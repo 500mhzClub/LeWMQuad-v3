@@ -1,0 +1,125 @@
+schema_version: 0.1
+platform_id: lewmquad_v3_go2_sim
+created: "2026-05-13"
+status: upstream_pinned_pending_license_and_build_audit
+
+stack:
+  os: ubuntu_24_04
+  ros_distro: jazzy
+  gazebo: harmonic
+  genesis: unpinned
+  dds:
+    default: system_default
+    unitree_bridge: cyclone_dds
+
+robot:
+  id: unitree_go2
+  upstream_base:
+    repository: https://github.com/mtakemi/unitree_go2_ros2
+    package: unitree_go2_description
+    branch: main
+    commit: 29bce68480dcc3d3bac8cc0cac983f8ac951e8e3
+    local_path: third_party/unitree_go2_ros2
+    selection_status: pinned_pending_license_and_build_audit
+    license_status: blocked_pending_upstream_license_clarification
+    rationale: closest_match_to_ubuntu_24_04_ros2_jazzy_gazebo_harmonic_go2_champ_cmd_vel_stack
+  asset_status: upstream_selected_pending_audit
+  description_package: unitree_go2_description
+  urdf_xacro: unitree_go2_description/urdf/unitree_go2_robot.xacro
+  mesh_source: upstream_unitree_go2_description
+  inertial_source: upstream_unitree_go2_description_pending_audit
+  collision_source: upstream_unitree_go2_description_pending_audit
+  acceptance_required_before_data: true
+
+locomotion:
+  backend_status: upstream_selected_pending_audit
+  preferred_backend: upstream_champ_cmd_vel_controller
+  fallback_backend: unitree_sport_api_adapter_for_real_robot_parity
+  upstream_base:
+    repository: https://github.com/mtakemi/unitree_go2_ros2
+    package: champ
+    command_topic: /cmd_vel
+    commit: 29bce68480dcc3d3bac8cc0cac983f8ac951e8e3
+    local_path: third_party/unitree_go2_ros2
+    selection_status: pinned_pending_license_and_build_audit
+  command_vector:
+    order: [vx_body_mps, vy_body_mps, yaw_rate_radps]
+    dim: 3
+  policy_artifact:
+    format: upstream_champ_gait_config
+    path: unitree_go2_sim/config/gait/gait.yaml
+    sha256: pending_vendor_pin
+  safety:
+    source: upstream_champ_gait_yaml_initial_limits
+    max_vx_mps: 0.3
+    min_vx_mps: -0.3
+    max_vy_mps: 0.25
+    min_vy_mps: -0.25
+    max_yaw_rate_radps: 0.5
+    max_command_delta_per_tick:
+      vx_mps: 0.25
+      vy_mps: 0.25
+      yaw_rate_radps: 0.35
+
+timing:
+  physics_dt_s: 0.002
+  policy_dt_s: 0.02
+  command_dt_s: 0.10
+  action_block_size: 5
+  macro_action_duration_s: 0.50
+  train_on: executed_command_block
+
+camera:
+  id: rgb_camera
+  parent_link: camera_link
+  status: upstream_pinned_pending_intrinsics_audit
+  source_topic: /rgb_image
+  camera_info_topic: manifest_intrinsics_required_for_mono_rgb
+  native_resolution: [640, 480]
+  training_resolution: [224, 224]
+  fov_axis: horizontal
+  fov_deg: 78.323
+  near_m: 0.05
+  far_m: 200.0
+  xyz_body_m: [0.326, 0.0, 0.043]
+  rpy_body_rad: [0.0, 0.0, 0.0]
+  encoding: rgb8
+  timestamp_source: sim_clock
+
+sensors_required:
+  - joint_states
+  - tf
+  - imu
+  - rgb_image
+  - camera_info_or_manifest_intrinsics
+  - base_state
+  - foot_contacts
+  - reset_event
+  - executed_command_block
+
+backends:
+  gazebo:
+    role: ros2_integration_authority
+    upstream_base:
+      repository: https://github.com/mtakemi/unitree_go2_ros2
+      package: unitree_go2_sim
+      launch: unitree_go2_sim/launch/unitree_go2_launch.py
+      commit: 29bce68480dcc3d3bac8cc0cac983f8ac951e8e3
+      local_path: third_party/unitree_go2_ros2
+      selection_status: pinned_pending_license_and_build_audit
+    lewm_adapter_package: lewm_go2_control
+  genesis:
+    role: high_throughput_rendering_after_parity
+    package: lewm_genesis
+    parity_required_before_full_data: true
+
+hard_gates_before_data_generation:
+  - verify_selected_upstream_license_allows_project_use
+  - build_selected_upstream_under_ros2_jazzy_and_gazebo_harmonic
+  - audit_upstream_go2_description_inertials_collisions_and_camera_frames
+  - lock_champ_gait_config_and_controller_parameters
+  - verify_command_block_to_executed_command_block_round_trip
+  - verify_reset_separated_episode_ids
+  - verify_camera_intrinsics_and_extrinsics_in_gazebo_and_genesis
+  - verify_each_trainable_primitive_has_distinct_executed_motion
+  - verify_smoke_bag_to_training_chunk_conversion

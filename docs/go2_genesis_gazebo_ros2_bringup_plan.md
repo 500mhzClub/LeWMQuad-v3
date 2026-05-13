@@ -74,6 +74,31 @@ If real-robot development must stay on Humble, keep the same internal
 interfaces and build the Unitree hardware bridge in a Humble overlay. Do not
 let Humble-only details define the training schema.
 
+### 3.1.1 Selected Upstream Base
+
+Use `mtakemi/unitree_go2_ros2` as the selected upstream base, pending clone,
+license, and build audit. It is the closest match to our target because it is
+documented as a ROS 2 Jazzy / Ubuntu 24.04 / Gazebo Harmonic Go2 simulator with:
+
+- `unitree_go2_description` for URDF/Xacro, meshes, sensors, and Gazebo
+  description.
+- `unitree_go2_sim` for launch, Gazebo, ROS 2 control, RViz, and gait/config
+  files.
+- CHAMP locomotion driven by `/cmd_vel`, which maps cleanly to our
+  `[vx_body_mps, vy_body_mps, yaw_rate_radps]` command-block contract.
+- Simulated IMU, joint states, lidar/camera options, odometry/state estimation,
+  and Gazebo Harmonic integration.
+
+Do not continue developing `go2_description` or a full `lewm_go2_gazebo`
+replacement unless the upstream audit fails. Our code should wrap the upstream
+stack with LeWM-specific command-block logging, reset/episode management,
+scene-manifest world insertion, and dataset conversion.
+
+Keep Unitree's official `unitreerobotics/unitree_ros2` as the real-robot API
+reference and hardware-parity bridge, not as the primary Gazebo simulator. It
+is official and important for Go2 sport-mode semantics, but it is not a complete
+Gazebo/Harmonic simulation stack.
+
 ### 3.2 Backend Roles
 
 Use one canonical scene manifest and two backend exporters:
@@ -162,24 +187,28 @@ Manifest requirements:
 Package target:
 
 ```text
-go2_description/
-  urdf/
-  meshes/
-  config/
+third_party/unitree_go2_ros2/
+  unitree_go2_description/
+  unitree_go2_sim/
+  champ/
+  champ_base/
+  champ_msgs/
 
 lewm_go2_control/
   msg/
   srv/
   src/
     command_block_adapter.py
-    sport_mode_adapter.py
-    blind_policy_runner.py
+    cmd_vel_adapter.py
+    executed_command_logger.py
     safety_monitor.py
     reset_manager.py
 ```
 
-This layer owns all Unitree-specific translation. The rest of the LeWM stack
-must depend only on the internal messages below.
+The upstream submodule owns the Go2 robot description, Gazebo launch, ROS 2
+control, CHAMP locomotion, and standard sensor topics. `lewm_go2_control` owns
+only LeWM-specific translation. The rest of the LeWM stack must depend on the
+internal messages below, not directly on CHAMP or Gazebo-specific topics.
 
 Core ROS topics:
 
@@ -194,10 +223,11 @@ Core ROS topics:
 
 /joint_states                    sensor_msgs/msg/JointState
 /tf                              tf2_msgs/msg/TFMessage
-/go2/imu                         sensor_msgs/msg/Imu
-/go2/front_camera/image_raw      sensor_msgs/msg/Image
-/go2/front_camera/camera_info    sensor_msgs/msg/CameraInfo
-/go2/lidar/points                sensor_msgs/msg/PointCloud2 optional
+/imu/data                        sensor_msgs/msg/Imu
+/rgb_image                       sensor_msgs/msg/Image
+/d455/camera_info                sensor_msgs/msg/CameraInfo optional
+/lewm/go2/camera_info            sensor_msgs/msg/CameraInfo optional if derived
+/velodyne_points/points          sensor_msgs/msg/PointCloud2 optional
 /clock                           rosgraph_msgs/msg/Clock
 ```
 
@@ -218,28 +248,29 @@ the executed block.
 Package target:
 
 ```text
-lewm_go2_gazebo/
-  launch/
-    go2_world.launch.py
-    spawn_go2.launch.py
-    record_rollout.launch.py
-  worlds/
-  models/
-  config/
-    ros_gz_bridge.yaml
-    go2_ros2_control.yaml
+third_party/unitree_go2_ros2/
+  unitree_go2_sim/
+    launch/unitree_go2_launch.py
+    config/gait/gait.yaml
+    config/ros_control/ros_control.yaml
+  unitree_go2_description/
+    urdf/unitree_go2_robot.xacro
+    urdf/unitree_go2_gazebo.xacro
+    worlds/default.sdf
+
+lewm_worlds/exporters/to_gazebo_sdf.py
+lewm_go2_control/src/*
 ```
 
 Responsibilities:
 
-- Launch Gazebo Harmonic with the exported SDF world.
-- Spawn the Go2 model.
-- Start `robot_state_publisher`.
-- Start `ros_gz_bridge`.
-- Start the blind locomotion policy runner.
-- Start the Go2 command adapter.
-- Start the reset manager.
-- Start recorders and health monitors.
+- Launch the selected upstream Gazebo Harmonic stack first.
+- Override the upstream world with exported LeWM scene manifests once the stock
+  launch passes.
+- Start the LeWM command-block adapter that converts fixed-length blocks to
+  `/cmd_vel`.
+- Start the LeWM executed-command logger, reset manager, recorders, and health
+  monitors.
 
 Gazebo is the authoritative environment for ROS 2 integration testing. A
 rollout is not accepted until Gazebo proves that the exact command/state
@@ -382,106 +413,57 @@ Exit gate:
 - The adapter echoes an `ExecutedCommandBlock`.
 - A bag records all required topics with consistent timestamps.
 
-### Phase 2: Gazebo Go2 Template
+### Phase 2: Upstream Gazebo Go2 Bring-up
 
 Goal: instantiate the dog in Gazebo with ROS 2 visibility.
 
-Template layout:
+Use the selected upstream repository rather than creating a local Go2 simulator
+from scratch:
 
 ```text
-go2_description/
-  package.xml
-  CMakeLists.txt
-  urdf/
-    go2.urdf.xacro
-    go2_links.xacro
-    go2_sensors.xacro
-    go2_ros2_control.xacro
-  meshes/
-  config/
-    joint_limits.yaml
-    camera.yaml
-
-lewm_go2_gazebo/
-  package.xml
-  CMakeLists.txt
-  launch/
-    go2_world.launch.py
-    spawn_go2.launch.py
-  worlds/
-    empty_bringup.sdf
-  config/
-    ros_gz_bridge.yaml
-    go2_ros2_control.yaml
+third_party/unitree_go2_ros2/
+  unitree_go2_description/
+  unitree_go2_sim/
+  champ/
+  champ_base/
+  champ_msgs/
 ```
 
-`go2.urdf.xacro` skeleton:
+Pinned commit:
 
-```xml
-<?xml version="1.0"?>
-<robot name="unitree_go2" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:arg name="use_sim" default="true"/>
-  <xacro:arg name="prefix" default=""/>
-
-  <!-- Import locked Go2 links, joints, inertials, collisions, and visuals. -->
-  <xacro:include filename="$(find go2_description)/urdf/go2_links.xacro"/>
-
-  <!-- Sensor frames must match the training camera manifest exactly. -->
-  <xacro:include filename="$(find go2_description)/urdf/go2_sensors.xacro"/>
-
-  <!-- Gazebo / ros2_control bindings live behind an arg so the same
-       description can be reused for RViz and hardware inspection. -->
-  <xacro:if value="$(arg use_sim)">
-    <xacro:include filename="$(find go2_description)/urdf/go2_ros2_control.xacro"/>
-  </xacro:if>
-</robot>
+```text
+29bce68480dcc3d3bac8cc0cac983f8ac951e8e3
 ```
 
-`ros_gz_bridge.yaml` skeleton:
+Initial upstream launch:
 
-```yaml
-- ros_topic_name: /clock
-  gz_topic_name: /clock
-  ros_type_name: rosgraph_msgs/msg/Clock
-  gz_type_name: gz.msgs.Clock
-  direction: GZ_TO_ROS
-
-- ros_topic_name: /go2/imu
-  gz_topic_name: /world/lewm/model/go2/link/imu_link/sensor/imu/imu
-  ros_type_name: sensor_msgs/msg/Imu
-  gz_type_name: gz.msgs.IMU
-  direction: GZ_TO_ROS
-
-- ros_topic_name: /go2/front_camera/image_raw
-  gz_topic_name: /world/lewm/model/go2/link/camera_link/sensor/front_camera/image
-  ros_type_name: sensor_msgs/msg/Image
-  gz_type_name: gz.msgs.Image
-  direction: GZ_TO_ROS
-
-- ros_topic_name: /go2/front_camera/camera_info
-  gz_topic_name: /world/lewm/model/go2/link/camera_link/sensor/front_camera/camera_info
-  ros_type_name: sensor_msgs/msg/CameraInfo
-  gz_type_name: gz.msgs.CameraInfo
-  direction: GZ_TO_ROS
-
-- ros_topic_name: /cmd_vel
-  gz_topic_name: /cmd_vel
-  ros_type_name: geometry_msgs/msg/Twist
-  gz_type_name: gz.msgs.Twist
-  direction: ROS_TO_GZ
+```bash
+ros2 launch unitree_go2_sim unitree_go2_launch.py rviz:=false
 ```
 
-The final bridge file must be verified against the installed `ros_gz_bridge`
-message conversion table. Anything unsupported by the bridge should be emitted
-by a native ROS 2 node instead of forced through Gazebo Transport.
+Important upstream files to audit:
+
+- `unitree_go2_sim/launch/unitree_go2_launch.py`
+- `unitree_go2_sim/config/gait/gait.yaml`
+- `unitree_go2_sim/config/ros_control/ros_control.yaml`
+- `unitree_go2_description/urdf/unitree_go2_robot.xacro`
+- `unitree_go2_description/urdf/unitree_go2_gazebo.xacro`
+- `unitree_go2_description/worlds/default.sdf`
+
+The upstream bridge and Gazebo plugins must be verified against the installed
+`ros_gz_bridge` message conversion table. Anything unsupported by the bridge
+should be emitted by a native ROS 2 node instead of forced through Gazebo
+Transport.
 
 Feature checks:
 
 - Model spawns without exploding.
 - Joint axes and limits match the asset source.
 - `robot_state_publisher` publishes the expected TF tree.
-- IMU, joint states, camera image, camera info, and optional lidar publish.
-- Foot-contact or foot-force estimates publish.
+- IMU, joint states, camera image, camera info or manifest-derived intrinsics,
+  and optional lidar publish.
+- Foot-contact or foot-force estimates publish through CHAMP, Gazebo contact
+  sensors, or the LeWM adapter.
 - Reset service returns the dog to a deterministic pose.
 - Blind policy can stand, walk forward, walk backward, yaw left/right, stop,
   and recover.
@@ -490,8 +472,8 @@ Feature checks:
 
 Exit gate:
 
-- `ros2 launch lewm_go2_gazebo go2_world.launch.py world:=empty_bringup`
-  brings up the model, all required topics, and a successful feature check.
+- `ros2 launch unitree_go2_sim unitree_go2_launch.py rviz:=false` brings up
+  the model, CHAMP controller, required topics, and a successful feature check.
 
 ### Phase 3: Locomotion Adapter
 
@@ -521,21 +503,21 @@ hold:
 
 forward_slow:
   type: velocity_block
-  vx: 0.25
+  vx: 0.15
   vy: 0.0
   yaw_rate: 0.0
   train: true
 
 forward_medium:
   type: velocity_block
-  vx: 0.50
+  vx: 0.25
   vy: 0.0
   yaw_rate: 0.0
   train: true
 
 backward:
   type: velocity_block
-  vx: -0.25
+  vx: -0.20
   vy: 0.0
   yaw_rate: 0.0
   train: true
@@ -544,14 +526,14 @@ yaw_left:
   type: velocity_block
   vx: 0.0
   vy: 0.0
-  yaw_rate: 0.7
+  yaw_rate: 0.45
   train: true
 
 yaw_right:
   type: velocity_block
   vx: 0.0
   vy: 0.0
-  yaw_rate: -0.7
+  yaw_rate: -0.45
   train: true
 
 recover:

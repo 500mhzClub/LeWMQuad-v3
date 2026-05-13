@@ -1,0 +1,10 @@
+uint64 scene_id
+string reason
+geometry_msgs/Pose spawn_pose_world
+bool use_spawn_pose
+---
+bool success
+uint64 episode_id
+uint32 reset_count
+string message
+

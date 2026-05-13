@@ -1,0 +1,8 @@
+string backend_id
+string artifact_path
+string artifact_sha256
+---
+bool success
+string active_backend_id
+string message
+

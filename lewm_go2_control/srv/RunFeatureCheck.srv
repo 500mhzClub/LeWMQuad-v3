@@ -1,0 +1,7 @@
+string check_name
+bool include_optional
+---
+bool success
+string report_json
+string message
+
