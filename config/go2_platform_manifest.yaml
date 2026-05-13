@@ -15,7 +15,7 @@ stack:
 robot:
   id: unitree_go2
   upstream_base:
-    repository: https://github.com/mtakemi/unitree_go2_ros2
+    repository: https://github.com/khaledgabr77/unitree_go2_ros2
     package: unitree_go2_description
     branch: main
     commit: 29bce68480dcc3d3bac8cc0cac983f8ac951e8e3
@@ -36,7 +36,7 @@ locomotion:
   preferred_backend: upstream_champ_cmd_vel_controller
   fallback_backend: unitree_sport_api_adapter_for_real_robot_parity
   upstream_base:
-    repository: https://github.com/mtakemi/unitree_go2_ros2
+    repository: https://github.com/khaledgabr77/unitree_go2_ros2
     package: champ
     command_topic: /cmd_vel
     commit: 29bce68480dcc3d3bac8cc0cac983f8ac951e8e3
@@ -101,7 +101,7 @@ backends:
   gazebo:
     role: ros2_integration_authority
     upstream_base:
-      repository: https://github.com/mtakemi/unitree_go2_ros2
+      repository: https://github.com/khaledgabr77/unitree_go2_ros2
       package: unitree_go2_sim
       launch: unitree_go2_sim/launch/unitree_go2_launch.py
       commit: 29bce68480dcc3d3bac8cc0cac983f8ac951e8e3

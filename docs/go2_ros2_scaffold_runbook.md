@@ -8,7 +8,7 @@ continue building a full robot description or Gazebo stack from scratch.
 
 Selected upstream base:
 
-- `https://github.com/mtakemi/unitree_go2_ros2`
+- `https://github.com/khaledgabr77/unitree_go2_ros2`
 - ROS 2 Jazzy / Ubuntu 24.04 / Gazebo Harmonic target.
 - Go2 description package: `unitree_go2_description`.
 - Simulation package: `unitree_go2_sim`.

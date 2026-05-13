@@ -76,7 +76,7 @@ let Humble-only details define the training schema.
 
 ### 3.1.1 Selected Upstream Base
 
-Use `mtakemi/unitree_go2_ros2` as the selected upstream base, pending clone,
+Use `khaledgabr77/unitree_go2_ros2` as the selected upstream base, pending clone,
 license, and build audit. It is the closest match to our target because it is
 documented as a ROS 2 Jazzy / Ubuntu 24.04 / Gazebo Harmonic Go2 simulator with:
 

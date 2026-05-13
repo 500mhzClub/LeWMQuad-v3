@@ -4,7 +4,7 @@ Date: 2026-05-13
 
 ## Selected Repository
 
-- Repository: `https://github.com/mtakemi/unitree_go2_ros2`
+- Repository: `https://github.com/khaledgabr77/unitree_go2_ros2`
 - Local path: `third_party/unitree_go2_ros2`
 - Pinned commit: `29bce68480dcc3d3bac8cc0cac983f8ac951e8e3`
 - Selection status: technically selected, blocked from training use until
@@ -105,7 +105,7 @@ Consequence:
      port the simulation pieces to Jazzy/Harmonic.
   2. Use official `unitreerobotics/unitree_ros` Go2 model assets where license
      permits, and keep CHAMP from its original BSD source.
-  3. Treat `mtakemi/unitree_go2_ros2` as an architectural reference only and
+  3. Treat `khaledgabr77/unitree_go2_ros2` as an architectural reference only and
      recreate the minimal glue using clearly licensed upstream assets.
 
 ## Required Next Audits
