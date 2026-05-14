@@ -1,0 +1,399 @@
+#!/usr/bin/env python3
+"""Translate LeWM Go2 command blocks into CHAMP /cmd_vel commands."""
+
+from __future__ import annotations
+
+import math
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import rclpy
+import yaml
+from ament_index_python.packages import get_package_share_directory
+from geometry_msgs.msg import Twist
+from rclpy.node import Node
+
+from lewm_go2_control.msg import CommandBlock, ExecutedCommandBlock
+
+
+@dataclass(frozen=True)
+class VelocityCommand:
+    vx: float
+    vy: float
+    yaw_rate: float
+
+
+@dataclass
+class ActiveBlock:
+    source: CommandBlock
+    requested: list[VelocityCommand]
+    executed: list[VelocityCommand]
+    clipped: bool
+    safety_overridden: bool
+    controller_mode: str
+    started_monotonic: float
+    command_dt_s: float
+
+
+class CommandBlockAdapter(Node):
+    def __init__(self) -> None:
+        super().__init__("lewm_go2_command_block_adapter")
+
+        package_share = Path(get_package_share_directory("lewm_go2_control"))
+        default_registry = package_share / "config" / "go2_primitive_registry.yaml"
+        default_manifest = package_share / "config" / "go2_platform_manifest.yaml"
+
+        self.declare_parameter("primitive_registry_path", str(default_registry))
+        self.declare_parameter("platform_manifest_path", str(default_manifest))
+        self.declare_parameter("command_topic", "/lewm/go2/command_block")
+        self.declare_parameter("executed_topic", "/lewm/go2/executed_command_block")
+        self.declare_parameter("cmd_vel_topic", "/cmd_vel")
+        self.declare_parameter("publish_period_s", 0.02)
+        self.declare_parameter("publish_stop_after_block", True)
+        self.declare_parameter("allow_untrainable_primitives", False)
+        self.declare_parameter("enforce_rate_limits", True)
+
+        self._registry = self._load_yaml_parameter("primitive_registry_path")
+        self._manifest = self._load_yaml_parameter("platform_manifest_path")
+        self._primitives = self._registry.get("primitives", {})
+        self._default_block_size = int(self._registry.get("block_size", 5))
+        self._default_command_dt_s = float(self._registry.get("command_dt_s", 0.10))
+        self._safety = self._manifest.get("locomotion", {}).get("safety", {})
+        self._allow_untrainable = bool(
+            self.get_parameter("allow_untrainable_primitives").value
+        )
+        self._enforce_rate_limits = bool(self.get_parameter("enforce_rate_limits").value)
+        publish_period_s = float(self.get_parameter("publish_period_s").value)
+
+        self._active_block: ActiveBlock | None = None
+        self._last_executed = VelocityCommand(0.0, 0.0, 0.0)
+
+        self._cmd_vel_pub = self.create_publisher(
+            Twist, str(self.get_parameter("cmd_vel_topic").value), 10
+        )
+        self._executed_pub = self.create_publisher(
+            ExecutedCommandBlock, str(self.get_parameter("executed_topic").value), 10
+        )
+        self._command_sub = self.create_subscription(
+            CommandBlock,
+            str(self.get_parameter("command_topic").value),
+            self._on_command_block,
+            10,
+        )
+        self._timer = self.create_timer(publish_period_s, self._on_timer)
+
+        self.get_logger().info(
+            "CommandBlock adapter ready: "
+            f"{self.get_parameter('command_topic').value} -> "
+            f"{self.get_parameter('cmd_vel_topic').value}"
+        )
+
+    def _load_yaml_parameter(self, parameter_name: str) -> dict[str, Any]:
+        path = Path(str(self.get_parameter(parameter_name).value))
+        if not path.is_file():
+            raise FileNotFoundError(f"{parameter_name} does not exist: {path}")
+        with path.open("r", encoding="utf-8") as stream:
+            data = yaml.safe_load(stream) or {}
+        if not isinstance(data, dict):
+            raise ValueError(f"{parameter_name} must point to a YAML mapping: {path}")
+        return data
+
+    def _on_command_block(self, msg: CommandBlock) -> None:
+        if self._active_block is not None:
+            self.get_logger().warn(
+                "Preempting an active command block with a newer CommandBlock"
+            )
+
+        try:
+            requested = self._requested_commands(msg)
+            executed, clipped = self._apply_safety_limits(requested)
+            command_dt_s = self._command_dt(msg)
+            controller_mode = "cmd_vel"
+            safety_overridden = False
+        except ValueError as exc:
+            self.get_logger().error(f"Rejecting CommandBlock {msg.sequence_id}: {exc}")
+            requested = []
+            executed = []
+            clipped = False
+            controller_mode = "rejected"
+            safety_overridden = True
+            self._publish_executed(
+                msg,
+                requested,
+                executed,
+                clipped=clipped,
+                safety_overridden=safety_overridden,
+                controller_mode=controller_mode,
+            )
+            self._publish_twist(VelocityCommand(0.0, 0.0, 0.0))
+            return
+
+        if not executed:
+            self._publish_executed(
+                msg,
+                requested,
+                executed,
+                clipped=clipped,
+                safety_overridden=True,
+                controller_mode="empty",
+            )
+            self._publish_twist(VelocityCommand(0.0, 0.0, 0.0))
+            return
+
+        self._active_block = ActiveBlock(
+            source=msg,
+            requested=requested,
+            executed=executed,
+            clipped=clipped,
+            safety_overridden=safety_overridden,
+            controller_mode=controller_mode,
+            started_monotonic=time.monotonic(),
+            command_dt_s=command_dt_s,
+        )
+        self.get_logger().info(
+            f"Accepted CommandBlock {msg.sequence_id} "
+            f"primitive='{msg.primitive_name or 'custom'}' "
+            f"steps={len(executed)} clipped={clipped}"
+        )
+
+    def _requested_commands(self, msg: CommandBlock) -> list[VelocityCommand]:
+        primitive = self._lookup_primitive(msg)
+        if primitive is not None and primitive.get("type") == "mode_event":
+            raise ValueError(
+                f"mode_event primitive '{msg.primitive_name}' is not implemented yet"
+            )
+
+        block_size = self._block_size(msg)
+        vx_values = list(msg.vx_body_mps)
+        vy_values = list(msg.vy_body_mps)
+        yaw_values = list(msg.yaw_rate_radps)
+
+        if not vx_values and not vy_values and not yaw_values and primitive is not None:
+            command = primitive.get("command", {})
+            vx_values = [float(command.get("vx_body_mps", 0.0))]
+            vy_values = [float(command.get("vy_body_mps", 0.0))]
+            yaw_values = [float(command.get("yaw_rate_radps", 0.0))]
+
+        vx = self._expand_vector("vx_body_mps", vx_values, block_size)
+        vy = self._expand_vector("vy_body_mps", vy_values, block_size)
+        yaw = self._expand_vector("yaw_rate_radps", yaw_values, block_size)
+
+        return [
+            VelocityCommand(vx=value_x, vy=value_y, yaw_rate=value_yaw)
+            for value_x, value_y, value_yaw in zip(vx, vy, yaw)
+        ]
+
+    def _lookup_primitive(self, msg: CommandBlock) -> dict[str, Any] | None:
+        primitive_name = msg.primitive_name.strip()
+        if not primitive_name:
+            return None
+
+        primitive = self._primitives.get(primitive_name)
+        if primitive is None:
+            raise ValueError(f"unknown primitive '{primitive_name}'")
+
+        trainable = bool(primitive.get("train", self._registry.get("defaults", {}).get("train", True)))
+        if not trainable and not self._allow_untrainable:
+            raise ValueError(
+                f"primitive '{primitive_name}' is not marked trainable; "
+                "set allow_untrainable_primitives:=true to override"
+            )
+
+        event_allowed = bool(
+            primitive.get(
+                "event_allowed_in_training",
+                self._registry.get("defaults", {}).get(
+                    "event_allowed_in_training", False
+                ),
+            )
+        )
+        if msg.event_name and msg.event_allowed_in_training and not event_allowed:
+            raise ValueError(
+                f"primitive '{primitive_name}' does not allow training event "
+                f"'{msg.event_name}'"
+            )
+
+        return primitive
+
+    def _block_size(self, msg: CommandBlock) -> int:
+        block_size = int(msg.block_size) if msg.block_size else self._default_block_size
+        if block_size <= 0:
+            raise ValueError("block_size must be positive")
+        return block_size
+
+    def _command_dt(self, msg: CommandBlock) -> float:
+        command_dt_s = (
+            float(msg.command_dt_s) if msg.command_dt_s else self._default_command_dt_s
+        )
+        if command_dt_s <= 0.0:
+            raise ValueError("command_dt_s must be positive")
+        return command_dt_s
+
+    @staticmethod
+    def _expand_vector(name: str, values: list[float], block_size: int) -> list[float]:
+        if not values:
+            raise ValueError(f"{name} must be provided or implied by primitive_name")
+        if len(values) == 1:
+            return [float(values[0])] * block_size
+        if len(values) != block_size:
+            raise ValueError(
+                f"{name} length must be 1 or block_size ({block_size}), got {len(values)}"
+            )
+        return [float(value) for value in values]
+
+    def _apply_safety_limits(
+        self, requested: list[VelocityCommand]
+    ) -> tuple[list[VelocityCommand], bool]:
+        executed: list[VelocityCommand] = []
+        clipped_any = False
+        previous = self._last_executed
+
+        for command in requested:
+            bounded, clipped = self._clip_absolute(command)
+            if self._enforce_rate_limits:
+                bounded, rate_clipped = self._clip_delta(bounded, previous)
+                clipped = clipped or rate_clipped
+
+            executed.append(bounded)
+            previous = bounded
+            clipped_any = clipped_any or clipped
+
+        return executed, clipped_any
+
+    def _clip_absolute(
+        self, command: VelocityCommand
+    ) -> tuple[VelocityCommand, bool]:
+        clipped = VelocityCommand(
+            vx=self._clip(
+                command.vx,
+                float(self._safety.get("min_vx_mps", -math.inf)),
+                float(self._safety.get("max_vx_mps", math.inf)),
+            ),
+            vy=self._clip(
+                command.vy,
+                float(self._safety.get("min_vy_mps", -math.inf)),
+                float(self._safety.get("max_vy_mps", math.inf)),
+            ),
+            yaw_rate=self._clip(
+                command.yaw_rate,
+                -float(self._safety.get("max_yaw_rate_radps", math.inf)),
+                float(self._safety.get("max_yaw_rate_radps", math.inf)),
+            ),
+        )
+        return clipped, clipped != command
+
+    def _clip_delta(
+        self, command: VelocityCommand, previous: VelocityCommand
+    ) -> tuple[VelocityCommand, bool]:
+        delta_limits = self._safety.get("max_command_delta_per_tick", {})
+        clipped = VelocityCommand(
+            vx=self._clip_delta_component(
+                command.vx, previous.vx, float(delta_limits.get("vx_mps", math.inf))
+            ),
+            vy=self._clip_delta_component(
+                command.vy, previous.vy, float(delta_limits.get("vy_mps", math.inf))
+            ),
+            yaw_rate=self._clip_delta_component(
+                command.yaw_rate,
+                previous.yaw_rate,
+                float(delta_limits.get("yaw_rate_radps", math.inf)),
+            ),
+        )
+        return clipped, clipped != command
+
+    @staticmethod
+    def _clip(value: float, lower: float, upper: float) -> float:
+        return min(max(value, lower), upper)
+
+    @classmethod
+    def _clip_delta_component(cls, value: float, previous: float, limit: float) -> float:
+        if math.isinf(limit):
+            return value
+        return cls._clip(value, previous - limit, previous + limit)
+
+    def _on_timer(self) -> None:
+        block = self._active_block
+        if block is None:
+            return
+
+        elapsed_s = time.monotonic() - block.started_monotonic
+        index = int(elapsed_s / block.command_dt_s)
+
+        if index < len(block.executed):
+            command = block.executed[index]
+            self._publish_twist(command)
+            self._last_executed = command
+            return
+
+        if bool(self.get_parameter("publish_stop_after_block").value):
+            stop = VelocityCommand(0.0, 0.0, 0.0)
+            self._publish_twist(stop)
+            self._last_executed = stop
+
+        self._publish_executed(
+            block.source,
+            block.requested,
+            block.executed,
+            clipped=block.clipped,
+            safety_overridden=block.safety_overridden,
+            controller_mode=block.controller_mode,
+        )
+        self._active_block = None
+
+    def _publish_twist(self, command: VelocityCommand) -> None:
+        twist = Twist()
+        twist.linear.x = command.vx
+        twist.linear.y = command.vy
+        twist.angular.z = command.yaw_rate
+        self._cmd_vel_pub.publish(twist)
+
+    def _publish_executed(
+        self,
+        source: CommandBlock,
+        requested: list[VelocityCommand],
+        executed: list[VelocityCommand],
+        *,
+        clipped: bool,
+        safety_overridden: bool,
+        controller_mode: str,
+    ) -> None:
+        msg = ExecutedCommandBlock()
+        msg.header = source.header
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.sequence_id = source.sequence_id
+        msg.block_size = len(executed)
+        try:
+            msg.command_dt_s = self._command_dt(source)
+        except ValueError:
+            msg.command_dt_s = self._default_command_dt_s
+        msg.primitive_name = source.primitive_name
+        msg.requested_vx_body_mps = [command.vx for command in requested]
+        msg.requested_vy_body_mps = [command.vy for command in requested]
+        msg.requested_yaw_rate_radps = [command.yaw_rate for command in requested]
+        msg.executed_vx_body_mps = [command.vx for command in executed]
+        msg.executed_vy_body_mps = [command.vy for command in executed]
+        msg.executed_yaw_rate_radps = [command.yaw_rate for command in executed]
+        msg.clipped = clipped
+        msg.safety_overridden = safety_overridden
+        msg.controller_mode = controller_mode
+        msg.backend_id = "champ_cmd_vel"
+        self._executed_pub.publish(msg)
+
+
+def main() -> None:
+    rclpy.init()
+    node = CommandBlockAdapter()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

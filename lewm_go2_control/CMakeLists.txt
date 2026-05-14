@@ -21,6 +21,18 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES geometry_msgs std_msgs
 )
 
+install(
+  PROGRAMS
+    nodes/command_block_adapter
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  FILES
+    ../config/go2_platform_manifest.yaml
+    ../config/go2_primitive_registry.yaml
+  DESTINATION share/${PROJECT_NAME}/config
+)
+
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()
-

@@ -60,6 +60,11 @@ def generate_launch_description():
     declare_gui = DeclareLaunchArgument(
         "gui", default_value="true", description="Use gui"
     )
+    declare_lewm_adapter = DeclareLaunchArgument(
+        "lewm_adapter",
+        default_value="true",
+        description="Launch the LeWM CommandBlock to /cmd_vel adapter",
+    )
     declare_world_init_x = DeclareLaunchArgument("world_init_x", default_value="0.0")
     declare_world_init_y = DeclareLaunchArgument("world_init_y", default_value="0.0")
     declare_world_init_z = DeclareLaunchArgument("world_init_z", default_value="0.375")
@@ -264,6 +269,15 @@ def generate_launch_description():
             '/joint_group_effort_controller/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory',
         ],
     )
+
+    lewm_command_block_adapter = Node(
+        package="lewm_go2_control",
+        executable="command_block_adapter",
+        name="lewm_go2_command_block_adapter",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+        condition=IfCondition(LaunchConfiguration("lewm_adapter")),
+    )
     
     # Use spawner nodes directly to handle the configuration step. (load → configure → activate)
     controller_spawner_js = TimerAction(
@@ -319,6 +333,7 @@ def generate_launch_description():
             declare_ros_control_file,
             declare_gazebo_world,
             declare_gui,
+            declare_lewm_adapter,
             declare_world_init_x,
             declare_world_init_y,
             declare_world_init_z,
@@ -331,6 +346,7 @@ def generate_launch_description():
             robot_state_publisher_node,
             gazebo_spawn_robot,
             gazebo_bridge,
+            lewm_command_block_adapter,
             
             # CHAMP controller nodes
             quadruped_controller_node,

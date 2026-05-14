@@ -12,6 +12,7 @@
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>gz_ros2_control</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>lewm_go2_control</exec_depend>
   <exec_depend>robot_localization</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>ros_gz_bridge</exec_depend>
@@ -25,4 +26,3 @@
     <build_type>ament_cmake</build_type>
   </export>
 </package>
-

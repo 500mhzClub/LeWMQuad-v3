@@ -123,6 +123,19 @@ The default wrapper launches:
 ros2 launch lewm_go2_bringup go2_sim.launch.py rviz:=false gui:=false
 ```
 
+It also starts the first-pass LeWM command adapter by default:
+
+```text
+/lewm/go2/command_block -> /cmd_vel
+/lewm/go2/executed_command_block
+```
+
+Disable it only when debugging the stock upstream stack:
+
+```bash
+scripts/launch_go2_sim.sh lewm_adapter:=false
+```
+
 To pass through launch arguments:
 
 ```bash
@@ -162,6 +175,26 @@ To also send a short forward velocity command:
 ```bash
 scripts/smoke_go2_topics.sh --drive
 ```
+
+LeWM command-block adapter smoke test. In one terminal:
+
+```bash
+scripts/ros2_go2.sh ros2 topic echo /lewm/go2/executed_command_block --once
+```
+
+In another terminal:
+
+```bash
+scripts/ros2_go2.sh ros2 topic pub /lewm/go2/command_block \
+  lewm_go2_control/msg/CommandBlock \
+  "{sequence_id: 1, block_size: 5, command_dt_s: 0.1, primitive_name: arc_left}" \
+  --once
+```
+
+The adapter expands named velocity primitives from
+`config/go2_primitive_registry.yaml`, clips against
+`config/go2_platform_manifest.yaml`, publishes `/cmd_vel`, then records the
+requested and executed command arrays for later audits.
 
 Gazebo GUI smoke test:
 
