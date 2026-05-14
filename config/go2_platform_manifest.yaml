@@ -104,6 +104,7 @@ backends:
       repository: https://github.com/khaledgabr77/unitree_go2_ros2
       package: unitree_go2_sim
       launch: unitree_go2_sim/launch/unitree_go2_launch.py
+      lewm_launch_wrapper: lewm_go2_bringup/launch/go2_sim.launch.py
       commit: 29bce68480dcc3d3bac8cc0cac983f8ac951e8e3
       local_path: third_party/unitree_go2_ros2
       selection_status: pinned_pending_license_and_build_audit

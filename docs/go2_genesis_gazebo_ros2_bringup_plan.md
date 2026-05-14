@@ -260,6 +260,7 @@ third_party/unitree_go2_ros2/
 
 lewm_worlds/exporters/to_gazebo_sdf.py
 lewm_go2_control/src/*
+lewm_go2_bringup/launch/go2_sim.launch.py
 ```
 
 Responsibilities:
@@ -435,11 +436,16 @@ Pinned commit:
 29bce68480dcc3d3bac8cc0cac983f8ac951e8e3
 ```
 
-Initial upstream launch:
+Initial LeWM launch wrapper:
 
 ```bash
-ros2 launch unitree_go2_sim unitree_go2_launch.py rviz:=false
+ros2 launch lewm_go2_bringup go2_sim.launch.py rviz:=false gui:=false
 ```
+
+The wrapper is intentionally tracked outside `third_party/` because the upstream
+launch declares `gui` and `world` arguments but does not fully use them. The
+wrapper preserves the upstream Go2 nodes and starts Gazebo server-only when
+`gui:=false`, which is required for headless bring-up and CI.
 
 Important upstream files to audit:
 
@@ -472,7 +478,7 @@ Feature checks:
 
 Exit gate:
 
-- `ros2 launch unitree_go2_sim unitree_go2_launch.py rviz:=false` brings up
+- `ros2 launch lewm_go2_bringup go2_sim.launch.py rviz:=false gui:=false` brings up
   the model, CHAMP controller, required topics, and a successful feature check.
 
 ### Phase 3: Locomotion Adapter

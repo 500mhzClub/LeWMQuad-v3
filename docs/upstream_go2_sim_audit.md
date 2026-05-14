@@ -27,6 +27,7 @@ This repository is the closest match to the LeWMQuad-v3 platform requirements:
 ## Relevant Upstream Paths
 
 - Launch: `unitree_go2_sim/launch/unitree_go2_launch.py`
+- LeWM launch wrapper: `lewm_go2_bringup/launch/go2_sim.launch.py`
 - Robot model: `unitree_go2_description/urdf/unitree_go2_robot.xacro`
 - Gazebo plugins and camera: `unitree_go2_description/urdf/unitree_go2_gazebo.xacro`
 - Gait config: `unitree_go2_sim/config/gait/gait.yaml`
@@ -116,7 +117,7 @@ Before data generation:
   licensed source.
 - Build under the target stack: Ubuntu 24.04, ROS 2 Jazzy, Gazebo Harmonic.
 - Verify `xacro` expansion of `unitree_go2_robot.xacro`.
-- Verify launch of `unitree_go2_sim unitree_go2_launch.py`.
+- Verify launch of `lewm_go2_bringup go2_sim.launch.py`.
 - Verify `/cmd_vel` produces distinct forward, backward, yaw, and arc motion.
 - Verify `/rgb_image` camera pose, FOV, resolution, near/far plane, frame
   alignment, and camera-info/intrinsics source against the LeWM camera manifest.

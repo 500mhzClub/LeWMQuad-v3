@@ -26,6 +26,7 @@ training-ready.
   no-data gates.
 - `config/go2_primitive_registry.yaml`: initial command primitive registry.
 - `lewm_go2_control`: internal ROS 2 messages and services.
+- `lewm_go2_bringup`: LeWM launch wrapper for headless/GUI Go2 simulator bring-up.
 - `third_party/unitree_go2_ros2`: selected upstream Go2 simulator submodule.
 - `docs/upstream_go2_sim_audit.md`: technical and license audit notes for the
   pinned upstream commit.
@@ -35,9 +36,9 @@ training-ready.
 Build these packages from the repository root as a ROS 2 workspace:
 
 ```bash
-source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install
-source install/setup.bash
+scripts/install_jazzy_harmonic_deps.sh
+scripts/check_ros_gz_alignment.sh
+scripts/build_go2_sim.sh --clean
 ```
 
 If the repository is later nested under a larger workspace, keep these packages
@@ -57,7 +58,7 @@ placeholder launch. After ROS 2 Jazzy, Gazebo Harmonic, `ros_gz`, `xacro`, and
 controller packages are installed:
 
 ```bash
-ros2 launch unitree_go2_sim unitree_go2_launch.py
+scripts/launch_go2_sim.sh
 ```
 
 Record the smoke topics with our LeWM recorder once implemented. Until then,
