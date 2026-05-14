@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 install(
   PROGRAMS
     nodes/command_block_adapter
+    nodes/base_state_publisher
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -123,17 +123,20 @@ The default wrapper launches:
 ros2 launch lewm_go2_bringup go2_sim.launch.py rviz:=false gui:=false
 ```
 
-It also starts the first-pass LeWM command adapter by default:
+It also starts the first-pass LeWM command adapter and the base state publisher
+by default:
 
 ```text
 /lewm/go2/command_block -> /cmd_vel
 /lewm/go2/executed_command_block
+/odom -> /lewm/go2/base_state
 ```
 
-Disable it only when debugging the stock upstream stack:
+Disable them only when debugging the stock upstream stack:
 
 ```bash
 scripts/launch_go2_sim.sh lewm_adapter:=false
+scripts/launch_go2_sim.sh lewm_base_state:=false
 ```
 
 To pass through launch arguments:
@@ -195,6 +198,16 @@ The adapter expands named velocity primitives from
 `config/go2_primitive_registry.yaml`, clips against
 `config/go2_platform_manifest.yaml`, publishes `/cmd_vel`, then records the
 requested and executed command arrays for later audits.
+
+LeWM base state publisher smoke test:
+
+```bash
+scripts/ros2_go2.sh ros2 topic echo /lewm/go2/base_state --once
+```
+
+The publisher converts the EKF-fused `/odom` stream into `BaseState`, preserving
+the world-frame pose, rotating the body-frame twist into the world frame, and
+emitting roll/pitch/yaw alongside the raw `(x, y, z, w)` quaternion.
 
 Gazebo GUI smoke test:
 
