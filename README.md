@@ -124,13 +124,15 @@ ros2 launch lewm_go2_bringup go2_sim.launch.py rviz:=false gui:=false
 ```
 
 It also starts the first-pass LeWM command adapter, the base state publisher,
-and the manifest-driven CameraInfo publisher by default:
+the manifest-driven CameraInfo publisher, and the episode-bookkeeping reset
+manager by default:
 
 ```text
 /lewm/go2/command_block -> /cmd_vel
 /lewm/go2/executed_command_block
 /odom -> /lewm/go2/base_state
 /rgb_image -> /lewm/go2/camera_info
+/lewm/go2/reset (service) -> /lewm/go2/reset_event
 ```
 
 Disable them only when debugging the stock upstream stack:
@@ -139,6 +141,7 @@ Disable them only when debugging the stock upstream stack:
 scripts/launch_go2_sim.sh lewm_adapter:=false
 scripts/launch_go2_sim.sh lewm_base_state:=false
 scripts/launch_go2_sim.sh lewm_camera_info:=false
+scripts/launch_go2_sim.sh lewm_reset:=false
 ```
 
 To pass through launch arguments:
@@ -221,6 +224,41 @@ The publisher computes the RGB camera intrinsics from
 `config/go2_platform_manifest.yaml` (resolution + horizontal FOV) and emits a
 `CameraInfo` stamped to match each `/rgb_image` frame, since the upstream
 Gazebo camera plugin does not publish one for `/rgb_image`.
+
+LeWM reset manager smoke test. Echo the event topic in one terminal:
+
+```bash
+scripts/ros2_go2.sh ros2 topic echo /lewm/go2/reset_event
+```
+
+Call the service in another:
+
+```bash
+scripts/ros2_go2.sh ros2 service call /lewm/go2/reset \
+  lewm_go2_control/srv/ResetEpisode \
+  "{scene_id: 1, reason: 'manual_smoke', use_spawn_pose: false}"
+```
+
+The reset manager owns the monotonic `episode_id` and `reset_count` counters
+used to split training windows on episode boundaries. Physical teleport back
+to a deterministic spawn pose is not yet wired up; the service still accepts
+`spawn_pose_world` so callers do not change once that slice lands, and the
+response/event flag the teleport as deferred when `use_spawn_pose` is true.
+Closing the teleport gap requires bridging Gazebo's `/world/default/set_pose`
+service through `ros_gz_bridge` plus zeroing the robot's velocities (typically
+via a pause/step around the pose write so the EKF and CHAMP controller see a
+clean discontinuity).
+
+### Foot contacts (deferred)
+
+`/lewm/go2/foot_contacts` is not yet wired up. CHAMP gates its kinematic
+contact publisher on `!gazebo`, so the in-sim CHAMP node never emits
+`/foot_contacts`; it expects Gazebo to provide real physics contacts instead.
+The upstream URDF has no `<sensor type="contact">` on the foot links, and the
+default world does not load Gazebo's contact system plugin, so neither path is
+available out of the box. Closing this gap requires either a URDF overlay that
+adds contact sensors per foot plus a world-side plugin + ros_gz bridge, or a
+deliberately-marked kinematic fallback (TF-based foot-height heuristic).
 
 Gazebo GUI smoke test:
 

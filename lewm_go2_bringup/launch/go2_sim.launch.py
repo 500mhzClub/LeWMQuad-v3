@@ -75,6 +75,11 @@ def generate_launch_description():
         default_value="true",
         description="Launch the LeWM manifest-driven CameraInfo publisher",
     )
+    declare_lewm_reset = DeclareLaunchArgument(
+        "lewm_reset",
+        default_value="true",
+        description="Launch the LeWM episode-bookkeeping reset manager",
+    )
     declare_world_init_x = DeclareLaunchArgument("world_init_x", default_value="0.0")
     declare_world_init_y = DeclareLaunchArgument("world_init_y", default_value="0.0")
     declare_world_init_z = DeclareLaunchArgument("world_init_z", default_value="0.375")
@@ -306,6 +311,15 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
         condition=IfCondition(LaunchConfiguration("lewm_camera_info")),
     )
+
+    lewm_reset_manager = Node(
+        package="lewm_go2_control",
+        executable="reset_manager",
+        name="lewm_go2_reset_manager",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+        condition=IfCondition(LaunchConfiguration("lewm_reset")),
+    )
     
     # Use spawner nodes directly to handle the configuration step. (load → configure → activate)
     controller_spawner_js = TimerAction(
@@ -364,6 +378,7 @@ def generate_launch_description():
             declare_lewm_adapter,
             declare_lewm_base_state,
             declare_lewm_camera_info,
+            declare_lewm_reset,
             declare_world_init_x,
             declare_world_init_y,
             declare_world_init_z,
@@ -379,6 +394,7 @@ def generate_launch_description():
             lewm_command_block_adapter,
             lewm_base_state_publisher,
             lewm_camera_info_publisher,
+            lewm_reset_manager,
 
             # CHAMP controller nodes
             quadruped_controller_node,

@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""Manage LeWM episode boundaries via /lewm/go2/reset.
+
+This slice handles episode-id bookkeeping only. Physical teleport back to a
+deterministic spawn pose requires a ros_gz bridge to gz `set_pose` plus
+velocity zeroing and is intentionally deferred; the service still accepts a
+`spawn_pose_world` so downstream callers do not need to change once that
+slice lands. When `physical_teleport_supported` is false the service reports
+that limitation in the response message and the published ResetEvent reason.
+"""
+
+from __future__ import annotations
+
+import rclpy
+from rclpy.node import Node
+
+from lewm_go2_control.msg import ResetEvent
+from lewm_go2_control.srv import ResetEpisode
+
+
+class ResetManager(Node):
+    def __init__(self) -> None:
+        super().__init__("lewm_go2_reset_manager")
+
+        self.declare_parameter("reset_service", "/lewm/go2/reset")
+        self.declare_parameter("reset_event_topic", "/lewm/go2/reset_event")
+        self.declare_parameter("initial_episode_id", 0)
+        self.declare_parameter("physical_teleport_supported", False)
+
+        self._episode_id = int(self.get_parameter("initial_episode_id").value)
+        self._reset_count = 0
+        self._physical_teleport_supported = bool(
+            self.get_parameter("physical_teleport_supported").value
+        )
+
+        self._event_pub = self.create_publisher(
+            ResetEvent, str(self.get_parameter("reset_event_topic").value), 10
+        )
+        self._service = self.create_service(
+            ResetEpisode,
+            str(self.get_parameter("reset_service").value),
+            self._on_reset,
+        )
+
+        self.get_logger().info(
+            "Reset manager ready: service="
+            f"{self.get_parameter('reset_service').value}, "
+            f"event_topic={self.get_parameter('reset_event_topic').value}, "
+            f"initial_episode_id={self._episode_id}, "
+            f"physical_teleport_supported={self._physical_teleport_supported}"
+        )
+
+    def _on_reset(
+        self, request: ResetEpisode.Request, response: ResetEpisode.Response
+    ) -> ResetEpisode.Response:
+        self._episode_id += 1
+        self._reset_count += 1
+
+        teleport_pending = bool(request.use_spawn_pose) and not self._physical_teleport_supported
+        if teleport_pending:
+            message = (
+                "episode bookkeeping advanced; physical teleport requested but "
+                "not yet supported in this build"
+            )
+        elif request.use_spawn_pose:
+            message = "episode bookkeeping advanced; physical teleport applied"
+        else:
+            message = "episode bookkeeping advanced"
+
+        response.success = True
+        response.episode_id = self._episode_id
+        response.reset_count = self._reset_count
+        response.message = message
+
+        event = ResetEvent()
+        event.header.stamp = self.get_clock().now().to_msg()
+        event.scene_id = request.scene_id
+        event.episode_id = self._episode_id
+        event.reset_count = self._reset_count
+        event.reason = request.reason
+        event.success = True
+        event.spawn_pose_world = request.spawn_pose_world
+        self._event_pub.publish(event)
+
+        self.get_logger().info(
+            f"reset accepted: scene_id={request.scene_id} "
+            f"episode_id={self._episode_id} reset_count={self._reset_count} "
+            f"reason='{request.reason}' teleport_pending={teleport_pending}"
+        )
+        return response
+
+
+def main() -> None:
+    rclpy.init()
+    node = ResetManager()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

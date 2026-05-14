@@ -26,6 +26,7 @@ install(
     nodes/command_block_adapter
     nodes/base_state_publisher
     nodes/camera_info_publisher
+    nodes/reset_manager
   DESTINATION lib/${PROJECT_NAME}
 )
 
