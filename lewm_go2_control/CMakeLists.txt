@@ -25,6 +25,7 @@ install(
   PROGRAMS
     nodes/command_block_adapter
     nodes/base_state_publisher
+    nodes/camera_info_publisher
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+"""Publish CameraInfo for the Go2 RGB camera using manifest intrinsics."""
+
+from __future__ import annotations
+
+import math
+from pathlib import Path
+from typing import Any
+
+import rclpy
+import yaml
+from ament_index_python.packages import get_package_share_directory
+from rclpy.node import Node
+from sensor_msgs.msg import CameraInfo, Image
+
+
+class CameraInfoPublisher(Node):
+    def __init__(self) -> None:
+        super().__init__("lewm_go2_camera_info_publisher")
+
+        package_share = Path(get_package_share_directory("lewm_go2_control"))
+        default_manifest = package_share / "config" / "go2_platform_manifest.yaml"
+
+        self.declare_parameter("platform_manifest_path", str(default_manifest))
+        self.declare_parameter("image_topic", "/rgb_image")
+        self.declare_parameter("camera_info_topic", "/lewm/go2/camera_info")
+        self.declare_parameter("frame_id_override", "")
+
+        manifest = self._load_yaml(self.get_parameter("platform_manifest_path").value)
+        camera = manifest.get("camera", {})
+        if not camera:
+            raise ValueError("platform manifest is missing a 'camera' block")
+
+        self._template = _build_camera_info_template(camera)
+        self._frame_id_override = str(self.get_parameter("frame_id_override").value)
+
+        self._info_pub = self.create_publisher(
+            CameraInfo, str(self.get_parameter("camera_info_topic").value), 10
+        )
+        self._image_sub = self.create_subscription(
+            Image,
+            str(self.get_parameter("image_topic").value),
+            self._on_image,
+            10,
+        )
+
+        self.get_logger().info(
+            "CameraInfo publisher ready: "
+            f"{self.get_parameter('image_topic').value} -> "
+            f"{self.get_parameter('camera_info_topic').value} "
+            f"(K=[{self._template.k[0]:.2f},{self._template.k[4]:.2f},"
+            f"{self._template.k[2]:.1f},{self._template.k[5]:.1f}])"
+        )
+
+    @staticmethod
+    def _load_yaml(path_value: Any) -> dict[str, Any]:
+        path = Path(str(path_value))
+        if not path.is_file():
+            raise FileNotFoundError(f"platform manifest does not exist: {path}")
+        with path.open("r", encoding="utf-8") as stream:
+            data = yaml.safe_load(stream) or {}
+        if not isinstance(data, dict):
+            raise ValueError(f"platform manifest must be a YAML mapping: {path}")
+        return data
+
+    def _on_image(self, msg: Image) -> None:
+        info = CameraInfo()
+        info.header.stamp = msg.header.stamp
+        info.header.frame_id = self._frame_id_override or msg.header.frame_id
+        info.height = self._template.height
+        info.width = self._template.width
+        info.distortion_model = self._template.distortion_model
+        info.d = list(self._template.d)
+        info.k = list(self._template.k)
+        info.r = list(self._template.r)
+        info.p = list(self._template.p)
+        info.binning_x = 0
+        info.binning_y = 0
+        self._info_pub.publish(info)
+
+
+class _CameraInfoTemplate:
+    __slots__ = ("height", "width", "distortion_model", "d", "k", "r", "p")
+
+    def __init__(
+        self,
+        height: int,
+        width: int,
+        distortion_model: str,
+        d: list[float],
+        k: list[float],
+        r: list[float],
+        p: list[float],
+    ) -> None:
+        self.height = height
+        self.width = width
+        self.distortion_model = distortion_model
+        self.d = d
+        self.k = k
+        self.r = r
+        self.p = p
+
+
+def _build_camera_info_template(camera: dict[str, Any]) -> _CameraInfoTemplate:
+    resolution = camera.get("native_resolution")
+    if not isinstance(resolution, list) or len(resolution) != 2:
+        raise ValueError("camera.native_resolution must be [width, height]")
+    width = int(resolution[0])
+    height = int(resolution[1])
+    if width <= 0 or height <= 0:
+        raise ValueError("camera.native_resolution entries must be positive")
+
+    fov_axis = str(camera.get("fov_axis", "horizontal")).strip().lower()
+    fov_deg = float(camera.get("fov_deg", 0.0))
+    if fov_deg <= 0.0:
+        raise ValueError("camera.fov_deg must be positive")
+    half_fov_rad = math.radians(fov_deg) * 0.5
+    if fov_axis == "horizontal":
+        focal = (width / 2.0) / math.tan(half_fov_rad)
+    elif fov_axis == "vertical":
+        focal = (height / 2.0) / math.tan(half_fov_rad)
+    else:
+        raise ValueError(f"camera.fov_axis must be 'horizontal' or 'vertical', got '{fov_axis}'")
+
+    fx = focal
+    fy = focal
+    cx = width / 2.0
+    cy = height / 2.0
+
+    k = [fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0]
+    r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    p = [fx, 0.0, cx, 0.0, 0.0, fy, cy, 0.0, 0.0, 0.0, 1.0, 0.0]
+    d = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+    return _CameraInfoTemplate(
+        height=height,
+        width=width,
+        distortion_model="plumb_bob",
+        d=d,
+        k=k,
+        r=r,
+        p=p,
+    )
+
+
+def main() -> None:
+    rclpy.init()
+    node = CameraInfoPublisher()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

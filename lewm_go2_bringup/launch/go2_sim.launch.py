@@ -70,6 +70,11 @@ def generate_launch_description():
         default_value="true",
         description="Launch the LeWM /odom to BaseState publisher",
     )
+    declare_lewm_camera_info = DeclareLaunchArgument(
+        "lewm_camera_info",
+        default_value="true",
+        description="Launch the LeWM manifest-driven CameraInfo publisher",
+    )
     declare_world_init_x = DeclareLaunchArgument("world_init_x", default_value="0.0")
     declare_world_init_y = DeclareLaunchArgument("world_init_y", default_value="0.0")
     declare_world_init_z = DeclareLaunchArgument("world_init_z", default_value="0.375")
@@ -292,6 +297,15 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
         condition=IfCondition(LaunchConfiguration("lewm_base_state")),
     )
+
+    lewm_camera_info_publisher = Node(
+        package="lewm_go2_control",
+        executable="camera_info_publisher",
+        name="lewm_go2_camera_info_publisher",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+        condition=IfCondition(LaunchConfiguration("lewm_camera_info")),
+    )
     
     # Use spawner nodes directly to handle the configuration step. (load → configure → activate)
     controller_spawner_js = TimerAction(
@@ -349,6 +363,7 @@ def generate_launch_description():
             declare_gui,
             declare_lewm_adapter,
             declare_lewm_base_state,
+            declare_lewm_camera_info,
             declare_world_init_x,
             declare_world_init_y,
             declare_world_init_z,
@@ -363,6 +378,7 @@ def generate_launch_description():
             gazebo_bridge,
             lewm_command_block_adapter,
             lewm_base_state_publisher,
+            lewm_camera_info_publisher,
 
             # CHAMP controller nodes
             quadruped_controller_node,

@@ -123,13 +123,14 @@ The default wrapper launches:
 ros2 launch lewm_go2_bringup go2_sim.launch.py rviz:=false gui:=false
 ```
 
-It also starts the first-pass LeWM command adapter and the base state publisher
-by default:
+It also starts the first-pass LeWM command adapter, the base state publisher,
+and the manifest-driven CameraInfo publisher by default:
 
 ```text
 /lewm/go2/command_block -> /cmd_vel
 /lewm/go2/executed_command_block
 /odom -> /lewm/go2/base_state
+/rgb_image -> /lewm/go2/camera_info
 ```
 
 Disable them only when debugging the stock upstream stack:
@@ -137,6 +138,7 @@ Disable them only when debugging the stock upstream stack:
 ```bash
 scripts/launch_go2_sim.sh lewm_adapter:=false
 scripts/launch_go2_sim.sh lewm_base_state:=false
+scripts/launch_go2_sim.sh lewm_camera_info:=false
 ```
 
 To pass through launch arguments:
@@ -208,6 +210,17 @@ scripts/ros2_go2.sh ros2 topic echo /lewm/go2/base_state --once
 The publisher converts the EKF-fused `/odom` stream into `BaseState`, preserving
 the world-frame pose, rotating the body-frame twist into the world frame, and
 emitting roll/pitch/yaw alongside the raw `(x, y, z, w)` quaternion.
+
+LeWM CameraInfo publisher smoke test:
+
+```bash
+scripts/ros2_go2.sh ros2 topic echo /lewm/go2/camera_info --once
+```
+
+The publisher computes the RGB camera intrinsics from
+`config/go2_platform_manifest.yaml` (resolution + horizontal FOV) and emits a
+`CameraInfo` stamped to match each `/rgb_image` frame, since the upstream
+Gazebo camera plugin does not publish one for `/rgb_image`.
 
 Gazebo GUI smoke test:
 
