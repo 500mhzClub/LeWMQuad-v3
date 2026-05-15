@@ -1,26 +1,227 @@
-"""Construct Genesis scenes from canonical LeWM Genesis specs."""
+"""Build Genesis scenes from typed ``ScenePack`` objects.
+
+This is the only module in ``lewm_genesis`` that imports ``genesis`` at
+runtime. Importing this module without Genesis installed is fine; calling
+``build_scene`` raises a clear error.
+
+The higher-level entry point ``build_scene_from_pack`` consumes a
+``ScenePack`` produced by :mod:`lewm_genesis.scene_loader` and returns the
+Genesis scene, robot, camera, and per-leg foot link handles in LeWM order.
+
+Genesis API surface used:
+
+- ``gs.init(backend=...)`` (process-global, called once via ``initialize_genesis``)
+- ``gs.Scene`` with ``SimOptions(dt=...)``
+- ``gs.morphs.Plane``, ``gs.morphs.Box``, ``gs.morphs.URDF``
+- ``scene.add_camera`` and ``scene.add_entity``
+- ``scene.build(n_envs=...)``
+
+The exact Genesis API for attaching a camera to a moving body or for
+resolving foot-link indices may require the rollout loop to do manual
+per-tick updates. Those concerns live in ``rollout.py``, not here.
+"""
 
 from __future__ import annotations
 
+import math
+from dataclasses import dataclass
 from typing import Any
+
+from lewm_genesis.scene_loader import ScenePack
+
+
+_GENESIS_INITIALIZED = False
+
+
+def _import_genesis():
+    try:
+        import genesis as gs  # type: ignore[import-not-found]
+    except ImportError as exc:  # pragma: no cover - exercised only when Genesis missing
+        raise RuntimeError(
+            "Genesis is not installed. Install the project-approved Genesis "
+            "runtime before calling lewm_genesis.scene_builder functions."
+        ) from exc
+    return gs
+
+
+def initialize_genesis(backend: str = "auto", seed: int | None = None, logging_level: int | None = None) -> None:
+    """Idempotently initialize Genesis with the requested backend.
+
+    Subsequent calls are no-ops. The backend resolver mirrors the v2 pattern
+    at ``../LeWMQuad-v2/lewm/genesis_utils.py``: ``"auto"`` chooses
+    ``gs.amdgpu`` / ``gs.cuda`` / ``gs.vulkan`` / ``gs.cpu`` based on what is
+    available.
+    """
+
+    global _GENESIS_INITIALIZED
+    if _GENESIS_INITIALIZED:
+        return
+
+    gs = _import_genesis()
+    backend_obj = _resolve_backend(gs, backend)
+    init_kwargs: dict[str, Any] = {"backend": backend_obj}
+    if seed is not None:
+        # Genesis routes seed through numpy.random.seed which requires 0..2**32-1.
+        init_kwargs["seed"] = int(seed) & 0xFFFF_FFFF
+    if logging_level is not None:
+        init_kwargs["logging_level"] = logging_level
+    gs.init(**init_kwargs)
+    _GENESIS_INITIALIZED = True
+
+
+def _resolve_backend(gs, backend_name: str):
+    name = backend_name.lower().strip()
+    explicit = {
+        "cpu": "cpu",
+        "gpu": "gpu",
+        "cuda": "cuda",
+        "vulkan": "vulkan",
+        "metal": "metal",
+        "amdgpu": "amdgpu",
+        "amd": "amdgpu",
+        "hip": "amdgpu",
+        "rocm": "amdgpu",
+    }
+    if name == "auto":
+        # Mirror v2's preference order for AMD hardware running ROCm.
+        try:
+            import torch
+
+            hip = getattr(torch.version, "hip", None)
+        except ImportError:
+            hip = None
+        if hip:
+            for attr in ("amdgpu", "vulkan", "gpu", "cuda", "cpu"):
+                backend = getattr(gs, attr, None)
+                if backend is not None:
+                    return backend
+        for attr in ("gpu", "cuda", "vulkan", "metal", "cpu"):
+            backend = getattr(gs, attr, None)
+            if backend is not None:
+                return backend
+        return gs.cpu
+    if name in explicit:
+        backend = getattr(gs, explicit[name], None)
+        if backend is not None:
+            return backend
+    return gs.cpu
+
+
+@dataclass
+class SceneBuild:
+    """The Genesis entities produced from a ``ScenePack``."""
+
+    scene: Any
+    robot: Any
+    camera: Any
+    pack: ScenePack
+    n_envs: int
+
+
+def build_scene_from_pack(
+    pack: ScenePack,
+    *,
+    n_envs: int,
+    backend: str = "auto",
+    show_viewer: bool = False,
+) -> SceneBuild:
+    """Build a Genesis scene with ``n_envs`` parallel envs from a ``ScenePack``."""
+
+    gs = _import_genesis()
+    initialize_genesis(backend=backend, seed=pack.physics_seed)
+
+    scene = gs.Scene(
+        sim_options=gs.options.SimOptions(
+            dt=float(pack.timing.physics_dt_s),
+            gravity=(0.0, 0.0, -9.81),
+        ),
+        show_viewer=bool(show_viewer),
+        renderer=gs.renderers.Rasterizer(),
+    )
+
+    scene.add_entity(gs.morphs.Plane())
+    for obj in pack.static_objects:
+        scene.add_entity(
+            gs.morphs.Box(
+                pos=obj.center_xyz_m,
+                size=obj.size_xyz_m,
+                euler=(0.0, 0.0, float(obj.yaw_rad)),
+            ),
+            name=obj.object_id,
+        )
+
+    # Genesis quaternion convention: wxyz (matches the scene manifest).
+    robot = scene.add_entity(
+        gs.morphs.URDF(
+            file=str(pack.robot.urdf_path),
+            pos=pack.robot.spawn_xyz_m,
+            quat=pack.robot.spawn_quat_wxyz,
+            fixed=False,
+        ),
+        name="go2",
+    )
+
+    cam_pos_world, cam_lookat_world = _initial_camera_pose_world(pack)
+    camera = scene.add_camera(
+        res=pack.camera.native_resolution,
+        pos=cam_pos_world,
+        lookat=cam_lookat_world,
+        fov=float(pack.camera.fov_deg),
+        near=float(pack.camera.near_m),
+        far=float(pack.camera.far_m),
+        GUI=False,
+    )
+
+    scene.build(n_envs=int(n_envs))
+    return SceneBuild(scene=scene, robot=robot, camera=camera, pack=pack, n_envs=int(n_envs))
+
+
+def _initial_camera_pose_world(pack: ScenePack) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+    """Compute an initial world-frame camera pose from the spawn + body mount.
+
+    The rollout loop tracks the body each tick (see ``rollout.py``); this
+    function only sets a sensible starting pose so the first rendered frame
+    is meaningful for previews and unit checks.
+    """
+
+    spawn_x, spawn_y, spawn_z = pack.robot.spawn_xyz_m
+    spawn_qw, spawn_qx, spawn_qy, spawn_qz = pack.robot.spawn_quat_wxyz
+    yaw = _yaw_from_wxyz(spawn_qw, spawn_qx, spawn_qy, spawn_qz)
+
+    mx, my, mz = pack.camera.xyz_body_m
+    cos_y, sin_y = math.cos(yaw), math.sin(yaw)
+    cam_x = spawn_x + cos_y * mx - sin_y * my
+    cam_y = spawn_y + sin_y * mx + cos_y * my
+    cam_z = spawn_z + mz
+
+    # Aim 1m forward from the camera, in the body x direction, slightly down.
+    look_x = cam_x + cos_y * 1.0
+    look_y = cam_y + sin_y * 1.0
+    look_z = cam_z - 0.1
+    return (cam_x, cam_y, cam_z), (look_x, look_y, look_z)
+
+
+def _yaw_from_wxyz(qw: float, qx: float, qy: float, qz: float) -> float:
+    siny_cosp = 2.0 * (qw * qz + qx * qy)
+    cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz)
+    return math.atan2(siny_cosp, cosy_cosp)
+
+
+# ---------------------------------------------------------------------------
+# Backwards-compatible legacy entry point
+# ---------------------------------------------------------------------------
 
 
 def build_genesis_scene(scene_spec: dict[str, Any], platform: dict[str, Any]) -> tuple[Any, Any, Any]:
-    """Build a Genesis scene, robot, and camera from a canonical scene spec.
+    """Legacy entry point retained for callers that still pass raw dicts.
 
-    Genesis is intentionally an optional runtime dependency. Importing this
-    module is safe without Genesis installed; calling this function requires it.
+    Prefer :func:`build_scene_from_pack`. This shim exists so the
+    ``lewm_genesis`` package keeps a stable surface during the bulk-loop port.
     """
 
-    try:
-        import genesis as gs  # type: ignore[import-not-found]
-    except ImportError as exc:  # pragma: no cover - depends on local renderer install.
-        raise RuntimeError(
-            "Genesis is not installed. Install the project-approved Genesis "
-            "runtime before calling build_genesis_scene()."
-        ) from exc
+    gs = _import_genesis()
+    initialize_genesis(backend=str(platform.get("backend", "auto")), seed=int(scene_spec["physics_seed"]))
 
-    gs.init(backend=platform.get("backend", "cpu"), seed=int(scene_spec["physics_seed"]))
     scene = gs.Scene(
         sim_options=gs.options.SimOptions(
             dt=float(platform.get("physics_dt_s", 0.002)),
