@@ -242,14 +242,28 @@ scripts/ros2_go2.sh ros2 service call /lewm/go2/reset \
 ```
 
 The reset manager owns the monotonic `episode_id` and `reset_count` counters
-used to split training windows on episode boundaries. Physical teleport back
-to a deterministic spawn pose is not yet wired up; the service still accepts
-`spawn_pose_world` so callers do not change once that slice lands, and the
-response/event flag the teleport as deferred when `use_spawn_pose` is true.
-Closing the teleport gap requires bridging Gazebo's `/world/default/set_pose`
-service through `ros_gz_bridge` plus zeroing the robot's velocities (typically
-via a pause/step around the pose write so the EKF and CHAMP controller see a
-clean discontinuity).
+used to split training windows on episode boundaries. When `use_spawn_pose`
+is true it also shells out to `gz service -s /world/default/set_pose` to
+teleport the Go2 model in Gazebo; the service response reports whether the
+teleport succeeded, and the published `ResetEvent` carries the requested
+pose for downstream auditing. Set `enable_teleport:=false` on the node
+parameters to disable the teleport path while keeping the bookkeeping.
+
+Limitations to know about:
+
+- The teleport sets the entity pose only; linear and angular velocities are
+  not explicitly zeroed, and the joint trajectory in progress is not
+  paused. CHAMP's kinematic odometry never tracks a teleport (it is pure
+  dead reckoning), and a teleport that lands during a swing phase or with
+  a high drop will frequently topple the robot. Cross-reset training
+  windows are filtered out by the dataset loader, so the controller
+  discontinuity is acceptable for episode boundaries, but callers should
+  expect the post-reset frames to look unsteady.
+- Pick a spawn `z` slightly above CHAMP's nominal stance plus a small
+  clearance (the launch default of `0.27 m` is good for the Go2). Lower
+  values let the feet penetrate the ground at the teleport instant;
+  significantly higher values (e.g. `0.45 m`) create enough drop impulse
+  to destabilize the gait even before any `/cmd_vel` is sent.
 
 LeWM foot contacts smoke test:
 
@@ -359,7 +373,9 @@ ros2 bag record -s mcap -o go2_bringup_smoke \
   manifests and Gazebo/Genesis exporters still need implementation.
 - Gait stability under sustained `/cmd_vel`: under `bullet-featherstone`
   CHAMP walks for short stretches but tends to tip slowly on multi-second
-  drives. Stand-up recovery is an open follow-up.
+  drives, and any teleport that lands mid-stride frequently topples the
+  robot. Stand-up recovery and a brief settle window around resets are
+  open follow-ups.
 
 Resolved on the current branch (kept here as a paper trail; the live state
 lives in the launch and the smoke tests above):
@@ -367,6 +383,8 @@ lives in the launch and the smoke tests above):
 - Camera info: `/lewm/go2/camera_info` is now published from the manifest.
 - Foot contacts: gz contact sensors + the LeWM aggregator publish
   `/lewm/go2/foot_contacts`.
+- Reset semantics: `/lewm/go2/reset` + `/lewm/go2/reset_event` advance
+  monotonic episode counters and optionally teleport via `gz set_pose`.
 
 ## Troubleshooting
 
