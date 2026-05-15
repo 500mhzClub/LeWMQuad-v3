@@ -133,7 +133,7 @@ manager, and the Gazebo foot-contact aggregator by default:
 /odom -> /lewm/go2/base_state
 /rgb_image -> /lewm/go2/camera_info
 /lewm/go2/reset (service) -> /lewm/go2/reset_event
-4x gz contact sensors -> /lewm/go2/foot_contacts
+/foot_contacts (CHAMP gait phase) -> /lewm/go2/foot_contacts
 ```
 
 Disable them only when debugging the stock upstream stack:
@@ -259,11 +259,9 @@ Limitations to know about:
   windows are filtered out by the dataset loader, so the controller
   discontinuity is acceptable for episode boundaries, but callers should
   expect the post-reset frames to look unsteady.
-- Pick a spawn `z` slightly above CHAMP's nominal stance plus a small
-  clearance (the launch default of `0.27 m` is good for the Go2). Lower
-  values let the feet penetrate the ground at the teleport instant;
-  significantly higher values (e.g. `0.45 m`) create enough drop impulse
-  to destabilize the gait even before any `/cmd_vel` is sent.
+- Pick a spawn `z` slightly above CHAMP's stance height. The launch
+  default of `0.375 m` matches upstream and lands cleanly; lower values
+  let the feet penetrate the ground at the teleport instant.
 
 LeWM foot contacts smoke test:
 
@@ -271,35 +269,26 @@ LeWM foot contacts smoke test:
 scripts/ros2_go2.sh ros2 topic echo /lewm/go2/foot_contacts --once
 ```
 
-The publisher fuses four per-foot Gazebo contact sensors (defined in
-`lewm_go2_bringup/urdf/lewm_go2_with_contacts.urdf.xacro`) into a single
-`FootContacts` message, mapping CHAMP's lf/rf/lh/rh leg order to LeWM's
-fl/fr/rl/rr field names. This required three pieces:
+The publisher republishes CHAMP's kinematic foot-contact booleans as the
+LeWM `FootContacts` msg. CHAMP exposes a per-leg `gait_phase()` boolean on
+`/foot_contacts` (`champ_msgs/ContactsStamped`) whenever the quadruped
+controller runs with `gazebo: False` and `publish_foot_contacts: True`;
+the launch sets those parameters here. The signal is the gait planner's
+intended stance/swing state, not a physics-derived contact -- it is what
+CHAMP itself uses on real hardware that lacks per-foot sensors. The
+republisher maps CHAMP's `lf, rf, lh, rh` order to LeWM's
+`fl, fr, rl, rr` fields and sets the four `*_force_n` fields to `0.0`,
+since the kinematic signal carries no force information.
 
-- A URDF overlay (`lewm_go2_bringup/urdf/lewm_go2_with_contacts.urdf.xacro`)
-  that includes the upstream xacro and adds a `<sensor type="contact">` on
-  each `<leg>_foot_link`. The collision reference must match the
-  auto-generated post-lump name
-  `<leg>_lower_leg_link_fixed_joint_lump__<leg>_foot_link_collision_1`,
-  since the fixed `<leg>_foot_joint` gets lumped into the lower-leg link
-  during URDF -> SDF conversion.
-- A world overlay (`lewm_go2_bringup/worlds/lewm_default.sdf`) that loads
-  the `gz-sim-contact-system` plugin. It keeps the upstream
-  `bullet-featherstone` physics backend because CHAMP's effort-based joint
-  controller is implicitly tuned against bullet-featherstone's solver and
-  the gait diverges under `dartsim`. Both backends emit contact wrench
-  data intermittently under gz-sim 8, so dartsim is not required for the
-  force fields to populate.
-- Bridge entries for each gz auto-generated contact topic
-  (`/world/default/model/go2/link/<leg>_lower_leg_link/sensor/<leg>_foot_contact/contact`)
-  -- gz-sim 8 ignores the `<topic>` override on contact sensors, so the
-  ROS-side topic name follows the auto path.
-
-Caveats: the booleans are real-time, but gz only populates the contact
-wrench intermittently (fresh non-zero magnitudes arrive seconds apart per
-foot in practice). The aggregator holds the most recent non-zero force per
-foot while the contact persists, so `*_force_n` is a peak/load proxy rather
-than a tick-by-tick signal.
+This is a deliberate retreat from gz `contact` sensors. An earlier slice
+declared four `<sensor type="contact">` blocks plus a
+`gz-sim-contact-system` plugin in a custom world; that combination
+destabilized CHAMP's effort-tracked gait within ~6 s of `/cmd_vel` under
+`bullet-featherstone`. The sensor declarations alone were harmless, and
+the plugin alone was harmless, but together the per-tick contact
+processing was enough to wreck gait stability. The kinematic path here
+has zero physics-side cost and restores the upstream's ~30+ s walking
+endurance.
 
 Gazebo GUI smoke test:
 
@@ -371,16 +360,17 @@ ros2 bag record -s mcap -o go2_bringup_smoke \
 - World generation: the upstream world is only the stock bring-up world plus a
   small set of boxes/cylinders for visual variety. Canonical LeWM scene
   manifests and Gazebo/Genesis exporters still need implementation.
-- Episode-length yield against CHAMP gait endurance: the data spec
-  ([docs/fresh_retrain_data_spec.md](docs/fresh_retrain_data_spec.md))
-  requires 800-1200 raw steps per episode at the manifest's 50 Hz policy,
-  i.e. 16-24 s of stable rollout. Under `bullet-featherstone` CHAMP
-  currently tips after ~6-8 s of sustained `/cmd_vel`, which is short of
-  that minimum. Closing this gap (CHAMP tuning, scripted stand-up, or a
-  swap to a more robust locomotion stack) is a precondition for bulk
-  data generation. Teleport-mid-stride toppling is **not** part of this
-  blocker -- post-reset frames live on the wrong side of the spec's
-  cross-reset filter (section 16) and are discarded before training.
+- No explicit gait-endurance blocker at the moment: upstream CHAMP +
+  bullet-featherstone delivers ~30+ s of sustained `/cmd_vel` walking on
+  this workstation, comfortably above the data spec's 16-24 s per-episode
+  minimum
+  ([docs/fresh_retrain_data_spec.md](docs/fresh_retrain_data_spec.md)).
+  This claim depends on keeping the gz `contact-system` plugin and per-foot
+  `<sensor type="contact">` blocks out of the spawned model -- see the
+  foot-contacts section above for why those break the gait. If a future
+  slice needs sensor-derived foot forces, that path needs to be revisited
+  (force_torque on the foot joint, an alternative physics backend, or a
+  different locomotion stack).
 
 Resolved on the current branch (kept here as a paper trail; the live state
 lives in the launch and the smoke tests above):

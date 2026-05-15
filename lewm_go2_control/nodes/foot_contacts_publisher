@@ -1,118 +1,83 @@
 #!/usr/bin/env python3
-"""Fuse four Gazebo foot contact sensor streams into a LeWM FootContacts msg.
+"""Republish CHAMP's kinematic foot contacts as the LeWM FootContacts msg.
 
-Each foot publishes `ros_gz_interfaces/msg/Contacts` on its own topic. The
-upstream gz contact sensor emits an empty `contacts[]` list when not touching
-anything and a populated one on contact. We aggregate the latest sample per
-foot and re-publish a single timestamped LeWM FootContacts at a fixed rate,
-mapping CHAMP's lf/rf/lh/rh leg order to the LeWM fl/fr/rl/rr field names.
+CHAMP exposes a per-leg gait-phase boolean stream on `/foot_contacts`
+(`champ_msgs/ContactsStamped`) when `gazebo: False` and
+`publish_foot_contacts: True`. The booleans come from
+`base_.legs[i]->gait_phase()` in the upstream `quadruped_controller`, so
+they describe the planned stance/swing state from the gait planner -- not
+sensor-derived ground contact. This is the contact signal CHAMP itself
+uses when there is no real per-foot sensor feedback.
 
-Caveats worth knowing about the force values:
-- Booleans (`*_contact`) are reliable: the gz contact sensor emits a
-  populated `contacts[]` whenever the foot collision is touching, every
-  physics step.
-- Forces (`*_force_n`) come from `wrench.body_1_wrench.force`, but gz
-  populates the wrench payload intermittently rather than every tick.
-  Empirically this is true under both `bullet-featherstone` and `dartsim`
-  in gz-sim 8 -- fresh non-zero magnitudes arrive sparsely (often seconds
-  apart per foot) while the contact persists. To avoid the published
-  force flickering to zero between updates, this node holds the most
-  recent non-zero magnitude as long as the foot is still in contact.
-  Treat the result as a peak/load proxy, not a real-time signal.
+We chose this over Gazebo `contact` sensors because the latter, combined
+with the `gz-sim-contact-system` plugin under `bullet-featherstone`,
+destabilizes CHAMP's effort-tracked gait within ~6 s of /cmd_vel. The
+sensor declarations themselves were inert (test in commit log); the cost
+came from the per-tick contact processing inside gz. CHAMP's kinematic
+signal has zero physics interaction and recovers gait endurance fully.
+
+CHAMP's leg order is `lf, rf, lh, rh`; LeWM's field names are
+`fl, fr, rl, rr`. The mapping below is:
+- lf -> fl
+- rf -> fr
+- lh -> rl
+- rh -> rr
+
+The `*_force_n` fields are set to 0.0. The kinematic signal is a
+boolean-only contract; downstream consumers that need per-foot forces
+must derive them elsewhere (e.g. from inverse dynamics on joint efforts).
 """
 
 from __future__ import annotations
 
-import math
-
 import rclpy
+from champ_msgs.msg import ContactsStamped
 from rclpy.node import Node
-from ros_gz_interfaces.msg import Contacts
 
 from lewm_go2_control.msg import FootContacts
 
 
 class FootContactsPublisher(Node):
-    LEG_ORDER = ("lf", "rf", "lh", "rh")
-
     def __init__(self) -> None:
         super().__init__("lewm_go2_foot_contacts_publisher")
 
-        self.declare_parameter(
-            "contact_topic_template",
-            "/world/default/model/go2/link/{name}_lower_leg_link/sensor/{name}_foot_contact/contact",
-        )
+        self.declare_parameter("champ_topic", "/foot_contacts")
         self.declare_parameter("foot_contacts_topic", "/lewm/go2/foot_contacts")
-        self.declare_parameter("publish_period_s", 0.02)
-        self.declare_parameter("force_threshold_n", 0.0)
+        self.declare_parameter("frame_id", "base_link")
 
-        self._topic_template = str(self.get_parameter("contact_topic_template").value)
-        self._force_threshold = float(self.get_parameter("force_threshold_n").value)
-
-        self._latest: dict[str, tuple[bool, float]] = {leg: (False, 0.0) for leg in self.LEG_ORDER}
+        self._frame_id = str(self.get_parameter("frame_id").value)
 
         self._pub = self.create_publisher(
             FootContacts, str(self.get_parameter("foot_contacts_topic").value), 10
         )
-
-        self._subs = []
-        for leg in self.LEG_ORDER:
-            topic = self._topic_template.format(name=leg)
-            sub = self.create_subscription(
-                Contacts, topic, self._make_callback(leg), 10
-            )
-            self._subs.append(sub)
-
-        publish_period_s = float(self.get_parameter("publish_period_s").value)
-        self._timer = self.create_timer(publish_period_s, self._on_timer)
-
-        self.get_logger().info(
-            "FootContacts publisher ready: "
-            f"4x {self._topic_template.format(name='<leg>')} -> "
-            f"{self.get_parameter('foot_contacts_topic').value} "
-            f"@ {1.0 / publish_period_s:.0f} Hz"
+        self._sub = self.create_subscription(
+            ContactsStamped,
+            str(self.get_parameter("champ_topic").value),
+            self._on_contacts,
+            10,
         )
 
-    def _make_callback(self, leg: str):
-        def _cb(msg: Contacts) -> None:
-            instantaneous_force = 0.0
-            for contact in msg.contacts:
-                for wrench in contact.wrenches:
-                    fx = wrench.body_1_wrench.force.x
-                    fy = wrench.body_1_wrench.force.y
-                    fz = wrench.body_1_wrench.force.z
-                    instantaneous_force += math.sqrt(fx * fx + fy * fy + fz * fz)
+        self.get_logger().info(
+            f"FootContacts republisher ready: "
+            f"{self.get_parameter('champ_topic').value} -> "
+            f"{self.get_parameter('foot_contacts_topic').value}"
+        )
 
-            prev_in_contact, prev_force = self._latest[leg]
-            if msg.contacts:
-                # gz/dartsim populates wrench data intermittently, so we hold
-                # the most recent non-zero reading while the foot stays in
-                # contact rather than dropping back to zero between solver
-                # updates.
-                kept_force = instantaneous_force if instantaneous_force > 0.0 else prev_force
-                in_contact = kept_force >= self._force_threshold or instantaneous_force >= self._force_threshold
-            else:
-                in_contact = False
-                kept_force = 0.0
-            self._latest[leg] = (in_contact, kept_force)
-        return _cb
-
-    def _on_timer(self) -> None:
+    def _on_contacts(self, msg: ContactsStamped) -> None:
+        if len(msg.contacts) < 4:
+            return
         out = FootContacts()
-        out.header.stamp = self.get_clock().now().to_msg()
-        out.header.frame_id = "base_link"
-        fl, fl_force = self._latest["lf"]
-        fr, fr_force = self._latest["rf"]
-        rl, rl_force = self._latest["lh"]
-        rr, rr_force = self._latest["rh"]
-        out.fl_contact = fl
-        out.fr_contact = fr
-        out.rl_contact = rl
-        out.rr_contact = rr
-        out.fl_force_n = float(fl_force)
-        out.fr_force_n = float(fr_force)
-        out.rl_force_n = float(rl_force)
-        out.rr_force_n = float(rr_force)
+        out.header.stamp = msg.header.stamp
+        out.header.frame_id = self._frame_id
+        # CHAMP leg order: lf, rf, lh, rh -> LeWM: fl, fr, rl, rr
+        out.fl_contact = bool(msg.contacts[0])
+        out.fr_contact = bool(msg.contacts[1])
+        out.rl_contact = bool(msg.contacts[2])
+        out.rr_contact = bool(msg.contacts[3])
+        out.fl_force_n = 0.0
+        out.fr_force_n = 0.0
+        out.rl_force_n = 0.0
+        out.rr_force_n = 0.0
         self._pub.publish(out)
 
 

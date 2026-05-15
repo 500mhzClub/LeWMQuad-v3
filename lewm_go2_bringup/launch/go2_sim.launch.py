@@ -24,9 +24,6 @@ def generate_launch_description():
         package="unitree_go2_sim").find("unitree_go2_sim")
     unitree_go2_description = launch_ros.substitutions.FindPackageShare(
         package="unitree_go2_description").find("unitree_go2_description")
-    lewm_go2_bringup = launch_ros.substitutions.FindPackageShare(
-        package="lewm_go2_bringup").find("lewm_go2_bringup")
-
     joints_config = os.path.join(unitree_go2_sim, "config/joints/joints.yaml")
     ros_control_config = os.path.join(
         unitree_go2_sim, "config/ros_control/ros_control.yaml"
@@ -34,9 +31,11 @@ def generate_launch_description():
     gait_config = os.path.join(unitree_go2_sim, "config/gait/gait.yaml")
     links_config = os.path.join(unitree_go2_sim, "config/links/links.yaml")
     default_model_path = os.path.join(
-        lewm_go2_bringup, "urdf/lewm_go2_with_contacts.urdf.xacro"
+        unitree_go2_description, "urdf/unitree_go2_robot.xacro"
     )
-    default_world_path = os.path.join(lewm_go2_bringup, "worlds/lewm_default.sdf")
+    default_world_path = os.path.join(
+        unitree_go2_description, "worlds/default.sdf"
+    )
 
     declare_use_sim_time = DeclareLaunchArgument(
         "use_sim_time",
@@ -91,11 +90,7 @@ def generate_launch_description():
     )
     declare_world_init_x = DeclareLaunchArgument("world_init_x", default_value="0.0")
     declare_world_init_y = DeclareLaunchArgument("world_init_y", default_value="0.0")
-    # CHAMP's nominal stance height is ~0.225 m (gait.yaml) plus a small swing
-    # clearance; spawning ~0.04 m above the stance gives the controller time to
-    # settle without a large drop impulse. Higher values are recoverable under
-    # bullet-featherstone but consistently destabilize the gait at /cmd_vel.
-    declare_world_init_z = DeclareLaunchArgument("world_init_z", default_value="0.27")
+    declare_world_init_z = DeclareLaunchArgument("world_init_z", default_value="0.375")
     declare_world_init_heading = DeclareLaunchArgument(
         "world_init_heading", default_value="0.0"
     )
@@ -119,24 +114,27 @@ def generate_launch_description():
         ],
     )
     
-    # CHAMP controller nodes
+    # CHAMP controller nodes. We flip `gazebo` to False so CHAMP enables its
+    # kinematic foot-contact publisher (the controller gates that publisher
+    # behind `!in_gazebo_`). ros2_control still owns `/joint_states`, so we
+    # also disable CHAMP's joint_states publisher to avoid two writers on the
+    # same topic.
     quadruped_controller_node = Node(
         package="champ_base",
         executable="quadruped_controller_node",
         output="screen",
         parameters=[
             {"use_sim_time": use_sim_time},
-            {"gazebo": True},
-            {"publish_joint_states": True},
+            {"gazebo": False},
+            {"publish_joint_states": False},
             {"publish_joint_control": True},
-            {"publish_foot_contacts": False},
+            {"publish_foot_contacts": True},
             {"joint_controller_topic": "joint_group_effort_controller/joint_trajectory"},
             {"urdf": Command(['xacro ', LaunchConfiguration('unitree_go2_description_path')])},
             joints_config,
             links_config,
             gait_config,
             {"hardware_connected": False},
-            {"publish_foot_contacts": False},
             {"close_loop_odom": True},
         ],
         remappings=[("/cmd_vel/smooth", "/cmd_vel")],
@@ -286,13 +284,6 @@ def generate_launch_description():
             # '/velodyne_points@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image',
-            # LeWM foot contact sensors. gz-sim 8 ignores the <topic>
-            # override on contact sensors and publishes to the auto-named
-            # path below; the aggregator subscribes to the bridged copy.
-            '/world/default/model/go2/link/lf_lower_leg_link/sensor/lf_foot_contact/contact@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
-            '/world/default/model/go2/link/rf_lower_leg_link/sensor/rf_foot_contact/contact@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
-            '/world/default/model/go2/link/lh_lower_leg_link/sensor/lh_foot_contact/contact@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
-            '/world/default/model/go2/link/rh_lower_leg_link/sensor/rh_foot_contact/contact@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
             # D455 RGBD camera bridges
             '/d455/image@sensor_msgs/msg/Image[gz.msgs.Image',
             '/d455/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
