@@ -1,0 +1,71 @@
+# rosbag2 subscription QoS overrides for the Go2 smoke recorder.
+#
+# Default rosbag2 subscriptions have depth=10. At /clock's ~1 kHz that is only
+# ~10 ms of buffer headroom, so even a short subscriber stall produces a
+# middleware MessageLost event. The overrides below give each hot topic at
+# least ~250 ms of headroom while keeping reliable/volatile semantics so they
+# stay compatible with the publishers offered by ros_gz_bridge and the LeWM
+# adapters (see .generated/bags/<bag>/metadata.yaml).
+#
+# Recompute depths if topic rates change materially. Rule of thumb:
+# depth >= rate_hz * 0.25 with a small safety multiplier.
+
+/clock:
+  history: keep_last
+  depth: 1024
+  reliability: reliable
+  durability: volatile
+
+/tf:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+
+/joint_states:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+
+/imu/data:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+
+/lewm/go2/foot_contacts:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+
+/lewm/go2/base_state:
+  history: keep_last
+  depth: 128
+  reliability: reliable
+  durability: volatile
+
+/odom:
+  history: keep_last
+  depth: 128
+  reliability: reliable
+  durability: volatile
+
+/gazebo/odom:
+  history: keep_last
+  depth: 128
+  reliability: reliable
+  durability: volatile
+
+/rgb_image:
+  history: keep_last
+  depth: 64
+  reliability: reliable
+  durability: volatile
+
+/lewm/go2/camera_info:
+  history: keep_last
+  depth: 64
+  reliability: reliable
+  durability: volatile

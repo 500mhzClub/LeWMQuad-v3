@@ -455,6 +455,17 @@ scripts/record_smoke_bag.sh --duration 20
 scripts/convert_smoke_bag_to_raw_rollout.sh .generated/bags/<bag-dir>
 ```
 
+`record_smoke_bag.sh` records with an explicit subscription QoS overrides
+file at [config/rosbag_record_qos_overrides.yaml](config/rosbag_record_qos_overrides.yaml).
+Default rosbag2 subscriptions use depth=10, which at `/clock`'s ~1 kHz is
+only ~10 ms of buffer headroom; under any subscriber stall the middleware
+reports a `MessageLost` event and the recorder logs it as a transport drop.
+The overrides give each hot topic at least ~250 ms of headroom (e.g.
+`/clock` depth 1024, `/tf` and `/joint_states` depth 256). Pass
+`--no-qos-overrides` to fall back to defaults for comparison, or
+`--qos-overrides <path>` to point at a custom file. The recorder also bumps
+`--max-cache-size` to 256 MiB to keep RGB frames buffered during writes.
+
 The converter writes a compact smoke `raw_rollout` directory with
 `summary.json` and `messages.jsonl`. Large image/point-cloud payload arrays are
 omitted from JSONL records while their timestamps and metadata are preserved.

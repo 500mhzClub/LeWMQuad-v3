@@ -8,6 +8,8 @@ source "$SCRIPT_DIR/ros_env.sh"
 REPO_ROOT="$(lewm_repo_root)"
 OUT_DIR="$REPO_ROOT/.generated/bags/go2_bringup_smoke_$(date +%Y%m%d_%H%M%S)"
 DURATION_SECS=20
+QOS_OVERRIDES="$REPO_ROOT/config/rosbag_record_qos_overrides.yaml"
+MAX_CACHE_BYTES=$((256 * 1024 * 1024))
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -17,6 +19,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     --duration)
       DURATION_SECS="$2"
+      shift 2
+      ;;
+    --qos-overrides)
+      QOS_OVERRIDES="$2"
+      shift 2
+      ;;
+    --no-qos-overrides)
+      QOS_OVERRIDES=""
+      shift
+      ;;
+    --max-cache-bytes)
+      MAX_CACHE_BYTES="$2"
       shift 2
       ;;
     *)
@@ -50,10 +64,22 @@ topics=(
   /lewm/episode_info
 )
 
-echo "Recording smoke bag to $OUT_DIR for ${DURATION_SECS}s..."
+record_args=(-s mcap -o "$OUT_DIR" --max-cache-size "$MAX_CACHE_BYTES")
+if [[ -n "$QOS_OVERRIDES" ]]; then
+  if [[ ! -f "$QOS_OVERRIDES" ]]; then
+    echo "QoS overrides file not found: $QOS_OVERRIDES" >&2
+    exit 1
+  fi
+  record_args+=(--qos-profile-overrides-path "$QOS_OVERRIDES")
+  echo "Using QoS overrides: $QOS_OVERRIDES"
+else
+  echo "Recording without QoS overrides (default subscription depth applies)."
+fi
+
+echo "Recording smoke bag to $OUT_DIR for ${DURATION_SECS}s (cache=${MAX_CACHE_BYTES}B)..."
 set +e
 timeout --signal=INT --kill-after=5s "${DURATION_SECS}s" \
-  ros2 bag record -s mcap -o "$OUT_DIR" "${topics[@]}"
+  ros2 bag record "${record_args[@]}" "${topics[@]}"
 record_status=$?
 set -e
 

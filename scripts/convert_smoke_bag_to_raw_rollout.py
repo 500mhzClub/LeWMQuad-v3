@@ -25,11 +25,21 @@ COMPACT_TOPICS = {
     "/velodyne_points/points",
 }
 
+# Topics whose drops corrupt downstream training. Audited after parsing.
+COMMAND_BLOCK_TOPIC = "/lewm/go2/command_block"
+EXECUTED_COMMAND_BLOCK_TOPIC = "/lewm/go2/executed_command_block"
+RESET_EVENT_TOPIC = "/lewm/go2/reset_event"
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("bag", type=Path)
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument(
+        "--no-strict",
+        action="store_true",
+        help="Write summary.json with the contract audit but exit 0 even on gaps.",
+    )
     args = parser.parse_args()
 
     bag_dir = args.bag.resolve()
@@ -55,6 +65,10 @@ def main() -> None:
     last_timestamp_ns: int | None = None
     messages_path = out_dir / "messages.jsonl"
 
+    command_block_sequence_ids: list[int] = []
+    executed_command_sequence_ids: list[int] = []
+    reset_counts: list[int] = []
+
     with messages_path.open("w", encoding="utf-8") as stream:
         while reader.has_next():
             topic, data, timestamp_ns = reader.read_next()
@@ -62,6 +76,12 @@ def main() -> None:
             if msg_type is None:
                 continue
             msg = deserialize_message(data, msg_type)
+            if topic == COMMAND_BLOCK_TOPIC:
+                command_block_sequence_ids.append(int(getattr(msg, "sequence_id", -1)))
+            elif topic == EXECUTED_COMMAND_BLOCK_TOPIC:
+                executed_command_sequence_ids.append(int(getattr(msg, "sequence_id", -1)))
+            elif topic == RESET_EVENT_TOPIC:
+                reset_counts.append(int(getattr(msg, "reset_count", -1)))
             record = {
                 "topic": topic,
                 "type": topic_types[topic],
@@ -74,6 +94,12 @@ def main() -> None:
             if first_timestamp_ns is None:
                 first_timestamp_ns = int(timestamp_ns)
             last_timestamp_ns = int(timestamp_ns)
+
+    contract_audit = _audit_contract_topics(
+        command_block_sequence_ids=command_block_sequence_ids,
+        executed_command_sequence_ids=executed_command_sequence_ids,
+        reset_counts=reset_counts,
+    )
 
     summary = {
         "schema": "lewm_raw_rollout_smoke_v0",
@@ -90,12 +116,89 @@ def main() -> None:
             else (last_timestamp_ns - first_timestamp_ns) / 1e9
         ),
         "messages_jsonl": str(messages_path),
+        "contract_audit": contract_audit,
     }
     (out_dir / "summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True),
         encoding="utf-8",
     )
     print(f"wrote {out_dir}")
+    print(
+        "contract_audit:"
+        f" pass={contract_audit['pass']}"
+        f" command_blocks={contract_audit['command_block_count']}"
+        f" executed={contract_audit['executed_command_block_count']}"
+        f" resets={contract_audit['reset_event_count']}"
+    )
+    if not contract_audit["pass"]:
+        for issue in contract_audit["issues"]:
+            print(f"  contract issue: {issue}")
+        if not args.no_strict:
+            raise SystemExit(2)
+
+
+def _audit_contract_topics(
+    *,
+    command_block_sequence_ids: list[int],
+    executed_command_sequence_ids: list[int],
+    reset_counts: list[int],
+) -> dict[str, Any]:
+    """Detect dropped or duplicated contract messages.
+
+    Rules:
+      * Every requested ``command_block.sequence_id`` must reappear as an
+        ``executed_command_block.sequence_id`` (no dropped executions).
+      * No ``sequence_id`` may repeat on either topic (each block is unique).
+      * ``reset_event.reset_count`` must be strictly increasing by one with no
+        gaps (each reset must be observed).
+
+    Orphan executions (executions without a matching command in this bag) are
+    reported but do not fail the audit, since the bag may begin partway
+    through a primitive.
+    """
+
+    issues: list[str] = []
+
+    cmd_seen = list(command_block_sequence_ids)
+    exec_seen = list(executed_command_sequence_ids)
+    cmd_set = set(cmd_seen)
+    exec_set = set(exec_seen)
+
+    missing_executions = sorted(cmd_set - exec_set)
+    if missing_executions:
+        issues.append(
+            f"command_block sequence_ids missing matching execution: {missing_executions}"
+        )
+
+    cmd_duplicates = sorted({s for s in cmd_seen if cmd_seen.count(s) > 1})
+    if cmd_duplicates:
+        issues.append(f"duplicate command_block sequence_ids: {cmd_duplicates}")
+
+    exec_duplicates = sorted({s for s in exec_seen if exec_seen.count(s) > 1})
+    if exec_duplicates:
+        issues.append(f"duplicate executed_command_block sequence_ids: {exec_duplicates}")
+
+    reset_gaps: list[dict[str, int]] = []
+    for prev, curr in zip(reset_counts, reset_counts[1:]):
+        if curr != prev + 1:
+            reset_gaps.append({"prev": int(prev), "next": int(curr)})
+    if reset_gaps:
+        issues.append(f"reset_event.reset_count gaps: {reset_gaps}")
+
+    orphan_executions = sorted(exec_set - cmd_set)
+
+    return {
+        "pass": not issues,
+        "issues": issues,
+        "command_block_count": len(cmd_seen),
+        "executed_command_block_count": len(exec_seen),
+        "reset_event_count": len(reset_counts),
+        "missing_executions": missing_executions,
+        "duplicate_command_sequence_ids": cmd_duplicates,
+        "duplicate_executed_sequence_ids": exec_duplicates,
+        "reset_gaps": reset_gaps,
+        "orphan_executions": orphan_executions,
+    }
 
 
 def _storage_id(bag_dir: Path) -> str:
