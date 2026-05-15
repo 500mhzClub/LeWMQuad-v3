@@ -137,7 +137,7 @@ and the feature-check service node by default:
 ```text
 /lewm/go2/command_block -> /cmd_vel
 /lewm/go2/executed_command_block
-/odom -> /lewm/go2/base_state
+/gazebo/odom -> /lewm/go2/base_state
 /rgb_image -> /lewm/go2/camera_info
 /lewm/go2/reset (service) -> /lewm/go2/reset_event
 /lewm/episode_info
@@ -165,6 +165,16 @@ To pass through launch arguments:
 scripts/launch_go2_sim.sh rviz:=false gui:=true
 scripts/launch_go2_sim.sh rviz:=true gui:=false
 ```
+
+To launch a generated canonical smoke world instead of the upstream default:
+
+```bash
+scripts/generate_smoke_world.sh --seed 7
+scripts/launch_go2_sim.sh --smoke-world 7 rviz:=false gui:=false
+```
+
+The smoke world is written under `.generated/worlds/` and uses Gazebo world
+name `default` so the reset manager can still call `/world/default/set_pose`.
 
 On Pop!_OS/Wayland, `scripts/launch_go2_sim.sh` automatically sets
 `QT_QPA_PLATFORM=xcb` when a display is available. This avoids common
@@ -244,9 +254,10 @@ LeWM base state publisher smoke test:
 scripts/ros2_go2.sh ros2 topic echo /lewm/go2/base_state --once
 ```
 
-The publisher converts the EKF-fused `/odom` stream into `BaseState`, preserving
-the world-frame pose, rotating the body-frame twist into the world frame, and
-emitting roll/pitch/yaw alongside the raw `(x, y, z, w)` quaternion.
+The publisher converts the bridged Gazebo ground-truth `/gazebo/odom` stream
+into `BaseState`, preserving the world-frame pose, rotating the body-frame twist
+into the world frame, and emitting roll/pitch/yaw alongside the raw `(x, y, z,
+w)` quaternion. The upstream EKF still publishes `/odom`.
 
 LeWM CameraInfo publisher smoke test:
 
@@ -338,6 +349,16 @@ bookkeeping. Use specific `check_name` values such as `topics`, `messages`,
 `mode_services`, `primitive_registry`, `command_round_trip`, or
 `reset_bookkeeping` when isolating failures.
 
+Primitive motion audit, after controllers are active:
+
+```bash
+scripts/audit_go2_primitives.sh
+```
+
+This calls `/lewm/go2/run_feature_check` with `check_name: primitive_motion`,
+drives every trainable primitive, and writes a JSON report under
+`.generated/audits/`.
+
 Gazebo GUI smoke test:
 
 ```bash
@@ -365,6 +386,7 @@ sourced by default:
 ```bash
 scripts/ros2_go2.sh ros2 control list_controllers
 scripts/ros2_go2.sh ros2 topic echo /odom --once
+scripts/ros2_go2.sh ros2 topic echo /gazebo/odom --once
 scripts/ros2_go2.sh ros2 topic echo /joint_states --once
 scripts/ros2_go2.sh ros2 topic hz /rgb_image
 ```
@@ -385,8 +407,8 @@ Before any LeWM data generation work, the stock simulator must pass:
 
 1. Go2 spawns without unstable joint explosions.
 2. `/cmd_vel` causes visible forward, backward, yaw-left, and yaw-right motion.
-3. `/joint_states`, `/imu/data`, `/odom`, `/tf`, and `/rgb_image` publish with
-   simulation timestamps.
+3. `/joint_states`, `/imu/data`, `/odom`, `/gazebo/odom`, `/tf`, and
+   `/rgb_image` publish with simulation timestamps.
 4. RViz can visualize the TF tree and robot state when launched with
    `rviz:=true`.
 5. A short ROS bag can capture the required topics without timestamp gaps.
@@ -394,11 +416,13 @@ Before any LeWM data generation work, the stock simulator must pass:
 Example smoke bag:
 
 ```bash
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 bag record -s mcap -o go2_bringup_smoke \
-  /clock /tf /joint_states /imu/data /odom /rgb_image /cmd_vel
+scripts/record_smoke_bag.sh --duration 20
+scripts/convert_smoke_bag_to_raw_rollout.sh .generated/bags/<bag-dir>
 ```
+
+The converter writes a compact smoke `raw_rollout` directory with
+`summary.json` and `messages.jsonl`. Large image/point-cloud payload arrays are
+omitted from JSONL records while their timestamps and metadata are preserved.
 
 ## Known Blockers Before Data Generation
 
@@ -406,7 +430,8 @@ ros2 bag record -s mcap -o go2_bringup_smoke \
   license metadata for `unitree_go2_description` and `unitree_go2_sim`. Use it
   for local evaluation until the license is clarified or replaced.
 - World generation: `lewm_worlds` now provides a deterministic smoke manifest
-  plus Gazebo/Genesis exporters. Production scene-family generators, split
+  plus Gazebo/Genesis exporters, and `scripts/launch_go2_sim.sh --smoke-world`
+  can launch a generated smoke SDF. Production scene-family generators, split
   management, and large-scale coverage audits still need implementation before
   dataset generation.
 - Genesis: `lewm_genesis` now has buildable scaffolding for scene construction,

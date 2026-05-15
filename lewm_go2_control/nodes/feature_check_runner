@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 import threading
 import time
 from pathlib import Path
@@ -12,7 +13,7 @@ from typing import Any
 import rclpy
 import yaml
 from ament_index_python.packages import get_package_share_directory
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Pose, Twist
 from nav_msgs.msg import Odometry
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
@@ -49,6 +50,13 @@ class FeatureCheckRunner(Node):
         self.declare_parameter("primitive_registry_path", str(default_registry))
         self.declare_parameter("wait_timeout_s", 5.0)
         self.declare_parameter("command_dt_s", 0.1)
+        self.declare_parameter("motion_audit_initial_settle_s", 2.0)
+        self.declare_parameter("motion_audit_between_primitives_s", 0.7)
+        self.declare_parameter("motion_audit_reset_between_primitives", True)
+        self.declare_parameter("motion_audit_spawn_z_m", 0.375)
+        self.declare_parameter("motion_audit_min_forward_m", 0.03)
+        self.declare_parameter("motion_audit_min_yaw_rad", 0.04)
+        self.declare_parameter("motion_audit_hold_max_m", 0.08)
 
         self._group = ReentrantCallbackGroup()
         self._lock = threading.Lock()
@@ -81,6 +89,7 @@ class FeatureCheckRunner(Node):
         self._subscribe("/joint_states", JointState)
         self._subscribe("/imu/data", Imu)
         self._subscribe("/odom", Odometry)
+        self._subscribe("/gazebo/odom", Odometry)
         self._subscribe("/rgb_image", Image)
         self._subscribe("/cmd_vel", Twist)
         self._subscribe("/lewm/go2/base_state", BaseState)
@@ -142,6 +151,8 @@ class FeatureCheckRunner(Node):
             report["checks"]["command_round_trip"] = self._check_command_round_trip()
         if check_name in {"all", "reset", "reset_bookkeeping"}:
             report["checks"]["reset_bookkeeping"] = self._check_reset_bookkeeping()
+        if check_name in {"primitive_motion", "motion_primitives", "motion"}:
+            report["checks"]["primitive_motion"] = self._check_primitive_motion()
         if not report["checks"]:
             report["checks"]["error"] = {
                 "success": False,
@@ -164,6 +175,7 @@ class FeatureCheckRunner(Node):
             "/joint_states",
             "/imu/data",
             "/odom",
+            "/gazebo/odom",
             "/rgb_image",
             "/cmd_vel",
             "/lewm/go2/command_block",
@@ -200,6 +212,7 @@ class FeatureCheckRunner(Node):
             "/joint_states",
             "/imu/data",
             "/odom",
+            "/gazebo/odom",
             "/rgb_image",
             "/lewm/go2/base_state",
             "/lewm/go2/camera_info",
@@ -290,6 +303,88 @@ class FeatureCheckRunner(Node):
             "unsupported_trainable_events": unsupported_events,
         }
 
+    def _check_primitive_motion(self) -> dict[str, Any]:
+        registry = self._load_primitive_registry()
+        if not registry["success"]:
+            return registry
+
+        timeout_s = float(self.get_parameter("wait_timeout_s").value)
+        primitives = registry["primitives"]
+        block_size = int(registry["block_size"])
+        command_dt_s = float(registry["command_dt_s"])
+        initial_settle_s = float(self.get_parameter("motion_audit_initial_settle_s").value)
+        between_s = float(self.get_parameter("motion_audit_between_primitives_s").value)
+        reset_between = bool(
+            self.get_parameter("motion_audit_reset_between_primitives").value
+        )
+
+        results: dict[str, Any] = {}
+        for name, spec in primitives.items():
+            if not bool(spec.get("train", registry["defaults"].get("train", True))):
+                continue
+
+            reset_result: dict[str, Any] | None = None
+            if reset_between:
+                reset_result = self._reset_motion_audit_pose(
+                    timeout_s, reason=f"primitive_motion:{name}"
+                )
+                if not reset_result["success"]:
+                    results[name] = {
+                        "success": False,
+                        "reason": "reset failed before primitive",
+                        "reset": reset_result,
+                    }
+                    continue
+                time.sleep(max(0.0, initial_settle_s))
+
+            self._set_mode("hold", timeout_s)
+            self._publish_hold(1, command_dt_s)
+            time.sleep(max(0.0, between_s))
+
+            start = self._latest_base_state()
+            if start is None:
+                results[name] = {"success": False, "reason": "missing start base_state"}
+                continue
+
+            sequence_id = int(time.time() * 1000.0) & 0xFFFFFFFF
+            self._publish_primitive_command(sequence_id, name, block_size, command_dt_s)
+            executed = self._wait_until(
+                lambda sequence_id=sequence_id: self._has_executed_sequence(sequence_id),
+                timeout_s,
+            )
+            duration_s = block_size * command_dt_s
+            time.sleep(duration_s + max(0.0, between_s))
+
+            end = self._latest_base_state()
+            if end is None:
+                results[name] = {
+                    "success": False,
+                    "reason": "missing end base_state",
+                    "executed": executed,
+                }
+                continue
+
+            metrics = _motion_metrics(start, end)
+            assessment = self._assess_primitive_motion(name, spec, metrics)
+            results[name] = {
+                "success": bool(executed and assessment["success"]),
+                "executed": executed,
+                "primitive_type": str(spec.get("type", "velocity_block")),
+                "command": spec.get("command", {}),
+                **({"reset": reset_result} if reset_result is not None else {}),
+                **metrics,
+                **assessment,
+            }
+
+        failed = [name for name, result in results.items() if not result.get("success", False)]
+        return {
+            "success": not failed,
+            "failed_primitives": failed,
+            "block_size": block_size,
+            "command_dt_s": command_dt_s,
+            "results": results,
+        }
+
     def _check_command_round_trip(self) -> dict[str, Any]:
         timeout_s = float(self.get_parameter("wait_timeout_s").value)
         sequence_id = int(time.time() * 1000.0) & 0xFFFFFFFF
@@ -306,6 +401,140 @@ class FeatureCheckRunner(Node):
             lambda: self._has_executed_sequence(sequence_id), timeout_s
         )
         return {"success": success, "sequence_id": sequence_id}
+
+    def _load_primitive_registry(self) -> dict[str, Any]:
+        path = Path(str(self.get_parameter("primitive_registry_path").value))
+        if not path.is_file():
+            return {"success": False, "message": f"registry not found: {path}"}
+        with path.open("r", encoding="utf-8") as stream:
+            registry = yaml.safe_load(stream) or {}
+        primitives = registry.get("primitives", {})
+        if not isinstance(primitives, dict):
+            return {"success": False, "message": "registry.primitives must be a mapping"}
+        return {
+            "success": True,
+            "path": str(path),
+            "defaults": registry.get("defaults", {}),
+            "primitives": primitives,
+            "block_size": int(registry.get("block_size", 5)),
+            "command_dt_s": float(registry.get("command_dt_s", self.get_parameter("command_dt_s").value)),
+        }
+
+    def _publish_primitive_command(
+        self, sequence_id: int, primitive_name: str, block_size: int, command_dt_s: float
+    ) -> None:
+        msg = CommandBlock()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.sequence_id = sequence_id
+        msg.block_size = block_size
+        msg.command_dt_s = command_dt_s
+        msg.primitive_name = primitive_name
+        self._command_pub.publish(msg)
+
+    def _publish_hold(self, block_size: int, command_dt_s: float) -> None:
+        sequence_id = int(time.time() * 1000.0) & 0xFFFFFFFF
+        self._publish_primitive_command(sequence_id, "hold", block_size, command_dt_s)
+
+    def _set_mode(self, mode: str, timeout_s: float) -> bool:
+        if not self._set_mode_client.wait_for_service(timeout_sec=timeout_s):
+            return False
+        request = SetGo2Mode.Request()
+        request.mode = mode
+        response = self._wait_for_future(self._set_mode_client.call_async(request), timeout_s)
+        return bool(response and response.success)
+
+    def _reset_motion_audit_pose(self, timeout_s: float, *, reason: str) -> dict[str, Any]:
+        if not self._reset_client.wait_for_service(timeout_sec=timeout_s):
+            return {"success": False, "message": "reset service unavailable"}
+
+        request = ResetEpisode.Request()
+        request.scene_id = 0
+        request.reason = reason
+        request.use_spawn_pose = True
+        request.spawn_pose_world = Pose()
+        request.spawn_pose_world.position.z = float(
+            self.get_parameter("motion_audit_spawn_z_m").value
+        )
+        request.spawn_pose_world.orientation.w = 1.0
+
+        before_count = self._latest_reset_count()
+        response = self._wait_for_future(self._reset_client.call_async(request), timeout_s)
+        if response is None:
+            return {"success": False, "message": "reset service timed out"}
+
+        observed = self._wait_until(
+            lambda: self._latest_reset_count() > before_count,
+            timeout_s,
+        )
+        return {
+            "success": bool(response.success and observed),
+            "episode_id": int(response.episode_id),
+            "reset_count": int(response.reset_count),
+            "observed_reset_event": observed,
+            "message": response.message,
+        }
+
+    def _latest_base_state(self) -> BaseState | None:
+        with self._lock:
+            msg = self._last_message.get("/lewm/go2/base_state")
+        return msg if isinstance(msg, BaseState) else None
+
+    def _assess_primitive_motion(
+        self, name: str, spec: dict[str, Any], metrics: dict[str, float]
+    ) -> dict[str, Any]:
+        min_forward_m = float(self.get_parameter("motion_audit_min_forward_m").value)
+        min_yaw_rad = float(self.get_parameter("motion_audit_min_yaw_rad").value)
+        hold_max_m = float(self.get_parameter("motion_audit_hold_max_m").value)
+        primitive_type = str(spec.get("type", "velocity_block"))
+
+        if primitive_type == "mode_event":
+            if name == "recovery_stand":
+                return {
+                    "success": metrics["planar_m"] <= hold_max_m,
+                    "criterion": f"planar_m <= {hold_max_m}",
+                }
+            return {"success": False, "criterion": "unsupported mode_event"}
+
+        command = spec.get("command", {})
+        vx = float(command.get("vx_body_mps", 0.0))
+        yaw_rate = float(command.get("yaw_rate_radps", 0.0))
+
+        if abs(vx) < 1e-6 and abs(yaw_rate) < 1e-6:
+            return {
+                "success": metrics["planar_m"] <= hold_max_m,
+                "criterion": f"hold planar_m <= {hold_max_m}",
+            }
+        if vx > 0.0 and abs(yaw_rate) < 1e-6:
+            return {
+                "success": metrics["body_dx_m"] >= min_forward_m,
+                "criterion": f"body_dx_m >= {min_forward_m}",
+            }
+        if vx < 0.0 and abs(yaw_rate) < 1e-6:
+            return {
+                "success": metrics["body_dx_m"] <= -min_forward_m,
+                "criterion": f"body_dx_m <= {-min_forward_m}",
+            }
+        if abs(vx) < 1e-6 and yaw_rate > 0.0:
+            return {
+                "success": metrics["dyaw_rad"] >= min_yaw_rad,
+                "criterion": f"dyaw_rad >= {min_yaw_rad}",
+            }
+        if abs(vx) < 1e-6 and yaw_rate < 0.0:
+            return {
+                "success": metrics["dyaw_rad"] <= -min_yaw_rad,
+                "criterion": f"dyaw_rad <= {-min_yaw_rad}",
+            }
+        if vx > 0.0 and yaw_rate > 0.0:
+            return {
+                "success": metrics["body_dx_m"] >= min_forward_m and metrics["dyaw_rad"] >= min_yaw_rad,
+                "criterion": f"body_dx_m >= {min_forward_m} and dyaw_rad >= {min_yaw_rad}",
+            }
+        if vx > 0.0 and yaw_rate < 0.0:
+            return {
+                "success": metrics["body_dx_m"] >= min_forward_m and metrics["dyaw_rad"] <= -min_yaw_rad,
+                "criterion": f"body_dx_m >= {min_forward_m} and dyaw_rad <= {-min_yaw_rad}",
+            }
+        return {"success": True, "criterion": "no specific criterion"}
 
     def _check_reset_bookkeeping(self) -> dict[str, Any]:
         timeout_s = float(self.get_parameter("wait_timeout_s").value)
@@ -389,6 +618,31 @@ class FeatureCheckRunner(Node):
                 return future.result()
             time.sleep(0.02)
         return future.result() if future.done() else None
+
+
+def _motion_metrics(start: BaseState, end: BaseState) -> dict[str, float]:
+    dx = float(end.pose_world.position.x - start.pose_world.position.x)
+    dy = float(end.pose_world.position.y - start.pose_world.position.y)
+    start_yaw = float(start.yaw_rad)
+    body_dx = math.cos(start_yaw) * dx + math.sin(start_yaw) * dy
+    body_dy = -math.sin(start_yaw) * dx + math.cos(start_yaw) * dy
+    dyaw = _wrap_angle(float(end.yaw_rad - start.yaw_rad))
+    return {
+        "world_dx_m": dx,
+        "world_dy_m": dy,
+        "body_dx_m": body_dx,
+        "body_dy_m": body_dy,
+        "planar_m": math.hypot(dx, dy),
+        "dyaw_rad": dyaw,
+    }
+
+
+def _wrap_angle(value: float) -> float:
+    while value > math.pi:
+        value -= 2.0 * math.pi
+    while value < -math.pi:
+        value += 2.0 * math.pi
+    return value
 
 
 def main() -> None:

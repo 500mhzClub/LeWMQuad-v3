@@ -24,7 +24,7 @@ primitives:
     type: velocity_block
     train: true
     command:
-      vx_body_mps: 0.15
+      vx_body_mps: 0.20
       vy_body_mps: 0.0
       yaw_rate_radps: 0.0
 
@@ -74,7 +74,7 @@ primitives:
     command:
       vx_body_mps: 0.20
       vy_body_mps: 0.0
-      yaw_rate_radps: 0.35
+      yaw_rate_radps: 0.45
 
   arc_right:
     type: velocity_block
@@ -82,7 +82,7 @@ primitives:
     command:
       vx_body_mps: 0.20
       vy_body_mps: 0.0
-      yaw_rate_radps: -0.35
+      yaw_rate_radps: -0.45
 
   lateral_left:
     type: velocity_block

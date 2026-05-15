@@ -292,7 +292,7 @@ def generate_launch_description():
             '/velodyne_points/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
             '/unitree_lidar/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
             # '/velodyne_points@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
-            '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
+            '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image',
             # D455 RGBD camera bridges
             '/d455/image@sensor_msgs/msg/Image[gz.msgs.Image',
@@ -304,6 +304,7 @@ def generate_launch_description():
             '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
             '/joint_group_effort_controller/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory',
         ],
+        remappings=[('/odom', '/gazebo/odom')],
     )
 
     lewm_command_block_adapter = Node(
@@ -320,7 +321,10 @@ def generate_launch_description():
         executable="base_state_publisher",
         name="lewm_go2_base_state_publisher",
         output="screen",
-        parameters=[{"use_sim_time": use_sim_time}],
+        parameters=[
+            {"use_sim_time": use_sim_time},
+            {"odom_topic": "/gazebo/odom"},
+        ],
         condition=IfCondition(LaunchConfiguration("lewm_base_state")),
     )
 

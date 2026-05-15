@@ -66,7 +66,7 @@ use `ros2 bag record` directly:
 
 ```bash
 ros2 bag record -s mcap -o go2_bringup_smoke \
-  /clock /tf /joint_states /imu/data /odom /rgb_image \
+  /clock /tf /joint_states /imu/data /odom /gazebo/odom /rgb_image \
   /cmd_vel
 ```
 

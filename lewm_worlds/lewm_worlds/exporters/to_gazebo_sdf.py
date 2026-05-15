@@ -31,11 +31,18 @@ def _render_world(manifest: SceneManifest) -> str:
     models = "\n".join(_render_box_model(obj) for obj in (*manifest.obstacles, *manifest.landmarks))
     return f"""<?xml version="1.0"?>
 <sdf version="1.9">
-  <world name="{escape(manifest.scene_id)}">
-    <physics name="default_physics" type="ignored">
-      <max_step_size>0.002</max_step_size>
+  <!-- scene_id: {escape(manifest.scene_id)} -->
+  <world name="default">
+    <physics name="1ms" type="bullet-featherstone">
+      <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
     </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>
       <pose>0 0 10 0 0 0</pose>

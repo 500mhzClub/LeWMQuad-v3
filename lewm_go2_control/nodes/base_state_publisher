@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish LeWM Go2 BaseState from the fused EKF odometry stream."""
+"""Publish LeWM Go2 BaseState from the configured odometry stream."""
 
 from __future__ import annotations
 
