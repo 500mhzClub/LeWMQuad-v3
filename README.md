@@ -176,6 +176,27 @@ scripts/launch_go2_sim.sh --smoke-world 7 rviz:=false gui:=false
 The smoke world is written under `.generated/worlds/` and uses Gazebo world
 name `default` so the reset manager can still call `/world/default/set_pose`.
 
+To generate a multi-family scene corpus instead of a single world:
+
+```bash
+# Smoke tier (default): one scene per family across train/val/test_id/test_hard.
+scripts/generate_scene_corpus.sh --name smoke
+
+# Spec-aligned plan with custom split totals (data spec section 8 shares).
+scripts/generate_scene_corpus.sh --standard \
+  --name pilot --plan-seed 1 \
+  --train 200 --val 50 --test-id 50 --test-hard 50
+
+# Custom totals JSON.
+scripts/generate_scene_corpus.sh --plan path/to/totals.json --name custom
+```
+
+Each scene is written to
+`.generated/scene_corpus/<name>/<split>/<family>/<scene_id>/` with
+`world.sdf`, `manifest.json`, `topology.json`, and `genesis_scene.json`. The
+top-level `corpus.json` records the full plan and per-scene manifest
+checksums. Splits never share a topology seed for a given plan seed.
+
 On Pop!_OS/Wayland, `scripts/launch_go2_sim.sh` automatically sets
 `QT_QPA_PLATFORM=xcb` when a display is available. This avoids common
 Gazebo/RViz OGRE GLX window errors while still allowing headless launches. Set
@@ -359,6 +380,20 @@ This calls `/lewm/go2/run_feature_check` with `check_name: primitive_motion`,
 drives every trainable primitive, and writes a JSON report under
 `.generated/audits/`.
 
+End-to-end acceptance gate. This builds the workspace, generates a smoke
+scene corpus, launches the simulator headless, runs the full feature check
+and primitive audit, records a smoke bag while driving `/cmd_vel`, converts
+the bag to a `raw_rollout`, then tears the simulator down:
+
+```bash
+scripts/acceptance_go2_contract.sh
+```
+
+The run writes per-stage logs and a top-level `summary.json` under
+`.generated/acceptance/<run-name>/`. Pass `--skip-build` (or `--skip-launch`
+if a simulator is already running) to shorten the loop. The exit code is
+non-zero if any non-skipped stage failed.
+
 Gazebo GUI smoke test:
 
 ```bash
@@ -429,11 +464,14 @@ omitted from JSONL records while their timestamps and metadata are preserved.
 - License: the selected upstream repo is technically suitable but has incomplete
   license metadata for `unitree_go2_description` and `unitree_go2_sim`. Use it
   for local evaluation until the license is clarified or replaced.
-- World generation: `lewm_worlds` now provides a deterministic smoke manifest
-  plus Gazebo/Genesis exporters, and `scripts/launch_go2_sim.sh --smoke-world`
-  can launch a generated smoke SDF. Production scene-family generators, split
-  management, and large-scale coverage audits still need implementation before
-  dataset generation.
+- World generation: `lewm_worlds` now ships per-family generators
+  (`open_obstacle_field`, `small_enclosed_maze`, `medium_enclosed_maze`,
+  `large_enclosed_maze`, `loop_alias_stress`), a deterministic
+  train/val/test_id/test_hard split planner with disjoint seeds, and a corpus
+  builder. `scripts/generate_scene_corpus.sh` materializes a smoke or
+  spec-aligned plan to `.generated/scene_corpus/<name>/`. Large-scale coverage
+  audits, visual/rough-terrain families, and per-scene rollout collection
+  still need implementation before dataset generation.
 - Genesis: `lewm_genesis` now has buildable scaffolding for scene construction,
   replay scheduling, batch jobs, and scalar parity checks. A Genesis runtime,
   rendered-frame validation, and Gazebo/Genesis parity runs are still required

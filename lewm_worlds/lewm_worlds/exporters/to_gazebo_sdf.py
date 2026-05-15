@@ -28,7 +28,7 @@ def export_gazebo_sdf(manifest: SceneManifest, out_dir: Path) -> Path:
 
 
 def _render_world(manifest: SceneManifest) -> str:
-    models = "\n".join(_render_box_model(obj) for obj in (*manifest.obstacles, *manifest.landmarks))
+    models = "\n".join(_render_box_model(obj) for obj in manifest.static_objects)
     return f"""<?xml version="1.0"?>
 <sdf version="1.9">
   <!-- scene_id: {escape(manifest.scene_id)} -->
@@ -91,8 +91,12 @@ def _material_rgba(material_id: str) -> str:
     palette = {
         "landmark_red": "0.85 0.12 0.08 1",
         "landmark_blue": "0.10 0.22 0.85 1",
+        "landmark_green": "0.10 0.65 0.18 1",
+        "landmark_yellow": "0.92 0.80 0.10 1",
         "mat_obstacle_0": "0.55 0.55 0.52 1",
         "mat_obstacle_1": "0.42 0.48 0.38 1",
         "mat_obstacle_2": "0.56 0.42 0.35 1",
+        "wall_interior": "0.62 0.62 0.60 1",
+        "wall_perimeter": "0.40 0.40 0.42 1",
     }
     return palette.get(material_id, "0.5 0.5 0.5 1")

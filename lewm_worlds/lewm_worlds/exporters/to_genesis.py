@@ -34,7 +34,7 @@ def export_genesis_scene(manifest: SceneManifest) -> dict[str, Any]:
                 "yaw_rad": obj.yaw_rad,
                 "material_id": obj.material_id,
             }
-            for obj in (*manifest.obstacles, *manifest.landmarks)
+            for obj in manifest.static_objects
         ],
         "graph": {
             "nodes": [node.__dict__ for node in manifest.graph_nodes],
