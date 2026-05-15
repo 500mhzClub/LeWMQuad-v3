@@ -22,10 +22,11 @@ Kilted or another distro by default.
 - `third_party/unitree_go2_ros2`: selected upstream Go2 simulator, description,
   Gazebo launch, and CHAMP controller packages.
 - `lewm_go2_control`: LeWM-specific ROS 2 message and service interfaces.
-- `lewm_worlds`: canonical scene manifest model, labels, and Gazebo/Genesis
-  smoke exporters.
-- `lewm_genesis`: Genesis scene-building, replay scheduling, batch-job, and
-  parity-check scaffolding.
+- `lewm_worlds`: canonical scene manifest model, labels, and Gazebo smoke
+  exporter, with dormant Genesis export metadata kept for optional future
+  acceleration.
+- `lewm_genesis`: optional Genesis scene-building, replay scheduling, batch-job,
+  and parity-check scaffolding. It is not on the required Gazebo-only data path.
 - `config/go2_platform_manifest.yaml`: pinned platform, camera, controller, and
   no-data gates.
 - `config/go2_primitive_registry.yaml`: initial command primitive bank.
@@ -382,8 +383,9 @@ drives every trainable primitive, and writes a JSON report under
 
 End-to-end acceptance gate. This builds the workspace, generates a smoke
 scene corpus, launches the simulator headless, runs the full feature check
-and primitive audit, records a smoke bag while driving `/cmd_vel`, converts
-the bag to a `raw_rollout`, then tears the simulator down:
+and primitive audit, records a smoke bag while driving through
+`/lewm/go2/command_block`, converts the bag to a `raw_rollout`, then tears the
+simulator down:
 
 ```bash
 scripts/acceptance_go2_contract.sh
@@ -470,6 +472,38 @@ The converter writes a compact smoke `raw_rollout` directory with
 `summary.json` and `messages.jsonl`. Large image/point-cloud payload arrays are
 omitted from JSONL records while their timestamps and metadata are preserved.
 
+`summary.json` also contains `contract_audit`, `topic_audit`, and
+`data_quality_audit` blocks. Every requested
+`/lewm/go2/command_block.sequence_id` must reappear as an
+`/lewm/go2/executed_command_block.sequence_id`, no `sequence_id` may repeat
+on either topic, and `/lewm/go2/reset_event.reset_count` must increase by
+exactly one per event. A missing execution, duplicate sequence_id, or reset
+gap fails the audit and the converter exits non-zero. Orphan executions
+(executions whose command was published before the recording started) are
+flagged in the audit but do not fail it.
+
+The default converter policy is `--quality-profile smoke`: only
+contract-critical command/reset loss fails the conversion, while per-topic
+timing is reported for triage. Before pilot or training data capture, run with
+`--quality-profile pilot` or `--quality-profile training`. Those stricter
+profiles also fail missing critical streams, timestamp regressions, excessive
+topic gaps, and low observed rates on `/clock`, `/tf`, state, odometry, IMU,
+RGB, camera-info, contacts, mode, episode-info, and `/cmd_vel`. Pass
+`--no-strict` to write the audits without failing — useful when triaging a
+known-bad bag or producing a benchmark report.
+
+Gazebo throughput benchmark, with a simulator already running:
+
+```bash
+scripts/benchmark_gazebo_throughput.sh --duration 60
+```
+
+This records a command-block-driven bag, converts it, and writes
+`.generated/benchmarks/<run>/throughput.json` with real-time factor, RGB frame
+rate, bag write rate, dropped/lost-message log lines, the command-contract
+audit, and the pilot-profile data-quality audit. Use this before considering
+any second rendering backend.
+
 ## Known Blockers Before Data Generation
 
 - License: the selected upstream repo is technically suitable but has incomplete
@@ -483,10 +517,10 @@ omitted from JSONL records while their timestamps and metadata are preserved.
   spec-aligned plan to `.generated/scene_corpus/<name>/`. Large-scale coverage
   audits, visual/rough-terrain families, and per-scene rollout collection
   still need implementation before dataset generation.
-- Genesis: `lewm_genesis` now has buildable scaffolding for scene construction,
-  replay scheduling, batch jobs, and scalar parity checks. A Genesis runtime,
-  rendered-frame validation, and Gazebo/Genesis parity runs are still required
-  before using Genesis for data.
+- Genesis: `lewm_genesis` is dormant optional acceleration scaffolding. Gazebo is
+  the authoritative rollout and rendering backend for smoke, acceptance, pilot
+  data, and the first retrain path. Reintroduce Genesis only if Gazebo pilot
+  throughput is measured as a blocker and parity can be proven.
 - No explicit gait-endurance blocker at the moment: upstream CHAMP +
   bullet-featherstone delivers ~30+ s of sustained `/cmd_vel` walking on
   this workstation, comfortably above the data spec's 16-24 s per-episode

@@ -1,4 +1,4 @@
-# LeWMQuad-v3 Go2 / ROS 2 / Gazebo / Genesis Bring-up and Rendering Plan
+# LeWMQuad-v3 Go2 / ROS 2 / Gazebo Bring-up and Rendering Plan
 
 Date: 2026-05-13
 
@@ -9,9 +9,10 @@ platform-specific implementation plan for:
 
 - A Unitree Go2 embodiment.
 - ROS 2 control and observability.
-- Gazebo as the integration simulator.
-- Genesis as the high-throughput world instantiation and rendering path, where
-  it passes parity against Gazebo.
+- Gazebo as the authoritative simulator, renderer, ROS 2 integration path, and
+  initial data-generation backend.
+- Genesis as optional dormant acceleration scaffolding, reintroduced only if a
+  Gazebo pilot benchmark proves throughput is a blocker.
 - A LeWM/H-JEPA data pipeline where the JEPA controls only generic command
   blocks such as forward, backward, turn, hold, recovery, and optional jump
   events. The JEPA does not replace the blind locomotion controller.
@@ -41,7 +42,6 @@ What is missing before implementation:
 - A concrete Go2 robot interface.
 - A ROS 2 package layout and topic/service contract.
 - A Gazebo instantiation template.
-- A Genesis scene/rendering template using the same canonical world metadata.
 - A blind locomotion policy contract.
 - A bring-up checklist proving the dog, sensors, commands, reset flow, and
   data capture work before any LeWM data generation begins.
@@ -101,17 +101,19 @@ Gazebo/Harmonic simulation stack.
 
 ### 3.2 Backend Roles
 
-Use one canonical scene manifest and two backend exporters:
+Use one canonical scene manifest and Gazebo as the authoritative backend:
 
-1. `scene_manifest -> Gazebo SDF`: integration, ROS 2 launch, controller
-   bring-up, sensor validation, reset semantics, and parity checks.
-2. `scene_manifest -> Genesis scene`: high-throughput rollout/replay/rendering
-   only after parity checks pass.
+1. `scene_manifest -> Gazebo SDF`: ROS 2 launch, controller bring-up, sensor
+   validation, reset semantics, rollout, rendering, and data-quality gates.
+2. Optional `scene_manifest -> Genesis scene`: dormant acceleration scaffold,
+   not part of the required data-generation path unless Gazebo-only pilot
+   throughput is measured and found insufficient.
 
-Do not make either Gazebo SDF or Genesis code the source of truth for topology.
-The scene manifest is the source of truth because derived labels, train/test
-splits, graph distances, landmarks, and loop-closure supervision must be
-regenerated deterministically without replaying physics.
+Do not make Gazebo SDF the source of truth for topology. The scene manifest is
+the source of truth because derived labels, train/test splits, graph distances,
+landmarks, and loop-closure supervision must be regenerated deterministically
+without replaying physics. If Genesis is reintroduced later, it must consume the
+same manifest and pass explicit parity checks before producing training data.
 
 ### 3.3 Controller Boundary
 
@@ -277,7 +279,7 @@ Gazebo is the authoritative environment for ROS 2 integration testing. A
 rollout is not accepted until Gazebo proves that the exact command/state
 contract works under ROS 2.
 
-### 4.4 Genesis Rendering Layer
+### 4.4 Optional Genesis Acceleration Layer
 
 Package target:
 
@@ -292,17 +294,20 @@ lewm_genesis/
 
 Responsibilities:
 
-- Build a Genesis scene from the same manifest used by Gazebo.
+- Stay out of the required smoke, acceptance, pilot, and first retrain path.
+- Build a Genesis scene from the same manifest used by Gazebo, if reintroduced.
 - Load the same Go2 URDF/MJCF asset or a documented Genesis-compatible
   equivalent.
 - Attach the same camera model with matching intrinsics and extrinsics.
-- Replay raw rollouts or run Genesis-native rollouts when parity is accepted.
+- Replay raw Gazebo rollouts when parity is accepted.
 - Render RGB, depth, segmentation, and camera-validity diagnostics.
 - Write `rendered_vision` without changing reset arrays or executed commands.
 
-Genesis is accepted as the high-throughput data path only after it matches the
-Gazebo/ROS 2 contract on geometry, camera pose, command timing, reset semantics,
-and basic controller response.
+Genesis is not assumed to be faster for this Go2 workload. It is accepted as an
+optional high-throughput data path only after a Gazebo pilot benchmark shows a
+real throughput bottleneck and Genesis then matches the Gazebo/ROS 2 contract on
+geometry, camera pose, command timing, reset semantics, and basic controller
+response.
 
 ## 5. Step-by-Step Bring-up Plan
 
@@ -338,12 +343,12 @@ Tasks:
 Exit gate:
 
 - A checked-in `go2_platform_manifest.yaml` names the robot asset, controller
-  artifact, camera parameters, command timing, ROS 2 distro, Gazebo version, and
-  Genesis version.
+  artifact, camera parameters, command timing, ROS 2 distro, and Gazebo version.
+  Optional accelerator versions are recorded only if such a backend is used.
 
 ### Phase 1: Internal ROS 2 Interfaces
 
-Goal: create a stable interface that hides Gazebo, Genesis, and Unitree details.
+Goal: create a stable interface that hides Gazebo and Unitree details.
 
 Define these messages.
 
@@ -563,7 +568,7 @@ Exit gate:
 
 ### Phase 4: Canonical World Generator
 
-Goal: generate diverse worlds once and instantiate them in both simulators.
+Goal: generate diverse worlds once and instantiate them in Gazebo.
 
 Scene families should inherit the proportions from
 `docs/fresh_retrain_data_spec.md`:
@@ -580,21 +585,23 @@ Implementation rules:
 - All walls, obstacles, landmarks, surfaces, and graph nodes are emitted from
   the manifest.
 - The manifest owns random seeds and object IDs.
-- Gazebo and Genesis exporters may approximate backend-specific geometry, but
-  they must preserve graph topology, camera occlusion, traversability, and
-  landmark line of sight.
+- Exporters must preserve graph topology, camera occlusion, traversability, and
+  landmark line of sight. Gazebo is the required exporter; optional exporters
+  inherit the same constraints if reintroduced.
 - Labels are computed from the manifest and rollout state, not from renderer
   pixels.
 
 Exit gate:
 
-- For a fixed seed, both exporters produce the same graph node count, edge
-  count, dead-end list, landmark node IDs, and world bounds.
-- A visual inspection script renders a top-down debug image for both backends.
+- For a fixed seed, the manifest and Gazebo export produce the same graph node
+  count, edge count, dead-end list, landmark node IDs, and world bounds.
+- A visual inspection script renders a top-down debug image from the manifest
+  and Gazebo export.
 
-### Phase 5: Genesis Instantiation and Rendering Template
+### Phase 5: Optional Genesis Instantiation and Rendering Template
 
-Goal: build and render the same world in Genesis.
+Goal: keep enough scaffolding to benchmark Genesis later without putting it on
+the required Gazebo-only data path.
 
 Template:
 
@@ -661,15 +668,28 @@ Rendering requirements:
 
 Exit gate:
 
-- A 10-scene Genesis render smoke test produces valid RGB/depth frames,
-  matching reset arrays, and invalid-frame rates below the thresholds in
+- None for Gazebo-only data generation. If Genesis is reintroduced, a 10-scene
+  Genesis render smoke test must produce valid RGB/depth frames, matching reset
+  arrays, and invalid-frame rates below the thresholds in
   `docs/fresh_retrain_data_spec.md`.
 
-### Phase 6: Gazebo / Genesis Parity
+### Phase 6: Gazebo Throughput Benchmark and Optional Genesis Parity
 
-Goal: prove that Genesis data is acceptable for training if it is used.
+Goal: prove that Gazebo-only data generation is practical before accepting the
+complexity of a second simulator. Genesis parity is required only if Genesis is
+reintroduced.
 
-Run the same seed, spawn, command script, and camera spec in both backends.
+First benchmark Gazebo on representative scenes and report:
+
+- Real-time factor.
+- RGB frame rate.
+- Bag write rate and disk GB/min.
+- Dropped-message count.
+- Render invalid-frame rate.
+- Reset and command/executed-command contract pass/fail.
+
+If Genesis is reintroduced, run the same seed, spawn, command script, and camera
+spec in both backends.
 
 Compare:
 
@@ -685,6 +705,8 @@ Compare:
 
 Acceptance:
 
+- Gazebo-only remains the default unless the benchmark shows that throughput is
+  the limiting blocker for the selected pilot tier.
 - No primitive collapses to indistinguishable motion in either backend.
 - Camera observations are qualitatively and quantitatively similar enough for
   domain randomization to cover the gap.
@@ -724,6 +746,9 @@ Exit gate:
 
 - A bag-to-HDF5 conversion round trip preserves timestamp order, reset arrays,
   command arrays, and scene metadata.
+- `raw_rollout` conversion emits `contract_audit`, `topic_audit`, and
+  `data_quality_audit`; smoke may fail only contract-critical loss, while pilot
+  and training runs must fail critical stream gaps/rate loss.
 
 ### Phase 8: Smoke Dataset
 
@@ -745,6 +770,8 @@ Pilot tier:
 - 800 raw command ticks per episode.
 - Initial train/val split by scene.
 - All render-quality, reset-integrity, and command-support audits run.
+- Pilot conversion uses the `pilot` data-quality profile before data is admitted
+  to any retrain corpus.
 
 Exit gate:
 
@@ -778,7 +805,7 @@ excluded from training." Silent partial support is not acceptable.
 
 | Feature | Required for training | Backend contract | Acceptance |
 | --- | --- | --- | --- |
-| Spawn/reset | Yes | Gazebo and Genesis | Deterministic reset pose and no joint explosion |
+| Spawn/reset | Yes | Gazebo | Deterministic reset pose and no joint explosion |
 | Stand/balance | Yes | Adapter mode | Stable for 30 s sim time |
 | Stop/hold | Yes | Velocity block | Displacement below threshold |
 | Forward/backward | Yes | `[vx, 0, 0]` | Distinct executed displacement bins |
@@ -794,7 +821,7 @@ excluded from training." Silent partial support is not acceptable.
 | IMU | Yes | ROS sensor topic | Timestamp-aligned and nonzero under motion |
 | Joint states | Yes | ROS sensor topic | All 12 leg joints present |
 | Foot contacts | Yes | ROS/custom topic | Contact toggles under gait |
-| Front camera | Yes | ROS/Gazebo and Genesis | Intrinsics/extrinsics match manifest |
+| Front camera | Yes | ROS/Gazebo | Intrinsics/extrinsics match manifest |
 | Lidar | Optional | ROS sensor topic | Recorded only if part of target claim |
 
 ## 7. Training Action-Space Policy
@@ -826,7 +853,7 @@ small bank that is both trained and physically meaningful.
 
 The data products remain those in `docs/fresh_retrain_data_spec.md`:
 
-1. `raw_rollout`: ROS/Gazebo/Genesis state, commands, resets, contacts,
+1. `raw_rollout`: ROS/Gazebo state, commands, resets, contacts,
    proprioception, and scene metadata.
 2. `rendered_vision`: egocentric RGB plus camera validity and copied raw labels.
 3. `derived_labels`: graph, landmark, clearance, traversability, body-motion,
@@ -863,12 +890,13 @@ Do not begin data generation or training until all gates pass:
 - `ExecutedCommandBlock` is recorded and differs from requested commands when
   clipping or safety overrides occur.
 - Reset events are explicit and produce reset-separated `episode_id`.
-- Canonical world manifest exports to both Gazebo and Genesis.
-- Camera intrinsics/extrinsics are identical in manifest, Gazebo, and Genesis.
-- Genesis render smoke test passes or Genesis is demoted to a non-authoritative
-  renderer until parity is fixed.
+- Canonical world manifest exports to Gazebo and remains the source of truth for
+  topology and labels.
+- Camera intrinsics/extrinsics are identical in manifest and Gazebo.
 - Primitive registry excludes unsupported Go2 behaviors.
 - Bag-to-training conversion preserves timestamps and reset arrays.
+- Gazebo throughput benchmark passes for the selected pilot tier, or a separate
+  acceleration decision is made with benchmark evidence.
 - Smoke and pilot datasets pass data-quality audits.
 
 ## 10. Main Risks and Mitigations
@@ -876,7 +904,7 @@ Do not begin data generation or training until all gates pass:
 | Risk | Failure mode | Mitigation |
 | --- | --- | --- |
 | Unitree/Humble assumptions leak into Jazzy sim | Training code depends on vendor topics | Internal `CommandBlock` and state messages |
-| Gazebo and Genesis disagree | Training data does not match integration sim | Manifest source of truth plus parity tests |
+| Optional renderer disagrees with Gazebo | Training data does not match integration sim | Keep Gazebo authoritative; require parity before using another renderer |
 | No real blind policy artifact | Dog moves kinematically or unrealistically | Lock policy artifact before dataset work |
 | Advanced sport behaviors are unstable | Jump/recovery corrupts action labels | Primitive registry with train flags |
 | Commands collapse physically | JEPA sees different vectors with same outcome | Executed-command histograms and action sensitivity |
@@ -904,13 +932,9 @@ Do not begin data generation or training until all gates pass:
   exposes the high-level methods this plan wraps: `Move(vx, vy, vyaw)`,
   `StopMove`, `BalanceStand`, `RecoveryStand`, gait/mode methods, and optional
   dynamic actions such as `FrontJump`.
-- [Genesis Hello tutorial](https://genesis-world.readthedocs.io/en/latest/user_guide/getting_started/hello_genesis.html),
-  [file I/O / URDF loading reference](https://genesis-world.readthedocs.io/en/latest/api_reference/utilities/file_io.html),
-  [visualization and rendering guide](https://genesis-world.readthedocs.io/en/v0.3.3/user_guide/getting_started/visualization.html),
-  and [camera sensor guide](https://genesis-world.readthedocs.io/en/latest/user_guide/getting_started/camera_sensors.html)
-  confirm scene creation, URDF loading, camera creation, RGB/depth/segmentation
-  rendering, and camera sensor backends including a batch renderer for
-  high-throughput work.
+- Genesis documentation and benchmarks are not treated as evidence that Genesis
+  is faster for this Go2/Gazebo workload. Keep the local `lewm_genesis`
+  scaffolding dormant until a Gazebo pilot benchmark justifies a second backend.
 
 ## 12. Implementation Order Summary
 
@@ -919,10 +943,10 @@ Do not begin data generation or training until all gates pass:
 3. Build Gazebo Go2 spawn and sensor template.
 4. Implement command adapter and blind policy runner.
 5. Implement canonical world manifests and Gazebo exporter.
-6. Implement Genesis exporter and renderer from the same manifests.
-7. Run Gazebo feature checks.
-8. Run Genesis render smoke tests.
-9. Run Gazebo/Genesis parity tests.
-10. Record smoke bags and convert them to training chunks.
-11. Run pilot dataset audits.
-12. Generate the full corpus only after the no-training gates pass.
+6. Run Gazebo feature checks.
+7. Record smoke bags through `CommandBlock` and convert them to training chunks.
+8. Benchmark Gazebo pilot throughput and frame validity.
+9. Run pilot dataset audits.
+10. Generate the full corpus only after the no-training gates pass.
+11. Reintroduce Genesis or another accelerator only if Gazebo throughput is a
+    measured blocker and parity can be proven.

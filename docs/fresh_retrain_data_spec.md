@@ -99,6 +99,29 @@ Every fresh retrain should produce three immutable datasets:
 The base LeWM may train on `rendered_vision` plus actions and reset masks. The
 planning and H-JEPA stages train from `rendered_vision` plus `derived_labels`.
 
+### 4.1 Transport and topic integrity
+
+Rosbag transport loss is not automatically equivalent to bad training data, but
+it must never be silent. Every `raw_rollout` conversion must emit:
+
+- `contract_audit`: command/reset loss checks.
+- `topic_audit`: per-topic count, record-time rate, source-time rate, maximum
+  timestamp gap, and timestamp-regression counts.
+- `data_quality_audit`: the selected pass/fail policy.
+
+Policy:
+
+- `smoke`: fail only contract-critical command/reset loss. Non-contract topic
+  gaps are reported but do not fail the gate.
+- `pilot` and `training`: fail missing command, executed-command, or reset
+  events; duplicate or unmatched command IDs; reset-count gaps; missing critical
+  streams; timestamp regressions; excessive critical-stream gaps; and low
+  observed critical-stream rates.
+
+RGB/proprio/state gaps that pass the hard gate may still invalidate local
+training windows. Those windows must be flagged or excluded; they must not be
+silently interpolated into valid data.
+
 ## 5. Required Schema
 
 ### 5.1 Per-step observations
@@ -587,6 +610,7 @@ Do not start the main retrain until these pass:
 - Valid LeWM sequences meet the selected tier.
 - Each major scene family contributes at least 5% of train sequences.
 - Render invalid-frame rate is below threshold.
+- `raw_rollout` conversion passes the `training` data-quality profile.
 - Per-primitive action support meets section 11.
 - Collision/contact examples are present but below 20% of all windows.
 - Reset-crossing windows are excluded.

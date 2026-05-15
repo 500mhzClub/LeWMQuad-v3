@@ -6,10 +6,11 @@
 #   2. scene_corpus_smoke     scripts/generate_scene_corpus.sh --name ...   (skippable)
 #   3. launch_sim             scripts/launch_go2_sim.sh in a process group   (skippable)
 #   4. await_topics           wait for required ROS topics to appear
-#   5. feature_check_all      /lewm/go2/run_feature_check check_name=all
-#   6. primitive_audit        scripts/audit_go2_primitives.sh
-#   7. smoke_bag              scripts/record_smoke_bag.sh + /cmd_vel drive
-#   8. bag_conversion         scripts/convert_smoke_bag_to_raw_rollout.sh
+#   5. await_messages         wait for core ROS topics to publish samples
+#   6. feature_check_all      /lewm/go2/run_feature_check check_name=all
+#   7. primitive_audit        scripts/audit_go2_primitives.sh
+#   8. smoke_bag              scripts/record_smoke_bag.sh + CommandBlock drive
+#   9. bag_conversion         scripts/convert_smoke_bag_to_raw_rollout.sh
 #
 # Writes a single summary.json under the run directory and exits non-zero
 # if any non-skipped stage failed.
@@ -57,9 +58,10 @@ Stages (each fails the run if it fails; teardown always runs):
   scene_corpus_smoke     scripts/generate_scene_corpus.sh --smoke       (--skip-scene-corpus)
   launch_sim             scripts/launch_go2_sim.sh in a process group   (--skip-launch)
   await_topics           wait for required ROS topics
+  await_messages         wait for core ROS topic samples
   feature_check_all      /lewm/go2/run_feature_check check_name=all
   primitive_audit        scripts/audit_go2_primitives.sh
-  smoke_bag              scripts/record_smoke_bag.sh + /cmd_vel drive   (--skip-bag)
+  smoke_bag              scripts/record_smoke_bag.sh + CommandBlock drive (--skip-bag)
   bag_conversion         scripts/convert_smoke_bag_to_raw_rollout.sh    (--skip-bag)
 
 Options:
@@ -322,6 +324,48 @@ await_topics() {
 run_stage await_topics await_topics
 if [[ $? -ne 0 ]]; then EXIT_RC=1; exit 1; fi
 
+# ---- stage: await messages ------------------------------------------------
+
+await_messages() {
+  local deadline=$((SECONDS + TOPIC_TIMEOUT_S))
+  local required=(
+    /clock
+    /tf
+    /joint_states
+    /imu/data
+    /odom
+    /gazebo/odom
+    /rgb_image
+    /lewm/go2/base_state
+    /lewm/go2/camera_info
+    /lewm/go2/foot_contacts
+    /lewm/go2/mode
+  )
+  local remaining=("${required[@]}")
+  while true; do
+    local next_remaining=()
+    local topic
+    for topic in "${remaining[@]}"; do
+      if timeout 3s ros2 topic echo "$topic" --once >/dev/null 2>&1; then
+        continue
+      fi
+      next_remaining+=("$topic")
+    done
+    remaining=("${next_remaining[@]}")
+    if [[ "${#remaining[@]}" -eq 0 ]]; then
+      echo "all required topic samples observed"
+      return 0
+    fi
+    if [[ "$SECONDS" -ge "$deadline" ]]; then
+      echo "timed out waiting for required topic samples: ${remaining[*]}" >&2
+      return 1
+    fi
+    sleep 2
+  done
+}
+run_stage await_messages await_messages
+if [[ $? -ne 0 ]]; then EXIT_RC=1; exit 1; fi
+
 # ---- stage: feature_check_all --------------------------------------------
 
 feature_check_all() {
@@ -397,22 +441,76 @@ if [[ "$SKIP_BAG" == "1" ]]; then
   mark_stage_skipped bag_conversion "--skip-bag"
 else
   BAG_DIR="$OUT_DIR/smoke_bag"
-  # Drive the robot for the duration of the bag so the recording has motion.
+  # Drive through the LeWM command-block contract so the recording proves both
+  # requested and executed command topics, not just backend /cmd_vel motion.
   drive_robot() {
-    local rate_hz=5
-    local cycles=$((BAG_DURATION * rate_hz))
-    for _ in $(seq 1 "$cycles"); do
-      ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist \
-        "{linear: {x: 0.18, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.05}}" \
+    local cycles="${1:-$((BAG_DURATION - 7))}"
+    if [[ "$cycles" -lt 1 ]]; then cycles=1; fi
+    local base_sequence=$(( (SCRIPT_START_EPOCH % 1000000) * 1000 ))
+    local primitive
+    for i in $(seq 1 "$cycles"); do
+      if (( i % 4 == 0 )); then
+        primitive="arc_right"
+      else
+        primitive="forward_medium"
+      fi
+      ros2 topic pub --once --wait-matching-subscriptions 2 --max-wait-time-secs 5 \
+        /lewm/go2/command_block lewm_go2_control/msg/CommandBlock \
+        "{sequence_id: $((base_sequence + i)), block_size: 5, command_dt_s: 0.1, primitive_name: '$primitive'}" \
         >/dev/null 2>&1 || true
-      sleep $(awk -v r="$rate_hz" 'BEGIN { printf "%.3f", 1.0 / r }')
+      sleep 1
     done
   }
-  drive_robot &
-  DRIVE_PID=$!
-  run_stage smoke_bag "$SCRIPT_DIR/record_smoke_bag.sh" \
-    --out "$BAG_DIR" --duration "$BAG_DURATION"
-  stop_drive
+
+  wait_for_bag_subscriptions() {
+    local record_log="$1"
+    local deadline=$((SECONDS + 20))
+    while true; do
+      if [[ -f "$record_log" ]] && grep -q "All requested topics are subscribed" "$record_log"; then
+        return 0
+      fi
+      if [[ "$SECONDS" -ge "$deadline" ]]; then
+        echo "timed out waiting for rosbag subscriptions" >&2
+        return 1
+      fi
+      sleep 0.5
+    done
+  }
+
+  record_smoke_bag_with_drive() {
+    local record_log="$OUT_DIR/smoke_bag_record.log"
+    "$SCRIPT_DIR/record_smoke_bag.sh" --out "$BAG_DIR" --duration "$BAG_DURATION" \
+      > >(tee "$record_log") 2>&1 &
+    local record_pid=$!
+    local record_start_s=$SECONDS
+
+    wait_for_bag_subscriptions "$record_log" || {
+      kill -INT "$record_pid" 2>/dev/null || true
+      wait "$record_pid" 2>/dev/null || true
+      return 1
+    }
+
+    ros2 service call /lewm/go2/reset lewm_go2_control/srv/ResetEpisode \
+      "{scene_id: 0, reason: 'acceptance_smoke_bag', use_spawn_pose: false}" \
+      >/dev/null || {
+        kill -INT "$record_pid" 2>/dev/null || true
+        wait "$record_pid" 2>/dev/null || true
+        return 1
+    }
+    sleep 0.5
+
+    local elapsed=$((SECONDS - record_start_s))
+    local drive_cycles=$((BAG_DURATION - elapsed - 3))
+    if [[ "$drive_cycles" -lt 1 ]]; then drive_cycles=1; fi
+    drive_robot "$drive_cycles" &
+    DRIVE_PID=$!
+    wait "$record_pid"
+    local rc=$?
+    stop_drive
+    return "$rc"
+  }
+
+  run_stage smoke_bag record_smoke_bag_with_drive
   if [[ $? -ne 0 ]]; then EXIT_RC=1; exit 1; fi
 
   RAW_ROLLOUT_DIR="$OUT_DIR/smoke_bag_raw_rollout"
@@ -440,6 +538,14 @@ print(f"raw_rollout topic counts (subset): "
       + ", ".join(f"{t}={counts.get(t, 0)}" for t in required))
 if missing:
     print("missing contract topics:", missing)
+    raise SystemExit(1)
+contract = summary.get("contract_audit", {})
+if not contract.get("pass", False):
+    print("contract audit failed:", contract.get("issues", []))
+    raise SystemExit(1)
+quality = summary.get("data_quality_audit", {})
+if quality.get("profile") != "smoke" or not quality.get("pass", False):
+    print("smoke data-quality audit failed:", quality)
     raise SystemExit(1)
 PY
   }
