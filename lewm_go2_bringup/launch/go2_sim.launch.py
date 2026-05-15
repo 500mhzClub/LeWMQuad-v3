@@ -24,15 +24,19 @@ def generate_launch_description():
         package="unitree_go2_sim").find("unitree_go2_sim")
     unitree_go2_description = launch_ros.substitutions.FindPackageShare(
         package="unitree_go2_description").find("unitree_go2_description")
-    
+    lewm_go2_bringup = launch_ros.substitutions.FindPackageShare(
+        package="lewm_go2_bringup").find("lewm_go2_bringup")
+
     joints_config = os.path.join(unitree_go2_sim, "config/joints/joints.yaml")
     ros_control_config = os.path.join(
         unitree_go2_sim, "config/ros_control/ros_control.yaml"
     )
     gait_config = os.path.join(unitree_go2_sim, "config/gait/gait.yaml")
     links_config = os.path.join(unitree_go2_sim, "config/links/links.yaml")
-    default_model_path = os.path.join(unitree_go2_description, "urdf/unitree_go2_robot.xacro")
-    default_world_path = os.path.join(unitree_go2_description, "worlds/default.sdf")
+    default_model_path = os.path.join(
+        lewm_go2_bringup, "urdf/lewm_go2_with_contacts.urdf.xacro"
+    )
+    default_world_path = os.path.join(lewm_go2_bringup, "worlds/lewm_default.sdf")
 
     declare_use_sim_time = DeclareLaunchArgument(
         "use_sim_time",
@@ -80,9 +84,18 @@ def generate_launch_description():
         default_value="true",
         description="Launch the LeWM episode-bookkeeping reset manager",
     )
+    declare_lewm_foot_contacts = DeclareLaunchArgument(
+        "lewm_foot_contacts",
+        default_value="true",
+        description="Launch the LeWM Gazebo foot-contact aggregator",
+    )
     declare_world_init_x = DeclareLaunchArgument("world_init_x", default_value="0.0")
     declare_world_init_y = DeclareLaunchArgument("world_init_y", default_value="0.0")
-    declare_world_init_z = DeclareLaunchArgument("world_init_z", default_value="0.375")
+    # CHAMP's nominal stance height is ~0.225 m (gait.yaml) plus a small swing
+    # clearance; spawning ~0.04 m above the stance gives the controller time to
+    # settle without a large drop impulse. Higher values are recoverable under
+    # bullet-featherstone but consistently destabilize the gait at /cmd_vel.
+    declare_world_init_z = DeclareLaunchArgument("world_init_z", default_value="0.27")
     declare_world_init_heading = DeclareLaunchArgument(
         "world_init_heading", default_value="0.0"
     )
@@ -273,6 +286,13 @@ def generate_launch_description():
             # '/velodyne_points@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image',
+            # LeWM foot contact sensors. gz-sim 8 ignores the <topic>
+            # override on contact sensors and publishes to the auto-named
+            # path below; the aggregator subscribes to the bridged copy.
+            '/world/default/model/go2/link/lf_lower_leg_link/sensor/lf_foot_contact/contact@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            '/world/default/model/go2/link/rf_lower_leg_link/sensor/rf_foot_contact/contact@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            '/world/default/model/go2/link/lh_lower_leg_link/sensor/lh_foot_contact/contact@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            '/world/default/model/go2/link/rh_lower_leg_link/sensor/rh_foot_contact/contact@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
             # D455 RGBD camera bridges
             '/d455/image@sensor_msgs/msg/Image[gz.msgs.Image',
             '/d455/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
@@ -319,6 +339,15 @@ def generate_launch_description():
         output="screen",
         parameters=[{"use_sim_time": use_sim_time}],
         condition=IfCondition(LaunchConfiguration("lewm_reset")),
+    )
+
+    lewm_foot_contacts_publisher = Node(
+        package="lewm_go2_control",
+        executable="foot_contacts_publisher",
+        name="lewm_go2_foot_contacts_publisher",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+        condition=IfCondition(LaunchConfiguration("lewm_foot_contacts")),
     )
     
     # Use spawner nodes directly to handle the configuration step. (load → configure → activate)
@@ -379,6 +408,7 @@ def generate_launch_description():
             declare_lewm_base_state,
             declare_lewm_camera_info,
             declare_lewm_reset,
+            declare_lewm_foot_contacts,
             declare_world_init_x,
             declare_world_init_y,
             declare_world_init_z,
@@ -395,6 +425,7 @@ def generate_launch_description():
             lewm_base_state_publisher,
             lewm_camera_info_publisher,
             lewm_reset_manager,
+            lewm_foot_contacts_publisher,
 
             # CHAMP controller nodes
             quadruped_controller_node,

@@ -124,8 +124,8 @@ ros2 launch lewm_go2_bringup go2_sim.launch.py rviz:=false gui:=false
 ```
 
 It also starts the first-pass LeWM command adapter, the base state publisher,
-the manifest-driven CameraInfo publisher, and the episode-bookkeeping reset
-manager by default:
+the manifest-driven CameraInfo publisher, the episode-bookkeeping reset
+manager, and the Gazebo foot-contact aggregator by default:
 
 ```text
 /lewm/go2/command_block -> /cmd_vel
@@ -133,6 +133,7 @@ manager by default:
 /odom -> /lewm/go2/base_state
 /rgb_image -> /lewm/go2/camera_info
 /lewm/go2/reset (service) -> /lewm/go2/reset_event
+4x gz contact sensors -> /lewm/go2/foot_contacts
 ```
 
 Disable them only when debugging the stock upstream stack:
@@ -142,6 +143,7 @@ scripts/launch_go2_sim.sh lewm_adapter:=false
 scripts/launch_go2_sim.sh lewm_base_state:=false
 scripts/launch_go2_sim.sh lewm_camera_info:=false
 scripts/launch_go2_sim.sh lewm_reset:=false
+scripts/launch_go2_sim.sh lewm_foot_contacts:=false
 ```
 
 To pass through launch arguments:
@@ -249,16 +251,41 @@ service through `ros_gz_bridge` plus zeroing the robot's velocities (typically
 via a pause/step around the pose write so the EKF and CHAMP controller see a
 clean discontinuity).
 
-### Foot contacts (deferred)
+LeWM foot contacts smoke test:
 
-`/lewm/go2/foot_contacts` is not yet wired up. CHAMP gates its kinematic
-contact publisher on `!gazebo`, so the in-sim CHAMP node never emits
-`/foot_contacts`; it expects Gazebo to provide real physics contacts instead.
-The upstream URDF has no `<sensor type="contact">` on the foot links, and the
-default world does not load Gazebo's contact system plugin, so neither path is
-available out of the box. Closing this gap requires either a URDF overlay that
-adds contact sensors per foot plus a world-side plugin + ros_gz bridge, or a
-deliberately-marked kinematic fallback (TF-based foot-height heuristic).
+```bash
+scripts/ros2_go2.sh ros2 topic echo /lewm/go2/foot_contacts --once
+```
+
+The publisher fuses four per-foot Gazebo contact sensors (defined in
+`lewm_go2_bringup/urdf/lewm_go2_with_contacts.urdf.xacro`) into a single
+`FootContacts` message, mapping CHAMP's lf/rf/lh/rh leg order to LeWM's
+fl/fr/rl/rr field names. This required three pieces:
+
+- A URDF overlay (`lewm_go2_bringup/urdf/lewm_go2_with_contacts.urdf.xacro`)
+  that includes the upstream xacro and adds a `<sensor type="contact">` on
+  each `<leg>_foot_link`. The collision reference must match the
+  auto-generated post-lump name
+  `<leg>_lower_leg_link_fixed_joint_lump__<leg>_foot_link_collision_1`,
+  since the fixed `<leg>_foot_joint` gets lumped into the lower-leg link
+  during URDF -> SDF conversion.
+- A world overlay (`lewm_go2_bringup/worlds/lewm_default.sdf`) that loads
+  the `gz-sim-contact-system` plugin. It keeps the upstream
+  `bullet-featherstone` physics backend because CHAMP's effort-based joint
+  controller is implicitly tuned against bullet-featherstone's solver and
+  the gait diverges under `dartsim`. Both backends emit contact wrench
+  data intermittently under gz-sim 8, so dartsim is not required for the
+  force fields to populate.
+- Bridge entries for each gz auto-generated contact topic
+  (`/world/default/model/go2/link/<leg>_lower_leg_link/sensor/<leg>_foot_contact/contact`)
+  -- gz-sim 8 ignores the `<topic>` override on contact sensors, so the
+  ROS-side topic name follows the auto path.
+
+Caveats: the booleans are real-time, but gz only populates the contact
+wrench intermittently (fresh non-zero magnitudes arrive seconds apart per
+foot in practice). The aggregator holds the most recent non-zero force per
+foot while the contact persists, so `*_force_n` is a peak/load proxy rather
+than a tick-by-tick signal.
 
 Gazebo GUI smoke test:
 
@@ -327,16 +354,19 @@ ros2 bag record -s mcap -o go2_bringup_smoke \
 - License: the selected upstream repo is technically suitable but has incomplete
   license metadata for `unitree_go2_description` and `unitree_go2_sim`. Use it
   for local evaluation until the license is clarified or replaced.
-- Camera info: the upstream mono RGB camera publishes `/rgb_image`, but a matching
-  mono `CameraInfo` topic is not currently bridged. LeWM must publish manifest
-  intrinsics or switch to the D455 camera topics.
-- Foot contacts: upstream CHAMP launch has foot-contact publishing disabled in
-  Gazebo mode. LeWM must enable reliable contact estimates or add Gazebo contact
-  sensors before training.
-- Reset semantics: upstream launch does not provide LeWM episode/reset events.
-  The `lewm_go2_control` reset manager still needs implementation.
-- World generation: the upstream world is only the stock bring-up world. Canonical
-  LeWM scene manifests and Gazebo/Genesis exporters still need implementation.
+- World generation: the upstream world is only the stock bring-up world plus a
+  small set of boxes/cylinders for visual variety. Canonical LeWM scene
+  manifests and Gazebo/Genesis exporters still need implementation.
+- Gait stability under sustained `/cmd_vel`: under `bullet-featherstone`
+  CHAMP walks for short stretches but tends to tip slowly on multi-second
+  drives. Stand-up recovery is an open follow-up.
+
+Resolved on the current branch (kept here as a paper trail; the live state
+lives in the launch and the smoke tests above):
+
+- Camera info: `/lewm/go2/camera_info` is now published from the manifest.
+- Foot contacts: gz contact sensors + the LeWM aggregator publish
+  `/lewm/go2/foot_contacts`.
 
 ## Troubleshooting
 

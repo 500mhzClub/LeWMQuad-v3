@@ -27,6 +27,7 @@ install(
     nodes/base_state_publisher
     nodes/camera_info_publisher
     nodes/reset_manager
+    nodes/foot_contacts_publisher
   DESTINATION lib/${PROJECT_NAME}
 )
 
