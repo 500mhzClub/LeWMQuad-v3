@@ -154,8 +154,16 @@ mark_stage_skipped() {
 stop_drive() {
   if [[ -n "${DRIVE_PID:-}" ]] && kill -0 "$DRIVE_PID" 2>/dev/null; then
     kill -INT "$DRIVE_PID" 2>/dev/null || true
-    sleep 1
+    for _ in $(seq 1 10); do
+      if ! kill -0 "$DRIVE_PID" 2>/dev/null; then
+        wait "$DRIVE_PID" 2>/dev/null || true
+        DRIVE_PID=""
+        return 0
+      fi
+      sleep 0.1
+    done
     kill -KILL "$DRIVE_PID" 2>/dev/null || true
+    wait "$DRIVE_PID" 2>/dev/null || true
   fi
   DRIVE_PID=""
 }

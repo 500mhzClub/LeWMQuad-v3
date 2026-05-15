@@ -99,6 +99,19 @@ Every fresh retrain should produce three immutable datasets:
 The base LeWM may train on `rendered_vision` plus actions and reset masks. The
 planning and H-JEPA stages train from `rendered_vision` plus `derived_labels`.
 
+At production scale, **Genesis is the authoritative dynamics and rendering
+backend** for state, commands, resets, contacts, and RGB/depth (see
+[decision_pivot_to_genesis.md](decision_pivot_to_genesis.md)). The
+`raw_rollout` and `rendered_vision` schema separation is preserved as a
+contract for downstream consumers even though the bulk implementation
+collapses them into a single Genesis pass. Gazebo is retained only as a
+small audit oracle for dynamics and sensor parity spot checks, not on the
+bulk path.
+
+Lidar (`/velodyne_points`, `/unitree_lidar/points`) is **not part of the v3
+corpus**. The bringup plan marked it optional; the pivot makes the absence
+explicit.
+
 ### 4.1 Transport and topic integrity
 
 Rosbag transport loss is not automatically equivalent to bad training data, but
@@ -117,6 +130,9 @@ Policy:
   events; duplicate or unmatched command IDs; reset-count gaps; missing critical
   streams; timestamp regressions; excessive critical-stream gaps; and low
   observed critical-stream rates.
+- `raw_pilot` and `raw_training`: same as `pilot`/`training` for state,
+  command, reset, contact, and proprioception streams, but do not require
+  `/rgb_image`; vision is supplied later by the render-replay stage.
 
 RGB/proprio/state gaps that pass the hard gate may still invalidate local
 training windows. Those windows must be flagged or excluded; they must not be
@@ -557,6 +573,9 @@ a hard render-quality gate:
   surfaces, not through-wall geometry.
 - Camera timestamp aligned with the command and proprio timestamp.
 - Render replay deterministic from raw rollout and scene metadata.
+- GPU render-replay jobs must consume a checked `raw_rollout` plus the scene and
+  camera manifests, write camera-validity flags, and never rewrite command,
+  reset, or episode arrays.
 
 If invalid frames cluster near collisions, do not simply drop all collisions.
 Fix the camera placement, near plane, wall thickness, or retraction logic so
@@ -611,6 +630,8 @@ Do not start the main retrain until these pass:
 - Each major scene family contributes at least 5% of train sequences.
 - Render invalid-frame rate is below threshold.
 - `raw_rollout` conversion passes the `training` data-quality profile.
+- If RGB was generated offline, the render-replay plan and rendered output pass
+  the camera-validity and timestamp-alignment gates.
 - Per-primitive action support meets section 11.
 - Collision/contact examples are present but below 20% of all windows.
 - Reset-crossing windows are excluded.

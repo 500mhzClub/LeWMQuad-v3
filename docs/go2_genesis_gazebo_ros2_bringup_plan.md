@@ -2,6 +2,37 @@
 
 Date: 2026-05-13
 
+> **STATUS: SUPERSEDED for backend roles (2026-05-15).**
+>
+> See [docs/decision_pivot_to_genesis.md](decision_pivot_to_genesis.md). Genesis
+> is now the authoritative bulk-generation backend; Gazebo is retained only as
+> a small audit oracle; lidar is dropped from the v3 corpus.
+>
+> What in this document **still applies**:
+>
+> - The LeWM action contract: command blocks, primitive registry, mode events,
+>   `CommandBlock` / `ExecutedCommandBlock` semantics.
+> - Reset / episode bookkeeping invariants and the `/lewm/episode_info` flow.
+> - The scene manifest model and the data-quality gate ladder
+>   (`smoke` / `pilot` / `training`).
+> - The `raw_rollout` → `rendered_vision` schema separation as a contract,
+>   even though the implementation now collapses to a single Genesis pass on
+>   the bulk path.
+>
+> What is **no longer authoritative**:
+>
+> - "Gazebo as the authoritative simulator" (sections 1, 3.2, etc.). Gazebo
+>   runs only the audit oracle now.
+> - "Genesis as optional dormant acceleration scaffolding." Genesis is the
+>   bulk path.
+> - Lidar treated as available-on-request. It is dropped.
+> - Any throughput-gating step phrased as "use Gazebo until proven a blocker."
+>   The throughput math against the 154M-tick target made Gazebo a blocker
+>   without further pilot benchmarking.
+>
+> The body below is preserved as paper trail for the original plan. Treat it
+> as historical context plus a still-valid LeWM interface specification.
+
 ## 1. Purpose
 
 This document turns the existing simulator-agnostic v3 documents into a
@@ -101,13 +132,16 @@ Gazebo/Harmonic simulation stack.
 
 ### 3.2 Backend Roles
 
-Use one canonical scene manifest and Gazebo as the authoritative backend:
+Use one canonical scene manifest, Gazebo as the authoritative dynamics backend,
+and a GPU replay renderer for scale:
 
 1. `scene_manifest -> Gazebo SDF`: ROS 2 launch, controller bring-up, sensor
-   validation, reset semantics, rollout, rendering, and data-quality gates.
-2. Optional `scene_manifest -> Genesis scene`: dormant acceleration scaffold,
-   not part of the required data-generation path unless Gazebo-only pilot
-   throughput is measured and found insufficient.
+   validation, reset semantics, raw rollout capture, and data-quality gates.
+2. `raw_rollout + scene_manifest -> rendered_vision`: GPU render replay for
+   production-scale RGB/depth/camera-validity generation.
+3. Optional `scene_manifest -> Genesis scene`: one candidate implementation of
+   the GPU replay renderer, and only a dynamics replacement if separate parity
+   evidence justifies it.
 
 Do not make Gazebo SDF the source of truth for topology. The scene manifest is
 the source of truth because derived labels, train/test splits, graph distances,
@@ -279,7 +313,7 @@ Gazebo is the authoritative environment for ROS 2 integration testing. A
 rollout is not accepted until Gazebo proves that the exact command/state
 contract works under ROS 2.
 
-### 4.4 Optional Genesis Acceleration Layer
+### 4.4 GPU Render-Replay Layer
 
 Package target:
 
@@ -294,20 +328,21 @@ lewm_genesis/
 
 Responsibilities:
 
-- Stay out of the required smoke, acceptance, pilot, and first retrain path.
-- Build a Genesis scene from the same manifest used by Gazebo, if reintroduced.
+- Plan GPU render-replay jobs from checked Gazebo `raw_rollout` chunks.
+- Build a Genesis scene from the same manifest used by Gazebo, if Genesis is the
+  selected renderer backend.
 - Load the same Go2 URDF/MJCF asset or a documented Genesis-compatible
   equivalent.
 - Attach the same camera model with matching intrinsics and extrinsics.
-- Replay raw Gazebo rollouts when parity is accepted.
+- Replay raw Gazebo rollout base/camera trajectories deterministically.
 - Render RGB, depth, segmentation, and camera-validity diagnostics.
 - Write `rendered_vision` without changing reset arrays or executed commands.
 
-Genesis is not assumed to be faster for this Go2 workload. It is accepted as an
-optional high-throughput data path only after a Gazebo pilot benchmark shows a
-real throughput bottleneck and Genesis then matches the Gazebo/ROS 2 contract on
-geometry, camera pose, command timing, reset semantics, and basic controller
-response.
+Genesis is not assumed to be a valid dynamics replacement for this Go2 workload.
+The first acceleration target is rendering: keep Gazebo as the dynamics oracle,
+record raw state/actions/resets without RGB payloads for production, then render
+vision offline on GPU. Genesis or another renderer can be admitted only after it
+matches Gazebo on geometry, camera pose, occlusion, and camera-validity audits.
 
 ## 5. Step-by-Step Bring-up Plan
 
@@ -673,23 +708,32 @@ Exit gate:
   arrays, and invalid-frame rates below the thresholds in
   `docs/fresh_retrain_data_spec.md`.
 
-### Phase 6: Gazebo Throughput Benchmark and Optional Genesis Parity
+### Phase 6: Raw Capture Throughput and GPU Render-Replay Benchmark
 
-Goal: prove that Gazebo-only data generation is practical before accepting the
-complexity of a second simulator. Genesis parity is required only if Genesis is
-reintroduced.
+Goal: prove that Gazebo raw rollout capture plus GPU render replay is practical
+before accepting GPU physics or another simulator as a dynamics replacement.
 
 First benchmark Gazebo on representative scenes and report:
 
 - Real-time factor.
-- RGB frame rate.
+- Raw capture profile (`raw` or `vision`).
+- RGB frame rate for audit captures.
 - Bag write rate and disk GB/min.
+- Conversion duration and conversion message rate.
 - Dropped-message count.
-- Render invalid-frame rate.
 - Reset and command/executed-command contract pass/fail.
+- Data-quality profile pass/fail.
 
-If Genesis is reintroduced, run the same seed, spawn, command script, and camera
-spec in both backends.
+Then build a GPU render-replay plan from the converted raw rollout and report:
+
+- Planned frame count and camera Hz.
+- Backend target, GPU requirement, and host metadata.
+- Camera intrinsics/extrinsics copied from the platform manifest.
+- Raw contract/data-quality audit status.
+
+If Genesis or another renderer is used to produce frames, run the same seed,
+spawn, command script, raw trajectory, and camera spec in both Gazebo audit
+captures and the GPU renderer.
 
 Compare:
 
@@ -705,8 +749,10 @@ Compare:
 
 Acceptance:
 
-- Gazebo-only remains the default unless the benchmark shows that throughput is
-  the limiting blocker for the selected pilot tier.
+- Gazebo remains the raw rollout authority unless GPU physics passes a separate
+  dynamics parity gate.
+- Production capture may use `raw` bags without `/rgb_image`; vision must then
+  come from a checked GPU render-replay backend.
 - No primitive collapses to indistinguishable motion in either backend.
 - Camera observations are qualitatively and quantitatively similar enough for
   domain randomization to cover the gap.
@@ -736,9 +782,11 @@ Record:
 
 Preferred bring-up flow:
 
-1. Record ROS bags in MCAP for short smoke and pilot rollouts.
+1. Record ROS bags in MCAP for short smoke and pilot rollouts; use RGB bags for
+   audit and raw-only bags for production throughput.
 2. Convert bags to immutable `raw_rollout` chunks.
-3. Render or copy images into `rendered_vision`.
+3. Plan GPU render replay from `raw_rollout` and render or copy images into
+   `rendered_vision`.
 4. Compute `derived_labels` offline from the manifest and rollout state.
 5. Build manifests for train/val/test only after scene IDs are fixed.
 
@@ -749,6 +797,8 @@ Exit gate:
 - `raw_rollout` conversion emits `contract_audit`, `topic_audit`, and
   `data_quality_audit`; smoke may fail only contract-critical loss, while pilot
   and training runs must fail critical stream gaps/rate loss.
+- Render-replay planning emits frame schedules from base-state timestamps and
+  refuses failing raw audits unless explicitly run in triage mode.
 
 ### Phase 8: Smoke Dataset
 
@@ -895,8 +945,9 @@ Do not begin data generation or training until all gates pass:
 - Camera intrinsics/extrinsics are identical in manifest and Gazebo.
 - Primitive registry excludes unsupported Go2 behaviors.
 - Bag-to-training conversion preserves timestamps and reset arrays.
-- Gazebo throughput benchmark passes for the selected pilot tier, or a separate
-  acceleration decision is made with benchmark evidence.
+- Gazebo raw-capture throughput and GPU render-replay throughput pass for the
+  selected pilot tier on the desktop that will generate the mass corpus. Laptop
+  benchmark runs are diagnostic only.
 - Smoke and pilot datasets pass data-quality audits.
 
 ## 10. Main Risks and Mitigations

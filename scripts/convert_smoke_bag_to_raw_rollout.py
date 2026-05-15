@@ -40,20 +40,23 @@ class TopicQualityRule:
     time_basis: str = "source"
 
 
-PILOT_TRAINING_TOPIC_RULES: dict[str, TopicQualityRule] = {
+RAW_TOPIC_RULES: dict[str, TopicQualityRule] = {
     "/clock": TopicQualityRule(min_rate_hz=500.0, max_gap_s=0.05),
     "/tf": TopicQualityRule(min_rate_hz=100.0, max_gap_s=0.5, time_basis="record"),
     "/joint_states": TopicQualityRule(min_rate_hz=100.0, max_gap_s=0.05),
     "/imu/data": TopicQualityRule(min_rate_hz=50.0, max_gap_s=0.05),
     "/odom": TopicQualityRule(min_rate_hz=20.0, max_gap_s=0.15),
     "/gazebo/odom": TopicQualityRule(min_rate_hz=20.0, max_gap_s=0.15),
-    "/rgb_image": TopicQualityRule(min_rate_hz=5.0, max_gap_s=0.3),
     "/lewm/go2/base_state": TopicQualityRule(min_rate_hz=20.0, max_gap_s=0.15),
-    "/lewm/go2/camera_info": TopicQualityRule(min_rate_hz=1.0, max_gap_s=1.0),
     "/lewm/go2/foot_contacts": TopicQualityRule(min_rate_hz=100.0, max_gap_s=0.05),
     "/lewm/go2/mode": TopicQualityRule(min_rate_hz=0.5, max_gap_s=2.0),
     "/lewm/episode_info": TopicQualityRule(min_rate_hz=0.2, max_gap_s=5.0),
     "/cmd_vel": TopicQualityRule(min_count=1, time_basis="record"),
+}
+VISION_TOPIC_RULES: dict[str, TopicQualityRule] = {
+    **RAW_TOPIC_RULES,
+    "/rgb_image": TopicQualityRule(min_rate_hz=5.0, max_gap_s=0.3),
+    "/lewm/go2/camera_info": TopicQualityRule(min_rate_hz=1.0, max_gap_s=1.0),
 }
 
 
@@ -135,11 +138,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--quality-profile",
-        choices=("smoke", "pilot", "training"),
+        choices=("smoke", "pilot", "training", "raw_pilot", "raw_training"),
         default="smoke",
         help=(
             "Data-quality policy to enforce. smoke fails only contract-critical "
-            "loss; pilot/training also fail critical stream gaps and rate loss."
+            "loss; pilot/training also fail critical stream gaps and rate loss. "
+            "raw_* profiles omit RGB/camera-info requirements for GPU render replay."
         ),
     )
     args = parser.parse_args()
@@ -221,7 +225,7 @@ def main() -> None:
                 "max_gap_s": rule.max_gap_s,
                 "time_basis": rule.time_basis,
             }
-            for topic, rule in sorted(PILOT_TRAINING_TOPIC_RULES.items())
+            for topic, rule in sorted(_topic_rules_for_profile(args.quality_profile).items())
         },
     }
     data_quality_audit = _audit_data_quality(
@@ -358,7 +362,7 @@ def _audit_data_quality(
     if profile == "smoke":
         warnings.append(
             "smoke profile does not fail non-contract topic gaps; use "
-            "--quality-profile pilot before pilot data capture"
+            "--quality-profile pilot or raw_pilot before pilot data capture"
         )
         return {
             "profile": profile,
@@ -380,7 +384,8 @@ def _audit_data_quality(
     if contract_audit["reset_event_count"] <= 0:
         issues.append(f"{RESET_EVENT_TOPIC} has no reset events")
 
-    for topic, rule in sorted(PILOT_TRAINING_TOPIC_RULES.items()):
+    topic_rules = _topic_rules_for_profile(profile)
+    for topic, rule in sorted(topic_rules.items()):
         stats = topics.get(topic)
         if stats is None or stats["record"]["count"] < rule.min_count:
             count = 0 if stats is None else stats["record"]["count"]
@@ -430,8 +435,16 @@ def _audit_data_quality(
         ),
         "issues": issues,
         "warnings": warnings,
-        "critical_topics": sorted(PILOT_TRAINING_TOPIC_RULES),
+        "critical_topics": sorted(topic_rules),
     }
+
+
+def _topic_rules_for_profile(profile: str) -> dict[str, TopicQualityRule]:
+    if profile.startswith("raw_"):
+        return RAW_TOPIC_RULES
+    if profile == "smoke":
+        return VISION_TOPIC_RULES
+    return VISION_TOPIC_RULES
 
 
 def _storage_id(bag_dir: Path) -> str:

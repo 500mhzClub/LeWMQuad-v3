@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/ros_env.sh"
 REPO_ROOT="$(lewm_repo_root)"
 
 if [[ $# -lt 1 ]]; then
-  echo "Usage: scripts/convert_smoke_bag_to_raw_rollout.sh <bag-dir> [--out <out-dir>]" >&2
+  echo "Usage: scripts/convert_smoke_bag_to_raw_rollout.sh <bag-dir> [--out <out-dir>] [--quality-profile smoke|pilot|training|raw_pilot|raw_training]" >&2
   exit 2
 fi
 

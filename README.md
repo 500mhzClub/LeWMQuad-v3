@@ -3,7 +3,33 @@
 This repository targets a Unitree Go2 simulation stack for LeWMQuad-v3 data
 generation and later H-JEPA training.
 
-The current simulator base is:
+> **Backend pivot (2026-05-15):** Genesis is now the authoritative bulk
+> data-generation backend. Gazebo is retained as a small audit oracle only.
+> Lidar is dropped from the v3 corpus contract. See
+> [docs/decision_pivot_to_genesis.md](docs/decision_pivot_to_genesis.md) for
+> the full decision, rationale, and rollback condition.
+
+## Backend Roles
+
+- **Genesis (bulk path):** authoritative for physics rollout, RGB/depth
+  rendering, and raw_rollout production at scale. Runs on the production GPU
+  (Radeon AI Pro 9700, ROCm). Bulk path is .h5/.npz/Zarr products, not ROS
+  bags. Implementation lives in [lewm_genesis/](lewm_genesis/) and is being
+  brought up against the pattern in
+  [../LeWMQuad-v2/scripts/1_physics_rollout.py](../LeWMQuad-v2/scripts/1_physics_rollout.py).
+  Tier A locomotion uses Genesis's built-in Go2 quadruped example.
+- **Gazebo (audit oracle only):** small, periodic dynamics and sensor parity
+  spot checks against the Genesis corpus. ROS 2 + CHAMP + ros_gz_bridge stay
+  alive only for this role. All Gazebo-specific instructions below describe
+  the audit oracle, not the production path.
+
+## Audit Oracle Stack (Gazebo)
+
+Everything from here through the "Known Blockers" section describes the
+Gazebo audit oracle: setup, smoke tests, throughput benchmarks, and bag
+recording. This is the parity reference, not the production generator.
+
+The audit oracle base is:
 
 - OS: Ubuntu 24.04 Noble or a Noble-derived OS such as Pop!_OS 24.04.
 - ROS 2: Jazzy.
@@ -19,21 +45,26 @@ Kilted or another distro by default.
 
 ## Repository Layout
 
-- `third_party/unitree_go2_ros2`: selected upstream Go2 simulator, description,
-  Gazebo launch, and CHAMP controller packages.
+- `lewm_genesis`: Genesis-side bulk generation (in progress). Scene building,
+  parity checks, and render-replay scaffolding. Becomes the bulk physics +
+  rendering loop; cross-references the v2 rollout pattern.
+- `lewm_worlds`: canonical scene manifest model and split planner. Consumed by
+  both Genesis and the Gazebo audit oracle.
 - `lewm_go2_control`: LeWM-specific ROS 2 message and service interfaces.
-- `lewm_worlds`: canonical scene manifest model, labels, and Gazebo smoke
-  exporter, with dormant Genesis export metadata kept for optional future
-  acceleration.
-- `lewm_genesis`: optional Genesis scene-building, replay scheduling, batch-job,
-  and parity-check scaffolding. It is not on the required Gazebo-only data path.
+  Contract is sim-agnostic; runtime form is ROS nodes under the audit oracle
+  and Python utilities under Genesis bulk.
+- `third_party/unitree_go2_ros2`: selected upstream Go2 simulator, description,
+  Gazebo launch, and CHAMP controller packages. Audit oracle only.
 - `config/go2_platform_manifest.yaml`: pinned platform, camera, controller, and
   no-data gates.
 - `config/go2_primitive_registry.yaml`: initial command primitive bank.
-- `docs/go2_genesis_gazebo_ros2_bringup_plan.md`: full simulator and rendering
-  plan.
-- `docs/upstream_go2_sim_audit.md`: upstream fit and license audit.
-- `scripts/`: install, alignment, build, launch, and smoke-test helpers.
+- `docs/decision_pivot_to_genesis.md`: backend-role authority. **Read first.**
+- `docs/go2_genesis_gazebo_ros2_bringup_plan.md`: superseded as backend
+  authority; LeWM interface specs inside still apply.
+- `docs/upstream_go2_sim_audit.md`: upstream fit and license audit for the
+  Gazebo audit oracle.
+- `scripts/`: install, alignment, build, launch, smoke-test, benchmark, and
+  render-replay helpers (audit oracle plus Genesis-side planners).
 
 ## Native Setup
 
@@ -471,6 +502,9 @@ The overrides give each hot topic at least ~250 ms of headroom (e.g.
 The converter writes a compact smoke `raw_rollout` directory with
 `summary.json` and `messages.jsonl`. Large image/point-cloud payload arrays are
 omitted from JSONL records while their timestamps and metadata are preserved.
+Under the audit oracle role, use `scripts/record_smoke_bag.sh --profile raw`
+to capture a state/action-only audit bag without `/rgb_image`. Bulk RGB
+generation does not run through this path anymore; it runs through Genesis.
 
 `summary.json` also contains `contract_audit`, `topic_audit`, and
 `data_quality_audit` blocks. Every requested
@@ -495,43 +529,84 @@ known-bad bag or producing a benchmark report.
 Gazebo throughput benchmark, with a simulator already running:
 
 ```bash
-scripts/benchmark_gazebo_throughput.sh --duration 60
+scripts/benchmark_gazebo_throughput.sh --duration 60 --machine-role dev_laptop --capture-profile vision
+scripts/benchmark_gazebo_throughput.sh --duration 60 --machine-role production_desktop --capture-profile raw
 ```
 
 This records a command-block-driven bag, converts it, and writes
 `.generated/benchmarks/<run>/throughput.json` with real-time factor, RGB frame
 rate, bag write rate, dropped/lost-message log lines, the command-contract
-audit, and the pilot-profile data-quality audit. Use this before considering
-any second rendering backend.
+audit, the pilot-profile data-quality audit, conversion duration, and host
+metadata. Under the post-pivot scope these benchmarks measure audit-oracle
+capacity, not the production generation rate. The production rate is set by
+Genesis, not Gazebo. See
+[docs/decision_pivot_to_genesis.md](docs/decision_pivot_to_genesis.md).
+
+GPU render-replay planning from a converted `raw_rollout`:
+
+```bash
+scripts/plan_gpu_render_replay.sh .generated/benchmarks/<run>/raw_rollout \
+  --out .generated/rendered_vision_plans/<run>
+```
+
+This writes `render_replay_plan.json` and `frames.jsonl`: the immutable contract
+for a renderer consuming an audit-oracle `raw_rollout`. The bulk path skips
+this stage entirely — Genesis emits state and RGB in the same pass. The
+render-replay scaffold is preserved for the audit-only flow where Gazebo
+captures dynamics and a separate renderer (Genesis or otherwise) generates
+matching frames for parity comparison.
 
 ## Known Blockers Before Data Generation
 
-- License: the selected upstream repo is technically suitable but has incomplete
-  license metadata for `unitree_go2_description` and `unitree_go2_sim`. Use it
-  for local evaluation until the license is clarified or replaced.
+### Genesis bulk path (production)
+
+- Genesis bulk loop is not yet wired against the Go2 platform manifest. The
+  v2 pattern in
+  [../LeWMQuad-v2/scripts/1_physics_rollout.py](../LeWMQuad-v2/scripts/1_physics_rollout.py)
+  is the porting reference. Status: in progress.
+- Tier A locomotion (Genesis's built-in Go2 example) needs an
+  executed-command histogram check against the primitive registry before
+  committing to a full bulk run. If the gait distribution is too narrow,
+  escalate to Tier B (port an external Go2 RL policy).
+- Safety thresholds in
+  [lewm_go2_control/nodes/command_block_adapter](lewm_go2_control/nodes/command_block_adapter)
+  are calibrated for CHAMP. They need recalibration against the Genesis
+  policy's response distribution before bulk capture.
+- ROCm-Genesis smoke on the production GPU (Radeon AI Pro 9700) is the only
+  step gating the pipeline porting. Per the v2 precedent this is expected to
+  pass; verify before committing weeks of integration work.
+
+### Audit oracle (Gazebo)
+
+- License: the selected upstream repo is technically suitable but has
+  incomplete license metadata for `unitree_go2_description` and
+  `unitree_go2_sim`. Use it for local evaluation until the license is
+  clarified or replaced.
 - World generation: `lewm_worlds` now ships per-family generators
   (`open_obstacle_field`, `small_enclosed_maze`, `medium_enclosed_maze`,
   `large_enclosed_maze`, `loop_alias_stress`), a deterministic
   train/val/test_id/test_hard split planner with disjoint seeds, and a corpus
   builder. `scripts/generate_scene_corpus.sh` materializes a smoke or
-  spec-aligned plan to `.generated/scene_corpus/<name>/`. Large-scale coverage
-  audits, visual/rough-terrain families, and per-scene rollout collection
-  still need implementation before dataset generation.
-- Genesis: `lewm_genesis` is dormant optional acceleration scaffolding. Gazebo is
-  the authoritative rollout and rendering backend for smoke, acceptance, pilot
-  data, and the first retrain path. Reintroduce Genesis only if Gazebo pilot
-  throughput is measured as a blocker and parity can be proven.
-- No explicit gait-endurance blocker at the moment: upstream CHAMP +
+  spec-aligned plan to `.generated/scene_corpus/<name>/`. The same manifest
+  drives both Genesis bulk and the Gazebo audit oracle.
+- No explicit gait-endurance blocker on the audit oracle: upstream CHAMP +
   bullet-featherstone delivers ~30+ s of sustained `/cmd_vel` walking on
   this workstation, comfortably above the data spec's 16-24 s per-episode
   minimum
   ([docs/fresh_retrain_data_spec.md](docs/fresh_retrain_data_spec.md)).
   This claim depends on keeping the gz `contact-system` plugin and per-foot
   `<sensor type="contact">` blocks out of the spawned model -- see the
-  foot-contacts section above for why those break the gait. If a future
-  slice needs sensor-derived foot forces, that path needs to be revisited
-  (force_torque on the foot joint, an alternative physics backend, or a
-  different locomotion stack).
+  foot-contacts section above for why those break the gait.
+
+### Dropped from scope
+
+- Lidar (`/velodyne_points`, `/unitree_lidar/points`) is not in the v3 corpus
+  contract. The Velodyne-description apt package is still required because
+  the upstream URDF references a Velodyne mount body, not because lidar data
+  is captured.
+- The "use Gazebo until throughput proves a blocker" gate from the original
+  bringup plan no longer applies. The 154M-tick spec target made Gazebo a
+  bulk-path blocker without further pilot benchmarking.
 
 Resolved on the current branch (kept here as a paper trail; the live state
 lives in the launch and the smoke tests above):

@@ -2,6 +2,15 @@
 
 Date: 2026-05-13
 
+> **Scope update (2026-05-15):** This audit now covers the **audit oracle**
+> stack only. Per [docs/decision_pivot_to_genesis.md](decision_pivot_to_genesis.md),
+> Genesis is the authoritative bulk-generation backend; the upstream Gazebo
+> stack audited here is retained for dynamics/sensor parity spot checks, not
+> for the production data path. License clarification and the build audit
+> remain valid concerns for the audit oracle role. Lidar topics listed below
+> (`/velodyne_points/points`, `/unitree_lidar/points`) are documented for
+> completeness only — they are dropped from the v3 corpus contract.
+
 ## Selected Repository
 
 - Repository: `https://github.com/khaledgabr77/unitree_go2_ros2`

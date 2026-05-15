@@ -10,6 +10,7 @@ OUT_DIR="$REPO_ROOT/.generated/bags/go2_bringup_smoke_$(date +%Y%m%d_%H%M%S)"
 DURATION_SECS=20
 QOS_OVERRIDES="$REPO_ROOT/config/rosbag_record_qos_overrides.yaml"
 MAX_CACHE_BYTES=$((256 * 1024 * 1024))
+RECORD_PROFILE="vision"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -33,12 +34,40 @@ while [[ $# -gt 0 ]]; do
       MAX_CACHE_BYTES="$2"
       shift 2
       ;;
+    --profile)
+      RECORD_PROFILE="$2"
+      shift 2
+      ;;
+    --raw-only)
+      RECORD_PROFILE="raw"
+      shift
+      ;;
+    -h|--help)
+      cat <<'USAGE'
+Usage: scripts/record_smoke_bag.sh [options]
+
+Options:
+  --out PATH             Bag output directory.
+  --duration N           Recording duration in seconds (default 20).
+  --profile vision|raw   vision records /rgb_image; raw omits RGB payloads.
+  --raw-only             Alias for --profile raw.
+  --qos-overrides PATH   QoS override YAML.
+  --no-qos-overrides     Use rosbag2 default subscription QoS.
+  --max-cache-bytes N    rosbag2 cache size in bytes.
+USAGE
+      exit 0
+      ;;
     *)
       echo "Unknown argument: $1" >&2
       exit 2
       ;;
   esac
 done
+
+if [[ "$RECORD_PROFILE" != "vision" && "$RECORD_PROFILE" != "raw" ]]; then
+  echo "Unknown profile: $RECORD_PROFILE (expected vision or raw)" >&2
+  exit 2
+fi
 
 cd "$REPO_ROOT"
 lewm_source_jazzy_underlay
@@ -52,7 +81,6 @@ topics=(
   /imu/data
   /odom
   /gazebo/odom
-  /rgb_image
   /lewm/go2/camera_info
   /cmd_vel
   /lewm/go2/command_block
@@ -63,6 +91,12 @@ topics=(
   /lewm/go2/reset_event
   /lewm/episode_info
 )
+
+if [[ "$RECORD_PROFILE" == "vision" ]]; then
+  topics+=(
+    /rgb_image
+  )
+fi
 
 record_args=(-s mcap -o "$OUT_DIR" --max-cache-size "$MAX_CACHE_BYTES")
 if [[ -n "$QOS_OVERRIDES" ]]; then
@@ -76,7 +110,7 @@ else
   echo "Recording without QoS overrides (default subscription depth applies)."
 fi
 
-echo "Recording smoke bag to $OUT_DIR for ${DURATION_SECS}s (cache=${MAX_CACHE_BYTES}B)..."
+echo "Recording smoke bag to $OUT_DIR for ${DURATION_SECS}s (profile=${RECORD_PROFILE}, cache=${MAX_CACHE_BYTES}B)..."
 set +e
 timeout --signal=INT --kill-after=5s "${DURATION_SECS}s" \
   ros2 bag record "${record_args[@]}" "${topics[@]}"
