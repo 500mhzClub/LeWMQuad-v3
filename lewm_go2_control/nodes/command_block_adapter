@@ -16,6 +16,7 @@ from geometry_msgs.msg import Twist
 from rclpy.node import Node
 
 from lewm_go2_control.msg import CommandBlock, ExecutedCommandBlock
+from lewm_go2_control.srv import SetGo2Mode
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,8 @@ class CommandBlockAdapter(Node):
         self.declare_parameter("command_topic", "/lewm/go2/command_block")
         self.declare_parameter("executed_topic", "/lewm/go2/executed_command_block")
         self.declare_parameter("cmd_vel_topic", "/cmd_vel")
+        self.declare_parameter("set_mode_service", "/lewm/go2/set_mode")
+        self.declare_parameter("mode_service_timeout_s", 0.5)
         self.declare_parameter("publish_period_s", 0.02)
         self.declare_parameter("publish_stop_after_block", True)
         self.declare_parameter("allow_untrainable_primitives", False)
@@ -75,6 +78,9 @@ class CommandBlockAdapter(Node):
         )
         self._executed_pub = self.create_publisher(
             ExecutedCommandBlock, str(self.get_parameter("executed_topic").value), 10
+        )
+        self._set_mode_client = self.create_client(
+            SetGo2Mode, str(self.get_parameter("set_mode_service").value)
         )
         self._command_sub = self.create_subscription(
             CommandBlock,
@@ -107,11 +113,16 @@ class CommandBlockAdapter(Node):
             )
 
         try:
-            requested = self._requested_commands(msg)
+            primitive = self._lookup_primitive(msg)
+            mode_event = self._mode_event_name(msg, primitive)
+            requested = self._requested_commands(msg, primitive)
             executed, clipped = self._apply_safety_limits(requested)
             command_dt_s = self._command_dt(msg)
             controller_mode = "cmd_vel"
             safety_overridden = False
+            if mode_event:
+                self._dispatch_mode_event(mode_event, msg, primitive)
+                controller_mode = f"mode_event:{mode_event}"
         except ValueError as exc:
             self.get_logger().error(f"Rejecting CommandBlock {msg.sequence_id}: {exc}")
             requested = []
@@ -158,12 +169,11 @@ class CommandBlockAdapter(Node):
             f"steps={len(executed)} clipped={clipped}"
         )
 
-    def _requested_commands(self, msg: CommandBlock) -> list[VelocityCommand]:
-        primitive = self._lookup_primitive(msg)
+    def _requested_commands(
+        self, msg: CommandBlock, primitive: dict[str, Any] | None
+    ) -> list[VelocityCommand]:
         if primitive is not None and primitive.get("type") == "mode_event":
-            raise ValueError(
-                f"mode_event primitive '{msg.primitive_name}' is not implemented yet"
-            )
+            return [VelocityCommand(0.0, 0.0, 0.0)] * self._block_size(msg)
 
         block_size = self._block_size(msg)
         vx_values = list(msg.vx_body_mps)
@@ -216,6 +226,61 @@ class CommandBlockAdapter(Node):
             )
 
         return primitive
+
+    def _mode_event_name(
+        self, msg: CommandBlock, primitive: dict[str, Any] | None
+    ) -> str:
+        if primitive is None or primitive.get("type") != "mode_event":
+            return ""
+        event_name = str(primitive.get("event_name") or msg.event_name).strip()
+        if not event_name:
+            raise ValueError(f"mode_event primitive '{msg.primitive_name}' has no event_name")
+        event_allowed = bool(
+            primitive.get(
+                "event_allowed_in_training",
+                self._registry.get("defaults", {}).get(
+                    "event_allowed_in_training", False
+                ),
+            )
+        )
+        if not event_allowed and not self._allow_untrainable:
+            raise ValueError(
+                f"mode_event primitive '{msg.primitive_name}' is not allowed in training"
+            )
+        return event_name
+
+    def _dispatch_mode_event(
+        self, event_name: str, msg: CommandBlock, primitive: dict[str, Any] | None
+    ) -> None:
+        timeout_s = float(self.get_parameter("mode_service_timeout_s").value)
+        if not self._set_mode_client.service_is_ready():
+            if not self._set_mode_client.wait_for_service(timeout_sec=timeout_s):
+                raise ValueError(
+                    f"set_mode service is unavailable for mode_event '{event_name}'"
+                )
+
+        request = SetGo2Mode.Request()
+        request.mode = event_name
+        request.gait_name = ""
+        request.allow_dynamic_event = bool(
+            msg.event_allowed_in_training
+            or (primitive or {}).get("event_allowed_in_training", False)
+        )
+        future = self._set_mode_client.call_async(request)
+        future.add_done_callback(
+            lambda result: self._log_mode_event_result(event_name, result)
+        )
+
+    def _log_mode_event_result(self, event_name: str, future: Any) -> None:
+        try:
+            response = future.result()
+        except Exception as exc:  # pragma: no cover - defensive ROS callback logging.
+            self.get_logger().error(f"mode_event '{event_name}' service call failed: {exc}")
+            return
+        if not response.success:
+            self.get_logger().error(
+                f"mode_event '{event_name}' was rejected: {response.message}"
+            )
 
     def _block_size(self, msg: CommandBlock) -> int:
         block_size = int(msg.block_size) if msg.block_size else self._default_block_size

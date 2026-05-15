@@ -55,6 +55,8 @@ colcon build --symlink-install \
     champ_base \
     unitree_go2_description \
     unitree_go2_sim \
+    lewm_worlds \
+    lewm_genesis \
     lewm_go2_bringup \
     lewm_go2_control \
   "$@"

@@ -1,0 +1,412 @@
+#!/usr/bin/env python3
+"""Run live ROS graph feature checks for the LeWM Go2 simulator contract."""
+
+from __future__ import annotations
+
+import json
+import threading
+import time
+from pathlib import Path
+from typing import Any
+
+import rclpy
+import yaml
+from ament_index_python.packages import get_package_share_directory
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.node import Node
+from rosgraph_msgs.msg import Clock
+from sensor_msgs.msg import CameraInfo, Image, Imu, JointState
+from tf2_msgs.msg import TFMessage
+
+from lewm_go2_control.msg import (
+    BaseState,
+    CommandBlock,
+    ExecutedCommandBlock,
+    FootContacts,
+    Go2ModeState,
+    ResetEvent,
+)
+from lewm_go2_control.srv import ResetEpisode, RunFeatureCheck, SetGo2Mode, SetPolicy
+
+
+class FeatureCheckRunner(Node):
+    def __init__(self) -> None:
+        super().__init__("lewm_go2_feature_check_runner")
+
+        self.declare_parameter("feature_check_service", "/lewm/go2/run_feature_check")
+        self.declare_parameter("command_topic", "/lewm/go2/command_block")
+        self.declare_parameter("reset_service", "/lewm/go2/reset")
+        self.declare_parameter("set_mode_service", "/lewm/go2/set_mode")
+        self.declare_parameter("set_policy_service", "/lewm/go2/set_policy")
+        default_registry = (
+            Path(get_package_share_directory("lewm_go2_control"))
+            / "config"
+            / "go2_primitive_registry.yaml"
+        )
+        self.declare_parameter("primitive_registry_path", str(default_registry))
+        self.declare_parameter("wait_timeout_s", 5.0)
+        self.declare_parameter("command_dt_s", 0.1)
+
+        self._group = ReentrantCallbackGroup()
+        self._lock = threading.Lock()
+        self._last_seen: dict[str, float] = {}
+        self._last_message: dict[str, Any] = {}
+        self._executed_sequences: set[int] = set()
+        self._reset_events: list[int] = []
+
+        self._command_pub = self.create_publisher(
+            CommandBlock, str(self.get_parameter("command_topic").value), 10
+        )
+        self._reset_client = self.create_client(
+            ResetEpisode,
+            str(self.get_parameter("reset_service").value),
+            callback_group=self._group,
+        )
+        self._set_mode_client = self.create_client(
+            SetGo2Mode,
+            str(self.get_parameter("set_mode_service").value),
+            callback_group=self._group,
+        )
+        self._set_policy_client = self.create_client(
+            SetPolicy,
+            str(self.get_parameter("set_policy_service").value),
+            callback_group=self._group,
+        )
+
+        self._subscribe("/clock", Clock)
+        self._subscribe("/tf", TFMessage)
+        self._subscribe("/joint_states", JointState)
+        self._subscribe("/imu/data", Imu)
+        self._subscribe("/odom", Odometry)
+        self._subscribe("/rgb_image", Image)
+        self._subscribe("/cmd_vel", Twist)
+        self._subscribe("/lewm/go2/base_state", BaseState)
+        self._subscribe("/lewm/go2/camera_info", CameraInfo)
+        self._subscribe("/lewm/go2/foot_contacts", FootContacts)
+        self._subscribe("/lewm/go2/mode", Go2ModeState)
+        self._subscribe("/lewm/go2/reset_event", ResetEvent)
+        self._subscribe("/lewm/go2/executed_command_block", ExecutedCommandBlock)
+
+        self._service = self.create_service(
+            RunFeatureCheck,
+            str(self.get_parameter("feature_check_service").value),
+            self._on_run_feature_check,
+            callback_group=self._group,
+        )
+
+        self.get_logger().info(
+            f"Feature check runner ready: "
+            f"{self.get_parameter('feature_check_service').value}"
+        )
+
+    def _subscribe(self, topic: str, message_type: Any) -> None:
+        self.create_subscription(
+            message_type,
+            topic,
+            lambda msg, topic=topic: self._remember(topic, msg),
+            10,
+            callback_group=self._group,
+        )
+
+    def _remember(self, topic: str, msg: Any) -> None:
+        with self._lock:
+            self._last_seen[topic] = time.monotonic()
+            self._last_message[topic] = msg
+            if isinstance(msg, ExecutedCommandBlock):
+                self._executed_sequences.add(int(msg.sequence_id))
+            elif isinstance(msg, ResetEvent):
+                self._reset_events.append(int(msg.reset_count))
+
+    def _on_run_feature_check(
+        self, request: RunFeatureCheck.Request, response: RunFeatureCheck.Response
+    ) -> RunFeatureCheck.Response:
+        check_name = request.check_name.strip().lower() or "all"
+        report: dict[str, Any] = {
+            "check_name": check_name,
+            "include_optional": bool(request.include_optional),
+            "checks": {},
+        }
+
+        if check_name in {"all", "topics"}:
+            report["checks"]["topics"] = self._check_topics(request.include_optional)
+        if check_name in {"all", "messages"}:
+            report["checks"]["messages"] = self._check_messages()
+        if check_name in {"all", "mode_services", "services"}:
+            report["checks"]["mode_services"] = self._check_mode_services()
+        if check_name in {"all", "primitive_registry", "primitives"}:
+            report["checks"]["primitive_registry"] = self._check_primitive_registry()
+        if check_name in {"all", "command_round_trip", "command"}:
+            report["checks"]["command_round_trip"] = self._check_command_round_trip()
+        if check_name in {"all", "reset", "reset_bookkeeping"}:
+            report["checks"]["reset_bookkeeping"] = self._check_reset_bookkeeping()
+        if not report["checks"]:
+            report["checks"]["error"] = {
+                "success": False,
+                "message": f"unknown feature check '{request.check_name}'",
+            }
+
+        success = all(
+            bool(check.get("success", False)) for check in report["checks"].values()
+        )
+        report["success"] = success
+        response.success = success
+        response.report_json = json.dumps(report, sort_keys=True)
+        response.message = "feature check passed" if success else "feature check failed"
+        return response
+
+    def _check_topics(self, include_optional: bool) -> dict[str, Any]:
+        required = [
+            "/clock",
+            "/tf",
+            "/joint_states",
+            "/imu/data",
+            "/odom",
+            "/rgb_image",
+            "/cmd_vel",
+            "/lewm/go2/command_block",
+            "/lewm/go2/executed_command_block",
+            "/lewm/go2/base_state",
+            "/lewm/go2/camera_info",
+            "/lewm/go2/foot_contacts",
+            "/lewm/go2/mode",
+            "/lewm/go2/reset_event",
+        ]
+        optional = [
+            "/d455/camera_info",
+            "/d455/depth_image",
+            "/d455/image",
+            "/d455/points",
+            "/velodyne_points/points",
+        ]
+        present = {name for name, _types in self.get_topic_names_and_types()}
+        missing = [topic for topic in required if topic not in present]
+        optional_missing = [topic for topic in optional if topic not in present]
+        result = {
+            "success": not missing,
+            "missing": missing,
+            "present_count": len(present),
+        }
+        if include_optional:
+            result["optional_missing"] = optional_missing
+        return result
+
+    def _check_messages(self) -> dict[str, Any]:
+        required = [
+            "/clock",
+            "/tf",
+            "/joint_states",
+            "/imu/data",
+            "/odom",
+            "/rgb_image",
+            "/lewm/go2/base_state",
+            "/lewm/go2/camera_info",
+            "/lewm/go2/foot_contacts",
+            "/lewm/go2/mode",
+        ]
+        timeout_s = float(self.get_parameter("wait_timeout_s").value)
+        self._wait_until(lambda: self._seen_all(required), timeout_s)
+        with self._lock:
+            missing = [topic for topic in required if topic not in self._last_seen]
+            diagnostics = self._message_diagnostics()
+        return {
+            "success": not missing and not diagnostics["errors"],
+            "missing": missing,
+            "diagnostics": diagnostics,
+        }
+
+    def _check_mode_services(self) -> dict[str, Any]:
+        timeout_s = float(self.get_parameter("wait_timeout_s").value)
+        if not self._set_policy_client.wait_for_service(timeout_sec=timeout_s):
+            return {"success": False, "message": "set_policy service unavailable"}
+        if not self._set_mode_client.wait_for_service(timeout_sec=timeout_s):
+            return {"success": False, "message": "set_mode service unavailable"}
+
+        policy_request = SetPolicy.Request()
+        policy_request.backend_id = "champ_cmd_vel"
+        policy_response = self._wait_for_future(
+            self._set_policy_client.call_async(policy_request), timeout_s
+        )
+        if policy_response is None or not policy_response.success:
+            return {
+                "success": False,
+                "message": getattr(policy_response, "message", "set_policy timed out"),
+            }
+
+        mode_request = SetGo2Mode.Request()
+        mode_request.mode = "hold"
+        mode_response = self._wait_for_future(
+            self._set_mode_client.call_async(mode_request), timeout_s
+        )
+        return {
+            "success": bool(mode_response and mode_response.success),
+            "active_mode": getattr(mode_response, "active_mode", ""),
+            "message": getattr(mode_response, "message", "set_mode timed out"),
+        }
+
+    def _check_primitive_registry(self) -> dict[str, Any]:
+        path = Path(str(self.get_parameter("primitive_registry_path").value))
+        if not path.is_file():
+            return {"success": False, "message": f"registry not found: {path}"}
+        with path.open("r", encoding="utf-8") as stream:
+            registry = yaml.safe_load(stream) or {}
+
+        primitives = registry.get("primitives", {})
+        if not isinstance(primitives, dict):
+            return {"success": False, "message": "registry.primitives must be a mapping"}
+
+        trainable_commands: dict[tuple[float, float, float], str] = {}
+        duplicate_commands: list[dict[str, str]] = []
+        unsupported_events: list[str] = []
+        supported_mode_events = {"recovery_stand"}
+
+        for name, spec in primitives.items():
+            if not bool(spec.get("train", registry.get("defaults", {}).get("train", True))):
+                continue
+            primitive_type = spec.get("type", "velocity_block")
+            if primitive_type == "velocity_block":
+                command = spec.get("command", {})
+                key = (
+                    float(command.get("vx_body_mps", 0.0)),
+                    float(command.get("vy_body_mps", 0.0)),
+                    float(command.get("yaw_rate_radps", 0.0)),
+                )
+                if key in trainable_commands:
+                    duplicate_commands.append(
+                        {"first": trainable_commands[key], "duplicate": str(name)}
+                    )
+                trainable_commands[key] = str(name)
+            elif primitive_type == "mode_event":
+                event_name = str(spec.get("event_name", name))
+                if event_name not in supported_mode_events:
+                    unsupported_events.append(str(name))
+
+        return {
+            "success": not duplicate_commands and not unsupported_events,
+            "trainable_velocity_count": len(trainable_commands),
+            "duplicate_commands": duplicate_commands,
+            "unsupported_trainable_events": unsupported_events,
+        }
+
+    def _check_command_round_trip(self) -> dict[str, Any]:
+        timeout_s = float(self.get_parameter("wait_timeout_s").value)
+        sequence_id = int(time.time() * 1000.0) & 0xFFFFFFFF
+
+        msg = CommandBlock()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.sequence_id = sequence_id
+        msg.block_size = 1
+        msg.command_dt_s = float(self.get_parameter("command_dt_s").value)
+        msg.primitive_name = "hold"
+        self._command_pub.publish(msg)
+
+        success = self._wait_until(
+            lambda: self._has_executed_sequence(sequence_id), timeout_s
+        )
+        return {"success": success, "sequence_id": sequence_id}
+
+    def _check_reset_bookkeeping(self) -> dict[str, Any]:
+        timeout_s = float(self.get_parameter("wait_timeout_s").value)
+        if not self._reset_client.wait_for_service(timeout_sec=timeout_s):
+            return {"success": False, "message": "reset service unavailable"}
+
+        request = ResetEpisode.Request()
+        request.scene_id = 0
+        request.reason = "feature_check"
+        request.use_spawn_pose = False
+        before_count = self._latest_reset_count()
+        response = self._wait_for_future(self._reset_client.call_async(request), timeout_s)
+        if response is None:
+            return {"success": False, "message": "reset service timed out"}
+
+        self._wait_until(
+            lambda: self._latest_reset_count() > before_count,
+            timeout_s,
+        )
+        after_count = self._latest_reset_count()
+        return {
+            "success": bool(response.success and after_count > before_count),
+            "episode_id": int(response.episode_id),
+            "reset_count": int(response.reset_count),
+            "observed_reset_event_count": after_count,
+            "message": response.message,
+        }
+
+    def _message_diagnostics(self) -> dict[str, Any]:
+        errors: list[str] = []
+        joint_state = self._last_message.get("/joint_states")
+        if isinstance(joint_state, JointState) and len(joint_state.name) < 12:
+            errors.append(f"joint_states has {len(joint_state.name)} joints, expected >= 12")
+
+        camera_info = self._last_message.get("/lewm/go2/camera_info")
+        if isinstance(camera_info, CameraInfo):
+            if camera_info.width <= 0 or camera_info.height <= 0:
+                errors.append("camera_info has non-positive image dimensions")
+            if len(camera_info.k) != 9 or camera_info.k[0] <= 0.0 or camera_info.k[4] <= 0.0:
+                errors.append("camera_info has invalid focal lengths")
+
+        contacts = self._last_message.get("/lewm/go2/foot_contacts")
+        if isinstance(contacts, FootContacts):
+            if not any(
+                [
+                    contacts.fl_contact,
+                    contacts.fr_contact,
+                    contacts.rl_contact,
+                    contacts.rr_contact,
+                ]
+            ):
+                errors.append("foot_contacts reports all feet false on latest sample")
+
+        return {"errors": errors}
+
+    def _seen_all(self, topics: list[str]) -> bool:
+        with self._lock:
+            return all(topic in self._last_seen for topic in topics)
+
+    def _has_executed_sequence(self, sequence_id: int) -> bool:
+        with self._lock:
+            return sequence_id in self._executed_sequences
+
+    def _latest_reset_count(self) -> int:
+        with self._lock:
+            return self._reset_events[-1] if self._reset_events else -1
+
+    def _wait_until(self, predicate: Any, timeout_s: float) -> bool:
+        deadline = time.monotonic() + timeout_s
+        while time.monotonic() < deadline:
+            if predicate():
+                return True
+            time.sleep(0.02)
+        return predicate()
+
+    @staticmethod
+    def _wait_for_future(future: Any, timeout_s: float) -> Any:
+        deadline = time.monotonic() + timeout_s
+        while time.monotonic() < deadline:
+            if future.done():
+                return future.result()
+            time.sleep(0.02)
+        return future.result() if future.done() else None
+
+
+def main() -> None:
+    rclpy.init()
+    node = FeatureCheckRunner()
+    executor = MultiThreadedExecutor(num_threads=4)
+    executor.add_node(node)
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        executor.remove_node(node)
+        node.destroy_node()
+        executor.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

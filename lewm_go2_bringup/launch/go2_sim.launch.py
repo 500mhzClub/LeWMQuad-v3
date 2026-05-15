@@ -86,7 +86,17 @@ def generate_launch_description():
     declare_lewm_foot_contacts = DeclareLaunchArgument(
         "lewm_foot_contacts",
         default_value="true",
-        description="Launch the LeWM Gazebo foot-contact aggregator",
+        description="Launch the LeWM CHAMP foot-contact republisher",
+    )
+    declare_lewm_mode = DeclareLaunchArgument(
+        "lewm_mode",
+        default_value="true",
+        description="Launch the LeWM Go2 mode and policy service node",
+    )
+    declare_lewm_feature_check = DeclareLaunchArgument(
+        "lewm_feature_check",
+        default_value="true",
+        description="Launch the LeWM feature-check service node",
     )
     declare_world_init_x = DeclareLaunchArgument("world_init_x", default_value="0.0")
     declare_world_init_y = DeclareLaunchArgument("world_init_y", default_value="0.0")
@@ -340,6 +350,24 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
         condition=IfCondition(LaunchConfiguration("lewm_foot_contacts")),
     )
+
+    lewm_mode_manager = Node(
+        package="lewm_go2_control",
+        executable="mode_manager",
+        name="lewm_go2_mode_manager",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+        condition=IfCondition(LaunchConfiguration("lewm_mode")),
+    )
+
+    lewm_feature_check_runner = Node(
+        package="lewm_go2_control",
+        executable="feature_check_runner",
+        name="lewm_go2_feature_check_runner",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+        condition=IfCondition(LaunchConfiguration("lewm_feature_check")),
+    )
     
     # Use spawner nodes directly to handle the configuration step. (load → configure → activate)
     controller_spawner_js = TimerAction(
@@ -400,6 +428,8 @@ def generate_launch_description():
             declare_lewm_camera_info,
             declare_lewm_reset,
             declare_lewm_foot_contacts,
+            declare_lewm_mode,
+            declare_lewm_feature_check,
             declare_world_init_x,
             declare_world_init_y,
             declare_world_init_z,
@@ -417,6 +447,8 @@ def generate_launch_description():
             lewm_camera_info_publisher,
             lewm_reset_manager,
             lewm_foot_contacts_publisher,
+            lewm_mode_manager,
+            lewm_feature_check_runner,
 
             # CHAMP controller nodes
             quadruped_controller_node,

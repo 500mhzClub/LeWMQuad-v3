@@ -116,14 +116,18 @@ Before data generation:
 - Confirm upstream license with the maintainer or replace with a clearly
   licensed source.
 - Build under the target stack: Ubuntu 24.04, ROS 2 Jazzy, Gazebo Harmonic.
-- Verify `xacro` expansion of `unitree_go2_robot.xacro`.
-- Verify launch of `lewm_go2_bringup go2_sim.launch.py`.
+  Current branch build passes the scoped 9-package target.
+- Verify `xacro` expansion of `unitree_go2_robot.xacro`. Current branch launch
+  expands the upstream Xacro through `robot_state_publisher` and CHAMP.
+- Verify launch of `lewm_go2_bringup go2_sim.launch.py`. Current branch
+  launches headless Gazebo, LeWM adapter nodes, and ROS 2 controllers.
 - Verify `/cmd_vel` produces distinct forward, backward, yaw, and arc motion.
 - Verify `/rgb_image` camera pose, FOV, resolution, near/far plane, frame
   alignment, and camera-info/intrinsics source against the LeWM camera manifest.
-- Verify foot-contact topic quality after enabling it; if CHAMP contacts are
-  synthetic or unavailable, determine whether Gazebo contact sensors are needed
-  for collision/recovery labels.
-- Verify reset support. Upstream launch does not provide LeWM reset/episode
-  semantics; we still need our reset manager.
+- Verify foot-contact topic quality. Current branch uses CHAMP kinematic
+  gait-phase contacts; they are suitable for stance/swing gating but not force
+  or collision labels.
+- Verify reset support. Current branch provides LeWM reset bookkeeping,
+  `/lewm/episode_info`, and optional Gazebo `set_pose` teleport; physics-state
+  velocity zeroing remains a future improvement.
 - Verify bag capture and conversion into `raw_rollout`.

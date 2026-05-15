@@ -70,9 +70,10 @@ ros2 bag record -s mcap -o go2_bringup_smoke \
   /cmd_vel
 ```
 
-After the LeWM adapter is running, add `/lewm/go2/foot_contacts`,
+The LeWM launch now adds `/lewm/go2/foot_contacts`,
 `/lewm/go2/command_block`, `/lewm/go2/executed_command_block`,
-`/lewm/go2/base_state`, `/lewm/go2/reset_event`, and `/lewm/episode_info`.
+`/lewm/go2/base_state`, `/lewm/go2/reset_event`, `/lewm/episode_info`,
+`/lewm/go2/mode`, and the set-mode, set-policy, and feature-check services.
 
 ## Before Any Training Data
 
@@ -84,8 +85,8 @@ Build and audit the selected upstream stack. Then update:
 - upstream CHAMP gait and control config paths
 - LeWM camera mount override, if different from upstream
 
-Then implement only the LeWM-specific adapter nodes behind the
-`lewm_go2_control` interfaces:
+The first LeWM-specific adapter nodes behind the `lewm_go2_control`
+interfaces are implemented:
 
 - command block adapter
 - `/cmd_vel` bridge to upstream CHAMP controller
@@ -93,7 +94,12 @@ Then implement only the LeWM-specific adapter nodes behind the
 - base-state publisher
 - foot-contact publisher
 - reset manager
+- mode/policy service node
 - feature-check runner
+
+Remaining pre-data work is production-scoped rather than interface-scoped:
+license clarification, physical primitive-displacement histograms, smoke-bag
+conversion, production scene families, and Gazebo/Genesis parity.
 
 The first accepted bag must show consistent `/clock`, `/tf`, `/joint_states`,
 IMU, camera, reset events, requested command blocks, and executed command

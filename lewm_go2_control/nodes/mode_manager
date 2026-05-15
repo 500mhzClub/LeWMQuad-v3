@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""Provide the LeWM Go2 mode and policy services for the CHAMP backend."""
+
+from __future__ import annotations
+
+import rclpy
+from geometry_msgs.msg import Twist
+from rclpy.node import Node
+
+from lewm_go2_control.msg import Go2ModeState
+from lewm_go2_control.srv import SetGo2Mode, SetPolicy
+
+
+class ModeManager(Node):
+    _ALIASES = {
+        "": "stand",
+        "idle": "stand",
+        "cmd_vel": "walk",
+        "move": "walk",
+        "moving": "walk",
+        "recover": "recovery_stand",
+        "recovery": "recovery_stand",
+    }
+    _SUPPORTED_MODES = {"stand", "hold", "stop", "walk", "recovery_stand"}
+    _UNSUPPORTED_DYNAMIC_EVENTS = {"jump", "front_jump", "sit", "rise", "body_pose"}
+    _SUPPORTED_BACKENDS = {
+        "",
+        "champ_cmd_vel",
+        "upstream_champ_cmd_vel_controller",
+    }
+
+    def __init__(self) -> None:
+        super().__init__("lewm_go2_mode_manager")
+
+        self.declare_parameter("mode_topic", "/lewm/go2/mode")
+        self.declare_parameter("set_mode_service", "/lewm/go2/set_mode")
+        self.declare_parameter("set_policy_service", "/lewm/go2/set_policy")
+        self.declare_parameter("cmd_vel_topic", "/cmd_vel")
+        self.declare_parameter("publish_period_s", 0.5)
+        self.declare_parameter("default_backend_id", "champ_cmd_vel")
+        self.declare_parameter("default_gait_name", "champ_default")
+
+        self._backend_id = str(self.get_parameter("default_backend_id").value)
+        self._gait_name = str(self.get_parameter("default_gait_name").value)
+        self._mode = "stand"
+        self._status_text = "CHAMP /cmd_vel backend ready"
+
+        self._mode_pub = self.create_publisher(
+            Go2ModeState, str(self.get_parameter("mode_topic").value), 10
+        )
+        self._cmd_vel_pub = self.create_publisher(
+            Twist, str(self.get_parameter("cmd_vel_topic").value), 10
+        )
+        self._mode_service = self.create_service(
+            SetGo2Mode,
+            str(self.get_parameter("set_mode_service").value),
+            self._on_set_mode,
+        )
+        self._policy_service = self.create_service(
+            SetPolicy,
+            str(self.get_parameter("set_policy_service").value),
+            self._on_set_policy,
+        )
+        self._timer = self.create_timer(
+            float(self.get_parameter("publish_period_s").value), self._publish_state
+        )
+
+        self._publish_state()
+        self.get_logger().info(
+            "Mode manager ready: "
+            f"{self.get_parameter('set_mode_service').value}, "
+            f"{self.get_parameter('set_policy_service').value}"
+        )
+
+    def _on_set_mode(
+        self, request: SetGo2Mode.Request, response: SetGo2Mode.Response
+    ) -> SetGo2Mode.Response:
+        requested = self._normalize_mode(request.mode)
+        if requested in self._UNSUPPORTED_DYNAMIC_EVENTS:
+            response.success = False
+            response.active_mode = self._mode
+            response.message = (
+                f"mode '{request.mode}' is not supported by the CHAMP sim backend"
+            )
+            return response
+
+        if requested not in self._SUPPORTED_MODES:
+            response.success = False
+            response.active_mode = self._mode
+            response.message = f"unknown Go2 mode '{request.mode}'"
+            return response
+
+        if request.gait_name:
+            self._gait_name = request.gait_name
+
+        self._mode = requested
+        if requested in {"stand", "hold", "stop", "recovery_stand"}:
+            self._publish_zero_twist()
+
+        if requested == "recovery_stand":
+            self._status_text = (
+                "recovery_stand mapped to a zero-velocity CHAMP stance; "
+                "no sport-mode fall recovery primitive is available in this backend"
+            )
+        else:
+            self._status_text = f"mode set to {requested}"
+
+        self._publish_state()
+        response.success = True
+        response.active_mode = self._mode
+        response.message = self._status_text
+        return response
+
+    def _on_set_policy(
+        self, request: SetPolicy.Request, response: SetPolicy.Response
+    ) -> SetPolicy.Response:
+        backend_id = request.backend_id.strip() or "champ_cmd_vel"
+        if backend_id not in self._SUPPORTED_BACKENDS:
+            response.success = False
+            response.active_backend_id = self._backend_id
+            response.message = (
+                f"backend '{request.backend_id}' is not supported by this node"
+            )
+            return response
+
+        self._backend_id = backend_id
+        artifact_note = ""
+        if request.artifact_path or request.artifact_sha256:
+            artifact_note = (
+                "; artifact metadata recorded for audit only because CHAMP is "
+                "configured through checked-in gait/controller YAML"
+            )
+        self._status_text = f"policy backend set to {self._backend_id}{artifact_note}"
+        self._publish_state()
+
+        response.success = True
+        response.active_backend_id = self._backend_id
+        response.message = self._status_text
+        return response
+
+    def _normalize_mode(self, mode: str) -> str:
+        normalized = mode.strip().lower().replace("-", "_")
+        return self._ALIASES.get(normalized, normalized)
+
+    def _publish_zero_twist(self) -> None:
+        self._cmd_vel_pub.publish(Twist())
+
+    def _publish_state(self) -> None:
+        msg = Go2ModeState()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.backend_id = self._backend_id
+        msg.controller_mode = self._mode
+        msg.gait_name = self._gait_name
+        msg.standing = self._mode in {"stand", "hold", "stop", "recovery_stand"}
+        msg.moving = self._mode == "walk"
+        msg.recovering = self._mode == "recovery_stand"
+        msg.fallen = False
+        msg.safety_stop = self._mode == "stop"
+        msg.status_text = self._status_text
+        self._mode_pub.publish(msg)
+
+
+def main() -> None:
+    rclpy.init()
+    node = ModeManager()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

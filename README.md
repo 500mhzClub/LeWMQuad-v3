@@ -22,6 +22,10 @@ Kilted or another distro by default.
 - `third_party/unitree_go2_ros2`: selected upstream Go2 simulator, description,
   Gazebo launch, and CHAMP controller packages.
 - `lewm_go2_control`: LeWM-specific ROS 2 message and service interfaces.
+- `lewm_worlds`: canonical scene manifest model, labels, and Gazebo/Genesis
+  smoke exporters.
+- `lewm_genesis`: Genesis scene-building, replay scheduling, batch-job, and
+  parity-check scaffolding.
 - `config/go2_platform_manifest.yaml`: pinned platform, camera, controller, and
   no-data gates.
 - `config/go2_primitive_registry.yaml`: initial command primitive bank.
@@ -104,6 +108,8 @@ colcon build --symlink-install \
     champ_base \
     unitree_go2_description \
     unitree_go2_sim \
+    lewm_worlds \
+    lewm_genesis \
     lewm_go2_bringup \
     lewm_go2_control
 ```
@@ -125,7 +131,8 @@ ros2 launch lewm_go2_bringup go2_sim.launch.py rviz:=false gui:=false
 
 It also starts the first-pass LeWM command adapter, the base state publisher,
 the manifest-driven CameraInfo publisher, the episode-bookkeeping reset
-manager, and the Gazebo foot-contact aggregator by default:
+manager, the CHAMP foot-contact republisher, the mode/policy service node,
+and the feature-check service node by default:
 
 ```text
 /lewm/go2/command_block -> /cmd_vel
@@ -133,7 +140,11 @@ manager, and the Gazebo foot-contact aggregator by default:
 /odom -> /lewm/go2/base_state
 /rgb_image -> /lewm/go2/camera_info
 /lewm/go2/reset (service) -> /lewm/go2/reset_event
+/lewm/episode_info
 /foot_contacts (CHAMP gait phase) -> /lewm/go2/foot_contacts
+/lewm/go2/set_mode (service) -> /lewm/go2/mode
+/lewm/go2/set_policy (service) -> /lewm/go2/mode
+/lewm/go2/run_feature_check (service)
 ```
 
 Disable them only when debugging the stock upstream stack:
@@ -144,6 +155,8 @@ scripts/launch_go2_sim.sh lewm_base_state:=false
 scripts/launch_go2_sim.sh lewm_camera_info:=false
 scripts/launch_go2_sim.sh lewm_reset:=false
 scripts/launch_go2_sim.sh lewm_foot_contacts:=false
+scripts/launch_go2_sim.sh lewm_mode:=false
+scripts/launch_go2_sim.sh lewm_feature_check:=false
 ```
 
 To pass through launch arguments:
@@ -206,6 +219,25 @@ The adapter expands named velocity primitives from
 `config/go2_platform_manifest.yaml`, publishes `/cmd_vel`, then records the
 requested and executed command arrays for later audits.
 
+Mode-event primitives such as `recovery_stand` dispatch through
+`/lewm/go2/set_mode` and publish a zero-velocity block. Under the current
+CHAMP backend this is a conservative stance/stop mapping, not a Unitree
+sport-mode fall-recovery behavior.
+
+LeWM mode and policy service smoke tests:
+
+```bash
+scripts/ros2_go2.sh ros2 service call /lewm/go2/set_mode \
+  lewm_go2_control/srv/SetGo2Mode \
+  "{mode: 'hold'}"
+
+scripts/ros2_go2.sh ros2 service call /lewm/go2/set_policy \
+  lewm_go2_control/srv/SetPolicy \
+  "{backend_id: 'champ_cmd_vel'}"
+
+scripts/ros2_go2.sh ros2 topic echo /lewm/go2/mode --once
+```
+
 LeWM base state publisher smoke test:
 
 ```bash
@@ -242,18 +274,20 @@ scripts/ros2_go2.sh ros2 service call /lewm/go2/reset \
 ```
 
 The reset manager owns the monotonic `episode_id` and `reset_count` counters
-used to split training windows on episode boundaries. When `use_spawn_pose`
-is true it also shells out to `gz service -s /world/default/set_pose` to
-teleport the Go2 model in Gazebo; the service response reports whether the
-teleport succeeded, and the published `ResetEvent` carries the requested
-pose for downstream auditing. Set `enable_teleport:=false` on the node
-parameters to disable the teleport path while keeping the bookkeeping.
+used to split training windows on episode boundaries and publishes
+`/lewm/episode_info` after each reset. When `use_spawn_pose` is true it also
+sends zero `/cmd_vel` commands around a `gz service -s /world/default/set_pose`
+teleport. The service response reports whether the teleport succeeded, and the
+published `ResetEvent` carries the requested pose for downstream auditing. Set
+`enable_teleport:=false` on the node parameters to disable the teleport path
+while keeping the bookkeeping.
 
 Limitations to know about:
 
 - The teleport sets the entity pose only; linear and angular velocities are
-  not explicitly zeroed, and the joint trajectory in progress is not
-  paused. CHAMP's kinematic odometry never tracks a teleport (it is pure
+  not zeroed through a physics-state API, and the joint trajectory in progress
+  is not paused. The reset manager now sends zero velocity before and after the
+  teleport, but CHAMP's kinematic odometry never tracks a teleport (it is pure
   dead reckoning), and a teleport that lands during a swing phase or with
   a high drop will frequently topple the robot. Cross-reset training
   windows are filtered out by the dataset loader, so the controller
@@ -289,6 +323,20 @@ the plugin alone was harmless, but together the per-tick contact
 processing was enough to wreck gait stability. The kinematic path here
 has zero physics-side cost and restores the upstream's ~30+ s walking
 endurance.
+
+Feature-check smoke test:
+
+```bash
+scripts/ros2_go2.sh ros2 service call /lewm/go2/run_feature_check \
+  lewm_go2_control/srv/RunFeatureCheck \
+  "{check_name: 'all', include_optional: false}"
+```
+
+The service checks topic presence, live messages, mode/policy services, a
+primitive-registry audit, a `hold` command-block round trip, and reset
+bookkeeping. Use specific `check_name` values such as `topics`, `messages`,
+`mode_services`, `primitive_registry`, `command_round_trip`, or
+`reset_bookkeeping` when isolating failures.
 
 Gazebo GUI smoke test:
 
@@ -357,9 +405,14 @@ ros2 bag record -s mcap -o go2_bringup_smoke \
 - License: the selected upstream repo is technically suitable but has incomplete
   license metadata for `unitree_go2_description` and `unitree_go2_sim`. Use it
   for local evaluation until the license is clarified or replaced.
-- World generation: the upstream world is only the stock bring-up world plus a
-  small set of boxes/cylinders for visual variety. Canonical LeWM scene
-  manifests and Gazebo/Genesis exporters still need implementation.
+- World generation: `lewm_worlds` now provides a deterministic smoke manifest
+  plus Gazebo/Genesis exporters. Production scene-family generators, split
+  management, and large-scale coverage audits still need implementation before
+  dataset generation.
+- Genesis: `lewm_genesis` now has buildable scaffolding for scene construction,
+  replay scheduling, batch jobs, and scalar parity checks. A Genesis runtime,
+  rendered-frame validation, and Gazebo/Genesis parity runs are still required
+  before using Genesis for data.
 - No explicit gait-endurance blocker at the moment: upstream CHAMP +
   bullet-featherstone delivers ~30+ s of sustained `/cmd_vel` walking on
   this workstation, comfortably above the data spec's 16-24 s per-episode
@@ -376,10 +429,14 @@ Resolved on the current branch (kept here as a paper trail; the live state
 lives in the launch and the smoke tests above):
 
 - Camera info: `/lewm/go2/camera_info` is now published from the manifest.
-- Foot contacts: gz contact sensors + the LeWM aggregator publish
+- Foot contacts: CHAMP gait-phase contacts + the LeWM republisher publish
   `/lewm/go2/foot_contacts`.
 - Reset semantics: `/lewm/go2/reset` + `/lewm/go2/reset_event` advance
-  monotonic episode counters and optionally teleport via `gz set_pose`.
+  monotonic episode counters, publish `/lewm/episode_info`, and optionally
+  teleport via `gz set_pose`.
+- Mode/policy/feature services: `/lewm/go2/set_mode`, `/lewm/go2/set_policy`,
+  `/lewm/go2/mode`, and `/lewm/go2/run_feature_check` are implemented for the
+  CHAMP `/cmd_vel` backend.
 
 ## Troubleshooting
 

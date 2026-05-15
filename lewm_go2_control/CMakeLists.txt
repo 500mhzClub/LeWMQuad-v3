@@ -28,6 +28,8 @@ install(
     nodes/camera_info_publisher
     nodes/reset_manager
     nodes/foot_contacts_publisher
+    nodes/mode_manager
+    nodes/feature_check_runner
   DESTINATION lib/${PROJECT_NAME}
 )
 

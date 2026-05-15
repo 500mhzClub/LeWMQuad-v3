@@ -12,12 +12,13 @@ windows are excluded downstream by the dataset loader).
 from __future__ import annotations
 
 import subprocess
+import time
 
 import rclpy
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, Twist
 from rclpy.node import Node
 
-from lewm_go2_control.msg import ResetEvent
+from lewm_go2_control.msg import EpisodeInfo, ResetEvent
 from lewm_go2_control.srv import ResetEpisode
 
 
@@ -27,11 +28,21 @@ class ResetManager(Node):
 
         self.declare_parameter("reset_service", "/lewm/go2/reset")
         self.declare_parameter("reset_event_topic", "/lewm/go2/reset_event")
+        self.declare_parameter("episode_info_topic", "/lewm/episode_info")
+        self.declare_parameter("episode_info_period_s", 1.0)
+        self.declare_parameter("cmd_vel_topic", "/cmd_vel")
         self.declare_parameter("initial_episode_id", 0)
         self.declare_parameter("enable_teleport", True)
+        self.declare_parameter("zero_cmd_before_reset", True)
+        self.declare_parameter("zero_cmd_after_reset", True)
+        self.declare_parameter("zero_cmd_repeats", 3)
+        self.declare_parameter("zero_cmd_period_s", 0.02)
         self.declare_parameter("world_name", "default")
         self.declare_parameter("entity_name", "go2")
         self.declare_parameter("gz_service_timeout_ms", 2000)
+        self.declare_parameter("scene_family", "")
+        self.declare_parameter("split", "")
+        self.declare_parameter("manifest_sha256", "")
 
         self._episode_id = int(self.get_parameter("initial_episode_id").value)
         self._reset_count = 0
@@ -39,15 +50,28 @@ class ResetManager(Node):
         self._world_name = str(self.get_parameter("world_name").value)
         self._entity_name = str(self.get_parameter("entity_name").value)
         self._gz_timeout_ms = int(self.get_parameter("gz_service_timeout_ms").value)
+        self._scene_id = 0
 
         self._event_pub = self.create_publisher(
             ResetEvent, str(self.get_parameter("reset_event_topic").value), 10
+        )
+        self._episode_info_pub = self.create_publisher(
+            EpisodeInfo, str(self.get_parameter("episode_info_topic").value), 10
+        )
+        self._cmd_vel_pub = self.create_publisher(
+            Twist, str(self.get_parameter("cmd_vel_topic").value), 10
         )
         self._service = self.create_service(
             ResetEpisode,
             str(self.get_parameter("reset_service").value),
             self._on_reset,
         )
+        episode_info_period_s = float(self.get_parameter("episode_info_period_s").value)
+        self._episode_info_timer = None
+        if episode_info_period_s > 0.0:
+            self._episode_info_timer = self.create_timer(
+                episode_info_period_s, self._publish_episode_info
+            )
 
         self.get_logger().info(
             "Reset manager ready: service="
@@ -57,18 +81,24 @@ class ResetManager(Node):
             f"enable_teleport={self._enable_teleport}, "
             f"world={self._world_name}, entity={self._entity_name}"
         )
+        self._publish_episode_info()
 
     def _on_reset(
         self, request: ResetEpisode.Request, response: ResetEpisode.Response
     ) -> ResetEpisode.Response:
         self._episode_id += 1
         self._reset_count += 1
+        self._scene_id = int(request.scene_id)
 
         teleport_attempted = bool(request.use_spawn_pose) and self._enable_teleport
         teleport_ok = True
         teleport_message = ""
         if teleport_attempted:
+            if bool(self.get_parameter("zero_cmd_before_reset").value):
+                self._publish_zero_commands()
             teleport_ok, teleport_message = self._teleport(request.spawn_pose_world)
+            if bool(self.get_parameter("zero_cmd_after_reset").value):
+                self._publish_zero_commands()
 
         if request.use_spawn_pose and not self._enable_teleport:
             response_message = (
@@ -102,6 +132,7 @@ class ResetManager(Node):
         event.success = overall_success
         event.spawn_pose_world = request.spawn_pose_world
         self._event_pub.publish(event)
+        self._publish_episode_info()
 
         self.get_logger().info(
             f"reset accepted: scene_id={request.scene_id} "
@@ -110,6 +141,27 @@ class ResetManager(Node):
             f"teleport_attempted={teleport_attempted} teleport_ok={teleport_ok}"
         )
         return response
+
+    def _publish_zero_commands(self) -> None:
+        repeats = max(1, int(self.get_parameter("zero_cmd_repeats").value))
+        period_s = max(0.0, float(self.get_parameter("zero_cmd_period_s").value))
+        zero = Twist()
+        for _ in range(repeats):
+            self._cmd_vel_pub.publish(zero)
+            if period_s:
+                time.sleep(period_s)
+
+    def _publish_episode_info(self) -> None:
+        msg = EpisodeInfo()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.scene_id = self._scene_id
+        msg.episode_id = self._episode_id
+        msg.episode_step = 0
+        msg.reset_count = self._reset_count
+        msg.scene_family = str(self.get_parameter("scene_family").value)
+        msg.split = str(self.get_parameter("split").value)
+        msg.manifest_sha256 = str(self.get_parameter("manifest_sha256").value)
+        self._episode_info_pub.publish(msg)
 
     def _teleport(self, pose: Pose) -> tuple[bool, str]:
         qx = float(pose.orientation.x)

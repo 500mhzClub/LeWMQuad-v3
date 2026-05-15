@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>lewm_genesis</name>
+  <version>0.1.0</version>
+  <description>Genesis rendering and parity scaffolding for LeWMQuad-v3.</description>
+  <maintainer email="maintainer@example.com">LeWMQuad Maintainers</maintainer>
+  <license>Proprietary</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>ament_cmake_python</build_depend>
+
+  <exec_depend>lewm_worlds</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
