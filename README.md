@@ -371,11 +371,16 @@ ros2 bag record -s mcap -o go2_bringup_smoke \
 - World generation: the upstream world is only the stock bring-up world plus a
   small set of boxes/cylinders for visual variety. Canonical LeWM scene
   manifests and Gazebo/Genesis exporters still need implementation.
-- Gait stability under sustained `/cmd_vel`: under `bullet-featherstone`
-  CHAMP walks for short stretches but tends to tip slowly on multi-second
-  drives, and any teleport that lands mid-stride frequently topples the
-  robot. Stand-up recovery and a brief settle window around resets are
-  open follow-ups.
+- Episode-length yield against CHAMP gait endurance: the data spec
+  ([docs/fresh_retrain_data_spec.md](docs/fresh_retrain_data_spec.md))
+  requires 800-1200 raw steps per episode at the manifest's 50 Hz policy,
+  i.e. 16-24 s of stable rollout. Under `bullet-featherstone` CHAMP
+  currently tips after ~6-8 s of sustained `/cmd_vel`, which is short of
+  that minimum. Closing this gap (CHAMP tuning, scripted stand-up, or a
+  swap to a more robust locomotion stack) is a precondition for bulk
+  data generation. Teleport-mid-stride toppling is **not** part of this
+  blocker -- post-reset frames live on the wrong side of the spec's
+  cross-reset filter (section 16) and are discarded before training.
 
 Resolved on the current branch (kept here as a paper trail; the live state
 lives in the launch and the smoke tests above):
