@@ -148,12 +148,18 @@ update can execute on the local ROCm path.
 
 ## Installation Used For The Probe
 
+The reusable form lives in
+`scripts/setup_genesis_rocm_training.sh` (idempotent; safe to re-run).
+
+Manual equivalent:
+
 ```bash
 python3 -m venv --system-site-packages .generated/venvs/genesis_rocm
 .generated/venvs/genesis_rocm/bin/python -m pip install --upgrade pip wheel setuptools
 .generated/venvs/genesis_rocm/bin/python -m pip install \
   torch==2.9.1 torchvision==0.24.1 torchaudio==2.9.1 \
   --index-url https://download.pytorch.org/whl/rocm6.4
+.generated/venvs/genesis_rocm/bin/python -m pip install genesis-world==0.4.6
 .generated/venvs/genesis_rocm/bin/python -m pip install \
   tensordict tensorboard GitPython onnx onnxscript
 .generated/venvs/genesis_rocm/bin/python -m pip install --no-deps \
@@ -162,6 +168,34 @@ python3 -m venv --system-site-packages .generated/venvs/genesis_rocm
 
 The venv uses `--system-site-packages` so it can reuse the already installed
 Genesis package while overriding the Torch stack locally inside `.generated/`.
+
+## Production Tier B Training
+
+`scripts/train_genesis_go2_locomotion.sh` is the production wrapper for the
+upstream Genesis Go2 PPO recipe. It uses the ROCm venv above and calls
+`go2_train.py` with the upstream defaults (`B=4096`, `max_iterations=101`,
+`seed=1`). Override via `LEWM_GO2_NUM_ENVS`, `LEWM_GO2_MAX_ITERS`,
+`LEWM_GO2_SEED`, `LEWM_GO2_EXP_NAME`.
+
+Important: do **not** export `HSA_OVERRIDE_GFX_VERSION` on the Radeon AI Pro
+9700. RDNA4 (`gfx1201`) is natively supported by ROCm; the
+`HSA_OVERRIDE_GFX_VERSION=11.0.0` value documented above is a workaround for
+the laptop iGPU's `gfx1103` only. Setting it on the production GPU will
+silently mistarget the kernels.
+
+Fresh-clone workflow on the production host:
+
+```bash
+git clone <repo-url> LeWMQuad-v3
+cd LeWMQuad-v3
+scripts/setup_genesis_rocm_training.sh                    # one-time
+scripts/check_genesis_go2_locomotion_train_rocm_smoke.sh  # 1 iter wiring
+scripts/train_genesis_go2_locomotion.sh                   # PPO run
+```
+
+Logs and checkpoints land under
+`.generated/upstream_genesis/locomotion/logs/<exp_name>/`. Tail with
+`tensorboard --logdir .generated/upstream_genesis/locomotion/logs`.
 
 ## Caveats
 

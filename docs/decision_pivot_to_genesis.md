@@ -16,10 +16,11 @@ semantics, episode bookkeeping, scene manifest, dataset gates) still apply.
 3. **Lidar is dropped from the v3 corpus contract.** It was already marked
    optional in the bringup plan and absent from the data spec; the pivot makes
    that absence explicit.
-4. **Locomotion starts from the Genesis Go2 quadruped recipe or a compatible
-   open Go2 checkpoint.** The pip package ships assets, not a pretrained Go2
-   policy. Tier B/C (porting an external Go2 RL checkpoint, or training one in
-   Genesis) are escalation paths if the first gait distribution is insufficient.
+4. **Locomotion starts off-the-shelf by porting the `unitree_rl_gym` Go2 PPO
+   checkpoint.** The Genesis pip package ships assets and a training *recipe*,
+   not a pretrained Go2 policy. Tier B (training a Genesis-native policy via
+   the Genesis `go2_train.py` recipe to convergence) is the escalation path if
+   the ported checkpoint's gait distribution under Genesis is insufficient.
 
 ## Why
 
@@ -52,9 +53,11 @@ exposes `gs.vulkan`.
 
 v2 replaced CHAMP-equivalent kinematic control with a frozen PPO actor-critic
 driving `robot.control_dofs_position`. That pattern transfers to Go2. The
-Genesis source repository ships a Go2 quadruped locomotion training recipe, and
-the broader ecosystem (`unitree_rl_gym`, legged_gym, IsaacLab) provides Go2
-checkpoints that can be ported with retuning rather than from-scratch training.
+broader ecosystem (`unitree_rl_gym`, legged_gym, IsaacLab) provides open Go2
+PPO checkpoints that can be ported into a Genesis-compatible policy adapter
+with retuning rather than from-scratch training. The Genesis source repository
+also ships a Go2 quadruped locomotion training recipe (`go2_train.py`) as a
+fallback path if the port produces unacceptable sim-to-sim drift.
 
 ### The split-pipeline detour was a partial answer to the wrong question
 
@@ -90,15 +93,19 @@ same manifest.
 
 ### Locomotion policy
 
-- **Tier A (default):** Use the Genesis Go2 quadruped example as the recipe
-  for the locomotion policy, or load a compatible open Go2 checkpoint with the
-  same observation/action contract.
-- **Tier B (if Tier A's gait distribution is too narrow or wrong-shaped):**
-  Port an existing open Go2 policy. Candidates: `unitree_rl_gym`,
-  `legged_gym`, IsaacLab Go2. Effort: ~1 week to retarget obs/action and
-  retune.
-- **Tier C (if A and B both fail):** Train a Go2 locomotion policy in Genesis.
-  Several weeks. Avoid unless forced.
+- **Tier A (default, off-the-shelf):** Port the open `unitree_rl_gym` Go2 PPO
+  checkpoint into a legged_gym-style policy adapter and run it inside
+  Genesis. No training on our side. Observation/action contract per the plan's
+  "Known-good locomotion policy" section. Effort: ~1 week to retarget
+  obs/action layout and validate against the executed-command histogram.
+- **Tier B (if Tier A's gait distribution is too narrow or its sim-to-sim
+  drift is too large):** Train a Genesis-native Go2 policy by running the
+  upstream `examples/locomotion/go2_train.py` recipe to convergence on the
+  production GPU. Loses the "no training on our side" property but produces a
+  policy native to the bulk-generation backend.
+- **Not in scope:** porting checkpoints from other ecosystems (`legged_gym`
+  variants, IsaacLab, MJX). Narrower deployment validation than
+  `unitree_rl_gym`'s real-Go2 lineage.
 
 ### ROS 2 stack disposition
 
@@ -183,9 +190,8 @@ accumulate.
 Reverse this decision if **any** of the following hold after the first
 end-to-end Genesis bulk-generation pilot:
 
-1. Tier A through Tier B both fail to produce a gait distribution acceptable
-   to the data spec. (Tier C would be a different decision — multi-week
-   training schedule.)
+1. Tier A and Tier B both fail to produce a gait distribution acceptable to
+   the data spec.
 2. ROCm-Genesis throughput on the production GPU is materially worse than v2
    demonstrated, and no driver/stack remedy is identified within a week.
 3. Genesis-Gazebo parity audits show systematic dynamics drift large enough

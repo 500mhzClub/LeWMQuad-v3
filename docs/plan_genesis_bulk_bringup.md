@@ -88,7 +88,7 @@ Lidar is dropped from the corpus (`/velodyne_points`,
 
 Each item has an exit criterion. Ordered by dependency.
 
-### 1.1 Install Genesis and train Tier A policy
+### 1.1 Install Genesis and port Tier A policy
 
 - Install Genesis with a verified GPU backend on the production GPU
   (Radeon AI Pro 9700, 32 GB). For the local current-Genesis path, see
@@ -97,13 +97,22 @@ Each item has an exit criterion. Ordered by dependency.
   venv, including the Genesis-bundled Go2 URDF and batched 12-DOF leg control.
   Legacy Vulkan notes live in
   [genesis_vulkan_local_audit.md](genesis_vulkan_local_audit.md).
-- Run `examples/locomotion/go2_train.py` (or the current Genesis equivalent)
-  to convergence.
-- Freeze the resulting checkpoint under
-  `models/tier_a_go2_locomotion/<date>.pt`.
+- Fetch the open `unitree_rl_gym` Go2 PPO checkpoint and port it into a
+  legged_gym-style policy adapter that consumes the obs layout described in
+  "Known-good locomotion policy" above and emits 12-dim joint position offsets
+  from the default qpos. PD control via Genesis
+  `robot.control_dofs_position`.
+- Freeze the ported policy (weights + obs/action adapter) under
+  `models/tier_a_go2_locomotion/<date>/`.
+- Tier B fallback (training a Genesis-native policy via upstream
+  `examples/locomotion/go2_train.py` to convergence and freezing the resulting
+  checkpoint at the same path) is only triggered if Tier A's gait validation
+  in Phase 2 fails. The local trainer smoke documented in
+  [genesis_rocm_local_audit.md](genesis_rocm_local_audit.md) proves the
+  training path is wired; it is not the planned Phase 1 step.
 
-**Exit:** checkpoint produces a walking gait for ≥10 s under constant
-`(vx=0.3, vy=0, yaw_rate=0)` without falling.
+**Exit:** ported Tier A policy produces a walking gait for ≥10 s under
+constant `(vx=0.3, vy=0, yaw_rate=0)` inside Genesis without falling.
 
 ### 1.2 `lewm_genesis/lewm_contract.py`
 

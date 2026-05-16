@@ -17,7 +17,9 @@ generation and later H-JEPA training.
   bags. Implementation lives in [lewm_genesis/](lewm_genesis/) and is being
   brought up against the pattern in
   [../LeWMQuad-v2/scripts/1_physics_rollout.py](../LeWMQuad-v2/scripts/1_physics_rollout.py).
-  Tier A locomotion uses Genesis's built-in Go2 quadruped example.
+  Tier A locomotion ports the open `unitree_rl_gym` Go2 PPO checkpoint into a
+  Genesis-compatible policy adapter (no training on our side). Training a
+  Genesis-native policy via Genesis's `go2_train.py` is the Tier B fallback.
 - **Gazebo (audit oracle only):** small, periodic dynamics and sensor parity
   spot checks against the Genesis corpus. ROS 2 + CHAMP + ros_gz_bridge stay
   alive only for this role. All Gazebo-specific instructions below describe
@@ -564,10 +566,25 @@ matching frames for parity comparison.
   v2 pattern in
   [../LeWMQuad-v2/scripts/1_physics_rollout.py](../LeWMQuad-v2/scripts/1_physics_rollout.py)
   is the porting reference. Status: in progress.
-- Tier A locomotion (Genesis's built-in Go2 example) needs an
+- Tier A locomotion (ported `unitree_rl_gym` Go2 PPO checkpoint) needs an
   executed-command histogram check against the primitive registry before
-  committing to a full bulk run. If the gait distribution is too narrow,
-  escalate to Tier B (port an external Go2 RL policy).
+  committing to a full bulk run. If the gait distribution is too narrow or the
+  sim-to-sim drift is too large, escalate to Tier B (train a Genesis-native
+  Go2 policy via `examples/locomotion/go2_train.py` on the production GPU).
+  Tier B training wrappers ship in this repo; on the production GPU host:
+
+  ```bash
+  scripts/setup_genesis_rocm_training.sh                      # one-time deps
+  scripts/check_genesis_go2_locomotion_train_rocm_smoke.sh    # 1-iter wiring check
+  scripts/train_genesis_go2_locomotion.sh                     # PPO to convergence
+  ```
+
+  Logs land under `.generated/upstream_genesis/locomotion/logs/<exp_name>/`
+  (tensorboard-compatible). Defaults match the upstream Genesis recipe:
+  `B=4096`, `max_iterations=101`. Tune via `LEWM_GO2_NUM_ENVS`,
+  `LEWM_GO2_MAX_ITERS`, `LEWM_GO2_SEED`, `LEWM_GO2_EXP_NAME`. Do **not** set
+  `HSA_OVERRIDE_GFX_VERSION` on RDNA4 (Radeon AI Pro 9700 / `gfx1201`); it is
+  only needed on the laptop iGPU (`gfx1103`).
 - Safety thresholds in
   [lewm_go2_control/nodes/command_block_adapter](lewm_go2_control/nodes/command_block_adapter)
   are calibrated for CHAMP. They need recalibration against the Genesis
