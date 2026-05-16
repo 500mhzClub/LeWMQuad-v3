@@ -62,8 +62,8 @@ def initialize_genesis(backend: str = "auto", seed: int | None = None, logging_l
     backend_obj = _resolve_backend(gs, backend)
     init_kwargs: dict[str, Any] = {"backend": backend_obj}
     if seed is not None:
-        # Genesis routes seed through numpy.random.seed which requires 0..2**32-1.
-        init_kwargs["seed"] = int(seed) & 0xFFFF_FFFF
+        # Quadrants' compile config accepts signed 32-bit seeds.
+        init_kwargs["seed"] = int(seed) & 0x7FFF_FFFF
     if logging_level is not None:
         init_kwargs["logging_level"] = logging_level
     gs.init(**init_kwargs)
@@ -163,6 +163,7 @@ def build_scene_from_pack(
                 pos=obj.center_xyz_m,
                 size=obj.size_xyz_m,
                 euler=(0.0, 0.0, float(obj.yaw_rad)),
+                fixed=True,
             ),
             name=obj.object_id,
         )

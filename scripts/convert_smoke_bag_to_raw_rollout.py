@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,6 +31,7 @@ COMPACT_TOPICS = {
 COMMAND_BLOCK_TOPIC = "/lewm/go2/command_block"
 EXECUTED_COMMAND_BLOCK_TOPIC = "/lewm/go2/executed_command_block"
 RESET_EVENT_TOPIC = "/lewm/go2/reset_event"
+ENV_TOPIC_RE = re.compile(r"^/env_(\d+)(/.*)$")
 
 
 @dataclass(frozen=True)
@@ -52,6 +54,19 @@ RAW_TOPIC_RULES: dict[str, TopicQualityRule] = {
     "/lewm/go2/mode": TopicQualityRule(min_rate_hz=0.5, max_gap_s=2.0),
     "/lewm/episode_info": TopicQualityRule(min_rate_hz=0.2, max_gap_s=5.0),
     "/cmd_vel": TopicQualityRule(min_count=1, time_basis="record"),
+}
+GENESIS_RAW_TOPIC_RULES: dict[str, TopicQualityRule] = {
+    "/clock": TopicQualityRule(min_rate_hz=9.0, max_gap_s=0.15),
+    COMMAND_BLOCK_TOPIC: TopicQualityRule(min_count=1, time_basis="record"),
+    EXECUTED_COMMAND_BLOCK_TOPIC: TopicQualityRule(min_count=1, time_basis="record"),
+    RESET_EVENT_TOPIC: TopicQualityRule(min_count=1, time_basis="record"),
+    "/joint_states": TopicQualityRule(min_rate_hz=9.0, max_gap_s=0.15),
+    "/imu/data": TopicQualityRule(min_rate_hz=9.0, max_gap_s=0.15),
+    "/odom": TopicQualityRule(min_rate_hz=9.0, max_gap_s=0.15),
+    "/lewm/go2/base_state": TopicQualityRule(min_rate_hz=9.0, max_gap_s=0.15),
+    "/lewm/go2/foot_contacts": TopicQualityRule(min_rate_hz=9.0, max_gap_s=0.15),
+    "/lewm/go2/mode": TopicQualityRule(min_rate_hz=9.0, max_gap_s=0.15),
+    "/lewm/episode_info": TopicQualityRule(min_rate_hz=9.0, max_gap_s=0.15),
 }
 VISION_TOPIC_RULES: dict[str, TopicQualityRule] = {
     **RAW_TOPIC_RULES,
@@ -175,6 +190,8 @@ def main() -> None:
     executed_command_sequence_ids: list[int] = []
     reset_counts: list[int] = []
     topic_timing: dict[str, TopicTiming] = {}
+    canonical_counts: Counter[str] = Counter()
+    canonical_topic_timing: dict[str, TopicTiming] = {}
 
     with messages_path.open("w", encoding="utf-8") as stream:
         while reader.has_next():
@@ -183,28 +200,40 @@ def main() -> None:
             if msg_type is None:
                 continue
             msg = deserialize_message(data, msg_type)
-            if topic == COMMAND_BLOCK_TOPIC:
+            canonical_topic = _canonical_topic(topic)
+            env_index = _env_index(topic)
+            if canonical_topic == COMMAND_BLOCK_TOPIC:
                 command_block_sequence_ids.append(int(getattr(msg, "sequence_id", -1)))
-            elif topic == EXECUTED_COMMAND_BLOCK_TOPIC:
+            elif canonical_topic == EXECUTED_COMMAND_BLOCK_TOPIC:
                 executed_command_sequence_ids.append(int(getattr(msg, "sequence_id", -1)))
-            elif topic == RESET_EVENT_TOPIC:
+            elif canonical_topic == RESET_EVENT_TOPIC:
                 reset_counts.append(int(getattr(msg, "reset_count", -1)))
             timing = topic_timing.setdefault(topic, TopicTiming.empty())
             timing.record.update(int(timestamp_ns))
-            source_timestamp_ns = _source_timestamp_ns(topic, msg)
+            canonical_timing = canonical_topic_timing.setdefault(
+                canonical_topic, TopicTiming.empty()
+            )
+            canonical_timing.record.update(int(timestamp_ns))
+            source_timestamp_ns = _source_timestamp_ns(canonical_topic, msg)
             if source_timestamp_ns is None:
                 timing.source_missing_count += 1
+                canonical_timing.source_missing_count += 1
             else:
                 timing.source.update(source_timestamp_ns)
+                canonical_timing.source.update(source_timestamp_ns)
             record = {
                 "topic": topic,
+                "canonical_topic": canonical_topic,
                 "type": topic_types[topic],
                 "timestamp_ns": int(timestamp_ns),
-                "payload": _compact_message(topic, msg),
+                "payload": _compact_message(canonical_topic, msg),
             }
+            if env_index is not None:
+                record["env_index"] = env_index
             stream.write(json.dumps(record, sort_keys=True, separators=(",", ":")))
             stream.write("\n")
             counts[topic] += 1
+            canonical_counts[canonical_topic] += 1
             if first_timestamp_ns is None:
                 first_timestamp_ns = int(timestamp_ns)
             last_timestamp_ns = int(timestamp_ns)
@@ -217,6 +246,10 @@ def main() -> None:
     topic_audit = {
         "topics": {
             topic: timing.as_dict() for topic, timing in sorted(topic_timing.items())
+        },
+        "canonical_topics": {
+            topic: timing.as_dict()
+            for topic, timing in sorted(canonical_topic_timing.items())
         },
         "rules": {
             topic: {
@@ -240,6 +273,7 @@ def main() -> None:
         "storage_id": storage_id,
         "message_count": sum(counts.values()),
         "topic_counts": dict(sorted(counts.items())),
+        "canonical_topic_counts": dict(sorted(canonical_counts.items())),
         "topic_types": dict(sorted(topic_types.items())),
         "first_timestamp_ns": first_timestamp_ns,
         "last_timestamp_ns": last_timestamp_ns,
@@ -354,7 +388,7 @@ def _audit_data_quality(
 ) -> dict[str, Any]:
     issues: list[str] = []
     warnings: list[str] = []
-    topics = topic_audit["topics"]
+    topics = topic_audit.get("canonical_topics", topic_audit["topics"])
 
     if not contract_audit["pass"]:
         issues.append("contract_audit failed; see contract_audit.issues")
@@ -441,7 +475,7 @@ def _audit_data_quality(
 
 def _topic_rules_for_profile(profile: str) -> dict[str, TopicQualityRule]:
     if profile.startswith("raw_"):
-        return RAW_TOPIC_RULES
+        return GENESIS_RAW_TOPIC_RULES
     if profile == "smoke":
         return VISION_TOPIC_RULES
     return VISION_TOPIC_RULES
@@ -460,6 +494,22 @@ def _compact_message(topic: str, msg: Any) -> dict[str, Any]:
         return _compact_sensor_payload(msg)
     payload = message_to_ordereddict(msg)
     return _jsonable(payload)
+
+
+def _canonical_topic(topic: str) -> str:
+    match = ENV_TOPIC_RE.match(topic)
+    if match:
+        topic = match.group(2)
+    if topic == "/camera_info":
+        return "/lewm/go2/camera_info"
+    return topic
+
+
+def _env_index(topic: str) -> int | None:
+    match = ENV_TOPIC_RE.match(topic)
+    if match:
+        return int(match.group(1))
+    return None
 
 
 def _source_timestamp_ns(topic: str, msg: Any) -> int | None:

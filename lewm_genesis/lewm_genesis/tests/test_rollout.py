@@ -81,11 +81,9 @@ def test_rollout_smoke_two_envs_three_blocks(tmp_path):
     )
     if not bundled.is_file():
         pytest.skip(f"genesis-bundled go2.urdf not found at {bundled}")
-    # Inject a robot.urdf_xacro override so resolve_go2_urdf picks the bundled file.
-    platform.setdefault("robot", {})["urdf_xacro"] = str(bundled.relative_to(REPO_ROOT)) if bundled.is_relative_to(REPO_ROOT) else str(bundled)
-    # resolve_go2_urdf joins with workspace_root, so use the bundled path directly via a small monkey-patch.
-    # Cleaner: skip resolve_go2_urdf entirely by setting the workspace_root to '/' when the path is absolute.
-    workspace_root = "/" if Path(platform["robot"]["urdf_xacro"]).is_absolute() else REPO_ROOT
+    # Inject a robot.genesis_urdf override so resolve_go2_urdf picks the bundled file.
+    platform.setdefault("robot", {})["genesis_urdf"] = str(bundled.relative_to(REPO_ROOT)) if bundled.is_relative_to(REPO_ROOT) else str(bundled)
+    workspace_root = "/" if Path(platform["robot"]["genesis_urdf"]).is_absolute() else REPO_ROOT
 
     pack = load_scene_pack(
         scenes[0],
@@ -155,3 +153,43 @@ def test_rollout_config_defaults_match_data_spec():
     assert len(config.leg_dof_indices) == 12
     # First six DOFs are the free root joint; legs start at 6.
     assert min(config.leg_dof_indices) >= 6
+
+
+def test_ppo_policy_validation_uses_robot_local_dofs():
+    from lewm_genesis.rollout import (
+        GENESIS_GO2_POLICY_DOF_INDICES,
+        GenesisGo2PPOPolicy,
+    )
+
+    class Joint:
+        def __init__(self, name, dof):
+            self.name = name
+            self.dofs_idx = dof
+
+    class Robot:
+        dof_start = 312
+
+        def __init__(self):
+            names = (
+                "FR_hip_joint",
+                "FR_thigh_joint",
+                "FR_calf_joint",
+                "FL_hip_joint",
+                "FL_thigh_joint",
+                "FL_calf_joint",
+                "RR_hip_joint",
+                "RR_thigh_joint",
+                "RR_calf_joint",
+                "RL_hip_joint",
+                "RL_thigh_joint",
+                "RL_calf_joint",
+            )
+            self.joints = [
+                Joint(name, self.dof_start + local_dof)
+                for name, local_dof in zip(names, GENESIS_GO2_POLICY_DOF_INDICES)
+            ]
+
+    policy = GenesisGo2PPOPolicy.__new__(GenesisGo2PPOPolicy)
+    policy.policy_joint_names = tuple(joint.name for joint in Robot().joints)
+    policy.policy_dof_indices = GENESIS_GO2_POLICY_DOF_INDICES
+    policy.validate_rollout_robot(Robot())

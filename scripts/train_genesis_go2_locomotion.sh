@@ -21,6 +21,29 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="${GENESIS_ROCM_PYTHON:-$ROOT/.generated/venvs/genesis_rocm/bin/python}"
 EXAMPLES_DIR="${GENESIS_GO2_EXAMPLES_DIR:-$ROOT/.generated/upstream_genesis/locomotion}"
 
+ROCM_PREFIX="${ROCM_PREFIX:-}"
+if [[ -z "$ROCM_PREFIX" ]]; then
+  if [[ -d /opt/rocm ]]; then
+    ROCM_PREFIX="/opt/rocm"
+  else
+    ROCM_PREFIX="$(find /opt -maxdepth 1 -type d -name 'rocm-*' 2>/dev/null | sort -V | tail -n 1 || true)"
+  fi
+fi
+
+if [[ -n "$ROCM_PREFIX" ]]; then
+  export ROCM_PATH="${ROCM_PATH:-$ROCM_PREFIX}"
+  if [[ -d "$ROCM_PREFIX/lib/llvm/bin" ]]; then
+    export PATH="$ROCM_PREFIX/lib/llvm/bin:$PATH"
+  elif [[ -d "$ROCM_PREFIX/llvm/bin" ]]; then
+    export PATH="$ROCM_PREFIX/llvm/bin:$PATH"
+  fi
+  if [[ -d "$ROCM_PREFIX/bin" ]]; then
+    export PATH="$ROCM_PREFIX/bin:$PATH"
+  fi
+fi
+export MPLCONFIGDIR="${MPLCONFIGDIR:-/tmp/lewm_mplconfig}"
+mkdir -p "$MPLCONFIGDIR" 2>/dev/null || true
+
 if [[ ! -x "$PYTHON_BIN" ]]; then
   echo "ROCm Genesis Python not found at: $PYTHON_BIN" >&2
   echo "Run scripts/setup_genesis_rocm_training.sh first." >&2
@@ -49,6 +72,9 @@ echo "  num_envs:       $NUM_ENVS"
 echo "  max_iterations: $MAX_ITERS"
 echo "  seed:           $SEED"
 echo "  log dir:        $EXAMPLES_DIR/logs/$EXP_NAME"
+echo "  ROCM_PATH:      ${ROCM_PATH:-unset}"
+echo "  ld.lld:         $(command -v ld.lld || echo missing)"
+echo "  MPLCONFIGDIR:   $MPLCONFIGDIR"
 echo
 
 cd "$EXAMPLES_DIR"

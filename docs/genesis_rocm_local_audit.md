@@ -204,11 +204,295 @@ Logs and checkpoints land under
 `.generated/upstream_genesis/locomotion/logs/<exp_name>/`. Tail with
 `tensorboard --logdir .generated/upstream_genesis/locomotion/logs`.
 
+### Production R9700 result, 2026-05-16
+
+The production host exposes the Radeon AI Pro R9700 as ROCm device 0:
+
+```text
+torch 2.9.1+rocm6.4
+torch.version.hip 6.4.43484-123eb5128
+cuda.is_available True
+device_count 2
+device_name AMD Radeon AI PRO R9700
+```
+
+Important environment detail: this host installs ROCm under the versioned
+prefix `/opt/rocm-7.1.1`, not `/opt/rocm`. Genesis's AMDGPU JIT failed with
+Ubuntu `lld-18`:
+
+```text
+ld.lld: error: unknown abi version
+```
+
+Putting `/opt/rocm-7.1.1/lib/llvm/bin` first on `PATH` and exporting
+`ROCM_PATH=/opt/rocm-7.1.1` fixed the JIT linker path. The training and trainer
+smoke wrappers now discover that prefix automatically. The laptop-only
+`HSA_OVERRIDE_GFX_VERSION=11.0.0` override must remain unset on this GPU.
+
+Patched trainer smoke passed:
+
+```text
+HSA_OVERRIDE_GFX_VERSION unset (correct for RDNA4 / gfx1201)
+ROCM_PATH=/opt/rocm-7.1.1
+ld.lld=/opt/rocm-7.1.1/lib/llvm/bin/ld.lld
+Run name: codex-smoke
+Total steps: 96
+Steps per second: 34
+Mean reward: -0.07
+```
+
+Full PPO run completed with upstream defaults:
+
+```text
+exp_name: lewm-go2-20260516T160610Z
+num_envs: 4096
+max_iterations: 101
+seed: 1
+Total steps: 9,928,704
+Steps per second: ~113k after warm-up
+Final mean reward: 15.14
+Final mean episode length: 1001.00
+Checkpoint: .generated/upstream_genesis/locomotion/logs/lewm-go2-20260516T160610Z/model_100.pt
+```
+
+The final checkpoint also passed a non-interactive load smoke: 16 envs, 20
+policy-controlled steps, no resets, and finite rewards.
+
+The same checkpoint does **not** pass the LeWM locomotion command contract. A
+contract probe now lives at:
+
+```bash
+scripts/check_genesis_go2_policy_contract.sh \
+  --exp-name lewm-go2-20260516T160610Z \
+  --ckpt 100
+```
+
+Observed result:
+
+```text
+policy_contract_probe_fail
+hold: requested [0.0, 0.0, 0.0], measured vx=0.528, yaw=0.091
+backward: requested vx=-0.200, measured vx=0.475
+yaw_left: requested yaw=0.450, measured yaw=0.091, measured vx=0.542
+yaw_right: requested yaw=-0.450, measured yaw=0.088
+arc_left: requested [0.200, 0.0, 0.450], measured yaw=0.066
+arc_right: requested yaw=-0.450, measured yaw=0.062
+```
+
+Root cause: the upstream Genesis training recipe is command-conditioned in
+shape but not in data distribution. The policy observation includes the
+3-D command vector, but `go2_train.py` trained only on a fixed command:
+`lin_vel_x_range=[0.5, 0.5]`, `lin_vel_y_range=[0, 0]`,
+`ang_vel_range=[0, 0]`. The checkpoint is therefore a forward-walk policy, not
+a compliant LeWM `[vx_body_mps, vy_body_mps, yaw_rate_radps]` primitive policy.
+
+### LeWM-contract PPO result, 2026-05-16
+
+The follow-up training run used a repo wrapper that samples exactly the
+trainable velocity primitives from `config/go2_primitive_registry.yaml`:
+
+```bash
+scripts/train_genesis_go2_locomotion_contract.sh
+```
+
+Training configuration:
+
+```text
+exp_name: lewm-go2-contract-20260516T163413Z
+num_envs: 4096
+max_iterations: 501
+seed: 11
+command_bank: hold, forward_slow, forward_medium, forward_fast, backward,
+              yaw_left, yaw_right, arc_left, arc_right
+tracking_ang_vel reward scale: 0.8
+Total steps: 49,250,304
+Final mean reward: 33.33
+Final mean episode length: 1001.00
+Checkpoint: .generated/upstream_genesis/locomotion/logs/lewm-go2-contract-20260516T163413Z/model_500.pt
+SHA256: e0a20545cdccac6b60a4587c96d2de9a169dfacf520b178f51709596a6f789ff
+```
+
+The velocity-primitive contract probe passed:
+
+```bash
+scripts/check_genesis_go2_policy_contract.sh \
+  --exp-name lewm-go2-contract-20260516T163413Z \
+  --ckpt 500
+```
+
+Observed measured body-frame response after a 2 s warmup in 5 s rollouts:
+
+```text
+hold          request [ 0.00, 0.00,  0.00] -> measured [ 0.001, 0.001, -0.001]
+forward_slow  request [ 0.20, 0.00,  0.00] -> measured [ 0.180, 0.010, -0.008]
+forward_medium request [0.25, 0.00,  0.00] -> measured [ 0.252, 0.013, -0.007]
+forward_fast  request [ 0.30, 0.00,  0.00] -> measured [ 0.303, 0.000, -0.012]
+backward      request [-0.20, 0.00,  0.00] -> measured [-0.191, 0.017,  0.012]
+yaw_left      request [ 0.00, 0.00,  0.45] -> measured [-0.000,-0.009,  0.452]
+yaw_right     request [ 0.00, 0.00, -0.45] -> measured [ 0.011, 0.014, -0.458]
+arc_left      request [ 0.20, 0.00,  0.45] -> measured [ 0.197,-0.005,  0.450]
+arc_right     request [ 0.20, 0.00, -0.45] -> measured [ 0.199, 0.017, -0.455]
+```
+
+All tested velocity primitives had zero resets and passed direction/magnitude
+criteria. This validates the blind PPO policy against the LeWM velocity command
+contract for the trainable primitive set. Nonzero lateral `vy_body_mps` remains
+disabled in the primitive registry and platform safety limits until a lateral
+policy pass is trained and validated. This does not validate mode-event
+primitives such as recovery stand.
+
+### Bulk-rollout adapter status, 2026-05-16
+
+The contract checkpoint is now wired into `lewm_genesis.rollout.GenesisGo2PPOPolicy`.
+The adapter loads `locomotion.policy_artifact` from `config/go2_platform_manifest.yaml`,
+reconstructs the upstream 45-D policy observation, applies the trained action
+latency semantics, and returns absolute 12-DOF joint position targets in the
+rollout's leg-joint order.
+
+The frozen artifact now lives outside `.generated/`:
+
+```text
+models/tier_a_go2_locomotion/20260516_contract_ppo/model_500.pt
+models/tier_a_go2_locomotion/20260516_contract_ppo/cfgs.pkl
+```
+
+Integration details locked by the smoke path:
+
+- Genesis bulk rollout resolves the same Genesis-bundled Go2 URDF used by the
+  training environment via `robot.genesis_urdf: genesis_builtin_go2`.
+- The adapter validates the robot's policy joint names and entity-local DOF
+  order before a rollout starts.
+- `RolloutRunner` resolves concrete leg DOF indices from built robot joint
+  names, so static scene entities cannot silently shift the policy mapping.
+- Static scene boxes are inserted as fixed Genesis entities.
+- Genesis scene seeds are clamped to the signed 32-bit range accepted by the
+  Quadrants compile config.
+
+A one-env CPU smoke on the generated acceptance corpus built a scene, loaded
+the PPO adapter from the manifest, stepped hold/forward/yaw command ticks, and
+completed with finite base and joint state. This smoke checks integration
+plumbing only; the formal behavior check remains the contract probe above.
+
+### Bulk-rollout CLI status, 2026-05-16
+
+The first scriptable Genesis bulk path is:
+
+```bash
+scripts/genesis_bulk_rollout.sh \
+  --scene-corpus .generated/scene_corpus/acceptance \
+  --split train \
+  --family open_obstacle_field \
+  --scene-limit 1 \
+  --n-envs 1 \
+  --n-blocks 1 \
+  --backend cpu \
+  --out .generated/genesis_bulk_rollouts/ppo_smoke_rgb
+```
+
+The RGB CPU smoke wrote one MCAP raw-rollout directory with the expected
+per-env topics:
+
+```text
+/clock                                      5
+/env_00/camera_info                        1
+/env_00/imu/data                           5
+/env_00/joint_states                       5
+/env_00/lewm/episode_info                  5
+/env_00/lewm/go2/base_state                5
+/env_00/lewm/go2/command_block             1
+/env_00/lewm/go2/executed_command_block    1
+/env_00/lewm/go2/foot_contacts             5
+/env_00/lewm/go2/mode                      5
+/env_00/lewm/go2/reset_event               1
+/env_00/odom                               5
+/env_00/rgb_image                          1
+```
+
+`scripts/convert_smoke_bag_to_raw_rollout.py` now recognizes per-env Genesis
+topics such as `/env_00/lewm/go2/command_block`, keeps `env_index` in each
+JSONL record, and audits them against the canonical command contract topic.
+The smoke conversion passed:
+
+```bash
+scripts/convert_smoke_bag_to_raw_rollout.sh \
+  .generated/genesis_bulk_rollouts/ppo_smoke_rgb_rawpilot_ready/open_obstacle_field_36c57d3baa8d \
+  --out .generated/genesis_bulk_rollouts/ppo_smoke_rgb_rawpilot_ready_raw \
+  --quality-profile raw_pilot
+```
+
+Result:
+
+```text
+contract_audit: pass=True command_blocks=1 executed=1 resets=1
+data_quality_audit: profile=raw_pilot pass=True issues=0
+```
+
+AMDGPU bulk smoke status on the Radeon AI Pro R9700:
+
+```bash
+scripts/genesis_bulk_rollout.sh \
+  --scene-corpus .generated/scene_corpus/acceptance \
+  --split train \
+  --family open_obstacle_field \
+  --scene-limit 1 \
+  --n-envs 1 \
+  --n-blocks 1 \
+  --backend amdgpu \
+  --out .generated/genesis_bulk_rollouts/ppo_smoke_amdgpu_rgb_default_contacts
+```
+
+This now passes with RGB enabled and converts under `--quality-profile
+raw_pilot` with `contract_audit: pass=True` and `data_quality_audit:
+pass=True`. The CLI defaults `foot_contact_source=zero` on `amdgpu`; summaries
+record that fact. The reason is a Genesis/R9700 backend fault in
+`get_links_net_contact_force()`, which reliably triggers:
+
+```text
+HSA_STATUS_ERROR_EXCEPTION: An HSAIL operation resulted in a hardware exception. code: 0x1016
+```
+
+The same AMDGPU scene, policy stepping, per-tick ROS message construction, and
+MCAP writing pass when contact-force reads are skipped. CPU remains on
+Genesis-derived contact-force labels by default.
+
+A slightly broader AMDGPU pilot also passed:
+
+```bash
+scripts/genesis_bulk_rollout.sh \
+  --scene-corpus .generated/scene_corpus/acceptance \
+  --split train \
+  --scene-limit 2 \
+  --n-envs 1 \
+  --n-blocks 2 \
+  --backend amdgpu \
+  --log-progress-every-blocks 1 \
+  --out .generated/genesis_bulk_rollouts/ppo_pilot_amdgpu_rgb_2scene_2block
+```
+
+Scenes:
+
+```text
+large_enclosed_maze_6edb8f490970
+loop_alias_stress_d11d400f506e
+```
+
+Both converted with `--quality-profile raw_pilot`:
+
+```text
+contract_audit: pass=True command_blocks=2 executed=2 resets=1
+data_quality_audit: profile=raw_pilot pass=True issues=0
+```
+
 ## Caveats
 
-- This laptop iGPU has only 2 GB VRAM; it proves backend viability, not training
+- The laptop iGPU has only 2 GB VRAM; it proves backend viability, not training
   throughput.
-- Production GPU smoke must be repeated on the target Radeon AI Pro 9700
-  without assuming the laptop override or throughput characteristics transfer.
+- Production GPU training has now passed on the Radeon AI Pro R9700, and the
+  contract-trained checkpoint passed velocity-primitive command validation.
+  The checkpoint is wired into the Genesis bulk `PolicyInterface`; mode-event
+  recovery remains a separate validation item.
+- R9700 AMDGPU bulk rollouts currently emit zero-valued foot-contact labels by
+  default. This preserves the topic contract for pilot data while avoiding the
+  Genesis contact-force hardware exception above.
 - `torch.cuda.*` is still the PyTorch API surface for ROCm/HIP builds; this is
   expected.

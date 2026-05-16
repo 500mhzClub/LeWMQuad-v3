@@ -193,6 +193,38 @@ def episode_info_record_to_msg(record: EpisodeInfoRecord) -> Any:
     return msg
 
 
+def mode_state_to_msg(
+    *,
+    stamp_ns: int,
+    backend_id: str,
+    controller_mode: str,
+    gait_name: str = "ppo",
+    standing: bool = False,
+    moving: bool = True,
+    recovering: bool = False,
+    fallen: bool = False,
+    safety_stop: bool = False,
+    status_text: str = "genesis bulk rollout",
+) -> Any:
+    """Build ``lewm_go2_control/Go2ModeState`` for synthetic Genesis rollouts."""
+
+    _require_ros()
+    from lewm_go2_control.msg import Go2ModeState
+
+    msg = Go2ModeState()
+    _set_header(msg.header, stamp_ns, "")
+    msg.backend_id = str(backend_id)
+    msg.controller_mode = str(controller_mode)
+    msg.gait_name = str(gait_name)
+    msg.standing = bool(standing)
+    msg.moving = bool(moving)
+    msg.recovering = bool(recovering)
+    msg.fallen = bool(fallen)
+    msg.safety_stop = bool(safety_stop)
+    msg.status_text = str(status_text)
+    return msg
+
+
 # ---------------------------------------------------------------------------
 # Standard sensor_msgs / nav_msgs builders
 # ---------------------------------------------------------------------------

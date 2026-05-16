@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from lewm_genesis.go2_adapter import resolve_go2_urdf
 from lewm_genesis.scene_loader import (
     DEFAULT_GO2_FOOT_LINKS_LEWM_ORDER,
     PhysicsTiming,
@@ -162,6 +163,18 @@ def test_load_scene_pack_resolves_go2_urdf_path():
         f"resolved URDF should exist; got {pack.robot.urdf_path}"
     )
     assert pack.robot.foot_links_in_lewm_order == DEFAULT_GO2_FOOT_LINKS_LEWM_ORDER
+
+
+def test_resolve_go2_urdf_prefers_genesis_asset_override(tmp_path):
+    urdf = tmp_path / "go2.urdf"
+    urdf.write_text("<robot name='go2' />", encoding="utf-8")
+    platform = {
+        "robot": {
+            "genesis_urdf": "go2.urdf",
+            "urdf_xacro": "missing_unitree_go2_robot.xacro",
+        }
+    }
+    assert resolve_go2_urdf(platform, tmp_path) == urdf
 
 
 def test_load_scene_pack_carries_spawn_pose():

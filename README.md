@@ -13,8 +13,9 @@ generation and later H-JEPA training.
 
 - **Genesis (bulk path):** authoritative for physics rollout, RGB/depth
   rendering, and raw_rollout production at scale. Runs on the production GPU
-  (Radeon AI Pro 9700, ROCm). Bulk path is .h5/.npz/Zarr products, not ROS
-  bags. Implementation lives in [lewm_genesis/](lewm_genesis/) and is being
+  (Radeon AI Pro 9700, ROCm). The current pilot CLI writes per-scene MCAP
+  raw-rollout directories; later bulk shards can be .h5/.npz/Zarr once the
+  schema is locked. Implementation lives in [lewm_genesis/](lewm_genesis/) and is being
   brought up against the pattern in
   [../LeWMQuad-v2/scripts/1_physics_rollout.py](../LeWMQuad-v2/scripts/1_physics_rollout.py).
   Tier A locomotion ports the open `unitree_rl_gym` Go2 PPO checkpoint into a
@@ -562,42 +563,57 @@ matching frames for parity comparison.
 
 ### Genesis bulk path (production)
 
-- Genesis bulk loop is not yet wired against the Go2 platform manifest. The
-  v2 pattern in
-  [../LeWMQuad-v2/scripts/1_physics_rollout.py](../LeWMQuad-v2/scripts/1_physics_rollout.py)
-  is the porting reference. Status: in progress.
-- Tier A locomotion (ported `unitree_rl_gym` Go2 PPO checkpoint) needs an
-  executed-command histogram check against the primitive registry before
-  committing to a full bulk run. If the gait distribution is too narrow or the
-  sim-to-sim drift is too large, escalate to Tier B (train a Genesis-native
-  Go2 policy via `examples/locomotion/go2_train.py` on the production GPU).
-  Tier B training wrappers ship in this repo; on the production GPU host:
+- The Genesis bulk loop now has a PPO-backed CLI entry point:
+
+  ```bash
+  scripts/genesis_bulk_rollout.sh \
+    --scene-corpus .generated/scene_corpus/acceptance \
+    --split train \
+    --scene-limit 1 \
+    --n-envs 1 \
+    --n-blocks 1 \
+    --backend cpu \
+    --out .generated/genesis_bulk_rollouts/ppo_smoke
+  ```
+
+  The script writes per-scene MCAP raw-rollout directories through the existing
+  `MCAPSceneWriter`.
+- On `--backend amdgpu`, the bulk CLI defaults `foot_contact_source=zero`
+  because Genesis `get_links_net_contact_force()` triggers an HSA hardware
+  exception on the Radeon AI Pro R9700. CPU rollouts still use Genesis-derived
+  contact-force labels by default. The AMDGPU path still emits the
+  `/lewm/go2/foot_contacts` topic at command-tick cadence, and summaries mark
+  the contact source explicitly.
+- The validated Genesis-native Go2 PPO artifact is frozen under
+  `models/tier_a_go2_locomotion/20260516_contract_ppo/` and referenced by
+  `config/go2_platform_manifest.yaml`. It passed the LeWM velocity primitive
+  contract for hold, forward, backward, yaw, and arc commands. Nonzero lateral
+  `vy_body_mps` remains disabled until trained and validated.
+- Tier B training wrappers ship in this repo; on the production GPU host:
 
   ```bash
   scripts/setup_genesis_rocm_training.sh                      # one-time deps
   scripts/check_genesis_go2_locomotion_train_rocm_smoke.sh    # 1-iter wiring check
-  scripts/train_genesis_go2_locomotion.sh                     # PPO to convergence
+  scripts/train_genesis_go2_locomotion_contract.sh            # LeWM command-contract PPO
+  scripts/check_genesis_go2_policy_contract.sh --exp-name lewm-go2-contract-20260516T163413Z --ckpt 500
   ```
 
-  Logs land under `.generated/upstream_genesis/locomotion/logs/<exp_name>/`
-  (tensorboard-compatible). Defaults match the upstream Genesis recipe:
-  `B=4096`, `max_iterations=101`. Tune via `LEWM_GO2_NUM_ENVS`,
-  `LEWM_GO2_MAX_ITERS`, `LEWM_GO2_SEED`, `LEWM_GO2_EXP_NAME`. Do **not** set
+  Logs land under `.generated/upstream_genesis/locomotion/logs/<exp_name>/`.
+  Tune via `LEWM_GO2_NUM_ENVS`, `LEWM_GO2_MAX_ITERS`, `LEWM_GO2_SEED`,
+  `LEWM_GO2_EXP_NAME`, and `LEWM_GO2_REWARD_TRACKING_ANG_VEL`. Do **not** set
   `HSA_OVERRIDE_GFX_VERSION` on RDNA4 (Radeon AI Pro 9700 / `gfx1201`); it is
   only needed on the laptop iGPU (`gfx1103`).
-- Safety thresholds in
-  [lewm_go2_control/nodes/command_block_adapter](lewm_go2_control/nodes/command_block_adapter)
-  are calibrated for CHAMP. They need recalibration against the Genesis
-  policy's response distribution before bulk capture.
-- ROCm-Genesis smoke on the production GPU (Radeon AI Pro 9700) is the only
-  step gating the pipeline porting. Per the v2 precedent this is expected to
-  pass; verify before committing weeks of integration work. Local ROCm audit
-  status is tracked in
+- Safety thresholds in `config/go2_platform_manifest.yaml` now reflect the
+  validated PPO primitive set; lateral velocity is clamped to zero.
+- ROCm-Genesis training and contract validation have passed on the production
+  Radeon AI Pro R9700. Local ROCm audit status is tracked in
   [docs/genesis_rocm_local_audit.md](docs/genesis_rocm_local_audit.md):
   `genesis-world==0.4.6` can step `gs.amdgpu` with `n_envs=4` under an isolated
-  ROCm PyTorch venv, including the Genesis-bundled Go2 URDF and 12-DOF leg
-  control path. Legacy Vulkan status is tracked in
-  [docs/genesis_vulkan_local_audit.md](docs/genesis_vulkan_local_audit.md).
+  ROCm PyTorch venv, including the Genesis-bundled Go2 URDF, 12-DOF leg
+  control path, PPO-backed MCAP rollout, RGB capture, and `raw_pilot`
+  conversion. A two-scene, two-block AMDGPU RGB pilot passed on
+  `large_enclosed_maze` and `loop_alias_stress`. Legacy Vulkan status is
+  tracked in [docs/genesis_vulkan_local_audit.md](docs/genesis_vulkan_local_audit.md).
 
 ### Audit oracle (Gazebo)
 

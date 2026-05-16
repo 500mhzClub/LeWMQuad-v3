@@ -38,6 +38,7 @@ TOPIC_TEMPLATES: dict[str, tuple[str, str]] = {
     "foot_contacts":         ("/env_{env}/lewm/go2/foot_contacts",         "lewm_go2_control/msg/FootContacts"),
     "reset_event":           ("/env_{env}/lewm/go2/reset_event",           "lewm_go2_control/msg/ResetEvent"),
     "episode_info":          ("/env_{env}/lewm/episode_info",              "lewm_go2_control/msg/EpisodeInfo"),
+    "mode":                  ("/env_{env}/lewm/go2/mode",                  "lewm_go2_control/msg/Go2ModeState"),
     "rgb_image":             ("/env_{env}/rgb_image",                      "sensor_msgs/msg/Image"),
     "camera_info":           ("/env_{env}/camera_info",                    "sensor_msgs/msg/CameraInfo"),
     "imu":                   ("/env_{env}/imu/data",                       "sensor_msgs/msg/Imu"),

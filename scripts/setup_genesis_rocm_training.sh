@@ -24,15 +24,18 @@ if [[ ! -x "$PYTHON_BIN" ]]; then
 fi
 
 # Hard prerequisite: ld.lld is needed by Genesis's quadrants/Taichi AMDGPU JIT
-# to link HSACO kernel modules. ROCm bundles it under /opt/rocm/llvm/bin/; the
-# system package on Debian/Ubuntu is `lld`.
+# to link HSACO kernel modules. ROCm packages may install it under
+# /opt/rocm/lib/llvm/bin/ or a versioned prefix such as
+# /opt/rocm-7.1.1/lib/llvm/bin/. The system Debian/Ubuntu `lld` package can be
+# too old for newer ROCm code objects.
 if ! command -v ld.lld >/dev/null 2>&1; then
   cat >&2 <<'EOF'
 WARNING: ld.lld not found on PATH.
 Genesis's AMDGPU JIT (quadrants/Taichi) needs it to compile HSACO kernels.
 Install one of:
   sudo apt install lld
-  export PATH=/opt/rocm/llvm/bin:$PATH    # if ROCm bundles it locally
+  export PATH=/opt/rocm/lib/llvm/bin:$PATH
+  export PATH=/opt/rocm-7.1.1/lib/llvm/bin:$PATH
 EOF
 fi
 
