@@ -154,20 +154,27 @@ The reusable form lives in
 Manual equivalent:
 
 ```bash
-python3 -m venv --system-site-packages .generated/venvs/genesis_rocm
+sudo apt install lld    # Genesis AMDGPU JIT needs ld.lld
+python3 -m venv .generated/venvs/genesis_rocm
 .generated/venvs/genesis_rocm/bin/python -m pip install --upgrade pip wheel setuptools
 .generated/venvs/genesis_rocm/bin/python -m pip install \
   torch==2.9.1 torchvision==0.24.1 torchaudio==2.9.1 \
   --index-url https://download.pytorch.org/whl/rocm6.4
 .generated/venvs/genesis_rocm/bin/python -m pip install genesis-world==0.4.6
+.generated/venvs/genesis_rocm/bin/python -m pip install matplotlib
 .generated/venvs/genesis_rocm/bin/python -m pip install \
   tensordict tensorboard GitPython onnx onnxscript
+.generated/venvs/genesis_rocm/bin/python -m pip install 'coverage>=7.6'
 .generated/venvs/genesis_rocm/bin/python -m pip install --no-deps \
   'rsl-rl-lib>=5.0.0'
 ```
 
-The venv uses `--system-site-packages` so it can reuse the already installed
-Genesis package while overriding the Torch stack locally inside `.generated/`.
+The venv is intentionally **not** `--system-site-packages`. Earlier iterations
+used that flag to inherit a system Genesis install, but the setup script now
+installs `genesis-world` explicitly, and the system-site path was leaking
+incompatible copies of `coverage` (pre-7.6, breaking numba) and `matplotlib`
+(built against numpy 1.x, ABI-incompatible with the venv's numpy 2.x).
+Isolated venv kills the whole class of bug.
 
 ## Production Tier B Training
 
