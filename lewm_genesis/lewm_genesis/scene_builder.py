@@ -24,6 +24,7 @@ per-tick updates. Those concerns live in ``rollout.py``, not here.
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -47,10 +48,10 @@ def _import_genesis():
 def initialize_genesis(backend: str = "auto", seed: int | None = None, logging_level: int | None = None) -> None:
     """Idempotently initialize Genesis with the requested backend.
 
-    Subsequent calls are no-ops. The backend resolver mirrors the v2 pattern
-    at ``../LeWMQuad-v2/lewm/genesis_utils.py``: ``"auto"`` chooses
-    ``gs.amdgpu`` / ``gs.cuda`` / ``gs.vulkan`` / ``gs.cpu`` based on what is
-    available.
+    Subsequent calls are no-ops. ``backend="auto"`` can be overridden with
+    ``GS_BACKEND`` and otherwise follows the v2 preference order. Explicit
+    backend requests fail loudly if the installed Genesis package does not
+    expose that backend.
     """
 
     global _GENESIS_INITIALIZED
@@ -82,6 +83,11 @@ def _resolve_backend(gs, backend_name: str):
         "hip": "amdgpu",
         "rocm": "amdgpu",
     }
+    env_backend = os.getenv("GS_BACKEND", "").lower().strip()
+
+    if name == "auto" and env_backend and env_backend != "auto":
+        name = env_backend
+
     if name == "auto":
         # Mirror v2's preference order for AMD hardware running ROCm.
         try:
@@ -104,7 +110,18 @@ def _resolve_backend(gs, backend_name: str):
         backend = getattr(gs, explicit[name], None)
         if backend is not None:
             return backend
-    return gs.cpu
+        available = ", ".join(
+            attr
+            for attr in dict.fromkeys(explicit.values())
+            if getattr(gs, attr, None) is not None
+        )
+        version = getattr(gs, "__version__", "unknown")
+        raise RuntimeError(
+            f"Genesis backend '{name}' requested but unavailable in genesis-world {version}. "
+            f"Available backend symbols: {available or 'none'}."
+        )
+    expected = ", ".join(sorted(explicit))
+    raise ValueError(f"Unknown Genesis backend '{backend_name}'. Expected one of: auto, {expected}.")
 
 
 @dataclass

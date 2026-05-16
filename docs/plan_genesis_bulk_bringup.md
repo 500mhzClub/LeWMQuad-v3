@@ -90,8 +90,13 @@ Each item has an exit criterion. Ordered by dependency.
 
 ### 1.1 Install Genesis and train Tier A policy
 
-- Install Genesis with ROCm/AMDGPU support on the production GPU
-  (Radeon AI Pro 9700, 32 GB).
+- Install Genesis with a verified GPU backend on the production GPU
+  (Radeon AI Pro 9700, 32 GB). For the local current-Genesis path, see
+  [genesis_rocm_local_audit.md](genesis_rocm_local_audit.md): `genesis-world`
+  `0.4.6` can step `gs.amdgpu` with `n_envs=4` under an isolated ROCm PyTorch
+  venv, including the Genesis-bundled Go2 URDF and batched 12-DOF leg control.
+  Legacy Vulkan notes live in
+  [genesis_vulkan_local_audit.md](genesis_vulkan_local_audit.md).
 - Run `examples/locomotion/go2_train.py` (or the current Genesis equivalent)
   to convergence.
 - Freeze the resulting checkpoint under

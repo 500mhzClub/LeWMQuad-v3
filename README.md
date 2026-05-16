@@ -574,7 +574,13 @@ matching frames for parity comparison.
   policy's response distribution before bulk capture.
 - ROCm-Genesis smoke on the production GPU (Radeon AI Pro 9700) is the only
   step gating the pipeline porting. Per the v2 precedent this is expected to
-  pass; verify before committing weeks of integration work.
+  pass; verify before committing weeks of integration work. Local ROCm audit
+  status is tracked in
+  [docs/genesis_rocm_local_audit.md](docs/genesis_rocm_local_audit.md):
+  `genesis-world==0.4.6` can step `gs.amdgpu` with `n_envs=4` under an isolated
+  ROCm PyTorch venv, including the Genesis-bundled Go2 URDF and 12-DOF leg
+  control path. Legacy Vulkan status is tracked in
+  [docs/genesis_vulkan_local_audit.md](docs/genesis_vulkan_local_audit.md).
 
 ### Audit oracle (Gazebo)
 

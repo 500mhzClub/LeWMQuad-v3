@@ -16,10 +16,10 @@ semantics, episode bookkeeping, scene manifest, dataset gates) still apply.
 3. **Lidar is dropped from the v3 corpus contract.** It was already marked
    optional in the bringup plan and absent from the data spec; the pivot makes
    that absence explicit.
-4. **Locomotion uses Genesis's built-in Go2 quadruped example as the starting
-   policy (Tier A).** Tier B/C (porting an external Go2 RL checkpoint, or
-   training one from scratch) are escalation paths if the Tier A gait
-   distribution proves insufficient.
+4. **Locomotion starts from the Genesis Go2 quadruped recipe or a compatible
+   open Go2 checkpoint.** The pip package ships assets, not a pretrained Go2
+   policy. Tier B/C (porting an external Go2 RL checkpoint, or training one in
+   Genesis) are escalation paths if the first gait distribution is insufficient.
 
 ## Why
 
@@ -39,14 +39,21 @@ Genesis on AMD hardware. The backend resolver in
 HIP detection; the rollout loop in
 `../LeWMQuad-v2/scripts/1_physics_rollout.py` ran at `--n_envs 2048` in
 parallel envs. ROCm-Genesis viability on the production GPU (Radeon AI Pro 9700
-32 GB) is not a research risk.
+32 GB) is not a research risk. Local current-Genesis status is tracked in
+[genesis_rocm_local_audit.md](genesis_rocm_local_audit.md): `genesis-world`
+`0.4.6` can step `gs.amdgpu` with `n_envs=4` under an isolated ROCm PyTorch
+venv, including the Genesis-bundled Go2 URDF and batched 12-DOF leg control.
+Legacy Vulkan status is tracked in
+[genesis_vulkan_local_audit.md](genesis_vulkan_local_audit.md): the host
+Vulkan stack works with `genesis-world==0.3.14`, while `0.4.x` no longer
+exposes `gs.vulkan`.
 
 ### Locomotion replacement is not a research risk either
 
 v2 replaced CHAMP-equivalent kinematic control with a frozen PPO actor-critic
-driving `robot.control_dofs_position`. That pattern transfers to Go2. Genesis
-ships a Go2 quadruped locomotion example that walks out of the box, and the
-broader ecosystem (`unitree_rl_gym`, legged_gym, IsaacLab) provides Go2
+driving `robot.control_dofs_position`. That pattern transfers to Go2. The
+Genesis source repository ships a Go2 quadruped locomotion training recipe, and
+the broader ecosystem (`unitree_rl_gym`, legged_gym, IsaacLab) provides Go2
 checkpoints that can be ported with retuning rather than from-scratch training.
 
 ### The split-pipeline detour was a partial answer to the wrong question
@@ -83,8 +90,9 @@ same manifest.
 
 ### Locomotion policy
 
-- **Tier A (default):** Use Genesis's built-in Go2 quadruped example as the
-  locomotion policy for bulk rollout. This is the starting state.
+- **Tier A (default):** Use the Genesis Go2 quadruped example as the recipe
+  for the locomotion policy, or load a compatible open Go2 checkpoint with the
+  same observation/action contract.
 - **Tier B (if Tier A's gait distribution is too narrow or wrong-shaped):**
   Port an existing open Go2 policy. Candidates: `unitree_rl_gym`,
   `legged_gym`, IsaacLab Go2. Effort: ~1 week to retarget obs/action and
