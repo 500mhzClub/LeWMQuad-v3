@@ -72,8 +72,9 @@ Per [fresh_retrain_data_spec.md §5–§10](fresh_retrain_data_spec.md):
 - **§5.2 scene metadata:** passes through from `lewm_worlds` scene manifests
   unmodified. `scene_id`, seeds, `scene_family`, `camera_model`,
   `world_bounds`, `obstacles`, `landmarks`, `navigable_graph`.
-- **§5.3 derived labels:** out of bulk scope. Computed offline from raw
-  rollout + scene manifest.
+- **§5.3 derived labels:** out of the rollout loop by design. Computed
+  offline from raw rollout pose logs plus regenerated scene metadata by
+  [scripts/derive_raw_rollout_labels.py](../scripts/derive_raw_rollout_labels.py).
 - **§7 shape:** 64 streams × 800–1200 raw steps per scene at full target.
   `n_envs=64` in `scene.build(n_envs=...)`.
 - **§7.3 compute-cut policy:** reduce envs to 32 before reducing scene count.
@@ -149,17 +150,28 @@ Extend [scene_builder.py](../lewm_genesis/lewm_genesis/scene_builder.py) to:
 Main bulk loop. Per scene:
 
 - Build scene + load Tier A policy.
-- Sample command tape from [config/go2_primitive_registry.yaml](../config/go2_primitive_registry.yaml).
+- Per-episode each env draws a collector from the data-spec §13 mix via
+  [`lewm_genesis.collectors.EpisodeScheduler`](../lewm_genesis/lewm_genesis/collectors/base.py)
+  (`route_teacher` 30 %, `frontier` 20 %, `primitive_curriculum` 20 %,
+  `ou_noise` 10 %, `recovery` 10 %, `loop_revisit` 10 %). Per block each
+  env's assigned collector observes privileged state (base xy/yaw, current
+  cell, clearance to walls, last executed cmd) and returns a primitive +
+  source tag.
 - Step physics at `physics_dt` and control at `control_dt` (decimation from
   platform manifest); render at `camera_hz`.
-- Capture state, commands, contacts, RGB per tick.
+- Capture state, commands, contacts, RGB per tick. Each emitted
+  `CommandBlock` carries `command_source`, `route_target_id`, and
+  `next_waypoint_id` privileged-label fields.
 - Handle resets: terminate on fall/collision per data spec; advance
-  `episode_id`; emit `ResetEvent` + `EpisodeInfo`.
+  `episode_id`; emit `ResetEvent` + `EpisodeInfo`. Spawn pose is
+  re-sampled per episode (random reachable cell + random yaw,
+  clearance-gated) via `SceneGraph.sample_spawn_pose`.
 
 Modeled on [../../LeWMQuad-v2/scripts/1_physics_rollout.py](../../LeWMQuad-v2/scripts/1_physics_rollout.py)
 (rollout loop at lines 1006–1126).
 
-**Exit:** one scene × 64 envs × 1000 ticks produced in memory.
+**Exit:** one scene × 64 envs × 1000 ticks produced in memory, with the
+realized §13 mix reported in the rollout stats summary.
 
 ### 1.5 `lewm_genesis/mcap_writer.py`
 
@@ -202,14 +214,40 @@ to operate on the new per-scene MCAPs. Profiles: `smoke`, `raw_pilot`,
 **Exit:** `smoke` profile passes on a generated MCAP; `raw_pilot` /
 `raw_training` surface known gaps for tuning.
 
+### 1.8 Offline derived-label pass
+
+Phase A1 is implemented as a post-processor, not as rollout code:
+
+```bash
+scripts/derive_raw_rollout_labels.py \
+  .generated/genesis_bulk_rollouts/<run>/<scene_id> \
+  --out .generated/derived_labels/<run>/<scene_id>
+```
+
+The script accepts compact `messages.jsonl` or per-scene rosbag2 MCAP input.
+It resolves the scene from `summary.json` (`family`, `topology_seed`, split,
+difficulty tier), from `--family + --topology-seed`, from `--scene-manifest`,
+or by searching `--scene-corpus`. It writes `labels.jsonl` plus `summary.json`
+with per-step `cell_id`, `yaw_bin`, `local_graph_type`,
+`nearest_cell_distance_m`, `bfs_distance_to_landmark`, clearance,
+traversability, landmark visibility/bearing/range, and integrated body motion.
+
+**Exit:** focused tests cover graph-type classification, BFS landmark labels,
+body-motion windows, and command/episode/base-pose joins.
+
 ## Out of Phase 1 scope
 
 - Tier A gait distribution validation → Phase 2.
 - Safety threshold recalibration → Phase 2.
 - Genesis-Gazebo parity audit → Phase 2.
-- Derived labels (§5.3) → Phase 3 or downstream offline pass.
+- Inline derived-label computation inside `RolloutRunner` or `MCAPSceneWriter`
+  → intentionally out of scope. §5.3 labels are **landed as a downstream
+  offline pass** in
+  [lewm_worlds/labels/derived.py](../lewm_worlds/lewm_worlds/labels/derived.py)
+  and [scripts/derive_raw_rollout_labels.py](../scripts/derive_raw_rollout_labels.py).
 - Missing scene families (composite motifs, rough/local dynamics,
-  visual/sensor stress) → parallel `lewm_worlds` work, not bulk-loop work.
+  visual/sensor stress) → **landed** in `lewm_worlds.families`; all eight
+  spec families now in the registry.
 - Tier B policy port → only if Tier A fails Phase 1.1.
 - DDS-overhead modeling → audit oracle path only.
 

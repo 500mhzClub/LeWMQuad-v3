@@ -122,9 +122,16 @@ For every existing rollout in the data corpus, recover the ground-truth scene gr
 
 This is feasible whenever the scene generator is deterministic from a stored seed: regenerate the scene metadata from `scene_seed`, then map the per-step world position into the regenerated graph.
 
+**Current implementation.** `lewm_worlds.labels.derived` and
+`scripts/derive_raw_rollout_labels.py` implement this as an offline
+post-pass over compact `messages.jsonl` or per-scene rosbag2 MCAP raw
+rollouts. The pass rebuilds the scene from `family + topology_seed` when
+available, or consumes an explicit manifest, and writes
+`derived_labels/labels.jsonl` plus a join summary.
+
 **Why offline matters.** Re-rolling out the corpus is expensive and changes the data distribution if the generator has been touched since. Offline metadata recovery preserves the existing trajectories exactly.
 
-**Acceptance criterion:** the new HDF5 keys are populated for ≥99% of steps across all rollouts; the remaining <1% are explained by edge cases (agent precisely on a wall, scene seed mismatch) and are flagged with a sentinel value, not silently filled.
+**Acceptance criterion:** the derived-label artifact keys are populated for ≥99% of steps across all rollouts; the remaining <1% are explained by edge cases (agent precisely on a wall, scene seed mismatch) and are flagged with a sentinel value, not silently filled. HDF5/Parquet packaging can consume the JSONL artifact directly; it should not recompute these labels independently.
 
 ### 4.3 Phase A2 — Visual-aliasing audit
 
@@ -567,7 +574,7 @@ This is a real possibility and the most useful negative outcome. The hierarchica
 When porting this plan to a new simulator and robot:
 
 1. **Rederive the action-block representation** from scratch. Block size `K`, command dimensionality, and the primitive bank are all robot-specific. The plan's structure does not depend on their values; only the LocalMPC implementation does.
-2. **Rederive the scene generator's metadata interface.** You need a function `(scene_seed) -> (cell_centres, adjacency, local_graph_types, beacon/landmark positions, world_bounds)`. Without this you cannot run Phase A1, and without Phase A1 the entire Phase A diagnostic gate is uncomputable.
+2. **Rederive the scene generator's metadata interface.** You need a function `(scene_seed) -> (cell_centres, adjacency, local_graph_types, beacon/landmark positions, world_bounds)`. In this repo that interface is `SceneManifest` + `SceneGraph` + `local_graph_type_per_node`; without an equivalent you cannot run Phase A1, and without Phase A1 the entire Phase A diagnostic gate is uncomputable.
 3. **Re-train LeWM on the new pixel distribution.** The frozen-encoder principle assumes LeWM has been trained on rollouts from the new simulator/robot. Using a LeWM trained on a different simulator is a domain-transfer experiment, which is out of scope for v3.
 4. **Reverify body-frame motion availability.** If the new platform does not expose IMU-equivalent integrated body-frame velocity cleanly, drop body-frame motion as a BeliefEncoder input and keep it as an auxiliary prediction target only (per §3.4 default). The thesis claim in §1 then reads as "egocentric perception and action history" without the proprioceptive-motion qualifier.
 5. **The privileged-leak rule (§3.4) carries over unchanged.** Whatever signals the new simulator exposes, they remain labels-only at deployment.

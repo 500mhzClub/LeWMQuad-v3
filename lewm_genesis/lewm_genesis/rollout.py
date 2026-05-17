@@ -27,6 +27,7 @@ Genesis is required at runtime. Import-time is safe (lazy import in
 from __future__ import annotations
 
 import pickle
+import random
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -115,6 +116,16 @@ class RolloutConfig:
     backend_id: str = "genesis_tier_a"
     log_progress_every_blocks: int = 50
     foot_contact_source: str = "genesis"
+    # Collection-policy controls. ``collector_mix`` is a name->share map; the
+    # rollout looks each name up in the policy registry built from
+    # :func:`lewm_genesis.collectors.build_default_policies`. None means
+    # "use the §13 default mix". An empty dict forces the legacy uniform
+    # random-primitive sampler.
+    collector_mix: dict[str, float] | None = None
+    # Per-episode spawn-pose randomization. When True (default), every reset
+    # samples a random reachable cell and random yaw; when False the rollout
+    # falls back to the manifest spawn.
+    randomize_spawn_pose: bool = True
 
 
 class PolicyInterface(Protocol):
@@ -433,6 +444,52 @@ class RolloutRunner:
         self._sim_time_ns = 0
         self._sequence_id_counter = 0
         self._rng = np.random.default_rng(int(config.seed))
+        # Per-env spawn pose tracking. Populated by ``_reset_robot_to_spawn``
+        # so the reset-event log records the actual cell + yaw the env was
+        # respawned at (data spec §16: reset integrity).
+        self._spawn_xyz_per_env = np.tile(
+            np.asarray(self.pack.robot.spawn_xyz_m, dtype=np.float32),
+            (self.n_envs, 1),
+        )
+        self._spawn_quat_wxyz_per_env = np.tile(
+            np.asarray(self.pack.robot.spawn_quat_wxyz, dtype=np.float32),
+            (self.n_envs, 1),
+        )
+        # Episode-scoped block counter for collector observations.
+        self._blocks_in_episode = np.zeros(self.n_envs, dtype=np.int64)
+
+        # Build the collector bench + scheduler. ``scene_graph`` may be None
+        # on legacy ScenePack instances built in tests; in that case fall
+        # back to the legacy uniform random sampler.
+        from lewm_genesis.collectors import (
+            DEFAULT_COLLECTION_MIX,
+            EpisodeScheduler,
+            build_default_policies,
+        )
+
+        self._scene_graph = getattr(self.pack, "scene_graph", None)
+        self._collectors = build_default_policies(self.registry, n_envs=self.n_envs)
+        if config.collector_mix is not None and not config.collector_mix:
+            # Empty dict => uniform primitive sampling (the old behaviour).
+            mix = {"primitive_curriculum": 1.0}
+        else:
+            mix = dict(config.collector_mix or DEFAULT_COLLECTION_MIX)
+        # If the scene has no graph available, route/frontier/recovery cannot
+        # run, so collapse the mix to policies that don't need it. This keeps
+        # legacy paths working without forcing every caller to populate a
+        # SceneGraph.
+        if self._scene_graph is None:
+            graph_free = {"primitive_curriculum", "ou_noise"}
+            mix = {k: v for k, v in mix.items() if k in graph_free}
+            if not mix:
+                mix = {"primitive_curriculum": 1.0}
+        self._scheduler = EpisodeScheduler(
+            policies=self._collectors,
+            shares=mix,
+            rng=self._rng,
+            n_envs=self.n_envs,
+        )
+        self._spawn_rng = random.Random(int(config.seed) * 0x9E37 ^ 0xA5A5A5A5)
 
     # ------------------------------------------------------------------
     # Public API
@@ -447,18 +504,18 @@ class RolloutRunner:
         from lewm_genesis import ros_msg_adapter as adapter
 
         self._reset_robot_to_spawn(envs_idx=None)
+        # All envs draw their first collector assignment via the scheduler so
+        # the §13 mix is honored from block 0.
+        for env_idx in range(self.n_envs):
+            self._scheduler.on_episode_reset(env_idx)
+            self._blocks_in_episode[env_idx] = 0
         self._emit_initial_reset_events(writer, adapter)
         wall_start = time.time()
-        tape, names = sample_command_tape(
-            self.registry,
-            self.n_envs,
-            self.config.n_blocks,
-            self._rng,
-        )
 
         for block_idx in range(self.config.n_blocks):
-            block = self._clip_block(tape[:, block_idx])
-            self._emit_command_block_request(block_idx, tape[:, block_idx], names, writer, adapter)
+            requested_block, choices = self._collect_block()
+            block = self._clip_block(requested_block)
+            self._emit_command_block_request(requested_block, choices, writer, adapter)
 
             for tick_idx in range(self._block_size):
                 target_cmd = block.executed[:, tick_idx]
@@ -466,8 +523,9 @@ class RolloutRunner:
                 self._emit_per_tick_records(writer, adapter, tick_idx == self._block_size - 1)
                 writer.write_clock(self._sim_time_ns)
 
-            self._emit_executed_command_block(block_idx, block, names, writer, adapter)
+            self._emit_executed_command_block(block, choices, writer, adapter)
             self._last_executed = block.executed[:, -1, :]
+            self._blocks_in_episode += 1
             self._check_and_reset_fallen_envs(writer, adapter)
 
             if (
@@ -488,7 +546,82 @@ class RolloutRunner:
             "command_ticks": self.config.n_blocks * self._block_size,
             "wall_seconds": wall_total,
             "final_sim_time_s": self._sim_time_ns / 1e9,
+            "collector_mix_realized": self._scheduler.realized_mix(),
         }
+
+    # ------------------------------------------------------------------
+    # Collector observation + block selection
+    # ------------------------------------------------------------------
+
+    def _collect_block(self) -> tuple[np.ndarray, list]:
+        """Observe per-env state and call each env's assigned collector.
+
+        Returns the requested ``(n_envs, T, 3)`` tape for the upcoming block
+        plus a parallel list of :class:`BlockChoice` for audit emission.
+        """
+
+        from lewm_genesis.collectors.base import BlockChoice, EnvObservation
+
+        robot = self.build.robot
+        pos_arr = self._as_np(robot.get_pos()).astype(np.float32, copy=False)
+        quat_wxyz = self._as_np(robot.get_quat()).astype(np.float32, copy=False)
+        if pos_arr.ndim == 1:
+            pos_arr = pos_arr[None, :]
+        if quat_wxyz.ndim == 1:
+            quat_wxyz = quat_wxyz[None, :]
+        yaws = np.array(
+            [
+                _yaw_from_quat_wxyz(
+                    float(quat_wxyz[i, 0]),
+                    float(quat_wxyz[i, 1]),
+                    float(quat_wxyz[i, 2]),
+                    float(quat_wxyz[i, 3]),
+                )
+                for i in range(self.n_envs)
+            ],
+            dtype=np.float32,
+        )
+
+        requested_block = np.zeros((self.n_envs, self._block_size, 3), dtype=np.float32)
+        choices: list[BlockChoice] = []
+        for env_idx in range(self.n_envs):
+            base_xy = (float(pos_arr[env_idx, 0]), float(pos_arr[env_idx, 1]))
+            if self._scene_graph is not None:
+                hit = self._scene_graph.locate(base_xy)
+                clearance = self._scene_graph.clearance_to_walls(base_xy)
+                current_cell = hit.cell_id
+                cell_dist = hit.distance_m
+            else:
+                current_cell = -1
+                cell_dist = 0.0
+                clearance = float("inf")
+
+            state = self.episode_states[env_idx]
+            observation = EnvObservation(
+                env_idx=env_idx,
+                base_xy_world=base_xy,
+                base_yaw_world=float(yaws[env_idx]),
+                current_cell_id=int(current_cell),
+                nearest_cell_distance_m=float(cell_dist),
+                clearance_to_walls_m=float(clearance),
+                last_executed_cmd=(
+                    float(self._last_executed[env_idx, 0]),
+                    float(self._last_executed[env_idx, 1]),
+                    float(self._last_executed[env_idx, 2]),
+                ),
+                episode_id=int(state.episode_id),
+                episode_step=int(state.episode_step),
+                block_idx_in_episode=int(self._blocks_in_episode[env_idx]),
+            )
+            policy = self._scheduler.policy_for(env_idx)
+            choice = policy.on_block(
+                observation=observation,
+                scene=self._scene_graph,
+                rng=self._rng,
+            )
+            requested_block[env_idx] = choice.requested_block
+            choices.append(choice)
+        return requested_block, choices
 
     # ------------------------------------------------------------------
     # Inner loop steps
@@ -635,25 +768,28 @@ class RolloutRunner:
 
     def _emit_command_block_request(
         self,
-        block_idx: int,
         requested_block: np.ndarray,
-        names: list[list[str]],
+        choices: list,
         writer: Any,
         adapter: Any,
     ) -> None:
         for env_idx in range(self.n_envs):
             sequence_id = self._next_sequence_id()
             req = requested_block[env_idx]  # (T, 3)
+            choice = choices[env_idx]
             record = CommandBlockRecord(
                 sequence_id=sequence_id,
                 block_size=int(req.shape[0]),
                 command_dt_s=float(self.timing.command_dt_s),
-                primitive_name=str(names[env_idx][block_idx]),
+                primitive_name=str(choice.primitive_name),
                 vx_body_mps=[float(v) for v in req[:, 0]],
                 vy_body_mps=[float(v) for v in req[:, 1]],
                 yaw_rate_radps=[float(v) for v in req[:, 2]],
                 event_name="",
                 event_allowed_in_training=False,
+                command_source=str(choice.command_source),
+                route_target_id=int(choice.route_target_id),
+                next_waypoint_id=int(choice.next_waypoint_id),
                 stamp_ns=self._sim_time_ns,
             )
             writer.write_env(
@@ -662,9 +798,8 @@ class RolloutRunner:
 
     def _emit_executed_command_block(
         self,
-        block_idx: int,
         block: _BlockTrajectory,
-        names: list[list[str]],
+        choices: list,
         writer: Any,
         adapter: Any,
     ) -> None:
@@ -676,7 +811,7 @@ class RolloutRunner:
                 requested,
                 executed,
                 sequence_id=sequence_id,
-                primitive_name=str(names[env_idx][block_idx]),
+                primitive_name=str(choices[env_idx].primitive_name),
                 command_dt_s=float(self.timing.command_dt_s),
                 clipped=bool(block.clipped[env_idx]),
                 safety_overridden=False,
@@ -697,11 +832,13 @@ class RolloutRunner:
 
     def _emit_initial_reset_events(self, writer: Any, adapter: Any) -> None:
         for env_idx in range(self.n_envs):
+            spawn_xyz = tuple(float(v) for v in self._spawn_xyz_per_env[env_idx])
+            spawn_wxyz = tuple(float(v) for v in self._spawn_quat_wxyz_per_env[env_idx])
             event = self.episode_states[env_idx].reset(
                 reason="initial_spawn",
                 success=True,
-                spawn_pose_xyz=self.pack.robot.spawn_xyz_m,
-                spawn_pose_quat_xyzw=self._wxyz_to_xyzw(self.pack.robot.spawn_quat_wxyz),
+                spawn_pose_xyz=spawn_xyz,
+                spawn_pose_quat_xyzw=self._wxyz_to_xyzw(spawn_wxyz),
                 stamp_ns=self._sim_time_ns,
             )
             writer.write_env(
@@ -725,30 +862,51 @@ class RolloutRunner:
         reasons = ["fall" if fell[i] else "out_of_bounds" for i in to_reset]
         self._reset_robot_to_spawn(envs_idx=to_reset.tolist())
         for env_idx, reason in zip(to_reset.tolist(), reasons):
+            spawn_xyz = tuple(float(v) for v in self._spawn_xyz_per_env[env_idx])
+            spawn_wxyz = tuple(float(v) for v in self._spawn_quat_wxyz_per_env[env_idx])
             event = self.episode_states[env_idx].reset(
                 reason=reason,
                 success=True,
-                spawn_pose_xyz=self.pack.robot.spawn_xyz_m,
-                spawn_pose_quat_xyzw=self._wxyz_to_xyzw(self.pack.robot.spawn_quat_wxyz),
+                spawn_pose_xyz=spawn_xyz,
+                spawn_pose_quat_xyzw=self._wxyz_to_xyzw(spawn_wxyz),
                 stamp_ns=self._sim_time_ns,
             )
             self._last_executed[env_idx] = 0.0
+            self._blocks_in_episode[env_idx] = 0
+            # New episode for this env: redraw the collector so the §13 mix
+            # is preserved across resets, and let it clear its per-env state.
+            self._scheduler.on_episode_reset(int(env_idx))
             writer.write_env(
                 env_idx, "reset_event", adapter.reset_event_record_to_msg(event), self._sim_time_ns
             )
 
     def _reset_robot_to_spawn(self, envs_idx: list[int] | None) -> None:
         robot = self.build.robot
-        spawn_pos = np.array(self.pack.robot.spawn_xyz_m, dtype=np.float32)
-        spawn_quat = np.array(self.pack.robot.spawn_quat_wxyz, dtype=np.float32)
         if envs_idx is None:
             envs = list(range(self.n_envs))
         else:
             envs = list(envs_idx)
         if not envs:
             return
-        pos_batch = np.tile(spawn_pos, (len(envs), 1))
-        quat_batch = np.tile(spawn_quat, (len(envs), 1))
+
+        # Sample a fresh per-env spawn pose (cell + yaw) if randomization is
+        # on and the scene exposes a graph; otherwise stick with the manifest
+        # spawn. Updating the per-env cache here means the ResetEvent log,
+        # the camera-pose helper, and the next reset all see the same spawn.
+        for env_idx in envs:
+            if self.config.randomize_spawn_pose and self._scene_graph is not None:
+                xyz, wxyz, _cell_id = self._scene_graph.sample_spawn_pose(
+                    self._spawn_rng,
+                    spawn_z_m=float(self.pack.robot.spawn_xyz_m[2]),
+                )
+                self._spawn_xyz_per_env[env_idx] = xyz
+                self._spawn_quat_wxyz_per_env[env_idx] = wxyz
+            else:
+                self._spawn_xyz_per_env[env_idx] = self.pack.robot.spawn_xyz_m
+                self._spawn_quat_wxyz_per_env[env_idx] = self.pack.robot.spawn_quat_wxyz
+
+        pos_batch = self._spawn_xyz_per_env[envs].astype(np.float32, copy=False)
+        quat_batch = self._spawn_quat_wxyz_per_env[envs].astype(np.float32, copy=False)
         reset_stance = getattr(self.policy, "reset_stance_rad", self._stance)
         stance_batch = np.tile(np.asarray(reset_stance, dtype=np.float32), (len(envs), 1))
         robot.set_pos(pos_batch, envs_idx=envs, zero_velocity=True)
@@ -772,11 +930,13 @@ class RolloutRunner:
             [quat_wxyz[..., 1], quat_wxyz[..., 2], quat_wxyz[..., 3], quat_wxyz[..., 0]],
             axis=-1,
         )
+        from lewm_genesis.scene_loader import effective_camera_mount_xyz_rpy
+        mount_xyz, mount_rpy = effective_camera_mount_xyz_rpy(self.pack)
         cam_pos, cam_lookat, cam_up = _camera_pose_world_from_base(
             pos_arr,
             quat_xyzw,
-            mount_xyz_body=self.pack.camera.xyz_body_m,
-            mount_rpy_body=self.pack.camera.rpy_body_rad,
+            mount_xyz_body=mount_xyz,
+            mount_rpy_body=mount_rpy,
         )
         if cam_pos.shape[0] == 1 and not bool(getattr(self.build.camera, "_is_batched", False)):
             self.build.camera.set_pose(pos=cam_pos[0], lookat=cam_lookat[0], up=cam_up[0])
@@ -888,6 +1048,14 @@ class RolloutRunner:
         sid = self._sequence_id_counter
         self._sequence_id_counter += 1
         return sid
+
+
+def _yaw_from_quat_wxyz(qw: float, qx: float, qy: float, qz: float) -> float:
+    """Return body yaw (rad) from a wxyz quaternion (ZYX convention)."""
+
+    siny_cosp = 2.0 * (qw * qz + qx * qy)
+    cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz)
+    return float(np.arctan2(siny_cosp, cosy_cosp))
 
 
 def _rotate_world_to_body(v_world: np.ndarray, q_xyzw: np.ndarray) -> np.ndarray:

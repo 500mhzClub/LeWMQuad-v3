@@ -28,7 +28,7 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from lewm_genesis.scene_loader import ScenePack
+from lewm_genesis.scene_loader import ScenePack, effective_camera_mount_xyz_rpy
 
 
 _GENESIS_INITIALIZED = False
@@ -156,17 +156,39 @@ def build_scene_from_pack(
         renderer=gs.renderers.Rasterizer(),
     )
 
-    scene.add_entity(gs.morphs.Plane())
+    floor_material = _floor_material(gs, pack)
+    obstacle_material = _obstacle_material(gs, pack)
+    material_lookup = _material_lookup(pack)
+    floor_surface = _surface_for(gs, "floor", material_lookup)
+
+    plane_kwargs: dict[str, Any] = {}
+    if floor_material is not None:
+        plane_kwargs["material"] = floor_material
+    if floor_surface is not None:
+        plane_kwargs["surface"] = floor_surface
+    scene.add_entity(gs.morphs.Plane(), **plane_kwargs)
+
     for obj in pack.static_objects:
-        scene.add_entity(
-            gs.morphs.Box(
-                pos=obj.center_xyz_m,
-                size=obj.size_xyz_m,
-                euler=(0.0, 0.0, float(obj.yaw_rad)),
-                fixed=True,
-            ),
-            name=obj.object_id,
+        # Box euler is in degrees per Genesis morph contract; convert from
+        # radians stored on the manifest.
+        euler_deg = (
+            math.degrees(float(obj.roll_rad)),
+            math.degrees(float(obj.pitch_rad)),
+            math.degrees(float(obj.yaw_rad)),
         )
+        morph = gs.morphs.Box(
+            pos=obj.center_xyz_m,
+            size=obj.size_xyz_m,
+            euler=euler_deg,
+            fixed=True,
+        )
+        entity_kwargs: dict[str, Any] = {"name": obj.object_id}
+        if obstacle_material is not None:
+            entity_kwargs["material"] = obstacle_material
+        surface = _surface_for(gs, obj.material_id, material_lookup)
+        if surface is not None:
+            entity_kwargs["surface"] = surface
+        scene.add_entity(morph, **entity_kwargs)
 
     # Genesis quaternion convention: wxyz (matches the scene manifest).
     robot = scene.add_entity(
@@ -194,28 +216,95 @@ def build_scene_from_pack(
     return SceneBuild(scene=scene, robot=robot, camera=camera, pack=pack, n_envs=int(n_envs))
 
 
+# ---------------------------------------------------------------------------
+# Material / surface helpers (data-spec §14 plumbing)
+# ---------------------------------------------------------------------------
+
+
+def _floor_material(gs, pack: ScenePack):
+    physics = pack.physics_randomization
+    if physics is None:
+        return None
+    return _build_rigid_material(gs, friction=physics.floor_friction_mu)
+
+
+def _obstacle_material(gs, pack: ScenePack):
+    physics = pack.physics_randomization
+    if physics is None:
+        return None
+    return _build_rigid_material(gs, friction=physics.obstacle_friction_mu)
+
+
+def _build_rigid_material(gs, *, friction: float):
+    # Genesis Rigid friction must live in [1e-2, 5.0]; clamp defensively so
+    # an out-of-range manifest value falls back to a sane edge instead of
+    # crashing scene build.
+    clamped = max(1e-2, min(5.0, float(friction)))
+    try:
+        return gs.materials.Rigid(friction=clamped)
+    except Exception:  # pragma: no cover - exercised only when Genesis API drifts
+        return None
+
+
+def _material_lookup(pack: ScenePack) -> dict[str, tuple[float, float, float, float]]:
+    """Resolve material_id -> RGBA from the manifest + landmark palette."""
+
+    from lewm_worlds.randomization import BASE_PALETTE, LANDMARK_PALETTE
+
+    lookup: dict[str, tuple[float, float, float, float]] = {}
+    if pack.visual_randomization is not None:
+        for override in pack.visual_randomization.material_overrides:
+            lookup[override.material_id] = override.rgba
+    for key, rgba in LANDMARK_PALETTE.items():
+        lookup.setdefault(key, rgba)
+    for key, rgba in BASE_PALETTE.items():
+        lookup.setdefault(key, rgba)
+    return lookup
+
+
+def _surface_for(
+    gs,
+    material_id: str,
+    lookup: dict[str, tuple[float, float, float, float]],
+):
+    if not material_id:
+        return None
+    rgba = lookup.get(material_id)
+    if rgba is None:
+        return None
+    try:
+        return gs.surfaces.Default(color=tuple(rgba))
+    except Exception:  # pragma: no cover - surface API drift
+        return None
+
+
 def _initial_camera_pose_world(pack: ScenePack) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
     """Compute an initial world-frame camera pose from the spawn + body mount.
 
     The rollout loop tracks the body each tick (see ``rollout.py``); this
     function only sets a sensible starting pose so the first rendered frame
-    is meaningful for previews and unit checks.
+    is meaningful for previews and unit checks. Per-scene camera-extrinsic
+    jitter (data-spec §14) is added to the platform mount before the
+    transform so each scene gets a slightly different mount.
     """
 
     spawn_x, spawn_y, spawn_z = pack.robot.spawn_xyz_m
     spawn_qw, spawn_qx, spawn_qy, spawn_qz = pack.robot.spawn_quat_wxyz
     yaw = _yaw_from_wxyz(spawn_qw, spawn_qx, spawn_qy, spawn_qz)
 
-    mx, my, mz = pack.camera.xyz_body_m
-    cos_y, sin_y = math.cos(yaw), math.sin(yaw)
+    (mx, my, mz), (_, jpitch, jyaw) = effective_camera_mount_xyz_rpy(pack)
+
+    effective_yaw = yaw + jyaw
+    cos_y, sin_y = math.cos(effective_yaw), math.sin(effective_yaw)
     cam_x = spawn_x + cos_y * mx - sin_y * my
     cam_y = spawn_y + sin_y * mx + cos_y * my
     cam_z = spawn_z + mz
 
-    # Aim 1m forward from the camera, in the body x direction, slightly down.
+    # Aim 1m forward from the camera, in the body x direction; nominal pitch
+    # is -0.1m below horizon at 1m forward (~5.7°), perturbed by jpitch.
     look_x = cam_x + cos_y * 1.0
     look_y = cam_y + sin_y * 1.0
-    look_z = cam_z - 0.1
+    look_z = cam_z - 0.1 - math.tan(jpitch)
     return (cam_x, cam_y, cam_z), (look_x, look_y, look_z)
 
 

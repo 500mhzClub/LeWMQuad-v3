@@ -2,6 +2,31 @@
 
 Date: 2026-05-13
 
+> **Implementation pointers.** Where this spec talks about generators or
+> collectors, the live implementation lives in:
+>
+> - §8 (scene distribution) + §9 (geometry) + §14 (domain randomization)
+>   → [lewm_worlds/families.py](../lewm_worlds/lewm_worlds/families.py),
+>   [lewm_worlds/randomization.py](../lewm_worlds/lewm_worlds/randomization.py),
+>   shares in [lewm_worlds/splits.py](../lewm_worlds/lewm_worlds/splits.py).
+> - §13 (collection policy mix) →
+>   [lewm_genesis/collectors/](../lewm_genesis/lewm_genesis/collectors/);
+>   see [collection_policy.md](collection_policy.md) for the per-collector
+>   reference and audit format.
+> - §5.1 `command_source` + privileged route labels →
+>   [CommandBlock.msg](../lewm_go2_control/msg/CommandBlock.msg) fields
+>   `command_source`, `route_target_id`, `next_waypoint_id`.
+> - §16 spawn integrity + cell-scoped `episode_id` →
+>   `RolloutRunner._reset_robot_to_spawn`; per-episode spawn pose
+>   randomization is on by default
+>   (`RolloutConfig.randomize_spawn_pose=True`).
+> - §5.3 derived labels →
+>   [lewm_worlds/labels/derived.py](../lewm_worlds/lewm_worlds/labels/derived.py)
+>   plus [scripts/derive_raw_rollout_labels.py](../scripts/derive_raw_rollout_labels.py).
+>   This is an offline post-pass: it rebuilds scene metadata from
+>   `family + topology_seed` or a manifest, then joins logged base poses,
+>   episode info, and command blocks.
+
 ## 1. Scope
 
 This document specifies the data required for a completely fresh retrain of the
@@ -211,6 +236,18 @@ Required:
   `landmark_range`, with line-of-sight occlusion.
 - `integrated_body_motion`: body-frame `dx`, `dy`, and `dyaw` over every action
   block and over H-JEPA history windows.
+
+Implementation status:
+
+- `scripts/derive_raw_rollout_labels.py` writes `derived_labels/labels.jsonl`
+  and `derived_labels/summary.json` for compact `messages.jsonl` or per-scene
+  rosbag2 MCAP raw rollouts.
+- Current fields include `cell_id`, `yaw_bin`, `local_graph_type`,
+  `nearest_cell_distance_m`, `bfs_distance_to_landmark`, `clearance_m`,
+  `traversability_forward_m`, landmark visibility/bearing/range, and
+  integrated body motion over action-block and history windows.
+- The pass is labels-only. It is not called by `RolloutRunner` and none of its
+  privileged fields are deployment inputs.
 
 Recommended:
 

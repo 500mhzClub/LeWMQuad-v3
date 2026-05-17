@@ -79,6 +79,15 @@ def command_block_record_to_msg(record: CommandBlockRecord) -> Any:
     msg.yaw_rate_radps = [float(v) for v in record.yaw_rate_radps]
     msg.event_name = str(record.event_name)
     msg.event_allowed_in_training = bool(record.event_allowed_in_training)
+    # New §13 audit fields. Newer msg definitions may not be installed yet
+    # on every consumer; treat missing attributes as a no-op so older
+    # ``lewm_go2_control`` builds keep deserializing successfully.
+    if hasattr(msg, "command_source"):
+        msg.command_source = str(record.command_source)
+    if hasattr(msg, "route_target_id"):
+        msg.route_target_id = int(record.route_target_id)
+    if hasattr(msg, "next_waypoint_id"):
+        msg.next_waypoint_id = int(record.next_waypoint_id)
     return msg
 
 

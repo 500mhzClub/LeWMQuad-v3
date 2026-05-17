@@ -22,23 +22,29 @@ from lewm_worlds.manifest import stable_scene_id
 DEFAULT_SPLITS: tuple[str, ...] = ("train", "val", "test_id", "test_hard")
 
 
-# Shares (data spec section 8) used by ``smoke_corpus_plan`` and
-# ``standard_corpus_plan`` below. Hard test deliberately reweights toward
-# large/alias families.
+# Shares (data spec §8) used by ``smoke_corpus_plan`` and
+# ``standard_corpus_plan`` below. Train shares match the spec table verbatim;
+# hard test deliberately reweights toward large/alias families.
 TRAIN_SHARES: dict[str, float] = {
-    "open_obstacle_field": 0.15,
-    "small_enclosed_maze": 0.20,
-    "medium_enclosed_maze": 0.35,
-    "large_enclosed_maze": 0.20,
+    "open_obstacle_field": 0.10,
+    "local_composite_motifs": 0.15,
+    "small_enclosed_maze": 0.15,
+    "medium_enclosed_maze": 0.25,
+    "large_enclosed_maze": 0.15,
     "loop_alias_stress": 0.10,
+    "rough_local_dynamics": 0.05,
+    "visual_sensor_stress": 0.05,
 }
 
 HARD_TEST_SHARES: dict[str, float] = {
-    "open_obstacle_field": 0.05,
-    "small_enclosed_maze": 0.10,
-    "medium_enclosed_maze": 0.25,
-    "large_enclosed_maze": 0.35,
-    "loop_alias_stress": 0.25,
+    "open_obstacle_field": 0.00,
+    "local_composite_motifs": 0.00,
+    "small_enclosed_maze": 0.00,
+    "medium_enclosed_maze": 0.20,
+    "large_enclosed_maze": 0.30,
+    "loop_alias_stress": 0.30,
+    "rough_local_dynamics": 0.10,
+    "visual_sensor_stress": 0.10,
 }
 
 
@@ -143,9 +149,30 @@ def smoke_corpus_plan(plan_seed: int = 0) -> CorpusPlan:
 
     totals: dict[str, dict[str, int]] = {
         "train": {family: 1 for family in registered_families()},
-        "val": {family: 1 for family in ("open_obstacle_field", "medium_enclosed_maze")},
-        "test_id": {family: 1 for family in ("medium_enclosed_maze", "large_enclosed_maze")},
-        "test_hard": {"loop_alias_stress": 1},
+        "val": {
+            family: 1
+            for family in (
+                "open_obstacle_field",
+                "medium_enclosed_maze",
+                "visual_sensor_stress",
+            )
+        },
+        "test_id": {
+            family: 1
+            for family in (
+                "medium_enclosed_maze",
+                "large_enclosed_maze",
+                "local_composite_motifs",
+            )
+        },
+        "test_hard": {
+            family: 1
+            for family in (
+                "loop_alias_stress",
+                "rough_local_dynamics",
+                "visual_sensor_stress",
+            )
+        },
     }
     return plan_corpus(plan_seed=plan_seed, totals=totals)
 

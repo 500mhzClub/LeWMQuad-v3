@@ -48,11 +48,12 @@ Kilted or another distro by default.
 
 ## Repository Layout
 
-- `lewm_genesis`: Genesis-side bulk generation (in progress). Scene building,
-  parity checks, and render-replay scaffolding. Becomes the bulk physics +
-  rendering loop; cross-references the v2 rollout pattern.
-- `lewm_worlds`: canonical scene manifest model and split planner. Consumed by
-  both Genesis and the Gazebo audit oracle.
+- `lewm_genesis`: Genesis-side bulk generation. Scene loading/building,
+  collector scheduling, PPO rollout, per-scene MCAP writing, parity checks,
+  and render-replay scaffolding for the production physics + rendering path.
+- `lewm_worlds`: canonical scene manifest model, split planner, scene graph,
+  topology labels, and offline derived-label helpers. Consumed by both Genesis
+  and the Gazebo audit oracle.
 - `lewm_go2_control`: LeWM-specific ROS 2 message and service interfaces.
   Contract is sim-agnostic; runtime form is ROS nodes under the audit oracle
   and Python utilities under Genesis bulk.
@@ -656,13 +657,59 @@ size.
   incomplete license metadata for `unitree_go2_description` and
   `unitree_go2_sim`. Use it for local evaluation until the license is
   clarified or replaced.
-- World generation: `lewm_worlds` now ships per-family generators
-  (`open_obstacle_field`, `small_enclosed_maze`, `medium_enclosed_maze`,
-  `large_enclosed_maze`, `loop_alias_stress`), a deterministic
-  train/val/test_id/test_hard split planner with disjoint seeds, and a corpus
-  builder. `scripts/generate_scene_corpus.sh` materializes a smoke or
+- World generation: `lewm_worlds` ships eight per-family generators matching
+  the data-spec §8 distribution: `open_obstacle_field`,
+  `local_composite_motifs` (T-junction / S-bend / doorway / slalom /
+  short-dead-end), `small_enclosed_maze`, `medium_enclosed_maze`,
+  `large_enclosed_maze`, `loop_alias_stress`, `rough_local_dynamics`
+  (ramps + low steps + slick patches with wide friction profile), and
+  `visual_sensor_stress` (medium-maze topology with aggressive lighting,
+  texture, distractor, and camera-extrinsic randomization). All families
+  sample corridor width per scene from the spec band
+  (`1.6 x W_body` to `3.0 x W_body`, ≥30 % from the narrow
+  `1.6-2.0 x W_body` band) and emit a per-scene
+  `VisualRandomization`/`PhysicsRandomization`/`CameraExtrinsicJitter`
+  payload that the SDF and Genesis exporters both consume. Train shares
+  match the spec verbatim (10/15/15/25/15/10/5/5). A deterministic
+  train/val/test_id/test_hard split planner keeps topology seeds disjoint
+  across splits. `scripts/generate_scene_corpus.sh` materializes a smoke or
   spec-aligned plan to `.generated/scene_corpus/<name>/`. The same manifest
   drives both Genesis bulk and the Gazebo audit oracle.
+- Collection policy: Genesis bulk rollouts now drive the data-spec §13
+  command-source mix instead of uniform random primitives. Per-episode each
+  env draws one collector from
+  `{route_teacher, frontier, primitive_curriculum, ou_noise, recovery,
+  loop_revisit}` according to the §13 share table. The route teacher uses
+  privileged BFS over the scene graph to a landmark cell; the frontier
+  teacher picks the least-visited reachable cell with cross-episode visit
+  carry-over; the recovery curriculum runs an approach → backout → pivot
+  FSM gated on clearance to walls; the OU collector snaps an
+  Ornstein-Uhlenbeck process in command space to the nearest trainable
+  primitive. Every emitted `CommandBlock` carries `command_source`,
+  `route_target_id`, and `next_waypoint_id` privileged-label fields for
+  post-hoc audits; the per-scene rollout summary publishes the realized
+  mix. Spawn pose is randomized per episode (random reachable cell + random
+  yaw, clearance-gated) so each cell accumulates entries from multiple
+  headings — required by the H-JEPA BeliefEncoder coverage gate in
+  [docs/v3_hjepa_plan.md](docs/v3_hjepa_plan.md) §5.1. See
+  [docs/collection_policy.md](docs/collection_policy.md) for the collector
+  reference.
+- Offline derived labels: Phase A1 lives outside the rollout loop in
+  `lewm_worlds.labels.derived` and `scripts/derive_raw_rollout_labels.py`.
+  The pass reads compact `messages.jsonl` or per-scene rosbag2 MCAP raw
+  rollouts, rebuilds the manifest from `family + topology_seed` (or consumes
+  an explicit `manifest.json`), joins `/lewm/go2/base_state` against
+  `EpisodeInfo` and command blocks, and writes `derived_labels/labels.jsonl`
+  with `cell_id`, `yaw_bin`, `local_graph_type`,
+  `nearest_cell_distance_m`, `bfs_distance_to_landmark`, clearance,
+  traversability, landmark bearing/range/visibility, and integrated
+  body-motion fields. Example:
+
+  ```bash
+  scripts/derive_raw_rollout_labels.py \
+    .generated/genesis_bulk_rollouts/<run>/<scene_id> \
+    --out .generated/derived_labels/<run>/<scene_id>
+  ```
 - No explicit gait-endurance blocker on the audit oracle: upstream CHAMP +
   bullet-featherstone delivers ~30+ s of sustained `/cmd_vel` walking on
   this workstation, comfortably above the data spec's 16-24 s per-episode

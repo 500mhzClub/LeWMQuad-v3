@@ -6,6 +6,18 @@ inference, and the failure analysis that has shaped the present design.
 Cross-references point at the live source so the audience can follow along
 in the editor.
 
+> **Current v3 implementation note.** The sections below preserve the v2
+> architecture narrative. The live v3 data path has moved to the
+> Genesis-first stack: scene families and split planning live in
+> [lewm_worlds/families.py](../lewm_worlds/lewm_worlds/families.py) and
+> [lewm_worlds/splits.py](../lewm_worlds/lewm_worlds/splits.py), rollout
+> collection lives in [lewm_genesis/rollout.py](../lewm_genesis/lewm_genesis/rollout.py)
+> with collectors under [lewm_genesis/collectors/](../lewm_genesis/lewm_genesis/collectors/),
+> and Phase A1 derived labels are produced offline by
+> [scripts/derive_raw_rollout_labels.py](../scripts/derive_raw_rollout_labels.py).
+> Do not read the old `scripts/1_physics_rollout.py`/HDF5 path below as the
+> current production corpus writer.
+
 ---
 
 ## 0. The setting in one paragraph

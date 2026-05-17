@@ -24,6 +24,8 @@ from typing import Any
 import yaml
 
 from lewm_genesis.go2_adapter import resolve_go2_urdf
+from lewm_worlds.manifest import SceneManifest, parse_scene_manifest_dict
+from lewm_worlds.scene_graph import SceneGraph
 
 
 # Unitree Go2 URDF link names in LeWM fl/fr/rl/rr order.
@@ -46,6 +48,48 @@ class StaticObject:
     size_xyz_m: tuple[float, float, float]
     yaw_rad: float
     material_id: str
+    # roll/pitch let an object represent a slope or tilted ramp; default 0 so
+    # axis-aligned walls/obstacles are unchanged from the legacy schema.
+    roll_rad: float = 0.0
+    pitch_rad: float = 0.0
+
+
+@dataclass(frozen=True)
+class MaterialOverride:
+    material_id: str
+    rgba: tuple[float, float, float, float]
+
+
+@dataclass(frozen=True)
+class LightingSpec:
+    direction: tuple[float, float, float]
+    diffuse_rgb: tuple[float, float, float]
+    specular_rgb: tuple[float, float, float]
+    ambient_rgb: tuple[float, float, float]
+
+
+@dataclass(frozen=True)
+class VisualRandomization:
+    material_overrides: tuple[MaterialOverride, ...]
+    lighting: LightingSpec
+    # Distractors are folded into ``static_objects`` at load time so the
+    # scene_builder doesn't need a second loop; this field is kept for callers
+    # that want to introspect distractor presence/count separately.
+    distractor_object_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class PhysicsRandomization:
+    floor_friction_mu: float
+    floor_restitution: float
+    obstacle_friction_mu: float
+    obstacle_restitution: float
+
+
+@dataclass(frozen=True)
+class CameraExtrinsicJitter:
+    xyz_offset_m: tuple[float, float, float]
+    rpy_offset_rad: tuple[float, float, float]
 
 
 @dataclass(frozen=True)
@@ -115,6 +159,14 @@ class ScenePack:
     timing: PhysicsTiming
     camera_constraints: dict[str, float]
     source_dir: Path
+    visual_randomization: VisualRandomization | None = None
+    physics_randomization: PhysicsRandomization | None = None
+    camera_extrinsic_jitter: CameraExtrinsicJitter | None = None
+    # Canonical scene manifest and pre-built scene graph. Optional so legacy
+    # consumers that constructed ScenePack directly (e.g. small test fixtures)
+    # still compile; the production loader always populates them.
+    manifest: SceneManifest | None = None
+    scene_graph: SceneGraph | None = None
 
 
 def load_platform_manifest(path: str | Path) -> dict[str, Any]:
@@ -127,6 +179,30 @@ def load_platform_manifest(path: str | Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError(f"platform manifest must be a mapping: {manifest_path}")
     return data
+
+
+def effective_camera_mount_xyz_rpy(
+    pack: "ScenePack",
+) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+    """Return the camera mount ``(xyz_body_m, rpy_body_rad)`` with jitter applied.
+
+    Callers that need the platform's nominal mount keep using
+    ``pack.camera.xyz_body_m``/``pack.camera.rpy_body_rad``. Callers that
+    actually place the camera (scene build, per-tick render-replay) should use
+    this helper so per-scene camera-extrinsic jitter (data spec §14) reaches
+    the rendered image rather than only the manifest.
+    """
+
+    base_xyz = pack.camera.xyz_body_m
+    base_rpy = pack.camera.rpy_body_rad
+    if pack.camera_extrinsic_jitter is None:
+        return base_xyz, base_rpy
+    j_xyz = pack.camera_extrinsic_jitter.xyz_offset_m
+    j_rpy = pack.camera_extrinsic_jitter.rpy_offset_rad
+    return (
+        (base_xyz[0] + j_xyz[0], base_xyz[1] + j_xyz[1], base_xyz[2] + j_xyz[2]),
+        (base_rpy[0] + j_rpy[0], base_rpy[1] + j_rpy[1], base_rpy[2] + j_rpy[2]),
+    )
 
 
 def camera_mount_from_platform(platform_manifest: dict[str, Any]) -> CameraMount:
@@ -176,9 +252,71 @@ def _load_static_objects(genesis_scene: dict[str, Any]) -> tuple[StaticObject, .
                 size_xyz_m=(float(size[0]), float(size[1]), float(size[2])),
                 yaw_rad=float(obj.get("yaw_rad", 0.0)),
                 material_id=str(obj.get("material_id", "")),
+                roll_rad=float(obj.get("roll_rad", 0.0)),
+                pitch_rad=float(obj.get("pitch_rad", 0.0)),
             )
         )
     return tuple(objects)
+
+
+def _load_visual_randomization(
+    genesis_scene: dict[str, Any]
+) -> VisualRandomization | None:
+    payload = genesis_scene.get("visual_randomization")
+    if not payload:
+        return None
+    overrides = tuple(
+        MaterialOverride(
+            material_id=str(entry["material_id"]),
+            rgba=tuple(float(v) for v in entry["rgba"]),
+        )
+        for entry in payload.get("material_overrides", [])
+    )
+    light_payload = payload.get("lighting", {})
+    lighting = LightingSpec(
+        direction=tuple(float(v) for v in light_payload.get("direction", (0.0, 0.0, -1.0))),
+        diffuse_rgb=tuple(float(v) for v in light_payload.get("diffuse_rgb", (0.8, 0.8, 0.8))),
+        specular_rgb=tuple(float(v) for v in light_payload.get("specular_rgb", (0.2, 0.2, 0.2))),
+        ambient_rgb=tuple(float(v) for v in light_payload.get("ambient_rgb", (0.25, 0.25, 0.25))),
+    )
+    distractor_ids = tuple(
+        str(entry["object_id"]) for entry in payload.get("distractor_objects", [])
+    )
+    return VisualRandomization(
+        material_overrides=overrides,
+        lighting=lighting,
+        distractor_object_ids=distractor_ids,
+    )
+
+
+def _load_physics_randomization(
+    genesis_scene: dict[str, Any]
+) -> PhysicsRandomization | None:
+    payload = genesis_scene.get("physics_randomization")
+    if not payload:
+        return None
+    return PhysicsRandomization(
+        floor_friction_mu=float(payload.get("floor_friction_mu", 1.0)),
+        floor_restitution=float(payload.get("floor_restitution", 0.0)),
+        obstacle_friction_mu=float(payload.get("obstacle_friction_mu", 0.85)),
+        obstacle_restitution=float(payload.get("obstacle_restitution", 0.0)),
+    )
+
+
+def _load_camera_jitter(
+    genesis_scene: dict[str, Any]
+) -> CameraExtrinsicJitter | None:
+    payload = genesis_scene.get("camera_extrinsic_jitter")
+    if not payload:
+        return None
+    return CameraExtrinsicJitter(
+        xyz_offset_m=tuple(
+            float(v) for v in payload.get("xyz_offset_m", (0.0, 0.0, 0.0))
+        ),
+        rpy_offset_rad=tuple(
+            float(v) for v in payload.get("rpy_offset_rad", (0.0, 0.0, 0.0))
+        ),
+    )
 
 
 def _verify_manifest_consistency(
@@ -214,6 +352,8 @@ def load_scene_pack(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     genesis_scene = json.loads(genesis_path.read_text(encoding="utf-8"))
     _verify_manifest_consistency(manifest, genesis_scene)
+    scene_manifest = parse_scene_manifest_dict(manifest)
+    scene_graph = SceneGraph(scene_manifest)
 
     if isinstance(platform_manifest, (str, Path)):
         platform = load_platform_manifest(platform_manifest)
@@ -257,6 +397,11 @@ def load_scene_pack(
         timing=physics_timing_from_platform(platform),
         camera_constraints=dict(genesis_scene.get("camera_constraints", {})),
         source_dir=scene_path,
+        visual_randomization=_load_visual_randomization(genesis_scene),
+        physics_randomization=_load_physics_randomization(genesis_scene),
+        camera_extrinsic_jitter=_load_camera_jitter(genesis_scene),
+        manifest=scene_manifest,
+        scene_graph=scene_graph,
     )
 
 

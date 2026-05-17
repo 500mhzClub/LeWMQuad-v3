@@ -120,6 +120,11 @@ class CommandBlockRecord:
     yaw_rate_radps: list[float]
     event_name: str = ""
     event_allowed_in_training: bool = False
+    # Data spec §5.1 command_source tag. Defaults match the legacy random
+    # sampler so existing tests keep passing without modification.
+    command_source: str = "primitive_curriculum"
+    route_target_id: int = -1
+    next_waypoint_id: int = -1
     stamp_ns: int = 0
     frame_id: str = "base_link"
 
