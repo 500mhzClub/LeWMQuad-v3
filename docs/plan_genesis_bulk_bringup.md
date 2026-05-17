@@ -235,6 +235,68 @@ traversability, landmark visibility/bearing/range, and integrated body motion.
 **Exit:** focused tests cover graph-type classification, BFS landmark labels,
 body-motion windows, and command/episode/base-pose joins.
 
+## Next production ramp
+
+There are no known implementation blockers to proceed with the staged
+production path. The remaining items are validation gates for scale, not
+reasons to keep implementing before the next shard. Use the split-phase path:
+
+1. CPU Genesis physics rollout with MCAP writer and `--no-rgb`.
+2. Convert to compact `raw_rollout` with the `raw_training` profile.
+3. Plan render replay from the converted raw rollout.
+4. Bulk render RGB/depth on AMDGPU.
+5. Compute derived labels offline.
+
+Initial shard:
+
+```bash
+scripts/genesis_bulk_rollout.sh \
+  --scene-corpus .generated/scene_corpus/acceptance \
+  --split train \
+  --scene-limit 1 \
+  --n-envs 512 \
+  --n-blocks 20 \
+  --backend cpu \
+  --no-rgb \
+  --out .generated/genesis_bulk_rollouts/cpu_512env_20block_pilot
+```
+
+Post-process:
+
+```bash
+scripts/convert_smoke_bag_to_raw_rollout.sh \
+  .generated/genesis_bulk_rollouts/cpu_512env_20block_pilot/<scene_id> \
+  --out .generated/raw_rollouts/cpu_512env_20block_pilot/<scene_id> \
+  --quality-profile raw_training
+
+scripts/plan_bulk_render_replay.sh \
+  --raw-root .generated/raw_rollouts/cpu_512env_20block_pilot \
+  --out-root .generated/rendered_vision_plans/cpu_512env_20block_pilot \
+  --camera-hz 10
+
+scripts/render_replay_genesis.sh \
+  .generated/rendered_vision_plans/cpu_512env_20block_pilot/<plan_dir>/render_replay_plan.json \
+  --backend amdgpu \
+  --out .generated/rendered_vision/cpu_512env_20block_pilot/<plan_dir>
+
+scripts/derive_raw_rollout_labels.py \
+  .generated/raw_rollouts/cpu_512env_20block_pilot/<scene_id> \
+  --scene-corpus .generated/scene_corpus/acceptance \
+  --out .generated/derived_labels/cpu_512env_20block_pilot/<scene_id>
+```
+
+Gate this shard on:
+
+- `raw_training` conversion pass;
+- render `invalid_frame_count=0`;
+- derived-label rows matching the base-state pose count, except explained
+  sentinels;
+- stable disk/write throughput.
+
+Ramp order after a clean shard: `512 x 20 blocks`, then `512 x 80`, then
+`512 x 200`. Only test writer-enabled 1024-env shards after the 512-env ramp
+is stable.
+
 ## Out of Phase 1 scope
 
 - Tier A gait distribution validation → Phase 2.

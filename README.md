@@ -563,7 +563,7 @@ scripts/genesis_bulk_rollout.sh ... --no-rgb --out .generated/genesis_bulk_rollo
 scripts/convert_smoke_bag_to_raw_rollout.sh \
   .generated/genesis_bulk_rollouts/<physics_run>/<scene_id> \
   --out .generated/genesis_bulk_rollouts/<physics_run>_raw/<scene_id> \
-  --quality-profile raw_pilot
+  --quality-profile raw_training
 scripts/plan_bulk_render_replay.sh \
   --raw-root .generated/genesis_bulk_rollouts/<physics_run>_raw \
   --out-root .generated/rendered_vision_plans/<physics_run>
@@ -582,6 +582,67 @@ rendered from their converted `raw_rollout` artifacts with source `env_index`
 preserved; the default `--replay-env-mode single` replays each source env frame
 through a single render env so camera binding does not depend on physics batch
 size.
+
+### Next production ramp
+
+There are no known implementation blockers to start the staged production
+ramp. Do not start with an unattended full corpus run. The next run should
+validate the intended production shape:
+
+1. CPU Genesis physics only, MCAP writer enabled, no inline RGB.
+2. Convert the MCAP to compact `raw_rollout` with `raw_training`.
+3. Plan render replay from that converted raw rollout.
+4. Render RGB/depth on AMDGPU from the replay plan.
+5. Run offline derived labels.
+
+Start with one scene at 512 envs and a modest block count:
+
+```bash
+scripts/genesis_bulk_rollout.sh \
+  --scene-corpus .generated/scene_corpus/acceptance \
+  --split train \
+  --scene-limit 1 \
+  --n-envs 512 \
+  --n-blocks 20 \
+  --backend cpu \
+  --no-rgb \
+  --out .generated/genesis_bulk_rollouts/cpu_512env_20block_pilot
+```
+
+Then convert, render-plan, render, and derive labels:
+
+```bash
+scripts/convert_smoke_bag_to_raw_rollout.sh \
+  .generated/genesis_bulk_rollouts/cpu_512env_20block_pilot/<scene_id> \
+  --out .generated/raw_rollouts/cpu_512env_20block_pilot/<scene_id> \
+  --quality-profile raw_training
+
+scripts/plan_bulk_render_replay.sh \
+  --raw-root .generated/raw_rollouts/cpu_512env_20block_pilot \
+  --out-root .generated/rendered_vision_plans/cpu_512env_20block_pilot \
+  --camera-hz 10
+
+scripts/render_replay_genesis.sh \
+  .generated/rendered_vision_plans/cpu_512env_20block_pilot/<plan_dir>/render_replay_plan.json \
+  --backend amdgpu \
+  --out .generated/rendered_vision/cpu_512env_20block_pilot/<plan_dir>
+
+scripts/derive_raw_rollout_labels.py \
+  .generated/raw_rollouts/cpu_512env_20block_pilot/<scene_id> \
+  --scene-corpus .generated/scene_corpus/acceptance \
+  --out .generated/derived_labels/cpu_512env_20block_pilot/<scene_id>
+```
+
+Acceptance for this ramp shard:
+
+- raw conversion passes `raw_training`;
+- render summary reports `invalid_frame_count=0`;
+- derived-label summary reports essentially all base-state pose rows labelled;
+- disk/write throughput remains stable.
+
+If it passes, ramp shard length at 512 envs before increasing env count:
+`512 x 20 blocks` → `512 x 80` → `512 x 200`; only then test writer-enabled
+1024-env shards.
 
 ## Known Blockers Before Data Generation
 
