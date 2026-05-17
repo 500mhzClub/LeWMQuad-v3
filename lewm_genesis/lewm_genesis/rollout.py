@@ -566,6 +566,22 @@ class RolloutRunner:
 
         for env_idx in range(self.n_envs):
             self.episode_states[env_idx].step()
+            info_rec = self.episode_states[env_idx].episode_info(stamp_ns=self._sim_time_ns)
+            writer.write_env(
+                env_idx, "episode_info", adapter.episode_info_record_to_msg(info_rec), self._sim_time_ns
+            )
+            writer.write_env(
+                env_idx,
+                "joint_states",
+                adapter.joint_state_to_msg(
+                    joint_names=DEFAULT_GO2_LEG_JOINT_NAMES_ROLLOUT_ORDER,
+                    positions=joint_pos[env_idx],
+                    velocities=joint_vel[env_idx],
+                    efforts=None,
+                    stamp_ns=self._sim_time_ns,
+                ),
+                self._sim_time_ns,
+            )
             base = base_state_from_genesis(
                 pos_world=pos_arr[env_idx],
                 quat_xyzw=quat_xyzw[env_idx],
@@ -578,18 +594,6 @@ class RolloutRunner:
                 env_idx,
                 "odom",
                 adapter.odometry_from_base_state(base),
-                self._sim_time_ns,
-            )
-            writer.write_env(
-                env_idx,
-                "joint_states",
-                adapter.joint_state_to_msg(
-                    joint_names=DEFAULT_GO2_LEG_JOINT_NAMES_ROLLOUT_ORDER,
-                    positions=joint_pos[env_idx],
-                    velocities=joint_vel[env_idx],
-                    efforts=None,
-                    stamp_ns=self._sim_time_ns,
-                ),
                 self._sim_time_ns,
             )
             writer.write_env(
@@ -624,11 +628,6 @@ class RolloutRunner:
             )
             writer.write_env(
                 env_idx, "foot_contacts", adapter.foot_contacts_record_to_msg(foot_rec), self._sim_time_ns
-            )
-
-            info_rec = self.episode_states[env_idx].episode_info(stamp_ns=self._sim_time_ns)
-            writer.write_env(
-                env_idx, "episode_info", adapter.episode_info_record_to_msg(info_rec), self._sim_time_ns
             )
 
         if is_last_tick and self.config.rgb_capture_per_block:
@@ -767,6 +766,22 @@ class RolloutRunner:
     # ------------------------------------------------------------------
 
     def _render_and_emit_rgb(self, writer: Any, adapter: Any) -> None:
+        pos_arr = self._as_np(self.build.robot.get_pos())
+        quat_wxyz = self._as_np(self.build.robot.get_quat())
+        quat_xyzw = np.stack(
+            [quat_wxyz[..., 1], quat_wxyz[..., 2], quat_wxyz[..., 3], quat_wxyz[..., 0]],
+            axis=-1,
+        )
+        cam_pos, cam_lookat, cam_up = _camera_pose_world_from_base(
+            pos_arr,
+            quat_xyzw,
+            mount_xyz_body=self.pack.camera.xyz_body_m,
+            mount_rpy_body=self.pack.camera.rpy_body_rad,
+        )
+        if cam_pos.shape[0] == 1 and not bool(getattr(self.build.camera, "_is_batched", False)):
+            self.build.camera.set_pose(pos=cam_pos[0], lookat=cam_lookat[0], up=cam_up[0])
+        else:
+            self.build.camera.set_pose(pos=cam_pos, lookat=cam_lookat, up=cam_up)
         result = self.build.camera.render()
         rgb = self._extract_rgb(result)
         if rgb is None:
@@ -832,9 +847,14 @@ class RolloutRunner:
             forces = self._as_np(robot.get_links_net_contact_force(link_indices))
         except Exception:
             return np.zeros((self.n_envs, 4), dtype=bool)
-        # forces shape: (n_envs, 4, 3) or (4, 3). Threshold magnitude.
+        # forces shape varies across Genesis backends: (n_envs, 4, 3),
+        # (4, n_envs, 3), or (4, 3) for a single env.
         if forces.ndim == 2:
             forces = forces[None, ...]
+        elif forces.ndim == 3 and forces.shape[0] == 4 and forces.shape[1] == self.n_envs:
+            forces = np.transpose(forces, (1, 0, 2))
+        if forces.ndim != 3 or forces.shape[0] != self.n_envs or forces.shape[1] != 4:
+            return np.zeros((self.n_envs, 4), dtype=bool)
         magnitudes = np.linalg.norm(forces, axis=-1)  # (n_envs, 4)
         return magnitudes > 1e-3
 
@@ -919,3 +939,53 @@ def _single_dof_index(joint: Any) -> int:
     if dofs_idx is None:
         raise ValueError(f"joint {getattr(joint, 'name', '<unnamed>')} has no DOF index")
     return int(dofs_idx)
+
+
+def _camera_pose_world_from_base(
+    base_pos_world: np.ndarray,
+    base_quat_xyzw: np.ndarray,
+    *,
+    mount_xyz_body: Iterable[float],
+    mount_rpy_body: Iterable[float],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    base_pos = np.asarray(base_pos_world, dtype=np.float32)
+    base_quat = np.asarray(base_quat_xyzw, dtype=np.float32)
+    if base_pos.ndim == 1:
+        base_pos = base_pos[None, :]
+    if base_quat.ndim == 1:
+        base_quat = base_quat[None, :]
+
+    mount_rot = _rpy_matrix(tuple(float(v) for v in mount_rpy_body))
+    mount_xyz = np.asarray(tuple(float(v) for v in mount_xyz_body), dtype=np.float32)
+    forward_body = mount_rot @ np.array([1.0, 0.0, 0.0], dtype=np.float32)
+    up_body = mount_rot @ np.array([0.0, 0.0, 1.0], dtype=np.float32)
+
+    cam_pos = base_pos + rotate_body_to_world(
+        np.tile(mount_xyz, (base_pos.shape[0], 1)),
+        base_quat,
+    )
+    forward_world = rotate_body_to_world(
+        np.tile(forward_body, (base_pos.shape[0], 1)),
+        base_quat,
+    )
+    up_world = rotate_body_to_world(
+        np.tile(up_body, (base_pos.shape[0], 1)),
+        base_quat,
+    )
+    cam_lookat = cam_pos + forward_world
+    return cam_pos.astype(np.float32), cam_lookat.astype(np.float32), up_world.astype(np.float32)
+
+
+def _rpy_matrix(rpy: tuple[float, float, float]) -> np.ndarray:
+    roll, pitch, yaw = rpy
+    cr, sr = np.cos(roll), np.sin(roll)
+    cp, sp = np.cos(pitch), np.sin(pitch)
+    cy, sy = np.cos(yaw), np.sin(yaw)
+    return np.array(
+        [
+            [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
+            [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
+            [-sp, cp * sr, cp * cr],
+        ],
+        dtype=np.float32,
+    )

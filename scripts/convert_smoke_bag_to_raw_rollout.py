@@ -188,7 +188,7 @@ def main() -> None:
 
     command_block_sequence_ids: list[int] = []
     executed_command_sequence_ids: list[int] = []
-    reset_counts: list[int] = []
+    reset_counts_by_env: dict[int | None, list[int]] = {}
     topic_timing: dict[str, TopicTiming] = {}
     canonical_counts: Counter[str] = Counter()
     canonical_topic_timing: dict[str, TopicTiming] = {}
@@ -207,7 +207,9 @@ def main() -> None:
             elif canonical_topic == EXECUTED_COMMAND_BLOCK_TOPIC:
                 executed_command_sequence_ids.append(int(getattr(msg, "sequence_id", -1)))
             elif canonical_topic == RESET_EVENT_TOPIC:
-                reset_counts.append(int(getattr(msg, "reset_count", -1)))
+                reset_counts_by_env.setdefault(env_index, []).append(
+                    int(getattr(msg, "reset_count", -1))
+                )
             timing = topic_timing.setdefault(topic, TopicTiming.empty())
             timing.record.update(int(timestamp_ns))
             canonical_timing = canonical_topic_timing.setdefault(
@@ -241,7 +243,7 @@ def main() -> None:
     contract_audit = _audit_contract_topics(
         command_block_sequence_ids=command_block_sequence_ids,
         executed_command_sequence_ids=executed_command_sequence_ids,
-        reset_counts=reset_counts,
+        reset_counts_by_env=reset_counts_by_env,
     )
     topic_audit = {
         "topics": {
@@ -320,7 +322,7 @@ def _audit_contract_topics(
     *,
     command_block_sequence_ids: list[int],
     executed_command_sequence_ids: list[int],
-    reset_counts: list[int],
+    reset_counts_by_env: dict[int | None, list[int]],
 ) -> dict[str, Any]:
     """Detect dropped or duplicated contract messages.
 
@@ -329,7 +331,7 @@ def _audit_contract_topics(
         ``executed_command_block.sequence_id`` (no dropped executions).
       * No ``sequence_id`` may repeat on either topic (each block is unique).
       * ``reset_event.reset_count`` must be strictly increasing by one with no
-        gaps (each reset must be observed).
+        gaps within each env stream (each reset must be observed).
 
     Orphan executions (executions without a matching command in this bag) are
     reported but do not fail the audit, since the bag may begin partway
@@ -357,10 +359,24 @@ def _audit_contract_topics(
     if exec_duplicates:
         issues.append(f"duplicate executed_command_block sequence_ids: {exec_duplicates}")
 
-    reset_gaps: list[dict[str, int]] = []
-    for prev, curr in zip(reset_counts, reset_counts[1:]):
-        if curr != prev + 1:
-            reset_gaps.append({"prev": int(prev), "next": int(curr)})
+    reset_gaps: list[dict[str, int | None]] = []
+    reset_event_count = 0
+    reset_env_counts: dict[str, int] = {}
+    for env_key, reset_counts in sorted(
+        reset_counts_by_env.items(),
+        key=lambda item: -1 if item[0] is None else item[0],
+    ):
+        reset_event_count += len(reset_counts)
+        reset_env_counts["none" if env_key is None else str(env_key)] = len(reset_counts)
+        for prev, curr in zip(reset_counts, reset_counts[1:]):
+            if curr != prev + 1:
+                reset_gaps.append(
+                    {
+                        "env_index": None if env_key is None else int(env_key),
+                        "prev": int(prev),
+                        "next": int(curr),
+                    }
+                )
     if reset_gaps:
         issues.append(f"reset_event.reset_count gaps: {reset_gaps}")
 
@@ -371,7 +387,8 @@ def _audit_contract_topics(
         "issues": issues,
         "command_block_count": len(cmd_seen),
         "executed_command_block_count": len(exec_seen),
-        "reset_event_count": len(reset_counts),
+        "reset_event_count": reset_event_count,
+        "reset_env_counts": reset_env_counts,
         "missing_executions": missing_executions,
         "duplicate_command_sequence_ids": cmd_duplicates,
         "duplicate_executed_sequence_ids": exec_duplicates,

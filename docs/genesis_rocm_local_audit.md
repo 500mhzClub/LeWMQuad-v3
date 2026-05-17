@@ -455,6 +455,96 @@ The same AMDGPU scene, policy stepping, per-tick ROS message construction, and
 MCAP writing pass when contact-force reads are skipped. CPU remains on
 Genesis-derived contact-force labels by default.
 
+Inline RGB now calls `Camera.set_pose()` from the current base pose plus the
+manifest camera mount before each render. One-block CPU and AMDGPU RGB smokes
+passed after this change and converted under `--quality-profile raw_pilot`.
+
+The split-phase path for physics-first, render-later production is also
+scriptable. A CPU physics-only smoke:
+
+```bash
+scripts/genesis_bulk_rollout.sh \
+  --scene-corpus .generated/scene_corpus/acceptance \
+  --split train \
+  --family open_obstacle_field \
+  --scene-limit 1 \
+  --n-envs 1 \
+  --n-blocks 2 \
+  --backend cpu \
+  --no-rgb \
+  --out .generated/genesis_bulk_rollouts/physics_only_cpu_1scene_2block
+```
+
+converted with:
+
+```text
+contract_audit: pass=True command_blocks=2 executed=2 resets=1
+data_quality_audit: profile=raw_pilot pass=True issues=0
+```
+
+and planned render replay with:
+
+```bash
+scripts/plan_bulk_render_replay.sh \
+  --raw-root .generated/genesis_bulk_rollouts/physics_only_cpu_1scene_2block_raw \
+  --out-root .generated/rendered_vision_plans/physics_only_cpu_1scene_2block_v2 \
+  --camera-hz 10
+```
+
+The generated `frames.jsonl` includes base pose, joint state, episode metadata,
+camera mount, and computed world-frame camera pose for each frame.
+
+The replay renderer now consumes those plans:
+
+```bash
+scripts/render_replay_genesis.sh \
+  .generated/rendered_vision_plans/physics_only_cpu_1scene_2block_v2/000000_physics_only_cpu_1scene_2block_raw/render_replay_plan.json \
+  --backend amdgpu \
+  --max-frames 2 \
+  --out .generated/rendered_vision/physics_only_cpu_1scene_2block_amdgpu_smoke \
+  --overwrite
+```
+
+CPU replay smoke rendered 3 frames with RGB PNG plus depth `.npy` outputs and
+`invalid_frame_count=0`. AMDGPU replay smoke rendered 2 frames with the same
+validity result. This confirms the physics-first, render-later path is viable
+for mass rendering without requiring GPU physics in the same job.
+
+The split-phase path also handles batched source environments. A 16-env,
+1-scene, 2-block CPU physics rollout converted with the env-aware reset audit:
+
+```text
+contract_audit: pass=True command_blocks=32 executed=32 resets=16
+data_quality_audit: profile=raw_pilot pass=True issues=0
+```
+
+The render planner emitted 160 frame jobs from those 16 source envs, and the
+AMDGPU replay renderer completed all 160 RGB/depth frames with
+`invalid_frame_count=0` using `--replay-env-mode single`. This means physics
+can remain highly batched while rendering replays one source env at a time,
+which avoids coupling render camera binding to the physics batch size.
+
+Current CPU physics scale probes on the production host:
+
+```text
+n_envs  writer  blocks  result
+16      mcap    2       converted, raw_pilot pass, 160-frame AMDGPU replay pass
+128     mcap    1       converted, raw_pilot pass
+512     mcap    1       converted, raw_pilot pass, 16-frame AMDGPU replay smoke pass, 0.5 s sim in 3.3 s wall
+1024    none    1       pass, 0.5 s sim in 9.1 s wall
+2048    none    1       pass, 0.5 s sim in 18.1 s wall
+```
+
+Genesis reported the 2048-env CPU probe at roughly 30k-39k aggregate sim FPS
+after build. This reaches the old Vulkan-style 2048-scene concurrency shape for
+physics. Writer-enabled production should ramp through longer 512-env shards
+before treating 1024 or 2048 as the default batch size.
+
+A two-process AMDGPU render smoke also passed for separate scene plans at the
+same time: 10 total RGB/depth frames, `invalid_frame_count=0` in both jobs.
+Render concurrency should start at 2 and be tuned upward only after longer
+jobs confirm stable VRAM and driver behavior.
+
 A slightly broader AMDGPU pilot also passed:
 
 ```bash

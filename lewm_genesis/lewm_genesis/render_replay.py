@@ -12,7 +12,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import yaml
+
+from lewm_genesis.lewm_contract import rotate_body_to_world
 
 
 def replay_frame_schedule(
@@ -65,6 +68,7 @@ def build_render_replay_plan(
         raise FileNotFoundError(f"raw_rollout summary.json not found: {summary_path}")
 
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    source_bag_summary = _load_source_bag_summary(summary)
     data_quality = summary.get("data_quality_audit", {})
     contract = summary.get("contract_audit", {})
     if require_quality_pass and not contract.get("pass", False):
@@ -101,10 +105,17 @@ def build_render_replay_plan(
         "render_status": "planned_not_rendered",
         "raw_rollout_dir": str(raw_dir),
         "raw_summary_json": str(summary_path),
+        "source_bag": summary.get("source_bag"),
+        "source_bag_summary_json": source_bag_summary.get("_summary_path"),
+        "scene_id": source_bag_summary.get("scene_id"),
+        "scene_family": source_bag_summary.get("family"),
+        "split": source_bag_summary.get("split"),
+        "manifest_sha256": source_bag_summary.get("manifest_sha256"),
         "source_messages_jsonl": str(messages_path),
         "output_dir": str(out_dir),
         "frames_jsonl": str(frames_path),
         "frame_count": len(frames),
+        "source_env_count": _source_env_count(frames),
         "camera_hz": camera_hz,
         "first_frame_timestamp_ns": frames[0]["timestamp_ns"],
         "last_frame_timestamp_ns": frames[-1]["timestamp_ns"],
@@ -145,19 +156,23 @@ def _extract_base_state_frames(
         raise ValueError("camera_hz must be positive")
 
     period_ns = int(round(1_000_000_000 / camera_hz))
-    next_frame_ns: int | None = None
     frames: list[dict[str, Any]] = []
-    latest_episode: dict[str, Any] = {}
+    latest_episode_by_env: dict[int | None, dict[str, Any]] = {}
+    latest_joint_state_by_env: dict[int | None, dict[str, Any]] = {}
+    next_frame_ns_by_env: dict[int | None, int] = {}
     source_line = 0
 
     with messages_path.open(encoding="utf-8") as stream:
         for line in stream:
             source_line += 1
             record = json.loads(line)
-            topic = record.get("topic")
+            source_topic = record.get("topic")
+            topic = record.get("canonical_topic", source_topic)
+            env_index = record.get("env_index")
+            env_key = int(env_index) if env_index is not None else None
             payload = record.get("payload", {})
             if topic == "/lewm/episode_info":
-                latest_episode = {
+                latest_episode_by_env[env_key] = {
                     "scene_id": payload.get("scene_id"),
                     "episode_id": payload.get("episode_id"),
                     "episode_step": payload.get("episode_step"),
@@ -166,12 +181,21 @@ def _extract_base_state_frames(
                     "manifest_sha256": payload.get("manifest_sha256"),
                 }
                 continue
+            if topic == "/joint_states":
+                latest_joint_state_by_env[env_key] = {
+                    "names": payload.get("name"),
+                    "position": payload.get("position"),
+                    "velocity": payload.get("velocity"),
+                    "effort": payload.get("effort"),
+                }
+                continue
             if topic != "/lewm/go2/base_state":
                 continue
 
             timestamp_ns = _payload_stamp_ns(payload)
             if timestamp_ns is None:
                 timestamp_ns = int(record["timestamp_ns"])
+            next_frame_ns = next_frame_ns_by_env.get(env_key)
             if next_frame_ns is None:
                 next_frame_ns = timestamp_ns
             if timestamp_ns + 1_000 < next_frame_ns:
@@ -180,12 +204,14 @@ def _extract_base_state_frames(
             frames.append(
                 {
                     "frame_index": len(frames),
+                    "env_index": env_index,
                     "source_line": source_line,
-                    "source_topic": topic,
+                    "source_topic": source_topic,
+                    "canonical_topic": topic,
                     "timestamp_ns": timestamp_ns,
                     "timestamp_s": round(timestamp_ns / 1e9, 9),
                     "record_timestamp_ns": int(record["timestamp_ns"]),
-                    "episode": dict(latest_episode),
+                    "episode": dict(latest_episode_by_env.get(env_key, {})),
                     "base_pose_world": payload.get("pose_world"),
                     "base_quat_world_xyzw": payload.get("quat_world_xyzw"),
                     "base_rpy_rad": {
@@ -194,14 +220,24 @@ def _extract_base_state_frames(
                         "yaw": payload.get("yaw_rad"),
                     },
                     "twist_body": payload.get("twist_body"),
+                    "joint_state": latest_joint_state_by_env.get(env_key),
+                    "camera_pose_world": _camera_pose_from_payload(
+                        payload,
+                        camera_mount_body,
+                    ),
                     "camera_mount_body": camera_mount_body,
                 }
             )
             if max_frames is not None and len(frames) >= max_frames:
                 break
-            next_frame_ns = timestamp_ns + period_ns
+            next_frame_ns_by_env[env_key] = timestamp_ns + period_ns
 
     return frames
+
+
+def _source_env_count(frames: list[dict[str, Any]]) -> int:
+    env_indices = [int(frame.get("env_index") or 0) for frame in frames]
+    return max(1, max(env_indices, default=0) + 1)
 
 
 def _load_platform_manifest(path: str | Path | None) -> dict[str, Any]:
@@ -213,12 +249,76 @@ def _load_platform_manifest(path: str | Path | None) -> dict[str, Any]:
     return yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
 
 
+def _load_source_bag_summary(raw_summary: dict[str, Any]) -> dict[str, Any]:
+    source_bag = raw_summary.get("source_bag")
+    if not source_bag:
+        return {}
+    summary_path = Path(source_bag) / "summary.json"
+    if not summary_path.is_file():
+        return {}
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["_summary_path"] = str(summary_path)
+    return summary
+
+
 def _camera_mount(camera: dict[str, Any]) -> dict[str, Any]:
     return {
         "parent_link": camera.get("parent_link"),
         "xyz_body_m": camera.get("xyz_body_m"),
         "rpy_body_rad": camera.get("rpy_body_rad"),
     }
+
+
+def _camera_pose_from_payload(
+    base_state_payload: dict[str, Any],
+    camera_mount_body: dict[str, Any],
+) -> dict[str, Any] | None:
+    position = (
+        base_state_payload.get("pose_world", {})
+        .get("position", {})
+    )
+    quat_xyzw = base_state_payload.get("quat_world_xyzw")
+    mount_xyz = camera_mount_body.get("xyz_body_m")
+    mount_rpy = camera_mount_body.get("rpy_body_rad")
+    if not position or quat_xyzw is None or mount_xyz is None or mount_rpy is None:
+        return None
+    base_pos = np.array(
+        [
+            float(position.get("x", 0.0)),
+            float(position.get("y", 0.0)),
+            float(position.get("z", 0.0)),
+        ],
+        dtype=np.float32,
+    )
+    base_quat = np.asarray(quat_xyzw, dtype=np.float32)
+    mount_rot = _rpy_matrix(tuple(float(v) for v in mount_rpy))
+    mount_offset = np.asarray(tuple(float(v) for v in mount_xyz), dtype=np.float32)
+    forward_body = mount_rot @ np.array([1.0, 0.0, 0.0], dtype=np.float32)
+    up_body = mount_rot @ np.array([0.0, 0.0, 1.0], dtype=np.float32)
+    cam_pos = base_pos + rotate_body_to_world(mount_offset, base_quat).astype(np.float32)
+    forward_world = rotate_body_to_world(forward_body, base_quat).astype(np.float32)
+    up_world = rotate_body_to_world(up_body, base_quat).astype(np.float32)
+    lookat = cam_pos + forward_world
+    return {
+        "position": [float(v) for v in cam_pos],
+        "lookat": [float(v) for v in lookat],
+        "up": [float(v) for v in up_world],
+    }
+
+
+def _rpy_matrix(rpy: tuple[float, float, float]) -> np.ndarray:
+    roll, pitch, yaw = rpy
+    cr, sr = np.cos(roll), np.sin(roll)
+    cp, sp = np.cos(pitch), np.sin(pitch)
+    cy, sy = np.cos(yaw), np.sin(yaw)
+    return np.array(
+        [
+            [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
+            [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
+            [-sp, cp * sr, cp * cr],
+        ],
+        dtype=np.float32,
+    )
 
 
 def _payload_stamp_ns(payload: dict[str, Any]) -> int | None:

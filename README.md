@@ -553,11 +553,34 @@ scripts/plan_gpu_render_replay.sh .generated/benchmarks/<run>/raw_rollout \
 ```
 
 This writes `render_replay_plan.json` and `frames.jsonl`: the immutable contract
-for a renderer consuming an audit-oracle `raw_rollout`. The bulk path skips
-this stage entirely — Genesis emits state and RGB in the same pass. The
-render-replay scaffold is preserved for the audit-only flow where Gazebo
-captures dynamics and a separate renderer (Genesis or otherwise) generates
-matching frames for parity comparison.
+for a renderer consuming an audit-oracle `raw_rollout`. The Genesis bulk path
+can either emit RGB inline or run split-phase: physics/proprioception first,
+then mass render replay from converted `raw_rollout` artifacts:
+
+```bash
+scripts/genesis_bulk_rollout.sh ... --no-rgb --out .generated/genesis_bulk_rollouts/<physics_run>
+scripts/convert_smoke_bag_to_raw_rollout.sh \
+  .generated/genesis_bulk_rollouts/<physics_run>/<scene_id> \
+  --out .generated/genesis_bulk_rollouts/<physics_run>_raw/<scene_id> \
+  --quality-profile raw_pilot
+scripts/plan_bulk_render_replay.sh \
+  --raw-root .generated/genesis_bulk_rollouts/<physics_run>_raw \
+  --out-root .generated/rendered_vision_plans/<physics_run>
+scripts/render_replay_genesis.sh \
+  .generated/rendered_vision_plans/<physics_run>/<plan_dir>/render_replay_plan.json \
+  --backend amdgpu \
+  --out .generated/rendered_vision/<physics_run>/<plan_dir>
+```
+
+The batch planner writes one render-replay plan per raw rollout and includes
+scene id, base pose, joint state, camera mount, and per-frame camera pose. The
+Genesis replay renderer consumes those plans and writes `rgb/`, `depth/`,
+`frames_rendered.jsonl`, and `summary.json`; use `--max-frames` for shard
+smokes and `--no-depth` for RGB-only jobs. Batched physics rollouts are
+rendered from their converted `raw_rollout` artifacts with source `env_index`
+preserved; the default `--replay-env-mode single` replays each source env frame
+through a single render env so camera binding does not depend on physics batch
+size.
 
 ## Known Blockers Before Data Generation
 
@@ -584,6 +607,18 @@ matching frames for parity comparison.
   contact-force labels by default. The AMDGPU path still emits the
   `/lewm/go2/foot_contacts` topic at command-tick cadence, and summaries mark
   the contact source explicitly.
+- Inline RGB now updates the Genesis camera pose from the robot base pose and
+  manifest camera mount before each render. For split-phase production,
+  `scripts/plan_bulk_render_replay.sh` plans mass rendering from physics-only
+  `--no-rgb` raw rollouts and `scripts/render_replay_genesis.sh` renders those
+  plans to `rendered_vision`.
+- Current scale guidance is CPU physics first, then AMDGPU replay rendering.
+  The production host has passed physics-only CPU probes at 512, 1024, and 2048
+  envs for one 0.5 s command block; 2048 took about 18 s wall time. Writer
+  enabled has now passed at 512 envs with raw conversion and a 16-frame AMDGPU
+  replay smoke, while 16-env batched source replay rendered 160 RGB/depth
+  frames with `invalid_frame_count=0`. Run longer 512-env writer shards before
+  attempting 1024/2048-env MCAP jobs, and start render-worker concurrency at 2.
 - The validated Genesis-native Go2 PPO artifact is frozen under
   `models/tier_a_go2_locomotion/20260516_contract_ppo/` and referenced by
   `config/go2_platform_manifest.yaml`. It passed the LeWM velocity primitive
