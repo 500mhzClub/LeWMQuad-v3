@@ -56,6 +56,7 @@ class InflatedOccupancyGrid:
         cell_size_m: float = 0.05,
         inflation_m: float = 0.20,
         treat_landmarks_as_obstacles: bool = True,
+        treat_distractors_as_obstacles: bool = True,
     ) -> None:
         (x_lo, y_lo), (x_hi, y_hi) = manifest.world_bounds_xy_m
         pad = float(inflation_m) + float(cell_size_m)
@@ -69,6 +70,18 @@ class InflatedOccupancyGrid:
         landmark_boxes = _collect_aabbs(manifest.landmarks)
         if treat_landmarks_as_obstacles:
             obstacles = obstacles + landmark_boxes
+        # Distractors are visual-randomization decorations stored under
+        # ``manifest.visual_randomization.distractor_objects``, but the
+        # scene_builder folds them into ``static_objects`` at load time, so
+        # they are *real* collision geometry the robot can crash into.
+        # Without this branch the route teacher plans paths straight through
+        # them, which manifests as crashes + wedge episodes in
+        # ``visual_sensor_stress`` (the only family that spawns distractors
+        # inside the maze interior).
+        if treat_distractors_as_obstacles:
+            distractor_boxes = _distractor_aabbs(manifest)
+            if distractor_boxes:
+                obstacles = obstacles + distractor_boxes
         self._obstacle_aabbs = (
             np.asarray(obstacles, dtype=np.float32)
             if obstacles
@@ -311,6 +324,20 @@ def _collect_aabbs(
             )
         )
     return out
+
+
+def _distractor_aabbs(
+    manifest: SceneManifest,
+) -> list[tuple[float, float, float, float, float]]:
+    """Return distractor AABBs from ``manifest.visual_randomization`` if present."""
+
+    visual = getattr(manifest, "visual_randomization", None)
+    if visual is None:
+        return []
+    distractors = getattr(visual, "distractor_objects", ())
+    if not distractors:
+        return []
+    return _collect_aabbs(distractors)
 
 
 def _batch_distance_to_boxes(

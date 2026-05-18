@@ -11,8 +11,10 @@ from lewm_worlds.manifest import (
     CameraValidityConstraints,
     GraphEdge,
     GraphNode,
+    LightingSpec,
     SceneManifest,
     SpawnSpec,
+    VisualRandomization,
 )
 from lewm_worlds.planning_grid import (
     InflatedOccupancyGrid,
@@ -96,6 +98,77 @@ def test_landmark_treated_as_obstacle_by_default():
     # 0.15 m beacon half-width + 0.20 m inflation = 0.35 m clear zone.
     assert not grid.is_free((0.30, 0.0))
     assert grid.is_free((0.40, 0.0))
+
+
+def _distractor(object_id: str, cx: float, cy: float, sx: float = 0.3, sy: float = 0.3) -> BoxObject:
+    return BoxObject(
+        object_id=object_id,
+        kind="distractor",
+        center_xyz_m=(cx, cy, 0.3),
+        size_xyz_m=(sx, sy, 0.6),
+        yaw_rad=0.0,
+        material_id="distractor_pole",
+    )
+
+
+def _manifest_with_distractors(distractors: tuple[BoxObject, ...]) -> SceneManifest:
+    base = _manifest()
+    return SceneManifest(
+        scene_id=base.scene_id,
+        family=base.family,
+        difficulty_tier=base.difficulty_tier,
+        topology_seed=base.topology_seed,
+        visual_seed=base.visual_seed,
+        physics_seed=base.physics_seed,
+        world_bounds_xy_m=base.world_bounds_xy_m,
+        spawn=base.spawn,
+        graph_nodes=base.graph_nodes,
+        graph_edges=base.graph_edges,
+        obstacles=base.obstacles,
+        landmarks=base.landmarks,
+        camera_constraints=base.camera_constraints,
+        walls=base.walls,
+        visual_randomization=VisualRandomization(
+            material_overrides=(),
+            lighting=LightingSpec(
+                direction=(0.0, 0.0, -1.0),
+                diffuse_rgb=(1.0, 1.0, 1.0),
+                specular_rgb=(0.5, 0.5, 0.5),
+                ambient_rgb=(0.2, 0.2, 0.2),
+            ),
+            distractor_objects=distractors,
+        ),
+    )
+
+
+def test_distractors_treated_as_obstacles_by_default():
+    # A 0.3 m distractor pole at origin should make the grid cell at (0,0)
+    # not free — this is the visual_sensor_stress regression: distractors
+    # are physical collision geometry the route teacher must avoid.
+    m = _manifest_with_distractors((_distractor("d0", cx=0.0, cy=0.0),))
+    grid = InflatedOccupancyGrid(m, cell_size_m=0.05, inflation_m=0.20)
+    assert not grid.is_free((0.0, 0.0))
+    assert not grid.is_free((0.30, 0.0))
+    assert grid.is_free((0.40, 0.0))
+
+
+def test_distractors_can_be_disabled():
+    m = _manifest_with_distractors((_distractor("d0", cx=0.0, cy=0.0),))
+    grid = InflatedOccupancyGrid(
+        m, cell_size_m=0.05, inflation_m=0.20, treat_distractors_as_obstacles=False
+    )
+    assert grid.is_free((0.0, 0.0))
+
+
+def test_distractor_blocks_astar_path():
+    # Distractor sitting on the straight-line corridor must force a detour.
+    m = _manifest_with_distractors((_distractor("d0", cx=0.0, cy=0.0, sx=0.3, sy=0.3),))
+    grid = InflatedOccupancyGrid(m, cell_size_m=0.05, inflation_m=0.20)
+    path = grid.astar((-1.5, 0.0), (1.5, 0.0))
+    assert path is not None
+    # Detour pushes path away from y=0 by at least distractor_half + inflation
+    # = 0.15 + 0.20 = 0.35 m.
+    assert max(abs(wp[1]) for wp in path.waypoints_xy) >= 0.30
 
 
 def test_landmark_passable_when_disabled():
