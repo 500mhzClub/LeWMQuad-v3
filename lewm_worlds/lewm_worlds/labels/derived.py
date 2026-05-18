@@ -349,10 +349,11 @@ def _precompute_landmark_bfs(scene: SceneGraph) -> dict[int, dict[str, int | Non
 
     table: dict[int, dict[str, int | None]] = {}
     landmark_cells = scene.landmark_cells
+    blocked = getattr(scene, "nav_blocked_cells", frozenset())
     for cell in range(scene.n_nodes):
         per_landmark: dict[str, int | None] = {}
         for object_id, lm_cell in landmark_cells:
-            per_landmark[object_id] = scene.bfs_distance(cell, lm_cell)
+            per_landmark[object_id] = scene.bfs_distance(cell, lm_cell, transit_blocked=blocked)
         table[cell] = per_landmark
     return table
 

@@ -71,7 +71,7 @@ WALL_HEIGHT_M = 0.80
 # synthetic-render checks do not fail at the narrowest cells.
 _CAMERA_CONSTRAINTS = CameraValidityConstraints(
     min_wall_thickness_m=WALL_THICKNESS_FLOOR_M,
-    near_m=0.05,
+    near_m=0.08,
     far_m=200.0,
     min_camera_clearance_m=0.10,
 )
@@ -564,10 +564,14 @@ def _motif_s_bend(*, rng: random.Random, geometry: CorridorGeometry):
         link(declared[i].node_id, declared[i + 1].node_id)
 
     walls = _walls_for_motif(nodes=nodes, traversable=traversable, geometry=geometry)
+    # Second landmark sits one cell into the spawn corridor so the robot has
+    # a near-spawn beacon for round-trip data without the landmark inflation
+    # zone wedging the spawn pose itself.
+    near_spawn = declared[1].node_id if len(declared) > 1 else declared[0].node_id
     landmarks = _two_landmarks_at_nodes(
         nodes=nodes,
         first=declared[-1].node_id,
-        second=declared[0].node_id,
+        second=near_spawn,
     )
     spawn_xy = declared[0].center_xy_m
     world_half = max(seg1 + goal_len + 1, spawn_len + seg2) * cell + geometry.wall_thickness_m + 1.0
@@ -705,10 +709,14 @@ def _motif_slalom(*, rng: random.Random, geometry: CorridorGeometry):
             )
         )
 
+    # Second landmark sits at the first slalom cell (row 1) rather than the
+    # spawn cell itself; the inflated landmark zone would otherwise overlap
+    # the spawn pose at (0,0) and wedge the robot at reset.
+    near_spawn_cell = cells[(1, 0)] if length > 1 else cells[(0, 0)]
     landmarks = _two_landmarks_at_nodes(
         nodes=nodes,
         first=cells[(length - 1, 0)],
-        second=cells[(0, 0)],
+        second=near_spawn_cell,
     )
     spawn_xy = nodes[cells[(0, 0)]].center_xy_m
     world_half = length * cell * 0.6 + geometry.wall_thickness_m + 1.0
@@ -1162,6 +1170,12 @@ def _maze_walls(
     wall_index = 0
 
     # Interior walls between adjacent cells whose edge is not traversable.
+    # The wall orientation has to match the neighbour direction: a horizontal
+    # neighbour pair (dc=+1) is divided by a wall perpendicular to x — thin
+    # in x, long in y. A vertical neighbour pair (dr=+1) is divided by a
+    # wall perpendicular to y — thin in y, long in x. (The original version
+    # had these size tuples swapped, leaving the actual gap between cells
+    # open and a paper-thin strip cutting across both cell centres.)
     for row in range(side):
         for col in range(side):
             here = cell_id(row, col)
@@ -1175,11 +1189,11 @@ def _maze_walls(
                 if axis == "x":
                     cx = round((col + 0.5) * cell_size - offset, 3)
                     cy = round(row * cell_size - offset, 3)
-                    size = (cell_size, wall_thickness, wall_height)
+                    size = (wall_thickness, cell_size, wall_height)
                 else:
                     cx = round(col * cell_size - offset, 3)
                     cy = round((row + 0.5) * cell_size - offset, 3)
-                    size = (wall_thickness, cell_size, wall_height)
+                    size = (cell_size, wall_thickness, wall_height)
                 walls.append(
                     BoxObject(
                         object_id=f"wall_int_{wall_index:04d}",

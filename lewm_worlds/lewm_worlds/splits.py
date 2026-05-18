@@ -2,8 +2,11 @@
 
 The planner converts a desired per-split, per-family scene count into a flat,
 reproducible list of ``(split, family, scene_seed)`` assignments. Seeds are
-derived by hashing ``(plan_seed, split, family, index)``, so two splits never
-share a topology seed even if their family counts overlap.
+derived by hashing ``(plan_seed, split, family, index, salt)``, so two splits
+never share a topology seed even if their family counts overlap. ``salt`` is
+0 by default; when scene-reachability validation is enabled, the planner
+increments the salt until the scene passes ``audit_scene_reachability``,
+keeping plan generation deterministic without inheriting unusable seeds.
 """
 
 from __future__ import annotations
@@ -11,9 +14,9 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict, dataclass
-from typing import Any
+from typing import Any, Callable
 
-from lewm_worlds.families import registered_families
+from lewm_worlds.families import build_family_manifest, registered_families
 from lewm_worlds.manifest import stable_scene_id
 
 
@@ -55,6 +58,11 @@ class SceneAssignment:
     scene_index: int
     scene_seed: int
     scene_id: str
+    # Salt offset used when scene-reachability validation rerolled a
+    # fragmented seed. 0 when the deterministic base seed produced a valid
+    # scene (the common case). Recorded so corpus reproducibility is exact
+    # and so audits can spot families with high reroll rates.
+    scene_seed_salt: int = 0
 
 
 @dataclass(frozen=True)
@@ -83,16 +91,32 @@ class CorpusPlan:
 
 PLAN_VERSION = "1"
 
+# Max reroll attempts per (split, family, index) slot when validation is on.
+# Surveys show ≤26% fragmentation rate across families, so 32 retries leaves
+# plenty of headroom (≈0.74^32 ≈ 1e-4 chance of giving up legitimately).
+_MAX_VALIDATION_SALT = 32
+
 
 def plan_corpus(
     plan_seed: int,
     totals: dict[str, dict[str, int]],
+    *,
+    validate: bool = False,
+    validator: Callable[[Any], bool] | None = None,
 ) -> CorpusPlan:
     """Return a deterministic :class:`CorpusPlan`.
 
     ``totals`` maps ``split -> {family -> count}``. Splits and families are
     validated against the registered set so a typo fails loudly instead of
     silently producing an empty plan.
+
+    When ``validate=True``, each slot's deterministic seed is built into a
+    manifest and audited for route-teacher reachability (every beacon must
+    sit in the same free component, with at least one spawn candidate in
+    that component). Failing seeds are rerolled by incrementing the salt
+    and recorded via ``SceneAssignment.scene_seed_salt`` so the corpus
+    layout stays reproducible. ``validator`` overrides the default
+    reachability gate (useful for tests).
     """
 
     known_families = set(registered_families())
@@ -101,6 +125,8 @@ def plan_corpus(
 
     splits_present: list[str] = []
     families_present: set[str] = set()
+
+    scene_ok = validator or (_default_scene_validator if validate else None)
 
     for split, family_counts in totals.items():
         if not isinstance(family_counts, dict):
@@ -116,9 +142,14 @@ def plan_corpus(
                 raise ValueError(f"negative count for totals[{split!r}][{family!r}]")
             families_present.add(family)
             for index in range(int(count)):
-                seed = _scene_seed(plan_seed=plan_seed, split=split, family=family, index=index)
-                if seed in seen_seeds:  # extremely unlikely with 64-bit hashes
-                    seed = (seed + 1) & 0xFFFFFFFFFFFFFFFF
+                seed, salt = _pick_valid_seed(
+                    plan_seed=plan_seed,
+                    split=split,
+                    family=family,
+                    index=index,
+                    seen_seeds=seen_seeds,
+                    validate=scene_ok,
+                )
                 seen_seeds.add(seed)
                 assignments.append(
                     SceneAssignment(
@@ -127,6 +158,7 @@ def plan_corpus(
                         scene_index=index,
                         scene_seed=seed,
                         scene_id=stable_scene_id(family, seed),
+                        scene_seed_salt=salt,
                     )
                 )
 
@@ -140,11 +172,61 @@ def plan_corpus(
     )
 
 
-def smoke_corpus_plan(plan_seed: int = 0) -> CorpusPlan:
+def _pick_valid_seed(
+    *,
+    plan_seed: int,
+    split: str,
+    family: str,
+    index: int,
+    seen_seeds: set[int],
+    validate: Callable[[Any], bool] | None,
+) -> tuple[int, int]:
+    """Return ``(seed, salt)`` for one plan slot, retrying on collisions and
+    (if ``validate`` is provided) on reachability failures."""
+
+    for salt in range(_MAX_VALIDATION_SALT + 1):
+        seed = _scene_seed(
+            plan_seed=plan_seed, split=split, family=family, index=index, salt=salt
+        )
+        if seed in seen_seeds:
+            continue
+        if validate is None:
+            return seed, salt
+        manifest = build_family_manifest(
+            scene_seed=seed, family=family, split=split, difficulty_tier=None
+        )
+        if validate(manifest):
+            return seed, salt
+    raise RuntimeError(
+        f"could not find a valid seed for split={split!r} family={family!r} "
+        f"index={index} after {_MAX_VALIDATION_SALT} reroll attempts — the "
+        f"family builder may be producing fragmented scenes too often; "
+        f"inspect with audit_scene_reachability and fix the topology"
+    )
+
+
+def _default_scene_validator(manifest: Any) -> bool:
+    # Imported lazily so plan_corpus stays usable in environments without
+    # numpy (the unrestricted path has no scene-validation dependency).
+    from lewm_worlds.scene_validation import audit_scene_reachability
+
+    report = audit_scene_reachability(
+        manifest,
+        cell_size_m=0.05,
+        inflation_m=0.20,
+        standoff_m=0.85,
+        spawn_clearance_floor_m=0.20,
+    )
+    return bool(report.is_valid)
+
+
+def smoke_corpus_plan(plan_seed: int = 0, *, validate: bool = True) -> CorpusPlan:
     """One scene per family across train/val/test_id, plus one hard test scene.
 
     Matches the Phase 8 smoke tier scale (~10 scenes) while exercising every
     registered family and every split. Useful as a CI/local sanity check.
+    Defaults to ``validate=True`` so the smoke corpus never contains a
+    fragmented (route-unreachable) scene.
     """
 
     totals: dict[str, dict[str, int]] = {
@@ -174,7 +256,7 @@ def smoke_corpus_plan(plan_seed: int = 0) -> CorpusPlan:
             )
         },
     }
-    return plan_corpus(plan_seed=plan_seed, totals=totals)
+    return plan_corpus(plan_seed=plan_seed, totals=totals, validate=validate)
 
 
 def standard_corpus_plan(
@@ -184,6 +266,7 @@ def standard_corpus_plan(
     val_scenes: int = 50,
     test_id_scenes: int = 50,
     test_hard_scenes: int = 50,
+    validate: bool = True,
 ) -> CorpusPlan:
     """Spec-aligned plan with configurable per-split totals.
 
@@ -199,7 +282,7 @@ def standard_corpus_plan(
         "test_id": _allocate(test_id_scenes, TRAIN_SHARES),
         "test_hard": _allocate(test_hard_scenes, HARD_TEST_SHARES),
     }
-    return plan_corpus(plan_seed=plan_seed, totals=totals)
+    return plan_corpus(plan_seed=plan_seed, totals=totals, validate=validate)
 
 
 def plan_sha256(plan: CorpusPlan) -> str:
@@ -207,8 +290,20 @@ def plan_sha256(plan: CorpusPlan) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def _scene_seed(*, plan_seed: int, split: str, family: str, index: int) -> int:
-    key = f"{plan_seed}:{split}:{family}:{index}".encode("utf-8")
+def _scene_seed(
+    *, plan_seed: int, split: str, family: str, index: int, salt: int = 0
+) -> int:
+    """Deterministic per-slot seed.
+
+    ``salt=0`` reproduces the legacy seed exactly, so existing plans built
+    without validation continue to map to the same scenes. Validation-aware
+    planning increments the salt for each reroll attempt.
+    """
+
+    if salt == 0:
+        key = f"{plan_seed}:{split}:{family}:{index}".encode("utf-8")
+    else:
+        key = f"{plan_seed}:{split}:{family}:{index}:{salt}".encode("utf-8")
     digest = hashlib.sha256(key).digest()
     return int.from_bytes(digest[:8], byteorder="big", signed=False)
 

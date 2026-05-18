@@ -26,8 +26,10 @@ Genesis is required at runtime. Import-time is safe (lazy import in
 
 from __future__ import annotations
 
+import math
 import pickle
 import random
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -35,6 +37,10 @@ from typing import Any, Iterable, Protocol
 
 import numpy as np
 
+from lewm_genesis.camera_safety import (
+    camera_safety_config_from_pack,
+    safe_camera_pose_from_base,
+)
 from lewm_genesis.lewm_contract import (
     BaseStateRecord,
     CommandBlockRecord,
@@ -108,6 +114,32 @@ class RolloutConfig:
 
     n_blocks: int = 200
     fall_z_threshold_m: float = 0.15
+    # Reset if the body is tipped past this for `tip_recovery_blocks` consecutive
+    # blocks. Catches "stuck on side" cases where the body rolls onto a hip
+    # but the base center stays above fall_z_threshold_m (seen in
+    # loop_alias_stress env 7: 86° tip, z=0.153 m, never reset, 38 s of
+    # corrupted training data).
+    tip_threshold_rad: float = math.radians(60.0)
+    tip_recovery_blocks: int = 1
+    # Privileged collection-time guard: if any non-recovery collector drives
+    # the base this close to a wall, hand off to the recovery curriculum for
+    # a short backout/pivot sequence. This is a data-generation label, not a
+    # deployed-model input. The default sits just above the Go2 footprint
+    # half-width (~0.15 m) so it only fires when the body is genuinely
+    # grazing a wall — earlier 0.55 m exceeded every maze corridor
+    # half-width (0.25–0.46 m), so collectors got handed off to recovery
+    # on every block and reversed instead of exploring.
+    recovery_interlock_clearance_m: float = 0.20
+    recovery_interlock_blocks: int = 16
+    # Spawn-time wall-clearance floor enforced for *every* reset, whether the
+    # pose is sampled (``randomize_spawn_pose=True``) or read from the scene
+    # manifest. Sits above the Go2 footprint half-diagonal (~0.36 m) and below
+    # the runtime recovery interlock so a fresh episode never starts already
+    # wedged between walls (data spec §16). If the manifest spawn fails the
+    # floor, the rollout falls back to ``SceneGraph.sample_spawn_pose`` and
+    # logs the override so fixed-spawn modes (e.g. long_route_teacher) fail
+    # loudly instead of producing stuck-robot frames.
+    spawn_clearance_floor_m: float = 0.45
     out_of_bounds_pad_m: float = 0.5
     rgb_capture_per_block: bool = True
     seed: int = 0
@@ -126,6 +158,196 @@ class RolloutConfig:
     # samples a random reachable cell and random yaw; when False the rollout
     # falls back to the manifest spawn.
     randomize_spawn_pose: bool = True
+
+
+_SPAWN_YAW_MIN_FREE_RAY_M = 0.60
+
+
+def _wxyz_from_yaw(yaw_rad: float) -> tuple[float, float, float, float]:
+    half = float(yaw_rad) * 0.5
+    return (math.cos(half), 0.0, 0.0, math.sin(half))
+
+
+def _align_spawn_yaw(
+    xyz: tuple[float, float, float],
+    quat_wxyz: tuple[float, float, float, float],
+    planning_grid: Any | None,
+    min_free_ray_m: float,
+) -> tuple[tuple[float, float, float, float], float]:
+    """Snap the spawn yaw to the longest free ray, if the original yaw is wedged.
+
+    Returns ``(new_quat_wxyz, chosen_free_ray_m)``. When ``planning_grid`` is
+    ``None`` or the original yaw already has more than ``min_free_ray_m`` of
+    free space ahead, returns the input quat unchanged.
+    """
+
+    if planning_grid is None:
+        return quat_wxyz, float("inf")
+    from lewm_worlds.planning_grid import best_free_yaw
+
+    current_yaw = _yaw_from_quat_wxyz(
+        float(quat_wxyz[0]),
+        float(quat_wxyz[1]),
+        float(quat_wxyz[2]),
+        float(quat_wxyz[3]),
+    )
+    cos_y = math.cos(current_yaw)
+    sin_y = math.sin(current_yaw)
+    bx, by = float(xyz[0]), float(xyz[1])
+    step = 0.25 * planning_grid.cell_size_m
+    max_steps = max(1, int(math.ceil(float(min_free_ray_m) / step)))
+    current_free = 0.0
+    for s in range(1, max_steps + 1):
+        d = s * step
+        if not planning_grid.is_free((bx + cos_y * d, by + sin_y * d)):
+            break
+        current_free = d
+    if current_free >= float(min_free_ray_m):
+        return quat_wxyz, current_free
+
+    best_yaw, best_free = best_free_yaw(
+        planning_grid, (bx, by), n_rays=24, max_m=max(2.0, float(min_free_ray_m) * 2.0)
+    )
+    if best_free <= current_free:
+        return quat_wxyz, current_free
+    return _wxyz_from_yaw(best_yaw), best_free
+
+
+def _select_spawn_pose(
+    *,
+    scene_graph: Any | None,
+    manifest_xyz: tuple[float, float, float],
+    manifest_quat_wxyz: tuple[float, float, float, float],
+    spawn_z_m: float,
+    randomize: bool,
+    clearance_floor_m: float,
+    rng: random.Random,
+    restrict_to_cells: tuple[int, ...] | None = None,
+    planning_grid: Any | None = None,
+    yaw_align_min_free_ray_m: float = _SPAWN_YAW_MIN_FREE_RAY_M,
+) -> tuple[
+    tuple[float, float, float],
+    tuple[float, float, float, float],
+    int,
+    str,
+]:
+    """Resolve a spawn pose that satisfies the wall-clearance floor.
+
+    Returns ``(xyz, quat_wxyz, cell_id, source)`` where ``source`` is one of:
+
+    * ``"randomized"``  — pose sampled from the scene graph.
+    * ``"manifest"``    — manifest spawn passed the floor (or no graph).
+    * ``"safety_fallback"`` — manifest spawn failed the floor; rolled to a
+      sampled pose so the episode does not start wedged.
+
+    When ``planning_grid`` is provided, the yaw is re-aligned to the longest
+    free ray from the resolved xy if the original yaw has less than
+    ``yaw_align_min_free_ray_m`` of free space ahead — this prevents the
+    common "spawn cell is fine but the robot is facing into a wall" failure
+    in narrow corridors where the manifest spawn quat (always identity)
+    points perpendicular to the corridor.
+
+    Scenes without a graph (legacy ScenePack) bypass the gate and return the
+    manifest pose unchanged — the caller is expected to validate clearance
+    elsewhere in that path.
+    """
+
+    manifest_xyz_t = (float(manifest_xyz[0]), float(manifest_xyz[1]), float(manifest_xyz[2]))
+    manifest_quat_t = (
+        float(manifest_quat_wxyz[0]),
+        float(manifest_quat_wxyz[1]),
+        float(manifest_quat_wxyz[2]),
+        float(manifest_quat_wxyz[3]),
+    )
+
+    if scene_graph is None:
+        return manifest_xyz_t, manifest_quat_t, -1, "manifest"
+
+    # When a restriction list is provided, prefer cells that still pass
+    # the configured wall-clearance floor — the locomotion policy is much
+    # happier starting in roomy cells. If *no* restricted cell passes the
+    # floor (the common case for narrow-corridor motifs where every cell
+    # sits at ~0.30 m clearance), relax to the planning-grid inflation
+    # (~0.20 m) so we still draw from canonical cells instead of falling
+    # back to the wedged manifest pose.
+    if restrict_to_cells:
+        passing = [
+            cid
+            for cid in restrict_to_cells
+            if 0 <= int(cid) < scene_graph.n_nodes
+            and scene_graph.clearance_to_walls(scene_graph.cell_center(int(cid)))
+            >= float(clearance_floor_m)
+        ]
+        if passing:
+            restrict_to_cells = tuple(int(c) for c in passing)
+            effective_floor = float(clearance_floor_m)
+        else:
+            effective_floor = min(float(clearance_floor_m), 0.20)
+    else:
+        effective_floor = float(clearance_floor_m)
+
+    if randomize:
+        xyz, wxyz, cell_id = scene_graph.sample_spawn_pose(
+            rng,
+            clearance_floor_m=effective_floor,
+            spawn_z_m=float(spawn_z_m),
+            restrict_to_cells=restrict_to_cells,
+        )
+        xyz_t = (float(xyz[0]), float(xyz[1]), float(xyz[2]))
+        quat_t = (float(wxyz[0]), float(wxyz[1]), float(wxyz[2]), float(wxyz[3]))
+        quat_t, _free = _align_spawn_yaw(
+            xyz_t, quat_t, planning_grid, yaw_align_min_free_ray_m
+        )
+        return xyz_t, quat_t, int(cell_id), "randomized"
+
+    manifest_cell_id = int(scene_graph.locate(manifest_xyz_t[:2]).cell_id)
+    manifest_in_restriction = (
+        restrict_to_cells is not None and manifest_cell_id in restrict_to_cells
+    )
+    manifest_clearance = float(
+        scene_graph.clearance_to_walls((manifest_xyz_t[0], manifest_xyz_t[1]))
+    )
+    if manifest_in_restriction or manifest_clearance >= float(clearance_floor_m):
+        if restrict_to_cells is not None and not manifest_in_restriction:
+            pass  # fall through to safety_fallback
+        else:
+            aligned_quat, _free = _align_spawn_yaw(
+                manifest_xyz_t, manifest_quat_t, planning_grid, yaw_align_min_free_ray_m
+            )
+            return manifest_xyz_t, aligned_quat, -1, "manifest"
+
+    xyz, wxyz, cell_id = scene_graph.sample_spawn_pose(
+        rng,
+        clearance_floor_m=effective_floor,
+        spawn_z_m=float(spawn_z_m),
+        restrict_to_cells=restrict_to_cells,
+    )
+    xyz_t = (float(xyz[0]), float(xyz[1]), float(xyz[2]))
+    quat_t = (float(wxyz[0]), float(wxyz[1]), float(wxyz[2]), float(wxyz[3]))
+    quat_t, _free = _align_spawn_yaw(
+        xyz_t, quat_t, planning_grid, yaw_align_min_free_ray_m
+    )
+    return xyz_t, quat_t, int(cell_id), "safety_fallback"
+
+
+def _is_route_like_policy(policy: Any) -> bool:
+    """Return True for policies that own route progress and local recovery."""
+
+    return callable(getattr(policy, "visited_landmark_cells", None))
+
+
+def _iter_route_like_landmark_cells(
+    collectors: dict[str, Any],
+    env_idx: int,
+) -> Iterable[int]:
+    """Yield landmark cells claimed by route-like collectors for one env."""
+
+    for collector in collectors.values():
+        visited_cells = getattr(collector, "visited_landmark_cells", None)
+        if not callable(visited_cells):
+            continue
+        for cell in visited_cells(int(env_idx)):
+            yield int(cell)
 
 
 class PolicyInterface(Protocol):
@@ -457,6 +679,26 @@ class RolloutRunner:
         )
         # Episode-scoped block counter for collector observations.
         self._blocks_in_episode = np.zeros(self.n_envs, dtype=np.int64)
+        # Consecutive-block tip counter used by the tipped-body reset trigger.
+        self._consecutive_tipped_blocks = np.zeros(self.n_envs, dtype=np.int64)
+        self._recovery_interlock_blocks_remaining = np.zeros(self.n_envs, dtype=np.int64)
+        # Per-env planner-quality metrics surfaced via run() — used by the
+        # physics-only profiler so we can tune teacher logic without
+        # re-rendering.
+        self._per_env_path_length_m = np.zeros(self.n_envs, dtype=np.float64)
+        self._per_env_last_xy: list[tuple[float, float] | None] = [None] * self.n_envs
+        self._per_env_cells_visited: list[set[int]] = [set() for _ in range(self.n_envs)]
+        self._per_env_primitive_counts: list[dict[str, int]] = [
+            {} for _ in range(self.n_envs)
+        ]
+        self._per_env_source_counts: list[dict[str, int]] = [
+            {} for _ in range(self.n_envs)
+        ]
+        self._per_env_goals_targeted: list[set[int]] = [set() for _ in range(self.n_envs)]
+        self._per_env_target_changes: np.ndarray = np.zeros(self.n_envs, dtype=np.int64)
+        self._per_env_prev_target: list[int] = [-1] * self.n_envs
+        self._per_env_recovery_handoffs: np.ndarray = np.zeros(self.n_envs, dtype=np.int64)
+        self._per_env_achieved_landmarks: list[set[str]] = [set() for _ in range(self.n_envs)]
 
         # Build the collector bench + scheduler. ``scene_graph`` may be None
         # on legacy ScenePack instances built in tests; in that case fall
@@ -468,6 +710,10 @@ class RolloutRunner:
         )
 
         self._scene_graph = getattr(self.pack, "scene_graph", None)
+        self._landmark_cell_to_id: dict[int, str] = {
+            int(cell): str(name)
+            for name, cell in getattr(self._scene_graph, "landmark_cells", ())
+        }
         self._collectors = build_default_policies(self.registry, n_envs=self.n_envs)
         if config.collector_mix is not None and not config.collector_mix:
             # Empty dict => uniform primitive sampling (the old behaviour).
@@ -490,6 +736,10 @@ class RolloutRunner:
             n_envs=self.n_envs,
         )
         self._spawn_rng = random.Random(int(config.seed) * 0x9E37 ^ 0xA5A5A5A5)
+        # Planning grid used to align the spawn yaw with the longest free
+        # ray from the spawn xy. Built lazily on first reset; reused across
+        # episodes for the same scene.
+        self._spawn_planning_grid: Any | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -539,6 +789,37 @@ class RolloutRunner:
                 )
 
         wall_total = time.time() - wall_start
+        per_env_metrics = []
+        available_landmarks = set(self._landmark_cell_to_id.values())
+        for env_idx in range(self.n_envs):
+            achieved_landmarks = set(self._per_env_achieved_landmarks[env_idx])
+            per_env_metrics.append(
+                {
+                    "env_idx": env_idx,
+                    "path_length_m": float(self._per_env_path_length_m[env_idx]),
+                    "cells_visited": len(self._per_env_cells_visited[env_idx]),
+                    "unique_goals_targeted": len(self._per_env_goals_targeted[env_idx]),
+                    "goal_target_changes": int(self._per_env_target_changes[env_idx]),
+                    "recovery_interlock_handoffs": int(
+                        self._per_env_recovery_handoffs[env_idx]
+                    ),
+                    "beacons_available": len(available_landmarks),
+                    "beacons_achieved": len(achieved_landmarks),
+                    "beacon_claim_ratio": (
+                        len(achieved_landmarks) / len(available_landmarks)
+                        if available_landmarks
+                        else 1.0
+                    ),
+                    "achieved_landmark_ids": sorted(achieved_landmarks),
+                    "unclaimed_landmark_ids": sorted(
+                        available_landmarks - achieved_landmarks
+                    ),
+                    "primitive_counts": dict(self._per_env_primitive_counts[env_idx]),
+                    "command_source_counts": dict(
+                        self._per_env_source_counts[env_idx]
+                    ),
+                }
+            )
         return {
             "scene_id": self.pack.scene_id,
             "n_envs": self.n_envs,
@@ -547,6 +828,7 @@ class RolloutRunner:
             "wall_seconds": wall_total,
             "final_sim_time_s": self._sim_time_ns / 1e9,
             "collector_mix_realized": self._scheduler.realized_mix(),
+            "per_env_metrics": per_env_metrics,
         }
 
     # ------------------------------------------------------------------
@@ -614,13 +896,91 @@ class RolloutRunner:
                 block_idx_in_episode=int(self._blocks_in_episode[env_idx]),
             )
             policy = self._scheduler.policy_for(env_idx)
-            choice = policy.on_block(
-                observation=observation,
-                scene=self._scene_graph,
-                rng=self._rng,
-            )
+            # Route-like teachers already have privileged backout/stuck logic.
+            # The rollout-level interlock can otherwise starve them in narrow
+            # blocking scenes before they get a chance to replan.
+            policy_is_route_like = _is_route_like_policy(policy)
+            recovery_policy = self._collectors.get("recovery")
+            if (
+                recovery_policy is not None
+                and getattr(policy, "name", "") != "recovery"
+                and not policy_is_route_like
+                and self._scene_graph is not None
+                and float(self.config.recovery_interlock_clearance_m) > 0.0
+                and (
+                    observation.clearance_to_walls_m
+                    <= float(self.config.recovery_interlock_clearance_m)
+                )
+                and self._recovery_interlock_blocks_remaining[env_idx] <= 0
+            ):
+                recovery_policy.on_episode_reset(env_idx)
+                self._recovery_interlock_blocks_remaining[env_idx] = max(
+                    1, int(self.config.recovery_interlock_blocks)
+                )
+                self._per_env_recovery_handoffs[env_idx] += 1
+
+            if (
+                recovery_policy is not None
+                and getattr(policy, "name", "") != "recovery"
+                and not policy_is_route_like
+                and self._recovery_interlock_blocks_remaining[env_idx] > 0
+            ):
+                choice = recovery_policy.on_block(
+                    observation=observation,
+                    scene=self._scene_graph,
+                    rng=self._rng,
+                )
+                self._recovery_interlock_blocks_remaining[env_idx] -= 1
+            else:
+                choice = policy.on_block(
+                    observation=observation,
+                    scene=self._scene_graph,
+                    rng=self._rng,
+                )
             requested_block[env_idx] = choice.requested_block
             choices.append(choice)
+
+            # Metrics: accumulate displacement, visited cells, primitive +
+            # source counts, and re-target events for the profiler.
+            prev_xy = self._per_env_last_xy[env_idx]
+            if prev_xy is not None:
+                self._per_env_path_length_m[env_idx] += math.hypot(
+                    base_xy[0] - prev_xy[0], base_xy[1] - prev_xy[1]
+                )
+            self._per_env_last_xy[env_idx] = base_xy
+            if current_cell >= 0:
+                self._per_env_cells_visited[env_idx].add(int(current_cell))
+
+            # Beacon achievement tracking.
+            if self._scene_graph is not None and current_cell >= 0:
+                for cell in _iter_route_like_landmark_cells(self._collectors, env_idx):
+                    landmark_id = self._landmark_cell_to_id.get(int(cell))
+                    if landmark_id is not None:
+                        self._per_env_achieved_landmarks[env_idx].add(landmark_id)
+
+                # We reuse the logic from RouteTeacher._is_arrived to detect achievement.
+                # Since the collector already ran, we can check if it considered itself arrived.
+                if choice.command_source == "route_teacher" and choice.primitive_name == "hold":
+                    # route_teacher emits 'hold' exactly once upon arrival.
+                    # Verify it was a landmark goal.
+                    goal_id = choice.route_target_id
+                    for lm_name, lm_cell in self._scene_graph.landmark_cells:
+                        if lm_cell == goal_id:
+                            self._per_env_achieved_landmarks[env_idx].add(lm_name)
+                            break
+
+            counts = self._per_env_primitive_counts[env_idx]
+            counts[choice.primitive_name] = counts.get(choice.primitive_name, 0) + 1
+            source_counts = self._per_env_source_counts[env_idx]
+            source_counts[choice.command_source] = (
+                source_counts.get(choice.command_source, 0) + 1
+            )
+            target = int(choice.route_target_id)
+            if target >= 0:
+                self._per_env_goals_targeted[env_idx].add(target)
+                if target != self._per_env_prev_target[env_idx]:
+                    self._per_env_target_changes[env_idx] += 1
+                    self._per_env_prev_target[env_idx] = target
         return requested_block, choices
 
     # ------------------------------------------------------------------
@@ -847,6 +1207,11 @@ class RolloutRunner:
 
     def _check_and_reset_fallen_envs(self, writer: Any, adapter: Any) -> None:
         pos = self._as_np(self.build.robot.get_pos())
+        quat_wxyz = self._as_np(self.build.robot.get_quat())
+        if pos.ndim == 1:
+            pos = pos[None, :]
+        if quat_wxyz.ndim == 1:
+            quat_wxyz = quat_wxyz[None, :]
         fell = pos[:, 2] < float(self.config.fall_z_threshold_m)
         (xmin, ymin), (xmax, ymax) = self.pack.world_bounds_xy_m
         pad = float(self.config.out_of_bounds_pad_m)
@@ -856,10 +1221,38 @@ class RolloutRunner:
             | (pos[:, 1] < ymin - pad)
             | (pos[:, 1] > ymax + pad)
         )
-        to_reset = np.where(fell | oob)[0]
+        # Tipped-body trigger: robot is on its side (|roll| or |pitch| > limit)
+        # for ``tip_recovery_blocks`` consecutive blocks. Reset criterion is
+        # body-frame, so it fires whether or not z stayed above the fall floor.
+        tip = np.array(
+            [
+                max(
+                    abs(_roll_from_quat_wxyz(float(quat_wxyz[i, 0]), float(quat_wxyz[i, 1]), float(quat_wxyz[i, 2]), float(quat_wxyz[i, 3]))),
+                    abs(_pitch_from_quat_wxyz(float(quat_wxyz[i, 0]), float(quat_wxyz[i, 1]), float(quat_wxyz[i, 2]), float(quat_wxyz[i, 3]))),
+                )
+                for i in range(quat_wxyz.shape[0])
+            ],
+            dtype=np.float32,
+        )
+        tip_limit = float(self.config.tip_threshold_rad)
+        tipped_now = tip > tip_limit
+        self._consecutive_tipped_blocks = np.where(
+            tipped_now,
+            self._consecutive_tipped_blocks + 1,
+            np.zeros_like(self._consecutive_tipped_blocks),
+        )
+        stuck_tipped = self._consecutive_tipped_blocks >= int(self.config.tip_recovery_blocks)
+        to_reset = np.where(fell | oob | stuck_tipped)[0]
         if to_reset.size == 0:
             return
-        reasons = ["fall" if fell[i] else "out_of_bounds" for i in to_reset]
+        reasons = []
+        for i in to_reset:
+            if fell[i]:
+                reasons.append("fall")
+            elif oob[i]:
+                reasons.append("out_of_bounds")
+            else:
+                reasons.append("stuck_tipped")
         self._reset_robot_to_spawn(envs_idx=to_reset.tolist())
         for env_idx, reason in zip(to_reset.tolist(), reasons):
             spawn_xyz = tuple(float(v) for v in self._spawn_xyz_per_env[env_idx])
@@ -873,12 +1266,42 @@ class RolloutRunner:
             )
             self._last_executed[env_idx] = 0.0
             self._blocks_in_episode[env_idx] = 0
+            self._consecutive_tipped_blocks[env_idx] = 0
+            self._recovery_interlock_blocks_remaining[env_idx] = 0
             # New episode for this env: redraw the collector so the §13 mix
             # is preserved across resets, and let it clear its per-env state.
             self._scheduler.on_episode_reset(int(env_idx))
             writer.write_env(
                 env_idx, "reset_event", adapter.reset_event_record_to_msg(event), self._sim_time_ns
             )
+
+    def _spawn_yaw_planning_grid(self) -> Any | None:
+        """Return a cached planning grid for spawn-yaw alignment.
+
+        Built once per scene from whichever route-aware collector already
+        has one, or from the scene manifest if no collector publishes one.
+        Returning ``None`` is safe — the spawn helper simply skips yaw
+        alignment.
+        """
+
+        if self._spawn_planning_grid is not None:
+            return self._spawn_planning_grid
+        for collector in self._collectors.values():
+            grid_for = getattr(collector, "spawn_planning_grid", None)
+            if callable(grid_for):
+                grid = grid_for(self.pack)
+                if grid is not None:
+                    self._spawn_planning_grid = grid
+                    return grid
+        manifest = getattr(self._scene_graph, "manifest", None)
+        if manifest is None:
+            return None
+        from lewm_worlds.planning_grid import InflatedOccupancyGrid
+
+        self._spawn_planning_grid = InflatedOccupancyGrid(
+            manifest, cell_size_m=0.05, inflation_m=0.20
+        )
+        return self._spawn_planning_grid
 
     def _reset_robot_to_spawn(self, envs_idx: list[int] | None) -> None:
         robot = self.build.robot
@@ -889,21 +1312,44 @@ class RolloutRunner:
         if not envs:
             return
 
-        # Sample a fresh per-env spawn pose (cell + yaw) if randomization is
-        # on and the scene exposes a graph; otherwise stick with the manifest
-        # spawn. Updating the per-env cache here means the ResetEvent log,
-        # the camera-pose helper, and the next reset all see the same spawn.
+        # Resolve a safe per-env spawn pose. The helper enforces the
+        # ``spawn_clearance_floor_m`` gate for both randomized sampling and
+        # the manifest (fixed-spawn) path: a manifest spawn that fails the
+        # floor falls back to a sampled pose so the robot never starts
+        # wedged between walls. Updating the per-env cache here means the
+        # ResetEvent log, the camera-pose helper, and the next reset all
+        # see the same spawn.
+        restrict_to_cells = None
+        for collector in self._collectors.values():
+            if hasattr(collector, "spawn_restriction_cells"):
+                restrict_to_cells = collector.spawn_restriction_cells(self.pack)
+                if restrict_to_cells:
+                    break
+
+        planning_grid = self._spawn_yaw_planning_grid()
+
         for env_idx in envs:
-            if self.config.randomize_spawn_pose and self._scene_graph is not None:
-                xyz, wxyz, _cell_id = self._scene_graph.sample_spawn_pose(
-                    self._spawn_rng,
-                    spawn_z_m=float(self.pack.robot.spawn_xyz_m[2]),
+            xyz, wxyz, _cell_id, source = _select_spawn_pose(
+                scene_graph=self._scene_graph,
+                manifest_xyz=tuple(self.pack.robot.spawn_xyz_m),
+                manifest_quat_wxyz=tuple(self.pack.robot.spawn_quat_wxyz),
+                spawn_z_m=float(self.pack.robot.spawn_xyz_m[2]),
+                randomize=bool(self.config.randomize_spawn_pose),
+                clearance_floor_m=float(self.config.spawn_clearance_floor_m),
+                rng=self._spawn_rng,
+                restrict_to_cells=restrict_to_cells,
+                planning_grid=planning_grid,
+            )
+            if source == "safety_fallback":
+                print(
+                    f"[rollout] spawn safety gate: scene={self.pack.scene_id} env={env_idx} "
+                    f"manifest spawn clearance below "
+                    f"{self.config.spawn_clearance_floor_m:.2f} m; "
+                    f"falling back to sampled cell xy=({xyz[0]:.2f}, {xyz[1]:.2f})",
+                    file=sys.stderr,
                 )
-                self._spawn_xyz_per_env[env_idx] = xyz
-                self._spawn_quat_wxyz_per_env[env_idx] = wxyz
-            else:
-                self._spawn_xyz_per_env[env_idx] = self.pack.robot.spawn_xyz_m
-                self._spawn_quat_wxyz_per_env[env_idx] = self.pack.robot.spawn_quat_wxyz
+            self._spawn_xyz_per_env[env_idx] = xyz
+            self._spawn_quat_wxyz_per_env[env_idx] = wxyz
 
         pos_batch = self._spawn_xyz_per_env[envs].astype(np.float32, copy=False)
         quat_batch = self._spawn_quat_wxyz_per_env[envs].astype(np.float32, copy=False)
@@ -932,16 +1378,29 @@ class RolloutRunner:
         )
         from lewm_genesis.scene_loader import effective_camera_mount_xyz_rpy
         mount_xyz, mount_rpy = effective_camera_mount_xyz_rpy(self.pack)
-        cam_pos, cam_lookat, cam_up = _camera_pose_world_from_base(
-            pos_arr,
-            quat_xyzw,
-            mount_xyz_body=mount_xyz,
-            mount_rpy_body=mount_rpy,
-        )
-        if cam_pos.shape[0] == 1 and not bool(getattr(self.build.camera, "_is_batched", False)):
-            self.build.camera.set_pose(pos=cam_pos[0], lookat=cam_lookat[0], up=cam_up[0])
-        else:
-            self.build.camera.set_pose(pos=cam_pos, lookat=cam_lookat, up=cam_up)
+        camera_config = camera_safety_config_from_pack(self.pack)
+        cam_pos_rows: list[np.ndarray] = []
+        cam_lookat_rows: list[np.ndarray] = []
+        cam_up_rows: list[np.ndarray] = []
+        for env_idx in range(pos_arr.shape[0]):
+            pose, _safety = safe_camera_pose_from_base(
+                pos_arr[env_idx],
+                quat_xyzw[env_idx],
+                mount_xyz_body=mount_xyz,
+                mount_rpy_body=mount_rpy,
+                objects=self.pack.static_objects,
+                config=camera_config,
+            )
+            cam_pos_rows.append(pose.position)
+            cam_lookat_rows.append(pose.lookat)
+            cam_up_rows.append(pose.up)
+        cam_pos = np.stack(cam_pos_rows, axis=0).astype(np.float32)
+        cam_lookat = np.stack(cam_lookat_rows, axis=0).astype(np.float32)
+        cam_up = np.stack(cam_up_rows, axis=0).astype(np.float32)
+
+        # Genesis renderer camera is tied to a single environment (env_0).
+        # We must set a single (3,) pose for that environment.
+        self.build.camera.set_pose(pos=cam_pos[0], lookat=cam_lookat[0], up=cam_up[0])
         result = self.build.camera.render()
         rgb = self._extract_rgb(result)
         if rgb is None:
@@ -1056,6 +1515,19 @@ def _yaw_from_quat_wxyz(qw: float, qx: float, qy: float, qz: float) -> float:
     siny_cosp = 2.0 * (qw * qz + qx * qy)
     cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz)
     return float(np.arctan2(siny_cosp, cosy_cosp))
+
+
+def _roll_from_quat_wxyz(qw: float, qx: float, qy: float, qz: float) -> float:
+    sinr_cosp = 2.0 * (qw * qx + qy * qz)
+    cosr_cosp = 1.0 - 2.0 * (qx * qx + qy * qy)
+    return float(math.atan2(sinr_cosp, cosr_cosp))
+
+
+def _pitch_from_quat_wxyz(qw: float, qx: float, qy: float, qz: float) -> float:
+    sinp = 2.0 * (qw * qy - qz * qx)
+    if abs(sinp) >= 1.0:
+        return float(math.copysign(math.pi / 2.0, sinp))
+    return float(math.asin(sinp))
 
 
 def _rotate_world_to_body(v_world: np.ndarray, q_xyzw: np.ndarray) -> np.ndarray:

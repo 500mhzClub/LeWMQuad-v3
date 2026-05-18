@@ -105,6 +105,7 @@ def _build_one(
     assignment: SceneAssignment,
     out_dir: Path,
     emit_genesis: bool,
+    validate_reachability: bool = True,
 ) -> CorpusSceneResult:
     manifest = build_scene_manifest(
         scene_seed=assignment.scene_seed,
@@ -116,6 +117,27 @@ def _build_one(
             "scene_id drift between plan and manifest: "
             f"plan={assignment.scene_id} manifest={manifest.scene_id}"
         )
+
+    if validate_reachability:
+        # Safety net for plans built without validate=True (legacy corpora,
+        # ad-hoc scripts). Fail loudly here rather than ship a scene whose
+        # route teacher can't navigate to all beacons.
+        from lewm_worlds.scene_validation import audit_scene_reachability
+
+        report = audit_scene_reachability(
+            manifest,
+            cell_size_m=0.05,
+            inflation_m=0.20,
+            standoff_m=0.85,
+            spawn_clearance_floor_m=0.20,
+        )
+        if not report.is_valid:
+            raise RuntimeError(
+                f"scene {assignment.scene_id} ({assignment.family}/{assignment.split}) "
+                f"failed reachability audit: {report.failure_reason}. "
+                f"Rebuild the plan with plan_corpus(..., validate=True) so "
+                f"unreachable seeds are rerolled before scenes hit disk."
+            )
 
     scene_dir = out_dir / assignment.split / assignment.family / assignment.scene_id
     scene_dir.mkdir(parents=True, exist_ok=True)

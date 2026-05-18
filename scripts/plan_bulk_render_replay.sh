@@ -5,5 +5,5 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-export PYTHONPATH="$ROOT/lewm_genesis:${PYTHONPATH:-}"
+export PYTHONPATH="$ROOT/lewm_genesis:$ROOT/lewm_worlds:${PYTHONPATH:-}"
 exec python3 "$SCRIPT_DIR/plan_bulk_render_replay.py" "$@"

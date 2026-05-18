@@ -5,27 +5,35 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import sys
 import time
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "lewm_genesis"))
 
+from lewm_genesis.camera_safety import (  # noqa: E402
+    camera_safety_config_from_pack,
+    safe_camera_pose_from_base,
+)
 from lewm_genesis.rollout import (  # noqa: E402
     DEFAULT_GO2_LEG_DOF_INDICES,
     DEFAULT_GO2_LEG_JOINT_NAMES_ROLLOUT_ORDER,
 )
 from lewm_genesis.scene_builder import build_scene_from_pack  # noqa: E402
 from lewm_genesis.scene_loader import (  # noqa: E402
+    effective_camera_mount_xyz_rpy,
     find_scene_dirs,
     load_platform_manifest,
     load_scene_pack,
+)
+from lewm_genesis.vision_quality import (  # noqa: E402
+    LOW_INFO_REASON_NAMES,
+    assess_rendered_frame,
 )
 
 
@@ -38,7 +46,25 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--backend", default=None)
     parser.add_argument("--max-frames", type=int, default=None)
+    parser.add_argument(
+        "--env-index",
+        type=int,
+        default=None,
+        help="Render only one source env stream from the replay plan.",
+    )
     parser.add_argument("--no-depth", action="store_true")
+    parser.add_argument(
+        "--rgb-format",
+        choices=("png", "npy"),
+        default="png",
+        help="RGB frame storage. Use npy to avoid PNG compression on production render jobs.",
+    )
+    parser.add_argument(
+        "--camera-mode",
+        choices=("replay", "overview"),
+        default="replay",
+        help="Camera pose source. replay uses recorded egocentric camera poses; overview uses a static top-down QA camera.",
+    )
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--show-viewer", action="store_true")
     parser.add_argument(
@@ -68,7 +94,7 @@ def main() -> int:
     frames_path = Path(plan["frames_jsonl"])
     if not frames_path.is_absolute():
         frames_path = plan_path.parent / frames_path
-    frames = _load_frames(frames_path, max_frames=args.max_frames)
+    frames = _load_frames(frames_path, max_frames=args.max_frames, env_index=args.env_index)
     if not frames:
         raise SystemExit(f"no frames to render in {frames_path}")
 
@@ -104,13 +130,18 @@ def main() -> int:
         or max(1, max((int(f.get("env_index") or 0) for f in frames), default=0) + 1)
     )
     render_env_count = source_env_count if args.replay_env_mode == "batched" else 1
+    render_robot = args.camera_mode != "replay"
     build = build_scene_from_pack(
         pack,
         n_envs=render_env_count,
         backend=backend,
         show_viewer=bool(args.show_viewer),
+        render_robot=render_robot,
     )
     leg_dof_idx = _resolve_rollout_leg_dof_indices(build.robot)
+    overview_pose = _overview_camera_pose(pack) if args.camera_mode == "overview" else None
+    camera_safety_config = camera_safety_config_from_pack(pack)
+    mount_xyz_body, mount_rpy_body = effective_camera_mount_xyz_rpy(pack)
 
     metadata_path = output_dir / "frames_rendered.jsonl"
     records: list[dict[str, Any]] = []
@@ -124,12 +155,33 @@ def main() -> int:
                 rgb_dir=rgb_dir,
                 depth_dir=None if args.no_depth else depth_dir,
                 target_env_index=0 if args.replay_env_mode == "single" else None,
+                rgb_format=args.rgb_format,
+                camera_mode=args.camera_mode,
+                overview_pose=overview_pose,
+                camera_safety_config=camera_safety_config,
+                mount_xyz_body=mount_xyz_body,
+                mount_rpy_body=mount_rpy_body,
+                scene_graph=pack.scene_graph,
             )
             records.append(record)
             stream.write(json.dumps(record, sort_keys=True, separators=(",", ":")))
             stream.write("\n")
 
     invalid = [r for r in records if not r["camera_valid"]]
+    low_info = [r for r in records if r.get("low_info_reasons")]
+    low_info_allowed = [r for r in low_info if bool(r.get("low_info_allowed"))]
+    low_texture = [
+        r for r in records
+        if "low_rgb_texture" in r.get("low_info_reasons", ())
+    ]
+    near_wall = [
+        r for r in records
+        if any(
+            reason in {"near_wall_depth", "near_forward_geometry"}
+            for reason in r.get("low_info_reasons", ())
+        )
+    ]
+    camera_safety_records = [r.get("camera_safety") or {} for r in records]
     summary = {
         "schema": "lewm_rendered_vision_v0",
         "render_status": "complete",
@@ -142,10 +194,25 @@ def main() -> int:
         "source_env_count": source_env_count,
         "render_env_count": render_env_count,
         "replay_env_mode": args.replay_env_mode,
+        "render_robot": render_robot,
         "frame_count": len(records),
         "invalid_frame_count": len(invalid),
         "invalid_frame_rate": 0.0 if not records else len(invalid) / len(records),
+        "low_info_frame_count": len(low_info),
+        "low_info_frame_rate": 0.0 if not records else len(low_info) / len(records),
+        "low_info_allowed_frame_count": len(low_info_allowed),
+        "low_info_invalid_frame_count": len(low_info) - len(low_info_allowed),
+        "low_rgb_texture_frame_count": len(low_texture),
+        "near_wall_frame_count": len(near_wall),
         "rgb_dir": str(rgb_dir),
+        "rgb_format": args.rgb_format,
+        "camera_mode": args.camera_mode,
+        "camera_retracted_count": sum(
+            1 for r in camera_safety_records if float(r.get("retracted_m") or 0.0) > 0.0
+        ),
+        "camera_safety_unresolved_count": sum(
+            1 for r in camera_safety_records if bool(r.get("unsafe"))
+        ),
         "depth_dir": None if args.no_depth else str(depth_dir),
         "frames_rendered_jsonl": str(metadata_path),
         "wall_seconds": time.time() - wall_start,
@@ -165,11 +232,19 @@ def main() -> int:
     return 2 if invalid else 0
 
 
-def _load_frames(path: Path, *, max_frames: int | None) -> list[dict[str, Any]]:
+def _load_frames(
+    path: Path,
+    *,
+    max_frames: int | None,
+    env_index: int | None,
+) -> list[dict[str, Any]]:
     frames: list[dict[str, Any]] = []
     with path.open(encoding="utf-8") as stream:
         for line in stream:
-            frames.append(json.loads(line))
+            frame = json.loads(line)
+            if env_index is not None and int(frame.get("env_index") or 0) != int(env_index):
+                continue
+            frames.append(frame)
             if max_frames is not None and len(frames) >= max_frames:
                 break
     return frames
@@ -237,27 +312,80 @@ def _render_frame(
     rgb_dir: Path,
     depth_dir: Path | None,
     target_env_index: int | None,
+    rgb_format: str,
+    camera_mode: str,
+    overview_pose: dict[str, list[float]] | None,
+    camera_safety_config: Any,
+    mount_xyz_body: tuple[float, float, float],
+    mount_rpy_body: tuple[float, float, float],
+    scene_graph: Any = None,
 ) -> dict[str, Any]:
     env_index = int(frame.get("env_index") or 0)
     render_env_index = env_index if target_env_index is None else int(target_env_index)
     _apply_robot_state(frame, build.robot, leg_dof_idx, render_env_index)
-    _apply_camera_pose(frame, build.camera, render_env_index)
+    camera_pose, camera_safety = _apply_camera_pose(
+        frame,
+        build.camera,
+        render_env_index,
+        camera_mode=camera_mode,
+        overview_pose=overview_pose,
+        objects=build.pack.static_objects,
+        camera_safety_config=camera_safety_config,
+        mount_xyz_body=mount_xyz_body,
+        mount_rpy_body=mount_rpy_body,
+    )
     rendered = build.camera.render(rgb=True, depth=depth_dir is not None, force_render=True)
     rgb, depth = _extract_render_outputs(rendered)
     rgb = _select_env(rgb, render_env_index)
     depth = _select_env(depth, render_env_index) if depth is not None else None
 
+    # Overlay target landmark info
+    if rgb is not None:
+        cmd_ctx = frame.get("command_context")
+        if isinstance(cmd_ctx, dict):
+            target_id = cmd_ctx.get("route_target_id")
+            if target_id is not None and int(target_id) >= 0 and scene_graph is not None:
+                target_name = "unknown"
+                for name, cell in scene_graph.landmark_cells:
+                    if cell == int(target_id):
+                        target_name = name
+                        break
+
+                # Draw overlay
+                img = Image.fromarray(np.asarray(rgb, dtype=np.uint8))
+                draw = ImageDraw.Draw(img)
+                text = f"Target: {target_name} ({target_id})"
+                # Simple black background for readability
+                draw.rectangle([5, 5, 220, 25], fill=(0, 0, 0, 128))
+                draw.text((10, 10), text, fill=(255, 255, 255))
+                rgb = np.array(img)
+
     frame_index = int(frame["frame_index"])
     stem = f"frame_{frame_index:06d}_env_{env_index:02d}"
-    rgb_path = rgb_dir / f"{stem}.png"
+    rgb_path = rgb_dir / f"{stem}.{rgb_format}"
     depth_path = None if depth_dir is None else depth_dir / f"{stem}.npy"
-    camera_valid, invalid_reasons, depth_stats = _validate_frame(
+    camera_valid, invalid_reasons, rgb_stats, depth_stats = _validate_frame(
         rgb,
         depth,
         require_depth=depth_dir is not None,
+        camera_safety=camera_safety,
+        apply_low_info_gates=camera_mode == "replay",
     )
+    low_info_reasons = [
+        reason for reason in invalid_reasons if reason in LOW_INFO_REASON_NAMES
+    ]
+    low_info_allowed = bool(
+        low_info_reasons
+        and camera_mode == "replay"
+        and _is_recovery_context(frame.get("command_context"))
+    )
+    if low_info_allowed:
+        invalid_reasons = [
+            reason for reason in invalid_reasons if reason not in LOW_INFO_REASON_NAMES
+        ]
+        camera_valid = not invalid_reasons
     if rgb is not None:
-        Image.fromarray(np.asarray(rgb, dtype=np.uint8)).save(rgb_path)
+        _write_rgb_frame(rgb, rgb_path, rgb_format=rgb_format)
     if depth is not None and depth_path is not None:
         np.save(depth_path, np.asarray(depth, dtype=np.float32))
 
@@ -271,13 +399,36 @@ def _render_frame(
         "depth_path": None if depth_path is None or depth is None else str(depth_path),
         "camera_valid": camera_valid,
         "invalid_reasons": invalid_reasons,
+        "low_info_reasons": low_info_reasons,
+        "low_info_allowed": low_info_allowed,
+        "rgb_stats": rgb_stats,
         "depth_stats": depth_stats,
+        "camera_pose_world": camera_pose,
+        "camera_safety": camera_safety,
+        "command_context": frame.get("command_context"),
         "source_frame": {
             "source_line": frame.get("source_line"),
             "source_topic": frame.get("source_topic"),
             "canonical_topic": frame.get("canonical_topic"),
         },
     }
+
+
+def _is_recovery_context(command_context: Any) -> bool:
+    if not isinstance(command_context, dict):
+        return False
+    return str(command_context.get("command_source") or "") == "recovery"
+
+
+def _write_rgb_frame(rgb: np.ndarray, path: Path, *, rgb_format: str) -> None:
+    rgb_u8 = np.asarray(rgb, dtype=np.uint8)
+    if rgb_format == "png":
+        Image.fromarray(rgb_u8).save(path)
+        return
+    if rgb_format == "npy":
+        np.save(path, rgb_u8)
+        return
+    raise ValueError(f"unsupported rgb_format: {rgb_format!r}")
 
 
 def _apply_robot_state(frame: dict[str, Any], robot: Any, leg_dof_idx: np.ndarray, env_index: int) -> None:
@@ -306,10 +457,46 @@ def _apply_robot_state(frame: dict[str, Any], robot: Any, leg_dof_idx: np.ndarra
         robot.set_dofs_position(qpos, leg_dof_idx.tolist(), envs_idx=envs)
 
 
-def _apply_camera_pose(frame: dict[str, Any], camera: Any, env_index: int) -> None:
-    pose = frame.get("camera_pose_world")
-    if not pose:
+def _apply_camera_pose(
+    frame: dict[str, Any],
+    camera: Any,
+    env_index: int,
+    *,
+    camera_mode: str,
+    overview_pose: dict[str, list[float]] | None,
+    objects: Any,
+    camera_safety_config: Any,
+    mount_xyz_body: tuple[float, float, float],
+    mount_rpy_body: tuple[float, float, float],
+) -> tuple[dict[str, list[float]], dict[str, float | bool]]:
+    if camera_mode == "overview":
+        if overview_pose is None:
+            raise ValueError("overview camera mode requires an overview pose")
+        pose = overview_pose
+        safety: dict[str, float | bool] = {"unsafe": False, "retracted_m": 0.0}
+    else:
+        pose = frame.get("camera_pose_world")
+    if camera_mode != "replay" and not pose:
         raise ValueError(f"frame {frame.get('frame_index')} missing camera_pose_world")
+    if camera_mode == "replay":
+        base_pose = frame.get("base_pose_world", {})
+        position = base_pose.get("position", {})
+        quat_xyzw = frame.get("base_quat_world_xyzw")
+        if not position or quat_xyzw is None:
+            raise ValueError(f"frame {frame.get('frame_index')} missing base pose/quaternion")
+        adjusted, safety = safe_camera_pose_from_base(
+            (
+                float(position["x"]),
+                float(position["y"]),
+                float(position["z"]),
+            ),
+            quat_xyzw,
+            mount_xyz_body=mount_xyz_body,
+            mount_rpy_body=mount_rpy_body,
+            objects=objects,
+            config=camera_safety_config,
+        )
+        pose = adjusted.to_dict()
     pos = np.asarray(pose["position"], dtype=np.float32)
     lookat = np.asarray(pose["lookat"], dtype=np.float32)
     up = np.asarray(pose["up"], dtype=np.float32)
@@ -317,6 +504,20 @@ def _apply_camera_pose(frame: dict[str, Any], camera: Any, env_index: int) -> No
         camera.set_pose(pos=pos[None, :], lookat=lookat[None, :], up=up[None, :], envs_idx=[env_index])
     else:
         camera.set_pose(pos=pos, lookat=lookat, up=up)
+    return pose, safety
+
+
+def _overview_camera_pose(pack: Any) -> dict[str, list[float]]:
+    (min_x, min_y), (max_x, max_y) = pack.world_bounds_xy_m
+    center_x = (float(min_x) + float(max_x)) * 0.5
+    center_y = (float(min_y) + float(max_y)) * 0.5
+    span = max(float(max_x) - float(min_x), float(max_y) - float(min_y), 1.0)
+    height = max(5.0, span * 1.1)
+    return {
+        "position": [center_x, center_y, height],
+        "lookat": [center_x, center_y, 0.0],
+        "up": [0.0, 1.0, 0.0],
+    }
 
 
 def _extract_render_outputs(rendered: Any) -> tuple[np.ndarray | None, np.ndarray | None]:
@@ -356,38 +557,29 @@ def _validate_frame(
     depth: np.ndarray | None,
     *,
     require_depth: bool,
-) -> tuple[bool, list[str], dict[str, float | int | None]]:
-    reasons: list[str] = []
-    if rgb is None:
-        reasons.append("missing_rgb")
-    else:
-        if rgb.ndim != 3 or rgb.shape[-1] != 3:
-            reasons.append(f"bad_rgb_shape:{tuple(rgb.shape)}")
-        if not np.isfinite(rgb).all():
-            reasons.append("rgb_nonfinite")
-    depth_stats: dict[str, float | int | None] = {
-        "finite_count": None,
-        "nonfinite_count": None,
-        "min_m": None,
-        "max_m": None,
-    }
-    if depth is None:
-        if require_depth:
-            reasons.append("missing_depth")
-    else:
-        finite = np.isfinite(depth)
-        finite_count = int(finite.sum())
-        nonfinite_count = int(depth.size - finite_count)
-        depth_stats["finite_count"] = finite_count
-        depth_stats["nonfinite_count"] = nonfinite_count
-        if finite_count:
-            depth_stats["min_m"] = float(np.nanmin(depth[finite]))
-            depth_stats["max_m"] = float(np.nanmax(depth[finite]))
-        else:
-            reasons.append("depth_all_nonfinite")
-        if any(math.isnan(float(v)) for v in (depth_stats["min_m"] or 0.0, depth_stats["max_m"] or 0.0)):
-            reasons.append("depth_nan_stats")
-    return not reasons, reasons, depth_stats
+    camera_safety: dict[str, float | bool] | None,
+    apply_low_info_gates: bool,
+) -> tuple[
+    bool,
+    list[str],
+    dict[str, float | int | bool | None],
+    dict[str, float | int | bool | None],
+]:
+    quality = assess_rendered_frame(
+        rgb,
+        depth,
+        require_depth=bool(require_depth),
+        camera_safety=camera_safety,
+    )
+    reasons = list(quality["invalid_reasons"])
+    if not apply_low_info_gates:
+        reasons = [reason for reason in reasons if reason not in LOW_INFO_REASON_NAMES]
+    return (
+        not reasons,
+        reasons,
+        dict(quality["rgb_stats"]),
+        dict(quality["depth_stats"]),
+    )
 
 
 if __name__ == "__main__":

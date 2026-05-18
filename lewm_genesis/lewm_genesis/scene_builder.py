@@ -141,8 +141,15 @@ def build_scene_from_pack(
     n_envs: int,
     backend: str = "auto",
     show_viewer: bool = False,
+    render_robot: bool = True,
 ) -> SceneBuild:
-    """Build a Genesis scene with ``n_envs`` parallel envs from a ``ScenePack``."""
+    """Build a Genesis scene with ``n_envs`` parallel envs from a ``ScenePack``.
+
+    ``render_robot=False`` keeps the robot fully present in physics but skips its
+    visual meshes from camera renders, so egocentric captures do not contain the
+    robot body when the safety retraction pulls the camera back inside the body
+    envelope.
+    """
 
     gs = _import_genesis()
     initialize_genesis(backend=backend, seed=pack.physics_seed)
@@ -197,6 +204,8 @@ def build_scene_from_pack(
             pos=pack.robot.spawn_xyz_m,
             quat=pack.robot.spawn_quat_wxyz,
             fixed=False,
+            visualization=bool(render_robot),
+            collision=True,
         ),
         name="go2",
     )

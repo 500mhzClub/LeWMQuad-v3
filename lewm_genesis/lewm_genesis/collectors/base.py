@@ -172,20 +172,23 @@ def wrap_angle_pi(angle: float) -> float:
 def primitive_toward_bearing(
     *,
     heading_error_rad: float,
-    yaw_tolerance_rad: float = math.pi / 8,
-    arc_tolerance_rad: float = math.pi / 3,
+    yaw_tolerance_rad: float = math.pi / 6,
+    arc_tolerance_rad: float = math.pi / 2,
 ) -> str:
     """Pick a velocity primitive that steers toward a desired bearing.
 
     | |error| | primitive       |
     | ------- | --------------- |
-    | <= π/8  | forward_medium  |
-    | <= π/3  | arc_left/right  |
-    | >  π/3  | yaw_left/right  |
+    | <= π/6  | forward_medium  |
+    | <= π/2  | arc_left/right  |
+    | >  π/2  | yaw_left/right  |
 
-    The defaults match the spec's intent that arcs are preferred over pivots
-    when the heading error is moderate (keeps the robot moving and gives the
-    encoder a richer dynamics signal).
+    Defaults bias hard toward translation: arc covers any turn up to 90°
+    (so the body keeps moving through corridor corners) and yaw-in-place
+    only kicks in for near-reversals. With the previous π/8 / π/3 bands a
+    typical 90° junction turn produced ~7 blocks of pure yaw before the
+    robot moved forward again, which dominated long maze traversals
+    (env 2 in the route_teacher profiler spent 42% of its blocks yawing).
     """
 
     if abs(heading_error_rad) <= yaw_tolerance_rad:

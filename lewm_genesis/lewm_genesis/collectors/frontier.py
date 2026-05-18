@@ -59,10 +59,11 @@ class FrontierTeacher:
         env_idx = observation.env_idx
         self._visit_counts[env_idx][int(observation.current_cell_id)] += 1
         goal = self._goal[env_idx]
+        blocked = getattr(scene, "nav_blocked_cells", frozenset())
         if (
             goal < 0
             or goal >= scene.n_nodes
-            or scene.bfs_distance(observation.current_cell_id, goal) is None
+            or scene.bfs_distance(observation.current_cell_id, goal, transit_blocked=blocked) is None
             or (self._retarget and observation.current_cell_id == goal)
         ):
             goal = self._pick_goal(env_idx, observation.current_cell_id, scene, rng)
@@ -75,7 +76,7 @@ class FrontierTeacher:
                 command_source=self.name,
             )
 
-        waypoint = scene.next_waypoint(observation.current_cell_id, goal)
+        waypoint = scene.next_waypoint(observation.current_cell_id, goal, transit_blocked=blocked)
         if waypoint is None:
             self._goal[env_idx] = -1
             return BlockChoice(
@@ -109,14 +110,15 @@ class FrontierTeacher:
         scene,
         rng: np.random.Generator,
     ) -> int:
-        reachable = [c for c in scene.reachable_cells(current_cell) if c != current_cell]
+        blocked = getattr(scene, "nav_blocked_cells", frozenset())
+        reachable = [c for c in scene.reachable_cells(current_cell, transit_blocked=blocked) if c != current_cell]
         if not reachable:
             return -1
         visits = self._visit_counts[env_idx]
         # Score = -visits + bias * graph_distance. Higher = better.
         scored = []
         for cell in reachable:
-            dist = scene.bfs_distance(current_cell, cell) or 0
+            dist = scene.bfs_distance(current_cell, cell, transit_blocked=blocked) or 0
             score = -float(visits.get(cell, 0)) + self._bias * float(dist)
             scored.append((score, int(cell)))
         scored.sort(reverse=True)

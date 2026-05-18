@@ -42,6 +42,24 @@ def test_render_replay_uses_canonical_env_topics_and_joint_state(tmp_path: Path)
             },
         },
         {
+            "topic": "/env_00/lewm/go2/command_block",
+            "canonical_topic": "/lewm/go2/command_block",
+            "env_index": 0,
+            "timestamp_ns": 0,
+            "payload": {
+                "sequence_id": 7,
+                "primitive_name": "backward",
+                "command_source": "recovery",
+                "route_target_id": -1,
+                "next_waypoint_id": -1,
+                "vx_body_mps": [-0.2, -0.2, -0.2, -0.2, -0.2],
+                "vy_body_mps": [0.0, 0.0, 0.0, 0.0, 0.0],
+                "yaw_rate_radps": [0.0, 0.0, 0.0, 0.0, 0.0],
+                "command_dt_s": 0.1,
+                "block_size": 5,
+            },
+        },
+        {
             "topic": "/env_00/lewm/go2/base_state",
             "canonical_topic": "/lewm/go2/base_state",
             "env_index": 0,
@@ -104,5 +122,8 @@ camera:
     assert frame["env_index"] == 0
     assert frame["episode"]["scene_id"] == 123
     assert frame["joint_state"]["names"] == ["FL_hip_joint"]
+    assert frame["command_context"]["command_source"] == "recovery"
+    assert frame["command_context"]["primitive_name"] == "backward"
+    assert frame["command_context"]["sequence_id"] == 7
     assert frame["camera_pose_world"]["position"] == pytest.approx([1.326, 2.0, 0.443])
     assert frame["camera_pose_world"]["lookat"] == pytest.approx([2.326, 2.0, 0.443])

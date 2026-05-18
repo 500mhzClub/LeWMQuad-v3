@@ -159,6 +159,7 @@ def _extract_base_state_frames(
     frames: list[dict[str, Any]] = []
     latest_episode_by_env: dict[int | None, dict[str, Any]] = {}
     latest_joint_state_by_env: dict[int | None, dict[str, Any]] = {}
+    latest_command_by_env: dict[int | None, dict[str, Any]] = {}
     next_frame_ns_by_env: dict[int | None, int] = {}
     source_line = 0
 
@@ -187,6 +188,22 @@ def _extract_base_state_frames(
                     "position": payload.get("position"),
                     "velocity": payload.get("velocity"),
                     "effort": payload.get("effort"),
+                }
+                continue
+            if topic == "/lewm/go2/command_block":
+                latest_command_by_env[env_key] = {
+                    "sequence_id": payload.get("sequence_id"),
+                    "primitive_name": payload.get("primitive_name"),
+                    "command_source": payload.get("command_source"),
+                    "route_target_id": payload.get("route_target_id"),
+                    "next_waypoint_id": payload.get("next_waypoint_id"),
+                    "vx_body_mps": payload.get("vx_body_mps"),
+                    "vy_body_mps": payload.get("vy_body_mps"),
+                    "yaw_rate_radps": payload.get("yaw_rate_radps"),
+                    "command_dt_s": payload.get("command_dt_s"),
+                    "block_size": payload.get("block_size"),
+                    "source_line": source_line,
+                    "timestamp_ns": int(record["timestamp_ns"]),
                 }
                 continue
             if topic != "/lewm/go2/base_state":
@@ -220,6 +237,7 @@ def _extract_base_state_frames(
                         "yaw": payload.get("yaw_rad"),
                     },
                     "twist_body": payload.get("twist_body"),
+                    "command_context": latest_command_by_env.get(env_key),
                     "joint_state": latest_joint_state_by_env.get(env_key),
                     "camera_pose_world": _camera_pose_from_payload(
                         payload,

@@ -44,5 +44,5 @@ cd "$ROOT"
 lewm_source_jazzy_underlay
 lewm_source_workspace_overlay "$ROOT"
 
-export PYTHONPATH="$ROOT/lewm_genesis:${PYTHONPATH:-}"
+export PYTHONPATH="$ROOT/lewm_genesis:$ROOT/lewm_worlds:${PYTHONPATH:-}"
 exec "$PYTHON_BIN" "$SCRIPT_DIR/genesis_bulk_rollout.py" "$@"

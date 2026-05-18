@@ -96,10 +96,61 @@ def main() -> int:
     parser.add_argument("--policy-device", default=None)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--fall-z-threshold-m", type=float, default=0.15)
+    parser.add_argument(
+        "--recovery-interlock-clearance-m",
+        type=float,
+        default=0.20,
+        help=(
+            "Base-center wall clearance that forces non-recovery collectors "
+            "into a short recovery handoff. Use <=0 to disable. The default "
+            "sits just above the Go2 footprint half-width so it only fires "
+            "when the body is genuinely grazing a wall (corridors are "
+            "0.50–0.93 m wide, so the legacy 0.55 m threshold fired "
+            "constantly)."
+        ),
+    )
+    parser.add_argument(
+        "--recovery-interlock-blocks",
+        type=int,
+        default=16,
+        help="Number of command blocks to keep the emergency recovery handoff active.",
+    )
     parser.add_argument("--out-of-bounds-pad-m", type=float, default=0.5)
     parser.add_argument("--log-progress-every-blocks", type=int, default=10)
     parser.add_argument("--show-viewer", action="store_true")
     parser.add_argument("--no-rgb", action="store_true")
+    parser.add_argument(
+        "--render-robot",
+        action="store_true",
+        help=(
+            "Render the robot body in egocentric camera frames. Default hides it so "
+            "the safety-retracted camera does not capture the robot back-plate."
+        ),
+    )
+    parser.add_argument(
+        "--collector-mix",
+        default=None,
+        help=(
+            "Override collection policy shares as comma-separated name=weight pairs, "
+            "for example route_teacher=1.0. Use legacy_random for the old random "
+            "primitive sampler."
+        ),
+    )
+    parser.add_argument(
+        "--fixed-spawn",
+        action="store_true",
+        help="Disable per-episode random spawn sampling and use the manifest spawn pose.",
+    )
+    parser.add_argument(
+        "--spawn-clearance-floor-m",
+        type=float,
+        default=0.45,
+        help=(
+            "Minimum wall clearance enforced at every spawn (randomized or "
+            "fixed). Manifest spawns that fall below this floor are rolled to "
+            "a sampled cell so the robot never starts wedged between walls."
+        ),
+    )
     parser.add_argument(
         "--foot-contact-source",
         choices=("genesis", "zero"),
@@ -176,6 +227,7 @@ def main() -> int:
         )
 
     out_root.mkdir(parents=True, exist_ok=True)
+    collector_mix = _parse_collector_mix(args.collector_mix)
     run_summary: dict[str, object] = {
         "schema": "lewm_genesis_bulk_rollout_run_v0",
         "scene_corpus": str(scene_corpus),
@@ -188,9 +240,15 @@ def main() -> int:
         "n_envs": int(args.n_envs),
         "n_blocks": n_blocks,
         "rgb": not args.no_rgb,
+        "render_robot": bool(args.render_robot),
         "backend": args.backend,
         "writer": "none" if args.no_writer else "mcap",
         "foot_contact_source": foot_contact_source,
+        "collector_mix": collector_mix,
+        "randomize_spawn_pose": not args.fixed_spawn,
+        "recovery_interlock_clearance_m": float(args.recovery_interlock_clearance_m),
+        "recovery_interlock_blocks": int(args.recovery_interlock_blocks),
+        "spawn_clearance_floor_m": float(args.spawn_clearance_floor_m),
         "scene_summaries": [],
     }
 
@@ -209,6 +267,7 @@ def main() -> int:
             n_envs=int(args.n_envs),
             backend=args.backend,
             show_viewer=bool(args.show_viewer),
+            render_robot=bool(args.render_robot),
         )
         config = RolloutConfig(
             n_blocks=n_blocks,
@@ -218,6 +277,11 @@ def main() -> int:
             seed=int(args.seed) + scene_index,
             log_progress_every_blocks=int(args.log_progress_every_blocks),
             foot_contact_source=foot_contact_source,
+            collector_mix=collector_mix,
+            randomize_spawn_pose=not args.fixed_spawn,
+            recovery_interlock_clearance_m=float(args.recovery_interlock_clearance_m),
+            recovery_interlock_blocks=int(args.recovery_interlock_blocks),
+            spawn_clearance_floor_m=float(args.spawn_clearance_floor_m),
         )
         runner = RolloutRunner(build, policy, registry, safety, config=config)
         writer_cls = NoWriterSceneWriter if args.no_writer else MCAPSceneWriter
@@ -233,8 +297,16 @@ def main() -> int:
                 "policy_artifact": platform.get("locomotion", {}).get("policy_artifact", {}),
                 "backend": args.backend,
                 "rgb": not args.no_rgb,
+                "render_robot": bool(args.render_robot),
                 "writer": "none" if args.no_writer else "mcap",
                 "foot_contact_source": foot_contact_source,
+                "collector_mix": collector_mix,
+                "randomize_spawn_pose": not args.fixed_spawn,
+                "recovery_interlock_clearance_m": float(
+                    args.recovery_interlock_clearance_m
+                ),
+                "recovery_interlock_blocks": int(args.recovery_interlock_blocks),
+                "spawn_clearance_floor_m": float(args.spawn_clearance_floor_m),
             }
         )
         run_summary["scene_summaries"].append(str(summary_path))
@@ -244,6 +316,36 @@ def main() -> int:
     run_summary_path.write_text(json.dumps(run_summary, indent=2, sort_keys=True), encoding="utf-8")
     print(f"run_summary={run_summary_path}")
     return 0
+
+
+def _parse_collector_mix(value: str | None) -> dict[str, float] | None:
+    if value is None or value.strip() == "":
+        return None
+    text = value.strip()
+    if text in {"legacy", "legacy_random", "random"}:
+        return {}
+    mix: dict[str, float] = {}
+    for chunk in text.split(","):
+        item = chunk.strip()
+        if not item:
+            continue
+        if "=" not in item:
+            raise argparse.ArgumentTypeError(
+                f"collector mix entry {item!r} must be NAME=WEIGHT"
+            )
+        name, weight_text = item.split("=", 1)
+        name = name.strip()
+        if not name:
+            raise argparse.ArgumentTypeError("collector mix name cannot be empty")
+        weight = float(weight_text)
+        if weight < 0.0:
+            raise argparse.ArgumentTypeError(
+                f"collector mix weight for {name!r} must be non-negative"
+            )
+        mix[name] = weight
+    if not mix:
+        raise argparse.ArgumentTypeError("collector mix cannot be empty")
+    return mix
 
 
 if __name__ == "__main__":

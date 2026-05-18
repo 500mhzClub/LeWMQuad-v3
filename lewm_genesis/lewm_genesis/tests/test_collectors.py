@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -58,24 +59,27 @@ def _grid_corridor_manifest() -> SceneManifest:
     cell = 1.0
     wall_t = 0.2
     wall_h = 0.8
+    # Increase corridor width to 1.2m (from 0.8m) to ensure the 0.3m landmark
+    # plus 0.2m inflation on each side (0.7m total) doesn't block it.
+    width = 1.2
     nodes = tuple(
         GraphNode(
             node_id=i,
             center_xy_m=(i * cell, 0.0),
-            width_m=cell - wall_t,
+            width_m=width,
             tags=("spawn",) if i == 0 else (),
         )
         for i in range(4)
     )
     edges = tuple(
-        GraphEdge(source=i, target=i + 1, width_m=cell - wall_t, traversable=True)
+        GraphEdge(source=i, target=i + 1, width_m=width, traversable=True)
         for i in range(3)
     )
     walls = (
         BoxObject(
             object_id="north_wall",
             kind="wall",
-            center_xyz_m=(1.5 * cell, cell * 0.5, wall_h * 0.5),
+            center_xyz_m=(1.5 * cell, (width + wall_t) * 0.5, wall_h * 0.5),
             size_xyz_m=(4 * cell, wall_t, wall_h),
             yaw_rad=0.0,
             material_id="wall_interior",
@@ -83,7 +87,7 @@ def _grid_corridor_manifest() -> SceneManifest:
         BoxObject(
             object_id="south_wall",
             kind="wall",
-            center_xyz_m=(1.5 * cell, -cell * 0.5, wall_h * 0.5),
+            center_xyz_m=(1.5 * cell, -(width + wall_t) * 0.5, wall_h * 0.5),
             size_xyz_m=(4 * cell, wall_t, wall_h),
             yaw_rad=0.0,
             material_id="wall_interior",
@@ -98,6 +102,14 @@ def _grid_corridor_manifest() -> SceneManifest:
             yaw_rad=0.0,
             material_id="landmark_red",
         ),
+        BoxObject(
+            object_id="secondary_landmark",
+            kind="landmark",
+            center_xyz_m=(0.0, 0.0, 0.5),
+            size_xyz_m=(0.3, 0.3, 1.0),
+            yaw_rad=0.0,
+            material_id="landmark_blue",
+        ),
     )
     return SceneManifest(
         scene_id="grid_corridor",
@@ -106,7 +118,7 @@ def _grid_corridor_manifest() -> SceneManifest:
         topology_seed=0,
         visual_seed=0,
         physics_seed=0,
-        world_bounds_xy_m=((-1.0, -1.0), (4.0, 1.0)),
+        world_bounds_xy_m=((-1.0, -1.025), (4.0, 0.975)),
         spawn=SpawnSpec(xyz_m=(0.0, 0.0, 0.375), quat_wxyz=(1.0, 0.0, 0.0, 0.0)),
         graph_nodes=nodes,
         graph_edges=edges,
@@ -114,6 +126,112 @@ def _grid_corridor_manifest() -> SceneManifest:
         landmarks=landmarks,
         camera_constraints=CameraValidityConstraints(
             min_wall_thickness_m=0.08, near_m=0.05, far_m=200.0, min_camera_clearance_m=0.10
+        ),
+        walls=walls,
+    )
+
+
+def _narrow_endpoint_landmark_manifest() -> SceneManifest:
+    """A narrow motif where spawn-beacon yaw drift can snap outside the route."""
+
+    width = 0.504
+    nodes = tuple(
+        GraphNode(
+            node_id=i,
+            center_xy_m=xy,
+            width_m=width,
+            tags=("spawn",) if i == 0 else (),
+        )
+        for i, xy in enumerate(
+            (
+                (0.0, 0.0),
+                (0.0, 0.8),
+                (0.0, 1.6),
+                (0.8, 1.6),
+                (1.6, 1.6),
+                (1.6, 2.4),
+                (1.6, 3.2),
+                (1.6, 4.0),
+                (2.4, 4.0),
+                (3.2, 4.0),
+            )
+        )
+    )
+    edges = tuple(
+        GraphEdge(source=i, target=i + 1, width_m=width, traversable=True)
+        for i in range(9)
+    )
+    wall_specs = (
+        ((0.4, 0.0), (0.296, 0.8400000000000001)),
+        ((-0.4, 0.0), (0.296, 0.8400000000000001)),
+        ((0.0, -0.4), (0.8400000000000001, 0.296)),
+        ((0.4, 0.8), (0.296, 0.8400000000000001)),
+        ((-0.4, 0.8), (0.296, 0.8400000000000001)),
+        ((0.0, 2.0), (0.8400000000000001, 0.296)),
+        ((-0.4, 1.6), (0.296, 0.8400000000000001)),
+        ((0.8, 2.0), (0.8400000000000001, 0.296)),
+        ((0.8, 1.2), (0.8400000000000001, 0.296)),
+        ((2.0, 1.6), (0.296, 0.8400000000000001)),
+        ((1.6, 1.2), (0.8400000000000001, 0.296)),
+        ((2.0, 2.4), (0.296, 0.8400000000000001)),
+        ((1.2, 2.4), (0.296, 0.8400000000000001)),
+        ((2.0, 3.2), (0.296, 0.8400000000000001)),
+        ((1.2, 3.2), (0.296, 0.8400000000000001)),
+        ((1.6, 4.4), (0.8400000000000001, 0.296)),
+        ((1.2, 4.0), (0.296, 0.8400000000000001)),
+        ((2.4, 4.4), (0.8400000000000001, 0.296)),
+        ((2.4, 3.6), (0.8400000000000001, 0.296)),
+        ((3.6, 4.0), (0.296, 0.8400000000000001)),
+        ((3.2, 4.4), (0.8400000000000001, 0.296)),
+        ((3.2, 3.6), (0.8400000000000001, 0.296)),
+    )
+    walls = tuple(
+        BoxObject(
+            object_id=f"wall_motif_{idx:04d}",
+            kind="wall",
+            center_xyz_m=(xy[0], xy[1], 0.4),
+            size_xyz_m=(size[0], size[1], 0.8),
+            yaw_rad=0.0,
+            material_id="wall_perimeter",
+        )
+        for idx, (xy, size) in enumerate(wall_specs)
+    )
+    landmarks = (
+        BoxObject(
+            object_id="landmark_00_landmark_red",
+            kind="landmark",
+            center_xyz_m=(3.2, 4.0, 0.44),
+            size_xyz_m=(0.3, 0.3, 0.88),
+            yaw_rad=0.0,
+            material_id="landmark_red",
+        ),
+        BoxObject(
+            object_id="landmark_01_landmark_blue",
+            kind="landmark",
+            center_xyz_m=(0.0, 0.0, 0.44),
+            size_xyz_m=(0.3, 0.3, 0.88),
+            yaw_rad=0.0,
+            material_id="landmark_blue",
+        ),
+    )
+    return SceneManifest(
+        scene_id="narrow_endpoint_landmark",
+        family="test",
+        difficulty_tier="test",
+        topology_seed=0,
+        visual_seed=0,
+        physics_seed=0,
+        world_bounds_xy_m=((-6.096, -6.096), (6.096, 6.096)),
+        spawn=SpawnSpec(xyz_m=(0.0, 0.0, 0.375), quat_wxyz=(1.0, 0.0, 0.0, 0.0)),
+        graph_nodes=nodes,
+        graph_edges=edges,
+        obstacles=(),
+        landmarks=landmarks,
+        camera_constraints=CameraValidityConstraints(
+            min_wall_thickness_m=0.12,
+            near_m=0.08,
+            far_m=200.0,
+            min_camera_clearance_m=0.10,
         ),
         walls=walls,
     )
@@ -151,9 +269,13 @@ def _observation(
 
 
 def test_primitive_toward_bearing_quadrants():
+    # Bands: |err| <= π/6 → forward; <= π/2 → arc; else yaw. Translation
+    # is preferred — any turn up to 90° should keep the body moving via
+    # an arc primitive instead of stopping to yaw.
     assert primitive_toward_bearing(heading_error_rad=0.0) == "forward_medium"
-    assert primitive_toward_bearing(heading_error_rad=math.pi / 6) == "arc_left"
-    assert primitive_toward_bearing(heading_error_rad=-math.pi / 6) == "arc_right"
+    assert primitive_toward_bearing(heading_error_rad=math.pi / 6) == "forward_medium"
+    assert primitive_toward_bearing(heading_error_rad=math.pi / 4) == "arc_left"
+    assert primitive_toward_bearing(heading_error_rad=-math.pi / 4) == "arc_right"
     assert primitive_toward_bearing(heading_error_rad=math.pi - 0.01) == "yaw_left"
     assert primitive_toward_bearing(heading_error_rad=-math.pi + 0.01) == "yaw_right"
 
@@ -190,8 +312,8 @@ def test_route_teacher_picks_landmark_goal_and_steers_toward_waypoint(registry):
     collector.on_episode_reset(0)
     rng = np.random.default_rng(0)
 
-    # At cell 0 facing +x, the goal landmark sits at cell 3. The next waypoint
-    # should be cell 1 and heading error ~0 → forward primitive.
+    # At cell 0 facing +x, the secondary landmark sits at the spawn cell so
+    # it is claimed immediately; the remaining goal landmark is at cell 3.
     choice = collector.on_block(
         observation=_observation(base_xy=(0.0, 0.0), yaw=0.0, cell_id=0),
         scene=scene,
@@ -199,8 +321,9 @@ def test_route_teacher_picks_landmark_goal_and_steers_toward_waypoint(registry):
     )
     assert choice.command_source == "route_teacher"
     assert choice.route_target_id == 3  # landmark cell
-    assert choice.next_waypoint_id == 1
-    assert choice.primitive_name in {"forward_medium", "arc_left", "arc_right"}
+    # Robot starts inside the 'secondary_landmark' (inflated), so it must
+    # dodge it to reach cell 3.
+    assert choice.primitive_name == "arc_right"
 
 
 def test_route_teacher_yaws_when_facing_wrong_way(registry):
@@ -217,24 +340,660 @@ def test_route_teacher_yaws_when_facing_wrong_way(registry):
     assert choice.primitive_name.startswith("yaw_")
 
 
-def test_route_teacher_repicks_goal_after_arrival(registry):
+def test_route_teacher_finishes_after_visiting_each_landmark_once(registry):
     scene = SceneGraph(_grid_corridor_manifest())
     collector = RouteTeacher(registry, n_envs=1)
     collector.on_episode_reset(0)
     rng = np.random.default_rng(0)
-    # First block: at cell 0, goal=3.
+    # First block: the spawn-cell beacon is auto-claimed and the teacher
+    # targets the remaining landmark at cell 3.
     first = collector.on_block(
         observation=_observation(cell_id=0, base_xy=(0.0, 0.0)), scene=scene, rng=rng
     )
     assert first.route_target_id == 3
-    # Pretend we arrived at cell 3 — the teacher should re-target on the
-    # same block so we don't waste compute holding at the goal. The new
-    # goal must differ from the one we just arrived at.
+    # Arrive at cell 3 facing the beacon — both landmarks now claimed, no
+    # further beacons to chase.
     arrival = collector.on_block(
-        observation=_observation(cell_id=3, base_xy=(3.0, 0.0)), scene=scene, rng=rng
+        observation=_observation(cell_id=3, base_xy=(3.0, 0.0), yaw=0.0),
+        scene=scene,
+        rng=rng,
     )
-    assert arrival.route_target_id != 3
-    assert arrival.route_target_id != -1
+    assert arrival.primitive_name == "hold"
+    assert arrival.route_target_id == -1
+
+
+def test_route_teacher_reuses_sticky_path_after_bad_snap_replan(registry):
+    scene = SceneGraph(_narrow_endpoint_landmark_manifest())
+    collector = RouteTeacher(registry, n_envs=1)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    first = collector.on_block(
+        observation=_observation(
+            base_xy=(0.0, 0.0),
+            cell_id=scene.locate((0.0, 0.0)).cell_id,
+            clearance=scene.clearance_to_walls((0.0, 0.0)),
+        ),
+        scene=scene,
+        rng=rng,
+    )
+    assert first.route_target_id == 9
+
+    # If the base drifts slightly south at the spawn landmark, the nearest
+    # free grid cell is in the exterior component while the previous route
+    # path remains close and viable.
+    drift_xy = (-0.021, -0.175)
+    collector._blocks_since_plan[0] = collector._replan_every_blocks
+    recovered = collector.on_block(
+        observation=_observation(
+            base_xy=drift_xy,
+            yaw=0.2,
+            cell_id=scene.locate(drift_xy).cell_id,
+            clearance=scene.clearance_to_walls(drift_xy),
+            last_cmd=(0.0, 0.0, 0.45),
+            block_idx=1,
+        ),
+        scene=scene,
+        rng=rng,
+    )
+
+    assert recovered.route_target_id == 9
+    assert recovered.primitive_name != "hold"
+    assert 9 not in collector._unreachable_beacons[0]
+
+
+def test_route_teacher_targets_next_unvisited_landmark(registry):
+    nodes = (
+        GraphNode(node_id=0, center_xy_m=(0.0, 0.0), width_m=0.8, tags=("spawn",)),
+        GraphNode(node_id=1, center_xy_m=(1.0, 0.0), width_m=0.8),
+        GraphNode(node_id=2, center_xy_m=(2.0, 0.0), width_m=0.8),
+        GraphNode(node_id=3, center_xy_m=(1.0, 1.0), width_m=0.8),
+    )
+    edges = (
+        GraphEdge(source=0, target=1, width_m=0.8, traversable=True),
+        GraphEdge(source=1, target=2, width_m=0.8, traversable=True),
+        GraphEdge(source=1, target=3, width_m=0.8, traversable=True),
+    )
+    landmarks = (
+        BoxObject(
+            object_id="east_landmark",
+            kind="landmark",
+            center_xyz_m=(2.0, 0.0, 0.5),
+            size_xyz_m=(0.3, 0.3, 1.0),
+            yaw_rad=0.0,
+            material_id="landmark_blue",
+        ),
+        BoxObject(
+            object_id="north_landmark",
+            kind="landmark",
+            center_xyz_m=(1.0, 1.0, 0.5),
+            size_xyz_m=(0.3, 0.3, 1.0),
+            yaw_rad=0.0,
+            material_id="landmark_red",
+        ),
+    )
+    scene = SceneGraph(
+        SceneManifest(
+            scene_id="branched_landmarks",
+            family="test",
+            difficulty_tier="test",
+            topology_seed=0,
+            visual_seed=0,
+            physics_seed=0,
+            world_bounds_xy_m=((-1.5, -1.525), (3.5, 1.475)),
+            spawn=SpawnSpec(
+                xyz_m=(0.0, 0.0, 0.375),
+
+                quat_wxyz=(1.0, 0.0, 0.0, 0.0),
+            ),
+            graph_nodes=nodes,
+            graph_edges=edges,
+            obstacles=(),
+            landmarks=landmarks,
+            camera_constraints=CameraValidityConstraints(
+                min_wall_thickness_m=0.08,
+                near_m=0.05,
+                far_m=200.0,
+                min_camera_clearance_m=0.10,
+            ),
+            walls=(),
+        )
+    )
+    collector = RouteTeacher(registry, n_envs=1)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    # A* on the inflated grid picks the cheaper beacon first; either order
+    # is fine. What matters is that after claiming one, the teacher pivots
+    # to the other instead of repeatedly chasing the same one.
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)), scene=scene, rng=rng
+    )
+    assert first.route_target_id in {2, 3}
+    first_target = first.route_target_id
+
+    # Simulate arrival at the first beacon facing it.
+    arrival_xy = (2.0, 0.0) if first_target == 2 else (1.0, 1.0)
+    arrival_yaw = 0.0 if first_target == 2 else math.pi / 2
+    _ = collector.on_block(
+        observation=_observation(
+            cell_id=first_target, base_xy=arrival_xy, yaw=arrival_yaw
+        ),
+        scene=scene,
+        rng=rng,
+    )
+
+    # Next block from the same pose: the teacher must pivot to the other
+    # beacon (or report no further reachable beacon).
+    after_goal = collector.on_block(
+        observation=_observation(
+            cell_id=first_target, base_xy=arrival_xy, yaw=arrival_yaw
+        ),
+        scene=scene,
+        rng=rng,
+    )
+    other = 3 if first_target == 2 else 2
+    assert after_goal.route_target_id in {other, -1}
+
+
+def test_route_teacher_does_not_resume_after_unreachable_beacons(registry):
+    # Two beacons separated by a solid wall — the remote one is in a
+    # disconnected free region. After claiming the local beacon, the
+    # teacher must report -1 instead of looping on the unreachable one.
+    nodes = (
+        GraphNode(node_id=0, center_xy_m=(0.0, 0.0), width_m=0.8, tags=("spawn",)),
+        GraphNode(node_id=1, center_xy_m=(1.0, 0.0), width_m=0.8),
+        GraphNode(node_id=2, center_xy_m=(10.0, 0.0), width_m=0.8),
+        GraphNode(node_id=3, center_xy_m=(11.0, 0.0), width_m=0.8),
+    )
+    edges = (
+        GraphEdge(source=0, target=1, width_m=0.8, traversable=True),
+        GraphEdge(source=2, target=3, width_m=0.8, traversable=True),
+    )
+    landmarks = (
+        BoxObject(
+            object_id="local_landmark",
+            kind="landmark",
+            center_xyz_m=(1.0, 0.0, 0.5),
+            size_xyz_m=(0.3, 0.3, 1.0),
+            yaw_rad=0.0,
+            material_id="landmark_blue",
+        ),
+        BoxObject(
+            object_id="remote_landmark",
+            kind="landmark",
+            center_xyz_m=(11.0, 0.0, 0.5),
+            size_xyz_m=(0.3, 0.3, 1.0),
+            yaw_rad=0.0,
+            material_id="landmark_red",
+        ),
+    )
+    # Wall spans the full world height so no free path exists around it.
+    walls = (
+        BoxObject(
+            object_id="divider",
+            kind="wall",
+            center_xyz_m=(5.5, 0.0, 0.5),
+            size_xyz_m=(0.2, 4.4, 1.0),
+            yaw_rad=0.0,
+            material_id="wall_interior",
+        ),
+    )
+    scene = SceneGraph(
+        SceneManifest(
+            scene_id="disconnected_landmarks",
+            family="test",
+            difficulty_tier="test",
+            topology_seed=0,
+            visual_seed=0,
+            physics_seed=0,
+            world_bounds_xy_m=((-1.5, -1.525), (3.5, 1.475)),
+            spawn=SpawnSpec(
+                xyz_m=(0.0, 0.0, 0.375),
+
+                quat_wxyz=(1.0, 0.0, 0.0, 0.0),
+            ),
+            graph_nodes=nodes,
+            graph_edges=edges,
+            obstacles=(),
+            landmarks=landmarks,
+            camera_constraints=CameraValidityConstraints(
+                min_wall_thickness_m=0.08,
+                near_m=0.05,
+                far_m=200.0,
+                min_camera_clearance_m=0.10,
+            ),
+            walls=walls,
+        )
+    )
+    collector = RouteTeacher(registry, n_envs=1)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)),
+        scene=scene,
+        rng=rng,
+    )
+    assert first.route_target_id == 1
+
+    # Arrive at the local beacon facing it.
+    _ = collector.on_block(
+        observation=_observation(cell_id=1, base_xy=(1.0, 0.0), yaw=0.0),
+        scene=scene,
+        rng=rng,
+    )
+    done = collector.on_block(
+        observation=_observation(cell_id=1, base_xy=(1.0, 0.0), yaw=0.0),
+        scene=scene,
+        rng=rng,
+    )
+    assert done.route_target_id == -1
+
+
+def test_route_teacher_does_not_arrive_outside_claim_envelope(registry):
+    scene = SceneGraph(_grid_corridor_manifest())
+    # Standoff just past the inflated beacon perimeter; claim envelope =
+    # standoff + claim_radius = 0.50 m around the beacon centre.
+    collector = RouteTeacher(
+        registry, n_envs=1, landmark_standoff_m=0.40, landmark_claim_radius_m=0.10
+    )
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)), scene=scene, rng=rng
+    )
+    assert first.route_target_id == 3
+
+    # 2.20 m → 0.80 m from beacon at (3.0, 0.0); outside the 0.50 m
+    # envelope → still chasing.
+    not_arrived = collector.on_block(
+        observation=_observation(cell_id=3, base_xy=(2.20, 0.0)), scene=scene, rng=rng
+    )
+    assert not_arrived.route_target_id == 3
+
+
+def test_route_teacher_requires_landmark_in_fov_to_claim_arrival(registry):
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RouteTeacher(registry, n_envs=1, landmark_fov_deg=60.0)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+    # First block: lock onto the landmark goal at cell 3.
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)),
+        scene=scene,
+        rng=rng,
+    )
+    assert first.route_target_id == 3
+
+    # Robot stands inside the claim envelope (0.05 m from beacon) but is
+    # facing -x while the beacon sits at +x. Beacon is outside the 60°
+    # FOV → arrival must not fire and the goal must remain pinned.
+    facing_wall = collector.on_block(
+        observation=_observation(cell_id=3, base_xy=(2.95, 0.0), yaw=math.pi),
+        scene=scene,
+        rng=rng,
+    )
+    assert facing_wall.route_target_id == 3
+
+
+def test_route_teacher_claims_landmark_when_facing_with_clear_los(registry):
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RouteTeacher(registry, n_envs=1, landmark_fov_deg=60.0)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)),
+        scene=scene,
+        rng=rng,
+    )
+    assert first.route_target_id == 3
+    # At the goal cell, facing +x toward the beacon, no occluder between →
+    # arrival should fire and the teacher must not re-target a visited beacon.
+    arrived = collector.on_block(
+        observation=_observation(cell_id=3, base_xy=(3.0, 0.0), yaw=0.0),
+        scene=scene,
+        rng=rng,
+    )
+    assert arrived.primitive_name == "hold"
+    assert arrived.route_target_id == -1
+
+
+def test_route_teacher_does_not_claim_landmark_behind_wall(registry):
+    # Two-cell scene with a thin pillar wall along x = 1.0 that fully blocks
+    # the segment from (0,0) to (2,0). The landmark sits at cell 1's centre.
+    nodes = (
+        GraphNode(node_id=0, center_xy_m=(0.0, 0.0), width_m=0.8, tags=("spawn",)),
+        GraphNode(node_id=1, center_xy_m=(2.0, 0.0), width_m=0.8),
+    )
+    edges = (GraphEdge(source=0, target=1, width_m=0.8, traversable=True),)
+    walls = (
+        BoxObject(
+            object_id="pillar",
+            kind="wall",
+            center_xyz_m=(1.0, 0.0, 0.5),
+            size_xyz_m=(0.2, 4.0, 1.0),
+            yaw_rad=0.0,
+            material_id="wall_interior",
+        ),
+    )
+    landmarks = (
+        BoxObject(
+            object_id="goal_landmark",
+            kind="landmark",
+            center_xyz_m=(2.0, 0.0, 0.5),
+            size_xyz_m=(0.3, 0.3, 1.0),
+            yaw_rad=0.0,
+            material_id="landmark_red",
+        ),
+    )
+    manifest = SceneManifest(
+        scene_id="pillar_corridor",
+        family="test",
+        difficulty_tier="test",
+        topology_seed=0,
+        visual_seed=0,
+        physics_seed=0,
+        world_bounds_xy_m=((-1.0, -1.0), (3.0, 1.0)),
+        spawn=SpawnSpec(xyz_m=(0.0, 0.0, 0.375), quat_wxyz=(1.0, 0.0, 0.0, 0.0)),
+        graph_nodes=nodes,
+        graph_edges=edges,
+        obstacles=(),
+        landmarks=landmarks,
+        camera_constraints=CameraValidityConstraints(
+            min_wall_thickness_m=0.08, near_m=0.05, far_m=200.0, min_camera_clearance_m=0.10
+        ),
+        walls=walls,
+    )
+    scene = SceneGraph(manifest)
+    # Sanity: the segment from cell 0 to the landmark should be blocked.
+    assert scene.has_line_of_sight((0.0, 0.0), (2.0, 0.0)) is False
+    assert scene.landmark_xy_for_cell(1) == (2.0, 0.0)
+
+    collector = RouteTeacher(
+        registry,
+        n_envs=1,
+        landmark_fov_deg=60.0,
+    )
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+    # Pillar wall blocks the only graph edge → A* finds no path to a free
+    # standoff around the beacon, so it is reported unreachable.
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)),
+        scene=scene,
+        rng=rng,
+    )
+    assert first.route_target_id == -1
+    assert first.primitive_name == "hold"
+
+
+def test_route_teacher_arcs_for_moderate_heading_error_when_seeking_beacon(registry):
+    # The teacher no longer suppresses arc primitives on the beacon approach.
+    # A moderate (45°) heading error should fall into the arc band so the
+    # robot keeps moving while reorienting — the old "yaw-then-forward"
+    # cycle produced visible hesitation throughout long routes.
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RouteTeacher(registry, n_envs=1)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+    choice = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0), yaw=math.pi / 4),
+        scene=scene,
+        rng=rng,
+    )
+    assert choice.route_target_id == 3
+    assert choice.primitive_name in {"arc_left", "arc_right"}
+
+
+def test_route_teacher_arcs_near_beacon_standoff_instead_of_yawing(registry):
+    # Near the standoff, yaw-in-place tends to wedge against nearby geometry.
+    # The route teacher should keep a translational arc while turning into the
+    # beacon FOV.
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RouteTeacher(registry, n_envs=1)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)), scene=scene, rng=rng
+    )
+    assert first.route_target_id == 3
+    standoff_xy = collector._goal_standoff_xy[0]
+    assert standoff_xy is not None
+
+    choice = collector.on_block(
+        observation=_observation(cell_id=2, base_xy=standoff_xy, yaw=0.75 * math.pi),
+        scene=scene,
+        rng=rng,
+    )
+    assert choice.route_target_id == 3
+    assert choice.primitive_name == "arc_right"
+
+
+def test_route_teacher_rejects_stale_standoff_and_replans(registry):
+    # A geometrically valid standoff can still be a poor approach for the
+    # locomotion policy. If path progress stalls, the teacher should blacklist
+    # that standoff for the episode and choose another one instead of looping.
+    manifest = _grid_corridor_manifest()
+    scene = SceneGraph(
+        replace(
+            manifest,
+            walls=(),
+            landmarks=(manifest.landmarks[0],),
+            world_bounds_xy_m=((-1.5, -2.0), (4.5, 2.0)),
+        )
+    )
+    collector = RouteTeacher(
+        registry,
+        n_envs=1,
+        approach_retry_blocks=2,
+        approach_retry_progress_m=0.01,
+    )
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0), block_idx=0),
+        scene=scene,
+        rng=rng,
+    )
+    assert first.route_target_id == 3
+    first_standoff = collector._goal_standoff_xy[0]
+    assert first_standoff is not None
+    first_key = collector._standoff_key(first_standoff)
+
+    _ = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0), block_idx=1),
+        scene=scene,
+        rng=rng,
+    )
+    retried = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0), block_idx=2),
+        scene=scene,
+        rng=rng,
+    )
+
+    assert first_key in collector._rejected_standoffs[0][3]
+    assert retried.route_target_id == 3
+    assert collector._goal_standoff_xy[0] is not None
+    assert collector._standoff_key(collector._goal_standoff_xy[0]) != first_key
+
+
+def test_route_teacher_penalizes_standoff_when_locomotion_sticks(registry):
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RouteTeacher(registry, n_envs=1)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0), block_idx=0),
+        scene=scene,
+        rng=rng,
+    )
+    assert first.route_target_id == 3
+    standoff_xy = collector._goal_standoff_xy[0]
+    assert standoff_xy is not None
+    standoff_key = collector._standoff_key(standoff_xy)
+
+    moving_cmd = (0.2, 0.0, 0.0)
+    for block_idx in (1, 2):
+        choice = collector.on_block(
+            observation=_observation(
+                cell_id=0,
+                base_xy=(0.0, 0.0),
+                last_cmd=moving_cmd,
+                block_idx=block_idx,
+            ),
+            scene=scene,
+            rng=rng,
+        )
+        assert choice.primitive_name != "backward"
+
+    stuck = collector.on_block(
+        observation=_observation(
+            cell_id=0,
+            base_xy=(0.0, 0.0),
+            last_cmd=moving_cmd,
+            block_idx=3,
+        ),
+        scene=scene,
+        rng=rng,
+    )
+
+    assert stuck.primitive_name == "backward"
+    assert standoff_key in collector._rejected_standoffs[0][3]
+
+
+def test_route_teacher_uses_landmark_standoff_for_arrival(registry):
+    # Arrival to a beacon goal must fire on the *standoff* radius, not on the
+    # cell-width-derived threshold. The body should stop short of the mesh.
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RouteTeacher(registry, n_envs=1, landmark_standoff_m=0.55)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)), scene=scene, rng=rng
+    )
+    assert first.route_target_id == 3
+    # At (2.5, 0.0) the robot is 0.50 m from the beacon at (3.0, 0.0) — well
+    # inside the 0.55 m standoff and facing the beacon → arrival fires.
+    arrived = collector.on_block(
+        observation=_observation(cell_id=3, base_xy=(2.5, 0.0), yaw=0.0),
+        scene=scene,
+        rng=rng,
+    )
+    assert arrived.primitive_name == "hold"
+    assert arrived.route_target_id == -1
+
+
+def test_route_teacher_requires_tight_landmark_claim_radius(registry):
+    # Claim envelope is (standoff + claim_radius) around the beacon. A
+    # tighter claim radius shrinks that envelope so an early-arriving
+    # robot must keep chasing until it sits properly close to the beacon.
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RouteTeacher(
+        registry,
+        n_envs=1,
+        landmark_standoff_m=0.40,
+        landmark_claim_radius_m=0.05,
+    )
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)), scene=scene, rng=rng
+    )
+    assert first.route_target_id == 3
+
+    # Envelope around beacon (3.0, 0) is 0.40 + 0.05 = 0.45 m. At (2.40, 0)
+    # the robot is 0.60 m away → outside envelope, still chasing.
+    early = collector.on_block(
+        observation=_observation(cell_id=2, base_xy=(2.40, 0.0), yaw=0.0),
+        scene=scene,
+        rng=rng,
+    )
+    assert early.route_target_id == 3
+
+    # At (2.60, 0) the robot is 0.40 m from the beacon — within envelope.
+    claimed = collector.on_block(
+        observation=_observation(cell_id=2, base_xy=(2.60, 0.0), yaw=0.0),
+        scene=scene,
+        rng=rng,
+    )
+    assert claimed.primitive_name == "hold"
+    assert claimed.route_target_id == -1
+
+
+def test_route_teacher_arrives_at_landmark_from_neighbor_cell(registry):
+    # Landmarks with standoff > cell_half_width must be claimable from a
+    # neighbor cell — the body should not be forced into the beacon cell.
+    scene = SceneGraph(_grid_corridor_manifest())
+    assert scene.locate((2.2, 0.0)).cell_id == 2
+    assert scene.locate((2.6, 0.0)).cell_id == 3
+
+    collector = RouteTeacher(registry, n_envs=1, landmark_standoff_m=0.85)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    obs = _observation(cell_id=0, base_xy=(0.0, 0.0))
+    first = collector.on_block(observation=obs, scene=scene, rng=rng)
+    assert first.route_target_id == 3
+
+    obs_near = _observation(cell_id=2, base_xy=(2.2, 0.0), yaw=0.0)
+    assert collector._landmark_visible(obs_near, 3, scene) is True
+
+    # 0.80 m from beacon < (0.85 standoff + 0.20 claim) envelope → arrives.
+    arrived = collector.on_block(observation=obs_near, scene=scene, rng=rng)
+    assert arrived.primitive_name == "hold"
+    assert arrived.route_target_id == -1
+
+
+def test_route_teacher_emergency_backout_on_collision(registry):
+    # The only reactive safety check that survived the rewrite: if the
+    # body has driven into a wall (clearance ≤ 0.05 m), reverse out
+    # before re-planning.
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RouteTeacher(registry, n_envs=1)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+    choice = collector.on_block(
+        observation=_observation(
+            cell_id=0, base_xy=(0.0, 0.0), yaw=0.0, clearance=0.03
+        ),
+        scene=scene,
+        rng=rng,
+    )
+    assert choice.primitive_name == "backward"
+    assert choice.command_source == "route_teacher"
+
+
+def test_route_teacher_legacy_arrival_when_visibility_disabled(registry):
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RouteTeacher(
+        registry,
+        n_envs=1,
+        require_landmark_visible=False,
+    )
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+    first = collector.on_block(
+        observation=_observation(cell_id=0, base_xy=(0.0, 0.0)),
+        scene=scene,
+        rng=rng,
+    )
+    assert first.route_target_id == 3
+    # Robot in goal cell facing -x — with visibility disabled the legacy
+    # metric-only arrival should still fire, but should not revisit a beacon
+    # already seen in the episode.
+    arrival = collector.on_block(
+        observation=_observation(cell_id=3, base_xy=(3.0, 0.0), yaw=math.pi),
+        scene=scene,
+        rng=rng,
+    )
+    assert arrival.primitive_name == "hold"
+    assert arrival.route_target_id == -1
 
 
 def test_route_teacher_hold_when_no_reachable_goal(registry):
@@ -311,7 +1070,9 @@ def test_recovery_curriculum_runs_approach_backout_pivot_cycle(registry):
         registry,
         n_envs=1,
         approach_clearance_m=0.20,
+        backout_clearance_m=0.50,
         backout_blocks=2,
+        max_backout_blocks=4,
         pivot_blocks=2,
     )
     collector.on_episode_reset(0)
@@ -335,7 +1096,65 @@ def test_recovery_curriculum_runs_approach_backout_pivot_cycle(registry):
     assert backout_a.primitive_name == "backward"
     assert backout_b.primitive_name == "backward"
 
-    # After backout: pivot phase.
+    # It keeps backing up after the minimum window while the wall is still too
+    # close to provide useful egocentric feedback.
+    still_backing = collector.on_block(
+        observation=_observation(clearance=0.05), scene=scene, rng=rng
+    )
+    assert still_backing.primitive_name == "backward"
+
+    # Once clear, pivot phase.
+    pivot = collector.on_block(
+        observation=_observation(clearance=0.60), scene=scene, rng=rng
+    )
+    assert pivot.primitive_name.startswith("yaw_")
+
+
+def test_recovery_curriculum_default_clearance_is_body_aware(registry):
+    # Default approach_clearance_m must sit below typical maze corridor
+    # half-width (0.25–0.46 m) so the FSM can actually run end-to-end in
+    # narrow corridors: at half-corridor clearance the FSM stays in
+    # `approach` and the robot keeps walking forward, only flipping to
+    # `backout` once the body is genuinely grazing a wall.
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RecoveryCurriculum(registry, n_envs=1)
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    walking = collector.on_block(
+        observation=_observation(clearance=0.50), scene=scene, rng=rng
+    )
+    assert walking.command_source == "recovery"
+    assert walking.primitive_name != "backward"
+
+    backout = collector.on_block(
+        observation=_observation(clearance=0.10), scene=scene, rng=rng
+    )
+    assert backout.primitive_name == "backward"
+
+
+def test_recovery_curriculum_backout_has_timeout(registry):
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = RecoveryCurriculum(
+        registry,
+        n_envs=1,
+        approach_clearance_m=0.20,
+        backout_clearance_m=0.90,
+        backout_blocks=2,
+        max_backout_blocks=3,
+    )
+    collector.on_episode_reset(0)
+    rng = np.random.default_rng(0)
+
+    assert collector.on_block(
+        observation=_observation(clearance=0.05), scene=scene, rng=rng
+    ).primitive_name == "backward"
+    assert collector.on_block(
+        observation=_observation(clearance=0.05), scene=scene, rng=rng
+    ).primitive_name == "backward"
+    assert collector.on_block(
+        observation=_observation(clearance=0.05), scene=scene, rng=rng
+    ).primitive_name == "backward"
     pivot = collector.on_block(
         observation=_observation(clearance=0.05), scene=scene, rng=rng
     )
@@ -425,3 +1244,78 @@ def test_episode_scheduler_falls_back_to_uniform_when_no_share_overlaps(registry
     # Should still produce a draw — uniform fallback.
     name = scheduler.on_episode_reset(0)
     assert name == "route_teacher"
+
+
+def test_rollout_interlock_recognizes_route_like_policies(registry):
+    from lewm_genesis.rollout import _is_route_like_policy
+
+    assert _is_route_like_policy(RouteTeacher(registry, n_envs=1))
+    assert _is_route_like_policy(
+        RouteTeacher(
+            registry,
+            n_envs=1,
+            revisit_after_arrival=True,
+            name="loop_revisit",
+        )
+    )
+    assert not _is_route_like_policy(FrontierTeacher(registry, n_envs=1))
+
+
+def test_route_teacher_provides_spawn_restriction(registry):
+    manifest = _grid_corridor_manifest()
+    collector = RouteTeacher(registry, n_envs=1)
+
+    class MockScene:
+        def __init__(self, manifest):
+            self.manifest = manifest
+            self.scene_graph = SceneGraph(manifest)
+
+    mock_scene = MockScene(manifest)
+    cells = collector.spawn_restriction_cells(mock_scene)
+
+    # Cells 0 and 3 each have a 0.3 m landmark sitting on the cell center,
+    # so the inflated grid rejects them as spawn sites — the robot would
+    # otherwise respawn inside the beacon footprint. Cells 1 and 2 are
+    # clear corridor and remain canonical.
+    assert cells is not None
+    assert set(cells) == {1, 2}
+
+
+def test_route_teacher_restricts_spawn_on_fragmented_scene(registry):
+    # Two disconnected 2-cell corridors. Landmark in cell 3 (second corridor).
+    m = _grid_corridor_manifest()
+    # Remove edge between 1 and 2.
+    new_edges = tuple(e for e in m.graph_edges if not (e.source == 1 and e.target == 2))
+    # Add a wall between them.
+    new_walls = list(m.walls)
+    new_walls.append(
+        BoxObject(
+            object_id="fragment_wall",
+            kind="wall",
+            center_xyz_m=(1.5, 0.0, 0.4),
+            size_xyz_m=(0.2, 5.0, 0.8),
+            yaw_rad=0.0,
+            material_id="wall_interior",
+        )
+    )
+    manifest = replace(m, graph_edges=new_edges, walls=tuple(new_walls), landmarks=(m.landmarks[0],))
+
+    collector = RouteTeacher(registry, n_envs=1)
+
+    class MockScene:
+        def __init__(self, manifest):
+            self.manifest = manifest
+            self.scene_graph = SceneGraph(manifest)
+
+    mock_scene = MockScene(manifest)
+    cells = collector.spawn_restriction_cells(mock_scene)
+
+    # The fragment wall splits the corridor; only the right segment
+    # (cells 2 and 3) can reach the surviving landmark at x=3.0. Cell 3
+    # itself has the landmark sitting on its center, so the inflated
+    # grid excludes it as a spawn site — only cell 2 remains canonical.
+    assert cells is not None
+    assert 0 not in cells
+    assert 1 not in cells
+    assert 2 in cells
+    assert 3 not in cells

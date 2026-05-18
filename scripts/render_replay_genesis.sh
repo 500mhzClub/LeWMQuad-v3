@@ -41,5 +41,5 @@ if [[ ! -x "$PYTHON_BIN" ]]; then
 fi
 
 cd "$ROOT"
-export PYTHONPATH="$ROOT/lewm_genesis:${PYTHONPATH:-}"
+export PYTHONPATH="$ROOT/lewm_genesis:$ROOT/lewm_worlds:${PYTHONPATH:-}"
 exec "$PYTHON_BIN" "$SCRIPT_DIR/render_replay_genesis.py" "$@"
