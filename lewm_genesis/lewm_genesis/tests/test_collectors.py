@@ -1060,6 +1060,299 @@ def test_route_teacher_relaxes_arrival_only_for_wedge_families(registry):
     assert collector._claim_radius_m(wedge_scene) == pytest.approx(0.35)
 
 
+def test_route_teacher_relaxed_claim_telemetry_fires_only_on_wedge(registry):
+    """Relaxed-claim counter must record wedge-family relaxations and
+    only those: a base-family claim under the same pose stays at zero,
+    while the wedge family logs a single event carrying the family name
+    and the scene_id for downstream auditing.
+    """
+
+    collector = _RouteTeacherImpl(
+        registry,
+        n_envs=2,
+        landmark_fov_deg=78.323,
+        landmark_camera_forward_offset_m=0.326,
+    )
+    base_scene = SceneGraph(_grid_corridor_manifest())
+    wedge_scene = SceneGraph(
+        replace(_grid_corridor_manifest(), family="small_enclosed_maze")
+    )
+    # Pose where the strict envelope rejects but the relaxed envelope
+    # accepts — same one used by the gating test above.
+    obs = _observation(cell_id=2, base_xy=(2.02, -0.56), yaw=0.0)
+
+    # env 0 — base family, claim must not fire and counter stays zero.
+    collector.on_episode_reset(0)
+    collector._goal_cell[0] = 3
+    collector._mark_arrival_if_present(0, obs, base_scene)
+    assert 3 not in collector._claimed[0]
+    assert collector.relaxed_claim_count(0) == 0
+    assert collector.relaxed_claim_events(0) == ()
+
+    # env 1 — wedge family, claim fires and gets recorded as relaxed.
+    collector.on_episode_reset(1)
+    collector._goal_cell[1] = 3
+    collector._mark_arrival_if_present(1, obs, wedge_scene)
+    assert 3 in collector._claimed[1]
+    assert collector.relaxed_claim_count(1) == 1
+    events = collector.relaxed_claim_events(1)
+    assert len(events) == 1
+    assert events[0]["scene_family"] == "small_enclosed_maze"
+    assert events[0]["beacon_cell"] == 3
+    assert events[0]["env_idx"] == 1
+
+
+def test_route_teacher_strict_claim_does_not_count_as_relaxed(registry):
+    """A claim pose that already passes the strict gate must claim the
+    beacon without bumping the relaxed-claim counter, even on a wedge
+    family — otherwise the audit can't trust the counter as a relaxation
+    metric.
+    """
+
+    collector = _RouteTeacherImpl(
+        registry,
+        n_envs=1,
+        landmark_fov_deg=78.323,
+        landmark_camera_forward_offset_m=0.326,
+    )
+    wedge_scene = SceneGraph(
+        replace(_grid_corridor_manifest(), family="small_enclosed_maze")
+    )
+
+    # On-axis arrival: body in line with beacon at 0.85 m → inside the
+    # strict envelope (FOV ~0, dist ≤ 1.05 m).
+    obs = _observation(cell_id=2, base_xy=(2.20, 0.0), yaw=0.0)
+    collector.on_episode_reset(0)
+    collector._goal_cell[0] = 3
+    collector._mark_arrival_if_present(0, obs, wedge_scene)
+    assert 3 in collector._claimed[0]
+    assert collector.relaxed_claim_count(0) == 0
+    assert collector.relaxed_claim_events(0) == ()
+
+
+def test_route_teacher_corridor_penalty_zero_on_wide_standoffs(registry):
+    """Wide corridors (>= safe width) must not be penalized so families
+    like open_obstacle_field and rough_local_dynamics see no scoring
+    change from the corridor-aware standoff selector."""
+
+    from lewm_worlds.planning_grid import InflatedOccupancyGrid
+
+    collector = _RouteTeacherImpl(registry, n_envs=1)
+    grid = InflatedOccupancyGrid(
+        _grid_corridor_manifest(), cell_size_m=0.05, inflation_m=0.20
+    )
+    # The grid_corridor manifest has 1.2 m corridor width — well above the
+    # 0.50 m safe threshold. Probe the centerline at three cells.
+    for xy in ((1.0, 0.0), (1.5, 0.0), (2.5, 0.0)):
+        assert collector._standoff_corridor_penalty(grid, xy) == 0.0
+
+
+def test_route_teacher_corridor_penalty_family_scoped(registry):
+    """The penalty fires only for families listed in
+    ``_STANDOFF_CORRIDOR_PENALTY_FAMILIES``; other families see zero
+    regardless of corridor width. Earlier sweeps showed unscoped
+    application regressing large/medium/visual yields, so the gate must
+    stay enforced.
+    """
+
+    from lewm_worlds.planning_grid import InflatedOccupancyGrid
+
+    collector = _RouteTeacherImpl(registry, n_envs=1)
+    # Use a manifest whose corridor is narrow enough to trigger the
+    # penalty when scope check is bypassed — same construction as the
+    # narrow-corridor test below.
+    from lewm_worlds.manifest import (
+        BoxObject,
+        CameraValidityConstraints,
+        GraphEdge,
+        GraphNode,
+        SceneManifest,
+        SpawnSpec,
+    )
+
+    wall_t = 0.2
+    wall_h = 0.8
+    width = 0.50
+    nodes = (
+        GraphNode(node_id=0, center_xy_m=(0.0, 0.0), width_m=width, tags=("spawn",)),
+        GraphNode(node_id=1, center_xy_m=(1.0, 0.0), width_m=width, tags=()),
+    )
+    edges = (GraphEdge(source=0, target=1, width_m=width, traversable=True),)
+    walls = (
+        BoxObject(
+            object_id="n",
+            kind="wall",
+            center_xyz_m=(0.5, (width + wall_t) * 0.5, wall_h * 0.5),
+            size_xyz_m=(2.0, wall_t, wall_h),
+            yaw_rad=0.0,
+            material_id="wall_interior",
+        ),
+        BoxObject(
+            object_id="s",
+            kind="wall",
+            center_xyz_m=(0.5, -(width + wall_t) * 0.5, wall_h * 0.5),
+            size_xyz_m=(2.0, wall_t, wall_h),
+            yaw_rad=0.0,
+            material_id="wall_interior",
+        ),
+    )
+    base = SceneManifest(
+        scene_id="narrow_corridor",
+        family="medium_enclosed_maze",
+        difficulty_tier="test",
+        topology_seed=0,
+        visual_seed=0,
+        physics_seed=0,
+        world_bounds_xy_m=((-0.5, -0.5), (1.5, 0.5)),
+        spawn=SpawnSpec(xyz_m=(0.0, 0.0, 0.375), quat_wxyz=(1.0, 0.0, 0.0, 0.0)),
+        graph_nodes=nodes,
+        graph_edges=edges,
+        obstacles=(),
+        landmarks=(),
+        camera_constraints=CameraValidityConstraints(
+            min_wall_thickness_m=0.08,
+            near_m=0.05,
+            far_m=200.0,
+            min_camera_clearance_m=0.10,
+        ),
+        walls=walls,
+    )
+    grid = InflatedOccupancyGrid(base, cell_size_m=0.05, inflation_m=0.20)
+    out_of_scope_scene = SceneGraph(base)
+    in_scope_scene = SceneGraph(replace(base, family="small_enclosed_maze"))
+
+    # Out-of-scope family: penalty must be zero even for a narrow corridor.
+    assert collector._standoff_corridor_penalty(grid, (0.5, 0.0), out_of_scope_scene) == 0.0
+    # In-scope family: penalty fires.
+    assert collector._standoff_corridor_penalty(grid, (0.5, 0.0), in_scope_scene) > 0.0
+    # Backward-compat: omitting scene preserves the prior unscoped behavior
+    # for direct callers (unit tests, etc.).
+    assert collector._standoff_corridor_penalty(grid, (0.5, 0.0)) > 0.0
+
+
+def test_route_teacher_corridor_penalty_grows_in_narrow_corridor(registry):
+    """Narrow corridors trigger a penalty roughly proportional to the
+    width deficit. The penalty must stay well below the rejected-standoff
+    cost (1e6) so it influences ranking without acting as a hard reject.
+    """
+
+    from lewm_worlds.manifest import (
+        BoxObject,
+        CameraValidityConstraints,
+        GraphEdge,
+        GraphNode,
+        SceneManifest,
+        SpawnSpec,
+    )
+    from lewm_worlds.planning_grid import InflatedOccupancyGrid
+
+    # 0.30 m corridor between two parallel walls along the x axis. After
+    # 0.20 m inflation, the free band is 0.30 - 0.40 = ... negative,
+    # which means *no* free cells. Use 0.50 m corridor so a 1-cell-wide
+    # free band remains.
+    wall_t = 0.2
+    wall_h = 0.8
+    width = 0.50
+    nodes = (
+        GraphNode(node_id=0, center_xy_m=(0.0, 0.0), width_m=width, tags=("spawn",)),
+        GraphNode(node_id=1, center_xy_m=(1.0, 0.0), width_m=width, tags=()),
+    )
+    edges = (GraphEdge(source=0, target=1, width_m=width, traversable=True),)
+    walls = (
+        BoxObject(
+            object_id="n",
+            kind="wall",
+            center_xyz_m=(0.5, (width + wall_t) * 0.5, wall_h * 0.5),
+            size_xyz_m=(2.0, wall_t, wall_h),
+            yaw_rad=0.0,
+            material_id="wall_interior",
+        ),
+        BoxObject(
+            object_id="s",
+            kind="wall",
+            center_xyz_m=(0.5, -(width + wall_t) * 0.5, wall_h * 0.5),
+            size_xyz_m=(2.0, wall_t, wall_h),
+            yaw_rad=0.0,
+            material_id="wall_interior",
+        ),
+    )
+    manifest = SceneManifest(
+        scene_id="narrow_corridor",
+        family="test",
+        difficulty_tier="test",
+        topology_seed=0,
+        visual_seed=0,
+        physics_seed=0,
+        world_bounds_xy_m=((-0.5, -0.5), (1.5, 0.5)),
+        spawn=SpawnSpec(xyz_m=(0.0, 0.0, 0.375), quat_wxyz=(1.0, 0.0, 0.0, 0.0)),
+        graph_nodes=nodes,
+        graph_edges=edges,
+        obstacles=(),
+        landmarks=(),
+        camera_constraints=CameraValidityConstraints(
+            min_wall_thickness_m=0.08,
+            near_m=0.05,
+            far_m=200.0,
+            min_camera_clearance_m=0.10,
+        ),
+        walls=walls,
+    )
+    grid = InflatedOccupancyGrid(manifest, cell_size_m=0.05, inflation_m=0.20)
+    collector = _RouteTeacherImpl(registry, n_envs=1)
+
+    # Sample at the corridor centerline — narrow axis is N-S (~0.10 m
+    # free band after inflation).
+    penalty = collector._standoff_corridor_penalty(grid, (0.5, 0.0))
+    assert penalty > 0.0
+    # Penalty should be well below the rejected-standoff penalty so it
+    # influences ranking without rejecting outright.
+    assert penalty < 1.0e6
+
+
+def test_route_teacher_available_standoffs_falls_back_when_all_rejected(registry):
+    """When every standoff for a beacon has been rejected via stuck-FSM,
+    ``_available_standoffs`` falls back to the full list so the planner
+    can still attempt the beacon — the ``_rejected_standoff_penalty``
+    (1e6) keeps it at the bottom of the ranking unless no alternative
+    exists, which lets controller-drift retries recover a wedge-prone
+    beacon without permanently writing it off (an earlier attempt to
+    blacklist the beacon outright regressed large/medium/visual yields).
+    """
+
+    from lewm_worlds.planning_grid import InflatedOccupancyGrid
+
+    scene = SceneGraph(_grid_corridor_manifest())
+    grid = InflatedOccupancyGrid(
+        _grid_corridor_manifest(), cell_size_m=0.05, inflation_m=0.20
+    )
+    collector = _RouteTeacherImpl(registry, n_envs=1)
+    collector.on_episode_reset(0)
+
+    beacon_cell = 3
+    beacon_xy = (3.0, 0.0)
+    standoffs = collector._standoffs_with_los(grid, beacon_xy, scene)
+    assert standoffs, "test fixture must have at least one LOS-valid standoff"
+
+    # Reject every standoff key for this beacon, mimicking repeated
+    # stuck-FSM triggers that exhaust every approach option.
+    for standoff in standoffs:
+        collector._rejected_standoffs[0].setdefault(beacon_cell, set()).add(
+            collector._standoff_key(standoff)
+        )
+
+    fallback = collector._available_standoffs(
+        0, beacon_cell, grid, beacon_xy, scene
+    )
+    assert set(fallback) == set(standoffs)
+    # Every returned standoff incurs the rejection penalty so the
+    # planner prefers an unrejected alternative if any other beacon
+    # exposes one.
+    for s in fallback:
+        assert collector._rejected_standoff_penalty(0, beacon_cell, s) == pytest.approx(
+            1.0e6
+        )
+
+
 def test_route_teacher_legacy_arrival_when_visibility_disabled(registry):
     scene = SceneGraph(_grid_corridor_manifest())
     collector = RouteTeacher(

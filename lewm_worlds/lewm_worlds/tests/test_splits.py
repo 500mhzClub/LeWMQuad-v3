@@ -110,6 +110,65 @@ def test_smoke_corpus_plan_validated_scenes_are_all_reachable():
         )
 
 
+def test_navigable_standoff_criterion_flags_alcove_beacon():
+    """A beacon whose only LOS standoff is in a sub-navigable corridor
+    must fail the audit when ``min_navigable_standoffs_per_beacon`` is
+    set, while staying valid under the default (grid-reachability-only)
+    audit. This is the gate that keeps local_composite_motifs alcove
+    beacons out of the materialized corpus.
+    """
+
+    from lewm_worlds.families import build_family_manifest
+
+    # local_composite_motifs index 1 (plan_seed=1, train) was the
+    # diagnosed alcove scene; rebuild the salt=0 seed directly.
+    from lewm_worlds.splits import _scene_seed
+
+    seed = _scene_seed(
+        plan_seed=1, split="train", family="local_composite_motifs", index=1, salt=0
+    )
+    manifest = build_family_manifest(
+        scene_seed=seed, family="local_composite_motifs", split="train", difficulty_tier=None
+    )
+    default = audit_scene_reachability(manifest)
+    strict = audit_scene_reachability(manifest, min_navigable_standoffs_per_beacon=1)
+    # The default audit only checks grid reachability; the alcove scene
+    # passes it. The navigable criterion rejects it.
+    assert default.is_valid
+    assert not strict.is_valid
+    assert strict.failure_reason == "beacon_lacks_navigable_standoff"
+    assert strict.beacons_without_navigable_standoff
+
+
+def test_default_validator_rerolls_to_navigable_scenes():
+    """The default plan validator now enforces the navigable-standoff
+    criterion, so a validated local_composite_motifs plan must contain
+    only scenes where every beacon has a navigable LOS standoff.
+    """
+
+    from lewm_worlds.families import build_family_manifest
+
+    plan = plan_corpus(
+        plan_seed=1,
+        totals={"train": {"local_composite_motifs": 8}},
+        validate=True,
+    )
+    for assignment in plan.assignments:
+        manifest = build_family_manifest(
+            scene_seed=assignment.scene_seed,
+            family=assignment.family,
+            split=assignment.split,
+            difficulty_tier=None,
+        )
+        report = audit_scene_reachability(
+            manifest, min_navigable_standoffs_per_beacon=1
+        )
+        assert report.is_valid, (
+            f"validated plan kept a non-navigable scene "
+            f"{assignment.family}/{assignment.scene_id}: {report.failure_reason}"
+        )
+
+
 def test_plan_version_unchanged():
     # Plan version tracks the seed-derivation contract. Adding salt does
     # not change the legacy seed (salt=0), so version stays at "1".

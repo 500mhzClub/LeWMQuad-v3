@@ -25,12 +25,22 @@ bash scripts/generate_scene_corpus.sh \
   --out .generated/scene_corpus/production_<timestamp>
 ```
 
-- Defaults to `validate=True`, so fragmented seeds (no single free
-  component contains every beacon) are rerolled via `scene_seed_salt`.
-  Salt=0 reproduces the legacy seed exactly; older corpora keep mapping
-  to the same scenes.
-- Expected runtime at 350 scenes: ~1 minute on CPU. Reroll rate ~9%,
-  max salt observed in practice: 3 (budget: 32).
+- Defaults to `validate=True`, so seeds are rerolled via `scene_seed_salt`
+  when they fail either reachability gate:
+  1. **fragmented** — no single free component contains every beacon, or
+  2. **non-navigable beacon** — a beacon has no LOS-valid standoff in a
+     navigable-width (≥0.50 m) corridor in the canonical component. This
+     gate (added 2026-05-19) rejects alcove beacons that are
+     grid-reachable but unclaimable by the trained locomotion policy.
+     Diagnosis found ~50% of `local_composite_motifs` beacons were such
+     alcoves; rerolling lifted that family's route-teacher yield from
+     75% to 100% with no regression elsewhere.
+  Salt=0 reproduces the legacy seed exactly; corpora built before the
+  navigable gate will map to different scenes for the affected families.
+- Expected runtime at 350 scenes: ~1-2 minutes on CPU. Reroll rate ~31%
+  with the navigable gate (was ~9% fragmentation-only); max salt observed
+  17, budget 32. `local_composite_motifs` and `visual_sensor_stress`
+  reroll most.
 - Output: per-scene `manifest.json`, `world.sdf`, `topology.json`,
   `genesis_scene.json` plus a top-level `corpus.json` listing every
   assignment (including its salt).
@@ -53,14 +63,16 @@ PYTHONPATH=lewm_genesis:lewm_worlds python3 scripts/audit_scene_corpus.py \
 ## 3. Quality probe (route-teacher beacon yield)
 
 ```bash
-# Per-family probe: 3 scenes, 4 envs, 400 blocks, no RGB, no writer.
+# Per-family probe: 3 scenes, 4 envs, 1000 blocks, no RGB, no writer.
+# scripts/sweep_route_teacher_families.sh wraps this loop and prints a
+# per-family aggregate; override N_BLOCKS / CORPUS_DIR via env vars.
 for FAMILY in large_enclosed_maze local_composite_motifs loop_alias_stress \
               medium_enclosed_maze open_obstacle_field rough_local_dynamics \
               small_enclosed_maze visual_sensor_stress; do
   bash scripts/genesis_bulk_rollout.sh \
     --scene-corpus .generated/scene_corpus/production_<timestamp> \
     --split train --family "$FAMILY" --scene-limit 3 \
-    --n-envs 4 --n-blocks 400 --backend cpu --no-rgb --no-writer \
+    --n-envs 4 --n-blocks 1000 --backend cpu --no-rgb --no-writer \
     --collector-mix route_teacher=1.0 \
     --recovery-interlock-clearance-m 0 \
     --log-progress-every-blocks 0 \
@@ -71,11 +83,23 @@ done
 - Per-env metrics under `<out>/<scene_id>/summary.json` →
   `extra.rollout_stats.per_env_metrics[*].beacons_achieved /
   beacons_available`.
-- Expected per-family pass rates (from the large-scale benchmark):
-  - `loop_alias_stress`, `open_obstacle_field`, `rough_local_dynamics`,
-    `small_enclosed_maze`, `medium_enclosed_maze`: ≥80%
-  - `large_enclosed_maze`, `local_composite_motifs`: ≥70%
-  - `visual_sensor_stress`: ≥50%
+- **Block budget matters.** A 400-block probe under-reports yield on
+  multi-beacon families because episodes don't finish. The 2026-05-19
+  diagnosis measured (route_teacher=1.0):
+  | family | 400 blocks | 1000 blocks |
+  | --- | --- | --- |
+  | `visual_sensor_stress` | 81% | **98%** |
+  | `large_enclosed_maze` | 64% | **89%** |
+  | `medium_enclosed_maze` | 69% | **77%** |
+  Use **≥1000 blocks** for the probe (and production) on maze/visual
+  families. 400 is fine only for a fast smoke.
+- Expected per-family pass rates at **1000 blocks** on a corpus built
+  with the navigable-standoff validator (see §1):
+  - `open_obstacle_field`, `rough_local_dynamics`,
+    `local_composite_motifs`, `loop_alias_stress`: ≥90%
+  - `small_enclosed_maze`, `medium_enclosed_maze`,
+    `visual_sensor_stress`: ≥85%
+  - `large_enclosed_maze`: ≥85% (budget-sensitive; lower at 400 blocks)
 - Anything noticeably below these baselines is a regression — investigate
   before launching the full rollout.
 
@@ -99,6 +123,17 @@ bash scripts/genesis_bulk_rollout.sh \
 - `--collector-mix` defaults to the §13 production mix when omitted. The
   route-heavy mix above is a probe/expert-rollout shard, not the default
   JEPA corpus mix.
+- **Tiered per-episode block budget (apply scale-up only where needed).**
+  The 2026-05-20 full benchmark (navigable corpus + scoped corridor
+  penalty) showed only two families gain materially from a larger budget;
+  the rest plateau by ~400-500 blocks. To avoid wasting rollout time, run
+  per-family with:
+  - `large_enclosed_maze`, `visual_sensor_stress`: **`--n-blocks 1000`**
+    (64%→89% and 81%→98% vs 400 blocks).
+  - all other families: `--n-blocks 500` is sufficient (`medium`/`small`/
+    `local_composite` plateau ≥90%, `open`/`rough`/`loop` at ceiling).
+  Drive this by looping `--family X --n-blocks {1000|500}` rather than one
+  whole-split run, or pass a per-family budget map to the driver.
 
 ## 5. Raw-rollout conversion
 
@@ -164,6 +199,8 @@ bash scripts/render_replay_genesis.sh \
 | `beacons_achieved=0/N` despite long path | Spawn yaw faces a wall | `_align_spawn_yaw` in `_select_spawn_pose` |
 | `--fixed-spawn` non-deterministic | Manifest spawn not in canonical, falls back to sampler | Audit script will flag if `manifest_spawn ∉ canonical_spawn_cells` |
 | Scene with 0 canonical cells | Fragmented topology (no shared free component) | `plan_corpus(validate=True)` reroll + `_build_one` safety net |
+| One beacon never claimed despite long path; `beacons_achieved` caps below N | Beacon in an alcove whose only LOS standoff is in a sub-0.50 m corridor (esp. `local_composite_motifs`) | `min_navigable_standoffs_per_beacon` gate in `audit_scene_reachability` reroll |
+| Maze/visual yield looks low (60-70%) at probe | 400-block probe budget too short — episodes unfinished, not a planner bug | Probe at ≥1000 blocks (§3) |
 | Stuck on render_replay frame 0 | Manifest changed since the rollout, mismatch on reset pose | Use the *same* `--scene-corpus` path across rollout + replay |
 
 ## Related code

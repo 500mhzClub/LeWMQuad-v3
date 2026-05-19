@@ -130,6 +130,7 @@ def _build_one(
             inflation_m=0.20,
             standoff_m=0.85,
             spawn_clearance_floor_m=0.20,
+            min_navigable_standoffs_per_beacon=1,
         )
         if not report.is_valid:
             raise RuntimeError(

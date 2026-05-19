@@ -23,9 +23,20 @@ import numpy as np
 from lewm_worlds.manifest import SceneManifest
 from lewm_worlds.planning_grid import (
     InflatedOccupancyGrid,
+    corridor_width_m,
     safe_standoff_xys,
 )
 from lewm_worlds.scene_graph import SceneGraph
+
+
+# A beacon arrival is only practically claimable if at least one LOS-valid
+# standoff sits in a corridor the trained locomotion policy can traverse.
+# `local_composite_motifs` seeds frequently place beacons in alcoves whose
+# only line-of-sight standoff is in a ~0.30 m corridor (50% of that family's
+# beacons had no navigable-width LOS standoff in the 2026-05-19 corpus scan),
+# so route-teacher yield caps at ~75% there. This threshold mirrors the
+# route teacher's `_STANDOFF_CORRIDOR_SAFE_WIDTH_M`.
+NAVIGABLE_STANDOFF_WIDTH_M = 0.50
 
 
 @dataclass(frozen=True)
@@ -44,6 +55,11 @@ class SceneReachabilityReport:
     unreachable_beacons: tuple[int, ...]
     spawn_candidate_count: int
     spawn_candidates_in_canonical: int
+    # Beacons that sit in the canonical component but expose no LOS-valid
+    # standoff in a navigable-width corridor — practically unclaimable by
+    # the trained locomotion policy even though grid-reachable. Empty
+    # unless ``min_navigable_standoffs_per_beacon`` > 0.
+    beacons_without_navigable_standoff: tuple[int, ...] = ()
     failure_reason: str = ""
 
 
@@ -56,6 +72,8 @@ def audit_scene_reachability(
     n_standoff_candidates: int = 12,
     spawn_clearance_floor_m: float = 0.20,
     min_spawn_cells_in_canonical: int = 1,
+    min_navigable_standoffs_per_beacon: int = 0,
+    navigable_standoff_width_m: float = NAVIGABLE_STANDOFF_WIDTH_M,
 ) -> SceneReachabilityReport:
     """Return a reachability audit of ``manifest``.
 
@@ -67,6 +85,12 @@ def audit_scene_reachability(
     2. That component contains at least ``min_spawn_cells_in_canonical``
        spawn-candidate cells, so the spawn sampler can actually drop the
        robot somewhere it can reach every goal.
+    3. (Optional, when ``min_navigable_standoffs_per_beacon`` > 0) every
+       beacon exposes at least that many LOS-valid standoffs in the
+       canonical component whose corridor width is at least
+       ``navigable_standoff_width_m``. This rejects alcove beacons whose
+       only sightline is through a corridor too narrow for the trained
+       locomotion policy — grid-reachable but not practically claimable.
 
     The spawn sampler is then expected to restrict its picks to the
     canonical component — cells in smaller isolated free regions (e.g.
@@ -83,6 +107,10 @@ def audit_scene_reachability(
 
     scene = SceneGraph(manifest)
     beacon_components: list[tuple[int, set[int]]] = []
+    # Per-beacon: component id -> count of LOS standoffs in a navigable
+    # corridor. Only populated when the navigable criterion is enabled.
+    beacon_navigable_by_comp: dict[int, dict[int, int]] = {}
+    check_navigable = int(min_navigable_standoffs_per_beacon) > 0
     for _name, beacon_cell in scene.landmark_cells:
         beacon_xy = scene.landmark_xy_for_cell(beacon_cell)
         if beacon_xy is None:
@@ -94,6 +122,7 @@ def audit_scene_reachability(
             n_candidates=n_standoff_candidates,
         )
         comp_set: set[int] = set()
+        nav_by_comp: dict[int, int] = {}
         for standoff in candidates:
             if not scene.has_line_of_sight(
                 standoff, beacon_xy, exclude_landmark_xy=beacon_xy
@@ -102,8 +131,14 @@ def audit_scene_reachability(
             ix, iy = grid.to_grid(standoff)
             nx, ny = grid.shape
             if 0 <= ix < nx and 0 <= iy < ny and components[ix, iy] > 0:
-                comp_set.add(int(components[ix, iy]))
+                comp = int(components[ix, iy])
+                comp_set.add(comp)
+                if check_navigable and corridor_width_m(grid, standoff) >= float(
+                    navigable_standoff_width_m
+                ):
+                    nav_by_comp[comp] = nav_by_comp.get(comp, 0) + 1
         beacon_components.append((int(beacon_cell), comp_set))
+        beacon_navigable_by_comp[int(beacon_cell)] = nav_by_comp
 
     # Canonical component = a single component shared by all beacons.
     # If beacons disagree on which component they sit in, no canonical
@@ -130,6 +165,19 @@ def audit_scene_reachability(
         else 0
     )
 
+    # Beacons that are grid-reachable in the canonical component but have
+    # too few navigable-width LOS standoffs there to be practically
+    # claimable. Only evaluated when the navigable criterion is enabled
+    # and a canonical component exists.
+    without_navigable: tuple[int, ...] = ()
+    if check_navigable and canonical_id > 0:
+        without_navigable = tuple(
+            int(b)
+            for b, _comps in beacon_components
+            if beacon_navigable_by_comp.get(int(b), {}).get(canonical_id, 0)
+            < int(min_navigable_standoffs_per_beacon)
+        )
+
     failure = ""
     is_valid = True
     if canonical_id < 0:
@@ -138,6 +186,9 @@ def audit_scene_reachability(
     elif spawn_in_canonical < int(min_spawn_cells_in_canonical):
         is_valid = False
         failure = "canonical_component_has_no_spawn_candidates"
+    elif without_navigable:
+        is_valid = False
+        failure = "beacon_lacks_navigable_standoff"
 
     return SceneReachabilityReport(
         is_valid=is_valid,
@@ -148,6 +199,7 @@ def audit_scene_reachability(
         unreachable_beacons=unreachable,
         spawn_candidate_count=len(spawn_cells),
         spawn_candidates_in_canonical=int(spawn_in_canonical),
+        beacons_without_navigable_standoff=without_navigable,
         failure_reason=failure,
     )
 

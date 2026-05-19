@@ -49,6 +49,16 @@ def main() -> int:
         default=0.20,
         help="Minimum wall clearance for spawn candidate cells",
     )
+    parser.add_argument(
+        "--min-navigable-standoffs",
+        type=int,
+        default=1,
+        help=(
+            "Require each beacon to expose at least this many LOS-valid "
+            "standoffs in a navigable-width corridor (default 1). Set to 0 "
+            "to disable and recover the legacy grid-reachability-only audit."
+        ),
+    )
     args = parser.parse_args()
 
     corpus_dir = Path(args.corpus_dir)
@@ -67,6 +77,7 @@ def main() -> int:
             inflation_m=args.inflation_m,
             standoff_m=args.standoff_m,
             spawn_clearance_floor_m=args.spawn_clearance_floor_m,
+            min_navigable_standoffs_per_beacon=args.min_navigable_standoffs,
         )
         rel = manifest_path.parent.relative_to(corpus_dir)
         split = rel.parts[0] if rel.parts else "?"

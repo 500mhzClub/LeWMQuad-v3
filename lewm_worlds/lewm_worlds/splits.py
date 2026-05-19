@@ -216,6 +216,15 @@ def _default_scene_validator(manifest: Any) -> bool:
         inflation_m=0.20,
         standoff_m=0.85,
         spawn_clearance_floor_m=0.20,
+        # Require each beacon to expose at least one navigable-width LOS
+        # standoff in the canonical component. Without this, alcove
+        # beacons (notably in local_composite_motifs, ~50% of that
+        # family's beacons in the 2026-05-19 scan) pass the grid-
+        # reachability gate but cap route-teacher yield because the only
+        # sightline is through a corridor the trained PPO can't traverse.
+        # Reroll feasibility was confirmed: 0/30 local_composite slots
+        # exhaust the salt budget under this criterion (mean salt 3.2).
+        min_navigable_standoffs_per_beacon=1,
     )
     return bool(report.is_valid)
 

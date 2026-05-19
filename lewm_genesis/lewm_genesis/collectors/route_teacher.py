@@ -32,6 +32,7 @@ from lewm_genesis.lewm_contract import PrimitiveRegistry, expand_primitive_to_bl
 from lewm_worlds.planning_grid import (
     GridPath,
     InflatedOccupancyGrid,
+    corridor_width_m,
     safe_standoff_xys,
 )
 
@@ -64,6 +65,28 @@ _WEDGE_RELAXED_HALF_FOV_MARGIN_RAD = math.radians(8.0)
 # those endpoints so the pure-pursuit follower tends to arrive already looking
 # toward the landmark instead of needing an in-place yaw next to geometry.
 _STANDOFF_HEADING_PENALTY_CELLS = 60.0
+
+# Standoffs that are *grid-free* (clearance ≥ body radius after inflation) can
+# still be unnavigable for the trained locomotion policy when the surrounding
+# corridor is barely wider than the body itself. In small-enclosed-maze traces
+# the failing arrivals all landed in 0.25-0.35 m corridors — geometrically free
+# under 0.20 m inflation, but ≤8 cm clearance per side once the 0.40 m body
+# width is laid in. Prefer wider arrival corridors by adding a soft penalty for
+# standoffs whose narrower-axis corridor width is below the safe threshold.
+#
+# The penalty is scoped to ``_STANDOFF_CORRIDOR_PENALTY_FAMILIES``. Earlier
+# sweeps that applied it corpus-wide regressed medium/large/visual yields by
+# 6-19 pp because the cardinal-walk width proxy fires on moderately-narrow
+# corridors that the planner *can* navigate, pushing it to longer paths that
+# exhaust the block budget. Restricting to small-enclosed-maze (where the
+# diagnosis was that the trained PPO is wedging on ≤0.35 m corridor pockets)
+# keeps the +pp gain there without touching other families.
+_STANDOFF_CORRIDOR_PENALTY_FAMILIES = frozenset({"small_enclosed_maze"})
+_STANDOFF_CORRIDOR_SAFE_WIDTH_M = 0.50
+_STANDOFF_CORRIDOR_PENALTY_CELLS_PER_CM = 30.0
+# Max cells to walk from the standoff before declaring "wide enough"; keeps the
+# cardinal-axis probe O(1) and bounds it well above the safe width threshold.
+_STANDOFF_CORRIDOR_PROBE_MAX_CELLS = 20
 
 # Near a beacon standoff, keep turning primitives translational. In-place yaw
 # is fragile next to blocking geometry with the trained locomotion policy; an
@@ -178,6 +201,16 @@ class RouteTeacher:
         ]
         self._approach_best_remaining_m: list[float | None] = [None] * n
         self._approach_blocks_since_progress: list[int] = [0] * n
+        # Relaxed-claim telemetry: a claim is *relaxed* when it fires under
+        # the wedge-family widened envelope but would not have fired under
+        # the strict default radius+FOV. By construction this can only be
+        # non-zero for families in _WEDGE_RELAXED_ARRIVAL_FAMILIES, so the
+        # mass-datagen audit can use the per-family aggregate as a sanity
+        # check on the relaxation scope. Events stay cheap (~bytes each)
+        # so we keep them across episode resets — the rollout summary
+        # consumes them once at run end.
+        self._relaxed_claim_count: list[int] = [0] * n
+        self._relaxed_claim_events: list[list[dict]] = [[] for _ in range(n)]
         # Locomotion-stuck FSM state (see _STUCK_* constants).
         self._last_xy: list[tuple[float, float] | None] = [None] * n
         self._last_yaw: list[float | None] = [None] * n
@@ -245,6 +278,21 @@ class RouteTeacher:
         """Return landmark cells claimed by this env in the current episode."""
 
         return frozenset(self._claimed[int(env_idx)])
+
+    def relaxed_claim_count(self, env_idx: int) -> int:
+        """Return total relaxed claims recorded for this env across all episodes."""
+
+        return int(self._relaxed_claim_count[int(env_idx)])
+
+    def relaxed_claim_events(self, env_idx: int) -> tuple[dict, ...]:
+        """Return a tuple of relaxed-claim events recorded for this env.
+
+        Each event carries ``beacon_cell``, ``scene_id``, ``scene_family``,
+        and ``env_idx`` so downstream audits can correlate the relaxation
+        with rendered landmark visibility per frame.
+        """
+
+        return tuple(self._relaxed_claim_events[int(env_idx)])
 
     # ------------------------------------------------------------------
     # Per-block decision
@@ -414,6 +462,7 @@ class RouteTeacher:
                         current_goal,
                         standoff,
                     )
+                    cost += self._standoff_corridor_penalty(grid, standoff, scene)
                     if sticky_best is None or cost < sticky_best[0]:
                         sticky_best = (cost, standoff, path)
                 if sticky_best is not None:
@@ -468,6 +517,7 @@ class RouteTeacher:
                     beacon_cell,
                     standoff,
                 )
+                cost += self._standoff_corridor_penalty(grid, standoff, scene)
                 if best is None or cost < best[0]:
                     best = (cost, beacon_cell, standoff, path)
             if not beacon_reachable:
@@ -490,6 +540,45 @@ class RouteTeacher:
             observation,
             append_history=True,
         )
+
+    def _standoff_corridor_penalty(
+        self,
+        grid: InflatedOccupancyGrid,
+        standoff_xy: tuple[float, float],
+        scene=None,
+    ) -> float:
+        """Penalize standoffs whose corridor is narrower than the safe width.
+
+        The inflated grid encodes ``body_radius`` clearance only. A free
+        cell can still sit in a corridor only marginally wider than the
+        body (e.g. ~0.30 m grid-free corridor → ~6 cm trained-PPO
+        clearance per side after the 0.40 m body width is laid in). The
+        planner can pick such a standoff because it satisfies A*'s
+        reachability check, but the locomotion policy wedges on
+        approach. Score these poses with a width penalty so the planner
+        prefers wider arrival corridors when alternatives exist; ties
+        and wide-corridor scenes are unaffected.
+
+        Width is approximated by cardinal-axis free-walk from the
+        standoff cell. ``min(N+S, E+W)`` gives the narrower-axis
+        corridor width; both axes meeting the safe threshold drops the
+        penalty to zero.
+
+        Scoped to families in ``_STANDOFF_CORRIDOR_PENALTY_FAMILIES``;
+        any other scene returns zero so the planner's existing scoring
+        is unchanged on families where the corpus sweep showed the
+        cardinal-walk proxy regressing yield.
+        """
+
+        if scene is not None and self._scene_family(scene) not in _STANDOFF_CORRIDOR_PENALTY_FAMILIES:
+            return 0.0
+        min_width_m = corridor_width_m(
+            grid, standoff_xy, max_cells=_STANDOFF_CORRIDOR_PROBE_MAX_CELLS
+        )
+        deficit_m = _STANDOFF_CORRIDOR_SAFE_WIDTH_M - min_width_m
+        if deficit_m <= 0.0:
+            return 0.0
+        return _STANDOFF_CORRIDOR_PENALTY_CELLS_PER_CM * (deficit_m * 100.0)
 
     def _standoff_path_cost(
         self,
@@ -572,22 +661,21 @@ class RouteTeacher:
             # sitting in a beacon cell — claim it so we don't waste an
             # A* trying to plan back to where we already are.
             cur = int(observation.current_cell_id)
-            if self._is_landmark_cell(cur, scene) and self._claim_check(
-                env_idx, observation, cur, scene
-            ):
-                self._claimed[env_idx].add(cur)
+            if self._is_landmark_cell(cur, scene):
+                strict_pass, relaxed_pass = self._evaluate_arrival_gates(
+                    observation, cur, scene
+                )
+                if relaxed_pass:
+                    if not strict_pass:
+                        self._record_relaxed_claim(env_idx, cur, scene)
+                    self._claimed[env_idx].add(cur)
             return
-        beacon_xy = self._beacon_xy(goal_cell, scene)
-        if beacon_xy is None:
-            return
-        dist = _distance(observation.base_xy_world, beacon_xy)
-        # Arrival = within (standoff + claim radius) of the beacon AND
-        # beacon visible (FOV + LOS). The standoff anchor sits at
-        # ``standoff_m`` from the beacon, so the metric envelope around
-        # the anchor extends to (standoff_m + claim_radius_m) from the
-        # beacon center.
-        within_metric = dist <= self._landmark_standoff_m + self._claim_radius_m(scene)
-        if within_metric and self._landmark_visible(observation, goal_cell, scene):
+        strict_pass, relaxed_pass = self._evaluate_arrival_gates(
+            observation, goal_cell, scene
+        )
+        if relaxed_pass:
+            if not strict_pass:
+                self._record_relaxed_claim(env_idx, goal_cell, scene)
             self._claimed[env_idx].add(goal_cell)
             self._clear_goal(env_idx)
 
@@ -598,19 +686,58 @@ class RouteTeacher:
         beacon_cell: int,
         scene,
     ) -> bool:
+        _, relaxed_pass = self._evaluate_arrival_gates(observation, beacon_cell, scene)
+        return relaxed_pass
+
+    def _evaluate_arrival_gates(
+        self,
+        observation: EnvObservation,
+        beacon_cell: int,
+        scene,
+    ) -> tuple[bool, bool]:
+        """Return ``(strict_pass, relaxed_pass)`` for this beacon arrival.
+
+        Strict = default radius + default FOV (family-agnostic). Relaxed =
+        the family-aware envelope returned by ``_claim_radius_m`` /
+        ``_landmark_half_fov_rad_for_scene``. For non-wedge families the
+        two are identical, so any claim where ``relaxed_pass and not
+        strict_pass`` is by construction a wedge-family relaxation.
+        """
+
         beacon_xy = self._beacon_xy(beacon_cell, scene)
         if beacon_xy is None:
-            return False
+            return False, False
         dist = _distance(observation.base_xy_world, beacon_xy)
-        if dist > self._landmark_standoff_m + self._claim_radius_m(scene):
-            return False
-        return self._landmark_visible(observation, beacon_cell, scene)
+        strict_envelope = self._landmark_standoff_m + self._landmark_claim_radius_m
+        relaxed_envelope = self._landmark_standoff_m + self._claim_radius_m(scene)
+        if dist > relaxed_envelope:
+            return False, False
+        if not self._landmark_visible(observation, beacon_cell, scene):
+            return False, False
+        if dist <= strict_envelope and self._landmark_visible(
+            observation, beacon_cell, scene, strict=True
+        ):
+            return True, True
+        return False, True
+
+    def _record_relaxed_claim(self, env_idx: int, beacon_cell: int, scene) -> None:
+        self._relaxed_claim_count[env_idx] += 1
+        self._relaxed_claim_events[env_idx].append(
+            {
+                "env_idx": int(env_idx),
+                "beacon_cell": int(beacon_cell),
+                "scene_family": self._scene_family(scene),
+                "scene_id": str(getattr(getattr(scene, "manifest", None), "scene_id", "")),
+            }
+        )
 
     def _landmark_visible(
         self,
         observation: EnvObservation,
         beacon_cell: int,
         scene,
+        *,
+        strict: bool = False,
     ) -> bool:
         """Return True iff the beacon is visible *from the camera*, not the body.
 
@@ -621,6 +748,10 @@ class RouteTeacher:
         was the historical default, ~53% of "achieved" events had the
         beacon outside the actual camera FOV, so the rendered training
         frame contained no beacon at all.
+
+        When ``strict=True`` the family-aware FOV widening is bypassed so
+        the relaxed-claim detector can decide whether a successful claim
+        also passed the default gate.
         """
 
         if not self._require_landmark_visible:
@@ -645,7 +776,12 @@ class RouteTeacher:
             return True
         bearing = math.atan2(dy, dx)
         heading_err = wrap_angle_pi(bearing - yaw)
-        if abs(heading_err) > self._landmark_half_fov_rad_for_scene(scene):
+        half_fov = (
+            self._landmark_half_fov_rad
+            if strict
+            else self._landmark_half_fov_rad_for_scene(scene)
+        )
+        if abs(heading_err) > half_fov:
             return False
         los = getattr(scene, "has_line_of_sight", None)
         if los is None:
@@ -853,6 +989,13 @@ class RouteTeacher:
             for standoff in standoffs
             if self._standoff_key(standoff) not in rejected
         )
+        # Fall back to *all* standoffs when every candidate has been
+        # rejected so the planner can still attempt the beacon. The
+        # ``_rejected_standoff_penalty`` (1e6) keeps a rejected
+        # standoff at the bottom of the cost ranking — so the planner
+        # only re-uses one if no other beacon offers a cheaper route,
+        # which lets a lucky controller-drift retry recover a wedge-
+        # prone beacon without burning the episode hunting alternatives.
         return filtered or standoffs
 
     def _rejected_standoff_penalty(

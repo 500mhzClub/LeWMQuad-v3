@@ -793,6 +793,7 @@ class RolloutRunner:
         available_landmarks = set(self._landmark_cell_to_id.values())
         for env_idx in range(self.n_envs):
             achieved_landmarks = set(self._per_env_achieved_landmarks[env_idx])
+            relaxed_count, relaxed_events = self._aggregate_relaxed_claims(env_idx)
             per_env_metrics.append(
                 {
                     "env_idx": env_idx,
@@ -814,6 +815,8 @@ class RolloutRunner:
                     "unclaimed_landmark_ids": sorted(
                         available_landmarks - achieved_landmarks
                     ),
+                    "relaxed_claim_count": relaxed_count,
+                    "relaxed_claim_events": relaxed_events,
                     "primitive_counts": dict(self._per_env_primitive_counts[env_idx]),
                     "command_source_counts": dict(
                         self._per_env_source_counts[env_idx]
@@ -830,6 +833,27 @@ class RolloutRunner:
             "collector_mix_realized": self._scheduler.realized_mix(),
             "per_env_metrics": per_env_metrics,
         }
+
+    def _aggregate_relaxed_claims(
+        self, env_idx: int
+    ) -> tuple[int, list[dict[str, Any]]]:
+        """Pull relaxed-claim telemetry from any route-like collector.
+
+        Returns total count and the event list. Collectors that don't
+        expose the accessors (anything except route_teacher) contribute
+        zero, so this stays a no-op for non-route mixes.
+        """
+
+        total = 0
+        events: list[dict[str, Any]] = []
+        for collector in self._collectors.values():
+            count_fn = getattr(collector, "relaxed_claim_count", None)
+            events_fn = getattr(collector, "relaxed_claim_events", None)
+            if not callable(count_fn) or not callable(events_fn):
+                continue
+            total += int(count_fn(env_idx))
+            events.extend(dict(event) for event in events_fn(env_idx))
+        return total, events
 
     # ------------------------------------------------------------------
     # Collector observation + block selection

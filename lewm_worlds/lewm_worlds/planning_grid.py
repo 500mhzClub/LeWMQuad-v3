@@ -410,6 +410,50 @@ def best_free_yaw(
     return best_yaw, best_len
 
 
+def corridor_width_m(
+    grid: InflatedOccupancyGrid,
+    xy: tuple[float, float],
+    *,
+    max_cells: int = 20,
+) -> float:
+    """Approximate the narrower-axis corridor width at ``xy``.
+
+    Walks the free mask outward from the cell containing ``xy`` along the
+    four cardinal directions. ``min(N+S, E+W)`` cells (minus the shared
+    centre cell) times the cell size gives the narrower-axis free width.
+    Returns 0.0 for an out-of-bounds or obstacle cell.
+
+    This is a cheap O(max_cells) proxy — it misses diagonal corridors —
+    but it is the same measure the route teacher uses to bias its
+    standoff selection, so the corpus validator and the planner agree on
+    what counts as a navigable arrival corridor.
+    """
+
+    try:
+        sx, sy = grid.to_grid(xy)
+    except Exception:
+        return 0.0
+    free = grid.free_mask
+    nx, ny = grid.shape
+    if not (0 <= sx < nx and 0 <= sy < ny and free[sx, sy]):
+        return 0.0
+
+    def reach(dx: int, dy: int) -> int:
+        x, y, n = sx, sy, 0
+        while 0 <= x < nx and 0 <= y < ny and free[x, y]:
+            x += dx
+            y += dy
+            n += 1
+            if n >= max_cells:
+                break
+        return n
+
+    ns = reach(0, 1) + reach(0, -1)
+    ew = reach(1, 0) + reach(-1, 0)
+    min_cells = max(0, min(ns, ew) - 1)
+    return min_cells * grid.cell_size_m
+
+
 def safe_standoff_xys(
     grid: InflatedOccupancyGrid,
     beacon_xy: tuple[float, float],
