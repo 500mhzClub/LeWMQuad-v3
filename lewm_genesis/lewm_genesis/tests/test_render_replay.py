@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from lewm_genesis.render_replay import build_render_replay_plan
@@ -127,3 +129,40 @@ camera:
     assert frame["command_context"]["sequence_id"] == 7
     assert frame["camera_pose_world"]["position"] == pytest.approx([1.326, 2.0, 0.443])
     assert frame["camera_pose_world"]["lookat"] == pytest.approx([2.326, 2.0, 0.443])
+
+
+def test_render_replay_target_overlay_is_opt_in():
+    module = _load_render_replay_script()
+    rgb = np.zeros((40, 240, 3), dtype=np.uint8)
+    frame = {"command_context": {"route_target_id": 3}}
+    scene_graph = type(
+        "SceneGraphStub",
+        (),
+        {"landmark_cells": (("goal_landmark", 3),)},
+    )()
+
+    clean = module._maybe_overlay_target_label(
+        rgb.copy(),
+        frame,
+        scene_graph=scene_graph,
+        enabled=False,
+    )
+    overlaid = module._maybe_overlay_target_label(
+        rgb.copy(),
+        frame,
+        scene_graph=scene_graph,
+        enabled=True,
+    )
+
+    assert np.array_equal(clean, rgb)
+    assert not np.array_equal(overlaid, rgb)
+
+
+def _load_render_replay_script():
+    path = Path(__file__).resolve().parents[3] / "scripts" / "render_replay_genesis.py"
+    spec = importlib.util.spec_from_file_location("render_replay_genesis_script", path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module

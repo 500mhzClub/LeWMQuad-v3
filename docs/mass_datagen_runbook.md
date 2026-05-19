@@ -87,14 +87,18 @@ bash scripts/genesis_bulk_rollout.sh \
   --split train \
   --n-envs 8 --n-blocks 2000 --backend gpu \
   --collector-mix route_teacher=0.7,frontier=0.2,recovery=0.1 \
+  --no-rgb \
   --out .generated/bulk_rollout/<run_name>
 ```
 
 - Writes MCAP per scene under `<out>/<scene_id>/<scene_id>_<env>.mcap`
   plus `summary.json`.
-- For mass datagen, leave the RGB writer **enabled** (drop `--no-rgb`)
-  unless you're staging a render-replay pipeline (see §6).
-- `--collector-mix` defaults to the §13 production mix when omitted.
+- For mass datagen, keep inline RGB **disabled** and use the render-replay
+  pipeline in §6. Inline RGB is useful for single-env QA, but multi-env
+  training data must render each env from its own replayed camera pose.
+- `--collector-mix` defaults to the §13 production mix when omitted. The
+  route-heavy mix above is a probe/expert-rollout shard, not the default
+  JEPA corpus mix.
 
 ## 5. Raw-rollout conversion
 
@@ -135,6 +139,8 @@ bash scripts/render_replay_genesis.sh \
 - `frames_rendered.jsonl` carries the camera-pose, joint-state, and
   command-context per frame; downstream label derivation pulls from
   here.
+- Do not pass `--overlay-target-label` for training renders. That option is
+  reserved for manual QA because it draws privileged target labels into RGB.
 
 ## 7. Pre-flight checklist before pressing "go" on a full run
 

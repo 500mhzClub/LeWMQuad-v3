@@ -44,9 +44,20 @@ _LOOKAHEAD_M = 0.5
 
 # Number of standoff candidates sampled around each beacon. The planner
 # tries each in A* and keeps the cheapest reachable one. 12 evenly spaced
-# angles (every 30 deg) is enough to find a viable approach in most
-# topologies without burning many A* queries.
+# angles (every 30 deg) is the stable default; loop-alias scenes benefit
+# from denser doorway/corner approach poses without showing the same
+# regressions seen in visual/maze families.
 _STANDOFF_CANDIDATES = 12
+_LOOP_ALIAS_STANDOFF_CANDIDATES = 24
+_DENSE_STANDOFF_FAMILIES = frozenset({"loop_alias_stress"})
+
+# Small enclosed mazes showed a stable wedge signature where a slightly wider
+# near-field arrival envelope recovers claims without changing other families.
+# Medium/local-composite looked similar in traces but regressed under the same
+# relaxation, so keep the default gate there.
+_WEDGE_RELAXED_ARRIVAL_FAMILIES = frozenset({"small_enclosed_maze"})
+_WEDGE_RELAXED_CLAIM_RADIUS_M = 0.15
+_WEDGE_RELAXED_HALF_FOV_MARGIN_RAD = math.radians(8.0)
 
 # A standoff that is cheap to reach can still be a bad arrival pose if the
 # final path segment leaves the robot facing away from the beacon. Penalize
@@ -99,10 +110,17 @@ class RouteTeacher:
         name: str = "route_teacher",
         revisit_after_arrival: bool = False,
         require_landmark_visible: bool = True,
-        landmark_fov_deg: float = 90.0,
+        landmark_fov_deg: float = 78.323,
         landmark_los_margin_m: float = 0.02,
         landmark_standoff_m: float = 0.85,
         landmark_claim_radius_m: float = 0.20,
+        # Forward offset of the camera origin from the body center in the
+        # body frame. Used by the arrival gate to check beacon visibility
+        # from the camera (not the body), since the camera sits 0.326 m
+        # ahead of the body on the Go2 and that offset materially widens
+        # the apparent bearing to a beacon at the claim envelope.
+        # Set to 0.0 to recover the legacy body-frame check.
+        landmark_camera_forward_offset_m: float = 0.326,
         grid_cell_size_m: float = 0.05,
         grid_inflation_m: float = 0.20,
         deviation_replan_m: float = 0.60,
@@ -126,6 +144,7 @@ class RouteTeacher:
         self._landmark_los_margin_m = float(landmark_los_margin_m)
         self._landmark_standoff_m = max(0.0, float(landmark_standoff_m))
         self._landmark_claim_radius_m = max(0.0, float(landmark_claim_radius_m))
+        self._landmark_camera_forward_offset_m = float(landmark_camera_forward_offset_m)
         self._grid_cell_size_m = float(grid_cell_size_m)
         self._grid_inflation_m = float(grid_inflation_m)
         self._deviation_replan_m = float(deviation_replan_m)
@@ -287,7 +306,7 @@ class RouteTeacher:
         near_beacon_standoff = False
         if standoff_xy is not None:
             dist_to_standoff = _distance(observation.base_xy_world, standoff_xy)
-            if dist_to_standoff <= self._landmark_claim_radius_m + 0.10:
+            if dist_to_standoff <= self._claim_radius_m(scene) + 0.10:
                 target_xy = self._beacon_xy(goal_cell, scene)
                 near_beacon_standoff = True
 
@@ -567,7 +586,7 @@ class RouteTeacher:
         # ``standoff_m`` from the beacon, so the metric envelope around
         # the anchor extends to (standoff_m + claim_radius_m) from the
         # beacon center.
-        within_metric = dist <= self._landmark_standoff_m + self._landmark_claim_radius_m
+        within_metric = dist <= self._landmark_standoff_m + self._claim_radius_m(scene)
         if within_metric and self._landmark_visible(observation, goal_cell, scene):
             self._claimed[env_idx].add(goal_cell)
             self._clear_goal(env_idx)
@@ -583,7 +602,7 @@ class RouteTeacher:
         if beacon_xy is None:
             return False
         dist = _distance(observation.base_xy_world, beacon_xy)
-        if dist > self._landmark_standoff_m + self._landmark_claim_radius_m:
+        if dist > self._landmark_standoff_m + self._claim_radius_m(scene):
             return False
         return self._landmark_visible(observation, beacon_cell, scene)
 
@@ -593,31 +612,68 @@ class RouteTeacher:
         beacon_cell: int,
         scene,
     ) -> bool:
+        """Return True iff the beacon is visible *from the camera*, not the body.
+
+        The camera is mounted ``_landmark_camera_forward_offset_m`` ahead of
+        the body in the body frame. With a 0.326 m offset and a beacon at
+        ~0.85 m, ignoring the offset can put a beacon ~15° wider in the
+        camera frame than in the body frame — at the body 45° gate that
+        was the historical default, ~53% of "achieved" events had the
+        beacon outside the actual camera FOV, so the rendered training
+        frame contained no beacon at all.
+        """
+
         if not self._require_landmark_visible:
             return True
         beacon_xy = self._beacon_xy(beacon_cell, scene)
         if beacon_xy is None:
             return True
-        rx, ry = float(observation.base_xy_world[0]), float(observation.base_xy_world[1])
+        bx = float(observation.base_xy_world[0])
+        by = float(observation.base_xy_world[1])
+        yaw = float(observation.base_yaw_world)
+        # Project the beacon into the camera frame: camera sits at
+        # (base_xy + R(yaw) · (forward_offset, 0)). The camera's optical
+        # axis is aligned with the body yaw (no extrinsic yaw jitter is
+        # modelled at this gate; ±3° of jitter is well inside the safety
+        # margin between the route-teacher FOV and the platform-manifest
+        # camera FOV).
+        cam_x = bx + self._landmark_camera_forward_offset_m * math.cos(yaw)
+        cam_y = by + self._landmark_camera_forward_offset_m * math.sin(yaw)
         lx, ly = float(beacon_xy[0]), float(beacon_xy[1])
-        dx, dy = lx - rx, ly - ry
+        dx, dy = lx - cam_x, ly - cam_y
         if math.hypot(dx, dy) <= 1e-3:
             return True
         bearing = math.atan2(dy, dx)
-        heading_err = wrap_angle_pi(bearing - float(observation.base_yaw_world))
-        if abs(heading_err) > self._landmark_half_fov_rad:
+        heading_err = wrap_angle_pi(bearing - yaw)
+        if abs(heading_err) > self._landmark_half_fov_rad_for_scene(scene):
             return False
         los = getattr(scene, "has_line_of_sight", None)
         if los is None:
             return True
         return bool(
             los(
-                (rx, ry),
+                (cam_x, cam_y),
                 (lx, ly),
                 margin_m=self._landmark_los_margin_m,
                 exclude_landmark_xy=(lx, ly),
             )
         )
+
+    def _claim_radius_m(self, scene) -> float:
+        radius = self._landmark_claim_radius_m
+        if self._scene_family(scene) in _WEDGE_RELAXED_ARRIVAL_FAMILIES:
+            radius += _WEDGE_RELAXED_CLAIM_RADIUS_M
+        return radius
+
+    def _landmark_half_fov_rad_for_scene(self, scene) -> float:
+        half_fov = self._landmark_half_fov_rad
+        if self._scene_family(scene) in _WEDGE_RELAXED_ARRIVAL_FAMILIES:
+            half_fov += _WEDGE_RELAXED_HALF_FOV_MARGIN_RAD
+        return half_fov
+
+    def _scene_family(self, scene) -> str:
+        manifest = getattr(scene, "manifest", None)
+        return str(getattr(manifest, "family", ""))
 
     # ------------------------------------------------------------------
     # Pure-pursuit follower
@@ -856,7 +912,7 @@ class RouteTeacher:
             grid,
             beacon_xy,
             standoff_m=self._landmark_standoff_m,
-            n_candidates=_STANDOFF_CANDIDATES,
+            n_candidates=self._standoff_candidate_count(scene),
         )
         los = getattr(scene, "has_line_of_sight", None)
         if los is None:
@@ -872,6 +928,11 @@ class RouteTeacher:
             ):
                 out.append((float(sx), float(sy)))
         return tuple(out)
+
+    def _standoff_candidate_count(self, scene) -> int:
+        if self._scene_family(scene) in _DENSE_STANDOFF_FAMILIES:
+            return _LOOP_ALIAS_STANDOFF_CANDIDATES
+        return _STANDOFF_CANDIDATES
 
     def _sparsify_path(
         self,

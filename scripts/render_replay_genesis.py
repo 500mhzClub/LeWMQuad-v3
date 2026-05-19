@@ -65,6 +65,14 @@ def main() -> int:
         default="replay",
         help="Camera pose source. replay uses recorded egocentric camera poses; overview uses a static top-down QA camera.",
     )
+    parser.add_argument(
+        "--overlay-target-label",
+        action="store_true",
+        help=(
+            "Draw the privileged route target label onto RGB frames. Use only for "
+            "manual QA renders; training renders must leave this disabled."
+        ),
+    )
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--show-viewer", action="store_true")
     parser.add_argument(
@@ -162,6 +170,7 @@ def main() -> int:
                 mount_xyz_body=mount_xyz_body,
                 mount_rpy_body=mount_rpy_body,
                 scene_graph=pack.scene_graph,
+                overlay_target_label=bool(args.overlay_target_label),
             )
             records.append(record)
             stream.write(json.dumps(record, sort_keys=True, separators=(",", ":")))
@@ -207,6 +216,7 @@ def main() -> int:
         "rgb_dir": str(rgb_dir),
         "rgb_format": args.rgb_format,
         "camera_mode": args.camera_mode,
+        "overlay_target_label": bool(args.overlay_target_label),
         "camera_retracted_count": sum(
             1 for r in camera_safety_records if float(r.get("retracted_m") or 0.0) > 0.0
         ),
@@ -319,6 +329,7 @@ def _render_frame(
     mount_xyz_body: tuple[float, float, float],
     mount_rpy_body: tuple[float, float, float],
     scene_graph: Any = None,
+    overlay_target_label: bool = False,
 ) -> dict[str, Any]:
     env_index = int(frame.get("env_index") or 0)
     render_env_index = env_index if target_env_index is None else int(target_env_index)
@@ -339,26 +350,12 @@ def _render_frame(
     rgb = _select_env(rgb, render_env_index)
     depth = _select_env(depth, render_env_index) if depth is not None else None
 
-    # Overlay target landmark info
-    if rgb is not None:
-        cmd_ctx = frame.get("command_context")
-        if isinstance(cmd_ctx, dict):
-            target_id = cmd_ctx.get("route_target_id")
-            if target_id is not None and int(target_id) >= 0 and scene_graph is not None:
-                target_name = "unknown"
-                for name, cell in scene_graph.landmark_cells:
-                    if cell == int(target_id):
-                        target_name = name
-                        break
-
-                # Draw overlay
-                img = Image.fromarray(np.asarray(rgb, dtype=np.uint8))
-                draw = ImageDraw.Draw(img)
-                text = f"Target: {target_name} ({target_id})"
-                # Simple black background for readability
-                draw.rectangle([5, 5, 220, 25], fill=(0, 0, 0, 128))
-                draw.text((10, 10), text, fill=(255, 255, 255))
-                rgb = np.array(img)
+    rgb = _maybe_overlay_target_label(
+        rgb,
+        frame,
+        scene_graph=scene_graph,
+        enabled=overlay_target_label,
+    )
 
     frame_index = int(frame["frame_index"])
     stem = f"frame_{frame_index:06d}_env_{env_index:02d}"
@@ -418,6 +415,36 @@ def _is_recovery_context(command_context: Any) -> bool:
     if not isinstance(command_context, dict):
         return False
     return str(command_context.get("command_source") or "") == "recovery"
+
+
+def _maybe_overlay_target_label(
+    rgb: np.ndarray | None,
+    frame: dict[str, Any],
+    *,
+    scene_graph: Any,
+    enabled: bool,
+) -> np.ndarray | None:
+    if rgb is None or not enabled or scene_graph is None:
+        return rgb
+    cmd_ctx = frame.get("command_context")
+    if not isinstance(cmd_ctx, dict):
+        return rgb
+    target_id = cmd_ctx.get("route_target_id")
+    if target_id is None or int(target_id) < 0:
+        return rgb
+
+    target_name = "unknown"
+    for name, cell in scene_graph.landmark_cells:
+        if cell == int(target_id):
+            target_name = str(name)
+            break
+
+    img = Image.fromarray(np.asarray(rgb, dtype=np.uint8))
+    draw = ImageDraw.Draw(img)
+    text = f"Target: {target_name} ({target_id})"
+    draw.rectangle([5, 5, 220, 25], fill=(0, 0, 0, 128))
+    draw.text((10, 10), text, fill=(255, 255, 255))
+    return np.array(img)
 
 
 def _write_rgb_frame(rgb: np.ndarray, path: Path, *, rgb_format: str) -> None:

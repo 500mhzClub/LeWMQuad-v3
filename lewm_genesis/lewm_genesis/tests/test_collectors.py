@@ -22,9 +22,27 @@ from lewm_genesis.collectors import (
     OUExploration,
     PrimitiveCurriculum,
     RecoveryCurriculum,
-    RouteTeacher,
     build_default_policies,
 )
+from lewm_genesis.collectors import RouteTeacher as _RouteTeacherImpl
+
+
+def RouteTeacher(*args, **kwargs):  # noqa: N802 — shim mirrors class name
+    """Test-only shim: defaults to the legacy body-frame visibility gate.
+
+    The production default for ``landmark_camera_forward_offset_m`` is the
+    Go2 camera mount (0.326 m forward of body center), which puts the
+    beacon ~15° wider in the camera frame than in the body frame at the
+    claim envelope. Most of these tests were written against the older
+    body-frame check and use body-on-beacon arrival poses that the
+    camera-aware gate (correctly) rejects. The shim lets us keep those
+    tests as-is while production picks up the camera-aware behavior;
+    individual tests that exercise the new gate pass an explicit
+    ``landmark_camera_forward_offset_m`` to override.
+    """
+
+    kwargs.setdefault("landmark_camera_forward_offset_m", 0.0)
+    return _RouteTeacherImpl(*args, **kwargs)
 from lewm_genesis.collectors.base import (
     BlockChoice,
     EnvObservation,
@@ -967,6 +985,79 @@ def test_route_teacher_emergency_backout_on_collision(registry):
     )
     assert choice.primitive_name == "backward"
     assert choice.command_source == "route_teacher"
+
+
+def test_route_teacher_camera_aware_gate_rejects_off_axis_beacon(registry):
+    """The camera-aware gate must reject claims where the beacon is in the
+    body FOV but outside the camera FOV — that's the visual-data gap that
+    motivates the gate. Empirical setup: body-bearing 40° to beacon (passes
+    a 90° body-frame gate) but camera-bearing ~58° (fails a 78° camera FOV)
+    because the camera sits 0.326 m forward of the body.
+    """
+
+    scene = SceneGraph(_grid_corridor_manifest())
+    # Production defaults: camera-aware gate at 78.3° FOV.
+    collector = _RouteTeacherImpl(
+        registry,
+        n_envs=1,
+        landmark_fov_deg=78.323,
+        landmark_camera_forward_offset_m=0.326,
+    )
+    collector.on_episode_reset(0)
+    # Body at (2.2, -0.65), yaw=0. Beacon at (3.0, 0.0).
+    # Body→beacon: dx=0.8, dy=0.65, dist=1.03 m, bearing ≈ 39° → inside
+    # the body 45° gate, would also be inside a 90° gate.
+    # Camera at (2.526, -0.65): dx=0.474, dy=0.65, bearing ≈ 54° — outside
+    # the camera's 39° half-FOV, so the claim must be rejected.
+    obs = _observation(cell_id=2, base_xy=(2.20, -0.65), yaw=0.0)
+    assert collector._landmark_visible(obs, 3, scene) is False
+
+
+def test_route_teacher_camera_aware_gate_accepts_on_axis_beacon(registry):
+    scene = SceneGraph(_grid_corridor_manifest())
+    collector = _RouteTeacherImpl(
+        registry,
+        n_envs=1,
+        landmark_fov_deg=78.323,
+        landmark_camera_forward_offset_m=0.326,
+    )
+    collector.on_episode_reset(0)
+    # Body at (2.2, 0), yaw=0, beacon at (3.0, 0). Beacon directly ahead;
+    # camera-frame bearing is 0° — well inside FOV.
+    obs = _observation(cell_id=2, base_xy=(2.20, 0.0), yaw=0.0)
+    assert collector._landmark_visible(obs, 3, scene) is True
+
+
+def test_route_teacher_dense_standoffs_only_for_loop_alias(registry):
+    collector = _RouteTeacherImpl(registry, n_envs=1)
+    base_scene = SceneGraph(_grid_corridor_manifest())
+    loop_scene = SceneGraph(
+        replace(_grid_corridor_manifest(), family="loop_alias_stress")
+    )
+
+    assert collector._standoff_candidate_count(base_scene) == 12
+    assert collector._standoff_candidate_count(loop_scene) == 24
+
+
+def test_route_teacher_relaxes_arrival_only_for_wedge_families(registry):
+    collector = _RouteTeacherImpl(
+        registry,
+        n_envs=1,
+        landmark_fov_deg=78.323,
+        landmark_camera_forward_offset_m=0.326,
+    )
+    base_scene = SceneGraph(_grid_corridor_manifest())
+    wedge_scene = SceneGraph(
+        replace(_grid_corridor_manifest(), family="small_enclosed_maze")
+    )
+
+    obs = _observation(cell_id=2, base_xy=(2.02, -0.56), yaw=0.0)
+    # Body range is just outside the standard 0.85 + 0.20 m envelope, and
+    # camera-frame bearing is just outside the strict 78.323 degree FOV.
+    assert collector._claim_check(0, obs, 3, base_scene) is False
+    assert collector._claim_check(0, obs, 3, wedge_scene) is True
+    assert collector._claim_radius_m(base_scene) == pytest.approx(0.20)
+    assert collector._claim_radius_m(wedge_scene) == pytest.approx(0.35)
 
 
 def test_route_teacher_legacy_arrival_when_visibility_disabled(registry):
