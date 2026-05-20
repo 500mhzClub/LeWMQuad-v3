@@ -74,6 +74,12 @@ def main() -> int:
         ),
     )
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--no-textures",
+        dest="textures",
+        action="store_false",
+        help="Disable CC0 surface textures (floor/walls/obstacles render as solid colors).",
+    )
     parser.add_argument("--show-viewer", action="store_true")
     parser.add_argument(
         "--replay-env-mode",
@@ -145,6 +151,7 @@ def main() -> int:
         backend=backend,
         show_viewer=bool(args.show_viewer),
         render_robot=render_robot,
+        apply_textures=bool(args.textures),
     )
     leg_dof_idx = _resolve_rollout_leg_dof_indices(build.robot)
     overview_pose = _overview_camera_pose(pack) if args.camera_mode == "overview" else None

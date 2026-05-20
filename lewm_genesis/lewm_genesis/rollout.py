@@ -1357,18 +1357,25 @@ class RolloutRunner:
             )
 
     def _check_and_reset_completed_envs(self, writer: Any, adapter: Any) -> None:
-        """Respawn envs whose route teacher has claimed every beacon.
+        """Respawn (same collector) envs whose route teacher claimed every beacon.
 
         Without this an env that finishes its route early spends the rest of
         the block budget emitting ``hold`` (~half the budget on a generous
         tier) — a stationary robot that wastes compute and floods the dataset
-        with near-identical idle frames. Resetting starts a fresh route
-        episode from a new corridor spawn, so every env stays productive.
+        with near-identical idle frames. We respawn from a fresh corridor
+        spawn so the env keeps producing data.
 
-        Revisit collectors (loop_revisit) are skipped: re-targeting cleared
-        beacons is their data signal, not wasted time. Non-route collectors
-        (frontier/ou_noise/recovery) never report all-claimed, so they run
-        their full budget as intended.
+        Crucially the env is **kept on its current collector** rather than
+        redrawn from the scheduler. Redrawing handed completed route episodes
+        to other collectors, so route_teacher accrued far fewer blocks than
+        its §13 assignment weight (pilot: 18% of blocks vs 30% target).
+        Keeping the collector means a route env runs back-to-back fresh route
+        episodes, so its transition share matches its assignment weight while
+        still getting fresh-spawn diversity and zero idle.
+
+        Revisit collectors (loop_revisit) are skipped (re-targeting cleared
+        beacons is their signal); non-route collectors never report
+        all-claimed, so they run their full budget as intended.
         """
 
         if self._scene_graph is None or not self._landmark_cell_to_id:
@@ -1407,7 +1414,9 @@ class RolloutRunner:
             self._blocks_in_episode[env_idx] = 0
             self._consecutive_tipped_blocks[env_idx] = 0
             self._recovery_interlock_blocks_remaining[env_idx] = 0
-            self._scheduler.on_episode_reset(int(env_idx))
+            # Keep the same collector (don't redraw) and just clear its per-env
+            # state for the fresh episode — see the docstring.
+            self._scheduler.policy_for(int(env_idx)).on_episode_reset(int(env_idx))
             writer.write_env(
                 env_idx, "reset_event", adapter.reset_event_record_to_msg(event), self._sim_time_ns
             )

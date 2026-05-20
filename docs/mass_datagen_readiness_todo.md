@@ -289,3 +289,92 @@ Validator change details:
    in chunked overnight runs. Family-balanced scene selection
    needed — current driver uses alphabetical `--scene-limit`.
 6. Run the P2 JEPA/H-JEPA audits after the minimum corpus exists.
+
+## Design Decisions
+
+### 2026-05-20 — Route teacher: reset-keep-collector (not revisit) for §13 mix
+
+**Decision:** when the route teacher claims every beacon, the rollout
+respawns the env from a fresh corridor cell **but keeps it assigned to
+route_teacher** (`_check_and_reset_completed_envs` calls the current
+policy's `on_episode_reset`, not `scheduler.on_episode_reset`).
+
+**Why:** §13 specifies 30% route by *macro transition* (block). With the
+original reset-on-completion *redraw*, completed route episodes were
+handed to other collectors, so route accrued only ~18% of blocks (route
+episodes finish fast). Two alternatives were tried and rejected:
+- *deficit-balanced scheduler* — unstable feedback loop (route runaway to
+  68%); also exposed that a blocks-on-reset metric mis-counts
+  non-completing collectors. Reverted.
+- *revisit-on-completion* (route re-targets claimed beacons) — overturned
+  the deliberate, tested "claim-all-then-hold; do not re-target a visited
+  beacon" contract (broke 7 collector tests) and only reached 22.9%.
+  Reverted.
+Reset-keep-collector preserves that contract (43 tests green), keeps
+fresh-spawn diversity, and lifts route to ~26% of blocks (3-scene sample;
+expected to average closer to 30% corpus-wide).
+
+**How to apply:** treat ~26-30% route transition share as compliant;
+§13 is advisory, and the hard gates (§10 situation coverage, §11 primitive
+support) already pass with large margin. Do not switch route_teacher to
+revisit mode — that is loop_revisit's role.
+
+## Design Decisions / 2026-05-20 — Augmentation scope for minimum-tier generation
+
+**Decision:** generate the minimum corpus with the **current** generation-time
+domain randomization only — per-scene seeded color/HSV jitter, lighting
+(direction/intensity/ambient/specular), camera-extrinsic mount jitter,
+floor/obstacle friction & restitution, and visual-stress distractors
+(`lewm_worlds/randomization.py`). No additional augmentation is added before
+the run.
+
+**Why:** the §14 items not yet implemented split by *where they belong*:
+- *RGB sensor noise / blur / compression* — deliberately deferred to
+  **train-time, per-window**. A JEPA predictor learns dynamics across a
+  context+prediction window; photometric aug must be temporally consistent
+  within the window or it injects spurious dynamics, and baking one fixed
+  noise realization per frame wastes the augmentation. So clean RGB out of
+  the data-gen pipeline is the intended contract, not a defect.
+- *Robot mass/inertia/actuator strength + randomized command/sensor latency*
+  — these shape the recorded proprio/base-state dynamics and **cannot** be
+  added post-hoc, so they are the genuine gen-time gaps. Only a fixed
+  one-step action latency exists today (`RolloutConfig.simulate_action_latency`).
+  Deferred: out of scope for the minimum tier (no sim/robot-transfer claim yet).
+- *test-transfer-visual / -physics holdouts* — §14/§17 make these conditional
+  on a transfer claim; splits remain train/val/test_id/test_hard. Deferred.
+
+**How to apply:** when a sim-to-real / robot-transfer claim becomes in-scope,
+revisit body-dynamics DR (mass/actuator/latency) and carve held-out
+visual+physics themes into test-transfer splits *before* regenerating. Do not
+add RGB noise/blur to the renderer — that is the trainer's per-window job.
+
+## Design Decisions / 2026-05-20 — Render-time CC0 surface textures
+
+**Decision:** apply semi-realistic CC0 diffuse textures to floor / walls /
+obstacles at render time. Assets (ambientCG, **CC0 1.0**, no attribution) live
+in `assets/textures/{floor,wall,obstacle}/` (see that dir's README for
+provenance). Scope is **floor + walls + obstacles, diffuse-only** (no
+normal/roughness). Landmarks, distractors, and slick_patch stay solid color
+(task identity / decoys / physics cue).
+
+**Why / how it works:** validated against Genesis 0.4.6 empirically —
+- the floor `Plane` textures and auto-tiles (~1 texel/m) directly;
+- `gs.morphs.Box` **cannot** carry a texture (UV-less), so textured
+  wall/obstacle boxes are rebuilt as UV-mapped cube **meshes**
+  (`textures.cached_box_obj`, per-face UVs scaled to size for ~0.7 tiles/m,
+  `collision=True`, `convexify=True`, `file_meshes_are_zup=True`);
+- selection is deterministic per scene (`visual_seed`+`scene_id`), one map per
+  category, so re-renders reproduce (§15).
+Implemented in `lewm_genesis/textures.py` + `scene_builder.py`
+(`build_scene_from_pack(apply_textures=...)`, default **False**). Render-only:
+`render_replay_genesis.py` passes `apply_textures=True` (`--no-textures` to
+disable); the rollout/physics path keeps fast box primitives unchanged.
+
+**Validation:** all 8 families rendered egocentric → `invalid_frame_count=0`
+(0.000%, gate <0.1%), `low_info_invalid=0`; audit gate green. Textured walls
+also reduce wall-staring low-info frames. 166 base-python tests pass (+5 new
+`test_textures.py`); rollout path byte-identical at `apply_textures=False`.
+
+**How to apply:** keep textures render-side; never bake them into rollouts.
+Adding/replacing maps = drop `*_Color.jpg` (CC0) into the category dir; tiling
+density is `textures._DEFAULT_TILES_PER_M`.

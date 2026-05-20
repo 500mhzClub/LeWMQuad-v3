@@ -29,6 +29,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from lewm_genesis.scene_loader import ScenePack, effective_camera_mount_xyz_rpy
+from lewm_genesis.textures import (
+    cached_box_obj,
+    category_for_kind,
+    select_scene_textures,
+)
 
 
 _GENESIS_INITIALIZED = False
@@ -142,6 +147,7 @@ def build_scene_from_pack(
     backend: str = "auto",
     show_viewer: bool = False,
     render_robot: bool = True,
+    apply_textures: bool = False,
 ) -> SceneBuild:
     """Build a Genesis scene with ``n_envs`` parallel envs from a ``ScenePack``.
 
@@ -166,7 +172,19 @@ def build_scene_from_pack(
     floor_material = _floor_material(gs, pack)
     obstacle_material = _obstacle_material(gs, pack)
     material_lookup = _material_lookup(pack)
-    floor_surface = _surface_for(gs, "floor", material_lookup)
+
+    # Per-scene texture theme (data-spec §14 visuals). Render-only: rollouts
+    # pass apply_textures=False so the physics path keeps fast box primitives.
+    scene_textures: dict[str, str | None] = (
+        select_scene_textures(visual_seed=pack.visual_seed, scene_id=pack.scene_id)
+        if apply_textures
+        else {}
+    )
+
+    floor_tex = scene_textures.get("floor")
+    floor_surface = (_diffuse_texture_surface(gs, floor_tex) if floor_tex else None) or (
+        _surface_for(gs, "floor", material_lookup)
+    )
 
     plane_kwargs: dict[str, Any] = {}
     if floor_material is not None:
@@ -183,18 +201,37 @@ def build_scene_from_pack(
             math.degrees(float(obj.pitch_rad)),
             math.degrees(float(obj.yaw_rad)),
         )
-        morph = gs.morphs.Box(
-            pos=obj.center_xyz_m,
-            size=obj.size_xyz_m,
-            euler=euler_deg,
-            fixed=True,
-        )
+        category = category_for_kind(obj.kind) if apply_textures else None
+        tex_path = scene_textures.get(category) if category else None
+        tex_surface = _diffuse_texture_surface(gs, tex_path) if tex_path else None
+
         entity_kwargs: dict[str, Any] = {"name": obj.object_id}
         if obstacle_material is not None:
             entity_kwargs["material"] = obstacle_material
-        surface = _surface_for(gs, obj.material_id, material_lookup)
-        if surface is not None:
-            entity_kwargs["surface"] = surface
+
+        if tex_surface is not None:
+            # Box primitives can't carry a texture; use a UV-mapped cube mesh
+            # (collision preserved). OBJ is authored Z-up in metres.
+            morph = gs.morphs.Mesh(
+                file=cached_box_obj(obj.size_xyz_m),
+                pos=obj.center_xyz_m,
+                euler=euler_deg,
+                fixed=True,
+                collision=True,
+                convexify=True,
+                file_meshes_are_zup=True,
+            )
+            entity_kwargs["surface"] = tex_surface
+        else:
+            morph = gs.morphs.Box(
+                pos=obj.center_xyz_m,
+                size=obj.size_xyz_m,
+                euler=euler_deg,
+                fixed=True,
+            )
+            surface = _surface_for(gs, obj.material_id, material_lookup)
+            if surface is not None:
+                entity_kwargs["surface"] = surface
         scene.add_entity(morph, **entity_kwargs)
 
     # Genesis quaternion convention: wxyz (matches the scene manifest).
@@ -284,6 +321,21 @@ def _surface_for(
     try:
         return gs.surfaces.Default(color=tuple(rgba))
     except Exception:  # pragma: no cover - surface API drift
+        return None
+
+
+def _diffuse_texture_surface(gs, image_path):
+    """A diffuse-textured surface, or ``None`` so callers fall back to color."""
+
+    if not image_path:
+        return None
+    try:
+        return gs.surfaces.Default(
+            diffuse_texture=gs.textures.ImageTexture(
+                image_path=str(image_path), encoding="srgb"
+            ),
+        )
+    except Exception:  # pragma: no cover - surface/texture API drift
         return None
 
 

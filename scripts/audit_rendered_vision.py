@@ -63,10 +63,23 @@ def main() -> int:
                 issues.append(
                     f"camera_safety_unresolved_count={data['camera_safety_unresolved_count']}"
                 )
-            low_info = int(data.get("low_info_frame_count", 0))
-            if low_info > args.low_info_threshold:
+            # Gate on low-info frames the renderer did NOT excuse. Recovery
+            # episodes legitimately stare at walls while backing out of
+            # dead-ends; the renderer marks those low_info_allowed and reports
+            # the un-excused remainder as low_info_invalid_frame_count. Gating
+            # on the raw count would fail honest recovery footage.
+            low_info_invalid = int(
+                data.get(
+                    "low_info_invalid_frame_count",
+                    data.get("low_info_frame_count", 0),
+                )
+            )
+            if low_info_invalid > args.low_info_threshold:
+                low_info_total = int(data.get("low_info_frame_count", 0))
                 issues.append(
-                    f"low_info_frame_count={low_info}>threshold({args.low_info_threshold})"
+                    f"low_info_invalid_frame_count={low_info_invalid}"
+                    f">threshold({args.low_info_threshold}) "
+                    f"(of {low_info_total} low-info; rest recovery-excused)"
                 )
             if bool(data.get("overlay_target_label", False)) and not args.allow_overlay:
                 issues.append("overlay_target_label=true")
