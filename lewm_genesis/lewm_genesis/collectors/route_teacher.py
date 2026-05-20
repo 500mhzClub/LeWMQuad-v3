@@ -91,7 +91,16 @@ _STANDOFF_CORRIDOR_PROBE_MAX_CELLS = 20
 # Near a beacon standoff, keep turning primitives translational. In-place yaw
 # is fragile next to blocking geometry with the trained locomotion policy; an
 # arc both rotates and moves the base enough to avoid wedge/yaw/backout loops.
+# (Beacons live in open rooms now, so the arc has lateral room.)
 _BEACON_APPROACH_ARC_TOLERANCE_RAD = math.pi
+
+# Below this live wall clearance the corridor is too tight to arc through: a
+# turn-while-moving sweeps the body sideways into the wall, jamming the camera
+# against blank geometry. Collapsing the arc band to the forward tolerance
+# (so turns become in-place yaw) keeps the body centred in the corridor.
+# Room cells sit well above this (~0.5 m+), so room/open-space turns still arc.
+_NARROW_CORRIDOR_CLEARANCE_M = 0.45
+_NARROW_CORRIDOR_ARC_TOLERANCE_RAD = math.pi / 6
 
 # If the teacher makes no meaningful path progress toward the current
 # standoff for this many blocks, reject that standoff for the rest of the
@@ -162,6 +171,10 @@ class RouteTeacher:
         self.name = name
         self._registry = registry
         self._revisit = bool(revisit_after_arrival)
+        # Public read-only flag: revisit collectors keep re-targeting claimed
+        # beacons after clearing them all, so the rollout must NOT treat their
+        # all-claimed state as episode completion (that's their data signal).
+        self.revisit_after_arrival = bool(revisit_after_arrival)
         self._require_landmark_visible = bool(require_landmark_visible)
         self._landmark_half_fov_rad = max(0.0, float(landmark_fov_deg)) * 0.5 * math.pi / 180.0
         self._landmark_los_margin_m = float(landmark_los_margin_m)
@@ -364,8 +377,28 @@ class RouteTeacher:
         )
         heading_err = wrap_angle_pi(bearing - observation.base_yaw_world)
         primitive_kwargs = {"heading_error_rad": heading_err}
+        beacon_neighborhood_open = (
+            observation.clearance_to_walls_m >= _NARROW_CORRIDOR_CLEARANCE_M
+        )
         if near_beacon_standoff:
-            primitive_kwargs["arc_tolerance_rad"] = _BEACON_APPROACH_ARC_TOLERANCE_RAD
+            if beacon_neighborhood_open:
+                # Open beacon (room / open visual spot): arcing here circles
+                # the beacon at standoff radius and never locks the FOV/LOS
+                # claim pose — the cause of the orbiting failures. Yaw in
+                # place to face the beacon and commit to the arrival check.
+                primitive_kwargs["arc_tolerance_rad"] = _NARROW_CORRIDOR_ARC_TOLERANCE_RAD
+            else:
+                # Tight beacon pocket: in-place yaw risks wedging against
+                # close geometry, so arc (turn-while-moving) to finish.
+                primitive_kwargs["arc_tolerance_rad"] = _BEACON_APPROACH_ARC_TOLERANCE_RAD
+        elif not beacon_neighborhood_open:
+            # In a narrow corridor an arc (forward + yaw) sweeps the body
+            # sideways into the wall — the camera ends up jammed against a
+            # blank wall and the locomotion policy hugs it. Collapse the arc
+            # band so any turn beyond the forward tolerance becomes an
+            # in-place yaw, which rotates without lateral translation. The
+            # stuck FSM still backs the body out if a yaw genuinely wedges.
+            primitive_kwargs["arc_tolerance_rad"] = _NARROW_CORRIDOR_ARC_TOLERANCE_RAD
         primitive_name = primitive_toward_bearing(**primitive_kwargs)
         self._blocks_since_plan[env_idx] += 1
         return BlockChoice(

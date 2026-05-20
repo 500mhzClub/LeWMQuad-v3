@@ -104,7 +104,10 @@ elif mode == "plan":
     if not plan_path:
         raise SystemExit("--plan requires a JSON path")
     totals = json.loads(Path(plan_path).read_text(encoding="utf-8"))
-    plan = plan_corpus(plan_seed=plan_seed, totals=totals)
+    # Validate like --standard/--smoke so unreachable / non-navigable seeds
+    # are rerolled before scenes hit disk (otherwise the _build_one safety
+    # net raises on the first bad seed).
+    plan = plan_corpus(plan_seed=plan_seed, totals=totals, validate=True)
 else:
     raise SystemExit(f"unknown mode: {mode}")
 

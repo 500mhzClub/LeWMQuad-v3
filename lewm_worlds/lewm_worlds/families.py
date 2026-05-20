@@ -291,24 +291,60 @@ def _enclosed_maze_builder(
     extra_loop_density: float,
     landmark_pairs: int = 1,
     profile: Profile = DEFAULT_PROFILE,
+    room_dim: int | None = None,
 ) -> Callable[[BuildContext], SceneManifest]:
+    """Build an enclosed maze.
+
+    When ``room_dim`` is set, beacons are placed at the centre of open
+    ``room_dim``x``room_dim`` rooms joined by corridors (the room layout
+    determines the grid side, so ``side_range`` is ignored). When
+    ``room_dim`` is ``None`` the legacy uniform-grid maze with beacons at
+    random corridor cells is produced.
+    """
+
     def builder(ctx: BuildContext) -> SceneManifest:
         rng = random.Random(f"{ctx.family}:{ctx.scene_seed}")
-        side = rng.randint(*side_range)
         geometry = sample_corridor_geometry(rng)
         cell_size = geometry.cell_size_m
         corridor_width = geometry.corridor_width_m
         wall_thickness = geometry.wall_thickness_m
 
-        world_half = (side * cell_size) / 2.0 + wall_thickness
+        if room_dim is not None:
+            layout = _room_corridor_topology(
+                rng=rng,
+                n_rooms=landmark_pairs * 2,
+                room_dim=int(room_dim),
+                cell_size=cell_size,
+                corridor_width=corridor_width,
+            )
+            side = layout.side
+            nodes = layout.nodes
+            traversable = layout.traversable
+            all_pairs = layout.all_pairs
+            spawn_xy = nodes[layout.spawn_node_id].center_xy_m
+            landmarks = _room_landmarks(
+                nodes=nodes,
+                room_center_ids=layout.room_center_ids,
+                wall_height=WALL_HEIGHT_M,
+            )
+        else:
+            side = rng.randint(*side_range)
+            nodes, traversable, all_pairs = _maze_topology(
+                rng=rng,
+                side=side,
+                cell_size=cell_size,
+                corridor_width=corridor_width,
+                extra_loop_density=extra_loop_density,
+            )
+            spawn_xy = nodes[0].center_xy_m
+            landmarks = _maze_landmarks(
+                rng=rng,
+                nodes=nodes,
+                pairs=landmark_pairs,
+                wall_height=WALL_HEIGHT_M,
+            )
 
-        nodes, traversable, all_pairs = _maze_topology(
-            rng=rng,
-            side=side,
-            cell_size=cell_size,
-            corridor_width=corridor_width,
-            extra_loop_density=extra_loop_density,
-        )
+        world_half = (side * cell_size) / 2.0 + wall_thickness
         edges = _maze_edges(
             traversable=traversable,
             all_pairs=all_pairs,
@@ -321,12 +357,6 @@ def _enclosed_maze_builder(
             wall_height=WALL_HEIGHT_M,
             traversable=traversable,
         )
-        landmarks = _maze_landmarks(
-            rng=rng,
-            nodes=nodes,
-            pairs=landmark_pairs,
-            wall_height=WALL_HEIGHT_M,
-        )
         return _assemble(
             ctx=ctx,
             world_half=world_half,
@@ -335,7 +365,7 @@ def _enclosed_maze_builder(
             walls=walls,
             obstacles=(),
             landmarks=landmarks,
-            spawn_xy=nodes[0].center_xy_m,
+            spawn_xy=spawn_xy,
             profile=profile,
         )
 
@@ -1064,6 +1094,232 @@ def _corner_landmarks(*, world_half: float) -> tuple[BoxObject, ...]:
 
 # ---- Maze helpers --------------------------------------------------------
 
+# Corridor cells ringing the room lattice. Adds transit space the robot must
+# traverse and, crucially, gives the corridor maze enough cells to host
+# dead-end branches (data spec §9 requires >=5000 dead-end nodes across the
+# train split; the dense room layout alone under-supplies them).
+_ROOM_CORRIDOR_MARGIN = 1
+# Fraction of candidate corridor edges added back as extra loops after the
+# spanning tree. Kept low because loops convert dead-ends into through-cells
+# and the corpus already far exceeds the §9 loop minimum; a little variety is
+# still useful for loop-closure data.
+_CORRIDOR_LOOP_FRACTION = 0.08
+
+
+@dataclass(frozen=True)
+class _RoomCorridorLayout:
+    nodes: tuple[GraphNode, ...]
+    traversable: set[frozenset[int]]
+    all_pairs: list[frozenset[int]]
+    room_center_ids: tuple[int, ...]
+    spawn_node_id: int
+    side: int
+
+
+def _room_corridor_topology(
+    *,
+    rng: random.Random,
+    n_rooms: int,
+    room_dim: int,
+    cell_size: float,
+    corridor_width: float,
+) -> _RoomCorridorLayout:
+    """Maze of open rooms joined by 1-wide corridors.
+
+    Beacons live at the centre of dedicated ``room_dim``x``room_dim`` open
+    rooms (all internal walls removed), so a beacon never blocks a
+    transit corridor and always exposes a full ring of navigable,
+    LOS-valid standoffs. Rooms are laid on a ``slots``x``slots`` lattice
+    (``slots = ceil(sqrt(n_rooms))``) separated by single-cell corridor
+    lanes; unused slots and the lanes form the corridor network the robot
+    traverses between rooms. Spawn is placed on a corridor cell so every
+    episode requires corridor navigation to reach the room beacons.
+    """
+
+    slots = max(1, math.ceil(math.sqrt(max(1, n_rooms))))
+    margin = _ROOM_CORRIDOR_MARGIN
+    # rooms of width room_dim separated by a 1-cell corridor lane, plus a
+    # corridor margin ring around the whole lattice for dead-end branches.
+    side = slots * room_dim + (slots - 1) + 2 * margin
+
+    offset = (side - 1) * cell_size * 0.5
+    nodes: list[GraphNode] = []
+    cell_to_id: dict[tuple[int, int], int] = {}
+    nid = 0
+    for row in range(side):
+        for col in range(side):
+            x = round(col * cell_size - offset, 3)
+            y = round(row * cell_size - offset, 3)
+            nodes.append(
+                GraphNode(node_id=nid, center_xy_m=(x, y), width_m=corridor_width, tags=())
+            )
+            cell_to_id[(row, col)] = nid
+            nid += 1
+
+    def slot_cells(sr: int, sc: int) -> tuple[set[tuple[int, int]], tuple[int, int]]:
+        r0 = margin + sr * (room_dim + 1)
+        c0 = margin + sc * (room_dim + 1)
+        cells = {(r0 + dr, c0 + dc) for dr in range(room_dim) for dc in range(room_dim)}
+        center = (r0 + room_dim // 2, c0 + room_dim // 2)
+        return cells, center
+
+    slot_coords = [(sr, sc) for sr in range(slots) for sc in range(slots)]
+    # Randomly choose which lattice slots host rooms so beacon positions
+    # vary across seeds and spread out when there are spare slots
+    # (e.g. 6 rooms on a 3x3 lattice, or 2 rooms on a 2x2 lattice).
+    rng.shuffle(slot_coords)
+    room_blocks: list[tuple[set[tuple[int, int]], tuple[int, int]]] = [
+        slot_cells(sr, sc) for (sr, sc) in slot_coords[: int(n_rooms)]
+    ]
+    room_cells: set[tuple[int, int]] = set()
+    for cells, _ in room_blocks:
+        room_cells |= cells
+    corridor_cells = {
+        (r, c) for r in range(side) for c in range(side)
+    } - room_cells
+
+    all_pairs: list[frozenset[int]] = []
+    for row in range(side):
+        for col in range(side):
+            here = cell_to_id[(row, col)]
+            for dr, dc in ((1, 0), (0, 1)):
+                nr, nc = row + dr, col + dc
+                if 0 <= nr < side and 0 <= nc < side:
+                    all_pairs.append(frozenset({here, cell_to_id[(nr, nc)]}))
+
+    traversable: set[frozenset[int]] = set()
+
+    def link(a: tuple[int, int], b: tuple[int, int]) -> None:
+        traversable.add(frozenset({cell_to_id[a], cell_to_id[b]}))
+
+    # 1. Open every room: all intra-room adjacencies traversable.
+    for cells, _ in room_blocks:
+        for (r, c) in cells:
+            for dr, dc in ((1, 0), (0, 1)):
+                nb = (r + dr, c + dc)
+                if nb in cells:
+                    link((r, c), nb)
+
+    # 2. Corridor network: randomized Prim's maze over corridor cells.
+    #    Prim's grows from a frontier of edges and produces many short
+    #    branches → high dead-end density (recursive-backtracker/DFS instead
+    #    yields long snaky passages with few dead-ends, which under-supplied
+    #    the §9 dead-end minimum). Loops are added back sparingly afterward.
+    corridor_degree: dict[tuple[int, int], int] = {c: 0 for c in corridor_cells}
+
+    def link_corridor(a: tuple[int, int], b: tuple[int, int]) -> None:
+        link(a, b)
+        corridor_degree[a] += 1
+        corridor_degree[b] += 1
+
+    if corridor_cells:
+        start = min(
+            corridor_cells,
+            key=lambda rc: (abs(rc[0] - side // 2), abs(rc[1] - side // 2)),
+        )
+        in_tree = {start}
+        # frontier: (in_tree_cell, out_cell) candidate edges
+        frontier: list[tuple[tuple[int, int], tuple[int, int]]] = []
+
+        def push_frontier(cell: tuple[int, int]) -> None:
+            for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                nb = (cell[0] + dr, cell[1] + dc)
+                if nb in corridor_cells and nb not in in_tree:
+                    frontier.append((cell, nb))
+
+        push_frontier(start)
+        while frontier:
+            idx = rng.randrange(len(frontier))
+            a, b = frontier.pop(idx)
+            if b in in_tree:
+                continue
+            link_corridor(a, b)
+            in_tree.add(b)
+            push_frontier(b)
+
+        # Add a small number of loops back for route/loop-closure variety.
+        extra_candidates = []
+        for (r, c) in corridor_cells:
+            for dr, dc in ((1, 0), (0, 1)):
+                nb = (r + dr, c + dc)
+                if nb in corridor_cells:
+                    p = frozenset({cell_to_id[(r, c)], cell_to_id[nb]})
+                    if p not in traversable:
+                        extra_candidates.append(((r, c), nb))
+        rng.shuffle(extra_candidates)
+        n_extra = int(len(extra_candidates) * _CORRIDOR_LOOP_FRACTION)
+        for a, b in extra_candidates[:n_extra]:
+            link_corridor(a, b)
+
+    # 3. Doorways: connect each room to the corridor network (1-2 per room).
+    #    Prefer attaching to higher-degree corridor cells so we don't convert
+    #    a corridor dead-end (degree 1) into a through-cell via the doorway.
+    for cells, _ in room_blocks:
+        doors = []
+        for (r, c) in cells:
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nb = (r + dr, c + dc)
+                if nb in corridor_cells:
+                    doors.append(((r, c), nb))
+        rng.shuffle(doors)
+        # Sort so corridor cells with the most existing connections come first.
+        doors.sort(key=lambda ab: -corridor_degree.get(ab[1], 0))
+        n_doors = min(len(doors), rng.randint(1, 2)) if doors else 0
+        for a, b in doors[:n_doors]:
+            link(a, b)
+
+    # Spawn: a corridor cell (prefer one adjacent to a room doorway so the
+    # robot starts on the transit network). Fall back to grid origin.
+    spawn_cell = (
+        min(corridor_cells, key=lambda rc: (rc[0], rc[1]))
+        if corridor_cells
+        else (0, 0)
+    )
+    spawn_id = cell_to_id[spawn_cell]
+    nodes[spawn_id] = GraphNode(
+        node_id=spawn_id,
+        center_xy_m=nodes[spawn_id].center_xy_m,
+        width_m=corridor_width,
+        tags=("spawn",),
+    )
+
+    room_center_ids = tuple(cell_to_id[center] for _, center in room_blocks)
+    return _RoomCorridorLayout(
+        nodes=tuple(nodes),
+        traversable=traversable,
+        all_pairs=all_pairs,
+        room_center_ids=room_center_ids,
+        spawn_node_id=spawn_id,
+        side=side,
+    )
+
+
+def _room_landmarks(
+    *,
+    nodes: tuple[GraphNode, ...],
+    room_center_ids: tuple[int, ...],
+    wall_height: float,
+) -> tuple[BoxObject, ...]:
+    """One beacon at each room centre (open space, never blocking transit)."""
+
+    palette = ("landmark_red", "landmark_blue", "landmark_green", "landmark_yellow")
+    height = max(0.6, wall_height * 1.1)
+    out: list[BoxObject] = []
+    for index, node_id in enumerate(room_center_ids):
+        x, y = nodes[node_id].center_xy_m
+        material = palette[index % len(palette)]
+        out.append(
+            BoxObject(
+                object_id=f"landmark_{index:02d}_{material}",
+                kind="landmark",
+                center_xyz_m=(round(x, 3), round(y, 3), round(height * 0.5, 3)),
+                size_xyz_m=(0.3, 0.3, height),
+                yaw_rad=0.0,
+                material_id=material,
+            )
+        )
+    return tuple(out)
+
 
 def _maze_topology(
     *,
@@ -1426,25 +1682,25 @@ _REGISTRY: dict[str, FamilySpec] = {
         FamilySpec(
             name="small_enclosed_maze",
             difficulty_tier="small",
-            description="4-5 cell side enclosed maze, short routes, one landmark pair.",
+            description="Rooms-and-corridors maze; 2 beacons in open 3x3 rooms.",
             builder=_enclosed_maze_builder(
-                side_range=(4, 5), extra_loop_density=0.05, landmark_pairs=1
+                side_range=(4, 5), extra_loop_density=0.05, landmark_pairs=1, room_dim=3
             ),
         ),
         FamilySpec(
             name="medium_enclosed_maze",
             difficulty_tier="medium",
-            description="6-8 cell side enclosed maze, the main navigation distribution.",
+            description="Rooms-and-corridors maze; 4 beacons in open 3x3 rooms.",
             builder=_enclosed_maze_builder(
-                side_range=(6, 8), extra_loop_density=0.10, landmark_pairs=2
+                side_range=(6, 8), extra_loop_density=0.10, landmark_pairs=2, room_dim=3
             ),
         ),
         FamilySpec(
             name="large_enclosed_maze",
             difficulty_tier="large",
-            description="9-12 cell side enclosed maze, long horizons for H-JEPA and routing.",
+            description="Rooms-and-corridors maze; 6 beacons in open 3x3 rooms.",
             builder=_enclosed_maze_builder(
-                side_range=(9, 12), extra_loop_density=0.15, landmark_pairs=3
+                side_range=(9, 12), extra_loop_density=0.15, landmark_pairs=3, room_dim=3
             ),
         ),
         FamilySpec(

@@ -765,10 +765,12 @@ def test_route_teacher_arcs_for_moderate_heading_error_when_seeking_beacon(regis
     assert choice.primitive_name in {"arc_left", "arc_right"}
 
 
-def test_route_teacher_arcs_near_beacon_standoff_instead_of_yawing(registry):
-    # Near the standoff, yaw-in-place tends to wedge against nearby geometry.
-    # The route teacher should keep a translational arc while turning into the
-    # beacon FOV.
+def test_route_teacher_yaws_to_face_open_beacon(registry):
+    # Near the standoff of an *open* beacon (wide corridor / room), an arc
+    # just circles the beacon at standoff radius and never locks the claim
+    # pose (the orbiting-failure cause). The teacher should yaw in place to
+    # face the beacon. The grid_corridor fixture is 1.2 m wide, so the
+    # standoff clearance is well above the narrow-corridor threshold.
     scene = SceneGraph(_grid_corridor_manifest())
     collector = RouteTeacher(registry, n_envs=1)
     collector.on_episode_reset(0)
@@ -781,13 +783,13 @@ def test_route_teacher_arcs_near_beacon_standoff_instead_of_yawing(registry):
     standoff_xy = collector._goal_standoff_xy[0]
     assert standoff_xy is not None
 
-    choice = collector.on_block(
-        observation=_observation(cell_id=2, base_xy=standoff_xy, yaw=0.75 * math.pi),
-        scene=scene,
-        rng=rng,
-    )
+    obs = _observation(cell_id=2, base_xy=standoff_xy, yaw=0.75 * math.pi)
+    # Sanity: the beacon neighborhood is open (above the narrow threshold),
+    # so the open-beacon branch applies.
+    assert obs.clearance_to_walls_m >= 0.45
+    choice = collector.on_block(observation=obs, scene=scene, rng=rng)
     assert choice.route_target_id == 3
-    assert choice.primitive_name == "arc_right"
+    assert choice.primitive_name in ("yaw_left", "yaw_right")
 
 
 def test_route_teacher_rejects_stale_standoff_and_replans(registry):

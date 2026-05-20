@@ -365,3 +365,66 @@ def test_fixed_spawn_outside_restriction_list_falls_back():
     # Should fall back because cell 0 is not in restrict.
     assert source == "safety_fallback"
     assert cell_id == 2
+
+
+class _ClearanceStubGraph:
+    """Minimal scene-graph stub exposing only what _relax_spawn_floor uses.
+
+    ``clearances`` maps cell_id -> wall clearance. ``cell_center`` returns
+    the cell id encoded as an xy so ``clearance_to_walls`` can look it up.
+    """
+
+    def __init__(self, clearances: dict[int, float]):
+        self._clearances = clearances
+
+    @property
+    def n_nodes(self) -> int:
+        return len(self._clearances)
+
+    def cell_center(self, cell_id: int) -> tuple[float, float]:
+        return (float(cell_id), 0.0)
+
+    def clearance_to_walls(self, xy: tuple[float, float]) -> float:
+        return self._clearances[int(round(xy[0]))]
+
+
+def test_relax_spawn_floor_relaxes_until_min_candidates():
+    """When few cells pass the configured floor, the floor relaxes until at
+    least the minimum number of candidates qualify — this is what stops
+    room mazes collapsing onto the handful of high-clearance room cells."""
+
+    from lewm_genesis.rollout import _relax_spawn_floor
+
+    # 4 high-clearance "room" cells (0.49) and 40 lower-clearance "corridor"
+    # cells (0.28). Mirrors the medium room maze's bimodal clearance.
+    clearances = {i: 0.49 for i in range(4)}
+    clearances.update({i: 0.28 for i in range(4, 44)})
+    graph = _ClearanceStubGraph(clearances)
+
+    # Configured floor 0.45 alone admits only the 4 room cells (collapse).
+    passing_strict = [c for c, cl in clearances.items() if cl >= 0.45]
+    assert len(passing_strict) == 4
+
+    passing, floor = _relax_spawn_floor(
+        graph, list(clearances.keys()), 0.45, min_candidates=24, hard_min_m=0.20
+    )
+    # Relaxation must drop the floor below the 0.28 corridor plateau so the
+    # candidate set is large and corridor-inclusive.
+    assert floor <= 0.28 + 1e-9
+    assert len(passing) >= 24
+    assert any(clearances[c] == 0.28 for c in passing)  # corridors included
+
+
+def test_relax_spawn_floor_keeps_high_floor_when_enough_candidates():
+    """If the configured floor already admits enough cells (open scenes),
+    don't relax — high-clearance spawns are preferred where available."""
+
+    from lewm_genesis.rollout import _relax_spawn_floor
+
+    clearances = {i: 0.60 for i in range(30)}
+    graph = _ClearanceStubGraph(clearances)
+    passing, floor = _relax_spawn_floor(
+        graph, list(clearances.keys()), 0.45, min_candidates=24, hard_min_m=0.20
+    )
+    assert floor == pytest.approx(0.45)
+    assert len(passing) == 30

@@ -162,6 +162,63 @@ class RolloutConfig:
 
 _SPAWN_YAW_MIN_FREE_RAY_M = 0.60
 
+# Minimum blocks an env must spend in an episode before a route-completion
+# reset can fire — guards against reset thrash if a scene's beacons happen to
+# sit right next to the spawn (claimed in the first block or two).
+_MIN_BLOCKS_BEFORE_COMPLETE_RESET = 2
+
+# Adaptive spawn-floor relaxation. The configured ``spawn_clearance_floor_m``
+# (0.45) was tuned for the wide-celled legacy mazes. Rooms-and-corridors
+# mazes have ~0.28 m corridor clearance, so at 0.45 only the few
+# high-clearance room-interior cells qualify — collapsing every env onto a
+# handful of identical spawns (the deterministic route teacher then traces
+# identical trajectories) and parking spawns on top of beacons instead of in
+# the corridors. To keep spawns diverse *and* corridor-biased, relax the
+# floor in steps until at least ``_MIN_SPAWN_CANDIDATES`` cells qualify,
+# never going below ``_SPAWN_FLOOR_HARD_MIN_M`` (the grid inflation). A
+# generous minimum is what pulls the floor below the room-cell clearance
+# plateau so corridor cells re-enter the candidate set.
+_MIN_SPAWN_CANDIDATES = 24
+_SPAWN_FLOOR_HARD_MIN_M = 0.20
+_SPAWN_FLOOR_RELAX_STEP_M = 0.05
+
+
+def _relax_spawn_floor(
+    scene_graph: Any,
+    candidate_cells: list[int],
+    configured_floor_m: float,
+    *,
+    min_candidates: int = _MIN_SPAWN_CANDIDATES,
+    hard_min_m: float = _SPAWN_FLOOR_HARD_MIN_M,
+    step_m: float = _SPAWN_FLOOR_RELAX_STEP_M,
+) -> tuple[tuple[int, ...], float]:
+    """Return ``(passing_cells, effective_floor)`` after adaptive relaxation.
+
+    Walks the floor down from ``configured_floor_m`` to ``hard_min_m`` in
+    ``step_m`` steps and stops at the highest floor that admits at least
+    ``min_candidates`` cells. If even the hard minimum cannot reach the
+    target (small scene), returns whatever passes the hard minimum — or,
+    failing that, all candidate cells.
+    """
+
+    clearances = {
+        cid: float(scene_graph.clearance_to_walls(scene_graph.cell_center(int(cid))))
+        for cid in candidate_cells
+        if 0 <= int(cid) < scene_graph.n_nodes
+    }
+    floor = float(configured_floor_m)
+    best_passing: tuple[int, ...] = ()
+    while floor >= hard_min_m - 1e-9:
+        passing = tuple(c for c, cl in clearances.items() if cl >= floor)
+        if len(passing) >= int(min_candidates):
+            return passing, floor
+        best_passing = passing  # remember the most permissive non-empty set
+        floor -= step_m
+    passing_hard = tuple(c for c, cl in clearances.items() if cl >= hard_min_m)
+    if passing_hard:
+        return passing_hard, hard_min_m
+    return (best_passing or tuple(clearances.keys())), hard_min_m
+
 
 def _wxyz_from_yaw(yaw_rad: float) -> tuple[float, float, float, float]:
     half = float(yaw_rad) * 0.5
@@ -263,28 +320,22 @@ def _select_spawn_pose(
     if scene_graph is None:
         return manifest_xyz_t, manifest_quat_t, -1, "manifest"
 
-    # When a restriction list is provided, prefer cells that still pass
-    # the configured wall-clearance floor — the locomotion policy is much
-    # happier starting in roomy cells. If *no* restricted cell passes the
-    # floor (the common case for narrow-corridor motifs where every cell
-    # sits at ~0.30 m clearance), relax to the planning-grid inflation
-    # (~0.20 m) so we still draw from canonical cells instead of falling
-    # back to the wedged manifest pose.
+    # Resolve the spawn-candidate set with adaptive floor relaxation. The
+    # configured floor is relaxed per-scene until at least
+    # ``_MIN_SPAWN_CANDIDATES`` cells qualify (down to the grid inflation),
+    # so narrow-corridor room mazes don't collapse onto the handful of
+    # high-clearance room-interior cells (which destroys per-env spawn
+    # diversity and parks spawns on beacons). See ``_relax_spawn_floor``.
+    base_cells = (
+        [int(c) for c in restrict_to_cells]
+        if restrict_to_cells
+        else list(range(scene_graph.n_nodes))
+    )
+    passing, effective_floor = _relax_spawn_floor(
+        scene_graph, base_cells, float(clearance_floor_m)
+    )
     if restrict_to_cells:
-        passing = [
-            cid
-            for cid in restrict_to_cells
-            if 0 <= int(cid) < scene_graph.n_nodes
-            and scene_graph.clearance_to_walls(scene_graph.cell_center(int(cid)))
-            >= float(clearance_floor_m)
-        ]
-        if passing:
-            restrict_to_cells = tuple(int(c) for c in passing)
-            effective_floor = float(clearance_floor_m)
-        else:
-            effective_floor = min(float(clearance_floor_m), 0.20)
-    else:
-        effective_floor = float(clearance_floor_m)
+        restrict_to_cells = passing if passing else tuple(base_cells)
 
     if randomize:
         xyz, wxyz, cell_id = scene_graph.sample_spawn_pose(
@@ -740,6 +791,10 @@ class RolloutRunner:
         # ray from the spawn xy. Built lazily on first reset; reused across
         # episodes for the same scene.
         self._spawn_planning_grid: Any | None = None
+        # Count of route episodes a non-revisit teacher finished (claimed
+        # every beacon) and was respawned for, per env. Reported in the
+        # summary so the data pipeline can see episodes-per-scene.
+        self._per_env_route_completions = np.zeros(self.n_envs, dtype=np.int64)
 
     # ------------------------------------------------------------------
     # Public API
@@ -777,6 +832,7 @@ class RolloutRunner:
             self._last_executed = block.executed[:, -1, :]
             self._blocks_in_episode += 1
             self._check_and_reset_fallen_envs(writer, adapter)
+            self._check_and_reset_completed_envs(writer, adapter)
 
             if (
                 self.config.log_progress_every_blocks
@@ -804,6 +860,7 @@ class RolloutRunner:
                     "recovery_interlock_handoffs": int(
                         self._per_env_recovery_handoffs[env_idx]
                     ),
+                    "route_completions": int(self._per_env_route_completions[env_idx]),
                     "beacons_available": len(available_landmarks),
                     "beacons_achieved": len(achieved_landmarks),
                     "beacon_claim_ratio": (
@@ -1294,6 +1351,62 @@ class RolloutRunner:
             self._recovery_interlock_blocks_remaining[env_idx] = 0
             # New episode for this env: redraw the collector so the §13 mix
             # is preserved across resets, and let it clear its per-env state.
+            self._scheduler.on_episode_reset(int(env_idx))
+            writer.write_env(
+                env_idx, "reset_event", adapter.reset_event_record_to_msg(event), self._sim_time_ns
+            )
+
+    def _check_and_reset_completed_envs(self, writer: Any, adapter: Any) -> None:
+        """Respawn envs whose route teacher has claimed every beacon.
+
+        Without this an env that finishes its route early spends the rest of
+        the block budget emitting ``hold`` (~half the budget on a generous
+        tier) — a stationary robot that wastes compute and floods the dataset
+        with near-identical idle frames. Resetting starts a fresh route
+        episode from a new corridor spawn, so every env stays productive.
+
+        Revisit collectors (loop_revisit) are skipped: re-targeting cleared
+        beacons is their data signal, not wasted time. Non-route collectors
+        (frontier/ou_noise/recovery) never report all-claimed, so they run
+        their full budget as intended.
+        """
+
+        if self._scene_graph is None or not self._landmark_cell_to_id:
+            return
+        all_cells = {int(c) for c in self._landmark_cell_to_id}
+        to_reset: list[int] = []
+        for env_idx in range(self.n_envs):
+            if int(self._blocks_in_episode[env_idx]) < _MIN_BLOCKS_BEFORE_COMPLETE_RESET:
+                continue
+            policy = self._scheduler.policy_for(env_idx)
+            if not _is_route_like_policy(policy):
+                continue
+            if bool(getattr(policy, "revisit_after_arrival", False)):
+                continue
+            visited = getattr(policy, "visited_landmark_cells", None)
+            if not callable(visited):
+                continue
+            claimed = {int(c) for c in visited(env_idx)}
+            if all_cells.issubset(claimed):
+                to_reset.append(env_idx)
+        if not to_reset:
+            return
+        self._reset_robot_to_spawn(envs_idx=to_reset)
+        for env_idx in to_reset:
+            self._per_env_route_completions[env_idx] += 1
+            spawn_xyz = tuple(float(v) for v in self._spawn_xyz_per_env[env_idx])
+            spawn_wxyz = tuple(float(v) for v in self._spawn_quat_wxyz_per_env[env_idx])
+            event = self.episode_states[env_idx].reset(
+                reason="route_complete",
+                success=True,
+                spawn_pose_xyz=spawn_xyz,
+                spawn_pose_quat_xyzw=self._wxyz_to_xyzw(spawn_wxyz),
+                stamp_ns=self._sim_time_ns,
+            )
+            self._last_executed[env_idx] = 0.0
+            self._blocks_in_episode[env_idx] = 0
+            self._consecutive_tipped_blocks[env_idx] = 0
+            self._recovery_interlock_blocks_remaining[env_idx] = 0
             self._scheduler.on_episode_reset(int(env_idx))
             writer.write_env(
                 env_idx, "reset_event", adapter.reset_event_record_to_msg(event), self._sim_time_ns

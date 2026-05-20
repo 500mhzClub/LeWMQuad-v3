@@ -17,6 +17,7 @@ REPO_ROOT="$(lewm_repo_root)"
 cd "$REPO_ROOT"
 
 CORPUS_DIR="${CORPUS_DIR:-$REPO_ROOT/.generated/scene_corpus/production_20260518T231208Z}"
+SPLIT="${SPLIT:-train}"
 SCENE_LIMIT="${SCENE_LIMIT:-3}"
 N_ENVS="${N_ENVS:-4}"
 N_BLOCKS="${N_BLOCKS:-400}"
@@ -37,7 +38,7 @@ for fam in $FAMILIES; do
   echo "--- $fam ---"
   bash "$SCRIPT_DIR/genesis_bulk_rollout.sh" \
     --scene-corpus "$CORPUS_DIR" \
-    --split train \
+    --split "$SPLIT" \
     --family "$fam" \
     --scene-limit "$SCENE_LIMIT" \
     --n-envs "$N_ENVS" \
