@@ -306,6 +306,17 @@ def main() -> int:
                 writer.__exit__(Exception, None, None)
             except Exception:
                 pass
+            # Remove the partial scene directory the writer created before the
+            # blow-up. Otherwise the downstream raw-conversion/audit stage
+            # ([2/4] in run_mass_datagen.sh) walks rollout/*/ , converts the
+            # truncated MCAP, and fails the whole chunk on a scene we
+            # intentionally skipped.
+            import shutil as _shutil
+            partial_dir = getattr(writer, "bag_dir", None) or getattr(
+                writer, "summary_dir", None
+            )
+            if partial_dir is not None:
+                _shutil.rmtree(partial_dir, ignore_errors=True)
             import sys as _sys
             print(
                 f"[SKIP] scene={pack.scene_id} {type(exc).__name__}: {exc}",
