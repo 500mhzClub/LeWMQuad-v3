@@ -31,6 +31,7 @@ OUT=""
 SPLIT="train"
 FAMILY=""
 SCENE_LIMIT=""
+SCENE_OFFSET=""
 N_ENVS=4
 N_BLOCKS=1000
 BACKEND="cpu"
@@ -46,6 +47,7 @@ while [[ $# -gt 0 ]]; do
     --split) SPLIT="$2"; shift 2 ;;
     --family) FAMILY="$2"; shift 2 ;;
     --scene-limit) SCENE_LIMIT="$2"; shift 2 ;;
+    --scene-offset) SCENE_OFFSET="$2"; shift 2 ;;
     --n-envs) N_ENVS="$2"; shift 2 ;;
     --n-blocks) N_BLOCKS="$2"; shift 2 ;;
     --backend) BACKEND="$2"; shift 2 ;;
@@ -80,6 +82,7 @@ ROLLOUT_ARGS=(
 )
 [[ -n "$FAMILY" ]] && ROLLOUT_ARGS+=(--family "$FAMILY")
 [[ -n "$SCENE_LIMIT" ]] && ROLLOUT_ARGS+=(--scene-limit "$SCENE_LIMIT")
+[[ -n "$SCENE_OFFSET" ]] && ROLLOUT_ARGS+=(--scene-offset "$SCENE_OFFSET")
 [[ -n "$COLLECTOR_MIX" ]] && ROLLOUT_ARGS+=(--collector-mix "$COLLECTOR_MIX")
 bash "$SCRIPT_DIR/genesis_bulk_rollout.sh" "${ROLLOUT_ARGS[@]}"
 

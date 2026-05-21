@@ -378,3 +378,30 @@ also reduce wall-staring low-info frames. 166 base-python tests pass (+5 new
 **How to apply:** keep textures render-side; never bake them into rollouts.
 Adding/replacing maps = drop `*_Color.jpg` (CC0) into the category dir; tiling
 density is `textures._DEFAULT_TILES_PER_M`.
+
+## Design Decisions / 2026-05-21 — Proceed at minimum tier (§7.2), defer scaling
+
+**Decision:** generate the full dataset at the **§7.2 minimum tier** on the
+current corpus `minimum_tex_20260520T211541Z` (1000 train + 150/150/150
+val/test_id/test_hard, family split exactly per §8). Do **not** scale to the
+§7.1 full tier (2400 train) now. If the v3 Phase-A diagnostic warrants it,
+**resize the encoder/predictor and add scene diversity later** rather than
+pre-emptively collecting more.
+
+**Why:** the LeWM model is small — ViT-Tiny encoder (~5.5M params) + DiT-style
+6-layer TransformerPredictor (~9M) ≈ **~15-16M trainable** (see
+`architecture_talking_points.md` §4). Vision-SSL at this scale is
+*capacity-limited, not data-limited*: the minimum tier already renders ~43M
+egocentric frames (1000×48×~900 raw steps @ 0.10 s/step), far exceeding what a
+Tiny encoder needs. The real generalization lever is **scene diversity (1000 vs
+2400 topologies)**, not volume — and §7.3 already says "scene count beats
+per-scene env count." The minimum tier is sufficient for the falsifiable
+Phase-A diagnostic (does a frozen-latent reachability probe preserve graph
+geometry); committing the ~1,200 sim-hours of the minimum tier now and scaling
+only if the diagnostic is promising is the cheaper path. If we do scale later,
+prefer **fewer streams × more scenes** (e.g. 24-32 streams × 1500-2000 scenes)
+over the nominal 48-64 streams, for better diversity-per-FLOP.
+
+**How to apply:** treat the current corpus as final for this retrain. Frame any
+minimum-tier result as diagnostic-grade (§7.2 caveat). Revisit model size +
+scene count together, not data volume alone, if Phase A is inconclusive.

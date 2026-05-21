@@ -82,6 +82,8 @@ def main() -> int:
     parser.add_argument("--split", default="train")
     parser.add_argument("--family", default=None)
     parser.add_argument("--scene-limit", type=int, default=1)
+    parser.add_argument("--scene-offset", type=int, default=0,
+                        help="Skip the first N scenes (after stable name sort) before applying --scene-limit. Enables concurrent chunked sub-shards.")
     parser.add_argument("--n-envs", type=int, default=1)
     parser.add_argument("--n-blocks", type=int, default=2)
     parser.add_argument(
@@ -202,6 +204,10 @@ def main() -> int:
         n_blocks = max(1, math.ceil(int(args.steps) / int(registry.block_size)))
 
     scene_dirs = find_scene_dirs(scene_corpus, split=args.split, family=args.family)
+    scene_dirs = sorted(scene_dirs, key=lambda p: p.name)  # stable order for offset chunking
+    offset = max(0, int(getattr(args, "scene_offset", 0) or 0))
+    if offset:
+        scene_dirs = scene_dirs[offset:]
     if args.scene_limit:
         scene_dirs = scene_dirs[: max(0, int(args.scene_limit))]
     if not scene_dirs:
@@ -288,9 +294,27 @@ def main() -> int:
         writer = writer_cls(pack, out_root, n_envs=int(args.n_envs))
         try:
             stats = runner.run(writer)
-        except BaseException:
+        except KeyboardInterrupt:
             writer.__exit__(Exception, None, None)
             raise
+        except Exception as exc:
+            # A single scene blowing up (e.g. rigid-solver NaN on aggressive
+            # rough-terrain physics) must not kill a whole bulk shard. Log it,
+            # record it as skipped, and move on so the rest of the chunk (and
+            # its resume marker) still complete.
+            try:
+                writer.__exit__(Exception, None, None)
+            except Exception:
+                pass
+            import sys as _sys
+            print(
+                f"[SKIP] scene={pack.scene_id} {type(exc).__name__}: {exc}",
+                file=_sys.stderr,
+            )
+            run_summary.setdefault("skipped_scenes", []).append(
+                {"scene": pack.scene_id, "error": f"{type(exc).__name__}: {exc}"}
+            )
+            continue
         summary_path = writer.close(
             extra_summary={
                 "rollout_stats": stats,

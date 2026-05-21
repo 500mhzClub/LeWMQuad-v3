@@ -54,6 +54,20 @@ def main() -> int:
     )
     parser.add_argument("--no-depth", action="store_true")
     parser.add_argument(
+        "--depth-validate-only",
+        action="store_true",
+        help="Render depth for the camera-validity gate but do not persist the .npy "
+        "(depth is not a training input; this avoids ~1.2MB/frame of storage).",
+    )
+    parser.add_argument(
+        "--store-resolution",
+        choices=("native", "training"),
+        default="native",
+        help="Resolution of the stored RGB. 'training' downsamples to the platform "
+        "manifest's training_resolution (e.g. 224x224) — what the encoder consumes — "
+        "while still rendering+validating at native resolution.",
+    )
+    parser.add_argument(
         "--rgb-format",
         choices=("png", "npy"),
         default="png",
@@ -123,7 +137,13 @@ def main() -> int:
     rgb_dir = output_dir / "rgb"
     depth_dir = output_dir / "depth"
     rgb_dir.mkdir(parents=True, exist_ok=True)
-    if not args.no_depth:
+    # Depth is rendered for the camera-validity gate whenever it is enabled, but
+    # only persisted to disk when not in validate-only mode (it is not a
+    # training input). render_depth drives rendering+validation; persist_depth
+    # drives the .npy write.
+    render_depth = not args.no_depth
+    persist_depth = render_depth and not args.depth_validate_only
+    if persist_depth:
         depth_dir.mkdir(parents=True, exist_ok=True)
 
     platform = load_platform_manifest(platform_path)
@@ -152,24 +172,37 @@ def main() -> int:
         show_viewer=bool(args.show_viewer),
         render_robot=render_robot,
         apply_textures=bool(args.textures),
+        batched_camera=args.replay_env_mode == "batched",
     )
     leg_dof_idx = _resolve_rollout_leg_dof_indices(build.robot)
     overview_pose = _overview_camera_pose(pack) if args.camera_mode == "overview" else None
     camera_safety_config = camera_safety_config_from_pack(pack)
     mount_xyz_body, mount_rpy_body = effective_camera_mount_xyz_rpy(pack)
 
+    store_resolution_wh = (
+        tuple(int(v) for v in pack.camera.training_resolution)
+        if args.store_resolution == "training"
+        else None
+    )
+
     metadata_path = output_dir / "frames_rendered.jsonl"
     records: list[dict[str, Any]] = []
     wall_start = time.time()
     with metadata_path.open("w", encoding="utf-8") as stream:
-        for frame in frames:
-            record = _render_frame(
-                frame,
+        def _emit(record: dict[str, Any]) -> None:
+            records.append(record)
+            stream.write(json.dumps(record, sort_keys=True, separators=(",", ":")))
+            stream.write("\n")
+
+        if args.replay_env_mode == "batched":
+            _render_frames_batched(
+                frames,
                 build,
                 leg_dof_idx,
                 rgb_dir=rgb_dir,
-                depth_dir=None if args.no_depth else depth_dir,
-                target_env_index=0 if args.replay_env_mode == "single" else None,
+                depth_dir=depth_dir if persist_depth else None,
+                render_depth=render_depth,
+                store_resolution_wh=store_resolution_wh,
                 rgb_format=args.rgb_format,
                 camera_mode=args.camera_mode,
                 overview_pose=overview_pose,
@@ -178,10 +211,30 @@ def main() -> int:
                 mount_rpy_body=mount_rpy_body,
                 scene_graph=pack.scene_graph,
                 overlay_target_label=bool(args.overlay_target_label),
+                on_record=_emit,
             )
-            records.append(record)
-            stream.write(json.dumps(record, sort_keys=True, separators=(",", ":")))
-            stream.write("\n")
+        else:
+            for frame in frames:
+                _emit(
+                    _render_frame(
+                        frame,
+                        build,
+                        leg_dof_idx,
+                        rgb_dir=rgb_dir,
+                        depth_dir=depth_dir if persist_depth else None,
+                        render_depth=render_depth,
+                        store_resolution_wh=store_resolution_wh,
+                        target_env_index=0,
+                        rgb_format=args.rgb_format,
+                        camera_mode=args.camera_mode,
+                        overview_pose=overview_pose,
+                        camera_safety_config=camera_safety_config,
+                        mount_xyz_body=mount_xyz_body,
+                        mount_rpy_body=mount_rpy_body,
+                        scene_graph=pack.scene_graph,
+                        overlay_target_label=bool(args.overlay_target_label),
+                    )
+                )
 
     invalid = [r for r in records if not r["camera_valid"]]
     low_info = [r for r in records if r.get("low_info_reasons")]
@@ -328,6 +381,8 @@ def _render_frame(
     *,
     rgb_dir: Path,
     depth_dir: Path | None,
+    render_depth: bool = True,
+    store_resolution_wh: tuple[int, int] | None = None,
     target_env_index: int | None,
     rgb_format: str,
     camera_mode: str,
@@ -352,18 +407,57 @@ def _render_frame(
         mount_xyz_body=mount_xyz_body,
         mount_rpy_body=mount_rpy_body,
     )
-    rendered = build.camera.render(rgb=True, depth=depth_dir is not None, force_render=True)
+    rendered = build.camera.render(rgb=True, depth=render_depth, force_render=True)
     rgb, depth = _extract_render_outputs(rendered)
     rgb = _select_env(rgb, render_env_index)
     depth = _select_env(depth, render_env_index) if depth is not None else None
 
-    rgb = _maybe_overlay_target_label(
+    return _finalize_env_record(
         rgb,
+        depth,
         frame,
+        env_index=env_index,
+        render_env_index=render_env_index,
+        camera_pose=camera_pose,
+        camera_safety=camera_safety,
+        render_depth=render_depth,
+        store_resolution_wh=store_resolution_wh,
+        rgb_dir=rgb_dir,
+        depth_dir=depth_dir,
+        rgb_format=rgb_format,
+        camera_mode=camera_mode,
         scene_graph=scene_graph,
-        enabled=overlay_target_label,
+        overlay_target_label=overlay_target_label,
     )
 
+
+def _finalize_env_record(
+    rgb: np.ndarray | None,
+    depth: np.ndarray | None,
+    frame: dict[str, Any],
+    *,
+    env_index: int,
+    render_env_index: int,
+    camera_pose: Any,
+    camera_safety: Any,
+    render_depth: bool,
+    store_resolution_wh: tuple[int, int] | None,
+    rgb_dir: Path,
+    depth_dir: Path | None,
+    rgb_format: str,
+    camera_mode: str,
+    scene_graph: Any,
+    overlay_target_label: bool,
+) -> dict[str, Any]:
+    """Validate, overlay, resize, and write one env's rendered frame.
+
+    Shared by the single-frame path and the batched-keep-all path so both
+    produce identical per-frame records and on-disk layout.
+    """
+
+    rgb = _maybe_overlay_target_label(
+        rgb, frame, scene_graph=scene_graph, enabled=overlay_target_label
+    )
     frame_index = int(frame["frame_index"])
     stem = f"frame_{frame_index:06d}_env_{env_index:02d}"
     rgb_path = rgb_dir / f"{stem}.{rgb_format}"
@@ -371,7 +465,7 @@ def _render_frame(
     camera_valid, invalid_reasons, rgb_stats, depth_stats = _validate_frame(
         rgb,
         depth,
-        require_depth=depth_dir is not None,
+        require_depth=render_depth,
         camera_safety=camera_safety,
         apply_low_info_gates=camera_mode == "replay",
     )
@@ -389,7 +483,12 @@ def _render_frame(
         ]
         camera_valid = not invalid_reasons
     if rgb is not None:
-        _write_rgb_frame(rgb, rgb_path, rgb_format=rgb_format)
+        rgb_store = (
+            _resize_rgb(rgb, store_resolution_wh)
+            if store_resolution_wh is not None
+            else rgb
+        )
+        _write_rgb_frame(rgb_store, rgb_path, rgb_format=rgb_format)
     if depth is not None and depth_path is not None:
         np.save(depth_path, np.asarray(depth, dtype=np.float32))
 
@@ -416,6 +515,88 @@ def _render_frame(
             "canonical_topic": frame.get("canonical_topic"),
         },
     }
+
+
+def _render_frames_batched(
+    frames: list[dict[str, Any]],
+    build: Any,
+    leg_dof_idx: np.ndarray,
+    *,
+    rgb_dir: Path,
+    depth_dir: Path | None,
+    render_depth: bool,
+    store_resolution_wh: tuple[int, int] | None,
+    rgb_format: str,
+    camera_mode: str,
+    overview_pose: dict[str, list[float]] | None,
+    camera_safety_config: Any,
+    mount_xyz_body: tuple[float, float, float],
+    mount_rpy_body: tuple[float, float, float],
+    scene_graph: Any,
+    overlay_target_label: bool,
+    on_record: Any,
+) -> None:
+    """Render all envs per timestep in ONE camera.render() call, keep all.
+
+    Groups source frames by ``frame_index`` (timestep), applies every env's
+    base pose / joints / camera pose, renders the batched camera once (rgb
+    shape ``(n_envs, H, W, 3)``), then finalizes every present env from that
+    single render. This is the efficient path: one render dispatch produces one
+    frame per parallel rollout stream instead of one render per stream-frame.
+    """
+
+    from collections import defaultdict
+
+    # Group by sim timestamp (shared across envs) so each render() call covers
+    # all envs at one timestep. frame_index is globally unique per (env, step),
+    # so grouping on it would defeat batching (one render per frame).
+    groups: dict[int, dict[int, dict[str, Any]]] = defaultdict(dict)
+    for frame in frames:
+        groups[int(frame["timestamp_ns"])][int(frame.get("env_index") or 0)] = frame
+
+    for timestamp_ns in sorted(groups):
+        group = groups[timestamp_ns]
+        pose_by_env: dict[int, tuple[Any, Any]] = {}
+        for env_index, frame in group.items():
+            _apply_robot_state(frame, build.robot, leg_dof_idx, env_index)
+            camera_pose, camera_safety = _apply_camera_pose(
+                frame,
+                build.camera,
+                env_index,
+                camera_mode=camera_mode,
+                overview_pose=overview_pose,
+                objects=build.pack.static_objects,
+                camera_safety_config=camera_safety_config,
+                mount_xyz_body=mount_xyz_body,
+                mount_rpy_body=mount_rpy_body,
+            )
+            pose_by_env[env_index] = (camera_pose, camera_safety)
+
+        rendered = build.camera.render(rgb=True, depth=render_depth, force_render=True)
+        rgb_all, depth_all = _extract_render_outputs(rendered)
+
+        for env_index, frame in group.items():
+            rgb_e = _select_env(rgb_all, env_index)
+            depth_e = _select_env(depth_all, env_index) if depth_all is not None else None
+            camera_pose, camera_safety = pose_by_env[env_index]
+            record = _finalize_env_record(
+                rgb_e,
+                depth_e,
+                frame,
+                env_index=env_index,
+                render_env_index=env_index,
+                camera_pose=camera_pose,
+                camera_safety=camera_safety,
+                render_depth=render_depth,
+                store_resolution_wh=store_resolution_wh,
+                rgb_dir=rgb_dir,
+                depth_dir=depth_dir,
+                rgb_format=rgb_format,
+                camera_mode=camera_mode,
+                scene_graph=scene_graph,
+                overlay_target_label=overlay_target_label,
+            )
+            on_record(record)
 
 
 def _is_recovery_context(command_context: Any) -> bool:
@@ -452,6 +633,23 @@ def _maybe_overlay_target_label(
     draw.rectangle([5, 5, 220, 25], fill=(0, 0, 0, 128))
     draw.text((10, 10), text, fill=(255, 255, 255))
     return np.array(img)
+
+
+def _resize_rgb(rgb: np.ndarray, size_wh: tuple[int, int]) -> np.ndarray:
+    """Downsample the rendered RGB to the stored (training) resolution.
+
+    Rendering happens at the camera's native resolution (for correct projection
+    and the depth-clipping validity gate); the encoder consumes a smaller image,
+    so the stored frame is resized here with Lanczos resampling.
+    """
+
+    w, h = int(size_wh[0]), int(size_wh[1])
+    arr = np.asarray(rgb, dtype=np.uint8)
+    if arr.shape[1] == w and arr.shape[0] == h:
+        return arr
+    return np.asarray(
+        Image.fromarray(arr).resize((w, h), Image.LANCZOS), dtype=np.uint8
+    )
 
 
 def _write_rgb_frame(rgb: np.ndarray, path: Path, *, rgb_format: str) -> None:

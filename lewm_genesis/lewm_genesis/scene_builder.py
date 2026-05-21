@@ -148,6 +148,7 @@ def build_scene_from_pack(
     show_viewer: bool = False,
     render_robot: bool = True,
     apply_textures: bool = False,
+    batched_camera: bool = False,
 ) -> SceneBuild:
     """Build a Genesis scene with ``n_envs`` parallel envs from a ``ScenePack``.
 
@@ -160,14 +161,23 @@ def build_scene_from_pack(
     gs = _import_genesis()
     initialize_genesis(backend=backend, seed=pack.physics_seed)
 
-    scene = gs.Scene(
-        sim_options=gs.options.SimOptions(
+    scene_kwargs: dict[str, Any] = {
+        "sim_options": gs.options.SimOptions(
             dt=float(pack.timing.physics_dt_s),
             gravity=(0.0, 0.0, -9.81),
         ),
-        show_viewer=bool(show_viewer),
-        renderer=gs.renderers.Rasterizer(),
-    )
+        "show_viewer": bool(show_viewer),
+        "renderer": gs.renderers.Rasterizer(),
+    }
+    # Batched rendering: env_separate_rigid makes a single (env_idx=None) camera
+    # render ALL envs in one call (rgb shape (n_envs, H, W, 3)), so a scene's
+    # parallel rollout streams render together instead of one-per-call.
+    if batched_camera and int(n_envs) > 1:
+        scene_kwargs["vis_options"] = gs.options.VisOptions(
+            env_separate_rigid=True,
+            rendered_envs_idx=list(range(int(n_envs))),
+        )
+    scene = gs.Scene(**scene_kwargs)
 
     floor_material = _floor_material(gs, pack)
     obstacle_material = _obstacle_material(gs, pack)
