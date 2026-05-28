@@ -151,22 +151,24 @@ Ordered by leverage. None of these require re-collecting data.
       (`route_teacher + frontier + loop_revisit`), filtered at the dataloader
       by `command_source`. Treat this as a hyperparameter to sweep, not a
       number to commit to.
-  - File to wire it into: the LeWM training dataloader (whichever index file
-    selects `messages.jsonl` rows). Filter on
-    `command_source ∈ {ou_noise, primitive_curriculum, ...}`.
-- [ ] **Add marginal-isotropy audits to per-scene `summary.json`.**
-      `rollout.py:890` already writes `collector_mix_realized`. Add three
-      more, computed during the rollout:
-      1. Heading-bin histogram per cell (e.g. 12 yaw bins × N visited cells)
-         → entropy and per-cell coverage.
-      2. Action-primitive marginal histogram → entropy.
-      3. `(vx, yaw_rate)` 2-D histogram → entropy.
-      Surface them per-collector (use the stamped `command_source`) so the
-      effect of the encoder-training subset filter is auditable directly.
-  - Cheap: all inputs already exist in the rollout state.
-- [ ] **Cross-reference this analysis from
-      [collection_policy.md](collection_policy.md)** so the next person who
-      reads the §13 share table sees the encoder-vs-head distinction.
+  - The contract is documented in §7 below: every dataloader row already
+    carries `command_source`, so this is a dataloader-side filter, no
+    re-collection needed. The LeWM trainer lives outside this repo;
+    implement the filter where the trainer reads `messages.jsonl`.
+- [x] **Per-scene marginal-isotropy audit, per collector.** Each
+      per-scene `summary.json` now carries `marginal_isotropy[source]` with
+      `blocks`, `distinct_cells`, `distinct_cell_yaw_bins`,
+      `mean_per_cell_yaw_entropy_nats`,
+      `max_per_cell_yaw_entropy_nats`, `primitive_entropy_nats`, and the
+      per-source `primitive_counts` histogram. The corpus-level
+      aggregation is in
+      `scripts/audit_jepa_corpus.py::marginal_isotropy_by_source`.
+      Implementation:
+      [`rollout.py::_summarize_marginal_isotropy`](../lewm_genesis/lewm_genesis/rollout.py),
+      tests in
+      [`tests/test_marginal_isotropy.py`](../lewm_genesis/lewm_genesis/tests/test_marginal_isotropy.py).
+- [x] **Cross-reference this analysis from
+      [collection_policy.md](collection_policy.md).**
 
 ### Priority 2 — Worth doing before the next major LeWM training run
 
@@ -207,7 +209,134 @@ Ordered by leverage. None of these require re-collecting data.
   privileged cell labels sidesteps the Gaussian-marginal issue entirely
   ([v3_hjepa_plan.md §3.4](v3_hjepa_plan.md) already makes this argument).
 
-## 6. Bottom line
+## 6. LeWM training subset filter contract
+
+The LeWM trainer lives outside this repo. This is the dataloader-side
+contract it should honour to consume the encoder-favourable subset.
+
+**Inputs already in the corpus.** Every emitted `CommandBlock` carries
+`command_source ∈ {route_teacher, frontier, primitive_curriculum,
+ou_noise, recovery, loop_revisit}`
+(see [collection_policy.md](collection_policy.md) "Privileged-label
+outputs"). The same field lands in compact `messages.jsonl` rows and is
+preserved through the render-replay path
+(`lewm_genesis/lewm_genesis/render_replay.py:197`). No re-collection is
+required.
+
+**Recommended starting filter** for the LeWM training stage:
+
+```python
+LEWM_ISOTROPIC_SOURCES = {"ou_noise", "primitive_curriculum"}
+LEWM_PERMITTED_SOURCES = LEWM_ISOTROPIC_SOURCES | {
+    "route_teacher", "frontier", "loop_revisit",
+}
+
+# Per row r in messages.jsonl:
+def keep_for_lewm(r) -> bool:
+    return r.get("command_source") in LEWM_PERMITTED_SOURCES
+
+# Then per-source weights when building the training index:
+LEWM_SOURCE_WEIGHTS = {
+    "ou_noise": 0.30,
+    "primitive_curriculum": 0.20,
+    "route_teacher": 0.20,
+    "frontier": 0.20,
+    "loop_revisit": 0.10,
+}
+```
+
+Notes:
+
+- `recovery` is excluded by default. Wall-contact-conditioned trajectories
+  are the *most* concentrated marginal in the corpus and dominate the OU
+  signal if let in. Re-include only if a planned downstream head wants
+  contact frames.
+- Downstream-head trainers (Reachability, BeliefEncoder, GoalAdapter) keep
+  the full §13 mix — no filter — because they consume privileged labels
+  that only the teachers produce.
+- Treat the weights as a hyperparameter to sweep (see Priority-2
+  ablation), not a number to commit to.
+
+## 7. Commands for the next build
+
+Run after `scripts/build_go2_sim.sh`. The two stages — per-scene audit
+emission and corpus-level aggregation — are independent; you can run the
+aggregator against any existing run that has the updated `summary.json`
+schema.
+
+### 7.1 Verify the unit tests pass
+
+```bash
+# From the repo root, with lewm_worlds + lewm_genesis on PYTHONPATH (the
+# colcon overlay does this automatically; the explicit PYTHONPATH below
+# only matters on the dev box without an overlay).
+PYTHONPATH=lewm_genesis:lewm_worlds \
+  python -m pytest \
+  lewm_genesis/lewm_genesis/tests/test_marginal_isotropy.py -v
+```
+
+Expected: 3 passed.
+
+### 7.2 Confirm the per-scene audit lands in the next rollout
+
+```bash
+# Smoke a single-scene pilot under the existing P1 ramp recipe.
+scripts/genesis_bulk_rollout.sh \
+  --scene-corpus .generated/scene_corpus/acceptance \
+  --split train \
+  --scene-limit 1 \
+  --n-envs 512 \
+  --n-blocks 20 \
+  --backend cpu \
+  --no-rgb \
+  --out .generated/genesis_bulk_rollouts/lejepa_audit_pilot
+
+# Inspect the new field. Expect one entry per command source the
+# scheduler drew, with `blocks > 0`.
+python -c "import json, pathlib; \
+  p=next(pathlib.Path('.generated/genesis_bulk_rollouts/lejepa_audit_pilot').glob('*/summary.json')); \
+  print(json.dumps(json.loads(p.read_text())['stats']['marginal_isotropy'], indent=2))"
+```
+
+### 7.3 Aggregate across a full corpus
+
+After a mass-datagen run that produced `rollout/<scene>/summary.json` for
+every scene:
+
+```bash
+scripts/audit_jepa_corpus.py <mass-datagen-root> \
+  --out .generated/audits/jepa_corpus_audit.json
+
+# Pretty-print the per-collector marginal-isotropy roll-up.
+python -c "import json; \
+  a=json.load(open('.generated/audits/jepa_corpus_audit.json')); \
+  print(json.dumps(a['marginal_isotropy_by_source'], indent=2))"
+```
+
+What to look for, by collector:
+
+- `ou_noise` and `primitive_curriculum`: `mean_per_cell_yaw_entropy_nats`
+  close to `max_per_cell_yaw_entropy_nats` (≈ 2.485 for the default 12
+  yaw bins) and high `primitive_entropy_nats` (≥ 1.5 nats over 5+
+  trainable primitives ≈ uniform).
+- `route_teacher`, `frontier`, `loop_revisit`: expect lower
+  `mean_per_cell_yaw_entropy_nats` and lower `primitive_entropy_nats`
+  (these collectors concentrate toward `forward_medium`); this is the
+  exact signal the paper warns about.
+- `recovery`: expect the lowest entropies and a strong bias to
+  `backward` + `yaw_*` primitives — confirms wall-contact concentration.
+- `distinct_cell_yaw_bins_sum`: a coverage number; bigger is better, and
+  the gap between `ou_noise` and the teachers is the directly auditable
+  version of "the encoder shard is more isotropic than the head shard."
+
+### 7.4 Pilot ablation (Priority 2, when you're ready)
+
+Once a corpus is in hand, run two LeWM training shards: one on the full
+§13 mix, one filtered per §6. Compare on the diagnostics listed in §5
+Priority 2 of this doc. There is nothing to wire in this repo for that —
+the filter is in the trainer's dataloader.
+
+## 8. Bottom line
 
 The strongest takeaway from the paper for v3 is narrow and actionable: **the
 goal-directed share of the §13 mix is a quiet tax on LeWM identifiability**,
