@@ -31,11 +31,70 @@ import pickle
 import random
 import sys
 import time
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Protocol
 
 import numpy as np
+
+
+def _summarize_marginal_isotropy(
+    *,
+    block_counts: dict[str, int],
+    cell_yaw_counts: dict[str, dict[int, np.ndarray]],
+    primitive_counts: dict[str, "Counter[str]"],
+    yaw_bins: int,
+) -> dict[str, dict[str, Any]]:
+    """Per-collector marginal-isotropy stats for the per-scene summary.
+
+    The LeJEPA identifiability theory (see
+    docs/lejepa_identifiability_analysis.md) is sensitive to whether the
+    per-collector marginal over (cell, heading) and over actions is
+    isotropic. These three numbers — cell × yaw-bin coverage, mean
+    per-cell yaw entropy, and primitive entropy — make that auditable
+    without touching the raw trajectories.
+
+    Cell-yaw counts are keyed (source -> cell_id -> 1-D histogram of
+    length ``yaw_bins``). Primitive counts are keyed (source ->
+    Counter[name]). Returns one dict per source.
+    """
+
+    result: dict[str, dict[str, Any]] = {}
+    max_entropy = float(np.log(max(int(yaw_bins), 1)))
+    for source, block_count in block_counts.items():
+        cells = cell_yaw_counts.get(source, {})
+        primitives = primitive_counts.get(source, Counter())
+        distinct_cells = len(cells)
+        distinct_cell_yaw = sum(int((arr > 0).sum()) for arr in cells.values())
+        per_cell_entropies: list[float] = []
+        for arr in cells.values():
+            total = float(arr.sum())
+            if total <= 0.0:
+                continue
+            probs = arr.astype(np.float64) / total
+            nz = probs[probs > 0.0]
+            per_cell_entropies.append(float(-(nz * np.log(nz)).sum()))
+        mean_yaw_entropy = (
+            float(np.mean(per_cell_entropies)) if per_cell_entropies else 0.0
+        )
+        prim_total = float(sum(primitives.values()))
+        if prim_total > 0.0:
+            probs = np.array(list(primitives.values()), dtype=np.float64) / prim_total
+            nz = probs[probs > 0.0]
+            prim_entropy = float(-(nz * np.log(nz)).sum())
+        else:
+            prim_entropy = 0.0
+        result[source] = {
+            "blocks": int(block_count),
+            "distinct_cells": int(distinct_cells),
+            "distinct_cell_yaw_bins": int(distinct_cell_yaw),
+            "mean_per_cell_yaw_entropy_nats": mean_yaw_entropy,
+            "max_per_cell_yaw_entropy_nats": max_entropy,
+            "primitive_entropy_nats": prim_entropy,
+            "primitive_counts": dict(primitives),
+        }
+    return result
 
 from lewm_genesis.camera_safety import (
     camera_safety_config_from_pack,
@@ -751,6 +810,14 @@ class RolloutRunner:
         self._per_env_recovery_handoffs: np.ndarray = np.zeros(self.n_envs, dtype=np.int64)
         self._per_env_achieved_landmarks: list[set[str]] = [set() for _ in range(self.n_envs)]
 
+        # Per-collector marginal-isotropy counters surfaced via run() — used
+        # by the data-isotropy audit. See
+        # docs/lejepa_identifiability_analysis.md for the motivation.
+        self._isotropy_yaw_bins: int = 12
+        self._isotropy_block_counts: dict[str, int] = {}
+        self._isotropy_cell_yaw_counts: dict[str, dict[int, np.ndarray]] = {}
+        self._isotropy_primitive_counts: dict[str, Counter[str]] = {}
+
         # Build the collector bench + scheduler. ``scene_graph`` may be None
         # on legacy ScenePack instances built in tests; in that case fall
         # back to the legacy uniform random sampler.
@@ -888,6 +955,12 @@ class RolloutRunner:
             "wall_seconds": wall_total,
             "final_sim_time_s": self._sim_time_ns / 1e9,
             "collector_mix_realized": self._scheduler.realized_mix(),
+            "marginal_isotropy": _summarize_marginal_isotropy(
+                block_counts=self._isotropy_block_counts,
+                cell_yaw_counts=self._isotropy_cell_yaw_counts,
+                primitive_counts=self._isotropy_primitive_counts,
+                yaw_bins=self._isotropy_yaw_bins,
+            ),
             "per_env_metrics": per_env_metrics,
         }
 
@@ -1056,6 +1129,30 @@ class RolloutRunner:
             source_counts[choice.command_source] = (
                 source_counts.get(choice.command_source, 0) + 1
             )
+
+            # Per-collector marginal-isotropy counters (see
+            # docs/lejepa_identifiability_analysis.md). We bin yaw at the
+            # block-request instant — the same cadence the encoder
+            # ultimately consumes — and bucket primitives by name.
+            source = choice.command_source
+            self._isotropy_block_counts[source] = (
+                self._isotropy_block_counts.get(source, 0) + 1
+            )
+            prim_counter = self._isotropy_primitive_counts.setdefault(
+                source, Counter()
+            )
+            prim_counter[choice.primitive_name] += 1
+            if current_cell >= 0:
+                cell_map = self._isotropy_cell_yaw_counts.setdefault(source, {})
+                yaw_norm = float(yaws[env_idx]) + math.pi
+                bin_idx = int(
+                    yaw_norm / (2.0 * math.pi) * self._isotropy_yaw_bins
+                ) % self._isotropy_yaw_bins
+                hist = cell_map.get(int(current_cell))
+                if hist is None:
+                    hist = np.zeros(self._isotropy_yaw_bins, dtype=np.int64)
+                    cell_map[int(current_cell)] = hist
+                hist[bin_idx] += 1
             target = int(choice.route_target_id)
             if target >= 0:
                 self._per_env_goals_targeted[env_idx].add(target)

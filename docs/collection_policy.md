@@ -7,6 +7,12 @@ labels these collectors use are scoped by
 data generation time, and **none** of it may enter the deployed model's
 input vector.
 
+> The §13 share table is sized for downstream-head training (Reachability,
+> BeliefEncoder, GoalAdapter), not for the LeWM encoder underneath. See
+> [lejepa_identifiability_analysis.md](lejepa_identifiability_analysis.md)
+> for why LeWM training should likely consume an exploratory-weighted
+> *subset* of this corpus, filtered by `command_source`.
+
 ## Architecture
 
 ```
