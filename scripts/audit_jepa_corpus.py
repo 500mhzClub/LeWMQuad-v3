@@ -66,6 +66,21 @@ def main() -> int:
         "relaxed_claim_counts_by_family": defaultdict(int),
         "achieved_landmark_count": 0,
         "available_landmark_count": 0,
+        # Per-collector marginal-isotropy aggregates. See
+        # docs/lejepa_identifiability_analysis.md for what each field is
+        # for; primitives are pooled across scenes so the entropy reflects
+        # the corpus-wide marginal, while the yaw entropy is averaged over
+        # per-scene means (each scene's mean is itself an average over
+        # visited cells).
+        "marginal_isotropy_by_source": defaultdict(
+            lambda: {
+                "blocks": 0,
+                "distinct_cell_yaw_bins_sum": 0,
+                "primitive_counts": Counter(),
+                "per_scene_mean_yaw_entropy_nats": [],
+                "max_per_cell_yaw_entropy_nats": 0.0,
+            }
+        ),
     }
 
     schema_failures: list[str] = []
@@ -115,6 +130,24 @@ def main() -> int:
             audit["scene_count"] += 1
             audit["per_family"][family]["scenes"] += 1
 
+            for source, iso in (stats.get("marginal_isotropy") or {}).items():
+                agg = audit["marginal_isotropy_by_source"][source]
+                agg["blocks"] += int(iso.get("blocks", 0))
+                agg["distinct_cell_yaw_bins_sum"] += int(
+                    iso.get("distinct_cell_yaw_bins", 0)
+                )
+                for prim, count in (iso.get("primitive_counts") or {}).items():
+                    agg["primitive_counts"][prim] += int(count)
+                mean_h = float(iso.get("mean_per_cell_yaw_entropy_nats", 0.0))
+                # Skip scenes where the collector saw zero cells — they
+                # contribute no signal and would bias the mean toward 0.
+                if iso.get("distinct_cells", 0) > 0:
+                    agg["per_scene_mean_yaw_entropy_nats"].append(mean_h)
+                agg["max_per_cell_yaw_entropy_nats"] = max(
+                    agg["max_per_cell_yaw_entropy_nats"],
+                    float(iso.get("max_per_cell_yaw_entropy_nats", 0.0)),
+                )
+
             labels_path = labels_root / scene_id / "labels.jsonl"
             label_summary_path = labels_root / scene_id / "summary.json"
             if not labels_path.is_file() or not label_summary_path.is_file():
@@ -148,6 +181,31 @@ def main() -> int:
     }
     audit["goal_image_landmark_yaw_bins"] = dict(audit["goal_image_landmark_yaw_bins"])
     audit["relaxed_claim_counts_by_family"] = dict(audit["relaxed_claim_counts_by_family"])
+
+    finalized_iso: dict[str, dict[str, Any]] = {}
+    import math as _math
+
+    for source, agg in audit["marginal_isotropy_by_source"].items():
+        prim_total = float(sum(agg["primitive_counts"].values()))
+        if prim_total > 0.0:
+            ps = [c / prim_total for c in agg["primitive_counts"].values() if c > 0]
+            prim_entropy = -sum(p * _math.log(p) for p in ps)
+        else:
+            prim_entropy = 0.0
+        per_scene = agg["per_scene_mean_yaw_entropy_nats"]
+        mean_yaw_entropy = (
+            sum(per_scene) / len(per_scene) if per_scene else 0.0
+        )
+        finalized_iso[source] = {
+            "blocks": int(agg["blocks"]),
+            "distinct_cell_yaw_bins_sum": int(agg["distinct_cell_yaw_bins_sum"]),
+            "primitive_entropy_nats": float(prim_entropy),
+            "mean_per_cell_yaw_entropy_nats": float(mean_yaw_entropy),
+            "max_per_cell_yaw_entropy_nats": float(agg["max_per_cell_yaw_entropy_nats"]),
+            "scene_count": len(per_scene),
+            "primitive_counts": dict(agg["primitive_counts"]),
+        }
+    audit["marginal_isotropy_by_source"] = finalized_iso
     audit["schema_violations"] = schema_failures
 
     out_path = args.out
