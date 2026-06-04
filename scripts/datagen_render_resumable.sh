@@ -24,6 +24,12 @@ WORKERS="${WORKERS:-4}"
 CORES_PER_WORKER="${CORES_PER_WORKER:-8}"
 CAMERA_HZ="${CAMERA_HZ:-10}"
 RENDER_MAX_FRAMES="${RENDER_MAX_FRAMES:-}"   # cap frames/scene (testing only; empty = all)
+RENDER_BACKEND="${RENDER_BACKEND:-cpu}"
+REPLAY_ENV_MODE="${REPLAY_ENV_MODE:-batched}"
+RENDER_VENV="${RENDER_VENV:-}"
+EGL_DEVICE_ID="${EGL_DEVICE_ID:-}"
+RESUME_PYTHON="${RENDER_RESUME_PYTHON:-python3}"
+RESUME_HELPER="$SCRIPT_DIR/render_resume_markers.py"
 mkdir -p "$OUT"
 
 # 1) Build render plans per chunk (cheap, serial) — idempotent.
@@ -46,22 +52,44 @@ find "$ROLLOUT_ROOT" -name render_replay_plan.json 2>/dev/null | sort | while re
 done
 total=$(wc -l < "$JOBS" 2>/dev/null || echo 0)
 echo "[render] $total scene plans, $WORKERS workers x $CORES_PER_WORKER cores"
+echo "[render] out=$OUT backend=$RENDER_BACKEND replay_env_mode=$REPLAY_ENV_MODE render_venv=${RENDER_VENV:-default} egl_device_id=${EGL_DEVICE_ID:-default}"
 
 render_scene() {
   local sid="$1" plan="$2" cpus="$3"
   local sd="$OUT/$sid"
-  if [[ -f "$sd/.render_done" ]]; then echo "[skip] $sid"; return 0; fi
+  if "$RESUME_PYTHON" "$RESUME_HELPER" mark --quiet \
+      --scene-dir "$sd" --plan "$plan" --scene-id "$sid" \
+      --max-frames "$RENDER_MAX_FRAMES"; then
+    echo "[skip] $sid"
+    return 0
+  fi
   rm -rf "$sd"; mkdir -p "$sd"
   local extra=()
+  local render_env=()
   [[ -n "$RENDER_MAX_FRAMES" ]] && extra=(--max-frames "$RENDER_MAX_FRAMES")
-  if taskset -c "$cpus" bash "$SCRIPT_DIR/render_replay_genesis.sh" "$plan" \
-      --scene-corpus "$CORPUS" --backend cpu --camera-mode replay \
-      --replay-env-mode batched --rgb-format png \
+  [[ -n "$RENDER_VENV" ]] && render_env+=("GENESIS_ROCM_PYTHON=$RENDER_VENV/bin/python")
+  [[ -n "$EGL_DEVICE_ID" ]] && render_env+=("EGL_DEVICE_ID=$EGL_DEVICE_ID")
+  [[ -n "${PYOPENGL_PLATFORM:-}" ]] && render_env+=("PYOPENGL_PLATFORM=$PYOPENGL_PLATFORM")
+  if taskset -c "$cpus" env "${render_env[@]}" bash "$SCRIPT_DIR/render_replay_genesis.sh" "$plan" \
+      --scene-corpus "$CORPUS" --backend "$RENDER_BACKEND" --camera-mode replay \
+      --replay-env-mode "$REPLAY_ENV_MODE" --rgb-format png \
       --store-resolution training --depth-validate-only "${extra[@]}" \
       --out "$sd" > "$sd/render.log" 2>&1; then
-    touch "$sd/.render_done"; echo "[done] $sid"
+    if "$RESUME_PYTHON" "$RESUME_HELPER" mark --quiet \
+        --scene-dir "$sd" --plan "$plan" --scene-id "$sid" \
+        --max-frames "$RENDER_MAX_FRAMES"; then
+      echo "[done] $sid"
+    else
+      echo "[FAIL] $sid (renderer exited 0 but output did not validate; see $sd/render.log)"
+    fi
   else
-    echo "[FAIL] $sid (see $sd/render.log)"
+    if "$RESUME_PYTHON" "$RESUME_HELPER" mark --quiet \
+        --scene-dir "$sd" --plan "$plan" --scene-id "$sid" \
+        --max-frames "$RENDER_MAX_FRAMES"; then
+      echo "[done-after-nonzero] $sid"
+    else
+      echo "[FAIL] $sid (see $sd/render.log)"
+    fi
   fi
 }
 

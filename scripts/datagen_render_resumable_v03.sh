@@ -22,6 +22,10 @@ OUT="${OUT:-$REPO/.generated/datagen_full/render}"
 WORKERS="${WORKERS:-8}"
 EGL_DEVICE_ID="${EGL_DEVICE_ID:-1}"   # 1 = AMD R9700 (discrete); 0 = iGPU
 RESOLUTION="${RESOLUTION:-224}"
+RENDER_TEXTURES="${RENDER_TEXTURES:-0}"
+RENDER_MAX_FRAMES="${RENDER_MAX_FRAMES:-}"
+RESUME_PYTHON="${RENDER_RESUME_PYTHON:-python3}"
+RESUME_HELPER="$SCRIPT_DIR/render_resume_markers.py"
 mkdir -p "$OUT"
 
 JOBS="$OUT/.render_jobs.txt"
@@ -29,7 +33,7 @@ find "$ROLLOUT_ROOT" -name render_replay_plan.json 2>/dev/null | sort > "$JOBS"
 total=$(wc -l < "$JOBS")
 echo "render_venv=$VENV"
 echo "corpus=$CORPUS"
-echo "out=$OUT  egl_device_id=$EGL_DEVICE_ID (1=R9700)  workers=$WORKERS  res=$RESOLUTION"
+echo "out=$OUT  egl_device_id=$EGL_DEVICE_ID (1=R9700)  workers=$WORKERS  res=$RESOLUTION  textures=$RENDER_TEXTURES"
 echo "total scene plans=$total"
 
 render_one() {
@@ -38,20 +42,49 @@ render_one() {
   sid="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['scene_id'])" "$plan" 2>/dev/null)"
   [[ -z "$sid" ]] && { echo "[skip] (no scene_id) $plan"; return 0; }
   local sd="$OUT/$sid"
-  if [[ -f "$sd/.render_done" ]]; then echo "[skip] $sid"; return 0; fi
+  local texture_args=()
+  local frame_args=()
+  local expected_visuals="material_color"
+  case "${RENDER_TEXTURES,,}" in
+    1|true|yes|on)
+      texture_args=(--textures)
+      expected_visuals="textured_v03"
+      ;;
+  esac
+  [[ -n "$RENDER_MAX_FRAMES" ]] && frame_args=(--max-frames "$RENDER_MAX_FRAMES")
+  if "$RESUME_PYTHON" "$RESUME_HELPER" mark --quiet \
+      --scene-dir "$sd" --plan "$plan" --scene-id "$sid" \
+      --max-frames "$RENDER_MAX_FRAMES" --visuals "$expected_visuals"; then
+    echo "[skip] $sid"
+    return 0
+  fi
   rm -rf "$sd"; mkdir -p "$sd"
   if EGL_DEVICE_ID="$EGL_DEVICE_ID" PYOPENGL_PLATFORM=egl \
      OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMBA_NUM_THREADS=1 \
      "$VENV/bin/python" "$SCRIPT_DIR/render_replay_v03.py" \
        --plan "$plan" --scene-corpus "$CORPUS" --out "$sd" --resolution "$RESOLUTION" \
+       "${texture_args[@]}" "${frame_args[@]}" \
        > "$sd/render.log" 2>&1; then
-    touch "$sd/.render_done"; echo "[done] $sid"
+    if "$RESUME_PYTHON" "$RESUME_HELPER" mark --quiet \
+        --scene-dir "$sd" --plan "$plan" --scene-id "$sid" \
+        --max-frames "$RENDER_MAX_FRAMES" --visuals "$expected_visuals"; then
+      echo "[done] $sid"
+    else
+      echo "[FAIL] $sid (renderer exited 0 but output did not validate; see $sd/render.log)"
+    fi
   else
-    echo "[FAIL] $sid (see $sd/render.log)"
+    if "$RESUME_PYTHON" "$RESUME_HELPER" mark --quiet \
+        --scene-dir "$sd" --plan "$plan" --scene-id "$sid" \
+        --max-frames "$RENDER_MAX_FRAMES" --visuals "$expected_visuals"; then
+      echo "[done-after-nonzero] $sid"
+    else
+      echo "[FAIL] $sid (see $sd/render.log)"
+    fi
   fi
 }
 export -f render_one
-export VENV SCRIPT_DIR CORPUS OUT EGL_DEVICE_ID RESOLUTION
+export VENV SCRIPT_DIR CORPUS OUT EGL_DEVICE_ID RESOLUTION RENDER_TEXTURES RENDER_MAX_FRAMES
+export RESUME_PYTHON RESUME_HELPER
 
 # xargs keeps WORKERS render processes busy, pulling plans dynamically.
 xargs -a "$JOBS" -r -P "$WORKERS" -I {} bash -c 'render_one "$@"' _ {}

@@ -10,19 +10,34 @@ Target the discrete GPU with ``EGL_DEVICE_ID=1 PYOPENGL_PLATFORM=egl`` (the
 OpenGL render device is chosen via EGL; device 1 is the R9700 on this box).
 
 Visuals: per-scene material colours from the manifest's
-``visual_randomization.material_overrides`` plus a landmark palette. Full CC0
-photo-textures (procedurally selected in the 0.4.6 path) are a deferred
-enhancement — colours already give per-scene visual diversity + colored beacons.
+``visual_randomization.material_overrides`` plus a landmark palette. Pass
+``--textures`` to use the same deterministic CC0 surface texture selection as
+the heavier replay path while keeping this renderer RGB-only and validation-free.
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import sys
 import time
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+TEXTURES_PATH = REPO_ROOT / "lewm_genesis" / "lewm_genesis" / "textures.py"
+_textures_spec = importlib.util.spec_from_file_location(
+    "lewm_genesis_textures_for_v03",
+    TEXTURES_PATH,
+)
+if _textures_spec is None or _textures_spec.loader is None:
+    raise ImportError(f"could not load texture helpers from {TEXTURES_PATH}")
+_textures = importlib.util.module_from_spec(_textures_spec)
+_textures_spec.loader.exec_module(_textures)
+cached_box_obj = _textures.cached_box_obj
+category_for_kind = _textures.category_for_kind
+select_scene_textures = _textures.select_scene_textures
 
 # Landmark beacon palette (the colored goal markers) — used when a landmark's
 # material_id has no explicit override.
@@ -59,6 +74,20 @@ def _surface(gs, rgba):
         return None
 
 
+def _texture_surface(gs, image_path: str | None):
+    if not image_path:
+        return None
+    try:
+        return gs.surfaces.Default(
+            diffuse_texture=gs.textures.ImageTexture(
+                image_path=str(image_path),
+                encoding="srgb",
+            )
+        )
+    except Exception:
+        return None
+
+
 def _euler_deg(o: dict):
     return (
         math.degrees(float(o.get("roll_rad", 0.0))),
@@ -67,11 +96,31 @@ def _euler_deg(o: dict):
     )
 
 
-def build_scene(gs, manifest: dict, *, fov: float, near: float, far: float, res):
+def build_scene(
+    gs,
+    manifest: dict,
+    *,
+    fov: float,
+    near: float,
+    far: float,
+    res,
+    textures: bool = False,
+):
     cmap = _color_map(manifest)
     scene = gs.Scene(show_viewer=False)
+    scene_textures = (
+        select_scene_textures(
+            visual_seed=int(manifest.get("visual_seed") or 0),
+            scene_id=str(manifest.get("scene_id") or ""),
+        )
+        if textures
+        else {}
+    )
 
-    floor_surface = _surface(gs, cmap.get("floor", _DEFAULT_FLOOR))
+    floor_surface = (
+        _texture_surface(gs, scene_textures.get("floor"))
+        or _surface(gs, cmap.get("floor", _DEFAULT_FLOOR))
+    )
     if floor_surface is not None:
         scene.add_entity(gs.morphs.Plane(), surface=floor_surface)
     else:
@@ -80,17 +129,32 @@ def build_scene(gs, manifest: dict, *, fov: float, near: float, far: float, res)
     def add_box(o: dict, default_rgba):
         mid = o.get("material_id", "")
         rgba = cmap.get(mid) or _LANDMARK_PALETTE.get(mid) or default_rgba
-        kw = dict(
-            pos=tuple(o["center_xyz_m"]),
-            size=tuple(o["size_xyz_m"]),
-            euler=_euler_deg(o),
-            fixed=True,
-        )
-        surf = _surface(gs, rgba)
-        if surf is not None:
-            scene.add_entity(gs.morphs.Box(**kw), surface=surf)
+        tex_surface = None
+        if textures:
+            category = category_for_kind(str(o.get("kind") or ""))
+            tex_surface = _texture_surface(gs, scene_textures.get(category))
+        surf = tex_surface or _surface(gs, rgba)
+        if tex_surface is not None:
+            morph = gs.morphs.Mesh(
+                file=cached_box_obj(tuple(float(v) for v in o["size_xyz_m"])),
+                pos=tuple(o["center_xyz_m"]),
+                euler=_euler_deg(o),
+                fixed=True,
+                collision=True,
+                convexify=True,
+                file_meshes_are_zup=True,
+            )
         else:
-            scene.add_entity(gs.morphs.Box(**kw))
+            morph = gs.morphs.Box(
+                pos=tuple(o["center_xyz_m"]),
+                size=tuple(o["size_xyz_m"]),
+                euler=_euler_deg(o),
+                fixed=True,
+            )
+        if surf is not None:
+            scene.add_entity(morph, surface=surf)
+        else:
+            scene.add_entity(morph)
 
     for w in manifest.get("walls", []) or []:
         add_box(w, _DEFAULT_WALL)
@@ -142,6 +206,11 @@ def main() -> int:
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--resolution", type=int, default=224)
     ap.add_argument("--max-frames", type=int, default=0)
+    ap.add_argument(
+        "--textures",
+        action="store_true",
+        help="Use deterministic CC0 diffuse textures on structural surfaces.",
+    )
     args = ap.parse_args()
 
     plan = json.loads(args.plan.read_text())
@@ -157,7 +226,15 @@ def main() -> int:
     from PIL import Image
     gs.init(backend=gs.vulkan, logging_level="error")
     res = (int(args.resolution), int(args.resolution))
-    scene, cam = build_scene(gs, manifest, fov=fov, near=near, far=far, res=res)
+    scene, cam = build_scene(
+        gs,
+        manifest,
+        fov=fov,
+        near=near,
+        far=far,
+        res=res,
+        textures=bool(args.textures),
+    )
 
     rgb_dir = args.out / "rgb"
     rgb_dir.mkdir(parents=True, exist_ok=True)
@@ -195,7 +272,8 @@ def main() -> int:
         "frame_count": n,
         "resolution": int(args.resolution),
         "renderer": "genesis-0.3.14/vulkan",
-        "visuals": "material_color",
+        "visuals": "textured_v03" if args.textures else "material_color",
+        "textures_enabled": bool(args.textures),
         "fps": (n / dt) if dt > 0 else 0.0,
         "plan": str(args.plan),
     }

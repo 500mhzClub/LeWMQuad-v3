@@ -678,12 +678,18 @@ Do not start the main retrain until these pass:
 
 Run before downstream heads:
 
+- Treat autoregressive planning-readiness as an explicit gate before advancing
+  the `seq_len={4,8,16}` sweep. Run
+  `scripts/probe_lewm_rollout_horizons.py`, review horizons
+  `1,2,3,5,8,10,16,20`, and approve the exact checkpoint before starting the
+  next sequence-length phase. See `docs/lewm_planning_readiness_gate.md`.
 - Held-out scene prediction loss is within 20% of train loss trend, not
   diverging.
 - `z_proj` per-dimension standard deviation remains non-collapsed.
 - Predictor action-sensitivity probe shows terminal predicted latents vary
   materially across supported primitive actions.
-- Multi-step open-loop error is reported for horizons 1, 3, 5, and 10 macro
+- Multi-step open-loop error and persistence, zero-action, and shuffled-action
+  baselines are reported for horizons 1, 2, 3, 5, 8, 10, 16, and 20 macro
   steps.
 - Latent-distance vs graph-distance Spearman rho is reported by scene family.
 - Nearest-neighbor cell confusion is reported by local graph type.
