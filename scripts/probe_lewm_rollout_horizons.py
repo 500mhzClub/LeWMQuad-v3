@@ -77,6 +77,7 @@ def probe_rollout_horizons(
             "shuffled_action",
             "target_from_start",
             "target_step_delta",
+            "teacher_forced",
         )
     }
     sample_count = 0
@@ -107,6 +108,17 @@ def probe_rollout_horizons(
             persistence = z_proj[:, :1].expand_as(targets)
             previous_targets = z_proj[:, :max_horizon]
 
+            # Teacher-forced single step: predict z_proj[t+1] from the TRUE latent
+            # z_raw[t] with one action and no self-conditioning, for every step t.
+            # Isolates per-transition difficulty from autoregressive compounding;
+            # at t=0 it equals the horizon-1 free-running point (sanity check).
+            d_model = z_raw.shape[-1]
+            tf_starts = z_raw[:, :max_horizon].reshape(batch_size * max_horizon, d_model)
+            tf_actions = actions.reshape(batch_size * max_horizon, 1, actions.shape[-1])
+            teacher_forced = model.plan_rollout(tf_starts, tf_actions).reshape(
+                batch_size, max_horizon, -1
+            )
+
             batch_metrics = {
                 "rollout": (rollout - targets).square().mean(dim=-1),
                 "persistence": (persistence - targets).square().mean(dim=-1),
@@ -114,6 +126,7 @@ def probe_rollout_horizons(
                 "shuffled_action": (shuffled_rollout - targets).square().mean(dim=-1),
                 "target_from_start": (targets - persistence).square().mean(dim=-1),
                 "target_step_delta": (targets - previous_targets).square().mean(dim=-1),
+                "teacher_forced": (teacher_forced - targets).square().mean(dim=-1),
             }
 
         for name, values in batch_metrics.items():
@@ -147,6 +160,20 @@ def probe_rollout_horizons(
                 "point_zero_minus_rollout": delta_or_none(
                     point["zero_action"],
                     point["rollout"],
+                ),
+                # >1 => free-running rollout is worse than the ideal per-step
+                # transition from the true latent, i.e. error is COMPOUNDING
+                # (a predictor problem). ~1 => the per-step transition itself is
+                # the limit (a target/representation problem).
+                "point_rollout_over_teacher_forced": ratio_or_none(
+                    point["rollout"],
+                    point["teacher_forced"],
+                ),
+                # teacher-forced 1-step vs persistence: does a single step from
+                # the TRUE latent even beat "assume no change"?
+                "point_teacher_forced_over_persistence": ratio_or_none(
+                    point["teacher_forced"],
+                    point["persistence"],
                 ),
             }
         )

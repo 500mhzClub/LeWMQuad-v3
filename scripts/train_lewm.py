@@ -332,6 +332,22 @@ class GenesisWMDataset(Dataset):
         )
         self.sessions = kept
 
+    def _scene_passes_holdout(self, scene_name: str) -> bool:
+        """Whether a scene survives the active holdout, decided from its name alone.
+
+        Exact mirror of the per-session test in `_apply_holdout_filter`: every
+        session returned by `process_scene_v03(sd, ...)` is constructed with that
+        same `sd`, so `sess.scene_dir.name == sd.name` and name-level selection
+        keeps exactly the same sessions. Only meaningful when a holdout is active;
+        callers guard on that, and `_apply_holdout_filter` still runs afterward as
+        the authoritative (now idempotent) filter.
+        """
+        key = f"{self.holdout_seed}:{scene_name}"
+        in_holdout = _stable_unit_interval(key) < self.holdout_fraction
+        return (self.holdout_role == "eval" and in_holdout) or (
+            self.holdout_role == "train" and not in_holdout
+        )
+
     def _load_corpus(self, max_sessions: Optional[int]):
         render_root = self.render_root
 
@@ -358,6 +374,25 @@ class GenesisWMDataset(Dataset):
                     break
             return
 
+        # When a holdout is active, decide membership from the scene name up
+        # front and skip scenes we would discard anyway, instead of parsing the
+        # whole corpus and dropping ~all of it in `_apply_holdout_filter`. This
+        # selects exactly the same sessions (see `_scene_passes_holdout`); it only
+        # avoids the wasted parse. The eval set (max_sessions=None, ~2% holdout)
+        # was parsing all ~48k sessions to keep ~2%, single-threaded under the GIL.
+        # The train path above (max_sessions set) is intentionally left untouched
+        # so its early-break subset stays identical across cells.
+        scenes_to_load = all_scenes
+        if self.holdout_role in {"train", "eval"} and 0.0 < self.holdout_fraction < 1.0:
+            scenes_to_load = [sd for sd in all_scenes if self._scene_passes_holdout(sd.name)]
+            logger.info(
+                "Holdout role=%s fraction=%.4f pre-filtered scenes to %d/%d before loading",
+                self.holdout_role,
+                self.holdout_fraction,
+                len(scenes_to_load),
+                len(all_scenes),
+            )
+
         # Keep corpus parsing in-process: forked Python workers have proved
         # unstable with the ROCm training runtime already imported.
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -369,9 +404,9 @@ class GenesisWMDataset(Dataset):
                     self.split,
                     self.allow_material_color_render,
                 )
-                for sd in all_scenes
+                for sd in scenes_to_load
             ]
-            pbar = tqdm(concurrent.futures.as_completed(futures), total=len(all_scenes), desc="Loading sessions")
+            pbar = tqdm(concurrent.futures.as_completed(futures), total=len(scenes_to_load), desc="Loading sessions")
             for f in pbar:
                 res = f.result()
                 self.sessions.extend(res)
