@@ -160,6 +160,8 @@ def main() -> int:
         poses = integrate_world_poses(cmd, dt)
 
     n, t, latent_dim = z_proj.shape
+    if t < 3:
+        raise SystemExit("pose geometry probe requires cache seq_len >= 3")
     a_idx, b_idx = ordered_pair_indices(t, torch.device("cpu"))
     encoded_target = body_relative(poses, a_idx, b_idx).reshape(-1, 3)
     encoded = _decode_pairs(

@@ -730,6 +730,7 @@ def _save_checkpoint(
             "pose_label_source": args.pose_label_source,
             "command_dt_s": args.command_dt_s,
             "freeze_model": bool(args.freeze_model),
+            "torch_seed": int(args.torch_seed),
         },
         "data_loader_config": {
             "sampler": train_sampler_kind,
@@ -808,6 +809,7 @@ def _validate_resume_config(
         "pose_label_source",
         "command_dt_s",
         "freeze_model",
+        "torch_seed",
     ):
         if key in model_config and model_config[key] != getattr(args, key):
             raise RuntimeError(
@@ -861,6 +863,9 @@ def train(args):
         raise ValueError("--freeze-model requires at least one pose auxiliary loss")
     if args.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested for LeWM training, but torch.cuda.is_available() is false")
+    torch.manual_seed(args.torch_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.torch_seed)
     if args.device == "cpu":
         device = torch.device("cpu")
     else:
@@ -1290,6 +1295,7 @@ def train(args):
                         "pose_aux_predicted_lambda": args.pose_aux_predicted_lambda,
                         "pose_label_source": args.pose_label_source,
                         "freeze_model": bool(args.freeze_model),
+                        "torch_seed": int(args.torch_seed),
                         **train_metrics,
                     },
                 )
@@ -1341,6 +1347,7 @@ def train(args):
                     "pose_aux_predicted_lambda": float(args.pose_aux_predicted_lambda),
                     "pose_label_source": str(args.pose_label_source),
                     "freeze_model": bool(args.freeze_model),
+                    "torch_seed": int(args.torch_seed),
                     "epoch": int(epoch),
                     "source_checkpoint": str(ckpt_path),
                 },
@@ -1369,6 +1376,7 @@ def train(args):
                 "pose_aux_predicted_lambda": args.pose_aux_predicted_lambda,
                 "pose_label_source": args.pose_label_source,
                 "freeze_model": bool(args.freeze_model),
+                "torch_seed": int(args.torch_seed),
                 **log_metrics,
             },
         )
@@ -1430,6 +1438,12 @@ if __name__ == "__main__":
     parser.add_argument("--drop-last", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--max-sessions", type=int, default=None)
     parser.add_argument("--shuffle-seed", type=int, default=0)
+    parser.add_argument(
+        "--torch-seed",
+        type=int,
+        default=0,
+        help="Torch RNG seed for model/head initialization and training stochasticity.",
+    )
     parser.add_argument(
         "--source-allow",
         type=str,

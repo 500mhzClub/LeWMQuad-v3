@@ -95,6 +95,16 @@ initial weights, holdout split, batch order, and evaluation caches.
 | C2 | yes | actual | tuned | tuned | tests the exact deployed planning contract |
 | A1 | yes | command | matched to winner | matched to winner | label-source ablation, only after an actual-pose cell is viable |
 
+The joint head is part of the deployed system, so its geometry metrics are the
+primary system gate. It does not by itself prove that the backbone improved:
+head learning and representation learning are confounded. For C0 and every
+candidate considered for promotion, run a post-hoc diagnostic cell with
+`--freeze-model`, a freshly initialized head, and the same actual-pose data,
+weights, `--torch-seed`, batch order, and epoch budget. Compare those frozen-head
+results to F0. C0's post-hoc frozen head is the geometry drift control; a promoted
+C1/C2 backbone must improve both its joint system metrics and this standardized
+fresh-head decodability measurement.
+
 Do not assume `lambda=1.0`. On a short pilot, log the unweighted base, encoded-pose,
 and predicted-pose losses and their encoder gradient norms. Select weights that make
 each auxiliary encoder-gradient contribution material but not dominant. A practical
@@ -126,9 +136,11 @@ warmup would be an uncontrolled reduction in rollout pressure. Use
 `--max-sessions 300` first, then repeat the winning comparison at 1000 sessions.
 F0 adds `--freeze-model`; C0 sets both pose lambdas to zero; C1 sets only
 `--pose-aux-lambda`; C2 sets both pose lambdas. Every cell gets a separate
-output directory and the same shuffle/eval seeds. `--init-from` loads weights
-only and intentionally does not inherit these flags; the trainer warns whenever
-an init-from run changes source objective/config fields.
+output directory and the same shuffle/eval seeds. Set the same `--torch-seed`
+for every cell so head initialization and training stochasticity are controlled.
+`--init-from` loads weights only and intentionally does not inherit these flags;
+the trainer warns whenever an init-from run changes source objective/config
+fields.
 
 A one-batch, two-window CPU smoke on one frontier session suggested
 approximately `0.087` encoded and `0.072` predicted for a 10%-of-base encoder
@@ -137,8 +149,9 @@ gradient exceeded the base encoder-gradient norm. This validates the probe and
 rejects `lambda=1.0` as an unmeasured default; the sample is too small and
 unrepresentative to select the registered cell weights.
 
-Promote only C1/C2 cells that beat C0 on geometry while preserving forward-model
-gates. C2 is the preferred winner because it supervises the contract used by MPC.
+Promote only C1/C2 cells whose standardized post-hoc head beats the C0 post-hoc
+head on geometry while preserving forward-model gates. C2 is the preferred winner
+because it supervises the contract used by MPC.
 
 ## Promotion Gates
 
