@@ -9,17 +9,21 @@
 set -u
 ROOT=/home/andrewknowles/Workspace/LeWMQuad-v3
 PY="$ROOT/.generated/venvs/genesis_render_vulkan/bin/python"
-DIR="${FT_DIR:-$ROOT/models/checkpoints_pose_aux_ft_20260606/pose_aux_selected_e3}"
+# Cells to sweep. FT_DIRS (space-separated) lets one watcher cover the whole
+# geometry ladder (F0/C1/C2/C0-posthoc); FT_DIR stays as the single-dir default.
+DIRS="${FT_DIRS:-${FT_DIR:-$ROOT/models/checkpoints_pose_aux_ft_20260606/pose_aux_selected_e3}}"
 RR=.generated/datagen_full
 RT=.generated/datagen_full/render_textured_v03
-REPORT="$DIR/finetune_eval_report.md"
 cd "$ROOT" || exit 1
-mkdir -p "$DIR"
 
-if [ ! -f "$REPORT" ]; then
-  cat > "$REPORT" <<HDR
-# Pose-aux fine-tune (from e3) — per-checkpoint eval report
-Started $(date). All evals on CPU (never competes with the GPU fine-tune).
+# Per-cell report header. DIR/REPORT are set per-dir in the main loop below so a
+# single watcher can sweep every ladder cell; eval_one reads those globals.
+ensure_report_header () {
+  local rpt="$1"
+  [ -f "$rpt" ] && return
+  cat > "$rpt" <<HDR
+# Pose-aux geometry ladder — per-checkpoint eval report
+Started $(date). All evals on CPU (never competes with the GPU training cells).
 **Goal:** make the latent metric enough for navigation without privileged runtime
 pose, while prior prediction metrics stay healthy. Reference (e3, pre-aux):
 zero-free@h10 +0.201, free/pers 0.39, MPC vs0 0.66; frozen z_proj distance
@@ -28,7 +32,7 @@ decodability pearson ~0.05.
 | epoch | zero-free@10 | free/pers@10 | MPC vs0 | navL2 m | energy nav m | **encoded xy m** | **encoded ρ** | **pred→goal xy m** | **pred→goal ρ** | **pose first ρ** | **pose first regret m** | **lewm_pose nav m** |
 |---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
 HDR
-fi
+}
 
 eval_one () {
   local ck="$1" name ep posehead dec mpc nL2 trc evc ehead nH pg nPose nPoseCost log flag
@@ -174,10 +178,26 @@ PYEOF
   echo "=== $(date) done $name ===" >> "$log"
 }
 
+# Exit only after a guaranteed final sweep. While training cells are alive the
+# loop keeps polling; once LADDER_SENTINEL disappears (driver finished/crashed) or
+# — when no sentinel is configured — no pose-aux training is left, we do one more
+# full sweep so the last epoch checkpoint of every cell is always evaluated.
+final=0
+WLOG="$ROOT/pose_aux_watcher.log"
 while true; do
-  for ck in $(ls "$DIR"/lewm_seq11_e*.pt 2>/dev/null | sort -V); do
-    eval_one "$ck"
+  for DIR in $DIRS; do
+    mkdir -p "$DIR"
+    REPORT="$DIR/finetune_eval_report.md"
+    ensure_report_header "$REPORT"
+    for ck in $(ls "$DIR"/lewm_seq11_e*.pt 2>/dev/null | sort -V); do
+      eval_one "$ck"
+    done
   done
-  pgrep -f 'train_lewm.py.*pose-aux' >/dev/null 2>&1 || { echo "fine-tune ended $(date); watcher exit" >> "$DIR/watcher.log"; break; }
+  [ "$final" = 1 ] && { echo "final sweep done $(date); watcher exit" >> "$WLOG"; break; }
+  if [ -n "${LADDER_SENTINEL:-}" ]; then
+    [ -f "$LADDER_SENTINEL" ] || { echo "sentinel gone $(date); one final sweep" >> "$WLOG"; final=1; continue; }
+  else
+    pgrep -f 'train_lewm.py.*pose-aux' >/dev/null 2>&1 || { echo "training ended $(date); one final sweep" >> "$WLOG"; final=1; continue; }
+  fi
   sleep 600
 done
