@@ -38,6 +38,7 @@ from lewm.actions import (
 )
 from lewm.models.lewm import LeWorldModel
 from lewm.models.pose_head import RelPoseHead, pose_aux_loss, predicted_pose_aux_loss
+from lewm.models.idm_head import InverseDynamicsHead, idm_loss
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -695,6 +696,7 @@ def _save_checkpoint(
     epoch_stats: RunningAverages,
     metrics: Dict[str, float],
     pose_head: Optional[RelPoseHead] = None,
+    idm_head: Optional[InverseDynamicsHead] = None,
 ) -> None:
     train_metrics = {f"train_{key}": value for key, value in epoch_stats.means().items()}
     payload = {
@@ -731,6 +733,9 @@ def _save_checkpoint(
             "command_dt_s": args.command_dt_s,
             "freeze_model": bool(args.freeze_model),
             "torch_seed": int(args.torch_seed),
+            "idm_lambda": args.idm_lambda,
+            "idm_hidden": args.idm_hidden,
+            "idm_source": args.idm_source,
         },
         "data_loader_config": {
             "sampler": train_sampler_kind,
@@ -749,6 +754,8 @@ def _save_checkpoint(
     }
     if pose_head is not None:
         payload["pose_head_state_dict"] = pose_head.state_dict()
+    if idm_head is not None:
+        payload["idm_head_state_dict"] = idm_head.state_dict()
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     torch.save(payload, tmp_path)
@@ -810,6 +817,9 @@ def _validate_resume_config(
         "command_dt_s",
         "freeze_model",
         "torch_seed",
+        "idm_lambda",
+        "idm_hidden",
+        "idm_source",
     ):
         if key in model_config and model_config[key] != getattr(args, key):
             raise RuntimeError(
@@ -858,9 +868,13 @@ def train(args):
         raise ValueError("--init-from and --resume are mutually exclusive")
     if args.pose_aux_lambda < 0.0 or args.pose_aux_predicted_lambda < 0.0:
         raise ValueError("pose auxiliary loss weights must be non-negative")
+    if args.idm_lambda < 0.0:
+        raise ValueError("inverse-dynamics loss weight must be non-negative")
     pose_aux_enabled = args.pose_aux_lambda > 0.0 or args.pose_aux_predicted_lambda > 0.0
-    if args.freeze_model and not pose_aux_enabled:
-        raise ValueError("--freeze-model requires at least one pose auxiliary loss")
+    idm_enabled = args.idm_lambda > 0.0
+    aux_enabled = pose_aux_enabled or idm_enabled
+    if args.freeze_model and not aux_enabled:
+        raise ValueError("--freeze-model requires at least one auxiliary loss (pose or IDM)")
     if args.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested for LeWM training, but torch.cuda.is_available() is false")
     torch.manual_seed(args.torch_seed)
@@ -1041,7 +1055,7 @@ def train(args):
             )
     if args.freeze_model:
         model.requires_grad_(False)
-        logger.info("Frozen-model control ON: only the RelPoseHead will be optimized")
+        logger.info("Frozen-model control ON: only the auxiliary head(s) will be optimized")
 
     # Optional RelPoseHead metric objective (trained jointly; loss backprops into encoder).
     pose_head = None
@@ -1053,9 +1067,22 @@ def train(args):
             model.latent_dim, args.pose_aux_hidden,
         )
 
+    # Optional inverse-dynamics objective (action-sensitivity; backprops into encoder).
+    idm_head = None
+    if idm_enabled:
+        idm_head = InverseDynamicsHead(
+            latent_dim=model.latent_dim, cmd_dim=ACTIVE_BLOCK_DIM, hidden=args.idm_hidden
+        ).to(device)
+        logger.info(
+            "IDM-aux ON: lambda=%.3g source=%s latent_dim=%d cmd_dim=%d hidden=%d",
+            args.idm_lambda, args.idm_source, model.latent_dim, ACTIVE_BLOCK_DIM, args.idm_hidden,
+        )
+
     params = [parameter for parameter in model.parameters() if parameter.requires_grad]
     if pose_head is not None:
         params.extend(pose_head.parameters())
+    if idm_head is not None:
+        params.extend(idm_head.parameters())
     optimizer = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.weight_decay)
     
     start_epoch = 0
@@ -1103,6 +1130,12 @@ def train(args):
                         "Cannot resume pose-aux training: checkpoint has no pose_head_state_dict"
                     )
                 pose_head.load_state_dict(checkpoint["pose_head_state_dict"])
+            if idm_head is not None:
+                if "idm_head_state_dict" not in checkpoint:
+                    raise RuntimeError(
+                        "Cannot resume IDM-aux training: checkpoint has no idm_head_state_dict"
+                    )
+                idm_head.load_state_dict(checkpoint["idm_head_state_dict"])
             optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
             if checkpoint.get("epoch_complete", True):
                 start_epoch = checkpoint["epoch"] + 1
@@ -1180,10 +1213,11 @@ def train(args):
                     cmd_seq=cmd,
                     rollout_lambda=effective_rollout_lambda,
                     rollout_teacher_prob=effective_teacher_prob,
-                    return_latents=(pose_head is not None),
+                    return_latents=(pose_head is not None or idm_head is not None),
                 )
                 loss = out["loss"]
                 pose_stats = None
+                idm_stats = None
                 if pose_head is not None:
                     pose_labels = (
                         batch["pose_seq"].to(device, non_blocking=non_blocking_transfer)
@@ -1203,6 +1237,10 @@ def train(args):
                         )
                         loss = loss + args.pose_aux_predicted_lambda * pose_pred_loss
                         pose_stats.update(pose_pred_stats)
+                if idm_head is not None:
+                    z_idm = out["z_raw"] if args.idm_source == "raw" else out["z_proj"]
+                    idm_l, idm_stats = idm_loss(idm_head, z_idm, cmd)
+                    loss = loss + args.idm_lambda * idm_l
             loss.backward()
             grad_norm = None
             if args.gradient_clip_val > 0:
@@ -1230,6 +1268,9 @@ def train(args):
                 if "pose_pred_xy_err_m" in pose_stats:
                     batch_metrics["pose_pred_xy_err"] = pose_stats["pose_pred_xy_err_m"]
                     batch_metrics["pose_pred_yaw_err"] = pose_stats["pose_pred_yaw_err_rad"]
+            if idm_stats is not None:
+                batch_metrics["idm_err"] = idm_stats["idm_action_err"]
+                batch_metrics["idm_r2"] = idm_stats["idm_action_r2"]
             epoch_stats.update(batch_metrics, weight=weight)
             epoch_means = epoch_stats.means()
             
@@ -1272,6 +1313,7 @@ def train(args):
                     epoch_stats=epoch_stats,
                     metrics=train_metrics,
                     pose_head=pose_head,
+                    idm_head=idm_head,
                 )
                 append_metrics_jsonl(
                     metrics_path,
@@ -1333,6 +1375,7 @@ def train(args):
             epoch_stats=epoch_stats,
             metrics=log_metrics,
             pose_head=pose_head,
+            idm_head=idm_head,
         )
         if pose_head is not None:
             pose_path = Path(args.out_dir) / f"posehead_seq{args.max_seq_len}_e{epoch}.pt"
@@ -1354,6 +1397,25 @@ def train(args):
                 pose_tmp_path,
             )
             os.replace(pose_tmp_path, pose_path)
+        if idm_head is not None:
+            idm_path = Path(args.out_dir) / f"idmhead_seq{args.max_seq_len}_e{epoch}.pt"
+            idm_tmp_path = idm_path.with_suffix(idm_path.suffix + ".tmp")
+            torch.save(
+                {
+                    "head_state_dict": idm_head.state_dict(),
+                    "latent_dim": int(model.latent_dim),
+                    "cmd_dim": int(ACTIVE_BLOCK_DIM),
+                    "hidden": int(args.idm_hidden),
+                    "idm_lambda": float(args.idm_lambda),
+                    "idm_source": str(args.idm_source),
+                    "freeze_model": bool(args.freeze_model),
+                    "torch_seed": int(args.torch_seed),
+                    "epoch": int(epoch),
+                    "source_checkpoint": str(ckpt_path),
+                },
+                idm_tmp_path,
+            )
+            os.replace(idm_tmp_path, idm_path)
         append_metrics_jsonl(
             metrics_path,
             {
@@ -1377,6 +1439,8 @@ def train(args):
                 "pose_label_source": args.pose_label_source,
                 "freeze_model": bool(args.freeze_model),
                 "torch_seed": int(args.torch_seed),
+                "idm_lambda": args.idm_lambda,
+                "idm_source": args.idm_source,
                 **log_metrics,
             },
         )
@@ -1525,8 +1589,22 @@ if __name__ == "__main__":
     parser.add_argument(
         "--freeze-model",
         action="store_true",
-        help="Train only the RelPoseHead with the world model held in eval mode; "
+        help="Train only the auxiliary head(s) with the world model held in eval mode; "
         "used for the frozen-head decodability ceiling.",
+    )
+    parser.add_argument(
+        "--idm-lambda",
+        type=float,
+        default=0.0,
+        help="Weight of the inverse-dynamics objective (0 = off). Predicts the action "
+        "between consecutive latents, backpropagating action-sensitivity into the encoder.",
+    )
+    parser.add_argument("--idm-hidden", type=int, default=512)
+    parser.add_argument(
+        "--idm-source",
+        choices=("proj", "raw"),
+        default="proj",
+        help="Latent the IDM head reads: projected planning space (default) or raw encoder output.",
     )
     args = parser.parse_args()
     
