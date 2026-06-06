@@ -64,10 +64,13 @@ class TrainCheckpointingTests(unittest.TestCase):
             },
             "epoch_stats": {"totals": {}, "counts": {}},
         }
-        args = Namespace(shuffle_seed=0, batch_size=64, drop_last=True)
+        args = Namespace(
+            shuffle_seed=0, batch_size=64, drop_last=True,
+            source_allow="", source_cap=0, source_weight="",
+        )
 
         with self.assertRaisesRegex(RuntimeError, "batch_size"):
-            _validate_partial_resume_config(checkpoint, list(range(1000)), args)
+            _validate_partial_resume_config(checkpoint, 1000, "epoch_random", args)
 
     def test_num_batches(self):
         cases = [

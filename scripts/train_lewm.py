@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import re
+import sys
 from pathlib import Path
 from collections import Counter
 from typing import Dict, Iterator, List, Optional, Tuple
@@ -25,6 +26,9 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset, Sampler, Subset, WeightedRandomSampler
 from tqdm import tqdm
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+
 from lewm.actions import (
     ACTIVE_BLOCK_DIM,
     ACTIVE_BLOCK_ORDER,
@@ -33,6 +37,7 @@ from lewm.actions import (
     encode_executed_command_block,
 )
 from lewm.models.lewm import LeWorldModel
+from lewm.models.pose_head import RelPoseHead, pose_aux_loss, predicted_pose_aux_loss
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -93,6 +98,7 @@ class GenesisWMSession:
         actions: np.ndarray,
         resets: np.ndarray,
         sources: Optional[List[str]] = None,
+        poses_by_frame: Optional[Dict[int, np.ndarray]] = None,
     ):
         self.scene_dir = scene_dir
         self.env_index = env_index
@@ -102,6 +108,7 @@ class GenesisWMSession:
         # Per-block collector source (command_source from the requested
         # CommandBlock), aligned with actions. None if the corpus lacks it.
         self.sources = sources  # list[str] length T, or None
+        self.poses_by_frame = poses_by_frame
 
     def __len__(self) -> int:
         return len(self.actions)
@@ -109,6 +116,42 @@ class GenesisWMSession:
     def get_rgb_path(self, step: int) -> Path:
         global_idx = step * self.n_envs + self.env_index
         return self.scene_dir / "rgb" / f"frame_{global_idx:06d}_env_{self.env_index:02d}.png"
+
+    def get_pose(self, step: int) -> np.ndarray:
+        if self.poses_by_frame is None:
+            raise RuntimeError("physical pose labels were not loaded for this session")
+        global_idx = step * self.n_envs + self.env_index
+        try:
+            return self.poses_by_frame[global_idx]
+        except KeyError as exc:
+            raise RuntimeError(
+                f"missing physical pose label for frame {global_idx} in {self.scene_dir}"
+            ) from exc
+
+
+def _load_replay_plan(summary: dict, summary_file: Path) -> Tuple[dict, Path]:
+    plan_path = Path(summary["plan"])
+    if not plan_path.is_absolute():
+        plan_path = (summary_file.parent / plan_path).resolve()
+    return json.loads(plan_path.read_text(encoding="utf-8")), plan_path
+
+
+def _load_pose_labels(plan: dict, plan_path: Path) -> Dict[int, np.ndarray]:
+    """Load aligned rendered-frame physical SE(2) labels from the replay plan."""
+    frames_path = Path(plan["frames_jsonl"])
+    if not frames_path.is_absolute():
+        frames_path = (plan_path.parent / frames_path).resolve()
+    poses: Dict[int, np.ndarray] = {}
+    with frames_path.open(encoding="utf-8") as fh:
+        for line in fh:
+            frame = json.loads(line)
+            pos = frame["base_pose_world"]["position"]
+            yaw = frame["base_rpy_rad"]["yaw"]
+            poses[int(frame["frame_index"])] = np.asarray(
+                [float(pos["x"]), float(pos["y"]), float(yaw)],
+                dtype=np.float32,
+            )
+    return poses
 
 
 def _is_material_color_render(summary: dict) -> bool:
@@ -144,6 +187,7 @@ def process_scene_v03(
     root_dir: Path,
     split: str,
     allow_material_color_render: bool,
+    include_pose_labels: bool = False,
 ) -> List[GenesisWMSession]:
     """Helper for multithreaded session loading."""
     summary_file = scene_dir / "summary.json"
@@ -208,7 +252,13 @@ def process_scene_v03(
                 if env_idx in resets_by_env and len(resets_by_env[env_idx]) > 0:
                     resets_by_env[env_idx][-1] = True
 
-    n_envs = len(actions_by_env)
+    plan, replay_plan_path = _load_replay_plan(summary, summary_file)
+    n_envs = int(plan.get("source_env_count", len(actions_by_env)))
+    if any(env_idx < 0 or env_idx >= n_envs for env_idx in actions_by_env):
+        raise RuntimeError(
+            f"executed-command env indexes exceed source_env_count={n_envs} in {scene_dir}"
+        )
+    poses_by_frame = _load_pose_labels(plan, replay_plan_path) if include_pose_labels else None
     sessions = []
     for env_idx, actions in actions_by_env.items():
         if not actions: continue
@@ -226,6 +276,7 @@ def process_scene_v03(
                 actions=sess_actions,
                 resets=sess_resets,
                 sources=sess_sources,
+                poses_by_frame=poses_by_frame,
             )
         )
     return sessions
@@ -246,6 +297,7 @@ class GenesisWMDataset(Dataset):
         holdout_fraction: float = 0.0,
         holdout_role: str = "all",
         holdout_seed: int = 0,
+        include_pose_labels: bool = False,
     ):
         self.root_dir = Path(root_dir)
         self.render_root = self._resolve_render_root(render_root)
@@ -256,6 +308,7 @@ class GenesisWMDataset(Dataset):
         self.holdout_fraction = float(holdout_fraction)
         self.holdout_role = holdout_role
         self.holdout_seed = int(holdout_seed)
+        self.include_pose_labels = bool(include_pose_labels)
 
         self.sessions: List[GenesisWMSession] = []
         self._load_corpus(max_sessions)
@@ -367,6 +420,7 @@ class GenesisWMDataset(Dataset):
                         self.root_dir,
                         self.split,
                         self.allow_material_color_render,
+                        self.include_pose_labels,
                     )
                 )
                 if len(self.sessions) >= max_sessions:
@@ -403,6 +457,7 @@ class GenesisWMDataset(Dataset):
                     self.root_dir,
                     self.split,
                     self.allow_material_color_render,
+                    self.include_pose_labels,
                 )
                 for sd in scenes_to_load
             ]
@@ -433,11 +488,17 @@ class GenesisWMDataset(Dataset):
             cmd_list.append(sess.actions[block_start + t])
         
         cmd_seq = torch.from_numpy(np.stack(cmd_list)).float()
-        
-        return {
+        item = {
             "vis_seq": vis_seq,
             "cmd_seq": cmd_seq,
         }
+        if self.include_pose_labels:
+            pose_list = [
+                sess.get_pose((block_start + t) * self.stride)
+                for t in range(self.seq_len)
+            ]
+            item["pose_seq"] = torch.from_numpy(np.stack(pose_list)).float()
+        return item
 
 
 # ---------------------------------------------------------------------------
@@ -570,6 +631,7 @@ def evaluate_model(
             {
                 "eval_loss": out["loss"].item(),
                 "eval_pred": out["pred_loss"].item(),
+                "eval_rollout_loss": out["rollout_loss"].item(),
                 "eval_sig": out["sigreg_loss"].item(),
                 "eval_std": out["z_proj_std"].item(),
                 "eval_rollout_pred": probe["rollout_pred_loss"].item(),
@@ -632,6 +694,7 @@ def _save_checkpoint(
     next_batch_idx: int,
     epoch_stats: RunningAverages,
     metrics: Dict[str, float],
+    pose_head: Optional[RelPoseHead] = None,
 ) -> None:
     train_metrics = {f"train_{key}": value for key, value in epoch_stats.means().items()}
     payload = {
@@ -647,6 +710,13 @@ def _save_checkpoint(
             "stride": args.stride,
             "cmd_dim": ACTIVE_BLOCK_DIM,
             "sigreg_lambda": args.sigreg_lambda,
+            "rollout_lambda": args.rollout_lambda,
+            "rollout_horizon": args.rollout_horizon,
+            "rollout_gamma": args.rollout_gamma,
+            "rollout_warmup_epochs": args.rollout_warmup_epochs,
+            "rollout_ss_start": args.rollout_ss_start,
+            "rollout_ss_end": args.rollout_ss_end,
+            "rollout_ss_ramp_epochs": args.rollout_ss_ramp_epochs,
             "render_root": str(dataset.render_root),
             "allow_material_color_render": bool(args.allow_material_color_render),
             "eval_holdout_fraction": args.eval_holdout_fraction,
@@ -654,6 +724,12 @@ def _save_checkpoint(
             "source_allow": args.source_allow,
             "source_cap": args.source_cap,
             "source_weight": args.source_weight,
+            "pose_aux_lambda": args.pose_aux_lambda,
+            "pose_aux_predicted_lambda": args.pose_aux_predicted_lambda,
+            "pose_aux_hidden": args.pose_aux_hidden,
+            "pose_label_source": args.pose_label_source,
+            "command_dt_s": args.command_dt_s,
+            "freeze_model": bool(args.freeze_model),
         },
         "data_loader_config": {
             "sampler": train_sampler_kind,
@@ -670,6 +746,8 @@ def _save_checkpoint(
         "loss": train_metrics["train_loss"],
         "metrics": metrics,
     }
+    if pose_head is not None:
+        payload["pose_head_state_dict"] = pose_head.state_dict()
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     torch.save(payload, tmp_path)
@@ -713,7 +791,24 @@ def _validate_resume_config(
             f"checkpoint={checkpoint_render_root} current={current_render_root}. "
             "Use a fresh --out-dir for a new render corpus."
         )
-    for key in ("source_allow", "source_cap", "source_weight"):
+    for key in (
+        "source_allow",
+        "source_cap",
+        "source_weight",
+        "rollout_lambda",
+        "rollout_horizon",
+        "rollout_gamma",
+        "rollout_warmup_epochs",
+        "rollout_ss_start",
+        "rollout_ss_end",
+        "rollout_ss_ramp_epochs",
+        "pose_aux_lambda",
+        "pose_aux_predicted_lambda",
+        "pose_aux_hidden",
+        "pose_label_source",
+        "command_dt_s",
+        "freeze_model",
+    ):
         if key in model_config and model_config[key] != getattr(args, key):
             raise RuntimeError(
                 f"Checkpoint model_config[{key!r}]={model_config[key]!r} does not "
@@ -757,7 +852,19 @@ def _validate_partial_resume_config(
 
 
 def train(args):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if args.init_from and args.resume:
+        raise ValueError("--init-from and --resume are mutually exclusive")
+    if args.pose_aux_lambda < 0.0 or args.pose_aux_predicted_lambda < 0.0:
+        raise ValueError("pose auxiliary loss weights must be non-negative")
+    pose_aux_enabled = args.pose_aux_lambda > 0.0 or args.pose_aux_predicted_lambda > 0.0
+    if args.freeze_model and not pose_aux_enabled:
+        raise ValueError("--freeze-model requires at least one pose auxiliary loss")
+    if args.device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested for LeWM training, but torch.cuda.is_available() is false")
+    if args.device == "cpu":
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Training on {device}")
 
     dataset = GenesisWMDataset(
@@ -770,6 +877,9 @@ def train(args):
         holdout_fraction=args.eval_holdout_fraction,
         holdout_role="train" if args.eval_every_epochs > 0 else "all",
         holdout_seed=args.eval_seed,
+        include_pose_labels=(
+            pose_aux_enabled and args.pose_label_source == "actual"
+        ),
     )
     if len(dataset) == 0:
         logger.error("Dataset is empty. Check data paths and split.")
@@ -891,10 +1001,57 @@ def train(args):
     model = LeWorldModel(
         max_seq_len=args.max_seq_len,
         cmd_dim=ACTIVE_BLOCK_DIM,
-        sigreg_lambda=args.sigreg_lambda
+        sigreg_lambda=args.sigreg_lambda,
+        rollout_lambda=args.rollout_lambda,
+        rollout_horizon=args.rollout_horizon or None,
+        rollout_gamma=args.rollout_gamma,
     ).to(device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    # Fine-tune init: load ONLY model weights (fresh optimizer + epoch 0).
+    if args.init_from:
+        logger.info("Init-from (weights only): %s", args.init_from)
+        ck = torch.load(args.init_from, map_location=device, weights_only=True)
+        state = ck["model_state_dict"] if isinstance(ck, dict) and "model_state_dict" in ck else ck
+        model.load_state_dict(state)
+        source_config = ck.get("model_config", {}) if isinstance(ck, dict) else {}
+        changed = []
+        for key in (
+            "max_seq_len",
+            "stride",
+            "sigreg_lambda",
+            "rollout_lambda",
+            "rollout_horizon",
+            "rollout_gamma",
+            "rollout_warmup_epochs",
+            "rollout_ss_start",
+            "rollout_ss_end",
+            "rollout_ss_ramp_epochs",
+        ):
+            if key in source_config and source_config[key] != getattr(args, key):
+                changed.append(f"{key}: {source_config[key]!r} -> {getattr(args, key)!r}")
+        if changed:
+            logger.warning(
+                "Init-from changes the source training objective/config: %s",
+                "; ".join(changed),
+            )
+    if args.freeze_model:
+        model.requires_grad_(False)
+        logger.info("Frozen-model control ON: only the RelPoseHead will be optimized")
+
+    # Optional RelPoseHead metric objective (trained jointly; loss backprops into encoder).
+    pose_head = None
+    if pose_aux_enabled:
+        pose_head = RelPoseHead(latent_dim=model.latent_dim, hidden=args.pose_aux_hidden).to(device)
+        logger.info(
+            "Pose-aux ON: encoded_lambda=%.3g predicted_lambda=%.3g labels=%s latent_dim=%d hidden=%d",
+            args.pose_aux_lambda, args.pose_aux_predicted_lambda, args.pose_label_source,
+            model.latent_dim, args.pose_aux_hidden,
+        )
+
+    params = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    if pose_head is not None:
+        params.extend(pose_head.parameters())
+    optimizer = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.weight_decay)
     
     start_epoch = 0
     start_batch_idx = 0
@@ -935,6 +1092,12 @@ def train(args):
             else:
                 assert_active_block_metadata_compatible(checkpoint_action_metadata)
             model.load_state_dict(checkpoint["model_state_dict"])
+            if pose_head is not None:
+                if "pose_head_state_dict" not in checkpoint:
+                    raise RuntimeError(
+                        "Cannot resume pose-aux training: checkpoint has no pose_head_state_dict"
+                    )
+                pose_head.load_state_dict(checkpoint["pose_head_state_dict"])
             optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
             if checkpoint.get("epoch_complete", True):
                 start_epoch = checkpoint["epoch"] + 1
@@ -964,7 +1127,27 @@ def train(args):
 
     total_batches = _num_batches(train_num_samples, args.batch_size, drop_last=args.drop_last)
     for epoch in range(start_epoch, args.epochs):
-        model.train()
+        model.eval() if args.freeze_model else model.train()
+        if pose_head is not None:
+            pose_head.train()
+        if args.rollout_lambda > 0.0 and args.rollout_warmup_epochs > 0:
+            effective_rollout_lambda = args.rollout_lambda * min(
+                1.0,
+                float(epoch + 1) / float(args.rollout_warmup_epochs),
+            )
+        else:
+            effective_rollout_lambda = args.rollout_lambda
+        # Scheduled sampling: ramp teacher-forcing prob start->end over ramp epochs.
+        if args.rollout_ss_start > 0.0 or args.rollout_ss_end > 0.0:
+            if args.rollout_ss_ramp_epochs > 0:
+                ss_frac = min(1.0, float(epoch) / float(args.rollout_ss_ramp_epochs))
+            else:
+                ss_frac = 0.0
+            effective_teacher_prob = args.rollout_ss_start + (
+                args.rollout_ss_end - args.rollout_ss_start
+            ) * ss_frac
+        else:
+            effective_teacher_prob = 0.0
         epoch_start_batch_idx = start_batch_idx if epoch == start_epoch else 0
         if hasattr(train_sampler, "set_epoch"):
             train_sampler.set_epoch(epoch, start_sample=epoch_start_batch_idx * args.batch_size)
@@ -986,13 +1169,40 @@ def train(args):
             optimizer.zero_grad(set_to_none=True)
             autocast_enabled = args.precision == "bf16" and device.type == "cuda"
             with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=autocast_enabled):
-                out = model(vis_seq=vis, prop_seq=None, cmd_seq=cmd)
-            loss = out["loss"]
+                out = model(
+                    vis_seq=vis,
+                    prop_seq=None,
+                    cmd_seq=cmd,
+                    rollout_lambda=effective_rollout_lambda,
+                    rollout_teacher_prob=effective_teacher_prob,
+                    return_latents=(pose_head is not None),
+                )
+                loss = out["loss"]
+                pose_stats = None
+                if pose_head is not None:
+                    pose_labels = (
+                        batch["pose_seq"].to(device, non_blocking=non_blocking_transfer)
+                        if args.pose_label_source == "actual" else None
+                    )
+                    pose_stats = {}
+                    if args.pose_aux_lambda > 0.0:
+                        pose_loss, encoded_pose_stats = pose_aux_loss(
+                            pose_head, out["z_proj"], cmd, args.command_dt_s, poses=pose_labels
+                        )
+                        loss = loss + args.pose_aux_lambda * pose_loss
+                        pose_stats.update(encoded_pose_stats)
+                    if args.pose_aux_predicted_lambda > 0.0:
+                        pose_pred_loss, pose_pred_stats = predicted_pose_aux_loss(
+                            pose_head, model, out["z_raw"], out["z_proj"], cmd,
+                            args.command_dt_s, poses=pose_labels,
+                        )
+                        loss = loss + args.pose_aux_predicted_lambda * pose_pred_loss
+                        pose_stats.update(pose_pred_stats)
             loss.backward()
             grad_norm = None
             if args.gradient_clip_val > 0:
                 grad_norm = torch.nn.utils.clip_grad_norm_(
-                    model.parameters(),
+                    params,
                     args.gradient_clip_val,
                 )
             optimizer.step()
@@ -1001,11 +1211,20 @@ def train(args):
             batch_metrics = {
                 "loss": loss.item(),
                 "pred": out["pred_loss"].item(),
+                "rollout": out["rollout_loss"].item(),
+                "rollout_lambda": out["rollout_lambda"].item(),
                 "sig": out["sigreg_loss"].item(),
                 "std": out["z_proj_std"].item(),
             }
             if grad_norm is not None:
                 batch_metrics["grad_norm"] = float(grad_norm.detach().cpu())
+            if pose_stats is not None:
+                if "pose_xy_err_m" in pose_stats:
+                    batch_metrics["pose_xy_err"] = pose_stats["pose_xy_err_m"]
+                    batch_metrics["pose_yaw_err"] = pose_stats["pose_yaw_err_rad"]
+                if "pose_pred_xy_err_m" in pose_stats:
+                    batch_metrics["pose_pred_xy_err"] = pose_stats["pose_pred_xy_err_m"]
+                    batch_metrics["pose_pred_yaw_err"] = pose_stats["pose_pred_yaw_err_rad"]
             epoch_stats.update(batch_metrics, weight=weight)
             epoch_means = epoch_stats.means()
             
@@ -1013,6 +1232,9 @@ def train(args):
                 "loss": f"{loss.item():.4f}",
                 "pred": f"{out['pred_loss'].item():.4f}",
                 "avg_pred": f"{epoch_means['pred']:.4f}",
+                "rollout": f"{out['rollout_loss'].item():.4f}",
+                "rlam": f"{effective_rollout_lambda:.3g}",
+                "ss_tf": f"{effective_teacher_prob:.2g}",
                 "sig": f"{out['sigreg_loss'].item():.4f}",
                 "std": f"{out['z_proj_std'].item():.4f}"
             })
@@ -1044,6 +1266,7 @@ def train(args):
                     next_batch_idx=next_batch_idx,
                     epoch_stats=epoch_stats,
                     metrics=train_metrics,
+                    pose_head=pose_head,
                 )
                 append_metrics_jsonl(
                     metrics_path,
@@ -1059,6 +1282,14 @@ def train(args):
                         "source_allow": args.source_allow,
                         "source_cap": args.source_cap,
                         "source_weight": args.source_weight,
+                        "rollout_lambda": args.rollout_lambda,
+                        "rollout_horizon": args.rollout_horizon,
+                        "rollout_gamma": args.rollout_gamma,
+                        "rollout_warmup_epochs": args.rollout_warmup_epochs,
+                        "pose_aux_lambda": args.pose_aux_lambda,
+                        "pose_aux_predicted_lambda": args.pose_aux_predicted_lambda,
+                        "pose_label_source": args.pose_label_source,
+                        "freeze_model": bool(args.freeze_model),
                         **train_metrics,
                     },
                 )
@@ -1095,7 +1326,27 @@ def train(args):
             next_batch_idx=0,
             epoch_stats=epoch_stats,
             metrics=log_metrics,
+            pose_head=pose_head,
         )
+        if pose_head is not None:
+            pose_path = Path(args.out_dir) / f"posehead_seq{args.max_seq_len}_e{epoch}.pt"
+            pose_tmp_path = pose_path.with_suffix(pose_path.suffix + ".tmp")
+            torch.save(
+                {
+                    "head_state_dict": pose_head.state_dict(),
+                    "latent_dim": int(model.latent_dim),
+                    "hidden": int(args.pose_aux_hidden),
+                    "command_dt_s": float(args.command_dt_s),
+                    "pose_aux_lambda": float(args.pose_aux_lambda),
+                    "pose_aux_predicted_lambda": float(args.pose_aux_predicted_lambda),
+                    "pose_label_source": str(args.pose_label_source),
+                    "freeze_model": bool(args.freeze_model),
+                    "epoch": int(epoch),
+                    "source_checkpoint": str(ckpt_path),
+                },
+                pose_tmp_path,
+            )
+            os.replace(pose_tmp_path, pose_path)
         append_metrics_jsonl(
             metrics_path,
             {
@@ -1110,6 +1361,14 @@ def train(args):
                 "source_allow": args.source_allow,
                 "source_cap": args.source_cap,
                 "source_weight": args.source_weight,
+                "rollout_lambda": args.rollout_lambda,
+                "rollout_horizon": args.rollout_horizon,
+                "rollout_gamma": args.rollout_gamma,
+                "rollout_warmup_epochs": args.rollout_warmup_epochs,
+                "pose_aux_lambda": args.pose_aux_lambda,
+                "pose_aux_predicted_lambda": args.pose_aux_predicted_lambda,
+                "pose_label_source": args.pose_label_source,
+                "freeze_model": bool(args.freeze_model),
                 **log_metrics,
             },
         )
@@ -1139,6 +1398,31 @@ if __name__ == "__main__":
     parser.add_argument("--gradient-clip-val", type=float, default=1.0)
     parser.add_argument("--precision", choices=("fp32", "bf16"), default="bf16")
     parser.add_argument("--sigreg-lambda", type=float, default=0.09)
+    parser.add_argument("--rollout-lambda", type=float, default=0.0)
+    parser.add_argument("--rollout-horizon", type=int, default=0, help="0 = all available transitions")
+    parser.add_argument("--rollout-gamma", type=float, default=0.9)
+    parser.add_argument("--rollout-warmup-epochs", type=int, default=0)
+    parser.add_argument(
+        "--rollout-ss-start",
+        type=float,
+        default=0.0,
+        help="Scheduled-sampling teacher-forcing prob at epoch 0 "
+        "(0 = off / pure free-running rollout).",
+    )
+    parser.add_argument(
+        "--rollout-ss-end",
+        type=float,
+        default=0.0,
+        help="Scheduled-sampling teacher-forcing prob after the ramp.",
+    )
+    parser.add_argument(
+        "--rollout-ss-ramp-epochs",
+        type=int,
+        default=0,
+        help="Epochs to linearly ramp teacher prob start->end "
+        "(0 = constant at --rollout-ss-start).",
+    )
+    parser.add_argument("--device", choices=("auto", "cuda", "cpu"), default="auto")
     parser.add_argument("--num-workers", type=int, default=6)
     parser.add_argument("--prefetch-factor", type=int, default=3)
     parser.add_argument("--pin-memory", action=argparse.BooleanOptionalAction, default=True)
@@ -1193,6 +1477,43 @@ if __name__ == "__main__":
         help="Resume a checkpoint lacking model_config/render_root metadata. Use only for known same-corpus continuations.",
     )
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint file or directory to resume from")
+    parser.add_argument(
+        "--init-from",
+        type=str,
+        default=None,
+        help="Load ONLY model weights from this checkpoint (fresh optimizer + epoch 0). "
+        "For fine-tuning a new objective from a trained model, e.g. the pose-aux run from e3.",
+    )
+    parser.add_argument(
+        "--pose-aux-lambda",
+        type=float,
+        default=0.0,
+        help="Weight of the RelPoseHead metric objective (0 = off). Backprops relative-pose "
+        "decoding into the encoder so the latent becomes metric for planning.",
+    )
+    parser.add_argument("--pose-aux-hidden", type=int, default=512)
+    parser.add_argument(
+        "--pose-aux-predicted-lambda",
+        type=float,
+        default=0.0,
+        help="Weight for deployment-aligned pose loss on predictor endpoint -> encoded final goal.",
+    )
+    parser.add_argument(
+        "--pose-label-source",
+        choices=("actual", "command"),
+        default="actual",
+        help="Pose-aux labels: aligned physical replay poses (primary) or command integration (ablation).",
+    )
+    parser.add_argument(
+        "--command-dt-s", type=float, default=0.10,
+        help="Tick dt for cmd-integrated pose targets (matches the kinematic nav benchmark).",
+    )
+    parser.add_argument(
+        "--freeze-model",
+        action="store_true",
+        help="Train only the RelPoseHead with the world model held in eval mode; "
+        "used for the frozen-head decodability ceiling.",
+    )
     args = parser.parse_args()
     
     train(args)

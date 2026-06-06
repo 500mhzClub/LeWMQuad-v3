@@ -12,6 +12,13 @@ This is an experiment gate, not a claim that a short-context model should
 produce pixel-perfect long rollouts. The immediate question is whether the
 learned rollout remains more useful than simple baselines as horizon increases.
 
+**Status update, 2026-06-06:** the newer seq11 8k-run e3 checkpoint clears the
+forward-prediction version of this gate, but separate diagnostics show that its
+latent cannot reliably encode fine metric geometry or rank navigation actions.
+Forward-model readiness therefore does not authorize a navigation claim. The
+representation-track navigation gate is now
+`docs/lewm_pose_aux_experiment_design_2026-06-06.md`.
+
 ## Sequence Semantics
 
 For a training sample with `seq_len=4`, the loader returns four frames and four

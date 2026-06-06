@@ -68,6 +68,8 @@ from lewm_genesis.scene_loader import (  # noqa: E402
 )
 from lewm_worlds.planning_grid import InflatedOccupancyGrid  # noqa: E402
 from probe_lewm_checkpoint import load_model  # noqa: E402
+from lewm.models.energy_head import GoalEnergyHead  # noqa: E402
+from lewm.models.pose_head import RelPoseHead  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -77,6 +79,7 @@ class GoalSpec:
     target_xy: tuple[float, float]
     target_yaw_rad: float
     image: torch.Tensor
+    approach_images: torch.Tensor | None = None  # (N, C, H, W) multi-view goal renders
 
 
 @dataclass
@@ -282,10 +285,52 @@ def _choose_lewm_primitive(
     action_tensor: torch.Tensor,
 ) -> tuple[str, float]:
     z_start_raw, _z_start_proj = _encode_frame(model, image)
-    _z_goal_raw, z_goal_proj = _encode_frame(model, goal_image)
-    repeated_start = z_start_raw.repeat(action_tensor.shape[0], 1)
+    # goal_image may be a single (C,H,W) frame or a (N,C,H,W) multi-view stack.
+    goal_views = goal_image if goal_image.dim() == 4 else goal_image[None]
+    z_goal_views = torch.cat([_encode_frame(model, gv)[1] for gv in goal_views], dim=0)  # (N, D)
+    n_cand = action_tensor.shape[0]
+    repeated_start = z_start_raw.repeat(n_cand, 1)
     z_pred = model.plan_rollout(repeated_start, action_tensor)
-    cost = model.plan_cost(z_pred, z_goal_proj.repeat(action_tensor.shape[0], 1))
+    head = getattr(model, "_energy_head", None)
+    if head is not None:
+        # Learned goal-energy cost (replaces the broken latent-L2 metric);
+        # min over goal views = "match the beacon from whichever side I arrive".
+        z_pred_last = z_pred[:, -1, :] if z_pred.dim() == 3 else z_pred
+        per_view = torch.stack(
+            [head(z_pred_last, z_goal_views[v:v + 1].repeat(n_cand, 1))
+             for v in range(z_goal_views.shape[0])],
+            dim=0,
+        )  # (N, n_cand)
+        cost = per_view.min(dim=0).values
+    else:
+        cost = model.plan_cost(z_pred, z_goal_views[0:1].repeat(n_cand, 1))
+    best_idx = int(torch.argmin(cost).item())
+    return sequences[best_idx][0], float(cost[best_idx].detach().cpu().item())
+
+
+@torch.no_grad()
+def _choose_lewm_pose_primitive(
+    model: torch.nn.Module,
+    pose_head: RelPoseHead,
+    image: torch.Tensor,
+    goal_image: torch.Tensor,
+    sequences: list[tuple[str, ...]],
+    action_tensor: torch.Tensor,
+) -> tuple[str, float]:
+    """No-privileged-runtime-geometry planner: cost = the model's own predicted
+    distance-to-goal ||dxy(z_pred, z_goal)||. No privileged geometry at runtime."""
+    z_start_raw, _ = _encode_frame(model, image)
+    goal_views = goal_image if goal_image.dim() == 4 else goal_image[None]
+    z_goal_proj = torch.cat([_encode_frame(model, gv)[1] for gv in goal_views], dim=0)  # (V, D) z_proj
+    n_cand = action_tensor.shape[0]
+    z_pred = model.plan_rollout(z_start_raw.repeat(n_cand, 1), action_tensor)
+    z_pred_last = z_pred[:, -1, :] if z_pred.dim() == 3 else z_pred
+    per_view = torch.stack(
+        [pose_head(z_pred_last, z_goal_proj[v:v + 1].repeat(n_cand, 1))[:, :2].norm(dim=-1)
+         for v in range(z_goal_proj.shape[0])],
+        dim=0,
+    )  # (V, n_cand) predicted distance-to-goal; min = "reach from whichever side"
+    cost = per_view.min(dim=0).values
     best_idx = int(torch.argmin(cost).item())
     return sequences[best_idx][0], float(cost[best_idx].detach().cpu().item())
 
@@ -318,6 +363,44 @@ def _line_of_sight_to_beacon(
     )
 
 
+def _render_approach_views(
+    build: Any,
+    pack: Any,
+    landmark_xy: tuple[float, float],
+    grid: InflatedOccupancyGrid,
+    standoff_m: float,
+    n_views: int,
+    base_z: float,
+    device: torch.device,
+) -> torch.Tensor | None:
+    """Render the beacon from N evenly-spaced approach directions (each facing it).
+
+    Multi-view goal latents make image-goal servoing robust to the heading the
+    robot actually arrives from — the LeJEPA latent is heading-dominated, so a
+    single goal photo only matches one approach heading.
+    """
+    lx, ly = float(landmark_xy[0]), float(landmark_xy[1])
+    imgs = []
+    for k in range(int(n_views)):
+        ang = 2.0 * math.pi * k / float(n_views)
+        vx = lx + float(standoff_m) * math.cos(ang)
+        vy = ly + float(standoff_m) * math.sin(ang)
+        if not grid.is_free((vx, vy)):
+            continue
+        if not _line_of_sight_to_beacon(pack, (vx, vy), (lx, ly)):
+            continue
+        vyaw = math.atan2(ly - vy, lx - vx)
+        imgs.append(_render_tensor_from_base(
+            build, pack,
+            base_xyz_m=np.asarray([vx, vy, base_z], dtype=np.float32),
+            base_quat_wxyz=_quat_wxyz_from_yaw(vyaw),
+            device=device,
+        ))
+    if not imgs:
+        return None
+    return torch.stack(imgs, dim=0)
+
+
 def _select_visible_beacon_setup(
     pack: Any,
     rng: random.Random,
@@ -328,6 +411,7 @@ def _select_visible_beacon_setup(
     approach_distance_m: float,
     goal_standoff_m: float,
     start_yaw_jitter_rad: float,
+    n_goal_views: int = 0,
 ) -> tuple[np.ndarray, np.ndarray, GoalSpec]:
     graph = pack.scene_graph
     landmarks = list(graph.landmark_cells)
@@ -372,12 +456,24 @@ def _select_visible_beacon_setup(
                 base_quat_wxyz=_quat_wxyz_from_yaw(target_yaw),
                 device=device,
             )
+            approach_imgs = None
+            if int(n_goal_views) > 0:
+                approach_imgs = _render_approach_views(
+                    build, pack, (lx, ly), grid, goal_standoff_m,
+                    int(n_goal_views), base_z, device,
+                )
+                # Always include the primary target view first.
+                approach_imgs = (
+                    goal_img[None] if approach_imgs is None
+                    else torch.cat([goal_img[None], approach_imgs], dim=0)
+                )
             goal = GoalSpec(
                 object_id=str(object_id),
                 landmark_xy=(lx, ly),
                 target_xy=(float(target_xy[0]), float(target_xy[1])),
                 target_yaw_rad=float(target_yaw),
                 image=goal_img,
+                approach_images=approach_imgs,
             )
             start_pos = np.asarray([start_xy[0], start_xy[1], base_z], dtype=np.float32)
             start_quat = _quat_wxyz_from_yaw(start_yaw)
@@ -491,7 +587,7 @@ def _run_policy_trial(
         if _xy_distance(pos[:2], goal.target_xy) <= float(goal_radius_m):
             break
 
-        if policy_name == "lewm":
+        if policy_name in ("lewm", "lewm_pose"):
             image = _render_tensor_from_base(
                 build,
                 pack,
@@ -499,13 +595,15 @@ def _run_policy_trial(
                 base_quat_wxyz=quat,
                 device=device,
             )
-            primitive_name, cost = _choose_lewm_primitive(
-                model,
-                image,
-                goal.image,
-                sequences,
-                action_tensor,
-            )
+            goal_img = goal.approach_images if goal.approach_images is not None else goal.image
+            if policy_name == "lewm":
+                primitive_name, cost = _choose_lewm_primitive(
+                    model, image, goal_img, sequences, action_tensor,
+                )
+            else:
+                primitive_name, cost = _choose_lewm_pose_primitive(
+                    model, model._pose_head, image, goal_img, sequences, action_tensor,
+                )
             plan_costs.append(cost)
         elif policy_name == "bearing":
             primitive_name = _choose_bearing_primitive(build, goal.target_xy)
@@ -639,6 +737,13 @@ def main() -> int:
     parser.add_argument("--min-initial-distance-m", type=float, default=1.5)
     parser.add_argument("--beacon-approach-distance-m", type=float, default=1.5)
     parser.add_argument("--beacon-start-yaw-jitter-rad", type=float, default=0.0)
+    parser.add_argument(
+        "--goal-views",
+        type=int,
+        default=0,
+        help="Multi-view image goals: render the beacon from N approach directions "
+        "and take min energy over views (0 = single front view).",
+    )
     parser.add_argument("--fall-z-threshold-m", type=float, default=0.15)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument(
@@ -648,6 +753,25 @@ def main() -> int:
     parser.add_argument("--policies", default="lewm,bearing,hold,random")
     parser.add_argument("--max-seq-len", type=int, default=None)
     parser.add_argument("--sigreg-lambda", type=float, default=None)
+    parser.add_argument(
+        "--head-ckpt",
+        type=Path,
+        default=None,
+        help="Optional GoalEnergyHead checkpoint; replaces L2 plan_cost for the lewm policy.",
+    )
+    parser.add_argument(
+        "--pose-head-ckpt",
+        type=Path,
+        default=None,
+        help="Optional RelPoseHead checkpoint; enables the lewm_pose policy "
+        "(cost = predicted distance-to-goal with no privileged runtime geometry).",
+    )
+    parser.add_argument(
+        "--allow-pose-multiview-goal-set",
+        action="store_true",
+        help="Allow lewm_pose with --goal-views > 0. This changes the target from "
+        "one pose to a set of approach poses and is not the primary benchmark.",
+    )
     args = parser.parse_args()
 
     repo_root = args.repo_root.resolve()
@@ -662,15 +786,49 @@ def main() -> int:
         device,
     )
 
+    if args.head_ckpt is not None:
+        head_ck = torch.load(args.head_ckpt.resolve(), map_location=device, weights_only=False)
+        head = GoalEnergyHead(
+            latent_dim=int(head_ck.get("latent_dim", model.latent_dim)),
+            hidden=int(head_ck.get("hidden", 1024)),
+            dropout=0.0,
+        ).to(device)
+        head.load_state_dict(head_ck["head_state_dict"])
+        head.eval()
+        model._energy_head = head
+        print(f"[lewm] using learned GoalEnergyHead cost from {args.head_ckpt} "
+              f"(train ranking acc {head_ck.get('best_eval_ranking_acc', '?')})", flush=True)
+
+    if args.pose_head_ckpt is not None:
+        pck = torch.load(args.pose_head_ckpt.resolve(), map_location=device, weights_only=False)
+        phead = RelPoseHead(
+            latent_dim=int(pck.get("latent_dim", model.latent_dim)),
+            hidden=int(pck.get("hidden", 512)),
+        ).to(device)
+        phead.load_state_dict(pck["head_state_dict"])
+        phead.eval()
+        model._pose_head = phead
+        print(f"[lewm_pose] using RelPoseHead metric cost from {args.pose_head_ckpt} "
+              f"(epoch {pck.get('epoch', '?')})", flush=True)
+
     primitive_names = _parse_csv(args.primitive_names)
     policies = _parse_csv(args.policies)
     if "hold" not in primitive_names:
         raise SystemExit("--primitive-names must include hold")
-    unsupported = sorted(set(policies) - {"lewm", "bearing", "hold", "random"})
+    unsupported = sorted(set(policies) - {"lewm", "lewm_pose", "bearing", "hold", "random"})
     if unsupported:
         raise SystemExit(f"unsupported policies: {unsupported}")
     if int(args.horizon) < 1:
         raise SystemExit("--horizon must be >= 1")
+    if (
+        "lewm_pose" in policies
+        and int(args.goal_views) > 0
+        and not args.allow_pose_multiview_goal_set
+    ):
+        raise SystemExit(
+            "lewm_pose with --goal-views > 0 changes the goal-set semantics; "
+            "pass --allow-pose-multiview-goal-set only for that explicit ablation"
+        )
 
     platform = load_platform_manifest(args.platform_manifest.resolve())
     registry = PrimitiveRegistry.from_yaml(args.primitive_registry.resolve())
@@ -768,6 +926,7 @@ def main() -> int:
                         approach_distance_m=float(args.beacon_approach_distance_m),
                         goal_standoff_m=float(args.goal_standoff_m),
                         start_yaw_jitter_rad=float(args.beacon_start_yaw_jitter_rad),
+                        n_goal_views=int(args.goal_views),
                     )
                     _set_pose(
                         build=build,

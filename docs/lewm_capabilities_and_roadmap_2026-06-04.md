@@ -7,6 +7,14 @@ into a capability-and-roadmap view: what the current flat LeWM **can** do, what
 it **cannot**, why, what to do about it, and what it implies for the H-JEPA
 hierarchy. Every key point has a **Plain:** line in non-specialist language.
 
+**Later evidence, 2026-06-06:** the scaled SIGReg/source-mix ablation did not
+restore metric geometry, while rollout-objective/data scaling substantially
+improved forward prediction. Treat the SIGReg root-cause language below as the
+hypothesis at this document's 2026-06-04 snapshot, not the current decision.
+Current representation evidence and the controlled pose-aux plan are in
+`docs/lewm_nav_cost_diagnosis_2026-06-06.md` and
+`docs/lewm_pose_aux_experiment_design_2026-06-06.md`.
+
 - Detailed chronological evidence + tables: `docs/lewm_state_diagnostic_2026-06-04.md` §1–§8.
 - Registered plan being tested: `docs/v3_hjepa_plan.md`.
 - Probe scripts: `scripts/probe_lewm_latent_aliasing.py` (A2),

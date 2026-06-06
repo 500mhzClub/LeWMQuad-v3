@@ -45,6 +45,12 @@ def load_model(args: argparse.Namespace, device: torch.device) -> tuple[LeWorldM
         max_seq_len=max_seq_len,
         cmd_dim=ACTIVE_BLOCK_DIM,
         sigreg_lambda=sigreg_lambda,
+        rollout_lambda=float(model_config.get("rollout_lambda", 0.0)),
+        rollout_horizon=(
+            int(model_config["rollout_horizon"])
+            if model_config.get("rollout_horizon") else None
+        ),
+        rollout_gamma=float(model_config.get("rollout_gamma", 0.9)),
     ).to(device)
 
     if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
