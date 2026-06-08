@@ -4,13 +4,19 @@ Companion to `lewm_pose_aux_experiment_design_2026-06-06.md` and
 `lewm_pose_aux_ladder_300sess_findings_2026-06-06.md`. Written after the 300-session
 pose-aux geometry screen to ground the next decision in the external literature.
 
-**Screen verdict being acted on:** the pose-aux geometry loss injects *encoded*
+**Screen verdict:** the pose-aux geometry loss injects *encoded*
 metric decodability (encρ monotonic F0 +0.067 → C2 +0.188) with the forward model
 preserved, but the *decisive* predicted→goal correlation only ties the
 plain-continuation control (C2 +0.142 vs C0/posthoc +0.148) and **no cell produces
 positive first-action ranking**. I.e. decodable geometry improved; *actionable*
-geometry did not. Conclusion: predictor/projector-alignment + action-sensitivity
-branch, not a λ problem.
+geometry did not. The later review in
+`lewm_post_idm_review_decision_2026-06-06.md` supersedes this document's original
+IDM-first ranking: action decodability is not the missing deployed contract.
+The subsequent executed closure probe found no held-out-scene IDM transition
+gain, and the first projected-feature goal-action ranker failed its registered
+three-seed regret/collision gate. A controlled pooled raw-feature screen improved
+the result but also failed all three seeds. P2 recognition/topology and P3
+spatial-patch/history screening are now the active directions.
 
 Provenance note: claims attributed to a paper are from that paper (fetched
 2026-06-06). Sections marked **[analysis]** are our interpretation, not a published
@@ -31,9 +37,9 @@ result.
 | **LeWM / LeWorldModel** (le-wm.github.io, 2603.19312) | end-to-end JEPA from pixels (our basis) | — | No |
 
 **Key structural fact:** none of the mainstream nav-JEPAs supervise physical pose.
-Our pose-aux approach is a deliberate departure (the design doc says so). They obtain
-plannability from the *self-supervised* objective + action-conditioning + data
-coverage instead.
+Our pose-aux approach is a deliberate departure. Their success depends on different
+combinations of representation substrate, action-conditioning, data coverage,
+rollout training, and planning. It should not be attributed generally to IDM.
 
 ### Did they hit our problem? Yes — it is a named result.
 
@@ -49,22 +55,23 @@ coverage instead.
   planning fails on a non-smooth latent landscape and switched to **CEM**; they
   explicitly *did not* constrain latent smoothness. Maps to our first-action ranking
   ≈ random.
-- **Action-insensitivity / slow features** is the central failure the subfield
-  engineers against — the same phenomenon as our own seq11 "zero-action shortcut"
-  that rollout-warmup fixed.
+- **Action-insensitivity / slow features** is one important failure the subfield
+  engineers against. Our seq11 zero-action shortcut was already materially fixed by
+  rollout warmup and data scaling; the remaining first-action goal-ranking failure
+  is not evidence by itself that action identity is absent.
 
 ### How the working methods fix it (none use pose labels)
 
-1. **Inverse-dynamics (IDM) + variance/covariance reg (PLDM).** Latent kept
-   action-sensitive by predicting the action from consecutive latents; anti-collapse
-   via VICReg variance+covariance + temporal smoothness. Ablations are dramatic:
-   removing the variance term drops Two-Rooms success **98% → 13%**; removing
-   covariance → 29%. PLDM never supervises distance — it relies on "distance in the
-   representation ∝ number of steps" *made roughly true by the regularization*.
-2. **Stronger action conditioning (What Drives Success).** Injecting actions at
-   **every transformer block (AdaLN + RoPE)** beats concatenation; **multi-step
-   rollout loss** beats teacher-forcing; need ≥2-frame context for velocity; **CEM
-   L2 > L1 > gradient**.
+1. **PLDM uses IDM alongside a multi-term VICReg-derived objective.** The ablations
+   do not show IDM is load-bearing: removing IDM leaves Two-Rooms at `98.0%` and
+   lowers Diverse Maze to `75.5%`, while removing variance/covariance regularization
+   is dramatically more damaging. PLDM is also evaluated on fully observed top-down
+   navigation and uses velocity in Diverse PointMaze, unlike our single-camera POMDP.
+2. **Predictor and substrate choices (What Drives Success / DINO-WM).** Action
+   conditioning at every transformer block, RoPE, short multistep rollout losses,
+   context/proprioception, pretrained spatial features, and CEM are useful levers.
+   Our predictor already applies AdaLN action conditioning at every block; RoPE and
+   a spatial/pretrained substrate remain untested.
 3. **Action coverage / harder data (PLDM).** Planning quality depends heavily on
    action diversity and coverage of critical regions (random vs directional actions;
    covering the doorway). Mirrors our decision-tree branch "candidate ranking fails →
@@ -88,8 +95,8 @@ A JEPA latent must satisfy two unrelated things, regularized by different tools:
   temporal smoothness live here.**
 
 Our failure (good prediction, non-actionable geometry, first-action ranking ≈
-random) is an **Axis-2 deficit**. SIGReg is an Axis-1 tool. So this is not a
-"VICReg vs SIGReg" decision.
+random) is a deployed goal-ranking deficit. It may involve dynamics geometry, but
+the evidence does not isolate action identifiability as its cause.
 
 ### Axis 1: SIGReg supersedes VICReg
 
@@ -112,12 +119,11 @@ So **for the collapse / marginal-shape job, VICReg would be a step backward**, a
 our stack already uses the better tool (`sigreg-lambda 0.09`). We are *not* swapping
 SIGReg out.
 
-### Axis 2: what PLDM actually buys — SIGReg can't
+### Axis 2: what transition objectives can buy — SIGReg can't
 
-- **Inverse-dynamics (IDM):** predict aₜ from (zₜ, zₜ₊₁) → latent becomes
-  action-sensitive and action-conditioned displacement is recoverable (a self-sup
-  cousin of our encoded relative-pose contract, driven by logged actions, no pose
-  labels).
+- **Inverse-dynamics (IDM):** predict aₜ from (zₜ, zₜ₊₁) so the logged action is
+  decodable from observed transitions. This does not guarantee that the latent can
+  rank counterfactual actions toward a goal.
 - **Temporal smoothness / step-count metric:** "latent distance ∝ steps" — makes
   L2-in-latent planning work.
 
@@ -148,7 +154,7 @@ absolute pose into the embedding.
 | first-action ranking ≈ random; fine resolution dead | WDS: large embeddings hard to distinguish nearby states; DINO-WM: gradient planning fails on non-smooth latent |
 | L2-in-latent anti-metric | DINO-WM/PLDM use L2 but make it work via SSL reg (PLDM) or sampling (DINO-WM CEM) |
 | zero-action shortcut killed by rollout warmup | the slow-features/action-insensitivity failure the whole subfield targets |
-| pose-λ is not the lever | nobody fixes this with metric supervision; they use IDM + action-conditioning + coverage |
+| pose-λ is not the lever | decodability objectives have not moved our deployed first-action contract |
 | latent good at recognition (retrieval@1 0.42) | NWM-style goal-image scoring is a viable metric-free route |
 
 ---
@@ -160,26 +166,22 @@ control with more data, "scale pose-aux" rises to the top. Base case = screen ho
 
 | # | option | why ranked here | cost | payoff |
 |---|---|---|---|---|
-| **1** | **Inverse-dynamics aux + relative/step-count geometry** | the mechanism working nav-JEPAs rely on (PLDM); attacks action-insensitivity; conditional geometry is SIGReg-compatible | Low — IDM head slots into existing ladder/watcher, fine-tunes from e3 | High |
-| **2** | **Harder action-conditioned pairs / coverage** | our decision-tree branch *and* PLDM's empirically-critical factor; complements #1 | Low — sampling/curriculum change | Med-High |
-| **3** | **Recognition / topological planning (hedge)** | leverages retrieval@1 ≈ 0.42; NWM-style goal-image scoring sidesteps metric; most likely to *actually navigate* | Med — retrieval/graph planner on frozen latents, no retrain | High (different deliverable) |
-| **4** | **Stronger action-conditioning architecture (AdaLN+RoPE)** | top driver in WDS; fixes "predictor doesn't carry geometry" | **High** — architecture change ⇒ retrain from scratch, lose e3 lineage | High but expensive |
-| **5** | **Finish 1000-sess confirm (+ A1 command-label ablation)** | necessary gate; cheap; low new info beyond settling the screen | ~free (running) | decisional |
-| **6** | **More pose-λ / pose-aux tuning** | research + our λ-sweep say wrong knob | Low | Low — stop after confirm |
-| **7** | **Planner-only tuning (CEM/MPPI) / generative NWM** | substrate, not planner, is the bottleneck; generative is a heavy departure | Low / Very high | Low |
+| **1** | **Goal-conditioned first-action dataset + ranker** | directly supervises and measures the missing deployed decision | Med | High |
+| **2** | **Recognition / topological planning** | leverages retrieval@1 ≈ 0.42 and avoids treating the pooled latent as a continuous map | Med | High |
+| **3** | **Spatial/history substrate screen** | tests pooled LeWM against patch features and temporal context on the same action-ranking gate | Med | High |
+| **4** | **IDM frozen-latent closure diagnostic** | cheaply tests whether true transitions contain action information beyond state/policy correlations | Very low | Decisional only |
+| **5** | **Bounded IDM proxy, only after closure** | allowed only if first-action metrics, not IDM R2, are the primary gate | Low | Uncertain |
+| **6** | **More pose-λ / pose-aux tuning** | wrong knob; decodability did not transfer | Low | Low |
 
 ### Recommended sequence
 
-1. **Do #1 + #2 together, reusing the ladder.** Add an `--idm-lambda` head (predict
-   the logged *action* from consecutive latents — fully self-supervised, no pose
-   labels) with hard-pair/coverage-aware sampling, fine-tuned from e3 on the same
-   harness. Highest expected value per GPU-hour, SIGReg-compatible, directly tests
-   the "predictor/projector isn't carrying geometry" diagnosis.
-2. **Run #3 in parallel as a hedge** — frozen-latent retrieval/graph planner, no GPU.
-   Most likely to ship a working navigator even if metric geometry never lands.
-3. **Defer #4** until #1/#2 show whether a cheap aux fix suffices (we already have
-   its multi-step-rollout half via warm2; the new piece is per-block conditioning).
-4. **Drop #6/#7** as primary directions.
+1. Build the goal-conditioned first-action dataset/ranker and use its regret and
+   closed-loop progress as the primary local-control gates.
+2. Build the minimal recognition/topological path in parallel.
+3. Run the IDM closure diagnostic. Do not calibrate or launch IDM unless it shows
+   transition-specific gain, and never promote it on IDM R2 alone.
+4. Screen spatial patch/history substrates if frozen pooled LeWM cannot support the
+   first-action ranker.
 
 ---
 

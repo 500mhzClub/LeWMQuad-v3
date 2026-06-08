@@ -1,17 +1,14 @@
-"""Inverse-dynamics auxiliary head — the action-sensitivity objective.
+"""Experimental inverse-dynamics auxiliary head.
 
-PLDM-style: from a consecutive latent pair ``(z_t, z_{t+1})`` predict the action
-that carried the encoder between them. The loss backprops into the ENCODER, forcing
-the latent to be action-sensitive and the transitions action-legible.
+From a consecutive latent pair ``(z_t, z_{t+1})``, predict the logged command
+between them. The loss backprops into the encoder and can make commands more
+decodable from observed transitions.
 
-Why this and not more pose supervision (see
-``docs/lewm_pose_aux_literature_and_options_2026-06-06.md``): the working
-navigation-JEPAs (PLDM, DINO-WM) obtain plannability via inverse-dynamics +
-action-conditioning, not pose labels. Unlike ``RelPoseHead`` this needs NO pose
-labels (the active-block commands are already in the batch), and it shapes
-*conditional* geometry (how actions move you through the latent), which coexists
-with the SIGReg isotropic-Gaussian marginal instead of fighting an absolute metric
-layout.
+This is retained as experimental tooling, not a promoted navigation objective.
+Command decodability is not equivalent to goal-conditioned counterfactual action
+ranking: the head has no goal input and can exploit behavior-policy or visual-motion
+cues. Run ``scripts/probe_idm_decodability.py`` before any fine-tune, and gate any
+future IDM cell on first-action planning metrics rather than IDM R2.
 """
 from __future__ import annotations
 

@@ -117,7 +117,7 @@ def build_scene_bank(model, *, label_file, family, split, render_root, corpus_ro
     return {"scene_id": scene_id, "family": family, "graph": graph,
             "z": z_proj.astype(np.float64), "z_raw": z_raw.astype(np.float64),
             "cells": cells, "xy": xy, "n_envs": n_envs, "by_env": by_env,
-            "render_dir": render_dir}
+            "render_dir": render_dir, "paths": paths}
 
 
 # ---------------------------------------------------------------------------

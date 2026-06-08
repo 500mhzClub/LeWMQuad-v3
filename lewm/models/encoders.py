@@ -102,7 +102,8 @@ class VisionEncoder(nn.Module):
                 if module.bias is not None:
                     nn.init.zeros_(module.bias)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward_tokens(self, x: torch.Tensor) -> torch.Tensor:
+        """Return normalized CLS and spatial patch tokens."""
         if x.ndim != 4:
             raise ValueError(
                 f"Expected vision tensor of shape (B, C, H, W), got {tuple(x.shape)}"
@@ -119,8 +120,10 @@ class VisionEncoder(nn.Module):
         x = self.pos_drop(x + self.pos_embed)
         for block in self.blocks:
             x = block(x)
-        x = self.norm(x)
-        return x[:, 0]
+        return self.norm(x)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.forward_tokens(x)[:, 0]
 
 
 class ProprioEncoder(nn.Module):
