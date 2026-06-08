@@ -170,22 +170,48 @@ It still does not pass the gates. Two facts locate the remaining wall:
    does both, so the information exists in the privileged geometry; the adapted
    frozen descriptors do not expose it sharply enough on held-out scenes.
 
+### Frozen-v1 control: is adaptation helping?
+
+A frozen-feature head (2x2 spatial substrate) was trained under the identical
+v1 objective and seed, with no encoder adaptation.
+
+Artifact: `.generated/task_aligned_policy_v0/head_v1_spatial2_seed20260608.json`
+
+| model | regret-ratio | collision | progress |
+|---|---:|---:|---:|
+| frozen-v1 spatial2 (no adaptation) | 0.593 | 7.40% | +0.0241 |
+| final-block adapter (cp=3) | 0.572 | 5.90% | +0.0206 |
+| final-block adapter (cp=5) | 0.577 | 4.74% | +0.0148 |
+| promotion bar | ≤0.500 | ≤5% | >0.0192 |
+
+Final-block adaptation **does** contribute: it improves regret-ratio
+0.593 -> 0.572 and collision 7.40% -> 5.90% over the frozen substrate, Pareto-
+better (safer and lower regret) on the same objective and seed. So the final two
+ViT blocks carry task-relevant signal — adaptation is not a no-op. But the gain
+(~0.02 regret-ratio, ~1.5 collision points) is small against the 0.07 gap to the
+0.50 promotion bar. The frozen LeWM base is near its ceiling for this task, and
+closing the gap by capacity alone would require unfreezing most of the encoder —
+i.e. approaching the full retrain the registered plan defers.
+
+### Next step
+
 Per the decision rule registered in
 `docs/lewm_task_aligned_frozen_base_result_2026-06-08.md`: small-head and
-deploy-time tuning are now exhausted, and the task target has been corrected.
-The two remaining review items before any large retrain are the
-**goal-conditioning contract** (the head sees only a pooled frozen goal
-descriptor plus a goal-present bit; the behavior policy reaches +0.044 m progress,
-so progress is attainable — the adapter is leaving it on the table) and the
-**base training objective**. Recommended next controls, in order:
+deploy-time tuning are exhausted, the task target is corrected, and final-block
+adaptation gives only a marginal lift. The higher-leverage review items, before
+any large retrain, are:
 
-1. a frozen-feature head trained under the identical v1 objective, to confirm
-   whether final-block adaptation is contributing at all (does it beat the frozen
-   substrate's regret-ratio, or is ~0.57 already the frozen ceiling?);
-2. if adaptation helps, a bounded capacity step (unfreeze four blocks, or a
-   stronger goal-conditioning path) rather than more epochs, which only trades
-   collision up for progress;
-3. only if both stall, revisit the base objective / a larger retrain.
+1. **Goal-conditioning contract.** The scorer sees only a pooled frozen goal
+   descriptor plus a goal-present bit. The logged behavior policy reaches
+   +0.044 m progress at 22% collision — the information to make more progress
+   exists in the scene; the adapter exposes only ~half of it (+0.021 m) while
+   staying safe. A richer goal-relative input (relative goal geometry, spatial
+   goal cross-attention) is the most likely lever to move regret-ratio.
+2. **Base training objective**, only if the goal-conditioning path stalls.
+
+A larger capacity step (unfreeze four+ blocks) is *not* recommended next: the
+per-block return measured here is too small relative to the remaining gap to
+justify the cost, and it pre-empts the cheaper goal-conditioning review.
 
 Do not collect new rollouts for any of these; the 32-scene decision sets and
 v1 scoring are sufficient.
@@ -195,4 +221,6 @@ v1 scoring are sufficient.
 - v1 scored decisions: `.generated/task_aligned_decisions/{train32,val32}_v1_scored.jsonl`
 - adapter (cp=3 deploy): `.generated/task_aligned_policy_v0/adapter_v1_last2_seed20260608.{pt,json}`
 - adapter (cp=5 deploy): `.generated/task_aligned_policy_v0/adapter_v1_last2_cp5_seed20260608.{pt,json}`
+- frozen-v1 control head: `.generated/task_aligned_policy_v0/head_v1_spatial2_seed20260608.{pt,json}`
+- v1 spatial features: `.generated/task_aligned_policy_v0/{train32,val32}_v1_spatial2.npz`
 - logs: `.generated/task_aligned_policy_v0/adapter_v1{,_cp5}_seed20260608.log`
