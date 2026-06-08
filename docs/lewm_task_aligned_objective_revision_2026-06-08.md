@@ -216,6 +216,18 @@ justify the cost, and it pre-empts the cheaper goal-conditioning review.
 Do not collect new rollouts for any of these; the 32-scene decision sets and
 v1 scoring are sufficient.
 
+### Follow-up contract audit
+
+Before implementing richer goal conditioning, a direct input/label audit found
+that v1 usually supplies a route-target image while scoring progress toward the
+oracle next cell, silently treats some targeted rows as targetless, and filters
+recovery-heavy rows using an unvalidated grid-collision proxy. These findings
+narrow the interpretation of the v1 result: adaptation helps, but the ~0.57
+regret-ratio is not yet established as a frozen-base representational ceiling.
+
+The revised stop condition and v2 repair plan are in
+`docs/lewm_task_aligned_contract_review_2026-06-08.md`.
+
 ## Artifacts
 
 - v1 scored decisions: `.generated/task_aligned_decisions/{train32,val32}_v1_scored.jsonl`
