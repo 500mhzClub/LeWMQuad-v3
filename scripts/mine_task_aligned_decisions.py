@@ -297,11 +297,30 @@ def _mine_scene(
             recent_frames[env].append(str(_frame_path(render_root, scene_id, frame)))
 
     for row in rows:
-        target = int(row["route_target_id"])
-        target_frame = target_frames.get(target) if target >= 0 else None
-        row["target_frame"] = (
-            target_frame if target_frame is not None and Path(target_frame).is_file() else None
+        route_target = int(row["route_target_id"])
+        oracle_next = row["oracle_next_cell_id"]
+        route_frame = target_frames.get(route_target) if route_target >= 0 else None
+        local_frame = (
+            target_frames.get(int(oracle_next)) if oracle_next is not None else None
         )
+        route_frame = (
+            route_frame if route_frame is not None and Path(route_frame).is_file() else None
+        )
+        local_frame = (
+            local_frame if local_frame is not None and Path(local_frame).is_file() else None
+        )
+        # v2 contract: separate the final-route-goal image from the local-subgoal
+        # image, and target existence from image availability. score_task_aligned
+        # targets the local next cell (oracle_next), so local_target_frame is the
+        # matched goal image; route_target_frame is the harder routing-plus-control
+        # input kept for an explicit control. target_present records that a scored
+        # target exists regardless of whether its representative frame was rendered.
+        row["route_target_frame"] = route_frame
+        row["local_target_frame"] = local_frame
+        row["target_frame"] = route_frame  # back-compat with v1 consumers
+        row["target_present"] = bool(oracle_next is not None or route_target >= 0)
+        row["route_target_image_present"] = route_frame is not None
+        row["local_target_image_present"] = local_frame is not None
     if max_rows > 0 and len(rows) > max_rows:
         random.Random(scene_id).shuffle(rows)
         rows = rows[:max_rows]
@@ -402,6 +421,13 @@ def main() -> int:
             row["execution_safety_overridden"] for row in all_rows
         ),
         "rows_with_target_frame": sum(row["target_frame"] is not None for row in all_rows),
+        "rows_with_route_target_frame": sum(
+            row["route_target_frame"] is not None for row in all_rows
+        ),
+        "rows_with_local_target_frame": sum(
+            row["local_target_frame"] is not None for row in all_rows
+        ),
+        "rows_with_target_present": sum(row["target_present"] for row in all_rows),
         "rows_with_oracle_next_cell": sum(
             row["oracle_next_cell_id"] is not None for row in all_rows
         ),

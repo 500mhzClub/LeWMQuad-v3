@@ -51,6 +51,8 @@ def _regression_stats(train: dict) -> dict[str, tuple[float, float]]:
     stats = {}
     for name in ("progress", "heading"):
         values = train[name][goal_mask]
+        if values.numel() == 0:  # no-goal control: fall back to all-row stats
+            values = train[name].flatten()
         stats[name] = (float(values.mean()), max(float(values.std()), 1e-6))
     values = train["clearance"]
     stats["clearance"] = (float(values.mean()), max(float(values.std()), 1e-6))
@@ -217,7 +219,11 @@ def _selection_metrics(
         "regret_ratio_vs_random": float(regret.mean() / random_regret.mean().clamp_min(1e-8)),
         "optimal_rate": float((regret <= 1e-8).float().mean()),
         "selected_collision_rate": float(selected_collision.float().mean()),
-        "mean_target_progress_m": float(selected_progress[goal_present].mean()),
+        "mean_target_progress_m": (
+            float(selected_progress[goal_present].mean())
+            if bool(goal_present.any())
+            else 0.0
+        ),
         "target_progress_rows": int(goal_present.sum()),
     }
 

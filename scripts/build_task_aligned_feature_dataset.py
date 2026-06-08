@@ -92,6 +92,14 @@ def main() -> int:
         default=0,
         help="Also store terminal/mean/delta raw descriptors over the last H frames.",
     )
+    parser.add_argument(
+        "--goal-frame-field",
+        choices=("target_frame", "route_target_frame", "local_target_frame", "none"),
+        default="target_frame",
+        help="Which row field supplies the goal image. v2 contract: "
+        "local_target_frame is the matched local-subgoal image, "
+        "route_target_frame is the final-route image, none zeros the goal.",
+    )
     parser.add_argument("--max-seq-len", type=int, default=None)
     parser.add_argument("--sigreg-lambda", type=float, default=None)
     parser.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
@@ -136,8 +144,11 @@ def main() -> int:
             raise RuntimeError("counterfactual primitive order differs between rows")
 
     start_paths = [Path(row["start_frame"]) for row in rows]
+    goal_field = args.goal_frame_field
     target_paths = [
-        Path(row["target_frame"]) if row.get("target_frame") is not None else None
+        Path(row[goal_field])
+        if goal_field != "none" and row.get(goal_field) is not None
+        else None
         for row in rows
     ]
     history_paths = [
@@ -209,6 +220,7 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     arrays = {
         "schema": np.asarray("task_aligned_feature_dataset_v0"),
+        "goal_frame_field": np.asarray(str(args.goal_frame_field)),
         "source_index": np.asarray(str(args.input.resolve())),
         "source_checkpoint": np.asarray(str(args.checkpoint.resolve())),
         "primitive_names": np.asarray(primitive_names),
