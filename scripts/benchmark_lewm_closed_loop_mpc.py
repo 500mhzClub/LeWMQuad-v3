@@ -727,6 +727,14 @@ def main() -> int:
         ),
     )
     parser.add_argument("--backend", default="cpu")
+    parser.add_argument(
+        "--apply-textures",
+        action="store_true",
+        help="Render with per-scene CC0 textures (matches render_textured_v03 "
+        "training distribution). Needs a texture-capable backend, e.g. "
+        "--backend vulkan. Default off renders untextured box geometry, which "
+        "is out-of-distribution for textured-trained checkpoints.",
+    )
     parser.add_argument("--model-device", default="cpu")
     parser.add_argument("--policy-device", default="cpu")
     parser.add_argument("--horizon", type=int, default=2)
@@ -899,6 +907,7 @@ def main() -> int:
                 backend=str(args.backend),
                 show_viewer=False,
                 render_robot=False,
+                apply_textures=bool(args.apply_textures),
             )
             runner: RolloutRunner | None = None
             if args.mode == "physical":
