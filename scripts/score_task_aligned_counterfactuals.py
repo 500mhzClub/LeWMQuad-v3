@@ -96,6 +96,18 @@ def _score_row(
     initial_distance = (
         math.dist(start_xy, target_xy) if target_xy is not None else None
     )
+    # Privileged start->target offset in the robot body frame (diagnostic ceiling
+    # goal input for the relative-goal-vector control). None when no scored target.
+    if target_xy is not None:
+        dx_world = target_xy[0] - start_xy[0]
+        dy_world = target_xy[1] - start_xy[1]
+        cos_yaw, sin_yaw = math.cos(start_yaw), math.sin(start_yaw)
+        relative_goal_vector_body = [
+            cos_yaw * dx_world + sin_yaw * dy_world,
+            -sin_yaw * dx_world + cos_yaw * dy_world,
+        ]
+    else:
+        relative_goal_vector_body = None
 
     candidates = []
     for primitive_name in primitive_names:
@@ -160,6 +172,7 @@ def _score_row(
         "counterfactual_schema": "task_aligned_counterfactual_v1",
         "counterfactual_target_cell_id": target_cell,
         "counterfactual_initial_target_distance_m": initial_distance,
+        "relative_goal_vector_body": relative_goal_vector_body,
         "counterfactual_best_primitive": best["primitive_name"],
         "counterfactual_best_cost": best["cost"],
         "counterfactual_logged_cost": logged["cost"] if logged is not None else None,

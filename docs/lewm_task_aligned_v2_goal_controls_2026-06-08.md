@@ -31,11 +31,20 @@ and the matched-local control is well powered.
 ## Goal-source controls (Phase 2)
 
 Frozen 2x2-spatial head (same architecture/seed/objective as the v1 control),
-three goal sources via `build_task_aligned_feature_dataset.py --goal-frame-field`:
+four goal sources:
 
 - `none` — start image + action only (goal zeroed);
 - `route` — final-route image (reproduces the v1 input contract);
-- `local` — matched local-subgoal image (the repaired contract).
+- `local` — matched local-subgoal image (the repaired contract);
+- `privileged` — diagnostic ceiling: the body-frame start->target offset
+  (`[cos bearing, sin bearing, tanh distance]`) injected into the goal slot,
+  available on every scored-target row. Not deployable (uses ground-truth
+  geometry); it isolates whether the limit is reading the goal or using it.
+
+Image goals come from `build_task_aligned_feature_dataset.py --goal-frame-field
+{none,route_target_frame,local_target_frame}`; the privileged goal is derived
+from the no-goal features by injecting the `relative_goal_vector_body` that
+`score_task_aligned_counterfactuals.py` now records.
 
 Metrics are sliced by decision type with
 `scripts/evaluate_task_aligned_goal_controls.py`, because regret-ratio averaged
@@ -44,16 +53,17 @@ the goal-seeking decisions; `recovery` rows have no goal task term.
 
 ### Regret-ratio vs random (lower is better), val32_v2
 
-| subset | none | route | local | rows |
-|---|---:|---:|---:|---:|
-| all (diluted) | 0.697 | 0.620 | 0.604 | 16,384 |
-| goal-present | — | 0.722 | 0.679 | 11,491 (route) |
-| **branch** | **0.904** | 0.762 | **0.734** | 9,141 |
-| **branch ∩ goal-present** | — | 0.749 | **0.689** | 8,469 (route) |
-| recovery | 0.529 | 0.547 | 0.557 | 12,426 |
+| subset | none | route | local | privileged | rows |
+|---|---:|---:|---:|---:|---:|
+| all (diluted) | 0.697 | 0.620 | 0.604 | 0.426 | 16,384 |
+| **branch** | **0.904** | 0.762 | 0.734 | **0.517** | 9,141 |
+| branch ∩ goal-present | — | 0.749 | 0.689 | 0.517 | 8,017–9,141 |
+| recovery | 0.529 | 0.547 | 0.557 | 0.429 | 12,426 |
 
-Selected target progress (branch): route +0.0226 m, local **+0.0305 m** (+35%).
-(`none` has no goal term so its branch∩goal / goal-present slices are empty.)
+Selected target progress (branch): route +0.0226 m, local +0.0305 m (+35%),
+**privileged +0.0456 m (2x route)**. Goal coverage on branch rows: route 92.6%,
+local 87.7%, privileged 100% (geometry is always available). `none` has no goal
+term so its goal-present slices are empty.
 
 ### Reading
 
@@ -63,13 +73,22 @@ Selected target progress (branch): route +0.0226 m, local **+0.0305 m** (+35%).
    image beats the final-route image by 0.028 (branch) / 0.060 (branch∩goal)
    regret-ratio and +35% progress, and is neutral on recovery rows where the
    goal is irrelevant — the signature of a correct fix, not noise.
-3. **Necessary but not sufficient.** Even with the correct local image,
-   branch∩goal regret-ratio is ~0.69 — still far from the 0.50 promotion bar.
-   Fixing the goal contract does not by itself unlock the local-action task.
+3. **Image goals are necessary but not sufficient.** Even with the correct local
+   image, branch regret-ratio is ~0.73 — still far from the 0.50 bar.
+4. **The bottleneck is visual goal-matching, not the base representation.** The
+   privileged relative-goal vector — the same frozen substrate and head, handed
+   the goal as body-frame geometry — drops branch regret-ratio to **0.517** and
+   doubles progress (**+0.0456 m**). The image-vs-privileged gap (0.22) dwarfs
+   the local-vs-route gap (0.03). So the representation and the action/safety
+   head are *not* the limit: given a usable goal signal they nearly pass the
+   gate. The binding constraint is recovering the subgoal's relative position
+   from a goal *image*. (Privileged's ~12% coverage edge cannot explain a 0.22
+   regret-ratio gap.)
 
-The earlier "~0.57 representation ceiling" is therefore doubly retired: it was
-measured on a confounded contract, and on the repaired contract the goal-seeking
-gap is real but its cause is not yet localized.
+The earlier "~0.57 representation ceiling" is therefore retired three times over:
+it was measured on a confounded contract; on the repaired contract the gap is
+real; and a privileged goal signal nearly closes it without touching the base
+encoder — so the base representation was never the binding limit.
 
 ### Caveats
 
@@ -83,24 +102,32 @@ gap is real but its cause is not yet localized.
 - `collided` remains an unvalidated 0.20 m inflated-grid proxy (rename/validate
   to `grid_unsafe` is still open from the contract review).
 
-## Next: privileged relative-goal vector (Phase 2 control #4)
+## Conclusion and next step
 
-The remaining open question is whether the branch∩goal ~0.69 gap is **visual
-goal-matching** (the spatial image descriptor cannot localize the subgoal
-precisely) or the **base representation / safety prediction**. The decisive
-control is a privileged start→target bearing/distance vector as the goal input:
+All four controls are run. The diagnostic resolves cleanly: the local-action
+gap is **visual goal-matching**, not the frozen base representation and not the
+action/safety head. A privileged goal vector nearly passes the gate on the same
+substrate; a pooled goal *image* does not.
 
-- if it materially beats the local image, visual goal-matching is the bottleneck
-  (pursue richer spatial goal cross-attention, deployable goal encodings);
-- if it does not, the limit is representational/safety, and only then is a base
-  change justified.
+Recommended next work, in order:
 
-This requires adding start→target-cell geometry to the feature builder; it is
-the recommended next step and was deliberately checkpointed before building.
+1. **Goal-localization path.** Add a head that recovers relative goal geometry
+   (bearing/distance, or a goal-relative spatial attention map) from the goal
+   image, and feed that to the candidate scorer. Target: close the image→
+   privileged gap (branch regret-ratio 0.73 → ~0.52). This is deployable; the
+   privileged vector is only the diagnostic ceiling.
+2. **Validate `grid_unsafe`** (still the open contract-review item): the retained
+   recovery rows hold collision at ~18%; rename/validate the inflated-grid label
+   before reading absolute collision/promotion numbers.
+3. Re-run the final-two-block adapter for three seeds **only after** the goal
+   path lands, on the v2 contract. Do not retrain or further unfreeze the base
+   encoder: these controls show it is not the binding limit.
+
+Do not collect new rollouts.
 
 ## Artifacts
 
 - v2 index: `.generated/task_aligned_decisions/{train32,val32}_v2{,_scored}.jsonl`
-- features: `.generated/task_aligned_policy_v0/{train32,val32}_v2_{none,route,local}_spatial2.npz`
-- heads: `.generated/task_aligned_policy_v0/head_v2_{none,route,local}_spatial2_seed20260608.{pt,json}`
+- features: `.generated/task_aligned_policy_v0/{train32,val32}_v2_{none,route,local,privileged}_spatial2.npz`
+- heads: `.generated/task_aligned_policy_v0/head_v2_{none,route,local,privileged}_spatial2_seed20260608.{pt,json}`
 - sliced controls: `.generated/task_aligned_policy_v0/v2_goal_controls.json`
