@@ -219,6 +219,7 @@ def _evaluate(
     actions: torch.Tensor,
     stats: dict[str, tuple[float, float]],
     *,
+    progress_weight: float,
     collision_penalty: float,
     clearance_target_m: float,
     clearance_penalty: float,
@@ -236,7 +237,7 @@ def _evaluate(
         goal_present = batch["goal_present"].to(device).unsqueeze(1)
         task_cost = torch.where(
             goal_present,
-            -progress + heading_weight * heading,
+            -progress_weight * progress + heading_weight * heading,
             torch.zeros_like(progress),
         )
         predicted_cost = (
@@ -265,10 +266,11 @@ def main() -> int:
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--max-train-rows", type=int, default=0)
     parser.add_argument("--max-eval-rows", type=int, default=0)
-    parser.add_argument("--collision-penalty", type=float, default=2.0)
+    parser.add_argument("--progress-weight", type=float, default=10.0)
+    parser.add_argument("--collision-penalty", type=float, default=3.0)
     parser.add_argument("--clearance-target-m", type=float, default=0.35)
-    parser.add_argument("--clearance-penalty", type=float, default=1.0)
-    parser.add_argument("--heading-weight", type=float, default=0.25)
+    parser.add_argument("--clearance-penalty", type=float, default=0.5)
+    parser.add_argument("--heading-weight", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=20260608)
     parser.add_argument("--max-seq-len", type=int, default=None)
     parser.add_argument("--sigreg-lambda", type=float, default=None)
@@ -357,6 +359,7 @@ def main() -> int:
             evaluation,
             actions,
             stats,
+            progress_weight=args.progress_weight,
             collision_penalty=args.collision_penalty,
             clearance_target_m=args.clearance_target_m,
             clearance_penalty=args.clearance_penalty,

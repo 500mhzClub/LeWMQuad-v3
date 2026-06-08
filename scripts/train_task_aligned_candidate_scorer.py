@@ -97,6 +97,7 @@ def _run_epoch(
     collision_pos_weight: torch.Tensor,
     ranking_weight: float,
     ranking_temperature: float,
+    progress_weight: float,
     collision_penalty: float,
     clearance_target_m: float,
     clearance_penalty: float,
@@ -141,7 +142,7 @@ def _run_epoch(
             )
             predicted_task_cost = torch.where(
                 goal_present,
-                -predicted_progress + heading_weight * predicted_heading,
+                -progress_weight * predicted_progress + heading_weight * predicted_heading,
                 torch.zeros_like(predicted_progress),
             )
             predicted_cost = (
@@ -227,6 +228,7 @@ def _evaluate(
     stats: dict[str, tuple[float, float]],
     *,
     batch_size: int,
+    progress_weight: float,
     collision_penalty: float,
     clearance_target_m: float,
     clearance_penalty: float,
@@ -237,7 +239,7 @@ def _evaluate(
     goal_present = dataset["goal_present"].unsqueeze(1)
     task_cost = torch.where(
         goal_present,
-        -predictions["progress"] + heading_weight * predictions["heading"],
+        -progress_weight * predictions["progress"] + heading_weight * predictions["heading"],
         torch.zeros_like(predictions["progress"]),
     )
     predicted_cost = (
@@ -296,10 +298,11 @@ def main() -> int:
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
-    parser.add_argument("--collision-penalty", type=float, default=2.0)
+    parser.add_argument("--progress-weight", type=float, default=10.0)
+    parser.add_argument("--collision-penalty", type=float, default=3.0)
     parser.add_argument("--clearance-target-m", type=float, default=0.35)
-    parser.add_argument("--clearance-penalty", type=float, default=1.0)
-    parser.add_argument("--heading-weight", type=float, default=0.25)
+    parser.add_argument("--clearance-penalty", type=float, default=0.5)
+    parser.add_argument("--heading-weight", type=float, default=0.1)
     parser.add_argument("--ranking-weight", type=float, default=0.0)
     parser.add_argument("--ranking-temperature", type=float, default=0.1)
     parser.add_argument("--gate-max-regret-ratio", type=float, default=0.5)
@@ -350,6 +353,7 @@ def main() -> int:
             collision_pos_weight=collision_pos_weight,
             ranking_weight=args.ranking_weight,
             ranking_temperature=args.ranking_temperature,
+            progress_weight=args.progress_weight,
             collision_penalty=args.collision_penalty,
             clearance_target_m=args.clearance_target_m,
             clearance_penalty=args.clearance_penalty,
@@ -361,6 +365,7 @@ def main() -> int:
             evaluation,
             stats,
             batch_size=args.batch_size,
+            progress_weight=args.progress_weight,
             collision_penalty=args.collision_penalty,
             clearance_target_m=args.clearance_target_m,
             clearance_penalty=args.clearance_penalty,

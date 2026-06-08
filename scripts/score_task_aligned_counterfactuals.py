@@ -82,6 +82,7 @@ def _score_row(
     assets: SceneAssets,
     registry: PrimitiveRegistry,
     primitive_names: list[str],
+    progress_weight: float,
     collision_penalty: float,
     clearance_target_m: float,
     clearance_penalty: float,
@@ -118,7 +119,11 @@ def _score_row(
         else:
             bearing = math.atan2(target_xy[1] - endpoint[1], target_xy[0] - endpoint[0])
             heading_error = abs(_wrap_angle_pi(bearing - end_yaw))
-            task_cost = distance + heading_weight * heading_error
+            # Progress-dominant task term: reward distance reduction toward the
+            # goal directly (meters), so a safe forward action outranks a
+            # turn-in-place. Absolute distance was dwarfed by the collision and
+            # clearance penalties, making the oracle a low-motion safe turn.
+            task_cost = -progress_weight * progress + heading_weight * heading_error
         clearance_shortfall = max(0.0, clearance_target_m - clearance)
         cost = (
             task_cost
@@ -152,7 +157,7 @@ def _score_row(
     )
     return {
         **row,
-        "counterfactual_schema": "task_aligned_counterfactual_v0",
+        "counterfactual_schema": "task_aligned_counterfactual_v1",
         "counterfactual_target_cell_id": target_cell,
         "counterfactual_initial_target_distance_m": initial_distance,
         "counterfactual_best_primitive": best["primitive_name"],
@@ -175,10 +180,18 @@ def main() -> int:
         default=REPO_ROOT / "config/go2_primitive_registry.yaml",
     )
     parser.add_argument("--max-rows", type=int, default=0)
-    parser.add_argument("--collision-penalty", type=float, default=2.0)
+    parser.add_argument("--progress-weight", type=float, default=10.0)
+    parser.add_argument("--collision-penalty", type=float, default=3.0)
     parser.add_argument("--clearance-target-m", type=float, default=0.35)
-    parser.add_argument("--clearance-penalty", type=float, default=1.0)
-    parser.add_argument("--heading-weight", type=float, default=0.25)
+    parser.add_argument("--clearance-penalty", type=float, default=0.5)
+    parser.add_argument("--heading-weight", type=float, default=0.1)
+    parser.add_argument(
+        "--drop-no-safe-action",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Drop decisions where every candidate primitive collides (no "
+        "navigable action exists); removes the irreducible collision floor.",
+    )
     args = parser.parse_args()
 
     registry = PrimitiveRegistry.from_yaml(args.primitive_registry)
@@ -191,6 +204,7 @@ def main() -> int:
     logged_optimal = 0
     logged_regret_sum = 0.0
     candidate_collisions = 0
+    dropped_no_safe_action = 0
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.input.open() as source, args.output.open("w") as destination:
@@ -218,11 +232,18 @@ def main() -> int:
                 assets=assets,
                 registry=registry,
                 primitive_names=primitive_names,
+                progress_weight=args.progress_weight,
                 collision_penalty=args.collision_penalty,
                 clearance_target_m=args.clearance_target_m,
                 clearance_penalty=args.clearance_penalty,
                 heading_weight=args.heading_weight,
             )
+            if args.drop_no_safe_action and all(
+                candidate["collided"]
+                for candidate in scored["counterfactual_candidates"]
+            ):
+                dropped_no_safe_action += 1
+                continue
             destination.write(json.dumps(scored, sort_keys=True) + "\n")
             rows += 1
             rows_with_target += scored["counterfactual_target_cell_id"] is not None
@@ -240,10 +261,12 @@ def main() -> int:
     if rows == 0:
         raise SystemExit("no rows scored")
     summary = {
-        "schema": "task_aligned_counterfactual_summary_v0",
+        "schema": "task_aligned_counterfactual_summary_v1",
         "input": str(args.input),
         "output": str(args.output),
         "row_count": rows,
+        "dropped_no_safe_action": dropped_no_safe_action,
+        "drop_no_safe_action": bool(args.drop_no_safe_action),
         "scene_count": len(assets_by_manifest),
         "primitive_names": primitive_names,
         "rows_with_target": rows_with_target,
@@ -253,6 +276,7 @@ def main() -> int:
         "mean_logged_regret": logged_regret_sum / rows,
         "candidate_collision_rate": candidate_collisions / (rows * len(primitive_names)),
         "weights": {
+            "progress_weight": args.progress_weight,
             "collision_penalty": args.collision_penalty,
             "clearance_target_m": args.clearance_target_m,
             "clearance_penalty": args.clearance_penalty,

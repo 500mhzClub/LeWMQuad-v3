@@ -148,3 +148,18 @@ final epoch, but it still failed the minimum gate. More adapter training is
 not yet a promotion path; the immediate next review should inspect whether the
 task target and goal-conditioning contract over-reward low-motion safe turns
 before running larger adapter/retrain jobs.
+
+## Follow-up: Objective Revised (see separate doc)
+
+That "over-reward low-motion safe turns" suspicion was confirmed and fixed. The
+old cost buried the ~cm progress signal under the collision (2.0) and clearance
+penalties, so the oracle-best action was a retreat or turn-in-place and the
+`yaw_left` prior was near cost-optimal. The objective was rebalanced to be
+progress-dominant (`-10*progress + 0.1*heading + 3.0*collided + 0.5*clearance`)
+and no-safe-action decisions were dropped, making the gate well-posed (oracle:
++0.069 m at 0% collision). Re-run under that v1 objective, the final-two-block
+adapter becomes a real navigation policy that dominates the behavior policy and
+random on every axis and makes positive progress above random, but plateaus at
+regret-ratio ~0.57 (promotion needs ≤0.50) along a safety/progress frontier.
+Full result and next steps:
+`docs/lewm_task_aligned_objective_revision_2026-06-08.md`.
