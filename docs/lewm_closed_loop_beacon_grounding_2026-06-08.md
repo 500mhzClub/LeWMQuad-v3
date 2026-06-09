@@ -43,38 +43,65 @@ use textured rendering.
 (circling and standing), with little forward motion: the planner spins instead of
 approaching a beacon it can see.
 
-## Conclusion
+## CORRECTION (2026-06-09): the "both fail under jitter" claim was wrong
 
-1. **Under any realistic heading offset the image-goal planner gets 0% — it
-   cannot orient to a visible beacon.** This holds for *both* checkpoints
-   (seq4_e9 N=10, seq11_e3 N=6) regardless of render/corpus. The "dog" can only
-   walk straight at a goal that is already centered in front of it.
-2. **Even dead-ahead our `seq11_e3` mostly fails (0.17)**, far below the prior
-   `seq4_e9` (0.78). This comparison is confounded (different model *and*
-   cost-head — `seq11_e3` used the learned `GoalEnergyHead`, the prior seq4 run
-   used the latent-L2 `plan_cost` — *and* textured vs untextured render), so it
-   is not a clean model verdict; but it flags that the checkpoint the entire
-   offline program is built on is a weak image-goal planner.
-3. **`bearing` solves every case (1.00).** Locomotion and the privileged geometry
-   are fine. The broken link is converting a goal *image* into a direction to
-   move — exactly the offline finding, now confirmed in closed loop.
+The table above mixes confounds: the `seq4_e9` rows used the **untextured** render
+on a **different (non-textured) corpus** with `plan_cost`, while `seq11_e3` used
+**textured** render with the learned `GoalEnergyHead`. A matched, controlled
+follow-up — **same textured corpus, same 6 scenes, same `plan_cost` cost path,
+same flags for both checkpoints** — overturns the headline:
 
-## Implications
+| checkpoint (plan_cost, textured, matched) | jitter 0.0 | jitter 0.7 | lewm progress |
+|---|---:|---:|---:|
+| seq4_e9 | **0.83** | **0.83** | 0.83–0.88 m |
+| seq11_e3 | 0.17 | 0.17 | −0.05 m |
+| bearing oracle | 1.00 | 1.00 | — |
 
-- The goal-localization translator (recover relative goal geometry from the goal
-  image; `docs/lewm_task_aligned_v2_goal_controls_2026-06-08.md` Phase A/B) is the
-  validated core fix. **Jittered visible-beacon success is now the real
-  closed-loop metric** to optimize, more trustworthy than offline regret-ratio.
-- **Re-examine checkpoint selection.** `seq11_e3` was chosen for rollout
-  stability (the seq11 action-sweep), not goal-image planning. The clean control
-  is to run the beacon test (and the offline goal controls) on `seq4_e9` under the
-  identical textured pipeline and the same cost head, to decide whether `seq4_e9`
-  is a materially better base for navigation before investing in the translator.
-- Caveat for the offline program: it used `seq11_e3` frozen features throughout.
-  The privileged-vector control showed those features suffice for action
-  selection given goal *geometry*; the beacon test shows they fail given a goal
-  *image*. Both point to the same translator, but a stronger base checkpoint may
-  raise the ceiling.
+So **seq4_e9 navigates to off-axis (jitter 0.7) visible beacons ~83% of the
+time**, near the bearing oracle — it does *not* fail under heading offset. The
+earlier "0% under jitter" for seq4 was an artifact of the untextured/old-corpus
+run; for seq11 the `GoalEnergyHead` further degraded the jitter case (0.17 with
+plan_cost -> 0.00 with the head). The "image-goal planner can't orient to a
+visible beacon" conclusion holds only for `seq11_e3`, **not** as a general claim.
+
+## Conclusion (revised 2026-06-09)
+
+1. **`seq11_e3` cannot orient to a visible beacon** (0.17 dead-ahead, circles /
+   negative progress). It is a weak image-goal nav base — consistent with its
+   selection for long-horizon rollout stability, not local goal-image planning.
+2. **`seq4_e9` *can*** navigate to visible beacons including off-axis ones
+   (~0.83 at jitter 0.0 and 0.7, plan_cost, matched textured setup). Switch the
+   navigation base to `seq4_e9`. Note `plan_cost` beat the learned
+   `GoalEnergyHead` for both checkpoints — investigate why the head degrades nav.
+3. **`bearing` solves every case (1.00).** Locomotion and privileged geometry are
+   fine.
+4. **Open question (untested here):** whether `seq4_e9` + `plan_cost` holds up on
+   *harder, occluded / non-line-of-sight* goals (the `landmark` task and maze
+   families) — that is where the offline maze/recovery failures live, and where a
+   goal-localization aid would actually be justified. The visible-beacon test does
+   not probe it.
+
+## Implications (revised 2026-06-09)
+
+- **Adopt `seq4_e9` as the navigation base.** It is dramatically better at local
+  goal-image servoing than `seq11_e3` and already handles off-axis visible
+  beacons at ~0.83 with `plan_cost`.
+- **A goal-localization translator is NOT yet justified.** `seq4_e9` + `plan_cost`
+  navigating off-axis visible beacons at 83% shows the frozen features already
+  carry enough goal-direction signal for the visible case. The separate offline
+  finding that a metric-vector *regression* from those features generalizes poorly
+  (low held-out R^2) reflects an ill-posed regression target (goal image is the
+  cell's arbitrary-yaw representative frame, not a goal-facing view) and the weak
+  `seq11_e3` checkpoint — it is not evidence of a frozen-feature navigation
+  ceiling.
+- **The real open question is harder goals.** Re-run the beacon test on `seq4_e9`
+  at higher N to confirm 0.83 is not a 6-scene fluke, and test the `landmark`
+  task (no line-of-sight guarantee) and maze families to find where image-cost
+  servoing actually breaks. Only a *well-posed* failure there (goal-facing image,
+  occluded target) would justify a translator or any encoder change.
+- Caveat for the offline program: it used `seq11_e3` frozen features throughout,
+  now shown to be a weak image-goal nav base. Its conclusions should be re-checked
+  on `seq4_e9` before being treated as properties of the LeWM substrate.
 
 ## Artifacts
 
