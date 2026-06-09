@@ -356,6 +356,129 @@ def _run_multi_beacon_demo(
     return claimed
 
 
+def _run_perception_multibeacon_demo(
+    *,
+    model: torch.nn.Module,
+    build: Any,
+    pack: Any,
+    registry: PrimitiveRegistry,
+    sequences: list,
+    action_tensor: torch.Tensor,
+    n_beacons: int,
+    goal_standoff_m: float,
+    goal_radius_m: float,
+    max_blocks: int,
+    command_dt_s: float,
+    device: torch.device,
+    grid: InflatedOccupancyGrid,
+    frame_sink: list,
+    scan_thresh: float,
+    runner: Any = None,
+) -> int:
+    """Pure-perception multi-beacon: image-goal servo to each beacon, and SCAN
+    (rotate) when no candidate action beats holding (i.e. the goal beacon is not
+    in view) until it crosses the FOV. No privileged breadcrumb waypoints; the
+    only privileged inputs are the per-beacon goal keyframe and the claim radius.
+    """
+    graph = pack.scene_graph
+    base_z = float(pack.robot.spawn_xyz_m[2])
+    beacons = []
+    for object_id, cell_id in graph.landmark_cells:
+        xy = graph.landmark_xy_for_cell(cell_id) or graph.cell_center(cell_id)
+        beacons.append((str(object_id), np.array([float(xy[0]), float(xy[1])], dtype=np.float64)))
+    if len(beacons) < 2:
+        return 0
+    spawn_xy = np.asarray(pack.robot.spawn_xyz_m[:2], dtype=np.float64)
+    remaining = beacons[:]
+    pos = spawn_xy.copy()
+    tour: list = []
+    while remaining and len(tour) < int(n_beacons):
+        remaining.sort(key=lambda b: float(np.linalg.norm(b[1] - pos)))
+        nxt = remaining.pop(0)
+        tour.append(nxt)
+        pos = nxt[1]
+    if len(tour) < 2:
+        return 0
+
+    def standoff_for(beacon_xy, from_xy):
+        bx = np.asarray(beacon_xy, dtype=np.float64)
+        fx = np.asarray(from_xy, dtype=np.float64)
+        d = bx - fx
+        base_ang = math.atan2(d[1], d[0]) if np.linalg.norm(d) > 1e-6 else 0.0
+        for dang in [0.0] + [s * math.radians(deg) for deg in (15, 30, 45, 60, 90, 120) for s in (1, -1)]:
+            ang = base_ang + dang
+            unit = np.array([math.cos(ang), math.sin(ang)])
+            so = bx - unit * float(goal_standoff_m)
+            if not grid.is_free((float(so[0]), float(so[1]))):
+                continue
+            if not _line_of_sight_to_beacon(pack, (float(so[0]), float(so[1])), (float(bx[0]), float(bx[1]))):
+                continue
+            return so, math.atan2(bx[1] - so[1], bx[0] - so[0])
+        return None
+
+    first = standoff_for(tour[0][1], spawn_xy)
+    if first is None:
+        return 0
+    so0, face0 = first
+    unit0 = (tour[0][1] - so0)
+    unit0 = unit0 / (np.linalg.norm(unit0) + 1e-9)
+    start_xy = so0 - unit0 * float(goal_standoff_m + 0.7)
+    if not grid.is_free((float(start_xy[0]), float(start_xy[1]))):
+        start_xy = so0
+    # face AWAY from the beacon so the robot must scan to find it
+    _set_pose(
+        build=build, runner=runner,
+        pos_xyz=np.array([start_xy[0], start_xy[1], base_z], dtype=np.float32),
+        quat_wxyz=_quat_wxyz_from_yaw(face0 + math.pi),
+    )
+
+    def execute(prim):
+        if runner is None:
+            _execute_kinematic_primitive(
+                build, registry, prim, command_dt_s=command_dt_s, grid=grid,
+                frame_sink=frame_sink, pack=pack, device=device,
+            )
+        else:
+            _execute_physical_primitive(
+                runner, registry, prim, frame_sink=frame_sink, build=build, pack=pack, device=device,
+            )
+
+    claimed = 0
+    for _obj, beacon_xy in tour:
+        so = standoff_for(beacon_xy, np.asarray(_current_pose(build)[0][:2]))
+        if so is None:
+            break
+        target_xy = np.asarray(so[0], dtype=np.float64)
+        beacon_face = so[1]
+        # one goal keyframe per beacon (rendered once; the goal specification)
+        goal_img = _render_tensor_from_base(
+            build, pack,
+            base_xyz_m=np.array([target_xy[0], target_xy[1], base_z], dtype=np.float32),
+            base_quat_wxyz=_quat_wxyz_from_yaw(beacon_face), device=device,
+        )
+        reached = False
+        for _ in range(int(max_blocks)):
+            pos, quat = _current_pose(build)
+            if _xy_distance(pos[:2], target_xy) <= float(goal_radius_m):
+                reached = True
+                break
+            image = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
+            costs, prims = _lewm_primitive_costs(model, image, goal_img, sequences, action_tensor)
+            best_i = int(costs.argmin())
+            best_prim = prims[best_i]
+            best_cost = float(costs[best_i])
+            hold_cost = float(costs[prims.index("hold")]) if "hold" in prims else float(costs.max())
+            # servoing signal: how much the best action beats holding still
+            signal = (hold_cost - best_cost) / (abs(hold_cost) + 1e-6)
+            prim = best_prim if signal > float(scan_thresh) else "yaw_left"  # scan when no gradient
+            execute(prim)
+        if reached:
+            claimed += 1
+        else:
+            break
+    return claimed
+
+
 def _hud_world_to_px(x, y, bounds, mx0, my0, mw, mh):
     (xlo, ylo), (xhi, yhi) = bounds
     nx = (float(x) - xlo) / max(xhi - xlo, 1e-8)
@@ -608,6 +731,43 @@ def _choose_lewm_primitive(
         cost = model.plan_cost(z_pred, z_goal_views[0:1].repeat(n_cand, 1))
     best_idx = int(torch.argmin(cost).item())
     return sequences[best_idx][0], float(cost[best_idx].detach().cpu().item())
+
+
+@torch.no_grad()
+def _lewm_primitive_costs(
+    model: torch.nn.Module,
+    image: torch.Tensor,
+    goal_image: torch.Tensor,
+    sequences: list[tuple[str, ...]],
+    action_tensor: torch.Tensor,
+) -> tuple[np.ndarray, list[str]]:
+    """Full image-goal cost over every candidate first-primitive (lower = closer)."""
+    z_start_raw, _z = _encode_frame(model, image)
+    goal_views = goal_image if goal_image.dim() == 4 else goal_image[None]
+    z_goal_views = torch.cat([_encode_frame(model, gv)[1] for gv in goal_views], dim=0)
+    n_cand = action_tensor.shape[0]
+    z_pred = model.plan_rollout(z_start_raw.repeat(n_cand, 1), action_tensor)
+    z_pred_last = z_pred[:, -1, :] if z_pred.dim() == 3 else z_pred
+    pose_head = getattr(model, "_pose_head", None)
+    head = getattr(model, "_energy_head", None)
+    if pose_head is not None:
+        # Metric cost: predicted ||dxy|| to the goal (a homing/approach gradient,
+        # unlike plan_cost's recognition-only latent L2).
+        per_view = torch.stack(
+            [pose_head(z_pred_last, z_goal_views[v:v + 1].repeat(n_cand, 1))[:, :2].norm(dim=-1)
+             for v in range(z_goal_views.shape[0])],
+            dim=0,
+        )
+        cost = per_view.min(dim=0).values
+    elif head is not None:
+        per_view = torch.stack(
+            [head(z_pred_last, z_goal_views[v:v + 1].repeat(n_cand, 1)) for v in range(z_goal_views.shape[0])],
+            dim=0,
+        )
+        cost = per_view.min(dim=0).values
+    else:
+        cost = model.plan_cost(z_pred, z_goal_views[0:1].repeat(n_cand, 1))
+    return cost.detach().cpu().numpy(), [seq[0] for seq in sequences]
 
 
 @torch.no_grad()
@@ -1031,6 +1191,14 @@ def main() -> int:
         help="If >1 (with --demo-video), the robot chases that many scene "
         "landmarks in sequence (claim one, then the next) in a single episode.",
     )
+    parser.add_argument(
+        "--demo-perception",
+        action="store_true",
+        help="Pure-perception multi-beacon: image-goal servo to each beacon and "
+        "scan (rotate) when it is not in view, instead of privileged breadcrumb "
+        "waypoints. Only the per-beacon goal keyframe and claim radius are privileged.",
+    )
+    parser.add_argument("--demo-scan-thresh", type=float, default=0.02)
     parser.add_argument("--split", default="test_id")
     parser.add_argument("--family", default=None)
     parser.add_argument("--scene-limit", type=int, default=1)
@@ -1266,32 +1434,57 @@ def main() -> int:
             grid = InflatedOccupancyGrid(pack.scene_graph.manifest, cell_size_m=0.05, inflation_m=0.20)
             if args.demo_video is not None and int(args.demo_beacons) > 1:
                 demo_frames: list = []
-                claimed = _run_multi_beacon_demo(
-                    model=model,
-                    build=build,
-                    pack=pack,
-                    registry=registry,
-                    sequences=sequences,
-                    action_tensor=action_tensor,
-                    n_beacons=int(args.demo_beacons),
-                    goal_standoff_m=float(args.goal_standoff_m),
-                    goal_radius_m=float(args.goal_radius_m),
-                    approach_distance_m=float(args.beacon_approach_distance_m),
-                    max_blocks=int(args.max_blocks),
-                    command_dt_s=command_dt_s,
-                    device=device,
-                    grid=grid,
-                    frame_sink=demo_frames,
-                    runner=runner,
-                )
+                if args.demo_perception:
+                    claimed = _run_perception_multibeacon_demo(
+                        model=model,
+                        build=build,
+                        pack=pack,
+                        registry=registry,
+                        sequences=sequences,
+                        action_tensor=action_tensor,
+                        n_beacons=int(args.demo_beacons),
+                        goal_standoff_m=float(args.goal_standoff_m),
+                        goal_radius_m=float(args.goal_radius_m),
+                        max_blocks=int(args.max_blocks),
+                        command_dt_s=command_dt_s,
+                        device=device,
+                        grid=grid,
+                        frame_sink=demo_frames,
+                        scan_thresh=float(args.demo_scan_thresh),
+                        runner=runner,
+                    )
+                else:
+                    claimed = _run_multi_beacon_demo(
+                        model=model,
+                        build=build,
+                        pack=pack,
+                        registry=registry,
+                        sequences=sequences,
+                        action_tensor=action_tensor,
+                        n_beacons=int(args.demo_beacons),
+                        goal_standoff_m=float(args.goal_standoff_m),
+                        goal_radius_m=float(args.goal_radius_m),
+                        approach_distance_m=float(args.beacon_approach_distance_m),
+                        max_blocks=int(args.max_blocks),
+                        command_dt_s=command_dt_s,
+                        device=device,
+                        grid=grid,
+                        frame_sink=demo_frames,
+                        runner=runner,
+                    )
                 print(f"    [demo] claimed {claimed}/{int(args.demo_beacons)} beacons, frames={len(demo_frames)}", flush=True)
                 # Prefer a scene that claims all beacons; otherwise accept the
                 # first substantial traversal (claims >=1 beacon and keeps going).
                 full = claimed >= int(args.demo_beacons)
                 if demo_frames and (full or (claimed >= 1 and len(demo_frames) >= 200)):
+                    mb_title = (
+                        "LeWM seq4 | perception servo + scan (no breadcrumbs)"
+                        if args.demo_perception
+                        else "LeWM seq4 | image-goal servoing + privileged subgoals (H-JEPA placeholder)"
+                    )
                     _write_hud_video(
                         args.demo_video, pack, grid, demo_frames, float(args.demo_fps),
-                        float(args.goal_radius_m), "LeWM seq4 | image-goal navigation (pure perception)",
+                        float(args.goal_radius_m), mb_title,
                     )
                     print(f"[demo] wrote {len(demo_frames)} frames ({claimed}/{int(args.demo_beacons)} claimed) -> {args.demo_video}", flush=True)
                     return 0
@@ -1385,7 +1578,7 @@ def main() -> int:
                     if demo_frames and result.success:
                         _write_hud_video(
                             args.demo_video, pack, grid, demo_frames, float(args.demo_fps),
-                            float(args.goal_radius_m), "LeWM seq4 | image-goal navigation (pure perception)",
+                            float(args.goal_radius_m), "LeWM seq4 | image-goal servoing to a visible beacon",
                         )
                         print(f"[demo] wrote {len(demo_frames)} frames -> {args.demo_video}", flush=True)
                         return 0
