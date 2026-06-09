@@ -13,14 +13,23 @@ first, then the per-stage docs linked at the bottom. Authoritative spec:
 - **Stage 0 (planner refactor): DONE + committed** (commit `696f6f4`).
 - **Stage 1 (recognition re-validation + H2 cheap test): DONE.** Decision: build
   the BeliefEncoder.
-- **Stage 2 (BeliefEncoder): DONE.** H2 is **supported** — a learned history
-  encoder beats naive pooling + single-frame (v6: eval R@5 0.637 vs 0.593 vs
-  0.582, +0.0436, 3/3 seeds, R@1 +0.042). The registered +0.05 gate **formally
-  failed by 0.006** on an unsaturated data curve; decision (registered before
-  running): the Stage-2→3 call moves to the **Stage 3a consumer-side gate** —
-  LoopClosureHead recall at 99% precision on v6-belief vs single-frame vs
-  mean-pool (spec §5.3 bars + belief ≥ +5 pp recall over single-frame, 3/3
-  seeds). See the Stage 2 doc "v6 + decision".
+- **Stage 2 (BeliefEncoder): DONE, committed `ca6401f`.** H2 supported — v6:
+  eval R@5 0.637 vs naive 0.593 (+0.0436, 3/3 seeds, R@1 +0.042); the +0.05
+  retrieval gate formally failed by 0.006 on an unsaturated curve; decision
+  (registered before running) moved the call to the Stage 3a consumer gate.
+- **Stage 3a (LoopClosureHead consumer gate): DONE — FAILED on every branch →
+  REASSESS before Stage 3.** The v6 encoder is confirmed the best place code
+  (AP 0.29 vs 0.21, 2–3× recall at every precision, ECE fine) **but absolute
+  pairwise place verification is too weak at every operating point** (belief
+  R=0.23 even at P≥0.50; ~0.02 at the spec's P≥0.99 with a 2.5% base rate);
+  naive sequence aggregation doesn't rescue it. Prime suspect: the
+  heading-dominated latent (any-yaw verification is the broken case). The §5.4
+  memory (global novelty check, merge decisions) is NOT buildable as specified.
+  Registered next probes: (1) yaw-conditioned verification → (cell × yaw-bin)
+  keyframe node design (converges with the goal-facing constraint), (2)
+  action-token + motion-aux BeliefEncoder pass, (3) filter-level (replay
+  coherence) evaluation with a re-registered commit-only pair bar. See
+  `docs/lewm_topological_nav_stage3a_loop_closure_2026-06-09.md`.
 
 ## Environment (READ — non-obvious, will bite on resume)
 
@@ -139,13 +148,17 @@ Note: user prefers commits **without** a Co-Authored-By footer.
 
 1. ~~Read v6; finalize the "## v6 + decision" section of the Stage 2 doc.~~ DONE.
 2. ~~Commit the Stage 2 unit (no co-author footer).~~ DONE.
-3. **Stage 3a (consumer gate, registered in the Stage 2 doc):** LoopClosureHead
-   (`lewm/models/loop_closure.py` + `scripts/train_loop_closure_head.py`) on the
-   cached banks — v6-belief vs single-frame vs mean-pool; deployment threshold
-   from calibration scenes at precision ≥ 0.99; Platt + ECE; gate = §5.3 bars +
-   belief ≥ +5 pp recall over single-frame 3/3 seeds. Result decides adopt-v6 vs
-   one action-token/motion-aux pass vs reassess.
-4. **Stage 3** (`v3_topological_nav_plan.md` §5–6, plan §5 Stage 3): wire the
+3. ~~Stage 3a consumer gate.~~ DONE — **FAILED on every branch** (see TL;DR +
+   Stage 3a doc). Verdict: adopt v6 as the place code, but the §5.4 memory is
+   not buildable on any-yaw pair verification.
+4. **Reassessment probes (in order, registered in the Stage 3a doc):**
+   (1) yaw-conditioned verification — rebuild banks with per-window terminal
+   `yaw_bin`, re-run the PR curves on same-yaw-bin pairs; if it lifts, adopt
+   **(cell × yaw-bin) keyframe nodes** (also satisfies the goal-facing
+   constraint); (2) action-token + body-motion-aux BeliefEncoder pass (spec
+   default, untried); (3) only then Stage 3b with filter-level replay-coherence
+   gating and a re-registered commit-only pair bar.
+5. **Stage 3** (`v3_topological_nav_plan.md` §5–6, plan §5 Stage 3): wire the
    BeliefEncoder into the `Memory`/`HierarchicalPlanner` seam — online node
    commitment with **goal-facing** `representative_observation` (hard constraint
    from the Stage-1/nav findings), calibrated `LoopClosureHead`, top-k Bayes
@@ -153,7 +166,7 @@ Note: user prefers commits **without** a Co-Authored-By footer.
    negatives) and the 3-level planner (Level 3 = seq4 + `plan_cost` LocalMPC,
    already built in Stage 0). GoalAdapter maps a goal image into belief space
    (goal-facing keyframes).
-5. Stage 4: end-to-end closed-loop eval (learned subgoals replace the privileged
+6. Stage 4: end-to-end closed-loop eval (learned subgoals replace the privileged
    breadcrumbs) via `benchmark_lewm_closed_loop_mpc.py --apply-textures --backend vulkan`.
 
 ## Detailed docs
@@ -161,5 +174,6 @@ Note: user prefers commits **without** a Co-Authored-By footer.
 - Build plan: `docs/lewm_topological_nav_implementation_plan_2026-06-09.md`
 - Stage 1: `docs/lewm_topological_nav_stage1_retrieval_2026-06-09.md`
 - Stage 2: `docs/lewm_topological_nav_stage2_belief_encoder_2026-06-09.md`
+- Stage 3a: `docs/lewm_topological_nav_stage3a_loop_closure_2026-06-09.md`
 - Nav-base synthesis (why seq4 + plan_cost): `docs/lewm_nav_base_synthesis_2026-06-09.md`
 - Memory index: `MEMORY.md` → "Topological-nav" entries.
