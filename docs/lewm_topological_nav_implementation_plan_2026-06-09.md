@@ -142,8 +142,12 @@ the §5.5 Same-place Recall and filter-coherence bars?
 history-separable at any `H`, even BeliefEncoder can't fix it — see §10.)
 
 ### Stage 2 — BeliefEncoder + GoalAdapter + LoopClosureHead (full Phase B)
-Only if Stage 1 fails. Train the contrastive history encoder (supcon + VICReg
-anti-collapse, body-motion auxiliary), the GoalAdapter (goal image → belief
+Only if Stage 1 fails. Train the contrastive history encoder (supervised
+contrastive, same masking as the existing `PlaceRetrievalHead`; **no anti-collapse
+regularizer** — the contrastive negatives prevent collapse, and the repo's JEPA
+anti-collapse mechanism is SIGReg, `lewm/models/sigreg.py`, which is for the
+negative-free world-model objective, not a contrastive head; body-motion
+auxiliary deferred), the GoalAdapter (goal image → belief
 space, **goal-facing keyframes**), and the calibrated LoopClosureHead (precision
 ≥ 99%). **Gates:** the full v3 §5.5 acceptance set. **If Same-place Recall@5 does
 not beat the frozen-latent baseline by the registered margin, H2 is falsified and
