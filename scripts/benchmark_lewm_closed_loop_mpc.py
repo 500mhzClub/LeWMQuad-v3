@@ -412,6 +412,7 @@ def _select_visible_beacon_setup(
     goal_standoff_m: float,
     start_yaw_jitter_rad: float,
     n_goal_views: int = 0,
+    goal_yaw_offset_rad: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray, GoalSpec]:
     graph = pack.scene_graph
     landmarks = list(graph.landmark_cells)
@@ -449,11 +450,15 @@ def _select_visible_beacon_setup(
                     start_yaw + rng.uniform(-float(start_yaw_jitter_rad), float(start_yaw_jitter_rad))
                 )
             base_z = float(pack.robot.spawn_xyz_m[2])
+            # goal_yaw_offset_rad rotates the goal *image* away from facing the
+            # beacon while keeping the goal *position* (success criterion) fixed.
+            # Tests whether image-goal servoing depends on a goal-facing view.
+            goal_render_yaw = wrap_angle_pi(target_yaw + float(goal_yaw_offset_rad))
             goal_img = _render_tensor_from_base(
                 build,
                 pack,
                 base_xyz_m=np.asarray([target_xy[0], target_xy[1], base_z], dtype=np.float32),
-                base_quat_wxyz=_quat_wxyz_from_yaw(target_yaw),
+                base_quat_wxyz=_quat_wxyz_from_yaw(goal_render_yaw),
                 device=device,
             )
             approach_imgs = None
@@ -746,6 +751,15 @@ def main() -> int:
     parser.add_argument("--beacon-approach-distance-m", type=float, default=1.5)
     parser.add_argument("--beacon-start-yaw-jitter-rad", type=float, default=0.0)
     parser.add_argument(
+        "--goal-yaw-offset-rad",
+        type=float,
+        default=0.0,
+        help="Rotate the goal IMAGE away from facing the beacon (goal position "
+        "and success criterion unchanged). 0 = goal-facing (default); pi = goal "
+        "image looks away from the beacon. Tests whether image-goal servoing "
+        "depends on a goal-facing view convention.",
+    )
+    parser.add_argument(
         "--goal-views",
         type=int,
         default=0,
@@ -936,6 +950,7 @@ def main() -> int:
                         goal_standoff_m=float(args.goal_standoff_m),
                         start_yaw_jitter_rad=float(args.beacon_start_yaw_jitter_rad),
                         n_goal_views=int(args.goal_views),
+                        goal_yaw_offset_rad=float(args.goal_yaw_offset_rad),
                     )
                     _set_pose(
                         build=build,

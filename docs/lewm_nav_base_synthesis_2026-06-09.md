@@ -79,14 +79,27 @@ Therefore:
    memory/subgoal stack owns choosing visible subgoals and presenting goal-facing
    representative images. Effort belongs there, not in the base encoder.
 
-## Remaining uncertainty (one clean test would close it)
+## CONFIRMED: the goal-image convention is the lever (2026-06-09)
 
-The goal-image-convention hypothesis is strongly supported but not directly
-proven. The decisive test: rebuild the offline `local` control with a
-**goal-facing** render of the subgoal cell (the beacon convention) instead of the
-arbitrary-yaw representative frame. If the image→geometry gap then collapses, the
-convention is confirmed as the cause. This needs on-the-fly goal-facing renders
-for the subgoal cells (a bounded render job), not new rollouts.
+Tested directly in the closed-loop beacon framework (cheaper and cleaner than an
+offline render pipeline): seq4, dead-ahead beacon (jitter 0, so the goal image is
+the only variable), `plan_cost`, N=12, with `--goal-yaw-offset-rad` rotating the
+goal *image* away from facing the beacon while holding the goal *position* (and
+success criterion) fixed.
+
+| goal-image yaw offset | lewm success | bearing |
+|---|---:|---:|
+| 0 (faces the beacon) | 0.92 | 1.00 |
+| π/2 (90° off) | 0.00 | 1.00 |
+| π (looks away) | 0.00 | 1.00 |
+
+Changing only the goal image's orientation collapses image-goal navigation from
+0.92 to 0.00 — and the planner is sensitive even at 90°. The frozen features are
+unchanged; only the goal-image convention changed. **This directly confirms the
+offline image-vs-geometry gap is a goal-image-convention artifact, not a
+frozen-feature ceiling.** It also sets a concrete requirement for the H-JEPA
+subgoal stack: a subgoal's representative observation must be roughly
+approach/goal-facing, or local image-goal servoing fails.
 
 ## Artifacts
 
