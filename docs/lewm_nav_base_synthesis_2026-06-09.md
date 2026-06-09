@@ -101,6 +101,27 @@ frozen-feature ceiling.** It also sets a concrete requirement for the H-JEPA
 subgoal stack: a subgoal's representative observation must be roughly
 approach/goal-facing, or local image-goal servoing fails.
 
+## Base-decision hardening across families (2026-06-09)
+
+Visible-beacon, `plan_cost`, textured, jitter 0.7, N≈8/family (test_id). The
+bearing oracle is the *achievable* ceiling and is well below 1.0 in the harder
+families (the constructed LOS approach can require obstacle avoidance), so read
+seq4 relative to bearing:
+
+| family | seq4 | seq11 | bearing | seq4/bearing |
+|---|---:|---:|---:|---:|
+| open_obstacle_field | 0.73 | 0.25 | 1.00 | 0.73 |
+| loop_alias_stress | 0.62 | — | 1.00 | 0.62 |
+| medium_enclosed_maze | 0.67 | 0.33 | 0.50 | 1.34 |
+| local_composite_motifs | 0.43 | — | 0.71 | 0.61 |
+| visual_sensor_stress | 0.14 | 0.00 | 0.71 | 0.20 |
+
+seq4 beats seq11 in every family compared; **the "adopt seq4" decision is
+robust.** In `medium_enclosed_maze` seq4 *exceeds* the bearing oracle (obstacle-
+aware servoing the naive heading controller lacks). Known weak spot:
+`visual_sensor_stress` (0.14) — the vision planner degrades under the
+sensor-noise family. N is small, so treat as indicative.
+
 ## Artifacts
 
 - closed-loop: `.generated/closed_loop_beacon/{cmp_*,hiN_*}.json`,
