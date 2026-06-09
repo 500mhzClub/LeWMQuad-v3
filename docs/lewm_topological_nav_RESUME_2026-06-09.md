@@ -184,11 +184,24 @@ Note: user prefers commits **without** a Co-Authored-By footer.
    right summary — calibration + novelty-streak + running-mean nodes carry it
    (transition prior itself adds only ~+0.01). Artifacts:
    `topo_filter_replay_seq4_e9_v6*.json`, `traj_banks_yaw_eval.pt`.
-6. **NEXT — Stage 3 proper:** wire `OnlineTopologicalMemory` into the
-   `Memory`/`HierarchicalPlanner` seam (Stage 0); GoalAdapter (goal-facing
-   keyframes — satisfied by the view-node design); ReachabilityHead on
-   memory-generated pairs (§6.1 purity rule); then Stage 4 end-to-end with
-   exploration mode.
+6. ~~Stage 3 wiring~~ **DONE** (doc:
+   `docs/lewm_topological_nav_stage3_wiring_2026-06-09.md`). GoalAdapter gate
+   FAILED decisively → **Level-1 goal matching = raw-frame cosine** vs node
+   representative observations (belief space no better at view matching:
+   oracle view-R@1 0.297 ≈ raw 0.301; third "simple frozen channel beats the
+   learned head" instance). `lewm/memory/topological_navigator.py` wires
+   window→v6→filter→keyframes→raw-frame goal match→BFS routing into the
+   `Memory`/`HierarchicalPlanner` seam. No learned ReachabilityHead (A3 +
+   principle #4: BFS over memory edges). **Offline routing probe: goal-match
+   0.879, plannable 1.0, BUT the literal BFS hop lands in the same place
+   cluster (progress@k1 0.22); lookahead k=8 → progress 0.744 @ locality 1.3
+   cells (priv. ceiling 0.912); gate 2/3 (margin vs random-local +0.19 <
+   +0.25, recorded honestly as NOT passed).** Remaining headroom is ONE rule
+   (cluster skip); candidates logged in the doc.
+7. **NEXT — Stage 4 end-to-end:** navigator in the `HierarchicalPlanner` seam,
+   closed loop (vulkan venv `--apply-textures --backend vulkan`), exploration
+   mode (§6.2 frontier), perceptual arrival (§6.4), §9.4 baselines 0/1/2 +
+   §9.3 per-level diagnostics; ground the cluster-skip rule there.
 5. **Stage 3** (`v3_topological_nav_plan.md` §5–6, plan §5 Stage 3): wire the
    BeliefEncoder into the `Memory`/`HierarchicalPlanner` seam — online node
    commitment with **goal-facing** `representative_observation` (hard constraint
@@ -197,8 +210,7 @@ Note: user prefers commits **without** a Co-Authored-By footer.
    negatives) and the 3-level planner (Level 3 = seq4 + `plan_cost` LocalMPC,
    already built in Stage 0). GoalAdapter maps a goal image into belief space
    (goal-facing keyframes).
-7. Stage 4: end-to-end closed-loop eval (learned subgoals replace the privileged
-   breadcrumbs) via `benchmark_lewm_closed_loop_mpc.py --apply-textures --backend vulkan`.
+
 
 ## Detailed docs
 - Spec: `docs/v3_topological_nav_plan.md`
@@ -206,5 +218,6 @@ Note: user prefers commits **without** a Co-Authored-By footer.
 - Stage 1: `docs/lewm_topological_nav_stage1_retrieval_2026-06-09.md`
 - Stage 2: `docs/lewm_topological_nav_stage2_belief_encoder_2026-06-09.md`
 - Stage 3a: `docs/lewm_topological_nav_stage3a_loop_closure_2026-06-09.md`
+- Stage 3 wiring: `docs/lewm_topological_nav_stage3_wiring_2026-06-09.md`
 - Nav-base synthesis (why seq4 + plan_cost): `docs/lewm_nav_base_synthesis_2026-06-09.md`
 - Memory index: `MEMORY.md` → "Topological-nav" entries.
