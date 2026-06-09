@@ -90,7 +90,7 @@ non-line-of-sight goals; that requires a max-distance cap the harness lacks. Not
 the hint that on far goals seq4's image cost loses direction (negative progress)
 — but it is confounded, not a clean result.
 
-Per the H-JEPA design (`docs/v3_hjepa_plan.md`) the base is only responsible for
+Per the topological-nav design (`docs/v3_topological_nav_plan.md`) the base is only responsible for
 *local visible* subgoal servoing; topology/occlusion is the memory+subgoal
 stack's job. seq4's visible-beacon result therefore validates the base's intended
 role, and no encoder change or goal-localization translator is justified by this

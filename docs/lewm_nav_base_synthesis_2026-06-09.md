@@ -74,8 +74,8 @@ Therefore:
 3. The whole offline task-aligned program was built on `seq11_e3` (a weak nav
    base) **and** an arbitrary-yaw goal-image convention; its "visual goal-matching
    is the bottleneck" headline does not survive grounding.
-4. Architecture-aligned next step (`docs/v3_hjepa_plan.md`): the base owns local
-   **visible, goal-facing** subgoal servoing — which works — and the H-JEPA
+4. Architecture-aligned next step (`docs/v3_topological_nav_plan.md`): the base owns local
+   **visible, goal-facing** subgoal servoing — which works — and the topological-nav
    memory/subgoal stack owns choosing visible subgoals and presenting goal-facing
    representative images. Effort belongs there, not in the base encoder.
 
@@ -97,7 +97,7 @@ Changing only the goal image's orientation collapses image-goal navigation from
 0.92 to 0.00 — and the planner is sensitive even at 90°. The frozen features are
 unchanged; only the goal-image convention changed. **This directly confirms the
 offline image-vs-geometry gap is a goal-image-convention artifact, not a
-frozen-feature ceiling.** It also sets a concrete requirement for the H-JEPA
+frozen-feature ceiling.** It also sets a concrete requirement for the topological-nav
 subgoal stack: a subgoal's representative observation must be roughly
 approach/goal-facing, or local image-goal servoing fails.
 

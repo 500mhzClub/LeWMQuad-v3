@@ -1,7 +1,7 @@
 # LeWMQuad-v3 Go2 Simulator Bring-up
 
 This repository targets a Unitree Go2 simulation stack for LeWMQuad-v3 data
-generation and later H-JEPA training.
+generation and later topological-nav training.
 
 > **Backend pivot (2026-05-15):** Genesis is now the authoritative bulk
 > data-generation backend. Gazebo is retained as a small audit oracle only.
@@ -751,8 +751,8 @@ If it passes, ramp shard length at 512 envs before increasing env count:
   post-hoc audits; the per-scene rollout summary publishes the realized
   mix. Spawn pose is randomized per episode (random reachable cell + random
   yaw, clearance-gated) so each cell accumulates entries from multiple
-  headings — required by the H-JEPA BeliefEncoder coverage gate in
-  [docs/v3_hjepa_plan.md](docs/v3_hjepa_plan.md) §5.1. See
+  headings — required by the topological-nav BeliefEncoder coverage gate in
+  [docs/v3_topological_nav_plan.md](docs/v3_topological_nav_plan.md) §5.1. See
   [docs/collection_policy.md](docs/collection_policy.md) for the collector
   reference.
 - Offline derived labels: Phase A1 lives outside the rollout loop in

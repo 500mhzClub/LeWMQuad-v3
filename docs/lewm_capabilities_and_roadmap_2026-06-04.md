@@ -16,7 +16,7 @@ Current representation evidence and the controlled pose-aux plan are in
 `docs/lewm_pose_aux_experiment_design_2026-06-06.md`.
 
 - Detailed chronological evidence + tables: `docs/lewm_state_diagnostic_2026-06-04.md` §1–§8.
-- Registered plan being tested: `docs/v3_hjepa_plan.md`.
+- Registered plan being tested: `docs/v3_topological_nav_plan.md`.
 - Probe scripts: `scripts/probe_lewm_latent_aliasing.py` (A2),
   `scripts/probe_lewm_reachability_a3.py` (A3),
   `scripts/probe_lewm_rollout_horizons.py`, `scripts/probe_lewm_receding_mpc_proxy.py`,

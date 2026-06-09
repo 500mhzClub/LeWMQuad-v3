@@ -17,7 +17,7 @@ Artifacts referenced:
 - `.../closed_loop_mpc_kinematic_e9_b050000_testid_visual_sensor_stress.json`
 - `.../cpu_mini_rollout_probe_lewm_seq4_e7.json`
 - `.../cpu_receding_mpc_proxy_lewm_seq4_e8.json`
-- `docs/v3_hjepa_plan.md`, `docs/fresh_retrain_data_spec.md`,
+- `docs/v3_topological_nav_plan.md`, `docs/fresh_retrain_data_spec.md`,
   `docs/lejepa_strategy_review_2026-05-28.md`,
   `docs/lewm_planning_readiness_gate.md`
 - `lewm/models/lewm.py`, `scripts/train_lewm.py`,
@@ -215,7 +215,7 @@ research design — arguably the strongest thing in the repo.
 
 **Three structural issues are limiting efficacy:**
 
-1. **Methodological drift.** The registered plan (`v3_hjepa_plan.md`) says LeWM
+1. **Methodological drift.** The registered plan (`v3_topological_nav_plan.md`) says LeWM
    is *frozen* and the next work is the Phase A *diagnostic*, not "retrain LeWM
    and invent closed-loop gates." The current activity — a 10-epoch retrain plus
    bespoke MPC benchmarks with hand-tuned distances/block caps — is
@@ -324,7 +324,7 @@ highest (~0.1–0.21), rough/loop ~0.06–0.12, mazes ≈0 or slightly negative
 
 ### A4 verdict
 
-Decisively the **insufficient frozen-latent regime** (`v3_hjepa_plan.md` §4.5):
+Decisively the **insufficient frozen-latent regime** (`v3_topological_nav_plan.md` §4.5):
 ρ_proj median 0.03 ≪ 0.40; confusion ≫ 15%. Per the registered gate,
 "insufficient" → build Phase B (BeliefEncoder) to test H2.
 
@@ -356,7 +356,7 @@ Partly yes, and the distinction matters:
   and is *precisely the plan's trigger* to build Phase B — not a verdict that
   "LeWM failed."
 - **But the H-JEPA is built *on top of* these frozen latents.** Per
-  `v3_hjepa_plan.md` §3, LeWM is frozen through Phases A/B/C; BeliefEncoder,
+  `v3_topological_nav_plan.md` §3, LeWM is frozen through Phases A/B/C; BeliefEncoder,
   memory, GoalAdapter, and ReachabilityHead all consume LeWM latents and never
   re-encode pixels. Crucially, in this plan **topology is represented by an
   explicit memory graph + a trained reachability head, not by a future
@@ -444,7 +444,7 @@ pairs; mean-pooled window = a weak lower bound for a real BeliefEncoder):
 
 ### A4 verdict (gate now complete)
 
-Formally the **insufficient frozen-latent regime** (`v3_hjepa_plan.md` §4.5):
+Formally the **insufficient frozen-latent regime** (`v3_topological_nav_plan.md` §4.5):
 A2 ρ ≈ 0.03 (< 0.40) **and** A3 reachability head ≈ majority baseline (+0.025 ≪
 +15 pp). Per the registered gate → **build Phase B.** But the binary verdict
 hides the important part: *why* it's insufficient.

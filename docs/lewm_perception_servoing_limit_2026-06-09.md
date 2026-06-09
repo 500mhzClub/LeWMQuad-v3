@@ -60,7 +60,7 @@ place-recognition code, not a metric code** (Phase-A: ρ≈0.03 for the latent;
 **in closed loop with two distinct cost models**.
 
 Therefore a genuinely pure-perception long-range traversal is **not reachable
-with this substrate**. It needs the H-JEPA **reachability / subgoal stack**,
+with this substrate**. It needs the topological-nav **reachability / subgoal stack**,
 which turns a long approach into recognition-sized hops between learned
 subgoals — exactly the role the privileged breadcrumb waypoints were standing in
 for in the multi-beacon *demo*. The breadcrumb 2/2 demo is therefore labeled

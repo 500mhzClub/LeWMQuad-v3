@@ -10,7 +10,6 @@ physical success/progress metrics, not latent MSE.
 from __future__ import annotations
 
 import argparse
-import itertools
 import json
 import math
 import os
@@ -54,7 +53,7 @@ except ModuleNotFoundError:
         import yaml as _yaml  # noqa: F401
         sys.path.remove(str(_system_dist_packages))
 
-from lewm.actions import ACTIVE_BLOCK_DIM, active_block_to_matrix, encode_active_block  # noqa: E402
+from lewm.actions import ACTIVE_BLOCK_DIM, active_block_to_matrix  # noqa: E402
 from lewm_genesis.camera_safety import camera_safety_config_from_pack, safe_camera_pose_from_base  # noqa: E402
 from lewm_genesis.collectors.base import primitive_toward_bearing, wrap_angle_pi  # noqa: E402
 from lewm_genesis.lewm_contract import PrimitiveRegistry, SafetyLimits, expand_primitive_to_block  # noqa: E402
@@ -70,6 +69,17 @@ from lewm_worlds.planning_grid import InflatedOccupancyGrid  # noqa: E402
 from probe_lewm_checkpoint import load_model  # noqa: E402
 from lewm.models.energy_head import GoalEnergyHead  # noqa: E402
 from lewm.models.pose_head import RelPoseHead  # noqa: E402
+# Stage 0 refactor (v3 §4.1): the planner now lives in lewm.planning / lewm.memory.
+# The wrappers below delegate to it so this benchmark is behaviour-locked
+# (see lewm/tests/test_planning_refactor.py).
+from lewm.planning.primitive_bank import (  # noqa: E402
+    active_blocks as _pb_active_blocks,
+    candidate_action_tensor as _pb_candidate_action_tensor,
+)
+from lewm.planning.local_mpc import (  # noqa: E402
+    choose_primitive as _lmpc_choose_primitive,
+    primitive_costs as _lmpc_primitive_costs,
+)
 
 
 @dataclass(frozen=True)
@@ -666,11 +676,7 @@ def _primitive_active_blocks(
     registry: PrimitiveRegistry,
     primitive_names: list[str],
 ) -> dict[str, np.ndarray]:
-    encoded: dict[str, np.ndarray] = {}
-    for name in primitive_names:
-        matrix = expand_primitive_to_block(registry, name)
-        encoded[name] = encode_active_block(matrix[:, 0], matrix[:, 1], matrix[:, 2])
-    return encoded
+    return _pb_active_blocks(registry, primitive_names)
 
 
 def _candidate_action_tensor(
@@ -682,17 +688,14 @@ def _candidate_action_tensor(
     rng: random.Random,
     device: torch.device,
 ) -> tuple[list[tuple[str, ...]], torch.Tensor]:
-    all_sequences = list(itertools.product(primitive_names, repeat=int(horizon)))
-    if max_candidates is not None and len(all_sequences) > int(max_candidates):
-        all_sequences = rng.sample(all_sequences, int(max_candidates))
-    actions = np.stack(
-        [
-            np.stack([primitive_blocks[name] for name in seq], axis=0)
-            for seq in all_sequences
-        ],
-        axis=0,
+    return _pb_candidate_action_tensor(
+        primitive_blocks,
+        primitive_names,
+        horizon,
+        max_candidates=max_candidates,
+        rng=rng,
+        device=device,
     )
-    return all_sequences, torch.from_numpy(actions).float().to(device)
 
 
 @torch.no_grad()
@@ -709,28 +712,9 @@ def _choose_lewm_primitive(
     sequences: list[tuple[str, ...]],
     action_tensor: torch.Tensor,
 ) -> tuple[str, float]:
-    z_start_raw, _z_start_proj = _encode_frame(model, image)
-    # goal_image may be a single (C,H,W) frame or a (N,C,H,W) multi-view stack.
-    goal_views = goal_image if goal_image.dim() == 4 else goal_image[None]
-    z_goal_views = torch.cat([_encode_frame(model, gv)[1] for gv in goal_views], dim=0)  # (N, D)
-    n_cand = action_tensor.shape[0]
-    repeated_start = z_start_raw.repeat(n_cand, 1)
-    z_pred = model.plan_rollout(repeated_start, action_tensor)
-    head = getattr(model, "_energy_head", None)
-    if head is not None:
-        # Learned goal-energy cost (replaces the broken latent-L2 metric);
-        # min over goal views = "match the beacon from whichever side I arrive".
-        z_pred_last = z_pred[:, -1, :] if z_pred.dim() == 3 else z_pred
-        per_view = torch.stack(
-            [head(z_pred_last, z_goal_views[v:v + 1].repeat(n_cand, 1))
-             for v in range(z_goal_views.shape[0])],
-            dim=0,
-        )  # (N, n_cand)
-        cost = per_view.min(dim=0).values
-    else:
-        cost = model.plan_cost(z_pred, z_goal_views[0:1].repeat(n_cand, 1))
-    best_idx = int(torch.argmin(cost).item())
-    return sequences[best_idx][0], float(cost[best_idx].detach().cpu().item())
+    # Behaviour-locked delegation to lewm.planning.local_mpc (Stage 0 refactor):
+    # energy-head cost if present, else plan_cost; min over goal views.
+    return _lmpc_choose_primitive(model, image, goal_image, sequences, action_tensor)
 
 
 @torch.no_grad()
@@ -742,32 +726,9 @@ def _lewm_primitive_costs(
     action_tensor: torch.Tensor,
 ) -> tuple[np.ndarray, list[str]]:
     """Full image-goal cost over every candidate first-primitive (lower = closer)."""
-    z_start_raw, _z = _encode_frame(model, image)
-    goal_views = goal_image if goal_image.dim() == 4 else goal_image[None]
-    z_goal_views = torch.cat([_encode_frame(model, gv)[1] for gv in goal_views], dim=0)
-    n_cand = action_tensor.shape[0]
-    z_pred = model.plan_rollout(z_start_raw.repeat(n_cand, 1), action_tensor)
-    z_pred_last = z_pred[:, -1, :] if z_pred.dim() == 3 else z_pred
-    pose_head = getattr(model, "_pose_head", None)
-    head = getattr(model, "_energy_head", None)
-    if pose_head is not None:
-        # Metric cost: predicted ||dxy|| to the goal (a homing/approach gradient,
-        # unlike plan_cost's recognition-only latent L2).
-        per_view = torch.stack(
-            [pose_head(z_pred_last, z_goal_views[v:v + 1].repeat(n_cand, 1))[:, :2].norm(dim=-1)
-             for v in range(z_goal_views.shape[0])],
-            dim=0,
-        )
-        cost = per_view.min(dim=0).values
-    elif head is not None:
-        per_view = torch.stack(
-            [head(z_pred_last, z_goal_views[v:v + 1].repeat(n_cand, 1)) for v in range(z_goal_views.shape[0])],
-            dim=0,
-        )
-        cost = per_view.min(dim=0).values
-    else:
-        cost = model.plan_cost(z_pred, z_goal_views[0:1].repeat(n_cand, 1))
-    return cost.detach().cpu().numpy(), [seq[0] for seq in sequences]
+    # Behaviour-locked delegation to lewm.planning.local_mpc (Stage 0 refactor):
+    # pose-head metric cost if present, elif energy head, else plan_cost.
+    return _lmpc_primitive_costs(model, image, goal_image, sequences, action_tensor)
 
 
 @torch.no_grad()

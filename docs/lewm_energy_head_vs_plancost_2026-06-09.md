@@ -59,7 +59,7 @@ accuracy ≠ a good servoing cost.
 - **Use `plan_cost` for closed-loop navigation** with `seq4` (the benchmark's
   `lewm` policy without `--head-ckpt`). It is the better servoing metric.
 - The `GoalEnergyHead` may still be useful for its *trained* job — goal
-  reachability/retrieval (e.g. subgoal selection in the H-JEPA memory) — but it
+  reachability/retrieval (e.g. subgoal selection in the topological-nav memory) — but it
   should not be the local servoing cost.
 - If a learned servoing cost is wanted, it should be trained for the deployed
   use: rank candidate *action rollouts* toward a *fixed, deployment-distribution*

@@ -4,7 +4,7 @@ This module is the privileged-side scene oracle. It is used at data
 generation time by collector policies (route teacher, frontier teacher,
 recovery curriculum) and at label-derivation time by Phase A1 metadata
 recovery. **It is never an input to the deployed model** — see the
-privileged-leak rule in ``docs/v3_hjepa_plan.md`` §3.4 and
+privileged-leak rule in ``docs/v3_topological_nav_plan.md`` §3.4 and
 ``docs/fresh_retrain_data_spec.md`` §2.
 
 All graph indices are scene-scoped: the caller is responsible for pairing

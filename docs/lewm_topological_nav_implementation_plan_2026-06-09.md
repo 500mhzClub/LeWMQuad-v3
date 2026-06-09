@@ -1,14 +1,26 @@
-# H-JEPA Implementation Plan (grounded in June findings + literature)
+# Topological Neural Navigation — Implementation Plan (grounded in June findings + literature)
 
 Date: 2026-06-09
 
-This sequences the build of the H-JEPA navigation stack specified in
-`docs/v3_hjepa_plan.md` (the authoritative design, written 2026-05-17), updated
-with everything learned since — the task-aligned program, the closed-loop
-grounding, and the external nav-JEPA literature
-(`docs/lewm_pose_aux_literature_and_options_2026-06-06.md`). It does not restate
-the v3 spec; it (a) records which decisions the June evidence settles, (b) marks
-Phase A as answered, and (c) gives a staged, de-risked build order.
+> **Naming (2026-06-09).** This was "the H-JEPA plan"; the name was a misnomer.
+> What we are building is **not** an H-JEPA (a hierarchy of JEPA *predictors* at
+> multiple timescales). It is **one flat JEPA predictor (LeWM) + a topological
+> recognition memory + a hierarchical planner** — the SPTM / Neural Topological
+> SLAM lineage. The hierarchy is in *planning and memory, not prediction*. A
+> *true* H-JEPA (a learned high-level predictor over place embeddings) is kept as
+> a **deferred research bet**, baselined against the symbolic graph built here —
+> see §8. Decision (2026-06-09): pursue option 3 — **build the topological stack
+> now; treat the learned high-level predictor as a later bet measured against this
+> graph.**
+
+This sequences the build of the topological navigation stack specified in
+`docs/v3_topological_nav_plan.md` (the authoritative design, written 2026-05-17,
+renamed from `v3_hjepa_plan.md`), updated with everything learned since — the
+task-aligned program, the closed-loop grounding, and the external nav-JEPA
+literature (`docs/lewm_pose_aux_literature_and_options_2026-06-06.md`). It does
+not restate the v3 spec; it (a) records which decisions the June evidence
+settles, (b) marks Phase A as answered, and (c) gives a staged, de-risked build
+order.
 
 ## 1. Convergent evidence: the architecture is decided
 
@@ -40,13 +52,14 @@ is true; build the belief/memory/reachability stack. The whole design rests on
 
 | v3 Phase A step | status | evidence |
 |---|---|---|
-| A0 planner refactor | partial | the closed-loop benchmark has proto-`LocalMPC` (`_choose_lewm_primitive` + CEM-ish primitive scan) and a proto-`hierarchical` multi-beacon loop, but not the modular `planning/` + `memory/` contract |
+| A0 planner refactor | **done (2026-06-09)** | extracted to `lewm/planning/` + `lewm/memory/` (genesis-free); benchmark delegates; behaviour-lock gate passes (`lewm/tests/test_planning_refactor.py`, 6/6, + benchmark-wrapper equivalence). See Stage 0 below. |
 | A1 cell-graph extraction | done | `lewm_worlds.labels.derived` / mined task-aligned decisions carry `cell_id`, `local_graph_type`, `route_target_id`, `oracle_next_cell_id`, BFS targets |
 | A2 visual-aliasing audit | done | recognition R@1 ≈ 0.42 (good); latent↔graph ρ≈0.03 (severe metric aliasing) → A4 "insufficient frozen-latent regime" |
 | A3 frozen reachability probe | done | reachability head ≈ baseline (nav-cost diagnosis) |
 | A4 decision gate | **passed → build Phase B** | the closed-loop recognition-vs-metric result is the strongest confirmation |
 
-The one open A-stage item is **A0 (refactor)**, which is the first build task.
+The one open A-stage item was **A0 (refactor)** — **done 2026-06-09** (Stage 0
+below). Phase B now proceeds.
 
 ## 3. Decisions the June evidence settles (deltas to the v3 spec)
 
@@ -73,10 +86,10 @@ The one open A-stage item is **A0 (refactor)**, which is the first build task.
 
 ## 4. The demo's privileged scaffolding == the components to build
 
-The multi-beacon demo faked the H-JEPA stack with ground truth. Each privileged
-bit maps to exactly one learned component:
+The multi-beacon demo faked the topological-nav stack with ground truth. Each
+privileged bit maps to exactly one learned component:
 
-| demo privileged bit | H-JEPA replacement |
+| demo privileged bit | topological-stack replacement |
 |---|---|
 | subgoal placed 2 m toward the true beacon | Level 1–2 planner: memory routing + ReachabilityHead picks the next *visible* node along the graph |
 | goal keyframe rendered from the true beacon pose | memory node `representative_observation` (committed online) + GoalAdapter |
@@ -89,12 +102,30 @@ Building these *is* the project.
 
 Each stage has a registered gate; the next stage runs only if the gate passes.
 
-### Stage 0 — Planner refactor (A0)
-Extract the benchmark's planner into the v3 module contract: `planning/local_mpc.py`,
-`planning/costs.py`, `planning/primitive_bank.py`, `memory/topological_memory.py`
-(abstract `Memory` + a `KeyframeMemory` baseline), `planning/hierarchical_planner.py`.
-Seed `LocalMPC` from `_choose_lewm_primitive` (use `plan_cost`). **Gate:** behaviour
-identical to the current benchmark within tolerance (v3 §4.1).
+### Stage 0 — Planner refactor (A0) — **DONE 2026-06-09**
+Extracted the benchmark's planner into the v3 module contract under the `lewm`
+package (all genesis-free so they unit-test with a fake model):
+- `lewm/planning/primitive_bank.py` — `active_blocks` + `candidate_action_tensor`.
+- `lewm/planning/costs.py` — pure `rollout_costs(..., allow_pose_head)` unifying the
+  exact math of `_choose_lewm_primitive` (energy/plan_cost) and
+  `_lewm_primitive_costs` (pose/energy/plan_cost); the head-selection asymmetry is
+  preserved by `allow_pose_head`.
+- `lewm/planning/local_mpc.py` — `PlannerState`/`GoalSpec` bundles + `LocalMPC`
+  (`.choose`, `.candidate_costs`) seeded from `_choose_lewm_primitive` (plan_cost).
+- `lewm/memory/topological_memory.py` — abstract `Memory` + `KeyframeMemory`
+  baseline (goal image = sub-goal → v2-identical).
+- `lewm/planning/hierarchical_planner.py` — `HierarchicalPlanner` routing
+  LocalMPC + KeyframeMemory; the seam where Stages 2–3 plug in.
+
+`scripts/benchmark_lewm_closed_loop_mpc.py` now delegates its four planner
+functions to these (signatures unchanged → rest of benchmark untouched).
+**Gate PASSED:** `lewm/tests/test_planning_refactor.py` (6/6) asserts the
+extracted modules reproduce a verbatim reference of the original math
+bit-for-bit (incl. the asymmetry and the hierarchical-planner identity), and a
+benchmark-wrapper equivalence check confirms `_choose_lewm_primitive` /
+`_lewm_primitive_costs` are unchanged end-to-end. (Full closed-loop re-run on a
+real scene is the optional heavier confirmation; the unit gate is the registered
+v3 §4.1 acceptance.)
 
 ### Stage 1 — Minimal topological memory on FROZEN latents (cheap H2 test)
 Before the full contrastive BeliefEncoder, test whether frozen seq4 recognition +
@@ -158,11 +189,57 @@ margin (v3 §10.9); arrival is perceptual (§6.4), not ground-truth.
 
 ## 7. First concrete deliverables
 
-1. Re-validate seq4 place-recognition R@1 (re-run `place_retrieval` /
-   `probe_lewm_history_retrieval` on seq4 frozen latents, held-out scenes).
-2. Stage 0 planner refactor (the modular `planning/` + `memory/` seam) from the
-   benchmark, behaviour-locked.
-3. Stage 1 minimal frozen-latent topological memory + the H2 gate decision.
+1. ~~Re-validate seq4 place-recognition R@1~~ — **DONE**: R@1 0.43, ρ 0.08
+   (recognition-not-metric confirmed on seq4).
+   `docs/lewm_topological_nav_stage1_retrieval_2026-06-09.md`.
+2. ~~Stage 0 planner refactor (modular `planning/` + `memory/` seam),
+   behaviour-locked~~ — **DONE** (Stage 0 above; `lewm/tests/test_planning_refactor.py`).
+3. ~~Stage 1 minimal frozen-latent topological memory + the H2 gate decision~~ —
+   **DONE**: naive frozen-history pooling fails the recall gate, but
+   history-disambiguability AUC 0.86 on aliased pairs → **decision: build the
+   Stage 2 BeliefEncoder** (the info is present, just not poolable).
 
-Items 1–2 are low-risk and unblock everything; item 3 is the cheap test that
-decides whether the heavy BeliefEncoder build (Stage 2) is even needed.
+**Next deliverable → Stage 2 (BeliefEncoder).** Train the contrastive history
+encoder against the registered bars: beat the naive-pooling Recall@5 baseline and
+approach the AUC-0.86 history-separation ceiling on aliased pairs; if it cannot
+despite the present signal, H2 falsifies → fork to DINOv2 patch features (§6). The
+`HierarchicalPlanner` + `Memory` seam from Stage 0 is where the learned memory
+plugs in.
+
+## 8. Deferred research bet: a *true* H-JEPA (option 3)
+
+The stack above is hierarchical in **planning/memory**, not in **prediction**.
+A genuine H-JEPA would add a second, *learned* predictor at a coarser level —
+not a counted graph. Concretely: a **high-level JEPA predictor over place
+embeddings** that, given the current place embedding and a coarse action,
+predicts the *next place* embedding, and plans by rolling that predictor out at
+the abstract level (instead of, or above, BFS over the symbolic graph). Levels:
+
+- **Level 0 (have it):** LeWM, frozen — local dynamics in pixel-latent space.
+- **Level 1 (the new bet):** a learned predictor over *place* embeddings —
+  `z_place_{t+1} ≈ f(z_place_t, coarse_action)` — trained on the same
+  memory-generated node transitions the topological graph already collects
+  (`transition_count`, `action_summary` become its supervision).
+
+**Why it is deferred, not chosen now.** A learned high-level predictor only helps
+if its abstract latent is *plannable* (smooth/monotone enough to roll out and
+score). Our load-bearing finding is **recognition-not-metric** at Level 0
+(latent↔graph ρ≈0.03; pose-aux failed to inject actionable geometry). There is no
+evidence the *place-level* latent escapes this, so a Level-1 predictor risks
+inheriting the same flat-cost failure — while the symbolic graph sidesteps it by
+construction (BFS is exact). So the topological stack is the lower-risk path that
+fits the substrate we actually have.
+
+**Entry gate (run only after the topological stack works, and only if it has a
+ceiling the graph cannot raise).** Before building Level 1, run a cheap
+*offline* probe analogous to Phase A: take the place embeddings the topological
+memory already produces, fit `z_place_{t+1} ≈ f(z_place_t, coarse_action)`, and
+measure whether rolling it out 2–4 abstract steps yields a **plannable** ordering
+(does predicted-place distance/order correlate with true graph distance on
+held-out scenes?). **Baseline = the symbolic graph + BFS** built here. The bet is
+funded only if the learned predictor *beats the graph* on a task the graph
+demonstrably caps (e.g. generalizing transitions to unobserved node pairs,
+where BFS has no edge but a learned predictor could interpolate). If it does not
+clear the graph baseline, the H-JEPA name stays aspirational and the symbolic
+stack stands. This keeps "H-JEPA" honest: a measured research direction with a
+concrete baseline, not the label for what we ship.

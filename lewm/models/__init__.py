@@ -2,7 +2,7 @@
 
 The H-JEPA superstructure (BeliefEncoder, GoalAdapter, LoopClosure,
 Reachability, MemoryGraph, hierarchical planner) is net-new for v3 and lands
-in sibling modules — see docs/v3_hjepa_plan.md.
+in sibling modules — see docs/v3_topological_nav_plan.md.
 """
 from __future__ import annotations
 

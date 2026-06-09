@@ -3,7 +3,7 @@
 This is the implementation reference for the §13 collection mix in
 [fresh_retrain_data_spec.md](fresh_retrain_data_spec.md). The privileged
 labels these collectors use are scoped by
-[v3_hjepa_plan.md §3.4](v3_hjepa_plan.md) — every signal here is allowed at
+[v3_topological_nav_plan.md §3.4](v3_topological_nav_plan.md) — every signal here is allowed at
 data generation time, and **none** of it may enter the deployed model's
 input vector.
 
@@ -58,7 +58,7 @@ Each collector implements [`CollectorPolicy`](../lewm_genesis/lewm_genesis/colle
 | `primitive_curriculum` | 20 % | Uniform random over trainable velocity primitives. The legacy sampler, kept as a collector so its share is auditable. | none |
 | `ou_noise` | 10 % | Ornstein–Uhlenbeck process in `(vx, vy, yaw_rate)` snapped to the nearest trainable primitive. Drives smooth drifts through the action space. | none |
 | `recovery` | 10 % | FSM: `approach` (steer toward a distant cell, ignoring clearance) → `backout` (`backward` primitive for `backout_blocks` blocks once clearance < `approach_clearance_m`) → `pivot` (`yaw_left`/`yaw_right` for `pivot_blocks` blocks) → next approach. Produces the "wall contact + recovery" examples in §10. | scene graph, current cell, base xy/yaw, **clearance to walls** |
-| `loop_revisit` | 10 % | Same as `route_teacher` but with `revisit_after_arrival=True`: re-targets to a previously visited goal cell (across all envs' histories) once any goal exists. Generates loop-closure pairs for [v3_hjepa_plan.md §5.3](v3_hjepa_plan.md). | as `route_teacher`, plus per-env goal history |
+| `loop_revisit` | 10 % | Same as `route_teacher` but with `revisit_after_arrival=True`: re-targets to a previously visited goal cell (across all envs' histories) once any goal exists. Generates loop-closure pairs for [v3_topological_nav_plan.md §5.3](v3_topological_nav_plan.md). | as `route_teacher`, plus per-env goal history |
 
 `RouteTeacher`, `FrontierTeacher`, and `RecoveryCurriculum` all use the
 same bearing-to-primitive mapping:

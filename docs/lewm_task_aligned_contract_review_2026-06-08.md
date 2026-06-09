@@ -39,7 +39,7 @@ and is sometimes given no goal task term at all.
 
 A final route-goal image paired with a local action label can define a valid
 image-goal navigation task, but it requires routing/topological inference. It is
-not the registered local-action contract: `docs/v3_hjepa_plan.md` explicitly
+not the registered local-action contract: `docs/v3_topological_nav_plan.md` explicitly
 states that local control chases the selected subgoal's representative image,
 not the final destination image. v1 therefore mixes the routing and local-action
 problems and cannot establish which one causes the remaining gap. This prevents

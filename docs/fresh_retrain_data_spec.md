@@ -49,7 +49,7 @@ The target stack is the repository architecture, not a larger model:
   is 3, so the predictor sees 15D macro actions.
 - Downstream heads: keep the existing 512-wide MLP/head scale unless an H-JEPA
   implementation explicitly adds the BeliefEncoder, GoalAdapter, LoopClosure,
-  and Reachability modules described in `docs/v3_hjepa_plan.md`.
+  and Reachability modules described in `docs/v3_topological_nav_plan.md`.
 
 The primary data lesson from `report.md` is that frame count is not the scarce
 resource. Distinct scene topology, reset-correct episodes, action support, hard
