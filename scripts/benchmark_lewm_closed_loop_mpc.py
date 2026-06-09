@@ -208,6 +208,176 @@ def _execute_physical_primitive(
     return clipped
 
 
+def _run_multi_beacon_demo(
+    *,
+    model: torch.nn.Module,
+    build: Any,
+    pack: Any,
+    registry: PrimitiveRegistry,
+    sequences: list,
+    action_tensor: torch.Tensor,
+    n_beacons: int,
+    goal_standoff_m: float,
+    goal_radius_m: float,
+    approach_distance_m: float,
+    max_blocks: int,
+    command_dt_s: float,
+    device: torch.device,
+    grid: InflatedOccupancyGrid,
+    frame_sink: list,
+) -> int:
+    """Chase scene landmarks one after another with the lewm image-goal planner.
+
+    Returns the number of beacons claimed (reached). Each leg uses a goal-facing
+    standoff render of the next beacon as the image goal.
+    """
+    graph = pack.scene_graph
+    base_z = float(pack.robot.spawn_xyz_m[2])
+    beacons = []
+    for object_id, cell_id in graph.landmark_cells:
+        xy = graph.landmark_xy_for_cell(cell_id) or graph.cell_center(cell_id)
+        beacons.append((str(object_id), np.array([float(xy[0]), float(xy[1])], dtype=np.float64)))
+    if len(beacons) < 2:
+        return 0
+
+    spawn_xy = np.asarray(pack.robot.spawn_xyz_m[:2], dtype=np.float64)
+    remaining = beacons[:]
+    pos = spawn_xy.copy()
+    tour: list = []
+    while remaining and len(tour) < int(n_beacons):
+        remaining.sort(key=lambda b: float(np.linalg.norm(b[1] - pos)))
+        nxt = remaining.pop(0)
+        tour.append(nxt)
+        pos = nxt[1]
+    if len(tour) < 2:
+        return 0
+
+    def standoff_for(beacon_xy, from_xy):
+        bx = np.asarray(beacon_xy, dtype=np.float64)
+        fx = np.asarray(from_xy, dtype=np.float64)
+        d = bx - fx
+        base_ang = math.atan2(d[1], d[0]) if np.linalg.norm(d) > 1e-6 else 0.0
+        for dang in [0.0] + [s * math.radians(deg) for deg in (15, 30, 45, 60, 90, 120) for s in (1, -1)]:
+            ang = base_ang + dang
+            unit = np.array([math.cos(ang), math.sin(ang)])
+            so = bx - unit * float(goal_standoff_m)
+            if not grid.is_free((float(so[0]), float(so[1]))):
+                continue
+            # Line-of-sight to the beacon as a target (not has_free_line, whose
+            # endpoint inside the beacon's own inflated occupancy always fails).
+            if not _line_of_sight_to_beacon(pack, (float(so[0]), float(so[1])), (float(bx[0]), float(bx[1]))):
+                continue
+            return so, math.atan2(bx[1] - so[1], bx[0] - so[0])
+        return None
+
+    first = standoff_for(tour[0][1], spawn_xy)
+    if first is None:
+        return 0
+    so0, face0 = first
+    unit0 = (tour[0][1] - so0)
+    unit0 = unit0 / (np.linalg.norm(unit0) + 1e-9)
+    start_xy = so0 - unit0 * float(approach_distance_m)
+    if not grid.is_free((float(start_xy[0]), float(start_xy[1]))):
+        start_xy = so0
+    _set_pose(
+        build=build,
+        runner=None,
+        pos_xyz=np.array([start_xy[0], start_xy[1], base_z], dtype=np.float32),
+        quat_wxyz=_quat_wxyz_from_yaw(face0),
+    )
+
+    claimed = 0
+    step_m = 2.0           # re-aim ~2 m toward the beacon each iteration
+    blocks_per_sub = 8     # servo this many blocks per fresh sub-goal, then re-aim
+    max_total_blocks = 140  # per-beacon cap (enough to cross the arena)
+    for _object_id, beacon_xy in tour:
+        cur_xy = np.asarray(_current_pose(build)[0][:2], dtype=np.float64)
+        so = standoff_for(beacon_xy, cur_xy)
+        if so is None:
+            break
+        target_xy = np.asarray(so[0], dtype=np.float64)
+        beacon_face = so[1]
+        total = 0
+        reached = False
+        while total < max_total_blocks:
+            cur_xy = np.asarray(_current_pose(build)[0][:2], dtype=np.float64)
+            if _xy_distance(cur_xy, target_xy) <= float(goal_radius_m):
+                reached = True
+                break
+            d = target_xy - cur_xy
+            dist_t = float(np.linalg.norm(d))
+            # fresh sub-goal ~step_m toward the standoff from the current pose,
+            # rendered facing the beacon (a distinct, growing servoing target)
+            sub = target_xy if dist_t <= step_m else cur_xy + d / dist_t * step_m
+            gyaw = beacon_face if dist_t <= step_m else math.atan2(
+                beacon_xy[1] - sub[1], beacon_xy[0] - sub[0]
+            )
+            goal_img = _render_tensor_from_base(
+                build, pack,
+                base_xyz_m=np.array([sub[0], sub[1], base_z], dtype=np.float32),
+                base_quat_wxyz=_quat_wxyz_from_yaw(gyaw), device=device,
+            )
+            for _ in range(blocks_per_sub):
+                pos, quat = _current_pose(build)
+                if _xy_distance(pos[:2], sub) <= float(goal_radius_m):
+                    break
+                image = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
+                primitive_name, _cost = _choose_lewm_primitive(model, image, goal_img, sequences, action_tensor)
+                _execute_kinematic_primitive(
+                    build, registry, primitive_name, command_dt_s=command_dt_s, grid=grid,
+                    frame_sink=frame_sink, pack=pack, device=device,
+                )
+                total += 1
+        if reached:
+            claimed += 1
+        else:
+            break
+    return claimed
+
+
+def _write_demo_video(path: Path, goal: "GoalSpec", frames: list, fps: float) -> None:
+    """Write the captured third-person|egocentric frames to an MP4, with a goal-image intro."""
+    import imageio
+
+    h, w = frames[0].shape[:2]
+    intro: list = []
+    goal_image = getattr(goal, "image", None)
+    if goal_image is not None:
+        goal_np = goal_image.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+        pad = np.zeros((h, w, 3), dtype=np.uint8)
+        half = np.array(Image.fromarray(goal_np).convert("RGB").resize((w // 2, h)))
+        pad[:, w - half.shape[1]:, :] = half  # goal image on the egocentric (right) half
+        intro = [pad] * max(1, int(round(fps)))
+    hold = [frames[-1]] * max(1, int(round(fps)))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    imageio.mimwrite(str(path), intro + frames + hold, fps=fps, macro_block_size=16)
+
+
+def _render_third_person(build: Any, base_xyz: np.ndarray, yaw: float, size: int = 224) -> np.ndarray:
+    """Render a third-person follow view (behind + above the robot, looking ahead)."""
+    heading = np.array([math.cos(yaw), math.sin(yaw)], dtype=np.float32)
+    cam_pos = np.array(
+        [float(base_xyz[0]) - heading[0] * 1.7,
+         float(base_xyz[1]) - heading[1] * 1.7,
+         float(base_xyz[2]) + 1.2],
+        dtype=np.float32,
+    )
+    lookat = np.array(
+        [float(base_xyz[0]) + heading[0] * 0.7,
+         float(base_xyz[1]) + heading[1] * 0.7,
+         float(base_xyz[2]) + 0.15],
+        dtype=np.float32,
+    )
+    build.camera.set_pose(pos=cam_pos, lookat=lookat, up=np.array([0.0, 0.0, 1.0], dtype=np.float32))
+    rgb = RolloutRunner._extract_rgb(build.camera.render())
+    if rgb is None:
+        raise RuntimeError("Genesis camera returned no RGB frame (third-person)")
+    if rgb.ndim == 4:
+        rgb = rgb[0]
+    img = Image.fromarray(np.asarray(rgb, dtype=np.uint8)).convert("RGB").resize((size, size))
+    return np.array(img, copy=True)
+
+
 def _execute_kinematic_primitive(
     build: Any,
     registry: PrimitiveRegistry,
@@ -215,6 +385,9 @@ def _execute_kinematic_primitive(
     *,
     command_dt_s: float,
     grid: InflatedOccupancyGrid | None,
+    frame_sink: list | None = None,
+    pack: Any = None,
+    device: torch.device | None = None,
 ) -> np.ndarray:
     block = expand_primitive_to_block(registry, primitive_name)
     pos, quat = _current_pose(build)
@@ -232,6 +405,24 @@ def _execute_kinematic_primitive(
         pos[0] = next_xy[0]
         pos[1] = next_xy[1]
         yaw = wrap_angle_pi(yaw + float(yaw_rate) * command_dt_s)
+        if frame_sink is not None and pack is not None and device is not None:
+            # Demo capture: at each kinematic sub-step render the egocentric
+            # (perception) view and a third-person follow view, side by side.
+            build.robot.set_pos(pos[None, :], envs_idx=[0], zero_velocity=True)
+            build.robot.set_quat(_quat_wxyz_from_yaw(yaw)[None, :], envs_idx=[0], zero_velocity=False)
+            # Kinematic mode never steps, so the robot's visual mesh does not track
+            # set_pos. One step (base re-pinned each sub-step) updates the visual so
+            # the robot is visible in the third-person view.
+            try:
+                build.scene.step()
+            except Exception:
+                pass
+            ego = _render_tensor_from_base(
+                build, pack, base_xyz_m=pos, base_quat_wxyz=_quat_wxyz_from_yaw(yaw), device=device,
+            )
+            ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+            third_np = _render_third_person(build, pos, yaw)
+            frame_sink.append(np.concatenate([third_np, ego_np], axis=1))
     build.robot.set_pos(pos[None, :], envs_idx=[0], zero_velocity=True)
     build.robot.set_quat(_quat_wxyz_from_yaw(yaw)[None, :], envs_idx=[0], zero_velocity=False)
     return block
@@ -574,6 +765,7 @@ def _run_policy_trial(
     device: torch.device,
     command_dt_s: float,
     grid: InflatedOccupancyGrid | None,
+    frame_sink: list | None = None,
 ) -> PolicyResult:
     _set_pose(build=build, runner=runner, pos_xyz=start_pos, quat_wxyz=start_quat)
     initial_pos, _initial_quat = _current_pose(build)
@@ -628,6 +820,9 @@ def _run_policy_trial(
                 primitive_name,
                 command_dt_s=command_dt_s,
                 grid=grid,
+                frame_sink=frame_sink,
+                pack=pack,
+                device=device,
             )
         else:
             _execute_physical_primitive(runner, registry, primitive_name)
@@ -707,6 +902,21 @@ def main() -> int:
     parser.add_argument("--platform-manifest", type=Path, default=REPO_ROOT / "config" / "go2_platform_manifest.yaml")
     parser.add_argument("--primitive-registry", type=Path, default=REPO_ROOT / "config" / "go2_primitive_registry.yaml")
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument(
+        "--demo-video",
+        type=Path,
+        default=None,
+        help="If set, run only the lewm policy, capture egocentric+third-person "
+        "frames, and write an MP4 of the first successful episode to this path.",
+    )
+    parser.add_argument("--demo-fps", type=float, default=12.0)
+    parser.add_argument(
+        "--demo-beacons",
+        type=int,
+        default=1,
+        help="If >1 (with --demo-video), the robot chases that many scene "
+        "landmarks in sequence (claim one, then the next) in a single episode.",
+    )
     parser.add_argument("--split", default="test_id")
     parser.add_argument("--family", default=None)
     parser.add_argument("--scene-limit", type=int, default=1)
@@ -835,6 +1045,8 @@ def main() -> int:
 
     primitive_names = _parse_csv(args.primitive_names)
     policies = _parse_csv(args.policies)
+    if args.demo_video is not None:
+        policies = ["lewm"]
     if "hold" not in primitive_names:
         raise SystemExit("--primitive-names must include hold")
     unsupported = sorted(set(policies) - {"lewm", "lewm_pose", "bearing", "hold", "random"})
@@ -920,7 +1132,7 @@ def main() -> int:
                 n_envs=1,
                 backend=str(args.backend),
                 show_viewer=False,
-                render_robot=False,
+                render_robot=bool(args.demo_video is not None),
                 apply_textures=bool(args.apply_textures),
             )
             runner: RolloutRunner | None = None
@@ -938,6 +1150,34 @@ def main() -> int:
                 )
                 runner = RolloutRunner(build, policy, registry, safety, config=config)
             grid = InflatedOccupancyGrid(pack.scene_graph.manifest, cell_size_m=0.05, inflation_m=0.20)
+            if args.demo_video is not None and int(args.demo_beacons) > 1:
+                demo_frames: list = []
+                claimed = _run_multi_beacon_demo(
+                    model=model,
+                    build=build,
+                    pack=pack,
+                    registry=registry,
+                    sequences=sequences,
+                    action_tensor=action_tensor,
+                    n_beacons=int(args.demo_beacons),
+                    goal_standoff_m=float(args.goal_standoff_m),
+                    goal_radius_m=float(args.goal_radius_m),
+                    approach_distance_m=float(args.beacon_approach_distance_m),
+                    max_blocks=int(args.max_blocks),
+                    command_dt_s=command_dt_s,
+                    device=device,
+                    grid=grid,
+                    frame_sink=demo_frames,
+                )
+                print(f"    [demo] claimed {claimed}/{int(args.demo_beacons)} beacons, frames={len(demo_frames)}", flush=True)
+                # Prefer a scene that claims all beacons; otherwise accept the
+                # first substantial traversal (claims >=1 beacon and keeps going).
+                full = claimed >= int(args.demo_beacons)
+                if demo_frames and (full or (claimed >= 1 and len(demo_frames) >= 200)):
+                    _write_demo_video(args.demo_video, None, demo_frames, float(args.demo_fps))
+                    print(f"[demo] wrote {len(demo_frames)} frames ({claimed}/{int(args.demo_beacons)} claimed) -> {args.demo_video}", flush=True)
+                    return 0
+                continue
             for trial_idx in range(int(args.trials_per_scene)):
                 if args.task == "visible-beacon":
                     start_pos, start_quat, goal = _select_visible_beacon_setup(
@@ -994,6 +1234,7 @@ def main() -> int:
                     flush=True,
                 )
                 for policy_name in policies:
+                    demo_frames = [] if args.demo_video is not None else None
                     result = _run_policy_trial(
                         policy_name=policy_name,
                         model=model,
@@ -1014,6 +1255,7 @@ def main() -> int:
                         device=device,
                         command_dt_s=command_dt_s,
                         grid=grid,
+                        frame_sink=demo_frames,
                     )
                     results.append(result)
                     print(
@@ -1022,6 +1264,10 @@ def main() -> int:
                         f"blocks={result.blocks_executed}",
                         flush=True,
                     )
+                    if demo_frames and result.success:
+                        _write_demo_video(args.demo_video, goal, demo_frames, float(args.demo_fps))
+                        print(f"[demo] wrote {len(demo_frames)} frames -> {args.demo_video}", flush=True)
+                        return 0
         except Exception as exc:
             skipped.append({"scene": str(scene_dir), "error": f"{type(exc).__name__}: {exc}"})
             print(f"[SKIP] {scene_dir}: {type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
