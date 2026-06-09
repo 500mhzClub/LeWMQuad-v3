@@ -213,10 +213,11 @@ def _execute_physical_primitive(
             # Demo capture: physics already steps the articulated robot, so render
             # the egocentric + third-person views directly each control tick.
             pos, quat = _current_pose(build)
+            yaw_t = _yaw_from_quat_wxyz(quat)
             ego = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
             ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
-            third_np = _render_third_person(build, pos, _yaw_from_quat_wxyz(quat))
-            frame_sink.append(np.concatenate([third_np, ego_np], axis=1))
+            third_np = _render_third_person(build, pos, yaw_t)
+            frame_sink.append((third_np, ego_np, float(pos[0]), float(pos[1]), float(yaw_t)))
     runner._last_executed[0] = clipped[-1]
     return clipped
 
@@ -303,7 +304,7 @@ def _run_multi_beacon_demo(
     claimed = 0
     step_m = 2.0           # re-aim ~2 m toward the beacon each iteration
     blocks_per_sub = 8     # servo this many blocks per fresh sub-goal, then re-aim
-    max_total_blocks = 80  # per-beacon cap (bounded; physical stepping is slow)
+    max_total_blocks = int(max_blocks)  # per-beacon cap (set via --max-blocks)
     for _object_id, beacon_xy in tour:
         cur_xy = np.asarray(_current_pose(build)[0][:2], dtype=np.float64)
         so = standoff_for(beacon_xy, cur_xy)
@@ -355,22 +356,112 @@ def _run_multi_beacon_demo(
     return claimed
 
 
-def _write_demo_video(path: Path, goal: "GoalSpec", frames: list, fps: float) -> None:
-    """Write the captured third-person|egocentric frames to an MP4, with a goal-image intro."""
-    import imageio
+def _hud_world_to_px(x, y, bounds, mx0, my0, mw, mh):
+    (xlo, ylo), (xhi, yhi) = bounds
+    nx = (float(x) - xlo) / max(xhi - xlo, 1e-8)
+    ny = (float(y) - ylo) / max(yhi - ylo, 1e-8)
+    px = mx0 + int(np.clip(nx, 0.0, 1.0) * mw)
+    py = my0 + mh - int(np.clip(ny, 0.0, 1.0) * mh)  # world +y is up
+    return px, py
 
-    h, w = frames[0].shape[:2]
-    intro: list = []
-    goal_image = getattr(goal, "image", None)
-    if goal_image is not None:
-        goal_np = goal_image.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
-        pad = np.zeros((h, w, 3), dtype=np.uint8)
-        half = np.array(Image.fromarray(goal_np).convert("RGB").resize((w // 2, h)))
-        pad[:, w - half.shape[1]:, :] = half  # goal image on the egocentric (right) half
-        intro = [pad] * max(1, int(round(fps)))
-    hold = [frames[-1]] * max(1, int(round(fps)))
+
+def _draw_minimap(draw, bounds, occ, beacons, trail, robot_xy, robot_yaw, target_idx, claimed, mx0, my0, mw, mh):
+    draw.rectangle([mx0, my0, mx0 + mw, my0 + mh], fill=(22, 22, 28), outline=(95, 95, 105))
+    rn = occ.shape[0]
+    for j in range(rn):
+        for i in range(rn):
+            if occ[j, i]:
+                x0 = mx0 + int(i / rn * mw)
+                y0 = my0 + mh - int((j + 1) / rn * mh)
+                x1 = mx0 + int((i + 1) / rn * mw)
+                y1 = my0 + mh - int(j / rn * mh)
+                draw.rectangle([x0, y0, x1, y1], fill=(120, 55, 55))
+    if len(trail) > 1:
+        pts = [_hud_world_to_px(x, y, bounds, mx0, my0, mw, mh) for (x, y) in trail[-600:]]
+        draw.line(pts, fill=(255, 220, 80), width=2)
+    for bi, (bxy, col, _name) in enumerate(beacons):
+        bx, by = _hud_world_to_px(bxy[0], bxy[1], bounds, mx0, my0, mw, mh)
+        draw.ellipse([bx - 6, by - 6, bx + 6, by + 6], fill=col, outline=(15, 15, 15))
+        if bi in claimed:
+            draw.ellipse([bx - 9, by - 9, bx + 9, by + 9], outline=(70, 230, 120), width=2)
+        elif bi == target_idx:
+            draw.ellipse([bx - 10, by - 10, bx + 10, by + 10], outline=(255, 255, 255), width=2)
+    rx, ry = _hud_world_to_px(robot_xy[0], robot_xy[1], bounds, mx0, my0, mw, mh)
+    s = 9.0
+    tri = [
+        (rx + int(math.cos(robot_yaw) * s), ry - int(math.sin(robot_yaw) * s)),
+        (rx + int(math.cos(robot_yaw + 2.5) * s * 0.8), ry - int(math.sin(robot_yaw + 2.5) * s * 0.8)),
+        (rx + int(math.cos(robot_yaw - 2.5) * s * 0.8), ry - int(math.sin(robot_yaw - 2.5) * s * 0.8)),
+    ]
+    draw.polygon(tri, fill=(255, 255, 255), outline=(10, 10, 10))
+
+
+def _write_hud_video(path: Path, pack: Any, grid: Any, frames: list, fps: float, goal_radius: float, title: str) -> None:
+    """Compose a HUD video: title, follow + robot-eye panels, minimap, status text.
+
+    frames is a list of (third_np, ego_np, robot_x, robot_y, robot_yaw).
+    """
+    import imageio
+    from PIL import ImageDraw, ImageFont
+    from lewm_worlds.planning_grid import InflatedOccupancyGrid
+
+    manifest = pack.scene_graph.manifest
+    (xlo, ylo), (xhi, yhi) = manifest.world_bounds_xy_m
+    bounds = ((float(xlo), float(ylo)), (float(xhi), float(yhi)))
+    raw = InflatedOccupancyGrid(manifest, cell_size_m=0.05, inflation_m=0.0)
+    rn = 76
+    occ = np.zeros((rn, rn), dtype=bool)
+    for j in range(rn):
+        for i in range(rn):
+            x = xlo + (i + 0.5) / rn * (xhi - xlo)
+            y = ylo + (j + 0.5) / rn * (yhi - ylo)
+            occ[j, i] = not raw.is_free((float(x), float(y)))
+    graph = pack.scene_graph
+    beacons = []
+    for obj_id, cell in graph.landmark_cells:
+        xy = graph.landmark_xy_for_cell(cell) or graph.cell_center(cell)
+        name = str(obj_id)
+        col = (225, 70, 70) if "red" in name else (70, 130, 255) if "blue" in name else (235, 200, 70)
+        beacons.append((np.array([float(xy[0]), float(xy[1])]), col, name))
+
+    def _font(sz, bold=False):
+        try:
+            p = "/usr/share/fonts/truetype/dejavu/DejaVuSans" + ("-Bold" if bold else "") + ".ttf"
+            return ImageFont.truetype(p, sz)
+        except Exception:
+            return ImageFont.load_default()
+
+    f_title, f_lab, f_stat = _font(19, True), _font(14), _font(13)
+    W, H = 896, 496
+    out: list = []
+    trail: list = []
+    claimed: set = set()
+    for (third, ego, rx, ry, yaw) in frames:
+        trail.append((rx, ry))
+        for bi, (bxy, _c, _n) in enumerate(beacons):
+            if math.hypot(rx - bxy[0], ry - bxy[1]) <= goal_radius * 1.7:
+                claimed.add(bi)
+        unclaimed = [bi for bi in range(len(beacons)) if bi not in claimed]
+        target = min(unclaimed, key=lambda bi: math.hypot(rx - beacons[bi][0][0], ry - beacons[bi][0][1])) if unclaimed else None
+        canvas = Image.new("RGB", (W, H), (16, 16, 20))
+        canvas.paste(Image.fromarray(third).resize((416, 416)), (12, 44))
+        canvas.paste(Image.fromarray(ego).resize((300, 300)), (456, 44))
+        draw = ImageDraw.Draw(canvas)
+        draw.rectangle([0, 0, W - 1, 36], fill=(10, 10, 13), outline=(70, 70, 80))
+        draw.text((14, 9), title, fill=(0, 235, 120), font=f_title)
+        draw.text((12, 462), "Third-person follow", fill=(195, 195, 200), font=f_lab)
+        draw.text((456, 346), "Robot-eye (perception)", fill=(195, 195, 200), font=f_lab)
+        _draw_minimap(draw, bounds, occ, beacons, trail, (rx, ry), yaw, target, claimed, 456, 372, 300, 106)
+        draw.text((766, 372), "Map", fill=(195, 195, 200), font=f_lab)
+        tgt_name = beacons[target][2].replace("landmark_", "") if target is not None else "done"
+        tgt_d = math.hypot(rx - beacons[target][0][0], ry - beacons[target][0][1]) if target is not None else 0.0
+        draw.text((766, 396), f"claimed {len(claimed)}/{len(beacons)}", fill=(70, 230, 120), font=f_stat)
+        draw.text((766, 416), f"target: {tgt_name}", fill=(220, 220, 110), font=f_stat)
+        draw.text((766, 436), f"dist: {tgt_d:.1f} m", fill=(200, 200, 205), font=f_stat)
+        out.append(np.asarray(canvas))
+    hold = [out[-1]] * max(1, int(round(fps)))
     path.parent.mkdir(parents=True, exist_ok=True)
-    imageio.mimwrite(str(path), intro + frames + hold, fps=fps, macro_block_size=16)
+    imageio.mimwrite(str(path), out + hold, fps=fps, macro_block_size=8)
 
 
 def _render_third_person(build: Any, base_xyz: np.ndarray, yaw: float, size: int = 224) -> np.ndarray:
@@ -442,7 +533,7 @@ def _execute_kinematic_primitive(
             )
             ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
             third_np = _render_third_person(build, pos, yaw)
-            frame_sink.append(np.concatenate([third_np, ego_np], axis=1))
+            frame_sink.append((third_np, ego_np, float(pos[0]), float(pos[1]), float(yaw)))
     build.robot.set_pos(pos[None, :], envs_idx=[0], zero_velocity=True)
     build.robot.set_quat(_quat_wxyz_from_yaw(yaw)[None, :], envs_idx=[0], zero_velocity=False)
     return block
@@ -1198,7 +1289,10 @@ def main() -> int:
                 # first substantial traversal (claims >=1 beacon and keeps going).
                 full = claimed >= int(args.demo_beacons)
                 if demo_frames and (full or (claimed >= 1 and len(demo_frames) >= 200)):
-                    _write_demo_video(args.demo_video, None, demo_frames, float(args.demo_fps))
+                    _write_hud_video(
+                        args.demo_video, pack, grid, demo_frames, float(args.demo_fps),
+                        float(args.goal_radius_m), "LeWM seq4 | image-goal navigation (pure perception)",
+                    )
                     print(f"[demo] wrote {len(demo_frames)} frames ({claimed}/{int(args.demo_beacons)} claimed) -> {args.demo_video}", flush=True)
                     return 0
                 continue
@@ -1289,7 +1383,10 @@ def main() -> int:
                         flush=True,
                     )
                     if demo_frames and result.success:
-                        _write_demo_video(args.demo_video, goal, demo_frames, float(args.demo_fps))
+                        _write_hud_video(
+                            args.demo_video, pack, grid, demo_frames, float(args.demo_fps),
+                            float(args.goal_radius_m), "LeWM seq4 | image-goal navigation (pure perception)",
+                        )
                         print(f"[demo] wrote {len(demo_frames)} frames -> {args.demo_video}", flush=True)
                         return 0
         except Exception as exc:
