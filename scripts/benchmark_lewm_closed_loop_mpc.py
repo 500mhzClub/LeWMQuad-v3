@@ -199,11 +199,24 @@ def _execute_physical_primitive(
     runner: RolloutRunner,
     registry: PrimitiveRegistry,
     primitive_name: str,
+    *,
+    frame_sink: list | None = None,
+    build: Any = None,
+    pack: Any = None,
+    device: torch.device | None = None,
 ) -> np.ndarray:
     requested = expand_primitive_to_block(registry, primitive_name)
     clipped = runner._clip_block(requested[None, :, :]).executed[0]
     for tick in clipped:
         runner._step_command_tick(tick[None, :])
+        if frame_sink is not None and build is not None and pack is not None and device is not None:
+            # Demo capture: physics already steps the articulated robot, so render
+            # the egocentric + third-person views directly each control tick.
+            pos, quat = _current_pose(build)
+            ego = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
+            ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+            third_np = _render_third_person(build, pos, _yaw_from_quat_wxyz(quat))
+            frame_sink.append(np.concatenate([third_np, ego_np], axis=1))
     runner._last_executed[0] = clipped[-1]
     return clipped
 
@@ -225,6 +238,7 @@ def _run_multi_beacon_demo(
     device: torch.device,
     grid: InflatedOccupancyGrid,
     frame_sink: list,
+    runner: Any = None,
 ) -> int:
     """Chase scene landmarks one after another with the lewm image-goal planner.
 
@@ -281,7 +295,7 @@ def _run_multi_beacon_demo(
         start_xy = so0
     _set_pose(
         build=build,
-        runner=None,
+        runner=runner,
         pos_xyz=np.array([start_xy[0], start_xy[1], base_z], dtype=np.float32),
         quat_wxyz=_quat_wxyz_from_yaw(face0),
     )
@@ -289,7 +303,7 @@ def _run_multi_beacon_demo(
     claimed = 0
     step_m = 2.0           # re-aim ~2 m toward the beacon each iteration
     blocks_per_sub = 8     # servo this many blocks per fresh sub-goal, then re-aim
-    max_total_blocks = 140  # per-beacon cap (enough to cross the arena)
+    max_total_blocks = 80  # per-beacon cap (bounded; physical stepping is slow)
     for _object_id, beacon_xy in tour:
         cur_xy = np.asarray(_current_pose(build)[0][:2], dtype=np.float64)
         so = standoff_for(beacon_xy, cur_xy)
@@ -323,10 +337,16 @@ def _run_multi_beacon_demo(
                     break
                 image = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
                 primitive_name, _cost = _choose_lewm_primitive(model, image, goal_img, sequences, action_tensor)
-                _execute_kinematic_primitive(
-                    build, registry, primitive_name, command_dt_s=command_dt_s, grid=grid,
-                    frame_sink=frame_sink, pack=pack, device=device,
-                )
+                if runner is None:
+                    _execute_kinematic_primitive(
+                        build, registry, primitive_name, command_dt_s=command_dt_s, grid=grid,
+                        frame_sink=frame_sink, pack=pack, device=device,
+                    )
+                else:
+                    _execute_physical_primitive(
+                        runner, registry, primitive_name,
+                        frame_sink=frame_sink, build=build, pack=pack, device=device,
+                    )
                 total += 1
         if reached:
             claimed += 1
@@ -825,7 +845,10 @@ def _run_policy_trial(
                 device=device,
             )
         else:
-            _execute_physical_primitive(runner, registry, primitive_name)
+            _execute_physical_primitive(
+                runner, registry, primitive_name,
+                frame_sink=frame_sink, build=build, pack=pack, device=device,
+            )
         primitives.append(primitive_name)
         new_pos, _new_quat = _current_pose(build)
         new_xy = np.asarray(new_pos[:2], dtype=np.float64)
@@ -1168,6 +1191,7 @@ def main() -> int:
                     device=device,
                     grid=grid,
                     frame_sink=demo_frames,
+                    runner=runner,
                 )
                 print(f"    [demo] claimed {claimed}/{int(args.demo_beacons)} beacons, frames={len(demo_frames)}", flush=True)
                 # Prefer a scene that claims all beacons; otherwise accept the
