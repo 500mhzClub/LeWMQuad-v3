@@ -101,6 +101,51 @@ frame-pair cosine grid — does evidence aggregation rescue verification?):
    the DINOv2/patch-feature fork returns to the table — for the *memory key*
    only (LeWM stays the dynamics/servoing base).
 
+## Probe 1 result — yaw-conditioned verification (run 2026-06-09, same day)
+
+`scripts/probe_loop_closure_yaw.py`: rebuilt the 32 eval banks with per-window
+terminal `yaw_bin` (8 bins, already in `labels.jsonl`, dropped by the Stage 1/2
+window selector) and re-measured verification under three pair scopes —
+positives AND negatives both restricted (under a (cell × yaw-bin) node design
+the negatives are different cells seen at the same heading: the classic aliased
+corridors, so this is not a giveaway). Training-free cosine scorers (the Stage
+3a head added little over cosine: AP 0.286 vs 0.279).
+Artifact: `.generated/topo_nav/loop_closure_yaw_probe_seq4_e9.json`; eval-bank
+cache `belief_banks_yaw_eval.pt`.
+
+| representation | scope | n pairs | base | AP | R@P95 | R@P90 | R@P80 | R@P50 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| single-frame | all | 273,826 | .025 | 0.182 | 0.000 | 0.044 | 0.067 | 0.131 |
+| single-frame | **same-yaw** | 35,506 | .048 | **0.501** | 0.001 | 0.174 | 0.272 | 0.500 |
+| belief v6 (3 seeds) | all | 273,826 | .025 | 0.279–0.286 | 0.04–0.05 | 0.08 | 0.12 | 0.23 |
+| belief v6 (3 seeds) | **same-yaw** | 35,506 | .048 | **0.620–0.637** | 0.12–0.16 | 0.25–0.29 | 0.39–0.40 | 0.64–0.67 |
+| belief v6 (3 seeds) | adjacent-yaw (±45°) | 103,945 | .035 | 0.450–0.461 | 0.07–0.10 | 0.14–0.16 | 0.23 | 0.41–0.42 |
+
+**Reading: yaw is confirmed as the dominant limiter.** Same-yaw conditioning
+more than doubles AP (0.28→0.63 belief; 0.18→0.50 single-frame) and triples
+recall at P≥0.90, consistently across all 3 encoder seeds, while the base rate
+only doubles — not a base-rate artifact. The graceful adjacent-yaw degradation
+says 45° bins are about right.
+
+**But the registered usable band (R≥0.3 @ P≥0.95) is not yet reached**
+(0.12–0.16) — with an important caveat: **v6 was trained yaw-INVARIANT** (its
+supcon pulls any-yaw same-cell pairs together), which actively *fights* the
+yaw-conditioned operating point. The encoder is being asked to verify a
+distinction its objective explicitly erased.
+
+**→ v7 (registered before running): yaw-conditioned BeliefEncoder.**
+`scripts/train_belief_encoder_yaw.py` retrains the identical v4/v6 config with
+the spec §5.1 yaw scheme at the registered knob λ_yaw_weak→0: strong positive =
+same (cell, yaw_bin); same-cell-different-yaw masked out (ambiguous-ignore);
+negatives = BFS≥2 any-yaw (same-heading aliased corridors arrive as the hard
+negatives naturally). Evaluation = this same probe on the identical cached eval
+banks (NOT retrieval R@5 — the proxy that misled Stage 2). **Bar: same-yaw
+recall ≥ 0.3 at P≥0.95.** If v7 clears it → adopt **(cell × yaw-bin) keyframe
+nodes** for the Stage 3 memory (converges with the goal-facing constraint;
+cross-yaw association via pivot edges in the graph, not visual verification).
+If v7 falls clearly short → yaw-selectivity alone is insufficient → probe #2
+(action tokens + motion-aux) stacked on the yaw-conditioned objective.
+
 ## What this does NOT change
 
 Level-3 local servoing (seq4 + `plan_cost`, visible goal-facing subgoals,

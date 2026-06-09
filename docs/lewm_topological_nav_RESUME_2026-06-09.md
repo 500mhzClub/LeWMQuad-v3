@@ -152,12 +152,17 @@ Note: user prefers commits **without** a Co-Authored-By footer.
    Stage 3a doc). Verdict: adopt v6 as the place code, but the §5.4 memory is
    not buildable on any-yaw pair verification.
 4. **Reassessment probes (in order, registered in the Stage 3a doc):**
-   (1) yaw-conditioned verification — rebuild banks with per-window terminal
-   `yaw_bin`, re-run the PR curves on same-yaw-bin pairs; if it lifts, adopt
-   **(cell × yaw-bin) keyframe nodes** (also satisfies the goal-facing
-   constraint); (2) action-token + body-motion-aux BeliefEncoder pass (spec
-   default, untried); (3) only then Stage 3b with filter-level replay-coherence
-   gating and a re-registered commit-only pair bar.
+   (1) ~~yaw-conditioned verification probe~~ DONE — **yaw confirmed as the
+   dominant limiter**: same-yaw AP 0.62–0.64 vs any-yaw 0.28 (belief, 3/3
+   seeds), recall@P90 3× — but registered band (R≥0.3 @P95) not yet reached
+   (0.12–0.16) *because v6 was trained yaw-invariant*. **v7 yaw-conditioned
+   encoder** (`train_belief_encoder_yaw.py`, λ_yaw_weak→0: positives =
+   same(cell,yaw_bin), same-cell-diff-yaw masked) trained + probed on the same
+   cached eval banks (`belief_banks_yaw_eval.pt`); bar = same-yaw R≥0.3 @P95.
+   Clears → adopt **(cell × yaw-bin) keyframe nodes**; falls short → stack
+   probe (2) action tokens + motion-aux on the yaw-conditioned objective;
+   (3) only then Stage 3b with filter-level replay-coherence gating and a
+   re-registered commit-only pair bar.
 5. **Stage 3** (`v3_topological_nav_plan.md` §5–6, plan §5 Stage 3): wire the
    BeliefEncoder into the `Memory`/`HierarchicalPlanner` seam — online node
    commitment with **goal-facing** `representative_observation` (hard constraint
