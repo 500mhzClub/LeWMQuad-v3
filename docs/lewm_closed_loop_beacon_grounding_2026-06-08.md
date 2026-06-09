@@ -64,6 +64,38 @@ run; for seq11 the `GoalEnergyHead` further degraded the jitter case (0.17 with
 plan_cost -> 0.00 with the head). The "image-goal planner can't orient to a
 visible beacon" conclusion holds only for `seq11_e3`, **not** as a general claim.
 
+## Higher-N confirmation + occluded probe (2026-06-09)
+
+Re-ran on the textured pipeline with `plan_cost`, N=12 (visible-beacon,
+`open_obstacle_field`):
+
+| run | lewm | bearing | lewm progress |
+|---|---:|---:|---:|
+| seq4 visible, jitter 0.0 | 0.92 | 1.00 | +0.86 |
+| seq4 visible, jitter 0.7 | 0.73 | 1.00 | +0.80 |
+| seq4 visible, jitter 1.5 (~86°) | 0.58 | 0.75 | +0.76 |
+| seq11 visible, jitter 0.7 | 0.25 | 1.00 | −0.07 |
+
+seq4's visible-beacon capability is robust at N=12 and degrades gracefully with
+heading offset (and at 86° even the oracle is only 0.75). seq11 stays weak
+(0.25, negative progress). The visible-local case is settled: **seq4 + plan_cost
+does the base's intended local goal-image servoing job.**
+
+The `landmark` task (no line-of-sight guarantee) was intended as an occluded
+probe but is **distance-confounded and uninformative**: it selected goals 3.6–8.9
+m away (mean 7.6 m), while the 16-block budget allows only ~2.4 m of travel, so
+even the bearing oracle reached 0/12 (it moved the right way, +1.19 m; seq4 went
+the wrong way, −0.16 m). A proper local-occluded test needs *near* (≈1.5–2.5 m)
+non-line-of-sight goals; that requires a max-distance cap the harness lacks. Note
+the hint that on far goals seq4's image cost loses direction (negative progress)
+— but it is confounded, not a clean result.
+
+Per the H-JEPA design (`docs/v3_hjepa_plan.md`) the base is only responsible for
+*local visible* subgoal servoing; topology/occlusion is the memory+subgoal
+stack's job. seq4's visible-beacon result therefore validates the base's intended
+role, and no encoder change or goal-localization translator is justified by this
+evidence.
+
 ## Conclusion (revised 2026-06-09)
 
 1. **`seq11_e3` cannot orient to a visible beacon** (0.17 dead-ahead, circles /
