@@ -216,6 +216,69 @@ question. So:
 3. **Substrate fork (last resort, memory-key only):** DINOv2/patch features
    for the place key; LeWM keeps dynamics + Level-3 servoing regardless.
 
+## Probe #3 result — the replay filter test PASSES: the memory IS buildable
+
+Code: `lewm/memory/online_topological_memory.py` (view-keyframe nodes = the
+(cell × yaw-bin) design — no yaw label needed at inference, the view-selective
+code makes nodes heading-specific by construction; §5.4 top-k Bayes filter with
+transition prior + uniform leak; global novelty commit; running-mean node
+embeddings) + `lewm/tests/test_online_topological_memory.py` (3/3; the test
+caught a real filter defect — zero prior mass on never-traversed transitions —
+fixed with the standard uniform-leak remedy).
+Script: `scripts/probe_topo_filter_replay.py` — trains the same-yaw head +
+Platt on the yaw train banks, derives data-driven τ_new candidates from
+calibration precision targets, builds **contiguous trajectory banks** (one env
+× ≤400 steps × 32 held-out scenes; H=8 sliding windows; per-step (cell, yaw)
+labels; boundary = cell-transition frames), replays the filter, scores per
+§5.5/§6.1 (majority labels, purity rule). Artifacts:
+`topo_filter_replay_seq4_e9_v6*.json`, cache `traj_banks_yaw_eval.pt`.
+
+| condition | τ_new | coh(cell) | median | coh(cell,yaw) | false-merge | frag | nodes |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **calP95 / filter** | 0.879 | **0.962** | 0.972 | 0.873 | 0.205 | 4.09 | 44.3 |
+| calP95 / no-prior | 0.879 | 0.953 | 0.959 | 0.860 | 0.228 | 4.02 | 43.8 |
+| calP90 / filter | 0.770 | 0.933 | 0.931 | 0.824 | 0.302 | 2.32 | 26.4 |
+| calP80 / filter | 0.544 | 0.894 | 0.886 | 0.746 | 0.464 | 1.28 | 15.0 |
+| calP50 / filter | 0.111 | 0.776 | 0.775 | 0.611 | 0.737 | 0.53 | 6.4 |
+
+**GATE PASSED, 3/3 belief seeds: mean cell-coherence 0.962 / 0.963 / 0.956 ≥
+0.90** at the calP95 operating point. Worst scene 0.87 (`loop_alias_stress`).
+The τ_new sweep reproduces the spec's predicted geometry: stricter matching →
+more fragmentation, fewer false merges, higher coherence — and §5.5's ordering
+(false merges fatal, fragmentation a minor inefficiency) picks the strict end.
+
+Honest notes:
+- **The reordering rationale was right for a subtler reason than predicted:**
+  the transition prior itself adds only +0.009–0.014 coherence over per-step
+  likelihood MAP. The heavy lifting is the *system* around the pair score —
+  calibrated probabilities, the novelty-streak commit (an N-consecutive-step
+  aggregate), running-mean node embeddings, and the strict operating point.
+  Pairwise R0.27@P90 was never the right summary of what the mechanism can do.
+- ~20% of nodes are impure at calP95; coherence already charges assignments to
+  those nodes, and the §6.1 purity rule routes them to `unknown` for
+  ReachabilityHead training. Fragmentation ≈ 4 view-nodes per true (cell, yaw)
+  — acceptable per spec; pivot/merge heuristics can reduce it later.
+- Scope: passive localization replay (one env, ≤400 contiguous steps, within-
+  session revisits only). Active navigation, cross-session loop closure, and
+  the GoalAdapter remain Stage 3/4 work.
+
+## FINAL VERDICT (2026-06-09): Stage 3 is GO
+
+- **Place code:** v6 BeliefEncoder, frozen (yaw-objective v7 retired).
+- **Node design:** view keyframes ((cell × yaw-bin) by construction) with
+  running-mean embeddings; goal-facing representative observations satisfied
+  by the same design.
+- **Loop closure:** same-yaw-trained head + Platt; **§5.3's single-pair 99%
+  bar is RE-REGISTERED as commit-only** — the deployed mechanism is the §5.4
+  filter + novelty streak at τ_new = calP95 (≈0.88 calibrated), which passes
+  §5.5 coherence at 0.96.
+- **Probe #2 (action tokens + motion-aux): now an optimization, not a
+  blocker** — revisit if Stage 3/4 shows localization-limited failures.
+- **Next:** Stage 3 proper — wire `OnlineTopologicalMemory` into the
+  `Memory`/`HierarchicalPlanner` seam (Stage 0), then GoalAdapter +
+  ReachabilityHead (§6.1 purity rule, memory-generated pairs), then Stage 4
+  end-to-end with exploration mode.
+
 ## What this does NOT change
 
 Level-3 local servoing (seq4 + `plan_cost`, visible goal-facing subgoals,

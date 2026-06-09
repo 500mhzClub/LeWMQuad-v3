@@ -30,6 +30,15 @@ first, then the per-stage docs linked at the bottom. Authoritative spec:
   action-token + motion-aux BeliefEncoder pass, (3) filter-level (replay
   coherence) evaluation with a re-registered commit-only pair bar. See
   `docs/lewm_topological_nav_stage3a_loop_closure_2026-06-09.md`.
+- **Stage 3a reassessment: COMPLETE — STAGE 3 IS GO.** Probe 1: yaw = dominant
+  limiter → (cell × yaw-bin) view-keyframe nodes adopted; v7 yaw-objective =
+  negative (keep v6); pairwise band converged at R≈0.27 @P90. **Probe #3
+  (replay filter test): GATE PASSED 3/3 seeds — cell-coherence 0.962/0.963/
+  0.956 ≥ 0.90** at τ_new=calP95 via `lewm/memory/online_topological_memory.py`
+  replayed on contiguous held-out trajectories. §5.3 pair bar re-registered as
+  commit-only; probe #2 (actions+motion) demoted to optimization. **Next =
+  Stage 3 proper** (wire into the `Memory`/`HierarchicalPlanner` seam →
+  GoalAdapter → ReachabilityHead → Stage 4 end-to-end).
 
 ## Environment (READ — non-obvious, will bite on resume)
 
@@ -163,14 +172,23 @@ Note: user prefers commits **without** a Co-Authored-By footer.
    the deployed §5.4 filter aggregates per-step likelihoods under a transition
    prior; at P0.90/R0.27 per step, sequence evidence plausibly reaches the
    §5.5 coherence gate, and that is the actual Stage 3 question.
-5. **NEXT — probe #3, offline replay filter test:** minimal (cell × yaw-bin)
-   keyframe memory + top-k Bayes filter over v6 embeddings + same-yaw head
-   (P90 point); replay held-out rollouts (pure torch, no genesis); gate =
-   filter trajectory coherence ≥90% non-boundary (§5.5) + new-node/false-merge
-   rates. Pass → memory buildable, §5.3 pair bar re-registered as commit-only.
-   Fail → probe #2 (action tokens + motion-aux into banks+encoder — the one
-   untried evidence SOURCE). Last resort: DINOv2/patch fork for the memory key
-   only.
+5. ~~Probe #3, offline replay filter test~~ **DONE — GATE PASSED, Stage 3 is
+   GO.** `lewm/memory/online_topological_memory.py` (view-keyframe nodes, §5.4
+   top-k Bayes filter + uniform leak, novelty-streak commit) replayed over
+   contiguous held-out trajectories (32 scenes × ≤400 steps): **cell-coherence
+   0.962/0.963/0.956 (3/3 belief seeds) ≥ 0.90** at τ_new = calP95 (≈0.88
+   calibrated); worst scene 0.87. False-merge 0.205 / fragmentation 4.09 at
+   that point (strict end is correct per §5.5). §5.3 single-pair 99% bar
+   re-registered as commit-only; probe #2 (actions+motion) demoted to
+   optimization. Key insight: the pairwise band (R0.27@P90) was never the
+   right summary — calibration + novelty-streak + running-mean nodes carry it
+   (transition prior itself adds only ~+0.01). Artifacts:
+   `topo_filter_replay_seq4_e9_v6*.json`, `traj_banks_yaw_eval.pt`.
+6. **NEXT — Stage 3 proper:** wire `OnlineTopologicalMemory` into the
+   `Memory`/`HierarchicalPlanner` seam (Stage 0); GoalAdapter (goal-facing
+   keyframes — satisfied by the view-node design); ReachabilityHead on
+   memory-generated pairs (§6.1 purity rule); then Stage 4 end-to-end with
+   exploration mode.
 5. **Stage 3** (`v3_topological_nav_plan.md` §5–6, plan §5 Stage 3): wire the
    BeliefEncoder into the `Memory`/`HierarchicalPlanner` seam — online node
    commitment with **goal-facing** `representative_observation` (hard constraint
@@ -179,8 +197,7 @@ Note: user prefers commits **without** a Co-Authored-By footer.
    negatives) and the 3-level planner (Level 3 = seq4 + `plan_cost` LocalMPC,
    already built in Stage 0). GoalAdapter maps a goal image into belief space
    (goal-facing keyframes).
-6. Stage 3 proper (memory + GoalAdapter + ReachabilityHead + 3-level planner),
-   then Stage 4: end-to-end closed-loop eval (learned subgoals replace the privileged
+7. Stage 4: end-to-end closed-loop eval (learned subgoals replace the privileged
    breadcrumbs) via `benchmark_lewm_closed_loop_mpc.py --apply-textures --backend vulkan`.
 
 ## Detailed docs
