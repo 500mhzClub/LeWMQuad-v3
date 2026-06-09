@@ -127,6 +127,21 @@ recall at P≥0.90, consistently across all 3 encoder seeds, while the base rate
 only doubles — not a base-rate artifact. The graceful adjacent-yaw degradation
 says 45° bins are about right.
 
+Per-family (belief seed 20260609, mean per-scene AP): the same-yaw lift is
+**uniform across all 8 families** — including the aliased mazes, which was the
+main risk to the (cell × yaw-bin) design:
+
+| family | AP all | AP same-yaw | same-yaw base |
+|---|---:|---:|---:|
+| large_enclosed_maze | 0.313 | 0.642 | 0.020 |
+| loop_alias_stress | 0.252 | 0.638 | 0.049 |
+| medium_enclosed_maze | 0.272 | 0.597 | 0.032 |
+| small_enclosed_maze | 0.277 | 0.618 | 0.034 |
+| visual_sensor_stress | 0.259 | 0.623 | 0.042 |
+| local_composite_motifs | 0.387 | 0.741 | 0.217 |
+| open_obstacle_field | 0.505 | 0.715 | 0.177 |
+| rough_local_dynamics | 0.527 | 0.741 | 0.170 |
+
 **But the registered usable band (R≥0.3 @ P≥0.95) is not yet reached**
 (0.12–0.16) — with an important caveat: **v6 was trained yaw-INVARIANT** (its
 supcon pulls any-yaw same-cell pairs together), which actively *fights* the
@@ -145,6 +160,61 @@ nodes** for the Stage 3 memory (converges with the goal-facing constraint;
 cross-yaw association via pivot edges in the graph, not visual verification).
 If v7 falls clearly short → yaw-selectivity alone is insufficient → probe #2
 (action tokens + motion-aux) stacked on the yaw-conditioned objective.
+
+## v7 + trained-head results — the substrate's verification band is now measured
+
+**v7 (yaw-conditioned objective): clean NEGATIVE.** Same-yaw AP 0.610–0.615 vs
+v6's 0.620–0.637; R@P95 0.13–0.19 vs 0.12–0.16 (3 seeds each; identical eval
+banks; `loop_closure_yaw_probe_v7.json`). v6's yaw-invariant training was NOT
+the binding constraint — supcon with any-yaw positives only needs to *cluster*
+same-cell pairs and evidently retains yaw variance anyway; conditioning the
+positives on yaw adds no discriminative power against same-heading negatives.
+**Keep v6; retire v7.**
+
+**Trained head on same-yaw pairs (the actual deployment configuration of a
+(cell × yaw-bin) memory; yaw train banks `belief_banks_yaw_train32.pt`):**
+
+| representation | eval R@P99 | R@P95 | R@P90 | R@P80 | R@P50 | deployed (cal-P95 thr) |
+|---|---:|---:|---:|---:|---:|---|
+| **belief v6 + head** | 0.025 | **0.128** | **0.272** | 0.394 | 0.639 | P=0.92, R=0.22 |
+| belief v7 + head | 0.015 | 0.112 | 0.196 | 0.374 | 0.637 | P=0.92, R=0.17 |
+| single-frame + head | 0.058 | 0.068 | 0.217 | 0.332 | 0.560 | P=0.93, R=0.11 |
+
+**Synthesis — every pairwise lever has now been tried and the band has
+converged:** yaw scoping (huge lift, kept), yaw-conditioned objective (flat),
+trained head over cosine (marginal), naive sequence aggregation (flat). Best
+achievable same-yaw pairwise verification on frozen seq4: **recall ≈0.13 at
+P≥0.95, ≈0.27 at P≥0.90.** The registered bar (R≥0.3 @P95) is **not met**. The
+residual errors are genuinely aliased same-heading views that the H=8 visual
+history does not separate at pair level.
+
+## Re-registered decision (2026-06-09): run probe #3 BEFORE probe #2
+
+Original order was (2) action-tokens/motion-aux, then (3) filter-level
+evaluation. **Reordered, with rationale:** four independent pairwise levers
+plateaued at the same band, so the next pairwise lever (#2) has a weak prior of
+clearing 0.3@P95 by itself. Meanwhile the deployed mechanism was never a
+single-pair decision: the §5.4 filter aggregates per-step likelihoods over N
+consecutive steps under a transition prior that shrinks the candidate set to a
+handful of graph-neighbors. At P0.90/R0.27 per step, 5–10 steps of evidence
+plausibly reach the §5.5 coherence gate — and that is the *actual* Stage 3
+question. So:
+
+1. **Probe #3 (next): offline replay filter test.** Build the minimal
+   (cell × yaw-bin) keyframe memory + top-k Bayes filter (§5.4) over v6
+   embeddings + the same-yaw trained head (P90 operating point); replay
+   held-out rollouts (pure torch, banks/labels only, no genesis); gate =
+   **filter trajectory coherence ≥90% on non-boundary frames** (§5.5) and
+   new-node/false-merge rates. Pass → the memory is buildable; the §5.3
+   single-pair 99% bar is re-registered as commit-only with sequence evidence.
+   Fail → run probe #2 (action tokens + motion-aux, the one untried evidence
+   *source*) before any substrate fork.
+2. **Probe #2 (conditional):** actions/motion into the bank path + encoder.
+   Motion is the canonical disambiguator for same-heading corridor aliases
+   (turn-sequence signatures); it is also the spec-default input that was
+   never wired.
+3. **Substrate fork (last resort, memory-key only):** DINOv2/patch features
+   for the place key; LeWM keeps dynamics + Level-3 servoing regardless.
 
 ## What this does NOT change
 

@@ -151,18 +151,26 @@ Note: user prefers commits **without** a Co-Authored-By footer.
 3. ~~Stage 3a consumer gate.~~ DONE — **FAILED on every branch** (see TL;DR +
    Stage 3a doc). Verdict: adopt v6 as the place code, but the §5.4 memory is
    not buildable on any-yaw pair verification.
-4. **Reassessment probes (in order, registered in the Stage 3a doc):**
-   (1) ~~yaw-conditioned verification probe~~ DONE — **yaw confirmed as the
-   dominant limiter**: same-yaw AP 0.62–0.64 vs any-yaw 0.28 (belief, 3/3
-   seeds), recall@P90 3× — but registered band (R≥0.3 @P95) not yet reached
-   (0.12–0.16) *because v6 was trained yaw-invariant*. **v7 yaw-conditioned
-   encoder** (`train_belief_encoder_yaw.py`, λ_yaw_weak→0: positives =
-   same(cell,yaw_bin), same-cell-diff-yaw masked) trained + probed on the same
-   cached eval banks (`belief_banks_yaw_eval.pt`); bar = same-yaw R≥0.3 @P95.
-   Clears → adopt **(cell × yaw-bin) keyframe nodes**; falls short → stack
-   probe (2) action tokens + motion-aux on the yaw-conditioned objective;
-   (3) only then Stage 3b with filter-level replay-coherence gating and a
-   re-registered commit-only pair bar.
+4. **Reassessment probes — pairwise levers EXHAUSTED, decision re-registered:**
+   (1) yaw probe DONE: yaw = dominant limiter (same-yaw AP 0.62–0.64 vs any-yaw
+   0.28, lift uniform across all 8 families incl. mazes) → **(cell × yaw-bin)
+   keyframe nodes adopted as the node design**. v7 yaw-conditioned objective =
+   clean NEGATIVE (≈v6, retire v7; keep v6). Trained head on same-yaw pairs =
+   marginal. **Converged substrate band: same-yaw verification R≈0.13 @P95,
+   R≈0.27 @P90 (deployed point P0.92/R0.22)** — registered 0.3@P95 bar NOT met
+   by any pairwise lever (yaw scope / yaw objective / head / aggregation).
+   **RE-REGISTERED (rationale in Stage 3a doc): probe #3 BEFORE probe #2** —
+   the deployed §5.4 filter aggregates per-step likelihoods under a transition
+   prior; at P0.90/R0.27 per step, sequence evidence plausibly reaches the
+   §5.5 coherence gate, and that is the actual Stage 3 question.
+5. **NEXT — probe #3, offline replay filter test:** minimal (cell × yaw-bin)
+   keyframe memory + top-k Bayes filter over v6 embeddings + same-yaw head
+   (P90 point); replay held-out rollouts (pure torch, no genesis); gate =
+   filter trajectory coherence ≥90% non-boundary (§5.5) + new-node/false-merge
+   rates. Pass → memory buildable, §5.3 pair bar re-registered as commit-only.
+   Fail → probe #2 (action tokens + motion-aux into banks+encoder — the one
+   untried evidence SOURCE). Last resort: DINOv2/patch fork for the memory key
+   only.
 5. **Stage 3** (`v3_topological_nav_plan.md` §5–6, plan §5 Stage 3): wire the
    BeliefEncoder into the `Memory`/`HierarchicalPlanner` seam — online node
    commitment with **goal-facing** `representative_observation` (hard constraint
@@ -171,7 +179,8 @@ Note: user prefers commits **without** a Co-Authored-By footer.
    negatives) and the 3-level planner (Level 3 = seq4 + `plan_cost` LocalMPC,
    already built in Stage 0). GoalAdapter maps a goal image into belief space
    (goal-facing keyframes).
-6. Stage 4: end-to-end closed-loop eval (learned subgoals replace the privileged
+6. Stage 3 proper (memory + GoalAdapter + ReachabilityHead + 3-level planner),
+   then Stage 4: end-to-end closed-loop eval (learned subgoals replace the privileged
    breadcrumbs) via `benchmark_lewm_closed_loop_mpc.py --apply-textures --backend vulkan`.
 
 ## Detailed docs
