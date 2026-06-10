@@ -265,7 +265,7 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         committed_subgoal, blocks_on_subgoal, subgoals_reached = None, 0, 0
         n_scan = blocks_per_revolution(registry, args.command_dt_s)
         scan_remaining, scan_costs, scan_return, z_subgoal_proj = 0, [], 0, None
-        scan_needed = True  # initial orientation is unknown
+        node_path, path_index, mode, walk_blocks = None, 0, "align", 0
         path_length, prev_xy = 0.0, np.asarray(start_pose[0][:2], dtype=np.float64)
         stopped_perceptually = False
         for _block in range(args.seek_max_blocks):
@@ -285,62 +285,105 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                 arrive_streak = 0
 
             if policy == "topo":
-                navigator.update((z_now, None))
-                # --- state machine: SCAN (when lost) -> ALIGN -> SERVO ---
-                if scan_remaining > 0:
-                    _zr, z_now_proj = model.encode(image[None], None)
-                    scan_costs.append(float((z_now_proj - z_subgoal_proj).square().sum()))
-                    scan_remaining -= 1
-                    if scan_remaining == 0:
-                        best = int(np.argmin(scan_costs))
-                        scan_return = (best + 1) % n_scan
-                    primitive = "yaw_right"
-                elif scan_return > 0:
-                    scan_return -= 1
-                    primitive = "yaw_right"
-                else:
-                    # Sub-goal accounting only while servoing (spec 6.2:
-                    # reached = the filter localizes to the sub-goal node).
-                    reached = False
-                    if committed_subgoal is not None:
-                        posterior = navigator.current_belief()
-                        reached = (navigator._last_map == committed_subgoal
-                                   or posterior.get(committed_subgoal, 0.0) >= 0.5)
-                        if reached:
-                            subgoals_reached += 1
-                    exhausted = blocks_on_subgoal >= args.subgoal_budget
-                    if committed_subgoal is None or reached or exhausted:
-                        scan_needed = scan_needed or exhausted or committed_subgoal is None
-                        plan = navigator.plan_to_goal_latent(z_goal_raw, lookahead=args.lookahead)
-                        if plan is not None:
-                            committed_subgoal, _gnode, _s = plan
-                            blocks_on_subgoal = 0
-                            subgoal_nodes.append(committed_subgoal)
-                            sg_label = majority.get(committed_subgoal)
-                            cur_cell = min(cells, key=lambda c: _xy_distance(graph.cell_center(c), pos[:2]))
-                            if sg_label is not None:
-                                d_cur = graph.bfs_distance(cur_cell, goal_cell)
-                                d_sg = graph.bfs_distance(int(sg_label[0]), goal_cell)
-                                if d_cur is not None and d_sg is not None:
-                                    subgoal_scored += 1
-                                    subgoal_progress += int(d_sg < d_cur)
-                        else:
-                            committed_subgoal = None
-                    blocks_on_subgoal += 1
-                    if committed_subgoal is not None:
-                        ref = navigator._observations.get(committed_subgoal)
-                        subgoal_image = stored_frames[ref] if ref is not None else goal_image
-                    else:
+                # Feed the filter ONLY during locomotion: the belief window
+                # (H=8 consecutive frames) matches the training distribution
+                # of smooth motion; scan rotations poison it for ~8 blocks
+                # after every alignment (measured: filter never confirmed
+                # arrival). The window is frozen during ALIGN.
+                if mode == "walk" or node_path is None:
+                    navigator.update((z_now, None))
+                # ---- Stage 4b traversal: ALIGN -> WALK per directed edge ----
+                # (plan_cost is flat between interior corridor views, so no
+                # image cost is used between nodes; alignment = raw-frame
+                # cosine to the NEXT node's keyframe, which faces the travel
+                # direction by construction of directed tour edges.)
+                if node_path is None or path_index >= len(node_path):
+                    plan = navigator.plan_node_path(z_goal_raw)
+                    if plan is None:
                         used_fallback += 1
-                        subgoal_image = goal_image
-                    if scan_needed:
-                        scan_needed = False
-                        scan_remaining, scan_costs, scan_return = n_scan, [], 0
-                        _zr, z_subgoal_proj = model.encode(subgoal_image[None], None)
+                        primitive, _cost = choose_vetoed_primitive(
+                            model, build, registry, grid, args.command_dt_s, image, goal_image,
+                            sequences, action_tensor)
+                        primitive_counts[primitive] = primitive_counts.get(primitive, 0) + 1
+                        _execute_kinematic_primitive(build, registry, primitive,
+                                                     command_dt_s=args.command_dt_s, grid=grid)
+                        continue
+                    node_path, _gnode, _s = plan
+                    path_index, mode, walk_blocks = 1, "align", 0
+                    scan_remaining, scan_costs, scan_return = n_scan, [], 0
+                    subgoal_nodes.append(node_path[-1])
+                    n_rev = sum(1 for i in range(1, len(node_path))
+                                if (node_path[i-1], node_path[i]) not in navigator.memory.edges)
+                    print(f"    path: {len(node_path)} nodes, {n_rev} reversed edges", flush=True)
+                next_node = node_path[min(path_index, len(node_path) - 1)]
+                at_goal_node = path_index >= len(node_path) - 1
+                reversed_edge = (node_path[path_index - 1], next_node) not in navigator.memory.edges
+                if mode == "align":
+                    keyframe = navigator._keyframes.get(next_node)
+                    cosine_k = float(F.normalize(z_now, dim=-1) @ keyframe) if keyframe is not None else 0.0
+                    if (cosine_k >= 0.95 and not reversed_edge) or (scan_remaining == 0 and scan_return == 0):
+                        mode, walk_blocks = "walk", 0
+                        navigator._window.clear()
+                        primitive = "hold"
+                    elif scan_remaining > 0:
+                        scan_costs.append(cosine_k)
+                        scan_remaining -= 1
+                        if scan_remaining == 0:
+                            best = int(np.argmax(scan_costs))
+                            # Reversed edge: the keyframe faces the OPPOSITE of
+                            # travel; align 180 degrees past the best match.
+                            offset = n_scan // 2 if reversed_edge else 0
+                            scan_return = (best + 1 + offset) % n_scan
                         primitive = "yaw_right"
                     else:
+                        scan_return -= 1
+                        primitive = "yaw_right"
+                else:  # walk
+                    posterior = navigator.current_belief()
+                    # Arrival at ANY node at/after path_index counts (parallel
+                    # view-nodes split the posterior; MAP may advance along a
+                    # sibling chain).
+                    remaining = node_path[path_index:]
+                    arrived_at = None
+                    if navigator._last_map in remaining:
+                        arrived_at = navigator._last_map
+                    else:
+                        for candidate in remaining:
+                            if posterior.get(candidate, 0.0) >= 0.5:
+                                arrived_at = candidate
+                                break
+                    arrived_node = arrived_at is not None
+                    if arrived_node:
+                        next_node = arrived_at
+                        path_index = node_path.index(arrived_at)
+                        subgoals_reached += 1
+                        sg_label = majority.get(next_node)
+                        cur_cell = min(cells, key=lambda c: _xy_distance(graph.cell_center(c), pos[:2]))
+                        if sg_label is not None:
+                            d_cur = graph.bfs_distance(cur_cell, goal_cell)
+                            d_sg = graph.bfs_distance(int(sg_label[0]), goal_cell)
+                            if d_cur is not None and d_sg is not None:
+                                subgoal_scored += 1
+                                subgoal_progress += int(d_sg <= d_cur)
+                        path_index += 1
+                        mode = "align"
+                        scan_remaining, scan_costs, scan_return = n_scan, [], 0
+                        primitive = "hold"
+                    elif at_goal_node and walk_blocks >= 2:
+                        # Final hop: salient goal-facing view -> plan_cost servo.
                         primitive, _cost = choose_vetoed_primitive(
-                            model, build, registry, grid, args.command_dt_s, image, subgoal_image, sequences, action_tensor)
+                            model, build, registry, grid, args.command_dt_s, image, goal_image,
+                            sequences, action_tensor)
+                        walk_blocks += 1
+                    else:
+                        walk_blocks += 1
+                        if walk_blocks > args.edge_budget:
+                            node_path = None        # lost on this edge -> replan
+                            primitive = "hold"
+                        else:
+                            forward_ok = _feasible_fraction(build, registry, "forward_medium",
+                                                            grid, args.command_dt_s) >= 0.5
+                            primitive = "forward_medium" if forward_ok else "yaw_right"
             elif policy == "v2":
                 primitive, _cost = choose_vetoed_primitive(
                     model, build, registry, grid, args.command_dt_s, image, goal_image, sequences, action_tensor)
@@ -417,6 +460,7 @@ def main() -> int:
     parser.add_argument("--tau-arrive", type=float, default=0.90)
     parser.add_argument("--tau-subgoal-reached", type=float, default=0.85)
     parser.add_argument("--subgoal-budget", type=int, default=26)
+    parser.add_argument("--edge-budget", type=int, default=14)
     parser.add_argument("--tour-max-cells", type=int, default=24)
     parser.add_argument("--tour-max-blocks", type=int, default=260)
     parser.add_argument("--seek-max-blocks", type=int, default=200)

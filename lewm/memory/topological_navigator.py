@@ -118,14 +118,21 @@ class TopologicalNavigator(Memory):
         best = int(scores.argmax())
         return node_ids[best], float(scores[best])
 
-    def bfs_path(self, start: int, target: int) -> Optional[list[int]]:
-        """Shortest undirected node path start->target incl. both ends (None if disconnected)."""
+    def bfs_path(self, start: int, target: int, *, directed: bool = False) -> Optional[list[int]]:
+        """Shortest node path start->target incl. both ends (None if disconnected).
+
+        ``directed=True`` follows edges only in their recorded direction — the
+        Stage 4b traversal mode: a directed edge A->B guarantees B's keyframe
+        faces the A->B travel direction (the tour walked into B facing it), so
+        align-to-keyframe + walk-forward traverses it without any metric cost.
+        """
         if start == target:
             return [start]
         adjacency: dict[int, set[int]] = {}
         for (a, b) in self.memory.edges:
             adjacency.setdefault(a, set()).add(b)
-            adjacency.setdefault(b, set()).add(a)
+            if not directed:
+                adjacency.setdefault(b, set()).add(a)
         frontier, parent = [start], {start: None}
         while frontier and target not in parent:
             nxt = []
@@ -183,3 +190,72 @@ class TopologicalNavigator(Memory):
         if next_hop is None:
             return None
         return next_hop, goal_node, score
+
+    def plan_node_path(self, goal_latent: torch.Tensor) -> Optional[tuple[list[int], int, float]]:
+        """Directed node path MAP->goal-matching node for Stage-4b traversal.
+
+        Considers SEVERAL goal-node candidates (the same place is stored under
+        multiple view-nodes from different tour passes) and prefers one with a
+        DIRECTED path — forward traversal is where alignment and localization
+        work; an all-reversed undirected path walks the tour backward facing
+        away from every stored keyframe (measured failure). Undirected fallback
+        only if no candidate is directed-reachable.
+        """
+        if not self._keyframes or self._last_map is None:
+            return None
+        node_ids = sorted(self._keyframes)
+        keyframes = torch.stack([self._keyframes[i] for i in node_ids])
+        scores = keyframes @ F.normalize(goal_latent, dim=-1)
+        order = torch.argsort(scores, descending=True)
+        candidates = [(node_ids[int(i)], float(scores[int(i)])) for i in order[:8]
+                      if float(scores[int(i)]) >= self.tau_goal]
+        if not candidates:
+            return None
+        best = None
+        for goal_node, score in candidates:
+            path = self._weighted_path(self._last_map, goal_node, reversed_cost=3.0)
+            if path is not None and len(path) >= 2:
+                n_reversed = sum(1 for i in range(1, len(path))
+                                 if (path[i - 1], path[i]) not in self.memory.edges)
+                if best is None or n_reversed < best[0]:
+                    best = (n_reversed, path, goal_node, score)
+                if n_reversed == 0:
+                    break
+        if best is None:
+            return None
+        _, path, goal_node, score = best
+        return path, goal_node, score
+
+    def _weighted_path(self, start: int, target: int, *, reversed_cost: float = 3.0) -> Optional[list[int]]:
+        """Dijkstra over memory edges; traversing an edge against its recorded
+        direction is allowed but penalized (a fresh node has only incoming
+        edges, so pure-directed search strands; pure-undirected walks the tour
+        backward facing away from every keyframe — both measured failures)."""
+        import heapq
+        adjacency: dict[int, list[tuple[int, float]]] = {}
+        for (a, b) in self.memory.edges:
+            adjacency.setdefault(a, []).append((b, 1.0))
+            adjacency.setdefault(b, []).append((a, reversed_cost))
+        if start == target:
+            return [start]
+        heap, parent, done = [(0.0, start)], {start: None}, set()
+        costs = {start: 0.0}
+        while heap:
+            cost, node = heapq.heappop(heap)
+            if node in done:
+                continue
+            done.add(node)
+            if node == target:
+                break
+            for neighbor, weight in adjacency.get(node, ()):
+                new_cost = cost + weight
+                if new_cost < costs.get(neighbor, float("inf")):
+                    costs[neighbor] = new_cost
+                    parent[neighbor] = node
+                    heapq.heappush(heap, (new_cost, neighbor))
+        if target not in parent:
+            return None
+        path = [target]
+        while parent[path[-1]] is not None:
+            path.append(parent[path[-1]])
+        return path[::-1]

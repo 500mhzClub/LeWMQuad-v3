@@ -212,10 +212,20 @@ Note: user prefers commits **without** a Co-Authored-By footer.
    unimplemented §5.4 mechanism: **`MemoryEdge.action_summary`** — SPTM-style
    align-to-node-view → replay edge action → re-localize; `plan_cost` only
    for the final salient hop.
-8. **NEXT — Stage 4b:** driven tour (real primitives, records per-edge
-   actions) + edge-action traversal in seek; then the registered Stage 4 gate
-   (≥8 scenes × 2 goals, non-visible goals, baselines 0/1/2, per-level
-   diagnostics); exploration mode after.
+8. ~~Stage 4b traversal~~ **DONE 2026-06-10 — FIRST END-TO-END SUCCESS** (doc:
+   `docs/lewm_topological_nav_stage4b_traversal_2026-06-10.md`). Align→walk
+   traversal over penalized-direction graph routing: held-out maze, goal image
+   only, **4.00 m / 5 hops → final 0.36 m with perceptual §6.4 stop** (v2
+   baseline: 3.99 m, never moves). Three measured fixes: weighted-Dijkstra
+   routing (reversed edges 3× cost, multi-candidate goal nodes), path-set
+   arrival, and the decisive one — **freeze the belief window during ALIGN**
+   (scan rotations poison the H=8 locomotion-distribution window; feed the
+   filter only while walking). Node-arrival confirmation turned out optional:
+   replan-when-lost carries Level 2.
+9. **NEXT — the Stage 4 gate:** ≥8 scenes × 2 goals, non-visible goals,
+   baselines 0/1/2 (§9.4), per-level diagnostics (§9.3); then exploration mode
+   (§6.2 frontier) to retire the privileged tour; then the out-of-family
+   transfer probe.
 5. **Stage 3** (`v3_topological_nav_plan.md` §5–6, plan §5 Stage 3): wire the
    BeliefEncoder into the `Memory`/`HierarchicalPlanner` seam — online node
    commitment with **goal-facing** `representative_observation` (hard constraint
@@ -234,5 +244,6 @@ Note: user prefers commits **without** a Co-Authored-By footer.
 - Stage 3a: `docs/lewm_topological_nav_stage3a_loop_closure_2026-06-09.md`
 - Stage 3 wiring: `docs/lewm_topological_nav_stage3_wiring_2026-06-09.md`
 - Stage 4a: `docs/lewm_topological_nav_stage4a_e2e_2026-06-10.md`
+- Stage 4b: `docs/lewm_topological_nav_stage4b_traversal_2026-06-10.md`
 - Nav-base synthesis (why seq4 + plan_cost): `docs/lewm_nav_base_synthesis_2026-06-09.md`
 - Memory index: `MEMORY.md` → "Topological-nav" entries.
