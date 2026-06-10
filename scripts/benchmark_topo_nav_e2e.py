@@ -70,10 +70,13 @@ from benchmark_lewm_closed_loop_mpc import (  # noqa: E402  (reuses env guards)
 from lewm.memory.topological_navigator import TopologicalNavigator  # noqa: E402
 from lewm.models.belief_encoder import BeliefEncoder  # noqa: E402
 from lewm.models.loop_closure import LoopClosureHead  # noqa: E402
-from lewm_genesis.lewm_contract import PrimitiveRegistry, expand_primitive_to_block  # noqa: E402
+from benchmark_lewm_closed_loop_mpc import _execute_physical_primitive  # noqa: E402
+from lewm_genesis.lewm_contract import PrimitiveRegistry, SafetyLimits, expand_primitive_to_block  # noqa: E402
+from lewm_genesis.rollout import GenesisGo2PPOPolicy, RolloutConfig, RolloutRunner  # noqa: E402
 from lewm_genesis.collectors.base import wrap_angle_pi  # noqa: E402
 from lewm_genesis.scene_builder import build_scene_from_pack  # noqa: E402
 from lewm_genesis.scene_loader import find_scene_dirs, load_platform_manifest, load_scene_pack  # noqa: E402
+from lewm_genesis.rollout import DEFAULT_GO2_STANCE_RAD, _resolve_rollout_leg_dof_indices  # noqa: E402
 from lewm_worlds.planning_grid import InflatedOccupancyGrid  # noqa: E402
 from probe_lewm_checkpoint import load_model  # noqa: E402
 
@@ -191,7 +194,47 @@ def choose_vetoed_primitive(model, build, registry, grid, command_dt_s, image, g
     return first_primitives[int(order[0])], float(costs[int(order[0])])
 
 
-def _write_topo_demo_video(path, pack, frames, statuses, goal_xy, goal_image_np, fps, title):
+def _demo_capture(build, pack, device, demo, status, *, physical=False):
+    """Pass-1 demo capture = bookkeeping ONLY (pose + status). Rendering happens
+    in a separate replay pass on a robot-visible scene, so the policy run stays
+    bit-identical to the verified non-demo configuration (with render_robot
+    enabled, the robot's own legs enter the ego frame and stance-pinning was
+    measurably perturbing the learned stack's decisions)."""
+    pos, quat = _current_pose(build)
+    yaw = _yaw_from_quat_wxyz(quat)
+    demo["poses"].append((np.asarray(pos, dtype=np.float32).copy(), float(yaw)))
+    demo["statuses"].append(status)
+
+
+def _render_demo_frames(pack, poses, args):
+    """Pass 2: rebuild the scene with the robot visible and replay the recorded
+    poses, rendering third-person + ego for the video."""
+    build = build_scene_from_pack(pack, n_envs=1, backend=args.backend,
+                                  show_viewer=False, render_robot=True,
+                                  apply_textures=bool(args.apply_textures))
+    leg_idx = _resolve_rollout_leg_dof_indices(build.robot, RolloutConfig().leg_dof_indices)
+    device = torch.device("cpu")
+    frames = []
+    for pos, yaw in poses:
+        quat = _quat_wxyz_from_yaw(yaw)
+        build.robot.set_pos(pos[None, :], envs_idx=[0], zero_velocity=True)
+        build.robot.set_quat(quat[None, :], envs_idx=[0], zero_velocity=False)
+        build.robot.set_dofs_position(DEFAULT_GO2_STANCE_RAD[None, :], leg_idx.tolist(), envs_idx=[0])
+        build.robot.set_dofs_velocity(np.zeros((1, len(leg_idx)), dtype=np.float32), leg_idx.tolist(), envs_idx=[0])
+        try:
+            build.scene.step()
+        except Exception:
+            pass
+        build.robot.set_pos(pos[None, :], envs_idx=[0], zero_velocity=True)
+        build.robot.set_quat(quat[None, :], envs_idx=[0], zero_velocity=False)
+        third = _render_third_person(build, pos, yaw)
+        ego = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
+        ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+        frames.append((third, ego_np, float(pos[0]), float(pos[1]), float(yaw)))
+    return frames
+
+
+def _write_topo_demo_video(path, pack, frames, statuses, goal_xy, goal_image_np, fps, title, waypoint_thumbs=None):
     """HUD video in the repo's established demo format (title bar, third-person
     + robot-eye panels, minimap with trail) + topo-nav extras: the goal-image
     inset (the actual task input), phase/memory status, perceptual-stop banner."""
@@ -218,6 +261,7 @@ def _write_topo_demo_video(path, pack, frames, statuses, goal_xy, goal_image_np,
         except Exception:
             return ImageFont.load_default()
 
+    waypoint_thumbs = waypoint_thumbs or {}
     f_title, f_lab, f_stat = _font(19, True), _font(14), _font(13)
     W, H = 896, 496
     out, trail = [], []
@@ -249,6 +293,15 @@ def _write_topo_demo_video(path, pack, frames, statuses, goal_xy, goal_image_np,
         draw.text((766, 416), f"memory: {status['nodes']} nodes", fill=(200, 200, 205), font=f_stat)
         if status["phase"] == "SEEK":
             draw.text((766, 436), f"goal dist: {status['dist']:.1f} m", fill=(200, 200, 205), font=f_stat)
+        if status.get("state"):
+            draw.rectangle([12, 44, 428, 66], fill=(10, 10, 13))
+            draw.text((18, 48), status["state"], fill=(140, 220, 255), font=f_lab)
+        draw.text((140, 462), "(kinematic base - gait not simulated)", fill=(120, 120, 130), font=f_stat)
+        wp_ref = status.get("waypoint_ref")
+        if wp_ref is not None and wp_ref in waypoint_thumbs and status["phase"] == "SEEK":
+            canvas.paste(Image.fromarray(waypoint_thumbs[wp_ref]).resize((128, 128)), (762, 200))
+            draw.rectangle([761, 199, 891, 329], outline=(140, 220, 255))
+            draw.text((762, 334), "Current waypoint view", fill=(140, 220, 255), font=f_stat)
         if status.get("stopped"):
             draw.rectangle([12, 200, 428, 260], fill=(10, 40, 16), outline=(70, 230, 120), width=2)
             draw.text((30, 215), "PERCEPTUAL STOP - GOAL REACHED", fill=(70, 230, 120), font=f_title)
@@ -259,7 +312,7 @@ def _write_topo_demo_video(path, pack, frames, statuses, goal_xy, goal_image_np,
 
 
 def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences, action_tensor,
-              primitive_names, args, rng, device, demo=None):
+              primitive_names, args, rng, device, demo=None, runner=None):
     graph = pack.scene_graph
     grid = InflatedOccupancyGrid(graph.manifest, cell_size_m=0.05, inflation_m=0.20)
     base_z = float(pack.robot.spawn_xyz_m[2])
@@ -292,14 +345,10 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         observe()
         tour_blocks += 1
         if demo is not None and tour_blocks % 2 == 0:
-            try:
-                build.scene.step()
-            except Exception:
-                pass
-            third = _render_third_person(build, pos_xyz, yaw)
-            ego_np = stored_frames[-1].mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
-            demo["frames"].append((third, ego_np, float(pos_xyz[0]), float(pos_xyz[1]), float(yaw)))
-            demo["statuses"].append({"phase": "TOUR", "nodes": len(navigator.memory.nodes)})
+            _demo_capture(build, pack, device, demo,
+                          {"phase": "TOUR", "state": "exploring (driven tour)",
+                           "nodes": len(navigator.memory.nodes)})
+            _set_pose(build=build, runner=None, pos_xyz=pos_xyz, quat_wxyz=_quat_wxyz_from_yaw(yaw))
     n_nodes = len(navigator.memory.nodes)
     visited_cells = sorted(tour_cell_heading)
     print(f"  tour: {tour_blocks} blocks, {len(visited_cells)} cells seen, {n_nodes} memory nodes", flush=True)
@@ -335,17 +384,18 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
     # ---------------- Seek phase ----------------
     results = {}
     for policy in _parse_csv(args.policies):
-        _set_pose(build=build, runner=None, pos_xyz=start_pose[0], quat_wxyz=start_pose[1])
+        _set_pose(build=build, runner=runner, pos_xyz=start_pose[0], quat_wxyz=start_pose[1])
         check_pos, _ = _current_pose(build)
         print(f"    [{policy}] start intended={start_pose[0][:2]} actual={check_pos[:2]}", flush=True)
         navigator._window.clear()           # fresh perceptual window; memory kept
         arrive_streak, used_fallback, subgoal_nodes = 0, 0, []
         max_goal_cosine, subgoal_progress, subgoal_scored = 0.0, 0, 0
         primitive_counts: dict[str, int] = {}
-        committed_subgoal, blocks_on_subgoal, subgoals_reached = None, 0, 0
+        committed_subgoal, blocks_on_subgoal, subgoals_reached, falls = None, 0, 0, 0
         n_scan = blocks_per_revolution(registry, args.command_dt_s)
         scan_remaining, scan_costs, scan_return, z_subgoal_proj = 0, [], 0, None
         node_path, path_index, mode, walk_blocks = None, 0, "align", 0
+        align_target, align_op = 0.0, "ge"
         path_length, prev_xy = 0.0, np.asarray(start_pose[0][:2], dtype=np.float64)
         stopped_perceptually = False
         for _block in range(args.seek_max_blocks):
@@ -409,15 +459,35 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                         scan_costs.append(cosine_k)
                         scan_remaining -= 1
                         if scan_remaining == 0:
-                            best = int(np.argmax(scan_costs))
-                            # Reversed edge: the keyframe faces the OPPOSITE of
-                            # travel; align 180 degrees past the best match.
-                            offset = n_scan // 2 if reversed_edge else 0
-                            scan_return = (best + 1 + offset) % n_scan
+                            if runner is None:
+                                # Kinematic: exact yaw per block -> open-loop
+                                # return, VERBATIM the verified-success logic.
+                                best = int(np.argmax(scan_costs))
+                                offset = n_scan // 2 if reversed_edge else 0
+                                scan_return = (best + 1 + offset) % n_scan
+                                align_op = "open"
+                            else:
+                                # Physical: gait yaw tracking error -> CLOSED-
+                                # LOOP return on the live view (reversed edge:
+                                # the anti-match).
+                                if reversed_edge:
+                                    align_target, align_op = float(min(scan_costs)) + 0.03, "le"
+                                else:
+                                    align_target, align_op = float(max(scan_costs)) - 0.03, "ge"
+                                scan_return = 2 * n_scan  # cap
                         primitive = "yaw_right"
-                    else:
+                    elif align_op == "open":
                         scan_return -= 1
                         primitive = "yaw_right"
+                    else:
+                        hit = (cosine_k >= align_target) if align_op == "ge" else (cosine_k <= align_target)
+                        scan_return -= 1
+                        if hit or scan_return <= 0:
+                            mode, walk_blocks = "walk", 0
+                            navigator._window.clear()
+                            primitive = "hold"
+                        else:
+                            primitive = "yaw_right"
                 else:  # walk
                     posterior = navigator.current_belief()
                     # Arrival at ANY node at/after path_index counts (parallel
@@ -461,9 +531,10 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                             node_path = None        # lost on this edge -> replan
                             primitive = "hold"
                         else:
-                            forward_ok = _feasible_fraction(build, registry, "forward_medium",
-                                                            grid, args.command_dt_s) >= 0.5
-                            primitive = "forward_medium" if forward_ok else "yaw_right"
+                            walk_prim = "forward_slow" if runner is not None else "forward_medium"
+                            forward_ok = _feasible_fraction(build, registry, walk_prim,
+                                                            grid, args.command_dt_s) >= (0.8 if runner is not None else 0.5)
+                            primitive = walk_prim if forward_ok else "yaw_right"
             elif policy == "v2":
                 primitive, _cost = choose_vetoed_primitive(
                     model, build, registry, grid, args.command_dt_s, image, goal_image, sequences, action_tensor)
@@ -474,16 +545,47 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
             else:
                 raise ValueError(policy)
             primitive_counts[primitive] = primitive_counts.get(primitive, 0) + 1
-            sink = demo["frames"] if (demo is not None and policy == "topo") else None
-            n_before_sink = len(sink) if sink is not None else 0
-            _execute_kinematic_primitive(build, registry, primitive, command_dt_s=args.command_dt_s, grid=grid,
-                                         frame_sink=sink, pack=pack if sink is not None else None,
-                                         device=device if sink is not None else None)
+            if runner is not None:
+                _execute_physical_primitive(runner, registry, primitive)
+            else:
+                _execute_kinematic_primitive(build, registry, primitive, command_dt_s=args.command_dt_s, grid=grid)
             new_pos, _ = _current_pose(build)
-            if sink is not None:
-                for (t3, eg, fx, fy, fyaw) in sink[n_before_sink:]:
-                    demo["statuses"].append({"phase": "SEEK", "nodes": len(navigator.memory.nodes),
-                                             "dist": _xy_distance((fx, fy), goal_xy)})
+            if runner is not None and float(new_pos[2]) < 0.15:
+                falls += 1
+                if falls > 6:
+                    print("    [fall] too many falls - aborting trial", flush=True)
+                    break
+                # Recover in place: stand back up at the current xy, reset the
+                # gait policy state (locomotion robustness is not the thesis
+                # under test; real platforms have get-up controllers).
+                up = np.asarray([new_pos[0], new_pos[1], start_pose[0][2]], dtype=np.float32)
+                _, cur_quat = _current_pose(build)
+                cur_yaw = _yaw_from_quat_wxyz(cur_quat)
+                _set_pose(build=build, runner=runner, pos_xyz=up, quat_wxyz=_quat_wxyz_from_yaw(cur_yaw))
+                print(f"    [fall->recover #{falls}]", flush=True)
+            if demo is not None and policy == "topo":
+                if node_path is None:
+                    demo_state, waypoint_ref = "REPLANNING (lost - re-localize)", None
+                elif mode == "align":
+                    demo_state, waypoint_ref = "ALIGN: scanning for waypoint view (4x speed)", \
+                        navigator._observations.get(next_node)
+                elif at_goal_node and walk_blocks > 2:
+                    demo_state, waypoint_ref = "FINAL APPROACH: servo on goal image", None
+                else:
+                    demo_state, waypoint_ref = "WALK: forward to waypoint", \
+                        navigator._observations.get(next_node)
+                if waypoint_ref is not None and waypoint_ref not in demo["waypoint_thumbs"]:
+                    thumb = stored_frames[waypoint_ref].mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+                    demo["waypoint_thumbs"][waypoint_ref] = thumb
+                is_scan_frame = demo_state.startswith("ALIGN")
+                demo["scan_tick"] = demo.get("scan_tick", 0) + (1 if is_scan_frame else 0)
+                if not is_scan_frame or demo["scan_tick"] % 4 == 0:
+                    status = {"phase": "SEEK", "state": demo_state, "waypoint_ref": waypoint_ref,
+                              "nodes": len(navigator.memory.nodes),
+                              "dist": _xy_distance(new_pos[:2], goal_xy)}
+                    repeats = 2 if demo_state.startswith(("WALK", "FINAL")) else 1
+                    for _ in range(repeats):
+                        _demo_capture(build, pack, device, demo, dict(status), physical=runner is not None)
             path_length += float(np.linalg.norm(np.asarray(new_pos[:2], dtype=np.float64) - prev_xy))
             prev_xy = np.asarray(new_pos[:2], dtype=np.float64)
 
@@ -505,6 +607,7 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
             "max_goal_cosine": max_goal_cosine,
             "primitive_counts": primitive_counts,
             "subgoals_reached": subgoals_reached,
+            "falls": falls,
             "subgoal_progress_rate": (subgoal_progress / subgoal_scored) if subgoal_scored else None,
         }
         print(f"  [{policy}] final={final_distance:.2f} m success={results[policy]['success_eval']} "
@@ -540,6 +643,8 @@ def main() -> int:
     parser.add_argument("--scene-offset", type=int, default=0)
     parser.add_argument("--goals-per-scene", type=int, default=2)
     parser.add_argument("--backend", default="vulkan")
+    parser.add_argument("--mode", choices=("kinematic", "physical"), default="kinematic",
+                        help="physical = real PPO locomotion for the SEEK phase (tour stays teleport)")
     parser.add_argument("--apply-textures", action="store_true")
     parser.add_argument("--policies", default="topo,v2,bearing,hold")
     parser.add_argument("--primitive-names", default="hold,forward_slow,forward_medium,forward_fast,yaw_left,yaw_right,arc_left,arc_right")
@@ -572,6 +677,11 @@ def main() -> int:
     encoder, scorer, tau_new = load_navigator_parts(args, device)
     platform = load_platform_manifest(args.platform_manifest.resolve())
     registry = PrimitiveRegistry.from_yaml(args.primitive_registry.resolve())
+    safety = SafetyLimits.from_manifest(platform)
+    locomotion_policy = None
+    if args.mode == "physical":
+        locomotion_policy = GenesisGo2PPOPolicy.from_platform_manifest(platform, REPO_ROOT, device="cpu")
+        print("[physical] PPO locomotion policy loaded", flush=True)
     args.command_dt_s = float(platform.get("timing", {}).get("command_dt_s", 0.10))
     primitive_names = _parse_csv(args.primitive_names)
     if args.demo_video is not None:
@@ -594,23 +704,35 @@ def main() -> int:
         pack = load_scene_pack(scene_dir, platform_manifest=platform, workspace_root=REPO_ROOT)
         print(f"scene {pack.scene_id} ({pack.family}/{pack.split})", flush=True)
         build = build_scene_from_pack(pack, n_envs=1, backend=args.backend,
-                                      show_viewer=False, render_robot=bool(args.demo_video is not None),
+                                      show_viewer=False, render_robot=False,
                                       apply_textures=bool(args.apply_textures))
+        runner = None
+        if args.mode == "physical":
+            runner = RolloutRunner(build, locomotion_policy, registry, safety, config=RolloutConfig(
+                n_blocks=int(args.seek_max_blocks), fall_z_threshold_m=0.15,
+                rgb_capture_per_block=False, seed=int(args.seed),
+                log_progress_every_blocks=0, foot_contact_source="zero",
+                randomize_spawn_pose=False))
         for trial in range(args.goals_per_scene):
             trial_rng = random.Random(args.seed + trial * 1009 + zlib.crc32(pack.scene_id.encode()) % 100000)
-            demo = ({"frames": [], "statuses": [], "goal_xy": None, "goal_image": None}
+            demo = ({"poses": [], "statuses": [], "goal_xy": None, "goal_image": None,
+                     "waypoint_thumbs": {}}
                     if args.demo_video is not None else None)
             out = run_scene(pack, build, model, encoder, scorer, tau_new, registry,
-                            sequences, action_tensor, primitive_names, args, trial_rng, device, demo=demo)
+                            sequences, action_tensor, primitive_names, args, trial_rng, device,
+                            demo=demo, runner=runner)
             if out is not None:
                 out["trial"] = trial
                 all_results.append(out)
-            if demo is not None and demo["frames"]:
+            if demo is not None and demo["poses"]:
+                print(f"rendering demo replay ({len(demo['poses'])} frames)...", flush=True)
+                demo_frames = _render_demo_frames(pack, demo["poses"], args)
                 _write_topo_demo_video(
-                    args.demo_video, pack, demo["frames"], demo["statuses"],
+                    args.demo_video, pack, demo_frames, demo["statuses"],
                     demo["goal_xy"], demo["goal_image"], args.demo_fps,
-                    "Topological Nav - learned map + goal-image seek (held-out maze)")
-                print(f"wrote demo video {args.demo_video} ({len(demo['frames'])} frames)", flush=True)
+                    "Topological Nav - learned map + goal-image seek (held-out maze)",
+                    waypoint_thumbs=demo["waypoint_thumbs"])
+                print(f"wrote demo video {args.demo_video} ({len(demo_frames)} frames)", flush=True)
 
     summary: dict = {"schema": "lewm_topo_nav_e2e_v0", "elapsed_s": time.time() - started,
                      "n_trials": len(all_results), "trials": all_results,

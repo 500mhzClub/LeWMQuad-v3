@@ -74,14 +74,32 @@ Interesting nuance: intermediate node-arrival confirmations still never fired
 goal. "Replan when lost" is doing the Level-2 work; per-node confirmation is
 optional, which simplifies the controller.
 
+## Demo video (v2, two-pass) + physical-gait status
+
+The demo is generated **two-pass**: pass 1 runs the policy in the exact
+verified configuration (`render_robot=False`, capture = pose bookkeeping only —
+with the robot visible its own legs enter the ego frame and demo-time stance
+pinning measurably changed the learned stack's decisions); pass 2 rebuilds the
+scene robot-visible and replays the poses for rendering. The verified 0.36 m
+success reproduces exactly under this scheme. Video shows: stance-pinned
+upright robot, controller-state labels, goal-image + current-waypoint insets,
+ALIGN scans at 4× subsampling, the §6.4 stop banner; kinematic-base caption.
+
+**Physical mode (`--mode physical`) is implemented** — PPO gait via
+`RolloutRunner`, fall-recovery (stand-up + policy reset), gentler walk
+primitive, closed-loop scan return (gait yaw tracking error defeats open-loop
+block counting). Status: the robot demonstrably walks (8+ m paths, no falls
+after fixes) but does not yet navigate — headings/displacements diverge from
+every kinematically-calibrated constant. **Registered Stage 4c unit:**
+per-level telemetry under gait (alignment heading error, per-block
+displacement, filter coherence under gait imagery) before further tuning.
+
 ## Demo video
 
-`.generated/topo_nav/topo_nav_e2e_success_demo.mp4` (~76 s, 12 fps, repo HUD
-format): TOUR phase (memory nodes accumulating on the minimap trail) → SEEK
-phase (the goal *image* shown as an inset — the only task input — with live
-goal distance) → **PERCEPTUAL STOP banner at 0.4 m**. Regenerate with
-`--demo-video <path>` on the same command (deterministic; the success
-reproduced exactly under demo rendering).
+`.generated/topo_nav/topo_nav_e2e_success_demo.mp4` (~20 s, 12 fps): TOUR
+(memory building) → SEEK (goal-image inset, waypoint-view inset, live
+distance) → **PERCEPTUAL STOP at 0.4 m**. Regenerate with `--demo-video
+<path>` on the verified command (`--mode kinematic`, seek 220, edge 20).
 
 ## Status + next
 
