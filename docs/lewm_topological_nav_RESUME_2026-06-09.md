@@ -198,10 +198,24 @@ Note: user prefers commits **without** a Co-Authored-By footer.
    cells (priv. ceiling 0.912); gate 2/3 (margin vs random-local +0.19 <
    +0.25, recorded honestly as NOT passed).** Remaining headroom is ONE rule
    (cluster skip); candidates logged in the doc.
-7. **NEXT — Stage 4 end-to-end:** navigator in the `HierarchicalPlanner` seam,
-   closed loop (vulkan venv `--apply-textures --backend vulkan`), exploration
-   mode (§6.2 frontier), perceptual arrival (§6.4), §9.4 baselines 0/1/2 +
-   §9.3 per-level diagnostics; ground the cluster-skip rule there.
+7. ~~Stage 4a first closed-loop run~~ **DONE 2026-06-10** (doc:
+   `docs/lewm_topological_nav_stage4a_e2e_2026-06-10.md`; harness
+   `scripts/benchmark_topo_nav_e2e.py`, vulkan venv). **Works live:** memory
+   built online, goal image matched 0.989 (cell-correct), Level-1 subgoals
+   reduce true distance 0.91–1.0 live. Seven integration fixes landed
+   (teleport tour, budget trap, subgoal commitment, §6.2 filter-reached,
+   kinematic veto, scan-then-servo, density-calibrated lookahead).
+   **BLOCKER FOUND (the real result): Level-3 `plan_cost` is FLAT between
+   same-corridor views ~0.5–1.5 m apart** (distance concentration) — beacon
+   servoing (0.92) was the salient-object regime; bare-corridor subgoal
+   keyframes give no gradient → hold/yaw attractor. The fix is the spec's own
+   unimplemented §5.4 mechanism: **`MemoryEdge.action_summary`** — SPTM-style
+   align-to-node-view → replay edge action → re-localize; `plan_cost` only
+   for the final salient hop.
+8. **NEXT — Stage 4b:** driven tour (real primitives, records per-edge
+   actions) + edge-action traversal in seek; then the registered Stage 4 gate
+   (≥8 scenes × 2 goals, non-visible goals, baselines 0/1/2, per-level
+   diagnostics); exploration mode after.
 5. **Stage 3** (`v3_topological_nav_plan.md` §5–6, plan §5 Stage 3): wire the
    BeliefEncoder into the `Memory`/`HierarchicalPlanner` seam — online node
    commitment with **goal-facing** `representative_observation` (hard constraint
@@ -219,5 +233,6 @@ Note: user prefers commits **without** a Co-Authored-By footer.
 - Stage 2: `docs/lewm_topological_nav_stage2_belief_encoder_2026-06-09.md`
 - Stage 3a: `docs/lewm_topological_nav_stage3a_loop_closure_2026-06-09.md`
 - Stage 3 wiring: `docs/lewm_topological_nav_stage3_wiring_2026-06-09.md`
+- Stage 4a: `docs/lewm_topological_nav_stage4a_e2e_2026-06-10.md`
 - Nav-base synthesis (why seq4 + plan_cost): `docs/lewm_nav_base_synthesis_2026-06-09.md`
 - Memory index: `MEMORY.md` → "Topological-nav" entries.
