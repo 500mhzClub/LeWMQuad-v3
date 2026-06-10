@@ -74,6 +74,15 @@ Interesting nuance: intermediate node-arrival confirmations still never fired
 goal. "Replan when lost" is doing the Level-2 work; per-node confirmation is
 optional, which simplifies the controller.
 
+## Demo video
+
+`.generated/topo_nav/topo_nav_e2e_success_demo.mp4` (~76 s, 12 fps, repo HUD
+format): TOUR phase (memory nodes accumulating on the minimap trail) → SEEK
+phase (the goal *image* shown as an inset — the only task input — with live
+goal distance) → **PERCEPTUAL STOP banner at 0.4 m**. Regenerate with
+`--demo-video <path>` on the same command (deterministic; the success
+reproduced exactly under demo rendering).
+
 ## Status + next
 
 This is the first closed-loop validation of the thesis mechanism end to end:

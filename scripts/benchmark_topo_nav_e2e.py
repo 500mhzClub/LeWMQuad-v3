@@ -62,6 +62,7 @@ from benchmark_lewm_closed_loop_mpc import (  # noqa: E402  (reuses env guards)
     _primitive_active_blocks,
     _quat_wxyz_from_yaw,
     _render_tensor_from_base,
+    _render_third_person,
     _set_pose,
     _xy_distance,
     _yaw_from_quat_wxyz,
@@ -190,8 +191,75 @@ def choose_vetoed_primitive(model, build, registry, grid, command_dt_s, image, g
     return first_primitives[int(order[0])], float(costs[int(order[0])])
 
 
+def _write_topo_demo_video(path, pack, frames, statuses, goal_xy, goal_image_np, fps, title):
+    """HUD video in the repo's established demo format (title bar, third-person
+    + robot-eye panels, minimap with trail) + topo-nav extras: the goal-image
+    inset (the actual task input), phase/memory status, perceptual-stop banner."""
+    import imageio
+    from PIL import Image, ImageDraw, ImageFont
+    from benchmark_lewm_closed_loop_mpc import _draw_minimap
+
+    manifest = pack.scene_graph.manifest
+    (xlo, ylo), (xhi, yhi) = manifest.world_bounds_xy_m
+    bounds = ((float(xlo), float(ylo)), (float(xhi), float(yhi)))
+    raw = InflatedOccupancyGrid(manifest, cell_size_m=0.05, inflation_m=0.0)
+    rn = 76
+    occ = np.zeros((rn, rn), dtype=bool)
+    for j in range(rn):
+        for i in range(rn):
+            x = xlo + (i + 0.5) / rn * (xhi - xlo)
+            y = ylo + (j + 0.5) / rn * (yhi - ylo)
+            occ[j, i] = not raw.is_free((float(x), float(y)))
+
+    def _font(sz, bold=False):
+        try:
+            fp = "/usr/share/fonts/truetype/dejavu/DejaVuSans" + ("-Bold" if bold else "") + ".ttf"
+            return ImageFont.truetype(fp, sz)
+        except Exception:
+            return ImageFont.load_default()
+
+    f_title, f_lab, f_stat = _font(19, True), _font(14), _font(13)
+    W, H = 896, 496
+    out, trail = [], []
+    goal_thumb = Image.fromarray(goal_image_np).resize((128, 128)) if goal_image_np is not None else None
+    for (third, ego, rx, ry, yaw), status in zip(frames, statuses):
+        trail.append((rx, ry))
+        canvas = Image.new("RGB", (W, H), (16, 16, 20))
+        canvas.paste(Image.fromarray(third).resize((416, 416)), (12, 44))
+        canvas.paste(Image.fromarray(ego).resize((300, 300)), (456, 44))
+        draw = ImageDraw.Draw(canvas)
+        draw.rectangle([0, 0, W - 1, 36], fill=(10, 10, 13), outline=(70, 70, 80))
+        draw.text((14, 9), title, fill=(0, 235, 120), font=f_title)
+        draw.text((12, 462), "Third-person follow", fill=(195, 195, 200), font=f_lab)
+        draw.text((456, 346), "Robot-eye (perception)", fill=(195, 195, 200), font=f_lab)
+        beacons, claimed = [], set()
+        if status["phase"] == "SEEK" and goal_xy is not None:
+            beacons = [(np.asarray(goal_xy, dtype=np.float64), (235, 200, 70), "goal")]
+            if status.get("stopped"):
+                claimed = {0}
+        _draw_minimap(draw, bounds, occ, beacons, trail, (rx, ry), yaw,
+                      0 if beacons and not claimed else None, claimed, 456, 372, 300, 106)
+        draw.text((766, 372), "Map", fill=(195, 195, 200), font=f_lab)
+        if goal_thumb is not None and status["phase"] == "SEEK":
+            canvas.paste(goal_thumb, (762, 44))
+            draw.rectangle([761, 43, 891, 173], outline=(235, 200, 70))
+            draw.text((762, 178), "Goal image (input)", fill=(235, 200, 70), font=f_stat)
+        phase_col = (120, 180, 255) if status["phase"] == "TOUR" else (235, 200, 70)
+        draw.text((766, 396), f"phase: {status['phase']}", fill=phase_col, font=f_stat)
+        draw.text((766, 416), f"memory: {status['nodes']} nodes", fill=(200, 200, 205), font=f_stat)
+        if status["phase"] == "SEEK":
+            draw.text((766, 436), f"goal dist: {status['dist']:.1f} m", fill=(200, 200, 205), font=f_stat)
+        if status.get("stopped"):
+            draw.rectangle([12, 200, 428, 260], fill=(10, 40, 16), outline=(70, 230, 120), width=2)
+            draw.text((30, 215), "PERCEPTUAL STOP - GOAL REACHED", fill=(70, 230, 120), font=f_title)
+        out.append(np.asarray(canvas))
+    hold = [out[-1]] * max(1, int(round(fps * 2)))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    imageio.mimwrite(str(path), out + hold, fps=fps, macro_block_size=8)
+
+
 def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences, action_tensor,
-              primitive_names, args, rng, device):
+              primitive_names, args, rng, device, demo=None):
     graph = pack.scene_graph
     grid = InflatedOccupancyGrid(graph.manifest, cell_size_m=0.05, inflation_m=0.20)
     base_z = float(pack.robot.spawn_xyz_m[2])
@@ -223,6 +291,15 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         _set_pose(build=build, runner=None, pos_xyz=pos_xyz, quat_wxyz=_quat_wxyz_from_yaw(yaw))
         observe()
         tour_blocks += 1
+        if demo is not None and tour_blocks % 2 == 0:
+            try:
+                build.scene.step()
+            except Exception:
+                pass
+            third = _render_third_person(build, pos_xyz, yaw)
+            ego_np = stored_frames[-1].mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+            demo["frames"].append((third, ego_np, float(pos_xyz[0]), float(pos_xyz[1]), float(yaw)))
+            demo["statuses"].append({"phase": "TOUR", "nodes": len(navigator.memory.nodes)})
     n_nodes = len(navigator.memory.nodes)
     visited_cells = sorted(tour_cell_heading)
     print(f"  tour: {tour_blocks} blocks, {len(visited_cells)} cells seen, {n_nodes} memory nodes", flush=True)
@@ -244,6 +321,9 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
     )
     z_goal_raw, _ = model.encode(goal_image[None], None)
     z_goal_raw = z_goal_raw.squeeze(0)
+    if demo is not None:
+        demo["goal_xy"] = (float(goal_xy[0]), float(goal_xy[1]))
+        demo["goal_image"] = goal_image.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
     goal_node, goal_score = navigator.match_goal(z_goal_raw)
     majority = navigator.memory.node_majority_labels()
     start_pose = (np.asarray([*graph.cell_center(end_cell), base_z], dtype=np.float32),
@@ -394,13 +474,24 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
             else:
                 raise ValueError(policy)
             primitive_counts[primitive] = primitive_counts.get(primitive, 0) + 1
-            _execute_kinematic_primitive(build, registry, primitive, command_dt_s=args.command_dt_s, grid=grid)
+            sink = demo["frames"] if (demo is not None and policy == "topo") else None
+            n_before_sink = len(sink) if sink is not None else 0
+            _execute_kinematic_primitive(build, registry, primitive, command_dt_s=args.command_dt_s, grid=grid,
+                                         frame_sink=sink, pack=pack if sink is not None else None,
+                                         device=device if sink is not None else None)
             new_pos, _ = _current_pose(build)
+            if sink is not None:
+                for (t3, eg, fx, fy, fyaw) in sink[n_before_sink:]:
+                    demo["statuses"].append({"phase": "SEEK", "nodes": len(navigator.memory.nodes),
+                                             "dist": _xy_distance((fx, fy), goal_xy)})
             path_length += float(np.linalg.norm(np.asarray(new_pos[:2], dtype=np.float64) - prev_xy))
             prev_xy = np.asarray(new_pos[:2], dtype=np.float64)
 
         final_pos, _ = _current_pose(build)
         final_distance = _xy_distance(final_pos[:2], goal_xy)
+        if demo is not None and policy == "topo" and stopped_perceptually and demo["statuses"]:
+            for st in demo["statuses"][-3:]:
+                st["stopped"] = True
         results[policy] = {
             "initial_distance_m": d0,
             "final_distance_m": final_distance,
@@ -468,6 +559,8 @@ def main() -> int:
     parser.add_argument("--goal-max-hops", type=int, default=5)
     parser.add_argument("--goal-radius-m", type=float, default=0.65)
     parser.add_argument("--seed", type=int, default=20260609)
+    parser.add_argument("--demo-video", type=Path, default=None)
+    parser.add_argument("--demo-fps", type=float, default=12.0)
     parser.add_argument("--max-seq-len", type=int, default=None)
     parser.add_argument("--sigreg-lambda", type=float, default=None)
     args = parser.parse_args()
@@ -481,6 +574,8 @@ def main() -> int:
     registry = PrimitiveRegistry.from_yaml(args.primitive_registry.resolve())
     args.command_dt_s = float(platform.get("timing", {}).get("command_dt_s", 0.10))
     primitive_names = _parse_csv(args.primitive_names)
+    if args.demo_video is not None:
+        args.policies = "topo"
     primitive_blocks = _primitive_active_blocks(registry, primitive_names)
     rng = random.Random(args.seed)
     sequences, action_tensor = _candidate_action_tensor(
@@ -499,15 +594,23 @@ def main() -> int:
         pack = load_scene_pack(scene_dir, platform_manifest=platform, workspace_root=REPO_ROOT)
         print(f"scene {pack.scene_id} ({pack.family}/{pack.split})", flush=True)
         build = build_scene_from_pack(pack, n_envs=1, backend=args.backend,
-                                      show_viewer=False, render_robot=False,
+                                      show_viewer=False, render_robot=bool(args.demo_video is not None),
                                       apply_textures=bool(args.apply_textures))
         for trial in range(args.goals_per_scene):
             trial_rng = random.Random(args.seed + trial * 1009 + zlib.crc32(pack.scene_id.encode()) % 100000)
+            demo = ({"frames": [], "statuses": [], "goal_xy": None, "goal_image": None}
+                    if args.demo_video is not None else None)
             out = run_scene(pack, build, model, encoder, scorer, tau_new, registry,
-                            sequences, action_tensor, primitive_names, args, trial_rng, device)
+                            sequences, action_tensor, primitive_names, args, trial_rng, device, demo=demo)
             if out is not None:
                 out["trial"] = trial
                 all_results.append(out)
+            if demo is not None and demo["frames"]:
+                _write_topo_demo_video(
+                    args.demo_video, pack, demo["frames"], demo["statuses"],
+                    demo["goal_xy"], demo["goal_image"], args.demo_fps,
+                    "Topological Nav - learned map + goal-image seek (held-out maze)")
+                print(f"wrote demo video {args.demo_video} ({len(demo['frames'])} frames)", flush=True)
 
     summary: dict = {"schema": "lewm_topo_nav_e2e_v0", "elapsed_s": time.time() - started,
                      "n_trials": len(all_results), "trials": all_results,
