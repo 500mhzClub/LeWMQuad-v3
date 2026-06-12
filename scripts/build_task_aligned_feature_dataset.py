@@ -216,6 +216,11 @@ def main() -> int:
     collision = _candidate_matrix(rows, "collided", primitive_names).astype(np.bool_)
     clearance = _candidate_matrix(rows, "clearance_m", primitive_names).astype(np.float32)
     cost = _candidate_matrix(rows, "cost", primitive_names).astype(np.float32)
+    relative_goal_vector_body = []
+    for row in rows:
+        v = row.get("relative_goal_vector_body")
+        relative_goal_vector_body.append(v if v is not None else [0.0, 0.0])
+    relative_goal_vector_body = np.asarray(relative_goal_vector_body, dtype=np.float32)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     arrays = {
@@ -230,6 +235,7 @@ def main() -> int:
         "goal_raw": goal_raw,
         "goal_proj": goal_proj,
         "goal_present": goal_present,
+        "relative_goal_vector_body": relative_goal_vector_body,
         "collision": collision,
         "progress": progress,
         "heading": heading,

@@ -214,6 +214,7 @@ def _execute_physical_primitive(
     build: Any = None,
     pack: Any = None,
     device: torch.device | None = None,
+    cam_side: float = 0.0,
 ) -> np.ndarray:
     requested = expand_primitive_to_block(registry, primitive_name)
     clipped = runner._clip_block(requested[None, :, :]).executed[0]
@@ -226,7 +227,7 @@ def _execute_physical_primitive(
             yaw_t = _yaw_from_quat_wxyz(quat)
             ego = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
             ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
-            third_np = _render_third_person(build, pos, yaw_t)
+            third_np = _render_third_person(build, pos, yaw_t, side=cam_side)
             frame_sink.append((third_np, ego_np, float(pos[0]), float(pos[1]), float(yaw_t)))
     runner._last_executed[0] = clipped[-1]
     return clipped
@@ -250,6 +251,8 @@ def _run_multi_beacon_demo(
     grid: InflatedOccupancyGrid,
     frame_sink: list,
     runner: Any = None,
+    goal_insets: list | None = None,
+    commit_margin: float = 0.01,
 ) -> int:
     """Chase scene landmarks one after another with the lewm image-goal planner.
 
@@ -315,13 +318,15 @@ def _run_multi_beacon_demo(
     step_m = 2.0           # re-aim ~2 m toward the beacon each iteration
     blocks_per_sub = 8     # servo this many blocks per fresh sub-goal, then re-aim
     max_total_blocks = int(max_blocks)  # per-beacon cap (set via --max-blocks)
-    for _object_id, beacon_xy in tour:
+    prev_prim: str | None = None
+    for leg_index, (object_id, beacon_xy) in enumerate(tour):
         cur_xy = np.asarray(_current_pose(build)[0][:2], dtype=np.float64)
         so = standoff_for(beacon_xy, cur_xy)
         if so is None:
             break
         target_xy = np.asarray(so[0], dtype=np.float64)
         beacon_face = so[1]
+        cam_side = 1.0 if leg_index % 2 == 0 else -1.0  # alternate follow side per leg
         total = 0
         reached = False
         while total < max_total_blocks:
@@ -342,12 +347,28 @@ def _run_multi_beacon_demo(
                 base_xyz_m=np.array([sub[0], sub[1], base_z], dtype=np.float32),
                 base_quat_wxyz=_quat_wxyz_from_yaw(gyaw), device=device,
             )
+            if goal_insets is not None:
+                goal_img_np = goal_img.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+                goal_insets.append((len(frame_sink), goal_img_np, str(object_id)))
             for _ in range(blocks_per_sub):
                 pos, quat = _current_pose(build)
                 if _xy_distance(pos[:2], sub) <= float(goal_radius_m):
                     break
                 image = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
-                primitive_name, _cost = _choose_lewm_primitive(model, image, goal_img, sequences, action_tensor)
+                costs, prims = _lewm_primitive_costs(model, image, goal_img, sequences, action_tensor)
+                best_i = int(np.argmin(costs))
+                primitive_name = prims[best_i]
+                # Commitment hysteresis: near-tie costs flip the argmin between
+                # blocks and the gait stutters; keep the previous primitive
+                # while it stays within a small margin of the best. Margin is
+                # delicate: 3% measurably locks onto stale headings and costs
+                # whole legs; keep it well under typical decision margins.
+                if (commit_margin > 0.0 and prev_prim is not None
+                        and prev_prim != "hold" and prev_prim in prims):
+                    prev_cost = min(c for c, p in zip(costs, prims) if p == prev_prim)
+                    if float(prev_cost) <= float(costs[best_i]) * (1.0 + commit_margin):
+                        primitive_name = prev_prim
+                prev_prim = primitive_name
                 if runner is None:
                     _execute_kinematic_primitive(
                         build, registry, primitive_name, command_dt_s=command_dt_s, grid=grid,
@@ -357,6 +378,7 @@ def _run_multi_beacon_demo(
                     _execute_physical_primitive(
                         runner, registry, primitive_name,
                         frame_sink=frame_sink, build=build, pack=pack, device=device,
+                        cam_side=cam_side,
                     )
                 total += 1
         if reached:
@@ -489,6 +511,61 @@ def _run_perception_multibeacon_demo(
     return claimed
 
 
+def _strip_obstacles(pack: Any) -> Any:
+    """Demo-only: remove free-standing obstacle boxes from the scene (visual
+    meshes, physics, occupancy grid, minimap); walls and landmarks stay. Used
+    to declutter the open-field beacon demo."""
+    import dataclasses
+    manifest = dataclasses.replace(pack.scene_graph.manifest, obstacles=())
+    return dataclasses.replace(
+        pack,
+        static_objects=tuple(o for o in pack.static_objects if "obstacle" not in o.kind),
+        manifest=manifest,
+        scene_graph=type(pack.scene_graph)(manifest),
+    )
+
+
+def _inject_extra_beacons(pack: Any, n_extra: int) -> Any:
+    """Demo-only: add extra coloured landmark pillars at the scene's unused
+    corner/edge slots (mirroring the existing landmark geometry), registered in
+    the manifest so the scene graph, beacon tour, physics, and HUD all see
+    them. Colours come from the standard landmark palette."""
+    import dataclasses
+    manifest = pack.scene_graph.manifest
+    existing = list(manifest.landmarks)
+    if n_extra <= 0 or not existing:
+        return pack
+    ax = max(abs(b.center_xyz_m[0]) for b in existing)
+    ay = max(abs(b.center_xyz_m[1]) for b in existing)
+    used = {(round(b.center_xyz_m[0], 1), round(b.center_xyz_m[1], 1)) for b in existing}
+    slots = [(sx * ax, sy * ay) for sx in (1, -1) for sy in (1, -1)]
+    slots += [(0.0, ay), (0.0, -ay), (ax, 0.0), (-ax, 0.0)]
+    slots = [s for s in slots if (round(s[0], 1), round(s[1], 1)) not in used]
+    palette = ["landmark_green", "landmark_yellow", "landmark_red", "landmark_blue"]
+    used_mats = {b.material_id for b in existing}
+    mats = [m for m in palette if m not in used_mats] + [m for m in palette if m in used_mats]
+    box_template = existing[0]
+    static_template = next(o for o in pack.static_objects if o.kind == "landmark")
+    new_boxes, new_statics = [], []
+    for i in range(min(int(n_extra), len(slots))):
+        x, y = slots[i]
+        mat = mats[i % len(mats)]
+        name = mat if mat not in used_mats else f"{mat}_extra{i}"
+        center = (float(x), float(y), float(box_template.center_xyz_m[2]))
+        new_boxes.append(dataclasses.replace(
+            box_template, object_id=name, material_id=mat, center_xyz_m=center))
+        new_statics.append(dataclasses.replace(
+            static_template, object_id=name, material_id=mat, center_xyz_m=center))
+        used_mats.add(mat)
+    manifest = dataclasses.replace(manifest, landmarks=(*manifest.landmarks, *new_boxes))
+    return dataclasses.replace(
+        pack,
+        static_objects=(*pack.static_objects, *new_statics),
+        manifest=manifest,
+        scene_graph=type(pack.scene_graph)(manifest),
+    )
+
+
 def _hud_world_to_px(x, y, bounds, mx0, my0, mw, mh):
     (xlo, ylo), (xhi, yhi) = bounds
     nx = (float(x) - xlo) / max(xhi - xlo, 1e-8)
@@ -529,10 +606,13 @@ def _draw_minimap(draw, bounds, occ, beacons, trail, robot_xy, robot_yaw, target
     draw.polygon(tri, fill=(255, 255, 255), outline=(10, 10, 10))
 
 
-def _write_hud_video(path: Path, pack: Any, grid: Any, frames: list, fps: float, goal_radius: float, title: str) -> None:
+def _write_hud_video(path: Path, pack: Any, grid: Any, frames: list, fps: float, goal_radius: float, title: str,
+                     goal_insets: list | None = None) -> None:
     """Compose a HUD video: title, follow + robot-eye panels, minimap, status text.
 
     frames is a list of (third_np, ego_np, robot_x, robot_y, robot_yaw).
+    goal_insets: optional [(frame_idx, image_np, beacon_name), ...] — the live
+    servo target image, shown as a bordered inset from frame_idx onwards.
     """
     import imageio
     from PIL import ImageDraw, ImageFont
@@ -554,7 +634,8 @@ def _write_hud_video(path: Path, pack: Any, grid: Any, frames: list, fps: float,
     for obj_id, cell in graph.landmark_cells:
         xy = graph.landmark_xy_for_cell(cell) or graph.cell_center(cell)
         name = str(obj_id)
-        col = (225, 70, 70) if "red" in name else (70, 130, 255) if "blue" in name else (235, 200, 70)
+        col = ((225, 70, 70) if "red" in name else (70, 130, 255) if "blue" in name
+               else (80, 205, 120) if "green" in name else (235, 200, 70))
         beacons.append((np.array([float(xy[0]), float(xy[1])]), col, name))
 
     def _font(sz, bold=False):
@@ -569,11 +650,25 @@ def _write_hud_video(path: Path, pack: Any, grid: Any, frames: list, fps: float,
     out: list = []
     trail: list = []
     claimed: set = set()
-    for (third, ego, rx, ry, yaw) in frames:
+    flash_left, flash_text = 0, ""
+    insets = sorted(goal_insets or [], key=lambda t: t[0])
+    inset_ptr, active_inset = 0, None
+    name_col = {"red": (225, 70, 70), "blue": (70, 130, 255),
+                "green": (80, 205, 120), "yellow": (235, 200, 70)}
+    for fi, (third, ego, rx, ry, yaw) in enumerate(frames):
+        while inset_ptr < len(insets) and insets[inset_ptr][0] <= fi:
+            active_inset = insets[inset_ptr]
+            inset_ptr += 1
         trail.append((rx, ry))
         for bi, (bxy, _c, _n) in enumerate(beacons):
-            if math.hypot(rx - bxy[0], ry - bxy[1]) <= goal_radius * 1.7:
+            # The robot stops at a STANDOFF from the beacon (it never reaches
+            # the beacon center), so the display claim radius must cover
+            # standoff + claim radius or successful claims render as misses.
+            if bi not in claimed and math.hypot(rx - bxy[0], ry - bxy[1]) <= goal_radius * 1.1:
                 claimed.add(bi)
+                flash_left = max(1, int(round(fps * 1.6)))
+                flash_text = (f"{beacons[bi][2].replace('landmark_', '').upper()} BEACON CLAIMED"
+                              f"  ({len(claimed)}/{len(beacons)})")
         unclaimed = [bi for bi in range(len(beacons)) if bi not in claimed]
         target = min(unclaimed, key=lambda bi: math.hypot(rx - beacons[bi][0][0], ry - beacons[bi][0][1])) if unclaimed else None
         canvas = Image.new("RGB", (W, H), (16, 16, 20))
@@ -586,24 +681,49 @@ def _write_hud_video(path: Path, pack: Any, grid: Any, frames: list, fps: float,
         draw.text((456, 346), "Robot-eye (perception)", fill=(195, 195, 200), font=f_lab)
         _draw_minimap(draw, bounds, occ, beacons, trail, (rx, ry), yaw, target, claimed, 456, 372, 300, 106)
         draw.text((766, 372), "Map", fill=(195, 195, 200), font=f_lab)
+        # Per-beacon checklist: coloured chip + name, ticked when claimed.
+        for bi, (_bxy, col, name) in enumerate(beacons):
+            yy = 392 + bi * 17
+            draw.rectangle([766, yy + 3, 776, yy + 13], fill=col)
+            label = name.replace("landmark_", "")
+            if bi in claimed:
+                draw.text((782, yy), f"{label} ✓", fill=(70, 230, 120), font=f_stat)
+            else:
+                draw.text((782, yy), label, fill=(160, 160, 168), font=f_stat)
         tgt_name = beacons[target][2].replace("landmark_", "") if target is not None else "done"
         tgt_d = math.hypot(rx - beacons[target][0][0], ry - beacons[target][0][1]) if target is not None else 0.0
-        draw.text((766, 396), f"claimed {len(claimed)}/{len(beacons)}", fill=(70, 230, 120), font=f_stat)
-        draw.text((766, 416), f"target: {tgt_name}", fill=(220, 220, 110), font=f_stat)
-        draw.text((766, 436), f"dist: {tgt_d:.1f} m", fill=(200, 200, 205), font=f_stat)
+        y0 = 392 + len(beacons) * 17 + 6
+        draw.text((766, y0), f"target: {tgt_name}", fill=(220, 220, 110), font=f_stat)
+        draw.text((766, min(y0 + 18, H - 18)), f"dist: {tgt_d:.1f} m", fill=(200, 200, 205), font=f_stat)
+        if active_inset is not None:
+            _idx, inset_np, inset_name = active_inset
+            short = inset_name.replace("landmark_", "").split("_")[0]
+            col = name_col.get(short, (235, 200, 70))
+            canvas.paste(Image.fromarray(inset_np).resize((124, 124)), (766, 44))
+            draw.rectangle([765, 43, 890, 168], outline=col, width=2)
+            draw.text((766, 172), "Target view (input)", fill=col, font=f_stat)
+        if flash_left > 0:
+            draw.rectangle([12, 44, 428, 460], outline=(70, 230, 120), width=4)
+            draw.rectangle([12, 200, 428, 252], fill=(10, 40, 16), outline=(70, 230, 120), width=2)
+            draw.text((26, 214), flash_text, fill=(70, 230, 120), font=f_title)
+            flash_left -= 1
         out.append(np.asarray(canvas))
     hold = [out[-1]] * max(1, int(round(fps)))
     path.parent.mkdir(parents=True, exist_ok=True)
     imageio.mimwrite(str(path), out + hold, fps=fps, macro_block_size=8)
 
 
-def _render_third_person(build: Any, base_xyz: np.ndarray, yaw: float, size: int = 224) -> np.ndarray:
-    """Render a third-person follow view (behind + above the robot, looking ahead)."""
+def _render_third_person(build: Any, base_xyz: np.ndarray, yaw: float, size: int = 224,
+                         side: float = 0.0) -> np.ndarray:
+    """Render a third-person follow view (behind + above the robot, looking
+    ahead). ``side`` shifts the camera laterally (in robot widths) so demo legs
+    can alternate the follow angle."""
     heading = np.array([math.cos(yaw), math.sin(yaw)], dtype=np.float32)
+    perp = np.array([-heading[1], heading[0]], dtype=np.float32)
     cam_pos = np.array(
-        [float(base_xyz[0]) - heading[0] * 1.7,
-         float(base_xyz[1]) - heading[1] * 1.7,
-         float(base_xyz[2]) + 1.2],
+        [float(base_xyz[0]) - heading[0] * 1.7 + perp[0] * 0.9 * float(side),
+         float(base_xyz[1]) - heading[1] * 1.7 + perp[1] * 0.9 * float(side),
+         float(base_xyz[2]) + 1.2 + 0.25 * abs(float(side))],
         dtype=np.float32,
     )
     lookat = np.array(
@@ -1160,6 +1280,35 @@ def main() -> int:
         "waypoints. Only the per-beacon goal keyframe and claim radius are privileged.",
     )
     parser.add_argument("--demo-scan-thresh", type=float, default=0.02)
+    parser.add_argument(
+        "--demo-commit-margin",
+        type=float,
+        default=0.01,
+        help="Primitive commitment hysteresis for the beacon demo: keep the "
+        "previous primitive while its cost is within this fraction of the "
+        "best (kills near-tie flip-flop stutter; too high locks onto stale "
+        "headings — 0.03 measurably loses legs). 0 disables.",
+    )
+    parser.add_argument(
+        "--demo-extra-beacons",
+        type=int,
+        default=0,
+        help="Demo-only: inject this many extra coloured landmark pillars at "
+        "the scene's unused corner/edge slots (standard landmark palette).",
+    )
+    parser.add_argument(
+        "--demo-clear-obstacles",
+        action="store_true",
+        help="Demo-only: strip free-standing obstacle boxes from the scene "
+        "(walls and landmarks stay) to declutter the stage.",
+    )
+    parser.add_argument(
+        "--demo-max-frames",
+        type=int,
+        default=900,
+        help="Subsample the demo to at most this many frames (time-compresses "
+        "playback; 12 fps shows ~1 control tick per frame at the default).",
+    )
     parser.add_argument("--split", default="test_id")
     parser.add_argument("--family", default=None)
     parser.add_argument("--scene-limit", type=int, default=1)
@@ -1364,6 +1513,10 @@ def main() -> int:
             platform_manifest=platform,
             workspace_root=repo_root,
         )
+        if args.demo_clear_obstacles:
+            pack = _strip_obstacles(pack)
+        if int(args.demo_extra_beacons) > 0:
+            pack = _inject_extra_beacons(pack, int(args.demo_extra_beacons))
         print(
             f"[{scene_index + 1}/{len(scene_dirs)}] scene={pack.scene_id} "
             f"family={pack.family} split={pack.split}",
@@ -1395,6 +1548,7 @@ def main() -> int:
             grid = InflatedOccupancyGrid(pack.scene_graph.manifest, cell_size_m=0.05, inflation_m=0.20)
             if args.demo_video is not None and int(args.demo_beacons) > 1:
                 demo_frames: list = []
+                demo_goal_insets: list = []
                 if args.demo_perception:
                     claimed = _run_perception_multibeacon_demo(
                         model=model,
@@ -1432,8 +1586,16 @@ def main() -> int:
                         grid=grid,
                         frame_sink=demo_frames,
                         runner=runner,
+                        goal_insets=demo_goal_insets,
+                        commit_margin=float(args.demo_commit_margin),
                     )
                 print(f"    [demo] claimed {claimed}/{int(args.demo_beacons)} beacons, frames={len(demo_frames)}", flush=True)
+                playback = 1
+                if len(demo_frames) > int(args.demo_max_frames):
+                    playback = int(math.ceil(len(demo_frames) / int(args.demo_max_frames)))
+                    demo_frames = demo_frames[::playback]
+                    demo_goal_insets = [(idx // playback, img, name)
+                                        for idx, img, name in demo_goal_insets]
                 # Prefer a scene that claims all beacons; otherwise accept the
                 # first substantial traversal (claims >=1 beacon and keeps going).
                 full = claimed >= int(args.demo_beacons)
@@ -1441,11 +1603,14 @@ def main() -> int:
                     mb_title = (
                         "LeWM seq4 | perception servo + scan (no breadcrumbs)"
                         if args.demo_perception
-                        else "LeWM seq4 | image-goal servoing + privileged subgoals (H-JEPA placeholder)"
+                        else "LeWM seq4 | beacon tour: image-goal servo (route subgoals privileged)"
                     )
+                    if playback > 1:
+                        mb_title += f" | {playback}x"
                     _write_hud_video(
                         args.demo_video, pack, grid, demo_frames, float(args.demo_fps),
-                        float(args.goal_radius_m), mb_title,
+                        float(args.goal_radius_m) + float(args.goal_standoff_m), mb_title,
+                        goal_insets=demo_goal_insets,
                     )
                     print(f"[demo] wrote {len(demo_frames)} frames ({claimed}/{int(args.demo_beacons)} claimed) -> {args.demo_video}", flush=True)
                     return 0
