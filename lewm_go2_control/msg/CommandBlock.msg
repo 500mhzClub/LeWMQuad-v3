@@ -15,7 +15,7 @@ bool event_allowed_in_training
 string command_source
 # Privileged label: graph node id of the teacher's current goal cell, or -1
 # if no route teacher was active. Labels-only; never an input to the
-# deployed model (privileged-leak rule, docs/v3_hjepa_plan.md §3.4).
+# deployed model (privileged-leak rule, docs/v3_topological_nav_plan.md §3.4).
 int32 route_target_id
 # Privileged label: graph node id of the next waypoint the teacher was
 # steering toward when emitting this block, or -1 if not applicable.

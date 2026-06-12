@@ -8,3 +8,4 @@ __pycache__/
 .generated/
 go2_bringup_smoke*/
 raw_rollout_smoke*/
+/models/

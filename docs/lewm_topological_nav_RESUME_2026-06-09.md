@@ -1,0 +1,249 @@
+# Topological Nav — RESUME / Handoff (2026-06-09)
+
+Pick-up point for the topological-navigation build (formerly "H-JEPA"). Read this
+first, then the per-stage docs linked at the bottom. Authoritative spec:
+`docs/v3_topological_nav_plan.md`; build sequence:
+`docs/lewm_topological_nav_implementation_plan_2026-06-09.md`.
+
+## TL;DR — where we are
+
+- The architecture is **one flat JEPA (LeWM, frozen) + topological recognition
+  memory + hierarchical planner** (SPTM lineage), NOT an H-JEPA. (Renamed
+  2026-06-09; "H-JEPA" kept only as a deferred research bet, plan §8.)
+- **Stage 0 (planner refactor): DONE + committed** (commit `696f6f4`).
+- **Stage 1 (recognition re-validation + H2 cheap test): DONE.** Decision: build
+  the BeliefEncoder.
+- **Stage 2 (BeliefEncoder): DONE, committed `ca6401f`.** H2 supported — v6:
+  eval R@5 0.637 vs naive 0.593 (+0.0436, 3/3 seeds, R@1 +0.042); the +0.05
+  retrieval gate formally failed by 0.006 on an unsaturated curve; decision
+  (registered before running) moved the call to the Stage 3a consumer gate.
+- **Stage 3a (LoopClosureHead consumer gate): DONE — FAILED on every branch →
+  REASSESS before Stage 3.** The v6 encoder is confirmed the best place code
+  (AP 0.29 vs 0.21, 2–3× recall at every precision, ECE fine) **but absolute
+  pairwise place verification is too weak at every operating point** (belief
+  R=0.23 even at P≥0.50; ~0.02 at the spec's P≥0.99 with a 2.5% base rate);
+  naive sequence aggregation doesn't rescue it. Prime suspect: the
+  heading-dominated latent (any-yaw verification is the broken case). The §5.4
+  memory (global novelty check, merge decisions) is NOT buildable as specified.
+  Registered next probes: (1) yaw-conditioned verification → (cell × yaw-bin)
+  keyframe node design (converges with the goal-facing constraint), (2)
+  action-token + motion-aux BeliefEncoder pass, (3) filter-level (replay
+  coherence) evaluation with a re-registered commit-only pair bar. See
+  `docs/lewm_topological_nav_stage3a_loop_closure_2026-06-09.md`.
+- **Stage 3a reassessment: COMPLETE — STAGE 3 IS GO.** Probe 1: yaw = dominant
+  limiter → (cell × yaw-bin) view-keyframe nodes adopted; v7 yaw-objective =
+  negative (keep v6); pairwise band converged at R≈0.27 @P90. **Probe #3
+  (replay filter test): GATE PASSED 3/3 seeds — cell-coherence 0.962/0.963/
+  0.956 ≥ 0.90** at τ_new=calP95 via `lewm/memory/online_topological_memory.py`
+  replayed on contiguous held-out trajectories. §5.3 pair bar re-registered as
+  commit-only; probe #2 (actions+motion) demoted to optimization. **Next =
+  Stage 3 proper** (wire into the `Memory`/`HierarchicalPlanner` seam →
+  GoalAdapter → ReachabilityHead → Stage 4 end-to-end).
+
+## Environment (READ — non-obvious, will bite on resume)
+
+- **GPU torch:** `~/TinyQuadJEPA/bin/python` (torch 2.10 dev, ROCm 6.3, `cuda
+  True` on the AMD R9700). Use `--device cuda`.
+- The scripts reference `.generated/venvs/genesis_rocm` — **that venv is GONE.**
+  `.generated/venvs/genesis_render_vulkan` exists but is **CPU-only torch**
+  (2.12+cu130, `cuda False`) and is for genesis/vulkan rendering, not GPU compute.
+- `tqdm` was pip-installed into the TinyQuadJEPA venv (the probe scripts need it).
+- The retrieval/belief scripts read **pre-rendered PNGs** + encode through the
+  frozen LeWM — pure torch, **no genesis needed** — so they run in TinyQuadJEPA.
+  Only the closed-loop benchmark needs the vulkan venv + `--apply-textures
+  --backend vulkan`.
+- **Base checkpoint:** `models/checkpoints_textured_v03_full_20260531/sweep_seq4/lewm_seq4_e9.pt` (frozen).
+- **Data roots (defaults in the scripts):** rollout `.generated/datagen_full/rollout`,
+  render `.generated/datagen_full/render_textured_v03`, corpus
+  `.generated/scene_corpus/minimum_tex_20260520T211541Z`. `test_id` = held-out eval split.
+- All Stage-1/2 artifacts live in `.generated/topo_nav/` (gitignored).
+
+## Stage 0 — planner refactor (DONE, committed `696f6f4`)
+
+Benchmark planner extracted into a genesis-free seam under `lewm/`:
+`planning/{primitive_bank,costs,local_mpc,hierarchical_planner}.py`,
+`memory/topological_memory.py` (abstract `Memory` + `KeyframeMemory` baseline).
+`scripts/benchmark_lewm_closed_loop_mpc.py` delegates to it. Behaviour-lock:
+`~/TinyQuadJEPA/bin/python lewm/tests/test_planning_refactor.py` (6/6).
+**`HierarchicalPlanner` + `Memory` is the seam Stage 3 plugs the learned memory into.**
+
+## Stage 1 — recognition re-validation + H2 cheap test (DONE)
+
+Doc: `docs/lewm_topological_nav_stage1_retrieval_2026-06-09.md`. On frozen seq4, 32 eval scenes:
+- Place recognition re-validated: **R@1 0.43, R@5 0.64, lift ~21×, graph-ρ 0.08**
+  (recognition-not-metric confirmed on seq4; 0.42 was not a seq11 artifact).
+- Learned single-frame supcon head: **fails** (adds nothing → lever is history).
+- Naive frozen-history pooling: **+0.014 R@5, fails the recall gate** (cheap
+  shortcut closed).
+- History-disambiguability AUC on aliased pairs: **0.81→0.86** (+0.04–0.055 over
+  single-frame) → signal present & history-separable → **build the BeliefEncoder.**
+
+## Stage 2 — BeliefEncoder (IN PROGRESS)
+
+Doc: `docs/lewm_topological_nav_stage2_belief_encoder_2026-06-09.md`.
+Code: `lewm/models/belief_encoder.py` (small Transformer + attention-pool over H=8
+frozen latents → L2-normalized place embedding; **pure supervised contrastive,
+NO anti-collapse regularizer** — negatives suffice; the repo's SIGReg is for the
+negative-free world-model objective, not a contrastive head).
+Script: `scripts/train_belief_encoder.py`. Tests: `lewm/tests/test_belief_encoder.py` (6/6).
+Gate: beat naive-pooling R@5 (0.593) by +0.05 across 3 seeds, R@1 non-regression.
+
+Run arc (all seq4, scene-disjoint train/eval; naive bar R@5=0.593, single-frame ~0.576):
+
+| run | json (`.generated/topo_nav/`) | config | train R@5 | eval R@5 | Δ naive | note |
+|---|---|---|---:|---:|---:|---|
+| v1 | `belief_encoder_seq4_e9.json` | +VICReg 1.0 | n/a | 0.574 | −0.019 | **confound** (mis-applied VICReg, train_loss stuck 1.05) |
+| v2 | `..._v2.json` | supcon, 32 tr, big | n/a | 0.564 | −0.029 | fits (loss 0.11) but **overfits** cross-scene |
+| v3 | `..._v3_train16.json` | supcon, 127 tr, big | 0.923 | 0.593 | parity | 4× data → naive parity; train≫eval |
+| **v4** | `..._v4_small.json` | **small+reg, 127 tr** | 0.854 | **0.621** | **+0.028** | **capacity was the limiter; beats naive 3/3** |
+| v5 | `..._v5_reg.json` | small+more reg | 0.877 | 0.617 | +0.024 | reg saturated; v4 is the sweet spot |
+| v6 | `..._v6_train32.json` | **small + 2× data** | 0.830 | **0.637** | **+0.0436** | gate failed by 0.006; curve unsaturated; 3/3 seeds; → Stage 3a consumer gate |
+
+**v4 config (the winner):** `--hidden 128 --n-layers 1 --embedding-dim 64
+--dropout 0.3 --weight-decay 3e-3 --epochs 80`. Saved encoders:
+`.generated/topo_nav/belief_encoder_seq4_e9_v4_small_encoders/belief_encoder_seed*.pt`.
+
+**Settled:** H2 supported; the **DINOv2 substrate-fork (§6) is NOT indicated** —
+the encoder already beats the free baseline. Two confounds (VICReg term; then
+over-capacity/under-data) each masqueraded as failure and were removed first.
+
+### How to read v6 when it finishes
+```
+~/TinyQuadJEPA/bin/python - <<'PY'
+import json; d=json.load(open(".generated/topo_nav/belief_encoder_seq4_e9_v6_train32.json"))
+print("eval R@5 across seeds:", d["learned_summary"]["retrieval_at_5_across_seeds"]["mean"])
+print("Δ vs naive R@5:", d["learned_summary"]["mean_recall5_improvement_vs_naive"])
+print("train R@5 (last seed):", d["train_recall_last_seed"]["retrieval_at_5"]["mean"])
+print("gate passed:", d["gate"]["passed"])
+PY
+```
+**Decision tree:**
+- v6 clears naive +0.05 across seeds → **gate passes** → adopt config, go to Stage 3.
+- v6 plateaus ~+0.03–0.04 → H2 still supported (modest, real). Choose: (a) proceed
+  to Stage 3 with the v4/v6 encoder (the topological memory needs recognition, not
+  a record R@5), or (b) one more architecture pass (e.g. mean-pool head, H=12,
+  per-family balancing). **Not** a substrate fork either way.
+
+### Bank caches (reuse to skip the ~17–30 min re-encode)
+- `.generated/topo_nav/belief_banks_seq4_e9_train16.pt` — 127 train + 32 eval. Fast
+  iteration on model/reg: `--bank-cache <that> ...` (skips model load + encode).
+- `.generated/topo_nav/belief_banks_seq4_e9_train32.pt` — being built by v6 (bigger).
+
+Example fast iteration (no re-encode):
+```
+~/TinyQuadJEPA/bin/python scripts/train_belief_encoder.py \
+  --checkpoint models/checkpoints_textured_v03_full_20260531/sweep_seq4/lewm_seq4_e9.pt \
+  --output .generated/topo_nav/belief_encoder_seq4_e9_<tag>.json \
+  --bank-cache .generated/topo_nav/belief_banks_seq4_e9_train16.pt \
+  --hidden 128 --n-layers 1 --embedding-dim 64 --dropout 0.3 --weight-decay 3e-3 --epochs 80 \
+  --device cuda
+```
+
+## Uncommitted work to commit (Stage 2 unit)
+
+New: `lewm/models/belief_encoder.py`, `scripts/train_belief_encoder.py`,
+`lewm/tests/test_belief_encoder.py`,
+`docs/lewm_topological_nav_stage2_belief_encoder_2026-06-09.md`,
+`docs/lewm_topological_nav_stage1_retrieval_2026-06-09.md` (if not already in
+`696f6f4` — it was committed there), this RESUME doc.
+Modified: `docs/lewm_topological_nav_implementation_plan_2026-06-09.md` (Stage-0/1
+marked done, VICReg→SIGReg correction at §5 Stage 2).
+**Excluded as before:** `scripts/build_task_aligned_feature_dataset.py`,
+`pose_aux_watcher.log`, `scripts/train_goal_localization_head.py`,
+`scripts/train_patch_cross_attention_head.py` (prior unrelated work).
+Note: user prefers commits **without** a Co-Authored-By footer.
+
+## Next steps (in order)
+
+1. ~~Read v6; finalize the "## v6 + decision" section of the Stage 2 doc.~~ DONE.
+2. ~~Commit the Stage 2 unit (no co-author footer).~~ DONE.
+3. ~~Stage 3a consumer gate.~~ DONE — **FAILED on every branch** (see TL;DR +
+   Stage 3a doc). Verdict: adopt v6 as the place code, but the §5.4 memory is
+   not buildable on any-yaw pair verification.
+4. **Reassessment probes — pairwise levers EXHAUSTED, decision re-registered:**
+   (1) yaw probe DONE: yaw = dominant limiter (same-yaw AP 0.62–0.64 vs any-yaw
+   0.28, lift uniform across all 8 families incl. mazes) → **(cell × yaw-bin)
+   keyframe nodes adopted as the node design**. v7 yaw-conditioned objective =
+   clean NEGATIVE (≈v6, retire v7; keep v6). Trained head on same-yaw pairs =
+   marginal. **Converged substrate band: same-yaw verification R≈0.13 @P95,
+   R≈0.27 @P90 (deployed point P0.92/R0.22)** — registered 0.3@P95 bar NOT met
+   by any pairwise lever (yaw scope / yaw objective / head / aggregation).
+   **RE-REGISTERED (rationale in Stage 3a doc): probe #3 BEFORE probe #2** —
+   the deployed §5.4 filter aggregates per-step likelihoods under a transition
+   prior; at P0.90/R0.27 per step, sequence evidence plausibly reaches the
+   §5.5 coherence gate, and that is the actual Stage 3 question.
+5. ~~Probe #3, offline replay filter test~~ **DONE — GATE PASSED, Stage 3 is
+   GO.** `lewm/memory/online_topological_memory.py` (view-keyframe nodes, §5.4
+   top-k Bayes filter + uniform leak, novelty-streak commit) replayed over
+   contiguous held-out trajectories (32 scenes × ≤400 steps): **cell-coherence
+   0.962/0.963/0.956 (3/3 belief seeds) ≥ 0.90** at τ_new = calP95 (≈0.88
+   calibrated); worst scene 0.87. False-merge 0.205 / fragmentation 4.09 at
+   that point (strict end is correct per §5.5). §5.3 single-pair 99% bar
+   re-registered as commit-only; probe #2 (actions+motion) demoted to
+   optimization. Key insight: the pairwise band (R0.27@P90) was never the
+   right summary — calibration + novelty-streak + running-mean nodes carry it
+   (transition prior itself adds only ~+0.01). Artifacts:
+   `topo_filter_replay_seq4_e9_v6*.json`, `traj_banks_yaw_eval.pt`.
+6. ~~Stage 3 wiring~~ **DONE** (doc:
+   `docs/lewm_topological_nav_stage3_wiring_2026-06-09.md`). GoalAdapter gate
+   FAILED decisively → **Level-1 goal matching = raw-frame cosine** vs node
+   representative observations (belief space no better at view matching:
+   oracle view-R@1 0.297 ≈ raw 0.301; third "simple frozen channel beats the
+   learned head" instance). `lewm/memory/topological_navigator.py` wires
+   window→v6→filter→keyframes→raw-frame goal match→BFS routing into the
+   `Memory`/`HierarchicalPlanner` seam. No learned ReachabilityHead (A3 +
+   principle #4: BFS over memory edges). **Offline routing probe: goal-match
+   0.879, plannable 1.0, BUT the literal BFS hop lands in the same place
+   cluster (progress@k1 0.22); lookahead k=8 → progress 0.744 @ locality 1.3
+   cells (priv. ceiling 0.912); gate 2/3 (margin vs random-local +0.19 <
+   +0.25, recorded honestly as NOT passed).** Remaining headroom is ONE rule
+   (cluster skip); candidates logged in the doc.
+7. ~~Stage 4a first closed-loop run~~ **DONE 2026-06-10** (doc:
+   `docs/lewm_topological_nav_stage4a_e2e_2026-06-10.md`; harness
+   `scripts/benchmark_topo_nav_e2e.py`, vulkan venv). **Works live:** memory
+   built online, goal image matched 0.989 (cell-correct), Level-1 subgoals
+   reduce true distance 0.91–1.0 live. Seven integration fixes landed
+   (teleport tour, budget trap, subgoal commitment, §6.2 filter-reached,
+   kinematic veto, scan-then-servo, density-calibrated lookahead).
+   **BLOCKER FOUND (the real result): Level-3 `plan_cost` is FLAT between
+   same-corridor views ~0.5–1.5 m apart** (distance concentration) — beacon
+   servoing (0.92) was the salient-object regime; bare-corridor subgoal
+   keyframes give no gradient → hold/yaw attractor. The fix is the spec's own
+   unimplemented §5.4 mechanism: **`MemoryEdge.action_summary`** — SPTM-style
+   align-to-node-view → replay edge action → re-localize; `plan_cost` only
+   for the final salient hop.
+8. ~~Stage 4b traversal~~ **DONE 2026-06-10 — FIRST END-TO-END SUCCESS** (doc:
+   `docs/lewm_topological_nav_stage4b_traversal_2026-06-10.md`). Align→walk
+   traversal over penalized-direction graph routing: held-out maze, goal image
+   only, **4.00 m / 5 hops → final 0.36 m with perceptual §6.4 stop** (v2
+   baseline: 3.99 m, never moves). Three measured fixes: weighted-Dijkstra
+   routing (reversed edges 3× cost, multi-candidate goal nodes), path-set
+   arrival, and the decisive one — **freeze the belief window during ALIGN**
+   (scan rotations poison the H=8 locomotion-distribution window; feed the
+   filter only while walking). Node-arrival confirmation turned out optional:
+   replan-when-lost carries Level 2.
+9. **NEXT — the Stage 4 gate:** ≥8 scenes × 2 goals, non-visible goals,
+   baselines 0/1/2 (§9.4), per-level diagnostics (§9.3); then exploration mode
+   (§6.2 frontier) to retire the privileged tour; then the out-of-family
+   transfer probe.
+5. **Stage 3** (`v3_topological_nav_plan.md` §5–6, plan §5 Stage 3): wire the
+   BeliefEncoder into the `Memory`/`HierarchicalPlanner` seam — online node
+   commitment with **goal-facing** `representative_observation` (hard constraint
+   from the Stage-1/nav findings), calibrated `LoopClosureHead`, top-k Bayes
+   filter; then recognition-based `ReachabilityHead` (6 buckets, false-loop
+   negatives) and the 3-level planner (Level 3 = seq4 + `plan_cost` LocalMPC,
+   already built in Stage 0). GoalAdapter maps a goal image into belief space
+   (goal-facing keyframes).
+
+
+## Detailed docs
+- Spec: `docs/v3_topological_nav_plan.md`
+- Build plan: `docs/lewm_topological_nav_implementation_plan_2026-06-09.md`
+- Stage 1: `docs/lewm_topological_nav_stage1_retrieval_2026-06-09.md`
+- Stage 2: `docs/lewm_topological_nav_stage2_belief_encoder_2026-06-09.md`
+- Stage 3a: `docs/lewm_topological_nav_stage3a_loop_closure_2026-06-09.md`
+- Stage 3 wiring: `docs/lewm_topological_nav_stage3_wiring_2026-06-09.md`
+- Stage 4a: `docs/lewm_topological_nav_stage4a_e2e_2026-06-10.md`
+- Stage 4b: `docs/lewm_topological_nav_stage4b_traversal_2026-06-10.md`
+- Nav-base synthesis (why seq4 + plan_cost): `docs/lewm_nav_base_synthesis_2026-06-09.md`
+- Memory index: `MEMORY.md` → "Topological-nav" entries.

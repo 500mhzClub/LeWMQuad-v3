@@ -1,8 +1,27 @@
-# H-JEPA / v3 Plan — Simulator- and Robot-Agnostic Specification
+# v3 Topological Neural Navigation Plan — Simulator- and Robot-Agnostic Specification
+
+> **Terminology note (2026-06-09, renamed from `v3_hjepa_plan.md`).** Despite the
+> historical "H-JEPA" name, this architecture is **not** an H-JEPA in the
+> LeCun sense (a *hierarchy of JEPA predictors* at multiple abstraction/timescale
+> levels, planning by prediction at the top). It uses **one flat JEPA predictor**
+> (LeWM, for local dynamics) beneath a **topological recognition memory** (a
+> discrete graph of recognized places with counted edges) and a **hierarchical
+> planner** (graph routing → sub-goal → local MPC). The hierarchy lives in
+> *planning and memory, not in prediction* — this is the SPTM / Neural
+> Topological SLAM lineage (Savinov et al. 2018; Chaplot et al.), not LeCun-style
+> hierarchical predictive abstraction. The symbolic graph is a deliberate,
+> evidence-driven choice: the substrate is **recognition-not-metric** (latent↔graph
+> ρ≈0.03), so a *learned* high-level predictor would likely inherit the same
+> flat-cost problem, whereas BFS over a discrete recognition graph is plannable by
+> construction. A *true* H-JEPA (a learned high-level predictor over place
+> embeddings) is retained only as a **deferred research direction**, baselined
+> against this symbolic graph — see the implementation plan
+> (`lewm_topological_nav_implementation_plan_2026-06-09.md` §8).
 
 ## Purpose of this document
 
-This is a self-contained specification of the v3 / Hierarchical-JEPA plan, written to be portable across simulators and robot embodiments. It assumes:
+This is a self-contained specification of the v3 topological-neural-navigation
+plan, written to be portable across simulators and robot embodiments. It assumes:
 
 - A vision-based agent operating in a procedurally generated environment containing a navigable graph of locations (rooms, cells, waypoints, etc.) connected by traversable edges (corridors, free space, etc.).
 - An action representation that can be discretised into fixed-length **action blocks** (a contiguous chunk of `K` low-level commands treated as one decision unit). The block size is a hyperparameter, not a structural commitment.
