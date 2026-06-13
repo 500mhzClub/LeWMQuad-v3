@@ -102,18 +102,33 @@ Running ego-depth with `--seek-escape-no-backward --seek-edge-veto-streak 6
 0.09 → 4.0 m, escapes 128 → 64; a 500-block budget then reached 0.78 m with goal
 cosine 0.95 and a perceptual stop.
 
-## Remaining: 0.13 m to the success radius
+## Remaining: 0.13 m to the success radius (perceptual-stop TIMING, not obstacles)
 
-The perceptual stop fires at ~0.78 m = the goal-image standoff (`goal_standoff_m`
-0.72 m, where the goal image is rendered) and the depth model sees the physical
-beacon as an obstacle, so the robot stops safely short of it — arguably *more*
-correct than the privileged grid (which has no beacon obstacle and walks in to
-0.19 m). To pass the 0.65 m radius, the final approach must close the last
-~0.13 m past the recognised standoff without overshooting (cf. the v26 overshoot
-to 1.05 m). Candidate: relax local-obstacle clearance specifically against the
-*matched goal object* during the final servo, or render the goal image at a
-tighter standoff. This is a goal-approach-stop detail, separate from the maze
-navigation that now works.
+The perceptual stop fires at ~0.78 m. The first hypothesis — the depth model
+sees the physical beacon as an obstacle and the strict veto halts the final
+`forward_slow` approach — was **tested and refuted**: a flag that ignored the
+local-obstacle veto during the armed final approach
+(`--seek-goal-approach-ignore-obstacles`) produced a **byte-identical 0.78 m**
+result, so `forward_slow` was already feasible (the beacon was *not* vetoing).
+That flag was reverted.
+
+The real cause is arrival-arming **timing**. For this *unaliased* goal the
+arrival gate (`run_scene`, ~L1361) counts an ALIGN-scan hit at
+`cosine >= tau_arrive_scan` (0.95) as evidence. The goal cosine peaks at 0.95
+while the robot is *scanning* at an intermediate node (idx 6/9), so arrival arms
+mid-sweep — after the robot has rotated past the goal-facing yaw — and the
+bounded `forward_slow` completion then runs on a heading that is **not pointed at
+the goal**, so it does not close the gap. The privileged v43 armed during a
+goal-facing *walk* at the final node, so its approach went straight in to 0.19 m.
+
+Fix is a stop-timing change with regression risk to the verified v43 walk-arrival
+(so it must be flag-gated + validated against the privileged path): re-acquire
+the goal bearing before the final servo (turn to peak cosine, then approach), or
+restrict unaliased ALIGN-scan arming to at/near the final node so the robot
+reaches the goal place before arming. (Earlier ideas — relaxing goal-object
+clearance, or rendering the goal image at a tighter standoff — are not the lever,
+since the approach is not obstacle-limited.) This is a goal-approach-stop detail,
+separate from the maze navigation that now works.
 
 ## Tooling added this pass (reusable)
 
