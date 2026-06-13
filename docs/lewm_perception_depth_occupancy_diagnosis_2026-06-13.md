@@ -102,33 +102,41 @@ Running ego-depth with `--seek-escape-no-backward --seek-edge-veto-streak 6
 0.09 → 4.0 m, escapes 128 → 64; a 500-block budget then reached 0.78 m with goal
 cosine 0.95 and a perceptual stop.
 
-## Remaining: 0.13 m to the success radius (perceptual-stop TIMING, not obstacles)
+## Remaining: 0.13 m to the success radius (needs a goal-object visual servo)
 
-The perceptual stop fires at ~0.78 m. The first hypothesis — the depth model
-sees the physical beacon as an obstacle and the strict veto halts the final
-`forward_slow` approach — was **tested and refuted**: a flag that ignored the
-local-obstacle veto during the armed final approach
-(`--seek-goal-approach-ignore-obstacles`) produced a **byte-identical 0.78 m**
-result, so `forward_slow` was already feasible (the beacon was *not* vetoing).
-That flag was reverted.
+Pinned by instrumenting the two perceptual-stop sites. The stop is:
+`ARMED at_final=False mode=walk cos=0.843 d=1.16` →
+`STOP armed approach_extra=6 fwd_feas=1.00 cos=0.951 d=0.78`. So arrival arms
+during a **walk** at an intermediate node 1.16 m out (the moment cosine crosses
+the 0.84 floor), and the robot stops purely because the **6-block `forward_slow`
+budget is exhausted** — forward is fully feasible (1.00) and cosine is still
+climbing (0.843→0.951). v43 reaches 0.19 m with the same 6-block cap only because
+it arms ~0.4 m closer.
 
-The real cause is arrival-arming **timing**. For this *unaliased* goal the
-arrival gate (`run_scene`, ~L1361) counts an ALIGN-scan hit at
-`cosine >= tau_arrive_scan` (0.95) as evidence. The goal cosine peaks at 0.95
-while the robot is *scanning* at an intermediate node (idx 6/9), so arrival arms
-mid-sweep — after the robot has rotated past the goal-facing yaw — and the
-bounded `forward_slow` completion then runs on a heading that is **not pointed at
-the goal**, so it does not close the gap. The privileged v43 armed during a
-goal-facing *walk* at the final node, so its approach went straight in to 0.19 m.
+Three hypotheses were tested and **refuted** by instrumentation, each reverted:
 
-Fix is a stop-timing change with regression risk to the verified v43 walk-arrival
-(so it must be flag-gated + validated against the privileged path): re-acquire
-the goal bearing before the final servo (turn to peak cosine, then approach), or
-restrict unaliased ALIGN-scan arming to at/near the final node so the robot
-reaches the goal place before arming. (Earlier ideas — relaxing goal-object
-clearance, or rendering the goal image at a tighter standoff — are not the lever,
-since the approach is not obstacle-limited.) This is a goal-approach-stop detail,
-separate from the maze navigation that now works.
+1. *Beacon-as-obstacle veto.* `--seek-goal-approach-ignore-obstacles` gave a
+   byte-identical 0.78 m — `forward_slow` was already feasible.
+2. *Armed on the wrong heading (re-acquire the goal bearing).* Tracking the yaw
+   at peak cosine and turning to it before the approach also gave an identical
+   0.78 m — at the 6-block stop the robot is *already* facing its best view.
+3. *Just raise the approach budget.* `--seek-goal-approach-blocks 14` made it
+   **worse** (1.08 m), and cosine *fell* 0.843→0.665 during the longer approach.
+
+(3) is the key tell: the final approach walks a **straight bearing** that only
+grazes the goal viewpoint at ~0.78 m (the `goal_standoff_m` 0.72 m where cosine
+peaks); continuing straight overshoots *past* the goal and diverges. The goal
+beacon is not dead ahead, so no straight-line `forward_slow` budget reaches
+0.65 m — the robot would walk past it. 0.78 m is therefore near-optimal for the
+current straight-line completion.
+
+Closing the last 0.13 m needs a **goal-object visual servo**: once arrival is
+armed, continuously steer to keep the beacon centred (RGB/colour centroid) and
+approach until the goal object fills the view / the capsule veto stops at it,
+rather than committing to one bearing. That is real new control logic (not a
+parameter), and it touches the completion path shared with the verified v43
+walk-arrival, so it must be flag-gated and validated against the privileged grid.
+This is a goal-approach detail; the maze navigation itself now works.
 
 ## Tooling added this pass (reusable)
 
