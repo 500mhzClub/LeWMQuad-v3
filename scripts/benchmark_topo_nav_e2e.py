@@ -378,6 +378,29 @@ def _colour_match(goal_sig, cur_sig, *, tol: float = 0.30,
     return float((goal_rgb - cur_rgb).abs().sum()) <= tol
 
 
+def _goal_colour_centroid_x(image_chw: torch.Tensor, goal_rgb: torch.Tensor,
+                            *, tol: float = 0.30):
+    """Horizontal position of the goal-coloured pixels in [-1, 1] (left..right)
+    and their full-frame fraction. Drives the goal-object visual servo: a beacon
+    centroid > 0 is to the robot's right (yaw right to centre it). Full frame, not
+    the centre crop, so the servo can re-acquire a beacon drifting toward an edge.
+    Returns (fraction, None) when no goal-coloured pixels are visible."""
+    arr = image_chw.detach().float()
+    h, w = arr.shape[-2], arr.shape[-1]
+    mx, _ = arr.max(dim=0)
+    mn, _ = arr.min(dim=0)
+    sat = ((mx - mn) > 0.25) & (mx > 0.25)
+    norm = arr / arr.sum(dim=0).clamp_min(1e-6)
+    hue_close = (norm - goal_rgb.view(3, 1, 1)).abs().sum(dim=0) <= float(tol)
+    mask = sat & hue_close
+    frac = float(mask.float().mean())
+    if frac < 1e-4:
+        return frac, None
+    cols = torch.arange(w, dtype=torch.float32).view(1, w).expand(h, w)
+    centroid_col = float(cols[mask].mean())
+    return frac, (centroid_col / max(w - 1, 1)) * 2.0 - 1.0
+
+
 def _saturation_score(image_chw: torch.Tensor) -> float:
     """Fraction of pixels that are strongly coloured (saturated + bright) — in
     these scenes that is essentially 'a coloured landmark fills part of the
@@ -1408,13 +1431,39 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
 
                 completion_primitive = None
                 if arrival_armed:
-                    if (approach_extra >= 6
-                            or _feasible_fraction(build, registry, "forward_slow", local_obstacles,
-                                                  args.command_dt_s, **veto_servo_kw) < 0.7):
+                    _fwd_feas = _feasible_fraction(build, registry, "forward_slow", local_obstacles,
+                                                   args.command_dt_s, **veto_servo_kw)
+                    if getattr(args, "seek_goal_visual_servo", False) and goal_colour_sig[1] is not None:
+                        # Goal-object visual servo. The straight-line completion
+                        # only grazes the standoff viewpoint (the beacon is not
+                        # dead ahead when arrival arms mid-route), so it stalls
+                        # ~0.13 m short. Steer to keep the beacon centred (RGB
+                        # centroid) and approach until the goal object fills the
+                        # view or the capsule veto stops at it. Yaw blocks do not
+                        # spend the forward budget. Off by default = verified
+                        # privileged-grid straight-line completion.
+                        g_frac, g_x = _goal_colour_centroid_x(image, goal_colour_sig[1])
+                        if approach_extra >= 24 or _fwd_feas < 0.7 or g_frac >= 0.45:
+                            stopped_perceptually = True
+                            break
+                        if g_x is not None and abs(g_x) > 0.12:
+                            primitive = "yaw_right" if g_x > 0 else "yaw_left"
+                            beh["head_corr"] += 1
+                            if runner is not None:
+                                _execute_physical_primitive(runner, registry, primitive)
+                            else:
+                                _execute_kinematic_primitive(build, registry, primitive,
+                                                             command_dt_s=args.command_dt_s, grid=route_grid)
+                            primitive_counts[primitive] = primitive_counts.get(primitive, 0) + 1
+                            continue
+                        completion_primitive = "forward_slow"
+                        approach_extra += 1
+                    elif approach_extra >= 6 or _fwd_feas < 0.7:
                         stopped_perceptually = True
                         break
-                    completion_primitive = "forward_slow"
-                    approach_extra += 1
+                    else:
+                        completion_primitive = "forward_slow"
+                        approach_extra += 1
 
                 if completion_primitive is not None:
                     primitive = completion_primitive
@@ -2124,6 +2173,13 @@ def main() -> int:
                         help="drop 'backward' from the walk veto-escape set so the robot "
                              "re-centers by turning instead of retreating down the corridor "
                              "(off by default = verified privileged-grid behaviour)")
+    parser.add_argument("--seek-goal-visual-servo", action="store_true",
+                        help="on perceptual arrival, steer to keep the goal beacon centred "
+                             "(RGB colour centroid) and approach until it fills the view or "
+                             "the capsule veto stops at it, instead of a straight-line "
+                             "forward_slow that only grazes the standoff viewpoint. Closes "
+                             "the goal approach for a perception obstacle source; off by "
+                             "default = verified straight-line completion.")
     parser.add_argument("--goal-min-hops", type=int, default=3)
     parser.add_argument("--goal-max-hops", type=int, default=5)
     parser.add_argument("--goal-mode", choices=("random", "colourful", "beacons"), default="random",

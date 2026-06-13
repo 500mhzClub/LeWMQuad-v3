@@ -13,18 +13,14 @@ Harness: `scripts/benchmark_topo_nav_e2e.py` (vulkan venv). Reproduce a run with
 `--local-obstacle-source ego-depth` added to the v43 command (see the wide-maze
 demo doc), `--mode physical`. Logs in `.generated/topo_nav/perceptual_path_logs/`.
 
-## Status: ego-depth now drives the full maze, recognises the goal, and stops
+## Status: SOLVED — ego-depth fully completes the maze (success_eval pass)
 
-Three occupancy fixes plus a flag-gated controller-recovery mode took ego-depth
-from "stuck at the start" to **traversing the entire 7-hop held-out maze on goal
-image alone, recognising the goal (cosine 0.95), and firing a perceptual stop at
-0.78 m**. It misses the 0.65 m `success_eval` radius by 0.13 m — the perceptual
-stop fires at the goal-image *standoff* (`goal_standoff_m` 0.72 m), where the
-goal image was rendered, and the depth model also (correctly) sees the physical
-beacon as an obstacle and stops safely short of it. The hard problem — navigate
-a held-out maze with a perception-backed obstacle source, recognise the goal,
-stop — is solved; the residual 0.13 m is a standoff-vs-radius / goal-object
-clearance detail, not a navigation or recognition failure.
+Three occupancy fixes, a flag-gated controller-recovery mode, and a goal-object
+visual servo took ego-depth from "stuck at the start" to a **full
+`success_eval` pass on the held-out v43 maze, on goal image alone, with no
+privileged scene geometry**: 8 subgoals, goal recognised (cosine 0.99),
+**perceptual stop correct at 0.28 m** (inside the 0.65 m radius), zero falls. The
+matching privileged-grid run (no flags) is unaffected (re-confirmed at 0.19 m).
 
 | run | obstacle source | final m | progress m | subgoals | goal cos | stop | escapes |
 |-----|-----------------|--------:|-----------:|---------:|---------:|:----:|--------:|
@@ -34,7 +30,8 @@ clearance detail, not a navigation or recognition failure.
 | + inflation 0.10 | ego-depth, 300 blk | 5.26 | +0.15 | 1 | — | no | 140 |
 | + free-clears-occupied | ego-depth, 300 blk | 5.33 | +0.09 | 2 | — | no | 128 |
 | + controller recovery | ego-depth, 300 blk | 1.42 | +4.0 | 8 | 0.57 | no | 64 |
-| + 500-block budget | ego-depth, 500 blk | **0.78** | +4.63 | 8 | **0.95** | **yes** | — |
+| + 500-block budget | ego-depth, 500 blk | 0.78 | +4.63 | 8 | 0.95 | yes | — |
+| + goal visual servo | ego-depth, 500 blk | **0.28** | +4.97 | 8 | **0.99** | **correct** | — |
 
 (Kinematic mode is **not** a valid testbed: its walk controller is
 `forward-or-yaw_right` with no heading hold and fails this maze even with the
@@ -102,7 +99,7 @@ Running ego-depth with `--seek-escape-no-backward --seek-edge-veto-streak 6
 0.09 → 4.0 m, escapes 128 → 64; a 500-block budget then reached 0.78 m with goal
 cosine 0.95 and a perceptual stop.
 
-## Remaining: 0.13 m to the success radius (needs a goal-object visual servo)
+## The final 0.13 m: diagnosed, then SOLVED by a goal-object visual servo
 
 Pinned by instrumenting the two perceptual-stop sites. The stop is:
 `ARMED at_final=False mode=walk cos=0.843 d=1.16` →
@@ -130,13 +127,21 @@ beacon is not dead ahead, so no straight-line `forward_slow` budget reaches
 0.65 m — the robot would walk past it. 0.78 m is therefore near-optimal for the
 current straight-line completion.
 
-Closing the last 0.13 m needs a **goal-object visual servo**: once arrival is
-armed, continuously steer to keep the beacon centred (RGB/colour centroid) and
-approach until the goal object fills the view / the capsule veto stops at it,
-rather than committing to one bearing. That is real new control logic (not a
-parameter), and it touches the completion path shared with the verified v43
-walk-arrival, so it must be flag-gated and validated against the privileged grid.
-This is a goal-approach detail; the maze navigation itself now works.
+### Fix (SOLVED): goal-object visual servo
+
+`--seek-goal-visual-servo` (flag-gated, off by default). Once arrival is armed,
+instead of a straight `forward_slow`, the robot steers to keep the goal beacon
+centred — `_goal_colour_centroid_x` gives the goal-colour horizontal centroid in
+[-1, 1]; a centroid right of centre yaws right — and only advances when the
+beacon is centred (|x| ≤ 0.12). It stops when the goal object fills the view
+(colour fraction ≥ 0.45), the capsule veto stops at it (`forward_slow` < 0.7), or
+a 24-block cap. Yaw blocks do not spend the forward budget.
+
+Result: ego-depth final **0.28 m, success_eval=True, perceptual_stop_correct,
+cosine 0.99, 0 falls** — first full ego-depth `success_eval` pass. The default
+(servo off) completion path is logically identical to the prior committed
+milestone; the privileged-grid v43 run (no flags) is re-confirmed unaffected at
+0.19 m. The maze navigation and the goal approach now both work on perception.
 
 ## Tooling added this pass (reusable)
 
@@ -150,3 +155,16 @@ This is a goal-approach detail; the maze navigation itself now works.
 - `DepthLocalObstacleModel.diagnostics()` now reports `is_free` rejection tallies
   (`reject_occupied`, `reject_unknown`, `hit_robot_footprint`, `hit_free_cell`)
   and an opt-in per-point `debug_capture` (default off) used by the probe.
+
+## Reproduce the ego-depth success
+
+`.generated/venvs/genesis_render_vulkan/bin/python scripts/benchmark_topo_nav_e2e.py`
+with the v43 scene/goal config plus:
+`--local-obstacle-source ego-depth --depth-obstacle-inflation-m 0.10
+--seek-edge-veto-streak 6 --seek-edge-realign-cap 5 --seek-escape-no-backward
+--seek-goal-visual-servo --seek-max-blocks 500`
+(artifact `.generated/topo_nav/ego_depth_v43maze_servo.json`: final 0.28 m,
+success_eval, perceptual_stop_correct, cosine 0.99, 0 falls). All flags default
+off/conservative, so the privileged-grid path is unchanged. Obstacle source stays
+deployment-invalid (sim depth + sim pose); this is a navigation-capability
+result, not a deployment claim — see the runtime-contract doc.
