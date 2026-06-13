@@ -40,6 +40,14 @@ class MemoryNode:
     embedding: torch.Tensor          # (D,) L2-normalized running mean
     n_members: int = 1
     member_labels: list = field(default_factory=list)  # eval-only bookkeeping
+    in_filter: bool = True           # False = terminal spur (goal/routing only):
+                                     # excluded from novelty, likelihood,
+                                     # prediction and the posterior — a spur's
+                                     # stationary-window embedding is out of the
+                                     # locomotion distribution the scorer was
+                                     # calibrated on and siphons posterior mass
+                                     # (wide-maze v18-v21: ~1 subgoal arrival
+                                     # per 700 blocks with spurs in-filter)
 
 
 class OnlineTopologicalMemory:
@@ -66,6 +74,13 @@ class OnlineTopologicalMemory:
 
         self.nodes: list[MemoryNode] = []
         self.edges: dict[tuple[int, int], int] = {}
+        # Frozen = localization-only: no node commits, no edge minting, no
+        # embedding updates. Set during goal-seeking on a completed map —
+        # mid-seek commits are posterior BLACK HOLES: commit resets the
+        # posterior to {new:1.0} and the running mean absorbs every following
+        # frame (wide-maze v24 trace: MAP locked on a fresh node at p*=1.00
+        # for 100+ blocks while the robot paced a 0.6 m box).
+        self.frozen = False
         self.posterior: dict[int, float] = {}
         self._novelty_streak = 0
         self._novelty_buffer: list[torch.Tensor] = []
@@ -103,6 +118,8 @@ class OnlineTopologicalMemory:
         predicted: dict[int, float] = {}
         outgoing: dict[int, list[tuple[int, int]]] = {}
         for (src, dst), count in self.edges.items():
+            if not self.nodes[dst].in_filter:
+                continue
             outgoing.setdefault(src, []).append((dst, count))
         keep = 1.0 - self.uniform_leak
         for node_id, weight in self.posterior.items():
@@ -113,8 +130,9 @@ class OnlineTopologicalMemory:
             for dst, count in neighbors:
                 move = keep * weight * (1.0 - self.self_stay_prob) * count / total
                 predicted[dst] = predicted.get(dst, 0.0) + move
-        leak_each = self.uniform_leak / len(self.nodes)
-        for node in self.nodes:
+        filter_nodes = [n for n in self.nodes if n.in_filter]
+        leak_each = self.uniform_leak / max(len(filter_nodes), 1)
+        for node in filter_nodes:
             predicted[node.node_id] = predicted.get(node.node_id, 0.0) + leak_each
         return predicted
 
@@ -123,16 +141,22 @@ class OnlineTopologicalMemory:
     @torch.no_grad()
     def update(self, embedding: torch.Tensor, label=None) -> int | None:
         """One filter step. Returns the MAP node id (None during cold start)."""
-        if self.nodes:
+        filter_ids = [n.node_id for n in self.nodes if n.in_filter]
+        if filter_ids:
             likelihoods = self.scorer(embedding, self._node_matrix()).clamp(
                 self.likelihood_floor, 1.0 - self.likelihood_floor
             )
-            global_max = float(likelihoods.max())
+            global_max = float(likelihoods[filter_ids].max())
         else:
             likelihoods, global_max = None, 0.0
 
-        # Global novelty check (over ALL nodes, not the top-k).
-        if global_max < self.tau_new:
+        # Frozen maps localize only. Do not retain a seek-time novelty buffer:
+        # unfreezing later must not immediately commit an average of stale,
+        # out-of-map observations.
+        if self.frozen:
+            self._novelty_streak = 0
+            self._novelty_buffer = []
+        elif global_max < self.tau_new:
             self._novelty_streak += 1
             self._novelty_buffer.append(embedding)
             if self._novelty_streak >= self.new_node_streak:
@@ -141,15 +165,15 @@ class OnlineTopologicalMemory:
             self._novelty_streak = 0
             self._novelty_buffer = []
 
-        if not self.nodes:
+        if not filter_ids:
             return None
 
         predicted = self._predict() if self.posterior else {
-            n.node_id: 1.0 / len(self.nodes) for n in self.nodes
+            nid: 1.0 / len(filter_ids) for nid in filter_ids
         }
         updated = {nid: w * float(likelihoods[nid]) for nid, w in predicted.items() if w > 0}
         if not updated or sum(updated.values()) <= 0:
-            updated = {nid: float(likelihoods[nid]) for nid in range(len(self.nodes))}
+            updated = {nid: float(likelihoods[nid]) for nid in filter_ids}
         ranked = sorted(updated.items(), key=lambda kv: kv[1], reverse=True)[: self.top_k]
         total = sum(w for _, w in ranked)
         self.posterior = {nid: w / total for nid, w in ranked}
@@ -157,15 +181,16 @@ class OnlineTopologicalMemory:
         map_node = max(self.posterior.items(), key=lambda kv: kv[1])[0]
         # Edge counting between consecutive MAP nodes (posterior-weighted
         # contribution simplified to the MAP transition; adequate for replay).
-        if self._previous_map is not None and self._previous_map != map_node:
+        if (self._previous_map is not None and self._previous_map != map_node
+                and not self.frozen):
             key = (self._previous_map, map_node)
             self.edges[key] = self.edges.get(key, 0) + 1
         self._previous_map = map_node
 
         node = self.nodes[map_node]
-        if label is not None:
+        if label is not None and not self.frozen:
             node.member_labels.append(label)
-        if self.update_node_embedding and global_max >= self.tau_new:
+        if self.update_node_embedding and global_max >= self.tau_new and not self.frozen:
             mean = node.embedding * node.n_members + embedding
             node.n_members += 1
             node.embedding = F.normalize(mean / node.n_members, dim=-1)

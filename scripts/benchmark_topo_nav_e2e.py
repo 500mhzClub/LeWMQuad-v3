@@ -12,6 +12,11 @@ localization -> raw-frame goal match -> BFS + lookahead sub-goal -> LocalMPC
 servoing on the sub-goal's stored representative observation -> perceptual
 arrival. Ground-truth distance is logged for EVALUATION only.
 
+Runtime collision avoidance consumes a ``LocalObstacleModel``. The default
+benchmark adapter is an explicitly deployment-invalid privileged manifest grid;
+inject a provider backed by accepted onboard sensing/odometry and pass
+``--require-deployment-valid-local-obstacles`` for a deployable-nav claim.
+
 Goal-image convention (the registered goal-facing constraint): the goal is
 rendered at the goal cell center facing the heading the tour used when passing
 through that cell — i.e. "a photo taken the way the place was seen", matching
@@ -60,6 +65,7 @@ from benchmark_lewm_closed_loop_mpc import (  # noqa: E402  (reuses env guards)
     _execute_kinematic_primitive,
     _parse_csv,
     _primitive_active_blocks,
+    _quat_xyzw_from_wxyz,
     _quat_wxyz_from_yaw,
     _render_tensor_from_base,
     _render_third_person,
@@ -70,12 +76,29 @@ from benchmark_lewm_closed_loop_mpc import (  # noqa: E402  (reuses env guards)
 from lewm.memory.topological_navigator import TopologicalNavigator  # noqa: E402
 from lewm.models.belief_encoder import BeliefEncoder  # noqa: E402
 from lewm.models.loop_closure import LoopClosureHead  # noqa: E402
+from lewm.planning.depth_local_obstacles import (  # noqa: E402
+    DepthLocalObstacleConfig,
+    DepthLocalObstacleModel,
+)
+from lewm.planning.local_obstacles import (  # noqa: E402
+    PrivilegedGridObstacleModel,
+    require_deployment_valid_local_obstacles,
+)
 from benchmark_lewm_closed_loop_mpc import _execute_physical_primitive  # noqa: E402
 from lewm_genesis.lewm_contract import PrimitiveRegistry, SafetyLimits, expand_primitive_to_block  # noqa: E402
 from lewm_genesis.rollout import GenesisGo2PPOPolicy, RolloutConfig, RolloutRunner  # noqa: E402
 from lewm_genesis.collectors.base import wrap_angle_pi  # noqa: E402
+from lewm_genesis.camera_safety import (  # noqa: E402
+    camera_safety_config_from_pack,
+    safe_camera_pose_from_base,
+)
 from lewm_genesis.scene_builder import build_scene_from_pack  # noqa: E402
-from lewm_genesis.scene_loader import find_scene_dirs, load_platform_manifest, load_scene_pack  # noqa: E402
+from lewm_genesis.scene_loader import (  # noqa: E402
+    effective_camera_mount_xyz_rpy,
+    find_scene_dirs,
+    load_platform_manifest,
+    load_scene_pack,
+)
 from lewm_genesis.rollout import DEFAULT_GO2_STANCE_RAD, _resolve_rollout_leg_dof_indices  # noqa: E402
 from lewm_worlds.planning_grid import InflatedOccupancyGrid  # noqa: E402
 from probe_lewm_checkpoint import load_model  # noqa: E402
@@ -142,6 +165,93 @@ def graph_tour_cells(graph, start_cell: int, max_cells: int, rng,
     return order
 
 
+def _graph_shortest_path(graph, start: int, target: int) -> list[int] | None:
+    if start == target:
+        return [int(start)]
+    frontier, parent = [int(start)], {int(start): None}
+    while frontier and int(target) not in parent:
+        nxt = []
+        for node in frontier:
+            for neighbor in graph.neighbors(node):
+                neighbor = int(neighbor)
+                if neighbor not in parent:
+                    parent[neighbor] = node
+                    nxt.append(neighbor)
+        frontier = nxt
+    if int(target) not in parent:
+        return None
+    path = [int(target)]
+    while parent[path[-1]] is not None:
+        path.append(parent[path[-1]])
+    return path[::-1]
+
+
+def _segment_is_traversable(grid, start_xy, end_xy, *, step_m: float = 0.05) -> bool:
+    """Reject synthetic edges whose centerline crosses inflated occupancy.
+
+    Do not extend a body probe beyond the endpoint: landmark photo standoffs
+    intentionally terminate near the beacon, and runtime WALK's strict capsule
+    gate stops the robot before contact. The mapping contract needed here is
+    free-space continuity, which rules out the v28-v34 wall-crossing spur.
+    """
+    start = np.asarray(start_xy, dtype=np.float64)
+    end = np.asarray(end_xy, dtype=np.float64)
+    delta = end - start
+    span = float(np.linalg.norm(delta))
+    if span <= 1e-9:
+        return bool(grid.is_free((float(start[0]), float(start[1]))))
+    n_steps = max(1, int(math.ceil(span / max(float(step_m), 1e-3))))
+    for i in range(n_steps + 1):
+        point = start + delta * (i / n_steps)
+        if not grid.is_free((float(point[0]), float(point[1]))):
+            return False
+    return True
+
+
+def _augment_tour_with_landmark_anchor(graph, tour, grid, *, goal_standoff_m: float,
+                                       goal_min_hops: int, goal_max_hops: int,
+                                       reprise_cells: int) -> list[int]:
+    """Splice a minimal traversed excursion to a route-valid landmark anchor."""
+    reprise_n = min(max(int(reprise_cells), 0), max(len(tour) - 1, 0))
+    core = list(tour[:-reprise_n] if reprise_n else tour)
+    reprise = list(tour[-reprise_n:] if reprise_n else [])
+    if not core:
+        return list(tour)
+    seek_end = int(tour[-1])
+    cells = [int(node.node_id) for node in graph.manifest.graph_nodes]
+    best = None
+    for _obj, landmark_cell in graph.landmark_cells:
+        beacon = np.asarray(graph.landmark_xy_for_cell(landmark_cell)
+                            or graph.cell_center(landmark_cell), dtype=np.float64)
+        for candidate in cells:
+            hops = graph.bfs_distance(seek_end, candidate)
+            if hops is None or not (int(goal_min_hops) <= hops <= int(goal_max_hops)):
+                continue
+            anchor_xy = np.asarray(graph.cell_center(candidate), dtype=np.float64)
+            gap = _xy_distance(anchor_xy, beacon)
+            if not (0.55 <= gap <= 1.60):
+                continue
+            standoff = beacon + (anchor_xy - beacon) / gap * float(goal_standoff_m)
+            if not _segment_is_traversable(grid, anchor_xy, standoff):
+                continue
+            for index, tour_cell in enumerate(core):
+                path = _graph_shortest_path(graph, int(tour_cell), candidate)
+                if path is None:
+                    continue
+                key = (len(path), gap)
+                if best is None or key < best[0]:
+                    best = (key, index, path, candidate)
+    if best is None:
+        return list(tour)
+    _key, index, path, candidate = best
+    if len(path) > 1:
+        excursion = path[1:] + list(reversed(path[:-1]))
+        core[index + 1:index + 1] = excursion
+    print(f"  tour added route-valid landmark anchor cell {candidate} "
+          f"(detour {2 * (len(path) - 1)} edges)", flush=True)
+    return core + reprise
+
+
 def tour_pose_sequence(graph, tour_cells, base_z, *, step_m: float = 0.12,
                        turn_step_rad: float = 0.5, max_steps: int,
                        lookats: dict | None = None, lookat_dwell: int = 4):
@@ -155,19 +265,23 @@ def tour_pose_sequence(graph, tour_cells, base_z, *, step_m: float = 0.12,
     forward hops (verified-run memory had translation edges only).
 
     ``lookats`` maps cell_id -> (bearing_rad, standoff_xy): on first arrival at
-    such a cell the tour turns toward the landmark (video-only), walks IN to
-    the standoff facing it with FED frames — minting the landmark-facing node a
-    colourful goal image needs (tour-heading memory matches such goals at ~0.7
-    < tau_goal, which is why the colourful contract fired 0/6 in v12) — dwells,
-    then retreats video-only (feeding the backward glide would mint a
-    translation edge the traversal walks forward)."""
+    such a cell the tour steps aside to the landmark standoff ENTIRELY
+    video-only — the locomotion chain must stay pure corridor — and emits one
+    ``"spur"`` pose at the standoff apex, which the harness registers via
+    ``navigator.insert_spur`` as a terminal goal-only node (anchor<->spur
+    edges). Feeding look-at frames through the filter instead splices the
+    standoff INLINE into the chain and every passing route detours into the
+    pillar (v18/v19: veto/realign storms, final 5.74 m).
+
+    Pose kinds: "walk" = fed to the navigator; "turn" = video-only;
+    "spur" = video-only + spur registration."""
     poses = []
     current = np.asarray(graph.cell_center(tour_cells[0]), dtype=np.float64)
     yaw = None
     pending = dict(lookats or {})
 
-    def emit(xy, yw, is_turn):
-        poses.append((np.asarray([xy[0], xy[1], base_z], dtype=np.float32), float(yw), is_turn))
+    def emit(xy, yw, kind):
+        poses.append((np.asarray([xy[0], xy[1], base_z], dtype=np.float32), float(yw), kind))
         return len(poses) >= max_steps
 
     for cell in tour_cells[1:]:
@@ -181,33 +295,41 @@ def tour_pose_sequence(graph, tour_cells, base_z, *, step_m: float = 0.12,
             dyaw = wrap_angle_pi(seg_yaw - yaw)
             n_turn = max(1, int(math.ceil(abs(dyaw) / turn_step_rad)))
             for k in range(1, n_turn + 1):
-                if emit(current, wrap_angle_pi(yaw + dyaw * (k / n_turn)), True):
+                if emit(current, wrap_angle_pi(yaw + dyaw * (k / n_turn)), "turn"):
                     return poses
         yaw = seg_yaw
         n_steps = max(1, int(math.ceil(span / step_m)))
         for i in range(1, n_steps + 1):
-            if emit(current + delta * (i / n_steps), yaw, False):
+            if emit(current + delta * (i / n_steps), yaw, "walk"):
                 return poses
         current = target
         if int(cell) in pending:
             look_yaw, look_xy = pending.pop(int(cell))
+            entry_yaw = yaw
             dyaw = wrap_angle_pi(look_yaw - yaw)
             n_turn = max(1, int(math.ceil(abs(dyaw) / turn_step_rad)))
             for k in range(1, n_turn + 1):
-                if emit(current, wrap_angle_pi(yaw + dyaw * (k / n_turn)), True):
+                if emit(current, wrap_angle_pi(yaw + dyaw * (k / n_turn)), "turn"):
                     return poses
             delta_l = np.asarray(look_xy, dtype=np.float64) - current
             n_app = max(1, int(math.ceil(float(np.linalg.norm(delta_l)) / step_m)))
             for i in range(1, n_app + 1):
-                if emit(current + delta_l * (i / n_app), look_yaw, False):
+                if emit(current + delta_l * (i / n_app), look_yaw, "turn"):
                     return poses
-            for _ in range(max(int(lookat_dwell), 1)):
-                if emit(current + delta_l, look_yaw, False):
+            if emit(current + delta_l, look_yaw, "spur"):
+                return poses
+            for _ in range(max(int(lookat_dwell) - 1, 0)):
+                if emit(current + delta_l, look_yaw, "turn"):
                     return poses
             for i in range(n_app - 1, -1, -1):
-                if emit(current + delta_l * (i / n_app), look_yaw, True):
+                if emit(current + delta_l * (i / n_app), look_yaw, "turn"):
                     return poses
-            yaw = look_yaw
+            dyb = wrap_angle_pi(entry_yaw - look_yaw)
+            n_turn = max(1, int(math.ceil(abs(dyb) / turn_step_rad)))
+            for k in range(1, n_turn + 1):
+                if emit(current, wrap_angle_pi(look_yaw + dyb * (k / n_turn)), "turn"):
+                    return poses
+            yaw = entry_yaw
     return poses
 
 
@@ -235,7 +357,8 @@ def _colour_signature(image_chw: torch.Tensor):
     return frac, rgb
 
 
-def _colour_match(goal_sig, cur_sig, *, tol: float = 0.30) -> bool:
+def _colour_match(goal_sig, cur_sig, *, tol: float = 0.30,
+                  min_frac: float | None = None) -> bool:
     """True when ``cur`` could pass the colour-gated stop for ``goal``. Goals
     without a colour signature accept anything (legacy bland-goal behaviour).
     The claimed view must be proportionally as colourful as the goal (>= 40 %
@@ -245,7 +368,12 @@ def _colour_match(goal_sig, cur_sig, *, tol: float = 0.30) -> bool:
     if goal_rgb is None:
         return True
     cur_frac, cur_rgb = cur_sig
-    if cur_frac < max(0.04, 0.4 * goal_frac) or cur_rgb is None:
+    # Coverage bar capped at 0.25: a standoff goal's own crop saturates to
+    # ~1.0, and demanding 40 % of that exceeds what the robot sees from the
+    # veto-limited servo distance (v23: arrival never counted at the beacon).
+    required_frac = (max(0.04, min(0.25, 0.4 * goal_frac))
+                     if min_frac is None else max(float(min_frac), 0.0))
+    if cur_frac < required_frac or cur_rgb is None:
         return False
     return float((goal_rgb - cur_rgb).abs().sum()) <= tol
 
@@ -289,11 +417,43 @@ def _render_tour_view(build, base_xyz, yaw, size: int = 224) -> np.ndarray:
     return np.array(img, copy=True)
 
 
-def _feasible_fraction(build, registry, primitive, grid, command_dt_s,
-                       *, horizon_blocks: int = 1, body_radius_m: float = 0.0):
-    """Fraction of the primitive's sub-steps the inflated grid permits from the
-    current pose (the spec's non-learned kinematic veto; stands in for onboard
-    local obstacle sensing in this kinematic benchmark).
+def _render_perception_tensor_from_base(build, pack, *, base_xyz_m, base_quat_wxyz,
+                                        device):
+    """Render synchronized ego RGB + depth and return the effective camera pose."""
+    from PIL import Image
+
+    quat_xyzw = _quat_xyzw_from_wxyz(np.asarray(base_quat_wxyz, dtype=np.float32))
+    mount_xyz, mount_rpy = effective_camera_mount_xyz_rpy(pack)
+    pose, _safety = safe_camera_pose_from_base(
+        np.asarray(base_xyz_m, dtype=np.float32),
+        quat_xyzw,
+        mount_xyz_body=mount_xyz,
+        mount_rpy_body=mount_rpy,
+        objects=pack.static_objects,
+        config=camera_safety_config_from_pack(pack),
+    )
+    build.camera.set_pose(pos=pose.position, lookat=pose.lookat, up=pose.up)
+    rendered = build.camera.render(rgb=True, depth=True, force_render=True)
+    if not isinstance(rendered, tuple) or len(rendered) < 2:
+        raise RuntimeError("Genesis camera returned no synchronized RGB/depth tuple")
+    rgb = RolloutRunner._as_np(rendered[0])
+    depth = RolloutRunner._as_np(rendered[1])
+    if rgb.ndim == 4:
+        rgb = rgb[0]
+    if depth.ndim >= 3 and depth.shape[0] == 1:
+        depth = depth[0]
+    depth = np.squeeze(np.asarray(depth, dtype=np.float32))
+    if depth.ndim != 2:
+        raise RuntimeError(f"Genesis camera returned unexpected depth shape {depth.shape}")
+    image = Image.fromarray(np.asarray(rgb, dtype=np.uint8)).convert("RGB").resize((224, 224))
+    chw = np.array(image, copy=True).transpose(2, 0, 1)
+    return torch.from_numpy(chw).float().div_(255.0).to(device), depth, pose
+
+
+def _feasible_fraction(build, registry, primitive, local_obstacles, command_dt_s,
+                       *, horizon_blocks: int = 1, body_radius_m: float = 0.0,
+                       lateral_radius_m: float = 0.0):
+    """Fraction of a primitive's sub-steps permitted by local obstacle sensing.
 
     Physical mode passes horizon_blocks > 1 and body_radius_m > 0: one block is
     0.5 s = 0.10 m of forward_slow, so a base-center single-block check cannot
@@ -310,32 +470,43 @@ def _feasible_fraction(build, registry, primitive, grid, command_dt_s,
         nx = x + (float(vx) * math.cos(yaw) - float(vy) * math.sin(yaw)) * command_dt_s
         ny = y + (float(vx) * math.sin(yaw) + float(vy) * math.cos(yaw)) * command_dt_s
         nyaw = wrap_angle_pi(yaw + float(yaw_rate) * command_dt_s)
-        if grid is not None:
+        if local_obstacles is not None:
             probes = [(nx, ny)]
             if body_radius_m > 0.0:
                 probes.append((nx + body_radius_m * math.cos(nyaw),
                                ny + body_radius_m * math.sin(nyaw)))
                 probes.append((nx - body_radius_m * math.cos(nyaw),
                                ny - body_radius_m * math.sin(nyaw)))
-            if not all(grid.is_free(p) for p in probes):
+            if lateral_radius_m > 0.0:
+                # Side probes: the nose/tail capsule is blind to walls
+                # PARALLEL to the path, which only the 0.20 m grid inflation
+                # covers — about the body half-width plus gait sway, so a
+                # "feasible 1.0" path can scrape a side wall. Used by the
+                # padded clearance SCORE, not the strict gate.
+                probes.append((nx - lateral_radius_m * math.sin(nyaw),
+                               ny + lateral_radius_m * math.cos(nyaw)))
+                probes.append((nx + lateral_radius_m * math.sin(nyaw),
+                               ny - lateral_radius_m * math.cos(nyaw)))
+            if not all(local_obstacles.is_free(p) for p in probes):
                 break
         x, y, yaw = nx, ny, nyaw
         allowed += 1
     return allowed / max(len(steps), 1)
 
 
-def _nearest_free_xy(grid, xy, *, max_radius_m: float = 0.45, step_m: float = 0.09):
-    """Closest grid-free point to ``xy`` (ring search). Fall recovery stands the
+def _nearest_free_xy(local_obstacles, xy, *, max_radius_m: float = 0.45,
+                     step_m: float = 0.09):
+    """Closest locally free point to ``xy`` (ring search). Fall recovery stands the
     robot up here instead of at the wall-contact point it fell at — standing up
     pressed into the wall just re-falls."""
-    if grid is None or grid.is_free((float(xy[0]), float(xy[1]))):
+    if local_obstacles is None or local_obstacles.is_free((float(xy[0]), float(xy[1]))):
         return float(xy[0]), float(xy[1])
     r = step_m
     while r <= max_radius_m + 1e-9:
         for k in range(16):
             ang = 2.0 * math.pi * k / 16.0
             p = (float(xy[0] + r * math.cos(ang)), float(xy[1] + r * math.sin(ang)))
-            if grid.is_free(p):
+            if local_obstacles.is_free(p):
                 return p
         r += step_m
     return float(xy[0]), float(xy[1])
@@ -347,12 +518,13 @@ def blocks_per_revolution(registry, command_dt_s, primitive="yaw_right"):
     return max(4, int(math.ceil(2.0 * math.pi / max(per_block, 1e-6))))
 
 
-def choose_vetoed_primitive(model, build, registry, grid, command_dt_s, image, goal_image,
+def choose_vetoed_primitive(model, build, registry, local_obstacles, command_dt_s,
+                            image, goal_image,
                             sequences, action_tensor, *, horizon_blocks: int = 1,
                             body_radius_m: float = 0.0):
     """Latent-cost ranking among kinematically feasible candidates only."""
     costs, first_primitives = _lewm_primitive_costs(model, image, goal_image, sequences, action_tensor)
-    feasibility = {name: _feasible_fraction(build, registry, name, grid, command_dt_s,
+    feasibility = {name: _feasible_fraction(build, registry, name, local_obstacles, command_dt_s,
                                             horizon_blocks=horizon_blocks,
                                             body_radius_m=body_radius_m)
                    for name in set(first_primitives)}
@@ -552,9 +724,38 @@ def _write_topo_demo_video(path, pack, frames, statuses, goals_viz, fps, title, 
 
 
 def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences, action_tensor,
-              primitive_names, args, rng, device, demo=None, runner=None):
+              primitive_names, args, rng, device, demo=None, runner=None, local_obstacles=None):
     graph = pack.scene_graph
-    grid = InflatedOccupancyGrid(graph.manifest, cell_size_m=0.05, inflation_m=0.20)
+    # Route construction and kinematic simulation remain privileged benchmark
+    # infrastructure. Runtime seek safety consumes only LocalObstacleModel.
+    route_grid = InflatedOccupancyGrid(graph.manifest, cell_size_m=0.05, inflation_m=0.20)
+    if local_obstacles is None:
+        if getattr(args, "local_obstacle_source", "privileged-grid") == "ego-depth":
+            local_obstacles = DepthLocalObstacleModel(
+                DepthLocalObstacleConfig(
+                    vertical_fov_deg=float(pack.camera.fov_deg),
+                    max_range_m=float(args.depth_obstacle_max_range_m),
+                    sample_stride_px=int(args.depth_obstacle_stride_px),
+                    occupied_inflation_m=float(args.depth_obstacle_inflation_m),
+                    max_age_frames=int(args.depth_obstacle_max_age_frames),
+                    unknown_is_free=bool(args.depth_obstacle_unknown_is_free),
+                ),
+                odometry_detail=(
+                    "simulator ground-truth pose; depth is simulator-rendered "
+                    "and absent from the current mono-RGB platform contract"
+                ),
+                odometry_deployment_valid=False,
+            )
+        else:
+            local_obstacles = PrivilegedGridObstacleModel(route_grid)
+    if getattr(args, "require_deployment_valid_local_obstacles", False):
+        require_deployment_valid_local_obstacles(local_obstacles)
+    print(
+        "  runtime local obstacles: "
+        f"{local_obstacles.contract.source} "
+        f"(deployment_valid={local_obstacles.contract.deployment_valid})",
+        flush=True,
+    )
     base_z = float(pack.robot.spawn_xyz_m[2])
     spawn_xy = np.asarray(pack.robot.spawn_xyz_m[:2], dtype=np.float64)
     cells = [n.node_id for n in graph.manifest.graph_nodes]
@@ -573,20 +774,41 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         z_raw, _ = model.encode(image[None], None)
         stored_frames.append(image)
         nearest = min(cells, key=lambda c: _xy_distance(graph.cell_center(c), pos[:2]))
-        navigator.update((z_raw.squeeze(0), len(stored_frames) - 1), label=int(nearest))
-        tour_cell_heading[nearest] = _yaw_from_quat_wxyz(quat)
+        yaw = _yaw_from_quat_wxyz(quat)
+        prev_map = navigator._last_map
+        map_node = navigator.update((z_raw.squeeze(0), len(stored_frames) - 1), label=int(nearest))
+        if prev_map is not None and map_node is not None and prev_map != map_node:
+            # The mapping tour feeds only translational poses; its IMU yaw is
+            # therefore the measured forward bearing for this directed memory
+            # edge. Reusing it during seek avoids a full visual revolution per
+            # edge (v38 still spent hundreds of blocks rescanning an otherwise
+            # forward-only route).
+            navigator._edge_bearings.setdefault((int(prev_map), int(map_node)), float(yaw))
+        tour_cell_heading[nearest] = yaw
 
     # ---------------- Tour phase (privileged motion, learned perception) ----
     tour = graph_tour_cells(graph, start_cell, args.tour_max_cells, rng,
                             reprise_cells=int(args.tour_reprise_cells))
     lookats: dict[int, tuple[float, np.ndarray]] = {}
     if args.tour_landmark_lookat:
+        tour = _augment_tour_with_landmark_anchor(
+            graph, tour, route_grid, goal_standoff_m=float(args.goal_standoff_m),
+            goal_min_hops=int(args.goal_min_hops),
+            goal_max_hops=max(int(args.goal_max_hops) + 2, 7),
+            reprise_cells=int(args.tour_reprise_cells))
         tour_set = set(int(c) for c in tour)
         for _obj, lcell in graph.landmark_cells:
             b = np.asarray(graph.landmark_xy_for_cell(lcell) or graph.cell_center(lcell),
                            dtype=np.float64)
             dists = {c: _xy_distance(graph.cell_center(c), b) for c in tour_set}
-            cands = [c for c, d in dists.items() if 0.55 <= d <= max(1.35, min(dists.values()) + 0.25)]
+            cands = []
+            for c, distance in dists.items():
+                if not (0.55 <= distance <= max(1.60, min(dists.values()) + 0.25)):
+                    continue
+                cx = np.asarray(graph.cell_center(c), dtype=np.float64)
+                standoff = b + (cx - b) / max(distance, 1e-6) * float(args.goal_standoff_m)
+                if _segment_is_traversable(route_grid, cx, standoff):
+                    cands.append(c)
             if not cands:
                 continue
             c = min(cands, key=lambda c: dists[c])
@@ -601,10 +823,28 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                                max_steps=args.tour_max_blocks,
                                lookats=lookats or None)
     tour_blocks = 0
-    for pos_xyz, yaw, is_turn in poses:
+    n_spurs = 0
+    for pos_xyz, yaw, kind in poses:
         _set_pose(build=build, runner=None, pos_xyz=pos_xyz, quat_wxyz=_quat_wxyz_from_yaw(yaw))
-        if not is_turn:     # turn poses are video-only (see tour_pose_sequence)
+        if kind == "walk":      # turn/spur poses are video-only (see tour_pose_sequence)
             observe()
+        elif kind == "spur" and navigator._last_map is not None:
+            # Landmark-facing view -> terminal goal-only spur node anchored at
+            # the current chain node (see TopologicalNavigator.insert_spur).
+            pos, quat = _current_pose(build)
+            image = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
+            z_raw, _ = model.encode(image[None], None)
+            stored_frames.append(image)
+            nearest = min(cells, key=lambda c: _xy_distance(graph.cell_center(c), pos[:2]))
+            # A standoff can be metrically nearer a cell across the beacon or
+            # wall, but its graph attachment and goal contract are the anchor
+            # cell represented by the current chain node.
+            anchor_label = navigator.memory.node_majority_labels().get(
+                navigator._last_map, (int(nearest), 0, False))[0]
+            navigator.insert_spur(z_raw.squeeze(0), len(stored_frames) - 1,
+                                  navigator._last_map, label=int(anchor_label),
+                                  bearing_rad=_yaw_from_quat_wxyz(quat))
+            n_spurs += 1
         tour_blocks += 1
         if demo is not None and tour_blocks % max(int(args.tour_capture_every), 1) == 0:
             _demo_capture(build, pack, device, demo,
@@ -613,7 +853,9 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
             _set_pose(build=build, runner=None, pos_xyz=pos_xyz, quat_wxyz=_quat_wxyz_from_yaw(yaw))
     n_nodes = len(navigator.memory.nodes)
     visited_cells = sorted(tour_cell_heading)
-    print(f"  tour: {tour_blocks} blocks, {len(visited_cells)} cells seen, {n_nodes} memory nodes", flush=True)
+    print(f"  tour: {tour_blocks} blocks, {len(visited_cells)} cells seen, "
+          f"{n_nodes} memory nodes ({n_spurs} landmark spurs, "
+          f"{len(navigator._edge_bearings)} directed bearings)", flush=True)
 
     # ---------------- Goal selection (setup-time privilege; eval contract) --
     end_pos, _ = _current_pose(build)
@@ -634,7 +876,19 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         )
         return np.asarray(xy, dtype=np.float64), image
 
-    def route_diag(z_goal, goal_sig=None):
+    def goal_node_allowlist(goal_sig=None, *, terminal_only: bool = False):
+        """Deployment-valid goal-node gate shared by setup diagnostics and seek."""
+        if not terminal_only and (goal_sig is None or goal_sig[1] is None):
+            return None
+        return {
+            node_id for node_id in navigator._keyframes
+            if (not terminal_only or not navigator.memory.nodes[node_id].in_filter)
+            and ((goal_sig is None or goal_sig[1] is None)
+                 or ((idx := navigator._observations.get(node_id)) is not None
+                     and _colour_match(goal_sig, _colour_signature(stored_frames[idx]))))
+        }
+
+    def route_diag(z_goal, goal_sig=None, *, terminal_only: bool = False):
         """Reversed-edge count on the planned route from the CURRENT
         localization (tour end = seek start) to the goal match. Setup-time
         privilege used only to PICK demo goals honoring the forward-mostly
@@ -643,7 +897,8 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         requires the PLANNED goal node's stored view to colour-match: beacon
         close-ups of different colours are latent-identical (~1.0 cosine), so
         the latent matcher can route to the wrong beacon."""
-        plan = navigator.plan_node_path(z_goal)
+        allowed_goal_nodes = goal_node_allowlist(goal_sig, terminal_only=terminal_only)
+        plan = navigator.plan_node_path(z_goal, allowed_goal_nodes=allowed_goal_nodes)
         if plan is None:
             return None, None
         path, gnode, _score = plan
@@ -656,7 +911,16 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         return n_rev, len(path)
 
     def forward_mostly(n_rev, path_len):
-        return n_rev is not None and n_rev <= max(1, (path_len - 1) // 3)
+        if n_rev is None:
+            return False
+        # Demo seeks must be fully forward-routable. Reversed edges align to a
+        # keyframe seen from the opposite travel direction and repeatedly fail
+        # to confirm arrival (v29: the first reversed edge consumed 200 blocks
+        # without leaving the start). Keep the looser benchmark contract for
+        # non-demo evaluation, where measuring that failure remains useful.
+        if args.demo_require_colourful and runner is not None:
+            return n_rev == 0
+        return n_rev <= max(1, (path_len - 1) // 3)
 
     # Median adjacent-cell spacing: the metric yardstick for "far" below.
     _spacings = [_xy_distance(graph.cell_center(n.node_id), graph.cell_center(nb))
@@ -744,11 +1008,12 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                                                else max(scored, key=lambda s: s[1]))
             goals.append({"cell": int(c), "xy": xy_c, "yaw": yaw_c, "image": img,
                           "name": name.split("landmark_")[-1], "beacon_xy": bxy,
-                          "saturation": sat})
+                          "saturation": sat, "terminal_only": False})
         if len(goals) < 2:
             print("  [beacons] fewer than 2 reachable beacon goals - skipping trial", flush=True)
             return None
     else:
+        terminal_only = False
         goal_candidates = [c for c in visited_cells
                            if (d := graph.bfs_distance(end_cell, c)) is not None
                            and args.goal_min_hops <= d <= args.goal_max_hops]
@@ -810,7 +1075,7 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                 z_raw, _ = model.encode(img[None], None)
                 sig = _colour_signature(img)
                 _n, match = navigator.match_goal(z_raw.squeeze(0))
-                n_rev, plen = route_diag(z_raw.squeeze(0), goal_sig=sig)
+                n_rev, plen = route_diag(z_raw.squeeze(0), goal_sig=sig, terminal_only=True)
                 alias, worst = aliased_far_cosine(z_raw.squeeze(0), c, goal_sig=sig,
                                                   return_worst=True)
                 if worst is not None:
@@ -823,10 +1088,10 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                         return (f"frac {s[0]:.3f} rgb (" +
                                 ",".join(f"{v:.2f}" for v in s[1].tolist()) + ")")
                     print(f"    [goal-cand-alias] stand cell {c}: goal {_sigtxt(sig)} | "
-                          f"worst node {wnode} label {wlab} hops {whops} cos {alias:.3f} "
+                          f"worst node {wnode} label {wlab} dist {whops} m cos {alias:.3f} "
                           f"{_sigtxt(wsig)}", flush=True)
                 scored.append((_saturation_score(img), float(match), c, yaw_c, xy_c, img,
-                               int(hops), n_rev, plen, alias))
+                               int(hops), n_rev, plen, alias, True))
             # Also score the standard tour-heading candidates: in open
             # families the landmark pillars are visible from afar, so a
             # forward-feasible tour-heading goal can be colourful too.
@@ -838,24 +1103,39 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                 n_rev, plen = route_diag(z_raw.squeeze(0))
                 alias = aliased_far_cosine(z_raw.squeeze(0), c)
                 scored_th.append((_saturation_score(img), float(match), c, tour_cell_heading[c],
-                                  xy_c, img, int(graph.bfs_distance(end_cell, c) or 99), n_rev, plen, alias))
+                                  xy_c, img, int(graph.bfs_distance(end_cell, c) or 99), n_rev, plen,
+                                  alias, False))
             alias_cap = float(args.tau_arrive) - 0.02
             tagged = [("stand", s) for s in scored] + [("tour-heading", s) for s in scored_th]
             for kind, s in sorted(tagged, key=lambda t: t[1][6]):
                 rev = f"rev {s[7]}/{s[8] - 1}" if s[7] is not None else "unplannable"
                 print(f"    [goal-cand] {kind:12s} cell {s[2]:3d} hops {s[6]} "
                       f"sat {s[0]:.3f} match {s[1]:.3f} alias {s[9]:.3f} {rev}", flush=True)
-            passing = [s for s in scored + scored_th
-                       if s[1] >= float(args.tau_goal) and s[0] >= 0.05
-                       and forward_mostly(s[7], s[8]) and s[9] < alias_cap]
+            passing_stand = [s for s in scored
+                             if s[1] >= float(args.tau_goal) and s[0] >= 0.05
+                             and forward_mostly(s[7], s[8]) and s[9] < alias_cap]
+            passing_heading = [s for s in scored_th
+                               if s[1] >= float(args.tau_goal) and s[0] >= 0.05
+                               and forward_mostly(s[7], s[8]) and s[9] < alias_cap]
+            # A route-valid terminal stand is the intended colourful-goal
+            # contract. Tour-heading views remain a fallback for families where
+            # no valid standoff exists; mixing both pools let a shorter ordinary
+            # keyframe beat the valid terminal spur in v40.
+            passing = passing_stand or passing_heading
             if passing:
-                # All passing views are colourful and forward-routable; prefer
-                # the fewest reversed edges, then the shortest route.
-                sat, match, goal_cell, goal_yaw_sel, goal_xy_sel, goal_img_sel, _h, _r, _l, _a = min(
-                    passing, key=lambda s: (s[7], s[6]))
+                # Within the selected contract, prefer the fewest reversed
+                # edges, then the shortest actual memory route.
+                sat, match, goal_cell, goal_yaw_sel, goal_xy_sel, goal_img_sel, _h, _r, _l, _a, terminal_only = min(
+                    passing, key=lambda s: (s[7], s[8], s[6]))
                 print(f"  goal saturation: {sat:.3f} (match {match:.3f}, "
-                      f"{len(passing)}/{len(scored) + len(scored_th)} candidates colourful+forward)", flush=True)
+                      f"{len(passing)}/{len(scored) + len(scored_th)} candidates "
+                      f"colourful+forward, {'terminal stand' if terminal_only else 'tour heading'})",
+                      flush=True)
             else:
+                if args.demo_require_colourful:
+                    print(f"  [colourful] no colourful+forward goal this draw "
+                          f"({len(scored) + len(scored_th)} candidates) - skipping trial", flush=True)
+                    return None
                 # Fall back to the bland tour-heading contract, but still honor
                 # the forward-mostly rule when any candidate routes forward.
                 plannable_th = [s for s in scored_th
@@ -864,13 +1144,21 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                 if plannable_th:
                     best_rev = min(s[7] for s in plannable_th)
                     pool = [s for s in plannable_th if s[7] == best_rev]
-                    _s, match, goal_cell, goal_yaw_sel, goal_xy_sel, goal_img_sel, _h, _r, _l, _a = \
+                    _s, match, goal_cell, goal_yaw_sel, goal_xy_sel, goal_img_sel, _h, _r, _l, _a, terminal_only = \
                         pool[rng.randrange(len(pool))]
                     sat = None
                     print(f"  [colourful] no colourful+forward goal - tour-heading fallback "
                           f"cell {goal_cell} (match {match:.3f}, {best_rev} reversed edges, "
                           f"{len(pool)} forward+unaliased candidates)", flush=True)
                 else:
+                    if args.demo_require_colourful:
+                        # Demo contract: the goal must BE a beacon photo. A
+                        # bland fallback seek can "succeed" and steal the demo
+                        # video from the actual task (v20 trial 2).
+                        print(f"  [colourful] no colourful+forward goal this draw "
+                              f"({len(scored) + len(scored_th)} candidates) - skipping trial",
+                              flush=True)
+                        return None
                     print(f"  [colourful] no forward-routable goal at all "
                           f"({len(scored) + len(scored_th)} candidates) - random tour-heading fallback",
                           flush=True)
@@ -882,20 +1170,33 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
             goal_xy_sel, goal_img_sel = render_goal(goal_cell, tour_cell_heading[goal_cell])
             goal_yaw_sel, sat = tour_cell_heading[goal_cell], None
         goals = [{"cell": int(goal_cell), "xy": goal_xy_sel, "yaw": goal_yaw_sel,
-                  "image": goal_img_sel, "name": "goal", "beacon_xy": None, "saturation": sat}]
+                  "image": goal_img_sel, "name": "goal", "beacon_xy": None, "saturation": sat,
+                  "terminal_only": terminal_only}]
 
     for g in goals:
         z_raw, _ = model.encode(g["image"][None], None)
         g["z"] = z_raw.squeeze(0)
         g["image_np"] = g["image"].mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
-        g["match_node"], g["match_score"] = navigator.match_goal(g["z"])
+        g["colour_sig"] = _colour_signature(g["image"])
+        allowed_goal_nodes = goal_node_allowlist(
+            g.get("colour_sig"), terminal_only=g.get("terminal_only", False))
+        plan = navigator.plan_node_path(g["z"], allowed_goal_nodes=allowed_goal_nodes)
+        if plan is not None:
+            path, g["match_node"], g["match_score"] = plan
+            g["planned_route_nodes"] = list(path)
+        else:
+            if g.get("terminal_only", False):
+                print("  [colourful] selected terminal stand has no constrained route - "
+                      "skipping trial", flush=True)
+                return None
+            g["match_node"], g["match_score"] = navigator.match_goal(g["z"])
+            g["planned_route_nodes"] = None
         # Goal-conditioned arrival threshold: arrived = current view matches the
         # goal better than ANY far-away keyframe ever could (alias + margin).
         # Deployment-valid (alias comes from the robot's own memory + the goal
         # image at seek start). The fixed 0.90 bar misses gait arrivals — the
         # walking camera's pitch/height caps the cosine below the kinematic
         # value (measured: 0.37 m final, stop never fired).
-        g["colour_sig"] = _colour_signature(g["image"])
         g["alias"] = aliased_far_cosine(g["z"], g["cell"], goal_sig=g["colour_sig"])
         g["tau_arrive_eff"] = min(float(args.tau_arrive),
                                   max(float(args.tau_arrive_floor), g["alias"] + 0.02))
@@ -911,9 +1212,16 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         print(f"  goal[{gi}] '{g['name']}': cell {g['cell']}, "
               f"{graph.bfs_distance(end_cell, g['cell'])} hops from tour end; "
               f"matched node {g['match_node']} (score {g['match_score']:.3f}, "
-              f"alias {g['alias']:.3f}, tau_arrive_eff {g['tau_arrive_eff']:.3f})", flush=True)
+              f"alias {g['alias']:.3f}, tau_arrive_eff {g['tau_arrive_eff']:.3f}, "
+              f"{'terminal stand' if g.get('terminal_only', False) else 'tour heading'})",
+              flush=True)
 
     # ---------------- Seek phase ----------------
+    # Map is complete: freeze the memory to localization-only. Mid-seek node
+    # commits are posterior black holes (v24 trace: commit resets the
+    # posterior to {new:1.0}, the running mean absorbs every following gait
+    # frame, and the MAP never escapes while the robot paces in place).
+    navigator.memory.frozen = True
     results = {}
     n_scan = blocks_per_revolution(registry, args.command_dt_s)
     # Gait-aware veto (physical only; kinematic keeps the verified base-center
@@ -923,10 +1231,19 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         veto_walk_kw = {"horizon_blocks": int(args.veto_horizon_blocks),
                         "body_radius_m": float(args.veto_body_radius_m)}
         veto_servo_kw = {"body_radius_m": float(args.veto_body_radius_m)}
+        # Padded clearance SCORE (not a gate): longer nose/tail capsule plus
+        # side probes, so steering can prefer corridor-centered paths before
+        # the strict veto ever fires.
+        veto_pad_kw = {"horizon_blocks": int(args.veto_horizon_blocks),
+                       "body_radius_m": float(args.veto_pad_radius_m),
+                       "lateral_radius_m": float(args.veto_pad_lateral_m)}
     else:
-        veto_walk_kw, veto_servo_kw = {}, {}
+        veto_walk_kw, veto_servo_kw, veto_pad_kw = {}, {}, {}
     for policy in _parse_csv(args.policies):
         _set_pose(build=build, runner=runner, pos_xyz=start_pose[0], quat_wxyz=start_pose[1])
+        reset_local_obstacles = getattr(local_obstacles, "reset", None)
+        if callable(reset_local_obstacles):
+            reset_local_obstacles()
         if demo is not None and policy == "topo":
             demo["seek_start"] = (np.asarray(start_pose[0], dtype=np.float32).copy(), start_pose[1].copy())
         check_pos, _ = _current_pose(build)
@@ -942,26 +1259,50 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
             cur0, _ = _current_pose(build)
             d0 = _xy_distance(cur0[:2], goal_xy)
             navigator._window.clear()       # fresh perceptual window; memory kept
-            arrive_hits, subgoal_nodes, cosine_profile = [], [], []
+            arrive_hits, subgoal_nodes, cosine_profile, colour_profile = [], [], [], []
             walk_bearing = None             # post-ALIGN IMU bearing held during WALK
             beh = {"walk_fwd": 0, "head_corr": 0, "veto_escape": 0, "align_blocks": 0,
+                   "align_timeout": 0,
                    "stuck_detect": 0, "stuck_escape": 0, "edge_realign": 0, "scan_reuse": 0,
                    "head_err_sq": 0.0, "head_err_n": 0}
             # Proprioceptive wall-contact recovery state (physical mode): the
-            # grid veto is a model, and when it is wrong the v9 failure mode
+            # The local-obstacle veto is a model, and when it is wrong the v9 failure mode
             # was pushing forward against the wall until falling.
-            stuck_streak, escape_blocks, edge_veto_streak = 0, 0, 0
+            stuck_streak, escape_blocks, edge_veto_streak, realigns_this_edge = 0, 0, 0, 0
             last_scan = None        # completed-revolution views for scan reuse
+            dead_edges: set = set() # edges that failed traversal -> penalized at replan
             max_goal_cosine, subgoal_progress, subgoal_scored = 0.0, 0, 0
+            approach_extra = 0      # bounded final-approach servo past first arrival hit
+            arrival_armed = False   # perceptual terminal-goal completion latch
+            final_approach_blocks = 0  # total spur-servo budget; never reset by re-align/replan
             subgoals_reached = 0
             scan_remaining, scan_costs, scan_return = 0, [], 0
             node_path, path_index, mode, walk_blocks = None, 0, "align", 0
+            align_blocks_this_edge = 0
             align_target, align_op = 0.0, "ge"
             align_phase, scan_samples, scan_cum, turn_target, turn_cap = "scan", [], 0.0, 0.0, 0
             stopped_perceptually = False
+            # Goal selection just validated a route from the tour-end MAP, and
+            # the physical reset places the robot at that same tour-end cell.
+            # Do not replace that valid start with a one-frame random-yaw
+            # localization before the first plan (v37: MAP jumped to node 2,
+            # which did not match the physical start, then 822/1100 blocks
+            # were spent aligning/replanning around the wrong graph origin).
+            initial_plan_pending = goal_index == 0
             for _block in range(args.seek_max_blocks):
                 pos, quat = _current_pose(build)
-                image = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
+                if isinstance(local_obstacles, DepthLocalObstacleModel):
+                    image, depth, camera_pose = _render_perception_tensor_from_base(
+                        build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
+                    local_obstacles.update(
+                        depth,
+                        camera_position_xyz=camera_pose.position,
+                        camera_rotation=camera_pose.rotation,
+                        robot_xy=(float(pos[0]), float(pos[1])),
+                    )
+                else:
+                    image = _render_tensor_from_base(
+                        build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
                 z_now, _ = model.encode(image[None], None)
                 z_now = z_now.squeeze(0)
                 # Perceptual arrival (deployment-valid; gt only logged for eval).
@@ -989,10 +1330,28 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                 at_final_node = node_path is not None and path_index >= len(node_path) - 1
                 unaliased_goal = tau_arrive_eff < float(args.tau_arrive) - 1e-9
                 in_align = policy == "topo" and mode == "align" and node_path is not None
+                goal_colour_sig = goal.get("colour_sig", (0.0, None))
+                cur_colour_sig = (_colour_signature(image)
+                                  if goal_colour_sig[1] is not None else None)
                 if cosine >= 0.80:
                     cosine_profile.append((mode if policy == "topo" else "walk",
                                            round(cosine, 4),
                                            round(_xy_distance(pos[:2], goal_xy), 3)))
+                    if cur_colour_sig is not None:
+                        frac, rgb = cur_colour_sig
+                        colour_profile.append({
+                            "block": int(_block),
+                            "mode": mode if policy == "topo" else "walk",
+                            "at_final_node": bool(at_final_node),
+                            "cosine": round(cosine, 4),
+                            "distance_m": round(_xy_distance(pos[:2], goal_xy), 3),
+                            "colour_frac": round(float(frac), 4),
+                            "colour_rgb": ([round(float(v), 4) for v in rgb.tolist()]
+                                           if rgb is not None else None),
+                            "strict_match": bool(_colour_match(goal_colour_sig, cur_colour_sig)),
+                            "terminal_match": bool(_colour_match(
+                                goal_colour_sig, cur_colour_sig, min_frac=0.04)),
+                        })
                 # Two-tier arrival evidence. Walk/servo blocks use tau_eff. An
                 # ALIGN scan facing the goal direction from the ADJACENT cell
                 # matches a bland corridor goal above tau_eff too (measured:
@@ -1006,20 +1365,67 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                 # Colour gate (colourful goals only): the latent cosine cannot
                 # tell beacon close-ups apart by hue, but the raw pixels can —
                 # a claimed arrival must also show the goal's colour.
-                if counted and goal.get("colour_sig", (0.0, None))[1] is not None:
-                    counted = _colour_match(goal["colour_sig"], _colour_signature(image))
+                if counted and cur_colour_sig is not None:
+                    # For a constrained terminal goal, high latent similarity
+                    # plus the correct hue is sufficient. Localization can lag
+                    # the physical route by several nodes (v42 saw the right
+                    # beacon twice at 0.87/0.78 m while at_final_node was false),
+                    # so graph-index state must not veto perceptual arrival.
+                    # Strict coverage remains mandatory for ordinary goals.
+                    min_frac = 0.04 if goal.get("terminal_only", False) else None
+                    counted = _colour_match(
+                        goal_colour_sig, cur_colour_sig, min_frac=min_frac)
                 arrive_hits.append(counted)
                 if sum(arrive_hits[-4:]) >= 2:
-                    stopped_perceptually = True
-                    break
+                    if (runner is not None and policy == "topo"
+                            and goal.get("terminal_only", False)):
+                        # The camera sees the beacon before the standoff, then
+                        # the close beacon leaves the crop as the robot advances.
+                        # Latch the two-frame perceptual evidence and complete a
+                        # short straight approach on the observed bearing. Six
+                        # gait blocks moved v42 from 0.78 m to 0.44 m; the strict
+                        # feasibility gate still stops before contact.
+                        arrival_armed = True
+                    # Final-approach completion (physical): the view matches a
+                    # standoff goal up to ~1 cell early (v25: stop at 0.86 m vs
+                    # 0.65 radius with ~0.5 m of veto-legal approach left) —
+                    # keep servoing a few more blocks while the goal cosine is
+                    # still CLIMBING, and stop the moment it falls off its peak
+                    # (walked past) or the small budget runs out. v26's
+                    # unconditional while-feasible suppression never released:
+                    # the robot passed through 0.44 m and drifted out to 1.05 m.
+                    past_peak = cosine <= max_goal_cosine - 0.004
+                    if arrival_armed:
+                        pass
+                    elif (runner is not None and policy == "topo" and at_final_node
+                            and not past_peak and approach_extra < 6
+                            and _feasible_fraction(build, registry, "forward_slow", local_obstacles,
+                                                   args.command_dt_s, **veto_servo_kw) >= 0.7):
+                        approach_extra += 1
+                    else:
+                        stopped_perceptually = True
+                        break
 
-                if policy == "topo":
+                completion_primitive = None
+                if arrival_armed:
+                    if (approach_extra >= 6
+                            or _feasible_fraction(build, registry, "forward_slow", local_obstacles,
+                                                  args.command_dt_s, **veto_servo_kw) < 0.7):
+                        stopped_perceptually = True
+                        break
+                    completion_primitive = "forward_slow"
+                    approach_extra += 1
+
+                if completion_primitive is not None:
+                    primitive = completion_primitive
+                    beh["walk_fwd"] += 1
+                elif policy == "topo":
                     # Feed the filter ONLY during locomotion: the belief window
                     # (H=8 consecutive frames) matches the training distribution
                     # of smooth motion; scan rotations poison it for ~8 blocks
                     # after every alignment (measured: filter never confirmed
                     # arrival). The window is frozen during ALIGN.
-                    if mode == "walk" or node_path is None:
+                    if mode == "walk" or (node_path is None and not initial_plan_pending):
                         navigator.update((z_now, None))
                     # ---- Stage 4b traversal: ALIGN -> WALK per directed edge ----
                     # (plan_cost is flat between interior corridor views, so no
@@ -1027,11 +1433,17 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                     # cosine to the NEXT node's keyframe, which faces the travel
                     # direction by construction of directed tour edges.)
                     if node_path is None or path_index >= len(node_path):
-                        plan = navigator.plan_node_path(z_goal_raw)
+                        allowed_goal_nodes = goal_node_allowlist(
+                            goal.get("colour_sig"),
+                            terminal_only=goal.get("terminal_only", False))
+                        plan = navigator.plan_node_path(
+                            z_goal_raw, avoid_edges=dead_edges,
+                            allowed_goal_nodes=allowed_goal_nodes)
                         if plan is None:
                             used_fallback += 1
                             primitive, _cost = choose_vetoed_primitive(
-                                model, build, registry, grid, args.command_dt_s, image, goal_image,
+                                model, build, registry, local_obstacles, args.command_dt_s,
+                                image, goal_image,
                                 sequences, action_tensor, **veto_servo_kw)
                             primitive_counts[primitive] = primitive_counts.get(primitive, 0) + 1
                             if runner is not None:
@@ -1040,129 +1452,176 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                                 _execute_physical_primitive(runner, registry, primitive)
                             else:
                                 _execute_kinematic_primitive(build, registry, primitive,
-                                                             command_dt_s=args.command_dt_s, grid=grid)
+                                                             command_dt_s=args.command_dt_s,
+                                                             grid=route_grid)
                             continue
                         node_path, _gnode, _s = plan
+                        initial_plan_pending = False
                         path_index, mode, walk_blocks = 1, "align", 0
                         scan_remaining, scan_costs, scan_return = n_scan, [], 0
                         align_phase, scan_samples, scan_cum = "scan", [], 0.0
-                        stuck_streak, escape_blocks, edge_veto_streak = 0, 0, 0
+                        align_blocks_this_edge = 0
+                        stuck_streak, escape_blocks, edge_veto_streak, realigns_this_edge = 0, 0, 0, 0
                         subgoal_nodes.append(node_path[-1])
                         n_rev = sum(1 for i in range(1, len(node_path))
                                     if (node_path[i-1], node_path[i]) not in navigator.memory.edges)
-                        print(f"    path: {len(node_path)} nodes, {n_rev} reversed edges", flush=True)
+                        print(f"    path: {len(node_path)} nodes, {n_rev} reversed edges "
+                              f"({node_path[0]}->{node_path[-1]})", flush=True)
                     next_node = node_path[min(path_index, len(node_path) - 1)]
                     at_goal_node = path_index >= len(node_path) - 1
                     prev_node = node_path[max(path_index - 1, 0)]
                     reversed_edge = (prev_node, next_node) not in navigator.memory.edges
-                    # Edge-bearing alignment: a tour node's view faces its EXIT
-                    # direction, so the bearing of edge prev->next is prev's view
-                    # (forward edge) or next's view + pi (reversed edge, stored
-                    # next->prev). Aligning to next's view on a forward edge only
-                    # coincides with the edge bearing in straight corridors and
-                    # is wrong in open terrain. The final hop still aligns to the
-                    # goal node's own goal-facing view for the plan_cost servo.
-                    if at_goal_node or reversed_edge or navigator._keyframes.get(prev_node) is None:
+                    edge_bearing = navigator._edge_bearings.get((prev_node, next_node))
+                    # Prefer the mapping-time IMU bearing for directed forward
+                    # traversals. Visual scan alignment remains the fallback for
+                    # reversed edges or legacy maps without recorded bearings.
+                    if edge_bearing is not None:
+                        align_ref = None
+                    elif at_goal_node or reversed_edge or navigator._keyframes.get(prev_node) is None:
                         align_ref = next_node
                     else:
                         align_ref = prev_node
                     if mode == "align" and runner is not None:
+                        align_blocks_this_edge += 1
+                    if (mode == "align" and runner is not None
+                            and align_blocks_this_edge > max(4 * n_scan, 24)):
+                        # A measured revolution plus the closed-loop turn-to
+                        # phase is bounded. If the gait cannot rotate to this
+                        # edge bearing/view within that allowance, retrying the
+                        # same ALIGN forever only burns the global seek budget
+                        # (v36: identical pose and waypoint for 230+ blocks).
+                        beh["align_timeout"] += 1
+                        if at_goal_node:
+                            print("    [goal-approach] alignment budget exhausted - "
+                                  "aborting goal", flush=True)
+                            break
+                        print(f"    [align] edge {prev_node}->{next_node} timed out - "
+                              "marking dead and replanning", flush=True)
+                        dead_edges.add((int(prev_node), int(next_node)))
+                        node_path = None
+                        primitive = "hold"
+                    elif mode == "align" and runner is not None:
                         # Physical ALIGN: IMU-yaw referenced (spec 3.4: body-frame
                         # integrated Delta-yaw is deployment-admissible). Scan a
                         # MEASURED full revolution sampling (yaw, view-match), then
                         # turn closed-loop on IMU yaw to the best heading
                         # (reversed edge: best + pi).
-                        keyframe = navigator._keyframes.get(align_ref)
-                        cosine_k = float(F.normalize(z_now, dim=-1) @ keyframe) if keyframe is not None else 0.0
                         yaw_now = _yaw_from_quat_wxyz(quat)
                         beh["align_blocks"] += 1
-                        if align_phase == "scan":
-                            if (scan_cum == 0.0 and not scan_samples
-                                    and last_scan is not None and keyframe is not None
-                                    and _xy_distance(pos[:2], last_scan["xy"]) < 0.2
-                                    and len(last_scan["samples"]) >= max(8, n_scan // 2)):
-                                # Scan reuse: a full revolution was already
-                                # swept at (essentially) this spot — score the
-                                # remembered views against the NEW target
-                                # keyframe and turn straight to the best
-                                # bearing. Re-aligns and replans at the same
-                                # place re-spinning full revolutions dominated
-                                # v12 screen time (up to 487/700 blocks).
-                                best_yaw = max(last_scan["samples"],
-                                               key=lambda t: float(t[1] @ keyframe))[0]
-                                turn_target = wrap_angle_pi(best_yaw + (math.pi if reversed_edge else 0.0))
-                                align_phase, turn_cap = "turnto", 3 * n_scan
-                                beh["scan_reuse"] += 1
-                                primitive = "hold"
-                            elif cosine_k >= float(args.align_early_cosine) and not reversed_edge:
-                                # Early-out (Stage 4c): already facing the
-                                # keyframe view — skip the rest of the
-                                # revolution. The bar is below the kinematic
-                                # 0.95: the walking camera's pitch/bob caps the
-                                # cosine, so 0.95 almost never fired under gait
-                                # and every align became a full revolution.
-                                # Safe at 0.92 because the latent is
-                                # yaw-dominant (wrong headings score low).
+                        if edge_bearing is not None:
+                            err = wrap_angle_pi(edge_bearing - yaw_now)
+                            if abs(err) <= 0.15:
                                 mode, walk_blocks = "walk", 0
-                                walk_bearing = yaw_now
-                                align_phase, scan_samples, scan_cum = "scan", [], 0.0
-                                navigator._window.clear()
-                                primitive = "hold"
-                            elif scan_cum >= 2.0 * math.pi:
-                                best_yaw = max(scan_samples, key=lambda t: t[1])[0]
-                                last_scan = {"xy": (float(pos[0]), float(pos[1])),
-                                             "samples": [(y, z) for y, _c, z in scan_samples]}
-                                turn_target = wrap_angle_pi(best_yaw + (math.pi if reversed_edge else 0.0))
-                                align_phase, turn_cap = "turnto", 3 * n_scan
-                                primitive = "yaw_right"
-                            else:
-                                if scan_samples:
-                                    step = abs(wrap_angle_pi(yaw_now - scan_samples[-1][0]))
-                                    scan_cum += step
-                                scan_samples.append((yaw_now, cosine_k,
-                                                     F.normalize(z_now, dim=-1)))
-                                primitive = "yaw_right"
-                        else:  # turnto
-                            err = wrap_angle_pi(turn_target - yaw_now)
-                            turn_cap -= 1
-                            if abs(err) <= 0.15 or turn_cap <= 0:
-                                mode, walk_blocks = "walk", 0
-                                walk_bearing = turn_target
+                                walk_bearing = edge_bearing
                                 align_phase, scan_samples, scan_cum = "scan", [], 0.0
                                 navigator._window.clear()
                                 primitive = "hold"
                             else:
                                 primitive = "yaw_left" if err > 0 else "yaw_right"
-                    elif mode == "align":
-                        keyframe = navigator._keyframes.get(align_ref)
-                        cosine_k = float(F.normalize(z_now, dim=-1) @ keyframe) if keyframe is not None else 0.0
-                        if (cosine_k >= 0.95 and not reversed_edge) or (scan_remaining == 0 and scan_return == 0):
-                            mode, walk_blocks = "walk", 0
-                            navigator._window.clear()
-                            primitive = "hold"
-                        elif scan_remaining > 0:
-                            scan_costs.append(cosine_k)
-                            scan_remaining -= 1
-                            if scan_remaining == 0:
-                                # Kinematic: exact yaw per block -> open-loop
-                                # return, VERBATIM the verified-success logic.
-                                best = int(np.argmax(scan_costs))
-                                offset = n_scan // 2 if reversed_edge else 0
-                                scan_return = (best + 1 + offset) % n_scan
-                                align_op = "open"
-                            primitive = "yaw_right"
-                        elif align_op == "open":
-                            scan_return -= 1
-                            primitive = "yaw_right"
                         else:
-                            hit = (cosine_k >= align_target) if align_op == "ge" else (cosine_k <= align_target)
-                            scan_return -= 1
-                            if hit or scan_return <= 0:
+                            keyframe = navigator._keyframes.get(align_ref)
+                            cosine_k = (float(F.normalize(z_now, dim=-1) @ keyframe)
+                                        if keyframe is not None else 0.0)
+                            if align_phase == "scan":
+                                if (args.scan_reuse and scan_cum == 0.0 and not scan_samples
+                                        and last_scan is not None and keyframe is not None
+                                        and _xy_distance(pos[:2], last_scan["xy"]) < 0.2
+                                        and len(last_scan["samples"]) >= max(8, n_scan // 2)):
+                                    # Scan reuse: a full revolution was already
+                                    # swept at (essentially) this spot — score the
+                                    # remembered views against the NEW target
+                                    # keyframe and turn straight to the best
+                                    # bearing. Re-aligns and replans at the same
+                                    # place re-spinning full revolutions dominated
+                                    # v12 screen time (up to 487/700 blocks).
+                                    best_yaw = max(last_scan["samples"],
+                                                   key=lambda t: float(t[1] @ keyframe))[0]
+                                    turn_target = wrap_angle_pi(best_yaw + (math.pi if reversed_edge else 0.0))
+                                    align_phase, turn_cap = "turnto", 3 * n_scan
+                                    beh["scan_reuse"] += 1
+                                    primitive = "hold"
+                                elif cosine_k >= float(args.align_early_cosine) and not reversed_edge:
+                                    # Early-out (Stage 4c): already facing the
+                                    # keyframe view — skip the rest of the
+                                    # revolution. The bar is below the kinematic
+                                    # 0.95: the walking camera's pitch/bob caps the
+                                    # cosine, so 0.95 almost never fired under gait
+                                    # and every align became a full revolution.
+                                    # Safe at 0.92 because the latent is
+                                    # yaw-dominant (wrong headings score low).
+                                    mode, walk_blocks = "walk", 0
+                                    walk_bearing = yaw_now
+                                    align_phase, scan_samples, scan_cum = "scan", [], 0.0
+                                    navigator._window.clear()
+                                    primitive = "hold"
+                                elif scan_cum >= 2.0 * math.pi:
+                                    best_yaw = max(scan_samples, key=lambda t: t[1])[0]
+                                    last_scan = {"xy": (float(pos[0]), float(pos[1])),
+                                                 "samples": [(y, z) for y, _c, z in scan_samples]}
+                                    turn_target = wrap_angle_pi(best_yaw + (math.pi if reversed_edge else 0.0))
+                                    align_phase, turn_cap = "turnto", 3 * n_scan
+                                    primitive = "yaw_right"
+                                else:
+                                    if scan_samples:
+                                        step = abs(wrap_angle_pi(yaw_now - scan_samples[-1][0]))
+                                        scan_cum += step
+                                    scan_samples.append((yaw_now, cosine_k,
+                                                         F.normalize(z_now, dim=-1)))
+                                    primitive = "yaw_right"
+                            else:  # turnto
+                                err = wrap_angle_pi(turn_target - yaw_now)
+                                turn_cap -= 1
+                                if abs(err) <= 0.15 or turn_cap <= 0:
+                                    mode, walk_blocks = "walk", 0
+                                    walk_bearing = turn_target
+                                    align_phase, scan_samples, scan_cum = "scan", [], 0.0
+                                    navigator._window.clear()
+                                    primitive = "hold"
+                                else:
+                                    primitive = "yaw_left" if err > 0 else "yaw_right"
+                    elif mode == "align":
+                        if edge_bearing is not None:
+                            yaw_now = _yaw_from_quat_wxyz(quat)
+                            err = wrap_angle_pi(edge_bearing - yaw_now)
+                            if abs(err) <= 0.15:
                                 mode, walk_blocks = "walk", 0
+                                walk_bearing = edge_bearing
                                 navigator._window.clear()
                                 primitive = "hold"
                             else:
+                                primitive = "yaw_left" if err > 0 else "yaw_right"
+                        else:
+                            keyframe = navigator._keyframes.get(align_ref)
+                            cosine_k = (float(F.normalize(z_now, dim=-1) @ keyframe)
+                                        if keyframe is not None else 0.0)
+                            if (cosine_k >= 0.95 and not reversed_edge) or (scan_remaining == 0 and scan_return == 0):
+                                mode, walk_blocks = "walk", 0
+                                navigator._window.clear()
+                                primitive = "hold"
+                            elif scan_remaining > 0:
+                                scan_costs.append(cosine_k)
+                                scan_remaining -= 1
+                                if scan_remaining == 0:
+                                    # Kinematic: exact yaw per block -> open-loop
+                                    # return, VERBATIM the verified-success logic.
+                                    best = int(np.argmax(scan_costs))
+                                    offset = n_scan // 2 if reversed_edge else 0
+                                    scan_return = (best + 1 + offset) % n_scan
+                                    align_op = "open"
                                 primitive = "yaw_right"
+                            elif align_op == "open":
+                                scan_return -= 1
+                                primitive = "yaw_right"
+                            else:
+                                hit = ((cosine_k >= align_target) if align_op == "ge"
+                                       else (cosine_k <= align_target))
+                                scan_return -= 1
+                                if hit or scan_return <= 0:
+                                    mode, walk_blocks = "walk", 0
+                                    navigator._window.clear()
+                                    primitive = "hold"
+                                else:
+                                    primitive = "yaw_right"
                     else:  # walk
                         posterior = navigator.current_belief()
                         # Arrival at ANY node at/after path_index counts (parallel
@@ -1194,39 +1653,51 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                             mode = "align"
                             scan_remaining, scan_costs, scan_return = n_scan, [], 0
                             align_phase, scan_samples, scan_cum = "scan", [], 0.0
-                            stuck_streak, escape_blocks, edge_veto_streak = 0, 0, 0
+                            align_blocks_this_edge = 0
+                            stuck_streak, escape_blocks, edge_veto_streak, realigns_this_edge = 0, 0, 0, 0
                             primitive = "hold"
-                        elif at_goal_node and walk_blocks >= 2:
-                            # Final hop: salient goal-facing view -> plan_cost servo.
-                            primitive, _cost = choose_vetoed_primitive(
-                                model, build, registry, grid, args.command_dt_s, image, goal_image,
-                                sequences, action_tensor, **veto_servo_kw)
-                            walk_blocks += 1
                         else:
+                            # The final spur uses the SAME clearance-aware
+                            # bearing hold as every other edge, with its
+                            # mapping-time measured bearing because a close-up
+                            # spur keyframe cannot determine travel direction
+                            # while still at the anchor. Perceptual arrival
+                            # supplies the stop.
                             walk_blocks += 1
-                            if walk_blocks > args.edge_budget:
+                            if at_goal_node:
+                                final_approach_blocks += 1
+                            if at_goal_node and final_approach_blocks > args.edge_budget:
+                                print("    [goal-approach] budget exhausted - aborting goal",
+                                      flush=True)
+                                break
+                            elif not at_goal_node and walk_blocks > args.edge_budget:
+                                print(f"    [walk] edge {prev_node}->{next_node} exhausted "
+                                      f"{args.edge_budget}-block budget at "
+                                      f"({pos[0]:.2f},{pos[1]:.2f}); replanning", flush=True)
+                                dead_edges.add((int(prev_node), int(next_node)))
                                 node_path = None        # lost on this edge -> replan
                                 primitive = "hold"
                             elif runner is not None and escape_blocks > 0:
                                 # Proprioceptive wall contact (stuck detector
                                 # fired): back straight off the obstacle, then
-                                # re-align — the grid veto already mispredicted
+                                # re-align — the local-obstacle veto already mispredicted
                                 # here, so forward is not to be trusted again
                                 # on this bearing.
                                 escape_blocks -= 1
                                 beh["stuck_escape"] += 1
-                                if _feasible_fraction(build, registry, "backward", grid,
+                                if _feasible_fraction(build, registry, "backward", local_obstacles,
                                                       args.command_dt_s, **veto_walk_kw) >= 0.5:
                                     primitive = "backward"
                                 else:
                                     primitive = max(("yaw_left", "yaw_right"),
                                                     key=lambda p: _feasible_fraction(
-                                                        build, registry, p, grid,
+                                                        build, registry, p, local_obstacles,
                                                         args.command_dt_s, **veto_walk_kw))
                                 if escape_blocks == 0:
                                     mode = "align"
                                     scan_remaining, scan_costs, scan_return = n_scan, [], 0
                                     align_phase, scan_samples, scan_cum = "scan", [], 0.0
+                                    align_blocks_this_edge = 0
                                     navigator._window.clear()
                             elif runner is not None:
                                 # Stage 4c closed-loop WALK: the PPO gait's yaw
@@ -1247,18 +1718,35 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                                 else:
                                     cand = ("arc_left" if herr > 0.12 else
                                             "arc_right" if herr < -0.12 else "forward_slow")
-                                    # An arc's predicted sweep clips the inflated
-                                    # side band far more often than the straight
-                                    # line does (v11 trials 0-1: 62-81 escapes,
-                                    # align 56-71% of budget) — keep moving
-                                    # straight when only the steering arc is
-                                    # blocked; the bearing hold corrects later.
-                                    chosen = None
-                                    for option in dict.fromkeys((cand, "forward_slow")):
-                                        if _feasible_fraction(build, registry, option, grid,
-                                                              args.command_dt_s, **veto_walk_kw) >= 0.8:
-                                            chosen = option
-                                            break
+                                    # Clearance-graded steering (DWA-lite). The
+                                    # binary veto only rejects predicted CONTACT,
+                                    # so the bearing-hold choice may legally skim
+                                    # the inflated boundary every block — and the
+                                    # gait tracks loosely enough that "skim the
+                                    # model" = "scrape the wall" on camera (v27:
+                                    # 43 escapes, 36 backward, walls on video).
+                                    # Among strict-feasible candidates, score by
+                                    # padded-capsule clearance (longer nose +
+                                    # side probes) minus a heading-deviation
+                                    # penalty: in the open everything pads 1.0
+                                    # and the bearing hold wins; near a wall the
+                                    # away-arc outscores it and the robot bends
+                                    # off BEFORE contact instead of escaping
+                                    # after. Penalties sized so one padded
+                                    # substep (0.1) of clearance flips an arc on.
+                                    chosen, best_score = None, None
+                                    for option, dev_pen in ((cand, 0.0),
+                                                            ("forward_slow", 0.04),
+                                                            ("arc_left", 0.08),
+                                                            ("arc_right", 0.08)):
+                                        if _feasible_fraction(build, registry, option, local_obstacles,
+                                                              args.command_dt_s, **veto_walk_kw) < 0.8:
+                                            continue
+                                        pad = _feasible_fraction(build, registry, option, local_obstacles,
+                                                                 args.command_dt_s, **veto_pad_kw)
+                                        score = pad - dev_pen
+                                        if best_score is None or score > best_score:
+                                            chosen, best_score = option, score
                                     if chosen is not None:
                                         primitive = chosen
                                         beh["walk_fwd"] += 1
@@ -1266,35 +1754,86 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                                         edge_veto_streak = 0
                                     else:
                                         # Wall-aware escape: back off or turn
-                                        # toward open space (most feasible
-                                        # option), not the blind yaw_right that
-                                        # read as a freak-out on camera.
-                                        options = ("backward", "yaw_left", "yaw_right",
-                                                   "arc_left", "arc_right")
-                                        primitive = max(options, key=lambda p: _feasible_fraction(
-                                            build, registry, p, grid, args.command_dt_s,
-                                            **veto_walk_kw))
+                                        # toward open space, not the blind
+                                        # yaw_right that read as a freak-out on
+                                        # camera. Tie-break strict feasibility
+                                        # (often 1.0 for several options) by
+                                        # padded clearance so the escape moves
+                                        # AWAY from the wall, not along it.
+                                        # Perception occupancy is noisier than the
+                                        # privileged grid; on a straight corridor a
+                                        # transient forward veto (gait heading drift)
+                                        # makes "backward" the highest-clearance
+                                        # escape, so the robot RETREATS down the
+                                        # corridor it came from instead of
+                                        # re-centering. --seek-escape-no-backward
+                                        # drops backward so the escape turns to
+                                        # re-acquire the bearing (default keeps the
+                                        # verified privileged-grid behaviour).
+                                        options = (("yaw_left", "yaw_right", "arc_left", "arc_right")
+                                                   if getattr(args, "seek_escape_no_backward", False)
+                                                   else ("backward", "yaw_left", "yaw_right",
+                                                         "arc_left", "arc_right"))
+                                        primitive = max(options, key=lambda p: (
+                                            _feasible_fraction(build, registry, p, local_obstacles,
+                                                               args.command_dt_s, **veto_walk_kw),
+                                            _feasible_fraction(build, registry, p, local_obstacles,
+                                                               args.command_dt_s, **veto_pad_kw)))
                                         beh["veto_escape"] += 1
                                         edge_veto_streak += 1
-                                        if edge_veto_streak >= 3:
+                                        if edge_veto_streak >= int(getattr(args, "seek_edge_veto_streak", 3)):
                                             # The aligned bearing leads into a
                                             # wall (bad align or gait drift):
                                             # stop fighting the heading hold —
                                             # re-scan for the keyframe instead
                                             # of oscillating veto<->correction.
-                                            mode = "align"
-                                            scan_remaining, scan_costs, scan_return = n_scan, [], 0
-                                            align_phase, scan_samples, scan_cum = "scan", [], 0.0
-                                            navigator._window.clear()
+                                            # But only twice per edge: each
+                                            # align completion resets
+                                            # walk_blocks, so without this cap
+                                            # a blocked edge NEVER exhausts its
+                                            # budget (v19: 48 realigns, 195
+                                            # escapes on one edge, whole seek
+                                            # burned in place).
                                             edge_veto_streak = 0
+                                            realigns_this_edge += 1
                                             beh["edge_realign"] += 1
+                                            realign_cap = int(getattr(args, "seek_edge_realign_cap", 2))
+                                            if realigns_this_edge >= realign_cap:
+                                                if at_goal_node:
+                                                    print(f"    [goal-approach] blocked after "
+                                                          f"{realign_cap} realigns - aborting goal", flush=True)
+                                                    break
+                                                else:
+                                                    print(f"    [walk] edge {prev_node}->{next_node} "
+                                                          f"blocked after {realign_cap} realigns; replanning",
+                                                          flush=True)
+                                                    dead_edges.add((int(prev_node), int(next_node)))
+                                                    node_path = None    # edge is dead -> replan
+                                                    realigns_this_edge = 0
+                                            else:
+                                                mode = "align"
+                                                scan_remaining, scan_costs, scan_return = n_scan, [], 0
+                                                align_phase, scan_samples, scan_cum = "scan", [], 0.0
+                                                align_blocks_this_edge = 0
+                                                navigator._window.clear()
                             else:
                                 forward_ok = _feasible_fraction(build, registry, "forward_medium",
-                                                                grid, args.command_dt_s) >= 0.5
+                                                                local_obstacles,
+                                                                args.command_dt_s) >= 0.5
                                 primitive = "forward_medium" if forward_ok else "yaw_right"
+                    if runner is not None and _block % 10 == 0:
+                        belief = navigator.current_belief()
+                        p_node, p_w = (max(belief.items(), key=lambda kv: kv[1])
+                                       if belief else (None, 0.0))
+                        print(f"    [trace] b{_block} {mode} idx {path_index}/"
+                              f"{len(node_path) if node_path else 0} next "
+                              f"{next_node if node_path else -1} map {navigator._last_map} "
+                              f"p* {p_node}:{p_w:.2f} walk_blocks {walk_blocks} "
+                              f"pos ({pos[0]:.2f},{pos[1]:.2f})", flush=True)
                 elif policy == "v2":
                     primitive, _cost = choose_vetoed_primitive(
-                        model, build, registry, grid, args.command_dt_s, image, goal_image,
+                        model, build, registry, local_obstacles, args.command_dt_s,
+                        image, goal_image,
                         sequences, action_tensor, **veto_servo_kw)
                 elif policy == "bearing":
                     primitive = _choose_bearing_primitive(build, (float(goal_xy[0]), float(goal_xy[1])))
@@ -1306,14 +1845,16 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                 if runner is not None:
                     _execute_physical_primitive(runner, registry, primitive)
                 else:
-                    _execute_kinematic_primitive(build, registry, primitive, command_dt_s=args.command_dt_s, grid=grid)
+                    _execute_kinematic_primitive(
+                        build, registry, primitive,
+                        command_dt_s=args.command_dt_s, grid=route_grid)
                 new_pos, _ = _current_pose(build)
                 if (runner is not None and policy == "topo" and mode == "walk"
-                        and escape_blocks == 0 and not at_goal_node
+                        and escape_blocks == 0
                         and primitive in ("forward_slow", "forward_medium", "forward_fast",
                                           "arc_left", "arc_right")):
                     # Stuck detector: commanded forward motion with essentially
-                    # no displacement = wall contact the grid veto missed
+                    # no displacement = wall contact the local-obstacle veto missed
                     # (commanded forward_slow moves ~0.10 m/block when free).
                     # The v9 falls came from pushing against the wall anyway.
                     disp = float(np.linalg.norm(np.asarray(new_pos[:2], dtype=np.float64)
@@ -1328,11 +1869,11 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                     if falls > 6:
                         print("    [fall] too many falls - aborting trial", flush=True)
                         break
-                    # Recover at the nearest grid-free point: stand back up clear
+                    # Recover at the nearest locally free point: stand back up clear
                     # of the wall it fell against, reset the gait policy state
                     # (locomotion robustness is not the thesis under test; real
                     # platforms have get-up controllers).
-                    free_x, free_y = _nearest_free_xy(grid, new_pos[:2])
+                    free_x, free_y = _nearest_free_xy(local_obstacles, new_pos[:2])
                     up = np.asarray([free_x, free_y, start_pose[0][2]], dtype=np.float32)
                     _, cur_quat = _current_pose(build)
                     cur_yaw = _yaw_from_quat_wxyz(cur_quat)
@@ -1350,14 +1891,15 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                         mode, walk_blocks = "align", 0
                         scan_remaining, scan_costs, scan_return = n_scan, [], 0
                         align_phase, scan_samples, scan_cum = "scan", [], 0.0
-                        stuck_streak, escape_blocks, edge_veto_streak = 0, 0, 0
+                        align_blocks_this_edge = 0
+                        stuck_streak, escape_blocks, edge_veto_streak, realigns_this_edge = 0, 0, 0, 0
                 if demo is not None and policy == "topo":
                     if node_path is None:
                         demo_state, waypoint_ref = "REPLANNING (lost - re-localize)", None
                     elif mode == "align":
                         demo_state, waypoint_ref = "ALIGN: scanning for waypoint view (4x speed)", \
                             navigator._observations.get(next_node)
-                    elif at_goal_node and walk_blocks > 2:
+                    elif arrival_armed or (at_goal_node and walk_blocks > 2):
                         demo_state, waypoint_ref = "FINAL APPROACH: servo on goal image", None
                     else:
                         demo_state, waypoint_ref = "WALK: forward to waypoint", \
@@ -1389,6 +1931,7 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
             if policy == "topo" and runner is not None:
                 print(f"    behavior: walk_fwd {beh['walk_fwd']} head_corr {beh['head_corr']} "
                       f"veto_escape {beh['veto_escape']} align {beh['align_blocks']} "
+                      f"align_timeout {beh['align_timeout']} "
                       f"stuck {beh['stuck_detect']} edge_realign {beh['edge_realign']} "
                       f"scan_reuse {beh['scan_reuse']} "
                       f"head_rms {beh['head_rms_rad'] if beh['head_rms_rad'] is None else round(beh['head_rms_rad'], 3)}",
@@ -1412,6 +1955,8 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
                 "n_subgoal_switches": len(set(subgoal_nodes)),
                 "max_goal_cosine": max_goal_cosine,
                 "cosine_profile_top": sorted(cosine_profile, key=lambda e: -e[1])[:20],
+                "colour_profile_top": sorted(
+                    colour_profile, key=lambda e: -e["cosine"])[:20],
                 "behavior": {k: v for k, v in beh.items() if k not in ("head_err_sq", "head_err_n")},
                 "subgoals_reached": subgoals_reached,
                 "subgoal_progress_rate": (subgoal_progress / subgoal_scored) if subgoal_scored else None,
@@ -1455,9 +2000,17 @@ def run_scene(pack, build, model, encoder, scorer, tau_new, registry, sequences,
         "goal_match_node": g0["match_node"],
         "goal_match_score": g0["match_score"],
         "goal_match_cell_correct": bool(g0_node_cell == g0["cell"]),
+        "local_obstacle_contract": local_obstacles.contract.to_dict(),
+        "local_obstacle_diagnostics": (
+            local_obstacles.diagnostics()
+            if callable(getattr(local_obstacles, "diagnostics", None))
+            else None
+        ),
         "goals": [{"name": g["name"], "cell": int(g["cell"]),
                    "match_node": g["match_node"], "match_score": g["match_score"],
-                   "saturation": g["saturation"]} for g in goals],
+                   "saturation": g["saturation"],
+                   "terminal_only": bool(g.get("terminal_only", False)),
+                   "planned_route_nodes": g.get("planned_route_nodes")} for g in goals],
         "policies": results,
     }
 
@@ -1479,6 +2032,29 @@ def main() -> int:
     parser.add_argument("--backend", default="vulkan")
     parser.add_argument("--mode", choices=("kinematic", "physical"), default="kinematic",
                         help="physical = real PPO locomotion for the SEEK phase (tour stays teleport)")
+    parser.add_argument(
+        "--require-deployment-valid-local-obstacles",
+        action="store_true",
+        help="refuse runtime seek safety backed by privileged manifest/oracle geometry; "
+             "requires an injected perception-backed LocalObstacleModel",
+    )
+    parser.add_argument(
+        "--local-obstacle-source",
+        choices=("privileged-grid", "ego-depth"),
+        default="privileged-grid",
+        help="runtime seek collision source; ego-depth is perception-backed but "
+             "this benchmark registers it with simulator pose, so strict "
+             "deployment-valid mode rejects it",
+    )
+    parser.add_argument("--depth-obstacle-max-range-m", type=float, default=3.0)
+    parser.add_argument("--depth-obstacle-stride-px", type=int, default=8)
+    parser.add_argument("--depth-obstacle-inflation-m", type=float, default=0.22)
+    parser.add_argument("--depth-obstacle-max-age-frames", type=int, default=12)
+    parser.add_argument(
+        "--depth-obstacle-unknown-is-free",
+        action="store_true",
+        help="permit unobserved local space; diagnostic only, off for conservative runs",
+    )
     parser.add_argument("--apply-textures", action="store_true")
     parser.add_argument("--policies", default="topo,v2,bearing,hold")
     parser.add_argument("--primitive-names", default="hold,forward_slow,forward_medium,forward_fast,yaw_left,yaw_right,arc_left,arc_right")
@@ -1496,20 +2072,33 @@ def main() -> int:
                              "scans match bland goals above tau_eff; only the goal-place align "
                              "should count)")
     parser.add_argument("--tau-subgoal-reached", type=float, default=0.85)
-    parser.add_argument("--align-early-cosine", type=float, default=0.92,
-                        help="physical ALIGN scan early-out bar (kinematic stays 0.95: the walking "
-                             "camera's pitch/bob caps the cosine, so 0.95 never fired under gait and "
-                             "every align became a full revolution = on-camera spinning)")
+    parser.add_argument("--align-early-cosine", type=float, default=0.95,
+                        help="physical ALIGN scan early-out bar. Lowering it (0.92) cut scan time but "
+                             "POISONED alignment: same-heading corridor views alias at 0.93-0.98, so "
+                             "the early-out fired facing the wrong corridor and locked walk_bearing "
+                             "onto walls (v18-v20 escape storms vs v12 with 0.95)")
+    parser.add_argument("--demo-require-colourful", action="store_true",
+                        help="skip trial draws without a colourful, fully forward-routable goal "
+                             "instead of falling back to a bland or reversed-edge seek")
+    parser.add_argument("--scan-reuse", action="store_true",
+                        help="reuse the last full revolution's views when re-aligning at the same spot "
+                             "(<0.2 m). Same aliasing caveat as the early-out bar; off by default")
     parser.add_argument("--tour-landmark-lookat", action="store_true",
                         help="tour turns to face each landmark from its nearest stand cell and walks "
                              "in to the goal standoff with FED frames: mints the landmark-facing "
                              "memory nodes a colourful goal image needs to be plannable")
     parser.add_argument("--veto-body-radius-m", type=float, default=0.25,
-                        help="physical mode: capsule probe radius for the grid veto (Go2 nose/tail "
+                        help="physical mode: capsule probe radius for the local-obstacle veto (Go2 nose/tail "
                              "extend ~0.25 m beyond base center; base-center checks walked into walls)")
     parser.add_argument("--veto-horizon-blocks", type=int, default=2,
                         help="physical mode: blocks of continuation simulated by the walk-gate veto "
                              "(the gait keeps moving past a single 0.5 s block)")
+    parser.add_argument("--veto-pad-radius-m", type=float, default=0.40,
+                        help="physical mode: nose/tail probe radius for the padded clearance SCORE "
+                             "used by WALK steering (comfort margin, not a hard gate)")
+    parser.add_argument("--veto-pad-lateral-m", type=float, default=0.35,
+                        help="physical mode: side-probe radius for the padded clearance score (the "
+                             "strict capsule is blind to walls parallel to the path)")
     parser.add_argument("--subgoal-budget", type=int, default=26)
     parser.add_argument("--edge-budget", type=int, default=14)
     parser.add_argument("--tour-max-cells", type=int, default=24)
@@ -1523,6 +2112,18 @@ def main() -> int:
     parser.add_argument("--tour-capture-every", type=int, default=2,
                         help="demo: capture every Nth tour block (controls tour screen time)")
     parser.add_argument("--seek-max-blocks", type=int, default=200)
+    parser.add_argument("--seek-edge-veto-streak", type=int, default=3,
+                        help="walk vetoes in a row before a re-scan realign (default 3, "
+                             "the verified privileged-grid value). Raise for noisier "
+                             "perception occupancy so a transient veto does not realign.")
+    parser.add_argument("--seek-edge-realign-cap", type=int, default=2,
+                        help="realigns on one edge before it is marked dead and replanned "
+                             "(default 2). Raise to persist on a sole-route edge that a "
+                             "perception obstacle source intermittently vetoes.")
+    parser.add_argument("--seek-escape-no-backward", action="store_true",
+                        help="drop 'backward' from the walk veto-escape set so the robot "
+                             "re-centers by turning instead of retreating down the corridor "
+                             "(off by default = verified privileged-grid behaviour)")
     parser.add_argument("--goal-min-hops", type=int, default=3)
     parser.add_argument("--goal-max-hops", type=int, default=5)
     parser.add_argument("--goal-mode", choices=("random", "colourful", "beacons"), default="random",
@@ -1596,7 +2197,7 @@ def main() -> int:
             if out is not None:
                 out["trial"] = trial
                 all_results.append(out)
-            if demo is not None and (demo["poses"] or demo["seek_blocks"]):
+            if demo is not None and out is not None and (demo["poses"] or demo["seek_blocks"]):
                 # Only render/keep the demo for a SUCCESSFUL trial (or the
                 # final attempt): the replay pass is expensive and a failed
                 # wander makes a bad video; report attempts honestly instead.

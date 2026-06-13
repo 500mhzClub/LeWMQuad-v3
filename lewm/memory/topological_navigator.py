@@ -38,7 +38,7 @@ from typing import Any, Callable, Optional
 import torch
 import torch.nn.functional as F
 
-from lewm.memory.online_topological_memory import OnlineTopologicalMemory
+from lewm.memory.online_topological_memory import MemoryNode, OnlineTopologicalMemory
 from lewm.memory.topological_memory import Memory
 from lewm.planning.local_mpc import GoalSpec
 
@@ -69,6 +69,10 @@ class TopologicalNavigator(Memory):
         self._window: deque[torch.Tensor] = deque(maxlen=self.history)
         self._keyframes: dict[int, torch.Tensor] = {}     # node_id -> raw frame latent (L2-normed)
         self._observations: dict[int, Any] = {}           # node_id -> opaque obs reference
+        # Mapping-time IMU yaw for directed traversals. Normal walked edges and
+        # synthetic terminal spurs both use this deployment-admissible heading
+        # instead of repeatedly recovering direction from a visual scan.
+        self._edge_bearings: dict[tuple[int, int], float] = {}
         self._last_map: Optional[int] = None
 
     # ------------------------------------------------------------------ #
@@ -92,6 +96,40 @@ class TopologicalNavigator(Memory):
             self._observations[node_id] = obs_ref
         self._last_map = map_node
         return map_node
+
+    @torch.no_grad()
+    def insert_spur(
+        self, z_raw: torch.Tensor, obs_ref: Any, anchor: int, *,
+        label=None, bearing_rad: Optional[float] = None,
+    ) -> int:
+        """Register a look-aside view (e.g. a landmark standoff photo taken by
+        stepping off the path and returning) as a TERMINAL SPUR node: a node
+        with anchor<->spur edges that does not touch the filter window,
+        posterior, or transition chain. Feeding such frames through ``update``
+        instead either splices the spur INLINE into the locomotion chain —
+        every passing route then detours into the standoff (measured: the
+        wide-maze v18/v19 seeks collapsed into veto/realign storms at the
+        first en-route beacon) — or mints duplicate chain nodes, because the
+        history-dependent belief embedding cannot loop-close from a few
+        stationary frames. The spur embedding is the BeliefEncoder over a
+        stationary window of the view: what the live window converges to when
+        the robot stands facing the landmark at arrival. ``bearing_rad`` records
+        the mapping-time IMU yaw used to traverse the synthetic anchor->spur
+        edge; unlike a normal walked edge, that direction cannot be recovered by
+        matching the close-up spur view while still standing at the anchor."""
+        window = z_raw.unsqueeze(0).repeat(self.history, 1).unsqueeze(0)
+        embedding = F.normalize(self.belief_encoder(window).squeeze(0), dim=-1)
+        node = MemoryNode(node_id=len(self.memory.nodes), embedding=embedding, in_filter=False)
+        if label is not None:
+            node.member_labels.append(label)
+        self.memory.nodes.append(node)
+        for key in ((int(anchor), node.node_id), (node.node_id, int(anchor))):
+            self.memory.edges[key] = self.memory.edges.get(key, 0) + 1
+        if bearing_rad is not None:
+            self._edge_bearings[(int(anchor), node.node_id)] = float(bearing_rad)
+        self._keyframes[node.node_id] = F.normalize(z_raw, dim=-1)
+        self._observations[node.node_id] = obs_ref
+        return node.node_id
 
     def current_belief(self) -> dict[int, float]:
         return dict(self.memory.posterior)
@@ -191,7 +229,8 @@ class TopologicalNavigator(Memory):
             return None
         return next_hop, goal_node, score
 
-    def plan_node_path(self, goal_latent: torch.Tensor) -> Optional[tuple[list[int], int, float]]:
+    def plan_node_path(self, goal_latent: torch.Tensor, avoid_edges=None,
+                       allowed_goal_nodes=None) -> Optional[tuple[list[int], int, float]]:
         """Directed node path MAP->goal-matching node for Stage-4b traversal.
 
         Considers SEVERAL goal-node candidates (the same place is stored under
@@ -199,21 +238,28 @@ class TopologicalNavigator(Memory):
         DIRECTED path — forward traversal is where alignment and localization
         work; an all-reversed undirected path walks the tour backward facing
         away from every stored keyframe (measured failure). Undirected fallback
-        only if no candidate is directed-reachable.
+        only if no candidate is directed-reachable. ``allowed_goal_nodes`` can
+        constrain goal matching with an external deployment-valid discriminator
+        such as a raw-image colour gate.
         """
         if not self._keyframes or self._last_map is None:
             return None
+        allowed = ({int(node_id) for node_id in allowed_goal_nodes}
+                   if allowed_goal_nodes is not None else None)
         node_ids = sorted(self._keyframes)
         keyframes = torch.stack([self._keyframes[i] for i in node_ids])
         scores = keyframes @ F.normalize(goal_latent, dim=-1)
         order = torch.argsort(scores, descending=True)
-        candidates = [(node_ids[int(i)], float(scores[int(i)])) for i in order[:8]
-                      if float(scores[int(i)]) >= self.tau_goal]
+        candidate_order = order if allowed is not None else order[:8]
+        candidates = [(node_ids[int(i)], float(scores[int(i)])) for i in candidate_order
+                      if float(scores[int(i)]) >= self.tau_goal
+                      and (allowed is None or node_ids[int(i)] in allowed)]
         if not candidates:
             return None
         best = None
         for goal_node, score in candidates:
-            path = self._weighted_path(self._last_map, goal_node, reversed_cost=3.0)
+            path = self._weighted_path(self._last_map, goal_node, reversed_cost=3.0,
+                                       avoid_edges=avoid_edges)
             if path is not None and len(path) >= 2:
                 n_reversed = sum(1 for i in range(1, len(path))
                                  if (path[i - 1], path[i]) not in self.memory.edges)
@@ -226,16 +272,31 @@ class TopologicalNavigator(Memory):
         _, path, goal_node, score = best
         return path, goal_node, score
 
-    def _weighted_path(self, start: int, target: int, *, reversed_cost: float = 3.0) -> Optional[list[int]]:
+    def _weighted_path(self, start: int, target: int, *, reversed_cost: float = 3.0,
+                       avoid_edges=None) -> Optional[list[int]]:
         """Dijkstra over memory edges; traversing an edge against its recorded
         direction is allowed but penalized (a fresh node has only incoming
         edges, so pure-directed search strands; pure-undirected walks the tour
-        backward facing away from every keyframe — both measured failures)."""
+        backward facing away from every keyframe — both measured failures).
+
+        ``avoid_edges``: node pairs that failed traversal (the controller's
+        blocked-edge signal); heavily penalized in BOTH directions, not
+        removed — if no alternative exists the old route is still returned
+        rather than stranding. Without this, replanning after a dead edge is
+        idempotent: the unchanged posterior reproduces the identical path and
+        the seek re-fails the same edge until the budget dies (v22)."""
         import heapq
+        avoid = {(int(a), int(b)) for a, b in (avoid_edges or ())}
+        avoid |= {(b, a) for a, b in avoid}
+        terminal_nodes = {
+            int(node.node_id) for node in getattr(self.memory, "nodes", ())
+            if not node.in_filter
+        }
         adjacency: dict[int, list[tuple[int, float]]] = {}
         for (a, b) in self.memory.edges:
-            adjacency.setdefault(a, []).append((b, 1.0))
-            adjacency.setdefault(b, []).append((a, reversed_cost))
+            dead = 25.0 if (a, b) in avoid else 0.0
+            adjacency.setdefault(a, []).append((b, 1.0 + dead))
+            adjacency.setdefault(b, []).append((a, reversed_cost + dead))
         if start == target:
             return [start]
         heap, parent, done = [(0.0, start)], {start: None}, set()
@@ -248,6 +309,10 @@ class TopologicalNavigator(Memory):
             if node == target:
                 break
             for neighbor, weight in adjacency.get(node, ()):
+                # Terminal spurs are goal-only views, not physical shortcuts
+                # through the graph. They may be entered only as the target.
+                if neighbor in terminal_nodes and neighbor != target:
+                    continue
                 new_cost = cost + weight
                 if new_cost < costs.get(neighbor, float("inf")):
                     costs[neighbor] = new_cost
