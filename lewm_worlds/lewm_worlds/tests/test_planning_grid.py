@@ -89,6 +89,19 @@ def test_inflation_blocks_cells_within_radius_of_wall():
     assert grid.is_free((0.0, 0.70))
 
 
+def test_continuous_configuration_clearance_tracks_inflation_boundary():
+    walls = (_wall("w", cx=0.0, cy=1.0, sx=2.0, sy=0.1),)
+    grid = InflatedOccupancyGrid(
+        _manifest(walls=walls), cell_size_m=0.05, inflation_m=0.20
+    )
+
+    assert grid.obstacle_clearance_m((0.0, 0.75)) == pytest.approx(0.20, abs=1e-6)
+    assert grid.configuration_clearance_m((0.0, 0.75)) == pytest.approx(0.0, abs=1e-6)
+    assert grid.configuration_clearance_m((0.0, 0.70)) == pytest.approx(0.05, abs=1e-6)
+    assert grid.configuration_clearance_m((0.0, 0.80)) == pytest.approx(-0.05, abs=1e-6)
+    assert grid.obstacle_clearance_grid_m.shape == grid.shape
+
+
 def test_landmark_treated_as_obstacle_by_default():
     landmarks = (_landmark("lm", cx=0.0, cy=0.0),)
     grid = InflatedOccupancyGrid(
