@@ -84,36 +84,86 @@ ROLLOUT_ARGS=(
 [[ -n "$SCENE_LIMIT" ]] && ROLLOUT_ARGS+=(--scene-limit "$SCENE_LIMIT")
 [[ -n "$SCENE_OFFSET" ]] && ROLLOUT_ARGS+=(--scene-offset "$SCENE_OFFSET")
 [[ -n "$COLLECTOR_MIX" ]] && ROLLOUT_ARGS+=(--collector-mix "$COLLECTOR_MIX")
-bash "$SCRIPT_DIR/genesis_bulk_rollout.sh" "${ROLLOUT_ARGS[@]}"
+# Pin only the rollout when the driver supplies a core range (ROLLOUT_CPUS):
+# genesis is orchestration-bound at ~2 cores, so pinning lets many streams pack
+# the box. The convert/label stages below stay unpinned to fan out via JOBS.
+if [[ -n "${ROLLOUT_CPUS:-}" ]]; then
+  taskset -c "$ROLLOUT_CPUS" bash "$SCRIPT_DIR/genesis_bulk_rollout.sh" "${ROLLOUT_ARGS[@]}"
+else
+  bash "$SCRIPT_DIR/genesis_bulk_rollout.sh" "${ROLLOUT_ARGS[@]}"
+fi
 
 mkdir -p "$OUT/raw" "$OUT/labels"
 
-echo "[2/4] raw conversion + audit"
-for scene_dir in "$OUT"/rollout/*/; do
-  scene=$(basename "$scene_dir")
+# Per-scene conversion and label derivation are independent (distinct in/out
+# dirs, no shared state), so fan them out across JOBS processes.
+#   JOBS=1     (default) one scene at a time; under the resumable driver the
+#              cross-chunk concurrency is the parallelism in this mode.
+#   JOBS=N     fixed fan-out of N (e.g. JOBS=$(nproc) for a standalone run).
+#   JOBS=auto  adaptive: nproc / (active chunks), read live from
+#              $LEWM_ACTIVE_CHUNKS_FILE just before each stage, so as sibling
+#              chunks finish a survivor's fan-out climbs and a lone tail chunk
+#              grabs every core. No file (standalone) => active=1 => nproc.
+JOBS="${JOBS:-1}"
+resolve_jobs() {
+  if [[ "$JOBS" != "auto" ]]; then echo "$JOBS"; return; fi
+  local ncores active j
+  ncores="$(nproc)"
+  active=1
+  if [[ -n "${LEWM_ACTIVE_CHUNKS_FILE:-}" && -r "${LEWM_ACTIVE_CHUNKS_FILE:-}" ]]; then
+    active="$(cat "$LEWM_ACTIVE_CHUNKS_FILE" 2>/dev/null || echo 1)"
+  fi
+  [[ "$active" =~ ^[0-9]+$ && "$active" -ge 1 ]] || active=1
+  j=$(( ncores / active )); (( j < 1 )) && j=1
+  echo "$j"
+}
+
+J2="$(resolve_jobs)"
+echo "[2/4] raw conversion + audit (jobs=$J2)"
+convert_and_audit_one() {
+  local scene_dir="$1"
+  local scene; scene="$(basename "$scene_dir")"
+  # A scene the bulk rollout aborted (e.g. rigid-solver NaN) can leave a
+  # partial dir with no summary.json. Skip it instead of converting a
+  # truncated MCAP and failing the whole chunk on an intentionally-dropped scene.
+  if [[ ! -f "$scene_dir/summary.json" ]]; then
+    echo "[skip] $scene (no rollout summary.json — partial/aborted scene)"
+    return 0
+  fi
   bash "$SCRIPT_DIR/convert_smoke_bag_to_raw_rollout.sh" \
-    "$scene_dir" \
-    --out "$OUT/raw/$scene" \
-    --quality-profile "$QUALITY_PROFILE" >/dev/null
-  summary="$OUT/raw/$scene/summary.json"
-  contract=$(jq -r '.contract_audit.pass' "$summary")
-  quality=$(jq -r '.data_quality_audit.pass' "$summary")
+    "$scene_dir" --out "$OUT/raw/$scene" \
+    --quality-profile "$QUALITY_PROFILE" >/dev/null \
+    || { echo "[FAIL raw] $scene (conversion error)" >&2; return 1; }
+  local summary="$OUT/raw/$scene/summary.json"
+  local contract quality
+  contract="$(jq -r '.contract_audit.pass' "$summary")"
+  quality="$(jq -r '.data_quality_audit.pass' "$summary")"
   if [[ "$contract" != "true" || "$quality" != "true" ]]; then
     echo "[FAIL raw] $scene contract=$contract quality=$quality" >&2
-    exit 1
+    return 1
   fi
-done
+}
+export -f convert_and_audit_one
+export SCRIPT_DIR OUT QUALITY_PROFILE
+printf '%s\0' "$OUT"/rollout/*/ \
+  | xargs -0 -r -P "$J2" -I {} bash -c 'convert_and_audit_one "$@"' _ {}
 
-echo "[3/4] derive labels + audit"
-for raw_dir in "$OUT"/raw/*/; do
-  scene=$(basename "$raw_dir")
+J3="$(resolve_jobs)"
+echo "[3/4] derive labels (jobs=$J3)"
+derive_one() {
+  local raw_dir="$1"
+  local scene; scene="$(basename "$raw_dir")"
   PYTHONPATH=lewm_genesis:lewm_worlds python3 \
     "$SCRIPT_DIR/derive_raw_rollout_labels.py" \
-    "$raw_dir" \
-    --scene-corpus "$CORPUS" \
-    --scene-id "$scene" \
-    --out "$OUT/labels/$scene" >/dev/null
-done
+    "$raw_dir" --scene-corpus "$CORPUS" --scene-id "$scene" \
+    --out "$OUT/labels/$scene" >/dev/null \
+    || { echo "[FAIL labels] $scene (derive error)" >&2; return 1; }
+}
+export -f derive_one
+export SCRIPT_DIR OUT CORPUS
+printf '%s\0' "$OUT"/raw/*/ \
+  | xargs -0 -r -P "$J3" -I {} bash -c 'derive_one "$@"' _ {}
+echo "[3/4] audit derived labels"
 python3 "$SCRIPT_DIR/audit_derived_labels.py" "$OUT/labels"
 
 if [[ "$SKIP_RENDER" -eq 1 ]]; then

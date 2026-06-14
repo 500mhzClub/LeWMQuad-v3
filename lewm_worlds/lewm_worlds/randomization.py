@@ -10,7 +10,7 @@ families use :data:`DEFAULT_PROFILE`; the visual-stress family uses
 
 Landmark colors are deliberately *not* randomized: landmark identity is part
 of the task signal and changing colors per scene would break the goal-image
-contract that GoalAdapter relies on later (see ``docs/v3_hjepa_plan.md``).
+contract that GoalAdapter relies on later (see ``docs/v3_topological_nav_plan.md``).
 """
 
 from __future__ import annotations

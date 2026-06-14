@@ -60,7 +60,7 @@ The current docs are valuable but intentionally abstract:
 - `docs/fresh_retrain_data_spec.md` is the source of truth for dataset schema,
   scene counts, action-block coverage, render-quality gates, reset integrity,
   and training-readiness criteria.
-- `docs/v3_hjepa_plan.md` is the source of truth for the H-JEPA diagnostic
+- `docs/v3_topological_nav_plan.md` is the source of truth for the H-JEPA diagnostic
   phases, the action-block abstraction, the privileged-leak rule, and the
   portability requirements.
 - `docs/architecture_talking_points.md` captures the v2 architecture and

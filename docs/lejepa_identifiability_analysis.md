@@ -50,7 +50,7 @@ explicit prescription (§8 Discussion):
   the LeJEPA recipe (the paper cites LeWorldModel as ref [9]). The encoder we
   are about to train is directly governed by Thm. 1's preconditions.
 - **The SIGReg-vs-VICReg split in
-  [v3_hjepa_plan.md §3.4](v3_hjepa_plan.md) is correct.** SIGReg for the
+  [v3_topological_nav_plan.md §3.4](v3_topological_nav_plan.md) is correct.** SIGReg for the
   predictive LeWM latents; VICReg + supervised contrastive for the
   retrieval-side BeliefEncoder. The paper validates this — SIGReg is the most
   robust of the three Gaussianity enforcers (Tab. 1, Fig. 4b), but it is only
@@ -132,7 +132,7 @@ These already reduce the risk and should be preserved:
 - **`collector_mix_realized` in per-scene `summary.json`**
   (`lewm_genesis/lewm_genesis/rollout.py:890`) lets us audit realized shares
   per scene without rerunning anything.
-- **SIGReg-vs-VICReg split** ([v3_hjepa_plan.md §3.4](v3_hjepa_plan.md)) is
+- **SIGReg-vs-VICReg split** ([v3_topological_nav_plan.md §3.4](v3_topological_nav_plan.md)) is
   the right choice and matches the paper's analysis of where each estimator
   works.
 
@@ -179,7 +179,7 @@ Ordered by leverage. None of these require re-collecting data.
       - Alignment gap `δ = L(h) − 2(1−ρ)·tr(Cov(h(z)))`.
       - The downstream proxy that matters most for the maze task: latent-to-
         graph-distance Spearman ρ on a held-out scene set (this is already
-        the diagnostic [v3_hjepa_plan.md §4.5](v3_hjepa_plan.md) uses).
+        the diagnostic [v3_topological_nav_plan.md §4.5](v3_topological_nav_plan.md) uses).
       If the isotropic-subset encoder is worse on the downstream proxy, the
       paper's prescription is the wrong tradeoff for the maze task and the
       full mix wins. If it is comparable or better, lock in the subset filter.
@@ -191,7 +191,7 @@ Ordered by leverage. None of these require re-collecting data.
 
 - [ ] **Per-collector eigenvalue / Hermite-mode probes** on a small held-out
       scene set, mirroring Fig. 4a of the paper. Useful only if the Phase A4
-      reachability probe in [v3_hjepa_plan.md §4.5](v3_hjepa_plan.md) lands in
+      reachability probe in [v3_topological_nav_plan.md §4.5](v3_topological_nav_plan.md) lands in
       the ambiguous regime — gives a paper-faithful diagnostic for *why* the
       latents are or are not preserving geometry.
 
@@ -207,7 +207,7 @@ Ordered by leverage. None of these require re-collecting data.
   guidance, not a spec.
 - **Change BeliefEncoder training.** VICReg + supervised contrastive on
   privileged cell labels sidesteps the Gaussian-marginal issue entirely
-  ([v3_hjepa_plan.md §3.4](v3_hjepa_plan.md) already makes this argument).
+  ([v3_topological_nav_plan.md §3.4](v3_topological_nav_plan.md) already makes this argument).
 
 ## 6. LeWM training subset filter contract
 
