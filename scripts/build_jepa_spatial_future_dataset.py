@@ -116,11 +116,16 @@ def build_spatial_future_dataset(
     render_root: Path,
     output: Path,
     max_rows: int = 0,
+    include_unplanned_candidates: bool = False,
 ) -> dict:
     """Write present/action/future tuples without hiding invalid future targets."""
 
     future_frames, render_stats = _future_frame_index(plan_root, render_root)
     stats = Counter()
+    stats["candidate_sequences_written"] = 0
+    stats["candidate_sequences_complete_valid"] = 0
+    stats["candidate_sequences_incomplete_or_invalid"] = 0
+    stats["candidate_sequences_unplanned_skipped"] = 0
     scenes = set()
     output.parent.mkdir(parents=True, exist_ok=True)
     with benchmark.open() as source, output.open("w") as destination:
@@ -129,9 +134,16 @@ def build_spatial_future_dataset(
                 break
             stats["benchmark_rows"] += 1
             row = json.loads(line)
-            scenes.add(str(row["scene_id"]))
             horizon = int(row["counterfactual_horizon_blocks"])
             for candidate_index, candidate in enumerate(row["counterfactual_candidates"]):
+                planned = any(
+                    (source_index, candidate_index, block_index) in future_frames
+                    for block_index in range(horizon)
+                )
+                if not planned and not include_unplanned_candidates:
+                    stats["candidate_sequences_unplanned_skipped"] += 1
+                    continue
+                scenes.add(str(row["scene_id"]))
                 stats["candidate_sequences_total"] += 1
                 bucket = _candidate_bucket(candidate)
                 stats[f"candidate_sequences_{bucket}"] += 1
@@ -238,7 +250,13 @@ def build_spatial_future_dataset(
                 "observation-validity event metadata"
             ),
             "privileged_consequences_are_evaluation_labels": True,
-            "writes_every_candidate_sequence": True,
+            "writes_every_candidate_sequence": include_unplanned_candidates,
+            "candidate_scope": (
+                "all benchmark candidates"
+                if include_unplanned_candidates
+                else "planned candidates only"
+            ),
+            "writes_every_planned_candidate_sequence": True,
             "token_prediction_requires_valid_future_observation": True,
             "renderer_invalidity_is_not_a_collision_label": True,
         },
@@ -254,6 +272,7 @@ def main() -> int:
     parser.add_argument("--render-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-rows", type=int, default=0)
+    parser.add_argument("--include-unplanned-candidates", action="store_true")
     args = parser.parse_args()
 
     summary = build_spatial_future_dataset(
@@ -262,6 +281,7 @@ def main() -> int:
         render_root=args.render_root,
         output=args.output,
         max_rows=args.max_rows,
+        include_unplanned_candidates=args.include_unplanned_candidates,
     )
     print(json.dumps(summary, indent=2))
     return 0

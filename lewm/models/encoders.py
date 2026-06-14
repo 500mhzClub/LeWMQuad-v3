@@ -156,6 +156,10 @@ class JointEncoder(nn.Module):
         patch_size: int = 14,
         use_proprio: bool = False,
         proprio_dim: int = 47,
+        vision_depth: int = 12,
+        vision_heads: int = 3,
+        vision_mlp_ratio: int = 4,
+        vision_dropout: float = 0.0,
     ):
         super().__init__()
         self.use_proprio = use_proprio
@@ -163,6 +167,10 @@ class JointEncoder(nn.Module):
             image_size=image_size,
             patch_size=patch_size,
             hidden_dim=latent_dim,
+            depth=vision_depth,
+            n_heads=vision_heads,
+            mlp_ratio=vision_mlp_ratio,
+            dropout=vision_dropout,
         )
         if use_proprio:
             self.prop_enc = ProprioEncoder(proprio_dim, latent_dim)

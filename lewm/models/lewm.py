@@ -58,6 +58,10 @@ class LeWorldModel(nn.Module):
         image_size: int = 224,
         patch_size: int = 14,
         use_proprio: bool = False,
+        encoder_depth: int = 12,
+        encoder_heads: int = 3,
+        encoder_mlp_ratio: int = 4,
+        encoder_dropout: float = 0.0,
     ):
         super().__init__()
         self.latent_dim = latent_dim
@@ -73,6 +77,10 @@ class LeWorldModel(nn.Module):
             image_size=image_size,
             patch_size=patch_size,
             use_proprio=use_proprio,
+            vision_depth=encoder_depth,
+            vision_heads=encoder_heads,
+            vision_mlp_ratio=encoder_mlp_ratio,
+            vision_dropout=encoder_dropout,
         )
         self.enc_projector = Projector(latent_dim, latent_dim)
 

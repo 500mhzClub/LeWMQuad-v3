@@ -404,3 +404,54 @@ The first Phase 2B architecture and data contracts are implemented:
 This is infrastructure, not a Phase 2B result. The next execution step is a
 scene-disjoint end-to-end training factorial against pooled CLS, persistence,
 appearance-only SIGReg, and spatial variance-floor controls.
+
+## Phase 2B Result: End-To-End Spatial Tokens Still Fail One-Step Prediction
+
+The registered eight-scene-train/eight-scene-evaluation bounded factorial is
+complete.
+
+- pooled one-step/persistence ratio: `2.07x`;
+- regularized spatial one-step/persistence ratio: `2.69x`;
+- regularized spatial two-step/persistence ratio: `3.68x`;
+- unregularized spatial mean feature standard deviation: `0.027`, collapsed;
+- meaningful real-action advantage over zero or shuffled action: none.
+
+The spatial variance floor is necessary because removing it collapses the
+latent. It is not sufficient because the non-collapsed model still fails to
+use actions meaningfully and loses to persistence at the first block.
+
+Do not scale Phase 2B or add recurrence.
+
+## Phase 2C Result: Naive EMA Teacher Is Not Sufficient
+
+Phase 2C added a stop-gradient EMA target encoder and projector with momentum
+`0.99`, while holding the data, model capacity, anti-collapse term, and gates
+fixed.
+
+The EMA target remains non-collapsed but fails persistence in all eight epochs.
+Its best one-step ratio is `1.97x` and final ratio is `8.37x`. Mean target
+feature standard deviation grows from `0.291` to `1.795`, while training
+prediction loss grows from `0.136` to `1.623`.
+
+This is consistent with feature-scale drift: the current spatial variance
+floor prevents low variance but does not impose normalized or bounded target
+geometry. A naive EMA teacher therefore does not rescue the image-aligned
+patch-token objective.
+
+## Phase 2D Next Implementation Target
+
+Run one more bounded objective-level test before replacing image-aligned patch
+tokens:
+
+1. normalize spatial student predictions and EMA teacher targets;
+2. add a masked action-identifiability loss requiring the true action to
+   outperform zero and mismatched actions;
+3. require action advantage of at least `10%` of actual target change;
+4. retain the one-step persistence gate as the stop condition.
+
+If this fails, move to an explicitly motion-equivariant spatial state such as
+learned egocentric/world-aligned slots or a factorized affordance/dynamics
+branch. Do not increase capacity, horizon, or controller complexity first.
+
+Detailed interpretation is in
+`docs/lewm_jepa_phase2b_phase2c_findings_2026-06-14.md`.

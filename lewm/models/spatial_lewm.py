@@ -1,6 +1,7 @@
 """End-to-end JEPA objective for action-predictable spatial vision tokens."""
 from __future__ import annotations
 
+import copy
 from typing import Dict
 
 import torch
@@ -74,14 +75,18 @@ class SpatialLeWorldModel(nn.Module):
         spatial_target_std: float = 1.0,
         sigreg_projections: int = 1024,
         sigreg_knots: int = 17,
+        target_ema_momentum: float | None = None,
     ):
         super().__init__()
+        if target_ema_momentum is not None and not 0.0 <= target_ema_momentum < 1.0:
+            raise ValueError("target_ema_momentum must lie in [0, 1)")
         self.latent_dim = int(latent_dim)
         self.appearance_sigreg_lambda = float(appearance_sigreg_lambda)
         self.spatial_variance_lambda = float(spatial_variance_lambda)
         self.spatial_target_std = float(spatial_target_std)
         self.sigreg_projections = int(sigreg_projections)
         self.sigreg_knots = int(sigreg_knots)
+        self.target_ema_momentum = target_ema_momentum
 
         self.encoder = VisionEncoder(
             image_size=image_size,
@@ -104,6 +109,58 @@ class SpatialLeWorldModel(nn.Module):
             mlp_dim=pred_mlp_dim,
             dropout=pred_dropout,
         )
+        self.target_encoder = (
+            copy.deepcopy(self.encoder) if target_ema_momentum is not None else None
+        )
+        self.target_spatial_projector = (
+            copy.deepcopy(self.spatial_projector)
+            if target_ema_momentum is not None
+            else None
+        )
+        if self.uses_ema_target:
+            for parameter in self.target_encoder.parameters():
+                parameter.requires_grad_(False)
+            for parameter in self.target_spatial_projector.parameters():
+                parameter.requires_grad_(False)
+            self.target_encoder.eval()
+            self.target_spatial_projector.eval()
+
+    @property
+    def uses_ema_target(self) -> bool:
+        return self.target_encoder is not None
+
+    def train(self, mode: bool = True) -> SpatialLeWorldModel:
+        """Keep the stop-gradient target modules in evaluation mode."""
+
+        super().train(mode)
+        if self.uses_ema_target:
+            self.target_encoder.eval()
+            self.target_spatial_projector.eval()
+        return self
+
+    @torch.no_grad()
+    def update_target_encoder(self) -> None:
+        """Update the stop-gradient target encoder and projector by EMA."""
+
+        if not self.uses_ema_target:
+            return
+        momentum = float(self.target_ema_momentum)
+        for target_module, online_module in (
+            (self.target_encoder, self.encoder),
+            (self.target_spatial_projector, self.spatial_projector),
+        ):
+            for target, online in zip(
+                target_module.parameters(),
+                online_module.parameters(),
+                strict=True,
+            ):
+                target.mul_(momentum).add_(online, alpha=1.0 - momentum)
+            for target, online in zip(
+                target_module.buffers(),
+                online_module.buffers(),
+                strict=True,
+            ):
+                target.copy_(online)
 
     def encode_seq(self, vision: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Return raw CLS and patch-token sequences."""
@@ -118,6 +175,35 @@ class SpatialLeWorldModel(nn.Module):
             vision.reshape(batch * steps, *vision.shape[2:])
         ).reshape(batch, steps, self.encoder.num_patches + 1, self.latent_dim)
         return tokens[:, :, 0], tokens[:, :, 1:]
+
+    @torch.no_grad()
+    def target_spatial_seq(self, vision: torch.Tensor) -> torch.Tensor:
+        """Return projected spatial targets from the EMA teacher or online model."""
+
+        if not self.uses_ema_target:
+            _appearance, spatial_raw = self.encode_seq(vision)
+            return self.spatial_projector(spatial_raw)
+        if vision.ndim != 5:
+            raise ValueError(
+                "vision must have shape (B, T, C, H, W), got "
+                f"{tuple(vision.shape)}"
+            )
+        batch, steps = vision.shape[:2]
+        tokens = self.target_encoder.forward_tokens(
+            vision.reshape(batch * steps, *vision.shape[2:])
+        ).reshape(batch, steps, self.encoder.num_patches + 1, self.latent_dim)
+        return self.target_spatial_projector(tokens[:, :, 1:])
+
+    @torch.no_grad()
+    def target_spatial_image(self, vision: torch.Tensor) -> torch.Tensor:
+        """Return projected target patch tokens for a batch of images."""
+
+        if vision.ndim != 4:
+            raise ValueError(
+                "vision must have shape (B, C, H, W), got "
+                f"{tuple(vision.shape)}"
+            )
+        return self.target_spatial_seq(vision[:, None])[:, 0]
 
     def rollout_spatial(
         self,
@@ -158,7 +244,12 @@ class SpatialLeWorldModel(nn.Module):
         )
         predicted_proj = self.spatial_projector(predicted_raw)
         spatial_proj = self.spatial_projector(spatial_raw)
-        per_transition = (predicted_proj - spatial_proj[:, 1:]).square().mean(
+        target_spatial_proj = (
+            self.target_spatial_seq(vision)[:, 1:]
+            if self.uses_ema_target
+            else spatial_proj[:, 1:]
+        )
+        per_transition = (predicted_proj - target_spatial_proj).square().mean(
             dim=(2, 3)
         )
         if mask is not None:
@@ -203,6 +294,7 @@ class SpatialLeWorldModel(nn.Module):
                     "appearance_proj": appearance_proj,
                     "spatial_raw": spatial_raw,
                     "spatial_proj": spatial_proj,
+                    "target_spatial_proj": target_spatial_proj,
                     "predicted_spatial_proj": predicted_proj,
                 }
             )

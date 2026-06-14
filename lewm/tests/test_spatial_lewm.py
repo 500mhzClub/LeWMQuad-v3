@@ -55,6 +55,69 @@ def test_spatial_lewm_rejects_misaligned_actions() -> None:
         model(torch.randn(2, 3, 3, 28, 28), torch.randn(2, 1, 6))
 
 
+def test_spatial_lewm_ema_target_is_frozen_and_updates() -> None:
+    torch.manual_seed(19)
+    model = SpatialLeWorldModel(
+        latent_dim=12,
+        cmd_dim=6,
+        pred_layers=1,
+        pred_heads=3,
+        pred_dim_head=4,
+        pred_mlp_dim=24,
+        pred_dropout=0.0,
+        image_size=28,
+        patch_size=14,
+        sigreg_projections=8,
+        sigreg_knots=5,
+        target_ema_momentum=0.5,
+    )
+    model.train()
+    target_before = model.target_encoder.patch_embed.weight.detach().clone()
+    with torch.no_grad():
+        model.encoder.patch_embed.weight.add_(2.0)
+
+    model.update_target_encoder()
+    target_after = model.target_encoder.patch_embed.weight.detach()
+
+    assert model.uses_ema_target
+    assert not model.target_encoder.training
+    assert not model.target_spatial_projector.training
+    assert all(
+        not parameter.requires_grad for parameter in model.target_encoder.parameters()
+    )
+    assert torch.allclose(target_after, target_before + 1.0)
+
+
+def test_spatial_lewm_ema_target_receives_no_gradient() -> None:
+    torch.manual_seed(23)
+    model = SpatialLeWorldModel(
+        latent_dim=12,
+        cmd_dim=6,
+        pred_layers=1,
+        pred_heads=3,
+        pred_dim_head=4,
+        pred_mlp_dim=24,
+        pred_dropout=0.0,
+        image_size=28,
+        patch_size=14,
+        sigreg_projections=8,
+        sigreg_knots=5,
+        target_ema_momentum=0.9,
+    )
+
+    output = model(torch.randn(2, 3, 3, 28, 28), torch.randn(2, 2, 6))
+    output["loss"].backward()
+
+    assert model.encoder.patch_embed.weight.grad is not None
+    assert all(
+        parameter.grad is None for parameter in model.target_encoder.parameters()
+    )
+    assert all(
+        parameter.grad is None
+        for parameter in model.target_spatial_projector.parameters()
+    )
+
+
 def test_default_spatial_lewm_is_capacity_matched_to_pooled_lewm() -> None:
     pooled = LeWorldModel()
     spatial = SpatialLeWorldModel()

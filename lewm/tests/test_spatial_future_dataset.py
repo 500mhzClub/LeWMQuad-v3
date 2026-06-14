@@ -209,3 +209,49 @@ def test_build_spatial_future_dataset_preserves_invalid_sequence(tmp_path: Path)
         "near_forward_geometry"
     ]
     assert row["future_observation_event"].startswith("incomplete_or_renderer_invalid")
+
+
+def test_build_spatial_future_dataset_skips_unplanned_candidates(tmp_path: Path) -> None:
+    benchmark = tmp_path / "benchmark.jsonl"
+    candidate = {
+        "primitive_sequence": ["hold"],
+        "active_blocks": [[0.0] * 15],
+        "starts_grid_unsafe": False,
+        "enters_grid_unsafe": False,
+        "ends_grid_unsafe": False,
+        "unsafe_sample_fraction": 0.0,
+        "minimum_swept_configuration_clearance_m": 0.2,
+        "p05_swept_configuration_clearance_m": 0.2,
+        "clearance_gain_m": 0.0,
+        "target_progress_m": 0.0,
+        "target_heading_error_rad": 0.0,
+        "target_recoverable": True,
+    }
+    _write_jsonl(
+        benchmark,
+        [
+            {
+                "scene_id": "scene",
+                "family": "family",
+                "split": "train",
+                "start_frame": str(tmp_path / "start.png"),
+                "local_target_frame": None,
+                "counterfactual_target_cell_id": None,
+                "counterfactual_horizon_blocks": 1,
+                "counterfactual_oracle_index": 0,
+                "counterfactual_candidates": [candidate],
+            }
+        ],
+    )
+    output = tmp_path / "dataset.jsonl"
+
+    summary = build_spatial_future_dataset(
+        benchmark=benchmark,
+        plan_root=tmp_path / "plans",
+        render_root=tmp_path / "renders",
+        output=output,
+    )
+
+    assert output.read_text() == ""
+    assert summary["candidate_sequences_unplanned_skipped"] == 1
+    assert summary["candidate_sequences_written"] == 0

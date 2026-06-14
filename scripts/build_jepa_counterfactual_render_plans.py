@@ -217,6 +217,12 @@ def main() -> int:
     parser.add_argument("--start-row", type=int, default=0)
     parser.add_argument("--max-rows", type=int, default=0)
     parser.add_argument(
+        "--max-rows-per-scene",
+        type=int,
+        default=0,
+        help="Maximum selected source states per scene; 0 keeps all.",
+    )
+    parser.add_argument(
         "--max-candidates-per-row",
         type=int,
         default=0,
@@ -237,6 +243,8 @@ def main() -> int:
     input_rows = 0
     output_rows = 0
     candidate_count = 0
+    skipped_scene_cap_rows = 0
+    rows_by_scene: dict[str, int] = {}
     try:
         with args.input.open() as source:
             for source_index, line in enumerate(source):
@@ -247,6 +255,12 @@ def main() -> int:
                 input_rows += 1
                 row = json.loads(line)
                 scene_id = str(row["scene_id"])
+                if (
+                    args.max_rows_per_scene > 0
+                    and rows_by_scene.get(scene_id, 0) >= args.max_rows_per_scene
+                ):
+                    skipped_scene_cap_rows += 1
+                    continue
                 if scene_id not in scenes:
                     scene_dir = (
                         args.output_root
@@ -311,6 +325,7 @@ def main() -> int:
                     scene["candidate_count"] += 1
                 output_rows += 1
                 scene["row_count"] += 1
+                rows_by_scene[scene_id] = rows_by_scene.get(scene_id, 0) + 1
     finally:
         for stream in streams.values():
             stream.close()
@@ -324,11 +339,14 @@ def main() -> int:
         "output_root": str(args.output_root.resolve()),
         "start_row": args.start_row,
         "max_rows": args.max_rows,
+        "max_rows_per_scene": args.max_rows_per_scene,
         "max_candidates_per_row": args.max_candidates_per_row,
         "candidate_selection": args.candidate_selection,
         "input_rows": input_rows,
         "output_rows": output_rows,
+        "skipped_scene_cap_rows": skipped_scene_cap_rows,
         "scene_count": len(scenes),
+        "rows_by_scene": rows_by_scene,
         "candidate_count": candidate_count,
         "frame_count": sum(scene["frame_count"] for scene in scenes.values()),
         "plans": [str(path.resolve()) for path in plan_paths],
