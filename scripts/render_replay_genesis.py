@@ -509,6 +509,7 @@ def _finalize_env_record(
         "camera_pose_world": camera_pose,
         "camera_safety": camera_safety,
         "command_context": frame.get("command_context"),
+        "counterfactual_context": frame.get("counterfactual_context"),
         "source_frame": {
             "source_line": frame.get("source_line"),
             "source_topic": frame.get("source_topic"),

@@ -165,11 +165,20 @@ class ConditionalBlock(nn.Module):
         nn.init.constant_(self.adaLN_modulation[-1].weight, 0)
         nn.init.constant_(self.adaLN_modulation[-1].bias, 0)
 
-    def forward(self, x: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        cond: torch.Tensor,
+        *,
+        causal: bool = True,
+    ) -> torch.Tensor:
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
             self.adaLN_modulation(cond).chunk(6, dim=-1)
         )
-        x = x + gate_msa * self.attn(modulate(self.norm1(x), shift_msa, scale_msa))
+        x = x + gate_msa * self.attn(
+            modulate(self.norm1(x), shift_msa, scale_msa),
+            causal=causal,
+        )
         x = x + gate_mlp * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
         return x
 

@@ -36,7 +36,7 @@ def _quat_xyzw_from_rpy(roll: float, pitch: float, yaw: float) -> list[float]:
     ]
 
 
-def _selected_candidate_indices(row: dict, max_candidates: int) -> list[int]:
+def _uniform_candidate_indices(row: dict, max_candidates: int) -> list[int]:
     count = len(row["counterfactual_candidates"])
     if max_candidates <= 0 or max_candidates >= count:
         return list(range(count))
@@ -52,6 +52,70 @@ def _selected_candidate_indices(row: dict, max_candidates: int) -> list[int]:
         if len(selected) >= max_candidates:
             break
         selected.add(index)
+    return sorted(selected)
+
+
+def _outcome_bucket(candidate: dict) -> str:
+    if bool(candidate["enters_grid_unsafe"]) or bool(candidate["ends_grid_unsafe"]):
+        return "kinematic_unsafe"
+    progress = candidate.get("target_progress_m")
+    if (
+        progress is not None
+        and float(progress) > 0.0
+        and candidate.get("target_recoverable") is not False
+    ):
+        return "safe_positive_progress"
+    return "safe_other"
+
+
+def _evenly_spaced(values: list[int], count: int) -> list[int]:
+    if count <= 0 or not values:
+        return []
+    if count >= len(values):
+        return values
+    positions = np.linspace(0, len(values) - 1, num=count, dtype=np.int64)
+    return [values[int(position)] for position in positions]
+
+
+def _selected_candidate_indices(
+    row: dict,
+    max_candidates: int,
+    selection: str = "uniform",
+) -> list[int]:
+    if selection == "uniform":
+        return _uniform_candidate_indices(row, max_candidates)
+    if selection != "outcome_stratified":
+        raise ValueError(f"unsupported candidate selection strategy: {selection}")
+
+    candidates = row["counterfactual_candidates"]
+    count = len(candidates)
+    if max_candidates <= 0 or max_candidates >= count:
+        return list(range(count))
+    oracle_index = int(row["counterfactual_oracle_index"])
+    bucket_names = ("safe_positive_progress", "kinematic_unsafe", "safe_other")
+    buckets = {
+        name: [
+            index
+            for index, candidate in enumerate(candidates)
+            if _outcome_bucket(candidate) == name
+        ]
+        for name in bucket_names
+    }
+    selected = {oracle_index}
+    base_quota, remainder = divmod(max_candidates, len(bucket_names))
+    for bucket_index, name in enumerate(bucket_names):
+        quota = base_quota + int(bucket_index < remainder)
+        values = [index for index in buckets[name] if index != oracle_index]
+        needed = max(0, quota - int(oracle_index in buckets[name]))
+        selected.update(_evenly_spaced(values, needed))
+
+    if len(selected) < max_candidates:
+        remaining = [index for index in range(count) if index not in selected]
+        selected.update(_evenly_spaced(remaining, max_candidates - len(selected)))
+    if len(selected) > max_candidates:
+        removable = [index for index in sorted(selected, reverse=True) if index != oracle_index]
+        for index in removable[: len(selected) - max_candidates]:
+            selected.remove(index)
     return sorted(selected)
 
 
@@ -158,6 +222,12 @@ def main() -> int:
         default=0,
         help="Deterministic bounded subset including the oracle; 0 emits all candidates.",
     )
+    parser.add_argument(
+        "--candidate-selection",
+        choices=("uniform", "outcome_stratified"),
+        default="outcome_stratified",
+        help="Bounded candidate subset strategy; ignored when all candidates are emitted.",
+    )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
@@ -202,7 +272,11 @@ def main() -> int:
                         "candidate_count": 0,
                     }
                 scene = scenes[scene_id]
-                selected = _selected_candidate_indices(row, args.max_candidates_per_row)
+                selected = _selected_candidate_indices(
+                    row,
+                    args.max_candidates_per_row,
+                    args.candidate_selection,
+                )
                 start_position = row["start_base_pose_world"]["position"]
                 start = Pose2D(
                     x_m=float(start_position["x"]),
@@ -251,6 +325,7 @@ def main() -> int:
         "start_row": args.start_row,
         "max_rows": args.max_rows,
         "max_candidates_per_row": args.max_candidates_per_row,
+        "candidate_selection": args.candidate_selection,
         "input_rows": input_rows,
         "output_rows": output_rows,
         "scene_count": len(scenes),

@@ -340,3 +340,67 @@ These are kinematic endpoint observations and inherit the physics-calibration
 warning above. The next implementation unit is the capacity-matched
 spatial-token predictor trained on these matched current/action/future tuples,
 with kinematic versus physically replayed subsets reported separately.
+
+## Phase 2A Result: Frozen Patch Tokens Fail The Learnability Gate
+
+Phase 2A implemented a capacity-matched action-conditioned spatial-token
+predictor and a matched current/action/future observation dataset. The dataset
+contract was revised after scaled rendering showed that invalid future
+observations are outcome-dependent. It now preserves every candidate and marks
+missing or renderer-invalid observations explicitly rather than silently
+dropping them.
+
+On the bounded 64-state, nine-candidate-per-state render:
+
+- training invalid planned frames: `416/1,152`;
+- evaluation invalid planned frames: `311/1,152`;
+- unsafe sequences with any invalid frame: `56.5%` train and `52.9%` eval;
+- safe sequences with any invalid frame: `31.2%` train and `21.1%` eval.
+
+Renderer invalidity is not treated as a collision label. Token loss is limited
+to valid observations, and all resulting selection metrics are explicitly
+conditional on that filtered subset.
+
+The corrected bidirectional one-layer frozen-encoder diagnostic used 338 valid
+training sequences and 399 valid sequences from a disjoint scene. At epoch 5:
+
+- train token MSE: `0.210`;
+- held-out teacher-forced token MSE: `0.755`;
+- held-out free-running token MSE: `0.955`;
+- held-out persistence token MSE: `0.347`;
+- free-running/persistence MSE ratio: `2.76x`.
+
+It also loses to persistence at the first block (`0.782` versus `0.324`), so
+recursive rollout drift is not the primary explanation.
+
+The frozen patch tokens therefore fail the minimum Phase 2 gate. The old
+training objective predicts and regularises only CLS, so its internal patch
+tokens were never required to form stable, action-predictable spatial state.
+Do not scale the frozen spatial predictor.
+
+The next implementation target is Phase 2B: a capacity-matched end-to-end
+spatial JEPA controlled against pooled CLS, persistence, and branch-specific
+anti-collapse variants. Full interpretation and gates are recorded in
+`docs/lewm_jepa_phase1_phase2a_findings_2026-06-14.md`.
+
+## Phase 2B Started: End-To-End Spatial Objective
+
+The first Phase 2B architecture and data contracts are implemented:
+
+- `SpatialLeWorldModel` applies action-conditioned future-prediction loss to
+  every ordered patch token, so the encoder is explicitly trained to create
+  predictable spatial state;
+- the default complete spatial model is capacity matched to pooled LeWM
+  (`18,083,104` versus `18,034,720` trainable parameters, `+0.27%`);
+- CLS retains a separate appearance projector and SIGReg term;
+- the spatial branch has a token-position-local variance-floor anti-collapse
+  term instead of being forced through global isotropic SIGReg;
+- spatial rollout uses bidirectional attention within each patch grid while
+  temporal pooled LeWM attention remains causal;
+- bounded future-render plans can now select candidates deterministically
+  across safe-positive-progress, kinematic-unsafe, and safe-other outcome
+  buckets.
+
+This is infrastructure, not a Phase 2B result. The next execution step is a
+scene-disjoint end-to-end training factorial against pooled CLS, persistence,
+appearance-only SIGReg, and spatial variance-floor controls.

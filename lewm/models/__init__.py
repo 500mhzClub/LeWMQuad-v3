@@ -10,6 +10,8 @@ from .encoders import JointEncoder, Projector, VisionEncoder, ProprioEncoder
 from .predictor import TransformerPredictor, ActionEmbedder
 from .sigreg import sigreg, sigreg_stepwise
 from .lewm import LeWorldModel
+from .spatial_predictor import SpatialTokenPredictor, trainable_parameter_count
+from .spatial_lewm import SpatialLeWorldModel, TokenProjector, spatial_variance_floor_loss
 
 __all__ = [
     "LeWorldModel",
@@ -21,4 +23,9 @@ __all__ = [
     "Projector",
     "sigreg",
     "sigreg_stepwise",
+    "SpatialTokenPredictor",
+    "trainable_parameter_count",
+    "SpatialLeWorldModel",
+    "TokenProjector",
+    "spatial_variance_floor_loss",
 ]
