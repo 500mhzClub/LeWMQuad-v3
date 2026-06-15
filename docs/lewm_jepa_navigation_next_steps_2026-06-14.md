@@ -774,3 +774,21 @@ The next bounded implementation should be a JEPA integration smoke that predicts
 or exposes the Phase 2S-style swept-affordance state while retaining the
 primitive gate, action-identifiability gate, zero/shuffled-action controls, and
 one-step persistence gate.
+
+Follow-up on 2026-06-15: Phase 2T implemented that first JEPA integration
+smoke by keeping the C2 normalized spatial JEPA objective and adding a
+factorized consequence head on predicted future spatial tokens. The bounded
+ROCm GPU smoke completed but failed both gates. The primitive gate scored
+`0.1094` primitive match and `0.2833` regret, worse than the primitive
+action-only prior (`0.1641` match, `0.0586` regret). The spatial JEPA gate also
+failed stability, hard-negative action advantage, zero-action advantage, and
+persistence (`1842.87x`). This smoke is documented in:
+
+```text
+docs/lewm_jepa_phase2t_factorized_jepa_affordance_integration_2026-06-15.md
+```
+
+Do not launch a full JEPA training matrix from Phase 2T. The next fix should
+change the target state itself: direct swept-affordance state prediction,
+RGB-to-Phase-2S state distillation, or factorized affordance slots tied to
+action-conditioned consequence geometry.
