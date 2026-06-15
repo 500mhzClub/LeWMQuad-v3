@@ -518,10 +518,34 @@
       ]
     },
     {
+      "id": "phase2u_source_action_factorized_affordance_bridge",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2U source-RGB/action-sequence factorized affordance bridge completed on the ROCm GPU runtime and improved primitive match over the primitive action-only prior, but failed the primitive gate because match remained below 0.50 and utility regret was worse than the prior.",
+      "prohibited_wording": "RGB observations cannot support affordance learning.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2u_source_action_factorized_affordance_smoke.json",
+          "sha256": "5e3ae9d356c8caee6b7432053fb7472f2387619146d6f65c337a7528add18d14"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2u_source_action_factorized_affordance_smoke_gate.json",
+          "sha256": "c07e4ba819e461df41e308676a07bfc34c8de94297dfee64b56d9f10e012e554"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded bridge smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "only the small source/action RGB encoder with FiLM interaction was tested",
+        "this is an affordance bridge diagnostic, not a JEPA world model"
+      ]
+    },
+    {
       "id": "current_research_decision",
       "status": "registered",
       "evidence_class": "D",
-      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, the Phase 2P source-only factorized affordance head, the Phase 2R source-local geometry-feature affordance model, and the Phase 2T C2 patch-token JEPA auxiliary factor head. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. Phase 2S shows that an action-conditioned swept-geometry learned affordance state can pass the primitive gate. Phase 2T shows that attaching a factor head to the current patch-token JEPA futures is not enough. The next bounded step must change the target state itself and pass primitive utility, stability, action-identifiability, zero-action, and persistence gates before any full training matrix.",
+      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, the Phase 2P source-only factorized affordance head, the Phase 2R source-local geometry-feature affordance model, the Phase 2T C2 patch-token JEPA auxiliary factor head, and the Phase 2U small source/action factorized affordance bridge. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. Phase 2S shows that an action-conditioned swept-geometry learned affordance state can pass the primitive gate. Phase 2T and Phase 2U show that neither attaching a factor head to current patch-token JEPA futures nor using the current small RGB/action bridge is enough. The next bounded step must introduce stronger state supervision or a non-image-aligned target state and pass primitive utility, stability, action-identifiability, zero-action, and persistence gates before any full training matrix.",
       "preregistration": "docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md"
     }
   ]

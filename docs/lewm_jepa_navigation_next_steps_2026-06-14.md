@@ -792,3 +792,21 @@ Do not launch a full JEPA training matrix from Phase 2T. The next fix should
 change the target state itself: direct swept-affordance state prediction,
 RGB-to-Phase-2S state distillation, or factorized affordance slots tied to
 action-conditioned consequence geometry.
+
+Follow-up on 2026-06-15: Phase 2U tested a narrower source/action bridge:
+source RGB plus candidate two-block action sequence directly predicted the six
+factorized consequence labels. The ROCm GPU smoke completed with finite metrics
+but failed the primitive gate. It improved primitive match over the
+source-independent prior (`0.2148` vs `0.1641`) but stayed below the `0.50`
+threshold and had much worse regret (`0.1903` vs `0.0586`). This bridge is
+documented in:
+
+```text
+docs/lewm_jepa_phase2u_source_action_factorized_affordance_2026-06-15.md
+```
+
+Do not launch a full JEPA training run from Phase 2U. The current small
+source/action RGB encoder is not enough. The next bounded fix must add stronger
+state supervision: RGB-to-swept-geometry distillation, factorized affordance
+slots, or another compact non-image-aligned state target tied directly to
+swept clearance, safety, progress, and heading.
