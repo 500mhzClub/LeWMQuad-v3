@@ -422,10 +422,30 @@
       ]
     },
     {
+      "id": "phase2q_factorized_affordance_ceiling_audit",
+      "status": "passed_train_validation_ceiling_audit",
+      "evidence_class": "B",
+      "permitted_wording": "Using true Phase 2O factor targets, the Phase 2P safety-first selector passes the primitive gate on train and validation, so the target/selector contract is coherent enough to use as a ceiling for the next learned affordance-state pilot.",
+      "prohibited_wording": "The factorized affordance model is solved.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2q_factorized_affordance_ceiling_audit.json",
+          "sha256": "3140c18125fc625ae30c40a8c84a4801f879ff4927651a848c1b5d1468d3fc62"
+        }
+      ],
+      "limitations": [
+        "privileged true-factor ceiling only",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened for reported metrics and model selection",
+        "factor targets are generator-derived supervision",
+        "this is not a learned model and not a JEPA world model"
+      ]
+    },
+    {
       "id": "current_research_decision",
       "status": "registered",
       "evidence_class": "D",
-      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, and the Phase 2P source-only factorized affordance head. Phase 2H supports continuing source-conditioned utility work because action-only priors do not explain exact validation action selection, but Phases 2I through 2P show that the current small RGB source-only utility/affordance diagnostic encoder path is not sufficient. Phase 2O establishes that core factorized geometry-derived primitive-affordance targets are available on train and validation. The next JEPA full training launch requires a bounded smoke of a geometry-exposed structured source-local affordance/dynamics state family to pass utility, stability, action-identifiability, zero-action, and persistence gates.",
+      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, and the Phase 2P source-only factorized affordance head. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. The next JEPA full training launch requires a bounded smoke of a geometry-exposed structured source-local affordance/dynamics state family to pass utility, stability, action-identifiability, zero-action, and persistence gates.",
       "preregistration": "docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md"
     }
   ]

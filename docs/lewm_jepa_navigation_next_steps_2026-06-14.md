@@ -717,3 +717,18 @@ bounded fix should change the state substrate, not only the loss. The active
 next step is a geometry-exposed affordance state pilot: local ray/clearance
 tokens or factorized affordance slots trained from the Phase 2O labels, with
 the same primitive gate retained before any full JEPA training run.
+
+Follow-up on 2026-06-15: Phase 2Q audited the true-factor ceiling for the
+Phase 2O labels plus Phase 2P safety-first selector. With true factor targets,
+the selector passed the primitive gate on validation: primitive match `0.8672`,
+mean utility regret `0.00142`, and selected max primitive fraction `0.3398`
+against oracle `0.3516`. This audit is documented in:
+
+```text
+docs/lewm_jepa_phase2q_factorized_affordance_ceiling_2026-06-15.md
+```
+
+This means the target/selector contract is coherent enough to keep. The next
+bounded implementation should not tune the Phase 2P RGB source-only head; it
+should implement Phase 2R, a geometry-exposed learned affordance state, and
+hold it to the same primitive gate before any JEPA full training launch.
