@@ -683,3 +683,20 @@ next step is Phase 2O: build factorized geometry-derived primitive affordance
 targets separating safety/recoverability, swept clearance, task progress, and
 heading tie-breakers. The model should be judged by a safety-first selection
 rule before any JEPA latent integration.
+
+Follow-up on 2026-06-15: Phase 2O implemented and audited the factorized
+primitive-affordance target contract. Core factors are complete on train and
+validation for every source/primitive target: safety/recoverability,
+task-gain, p05 clearance, minimum clearance, and unsafe fraction.
+`heading_alignment` is partial and should remain an optional tie-breaker. This
+audit is documented in:
+
+```text
+docs/lewm_jepa_phase2o_factorized_affordance_targets_2026-06-15.md
+```
+
+The next bounded implementation is a factorized primitive affordance head with
+safety-first selection. It must still pass the primitive gate before any JEPA
+latent integration: primitive match at least `0.50`, regret below the
+source-independent primitive prior, and selected primitive distribution no more
+collapsed than oracle by more than `0.20`.
