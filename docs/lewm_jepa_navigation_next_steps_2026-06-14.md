@@ -700,3 +700,20 @@ safety-first selection. It must still pass the primitive gate before any JEPA
 latent integration: primitive match at least `0.50`, regret below the
 source-independent primitive prior, and selected primitive distribution no more
 collapsed than oracle by more than `0.20`.
+
+Follow-up on 2026-06-15: Phase 2P implemented the factorized primitive
+affordance head and safety-first selector. The ROCm GPU smoke stayed finite but
+failed the executable gate. It scored below the primitive action-only prior on
+validation primitive match (`0.1367` vs `0.1641`), had worse regret (`0.1248`
+vs `0.0586`), and still concentrated selection too strongly (`0.6094` max
+selected fraction vs `0.3516` oracle). This pilot is documented in:
+
+```text
+docs/lewm_jepa_phase2p_factorized_affordance_model_2026-06-15.md
+```
+
+Do not integrate the Phase 2P source-only factorized head into JEPA. The next
+bounded fix should change the state substrate, not only the loss. The active
+next step is a geometry-exposed affordance state pilot: local ray/clearance
+tokens or factorized affordance slots trained from the Phase 2O labels, with
+the same primitive gate retained before any full JEPA training run.

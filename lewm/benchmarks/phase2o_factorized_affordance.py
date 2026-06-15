@@ -4,10 +4,17 @@ from __future__ import annotations
 import math
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Mapping, Sequence
 
+import torch
+
 from .phase2_data import action_name, source_key
-from .phase2d_training import ACTION_UTILITY_TARGET_VERSION, action_utility_target
+from .phase2d_training import (
+    ACTION_UTILITY_TARGET_VERSION,
+    action_utility_target,
+    image_tensor,
+)
 from .phase2m_primitive_affordance import primitive_vocabulary
 
 FACTORIZED_AFFORDANCE_TARGET_VERSION = (
@@ -30,6 +37,7 @@ class FactorizedPrimitiveAffordanceExample:
 
     scene_id: str
     source_index: int
+    start_frame: str
     primitive_names: tuple[str, ...]
     utility_targets: tuple[float, ...]
     utility_mask: tuple[bool, ...]
@@ -41,6 +49,30 @@ class FactorizedPrimitiveAffordanceExample:
     oracle_primitive: str | None
     oracle_row_index: int | None
     oracle_sequence: tuple[str, ...]
+
+
+@dataclass
+class Phase2PFactorizedBatch:
+    """Materialized source-image batch with factorized primitive targets."""
+
+    example_indices: tuple[int, ...]
+    examples: tuple[FactorizedPrimitiveAffordanceExample, ...]
+    start_vision: torch.Tensor
+    primitive_utility_targets: torch.Tensor
+    primitive_utility_mask: torch.Tensor
+    factor_targets: torch.Tensor
+    factor_mask: torch.Tensor
+
+    def to(self, device: torch.device) -> "Phase2PFactorizedBatch":
+        return Phase2PFactorizedBatch(
+            example_indices=self.example_indices,
+            examples=self.examples,
+            start_vision=self.start_vision.to(device),
+            primitive_utility_targets=self.primitive_utility_targets.to(device),
+            primitive_utility_mask=self.primitive_utility_mask.to(device),
+            factor_targets=self.factor_targets.to(device),
+            factor_mask=self.factor_mask.to(device),
+        )
 
 
 def _finite_float(value: object) -> float | None:
@@ -149,6 +181,12 @@ def build_factorized_primitive_affordance_examples(
 
     examples = []
     for key, source_rows in sorted(grouped.items()):
+        start_frames = {str(row["start_frame"]) for _row_index, row in source_rows}
+        if len(start_frames) != 1:
+            raise ValueError(
+                "all rows for one source state must share one start_frame: "
+                f"{key}"
+            )
         best_by_primitive: dict[
             str,
             tuple[float, int, tuple[str, ...], tuple[float, ...], tuple[bool, ...]],
@@ -210,6 +248,7 @@ def build_factorized_primitive_affordance_examples(
             FactorizedPrimitiveAffordanceExample(
                 scene_id=key[0],
                 source_index=int(key[1]),
+                start_frame=next(iter(start_frames)),
                 primitive_names=names,
                 utility_targets=tuple(utility_targets),
                 utility_mask=tuple(utility_mask),
@@ -224,6 +263,192 @@ def build_factorized_primitive_affordance_examples(
             )
         )
     return tuple(examples)
+
+
+def materialize_phase2p_factorized_batch(
+    examples: Sequence[FactorizedPrimitiveAffordanceExample],
+    indices: Sequence[int],
+    *,
+    image_size: int = 224,
+) -> Phase2PFactorizedBatch:
+    """Build one source-image factorized affordance training batch."""
+
+    example_indices = tuple(int(index) for index in indices)
+    if not example_indices:
+        raise ValueError("cannot materialize an empty Phase 2P batch")
+    selected = tuple(examples[index] for index in example_indices)
+    primitive_names = selected[0].primitive_names
+    if any(example.primitive_names != primitive_names for example in selected):
+        raise ValueError("all Phase 2P examples in a batch must share vocabulary")
+    image_cache: dict[Path, torch.Tensor] = {}
+
+    def cached_image(path: Path) -> torch.Tensor:
+        cached = image_cache.get(path)
+        if cached is None:
+            cached = image_tensor(path, image_size=image_size)
+            image_cache[path] = cached
+        return cached
+
+    return Phase2PFactorizedBatch(
+        example_indices=example_indices,
+        examples=selected,
+        start_vision=torch.stack(
+            [cached_image(Path(example.start_frame)) for example in selected]
+        ),
+        primitive_utility_targets=torch.tensor(
+            [example.utility_targets for example in selected],
+            dtype=torch.float32,
+        ),
+        primitive_utility_mask=torch.tensor(
+            [example.utility_mask for example in selected],
+            dtype=torch.bool,
+        ),
+        factor_targets=torch.tensor(
+            [example.factor_targets for example in selected],
+            dtype=torch.float32,
+        ),
+        factor_mask=torch.tensor(
+            [example.factor_mask for example in selected],
+            dtype=torch.bool,
+        ),
+    )
+
+
+def phase2p_batch_contract_audit(batch: Phase2PFactorizedBatch) -> dict:
+    """Return compact evidence for one Phase 2P materialized batch."""
+
+    return {
+        "schema": "jepa_phase2p_factorized_affordance_batch_contract_v0",
+        "examples": len(batch.examples),
+        "primitive_count": int(batch.factor_targets.shape[1]),
+        "factor_count": int(batch.factor_targets.shape[2]),
+        "primitive_utility_targets": int(batch.primitive_utility_mask.sum()),
+        "factor_targets": int(batch.factor_mask.sum()),
+        "core_factor_targets": int(batch.factor_mask[:, :, :-1].sum()),
+        "target_version": FACTORIZED_AFFORDANCE_TARGET_VERSION,
+        "source_target_version": ACTION_UTILITY_TARGET_VERSION,
+        "all_start_frames_finite": bool(torch.isfinite(batch.start_vision).all()),
+    }
+
+
+def _safe_factor_value(values: torch.Tensor, index: int, default: float) -> torch.Tensor:
+    if values.shape[-1] <= index:
+        return values.new_full(values.shape[:-1], float(default))
+    return values[..., index]
+
+
+def factorized_affordance_selection_records(
+    examples: Sequence[FactorizedPrimitiveAffordanceExample],
+    factor_values: torch.Tensor,
+    *,
+    seed: int,
+    split_name: str,
+    scorer_name: str,
+    safe_threshold: float = 0.5,
+    unsafe_threshold: float = 0.5,
+    task_gain_weight: float = 0.75,
+    p05_clearance_weight: float = 1.25,
+    minimum_clearance_weight: float = 0.75,
+    unsafe_penalty_weight: float = 2.0,
+    heading_weight: float = 0.05,
+) -> list[dict]:
+    """Return primitive selection records from factorized predicted values."""
+
+    values = factor_values.detach().cpu().float()
+    if values.ndim != 3:
+        raise ValueError("factor_values must have shape (B, primitive_count, factors)")
+    if values.shape[0] != len(examples):
+        raise ValueError("factor_values row count must match examples")
+    records = []
+    safe = _safe_factor_value(values, 0, 0.0)
+    task_gain = _safe_factor_value(values, 1, 0.0)
+    p05_clearance = _safe_factor_value(values, 2, 0.0)
+    minimum_clearance = _safe_factor_value(values, 3, 0.0)
+    unsafe_fraction = _safe_factor_value(values, 4, 1.0)
+    heading = _safe_factor_value(values, 5, 0.0)
+    base_score = (
+        task_gain_weight * task_gain
+        + p05_clearance_weight * p05_clearance
+        + minimum_clearance_weight * minimum_clearance
+        - unsafe_penalty_weight * unsafe_fraction
+        + heading_weight * heading
+    )
+    fallback_score = safe - unsafe_fraction + 0.05 * base_score
+    for example_index, example in enumerate(examples):
+        valid_indices = [
+            primitive_index
+            for primitive_index, valid in enumerate(example.utility_mask)
+            if valid
+        ]
+        if len(valid_indices) < 2:
+            continue
+        target_values = torch.tensor(
+            [
+                example.utility_targets[primitive_index]
+                for primitive_index in valid_indices
+            ],
+            dtype=torch.float32,
+        )
+        valid_safe = safe[example_index, valid_indices]
+        valid_unsafe = unsafe_fraction[example_index, valid_indices]
+        valid_base = base_score[example_index, valid_indices]
+        valid_fallback = fallback_score[example_index, valid_indices]
+        eligible = (valid_safe >= safe_threshold) & (valid_unsafe <= unsafe_threshold)
+        if bool(eligible.any()):
+            local_scores = torch.where(
+                eligible,
+                valid_base,
+                torch.full_like(valid_base, -1.0e9),
+            )
+        else:
+            local_scores = valid_fallback
+        selected_local = int(torch.argmax(local_scores))
+        oracle_local = int(torch.argmax(target_values))
+        selected_index = valid_indices[selected_local]
+        oracle_index = valid_indices[oracle_local]
+        selected_utility = float(target_values[selected_local])
+        oracle_utility = float(target_values[oracle_local])
+        records.append(
+            {
+                "schema": "jepa_phase2p_factorized_affordance_selection_v0",
+                "seed": int(seed),
+                "split": split_name,
+                "scorer_name": scorer_name,
+                "scene_id": example.scene_id,
+                "source_index": int(example.source_index),
+                "candidate_rows": int(example.candidate_rows),
+                "valid_primitive_count": int(example.valid_primitive_count),
+                "selected_primitive": example.primitive_names[selected_index],
+                "oracle_primitive": example.primitive_names[oracle_index],
+                "oracle_row_index": example.oracle_row_index,
+                "oracle_sequence": list(example.oracle_sequence),
+                "selected_predicted_utility": float(local_scores[selected_local]),
+                "oracle_predicted_utility": float(local_scores[oracle_local]),
+                "selected_target_utility": selected_utility,
+                "oracle_target_utility": oracle_utility,
+                "target_utility_regret": oracle_utility - selected_utility,
+                "primitive_match": selected_index == oracle_index,
+                "uniform_random_primitive_match_rate": 1.0 / len(valid_indices),
+                "selected_predicted_safe_recoverable": float(
+                    safe[example_index, selected_index]
+                ),
+                "selected_predicted_unsafe_fraction": float(
+                    unsafe_fraction[example_index, selected_index]
+                ),
+                "selected_predicted_task_gain_norm": float(
+                    task_gain[example_index, selected_index]
+                ),
+                "selected_predicted_p05_clearance_norm": float(
+                    p05_clearance[example_index, selected_index]
+                ),
+                "selected_predicted_minimum_clearance_norm": float(
+                    minimum_clearance[example_index, selected_index]
+                ),
+                "selected_by_predicted_safe_gate": bool(eligible[selected_local]),
+                "predicted_safe_candidate_count": int(eligible.sum()),
+            }
+        )
+    return records
 
 
 def factorized_affordance_dataset_audit(

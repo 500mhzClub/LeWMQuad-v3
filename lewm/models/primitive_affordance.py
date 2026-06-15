@@ -57,6 +57,130 @@ class PrimitiveAffordanceModel(nn.Module):
         return self.head(self.encoder(start_vision))
 
 
+class FactorizedPrimitiveAffordanceModel(nn.Module):
+    """Predict factorized primitive affordance labels from one source image."""
+
+    def __init__(
+        self,
+        *,
+        primitive_count: int,
+        factor_count: int,
+        latent_dim: int = 48,
+        hidden_dim: int = 96,
+        image_size: int = 224,
+        patch_size: int = 14,
+        encoder_depth: int = 2,
+        encoder_heads: int = 3,
+        encoder_mlp_ratio: int = 2,
+        encoder_dropout: float = 0.0,
+    ):
+        super().__init__()
+        if primitive_count < 2:
+            raise ValueError("primitive_count must be at least 2")
+        if factor_count < 2:
+            raise ValueError("factor_count must be at least 2")
+        self.primitive_count = int(primitive_count)
+        self.factor_count = int(factor_count)
+        self.latent_dim = int(latent_dim)
+        self.encoder = VisionEncoder(
+            image_size=image_size,
+            patch_size=patch_size,
+            hidden_dim=latent_dim,
+            depth=encoder_depth,
+            n_heads=encoder_heads,
+            mlp_ratio=encoder_mlp_ratio,
+            dropout=encoder_dropout,
+        )
+        self.head = nn.Sequential(
+            nn.LayerNorm(latent_dim),
+            nn.Linear(latent_dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, primitive_count * factor_count),
+        )
+
+    def forward(self, start_vision: torch.Tensor) -> torch.Tensor:
+        """Return raw factor logits with shape ``(B, primitive_count, factor_count)``."""
+
+        if start_vision.ndim != 4:
+            raise ValueError("start_vision must have shape (B, C, H, W)")
+        logits = self.head(self.encoder(start_vision))
+        return logits.reshape(
+            start_vision.shape[0],
+            self.primitive_count,
+            self.factor_count,
+        )
+
+
+def factorized_affordance_values(factor_logits: torch.Tensor) -> torch.Tensor:
+    """Map raw factor logits to the registered target value domains."""
+
+    if factor_logits.ndim != 3:
+        raise ValueError("factor_logits must have shape (B, primitive_count, factors)")
+    if factor_logits.shape[-1] < 6:
+        raise ValueError("factor_logits must contain the six Phase 2O factors")
+    return torch.stack(
+        [
+            torch.sigmoid(factor_logits[..., 0]),
+            torch.tanh(factor_logits[..., 1]),
+            torch.sigmoid(factor_logits[..., 2]),
+            torch.sigmoid(factor_logits[..., 3]),
+            torch.sigmoid(factor_logits[..., 4]),
+            torch.sigmoid(factor_logits[..., 5]),
+        ],
+        dim=-1,
+    )
+
+
+def factorized_affordance_losses(
+    *,
+    factor_logits: torch.Tensor,
+    factor_targets: torch.Tensor,
+    factor_mask: torch.Tensor,
+    safety_weight: float = 1.0,
+    value_weight: float = 1.0,
+) -> dict[str, torch.Tensor]:
+    """Return masked losses for factorized primitive affordance prediction."""
+
+    if factor_logits.shape != factor_targets.shape:
+        raise ValueError("factor_logits and factor_targets must align")
+    if factor_mask.shape != factor_logits.shape:
+        raise ValueError("factor_mask must align with factor_logits")
+    if factor_logits.shape[-1] < 6:
+        raise ValueError("factorized affordance loss requires six factors")
+    if safety_weight < 0.0:
+        raise ValueError("safety_weight must be non-negative")
+    if value_weight < 0.0:
+        raise ValueError("value_weight must be non-negative")
+
+    zero = factor_logits.sum() * 0.0
+    safety_mask = factor_mask[..., 0].bool()
+    if bool(safety_mask.any()):
+        safety_loss = F.binary_cross_entropy_with_logits(
+            factor_logits[..., 0][safety_mask],
+            factor_targets[..., 0][safety_mask],
+        )
+    else:
+        safety_loss = zero
+
+    values = factorized_affordance_values(factor_logits)
+    value_mask = factor_mask[..., 1:].bool()
+    if bool(value_mask.any()):
+        value_loss = F.mse_loss(
+            values[..., 1:][value_mask],
+            factor_targets[..., 1:][value_mask],
+        )
+    else:
+        value_loss = zero
+    total = float(safety_weight) * safety_loss + float(value_weight) * value_loss
+    return {
+        "factorized_affordance_loss": total,
+        "factorized_safety_bce_loss": safety_loss,
+        "factorized_value_mse_loss": value_loss,
+        "factorized_safety_valid_count": safety_mask.sum(),
+        "factorized_value_valid_count": value_mask.sum(),
+    }
+
+
 def primitive_affordance_losses(
     *,
     primitive_scores: torch.Tensor,
