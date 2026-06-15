@@ -630,3 +630,56 @@ It should answer three questions before substantial architecture investment:
 This establishes a direct, falsifiable bridge between JEPA representation
 learning and navigation behavior, and provides the evaluation contract for all
 subsequent world-model designs.
+
+Follow-up on 2026-06-15: Phases 2J, 2K, and 2L tested stronger utility-ranker
+controls after Phase 2I. FiLM conditioning, interaction-only fusion, and a soft
+utility-distribution objective all failed the executable utility gate. The
+models continued to choose a global backward-first pattern rather than a
+source-local action. These pilots are documented in:
+
+```text
+docs/lewm_jepa_phase2j_film_utility_plan_2026-06-15.md
+docs/lewm_jepa_phase2k_interaction_only_utility_plan_2026-06-15.md
+docs/lewm_jepa_phase2l_soft_utility_objective_plan_2026-06-15.md
+```
+
+Do not launch a full JEPA training run from the RGB CLS source-action ranker
+family. The active next gate is Phase 2M: collapse the two-block utility target
+to source-local first-primitive affordances, train a source-image-only
+primitive utility vector, and require it to beat a source-independent primitive
+prior before any JEPA integration pilot. This bounded plan is documented in:
+
+```text
+docs/lewm_jepa_phase2m_structured_affordance_state_plan_2026-06-15.md
+```
+
+Follow-up on 2026-06-15: Phase 2M completed as a bounded ROCm GPU smoke and
+failed the executable gate. It improved primitive match over the
+source-independent primitive prior (`0.3125` vs `0.1641`), but had worse regret
+(`0.1084` vs `0.0586`) and a more collapsed selected primitive distribution
+than the oracle (`0.6875` max selected fraction vs `0.3516` oracle).
+
+Do not integrate the Phase 2M scalar primitive-affordance head into JEPA. The
+next bounded fix is Phase 2N: keep the source-only primitive model but replace
+the soft scalar-utility objective with class-balanced hard-oracle primitive
+supervision. This isolates whether the remaining collapse is primarily caused
+by oracle class imbalance/objective geometry. If Phase 2N cannot reduce
+collapse and regret, stop RGB CLS-only affordance variants and move to
+geometry-derived local affordance targets before any JEPA full run.
+
+Follow-up on 2026-06-15: Phase 2N completed as a bounded ROCm GPU smoke and
+failed the same executable gate. Class balancing marginally improved primitive
+match (`0.3320` vs Phase 2M `0.3125`) and slightly reduced selected primitive
+collapse (`0.5977` vs `0.6875`), but utility regret became much worse
+(`0.2525` vs `0.1084`) and remained worse than the primitive action-only prior
+(`0.0586`). This pilot is documented in:
+
+```text
+docs/lewm_jepa_phase2n_class_balanced_affordance_plan_2026-06-15.md
+```
+
+Stop RGB CLS-only scalar primitive-affordance objective variants. The active
+next step is Phase 2O: build factorized geometry-derived primitive affordance
+targets separating safety/recoverability, swept clearance, task progress, and
+heading tie-breakers. The model should be judged by a safety-first selection
+rule before any JEPA latent integration.

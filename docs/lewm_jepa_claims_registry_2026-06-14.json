@@ -330,10 +330,58 @@
       ]
     },
     {
+      "id": "phase2m_primitive_affordance_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2M source-only first-primitive affordance model completed on the ROCm GPU runtime and improved primitive match over the source-independent primitive prior, but failed the executable gate by insufficient primitive match, worse utility regret than the prior, and a selected primitive distribution more collapsed than the oracle distribution.",
+      "prohibited_wording": "Source-only primitive affordance learning is impossible.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2m_primitive_affordance_smoke.json",
+          "sha256": "87a60d9182343c6d93779d44cc63871d1f1fe7565d31db6fb6e1611aa965e2bd"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2m_primitive_affordance_smoke_gate.json",
+          "sha256": "122dc5781f22a9a76dc41a32524aa3891d63c8c46c763a136f414c968e515e61"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested target was a scalar max-over-continuations primitive utility, not factorized geometry supervision",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2n_class_balanced_primitive_affordance_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2N class-balanced hard-oracle primitive affordance objective completed on the ROCm GPU runtime and marginally improved primitive match over Phase 2M, but failed the executable gate by insufficient primitive match, worse utility regret than both Phase 2M and the primitive action-only prior, and a selected primitive distribution more collapsed than the oracle distribution.",
+      "prohibited_wording": "Class balancing proves source-only affordance learning cannot work.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2n_class_balanced_primitive_affordance_smoke.json",
+          "sha256": "e038e1fbb6b91fe36874362c6b4c7ed623e05ceca9c1f06c8355ffd3b081f695"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2n_class_balanced_primitive_affordance_smoke_gate.json",
+          "sha256": "7375f1fe80efae44fcb0f74bfb586be6d05499052946fbdaf4fcedff45a45532"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested objective used hard oracle primitive labels without factorized geometry supervision",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
       "id": "current_research_decision",
       "status": "registered",
       "evidence_class": "D",
-      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, and the Phase 2L soft utility-objective ranker. Phase 2H supports continuing source-conditioned utility work because action-only priors do not explain exact validation action selection, but Phases 2I through 2L show that the current RGB CLS utility-ranker path is not sufficient. The next JEPA full training launch requires a bounded smoke of a redesigned structured source-local affordance/dynamics state family to pass utility, stability, action-identifiability, zero-action, and persistence gates.",
+      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, and the Phase 2N class-balanced hard-oracle primitive affordance objective. Phase 2H supports continuing source-conditioned utility work because action-only priors do not explain exact validation action selection, but Phases 2I through 2N show that the current RGB CLS scalar utility-ranker path is not sufficient. The next JEPA full training launch requires a bounded smoke of a redesigned structured source-local affordance/dynamics state family to pass utility, stability, action-identifiability, zero-action, and persistence gates.",
       "preregistration": "docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md"
     }
   ]
