@@ -2,6 +2,42 @@
 
 Date: 2026-06-14
 
+## Supersession Note
+
+This document records the broad JEPA-first research direction. The current
+evidence-qualified repository audit and authoritative next experiment are:
+
+- `docs/lewm_jepa_repository_research_audit_2026-06-14.md`;
+- `docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md`.
+- `docs/lewm_jepa_phase2d_stage2_corrected_model_2026-06-14.md`.
+- `docs/lewm_jepa_phase2d_stage3_trainer_statistics_2026-06-14.md`.
+- `docs/lewm_jepa_phase2d_stage4_source_state_table_2026-06-14.md`.
+- `docs/lewm_jepa_phase2d_stage5_split_run_readiness_2026-06-14.md`.
+- `docs/lewm_jepa_phase2d_stage6_generation_contract_2026-06-14.md`.
+- `docs/lewm_jepa_phase2d_stage7_training_start_gate_2026-06-14.md`.
+- `docs/lewm_jepa_phase2d_stage8_source_selection_render_readiness_2026-06-14.md`.
+- `docs/lewm_jepa_phase2d_stage9_training_ready_2026-06-14.md`.
+- `docs/lewm_jepa_phase2d_stage10_full_training_launch_2026-06-14.md`.
+- `docs/lewm_jepa_phase2h_action_utility_audit_2026-06-15.md`.
+- `docs/lewm_jepa_phase2i_source_action_utility_plan_2026-06-15.md`.
+- `docs/lewm_jepa_phase2j_film_utility_plan_2026-06-15.md`.
+- `docs/lewm_jepa_phase2k_interaction_only_utility_plan_2026-06-15.md`.
+- `docs/lewm_jepa_phase2l_soft_utility_objective_plan_2026-06-15.md`.
+
+The preregistered reproducibility, data, control, split, render-readiness, and
+training-start gates passed for the registered-minimum Phase 2D primary
+C0/C1/C2 training matrix. The first full-training launch exposed a
+validation-diagnostic OOM; that implementation failure is fixed and documented
+in Stage 10. A CPU-only v2 relaunch was stopped as a runtime-selection error.
+The corrected ROCm GPU launch completed C0/C1 but failed to produce a valid C2
+checkpoint. Follow-on bounded pilots through Phase 2L also failed before test
+access. The current branch is not ready for a full JEPA training matrix. The
+next registered direction should replace the current RGB CLS utility ranker with
+a structured source-local affordance/dynamics state that has explicit
+primitive-balanced supervision and geometry-derived calibration before
+re-entering JEPA latent prediction. Do not access test-ID or test-hard results
+until a new selected checkpoint candidate and staged access gates exist.
+
 ## Research Objective
 
 The purpose of this project is not merely to produce a successful navigation
@@ -464,6 +500,124 @@ predictive objectives, not merely engineering failures.
 
 The first implementation target is the counterfactual decision benchmark, not a
 new end-to-end navigation controller.
+
+Update on 2026-06-15: Phase 2D reached the GPU training gate but did not
+produce a valid action-conditioned spatial JEPA checkpoint. C0/C1 failed the
+persistence gate, original C2 failed numerically, and a detached-control C2
+pilot stayed finite but collapsed and lost badly to persistence. The current
+image-aligned spatial-token objective should not receive another full training
+launch until a bounded smoke passes the explicit validation gate:
+
+- no collapse, effective-rank, or near-static-target warning;
+- real action beats zero action by at least `0.10` of target change;
+- real action beats shuffled/hard-negative actions by at least `0.10` of
+  target change;
+- one-step real prediction beats persistence with ratio `< 1.0`.
+
+The next implementation target is therefore an architecture-level redesign of
+the target/state geometry, not another hyperparameter-only C2 run. The preferred
+bounded direction is a factorized affordance/dynamics state or
+motion-equivariant slots where action consequences are represented in a
+geometry that is not dominated by image-aligned appearance persistence.
+
+Follow-up on 2026-06-15: the first target-geometry pilot tested learned slot
+state/target pooling under the same Phase 2D controls. It completed on the ROCm
+GPU runtime and avoided the original C2 non-finite-gradient failure, but it
+still collapsed, failed effective-rank diagnostics, ranked hard-negative actions
+above the real action, and lost to one-step persistence by `24.96x`. This pilot
+is documented in:
+
+```text
+docs/lewm_jepa_phase2e_target_geometry_plan_2026-06-15.md
+```
+
+Do not launch a full slot-geometry training matrix. The next bounded experiment
+should replace generic image/slot target prediction with a factorized
+affordance/dynamics/event state and must keep the same explicit gate:
+
+- no collapse, effective-rank, or near-static-target warning;
+- real action beats zero action by at least `0.10` of target change;
+- real action beats shuffled/hard-negative actions by at least `0.10` of
+  target change;
+- one-step real prediction beats persistence with ratio `< 1.0`.
+
+Follow-up on 2026-06-15: Phase 2F added a masked sequence-level consequence
+head using the privileged generator labels already present in the Phase 2D
+JSONL rows. C2 plus the consequence head was numerically unstable in two
+bounded smokes, failing before validation with infinite pre-clip gradient norm.
+A C1 consequence-isolation smoke completed, but still collapsed, ranked
+hard-negative actions above the real action, and lost to persistence by
+`229.69x`. This pilot is documented in:
+
+```text
+docs/lewm_jepa_phase2f_factorized_consequence_plan_2026-06-15.md
+```
+
+Do not launch a full consequence-head matrix. The next candidate must put
+navigation consequence structure into the state itself, for example dedicated
+affordance/dynamics tokens or direct 81-way per-source action-utility
+supervision, rather than a mean-pooled auxiliary head attached to the same
+image-aligned latent prediction target.
+
+Follow-up on 2026-06-15: Phase 2G added a source-local direct action-utility
+head over the predicted future spatial tokens. The bounded C1 smoke stayed
+finite but did not pass the utility-selection or latent gates. It selected the
+oracle utility row in `1/5` validation source states, matched the oracle first
+primitive in `1/5`, collapsed to low-rank latent targets, ranked hard-negative
+actions above the real action on average, and lost to one-step persistence by
+`117.98x`. This pilot is documented in:
+
+```text
+docs/lewm_jepa_phase2g_action_utility_plan_2026-06-15.md
+```
+
+Do not launch a full action-utility-head matrix attached to the current
+image-aligned latent future. The next immediate diagnostic is a Phase 2H
+utility-label and action-only baseline audit. It must determine whether the
+81-way utility target is genuinely source-conditioned or mostly explained by
+source-independent action-sequence bias. Only if action-only baselines fail to
+explain validation utility should the next model add dedicated
+source-conditioned affordance/utility state.
+
+Follow-up on 2026-06-15: Phase 2H audited the utility target and train-derived
+action-only baselines. Utility labels had complete train/validation coverage,
+non-trivial within-source spread, and rare top ties. The full-sequence
+action-only baseline was below uniform random top-1 on validation
+(`0.0078` vs `0.0123` expected), and the first-primitive baseline improved
+coarse primitive choice but not exact source-local action selection
+(`0.0117` top-1). This audit is documented in:
+
+```text
+docs/lewm_jepa_phase2h_action_utility_audit_2026-06-15.md
+```
+
+The next bounded implementation target is Phase 2I: a source-conditioned
+affordance/utility pilot that predicts utility from the current observation and
+candidate action sequence directly. This is a diagnostic prerequisite for a new
+JEPA full run: it must beat the Phase 2H action-only baselines before the
+research should invest in integrating the utility state into a latent
+world-model objective.
+
+Follow-up on 2026-06-15: Phase 2I trained a source-conditioned utility ranker
+on the ROCm GPU runtime. It completed with finite metrics and improved exact
+top-1 utility selection over the action-only priors (`0.2148` vs `0.0117`),
+but failed the promotion gate. It selected `backward` as the first primitive for
+all 256 validation source states, matched the first-primitive baseline exactly
+(`0.3516`), and had worse regret than both action-only baselines. This pilot is
+documented in:
+
+```text
+docs/lewm_jepa_phase2i_source_action_utility_plan_2026-06-15.md
+```
+
+Do not integrate this Phase 2I ranker into JEPA. The next bounded fix should
+force source-action interaction explicitly, for example a FiLM or bilinear
+source-conditioned action scorer with per-source score centering and a
+trainable action-only control under the same architecture.
+
+The matched trainable action-only control reached the same validation summary
+as the source-conditioned ranker. Therefore, the source-conditioned
+concatenation model did not measurably use the source observation.
 
 It should answer three questions before substantial architecture investment:
 

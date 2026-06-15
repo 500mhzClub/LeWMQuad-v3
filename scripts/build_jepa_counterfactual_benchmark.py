@@ -10,7 +10,6 @@ recoverability.
 from __future__ import annotations
 
 import argparse
-import itertools
 import json
 import sys
 from collections import Counter
@@ -25,6 +24,11 @@ from lewm.benchmarks.counterfactual import (  # noqa: E402
     Pose2D,
     oracle_sort_key,
     simulate_candidate_trajectory,
+)
+from lewm.benchmarks.phase2d_generation import (  # noqa: E402
+    factorial_primitive_sequences,
+    phase2d_lineage_fields,
+    sequence_grid_audit,
 )
 from lewm.actions import encode_active_block  # noqa: E402
 from lewm_genesis.lewm_contract import (  # noqa: E402
@@ -99,6 +103,14 @@ def main() -> int:
         default=True,
         help="Skip goal-conditioned rows without the matched local-target image.",
     )
+    parser.add_argument(
+        "--require-phase2d-lineage",
+        action="store_true",
+        help=(
+            "Fail if a generated source state cannot be assigned both topology "
+            "and visual lineage fields."
+        ),
+    )
     args = parser.parse_args()
 
     if args.horizon_blocks < 1:
@@ -113,9 +125,17 @@ def main() -> int:
         name: expand_primitive_to_block(registry, name) for name in primitive_names
     }
     active_blocks = {name: _active_block(block) for name, block in action_blocks.items()}
-    sequences = list(itertools.product(primitive_names, repeat=args.horizon_blocks))
+    sequences = factorial_primitive_sequences(
+        primitive_names,
+        horizon_blocks=args.horizon_blocks,
+    )
+    sequence_audit = sequence_grid_audit(
+        primitive_names=primitive_names,
+        horizon_blocks=args.horizon_blocks,
+        sequences=sequences,
+    )
 
-    assets: dict[str, tuple[SceneGraph, InflatedOccupancyGrid]] = {}
+    assets: dict[str, tuple[dict, SceneGraph, InflatedOccupancyGrid]] = {}
     input_row_count = 0
     row_count = 0
     skipped_missing_local_target_frame = 0
@@ -127,6 +147,8 @@ def main() -> int:
     candidate_ends_unsafe = 0
     candidate_recoverable = 0
     oracle_first_primitive: Counter[str] = Counter()
+    phase2d_lineage_verified_rows = 0
+    phase2d_lineage_missing_field_counts: Counter[str] = Counter()
     scene_ids: set[str] = set()
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -158,10 +180,12 @@ def main() -> int:
                 continue
             manifest_path = str(row["scene_manifest"])
             if manifest_path not in assets:
+                manifest_payload = json.loads(Path(manifest_path).read_text())
                 manifest = parse_scene_manifest_dict(
-                    json.loads(Path(manifest_path).read_text())
+                    manifest_payload
                 )
                 assets[manifest_path] = (
+                    manifest_payload,
                     SceneGraph(manifest),
                     InflatedOccupancyGrid(
                         manifest,
@@ -169,7 +193,22 @@ def main() -> int:
                         inflation_m=args.inflation_m,
                     ),
                 )
-            graph, grid = assets[manifest_path]
+            manifest_payload, graph, grid = assets[manifest_path]
+            lineage_fields = phase2d_lineage_fields(
+                row,
+                scene_manifest=manifest_payload,
+            )
+            lineage_audit = lineage_fields["phase2d_source_state_lineage"]
+            if lineage_audit["lineage_verified"]:
+                phase2d_lineage_verified_rows += 1
+            else:
+                for field in lineage_audit["missing_fields"]:
+                    phase2d_lineage_missing_field_counts[str(field)] += 1
+                if args.require_phase2d_lineage:
+                    raise SystemExit(
+                        "missing Phase 2D lineage for source row "
+                        f"{source_index}: {lineage_audit['missing_fields']}"
+                    )
             cached_grid = _CachedRecoverabilityGrid(grid)
             target_xy = graph.cell_center(target_cell) if target_cell is not None else None
             position = row["start_base_pose_world"]["position"]
@@ -216,6 +255,21 @@ def main() -> int:
                 "benchmark_schema": "jepa_counterfactual_decision_v0",
                 "label_source": "privileged_kinematic_grid_v0",
                 "physics_validated": False,
+                "topology_seed": lineage_fields["topology_seed"],
+                "visual_seed": lineage_fields["visual_seed"],
+                "phase2d_source_state_lineage": lineage_audit,
+                "counterfactual_sequence_grid": sequence_audit,
+                "counterfactual_generation_contract": {
+                    "schema": "jepa_phase2d_counterfactual_generation_contract_v0",
+                    "same_source_state_for_all_candidates": True,
+                    "full_factorial_sequence_grid": sequence_audit[
+                        "full_factorial_passed"
+                    ],
+                    "phase2d_full_81_two_block_grid": sequence_audit[
+                        "phase2d_full_81_two_block_grid"
+                    ],
+                    "lineage_verified": lineage_audit["lineage_verified"],
+                },
                 "counterfactual_horizon_blocks": args.horizon_blocks,
                 "counterfactual_target_cell_id": target_cell,
                 "counterfactual_target_xy": list(target_xy) if target_xy is not None else None,
@@ -240,6 +294,12 @@ def main() -> int:
         "physics_validated": False,
         "input_row_count": input_row_count,
         "row_count": row_count,
+        "require_phase2d_lineage": bool(args.require_phase2d_lineage),
+        "phase2d_lineage_verified_rows": phase2d_lineage_verified_rows,
+        "phase2d_lineage_missing_rows": row_count - phase2d_lineage_verified_rows,
+        "phase2d_lineage_missing_field_counts": dict(
+            sorted(phase2d_lineage_missing_field_counts.items())
+        ),
         "require_local_target_frame": bool(args.require_local_target_frame),
         "skipped_missing_local_target_frame": skipped_missing_local_target_frame,
         "input_target_rows": target_rows,
@@ -248,6 +308,7 @@ def main() -> int:
         "horizon_blocks": args.horizon_blocks,
         "primitive_names": primitive_names,
         "sequences_per_row": len(sequences),
+        "counterfactual_sequence_grid": sequence_audit,
         "candidate_count": candidate_count,
         "starts_grid_unsafe_rate": starts_grid_unsafe / row_count,
         "candidate_enters_grid_unsafe_rate": candidate_enters_unsafe / candidate_count,

@@ -12,6 +12,16 @@ from .sigreg import sigreg, sigreg_stepwise
 from .lewm import LeWorldModel
 from .spatial_predictor import SpatialTokenPredictor, trainable_parameter_count
 from .spatial_lewm import SpatialLeWorldModel, TokenProjector, spatial_variance_floor_loss
+from .phase2d_spatial_lewm import (
+    IdentityTokenGeometry,
+    LearnedSlotGeometry,
+    LinearTokenProjector,
+    Phase2DSpatialLeWorldModel,
+    PredictionInputMode,
+    TargetGeometry,
+    action_identifiability_losses,
+    normalize_spatial_tokens,
+)
 
 __all__ = [
     "LeWorldModel",
@@ -28,4 +38,12 @@ __all__ = [
     "SpatialLeWorldModel",
     "TokenProjector",
     "spatial_variance_floor_loss",
+    "IdentityTokenGeometry",
+    "LearnedSlotGeometry",
+    "LinearTokenProjector",
+    "Phase2DSpatialLeWorldModel",
+    "PredictionInputMode",
+    "TargetGeometry",
+    "action_identifiability_losses",
+    "normalize_spatial_tokens",
 ]

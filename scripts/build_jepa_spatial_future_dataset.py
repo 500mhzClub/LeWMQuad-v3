@@ -27,6 +27,22 @@ def _resolve_from(parent: Path, value: str) -> Path:
     return path if path.is_absolute() else parent / path
 
 
+def _resolve_existing_render_path(parent: Path, value: str | None) -> Path | None:
+    if value is None:
+        return None
+    raw_path = Path(value)
+    candidates = [_resolve_from(parent, value)]
+    if raw_path.name:
+        candidates.append(parent / raw_path.name)
+    if raw_path.parent.name and raw_path.name:
+        candidates.append(parent / raw_path.parent.name / raw_path.name)
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved.is_file():
+            return resolved
+    return candidates[0].resolve()
+
+
 def _rendered_metadata_by_plan(render_root: Path) -> dict[Path, Path]:
     summaries = (
         [render_root / "summary.json"]
@@ -39,10 +55,10 @@ def _rendered_metadata_by_plan(render_root: Path) -> dict[Path, Path]:
         if summary.get("schema") != "lewm_rendered_vision_v0":
             continue
         plan = _resolve_from(summary_path.parent, str(summary["plan"])).resolve()
-        metadata = _resolve_from(
+        metadata = _resolve_existing_render_path(
             summary_path.parent, str(summary["frames_rendered_jsonl"])
-        ).resolve()
-        if metadata.is_file():
+        )
+        if metadata is not None and metadata.is_file():
             result[plan] = metadata
     return result
 
@@ -85,12 +101,23 @@ def _future_frame_index(
                 int(context["block_index"]),
             )
             rgb_path = rendered.get("rgb_path")
+            resolved_rgb = _resolve_existing_render_path(
+                metadata_path.parent,
+                None if rgb_path is None else str(rgb_path),
+            )
+            if resolved_rgb is not None and resolved_rgb.is_file():
+                rgb_path = str(resolved_rgb)
             future_frames[key] = {
                 "rgb_path": rgb_path,
                 "camera_valid": bool(rendered["camera_valid"]),
                 "invalid_reasons": rendered.get("invalid_reasons", []),
                 "camera_safety": rendered.get("camera_safety"),
                 "physics_validated": bool(context.get("physics_validated", False)),
+                "topology_seed": context.get("topology_seed"),
+                "visual_seed": context.get("visual_seed"),
+                "phase2d_lineage_verified": bool(
+                    context.get("phase2d_lineage_verified", False)
+                ),
             }
             stats["rendered_frames_indexed"] += 1
     return future_frames, dict(stats)
@@ -107,6 +134,20 @@ def _candidate_bucket(candidate: dict) -> str:
     ):
         return "safe_positive_progress"
     return "safe_other"
+
+
+def _first_present(values):
+    for value in values:
+        if value is not None and value != "":
+            return value
+    return None
+
+
+def _lineage_value(row: dict, matched: list[dict | None], field: str):
+    return _first_present(
+        [row.get(field)]
+        + [frame.get(field) for frame in matched if frame is not None]
+    )
 
 
 def build_spatial_future_dataset(
@@ -163,6 +204,12 @@ def build_spatial_future_dataset(
                     for frame in matched
                 )
                 complete_valid = missing == 0 and invalid == 0
+                topology_seed = _lineage_value(row, matched, "topology_seed")
+                visual_seed = _lineage_value(row, matched, "visual_seed")
+                if topology_seed is None:
+                    stats["candidate_sequences_missing_topology_seed"] += 1
+                if visual_seed is None:
+                    stats["candidate_sequences_missing_visual_seed"] += 1
                 if missing:
                     stats["candidate_sequences_missing_future_frames"] += 1
                     stats["future_frames_missing"] += missing
@@ -180,6 +227,15 @@ def build_spatial_future_dataset(
                     "scene_id": row["scene_id"],
                     "family": row["family"],
                     "split": row["split"],
+                    "scene_manifest": row.get("scene_manifest"),
+                    "topology_seed": topology_seed,
+                    "visual_seed": visual_seed,
+                    "phase2d_source_state_lineage": row.get(
+                        "phase2d_source_state_lineage"
+                    ),
+                    "counterfactual_sequence_grid": row.get(
+                        "counterfactual_sequence_grid"
+                    ),
                     "start_frame": row["start_frame"],
                     "goal_frame": row.get("local_target_frame"),
                     "goal_present": row.get("counterfactual_target_cell_id") is not None,
@@ -259,6 +315,8 @@ def build_spatial_future_dataset(
             "writes_every_planned_candidate_sequence": True,
             "token_prediction_requires_valid_future_observation": True,
             "renderer_invalidity_is_not_a_collision_label": True,
+            "source_state_lineage_fields_propagated": True,
+            "confirmatory_phase2d_requires_topology_and_visual_lineage": True,
         },
     }
     output.with_suffix(".summary.json").write_text(json.dumps(summary, indent=2) + "\n")

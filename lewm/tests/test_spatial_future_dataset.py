@@ -39,6 +39,13 @@ def test_build_spatial_future_dataset_preserves_complete_valid_sequence(tmp_path
                 "scene_id": "scene",
                 "family": "family",
                 "split": "train",
+                "scene_manifest": "scene_manifest.json",
+                "topology_seed": 123,
+                "visual_seed": 456,
+                "phase2d_source_state_lineage": {"lineage_verified": True},
+                "counterfactual_sequence_grid": {
+                    "phase2d_full_81_two_block_grid": True
+                },
                 "start_frame": str(start),
                 "local_target_frame": None,
                 "counterfactual_target_cell_id": None,
@@ -106,6 +113,12 @@ def test_build_spatial_future_dataset_preserves_complete_valid_sequence(tmp_path
 
     assert summary["candidate_sequences_written"] == 1
     assert row["future_frames"] == [str(future0), str(future1)]
+    assert row["topology_seed"] == 123
+    assert row["visual_seed"] == 456
+    assert row["phase2d_source_state_lineage"] == {"lineage_verified": True}
+    assert row["counterfactual_sequence_grid"] == {
+        "phase2d_full_81_two_block_grid": True
+    }
     assert row["complete_valid_future_sequence"]
     assert all(item["observation_valid"] for item in row["future_observations"])
     assert row["is_oracle_candidate"]
@@ -209,6 +222,106 @@ def test_build_spatial_future_dataset_preserves_invalid_sequence(tmp_path: Path)
         "near_forward_geometry"
     ]
     assert row["future_observation_event"].startswith("incomplete_or_renderer_invalid")
+
+
+def test_build_spatial_future_dataset_resolves_moved_render_paths(
+    tmp_path: Path,
+) -> None:
+    start = tmp_path / "start.png"
+    render_scene = tmp_path / "new_render" / "train" / "family" / "scene"
+    future = render_scene / "rgb" / "future.png"
+    for path in (start, future):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"png")
+    benchmark = tmp_path / "benchmark.jsonl"
+    candidate = {
+        "primitive_sequence": ["forward"],
+        "active_blocks": [[0.0] * 15],
+        "starts_grid_unsafe": False,
+        "enters_grid_unsafe": False,
+        "ends_grid_unsafe": False,
+        "unsafe_sample_fraction": 0.0,
+        "minimum_swept_configuration_clearance_m": 0.2,
+        "p05_swept_configuration_clearance_m": 0.2,
+        "clearance_gain_m": 0.0,
+        "target_progress_m": 0.1,
+        "target_heading_error_rad": 0.0,
+        "target_recoverable": True,
+    }
+    _write_jsonl(
+        benchmark,
+        [
+            {
+                "scene_id": "scene",
+                "family": "family",
+                "split": "train",
+                "start_frame": str(start),
+                "local_target_frame": None,
+                "counterfactual_target_cell_id": None,
+                "counterfactual_horizon_blocks": 1,
+                "counterfactual_oracle_index": 0,
+                "counterfactual_candidates": [candidate],
+            }
+        ],
+    )
+    plan_root = tmp_path / "plans"
+    plan_dir = plan_root / "train" / "family" / "scene"
+    frames = plan_dir / "frames.jsonl"
+    _write_jsonl(
+        frames,
+        [
+            {
+                "frame_index": 0,
+                "env_index": 0,
+                "counterfactual_context": {
+                    "source_index": 0,
+                    "candidate_index": 0,
+                    "block_index": 0,
+                },
+            }
+        ],
+    )
+    plan = plan_dir / "render_replay_plan.json"
+    plan.parent.mkdir(parents=True, exist_ok=True)
+    plan.write_text(json.dumps({"frames_jsonl": str(frames)}))
+    old_scene = tmp_path / "old_render" / "train" / "family" / "scene"
+    metadata = render_scene / "frames_rendered.jsonl"
+    _write_jsonl(
+        metadata,
+        [
+            {
+                "frame_index": 0,
+                "env_index": 0,
+                "rgb_path": str(old_scene / "rgb" / "future.png"),
+                "camera_valid": True,
+                "invalid_reasons": [],
+                "camera_safety": {},
+            }
+        ],
+    )
+    (render_scene / "summary.json").write_text(
+        json.dumps(
+            {
+                "schema": "lewm_rendered_vision_v0",
+                "plan": str(plan),
+                "frames_rendered_jsonl": str(old_scene / "frames_rendered.jsonl"),
+            }
+        )
+    )
+    output = tmp_path / "dataset.jsonl"
+
+    summary = build_spatial_future_dataset(
+        benchmark=benchmark,
+        plan_root=plan_root,
+        render_root=tmp_path / "new_render",
+        output=output,
+    )
+    row = json.loads(output.read_text())
+
+    assert summary["candidate_sequences_written"] == 1
+    assert summary["candidate_sequences_complete_valid"] == 1
+    assert row["future_frames"] == [str(future.resolve())]
+    assert row["future_observations"][0]["rgb_path"] == str(future.resolve())
 
 
 def test_build_spatial_future_dataset_skips_unplanned_candidates(tmp_path: Path) -> None:

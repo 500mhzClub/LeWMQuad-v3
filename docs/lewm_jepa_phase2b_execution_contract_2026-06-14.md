@@ -2,6 +2,18 @@
 
 Date: 2026-06-14
 
+## Retrospective Audit Note
+
+The registered gate result remains valid: every tested non-collapsed model
+loses to one-step persistence. A later audit found that batch-rolled shuffled
+actions and zero-action comparisons contain many false negatives, and that
+complete-valid filtering changes the effective action distribution. These
+findings narrow the interpretation of the action-sensitivity metrics and are
+recorded in:
+
+- `docs/lewm_jepa_repository_research_audit_2026-06-14.md`;
+- `docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md`.
+
 ## Question
 
 Does training the encoder end to end to create action-predictable spatial

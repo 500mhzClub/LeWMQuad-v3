@@ -4,6 +4,19 @@ Date: 2026-06-14
 
 Branch: `jepa-spatial-world-model-nav`
 
+## Retrospective Audit Note
+
+A later same-date repository and artifact audit identified important
+limitations in the action controls, complete-valid filtering, evaluation split
+usage, and shared spatial projector. These limitations do not change the
+registered persistence failure or collapse result, but they narrow the
+permitted interpretation of action sensitivity and target-geometry failure.
+
+The evidence-qualified claims and revised next experiment are recorded in:
+
+- `docs/lewm_jepa_repository_research_audit_2026-06-14.md`;
+- `docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md`.
+
 ## Purpose
 
 The purpose of these experiments is not to maximize navigation success by any
@@ -130,9 +143,10 @@ For the regularized spatial model at one step:
 For the pooled model, the real action's advantage over zero is only `0.67%` of
 target change and over shuffled action only `0.18%`.
 
-Lay interpretation: the action input is connected to the network, but the
-learned future is not meaningfully determined by it. The model behaves more
-like a generic next-view predictor than an action-conditioned world model.
+Lay interpretation: under the implemented controls, there is no evidence that
+the learned future is meaningfully determined by the supplied action. A later
+audit found that many zero and shuffled comparisons are not valid negative
+actions, so the exact degree of action insensitivity remains unresolved.
 
 ### Anti-collapse result
 
@@ -222,13 +236,18 @@ The evidence now supports the following conclusions:
 3. Training patch tokens end to end improves some conditional ranking metrics
    but does not create action-usable dynamics.
 4. Persistence wins at the first step for every valid non-collapsed model.
-5. Real actions do not meaningfully outperform zero or shuffled actions.
+5. Under the implemented controls, real actions do not show a meaningful
+   measured advantage over zero or batch-rolled actions. A later audit found
+   that those controls contain many false negatives, so this does not cleanly
+   estimate the degree of action use.
 6. Removing the spatial anti-collapse term causes immediate collapse.
 7. The current variance floor prevents collapse but does not stabilize scale or
    create navigation semantics.
 8. A naive stop-gradient EMA teacher does not rescue the current target.
-9. Larger models, longer horizons, recurrence, or navigation heuristics are not
-   justified until the one-step action-identifiability gate passes.
+9. Larger models, longer horizons, or navigation heuristics are not justified
+   as simultaneous compensating changes. Recurrent belief should be tested
+   separately on registered history-required subsets rather than assumed to
+   solve the single-frame failure.
 
 ## Why The Current Spatial Target Is Probably Mismatched
 
@@ -256,8 +275,12 @@ the doorway.
 
 ## Next Falsifiable Experiment: Phase 2D
 
-Phase 2D will test a normalized, action-identifiable JEPA target before any
-larger architectural investment.
+The original Phase 2D outline below is superseded by the corrected
+preregistration in
+`docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md`.
+That plan retains normalized EMA targets and masked action identifiability, but
+requires corrected hard negatives, per-slot masks, separate projection paths,
+new test splits, and hierarchical statistical analysis before training.
 
 ### Controlled changes
 

@@ -4,6 +4,17 @@ Date: 2026-06-14
 
 Branch: `jepa-spatial-world-model-nav`
 
+## Current Registered Next Step
+
+The repository-wide retrospective audit and corrected Phase 2D preregistration
+supersede earlier informal next-step language in this document:
+
+- `docs/lewm_jepa_repository_research_audit_2026-06-14.md`;
+- `docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md`.
+
+The immediate work is reproducibility and control correction. Do not begin new
+Phase 2D training until the preregistered Stage 0 and Stage 1 gates pass.
+
 ## Objective
 
 Build and evaluate a JEPA-style world model whose learned latent state can

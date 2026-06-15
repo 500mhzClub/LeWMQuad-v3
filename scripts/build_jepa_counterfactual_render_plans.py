@@ -136,6 +136,7 @@ def _frame(
     candidate = row["counterfactual_candidates"][candidate_index]
     primitive_sequence = candidate["primitive_sequence"]
     timestamp_ns = (frame_index + 1) * 100_000_000
+    lineage = row.get("phase2d_source_state_lineage") or {}
     return {
         "frame_index": frame_index,
         "env_index": 0,
@@ -170,6 +171,12 @@ def _frame(
             "benchmark_schema": row["benchmark_schema"],
             "source_index": source_index,
             "source_start_frame": row["start_frame"],
+            "scene_id": row.get("scene_id"),
+            "topology_seed": row.get("topology_seed"),
+            "visual_seed": row.get("visual_seed"),
+            "phase2d_lineage_verified": bool(
+                lineage.get("lineage_verified", False)
+            ),
             "candidate_index": candidate_index,
             "primitive_sequence": primitive_sequence,
             "block_index": block_index,
@@ -193,6 +200,8 @@ def _write_plan(scene: dict, output_root: Path) -> Path:
         "scene_family": scene["family"],
         "split": scene["split"],
         "scene_manifest": scene["scene_manifest"],
+        "topology_seed": scene.get("topology_seed"),
+        "visual_seed": scene.get("visual_seed"),
         "output_dir": str(scene_dir.resolve()),
         "frames_jsonl": str(frames_path.resolve()),
         "frame_count": scene["frame_count"],
@@ -281,6 +290,8 @@ def main() -> int:
                         "family": str(row["family"]),
                         "split": str(row["split"]),
                         "scene_manifest": str(row["scene_manifest"]),
+                        "topology_seed": row.get("topology_seed"),
+                        "visual_seed": row.get("visual_seed"),
                         "frame_count": 0,
                         "row_count": 0,
                         "candidate_count": 0,
