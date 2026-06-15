@@ -43,6 +43,7 @@ from lewm.models.primitive_affordance import (  # noqa: E402
     GeometryPrimitiveAffordanceModel,
     factorized_affordance_losses,
     factorized_affordance_values,
+    primitive_affordance_losses,
 )
 from lewm.models.spatial_predictor import trainable_parameter_count  # noqa: E402
 
@@ -52,6 +53,9 @@ METRIC_KEYS = (
     "factorized_affordance_loss",
     "factorized_safety_bce_loss",
     "factorized_value_mse_loss",
+    "primitive_affordance_loss",
+    "primitive_affordance_ce_loss",
+    "primitive_affordance_regression_loss",
 )
 
 
@@ -83,6 +87,9 @@ def _forward_batch(
     *,
     safety_weight: float,
     value_weight: float,
+    primitive_ranking_loss_weight: float = 0.0,
+    primitive_ranking_regression_weight: float = 1.0,
+    selection_kwargs: dict | None = None,
 ) -> dict[str, torch.Tensor]:
     factor_logits = model(batch.geometry_features)
     losses = factorized_affordance_losses(
@@ -92,10 +99,34 @@ def _forward_batch(
         safety_weight=safety_weight,
         value_weight=value_weight,
     )
+    factor_values = factorized_affordance_values(factor_logits)
+    primitive_scores = _primitive_scores_from_factor_values(
+        factor_values,
+        **(selection_kwargs or _default_selection_kwargs()),
+    )
+    primitive_losses = primitive_affordance_losses(
+        primitive_scores=primitive_scores,
+        primitive_utility_targets=batch.primitive_utility_targets,
+        primitive_utility_mask=batch.primitive_utility_mask,
+        regression_weight=primitive_ranking_regression_weight,
+    )
+    total_loss = (
+        losses["factorized_affordance_loss"]
+        + float(primitive_ranking_loss_weight)
+        * primitive_losses["primitive_affordance_loss"]
+    )
     return {
-        "loss": losses["factorized_affordance_loss"],
+        "loss": total_loss,
         "factor_logits": factor_logits,
-        "factor_values": factorized_affordance_values(factor_logits),
+        "factor_values": factor_values,
+        "primitive_scores": primitive_scores,
+        "primitive_affordance_loss": primitive_losses["primitive_affordance_loss"],
+        "primitive_affordance_ce_loss": primitive_losses[
+            "primitive_affordance_ce_loss"
+        ],
+        "primitive_affordance_regression_loss": primitive_losses[
+            "primitive_affordance_regression_loss"
+        ],
         **losses,
     }
 
@@ -105,6 +136,56 @@ def _mean_records(records: list[dict[str, float]]) -> dict[str, float]:
         key: float(np.mean([record[key] for record in records]))
         for key in METRIC_KEYS
     }
+
+
+def _default_selection_kwargs() -> dict[str, float]:
+    return {
+        "safe_threshold": 0.5,
+        "unsafe_threshold": 0.5,
+        "task_gain_weight": 0.75,
+        "p05_clearance_weight": 1.25,
+        "minimum_clearance_weight": 0.75,
+        "unsafe_penalty_weight": 2.0,
+        "heading_weight": 0.05,
+    }
+
+
+def _safe_factor_value(values: torch.Tensor, index: int, default: float) -> torch.Tensor:
+    if values.shape[-1] <= index:
+        return values.new_full(values.shape[:-1], float(default))
+    return values[..., index]
+
+
+def _primitive_scores_from_factor_values(
+    factor_values: torch.Tensor,
+    *,
+    safe_threshold: float,
+    unsafe_threshold: float,
+    task_gain_weight: float,
+    p05_clearance_weight: float,
+    minimum_clearance_weight: float,
+    unsafe_penalty_weight: float,
+    heading_weight: float,
+) -> torch.Tensor:
+    """Return differentiable primitive scores aligned with the Phase 2P selector."""
+
+    if factor_values.ndim != 3:
+        raise ValueError("factor_values must have shape (B, primitive_count, factors)")
+    del safe_threshold, unsafe_threshold
+    safe = _safe_factor_value(factor_values, 0, 0.0)
+    task_gain = _safe_factor_value(factor_values, 1, 0.0)
+    p05_clearance = _safe_factor_value(factor_values, 2, 0.0)
+    minimum_clearance = _safe_factor_value(factor_values, 3, 0.0)
+    unsafe_fraction = _safe_factor_value(factor_values, 4, 1.0)
+    heading = _safe_factor_value(factor_values, 5, 0.0)
+    base_score = (
+        task_gain_weight * task_gain
+        + p05_clearance_weight * p05_clearance
+        + minimum_clearance_weight * minimum_clearance
+        - unsafe_penalty_weight * unsafe_fraction
+        + heading_weight * heading
+    )
+    return base_score + safe - unsafe_fraction
 
 
 @torch.no_grad()
@@ -118,6 +199,8 @@ def evaluate(
     safety_weight: float,
     value_weight: float,
     selection_kwargs: dict,
+    primitive_ranking_loss_weight: float = 0.0,
+    primitive_ranking_regression_weight: float = 1.0,
 ) -> dict:
     model.eval()
     records = []
@@ -135,6 +218,9 @@ def evaluate(
             batch,
             safety_weight=safety_weight,
             value_weight=value_weight,
+            primitive_ranking_loss_weight=primitive_ranking_loss_weight,
+            primitive_ranking_regression_weight=primitive_ranking_regression_weight,
+            selection_kwargs=selection_kwargs,
         )
         metric_record = _metric_record(output)
         _assert_finite_metrics(
@@ -207,6 +293,8 @@ def main() -> int:
     parser.add_argument("--max-grad-norm", type=float, default=1.0)
     parser.add_argument("--safety-loss-weight", type=float, default=1.0)
     parser.add_argument("--value-loss-weight", type=float, default=1.0)
+    parser.add_argument("--primitive-ranking-loss-weight", type=float, default=0.0)
+    parser.add_argument("--primitive-ranking-regression-weight", type=float, default=1.0)
     parser.add_argument("--safe-threshold", type=float, default=0.5)
     parser.add_argument("--unsafe-threshold", type=float, default=0.5)
     parser.add_argument("--task-gain-weight", type=float, default=0.75)
@@ -250,6 +338,10 @@ def main() -> int:
         parser.error("--safety-loss-weight must be non-negative")
     if args.value_loss_weight < 0.0:
         parser.error("--value-loss-weight must be non-negative")
+    if args.primitive_ranking_loss_weight < 0.0:
+        parser.error("--primitive-ranking-loss-weight must be non-negative")
+    if args.primitive_ranking_regression_weight < 0.0:
+        parser.error("--primitive-ranking-regression-weight must be non-negative")
     if not 0.0 <= args.safe_threshold <= 1.0:
         parser.error("--safe-threshold must lie in [0, 1]")
     if not 0.0 <= args.unsafe_threshold <= 1.0:
@@ -356,6 +448,11 @@ def main() -> int:
                 batch,
                 safety_weight=args.safety_loss_weight,
                 value_weight=args.value_loss_weight,
+                primitive_ranking_loss_weight=args.primitive_ranking_loss_weight,
+                primitive_ranking_regression_weight=(
+                    args.primitive_ranking_regression_weight
+                ),
+                selection_kwargs=selection_kwargs,
             )
             train_metrics = _metric_record(output)
             _assert_finite_metrics(
@@ -408,6 +505,10 @@ def main() -> int:
                     safety_weight=args.safety_loss_weight,
                     value_weight=args.value_loss_weight,
                     selection_kwargs=selection_kwargs,
+                    primitive_ranking_loss_weight=args.primitive_ranking_loss_weight,
+                    primitive_ranking_regression_weight=(
+                        args.primitive_ranking_regression_weight
+                    ),
                 )
             history.append(record)
             if args.log_every > 0 and (
@@ -451,6 +552,10 @@ def main() -> int:
             "evaluation_interval": args.evaluation_interval,
             "safety_loss_weight": args.safety_loss_weight,
             "value_loss_weight": args.value_loss_weight,
+            "primitive_ranking_loss_weight": args.primitive_ranking_loss_weight,
+            "primitive_ranking_regression_weight": (
+                args.primitive_ranking_regression_weight
+            ),
         },
         "feature_config": {
             "ray_count": args.ray_count,

@@ -843,3 +843,19 @@ memory, occupancy-like intermediate state, or factorized slots supervised by
 the Phase 2W sanitized target. A candidate must pass the primitive gate before
 JEPA integration, and any JEPA integration must still pass action
 identifiability, zero/shuffled-action, stability, and persistence gates.
+
+Follow-up on 2026-06-15: Phase 2Y added the same light primitive-ranking
+objective to the Phase 2R source-local geometry bridge. This tests whether a
+small local metric/ray state plus source and goal pose is enough when the loss
+is aligned with the primitive gate. The bounded ROCm GPU smoke completed but
+failed: validation primitive match `0.3906`, regret `0.0980`, and selected max
+primitive fraction `0.3281`. It is documented in:
+
+```text
+docs/lewm_jepa_phase2y_ranked_geometry_bridge_2026-06-15.md
+```
+
+Do not launch a full JEPA sweep from Phase 2Y. Simple local rays are not enough
+either. The next bounded bridge should accumulate or construct a richer
+deployable state, for example depth-derived swept occupancy, temporal memory,
+or factorized affordance slots supervised by the Phase 2W sanitized target.
