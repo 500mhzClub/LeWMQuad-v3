@@ -24,6 +24,7 @@ from .phase2d_spatial_lewm import (
 )
 from .primitive_affordance import (
     FactorizedPrimitiveAffordanceModel,
+    GeometryPrimitiveAffordanceModel,
     PrimitiveAffordanceModel,
     factorized_affordance_losses,
     factorized_affordance_values,
@@ -54,6 +55,7 @@ __all__ = [
     "action_identifiability_losses",
     "normalize_spatial_tokens",
     "FactorizedPrimitiveAffordanceModel",
+    "GeometryPrimitiveAffordanceModel",
     "PrimitiveAffordanceModel",
     "factorized_affordance_losses",
     "factorized_affordance_values",

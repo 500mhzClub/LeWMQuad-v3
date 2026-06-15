@@ -732,3 +732,24 @@ This means the target/selector contract is coherent enough to keep. The next
 bounded implementation should not tune the Phase 2P RGB source-only head; it
 should implement Phase 2R, a geometry-exposed learned affordance state, and
 hold it to the same primitive gate before any JEPA full training launch.
+
+Follow-up on 2026-06-15: Phase 2R implemented a privileged geometry-feature
+affordance diagnostic. It joined source pose, optional goal pose, local
+obstacle rays, source clearance, and scene bounds from the referenced
+train/validation render metadata and scene manifests, then trained an MLP to
+predict the Phase 2O factors. The bounded ROCm GPU smoke completed with finite
+metrics but failed the primitive gate. Validation primitive match improved to
+`0.3867` versus the primitive action-only prior at `0.1641`, and selected
+primitive distribution was not more collapsed than oracle (`0.3242` selected
+max fraction vs `0.3516` oracle). However, match remained below the `0.50`
+threshold and regret was worse than the primitive prior (`0.0961` vs
+`0.0586`). This pilot is documented in:
+
+```text
+docs/lewm_jepa_phase2r_geometry_affordance_state_2026-06-15.md
+```
+
+Do not launch a full JEPA training run from Phase 2R. Source-local geometry is
+not enough. The next bounded implementation should expose action-conditioned
+swept geometry or factorized affordance slots before learning, then hold that
+state to the unchanged primitive gate before any JEPA integration.

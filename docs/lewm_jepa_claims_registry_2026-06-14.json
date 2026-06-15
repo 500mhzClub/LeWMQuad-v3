@@ -442,10 +442,34 @@
       ]
     },
     {
+      "id": "phase2r_geometry_affordance_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2R privileged geometry-feature affordance model completed on the ROCm GPU runtime and improved primitive match and distribution collapse versus the RGB source-only Phase 2P pilot, but failed the executable primitive gate because validation primitive match remained below 0.50 and utility regret was worse than the primitive action-only prior.",
+      "prohibited_wording": "Privileged geometry cannot support affordance learning.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2r_geometry_affordance_smoke.json",
+          "sha256": "066fa5a998437030944e41380b2f5c5ca8316a769dba3ec2d12546241b2f21dd"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2r_geometry_affordance_smoke_gate.json",
+          "sha256": "118f4720ffaa1c80b1a4436bc2f8bfeaded961c2cd67d26c223409313336b1ab"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "features are privileged pose-derived and scene-derived geometry features",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
       "id": "current_research_decision",
       "status": "registered",
       "evidence_class": "D",
-      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, and the Phase 2P source-only factorized affordance head. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. The next JEPA full training launch requires a bounded smoke of a geometry-exposed structured source-local affordance/dynamics state family to pass utility, stability, action-identifiability, zero-action, and persistence gates.",
+      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, the Phase 2P source-only factorized affordance head, and the Phase 2R source-local geometry-feature affordance model. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. The next JEPA full training launch requires a bounded smoke of an action-conditioned swept-geometry or factorized affordance-slot state to pass primitive utility, stability, action-identifiability, zero-action, and persistence gates before integration.",
       "preregistration": "docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md"
     }
   ]

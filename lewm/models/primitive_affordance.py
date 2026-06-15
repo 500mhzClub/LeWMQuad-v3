@@ -111,6 +111,59 @@ class FactorizedPrimitiveAffordanceModel(nn.Module):
         )
 
 
+class GeometryPrimitiveAffordanceModel(nn.Module):
+    """Predict factorized primitive affordance labels from geometry features."""
+
+    def __init__(
+        self,
+        *,
+        feature_dim: int,
+        primitive_count: int,
+        factor_count: int,
+        hidden_dim: int = 128,
+        depth: int = 3,
+        dropout: float = 0.0,
+    ):
+        super().__init__()
+        if feature_dim < 1:
+            raise ValueError("feature_dim must be positive")
+        if primitive_count < 2:
+            raise ValueError("primitive_count must be at least 2")
+        if factor_count < 2:
+            raise ValueError("factor_count must be at least 2")
+        if hidden_dim < 1:
+            raise ValueError("hidden_dim must be positive")
+        if depth < 1:
+            raise ValueError("depth must be positive")
+        self.feature_dim = int(feature_dim)
+        self.primitive_count = int(primitive_count)
+        self.factor_count = int(factor_count)
+        layers: list[nn.Module] = [nn.LayerNorm(feature_dim)]
+        in_dim = feature_dim
+        for _index in range(int(depth)):
+            layers.append(nn.Linear(in_dim, hidden_dim))
+            layers.append(nn.GELU())
+            if dropout > 0.0:
+                layers.append(nn.Dropout(dropout))
+            in_dim = hidden_dim
+        layers.append(nn.Linear(in_dim, primitive_count * factor_count))
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, geometry_features: torch.Tensor) -> torch.Tensor:
+        """Return raw factor logits with shape ``(B, primitive_count, factor_count)``."""
+
+        if geometry_features.ndim != 2:
+            raise ValueError("geometry_features must have shape (B, feature_dim)")
+        if geometry_features.shape[1] != self.feature_dim:
+            raise ValueError("geometry_features feature dimension mismatch")
+        logits = self.net(geometry_features)
+        return logits.reshape(
+            geometry_features.shape[0],
+            self.primitive_count,
+            self.factor_count,
+        )
+
+
 def factorized_affordance_values(factor_logits: torch.Tensor) -> torch.Tensor:
     """Map raw factor logits to the registered target value domains."""
 
