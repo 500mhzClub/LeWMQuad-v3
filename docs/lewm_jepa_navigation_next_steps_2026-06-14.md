@@ -859,3 +859,46 @@ Do not launch a full JEPA sweep from Phase 2Y. Simple local rays are not enough
 either. The next bounded bridge should accumulate or construct a richer
 deployable state, for example depth-derived swept occupancy, temporal memory,
 or factorized affordance slots supervised by the Phase 2W sanitized target.
+
+Follow-up on 2026-06-15: Phase 2Z implemented an action-conditioned local
+occupancy bridge: per-candidate local occupancy/clearance/goal/path grids plus
+compact command and goal-relative vector features. The bounded ROCm GPU smokes
+completed but failed the primitive gate. With ranking weight `0.10`, validation
+primitive match was `0.3125` and regret was `0.0747`; with ranking weight
+`1.00`, match improved to `0.3633` but regret worsened to `0.0951`. Both failed
+because match stayed below `0.50` and regret did not beat the primitive
+action-only prior (`0.0586`). This is documented in:
+
+```text
+docs/lewm_jepa_phase2z_occupancy_and_dino_review_2026-06-15.md
+```
+
+Do not launch a full JEPA sweep from Phase 2Z. A dense single-frame local
+occupancy bridge is not enough under the current action-choice gate.
+
+The DINO/DINOv2/DINO-WM and LeWM-paper review changes the next registered step.
+The missing control is not another small affordance classifier; it is a
+DINO-WM-style frozen spatial-patch substrate and action-conditioned rollout
+screen, plus a LeWM-paper-faithful 2D navigation positive control. Register
+Phase 2AA as:
+
+1. cache frozen DINOv2 patch features for Phase 2D train/validation frames;
+2. train an action-conditioned predictor over normalized patch features;
+3. gate real-action rollout against persistence, zero-action, and shuffled-action
+   controls;
+4. evaluate candidate two-block action sequences by DINO-WM-style latent
+   goal-feature distance and the existing primitive match/regret/collapse gate;
+5. run a simpler LeWM-paper-style 2D navigation positive-control task before any
+   full quadruped sweep.
+
+No `test_id` or `test_hard` metrics should be accessed for Phase 2AA model
+selection. If DINOv2 weights are unavailable locally, Phase 2AA must fail
+preflight or explicitly request approval for the one-time download instead of
+silently falling back to a weaker encoder.
+
+Phase 2AA.0 implementation note: the DINOv2 cache preflight is now implemented
+and smoke-tested on the ROCm runtime. Local DINOv2 weights are present in the
+torch hub cache. A `mode=complete`, `max_rows=4`, `patch_mean` smoke cached 9
+unique frames with both future steps represented. The next implementation unit
+is the action-conditioned DINOv2 feature predictor and its persistence /
+zero-action / shuffled-action gates.

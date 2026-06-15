@@ -213,6 +213,94 @@ class SweptGeometryPrimitiveAffordanceModel(nn.Module):
         return logits.reshape(batch, primitive_count, self.factor_count)
 
 
+class OccupancyPrimitiveAffordanceModel(nn.Module):
+    """Predict factorized affordance labels from action-conditioned occupancy grids."""
+
+    def __init__(
+        self,
+        *,
+        grid_channels: int,
+        vector_dim: int,
+        factor_count: int,
+        conv_channels: int = 32,
+        hidden_dim: int = 128,
+        depth: int = 2,
+        dropout: float = 0.0,
+    ):
+        super().__init__()
+        if grid_channels < 1:
+            raise ValueError("grid_channels must be positive")
+        if vector_dim < 0:
+            raise ValueError("vector_dim must be non-negative")
+        if factor_count < 2:
+            raise ValueError("factor_count must be at least 2")
+        if conv_channels < 1:
+            raise ValueError("conv_channels must be positive")
+        if hidden_dim < 1:
+            raise ValueError("hidden_dim must be positive")
+        if depth < 1:
+            raise ValueError("depth must be positive")
+        self.grid_channels = int(grid_channels)
+        self.vector_dim = int(vector_dim)
+        self.factor_count = int(factor_count)
+        conv = int(conv_channels)
+        self.grid_encoder = nn.Sequential(
+            nn.Conv2d(grid_channels, conv, kernel_size=3, padding=1),
+            nn.GELU(),
+            nn.Conv2d(conv, conv, kernel_size=3, stride=2, padding=1),
+            nn.GELU(),
+            nn.Conv2d(conv, 2 * conv, kernel_size=3, stride=2, padding=1),
+            nn.GELU(),
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Flatten(),
+        )
+        input_dim = 2 * conv + int(vector_dim)
+        layers: list[nn.Module] = [nn.LayerNorm(input_dim)]
+        in_dim = input_dim
+        for _index in range(int(depth)):
+            layers.append(nn.Linear(in_dim, hidden_dim))
+            layers.append(nn.GELU())
+            if dropout > 0.0:
+                layers.append(nn.Dropout(dropout))
+            in_dim = hidden_dim
+        layers.append(nn.Linear(in_dim, factor_count))
+        self.head = nn.Sequential(*layers)
+
+    def forward(
+        self,
+        occupancy_action_grids: torch.Tensor,
+        vector_features: torch.Tensor,
+    ) -> torch.Tensor:
+        """Return raw factor logits with shape ``(B, primitive_count, factor_count)``."""
+
+        if occupancy_action_grids.ndim != 5:
+            raise ValueError(
+                "occupancy_action_grids must have shape "
+                "(B, primitive_count, channels, H, W)"
+            )
+        if occupancy_action_grids.shape[2] != self.grid_channels:
+            raise ValueError("occupancy grid channel count mismatch")
+        if vector_features.ndim != 3:
+            raise ValueError(
+                "vector_features must have shape (B, primitive_count, vector_dim)"
+            )
+        if vector_features.shape[:2] != occupancy_action_grids.shape[:2]:
+            raise ValueError("vector features must align with occupancy grids")
+        if vector_features.shape[2] != self.vector_dim:
+            raise ValueError("vector feature dimension mismatch")
+        batch, primitive_count, channels, height, width = occupancy_action_grids.shape
+        flat_grids = occupancy_action_grids.reshape(
+            batch * primitive_count,
+            channels,
+            height,
+            width,
+        )
+        flat_vectors = vector_features.reshape(batch * primitive_count, self.vector_dim)
+        grid_latent = self.grid_encoder(flat_grids)
+        logits = self.head(torch.cat([grid_latent, flat_vectors], dim=1))
+        return logits.reshape(batch, primitive_count, self.factor_count)
+
+
 def factorized_affordance_values(factor_logits: torch.Tensor) -> torch.Tensor:
     """Map raw factor logits to the registered target value domains."""
 
