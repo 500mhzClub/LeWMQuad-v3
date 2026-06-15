@@ -810,3 +810,36 @@ source/action RGB encoder is not enough. The next bounded fix must add stronger
 state supervision: RGB-to-swept-geometry distillation, factorized affordance
 slots, or another compact non-image-aligned state target tied directly to
 swept clearance, safety, progress, and heading.
+
+Follow-up on 2026-06-15: Phase 2V implemented RGB-to-Phase-2S swept-state
+distillation. Both the plain full-target bridge and the anchored/ranked
+full-target bridge completed on the ROCm GPU runtime but failed the primitive
+gate. The worst reconstructed full-target feature was consistently in the
+`best_progress_second_onehot_*` family, so Phase 2W audited whether that
+explicit continuation-choice identity was necessary.
+
+Phase 2W found a cleaner privileged teacher target: remove
+`best_progress_second_onehot_*` and add a light primitive-ranking term
+(`0.10`). This sanitized privileged target passed the primitive gate with
+validation primitive match `0.5117`, mean regret `0.0365`, and selected max
+primitive fraction `0.4102` against oracle `0.3516`. A first-block-only target
+failed, showing that continuation aggregates remain useful; only the explicit
+second-action identity should be removed.
+
+Phase 2X then repeated the RGB bridge using the passed Phase 2W sanitized
+target. It reconstructed the sanitized state within the registered feature
+error thresholds but still failed primitive choice: validation primitive match
+`0.125` and regret `0.1302`, both worse than the primitive action-only prior.
+This result is documented in:
+
+```text
+docs/lewm_jepa_phase2v_phase2w_phase2x_swept_state_bridge_2026-06-15.md
+```
+
+Do not launch a full JEPA training sweep from Phase 2X. The current single-frame
+RGB bridge is still not sufficient. The next bounded fix should introduce a
+stronger deployable state bridge: local metric/depth observations, temporal
+memory, occupancy-like intermediate state, or factorized slots supervised by
+the Phase 2W sanitized target. A candidate must pass the primitive gate before
+JEPA integration, and any JEPA integration must still pass action
+identifiability, zero/shuffled-action, stability, and persistence gates.

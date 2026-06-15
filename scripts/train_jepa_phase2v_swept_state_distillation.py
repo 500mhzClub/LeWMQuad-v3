@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train the bounded Phase 2S swept-geometry affordance diagnostic."""
+"""Train Phase 2V RGB-to-swept-state distillation diagnostic."""
 from __future__ import annotations
 
 import argparse
@@ -11,6 +11,7 @@ from typing import Sequence
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
@@ -31,29 +32,48 @@ from lewm.benchmarks.phase2m_primitive_affordance import (  # noqa: E402
 from lewm.benchmarks.phase2o_factorized_affordance import (  # noqa: E402
     FACTORIZED_AFFORDANCE_FACTOR_NAMES,
     FACTORIZED_AFFORDANCE_TARGET_VERSION,
+    factorized_affordance_dataset_audit,
     factorized_affordance_selection_records,
 )
 from lewm.benchmarks.phase2s_swept_geometry_affordance import (  # noqa: E402
     PHASE2S_SWEPT_FEATURE_SCHEMA,
     build_phase2s_swept_geometry_affordance_examples,
-    materialize_phase2s_swept_geometry_batch,
     phase2s_swept_feature_names,
     phase2s_swept_geometry_dataset_audit,
 )
+from lewm.benchmarks.phase2v_swept_state_distillation import (  # noqa: E402
+    PHASE2V_SWEPT_STATE_DISTILLATION_SCHEMA,
+    materialize_phase2v_source_swept_state_batch,
+    phase2v_batch_contract_audit,
+    phase2v_swept_state_error_summary,
+)
 from lewm.models.primitive_affordance import (  # noqa: E402
-    SweptGeometryPrimitiveAffordanceModel,
     factorized_affordance_losses,
     factorized_affordance_values,
     primitive_affordance_losses,
 )
+from lewm.models.source_action_utility import (  # noqa: E402
+    SourcePrimitiveSweptStateModel,
+)
 from lewm.models.spatial_predictor import trainable_parameter_count  # noqa: E402
 
 
+MODEL_CONSTANTS = {
+    "latent_dim": 64,
+    "image_size": 224,
+    "patch_size": 14,
+    "encoder_depth": 2,
+    "encoder_heads": 4,
+    "encoder_mlp_ratio": 2,
+}
+
 METRIC_KEYS = (
     "loss",
+    "swept_state_mse_loss",
     "factorized_affordance_loss",
     "factorized_safety_bce_loss",
     "factorized_value_mse_loss",
+    "teacher_factorized_affordance_loss",
     "primitive_affordance_loss",
     "primitive_affordance_ce_loss",
     "primitive_affordance_regression_loss",
@@ -72,7 +92,7 @@ def _assert_finite_metrics(metrics: dict[str, float], *, step: int, phase: str) 
         raise RuntimeError(
             json.dumps(
                 {
-                    "error": "nonfinite_phase2s_metrics",
+                    "error": "nonfinite_phase2v_metrics",
                     "metrics": nonfinite,
                     "phase": phase,
                     "step": int(step),
@@ -83,24 +103,41 @@ def _assert_finite_metrics(metrics: dict[str, float], *, step: int, phase: str) 
 
 
 def _forward_batch(
-    model: SweptGeometryPrimitiveAffordanceModel,
+    model: SourcePrimitiveSweptStateModel,
     batch,
     *,
+    swept_state_loss_weight: float,
+    student_factor_loss_weight: float,
+    teacher_factor_loss_weight: float,
+    primitive_ranking_loss_weight: float,
+    primitive_ranking_regression_weight: float,
     safety_weight: float,
     value_weight: float,
+    selection_kwargs: dict,
     feature_indices: tuple[int, ...] | None = None,
-    primitive_ranking_loss_weight: float = 0.0,
-    primitive_ranking_regression_weight: float = 1.0,
-    selection_kwargs: dict | None = None,
 ) -> dict[str, torch.Tensor]:
-    swept_geometry_features = (
+    output = model(batch.start_vision)
+    predicted_features = output["swept_geometry_features"]
+    factor_logits = output["factor_logits"]
+    target_features = (
         batch.swept_geometry_features
         if feature_indices is None
         else batch.swept_geometry_features[:, :, list(feature_indices)]
     )
-    factor_logits = model(swept_geometry_features)
-    losses = factorized_affordance_losses(
+    batch_size, primitive_count, feature_dim = target_features.shape
+    teacher_factor_logits = model.factor_head(
+        target_features.reshape(batch_size * primitive_count, feature_dim)
+    ).reshape(batch_size, primitive_count, model.factor_count)
+    swept_state_mse = F.mse_loss(predicted_features, target_features)
+    factor_losses = factorized_affordance_losses(
         factor_logits=factor_logits,
+        factor_targets=batch.factor_targets,
+        factor_mask=batch.factor_mask,
+        safety_weight=safety_weight,
+        value_weight=value_weight,
+    )
+    teacher_factor_losses = factorized_affordance_losses(
+        factor_logits=teacher_factor_logits,
         factor_targets=batch.factor_targets,
         factor_mask=batch.factor_mask,
         safety_weight=safety_weight,
@@ -109,7 +146,7 @@ def _forward_batch(
     factor_values = factorized_affordance_values(factor_logits)
     primitive_scores = _primitive_scores_from_factor_values(
         factor_values,
-        **(selection_kwargs or _default_selection_kwargs()),
+        **selection_kwargs,
     )
     primitive_losses = primitive_affordance_losses(
         primitive_scores=primitive_scores,
@@ -117,15 +154,26 @@ def _forward_batch(
         primitive_utility_mask=batch.primitive_utility_mask,
         regression_weight=primitive_ranking_regression_weight,
     )
-    total_loss = (
-        losses["factorized_affordance_loss"]
+    loss = (
+        float(swept_state_loss_weight) * swept_state_mse
+        + float(student_factor_loss_weight)
+        * factor_losses["factorized_affordance_loss"]
+        + float(teacher_factor_loss_weight)
+        * teacher_factor_losses["factorized_affordance_loss"]
         + float(primitive_ranking_loss_weight)
         * primitive_losses["primitive_affordance_loss"]
     )
     return {
-        "loss": total_loss,
+        "loss": loss,
+        "swept_state_mse_loss": swept_state_mse,
+        "swept_geometry_features": predicted_features,
+        "target_swept_geometry_features": target_features,
         "factor_logits": factor_logits,
         "factor_values": factor_values,
+        "teacher_factor_logits": teacher_factor_logits,
+        "teacher_factorized_affordance_loss": teacher_factor_losses[
+            "factorized_affordance_loss"
+        ],
         "primitive_scores": primitive_scores,
         "primitive_affordance_loss": primitive_losses["primitive_affordance_loss"],
         "primitive_affordance_ce_loss": primitive_losses[
@@ -134,26 +182,7 @@ def _forward_batch(
         "primitive_affordance_regression_loss": primitive_losses[
             "primitive_affordance_regression_loss"
         ],
-        **losses,
-    }
-
-
-def _mean_records(records: list[dict[str, float]]) -> dict[str, float]:
-    return {
-        key: float(np.mean([record[key] for record in records]))
-        for key in METRIC_KEYS
-    }
-
-
-def _default_selection_kwargs() -> dict[str, float]:
-    return {
-        "safe_threshold": 0.5,
-        "unsafe_threshold": 0.5,
-        "task_gain_weight": 0.75,
-        "p05_clearance_weight": 1.25,
-        "minimum_clearance_weight": 0.75,
-        "unsafe_penalty_weight": 2.0,
-        "heading_weight": 0.05,
+        **factor_losses,
     }
 
 
@@ -195,6 +224,13 @@ def _primitive_scores_from_factor_values(
     return base_score + safe - unsafe_fraction
 
 
+def _mean_records(records: list[dict[str, float]]) -> dict[str, float]:
+    return {
+        key: float(np.mean([record[key] for record in records]))
+        for key in METRIC_KEYS
+    }
+
+
 def _selected_feature_indices(
     feature_names: tuple[str, ...],
     *,
@@ -207,28 +243,36 @@ def _selected_feature_indices(
         if not any(name.startswith(prefix) for prefix in excluded)
     )
     if not selected:
-        raise ValueError("feature selection removed every swept-geometry feature")
+        raise ValueError("feature selection removed every swept-state feature")
     return selected
 
 
 @torch.no_grad()
 def evaluate(
-    model: SweptGeometryPrimitiveAffordanceModel,
+    model: SourcePrimitiveSweptStateModel,
     examples,
     *,
     source_states_per_batch: int,
     seed: int,
     device: torch.device,
+    swept_state_loss_weight: float,
+    student_factor_loss_weight: float,
+    teacher_factor_loss_weight: float,
+    primitive_ranking_loss_weight: float,
+    primitive_ranking_regression_weight: float,
     safety_weight: float,
     value_weight: float,
     selection_kwargs: dict,
+    feature_names: tuple[str, ...],
+    image_cache: dict[Path, torch.Tensor] | None,
     feature_indices: tuple[int, ...] | None = None,
-    primitive_ranking_loss_weight: float = 0.0,
-    primitive_ranking_regression_weight: float = 1.0,
 ) -> dict:
     model.eval()
     records = []
+    contracts = []
     selection_records = []
+    predicted_features = []
+    target_features = []
     batches = primitive_affordance_batches(
         len(examples),
         source_states_per_batch=source_states_per_batch,
@@ -236,16 +280,23 @@ def evaluate(
         shuffle=False,
     )
     for indices in batches:
-        batch = materialize_phase2s_swept_geometry_batch(examples, indices).to(device)
+        batch = materialize_phase2v_source_swept_state_batch(
+            examples,
+            indices,
+            image_cache=image_cache,
+        ).to(device)
         output = _forward_batch(
             model,
             batch,
-            safety_weight=safety_weight,
-            value_weight=value_weight,
-            feature_indices=feature_indices,
+            swept_state_loss_weight=swept_state_loss_weight,
+            student_factor_loss_weight=student_factor_loss_weight,
+            teacher_factor_loss_weight=teacher_factor_loss_weight,
             primitive_ranking_loss_weight=primitive_ranking_loss_weight,
             primitive_ranking_regression_weight=primitive_ranking_regression_weight,
+            safety_weight=safety_weight,
+            value_weight=value_weight,
             selection_kwargs=selection_kwargs,
+            feature_indices=feature_indices,
         )
         metric_record = _metric_record(output)
         _assert_finite_metrics(
@@ -254,18 +305,32 @@ def evaluate(
             phase="validation_batch",
         )
         records.append(metric_record)
+        contracts.append(phase2v_batch_contract_audit(batch))
+        predicted_features.append(output["swept_geometry_features"].detach().cpu())
+        target_features.append(batch.swept_geometry_features.detach().cpu())
         selection_records.extend(
             factorized_affordance_selection_records(
-                batch.base_examples,
+                tuple(example.factorized_example for example in batch.examples),
                 output["factor_values"],
                 seed=seed,
                 split_name="validation",
-                scorer_name="swept_geometry_affordance_model",
+                scorer_name="phase2v_source_rgb_swept_state_distillation",
                 **selection_kwargs,
             )
         )
+    feature_error_summary = phase2v_swept_state_error_summary(
+        predicted_features=torch.cat(predicted_features),
+        target_features=(
+            torch.cat(target_features)
+            if feature_indices is None
+            else torch.cat(target_features)[:, :, list(feature_indices)]
+        ),
+        feature_names=feature_names,
+    )
     return {
         "metrics_unweighted_batch_mean": _mean_records(records),
+        "batch_contracts": contracts,
+        "swept_state_error_summary": feature_error_summary,
         "primitive_affordance_selection_records": selection_records,
         "primitive_affordance_selection_summary": (
             primitive_affordance_selection_summary(selection_records)
@@ -294,6 +359,9 @@ def _compact_log_record(record: dict) -> dict:
             "primitive_affordance_selection_summary"
         )
         result["validation_metrics"] = validation.get("metrics_unweighted_batch_mean")
+        result["swept_state_error_summary"] = validation.get(
+            "swept_state_error_summary"
+        )
     return result
 
 
@@ -305,7 +373,7 @@ def main() -> int:
     parser.add_argument("--run-class", choices=("smoke", "pilot"), default="smoke")
     parser.add_argument("--optimization-steps", type=int, required=True)
     parser.add_argument("--evaluation-interval", type=int, required=True)
-    parser.add_argument("--source-states-per-batch", type=int, default=32)
+    parser.add_argument("--source-states-per-batch", type=int, default=16)
     parser.add_argument("--max-train-rows", type=int, default=0)
     parser.add_argument("--max-validation-rows", type=int, default=0)
     parser.add_argument("--command-dt-s", type=float, default=0.1)
@@ -315,18 +383,26 @@ def main() -> int:
         "--exclude-feature-prefix",
         action="append",
         default=[],
-        help="Drop Phase 2S features whose name starts with this prefix.",
+        help="Drop Phase 2S teacher features whose name starts with this prefix.",
     )
     parser.add_argument("--hidden-dim", type=int, default=128)
-    parser.add_argument("--mlp-depth", type=int, default=3)
+    parser.add_argument("--factor-head-depth", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.0)
-    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--max-grad-norm", type=float, default=1.0)
+    parser.add_argument("--swept-state-loss-weight", type=float, default=2.0)
+    parser.add_argument("--student-factor-loss-weight", type=float, default=1.0)
+    parser.add_argument("--teacher-factor-loss-weight", type=float, default=1.0)
+    parser.add_argument("--primitive-ranking-loss-weight", type=float, default=0.5)
+    parser.add_argument("--primitive-ranking-regression-weight", type=float, default=1.0)
     parser.add_argument("--safety-loss-weight", type=float, default=1.0)
     parser.add_argument("--value-loss-weight", type=float, default=1.0)
-    parser.add_argument("--primitive-ranking-loss-weight", type=float, default=0.0)
-    parser.add_argument("--primitive-ranking-regression-weight", type=float, default=1.0)
+    parser.add_argument(
+        "--input-mode",
+        choices=("source_primitive", "primitive_only"),
+        default="source_primitive",
+    )
     parser.add_argument("--safe-threshold", type=float, default=0.5)
     parser.add_argument("--unsafe-threshold", type=float, default=0.5)
     parser.add_argument("--task-gain-weight", type=float, default=0.75)
@@ -334,6 +410,11 @@ def main() -> int:
     parser.add_argument("--minimum-clearance-weight", type=float, default=0.75)
     parser.add_argument("--unsafe-penalty-weight", type=float, default=2.0)
     parser.add_argument("--heading-weight", type=float, default=0.05)
+    parser.add_argument(
+        "--disable-image-cache",
+        action="store_true",
+        help="Decode images per batch instead of caching source images in RAM.",
+    )
     parser.add_argument(
         "--log-every",
         type=int,
@@ -362,20 +443,26 @@ def main() -> int:
         parser.error("--unsafe-clearance-m must be non-negative")
     if args.hidden_dim < 1:
         parser.error("--hidden-dim must be positive")
-    if args.mlp_depth < 1:
-        parser.error("--mlp-depth must be positive")
+    if args.factor_head_depth < 1:
+        parser.error("--factor-head-depth must be positive")
     if not 0.0 <= args.dropout < 1.0:
         parser.error("--dropout must lie in [0, 1)")
     if args.max_grad_norm < 0.0:
         parser.error("--max-grad-norm must be non-negative")
-    if args.safety_loss_weight < 0.0:
-        parser.error("--safety-loss-weight must be non-negative")
-    if args.value_loss_weight < 0.0:
-        parser.error("--value-loss-weight must be non-negative")
+    if args.swept_state_loss_weight < 0.0:
+        parser.error("--swept-state-loss-weight must be non-negative")
+    if args.student_factor_loss_weight < 0.0:
+        parser.error("--student-factor-loss-weight must be non-negative")
+    if args.teacher_factor_loss_weight < 0.0:
+        parser.error("--teacher-factor-loss-weight must be non-negative")
     if args.primitive_ranking_loss_weight < 0.0:
         parser.error("--primitive-ranking-loss-weight must be non-negative")
     if args.primitive_ranking_regression_weight < 0.0:
         parser.error("--primitive-ranking-regression-weight must be non-negative")
+    if args.safety_loss_weight < 0.0:
+        parser.error("--safety-loss-weight must be non-negative")
+    if args.value_loss_weight < 0.0:
+        parser.error("--value-loss-weight must be non-negative")
     if not 0.0 <= args.safe_threshold <= 1.0:
         parser.error("--safe-threshold must lie in [0, 1]")
     if not 0.0 <= args.unsafe_threshold <= 1.0:
@@ -447,12 +534,15 @@ def main() -> int:
         split_name="validation",
         seed=args.seed,
     )
-    model = SweptGeometryPrimitiveAffordanceModel(
+    model = SourcePrimitiveSweptStateModel(
+        primitive_count=len(primitive_names),
         feature_dim=len(selected_feature_names),
         factor_count=len(FACTORIZED_AFFORDANCE_FACTOR_NAMES),
         hidden_dim=args.hidden_dim,
-        depth=args.mlp_depth,
+        factor_head_depth=args.factor_head_depth,
         dropout=args.dropout,
+        input_mode=args.input_mode,
+        **MODEL_CONSTANTS,
     ).to(device)
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -468,6 +558,8 @@ def main() -> int:
         "unsafe_penalty_weight": args.unsafe_penalty_weight,
         "heading_weight": args.heading_weight,
     }
+    train_image_cache = None if args.disable_image_cache else {}
+    validation_image_cache = None if args.disable_image_cache else {}
 
     history = []
     completed_steps = 0
@@ -481,21 +573,25 @@ def main() -> int:
             shuffle=True,
         )
         for indices in batches:
-            batch = materialize_phase2s_swept_geometry_batch(
+            batch = materialize_phase2v_source_swept_state_batch(
                 train_examples,
                 indices,
+                image_cache=train_image_cache,
             ).to(device)
             output = _forward_batch(
                 model,
                 batch,
-                safety_weight=args.safety_loss_weight,
-                value_weight=args.value_loss_weight,
-                feature_indices=selected_feature_indices,
+                swept_state_loss_weight=args.swept_state_loss_weight,
+                student_factor_loss_weight=args.student_factor_loss_weight,
+                teacher_factor_loss_weight=args.teacher_factor_loss_weight,
                 primitive_ranking_loss_weight=args.primitive_ranking_loss_weight,
                 primitive_ranking_regression_weight=(
                     args.primitive_ranking_regression_weight
                 ),
+                safety_weight=args.safety_loss_weight,
+                value_weight=args.value_loss_weight,
                 selection_kwargs=selection_kwargs,
+                feature_indices=selected_feature_indices,
             )
             train_metrics = _metric_record(output)
             _assert_finite_metrics(
@@ -516,7 +612,7 @@ def main() -> int:
                     raise RuntimeError(
                         json.dumps(
                             {
-                                "error": "nonfinite_phase2s_gradient_norm",
+                                "error": "nonfinite_phase2v_gradient_norm",
                                 "gradient_norm": float(
                                     gradient_norm_tensor.detach().cpu()
                                 ),
@@ -532,6 +628,7 @@ def main() -> int:
                 "optimization_step": completed_steps,
                 "epoch": epoch + 1,
                 "train_metrics": train_metrics,
+                "batch_contract": phase2v_batch_contract_audit(batch),
             }
             if gradient_norm is not None:
                 record["gradient_norm"] = gradient_norm
@@ -545,14 +642,19 @@ def main() -> int:
                     source_states_per_batch=args.source_states_per_batch,
                     seed=args.seed,
                     device=device,
-                    safety_weight=args.safety_loss_weight,
-                    value_weight=args.value_loss_weight,
-                    selection_kwargs=selection_kwargs,
-                    feature_indices=selected_feature_indices,
+                    swept_state_loss_weight=args.swept_state_loss_weight,
+                    student_factor_loss_weight=args.student_factor_loss_weight,
+                    teacher_factor_loss_weight=args.teacher_factor_loss_weight,
                     primitive_ranking_loss_weight=args.primitive_ranking_loss_weight,
                     primitive_ranking_regression_weight=(
                         args.primitive_ranking_regression_weight
                     ),
+                    safety_weight=args.safety_loss_weight,
+                    value_weight=args.value_loss_weight,
+                    selection_kwargs=selection_kwargs,
+                    feature_names=selected_feature_names,
+                    image_cache=validation_image_cache,
+                    feature_indices=selected_feature_indices,
                 )
             history.append(record)
             if args.log_every > 0 and (
@@ -573,21 +675,24 @@ def main() -> int:
         None,
     )
     report = {
-        "schema": "jepa_phase2s_swept_geometry_affordance_training_v0",
+        "schema": "jepa_phase2v_swept_state_distillation_training_v0",
         "run_class": args.run_class,
         "confirmatory_result": False,
-        "feature_schema": PHASE2S_SWEPT_FEATURE_SCHEMA,
+        "distillation_schema": PHASE2V_SWEPT_STATE_DISTILLATION_SCHEMA,
+        "teacher_feature_schema": PHASE2S_SWEPT_FEATURE_SCHEMA,
         "target_version": FACTORIZED_AFFORDANCE_TARGET_VERSION,
         "model": {
-            "name": "SweptGeometryPrimitiveAffordanceModel",
+            "name": "SourcePrimitiveSweptStateModel",
+            "constants": MODEL_CONSTANTS,
+            "hidden_dim": args.hidden_dim,
+            "factor_head_depth": args.factor_head_depth,
+            "dropout": args.dropout,
+            "input_mode": args.input_mode,
+            "primitive_names": list(primitive_names),
             "feature_names": list(feature_names),
             "selected_feature_names": list(selected_feature_names),
             "excluded_feature_prefixes": list(args.exclude_feature_prefix),
-            "primitive_names": list(primitive_names),
             "factor_names": list(FACTORIZED_AFFORDANCE_FACTOR_NAMES),
-            "hidden_dim": args.hidden_dim,
-            "mlp_depth": args.mlp_depth,
-            "dropout": args.dropout,
         },
         "optimizer": {
             "name": "AdamW",
@@ -596,12 +701,15 @@ def main() -> int:
             "max_grad_norm": args.max_grad_norm,
             "optimization_steps": args.optimization_steps,
             "evaluation_interval": args.evaluation_interval,
-            "safety_loss_weight": args.safety_loss_weight,
-            "value_loss_weight": args.value_loss_weight,
+            "swept_state_loss_weight": args.swept_state_loss_weight,
+            "student_factor_loss_weight": args.student_factor_loss_weight,
+            "teacher_factor_loss_weight": args.teacher_factor_loss_weight,
             "primitive_ranking_loss_weight": args.primitive_ranking_loss_weight,
             "primitive_ranking_regression_weight": (
                 args.primitive_ranking_regression_weight
             ),
+            "safety_loss_weight": args.safety_loss_weight,
+            "value_loss_weight": args.value_loss_weight,
         },
         "feature_config": {
             "command_dt_s": args.command_dt_s,
@@ -612,6 +720,7 @@ def main() -> int:
             "schema": "jepa_phase2p_safety_first_selection_rule_v0",
             **selection_kwargs,
         },
+        "image_cache_enabled": not args.disable_image_cache,
         "primitive_action_priors": primitive_priors,
         "primitive_action_only_baseline": primitive_action_only_baseline,
         "seed": args.seed,
@@ -620,6 +729,10 @@ def main() -> int:
         "train_data": {
             "load_audit": train_load_audit,
             "dataset_audit": phase2_dataset_audit(train_rows),
+            "factorized_affordance_audit": factorized_affordance_dataset_audit(
+                tuple(example.factorized_example for example in train_examples),
+                split_name="train",
+            ),
             "swept_geometry_affordance_audit": phase2s_swept_geometry_dataset_audit(
                 train_examples,
                 split_name="train",
@@ -629,6 +742,10 @@ def main() -> int:
         "validation_data": {
             "load_audit": validation_load_audit,
             "dataset_audit": phase2_dataset_audit(validation_rows),
+            "factorized_affordance_audit": factorized_affordance_dataset_audit(
+                tuple(example.factorized_example for example in validation_examples),
+                split_name="validation",
+            ),
             "swept_geometry_affordance_audit": phase2s_swept_geometry_dataset_audit(
                 validation_examples,
                 split_name="validation",
@@ -639,11 +756,11 @@ def main() -> int:
         "history": history,
         "final_validation": final_validation,
         "limitations": [
-            "privileged swept-geometry diagnostic, not a deployable RGB policy",
+            "source RGB to privileged swept-state distillation diagnostic, not a JEPA world model",
             "train and validation evidence only",
             "test_id and test_hard are not used for reported metrics or model selection",
-            "kinematic swept geometry is an approximation of simulator consequences",
-            "this is an affordance/utility diagnostic, not a JEPA world model",
+            "Phase 2S swept-state targets are generated from pose, action, goal, and scene geometry",
+            "passing this gate would justify JEPA integration; it would not by itself prove imagined rollout dynamics",
         ],
     }
     payload = {

@@ -31,6 +31,7 @@ from .primitive_affordance import (
     factorized_affordance_values,
     primitive_affordance_losses,
 )
+from .source_action_utility import SourcePrimitiveSweptStateModel
 
 __all__ = [
     "LeWorldModel",
@@ -62,4 +63,5 @@ __all__ = [
     "factorized_affordance_losses",
     "factorized_affordance_values",
     "primitive_affordance_losses",
+    "SourcePrimitiveSweptStateModel",
 ]

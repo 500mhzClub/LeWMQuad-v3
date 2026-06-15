@@ -212,3 +212,114 @@ class SourceActionFactorizedAffordanceModel(nn.Module):
         else:
             features = torch.cat([source, action], dim=-1)
         return self.head(features)
+
+
+class SourcePrimitiveSweptStateModel(nn.Module):
+    """Distill per-primitive swept-geometry state from one source image."""
+
+    def __init__(
+        self,
+        *,
+        primitive_count: int,
+        feature_dim: int,
+        factor_count: int,
+        latent_dim: int = 64,
+        hidden_dim: int = 128,
+        image_size: int = 224,
+        patch_size: int = 14,
+        encoder_depth: int = 2,
+        encoder_heads: int = 4,
+        encoder_mlp_ratio: int = 2,
+        encoder_dropout: float = 0.0,
+        factor_head_depth: int = 2,
+        dropout: float = 0.0,
+        input_mode: Literal["source_primitive", "primitive_only"] = "source_primitive",
+    ):
+        super().__init__()
+        if primitive_count < 2:
+            raise ValueError("primitive_count must be at least 2")
+        if feature_dim < 1:
+            raise ValueError("feature_dim must be positive")
+        if factor_count < 2:
+            raise ValueError("factor_count must be at least 2")
+        if hidden_dim < 1:
+            raise ValueError("hidden_dim must be positive")
+        if factor_head_depth < 1:
+            raise ValueError("factor_head_depth must be positive")
+        if not 0.0 <= dropout < 1.0:
+            raise ValueError("dropout must lie in [0, 1)")
+        if input_mode not in ("source_primitive", "primitive_only"):
+            raise ValueError(f"unsupported swept-state input mode: {input_mode}")
+        self.primitive_count = int(primitive_count)
+        self.feature_dim = int(feature_dim)
+        self.factor_count = int(factor_count)
+        self.latent_dim = int(latent_dim)
+        self.input_mode = input_mode
+        self.encoder = VisionEncoder(
+            image_size=image_size,
+            patch_size=patch_size,
+            hidden_dim=latent_dim,
+            depth=encoder_depth,
+            n_heads=encoder_heads,
+            mlp_ratio=encoder_mlp_ratio,
+            dropout=encoder_dropout,
+        )
+        self.primitive_embedding = nn.Embedding(primitive_count, latent_dim)
+        state_input_dim = latent_dim * 3
+        self.state_head = nn.Sequential(
+            nn.LayerNorm(state_input_dim),
+            nn.Linear(state_input_dim, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout) if dropout > 0.0 else nn.Identity(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, feature_dim),
+        )
+        factor_layers: list[nn.Module] = [nn.LayerNorm(feature_dim)]
+        in_dim = feature_dim
+        for _index in range(int(factor_head_depth)):
+            factor_layers.append(nn.Linear(in_dim, hidden_dim))
+            factor_layers.append(nn.GELU())
+            if dropout > 0.0:
+                factor_layers.append(nn.Dropout(dropout))
+            in_dim = hidden_dim
+        factor_layers.append(nn.Linear(in_dim, factor_count))
+        self.factor_head = nn.Sequential(*factor_layers)
+
+    def forward(self, start_vision: torch.Tensor) -> dict[str, torch.Tensor]:
+        """Return predicted swept state and factor logits for each primitive."""
+
+        if start_vision.ndim != 4:
+            raise ValueError("start_vision must have shape (B, C, H, W)")
+        batch = start_vision.shape[0]
+        source = self.encoder.forward_tokens(start_vision)[:, 0]
+        if self.input_mode == "primitive_only":
+            source = torch.zeros_like(source)
+        primitive_indices = torch.arange(
+            self.primitive_count,
+            device=start_vision.device,
+        )
+        primitive = self.primitive_embedding(primitive_indices)
+        source_expanded = source[:, None, :].expand(batch, self.primitive_count, -1)
+        primitive_expanded = primitive[None, :, :].expand(batch, -1, -1)
+        state_input = torch.cat(
+            [
+                source_expanded,
+                primitive_expanded,
+                source_expanded * primitive_expanded,
+            ],
+            dim=-1,
+        )
+        flat = state_input.reshape(batch * self.primitive_count, -1)
+        predicted_features = self.state_head(flat).reshape(
+            batch,
+            self.primitive_count,
+            self.feature_dim,
+        )
+        factor_logits = self.factor_head(
+            predicted_features.reshape(batch * self.primitive_count, self.feature_dim)
+        ).reshape(batch, self.primitive_count, self.factor_count)
+        return {
+            "swept_geometry_features": predicted_features,
+            "factor_logits": factor_logits,
+        }

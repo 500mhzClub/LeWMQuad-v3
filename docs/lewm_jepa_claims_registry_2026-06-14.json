@@ -542,10 +542,90 @@
       ]
     },
     {
+      "id": "phase2v_rgb_to_full_swept_state_distillation_bridge",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2V single-frame RGB-to-full-Phase-2S swept-state distillation bridges completed on the ROCm GPU runtime but failed the executable gate; state reconstruction error was finite, but primitive match and regret were worse than required, and the hardest reconstructed features were explicit best-second-action identity columns.",
+      "prohibited_wording": "RGB observations cannot support navigation affordance learning.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2v_swept_state_distillation_smoke.json",
+          "sha256": "82d7ebc0a7d2916d8378b73f1ecd0e31f9e786077d6a20864a258c62af5919a4"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2v_swept_state_distillation_smoke_gate.json",
+          "sha256": "3236f081cbd80c1f031f19dc4dce3b9e6d0ab43d72b309aa342fc7816ce5d42d"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2v_swept_state_distillation_ranked_smoke.json",
+          "sha256": "60165c5166f2327d32ba25c59c66b656ae16816af9b991b479fd65323fe3648e"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2v_swept_state_distillation_ranked_smoke_gate.json",
+          "sha256": "a5b9c6db0811f4753c17461ad276606420d7cac7d6b7fef508a764aa46d967a9"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded bridge evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "only single-frame RGB source observation was tested",
+        "this is a swept-state bridge diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2w_sanitized_swept_geometry_teacher_target",
+      "status": "passed_bounded_smoke_before_rgb_or_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2W sanitized privileged swept-geometry target, which removes explicit best-second-action identity features and adds a light primitive-ranking term, passed the executable primitive gate on validation.",
+      "prohibited_wording": "The deployable RGB or JEPA world model is validated.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2w_swept_geometry_no_second_onehot_rank010_smoke.json",
+          "sha256": "733f21996f727cd90d9a168e88d6b827fb79bb4566d6a7bac2b35faa0dbe685a"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2w_swept_geometry_no_second_onehot_rank010_smoke_gate.json",
+          "sha256": "f78106f840ebe38b021f45bbb5e44c349aacd00ea0c9f1cfef3611be533c8bd2"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded privileged-target evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "features remain privileged pose/action/scene-derived swept geometry",
+        "this validates a teacher target, not a deployable RGB bridge or JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2x_rgb_to_sanitized_swept_state_bridge",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2X RGB bridge to the Phase 2W sanitized swept-state target completed on the ROCm GPU runtime and met the registered state reconstruction thresholds, but failed primitive choice and scored worse than the primitive action-only prior.",
+      "prohibited_wording": "The Phase 2W sanitized target is invalid.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2x_source_sanitized_swept_state_rank010_smoke.json",
+          "sha256": "815d68cad1beecf256716096e4b415dcec78f6d89cbcecbf55951a8e4e4e8813"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2x_source_sanitized_swept_state_rank010_smoke_gate.json",
+          "sha256": "8e76f12e2e6758e797ca014125fc88d026f4b953d479e5cab2c205002fd144a1"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded bridge evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "only single-frame RGB source observation was tested",
+        "passing state reconstruction thresholds was not sufficient for primitive action selection"
+      ]
+    },
+    {
       "id": "current_research_decision",
       "status": "registered",
       "evidence_class": "D",
-      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, the Phase 2P source-only factorized affordance head, the Phase 2R source-local geometry-feature affordance model, the Phase 2T C2 patch-token JEPA auxiliary factor head, and the Phase 2U small source/action factorized affordance bridge. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. Phase 2S shows that an action-conditioned swept-geometry learned affordance state can pass the primitive gate. Phase 2T and Phase 2U show that neither attaching a factor head to current patch-token JEPA futures nor using the current small RGB/action bridge is enough. The next bounded step must introduce stronger state supervision or a non-image-aligned target state and pass primitive utility, stability, action-identifiability, zero-action, and persistence gates before any full training matrix.",
+      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, the Phase 2P source-only factorized affordance head, the Phase 2R source-local geometry-feature affordance model, the Phase 2T C2 patch-token JEPA auxiliary factor head, the Phase 2U small source/action factorized affordance bridge, the Phase 2V full RGB-to-swept-state bridge, and the Phase 2X sanitized RGB-to-swept-state bridge. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. Phase 2W shows that a sanitized action-conditioned swept-geometry teacher target can pass the primitive gate without explicit best-second-action identity features. Phase 2T, Phase 2U, Phase 2V, and Phase 2X show that neither current patch-token JEPA futures nor current single-frame RGB bridges are enough. The next bounded step must introduce a stronger deployable state bridge, such as metric/depth observations, temporal memory, occupancy-like state, or factorized slots, and pass primitive utility, stability, action-identifiability, zero-action, and persistence gates before any full training matrix.",
       "preregistration": "docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md"
     }
   ]
