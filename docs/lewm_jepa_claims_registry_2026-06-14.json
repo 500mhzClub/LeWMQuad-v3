@@ -466,10 +466,34 @@
       ]
     },
     {
+      "id": "phase2s_swept_geometry_affordance_pilot",
+      "status": "passed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2S action-conditioned swept-geometry affordance model completed on the ROCm GPU runtime and passed the executable primitive gate on validation, with primitive match above 0.50, utility regret below the primitive action-only prior, and selected primitive distribution within the registered collapse bound.",
+      "prohibited_wording": "The JEPA world model is validated for navigation.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2s_swept_geometry_affordance_smoke.json",
+          "sha256": "7c3f7761837972e1f3e231cf4b241bb24e7bfb0d2a68b599848e8bb6bd02bf1e"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2s_swept_geometry_affordance_smoke_gate.json",
+          "sha256": "109e16a29bdd383b7bb008775e5722662eb8c3e4704a907dd717f9bc1bb49a85"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "features are privileged action-conditioned kinematic swept-geometry features",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
       "id": "current_research_decision",
       "status": "registered",
       "evidence_class": "D",
-      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, the Phase 2P source-only factorized affordance head, and the Phase 2R source-local geometry-feature affordance model. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. The next JEPA full training launch requires a bounded smoke of an action-conditioned swept-geometry or factorized affordance-slot state to pass primitive utility, stability, action-identifiability, zero-action, and persistence gates before integration.",
+      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, the Phase 2P source-only factorized affordance head, and the Phase 2R source-local geometry-feature affordance model. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. Phase 2S shows that an action-conditioned swept-geometry learned affordance state can pass the primitive gate. The next bounded step is a JEPA integration smoke that predicts or exposes the Phase 2S-style swept-affordance state and must pass primitive utility, stability, action-identifiability, zero-action, and persistence gates before any full training matrix.",
       "preregistration": "docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md"
     }
   ]

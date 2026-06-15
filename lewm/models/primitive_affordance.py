@@ -164,6 +164,55 @@ class GeometryPrimitiveAffordanceModel(nn.Module):
         )
 
 
+class SweptGeometryPrimitiveAffordanceModel(nn.Module):
+    """Predict factorized affordance labels from per-primitive geometry features."""
+
+    def __init__(
+        self,
+        *,
+        feature_dim: int,
+        factor_count: int,
+        hidden_dim: int = 128,
+        depth: int = 3,
+        dropout: float = 0.0,
+    ):
+        super().__init__()
+        if feature_dim < 1:
+            raise ValueError("feature_dim must be positive")
+        if factor_count < 2:
+            raise ValueError("factor_count must be at least 2")
+        if hidden_dim < 1:
+            raise ValueError("hidden_dim must be positive")
+        if depth < 1:
+            raise ValueError("depth must be positive")
+        self.feature_dim = int(feature_dim)
+        self.factor_count = int(factor_count)
+        layers: list[nn.Module] = [nn.LayerNorm(feature_dim)]
+        in_dim = feature_dim
+        for _index in range(int(depth)):
+            layers.append(nn.Linear(in_dim, hidden_dim))
+            layers.append(nn.GELU())
+            if dropout > 0.0:
+                layers.append(nn.Dropout(dropout))
+            in_dim = hidden_dim
+        layers.append(nn.Linear(in_dim, factor_count))
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, swept_geometry_features: torch.Tensor) -> torch.Tensor:
+        """Return raw factor logits with shape ``(B, primitive_count, factor_count)``."""
+
+        if swept_geometry_features.ndim != 3:
+            raise ValueError(
+                "swept_geometry_features must have shape (B, primitive_count, feature_dim)"
+            )
+        if swept_geometry_features.shape[2] != self.feature_dim:
+            raise ValueError("swept_geometry_features feature dimension mismatch")
+        batch, primitive_count, feature_dim = swept_geometry_features.shape
+        flat = swept_geometry_features.reshape(batch * primitive_count, feature_dim)
+        logits = self.net(flat)
+        return logits.reshape(batch, primitive_count, self.factor_count)
+
+
 def factorized_affordance_values(factor_logits: torch.Tensor) -> torch.Tensor:
     """Map raw factor logits to the registered target value domains."""
 

@@ -753,3 +753,24 @@ Do not launch a full JEPA training run from Phase 2R. Source-local geometry is
 not enough. The next bounded implementation should expose action-conditioned
 swept geometry or factorized affordance slots before learning, then hold that
 state to the unchanged primitive gate before any JEPA integration.
+
+Follow-up on 2026-06-15: Phase 2S implemented an action-conditioned
+swept-geometry affordance diagnostic. For each source state and first
+primitive, it built per-primitive features from the first command block,
+kinematic swept clearance, unsafe fraction, goal progress, heading alignment,
+and two-block continuation aggregates. The bounded ROCm GPU smoke passed the
+primitive gate: validation primitive match `0.53125`, mean utility regret
+`0.04997` versus the primitive action-only prior at `0.05860`, and selected max
+primitive fraction `0.4141` versus oracle `0.3516`, within the registered
+`+0.20` collapse bound. This pilot is documented in:
+
+```text
+docs/lewm_jepa_phase2s_swept_geometry_affordance_2026-06-15.md
+```
+
+This is the first passed learned affordance-state diagnostic in the Phase 2
+redesign chain. It does not validate RGB perception or JEPA latent prediction.
+The next bounded implementation should be a JEPA integration smoke that predicts
+or exposes the Phase 2S-style swept-affordance state while retaining the
+primitive gate, action-identifiability gate, zero/shuffled-action controls, and
+one-step persistence gate.
