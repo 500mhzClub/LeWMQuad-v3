@@ -100,6 +100,7 @@ def evaluate_gate(
     min_claim_area: float,
     require_escape_artifact: bool,
     min_stuck_recoveries: int,
+    expected_wall_source: str | None,
 ) -> dict[str, Any]:
     failures: list[str] = []
     checks: list[dict[str, Any]] = []
@@ -151,6 +152,18 @@ def evaluate_gate(
             "guard_log_entries": len(base_guard_entries),
         },
     )
+    if expected_wall_source is not None:
+        check(
+            "wall_source_contract",
+            "expected_wall_decision_source_used",
+            wall_metrics.get("source") == expected_wall_source
+            and recall_metrics.get("source") == expected_wall_source,
+            {
+                "expected_wall_source": expected_wall_source,
+                "wallaware_explore_source": wall_metrics.get("source"),
+                "wallaware_recall_source": recall_metrics.get("source"),
+            },
+        )
     check(
         "wallaware_closed_loop",
         "physical_explore_succeeded",
@@ -372,6 +385,8 @@ def evaluate_gate(
             },
             "wall_vetoes": wall_metrics.get("wall_vetoes"),
             "claim_bearing": claim.get("bearing") if claim else None,
+            "wall_source": wall_metrics.get("source"),
+            "recall_wall_source": recall_metrics.get("source"),
         },
     }
 
@@ -397,6 +412,7 @@ def main() -> int:
     parser.add_argument("--min-claim-area", type=float, default=1.5)
     parser.add_argument("--require-escape-artifact", action="store_true")
     parser.add_argument("--min-stuck-recoveries", type=int, default=1)
+    parser.add_argument("--expected-wall-source", default=None)
     args = parser.parse_args()
 
     allowed_states = {
@@ -423,6 +439,7 @@ def main() -> int:
         min_claim_area=float(args.min_claim_area),
         require_escape_artifact=bool(args.require_escape_artifact),
         min_stuck_recoveries=int(args.min_stuck_recoveries),
+        expected_wall_source=args.expected_wall_source,
     )
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)

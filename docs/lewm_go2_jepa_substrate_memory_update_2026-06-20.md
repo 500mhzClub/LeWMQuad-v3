@@ -2064,3 +2064,46 @@ successfully at 1.047 m. The full gate writes
 `.generated/go2_memory_closed_loop/wallaware_closed_loop_gate_result.json` and
 passes with blocked forward executions reduced from 16/25 to 9/29 and
 contact-like stalls reduced from 2 to 1 on the primary explore artifact.
+
+### 2026-06-23 Learned front-blocked wall source in physical closed loop
+
+Replaced the privileged-grid wall decision source for the final demo with an
+RGB/latent front-blocked predictor. `Go2FrontBlockedHead` is a small MLP over the
+frozen Go2 JEPA latent; `train_go2_jepa_front_blocked_predictor.py` labels
+rendered Go2 frames from `traversability_forward_m` and trains only the head
+while the JEPA encoder stays frozen. First mixed-dataset checkpoint:
+`.generated/go2_wallaware_learned/front_blocked_jepa_mixed.pt`
+(`front_blocked_jepa_mixed_report.json` records validation F1 0.471 at threshold
+0.5, so this is a usable closed-loop component, not a finished offline classifier).
+
+`benchmark_go2_memory_closed_loop.py` now supports
+`--wall-decision-source privileged_grid|learned_front`. In learned mode the loop
+encodes the current ego RGB frame through the frozen JEPA, predicts
+`front_blocked_prob`, and vetoes requested forward/arc primitives only when the
+learned head says the immediate front is blocked. The manifest grid is no longer
+consulted for the wall decision in this mode; it remains available for diagnostics
+and the older scaffold.
+
+Closed-loop checks:
+- Learned physical explore on held-out `01732` with real PPO gait/collisions:
+  success=True, discovered green at tick 58, claimed at tick 72, final 1.011 m,
+  wall source `learned_front_blocked`, 19 learned vetoes, blocked forward
+  executions 0/22.
+- Learned physical recall on held-out `000c67`: success=True, final 0.697 m,
+  wall source `learned_front_blocked`.
+- `scripts/check_go2_wallaware_closed_loop_gate.py` now has
+  `--expected-wall-source`; the rendered-run gate
+  `.generated/go2_memory_closed_loop/learned_front_demo_closed_loop_gate_result.json`
+  passes with the learned source asserted on explore and recall, baseline blocked
+  forward executions reduced from 16 to 0, centered claim bearing -0.028, and
+  claim area 2.815.
+
+Final point-5 demo:
+`.generated/go2_memory_closed_loop/learned_front_physical_explore_01732_tightarea_demo.mp4`
+is a valid H.264 MP4 (448x224, 36.0 s, 360 frames). It shows the real Go2 PPO
+gait under rigid-body physics and collisions, autonomous exploration, memory-based
+target binding, navigation/servo, and claim, with wall arbitration driven by the
+learned JEPA/RGB front-blocked predictor rather than the manifest grid. A mid-run
+frame sanity check was extracted to
+`learned_front_physical_explore_01732_tightarea_demo_midframe.png` and shows the
+robot/maze/landmarks rendered correctly.

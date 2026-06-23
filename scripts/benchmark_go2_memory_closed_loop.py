@@ -53,6 +53,10 @@ from train_go2_rgb_jepa_vector_memory_controller import (  # noqa: E402
     PRIMITIVE_NAMES,
     load_controller,
 )
+from lewm.models.go2_jepa import (  # noqa: E402
+    Go2FrontBlockedHead,
+    load_go2_jepa_encoder,
+)
 from lewm_genesis.lewm_contract import (  # noqa: E402
     PrimitiveRegistry,
     SafetyLimits,
@@ -314,6 +318,56 @@ def _wall_guard_select(
     return selected, guard
 
 
+def _learned_front_guard_select(
+    *,
+    requested: str,
+    bearing: float | None,
+    enabled: bool,
+    front_blocked_prob: float | None,
+    threshold: float,
+    force_escape: bool = False,
+) -> tuple[str, dict[str, Any]]:
+    prob = None if front_blocked_prob is None else float(front_blocked_prob)
+    requested_blocked = bool(prob is not None and prob >= float(threshold))
+    should_veto = (
+        enabled
+        and (force_escape or requested in _FORWARD_PRIMITIVES)
+        and (force_escape or requested_blocked)
+    )
+    selected = requested
+    candidates = [{"primitive": requested, "front_blocked_prob": _round_float(prob), "blocked": requested_blocked}]
+    if should_veto:
+        if force_escape:
+            selected = "backward"
+        elif requested == "arc_right":
+            selected = "yaw_right"
+        elif requested == "arc_left":
+            selected = "yaw_left"
+        elif bearing is not None and bearing < 0.0:
+            selected = "yaw_right"
+        else:
+            selected = "yaw_left"
+        candidates.append({"primitive": selected, "front_blocked_prob": None, "blocked": False})
+    guard = {
+        "enabled": bool(enabled),
+        "source": "learned_front_blocked",
+        "requested": requested,
+        "selected": selected,
+        "vetoed": bool(selected != requested),
+        "force_escape": bool(force_escape),
+        "front_blocked_prob": _round_float(prob, 4),
+        "threshold": _round_float(float(threshold), 4),
+        "requested_min_clearance_m": None,
+        "requested_feasible_fraction": None,
+        "requested_blocked": requested_blocked,
+        "selected_min_clearance_m": None,
+        "selected_feasible_fraction": None,
+        "selected_blocked": False if selected != requested else requested_blocked,
+        "candidates": candidates,
+    }
+    return selected, guard
+
+
 def _los_clear(grid, a, b, stop_short_m: float = 0.35, step: float = 0.05) -> bool:
     dx, dy = b[0] - a[0], b[1] - a[1]
     dist = math.hypot(dx, dy)
@@ -532,6 +586,16 @@ def main() -> int:
                         help="Opt-in privileged-grid local guard: predicts each primitive's "
                              "near-field clearance and vetoes blocked forward/arc commands. "
                              "This is a planning scaffold, not a deployment-valid latent model.")
+    parser.add_argument("--wall-decision-source", choices=("privileged_grid", "learned_front"),
+                        default="privileged_grid",
+                        help="Source for wall-aware veto decisions. learned_front uses a frozen "
+                             "JEPA/RGB front-blocked head and does not use the manifest grid for "
+                             "runtime wall decisions.")
+    parser.add_argument("--front-blocked-checkpoint", type=Path, default=None,
+                        help="Checkpoint from train_go2_jepa_front_blocked_predictor.py "
+                             "(required for --wall-decision-source learned_front).")
+    parser.add_argument("--front-blocked-threshold", type=float, default=None,
+                        help="Override the learned front-blocked probability threshold.")
     parser.add_argument("--wall-guard-states", default="EXPLORE",
                         help="Comma-separated controller states where --wall-aware-planner may veto "
                              "forward/arc commands. Default keeps target SEEK/SERVO unmodified.")
@@ -557,6 +621,9 @@ def main() -> int:
                              "report the controller's color-mask area/bearing (tests in-sim detection).")
     args = parser.parse_args()
     wall_guard_states = {s.strip().upper() for s in str(args.wall_guard_states).split(",") if s.strip()}
+    use_learned_wall_source = bool(
+        args.wall_aware_planner and args.wall_decision_source == "learned_front"
+    )
 
     device = torch.device("cpu")
     platform = load_platform_manifest(args.platform_manifest.resolve())
@@ -619,6 +686,33 @@ def main() -> int:
         tc = color_vocab.index(args.target_color)
         range_scale = float(ck["range_scale_m"])
 
+    front_encoder = front_head = None
+    front_image_size = 64
+    front_threshold = float(args.front_blocked_threshold) if args.front_blocked_threshold is not None else None
+    if use_learned_wall_source:
+        if args.front_blocked_checkpoint is None:
+            raise SystemExit("--front-blocked-checkpoint required for learned_front wall decisions")
+        try:
+            front_ck = torch.load(args.front_blocked_checkpoint, map_location=device, weights_only=False)
+        except TypeError:
+            front_ck = torch.load(args.front_blocked_checkpoint, map_location=device)
+        encoder_checkpoint = args.frozen_jepa_checkpoint or Path(str(front_ck["frozen_jepa_checkpoint"]))
+        front_encoder, _front_encoder_ck = load_go2_jepa_encoder(encoder_checkpoint, device=device, freeze=True)
+        front_head = Go2FrontBlockedHead(
+            latent_dim=int(front_ck.get("latent_dim", 96)),
+            hidden_dim=int(front_ck.get("hidden_dim", 128)),
+        ).to(device)
+        front_head.load_state_dict(front_ck["model_state_dict"])
+        front_head.eval()
+        front_image_size = int(front_ck.get("image_size", 64))
+        if front_threshold is None:
+            front_threshold = float(front_ck.get("threshold", 0.5))
+        print(
+            f"front-blocked: checkpoint={args.front_blocked_checkpoint.name} "
+            f"threshold={front_threshold:.3f} image_size={front_image_size}",
+            flush=True,
+        )
+
     if args.demo_mode == "recall" and args.policy == "memory" and not args.face_target:
         from benchmark_lewm_closed_loop_mpc import _quat_wxyz_from_yaw
         place = _los_placement(grid, landmarks[args.target_color], explorer.free)
@@ -679,9 +773,14 @@ def main() -> int:
     log = []
     claimed = False
     first_seen_tick = None
+    wall_source = (
+        "learned_front_blocked"
+        if use_learned_wall_source
+        else ("privileged_manifest_grid" if args.wall_aware_planner else "diagnostic_only")
+    )
     wall_metrics: dict[str, Any] = {
         "enabled": bool(args.wall_aware_planner),
-        "source": "privileged_manifest_grid" if args.wall_aware_planner else "diagnostic_only",
+        "source": wall_source,
         "commands_total": 0,
         "forward_requests": 0,
         "blocked_forward_requests": 0,
@@ -704,6 +803,7 @@ def main() -> int:
         cur_pose = (float(pos[0]), float(pos[1]), float(yaw))
         log_entry: dict[str, Any] | None = None
         bearing_for_guard: float | None = None
+        front_blocked_prob: float | None = None
 
         if args.policy == "wander":
             primitive = explorer.primitive(pos, yaw)
@@ -711,6 +811,18 @@ def main() -> int:
         else:
             ego = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
             ego64 = F.interpolate(ego.unsqueeze(0), size=(64, 64), mode="bilinear", align_corners=False)[0]
+            if front_encoder is not None and front_head is not None:
+                front_input = ego64
+                if int(front_image_size) != 64:
+                    front_input = F.interpolate(
+                        ego64.unsqueeze(0),
+                        size=(int(front_image_size), int(front_image_size)),
+                        mode="bilinear",
+                        align_corners=False,
+                    )[0]
+                with torch.no_grad():
+                    latent = front_encoder(front_input.unsqueeze(0).to(device))
+                    front_blocked_prob = float(torch.sigmoid(front_head(latent))[0].cpu().item())
             dx, dy, dyaw = _body_delta(prev_pose, cur_pose)
             aux = _build_aux((dx, dy, dyaw), last_cmd, last_primitive)
             aux_t = (torch.from_numpy(aux).to(device) - aux_mean) / aux_std
@@ -777,21 +889,31 @@ def main() -> int:
         if force_escape:
             escape_blocks -= 1
             wall_metrics["escape_blocks_executed"] += 1
-        primitive, wall_guard = _wall_guard_select(
-            requested=requested_primitive,
-            pos_xy=pos[:2],
-            yaw=yaw,
-            bearing=bearing_for_guard,
-            registry=registry,
-            grid=grid,
-            command_dt_s=float(args.command_dt_s),
-            enabled=guard_enabled,
-            min_clearance_m=float(args.wall_min_clearance_m),
-            feasible_threshold=float(args.wall_feasible_threshold),
-            body_forward_m=float(args.wall_body_forward_m),
-            body_half_width_m=float(args.wall_body_half_width_m),
-            force_escape=force_escape,
-        )
+        if use_learned_wall_source:
+            primitive, wall_guard = _learned_front_guard_select(
+                requested=requested_primitive,
+                bearing=bearing_for_guard,
+                enabled=guard_enabled,
+                front_blocked_prob=front_blocked_prob,
+                threshold=float(front_threshold if front_threshold is not None else 0.5),
+                force_escape=force_escape,
+            )
+        else:
+            primitive, wall_guard = _wall_guard_select(
+                requested=requested_primitive,
+                pos_xy=pos[:2],
+                yaw=yaw,
+                bearing=bearing_for_guard,
+                registry=registry,
+                grid=grid,
+                command_dt_s=float(args.command_dt_s),
+                enabled=guard_enabled,
+                min_clearance_m=float(args.wall_min_clearance_m),
+                feasible_threshold=float(args.wall_feasible_threshold),
+                body_forward_m=float(args.wall_body_forward_m),
+                body_half_width_m=float(args.wall_body_half_width_m),
+                force_escape=force_escape,
+            )
         wall_metrics["commands_total"] += 1
         if requested_primitive in _FORWARD_PRIMITIVES:
             wall_metrics["forward_requests"] += 1
