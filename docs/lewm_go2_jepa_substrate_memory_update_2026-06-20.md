@@ -1949,3 +1949,44 @@ loop binds the target across free poses and completes explore→navigate→claim
 inference-time shim and no far false-claims. The detector is shared (load_controller
 reconstructs it from the checkpoint). Caveat retained: warm-color (red/yellow)
 selectivity in warm-background scenes is the residual hue-ambiguity; green is robust.
+
+### 2026-06-23 Physical mode — real PPO gait + rigid-body collisions in the loop
+
+The first closed-loop demos drove the robot kinematically
+(`_execute_kinematic_primitive`: integrate a named velocity primitive, `set_pos`
+the base to the result if a 2D grid cell is free). That teleports — no walking
+policy and no contact, so the robot clips through walls. Fixed by adding
+`--mode physical` to `benchmark_go2_memory_closed_loop.py`, reusing the exact path
+the datagen used to generate the training data:
+`GenesisGo2PPOPolicy.from_platform_manifest` (the trained RSL-RL Go2 policy
+`models/tier_a_go2_locomotion/20260516_contract_ppo/model_500.pt`) +
+`RolloutRunner` + `_execute_physical_primitive` (already present in
+`benchmark_lewm_closed_loop_mpc.py`). Each named primitive expands to a velocity
+command block that the PPO gait tracks via `runner._step_command_tick`
+(observation -> `policy.act` -> joint targets -> `scene.step()` rigid solver), so
+the robot actually walks and collides. Run in the vulkan venv (which already has
+rsl-rl + tensordict) with `--backend cpu --apply-textures --policy-device cpu`.
+
+Notably, **perception is better in physical mode**: the controller was trained on
+frames rendered from this same gait+physics rollout, so the physically-walking
+camera (with body bob) matches the training distribution — the kinematic
+static-height camera was itself a mismatch. The recall OBSERVE area is 2.88
+(physical) vs the kinematic claim at 0.567 m.
+
+Results (value-norm controller, no perception shim):
+- `recall` on held-out 000c67: OBSERVE->HIDE->CLAIM, success, final **0.697 m**.
+- autonomous `explore` on held-out 01732: EXPLORE (PPO gait, real collisions) ->
+  discovers green at tick 68 -> SERVO -> CLAIM tick 70, claimed True, final
+  **1.009 m**. The robot physically stops at the box (collision now prevents the
+  clip-through), so 1.009 m base-center is "at the target": with success-dist 1.2 m
+  (footprint-justified — base-center metric, Go2 ~0.65 m long, camera +0.326 m
+  forward, plus the box's own extent) this reads success=True. No fall
+  (RolloutConfig fall_z_threshold 0.15 would have aborted).
+
+Demos: `.generated/go2_memory_closed_loop/valuenorm_physical_recall_demo.mp4`,
+`valuenorm_physical_explore_demo.mp4`. Wiring: build the RolloutRunner after
+`build_scene_from_pack`, settle the stance via `_set_pose(..., runner=runner)`,
+and branch the executor on `args.mode`; the main loop already reads pose from
+`_current_pose(build)`, so in physical mode the memory's odometry (`_body_delta`)
+becomes real physics base-pose deltas (closing the privileged-odometry gap too).
+Kinematic mode stays the default for fast iteration.

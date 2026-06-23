@@ -44,6 +44,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 from benchmark_lewm_closed_loop_mpc import (  # noqa: E402
     _current_pose,
     _execute_kinematic_primitive,
+    _execute_physical_primitive,
     _render_tensor_from_base,
     _yaw_from_quat_wxyz,
     _set_pose,
@@ -52,7 +53,12 @@ from train_go2_rgb_jepa_vector_memory_controller import (  # noqa: E402
     PRIMITIVE_NAMES,
     load_controller,
 )
-from lewm_genesis.lewm_contract import PrimitiveRegistry  # noqa: E402
+from lewm_genesis.lewm_contract import PrimitiveRegistry, SafetyLimits  # noqa: E402
+from lewm_genesis.rollout import (  # noqa: E402
+    GenesisGo2PPOPolicy,
+    RolloutConfig,
+    RolloutRunner,
+)
 from lewm_genesis.scene_builder import build_scene_from_pack  # noqa: E402
 from lewm_genesis.scene_loader import (  # noqa: E402
     find_scene_dirs,
@@ -277,6 +283,15 @@ def main() -> int:
     parser.add_argument("--scene-id", default=None)
     parser.add_argument("--backend", default="vulkan")
     parser.add_argument("--apply-textures", action="store_true")
+    parser.add_argument("--mode", choices=("kinematic", "physical"), default="kinematic",
+                        help="physical: drive the robot with the trained Go2 PPO walking "
+                             "policy stepped in Genesis physics (real gait + rigid-body "
+                             "collisions); kinematic: integrate named velocity primitives "
+                             "against a 2D grid (teleport, no contact).")
+    parser.add_argument("--policy-device", default="cpu",
+                        help="Torch device for the PPO locomotion policy (physical mode).")
+    parser.add_argument("--fall-z-threshold-m", type=float, default=0.15,
+                        help="Base-height fall threshold for the physical rollout.")
     parser.add_argument("--policy", choices=("wander", "memory"), default="memory")
     parser.add_argument("--demo-mode", choices=("explore", "recall"), default="explore",
                         help="recall: place at a line-of-sight standoff (privileged scaffold), "
@@ -328,7 +343,24 @@ def main() -> int:
     bounds = (wb[0][0], wb[0][1], wb[1][0], wb[1][1]) if isinstance(wb[0], (list, tuple)) else tuple(wb)
     explorer = FrontierExplorer(grid, bounds)
     print(f"explorer free nav-cells: {len(explorer.free)}", flush=True)
-    _set_pose(build=build, runner=None, pos_xyz=spawn_pos, quat_wxyz=spawn_quat)
+
+    # Physical mode: drive the robot with the trained Go2 PPO walking policy stepped
+    # in Genesis physics (real gait + rigid-body collisions). The datagen that trained
+    # the controller used this same RolloutRunner path, so the walking camera matches
+    # the training perception distribution. Kinematic mode keeps the teleport fallback.
+    runner = None
+    if args.mode == "physical":
+        safety = SafetyLimits.from_manifest(platform)
+        policy = GenesisGo2PPOPolicy.from_platform_manifest(
+            platform, REPO_ROOT, device=str(args.policy_device))
+        config = RolloutConfig(
+            n_blocks=int(args.max_ticks), fall_z_threshold_m=float(args.fall_z_threshold_m),
+            rgb_capture_per_block=False, seed=int(args.seed),
+            log_progress_every_blocks=0, foot_contact_source="zero",
+            randomize_spawn_pose=False,
+        )
+        runner = RolloutRunner(build, policy, registry, safety, config=config)
+    _set_pose(build=build, runner=runner, pos_xyz=spawn_pos, quat_wxyz=spawn_quat)
 
     model = color_vocab = aux_mean = aux_std = None
     tc = range_scale = None
@@ -357,7 +389,7 @@ def main() -> int:
         if place is None:
             raise SystemExit(f"no line-of-sight standoff found for {args.target_color}")
         rpos, ryaw = place
-        _set_pose(build=build, runner=None, pos_xyz=rpos, quat_wxyz=_quat_wxyz_from_yaw(ryaw))
+        _set_pose(build=build, runner=runner, pos_xyz=rpos, quat_wxyz=_quat_wxyz_from_yaw(ryaw))
         print(f"recall: placed at {rpos[:2].tolist()} facing {math.degrees(ryaw):.0f}deg, "
               f"target at {landmarks[args.target_color].tolist()}", flush=True)
 
@@ -480,9 +512,14 @@ def main() -> int:
             log.append({"tick": tick, "state": st, "primitive": primitive, "mem_conf": round(mem_conf, 3),
                         "area": round(area, 2), "bearing": round(bearing, 2), "in_cone": in_cone})
 
-        _execute_kinematic_primitive(
-            build, registry, primitive, command_dt_s=float(args.command_dt_s),
-            grid=grid, frame_sink=frames if capture else None, pack=pack, device=device)
+        if args.mode == "physical":
+            _execute_physical_primitive(
+                runner, registry, primitive,
+                frame_sink=frames if capture else None, build=build, pack=pack, device=device)
+        else:
+            _execute_kinematic_primitive(
+                build, registry, primitive, command_dt_s=float(args.command_dt_s),
+                grid=grid, frame_sink=frames if capture else None, pack=pack, device=device)
         last_primitive = primitive
         last_cmd = _PRIM_CMD.get(primitive, (0.0, 0.0, 0.0))
         prev_pose = cur_pose
