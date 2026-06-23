@@ -1990,3 +1990,77 @@ and branch the executor on `args.mode`; the main loop already reads pose from
 `_current_pose(build)`, so in physical mode the memory's odometry (`_body_delta`)
 becomes real physics base-pose deltas (closing the privileged-odometry gap too).
 Kinematic mode stays the default for fast iteration.
+
+### 2026-06-23 Local wall-aware physical guard
+
+Added opt-in `--wall-aware-planner` diagnostics/guard to
+`benchmark_go2_memory_closed_loop.py`. It predicts the next named primitive against
+the inflated manifest grid with a compact Go2 body probe, records requested vs
+executed primitive clearance, and vetoes blocked forward/arc commands in selected
+states (`--wall-guard-states`, default `EXPLORE`). This is explicitly a
+privileged-grid scaffold, not a deployment-valid latent-wall planner yet; it gives
+the physical harness the missing local obstacle arbitration and provides metrics
+for training/replacing it with a latent obstacle head later.
+
+Physical no-video comparison on held-out `medium_enclosed_maze_01732aabc542`
+(`--mode physical --backend cpu --policy-device cpu --apply-textures
+--success-dist-m 1.2 --claim-area-logit 1.5`; wall-aware run used
+`--claim-bearing 0.3` to avoid early off-center claims):
+- Baseline physical explore:
+  `.generated/go2_memory_closed_loop/baseline_physical_explore_metrics_result.json`
+  success=True, final 1.009 m, blocked forward executions 16/25,
+  contact-like stalls 2.
+- Wall-aware physical explore:
+  `.generated/go2_memory_closed_loop/wallaware_physical_explore_metrics_tightclaim_result.json`
+  success=True, final 1.136 m, wall vetoes 14, blocked forward executions 9/29,
+  contact-like stalls 1.
+- Wall-aware physical recall on held-out `000c67`:
+  `.generated/go2_memory_closed_loop/wallaware_physical_recall_metrics_result.json`
+  success=True, final 0.697 m.
+
+Net: the credible physical explore still succeeds while executing materially fewer
+predicted wall/contact-driving forward blocks. Remaining limitation: this is a
+privileged planner-side guard; the right next research step is to distill the same
+near-field blocked/clear primitive classifier from JEPA latents/RGB so deployment
+does not depend on the manifest grid.
+
+### 2026-06-23 Wall-aware closed-loop component gate
+
+Added `scripts/check_go2_wallaware_closed_loop_gate.py` so each new wall-aware
+component has a closed-loop artifact check instead of relying on a narrative
+summary. The gate consumes physical result JSONs and fails on missing trace
+evidence or regressions:
+- Baseline diagnostic path: baseline physical explore must succeed while logging
+  requested primitive clearance in diagnostic-only mode.
+- Clearance predictor/diagnostic: wall-aware explore must log guard candidates
+  for every executed command and observe blocked forward requests.
+- Primitive veto/arbitration: wall-aware explore must veto blocked requests and
+  materially reduce blocked forward executions/rate versus baseline.
+- State scoping: enabled/vetoed guard entries must remain inside the configured
+  guard states (`EXPLORE` for the current scaffold).
+- Stall detector: contact-like stalls must be measured in the trace and not
+  regress versus baseline.
+- Claim calibration: the successful claim must be centered and large enough
+  (`abs(bearing) <= 0.3`, area >= 1.5).
+- Recall preservation: physical recall must still succeed.
+- Escape hook: a dedicated physical run must exercise stuck recovery and a
+  force-escape block while still succeeding.
+
+Current passing gate:
+`scripts/check_go2_wallaware_closed_loop_gate.py --baseline-explore
+.generated/go2_memory_closed_loop/baseline_physical_explore_metrics_result.json
+--wallaware-explore
+.generated/go2_memory_closed_loop/wallaware_physical_explore_metrics_tightclaim_result.json
+--wallaware-recall
+.generated/go2_memory_closed_loop/wallaware_physical_recall_metrics_result.json
+--wallaware-escape
+.generated/go2_memory_closed_loop/wallaware_physical_explore_escapehook_metrics_result.json
+--require-escape-artifact`.
+
+The escape-hook artifact used the same physical scene/controller with
+`--wall-stall-streak 1 --wall-escape-blocks 1 --claim-area-logit 2.5`; it
+triggered one stuck recovery and one forced escape block, then still claimed
+successfully at 1.047 m. The full gate writes
+`.generated/go2_memory_closed_loop/wallaware_closed_loop_gate_result.json` and
+passes with blocked forward executions reduced from 16/25 to 9/29 and
+contact-like stalls reduced from 2 to 1 on the primary explore artifact.

@@ -53,7 +53,11 @@ from train_go2_rgb_jepa_vector_memory_controller import (  # noqa: E402
     PRIMITIVE_NAMES,
     load_controller,
 )
-from lewm_genesis.lewm_contract import PrimitiveRegistry, SafetyLimits  # noqa: E402
+from lewm_genesis.lewm_contract import (  # noqa: E402
+    PrimitiveRegistry,
+    SafetyLimits,
+    expand_primitive_to_block,
+)
 from lewm_genesis.rollout import (  # noqa: E402
     GenesisGo2PPOPolicy,
     RolloutConfig,
@@ -75,6 +79,8 @@ _PRIM_CMD = {
     "yaw_left": (0.0, 0.0, 0.45), "yaw_right": (0.0, 0.0, -0.45),
     "backward": (-0.2, 0.0, 0.0), "hold": (0.0, 0.0, 0.0),
 }
+_FORWARD_PRIMITIVES = frozenset(("forward_slow", "forward_medium", "forward_fast", "arc_left", "arc_right"))
+_TURN_PRIMITIVES = frozenset(("yaw_left", "yaw_right"))
 
 
 def _scene_spawn(scene_dir: Path) -> tuple[np.ndarray, np.ndarray]:
@@ -98,6 +104,214 @@ def _scene_landmarks(scene_dir: Path) -> dict[str, np.ndarray]:
 def _look_ahead_free(grid, pos_xy, yaw, dist_m: float = 0.5) -> bool:
     return grid.is_free((float(pos_xy[0]) + dist_m * math.cos(yaw),
                          float(pos_xy[1]) + dist_m * math.sin(yaw)))
+
+
+def _round_float(value: float | None, ndigits: int = 3) -> float | None:
+    if value is None:
+        return None
+    return round(float(value), ndigits)
+
+
+def _body_probe_clearance(
+    grid: InflatedOccupancyGrid,
+    xy: np.ndarray | tuple[float, float],
+    yaw: float,
+    *,
+    body_forward_m: float,
+    body_half_width_m: float,
+) -> float:
+    """Minimum C-space clearance over a compact Go2 footprint probe."""
+
+    x = float(xy[0])
+    y = float(xy[1])
+    fx, fy = math.cos(yaw), math.sin(yaw)
+    lx, ly = -fy, fx
+    probes = (
+        (0.0, 0.0),
+        (body_forward_m, 0.0),
+        (body_forward_m, body_half_width_m),
+        (body_forward_m, -body_half_width_m),
+        (0.0, body_half_width_m),
+        (0.0, -body_half_width_m),
+    )
+    min_clearance = float("inf")
+    for forward, lateral in probes:
+        px = x + forward * fx + lateral * lx
+        py = y + forward * fy + lateral * ly
+        min_clearance = min(min_clearance, grid.configuration_clearance_m((px, py)))
+    return float(min_clearance)
+
+
+def _primitive_clearance_report(
+    registry: PrimitiveRegistry,
+    primitive: str,
+    pos_xy: np.ndarray | tuple[float, float],
+    yaw: float,
+    grid: InflatedOccupancyGrid,
+    command_dt_s: float,
+    *,
+    body_forward_m: float,
+    body_half_width_m: float,
+    min_clearance_m: float,
+) -> dict[str, Any]:
+    block = expand_primitive_to_block(registry, primitive)
+    x = float(pos_xy[0])
+    y = float(pos_xy[1])
+    heading = float(yaw)
+    min_clearance = float("inf")
+    feasible = 0
+    samples = 0
+    predicted_path_m = 0.0
+    for vx, vy, yaw_rate in block:
+        vx = float(vx)
+        vy = float(vy)
+        yaw_rate = float(yaw_rate)
+        dx = (math.cos(heading) * vx - math.sin(heading) * vy) * command_dt_s
+        dy = (math.sin(heading) * vx + math.cos(heading) * vy) * command_dt_s
+        x += dx
+        y += dy
+        heading = wrap_angle_pi(heading + yaw_rate * command_dt_s)
+        predicted_path_m += math.hypot(dx, dy)
+        clearance = _body_probe_clearance(
+            grid, (x, y), heading,
+            body_forward_m=body_forward_m,
+            body_half_width_m=body_half_width_m,
+        )
+        min_clearance = min(min_clearance, clearance)
+        samples += 1
+        if clearance >= min_clearance_m and grid.is_free((x, y)):
+            feasible += 1
+    feasible_fraction = float(feasible / max(1, samples))
+    if not math.isfinite(min_clearance):
+        min_clearance = -1.0
+    blocked = feasible_fraction < 1.0 or min_clearance < min_clearance_m
+    return {
+        "primitive": primitive,
+        "min_clearance_m": float(min_clearance),
+        "feasible_fraction": feasible_fraction,
+        "blocked": bool(blocked),
+        "predicted_path_m": float(predicted_path_m),
+    }
+
+
+def _turn_preference(primitive: str, bearing: float | None) -> float:
+    if bearing is None or abs(float(bearing)) < 0.05:
+        return 0.0
+    left = primitive.endswith("left")
+    right = primitive.endswith("right")
+    if not (left or right):
+        return 0.0
+    turns_toward = (bearing > 0.0 and left) or (bearing < 0.0 and right)
+    return 0.12 if turns_toward else -0.06
+
+
+def _score_clearance_candidate(report: dict[str, Any], bearing: float | None) -> float:
+    primitive = str(report["primitive"])
+    clearance = max(-0.4, min(0.6, float(report["min_clearance_m"])))
+    score = 2.0 * float(report["feasible_fraction"]) + 0.8 * clearance
+    score += _turn_preference(primitive, bearing)
+    if primitive == "backward":
+        score -= 0.02
+    elif primitive in _TURN_PRIMITIVES:
+        score -= 0.16
+    elif primitive == "hold":
+        score -= 0.50
+    return score
+
+
+def _unique_primitives(names: list[str]) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for name in names:
+        if name not in seen:
+            out.append(name)
+            seen.add(name)
+    return out
+
+
+def _wall_guard_select(
+    *,
+    requested: str,
+    pos_xy: np.ndarray | tuple[float, float],
+    yaw: float,
+    bearing: float | None,
+    registry: PrimitiveRegistry,
+    grid: InflatedOccupancyGrid,
+    command_dt_s: float,
+    enabled: bool,
+    min_clearance_m: float,
+    feasible_threshold: float,
+    body_forward_m: float,
+    body_half_width_m: float,
+    force_escape: bool = False,
+) -> tuple[str, dict[str, Any]]:
+    requested_report = _primitive_clearance_report(
+        registry, requested, pos_xy, yaw, grid, command_dt_s,
+        body_forward_m=body_forward_m, body_half_width_m=body_half_width_m,
+        min_clearance_m=min_clearance_m,
+    )
+    should_veto = (
+        enabled
+        and (force_escape or requested in _FORWARD_PRIMITIVES)
+        and (
+            force_escape
+            or bool(requested_report["blocked"])
+            or float(requested_report["feasible_fraction"]) < feasible_threshold
+        )
+    )
+    candidate_names = [requested]
+    if should_veto:
+        if bearing is not None and bearing > 0.0:
+            turns = ["arc_left", "yaw_left", "arc_right", "yaw_right"]
+        elif bearing is not None and bearing < 0.0:
+            turns = ["arc_right", "yaw_right", "arc_left", "yaw_left"]
+        else:
+            turns = ["arc_left", "arc_right", "yaw_left", "yaw_right"]
+        candidate_names = _unique_primitives([requested, "forward_slow", *turns, "backward", "hold"])
+    reports = [
+        _primitive_clearance_report(
+            registry, name, pos_xy, yaw, grid, command_dt_s,
+            body_forward_m=body_forward_m, body_half_width_m=body_half_width_m,
+            min_clearance_m=min_clearance_m,
+        )
+        if name != requested else requested_report
+        for name in candidate_names
+    ]
+    selected_report = requested_report
+    selected = requested
+    if should_veto:
+        def _score(report: dict[str, Any]) -> float:
+            score = _score_clearance_candidate(report, bearing)
+            if force_escape and str(report["primitive"]) in _FORWARD_PRIMITIVES:
+                score -= 0.7
+            return score
+
+        selected_report = max(reports, key=_score)
+        selected = str(selected_report["primitive"])
+    compact_reports = [
+        {
+            "primitive": str(r["primitive"]),
+            "min_clearance_m": _round_float(float(r["min_clearance_m"])),
+            "feasible_fraction": _round_float(float(r["feasible_fraction"])),
+            "blocked": bool(r["blocked"]),
+        }
+        for r in reports
+    ]
+    guard = {
+        "enabled": bool(enabled),
+        "requested": requested,
+        "selected": selected,
+        "vetoed": bool(selected != requested),
+        "force_escape": bool(force_escape),
+        "requested_min_clearance_m": _round_float(float(requested_report["min_clearance_m"])),
+        "requested_feasible_fraction": _round_float(float(requested_report["feasible_fraction"])),
+        "requested_blocked": bool(requested_report["blocked"]),
+        "selected_min_clearance_m": _round_float(float(selected_report["min_clearance_m"])),
+        "selected_feasible_fraction": _round_float(float(selected_report["feasible_fraction"])),
+        "selected_blocked": bool(selected_report["blocked"]),
+        "candidates": compact_reports,
+    }
+    return selected, guard
 
 
 def _los_clear(grid, a, b, stop_short_m: float = 0.35, step: float = 0.05) -> bool:
@@ -314,6 +528,27 @@ def main() -> int:
     parser.add_argument("--claim-area-logit", type=float, default=3.0)
     parser.add_argument("--claim-bearing", type=float, default=0.25)
     parser.add_argument("--success-dist-m", type=float, default=0.8)
+    parser.add_argument("--wall-aware-planner", action="store_true",
+                        help="Opt-in privileged-grid local guard: predicts each primitive's "
+                             "near-field clearance and vetoes blocked forward/arc commands. "
+                             "This is a planning scaffold, not a deployment-valid latent model.")
+    parser.add_argument("--wall-guard-states", default="EXPLORE",
+                        help="Comma-separated controller states where --wall-aware-planner may veto "
+                             "forward/arc commands. Default keeps target SEEK/SERVO unmodified.")
+    parser.add_argument("--wall-min-clearance-m", type=float, default=0.02,
+                        help="Minimum predicted C-space clearance for the wall-aware guard.")
+    parser.add_argument("--wall-feasible-threshold", type=float, default=0.8,
+                        help="Minimum feasible sample fraction before a forward primitive is vetoed.")
+    parser.add_argument("--wall-body-forward-m", type=float, default=0.35,
+                        help="Forward body probe length used by the wall-aware guard.")
+    parser.add_argument("--wall-body-half-width-m", type=float, default=0.18,
+                        help="Half-width body probe used by the wall-aware guard.")
+    parser.add_argument("--wall-stall-displacement-m", type=float, default=0.03,
+                        help="Physical blocks with less XY displacement than this count as contact-like stalls.")
+    parser.add_argument("--wall-stall-streak", type=int, default=2,
+                        help="Consecutive forward stalls before scheduling escape blocks.")
+    parser.add_argument("--wall-escape-blocks", type=int, default=2,
+                        help="Backward/yaw escape blocks scheduled after a stall streak.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--demo-video", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=None)
@@ -321,6 +556,7 @@ def main() -> int:
                         help="Diagnostic: place robot at several poses facing the target color and "
                              "report the controller's color-mask area/bearing (tests in-sim detection).")
     args = parser.parse_args()
+    wall_guard_states = {s.strip().upper() for s in str(args.wall_guard_states).split(",") if s.strip()}
 
     device = torch.device("cpu")
     platform = load_platform_manifest(args.platform_manifest.resolve())
@@ -443,14 +679,35 @@ def main() -> int:
     log = []
     claimed = False
     first_seen_tick = None
+    wall_metrics: dict[str, Any] = {
+        "enabled": bool(args.wall_aware_planner),
+        "source": "privileged_manifest_grid" if args.wall_aware_planner else "diagnostic_only",
+        "commands_total": 0,
+        "forward_requests": 0,
+        "blocked_forward_requests": 0,
+        "forward_executions": 0,
+        "blocked_forward_executions": 0,
+        "wall_vetoes": 0,
+        "escape_blocks_executed": 0,
+        "contact_like_stalls": 0,
+        "stuck_recoveries": 0,
+        "requested_min_clearance_min_m": None,
+        "selected_min_clearance_min_m": None,
+        "forward_execution_displacement_sum_m": 0.0,
+    }
+    stuck_streak = 0
+    escape_blocks = 0
 
     for tick in range(int(args.max_ticks)):
         pos, quat = _current_pose(build)
         yaw = _yaw_from_quat_wxyz(quat)
         cur_pose = (float(pos[0]), float(pos[1]), float(yaw))
+        log_entry: dict[str, Any] | None = None
+        bearing_for_guard: float | None = None
 
         if args.policy == "wander":
             primitive = explorer.primitive(pos, yaw)
+            log_entry = {"tick": tick, "state": "WANDER", "primitive": primitive}
         else:
             ego = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
             ego64 = F.interpolate(ego.unsqueeze(0), size=(64, 64), mode="bilinear", align_corners=False)[0]
@@ -471,6 +728,7 @@ def main() -> int:
                 bearing = math.atan2(float(evid[1]), float(evid[0]))
             else:
                 bearing = math.atan2(float(mem_vec[1]), float(mem_vec[0]))
+            bearing_for_guard = bearing
 
             # Recall preamble (scaffold): OBSERVE to bind, then HIDE (turn away).
             recall_preamble = False
@@ -509,8 +767,54 @@ def main() -> int:
                     else:
                         primitive = "forward_medium"
                     st = "SEEK"
-            log.append({"tick": tick, "state": st, "primitive": primitive, "mem_conf": round(mem_conf, 3),
-                        "area": round(area, 2), "bearing": round(bearing, 2), "in_cone": in_cone})
+            log_entry = {"tick": tick, "state": st, "primitive": primitive, "mem_conf": round(mem_conf, 3),
+                         "area": round(area, 2), "bearing": round(bearing, 2), "in_cone": in_cone}
+
+        requested_primitive = primitive
+        guard_state = str(log_entry.get("state", "")) if log_entry is not None else ""
+        guard_enabled = bool(args.wall_aware_planner and (not wall_guard_states or guard_state.upper() in wall_guard_states))
+        force_escape = bool(guard_enabled and escape_blocks > 0 and requested_primitive in _FORWARD_PRIMITIVES)
+        if force_escape:
+            escape_blocks -= 1
+            wall_metrics["escape_blocks_executed"] += 1
+        primitive, wall_guard = _wall_guard_select(
+            requested=requested_primitive,
+            pos_xy=pos[:2],
+            yaw=yaw,
+            bearing=bearing_for_guard,
+            registry=registry,
+            grid=grid,
+            command_dt_s=float(args.command_dt_s),
+            enabled=guard_enabled,
+            min_clearance_m=float(args.wall_min_clearance_m),
+            feasible_threshold=float(args.wall_feasible_threshold),
+            body_forward_m=float(args.wall_body_forward_m),
+            body_half_width_m=float(args.wall_body_half_width_m),
+            force_escape=force_escape,
+        )
+        wall_metrics["commands_total"] += 1
+        if requested_primitive in _FORWARD_PRIMITIVES:
+            wall_metrics["forward_requests"] += 1
+            if bool(wall_guard["requested_blocked"]):
+                wall_metrics["blocked_forward_requests"] += 1
+        if primitive in _FORWARD_PRIMITIVES:
+            wall_metrics["forward_executions"] += 1
+            if bool(wall_guard["selected_blocked"]):
+                wall_metrics["blocked_forward_executions"] += 1
+        if bool(wall_guard["vetoed"]):
+            wall_metrics["wall_vetoes"] += 1
+        for key, guard_key in (
+            ("requested_min_clearance_min_m", "requested_min_clearance_m"),
+            ("selected_min_clearance_min_m", "selected_min_clearance_m"),
+        ):
+            val = wall_guard.get(guard_key)
+            if val is not None:
+                wall_metrics[key] = val if wall_metrics[key] is None else min(float(wall_metrics[key]), float(val))
+        if log_entry is not None:
+            log_entry["requested_primitive"] = requested_primitive
+            log_entry["primitive"] = primitive
+            log_entry["wall_guard"] = wall_guard
+            log.append(log_entry)
 
         if args.mode == "physical":
             _execute_physical_primitive(
@@ -520,6 +824,28 @@ def main() -> int:
             _execute_kinematic_primitive(
                 build, registry, primitive, command_dt_s=float(args.command_dt_s),
                 grid=grid, frame_sink=frames if capture else None, pack=pack, device=device)
+        post_pos, post_quat = _current_pose(build)
+        xy_displacement = float(math.hypot(float(post_pos[0]) - float(pos[0]), float(post_pos[1]) - float(pos[1])))
+        if primitive in _FORWARD_PRIMITIVES:
+            wall_metrics["forward_execution_displacement_sum_m"] += xy_displacement
+            stalled = xy_displacement < float(args.wall_stall_displacement_m)
+            if stalled:
+                wall_metrics["contact_like_stalls"] += 1
+                stuck_streak += 1
+                if stuck_streak >= int(args.wall_stall_streak):
+                    escape_blocks = max(escape_blocks, int(args.wall_escape_blocks))
+                    wall_metrics["stuck_recoveries"] += 1
+                    stuck_streak = 0
+            else:
+                stuck_streak = 0
+        else:
+            stalled = False
+            if primitive in _TURN_PRIMITIVES or primitive == "backward":
+                stuck_streak = 0
+        if log_entry is not None:
+            log_entry["executed_displacement_m"] = _round_float(xy_displacement)
+            log_entry["post_xy"] = [_round_float(float(post_pos[0])), _round_float(float(post_pos[1]))]
+            log_entry["stalled"] = bool(stalled)
         last_primitive = primitive
         last_cmd = _PRIM_CMD.get(primitive, (0.0, 0.0, 0.0))
         prev_pose = cur_pose
@@ -528,11 +854,18 @@ def main() -> int:
     final_xy = np.asarray([float(final_pos[0]), float(final_pos[1])])
     dist = float(np.linalg.norm(final_xy - landmarks[args.target_color])) if args.target_color in landmarks else None
     success = bool(claimed and dist is not None and dist <= float(args.success_dist_m))
+    if wall_metrics["forward_executions"]:
+        wall_metrics["mean_forward_execution_displacement_m"] = (
+            wall_metrics["forward_execution_displacement_sum_m"] / wall_metrics["forward_executions"]
+        )
+    else:
+        wall_metrics["mean_forward_execution_displacement_m"] = None
+    wall_metrics.pop("forward_execution_displacement_sum_m", None)
     result = {
         "scene": scene_dir.name, "policy": args.policy, "target_color": args.target_color,
         "ticks_used": len(log), "claimed": claimed, "first_seen_tick": first_seen_tick,
         "final_xy": final_xy.tolist(), "target_xy": landmarks.get(args.target_color, np.zeros(2)).tolist(),
-        "final_dist_to_target_m": dist, "success": success,
+        "final_dist_to_target_m": dist, "success": success, "wall_metrics": wall_metrics,
     }
     print(json.dumps(result, indent=2))
     if args.policy == "memory":
