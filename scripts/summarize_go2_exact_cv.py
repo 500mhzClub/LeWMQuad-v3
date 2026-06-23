@@ -7,6 +7,7 @@ false_claim_rate <= 0.12, corruption gap >= 0.30, with recall preserved.
 
 from __future__ import annotations
 
+import argparse
 import collections
 import glob
 import json
@@ -18,7 +19,14 @@ GAP_BAR = 0.30
 
 
 def main() -> int:
-    d = ".generated/go2_hidden_target_memory/observed_memory_gate_20260622/exact_cv"
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--dir",
+        default=".generated/go2_hidden_target_memory/observed_memory_gate_20260622/exact_cv",
+        help="CV report directory (exact_<scene>_s<seed>_report.json files).",
+    )
+    args = parser.parse_args()
+    d = args.dir
     per_scene = collections.defaultdict(list)
     for f in sorted(glob.glob(f"{d}/exact_*_report.json")):
         name = Path(f).name.replace("exact_", "").replace("_report.json", "")

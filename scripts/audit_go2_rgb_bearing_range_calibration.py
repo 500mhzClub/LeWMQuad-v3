@@ -50,9 +50,20 @@ def _soft_mask_stats(
     sigma: float,
     threshold: float,
     temperature: float,
+    value_normalized: bool = False,
+    value_norm_floor: float = 0.15,
 ) -> tuple[float, float]:
     """Replicates ColorVectorMemoryController._rgb_color_readout for one color."""
-    distance = ((image - color_rgb.reshape(3, 1, 1)) ** 2).mean(dim=0)
+    if value_normalized:
+        # Value-normalize each pixel (divide by its max channel) and compare hue to
+        # the (value-normalized) pure color: a desaturated/shadowed target still fires
+        # while a near-gray background tint normalizes far from the hue and is rejected.
+        mx = image.amax(dim=0, keepdim=True).clamp_min(value_norm_floor)
+        norm = image / mx
+        cn = color_rgb / float(color_rgb.max())
+        distance = ((norm - cn.reshape(3, 1, 1)) ** 2).mean(dim=0)
+    else:
+        distance = ((image - color_rgb.reshape(3, 1, 1)) ** 2).mean(dim=0)
     similarity = torch.exp(-distance / (2.0 * sigma**2))
     soft_mask = torch.sigmoid((similarity - threshold) / temperature)
     area = float(soft_mask.mean().clamp_min(1e-8))
@@ -93,6 +104,10 @@ def main() -> int:
     parser.add_argument("--rgb-evidence-threshold", type=float, default=0.55)
     parser.add_argument("--rgb-evidence-temperature", type=float, default=0.08)
     parser.add_argument("--rgb-evidence-area-threshold", type=float, default=0.006)
+    parser.add_argument("--rgb-evidence-value-normalized", action="store_true",
+                        help="Value-normalize each pixel (divide by its max channel) before "
+                             "the Euclidean readout so it compares hue, not brightness.")
+    parser.add_argument("--value-norm-floor", type=float, default=0.15)
     parser.add_argument("--range-scale-m", type=float, default=6.0)
     parser.add_argument("--max-rows", type=int, default=0, help="0 = all rows")
     parser.add_argument("--output", type=Path, default=None)
@@ -139,6 +154,8 @@ def main() -> int:
                 sigma=args.rgb_evidence_sigma,
                 threshold=args.rgb_evidence_threshold,
                 temperature=args.rgb_evidence_temperature,
+                value_normalized=bool(args.rgb_evidence_value_normalized),
+                value_norm_floor=float(args.value_norm_floor),
             )
             fires = area > args.rgb_evidence_area_threshold
             if fires:

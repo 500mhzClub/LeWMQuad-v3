@@ -157,6 +157,8 @@ class ColorVectorMemoryController(nn.Module):
         rgb_vector_bearing_b: float,
         rgb_vector_range_loglog_m: float,
         rgb_vector_range_loglog_c: float,
+        rgb_evidence_value_normalized: bool,
+        value_norm_floor: float,
         range_scale_m: float,
         evidence_write_logit_bias: float,
         evidence_write_temperature: float,
@@ -195,6 +197,18 @@ class ColorVectorMemoryController(nn.Module):
         self.rgb_vector_range_loglog_c = float(rgb_vector_range_loglog_c)
         self.range_scale_m = max(1e-6, float(range_scale_m))
         self.register_buffer("color_rgb", color_rgb.float().clamp(0.0, 1.0), persistent=False)
+        # Brightness/saturation-invariant color detector: normalize each pixel by its
+        # max channel (value), then run the same Euclidean readout against the pure
+        # colors (also value-normalized). This compares hue while ignoring brightness,
+        # so a desaturated/shadowed target still fires, yet it keeps the Euclidean
+        # mask's per-color selectivity (a near-gray background tint normalizes far from
+        # any pure hue and is rejected). value_norm_floor clamps the per-pixel max so
+        # near-black noise is not amplified. See hidden-snuggling-dijkstra plan Phase 1.
+        self.rgb_evidence_value_normalized = bool(rgb_evidence_value_normalized)
+        self.value_norm_floor = max(1e-3, float(value_norm_floor))
+        _cn = color_rgb.float().clamp(0.0, 1.0)
+        _cn = _cn / _cn.amax(dim=1, keepdim=True).clamp_min(1e-6)
+        self.register_buffer("color_rgb_value_normalized", _cn, persistent=False)
         self.evidence_write_logit_bias = float(evidence_write_logit_bias)
         self.evidence_write_temperature = max(1e-3, float(evidence_write_temperature))
         self.read_head_scale = float(read_head_scale)
@@ -408,6 +422,91 @@ class ColorVectorMemoryController(nn.Module):
             result["rgb_evidence_vec"] = rgb_vec
         return result
 
+    @torch.no_grad()
+    def step_online(
+        self,
+        image: torch.Tensor,
+        aux: torch.Tensor,
+        motion_delta: torch.Tensor | None,
+        state: tuple | None,
+    ) -> tuple[dict[str, torch.Tensor], tuple]:
+        """Single-frame online step for closed-loop deployment.
+
+        Mirrors one iteration of forward_sequence: encodes the new frame, writes
+        evidence into the per-color vector memory propagated by motion_delta, and
+        returns steering/read/memory for the current frame plus the carried state
+        (memory_vec, memory_conf, memory_latent, recurrent_state). 1 encode/tick.
+        """
+        if self.world_belief_features:
+            raise NotImplementedError("step_online does not support world_belief_features")
+        images = image.unsqueeze(0) if image.dim() == 3 else image
+        aux_t = aux.unsqueeze(0) if aux.dim() == 1 else aux
+        encoded = self.encoder(images)
+        hidden = self.encoder_projection(encoded)
+        raw = self.evidence_head(hidden).reshape(1, self.color_count, 3)
+        evidence_logits = raw[..., 0]
+        evidence_vec = torch.tanh(raw[..., 1:3])
+        rgb_area_logits = None
+        if self.rgb_color_evidence:
+            rgb_logits, rgb_vec = self._rgb_color_readout(images)
+            rgb_area_logits = rgb_logits
+            if self.rgb_evidence_replaces_learned:
+                evidence_logits = float(self.rgb_evidence_logit_scale) * rgb_logits
+                if self.rgb_evidence_replaces_learned_logits_only:
+                    evidence_vec = torch.tanh(raw[..., 1:3] + float(self.rgb_vector_scale) * rgb_vec)
+                elif self.rgb_vector_calibrated:
+                    evidence_vec = rgb_vec
+                else:
+                    evidence_vec = torch.tanh(float(self.rgb_vector_scale) * rgb_vec)
+            else:
+                evidence_logits = evidence_logits + float(self.rgb_evidence_logit_scale) * rgb_logits
+                evidence_vec = torch.tanh(raw[..., 1:3] + float(self.rgb_vector_scale) * rgb_vec)
+        if state is None:
+            memory_vec = torch.zeros(self.color_count, 2, device=hidden.device, dtype=hidden.dtype)
+            memory_conf = torch.zeros(self.color_count, device=hidden.device, dtype=hidden.dtype)
+            memory_latent = torch.zeros(self.color_count, hidden.shape[-1], device=hidden.device, dtype=hidden.dtype)
+            recurrent_state = torch.zeros(hidden.shape[-1], device=hidden.device, dtype=hidden.dtype)
+        else:
+            memory_vec, memory_conf, memory_latent, recurrent_state = state
+            if motion_delta is not None:
+                memory_vec = _propagate_vectors(memory_vec, motion_delta.to(device=hidden.device, dtype=hidden.dtype))
+        color_index = torch.arange(self.color_count, device=hidden.device)
+        color_emb = self.color_embedding(color_index)
+        recurrent_state = self.recurrent_memory(torch.cat([hidden[0], aux_t[0]], dim=-1), recurrent_state)
+        write = torch.sigmoid(
+            (evidence_logits[0] - float(self.evidence_write_logit_bias)) / float(self.evidence_write_temperature)
+        )
+        propagated_weight = memory_conf * (1.0 - write)
+        new_conf = 1.0 - (1.0 - memory_conf) * (1.0 - write)
+        memory_vec = (
+            propagated_weight.unsqueeze(-1) * memory_vec + write.unsqueeze(-1) * evidence_vec[0]
+        ) / new_conf.clamp_min(1e-4).unsqueeze(-1)
+        memory_latent = (
+            propagated_weight.unsqueeze(-1) * memory_latent + write.unsqueeze(-1) * hidden[0].unsqueeze(0)
+        ) / new_conf.clamp_min(1e-4).unsqueeze(-1)
+        memory_conf = new_conf.clamp(0.0, 1.0)
+        recurrent_features = recurrent_state.unsqueeze(0).expand(self.color_count, -1)
+        feature_parts = [memory_vec, memory_conf.unsqueeze(-1), color_emb, recurrent_features]
+        if self.latent_memory_features:
+            feature_parts.append(memory_latent)
+        features = torch.cat(feature_parts, dim=-1)
+        confidence_logit = torch.logit(memory_conf.clamp(1e-4, 1.0 - 1e-4))
+        read_logits = (
+            float(self.read_head_scale) * self.read_head(features).squeeze(-1)
+            + float(self.read_confidence_prior_scale) * confidence_logit
+        )
+        steering_logits = self.steering_head(features)
+        outputs = {
+            "memory_vec": memory_vec,
+            "memory_conf": memory_conf,
+            "read_logits": read_logits,
+            "steering_logits": steering_logits,
+            "evidence_vec": evidence_vec[0],
+        }
+        if rgb_area_logits is not None:
+            outputs["rgb_area_logits"] = rgb_area_logits[0]
+        return outputs, (memory_vec, memory_conf, memory_latent, recurrent_state)
+
     def _motion_delta(self, aux: torch.Tensor) -> torch.Tensor:
         # Bound single-step motion to keep early training stable. Units are the
         # normalized vector space used by target_vec.
@@ -417,8 +516,16 @@ class ColorVectorMemoryController(nn.Module):
         return torch.cat([dx_dy, dyaw.reshape(1)])
 
     def _rgb_color_readout(self, images: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        colors = self.color_rgb.to(device=images.device, dtype=images.dtype)
-        distance = ((images[:, None] - colors[None, :, :, None, None]) ** 2).mean(dim=2)
+        if self.rgb_evidence_value_normalized:
+            # Value-normalize each pixel (divide by its max channel) so the readout
+            # compares hue, not brightness: a desaturated/shadowed target still fires.
+            mx = images.amax(dim=1, keepdim=True).clamp_min(float(self.value_norm_floor))
+            norm_images = images / mx
+            colors = self.color_rgb_value_normalized.to(device=images.device, dtype=images.dtype)
+            distance = ((norm_images[:, None] - colors[None, :, :, None, None]) ** 2).mean(dim=2)
+        else:
+            colors = self.color_rgb.to(device=images.device, dtype=images.dtype)
+            distance = ((images[:, None] - colors[None, :, :, None, None]) ** 2).mean(dim=2)
         similarity = torch.exp(
             -distance / (2.0 * float(self.rgb_evidence_sigma) ** 2)
         )
@@ -447,6 +554,70 @@ class ColorVectorMemoryController(nn.Module):
         forward = torch.full_like(x_centroid, 0.75)
         lateral_left = -x_centroid.clamp(-1.0, 1.0)
         return area_logits, torch.stack([forward, lateral_left], dim=-1)
+
+
+def load_controller(
+    checkpoint_path: Path,
+    *,
+    device: torch.device,
+    frozen_jepa_checkpoint: Path | None = None,
+):
+    """Reconstruct a trained ColorVectorMemoryController for online deployment.
+
+    Returns (model.eval(), color_vocab, aux_mean, aux_std, config). The bearing/
+    range calibration coefficients default to the fitted values (the runs used
+    defaults); the JEPA encoder path can be overridden if the checkpoint moved.
+    """
+    ck = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    color_vocab = list(ck["color_vocab"])
+    jepa_ckpt = Path(frozen_jepa_checkpoint) if frozen_jepa_checkpoint else Path(ck["frozen_jepa_checkpoint"])
+    base_encoder, jepa_checkpoint = load_go2_jepa_encoder(
+        jepa_ckpt, device=device, freeze=False if bool(ck["spatial_jepa_readout"]) else True,
+    )
+    if bool(ck["spatial_jepa_readout"]):
+        encoder = SpatialGo2JepaFeatureEncoder(
+            base_encoder, image_size=int(ck["image_size"]),
+            output_dim=int(ck["spatial_output_dim"]), feature_stride=int(ck["spatial_feature_stride"]),
+        ).to(device)
+        encoder_output_dim = int(ck["spatial_output_dim"])
+    else:
+        encoder = base_encoder
+        encoder_output_dim = int(jepa_checkpoint.get("latent_dim", ck["hidden_dim"]))
+    a = dict(ck.get("args") or {})
+    model = ColorVectorMemoryController(
+        encoder=encoder, encoder_output_dim=encoder_output_dim, color_count=len(color_vocab),
+        aux_dim=len(ck["aux_mean"]), hidden_dim=int(ck["hidden_dim"]),
+        color_embedding_dim=int(ck["color_embedding_dim"]), freeze_encoder=True,
+        color_rgb=torch.tensor([_COLOR_RGB[c] for c in color_vocab], dtype=torch.float32),
+        rgb_color_evidence=bool(ck["rgb_color_evidence"]),
+        rgb_evidence_replaces_learned=bool(ck["rgb_evidence_replaces_learned"]),
+        rgb_evidence_sigma=float(ck["rgb_evidence_sigma"]),
+        rgb_evidence_threshold=float(ck["rgb_evidence_threshold"]),
+        rgb_evidence_temperature=float(ck["rgb_evidence_temperature"]),
+        rgb_evidence_area_threshold=float(ck["rgb_evidence_area_threshold"]),
+        rgb_evidence_logit_scale=float(ck["rgb_evidence_logit_scale"]),
+        rgb_evidence_replaces_learned_logits_only=bool(ck["rgb_evidence_replaces_learned_logits_only"]),
+        rgb_vector_scale=float(ck["rgb_vector_scale"]),
+        rgb_vector_calibrated=bool(ck.get("rgb_vector_calibrated", False)),
+        rgb_vector_bearing_a=float(a.get("rgb_vector_bearing_a", -0.7412162764485124)),
+        rgb_vector_bearing_b=float(a.get("rgb_vector_bearing_b", 0.01266205992118909)),
+        rgb_vector_range_loglog_m=float(a.get("rgb_vector_range_loglog_m", -0.25799125815180496)),
+        rgb_vector_range_loglog_c=float(a.get("rgb_vector_range_loglog_c", -0.7229343594424763)),
+        rgb_evidence_value_normalized=bool(ck.get("rgb_evidence_value_normalized", False)),
+        value_norm_floor=float(ck.get("value_norm_floor", 0.15)),
+        range_scale_m=float(ck["range_scale_m"]),
+        evidence_write_logit_bias=float(ck["evidence_write_logit_bias"]),
+        evidence_write_temperature=float(ck["evidence_write_temperature"]),
+        read_head_scale=float(ck["read_head_scale"]),
+        read_confidence_prior_scale=float(ck["read_confidence_prior_scale"]),
+        latent_memory_features=bool(ck["latent_memory_features"]),
+        world_belief_features=bool(ck["world_belief_features"]),
+    ).to(device)
+    model.load_state_dict(ck["model_state_dict"], strict=True)
+    model.eval()
+    aux_mean = torch.tensor(ck["aux_mean"], dtype=torch.float32, device=device)
+    aux_std = torch.tensor(ck["aux_std"], dtype=torch.float32, device=device)
+    return model, color_vocab, aux_mean, aux_std, ck
 
 
 def main() -> int:
@@ -503,6 +674,20 @@ def main() -> int:
     parser.add_argument("--rgb-vector-bearing-b", type=float, default=0.01266205992118909)
     parser.add_argument("--rgb-vector-range-loglog-m", type=float, default=-0.25799125815180496)
     parser.add_argument("--rgb-vector-range-loglog-c", type=float, default=-0.7229343594424763)
+    parser.add_argument(
+        "--rgb-evidence-value-normalized",
+        action="store_true",
+        help=(
+            "Value-normalize each pixel (divide by its max channel) before the RGB "
+            "evidence Euclidean readout so it compares hue, not brightness. A "
+            "desaturated/shadowed target still fires while keeping the Euclidean mask's "
+            "per-color selectivity (a near-gray background tint normalizes far from any "
+            "pure hue and is rejected). See hidden-snuggling-dijkstra plan Phase 1."
+        ),
+    )
+    parser.add_argument("--value-norm-floor", type=float, default=0.15,
+                        help="Clamp the per-pixel max channel to this floor before "
+                             "value-normalizing, so near-black noise is not amplified.")
     parser.add_argument("--evidence-write-logit-bias", type=float, default=0.0)
     parser.add_argument("--evidence-write-temperature", type=float, default=1.0)
     parser.add_argument("--read-head-scale", type=float, default=1.0)
@@ -696,6 +881,8 @@ def main() -> int:
         rgb_vector_bearing_b=float(args.rgb_vector_bearing_b),
         rgb_vector_range_loglog_m=float(args.rgb_vector_range_loglog_m),
         rgb_vector_range_loglog_c=float(args.rgb_vector_range_loglog_c),
+        rgb_evidence_value_normalized=bool(args.rgb_evidence_value_normalized),
+        value_norm_floor=float(args.value_norm_floor),
         range_scale_m=float(args.range_scale_m),
         evidence_write_logit_bias=float(args.evidence_write_logit_bias),
         evidence_write_temperature=float(args.evidence_write_temperature),
@@ -873,6 +1060,8 @@ def main() -> int:
         "rgb_supervision_from_evidence": bool(args.rgb_supervision_from_evidence),
         "rgb_vector_scale": float(args.rgb_vector_scale),
         "rgb_vector_calibrated": bool(args.rgb_vector_calibrated),
+        "rgb_evidence_value_normalized": bool(args.rgb_evidence_value_normalized),
+        "value_norm_floor": float(args.value_norm_floor),
         "evidence_write_logit_bias": float(args.evidence_write_logit_bias),
         "evidence_write_temperature": float(args.evidence_write_temperature),
         "read_head_scale": float(args.read_head_scale),

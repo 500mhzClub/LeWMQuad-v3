@@ -1848,3 +1848,104 @@ query-landmark-excluded solve would give the same robot motion. Remaining caveat
 long horizons, bounded in practice by scan-then-reacquire; (2) per-scene val is
 small (10–60 positives); (3) this is the observed-memory contract (see→hide→recall),
 not the ill-posed strict no-prior-RGB gate.
+
+### 2026-06-22 P0 integrity check — egomotion is leak-free
+
+Concern: `exact_body_motion` is solved over the static-landmark constellation,
+which at the query frame includes the queried landmark's own true body position —
+could the solved egomotion encode the bearing it is then used to predict?
+`scripts/audit_go2_egomotion_circularity.py` re-solves the full src→query
+egomotion chain EXCLUDING the query's `object_id` at every pair. Result over 218
+out-of-frame queries: all-landmark = 0.986 (215/218), **query-excluded = 0.986
+(215/218), identical, 0 infeasible pairs**. The egomotion is recoverable from the
+other landmarks (= what onboard proprioception provides independently), so the
+steering result does not leak through the queried landmark. The committed gate
+pass stands.
+
+### 2026-06-22 P1 odometry noise/drift robustness — wide margin
+
+`scripts/audit_go2_odometry_noise_robustness.py` perturbs the exact solved
+egomotion with per-step iid yaw noise (rad) + relative translation noise (which
+accumulate to ~sqrt(gap) drift) and re-measures out-of-frame steering (16 draws,
+218 queries):
+
+| yaw σ (rad/step) | trans σ | overall | gap17+ |
+|---|---|---|---|
+| 0.00 (clean) | 0.00 | 0.986 | 0.97 |
+| 0.05 (~2.9°/step) | 0.00 | 0.969 | 0.96 |
+| 0.10 (~5.7°/step) | 0.00 | 0.916 | 0.87 |
+| 0.03 + 0.10 (realistic) | | 0.987 | 0.98 |
+| 0.05 + 0.15 (pessimistic) | | 0.977 | 0.96 |
+
+Translation noise is nearly irrelevant to the 3-class decision; yaw tolerance is
+wide — steering stays ≥0.90 up to ~0.10 rad/step yaw noise, far beyond real onboard
+IMU error (~0.01–0.03 rad/step). Degradation concentrates at long gaps (drift
+~sqrt(gap)), bounded by scan-then-reacquire. End-to-end confirmation: retraining
+two folds (000c67, e06e3c) on a realistic-noise `cv_exact_noisy/` set (yaw 0.03,
+trans 0.10) still PASSES the full gate (steer 1.000, recall 1.0, false_claim
+≤0.062, gap ≥0.84) — recognition undisturbed. The zero-drift caveat is now
+quantified; the result holds under realistic odometry. Pipe gained
+`--odom-noise-yaw-sigma` / `--odom-noise-trans-rel-sigma`.
+
+### 2026-06-23 Robust perception → working closed-loop demos (value-normalized detector)
+
+The offline steering gate is validated (5/5 above), but the *deployed* color
+perception was a fixed Euclidean color mask (distance to pure `(0,1,0)`, σ=0.20)
+that is brittle to SATURATION/brightness: at off-angle/shadowed Genesis render
+poses green renders dark/desaturated (e.g. `[0.04,0.225,0.064]`) and the mask
+does not fire, so the closed loop never binds the target. Relaxing σ over-fires on
+gray walls (false-claims from afar). DR audit: cross-scene render DR exists, but
+there is no photometric train-time augmentation and the detector is a fixed
+threshold, so DR cannot help it.
+
+**Fix — value-normalized hue detector** (`--rgb-evidence-value-normalized` in
+`train_go2_rgb_jepa_vector_memory_controller.py`, shared by training and inference):
+normalize each pixel by its max channel (value), then run the *same* Euclidean
+readout against the value-normalized pure colors. This compares hue while ignoring
+brightness, so a dark/desaturated-but-pure target still fires, yet a near-gray
+background tint normalizes far from any pure hue and is rejected — keeping the
+Euclidean mask's per-color selectivity. Verified offline on real frames:
+desaturated deployment green fires at area 0.13–0.23 (Euclidean ~0.002, dead) while
+red/blue/yellow stay ~0; on the false-claim scene 01732, green not-visible area is
+**0.0001** and blue 0.0023 (vs a tried-and-rejected dominant-channel "chroma"
+detector: green novis 0.014, blue 0.025, which produced false_claim 0.81 on 01732).
+A dominant-channel chroma variant with per-color warm-margins was implemented and
+discarded — value-normalization is strictly better and needs no per-color margin.
+
+**Refit calibration** (`audit_go2_rgb_bearing_range_calibration.py
+--rgb-evidence-value-normalized`, on `broad_clean.jsonl`): bearing a=-0.7435
+b=0.0219 (pooled r²=0.84, per-color green/red/blue 0.98/0.98/0.93), range loglog
+m=-0.3621 c=-0.7443; pooled 3-class steering 0.934 (> Euclidean 0.866, > chroma
+0.914). area_threshold 0.01 (value-norm area scale; background ~0.001 → never fires).
+
+**Offline gate preserved** — leave-one-scene-out CV `exact_valuenorm_cv/` (same
+config as exact_cv + `--rgb-evidence-value-normalized --value-norm-floor 0.15` and
+the refit coefficients, 10 epochs × 3 seeds): **4/5 scenes PASS**
+(`summarize_go2_exact_cv.py --dir`): steer 5/5 ≥0.95, recall 1.0, false_claim ≤0.12
+on 4/5, gap all ≥0.30. Only 04f670 fails false_claim (0.27) because its warm-toned
+red/yellow background value-normalizes close to red/yellow LANDMARK hue (red/yellow
+novis area p99 0.23–0.28) — a fundamental limit of any hue-based detector for warm
+colors in warm scenes, NOT a value-norm defect (Euclidean's saturation-selectivity
+rejected them but at the cost of the deployment desaturation failure). GREEN, the
+deployment color, is clean (novis ≤0.0011) in every scene.
+
+**Closed-loop demos** (`benchmark_go2_memory_closed_loop.py`, value-norm checkpoint,
+`--backend cpu --apply-textures`, NO `--mask-sigma` shim):
+- `recall` on `medium_enclosed_maze_000c67a65968` (held out from the controller):
+  OBSERVE→HIDE→SEEK→CLAIM, success=True, final 0.567 m.
+- autonomous `explore` on `medium_enclosed_maze_01732aabc542` (held out; green is 9
+  coarse-hops from spawn vs 31 on 000c67): EXPLORE → autonomously discovers green at
+  tick 27 (no false-claim during the sweep) → SEEK → SERVO → CLAIM at tick 35,
+  success=True, final 0.94 m. Claim gate `--claim-area-logit 1.5 --claim-bearing 0.5`
+  (the box+inflation caps approach at ~0.9 m and the target sits ~25° off-center, so
+  the prior 0.25 bearing gate stalled; area 3.27 ≫ 1.5 and final_dist ≤ 1.0 m
+  independently confirm proximity). Demos:
+  `.generated/go2_memory_closed_loop/valuenorm_recall_demo.mp4`,
+  `valuenorm_explore_demo.mp4`.
+
+This closes the perception-robustness blocker: the same value-normalized detector
+trains and deploys, the offline steering gate holds (4/5, target met), and the live
+loop binds the target across free poses and completes explore→navigate→claim with no
+inference-time shim and no far false-claims. The detector is shared (load_controller
+reconstructs it from the checkpoint). Caveat retained: warm-color (red/yellow)
+selectivity in warm-background scenes is the residual hue-ambiguity; green is robust.
