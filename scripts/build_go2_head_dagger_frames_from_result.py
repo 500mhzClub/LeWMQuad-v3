@@ -63,6 +63,8 @@ from lewm_genesis.scene_loader import (  # noqa: E402
     load_platform_manifest,
     load_scene_pack,
 )
+from lewm_worlds.manifest import parse_scene_manifest_dict  # noqa: E402
+from lewm_worlds.planning_grid import InflatedOccupancyGrid  # noqa: E402
 
 
 def _quat_wxyz_from_rpy(roll: float, pitch: float, yaw: float) -> np.ndarray:
@@ -113,8 +115,18 @@ def _decision_poses(result_path: Path) -> tuple[str, list[dict[str, float]]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--results", type=Path, nargs="+", required=True,
+    parser.add_argument("--results", type=Path, nargs="*", default=[],
                         help="Closed-loop result JSONs; all must be from the same scene.")
+    parser.add_argument("--sample-poses", type=int, default=0,
+                        help="If >0, additionally sample this many random free-space "
+                             "poses from the scene manifest grid (dense geometric "
+                             "coverage for encoder training; privileged grid use is "
+                             "training-time only).")
+    parser.add_argument("--sample-seed", type=int, default=20260701)
+    parser.add_argument("--sample-min-obstacle-clearance-m", type=float, default=0.18,
+                        help="Minimum raw obstacle clearance for sampled poses so the "
+                             "robot body placement stays physically valid while still "
+                             "including wall-adjacent decision poses.")
     parser.add_argument("--output-jsonl", type=Path, required=True)
     parser.add_argument("--frames-dir", type=Path, required=True)
     parser.add_argument(
@@ -174,6 +186,40 @@ def main() -> int:
     )
 
     spawn_pos, spawn_quat = _scene_spawn(scene_dir)
+    if int(args.sample_poses) > 0:
+        rng = np.random.default_rng(int(args.sample_seed))
+        manifest_payload = json.loads(manifest_path.read_text())
+        grid = InflatedOccupancyGrid(
+            parse_scene_manifest_dict(manifest_payload),
+            cell_size_m=0.05,
+            inflation_m=0.12,
+        )
+        free = np.argwhere(grid.free_mask)
+        clearance_floor = float(args.sample_min_obstacle_clearance_m)
+        z_m = float(spawn_pos[2])
+        sampled = 0
+        attempts = 0
+        max_attempts = int(args.sample_poses) * 50
+        while sampled < int(args.sample_poses) and attempts < max_attempts:
+            attempts += 1
+            ij = free[int(rng.integers(0, len(free)))]
+            x_m, y_m = grid.to_world((int(ij[0]), int(ij[1])))
+            x_m += float(rng.uniform(-0.025, 0.025))
+            y_m += float(rng.uniform(-0.025, 0.025))
+            if grid.obstacle_clearance_m((x_m, y_m)) < clearance_floor:
+                continue
+            all_poses.append(
+                {
+                    "x": x_m,
+                    "y": y_m,
+                    "z": z_m,
+                    "yaw": float(rng.uniform(-math.pi, math.pi)),
+                    "roll": 0.0,
+                    "pitch": 0.0,
+                }
+            )
+            sampled += 1
+        print(f"sampled {sampled} free-space poses (attempts={attempts})", flush=True)
     if args.include_spawn:
         all_poses.insert(
             0,

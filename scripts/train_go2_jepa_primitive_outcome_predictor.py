@@ -531,6 +531,16 @@ def main() -> int:
     parser.add_argument("--report-output", type=Path, default=None)
     parser.add_argument("--primitive-vocab", nargs="*", default=list(PRIMITIVE_NAMES))
     parser.add_argument("--image-size", type=int, default=64)
+    parser.add_argument(
+        "--feature-mode",
+        choices=("global", "spatial"),
+        default="global",
+        help="global uses the frozen encoder's pooled latent. spatial taps the "
+             "conv feature map before global pooling (adaptive-pooled to "
+             "--spatial-pool x --spatial-pool and flattened) so the head can "
+             "see where free space and obstacles are in the frame.",
+    )
+    parser.add_argument("--spatial-pool", type=int, default=4)
     parser.add_argument("--hidden-dim", type=int, default=160)
     parser.add_argument("--epochs", type=int, default=80)
     parser.add_argument("--batch-size", type=int, default=64)
@@ -652,8 +662,20 @@ def main() -> int:
         device=device,
         freeze=True,
     )
+    if str(args.feature_mode) == "spatial":
+        # Tap the last conv activation (before AdaptiveAvgPool2d/Flatten/Linear)
+        # so spatial obstacle layout survives into the head input.
+        pool = max(1, int(args.spatial_pool))
+        feature_encoder: torch.nn.Module = torch.nn.Sequential(
+            *list(encoder.net[:8]),
+            torch.nn.AdaptiveAvgPool2d((pool, pool)),
+            torch.nn.Flatten(),
+        ).to(device)
+        feature_encoder.eval()
+    else:
+        feature_encoder = encoder
     train_data = _precompute(
-        encoder,
+        feature_encoder,
         train_examples,
         primitive_to_idx=primitive_to_idx,
         image_size=int(args.image_size),
@@ -661,14 +683,17 @@ def main() -> int:
         batch_size=int(args.batch_size),
     )
     val_data = _precompute(
-        encoder,
+        feature_encoder,
         val_examples,
         primitive_to_idx=primitive_to_idx,
         image_size=int(args.image_size),
         device=device,
         batch_size=int(args.batch_size),
     )
-    latent_dim = int(encoder_checkpoint.get("latent_dim", train_data[0].shape[-1]))
+    if str(args.feature_mode) == "spatial":
+        latent_dim = int(train_data[0].shape[-1])
+    else:
+        latent_dim = int(encoder_checkpoint.get("latent_dim", train_data[0].shape[-1]))
     model = Go2PrimitiveOutcomeHead(
         latent_dim=latent_dim,
         primitive_count=len(primitive_vocab),
@@ -705,6 +730,8 @@ def main() -> int:
         "latent_dim": latent_dim,
         "hidden_dim": int(args.hidden_dim),
         "image_size": int(args.image_size),
+        "feature_mode": str(args.feature_mode),
+        "spatial_pool": int(args.spatial_pool),
         "primitive_vocab": primitive_vocab,
         "threshold": float(args.threshold),
         "min_progress_m": float(args.min_progress_m),
