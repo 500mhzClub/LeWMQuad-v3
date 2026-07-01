@@ -6308,6 +6308,15 @@ def main() -> int:
     parser.add_argument("--primitive-outcome-checkpoint", type=Path, default=None,
                         help="Checkpoint from train_go2_jepa_primitive_outcome_predictor.py "
                              "(required for --wall-decision-source learned_action).")
+    parser.add_argument("--primitive-outcome-frozen-jepa-checkpoint", type=Path, default=None,
+                        help="Optional encoder override for the primitive-outcome head only. "
+                             "Lets the guard heads run on a geometry-retrained frozen JEPA "
+                             "encoder while the memory controller keeps its own encoder. "
+                             "Falls back to --frozen-jepa-checkpoint, then to the head "
+                             "checkpoint's recorded encoder.")
+    parser.add_argument("--primitive-clearance-frozen-jepa-checkpoint", type=Path, default=None,
+                        help="Optional encoder override for the body-clearance head only; "
+                             "same precedence as --primitive-outcome-frozen-jepa-checkpoint.")
     parser.add_argument("--primitive-post-claim-outcome-checkpoint", type=Path, default=None,
                         help="Optional learned primitive-outcome checkpoint used after at "
                              "least one target claim when the controller state is enabled "
@@ -7219,7 +7228,11 @@ def main() -> int:
             outcome_ck = torch.load(args.primitive_outcome_checkpoint, map_location=device, weights_only=False)
         except TypeError:
             outcome_ck = torch.load(args.primitive_outcome_checkpoint, map_location=device)
-        encoder_checkpoint = args.frozen_jepa_checkpoint or Path(str(outcome_ck["frozen_jepa_checkpoint"]))
+        encoder_checkpoint = (
+            args.primitive_outcome_frozen_jepa_checkpoint
+            or args.frozen_jepa_checkpoint
+            or Path(str(outcome_ck["frozen_jepa_checkpoint"]))
+        )
         outcome_encoder, _outcome_encoder_ck = load_go2_jepa_encoder(encoder_checkpoint, device=device, freeze=True)
         outcome_primitive_vocab = [str(item) for item in outcome_ck.get("primitive_vocab", PRIMITIVE_NAMES)]
         outcome_head = Go2PrimitiveOutcomeHead(
@@ -7279,7 +7292,11 @@ def main() -> int:
                 clearance_ck = torch.load(args.primitive_clearance_checkpoint, map_location=device, weights_only=False)
             except TypeError:
                 clearance_ck = torch.load(args.primitive_clearance_checkpoint, map_location=device)
-            clearance_encoder_checkpoint = args.frozen_jepa_checkpoint or Path(str(clearance_ck["frozen_jepa_checkpoint"]))
+            clearance_encoder_checkpoint = (
+                args.primitive_clearance_frozen_jepa_checkpoint
+                or args.frozen_jepa_checkpoint
+                or Path(str(clearance_ck["frozen_jepa_checkpoint"]))
+            )
             clearance_encoder, _clearance_encoder_ck = load_go2_jepa_encoder(
                 clearance_encoder_checkpoint,
                 device=device,
