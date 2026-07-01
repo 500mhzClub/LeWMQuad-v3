@@ -8452,7 +8452,7 @@ def main() -> int:
                 outcome_input = ego64
                 if int(outcome_image_size) != 64:
                     outcome_input = F.interpolate(
-                        ego64.unsqueeze(0),
+                        ego.unsqueeze(0),
                         size=(int(outcome_image_size), int(outcome_image_size)),
                         mode="bilinear",
                         align_corners=False,
@@ -8469,7 +8469,7 @@ def main() -> int:
                 clearance_input = ego64
                 if int(clearance_image_size) != 64:
                     clearance_input = F.interpolate(
-                        ego64.unsqueeze(0),
+                        ego.unsqueeze(0),
                         size=(int(clearance_image_size), int(clearance_image_size)),
                         mode="bilinear",
                         align_corners=False,
