@@ -3038,6 +3038,7 @@ def _learned_action_guard_select(
     body_clearance_min_area: float | None = None,
     body_clearance_hard_veto_prob: float = 1.01,
     body_clearance_hard_veto_margin: float = 0.05,
+    body_clearance_hard_veto_replacement_cap: float = 1.01,
     body_clearance_hard_veto_primitives: set[str] | None = None,
     body_clearance_hard_veto_selected_primitives: set[str] | None = None,
     body_clearance_saturated_veto_prob: float = 1.01,
@@ -3402,6 +3403,8 @@ def _learned_action_guard_select(
                         continue
                     if float(clearance_prob) > float(selected_clearance_prob) - float(body_clearance_hard_veto_margin):
                         continue
+                    if float(clearance_prob) > float(body_clearance_hard_veto_replacement_cap):
+                        continue
                     blocked_prob = float(pred.get("blocked_prob", 0.0))
                     if name in _TURN_PRIMITIVES:
                         primitive_bias = 0.0
@@ -3764,6 +3767,9 @@ def _learned_action_guard_select(
         "body_clearance_hard_veto": bool(body_clearance_hard_vetoed),
         "body_clearance_hard_veto_prob": _round_float(float(body_clearance_hard_veto_prob), 4),
         "body_clearance_hard_veto_margin": _round_float(float(body_clearance_hard_veto_margin), 4),
+        "body_clearance_hard_veto_replacement_cap": _round_float(
+            float(body_clearance_hard_veto_replacement_cap), 4
+        ),
         "body_clearance_hard_veto_primitives": sorted(body_clearance_hard_veto_primitives or ()),
         "body_clearance_hard_veto_selected_primitives": sorted(
             body_clearance_hard_veto_selected_primitives or _TRANSLATING_PRIMITIVES
@@ -6509,6 +6515,14 @@ def main() -> int:
                         help="Minimum learned clearance probability improvement required "
                              "before --body-clearance-hard-veto-prob may replace a selected "
                              "translating primitive.")
+    parser.add_argument("--body-clearance-hard-veto-replacement-cap", type=float, default=1.01,
+                        help="Maximum learned clearance blocked probability allowed for a "
+                             "replacement primitive under --body-clearance-hard-veto-prob. "
+                             "If no fallback is at or below this cap, the originally "
+                             "selected translating primitive executes instead of being "
+                             "swapped for a marginally-less-blocked non-translating one. "
+                             "Values above 1 disable the cap, preserving historical "
+                             "behavior. This uses only the learned clearance head.")
     parser.add_argument("--body-clearance-hard-veto-primitives", default="yaw_left,yaw_right,backward,hold",
                         help="Comma-separated fallback primitives eligible for "
                              "--body-clearance-hard-veto-prob.")
@@ -7899,6 +7913,9 @@ def main() -> int:
         "body_clearance_yaw_always": bool(args.body_clearance_yaw_always),
         "body_clearance_hard_veto_prob": float(args.body_clearance_hard_veto_prob),
         "body_clearance_hard_veto_margin": float(args.body_clearance_hard_veto_margin),
+        "body_clearance_hard_veto_replacement_cap": float(
+            args.body_clearance_hard_veto_replacement_cap
+        ),
         "body_clearance_hard_veto_primitives": sorted(body_clearance_hard_veto_primitives),
         "body_clearance_hard_veto_selected_primitives": sorted(
             body_clearance_hard_veto_selected_primitives or _TRANSLATING_PRIMITIVES
@@ -10336,6 +10353,9 @@ def main() -> int:
                 body_clearance_yaw_always=bool(args.body_clearance_yaw_always),
                 body_clearance_hard_veto_prob=float(args.body_clearance_hard_veto_prob),
                 body_clearance_hard_veto_margin=float(args.body_clearance_hard_veto_margin),
+                body_clearance_hard_veto_replacement_cap=float(
+                    args.body_clearance_hard_veto_replacement_cap
+                ),
                 body_clearance_hard_veto_primitives=body_clearance_hard_veto_primitives,
                 body_clearance_hard_veto_selected_primitives=(
                     body_clearance_hard_veto_selected_primitives or None
