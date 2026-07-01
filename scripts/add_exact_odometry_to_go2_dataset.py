@@ -52,11 +52,19 @@ def _body_positions(lbid: dict) -> dict[str, np.ndarray]:
     return out
 
 
-def solve_egomotion(prev_lbid: dict, cur_lbid: dict) -> list[float] | None:
-    """Returns [dx_m, dy_m, dyaw_rad] s.t. cur = R(-dyaw)(prev - [dx,dy]), or None."""
+def solve_egomotion(
+    prev_lbid: dict, cur_lbid: dict, *, exclude_oid: str | None = None
+) -> list[float] | None:
+    """Returns [dx_m, dy_m, dyaw_rad] s.t. cur = R(-dyaw)(prev - [dx,dy]), or None.
+
+    exclude_oid drops one landmark from the constellation (used by the circularity
+    audit to confirm the egomotion is recoverable without the queried landmark).
+    """
     pp = _body_positions(prev_lbid)
     cp = _body_positions(cur_lbid)
     common = sorted(set(pp) & set(cp))
+    if exclude_oid is not None:
+        common = [o for o in common if o != exclude_oid]
     if len(common) < 2:
         return None
     P = np.stack([pp[o] for o in common])  # prev body positions
@@ -76,7 +84,14 @@ def solve_egomotion(prev_lbid: dict, cur_lbid: dict) -> list[float] | None:
     return [float(t_world[0]), float(t_world[1]), float(-theta)]
 
 
-def process_file(src: Path, dst: Path) -> tuple[int, int]:
+def process_file(
+    src: Path,
+    dst: Path,
+    *,
+    yaw_noise_sigma: float = 0.0,
+    trans_rel_sigma: float = 0.0,
+    rng=None,
+) -> tuple[int, int]:
     rows = [json.loads(l) for l in src.read_text().splitlines() if l.strip()]
     by_seq: dict = defaultdict(list)
     for i, row in enumerate(rows):
@@ -96,6 +111,10 @@ def process_file(src: Path, dst: Path) -> tuple[int, int]:
                 if delta is None:
                     rows[i]["exact_body_motion"] = [0.0, 0.0, 0.0]
                 else:
+                    if rng is not None and (yaw_noise_sigma > 0 or trans_rel_sigma > 0):
+                        f = 1.0 + (rng.normal(0, trans_rel_sigma) if trans_rel_sigma > 0 else 0.0)
+                        dyaw = delta[2] + (rng.normal(0, yaw_noise_sigma) if yaw_noise_sigma > 0 else 0.0)
+                        delta = [delta[0] * f, delta[1] * f, dyaw]
                     rows[i]["exact_body_motion"] = delta
                     n_solved += 1
             prev_lbid = cur_lbid
@@ -107,12 +126,23 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("inputs", nargs="+", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--odom-noise-yaw-sigma", type=float, default=0.0,
+                        help="Per-step iid Gaussian yaw noise (rad); accumulates to ~sqrt(gap) drift.")
+    parser.add_argument("--odom-noise-trans-rel-sigma", type=float, default=0.0,
+                        help="Per-step relative translation noise (fraction).")
+    parser.add_argument("--noise-seed", type=int, default=0)
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(args.noise_seed)
     total_solved = total_pairs = 0
     for src in args.inputs:
         dst = args.output_dir / src.name
-        solved, pairs = process_file(src, dst)
+        solved, pairs = process_file(
+            src, dst,
+            yaw_noise_sigma=args.odom_noise_yaw_sigma,
+            trans_rel_sigma=args.odom_noise_trans_rel_sigma,
+            rng=rng,
+        )
         total_solved += solved
         total_pairs += pairs
         print(f"{src.name}: {solved}/{pairs} pairs solved -> {dst}")

@@ -21,7 +21,11 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import yaml
+
+try:
+    import yaml
+except ModuleNotFoundError:  # pragma: no cover - exercised only in minimal train envs.
+    yaml = None
 
 
 LEWM_FOOT_ORDER: tuple[str, ...] = ("fl", "fr", "rl", "rr")
@@ -74,7 +78,12 @@ class PrimitiveRegistry:
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "PrimitiveRegistry":
-        data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+        text = Path(path).read_text(encoding="utf-8")
+        data = (
+            _load_simple_yaml_mapping(text)
+            if yaml is None
+            else yaml.safe_load(text)
+        ) or {}
         return cls(
             block_size=int(data.get("block_size", 5)),
             command_dt_s=float(data.get("command_dt_s", 0.10)),
@@ -100,6 +109,86 @@ class PrimitiveRegistry:
         if name not in self.primitives:
             raise KeyError(f"unknown primitive '{name}'")
         return self.primitives[name]
+
+
+def _load_simple_yaml_mapping(text: str) -> dict[str, Any]:
+    """Small fallback for the primitive registry when PyYAML is unavailable."""
+
+    lines: list[tuple[int, str]] = []
+    for raw in text.splitlines():
+        stripped = raw.split("#", 1)[0].rstrip()
+        if not stripped.strip():
+            continue
+        indent = len(stripped) - len(stripped.lstrip(" "))
+        lines.append((indent, stripped.strip()))
+
+    def parse_scalar(value: str) -> Any:
+        value = value.strip()
+        if not value:
+            return ""
+        if value.startswith("[") and value.endswith("]"):
+            inner = value[1:-1].strip()
+            if not inner:
+                return []
+            return [parse_scalar(item.strip()) for item in inner.split(",")]
+        if value.lower() == "true":
+            return True
+        if value.lower() == "false":
+            return False
+        if value.lower() in {"null", "none"}:
+            return None
+        try:
+            if any(ch in value for ch in ".eE"):
+                return float(value)
+            return int(value)
+        except ValueError:
+            return value.strip("'\"")
+
+    def parse_block(index: int, indent: int) -> tuple[Any, int]:
+        if index >= len(lines):
+            return {}, index
+        if lines[index][0] == indent and lines[index][1].startswith("- "):
+            items: list[Any] = []
+            while index < len(lines):
+                line_indent, content = lines[index]
+                if line_indent < indent:
+                    break
+                if line_indent != indent or not content.startswith("- "):
+                    break
+                item = content[2:].strip()
+                items.append(parse_scalar(item))
+                index += 1
+            return items, index
+
+        mapping: dict[str, Any] = {}
+        while index < len(lines):
+            line_indent, content = lines[index]
+            if line_indent < indent:
+                break
+            if line_indent != indent:
+                break
+            if ":" not in content:
+                raise ValueError(f"unsupported YAML line: {content!r}")
+            key, raw_value = content.split(":", 1)
+            key = key.strip()
+            raw_value = raw_value.strip()
+            index += 1
+            if raw_value:
+                mapping[key] = parse_scalar(raw_value)
+                continue
+            if index < len(lines) and lines[index][0] > line_indent:
+                value, index = parse_block(index, lines[index][0])
+                mapping[key] = value
+            else:
+                mapping[key] = {}
+        return mapping, index
+
+    parsed, final_index = parse_block(0, lines[0][0] if lines else 0)
+    if final_index != len(lines):
+        raise ValueError("could not parse complete primitive registry YAML")
+    if not isinstance(parsed, dict):
+        raise ValueError("primitive registry YAML must be a mapping")
+    return parsed
 
 
 # ---------------------------------------------------------------------------

@@ -69,6 +69,39 @@ class Go2FrontBlockedHead(nn.Module):
         return self.net(latent).squeeze(-1)
 
 
+class Go2PrimitiveOutcomeHead(nn.Module):
+    """Action-conditioned primitive outcome predictor over frozen Go2 JEPA latents."""
+
+    def __init__(
+        self,
+        latent_dim: int = 96,
+        primitive_count: int = 7,
+        hidden_dim: int = 160,
+    ) -> None:
+        super().__init__()
+        self.latent_dim = int(latent_dim)
+        self.primitive_count = int(primitive_count)
+        self.trunk = nn.Sequential(
+            nn.Linear(self.latent_dim + self.primitive_count, int(hidden_dim)),
+            nn.GELU(),
+            nn.LayerNorm(int(hidden_dim)),
+            nn.Linear(int(hidden_dim), int(hidden_dim)),
+            nn.GELU(),
+        )
+        self.blocked = nn.Linear(int(hidden_dim), 1)
+        self.progress = nn.Linear(int(hidden_dim), 1)
+
+    def forward(
+        self,
+        latent: torch.Tensor,
+        primitive_one_hot: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        features = self.trunk(torch.cat([latent, primitive_one_hot], dim=-1))
+        blocked_logits = self.blocked(features).squeeze(-1)
+        progress_m = self.progress(features).squeeze(-1)
+        return blocked_logits, progress_m
+
+
 def load_go2_jepa_encoder(
     checkpoint_path: Path | str,
     *,

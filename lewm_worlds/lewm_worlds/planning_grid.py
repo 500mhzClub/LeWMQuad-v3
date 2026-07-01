@@ -255,6 +255,11 @@ class InflatedOccupancyGrid:
         self,
         start_xy: tuple[float, float],
         goal_xy: tuple[float, float],
+        *,
+        clearance_weight: float = 0.0,
+        clearance_target_m: float = 0.0,
+        allow_diagonal: bool = True,
+        blocked_cells: set[tuple[int, int]] | None = None,
     ) -> GridPath | None:
         """8-connected A* with octile heuristic. Returns world waypoints or None."""
 
@@ -262,6 +267,7 @@ class InflatedOccupancyGrid:
         goal = self.to_grid(goal_xy)
         nx, ny = self._nx, self._ny
         free = self._free
+        blocked = set(blocked_cells or ())
 
         if not (0 <= goal[0] < nx and 0 <= goal[1] < ny) or not free[goal]:
             return None
@@ -276,15 +282,25 @@ class InflatedOccupancyGrid:
             return GridPath(waypoints_xy=(self.to_world(goal),), cost_cells=0.0)
 
         diag = math.sqrt(2.0)
-        neighbors = (
-            ((-1, -1), diag), ((-1, 0), 1.0), ((-1, 1), diag),
-            ((0, -1), 1.0),                    ((0, 1), 1.0),
-            ((1, -1), diag),  ((1, 0), 1.0),  ((1, 1), diag),
-        )
+        if allow_diagonal:
+            neighbors = (
+                ((-1, -1), diag), ((-1, 0), 1.0), ((-1, 1), diag),
+                ((0, -1), 1.0),                    ((0, 1), 1.0),
+                ((1, -1), diag),  ((1, 0), 1.0),  ((1, 1), diag),
+            )
+        else:
+            neighbors = (
+                ((-1, 0), 1.0),
+                ((0, -1), 1.0),
+                ((0, 1), 1.0),
+                ((1, 0), 1.0),
+            )
 
         def heuristic(a: tuple[int, int], b: tuple[int, int]) -> float:
             dx_ = abs(a[0] - b[0])
             dy_ = abs(a[1] - b[1])
+            if not allow_diagonal:
+                return float(dx_ + dy_)
             return (dx_ + dy_) + (diag - 2.0) * min(dx_, dy_)
 
         open_heap: list[tuple[float, int, tuple[int, int]]] = []
@@ -316,6 +332,8 @@ class InflatedOccupancyGrid:
                 if not free[ni, nj]:
                     continue
                 neighbour = (ni, nj)
+                if neighbour in blocked and neighbour != goal:
+                    continue
                 if neighbour in closed:
                     continue
                 # Block diagonal corner-cutting: the diagonal step is only
@@ -324,7 +342,18 @@ class InflatedOccupancyGrid:
                 if di != 0 and dj != 0:
                     if not free[cx + di, cy] or not free[cx, cy + dj]:
                         continue
-                tentative = cur_g + step
+                clearance_penalty = 0.0
+                if float(clearance_weight) > 0.0:
+                    clearance_deficit = max(
+                        0.0,
+                        float(clearance_target_m)
+                        - (float(self._obstacle_clearance[ni, nj]) - self._inflation),
+                    )
+                    clearance_penalty = float(clearance_weight) * clearance_deficit / max(
+                        self._cell_size,
+                        1e-6,
+                    )
+                tentative = cur_g + step + clearance_penalty
                 if tentative < gscore.get(neighbour, math.inf):
                     came_from[neighbour] = cur
                     gscore[neighbour] = tentative

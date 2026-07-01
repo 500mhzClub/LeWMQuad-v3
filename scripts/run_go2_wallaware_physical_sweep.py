@@ -20,9 +20,16 @@ DEFAULT_SCENES = (
 
 
 @dataclass(frozen=True)
+class SceneSpec:
+    scene_short: str
+    split: str
+    scene_corpus: Path
+
+
+@dataclass(frozen=True)
 class RunSpec:
     label: str
-    scene_short: str
+    scene: SceneSpec
     demo_mode: str
     wallaware: bool
     claim_area_logit: float
@@ -71,12 +78,20 @@ def _controller_path(controller_dir: Path, scene_short: str, seed: str) -> Path:
     return controller_dir / f"exact_{scene_short}_s{seed}.pt"
 
 
+def _parse_scene_spec(text: str, *, default_split: str, default_scene_corpus: Path) -> SceneSpec:
+    parts = text.split(":", 2)
+    if not parts[0]:
+        raise ValueError(f"empty scene spec: {text!r}")
+    scene_short = parts[0]
+    split = parts[1] if len(parts) >= 2 and parts[1] else default_split
+    scene_corpus = Path(parts[2]) if len(parts) >= 3 and parts[2] else default_scene_corpus
+    return SceneSpec(scene_short=scene_short, split=split, scene_corpus=scene_corpus)
+
+
 def _build_command(
     *,
     python_bin: Path,
     spec: RunSpec,
-    scene_corpus: Path,
-    split: str,
     controller_dir: Path,
     controller_seed: str,
     frozen_jepa: Path,
@@ -85,19 +100,19 @@ def _build_command(
     max_ticks: int,
     success_dist_m: float,
     extra_wall_args: list[str],
+    apply_textures: bool,
 ) -> list[str]:
-    scene_id = f"medium_enclosed_maze_{spec.scene_short}"
+    scene_id = f"medium_enclosed_maze_{spec.scene.scene_short}"
     cmd = [
         str(python_bin),
         "scripts/benchmark_go2_memory_closed_loop.py",
-        "--scene-corpus", str(scene_corpus),
-        "--split", split,
+        "--scene-corpus", str(spec.scene.scene_corpus),
+        "--split", spec.scene.split,
         "--scene-id", scene_id,
         "--backend", backend,
-        "--apply-textures",
         "--mode", "physical",
         "--policy-device", "cpu",
-        "--controller", str(_controller_path(controller_dir, spec.scene_short, controller_seed)),
+        "--controller", str(_controller_path(controller_dir, spec.scene.scene_short, controller_seed)),
         "--frozen-jepa-checkpoint", str(frozen_jepa),
         "--target-color", "green",
         "--policy", "memory",
@@ -108,13 +123,15 @@ def _build_command(
         "--claim-bearing", str(spec.claim_bearing),
         "--output", str(output),
     ]
+    if apply_textures:
+        cmd.append("--apply-textures")
     if spec.wallaware:
         cmd.append("--wall-aware-planner")
         cmd.extend(extra_wall_args)
     return cmd
 
 
-def _summarize_scene(scene_short: str, paths: dict[str, Path]) -> dict[str, Any]:
+def _summarize_scene(scene: SceneSpec, paths: dict[str, Path]) -> dict[str, Any]:
     baseline = _result(paths["baseline_explore"])
     wall = _result(paths["wallaware_explore"])
     recall = _result(paths["wallaware_recall"])
@@ -130,7 +147,9 @@ def _summarize_scene(scene_short: str, paths: dict[str, Path]) -> dict[str, Any]
         (base_rate - wall_rate) / base_rate if base_rate > 0.0 else 0.0
     )
     return {
-        "scene_short": scene_short,
+        "scene_short": scene.scene_short,
+        "split": scene.split,
+        "scene_corpus": str(scene.scene_corpus),
         "baseline_explore_success": bool(baseline.get("success")),
         "wallaware_explore_success": bool(wall.get("success")),
         "wallaware_recall_success": bool(recall.get("success")),
@@ -149,6 +168,12 @@ def _summarize_scene(scene_short: str, paths: dict[str, Path]) -> dict[str, Any]
         "blocked_forward_rate_reduction": round(rate_reduction, 6),
         "baseline_contact_like_stalls": int(_num(base_metrics.get("contact_like_stalls"))),
         "wallaware_contact_like_stalls": int(_num(wall_metrics.get("contact_like_stalls"))),
+        "baseline_hard_contact_like_stalls": int(_num(
+            base_metrics.get("hard_contact_like_stalls", base_metrics.get("contact_like_stalls"))
+        )),
+        "wallaware_hard_contact_like_stalls": int(_num(
+            wall_metrics.get("hard_contact_like_stalls", wall_metrics.get("contact_like_stalls"))
+        )),
         "wall_vetoes": int(_num(wall_metrics.get("wall_vetoes"))),
     }
 
@@ -162,6 +187,9 @@ def main() -> int:
     parser.add_argument("--split", default="train")
     parser.add_argument("--scene-short", action="append", default=None,
                         help="Scene suffix such as 01732aabc542. May be repeated.")
+    parser.add_argument("--scene-spec", action="append", default=None,
+                        help="Scene spec as short[:split[:scene_corpus]]. May be repeated. "
+                             "Useful when a gate spans multiple corpora.")
     parser.add_argument("--controller-dir", type=Path,
                         default=REPO_ROOT / ".generated/go2_hidden_target_memory/observed_memory_gate_20260622/exact_valuenorm_cv")
     parser.add_argument("--controller-seed", default="20260820")
@@ -170,6 +198,9 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path,
                         default=REPO_ROOT / ".generated/go2_wallaware_physical_sweep/minimum_3scene")
     parser.add_argument("--backend", default="cpu")
+    parser.add_argument("--apply-textures", action="store_true",
+                        help="Forward --apply-textures to benchmark runs. Default keeps the "
+                             "same untextured render domain used by the controller smoke tests.")
     parser.add_argument("--max-ticks", type=int, default=90)
     parser.add_argument("--success-dist-m", type=float, default=1.2)
     parser.add_argument("--baseline-claim-bearing", type=float, default=0.5)
@@ -185,7 +216,21 @@ def main() -> int:
     parser.add_argument("--skip-existing", action="store_true")
     args = parser.parse_args()
 
-    scenes = tuple(args.scene_short) if args.scene_short else DEFAULT_SCENES
+    if args.scene_spec:
+        scenes = tuple(
+            _parse_scene_spec(
+                text,
+                default_split=args.split,
+                default_scene_corpus=args.scene_corpus,
+            )
+            for text in args.scene_spec
+        )
+    else:
+        scene_shorts = tuple(args.scene_short) if args.scene_short else DEFAULT_SCENES
+        scenes = tuple(
+            SceneSpec(scene_short=short, split=args.split, scene_corpus=args.scene_corpus)
+            for short in scene_shorts
+        )
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -195,22 +240,20 @@ def main() -> int:
         else args.wallaware_recall_claim_bearing
     )
     run_specs = []
-    for scene_short in scenes:
+    for scene in scenes:
         run_specs.extend([
-            RunSpec("baseline_explore", scene_short, "explore", False, args.claim_area_logit, args.baseline_claim_bearing),
-            RunSpec("wallaware_explore", scene_short, "explore", True, args.claim_area_logit, args.wallaware_claim_bearing),
-            RunSpec("wallaware_recall", scene_short, "recall", True, args.claim_area_logit, recall_claim_bearing),
+            RunSpec("baseline_explore", scene, "explore", False, args.claim_area_logit, args.baseline_claim_bearing),
+            RunSpec("wallaware_explore", scene, "explore", True, args.claim_area_logit, args.wallaware_claim_bearing),
+            RunSpec("wallaware_recall", scene, "recall", True, args.claim_area_logit, recall_claim_bearing),
         ])
 
     run_records = []
     for spec in run_specs:
-        output = output_dir / f"{spec.scene_short}_{spec.label}_result.json"
-        log = output_dir / f"{spec.scene_short}_{spec.label}.log"
+        output = output_dir / f"{spec.scene.scene_short}_{spec.label}_result.json"
+        log = output_dir / f"{spec.scene.scene_short}_{spec.label}.log"
         cmd = _build_command(
             python_bin=args.python_bin,
             spec=spec,
-            scene_corpus=args.scene_corpus,
-            split=args.split,
             controller_dir=args.controller_dir,
             controller_seed=args.controller_seed,
             frozen_jepa=args.frozen_jepa_checkpoint,
@@ -219,14 +262,17 @@ def main() -> int:
             max_ticks=args.max_ticks,
             success_dist_m=args.success_dist_m,
             extra_wall_args=list(args.wall_extra_arg),
+            apply_textures=bool(args.apply_textures),
         )
         skipped = bool(args.skip_existing and output.exists())
         returncode = 0
         if not skipped:
-            print(f"RUN {spec.scene_short} {spec.label}", flush=True)
+            print(f"RUN {spec.scene.scene_short} {spec.label}", flush=True)
             returncode = _run_command(cmd, log)
         run_records.append({
-            "scene_short": spec.scene_short,
+            "scene_short": spec.scene.scene_short,
+            "split": spec.scene.split,
+            "scene_corpus": str(spec.scene.scene_corpus),
             "label": spec.label,
             "output": str(output),
             "log": str(log),
@@ -237,7 +283,7 @@ def main() -> int:
             report = {
                 "schema": "go2_wallaware_physical_sweep_v0",
                 "passed": False,
-                "failure_reasons": [f"run_failed:{spec.scene_short}:{spec.label}"],
+                "failure_reasons": [f"run_failed:{spec.scene.scene_short}:{spec.label}"],
                 "runs": run_records,
             }
             (output_dir / "sweep_report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
@@ -245,19 +291,19 @@ def main() -> int:
             return 1
 
     scene_summaries = []
-    for scene_short in scenes:
+    for scene in scenes:
         paths = {
-            label: output_dir / f"{scene_short}_{label}_result.json"
+            label: output_dir / f"{scene.scene_short}_{label}_result.json"
             for label in ("baseline_explore", "wallaware_explore", "wallaware_recall")
         }
-        scene_summaries.append(_summarize_scene(scene_short, paths))
+        scene_summaries.append(_summarize_scene(scene, paths))
 
     explore_success_rate = sum(1 for s in scene_summaries if s["wallaware_explore_success"]) / len(scene_summaries)
     recall_success_rate = sum(1 for s in scene_summaries if s["wallaware_recall_success"]) / len(scene_summaries)
     improved_scenes = sum(1 for s in scene_summaries if s["blocked_forward_rate_reduction"] > 0.0)
     stall_regression_scenes = sum(
         1 for s in scene_summaries
-        if s["wallaware_contact_like_stalls"] > s["baseline_contact_like_stalls"]
+        if s["wallaware_hard_contact_like_stalls"] > s["baseline_hard_contact_like_stalls"]
     )
 
     failures = []

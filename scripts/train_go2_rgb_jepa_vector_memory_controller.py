@@ -611,7 +611,7 @@ def load_controller(
         read_head_scale=float(ck["read_head_scale"]),
         read_confidence_prior_scale=float(ck["read_confidence_prior_scale"]),
         latent_memory_features=bool(ck["latent_memory_features"]),
-        world_belief_features=bool(ck["world_belief_features"]),
+        world_belief_features=bool(ck.get("world_belief_features", False)),
     ).to(device)
     model.load_state_dict(ck["model_state_dict"], strict=True)
     model.eval()
@@ -778,6 +778,16 @@ def main() -> int:
         help="Use learned head logits or deterministic steering from the learned memory vector.",
     )
     parser.add_argument(
+        "--claim-steering-filter",
+        choices=("none", "non_forward"),
+        default="none",
+        help=(
+            "Optional runtime-safe claim gate based on the controller's own "
+            "predicted steering. non_forward abstains when the selected memory "
+            "vector predicts forward."
+        ),
+    )
+    parser.add_argument(
         "--spatial-jepa-readout",
         action="store_true",
         help="Use JEPA conv features plus coordinate channels instead of global pooled latent.",
@@ -792,7 +802,23 @@ def main() -> int:
     parser.add_argument("--min-target-steering-success", type=float, default=0.90)
     parser.add_argument("--max-false-claim-rate", type=float, default=0.12)
     parser.add_argument("--min-corrupted-gap", type=float, default=0.30)
+    parser.add_argument(
+        "--thresholds",
+        default="0.05,0.1,0.15,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95",
+        help="Comma-separated read-score thresholds for validation sweeps.",
+    )
+    parser.add_argument(
+        "--selection-mode",
+        choices=("legacy", "balanced", "gate"),
+        default="legacy",
+        help=(
+            "legacy preserves the original fixed-threshold training selection and "
+            "target-steering final threshold selection; gate ranks by strict-gate "
+            "shortfall."
+        ),
+    )
     args = parser.parse_args()
+    thresholds = _parse_thresholds(str(args.thresholds))
 
     random.seed(int(args.seed))
     np.random.seed(int(args.seed))
@@ -897,14 +923,30 @@ def main() -> int:
             map_location=device,
             weights_only=False,
         )
-        missing, unexpected = model.load_state_dict(
-            init_checkpoint["model_state_dict"],
-            strict=False,
-        )
-        if missing or unexpected:
+        init_state = init_checkpoint["model_state_dict"]
+        model_state = model.state_dict()
+        compatible_state = {
+            key: value
+            for key, value in init_state.items()
+            if key in model_state and tuple(model_state[key].shape) == tuple(value.shape)
+        }
+        skipped_shape = {
+            key: {
+                "checkpoint": list(value.shape),
+                "model": list(model_state[key].shape),
+            }
+            for key, value in init_state.items()
+            if key in model_state and tuple(model_state[key].shape) != tuple(value.shape)
+        }
+        missing, unexpected = model.load_state_dict(compatible_state, strict=False)
+        skipped_unexpected = sorted(key for key in init_state if key not in model_state)
+        if missing or unexpected or skipped_shape or skipped_unexpected:
             print(
                 "init_controller_checkpoint_load:"
-                f" missing={list(missing)} unexpected={list(unexpected)}",
+                f" loaded={len(compatible_state)}"
+                f" missing={list(missing)} unexpected={list(unexpected)}"
+                f" skipped_shape={skipped_shape}"
+                f" skipped_unexpected={skipped_unexpected}",
                 flush=True,
             )
     if bool(args.freeze_except_read_head):
@@ -958,17 +1000,52 @@ def main() -> int:
             memory_state_positive_loss_scale=float(args.memory_state_positive_loss_scale),
             memory_state_negative_loss_weight=float(args.memory_state_negative_loss_weight),
         )
-        normal = _evaluate(
-            model,
-            validation_sequences,
-            device=device,
-            threshold=float(args.threshold),
-            ablation="normal",
-            motion_propagation=str(args.motion_propagation),
-            steering_source=str(args.steering_source),
-        )
-        score = _selection_score(normal)
-        history.append({"epoch": int(epoch), "train_loss": float(loss), "validation": normal})
+        if str(args.selection_mode) == "legacy":
+            normal = _evaluate(
+                model,
+                validation_sequences,
+                device=device,
+                threshold=float(args.threshold),
+                ablation="normal",
+                motion_propagation=str(args.motion_propagation),
+                steering_source=str(args.steering_source),
+                claim_steering_filter=str(args.claim_steering_filter),
+            )
+            score = _selection_score(normal)
+            history.append({"epoch": int(epoch), "train_loss": float(loss), "validation": normal})
+        else:
+            epoch_sweep = _threshold_sweep(
+                model,
+                validation_sequences,
+                device=device,
+                motion_propagation=str(args.motion_propagation),
+                steering_source=str(args.steering_source),
+                thresholds=thresholds,
+                claim_steering_filter=str(args.claim_steering_filter),
+            )
+            threshold_key, threshold_value = _select_threshold(
+                epoch_sweep,
+                mode=str(args.selection_mode),
+                min_target_steering_success=float(args.min_target_steering_success),
+                max_false_claim_rate=float(args.max_false_claim_rate),
+                min_corrupted_gap=float(args.min_corrupted_gap),
+            )
+            normal = threshold_value["normal"]
+            score = _threshold_value_selection_score(
+                threshold_value,
+                mode=str(args.selection_mode),
+                min_target_steering_success=float(args.min_target_steering_success),
+                max_false_claim_rate=float(args.max_false_claim_rate),
+                min_corrupted_gap=float(args.min_corrupted_gap),
+            )
+            history.append(
+                {
+                    "epoch": int(epoch),
+                    "train_loss": float(loss),
+                    "selected_threshold": threshold_key,
+                    "validation": threshold_value,
+                }
+            )
         if score >= best_score:
             best_score = float(score)
             best_metrics = normal
@@ -997,6 +1074,7 @@ def main() -> int:
         ablation="normal",
         motion_propagation=str(args.motion_propagation),
         steering_source=str(args.steering_source),
+        claim_steering_filter=str(args.claim_steering_filter),
     )
     threshold_sweep = _threshold_sweep(
         model,
@@ -1004,14 +1082,15 @@ def main() -> int:
         device=device,
         motion_propagation=str(args.motion_propagation),
         steering_source=str(args.steering_source),
+        thresholds=thresholds,
+        claim_steering_filter=str(args.claim_steering_filter),
     )
-    best_threshold_key, best_threshold_value = max(
-        threshold_sweep.items(),
-        key=lambda item: (
-            item[1]["normal"]["target_steering_pipeline_success"],
-            -item[1]["normal"]["false_claim_rate"],
-            item[1]["normal_minus_best_corrupted_target_steering_pipeline_success"],
-        ),
+    best_threshold_key, best_threshold_value = _select_threshold(
+        threshold_sweep,
+        mode=str(args.selection_mode),
+        min_target_steering_success=float(args.min_target_steering_success),
+        max_false_claim_rate=float(args.max_false_claim_rate),
+        min_corrupted_gap=float(args.min_corrupted_gap),
     )
     validation_ablations = best_threshold_value["ablations"]
     normal = validation_ablations["normal"]
@@ -1043,6 +1122,11 @@ def main() -> int:
         "motion_propagation": str(args.motion_propagation),
         "motion_translation_scale_m": float(motion_translation_scale_m),
         "steering_source": str(args.steering_source),
+        "claim_steering_filter": str(args.claim_steering_filter),
+        "claim_steering_filter_boundary": (
+            "The optional claim steering filter uses only the controller's own "
+            "predicted steering from the configured steering_source."
+        ),
         "steering_class_balanced_loss": bool(args.steering_class_balanced_loss),
         "image_size": int(args.image_size),
         "hidden_dim": int(args.hidden_dim),
@@ -1081,6 +1165,13 @@ def main() -> int:
         "output": str(args.output),
         "device": str(device),
         "frozen_jepa_checkpoint": str(args.frozen_jepa_checkpoint),
+        "motion_propagation": str(args.motion_propagation),
+        "steering_source": str(args.steering_source),
+        "claim_steering_filter": str(args.claim_steering_filter),
+        "claim_steering_filter_boundary": (
+            "The optional claim steering filter uses only the controller's own "
+            "predicted steering from the configured steering_source."
+        ),
         "finetuned_jepa_encoder": bool(args.finetune_jepa_encoder),
         "spatial_jepa_readout": bool(args.spatial_jepa_readout),
         "spatial_output_dim": int(args.spatial_output_dim),
@@ -1116,6 +1207,9 @@ def main() -> int:
         "validation_ablations": validation_ablations,
         "threshold_sweep": threshold_sweep,
         "best_threshold_by_target_steering": best_threshold_key,
+        "selected_threshold": best_threshold_key,
+        "selection_mode": str(args.selection_mode),
+        "thresholds": list(thresholds),
         "steering_diagnostics": _steering_diagnostics(
             model,
             validation_sequences,
@@ -1123,6 +1217,18 @@ def main() -> int:
             threshold=float(best_threshold_key),
             ablation="normal",
             motion_propagation=str(args.motion_propagation),
+            steering_source=str(args.steering_source),
+            claim_steering_filter=str(args.claim_steering_filter),
+        ),
+        "validation_query_score_records": _query_score_records(
+            model,
+            validation_sequences,
+            device=device,
+            threshold=float(best_threshold_key),
+            ablation="normal",
+            motion_propagation=str(args.motion_propagation),
+            steering_source=str(args.steering_source),
+            claim_steering_filter=str(args.claim_steering_filter),
         ),
         "normal_minus_best_corrupted_target_steering_pipeline_success": gap,
         "controller_gate_pass": bool(gate_pass),
@@ -1635,6 +1741,7 @@ def _evaluate(
     ablation: str,
     motion_propagation: str,
     steering_source: str,
+    claim_steering_filter: str,
 ) -> dict[str, Any]:
     model.eval()
     outputs_by_key = _outputs_by_sequence(
@@ -1664,8 +1771,106 @@ def _evaluate(
                             color_idx=color_idx,
                             steering_source=steering_source,
                         )
+                        if not _claim_steering_allowed(
+                            steering_index,
+                            claim_steering_filter=claim_steering_filter,
+                        ):
+                            selected = False
+                            steering_index = None
                     metrics.add(query=query, selected=selected, steering_index=steering_index)
     return metrics.to_dict()
+
+
+def _query_score_records(
+    model: ColorVectorMemoryController,
+    sequences: dict[tuple[str, int, int], list[Frame]],
+    *,
+    device: torch.device,
+    threshold: float,
+    ablation: str,
+    motion_propagation: str,
+    steering_source: str,
+    claim_steering_filter: str,
+) -> list[dict[str, Any]]:
+    model.eval()
+    outputs_by_key = _outputs_by_sequence(
+        model,
+        sequences,
+        device=device,
+        ablation=ablation,
+        motion_propagation=motion_propagation,
+    )
+    records: list[dict[str, Any]] = []
+    with torch.no_grad():
+        for key, sequence in sequences.items():
+            scene_id, env_idx, episode_id = key
+            outputs = outputs_by_key[key]
+            for step_idx, frame in enumerate(sequence):
+                for query in frame.queries:
+                    color_idx = int(query.color_index)
+                    read_logit = float(outputs["read_logits"][step_idx, color_idx].detach().cpu())
+                    score = float(torch.sigmoid(torch.tensor(read_logit)).item())
+                    selected = bool(score >= float(threshold)) and ablation != "memory_off_abstain"
+                    steering_index = None
+                    claim_filter_rejected = False
+                    if selected:
+                        steering_index = _select_steering_index(
+                            outputs,
+                            step_idx=step_idx,
+                            color_idx=color_idx,
+                            steering_source=steering_source,
+                        )
+                        if not _claim_steering_allowed(
+                            steering_index,
+                            claim_steering_filter=claim_steering_filter,
+                        ):
+                            selected = False
+                            claim_filter_rejected = True
+                    target_steering = int(query.target_steering)
+                    predicted_steering = (
+                        _steering_name(int(steering_index))
+                        if steering_index is not None
+                        else None
+                    )
+                    classification = "abstain"
+                    if query.target >= 0.5 and selected:
+                        classification = "correct_target"
+                    elif query.target >= 0.5:
+                        classification = "missed_positive"
+                    elif selected:
+                        classification = "false_claim"
+                    memory_conf = float(outputs["memory_conf"][step_idx, color_idx].detach().cpu())
+                    record = {
+                        "scene_id": str(scene_id),
+                        "env_idx": int(env_idx),
+                        "episode_id": int(episode_id),
+                        "episode_step": int(frame.episode_step),
+                        "step_idx": int(step_idx),
+                        "color_index": int(color_idx),
+                        "color": str(query.group_key[3]),
+                        "group_key": list(query.group_key),
+                        "target": float(query.target),
+                        "score": score,
+                        "read_logit": read_logit,
+                        "memory_conf": memory_conf,
+                        "selected": selected,
+                        "claim_filter_rejected": bool(claim_filter_rejected),
+                        "claim_steering_filter": str(claim_steering_filter),
+                        "classification": classification,
+                        "predicted_steering": predicted_steering,
+                        "target_steering": _steering_name(target_steering),
+                        "steering_correct": (
+                            bool(steering_index == target_steering)
+                            if steering_index is not None and query.target >= 0.5
+                            else None
+                        ),
+                    }
+                    if "rgb_evidence_logits" in outputs:
+                        record["rgb_evidence_logit"] = float(
+                            outputs["rgb_evidence_logits"][step_idx, color_idx].detach().cpu()
+                        )
+                    records.append(record)
+    return records
 
 
 def _outputs_by_sequence(
@@ -1730,9 +1935,11 @@ def _threshold_sweep(
     device: torch.device,
     motion_propagation: str,
     steering_source: str,
+    thresholds: tuple[float, ...],
+    claim_steering_filter: str,
 ) -> dict[str, Any]:
     result = {}
-    for threshold in (0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95):
+    for threshold in thresholds:
         ablations = {
             ablation: _evaluate(
                 model,
@@ -1742,6 +1949,7 @@ def _threshold_sweep(
                 ablation=ablation,
                 motion_propagation=motion_propagation,
                 steering_source=steering_source,
+                claim_steering_filter=claim_steering_filter,
             )
             for ablation in (
                 "normal",
@@ -1770,6 +1978,91 @@ def _threshold_sweep(
             ),
         }
     return result
+
+
+def _parse_thresholds(raw: str) -> tuple[float, ...]:
+    thresholds = []
+    for item in str(raw).split(","):
+        item = item.strip()
+        if not item:
+            continue
+        value = float(item)
+        if value < 0.0 or value > 1.0:
+            raise ValueError(f"threshold outside [0, 1]: {value}")
+        thresholds.append(value)
+    if not thresholds:
+        raise ValueError("at least one threshold is required")
+    return tuple(sorted(set(thresholds)))
+
+
+def _select_threshold(
+    threshold_sweep: dict[str, Any],
+    *,
+    mode: str,
+    min_target_steering_success: float,
+    max_false_claim_rate: float,
+    min_corrupted_gap: float,
+) -> tuple[str, dict[str, Any]]:
+    return max(
+        threshold_sweep.items(),
+        key=lambda item: (
+            _threshold_value_selection_score(
+                item[1],
+                mode=mode,
+                min_target_steering_success=min_target_steering_success,
+                max_false_claim_rate=max_false_claim_rate,
+                min_corrupted_gap=min_corrupted_gap,
+            ),
+            float(item[1]["normal"]["target_steering_pipeline_success"]),
+            -float(item[1]["normal"]["false_claim_rate"]),
+            float(item[1]["normal_minus_best_corrupted_target_steering_pipeline_success"]),
+        ),
+    )
+
+
+def _threshold_value_selection_score(
+    value: dict[str, Any],
+    *,
+    mode: str,
+    min_target_steering_success: float,
+    max_false_claim_rate: float,
+    min_corrupted_gap: float,
+) -> float:
+    normal = value["normal"]
+    gap = float(value["normal_minus_best_corrupted_target_steering_pipeline_success"])
+    if mode == "legacy":
+        return (
+            2.0 * float(normal["target_steering_pipeline_success"])
+            - 0.25 * float(normal["false_claim_rate"])
+            + 0.25 * gap
+        )
+    if mode == "balanced":
+        return _selection_score(normal) + 0.5 * gap
+    if mode != "gate":
+        raise ValueError(f"unknown selection mode: {mode}")
+    steer = float(normal["target_steering_pipeline_success"])
+    false_claim = float(normal["false_claim_rate"])
+    steer_shortfall = max(0.0, float(min_target_steering_success) - steer) / max(
+        1e-6, float(min_target_steering_success)
+    )
+    false_shortfall = max(0.0, false_claim - float(max_false_claim_rate)) / max(
+        1e-6, 1.0 - float(max_false_claim_rate)
+    )
+    gap_shortfall = max(0.0, float(min_corrupted_gap) - gap) / max(
+        1e-6, float(min_corrupted_gap)
+    )
+    gate_pass = (
+        steer >= float(min_target_steering_success)
+        and false_claim <= float(max_false_claim_rate)
+        and gap >= float(min_corrupted_gap)
+    )
+    if gate_pass:
+        return 1000.0 + _selection_score(normal) + 0.5 * gap
+    return -(
+        2.0 * steer_shortfall
+        + 2.0 * false_shortfall
+        + gap_shortfall
+    )
 
 
 class _Metrics:
@@ -1837,6 +2130,8 @@ def _steering_diagnostics(
     threshold: float,
     ablation: str,
     motion_propagation: str,
+    steering_source: str,
+    claim_steering_filter: str,
 ) -> dict[str, Any]:
     outputs_by_key = _outputs_by_sequence(
         model,
@@ -1886,6 +2181,18 @@ def _steering_diagnostics(
                     target = int(query.target_steering)
                     head = int(torch.argmax(outputs["steering_logits"][step_idx, color_idx]).cpu())
                     vector = _vector_steering_index(outputs["memory_vec"][step_idx, color_idx])
+                    selection_pred = _select_steering_index(
+                        outputs,
+                        step_idx=step_idx,
+                        color_idx=color_idx,
+                        steering_source=steering_source,
+                    )
+                    if not _claim_steering_allowed(
+                        selection_pred,
+                        claim_steering_filter=claim_steering_filter,
+                    ):
+                        selected_positive -= 1
+                        continue
                     if has_rgb and color_idx in last_fire:
                         gap = step_idx - last_fire[color_idx]
                         bucket = next(bk for bk in gap_buckets if gap <= bk)
@@ -2054,6 +2361,18 @@ def _select_steering_index(
             return belief_index
         return _flip_steering_index(belief_index)
     raise ValueError(f"unknown steering source: {steering_source}")
+
+
+def _claim_steering_allowed(
+    steering_index: int,
+    *,
+    claim_steering_filter: str,
+) -> bool:
+    if claim_steering_filter == "none":
+        return True
+    if claim_steering_filter == "non_forward":
+        return int(steering_index) != 1
+    raise ValueError(f"unknown claim steering filter: {claim_steering_filter}")
 
 
 def _flip_steering_index(index: int) -> int:

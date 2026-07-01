@@ -25,7 +25,13 @@ from lewm_genesis.lewm_contract import (
     sample_command_tape,
 )
 from lewm_genesis.parity_checks import compare_scalar_metrics, parity_summary
-from lewm_genesis.render_replay import build_render_replay_plan, replay_frame_schedule
+try:
+    from lewm_genesis.render_replay import build_render_replay_plan, replay_frame_schedule
+except ModuleNotFoundError as exc:  # pragma: no cover - only for minimal train envs.
+    if exc.name != "yaml":
+        raise
+    build_render_replay_plan = None
+    replay_frame_schedule = None
 from lewm_genesis.rollout import (
     DEFAULT_GO2_LEG_DOF_INDICES,
     DEFAULT_GO2_LEG_JOINT_NAMES_ROLLOUT_ORDER,

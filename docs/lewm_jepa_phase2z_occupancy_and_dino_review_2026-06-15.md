@@ -5,6 +5,18 @@ Date registered: 2026-06-15
 Status: Phase 2Z failed bounded ROCm GPU smokes; train and validation data
 only; no `test_id` or `test_hard` metric use.
 
+Supersession note, 2026-06-15: this document originally registered Phase 2AA as
+a DINO-WM-style next step. That branch is retained as an optional diagnostic
+ceiling/control, not the mainline. The new primary direction is the foundational
+JEPA plan in `docs/lewm_foundational_jepa_research_plan_2026-06-15.md`.
+
+Status update, 2026-06-15: the foundational path now has Phase 3A
+positive-control passes on the medium 2D navigation split without DINO,
+including a stricter hidden-goal alias memory split where the memory-conditioned
+model passes and the paired no-memory ablation fails. The DINO cache preflight
+below remains useful only as a ceiling/control artifact; it is not the next
+mainline implementation target.
+
 ## Plain-English Summary
 
 The latest question was whether the model needs a map-like intermediate state
@@ -236,7 +248,7 @@ https://le-wm.github.io/
 https://arxiv.org/abs/2603.19312
 ```
 
-## Research Decision
+## Historical Research Decision
 
 Stop Phase 2Z. Do not launch a full training sweep from:
 
@@ -245,7 +257,7 @@ Stop Phase 2Z. Do not launch a full training sweep from:
 - current single-frame RGB-to-swept-state bridges;
 - current C2 image-aligned patch-token JEPA integration.
 
-The next bounded experiment should be Phase 2AA:
+This section originally proposed Phase 2AA as the next bounded experiment:
 
 1. Build a DINOv2 patch-feature cache for Phase 2D train/validation frames, or
    fail preflight if pretrained weights are unavailable locally and no download
@@ -260,6 +272,12 @@ The next bounded experiment should be Phase 2AA:
    primitive gate.
 5. In parallel or immediately after, add a LeWM-paper-faithful 2D navigation
    positive-control task.
+
+That recommendation is now superseded for mainline work. The 2D positive
+control was implemented as Phase 3A and has a first-primitive receding-horizon
+pass under `jepa_phase3a_positive_control_gate_v1`. Continue from the
+foundational Phase 3A/3B/3C plan unless a DINO ceiling/control is explicitly
+needed to bound the visual-representation gap.
 
 ## Phase 2AA Promotion Gate
 

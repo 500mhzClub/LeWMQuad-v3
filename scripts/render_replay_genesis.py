@@ -510,6 +510,12 @@ def _finalize_env_record(
         "camera_safety": camera_safety,
         "command_context": frame.get("command_context"),
         "counterfactual_context": frame.get("counterfactual_context"),
+        "go2_hidden_target_memory_selection": frame.get(
+            "go2_hidden_target_memory_selection"
+        ),
+        "go2_causal_memory_pair_selection": frame.get(
+            "go2_causal_memory_pair_selection"
+        ),
         "source_frame": {
             "source_line": frame.get("source_line"),
             "source_topic": frame.get("source_topic"),
