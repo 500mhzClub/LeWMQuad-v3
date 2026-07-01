@@ -245,6 +245,8 @@ def _load_counterfactual_body_clearance_rows(
     cell_size_m: float,
     inflation_m: float,
     max_source_rows: int,
+    blocked_label_source: str = "clearance",
+    progress_floor_m: float = 0.04,
 ) -> list[Example]:
     registry = PrimitiveRegistry.from_yaml(primitive_registry)
     known_primitives = [name for name in primitive_vocab if name in registry.primitives]
@@ -316,7 +318,14 @@ def _load_counterfactual_body_clearance_rows(
                             scene_id=scene_id,
                             primitive=primitive,
                             progress_m=progress_m,
-                            blocked=1.0 if clearance_m < float(body_clearance_margin_m) else 0.0,
+                            blocked=(
+                                (1.0 if progress_m < float(progress_floor_m) else 0.0)
+                                if (
+                                    str(blocked_label_source) == "progress"
+                                    and primitive in _TRANSLATING_PRIMITIVES
+                                )
+                                else (1.0 if clearance_m < float(body_clearance_margin_m) else 0.0)
+                            ),
                             clearance_m=clearance_m,
                         )
                     )
@@ -552,6 +561,17 @@ def main() -> int:
     parser.add_argument("--include-guard-block-label", action="store_true")
     parser.add_argument("--progress-loss-weight", type=float, default=2.0)
     parser.add_argument(
+        "--counterfactual-blocked-source",
+        choices=("clearance", "progress"),
+        default="clearance",
+        help="In counterfactual mode, label a TRANSLATING primitive blocked when "
+             "its swept counterfactual progress falls below "
+             "--counterfactual-progress-floor-m (operationally exact for the "
+             "kinematic sim) instead of the clearance-margin label. Yaw/hold "
+             "keep the clearance label.",
+    )
+    parser.add_argument("--counterfactual-progress-floor-m", type=float, default=0.04)
+    parser.add_argument(
         "--label-mode",
         choices=("closed_loop_progress", "counterfactual_body_clearance"),
         default="closed_loop_progress",
@@ -612,6 +632,8 @@ def main() -> int:
             cell_size_m=float(args.cell_size_m),
             inflation_m=float(args.inflation_m),
             max_source_rows=int(args.max_source_rows),
+            blocked_label_source=str(args.counterfactual_blocked_source),
+            progress_floor_m=float(args.counterfactual_progress_floor_m),
         )
         if args.validation_datasets:
             val_examples = _load_counterfactual_body_clearance_rows(
@@ -626,6 +648,8 @@ def main() -> int:
                 cell_size_m=float(args.cell_size_m),
                 inflation_m=float(args.inflation_m),
                 max_source_rows=int(args.max_source_rows),
+                blocked_label_source=str(args.counterfactual_blocked_source),
+                progress_floor_m=float(args.counterfactual_progress_floor_m),
             )
         else:
             random.shuffle(train_examples)
