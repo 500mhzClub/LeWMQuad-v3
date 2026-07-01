@@ -1558,7 +1558,13 @@ class OnlineEgomotionMap:
                 self.guard_blocked_edges.discard((start_cell, edge_target))
                 self.guard_blocked_edges.discard((edge_target, start_cell))
                 self.guard_blocked.discard(edge_target)
-            else:
+            elif post_cell != start_cell:
+                # Only a real cell transition may clear a blocked edge. A
+                # partial in-cell translation (e.g. forward re-entering a wall
+                # pocket after a backward escape) previously counted as
+                # reaching the ahead cell and erased the stall mark every
+                # backward/forward oscillation, so the same wall was pushed
+                # hundreds of times.
                 self.attempted_edges.add((edge_target, start_cell))
                 self.blocked_edges.discard((start_cell, edge_target))
                 self.blocked_edges.discard((edge_target, start_cell))
