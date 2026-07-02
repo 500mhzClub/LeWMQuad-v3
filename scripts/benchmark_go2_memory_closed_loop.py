@@ -1550,7 +1550,11 @@ class OnlineEgomotionMap:
             else self._cardinal_step_toward(start_cell, target_cell)
         )
         if edge_target != start_cell and str(primitive) in _TRANSLATING_PRIMITIVES:
-            self.attempted_edges.add((start_cell, edge_target))
+            # Only conclusive outcomes (stall or an actual cell transition)
+            # consume the edge's attempt budget; a partial in-cell step is
+            # inconclusive and must not disqualify future probes.
+            if bool(stalled) or post_cell != start_cell:
+                self.attempted_edges.add((start_cell, edge_target))
             if bool(stalled):
                 self.blocked_edges.add((start_cell, edge_target))
                 self.blocked_edges.add((edge_target, start_cell))
