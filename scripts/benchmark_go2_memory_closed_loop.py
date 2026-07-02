@@ -5637,7 +5637,11 @@ def _fully_learned_runtime_contract_report(
         "runtime_path": (
             "learned_topology_route_memory"
             if uses_learned_topology_route_memory
-            else ("learned_local_policy" if uses_learned_local_policy else "invalid")
+            else (
+                "learned_local_policy"
+                if uses_learned_local_policy
+                else ("online_frontier" if uses_online_frontier else "invalid")
+            )
         ),
         "learned_local_policy_checkpoint": learned_local_policy_summary,
         "learned_local_post_claim_policy_checkpoint": learned_local_post_claim_policy_summary,

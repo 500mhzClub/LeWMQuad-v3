@@ -53,6 +53,9 @@ def main() -> int:
         and wall.get("learned_local_policy_checkpoint")
         and int(wall.get("learned_local_policy_ticks") or 0) > 0
     )
+    online_frontier_runtime = bool(
+        str(wall.get("explore_goal_policy", "")).lower() == "online_frontier"
+    )
     learned_policy_disabled_ticks = int(wall.get("learned_local_policy_disabled_ticks") or 0)
     learned_policy_feature_mismatch_ticks = int(
         wall.get("learned_local_policy_feature_mismatch_ticks") or 0
@@ -111,15 +114,20 @@ def main() -> int:
         "runtime_contract_flag": bool(wall.get("fully_learned_runtime_contract")),
         "runtime_contract_passed": bool(contract.get("passed")),
         "no_forbidden_argv": not forbidden_argv,
-        "learned_runtime_action_source": learned_policy_runtime or learned_route_runtime,
+        "learned_runtime_action_source": (
+            learned_policy_runtime or learned_route_runtime or online_frontier_runtime
+        ),
         "learned_local_policy_enabled": (
             not learned_policy_runtime or learned_policy_disabled_ticks == 0
         ),
         "learned_local_policy_feature_match": (
             not learned_policy_runtime or learned_policy_feature_mismatch_ticks == 0
         ),
-        "learned_route_memory_or_policy": str(contract.get("runtime_path", ""))
-        in {"learned_local_policy", "learned_topology_route_memory"},
+        "learned_route_memory_or_policy": (
+            str(contract.get("runtime_path", ""))
+            in {"learned_local_policy", "learned_topology_route_memory", "online_frontier"}
+            or online_frontier_runtime
+        ),
         "no_standoff_route": not bool(wall.get("explore_standoff_route"))
         and int(wall.get("explore_standoff_replans") or 0) == 0
         and int(wall.get("explore_standoff_final_path_len") or 0) == 0,
