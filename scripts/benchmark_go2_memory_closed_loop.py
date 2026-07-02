@@ -6143,6 +6143,12 @@ def main() -> int:
                              "allow the runtime-safe online egomotion map to pick a "
                              "translating primitive that routes through self-visited cells "
                              "toward a non-current frontier. This uses no scene geometry.")
+    parser.add_argument("--learned-local-policy-frontier-pressure-pre-claim",
+                        action="store_true",
+                        help="Arm frontier pressure from tick 0 instead of only after the "
+                             "first claim. Without this, scenes where the first target is "
+                             "not found by local wandering get no exploration drive at all. "
+                             "Uses only the online egomotion map and learned predictions.")
     parser.add_argument("--learned-local-policy-frontier-pressure-states", default="",
                         help="Comma-separated controller states where frontier-pressure "
                              "overrides may run. Empty preserves the legacy all-state "
@@ -9868,7 +9874,10 @@ def main() -> int:
                     and learned_local_policy_pressure_run >= frontier_after
                     and primitive_outcomes is not None
                     and learned_local_online_map is not None
-                    and bool(learned_local_online_map.claimed)
+                    and (
+                        bool(learned_local_online_map.claimed)
+                        or bool(args.learned_local_policy_frontier_pressure_pre_claim)
+                    )
                 ):
                     frontier_primitive, frontier_log = learned_local_online_map.frontier_pressure_primitive(
                         pose_xy=pos[:2],
