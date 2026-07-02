@@ -1681,6 +1681,7 @@ class OnlineEgomotionMap:
         allow_map_blocked_backward_claim_escape: bool = False,
         allow_guarded_retry: bool = False,
         allow_combined_blocked_retry: bool = False,
+        probe_route_steps: bool = False,
     ) -> tuple[str | None, dict[str, Any]]:
         if not predictions:
             return None, {"enabled": False, "reason": "missing_predictions"}
@@ -1793,6 +1794,21 @@ class OnlineEgomotionMap:
                 and bool(allow_map_blocked_backward_claim_escape)
                 and not guard_map_blocked
             )
+            prediction_ok = bool(
+                blocked_prob <= float(max_blocked_prob)
+                and clearance_prob <= float(max_blocked_prob)
+                and progress_m >= float(min_progress_m)
+            )
+            if (
+                not prediction_ok
+                and bool(probe_route_steps)
+                and route_step
+                and (current_cell, edge_target) not in self.attempted_edges
+            ):
+                # Contact-tolerant probing: a never-attempted route step may be
+                # tried once even when the heads call it impassable; physics
+                # resolves it and the map records the outcome permanently.
+                prediction_ok = True
             accepted = bool(
                 (not map_blocked or map_blocked_allowed)
                 and (not guard_map_blocked or not self.hard_guard_blocks)
@@ -1801,9 +1817,7 @@ class OnlineEgomotionMap:
                     or not bool(self.claimed)
                     or backward_claim_escape
                 )
-                and blocked_prob <= float(max_blocked_prob)
-                and clearance_prob <= float(max_blocked_prob)
-                and progress_m >= float(min_progress_m)
+                and prediction_ok
             )
             score = (
                 float(route_weight) * route_score
@@ -6160,6 +6174,12 @@ def main() -> int:
                              "allow the runtime-safe online egomotion map to pick a "
                              "translating primitive that routes through self-visited cells "
                              "toward a non-current frontier. This uses no scene geometry.")
+    parser.add_argument("--learned-local-policy-frontier-pressure-probe-route-steps",
+                        action="store_true",
+                        help="Accept a never-attempted frontier route step even when the "
+                             "learned heads predict it blocked/no-progress, so contact "
+                             "resolves the uncertainty once and the online map remembers. "
+                             "Contact-tolerant demos only.")
     parser.add_argument("--learned-local-policy-frontier-pressure-always",
                         action="store_true",
                         help="Run frontier pressure on every eligible EXPLORE tick instead "
@@ -9951,6 +9971,9 @@ def main() -> int:
                             >= int(
                                 args.learned_local_policy_frontier_pressure_combined_blocked_retry_after_noops
                             )
+                        ),
+                        probe_route_steps=bool(
+                            args.learned_local_policy_frontier_pressure_probe_route_steps
                         ),
                     )
                     frontier_log["turn_run_before"] = int(learned_local_policy_turn_run)
