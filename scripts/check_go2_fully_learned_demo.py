@@ -159,8 +159,12 @@ def main() -> int:
         )
         gates["generalized_runtime_contract_flag"] = bool(wall.get("generalized_runtime_contract"))
         gates["generalized_contract_report"] = bool(contract.get("generalized"))
-        gates["generalized_runtime_path"] = str(contract.get("runtime_path", "")) == "learned_local_policy"
-        gates["generalized_uses_policy_ticks"] = learned_policy_runtime
+        gates["generalized_runtime_path"] = (
+            str(contract.get("runtime_path", ""))
+            in {"learned_local_policy", "online_frontier"}
+            or online_frontier_runtime
+        )
+        gates["generalized_uses_policy_ticks"] = learned_policy_runtime or online_frontier_runtime
         gates["no_privileged_explorer_for_policy_ticks"] = int(
             wall.get("learned_local_policy_privileged_explorer_skipped_ticks") or 0
         ) >= policy_explore_ticks
