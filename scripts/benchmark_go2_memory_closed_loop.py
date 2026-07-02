@@ -1495,6 +1495,27 @@ class OnlineEgomotionMap:
     def mark_claim(self, pose_xy: np.ndarray | tuple[float, float] | list[float]) -> None:
         self.claimed.add(self._cell(pose_xy))
 
+    def mark_rotation_blocked(
+        self,
+        pose_xy: np.ndarray | tuple[float, float] | list[float],
+        target_cell: tuple[int, int],
+    ) -> None:
+        """Mark the edge toward a route target unreachable by rotation.
+
+        Physical-mode wall contact can mechanically block in-place yaw, so a
+        route requiring alignment the body cannot perform must be rerouted.
+        """
+        start_cell = self._cell(pose_xy)
+        cell = (int(target_cell[0]), int(target_cell[1]))
+        if cell == start_cell:
+            return
+        step = self._cardinal_step_toward(start_cell, cell)
+        if step == start_cell:
+            return
+        self.blocked_edges.add((start_cell, step))
+        self.blocked_edges.add((step, start_cell))
+        self.blocked.add(step)
+
     def reset_after_claim(
         self,
         pose_xy: np.ndarray | tuple[float, float] | list[float],
@@ -6108,6 +6129,13 @@ def main() -> int:
                              "without counting it as a contact-like stall. This is a "
                              "runtime-safe proprioceptive progress guard for repeated "
                              "false-clear learned action predictions.")
+    parser.add_argument("--learned-local-online-map-rotation-stall-block-ticks",
+                        type=int, default=0,
+                        help="If >0, after this many consecutive turn ticks with almost no "
+                             "executed rotation (physical wall contact can mechanically "
+                             "block in-place yaw), mark the online-map edge toward the "
+                             "current frontier route target blocked so routing moves on. "
+                             "Proprioceptive only; no scene geometry.")
     parser.add_argument("--learned-local-policy-outcome-rerank", action="store_true",
                         help="Rerank the learned policy's top primitive candidates with learned "
                              "primitive-outcome predictions before the wall guard. This uses only "
@@ -8332,6 +8360,7 @@ def main() -> int:
             args.learned_local_online_map_low_progress_block_m
         ),
         "learned_local_online_map_low_progress_block_ticks": 0,
+        "learned_local_online_map_rotation_stall_blocks": 0,
         "learned_local_policy_max_turn_run": 0,
         "learned_local_policy_nonprogress_ticks": 0,
         "learned_local_policy_max_nonprogress_run": 0,
@@ -8445,6 +8474,8 @@ def main() -> int:
     learned_local_policy_turn_run = 0
     learned_local_policy_nonprogress_run = 0
     learned_local_policy_frontier_noop_run = 0
+    learned_local_rotation_stall_streak = 0
+    learned_local_last_route_next: tuple[int, int] | None = None
     learned_topology_route_state: dict[str, Any] = {}
     learned_local_online_map = (
         OnlineEgomotionMap(
@@ -10021,6 +10052,12 @@ def main() -> int:
                             ] += 1
                         if frontier_pressure_committed:
                             frontier_log["guard_commit_requested"] = True
+                    route_next_cell = frontier_log.get("route_next")
+                    learned_local_last_route_next = (
+                        (int(route_next_cell[0]), int(route_next_cell[1]))
+                        if route_next_cell
+                        else None
+                    )
                     learned_policy_log["frontier_pressure"] = frontier_log
                 learned_local_policy_pressure_run = max(
                     int(learned_local_policy_turn_run),
@@ -11078,6 +11115,25 @@ def main() -> int:
             and xy_displacement
             < float(args.learned_local_online_map_low_progress_block_m)
         )
+        rotation_stall_ticks = int(args.learned_local_online_map_rotation_stall_block_ticks)
+        if rotation_stall_ticks > 0:
+            yaw_rotation_delta = abs(float(wrap_angle_pi(post_yaw - float(yaw))))
+            if str(primitive) in _TURN_PRIMITIVES and yaw_rotation_delta < 0.02:
+                learned_local_rotation_stall_streak += 1
+            else:
+                learned_local_rotation_stall_streak = 0
+            if (
+                learned_local_rotation_stall_streak >= rotation_stall_ticks
+                and learned_local_online_map is not None
+                and learned_local_last_route_next is not None
+            ):
+                learned_local_online_map.mark_rotation_blocked(
+                    pos[:2], learned_local_last_route_next
+                )
+                wall_metrics["learned_local_online_map_rotation_stall_blocks"] += 1
+                learned_local_rotation_stall_streak = 0
+                if log_entry is not None:
+                    log_entry["rotation_stall_block"] = True
         wall_metrics["body_clearance_min_m"] = (
             post_body_clearance
             if wall_metrics["body_clearance_min_m"] is None
