@@ -4115,6 +4115,14 @@ class FrontierExplorer:
         self.standoff_arc_target_dist_suppressions = 0
         x0, y0, x1, y1 = bounds
         self.free: dict[tuple[int, int], tuple[float, float]] = {}
+        # online_frontier is the runtime-contract-clean coverage mode: the free
+        # graph starts optimistic (every cell presumed traversable, no manifest
+        # reads) and is pruned only by executed-contact evidence via the
+        # existing waypoint-block machinery.
+        self.optimistic_free_graph = str(goal_policy).lower() == "online_frontier"
+        if self.optimistic_free_graph:
+            goal_policy = "nearest"
+            self.goal_policy = "nearest"
         if str(goal_policy).lower() not in (
             "learned_sweep",
             "learned_local",
@@ -4126,7 +4134,7 @@ class FrontierExplorer:
             for i in range(nx):
                 for j in range(ny):
                     x, y = x0 + i * step_m, y0 + j * step_m
-                    if grid.is_free((x, y)):
+                    if self.optimistic_free_graph or grid.is_free((x, y)):
                         self.free[(i, j)] = (x, y)
         self.visited: set[tuple[int, int]] = set()
         self.blocked: set[tuple[int, int]] = set()
@@ -5539,6 +5547,7 @@ def _fully_learned_runtime_contract_report(
         explore_policy == "learned_policy"
         and args.learned_local_policy_checkpoint is not None
     )
+    uses_online_frontier = bool(explore_policy == "online_frontier")
     uses_learned_topology_route_memory = bool(args.learned_topology_route_table is not None)
 
     if str(args.policy).lower() != "memory":
@@ -5547,16 +5556,17 @@ def _fully_learned_runtime_contract_report(
         failures.append("--demo-mode must be explore")
     if bool(args.face_target):
         failures.append("--face-target is a privileged diagnostic")
-    if not (uses_learned_local_policy or uses_learned_topology_route_memory):
+    if not (uses_learned_local_policy or uses_learned_topology_route_memory or uses_online_frontier):
         failures.append(
-            "runtime EXPLORE action source must be either "
-            "--explore-goal-policy learned_policy with --learned-local-policy-checkpoint "
-            "or --learned-topology-route-table"
+            "runtime EXPLORE action source must be --explore-goal-policy learned_policy "
+            "with --learned-local-policy-checkpoint, online_frontier (optimistic coverage "
+            "over the runtime-built contact map, no manifest reads), or "
+            "--learned-topology-route-table"
         )
     if args.learned_topology_route_table is None:
-        if explore_policy != "learned_policy":
-            failures.append("--explore-goal-policy must be learned_policy without a route-memory table")
-        if args.learned_local_policy_checkpoint is None:
+        if explore_policy not in ("learned_policy", "online_frontier"):
+            failures.append("--explore-goal-policy must be learned_policy or online_frontier without a route-memory table")
+        if explore_policy == "learned_policy" and args.learned_local_policy_checkpoint is None:
             failures.append("--learned-local-policy-checkpoint is required without a route-memory table")
     if uses_learned_topology_route_memory and args.learned_topology_route_until_area_logit is None:
         failures.append("--learned-topology-route-until-area-logit is required for route-memory runtime")
@@ -5573,10 +5583,10 @@ def _fully_learned_runtime_contract_report(
     if bool(args.wall_aware_planner) and wall_source == "learned_action" and args.primitive_outcome_checkpoint is None:
         failures.append("--primitive-outcome-checkpoint is required for learned_action wall decisions")
     if generalized:
-        if not uses_learned_local_policy:
+        if not (uses_learned_local_policy or uses_online_frontier):
             failures.append(
                 "--generalized-runtime-contract requires --explore-goal-policy "
-                "learned_policy with --learned-local-policy-checkpoint"
+                "learned_policy with --learned-local-policy-checkpoint or online_frontier"
             )
         if uses_learned_topology_route_memory:
             failures.append(
@@ -5713,7 +5723,7 @@ def main() -> int:
                         help="Stricter fully learned contract for scene-disjoint claims: "
                              "requires learned-local policy inference, forbids learned topology "
                              "route tables, and rejects pose/topology policy features.")
-    parser.add_argument("--explore-goal-policy", choices=("nearest", "farthest", "mixed", "dfs", "learned_sweep", "learned_local", "learned_wall_follow", "learned_policy"), default="nearest",
+    parser.add_argument("--explore-goal-policy", choices=("nearest", "farthest", "mixed", "dfs", "online_frontier", "learned_sweep", "learned_local", "learned_wall_follow", "learned_policy"), default="nearest",
                         help="Unvisited free-cell selection policy for autonomous EXPLORE coverage. "
                              "learned_sweep skips manifest-route waypointing and lets the learned "
                              "action-outcome guard select safe traversal primitives from RGB/JEPA "
