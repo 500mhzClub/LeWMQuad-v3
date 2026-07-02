@@ -6160,6 +6160,13 @@ def main() -> int:
                              "allow the runtime-safe online egomotion map to pick a "
                              "translating primitive that routes through self-visited cells "
                              "toward a non-current frontier. This uses no scene geometry.")
+    parser.add_argument("--learned-local-policy-frontier-pressure-always",
+                        action="store_true",
+                        help="Run frontier pressure on every eligible EXPLORE tick instead "
+                             "of only after yaw/nonprogress runs. Without this, any "
+                             "translation proposal resets frontier authority for a tick and "
+                             "a guard conversion to the opposite yaw can lock the robot in "
+                             "a two-tick align/convert cycle.")
     parser.add_argument("--learned-local-policy-frontier-pressure-pre-claim",
                         action="store_true",
                         help="Arm frontier pressure from tick 0 instead of only after the "
@@ -9888,7 +9895,10 @@ def main() -> int:
                 if (
                     frontier_after > 0
                     and frontier_pressure_state_allowed
-                    and learned_local_policy_pressure_run >= frontier_after
+                    and (
+                        learned_local_policy_pressure_run >= frontier_after
+                        or bool(args.learned_local_policy_frontier_pressure_always)
+                    )
                     and primitive_outcomes is not None
                     and learned_local_online_map is not None
                     and (
