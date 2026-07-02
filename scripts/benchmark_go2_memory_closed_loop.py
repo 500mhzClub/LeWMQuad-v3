@@ -5294,7 +5294,11 @@ class FrontierExplorer:
         self.last_bearing = float(bearing)
         if abs(bearing) > self.yaw_bearing_threshold:  # face the waypoint
             return "yaw_left" if bearing > 0 else "yaw_right"
-        if not _look_ahead_free(grid_global[0], pos[:2], yaw, self.lookahead_m):
+        if not self.optimistic_free_graph and not _look_ahead_free(
+            grid_global[0], pos[:2], yaw, self.lookahead_m
+        ):
+            # Manifest-grid lookahead is privileged; in online_frontier mode
+            # the learned wall guard downstream owns pre-contact safety.
             return "yaw_left" if bearing >= 0 else "yaw_right"
         if abs(bearing) < self.forward_bearing_threshold:
             return self.forward_primitive
