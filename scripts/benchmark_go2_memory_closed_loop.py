@@ -1955,6 +1955,23 @@ class OnlineEgomotionMap:
             base_log["reason"] = "no_accepted_frontier_pressure"
             base_log["rejected_candidates"] = rejected[:5]
             return None, base_log
+        if (
+            route_bearing is not None
+            and abs(float(route_bearing)) >= 0.28
+            and not any(bool(item[2].get("route_step")) for item in scored)
+        ):
+            # No accepted candidate advances the frontier route and the route
+            # is off-bearing: align first. Without this, an unblocked arc that
+            # points away from the route wins on novelty/progress every tick
+            # and the robot orbits in place next to its own frontier.
+            selected_yaw = "yaw_left" if float(route_bearing) > 0.0 else "yaw_right"
+            return selected_yaw, {
+                **base_log,
+                "selected": selected_yaw,
+                "reason": "route_align_yaw_over_nonroute",
+                "route_align_threshold": 0.28,
+                "rejected_candidates": rejected[:5],
+            }
         selected_scored = scored
         if bool(prefer_unguarded_candidates):
             unguarded_scored = [
