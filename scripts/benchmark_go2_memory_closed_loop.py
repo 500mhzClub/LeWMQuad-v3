@@ -6147,6 +6147,12 @@ def main() -> int:
                              "without counting it as a contact-like stall. This is a "
                              "runtime-safe proprioceptive progress guard for repeated "
                              "false-clear learned action predictions.")
+    parser.add_argument("--stability-guard-roll-pitch-threshold", type=float, default=0.0,
+                        help="If >0 (physical mode), when the previous tick's |roll| or "
+                             "|pitch| meets this threshold, hold in place for "
+                             "--stability-guard-hold-ticks so the gait settles instead of "
+                             "levering the body over against a wall. Proprioceptive only.")
+    parser.add_argument("--stability-guard-hold-ticks", type=int, default=4)
     parser.add_argument("--learned-local-online-map-rotation-stall-block-ticks",
                         type=int, default=0,
                         help="If >0, after this many consecutive turn ticks with almost no "
@@ -8379,6 +8385,8 @@ def main() -> int:
         ),
         "learned_local_online_map_low_progress_block_ticks": 0,
         "learned_local_online_map_rotation_stall_blocks": 0,
+        "stability_guard_events": 0,
+        "stability_guard_hold_ticks": 0,
         "learned_local_policy_max_turn_run": 0,
         "learned_local_policy_nonprogress_ticks": 0,
         "learned_local_policy_max_nonprogress_run": 0,
@@ -8494,6 +8502,9 @@ def main() -> int:
     learned_local_policy_frontier_noop_run = 0
     learned_local_rotation_stall_streak = 0
     learned_local_last_route_next: tuple[int, int] | None = None
+    stability_hold_remaining = 0
+    prev_post_roll = 0.0
+    prev_post_pitch = 0.0
     learned_topology_route_state: dict[str, Any] = {}
     learned_local_online_map = (
         OnlineEgomotionMap(
@@ -11090,6 +11101,28 @@ def main() -> int:
             val = wall_guard.get(guard_key)
             if val is not None:
                 wall_metrics[key] = val if wall_metrics[key] is None else min(float(wall_metrics[key]), float(val))
+        if (
+            float(args.stability_guard_roll_pitch_threshold) > 0.0
+            and args.mode == "physical"
+        ):
+            if stability_hold_remaining > 0:
+                primitive = "hold"
+                stability_hold_remaining -= 1
+                wall_metrics["stability_guard_hold_ticks"] += 1
+                if log_entry is not None:
+                    log_entry["stability_guard_hold"] = True
+            elif max(abs(float(prev_post_roll)), abs(float(prev_post_pitch))) >= float(
+                args.stability_guard_roll_pitch_threshold
+            ):
+                # Proprioceptive capsize prevention: yawing while pressed
+                # against a wall can lever the body over in a few ticks.
+                # Freeze commands and let the gait settle before continuing.
+                primitive = "hold"
+                stability_hold_remaining = max(0, int(args.stability_guard_hold_ticks) - 1)
+                wall_metrics["stability_guard_events"] += 1
+                wall_metrics["stability_guard_hold_ticks"] += 1
+                if log_entry is not None:
+                    log_entry["stability_guard_hold"] = True
         if log_entry is not None:
             log_entry["requested_primitive"] = requested_primitive
             log_entry["primitive"] = primitive
@@ -11111,6 +11144,8 @@ def main() -> int:
         xy_displacement = float(math.hypot(float(post_pos[0]) - float(pos[0]), float(post_pos[1]) - float(pos[1])))
         post_roll = _roll_from_quat_wxyz(post_quat)
         post_pitch = _pitch_from_quat_wxyz(post_quat)
+        prev_post_roll = float(post_roll)
+        prev_post_pitch = float(post_pitch)
         post_yaw = float(_yaw_from_quat_wxyz(post_quat))
         post_tip = max(abs(post_roll), abs(post_pitch))
         post_base_z = float(post_pos[2])
