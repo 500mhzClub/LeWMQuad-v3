@@ -6153,6 +6153,10 @@ def main() -> int:
                              "--stability-guard-hold-ticks so the gait settles instead of "
                              "levering the body over against a wall. Proprioceptive only.")
     parser.add_argument("--stability-guard-hold-ticks", type=int, default=4)
+    parser.add_argument("--stability-guard-primitive", default="hold",
+                        help="Recovery primitive when the stability guard fires. hold "
+                             "freezes in place; backward steps out of a wall-lean, which "
+                             "is statically stable and cannot be fixed by holding.")
     parser.add_argument("--learned-local-online-map-rotation-stall-block-ticks",
                         type=int, default=0,
                         help="If >0, after this many consecutive turn ticks with almost no "
@@ -11106,7 +11110,7 @@ def main() -> int:
             and args.mode == "physical"
         ):
             if stability_hold_remaining > 0:
-                primitive = "hold"
+                primitive = str(args.stability_guard_primitive)
                 stability_hold_remaining -= 1
                 wall_metrics["stability_guard_hold_ticks"] += 1
                 if log_entry is not None:
@@ -11116,8 +11120,9 @@ def main() -> int:
             ):
                 # Proprioceptive capsize prevention: yawing while pressed
                 # against a wall can lever the body over in a few ticks.
-                # Freeze commands and let the gait settle before continuing.
-                primitive = "hold"
+                # A wall-lean is statically stable, so holding cannot right
+                # the body; the recovery primitive must step away from it.
+                primitive = str(args.stability_guard_primitive)
                 stability_hold_remaining = max(0, int(args.stability_guard_hold_ticks) - 1)
                 wall_metrics["stability_guard_events"] += 1
                 wall_metrics["stability_guard_hold_ticks"] += 1
