@@ -3108,6 +3108,7 @@ def _learned_action_guard_select(
     body_clearance_saturated_veto_primitives: set[str] | None = None,
     body_clearance_saturated_veto_selected_primitives: set[str] | None = None,
     body_clearance_yaw_direction_veto_prob: float = 1.01,
+    body_clearance_yaw_contact_veto_prob: float = 1.01,
     body_clearance_yaw_direction_veto_margin: float = 0.05,
     forward_progress_floor: float | None = None,
     forward_progress_floor_min_blocked_prob: float | None = None,
@@ -3186,6 +3187,9 @@ def _learned_action_guard_select(
     body_clearance_yaw_direction_vetoed = False
     body_clearance_yaw_direction_veto_from: str | None = None
     body_clearance_yaw_direction_veto_from_prob: float | None = None
+    body_clearance_yaw_contact_vetoed = False
+    body_clearance_yaw_contact_veto_from: str | None = None
+    body_clearance_yaw_contact_veto_from_prob: float | None = None
     blocked_hard_vetoed = False
     blocked_hard_veto_from: str | None = None
     blocked_hard_veto_from_prob: float | None = None
@@ -3530,6 +3534,38 @@ def _learned_action_guard_select(
                         selected_score = float(score)
                         selected_body_clearance_penalty = float(body_clearance_penalty)
                         selected_progress_floor_penalty = float(progress_floor_penalty)
+            selected_clearance_prob = selected_pred.get("clearance_blocked_prob")
+            yaw_contact_veto_allowed = (
+                body_clearance_enabled
+                and not force_single_candidate_active
+                and float(body_clearance_yaw_contact_veto_prob) <= 1.0
+                and selected in ("yaw_left", "yaw_right")
+                and selected_clearance_prob is not None
+                and float(selected_clearance_prob) >= float(body_clearance_yaw_contact_veto_prob)
+            )
+            if yaw_contact_veto_allowed:
+                # Yaw-in-place with the swept body already in contact can lever
+                # the base over a wall lip in a single tick (unrecoverable
+                # capsize). When the learned clearance head flags the yaw
+                # itself, back out instead of rotating.
+                backward_candidates = [
+                    (score, name, pred, body_clearance_penalty, progress_floor_penalty)
+                    for score, name, pred, body_clearance_penalty, progress_floor_penalty in scored
+                    if name == "backward" and pred.get("clearance_blocked_prob") is not None
+                ]
+                if backward_candidates:
+                    score, name, pred, body_clearance_penalty, progress_floor_penalty = (
+                        backward_candidates[0]
+                    )
+                    if float(pred["clearance_blocked_prob"]) < float(selected_clearance_prob):
+                        body_clearance_yaw_contact_vetoed = True
+                        body_clearance_yaw_contact_veto_from = selected
+                        body_clearance_yaw_contact_veto_from_prob = float(selected_clearance_prob)
+                        selected = name
+                        selected_pred = pred
+                        selected_score = float(score)
+                        selected_body_clearance_penalty = float(body_clearance_penalty)
+                        selected_progress_floor_penalty = float(progress_floor_penalty)
             selected_prob_for_blocked_veto = selected_pred.get("blocked_prob")
             selected_blocked_for_veto = bool(
                 bool(blocked_hard_veto)
@@ -3857,6 +3893,14 @@ def _learned_action_guard_select(
         ),
         "body_clearance_yaw_direction_veto_margin": _round_float(
             float(body_clearance_yaw_direction_veto_margin), 4
+        ),
+        "body_clearance_yaw_contact_veto": bool(body_clearance_yaw_contact_vetoed),
+        "body_clearance_yaw_contact_veto_prob": _round_float(
+            float(body_clearance_yaw_contact_veto_prob), 4
+        ),
+        "selected_before_body_clearance_yaw_contact_veto": body_clearance_yaw_contact_veto_from,
+        "selected_before_body_clearance_yaw_contact_veto_prob": _round_float(
+            body_clearance_yaw_contact_veto_from_prob, 4
         ),
         "selected_before_body_clearance_yaw_direction_veto": body_clearance_yaw_direction_veto_from,
         "selected_before_body_clearance_yaw_direction_veto_prob": _round_float(
@@ -6673,6 +6717,12 @@ def main() -> int:
                         default="arc_left,arc_right",
                         help="Comma-separated selected primitives eligible for "
                              "--body-clearance-saturated-veto-prob.")
+    parser.add_argument("--body-clearance-yaw-contact-veto-prob", type=float, default=1.01,
+                        help="If a selected yaw-in-place primitive has at least this learned "
+                             "swept-body clearance blocked probability, execute backward "
+                             "instead: rotating with the body in wall contact can lever the "
+                             "base over a lip in one tick (unrecoverable capsize). Values "
+                             "above 1 disable. Learned clearance head only.")
     parser.add_argument("--body-clearance-yaw-direction-veto-prob", type=float, default=1.01,
                         help="If a selected pure-yaw primitive has at least this learned "
                              "swept-body blocked probability, allow the learned clearance "
@@ -10521,6 +10571,9 @@ def main() -> int:
                 body_clearance_saturated_veto_primitives=body_clearance_saturated_veto_primitives,
                 body_clearance_saturated_veto_selected_primitives=(
                     body_clearance_saturated_veto_selected_primitives or None
+                ),
+                body_clearance_yaw_contact_veto_prob=float(
+                    args.body_clearance_yaw_contact_veto_prob
                 ),
                 body_clearance_yaw_direction_veto_prob=float(
                     args.body_clearance_yaw_direction_veto_prob
