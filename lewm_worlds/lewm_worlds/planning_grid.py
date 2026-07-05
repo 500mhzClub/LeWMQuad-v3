@@ -101,6 +101,7 @@ class InflatedOccupancyGrid:
         clearance = _batch_distance_to_boxes(
             gx.ravel(), gy.ravel(), self._obstacle_aabbs
         ).reshape(self._nx, self._ny)
+        self._obstacle_clearance = clearance
         self._free = clearance >= self._inflation
 
     # ------------------------------------------------------------------
@@ -129,6 +130,12 @@ class InflatedOccupancyGrid:
 
         return self._free
 
+    @property
+    def obstacle_clearance_grid_m(self) -> np.ndarray:
+        """Read-only view of point-to-obstacle clearance at grid-cell centers."""
+
+        return self._obstacle_clearance
+
     def to_grid(self, xy: tuple[float, float]) -> tuple[int, int]:
         ix = int(math.floor((float(xy[0]) - self._origin[0]) / self._cell_size))
         iy = int(math.floor((float(xy[1]) - self._origin[1]) / self._cell_size))
@@ -144,6 +151,33 @@ class InflatedOccupancyGrid:
         if 0 <= ix < self._nx and 0 <= iy < self._ny:
             return bool(self._free[ix, iy])
         return False
+
+    def obstacle_clearance_m(self, xy: tuple[float, float]) -> float:
+        """Return continuous point clearance to the nearest obstacle surface.
+
+        Unlike :meth:`is_free`, this query is evaluated at the exact world
+        coordinate rather than the containing raster cell. Points outside the
+        finite planning grid return ``0.0`` so benchmark trajectories cannot
+        treat leaving the represented world as open space.
+        """
+
+        ix, iy = self.to_grid(xy)
+        if not (0 <= ix < self._nx and 0 <= iy < self._ny):
+            return 0.0
+        point_x = np.asarray([float(xy[0])], dtype=np.float32)
+        point_y = np.asarray([float(xy[1])], dtype=np.float32)
+        return float(_batch_distance_to_boxes(point_x, point_y, self._obstacle_aabbs)[0])
+
+    def configuration_clearance_m(self, xy: tuple[float, float]) -> float:
+        """Return signed clearance after applying the configured body inflation.
+
+        Positive values are collision-free margins, zero lies on the inflated
+        configuration-space boundary, and negative values are unsafe. The
+        query is continuous with respect to the obstacle geometry even though
+        :meth:`is_free` remains a raster lookup for A*.
+        """
+
+        return self.obstacle_clearance_m(xy) - self._inflation
 
     # ------------------------------------------------------------------
     # Queries
@@ -221,6 +255,11 @@ class InflatedOccupancyGrid:
         self,
         start_xy: tuple[float, float],
         goal_xy: tuple[float, float],
+        *,
+        clearance_weight: float = 0.0,
+        clearance_target_m: float = 0.0,
+        allow_diagonal: bool = True,
+        blocked_cells: set[tuple[int, int]] | None = None,
     ) -> GridPath | None:
         """8-connected A* with octile heuristic. Returns world waypoints or None."""
 
@@ -228,6 +267,7 @@ class InflatedOccupancyGrid:
         goal = self.to_grid(goal_xy)
         nx, ny = self._nx, self._ny
         free = self._free
+        blocked = set(blocked_cells or ())
 
         if not (0 <= goal[0] < nx and 0 <= goal[1] < ny) or not free[goal]:
             return None
@@ -242,15 +282,25 @@ class InflatedOccupancyGrid:
             return GridPath(waypoints_xy=(self.to_world(goal),), cost_cells=0.0)
 
         diag = math.sqrt(2.0)
-        neighbors = (
-            ((-1, -1), diag), ((-1, 0), 1.0), ((-1, 1), diag),
-            ((0, -1), 1.0),                    ((0, 1), 1.0),
-            ((1, -1), diag),  ((1, 0), 1.0),  ((1, 1), diag),
-        )
+        if allow_diagonal:
+            neighbors = (
+                ((-1, -1), diag), ((-1, 0), 1.0), ((-1, 1), diag),
+                ((0, -1), 1.0),                    ((0, 1), 1.0),
+                ((1, -1), diag),  ((1, 0), 1.0),  ((1, 1), diag),
+            )
+        else:
+            neighbors = (
+                ((-1, 0), 1.0),
+                ((0, -1), 1.0),
+                ((0, 1), 1.0),
+                ((1, 0), 1.0),
+            )
 
         def heuristic(a: tuple[int, int], b: tuple[int, int]) -> float:
             dx_ = abs(a[0] - b[0])
             dy_ = abs(a[1] - b[1])
+            if not allow_diagonal:
+                return float(dx_ + dy_)
             return (dx_ + dy_) + (diag - 2.0) * min(dx_, dy_)
 
         open_heap: list[tuple[float, int, tuple[int, int]]] = []
@@ -282,6 +332,8 @@ class InflatedOccupancyGrid:
                 if not free[ni, nj]:
                     continue
                 neighbour = (ni, nj)
+                if neighbour in blocked and neighbour != goal:
+                    continue
                 if neighbour in closed:
                     continue
                 # Block diagonal corner-cutting: the diagonal step is only
@@ -290,7 +342,18 @@ class InflatedOccupancyGrid:
                 if di != 0 and dj != 0:
                     if not free[cx + di, cy] or not free[cx, cy + dj]:
                         continue
-                tentative = cur_g + step
+                clearance_penalty = 0.0
+                if float(clearance_weight) > 0.0:
+                    clearance_deficit = max(
+                        0.0,
+                        float(clearance_target_m)
+                        - (float(self._obstacle_clearance[ni, nj]) - self._inflation),
+                    )
+                    clearance_penalty = float(clearance_weight) * clearance_deficit / max(
+                        self._cell_size,
+                        1e-6,
+                    )
+                tentative = cur_g + step + clearance_penalty
                 if tentative < gscore.get(neighbour, math.inf):
                     came_from[neighbour] = cur
                     gscore[neighbour] = tentative

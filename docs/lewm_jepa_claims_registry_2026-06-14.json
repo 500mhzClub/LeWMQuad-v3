@@ -1,0 +1,688 @@
+{
+  "schema": "lewm_jepa_claims_registry_v0",
+  "audited_branch": "jepa-spatial-world-model-nav",
+  "audited_commit": "5c06bba76955c37b7223e9255756dffa59338680",
+  "companion_audit": "docs/lewm_jepa_repository_research_audit_2026-06-14.md",
+  "claims": [
+    {
+      "id": "phase2_persistence_failure",
+      "status": "established_within_registered_bounded_experiment",
+      "evidence_class": "A",
+      "permitted_wording": "Every tested valid non-collapsed Phase 2B/2C predictor loses to latent persistence at the first action block under the registered bounded protocol.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2b_bounded_factorial/analysis.json",
+          "sha256": "39d5b7f497e9517e9410c6b7554d5900884302fd648c96cfc12100fde053141b"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2c_ema_gate/analysis.json",
+          "sha256": "0450317eb175c6de033260f28c589707a36833a84b37460a9e7d85e896a0fb02"
+        }
+      ]
+    },
+    {
+      "id": "phase2_unregularized_spatial_collapse",
+      "status": "established_within_registered_bounded_experiment",
+      "evidence_class": "A",
+      "permitted_wording": "The tested unregularized spatial cell collapses under the registered Phase 2B protocol.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2b_bounded_factorial/analysis.json",
+          "sha256": "39d5b7f497e9517e9410c6b7554d5900884302fd648c96cfc12100fde053141b"
+        }
+      ]
+    },
+    {
+      "id": "phase2_action_sensitivity",
+      "status": "supported_but_limited",
+      "evidence_class": "A_plus_B",
+      "permitted_wording": "The tested models show little measured advantage from real actions under the implemented controls; the exact degree of action insensitivity is unresolved because the legacy controls contain false negatives.",
+      "prohibited_wording": "The model ignores actions.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2b_bounded_factorial/analysis.json",
+          "sha256": "39d5b7f497e9517e9410c6b7554d5900884302fd648c96cfc12100fde053141b"
+        },
+                {
+                  "artifact": ".generated/jepa_counterfactual/phase2_stage0_stage1_audit.json",
+                  "sha256": "c8b01235d8fec19ae636760b85c37c18107a7d318c93ab5b972ec94fd58f0634",
+                  "status": "local_generated_audit"
+                }
+              ]
+            },
+            {
+              "id": "phase2_training_set_persistence_failure",
+              "status": "post_hoc_diagnostic",
+              "evidence_class": "B",
+              "permitted_wording": "The final Phase 2B pooled and regularized spatial checkpoints also lose to persistence on their own complete-valid training rows.",
+              "evidence": [
+                {
+                  "artifact": ".generated/jepa_counterfactual/phase2_stage0_spatial_var_frozen_diagnostic.json",
+                  "sha256": "44405e39b75ed6206a2c02dce0308d5c799d3fbec7f1e4ed0651e0f7e5ef70ea"
+                },
+                {
+                  "artifact": ".generated/jepa_counterfactual/phase2_stage0_pooled_frozen_diagnostic.json",
+                  "sha256": "f7a9aec5b5ab1cb7c60e6572b4ce90bd29f2bd5b5e4fcc1fd0f72fdd1b2f1fe3"
+                }
+              ]
+            },
+            {
+              "id": "phase2_ema_result",
+      "status": "established_for_tested_configuration_only",
+      "evidence_class": "A",
+      "permitted_wording": "The tested Phase 2C EMA configuration fails the registered prediction and action gates and exhibits increasing feature scale and prediction loss.",
+      "prohibited_wording": "EMA is unsuitable for navigation.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2c_ema_gate/analysis.json",
+          "sha256": "0450317eb175c6de033260f28c589707a36833a84b37460a9e7d85e896a0fb02"
+        }
+      ]
+    },
+    {
+      "id": "spatial_jepa_general_unsuitability",
+      "status": "not_established",
+      "evidence_class": "none",
+      "prohibited_wording": "Spatial JEPA cannot learn navigation dynamics."
+    },
+    {
+      "id": "phase2d_registered_gpu_attempt",
+      "status": "failed_before_test_access",
+      "evidence_class": "B",
+      "permitted_wording": "The registered-minimum Phase 2D GPU attempt did not produce a valid C2 checkpoint: C0/C1 failed persistence gates, original C2 failed numerically, and detached-control C2 stayed finite but collapsed and failed the validation gate.",
+      "prohibited_wording": "Phase 2D proves spatial JEPA is impossible.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/full_run_matrix_report_gpu.json",
+          "sha256": "fee304dc4fc695eb2d885eb8358730ad73c8a168b646351e18d947f33132e7c7"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2d_c2_detach_clip1_smoke.json",
+          "sha256": "57ffad62862c89bcb0c58462211c6353dc8edde0b55223cfb15cc0f8984e4073"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2d_c2_detach_clip1_smoke_gate.json",
+          "sha256": "32b74b2fb367ff13f0b4470c396220d4eadb31da9d67b554738bc126463a163c"
+        }
+      ],
+      "limitations": [
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "detached-control C2 is an amended pilot, not the preregistered C2 result"
+      ]
+    },
+    {
+      "id": "phase2e_slot_geometry_pilot",
+      "status": "failed_bounded_smoke_before_full_launch",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2E learned-slot target/state geometry pilot completed on the ROCm GPU runtime but failed the explicit validation gate by collapse, low effective rank, negative hard-negative action advantage, insufficient zero-action advantage, and a persistence ratio above 1.0.",
+      "prohibited_wording": "Learned slots cannot support JEPA navigation.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2e_slot_c2_smoke.json",
+          "sha256": "8db813c81d57f9058b9816ab76683b34a23385f731394d4b5fe11aadece472ae"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2e_slot_c2_smoke_gate.json",
+          "sha256": "12e2103337e083a19e313af585e52a05300e4240a7ea263298a1bd8a9e69d759"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke only",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "learned slots were used as target/state geometry, not claimed object slots"
+      ]
+    },
+    {
+      "id": "phase2f_consequence_head_pilot",
+      "status": "failed_bounded_smoke_before_full_launch",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2F sequence-level consequence-head pilot did not produce a promotable checkpoint: C2 consequence variants failed numerically before validation, and the C1 consequence-isolation variant completed but failed stability, hard-negative action, zero-action, and persistence gates.",
+      "prohibited_wording": "Navigation-event supervision cannot help JEPA navigation.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2f_consequence_c1_lr1e4_lam1_smoke.json",
+          "sha256": "a5f373bc863da92479923e1eddc9326ed5133c32defa7503b3d81196470d85ec"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2f_consequence_c1_lr1e4_lam1_smoke_gate.json",
+          "sha256": "d74ae516dae6771872df3680d08e024ba3df11c86fc77f53fe461a68150ada3c"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "C2 consequence variants produced no checkpoint or JSON artifact because fail-fast gradient checks stopped them before validation",
+        "the tested consequence head was sequence-level and mean-pooled, not a dedicated affordance/dynamics state"
+      ]
+    },
+    {
+      "id": "phase2g_action_utility_head_pilot",
+      "status": "failed_bounded_smoke_before_full_launch",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2G source-local action-utility head attached to predicted spatial tokens completed on the ROCm GPU runtime but failed both the utility-selection promotion threshold and the explicit latent validation gate.",
+      "prohibited_wording": "Action-utility supervision cannot support JEPA navigation.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2g_action_utility_c1_lr1e4_lam1_smoke.json",
+          "sha256": "9051a1a303c9617cda7504417c033a0ba8887e4cda10c820af5023c93e96be1a"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2g_action_utility_c1_lr1e4_lam1_smoke_gate.json",
+          "sha256": "fec14dce4a1d9279ac3ba9bb566d929ab3fc0f9fb5737e036f75d793cf6fa596"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested utility head consumed mean-pooled predicted spatial tokens, not a dedicated source-conditioned affordance state",
+        "the utility target itself still requires a source-local label and action-only baseline audit"
+      ]
+    },
+    {
+      "id": "phase2h_action_utility_label_audit",
+      "status": "completed_train_validation_audit",
+      "evidence_class": "B",
+      "permitted_wording": "The Phase 2H train/validation audit found complete utility-target coverage and non-trivial source-local utility spread; source-independent action-only priors did not explain exact validation action selection.",
+      "prohibited_wording": "The utility labels are fully validated for deployment.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2h_action_utility_audit.json",
+          "sha256": "d061a338cc71c52440057bef98bc1e0d7ccaa439f32892d91d22b61fd66d6b18"
+        }
+      ],
+      "limitations": [
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the audit tests source-independent action priors, not learned source-conditioned utility prediction",
+        "utility labels are generator-derived supervision, not real robot outcomes"
+      ]
+    },
+    {
+      "id": "phase2i_source_action_utility_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2I source-conditioned utility ranker completed on the ROCm GPU runtime and improved exact top-1 validation utility selection over non-trainable action-only priors, but failed the promotion gate by collapsing to a global backward-first selection pattern with worse utility regret than action-only baselines. A matched trainable action-only control reached the same validation summary, so the source-conditioned concatenation model did not measurably use the source observation.",
+      "prohibited_wording": "Source-conditioned affordance learning is solved.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2i_source_action_utility_smoke.json",
+          "sha256": "68669e48fb791ec901a5b88c03029201aadb594678df25f3ed62e15e902e5fdb"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2i_source_action_utility_smoke_gate.json",
+          "sha256": "f9df34b956df445522fb1e11b13c0fc2ca7f43463644838739c6db0ba5034b30"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2i_action_only_utility_control_smoke.json",
+          "sha256": "8a6ea32249ba6425de6ee552e27aa217902b2dbe9db31cc0af2dafef08b52832"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2i_action_only_utility_control_smoke_gate.json",
+          "sha256": "7675641adeecf3159f49127d24a26dd4c8d06aa954100d16ad3d649b3bbcd72d"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested source/action fusion was a concatenation ranker and did not force source-action interaction",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2j_film_utility_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2J FiLM source-action utility ranker completed on the ROCm GPU runtime but produced the same validation utility summary as its matched trainable action-only FiLM control, selecting backward/backward for all 256 validation source states and failing the executable utility gate.",
+      "prohibited_wording": "Source-action interaction cannot support affordance learning.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2j_film_source_action_utility_smoke.json",
+          "sha256": "6043230e494c7279522e6949cfb307a49afa1323ebe05b17b05109e215fce812"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2j_film_source_action_utility_smoke_gate.json",
+          "sha256": "cf7c8f2d2d54c3425137c2b30edf8c9ecc86182a94d27b614214bc1fd12dbbf7"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2j_film_action_only_utility_control_smoke.json",
+          "sha256": "1e07daea66bea26b0f896c4fb77bf6f86543f240a6f6cb9fd692129a73fe5615"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2j_film_action_only_utility_control_smoke_gate.json",
+          "sha256": "09d6b49eb34d1c086879e50fd3f7bea7946f3b05b7f175753ad9cf263711d9d9"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested FiLM scorer still exposed standalone action-derived features to the utility head",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2k_interaction_only_utility_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2K interaction-only source-action utility ranker completed on the ROCm GPU runtime and successfully disabled the matched action-only control's action-identity path, but the source-action model still selected backward/backward for all 256 validation source states and failed the executable utility gate.",
+      "prohibited_wording": "Interaction-only source-action scoring cannot support affordance learning.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2k_interaction_source_action_utility_smoke.json",
+          "sha256": "fff5aec1957001485a97cb3094cd004dc6580d701fe4df60f57d984cf1868d05"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2k_interaction_source_action_utility_smoke_gate.json",
+          "sha256": "1ac56689ff10f0b23ffd9100ff5e51173b229a714bc6fc7ed5d50e7936e97b7d"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2k_interaction_action_only_utility_control_smoke.json",
+          "sha256": "8b56a04b57df04b4ecd5cca5befa4e7ba3992046471373908b4c5385630681f8"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2k_interaction_action_only_utility_control_smoke_gate.json",
+          "sha256": "cce58a00d398593411afffd42f0d3e2eb15a7f19d2dc56b73188158dd14e9b30"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested objective still used hard argmax utility cross-entropy",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2l_soft_utility_objective_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2L soft utility-distribution objective completed on the ROCm GPU runtime and changed the exact sequence failure mode, but the source-action model still selected a backward-first action for all 256 validation source states, scored zero exact top-1 matches, and failed the executable utility gate.",
+      "prohibited_wording": "Soft utility objectives cannot support affordance learning.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2l_soft_interaction_source_action_utility_smoke.json",
+          "sha256": "03021283fa4692f47c6dd9887d42f39251297ded9a3aa5de5a43a75b08366e96"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2l_soft_interaction_source_action_utility_smoke_gate.json",
+          "sha256": "786cc1787ad9e3e1112ee7e019181156e328bbaeae047c42ba684f1bb81361a4"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2l_soft_interaction_action_only_utility_control_smoke.json",
+          "sha256": "0851ba8a37697fa8f67e3dd51c052c0755538c451c4bd319f3fcfd967e7ca1fd"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2l_soft_interaction_action_only_utility_control_smoke_gate.json",
+          "sha256": "eb80e79bce313b481cc4315f9afe89833a1ca1f3b99fb8b04d2cc6d11ccbf869"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested source encoder remained the small RGB CLS encoder from the utility diagnostic",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2m_primitive_affordance_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2M source-only first-primitive affordance model completed on the ROCm GPU runtime and improved primitive match over the source-independent primitive prior, but failed the executable gate by insufficient primitive match, worse utility regret than the prior, and a selected primitive distribution more collapsed than the oracle distribution.",
+      "prohibited_wording": "Source-only primitive affordance learning is impossible.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2m_primitive_affordance_smoke.json",
+          "sha256": "87a60d9182343c6d93779d44cc63871d1f1fe7565d31db6fb6e1611aa965e2bd"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2m_primitive_affordance_smoke_gate.json",
+          "sha256": "122dc5781f22a9a76dc41a32524aa3891d63c8c46c763a136f414c968e515e61"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested target was a scalar max-over-continuations primitive utility, not factorized geometry supervision",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2n_class_balanced_primitive_affordance_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2N class-balanced hard-oracle primitive affordance objective completed on the ROCm GPU runtime and marginally improved primitive match over Phase 2M, but failed the executable gate by insufficient primitive match, worse utility regret than both Phase 2M and the primitive action-only prior, and a selected primitive distribution more collapsed than the oracle distribution.",
+      "prohibited_wording": "Class balancing proves source-only affordance learning cannot work.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2n_class_balanced_primitive_affordance_smoke.json",
+          "sha256": "e038e1fbb6b91fe36874362c6b4c7ed623e05ceca9c1f06c8355ffd3b081f695"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2n_class_balanced_primitive_affordance_smoke_gate.json",
+          "sha256": "7375f1fe80efae44fcb0f74bfb586be6d05499052946fbdaf4fcedff45a45532"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested objective used hard oracle primitive labels without factorized geometry supervision",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2o_factorized_affordance_target_audit",
+      "status": "completed_train_validation_audit",
+      "evidence_class": "B",
+      "permitted_wording": "The Phase 2O target audit found complete train/validation coverage for the core factorized primitive-affordance targets: safety/recoverability, task gain, p05 clearance, minimum clearance, and unsafe fraction. Heading alignment is partially available and should be treated as an optional tie-breaker.",
+      "prohibited_wording": "The factorized affordance model is validated.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2o_factorized_affordance_audit.json",
+          "sha256": "5e0951c02e86e1466d12f1264d9064de830f141044fee750d3387a5a7609bdb1"
+        }
+      ],
+      "limitations": [
+        "target coverage audit only",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "factor targets are generator-derived supervision",
+        "no factorized model has passed the primitive affordance gate yet"
+      ]
+    },
+    {
+      "id": "phase2p_factorized_affordance_model_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2P source-only factorized primitive affordance model completed on the ROCm GPU runtime with finite metrics, but failed the executable primitive gate by scoring below the primitive action-only prior on validation primitive match, having worse utility regret than the prior, and selecting a primitive distribution more collapsed than the oracle distribution.",
+      "prohibited_wording": "Factorized affordance supervision cannot support JEPA navigation.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2p_factorized_affordance_smoke.json",
+          "sha256": "b62634f198cf968f940606c70c939bc799140a61da8fd6ce7f7e869f8259c0c2"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2p_factorized_affordance_smoke_gate.json",
+          "sha256": "76ac702823b84f8a70848b7362bfb3c0abfb6793beccee9b0d2893896dce36b1"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened",
+        "the tested model used the small RGB source-only diagnostic encoder",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2q_factorized_affordance_ceiling_audit",
+      "status": "passed_train_validation_ceiling_audit",
+      "evidence_class": "B",
+      "permitted_wording": "Using true Phase 2O factor targets, the Phase 2P safety-first selector passes the primitive gate on train and validation, so the target/selector contract is coherent enough to use as a ceiling for the next learned affordance-state pilot.",
+      "prohibited_wording": "The factorized affordance model is solved.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2q_factorized_affordance_ceiling_audit.json",
+          "sha256": "3140c18125fc625ae30c40a8c84a4801f879ff4927651a848c1b5d1468d3fc62"
+        }
+      ],
+      "limitations": [
+        "privileged true-factor ceiling only",
+        "train and validation evidence only",
+        "test_id and test_hard remain unopened for reported metrics and model selection",
+        "factor targets are generator-derived supervision",
+        "this is not a learned model and not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2r_geometry_affordance_pilot",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2R privileged geometry-feature affordance model completed on the ROCm GPU runtime and improved primitive match and distribution collapse versus the RGB source-only Phase 2P pilot, but failed the executable primitive gate because validation primitive match remained below 0.50 and utility regret was worse than the primitive action-only prior.",
+      "prohibited_wording": "Privileged geometry cannot support affordance learning.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2r_geometry_affordance_smoke.json",
+          "sha256": "066fa5a998437030944e41380b2f5c5ca8316a769dba3ec2d12546241b2f21dd"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2r_geometry_affordance_smoke_gate.json",
+          "sha256": "118f4720ffaa1c80b1a4436bc2f8bfeaded961c2cd67d26c223409313336b1ab"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "features are privileged pose-derived and scene-derived geometry features",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2s_swept_geometry_affordance_pilot",
+      "status": "passed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2S action-conditioned swept-geometry affordance model completed on the ROCm GPU runtime and passed the executable primitive gate on validation, with primitive match above 0.50, utility regret below the primitive action-only prior, and selected primitive distribution within the registered collapse bound.",
+      "prohibited_wording": "The JEPA world model is validated for navigation.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2s_swept_geometry_affordance_smoke.json",
+          "sha256": "7c3f7761837972e1f3e231cf4b241bb24e7bfb0d2a68b599848e8bb6bd02bf1e"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2s_swept_geometry_affordance_smoke_gate.json",
+          "sha256": "109e16a29bdd383b7bb008775e5722662eb8c3e4704a907dd717f9bc1bb49a85"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "features are privileged action-conditioned kinematic swept-geometry features",
+        "this is an affordance/utility diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2t_factorized_jepa_affordance_integration_smoke",
+      "status": "failed_bounded_smoke_before_full_training",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2T C2 spatial-JEPA integration with an auxiliary factorized future-affordance head completed on the ROCm GPU runtime but failed both the primitive-affordance gate and the Phase 2D spatial action-identifiability/persistence gate.",
+      "prohibited_wording": "Phase 2S swept-geometry affordance targets are invalid.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2t_factorized_jepa_affordance_smoke.json",
+          "sha256": "e9205c0983f5cf1dcb58221ff3ddb10c04dd7b6dfac5a21f456b2564dd8f105a"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2t_factorized_jepa_affordance_smoke_primitive_gate.json",
+          "sha256": "1b31f7228922d23893708dcdddd21c8108466980c012550f3cfdd522694c3439"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2t_factorized_jepa_affordance_smoke_phase2d_gate.json",
+          "sha256": "b3bc49947736cd076b959df58fefd23935829e379104f2b18d9e2c8b90bde905"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded integration smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "only the C2 patch-token spatial JEPA integration was tested",
+        "this failure does not negate the separate Phase 2S privileged swept-geometry diagnostic"
+      ]
+    },
+    {
+      "id": "phase2u_source_action_factorized_affordance_bridge",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2U source-RGB/action-sequence factorized affordance bridge completed on the ROCm GPU runtime and improved primitive match over the primitive action-only prior, but failed the primitive gate because match remained below 0.50 and utility regret was worse than the prior.",
+      "prohibited_wording": "RGB observations cannot support affordance learning.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2u_source_action_factorized_affordance_smoke.json",
+          "sha256": "5e3ae9d356c8caee6b7432053fb7472f2387619146d6f65c337a7528add18d14"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2u_source_action_factorized_affordance_smoke_gate.json",
+          "sha256": "c07e4ba819e461df41e308676a07bfc34c8de94297dfee64b56d9f10e012e554"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded bridge smoke evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "only the small source/action RGB encoder with FiLM interaction was tested",
+        "this is an affordance bridge diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2v_rgb_to_full_swept_state_distillation_bridge",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2V single-frame RGB-to-full-Phase-2S swept-state distillation bridges completed on the ROCm GPU runtime but failed the executable gate; state reconstruction error was finite, but primitive match and regret were worse than required, and the hardest reconstructed features were explicit best-second-action identity columns.",
+      "prohibited_wording": "RGB observations cannot support navigation affordance learning.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2v_swept_state_distillation_smoke.json",
+          "sha256": "82d7ebc0a7d2916d8378b73f1ecd0e31f9e786077d6a20864a258c62af5919a4"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2v_swept_state_distillation_smoke_gate.json",
+          "sha256": "3236f081cbd80c1f031f19dc4dce3b9e6d0ab43d72b309aa342fc7816ce5d42d"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2v_swept_state_distillation_ranked_smoke.json",
+          "sha256": "60165c5166f2327d32ba25c59c66b656ae16816af9b991b479fd65323fe3648e"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2v_swept_state_distillation_ranked_smoke_gate.json",
+          "sha256": "a5b9c6db0811f4753c17461ad276606420d7cac7d6b7fef508a764aa46d967a9"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded bridge evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "only single-frame RGB source observation was tested",
+        "this is a swept-state bridge diagnostic, not a JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2w_sanitized_swept_geometry_teacher_target",
+      "status": "passed_bounded_smoke_before_rgb_or_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2W sanitized privileged swept-geometry target, which removes explicit best-second-action identity features and adds a light primitive-ranking term, passed the executable primitive gate on validation.",
+      "prohibited_wording": "The deployable RGB or JEPA world model is validated.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2w_swept_geometry_no_second_onehot_rank010_smoke.json",
+          "sha256": "733f21996f727cd90d9a168e88d6b827fb79bb4566d6a7bac2b35faa0dbe685a"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2w_swept_geometry_no_second_onehot_rank010_smoke_gate.json",
+          "sha256": "f78106f840ebe38b021f45bbb5e44c349aacd00ea0c9f1cfef3611be533c8bd2"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded privileged-target evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "features remain privileged pose/action/scene-derived swept geometry",
+        "this validates a teacher target, not a deployable RGB bridge or JEPA world model"
+      ]
+    },
+    {
+      "id": "phase2x_rgb_to_sanitized_swept_state_bridge",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2X RGB bridge to the Phase 2W sanitized swept-state target completed on the ROCm GPU runtime and met the registered state reconstruction thresholds, but failed primitive choice and scored worse than the primitive action-only prior.",
+      "prohibited_wording": "The Phase 2W sanitized target is invalid.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2x_source_sanitized_swept_state_rank010_smoke.json",
+          "sha256": "815d68cad1beecf256716096e4b415dcec78f6d89cbcecbf55951a8e4e4e8813"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2x_source_sanitized_swept_state_rank010_smoke_gate.json",
+          "sha256": "8e76f12e2e6758e797ca014125fc88d026f4b953d479e5cab2c205002fd144a1"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded bridge evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "only single-frame RGB source observation was tested",
+        "passing state reconstruction thresholds was not sufficient for primitive action selection"
+      ]
+    },
+    {
+      "id": "phase2y_ranked_geometry_affordance_bridge",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2Y source-local geometry bridge with light primitive-ranking loss completed on the ROCm GPU runtime but failed the primitive gate; local rays plus source and goal pose improved over random and avoided distribution collapse but did not beat the action-only prior on regret or reach the match threshold.",
+      "prohibited_wording": "Metric or depth-like observations cannot support the JEPA navigation objective.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2y_geometry_affordance_rank010_smoke.json",
+          "sha256": "233bb1d866330870ac8a00569256f38239878705bd0a3738473f1483a74425c3"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2y_geometry_affordance_rank010_smoke_gate.json",
+          "sha256": "47ae424c7e11249de1c32e844b6d495e44e1854e8987b90fe92f1ec0c343c72f"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded geometry bridge evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "features are privileged source-local geometry and goal-pose features",
+        "this does not test richer depth-derived occupancy or temporal memory"
+      ]
+    },
+    {
+      "id": "phase2z_local_occupancy_affordance_bridge",
+      "status": "failed_bounded_smoke_before_jepa_integration",
+      "evidence_class": "B",
+      "permitted_wording": "The tested Phase 2Z single-frame local-occupancy affordance bridge completed on the ROCm GPU runtime but failed the primitive gate; local occupancy and candidate swept-path overlays improved over random and avoided final primitive-distribution collapse, but did not reach the match threshold or beat the action-only prior on utility regret.",
+      "prohibited_wording": "Depth-derived or temporally accumulated occupancy cannot support the JEPA navigation objective.",
+      "evidence": [
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2z_occupancy_affordance_rank010_smoke.json",
+          "sha256": "e7f5d1ba61e7b2a43e07e31ac3fdf47d25b215df439134d4b4ba7d5d16300a80"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2z_occupancy_affordance_rank010_smoke_gate.json",
+          "sha256": "3d923fdf5f573f098025c93505ea874f9eda9a49112d806c0b66e220b3cfee29"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2z_occupancy_affordance_rank100_smoke.json",
+          "sha256": "29fbf456603686b1efe229caaa105c9b91e7865bd76883b45696d9865580a667"
+        },
+        {
+          "artifact": ".generated/jepa_counterfactual/phase2d_min_sources/phase2z_occupancy_affordance_rank100_smoke_gate.json",
+          "sha256": "73866fbf64bb2ddd53f521efc818ecf99a495228238be8128bd4eb5bf2050e19"
+        }
+      ],
+      "limitations": [
+        "single-seed bounded occupancy bridge evidence",
+        "train and validation evidence only",
+        "test_id and test_hard are not used for reported metrics or model selection",
+        "features are privileged manifest-derived local occupancy and source-pose features",
+        "this does not test depth-derived temporal occupancy, recurrent belief, DINOv2 patch dynamics, or LeWM-paper-faithful 2D navigation"
+      ]
+    },
+    {
+      "id": "current_research_decision",
+      "status": "registered",
+      "evidence_class": "D",
+      "permitted_wording": "Stop full runs of the current image-aligned Phase 2D C2 objective, the Phase 2E learned-slot pilot, the Phase 2F sequence-level consequence-head pilot, the Phase 2G action-utility head attached to predicted spatial tokens, the Phase 2I concatenation-based utility ranker, the Phase 2J FiLM utility ranker, the Phase 2K hard-CE interaction-only ranker, the Phase 2L soft utility-objective ranker, the Phase 2M scalar first-primitive affordance head, the Phase 2N class-balanced hard-oracle primitive affordance objective, the Phase 2P source-only factorized affordance head, the Phase 2R source-local geometry-feature affordance model, the Phase 2T C2 patch-token JEPA auxiliary factor head, the Phase 2U small source/action factorized affordance bridge, the Phase 2V full RGB-to-swept-state bridge, the Phase 2X sanitized RGB-to-swept-state bridge, the Phase 2Y ranked source-local geometry bridge, and the Phase 2Z single-frame local-occupancy bridge. Phase 2Q shows that the Phase 2O target and Phase 2P selector form a valid train/validation ceiling when supplied true factor values. Phase 2W shows that a sanitized action-conditioned swept-geometry teacher target can pass the primitive gate without explicit best-second-action identity features. Phase 2T, Phase 2U, Phase 2V, Phase 2X, Phase 2Y, and Phase 2Z show that neither current patch-token JEPA futures, current single-frame RGB bridges, simple source-local ray geometry, nor single-frame local occupancy are enough. The next bounded step is Phase 2AA: a DINO-WM-style frozen DINOv2 spatial patch dynamics and sampling-planning screen plus a LeWM-paper-faithful 2D navigation positive control. Any candidate must pass primitive utility, stability, action-identifiability, zero-action, shuffled-action, and persistence gates before any full training matrix.",
+      "preregistration": "docs/lewm_jepa_phase2d_preregistered_research_plan_2026-06-14.md"
+    }
+  ]
+}

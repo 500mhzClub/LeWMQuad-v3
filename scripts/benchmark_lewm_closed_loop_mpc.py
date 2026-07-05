@@ -205,6 +205,63 @@ def _set_pose(
     runner._last_executed[:] = 0.0
 
 
+def _sync_robot_for_third_person_render(
+    *,
+    source_build: Any,
+    render_build: Any | None,
+    pos_xyz: np.ndarray,
+    quat_wxyz: np.ndarray,
+    leg_dof_idx: Any = None,
+) -> Any:
+    """Mirror the authoritative robot state into an optional visible render scene."""
+
+    if render_build is None or render_build is source_build:
+        return source_build
+
+    envs = [0]
+    pos_batch = np.asarray(pos_xyz, dtype=np.float32)[None, :]
+    quat_batch = np.asarray(quat_wxyz, dtype=np.float32)[None, :]
+    render_build.robot.set_pos(pos_batch, envs_idx=envs, zero_velocity=True)
+    render_build.robot.set_quat(quat_batch, envs_idx=envs, zero_velocity=False)
+
+    if leg_dof_idx is not None:
+        dof_idx = [int(i) for i in np.asarray(leg_dof_idx).reshape(-1).tolist()]
+        if dof_idx:
+            try:
+                joint_pos = RolloutRunner._as_np(source_build.robot.get_dofs_position(dof_idx))
+                joint_pos = _first_env(joint_pos)[None, :].astype(np.float32, copy=False)
+                render_build.robot.set_dofs_position(joint_pos, dof_idx, envs_idx=envs)
+                render_build.robot.set_dofs_velocity(np.zeros_like(joint_pos), dof_idx, envs_idx=envs)
+            except Exception:
+                pass
+
+    try:
+        render_build.scene.step()
+    except Exception:
+        pass
+    return render_build
+
+
+def _render_synced_third_person(
+    *,
+    source_build: Any,
+    render_build: Any | None,
+    base_xyz: np.ndarray,
+    base_quat_wxyz: np.ndarray,
+    yaw: float,
+    side: float = 0.0,
+    leg_dof_idx: Any = None,
+) -> np.ndarray:
+    third_build = _sync_robot_for_third_person_render(
+        source_build=source_build,
+        render_build=render_build,
+        pos_xyz=base_xyz,
+        quat_wxyz=base_quat_wxyz,
+        leg_dof_idx=leg_dof_idx,
+    )
+    return _render_third_person(third_build, base_xyz, yaw, side=side)
+
+
 def _execute_physical_primitive(
     runner: RolloutRunner,
     registry: PrimitiveRegistry,
@@ -215,20 +272,54 @@ def _execute_physical_primitive(
     pack: Any = None,
     device: torch.device | None = None,
     cam_side: float = 0.0,
+    capture_policy_steps: bool = False,
+    third_person_build: Any | None = None,
 ) -> np.ndarray:
     requested = expand_primitive_to_block(registry, primitive_name)
     clipped = runner._clip_block(requested[None, :, :]).executed[0]
     for tick in clipped:
-        runner._step_command_tick(tick[None, :])
-        if frame_sink is not None and build is not None and pack is not None and device is not None:
-            # Demo capture: physics already steps the articulated robot, so render
-            # the egocentric + third-person views directly each control tick.
-            pos, quat = _current_pose(build)
-            yaw_t = _yaw_from_quat_wxyz(quat)
-            ego = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
-            ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
-            third_np = _render_third_person(build, pos, yaw_t, side=cam_side)
-            frame_sink.append((third_np, ego_np, float(pos[0]), float(pos[1]), float(yaw_t)))
+        capture = frame_sink is not None and build is not None and pack is not None and device is not None
+        if capture_policy_steps and capture:
+            for _ in range(runner._policy_steps_per_command_tick):
+                obs = runner._build_observation(tick[None, :])
+                joint_targets = runner.policy.act(obs)
+                runner._apply_joint_targets(joint_targets)
+                for _step in range(runner._physics_steps_per_policy):
+                    runner.build.scene.step()
+                runner._sim_time_ns += runner._policy_dt_ns
+                pos, quat = _current_pose(build)
+                yaw_t = _yaw_from_quat_wxyz(quat)
+                ego = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
+                ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+                third_np = _render_synced_third_person(
+                    source_build=build,
+                    render_build=third_person_build,
+                    base_xyz=pos,
+                    base_quat_wxyz=quat,
+                    yaw=yaw_t,
+                    side=cam_side,
+                    leg_dof_idx=runner._leg_dof_idx,
+                )
+                frame_sink.append((third_np, ego_np, float(pos[0]), float(pos[1]), float(yaw_t)))
+        else:
+            runner._step_command_tick(tick[None, :])
+            if capture:
+                # Demo capture: physics already steps the articulated robot, so render
+                # the egocentric + third-person views directly each control tick.
+                pos, quat = _current_pose(build)
+                yaw_t = _yaw_from_quat_wxyz(quat)
+                ego = _render_tensor_from_base(build, pack, base_xyz_m=pos, base_quat_wxyz=quat, device=device)
+                ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+                third_np = _render_synced_third_person(
+                    source_build=build,
+                    render_build=third_person_build,
+                    base_xyz=pos,
+                    base_quat_wxyz=quat,
+                    yaw=yaw_t,
+                    side=cam_side,
+                    leg_dof_idx=runner._leg_dof_idx,
+                )
+                frame_sink.append((third_np, ego_np, float(pos[0]), float(pos[1]), float(yaw_t)))
     runner._last_executed[0] = clipped[-1]
     return clipped
 
@@ -253,6 +344,7 @@ def _run_multi_beacon_demo(
     runner: Any = None,
     goal_insets: list | None = None,
     commit_margin: float = 0.01,
+    third_person_build: Any | None = None,
 ) -> int:
     """Chase scene landmarks one after another with the lewm image-goal planner.
 
@@ -373,12 +465,14 @@ def _run_multi_beacon_demo(
                     _execute_kinematic_primitive(
                         build, registry, primitive_name, command_dt_s=command_dt_s, grid=grid,
                         frame_sink=frame_sink, pack=pack, device=device,
+                        third_person_build=third_person_build,
                     )
                 else:
                     _execute_physical_primitive(
                         runner, registry, primitive_name,
                         frame_sink=frame_sink, build=build, pack=pack, device=device,
                         cam_side=cam_side,
+                        third_person_build=third_person_build,
                     )
                 total += 1
         if reached:
@@ -406,6 +500,7 @@ def _run_perception_multibeacon_demo(
     frame_sink: list,
     scan_thresh: float,
     runner: Any = None,
+    third_person_build: Any | None = None,
 ) -> int:
     """Pure-perception multi-beacon: image-goal servo to each beacon, and SCAN
     (rotate) when no candidate action beats holding (i.e. the goal beacon is not
@@ -469,10 +564,12 @@ def _run_perception_multibeacon_demo(
             _execute_kinematic_primitive(
                 build, registry, prim, command_dt_s=command_dt_s, grid=grid,
                 frame_sink=frame_sink, pack=pack, device=device,
+                third_person_build=third_person_build,
             )
         else:
             _execute_physical_primitive(
                 runner, registry, prim, frame_sink=frame_sink, build=build, pack=pack, device=device,
+                third_person_build=third_person_build,
             )
 
     claimed = 0
@@ -721,15 +818,15 @@ def _render_third_person(build: Any, base_xyz: np.ndarray, yaw: float, size: int
     heading = np.array([math.cos(yaw), math.sin(yaw)], dtype=np.float32)
     perp = np.array([-heading[1], heading[0]], dtype=np.float32)
     cam_pos = np.array(
-        [float(base_xyz[0]) - heading[0] * 1.7 + perp[0] * 0.9 * float(side),
-         float(base_xyz[1]) - heading[1] * 1.7 + perp[1] * 0.9 * float(side),
-         float(base_xyz[2]) + 1.2 + 0.25 * abs(float(side))],
+        [float(base_xyz[0]) - heading[0] * 1.25 + perp[0] * 0.8 * float(side),
+         float(base_xyz[1]) - heading[1] * 1.25 + perp[1] * 0.8 * float(side),
+         float(base_xyz[2]) + 1.55 + 0.2 * abs(float(side))],
         dtype=np.float32,
     )
     lookat = np.array(
-        [float(base_xyz[0]) + heading[0] * 0.7,
-         float(base_xyz[1]) + heading[1] * 0.7,
-         float(base_xyz[2]) + 0.15],
+        [float(base_xyz[0]) + heading[0] * 0.15,
+         float(base_xyz[1]) + heading[1] * 0.15,
+         float(base_xyz[2]) + 0.25],
         dtype=np.float32,
     )
     build.camera.set_pose(pos=cam_pos, lookat=lookat, up=np.array([0.0, 0.0, 1.0], dtype=np.float32))
@@ -752,6 +849,7 @@ def _execute_kinematic_primitive(
     frame_sink: list | None = None,
     pack: Any = None,
     device: torch.device | None = None,
+    third_person_build: Any | None = None,
 ) -> np.ndarray:
     block = expand_primitive_to_block(registry, primitive_name)
     pos, quat = _current_pose(build)
@@ -774,18 +872,25 @@ def _execute_kinematic_primitive(
             # (perception) view and a third-person follow view, side by side.
             build.robot.set_pos(pos[None, :], envs_idx=[0], zero_velocity=True)
             build.robot.set_quat(_quat_wxyz_from_yaw(yaw)[None, :], envs_idx=[0], zero_velocity=False)
-            # Kinematic mode never steps, so the robot's visual mesh does not track
-            # set_pos. One step (base re-pinned each sub-step) updates the visual so
-            # the robot is visible in the third-person view.
-            try:
-                build.scene.step()
-            except Exception:
-                pass
+            # Kinematic mode never steps, so a visible main scene needs one
+            # refresh step for meshes to track set_pos. Split-render demos step
+            # the separate third-person scene during sync instead.
+            if third_person_build is None:
+                try:
+                    build.scene.step()
+                except Exception:
+                    pass
             ego = _render_tensor_from_base(
                 build, pack, base_xyz_m=pos, base_quat_wxyz=_quat_wxyz_from_yaw(yaw), device=device,
             )
             ego_np = ego.mul(255.0).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
-            third_np = _render_third_person(build, pos, yaw)
+            third_np = _render_synced_third_person(
+                source_build=build,
+                render_build=third_person_build,
+                base_xyz=pos,
+                base_quat_wxyz=_quat_wxyz_from_yaw(yaw),
+                yaw=yaw,
+            )
             frame_sink.append((third_np, ego_np, float(pos[0]), float(pos[1]), float(yaw)))
     build.robot.set_pos(pos[None, :], envs_idx=[0], zero_velocity=True)
     build.robot.set_quat(_quat_wxyz_from_yaw(yaw)[None, :], envs_idx=[0], zero_velocity=False)
@@ -1118,6 +1223,7 @@ def _run_policy_trial(
     command_dt_s: float,
     grid: InflatedOccupancyGrid | None,
     frame_sink: list | None = None,
+    third_person_build: Any | None = None,
 ) -> PolicyResult:
     _set_pose(build=build, runner=runner, pos_xyz=start_pos, quat_wxyz=start_quat)
     initial_pos, _initial_quat = _current_pose(build)
@@ -1175,11 +1281,13 @@ def _run_policy_trial(
                 frame_sink=frame_sink,
                 pack=pack,
                 device=device,
+                third_person_build=third_person_build,
             )
         else:
             _execute_physical_primitive(
                 runner, registry, primitive_name,
                 frame_sink=frame_sink, build=build, pack=pack, device=device,
+                third_person_build=third_person_build,
             )
         primitives.append(primitive_name)
         new_pos, _new_quat = _current_pose(build)
@@ -1301,6 +1409,16 @@ def main() -> int:
         action="store_true",
         help="Demo-only: strip free-standing obstacle boxes from the scene "
         "(walls and landmarks stay) to declutter the stage.",
+    )
+    parser.add_argument(
+        "--render-robot",
+        action="store_true",
+        help=(
+            "Legacy/debug mode: render Go2 visual meshes in the main camera "
+            "scene, including egocentric RGB. By default ego RGB hides the "
+            "robot body; demo videos use a separate robot-visible scene for "
+            "the third-person panel."
+        ),
     )
     parser.add_argument(
         "--demo-max-frames",
@@ -1528,9 +1646,19 @@ def main() -> int:
                 n_envs=1,
                 backend=str(args.backend),
                 show_viewer=False,
-                render_robot=bool(args.demo_video is not None),
+                render_robot=bool(args.render_robot),
                 apply_textures=bool(args.apply_textures),
             )
+            third_person_build = None
+            if args.demo_video is not None and not bool(args.render_robot):
+                third_person_build = build_scene_from_pack(
+                    pack,
+                    n_envs=1,
+                    backend=str(args.backend),
+                    show_viewer=False,
+                    render_robot=True,
+                    apply_textures=bool(args.apply_textures),
+                )
             runner: RolloutRunner | None = None
             if args.mode == "physical":
                 if policy is None:
@@ -1567,6 +1695,7 @@ def main() -> int:
                         frame_sink=demo_frames,
                         scan_thresh=float(args.demo_scan_thresh),
                         runner=runner,
+                        third_person_build=third_person_build,
                     )
                 else:
                     claimed = _run_multi_beacon_demo(
@@ -1588,6 +1717,7 @@ def main() -> int:
                         runner=runner,
                         goal_insets=demo_goal_insets,
                         commit_margin=float(args.demo_commit_margin),
+                        third_person_build=third_person_build,
                     )
                 print(f"    [demo] claimed {claimed}/{int(args.demo_beacons)} beacons, frames={len(demo_frames)}", flush=True)
                 playback = 1
@@ -1693,6 +1823,7 @@ def main() -> int:
                         command_dt_s=command_dt_s,
                         grid=grid,
                         frame_sink=demo_frames,
+                        third_person_build=third_person_build,
                     )
                     results.append(result)
                     print(
