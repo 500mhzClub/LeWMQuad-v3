@@ -101,6 +101,10 @@ _LEARNED_LOCAL_POLICY_PRIMITIVES = (
 )
 _LEARNED_LOCAL_STATE_FEATURES = ("EXPLORE", "SEEK", "SERVO", "CLAIM")
 _LEARNED_LOCAL_ONLINE_MAP_CHANNELS = 8
+_CLAIM_SUCCESS_FEATURE_SCHEMA = "lewm_go2_claim_success_head_features_v0"
+_CLAIM_SUCCESS_CHECKPOINT_SCHEMA = "lewm_go2_claim_success_head_v0"
+_TARGET_SCHEDULER_FEATURE_SCHEMA = "lewm_go2_target_scheduler_features_v1"
+_TARGET_SCHEDULER_CHECKPOINT_SCHEMA = "lewm_go2_target_scheduler_head_v0"
 
 
 def _learned_local_policy_label_primitive(primitive: str | None) -> str | None:
@@ -133,6 +137,57 @@ def _scene_landmarks(scene_dir: Path) -> dict[str, np.ndarray]:
     return out
 
 
+def _quat_wxyz_from_yaw_local(yaw: float) -> np.ndarray:
+    half = 0.5 * float(yaw)
+    return np.asarray([math.cos(half), 0.0, 0.0, math.sin(half)], dtype=np.float32)
+
+
+def _load_slice_start(
+    path: Path,
+    *,
+    start_tick: int,
+    preclaimed_colors: set[str],
+) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    result = payload.get("result", payload)
+    log = payload.get("log", [])
+    if not isinstance(log, list):
+        raise SystemExit(f"{path} has no list log for slice start")
+    rows = [
+        row
+        for row in log
+        if isinstance(row, dict)
+        and row.get("tick") is not None
+        and int(row.get("tick")) >= int(start_tick)
+        and row.get("post_xy") is not None
+        and row.get("post_yaw") is not None
+    ]
+    if not rows:
+        raise SystemExit(f"{path} has no pose row at or after slice start tick {start_tick}")
+    start_row = rows[0]
+    preclaims: list[dict[str, Any]] = []
+    for claim in result.get("beacon_claims", []):
+        if not isinstance(claim, dict):
+            continue
+        color = str(claim.get("target_color", "")).lower()
+        if color in preclaimed_colors:
+            preclaims.append(dict(claim))
+    missing = sorted(preclaimed_colors - {str(item.get("target_color", "")).lower() for item in preclaims})
+    if missing:
+        raise SystemExit(f"{path} is missing requested preclaimed colors: {','.join(missing)}")
+    return {
+        "path": str(path),
+        "source_ticks_used": int(result.get("ticks_used", 0) or 0),
+        "start_tick": int(start_row.get("tick")),
+        "start_xy": [float(start_row["post_xy"][0]), float(start_row["post_xy"][1])],
+        "start_yaw": float(start_row["post_yaw"]),
+        "preclaims": preclaims,
+        "preload_log": log,
+        "source_target_xy": result.get("target_xy"),
+        "source_claimed_colors": result.get("claimed_colors", []),
+    }
+
+
 def _look_ahead_free(grid, pos_xy, yaw, dist_m: float = 0.5) -> bool:
     return grid.is_free((float(pos_xy[0]) + dist_m * math.cos(yaw),
                          float(pos_xy[1]) + dist_m * math.sin(yaw)))
@@ -142,6 +197,514 @@ def _round_float(value: float | None, ndigits: int = 3) -> float | None:
     if value is None:
         return None
     return round(float(value), ndigits)
+
+
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        out = float(value)
+    except (TypeError, ValueError):
+        return float(default)
+    if not math.isfinite(out):
+        return float(default)
+    return out
+
+
+def _claim_gate_entry(
+    *,
+    enabled: bool,
+    seen: bool,
+    in_cone: bool,
+    seen_age_ticks: int,
+    min_seen_ticks: int,
+    area: float,
+    area_threshold: float | None,
+    bearing: float,
+    bearing_threshold: float | None,
+    extra_rejections: list[str] | None = None,
+) -> dict[str, Any]:
+    rejections: list[str] = []
+    if not bool(enabled):
+        rejections.append("disabled")
+    if not bool(seen):
+        rejections.append("not_seen")
+    if not bool(in_cone):
+        rejections.append("not_in_cone")
+    if int(seen_age_ticks) < int(min_seen_ticks):
+        rejections.append("seen_age_low")
+    if area_threshold is None:
+        rejections.append("area_threshold_disabled")
+    elif float(area) <= float(area_threshold):
+        rejections.append("area_low")
+    if bearing_threshold is None:
+        rejections.append("bearing_threshold_disabled")
+    elif abs(float(bearing)) >= float(bearing_threshold):
+        rejections.append("bearing_high")
+    if extra_rejections:
+        rejections.extend(str(item) for item in extra_rejections if str(item))
+    return {
+        "enabled": bool(enabled),
+        "passed": not rejections,
+        "reject_reasons": rejections,
+        "area_threshold": None if area_threshold is None else float(area_threshold),
+        "bearing_threshold": None if bearing_threshold is None else float(bearing_threshold),
+        "min_seen_ticks": int(min_seen_ticks),
+    }
+
+
+def _claim_success_proxy_gate_entry(
+    *,
+    area: float,
+    area_threshold: float | None,
+    bearing: float,
+    bearing_threshold: float | None,
+    model_score: float | None = None,
+    model_threshold: float | None = None,
+) -> dict[str, Any]:
+    rejections: list[str] = []
+    enabled = bool(
+        area_threshold is not None
+        or bearing_threshold is not None
+        or model_threshold is not None
+    )
+    if area_threshold is not None and float(area) <= float(area_threshold):
+        rejections.append("area_low")
+    if bearing_threshold is not None and abs(float(bearing)) >= float(bearing_threshold):
+        rejections.append("bearing_high")
+    if (
+        model_threshold is not None
+        and (model_score is None or float(model_score) < float(model_threshold))
+    ):
+        rejections.append("model_low")
+    return {
+        "enabled": bool(enabled),
+        "passed": bool(not enabled or not rejections),
+        "reject_reasons": rejections,
+        "area_threshold": None if area_threshold is None else float(area_threshold),
+        "bearing_threshold": None if bearing_threshold is None else float(bearing_threshold),
+        "model_score": None if model_score is None else _round_float(float(model_score), 4),
+        "model_threshold": None if model_threshold is None else float(model_threshold),
+        "source": "learned_rgb_area_bearing",
+    }
+
+
+class ClaimSuccessHead(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int = 64) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LayerNorm(int(input_dim)),
+            nn.Linear(int(input_dim), int(hidden_dim)),
+            nn.GELU(),
+            nn.Linear(int(hidden_dim), int(hidden_dim) // 2),
+            nn.GELU(),
+            nn.Linear(int(hidden_dim) // 2, 1),
+        )
+
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        return self.net(features).squeeze(-1)
+
+
+class TargetSchedulerHead(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int, color_count: int) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LayerNorm(int(input_dim)),
+            nn.Linear(int(input_dim), int(hidden_dim)),
+            nn.GELU(),
+            nn.Dropout(0.05),
+            nn.Linear(int(hidden_dim), int(hidden_dim) // 2),
+            nn.GELU(),
+            nn.Linear(int(hidden_dim) // 2, int(color_count)),
+        )
+
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        return self.net(features)
+
+
+def _target_scheduler_feature(
+    *,
+    colors: list[str],
+    current_color: str,
+    current_target_age_ticks: int,
+    claimed_colors: set[str],
+    color_readouts: dict[str, dict[str, Any]],
+    tick: int,
+    max_ticks: int,
+    device: torch.device,
+) -> torch.Tensor:
+    current_key = str(current_color).lower()
+    claimed = {str(item).lower() for item in claimed_colors}
+    max_tick = max(1.0, float(max_ticks))
+    feature: list[float] = [
+        min(1.0, max(0.0, float(tick) / max_tick)),
+        min(1.0, max(0.0, float(len(claimed)) / max(1.0, float(len(colors))))),
+        min(1.0, max(0.0, float(current_target_age_ticks) / 256.0)),
+    ]
+    for color in colors:
+        key = str(color).lower()
+        readout = color_readouts.get(key, {})
+        first_seen_tick = readout.get("first_seen_tick")
+        last_seen_tick = readout.get("last_seen_tick")
+        first_age = (
+            9999.0
+            if first_seen_tick is None
+            else max(0.0, float(tick) - float(first_seen_tick))
+        )
+        last_age = (
+            9999.0
+            if last_seen_tick is None
+            else max(0.0, float(tick) - float(last_seen_tick))
+        )
+        feature.extend(
+            [
+                1.0 if key == current_key else 0.0,
+                1.0 if key in claimed or bool(readout.get("claimed", False)) else 0.0,
+                _safe_float(readout.get("mem_conf"), 0.0),
+                _safe_float(readout.get("area"), -99.0),
+                _safe_float(readout.get("read_score"), 0.0),
+                1.0 if bool(readout.get("read_gate_pass", False)) else 0.0,
+                min(1.0, first_age / 128.0),
+                min(1.0, last_age / 128.0),
+            ]
+        )
+    return torch.tensor(feature, dtype=torch.float32, device=device).unsqueeze(0)
+
+
+def _ctrl_state_to_cpu(ctrl_state: tuple | None) -> tuple | None:
+    if ctrl_state is None:
+        return None
+    return tuple(
+        item.detach().cpu() if isinstance(item, torch.Tensor) else item
+        for item in ctrl_state
+    )
+
+
+def _ctrl_state_to_device(ctrl_state: tuple | None, *, device: torch.device) -> tuple | None:
+    if ctrl_state is None:
+        return None
+    return tuple(
+        item.to(device) if isinstance(item, torch.Tensor) else item
+        for item in ctrl_state
+    )
+
+
+def _write_slice_snapshot(
+    path: Path,
+    *,
+    build: Any,
+    runner: RolloutRunner | None,
+    scene_id: str,
+    tick: int,
+    next_tick: int,
+    pos: np.ndarray,
+    quat: np.ndarray,
+    yaw: float,
+    ctrl_state: tuple | None,
+    target_sequence: list[str],
+    target_index: int,
+    target_active_since_tick: int,
+    beacon_claims: list[dict[str, Any]],
+    first_seen_ticks: dict[str, int],
+    last_seen_ticks: dict[str, int],
+    last_primitive: str,
+    last_cmd: tuple[float, float, float],
+    online_map: OnlineEgomotionMap | None,
+    feature_max_ticks: int,
+    source_result: str | None,
+) -> None:
+    physics_state = _slice_physics_state(build=build, runner=runner)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "schema": "lewm_go2_yellow_slice_resume_snapshot_v0",
+            "scene_id": str(scene_id),
+            "tick": int(tick),
+            "next_tick": int(next_tick),
+            "pos_xyz": np.asarray(pos, dtype=np.float32).tolist(),
+            "quat_wxyz": np.asarray(quat, dtype=np.float32).tolist(),
+            "yaw_rad": float(yaw),
+            "ctrl_state": _ctrl_state_to_cpu(ctrl_state),
+            "target_sequence": list(target_sequence),
+            "target_index": int(target_index),
+            "target_active_since_tick": int(target_active_since_tick),
+            "beacon_claims": [dict(item) for item in beacon_claims],
+            "first_seen_ticks": {str(k): int(v) for k, v in first_seen_ticks.items()},
+            "last_seen_ticks": {str(k): int(v) for k, v in last_seen_ticks.items()},
+            "last_primitive": str(last_primitive),
+            "last_cmd": tuple(float(v) for v in last_cmd),
+            "online_map": None if online_map is None else online_map.state_dict(),
+            "feature_max_ticks": int(feature_max_ticks),
+            "source_result": source_result,
+            "physics_state": physics_state,
+        },
+        path,
+    )
+
+
+def _first_env_np(value: Any, *, dtype: Any = np.float32) -> np.ndarray:
+    arr = RolloutRunner._as_np(value)
+    out = np.asarray(arr, dtype=dtype)
+    if out.ndim >= 2:
+        return np.asarray(out[0], dtype=dtype)
+    return out
+
+
+def _slice_physics_state(*, build: Any, runner: RolloutRunner | None) -> dict[str, Any] | None:
+    if build is None or runner is None or not hasattr(build, "robot"):
+        return None
+    robot = build.robot
+    state: dict[str, Any] = {
+        "qpos": _first_env_np(robot.get_qpos()).tolist(),
+        "dofs_velocity": _first_env_np(robot.get_dofs_velocity()).tolist(),
+        "n_qs": int(getattr(robot, "n_qs", -1)),
+        "n_dofs": int(getattr(robot, "n_dofs", -1)),
+        "runner_last_executed": _first_env_np(getattr(runner, "_last_executed", np.zeros((1, 3), dtype=np.float32))).tolist(),
+        "runner_sim_time_ns": int(getattr(runner, "_sim_time_ns", 0)),
+        "runner_sequence_id_counter": int(getattr(runner, "_sequence_id_counter", 0)),
+    }
+    policy_last_actions = getattr(getattr(runner, "policy", None), "_last_actions", None)
+    if policy_last_actions is not None:
+        state["policy_last_actions"] = _first_env_np(policy_last_actions).tolist()
+    return state
+
+
+def _restore_slice_snapshot_physics(
+    *,
+    build: Any,
+    runner: RolloutRunner | None,
+    snapshot: dict[str, Any],
+    fallback_pos: np.ndarray,
+    fallback_quat: np.ndarray,
+) -> bool:
+    physics_state = snapshot.get("physics_state")
+    if runner is None or not isinstance(physics_state, dict):
+        _set_pose(build=build, runner=runner, pos_xyz=fallback_pos, quat_wxyz=fallback_quat)
+        return False
+    robot = build.robot
+    envs = [0]
+    qpos = np.asarray(physics_state.get("qpos"), dtype=np.float32)
+    dofs_velocity = np.asarray(physics_state.get("dofs_velocity"), dtype=np.float32)
+    if qpos.ndim != 1 or dofs_velocity.ndim != 1:
+        _set_pose(build=build, runner=runner, pos_xyz=fallback_pos, quat_wxyz=fallback_quat)
+        return False
+    if int(physics_state.get("n_qs", qpos.shape[0])) != int(getattr(robot, "n_qs", qpos.shape[0])):
+        _set_pose(build=build, runner=runner, pos_xyz=fallback_pos, quat_wxyz=fallback_quat)
+        return False
+    if int(physics_state.get("n_dofs", dofs_velocity.shape[0])) != int(
+        getattr(robot, "n_dofs", dofs_velocity.shape[0])
+    ):
+        _set_pose(build=build, runner=runner, pos_xyz=fallback_pos, quat_wxyz=fallback_quat)
+        return False
+
+    robot.set_qpos(qpos[None, :], envs_idx=envs, zero_velocity=False)
+    robot.set_dofs_velocity(dofs_velocity[None, :], envs_idx=envs)
+    last_executed = np.asarray(physics_state.get("runner_last_executed", [0.0, 0.0, 0.0]), dtype=np.float32)
+    if last_executed.shape == (3,):
+        runner._last_executed[0] = last_executed
+    runner._sim_time_ns = int(physics_state.get("runner_sim_time_ns", getattr(runner, "_sim_time_ns", 0)))
+    runner._sequence_id_counter = int(
+        physics_state.get("runner_sequence_id_counter", getattr(runner, "_sequence_id_counter", 0))
+    )
+    policy_last_actions = physics_state.get("policy_last_actions")
+    if policy_last_actions is not None and hasattr(runner.policy, "_last_actions"):
+        arr = np.asarray(policy_last_actions, dtype=np.float32)
+        expected = getattr(runner.policy, "_last_actions", None)
+        if expected is not None and np.asarray(expected).ndim == 2 and arr.shape == np.asarray(expected)[0].shape:
+            runner.policy._last_actions[0] = arr
+        elif expected is None:
+            runner.policy._last_actions = arr[None, :]
+    return True
+
+
+def _claim_success_model_feature(
+    *,
+    color: str,
+    color_vocab: list[str],
+    area: float,
+    bearing: float,
+    mem_conf: float,
+    read_score: float | None,
+    seen_age_ticks: int,
+    seen: bool,
+    in_cone: bool,
+    claimed_count: int,
+    tick: int,
+    max_ticks: int,
+    device: torch.device,
+) -> torch.Tensor:
+    color_key = str(color).lower()
+    one_hot = [1.0 if color_key == str(item).lower() else 0.0 for item in color_vocab]
+    feature = np.asarray(
+        [
+            *one_hot,
+            float(area),
+            float(bearing),
+            abs(float(bearing)),
+            float(mem_conf),
+            0.0 if read_score is None else float(read_score),
+            min(1.0, max(0.0, float(seen_age_ticks) / 64.0)),
+            1.0 if bool(seen) else 0.0,
+            1.0 if bool(in_cone) else 0.0,
+            min(1.0, max(0.0, float(claimed_count) / max(1.0, float(len(color_vocab))))),
+            min(1.0, max(0.0, float(tick) / max(1.0, float(max_ticks)))),
+        ],
+        dtype=np.float32,
+    )
+    return torch.from_numpy(feature).to(device=device).unsqueeze(0)
+
+
+def _post_claim_acquisition_diagnostics(
+    log: list[dict[str, Any]],
+    *,
+    target_sequence: list[str],
+    min_claims: int,
+) -> dict[str, Any]:
+    min_claims = max(0, int(min_claims))
+    claimed: set[str] = set()
+    active = False
+    start_tick: int | None = None
+    start_xy: list[float] | None = None
+    last_xy: list[float] | None = None
+    xs: list[float] = []
+    ys: list[float] = []
+    primitive_counts: dict[str, int] = {}
+    state_counts: dict[str, int] = {}
+    remaining_seen: dict[str, int] = {}
+    remaining_area_max: dict[str, float] = {}
+    remaining_mem_conf_max: dict[str, float] = {}
+    remaining_read_score_max: dict[str, float] = {}
+    active_claim_rejects: dict[str, int] = {}
+    wall_requested_counts: dict[str, int] = {}
+    wall_selected_counts: dict[str, int] = {}
+    wall_vetoes = 0
+    stalled_ticks = 0
+    hard_stalled_ticks = 0
+
+    def _xy_from_row(row: dict[str, Any]) -> list[float] | None:
+        xy = row.get("post_xy")
+        if not isinstance(xy, list) or len(xy) < 2:
+            xy = row.get("xy")
+        if not isinstance(xy, list) or len(xy) < 2:
+            return None
+        try:
+            return [float(xy[0]), float(xy[1])]
+        except (TypeError, ValueError):
+            return None
+
+    for row in log:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("state", "")).upper() == "CLAIM":
+            claim_color = str(row.get("target_color", "")).lower()
+            if claim_color:
+                claimed.add(claim_color)
+        if len(claimed) < min_claims:
+            continue
+        tick = int(row.get("tick", 0))
+        if not active:
+            active = True
+            start_tick = tick
+            start_xy = _xy_from_row(row)
+        xy = _xy_from_row(row)
+        if xy is not None:
+            if start_xy is None:
+                start_xy = xy
+            last_xy = xy
+            xs.append(float(xy[0]))
+            ys.append(float(xy[1]))
+        state_name = str(row.get("state", "")).upper()
+        if state_name:
+            state_counts[state_name] = state_counts.get(state_name, 0) + 1
+        primitive = str(row.get("primitive", ""))
+        if primitive:
+            primitive_counts[primitive] = primitive_counts.get(primitive, 0) + 1
+        if bool(row.get("stalled", False)):
+            stalled_ticks += 1
+        if bool(row.get("hard_stalled", False)):
+            hard_stalled_ticks += 1
+        wall_guard = row.get("wall_guard")
+        if isinstance(wall_guard, dict):
+            requested = str(wall_guard.get("requested", ""))
+            selected = str(wall_guard.get("selected", ""))
+            if requested:
+                wall_requested_counts[requested] = wall_requested_counts.get(requested, 0) + 1
+            if selected:
+                wall_selected_counts[selected] = wall_selected_counts.get(selected, 0) + 1
+            if bool(wall_guard.get("vetoed", False)):
+                wall_vetoes += 1
+        readouts = row.get("color_readouts")
+        if isinstance(readouts, dict):
+            for color in target_sequence:
+                color_key = str(color).lower()
+                if color_key in claimed:
+                    continue
+                item = readouts.get(color_key)
+                if not isinstance(item, dict):
+                    continue
+                if bool(item.get("claimed", False)):
+                    continue
+                if bool(item.get("first_seen_tick") is not None) or float(item.get("mem_conf", 0.0)) > 0.0:
+                    remaining_seen.setdefault(color_key, tick)
+                for out_key, dest in (
+                    ("area", remaining_area_max),
+                    ("mem_conf", remaining_mem_conf_max),
+                    ("read_score", remaining_read_score_max),
+                ):
+                    value = item.get(out_key)
+                    if value is None:
+                        continue
+                    try:
+                        value_f = float(value)
+                    except (TypeError, ValueError):
+                        continue
+                    dest[color_key] = max(dest.get(color_key, float("-inf")), value_f)
+        gate = row.get("claim_gate")
+        if isinstance(gate, dict) and not bool(gate.get("accepted", False)):
+            target_color = str(row.get("target_color", "")).lower()
+            if target_color and target_color not in claimed:
+                for section in (
+                    "standard",
+                    "near",
+                    "contact",
+                    "stalled_visual",
+                    "success_proxy",
+                ):
+                    detail = gate.get(section)
+                    if not isinstance(detail, dict):
+                        continue
+                    for reason in detail.get("reject_reasons", []) or []:
+                        key = f"{section}:{reason}"
+                        active_claim_rejects[key] = active_claim_rejects.get(key, 0) + 1
+
+    span_x = (max(xs) - min(xs)) if xs else 0.0
+    span_y = (max(ys) - min(ys)) if ys else 0.0
+    return {
+        "min_claims": int(min_claims),
+        "active": bool(active),
+        "start_tick": start_tick,
+        "ticks": 0 if start_tick is None else max(0, len(log) - int(start_tick)),
+        "start_xy": None if start_xy is None else [_round_float(v, 3) for v in start_xy],
+        "final_xy": None if last_xy is None else [_round_float(v, 3) for v in last_xy],
+        "xy_span_m": _round_float(float(math.hypot(span_x, span_y)), 3),
+        "claimed_at_start_or_later": sorted(claimed),
+        "remaining_first_seen_tick": remaining_seen,
+        "remaining_area_max": {
+            k: _round_float(v, 4) for k, v in sorted(remaining_area_max.items())
+        },
+        "remaining_mem_conf_max": {
+            k: _round_float(v, 4) for k, v in sorted(remaining_mem_conf_max.items())
+        },
+        "remaining_read_score_max": {
+            k: _round_float(v, 4) for k, v in sorted(remaining_read_score_max.items())
+        },
+        "state_counts": dict(sorted(state_counts.items())),
+        "primitive_counts": dict(sorted(primitive_counts.items())),
+        "wall_requested_counts": dict(sorted(wall_requested_counts.items())),
+        "wall_selected_counts": dict(sorted(wall_selected_counts.items())),
+        "wall_vetoes": int(wall_vetoes),
+        "stalled_ticks": int(stalled_ticks),
+        "hard_stalled_ticks": int(hard_stalled_ticks),
+        "active_claim_rejects": dict(sorted(active_claim_rejects.items())),
+    }
 
 
 def _roll_from_quat_wxyz(quat_wxyz: np.ndarray) -> float:
@@ -1452,6 +2015,35 @@ def _load_learned_local_policy(path: Path, *, device: torch.device) -> tuple[nn.
     return model, dict(checkpoint)
 
 
+def _load_target_scheduler(
+    path: Path,
+    *,
+    device: torch.device,
+) -> tuple[TargetSchedulerHead, dict[str, Any]]:
+    try:
+        checkpoint = torch.load(path, map_location=device, weights_only=False)
+    except TypeError:
+        checkpoint = torch.load(path, map_location=device)
+    if checkpoint.get("schema") != _TARGET_SCHEDULER_CHECKPOINT_SCHEMA:
+        raise SystemExit(
+            "--learned-target-scheduler-checkpoint has unsupported schema: "
+            f"{checkpoint.get('schema')}"
+        )
+    if checkpoint.get("feature_schema") != _TARGET_SCHEDULER_FEATURE_SCHEMA:
+        raise SystemExit(
+            "--learned-target-scheduler-checkpoint has unsupported feature schema: "
+            f"{checkpoint.get('feature_schema')}"
+        )
+    model = TargetSchedulerHead(
+        input_dim=int(checkpoint["input_dim"]),
+        hidden_dim=int(checkpoint.get("hidden_dim", 64)),
+        color_count=len(checkpoint["color_vocab"]),
+    ).to(device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model.eval()
+    return model, dict(checkpoint)
+
+
 def _one_hot(index: int, count: int, *, device: torch.device) -> torch.Tensor:
     out = torch.zeros(max(0, int(count)), dtype=torch.float32, device=device)
     if 0 <= int(index) < int(count):
@@ -1494,6 +2086,63 @@ class OnlineEgomotionMap:
 
     def mark_claim(self, pose_xy: np.ndarray | tuple[float, float] | list[float]) -> None:
         self.claimed.add(self._cell(pose_xy))
+
+    def state_dict(self) -> dict[str, Any]:
+        def _cells(cells: Any) -> list[list[int]]:
+            return [[int(a), int(b)] for a, b in sorted(cells)]
+
+        def _edges(edges: Any) -> list[list[list[int]]]:
+            return [
+                [[int(a[0]), int(a[1])], [int(b[0]), int(b[1])]]
+                for a, b in sorted(edges)
+            ]
+
+        return {
+            "size": int(self.size),
+            "cell_m": float(self.cell_m),
+            "hard_guard_blocks": bool(self.hard_guard_blocks),
+            "visited": [
+                [[int(cell[0]), int(cell[1])], int(tick)]
+                for cell, tick in sorted(self.visited.items())
+            ],
+            "blocked": _cells(self.blocked),
+            "claimed": _cells(self.claimed),
+            "attempted_edges": _edges(self.attempted_edges),
+            "blocked_edges": _edges(self.blocked_edges),
+            "guard_blocked": _cells(self.guard_blocked),
+            "guard_blocked_edges": _edges(self.guard_blocked_edges),
+        }
+
+    def load_state_dict(self, state: dict[str, Any]) -> None:
+        self.size = int(state.get("size", self.size))
+        self.radius = self.size // 2
+        self.cell_m = max(1e-3, float(state.get("cell_m", self.cell_m)))
+        self.hard_guard_blocks = bool(state.get("hard_guard_blocks", self.hard_guard_blocks))
+        self.visited = {
+            (int(cell[0]), int(cell[1])): int(tick)
+            for cell, tick in state.get("visited", [])
+        }
+        self.blocked = {
+            (int(cell[0]), int(cell[1])) for cell in state.get("blocked", [])
+        }
+        self.claimed = {
+            (int(cell[0]), int(cell[1])) for cell in state.get("claimed", [])
+        }
+        self.attempted_edges = {
+            ((int(a[0]), int(a[1])), (int(b[0]), int(b[1])))
+            for a, b in state.get("attempted_edges", [])
+        }
+        self.blocked_edges = {
+            ((int(a[0]), int(a[1])), (int(b[0]), int(b[1])))
+            for a, b in state.get("blocked_edges", [])
+        }
+        self.guard_blocked = {
+            (int(cell[0]), int(cell[1])) for cell in state.get("guard_blocked", [])
+        }
+        self.guard_blocked_edges = {
+            ((int(a[0]), int(a[1])), (int(b[0]), int(b[1])))
+            for a, b in state.get("guard_blocked_edges", [])
+        }
 
     def mark_rotation_blocked(
         self,
@@ -2723,6 +3372,8 @@ def _select_learned_local_policy_primitive(
     rerank_hard_blocked_penalty: float = 2.0,
     rerank_backward_penalty: float = 0.0,
     rerank_switch_margin: float = 0.0,
+    rerank_protect_top_prob: float = 0.0,
+    rerank_override_min_prob: float = 0.0,
     bearing: float | None = None,
     rerank_bearing_turn_threshold: float = 0.4,
     rerank_bearing_turn_bonus: float = 0.4,
@@ -2735,6 +3386,7 @@ def _select_learned_local_policy_primitive(
     online_map_turn_scale: float = 0.2,
     online_map_claim_repulsion_weight: float = 0.0,
     online_map_frontier_route_weight: float = 0.0,
+    online_map_hard_veto: bool = False,
     controller_state_name: str | None = None,
     online_map_novelty_states: set[str] | None = None,
 ) -> tuple[str, dict[str, Any], torch.Tensor | None]:
@@ -2799,6 +3451,7 @@ def _select_learned_local_policy_primitive(
         selected_idx = int(ranked[0]) if ranked else 0
     selected = primitive_vocab[max(0, min(selected_idx, len(primitive_vocab) - 1))]
     top_selected = selected
+    top_prob = float(probs[selected_idx].detach().cpu()) if primitive_vocab else 0.0
     rerank_log: dict[str, Any] | None = None
     if bool(outcome_rerank) and primitive_outcomes:
         threshold = float(outcome_threshold)
@@ -2831,6 +3484,7 @@ def _select_learned_local_policy_primitive(
         top_score: float | None = None
         top_unsafe_forward = False
         top_unsafe_translation = False
+        top_online_map_hard_veto = False
         for idx in candidates_idx:
             if int(idx) < 0 or int(idx) >= len(primitive_vocab):
                 continue
@@ -2858,6 +3512,34 @@ def _select_learned_local_policy_primitive(
                 name in _TRANSLATING_PRIMITIVES
                 and blocked_prob >= threshold
             )
+            novelty_log = None
+            online_map_hard_blocked = False
+            if novelty_active and online_map is not None:
+                novelty_log = online_map.primitive_novelty(
+                    pose_xy=online_map_pose_xy,
+                    yaw_rad=float(online_map_yaw_rad),
+                    primitive=name,
+                    tick=int(online_map_tick),
+                    blocked_penalty=float(online_map_blocked_penalty),
+                    turn_scale=float(online_map_turn_scale),
+                    claim_repulsion_weight=float(online_map_claim_repulsion_weight),
+                    frontier_route_weight=float(online_map_frontier_route_weight),
+                )
+                online_map_hard_blocked = bool(
+                    online_map_hard_veto
+                    and name in _TRANSLATING_PRIMITIVES
+                    and (
+                        bool(novelty_log.get("blocked"))
+                        or bool(novelty_log.get("edge_blocked"))
+                        or bool(novelty_log.get("guard_blocked"))
+                        or bool(novelty_log.get("guard_edge_blocked"))
+                    )
+                )
+                if online_map_hard_blocked:
+                    if name in _FORWARD_PRIMITIVES:
+                        unsafe_forward = True
+                    else:
+                        unsafe_translation = True
             hard_blocked = bool(unsafe_forward or unsafe_translation)
             score = (
                 float(rerank_policy_weight) * math.log(max(prob, 1e-6))
@@ -2873,18 +3555,7 @@ def _select_learned_local_policy_primitive(
                 preferred_turn = "yaw_left" if float(bearing) > 0.0 else "yaw_right"
                 if name == preferred_turn:
                     score += float(rerank_bearing_turn_bonus)
-            novelty_log = None
-            if novelty_active and online_map is not None:
-                novelty_log = online_map.primitive_novelty(
-                    pose_xy=online_map_pose_xy,
-                    yaw_rad=float(online_map_yaw_rad),
-                    primitive=name,
-                    tick=int(online_map_tick),
-                    blocked_penalty=float(online_map_blocked_penalty),
-                    turn_scale=float(online_map_turn_scale),
-                    claim_repulsion_weight=float(online_map_claim_repulsion_weight),
-                    frontier_route_weight=float(online_map_frontier_route_weight),
-                )
+            if novelty_log is not None:
                 score += float(online_map_novelty_weight) * float(
                     novelty_log.get("score", 0.0)
                 )
@@ -2898,6 +3569,7 @@ def _select_learned_local_policy_primitive(
                 "low_progress": bool(low_progress),
                 "unsafe_forward": bool(unsafe_forward),
                 "unsafe_translation": bool(unsafe_translation),
+                "online_map_hard_veto": bool(online_map_hard_blocked),
                 "score": _round_float(score, 4),
             }
             if novelty_log is not None:
@@ -2912,31 +3584,57 @@ def _select_learned_local_policy_primitive(
                 top_score = float(score)
                 top_unsafe_forward = bool(unsafe_forward)
                 top_unsafe_translation = bool(unsafe_translation)
+                top_online_map_hard_veto = bool(online_map_hard_blocked)
         if scored:
             scored.sort(key=lambda item: item[0], reverse=True)
             best_score, best_idx, best_name, _ = scored[0]
             selected_score = top_score if top_score is not None else best_score
+            best_prob = float(probs[int(best_idx)].detach().cpu())
+            preserve_top_reason: str | None = None
             if (
                 best_name != top_selected
                 and not bool(top_unsafe_forward or top_unsafe_translation)
-                and float(best_score) < float(selected_score) + float(rerank_switch_margin)
             ):
-                best_idx = selected_idx
-                best_name = top_selected
+                if (
+                    float(rerank_protect_top_prob) > 0.0
+                    and top_prob >= float(rerank_protect_top_prob)
+                    and not bool(top_online_map_hard_veto)
+                ):
+                    preserve_top_reason = "top_policy_confidence"
+                elif (
+                    float(rerank_override_min_prob) > 0.0
+                    and best_prob < float(rerank_override_min_prob)
+                ):
+                    preserve_top_reason = "candidate_policy_floor"
+                elif float(best_score) < float(selected_score) + float(rerank_switch_margin):
+                    preserve_top_reason = "switch_margin"
+                if preserve_top_reason is not None:
+                    best_idx = selected_idx
+                    best_name = top_selected
             selected_idx = int(best_idx)
             selected = best_name
             rerank_log = {
                 "enabled": True,
                 "selected_before": top_selected,
                 "selected_after": selected,
+                "top_prob": _round_float(top_prob, 4),
+                "selected_after_prob": _round_float(
+                    float(probs[int(selected_idx)].detach().cpu()),
+                    4,
+                ),
+                "preserve_top_reason": preserve_top_reason,
                 "top_unsafe_forward": bool(top_unsafe_forward),
                 "top_unsafe_translation": bool(top_unsafe_translation),
+                "top_online_map_hard_veto": bool(top_online_map_hard_veto),
                 "bearing": _round_float(bearing, 4),
                 "threshold": _round_float(threshold, 4),
                 "forward_progress_floor": _round_float(forward_progress_floor, 4),
                 "top_k": int(rerank_top_k),
+                "protect_top_prob": _round_float(rerank_protect_top_prob, 4),
+                "override_min_prob": _round_float(rerank_override_min_prob, 4),
                 "backward_penalty": _round_float(rerank_backward_penalty, 4),
                 "online_map_novelty_enabled": bool(novelty_active),
+                "online_map_hard_veto_enabled": bool(online_map_hard_veto),
                 "online_map_novelty_weight": _round_float(online_map_novelty_weight, 4),
                 "online_map_blocked_penalty": _round_float(online_map_blocked_penalty, 4),
                 "online_map_turn_scale": _round_float(online_map_turn_scale, 4),
@@ -5741,6 +6439,82 @@ def main() -> int:
     parser.add_argument("--scene-id", default=None)
     parser.add_argument("--backend", default="vulkan")
     parser.add_argument("--apply-textures", action="store_true")
+    parser.add_argument(
+        "--slice-start-result",
+        type=Path,
+        default=None,
+        help=(
+            "Start a short physical benchmark slice from a pose in a prior result log. "
+            "This is for fast local-policy iteration; full all-beacon runs remain the "
+            "acceptance test."
+        ),
+    )
+    parser.add_argument(
+        "--slice-start-tick",
+        type=int,
+        default=0,
+        help="First result-log tick at or after which to take post_xy/post_yaw for a slice start.",
+    )
+    parser.add_argument(
+        "--slice-active-target-color",
+        default="",
+        help="If set with --slice-start-result, force this target color active at slice start.",
+    )
+    parser.add_argument(
+        "--slice-preclaimed-colors",
+        default="",
+        help="Comma-separated colors to seed as already claimed for a slice benchmark.",
+    )
+    parser.add_argument(
+        "--slice-feature-max-ticks",
+        type=int,
+        default=0,
+        help=(
+            "Clock denominator for learned features in slice mode. Use the source full-run "
+            "budget, e.g. 1000, when --max-ticks is shortened."
+        ),
+    )
+    parser.add_argument(
+        "--slice-preload-online-map",
+        action="store_true",
+        help=(
+            "Reconstruct the online egomotion map up to --slice-start-tick from the "
+            "source result log. This restores runtime-safe map memory but not the "
+            "controller RNN hidden state."
+        ),
+    )
+    parser.add_argument(
+        "--slice-snapshot-output",
+        type=Path,
+        default=None,
+        help="Save a faithful resume snapshot containing pose, controller state, claims, and online map.",
+    )
+    parser.add_argument(
+        "--slice-snapshot-after-claims",
+        type=int,
+        default=0,
+        help="When >0 with --slice-snapshot-output, write the snapshot after this many claims.",
+    )
+    parser.add_argument(
+        "--slice-snapshot-at-tick",
+        type=int,
+        default=-1,
+        help=(
+            "When >=0 with --slice-snapshot-output, write the snapshot after executing "
+            "the first tick whose index is at least this value."
+        ),
+    )
+    parser.add_argument(
+        "--slice-snapshot-exit",
+        action="store_true",
+        help="Exit the rollout immediately after writing --slice-snapshot-output.",
+    )
+    parser.add_argument(
+        "--slice-snapshot-input",
+        type=Path,
+        default=None,
+        help="Resume from a faithful slice snapshot saved by --slice-snapshot-output.",
+    )
     parser.add_argument("--mode", choices=("kinematic", "physical"), default="kinematic",
                         help="physical: drive the robot with the trained Go2 PPO walking "
                              "policy stepped in Genesis physics (real gait + rigid-body "
@@ -5989,6 +6763,13 @@ def main() -> int:
     parser.add_argument("--multi-target-switch-conf", type=float, default=None,
                         help="Memory confidence required for non-fixed multi-target "
                              "switching. Defaults to --seen-conf.")
+    parser.add_argument("--learned-target-scheduler-checkpoint", type=Path, default=None,
+                        help="Learned per-tick target-color scheduler using only "
+                             "controller color readouts and the claimed-color set. "
+                             "When set, it runs before rule-based multi-target "
+                             "switching and masks already-claimed colors.")
+    parser.add_argument("--learned-target-scheduler-log-scores", action="store_true",
+                        help="Log per-color learned scheduler probabilities every tick.")
     parser.add_argument("--multi-target-switch-area-logit", type=float, default=0.0,
                         help="RGB area logit required for visible_priority target "
                              "switching.")
@@ -6053,6 +6834,26 @@ def main() -> int:
                              "control in EXPLORE immediately instead of waiting for SEEK stalls. "
                              "This uses only controller memory/RGB outputs and avoids chasing "
                              "high-confidence but visually weak memories through walls.")
+    parser.add_argument("--target-pursuit-stale-ticks", type=int, default=0,
+                        help="If >0, consecutive SEEK/SERVO target-pursuit ticks with no "
+                             "passing claim gate before forcing a temporary EXPLORE cooldown. "
+                             "This is runtime-safe and prevents stale visual/memory target "
+                             "latches from occupying the rest of an all-beacon episode.")
+    parser.add_argument("--target-pursuit-stale-states", default="SEEK,SERVO",
+                        help="Comma-separated controller states counted by "
+                             "--target-pursuit-stale-ticks.")
+    parser.add_argument("--target-pursuit-stale-explore-cooldown-ticks", type=int, default=36,
+                        help="EXPLORE ticks to force after --target-pursuit-stale-ticks arms.")
+    parser.add_argument("--target-pursuit-stale-window-ticks", type=int, default=0,
+                        help="If >0, count stale target-pursuit candidate ticks over this "
+                             "rolling per-color window instead of requiring a perfectly "
+                             "consecutive SEEK/SERVO run. The threshold remains "
+                             "--target-pursuit-stale-ticks.")
+    parser.add_argument("--target-pursuit-stale-suppress-color-ticks", type=int, default=0,
+                        help="If >0, temporarily suppress the stale active color from "
+                             "multi-target switching after a stale-pursuit recovery. "
+                             "This lets the learned explorer break far-readout loops "
+                             "without using target positions or a route table.")
     parser.add_argument("--seen-read-threshold", type=float, default=None,
                         help="Optional learned read-score threshold for treating a target "
                              "as remembered. The score comes from the RGB/JEPA vector-memory "
@@ -6087,6 +6888,11 @@ def main() -> int:
                              "--learned-local-policy-post-claim-states after at least one beacon "
                              "has been claimed. This allows post-claim pursuit to be learned "
                              "without changing the pre-claim EXPLORE checkpoint.")
+    parser.add_argument("--learned-local-post-claim-policy-min-claims", type=int, default=1,
+                        help="Minimum claimed beacon count before "
+                             "--learned-local-post-claim-policy-checkpoint may override actions. "
+                             "This lets a learned recovery policy specialize to late-episode "
+                             "acquisition without perturbing early visible-target claims.")
     parser.add_argument("--learned-local-target-policy-checkpoints", default="",
                         help="Optional comma-separated color=checkpoint map for learned "
                              "primitive policies keyed by active target color. The router "
@@ -6232,6 +7038,14 @@ def main() -> int:
     parser.add_argument("--learned-local-policy-rerank-hard-blocked-penalty", type=float, default=2.0)
     parser.add_argument("--learned-local-policy-rerank-backward-penalty", type=float, default=0.0)
     parser.add_argument("--learned-local-policy-rerank-switch-margin", type=float, default=0.0)
+    parser.add_argument("--learned-local-policy-rerank-protect-top-prob", type=float, default=0.0,
+                        help="If >0, preserve a learned policy top action at or above this "
+                             "probability unless learned outcome/online-map evidence marks it "
+                             "unsafe. This keeps JEPA/memory in veto mode instead of letting "
+                             "novelty become a planner.")
+    parser.add_argument("--learned-local-policy-rerank-override-min-prob", type=float, default=0.0,
+                        help="If >0, do not rerank onto a candidate below this learned-policy "
+                             "probability unless the top action is unsafe.")
     parser.add_argument("--learned-local-policy-rerank-bearing-turn-threshold", type=float, default=0.4)
     parser.add_argument("--learned-local-policy-rerank-bearing-turn-bonus", type=float, default=0.4)
     parser.add_argument("--learned-local-policy-online-map-novelty-weight", type=float, default=0.0,
@@ -6251,6 +7065,9 @@ def main() -> int:
                         type=float, default=0.0,
                         help="Runtime-safe novelty bonus for reducing BFS distance through "
                              "self-visited cells to an unknown-neighbor frontier.")
+    parser.add_argument("--learned-local-policy-online-map-hard-veto", action="store_true",
+                        help="Treat self-marked online-map blocked cells/edges as hard unsafe "
+                             "evidence inside learned-local reranking.")
     parser.add_argument("--learned-local-policy-online-map-novelty-states", default="EXPLORE",
                         help="Comma-separated controller states where the online-map novelty "
                              "bonus may affect learned-local reranking. Empty means all states.")
@@ -6422,6 +7239,34 @@ def main() -> int:
     parser.add_argument("--claim-near-min-seen-ticks-by-color", default="",
                         help="Optional comma-separated color:ticks overrides for "
                              "--claim-near-min-seen-ticks.")
+    parser.add_argument("--claim-success-proxy-area-logit", type=float, default=None,
+                        help="Optional learned RGB area-logit proxy required before any "
+                             "visual CLAIM is accepted. This is a runtime-safe learned "
+                             "distance/validity gate for keeping all-color claims inside "
+                             "--success-dist-m without using privileged target distance.")
+    parser.add_argument("--claim-success-proxy-area-logit-by-color", default="",
+                        help="Optional comma-separated color:area-logit overrides for "
+                             "--claim-success-proxy-area-logit.")
+    parser.add_argument("--claim-success-proxy-bearing", type=float, default=None,
+                        help="Optional learned RGB bearing proxy required before any "
+                             "visual CLAIM is accepted.")
+    parser.add_argument("--claim-success-proxy-bearing-by-color", default="",
+                        help="Optional comma-separated color:bearing overrides for "
+                             "--claim-success-proxy-bearing.")
+    parser.add_argument("--claim-success-model-checkpoint", type=Path, default=None,
+                        help="Optional learned claim-valid/distance classifier checkpoint. "
+                             "The model consumes only runtime RGB/readout, active color, "
+                             "claim memory, and controller-state timing scalars.")
+    parser.add_argument("--claim-success-model-threshold", type=float, default=None,
+                        help="Probability threshold for --claim-success-model-checkpoint. "
+                             "Defaults to the threshold saved in the checkpoint.")
+    parser.add_argument("--claim-success-model-positive-trigger", action="store_true",
+                        help="Allow the learned claim-valid/distance classifier to trigger "
+                             "CLAIM directly once runtime perception says the active target "
+                             "is visible, instead of using only hand-set RGB area gates.")
+    parser.add_argument("--claim-success-model-trigger-min-seen-ticks", type=int, default=None,
+                        help="Minimum visible age for --claim-success-model-positive-trigger. "
+                             "Defaults to the active color's near-claim min-seen setting.")
     parser.add_argument("--claim-contact-area-logit", type=float, default=None,
                         help="Optional high-confidence visual standoff claim. If the target "
                              "blob is very large, allow a wider bearing than --claim-bearing "
@@ -6936,6 +7781,12 @@ def main() -> int:
     claim_near_area_by_color = _parse_color_float_map(args.claim_near_area_logit_by_color)
     claim_near_bearing_by_color = _parse_color_float_map(args.claim_near_bearing_by_color)
     claim_near_min_seen_by_color = _parse_color_int_map(args.claim_near_min_seen_ticks_by_color)
+    claim_success_proxy_area_by_color = _parse_color_float_map(
+        args.claim_success_proxy_area_logit_by_color
+    )
+    claim_success_proxy_bearing_by_color = _parse_color_float_map(
+        args.claim_success_proxy_bearing_by_color
+    )
     wall_guard_states = {s.strip().upper() for s in str(args.wall_guard_states).split(",") if s.strip()}
     wall_guard_post_claim_states = {
         s.strip().upper()
@@ -6960,6 +7811,11 @@ def main() -> int:
     primitive_outcome_forward_progress_floor_states = {
         s.strip().upper()
         for s in str(args.primitive_outcome_forward_progress_floor_states).split(",")
+        if s.strip()
+    }
+    target_pursuit_stale_states = {
+        s.strip().upper()
+        for s in str(args.target_pursuit_stale_states).split(",")
         if s.strip()
     }
     primitive_outcome_low_progress_hard_veto_primitives = {
@@ -7103,6 +7959,8 @@ def main() -> int:
             raise SystemExit(
                 f"scene-id not found in split={args.split} family={args.family}: {args.scene_id}"
             )
+    if args.slice_start_result is not None and args.slice_snapshot_input is not None:
+        raise SystemExit("--slice-start-result and --slice-snapshot-input are mutually exclusive")
     scene_dir = scene_dirs[0]
     print(f"scene={scene_dir.name} target={args.target_color}", flush=True)
 
@@ -7315,6 +8173,12 @@ def main() -> int:
         target_sequence = [c for c in ("red", "green", "blue", "yellow") if c in landmarks]
     if not target_sequence:
         raise SystemExit("no target colors requested")
+    slice_start: dict[str, Any] | None = None
+    slice_preclaimed_colors = {
+        item.strip().lower()
+        for item in str(args.slice_preclaimed_colors).split(",")
+        if item.strip()
+    }
     ctrl_state = None
     if args.policy == "memory":
         if args.controller is None:
@@ -7339,6 +8203,70 @@ def main() -> int:
             raise SystemExit("--target-colors is currently supported for --demo-mode explore only")
         tc = color_vocab.index(target_sequence[0])
         range_scale = float(ck["range_scale_m"])
+    if args.slice_start_result is not None:
+        slice_active_target = str(args.slice_active_target_color or "").strip().lower()
+        if not slice_active_target:
+            raise SystemExit("--slice-active-target-color is required with --slice-start-result")
+        target_lookup = {str(color).lower(): idx for idx, color in enumerate(target_sequence)}
+        if slice_active_target not in target_lookup:
+            raise SystemExit(
+                f"--slice-active-target-color={slice_active_target!r} is not in "
+                f"--target-colors/--target-color sequence {target_sequence}"
+            )
+        slice_start = _load_slice_start(
+            args.slice_start_result,
+            start_tick=int(args.slice_start_tick),
+            preclaimed_colors=slice_preclaimed_colors,
+        )
+        sx, sy = slice_start["start_xy"]
+        spawn_pos = np.asarray([float(sx), float(sy), float(spawn_pos[2])], dtype=np.float32)
+        spawn_quat = _quat_wxyz_from_yaw_local(float(slice_start["start_yaw"]))
+        _set_pose(build=build, runner=runner, pos_xyz=spawn_pos, quat_wxyz=spawn_quat)
+        print(
+            "slice-start: "
+            f"source={args.slice_start_result} tick={slice_start['start_tick']} "
+            f"xy={[round(float(v), 3) for v in slice_start['start_xy']]} "
+            f"yaw={math.degrees(float(slice_start['start_yaw'])):.1f}deg "
+            f"active={slice_active_target} preclaimed={sorted(slice_preclaimed_colors)}",
+            flush=True,
+        )
+    slice_snapshot: dict[str, Any] | None = None
+    if args.slice_snapshot_input is not None:
+        try:
+            slice_snapshot = torch.load(args.slice_snapshot_input, map_location="cpu", weights_only=False)
+        except TypeError:
+            slice_snapshot = torch.load(args.slice_snapshot_input, map_location="cpu")
+        if slice_snapshot.get("schema") != "lewm_go2_yellow_slice_resume_snapshot_v0":
+            raise SystemExit(
+                f"unsupported --slice-snapshot-input schema: {slice_snapshot.get('schema')}"
+            )
+        if str(slice_snapshot.get("scene_id")) != str(scene_dir.name):
+            raise SystemExit(
+                f"snapshot scene {slice_snapshot.get('scene_id')} does not match {scene_dir.name}"
+            )
+        snap_sequence = [str(item) for item in slice_snapshot.get("target_sequence", [])]
+        if snap_sequence and snap_sequence != list(target_sequence):
+            raise SystemExit(
+                f"snapshot target sequence {snap_sequence} does not match requested {target_sequence}"
+            )
+        spawn_pos = np.asarray(slice_snapshot["pos_xyz"], dtype=np.float32)
+        spawn_quat = np.asarray(slice_snapshot["quat_wxyz"], dtype=np.float32)
+        restored_physics = _restore_slice_snapshot_physics(
+            build=build,
+            runner=runner,
+            snapshot=slice_snapshot,
+            fallback_pos=spawn_pos,
+            fallback_quat=spawn_quat,
+        )
+        print(
+            "slice-snapshot: "
+            f"source={args.slice_snapshot_input} next_tick={slice_snapshot.get('next_tick')} "
+            f"xy={[round(float(v), 3) for v in spawn_pos[:2]]} "
+            f"yaw={math.degrees(float(slice_snapshot.get('yaw_rad', 0.0))):.1f}deg "
+            f"active={target_sequence[int(slice_snapshot.get('target_index', 0))]} "
+            f"physics_state={'restored' if restored_physics else 'pose_only'}",
+            flush=True,
+        )
 
     front_encoder = front_head = None
     front_image_size = 64
@@ -7521,6 +8449,89 @@ def main() -> int:
         print(
             f"current-body-risk: checkpoint={args.current_body_risk_checkpoint.name} "
             f"threshold={current_body_threshold:.3f} image_size={current_body_image_size}",
+            flush=True,
+        )
+
+    claim_success_model: ClaimSuccessHead | None = None
+    claim_success_checkpoint: dict[str, Any] | None = None
+    claim_success_model_threshold: float | None = None
+    claim_success_model_threshold_by_color: dict[str, float] = {}
+    claim_success_model_color_vocab: list[str] = []
+    if args.claim_success_model_checkpoint is not None:
+        try:
+            claim_success_checkpoint = torch.load(
+                args.claim_success_model_checkpoint,
+                map_location=device,
+                weights_only=False,
+            )
+        except TypeError:
+            claim_success_checkpoint = torch.load(
+                args.claim_success_model_checkpoint,
+                map_location=device,
+            )
+        if claim_success_checkpoint.get("schema") != _CLAIM_SUCCESS_CHECKPOINT_SCHEMA:
+            raise SystemExit(
+                "--claim-success-model-checkpoint has unsupported schema: "
+                f"{claim_success_checkpoint.get('schema')}"
+            )
+        if claim_success_checkpoint.get("feature_schema") != _CLAIM_SUCCESS_FEATURE_SCHEMA:
+            raise SystemExit(
+                "--claim-success-model-checkpoint has unsupported feature schema: "
+                f"{claim_success_checkpoint.get('feature_schema')}"
+            )
+        claim_success_model = ClaimSuccessHead(
+            input_dim=int(claim_success_checkpoint["input_dim"]),
+            hidden_dim=int(claim_success_checkpoint.get("hidden_dim", 64)),
+        ).to(device)
+        claim_success_model.load_state_dict(claim_success_checkpoint["model_state_dict"])
+        claim_success_model.eval()
+        claim_success_model_color_vocab = [
+            str(item).lower()
+            for item in claim_success_checkpoint.get("color_vocab", color_vocab or [])
+        ]
+        claim_success_model_threshold = (
+            float(args.claim_success_model_threshold)
+            if args.claim_success_model_threshold is not None
+            else float(claim_success_checkpoint.get("threshold", 0.5))
+        )
+        raw_threshold_by_color = claim_success_checkpoint.get("threshold_by_color", {})
+        if isinstance(raw_threshold_by_color, dict):
+            claim_success_model_threshold_by_color = {
+                str(color).lower(): float(value)
+                for color, value in raw_threshold_by_color.items()
+            }
+        print(
+            f"claim-success-model: checkpoint={args.claim_success_model_checkpoint.name} "
+            f"threshold={claim_success_model_threshold:.3f} "
+            f"threshold_by_color={claim_success_model_threshold_by_color} "
+            f"input_dim={claim_success_checkpoint['input_dim']}",
+            flush=True,
+        )
+
+    learned_target_scheduler_model: TargetSchedulerHead | None = None
+    learned_target_scheduler_checkpoint: dict[str, Any] | None = None
+    learned_target_scheduler_color_vocab: list[str] = []
+    if args.learned_target_scheduler_checkpoint is not None:
+        (
+            learned_target_scheduler_model,
+            learned_target_scheduler_checkpoint,
+        ) = _load_target_scheduler(args.learned_target_scheduler_checkpoint, device=device)
+        learned_target_scheduler_color_vocab = [
+            str(item).lower()
+            for item in learned_target_scheduler_checkpoint.get("color_vocab", color_vocab or [])
+        ]
+        missing_scheduler_colors = [
+            color for color in target_sequence if color not in learned_target_scheduler_color_vocab
+        ]
+        if missing_scheduler_colors:
+            raise SystemExit(
+                "--learned-target-scheduler-checkpoint is missing target colors: "
+                + ",".join(missing_scheduler_colors)
+            )
+        print(
+            f"learned-target-scheduler: checkpoint={args.learned_target_scheduler_checkpoint.name} "
+            f"input_dim={learned_target_scheduler_checkpoint['input_dim']} "
+            f"colors={','.join(learned_target_scheduler_color_vocab)}",
             flush=True,
         )
 
@@ -7760,15 +8771,68 @@ def main() -> int:
     capture = args.demo_video is not None
     prev_pose = (float(spawn_pos[0]), float(spawn_pos[1]), _yaw_from_quat_wxyz(spawn_quat))
     last_primitive, last_cmd = "hold", (0.0, 0.0, 0.0)
+    if slice_snapshot is not None:
+        ctrl_state = _ctrl_state_to_device(slice_snapshot.get("ctrl_state"), device=device)
+        last_primitive = str(slice_snapshot.get("last_primitive", "hold"))
+        last_cmd = tuple(float(v) for v in slice_snapshot.get("last_cmd", (0.0, 0.0, 0.0)))
     last_primitive_run_ticks = 0
     log = []
     claimed = False
     target_index = 0
+    if slice_start is not None:
+        slice_active_target = str(args.slice_active_target_color).strip().lower()
+        target_index = {
+            str(color).lower(): idx for idx, color in enumerate(target_sequence)
+        }[slice_active_target]
+    if slice_snapshot is not None:
+        target_index = int(slice_snapshot.get("target_index", target_index))
+    slice_tick_offset = int(slice_start["start_tick"]) if slice_start is not None else 0
+    if slice_snapshot is not None:
+        slice_tick_offset = int(slice_snapshot.get("next_tick", slice_snapshot.get("tick", 0)))
+    feature_max_ticks = int(args.max_ticks)
+    if slice_start is not None:
+        feature_max_ticks = int(
+            args.slice_feature_max_ticks
+            or slice_start.get("source_ticks_used")
+            or max(int(args.max_ticks), int(slice_tick_offset) + int(args.max_ticks))
+        )
+    if slice_snapshot is not None:
+        feature_max_ticks = int(
+            args.slice_feature_max_ticks
+            or slice_snapshot.get("feature_max_ticks")
+            or max(int(args.max_ticks), int(slice_tick_offset) + int(args.max_ticks))
+        )
+    target_active_since_tick = int(slice_tick_offset)
+    if slice_snapshot is not None:
+        target_active_since_tick = int(
+            slice_snapshot.get("target_active_since_tick", target_active_since_tick)
+        )
     active_target_color = target_sequence[target_index]
     active_target_tc = color_vocab.index(active_target_color) if color_vocab is not None else None
     first_seen_ticks: dict[str, int] = {}
     last_seen_ticks: dict[str, int] = {}
     beacon_claims: list[dict[str, Any]] = []
+    if slice_start is not None:
+        beacon_claims.extend(dict(item) for item in slice_start["preclaims"])
+        for claim in beacon_claims:
+            color = str(claim.get("target_color", "")).lower()
+            if color:
+                claim_tick = int(claim.get("tick", 0))
+                first_seen_ticks.setdefault(color, claim_tick)
+                last_seen_ticks[color] = max(int(last_seen_ticks.get(color, claim_tick)), claim_tick)
+    if slice_snapshot is not None:
+        beacon_claims = [dict(item) for item in slice_snapshot.get("beacon_claims", [])]
+        first_seen_ticks = {
+            str(k): int(v) for k, v in slice_snapshot.get("first_seen_ticks", {}).items()
+        }
+        last_seen_ticks = {
+            str(k): int(v) for k, v in slice_snapshot.get("last_seen_ticks", {}).items()
+        }
+        slice_preclaimed_colors = {
+            str(item.get("target_color", "")).lower()
+            for item in beacon_claims
+            if str(item.get("target_color", "")).strip()
+        }
     first_seen_tick = None
     wall_source = (
         "learned_front_blocked"
@@ -7785,6 +8849,39 @@ def main() -> int:
         "fully_learned_runtime_contract": bool(args.fully_learned_runtime_contract),
         "generalized_runtime_contract": bool(args.generalized_runtime_contract),
         "fully_learned_runtime_contract_report": fully_learned_contract_report,
+        "slice_benchmark": bool(slice_start is not None or slice_snapshot is not None),
+        "slice_start": (
+            (
+                {
+                    "path": str(args.slice_snapshot_input),
+                    "start_tick": int(slice_snapshot.get("next_tick", 0)),
+                    "start_xy": [
+                        float(v) for v in np.asarray(slice_snapshot.get("pos_xyz", [0.0, 0.0]))[:2]
+                    ],
+                    "start_yaw": float(slice_snapshot.get("yaw_rad", 0.0)),
+                    "snapshot": True,
+                    "source_result": slice_snapshot.get("source_result"),
+                }
+                if slice_snapshot is not None
+                else None
+            )
+            if slice_start is None
+            else {
+                key: value
+                for key, value in slice_start.items()
+                if key not in {"preload_log"}
+            }
+        ),
+        "slice_preclaimed_colors": sorted(slice_preclaimed_colors),
+        "slice_active_target_color": (
+            (
+                None
+                if slice_start is None and slice_snapshot is None
+                else str(target_sequence[target_index]).lower()
+            )
+        ),
+        "slice_tick_offset": int(slice_tick_offset),
+        "slice_feature_max_ticks": int(feature_max_ticks),
         "explore_goal_policy": str(args.explore_goal_policy),
         "explore_yaw_bearing_threshold": float(args.explore_yaw_bearing_threshold),
         "explore_forward_bearing_threshold": float(args.explore_forward_bearing_threshold),
@@ -7903,6 +9000,37 @@ def main() -> int:
         "claim_near_bearing_by_color": dict(sorted(claim_near_bearing_by_color.items())),
         "claim_near_min_seen_ticks": int(args.claim_near_min_seen_ticks),
         "claim_near_min_seen_ticks_by_color": dict(sorted(claim_near_min_seen_by_color.items())),
+        "claim_success_proxy_area_logit": (
+            None
+            if args.claim_success_proxy_area_logit is None
+            else float(args.claim_success_proxy_area_logit)
+        ),
+        "claim_success_proxy_area_logit_by_color": dict(
+            sorted(claim_success_proxy_area_by_color.items())
+        ),
+        "claim_success_proxy_bearing": (
+            None
+            if args.claim_success_proxy_bearing is None
+            else float(args.claim_success_proxy_bearing)
+        ),
+        "claim_success_proxy_bearing_by_color": dict(
+            sorted(claim_success_proxy_bearing_by_color.items())
+        ),
+        "claim_success_model_checkpoint": (
+            None if args.claim_success_model_checkpoint is None else str(args.claim_success_model_checkpoint)
+        ),
+        "claim_success_model_threshold": (
+            None if claim_success_model_threshold is None else float(claim_success_model_threshold)
+        ),
+        "claim_success_model_threshold_by_color": dict(
+            sorted(claim_success_model_threshold_by_color.items())
+        ),
+        "claim_success_model_evaluations": 0,
+        "claim_success_model_rejections": 0,
+        "claim_success_model_positive_trigger": bool(args.claim_success_model_positive_trigger),
+        "claim_success_model_trigger_claims": 0,
+        "claim_success_proxy_rejections": 0,
+        "claim_success_proxy_opportunistic_rejections": 0,
         "claim_contact_area_logit": (
             None if args.claim_contact_area_logit is None else float(args.claim_contact_area_logit)
         ),
@@ -7923,6 +9051,15 @@ def main() -> int:
             else float(args.multi_target_switch_conf)
         ),
         "multi_target_switch_area_logit": float(args.multi_target_switch_area_logit),
+        "learned_target_scheduler_checkpoint": (
+            None
+            if args.learned_target_scheduler_checkpoint is None
+            else str(args.learned_target_scheduler_checkpoint)
+        ),
+        "learned_target_scheduler_ticks": 0,
+        "learned_target_scheduler_switches": 0,
+        "learned_target_scheduler_masked_claimed_colors": True,
+        "learned_target_scheduler_color_vocab": list(learned_target_scheduler_color_vocab),
         "multi_target_seen_switch_min_area_logit": (
             None
             if args.multi_target_seen_switch_min_area_logit is None
@@ -7985,6 +9122,25 @@ def main() -> int:
         "weak_memory_seek_immediate_explore_recoveries": 0,
         "weak_memory_seek_forced_explore_ticks": 0,
         "weak_memory_seek_stall_events": 0,
+        "target_pursuit_stale_ticks": int(args.target_pursuit_stale_ticks),
+        "target_pursuit_stale_states": sorted(target_pursuit_stale_states),
+        "target_pursuit_stale_explore_cooldown_ticks": int(
+            args.target_pursuit_stale_explore_cooldown_ticks
+        ),
+        "target_pursuit_stale_window_ticks": int(args.target_pursuit_stale_window_ticks),
+        "target_pursuit_stale_suppress_color_ticks": int(
+            args.target_pursuit_stale_suppress_color_ticks
+        ),
+        "target_pursuit_stale_candidate_ticks": 0,
+        "target_pursuit_stale_claim_proxy_pending_ticks": 0,
+        "target_pursuit_stale_window_candidate_ticks_max": 0,
+        "target_pursuit_stale_recoveries": 0,
+        "target_pursuit_stale_window_recoveries": 0,
+        "target_pursuit_stale_forced_explore_ticks": 0,
+        "target_pursuit_stale_color_suppressions": 0,
+        "target_pursuit_stale_suppressed_active_ticks": 0,
+        "target_pursuit_stale_switches_from_suppressed": 0,
+        "target_pursuit_stale_switch_rejections_suppressed": 0,
         "seen_read_threshold": (
             None if args.seen_read_threshold is None else float(args.seen_read_threshold)
         ),
@@ -8258,6 +9414,9 @@ def main() -> int:
             if args.learned_local_post_claim_policy_checkpoint is None
             else str(args.learned_local_post_claim_policy_checkpoint)
         ),
+        "learned_local_post_claim_policy_min_claims": int(
+            args.learned_local_post_claim_policy_min_claims
+        ),
         "learned_local_target_policy_checkpoints": {
             color: str(checkpoint.get("source", ""))
             for color, checkpoint in sorted(learned_local_target_policy_checkpoints.items())
@@ -8329,6 +9488,12 @@ def main() -> int:
             args.learned_local_policy_rerank_backward_penalty
         ),
         "learned_local_policy_rerank_switch_margin": float(args.learned_local_policy_rerank_switch_margin),
+        "learned_local_policy_rerank_protect_top_prob": float(
+            args.learned_local_policy_rerank_protect_top_prob
+        ),
+        "learned_local_policy_rerank_override_min_prob": float(
+            args.learned_local_policy_rerank_override_min_prob
+        ),
         "learned_local_policy_rerank_bearing_turn_threshold": float(
             args.learned_local_policy_rerank_bearing_turn_threshold
         ),
@@ -8337,6 +9502,9 @@ def main() -> int:
         ),
         "learned_local_policy_online_map_novelty_weight": float(
             args.learned_local_policy_online_map_novelty_weight
+        ),
+        "learned_local_policy_online_map_hard_veto": bool(
+            args.learned_local_policy_online_map_hard_veto
         ),
         "learned_local_policy_online_map_blocked_penalty": float(
             args.learned_local_policy_online_map_blocked_penalty
@@ -8447,6 +9615,7 @@ def main() -> int:
         "learned_local_policy_collected_examples": 0,
         "learned_local_policy_label_mapped_examples": 0,
         "learned_local_policy_skipped_unmapped_examples": 0,
+        "learned_local_policy_skipped_feature_dim_examples": 0,
         "learned_local_policy_privileged_explorer_skipped_ticks": 0,
         "learned_local_policy_feature_dim": (
             None
@@ -8572,16 +9741,72 @@ def main() -> int:
     weak_memory_seek_stall_streak = 0
     weak_memory_seek_yaw_loop_streak = 0
     weak_memory_seek_explore_cooldown = 0
+    target_pursuit_stale_streak = 0
+    target_pursuit_escape_cooldown = 0
+    target_pursuit_stale_last_color: str | None = None
+    target_pursuit_stale_window_ticks_by_color: dict[str, list[int]] = {}
+    target_pursuit_suppressed_until: dict[str, int] = {}
     weak_memory_seek_colors = {
         item.strip().lower()
         for item in str(args.weak_memory_seek_colors).split(",")
         if item.strip()
     }
+    if (
+        slice_start is not None
+        and bool(args.slice_preload_online_map)
+        and learned_local_online_map is not None
+    ):
+        preload_rows = 0
+        for row in slice_start.get("preload_log", []):
+            if not isinstance(row, dict):
+                continue
+            row_tick = row.get("tick")
+            if row_tick is None or int(row_tick) >= int(slice_start["start_tick"]):
+                continue
+            post_xy = row.get("post_xy")
+            if isinstance(post_xy, (list, tuple)) and len(post_xy) >= 2:
+                learned_local_online_map.observe_pose(post_xy[:2], tick=int(row_tick))
+                preload_rows += 1
+        for claim in beacon_claims:
+            color = str(claim.get("target_color", "")).lower()
+            if color not in slice_preclaimed_colors:
+                continue
+            xy = None
+            claim_tick = int(claim.get("tick", 0))
+            for row in slice_start.get("preload_log", []):
+                if not isinstance(row, dict):
+                    continue
+                if row.get("tick") is None or int(row.get("tick")) < claim_tick:
+                    continue
+                post_xy = row.get("post_xy")
+                if isinstance(post_xy, (list, tuple)) and len(post_xy) >= 2:
+                    xy = post_xy[:2]
+                    break
+            if xy is None:
+                continue
+            learned_local_online_map.mark_claim(xy)
+        wall_metrics["slice_online_map_preloaded"] = True
+        wall_metrics["slice_online_map_preload_rows"] = int(preload_rows)
+    else:
+        wall_metrics["slice_online_map_preloaded"] = False
+        wall_metrics["slice_online_map_preload_rows"] = 0
+    if (
+        slice_snapshot is not None
+        and learned_local_online_map is not None
+        and slice_snapshot.get("online_map") is not None
+    ):
+        learned_local_online_map.load_state_dict(slice_snapshot["online_map"])
+        wall_metrics["slice_online_map_preloaded"] = True
+        wall_metrics["slice_online_map_preload_rows"] = int(
+            len(slice_snapshot["online_map"].get("visited", []))
+        )
     learned_local_dataset_features: list[np.ndarray] = []
     learned_local_dataset_labels: list[int] = []
     learned_local_dataset_meta: list[dict[str, Any]] = []
+    learned_local_dataset_feature_dim: int | None = None
+    slice_snapshot_saved = False
 
-    for tick in range(int(args.max_ticks)):
+    for tick in range(int(slice_tick_offset), int(slice_tick_offset) + int(args.max_ticks)):
         pos, quat = _current_pose(build)
         yaw = _yaw_from_quat_wxyz(quat)
         cur_pose = (float(pos[0]), float(pos[1]), float(yaw))
@@ -8722,7 +9947,90 @@ def main() -> int:
                     target_color_readouts[color]["first_seen_tick"] = int(first_seen_ticks[color])
                 if color in last_seen_ticks:
                     target_color_readouts[color]["last_seen_tick"] = int(last_seen_ticks[color])
-            if len(target_sequence) > 1 and str(args.multi_target_switch_policy) != "fixed":
+            if learned_target_scheduler_model is not None and len(target_sequence) > 1:
+                claimed_color_set = {str(item.get("target_color")) for item in beacon_claims}
+                current_color = target_sequence[target_index]
+                scheduler_feature = _target_scheduler_feature(
+                    colors=learned_target_scheduler_color_vocab,
+                    current_color=current_color,
+                    current_target_age_ticks=max(
+                        0,
+                        int(tick) - int(target_active_since_tick),
+                    ),
+                    claimed_colors=claimed_color_set,
+                    color_readouts=target_color_readouts,
+                    tick=int(tick),
+                    max_ticks=int(feature_max_ticks),
+                    device=device,
+                )
+                with torch.no_grad():
+                    scheduler_logits = learned_target_scheduler_model(scheduler_feature)[0]
+                    scheduler_probs = torch.softmax(scheduler_logits, dim=0)
+                masked_logits = scheduler_logits.detach().clone()
+                for idx, color in enumerate(learned_target_scheduler_color_vocab):
+                    if color in claimed_color_set or color not in target_sequence:
+                        masked_logits[idx] = -1.0e9
+                if torch.isfinite(masked_logits).any() and float(masked_logits.max().detach().cpu()) > -1.0e8:
+                    selected_scheduler_idx = int(torch.argmax(masked_logits).detach().cpu())
+                    selected_scheduler_color = learned_target_scheduler_color_vocab[
+                        selected_scheduler_idx
+                    ]
+                    selected_scheduler_prob = float(
+                        scheduler_probs[selected_scheduler_idx].detach().cpu()
+                    )
+                    sorted_logits = torch.sort(masked_logits, descending=True).values
+                    scheduler_margin = (
+                        float((sorted_logits[0] - sorted_logits[1]).detach().cpu())
+                        if int(sorted_logits.numel()) > 1 and float(sorted_logits[1].detach().cpu()) > -1.0e8
+                        else None
+                    )
+                    wall_metrics["learned_target_scheduler_ticks"] += 1
+                    if bool(args.learned_target_scheduler_log_scores):
+                        for idx, color in enumerate(learned_target_scheduler_color_vocab):
+                            target_switch_candidates.append(
+                                {
+                                    "color": color,
+                                    "target_index": (
+                                        target_sequence.index(color)
+                                        if color in target_sequence
+                                        else None
+                                    ),
+                                    "claimed": bool(color in claimed_color_set),
+                                    "policy": "learned_target_scheduler",
+                                    "current_target_age_ticks": max(
+                                        0,
+                                        int(tick) - int(target_active_since_tick),
+                                    ),
+                                    "logit": _round_float(
+                                        float(scheduler_logits[idx].detach().cpu()),
+                                        4,
+                                    ),
+                                    "prob": _round_float(
+                                        float(scheduler_probs[idx].detach().cpu()),
+                                        4,
+                                    ),
+                                    "accepted": bool(color == selected_scheduler_color),
+                                }
+                            )
+                    if selected_scheduler_color in target_sequence:
+                        new_index = target_sequence.index(selected_scheduler_color)
+                        if int(new_index) != int(target_index):
+                            target_switch_info = {
+                                "from": current_color,
+                                "to": selected_scheduler_color,
+                                "policy": "learned_target_scheduler",
+                                "prob": _round_float(selected_scheduler_prob, 4),
+                                "margin": _round_float(scheduler_margin, 4),
+                            }
+                            wall_metrics["learned_target_scheduler_switches"] += 1
+                            wall_metrics["target_switches"] += 1
+                            target_index = int(new_index)
+                            target_active_since_tick = int(tick)
+            if (
+                len(target_sequence) > 1
+                and str(args.multi_target_switch_policy) != "fixed"
+                and learned_target_scheduler_model is None
+            ):
                 claimed_color_set = {str(item.get("target_color")) for item in beacon_claims}
                 current_color = target_sequence[target_index]
                 current_idx = color_vocab.index(current_color)
@@ -8738,6 +10046,10 @@ def main() -> int:
                     if "rgb_area_logits" in outputs
                     else -99.0
                 )
+                current_suppressed_until = int(
+                    target_pursuit_suppressed_until.get(str(current_color), 0)
+                )
+                current_stale_suppressed = bool(current_suppressed_until > int(tick))
                 switch_conf = (
                     float(args.seen_conf)
                     if args.multi_target_switch_conf is None
@@ -8753,14 +10065,28 @@ def main() -> int:
                     should_consider_switch = current_area < switch_area
                 elif policy_name == "memory_priority":
                     should_consider_switch = True
+                if current_stale_suppressed:
+                    should_consider_switch = True
                 if should_consider_switch:
                     candidates: list[tuple[float, int, str, float, float]] = []
                     for cand_index, color in enumerate(target_sequence):
+                        color_suppressed_until = int(
+                            target_pursuit_suppressed_until.get(str(color), 0)
+                        )
+                        color_stale_suppressed = bool(
+                            color_suppressed_until > int(tick)
+                        )
                         candidate_log: dict[str, Any] | None = (
                             {
                                 "color": color,
                                 "target_index": int(cand_index),
                                 "claimed": bool(color in claimed_color_set),
+                                "stale_suppressed": bool(color_stale_suppressed),
+                                "stale_suppressed_until": (
+                                    int(color_suppressed_until)
+                                    if color_stale_suppressed
+                                    else None
+                                ),
                             }
                             if bool(args.log_color_readouts)
                             else None
@@ -8769,6 +10095,15 @@ def main() -> int:
                             if candidate_log is not None:
                                 candidate_log["accepted"] = False
                                 candidate_log["reject_reason"] = "claimed"
+                                target_switch_candidates.append(candidate_log)
+                            continue
+                        if color_stale_suppressed:
+                            wall_metrics[
+                                "target_pursuit_stale_switch_rejections_suppressed"
+                            ] += 1
+                            if candidate_log is not None:
+                                candidate_log["accepted"] = False
+                                candidate_log["reject_reason"] = "stale_suppressed"
                                 target_switch_candidates.append(candidate_log)
                             continue
                         color_idx = color_vocab.index(color)
@@ -8795,21 +10130,26 @@ def main() -> int:
                                 "read_gate_pass": bool(read_gate_pass),
                                 "area": _round_float(area_logit, 4),
                             })
-                        if conf < switch_conf:
+                        relaxed_for_suppressed_current = bool(current_stale_suppressed)
+                        if conf < switch_conf and not relaxed_for_suppressed_current:
                             wall_metrics["target_switch_rejections_conf"] += 1
                             if candidate_log is not None:
                                 candidate_log["accepted"] = False
                                 candidate_log["reject_reason"] = "conf"
                                 target_switch_candidates.append(candidate_log)
                             continue
-                        if not read_gate_pass:
+                        if not read_gate_pass and not relaxed_for_suppressed_current:
                             wall_metrics["target_switch_rejections_read"] += 1
                             if candidate_log is not None:
                                 candidate_log["accepted"] = False
                                 candidate_log["reject_reason"] = "read"
                                 target_switch_candidates.append(candidate_log)
                             continue
-                        if policy_name == "visible_priority" and area_logit < switch_area:
+                        if (
+                            policy_name == "visible_priority"
+                            and area_logit < switch_area
+                            and not relaxed_for_suppressed_current
+                        ):
                             wall_metrics["target_switch_rejections_area"] += 1
                             if candidate_log is not None:
                                 candidate_log["accepted"] = False
@@ -8820,6 +10160,7 @@ def main() -> int:
                             policy_name == "seen_when_active_unseen"
                             and seen_switch_min_area is not None
                             and area_logit < float(seen_switch_min_area)
+                            and not relaxed_for_suppressed_current
                         ):
                             wall_metrics["target_switch_rejections_area"] += 1
                             if candidate_log is not None:
@@ -8828,10 +10169,22 @@ def main() -> int:
                                 target_switch_candidates.append(candidate_log)
                             continue
                         visible_bonus = 10.0 if area_logit >= switch_area else 0.0
-                        score = visible_bonus + area_logit + 0.1 * conf - 1e-3 * cand_index
+                        if relaxed_for_suppressed_current:
+                            read_bonus = 0.0 if read_score is None else 0.05 * float(read_score)
+                            score = (
+                                visible_bonus
+                                + area_logit
+                                + 0.1 * conf
+                                + read_bonus
+                                - 1e-3 * cand_index
+                            )
+                        else:
+                            score = visible_bonus + area_logit + 0.1 * conf - 1e-3 * cand_index
                         if candidate_log is not None:
                             candidate_log["accepted"] = True
                             candidate_log["score"] = _round_float(score, 4)
+                            if relaxed_for_suppressed_current:
+                                candidate_log["relaxed_for_stale_suppressed_current"] = True
                             target_switch_candidates.append(candidate_log)
                         candidates.append((score, cand_index, color, conf, area_logit))
                     if candidates:
@@ -8847,7 +10200,16 @@ def main() -> int:
                                 "area": _round_float(new_area, 4),
                             }
                             wall_metrics["target_switches"] += 1
+                            if current_stale_suppressed:
+                                wall_metrics[
+                                    "target_pursuit_stale_switches_from_suppressed"
+                                ] += 1
+                                target_switch_info["from_stale_suppressed"] = True
+                                target_switch_info["suppressed_until"] = int(
+                                    current_suppressed_until
+                                )
                             target_index = int(new_index)
+                            target_active_since_tick = int(tick)
             stale_switch_after_noops = int(
                 args.multi_target_stale_seen_switch_after_frontier_noops
             )
@@ -8855,6 +10217,7 @@ def main() -> int:
                 stale_switch_after_noops > 0
                 and len(target_sequence) > 1
                 and target_switch_info is None
+                and learned_target_scheduler_model is None
                 and int(learned_local_policy_frontier_noop_run) >= stale_switch_after_noops
             ):
                 claimed_color_set = {str(item.get("target_color")) for item in beacon_claims}
@@ -8945,6 +10308,7 @@ def main() -> int:
                             wall_metrics["target_stale_seen_switches"] += 1
                             wall_metrics["target_switches"] += 1
                             target_index = int(new_index)
+                            target_active_since_tick = int(tick)
             active_target_color = target_sequence[target_index]
             active_target_tc = color_vocab.index(active_target_color)
             mem_vec = outputs["memory_vec"][active_target_tc]
@@ -8973,6 +10337,16 @@ def main() -> int:
             else:
                 bearing = math.atan2(float(mem_vec[1]), float(mem_vec[0]))
             bearing_for_guard = bearing
+            weak_memory_recovery_active = False
+            weak_memory_force_explore = False
+            target_pursuit_force_explore = False
+            active_target_stale_suppressed_until = int(
+                target_pursuit_suppressed_until.get(str(active_target_color), 0)
+            )
+            active_target_stale_suppressed = bool(
+                active_target_stale_suppressed_until > int(tick)
+            )
+            claim_gate_log: dict[str, Any] = {}
 
             # Recall preamble (scaffold): OBSERVE to bind, then HIDE (turn away).
             recall_preamble = False
@@ -9021,11 +10395,23 @@ def main() -> int:
                         or bool(args.weak_memory_seek_force_explore_on_recovery)
                     )
                 )
-                state_seen = bool(seen and not weak_memory_force_explore)
+                target_pursuit_force_explore = bool(
+                    int(target_pursuit_escape_cooldown) > 0
+                )
+                state_seen = bool(
+                    seen
+                    and not weak_memory_force_explore
+                    and not target_pursuit_force_explore
+                    and not active_target_stale_suppressed
+                )
                 if weak_memory_force_explore:
                     wall_metrics["weak_memory_seek_forced_explore_ticks"] += 1
                     if bool(args.weak_memory_seek_force_explore_on_recovery):
                         wall_metrics["weak_memory_seek_immediate_explore_recoveries"] += 1
+                if target_pursuit_force_explore:
+                    wall_metrics["target_pursuit_stale_forced_explore_ticks"] += 1
+                if active_target_stale_suppressed:
+                    wall_metrics["target_pursuit_stale_suppressed_active_ticks"] += 1
                 claim_mature = seen_age_ticks >= max(0, int(args.claim_min_seen_ticks))
                 standard_claim = (
                     seen and in_cone
@@ -9045,12 +10431,81 @@ def main() -> int:
                     active_target_color,
                     int(args.claim_near_min_seen_ticks),
                 )
+                claim_success_proxy_area_logit = claim_success_proxy_area_by_color.get(
+                    active_target_color,
+                    args.claim_success_proxy_area_logit,
+                )
+                claim_success_proxy_bearing = claim_success_proxy_bearing_by_color.get(
+                    active_target_color,
+                    args.claim_success_proxy_bearing,
+                )
+                claim_success_model_score: float | None = None
+                active_claim_success_model_threshold = (
+                    claim_success_model_threshold_by_color.get(
+                        str(active_target_color).lower(),
+                        claim_success_model_threshold,
+                    )
+                )
+                if claim_success_model is not None and claim_success_model_threshold is not None:
+                    with torch.no_grad():
+                        claim_success_model_score = float(
+                            torch.sigmoid(
+                                claim_success_model(
+                                    _claim_success_model_feature(
+                                        color=active_target_color,
+                                        color_vocab=claim_success_model_color_vocab,
+                                        area=area,
+                                        bearing=bearing,
+                                        mem_conf=mem_conf,
+                                        read_score=read_score,
+                                        seen_age_ticks=int(seen_age_ticks),
+                                        seen=bool(seen),
+                                        in_cone=bool(in_cone),
+                                        claimed_count=int(len(beacon_claims)),
+                                        tick=int(tick),
+                                        max_ticks=int(feature_max_ticks),
+                                        device=device,
+                                    )
+                                )
+                            ).detach().cpu().item()
+                        )
+                    wall_metrics["claim_success_model_evaluations"] += 1
+                claim_success_proxy_gate = _claim_success_proxy_gate_entry(
+                    area=area,
+                    area_threshold=claim_success_proxy_area_logit,
+                    bearing=bearing,
+                    bearing_threshold=claim_success_proxy_bearing,
+                    model_score=claim_success_model_score,
+                    model_threshold=active_claim_success_model_threshold,
+                )
+                claim_success_proxy_pass = bool(claim_success_proxy_gate["passed"])
+                if not claim_success_proxy_pass:
+                    wall_metrics["claim_success_proxy_rejections"] += 1
+                    if "model_low" in claim_success_proxy_gate.get("reject_reasons", []):
+                        wall_metrics["claim_success_model_rejections"] += 1
+                claim_success_model_trigger_min_seen_ticks = (
+                    int(near_min_seen_ticks)
+                    if args.claim_success_model_trigger_min_seen_ticks is None
+                    else int(args.claim_success_model_trigger_min_seen_ticks)
+                )
+                learned_model_claim = bool(
+                    args.claim_success_model_positive_trigger
+                    and claim_success_model is not None
+                    and active_claim_success_model_threshold is not None
+                    and seen
+                    and in_cone
+                    and read_gate_pass
+                    and seen_age_ticks >= max(0, claim_success_model_trigger_min_seen_ticks)
+                    and claim_success_proxy_pass
+                )
+                standard_claim = bool(standard_claim and claim_success_proxy_pass)
                 near_claim = (
                     near_area_logit is not None
                     and seen and in_cone
                     and seen_age_ticks >= max(0, int(near_min_seen_ticks))
                     and area > float(near_area_logit)
                     and abs(bearing) < float(near_bearing)
+                    and claim_success_proxy_pass
                 )
                 contact_claim = (
                     args.claim_contact_area_logit is not None
@@ -9058,6 +10513,7 @@ def main() -> int:
                     and seen_age_ticks >= max(0, int(args.claim_contact_min_seen_ticks))
                     and area > float(args.claim_contact_area_logit)
                     and abs(bearing) < float(args.claim_contact_bearing)
+                    and claim_success_proxy_pass
                 )
                 stalled_visual_claim = (
                     args.claim_stalled_area_logit is not None
@@ -9066,7 +10522,47 @@ def main() -> int:
                     and seen_age_ticks >= max(0, int(args.claim_stalled_min_seen_ticks))
                     and area > float(args.claim_stalled_area_logit)
                     and abs(bearing) < float(args.claim_stalled_bearing)
+                    and claim_success_proxy_pass
                 )
+                learned_model_gate_rejections: list[str] = []
+                learned_model_gate_enabled = bool(
+                    args.claim_success_model_positive_trigger
+                    and claim_success_model is not None
+                    and active_claim_success_model_threshold is not None
+                )
+                if not bool(args.claim_success_model_positive_trigger):
+                    learned_model_gate_rejections.append("disabled")
+                if claim_success_model is None or active_claim_success_model_threshold is None:
+                    learned_model_gate_rejections.append("model_unavailable")
+                if not bool(seen):
+                    learned_model_gate_rejections.append("not_seen")
+                if not bool(in_cone):
+                    learned_model_gate_rejections.append("not_in_cone")
+                if not bool(read_gate_pass):
+                    learned_model_gate_rejections.append("read_gate_low")
+                if seen_age_ticks < max(0, claim_success_model_trigger_min_seen_ticks):
+                    learned_model_gate_rejections.append("seen_age_low")
+                if not claim_success_proxy_pass:
+                    learned_model_gate_rejections.extend(
+                        f"success_proxy:{reason}"
+                        for reason in claim_success_proxy_gate.get("reject_reasons", [])
+                    )
+                learned_model_gate = {
+                    "enabled": bool(learned_model_gate_enabled),
+                    "passed": bool(learned_model_claim),
+                    "reject_reasons": [] if learned_model_claim else learned_model_gate_rejections,
+                    "min_seen_ticks": int(claim_success_model_trigger_min_seen_ticks),
+                    "model_score": (
+                        None
+                        if claim_success_model_score is None
+                        else _round_float(claim_success_model_score, 4)
+                    ),
+                    "model_threshold": (
+                        None
+                        if active_claim_success_model_threshold is None
+                        else float(active_claim_success_model_threshold)
+                    ),
+                }
                 opportunistic_claim_info: dict[str, Any] | None = None
                 if bool(args.multi_target_opportunistic_claims) and len(target_sequence) > 1:
                     claimed_color_set = {
@@ -9112,6 +10608,79 @@ def main() -> int:
                                 color_area > float(area_threshold)
                                 and abs(color_bearing) < float(bearing_threshold)
                             )
+                            candidate_success_proxy_area = (
+                                claim_success_proxy_area_by_color.get(
+                                    color_name,
+                                    args.claim_success_proxy_area_logit,
+                                )
+                            )
+                            candidate_success_proxy_bearing = (
+                                claim_success_proxy_bearing_by_color.get(
+                                    color_name,
+                                    args.claim_success_proxy_bearing,
+                                )
+                            )
+                            cand_read_score = _controller_read_score(outputs, color_idx)
+                            candidate_success_model_score: float | None = None
+                            candidate_claim_success_model_threshold = (
+                                claim_success_model_threshold_by_color.get(
+                                    str(color_name).lower(),
+                                    claim_success_model_threshold,
+                                )
+                            )
+                            if (
+                                claim_success_model is not None
+                                and claim_success_model_threshold is not None
+                            ):
+                                with torch.no_grad():
+                                    candidate_success_model_score = float(
+                                        torch.sigmoid(
+                                            claim_success_model(
+                                                _claim_success_model_feature(
+                                                    color=color_name,
+                                                    color_vocab=claim_success_model_color_vocab,
+                                                    area=color_area,
+                                                    bearing=color_bearing,
+                                                    mem_conf=float(outputs["memory_conf"][color_idx]),
+                                                    read_score=cand_read_score,
+                                                    seen_age_ticks=int(
+                                                        opportunistic_claim_visible_ticks.get(
+                                                            color_name, 0
+                                                        )
+                                                    ),
+                                                    seen=bool(color_area > float(area_threshold)),
+                                                    in_cone=bool(
+                                                        abs(color_bearing)
+                                                        < float(bearing_threshold)
+                                                    ),
+                                                    claimed_count=int(len(beacon_claims)),
+                                                    tick=int(tick),
+                                                    max_ticks=int(feature_max_ticks),
+                                                    device=device,
+                                                )
+                                            )
+                                        ).detach().cpu().item()
+                                    )
+                                wall_metrics["claim_success_model_evaluations"] += 1
+                            candidate_success_proxy_gate = _claim_success_proxy_gate_entry(
+                                area=color_area,
+                                area_threshold=candidate_success_proxy_area,
+                                bearing=color_bearing,
+                                bearing_threshold=candidate_success_proxy_bearing,
+                                model_score=candidate_success_model_score,
+                                model_threshold=candidate_claim_success_model_threshold,
+                            )
+                            if visual_ok and not bool(candidate_success_proxy_gate["passed"]):
+                                wall_metrics[
+                                    "claim_success_proxy_opportunistic_rejections"
+                                ] += 1
+                                if "model_low" in candidate_success_proxy_gate.get(
+                                    "reject_reasons", []
+                                ):
+                                    wall_metrics["claim_success_model_rejections"] += 1
+                            visual_ok = bool(
+                                visual_ok and candidate_success_proxy_gate["passed"]
+                            )
                             if visual_ok:
                                 visible_candidate_tick = True
                                 opportunistic_claim_visible_ticks[color_name] = min(
@@ -9125,7 +10694,6 @@ def main() -> int:
                                 1,
                                 int(args.multi_target_opportunistic_claim_min_visible_ticks),
                             ):
-                                cand_read_score = _controller_read_score(outputs, color_idx)
                                 ready_candidates.append({
                                     "target_color": color_name,
                                     "target_index": int(cand_index),
@@ -9136,6 +10704,7 @@ def main() -> int:
                                     "read_score": cand_read_score,
                                     "area_threshold": float(area_threshold),
                                     "bearing_threshold": float(bearing_threshold),
+                                    "success_proxy": dict(candidate_success_proxy_gate),
                                 })
                     if visible_candidate_tick:
                         wall_metrics["target_opportunistic_claim_candidate_ticks"] += 1
@@ -9148,11 +10717,106 @@ def main() -> int:
                             reverse=True,
                         )
                         opportunistic_claim_info = ready_candidates[0]
+                standard_gate = _claim_gate_entry(
+                    enabled=True,
+                    seen=seen,
+                    in_cone=in_cone,
+                    seen_age_ticks=seen_age_ticks,
+                    min_seen_ticks=int(args.claim_min_seen_ticks),
+                    area=area,
+                    area_threshold=float(args.claim_area_logit),
+                    bearing=bearing,
+                    bearing_threshold=float(args.claim_bearing),
+                )
+                near_gate = _claim_gate_entry(
+                    enabled=near_area_logit is not None,
+                    seen=seen,
+                    in_cone=in_cone,
+                    seen_age_ticks=seen_age_ticks,
+                    min_seen_ticks=int(near_min_seen_ticks),
+                    area=area,
+                    area_threshold=None if near_area_logit is None else float(near_area_logit),
+                    bearing=bearing,
+                    bearing_threshold=None if near_bearing is None else float(near_bearing),
+                )
+                contact_gate = _claim_gate_entry(
+                    enabled=args.claim_contact_area_logit is not None,
+                    seen=seen,
+                    in_cone=in_cone,
+                    seen_age_ticks=seen_age_ticks,
+                    min_seen_ticks=int(args.claim_contact_min_seen_ticks),
+                    area=area,
+                    area_threshold=(
+                        None
+                        if args.claim_contact_area_logit is None
+                        else float(args.claim_contact_area_logit)
+                    ),
+                    bearing=bearing,
+                    bearing_threshold=float(args.claim_contact_bearing),
+                )
+                stalled_gate = _claim_gate_entry(
+                    enabled=args.claim_stalled_area_logit is not None,
+                    seen=seen,
+                    in_cone=in_cone,
+                    seen_age_ticks=seen_age_ticks,
+                    min_seen_ticks=int(args.claim_stalled_min_seen_ticks),
+                    area=area,
+                    area_threshold=(
+                        None
+                        if args.claim_stalled_area_logit is None
+                        else float(args.claim_stalled_area_logit)
+                    ),
+                    bearing=bearing,
+                    bearing_threshold=float(args.claim_stalled_bearing),
+                    extra_rejections=(
+                        []
+                        if int(claim_stalled_visual_latch) > 0
+                        else ["stalled_latch_inactive"]
+                    ),
+                )
+                opportunistic_gate = {
+                    "enabled": bool(args.multi_target_opportunistic_claims)
+                    and len(target_sequence) > 1,
+                    "passed": opportunistic_claim_info is not None,
+                    "reject_reasons": (
+                        []
+                        if opportunistic_claim_info is not None
+                        else ["no_ready_candidate"]
+                    ),
+                }
+                if opportunistic_claim_info is not None:
+                    opportunistic_gate["candidate"] = dict(opportunistic_claim_info)
+                claim_gate_log = {
+                    "accepted": bool(
+                        standard_claim
+                        or near_claim
+                        or contact_claim
+                        or stalled_visual_claim
+                        or learned_model_claim
+                        or opportunistic_claim_info is not None
+                    ),
+                    "seen": bool(seen),
+                    "in_cone": bool(in_cone),
+                    "seen_age_ticks": int(seen_age_ticks),
+                    "area": _round_float(area, 4),
+                    "bearing": _round_float(bearing, 4),
+                    "mem_conf": _round_float(mem_conf, 4),
+                    "read_score": None if read_score is None else _round_float(read_score, 4),
+                    "read_gate_pass": bool(read_gate_pass),
+                    "standard": standard_gate,
+                    "near": near_gate,
+                    "contact": contact_gate,
+                    "stalled_visual": stalled_gate,
+                    "success_proxy": claim_success_proxy_gate,
+                    "learned_model": learned_model_gate,
+                    "opportunistic_visible": opportunistic_gate,
+                }
                 if (
                     standard_claim
                     or near_claim
                     or contact_claim
                     or stalled_visual_claim
+                    or learned_model_claim
                     or opportunistic_claim_info is not None
                 ):
                     claim_reason = "standard"
@@ -9164,7 +10828,10 @@ def main() -> int:
                     claim_seen_age_ticks = int(seen_age_ticks)
                     claim_read_score = read_score
                     claim_near_area_logit = near_area_logit
-                    if contact_claim and not standard_claim and not near_claim:
+                    if learned_model_claim:
+                        claim_reason = "learned_claim_success_model"
+                        wall_metrics["claim_success_model_trigger_claims"] += 1
+                    elif contact_claim and not standard_claim and not near_claim:
                         claim_reason = "contact_visual"
                     elif near_claim and not standard_claim:
                         claim_reason = "near_visual"
@@ -9185,6 +10852,7 @@ def main() -> int:
                             opportunistic_claim_info["area_threshold"]
                         )
                         target_index = int(claim_target_index)
+                        target_active_since_tick = int(tick)
                         wall_metrics["target_opportunistic_claims"] += 1
                         if claim_target_color not in first_seen_ticks:
                             first_seen_ticks[claim_target_color] = int(tick)
@@ -9204,6 +10872,7 @@ def main() -> int:
                         "stalled_visual_latch": int(claim_stalled_visual_latch),
                         "dist_to_target_m": claim_dist,
                         "target_index": int(claim_target_index),
+                        "claim_gate": claim_gate_log,
                     }
                     if opportunistic_claim_info is not None:
                         claim_entry["opportunistic_claim"] = dict(opportunistic_claim_info)
@@ -9263,6 +10932,7 @@ def main() -> int:
                         break
                     next_indices = [i for i in remaining_indices if i > int(target_index)]
                     target_index = int((next_indices or remaining_indices)[0])
+                    target_active_since_tick = int(tick) + 1
                     active_target_color = target_sequence[target_index]
                     active_target_tc = color_vocab.index(active_target_color)
                     body_clearance_latch = 0
@@ -9290,11 +10960,49 @@ def main() -> int:
                     last_primitive = "hold"
                     last_cmd = _PRIM_CMD["hold"]
                     last_primitive_run_ticks = 0
+                    if (
+                        args.slice_snapshot_output is not None
+                        and int(args.slice_snapshot_after_claims) > 0
+                        and len(beacon_claims) >= int(args.slice_snapshot_after_claims)
+                        and not slice_snapshot_saved
+                    ):
+                        _write_slice_snapshot(
+                            args.slice_snapshot_output,
+                            build=build,
+                            runner=runner,
+                            scene_id=scene_dir.name,
+                            tick=int(tick),
+                            next_tick=int(tick) + 1,
+                            pos=np.asarray(pos, dtype=np.float32),
+                            quat=np.asarray(quat, dtype=np.float32),
+                            yaw=float(yaw),
+                            ctrl_state=ctrl_state,
+                            target_sequence=target_sequence,
+                            target_index=int(target_index),
+                            target_active_since_tick=int(target_active_since_tick),
+                            beacon_claims=beacon_claims,
+                            first_seen_ticks=first_seen_ticks,
+                            last_seen_ticks=last_seen_ticks,
+                            last_primitive=last_primitive,
+                            last_cmd=last_cmd,
+                            online_map=learned_local_online_map,
+                            feature_max_ticks=int(feature_max_ticks),
+                            source_result=str(args.output),
+                        )
+                        slice_snapshot_saved = True
+                        wall_metrics["slice_snapshot_output"] = str(args.slice_snapshot_output)
+                        wall_metrics["slice_snapshot_tick"] = int(tick)
+                        if bool(args.slice_snapshot_exit):
+                            break
                     learned_local_turn_balance = 0
                     learned_local_turn_run = 0
                     learned_local_policy_turn_run = 0
                     weak_memory_seek_stall_streak = 0
                     weak_memory_seek_explore_cooldown = 0
+                    target_pursuit_stale_streak = 0
+                    target_pursuit_escape_cooldown = 0
+                    target_pursuit_stale_last_color = None
+                    target_pursuit_stale_window_ticks_by_color.clear()
                     prev_pose = cur_pose
                     continue
                 if bool(args.explore_standoff_release_on_seen) and seen:
@@ -9438,7 +11146,8 @@ def main() -> int:
                              "primitive": primitive, "mem_conf": round(mem_conf, 3),
                              "area": round(area, 2), "bearing": round(bearing, 2), "in_cone": in_cone,
                              "seen": bool(seen), "state_seen": bool(state_seen),
-                             "seen_age_ticks": seen_age_ticks}
+                             "seen_age_ticks": seen_age_ticks,
+                             "claim_gate": claim_gate_log}
                 if read_score is not None:
                     log_entry["read_score"] = _round_float(read_score, 4)
                     if args.seen_read_threshold is not None:
@@ -9464,6 +11173,21 @@ def main() -> int:
                             None
                             if args.weak_memory_seek_area_logit is None
                             else float(args.weak_memory_seek_area_logit)
+                        ),
+                    }
+                if target_pursuit_force_explore:
+                    log_entry["target_pursuit_stale_escape"] = {
+                        "force_explore": True,
+                        "cooldown": int(target_pursuit_escape_cooldown),
+                        "streak": int(target_pursuit_stale_streak),
+                    }
+                if active_target_stale_suppressed:
+                    log_entry["target_pursuit_stale_suppressed_active"] = {
+                        "color": str(active_target_color),
+                        "until_tick": int(active_target_stale_suppressed_until),
+                        "remaining_ticks": max(
+                            0,
+                            int(active_target_stale_suppressed_until) - int(tick),
                         ),
                     }
                 if st == "EXPLORE":
@@ -9493,11 +11217,21 @@ def main() -> int:
         learned_local_state_name = (
             "" if log_entry is None else str(log_entry.get("state", "")).upper()
         )
+        learned_local_target_policy_state_active = bool(
+            log_entry is not None
+            and learned_local_state_name
+            and (
+                f"{str(active_target_color).lower()}:{learned_local_state_name}"
+                in learned_local_target_policy_models
+                or str(active_target_color).lower() in learned_local_target_policy_models
+            )
+        )
         learned_local_policy_state_active = bool(
             log_entry is not None
             and (
                 not learned_local_policy_states
                 or learned_local_state_name in learned_local_policy_states
+                or learned_local_target_policy_state_active
                 or (
                     bool(beacon_claims)
                     and learned_local_state_name in learned_local_policy_post_claim_states
@@ -9511,6 +11245,7 @@ def main() -> int:
             and (
                 not learned_local_dataset_states
                 or learned_local_state_name in learned_local_dataset_states
+                or learned_local_target_policy_state_active
                 or (
                     bool(beacon_claims)
                     and learned_local_state_name in learned_local_policy_post_claim_states
@@ -9575,7 +11310,7 @@ def main() -> int:
                 primitive_outcomes=primitive_outcomes,
                 last_primitive=last_primitive,
                 tick=int(tick),
-                max_ticks=int(args.max_ticks),
+                max_ticks=int(feature_max_ticks),
                 append_clock_features=bool(learned_local_primary_feature_flags["clock"]),
                 append_state_features=bool(learned_local_primary_feature_flags["state"]),
                 append_visual_readout_features=bool(
@@ -9604,7 +11339,7 @@ def main() -> int:
                     primitive_outcomes=primitive_outcomes,
                     last_primitive=last_primitive,
                     tick=int(tick),
-                    max_ticks=int(args.max_ticks),
+                    max_ticks=int(feature_max_ticks),
                     append_clock_features=bool(learned_local_post_claim_feature_flags["clock"]),
                     append_state_features=bool(learned_local_post_claim_feature_flags["state"]),
                     append_visual_readout_features=bool(
@@ -9635,7 +11370,7 @@ def main() -> int:
                     primitive_outcomes=primitive_outcomes,
                     last_primitive=last_primitive,
                     tick=int(tick),
-                    max_ticks=int(args.max_ticks),
+                    max_ticks=int(feature_max_ticks),
                     append_clock_features=bool(target_flags["clock"]),
                     append_state_features=bool(target_flags["state"]),
                     append_visual_readout_features=bool(target_flags["visual_readout"]),
@@ -9654,6 +11389,10 @@ def main() -> int:
             if (
                 learned_local_post_claim_policy_checkpoint is not None
                 and bool(beacon_claims)
+                and len(beacon_claims) >= max(
+                    1,
+                    int(args.learned_local_post_claim_policy_min_claims),
+                )
                 and learned_local_state_name in learned_local_policy_post_claim_states
             ):
                 learned_policy_feature = learned_post_claim_policy_feature
@@ -9673,6 +11412,10 @@ def main() -> int:
             )
             dataset_post_claim_policy_available = bool(
                 bool(beacon_claims)
+                and len(beacon_claims) >= max(
+                    1,
+                    int(args.learned_local_post_claim_policy_min_claims),
+                )
                 and learned_local_state_name in learned_local_policy_post_claim_states
                 and learned_local_post_claim_policy_model is not None
                 and learned_local_post_claim_policy_checkpoint is not None
@@ -9727,14 +11470,21 @@ def main() -> int:
                                 wall_metrics["learned_local_oracle_standoff_label_overrides"] += 1
                             teacher_label_primitive = oracle_label_primitive
                     if teacher_label_primitive is not None:
-                        learned_local_dataset_features.append(
+                        feature_np = (
                             learned_policy_feature.detach().cpu().numpy().astype(np.float32)
                         )
-                        learned_local_dataset_labels.append(
-                            _LEARNED_LOCAL_POLICY_PRIMITIVES.index(teacher_label_primitive)
-                        )
-                        learned_local_dataset_meta.append(
-                            {
+                        feature_dim = int(feature_np.reshape(-1).shape[0])
+                        if learned_local_dataset_feature_dim is None:
+                            learned_local_dataset_feature_dim = feature_dim
+                        if feature_dim != int(learned_local_dataset_feature_dim):
+                            wall_metrics["learned_local_policy_skipped_feature_dim_examples"] += 1
+                        else:
+                            learned_local_dataset_features.append(feature_np)
+                            learned_local_dataset_labels.append(
+                                _LEARNED_LOCAL_POLICY_PRIMITIVES.index(teacher_label_primitive)
+                            )
+                            learned_local_dataset_meta.append(
+                                {
                                 "tick": int(tick),
                                 "state": str(log_entry.get("state", "")),
                                 "label": teacher_label_primitive,
@@ -9764,11 +11514,15 @@ def main() -> int:
                                 "yaw_rad": float(yaw),
                                 "claimed_count": int(len(beacon_claims)),
                                 "standoff_route_gate": bool(log_entry.get("standoff_route_gate", False)),
-                            }
-                        )
-                        wall_metrics["learned_local_policy_collected_examples"] += 1
+                                }
+                            )
+                            wall_metrics["learned_local_policy_collected_examples"] += 1
             post_claim_policy_available = bool(
                 bool(beacon_claims)
+                and len(beacon_claims) >= max(
+                    1,
+                    int(args.learned_local_post_claim_policy_min_claims),
+                )
                 and learned_local_state_name in learned_local_policy_post_claim_states
                 and learned_local_post_claim_policy_model is not None
                 and learned_local_post_claim_policy_checkpoint is not None
@@ -9906,6 +11660,12 @@ def main() -> int:
                         args.learned_local_policy_rerank_backward_penalty
                     ),
                     rerank_switch_margin=float(args.learned_local_policy_rerank_switch_margin),
+                    rerank_protect_top_prob=float(
+                        args.learned_local_policy_rerank_protect_top_prob
+                    ),
+                    rerank_override_min_prob=float(
+                        args.learned_local_policy_rerank_override_min_prob
+                    ),
                     bearing=(
                         None
                         if log_entry is None or "bearing" not in log_entry
@@ -9935,6 +11695,9 @@ def main() -> int:
                     ),
                     online_map_frontier_route_weight=float(
                         args.learned_local_policy_online_map_frontier_route_weight
+                    ),
+                    online_map_hard_veto=bool(
+                        args.learned_local_policy_online_map_hard_veto
                     ),
                     controller_state_name=str(log_entry.get("state", "")),
                     online_map_novelty_states=learned_local_policy_online_map_novelty_states,
@@ -11466,12 +13229,161 @@ def main() -> int:
         elif log_entry is not None and not bool(weak_memory_force_explore):
             weak_memory_seek_stall_streak = 0
             weak_memory_seek_yaw_loop_streak = 0
+        if log_entry is not None and int(args.target_pursuit_stale_ticks) > 0:
+            target_state = str(log_entry.get("state", "")).upper()
+            target_color_for_stale = str(log_entry.get("target_color", ""))
+            if target_color_for_stale != target_pursuit_stale_last_color:
+                target_pursuit_stale_streak = 0
+                target_pursuit_stale_last_color = target_color_for_stale
+            target_gate = log_entry.get("claim_gate")
+            claim_gate_passed = bool(
+                isinstance(target_gate, dict) and target_gate.get("accepted")
+            )
+            claim_proxy_pending = False
+            if isinstance(target_gate, dict):
+                proxy_gate = target_gate.get("success_proxy")
+                base_claim_ready = any(
+                    bool(
+                        isinstance(target_gate.get(section), dict)
+                        and target_gate.get(section, {}).get("passed")
+                    )
+                    for section in ("standard", "near", "contact", "stalled_visual")
+                )
+                claim_proxy_pending = bool(
+                    base_claim_ready
+                    and isinstance(proxy_gate, dict)
+                    and bool(proxy_gate.get("enabled"))
+                    and not bool(proxy_gate.get("passed"))
+                )
+            if claim_proxy_pending:
+                wall_metrics["target_pursuit_stale_claim_proxy_pending_ticks"] += 1
+                log_entry["target_pursuit_stale_claim_proxy_pending"] = True
+            stale_candidate = bool(
+                target_state in target_pursuit_stale_states
+                and bool(log_entry.get("seen", False))
+                and not claim_gate_passed
+                and not claim_proxy_pending
+            )
+            stale_window_ticks = max(0, int(args.target_pursuit_stale_window_ticks))
+            stale_window_count = 0
+            if stale_window_ticks > 0 and target_color_for_stale:
+                cutoff_tick = int(tick) - stale_window_ticks + 1
+                color_window = [
+                    int(item)
+                    for item in target_pursuit_stale_window_ticks_by_color.get(
+                        target_color_for_stale,
+                        [],
+                    )
+                    if int(item) >= cutoff_tick
+                ]
+                target_pursuit_stale_window_ticks_by_color[
+                    target_color_for_stale
+                ] = color_window
+                stale_window_count = len(color_window)
+            if stale_candidate:
+                target_pursuit_stale_streak = min(
+                    1000000,
+                    int(target_pursuit_stale_streak) + 1,
+                )
+                wall_metrics["target_pursuit_stale_candidate_ticks"] += 1
+                if stale_window_ticks > 0 and target_color_for_stale:
+                    color_window = target_pursuit_stale_window_ticks_by_color.setdefault(
+                        target_color_for_stale,
+                        [],
+                    )
+                    color_window.append(int(tick))
+                    cutoff_tick = int(tick) - stale_window_ticks + 1
+                    color_window[:] = [
+                        int(item) for item in color_window if int(item) >= cutoff_tick
+                    ]
+                    stale_window_count = len(color_window)
+                    wall_metrics[
+                        "target_pursuit_stale_window_candidate_ticks_max"
+                    ] = max(
+                        int(wall_metrics["target_pursuit_stale_window_candidate_ticks_max"]),
+                        int(stale_window_count),
+                    )
+                    log_entry["target_pursuit_stale_window_candidate_ticks"] = int(
+                        stale_window_count
+                    )
+                    log_entry["target_pursuit_stale_window_ticks"] = int(
+                        stale_window_ticks
+                    )
+                log_entry["target_pursuit_stale_streak_after"] = int(
+                    target_pursuit_stale_streak
+                )
+                stale_recovery_reason = None
+                if int(target_pursuit_stale_streak) >= max(
+                    1,
+                    int(args.target_pursuit_stale_ticks),
+                ):
+                    stale_recovery_reason = "consecutive"
+                elif (
+                    stale_window_ticks > 0
+                    and int(stale_window_count) >= max(
+                        1,
+                        int(args.target_pursuit_stale_ticks),
+                    )
+                ):
+                    stale_recovery_reason = "window"
+                if (
+                    stale_recovery_reason is not None
+                    and int(target_pursuit_escape_cooldown) <= 0
+                ):
+                    target_pursuit_escape_cooldown = max(
+                        1,
+                        int(args.target_pursuit_stale_explore_cooldown_ticks),
+                    )
+                    target_pursuit_stale_streak = 0
+                    if stale_window_ticks > 0 and target_color_for_stale:
+                        target_pursuit_stale_window_ticks_by_color[target_color_for_stale] = []
+                    wall_metrics["target_pursuit_stale_recoveries"] += 1
+                    if stale_recovery_reason == "window":
+                        wall_metrics["target_pursuit_stale_window_recoveries"] += 1
+                    suppress_ticks = max(
+                        0,
+                        int(args.target_pursuit_stale_suppress_color_ticks),
+                    )
+                    if suppress_ticks > 0 and target_color_for_stale:
+                        suppress_until = int(tick) + suppress_ticks
+                        target_pursuit_suppressed_until[target_color_for_stale] = max(
+                            int(
+                                target_pursuit_suppressed_until.get(
+                                    target_color_for_stale,
+                                    0,
+                                )
+                            ),
+                            int(suppress_until),
+                        )
+                        wall_metrics["target_pursuit_stale_color_suppressions"] += 1
+                        log_entry["target_pursuit_stale_color_suppression"] = {
+                            "color": target_color_for_stale,
+                            "until_tick": int(
+                                target_pursuit_suppressed_until[
+                                    target_color_for_stale
+                                ]
+                            ),
+                            "ticks": int(suppress_ticks),
+                        }
+                    log_entry["target_pursuit_stale_recovery_armed"] = True
+                    log_entry["target_pursuit_stale_recovery_reason"] = str(
+                        stale_recovery_reason
+                    )
+                    log_entry["target_pursuit_stale_recovery_cooldown"] = int(
+                        target_pursuit_escape_cooldown
+                    )
+            elif not bool(target_pursuit_force_explore):
+                target_pursuit_stale_streak = 0
+        elif log_entry is not None and not bool(target_pursuit_force_explore):
+            target_pursuit_stale_streak = 0
         if body_clearance_risk_escape_cooldown > 0:
             body_clearance_risk_escape_cooldown -= 1
         if current_body_risk_cooldown > 0:
             current_body_risk_cooldown -= 1
         if weak_memory_seek_explore_cooldown > 0:
             weak_memory_seek_explore_cooldown -= 1
+        if target_pursuit_escape_cooldown > 0:
+            target_pursuit_escape_cooldown -= 1
         if log_entry is not None:
             log_entry["executed_displacement_m"] = _round_float(xy_displacement)
             log_entry["post_xy"] = [_round_float(float(post_pos[0])), _round_float(float(post_pos[1]))]
@@ -11537,6 +13449,40 @@ def main() -> int:
         )
         last_primitive = primitive
         last_cmd = _PRIM_CMD.get(primitive, (0.0, 0.0, 0.0))
+        if (
+            args.slice_snapshot_output is not None
+            and int(args.slice_snapshot_at_tick) >= 0
+            and int(tick) >= int(args.slice_snapshot_at_tick)
+            and not slice_snapshot_saved
+        ):
+            _write_slice_snapshot(
+                args.slice_snapshot_output,
+                build=build,
+                runner=runner,
+                scene_id=scene_dir.name,
+                tick=int(tick),
+                next_tick=int(tick) + 1,
+                pos=np.asarray(post_pos, dtype=np.float32),
+                quat=np.asarray(post_quat, dtype=np.float32),
+                yaw=float(post_yaw),
+                ctrl_state=ctrl_state,
+                target_sequence=target_sequence,
+                target_index=int(target_index),
+                target_active_since_tick=int(target_active_since_tick),
+                beacon_claims=beacon_claims,
+                first_seen_ticks=first_seen_ticks,
+                last_seen_ticks=last_seen_ticks,
+                last_primitive=last_primitive,
+                last_cmd=last_cmd,
+                online_map=learned_local_online_map,
+                feature_max_ticks=int(feature_max_ticks),
+                source_result=str(args.output),
+            )
+            slice_snapshot_saved = True
+            wall_metrics["slice_snapshot_output"] = str(args.slice_snapshot_output)
+            wall_metrics["slice_snapshot_tick"] = int(tick)
+            if bool(args.slice_snapshot_exit):
+                break
         prev_pose = cur_pose
 
     final_pos, _ = _current_pose(build)
@@ -11680,6 +13626,15 @@ def main() -> int:
     )
     wall_metrics["explore_standoff_body_forward_clearance_m"] = _round_float(
         getattr(explorer, "standoff_body_forward_clearance_m", None), 4
+    )
+    wall_metrics["post_claim_acquisition_diagnostics"] = (
+        _post_claim_acquisition_diagnostics(
+            log,
+            target_sequence=target_sequence,
+            min_claims=max(1, min(3, len(target_sequence))),
+        )
+        if len(target_sequence) > 1
+        else {}
     )
     wall_metrics.pop("forward_execution_displacement_sum_m", None)
     result = {

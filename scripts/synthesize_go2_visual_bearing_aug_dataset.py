@@ -30,6 +30,15 @@ def main() -> int:
         help="Color order in the learned-local feature vector.",
     )
     parser.add_argument("--target-color", default="blue")
+    parser.add_argument(
+        "--allow-template-any-target",
+        action="store_true",
+        help=(
+            "Use input rows from any template target_color, then rewrite the "
+            "active target slots and output metadata to --target-color. Default "
+            "behavior preserves the historical same-target template filter."
+        ),
+    )
     parser.add_argument("--claimed-colors", default="red,green")
     parser.add_argument("--bearings", required=True, help="Comma-separated bearing radians.")
     parser.add_argument("--areas", required=True, help="Comma-separated area logits.")
@@ -79,7 +88,7 @@ def main() -> int:
             "Comma-separated synthetic outcome contexts used with "
             "--rewrite-primitive-outcomes. Supported: open, forward_blocked, "
             "arc_open, translating_blocked, clearance_risk, blocked_center_escape, "
-            "target_standoff_escape, target_servo_approach."
+            "target_standoff_escape, target_far_approach, target_servo_approach."
         ),
     )
     parser.add_argument(
@@ -197,15 +206,21 @@ def main() -> int:
             if features.shape[0] != len(meta_rows):
                 raise SystemExit(f"bad meta row count in {input_path}")
             source_rows += int(features.shape[0])
-            keep = [
-                idx
-                for idx, row in enumerate(meta_rows)
-                if str(row.get("target_color", target_color)) == target_color
-            ]
+            if bool(args.allow_template_any_target):
+                keep = list(range(len(meta_rows)))
+            else:
+                keep = [
+                    idx
+                    for idx, row in enumerate(meta_rows)
+                    if str(row.get("target_color", target_color)) == target_color
+                ]
             if int(args.max_source_rows) > 0:
                 keep = keep[: int(args.max_source_rows)]
             if not keep:
-                raise SystemExit(f"{input_path} has no template rows for target_color={target_color}")
+                raise SystemExit(
+                    f"{input_path} has no template rows for target_color={target_color}; "
+                    "pass --allow-template-any-target to retarget rows across colors"
+                )
 
             out_features: list[np.ndarray] = []
             out_labels: list[int] = []
@@ -411,6 +426,7 @@ def main() -> int:
         "output_rows": int(output_rows),
         "color_vocab": list(color_vocab),
         "target_color": target_color,
+        "allow_template_any_target": bool(args.allow_template_any_target),
         "claimed_colors": list(claimed_colors),
         "bearings": bearings,
         "areas": areas,
@@ -523,6 +539,12 @@ def _outcome_context_label(
         if float(area) <= 0.25 and abs_bearing <= backward_bearing:
             return "backward"
         if abs_bearing <= max(float(arc_bearing) * 1.8, float(forward_bearing)):
+            return signed_arc
+        return signed_yaw
+    if context == "target_far_approach":
+        if abs_bearing <= max(float(forward_bearing), 0.25):
+            return "forward_medium"
+        if abs_bearing <= max(float(arc_bearing) * 1.5, float(forward_bearing)):
             return signed_arc
         return signed_yaw
     if context == "target_servo_approach":
@@ -672,6 +694,15 @@ def _rewrite_primitive_outcome_slice(
         set_if_present("yaw_left", 0.04, 0.03, 0.08)
         set_if_present("yaw_right", 0.04, 0.03, 0.08)
         set_if_present("hold", 0.08, 0.0, 0.88)
+    elif context == "target_far_approach":
+        set_if_present("forward_fast", 0.18, 0.24, 0.20)
+        set_if_present("forward_medium", 0.04, 0.24, 0.08)
+        set_if_present(signed_arc, 0.06, 0.18, 0.08)
+        set_if_present(opposite_arc, 0.58, 0.02, 0.62)
+        set_if_present("backward", 0.54, -0.03, 0.56)
+        set_if_present("yaw_left", 0.03, 0.04, 0.06)
+        set_if_present("yaw_right", 0.03, 0.04, 0.06)
+        set_if_present("hold", 0.08, 0.0, 0.82)
     elif context == "target_servo_approach":
         set_if_present("forward_fast", 0.14, 0.26, 0.16)
         set_if_present("forward_medium", 0.03, 0.24, 0.06)
