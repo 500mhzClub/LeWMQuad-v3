@@ -1,0 +1,86 @@
+{
+  "schema": "lewm_go2_generalization_geometry_v2",
+  "status": "platform_conservative_simulation_calibrated_hardware_validation_pending",
+  "source_artifacts": {
+    "platform_manifest": {
+      "path": "config/go2_platform_manifest.yaml",
+      "sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189"
+    },
+    "urdf_constants": {
+      "path": "third_party/unitree_go2_ros2/unitree_go2_description/urdf/const.xacro",
+      "sha256": "884c1f685ee0a89cbeee320598d0d482b842f497096938d2a6a415b89a2007fb"
+    },
+    "urdf_robot": {
+      "path": "third_party/unitree_go2_ros2/unitree_go2_description/urdf/unitree_go2_robot.xacro",
+      "sha256": "be0abf5e860427bfb8762c85b58232c9ff466a3bc8f522915f8ca71e3b8c05e9"
+    },
+    "open_plane_calibration": {
+      "path": "config/go2_geometry_v2_artifacts/open_plane_calibration_56389a44.json",
+      "sha256": "56389a44f28c1a151bef263d7a1aa0be64bba4b1db010211f2ac7e92a567ec15"
+    },
+    "directional_footprint_policy": {
+      "path": "config/go2_geometry_v2_artifacts/go2_directional_footprint_policy_v1_c57650326e8b7d302498bbfe93b9e3d15c36d56d55ae9e1f339507ece0a9f1fc.json",
+      "sha256": "750d8afe47ee3edd5988cdea443f19703efad7a3266218932671b9fdfbe43828"
+    },
+    "v3_directional_development_audit": {
+      "path": "config/go2_geometry_v2_artifacts/v3_directional_development_audit_9cd02e03.json",
+      "sha256": "7d1c682d166f26e0d3f901e34e9b20309e571c608c5ea735e5eb5c9a236d3851"
+    },
+    "directional_geometry_implementation": {
+      "path": "lewm/planning/oriented_footprint.py",
+      "sha256": "5831379e52eb0eaa1c2cf8d195b6d46b29ad8b66dbadc98f51629f22bc656b37"
+    }
+  },
+  "camera": {
+    "frame": "camera_link",
+    "horizontal_fov_deg": 78.323,
+    "near_m": 0.05,
+    "nominal_xyz_body_m": [0.326, 0.0, 0.043],
+    "nominal_rpy_body_rad": [0.0, 0.0, 0.0],
+    "apply_manifest_extrinsic_jitter": true,
+    "apply_runtime_safety_retraction_to_labels": true
+  },
+  "configuration_space": {
+    "reference_frame": "base_link",
+    "oracle_cell_size_m": 0.05,
+    "online_cell_size_m": 0.10,
+    "body_inflation_radius_m": 0.47,
+    "connectivity": 4,
+    "allow_diagonal_corner_cutting": false,
+    "landmarks_are_obstacles": true,
+    "distractors_are_obstacles": true
+  },
+  "swept_footprint": {
+    "forward_m": 0.3700000000000001,
+    "rear_m": 0.43210313102250314,
+    "half_width_m": 0.2668059073252429,
+    "probe_margin_m": 0.03,
+    "source": "go2-directional-observed-max-margin-v1",
+    "calibration_required_for_physical_promotion": true,
+    "directional_policy_id": "go2-directional-observed-max-margin-v1",
+    "directional_policy_content_sha256": "c57650326e8b7d302498bbfe93b9e3d15c36d56d55ae9e1f339507ece0a9f1fc",
+    "directional_profile": "observed_max_plus_margin",
+    "maximum_vertex_radius_m": 0.4617711967569951,
+    "planning_disc_radius_m": 0.47,
+    "strict_collision_representation": "directional_polygon_at_actual_yaw",
+    "planning_representation": "yaw_invariant_enclosing_disc"
+  },
+  "visibility_and_claim": {
+    "claim_radius_m": 1.20,
+    "standoff_m": 1.05,
+    "standoff_candidates": 32,
+    "minimum_navigable_corridor_width_m": 1.10,
+    "require_line_of_sight_for_scene_validity": true,
+    "require_true_distance_for_success": true
+  },
+  "coverage": {
+    "cell_size_m": 0.10,
+    "normalization": "fixed_spawn_reachable_configuration_space_cells",
+    "mark_swept_reference_path": true
+  },
+  "kinematic_execution": {
+    "collision_space": "directional_polygon_at_actual_yaw",
+    "maximum_translation_substep_m": 0.025,
+    "minimum_progress_m": 0.001
+  }
+}

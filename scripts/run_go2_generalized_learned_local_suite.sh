@@ -339,6 +339,7 @@ for SCENE_ID in "${HELDOUT_SCENE_ARRAY[@]}"; do
   if ! "$PYTHON" "$ROOT/scripts/check_go2_fully_learned_demo.py" \
       --result "$RESULT" \
       --max-ticks "$EVAL_MAX_TICKS" \
+      --max-body-contact-events 0 \
       --require-generalized-runtime-contract \
       --forbid-route-memory \
       --forbid-pose-topology-features \

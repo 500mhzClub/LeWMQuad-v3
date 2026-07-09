@@ -1,0 +1,28 @@
+{
+  "benchmark_id": "go2-jepa-online-memory-generalization-v1",
+  "candidate_plan_seed": 2026070901,
+  "candidate_plan_sha256": "afdb8cba27bfeace0b6b3478d67ef62a9fabaa6616ea8aa98f2cd7a9cf4cc74d",
+  "candidates_per_family": 96,
+  "excluded_scene_count": 17,
+  "families": [
+    "medium_enclosed_maze",
+    "large_enclosed_maze",
+    "loop_alias_stress"
+  ],
+  "geometry_contract": {
+    "path": "config/go2_generalization_geometry_v1.json",
+    "sha256": "551b0938cab9018aca34fccad21e42b9e8cad93e7dc3d8904c77e9d9e7368345"
+  },
+  "known_scene_count": 302,
+  "known_scene_ids_sha256": "8f0f24846e262b3db585115b8374f7725a98ba20f875801911765facc3c72e57",
+  "schema": "lewm_navigation_benchmark_creation_report_v0",
+  "sealed_test_commitment_sha256": "ed8a6ee0d8349b22ad713391d3e94b46ceade4a6b2fc3d15bf71fca941948e9e",
+  "sealed_test_scene_count": 30,
+  "split_seed": 2026070902,
+  "train_count_by_family": {
+    "large_enclosed_maze": 78,
+    "loop_alias_stress": 61,
+    "medium_enclosed_maze": 78
+  },
+  "validation_scene_count": 24
+}

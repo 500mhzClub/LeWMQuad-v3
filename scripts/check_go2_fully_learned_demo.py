@@ -22,9 +22,22 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--quality", type=Path, default=None)
+    parser.add_argument("--render-report", type=Path, default=None)
+    parser.add_argument(
+        "--require-scene-id",
+        default=None,
+        help="Require the result scene id to match this exact scene.",
+    )
+    parser.add_argument("--require-physical-mode", action="store_true")
     parser.add_argument("--max-ticks", type=int, default=400)
     parser.add_argument("--max-contact-like-stalls", type=int, default=0)
     parser.add_argument("--max-hard-stalls", type=int, default=0)
+    parser.add_argument(
+        "--max-body-contact-events",
+        type=int,
+        default=0,
+        help="Maximum body-clearance contact events. Use a negative value to skip this gate.",
+    )
     parser.add_argument("--max-body-violations", type=int, default=0)
     parser.add_argument("--max-blocked-forward-executions", type=int, default=None)
     parser.add_argument("--max-blocked-forward-requests", type=int, default=None)
@@ -35,6 +48,13 @@ def main() -> int:
     parser.add_argument("--max-post-claim-max-turn-run", type=int, default=None)
     parser.add_argument("--require-active-jepa-veto", action="store_true")
     parser.add_argument("--require-online-map-memory-active", action="store_true")
+    parser.add_argument("--require-learned-local-policy-runtime", action="store_true")
+    parser.add_argument("--require-locomotion-policy-render", action="store_true")
+    parser.add_argument(
+        "--allow-slice-result",
+        action="store_true",
+        help="Allow a benchmark slice result. Full demo gates reject slices by default.",
+    )
     parser.add_argument("--require-generalized-runtime-contract", action="store_true")
     parser.add_argument("--require-learned-claim-success-model", action="store_true")
     parser.add_argument("--require-learned-target-scheduler", action="store_true")
@@ -53,17 +73,32 @@ def main() -> int:
     result = payload.get("result", payload)
     wall = result.get("wall_metrics", {}) if isinstance(result, dict) else {}
     argv = [str(item) for item in payload.get("provenance", {}).get("argv", [])]
+    benchmark_mode = _argv_value(argv, "--mode")
     quality = _load_json(args.quality) if args.quality is not None else {}
+    render_report = _load_json(args.render_report) if args.render_report is not None else {}
 
     claimed = {str(item) for item in result.get("claimed_colors", [])}
     contract = wall.get("fully_learned_runtime_contract_report", {})
     forbidden_argv = _forbidden_argv(argv)
     contact_like = _metric_int(wall, "contact_like_stalls", "contact_like_stall_events")
     hard_stalls = _metric_int(wall, "hard_contact_like_stalls", "hard_stalls", "hard_stall_events")
+    body_contact_threshold = _metric_float(wall, "body_clearance_contact_threshold_m")
+    if body_contact_threshold is None:
+        body_contact_threshold = 1e-4
+    body_contacts = _metric_int(wall, "body_clearance_contact_events")
+    log_rows = payload.get("log", [])
+    if not isinstance(log_rows, list):
+        log_rows = []
+    if "body_clearance_contact_events" not in wall:
+        body_contacts = _body_contact_events_from_log(
+            log_rows,
+            threshold=float(body_contact_threshold),
+        )
     body_violations = _metric_int(wall, "body_clearance_violation_events")
     blocked_forward_executions = _metric_int(wall, "blocked_forward_executions")
     blocked_forward_requests = _metric_int(wall, "blocked_forward_requests")
     body_clearance_min = _metric_float(wall, "body_clearance_min_m")
+    slice_benchmark = bool(wall.get("slice_benchmark") or wall.get("slice_start"))
     learned_local_max_turn_run = _metric_int(wall, "learned_local_policy_max_turn_run")
     post_claim_diag = wall.get("post_claim_acquisition_diagnostics", {})
     if not isinstance(post_claim_diag, dict):
@@ -75,9 +110,6 @@ def main() -> int:
     post_claim_turn_count = int(post_claim_primitives.get("yaw_left") or 0) + int(
         post_claim_primitives.get("yaw_right") or 0
     )
-    log_rows = payload.get("log", [])
-    if not isinstance(log_rows, list):
-        log_rows = []
     post_claim_start_tick = post_claim_diag.get("start_tick")
     post_claim_max_turn_run = _max_primitive_run(
         log_rows,
@@ -89,6 +121,8 @@ def main() -> int:
         + _metric_int(wall, "body_clearance_hard_vetoes")
         + _metric_int(wall, "body_clearance_saturated_vetoes")
         + _metric_int(wall, "body_clearance_yaw_direction_vetoes")
+        + _metric_int(wall, "body_clearance_yaw_contact_vetoes")
+        + _metric_int(wall, "body_clearance_current_contact_escapes")
         + _metric_int(wall, "blocked_hard_vetoes")
         + _metric_int(wall, "low_progress_hard_vetoes")
         + _metric_int(wall, "learned_local_policy_outcome_rerank_overrides")
@@ -199,6 +233,7 @@ def main() -> int:
         "no_oracle_labels": not bool(wall.get("learned_local_oracle_standoff_labels"))
         and int(wall.get("learned_local_oracle_standoff_label_ticks") or 0) == 0,
         "learned_wall_source": str(wall.get("source")) == "learned_action_outcome",
+        "not_slice_benchmark": (not slice_benchmark) or bool(args.allow_slice_result),
         "success": bool(result.get("success")),
         "all_beacons_claimed": REQUIRED_COLORS.issubset(claimed),
         "ticks": int(result.get("ticks_used") or 0) <= int(args.max_ticks),
@@ -209,10 +244,16 @@ def main() -> int:
         and _metric_int(wall, "tip_events") == 0
         and _metric_int(wall, "unstable_base_events") == 0,
     }
+    if args.require_scene_id is not None:
+        gates["expected_scene_id"] = scene_id == str(args.require_scene_id)
+    if bool(args.require_physical_mode):
+        gates["physical_benchmark_mode"] = str(benchmark_mode or "").lower() == "physical"
     if args.max_blocked_forward_executions is not None:
         gates["blocked_forward_executions"] = blocked_forward_executions <= int(
             args.max_blocked_forward_executions
         )
+    if args.max_body_contact_events is not None and int(args.max_body_contact_events) >= 0:
+        gates["body_clearance_contacts"] = body_contacts <= int(args.max_body_contact_events)
     if args.max_blocked_forward_requests is not None:
         gates["blocked_forward_requests"] = blocked_forward_requests <= int(
             args.max_blocked_forward_requests
@@ -246,6 +287,18 @@ def main() -> int:
         gates["online_map_memory_active"] = (
             bool(wall.get("learned_local_online_map_features"))
             and online_map_memory_ticks > 0
+        )
+    if bool(args.require_learned_local_policy_runtime):
+        gates["learned_local_policy_runtime"] = learned_policy_runtime
+    if bool(args.require_locomotion_policy_render):
+        gates["locomotion_policy_render"] = (
+            bool(render_report)
+            and str(render_report.get("replay_mode")) == "physical"
+            and bool(render_report.get("locomotion_policy_replayed"))
+            and str(render_report.get("replay_start_source", "scene_spawn")) == "scene_spawn"
+            and str(render_report.get("capture_rate")) == "policy"
+            and int(render_report.get("frame_count") or -1)
+            == int(render_report.get("expected_frame_count") or -2)
         )
     if quality:
         gates["quality_passed"] = bool(quality.get("passed", True))
@@ -305,21 +358,32 @@ def main() -> int:
         "result": {
             "path": str(args.result),
             "scene": scene_id,
+            "benchmark_mode": benchmark_mode,
             "success": bool(result.get("success")),
             "ticks_used": int(result.get("ticks_used") or 0),
             "claimed_colors": sorted(claimed),
             "contact_like_stalls": contact_like,
             "hard_stalls": hard_stalls,
+            "body_clearance_contact_events": body_contacts,
+            "body_clearance_contact_threshold_m": body_contact_threshold,
             "body_clearance_violation_events": body_violations,
             "blocked_forward_executions": blocked_forward_executions,
             "blocked_forward_requests": blocked_forward_requests,
             "body_clearance_min_m": body_clearance_min,
+            "slice_benchmark": slice_benchmark,
+            "slice_start": wall.get("slice_start"),
             "learned_local_policy_max_turn_run": learned_local_max_turn_run,
             "post_claim_ticks": post_claim_ticks,
             "post_claim_turn_count": post_claim_turn_count,
             "post_claim_max_turn_run": post_claim_max_turn_run,
             "active_jepa_veto_count": active_jepa_veto_count,
             "online_map_memory_ticks": online_map_memory_ticks,
+            "render_report": str(args.render_report) if args.render_report is not None else None,
+            "render_replay_mode": render_report.get("replay_mode"),
+            "render_replay_start_source": render_report.get("replay_start_source"),
+            "render_locomotion_policy_replayed": render_report.get("locomotion_policy_replayed"),
+            "render_frame_count": render_report.get("frame_count"),
+            "render_expected_frame_count": render_report.get("expected_frame_count"),
             "wall_source": wall.get("source"),
             "learned_local_policy_checkpoint": wall.get("learned_local_policy_checkpoint"),
             "learned_local_post_claim_policy_checkpoint": wall.get(
@@ -388,6 +452,30 @@ def _metric_float(mapping: dict[str, Any], *keys: str) -> float | None:
         if isinstance(value, (int, float)):
             return float(value)
     return None
+
+
+def _body_contact_events_from_log(rows: list[Any], *, threshold: float) -> int:
+    count = 0
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        value = row.get("post_body_clearance_m")
+        if not isinstance(value, (int, float)):
+            continue
+        if float(value) <= float(threshold):
+            count += 1
+    return count
+
+
+def _argv_value(argv: list[str], flag: str) -> str | None:
+    try:
+        idx = argv.index(flag)
+    except ValueError:
+        return None
+    if idx + 1 >= len(argv):
+        return None
+    value = argv[idx + 1]
+    return None if str(value).startswith("--") else str(value)
 
 
 def _max_primitive_run(

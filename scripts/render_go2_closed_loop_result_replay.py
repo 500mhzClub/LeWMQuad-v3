@@ -601,11 +601,31 @@ def main() -> int:
     parser.add_argument(
         "--replay-mode",
         choices=("recorded", "physical"),
-        default="recorded",
+        default="physical",
         help=(
-            "recorded renders the saved post-pose trajectory exactly; physical "
-            "re-executes primitive names through Genesis and can drift from the "
-            "closed-loop result."
+            "physical re-executes primitive names through Genesis with the Go2 "
+            "locomotion policy; recorded renders saved post-pose trajectories "
+            "exactly and can hide locomotion contacts/drift."
+        ),
+    )
+    parser.add_argument(
+        "--allow-recorded-replay",
+        action="store_true",
+        help="Allow diagnostic recorded-pose replay. Demo renders reject it by default.",
+    )
+    parser.add_argument(
+        "--allow-slice-result",
+        action="store_true",
+        help="Allow rendering a benchmark slice result. Full demo renders reject slices by default.",
+    )
+    parser.add_argument(
+        "--use-slice-start",
+        action="store_true",
+        help=(
+            "If the result is a benchmark slice, start replay from "
+            "result.wall_metrics.slice_start instead of the scene spawn. "
+            "This keeps physical post-claim slice review videos aligned with "
+            "the evaluated locomotion-policy rollout."
         ),
     )
     parser.add_argument(
@@ -620,6 +640,22 @@ def main() -> int:
     args = parser.parse_args()
 
     result, log_entries, primitives = _load_replay_log(args.result.resolve())
+    wall_metrics = result.get("wall_metrics", {}) if isinstance(result, dict) else {}
+    if not isinstance(wall_metrics, dict):
+        wall_metrics = {}
+    source_slice_benchmark = bool(wall_metrics.get("slice_benchmark") or wall_metrics.get("slice_start"))
+    if source_slice_benchmark and not bool(args.allow_slice_result):
+        raise SystemExit(
+            "refusing to render benchmark slice as a full demo; pass --allow-slice-result "
+            "only for diagnostic slice review"
+        )
+    if str(args.replay_mode) == "recorded" and not bool(args.allow_recorded_replay):
+        raise SystemExit(
+            "refusing recorded-pose replay as a demo render; pass --allow-recorded-replay "
+            "only for diagnostic review"
+        )
+    if bool(args.use_slice_start) and not bool(args.allow_slice_result):
+        raise SystemExit("--use-slice-start requires --allow-slice-result")
     if args.max_primitives is not None:
         primitives = primitives[: max(0, int(args.max_primitives))]
     include_claim_only_frames = bool(args.include_claim_only_frames) and str(args.replay_mode) == "recorded"
@@ -684,6 +720,25 @@ def main() -> int:
         ),
     )
     spawn_pos, spawn_quat = _scene_spawn(scene_dir)
+    replay_start_source = "scene_spawn"
+    if bool(args.use_slice_start):
+        slice_start = wall_metrics.get("slice_start") if isinstance(wall_metrics, dict) else None
+        if not isinstance(slice_start, dict):
+            raise SystemExit("--use-slice-start requested but result has no wall_metrics.slice_start")
+        start_xy = slice_start.get("start_xy")
+        start_yaw = slice_start.get("start_yaw")
+        if (
+            not isinstance(start_xy, list)
+            or len(start_xy) < 2
+            or start_yaw is None
+        ):
+            raise SystemExit("--use-slice-start result slice_start lacks start_xy/start_yaw")
+        spawn_pos = np.asarray(
+            [float(start_xy[0]), float(start_xy[1]), float(spawn_pos[2])],
+            dtype=np.float32,
+        )
+        spawn_quat = _quat_wxyz_from_yaw(float(start_yaw))
+        replay_start_source = "slice_start"
     _set_pose(build=build, runner=runner, pos_xyz=spawn_pos, quat_wxyz=spawn_quat)
 
     if args.demo_fps is not None:
@@ -840,7 +895,14 @@ def main() -> int:
         "source_result": str(args.result),
         "video": None if args.demo_video is None else str(args.demo_video),
         "scene": scene_id,
+        "source_slice_benchmark": bool(source_slice_benchmark),
+        "source_slice_start": wall_metrics.get("slice_start"),
         "replay_mode": str(args.replay_mode),
+        "locomotion_policy_replayed": str(args.replay_mode) == "physical",
+        "recorded_pose_interpolation": str(args.replay_mode) == "recorded",
+        "replay_start_source": replay_start_source,
+        "replay_start_xy": [float(spawn_pos[0]), float(spawn_pos[1])],
+        "replay_start_yaw": float(_yaw_from_quat_wxyz(spawn_quat)),
         "capture_rate": str(args.capture_rate),
         "fps": demo_fps,
         "frame_count": int(frame_count),

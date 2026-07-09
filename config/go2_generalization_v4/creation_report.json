@@ -1,0 +1,113 @@
+{
+  "benchmark_id": "go2-jepa-online-memory-generalization-v4",
+  "candidate_plan_seed": 2026070923,
+  "candidate_plan_sha256": "0d39c62bb6c70b5143f341f82d45ada5c4ef0f4733878ac07f3d6518f64cd4b1",
+  "candidates_per_family": 192,
+  "excluded_scene_count": 0,
+  "families": [
+    "go2_deployment_medium_maze"
+  ],
+  "geometry_contract": {
+    "path": "config/go2_generalization_geometry_v2.json",
+    "sha256": "e06830cbffa67dedec4c20ecd3c1fb9873fe814f212bfa09ec0f160b6514d0ca"
+  },
+  "hashed_scene_role_commitment": {
+    "contains_raw_scene_ids": false,
+    "content_sha256": "12f203f6dc03dd2f0ed76067075baaac026d9b2843d9471962a9364514bf0cc7",
+    "counts": {
+      "development": 24,
+      "excluded": 0,
+      "sealed_test": 30,
+      "train": 138
+    },
+    "file_sha256": "82c4a9a382452031febb712faaa90bb52c8fc5e2fab2a33d8a7ea2d447413b75",
+    "path": "config/go2_generalization_v4/scene_role_commitments.json",
+    "screening_files": {
+      "development": {
+        "contains_raw_scene_ids": false,
+        "count": 24,
+        "file_sha256": "15e3b30cd10902664f2a207fc93084dd8b474df3d5028ee3b07b2e986408b344",
+        "format": "newline_sha256_scene_id",
+        "path": "config/go2_generalization_v4/development_scene_ids.sha256",
+        "scene_id_set_sha256": "5d2559a1336dc4c8c9d67830e7a3f7618317b32635dbf7f86f591534ac608039"
+      },
+      "sealed_test": {
+        "contains_raw_scene_ids": false,
+        "count": 30,
+        "file_sha256": "db118ca435877b06dfe2666b681e3313d0c5c120ed2a316853413469a5a0f103",
+        "format": "newline_sha256_scene_id",
+        "path": "config/go2_generalization_v4/sealed_scene_ids.sha256",
+        "scene_id_set_sha256": "aa99e4a1c7b63b4464c1ab2185dd201ffc9f0c93220af85b276b76338cc45b30"
+      }
+    },
+    "set_sha256_by_role": {
+      "development": {
+        "role_tokens_sha256": "790e2530e8433d153480fd182aca65311d292b1dc815ab8645519b78b6f2f282",
+        "scene_id_sha256": "5d2559a1336dc4c8c9d67830e7a3f7618317b32635dbf7f86f591534ac608039"
+      },
+      "excluded": {
+        "role_tokens_sha256": "9ee12b34bcf7cf0f3d4e9f9340d8eb7db4ed8d82ecfb58dfba3d7fe1f3db63ca",
+        "scene_id_sha256": "5ea28ccc659664e07db3499291ea697d8a2f1696202c9989e8980cfcc2e14b19"
+      },
+      "sealed_test": {
+        "role_tokens_sha256": "6e29a342caf62f22435972b1056be16c7dde7ad33c298d0dae6229e5d0367ac1",
+        "scene_id_sha256": "aa99e4a1c7b63b4464c1ab2185dd201ffc9f0c93220af85b276b76338cc45b30"
+      },
+      "train": {
+        "role_tokens_sha256": "6c3a8f000c17922f99e6790d4ff28632339316472eaf7eccdc5b1bef1c5f4ba4",
+        "scene_id_sha256": "1d7cc5d487f6993a7cdd38675689fe3fb3c452387b6429054ec324e5cf52b08b"
+      }
+    }
+  },
+  "known_scene_count": 0,
+  "known_scene_ids_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "physical_eligibility": {
+    "candidate_count": 192,
+    "combined_acceptance_rate": 1.0,
+    "combined_eligible_count": 192,
+    "config": {
+      "cell_size_m": 0.05,
+      "claim_radius_m": 1.2,
+      "mask_validation_samples": 32,
+      "maximum_translation_substep_m": 0.025,
+      "preferred_standoff_m": 1.05,
+      "require_line_of_sight": true,
+      "required_beacon_count": 4,
+      "rotation_subsamples": 5,
+      "yaw_bins": 16
+    },
+    "disc_eligible_count": 192,
+    "evaluator": {
+      "path": "lewm/benchmarks/go2_physical_eligibility.py",
+      "sha256": "16141944b5d544cdd5c98654956a40641944fa87ce1cc289d8bb3f253063583e"
+    },
+    "gate": "0.47m_disc_and_exact_actual_yaw_directional_polygon",
+    "planning_disc_radius_m": 0.47,
+    "policy": {
+      "content_sha256": "c57650326e8b7d302498bbfe93b9e3d15c36d56d55ae9e1f339507ece0a9f1fc",
+      "file_sha256": "750d8afe47ee3edd5988cdea443f19703efad7a3266218932671b9fdfbe43828",
+      "maximum_vertex_radius_m": 0.4617711967569951,
+      "path": "config/go2_geometry_v2_artifacts/go2_directional_footprint_policy_v1_c57650326e8b7d302498bbfe93b9e3d15c36d56d55ae9e1f339507ece0a9f1fc.json",
+      "policy_id": "go2-directional-observed-max-margin-v1",
+      "profile": "observed_max_plus_margin",
+      "vertex_count": 24
+    },
+    "polygon_eligible_count": 192,
+    "polygon_rejection_counts": {},
+    "required": true
+  },
+  "required_target_colors": [
+    "blue",
+    "green",
+    "red",
+    "yellow"
+  ],
+  "schema": "lewm_navigation_benchmark_creation_report_v0",
+  "sealed_test_commitment_sha256": "d2dcbcc5444f0046be41311c0127943b63c2485c39b69844ed662f79aa13fef7",
+  "sealed_test_scene_count": 30,
+  "split_seed": 2026070924,
+  "train_count_by_family": {
+    "go2_deployment_medium_maze": 138
+  },
+  "validation_scene_count": 24
+}

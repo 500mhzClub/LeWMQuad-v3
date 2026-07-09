@@ -59,6 +59,16 @@ CORRIDOR_WIDE_BAND_M = (2.0 * W_BODY_M, 3.0 * W_BODY_M)  # 0.620..0.930
 # that small-scale corpora reliably contain a few narrow scenes.
 CORRIDOR_NARROW_BAND_PROB = 0.30
 
+# Platform-conservative navigation benchmark geometry. The online planner uses
+# a 0.47 m yaw-invariant disc that contains the observed-max directional gait
+# envelope plus margin. Corridors below 0.94 m are therefore impossible by
+# construction; this band retains a narrow/wide treatment while leaving at
+# least 0.08 m total lateral clearance in the narrowest corridor.
+DEPLOYMENT_CORRIDOR_NARROW_BAND_M = (1.10, 1.25)
+DEPLOYMENT_CORRIDOR_WIDE_BAND_M = (1.25, 1.55)
+DEPLOYMENT_CORRIDOR_NARROW_BAND_PROB = 0.30
+DEPLOYMENT_CELL_SIZE_FLOOR_M = 1.22
+
 # Floor wall thickness — the wall slab gets thicker when corridors are narrow
 # so that cells always have enough room for the robot to occupy a junction
 # (cell_size = corridor_width + wall_thickness). Cells are kept ≥0.80 m so
@@ -166,6 +176,28 @@ def sample_corridor_geometry(rng: random.Random) -> CorridorGeometry:
         corridor_width = rng.uniform(*CORRIDOR_WIDE_BAND_M)
         band = "wide"
     wall_thickness = max(WALL_THICKNESS_FLOOR_M, CELL_SIZE_FLOOR_M - corridor_width)
+    cell_size = corridor_width + wall_thickness
+    return CorridorGeometry(
+        cell_size_m=round(cell_size, 4),
+        corridor_width_m=round(corridor_width, 4),
+        wall_thickness_m=round(wall_thickness, 4),
+        band=band,
+    )
+
+
+def sample_deployment_corridor_geometry(rng: random.Random) -> CorridorGeometry:
+    """Sample corridors compatible with the conservative 0.47 m planner disc."""
+
+    if rng.random() < DEPLOYMENT_CORRIDOR_NARROW_BAND_PROB:
+        corridor_width = rng.uniform(*DEPLOYMENT_CORRIDOR_NARROW_BAND_M)
+        band = "narrow"
+    else:
+        corridor_width = rng.uniform(*DEPLOYMENT_CORRIDOR_WIDE_BAND_M)
+        band = "wide"
+    wall_thickness = max(
+        WALL_THICKNESS_FLOOR_M,
+        DEPLOYMENT_CELL_SIZE_FLOOR_M - corridor_width,
+    )
     cell_size = corridor_width + wall_thickness
     return CorridorGeometry(
         cell_size_m=round(cell_size, 4),
@@ -292,6 +324,7 @@ def _enclosed_maze_builder(
     landmark_pairs: int = 1,
     profile: Profile = DEFAULT_PROFILE,
     room_dim: int | None = None,
+    geometry_sampler: Callable[[random.Random], CorridorGeometry] = sample_corridor_geometry,
 ) -> Callable[[BuildContext], SceneManifest]:
     """Build an enclosed maze.
 
@@ -304,7 +337,7 @@ def _enclosed_maze_builder(
 
     def builder(ctx: BuildContext) -> SceneManifest:
         rng = random.Random(f"{ctx.family}:{ctx.scene_seed}")
-        geometry = sample_corridor_geometry(rng)
+        geometry = geometry_sampler(rng)
         cell_size = geometry.cell_size_m
         corridor_width = geometry.corridor_width_m
         wall_thickness = geometry.wall_thickness_m
@@ -1693,6 +1726,21 @@ _REGISTRY: dict[str, FamilySpec] = {
             description="Rooms-and-corridors maze; 4 beacons in open 3x3 rooms.",
             builder=_enclosed_maze_builder(
                 side_range=(6, 8), extra_loop_density=0.10, landmark_pairs=2, room_dim=3
+            ),
+        ),
+        FamilySpec(
+            name="go2_deployment_medium_maze",
+            difficulty_tier="medium_deployment",
+            description=(
+                "Four-beacon rooms-and-corridors maze whose corridor band is "
+                "compatible with the calibrated 0.47 m Go2 planning footprint."
+            ),
+            builder=_enclosed_maze_builder(
+                side_range=(6, 8),
+                extra_loop_density=0.10,
+                landmark_pairs=2,
+                room_dim=3,
+                geometry_sampler=sample_deployment_corridor_geometry,
             ),
         ),
         FamilySpec(

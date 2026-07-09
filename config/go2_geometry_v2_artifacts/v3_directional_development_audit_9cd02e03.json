@@ -1,0 +1,2695 @@
+{
+  "audits": {
+    "observed_max_plus_margin": {
+      "claimable_beacon_count": 48,
+      "footprint": {
+        "margin_m": 0.03,
+        "maximum_vertex_radius_m": 0.4617711967569951,
+        "vertex_count": 24,
+        "vertices_xy_body_m": [
+          [
+            0.22180186069512248,
+            0.20559036817997559
+          ],
+          [
+            -0.006657641607736686,
+            0.2668059073252429
+          ],
+          [
+            -0.27409585007903725,
+            0.2668059073252429
+          ],
+          [
+            -0.3707941103470017,
+            0.24089568657694727
+          ],
+          [
+            -0.39359187560054765,
+            0.22773339067089063
+          ],
+          [
+            -0.4032734824761839,
+            0.2180517837952544
+          ],
+          [
+            -0.4252483854592046,
+            0.1799901353372656
+          ],
+          [
+            -0.4321031310225031,
+            0.15440787662207844
+          ],
+          [
+            -0.43210313102250314,
+            -0.12853063446358498
+          ],
+          [
+            -0.4277240327087361,
+            -0.14487365186190276
+          ],
+          [
+            -0.41287945563947137,
+            -0.17058521356274112
+          ],
+          [
+            -0.3990345266614402,
+            -0.1844301425407723
+          ],
+          [
+            -0.37245460425775256,
+            -0.19977606789558075
+          ],
+          [
+            -0.2106736071187977,
+            -0.24312515542966545
+          ],
+          [
+            0.16964537438186286,
+            -0.2431251554296655
+          ],
+          [
+            0.19572552173487207,
+            -0.23613700100794202
+          ],
+          [
+            0.24343382811563966,
+            -0.20859259747642472
+          ],
+          [
+            0.28613377495100734,
+            -0.16589265064105704
+          ],
+          [
+            0.3647525772485165,
+            -0.02972089063155864
+          ],
+          [
+            0.3700000000000001,
+            -0.010137242314228814
+          ],
+          [
+            0.3700000000000001,
+            0.010137242314228523
+          ],
+          [
+            0.3647525772485163,
+            0.02972089063155902
+          ],
+          [
+            0.298366549067437,
+            0.14470486435388766
+          ],
+          [
+            0.25889920964211904,
+            0.18417220377920562
+          ]
+        ]
+      },
+      "fully_claimable_scene_count": 12,
+      "per_scene": [
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39441095319476116,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1572
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39441095319476116,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1577
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4183873803068149,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1570
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39404568263083417,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1582
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 16999,
+          "reachable_pose_states": 196515,
+          "scene_id": "medium_enclosed_maze_0c34871b7bc4",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 200,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 168,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 168
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 200,
+            "centerline_turns_blocked_mid_sweep": 31,
+            "centerline_turns_swept_feasible": 137,
+            "centerline_turns_with_feasible_endpoints": 168,
+            "directed_edges_swept_feasible": 164,
+            "directed_edges_with_feasible_endpoints": 164,
+            "directed_topology_edges": 196
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_131646c2e527",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 190,
+            "staged_turns_blocked": 114,
+            "staged_turns_feasible": 44,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 158
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 190,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 28,
+            "centerline_turns_with_feasible_endpoints": 28,
+            "directed_edges_swept_feasible": 72,
+            "directed_edges_with_feasible_endpoints": 72,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_160d191c9168",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 104,
+            "staged_turns_feasible": 52,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 32,
+            "centerline_turns_with_feasible_endpoints": 32,
+            "directed_edges_swept_feasible": 80,
+            "directed_edges_with_feasible_endpoints": 80,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 2.5031580054003775,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 7.51230244332588,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 5.599128860813974,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 5.599128860813974,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 1,
+          "reachable_pose_states": 1,
+          "scene_id": "medium_enclosed_maze_4687f00e9207",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 156,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 16,
+            "centerline_turns_swept_feasible": 72,
+            "centerline_turns_with_feasible_endpoints": 88,
+            "directed_edges_swept_feasible": 125,
+            "directed_edges_with_feasible_endpoints": 125,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39800000000000013,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1557
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39800000000000013,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1531
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3999999999999999,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1542
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3980050250939052,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1548
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 14814,
+          "reachable_pose_states": 171101,
+          "scene_id": "medium_enclosed_maze_4a98d8d1073d",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 194,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 162,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 162
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 194,
+            "centerline_turns_blocked_mid_sweep": 64,
+            "centerline_turns_swept_feasible": 98,
+            "centerline_turns_with_feasible_endpoints": 162,
+            "directed_edges_swept_feasible": 164,
+            "directed_edges_with_feasible_endpoints": 164,
+            "directed_topology_edges": 196
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3940456826308346,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1513
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39432473926955236,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1536
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4163075786002455,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1539
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39432473926955236,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1510
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 14471,
+          "reachable_pose_states": 161505,
+          "scene_id": "medium_enclosed_maze_4ac3ff5600f0",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 204,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 172,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 172
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 204,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 104,
+            "centerline_turns_with_feasible_endpoints": 104,
+            "directed_edges_swept_feasible": 129,
+            "directed_edges_with_feasible_endpoints": 129,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_4ea19ece2a0d",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 206,
+            "staged_turns_blocked": 56,
+            "staged_turns_feasible": 118,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 174
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 206,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 44,
+            "centerline_turns_with_feasible_endpoints": 44,
+            "directed_edges_swept_feasible": 74,
+            "directed_edges_with_feasible_endpoints": 74,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_527def894cba",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 180,
+            "staged_turns_blocked": 53,
+            "staged_turns_feasible": 14,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 67
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 180,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 26,
+            "centerline_turns_with_feasible_endpoints": 26,
+            "directed_edges_swept_feasible": 26,
+            "directed_edges_with_feasible_endpoints": 26,
+            "directed_topology_edges": 192
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3944109531947614,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1239
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3944109531947614,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1224
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41838738030681466,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1233
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3940456826308344,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1353
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 9713,
+          "reachable_pose_states": 92779,
+          "scene_id": "medium_enclosed_maze_6c0e55398a6a",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 156,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 19,
+            "centerline_turns_swept_feasible": 70,
+            "centerline_turns_with_feasible_endpoints": 89,
+            "directed_edges_swept_feasible": 125,
+            "directed_edges_with_feasible_endpoints": 125,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_7564a80f66e0",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 3,
+            "staged_turns_feasible": 153,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 40,
+            "centerline_turns_with_feasible_endpoints": 40,
+            "directed_edges_swept_feasible": 73,
+            "directed_edges_with_feasible_endpoints": 73,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 5.556121848915841,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 5.556121848915841,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 2.4847732290895275,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 7.454319687268582,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 1,
+          "reachable_pose_states": 1,
+          "scene_id": "medium_enclosed_maze_7d4292732368",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 200,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 168,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 168
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 200,
+            "centerline_turns_blocked_mid_sweep": 12,
+            "centerline_turns_swept_feasible": 88,
+            "centerline_turns_with_feasible_endpoints": 100,
+            "directed_edges_swept_feasible": 130,
+            "directed_edges_with_feasible_endpoints": 130,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_7fd510c16da6",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 202,
+            "staged_turns_blocked": 46,
+            "staged_turns_feasible": 44,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 90
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 202,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 56,
+            "centerline_turns_with_feasible_endpoints": 56,
+            "directed_edges_swept_feasible": 33,
+            "directed_edges_with_feasible_endpoints": 33,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41120554470969933,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1490
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41320454982974186,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1487
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41120554470969933,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1506
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4111471755953099,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1429
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 13595,
+          "reachable_pose_states": 145390,
+          "scene_id": "medium_enclosed_maze_827f824b1965",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 202,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 170,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 170
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 202,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 108,
+            "centerline_turns_with_feasible_endpoints": 108,
+            "directed_edges_swept_feasible": 129,
+            "directed_edges_with_feasible_endpoints": 129,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42068515543099555,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1548
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42467870207958497,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1544
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42047592083257385,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1538
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42068515543099555,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1567
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 15094,
+          "reachable_pose_states": 169092,
+          "scene_id": "medium_enclosed_maze_82a8e21bd5cc",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 210,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 178,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 178
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 210,
+            "centerline_turns_blocked_mid_sweep": 64,
+            "centerline_turns_swept_feasible": 114,
+            "centerline_turns_with_feasible_endpoints": 178,
+            "directed_edges_swept_feasible": 168,
+            "directed_edges_with_feasible_endpoints": 168,
+            "directed_topology_edges": 200
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3950316443020736,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1536
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39528470752104744,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1544
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41527099585692234,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1517
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39528470752104744,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1544
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 14837,
+          "reachable_pose_states": 166486,
+          "scene_id": "medium_enclosed_maze_8462b1803e7f",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 182,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 150,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 150
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 182,
+            "centerline_turns_blocked_mid_sweep": 62,
+            "centerline_turns_swept_feasible": 88,
+            "centerline_turns_with_feasible_endpoints": 150,
+            "directed_edges_swept_feasible": 160,
+            "directed_edges_with_feasible_endpoints": 160,
+            "directed_topology_edges": 192
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_aa82075e6451",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 200,
+            "staged_turns_blocked": 116,
+            "staged_turns_feasible": 52,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 168
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 200,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 36,
+            "centerline_turns_with_feasible_endpoints": 36,
+            "directed_edges_swept_feasible": 84,
+            "directed_edges_with_feasible_endpoints": 84,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4173463789228317,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1460
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41135143126042484,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1465
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4111471755953092,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1484
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41135143126042484,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1519
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 13882,
+          "reachable_pose_states": 148859,
+          "scene_id": "medium_enclosed_maze_c5601715da1b",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 186,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 154,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 154
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 186,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 88,
+            "centerline_turns_with_feasible_endpoints": 88,
+            "directed_edges_swept_feasible": 127,
+            "directed_edges_with_feasible_endpoints": 127,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42068515543099394,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1555
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42068515543099394,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1547
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42467870207958336,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1560
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4204759208325722,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1566
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 15929,
+          "reachable_pose_states": 181065,
+          "scene_id": "medium_enclosed_maze_caf930b7d00f",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 196,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 164,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 164
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 196,
+            "centerline_turns_blocked_mid_sweep": 65,
+            "centerline_turns_swept_feasible": 99,
+            "centerline_turns_with_feasible_endpoints": 164,
+            "directed_edges_swept_feasible": 164,
+            "directed_edges_with_feasible_endpoints": 164,
+            "directed_topology_edges": 196
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_deb82c845209",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 190,
+            "staged_turns_blocked": 44,
+            "staged_turns_feasible": 33,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 77
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 190,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 50,
+            "centerline_turns_with_feasible_endpoints": 50,
+            "directed_edges_swept_feasible": 26,
+            "directed_edges_with_feasible_endpoints": 26,
+            "directed_topology_edges": 192
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_e4b1e47b966b",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 186,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 154,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 154
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 186,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 52,
+            "centerline_turns_with_feasible_endpoints": 52,
+            "directed_edges_swept_feasible": 100,
+            "directed_edges_with_feasible_endpoints": 100,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_edd7eaec9171",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 192,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 160,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 160
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 192,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 36,
+            "centerline_turns_with_feasible_endpoints": 36,
+            "directed_edges_swept_feasible": 84,
+            "directed_edges_with_feasible_endpoints": 84,
+            "directed_topology_edges": 196
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4236248340218031,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1496
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4176338108917912,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1515
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4176338108917912,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1515
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41734637892283244,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1561
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 14280,
+          "reachable_pose_states": 161765,
+          "scene_id": "medium_enclosed_maze_eeed996ddb37",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 190,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 158,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 158
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 190,
+            "centerline_turns_blocked_mid_sweep": 67,
+            "centerline_turns_swept_feasible": 91,
+            "centerline_turns_with_feasible_endpoints": 158,
+            "directed_edges_swept_feasible": 162,
+            "directed_edges_with_feasible_endpoints": 162,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42467870207958386,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1570
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.40807842383541953,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1577
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.408705272782234,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1577
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.408705272782234,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1577
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 17756,
+          "reachable_pose_states": 204731,
+          "scene_id": "medium_enclosed_maze_f93106be9c73",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 156,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 156,
+            "centerline_turns_with_feasible_endpoints": 156,
+            "directed_edges_swept_feasible": 162,
+            "directed_edges_with_feasible_endpoints": 162,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41320454982974264,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1400
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4132045498297417,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1422
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4132045498297417,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1425
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41320454982974164,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1385
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 12429,
+          "reachable_pose_states": 127144,
+          "scene_id": "medium_enclosed_maze_fbf474294a7c",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 196,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 164,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 164
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 196,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 100,
+            "centerline_turns_with_feasible_endpoints": 100,
+            "directed_edges_swept_feasible": 127,
+            "directed_edges_with_feasible_endpoints": 127,
+            "directed_topology_edges": 196
+          }
+        }
+      ],
+      "profile_name": "observed_max_plus_margin",
+      "reachable_center_cell_count": 173801,
+      "spawn_clear_scene_count": 14,
+      "staged_turn_totals": {
+        "ordered_quarter_turns": 4646,
+        "staged_turns_blocked": 536,
+        "staged_turns_feasible": 3100,
+        "staging_distance_m": 0.2,
+        "turns_with_feasible_staging_endpoints": 3636
+      },
+      "straight_and_centerline_turn_totals": {
+        "centerline_quarter_turns": 4646,
+        "centerline_turns_blocked_mid_sweep": 400,
+        "centerline_turns_swept_feasible": 1813,
+        "centerline_turns_with_feasible_endpoints": 2213,
+        "directed_edges_swept_feasible": 2688,
+        "directed_edges_with_feasible_endpoints": 2688,
+        "directed_topology_edges": 4690
+      }
+    },
+    "q99_plus_margin": {
+      "claimable_beacon_count": 48,
+      "footprint": {
+        "margin_m": 0.03,
+        "maximum_vertex_radius_m": 0.4516149373629822,
+        "vertex_count": 24,
+        "vertices_xy_body_m": [
+          [
+            0.22544192752314995,
+            0.1894135951744786
+          ],
+          [
+            0.002268125307888974,
+            0.24921283524984086
+          ],
+          [
+            -0.293362972357621,
+            0.24921283524984086
+          ],
+          [
+            -0.32068463096429006,
+            0.24189201889030507
+          ],
+          [
+            -0.39179634658923246,
+            0.20083565073170848
+          ],
+          [
+            -0.41127661772228113,
+            0.1813553795986598
+          ],
+          [
+            -0.41968921690208727,
+            0.16678433039552332
+          ],
+          [
+            -0.4276753850191439,
+            0.13697954522488123
+          ],
+          [
+            -0.427675385019144,
+            -0.1284450318167711
+          ],
+          [
+            -0.4222354380748057,
+            -0.1487471902035207
+          ],
+          [
+            -0.41014639530469027,
+            -0.1696860264962338
+          ],
+          [
+            -0.39140745714119407,
+            -0.18842496465973002
+          ],
+          [
+            -0.3730367245887487,
+            -0.199031312044095
+          ],
+          [
+            -0.2403394855295585,
+            -0.23458743008784463
+          ],
+          [
+            0.18156920875702529,
+            -0.2345874300878447
+          ],
+          [
+            0.19479452969859867,
+            -0.2310437160219077
+          ],
+          [
+            0.22777328079785963,
+            -0.21200342519721171
+          ],
+          [
+            0.30286720310973597,
+            -0.13690950288533538
+          ],
+          [
+            0.3647525772485165,
+            -0.02972089063155864
+          ],
+          [
+            0.3700000000000001,
+            -0.010137242314228885
+          ],
+          [
+            0.3700000000000001,
+            0.010137242314228745
+          ],
+          [
+            0.3647525772485164,
+            0.02972089063155883
+          ],
+          [
+            0.3185088079680192,
+            0.1098174485588728
+          ],
+          [
+            0.2573140259708058,
+            0.17101223055608622
+          ]
+        ]
+      },
+      "fully_claimable_scene_count": 12,
+      "per_scene": [
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39441095319476116,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1577
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39441095319476116,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1582
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4183873803068149,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1575
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39404568263083417,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1585
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 17309,
+          "reachable_pose_states": 203553,
+          "scene_id": "medium_enclosed_maze_0c34871b7bc4",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 200,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 168,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 168
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 200,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 168,
+            "centerline_turns_with_feasible_endpoints": 168,
+            "directed_edges_swept_feasible": 164,
+            "directed_edges_with_feasible_endpoints": 164,
+            "directed_topology_edges": 196
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_131646c2e527",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 190,
+            "staged_turns_blocked": 110,
+            "staged_turns_feasible": 48,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 158
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 190,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 28,
+            "centerline_turns_with_feasible_endpoints": 28,
+            "directed_edges_swept_feasible": 72,
+            "directed_edges_with_feasible_endpoints": 72,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_160d191c9168",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 104,
+            "staged_turns_feasible": 52,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 32,
+            "centerline_turns_with_feasible_endpoints": 32,
+            "directed_edges_swept_feasible": 80,
+            "directed_edges_with_feasible_endpoints": 80,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 2.5031580054003775,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 7.51230244332588,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 5.599128860813974,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 5.599128860813974,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 1,
+          "reachable_pose_states": 1,
+          "scene_id": "medium_enclosed_maze_4687f00e9207",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 156,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 16,
+            "centerline_turns_swept_feasible": 72,
+            "centerline_turns_with_feasible_endpoints": 88,
+            "directed_edges_swept_feasible": 125,
+            "directed_edges_with_feasible_endpoints": 125,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39800000000000013,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1566
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39800000000000013,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1537
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3999999999999999,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1550
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3980050250939052,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1555
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 16065,
+          "reachable_pose_states": 176895,
+          "scene_id": "medium_enclosed_maze_4a98d8d1073d",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 194,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 162,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 162
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 194,
+            "centerline_turns_blocked_mid_sweep": 64,
+            "centerline_turns_swept_feasible": 98,
+            "centerline_turns_with_feasible_endpoints": 162,
+            "directed_edges_swept_feasible": 164,
+            "directed_edges_with_feasible_endpoints": 164,
+            "directed_topology_edges": 196
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3940456826308346,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1516
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39432473926955236,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1553
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4163075786002455,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1565
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.39432473926955236,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1547
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 15270,
+          "reachable_pose_states": 169911,
+          "scene_id": "medium_enclosed_maze_4ac3ff5600f0",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 204,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 172,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 172
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 204,
+            "centerline_turns_blocked_mid_sweep": 68,
+            "centerline_turns_swept_feasible": 104,
+            "centerline_turns_with_feasible_endpoints": 172,
+            "directed_edges_swept_feasible": 166,
+            "directed_edges_with_feasible_endpoints": 166,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_4ea19ece2a0d",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 206,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 174,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 174
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 206,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 44,
+            "centerline_turns_with_feasible_endpoints": 44,
+            "directed_edges_swept_feasible": 74,
+            "directed_edges_with_feasible_endpoints": 74,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_527def894cba",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 180,
+            "staged_turns_blocked": 108,
+            "staged_turns_feasible": 40,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 148
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 180,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 26,
+            "centerline_turns_with_feasible_endpoints": 26,
+            "directed_edges_swept_feasible": 75,
+            "directed_edges_with_feasible_endpoints": 75,
+            "directed_topology_edges": 192
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3944109531947614,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1274
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3944109531947614,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1261
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41838738030681466,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1261
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3940456826308344,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1357
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 10376,
+          "reachable_pose_states": 99560,
+          "scene_id": "medium_enclosed_maze_6c0e55398a6a",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 156,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 19,
+            "centerline_turns_swept_feasible": 70,
+            "centerline_turns_with_feasible_endpoints": 89,
+            "directed_edges_swept_feasible": 125,
+            "directed_edges_with_feasible_endpoints": 125,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_7564a80f66e0",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 156,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 40,
+            "centerline_turns_with_feasible_endpoints": 40,
+            "directed_edges_swept_feasible": 73,
+            "directed_edges_with_feasible_endpoints": 73,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 5.556121848915841,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 5.556121848915841,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 2.4847732290895275,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": 7.454319687268582,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 1,
+          "reachable_pose_states": 1,
+          "scene_id": "medium_enclosed_maze_7d4292732368",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 200,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 168,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 168
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 200,
+            "centerline_turns_blocked_mid_sweep": 12,
+            "centerline_turns_swept_feasible": 88,
+            "centerline_turns_with_feasible_endpoints": 100,
+            "directed_edges_swept_feasible": 130,
+            "directed_edges_with_feasible_endpoints": 130,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_7fd510c16da6",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 202,
+            "staged_turns_blocked": 94,
+            "staged_turns_feasible": 76,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 170
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 202,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 56,
+            "centerline_turns_with_feasible_endpoints": 56,
+            "directed_edges_swept_feasible": 84,
+            "directed_edges_with_feasible_endpoints": 84,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.38715629918677613,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1511
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.38721828469223984,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1546
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.38715629918677613,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1557
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3891554959139076,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1493
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 14279,
+          "reachable_pose_states": 152131,
+          "scene_id": "medium_enclosed_maze_827f824b1965",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 202,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 170,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 170
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 202,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 108,
+            "centerline_turns_with_feasible_endpoints": 108,
+            "directed_edges_swept_feasible": 129,
+            "directed_edges_with_feasible_endpoints": 129,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42068515543099555,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1556
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42467870207958497,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1556
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42047592083257385,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1553
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42068515543099555,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1584
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 15569,
+          "reachable_pose_states": 173959,
+          "scene_id": "medium_enclosed_maze_82a8e21bd5cc",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 210,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 178,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 178
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 210,
+            "centerline_turns_blocked_mid_sweep": 64,
+            "centerline_turns_swept_feasible": 114,
+            "centerline_turns_with_feasible_endpoints": 178,
+            "directed_edges_swept_feasible": 168,
+            "directed_edges_with_feasible_endpoints": 168,
+            "directed_topology_edges": 200
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3950316443020736,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1540
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3850324661635689,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1560
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3852920969861695,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1539
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3850324661635689,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1560
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 15240,
+          "reachable_pose_states": 172600,
+          "scene_id": "medium_enclosed_maze_8462b1803e7f",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 182,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 150,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 150
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 182,
+            "centerline_turns_blocked_mid_sweep": 62,
+            "centerline_turns_swept_feasible": 88,
+            "centerline_turns_with_feasible_endpoints": 150,
+            "directed_edges_swept_feasible": 160,
+            "directed_edges_with_feasible_endpoints": 160,
+            "directed_topology_edges": 192
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_aa82075e6451",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 200,
+            "staged_turns_blocked": 114,
+            "staged_turns_feasible": 54,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 168
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 200,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 36,
+            "centerline_turns_with_feasible_endpoints": 36,
+            "directed_edges_swept_feasible": 84,
+            "directed_edges_with_feasible_endpoints": 84,
+            "directed_topology_edges": 198
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4173463789228317,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1504
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3893712881042975,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1518
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.38915549591390824,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1524
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3893712881042975,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1532
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 14190,
+          "reachable_pose_states": 155054,
+          "scene_id": "medium_enclosed_maze_c5601715da1b",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 186,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 154,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 154
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 186,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 88,
+            "centerline_turns_with_feasible_endpoints": 88,
+            "directed_edges_swept_feasible": 127,
+            "directed_edges_with_feasible_endpoints": 127,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42068515543099394,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1564
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42068515543099394,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1555
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42467870207958336,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1572
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4204759208325722,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1573
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 16591,
+          "reachable_pose_states": 187682,
+          "scene_id": "medium_enclosed_maze_caf930b7d00f",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 196,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 164,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 164
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 196,
+            "centerline_turns_blocked_mid_sweep": 65,
+            "centerline_turns_swept_feasible": 99,
+            "centerline_turns_with_feasible_endpoints": 164,
+            "directed_edges_swept_feasible": 164,
+            "directed_edges_with_feasible_endpoints": 164,
+            "directed_topology_edges": 196
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_deb82c845209",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 190,
+            "staged_turns_blocked": 90,
+            "staged_turns_feasible": 68,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 158
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 190,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 50,
+            "centerline_turns_with_feasible_endpoints": 50,
+            "directed_edges_swept_feasible": 70,
+            "directed_edges_with_feasible_endpoints": 70,
+            "directed_topology_edges": 192
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_e4b1e47b966b",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 186,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 154,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 154
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 186,
+            "centerline_turns_blocked_mid_sweep": 16,
+            "centerline_turns_swept_feasible": 52,
+            "centerline_turns_with_feasible_endpoints": 68,
+            "directed_edges_swept_feasible": 111,
+            "directed_edges_with_feasible_endpoints": 111,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 0
+            },
+            {
+              "claimable": false,
+              "closest_reachable_center_m": null,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 0
+            }
+          ],
+          "claimable_beacons": 0,
+          "fully_claimable": false,
+          "reachable_center_cells": 0,
+          "reachable_pose_states": 0,
+          "scene_id": "medium_enclosed_maze_edd7eaec9171",
+          "spawn_clear": false,
+          "staged_turns": {
+            "ordered_quarter_turns": 192,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 160,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 160
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 192,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 36,
+            "centerline_turns_with_feasible_endpoints": 36,
+            "directed_edges_swept_feasible": 84,
+            "directed_edges_with_feasible_endpoints": 84,
+            "directed_topology_edges": 196
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4236248340218031,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1506
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4176338108917912,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1546
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.4176338108917912,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1547
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.41734637892283244,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1581
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 15251,
+          "reachable_pose_states": 167883,
+          "scene_id": "medium_enclosed_maze_eeed996ddb37",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 190,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 158,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 158
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 190,
+            "centerline_turns_blocked_mid_sweep": 67,
+            "centerline_turns_swept_feasible": 91,
+            "centerline_turns_with_feasible_endpoints": 158,
+            "directed_edges_swept_feasible": 162,
+            "directed_edges_with_feasible_endpoints": 162,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.42467870207958386,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1582
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.392081624154971,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1595
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3927340066762744,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1588
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3927340066762744,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1588
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 17979,
+          "reachable_pose_states": 209408,
+          "scene_id": "medium_enclosed_maze_f93106be9c73",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 188,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 156,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 156
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 188,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 156,
+            "centerline_turns_with_feasible_endpoints": 156,
+            "directed_edges_swept_feasible": 162,
+            "directed_edges_with_feasible_endpoints": 162,
+            "directed_topology_edges": 194
+          }
+        },
+        {
+          "beacons": [
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3872182846922388,
+              "object_id": "landmark_00_landmark_red",
+              "reachable_claim_center_count": 1423
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.38721828469223873,
+              "object_id": "landmark_01_landmark_blue",
+              "reachable_claim_center_count": 1445
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.38721828469223873,
+              "object_id": "landmark_02_landmark_green",
+              "reachable_claim_center_count": 1447
+            },
+            {
+              "claimable": true,
+              "closest_reachable_center_m": 0.3872182846922396,
+              "object_id": "landmark_03_landmark_yellow",
+              "reachable_claim_center_count": 1409
+            }
+          ],
+          "claimable_beacons": 4,
+          "fully_claimable": true,
+          "reachable_center_cells": 12594,
+          "reachable_pose_states": 133682,
+          "scene_id": "medium_enclosed_maze_fbf474294a7c",
+          "spawn_clear": true,
+          "staged_turns": {
+            "ordered_quarter_turns": 196,
+            "staged_turns_blocked": 0,
+            "staged_turns_feasible": 164,
+            "staging_distance_m": 0.2,
+            "turns_with_feasible_staging_endpoints": 164
+          },
+          "straight_and_centerline_turns": {
+            "centerline_quarter_turns": 196,
+            "centerline_turns_blocked_mid_sweep": 0,
+            "centerline_turns_swept_feasible": 100,
+            "centerline_turns_with_feasible_endpoints": 100,
+            "directed_edges_swept_feasible": 127,
+            "directed_edges_with_feasible_endpoints": 127,
+            "directed_topology_edges": 196
+          }
+        }
+      ],
+      "profile_name": "q99_plus_margin",
+      "reachable_center_cell_count": 180715,
+      "spawn_clear_scene_count": 14,
+      "staged_turn_totals": {
+        "ordered_quarter_turns": 4646,
+        "staged_turns_blocked": 620,
+        "staged_turns_feasible": 3258,
+        "staging_distance_m": 0.2,
+        "turns_with_feasible_staging_endpoints": 3878
+      },
+      "straight_and_centerline_turn_totals": {
+        "centerline_quarter_turns": 4646,
+        "centerline_turns_blocked_mid_sweep": 453,
+        "centerline_turns_swept_feasible": 1844,
+        "centerline_turns_with_feasible_endpoints": 2297,
+        "directed_edges_swept_feasible": 2880,
+        "directed_edges_with_feasible_endpoints": 2880,
+        "directed_topology_edges": 4690
+      }
+    }
+  },
+  "content_sha256": "9cd02e031ff642d4b4accb5d229949d5dd0b1a1ab966956c7ea7ce4b7991f70b",
+  "lattice": {
+    "cell_size_m": 0.05,
+    "maximum_rotation_sample_step_deg": 4.5,
+    "rotation_subsamples": 5,
+    "translation_model": "fore_aft_only_with_no_diagonal_corner_cutting",
+    "yaw_bins": 16
+  },
+  "recommended_profile": "observed_max_plus_margin",
+  "schema": "lewm_go2_directional_footprint_development_audit_v1",
+  "scope": {
+    "beacon_count": 96,
+    "scene_count": 24,
+    "sealed_test_accessed": false,
+    "split": "validation"
+  },
+  "source_artifacts": {
+    "audit_script": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/audit_go2_directional_footprint_development.py",
+      "sha256": "0065a9a3fad4284cbc0ed7122d7f85f7e72ca6a79866e55edea751b113a82fc1"
+    },
+    "development_manifest": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_generalization_v3/development.json",
+      "sha256": "92349a8a93e627b3cc3cb193fd9176eb4f290427c8c5889dc3849b91846fb806"
+    },
+    "directional_policy": {
+      "content_sha256": "c57650326e8b7d302498bbfe93b9e3d15c36d56d55ae9e1f339507ece0a9f1fc",
+      "file_sha256": "750d8afe47ee3edd5988cdea443f19703efad7a3266218932671b9fdfbe43828",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_footprint_calibration/go2_directional_footprint_policy_v1_c57650326e8b7d302498bbfe93b9e3d15c36d56d55ae9e1f339507ece0a9f1fc.json"
+    },
+    "geometry_helper": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/planning/oriented_footprint.py",
+      "sha256": "5831379e52eb0eaa1c2cf8d195b6d46b29ad8b66dbadc98f51629f22bc656b37"
+    }
+  }
+}

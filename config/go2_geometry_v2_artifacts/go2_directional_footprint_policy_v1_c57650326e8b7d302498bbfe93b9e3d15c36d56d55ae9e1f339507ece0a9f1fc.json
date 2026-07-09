@@ -1,0 +1,506 @@
+{
+  "angle_convention": "degrees_ccw_from_body_forward",
+  "content_sha256": "c57650326e8b7d302498bbfe93b9e3d15c36d56d55ae9e1f339507ece0a9f1fc",
+  "limitations": {
+    "margin_basis": "The applied margin is an explicit engineering floor, not a measured physical confidence bound. Physical promotion still requires hardware dimensional/controller validation.",
+    "physical_measurement_status": "not_available",
+    "promotion_gate": "hardware dimensions and controller gait envelope remain required",
+    "support_angle_step_deg": 15.0
+  },
+  "policy_id": "go2-directional-observed-max-margin-v1",
+  "profiles": {
+    "observed_max_plus_margin": {
+      "cardinal_support_m": {
+        "forward": 0.3700000000000001,
+        "left": 0.2668059073252429,
+        "rear": 0.43210313102250314,
+        "right": 0.24312515542966548
+      },
+      "construction": "intersection_of_directional_support_halfspaces",
+      "margin_m": 0.03,
+      "maximum_vertex_radius_m": 0.4617711967569951,
+      "statistic": "maximum",
+      "support_planes": [
+        {
+          "angle_deg": 0.0,
+          "raw_support_m": 0.33999999999999997,
+          "support_with_margin_m": 0.37
+        },
+        {
+          "angle_deg": 15.0,
+          "raw_support_m": 0.330016267102697,
+          "support_with_margin_m": 0.36001626710269696
+        },
+        {
+          "angle_deg": 30.0,
+          "raw_support_m": 0.3007454433088405,
+          "support_with_margin_m": 0.3307454433088405
+        },
+        {
+          "angle_deg": 45.0,
+          "raw_support_m": 0.283298800980127,
+          "support_with_margin_m": 0.31329880098012697
+        },
+        {
+          "angle_deg": 60.0,
+          "raw_support_m": 0.258947411964816,
+          "support_with_margin_m": 0.288947411964816
+        },
+        {
+          "angle_deg": 75.0,
+          "raw_support_m": 0.2259915920483906,
+          "support_with_margin_m": 0.2559915920483906
+        },
+        {
+          "angle_deg": 90.0,
+          "raw_support_m": 0.2368059073252429,
+          "support_with_margin_m": 0.2668059073252429
+        },
+        {
+          "angle_deg": 105.0,
+          "raw_support_m": 0.29865594267595996,
+          "support_with_margin_m": 0.32865594267596
+        },
+        {
+          "angle_deg": 120.0,
+          "raw_support_m": 0.36401883941123114,
+          "support_with_margin_m": 0.39401883941123117
+        },
+        {
+          "angle_deg": 135.0,
+          "raw_support_m": 0.4093433091030713,
+          "support_with_margin_m": 0.4393433091030713
+        },
+        {
+          "angle_deg": 150.0,
+          "raw_support_m": 0.42827097239462114,
+          "support_with_margin_m": 0.4582709723946211
+        },
+        {
+          "angle_deg": 165.0,
+          "raw_support_m": 0.427343273058639,
+          "support_with_margin_m": 0.457343273058639
+        },
+        {
+          "angle_deg": 180.0,
+          "raw_support_m": 0.40210313102250306,
+          "support_with_margin_m": 0.4321031310225031
+        },
+        {
+          "angle_deg": 195.0,
+          "raw_support_m": 0.4206457499532911,
+          "support_with_margin_m": 0.4506457499532911
+        },
+        {
+          "angle_deg": 210.0,
+          "raw_support_m": 0.412856704065843,
+          "support_with_margin_m": 0.442856704065843
+        },
+        {
+          "angle_deg": 225.0,
+          "raw_support_m": 0.38257182417565033,
+          "support_with_margin_m": 0.4125718241756503
+        },
+        {
+          "angle_deg": 240.0,
+          "raw_support_m": 0.3292384519946141,
+          "support_with_margin_m": 0.3592384519946141
+        },
+        {
+          "angle_deg": 255.0,
+          "raw_support_m": 0.25936720847284855,
+          "support_with_margin_m": 0.2893672084728486
+        },
+        {
+          "angle_deg": 270.0,
+          "raw_support_m": 0.21312515542966548,
+          "support_with_margin_m": 0.24312515542966548
+        },
+        {
+          "angle_deg": 285.0,
+          "raw_support_m": 0.2487483204536312,
+          "support_with_margin_m": 0.2787483204536312
+        },
+        {
+          "angle_deg": 300.0,
+          "raw_support_m": 0.2723634025137855,
+          "support_with_margin_m": 0.30236340251378546
+        },
+        {
+          "angle_deg": 315.0,
+          "raw_support_m": 0.289630950811665,
+          "support_with_margin_m": 0.31963095081166504
+        },
+        {
+          "angle_deg": 330.0,
+          "raw_support_m": 0.3007454433088404,
+          "support_with_margin_m": 0.33074544330884037
+        },
+        {
+          "angle_deg": 345.0,
+          "raw_support_m": 0.330016267102697,
+          "support_with_margin_m": 0.36001626710269696
+        }
+      ],
+      "vertex_count": 24,
+      "vertices_xy_body_m": [
+        [
+          0.22180186069512248,
+          0.20559036817997559
+        ],
+        [
+          -0.006657641607736686,
+          0.2668059073252429
+        ],
+        [
+          -0.27409585007903725,
+          0.2668059073252429
+        ],
+        [
+          -0.3707941103470017,
+          0.24089568657694727
+        ],
+        [
+          -0.39359187560054765,
+          0.22773339067089063
+        ],
+        [
+          -0.4032734824761839,
+          0.2180517837952544
+        ],
+        [
+          -0.4252483854592046,
+          0.1799901353372656
+        ],
+        [
+          -0.4321031310225031,
+          0.15440787662207844
+        ],
+        [
+          -0.43210313102250314,
+          -0.12853063446358498
+        ],
+        [
+          -0.4277240327087361,
+          -0.14487365186190276
+        ],
+        [
+          -0.41287945563947137,
+          -0.17058521356274112
+        ],
+        [
+          -0.3990345266614402,
+          -0.1844301425407723
+        ],
+        [
+          -0.37245460425775256,
+          -0.19977606789558075
+        ],
+        [
+          -0.2106736071187977,
+          -0.24312515542966545
+        ],
+        [
+          0.16964537438186286,
+          -0.2431251554296655
+        ],
+        [
+          0.19572552173487207,
+          -0.23613700100794202
+        ],
+        [
+          0.24343382811563966,
+          -0.20859259747642472
+        ],
+        [
+          0.28613377495100734,
+          -0.16589265064105704
+        ],
+        [
+          0.3647525772485165,
+          -0.02972089063155864
+        ],
+        [
+          0.3700000000000001,
+          -0.010137242314228814
+        ],
+        [
+          0.3700000000000001,
+          0.010137242314228523
+        ],
+        [
+          0.3647525772485163,
+          0.02972089063155902
+        ],
+        [
+          0.298366549067437,
+          0.14470486435388766
+        ],
+        [
+          0.25889920964211904,
+          0.18417220377920562
+        ]
+      ]
+    },
+    "q99_plus_margin": {
+      "cardinal_support_m": {
+        "forward": 0.3700000000000001,
+        "left": 0.24921283524984086,
+        "rear": 0.427675385019144,
+        "right": 0.2345874300878447
+      },
+      "construction": "intersection_of_directional_support_halfspaces",
+      "margin_m": 0.03,
+      "maximum_vertex_radius_m": 0.4516149373629822,
+      "statistic": "q99",
+      "support_planes": [
+        {
+          "angle_deg": 0.0,
+          "raw_support_m": 0.33999999999999997,
+          "support_with_margin_m": 0.37
+        },
+        {
+          "angle_deg": 15.0,
+          "raw_support_m": 0.330016267102697,
+          "support_with_margin_m": 0.36001626710269696
+        },
+        {
+          "angle_deg": 30.0,
+          "raw_support_m": 0.3007454433088405,
+          "support_with_margin_m": 0.3307454433088405
+        },
+        {
+          "angle_deg": 45.0,
+          "raw_support_m": 0.2728724005504141,
+          "support_with_margin_m": 0.3028724005504141
+        },
+        {
+          "angle_deg": 60.0,
+          "raw_support_m": 0.24675794900481496,
+          "support_with_margin_m": 0.276757949004815
+        },
+        {
+          "angle_deg": 75.0,
+          "raw_support_m": 0.2113081478369047,
+          "support_with_margin_m": 0.24130814783690469
+        },
+        {
+          "angle_deg": 90.0,
+          "raw_support_m": 0.21921283524984084,
+          "support_with_margin_m": 0.24921283524984084
+        },
+        {
+          "angle_deg": 105.0,
+          "raw_support_m": 0.28664903818458065,
+          "support_with_margin_m": 0.3166490381845807
+        },
+        {
+          "angle_deg": 120.0,
+          "raw_support_m": 0.3398269488138545,
+          "support_with_margin_m": 0.3698269488138545
+        },
+        {
+          "angle_deg": 135.0,
+          "raw_support_m": 0.38905410405376517,
+          "support_with_margin_m": 0.4190541040537652
+        },
+        {
+          "angle_deg": 150.0,
+          "raw_support_m": 0.4168536887293667,
+          "support_with_margin_m": 0.4468536887293667
+        },
+        {
+          "angle_deg": 165.0,
+          "raw_support_m": 0.4185556147517933,
+          "support_with_margin_m": 0.4485556147517933
+        },
+        {
+          "angle_deg": 180.0,
+          "raw_support_m": 0.3976753850191439,
+          "support_with_margin_m": 0.4276753850191439
+        },
+        {
+          "angle_deg": 195.0,
+          "raw_support_m": 0.41634672014109164,
+          "support_with_margin_m": 0.44634672014109167
+        },
+        {
+          "angle_deg": 210.0,
+          "raw_support_m": 0.41004021085259323,
+          "support_with_margin_m": 0.44004021085259326
+        },
+        {
+          "angle_deg": 225.0,
+          "raw_support_m": 0.38000343740725195,
+          "support_with_margin_m": 0.410003437407252
+        },
+        {
+          "angle_deg": 240.0,
+          "raw_support_m": 0.32888453467310846,
+          "support_with_margin_m": 0.35888453467310844
+        },
+        {
+          "angle_deg": 255.0,
+          "raw_support_m": 0.2587984933898218,
+          "support_with_margin_m": 0.2887984933898218
+        },
+        {
+          "angle_deg": 270.0,
+          "raw_support_m": 0.20458743008784466,
+          "support_with_margin_m": 0.23458743008784466
+        },
+        {
+          "angle_deg": 285.0,
+          "raw_support_m": 0.24358762647514393,
+          "support_with_margin_m": 0.2735876264751439
+        },
+        {
+          "angle_deg": 300.0,
+          "raw_support_m": 0.2674869923090291,
+          "support_with_margin_m": 0.2974869923090291
+        },
+        {
+          "angle_deg": 315.0,
+          "raw_support_m": 0.2809690910169975,
+          "support_with_margin_m": 0.31096909101699755
+        },
+        {
+          "angle_deg": 330.0,
+          "raw_support_m": 0.3007454433088404,
+          "support_with_margin_m": 0.33074544330884037
+        },
+        {
+          "angle_deg": 345.0,
+          "raw_support_m": 0.330016267102697,
+          "support_with_margin_m": 0.36001626710269696
+        }
+      ],
+      "vertex_count": 24,
+      "vertices_xy_body_m": [
+        [
+          0.22544192752314995,
+          0.1894135951744786
+        ],
+        [
+          0.002268125307888974,
+          0.24921283524984086
+        ],
+        [
+          -0.293362972357621,
+          0.24921283524984086
+        ],
+        [
+          -0.32068463096429006,
+          0.24189201889030507
+        ],
+        [
+          -0.39179634658923246,
+          0.20083565073170848
+        ],
+        [
+          -0.41127661772228113,
+          0.1813553795986598
+        ],
+        [
+          -0.41968921690208727,
+          0.16678433039552332
+        ],
+        [
+          -0.4276753850191439,
+          0.13697954522488123
+        ],
+        [
+          -0.427675385019144,
+          -0.1284450318167711
+        ],
+        [
+          -0.4222354380748057,
+          -0.1487471902035207
+        ],
+        [
+          -0.41014639530469027,
+          -0.1696860264962338
+        ],
+        [
+          -0.39140745714119407,
+          -0.18842496465973002
+        ],
+        [
+          -0.3730367245887487,
+          -0.199031312044095
+        ],
+        [
+          -0.2403394855295585,
+          -0.23458743008784463
+        ],
+        [
+          0.18156920875702529,
+          -0.2345874300878447
+        ],
+        [
+          0.19479452969859867,
+          -0.2310437160219077
+        ],
+        [
+          0.22777328079785963,
+          -0.21200342519721171
+        ],
+        [
+          0.30286720310973597,
+          -0.13690950288533538
+        ],
+        [
+          0.3647525772485165,
+          -0.02972089063155864
+        ],
+        [
+          0.3700000000000001,
+          -0.010137242314228885
+        ],
+        [
+          0.3700000000000001,
+          0.010137242314228745
+        ],
+        [
+          0.3647525772485164,
+          0.02972089063155883
+        ],
+        [
+          0.3185088079680192,
+          0.1098174485588728
+        ],
+        [
+          0.2573140259708058,
+          0.17101223055608622
+        ]
+      ]
+    }
+  },
+  "recommended_profile": "observed_max_plus_margin",
+  "reference_frame": "go2_base_xy",
+  "schema": "lewm_go2_directional_footprint_policy_v1",
+  "selection_policy": {
+    "development_sensitivity_only": "q99_plus_margin",
+    "planning_and_collision": "observed_max_plus_margin",
+    "rationale": "collision feasibility must retain every accepted observed gait state; q99 deliberately excludes the upper one-percent tail"
+  },
+  "source_artifacts": {
+    "builder": {
+      "path": "scripts/build_go2_directional_footprint_policy.py",
+      "sha256": "035a408198d3d0dcfb521178fb1bb233a89bd0de8a6a91dd49493062f7fca6b0"
+    },
+    "calibration_core": {
+      "path": "lewm/planning/swept_footprint_calibration.py",
+      "sha256": "5e4853720ba86ec21a1175ba93ea0c1678628c87b3189d05f5a3db0fda9ff44e"
+    },
+    "calibration_report": {
+      "path": ".generated/go2_footprint_calibration/geometry_v1_calibration.json",
+      "sha256": "56389a44f28c1a151bef263d7a1aa0be64bba4b1db010211f2ac7e92a567ec15"
+    },
+    "directional_geometry": {
+      "path": "lewm/planning/oriented_footprint.py",
+      "sha256": "5831379e52eb0eaa1c2cf8d195b6d46b29ad8b66dbadc98f51629f22bc656b37"
+    }
+  },
+  "status": "recommended_pending_physical_validation"
+}

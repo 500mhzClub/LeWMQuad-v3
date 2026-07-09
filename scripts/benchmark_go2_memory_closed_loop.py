@@ -119,6 +119,56 @@ def _learned_local_policy_label_primitive(primitive: str | None) -> str | None:
     return None
 
 
+def _load_debug_force_primitive_script(path: Path | None) -> dict[int, str]:
+    if path is None:
+        return {}
+    payload_text = path.read_text(encoding="utf-8").strip()
+    if not payload_text:
+        return {}
+    try:
+        payload = json.loads(payload_text)
+    except json.JSONDecodeError:
+        payload = []
+        for line_no, raw_line in enumerate(payload_text.splitlines(), start=1):
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.replace(",", " ").split()
+            if len(parts) != 2:
+                raise SystemExit(
+                    f"{path}:{line_no}: expected 'tick primitive' or 'tick,primitive'"
+                )
+            payload.append({"tick": parts[0], "primitive": parts[1]})
+
+    rows: list[tuple[Any, Any]] = []
+    if isinstance(payload, dict):
+        if "overrides" in payload and isinstance(payload["overrides"], dict):
+            rows = list(payload["overrides"].items())
+        else:
+            rows = list(payload.items())
+    elif isinstance(payload, list):
+        for idx, item in enumerate(payload):
+            if not isinstance(item, dict):
+                raise SystemExit(f"{path}: list item {idx} is not an object")
+            rows.append((item.get("tick"), item.get("primitive")))
+    else:
+        raise SystemExit(f"{path}: expected JSON object or list")
+
+    script: dict[int, str] = {}
+    allowed = set(_LEARNED_LOCAL_POLICY_PRIMITIVES) | {"forward_slow"}
+    for raw_tick, raw_primitive in rows:
+        if raw_tick is None or raw_primitive is None:
+            raise SystemExit(f"{path}: forced primitive row missing tick or primitive")
+        tick = int(raw_tick)
+        primitive = str(raw_primitive)
+        if primitive not in allowed:
+            raise SystemExit(
+                f"{path}: unsupported forced primitive {primitive!r} at tick {tick}"
+            )
+        script[tick] = primitive
+    return dict(sorted(script.items()))
+
+
 def _scene_spawn(scene_dir: Path) -> tuple[np.ndarray, np.ndarray]:
     d = json.loads((scene_dir / "genesis_scene.json").read_text())
     sp = d["spawn"]
@@ -740,6 +790,64 @@ def _make_escape_plan(last_primitive: str, blocks: int) -> list[str]:
     return (["backward"] * (count - 1) + [turn])[:count]
 
 
+def _proprio_contact_tick_features(
+    *,
+    displacement_m: float,
+    post_yaw: float,
+    post_roll: float,
+    post_pitch: float,
+    post_z: float,
+    post_tip_rad: float,
+    primitive: str,
+    requested_primitive: str | None,
+    prev_yaw: float | None,
+    prev_z: float | None,
+) -> np.ndarray:
+    """Nonprivileged proprioceptive features, parity with the offline builder.
+
+    Values are rounded to the same precision the result log stores so runtime
+    inference matches the training distribution built from replayed logs.
+    """
+    from build_go2_proprio_contact_dataset import (
+        FEATURE_DIM,
+        NOMINAL_ABS_DYAW,
+        NOMINAL_DISP_M,
+        PRIMITIVE_INDEX,
+        PRIMITIVES,
+    )
+
+    features = np.zeros(FEATURE_DIM, dtype=np.float32)
+    disp = float(np.clip(round(float(displacement_m), 3), 0.0, 0.3))
+    features[0] = disp
+    dyaw = 0.0
+    if prev_yaw is not None:
+        dyaw = float(
+            np.clip(
+                math.atan2(
+                    math.sin(round(float(post_yaw), 3) - float(prev_yaw)),
+                    math.cos(round(float(post_yaw), 3) - float(prev_yaw)),
+                ),
+                -0.6,
+                0.6,
+            )
+        )
+        features[1] = dyaw
+        if prev_z is not None:
+            features[4] = float(np.clip(round(float(post_z), 4) - float(prev_z), -0.1, 0.1))
+    features[2] = float(np.clip(round(float(post_roll), 4), -0.8, 0.8))
+    features[3] = float(np.clip(round(float(post_pitch), 4), -0.8, 0.8))
+    features[5] = (
+        1.0
+        if requested_primitive is not None and str(requested_primitive) != str(primitive)
+        else 0.0
+    )
+    features[6] = float(np.clip(round(float(post_tip_rad), 4), 0.0, 1.0))
+    features[7] = float(NOMINAL_DISP_M.get(str(primitive), 0.05)) - disp
+    features[8] = float(NOMINAL_ABS_DYAW.get(str(primitive), 0.05)) - abs(dyaw)
+    features[9 + PRIMITIVE_INDEX.get(str(primitive), len(PRIMITIVES))] = 1.0
+    return features
+
+
 def _primitive_turns_toward_bearing(primitive: str, bearing: float | None) -> bool:
     if bearing is None:
         return False
@@ -945,6 +1053,27 @@ def _parse_color_float_map(spec: str | None) -> dict[str, float]:
     return out
 
 
+def _parse_primitive_float_map(spec: str | None) -> dict[str, float]:
+    if not spec:
+        return {}
+    allowed = set(_LEARNED_LOCAL_POLICY_PRIMITIVES) | {"forward_slow", "hold"}
+    out: dict[str, float] = {}
+    for raw_item in str(spec).split(","):
+        item = raw_item.strip()
+        if not item:
+            continue
+        if ":" not in item:
+            raise ValueError(f"bad primitive:value item '{item}'")
+        primitive, value = item.split(":", 1)
+        primitive = primitive.strip()
+        if not primitive:
+            raise ValueError(f"bad empty primitive in '{item}'")
+        if primitive not in allowed:
+            raise ValueError(f"unsupported primitive in '{item}'")
+        out[primitive] = float(value.strip())
+    return out
+
+
 def _parse_color_int_map(spec: str | None) -> dict[str, int]:
     if not spec:
         return {}
@@ -1049,6 +1178,124 @@ def _wall_guard_select(
         "candidates": compact_reports,
     }
     return selected, guard
+
+
+def _geometry_clearance_veto_select(
+    *,
+    selected: str,
+    requested: str,
+    pos_xy: np.ndarray | tuple[float, float],
+    yaw: float,
+    bearing: float | None,
+    registry: PrimitiveRegistry,
+    grid: InflatedOccupancyGrid,
+    command_dt_s: float,
+    enabled: bool,
+    min_clearance_m: float,
+    feasible_threshold: float,
+    body_forward_m: float,
+    body_half_width_m: float,
+    body_probe_margin_m: float,
+    selected_primitives: set[str] | None,
+    replacement_primitives: set[str] | None,
+    blocked_fallback_primitives: list[str] | None = None,
+) -> tuple[str, dict[str, Any]]:
+    selected_report = _primitive_clearance_report(
+        registry,
+        selected,
+        pos_xy,
+        yaw,
+        grid,
+        command_dt_s,
+        body_forward_m=body_forward_m,
+        body_half_width_m=body_half_width_m,
+        body_probe_margin_m=body_probe_margin_m,
+        min_clearance_m=min_clearance_m,
+    )
+    active_selected_primitives = set(
+        selected_primitives or _FORWARD_PRIMITIVES.union(_TURN_PRIMITIVES)
+    )
+    should_veto = bool(
+        enabled
+        and selected in active_selected_primitives
+        and (
+            bool(selected_report["blocked"])
+            or float(selected_report["feasible_fraction"]) < float(feasible_threshold)
+        )
+    )
+    if bearing is not None and bearing > 0.0:
+        turns = ["arc_left", "yaw_left", "arc_right", "yaw_right"]
+    elif bearing is not None and bearing < 0.0:
+        turns = ["arc_right", "yaw_right", "arc_left", "yaw_left"]
+    else:
+        turns = ["arc_left", "arc_right", "yaw_left", "yaw_right"]
+    default_replacements = ["forward_slow", *turns, "backward", "hold"]
+    allowed_replacements = set(
+        replacement_primitives or default_replacements
+    )
+    candidate_names = [selected]
+    if should_veto:
+        candidate_names = _unique_primitives(
+            [selected, *[name for name in default_replacements if name in allowed_replacements]]
+        )
+    reports = [
+        selected_report
+        if name == selected
+        else _primitive_clearance_report(
+            registry,
+            name,
+            pos_xy,
+            yaw,
+            grid,
+            command_dt_s,
+            body_forward_m=body_forward_m,
+            body_half_width_m=body_half_width_m,
+            body_probe_margin_m=body_probe_margin_m,
+            min_clearance_m=min_clearance_m,
+        )
+        for name in candidate_names
+    ]
+    replacement = selected
+    replacement_report = selected_report
+    blocked_fallback_active = False
+    if should_veto:
+        replacement_report = max(reports, key=lambda report: _score_clearance_candidate(report, bearing))
+        replacement = str(replacement_report["primitive"])
+        if blocked_fallback_primitives and all(bool(report["blocked"]) for report in reports):
+            reports_by_name = {str(report["primitive"]): report for report in reports}
+            for name in blocked_fallback_primitives:
+                if name in reports_by_name:
+                    replacement = name
+                    replacement_report = reports_by_name[name]
+                    blocked_fallback_active = True
+                    break
+    compact_reports = [
+        {
+            "primitive": str(report["primitive"]),
+            "min_clearance_m": _round_float(float(report["min_clearance_m"])),
+            "feasible_fraction": _round_float(float(report["feasible_fraction"])),
+            "blocked": bool(report["blocked"]),
+        }
+        for report in reports
+    ]
+    return replacement, {
+        "active": bool(should_veto and replacement != selected),
+        "enabled": bool(enabled),
+        "from": selected,
+        "to": replacement,
+        "requested": requested,
+        "min_clearance_m": _round_float(float(min_clearance_m), 4),
+        "feasible_threshold": _round_float(float(feasible_threshold), 4),
+        "selected_min_clearance_m": _round_float(float(selected_report["min_clearance_m"])),
+        "selected_feasible_fraction": _round_float(float(selected_report["feasible_fraction"])),
+        "selected_blocked": bool(selected_report["blocked"]),
+        "replacement_min_clearance_m": _round_float(float(replacement_report["min_clearance_m"])),
+        "replacement_feasible_fraction": _round_float(float(replacement_report["feasible_fraction"])),
+        "replacement_blocked": bool(replacement_report["blocked"]),
+        "blocked_fallback_active": bool(blocked_fallback_active),
+        "blocked_fallback_primitives": list(blocked_fallback_primitives or []),
+        "candidates": compact_reports,
+    }
 
 
 def _learned_front_guard_select(
@@ -1297,6 +1544,140 @@ def _prediction_alias_for_primitive(
     if primitive in ("forward_slow", "forward_fast") and "forward_medium" in predictions:
         return "forward_medium"
     return None
+
+
+def _select_aux_clearance_veto(
+    *,
+    selected: str,
+    primary_predictions: dict[str, dict[str, float]] | None,
+    aux_clearance_predictions: dict[str, dict[str, float]] | None,
+    candidate_primitives: list[str],
+    enabled: bool,
+    aux_veto_prob: float,
+    primary_max_prob: float,
+    aux_veto_margin: float,
+    aux_replacement_cap: float,
+    selected_primitives: set[str] | None,
+    replacement_primitives: set[str] | None,
+) -> tuple[str, dict[str, Any]]:
+    if (
+        not enabled
+        or not primary_predictions
+        or not aux_clearance_predictions
+        or float(aux_veto_prob) > 1.0
+        or selected not in set(selected_primitives or _FORWARD_PRIMITIVES.union(_TURN_PRIMITIVES))
+    ):
+        return selected, {"active": False}
+    selected_primary_alias = _prediction_alias_for_primitive(selected, primary_predictions)
+    selected_aux_alias = _prediction_alias_for_primitive(selected, aux_clearance_predictions)
+    selected_primary = (
+        primary_predictions.get(selected_primary_alias)
+        if selected_primary_alias is not None
+        else None
+    )
+    selected_aux = (
+        aux_clearance_predictions.get(selected_aux_alias)
+        if selected_aux_alias is not None
+        else None
+    )
+    if selected_primary is None or selected_aux is None:
+        return selected, {"active": False}
+    selected_primary_prob = selected_primary.get("clearance_blocked_prob")
+    selected_aux_prob = selected_aux.get("blocked_prob")
+    if selected_primary_prob is None or selected_aux_prob is None:
+        return selected, {"active": False}
+    if float(selected_primary_prob) > float(primary_max_prob):
+        return selected, {
+            "active": False,
+            "suppressed": "primary_above_max",
+            "selected": selected,
+            "selected_primary_clearance_prob": _round_float(selected_primary_prob, 4),
+            "selected_aux_clearance_prob": _round_float(selected_aux_prob, 4),
+        }
+    if float(selected_aux_prob) < float(aux_veto_prob):
+        return selected, {
+            "active": False,
+            "suppressed": "aux_below_threshold",
+            "selected": selected,
+            "selected_primary_clearance_prob": _round_float(selected_primary_prob, 4),
+            "selected_aux_clearance_prob": _round_float(selected_aux_prob, 4),
+        }
+    allowed_replacements = set(
+        replacement_primitives
+        or {"backward", "yaw_left", "yaw_right", "arc_left", "arc_right", "hold"}
+    )
+    candidates = _unique_primitives([*candidate_primitives, *sorted(allowed_replacements)])
+    scored: list[tuple[float, str, float, float | None, float | None]] = []
+    for name in candidates:
+        if name == selected or name not in allowed_replacements:
+            continue
+        aux_alias = _prediction_alias_for_primitive(name, aux_clearance_predictions)
+        if aux_alias is None:
+            continue
+        aux_pred = aux_clearance_predictions.get(aux_alias)
+        if aux_pred is None or aux_pred.get("blocked_prob") is None:
+            continue
+        aux_prob = float(aux_pred["blocked_prob"])
+        if aux_prob > float(selected_aux_prob) - float(aux_veto_margin):
+            continue
+        if aux_prob > float(aux_replacement_cap):
+            continue
+        primary_alias = _prediction_alias_for_primitive(name, primary_predictions)
+        primary_pred = (
+            primary_predictions.get(primary_alias)
+            if primary_alias is not None
+            else None
+        )
+        primary_blocked = (
+            None
+            if primary_pred is None or primary_pred.get("blocked_prob") is None
+            else float(primary_pred["blocked_prob"])
+        )
+        progress_m = (
+            None
+            if primary_pred is None or primary_pred.get("progress_m") is None
+            else float(primary_pred["progress_m"])
+        )
+        if name in _TURN_PRIMITIVES:
+            primitive_bias = 0.0
+        elif name == "backward":
+            primitive_bias = 0.08
+        elif name == "hold":
+            primitive_bias = 0.18
+        else:
+            primitive_bias = 0.12
+        score = aux_prob + 0.12 * float(primary_blocked or 0.0) + primitive_bias
+        if progress_m is not None:
+            score -= 0.02 * progress_m
+        scored.append((score, name, aux_prob, primary_blocked, progress_m))
+    if not scored:
+        return selected, {
+            "active": False,
+            "suppressed": "no_replacement",
+            "selected": selected,
+            "selected_primary_clearance_prob": _round_float(selected_primary_prob, 4),
+            "selected_aux_clearance_prob": _round_float(selected_aux_prob, 4),
+            "aux_veto_prob": _round_float(float(aux_veto_prob), 4),
+            "primary_max_prob": _round_float(float(primary_max_prob), 4),
+            "aux_replacement_cap": _round_float(float(aux_replacement_cap), 4),
+        }
+    scored.sort(key=lambda item: item[0])
+    score, replacement, replacement_aux_prob, replacement_primary_blocked, replacement_progress = scored[0]
+    return replacement, {
+        "active": True,
+        "from": selected,
+        "to": replacement,
+        "selected_primary_clearance_prob": _round_float(selected_primary_prob, 4),
+        "selected_aux_clearance_prob": _round_float(selected_aux_prob, 4),
+        "replacement_aux_clearance_prob": _round_float(replacement_aux_prob, 4),
+        "replacement_primary_blocked_prob": _round_float(replacement_primary_blocked, 4),
+        "replacement_progress_m": _round_float(replacement_progress, 4),
+        "score": _round_float(score, 4),
+        "aux_veto_prob": _round_float(float(aux_veto_prob), 4),
+        "primary_max_prob": _round_float(float(primary_max_prob), 4),
+        "aux_veto_margin": _round_float(float(aux_veto_margin), 4),
+        "aux_replacement_cap": _round_float(float(aux_replacement_cap), 4),
+    }
 
 
 def _select_learned_local_explore_primitive(
@@ -1753,6 +2134,63 @@ def _update_guard_selected_from_candidate(
     ):
         if candidate_key in candidate:
             wall_guard[guard_key] = candidate.get(candidate_key)
+
+
+def _current_contact_escape_score(
+    primitive: str,
+    *,
+    clearance_blocked_prob: float | None,
+    blocked_prob: float | None,
+    candidate_score: float | None = None,
+) -> float:
+    if primitive == "backward":
+        primitive_bias = 0.02
+    elif primitive in _TURN_PRIMITIVES:
+        primitive_bias = 0.04
+    elif primitive == "hold":
+        primitive_bias = 0.08
+    else:
+        primitive_bias = 0.12
+    clearance = 1.0 if clearance_blocked_prob is None else float(clearance_blocked_prob)
+    blocked = 0.0 if blocked_prob is None else float(blocked_prob)
+    policy_score = 0.0 if candidate_score is None else float(candidate_score)
+    return clearance + 0.15 * blocked + primitive_bias - 0.02 * policy_score
+
+
+def _current_contact_projected_clearance_ok(
+    primitive: str,
+    *,
+    projected_clearances: dict[str, float] | None,
+    current_body_clearance_m: float | None,
+    min_projected_clearance_m: float | None,
+    min_projected_improvement_m: float,
+) -> tuple[bool, float | None, str | None]:
+    if (
+        projected_clearances is None
+        or (
+            min_projected_clearance_m is None
+            and float(min_projected_improvement_m) <= 0.0
+        )
+    ):
+        return True, None, None
+    projected = projected_clearances.get(str(primitive))
+    if projected is None:
+        return False, None, "missing_projected_clearance"
+    projected = float(projected)
+    if (
+        min_projected_clearance_m is not None
+        and projected < float(min_projected_clearance_m)
+    ):
+        return False, projected, "projected_clearance"
+    if (
+        str(primitive) != "hold"
+        and current_body_clearance_m is not None
+        and float(min_projected_improvement_m) > 0.0
+    ):
+        required = float(current_body_clearance_m) + float(min_projected_improvement_m)
+        if projected < required:
+            return False, projected, "projected_improvement"
+    return True, projected, None
 
 
 class LearnedLocalPolicyHead(nn.Module):
@@ -2981,6 +3419,145 @@ class OnlineEgomotionMap:
                 queue.append(neighbor)
         return []
 
+    def path_to_goal_biased_frontier(
+        self,
+        start_xy: np.ndarray | tuple[float, float] | list[float],
+        goal_xy: tuple[float, float],
+        *,
+        goal_weight: float = 1.0,
+        optimistic: bool = False,
+        max_cells: int = 4000,
+    ) -> list[tuple[int, int]]:
+        """BFS over visited cells to the frontier that best approaches a goal.
+
+        The goal is an (approximate) world position estimated from a seen
+        target's bearing and area; it is usually OUTSIDE the visited region,
+        so the route targets the reachable frontier cell minimising
+        path_length + goal_weight * remaining_cell_distance. If the goal cell
+        itself is inside the visited region, route straight to it.
+        """
+        start = self._cell(start_xy)
+        goal = self._cell(goal_xy)
+        if start not in self.visited:
+            return []
+        queue: list[tuple[int, int]] = [start]
+        seen = {start}
+        parent: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
+        depth: dict[tuple[int, int], int] = {start: 0}
+        best_cell: tuple[int, int] | None = None
+        best_score: float | None = None
+        approach_cell: tuple[int, int] | None = None
+        approach_key: tuple[int, int] | None = None
+        start_goal_distance = _cell_distance(start, goal)
+        goal_reached = False
+        for cell in queue:
+            if cell == goal:
+                best_cell, best_score = cell, -1.0
+                goal_reached = True
+                break
+            remaining = _cell_distance(cell, goal)
+            if cell != start and remaining < start_goal_distance:
+                # Track the best goal-approaching visited cell as a fallback
+                # when no qualifying frontier exists (edges may all have been
+                # attempted): repositioning closer still helps.
+                key = (int(remaining), int(depth[cell]))
+                if approach_key is None or key < approach_key:
+                    approach_key, approach_cell = key, cell
+                if self._is_self_built_frontier(cell):
+                    score = float(depth[cell]) + float(goal_weight) * float(remaining)
+                    if best_score is None or score < best_score:
+                        best_cell, best_score = cell, score
+            if len(seen) > int(max_cells):
+                break
+            cx, cy = int(cell[0]), int(cell[1])
+            for neighbor in ((cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)):
+                vision_free = getattr(self, "vision_free", None)
+                if (
+                    neighbor in seen
+                    or (
+                        not optimistic
+                        and neighbor not in self.visited
+                        and not (vision_free is not None and neighbor in vision_free)
+                    )
+                    or neighbor in self.blocked
+                    or neighbor in getattr(self, "vision_blocked", ())
+                    or (cell, neighbor) in self.blocked_edges
+                    or (
+                        self.hard_guard_blocks
+                        and (cell, neighbor) in self.guard_blocked_edges
+                    )
+                ):
+                    continue
+                if optimistic and (abs(neighbor[0]) > 24 or abs(neighbor[1]) > 24):
+                    continue
+                seen.add(neighbor)
+                parent[neighbor] = cell
+                depth[neighbor] = depth[cell] + 1
+                queue.append(neighbor)
+        if best_cell is None and not goal_reached:
+            best_cell = approach_cell
+        if best_cell is None:
+            return []
+        out: list[tuple[int, int]] = []
+        cursor: tuple[int, int] | None = best_cell
+        while cursor is not None:
+            out.append(cursor)
+            cursor = parent.get(cursor)
+        out.reverse()
+        return out
+
+    def cell_center_xy(self, cell: tuple[int, int]) -> tuple[float, float]:
+        return (float(cell[0]) * self.cell_m, float(cell[1]) * self.cell_m)
+
+    def integrate_rays(
+        self,
+        pose_xy: np.ndarray | tuple[float, float] | list[float],
+        yaw_rad: float,
+        angles_rad: np.ndarray,
+        depths_m: np.ndarray,
+        *,
+        depth_cap_m: float,
+        hit_confirmations: int = 3,
+    ) -> int:
+        """Fuse predicted free-depths into the map as vision evidence.
+
+        Cells along each ray (short of the predicted obstacle) become
+        vision_free — traversable for routing even though never driven.
+        Ray terminals below the cap accumulate hit counts and become
+        vision_blocked once confirmed, so single bad predictions cannot
+        wall off a corridor.
+        """
+        if not hasattr(self, "vision_free"):
+            self.vision_free: set[tuple[int, int]] = set()
+            self.vision_hit_counts: dict[tuple[int, int], int] = {}
+            self.vision_blocked: set[tuple[int, int]] = set()
+        x0, y0 = float(pose_xy[0]), float(pose_xy[1])
+        added = 0
+        for angle, depth in zip(angles_rad, depths_m):
+            ang = float(yaw_rad) + float(angle)
+            cos_a, sin_a = math.cos(ang), math.sin(ang)
+            free_len = max(0.0, min(float(depth), float(depth_cap_m)) - 0.3)
+            step = 0.15
+            n = int(free_len / step)
+            for k in range(1, n + 1):
+                cell = self._cell((x0 + cos_a * step * k, y0 + sin_a * step * k))
+                if cell in self.blocked or cell in self.vision_blocked:
+                    break
+                if cell not in self.vision_free:
+                    self.vision_free.add(cell)
+                    added += 1
+            if float(depth) < float(depth_cap_m) - 0.1:
+                hit = self._cell(
+                    (x0 + cos_a * float(depth), y0 + sin_a * float(depth))
+                )
+                if hit not in self.visited:
+                    count = self.vision_hit_counts.get(hit, 0) + 1
+                    self.vision_hit_counts[hit] = count
+                    if count >= int(hit_confirmations):
+                        self.vision_blocked.add(hit)
+                        self.vision_free.discard(hit)
+        return added
+
     def _path_to_claim_repelled_frontier(
         self,
         start: tuple[int, int],
@@ -3694,10 +4271,21 @@ def _load_learned_topology_route_table(path: Path) -> dict[str, Any]:
             if isinstance(item, (list, tuple)) and len(item) >= 2:
                 waypoints.append((float(item[0]), float(item[1])))
         if waypoints:
+            raw_primitives = route.get("primitives", [])
+            primitives = []
+            if isinstance(raw_primitives, list):
+                primitives = [
+                    str(item)
+                    for item in raw_primitives[: len(waypoints)]
+                    if str(item)
+                ]
+            if primitives and len(primitives) < len(waypoints):
+                primitives.extend([primitives[-1]] * (len(waypoints) - len(primitives)))
             normalised_routes[str(key)] = {
                 "target_color": str(route.get("target_color", key)),
                 "target_index": int(route.get("target_index", key if str(key).isdigit() else 0)),
                 "waypoints": tuple(waypoints),
+                "primitives": tuple(primitives),
             }
     if not normalised_routes:
         raise SystemExit(f"learned-topology route table has no usable waypoints: {path}")
@@ -3714,10 +4302,14 @@ def _select_learned_topology_route_primitive(
     pos_xy: np.ndarray | tuple[float, float],
     yaw: float,
     advance_m: float,
+    lookahead_m: float,
+    reproject_window: int,
+    reproject_trigger_m: float,
     yaw_bearing_threshold: float,
     forward_bearing_threshold: float,
     arc_max_bearing: float,
     forward_primitive: str,
+    use_stored_primitives: bool,
 ) -> tuple[str, dict[str, Any]]:
     route = route_table.get("routes", {}).get(str(target_color))
     if route is None:
@@ -3747,12 +4339,67 @@ def _select_learned_topology_route_primitive(
             idx += 1
         else:
             break
+
+    reprojected = False
+    reproject_from_idx = int(idx)
+    reproject_to_idx = int(idx)
+    reproject_current_dist_m = None
+    reproject_best_dist_m = None
+    reproject_window_i = max(0, int(reproject_window))
+    reproject_trigger_m_f = max(0.0, float(reproject_trigger_m))
+    if reproject_window_i > 0 and idx < len(waypoints) - 1:
+        wx, wy = waypoints[idx]
+        current_d2 = (wx - px) ** 2 + (wy - py) ** 2
+        should_reproject = (
+            reproject_trigger_m_f <= 0.0
+            or current_d2 > reproject_trigger_m_f * reproject_trigger_m_f
+        )
+        if should_reproject:
+            end_idx = min(len(waypoints) - 1, idx + reproject_window_i)
+            best_idx = min(
+                range(idx + 1, end_idx + 1),
+                key=lambda i: (waypoints[i][0] - px) ** 2
+                + (waypoints[i][1] - py) ** 2,
+            )
+            bx, by = waypoints[best_idx]
+            best_d2 = (bx - px) ** 2 + (by - py) ** 2
+            if best_d2 + 1e-9 < current_d2:
+                idx = int(best_idx)
+                reprojected = True
+                reproject_to_idx = int(best_idx)
+                reproject_current_dist_m = math.sqrt(float(current_d2))
+                reproject_best_dist_m = math.sqrt(float(best_d2))
+
+    while idx < len(waypoints) - 1:
+        wx, wy = waypoints[idx]
+        if (wx - px) ** 2 + (wy - py) ** 2 <= advance2:
+            idx += 1
+        else:
+            break
     route_state["idx"] = int(idx)
 
-    wx, wy = waypoints[min(idx, len(waypoints) - 1)]
+    goal_idx = int(idx)
+    remaining_lookahead = max(0.0, float(lookahead_m))
+    if remaining_lookahead > 0.0:
+        while goal_idx < len(waypoints) - 1 and remaining_lookahead > 0.0:
+            x0, y0 = waypoints[goal_idx]
+            x1, y1 = waypoints[goal_idx + 1]
+            segment_m = math.hypot(float(x1) - float(x0), float(y1) - float(y0))
+            goal_idx += 1
+            remaining_lookahead -= max(0.0, float(segment_m))
+
+    wx, wy = waypoints[min(goal_idx, len(waypoints) - 1)]
     bearing = wrap_angle_pi(math.atan2(wy - py, wx - px) - float(yaw))
     abs_bearing = abs(float(bearing))
-    if abs_bearing >= float(yaw_bearing_threshold) or abs_bearing > float(arc_max_bearing):
+    stored_primitives = tuple(route.get("primitives", ()))
+    stored_primitive = (
+        str(stored_primitives[min(idx, len(stored_primitives) - 1)])
+        if bool(use_stored_primitives) and stored_primitives
+        else None
+    )
+    if stored_primitive:
+        primitive = stored_primitive
+    elif abs_bearing >= float(yaw_bearing_threshold) or abs_bearing > float(arc_max_bearing):
         primitive = "yaw_left" if bearing > 0 else "yaw_right"
     elif abs_bearing >= float(forward_bearing_threshold):
         primitive = "arc_left" if bearing > 0 else "arc_right"
@@ -3763,9 +4410,31 @@ def _select_learned_topology_route_primitive(
         "target_color": str(target_color),
         "target_index": int(target_index),
         "idx": int(idx),
+        "goal_idx": int(goal_idx),
         "route_len": int(len(waypoints)),
         "goal_xy": [_round_float(wx, 4), _round_float(wy, 4)],
+        "lookahead_m": _round_float(float(lookahead_m), 4),
+        "yaw_bearing_threshold": _round_float(float(yaw_bearing_threshold), 4),
+        "forward_bearing_threshold": _round_float(float(forward_bearing_threshold), 4),
+        "arc_max_bearing": _round_float(float(arc_max_bearing), 4),
+        "reproject_window": int(reproject_window_i),
+        "reproject_trigger_m": _round_float(float(reproject_trigger_m_f), 4),
+        "reprojected": bool(reprojected),
+        "reproject_from_idx": int(reproject_from_idx),
+        "reproject_to_idx": int(reproject_to_idx),
+        "reproject_current_dist_m": (
+            None
+            if reproject_current_dist_m is None
+            else _round_float(float(reproject_current_dist_m), 4)
+        ),
+        "reproject_best_dist_m": (
+            None
+            if reproject_best_dist_m is None
+            else _round_float(float(reproject_best_dist_m), 4)
+        ),
         "bearing": _round_float(float(bearing), 4),
+        "stored_primitive": stored_primitive,
+        "use_stored_primitives": bool(use_stored_primitives),
         "primitive": primitive,
         "resets": int(route_state.get("resets", 0)),
     }
@@ -3801,6 +4470,8 @@ def _learned_action_guard_select(
     body_clearance_hard_veto_replacement_cap: float = 1.01,
     body_clearance_hard_veto_primitives: set[str] | None = None,
     body_clearance_hard_veto_selected_primitives: set[str] | None = None,
+    body_clearance_arc_sweep_veto_prob: float = 1.01,
+    body_clearance_arc_sweep_veto_selected_primitives: set[str] | None = None,
     body_clearance_saturated_veto_prob: float = 1.01,
     body_clearance_saturated_veto_spread: float = 0.01,
     body_clearance_saturated_veto_primitives: set[str] | None = None,
@@ -3808,6 +4479,16 @@ def _learned_action_guard_select(
     body_clearance_yaw_direction_veto_prob: float = 1.01,
     body_clearance_yaw_contact_veto_prob: float = 1.01,
     body_clearance_yaw_direction_veto_margin: float = 0.05,
+    current_body_clearance_m: float | None = None,
+    body_clearance_current_contact_escape_m: float | None = None,
+    body_clearance_current_contact_escape_m_by_primitive: dict[str, float] | None = None,
+    body_clearance_current_contact_escape_primitives: set[str] | None = None,
+    body_clearance_current_contact_escape_replacements: set[str] | None = None,
+    body_clearance_current_contact_escape_replacement_cap: float = 1.01,
+    body_clearance_current_contact_escape_require_replacement_under_cap: bool = False,
+    body_clearance_current_contact_escape_projected_clearances: dict[str, float] | None = None,
+    body_clearance_current_contact_escape_min_projected_clearance_m: float | None = None,
+    body_clearance_current_contact_escape_min_projected_improvement_m: float = 0.0,
     forward_progress_floor: float | None = None,
     forward_progress_floor_min_blocked_prob: float | None = None,
     forward_progress_floor_force_below: float | None = None,
@@ -3879,6 +4560,11 @@ def _learned_action_guard_select(
     body_clearance_hard_vetoed = False
     body_clearance_hard_veto_from: str | None = None
     body_clearance_hard_veto_from_prob: float | None = None
+    body_clearance_area_gate_active = True
+    body_clearance_hard_veto_relaxed_motion_replacement = False
+    body_clearance_arc_sweep_vetoed = False
+    body_clearance_arc_sweep_veto_from: str | None = None
+    body_clearance_arc_sweep_veto_from_prob: float | None = None
     body_clearance_saturated_vetoed = False
     body_clearance_saturated_veto_from: str | None = None
     body_clearance_saturated_veto_from_prob: float | None = None
@@ -3888,6 +4574,13 @@ def _learned_action_guard_select(
     body_clearance_yaw_contact_vetoed = False
     body_clearance_yaw_contact_veto_from: str | None = None
     body_clearance_yaw_contact_veto_from_prob: float | None = None
+    body_clearance_current_contact_escape = False
+    body_clearance_current_contact_escape_from: str | None = None
+    body_clearance_current_contact_escape_from_prob: float | None = None
+    body_clearance_current_contact_escape_to_prob: float | None = None
+    body_clearance_current_contact_escape_candidate: dict[str, Any] | None = None
+    body_clearance_current_contact_escape_projected_rejections: list[dict[str, Any]] = []
+    body_clearance_current_contact_escape_suppressed_reason: str | None = None
     blocked_hard_vetoed = False
     blocked_hard_veto_from: str | None = None
     blocked_hard_veto_from_prob: float | None = None
@@ -4145,7 +4838,17 @@ def _learned_action_guard_select(
                     selected_score = requested_score
                     selected_body_clearance_penalty = requested_body_clearance_penalty
                     selected_progress_floor_penalty = requested_progress_floor_penalty
-            selected_clearance_prob = selected_pred.get("clearance_blocked_prob")
+            selected_clearance_prob = selected_pred.get(
+                "clearance_blocked_prob",
+                selected_pred.get("blocked_prob"),
+            )
+            body_clearance_area_gate_active = bool(
+                body_clearance_min_area is None
+                or (
+                    target_area is not None
+                    and float(target_area) >= float(body_clearance_min_area)
+                )
+            )
             hard_veto_allowed = (
                 body_clearance_enabled
                 and not force_single_candidate_active
@@ -4156,7 +4859,11 @@ def _learned_action_guard_select(
             )
             if hard_veto_allowed:
                 allowed_primitives = set(body_clearance_hard_veto_primitives or ())
-                hard_veto_candidates: list[tuple[float, float, str, dict[str, float], float, float]] = []
+                target_turn_motion_veto = bool(
+                    requested in _TURN_PRIMITIVES
+                    and selected in _TRANSLATING_PRIMITIVES
+                )
+                hard_veto_candidates: list[tuple[float, float, str, dict[str, float], float, float, bool]] = []
                 for score, name, pred, body_clearance_penalty, progress_floor_penalty in scored:
                     if name == selected:
                         continue
@@ -4165,7 +4872,94 @@ def _learned_action_guard_select(
                     clearance_prob = pred.get("clearance_blocked_prob")
                     if clearance_prob is None:
                         continue
-                    if float(clearance_prob) > float(selected_clearance_prob) - float(body_clearance_hard_veto_margin):
+                    strict_margin_ok = bool(
+                        float(clearance_prob)
+                        <= float(selected_clearance_prob) - float(body_clearance_hard_veto_margin)
+                    )
+                    relaxed_motion_ok = bool(
+                        target_turn_motion_veto
+                        and name != "hold"
+                        and float(clearance_prob) <= float(selected_clearance_prob)
+                        and float(pred.get("blocked_prob", 1.0)) < float(blocked_threshold)
+                    )
+                    if not strict_margin_ok and not relaxed_motion_ok:
+                        continue
+                    if float(clearance_prob) > float(body_clearance_hard_veto_replacement_cap):
+                        continue
+                    blocked_prob = float(pred.get("blocked_prob", 0.0))
+                    if target_turn_motion_veto and name == requested:
+                        primitive_bias = -0.12
+                    elif name in _TURN_PRIMITIVES:
+                        primitive_bias = 0.0
+                    elif name == "backward":
+                        primitive_bias = 0.08
+                    elif name == "hold":
+                        primitive_bias = 0.65 if target_turn_motion_veto else 0.25
+                    else:
+                        primitive_bias = 0.12
+                    hard_veto_candidates.append((
+                        float(clearance_prob) + 0.15 * blocked_prob + primitive_bias,
+                        -float(score),
+                        name,
+                        pred,
+                        float(body_clearance_penalty),
+                        float(progress_floor_penalty),
+                        bool(relaxed_motion_ok and not strict_margin_ok),
+                    ))
+                if hard_veto_candidates:
+                    (
+                        _,
+                        _,
+                        veto_selected,
+                        veto_pred,
+                        veto_body_penalty,
+                        veto_progress_penalty,
+                        veto_relaxed_motion,
+                    ) = min(
+                        hard_veto_candidates,
+                        key=lambda item: (item[0], item[1]),
+                    )
+                    body_clearance_hard_vetoed = True
+                    body_clearance_hard_veto_from = selected
+                    body_clearance_hard_veto_from_prob = float(selected_clearance_prob)
+                    body_clearance_hard_veto_relaxed_motion_replacement = bool(
+                        veto_relaxed_motion
+                    )
+                    selected = veto_selected
+                    selected_pred = veto_pred
+                    selected_score = next(
+                        (float(score) for score, name, _, _, _ in scored if name == selected),
+                        selected_score,
+                    )
+                    selected_body_clearance_penalty = veto_body_penalty
+                    selected_progress_floor_penalty = veto_progress_penalty
+            selected_clearance_prob = selected_pred.get("clearance_blocked_prob")
+            arc_sweep_veto_allowed = (
+                body_clearance_enabled
+                and not force_single_candidate_active
+                and not body_clearance_hard_vetoed
+                and float(body_clearance_arc_sweep_veto_prob) <= 1.0
+                and selected in set(
+                    body_clearance_arc_sweep_veto_selected_primitives
+                    or {"arc_left", "arc_right"}
+                )
+                and selected_clearance_prob is not None
+                and float(selected_clearance_prob) >= float(body_clearance_arc_sweep_veto_prob)
+            )
+            if arc_sweep_veto_allowed:
+                allowed_primitives = set(body_clearance_hard_veto_primitives or ())
+                arc_veto_candidates: list[tuple[float, float, str, dict[str, float], float, float]] = []
+                for score, name, pred, body_clearance_penalty, progress_floor_penalty in scored:
+                    if name == selected:
+                        continue
+                    if allowed_primitives and name not in allowed_primitives:
+                        continue
+                    clearance_prob = pred.get("clearance_blocked_prob")
+                    if clearance_prob is None:
+                        continue
+                    if float(clearance_prob) > float(selected_clearance_prob) - float(
+                        body_clearance_hard_veto_margin
+                    ):
                         continue
                     if float(clearance_prob) > float(body_clearance_hard_veto_replacement_cap):
                         continue
@@ -4178,7 +4972,7 @@ def _learned_action_guard_select(
                         primitive_bias = 0.25
                     else:
                         primitive_bias = 0.12
-                    hard_veto_candidates.append((
+                    arc_veto_candidates.append((
                         float(clearance_prob) + 0.15 * blocked_prob + primitive_bias,
                         -float(score),
                         name,
@@ -4186,14 +4980,14 @@ def _learned_action_guard_select(
                         float(body_clearance_penalty),
                         float(progress_floor_penalty),
                     ))
-                if hard_veto_candidates:
+                if arc_veto_candidates:
                     _, _, veto_selected, veto_pred, veto_body_penalty, veto_progress_penalty = min(
-                        hard_veto_candidates,
+                        arc_veto_candidates,
                         key=lambda item: (item[0], item[1]),
                     )
-                    body_clearance_hard_vetoed = True
-                    body_clearance_hard_veto_from = selected
-                    body_clearance_hard_veto_from_prob = float(selected_clearance_prob)
+                    body_clearance_arc_sweep_vetoed = True
+                    body_clearance_arc_sweep_veto_from = selected
+                    body_clearance_arc_sweep_veto_from_prob = float(selected_clearance_prob)
                     selected = veto_selected
                     selected_pred = veto_pred
                     selected_score = next(
@@ -4233,6 +5027,226 @@ def _learned_action_guard_select(
                         selected_body_clearance_penalty = float(body_clearance_penalty)
                         selected_progress_floor_penalty = float(progress_floor_penalty)
             selected_clearance_prob = selected_pred.get("clearance_blocked_prob")
+            selected_current_contact_escape_m = (
+                body_clearance_current_contact_escape_m_by_primitive.get(selected)
+                if body_clearance_current_contact_escape_m_by_primitive
+                and selected in body_clearance_current_contact_escape_m_by_primitive
+                else body_clearance_current_contact_escape_m
+            )
+            current_contact_escape_allowed = (
+                body_clearance_enabled
+                and not force_single_candidate_active
+                and selected_current_contact_escape_m is not None
+                and current_body_clearance_m is not None
+                and float(current_body_clearance_m) <= float(selected_current_contact_escape_m)
+                and selected
+                in set(
+                    body_clearance_current_contact_escape_primitives
+                    or {"forward_fast", "forward_medium", "arc_left", "arc_right", "yaw_left", "yaw_right"}
+                )
+            )
+            if (
+                body_clearance_enabled
+                and not force_single_candidate_active
+                and body_clearance_current_contact_escape_m is not None
+                and selected_current_contact_escape_m is not None
+                and current_body_clearance_m is not None
+                and float(current_body_clearance_m) > float(selected_current_contact_escape_m)
+                and selected
+                in set(
+                    body_clearance_current_contact_escape_primitives
+                    or {"forward_fast", "forward_medium", "arc_left", "arc_right", "yaw_left", "yaw_right"}
+                )
+            ):
+                body_clearance_current_contact_escape_suppressed_reason = (
+                    "primitive_clearance"
+                )
+            if current_contact_escape_allowed:
+                selected_projected_ok, selected_projected_clearance, selected_projected_reason = (
+                    _current_contact_projected_clearance_ok(
+                        selected,
+                        projected_clearances=body_clearance_current_contact_escape_projected_clearances,
+                        current_body_clearance_m=current_body_clearance_m,
+                        min_projected_clearance_m=(
+                            body_clearance_current_contact_escape_min_projected_clearance_m
+                        ),
+                        min_projected_improvement_m=(
+                            body_clearance_current_contact_escape_min_projected_improvement_m
+                        ),
+                    )
+                )
+                if (
+                    body_clearance_current_contact_escape_projected_clearances is not None
+                    and selected_projected_ok
+                ):
+                    body_clearance_current_contact_escape_suppressed_reason = (
+                        "selected_projected_safe"
+                    )
+                    body_clearance_current_contact_escape_candidate = {
+                        "primitive": selected,
+                        "projected_clearance_m": _round_float(
+                            selected_projected_clearance, 4
+                        ),
+                        "suppressed": True,
+                    }
+                    current_contact_escape_allowed = False
+                elif selected_projected_reason is not None:
+                    body_clearance_current_contact_escape_projected_rejections.append({
+                        "primitive": selected,
+                        "projected_clearance_m": _round_float(
+                            selected_projected_clearance, 4
+                        ),
+                        "reason": selected_projected_reason,
+                        "selected": True,
+                    })
+            if current_contact_escape_allowed:
+                replacement_primitives = set(
+                    body_clearance_current_contact_escape_replacements
+                    or {"backward", "yaw_left", "yaw_right", "hold"}
+                )
+                escape_candidates = []
+                escape_candidates_under_cap = []
+                for score, name, pred, body_clearance_penalty, progress_floor_penalty in scored:
+                    if name not in replacement_primitives or name == selected:
+                        continue
+                    replacement_contact_prob = pred.get(
+                        "clearance_blocked_prob",
+                        pred.get("blocked_prob"),
+                    )
+                    replacement_under_cap = bool(
+                        float(body_clearance_current_contact_escape_replacement_cap) > 1.0
+                        or (
+                            replacement_contact_prob is not None
+                            and float(replacement_contact_prob)
+                            <= float(body_clearance_current_contact_escape_replacement_cap)
+                        )
+                    )
+                    if not replacement_under_cap:
+                        body_clearance_current_contact_escape_projected_rejections.append({
+                            "primitive": name,
+                            "clearance_blocked_prob": _round_float(
+                                replacement_contact_prob, 4
+                            ),
+                            "reason": "replacement_cap",
+                            "selected": False,
+                        })
+                    projected_ok, projected_clearance, projected_reason = (
+                        _current_contact_projected_clearance_ok(
+                            name,
+                            projected_clearances=body_clearance_current_contact_escape_projected_clearances,
+                            current_body_clearance_m=current_body_clearance_m,
+                            min_projected_clearance_m=(
+                                body_clearance_current_contact_escape_min_projected_clearance_m
+                            ),
+                            min_projected_improvement_m=(
+                                body_clearance_current_contact_escape_min_projected_improvement_m
+                            ),
+                        )
+                    )
+                    if not projected_ok:
+                        body_clearance_current_contact_escape_projected_rejections.append({
+                            "primitive": name,
+                            "projected_clearance_m": _round_float(
+                                projected_clearance, 4
+                            ),
+                            "reason": projected_reason,
+                            "selected": False,
+                        })
+                        continue
+                    escape_candidate = (
+                        score,
+                        name,
+                        pred,
+                        body_clearance_penalty,
+                        progress_floor_penalty,
+                    )
+                    escape_candidates.append(escape_candidate)
+                    if replacement_under_cap:
+                        escape_candidates_under_cap.append(escape_candidate)
+                if escape_candidates:
+                    if (
+                        body_clearance_current_contact_escape_require_replacement_under_cap
+                        and float(body_clearance_current_contact_escape_replacement_cap) <= 1.0
+                        and not escape_candidates_under_cap
+                    ):
+                        body_clearance_current_contact_escape_suppressed_reason = (
+                            "replacement_cap"
+                        )
+                    else:
+                        ranked_escape_candidates = (
+                            escape_candidates_under_cap or escape_candidates
+                        )
+                        score, name, pred, body_clearance_penalty, progress_floor_penalty = min(
+                            ranked_escape_candidates,
+                            key=lambda item: (
+                                _current_contact_escape_score(
+                                    item[1],
+                                    clearance_blocked_prob=item[2].get(
+                                        "clearance_blocked_prob",
+                                        item[2].get("blocked_prob"),
+                                    ),
+                                    blocked_prob=item[2].get("blocked_prob"),
+                                    candidate_score=item[0],
+                                ),
+                                float(
+                                    item[2].get(
+                                        "clearance_blocked_prob",
+                                        item[2].get("blocked_prob", 1.0),
+                                    )
+                                ),
+                                -float(item[0]),
+                            ),
+                        )
+                        replacement_contact_prob = pred.get(
+                            "clearance_blocked_prob",
+                            pred.get("blocked_prob"),
+                        )
+                        body_clearance_current_contact_escape = True
+                        body_clearance_current_contact_escape_from = selected
+                        body_clearance_current_contact_escape_from_prob = (
+                            None if selected_clearance_prob is None else float(selected_clearance_prob)
+                        )
+                        body_clearance_current_contact_escape_to_prob = (
+                            None
+                            if replacement_contact_prob is None
+                            else float(replacement_contact_prob)
+                        )
+                        body_clearance_current_contact_escape_candidate = {
+                            "primitive": name,
+                            "clearance_blocked_prob": _round_float(
+                                replacement_contact_prob, 4
+                            ),
+                            "blocked_prob": _round_float(pred.get("blocked_prob"), 4),
+                            "score": _round_float(float(score), 4),
+                            "projected_clearance_m": _round_float(
+                                (
+                                    body_clearance_current_contact_escape_projected_clearances
+                                    or {}
+                                ).get(name),
+                                4,
+                            ),
+                            "threshold_m": _round_float(
+                                selected_current_contact_escape_m, 4
+                            ),
+                            "replacement_cap": _round_float(
+                                body_clearance_current_contact_escape_replacement_cap,
+                                4,
+                            ),
+                            "replacement_cap_relaxed": bool(
+                                float(body_clearance_current_contact_escape_replacement_cap) <= 1.0
+                                and not escape_candidates_under_cap
+                            ),
+                        }
+                        selected = name
+                        selected_pred = pred
+                        selected_score = float(score)
+                        selected_body_clearance_penalty = float(body_clearance_penalty)
+                        selected_progress_floor_penalty = float(progress_floor_penalty)
+                elif body_clearance_current_contact_escape_suppressed_reason is None:
+                    body_clearance_current_contact_escape_suppressed_reason = (
+                        "no_scored_candidate"
+                    )
+            selected_clearance_prob = selected_pred.get("clearance_blocked_prob")
             yaw_contact_veto_allowed = (
                 body_clearance_enabled
                 and not force_single_candidate_active
@@ -4245,17 +5259,43 @@ def _learned_action_guard_select(
                 # Yaw-in-place with the swept body already in contact can lever
                 # the base over a wall lip in a single tick (unrecoverable
                 # capsize). When the learned clearance head flags the yaw
-                # itself, back out instead of rotating.
-                backward_candidates = [
+                # itself, back out if that is safer; otherwise hold for a tick
+                # when the learned head says every movement primitive is risky.
+                contact_fallback_candidates = [
                     (score, name, pred, body_clearance_penalty, progress_floor_penalty)
                     for score, name, pred, body_clearance_penalty, progress_floor_penalty in scored
-                    if name == "backward" and pred.get("clearance_blocked_prob") is not None
+                    if name in ("backward", "hold") and pred.get("clearance_blocked_prob") is not None
                 ]
-                if backward_candidates:
-                    score, name, pred, body_clearance_penalty, progress_floor_penalty = (
-                        backward_candidates[0]
+                contact_fallbacks: list[tuple[float, float, str, dict[str, float], float, float]] = []
+                for score, name, pred, body_clearance_penalty, progress_floor_penalty in contact_fallback_candidates:
+                    fallback_prob = float(pred["clearance_blocked_prob"])
+                    if name == "backward":
+                        allowed = fallback_prob < float(selected_clearance_prob)
+                        priority = 0.0
+                    else:
+                        allowed = fallback_prob <= float(selected_clearance_prob) - float(
+                            body_clearance_yaw_direction_veto_margin
+                        )
+                        priority = 1.0
+                    if allowed:
+                        contact_fallbacks.append((
+                            priority,
+                            fallback_prob,
+                            name,
+                            pred,
+                            float(body_clearance_penalty),
+                            float(progress_floor_penalty),
+                        ))
+                if contact_fallbacks:
+                    _, _, name, pred, body_clearance_penalty, progress_floor_penalty = min(
+                        contact_fallbacks,
+                        key=lambda item: (item[0], item[1]),
                     )
-                    if float(pred["clearance_blocked_prob"]) < float(selected_clearance_prob):
+                    score = next(
+                        (float(score) for score, scored_name, _, _, _ in scored if scored_name == name),
+                        selected_score,
+                    )
+                    if name != selected:
                         body_clearance_yaw_contact_vetoed = True
                         body_clearance_yaw_contact_veto_from = selected
                         body_clearance_yaw_contact_veto_from_prob = float(selected_clearance_prob)
@@ -4555,12 +5595,16 @@ def _learned_action_guard_select(
         "body_clearance_enabled": bool(body_clearance_enabled),
         "body_clearance_target_area": _round_float(float(body_clearance_target_area), 4),
         "body_clearance_min_area": _round_float(body_clearance_min_area, 4),
+        "body_clearance_area_gate_active": bool(body_clearance_area_gate_active),
         "body_clearance_near_forward_prob_floor": _round_float(body_clearance_near_forward_prob_floor, 4),
         "body_clearance_near_forward_prob_weight": _round_float(body_clearance_near_forward_prob_weight, 4),
         "body_clearance_near_yaw_prob_floor": _round_float(body_clearance_near_yaw_prob_floor, 4),
         "body_clearance_yaw_always": bool(body_clearance_yaw_always),
         "body_clearance_yaw_penalty_weight": _round_float(float(body_clearance_yaw_penalty_weight), 4),
         "body_clearance_hard_veto": bool(body_clearance_hard_vetoed),
+        "body_clearance_hard_veto_relaxed_motion_replacement": bool(
+            body_clearance_hard_veto_relaxed_motion_replacement
+        ),
         "body_clearance_hard_veto_prob": _round_float(float(body_clearance_hard_veto_prob), 4),
         "body_clearance_hard_veto_margin": _round_float(float(body_clearance_hard_veto_margin), 4),
         "body_clearance_hard_veto_replacement_cap": _round_float(
@@ -4573,6 +5617,18 @@ def _learned_action_guard_select(
         "selected_before_body_clearance_hard_veto": body_clearance_hard_veto_from,
         "selected_before_body_clearance_hard_veto_prob": _round_float(
             body_clearance_hard_veto_from_prob, 4
+        ),
+        "body_clearance_arc_sweep_veto": bool(body_clearance_arc_sweep_vetoed),
+        "body_clearance_arc_sweep_veto_prob": _round_float(
+            float(body_clearance_arc_sweep_veto_prob), 4
+        ),
+        "body_clearance_arc_sweep_veto_selected_primitives": sorted(
+            body_clearance_arc_sweep_veto_selected_primitives
+            or {"arc_left", "arc_right"}
+        ),
+        "selected_before_body_clearance_arc_sweep_veto": body_clearance_arc_sweep_veto_from,
+        "selected_before_body_clearance_arc_sweep_veto_prob": _round_float(
+            body_clearance_arc_sweep_veto_from_prob, 4
         ),
         "body_clearance_saturated_veto": bool(body_clearance_saturated_vetoed),
         "body_clearance_saturated_veto_prob": _round_float(float(body_clearance_saturated_veto_prob), 4),
@@ -4595,6 +5651,61 @@ def _learned_action_guard_select(
         "body_clearance_yaw_contact_veto": bool(body_clearance_yaw_contact_vetoed),
         "body_clearance_yaw_contact_veto_prob": _round_float(
             float(body_clearance_yaw_contact_veto_prob), 4
+        ),
+        "current_body_clearance_m": _round_float(current_body_clearance_m, 4),
+        "body_clearance_current_contact_escape": bool(body_clearance_current_contact_escape),
+        "body_clearance_current_contact_escape_m": (
+            None
+            if body_clearance_current_contact_escape_m is None
+            else _round_float(float(body_clearance_current_contact_escape_m), 4)
+        ),
+        "body_clearance_current_contact_escape_min_projected_clearance_m": (
+            None
+            if body_clearance_current_contact_escape_min_projected_clearance_m is None
+            else _round_float(
+                float(body_clearance_current_contact_escape_min_projected_clearance_m),
+                4,
+            )
+        ),
+        "body_clearance_current_contact_escape_min_projected_improvement_m": _round_float(
+            float(body_clearance_current_contact_escape_min_projected_improvement_m),
+            4,
+        ),
+        "body_clearance_current_contact_escape_m_by_primitive": dict(
+            sorted((body_clearance_current_contact_escape_m_by_primitive or {}).items())
+        ),
+        "body_clearance_current_contact_escape_primitives": sorted(
+            body_clearance_current_contact_escape_primitives
+            or {"forward_fast", "forward_medium", "arc_left", "arc_right", "yaw_left", "yaw_right"}
+        ),
+        "body_clearance_current_contact_escape_replacements": sorted(
+            body_clearance_current_contact_escape_replacements
+            or {"backward", "yaw_left", "yaw_right", "hold"}
+        ),
+        "body_clearance_current_contact_escape_replacement_cap": _round_float(
+            body_clearance_current_contact_escape_replacement_cap,
+            4,
+        ),
+        "body_clearance_current_contact_escape_require_replacement_under_cap": bool(
+            body_clearance_current_contact_escape_require_replacement_under_cap
+        ),
+        "selected_before_body_clearance_current_contact_escape": (
+            body_clearance_current_contact_escape_from
+        ),
+        "selected_before_body_clearance_current_contact_escape_prob": _round_float(
+            body_clearance_current_contact_escape_from_prob, 4
+        ),
+        "selected_after_body_clearance_current_contact_escape_prob": _round_float(
+            body_clearance_current_contact_escape_to_prob, 4
+        ),
+        "body_clearance_current_contact_escape_candidate": (
+            body_clearance_current_contact_escape_candidate
+        ),
+        "body_clearance_current_contact_escape_projected_rejections": (
+            body_clearance_current_contact_escape_projected_rejections[:8]
+        ),
+        "body_clearance_current_contact_escape_suppressed_reason": (
+            body_clearance_current_contact_escape_suppressed_reason
         ),
         "selected_before_body_clearance_yaw_contact_veto": body_clearance_yaw_contact_veto_from,
         "selected_before_body_clearance_yaw_contact_veto_prob": _round_float(
@@ -4863,8 +5974,11 @@ class FrontierExplorer:
         # existing waypoint-block machinery.
         self.optimistic_free_graph = str(goal_policy).lower() == "online_frontier"
         if self.optimistic_free_graph:
-            goal_policy = "nearest"
-            self.goal_policy = "nearest"
+            # "mixed" commits to a far frontier every third replan: pure
+            # nearest-cell hopping pays several yaw-alignment ticks per
+            # 1-cell hop and stalls coverage (~15 cells / 2400 ticks).
+            goal_policy = "mixed"
+            self.goal_policy = "mixed"
         if str(goal_policy).lower() not in (
             "learned_sweep",
             "learned_local",
@@ -6324,6 +7438,8 @@ def _fully_learned_runtime_contract_report(
         failures.append("--learned-local-oracle-standoff-labels is for data collection only")
     if args.learned_local_dataset_output is not None:
         failures.append("--learned-local-dataset-output is for data collection only")
+    if args.debug_force_primitive_script is not None:
+        failures.append("--debug-force-primitive-script is for offline data collection only")
     if bool(args.wall_aware_planner) and wall_source == "privileged_grid":
         failures.append("--wall-decision-source privileged_grid is forbidden")
     if bool(args.wall_aware_planner) and wall_source == "learned_action" and args.primitive_outcome_checkpoint is None:
@@ -6749,6 +7865,9 @@ def main() -> int:
                              "successful claim before returning to the learned policy. "
                              "The learned action-outcome guard still scores the request; "
                              "this uses no map geometry or target coordinates.")
+    parser.add_argument("--post-claim-explore-min-claimed-count", type=int, default=0,
+                        help="Minimum number of total claimed beacons required before "
+                             "--post-claim-explore-primitives schedules a post-claim plan.")
     parser.add_argument("--multi-target-switch-policy",
                         choices=("fixed", "seen_when_active_unseen", "visible_priority", "memory_priority"),
                         default="fixed",
@@ -6908,6 +8027,12 @@ def main() -> int:
                         help="When a target-specific learned-local checkpoint exists for the "
                              "active color, route through it before the generic post-claim "
                              "checkpoint. This uses only active task color and claim memory.")
+    parser.add_argument("--learned-local-target-policy-priority-on-aux-clearance-switch",
+                        action="store_true",
+                        help="When the learned auxiliary clearance switch is active, route "
+                             "through the active target-specific learned-local checkpoint "
+                             "before the generic post-claim checkpoint. This gates policy "
+                             "routing on learned RGB/JEPA risk, not pose or geometry.")
     parser.add_argument("--learned-local-target-policy-outcome-rerank",
                         choices=("inherit", "on", "off"), default="inherit",
                         help="Override learned-local outcome reranking for target-specific "
@@ -6937,9 +8062,18 @@ def main() -> int:
                              "--learned-local-policy-states. "
                              "Use with the privileged standoff route enabled to generate offline "
                              "labels, then rerun with --explore-standoff-route off.")
+    parser.add_argument("--learned-local-dataset-label-source",
+                        choices=("teacher", "executed"), default="teacher",
+                        help="For --learned-local-dataset-output, save labels from the pre-policy "
+                             "teacher/request path (default) or from the final primitive selected "
+                             "for execution after learned policy and runtime guards.")
     parser.add_argument("--learned-local-dataset-min-claimed-count", type=int, default=0,
                         help="For learned-local dataset collection, skip rows before this many "
                              "target claims have been recorded.")
+    parser.add_argument("--debug-force-primitive-script", type=Path, default=None,
+                        help="Offline data-collection/debug only: force final executable "
+                             "primitives at specific ticks from a JSON/JSONL/text script. "
+                             "This is forbidden by the fully learned runtime contract.")
     parser.add_argument("--learned-local-oracle-standoff-labels", action="store_true",
                         help="For dataset collection only, label EXPLORE examples with a separate "
                              "standoff-route oracle while executing the normal controller action. "
@@ -6983,6 +8117,22 @@ def main() -> int:
                              "the runtime online-map guard-block memory. The default preserves "
                              "legacy behavior. requested_selected avoids hard-blocking routes "
                              "from guard candidates the robot never attempted.")
+    parser.add_argument("--learned-local-online-map-current-contact-projection-blocks",
+                        action="store_true",
+                        help="When current-contact projected-clearance gating rejects the "
+                             "selected translating primitive, mark that primitive's online-map "
+                             "edge blocked so frontier pressure can reroute instead of "
+                             "requesting the same unsafe edge forever.")
+    parser.add_argument("--learned-local-online-map-hard-veto-hold-escape-projection-blocks",
+                        action="store_true",
+                        help="When projected-clearance filtering leaves hard-veto hold escape "
+                             "without a safe translating recovery, mark the primitive that was "
+                             "hard-vetoed to hold as an online-map guard block.")
+    parser.add_argument("--learned-local-online-map-geometry-veto-hold-blocks",
+                        action="store_true",
+                        help="When the generic body-clearance geometry veto replaces a "
+                             "translating primitive with hold, mark the blocked primitive's "
+                             "online-map edge as a guard block so frontier pressure can reroute.")
     parser.add_argument("--learned-local-online-map-route-replay-guard-override",
                         action="store_true",
                         help="Let a learned-policy translating request pass through the "
@@ -7196,13 +8346,101 @@ def main() -> int:
                              "Runtime uses only stored waypoints plus odometry; it does not "
                              "run standoff planning or free-cell graph search.")
     parser.add_argument("--learned-topology-route-advance-m", type=float, default=0.38)
+    parser.add_argument("--learned-topology-route-lookahead-m", type=float, default=0.0,
+                        help="Additional route distance to steer toward after the committed "
+                             "--learned-topology-route-advance-m index. This smooths dense "
+                             "teacher traces without changing route progress accounting.")
+    parser.add_argument("--learned-topology-route-reproject-window", type=int, default=0,
+                        help="If positive, allow a route-memory follower to jump only forward "
+                             "to the nearest waypoint within this many future route indices "
+                             "when physical drift leaves the committed waypoint behind.")
+    parser.add_argument("--learned-topology-route-reproject-trigger-m", type=float, default=0.0,
+                        help="Minimum distance from the committed waypoint before bounded "
+                             "forward re-projection is allowed. Values <= 0 allow projection "
+                             "whenever it improves distance.")
     parser.add_argument("--learned-topology-route-until-area-logit", type=float, default=None,
                         help="If set, keep following the learned topology route while the "
                              "active target is remembered but not visually large enough "
                              "for a stable SERVO handoff.")
+    parser.add_argument("--learned-topology-route-release-on-seen-area-logit",
+                        type=float, default=None,
+                        help="If set, release route-memory control once the active target "
+                             "is visually seen at or above this area logit, even when it "
+                             "is not yet in the tight in-cone gate.")
     parser.add_argument("--learned-topology-route-yaw-threshold", type=float, default=0.50)
+    parser.add_argument("--learned-topology-route-yaw-threshold-by-color", default="",
+                        help="Optional comma-separated color:threshold overrides for "
+                             "--learned-topology-route-yaw-threshold.")
     parser.add_argument("--learned-topology-route-forward-threshold", type=float, default=0.12)
     parser.add_argument("--learned-topology-route-arc-max-bearing", type=float, default=0.35)
+    parser.add_argument("--learned-topology-route-arc-max-bearing-by-color", default="",
+                        help="Optional comma-separated color:bearing overrides for "
+                             "--learned-topology-route-arc-max-bearing.")
+    parser.add_argument("--learned-topology-route-use-stored-primitives", action="store_true",
+                        help="Use primitive labels stored in the route table instead of deriving "
+                             "route actions from waypoint bearing.")
+    parser.add_argument("--learned-topology-route-geometry-veto-min-clearance-m",
+                        type=float, default=None,
+                        help="If set, route-memory ticks run an explicit body-footprint "
+                             "primitive clearance veto after learned-action selection.")
+    parser.add_argument("--learned-topology-route-geometry-veto-feasible-threshold",
+                        type=float, default=1.0)
+    parser.add_argument("--learned-topology-route-geometry-veto-selected-primitives",
+                        default="forward_slow,forward_medium,forward_fast,arc_left,arc_right,yaw_left,yaw_right",
+                        help="Comma-separated primitives eligible for the route geometry veto.")
+    parser.add_argument("--learned-topology-route-geometry-veto-replacements",
+                        default="forward_slow,arc_left,arc_right,yaw_left,yaw_right,backward,hold",
+                        help="Comma-separated replacement primitives considered by the route geometry veto.")
+    parser.add_argument("--body-clearance-geometry-veto-min-clearance-m",
+                        type=float, default=None,
+                        help="If set, all learned-action guard ticks run an explicit "
+                             "body-footprint primitive clearance veto after learned-action "
+                             "selection. This is route-free and uses the same runtime "
+                             "occupancy/body projection as the wall guard.")
+    parser.add_argument("--body-clearance-geometry-veto-feasible-threshold",
+                        type=float, default=1.0)
+    parser.add_argument("--body-clearance-geometry-veto-states", default="",
+                        help="Comma-separated controller states where the generic geometry "
+                             "veto may run. Empty means all states.")
+    parser.add_argument("--body-clearance-geometry-veto-min-claimed-count",
+                        type=int, default=0,
+                        help="Minimum number of already claimed beacons before the "
+                             "generic geometry veto may run.")
+    parser.add_argument("--body-clearance-geometry-veto-target-colors",
+                        default="",
+                        help="Optional comma-separated active target colors where the "
+                             "generic geometry veto may run. Empty means all target colors.")
+    parser.add_argument("--body-clearance-geometry-veto-allow-force-single-candidate",
+                        action="store_true",
+                        help="Allow the generic body-clearance geometry veto to override "
+                             "force-single-candidate learned guard decisions. This is intended "
+                             "for body-safety vetoes on route-replay or escape context.")
+    parser.add_argument("--body-clearance-geometry-veto-allow-guard-disabled",
+                        action="store_true",
+                        help="Allow the generic body-clearance geometry veto to run even "
+                             "when the learned guard is disabled by state/body-clearance "
+                             "locks, while the wall-aware planner itself is enabled.")
+    parser.add_argument("--body-clearance-geometry-veto-selected-primitives",
+                        default="forward_slow,forward_medium,forward_fast,arc_left,arc_right,yaw_left,yaw_right,backward",
+                        help="Comma-separated primitives eligible for the generic geometry veto.")
+    parser.add_argument("--body-clearance-geometry-veto-replacements",
+                        default="forward_slow,arc_left,arc_right,yaw_left,yaw_right,backward,hold",
+                        help="Comma-separated replacement primitives considered by the generic geometry veto.")
+    parser.add_argument("--body-clearance-geometry-veto-blocked-fallback-primitives",
+                        default="",
+                        help="Optional ordered primitives to use when every generic "
+                             "geometry-veto candidate is projected blocked. Empty keeps "
+                             "the normal best-scored blocked candidate.")
+    parser.add_argument("--body-clearance-geometry-veto-override-replacements",
+                        default="",
+                        help="Optional comma-separated replacement primitives that replace "
+                             "--body-clearance-geometry-veto-replacements once "
+                             "--body-clearance-geometry-veto-override-min-claimed-count "
+                             "is satisfied.")
+    parser.add_argument("--body-clearance-geometry-veto-override-min-claimed-count",
+                        type=int, default=0,
+                        help="Minimum number of already claimed beacons before the optional "
+                             "generic geometry-veto replacement override activates.")
     parser.add_argument("--max-ticks", type=int, default=120)
     parser.add_argument("--command-dt-s", type=float, default=0.10)
     parser.add_argument("--inflation-m", type=float, default=0.12)
@@ -7260,6 +8498,9 @@ def main() -> int:
     parser.add_argument("--claim-success-model-threshold", type=float, default=None,
                         help="Probability threshold for --claim-success-model-checkpoint. "
                              "Defaults to the threshold saved in the checkpoint.")
+    parser.add_argument("--claim-success-model-threshold-by-color", default="",
+                        help="Optional comma-separated color:threshold overrides for "
+                             "--claim-success-model-threshold.")
     parser.add_argument("--claim-success-model-positive-trigger", action="store_true",
                         help="Allow the learned claim-valid/distance classifier to trigger "
                              "CLAIM directly once runtime perception says the active target "
@@ -7276,6 +8517,13 @@ def main() -> int:
                         help="Bearing threshold for --claim-contact-area-logit.")
     parser.add_argument("--claim-contact-min-seen-ticks", type=int, default=8,
                         help="Minimum seen age for --claim-contact-area-logit.")
+    parser.add_argument("--multi-target-success-requires-claim-distance", action="store_true",
+                        help="For multi-target runs, require every accepted claim's "
+                             "diagnostic privileged distance to be within "
+                             "--success-dist-m before setting result.success. By "
+                             "default multi-target success follows accepted learned "
+                             "claim gates plus physical safety; claim distances remain "
+                             "reported as diagnostics.")
     parser.add_argument("--claim-stalled-area-logit", type=float, default=None,
                         help="Optional visual-stall claim. If a previous near-target "
                              "forward step stalled with high learned clearance risk, allow "
@@ -7322,6 +8570,11 @@ def main() -> int:
     parser.add_argument("--primitive-clearance-frozen-jepa-checkpoint", type=Path, default=None,
                         help="Optional encoder override for the body-clearance head only; "
                              "same precedence as --primitive-outcome-frozen-jepa-checkpoint.")
+    parser.add_argument("--primitive-aux-clearance-frozen-jepa-checkpoint", type=Path, default=None,
+                        help="Optional encoder override for the auxiliary body-clearance head. "
+                             "Falls back to --primitive-clearance-frozen-jepa-checkpoint, "
+                             "--frozen-jepa-checkpoint, then the auxiliary checkpoint's "
+                             "recorded encoder.")
     parser.add_argument("--primitive-post-claim-outcome-checkpoint", type=Path, default=None,
                         help="Optional learned primitive-outcome checkpoint used after at "
                              "least one target claim when the controller state is enabled "
@@ -7335,6 +8588,11 @@ def main() -> int:
                              "learned swept-body blocked probability is fused with the normal "
                              "action-outcome probability, keeping runtime wall decisions "
                              "nonprivileged.")
+    parser.add_argument("--primitive-aux-clearance-checkpoint", type=Path, default=None,
+                        help="Optional second learned clearance checkpoint used only for "
+                             "primary-low/aux-high disagreement vetoes. It is not fused into "
+                             "normal scoring, so the primary clearance head remains the global "
+                             "calibration source.")
     parser.add_argument("--primitive-clearance-threshold", type=float, default=None,
                         help="Override threshold for the learned swept-body clearance checkpoint. "
                              "When provided, the learned-action blocked threshold becomes the "
@@ -7537,6 +8795,16 @@ def main() -> int:
                              "swapped for a marginally-less-blocked non-translating one. "
                              "Values above 1 disable the cap, preserving historical "
                              "behavior. This uses only the learned clearance head.")
+    parser.add_argument("--body-clearance-target-area-hard-veto-prob", type=float, default=1.01,
+                        help="Optional lower learned swept-body hard-veto threshold used "
+                             "only when the active target is visually large. Values above "
+                             "1 disable. This keeps near-beacon shoulder/yaw cleanup local "
+                             "to target approach while still using only learned clearance "
+                             "predictions and RGB target area.")
+    parser.add_argument("--body-clearance-target-area-hard-veto-min-area-logit", type=float, default=None,
+                        help="Minimum target area logit for "
+                             "--body-clearance-target-area-hard-veto-prob. Defaults to "
+                             "--body-clearance-target-area-logit.")
     parser.add_argument("--body-clearance-hard-veto-primitives", default="yaw_left,yaw_right,backward,hold",
                         help="Comma-separated fallback primitives eligible for "
                              "--body-clearance-hard-veto-prob.")
@@ -7544,6 +8812,142 @@ def main() -> int:
                         help="Comma-separated selected primitives eligible for "
                              "--body-clearance-hard-veto-prob. Empty means all "
                              "translating primitives, preserving historical behavior.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-after",
+                        type=int, default=0,
+                        help="If >0, after this many consecutive learned body-clearance "
+                             "hard-veto replacements to hold, allow a learned-clearance "
+                             "ranked non-hold recovery primitive. This is route-free and "
+                             "uses only the same learned primitive-outcome candidates.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-max-clearance-prob",
+                        type=float, default=0.70,
+                        help="Maximum learned swept-body blocked probability allowed for "
+                             "--body-clearance-hard-veto-hold-escape-after recovery "
+                             "candidates.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-primitives",
+                        default="backward,yaw_left,yaw_right",
+                        help="Comma-separated non-hold primitives eligible for bounded "
+                             "hard-veto hold escape.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-states",
+                        default="EXPLORE",
+                        help="Comma-separated controller states where bounded hard-veto "
+                             "hold escape may run. Empty means all states.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-override-primitives",
+                        default="",
+                        help="Optional comma-separated non-hold primitives that replace "
+                             "--body-clearance-hard-veto-hold-escape-primitives once "
+                             "--body-clearance-hard-veto-hold-escape-override-min-claimed-count "
+                             "and state gates are satisfied.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-override-states",
+                        default="",
+                        help="Comma-separated states for the hold-escape override. Empty "
+                             "means all states once the claimed-count gate passes.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-override-min-claimed-count",
+                        type=int, default=0,
+                        help="Minimum number of already claimed beacons before the optional "
+                             "hold-escape override primitive set may replace the base set.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-override-max-clearance-prob",
+                        type=float, default=None,
+                        help="Optional max learned swept-body blocked probability for the "
+                             "hold-escape override. Defaults to the base hold-escape cap.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-override-min-current-clearance-m",
+                        type=float, default=None,
+                        help="Optional minimum current swept-body clearance required before "
+                             "the hold-escape override may replace the base primitive set.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-min-projected-clearance-m",
+                        type=float, default=None,
+                        help="If set, hard-veto hold-escape candidates must have at least "
+                             "this projected swept-body clearance under the geometric "
+                             "primitive rollout before they may replace hold.")
+    parser.add_argument("--body-clearance-hard-veto-hold-escape-min-projected-improvement-m",
+                        type=float, default=0.0,
+                        help="Minimum projected swept-body clearance improvement required "
+                             "for non-hold hard-veto hold-escape candidates. Requires a "
+                             "current body-clearance probe.")
+    parser.add_argument("--body-clearance-aux-switch-hard-veto-primitives", default="",
+                        help="Optional comma-separated fallback primitives used for "
+                             "--body-clearance-hard-veto-prob only while the learned "
+                             "auxiliary clearance switch is active. Empty keeps "
+                             "--body-clearance-hard-veto-primitives for both primary "
+                             "and auxiliary-switch guard decisions.")
+    parser.add_argument("--body-clearance-veto-min-claimed-count", type=int, default=0,
+                        help="Minimum number of already claimed beacons before learned "
+                             "body-clearance veto hooks may replace the selected action. "
+                             "This gates only veto-style interventions; learned clearance "
+                             "scoring remains available.")
+    parser.add_argument("--body-clearance-aux-veto-prob", type=float, default=1.01,
+                        help="If the auxiliary learned clearance head predicts the selected "
+                             "primitive at least this risky while the primary learned clearance "
+                             "head is below --body-clearance-aux-veto-primary-max-prob, replace "
+                             "with an auxiliary-safer fallback. Values above 1 disable.")
+    parser.add_argument("--body-clearance-aux-veto-primary-max-prob", type=float, default=0.65,
+                        help="Maximum primary learned clearance probability for the auxiliary "
+                             "disagreement veto. This keeps the aux head focused on primary "
+                             "blind spots instead of duplicating ordinary hard vetoes.")
+    parser.add_argument("--body-clearance-aux-veto-margin", type=float, default=0.10,
+                        help="Minimum auxiliary learned clearance probability improvement "
+                             "required before the auxiliary disagreement veto may replace "
+                             "the selected primitive.")
+    parser.add_argument("--body-clearance-aux-veto-replacement-cap", type=float, default=0.90,
+                        help="Maximum auxiliary learned clearance probability allowed for an "
+                             "auxiliary-veto replacement primitive.")
+    parser.add_argument("--body-clearance-aux-veto-primitives",
+                        default="backward,yaw_left,yaw_right,arc_left,arc_right,hold",
+                        help="Comma-separated fallback primitives eligible for the auxiliary "
+                             "learned clearance disagreement veto.")
+    parser.add_argument("--body-clearance-aux-veto-selected-primitives",
+                        default="forward_medium,arc_left,arc_right,yaw_left,yaw_right",
+                        help="Comma-separated selected primitives eligible for the auxiliary "
+                             "learned clearance disagreement veto.")
+    parser.add_argument("--primitive-aux-clearance-switch-current-body-risk",
+                        action="store_true",
+                        help="Use the current-body-risk RGB/JEPA classifier as a learned "
+                             "switch that fuses --primitive-aux-clearance-checkpoint into "
+                             "primitive scoring instead of the primary clearance head. This "
+                             "keeps the switch nonprivileged; the classifier must be trained "
+                             "offline for the desired visual phase.")
+    parser.add_argument("--primitive-aux-clearance-switch-threshold", type=float, default=None,
+                        help="Threshold for --primitive-aux-clearance-switch-current-body-risk. "
+                             "Defaults to the loaded current-body-risk checkpoint threshold.")
+    parser.add_argument("--primitive-aux-clearance-switch-min-claimed-count", type=int, default=0,
+                        help="Minimum claimed beacon count before the learned auxiliary "
+                             "clearance-head switch may activate.")
+    parser.add_argument("--primitive-aux-clearance-switch-latch-ticks", type=int, default=0,
+                        help="After the learned auxiliary clearance-head switch triggers, "
+                             "keep the auxiliary clearance head active for this many ticks. "
+                             "This smooths intermittent RGB/JEPA switch detections without "
+                             "using pose or geometry.")
+    parser.add_argument("--primitive-aux-clearance-switch-policy-features",
+                        action="store_true",
+                        help="When the learned auxiliary clearance switch is active, also "
+                             "fuse the auxiliary clearance head into learned-local policy "
+                             "features. By default the switch is guard-only, preserving the "
+                             "navigation policy inputs while still letting the learned "
+                             "clearance head veto unsafe actions.")
+    parser.add_argument("--body-clearance-aux-switch-enable",
+                        action="store_true",
+                        help="While the learned auxiliary clearance switch is active, enable "
+                             "learned swept-body clearance scoring/vetoes even outside the "
+                             "near-target body-clearance servo gate. This uses the learned "
+                             "current-body-risk switch to protect pre-beacon corner approach "
+                             "without privileged geometry.")
+    parser.add_argument("--body-clearance-aux-switch-ignore-min-area",
+                        action="store_true",
+                        help="While --body-clearance-aux-switch-enable is active, ignore "
+                             "--body-clearance-learned-min-area-logit so learned clearance "
+                             "penalties can act before the target occupies a large image area.")
+    parser.add_argument("--body-clearance-aux-switch-arc-sweep-veto-prob",
+                        type=float, default=1.01,
+                        help="Auxiliary-switch-only learned clearance threshold for selected "
+                             "arc primitives. When active, an arc whose learned swept-body "
+                             "blocked probability exceeds this threshold may be replaced by "
+                             "a safer learned-clearance fallback using the normal hard-veto "
+                             "margin, cap, and fallback primitive list. Values above 1 disable.")
+    parser.add_argument("--body-clearance-aux-switch-arc-sweep-veto-selected-primitives",
+                        default="arc_left,arc_right",
+                        help="Comma-separated selected primitives eligible for "
+                             "--body-clearance-aux-switch-arc-sweep-veto-prob. This can "
+                             "target a learned one-sided shoulder sweep without changing "
+                             "opposite-direction arc decisions.")
     parser.add_argument("--body-clearance-saturated-veto-prob", type=float, default=1.01,
                         help="If the selected primitive's learned swept-body blocked "
                              "probability is at least this high, allow a low-sweep "
@@ -7578,6 +8982,79 @@ def main() -> int:
                         help="Minimum learned clearance-probability improvement required "
                              "before --body-clearance-yaw-direction-veto-prob flips yaw "
                              "direction.")
+    parser.add_argument("--body-clearance-current-contact-escape-m", type=float, default=None,
+                        help="When the current explicit shoulder/body probe clearance is at "
+                             "or below this margin-adjusted value, replace eligible yaw/arc/"
+                             "forward selections with the lowest learned-clearance-risk "
+                             "escape primitive. Omit to disable. This is a local contact "
+                             "escape gate, not a route planner.")
+    parser.add_argument("--body-clearance-current-contact-escape-m-by-primitive", default="",
+                        help="Optional comma-separated primitive:meters overrides for "
+                             "--body-clearance-current-contact-escape-m. Use this when "
+                             "forward/arc shoulder moves need an earlier guard than pure "
+                             "yaw turns; omitted primitives keep the base threshold.")
+    parser.add_argument("--body-clearance-current-contact-escape-min-streak",
+                        type=int, default=1,
+                        help="Minimum consecutive low-current-clearance ticks required before "
+                             "--body-clearance-current-contact-escape-m may fire. Values <=1 "
+                             "preserve threshold-only behavior.")
+    parser.add_argument("--body-clearance-current-contact-escape-cooldown-ticks",
+                        type=int, default=0,
+                        help="Minimum closed-loop ticks between current-contact escape "
+                             "overrides. The clearance streak still updates during cooldown.")
+    parser.add_argument("--body-clearance-current-contact-escape-min-claimed-count",
+                        type=int, default=0,
+                        help="Minimum number of claimed targets before current-contact escape "
+                             "may fire. Use this to avoid disturbing the early route.")
+    parser.add_argument("--body-clearance-current-contact-escape-states", default="",
+                        help="Comma-separated controller states where current-contact escape "
+                             "may fire. Empty means all states.")
+    parser.add_argument("--body-clearance-current-contact-escape-target-colors", default="",
+                        help="Comma-separated active target colors where current-contact "
+                             "escape may fire. Empty means all targets.")
+    parser.add_argument("--body-clearance-current-contact-escape-primitives",
+                        default="forward_fast,forward_medium,arc_left,arc_right,yaw_left,yaw_right",
+                        help="Comma-separated selected primitives eligible for "
+                             "--body-clearance-current-contact-escape-m.")
+    parser.add_argument("--body-clearance-current-contact-escape-replacements",
+                        default="backward,yaw_left,yaw_right,hold",
+                        help="Comma-separated learned-clearance-ranked replacement "
+                             "primitives for --body-clearance-current-contact-escape-m.")
+    parser.add_argument("--body-clearance-current-contact-escape-replacement-cap",
+                        type=float, default=1.01,
+                        help="Maximum learned swept-body clearance blocked probability "
+                             "allowed for a current-contact escape replacement. Values "
+                             "above 1 disable the cap. This prevents a low-clearance "
+                             "escape from swapping into a replacement that the learned "
+                             "clearance head also marks risky.")
+    parser.add_argument("--body-clearance-current-contact-escape-require-replacement-under-cap",
+                        action="store_true",
+                        help="When --body-clearance-current-contact-escape-replacement-cap "
+                             "is active, suppress the escape if every scored replacement "
+                             "is over cap instead of relaxing to the least-bad over-cap "
+                             "candidate.")
+    parser.add_argument("--body-clearance-current-contact-escape-min-area-logit",
+                        type=float, default=None,
+                        help="Optional active-target RGB area-logit floor before "
+                             "current-contact escape may run. This lets final approach "
+                             "close distance before the low-clearance escape starts "
+                             "intervening.")
+    parser.add_argument("--body-clearance-current-contact-escape-min-area-states",
+                        default="",
+                        help="Comma-separated controller states where "
+                             "--body-clearance-current-contact-escape-min-area-logit "
+                             "applies. Empty applies the area gate in every state.")
+    parser.add_argument("--body-clearance-current-contact-escape-min-projected-clearance-m",
+                        type=float, default=None,
+                        help="Optional swept-body geometry floor for current-contact escape "
+                             "replacements. When set, replacements below this projected "
+                             "clearance are rejected, and an already-selected primitive that "
+                             "passes the floor is not replaced.")
+    parser.add_argument("--body-clearance-current-contact-escape-min-projected-improvement-m",
+                        type=float, default=0.0,
+                        help="Optional required projected clearance improvement over the "
+                             "current body-clearance probe before current-contact escape may "
+                             "use a replacement. Values <=0 disable the improvement gate.")
     parser.add_argument("--body-clearance-risk-escape-threshold", type=float, default=1.01,
                         help="If the optional learned swept-body clearance head assigns at "
                              "least this blocked probability to the selected forward/yaw "
@@ -7593,6 +9070,136 @@ def main() -> int:
     parser.add_argument("--body-clearance-risk-escape-states", default="EXPLORE,SEEK,SERVO",
                         help="Comma-separated controller states where learned body-risk "
                              "escape may preempt a selected forward/yaw primitive.")
+    parser.add_argument("--proprio-contact-detector-checkpoint", type=Path, default=None,
+                        help="Optional checkpoint from train_go2_proprio_contact_detector.py. "
+                             "Runs a nonprivileged proprioceptive contact_now classifier over "
+                             "a window of executed-primitive egomotion features and schedules "
+                             "a committed escape when sustained contact is detected.")
+    parser.add_argument("--proprio-contact-escape-threshold", type=float, default=0.7,
+                        help="Rolling-mean (3 ticks) contact probability at or above which "
+                             "the proprio contact streak advances.")
+    parser.add_argument("--proprio-contact-escape-streak", type=int, default=2,
+                        help="Consecutive over-threshold ticks required before a proprio "
+                             "contact escape is scheduled.")
+    parser.add_argument("--proprio-contact-escape-blocks", type=int, default=0,
+                        help="Escape blocks scheduled on a proprio contact trigger. "
+                             "Zero disables the escape (detector still logs probabilities).")
+    parser.add_argument("--proprio-contact-escape-cooldown-ticks", type=int, default=12,
+                        help="Minimum ticks between proprio contact escape triggers.")
+    parser.add_argument("--proprio-contact-escape-states", default="EXPLORE,SEEK,SERVO",
+                        help="Comma-separated controller states where the proprio contact "
+                             "escape may schedule blocks.")
+    parser.add_argument("--proprio-contact-map-blocks", action="store_true",
+                        help="On a proprio contact trigger during a translating primitive, "
+                             "mark the online-map edge for that primitive blocked. Rotation "
+                             "and hold grinds never mark the map (lateral wall direction is "
+                             "unobserved).")
+    parser.add_argument("--history-risk-checkpoint", type=Path, default=None,
+                        help="Optional checkpoint from train_go2_history_risk_head.py. "
+                             "History+action-conditioned per-primitive contact risk over "
+                             "frozen-JEPA latents and proprioceptive egomotion; sees flank "
+                             "walls through history that the single-frame head misses.")
+    parser.add_argument("--history-risk-veto-threshold", type=float, default=1.01,
+                        help="Veto the selected primitive when its history-risk blocked "
+                             "probability is at or above this value. Values above 1 "
+                             "disable the veto (probabilities still logged).")
+    parser.add_argument("--history-risk-veto-primitives",
+                        default="forward_slow,forward_medium,forward_fast,arc_left,arc_right,yaw_left,yaw_right",
+                        help="Primitives eligible for the history-risk veto.")
+    parser.add_argument("--history-risk-replacements",
+                        default="backward,yaw_left,yaw_right,hold",
+                        help="Replacement candidates ordered by predicted risk; the lowest "
+                             "risk under --history-risk-replacement-cap is selected, else hold.")
+    parser.add_argument("--history-risk-replacement-cap", type=float, default=0.9,
+                        help="Maximum predicted risk allowed for a veto replacement.")
+    parser.add_argument("--history-risk-states", default="EXPLORE,SEEK,SERVO",
+                        help="Comma-separated controller states where the history-risk veto "
+                             "may fire.")
+    parser.add_argument("--history-risk-wedge-escape-blocks", type=int, default=2,
+                        help="When every replacement is above the cap (wedged), commit this "
+                             "many extra ticks of the least-risky escape direction instead "
+                             "of per-tick reselection. Zero disables the committed escape.")
+    parser.add_argument("--history-risk-wedge-escape-cooldown-ticks", type=int, default=6,
+                        help="Minimum ticks between history-risk wedge escapes.")
+    parser.add_argument("--history-risk-fuse-outcomes", action="store_true",
+                        help="Fuse history-risk probabilities into primitive_outcomes "
+                             "blocked_prob (max-combine) so the learned-policy rerank and "
+                             "outcome guards avoid risky primitives at selection time "
+                             "instead of relying on post-hoc vetoes.")
+    parser.add_argument("--history-risk-fuse-weight", type=float, default=1.0,
+                        help="Multiplier applied to history-risk probability before "
+                             "max-combining into blocked_prob.")
+    parser.add_argument("--history-risk-corridor-commit", action="store_true",
+                        help="When the learned risk signature says corridor (both yaws "
+                             "risky, forward safe) and a scan yaw/hold was selected, "
+                             "commit to forward instead. Scanning inside a tight lane is "
+                             "the dominant shoulder-contact source.")
+    parser.add_argument("--history-risk-corridor-yaw-min", type=float, default=0.7,
+                        help="Minimum predicted risk for BOTH yaws before corridor commit.")
+    parser.add_argument("--history-risk-corridor-forward-max", type=float, default=0.3,
+                        help="Maximum predicted forward risk for corridor commit.")
+    parser.add_argument("--history-risk-corridor-max-run", type=int, default=6,
+                        help="Maximum consecutive corridor commits before yielding a tick "
+                             "back to normal selection.")
+    parser.add_argument("--history-risk-corridor-states", default="EXPLORE,SEEK",
+                        help="Controller states where corridor commit may fire.")
+    parser.add_argument("--history-risk-relax-min-claims", type=int, default=-1,
+                        help="When at least this many beacons are claimed, switch the "
+                             "history-risk veto threshold and fuse weight to the relaxed "
+                             "values so the endgame may thread tight approaches. Negative "
+                             "disables relaxation.")
+    parser.add_argument("--history-risk-relaxed-veto-threshold", type=float, default=0.97,
+                        help="Veto threshold used once the claim relaxation is active.")
+    parser.add_argument("--history-risk-relaxed-fuse-weight", type=float, default=0.4,
+                        help="Fuse weight used once the claim relaxation is active.")
+    parser.add_argument("--seen-target-route", action="store_true",
+                        help="Route toward a seen-but-distant active target over the "
+                             "runtime-built online map: estimate the target position from "
+                             "bearing plus a calibrated area->distance model, then follow a "
+                             "goal-biased frontier path. Bridges the gap between local "
+                             "visual servo and blind exploration.")
+    parser.add_argument("--seen-target-route-max-age-ticks", type=int, default=240,
+                        help="Maximum age of the last sighting before the route estimate "
+                             "expires.")
+    parser.add_argument("--seen-target-route-goal-weight", type=float, default=3.0,
+                        help="Weight of remaining goal distance vs path length when "
+                             "selecting the frontier to route through.")
+    parser.add_argument("--seen-target-route-handoff-area-logit", type=float, default=1.2,
+                        help="When the target is currently seen at or above this area "
+                             "logit, the router yields to the visual servo.")
+    parser.add_argument("--seen-target-route-dist-calib", default="0.9531,-0.1972",
+                        help="Comma-separated a,b of the learned distance calibration "
+                             "dist_m = exp(a + b * area_logit), fitted offline on "
+                             "train-scene logs.")
+    parser.add_argument("--seen-target-route-states", default="EXPLORE,SEEK",
+                        help="Controller states where the seen-target router may override "
+                             "the requested primitive.")
+    parser.add_argument("--broad-explorer-checkpoint", type=Path, default=None,
+                        help="Optional checkpoint from train_go2_broad_explorer_bc.py. "
+                             "History-conditioned BC head over frozen-JEPA latents plus "
+                             "proprioception, trained on corpus teacher/frontier slices "
+                             "across many scenes; drives EXPLORE primitive selection.")
+    parser.add_argument("--broad-explorer-states", default="EXPLORE",
+                        help="Controller states where the broad explorer proposes the "
+                             "requested primitive.")
+    parser.add_argument("--novelty-route", action="store_true",
+                        help="When no live seen-target estimate exists, draw the route "
+                             "goal from the online memory instead: nearest unexplored "
+                             "cell, held for a commitment window. Memory-directed "
+                             "exploration through the same validated route-following "
+                             "machinery as --seen-target-route (which must be enabled).")
+    parser.add_argument("--novelty-route-commit-ticks", type=int, default=40,
+                        help="Ticks a novelty goal is held before re-selection.")
+    parser.add_argument("--novelty-route-scan-ticks", type=int, default=8,
+                        help="Look-around yaw ticks injected on novelty-goal arrival "
+                             "(sightings come from scanning at new places, and route "
+                             "following otherwise suppresses the policy's scan yaws).")
+    parser.add_argument("--visual-ray-checkpoint", type=Path, default=None,
+                        help="Optional checkpoint from train_go2_ray_depth_head.py. "
+                             "Learned 1D-lidar: predicts free depth along K FOV rays from "
+                             "the frozen-JEPA latent each tick and fuses the result into "
+                             "the online map (vision_free/vision_blocked), so routing "
+                             "plans over seen-but-undriven space.")
     parser.add_argument("--current-body-risk-checkpoint", type=Path, default=None,
                         help="Optional checkpoint from "
                              "train_go2_jepa_current_body_risk_predictor.py. This "
@@ -7600,9 +9207,24 @@ def main() -> int:
                              "body envelope is already too close to a wall/corner.")
     parser.add_argument("--current-body-risk-threshold", type=float, default=None,
                         help="Override threshold for --current-body-risk-checkpoint.")
+    parser.add_argument("--current-body-risk-min-claimed-count", type=int, default=0,
+                        help="Minimum claimed beacon count before current-body-risk "
+                             "recovery, preserve-yaw, or clearance-rerank hooks may "
+                             "alter the selected primitive.")
     parser.add_argument("--current-body-risk-recovery-blocks", type=int, default=0,
                         help="Number of recovery blocks to schedule when current body "
                              "risk fires. The first block is backward.")
+    parser.add_argument("--current-body-risk-recovery-selected-prob-floor",
+                        type=float, default=None,
+                        help="Optional learned swept-body clearance probability floor "
+                             "for the already selected primitive before current-body "
+                             "risk recovery may fire. This requires the current-body "
+                             "risk head and primitive-clearance head to agree.")
+    parser.add_argument("--current-body-risk-recovery-selected-primitives",
+                        default="",
+                        help="Optional comma-separated primitive names for which the "
+                             "already selected primitive may trigger current-body "
+                             "risk recovery. Empty means any non-backward primitive.")
     parser.add_argument("--current-body-risk-preserve-yaw", action="store_true",
                         help="When current body risk is high, preserve a requested pure "
                              "yaw correction instead of allowing the learned action "
@@ -7787,6 +9409,15 @@ def main() -> int:
     claim_success_proxy_bearing_by_color = _parse_color_float_map(
         args.claim_success_proxy_bearing_by_color
     )
+    body_clearance_current_contact_escape_m_by_primitive = _parse_primitive_float_map(
+        args.body_clearance_current_contact_escape_m_by_primitive
+    )
+    learned_topology_route_yaw_threshold_by_color = _parse_color_float_map(
+        args.learned_topology_route_yaw_threshold_by_color
+    )
+    learned_topology_route_arc_max_bearing_by_color = _parse_color_float_map(
+        args.learned_topology_route_arc_max_bearing_by_color
+    )
     wall_guard_states = {s.strip().upper() for s in str(args.wall_guard_states).split(",") if s.strip()}
     wall_guard_post_claim_states = {
         s.strip().upper()
@@ -7843,9 +9474,49 @@ def main() -> int:
         for s in str(args.body_clearance_hard_veto_primitives).split(",")
         if s.strip()
     }
+    body_clearance_aux_switch_hard_veto_primitives = {
+        s.strip()
+        for s in str(args.body_clearance_aux_switch_hard_veto_primitives).split(",")
+        if s.strip()
+    }
     body_clearance_hard_veto_selected_primitives = {
         s.strip()
         for s in str(args.body_clearance_hard_veto_selected_primitives).split(",")
+        if s.strip()
+    }
+    body_clearance_hard_veto_hold_escape_primitives = {
+        s.strip()
+        for s in str(args.body_clearance_hard_veto_hold_escape_primitives).split(",")
+        if s.strip() and s.strip() != "hold"
+    }
+    body_clearance_hard_veto_hold_escape_states = {
+        s.strip().upper()
+        for s in str(args.body_clearance_hard_veto_hold_escape_states).split(",")
+        if s.strip()
+    }
+    body_clearance_hard_veto_hold_escape_override_primitives = {
+        s.strip()
+        for s in str(args.body_clearance_hard_veto_hold_escape_override_primitives).split(",")
+        if s.strip() and s.strip() != "hold"
+    }
+    body_clearance_hard_veto_hold_escape_override_states = {
+        s.strip().upper()
+        for s in str(args.body_clearance_hard_veto_hold_escape_override_states).split(",")
+        if s.strip()
+    }
+    body_clearance_aux_switch_arc_sweep_veto_selected_primitives = {
+        s.strip()
+        for s in str(args.body_clearance_aux_switch_arc_sweep_veto_selected_primitives).split(",")
+        if s.strip()
+    }
+    body_clearance_aux_veto_primitives = {
+        s.strip()
+        for s in str(args.body_clearance_aux_veto_primitives).split(",")
+        if s.strip()
+    }
+    body_clearance_aux_veto_selected_primitives = {
+        s.strip()
+        for s in str(args.body_clearance_aux_veto_selected_primitives).split(",")
         if s.strip()
     }
     body_clearance_saturated_veto_primitives = {
@@ -7858,9 +9529,79 @@ def main() -> int:
         for s in str(args.body_clearance_saturated_veto_selected_primitives).split(",")
         if s.strip()
     }
+    body_clearance_current_contact_escape_primitives = {
+        s.strip()
+        for s in str(args.body_clearance_current_contact_escape_primitives).split(",")
+        if s.strip()
+    }
+    body_clearance_current_contact_escape_replacements = {
+        s.strip()
+        for s in str(args.body_clearance_current_contact_escape_replacements).split(",")
+        if s.strip()
+    }
+    body_clearance_current_contact_escape_states = {
+        s.strip().upper()
+        for s in str(args.body_clearance_current_contact_escape_states).split(",")
+        if s.strip()
+    }
+    body_clearance_current_contact_escape_min_area_states = {
+        s.strip().upper()
+        for s in str(args.body_clearance_current_contact_escape_min_area_states).split(",")
+        if s.strip()
+    }
+    body_clearance_current_contact_escape_target_colors = {
+        s.strip().lower()
+        for s in str(args.body_clearance_current_contact_escape_target_colors).split(",")
+        if s.strip()
+    }
+    learned_topology_route_geometry_veto_selected_primitives = {
+        s.strip()
+        for s in str(args.learned_topology_route_geometry_veto_selected_primitives).split(",")
+        if s.strip()
+    }
+    learned_topology_route_geometry_veto_replacements = {
+        s.strip()
+        for s in str(args.learned_topology_route_geometry_veto_replacements).split(",")
+        if s.strip()
+    }
+    body_clearance_geometry_veto_states = {
+        s.strip().upper()
+        for s in str(args.body_clearance_geometry_veto_states).split(",")
+        if s.strip()
+    }
+    body_clearance_geometry_veto_target_colors = {
+        s.strip().lower()
+        for s in str(args.body_clearance_geometry_veto_target_colors).split(",")
+        if s.strip()
+    }
+    body_clearance_geometry_veto_selected_primitives = {
+        s.strip()
+        for s in str(args.body_clearance_geometry_veto_selected_primitives).split(",")
+        if s.strip()
+    }
+    body_clearance_geometry_veto_replacements = {
+        s.strip()
+        for s in str(args.body_clearance_geometry_veto_replacements).split(",")
+        if s.strip()
+    }
+    body_clearance_geometry_veto_blocked_fallback_primitives = [
+        s.strip()
+        for s in str(args.body_clearance_geometry_veto_blocked_fallback_primitives).split(",")
+        if s.strip()
+    ]
+    body_clearance_geometry_veto_override_replacements = {
+        s.strip()
+        for s in str(args.body_clearance_geometry_veto_override_replacements).split(",")
+        if s.strip()
+    }
     current_body_risk_states = {
         s.strip().upper()
         for s in str(args.current_body_risk_states).split(",")
+        if s.strip()
+    }
+    current_body_risk_recovery_selected_primitives = {
+        s.strip()
+        for s in str(args.current_body_risk_recovery_selected_primitives).split(",")
         if s.strip()
     }
     current_body_risk_clearance_rerank_primitives = {
@@ -7910,6 +9651,9 @@ def main() -> int:
     }
     if not learned_local_dataset_states:
         learned_local_dataset_states = set(learned_local_policy_states)
+    debug_force_primitive_script = _load_debug_force_primitive_script(
+        args.debug_force_primitive_script
+    )
     learned_local_policy_online_map_novelty_states = {
         s.strip().upper()
         for s in str(args.learned_local_policy_online_map_novelty_states).split(",")
@@ -8297,14 +10041,17 @@ def main() -> int:
     outcome_encoder = outcome_head = None
     post_claim_outcome_encoder = post_claim_outcome_head = None
     clearance_encoder = clearance_head = None
+    aux_clearance_encoder = aux_clearance_head = None
     current_body_encoder = current_body_head = None
     outcome_image_size = 64
     post_claim_outcome_image_size = 64
     clearance_image_size = 64
+    aux_clearance_image_size = 64
     current_body_image_size = 64
     outcome_primitive_vocab = list(PRIMITIVE_NAMES)
     post_claim_outcome_primitive_vocab = list(PRIMITIVE_NAMES)
     clearance_primitive_vocab = list(PRIMITIVE_NAMES)
+    aux_clearance_primitive_vocab = list(PRIMITIVE_NAMES)
     outcome_threshold = (
         float(args.primitive_outcome_threshold)
         if args.primitive_outcome_threshold is not None
@@ -8414,6 +10161,42 @@ def main() -> int:
                 f"threshold={clearance_threshold:.3f} image_size={clearance_image_size}",
                 flush=True,
             )
+        if args.primitive_aux_clearance_checkpoint is not None:
+            try:
+                aux_clearance_ck = torch.load(
+                    args.primitive_aux_clearance_checkpoint,
+                    map_location=device,
+                    weights_only=False,
+                )
+            except TypeError:
+                aux_clearance_ck = torch.load(args.primitive_aux_clearance_checkpoint, map_location=device)
+            aux_clearance_encoder_checkpoint = (
+                args.primitive_aux_clearance_frozen_jepa_checkpoint
+                or args.primitive_clearance_frozen_jepa_checkpoint
+                or args.frozen_jepa_checkpoint
+                or Path(str(aux_clearance_ck["frozen_jepa_checkpoint"]))
+            )
+            aux_clearance_encoder, _aux_clearance_encoder_ck = load_go2_jepa_encoder(
+                aux_clearance_encoder_checkpoint,
+                device=device,
+                freeze=True,
+            )
+            aux_clearance_primitive_vocab = [
+                str(item) for item in aux_clearance_ck.get("primitive_vocab", PRIMITIVE_NAMES)
+            ]
+            aux_clearance_head = Go2PrimitiveOutcomeHead(
+                latent_dim=int(aux_clearance_ck.get("latent_dim", 96)),
+                primitive_count=len(aux_clearance_primitive_vocab),
+                hidden_dim=int(aux_clearance_ck.get("hidden_dim", 160)),
+            ).to(device)
+            aux_clearance_head.load_state_dict(aux_clearance_ck["model_state_dict"])
+            aux_clearance_head.eval()
+            aux_clearance_image_size = int(aux_clearance_ck.get("image_size", 64))
+            print(
+                f"primitive-aux-clearance: checkpoint={args.primitive_aux_clearance_checkpoint.name} "
+                f"image_size={aux_clearance_image_size}",
+                flush=True,
+            )
     current_body_threshold = (
         float(args.current_body_risk_threshold)
         if args.current_body_risk_threshold is not None
@@ -8429,8 +10212,9 @@ def main() -> int:
         except TypeError:
             current_body_ck = torch.load(args.current_body_risk_checkpoint, map_location=device)
         current_body_encoder_checkpoint = (
-            args.frozen_jepa_checkpoint
-            or Path(str(current_body_ck["frozen_jepa_checkpoint"]))
+            Path(str(current_body_ck["frozen_jepa_checkpoint"]))
+            if current_body_ck.get("frozen_jepa_checkpoint")
+            else args.frozen_jepa_checkpoint
         )
         current_body_encoder, _current_body_encoder_ck = load_go2_jepa_encoder(
             current_body_encoder_checkpoint,
@@ -8449,6 +10233,217 @@ def main() -> int:
         print(
             f"current-body-risk: checkpoint={args.current_body_risk_checkpoint.name} "
             f"threshold={current_body_threshold:.3f} image_size={current_body_image_size}",
+            flush=True,
+        )
+
+    proprio_contact_detector = None
+    proprio_contact_window = 0
+    proprio_contact_feature_mean: np.ndarray | None = None
+    proprio_contact_feature_std: np.ndarray | None = None
+    proprio_contact_escape_states = {
+        state.strip().upper()
+        for state in str(args.proprio_contact_escape_states).split(",")
+        if state.strip()
+    }
+    if args.proprio_contact_detector_checkpoint is not None:
+        from train_go2_proprio_contact_detector import ProprioContactDetector
+
+        try:
+            proprio_contact_ck = torch.load(
+                args.proprio_contact_detector_checkpoint,
+                map_location=device,
+                weights_only=False,
+            )
+        except TypeError:
+            proprio_contact_ck = torch.load(
+                args.proprio_contact_detector_checkpoint, map_location=device
+            )
+        proprio_contact_window = int(proprio_contact_ck["window"])
+        proprio_contact_detector = ProprioContactDetector(
+            proprio_contact_window,
+            int(proprio_contact_ck["feature_dim"]),
+            hidden_dim=int(proprio_contact_ck.get("hidden_dim", 128)),
+            arch=str(proprio_contact_ck.get("arch", "mlp")),
+        ).to(device)
+        proprio_contact_detector.load_state_dict(proprio_contact_ck["model_state_dict"])
+        proprio_contact_detector.eval()
+        proprio_contact_feature_mean = np.asarray(
+            proprio_contact_ck["feature_mean"], dtype=np.float32
+        )
+        proprio_contact_feature_std = np.asarray(
+            proprio_contact_ck["feature_std"], dtype=np.float32
+        )
+        print(
+            f"proprio-contact-detector: checkpoint={args.proprio_contact_detector_checkpoint.name} "
+            f"arch={proprio_contact_ck.get('arch', 'mlp')} window={proprio_contact_window} "
+            f"threshold={float(args.proprio_contact_escape_threshold):.3f} "
+            f"blocks={int(args.proprio_contact_escape_blocks)}",
+            flush=True,
+        )
+
+    history_risk_model = None
+    history_risk_encoder = None
+    history_risk_vocab: list[str] = []
+    history_risk_window = 0
+    history_risk_image_size = 128
+    history_risk_latent_mean: np.ndarray | None = None
+    history_risk_latent_std: np.ndarray | None = None
+    history_risk_proprio_mean: np.ndarray | None = None
+    history_risk_proprio_std: np.ndarray | None = None
+    history_risk_states = {
+        state.strip().upper()
+        for state in str(args.history_risk_states).split(",")
+        if state.strip()
+    }
+    history_risk_corridor_states = {
+        state.strip().upper()
+        for state in str(args.history_risk_corridor_states).split(",")
+        if state.strip()
+    }
+    history_risk_veto_primitives = {
+        name.strip()
+        for name in str(args.history_risk_veto_primitives).split(",")
+        if name.strip()
+    }
+    history_risk_replacements = [
+        name.strip()
+        for name in str(args.history_risk_replacements).split(",")
+        if name.strip()
+    ]
+    if args.history_risk_checkpoint is not None:
+        from train_go2_history_risk_head import HistoryRiskHead
+
+        try:
+            history_risk_ck = torch.load(
+                args.history_risk_checkpoint, map_location=device, weights_only=False
+            )
+        except TypeError:
+            history_risk_ck = torch.load(args.history_risk_checkpoint, map_location=device)
+        history_risk_vocab = [str(name) for name in history_risk_ck["primitive_vocab"]]
+        history_risk_window = int(history_risk_ck["window"])
+        history_risk_image_size = int(history_risk_ck.get("image_size", 128))
+        history_risk_model = HistoryRiskHead(
+            int(history_risk_ck["latent_dim"]),
+            int(history_risk_ck["proprio_dim"]),
+            len(history_risk_vocab),
+            hidden_dim=int(history_risk_ck.get("hidden_dim", 192)),
+            latent_proj_dim=int(history_risk_ck.get("latent_proj_dim", 96)),
+        ).to(device)
+        history_risk_model.load_state_dict(history_risk_ck["model_state_dict"])
+        history_risk_model.eval()
+        history_risk_encoder, _history_risk_encoder_ck = load_go2_jepa_encoder(
+            Path(str(history_risk_ck["frozen_jepa_checkpoint"])),
+            device=device,
+            freeze=True,
+        )
+        history_risk_latent_mean = np.asarray(history_risk_ck["latent_mean"], dtype=np.float32)
+        history_risk_latent_std = np.asarray(history_risk_ck["latent_std"], dtype=np.float32)
+        history_risk_proprio_mean = np.asarray(history_risk_ck["proprio_mean"], dtype=np.float32)
+        history_risk_proprio_std = np.asarray(history_risk_ck["proprio_std"], dtype=np.float32)
+        print(
+            f"history-risk: checkpoint={args.history_risk_checkpoint.name} "
+            f"window={history_risk_window} image_size={history_risk_image_size} "
+            f"veto_threshold={float(args.history_risk_veto_threshold):.3f}",
+            flush=True,
+        )
+
+    broad_explorer_model = None
+    broad_explorer_encoder = None
+    broad_explorer_vocab: list[str] = []
+    broad_explorer_window = 0
+    broad_explorer_image_size = 128
+    broad_explorer_latent_mean: np.ndarray | None = None
+    broad_explorer_latent_std: np.ndarray | None = None
+    broad_explorer_proprio_mean: np.ndarray | None = None
+    broad_explorer_proprio_std: np.ndarray | None = None
+    broad_explorer_states = {
+        state.strip().upper()
+        for state in str(args.broad_explorer_states).split(",")
+        if state.strip()
+    }
+    if args.broad_explorer_checkpoint is not None:
+        from train_go2_broad_explorer_bc import BroadExplorerBC
+
+        try:
+            broad_explorer_ck = torch.load(
+                args.broad_explorer_checkpoint, map_location=device, weights_only=False
+            )
+        except TypeError:
+            broad_explorer_ck = torch.load(args.broad_explorer_checkpoint, map_location=device)
+        broad_explorer_vocab = [str(p) for p in broad_explorer_ck["primitive_vocab"]]
+        broad_explorer_window = int(broad_explorer_ck["window"])
+        broad_explorer_image_size = int(broad_explorer_ck.get("image_size", 128))
+        broad_explorer_model = BroadExplorerBC(
+            int(broad_explorer_ck["latent_dim"]),
+            int(broad_explorer_ck["proprio_dim"]),
+            len(broad_explorer_vocab),
+            hidden_dim=int(broad_explorer_ck.get("hidden_dim", 192)),
+            latent_proj_dim=int(broad_explorer_ck.get("latent_proj_dim", 96)),
+        ).to(device)
+        broad_explorer_model.load_state_dict(broad_explorer_ck["model_state_dict"])
+        broad_explorer_model.eval()
+        if history_risk_encoder is not None and str(
+            broad_explorer_ck["frozen_jepa_checkpoint"]
+        ) != str(history_risk_ck["frozen_jepa_checkpoint"]):
+            raise SystemExit(
+                "broad-explorer and history-risk checkpoints must share the same "
+                "frozen encoder (shared sequence latent buffer)"
+            )
+        if history_risk_encoder is None:
+            broad_explorer_encoder, _bx_ck = load_go2_jepa_encoder(
+                Path(str(broad_explorer_ck["frozen_jepa_checkpoint"])),
+                device=device,
+                freeze=True,
+            )
+        broad_explorer_latent_mean = np.asarray(broad_explorer_ck["latent_mean"], dtype=np.float32)
+        broad_explorer_latent_std = np.asarray(broad_explorer_ck["latent_std"], dtype=np.float32)
+        broad_explorer_proprio_mean = np.asarray(broad_explorer_ck["proprio_mean"], dtype=np.float32)
+        broad_explorer_proprio_std = np.asarray(broad_explorer_ck["proprio_std"], dtype=np.float32)
+        print(
+            f"broad-explorer: checkpoint={args.broad_explorer_checkpoint.name} "
+            f"window={broad_explorer_window} states={sorted(broad_explorer_states)}",
+            flush=True,
+        )
+
+    visual_ray_model = None
+    visual_ray_encoder = None
+    visual_ray_image_size = 128
+    visual_ray_depth_cap = 4.0
+    visual_ray_angles: np.ndarray | None = None
+    visual_ray_latent_mean: np.ndarray | None = None
+    visual_ray_latent_std: np.ndarray | None = None
+    if args.visual_ray_checkpoint is not None:
+        from train_go2_ray_depth_head import RayDepthHead
+
+        try:
+            visual_ray_ck = torch.load(
+                args.visual_ray_checkpoint, map_location=device, weights_only=False
+            )
+        except TypeError:
+            visual_ray_ck = torch.load(args.visual_ray_checkpoint, map_location=device)
+        visual_ray_model = RayDepthHead(
+            int(visual_ray_ck["latent_dim"]),
+            int(visual_ray_ck["k_rays"]),
+            hidden_dim=int(visual_ray_ck.get("hidden_dim", 256)),
+        ).to(device)
+        visual_ray_model.load_state_dict(visual_ray_ck["model_state_dict"])
+        visual_ray_model.eval()
+        visual_ray_image_size = int(visual_ray_ck.get("image_size", 128))
+        visual_ray_depth_cap = float(visual_ray_ck.get("depth_cap_m", 4.0))
+        half_fov = math.radians(float(visual_ray_ck.get("fov_deg", 78.323))) / 2.0
+        visual_ray_angles = np.linspace(-half_fov, half_fov, int(visual_ray_ck["k_rays"]))
+        visual_ray_latent_mean = np.asarray(visual_ray_ck["latent_mean"], dtype=np.float32)
+        visual_ray_latent_std = np.asarray(visual_ray_ck["latent_std"], dtype=np.float32)
+        if history_risk_encoder is None and broad_explorer_encoder is None:
+            visual_ray_encoder, _vr_ck = load_go2_jepa_encoder(
+                Path(str(visual_ray_ck["frozen_jepa_checkpoint"])),
+                device=device,
+                freeze=True,
+            )
+        print(
+            f"visual-ray: checkpoint={args.visual_ray_checkpoint.name} "
+            f"k={int(visual_ray_ck['k_rays'])} cap={visual_ray_depth_cap}m "
+            f"err={visual_ray_ck.get('best_val_median_err_m')}",
             flush=True,
         )
 
@@ -8500,6 +10495,9 @@ def main() -> int:
                 str(color).lower(): float(value)
                 for color, value in raw_threshold_by_color.items()
             }
+        claim_success_model_threshold_by_color.update(
+            _parse_color_float_map(args.claim_success_model_threshold_by_color)
+        )
         print(
             f"claim-success-model: checkpoint={args.claim_success_model_checkpoint.name} "
             f"threshold={claim_success_model_threshold:.3f} "
@@ -8789,7 +10787,7 @@ def main() -> int:
     slice_tick_offset = int(slice_start["start_tick"]) if slice_start is not None else 0
     if slice_snapshot is not None:
         slice_tick_offset = int(slice_snapshot.get("next_tick", slice_snapshot.get("tick", 0)))
-    feature_max_ticks = int(args.max_ticks)
+    feature_max_ticks = int(args.slice_feature_max_ticks or args.max_ticks)
     if slice_start is not None:
         feature_max_ticks = int(
             args.slice_feature_max_ticks
@@ -8809,6 +10807,25 @@ def main() -> int:
         )
     active_target_color = target_sequence[target_index]
     active_target_tc = color_vocab.index(active_target_color) if color_vocab is not None else None
+    full_from_spawn_contract = bool(
+        slice_start is None
+        and slice_snapshot is None
+        and (args.fully_learned_runtime_contract or args.generalized_runtime_contract)
+    )
+    configured_body_clearance_veto_min_claimed_count = max(
+        0,
+        int(args.body_clearance_veto_min_claimed_count),
+    )
+    effective_body_clearance_veto_min_claimed_count = (
+        configured_body_clearance_veto_min_claimed_count
+    )
+    configured_aux_clearance_switch_min_claimed_count = max(
+        0,
+        int(args.primitive_aux_clearance_switch_min_claimed_count),
+    )
+    effective_aux_clearance_switch_min_claimed_count = (
+        configured_aux_clearance_switch_min_claimed_count
+    )
     first_seen_ticks: dict[str, int] = {}
     last_seen_ticks: dict[str, int] = {}
     beacon_claims: list[dict[str, Any]] = []
@@ -9036,6 +11053,9 @@ def main() -> int:
         ),
         "claim_contact_bearing": float(args.claim_contact_bearing),
         "claim_contact_min_seen_ticks": int(args.claim_contact_min_seen_ticks),
+        "multi_target_success_requires_claim_distance": bool(
+            args.multi_target_success_requires_claim_distance
+        ),
         "claim_stalled_area_logit": (
             None if args.claim_stalled_area_logit is None else float(args.claim_stalled_area_logit)
         ),
@@ -9220,6 +11240,11 @@ def main() -> int:
         "primitive_clearance_checkpoint": (
             None if args.primitive_clearance_checkpoint is None else str(args.primitive_clearance_checkpoint)
         ),
+        "primitive_aux_clearance_checkpoint": (
+            None
+            if args.primitive_aux_clearance_checkpoint is None
+            else str(args.primitive_aux_clearance_checkpoint)
+        ),
         "primitive_clearance_threshold": clearance_threshold,
         "body_clearance_target_servo": bool(args.body_clearance_target_servo),
         "body_clearance_target_area_logit": float(args.body_clearance_target_area_logit),
@@ -9255,18 +11280,188 @@ def main() -> int:
         "body_clearance_hard_veto_replacement_cap": float(
             args.body_clearance_hard_veto_replacement_cap
         ),
+        "body_clearance_target_area_hard_veto_prob": float(
+            args.body_clearance_target_area_hard_veto_prob
+        ),
+        "body_clearance_target_area_hard_veto_min_area_logit": (
+            float(args.body_clearance_target_area_logit)
+            if args.body_clearance_target_area_hard_veto_min_area_logit is None
+            else float(args.body_clearance_target_area_hard_veto_min_area_logit)
+        ),
+        "body_clearance_target_area_hard_veto_ticks": 0,
         "body_clearance_hard_veto_primitives": sorted(body_clearance_hard_veto_primitives),
+        "body_clearance_aux_switch_hard_veto_primitives": sorted(
+            body_clearance_aux_switch_hard_veto_primitives
+        ),
         "body_clearance_hard_veto_selected_primitives": sorted(
             body_clearance_hard_veto_selected_primitives or _TRANSLATING_PRIMITIVES
         ),
+        "body_clearance_hard_veto_hold_escape_after": int(
+            args.body_clearance_hard_veto_hold_escape_after
+        ),
+        "body_clearance_hard_veto_hold_escape_max_clearance_prob": float(
+            args.body_clearance_hard_veto_hold_escape_max_clearance_prob
+        ),
+        "body_clearance_hard_veto_hold_escape_primitives": sorted(
+            body_clearance_hard_veto_hold_escape_primitives
+        ),
+        "body_clearance_hard_veto_hold_escape_states": sorted(
+            body_clearance_hard_veto_hold_escape_states
+        ),
+        "body_clearance_hard_veto_hold_escape_override_primitives": sorted(
+            body_clearance_hard_veto_hold_escape_override_primitives
+        ),
+        "body_clearance_hard_veto_hold_escape_override_states": sorted(
+            body_clearance_hard_veto_hold_escape_override_states
+        ),
+        "body_clearance_hard_veto_hold_escape_override_min_claimed_count": max(
+            0,
+            int(args.body_clearance_hard_veto_hold_escape_override_min_claimed_count),
+        ),
+        "body_clearance_hard_veto_hold_escape_override_max_clearance_prob": (
+            None
+            if args.body_clearance_hard_veto_hold_escape_override_max_clearance_prob is None
+            else float(args.body_clearance_hard_veto_hold_escape_override_max_clearance_prob)
+        ),
+        "body_clearance_hard_veto_hold_escape_override_min_current_clearance_m": (
+            None
+            if args.body_clearance_hard_veto_hold_escape_override_min_current_clearance_m is None
+            else float(args.body_clearance_hard_veto_hold_escape_override_min_current_clearance_m)
+        ),
+        "body_clearance_hard_veto_hold_escape_min_projected_clearance_m": (
+            None
+            if args.body_clearance_hard_veto_hold_escape_min_projected_clearance_m is None
+            else float(args.body_clearance_hard_veto_hold_escape_min_projected_clearance_m)
+        ),
+        "body_clearance_hard_veto_hold_escape_min_projected_improvement_m": float(
+            args.body_clearance_hard_veto_hold_escape_min_projected_improvement_m
+        ),
+        "body_clearance_veto_configured_min_claimed_count": int(
+            configured_body_clearance_veto_min_claimed_count
+        ),
+        "body_clearance_veto_min_claimed_count": int(
+            effective_body_clearance_veto_min_claimed_count
+        ),
+        "body_clearance_veto_min_claimed_count_clamped_for_full_run": bool(
+            full_from_spawn_contract
+            and configured_body_clearance_veto_min_claimed_count
+            != effective_body_clearance_veto_min_claimed_count
+        ),
+        "body_clearance_aux_veto_prob": float(args.body_clearance_aux_veto_prob),
+        "body_clearance_aux_veto_primary_max_prob": float(
+            args.body_clearance_aux_veto_primary_max_prob
+        ),
+        "body_clearance_aux_veto_margin": float(args.body_clearance_aux_veto_margin),
+        "body_clearance_aux_veto_replacement_cap": float(
+            args.body_clearance_aux_veto_replacement_cap
+        ),
+        "body_clearance_aux_veto_primitives": sorted(body_clearance_aux_veto_primitives),
+        "body_clearance_aux_veto_selected_primitives": sorted(
+            body_clearance_aux_veto_selected_primitives
+        ),
+        "primitive_aux_clearance_switch_current_body_risk": bool(
+            args.primitive_aux_clearance_switch_current_body_risk
+        ),
+        "primitive_aux_clearance_switch_threshold": (
+            current_body_threshold
+            if args.primitive_aux_clearance_switch_threshold is None
+            else float(args.primitive_aux_clearance_switch_threshold)
+        ),
+        "primitive_aux_clearance_switch_configured_min_claimed_count": int(
+            configured_aux_clearance_switch_min_claimed_count
+        ),
+        "primitive_aux_clearance_switch_min_claimed_count": int(
+            effective_aux_clearance_switch_min_claimed_count
+        ),
+        "primitive_aux_clearance_switch_min_claimed_count_clamped_for_full_run": bool(
+            full_from_spawn_contract
+            and configured_aux_clearance_switch_min_claimed_count
+            != effective_aux_clearance_switch_min_claimed_count
+        ),
+        "primitive_aux_clearance_switch_latch_ticks": int(
+            args.primitive_aux_clearance_switch_latch_ticks
+        ),
+        "primitive_aux_clearance_switch_policy_features": bool(
+            args.primitive_aux_clearance_switch_policy_features
+        ),
+        "body_clearance_aux_switch_enable": bool(args.body_clearance_aux_switch_enable),
+        "body_clearance_aux_switch_ignore_min_area": bool(
+            args.body_clearance_aux_switch_ignore_min_area
+        ),
+        "body_clearance_aux_switch_arc_sweep_veto_prob": float(
+            args.body_clearance_aux_switch_arc_sweep_veto_prob
+        ),
+        "body_clearance_aux_switch_arc_sweep_veto_selected_primitives": sorted(
+            body_clearance_aux_switch_arc_sweep_veto_selected_primitives
+        ),
+        "body_clearance_aux_switch_enabled_ticks": 0,
+        "body_clearance_aux_switch_min_area_ignored_ticks": 0,
+        "body_clearance_arc_sweep_vetoes": 0,
+        "primitive_aux_clearance_switch_ticks": 0,
+        "primitive_aux_clearance_switch_suppressed_ticks": 0,
         "body_clearance_saturated_veto_prob": float(args.body_clearance_saturated_veto_prob),
         "body_clearance_saturated_veto_spread": float(args.body_clearance_saturated_veto_spread),
         "body_clearance_saturated_veto_primitives": sorted(body_clearance_saturated_veto_primitives),
         "body_clearance_saturated_veto_selected_primitives": sorted(
             body_clearance_saturated_veto_selected_primitives
         ),
+        "body_clearance_yaw_contact_veto_prob": float(args.body_clearance_yaw_contact_veto_prob),
         "body_clearance_yaw_direction_veto_prob": float(args.body_clearance_yaw_direction_veto_prob),
         "body_clearance_yaw_direction_veto_margin": float(args.body_clearance_yaw_direction_veto_margin),
+        "body_clearance_current_contact_escape_m": (
+            None
+            if args.body_clearance_current_contact_escape_m is None
+            else float(args.body_clearance_current_contact_escape_m)
+        ),
+        "body_clearance_current_contact_escape_m_by_primitive": dict(
+            sorted(body_clearance_current_contact_escape_m_by_primitive.items())
+        ),
+        "body_clearance_current_contact_escape_min_projected_clearance_m": (
+            None
+            if args.body_clearance_current_contact_escape_min_projected_clearance_m is None
+            else float(args.body_clearance_current_contact_escape_min_projected_clearance_m)
+        ),
+        "body_clearance_current_contact_escape_min_projected_improvement_m": float(
+            args.body_clearance_current_contact_escape_min_projected_improvement_m
+        ),
+        "body_clearance_current_contact_escape_min_streak": max(
+            1,
+            int(args.body_clearance_current_contact_escape_min_streak),
+        ),
+        "body_clearance_current_contact_escape_cooldown_ticks": max(
+            0,
+            int(args.body_clearance_current_contact_escape_cooldown_ticks),
+        ),
+        "body_clearance_current_contact_escape_min_claimed_count": max(
+            0,
+            int(args.body_clearance_current_contact_escape_min_claimed_count),
+        ),
+        "body_clearance_current_contact_escape_states": sorted(
+            body_clearance_current_contact_escape_states
+        ),
+        "body_clearance_current_contact_escape_target_colors": sorted(
+            body_clearance_current_contact_escape_target_colors
+        ),
+        "body_clearance_current_contact_escape_primitives": sorted(
+            body_clearance_current_contact_escape_primitives
+        ),
+        "body_clearance_current_contact_escape_replacements": sorted(
+            body_clearance_current_contact_escape_replacements
+        ),
+        "body_clearance_current_contact_escape_replacement_cap": float(
+            args.body_clearance_current_contact_escape_replacement_cap
+        ),
+        "body_clearance_current_contact_escape_require_replacement_under_cap": bool(
+            args.body_clearance_current_contact_escape_require_replacement_under_cap
+        ),
+        "body_clearance_current_contact_escape_min_area_logit": (
+            None
+            if args.body_clearance_current_contact_escape_min_area_logit is None
+            else float(args.body_clearance_current_contact_escape_min_area_logit)
+        ),
+        "body_clearance_current_contact_escape_min_area_states": sorted(
+            body_clearance_current_contact_escape_min_area_states
+        ),
         "body_clearance_near_arc_penalty": float(args.body_clearance_near_arc_penalty),
         "body_clearance_risk_escape_threshold": float(args.body_clearance_risk_escape_threshold),
         "body_clearance_risk_escape_blocks": int(args.body_clearance_risk_escape_blocks),
@@ -9278,7 +11473,40 @@ def main() -> int:
             else str(args.current_body_risk_checkpoint)
         ),
         "current_body_risk_threshold": current_body_threshold,
+        "current_body_risk_min_claimed_count": max(
+            0,
+            int(args.current_body_risk_min_claimed_count),
+        ),
         "current_body_risk_recovery_blocks": int(args.current_body_risk_recovery_blocks),
+        "proprio_contact_detector_checkpoint": (
+            None
+            if args.proprio_contact_detector_checkpoint is None
+            else str(args.proprio_contact_detector_checkpoint)
+        ),
+        "proprio_contact_escape_threshold": float(args.proprio_contact_escape_threshold),
+        "proprio_contact_escape_streak": int(args.proprio_contact_escape_streak),
+        "proprio_contact_escape_blocks": int(args.proprio_contact_escape_blocks),
+        "proprio_contact_escape_cooldown_ticks": int(args.proprio_contact_escape_cooldown_ticks),
+        "proprio_contact_escape_states": str(args.proprio_contact_escape_states),
+        "proprio_contact_map_blocks": bool(args.proprio_contact_map_blocks),
+        "history_risk_checkpoint": (
+            None
+            if args.history_risk_checkpoint is None
+            else str(args.history_risk_checkpoint)
+        ),
+        "history_risk_veto_threshold": float(args.history_risk_veto_threshold),
+        "history_risk_veto_primitives": str(args.history_risk_veto_primitives),
+        "history_risk_replacements": str(args.history_risk_replacements),
+        "history_risk_replacement_cap": float(args.history_risk_replacement_cap),
+        "history_risk_states": str(args.history_risk_states),
+        "current_body_risk_recovery_selected_prob_floor": (
+            None
+            if args.current_body_risk_recovery_selected_prob_floor is None
+            else float(args.current_body_risk_recovery_selected_prob_floor)
+        ),
+        "current_body_risk_recovery_selected_primitives": sorted(
+            current_body_risk_recovery_selected_primitives
+        ),
         "current_body_risk_preserve_yaw": bool(args.current_body_risk_preserve_yaw),
         "current_body_risk_preserve_yaw_threshold": (
             current_body_threshold
@@ -9337,20 +11565,48 @@ def main() -> int:
         "body_clearance_learned_penalty_ticks": 0,
         "body_clearance_learned_vetoes": 0,
         "body_clearance_hard_vetoes": 0,
+        "body_clearance_hard_veto_hold_ticks": 0,
+        "body_clearance_hard_veto_hold_streak_max": 0,
+        "body_clearance_hard_veto_hold_escapes": 0,
+        "body_clearance_hard_veto_hold_escape_overrides": 0,
+        "body_clearance_hard_veto_hold_escape_no_candidate_ticks": 0,
+        "body_clearance_hard_veto_hold_escape_capped_candidates": 0,
+        "body_clearance_hard_veto_hold_escape_projection_rejections": 0,
+        "body_clearance_veto_claim_gate_suppressed_ticks": 0,
+        "body_clearance_veto_claim_gate_suppressed_high_risk_ticks": 0,
+        "body_clearance_aux_vetoes": 0,
+        "body_clearance_aux_veto_suppressed_ticks": 0,
         "body_clearance_saturated_vetoes": 0,
         "body_clearance_yaw_direction_vetoes": 0,
+        "body_clearance_yaw_contact_vetoes": 0,
+        "body_clearance_current_contact_escape_low_clearance_ticks": 0,
+        "body_clearance_current_contact_escape_gate_suppressed_ticks": 0,
+        "body_clearance_current_contact_escape_streak_suppressed_ticks": 0,
+        "body_clearance_current_contact_escape_cooldown_suppressed_ticks": 0,
+        "body_clearance_current_contact_escape_claimed_count_suppressed_ticks": 0,
+        "body_clearance_current_contact_escape_state_suppressed_ticks": 0,
+        "body_clearance_current_contact_escape_target_suppressed_ticks": 0,
+        "body_clearance_current_contact_escape_area_suppressed_ticks": 0,
+        "body_clearance_current_contact_escapes": 0,
         "blocked_hard_vetoes": 0,
         "low_progress_hard_vetoes": 0,
         "body_clearance_risk_escapes": 0,
         "current_body_risk_ticks": 0,
         "current_body_risk_recoveries": 0,
         "current_body_risk_recovery_blocks_executed": 0,
+        "current_body_risk_recovery_selected_floor_blocks": 0,
+        "current_body_risk_recovery_selected_primitive_blocks": 0,
         "current_body_risk_preserve_yaw_overrides": 0,
         "current_body_risk_preserve_yaw_suppressed": 0,
         "current_body_risk_clearance_reranks": 0,
         "current_body_risk_clearance_rerank_selected_floor_blocks": 0,
         "current_body_risk_clearance_rerank_selected_primitive_blocks": 0,
+        "current_body_risk_claim_gate_suppressed_ticks": 0,
+        "current_body_risk_claim_gate_suppressed_high_risk_ticks": 0,
         "current_body_risk_prob_max": None,
+        "primitive_aux_clearance_switch_claim_gate_suppressed_ticks": 0,
+        "primitive_aux_clearance_switch_claim_gate_suppressed_high_risk_ticks": 0,
+        "primitive_aux_clearance_switch_area_suppressed_ticks": 0,
         "commands_total": 0,
         "forward_requests": 0,
         "blocked_forward_requests": 0,
@@ -9424,6 +11680,9 @@ def main() -> int:
         "learned_local_target_policy_priority_over_post_claim": bool(
             args.learned_local_target_policy_priority_over_post_claim
         ),
+        "learned_local_target_policy_priority_on_aux_clearance_switch": bool(
+            args.learned_local_target_policy_priority_on_aux_clearance_switch
+        ),
         "learned_local_policy_states": sorted(learned_local_policy_states),
         "learned_local_policy_post_claim_states": sorted(
             learned_local_policy_post_claim_states
@@ -9434,7 +11693,15 @@ def main() -> int:
             if args.learned_local_dataset_output is None
             else str(args.learned_local_dataset_output)
         ),
+        "learned_local_dataset_label_source": str(args.learned_local_dataset_label_source),
         "learned_local_dataset_min_claimed_count": int(args.learned_local_dataset_min_claimed_count),
+        "debug_force_primitive_script": (
+            None if args.debug_force_primitive_script is None else str(args.debug_force_primitive_script)
+        ),
+        "debug_force_primitive_script_ticks": [
+            int(tick) for tick in sorted(debug_force_primitive_script)
+        ],
+        "debug_force_primitive_overrides": 0,
         "learned_local_oracle_standoff_labels": bool(args.learned_local_oracle_standoff_labels),
         "learned_local_oracle_standoff_label_states": sorted(
             learned_local_oracle_standoff_label_states
@@ -9601,6 +11868,18 @@ def main() -> int:
         "learned_local_online_map_wall_guard_block_source": str(
             args.learned_local_online_map_wall_guard_block_source
         ),
+        "learned_local_online_map_current_contact_projection_blocks": bool(
+            args.learned_local_online_map_current_contact_projection_blocks
+        ),
+        "learned_local_online_map_current_contact_projection_blocked_edges": 0,
+        "learned_local_online_map_hard_veto_hold_escape_projection_blocks": bool(
+            args.learned_local_online_map_hard_veto_hold_escape_projection_blocks
+        ),
+        "learned_local_online_map_hard_veto_hold_escape_projection_blocked_edges": 0,
+        "learned_local_online_map_geometry_veto_hold_blocks": bool(
+            args.learned_local_online_map_geometry_veto_hold_blocks
+        ),
+        "learned_local_online_map_geometry_veto_hold_blocked_edges": 0,
         "learned_local_online_map_route_replay_guard_override_ticks": 0,
         "learned_local_online_map_low_progress_block_m": float(
             args.learned_local_online_map_low_progress_block_m
@@ -9662,6 +11941,10 @@ def main() -> int:
         "learned_local_online_map_guard_blocked_edges": 0,
         "learned_local_online_map_wall_guard_blocked_edges": 0,
         "post_claim_explore_primitives": list(post_claim_explore_primitives),
+        "post_claim_explore_min_claimed_count": max(
+            0,
+            int(args.post_claim_explore_min_claimed_count),
+        ),
         "post_claim_explore_plans": 0,
         "post_claim_explore_blocks_scheduled": 0,
         "post_claim_explore_blocks_executed": 0,
@@ -9673,8 +11956,94 @@ def main() -> int:
             if args.learned_topology_route_until_area_logit is None
             else float(args.learned_topology_route_until_area_logit)
         ),
+        "learned_topology_route_release_on_seen_area_logit": (
+            None
+            if args.learned_topology_route_release_on_seen_area_logit is None
+            else float(args.learned_topology_route_release_on_seen_area_logit)
+        ),
+        "learned_topology_route_advance_m": float(args.learned_topology_route_advance_m),
+        "learned_topology_route_lookahead_m": float(args.learned_topology_route_lookahead_m),
+        "learned_topology_route_reproject_window": int(
+            args.learned_topology_route_reproject_window
+        ),
+        "learned_topology_route_reproject_trigger_m": float(
+            args.learned_topology_route_reproject_trigger_m
+        ),
+        "learned_topology_route_yaw_threshold_by_color": dict(
+            sorted(learned_topology_route_yaw_threshold_by_color.items())
+        ),
+        "learned_topology_route_arc_max_bearing_by_color": dict(
+            sorted(learned_topology_route_arc_max_bearing_by_color.items())
+        ),
+        "learned_topology_route_use_stored_primitives": bool(
+            args.learned_topology_route_use_stored_primitives
+        ),
+        "learned_topology_route_geometry_veto_min_clearance_m": (
+            None
+            if args.learned_topology_route_geometry_veto_min_clearance_m is None
+            else float(args.learned_topology_route_geometry_veto_min_clearance_m)
+        ),
+        "learned_topology_route_geometry_veto_feasible_threshold": float(
+            args.learned_topology_route_geometry_veto_feasible_threshold
+        ),
+        "learned_topology_route_geometry_veto_selected_primitives": sorted(
+            learned_topology_route_geometry_veto_selected_primitives
+        ),
+        "learned_topology_route_geometry_veto_replacements": sorted(
+            learned_topology_route_geometry_veto_replacements
+        ),
+        "body_clearance_geometry_veto_min_clearance_m": (
+            None
+            if args.body_clearance_geometry_veto_min_clearance_m is None
+            else float(args.body_clearance_geometry_veto_min_clearance_m)
+        ),
+        "body_clearance_geometry_veto_feasible_threshold": float(
+            args.body_clearance_geometry_veto_feasible_threshold
+        ),
+        "body_clearance_geometry_veto_states": sorted(
+            body_clearance_geometry_veto_states
+        ),
+        "body_clearance_geometry_veto_min_claimed_count": max(
+            0,
+            int(args.body_clearance_geometry_veto_min_claimed_count),
+        ),
+        "body_clearance_geometry_veto_target_colors": sorted(
+            body_clearance_geometry_veto_target_colors
+        ),
+        "body_clearance_geometry_veto_allow_force_single_candidate": bool(
+            args.body_clearance_geometry_veto_allow_force_single_candidate
+        ),
+        "body_clearance_geometry_veto_allow_guard_disabled": bool(
+            args.body_clearance_geometry_veto_allow_guard_disabled
+        ),
+        "body_clearance_geometry_veto_selected_primitives": sorted(
+            body_clearance_geometry_veto_selected_primitives
+        ),
+        "body_clearance_geometry_veto_replacements": sorted(
+            body_clearance_geometry_veto_replacements
+        ),
+        "body_clearance_geometry_veto_blocked_fallback_primitives": list(
+            body_clearance_geometry_veto_blocked_fallback_primitives
+        ),
+        "body_clearance_geometry_veto_override_replacements": sorted(
+            body_clearance_geometry_veto_override_replacements
+        ),
+        "body_clearance_geometry_veto_override_min_claimed_count": max(
+            0,
+            int(args.body_clearance_geometry_veto_override_min_claimed_count),
+        ),
+        "body_clearance_geometry_veto_ticks": 0,
+        "body_clearance_geometry_vetoes": 0,
+        "body_clearance_geometry_veto_claimed_count_suppressed_ticks": 0,
+        "body_clearance_geometry_veto_target_suppressed_ticks": 0,
+        "body_clearance_geometry_veto_selected_min_clearance_m": None,
         "learned_topology_route_ticks": 0,
         "learned_topology_route_overrides": 0,
+        "learned_topology_route_reprojects": 0,
+        "learned_topology_route_release_on_seen_ticks": 0,
+        "learned_topology_route_geometry_veto_ticks": 0,
+        "learned_topology_route_geometry_vetoes": 0,
+        "learned_topology_route_geometry_veto_selected_min_clearance_m": None,
         "learned_topology_route_seen_gate_ticks": 0,
         "learned_topology_route_privileged_explorer_skipped_ticks": 0,
         "learned_topology_route_final_idx": 0,
@@ -9692,6 +12061,9 @@ def main() -> int:
         "body_clearance_success_required": bool(not args.allow_body_clearance_violation_success),
         "success_min_body_clearance_m": float(args.success_min_body_clearance_m),
         "body_clearance_min_m": None,
+        "body_clearance_contact_threshold_m": 1e-4,
+        "body_clearance_contact_events": 0,
+        "first_body_clearance_contact_tick": None,
         "body_clearance_violation_events": 0,
         "first_body_clearance_violation_tick": None,
         "explorer_replans": 0,
@@ -9700,10 +12072,49 @@ def main() -> int:
         "requested_min_clearance_min_m": None,
         "selected_min_clearance_min_m": None,
         "forward_execution_displacement_sum_m": 0.0,
+        "proprio_contact_detector_ticks": 0,
+        "proprio_contact_prob_max": None,
+        "proprio_contact_escapes": 0,
+        "proprio_contact_map_blocked_edges": 0,
+        "history_risk_vetoes": 0,
+        "history_risk_wedge_escapes": 0,
+        "history_risk_corridor_commits": 0,
+        "seen_target_route_ticks": 0,
+        "seen_target_route_overrides": 0,
+        "broad_explorer_ticks": 0,
+        "broad_explorer_overrides": 0,
+        "novelty_route_goals": 0,
+        "novelty_route_scans": 0,
+        "visual_ray_cells_added": 0,
     }
     stuck_streak = 0
     turn_streak = 0
     escape_plan: list[str] = []
+    proprio_contact_feature_buffer: list[np.ndarray] = []
+    proprio_contact_prob_history: list[float] = []
+    proprio_contact_streak = 0
+    proprio_contact_cooldown = 0
+    proprio_contact_prev_yaw: float | None = None
+    proprio_contact_prev_z: float | None = None
+    history_risk_rows: list[tuple[np.ndarray, np.ndarray]] = []
+    history_risk_pending_proprio: np.ndarray | None = None
+    history_risk_wedge_cooldown = 0
+    sequence_rows_window = max(int(history_risk_window), int(broad_explorer_window), 1)
+    history_risk_corridor_run = 0
+    stalled_prev_tick = False
+    seen_target_estimates: dict[str, tuple[float, float, int]] = {}
+    novelty_route_goal: tuple[float, float] | None = None
+    novelty_route_goal_expiry = 0
+    novelty_route_direction = 0.0
+    novelty_route_visited_goals: set[tuple[int, int]] = set()
+    seen_target_dist_calib = tuple(
+        float(v) for v in str(args.seen_target_route_dist_calib).split(",")
+    )
+    seen_target_route_states = {
+        state.strip().upper()
+        for state in str(args.seen_target_route_states).split(",")
+        if state.strip()
+    }
     post_claim_explore_plan: list[str] = []
     stall_penalties: dict[str, int] = {}
     predicted_blocked_streak = 0
@@ -9711,7 +12122,11 @@ def main() -> int:
     body_clearance_latch = 0
     claim_stalled_visual_latch = 0
     body_clearance_risk_escape_cooldown = 0
+    body_clearance_current_contact_escape_streak = 0
+    body_clearance_current_contact_escape_last_tick: int | None = None
+    body_clearance_hard_veto_hold_streak = 0
     current_body_risk_cooldown = 0
+    primitive_aux_clearance_switch_latch = 0
     opportunistic_claim_visible_ticks = {str(color): 0 for color in target_sequence}
     learned_local_turn_balance = 0
     learned_local_turn_run = 0
@@ -9816,10 +12231,21 @@ def main() -> int:
         bearing_for_guard: float | None = None
         front_blocked_prob: float | None = None
         current_body_risk_prob: float | None = None
+        history_risk_probs: dict[str, float] | None = None
+        broad_explorer_primitive: str | None = None
         primitive_outcomes: dict[str, dict[str, float]] | None = None
+        primitive_guard_outcomes: dict[str, dict[str, float]] | None = None
         primitive_clearance_outcomes: dict[str, dict[str, float]] | None = None
+        primitive_aux_clearance_outcomes: dict[str, dict[str, float]] | None = None
         ego64: torch.Tensor | None = None
         primitive_outcome_slot = "primary"
+        primitive_clearance_slot = "primary"
+        primitive_policy_clearance_slot = "primary"
+        primitive_aux_clearance_switch_active = False
+        primitive_aux_clearance_switch_prob: float | None = None
+        primitive_aux_clearance_switch_requested = False
+        primitive_aux_clearance_switch_threshold: float | None = None
+        current_body_risk_area_active_for_switch = True
         body_clearance_request = False
         frontier_pressure_committed = False
         weak_memory_recovery_active = False
@@ -9885,6 +12311,167 @@ def main() -> int:
                     primitive_outcomes,
                     primitive_clearance_outcomes,
                 )
+            if aux_clearance_encoder is not None and aux_clearance_head is not None:
+                aux_clearance_input = ego64
+                if int(aux_clearance_image_size) != 64:
+                    aux_clearance_input = F.interpolate(
+                        ego.unsqueeze(0),
+                        size=(int(aux_clearance_image_size), int(aux_clearance_image_size)),
+                        mode="bilinear",
+                        align_corners=False,
+                    )[0]
+                with torch.no_grad():
+                    aux_clearance_latent = aux_clearance_encoder(
+                        aux_clearance_input.unsqueeze(0).to(device)
+                    )
+                primitive_aux_clearance_outcomes = _predict_primitive_outcomes(
+                    aux_clearance_head,
+                    aux_clearance_latent,
+                    primitive_vocab=aux_clearance_primitive_vocab,
+                    device=device,
+                )
+            if (
+                history_risk_model is not None
+                or broad_explorer_model is not None
+                or visual_ray_model is not None
+            ):
+                sequence_encoder = (
+                    history_risk_encoder
+                    if history_risk_encoder is not None
+                    else (
+                        broad_explorer_encoder
+                        if broad_explorer_encoder is not None
+                        else visual_ray_encoder
+                    )
+                )
+                sequence_image_size = (
+                    int(history_risk_image_size)
+                    if history_risk_model is not None
+                    else (
+                        int(broad_explorer_image_size)
+                        if broad_explorer_model is not None
+                        else int(visual_ray_image_size)
+                    )
+                )
+                history_input = ego64
+                if int(sequence_image_size) != 64:
+                    history_input = F.interpolate(
+                        ego.unsqueeze(0),
+                        size=(int(sequence_image_size), int(sequence_image_size)),
+                        mode="bilinear",
+                        align_corners=False,
+                    )[0]
+                with torch.no_grad():
+                    history_latent_now = (
+                        sequence_encoder(history_input.unsqueeze(0).to(device))[0]
+                        .cpu()
+                        .numpy()
+                        .astype(np.float32)
+                    )
+                if (
+                    visual_ray_model is not None
+                    and learned_local_online_map is not None
+                ):
+                    ray_lat = torch.from_numpy(
+                        (history_latent_now - visual_ray_latent_mean)
+                        / visual_ray_latent_std
+                    ).float().unsqueeze(0).to(device)
+                    with torch.no_grad():
+                        ray_depths = (
+                            visual_ray_model(ray_lat)[0].cpu().numpy().astype(np.float64)
+                        )
+                    np.clip(ray_depths, 0.0, float(visual_ray_depth_cap), out=ray_depths)
+                    wall_metrics["visual_ray_cells_added"] += int(
+                        learned_local_online_map.integrate_rays(
+                            pos[:2],
+                            float(yaw),
+                            visual_ray_angles,
+                            ray_depths,
+                            depth_cap_m=float(visual_ray_depth_cap),
+                        )
+                    )
+                if history_risk_pending_proprio is not None:
+                    history_risk_rows.append(
+                        (history_latent_now, history_risk_pending_proprio)
+                    )
+                    history_risk_pending_proprio = None
+                    if len(history_risk_rows) > int(sequence_rows_window):
+                        history_risk_rows.pop(0)
+                if (
+                    history_risk_model is not None
+                    and len(history_risk_rows) >= int(history_risk_window)
+                ):
+                    history_rows = history_risk_rows[-int(history_risk_window):]
+                    history_lat_w = torch.from_numpy(
+                        (
+                            np.stack([row[0] for row in history_rows])
+                            - history_risk_latent_mean
+                        )
+                        / history_risk_latent_std
+                    ).float().unsqueeze(0).to(device)
+                    history_pro_w = torch.from_numpy(
+                        (
+                            np.stack([row[1] for row in history_rows])
+                            - history_risk_proprio_mean
+                        )
+                        / history_risk_proprio_std
+                    ).float().unsqueeze(0).to(device)
+                    with torch.no_grad():
+                        history_logits = history_risk_model(history_lat_w, history_pro_w)[0]
+                    history_risk_probs = {
+                        name: float(torch.sigmoid(history_logits[idx]).item())
+                        for idx, name in enumerate(history_risk_vocab)
+                    }
+                if (
+                    broad_explorer_model is not None
+                    and len(history_risk_rows) >= int(broad_explorer_window)
+                ):
+                    explorer_rows = history_risk_rows[-int(broad_explorer_window):]
+                    explorer_lat_w = torch.from_numpy(
+                        (
+                            np.stack([row[0] for row in explorer_rows])
+                            - broad_explorer_latent_mean
+                        )
+                        / broad_explorer_latent_std
+                    ).float().unsqueeze(0).to(device)
+                    explorer_pro_w = torch.from_numpy(
+                        (
+                            np.stack([row[1] for row in explorer_rows])
+                            - broad_explorer_proprio_mean
+                        )
+                        / broad_explorer_proprio_std
+                    ).float().unsqueeze(0).to(device)
+                    with torch.no_grad():
+                        explorer_logits = broad_explorer_model(
+                            explorer_lat_w, explorer_pro_w
+                        )[0]
+                    broad_explorer_primitive = str(
+                        broad_explorer_vocab[int(explorer_logits.argmax().item())]
+                    )
+                history_risk_relaxed = bool(
+                    int(args.history_risk_relax_min_claims) >= 0
+                    and len(beacon_claims) >= int(args.history_risk_relax_min_claims)
+                )
+                if (
+                    history_risk_probs is not None
+                    and bool(args.history_risk_fuse_outcomes)
+                    and primitive_outcomes is not None
+                ):
+                    active_fuse_weight = (
+                        float(args.history_risk_relaxed_fuse_weight)
+                        if history_risk_relaxed
+                        else float(args.history_risk_fuse_weight)
+                    )
+                    for fuse_name, fuse_prob in history_risk_probs.items():
+                        fuse_prediction = primitive_outcomes.get(fuse_name)
+                        if fuse_prediction is None:
+                            continue
+                        fused_prob = max(
+                            float(fuse_prediction.get("blocked_prob", 0.0)),
+                            float(fuse_prob) * active_fuse_weight,
+                        )
+                        fuse_prediction["history_risk_prob"] = float(fuse_prob)
+                        fuse_prediction["blocked_prob"] = float(min(1.0, fused_prob))
             if current_body_encoder is not None and current_body_head is not None:
                 current_body_input = ego64
                 if int(current_body_image_size) != 64:
@@ -9899,6 +12486,58 @@ def main() -> int:
                     current_body_risk_prob = float(
                         torch.sigmoid(current_body_head(current_body_latent))[0].cpu().item()
                     )
+            primitive_aux_clearance_switch_threshold = (
+                current_body_threshold
+                if args.primitive_aux_clearance_switch_threshold is None
+                else float(args.primitive_aux_clearance_switch_threshold)
+            )
+            primitive_aux_clearance_switch_prob = current_body_risk_prob
+            primitive_aux_clearance_switch_requested = bool(
+                args.primitive_aux_clearance_switch_current_body_risk
+                and primitive_outcomes is not None
+                and primitive_aux_clearance_outcomes is not None
+                and current_body_risk_prob is not None
+                and primitive_aux_clearance_switch_threshold is not None
+            )
+            if (
+                primitive_aux_clearance_switch_requested
+                and args.current_body_risk_min_area_logit is None
+            ):
+                switch_claim_gate_pass = bool(
+                    len(beacon_claims)
+                    >= int(effective_aux_clearance_switch_min_claimed_count)
+                )
+                switch_triggered = bool(
+                    switch_claim_gate_pass
+                    and float(current_body_risk_prob)
+                    >= float(primitive_aux_clearance_switch_threshold)
+                )
+                if not switch_claim_gate_pass:
+                    wall_metrics[
+                        "primitive_aux_clearance_switch_claim_gate_suppressed_ticks"
+                    ] += 1
+                    if float(current_body_risk_prob) >= float(
+                        primitive_aux_clearance_switch_threshold
+                    ):
+                        wall_metrics[
+                            "primitive_aux_clearance_switch_claim_gate_suppressed_high_risk_ticks"
+                        ] += 1
+                if switch_triggered:
+                    primitive_aux_clearance_switch_latch = max(
+                        int(primitive_aux_clearance_switch_latch),
+                        int(args.primitive_aux_clearance_switch_latch_ticks),
+                    )
+                switch_latched = int(primitive_aux_clearance_switch_latch) > 0
+                if switch_triggered or switch_latched:
+                    primitive_aux_clearance_switch_active = True
+                    wall_metrics["primitive_aux_clearance_switch_ticks"] += 1
+                    if switch_latched:
+                        primitive_aux_clearance_switch_latch = max(
+                            0,
+                            int(primitive_aux_clearance_switch_latch) - 1,
+                        )
+                else:
+                    wall_metrics["primitive_aux_clearance_switch_suppressed_ticks"] += 1
             dx, dy, dyaw = _body_delta(prev_pose, cur_pose)
             aux = _build_aux((dx, dy, dyaw), last_cmd, last_primitive)
             aux_t = (torch.from_numpy(aux).to(device) - aux_mean) / aux_std
@@ -10940,7 +13579,12 @@ def main() -> int:
                     stuck_streak = 0
                     turn_streak = 0
                     escape_plan = []
-                    post_claim_explore_plan = list(post_claim_explore_primitives)
+                    post_claim_explore_plan = []
+                    if len(beacon_claims) >= max(
+                        0,
+                        int(args.post_claim_explore_min_claimed_count),
+                    ):
+                        post_claim_explore_plan = list(post_claim_explore_primitives)
                     if post_claim_explore_plan:
                         wall_metrics["post_claim_explore_plans"] += 1
                         wall_metrics["post_claim_explore_blocks_scheduled"] += len(
@@ -11028,17 +13672,28 @@ def main() -> int:
                 standoff_route_gate = bool(
                     standoff_route_wants_gate and not standoff_route_released_on_seen
                 )
+                learned_topology_route_released_on_seen = bool(
+                    learned_topology_route_table is not None
+                    and args.learned_topology_route_release_on_seen_area_logit is not None
+                    and bool(seen)
+                    and float(area)
+                    >= float(args.learned_topology_route_release_on_seen_area_logit)
+                )
                 learned_topology_route_wants_gate = (
                     learned_topology_route_table is not None
                     and args.learned_topology_route_until_area_logit is not None
+                    and not learned_topology_route_released_on_seen
                     and (
                         (not state_seen)
                         or (not in_cone)
                         or area < float(args.learned_topology_route_until_area_logit)
                     )
                 )
+                learned_topology_route_selected_this_tick = False
                 if standoff_route_wants_gate and standoff_route_released_on_seen:
                     wall_metrics["explore_standoff_releases_on_seen"] += 1
+                if learned_topology_route_released_on_seen:
+                    wall_metrics["learned_topology_route_release_on_seen_ticks"] += 1
                 if standoff_route_gate:
                     primitive = explorer.primitive(pos, yaw, target_color=active_target_color)
                     st = "EXPLORE"
@@ -11047,6 +13702,14 @@ def main() -> int:
                 elif learned_topology_route_wants_gate or not state_seen:
                     st = "EXPLORE"
                     if learned_topology_route_table is not None:
+                        route_yaw_threshold = learned_topology_route_yaw_threshold_by_color.get(
+                            str(active_target_color),
+                            float(args.learned_topology_route_yaw_threshold),
+                        )
+                        route_arc_max_bearing = learned_topology_route_arc_max_bearing_by_color.get(
+                            str(active_target_color),
+                            float(args.learned_topology_route_arc_max_bearing),
+                        )
                         route_primitive, route_log = _select_learned_topology_route_primitive(
                             route_table=learned_topology_route_table,
                             route_state=learned_topology_route_state,
@@ -11055,17 +13718,30 @@ def main() -> int:
                             pos_xy=pos[:2],
                             yaw=float(yaw),
                             advance_m=float(args.learned_topology_route_advance_m),
-                            yaw_bearing_threshold=float(args.learned_topology_route_yaw_threshold),
+                            lookahead_m=float(args.learned_topology_route_lookahead_m),
+                            reproject_window=int(
+                                args.learned_topology_route_reproject_window
+                            ),
+                            reproject_trigger_m=float(
+                                args.learned_topology_route_reproject_trigger_m
+                            ),
+                            yaw_bearing_threshold=float(route_yaw_threshold),
                             forward_bearing_threshold=float(args.learned_topology_route_forward_threshold),
-                            arc_max_bearing=float(args.learned_topology_route_arc_max_bearing),
+                            arc_max_bearing=float(route_arc_max_bearing),
                             forward_primitive=str(args.explore_forward_primitive),
+                            use_stored_primitives=bool(
+                                args.learned_topology_route_use_stored_primitives
+                            ),
                         )
                         wall_metrics["learned_topology_route_ticks"] += 1
                         if learned_topology_route_wants_gate and state_seen:
                             wall_metrics["learned_topology_route_seen_gate_ticks"] += 1
                         if route_primitive != str(args.explore_forward_primitive):
                             wall_metrics["learned_topology_route_overrides"] += 1
+                        if bool(route_log.get("reprojected")):
+                            wall_metrics["learned_topology_route_reprojects"] += 1
                         primitive = route_primitive
+                        learned_topology_route_selected_this_tick = True
                         bearing_for_guard = (
                             None
                             if route_log.get("bearing") is None
@@ -11197,6 +13873,12 @@ def main() -> int:
                     log_entry["standoff_route_release_dist_m"] = _round_float(
                         standoff_route_release_dist_m, 4
                     )
+                if learned_topology_route_released_on_seen:
+                    log_entry["learned_topology_route_released_on_seen"] = True
+                    log_entry["learned_topology_route_release_area_logit"] = _round_float(
+                        float(args.learned_topology_route_release_on_seen_area_logit),
+                        4,
+                    )
                 if st == "SERVO" and bool(args.body_clearance_target_servo):
                     log_entry["body_clearance_target_servo"] = bool(
                         area >= float(args.body_clearance_target_area_logit)
@@ -11213,6 +13895,67 @@ def main() -> int:
                     )
                 if st == "EXPLORE":
                     log_entry["explorer"] = explorer_trace
+
+        if (
+            primitive_aux_clearance_switch_requested
+            and args.current_body_risk_min_area_logit is not None
+        ):
+            current_body_risk_area_active_for_switch = bool(
+                log_entry is not None
+                and "area" in log_entry
+                and float(log_entry["area"]) >= float(args.current_body_risk_min_area_logit)
+            )
+            switch_claim_gate_pass = bool(
+                len(beacon_claims)
+                >= int(effective_aux_clearance_switch_min_claimed_count)
+            )
+            switch_triggered = bool(
+                switch_claim_gate_pass
+                and current_body_risk_area_active_for_switch
+                and current_body_risk_prob is not None
+                and primitive_aux_clearance_switch_threshold is not None
+                and float(current_body_risk_prob)
+                >= float(primitive_aux_clearance_switch_threshold)
+            )
+            if not switch_claim_gate_pass:
+                wall_metrics[
+                    "primitive_aux_clearance_switch_claim_gate_suppressed_ticks"
+                ] += 1
+                if (
+                    current_body_risk_prob is not None
+                    and primitive_aux_clearance_switch_threshold is not None
+                    and float(current_body_risk_prob)
+                    >= float(primitive_aux_clearance_switch_threshold)
+                ):
+                    wall_metrics[
+                        "primitive_aux_clearance_switch_claim_gate_suppressed_high_risk_ticks"
+                    ] += 1
+            elif (
+                not current_body_risk_area_active_for_switch
+                and current_body_risk_prob is not None
+                and primitive_aux_clearance_switch_threshold is not None
+                and float(current_body_risk_prob)
+                >= float(primitive_aux_clearance_switch_threshold)
+            ):
+                wall_metrics[
+                    "primitive_aux_clearance_switch_area_suppressed_ticks"
+                ] += 1
+            if switch_triggered:
+                primitive_aux_clearance_switch_latch = max(
+                    int(primitive_aux_clearance_switch_latch),
+                    int(args.primitive_aux_clearance_switch_latch_ticks),
+                )
+            switch_latched = int(primitive_aux_clearance_switch_latch) > 0
+            if switch_triggered or switch_latched:
+                primitive_aux_clearance_switch_active = True
+                wall_metrics["primitive_aux_clearance_switch_ticks"] += 1
+                if switch_latched:
+                    primitive_aux_clearance_switch_latch = max(
+                        0,
+                        int(primitive_aux_clearance_switch_latch) - 1,
+                    )
+            else:
+                wall_metrics["primitive_aux_clearance_switch_suppressed_ticks"] += 1
 
         learned_local_state_name = (
             "" if log_entry is None else str(log_entry.get("state", "")).upper()
@@ -11284,6 +14027,18 @@ def main() -> int:
             )
             primitive_outcome_slot = "post_claim"
             wall_metrics["primitive_post_claim_outcome_ticks"] += 1
+        primitive_guard_outcomes = primitive_outcomes
+        if primitive_aux_clearance_switch_active:
+            primitive_guard_outcomes = _fuse_clearance_outcomes(
+                primitive_outcomes,
+                primitive_aux_clearance_outcomes,
+            )
+            primitive_clearance_slot = "aux_switch"
+            if bool(args.primitive_aux_clearance_switch_policy_features):
+                primitive_outcomes = primitive_guard_outcomes
+                primitive_policy_clearance_slot = "aux_switch"
+        learned_policy_feature_for_dataset: torch.Tensor | None = None
+        learned_policy_feature_slot_for_dataset = "primary"
         if (
             log_entry is not None
             and (learned_local_policy_state_active or learned_local_dataset_state_active)
@@ -11424,6 +14179,12 @@ def main() -> int:
                 dataset_target_policy_available
                 and (
                     bool(args.learned_local_target_policy_priority_over_post_claim)
+                    or (
+                        bool(
+                            args.learned_local_target_policy_priority_on_aux_clearance_switch
+                        )
+                        and bool(primitive_aux_clearance_switch_active)
+                    )
                     or not dataset_post_claim_policy_available
                 )
             )
@@ -11436,10 +14197,13 @@ def main() -> int:
                 if target_feature is not None:
                     learned_policy_feature = target_feature
                     learned_policy_feature_slot = f"target:{dataset_target_policy_key}"
+            learned_policy_feature_for_dataset = learned_policy_feature
+            learned_policy_feature_slot_for_dataset = learned_policy_feature_slot
             if (
                 args.learned_local_dataset_output is not None
                 and learned_local_dataset_state_active
                 and learned_policy_feature is not None
+                and str(args.learned_local_dataset_label_source) == "teacher"
             ):
                 teacher_label_primitive = _learned_local_policy_label_primitive(primitive)
                 if teacher_label_primitive is None:
@@ -11488,6 +14252,7 @@ def main() -> int:
                                 "tick": int(tick),
                                 "state": str(log_entry.get("state", "")),
                                 "label": teacher_label_primitive,
+                                "dataset_label_source": "teacher",
                                 "policy_feature_slot": str(learned_policy_feature_slot),
                                 "executed_label_source_primitive": primitive,
                                 "oracle_standoff_label": bool(oracle_label_used),
@@ -11544,6 +14309,12 @@ def main() -> int:
                 target_policy_available
                 and (
                     bool(args.learned_local_target_policy_priority_over_post_claim)
+                    or (
+                        bool(
+                            args.learned_local_target_policy_priority_on_aux_clearance_switch
+                        )
+                        and bool(primitive_aux_clearance_switch_active)
+                    )
                     or not post_claim_policy_available
                 )
             )
@@ -12078,6 +14849,223 @@ def main() -> int:
 
         requested_primitive = primitive
         guard_state = str(log_entry.get("state", "")) if log_entry is not None else ""
+        if (
+            broad_explorer_primitive is not None
+            and guard_state.upper() in broad_explorer_states
+            and not escape_plan
+        ):
+            if broad_explorer_primitive != primitive:
+                wall_metrics["broad_explorer_overrides"] += 1
+            primitive = broad_explorer_primitive
+            requested_primitive = broad_explorer_primitive
+            wall_metrics["broad_explorer_ticks"] += 1
+            if log_entry is not None:
+                log_entry["broad_explorer_primitive"] = broad_explorer_primitive
+        if bool(args.seen_target_route) and log_entry is not None:
+            seen_route_color = str(log_entry.get("target_color") or "")
+            if (
+                seen_route_color
+                and log_entry.get("seen")
+                and log_entry.get("area") is not None
+                and log_entry.get("bearing") is not None
+            ):
+                seen_route_dist = float(
+                    np.clip(
+                        math.exp(
+                            seen_target_dist_calib[0]
+                            + seen_target_dist_calib[1] * float(log_entry["area"])
+                        ),
+                        0.5,
+                        9.0,
+                    )
+                )
+                seen_route_angle = float(yaw) + float(log_entry["bearing"])
+                seen_route_new = (
+                    float(pos[0]) + seen_route_dist * math.cos(seen_route_angle),
+                    float(pos[1]) + seen_route_dist * math.sin(seen_route_angle),
+                )
+                seen_route_prev = seen_target_estimates.get(seen_route_color)
+                if (
+                    seen_route_prev is not None
+                    and int(tick) - int(seen_route_prev[2])
+                    <= int(args.seen_target_route_max_age_ticks)
+                ):
+                    seen_route_new = (
+                        0.7 * float(seen_route_prev[0]) + 0.3 * seen_route_new[0],
+                        0.7 * float(seen_route_prev[1]) + 0.3 * seen_route_new[1],
+                    )
+                seen_target_estimates[seen_route_color] = (
+                    seen_route_new[0],
+                    seen_route_new[1],
+                    int(tick),
+                )
+            seen_route_estimate = seen_target_estimates.get(seen_route_color)
+            if (
+                seen_route_estimate is None
+                or int(tick) - int(seen_route_estimate[2])
+                > int(args.seen_target_route_max_age_ticks)
+            ) and bool(args.novelty_route) and learned_local_online_map is not None:
+                # No live target estimate: draw the goal from the online
+                # memory instead — nearest unexplored cell, held for a
+                # commitment window so route-following can make progress.
+                novelty_goal_reached = bool(
+                    novelty_route_goal is not None
+                    and learned_local_online_map._cell(pos[:2])
+                    == learned_local_online_map._cell(novelty_route_goal)
+                )
+                if (
+                    novelty_goal_reached
+                    and int(args.novelty_route_scan_ticks) > 0
+                    and not escape_plan
+                ):
+                    # Arrived somewhere new: look around before routing on.
+                    escape_plan = ["yaw_left"] * int(args.novelty_route_scan_ticks)
+                    wall_metrics["novelty_route_scans"] += 1
+                novelty_goal_stale = bool(
+                    novelty_route_goal is None
+                    or int(tick) >= int(novelty_route_goal_expiry)
+                    or novelty_goal_reached
+                )
+                if novelty_goal_stale:
+                    map_cell_m = float(learned_local_online_map.cell_m)
+                    cur_cell = learned_local_online_map._cell(pos[:2])
+                    found_goal = None
+                    vision_free = getattr(learned_local_online_map, "vision_free", None)
+                    if vision_free:
+                        # Vision frontier: a seen-free cell bordering unknown
+                        # space, preferring far ones (long committed traversals
+                        # through known-free geometry).
+                        known = vision_free | set(learned_local_online_map.visited)
+                        blocked_all = set(learned_local_online_map.blocked) | set(
+                            getattr(learned_local_online_map, "vision_blocked", set())
+                        )
+                        best_frontier = None
+                        best_score = None
+                        for cell in vision_free:
+                            if cell in blocked_all or cell in novelty_route_visited_goals:
+                                continue
+                            cx_f, cy_f = cell
+                            frontier = any(
+                                (cx_f + dx, cy_f + dy) not in known
+                                and (cx_f + dx, cy_f + dy) not in blocked_all
+                                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                            )
+                            if not frontier:
+                                continue
+                            dist = abs(cx_f - cur_cell[0]) + abs(cy_f - cur_cell[1])
+                            if dist < 2:
+                                continue
+                            if best_score is None or dist > best_score:
+                                best_score, best_frontier = dist, cell
+                        found_goal = best_frontier
+                        if found_goal is not None:
+                            novelty_route_visited_goals.add(found_goal)
+                    if found_goal is None:
+                        for radius in range(2, 14):
+                            ring = []
+                            for k in range(8):
+                                ang = (
+                                    float(novelty_route_direction) + k * (2 * math.pi / 8)
+                                )
+                                gx = cur_cell[0] + int(round(radius * math.cos(ang)))
+                                gy = cur_cell[1] + int(round(radius * math.sin(ang)))
+                                cell = (gx, gy)
+                                if (
+                                    cell not in learned_local_online_map.visited
+                                    and cell not in learned_local_online_map.blocked
+                                    and cell not in learned_local_online_map.guard_blocked
+                                ):
+                                    ring.append(cell)
+                            if ring:
+                                found_goal = ring[0]
+                                break
+                    if found_goal is not None:
+                        novelty_route_goal = learned_local_online_map.cell_center_xy(
+                            found_goal
+                        )
+                        novelty_route_goal_expiry = int(tick) + int(
+                            args.novelty_route_commit_ticks
+                        )
+                        novelty_route_direction = float(
+                            novelty_route_direction
+                        ) + 2 * math.pi / 8
+                        wall_metrics["novelty_route_goals"] += 1
+                if novelty_route_goal is not None:
+                    seen_route_estimate = (
+                        float(novelty_route_goal[0]),
+                        float(novelty_route_goal[1]),
+                        int(tick),
+                    )
+            seen_route_near_target = bool(
+                log_entry.get("seen")
+                and log_entry.get("area") is not None
+                and float(log_entry["area"]) >= float(args.seen_target_route_handoff_area_logit)
+            )
+            if (
+                seen_route_estimate is not None
+                and int(tick) - int(seen_route_estimate[2])
+                <= int(args.seen_target_route_max_age_ticks)
+                and guard_state.upper() in seen_target_route_states
+                and not seen_route_near_target
+                and not escape_plan
+                and learned_local_online_map is not None
+            ):
+                seen_route_path = learned_local_online_map.path_to_goal_biased_frontier(
+                    pos[:2],
+                    (float(seen_route_estimate[0]), float(seen_route_estimate[1])),
+                    goal_weight=float(args.seen_target_route_goal_weight),
+                )
+                if len(seen_route_path) < 2:
+                    # Strict routing is sealed inside the visited island (early
+                    # blocked-edge evidence); plan optimistically through
+                    # unknown cells and let execution evidence correct.
+                    seen_route_path = learned_local_online_map.path_to_goal_biased_frontier(
+                        pos[:2],
+                        (float(seen_route_estimate[0]), float(seen_route_estimate[1])),
+                        goal_weight=float(args.seen_target_route_goal_weight),
+                        optimistic=True,
+                    )
+                if len(seen_route_path) >= 2:
+                    seen_route_wp = None
+                    for candidate_cell in seen_route_path[1:]:
+                        wx, wy = learned_local_online_map.cell_center_xy(candidate_cell)
+                        if (wx - float(pos[0])) ** 2 + (wy - float(pos[1])) ** 2 > (
+                            0.6 * float(learned_local_online_map.cell_m)
+                        ) ** 2:
+                            seen_route_wp = (wx, wy)
+                            break
+                    if seen_route_wp is not None:
+                        seen_route_bearing = wrap_angle_pi(
+                            math.atan2(
+                                seen_route_wp[1] - float(pos[1]),
+                                seen_route_wp[0] - float(pos[0]),
+                            )
+                            - float(yaw)
+                        )
+                        if abs(seen_route_bearing) > 0.5:
+                            seen_route_primitive = (
+                                "yaw_left" if seen_route_bearing > 0 else "yaw_right"
+                            )
+                        elif abs(seen_route_bearing) > 0.25:
+                            seen_route_primitive = (
+                                "arc_left" if seen_route_bearing > 0 else "arc_right"
+                            )
+                        else:
+                            seen_route_primitive = "forward_medium"
+                        if seen_route_primitive != primitive:
+                            wall_metrics["seen_target_route_overrides"] += 1
+                        primitive = seen_route_primitive
+                        requested_primitive = seen_route_primitive
+                        wall_metrics["seen_target_route_ticks"] += 1
+                        log_entry["seen_target_route"] = {
+                            "goal_est": [
+                                _round_float(seen_route_estimate[0]),
+                                _round_float(seen_route_estimate[1]),
+                            ],
+                            "est_age": int(tick) - int(seen_route_estimate[2]),
+                            "path_cells": len(seen_route_path),
+                            "primitive": seen_route_primitive,
+                        }
         guard_state_upper = guard_state.upper()
         guard_enabled = bool(
             args.wall_aware_planner
@@ -12239,6 +15227,11 @@ def main() -> int:
         elif frontier_guard_force and log_entry is not None:
             log_entry["frontier_pressure_guard_commit"] = True
             wall_metrics["learned_local_policy_frontier_pressure_guard_commits"] += 1
+        current_body_clearance_for_guard = None
+        current_contact_escape_low_clearance = False
+        current_contact_escape_suppressed_reason: str | None = None
+        active_current_contact_escape_m: float | None = None
+        current_contact_escape_projected_clearances: dict[str, float] | None = None
         if use_learned_wall_source:
             primitive, wall_guard = _learned_front_guard_select(
                 requested=requested_primitive,
@@ -12285,11 +15278,280 @@ def main() -> int:
             preserve_straight_request = bool(primitive_outcome_preserve_straight_states) and (
                 guard_state.upper() in primitive_outcome_preserve_straight_states
             )
+            current_body_clearance_for_guard = None
+            current_contact_escape_suppressed_reason: str | None = None
+            active_current_contact_escape_m: float | None = None
+            current_contact_escape_area_gate_active = False
+            current_contact_escape_target_area = (
+                float(log_entry["area"])
+                if log_entry is not None and "area" in log_entry
+                else None
+            )
+            current_contact_escape_gate_m = (
+                None
+                if args.body_clearance_current_contact_escape_m is None
+                else float(args.body_clearance_current_contact_escape_m)
+            )
+            if body_clearance_current_contact_escape_m_by_primitive:
+                primitive_gate_m = max(
+                    float(value)
+                    for value in body_clearance_current_contact_escape_m_by_primitive.values()
+                )
+                current_contact_escape_gate_m = (
+                    primitive_gate_m
+                    if current_contact_escape_gate_m is None
+                    else max(float(current_contact_escape_gate_m), primitive_gate_m)
+                )
+            if current_contact_escape_gate_m is not None:
+                min_escape_streak = max(
+                    1,
+                    int(args.body_clearance_current_contact_escape_min_streak),
+                )
+                min_escape_claims = max(
+                    0,
+                    int(args.body_clearance_current_contact_escape_min_claimed_count),
+                )
+                escape_cooldown_ticks = max(
+                    0,
+                    int(args.body_clearance_current_contact_escape_cooldown_ticks),
+                )
+                if len(beacon_claims) < min_escape_claims:
+                    current_contact_escape_suppressed_reason = "claimed_count"
+                    wall_metrics[
+                        "body_clearance_current_contact_escape_claimed_count_suppressed_ticks"
+                    ] += 1
+                elif (
+                    body_clearance_current_contact_escape_states
+                    and guard_state.upper()
+                    not in body_clearance_current_contact_escape_states
+                ):
+                    current_contact_escape_suppressed_reason = "state"
+                    wall_metrics[
+                        "body_clearance_current_contact_escape_state_suppressed_ticks"
+                    ] += 1
+                elif (
+                    body_clearance_current_contact_escape_target_colors
+                    and str(active_target_color).lower()
+                    not in body_clearance_current_contact_escape_target_colors
+                ):
+                    current_contact_escape_suppressed_reason = "target"
+                    wall_metrics[
+                        "body_clearance_current_contact_escape_target_suppressed_ticks"
+                    ] += 1
+                elif (
+                    escape_cooldown_ticks > 0
+                    and body_clearance_current_contact_escape_last_tick is not None
+                    and int(tick) - int(body_clearance_current_contact_escape_last_tick)
+                    < escape_cooldown_ticks
+                ):
+                    current_contact_escape_suppressed_reason = "cooldown"
+                    wall_metrics[
+                        "body_clearance_current_contact_escape_cooldown_suppressed_ticks"
+                    ] += 1
+                elif (
+                    args.body_clearance_current_contact_escape_min_area_logit is not None
+                    and (
+                        not body_clearance_current_contact_escape_min_area_states
+                        or guard_state.upper()
+                        in body_clearance_current_contact_escape_min_area_states
+                    )
+                    and (
+                        current_contact_escape_target_area is None
+                        or float(current_contact_escape_target_area)
+                        < float(args.body_clearance_current_contact_escape_min_area_logit)
+                    )
+                ):
+                    current_contact_escape_area_gate_active = True
+                    current_contact_escape_suppressed_reason = "area"
+                    wall_metrics[
+                        "body_clearance_current_contact_escape_area_suppressed_ticks"
+                    ] += 1
+                else:
+                    current_contact_escape_area_gate_active = bool(
+                        args.body_clearance_current_contact_escape_min_area_logit
+                        is not None
+                        and (
+                            not body_clearance_current_contact_escape_min_area_states
+                            or guard_state.upper()
+                            in body_clearance_current_contact_escape_min_area_states
+                        )
+                    )
+                    if bool(args.body_clearance_target_servo):
+                        current_body_clearance_for_guard = _body_probe_clearance(
+                            grid,
+                            pos[:2],
+                            yaw,
+                            body_forward_m=float(args.wall_body_forward_m),
+                            body_half_width_m=float(args.wall_body_half_width_m),
+                            body_probe_margin_m=float(args.wall_body_probe_margin_m),
+                        )
+                    current_contact_escape_low_clearance = bool(
+                        current_body_clearance_for_guard is not None
+                        and float(current_body_clearance_for_guard)
+                        <= float(current_contact_escape_gate_m)
+                    )
+                    if current_contact_escape_low_clearance:
+                        body_clearance_current_contact_escape_streak += 1
+                        wall_metrics[
+                            "body_clearance_current_contact_escape_low_clearance_ticks"
+                        ] += 1
+                    else:
+                        body_clearance_current_contact_escape_streak = 0
+                    if not current_contact_escape_low_clearance:
+                        current_contact_escape_suppressed_reason = "clearance"
+                    elif body_clearance_current_contact_escape_streak < min_escape_streak:
+                        current_contact_escape_suppressed_reason = "streak"
+                        wall_metrics[
+                            "body_clearance_current_contact_escape_streak_suppressed_ticks"
+                        ] += 1
+                    else:
+                        active_current_contact_escape_m = float(
+                            current_contact_escape_gate_m
+                        )
+                if (
+                    current_contact_escape_low_clearance
+                    and active_current_contact_escape_m is None
+                ):
+                    wall_metrics[
+                        "body_clearance_current_contact_escape_gate_suppressed_ticks"
+                    ] += 1
+                if current_contact_escape_suppressed_reason in {
+                    "claimed_count",
+                    "state",
+                    "target",
+                    "cooldown",
+                    "area",
+                }:
+                    body_clearance_current_contact_escape_streak = 0
+            current_contact_escape_projected_clearances: dict[str, float] | None = None
+            current_contact_escape_projection_active = bool(
+                active_current_contact_escape_m is not None
+                and (
+                    args.body_clearance_current_contact_escape_min_projected_clearance_m
+                    is not None
+                    or float(
+                        args.body_clearance_current_contact_escape_min_projected_improvement_m
+                    )
+                    > 0.0
+                )
+            )
+            if current_contact_escape_projection_active:
+                current_contact_escape_projected_clearances = {}
+                for projection_primitive in outcome_primitive_vocab:
+                    try:
+                        projection_report = _primitive_clearance_report(
+                            registry,
+                            str(projection_primitive),
+                            pos[:2],
+                            yaw,
+                            grid,
+                            float(args.command_dt_s),
+                            body_forward_m=float(args.wall_body_forward_m),
+                            body_half_width_m=float(args.wall_body_half_width_m),
+                            body_probe_margin_m=float(args.wall_body_probe_margin_m),
+                            min_clearance_m=float(args.wall_min_clearance_m),
+                        )
+                    except Exception:
+                        continue
+                    current_contact_escape_projected_clearances[
+                        str(projection_primitive)
+                    ] = float(projection_report["min_clearance_m"])
+            current_body_clearance_for_select = (
+                current_body_clearance_for_guard
+                if active_current_contact_escape_m is not None
+                else None
+            )
+            body_clearance_veto_claim_gate_active = (
+                len(beacon_claims) >= int(effective_body_clearance_veto_min_claimed_count)
+            )
+            effective_body_clearance_hard_veto_prob = (
+                float(args.body_clearance_hard_veto_prob)
+                if body_clearance_veto_claim_gate_active
+                else 1.01
+            )
+            target_area_for_guard = (
+                float(log_entry["area"])
+                if log_entry is not None and "area" in log_entry
+                else None
+            )
+            target_area_hard_veto_min_area = (
+                float(args.body_clearance_target_area_logit)
+                if args.body_clearance_target_area_hard_veto_min_area_logit is None
+                else float(args.body_clearance_target_area_hard_veto_min_area_logit)
+            )
+            target_area_hard_veto_active = bool(
+                body_clearance_veto_claim_gate_active
+                and float(args.body_clearance_target_area_hard_veto_prob) <= 1.0
+                and target_area_for_guard is not None
+                and float(target_area_for_guard) >= float(target_area_hard_veto_min_area)
+            )
+            if target_area_hard_veto_active:
+                effective_body_clearance_hard_veto_prob = min(
+                    float(effective_body_clearance_hard_veto_prob),
+                    float(args.body_clearance_target_area_hard_veto_prob),
+                )
+                wall_metrics["body_clearance_target_area_hard_veto_ticks"] += 1
+            effective_body_clearance_saturated_veto_prob = (
+                float(args.body_clearance_saturated_veto_prob)
+                if body_clearance_veto_claim_gate_active
+                else 1.01
+            )
+            effective_body_clearance_yaw_contact_veto_prob = (
+                float(args.body_clearance_yaw_contact_veto_prob)
+                if body_clearance_veto_claim_gate_active
+                else 1.01
+            )
+            effective_body_clearance_yaw_direction_veto_prob = (
+                float(args.body_clearance_yaw_direction_veto_prob)
+                if body_clearance_veto_claim_gate_active
+                else 1.01
+            )
+            active_guard_primitive_outcomes = (
+                primitive_guard_outcomes
+                if primitive_guard_outcomes is not None
+                else primitive_outcomes
+            )
+            active_body_clearance_hard_veto_primitives = body_clearance_hard_veto_primitives
+            if (
+                primitive_aux_clearance_switch_active
+                and body_clearance_aux_switch_hard_veto_primitives
+            ):
+                active_body_clearance_hard_veto_primitives = (
+                    body_clearance_aux_switch_hard_veto_primitives
+                )
+            effective_body_clearance_enabled = bool(args.body_clearance_target_servo) or (
+                bool(args.body_clearance_aux_switch_enable)
+                and bool(primitive_aux_clearance_switch_active)
+            )
+            effective_body_clearance_min_area = (
+                None
+                if args.body_clearance_learned_min_area_logit is None
+                else float(args.body_clearance_learned_min_area_logit)
+            )
+            if (
+                bool(args.body_clearance_aux_switch_enable)
+                and bool(primitive_aux_clearance_switch_active)
+            ):
+                wall_metrics["body_clearance_aux_switch_enabled_ticks"] += 1
+                if (
+                    bool(args.body_clearance_aux_switch_ignore_min_area)
+                    and effective_body_clearance_min_area is not None
+                ):
+                    effective_body_clearance_min_area = None
+                    wall_metrics["body_clearance_aux_switch_min_area_ignored_ticks"] += 1
+            effective_body_clearance_arc_sweep_veto_prob = (
+                float(args.body_clearance_aux_switch_arc_sweep_veto_prob)
+                if (
+                    bool(args.body_clearance_aux_switch_enable)
+                    and bool(primitive_aux_clearance_switch_active)
+                )
+                else 1.01
+            )
             primitive, wall_guard = _learned_action_guard_select(
                 requested=requested_primitive,
                 bearing=bearing_for_guard,
                 enabled=guard_enabled,
-                predictions=primitive_outcomes,
+                predictions=active_guard_primitive_outcomes,
                 primitive_vocab=outcome_primitive_vocab,
                 blocked_threshold=float(outcome_threshold if outcome_threshold is not None else 0.5),
                 blocked_weight=float(args.primitive_outcome_blocked_weight),
@@ -12297,8 +15559,8 @@ def main() -> int:
                 requested_bonus=float(args.primitive_outcome_requested_bonus),
                 turn_progress_scale=float(args.primitive_outcome_turn_progress_scale),
                 switch_margin=float(args.primitive_outcome_switch_margin),
-                target_area=(float(log_entry["area"]) if log_entry is not None and "area" in log_entry else None),
-                body_clearance_enabled=bool(args.body_clearance_target_servo),
+                target_area=target_area_for_guard,
+                body_clearance_enabled=bool(effective_body_clearance_enabled),
                 body_clearance_target_area=float(args.body_clearance_target_area_logit),
                 body_clearance_arc_penalty=float(args.body_clearance_near_arc_penalty),
                 body_clearance_yaw_penalty_weight=float(args.body_clearance_near_yaw_prob_weight),
@@ -12320,35 +15582,68 @@ def main() -> int:
                     else float(args.body_clearance_near_yaw_prob_floor)
                 ),
                 body_clearance_yaw_always=bool(args.body_clearance_yaw_always),
-                body_clearance_hard_veto_prob=float(args.body_clearance_hard_veto_prob),
+                body_clearance_hard_veto_prob=effective_body_clearance_hard_veto_prob,
                 body_clearance_hard_veto_margin=float(args.body_clearance_hard_veto_margin),
                 body_clearance_hard_veto_replacement_cap=float(
                     args.body_clearance_hard_veto_replacement_cap
                 ),
-                body_clearance_hard_veto_primitives=body_clearance_hard_veto_primitives,
+                body_clearance_hard_veto_primitives=(
+                    active_body_clearance_hard_veto_primitives
+                ),
                 body_clearance_hard_veto_selected_primitives=(
                     body_clearance_hard_veto_selected_primitives or None
                 ),
-                body_clearance_saturated_veto_prob=float(args.body_clearance_saturated_veto_prob),
+                body_clearance_arc_sweep_veto_prob=(
+                    effective_body_clearance_arc_sweep_veto_prob
+                ),
+                body_clearance_arc_sweep_veto_selected_primitives=(
+                    body_clearance_aux_switch_arc_sweep_veto_selected_primitives or None
+                ),
+                body_clearance_saturated_veto_prob=effective_body_clearance_saturated_veto_prob,
                 body_clearance_saturated_veto_spread=float(args.body_clearance_saturated_veto_spread),
                 body_clearance_saturated_veto_primitives=body_clearance_saturated_veto_primitives,
                 body_clearance_saturated_veto_selected_primitives=(
                     body_clearance_saturated_veto_selected_primitives or None
                 ),
-                body_clearance_yaw_contact_veto_prob=float(
-                    args.body_clearance_yaw_contact_veto_prob
-                ),
-                body_clearance_yaw_direction_veto_prob=float(
-                    args.body_clearance_yaw_direction_veto_prob
+                body_clearance_yaw_contact_veto_prob=effective_body_clearance_yaw_contact_veto_prob,
+                body_clearance_yaw_direction_veto_prob=(
+                    effective_body_clearance_yaw_direction_veto_prob
                 ),
                 body_clearance_yaw_direction_veto_margin=float(
                     args.body_clearance_yaw_direction_veto_margin
                 ),
-                body_clearance_min_area=(
-                    None
-                    if args.body_clearance_learned_min_area_logit is None
-                    else float(args.body_clearance_learned_min_area_logit)
+                current_body_clearance_m=current_body_clearance_for_select,
+                body_clearance_current_contact_escape_m=active_current_contact_escape_m,
+                body_clearance_current_contact_escape_m_by_primitive=(
+                    body_clearance_current_contact_escape_m_by_primitive or None
                 ),
+                body_clearance_current_contact_escape_primitives=(
+                    body_clearance_current_contact_escape_primitives or None
+                ),
+                body_clearance_current_contact_escape_replacements=(
+                    body_clearance_current_contact_escape_replacements or None
+                ),
+                body_clearance_current_contact_escape_replacement_cap=float(
+                    args.body_clearance_current_contact_escape_replacement_cap
+                ),
+                body_clearance_current_contact_escape_require_replacement_under_cap=bool(
+                    args.body_clearance_current_contact_escape_require_replacement_under_cap
+                ),
+                body_clearance_current_contact_escape_projected_clearances=(
+                    current_contact_escape_projected_clearances
+                ),
+                body_clearance_current_contact_escape_min_projected_clearance_m=(
+                    None
+                    if args.body_clearance_current_contact_escape_min_projected_clearance_m
+                    is None
+                    else float(
+                        args.body_clearance_current_contact_escape_min_projected_clearance_m
+                    )
+                ),
+                body_clearance_current_contact_escape_min_projected_improvement_m=float(
+                    args.body_clearance_current_contact_escape_min_projected_improvement_m
+                ),
+                body_clearance_min_area=effective_body_clearance_min_area,
                 forward_progress_floor=active_forward_progress_floor,
                 forward_progress_floor_min_blocked_prob=(
                     None
@@ -12398,6 +15693,162 @@ def main() -> int:
                 force_single_candidate=force_single_candidate,
                 candidate_names_override=candidate_names_override,
             )
+            wall_guard["body_clearance_veto_claim_gate_active"] = bool(
+                body_clearance_veto_claim_gate_active
+            )
+            wall_guard["body_clearance_veto_configured_min_claimed_count"] = int(
+                configured_body_clearance_veto_min_claimed_count
+            )
+            wall_guard["body_clearance_veto_min_claimed_count"] = int(
+                effective_body_clearance_veto_min_claimed_count
+            )
+            wall_guard["body_clearance_veto_claimed_count"] = int(len(beacon_claims))
+            wall_guard["body_clearance_current_contact_escape_low_clearance"] = bool(
+                current_contact_escape_low_clearance
+            )
+            wall_guard["body_clearance_current_contact_escape_streak"] = int(
+                body_clearance_current_contact_escape_streak
+            )
+            wall_guard["body_clearance_current_contact_escape_gate_active"] = bool(
+                active_current_contact_escape_m is not None
+            )
+            wall_guard["body_clearance_current_contact_escape_observed_clearance_m"] = (
+                _round_float(current_body_clearance_for_guard, 4)
+            )
+            wall_guard["body_clearance_current_contact_escape_min_area_logit"] = (
+                None
+                if args.body_clearance_current_contact_escape_min_area_logit is None
+                else _round_float(
+                    float(args.body_clearance_current_contact_escape_min_area_logit),
+                    4,
+                )
+            )
+            wall_guard["body_clearance_current_contact_escape_area_gate_active"] = bool(
+                current_contact_escape_area_gate_active
+            )
+            wall_guard["body_clearance_current_contact_escape_area_logit"] = _round_float(
+                current_contact_escape_target_area,
+                4,
+            )
+            wall_guard["body_clearance_current_contact_escape_suppressed_reason"] = (
+                current_contact_escape_suppressed_reason
+            )
+            if not body_clearance_veto_claim_gate_active:
+                wall_metrics["body_clearance_veto_claim_gate_suppressed_ticks"] += 1
+                selected_clearance_for_gate = wall_guard.get("selected_clearance_blocked_prob")
+                high_risk_thresholds = [
+                    float(value)
+                    for value in (
+                        args.body_clearance_hard_veto_prob,
+                        args.body_clearance_saturated_veto_prob,
+                        args.body_clearance_yaw_contact_veto_prob,
+                        args.body_clearance_yaw_direction_veto_prob,
+                    )
+                    if float(value) <= 1.0
+                ]
+                if (
+                    selected_clearance_for_gate is not None
+                    and high_risk_thresholds
+                    and float(selected_clearance_for_gate) >= min(high_risk_thresholds)
+                ):
+                    wall_metrics[
+                        "body_clearance_veto_claim_gate_suppressed_high_risk_ticks"
+                    ] += 1
+            wall_guard["primitive_clearance_slot"] = str(primitive_clearance_slot)
+            wall_guard["primitive_policy_clearance_slot"] = str(
+                primitive_policy_clearance_slot
+            )
+            wall_guard["primitive_aux_clearance_switch_active"] = bool(
+                primitive_aux_clearance_switch_active
+            )
+            wall_guard["primitive_aux_clearance_switch_configured_min_claimed_count"] = int(
+                configured_aux_clearance_switch_min_claimed_count
+            )
+            wall_guard["primitive_aux_clearance_switch_min_claimed_count"] = int(
+                effective_aux_clearance_switch_min_claimed_count
+            )
+            wall_guard["body_clearance_target_area_hard_veto_active"] = bool(
+                target_area_hard_veto_active
+            )
+            wall_guard["body_clearance_target_area_hard_veto_prob"] = _round_float(
+                float(args.body_clearance_target_area_hard_veto_prob), 4
+            )
+            wall_guard["body_clearance_target_area_hard_veto_min_area_logit"] = _round_float(
+                float(target_area_hard_veto_min_area), 4
+            )
+            wall_guard["primitive_aux_clearance_switch_policy_features"] = bool(
+                args.primitive_aux_clearance_switch_policy_features
+            )
+            wall_guard["primitive_aux_clearance_switch_area_active"] = bool(
+                current_body_risk_area_active_for_switch
+            )
+            wall_guard["body_clearance_hard_veto_active_primitives"] = sorted(
+                active_body_clearance_hard_veto_primitives
+            )
+            wall_guard["primitive_aux_clearance_switch_prob"] = _round_float(
+                primitive_aux_clearance_switch_prob,
+                4,
+            )
+            wall_guard["primitive_aux_clearance_switch_latch_remaining"] = int(
+                primitive_aux_clearance_switch_latch
+            )
+            aux_candidate_primitives = [
+                str(item.get("primitive"))
+                for item in wall_guard.get("candidates", [])
+                if isinstance(item, dict) and item.get("primitive") is not None
+            ]
+            aux_selected, aux_log = _select_aux_clearance_veto(
+                selected=primitive,
+                primary_predictions=primitive_outcomes,
+                aux_clearance_predictions=primitive_aux_clearance_outcomes,
+                candidate_primitives=aux_candidate_primitives,
+                enabled=bool(
+                    body_clearance_veto_claim_gate_active
+                    and args.body_clearance_target_servo
+                    and args.primitive_aux_clearance_checkpoint is not None
+                    and primitive_aux_clearance_outcomes is not None
+                    and not force_single_candidate
+                ),
+                aux_veto_prob=float(args.body_clearance_aux_veto_prob),
+                primary_max_prob=float(args.body_clearance_aux_veto_primary_max_prob),
+                aux_veto_margin=float(args.body_clearance_aux_veto_margin),
+                aux_replacement_cap=float(args.body_clearance_aux_veto_replacement_cap),
+                selected_primitives=body_clearance_aux_veto_selected_primitives or None,
+                replacement_primitives=body_clearance_aux_veto_primitives or None,
+            )
+            if bool(aux_log.get("active")):
+                previous_primitive = primitive
+                primitive = aux_selected
+                wall_guard["body_clearance_aux_veto"] = True
+                wall_guard["selected_before_body_clearance_aux_veto"] = previous_primitive
+                wall_guard["selected"] = primitive
+                wall_guard["vetoed"] = bool(primitive != requested_primitive)
+                selected_alias = _prediction_alias_for_primitive(
+                    primitive,
+                    active_guard_primitive_outcomes,
+                )
+                selected_pred = (
+                    active_guard_primitive_outcomes.get(selected_alias)
+                    if selected_alias is not None and active_guard_primitive_outcomes is not None
+                    else None
+                )
+                if selected_pred is not None:
+                    wall_guard["selected_prediction_alias"] = (
+                        selected_alias if selected_alias != primitive else None
+                    )
+                    wall_guard["selected_outcome_blocked_prob"] = _round_float(
+                        selected_pred.get("outcome_blocked_prob"), 4
+                    )
+                    wall_guard["selected_clearance_blocked_prob"] = _round_float(
+                        selected_pred.get("clearance_blocked_prob"), 4
+                    )
+                    wall_guard["selected_progress_m"] = _round_float(
+                        selected_pred.get("progress_m"), 4
+                    )
+                wall_guard["body_clearance_aux_veto_log"] = aux_log
+            elif aux_log.get("suppressed") is not None:
+                wall_guard["body_clearance_aux_veto"] = False
+                wall_guard["body_clearance_aux_veto_log"] = aux_log
         else:
             primitive, wall_guard = _wall_guard_select(
                 requested=requested_primitive,
@@ -12415,6 +15866,73 @@ def main() -> int:
                 body_probe_margin_m=float(args.wall_body_probe_margin_m),
                 force_escape=force_escape,
             )
+        if (
+            bool(learned_topology_route_selected_this_tick)
+            and args.learned_topology_route_geometry_veto_min_clearance_m is not None
+            and bool(guard_enabled)
+            and not force_single_candidate
+        ):
+            wall_metrics["learned_topology_route_geometry_veto_ticks"] += 1
+            geometry_selected, geometry_log = _geometry_clearance_veto_select(
+                selected=primitive,
+                requested=requested_primitive,
+                pos_xy=pos[:2],
+                yaw=yaw,
+                bearing=bearing_for_guard,
+                registry=registry,
+                grid=grid,
+                command_dt_s=float(args.command_dt_s),
+                enabled=True,
+                min_clearance_m=float(
+                    args.learned_topology_route_geometry_veto_min_clearance_m
+                ),
+                feasible_threshold=float(
+                    args.learned_topology_route_geometry_veto_feasible_threshold
+                ),
+                body_forward_m=float(args.wall_body_forward_m),
+                body_half_width_m=float(args.wall_body_half_width_m),
+                body_probe_margin_m=float(args.wall_body_probe_margin_m),
+                selected_primitives=(
+                    learned_topology_route_geometry_veto_selected_primitives or None
+                ),
+                replacement_primitives=(
+                    learned_topology_route_geometry_veto_replacements or None
+                ),
+            )
+            selected_route_geometry_clearance = geometry_log.get(
+                "selected_min_clearance_m"
+            )
+            if selected_route_geometry_clearance is not None:
+                previous_min = wall_metrics[
+                    "learned_topology_route_geometry_veto_selected_min_clearance_m"
+                ]
+                wall_metrics[
+                    "learned_topology_route_geometry_veto_selected_min_clearance_m"
+                ] = (
+                    selected_route_geometry_clearance
+                    if previous_min is None
+                    else min(float(previous_min), float(selected_route_geometry_clearance))
+                )
+            wall_guard["learned_topology_route_geometry_veto"] = bool(
+                geometry_log.get("active")
+            )
+            wall_guard["learned_topology_route_geometry_veto_log"] = geometry_log
+            wall_guard["selected_min_clearance_m"] = geometry_log.get(
+                "replacement_min_clearance_m"
+            )
+            wall_guard["selected_feasible_fraction"] = geometry_log.get(
+                "replacement_feasible_fraction"
+            )
+            wall_guard["selected_blocked"] = bool(geometry_log.get("replacement_blocked"))
+            if bool(geometry_log.get("active")):
+                previous_primitive = primitive
+                primitive = geometry_selected
+                wall_metrics["learned_topology_route_geometry_vetoes"] += 1
+                wall_guard["selected_before_learned_topology_route_geometry_veto"] = (
+                    previous_primitive
+                )
+                wall_guard["selected"] = primitive
+                wall_guard["vetoed"] = bool(primitive != requested_primitive)
         if frontier_guard_force:
             wall_guard["frontier_pressure_guard_commit"] = True
         if route_replay_guard_log is not None:
@@ -12422,6 +15940,144 @@ def main() -> int:
             wall_guard["online_map_route_replay_guard_override"] = bool(
                 route_replay_guard_force
             )
+        body_clearance_geometry_veto_state_active = (
+            not body_clearance_geometry_veto_states
+            or guard_state.upper() in body_clearance_geometry_veto_states
+        )
+        body_clearance_geometry_veto_claim_active = len(beacon_claims) >= max(
+            0,
+            int(args.body_clearance_geometry_veto_min_claimed_count),
+        )
+        body_clearance_geometry_veto_target_active = (
+            not body_clearance_geometry_veto_target_colors
+            or str(active_target_color).lower()
+            in body_clearance_geometry_veto_target_colors
+        )
+        body_clearance_geometry_veto_basic_active = (
+            use_learned_action_source
+            and args.body_clearance_geometry_veto_min_clearance_m is not None
+            and (
+                bool(guard_enabled)
+                or (
+                    bool(args.body_clearance_geometry_veto_allow_guard_disabled)
+                    and bool(args.wall_aware_planner)
+                )
+            )
+            and (
+                not force_single_candidate
+                or bool(args.body_clearance_geometry_veto_allow_force_single_candidate)
+            )
+            and body_clearance_geometry_veto_state_active
+        )
+        if args.body_clearance_geometry_veto_min_clearance_m is not None:
+            wall_guard["body_clearance_geometry_veto_claim_gate_active"] = bool(
+                body_clearance_geometry_veto_claim_active
+            )
+            wall_guard["body_clearance_geometry_veto_min_claimed_count"] = max(
+                0,
+                int(args.body_clearance_geometry_veto_min_claimed_count),
+            )
+            wall_guard["body_clearance_geometry_veto_target_gate_active"] = bool(
+                body_clearance_geometry_veto_target_active
+            )
+            wall_guard["body_clearance_geometry_veto_target_colors"] = sorted(
+                body_clearance_geometry_veto_target_colors
+            )
+            if (
+                body_clearance_geometry_veto_basic_active
+                and not body_clearance_geometry_veto_claim_active
+            ):
+                wall_metrics[
+                    "body_clearance_geometry_veto_claimed_count_suppressed_ticks"
+                ] += 1
+            elif (
+                body_clearance_geometry_veto_basic_active
+                and not body_clearance_geometry_veto_target_active
+            ):
+                wall_metrics[
+                    "body_clearance_geometry_veto_target_suppressed_ticks"
+                ] += 1
+        if (
+            body_clearance_geometry_veto_basic_active
+            and body_clearance_geometry_veto_claim_active
+            and body_clearance_geometry_veto_target_active
+        ):
+            active_geometry_veto_replacements = body_clearance_geometry_veto_replacements
+            if (
+                body_clearance_geometry_veto_override_replacements
+                and len(beacon_claims)
+                >= max(
+                    0,
+                    int(args.body_clearance_geometry_veto_override_min_claimed_count),
+                )
+            ):
+                active_geometry_veto_replacements = (
+                    body_clearance_geometry_veto_override_replacements
+                )
+            wall_metrics["body_clearance_geometry_veto_ticks"] += 1
+            geometry_selected, geometry_log = _geometry_clearance_veto_select(
+                selected=primitive,
+                requested=requested_primitive,
+                pos_xy=pos[:2],
+                yaw=yaw,
+                bearing=bearing_for_guard,
+                registry=registry,
+                grid=grid,
+                command_dt_s=float(args.command_dt_s),
+                enabled=True,
+                min_clearance_m=float(
+                    args.body_clearance_geometry_veto_min_clearance_m
+                ),
+                feasible_threshold=float(
+                    args.body_clearance_geometry_veto_feasible_threshold
+                ),
+                body_forward_m=float(args.wall_body_forward_m),
+                body_half_width_m=float(args.wall_body_half_width_m),
+                body_probe_margin_m=float(args.wall_body_probe_margin_m),
+                selected_primitives=(
+                    body_clearance_geometry_veto_selected_primitives or None
+                ),
+                replacement_primitives=(
+                    active_geometry_veto_replacements or None
+                ),
+                blocked_fallback_primitives=(
+                    body_clearance_geometry_veto_blocked_fallback_primitives or None
+                ),
+            )
+            geometry_log["replacement_override_active"] = bool(
+                active_geometry_veto_replacements
+                is body_clearance_geometry_veto_override_replacements
+            )
+            selected_geometry_clearance = geometry_log.get("selected_min_clearance_m")
+            if selected_geometry_clearance is not None:
+                previous_min = wall_metrics[
+                    "body_clearance_geometry_veto_selected_min_clearance_m"
+                ]
+                wall_metrics["body_clearance_geometry_veto_selected_min_clearance_m"] = (
+                    selected_geometry_clearance
+                    if previous_min is None
+                    else min(float(previous_min), float(selected_geometry_clearance))
+                )
+            wall_guard["body_clearance_geometry_veto"] = bool(
+                geometry_log.get("active")
+            )
+            wall_guard["body_clearance_geometry_veto_log"] = geometry_log
+            wall_guard["selected_min_clearance_m"] = geometry_log.get(
+                "replacement_min_clearance_m"
+            )
+            wall_guard["selected_feasible_fraction"] = geometry_log.get(
+                "replacement_feasible_fraction"
+            )
+            wall_guard["selected_blocked"] = bool(geometry_log.get("replacement_blocked"))
+            if bool(geometry_log.get("active")):
+                previous_primitive = primitive
+                primitive = geometry_selected
+                wall_metrics["body_clearance_geometry_vetoes"] += 1
+                wall_guard["selected_before_body_clearance_geometry_veto"] = (
+                    previous_primitive
+                )
+                wall_guard["selected"] = primitive
+                wall_guard["vetoed"] = bool(primitive != requested_primitive)
         selected_clearance_prob = wall_guard.get("selected_clearance_blocked_prob")
         body_risk_escape = bool(
             use_learned_action_source
@@ -12497,6 +16153,81 @@ def main() -> int:
                 )
                 wall_guard["online_map_blocked_edge_updates"] = int(wall_guard_map_updates)
                 wall_guard["online_map_blocked_edge_source"] = guard_block_source
+            projection_block_updates = 0
+            if bool(args.learned_local_online_map_current_contact_projection_blocks):
+                for rejection in wall_guard.get(
+                    "body_clearance_current_contact_escape_projected_rejections",
+                    (),
+                ):
+                    if not isinstance(rejection, dict):
+                        continue
+                    primitive_name = str(rejection.get("primitive", ""))
+                    if primitive_name not in _TRANSLATING_PRIMITIVES:
+                        continue
+                    if not bool(rejection.get("selected", False)):
+                        continue
+                    if str(rejection.get("reason")) != "projected_clearance":
+                        continue
+                    if learned_local_online_map.mark_blocked_primitive(
+                        pos[:2],
+                        float(yaw),
+                        primitive_name,
+                    ):
+                        projection_block_updates += 1
+            if projection_block_updates:
+                wall_metrics[
+                    "learned_local_online_map_current_contact_projection_blocked_edges"
+                ] += int(projection_block_updates)
+                wall_guard["online_map_projection_blocked_edge_updates"] = int(
+                    projection_block_updates
+                )
+            hold_escape_projection_block_updates = 0
+            if bool(
+                args.learned_local_online_map_hard_veto_hold_escape_projection_blocks
+            ):
+                primitive_name = str(
+                    wall_guard.get(
+                        "body_clearance_hard_veto_hold_escape_projection_block_primitive",
+                        "",
+                    )
+                )
+                if primitive_name in _TRANSLATING_PRIMITIVES:
+                    if learned_local_online_map.mark_blocked_primitive(
+                        pos[:2],
+                        float(yaw),
+                        primitive_name,
+                    ):
+                        hold_escape_projection_block_updates += 1
+            if hold_escape_projection_block_updates:
+                wall_metrics[
+                    "learned_local_online_map_hard_veto_hold_escape_projection_blocked_edges"
+                ] += int(hold_escape_projection_block_updates)
+                wall_guard[
+                    "online_map_hold_escape_projection_blocked_edge_updates"
+                ] = int(hold_escape_projection_block_updates)
+            geometry_hold_block_updates = 0
+            if (
+                bool(args.learned_local_online_map_geometry_veto_hold_blocks)
+                and bool(wall_guard.get("body_clearance_geometry_veto"))
+                and str(wall_guard.get("selected", "")) == "hold"
+            ):
+                primitive_name = str(
+                    wall_guard.get("selected_before_body_clearance_geometry_veto", "")
+                )
+                if primitive_name in _TRANSLATING_PRIMITIVES:
+                    if learned_local_online_map.mark_blocked_primitive(
+                        pos[:2],
+                        float(yaw),
+                        primitive_name,
+                    ):
+                        geometry_hold_block_updates += 1
+            if geometry_hold_block_updates:
+                wall_metrics[
+                    "learned_local_online_map_geometry_veto_hold_blocked_edges"
+                ] += int(geometry_hold_block_updates)
+                wall_guard[
+                    "online_map_geometry_veto_hold_blocked_edge_updates"
+                ] = int(geometry_hold_block_updates)
         if current_body_risk_prob is not None:
             wall_metrics["current_body_risk_prob_max"] = (
                 _round_float(current_body_risk_prob, 4)
@@ -12521,6 +16252,24 @@ def main() -> int:
                 and float(log_entry["area"]) >= float(args.current_body_risk_min_area_logit)
             )
         )
+        current_body_min_claimed_count = max(
+            0,
+            int(args.current_body_risk_min_claimed_count),
+        )
+        current_body_claim_gate_active = bool(
+            len(beacon_claims) >= int(current_body_min_claimed_count)
+        )
+        if (
+            current_body_risk_prob is not None
+            and current_body_threshold is not None
+            and float(current_body_threshold) <= 1.0
+            and not current_body_claim_gate_active
+        ):
+            wall_metrics["current_body_risk_claim_gate_suppressed_ticks"] += 1
+            if float(current_body_risk_prob) >= float(current_body_threshold):
+                wall_metrics[
+                    "current_body_risk_claim_gate_suppressed_high_risk_ticks"
+                ] += 1
         current_body_preserve_yaw_threshold = (
             current_body_threshold
             if args.current_body_risk_preserve_yaw_threshold is None
@@ -12579,6 +16328,7 @@ def main() -> int:
             and current_body_risk_prob is not None
             and current_body_clearance_rerank_threshold is not None
             and float(current_body_clearance_rerank_threshold) <= 1.0
+            and current_body_claim_gate_active
             and current_body_clearance_rerank_area_active
             and current_body_clearance_rerank_selected_active
             and current_body_clearance_rerank_selected_primitive_active
@@ -12592,6 +16342,7 @@ def main() -> int:
             and current_body_risk_prob is not None
             and current_body_clearance_rerank_threshold is not None
             and float(current_body_clearance_rerank_threshold) <= 1.0
+            and current_body_claim_gate_active
             and current_body_clearance_rerank_area_active
             and not current_body_clearance_rerank_selected_active
             and not bool(wall_guard.get("force_escape"))
@@ -12604,6 +16355,7 @@ def main() -> int:
             and current_body_risk_prob is not None
             and current_body_clearance_rerank_threshold is not None
             and float(current_body_clearance_rerank_threshold) <= 1.0
+            and current_body_claim_gate_active
             and current_body_clearance_rerank_area_active
             and current_body_clearance_rerank_selected_active
             and not current_body_clearance_rerank_selected_primitive_active
@@ -12615,6 +16367,13 @@ def main() -> int:
         wall_guard["current_body_risk_clearance_rerank_area_active"] = bool(
             current_body_clearance_rerank_area_active
         )
+        wall_guard["current_body_risk_claim_gate_active"] = bool(
+            current_body_claim_gate_active
+        )
+        wall_guard["current_body_risk_min_claimed_count"] = int(
+            current_body_min_claimed_count
+        )
+        wall_guard["current_body_risk_claimed_count"] = int(len(beacon_claims))
         wall_guard["current_body_risk_clearance_rerank_selected_active"] = bool(
             current_body_clearance_rerank_selected_active
         )
@@ -12698,6 +16457,7 @@ def main() -> int:
             and current_body_risk_prob is not None
             and current_body_preserve_yaw_threshold is not None
             and float(current_body_preserve_yaw_threshold) <= 1.0
+            and current_body_claim_gate_active
             and current_body_preserve_yaw_area_active
             and not bool(wall_guard.get("force_escape"))
             and not bool(wall_guard.get("current_body_risk_clearance_rerank"))
@@ -12768,11 +16528,30 @@ def main() -> int:
                     "to": primitive,
                     "prob": _round_float(current_body_risk_prob, 4),
                 }
-        current_body_recovery = bool(
+        current_body_recovery_selected_floor = (
+            None
+            if args.current_body_risk_recovery_selected_prob_floor is None
+            else float(args.current_body_risk_recovery_selected_prob_floor)
+        )
+        current_body_recovery_selected_prob = wall_guard.get("selected_clearance_blocked_prob")
+        current_body_recovery_selected_active = bool(
+            current_body_recovery_selected_floor is None
+            or (
+                current_body_recovery_selected_prob is not None
+                and float(current_body_recovery_selected_prob)
+                >= float(current_body_recovery_selected_floor)
+            )
+        )
+        current_body_recovery_selected_primitive_active = bool(
+            not current_body_risk_recovery_selected_primitives
+            or primitive in current_body_risk_recovery_selected_primitives
+        )
+        current_body_recovery_base = bool(
             current_body_risk_prob is not None
             and current_body_threshold is not None
             and float(current_body_threshold) <= 1.0
             and int(args.current_body_risk_recovery_blocks) > 0
+            and current_body_claim_gate_active
             and current_body_area_active
             and int(current_body_risk_cooldown) <= 0
             and not bool(wall_guard.get("force_escape"))
@@ -12781,12 +16560,35 @@ def main() -> int:
             and primitive != "backward"
             and float(current_body_risk_prob) >= float(current_body_threshold)
         )
+        current_body_recovery = bool(
+            current_body_recovery_base
+            and current_body_recovery_selected_active
+            and current_body_recovery_selected_primitive_active
+        )
         wall_guard["current_body_risk_area_active"] = bool(current_body_area_active)
         wall_guard["current_body_risk_min_area_logit"] = (
             None
             if args.current_body_risk_min_area_logit is None
             else _round_float(float(args.current_body_risk_min_area_logit), 4)
         )
+        wall_guard["current_body_risk_recovery_selected_prob_floor"] = (
+            None
+            if current_body_recovery_selected_floor is None
+            else _round_float(float(current_body_recovery_selected_floor), 4)
+        )
+        wall_guard["current_body_risk_recovery_selected_active"] = bool(
+            current_body_recovery_selected_active
+        )
+        wall_guard["current_body_risk_recovery_selected_primitive_active"] = bool(
+            current_body_recovery_selected_primitive_active
+        )
+        wall_guard["current_body_risk_recovery_selected_primitives"] = sorted(
+            current_body_risk_recovery_selected_primitives
+        )
+        if current_body_recovery_base and not current_body_recovery_selected_active:
+            wall_metrics["current_body_risk_recovery_selected_floor_blocks"] += 1
+        if current_body_recovery_base and not current_body_recovery_selected_primitive_active:
+            wall_metrics["current_body_risk_recovery_selected_primitive_blocks"] += 1
         if current_body_recovery:
             risky_primitive = primitive if primitive != "hold" else last_primitive
             current_body_plan = _make_escape_plan(
@@ -12818,6 +16620,759 @@ def main() -> int:
                         "prob": _round_float(current_body_risk_prob, 4),
                         "remaining_plan": list(escape_plan),
                     }
+        post_guard_current_contact_escape_m = (
+            body_clearance_current_contact_escape_m_by_primitive.get(primitive)
+            if body_clearance_current_contact_escape_m_by_primitive
+            and primitive in body_clearance_current_contact_escape_m_by_primitive
+            else active_current_contact_escape_m
+        )
+        post_guard_current_contact_escape = bool(
+            post_guard_current_contact_escape_m is not None
+            and current_body_clearance_for_guard is not None
+            and float(current_body_clearance_for_guard) <= float(post_guard_current_contact_escape_m)
+            and not bool(wall_guard.get("body_clearance_current_contact_escape"))
+            and primitive
+            in set(
+                body_clearance_current_contact_escape_primitives
+                or {
+                    "forward_fast",
+                    "forward_medium",
+                    "arc_left",
+                    "arc_right",
+                    "yaw_left",
+                    "yaw_right",
+                }
+            )
+            and primitive != "backward"
+        )
+        if (
+            active_current_contact_escape_m is not None
+            and post_guard_current_contact_escape_m is not None
+            and current_body_clearance_for_guard is not None
+            and float(current_body_clearance_for_guard) > float(post_guard_current_contact_escape_m)
+            and primitive
+            in set(
+                body_clearance_current_contact_escape_primitives
+                or {
+                    "forward_fast",
+                    "forward_medium",
+                    "arc_left",
+                    "arc_right",
+                    "yaw_left",
+                    "yaw_right",
+                }
+            )
+            and primitive != "backward"
+            and not bool(wall_guard.get("body_clearance_current_contact_escape"))
+        ):
+            wall_guard["body_clearance_current_contact_escape_suppressed_reason"] = (
+                "primitive_clearance"
+            )
+        if post_guard_current_contact_escape:
+            selected_projected_ok, selected_projected_clearance, selected_projected_reason = (
+                _current_contact_projected_clearance_ok(
+                    primitive,
+                    projected_clearances=current_contact_escape_projected_clearances,
+                    current_body_clearance_m=current_body_clearance_for_guard,
+                    min_projected_clearance_m=(
+                        None
+                        if args.body_clearance_current_contact_escape_min_projected_clearance_m
+                        is None
+                        else float(
+                            args.body_clearance_current_contact_escape_min_projected_clearance_m
+                        )
+                    ),
+                    min_projected_improvement_m=float(
+                        args.body_clearance_current_contact_escape_min_projected_improvement_m
+                    ),
+                )
+            )
+            if (
+                current_contact_escape_projected_clearances is not None
+                and selected_projected_ok
+            ):
+                post_guard_current_contact_escape = False
+                wall_guard["body_clearance_current_contact_escape_suppressed_reason"] = (
+                    "selected_projected_safe"
+                )
+                wall_guard["body_clearance_current_contact_escape_candidate"] = {
+                    "primitive": primitive,
+                    "projected_clearance_m": _round_float(
+                        selected_projected_clearance, 4
+                    ),
+                    "suppressed": True,
+                    "post_guard": True,
+                }
+            elif selected_projected_reason is not None:
+                wall_guard.setdefault(
+                    "body_clearance_current_contact_escape_projected_rejections",
+                    [],
+                ).append({
+                    "primitive": primitive,
+                    "projected_clearance_m": _round_float(
+                        selected_projected_clearance, 4
+                    ),
+                    "reason": selected_projected_reason,
+                    "selected": True,
+                    "post_guard": True,
+                })
+        if post_guard_current_contact_escape:
+            replacement_primitives = list(
+                body_clearance_current_contact_escape_replacements
+                or {"backward", "yaw_left", "yaw_right", "hold"}
+            )
+            ranked_replacements: list[tuple[float, str, dict[str, Any]]] = []
+            ranked_replacements_under_cap: list[tuple[float, str, dict[str, Any]]] = []
+            for candidate in wall_guard.get("candidates", ()):
+                if not isinstance(candidate, dict):
+                    continue
+                candidate_primitive = str(candidate.get("primitive", ""))
+                if (
+                    candidate_primitive == primitive
+                    or candidate_primitive not in replacement_primitives
+                ):
+                    continue
+                clearance_prob = candidate.get(
+                    "clearance_blocked_prob",
+                    candidate.get("blocked_prob"),
+                )
+                replacement_under_cap = bool(
+                    float(args.body_clearance_current_contact_escape_replacement_cap) > 1.0
+                    or (
+                        clearance_prob is not None
+                        and float(clearance_prob)
+                        <= float(args.body_clearance_current_contact_escape_replacement_cap)
+                    )
+                )
+                if not replacement_under_cap:
+                    wall_guard.setdefault(
+                        "body_clearance_current_contact_escape_projected_rejections",
+                        [],
+                    ).append({
+                        "primitive": candidate_primitive,
+                        "clearance_blocked_prob": _round_float(clearance_prob, 4),
+                        "reason": "replacement_cap",
+                        "selected": False,
+                        "post_guard": True,
+                    })
+                projected_ok, projected_clearance, projected_reason = (
+                    _current_contact_projected_clearance_ok(
+                        candidate_primitive,
+                        projected_clearances=current_contact_escape_projected_clearances,
+                        current_body_clearance_m=current_body_clearance_for_guard,
+                        min_projected_clearance_m=(
+                            None
+                            if args.body_clearance_current_contact_escape_min_projected_clearance_m
+                            is None
+                            else float(
+                                args.body_clearance_current_contact_escape_min_projected_clearance_m
+                            )
+                        ),
+                        min_projected_improvement_m=float(
+                            args.body_clearance_current_contact_escape_min_projected_improvement_m
+                        ),
+                    )
+                )
+                if not projected_ok:
+                    wall_guard.setdefault(
+                        "body_clearance_current_contact_escape_projected_rejections",
+                        [],
+                    ).append({
+                        "primitive": candidate_primitive,
+                        "projected_clearance_m": _round_float(
+                            projected_clearance, 4
+                        ),
+                        "reason": projected_reason,
+                        "selected": False,
+                        "post_guard": True,
+                    })
+                    continue
+                ranked_replacement = (
+                    _current_contact_escape_score(
+                        candidate_primitive,
+                        clearance_blocked_prob=clearance_prob,
+                        blocked_prob=candidate.get("blocked_prob"),
+                        candidate_score=candidate.get("score"),
+                    ),
+                    candidate_primitive,
+                    candidate,
+                )
+                ranked_replacements.append(ranked_replacement)
+                if replacement_under_cap:
+                    ranked_replacements_under_cap.append(ranked_replacement)
+            replacement_candidate: dict[str, Any] | None = None
+            replacement_primitive: str | None = None
+            if ranked_replacements:
+                if (
+                    bool(
+                        args.body_clearance_current_contact_escape_require_replacement_under_cap
+                    )
+                    and float(args.body_clearance_current_contact_escape_replacement_cap)
+                    <= 1.0
+                    and not ranked_replacements_under_cap
+                ):
+                    wall_guard["body_clearance_current_contact_escape_suppressed_reason"] = (
+                        "replacement_cap"
+                    )
+                else:
+                    ranked_replacement_pool = (
+                        ranked_replacements_under_cap or ranked_replacements
+                    )
+                    _, replacement_primitive, replacement_candidate = min(
+                        ranked_replacement_pool,
+                        key=lambda item: (
+                            item[0],
+                            float(
+                                item[2].get(
+                                    "clearance_blocked_prob",
+                                    item[2].get("blocked_prob", 1.0),
+                                )
+                            ),
+                        ),
+                    )
+            elif current_contact_escape_projected_clearances is not None:
+                fallback_replacements = [
+                    name
+                    for name in ("backward", "hold", "yaw_left", "yaw_right")
+                    if name in replacement_primitives and name != primitive
+                ]
+                if not fallback_replacements:
+                    fallback_replacements = [
+                        name for name in replacement_primitives if name != primitive
+                    ]
+                replacement_primitive = (
+                    next(
+                        (
+                            name
+                            for name in fallback_replacements
+                            if _current_contact_projected_clearance_ok(
+                                name,
+                                projected_clearances=current_contact_escape_projected_clearances,
+                                current_body_clearance_m=current_body_clearance_for_guard,
+                                min_projected_clearance_m=(
+                                    None
+                                    if args.body_clearance_current_contact_escape_min_projected_clearance_m
+                                    is None
+                                    else float(
+                                        args.body_clearance_current_contact_escape_min_projected_clearance_m
+                                    )
+                                ),
+                                min_projected_improvement_m=float(
+                                    args.body_clearance_current_contact_escape_min_projected_improvement_m
+                                ),
+                            )[0]
+                        ),
+                        None,
+                    )
+                    if fallback_replacements
+                    else None
+                )
+                if replacement_primitive is None:
+                    wall_guard["body_clearance_current_contact_escape_suppressed_reason"] = (
+                        "no_projected_fallback"
+                    )
+            else:
+                wall_guard["body_clearance_current_contact_escape_suppressed_reason"] = (
+                    "no_scored_candidate"
+                )
+            if replacement_primitive is not None:
+                previous_primitive = primitive
+                primitive = replacement_primitive
+                wall_guard["body_clearance_current_contact_escape"] = True
+                wall_guard["body_clearance_current_contact_escape_post_guard"] = True
+                wall_guard["selected_before_body_clearance_current_contact_escape"] = (
+                    previous_primitive
+                )
+                wall_guard["body_clearance_current_contact_escape_m"] = _round_float(
+                    float(post_guard_current_contact_escape_m), 4
+                )
+                wall_guard["current_body_clearance_m"] = _round_float(
+                    float(current_body_clearance_for_guard), 4
+                )
+                if replacement_candidate is not None:
+                    wall_guard["body_clearance_current_contact_escape_candidate"] = {
+                        "primitive": primitive,
+                        "clearance_blocked_prob": _round_float(
+                            replacement_candidate.get("clearance_blocked_prob"), 4
+                        ),
+                        "blocked_prob": _round_float(
+                            replacement_candidate.get("blocked_prob"), 4
+                        ),
+                        "score": _round_float(replacement_candidate.get("score"), 4),
+                        "projected_clearance_m": _round_float(
+                            (
+                                current_contact_escape_projected_clearances
+                                or {}
+                            ).get(primitive),
+                            4,
+                        ),
+                        "replacement_cap": _round_float(
+                            args.body_clearance_current_contact_escape_replacement_cap,
+                            4,
+                        ),
+                        "replacement_cap_relaxed": bool(
+                            float(args.body_clearance_current_contact_escape_replacement_cap) <= 1.0
+                            and not ranked_replacements_under_cap
+                        ),
+                    }
+                _update_guard_selected_from_candidate(
+                    wall_guard,
+                    primitive,
+                    requested_primitive,
+                )
+                if log_entry is not None:
+                    log_entry["body_clearance_current_contact_escape"] = {
+                        "from": previous_primitive,
+                        "to": primitive,
+                        "current_body_clearance_m": _round_float(
+                            float(current_body_clearance_for_guard), 4
+                        ),
+                        "post_guard": True,
+                        "threshold_m": _round_float(
+                            post_guard_current_contact_escape_m, 4
+                        ),
+                    }
+        hard_veto_hold = bool(
+            primitive == "hold" and wall_guard.get("body_clearance_hard_veto")
+        )
+        if hard_veto_hold:
+            body_clearance_hard_veto_hold_streak += 1
+            wall_metrics["body_clearance_hard_veto_hold_ticks"] += 1
+            wall_metrics["body_clearance_hard_veto_hold_streak_max"] = max(
+                int(wall_metrics["body_clearance_hard_veto_hold_streak_max"]),
+                int(body_clearance_hard_veto_hold_streak),
+            )
+        else:
+            body_clearance_hard_veto_hold_streak = 0
+        hold_escape_after = max(
+            0,
+            int(args.body_clearance_hard_veto_hold_escape_after),
+        )
+        base_hold_escape_state_active = bool(
+            not body_clearance_hard_veto_hold_escape_states
+            or guard_state.upper() in body_clearance_hard_veto_hold_escape_states
+        )
+        hold_escape_override_min_claimed_count = max(
+            0,
+            int(args.body_clearance_hard_veto_hold_escape_override_min_claimed_count),
+        )
+        hold_escape_override_state_active = bool(
+            not body_clearance_hard_veto_hold_escape_override_states
+            or guard_state.upper() in body_clearance_hard_veto_hold_escape_override_states
+        )
+        hold_escape_override_min_current_clearance_m = (
+            None
+            if args.body_clearance_hard_veto_hold_escape_override_min_current_clearance_m
+            is None
+            else float(args.body_clearance_hard_veto_hold_escape_override_min_current_clearance_m)
+        )
+        hold_escape_override_clearance_active = bool(
+            hold_escape_override_min_current_clearance_m is None
+            or (
+                current_body_clearance_for_guard is not None
+                and float(current_body_clearance_for_guard)
+                >= float(hold_escape_override_min_current_clearance_m)
+            )
+        )
+        hold_escape_override_active = bool(
+            body_clearance_hard_veto_hold_escape_override_primitives
+            and len(beacon_claims) >= hold_escape_override_min_claimed_count
+            and hold_escape_override_state_active
+            and hold_escape_override_clearance_active
+        )
+        hold_escape_state_active = bool(
+            base_hold_escape_state_active or hold_escape_override_active
+        )
+        hold_escape_allowed = bool(
+            hard_veto_hold
+            and hold_escape_after > 0
+            and body_clearance_hard_veto_hold_streak >= hold_escape_after
+            and hold_escape_state_active
+            and not bool(wall_guard.get("force_escape"))
+            and not escape_plan
+        )
+        if hold_escape_allowed:
+            hold_escape_candidates: list[tuple[float, str, dict[str, Any], float | None]] = []
+            hold_escape_projected_rejections: list[dict[str, Any]] = []
+            capped_candidates = 0
+            active_hold_escape_primitives = body_clearance_hard_veto_hold_escape_primitives
+            max_clearance_prob = float(args.body_clearance_hard_veto_hold_escape_max_clearance_prob)
+            if hold_escape_override_active:
+                active_hold_escape_primitives = (
+                    body_clearance_hard_veto_hold_escape_override_primitives
+                )
+                if (
+                    args.body_clearance_hard_veto_hold_escape_override_max_clearance_prob
+                    is not None
+                ):
+                    max_clearance_prob = float(
+                        args.body_clearance_hard_veto_hold_escape_override_max_clearance_prob
+                    )
+            hold_escape_min_projected_clearance_m = (
+                None
+                if args.body_clearance_hard_veto_hold_escape_min_projected_clearance_m
+                is None
+                else float(args.body_clearance_hard_veto_hold_escape_min_projected_clearance_m)
+            )
+            hold_escape_min_projected_improvement_m = float(
+                args.body_clearance_hard_veto_hold_escape_min_projected_improvement_m
+            )
+            hold_escape_projection_active = bool(
+                hold_escape_min_projected_clearance_m is not None
+                or hold_escape_min_projected_improvement_m > 0.0
+            )
+            hold_escape_projected_clearances: dict[str, float] | None = None
+            if hold_escape_projection_active:
+                if current_body_clearance_for_guard is None:
+                    try:
+                        current_body_clearance_for_guard = _body_probe_clearance(
+                            grid,
+                            pos[:2],
+                            yaw,
+                            body_forward_m=float(args.wall_body_forward_m),
+                            body_half_width_m=float(args.wall_body_half_width_m),
+                            body_probe_margin_m=float(args.wall_body_probe_margin_m),
+                        )
+                    except Exception:
+                        current_body_clearance_for_guard = None
+                if current_contact_escape_projected_clearances is not None:
+                    hold_escape_projected_clearances = dict(
+                        current_contact_escape_projected_clearances
+                    )
+                else:
+                    hold_escape_projected_clearances = {}
+                    for projection_primitive in outcome_primitive_vocab:
+                        try:
+                            projection_report = _primitive_clearance_report(
+                                registry,
+                                str(projection_primitive),
+                                pos[:2],
+                                yaw,
+                                grid,
+                                float(args.command_dt_s),
+                                body_forward_m=float(args.wall_body_forward_m),
+                                body_half_width_m=float(args.wall_body_half_width_m),
+                                body_probe_margin_m=float(args.wall_body_probe_margin_m),
+                                min_clearance_m=float(args.wall_min_clearance_m),
+                            )
+                        except Exception:
+                            continue
+                        hold_escape_projected_clearances[
+                            str(projection_primitive)
+                        ] = float(projection_report["min_clearance_m"])
+            for cand in wall_guard.get("candidates", ()):
+                cand_name = str(cand.get("primitive", ""))
+                if (
+                    cand_name == "hold"
+                    or cand_name not in active_hold_escape_primitives
+                ):
+                    continue
+                clearance_prob = cand.get("clearance_blocked_prob")
+                if clearance_prob is None:
+                    continue
+                if float(clearance_prob) > max_clearance_prob:
+                    capped_candidates += 1
+                    continue
+                projected_ok, projected_clearance, projected_reason = (
+                    _current_contact_projected_clearance_ok(
+                        cand_name,
+                        projected_clearances=hold_escape_projected_clearances,
+                        current_body_clearance_m=current_body_clearance_for_guard,
+                        min_projected_clearance_m=hold_escape_min_projected_clearance_m,
+                        min_projected_improvement_m=hold_escape_min_projected_improvement_m,
+                    )
+                )
+                if not projected_ok:
+                    hold_escape_projected_rejections.append({
+                        "primitive": cand_name,
+                        "reason": projected_reason,
+                        "clearance_blocked_prob": _round_float(clearance_prob, 4),
+                        "projected_clearance_m": _round_float(projected_clearance, 4),
+                        "current_body_clearance_m": _round_float(
+                            current_body_clearance_for_guard, 4
+                        ),
+                    })
+                    continue
+                blocked_prob = float(cand.get("blocked_prob", 0.0) or 0.0)
+                candidate_score = float(cand.get("score", 0.0) or 0.0)
+                if cand_name == "backward":
+                    primitive_bias = 0.0
+                elif cand_name in _TURN_PRIMITIVES:
+                    primitive_bias = 0.04
+                else:
+                    primitive_bias = 0.18
+                hold_escape_score = (
+                    float(clearance_prob)
+                    + 0.15 * blocked_prob
+                    + primitive_bias
+                    - 0.02 * candidate_score
+                )
+                hold_escape_candidates.append((
+                    hold_escape_score,
+                    cand_name,
+                    cand,
+                    projected_clearance,
+                ))
+            wall_metrics["body_clearance_hard_veto_hold_escape_capped_candidates"] += int(
+                capped_candidates
+            )
+            if hold_escape_projected_rejections:
+                wall_metrics[
+                    "body_clearance_hard_veto_hold_escape_projection_rejections"
+                ] += int(len(hold_escape_projected_rejections))
+                wall_guard[
+                    "body_clearance_hard_veto_hold_escape_projected_rejections"
+                ] = hold_escape_projected_rejections[:8]
+                wall_guard[
+                    "body_clearance_hard_veto_hold_escape_min_projected_clearance_m"
+                ] = (
+                    None
+                    if hold_escape_min_projected_clearance_m is None
+                    else _round_float(hold_escape_min_projected_clearance_m, 4)
+                )
+                wall_guard[
+                    "body_clearance_hard_veto_hold_escape_min_projected_improvement_m"
+                ] = _round_float(hold_escape_min_projected_improvement_m, 4)
+            if hold_escape_candidates:
+                hold_escape_streak_before = int(body_clearance_hard_veto_hold_streak)
+                (
+                    _,
+                    hold_escape_primitive,
+                    hold_escape_candidate,
+                    hold_escape_projected_clearance,
+                ) = min(
+                    hold_escape_candidates,
+                    key=lambda item: item[0],
+                )
+                previous_primitive = primitive
+                primitive = hold_escape_primitive
+                body_clearance_hard_veto_hold_streak = 0
+                wall_metrics["body_clearance_hard_veto_hold_escapes"] += 1
+                if hold_escape_override_active:
+                    wall_metrics["body_clearance_hard_veto_hold_escape_overrides"] += 1
+                wall_guard["body_clearance_hard_veto_hold_escape"] = True
+                wall_guard["body_clearance_hard_veto_hold_escape_override"] = bool(
+                    hold_escape_override_active
+                )
+                if hold_escape_override_min_current_clearance_m is not None:
+                    wall_guard[
+                        "body_clearance_hard_veto_hold_escape_override_min_current_clearance_m"
+                    ] = _round_float(hold_escape_override_min_current_clearance_m, 4)
+                wall_guard["body_clearance_hard_veto_hold_escape_after"] = int(
+                    hold_escape_after
+                )
+                wall_guard[
+                    "body_clearance_hard_veto_hold_escape_streak_before"
+                ] = int(hold_escape_streak_before)
+                wall_guard[
+                    "selected_before_body_clearance_hard_veto_hold_escape"
+                ] = previous_primitive
+                wall_guard[
+                    "body_clearance_hard_veto_hold_escape_max_clearance_prob"
+                ] = _round_float(max_clearance_prob, 4)
+                wall_guard[
+                    "body_clearance_hard_veto_hold_escape_primitives"
+                ] = sorted(active_hold_escape_primitives)
+                wall_guard["body_clearance_hard_veto_hold_escape_candidate"] = {
+                    "primitive": str(hold_escape_primitive),
+                    "clearance_blocked_prob": _round_float(
+                        hold_escape_candidate.get("clearance_blocked_prob"), 4
+                    ),
+                    "blocked_prob": _round_float(
+                        hold_escape_candidate.get("blocked_prob"), 4
+                    ),
+                    "progress_m": _round_float(
+                        hold_escape_candidate.get("progress_m"), 4
+                    ),
+                }
+                if hold_escape_projected_clearance is not None:
+                    wall_guard[
+                        "body_clearance_hard_veto_hold_escape_candidate"
+                    ]["projected_clearance_m"] = _round_float(
+                        hold_escape_projected_clearance, 4
+                    )
+                _update_guard_selected_from_candidate(
+                    wall_guard,
+                    primitive,
+                    requested_primitive,
+                )
+                if log_entry is not None:
+                    log_entry["body_clearance_hard_veto_hold_escape"] = {
+                        "from": previous_primitive,
+                        "to": primitive,
+                        "after": int(hold_escape_after),
+                        "max_clearance_prob": _round_float(max_clearance_prob, 4),
+                        "override": bool(hold_escape_override_active),
+                    }
+            else:
+                wall_metrics[
+                    "body_clearance_hard_veto_hold_escape_no_candidate_ticks"
+                ] += 1
+                wall_guard["body_clearance_hard_veto_hold_escape_no_candidate"] = True
+                wall_guard["body_clearance_hard_veto_hold_escape_override"] = bool(
+                    hold_escape_override_active
+                )
+                if hold_escape_override_min_current_clearance_m is not None:
+                    wall_guard[
+                        "body_clearance_hard_veto_hold_escape_override_min_current_clearance_m"
+                    ] = _round_float(hold_escape_override_min_current_clearance_m, 4)
+                wall_guard[
+                    "body_clearance_hard_veto_hold_escape_max_clearance_prob"
+                ] = _round_float(max_clearance_prob, 4)
+                wall_guard[
+                    "body_clearance_hard_veto_hold_escape_primitives"
+                ] = sorted(active_hold_escape_primitives)
+                if hold_escape_projected_rejections:
+                    projection_block_primitive = str(
+                        wall_guard.get("selected_before_body_clearance_hard_veto")
+                        or ""
+                    )
+                    if projection_block_primitive in _TRANSLATING_PRIMITIVES:
+                        wall_guard[
+                            "body_clearance_hard_veto_hold_escape_projection_block_primitive"
+                        ] = projection_block_primitive
+        if (
+            history_risk_probs is not None
+            and bool(args.history_risk_corridor_commit)
+            and not bool(wall_guard.get("force_escape"))
+            and primitive in ("yaw_left", "yaw_right", "hold")
+            and guard_state.upper() in history_risk_corridor_states
+            and int(history_risk_corridor_run) < int(args.history_risk_corridor_max_run)
+            and float(history_risk_probs.get("yaw_left", 0.0))
+            >= float(args.history_risk_corridor_yaw_min)
+            and float(history_risk_probs.get("yaw_right", 0.0))
+            >= float(args.history_risk_corridor_yaw_min)
+            and float(history_risk_probs.get("forward_medium", 1.0))
+            <= float(args.history_risk_corridor_forward_max)
+            and not bool(stalled_prev_tick)
+        ):
+            history_corridor_from = primitive
+            primitive = "forward_medium"
+            history_risk_corridor_run += 1
+            wall_metrics["history_risk_corridor_commits"] += 1
+            wall_guard["history_risk_corridor_commit"] = True
+            wall_guard["selected"] = primitive
+            wall_guard["vetoed"] = bool(primitive != requested_primitive)
+            if log_entry is not None:
+                log_entry["history_risk_corridor_commit"] = {
+                    "from": history_corridor_from,
+                    "yaw_left": _round_float(float(history_risk_probs.get("yaw_left", 0.0)), 4),
+                    "yaw_right": _round_float(float(history_risk_probs.get("yaw_right", 0.0)), 4),
+                    "forward": _round_float(float(history_risk_probs.get("forward_medium", 1.0)), 4),
+                    "run": int(history_risk_corridor_run),
+                }
+        else:
+            history_risk_corridor_run = 0
+        effective_history_risk_veto_threshold = (
+            float(args.history_risk_relaxed_veto_threshold)
+            if (
+                int(args.history_risk_relax_min_claims) >= 0
+                and len(beacon_claims) >= int(args.history_risk_relax_min_claims)
+            )
+            else float(args.history_risk_veto_threshold)
+        )
+        if (
+            history_risk_probs is not None
+            and float(effective_history_risk_veto_threshold) <= 1.0
+            and not bool(wall_guard.get("force_escape"))
+            and primitive in history_risk_veto_primitives
+            and (
+                not history_risk_states
+                or guard_state.upper() in history_risk_states
+            )
+            and float(history_risk_probs.get(primitive, 0.0))
+            >= float(effective_history_risk_veto_threshold)
+        ):
+            if primitive in ("yaw_left", "yaw_right"):
+                # A vetoed scanning yaw must stay a rotation where possible:
+                # the opposite yaw sweeps away from the grinding wall and
+                # preserves the explorer's scan; backward is the fallback.
+                opposite_yaw = "yaw_right" if primitive == "yaw_left" else "yaw_left"
+                history_replacement_pool = [opposite_yaw, "backward"]
+            else:
+                # A vetoed translation should scan for an opening rather than
+                # retreat: prefer the lower-risk yaw, then backward.
+                yaw_by_risk = sorted(
+                    ("yaw_left", "yaw_right"),
+                    key=lambda name: float(history_risk_probs.get(name, 1.0)),
+                )
+                history_replacement_pool = [*yaw_by_risk, "backward"] + [
+                    name
+                    for name in history_risk_replacements
+                    if name not in ("yaw_left", "yaw_right", "backward")
+                ]
+            history_replacement_candidates = [
+                (float(history_risk_probs.get(candidate, 1.0)), candidate)
+                for candidate in history_replacement_pool
+                if candidate != primitive
+            ]
+            history_vetoed_from = primitive
+            history_vetoed_from_prob = float(history_risk_probs.get(primitive, 0.0))
+            history_replacement: str | None = None
+            for candidate_prob, candidate in history_replacement_candidates:
+                if candidate_prob < float(args.history_risk_replacement_cap):
+                    history_replacement = candidate
+                    break
+            if history_replacement is None and history_replacement_candidates:
+                # Everything is risky (likely already wedged). Per-tick argmin
+                # replacement ping-pongs between grinding yaws, so commit to a
+                # short escape in the least-risky direction instead.
+                wedge_safest = min(
+                    (
+                        (float(history_risk_probs.get(name, 1.0)), name)
+                        for name in ("backward", "yaw_left", "yaw_right")
+                        if name != primitive
+                    ),
+                )[1]
+                history_replacement = wedge_safest
+                if (
+                    int(args.history_risk_wedge_escape_blocks) > 0
+                    and not escape_plan
+                    and int(history_risk_wedge_cooldown) <= 0
+                ):
+                    escape_plan = [wedge_safest] * int(
+                        args.history_risk_wedge_escape_blocks
+                    ) + escape_plan
+                    history_risk_wedge_cooldown = int(
+                        args.history_risk_wedge_escape_cooldown_ticks
+                    )
+                    wall_metrics["history_risk_wedge_escapes"] += 1
+                    if (
+                        bool(args.proprio_contact_map_blocks)
+                        and learned_local_online_map is not None
+                        and history_vetoed_from in _TRANSLATING_PRIMITIVES
+                    ):
+                        if learned_local_online_map.mark_blocked_primitive(
+                            pos[:2],
+                            float(yaw),
+                            str(history_vetoed_from),
+                        ):
+                            wall_metrics["proprio_contact_map_blocked_edges"] += 1
+                    if log_entry is not None:
+                        log_entry["history_risk_wedge_escape"] = {
+                            "primitive": wedge_safest,
+                            "blocks": int(args.history_risk_wedge_escape_blocks),
+                        }
+            if history_replacement is None:
+                history_replacement = "hold"
+            primitive = history_replacement
+            wall_metrics["history_risk_vetoes"] += 1
+            wall_guard["history_risk_veto"] = True
+            wall_guard["selected_before_history_risk_veto"] = history_vetoed_from
+            wall_guard["selected_before_history_risk_veto_prob"] = _round_float(
+                history_vetoed_from_prob, 4
+            )
+            wall_guard["selected"] = primitive
+            wall_guard["vetoed"] = bool(primitive != requested_primitive)
+            if log_entry is not None:
+                log_entry["history_risk_veto"] = {
+                    "from": history_vetoed_from,
+                    "from_prob": _round_float(history_vetoed_from_prob, 4),
+                    "to": primitive,
+                    "to_prob": _round_float(
+                        float(history_risk_probs.get(primitive, 1.0)), 4
+                    ),
+                }
         smoothing_enabled = bool(
             log_entry is not None
             and int(args.command_smoothing_min_ticks) > 1
@@ -12854,6 +17409,86 @@ def main() -> int:
                         "to": primitive,
                         "run_ticks_before": int(last_primitive_run_ticks),
                     }
+        forced_primitive = debug_force_primitive_script.get(int(tick))
+        if forced_primitive is not None:
+            previous_primitive = primitive
+            primitive = str(forced_primitive)
+            wall_metrics["debug_force_primitive_overrides"] += 1
+            wall_guard["debug_force_primitive_override"] = True
+            wall_guard["selected_before_debug_force_primitive"] = previous_primitive
+            wall_guard["selected"] = primitive
+            wall_guard["vetoed"] = bool(primitive != requested_primitive)
+            if log_entry is not None:
+                log_entry["debug_force_primitive_override"] = {
+                    "from": previous_primitive,
+                    "to": primitive,
+                    "script": (
+                        None
+                        if args.debug_force_primitive_script is None
+                        else str(args.debug_force_primitive_script)
+                    ),
+                }
+        if (
+            args.learned_local_dataset_output is not None
+            and str(args.learned_local_dataset_label_source) == "executed"
+            and learned_local_dataset_state_active
+            and learned_policy_feature_for_dataset is not None
+            and log_entry is not None
+        ):
+            executed_label_primitive = _learned_local_policy_label_primitive(primitive)
+            if executed_label_primitive is None:
+                wall_metrics["learned_local_policy_skipped_unmapped_examples"] += 1
+            else:
+                if executed_label_primitive != primitive:
+                    wall_metrics["learned_local_policy_label_mapped_examples"] += 1
+                feature_np = (
+                    learned_policy_feature_for_dataset.detach().cpu().numpy().astype(np.float32)
+                )
+                feature_dim = int(feature_np.reshape(-1).shape[0])
+                if learned_local_dataset_feature_dim is None:
+                    learned_local_dataset_feature_dim = feature_dim
+                if feature_dim != int(learned_local_dataset_feature_dim):
+                    wall_metrics["learned_local_policy_skipped_feature_dim_examples"] += 1
+                else:
+                    learned_local_dataset_features.append(feature_np)
+                    learned_local_dataset_labels.append(
+                        _LEARNED_LOCAL_POLICY_PRIMITIVES.index(executed_label_primitive)
+                    )
+                    learned_local_dataset_meta.append(
+                        {
+                            "tick": int(tick),
+                            "state": str(log_entry.get("state", "")),
+                            "label": executed_label_primitive,
+                            "dataset_label_source": "executed",
+                            "policy_feature_slot": str(learned_policy_feature_slot_for_dataset),
+                            "executed_label_source_primitive": primitive,
+                            "oracle_standoff_label": False,
+                            "target_color": str(log_entry.get("target_color", "")),
+                            "target_index": int(log_entry.get("target_index", -1)),
+                            "mem_conf": float(log_entry.get("mem_conf", 0.0)),
+                            "area": float(log_entry.get("area", -99.0)),
+                            "bearing": float(log_entry.get("bearing", 0.0)),
+                            "in_cone": bool(log_entry.get("in_cone", False)),
+                            "seen": bool(log_entry.get("seen", False)),
+                            "state_seen": bool(log_entry.get("state_seen", False)),
+                            "read_score": (
+                                None
+                                if log_entry.get("read_score") is None
+                                else float(log_entry.get("read_score", 0.0))
+                            ),
+                            "read_gate_pass": (
+                                None
+                                if log_entry.get("read_gate_pass") is None
+                                else bool(log_entry.get("read_gate_pass", False))
+                            ),
+                            "seen_age_ticks": int(log_entry.get("seen_age_ticks", 0)),
+                            "pose_xy": [float(pos[0]), float(pos[1])],
+                            "yaw_rad": float(yaw),
+                            "claimed_count": int(len(beacon_claims)),
+                            "standoff_route_gate": bool(log_entry.get("standoff_route_gate", False)),
+                        }
+                    )
+                    wall_metrics["learned_local_policy_collected_examples"] += 1
         wall_metrics["commands_total"] += 1
         if requested_primitive in _FORWARD_PRIMITIVES:
             wall_metrics["forward_requests"] += 1
@@ -12872,10 +17507,24 @@ def main() -> int:
                 wall_metrics["body_clearance_learned_vetoes"] += 1
         if bool(wall_guard.get("body_clearance_hard_veto")):
             wall_metrics["body_clearance_hard_vetoes"] += 1
+        if bool(wall_guard.get("body_clearance_arc_sweep_veto")):
+            wall_metrics["body_clearance_arc_sweep_vetoes"] += 1
+        if bool(wall_guard.get("body_clearance_aux_veto")):
+            wall_metrics["body_clearance_aux_vetoes"] += 1
+        elif (
+            isinstance(wall_guard.get("body_clearance_aux_veto_log"), dict)
+            and wall_guard["body_clearance_aux_veto_log"].get("suppressed") is not None
+        ):
+            wall_metrics["body_clearance_aux_veto_suppressed_ticks"] += 1
         if bool(wall_guard.get("body_clearance_saturated_veto")):
             wall_metrics["body_clearance_saturated_vetoes"] += 1
         if bool(wall_guard.get("body_clearance_yaw_direction_veto")):
             wall_metrics["body_clearance_yaw_direction_vetoes"] += 1
+        if bool(wall_guard.get("body_clearance_yaw_contact_veto")):
+            wall_metrics["body_clearance_yaw_contact_vetoes"] += 1
+        if bool(wall_guard.get("body_clearance_current_contact_escape")):
+            wall_metrics["body_clearance_current_contact_escapes"] += 1
+            body_clearance_current_contact_escape_last_tick = int(tick)
         if bool(wall_guard.get("blocked_hard_veto")):
             wall_metrics["blocked_hard_vetoes"] += 1
         if bool(wall_guard.get("low_progress_hard_veto")):
@@ -12992,7 +17641,35 @@ def main() -> int:
         rotation_stall_ticks = int(args.learned_local_online_map_rotation_stall_block_ticks)
         if rotation_stall_ticks > 0:
             yaw_rotation_delta = abs(float(wrap_angle_pi(post_yaw - float(yaw))))
-            if str(primitive) in _TURN_PRIMITIVES and yaw_rotation_delta < 0.02:
+            route_align_hard_vetoed = bool(
+                log_entry is not None
+                and isinstance(log_entry.get("learned_local_policy"), dict)
+                and isinstance(
+                    log_entry["learned_local_policy"].get("frontier_pressure"),
+                    dict,
+                )
+                and str(
+                    log_entry["learned_local_policy"]["frontier_pressure"].get(
+                        "reason", ""
+                    )
+                )
+                in {
+                    "route_align_yaw",
+                    "route_align_yaw_over_nonroute",
+                    "post_claim_route_align_yaw",
+                }
+                and str(requested_primitive) in _TURN_PRIMITIVES
+                and bool(wall_guard.get("body_clearance_hard_veto"))
+                and str(
+                    wall_guard.get("selected_before_body_clearance_hard_veto", "")
+                )
+                in _TURN_PRIMITIVES
+                and str(primitive) != str(requested_primitive)
+            )
+            if (
+                str(primitive) in _TURN_PRIMITIVES
+                and yaw_rotation_delta < 0.02
+            ) or route_align_hard_vetoed:
                 learned_local_rotation_stall_streak += 1
             else:
                 learned_local_rotation_stall_streak = 0
@@ -13008,12 +17685,27 @@ def main() -> int:
                 learned_local_rotation_stall_streak = 0
                 if log_entry is not None:
                     log_entry["rotation_stall_block"] = True
+                    log_entry["rotation_stall_block_hard_veto_route_align"] = bool(
+                        route_align_hard_vetoed
+                    )
         wall_metrics["body_clearance_min_m"] = (
             post_body_clearance
             if wall_metrics["body_clearance_min_m"] is None
             else min(float(wall_metrics["body_clearance_min_m"]), post_body_clearance)
         )
-        body_clearance_violation = post_body_clearance < float(args.success_min_body_clearance_m)
+        body_clearance_contact = post_body_clearance <= float(
+            wall_metrics["body_clearance_contact_threshold_m"]
+        )
+        if body_clearance_contact:
+            wall_metrics["body_clearance_contact_events"] += 1
+            if wall_metrics["first_body_clearance_contact_tick"] is None:
+                wall_metrics["first_body_clearance_contact_tick"] = int(len(log) - 1)
+        success_min_body_clearance_m = float(args.success_min_body_clearance_m)
+        body_clearance_violation = (
+            post_body_clearance < success_min_body_clearance_m
+            if success_min_body_clearance_m > 0.0
+            else body_clearance_contact
+        )
         if body_clearance_violation:
             wall_metrics["body_clearance_violation_events"] += 1
             if wall_metrics["first_body_clearance_violation_tick"] is None:
@@ -13117,15 +17809,33 @@ def main() -> int:
             and isinstance(log_entry.get("learned_local_policy"), dict)
             and str(log_entry.get("state", "")).upper() == "EXPLORE"
         ):
-            if str(primitive) in _TRANSLATING_PRIMITIVES and bool(
-                translating_nonprogress or online_map_low_progress_block
-            ):
+            guard_blocked_translation_nonprogress = bool(
+                str(primitive) == "hold"
+                and str(requested_primitive) in _TRANSLATING_PRIMITIVES
+                and (
+                    bool(wall_guard.get("body_clearance_current_contact_escape"))
+                    or bool(wall_guard.get("body_clearance_hard_veto"))
+                    or bool(wall_guard.get("body_clearance_arc_sweep_veto"))
+                    or bool(wall_guard.get("body_clearance_saturated_veto"))
+                    or bool(wall_guard.get("blocked_hard_veto"))
+                    or bool(wall_guard.get("low_progress_hard_veto"))
+                )
+            )
+            if (
+                str(primitive) in _TRANSLATING_PRIMITIVES
+                and bool(translating_nonprogress or online_map_low_progress_block)
+            ) or guard_blocked_translation_nonprogress:
                 learned_local_policy_nonprogress_run = min(
                     64,
                     int(learned_local_policy_nonprogress_run) + 1,
                 )
                 wall_metrics["learned_local_policy_nonprogress_ticks"] += 1
-                for penalized in _stall_penalty_family(str(primitive)):
+                penalized_primitive = (
+                    str(requested_primitive)
+                    if guard_blocked_translation_nonprogress
+                    else str(primitive)
+                )
+                for penalized in _stall_penalty_family(penalized_primitive):
                     stall_penalties[penalized] = max(
                         int(stall_penalties.get(penalized, 0)),
                         int(args.wall_stall_penalty_ticks),
@@ -13142,6 +17852,9 @@ def main() -> int:
             log_entry["learned_local_policy_translating_nonprogress"] = bool(
                 translating_nonprogress
             )
+            log_entry[
+                "learned_local_policy_guard_blocked_translation_nonprogress"
+            ] = bool(guard_blocked_translation_nonprogress)
             log_entry["learned_local_online_map_low_progress_block"] = bool(
                 online_map_low_progress_block
             )
@@ -13380,6 +18093,9 @@ def main() -> int:
             body_clearance_risk_escape_cooldown -= 1
         if current_body_risk_cooldown > 0:
             current_body_risk_cooldown -= 1
+        if history_risk_wedge_cooldown > 0:
+            history_risk_wedge_cooldown -= 1
+        stalled_prev_tick = bool(stalled)
         if weak_memory_seek_explore_cooldown > 0:
             weak_memory_seek_explore_cooldown -= 1
         if target_pursuit_escape_cooldown > 0:
@@ -13393,6 +18109,7 @@ def main() -> int:
             log_entry["post_pitch"] = _round_float(post_pitch, 4)
             log_entry["post_tip_rad"] = _round_float(post_tip, 4)
             log_entry["post_body_clearance_m"] = _round_float(post_body_clearance, 4)
+            log_entry["body_clearance_contact"] = bool(body_clearance_contact)
             log_entry["stalled"] = bool(stalled)
             log_entry["hard_stalled"] = bool(hard_stalled)
             log_entry["fall_event"] = bool(fall_event)
@@ -13401,10 +18118,147 @@ def main() -> int:
             log_entry["body_clearance_violation"] = bool(body_clearance_violation)
             if current_body_risk_prob is not None:
                 log_entry["current_body_risk_prob"] = _round_float(current_body_risk_prob, 4)
+            if history_risk_probs is not None:
+                log_entry["history_risk_probs"] = {
+                    name: _round_float(prob, 4)
+                    for name, prob in history_risk_probs.items()
+                }
             if active_stall_penalties:
                 log_entry["stall_penalties"] = {
                     k: _round_float(v, 3) for k, v in sorted(active_stall_penalties.items())
                 }
+        if (
+            proprio_contact_detector is not None
+            or history_risk_model is not None
+            or broad_explorer_model is not None
+        ):
+            proprio_tick_values = (xy_displacement, post_yaw, post_roll, post_pitch, post_base_z, post_tip)
+            if any(value is None for value in proprio_tick_values):
+                proprio_contact_feature_buffer.clear()
+                proprio_contact_prob_history.clear()
+                proprio_contact_prev_yaw = None
+                proprio_contact_prev_z = None
+                history_risk_pending_proprio = None
+                history_risk_rows.clear()
+            else:
+                proprio_tick_feature_vec = _proprio_contact_tick_features(
+                    displacement_m=float(xy_displacement),
+                    post_yaw=float(post_yaw),
+                    post_roll=float(post_roll),
+                    post_pitch=float(post_pitch),
+                    post_z=float(post_base_z),
+                    post_tip_rad=float(post_tip),
+                    primitive=str(primitive),
+                    requested_primitive=(
+                        None if requested_primitive is None else str(requested_primitive)
+                    ),
+                    prev_yaw=proprio_contact_prev_yaw,
+                    prev_z=proprio_contact_prev_z,
+                )
+                proprio_contact_feature_buffer.append(proprio_tick_feature_vec)
+                if (
+                history_risk_model is not None
+                or broad_explorer_model is not None
+                or visual_ray_model is not None
+            ):
+                    history_risk_pending_proprio = proprio_tick_feature_vec
+                proprio_contact_prev_yaw = round(float(post_yaw), 3)
+                proprio_contact_prev_z = round(float(post_base_z), 4)
+                if len(proprio_contact_feature_buffer) > max(1, int(proprio_contact_window)):
+                    proprio_contact_feature_buffer.pop(0)
+        if proprio_contact_detector is not None:
+            proprio_contact_prob: float | None = None
+            if len(proprio_contact_feature_buffer) == int(proprio_contact_window):
+                proprio_window_arr = (
+                    np.stack(proprio_contact_feature_buffer) - proprio_contact_feature_mean
+                ) / proprio_contact_feature_std
+                with torch.no_grad():
+                    proprio_contact_prob = float(
+                        torch.sigmoid(
+                            proprio_contact_detector(
+                                torch.from_numpy(proprio_window_arr).float().unsqueeze(0).to(device)
+                            )
+                        )[0].cpu().item()
+                    )
+                proprio_contact_prob_history.append(float(proprio_contact_prob))
+                if len(proprio_contact_prob_history) > 3:
+                    proprio_contact_prob_history.pop(0)
+            if proprio_contact_cooldown > 0:
+                proprio_contact_cooldown -= 1
+            proprio_contact_rolling_prob = (
+                float(np.mean(proprio_contact_prob_history))
+                if proprio_contact_prob_history
+                else None
+            )
+            if (
+                proprio_contact_rolling_prob is not None
+                and proprio_contact_rolling_prob >= float(args.proprio_contact_escape_threshold)
+            ):
+                proprio_contact_streak += 1
+            else:
+                proprio_contact_streak = 0
+            if proprio_contact_prob is not None:
+                wall_metrics["proprio_contact_detector_ticks"] += 1
+                rolling_rounded = _round_float(proprio_contact_rolling_prob, 4)
+                wall_metrics["proprio_contact_prob_max"] = (
+                    rolling_rounded
+                    if wall_metrics["proprio_contact_prob_max"] is None
+                    else max(float(wall_metrics["proprio_contact_prob_max"]), float(rolling_rounded))
+                )
+                if log_entry is not None:
+                    log_entry["proprio_contact_prob"] = _round_float(proprio_contact_prob, 4)
+            proprio_tick_state = (
+                "" if log_entry is None else str(log_entry.get("state", "")).upper()
+            )
+            if (
+                int(args.proprio_contact_escape_blocks) > 0
+                and proprio_contact_streak >= int(args.proprio_contact_escape_streak)
+                and int(proprio_contact_cooldown) <= 0
+                and not escape_plan
+                and (
+                    not proprio_contact_escape_states
+                    or proprio_tick_state in proprio_contact_escape_states
+                )
+            ):
+                proprio_risky_primitive = primitive if primitive != "hold" else last_primitive
+                proprio_escape_plan = _make_escape_plan(
+                    proprio_risky_primitive,
+                    int(args.proprio_contact_escape_blocks),
+                )
+                if history_risk_probs is not None:
+                    escape_candidates = sorted(
+                        ("backward", "yaw_left", "yaw_right"),
+                        key=lambda name: float(history_risk_probs.get(name, 1.0)),
+                    )
+                    safest = escape_candidates[0]
+                    if float(history_risk_probs.get(safest, 1.0)) < float(
+                        history_risk_probs.get(proprio_escape_plan[0], 1.0)
+                    ):
+                        proprio_escape_plan[0] = safest
+                escape_plan = proprio_escape_plan + escape_plan
+                proprio_contact_cooldown = int(args.proprio_contact_escape_cooldown_ticks)
+                proprio_contact_streak = 0
+                wall_metrics["proprio_contact_escapes"] += 1
+                proprio_marked_edges = 0
+                if (
+                    bool(args.proprio_contact_map_blocks)
+                    and learned_local_online_map is not None
+                    and str(primitive) in _TRANSLATING_PRIMITIVES
+                ):
+                    if learned_local_online_map.mark_blocked_primitive(
+                        pos[:2],
+                        float(yaw),
+                        str(primitive),
+                    ):
+                        proprio_marked_edges = 1
+                        wall_metrics["proprio_contact_map_blocked_edges"] += 1
+                if log_entry is not None:
+                    log_entry["proprio_contact_escape"] = {
+                        "prob": _round_float(proprio_contact_rolling_prob, 4),
+                        "from": str(proprio_risky_primitive),
+                        "plan": list(proprio_escape_plan),
+                        "map_blocked_edges": int(proprio_marked_edges),
+                    }
         if bool(args.body_clearance_target_servo):
             observed_near_target = bool(
                 log_entry is not None
@@ -13499,6 +18353,17 @@ def main() -> int:
         str(item.get("target_color")): item.get("dist_to_target_m")
         for item in beacon_claims
     }
+    multi_target_claim_distance_success = bool(
+        len(target_sequence) <= 1
+        or all(
+            claim_distances.get(color) is not None
+            and float(claim_distances[color]) <= float(args.success_dist_m)
+            for color in target_sequence
+        )
+    )
+    wall_metrics["multi_target_claim_distance_success"] = bool(
+        multi_target_claim_distance_success
+    )
     stable_base_success = bool(
         args.mode != "physical"
         or args.allow_unstable_base_success
@@ -13514,10 +18379,9 @@ def main() -> int:
             and all_target_colors_claimed
             and stable_base_success
             and body_clearance_success
-            and all(
-                claim_distances.get(color) is not None
-                and float(claim_distances[color]) <= float(args.success_dist_m)
-                for color in target_sequence
+            and (
+                not bool(args.multi_target_success_requires_claim_distance)
+                or multi_target_claim_distance_success
             )
         )
     else:

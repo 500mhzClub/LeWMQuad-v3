@@ -102,7 +102,15 @@ class InflatedOccupancyGrid:
             gx.ravel(), gy.ravel(), self._obstacle_aabbs
         ).reshape(self._nx, self._ny)
         self._obstacle_clearance = clearance
-        self._free = clearance >= self._inflation
+        # Point-to-box distance is exactly zero throughout an obstacle's
+        # interior.  The usual inflated-space predicate is inclusive at the
+        # requested clearance, but zero inflation is the physical occupancy
+        # special case: obstacle interiors and boundaries are still occupied.
+        self._free = (
+            clearance > 0.0
+            if self._inflation == 0.0
+            else clearance >= self._inflation
+        )
 
     # ------------------------------------------------------------------
     # Basic accessors

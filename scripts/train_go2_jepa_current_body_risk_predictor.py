@@ -106,11 +106,39 @@ def _scene_grid(
     return grid
 
 
-def _infer_raw_messages_path(dataset_path: Path, scene_id: str) -> Path | None:
+def _infer_scene_id(row: dict[str, Any], dataset_path: Path, rgb_path: Path) -> str:
+    explicit_scene_id = row.get("scene_id")
+    if explicit_scene_id:
+        return str(explicit_scene_id)
+    if rgb_path.parent.name == "rgb":
+        return rgb_path.parent.parent.name
+    return dataset_path.parent.name
+
+
+def _infer_raw_messages_path(
+    dataset_path: Path,
+    scene_id: str,
+    *,
+    rgb_path: Path | None = None,
+) -> Path | None:
+    family = "_".join(str(scene_id).split("_")[:-1])
     for parent in (dataset_path.parent, *dataset_path.parents):
-        candidate = parent / "raw" / scene_id / "messages.jsonl"
-        if candidate.is_file():
-            return candidate
+        candidates = [parent / "raw" / scene_id / "messages.jsonl"]
+        if family:
+            candidates.append(parent / "raw" / family / scene_id / "messages.jsonl")
+        for candidate in candidates:
+            if candidate.is_file():
+                return candidate
+    if rgb_path is not None:
+        for parent in (rgb_path.parent, *rgb_path.parents):
+            if parent.name != "render":
+                continue
+            candidates = [parent.parent / "raw" / scene_id / "messages.jsonl"]
+            if family:
+                candidates.append(parent.parent / "raw" / family / scene_id / "messages.jsonl")
+            for candidate in candidates:
+                if candidate.is_file():
+                    return candidate
     return None
 
 
@@ -168,6 +196,7 @@ def _load_examples(
         "missing_raw": 0,
         "missing_pose": 0,
         "duplicate_rgb": 0,
+        "direct_label_rows": 0,
     }
     for dataset_path in paths:
         with dataset_path.open() as f:
@@ -186,7 +215,34 @@ def _load_examples(
                 if rgb_key in seen_rgb:
                     skipped["duplicate_rgb"] += 1
                     continue
-                scene_id = str(row.get("scene_id", ""))
+                scene_id = _infer_scene_id(row, dataset_path, rgb_path)
+                direct_traversability = row.get("traversability_forward_m")
+                if direct_traversability is not None and (
+                    row.get("env_idx", row.get("env_index")) is None
+                    or row.get("timestamp_ns") is None
+                ):
+                    direct_label = 1.0 if float(direct_traversability) <= 0.0 else 0.0
+                    if row.get("source_clearance_m") is not None:
+                        direct_clearance = float(row["source_clearance_m"])
+                    else:
+                        direct_clearance = (
+                            0.0 if direct_label >= 0.5 else float(risk_margin_m) * 2.0
+                        )
+                    seen_rgb.add(rgb_key)
+                    skipped["direct_label_rows"] += 1
+                    examples.append(
+                        Example(
+                            rgb_path=rgb_path,
+                            scene_id=scene_id,
+                            env_idx=-1,
+                            timestamp_ns=-1,
+                            body_clearance_m=direct_clearance,
+                            label=direct_label,
+                        )
+                    )
+                    if max_examples is not None and len(examples) >= int(max_examples):
+                        return examples, skipped
+                    continue
                 grid = _scene_grid(
                     scene_id,
                     scene_dirs_by_id=scene_dirs_by_id,
@@ -197,7 +253,11 @@ def _load_examples(
                 if grid is None:
                     skipped["missing_scene"] += 1
                     continue
-                raw_messages_path = _infer_raw_messages_path(dataset_path, scene_id)
+                raw_messages_path = _infer_raw_messages_path(
+                    dataset_path,
+                    scene_id,
+                    rgb_path=rgb_path,
+                )
                 if raw_messages_path is None:
                     skipped["missing_raw"] += 1
                     continue
@@ -262,6 +322,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report-output", type=Path, default=None)
     parser.add_argument("--scene-corpus", type=Path, default=REPO_ROOT / ".generated/scene_corpus/minimum_20260520T080420Z")
+    parser.add_argument("--extra-scene-corpus", action="append", type=Path, default=[])
     parser.add_argument("--platform-manifest", type=Path, default=REPO_ROOT / "config/go2_platform_manifest.yaml")
     parser.add_argument("--family", default="medium_enclosed_maze")
     parser.add_argument("--image-size", type=int, default=64)
@@ -285,10 +346,11 @@ def main() -> int:
     torch.manual_seed(int(args.seed))
 
     platform_manifest = load_platform_manifest(args.platform_manifest.resolve())
-    scene_dirs_by_id = {
-        scene_dir.name: scene_dir
-        for scene_dir in find_scene_dirs(args.scene_corpus.resolve(), family=str(args.family))
-    }
+    scene_dirs_by_id: dict[str, Path] = {}
+    scene_corpora = [args.scene_corpus.resolve(), *(path.resolve() for path in args.extra_scene_corpus)]
+    for scene_corpus in scene_corpora:
+        for scene_dir in find_scene_dirs(scene_corpus, family=str(args.family)):
+            scene_dirs_by_id.setdefault(scene_dir.name, scene_dir)
     train_examples, train_skipped = _load_examples(
         args.datasets,
         scene_dirs_by_id=scene_dirs_by_id,
@@ -394,6 +456,7 @@ def main() -> int:
         "body_forward_m": float(args.body_forward_m),
         "body_half_width_m": float(args.body_half_width_m),
         "threshold": float(args.threshold),
+        "scene_corpora": [str(path) for path in scene_corpora],
         "train_clearance": _clearance_stats(train_examples),
         "validation_clearance": _clearance_stats(val_examples),
         "train": train_metrics,

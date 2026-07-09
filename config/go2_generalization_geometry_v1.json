@@ -1,0 +1,63 @@
+{
+  "schema": "lewm_go2_generalization_geometry_v1",
+  "status": "provisional_pending_physical_footprint_calibration",
+  "source_artifacts": {
+    "platform_manifest": {
+      "path": "config/go2_platform_manifest.yaml",
+      "sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189"
+    },
+    "urdf_constants": {
+      "path": "third_party/unitree_go2_ros2/unitree_go2_description/urdf/const.xacro",
+      "sha256": "884c1f685ee0a89cbeee320598d0d482b842f497096938d2a6a415b89a2007fb"
+    },
+    "urdf_robot": {
+      "path": "third_party/unitree_go2_ros2/unitree_go2_description/urdf/unitree_go2_robot.xacro",
+      "sha256": "be0abf5e860427bfb8762c85b58232c9ff466a3bc8f522915f8ca71e3b8c05e9"
+    }
+  },
+  "camera": {
+    "frame": "camera_link",
+    "horizontal_fov_deg": 78.323,
+    "near_m": 0.05,
+    "nominal_xyz_body_m": [0.326, 0.0, 0.043],
+    "nominal_rpy_body_rad": [0.0, 0.0, 0.0],
+    "apply_manifest_extrinsic_jitter": true,
+    "apply_runtime_safety_retraction_to_labels": true
+  },
+  "configuration_space": {
+    "reference_frame": "base_link",
+    "oracle_cell_size_m": 0.05,
+    "online_cell_size_m": 0.10,
+    "body_inflation_radius_m": 0.20,
+    "connectivity": 8,
+    "allow_diagonal_corner_cutting": false,
+    "landmarks_are_obstacles": true,
+    "distractors_are_obstacles": true
+  },
+  "swept_footprint": {
+    "forward_m": 0.40,
+    "rear_m": 0.30,
+    "half_width_m": 0.24,
+    "probe_margin_m": 0.03,
+    "source": "conservative_urdf_and_existing_action_probe_prior",
+    "calibration_required_for_physical_promotion": true
+  },
+  "visibility_and_claim": {
+    "claim_radius_m": 1.20,
+    "standoff_m": 1.05,
+    "standoff_candidates": 32,
+    "minimum_navigable_corridor_width_m": 0.50,
+    "require_line_of_sight_for_scene_validity": true,
+    "require_true_distance_for_success": true
+  },
+  "coverage": {
+    "cell_size_m": 0.10,
+    "normalization": "fixed_spawn_reachable_configuration_space_cells",
+    "mark_swept_reference_path": true
+  },
+  "kinematic_execution": {
+    "collision_space": "canonical_configuration_space",
+    "maximum_translation_substep_m": 0.025,
+    "minimum_progress_m": 0.001
+  }
+}

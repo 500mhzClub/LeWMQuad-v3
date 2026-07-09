@@ -1,0 +1,59 @@
+{
+  "schema": "lewm_go2_fast_development_panel_v0",
+  "selection": {
+    "domain": "go2-g3-fast-development-v1",
+    "method": "lowest_sha256(domain + NUL + scene_id)",
+    "selected_count": 8,
+    "source_role": "validation_scenes"
+  },
+  "development_manifest": {
+    "path": "config/go2_generalization_v3/development.json",
+    "sha256": "92349a8a93e627b3cc3cb193fd9176eb4f290427c8c5889dc3849b91846fb806"
+  },
+  "geometry_contract_sha256": "551b0938cab9018aca34fccad21e42b9e8cad93e7dc3d8904c77e9d9e7368345",
+  "tick_budget": 600,
+  "baseline_template": {
+    "path": ".generated/go2_memory_closed_loop/phase4_full18/013d59bed2d7_base_result.json",
+    "sha256": "2486ff2d1fd2294f317b904a69e958bec0f63398d4d4601510e9ef5f525258fb"
+  },
+  "promotion_gate": {
+    "median_final_coverage_multiple": 2.0,
+    "require_scene_cluster_lower_bound_above_no_improvement": true,
+    "maximum_collision_tick_regression": 0,
+    "maximum_stalled_route_fraction_regression": 0.0
+  },
+  "scenes": [
+    {
+      "scene_id": "medium_enclosed_maze_7d4292732368",
+      "manifest_sha256": "155fa1dad42c6279e9bb9813b4e70eed8a7b942b0e19eff28ee173991a33f0f6"
+    },
+    {
+      "scene_id": "medium_enclosed_maze_160d191c9168",
+      "manifest_sha256": "f2a576fa37de982cb62ef660ae53ef3e34cf4a762190f7fb507631d858335fc4"
+    },
+    {
+      "scene_id": "medium_enclosed_maze_7fd510c16da6",
+      "manifest_sha256": "f2696b5bd8b4af214ec8a1bc0782809c91304658d20ab14d2ac46db1ae0229b4"
+    },
+    {
+      "scene_id": "medium_enclosed_maze_4ea19ece2a0d",
+      "manifest_sha256": "1030b0ea3d97f9b5b91bd957fce63397a5844286db9e553615cabdacf7b4c518"
+    },
+    {
+      "scene_id": "medium_enclosed_maze_e4b1e47b966b",
+      "manifest_sha256": "a68721e44506a042f2e0988ce001692dc777e21e6e1da698a7e3bcd60327ebce"
+    },
+    {
+      "scene_id": "medium_enclosed_maze_0c34871b7bc4",
+      "manifest_sha256": "fa276e90847ab4ed73714c75ceb0fc35ec1262c747f086e1e9b489c475099f38"
+    },
+    {
+      "scene_id": "medium_enclosed_maze_131646c2e527",
+      "manifest_sha256": "84e224d3e0139dd72e8f3a4dc5fbf6ecd236ee5c05087c987f307716625001db"
+    },
+    {
+      "scene_id": "medium_enclosed_maze_caf930b7d00f",
+      "manifest_sha256": "45fba310c8c216fa893c08e89f5b2754a4d15c9c2aa5e1e0cc543a4cafb613d5"
+    }
+  ]
+}
