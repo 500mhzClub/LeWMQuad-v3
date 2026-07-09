@@ -398,7 +398,7 @@ The next experiment must target the measured failure class.
 | --- | --- | --- | --- |
 | G0 benchmark integrity | PASSED (V4) | V3 physical invalidation recorded before sealed use. V4: 192/192 candidates pass disc and exact polygon SE(2), 138/24/30 disjoint roles, opaque screening/role commitments, strict scorer and provenance tests | Preserve the freeze; materialize development only and pass the v4 oracle |
 | G1 oracle ceiling | PASSED (V4) | Geometry-v2 v4 dev: 96/96 claims, 24/24 all-claim through the shared `OnlineBeliefMap`; zero stalls, center collision attempts, or actual-yaw polygon collision segments | Preserve as the planner ceiling; proceed to G2 |
-| G2 traversability | IN PROGRESS / v0 FAILED | Ray-depth v0 failed closed loop. Geometry-v2 paired-RGB pilot is provenance-complete; its first trainer smoke exposed an invalid calibration role with zero FREE labels. The sampler also needed a deterministic rare-class backfill | Rebuild a broader scene-disjoint development dataset, validate selection/calibration adequacy without evaluating G2 outputs, then train |
+| G2 traversability | IN PROGRESS / dataset v2 ADEQUATE, first candidate FAILED offline | Dataset v2 built per preregistration (96 scenes, 5,641 rows, role commitments persisted, 16 recorded at-most-64 shortfalls); adequacy floors pass 8-46x over with zero G2 contact; 2-epoch smoke passed data/calibration/serialization. 20-epoch dev-only candidate: 0/288 threshold candidates pass (free precision 0.64 vs 0.99, obstacle recall 0.59 vs 0.95, traversable recall 0.31 vs 0.90, ECE 0.30); untouched G2 never read | 60-epoch probe separates training- vs data-limited; only a data-limited verdict triggers the preregistered 128-row rebuild |
 | G3 fast coverage | BASELINE LOCKED / v0 FAILED | V3 fast8 at 600 ticks: 2.63% median coverage, 1.75% mean AUC, 4/32 claims, 0/8 solves; ray-v0 previously reduced raw cells | Pass G2, then exceed 5.263% median with CI and collision constraints |
 | G4 frontier value | NOT STARTED | Current frontier is heuristic | Build oracle labels and candidate scorer |
 | G5 target conversion | FAILED | Strict conversion 43-46% on full18 development data | Scene-disjoint observation and claim stack |
@@ -538,6 +538,26 @@ Geometry-v2 paired-navigation pilot evidence:
   v1 labeler also used body-inflated occupancy as camera occlusion geometry,
   creating virtual occluders around physical walls. Dataset v1 is retained as
   wiring/negative evidence only and is forbidden for model promotion.
+
+G2 dataset-v2 evidence (2026-07-09, per the preregistration above):
+
+- source index:
+  `go2_navigation_sources_09991d78f2e2b483a43b7157a0301987308f958b6a9570c99670b1fb60dfd6b9.jsonl`
+  (96 scenes, 12 per family, zero forbidden overlaps);
+- dataset manifest:
+  `.generated/go2_paired_navigation/geometry_v2_dev_v2/dataset/dataset_manifest.json`,
+  SHA-256 `e474fce5c6ca520728a94fdaada9edc7d86beb69387e14a9cd882e4240530b0c`;
+  5,641 rows; roles 72/8/8/8; assignments SHA-256
+  `016c5f872c493065ee4c38fb612fb76958728b37a64987b80d7c0d2736616a02`;
+  untouched-G2 set commitment
+  `0c9d5cfb6fdeec9be17a1afa8aed13fb62848a06594782c98933e1db8a2e1402`;
+- adequacy report (G2 shards never opened):
+  `.generated/go2_paired_navigation/geometry_v2_dev_v2/adequacy_report.json`,
+  SHA-256 `24a0a64aa2a3d69e447289c0de82ea8628c6330841008fdefe855fb66109920a`;
+  calibration role 82,388 FREE / 46,080 OCCUPIED supervised cells; combined
+  nonempty next-observed row fraction 98.51%;
+- run log and per-candidate detail:
+  `docs/lewm_go2_g2_dataset_v2_build_2026-07-09.md`.
 
 Strict learned-baseline evidence:
 
