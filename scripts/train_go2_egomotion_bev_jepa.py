@@ -621,6 +621,7 @@ def collect_calibration_sample(
     *,
     device: torch.device,
     maximum_cells: int = 250_000,
+    allow_rare_class_backfill: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor, dict[str, Any]]:
     """Uniformly subsample held-out cells and retain every available class.
 
@@ -629,6 +630,11 @@ def collect_calibration_sample(
     cell is deterministically appended or replaced with the first source cell
     of that class. This changes at most one cell per missed class and avoids
     balancing the sample, which would change the class prior fitted by NLL.
+
+    Promotion calibration forbids that backfill: with
+    ``allow_rare_class_backfill=False`` a class missed by the stride raises
+    instead, because the preregistered G2 contract requires the calibration
+    role itself to carry enough support for every class.
     """
 
     class_names = ("unknown", "free", "occupied")
@@ -707,6 +713,15 @@ def collect_calibration_sample(
     for class_index in range(3):
         if bool((labels == class_index).any().item()):
             continue
+        if not allow_rare_class_backfill:
+            raise RuntimeError(
+                "promotion calibration forbids rare-class backfill, but the "
+                f"uniform stride sample lacks {class_names[class_index]!r} "
+                f"(source_class_counts={source_class_counts}, "
+                f"stride={stride}, sample={uniform_sample_count}); increase "
+                "--max-calibration-cells or rebuild a calibration role with "
+                "adequate class support"
+            )
         backfilled_classes.append(class_names[class_index])
         fallback_logit = first_source_logits[class_index].reshape(1, 3)
         fallback_label = torch.tensor([class_index], dtype=torch.long)
@@ -741,6 +756,7 @@ def collect_calibration_sample(
     sampling = {
         "schema": "lewm_go2_probability_calibration_sampling_v1",
         "method": "global_uniform_stride_with_minimal_missing_class_backfill",
+        "rare_class_backfill_allowed": bool(allow_rare_class_backfill),
         "maximum_cells": int(maximum_cells),
         "source_cell_count": int(source_counts.sum()),
         "source_class_counts": source_class_counts,
@@ -1565,6 +1581,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         calibration_loader,
         device=device,
         maximum_cells=args.max_calibration_cells,
+        allow_rare_class_backfill=bool(args.development_only),
     )
     calibration = fit_vector_calibration(
         calibration_logits,

@@ -278,6 +278,42 @@ def test_calibration_sampler_minimally_backfills_rare_available_class() -> None:
     }
 
 
+def test_promotion_calibration_forbids_rare_class_backfill() -> None:
+    labels = torch.tensor(
+        [[0, 2, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+        dtype=torch.long,
+    )
+    loader = DataLoader(
+        [
+            {
+                "next_image": torch.zeros(3, 4, 4),
+                "next_labels": labels,
+                "next_mask": torch.ones(4, 4, dtype=torch.bool),
+            }
+        ],
+        batch_size=1,
+    )
+
+    with pytest.raises(RuntimeError, match=r"forbids rare-class backfill.*'occupied'"):
+        collect_calibration_sample(
+            _CalibrationModel(),
+            loader,
+            device=torch.device("cpu"),
+            maximum_cells=3,
+            allow_rare_class_backfill=False,
+        )
+
+    _, _, sampling = collect_calibration_sample(
+        _CalibrationModel(),
+        loader,
+        device=torch.device("cpu"),
+        maximum_cells=16,
+        allow_rare_class_backfill=False,
+    )
+    assert sampling["rare_class_backfill_allowed"] is False
+    assert sampling["backfilled_classes"] == []
+
+
 def test_calibration_sampler_names_class_missing_from_source_role() -> None:
     labels = torch.zeros(4, 4, dtype=torch.long)
     labels[0, 1] = 2

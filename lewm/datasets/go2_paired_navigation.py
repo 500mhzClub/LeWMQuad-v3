@@ -1696,8 +1696,9 @@ def build_paired_navigation_dataset(
                     f"direct-role scene {source.scene_id!r} produced "
                     f"{len(scene_rows)} rows, fewer than the requested "
                     f"{int(max_transitions_per_scene)}; pass "
-                    "allow_role_transition_shortfall=True only for an explicit "
-                    "diagnostic build"
+                    "allow_role_transition_shortfall=True when the "
+                    "preregistered contract caps rows per scene ('at most N') "
+                    "so the shortfall is an explicit, recorded decision"
                 )
 
             if not scene_rows:

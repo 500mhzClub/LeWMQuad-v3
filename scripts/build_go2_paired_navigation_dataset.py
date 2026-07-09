@@ -83,8 +83,11 @@ def main() -> None:
         "--allow-role-transition-shortfall",
         action="store_true",
         help=(
-            "Diagnostic only: permit a direct-role scene to yield fewer rows "
-            "than --max-transitions-per-scene."
+            "Permit a direct-role scene to yield fewer rows than "
+            "--max-transitions-per-scene. Required when the preregistered "
+            "dataset contract caps rows per scene ('at most N') and the "
+            "label-independent validity filter leaves fewer; the shortfall "
+            "is recorded per scene in the dataset manifest."
         ),
     )
     parser.add_argument("--max-transitions-per-scene", type=int, default=512)
