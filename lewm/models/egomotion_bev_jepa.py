@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 import math
-from typing import Any
+import operator
+from typing import Any, Mapping
 
 import torch
 import torch.nn as nn
@@ -15,6 +18,26 @@ from .encoders import VisionEncoder
 UNKNOWN_CLASS = 0
 FREE_CLASS = 1
 OCCUPIED_CLASS = 2
+
+GLOBAL_CROSS_ATTENTION_LIFT = "global_cross_attention_v1"
+PROJECTIVE_COLUMN_ATTENTION_LIFT = "projective_column_attention_v1"
+PROJECTIVE_FOOTPRINT_ATTENTION_LIFT = "projective_footprint_attention_v1"
+PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT = "projective_cell_square_attention_v1"
+DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT = (
+    "dynamic_projective_cell_square_attention_v1"
+)
+PROJECTIVE_QUERY_SUPPORT_SCHEMA = "lewm_projective_query_support_v1"
+PROJECTIVE_CELL_SQUARE_OUTPUT_CELL_SIZE_M = 0.10
+PROJECTIVE_QUATERNION_NORM_TOLERANCE = 1e-5
+PROJECTIVE_QUATERNION_YAW_TOLERANCE_RAD = 1e-5
+PROJECTIVE_FLOAT32_BOUNDARY_TOLERANCE_ULPS = 8.0
+PROJECTIVE_CELL_SQUARE_BIAS_AGGREGATION = (
+    "minimum_normalized_image_token_distance_over_output_cell_support_"
+    "and_vertical_anchors_v1"
+)
+PROJECTIVE_CELL_SQUARE_VISIBILITY_AGGREGATION = (
+    "any_output_cell_support_and_vertical_anchor_visible_v1"
+)
 
 
 def bev_variance_floor_loss(
@@ -119,6 +142,584 @@ def _weighted_cross_entropy_mean(
     )
 
 
+def _finite_projection_value(value: Any, *, name: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a finite number")
+    try:
+        result = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a finite number") from exc
+    if not math.isfinite(result):
+        raise ValueError(f"{name} must be a finite number")
+    return result
+
+
+def _projection_triple(value: Any, *, name: str) -> tuple[float, float, float]:
+    if not isinstance(value, (list, tuple)) or len(value) != 3:
+        raise ValueError(f"{name} must contain exactly three values")
+    return tuple(
+        _finite_projection_value(item, name=f"{name}[{index}]")
+        for index, item in enumerate(value)
+    )
+
+
+def _projection_anchors(value: Any) -> tuple[float, ...]:
+    if not isinstance(value, (list, tuple)) or not value:
+        raise ValueError(
+            "projective_vertical_anchor_z_body_m must be a non-empty sequence"
+        )
+    anchors = tuple(
+        _finite_projection_value(
+            item,
+            name=f"projective_vertical_anchor_z_body_m[{index}]",
+        )
+        for index, item in enumerate(value)
+    )
+    if any(next_value <= value for value, next_value in zip(anchors, anchors[1:])):
+        raise ValueError(
+            "projective_vertical_anchor_z_body_m must be strictly increasing"
+        )
+    return anchors
+
+
+def _projection_integer(value: Any, *, name: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be an integer")
+    try:
+        return int(operator.index(value))
+    except TypeError as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+
+
+def _footprint_horizontal_offsets(
+    radius_m: float,
+    perimeter_samples: int,
+) -> tuple[tuple[float, float], ...]:
+    """Return center then a deterministic, cardinal-aligned footprint ring."""
+
+    offsets = [(0.0, 0.0)]
+    for index in range(perimeter_samples):
+        angle = 2.0 * math.pi * float(index) / float(perimeter_samples)
+        offsets.append((radius_m * math.cos(angle), radius_m * math.sin(angle)))
+    return tuple(offsets)
+
+
+def _cell_square_horizontal_offsets(
+    output_cell_size_m: float,
+) -> tuple[tuple[float, float], ...]:
+    """Return center then lexicographically ordered output-cell corners."""
+
+    cell_size = _finite_projection_value(
+        output_cell_size_m,
+        name="projective_output_cell_size_m",
+    )
+    if cell_size <= 0.0:
+        raise ValueError("projective_output_cell_size_m must be positive")
+    if not math.isclose(
+        cell_size,
+        PROJECTIVE_CELL_SQUARE_OUTPUT_CELL_SIZE_M,
+        rel_tol=0.0,
+        abs_tol=1e-12,
+    ):
+        raise ValueError(
+            "projective_output_cell_size_m differs from registered 0.10 m support"
+        )
+    half = 0.5 * cell_size
+    return (
+        (0.0, 0.0),
+        (-half, -half),
+        (-half, half),
+        (half, -half),
+        (half, half),
+    )
+
+
+def _canonical_json_sha256(payload: Any) -> str:
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def build_projective_query_support_contract(
+    dataset_manifest: Mapping[str, Any],
+    *,
+    lift_type: str = PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT,
+) -> dict[str, Any]:
+    """Derive cell-square query support only from a physical-v3 manifest."""
+
+    lift_type = str(lift_type)
+    if lift_type not in (
+        PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT,
+        DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT,
+    ):
+        raise ValueError("query support requires a cell-square lift type")
+
+    if dataset_manifest.get("schema") != "lewm_go2_paired_navigation_dataset_v3":
+        raise ValueError("cell-square query support requires physical dataset v3")
+    semantics = dataset_manifest.get("label_semantics")
+    grid = dataset_manifest.get("local_grid")
+    if not isinstance(semantics, Mapping) or not isinstance(grid, Mapping):
+        raise ValueError("physical dataset lacks label or local-grid semantics")
+    if (
+        semantics.get("label_contract") != "observable_physical_occupancy_v3"
+        or semantics.get("target_occupancy_space")
+        != "observable_physical_occupancy"
+        or semantics.get("per_frame_configuration_classes_supervised") is not False
+    ):
+        raise ValueError("cell-square query support requires physical occupancy labels")
+    aggregation = semantics.get("physical_aggregation")
+    if not isinstance(aggregation, Mapping):
+        raise ValueError("physical dataset lacks its aggregation contract")
+    aggregation_core = dict(aggregation)
+    aggregation_sha256 = str(aggregation_core.pop("contract_sha256", ""))
+    if (
+        aggregation.get("schema") != "lewm_observable_physical_aggregation_v1"
+        or _canonical_json_sha256(aggregation_core) != aggregation_sha256
+    ):
+        raise ValueError("physical aggregation contract hash mismatch")
+    output_cell_size_m = _finite_projection_value(
+        grid.get("cell_size_m"), name="local_grid.cell_size_m"
+    )
+    aggregation_cell_size_m = _finite_projection_value(
+        aggregation.get("output_cell_size_m"),
+        name="physical_aggregation.output_cell_size_m",
+    )
+    if not math.isclose(
+        output_cell_size_m,
+        aggregation_cell_size_m,
+        rel_tol=0.0,
+        abs_tol=1e-12,
+    ):
+        raise ValueError("local-grid and physical-aggregation cell sizes differ")
+    offsets = _cell_square_horizontal_offsets(output_cell_size_m)
+    core = {
+        "schema": PROJECTIVE_QUERY_SUPPORT_SCHEMA,
+        "lift_type": lift_type,
+        "support_geometry": "output_cell_center_plus_four_corners_v1",
+        "support_frame": "base_forward_left_offsets_from_output_cell_center",
+        "output_cell_size_m": output_cell_size_m,
+        "output_cell_half_extent_m": 0.5 * output_cell_size_m,
+        "horizontal_offsets_body_m": [list(value) for value in offsets],
+        "support_point_count": len(offsets),
+        "uses_body_footprint": False,
+        "attention_bias_aggregation": (
+            PROJECTIVE_CELL_SQUARE_BIAS_AGGREGATION
+        ),
+        "query_visibility_aggregation": (
+            PROJECTIVE_CELL_SQUARE_VISIBILITY_AGGREGATION
+        ),
+        "physical_aggregation_contract": {
+            "schema": str(aggregation["schema"]),
+            "contract_sha256": aggregation_sha256,
+            "output_cell_size_m": aggregation_cell_size_m,
+        },
+    }
+    return {**core, "contract_sha256": _canonical_json_sha256(core)}
+
+
+def validate_projective_query_support_binding(
+    *,
+    model_config: Mapping[str, Any],
+    projective_query_support: Mapping[str, Any] | None,
+    dataset_manifest: Mapping[str, Any],
+    occupancy_output_contract: Mapping[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Validate new-lift support while preserving old checkpoint contracts."""
+
+    lift_type = str(
+        model_config.get("bev_lift_type", GLOBAL_CROSS_ATTENTION_LIFT)
+    )
+    if lift_type not in (
+        PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT,
+        DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT,
+    ):
+        if projective_query_support is not None:
+            raise ValueError("projective query support is invalid for this lift type")
+        if "projective_output_cell_size_m" in model_config:
+            raise ValueError("output-cell support size is invalid for this lift type")
+        if occupancy_output_contract is not None and occupancy_output_contract.get(
+            "projective_query_support_contract_sha256"
+        ) is not None:
+            raise ValueError("occupancy output binds support for the wrong lift type")
+        return None
+    if not isinstance(projective_query_support, Mapping):
+        raise ValueError("cell-square lift lacks projective query support")
+    expected = build_projective_query_support_contract(
+        dataset_manifest,
+        lift_type=lift_type,
+    )
+    if dict(projective_query_support) != expected:
+        raise ValueError("projective query support differs from the dataset contract")
+    configured_size = _finite_projection_value(
+        model_config.get("projective_output_cell_size_m"),
+        name="model_config.projective_output_cell_size_m",
+    )
+    if not math.isclose(
+        configured_size,
+        float(expected["output_cell_size_m"]),
+        rel_tol=0.0,
+        abs_tol=1e-12,
+    ):
+        raise ValueError("model output-cell support size differs from its contract")
+    for name in (
+        "projective_footprint_radius_m",
+        "projective_footprint_perimeter_samples",
+    ):
+        if model_config.get(name) is not None:
+            raise ValueError("cell-square support must not use body-footprint arguments")
+    if occupancy_output_contract is not None and occupancy_output_contract.get(
+        "projective_query_support_contract_sha256"
+    ) != expected["contract_sha256"]:
+        raise ValueError("occupancy output is not bound to projective query support")
+    return expected
+
+
+def _rpy_body_from_camera(
+    rpy_rad: tuple[float, float, float],
+) -> torch.Tensor:
+    """Return ``R_body_from_camera = Rz(yaw) @ Ry(pitch) @ Rx(roll)``."""
+
+    roll, pitch, yaw = rpy_rad
+    cos_roll, sin_roll = math.cos(roll), math.sin(roll)
+    cos_pitch, sin_pitch = math.cos(pitch), math.sin(pitch)
+    cos_yaw, sin_yaw = math.cos(yaw), math.sin(yaw)
+    return torch.tensor(
+        (
+            (
+                cos_yaw * cos_pitch,
+                cos_yaw * sin_pitch * sin_roll - sin_yaw * cos_roll,
+                cos_yaw * sin_pitch * cos_roll + sin_yaw * sin_roll,
+            ),
+            (
+                sin_yaw * cos_pitch,
+                sin_yaw * sin_pitch * sin_roll + cos_yaw * cos_roll,
+                sin_yaw * sin_pitch * cos_roll - cos_yaw * sin_roll,
+            ),
+            (-sin_pitch, cos_pitch * sin_roll, cos_pitch * cos_roll),
+        ),
+        dtype=torch.float64,
+    )
+
+
+def _projective_column_attention_geometry(
+    *,
+    metric_forward_grid: torch.Tensor,
+    metric_left_grid: torch.Tensor,
+    token_side: int,
+    horizontal_fov_deg: float,
+    vertical_fov_deg: float,
+    camera_xyz_body_m: tuple[float, float, float],
+    camera_rpy_body_rad: tuple[float, float, float],
+    near_m: float,
+    vertical_anchor_z_body_m: tuple[float, ...],
+    horizontal_offsets_body_m: tuple[tuple[float, float], ...],
+    sigma_tokens: float,
+    bias_floor: float,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Build a fixed projective token prior for body-frame BEV queries.
+
+    The square input represents the full camera frame. Normalized image x/y span
+    ``[-1, 1]`` from left/right and top/bottom respectively. Camera axes are
+    ``x_forward_y_left_z_up``; BEV rows increase forward and columns increase left.
+    Each query attends near the union of its vertical columns at the supplied
+    horizontal support offsets. The reduction is streamed over offsets so the
+    temporary tensor shape remains ``(queries, anchors, image_tokens)``.
+    """
+
+    query_forward = metric_forward_grid.reshape(-1).to(dtype=torch.float64)
+    query_left = metric_left_grid.reshape(-1).to(dtype=torch.float64)
+    anchors = torch.tensor(vertical_anchor_z_body_m, dtype=torch.float64)
+    query_count = int(query_forward.numel())
+    anchor_count = int(anchors.numel())
+    camera_origin = torch.tensor(camera_xyz_body_m, dtype=torch.float64)
+    rotation_body_from_camera = _rpy_body_from_camera(camera_rpy_body_rad)
+    tan_horizontal = math.tan(math.radians(horizontal_fov_deg) * 0.5)
+    tan_vertical = math.tan(math.radians(vertical_fov_deg) * 0.5)
+    boundary_tolerance = 32.0 * torch.finfo(torch.float64).eps
+
+    token_axis = (
+        2.0
+        * (torch.arange(token_side, dtype=torch.float64) + 0.5)
+        / float(token_side)
+        - 1.0
+    )
+    token_v, token_u = torch.meshgrid(token_axis, token_axis, indexing="ij")
+    token_centers = torch.stack((token_u.reshape(-1), token_v.reshape(-1)), dim=-1)
+    token_width = 2.0 / float(token_side)
+    nearest_distance_squared = torch.full(
+        (query_count, token_side * token_side),
+        float("inf"),
+        dtype=torch.float64,
+    )
+    query_visible = torch.zeros(query_count, dtype=torch.bool)
+    center_only = horizontal_offsets_body_m == ((0.0, 0.0),)
+    for offset_forward, offset_left in horizontal_offsets_body_m:
+        support_forward = query_forward[:, None].expand(query_count, anchor_count)
+        support_left = query_left[:, None].expand(query_count, anchor_count)
+        if not center_only:
+            support_forward = support_forward + float(offset_forward)
+            support_left = support_left + float(offset_left)
+        points_body = torch.stack(
+            (
+                support_forward,
+                support_left,
+                anchors[None].expand(query_count, anchor_count),
+            ),
+            dim=-1,
+        )
+        # Row-vector form of p_camera = R_body_from_camera.T @ (p_body - t).
+        points_camera = (points_body - camera_origin) @ rotation_body_from_camera
+        camera_forward = points_camera[..., 0]
+        safe_forward = torch.where(
+            camera_forward.abs() > torch.finfo(torch.float64).eps,
+            camera_forward,
+            torch.ones_like(camera_forward),
+        )
+        normalized_u = -points_camera[..., 1] / (safe_forward * tan_horizontal)
+        normalized_v = -points_camera[..., 2] / (safe_forward * tan_vertical)
+        anchor_visible = (
+            (camera_forward >= near_m - boundary_tolerance)
+            & (normalized_u >= -1.0 - boundary_tolerance)
+            & (normalized_u <= 1.0 + boundary_tolerance)
+            & (normalized_v >= -1.0 - boundary_tolerance)
+            & (normalized_v <= 1.0 + boundary_tolerance)
+        )
+        query_visible |= anchor_visible.any(dim=1)
+        projected = torch.stack((normalized_u, normalized_v), dim=-1)
+        difference_tokens = (
+            projected[:, :, None, :] - token_centers[None, None, :, :]
+        ) / token_width
+        distance_squared = difference_tokens.square().sum(dim=-1)
+        distance_squared = distance_squared.masked_fill(
+            ~anchor_visible[:, :, None],
+            float("inf"),
+        )
+        support_nearest_distance_squared = distance_squared.amin(dim=1)
+        if center_only:
+            nearest_distance_squared = support_nearest_distance_squared
+        else:
+            nearest_distance_squared = torch.minimum(
+                nearest_distance_squared,
+                support_nearest_distance_squared,
+            )
+    attention_bias = -0.5 * nearest_distance_squared / (sigma_tokens * sigma_tokens)
+    attention_bias = attention_bias.clamp(min=bias_floor, max=0.0)
+    attention_bias = torch.where(
+        query_visible[:, None],
+        attention_bias,
+        torch.zeros_like(attention_bias),
+    )
+    return attention_bias.to(dtype=torch.float32), query_visible
+
+
+def _dynamic_projective_cell_square_attention_geometry(
+    *,
+    metric_forward_grid: torch.Tensor,
+    metric_left_grid: torch.Tensor,
+    token_side: int,
+    horizontal_fov_deg: float,
+    vertical_fov_deg: float,
+    camera_xyz_body_m: tuple[float, float, float],
+    camera_rpy_body_rad: tuple[float, float, float],
+    near_m: float,
+    vertical_anchor_z_body_m: tuple[float, ...],
+    horizontal_offsets_body_m: tuple[tuple[float, float], ...],
+    sigma_tokens: float,
+    bias_floor: float,
+    base_quat_world_xyzw: torch.Tensor,
+    stored_base_yaw_rad: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Build per-frame projective priors from deployment-valid base attitude."""
+
+    if camera_rpy_body_rad != (0.0, 0.0, 0.0):
+        raise ValueError("dynamic cell-square lift requires the registered zero camera RPY")
+    if horizontal_offsets_body_m != _cell_square_horizontal_offsets(
+        PROJECTIVE_CELL_SQUARE_OUTPUT_CELL_SIZE_M
+    ):
+        raise ValueError("dynamic lift requires registered cell-square support")
+    if (
+        not isinstance(base_quat_world_xyzw, torch.Tensor)
+        or base_quat_world_xyzw.ndim != 2
+        or base_quat_world_xyzw.shape[1] != 4
+        or not torch.is_floating_point(base_quat_world_xyzw)
+    ):
+        raise ValueError("base_quat_world_xyzw must be a floating tensor with shape (B, 4)")
+    if (
+        not isinstance(stored_base_yaw_rad, torch.Tensor)
+        or stored_base_yaw_rad.ndim != 1
+        or stored_base_yaw_rad.shape[0] != base_quat_world_xyzw.shape[0]
+        or not torch.is_floating_point(stored_base_yaw_rad)
+    ):
+        raise ValueError("stored_base_yaw_rad must be a floating tensor with shape (B,)")
+    if base_quat_world_xyzw.device != stored_base_yaw_rad.device:
+        raise ValueError("quaternion and yaw tensors must share a device")
+    if not bool(torch.isfinite(base_quat_world_xyzw).all().item()) or not bool(
+        torch.isfinite(stored_base_yaw_rad).all().item()
+    ):
+        raise ValueError("quaternion and yaw tensors must be finite")
+
+    # Validate the source values before the bounded float32 geometry cast.
+    validation_quaternion = base_quat_world_xyzw.to(dtype=torch.float64)
+    validation_yaw = stored_base_yaw_rad.to(dtype=torch.float64)
+    norm_squared = validation_quaternion[:, 0].square()
+    norm_squared = norm_squared + validation_quaternion[:, 1].square()
+    norm_squared = norm_squared + validation_quaternion[:, 2].square()
+    norm_squared = norm_squared + validation_quaternion[:, 3].square()
+    norm = torch.sqrt(norm_squared)
+    if bool(
+        ((norm - 1.0).abs() > PROJECTIVE_QUATERNION_NORM_TOLERANCE).any().item()
+    ):
+        raise ValueError("base quaternion norm differs from one")
+    qx, qy, qz, qw = validation_quaternion.unbind(dim=1)
+    quaternion_yaw = torch.atan2(
+        2.0 * (qw * qz + qx * qy),
+        1.0 - 2.0 * (qy * qy + qz * qz),
+    )
+    yaw_difference = torch.atan2(
+        torch.sin(validation_yaw - quaternion_yaw),
+        torch.cos(validation_yaw - quaternion_yaw),
+    )
+    if bool(
+        (yaw_difference.abs() > PROJECTIVE_QUATERNION_YAW_TOLERANCE_RAD)
+        .any()
+        .item()
+    ):
+        raise ValueError("stored base yaw disagrees with the base quaternion")
+
+    # Geometry is parameter-free and evaluated in float32 on the selected device.
+    quaternion = base_quat_world_xyzw.to(dtype=torch.float32)
+    stored_yaw = stored_base_yaw_rad.to(dtype=torch.float32)
+    qx, qy, qz, qw = quaternion.unbind(dim=1)
+
+    # Standard raw-quaternion R_world_from_body, without renormalization.
+    rotation = torch.stack(
+        (
+            1.0 - 2.0 * (qy * qy + qz * qz),
+            2.0 * (qx * qy - qz * qw),
+            2.0 * (qx * qz + qy * qw),
+            2.0 * (qx * qy + qz * qw),
+            1.0 - 2.0 * (qx * qx + qz * qz),
+            2.0 * (qy * qz - qx * qw),
+            2.0 * (qx * qz - qy * qw),
+            2.0 * (qy * qz + qx * qw),
+            1.0 - 2.0 * (qx * qx + qy * qy),
+        ),
+        dim=1,
+    ).reshape(-1, 3, 3)
+    cos_yaw = torch.cos(stored_yaw)
+    sin_yaw = torch.sin(stored_yaw)
+    yaw_from_world = torch.zeros_like(rotation)
+    yaw_from_world[:, 0, 0] = cos_yaw
+    yaw_from_world[:, 0, 1] = sin_yaw
+    yaw_from_world[:, 1, 0] = -sin_yaw
+    yaw_from_world[:, 1, 1] = cos_yaw
+    yaw_from_world[:, 2, 2] = 1.0
+    rotation_yaw_from_body = torch.bmm(yaw_from_world, rotation)
+    camera_forward = rotation_yaw_from_body[:, :, 0]
+    camera_left = rotation_yaw_from_body[:, :, 1]
+    camera_up = rotation_yaw_from_body[:, :, 2]
+    mount = quaternion.new_tensor(camera_xyz_body_m)
+    camera_origin = (
+        mount[0] * camera_forward
+        + mount[1] * camera_left
+        + mount[2] * camera_up
+    )
+
+    query_forward = metric_forward_grid.reshape(-1).to(
+        device=quaternion.device, dtype=torch.float32
+    )
+    query_left = metric_left_grid.reshape(-1).to(
+        device=quaternion.device, dtype=torch.float32
+    )
+    anchors = quaternion.new_tensor(vertical_anchor_z_body_m)
+    token_axis = (
+        2.0
+        * (torch.arange(token_side, device=quaternion.device, dtype=torch.float32) + 0.5)
+        / float(token_side)
+        - 1.0
+    )
+    token_v, token_u = torch.meshgrid(token_axis, token_axis, indexing="ij")
+    token_centers = torch.stack((token_u.reshape(-1), token_v.reshape(-1)), dim=-1)
+    token_width = 2.0 / float(token_side)
+    batch = quaternion.shape[0]
+    query_count = int(query_forward.numel())
+    token_count = token_side * token_side
+    nearest_distance_squared = torch.full(
+        (batch, query_count, token_count),
+        float("inf"),
+        device=quaternion.device,
+        dtype=torch.float32,
+    )
+    query_visible = torch.zeros(
+        (batch, query_count), device=quaternion.device, dtype=torch.bool
+    )
+    tan_horizontal = math.tan(math.radians(horizontal_fov_deg) * 0.5)
+    tan_vertical = math.tan(math.radians(vertical_fov_deg) * 0.5)
+    boundary_tolerance = (
+        PROJECTIVE_FLOAT32_BOUNDARY_TOLERANCE_ULPS
+        * torch.finfo(torch.float32).eps
+    )
+
+    for offset_forward, offset_left in horizontal_offsets_body_m:
+        support_forward = (
+            query_forward[:, None].expand(query_count, anchors.numel())
+            + float(offset_forward)
+        )
+        support_left = (
+            query_left[:, None].expand(query_count, anchors.numel())
+            + float(offset_left)
+        )
+        points = torch.stack(
+            (
+                support_forward,
+                support_left,
+                anchors[None, :].expand(query_count, -1),
+            ),
+            dim=-1,
+        )
+        delta = points[None, :, :, :] - camera_origin[:, None, None, :]
+        forward = (delta * camera_forward[:, None, None, :]).sum(dim=-1)
+        left = (delta * camera_left[:, None, None, :]).sum(dim=-1)
+        up = (delta * camera_up[:, None, None, :]).sum(dim=-1)
+        safe_forward = torch.where(
+            forward.abs() > torch.finfo(torch.float32).eps,
+            forward,
+            torch.ones_like(forward),
+        )
+        normalized_u = -left / (safe_forward * tan_horizontal)
+        normalized_v = -up / (safe_forward * tan_vertical)
+        visible = (
+            (forward >= float(near_m) - boundary_tolerance)
+            & (normalized_u >= -1.0 - boundary_tolerance)
+            & (normalized_u <= 1.0 + boundary_tolerance)
+            & (normalized_v >= -1.0 - boundary_tolerance)
+            & (normalized_v <= 1.0 + boundary_tolerance)
+        )
+        query_visible |= visible.any(dim=2)
+        projected = torch.stack((normalized_u, normalized_v), dim=-1)
+        difference = (
+            projected[:, :, :, None, :] - token_centers[None, None, None, :, :]
+        ) / token_width
+        distance_squared = difference.square().sum(dim=-1).masked_fill(
+            ~visible[:, :, :, None], float("inf")
+        )
+        nearest_distance_squared = torch.minimum(
+            nearest_distance_squared,
+            distance_squared.amin(dim=2),
+        )
+
+    attention_bias = -0.5 * nearest_distance_squared / float(sigma_tokens**2)
+    attention_bias = attention_bias.clamp(min=float(bias_floor), max=0.0)
+    attention_bias = torch.where(
+        query_visible[:, :, None], attention_bias, torch.zeros_like(attention_bias)
+    )
+    return attention_bias, query_visible
+
+
 def warp_bev_current_to_next(
     current: torch.Tensor,
     delta_pose_current: torch.Tensor,
@@ -195,7 +796,7 @@ def warp_bev_current_to_next(
 
 
 class BevDecoder(nn.Module):
-    """Globally lift image tokens into fixed-calibration metric BEV queries."""
+    """Lift image tokens into fixed-calibration metric BEV queries."""
 
     def __init__(
         self,
@@ -207,12 +808,26 @@ class BevDecoder(nn.Module):
         forward_range_m: tuple[float, float],
         left_range_m: tuple[float, float],
         attention_heads: int,
+        lift_type: str = GLOBAL_CROSS_ATTENTION_LIFT,
+        projective_horizontal_fov_deg: float | None = None,
+        projective_vertical_fov_deg: float | None = None,
+        projective_camera_xyz_body_m: tuple[float, float, float] | None = None,
+        projective_camera_rpy_body_rad: tuple[float, float, float] | None = None,
+        projective_near_m: float | None = None,
+        projective_vertical_anchor_z_body_m: tuple[float, ...] | None = None,
+        projective_output_cell_size_m: float | None = None,
+        projective_footprint_radius_m: float | None = None,
+        projective_footprint_perimeter_samples: int | None = None,
+        projective_attention_sigma_tokens: float = 1.0,
+        projective_attention_bias_floor: float = -6.0,
     ) -> None:
         super().__init__()
         self.token_side = int(token_side)
         self.bev_size = (int(bev_size[0]), int(bev_size[1]))
         self.forward_range_m = tuple(map(float, forward_range_m))
         self.left_range_m = tuple(map(float, left_range_m))
+        self.lift_type = str(lift_type)
+        self.attention_heads = int(attention_heads)
         if not self.forward_range_m[1] > self.forward_range_m[0]:
             raise ValueError("forward_range_m must be increasing")
         if not self.left_range_m[1] > self.left_range_m[0]:
@@ -260,25 +875,436 @@ class BevDecoder(nn.Module):
             nn.Conv2d(int(bev_dim), int(bev_dim), 3, padding=1),
             nn.GroupNorm(1, int(bev_dim)),
         )
+        projective_values = {
+            "projective_horizontal_fov_deg": projective_horizontal_fov_deg,
+            "projective_vertical_fov_deg": projective_vertical_fov_deg,
+            "projective_camera_xyz_body_m": projective_camera_xyz_body_m,
+            "projective_camera_rpy_body_rad": projective_camera_rpy_body_rad,
+            "projective_near_m": projective_near_m,
+            "projective_vertical_anchor_z_body_m": (
+                projective_vertical_anchor_z_body_m
+            ),
+        }
+        footprint_values = {
+            "projective_footprint_radius_m": projective_footprint_radius_m,
+            "projective_footprint_perimeter_samples": (
+                projective_footprint_perimeter_samples
+            ),
+        }
+        cell_square_values = {
+            "projective_output_cell_size_m": projective_output_cell_size_m,
+        }
+        self.projective_output_cell_size_m: float | None = None
+        self.projective_footprint_radius_m: float | None = None
+        self.projective_footprint_perimeter_samples: int | None = None
+        self.projective_horizontal_offsets_body_m: tuple[
+            tuple[float, float], ...
+        ] = ()
+        self.projective_horizontal_fov_deg: float | None = None
+        self.projective_vertical_fov_deg: float | None = None
+        self.projective_camera_xyz_body_m: tuple[float, float, float] | None = None
+        self.projective_camera_rpy_body_rad: tuple[float, float, float] | None = None
+        self.projective_near_m: float | None = None
+        self.projective_vertical_anchor_z_body_m: tuple[float, ...] = ()
+        self.projective_attention_sigma_tokens: float | None = None
+        self.projective_attention_bias_floor: float | None = None
+        self.register_buffer(
+            "dynamic_metric_forward_grid", None, persistent=False
+        )
+        self.register_buffer(
+            "dynamic_metric_left_grid", None, persistent=False
+        )
+        if self.lift_type == GLOBAL_CROSS_ATTENTION_LIFT:
+            sigma_tokens = _finite_projection_value(
+                projective_attention_sigma_tokens,
+                name="projective_attention_sigma_tokens",
+            )
+            bias_floor = _finite_projection_value(
+                projective_attention_bias_floor,
+                name="projective_attention_bias_floor",
+            )
+            if sigma_tokens != 1.0 or bias_floor != -6.0:
+                raise ValueError(
+                    "projective attention tuning requires "
+                    "a projective lift type"
+                )
+            supplied = sorted(
+                name
+                for name, value in (projective_values | footprint_values).items()
+                if value is not None
+            )
+            supplied.extend(
+                name for name, value in cell_square_values.items() if value is not None
+            )
+            supplied.sort()
+            if supplied:
+                raise ValueError(
+                    "projective camera parameters require "
+                    f"a projective lift type: {supplied}"
+                )
+            self.register_buffer(
+                "projective_attention_bias",
+                None,
+                persistent=False,
+            )
+            self.register_buffer(
+                "projective_query_visibility",
+                None,
+                persistent=False,
+            )
+        elif self.lift_type in (
+            PROJECTIVE_COLUMN_ATTENTION_LIFT,
+            PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT,
+            DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT,
+            PROJECTIVE_FOOTPRINT_ATTENTION_LIFT,
+        ):
+            if self.token_side <= 0:
+                raise ValueError("token_side must be positive for projective attention")
+            missing = sorted(
+                name for name, value in projective_values.items() if value is None
+            )
+            if missing:
+                raise ValueError(
+                    "projective-column attention requires all fixed camera "
+                    f"parameters; missing={missing}"
+                )
+            supplied_footprint = sorted(
+                name for name, value in footprint_values.items() if value is not None
+            )
+            supplied_cell_square = sorted(
+                name for name, value in cell_square_values.items() if value is not None
+            )
+            if self.lift_type == PROJECTIVE_COLUMN_ATTENTION_LIFT:
+                if supplied_footprint:
+                    raise ValueError(
+                        "footprint projection parameters require "
+                        f"lift_type={PROJECTIVE_FOOTPRINT_ATTENTION_LIFT!r}: "
+                        f"{supplied_footprint}"
+                    )
+                if supplied_cell_square:
+                    raise ValueError(
+                        "output-cell projection parameters require "
+                        f"lift_type={PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT!r}: "
+                        f"{supplied_cell_square}"
+                    )
+                horizontal_offsets = ((0.0, 0.0),)
+            elif self.lift_type in (
+                PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT,
+                DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT,
+            ):
+                if supplied_footprint:
+                    raise ValueError(
+                        "cell-square support must not use body-footprint parameters: "
+                        f"{supplied_footprint}"
+                    )
+                if not supplied_cell_square:
+                    raise ValueError(
+                        "projective-cell-square attention requires "
+                        "projective_output_cell_size_m"
+                    )
+                output_cell_size_m = _finite_projection_value(
+                    projective_output_cell_size_m,
+                    name="projective_output_cell_size_m",
+                )
+                if output_cell_size_m <= 0.0:
+                    raise ValueError("projective_output_cell_size_m must be positive")
+                self.projective_output_cell_size_m = output_cell_size_m
+                horizontal_offsets = _cell_square_horizontal_offsets(
+                    output_cell_size_m
+                )
+            else:
+                if supplied_cell_square:
+                    raise ValueError(
+                        "output-cell projection parameters require "
+                        f"lift_type={PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT!r}: "
+                        f"{supplied_cell_square}"
+                    )
+                missing_footprint = sorted(
+                    name for name, value in footprint_values.items() if value is None
+                )
+                if missing_footprint:
+                    raise ValueError(
+                        "projective-footprint attention requires all footprint "
+                        f"parameters; missing={missing_footprint}"
+                    )
+                footprint_radius = _finite_projection_value(
+                    projective_footprint_radius_m,
+                    name="projective_footprint_radius_m",
+                )
+                if footprint_radius <= 0.0:
+                    raise ValueError("projective_footprint_radius_m must be positive")
+                perimeter_samples = _projection_integer(
+                    projective_footprint_perimeter_samples,
+                    name="projective_footprint_perimeter_samples",
+                )
+                if (
+                    perimeter_samples < 4
+                    or perimeter_samples > 64
+                    or perimeter_samples % 4 != 0
+                ):
+                    raise ValueError(
+                        "projective_footprint_perimeter_samples must be a multiple "
+                        "of four between four and 64"
+                    )
+                self.projective_footprint_radius_m = footprint_radius
+                self.projective_footprint_perimeter_samples = perimeter_samples
+                horizontal_offsets = _footprint_horizontal_offsets(
+                    footprint_radius,
+                    perimeter_samples,
+                )
+            self.projective_horizontal_offsets_body_m = horizontal_offsets
+            horizontal_fov = _finite_projection_value(
+                projective_horizontal_fov_deg,
+                name="projective_horizontal_fov_deg",
+            )
+            vertical_fov = _finite_projection_value(
+                projective_vertical_fov_deg,
+                name="projective_vertical_fov_deg",
+            )
+            if not 0.0 < horizontal_fov < 180.0:
+                raise ValueError("projective_horizontal_fov_deg must lie in (0, 180)")
+            if not 0.0 < vertical_fov < 180.0:
+                raise ValueError("projective_vertical_fov_deg must lie in (0, 180)")
+            camera_xyz = _projection_triple(
+                projective_camera_xyz_body_m,
+                name="projective_camera_xyz_body_m",
+            )
+            camera_rpy = _projection_triple(
+                projective_camera_rpy_body_rad,
+                name="projective_camera_rpy_body_rad",
+            )
+            near_m = _finite_projection_value(
+                projective_near_m,
+                name="projective_near_m",
+            )
+            if near_m <= 0.0:
+                raise ValueError("projective_near_m must be positive")
+            anchors = _projection_anchors(projective_vertical_anchor_z_body_m)
+            sigma_tokens = _finite_projection_value(
+                projective_attention_sigma_tokens,
+                name="projective_attention_sigma_tokens",
+            )
+            if sigma_tokens <= 0.0:
+                raise ValueError("projective_attention_sigma_tokens must be positive")
+            bias_floor = _finite_projection_value(
+                projective_attention_bias_floor,
+                name="projective_attention_bias_floor",
+            )
+            if bias_floor >= 0.0:
+                raise ValueError("projective_attention_bias_floor must be negative")
+            metric_forward = torch.linspace(
+                *self.forward_range_m,
+                self.bev_size[0],
+                dtype=torch.float64,
+            )
+            metric_left = torch.linspace(
+                *self.left_range_m,
+                self.bev_size[1],
+                dtype=torch.float64,
+            )
+            metric_forward_grid, metric_left_grid = torch.meshgrid(
+                metric_forward,
+                metric_left,
+                indexing="ij",
+            )
+            if self.lift_type == DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT:
+                if camera_rpy != (0.0, 0.0, 0.0):
+                    raise ValueError(
+                        "dynamic cell-square lift requires registered zero camera RPY"
+                    )
+                self.projective_horizontal_fov_deg = horizontal_fov
+                self.projective_vertical_fov_deg = vertical_fov
+                self.projective_camera_xyz_body_m = camera_xyz
+                self.projective_camera_rpy_body_rad = camera_rpy
+                self.projective_near_m = near_m
+                self.projective_vertical_anchor_z_body_m = anchors
+                self.projective_attention_sigma_tokens = sigma_tokens
+                self.projective_attention_bias_floor = bias_floor
+                self.dynamic_metric_forward_grid = metric_forward_grid.to(
+                    dtype=torch.float32
+                )
+                self.dynamic_metric_left_grid = metric_left_grid.to(
+                    dtype=torch.float32
+                )
+                self.register_buffer(
+                    "projective_attention_bias", None, persistent=False
+                )
+                self.register_buffer(
+                    "projective_query_visibility", None, persistent=False
+                )
+            else:
+                attention_bias, query_visibility = (
+                    _projective_column_attention_geometry(
+                        metric_forward_grid=metric_forward_grid,
+                        metric_left_grid=metric_left_grid,
+                        token_side=self.token_side,
+                        horizontal_fov_deg=horizontal_fov,
+                        vertical_fov_deg=vertical_fov,
+                        camera_xyz_body_m=camera_xyz,
+                        camera_rpy_body_rad=camera_rpy,
+                        near_m=near_m,
+                        vertical_anchor_z_body_m=anchors,
+                        horizontal_offsets_body_m=horizontal_offsets,
+                        sigma_tokens=sigma_tokens,
+                        bias_floor=bias_floor,
+                    )
+                )
+                if not bool(torch.isfinite(attention_bias).all().item()):
+                    raise ValueError(
+                        "projective attention geometry produced non-finite bias"
+                    )
+                self.register_buffer(
+                    "projective_attention_bias",
+                    attention_bias,
+                    persistent=False,
+                )
+                self.register_buffer(
+                    "projective_query_visibility",
+                    query_visibility,
+                    persistent=False,
+                )
+        else:
+            raise ValueError(
+                "lift_type must be one of "
+                f"{GLOBAL_CROSS_ATTENTION_LIFT!r}, "
+                f"{PROJECTIVE_COLUMN_ATTENTION_LIFT!r}, "
+                f"{PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT!r}, "
+                f"{DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT!r}, "
+                f"{PROJECTIVE_FOOTPRINT_ATTENTION_LIFT!r}"
+            )
 
-    def forward(self, patch_tokens: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        patch_tokens: torch.Tensor,
+        *,
+        base_quat_world_xyzw: torch.Tensor | None = None,
+        stored_base_yaw_rad: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         expected_tokens = self.token_side * self.token_side
         if patch_tokens.ndim != 3 or patch_tokens.shape[1] != expected_tokens:
             raise ValueError(
                 f"patch_tokens must have shape (B, {expected_tokens}, D)"
             )
+        attitude_supplied = (
+            base_quat_world_xyzw is not None,
+            stored_base_yaw_rad is not None,
+        )
+        if self.lift_type == DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT:
+            if not all(attitude_supplied):
+                raise ValueError(
+                    "dynamic cell-square lift requires base quaternion and stored yaw"
+                )
+            assert base_quat_world_xyzw is not None
+            assert stored_base_yaw_rad is not None
+            if not isinstance(base_quat_world_xyzw, torch.Tensor) or not isinstance(
+                stored_base_yaw_rad, torch.Tensor
+            ):
+                raise ValueError("dynamic attitude inputs must be tensors")
+            if (
+                base_quat_world_xyzw.ndim != 2
+                or base_quat_world_xyzw.shape != (patch_tokens.shape[0], 4)
+                or stored_base_yaw_rad.ndim != 1
+                or stored_base_yaw_rad.shape != (patch_tokens.shape[0],)
+            ):
+                raise ValueError("attitude batch must match patch-token batch")
+            if (
+                base_quat_world_xyzw.device != patch_tokens.device
+                or stored_base_yaw_rad.device != patch_tokens.device
+            ):
+                raise ValueError("attitude and patch-token tensors must share a device")
+        elif any(attitude_supplied):
+            raise ValueError("attitude inputs are invalid for legacy lift types")
         tokens = self.token_project(patch_tokens)
         queries = self.coordinate_query(
             self.coordinate_features.to(dtype=patch_tokens.dtype)
         )
         queries = queries + self.query_bias.to(dtype=queries.dtype)
         queries = queries[None].expand(patch_tokens.shape[0], -1, -1)
-        attended, _weights = self.cross_attention(
-            queries,
-            tokens,
-            tokens,
-            need_weights=False,
-        )
+        if self.lift_type == GLOBAL_CROSS_ATTENTION_LIFT:
+            attended, _weights = self.cross_attention(
+                queries,
+                tokens,
+                tokens,
+                need_weights=False,
+            )
+        elif self.lift_type == DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT:
+            if (
+                self.dynamic_metric_forward_grid is None
+                or self.dynamic_metric_left_grid is None
+                or self.projective_horizontal_fov_deg is None
+                or self.projective_vertical_fov_deg is None
+                or self.projective_camera_xyz_body_m is None
+                or self.projective_camera_rpy_body_rad is None
+                or self.projective_near_m is None
+                or not self.projective_vertical_anchor_z_body_m
+                or not self.projective_horizontal_offsets_body_m
+                or self.projective_attention_sigma_tokens is None
+                or self.projective_attention_bias_floor is None
+            ):
+                raise RuntimeError("dynamic projective geometry is incomplete")
+            assert base_quat_world_xyzw is not None
+            assert stored_base_yaw_rad is not None
+            attention_bias, query_visibility = (
+                _dynamic_projective_cell_square_attention_geometry(
+                    metric_forward_grid=self.dynamic_metric_forward_grid,
+                    metric_left_grid=self.dynamic_metric_left_grid,
+                    token_side=self.token_side,
+                    horizontal_fov_deg=self.projective_horizontal_fov_deg,
+                    vertical_fov_deg=self.projective_vertical_fov_deg,
+                    camera_xyz_body_m=self.projective_camera_xyz_body_m,
+                    camera_rpy_body_rad=self.projective_camera_rpy_body_rad,
+                    near_m=self.projective_near_m,
+                    vertical_anchor_z_body_m=(
+                        self.projective_vertical_anchor_z_body_m
+                    ),
+                    horizontal_offsets_body_m=(
+                        self.projective_horizontal_offsets_body_m
+                    ),
+                    sigma_tokens=self.projective_attention_sigma_tokens,
+                    bias_floor=self.projective_attention_bias_floor,
+                    base_quat_world_xyzw=base_quat_world_xyzw,
+                    stored_base_yaw_rad=stored_base_yaw_rad,
+                )
+            )
+            attention_bias = (
+                attention_bias[:, None]
+                .expand(-1, self.attention_heads, -1, -1)
+                .reshape(
+                    patch_tokens.shape[0] * self.attention_heads,
+                    attention_bias.shape[1],
+                    attention_bias.shape[2],
+                )
+            )
+            attended, _weights = self.cross_attention(
+                queries,
+                tokens,
+                tokens,
+                attn_mask=attention_bias.to(dtype=queries.dtype),
+                need_weights=False,
+            )
+            attended = attended * query_visibility.to(
+                dtype=attended.dtype
+            )[:, :, None]
+        else:
+            if (
+                self.projective_attention_bias is None
+                or self.projective_query_visibility is None
+            ):
+                raise RuntimeError("projective-column geometry buffers are missing")
+            attended, _weights = self.cross_attention(
+                queries,
+                tokens,
+                tokens,
+                attn_mask=self.projective_attention_bias.to(
+                    device=queries.device,
+                    dtype=queries.dtype,
+                ),
+                need_weights=False,
+            )
+            attended = attended * self.projective_query_visibility.to(
+                device=attended.device,
+                dtype=attended.dtype,
+            )[None, :, None]
         features = self.query_norm(queries + attended)
         features = features.transpose(1, 2).reshape(
             patch_tokens.shape[0],
@@ -345,6 +1371,18 @@ class EgomotionBevJepa(nn.Module):
         left_range_m: tuple[float, float] = (-3.15, 3.15),
         action_dim: int = 9,
         bev_attention_heads: int = 4,
+        bev_lift_type: str = GLOBAL_CROSS_ATTENTION_LIFT,
+        projective_horizontal_fov_deg: float | None = None,
+        projective_vertical_fov_deg: float | None = None,
+        projective_camera_xyz_body_m: tuple[float, float, float] | None = None,
+        projective_camera_rpy_body_rad: tuple[float, float, float] | None = None,
+        projective_near_m: float | None = None,
+        projective_vertical_anchor_z_body_m: tuple[float, ...] | None = None,
+        projective_output_cell_size_m: float | None = None,
+        projective_footprint_radius_m: float | None = None,
+        projective_footprint_perimeter_samples: int | None = None,
+        projective_attention_sigma_tokens: float = 1.0,
+        projective_attention_bias_floor: float = -6.0,
         predictor_hidden_dim: int = 128,
         target_ema_momentum: float = 0.996,
         jepa_weight: float = 1.0,
@@ -365,6 +1403,7 @@ class EgomotionBevJepa(nn.Module):
         self.bev_size = (int(bev_size[0]), int(bev_size[1]))
         self.forward_range_m = tuple(map(float, forward_range_m))
         self.left_range_m = tuple(map(float, left_range_m))
+        self.bev_lift_type = str(bev_lift_type)
         self.target_ema_momentum = float(target_ema_momentum)
         self.jepa_weight = float(jepa_weight)
         self.occupancy_weight = float(occupancy_weight)
@@ -402,6 +1441,22 @@ class EgomotionBevJepa(nn.Module):
             forward_range_m=self.forward_range_m,
             left_range_m=self.left_range_m,
             attention_heads=int(bev_attention_heads),
+            lift_type=self.bev_lift_type,
+            projective_horizontal_fov_deg=projective_horizontal_fov_deg,
+            projective_vertical_fov_deg=projective_vertical_fov_deg,
+            projective_camera_xyz_body_m=projective_camera_xyz_body_m,
+            projective_camera_rpy_body_rad=projective_camera_rpy_body_rad,
+            projective_near_m=projective_near_m,
+            projective_vertical_anchor_z_body_m=(
+                projective_vertical_anchor_z_body_m
+            ),
+            projective_output_cell_size_m=projective_output_cell_size_m,
+            projective_footprint_radius_m=projective_footprint_radius_m,
+            projective_footprint_perimeter_samples=(
+                projective_footprint_perimeter_samples
+            ),
+            projective_attention_sigma_tokens=projective_attention_sigma_tokens,
+            projective_attention_bias_floor=projective_attention_bias_floor,
         )
         self.occupancy_head = nn.Conv2d(int(bev_dim), 3, kernel_size=1)
         self.predictor = BevResidualPredictor(
@@ -421,19 +1476,48 @@ class EgomotionBevJepa(nn.Module):
         self.target_bev_decoder.eval()
         return self
 
-    def _encode_online(self, image: torch.Tensor) -> torch.Tensor:
+    def _encode_online(
+        self,
+        image: torch.Tensor,
+        base_quat_world_xyzw: torch.Tensor | None = None,
+        stored_base_yaw_rad: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         tokens = self.encoder.forward_tokens(image)[:, 1:]
-        return self.bev_decoder(tokens)
+        return self.bev_decoder(
+            tokens,
+            base_quat_world_xyzw=base_quat_world_xyzw,
+            stored_base_yaw_rad=stored_base_yaw_rad,
+        )
 
     @torch.no_grad()
-    def _encode_target(self, image: torch.Tensor) -> torch.Tensor:
+    def _encode_target(
+        self,
+        image: torch.Tensor,
+        base_quat_world_xyzw: torch.Tensor | None = None,
+        stored_base_yaw_rad: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         tokens = self.target_encoder.forward_tokens(image)[:, 1:]
-        return self.target_bev_decoder(tokens)
+        return self.target_bev_decoder(
+            tokens,
+            base_quat_world_xyzw=base_quat_world_xyzw,
+            stored_base_yaw_rad=stored_base_yaw_rad,
+        )
 
-    def occupancy_logits(self, image: torch.Tensor) -> torch.Tensor:
+    def occupancy_logits(
+        self,
+        image: torch.Tensor,
+        base_quat_world_xyzw: torch.Tensor | None = None,
+        stored_base_yaw_rad: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         """Return current-frame unknown/free/occupied logits."""
 
-        return self.occupancy_head(self._encode_online(image))
+        return self.occupancy_head(
+            self._encode_online(
+                image,
+                base_quat_world_xyzw,
+                stored_base_yaw_rad,
+            )
+        )
 
     def predict_from_command(
         self,
@@ -598,6 +1682,10 @@ class EgomotionBevJepa(nn.Module):
         realized_delta_pose_current: torch.Tensor,
         *,
         commanded_delta_pose_current: torch.Tensor,
+        current_base_quat_world_xyzw: torch.Tensor | None = None,
+        current_stored_base_yaw_rad: torch.Tensor | None = None,
+        next_base_quat_world_xyzw: torch.Tensor | None = None,
+        next_stored_base_yaw_rad: torch.Tensor | None = None,
         current_occupancy: torch.Tensor | None = None,
         next_occupancy: torch.Tensor | None = None,
         current_occupancy_mask: torch.Tensor | None = None,
@@ -676,9 +1764,66 @@ class EgomotionBevJepa(nn.Module):
                 "diagnostic_wrong_commanded_delta_pose_current must have shape (B, 3)"
             )
         online_images = torch.cat((current_image, next_image), dim=0)
-        online_bev = self._encode_online(online_images)
+        online_quaternion = None
+        online_yaw = None
+        attitude_values = (
+            current_base_quat_world_xyzw,
+            current_stored_base_yaw_rad,
+            next_base_quat_world_xyzw,
+            next_stored_base_yaw_rad,
+        )
+        if self.bev_lift_type == DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT:
+            if any(value is None for value in attitude_values):
+                raise ValueError(
+                    "dynamic lift requires current and next quaternion and yaw"
+                )
+            assert current_base_quat_world_xyzw is not None
+            assert current_stored_base_yaw_rad is not None
+            assert next_base_quat_world_xyzw is not None
+            assert next_stored_base_yaw_rad is not None
+            for name, value, shape in (
+                (
+                    "current_base_quat_world_xyzw",
+                    current_base_quat_world_xyzw,
+                    (current_image.shape[0], 4),
+                ),
+                (
+                    "current_stored_base_yaw_rad",
+                    current_stored_base_yaw_rad,
+                    (current_image.shape[0],),
+                ),
+                (
+                    "next_base_quat_world_xyzw",
+                    next_base_quat_world_xyzw,
+                    (current_image.shape[0], 4),
+                ),
+                (
+                    "next_stored_base_yaw_rad",
+                    next_stored_base_yaw_rad,
+                    (current_image.shape[0],),
+                ),
+            ):
+                if not isinstance(value, torch.Tensor) or value.shape != shape:
+                    raise ValueError(f"{name} must be a tensor with shape {shape}")
+            online_quaternion = torch.cat(
+                (current_base_quat_world_xyzw, next_base_quat_world_xyzw), dim=0
+            )
+            online_yaw = torch.cat(
+                (current_stored_base_yaw_rad, next_stored_base_yaw_rad), dim=0
+            )
+        elif any(value is not None for value in attitude_values):
+            raise ValueError("attitude inputs are invalid for legacy lift types")
+        online_bev = self._encode_online(
+            online_images,
+            online_quaternion,
+            online_yaw,
+        )
         current_bev, next_online_bev = online_bev.chunk(2, dim=0)
-        target_next_bev = self._encode_target(next_image)
+        target_next_bev = self._encode_target(
+            next_image,
+            next_base_quat_world_xyzw,
+            next_stored_base_yaw_rad,
+        )
         predicted_next_bev, commanded_warped_current, commanded_overlap = (
             self.predict_from_command(
                 current_bev,
@@ -916,6 +2061,7 @@ class EgomotionBevJepa(nn.Module):
 __all__ = [
     "BevDecoder",
     "BevResidualPredictor",
+    "DYNAMIC_PROJECTIVE_CELL_SQUARE_ATTENTION_LIFT",
     "EgomotionBevJepa",
     "FREE_CLASS",
     "OCCUPIED_CLASS",
