@@ -379,6 +379,14 @@ def source_review_receipt_binding(
     }
 
 
+def _is_git_object_id(value: object) -> bool:
+    return (
+        type(value) is str
+        and len(value) in {40, 64}
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 def current_reviewed_git_commit(review: Mapping[str, Any]) -> str:
     """Return HEAD only when it contains the complete reviewed closure."""
 
@@ -394,7 +402,10 @@ def current_reviewed_git_commit(review: Mapping[str, Any]) -> str:
     if completed.returncode != 0 or len(lines) != 2:
         raise PermissionError("V15 reviewed Git closure is unavailable")
     git_root, commit = lines
-    if Path(git_root).resolve() != policy.ROOT.resolve() or not policy.is_sha256(commit):
+    if (
+        Path(git_root).resolve() != policy.ROOT.resolve()
+        or not _is_git_object_id(commit)
+    ):
         raise PermissionError("V15 reviewed Git repository binding changed")
     bindings = {
         **review["successor_sources"],

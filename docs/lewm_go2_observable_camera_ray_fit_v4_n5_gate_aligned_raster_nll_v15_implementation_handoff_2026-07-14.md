@@ -47,7 +47,7 @@ at SHA-256
 | Role | Path | File SHA-256 |
 | --- | --- | --- |
 | V15 policy | `lewm/benchmarks/go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15.py` | `17677435731779c9549b5fb8f08b3268f223bc7a945d40f4f2f572a3b652e0ed` |
-| standalone GPU-visibility preflight | `scripts/preflight_go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15_gpu_visibility.py` | `b998110b6f22664d7a7e12414cd6c795c5272343a0b241ba3bfc481ead15ed6d` |
+| standalone GPU-visibility preflight | `scripts/preflight_go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15_gpu_visibility.py` | `fe913bd04448ea5ddae39186c805c8448c72a4f0bd12b430c26dd29a991b3051` |
 | V15 trainer | `scripts/train_go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15.py` | `62f5d9d5072bb83f6c8fd9af4c8bb32a96357d3365ba87a5258a529ae1ddcaf1` |
 | V15 verifier | `scripts/verify_go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15.py` | `bb3e8838689105ab2ee1e4e5525d1de341525439aa83e526ff834efce89a1584` |
 | V15 executor | `scripts/execute_go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15.py` | `8879a42bd091609e4d48aa8ff743d0ab5adcb595caead3507c4393afcc8a7d6d` |
@@ -59,7 +59,7 @@ at SHA-256
 | synthetic lifecycle and native gate fixture | `lewm/tests/n5_gate_aligned_raster_nll_v15_synthetic_execution.py` | `19d1f6e18d143bd5e62bac8e1d9a06a1ee21c2f31aae48187e0cc9cc4074333c` |
 | loss, parity, gradient, and diagnostic tests | `lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15.py` | `0b003280bad8240e122c8cd6e51ad9d2a7be6a135629b7702876c265176fe18b` |
 | lifecycle, authority, replacement, and subprocess tests | `lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15_lifecycle.py` | `c71c830e8e36e9b8904e7dd29190fa3864f7f20d7cb71cec40032b790c678cd2` |
-| runtime-visibility and receipt tests | `lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15_runtime_visibility.py` | `3eac6662833b47bbd0e74587b6e8d4fa9e4c888eb6ef0b1ced9f30def9f4cdcd` |
+| runtime-visibility and receipt tests | `lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_gate_aligned_raster_nll_v15_runtime_visibility.py` | `c66f0e11563795a97be9393f04bd489fa63ae23856f8776fb80ad2c9a2ad6d9c` |
 
 This handoff was written after the hashes above were frozen. It does not
 self-hash; the independent reviewer must hash its final bytes and bind that
@@ -125,7 +125,11 @@ The additive V15 runtime delta is:
    JSON, a no-follow singly linked mode-`0600` regular file owned by the
    reader, exact review and Git-closure bindings, the same host and boot, and
    UTC and monotonic freshness no greater than 600 seconds. No alternate path
-   is accepted.
+   is accepted. The reviewed Git closure accepts only a plain exact string
+   containing lowercase hexadecimal of length 40 for a SHA-1 repository or 64
+   for a SHA-256 repository. Every reviewed source/proof and both source
+   authority documents are still rehashed from that exact Git object before
+   the commit is accepted.
 5. Exact execution validates static authority and the caller-bound V15 review,
    then the caller-bound fixed receipt, then repeats the live predicate, then
    proves `.generated` mutator quiescence and V15 output freshness. Only after
@@ -186,15 +190,23 @@ repository copy. No real visibility diagnostic ran and the fixed `/tmp`
 receipt was not touched.
 
 The full V15 closure ran the science, lifecycle, runtime-visibility, and
-frozen ladder-gate suites. Result: **281 passed in 19.95 seconds**, partitioned
-as 23 science, 195 lifecycle, 43 runtime-visibility, and 20 ladder-gate tests.
-The affected runtime-visibility suite passed **43 tests in 0.20 seconds**.
+frozen ladder-gate suites. Result: **284 passed in 19.86 seconds**, partitioned
+as 23 science, 195 lifecycle, 46 runtime-visibility, and 20 ladder-gate tests.
+The affected runtime-visibility suite passed **46 tests in 0.24 seconds**.
 
 The new focused regression copied only the standalone preflight and policy
 into a writable temporary repository, removed all ambient bytecode suppression,
 and invoked the natural CLI without `-I` or `-B` using `--help`. Both bootstrap
 and isolated-child imports completed with no `__pycache__` directory or
 `.pyc`/`.pyo` file anywhere in that copy. It passed alone in **0.16 seconds**.
+
+Three focused Git-object tests passed in **0.10 seconds**. They rehashed the
+complete reviewed closure from the repository's actual 40-character SHA-1
+HEAD, exercised a synthetic 64-character SHA-256 object ID through the same
+containment function, and rejected nonstrings, booleans, string subclasses,
+wrong lengths, uppercase, and nonhex input. The actual-HEAD proof used only
+`git rev-parse` and `git show`; it performed no GPU, receipt, data, or output
+operation.
 
 The clarified retained V14 closure passed **234 tests with the one exact node
 deselected in 18.87 seconds**. The terminal-state replacement proof passed

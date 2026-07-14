@@ -173,6 +173,39 @@ def _validate(value: dict[str, Any], **overrides: Any) -> dict[str, Any]:
     )
 
 
+def _git_show(commit: str, relative: str) -> bytes:
+    completed = subprocess.run(
+        ["git", "show", f"{commit}:{relative}"],
+        cwd=ROOT,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr.decode(
+        "utf-8", errors="replace"
+    )
+    return completed.stdout
+
+
+def _review_bound_to_git_commit(commit: str) -> dict[str, Any]:
+    def bindings(paths: tuple[str, ...]) -> dict[str, dict[str, str]]:
+        return {
+            relative: {
+                "path": relative,
+                "file_sha256": hashlib.sha256(
+                    _git_show(commit, relative)
+                ).hexdigest(),
+            }
+            for relative in paths
+        }
+
+    return {
+        "successor_sources": bindings(policy.SUCCESSOR_SOURCE_PATHS),
+        "successor_proofs": bindings(policy.SUCCESSOR_PROOF_PATHS),
+    }
+
+
 @pytest.mark.parametrize(
     ("torch_loader", "expected_reason"),
     (
@@ -543,6 +576,81 @@ def test_natural_cli_bootstrap_suppresses_repo_bytecode_before_policy_import(
     assert b"--source-review-sha256" in completed.stdout
     assert list(copied_root.rglob("__pycache__")) == []
     assert list(copied_root.rglob("*.py[co]")) == []
+
+
+def test_actual_sha1_head_passes_complete_reviewed_closure_containment() -> None:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr.decode(
+        "utf-8", errors="replace"
+    )
+    commit = completed.stdout.decode("ascii", errors="strict").strip()
+    assert len(commit) == 40
+    assert visibility._is_git_object_id(commit) is True
+    assert visibility.current_reviewed_git_commit(
+        _review_bound_to_git_commit(commit)
+    ) == commit
+
+
+def test_synthetic_sha256_git_object_id_passes_containment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    commit = "d" * 64
+    amendment = b"synthetic amendment\n"
+    clarification = b"synthetic clarification\n"
+    payloads = {
+        policy.V15_AMENDMENT_RELATIVE_PATH: amendment,
+        policy.V15_TERMINAL_V14_PROOF_CLARIFICATION_RELATIVE_PATH: clarification,
+    }
+    monkeypatch.setattr(
+        policy,
+        "V15_AMENDMENT_FILE_SHA256",
+        hashlib.sha256(amendment).hexdigest(),
+    )
+    monkeypatch.setattr(
+        policy,
+        "V15_TERMINAL_V14_PROOF_CLARIFICATION_FILE_SHA256",
+        hashlib.sha256(clarification).hexdigest(),
+    )
+
+    def fake_run(command: list[str], **_kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+        if command == ["git", "rev-parse", "--show-toplevel", "HEAD"]:
+            output = f"{policy.ROOT}\n{commit}\n".encode("ascii")
+            return subprocess.CompletedProcess(command, 0, output, b"")
+        assert command[:2] == ["git", "show"]
+        shown_commit, relative = command[2].split(":", 1)
+        assert shown_commit == commit
+        return subprocess.CompletedProcess(command, 0, payloads[relative], b"")
+
+    monkeypatch.setattr(visibility.subprocess, "run", fake_run)
+    review = {"successor_sources": {}, "successor_proofs": {}}
+    assert visibility.current_reviewed_git_commit(review) == commit
+
+
+def test_git_object_id_rejects_nonexact_strings_bad_lengths_and_nonhex() -> None:
+    class StringSubclass(str):
+        pass
+
+    values = (
+        None,
+        False,
+        40,
+        "",
+        "a" * 39,
+        "a" * 41,
+        "a" * 63,
+        "a" * 65,
+        "A" * 40,
+        "g" * 40,
+        StringSubclass("a" * 40),
+    )
+    assert all(visibility._is_git_object_id(value) is False for value in values)
 
 
 def test_executor_order_is_static_review_receipt_live_freshness_then_reservation() -> None:
