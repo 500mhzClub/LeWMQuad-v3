@@ -501,6 +501,63 @@ def test_only_backward_membership_differs_between_arms() -> None:
         runner.Trainer.backward_for_arm(joint, "third_arm")
 
 
+def test_r9700_resource_contract_uses_decimal_32gb_boundary() -> None:
+    def trainer_for(
+        *,
+        total_memory: int,
+        name: str = "AMD Radeon AI PRO R9700",
+        visible_count: int = 1,
+    ) -> tuple[runner.Trainer, list[bool]]:
+        deterministic_calls: list[bool] = []
+        properties = SimpleNamespace(name=name, total_memory=total_memory)
+        cuda = SimpleNamespace(
+            is_available=lambda: True,
+            device_count=lambda: visible_count,
+            get_device_properties=lambda _device: properties,
+        )
+        torch = SimpleNamespace(
+            cuda=cuda,
+            device=lambda value: value,
+            use_deterministic_algorithms=deterministic_calls.append,
+            backends=SimpleNamespace(
+                cudnn=SimpleNamespace(benchmark=True, deterministic=False)
+            ),
+            version=SimpleNamespace(hip="test-hip"),
+            __version__="test-torch",
+        )
+        return (
+            runner.Trainer(
+                SimpleNamespace(torch=torch),
+                SimpleNamespace(),
+                Path("."),
+                {},
+            ),
+            deterministic_calls,
+        )
+
+    assert contract.MINIMUM_R9700_TOTAL_MEMORY_BYTES == 32_000_000_000
+    trainer, deterministic_calls = trainer_for(total_memory=32_000_000_000)
+    device, resource = trainer.device()
+    assert device == "cuda:0"
+    assert resource["total_memory_bytes"] == 32_000_000_000
+    assert resource["minimum_total_memory_bytes"] == 32_000_000_000
+    assert resource["visible_device_count"] == 1
+    assert deterministic_calls == [True]
+
+    with pytest.raises(PermissionError, match="discrete R9700"):
+        trainer_for(total_memory=31_999_999_999)[0].device()
+    with pytest.raises(PermissionError, match="discrete R9700"):
+        trainer_for(
+            total_memory=64_000_000_000,
+            name="AMD Radeon Graphics (Raphael)",
+        )[0].device()
+    with pytest.raises(PermissionError, match="exactly one visible GPU"):
+        trainer_for(
+            total_memory=64_000_000_000,
+            visible_count=2,
+        )[0].device()
+
+
 def test_camera_gate_checkpoint_leaf_normalizes_to_authorized_repo_path() -> None:
     leaf = _binding("checkpoint.pt", "1" * 64, "2" * 64)
     normalized = runner._normalize_camera_gate_checkpoint_binding(leaf)

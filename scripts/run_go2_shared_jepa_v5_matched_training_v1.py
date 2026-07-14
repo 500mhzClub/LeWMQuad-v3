@@ -869,7 +869,8 @@ class Trainer:
         properties = torch.cuda.get_device_properties(device)
         if (
             "r9700" not in str(properties.name).casefold().replace(" ", "")
-            or int(properties.total_memory) < 32 * 1024**3
+            or int(properties.total_memory)
+            < contract.MINIMUM_R9700_TOTAL_MEMORY_BYTES
         ):
             raise PermissionError("matched training requires the discrete R9700")
         torch.use_deterministic_algorithms(True)
@@ -879,6 +880,7 @@ class Trainer:
             "device": "cuda:0",
             "name": str(properties.name),
             "total_memory_bytes": int(properties.total_memory),
+            "minimum_total_memory_bytes": contract.MINIMUM_R9700_TOTAL_MEMORY_BYTES,
             "visible_device_count": 1,
             "torch_version": str(torch.__version__),
             "hip_version": str(torch.version.hip),

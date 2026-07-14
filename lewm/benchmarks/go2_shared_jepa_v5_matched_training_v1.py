@@ -222,6 +222,7 @@ OPTIMIZER_CONTRACT = {
     "updates": UPDATE_COUNT,
     "ema_updates_per_optimizer_step": 1,
 }
+MINIMUM_R9700_TOTAL_MEMORY_BYTES = 32_000_000_000
 THREAD_ENVIRONMENT = (
     "OMP_NUM_THREADS",
     "MKL_NUM_THREADS",
