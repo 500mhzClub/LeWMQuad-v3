@@ -119,8 +119,23 @@ RAW_SAMPLE_RESULTS_SHA256 = (
 RAW_ORDERED_PAIR_SHA256 = (
     "76810dba883f3aaffb92fccb593d382daf7edca74a9bb5559a977e7e88b7b5ea"
 )
-RAW_ORDERED_ENDPOINT_SHA256 = (
-    "8130e961b7b5c04944b178fa4f73c1fa157776f7702ab5cdc213cf16c922f698"
+RAW_ENDPOINT_INDEX_ORDER_SHA256 = (
+    "ab21c1a89b37ef60a056de390d59d3983705ab2e40de061d0cb163d1837e850f"
+)
+RAW_AUDIT_DOWNSTREAM_DENIAL_FIELDS = (
+    "dataset_use_authorized",
+    "rgb_decode_authorized",
+    "training_authorized",
+    "selection_authorized",
+    "calibration_authorized",
+    "g2_authorized",
+    "heldout_authorized",
+    "navigation_authorized",
+    "runtime_authorized",
+    "hardware_authorized",
+    "production_authorized",
+    "promotion_authorized",
+    "deployment_authorized",
 )
 
 FAMILIES = (
@@ -656,7 +671,7 @@ def validate_raw_manifest(value: object) -> dict[str, Any]:
         or value["endpoint_instance_count"] != 10_344
         or value["scene_shard_count"] != 88
         or value["ordered_pair_sha256"] != RAW_ORDERED_PAIR_SHA256
-        or value["ordered_endpoint_sha256"] != RAW_ORDERED_ENDPOINT_SHA256
+        or value["ordered_endpoint_sha256"] != RAW_ENDPOINT_INDEX_ORDER_SHA256
         or value["array_layout"] != list(RAW_ARRAY_LAYOUT)
         or value["pair_index"]
         != {
@@ -706,22 +721,6 @@ def validate_raw_audit(value: object) -> dict[str, Any]:
         raise PermissionError("Raw V13 audit is not a plain dict")
     core = dict(value)
     declared = core.pop("content_sha256", None)
-    denials = (
-        "dataset_use_authorized",
-        "rgb_decode_authorized",
-        "training_authorized",
-        "selection_authorized",
-        "calibration_authorized",
-        "g2_authorized",
-        "heldout_authorized",
-        "navigation_authorized",
-        "runtime_authorized",
-        "hardware_authorized",
-        "production_authorized",
-        "promotion_authorized",
-        "deployment_authorized",
-        "retry_authorized",
-    )
     if (
         declared != RAW_AUDIT_CONTENT_SHA256
         or canonical_json_sha256(core) != declared
@@ -736,7 +735,11 @@ def validate_raw_audit(value: object) -> dict[str, Any]:
         or value.get("sample_results_sha256") != RAW_SAMPLE_RESULTS_SHA256
         or type(value.get("sample_results")) is not list
         or len(value["sample_results"]) != 24
-        or any(value.get(name) is not False for name in denials)
+        or any(
+            value.get(name) is not False
+            for name in RAW_AUDIT_DOWNSTREAM_DENIAL_FIELDS
+        )
+        or "retry_authorized" in value
     ):
         raise PermissionError("Raw V13 PASS or downstream denials changed")
     coverage = {

@@ -181,6 +181,159 @@ def test_review_and_authorization_are_strict_and_separate() -> None:
         contract.validate_authorization(swapped, review_binding=review_binding)
 
 
+def test_raw_manifest_binds_endpoint_index_order_not_metadata_plan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    core = {
+        "schema": "lewm_go2_shared_jepa_v5_raw_supervision_dataset_v1",
+        "status": "complete_pending_independent_audit",
+        "evidence_schema": "lewm_go2_observable_camera_ray_evidence_v4",
+        "raster_schema": "lewm_go2_observable_camera_ray_raster_v4",
+        "roles": list(contract.ROLES),
+        "pair_counts": {
+            role: contract.ROLE_COUNTS[role]["pairs"] for role in contract.ROLES
+        },
+        "endpoint_instance_count": 10_344,
+        "unique_endpoint_counts": {
+            role: contract.ROLE_COUNTS[role]["unique_endpoints"]
+            for role in contract.ROLES
+        },
+        "scene_shard_count": 88,
+        "ordered_pair_sha256": contract.RAW_ORDERED_PAIR_SHA256,
+        "ordered_endpoint_sha256": contract.RAW_ENDPOINT_INDEX_ORDER_SHA256,
+        "pair_index": {
+            "path": "pairs.jsonl",
+            "row_count": 5172,
+            "file_sha256": "1" * 64,
+        },
+        "endpoint_index": {
+            "path": "endpoints.jsonl",
+            "row_count": 9460,
+            "file_sha256": "2" * 64,
+        },
+        "array_layout": list(contract.RAW_ARRAY_LAYOUT),
+        "shards": [{} for _ in range(88)],
+        "files": [
+            {"path": "pairs.jsonl", "byte_count": 1, "file_sha256": "1" * 64},
+            {"path": "endpoints.jsonl", "byte_count": 1, "file_sha256": "2" * 64},
+        ],
+        "input_provenance": {},
+        "access_ledger": {},
+        "independent_audit_precommit": {},
+        "parallel_contract": {},
+        "publication": {},
+        "licenses": {"dataset_use_authorized": False},
+    }
+    manifest = contract.with_content_sha256(core)
+    monkeypatch.setattr(
+        contract,
+        "RAW_MANIFEST_CONTENT_SHA256",
+        manifest["content_sha256"],
+    )
+    assert contract.validate_raw_manifest(manifest) == manifest
+    assert contract.RAW_ENDPOINT_INDEX_ORDER_SHA256 == (
+        "ab21c1a89b37ef60a056de390d59d3983705ab2e40de061d0cb163d1837e850f"
+    )
+
+    metadata_plan_core = {
+        **core,
+        "ordered_endpoint_sha256": (
+            "8130e961b7b5c04944b178fa4f73c1fa157776f7702ab5cdc213cf16c922f698"
+        ),
+    }
+    metadata_plan_manifest = contract.with_content_sha256(metadata_plan_core)
+    monkeypatch.setattr(
+        contract,
+        "RAW_MANIFEST_CONTENT_SHA256",
+        metadata_plan_manifest["content_sha256"],
+    )
+    with pytest.raises(PermissionError, match="manifest contract changed"):
+        contract.validate_raw_manifest(metadata_plan_manifest)
+
+
+def test_runner_endpoint_index_order_accepts_exact_digest_not_plan_digest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    inputs = object.__new__(runner.RawInputs)
+    inputs.pairs = [{"content_sha256": "pair"}] * 5172
+    inputs.endpoints = {str(index): {} for index in range(9460)}
+    endpoint_rows = [{"content_sha256": "endpoint"}] * 9460
+    endpoint_digest = runner.contract.RAW_ENDPOINT_INDEX_ORDER_SHA256
+
+    def synthetic_order_digest(values: list[str]) -> str:
+        if len(values) == 5172:
+            return runner.contract.RAW_ORDERED_PAIR_SHA256
+        assert len(values) == 9460
+        return endpoint_digest
+
+    monkeypatch.setattr(
+        runner.contract,
+        "canonical_json_sha256",
+        synthetic_order_digest,
+    )
+    with pytest.raises(PermissionError, match="pair identities repeat"):
+        inputs._validate_indexes(endpoint_rows)
+
+    endpoint_digest = (
+        "8130e961b7b5c04944b178fa4f73c1fa157776f7702ab5cdc213cf16c922f698"
+    )
+    with pytest.raises(PermissionError, match="population or ordering changed"):
+        inputs._validate_indexes(endpoint_rows)
+
+
+def test_raw_audit_exact_denials_require_retry_field_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sample_results = [
+        {"dataset_role": role, "family": family, "passes": True}
+        for role in contract.ROLES
+        for family in contract.FAMILIES
+    ]
+    core = {
+        "schema": "lewm_go2_shared_jepa_v5_raw_supervision_audit_v13",
+        "verdict": "PASS",
+        "dataset_manifest_file_sha256": contract.RAW_MANIFEST_FILE_SHA256,
+        "dataset_manifest_content_sha256": contract.RAW_MANIFEST_CONTENT_SHA256,
+        "pair_count": 5172,
+        "unique_endpoint_count": 9460,
+        "scene_shard_count": 88,
+        "sample_count": 24,
+        "sample_results": sample_results,
+        "sample_results_sha256": contract.RAW_SAMPLE_RESULTS_SHA256,
+        "observed_population": {},
+        "strict_integer_cardinalities": True,
+        "unaliased_descriptor_bound_dataset_leaves": True,
+        "full_byte_inventory_revalidated": True,
+        "pair_endpoint_joins_reconstructed": True,
+        "all_stored_evidence_and_rasters_recomputed": True,
+        "sample_original_geometry_recomputed": True,
+        **{
+            name: False
+            for name in contract.RAW_AUDIT_DOWNSTREAM_DENIAL_FIELDS
+        },
+    }
+    audit = contract.with_content_sha256(core)
+    monkeypatch.setattr(
+        contract,
+        "RAW_AUDIT_CONTENT_SHA256",
+        audit["content_sha256"],
+    )
+    assert len(contract.RAW_AUDIT_DOWNSTREAM_DENIAL_FIELDS) == 13
+    assert "retry_authorized" not in audit
+    assert contract.validate_raw_audit(audit) == audit
+
+    added_retry = contract.with_content_sha256(
+        {**core, "retry_authorized": False}
+    )
+    monkeypatch.setattr(
+        contract,
+        "RAW_AUDIT_CONTENT_SHA256",
+        added_retry["content_sha256"],
+    )
+    with pytest.raises(PermissionError, match="PASS or downstream denials changed"):
+        contract.validate_raw_audit(added_retry)
+
+
 def test_bound_sources_are_complete_and_pin_model_loss_and_egomotion() -> None:
     direct_dependencies = (
         "lewm/benchmarks/go2_observable_camera_ray_evidence_v4.py",
@@ -346,6 +499,34 @@ def test_only_backward_membership_differs_between_arms() -> None:
     assert runner.Trainer.backward_for_arm(joint, "matched_no_jepa") is camera
     with pytest.raises(ValueError):
         runner.Trainer.backward_for_arm(joint, "third_arm")
+
+
+def test_camera_gate_checkpoint_leaf_normalizes_to_authorized_repo_path() -> None:
+    leaf = _binding("checkpoint.pt", "1" * 64, "2" * 64)
+    normalized = runner._normalize_camera_gate_checkpoint_binding(leaf)
+    assert normalized == _binding(
+        contract.CAMERA_CHECKPOINT_RELATIVE_PATH,
+        "1" * 64,
+        "2" * 64,
+    )
+    assert leaf["path"] == "checkpoint.pt"
+    assert "_normalize_camera_gate_checkpoint_binding(" in inspect.getsource(
+        runner._camera_model_after_reservation
+    )
+
+
+def test_camera_gate_checkpoint_normalization_rejects_path_confusion() -> None:
+    valid = _binding("checkpoint.pt", "1" * 64, "2" * 64)
+    invalid = [
+        {**valid, "path": "/checkpoint.pt"},
+        {**valid, "path": "../checkpoint.pt"},
+        {**valid, "path": contract.CAMERA_CHECKPOINT_RELATIVE_PATH},
+        {**valid, "path": "other.pt"},
+        {**valid, "extra": False},
+    ]
+    for binding in invalid:
+        with pytest.raises(PermissionError, match="checkpoint binding changed"):
+            runner._normalize_camera_gate_checkpoint_binding(binding)
 
 
 def test_parent_reserves_once_before_runtime_or_payload(tmp_path: Path) -> None:

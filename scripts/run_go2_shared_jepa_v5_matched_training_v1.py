@@ -372,6 +372,14 @@ def _tensor_manifest(runtime: Runtime, state: Mapping[str, Any]) -> list[dict[st
     return result
 
 
+def _normalize_camera_gate_checkpoint_binding(value: object) -> dict[str, Any]:
+    try:
+        leaf = contract.validate_binding(value, path="checkpoint.pt")
+    except (TypeError, ValueError) as error:
+        raise PermissionError("Camera gate checkpoint binding changed") from error
+    return {**leaf, "path": contract.CAMERA_CHECKPOINT_RELATIVE_PATH}
+
+
 def _camera_model_after_reservation(
     runtime: Runtime,
     authorization: Mapping[str, Any],
@@ -395,7 +403,10 @@ def _camera_model_after_reservation(
         or numeric.get("failure_count") != 0
         or gate.get("retry_authorized") is not False
         or type(gate.get("artifacts")) is not dict
-        or gate["artifacts"].get("checkpoint") != camera["checkpoint"]
+        or _normalize_camera_gate_checkpoint_binding(
+            gate["artifacts"].get("checkpoint")
+        )
+        != camera["checkpoint"]
         or gate.get("licenses", {}).get("shared_v5_development_use_authorized")
         is not True
         or any(
@@ -630,7 +641,7 @@ class RawInputs:
             or contract.canonical_json_sha256(
                 [item["content_sha256"] for item in endpoint_rows]
             )
-            != contract.RAW_ORDERED_ENDPOINT_SHA256
+            != contract.RAW_ENDPOINT_INDEX_ORDER_SHA256
         ):
             raise PermissionError("Raw V13 index population or ordering changed")
         pair_ids = {str(item["content_sha256"]) for item in self.pairs}
