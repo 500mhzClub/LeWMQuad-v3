@@ -1,0 +1,83 @@
+{
+  "audit_receipt_file_sha256": "2d6c81d6603d1baad03c4a9dadf26cf7d0ad0bfe5c2f45eb1742eb4c3d869f7c",
+  "content_sha256": "8dd54d178e3c00a8622d89e4e371a115e1391f34588f667c20cd95b970fc68d2",
+  "dataset_manifest_content_sha256": "9be0c1539897bd731d4dfaf96e03b5d5c1d31d8cb8c723a2b77ffde57baf2812",
+  "dataset_manifest_file_sha256": "2ed32d0c385756ae1b56b2d4bd8871f8d6e6513aac97d19f737cdba2b8668c85",
+  "derivation": "verified_audited_evidence_arrays_then_family_round_robin_ascii_backslash_zero_rank_v1",
+  "fit_sizes": {
+    "5": {
+      "family_counts": {"large_enclosed_maze": 1, "medium_enclosed_maze": 1, "open_obstacle_field": 1, "rough_local_dynamics": 1, "small_enclosed_maze": 1},
+      "first_frame_key_sha256": "245abcda3add36f7bd066189b8d7314e7ece21b28006c51d57a3875454ee8b28",
+      "fit_size": 5,
+      "last_frame_key_sha256": "d98605f84e231bbef49af927ced4524d4787e551d24be50b0873f109465cecd1",
+      "ordered_per_frame_target_sha256": "8f92b70eaa103c1dbaa075771ba339fc0946a98907e74620ed78752711e4176a",
+      "ordered_target_bytes_sha256": "00e791303b9268a7d7c80b1594db9d2de34a996487dd0a42bf5e8117fe1c8e3b",
+      "signature": {
+        "depth_count": 20717,
+        "ground_by_distance": {"0.0_to_1.0": [512, 1769], "1.0_to_2.0": [9218, 11291], "2.0_to_3.0": [16489, 17633], "3.0_to_4.0": [25886, 22108], "4.0_to_5.0": [35497, 25939], "5.0_plus": [17406, 11830]},
+        "ground_by_family": {"large_enclosed_maze": [39123, 0], "medium_enclosed_maze": [38452, 701], "open_obstacle_field": [0, 39342], "rough_local_dynamics": [0, 39019], "small_enclosed_maze": [27433, 11508]},
+        "ground_overall": [105008, 90570],
+        "pixel": [26323, 20717],
+        "raster_target_counts": [16123, 4259, 98]
+      },
+      "signature_sha256": "d06f2a22b5ea93ded28dc474aade6b3df1ec44a48b401ac2e69200b0403c5f03",
+      "subset_content_sha256": "3595dff9d24dbb44f3e73086fce3be4ec53eb8659684738defa8591c4a375f15"
+    },
+    "16": {
+      "family_counts": {"large_enclosed_maze": 3, "medium_enclosed_maze": 3, "open_obstacle_field": 4, "rough_local_dynamics": 3, "small_enclosed_maze": 3},
+      "first_frame_key_sha256": "245abcda3add36f7bd066189b8d7314e7ece21b28006c51d57a3875454ee8b28",
+      "fit_size": 16,
+      "last_frame_key_sha256": "541cf8093055cad2bc482baa4cd58a36374319ee2330d011a2f0638afe448c39",
+      "ordered_per_frame_target_sha256": "5229488232dd04ebfc7bfd5975718abb8585402d98faa0c05b653a29e77d1b3f",
+      "ordered_target_bytes_sha256": "c5f0227cf74aab059f0a846b99297101abce700ff70461cf82796ae0a8b6b5bc",
+      "signature": {
+        "depth_count": 59568,
+        "ground_by_distance": {"0.0_to_1.0": [1372, 5482], "1.0_to_2.0": [25780, 39701], "2.0_to_3.0": [51517, 57539], "3.0_to_4.0": [83793, 69581], "4.0_to_5.0": [112075, 84535], "5.0_plus": [54591, 39032]},
+        "ground_by_family": {"large_enclosed_maze": [108343, 9182], "medium_enclosed_maze": [116244, 701], "open_obstacle_field": [8919, 147619], "rough_local_dynamics": [755, 116440], "small_enclosed_maze": [94867, 21928]},
+        "ground_overall": [329128, 295870],
+        "pixel": [90960, 59568],
+        "raster_target_counts": [51302, 13876, 358]
+      },
+      "signature_sha256": "0ef761bf655a41c2cd0516d42223800b896471790c7fe3262ae173746712aa27",
+      "subset_content_sha256": "3e3706c4d46476c9d6682e92bd80aa97bd7b0f0bd5bc2c9b69b9aa3605f9d4ba"
+    },
+    "32": {
+      "family_counts": {"large_enclosed_maze": 6, "medium_enclosed_maze": 6, "open_obstacle_field": 7, "rough_local_dynamics": 7, "small_enclosed_maze": 6},
+      "first_frame_key_sha256": "245abcda3add36f7bd066189b8d7314e7ece21b28006c51d57a3875454ee8b28",
+      "fit_size": 32,
+      "last_frame_key_sha256": "02024df7042faf89a681688552deccb7c9a9c5ef453dd05e5c222a83928b67b0",
+      "ordered_per_frame_target_sha256": "884e6ada4ef2c6c0e6eb7cf40bbf1d506a265db15b28be9f7d641b0c9851fac6",
+      "ordered_target_bytes_sha256": "29e153d67373bb05c68e07488cf137155418b57fcf0a192c54aa6e7d10bfedbb",
+      "signature": {
+        "depth_count": 126030,
+        "ground_by_distance": {"0.0_to_1.0": [3627, 10944], "1.0_to_2.0": [56941, 74164], "2.0_to_3.0": [115463, 102884], "3.0_to_4.0": [173926, 132968], "4.0_to_5.0": [234223, 158960], "5.0_plus": [112177, 74965]},
+        "ground_by_family": {"large_enclosed_maze": [222280, 12907], "medium_enclosed_maze": [226621, 7663], "open_obstacle_field": [29523, 244543], "rough_local_dynamics": [16232, 257168], "small_enclosed_maze": [201701, 32604]},
+        "ground_overall": [696357, 554885],
+        "pixel": [175026, 126030],
+        "raster_target_counts": [104108, 25975, 989]
+      },
+      "signature_sha256": "e5cd22e7ee9481a0230a938077397e1f99664139c5dc39b421d01da255a30f60",
+      "subset_content_sha256": "19ae70495e7a21e4ecacd7846672145ffc0187ced6b4f9296c7f9e5b4d46ed73"
+    },
+    "320": {
+      "family_counts": {"large_enclosed_maze": 64, "medium_enclosed_maze": 64, "open_obstacle_field": 64, "rough_local_dynamics": 64, "small_enclosed_maze": 64},
+      "first_frame_key_sha256": "245abcda3add36f7bd066189b8d7314e7ece21b28006c51d57a3875454ee8b28",
+      "fit_size": 320,
+      "last_frame_key_sha256": "fde2a06b7d46f68a27179acd0b1c2e1de5eda5516cb36c58f00dcaed89b174f5",
+      "ordered_per_frame_target_sha256": "241306829ed72a1b596f98e57b65f903d84e45f097a325f4fd5fe656ec34267e",
+      "ordered_target_bytes_sha256": "6f91a8ba8ab121c88f9a10ac68ece2dfd8de76d0f42b8c5f9841bf7fdb1de029",
+      "signature": {
+        "depth_count": 1332675,
+        "ground_by_distance": {"0.0_to_1.0": [40077, 110766], "1.0_to_2.0": [577656, 731628], "2.0_to_3.0": [1280116, 900717], "3.0_to_4.0": [1913807, 1149860], "4.0_to_5.0": [2545886, 1377222], "5.0_plus": [1221191, 643494]},
+        "ground_by_family": {"large_enclosed_maze": [2331659, 172202], "medium_enclosed_maze": [2371476, 131919], "open_obstacle_field": [328128, 2150826], "rough_local_dynamics": [268612, 2233890], "small_enclosed_maze": [2278858, 224850]},
+        "ground_overall": [7578733, 4913687],
+        "pixel": [1677885, 1332675],
+        "raster_target_counts": [1072012, 228477, 10231]
+      },
+      "signature_sha256": "95cf60743c215593cda9c0c3299aec1ef8fd734852596e18d1aea93f00275f2a",
+      "subset_content_sha256": "be4b8863120d67132180228982f0631f5f8f6042b581ee5f8a61559fa58188b1"
+    }
+  },
+  "schema": "lewm_go2_observable_camera_ray_fit_v4_target_partitions_v1",
+  "verified_dataset_file_count": 180
+}

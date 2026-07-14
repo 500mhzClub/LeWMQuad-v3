@@ -1,0 +1,112 @@
+{
+  "authority": {
+    "exact_attempt_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "hardware_authorized": false,
+    "later_rung_authorized": false,
+    "navigation_authorized": false,
+    "production_authorized": false,
+    "retry_authorized": false,
+    "runtime_authorized": false,
+    "source_closure_approved": false
+  },
+  "candidate_sources": {
+    "lewm/benchmarks/go2_observable_camera_ray_fit_v4_n5_full_panel_v3.py": "b0f5929aadfaeb9a10f2211db21297c7c01d10305e094a249e5ad8f27b8f46d3",
+    "scripts/execute_go2_observable_camera_ray_fit_v4_n5_full_panel_v3.py": "8a8bec79bbbfdd2554e0625afc3d423ea9ec8e56baf1134f70d334efe357af66"
+  },
+  "canonical_output_root_created": false,
+  "canonical_pass_review_created": false,
+  "content_sha256": "d84152d611631364e4c52114a753c36fdabd1cf69d5508d4cb25b5b93dd67f2f",
+  "findings": [
+    {
+      "code": "constructible_stage_evidence_and_direct_completion_writer_bypass_single_operation_contract",
+      "tests": [
+        "test_v3_production_module_exposes_no_constructible_stage_evidence_object",
+        "test_v3_reservation_copies_reconstruction_and_mutation_are_not_accepted",
+        "test_v3_completion_writer_rejects_caller_supplied_stage_inputs"
+      ]
+    },
+    {
+      "code": "metric_and_gate_writers_accept_caller_mappings_outside_end_to_end_operation",
+      "test": "test_v3_metric_and_gate_writers_reject_caller_mappings"
+    },
+    {
+      "code": "publication_does_not_retain_claimed_directory_identity",
+      "test": "test_v3_publication_requires_the_original_claimed_directory_identity"
+    },
+    {
+      "code": "canonical_review_leaf_alias_is_accepted",
+      "test": "test_v3_review_preflight_rejects_a_canonical_leaf_alias"
+    },
+    {
+      "code": "source_reader_does_not_retain_parent_directory_identity",
+      "test": "test_v3_source_reader_rejects_parent_identity_change_before_open"
+    }
+  ],
+  "handoff": {
+    "file_sha256": "c97b3f761955fb6d73469c53632c27388626ae75b010c317fe64b860f76bf8db",
+    "path": "docs/lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v3_implementation_handoff_2026-07-13.md"
+  },
+  "implementation_author": "/root/v4_full_panel_v3_author",
+  "independent_tests": {
+    "file_sha256": "b7d3669135f22311e13c840e04c4ec2ed583365fc77f7fce6c5c0ecc4e512395",
+    "path": "lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_full_panel_v3_independent_review.py",
+    "result": "7_passed_8_failed"
+  },
+  "parent_block_evidence": {
+    "v1_content_sha256": "99ded56d11b357ada724b238e750d1845bd0010d72a081f4819948b3e05163e7",
+    "v2_block_file_sha256": "ddca89e467e4cc30e52bacf57b28c040465e712843fde465f472f3cc8b38fc73",
+    "v2_content_sha256": "c4d93bbac0c849a2add12bb0ab69609cef0c58a6e203a02d6b806b3c7a41fd8a",
+    "v2_independent_test_file_sha256": "a53c5e5d351784ff2a4824231998194e15040597897411c91e7727ec73a95e69",
+    "v2_review_file_sha256": "24953fc64da151a6ff1f4ad89e5465e1caae300223556702e0f5c8430d47ee04"
+  },
+  "review_completed": true,
+  "reviewer": "/root/raw_plan_v2_qa",
+  "schema": "lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v3_source_review_block_v1",
+  "source_closure_approved": false,
+  "status": "blocked_callable_lifecycle_and_path_identity_contract",
+  "test_sources": {
+    "lewm/tests/n5_full_panel_v3_synthetic_execution.py": "83af899f8479f6a3e98530da5af2c58b2b0fd25b48e29954ef77db08e5bf5c91",
+    "lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_full_panel_v3.py": "730513d7607b02539b58cde883600a28e6d0e3592333a16d5df67ac3e092beee"
+  },
+  "verification": {
+    "accelerators_hidden": true,
+    "aggregate": {
+      "collected": 86,
+      "failed": 11,
+      "passed": 75
+    },
+    "canonical_output_root_absent": true,
+    "canonical_pass_review_absent": true,
+    "exact_mode_run": false,
+    "external_pytest_plugins_disabled": true,
+    "gpu_opened": false,
+    "independent_v3": {
+      "collected": 15,
+      "duration_seconds": 0.7,
+      "failed": 8,
+      "passed": 7
+    },
+    "native_threads": 1,
+    "protected_role_data_opened": false,
+    "retained_closure": {
+      "collected": 48,
+      "duration_seconds": 1.81,
+      "failed": 0,
+      "passed": 48
+    },
+    "v2_block_reproducer": {
+      "collected": 4,
+      "duration_seconds": 0.06,
+      "failed": 3,
+      "passed": 1
+    },
+    "v3_author": {
+      "collected": 19,
+      "duration_seconds": 0.89,
+      "failed": 0,
+      "passed": 19
+    }
+  }
+}

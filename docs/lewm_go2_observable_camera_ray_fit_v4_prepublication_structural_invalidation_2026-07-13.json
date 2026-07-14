@@ -1,0 +1,190 @@
+{
+  "schema": "lewm_go2_observable_camera_ray_fit_v4_prepublication_structural_invalidation_v1",
+  "date": "2026-07-13",
+  "status": "terminal_prepublication_structural_invalidation",
+  "authoritative": false,
+  "created_by": "/root/v4_execution_successor_review",
+  "scope": {
+    "seed": 20260710,
+    "fit_size": 5,
+    "attempt_path": ".generated/go2_observable_camera_ray_fit_v4/development_fit_v2/attempts/seed_20260710/n5",
+    "decision": "immutable_n5_is_structurally_invalid_for_canonical_finalization",
+    "artifacts_mutated": false,
+    "frozen_validator_weakened": false
+  },
+  "immutable_artifacts": {
+    "reservation.json": {
+      "byte_count": 3740,
+      "file_sha256": "f5926ee9006df8d163a2d1a17882d82124608ddce319ea0fb5e80fcfe2c2a8aa",
+      "content_sha256": "699b4e95ed05cb13a79fe6af8507fae5d987af9ff1977b0e4684f32742aa4943"
+    },
+    "checkpoint.pt": {
+      "byte_count": 13778252,
+      "file_sha256": "f1739c742f9c19d5e17753da504a547254eb6e1997bb1ac4eca8b188bbf1dcf0",
+      "declared_content_sha256": "589060417903167bbf9ce7605c906b25cd802edd73b79ec607c77403c6df305a"
+    },
+    "result.json": {
+      "byte_count": 27102689,
+      "file_sha256": "39030bb7928a6b078b03156dc9e14fb206c60c73ab2acac88bfd307c5a65bbfa",
+      "content_sha256": "8c38e13f411a5cd9b03362cb5ac98379875065f284a75ac894706944ff252b61"
+    },
+    "completed.json": {
+      "byte_count": 1111,
+      "file_sha256": "4fb9b5629f039ac16692ec6e171a8188f3bf8b7d052ac8cde26b8ac86c10f6af",
+      "content_sha256": "48022dca829a73b7cbd3b665ac7679807825a9aefd56a48e752ae07e6eaa336f"
+    }
+  },
+  "primary_structural_invalidation": {
+    "frozen_validator": {
+      "path": "lewm/benchmarks/go2_observable_camera_ray_fit_v4_ladder_gate.py",
+      "file_sha256": "aa51413edfea10a2d7c04b034033c83c78c27b1c08d2be1413f5917dc32e36ad",
+      "relative_tolerance": 0.0,
+      "absolute_tolerance": 1e-9
+    },
+    "matched_rgb": {
+      "loss_components": {
+        "ordered_first_hit_nll": 0.8502061486244201,
+        "target_bin_offset_smooth_l1": 0.008017196878790855,
+        "ground_clear_distance_state_balanced_bce": 0.02327450516168028,
+        "derived_raster_hierarchical_bce": 0.23610746562480928
+      },
+      "weight_per_component": 0.25,
+      "stored_total": 0.27940133213996887,
+      "computed_quarter_component_sum": 0.27940132907242515,
+      "stored_minus_computed_delta": 3.067543719037502e-9,
+      "absolute_delta": 3.067543719037502e-9,
+      "within_tolerance": false,
+      "frozen_validator_exception": "ValueError: V4 matched evaluation losses are inconsistent"
+    },
+    "wrong_rgb_with_target_calibration": {
+      "loss_components": {
+        "ordered_first_hit_nll": 3.1058685004711153,
+        "target_bin_offset_smooth_l1": 0.021261028945446014,
+        "ground_clear_distance_state_balanced_bce": 2.292181818652898,
+        "derived_raster_hierarchical_bce": 2.666086030006409
+      },
+      "weight_per_component": 0.25,
+      "stored_total": 2.0213493436574934,
+      "computed_quarter_component_sum": 2.021349344518967,
+      "stored_minus_computed_delta": -8.614735591550016e-10,
+      "absolute_delta": 8.614735591550016e-10,
+      "within_tolerance": true,
+      "frozen_validator_exception": null
+    },
+    "full_immutable_result_validation": {
+      "passed": false,
+      "exception": "ValueError: V4 matched evaluation losses are inconsistent"
+    }
+  },
+  "counterfactual_diagnostic": {
+    "counterfactual_only": true,
+    "mutation_authorized": false,
+    "changed_semantic_paths": [
+      "$.evaluation.matched_rgb.losses.total"
+    ],
+    "replacement_total": 0.27940132907242515,
+    "enclosing_content_sha256_recomputed": true,
+    "counterfactual_content_sha256": "51b814a9a4ce240de61bf8fdb36d3efee8dc678ee618d267bba8c1f374c245cf",
+    "full_frozen_validator_passed": true,
+    "other_failing_invariants_detected_after_counterfactual": [],
+    "interpretation": "the_frozen_full_result_validator_detected_no_independent_failure_after_the_single_forbidden_in_memory_replacement"
+  },
+  "secondary_sorted_vector_findings": {
+    "classification": "secondary_observation_not_an_exception",
+    "recorded_replacement_reason": "stable_rerun_sorted_depth_byte_commitment_replacement_with_exact_numeric_metrics",
+    "matched_rgb": {
+      "immutable_result_sorted_values_sha256": "a8ec842a10766b724b9ee4835c0e6866ce4b2323ccb7c33757c9f9d04ac20326",
+      "stable_read_only_recomputed_sorted_values_sha256": "6014597b1c286c42e5e7caa0643a98141b9545809c325a40763c82caf99d9f08"
+    },
+    "wrong_rgb_with_target_calibration": {
+      "immutable_result_sorted_values_sha256": "6ec4af60dd8f684bf6ef74339e4e439e7235d1a5fdf632aca0b79e77e95e1c86",
+      "stable_read_only_recomputed_sorted_values_sha256": "1e161762ff2158664cee260ff65b903864e14cce3c7bc09a405336140eee5ec8"
+    },
+    "effect_on_terminal_decision": "none_primary_structural_failure_stops_finalization"
+  },
+  "diagnostic_evidence": {
+    "script": {
+      "path": "scripts/diagnose_go2_observable_camera_ray_fit_v4_structural_invalidation.py",
+      "file_sha256": "e5903f8e4979b2dfe4c81440f617c2a06d603a5cf9e9f6552b9d80861682fef3"
+    },
+    "test": {
+      "path": "lewm/tests/test_diagnose_go2_observable_camera_ray_fit_v4_structural_invalidation.py",
+      "file_sha256": "1a357ddd32767048bcd38a1d5f292732592691b043392604cf9de519fafb1811"
+    },
+    "diagnostic_output_content_sha256": "6de176104c587d91bcd74e20d1de6a91f4c725c42441c5e046e700b3c1546f9e",
+    "cpu_only": true,
+    "imports_torch": false,
+    "loads_checkpoint": false,
+    "writes_artifacts": false,
+    "focused_test_result": "2_passed"
+  },
+  "source_closure": {
+    "read_only_reproduction_diagnostic": {
+      "path": "scripts/diagnose_go2_observable_camera_ray_fit_v4_reproduction.py",
+      "file_sha256": "74b95f0e70444704ced4f685c6e341311b76ebe9ec82a8357353da627da7517f"
+    },
+    "v2_metric_verifier": {
+      "path": "scripts/verify_go2_observable_camera_ray_fit_v4_metrics_v2.py",
+      "file_sha256": "4640b4e9a65221f9825140aa58f69ce66e51e06dd1ffb28d77355cadacf377e3"
+    },
+    "v2_finalizer": {
+      "path": "scripts/finalize_go2_observable_camera_ray_fit_v4_ladder_v2.py",
+      "file_sha256": "150ba5f56ff2c5c47794cf87c22b959309856d9a2d921d277d5bf2e2e207d101"
+    },
+    "v2_trainer": {
+      "path": "scripts/train_go2_observable_camera_ray_fit_v4_v2.py",
+      "file_sha256": "c9d22fb38acdf5fd3099271661dc65bb9cea989426a3b6021ad28649d6dd74d3"
+    },
+    "v2_launcher": {
+      "path": "scripts/launch_go2_observable_camera_ray_fit_v4_v2.py",
+      "file_sha256": "65c58e36cb97d155a58ec1cbc93a1f2f42a75e62f049b5d8e874481a435a614b"
+    },
+    "v2_independent_review_json": {
+      "path": "docs/lewm_go2_observable_camera_ray_fit_v4_metric_verifier_finalizer_v2_independent_review_2026-07-13.json",
+      "file_sha256": "fc339ea4d42e83ac10e99d536dd076b4df50ef6fb2598b814596aafc6e866c41",
+      "content_sha256": "493872c56cfe9898de7604e953d0247d08cc09b3ac5766a7725ecf5a929b0daa"
+    },
+    "v2_independent_review_markdown": {
+      "path": "docs/lewm_go2_observable_camera_ray_fit_v4_metric_verifier_finalizer_v2_independent_review_2026-07-13.md",
+      "file_sha256": "d9257086d3dd079523c1e167f9923f2034a27d3c7e6e488442470dd5d4c31029"
+    },
+    "predecessor_trainer": {
+      "path": "scripts/train_go2_observable_camera_ray_fit_v4.py",
+      "file_sha256": "299980cdcb5ef561102f325bbb3db3dfd7aa8217b8a45446b0437badb8f27cfa"
+    },
+    "predecessor_launcher": {
+      "path": "scripts/launch_go2_observable_camera_ray_fit_v4.py",
+      "file_sha256": "71d95ae79cd90c64bee8b06f2787b336d72e2fca1e23fcb0cc52f921350a2ff4"
+    },
+    "predecessor_metric_verifier": {
+      "path": "scripts/verify_go2_observable_camera_ray_fit_v4_metrics.py",
+      "file_sha256": "235f7a6e2cabeaa2ff68c09c82894f69c9bfd47af0bea687dbaec5b06f27f67f"
+    },
+    "predecessor_finalizer": {
+      "path": "scripts/finalize_go2_observable_camera_ray_fit_v4_ladder.py",
+      "file_sha256": "375b1dcd3a548cf7b130fb67291ef5116effcc0197a28be42643bfc59e710ec6"
+    }
+  },
+  "v3_draft_disposition": {
+    "never_reviewed": true,
+    "never_authoritative": true,
+    "removed": true,
+    "metric_receipt_created": false,
+    "gate_created": false,
+    "training_run": false,
+    "gpu_run": false
+  },
+  "authority": {
+    "checkpoint_use_authorized": false,
+    "finalization_authorized": false,
+    "g2_authorized": false,
+    "holdout_authorized": false,
+    "later_rung_authorized": false,
+    "metric_receipt_authorized": false,
+    "promotion_authorized": false,
+    "runtime_authorized": false,
+    "training_authorized": false
+  },
+  "successor_rule": "a_fresh_full_panel_successor_requires_a_separate_reviewed_amendment_that_binds_this_terminal_record_and_must_not_mutate_or_canonically_finalize_the_invalid_n5_result",
+  "content_sha256": "7bdaae6ebb13b7d90290dfe07f5d48f403d29cad977f4a56c9ac7b8cfbcb8602"
+}

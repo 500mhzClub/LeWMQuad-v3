@@ -1,0 +1,190 @@
+{
+  "content_sha256": "17440ae679d1e730f8f37b2fe62de9bef5029e69198b4969d6ff8990bd38d90b",
+  "closure_contract": {
+    "authorization_inside_every_exact_payload_opener": true,
+    "build_receipt_validated_before_exact_label_access": true,
+    "complete_dataset_filesystem_inventory": true,
+    "denied_and_unexpected_access_counters_must_be_zero": true,
+    "destination_cleanup_through_successful_return": true,
+    "duplicate_declared_shard_files_rejected": true,
+    "exact_denial_receipt_schema_and_totals": true,
+    "exact_imports_neutral_until_source_authorization": true,
+    "manifest_bound_rgb_receipt_without_rgb_opens": true,
+    "parent_and_worker_source_revalidation": true,
+    "published_shard_inventory_and_hash_revalidation": true,
+    "source_sidecar_attitude_crosscheck": true,
+    "staging_and_partial_publication_cleanup": true,
+    "transitive_executable_source_closure": true
+  },
+  "date": "2026-07-12",
+  "exact_fit_audit_authorized_after_review": true,
+  "exact_fit_build_authorized_after_review": true,
+  "frozen_inputs": {
+    "fit_label_shards_manifest_sha256": "998ce5a768029c23c931fbbec730c1fe31b9ed1fe155494fc68f34a0c23d3d1b",
+    "fit_panel_content_sha256": "f3e5198b81ac48c06f6c8e4b21e8bf24d62200e3830b1d6685d949a668349d5f",
+    "fit_panel_file_sha256": "c3f44c6b1147efbb6a5fbc2294c6431c72e25da877cab6884972d25c1ffdb16c",
+    "fit_rows_sha256": "5a75e202c8f7a803aafaad093c7f474137dd2e69f50ecdb7fb4e97765afb659d",
+    "render_summaries_manifest_sha256": "9fff0ee9933ee582e4452f15c58f44dae721379bc983f2046d0b87498d1d002f",
+    "sidecar_manifest_content_sha256": "6f1ef7d9ac0c55a42182c3e2c75909f00ab37fffa460aadb549d5cd60d278c1a",
+    "sidecar_manifest_file_sha256": "6fafa417b4f724a0fdf32cfde5740025c3117e4c0b43231fe9ebe94bd9eff529",
+    "sidecar_train_content_sha256": "137f1286e85fbd3e4b45d1c9fb0337255ac735508d6ead57cd816e5134725fa2",
+    "sidecar_train_file_sha256": "6cd47d0d679ace897f5b5d8e5c2f11eabab01930904666161eec3792fd9ab6d6",
+    "sidecar_train_ordered_global_sha256": "36ebaad06bb0370e8914a8012a68d7102e481e358d42e6e803f05d5459c0119c",
+    "sidecar_train_ordered_identity_sha256": "0ca28a66bc3c7a4def8ceb69a482322e18c808298b000860b0d227576c386c63",
+    "source_authorization_binding_sha256": "c045a5566e53686ab80fdc86c2de910d312c02c5f03f253dfda13be7a85a16c9",
+    "source_authorization_manifest_content_sha256": "5811cc732ed4a0af53f70e099721c5d1854f49ccd8891cce8570ff9231ab70df",
+    "source_authorization_manifest_file_sha256": "93b59cc38338857f01160b1cc048071ab7f32d0d2cfc2ab0a30b64a0e5a40380",
+    "source_geometry_manifest_sha256": "beddb29b9826d7a21968effea863d040a6cfc9849ab0b2a78c4105d28dbb37d2"
+  },
+  "immutable_outputs": {
+    "audit_result": ".generated/go2_observable_camera_ray_fit_v4/v1/audit_result.json",
+    "currently_absent_required": true,
+    "dataset_manifest": ".generated/go2_observable_camera_ray_fit_v4/v1/manifest.json"
+  },
+  "resource_contract": {
+    "device": "cpu_only",
+    "gpu_used": false,
+    "maximum_workers": 6,
+    "native_threads_per_worker": 1,
+    "ray_chunk_size": 8192,
+    "worker_start_method": "spawn"
+  },
+  "role_contract": {
+    "auditor_additional_roles": [
+      "physical_train_fit_label_shards"
+    ],
+    "builder_roles": [
+      "physical_train_fit_metadata",
+      "physical_train_rgb_path_and_sha_metadata_only",
+      "allowlisted_train_source_geometry",
+      "attitude_sidecar_train"
+    ],
+    "forbidden_roles": [
+      "rgb_bytes",
+      "checkpoint_selection",
+      "probability_calibration",
+      "g2_evaluation",
+      "holdout",
+      "runtime",
+      "sealed",
+      "checkpoint",
+      "model_output"
+    ]
+  },
+  "schema": "lewm_go2_observable_camera_ray_fit_v4_implementation_manifest_v1",
+  "source_map": {
+    "entries": [
+      {
+        "path": "docs/lewm_go2_observable_camera_ray_evidence_v4_contract_2026-07-12.md",
+        "role": "contract",
+        "sha256": "0a17cc94056ef5c53d2a96266cb21a5500eb3a9ea13e62f02f296b97455bcdee"
+      },
+      {
+        "path": "lewm/benchmarks/go2_observable_camera_ray_evidence_v4.py",
+        "role": "pure_evidence",
+        "sha256": "708d368e461fe60aacb860dda5b0cbfd1acaf43e5cb3ae18a77bb48de739fb85"
+      },
+      {
+        "path": "scripts/build_go2_observable_camera_ray_fit_v4.py",
+        "role": "builder",
+        "sha256": "4efb0517130df39a1953539755d82289b16e89b314bba5713d6d9d944acf1d16"
+      },
+      {
+        "path": "scripts/audit_go2_observable_camera_ray_fit_v4.py",
+        "role": "auditor",
+        "sha256": "5cc17aa430aa85cf5b8c487f0aca908df239bcedb4b12b589e61105a0690e647"
+      },
+      {
+        "path": "scripts/audit_go2_n32_camera_frustum_observability.py",
+        "role": "source_access_runner",
+        "sha256": "f7e3a3e60937caabbe003ff41af6aec44248df137b0a53c383364272152f3079"
+      },
+      {
+        "path": "lewm/benchmarks/go2_n32_camera_frustum_observability.py",
+        "role": "source_audit_core",
+        "sha256": "ab97c34a8a07a93d6b49b5adb0b1a82bc66d38be206baab362b7b1f1b59f3cc3"
+      },
+      {
+        "path": "lewm/datasets/go2_paired_navigation.py",
+        "role": "source_label_semantics",
+        "sha256": "14df0cf59ab7554431b1be2ef91e3ab7229200be94bb9afa88127e3ea53c2c08"
+      },
+      {
+        "path": "lewm/planning/geometry_contract.py",
+        "role": "source_geometry_contract_semantics",
+        "sha256": "6873a9550399a5decc90e4a31b2945e54074bdb56855a035924f49b4511c813b"
+      },
+      {
+        "path": "lewm_worlds/lewm_worlds/manifest.py",
+        "role": "source_scene_manifest_semantics",
+        "sha256": "5679768016226e89e385ec7a7238616416248a9a1194b898ecb9078662f6a888"
+      },
+      {
+        "path": "lewm_worlds/lewm_worlds/planning_grid.py",
+        "role": "source_planning_grid_semantics",
+        "sha256": "e6f7e26d584dfd7923493803fc95a75135122b37a1f95cb51f9267b284649510"
+      },
+      {
+        "path": "lewm/benchmarks/go2_dynamic_cell_square_projection.py",
+        "role": "dynamic_projection",
+        "sha256": "ce2bb0d38ed1436635cdd1468ba1dfe1a935fdafdd6dda5adcf37b97a32a74bf"
+      },
+      {
+        "path": "lewm/datasets/go2_attitude_sidecar.py",
+        "role": "attitude_sidecar",
+        "sha256": "74b7febce112d85aefe986cfbaf99dd116100e2256d0c13bf275310c76b06313"
+      },
+      {
+        "path": "lewm/tests/test_go2_observable_camera_ray_evidence_v4.py",
+        "role": "pure_test",
+        "sha256": "f8f9c402f3cce81eec86595173840b89c35231bcdf3f5ec81ce617d36752758e"
+      },
+      {
+        "path": "lewm/tests/test_build_go2_observable_camera_ray_fit_v4.py",
+        "role": "builder_test",
+        "sha256": "2bf3e913de626ea35d02beffbbc5e43ed060e76895b144b08a337edddd05c14a"
+      },
+      {
+        "path": "lewm/tests/test_audit_go2_observable_camera_ray_fit_v4.py",
+        "role": "auditor_test",
+        "sha256": "9398aa40c777a0941164d91185a7733391f5bf2d140da65ace4eb0a78f8fe5c1"
+      }
+    ],
+    "entry_count": 15,
+    "source_map_sha256": "a22989bcd64c2e79fbb2a06743622fd7ca14332d0b4715f2c982af083a2061bd"
+  },
+  "status": "independent_final_review_passed_exact_fit_build_and_audit_authorized",
+  "verification": {
+    "auditor_dry_run": {
+      "audit_content_sha256": "01bacf4cf82eb97e3e6dbe8435bd48306f811d7d1f723225c6bb268e11e809a9",
+      "internal_verification_passes": true,
+      "synthetic_reference_exact": true
+    },
+    "builder_dry_run": {
+      "artifact_map_sha256": "d9262b54f303edb8733bec1f7a7af0b0d52d62193788b36fa8b54c66985c9941",
+      "dataset_content_sha256": "04eb88f517eabdbab9dbe79298939a5c6d0146d02bf334ab457563df83279442",
+      "one_vs_six_worker_byte_identical": true
+    },
+    "exact_fit_payload_opened": false,
+    "focused_pytest": {
+      "failed": 0,
+      "passed": 72
+    },
+    "independent_final_review": {
+      "blocking_findings": 0,
+      "decision": "pass",
+      "reviewed_manifest_content_sha256": "496a7aefbae85b665faaab3b72159305842dac10b745687668d439a431d9f0a2",
+      "reviewed_manifest_file_sha256": "8555ac9076e3472044f1ba1af1ced89af5c80b28cb1b6d78a65a799d0a01ea0f",
+      "reviewed_source_map_sha256": "a22989bcd64c2e79fbb2a06743622fd7ca14332d0b4715f2c982af083a2061bd",
+      "restricted_payload_opened": false
+    },
+    "py_compile": {
+      "file_count": 6,
+      "passed": true
+    },
+    "transitive_regression_pytest": {
+      "failed": 0,
+      "passed": 137
+    }
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "authority": {
+    "exact_attempt_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "hardware_authorized": false,
+    "later_rung_authorized": false,
+    "navigation_authorized": false,
+    "production_authorized": false,
+    "retry_authorized": false,
+    "runtime_authorized": false,
+    "source_closure_approved": false
+  },
+  "candidate_sources": {
+    "lewm/benchmarks/go2_observable_camera_ray_fit_v4_n5_full_panel_v4.py": "ff291b94b1546ae9ccf0b85de5f96b87edce4ad5b7992ca16bbbf13dcd1d4485",
+    "scripts/execute_go2_observable_camera_ray_fit_v4_n5_full_panel_v4.py": "19cbdc5692911b31b3b44883b0cfefcc81daa4afc16250b89c1317dd9b66afe4"
+  },
+  "canonical_output_root_created": false,
+  "canonical_pass_review_created": false,
+  "content_sha256": "0c34ec6931c8850a949498ca1b38f16548db76bc4d6e1e47994c6514898ff091",
+  "findings": [
+    {
+      "code": "post_training_verification_and_finalization_failures_lack_terminal_failure_path",
+      "test": "test_v4_independent_post_training_failures_are_terminalized"
+    },
+    {
+      "code": "repository_root_absolute_open_accepts_transient_ancestor_alias",
+      "test": "test_v4_independent_repository_root_walk_rejects_transient_ancestor_alias"
+    },
+    {
+      "code": "claimed_path_absolute_stat_accepts_transient_output_ancestor_alias",
+      "test": "test_v4_independent_claim_rejects_transient_output_ancestor_alias"
+    }
+  ],
+  "handoff": {
+    "file_sha256": "4e0aa7e2efa266feb774a4b095cbddca105cfd046aac7a0da7f942f1b2b6925e",
+    "path": "docs/lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v4_implementation_handoff_2026-07-13.md"
+  },
+  "implementation_author": "/root/raw_plan_v2_qa",
+  "independent_tests": {
+    "file_sha256": "2942b23215f506fa9893013d377f5bb4ce4b2327083a1806be4746bfdae56e9f",
+    "path": "lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_full_panel_v4_independent_review.py",
+    "result": "14_passed_3_failed"
+  },
+  "parent_block_evidence": {
+    "v1_content_sha256": "99ded56d11b357ada724b238e750d1845bd0010d72a081f4819948b3e05163e7",
+    "v2_content_sha256": "c4d93bbac0c849a2add12bb0ab69609cef0c58a6e203a02d6b806b3c7a41fd8a",
+    "v3_block_file_sha256": "d1f859aea2a80f090c3ee09df5194f5b4bcfca22865f323de543f3b216b3e168",
+    "v3_content_sha256": "d84152d611631364e4c52114a753c36fdabd1cf69d5508d4cb25b5b93dd67f2f",
+    "v3_independent_test_file_sha256": "b7d3669135f22311e13c840e04c4ec2ed583365fc77f7fce6c5c0ecc4e512395",
+    "v3_review_file_sha256": "d28eadce56668b0cf793806bb98e7c793eb9d874b7ca818d4d9b3c3205fe53e7"
+  },
+  "review_completed": true,
+  "reviewer": "/root/coordinator_v2_qa",
+  "schema": "lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v4_source_review_block_v1",
+  "source_closure_approved": false,
+  "status": "blocked_path_continuity_and_terminal_lifecycle_contract",
+  "test_sources": {
+    "lewm/tests/n5_full_panel_v4_synthetic_execution.py": "01e49c303d0e2c8e76e7ecbdbd2d0cf159948a5f36a4dc6248d0e014d9c69fb5",
+    "lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_full_panel_v4.py": "299fd18b88a869916a916adc4e8848235e955447e9a1f245aeaeec6e7ee69688"
+  },
+  "verification": {
+    "accelerators_hidden": true,
+    "aggregate": {
+      "collected": 122,
+      "failed": 11,
+      "passed": 111
+    },
+    "canonical_output_root_absent": true,
+    "canonical_pass_review_absent": true,
+    "exact_mode_run": false,
+    "external_pytest_plugins_disabled": true,
+    "gpu_opened": false,
+    "independent_v4": {
+      "collected": 17,
+      "duration_seconds": 0.73,
+      "failed": 3,
+      "passed": 14
+    },
+    "native_threads": 1,
+    "protected_role_data_opened": false,
+    "retained_closure": {
+      "collected": 90,
+      "duration_seconds": 2.29,
+      "failed": 0,
+      "passed": 90
+    },
+    "v3_block_reproducer": {
+      "collected": 15,
+      "duration_seconds": 0.70,
+      "failed": 8,
+      "passed": 7
+    },
+    "v3_closures_in_v4": {
+      "collected": 8,
+      "duration_seconds": 0.07,
+      "failed": 0,
+      "passed": 8,
+      "subset_of_independent_v4": true
+    },
+    "v4_author": {
+      "collected": 23,
+      "duration_seconds": 0.78,
+      "failed": 0,
+      "passed": 23,
+      "subset_of_retained_closure": true
+    },
+    "v4_cpu_contract_smoke": {
+      "frame_exposures": 2000,
+      "passed": true,
+      "schedule_sha256": "62efec890e572623ab6d76e8c67337ee29badaf81638943ae56ed8da0a3a8634",
+      "update_count": 400
+    }
+  }
+}

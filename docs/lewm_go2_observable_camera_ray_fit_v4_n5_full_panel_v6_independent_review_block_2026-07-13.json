@@ -1,0 +1,84 @@
+{
+  "authority": {
+    "checkpoint_use_authorized": false,
+    "exact_attempt_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "hardware_authorized": false,
+    "navigation_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "retry_authorized": false,
+    "runtime_authorized": false,
+    "selection_authorized": false,
+    "source_closure_approved": false,
+    "training_authorized": false
+  },
+  "candidate_sources": {
+    "lewm/benchmarks/go2_observable_camera_ray_fit_v4_n5_full_panel_v6.py": "75b987dc97c21e2689caea8df4fb316a80b6602cf8a612e47abe02bf14a5d549",
+    "scripts/execute_go2_observable_camera_ray_fit_v4_n5_full_panel_v6.py": "791103400c6093c40abed5c87009d4a18feceda1c5155c2d06dae97b2bb38a3d"
+  },
+  "canonical_output_root_created": false,
+  "canonical_pass_review_created": false,
+  "content_sha256": "98260f2b1af7845af6cf1312698b7a5c0d6a0579705f4ff522801eaa02d41fb1",
+  "findings": [
+    {
+      "code": "claim_refresh_absorbs_interleaved_unowned_create_delete",
+      "function": "_refresh_claim_directory",
+      "test": "test_v6_claim_refresh_rejects_interleaved_foreign_create_delete"
+    },
+    {
+      "code": "directory_chain_refresh_absorbs_interleaved_unowned_create_delete",
+      "function": "_refresh_directory_chain",
+      "test": "test_v6_derived_refresh_rejects_interleaved_foreign_create_delete"
+    }
+  ],
+  "handoff": {
+    "file_sha256": "4ca14a5d8392d88c4d9779d82ef4eb3f1655317ed61c8e51490651877e3e57e1",
+    "path": "docs/lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v6_implementation_handoff_2026-07-13.md"
+  },
+  "implementation_author": "/root/camera_v5_independent",
+  "independent_evidence": {
+    "author_suite": "40_passed",
+    "regression": {
+      "file_sha256": "bd2379d7aab8e20be2d87ac857b1086da5aa6e6d9efa58f2ea3cd3095d406e51",
+      "path": "lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_full_panel_v6_directory_consistency_review.py",
+      "result": "3_passed_2_failed"
+    },
+    "standalone": {
+      "claim_interleaving": "MISSED",
+      "derived_interleaving": "MISSED",
+      "normal_owned_write": "PASS",
+      "shared_parent_churn": "PASS"
+    }
+  },
+  "lifecycle_amendment": {
+    "file_sha256": "1fa4279c604b1a8be825e082a367a5404381154fe1784394e43aee35924caa90",
+    "path": "docs/lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v6_lifecycle_recovery_amendment_2026-07-13.md"
+  },
+  "required_remediation": "Bind refresh to a verifiable exact owned-mutation transaction or equivalent event provenance and reject interleaved unowned create/delete even when final names are restored.",
+  "review": {
+    "file_sha256": "c1ac98c38f19d6b141ff6306956317cb08914c5be22606a86de03fe0439d4692",
+    "path": "docs/lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v6_independent_review_2026-07-13.md"
+  },
+  "review_completed": true,
+  "reviewer": "/root/raw_auditor_author",
+  "schema": "lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v6_source_review_block_v1",
+  "source_closure_approved": false,
+  "status": "blocked_transient_unowned_directory_history_absorbed_by_refresh",
+  "test_sources": {
+    "lewm/tests/n5_full_panel_v6_synthetic_execution.py": "8df835debcc24f7fd1b77f5cc0f559215023c9111d3c2ff5ae367129296a496f",
+    "lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_full_panel_v6.py": "2af8b43439ce2b72cc9c22cd1a3d48028c66e3b18cd2b2b742ddf0b147ce017b"
+  },
+  "verification": {
+    "accelerators_hidden": true,
+    "canonical_output_root_absent": true,
+    "canonical_pass_review_absent": true,
+    "exact_mode_run": false,
+    "external_pytest_plugins_disabled": true,
+    "gpu_opened": false,
+    "native_threads": 1,
+    "production_payload_opened": false,
+    "protected_role_data_opened": false
+  }
+}

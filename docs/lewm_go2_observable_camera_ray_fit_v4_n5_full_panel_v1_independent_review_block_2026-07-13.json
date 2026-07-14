@@ -1,0 +1,67 @@
+{
+  "authority": {
+    "exact_attempt_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "hardware_authorized": false,
+    "later_rung_authorized": false,
+    "production_authorized": false,
+    "retry_authorized": false,
+    "runtime_authorized": false,
+    "source_closure_approved": false
+  },
+  "candidate_sources": {
+    "lewm/benchmarks/go2_observable_camera_ray_fit_v4_n5_full_panel_v1.py": "875edc86efbe25d246b24c2ef2467cc7956b1b3bb90e6d8d1e03e4a9c5b11d88",
+    "scripts/finalize_go2_observable_camera_ray_fit_v4_n5_full_panel_v1.py": "1d4471381a6c3b29f0b077e44e3126f956281ff105d4e38aa8e0f6ba18675b8b",
+    "scripts/launch_go2_observable_camera_ray_fit_v4_n5_full_panel_v1.py": "3cb9ff782a15bc97dd3cca2cc25705e006d6af19a7dbef6d27dee893d9b570c8",
+    "scripts/train_go2_observable_camera_ray_fit_v4_n5_full_panel_v1.py": "48ac856c080906a8d73d5a9b97d1dcf7fe21f5bc99217cce669c43b9c091acca",
+    "scripts/verify_go2_observable_camera_ray_fit_v4_n5_full_panel_v1.py": "00c62cec39e1eb05bf23a96a9153aa8ff350235c2e5c6662f6148934ab9d85b0"
+  },
+  "canonical_pass_review_created": false,
+  "content_sha256": "99ded56d11b357ada724b238e750d1845bd0010d72a081f4819948b3e05163e7",
+  "findings": [
+    {
+      "code": "importable_global_marker_forges_authority",
+      "test": "test_importable_global_marker_cannot_forge_verified_authority"
+    },
+    {
+      "code": "verified_authority_clone_is_accepted",
+      "test": "test_verified_authority_clone_is_rejected"
+    },
+    {
+      "code": "one_authority_reserves_multiple_paths",
+      "test": "test_verified_authority_cannot_reserve_more_than_one_attempt"
+    },
+    {
+      "code": "stale_preclaim_staging_strands_sole_attempt",
+      "test": "test_stale_preclaim_staging_cannot_strand_the_sole_attempt"
+    },
+    {
+      "code": "post_rename_failure_omits_seed_root_fsync",
+      "test": "test_post_rename_failure_durably_fsyncs_seed_root"
+    }
+  ],
+  "handoff": {
+    "file_sha256": "8f4735a3ecd20a8c19bd729fdaf71ceb60a3a884de717423e8f84ef6ef2745f7",
+    "path": "docs/lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v1_implementation_handoff_2026-07-13.md"
+  },
+  "implementation_author": "/root/v4_execution_successor_review",
+  "independent_tests": {
+    "file_sha256": "387147a8dd6fe1a20184284a05c18df73419ca91c21054eb378e79a8194d5b3b",
+    "path": "lewm/tests/test_go2_observable_camera_ray_fit_v4_n5_full_panel_v1_independent_review.py",
+    "result": "1_passed_5_failed"
+  },
+  "review_completed": true,
+  "reviewer": "/root/downstream_integration_review",
+  "schema": "lewm_go2_observable_camera_ray_fit_v4_n5_full_panel_v1_source_review_block_v1",
+  "source_closure_approved": false,
+  "status": "blocked_authority_replay_and_reservation_durability",
+  "verification": {
+    "candidate_focused": "17_passed",
+    "canonical_output_root_absent": true,
+    "canonical_pass_review_absent": true,
+    "exact_data_opened": false,
+    "gpu_opened": false,
+    "predecessor_closure": "31_passed"
+  }
+}
