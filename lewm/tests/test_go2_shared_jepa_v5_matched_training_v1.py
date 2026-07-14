@@ -181,11 +181,35 @@ def test_review_and_authorization_are_strict_and_separate() -> None:
         contract.validate_authorization(swapped, review_binding=review_binding)
 
 
-def test_bound_sources_pin_the_retained_model_and_corrected_loss() -> None:
+def test_bound_sources_are_complete_and_pin_model_loss_and_egomotion() -> None:
+    direct_dependencies = (
+        "lewm/benchmarks/go2_observable_camera_ray_evidence_v4.py",
+        "lewm/models/encoders.py",
+        "lewm/models/egomotion_bev_jepa.py",
+        "lewm/models/observable_camera_ray_evidence_v4.py",
+        "lewm/models/observable_camera_ray_evidence_v4_training.py",
+        "lewm/models/observable_camera_ray_evidence_v4_gate_aligned_raster_nll_v12.py",
+        "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py",
+    )
+    assert contract.DIRECT_SEMANTIC_DEPENDENCY_PATHS == direct_dependencies
+    assert contract.SOURCE_PATHS == (
+        contract.CONTRACT_RELATIVE_PATH,
+        contract.RUNNER_RELATIVE_PATH,
+        contract.TEST_RELATIVE_PATH,
+        contract.MODEL_RELATIVE_PATH,
+        contract.LOSS_RELATIVE_PATH,
+        contract.METRICS_RELATIVE_PATH,
+        *direct_dependencies,
+    )
     observed = contract.current_source_bindings(ROOT)
     assert tuple(observed) == contract.SOURCE_PATHS
     assert observed[contract.MODEL_RELATIVE_PATH] == contract.MODEL_FILE_SHA256
     assert observed[contract.LOSS_RELATIVE_PATH] == contract.LOSS_FILE_SHA256
+    assert (
+        observed[contract.EGOMOTION_RELATIVE_PATH]
+        == contract.EGOMOTION_FILE_SHA256
+        == "c4006e9804182b077399229d43bc8c9be64b5af12c81fff4076d5a78e6ef359b"
+    )
     assert "go2_shared_jepa_v5_full_training_v4_policy" not in (
         ROOT / contract.RUNNER_RELATIVE_PATH
     ).read_text()
@@ -422,9 +446,89 @@ def test_runner_is_stdlib_until_reservation_and_child_is_isolated() -> None:
     )
     assert "-I" in command and "-B" in command
     internal_source = inspect.getsource(runner.run_internal_verifier)
+    authority_source = inspect.getsource(runner._revalidate_isolated_authority)
+    assert internal_source.index("_revalidate_isolated_authority(") < internal_source.index(
+        "_load_runtime()"
+    )
+    assert authority_source.index("current_source_bindings(") < authority_source.index(
+        "validate_review("
+    ) < authority_source.index("validate_authorization(")
     assert '"checkpoint_open_count": 1' in internal_source
     assert "model.load_state_dict(evaluation_state, strict=True)" in internal_source
     assert "qualified_checkpoint.pt" not in source
+
+
+def test_isolated_authority_revalidation_rejects_source_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository_root = tmp_path / "repository"
+    output_root = repository_root / "attempt"
+    sources = {
+        path: hashlib.sha256(f"source:{path}".encode()).hexdigest()
+        for path in contract.SOURCE_PATHS
+    }
+
+    review = _review(sources)
+    review_raw = contract.canonical_json_bytes(review) + b"\n"
+    review_path = repository_root / contract.REVIEW_RELATIVE_PATH
+    review_path.parent.mkdir(parents=True)
+    review_path.write_bytes(review_raw)
+    review_binding = contract.artifact_binding(
+        contract.REVIEW_RELATIVE_PATH,
+        review_raw,
+        content_sha256=str(review["content_sha256"]),
+    )
+
+    authorization = _authorization(review_binding)
+    authorization_raw = contract.canonical_json_bytes(authorization) + b"\n"
+    authorization_path = repository_root / contract.AUTHORIZATION_RELATIVE_PATH
+    authorization_path.write_bytes(authorization_raw)
+    reservation, reservation_raw = runner._reserve_output(
+        output_root,
+        review=review,
+        review_raw=review_raw,
+        authorization=authorization,
+        authorization_raw=authorization_raw,
+        sources=sources,
+        environment={"test": True},
+    )
+    result = {
+        "attempt_identity": reservation["attempt_identity"],
+        "artifacts": {
+            "reservation": contract.artifact_binding(
+                "reservation.json",
+                reservation_raw,
+                content_sha256=str(reservation["content_sha256"]),
+            )
+        },
+    }
+
+    monkeypatch.setattr(
+        runner.contract,
+        "current_source_bindings",
+        lambda _root: dict(sources),
+    )
+    reopened = runner._revalidate_isolated_authority(
+        output_root,
+        result,
+        repository_root=repository_root,
+    )
+    assert reopened[0] == reservation
+
+    mutated_sources = dict(sources)
+    mutated_sources[contract.EGOMOTION_RELATIVE_PATH] = "f" * 64
+    monkeypatch.setattr(
+        runner.contract,
+        "current_source_bindings",
+        lambda _root: mutated_sources,
+    )
+    with pytest.raises(PermissionError, match="reviewed source bindings changed"):
+        runner._revalidate_isolated_authority(
+            output_root,
+            result,
+            repository_root=repository_root,
+        )
 
 
 def test_isolated_child_import_does_not_load_numpy_torch_or_pillow() -> None:

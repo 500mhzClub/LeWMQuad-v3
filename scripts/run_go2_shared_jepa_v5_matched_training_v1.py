@@ -2221,6 +2221,134 @@ def run_parent(
         raise
 
 
+def _read_binding_from_root(
+    root: Path,
+    binding: Mapping[str, Any],
+    *,
+    expected_path: str,
+) -> tuple[dict[str, Any], bytes]:
+    validated = contract.validate_binding(binding, path=expected_path)
+    raw = _read_regular(
+        root / expected_path,
+        expected_sha256=validated["file_sha256"],
+    )
+    if len(raw) != validated["byte_count"]:
+        raise PermissionError(f"bound byte count changed: {expected_path}")
+    return validated, raw
+
+
+def _revalidate_isolated_authority(
+    output_root: Path,
+    result: Mapping[str, Any],
+    *,
+    repository_root: Path = ROOT,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, str]]:
+    artifacts = result.get("artifacts")
+    if type(artifacts) is not dict:
+        raise PermissionError("training result artifacts changed")
+    reservation_binding, reservation_raw = _read_binding_from_root(
+        output_root,
+        artifacts.get("reservation"),
+        expected_path="reservation.json",
+    )
+    reservation = contract.parse_canonical_json(
+        reservation_raw,
+        name="training reservation",
+    )
+    expected_reservation_fields = {
+        "schema",
+        "status",
+        "attempt_index",
+        "maximum_attempts",
+        "attempt_identity",
+        "independent_review",
+        "execution_authorization",
+        "reviewed_sources",
+        "science_contract",
+        "raw",
+        "camera",
+        "environment",
+        "torch_imported_before_reservation",
+        "camera_or_raw_opened_before_reservation",
+        "retry_authorized",
+        "content_sha256",
+    }
+    recomputed_reservation_binding = contract.artifact_binding(
+        "reservation.json",
+        reservation_raw,
+        content_sha256=str(reservation["content_sha256"]),
+    )
+    if (
+        set(reservation) != expected_reservation_fields
+        or recomputed_reservation_binding != reservation_binding
+        or reservation.get("schema") != contract.RESERVATION_SCHEMA
+        or reservation.get("status") != "reserved_before_torch_camera_raw_or_rgb"
+        or reservation.get("attempt_index") != 1
+        or reservation.get("maximum_attempts") != 1
+        or reservation.get("attempt_identity") != result.get("attempt_identity")
+        or reservation.get("science_contract") != contract.science_contract()
+        or reservation.get("torch_imported_before_reservation") is not False
+        or reservation.get("camera_or_raw_opened_before_reservation") is not False
+        or reservation.get("retry_authorized") is not False
+    ):
+        raise PermissionError("training reservation changed")
+
+    sources = contract.current_source_bindings(repository_root)
+    if reservation.get("reviewed_sources") != sources:
+        raise PermissionError("reviewed source bindings changed before verification")
+
+    review_binding, review_raw = _read_binding_from_root(
+        repository_root,
+        reservation.get("independent_review"),
+        expected_path=contract.REVIEW_RELATIVE_PATH,
+    )
+    review = contract.parse_canonical_json(review_raw, name="independent review")
+    contract.validate_review(review, expected_sources=sources)
+    if contract.artifact_binding(
+        contract.REVIEW_RELATIVE_PATH,
+        review_raw,
+        content_sha256=str(review["content_sha256"]),
+    ) != review_binding:
+        raise PermissionError("independent review binding changed")
+
+    authorization_binding, authorization_raw = _read_binding_from_root(
+        repository_root,
+        reservation.get("execution_authorization"),
+        expected_path=contract.AUTHORIZATION_RELATIVE_PATH,
+    )
+    authorization = contract.parse_canonical_json(
+        authorization_raw,
+        name="execution authorization",
+    )
+    contract.validate_authorization(
+        authorization,
+        review_binding=review_binding,
+    )
+    if contract.artifact_binding(
+        contract.AUTHORIZATION_RELATIVE_PATH,
+        authorization_raw,
+        content_sha256=str(authorization["content_sha256"]),
+    ) != authorization_binding:
+        raise PermissionError("execution authorization binding changed")
+    expected_attempt_identity = contract.canonical_json_sha256(
+        {
+            "schema": f"{contract.SCHEMA_PREFIX}_attempt_identity_v1",
+            "review": review_binding,
+            "authorization": authorization_binding,
+            "science_contract_sha256": contract.canonical_json_sha256(
+                contract.science_contract()
+            ),
+        }
+    )
+    if (
+        reservation["attempt_identity"] != expected_attempt_identity
+        or reservation.get("raw") != authorization["raw"]
+        or reservation.get("camera") != authorization["camera"]
+    ):
+        raise PermissionError("reserved execution authority changed")
+    return reservation, review, authorization, sources
+
+
 def run_internal_verifier() -> int:
     if not sys.flags.isolated or not sys.dont_write_bytecode:
         raise PermissionError("internal verifier requires python -I -B")
@@ -2239,6 +2367,7 @@ def run_internal_verifier() -> int:
     result_binding = contract.artifact_binding(
         "result.json", result_raw, content_sha256=str(result["content_sha256"])
     )
+    _revalidate_isolated_authority(output_root, result)
     candidate_binding = contract.validate_binding(
         result["artifacts"]["pre_g2_candidate"], path="pre_g2_candidate.pt"
     )

@@ -29,6 +29,30 @@ LOSS_RELATIVE_PATH = (
 METRICS_RELATIVE_PATH = (
     "lewm/benchmarks/go2_observable_camera_ray_fit_v4_metrics.py"
 )
+EVIDENCE_CONTRACT_RELATIVE_PATH = (
+    "lewm/benchmarks/go2_observable_camera_ray_evidence_v4.py"
+)
+EGOMOTION_RELATIVE_PATH = "lewm/models/egomotion_bev_jepa.py"
+ENCODERS_RELATIVE_PATH = "lewm/models/encoders.py"
+EVIDENCE_MODEL_RELATIVE_PATH = "lewm/models/observable_camera_ray_evidence_v4.py"
+EVIDENCE_TRAINING_RELATIVE_PATH = (
+    "lewm/models/observable_camera_ray_evidence_v4_training.py"
+)
+HIERARCHICAL_FIRST_HIT_RELATIVE_PATH = (
+    "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py"
+)
+GATE_ALIGNED_NLL_RELATIVE_PATH = (
+    "lewm/models/observable_camera_ray_evidence_v4_gate_aligned_raster_nll_v12.py"
+)
+DIRECT_SEMANTIC_DEPENDENCY_PATHS = (
+    EVIDENCE_CONTRACT_RELATIVE_PATH,
+    ENCODERS_RELATIVE_PATH,
+    EGOMOTION_RELATIVE_PATH,
+    EVIDENCE_MODEL_RELATIVE_PATH,
+    EVIDENCE_TRAINING_RELATIVE_PATH,
+    GATE_ALIGNED_NLL_RELATIVE_PATH,
+    HIERARCHICAL_FIRST_HIT_RELATIVE_PATH,
+)
 SOURCE_PATHS = (
     CONTRACT_RELATIVE_PATH,
     RUNNER_RELATIVE_PATH,
@@ -36,12 +60,16 @@ SOURCE_PATHS = (
     MODEL_RELATIVE_PATH,
     LOSS_RELATIVE_PATH,
     METRICS_RELATIVE_PATH,
+    *DIRECT_SEMANTIC_DEPENDENCY_PATHS,
 )
 MODEL_FILE_SHA256 = (
     "b438295d7ec5cb0897cc953a229f461da7fca16322c4c936555d37833a36e4b9"
 )
 LOSS_FILE_SHA256 = (
     "8422c253c3eca3b34dd42b4f823dab4ac67f0e90fb2cff8eeaa67a1310b3c53a"
+)
+EGOMOTION_FILE_SHA256 = (
+    "c4006e9804182b077399229d43bc8c9be64b5af12c81fff4076d5a78e6ef359b"
 )
 
 REVIEW_RELATIVE_PATH = (
@@ -444,8 +472,11 @@ def current_source_bindings(root: Path = ROOT) -> dict[str, str]:
     if (
         bindings[MODEL_RELATIVE_PATH] != MODEL_FILE_SHA256
         or bindings[LOSS_RELATIVE_PATH] != LOSS_FILE_SHA256
+        or bindings[EGOMOTION_RELATIVE_PATH] != EGOMOTION_FILE_SHA256
     ):
-        raise PermissionError("stable Shared-V5 model or corrected loss changed")
+        raise PermissionError(
+            "stable Shared-V5 model, corrected loss or egomotion base changed"
+        )
     return bindings
 
 
