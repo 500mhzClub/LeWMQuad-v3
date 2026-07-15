@@ -4,7 +4,7 @@
 
 This source-free document preregisters exactly one possible fresh Camera-only attempt rooted at `.generated/go2_shared_observable_camera_ray_jepa_v5/protected_camera_adaptation_v5_native_schedule_completion`. It is not implementation, review, execution, training, selection, promotion, or downstream authority. Exact source closure, an independent source review, and a separate execution authorization are required before reserving a previously absent output root.
 
-V5 is not a V3/V4 retry, resume, warm start, or checkpoint continuation. It must reconstruct the exact Shared-V5 update-zero state SHA-256 `e03613bf5da2d93910630a0e2b98799a907f9a2b4767a0c2c36b1fa942cd2a87` from the already-qualified N320 checkpoint file/content SHA-256 `ece874b53941e841fffc61b724a86d4383b881549afa453b746dd5d68aba11b0` / `9dcca536943f89acfdab591e19a030ef3dc8f3f19a050b1b10025fc2b`.
+V5 is not a V3/V4 retry, resume, warm start, or checkpoint continuation. It must reconstruct the exact Shared-V5 update-zero state SHA-256 `e03613bf5da2d93910630a0e2b98799a907f9a2b4767a0c2c36b1fa942cd2a87` from the already-qualified N320 checkpoint file/content SHA-256 `ece874b53941e841fffc61b724a86d4383b881549afa453b746dd5d68aba11b0` / `9dcca536943f89acfd7d463fdab591e19a030ef3dc8f3f19a050b1b10025fc2b`.
 
 ## Committed evidence
 
