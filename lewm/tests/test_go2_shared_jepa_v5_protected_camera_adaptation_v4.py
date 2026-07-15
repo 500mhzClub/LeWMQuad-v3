@@ -236,6 +236,58 @@ def test_source_closure_science_delta_and_runner_import_are_exact() -> None:
     assert hashlib.sha256((ROOT / contract.V3_RUNNER_RELATIVE_PATH).read_bytes()).hexdigest() == contract.V3_SOURCE_SHA256[contract.V3_RUNNER_RELATIVE_PATH]
 
 
+def test_persisted_review_and_authorization_round_trip_validate() -> None:
+    sources = contract.current_source_bindings(ROOT)
+    review = contract.with_content_sha256({
+        "schema": contract.REVIEW_SCHEMA,
+        "status": "PASS",
+        "implementation_author": contract.IMPLEMENTATION_AUTHOR,
+        "reviewer": "/root/camera_v4_roundtrip_reviewer",
+        "reviewed_sources": sources,
+        "predecessor": contract.predecessor_contract(),
+        "science_contract": contract.science_contract(),
+        "science_delta": contract.science_delta(),
+        "evidence": contract.evidence_contract(),
+        "reporting_contract": contract.reporting_contract(),
+        "control_contract": contract.control_contract(),
+        "source_only": True,
+        "findings": [],
+        "authority": dict(contract.REVIEW_AUTHORITY),
+    })
+    review_raw = contract.canonical_json_bytes(review) + b"\n"
+    parsed_review = contract.parse_canonical_json(review_raw, name="round-trip V4 review")
+    assert contract.validate_review(parsed_review, expected_sources=sources) == parsed_review
+    review_binding = contract.artifact_binding(
+        contract.REVIEW_RELATIVE_PATH,
+        review_raw,
+        content_sha256=parsed_review["content_sha256"],
+    )
+    authorization = contract.with_content_sha256({
+        "schema": contract.AUTHORIZATION_SCHEMA,
+        "status": "authorized_one_exact_protected_camera_adaptation_v4_tail_depth_attempt",
+        "authorizer": "/root/camera_v4_roundtrip_authorizer",
+        "independent_review": review_binding,
+        "predecessor": contract.predecessor_contract(),
+        "raw": contract.expected_raw_authority(),
+        "camera": contract.expected_camera_authority(),
+        "experiment": contract.science_contract(),
+        "science_delta": contract.science_delta(),
+        "evidence": contract.evidence_contract(),
+        "reporting_contract": contract.reporting_contract(),
+        "control_contract": contract.control_contract(),
+        "authority": dict(contract.EXECUTION_AUTHORITY),
+    })
+    authorization_raw = contract.canonical_json_bytes(authorization) + b"\n"
+    parsed_authorization = contract.parse_canonical_json(
+        authorization_raw, name="round-trip V4 authorization"
+    )
+    assert contract.validate_authorization(
+        parsed_authorization,
+        review_binding=review_binding,
+        reviewer=parsed_review["reviewer"],
+    ) == parsed_authorization
+
+
 def test_runner_restores_loss_trace_and_snapshot_hooks_on_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runner = _runner()
     runtime = SimpleNamespace(loss_adapter=baseline_loss, torch=torch)

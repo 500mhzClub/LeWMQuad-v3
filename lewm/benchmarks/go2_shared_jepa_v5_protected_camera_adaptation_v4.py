@@ -88,6 +88,9 @@ BASELINE_PROGRESS = {
     1_000: {"passed_margin_count": 106, "total_shortfall": 49.09939462151839, "worst_margin": -7.944758415222166},
     2_000: {"passed_margin_count": 121, "total_shortfall": 30.06221418748834, "worst_margin": -5.833248805999755},
 }
+PERSISTED_BASELINE_PROGRESS = {
+    str(update): dict(values) for update, values in BASELINE_PROGRESS.items()
+}
 TAIL_DEPTH_DEFINITION = {
     "finite_hit_bin_count": 64,
     "conditional_first_hit_mass": True,
@@ -145,7 +148,7 @@ def evidence_contract() -> dict[str, Any]:
     return {
         "preregistration_commit": "0fdf1b163394aefa1a0a3731f9609ba4fa314f77",
         "fixed_file_sha256": dict(FIXED_EVIDENCE_SHA256),
-        "v3_progress_baselines": copy.deepcopy(BASELINE_PROGRESS),
+        "v3_progress_baselines": copy.deepcopy(PERSISTED_BASELINE_PROGRESS),
         "v3_warm_start_authorized": False,
         "unchanged_physical_gate_attainable_positive_control_only": True,
         "learned_checkpoint_qualified_by_oracle": False,
@@ -203,7 +206,7 @@ def control_contract() -> dict[str, Any]:
         "margin_statistics": {"count": MARGIN_COUNT, "P": "count(m>=0)", "S": "sum(max(0,-m))", "W": "min(m)"},
         "update_100": "finite_state_metrics_92_gradients_frozen_hash_trainable_movement_and_189_margins_required_then_qualify_or_continue",
         "update_400": "qualify_or_continue_without_numeric_cutoff",
-        "pareto_baselines": copy.deepcopy(BASELINE_PROGRESS),
+        "pareto_baselines": copy.deepcopy(PERSISTED_BASELINE_PROGRESS),
         "pareto_rule": "P>=P3_and_S<=S3_and_W>=W3_with_at_least_one_strict; loss_is_not_compared",
         "update_4000": "only_all_nine_qualifies_otherwise_stop_unqualified",
         "retry_resume_extension_threshold_relaxation_or_soft_promotion_authorized": False,
