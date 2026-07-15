@@ -231,6 +231,9 @@ class GenesisKinematicDevBackend:
         )
         self._pose = Pose2D(self._spawn_xyz[0], self._spawn_xyz[1], self._spawn_yaw)
         self._last_camera_body: tuple[np.ndarray, np.ndarray] | None = None
+        self._last_rgb_sha256: str | None = None
+        self._collision_observed = self._fall_observed = False
+        self._claimed_colors: set[str] = set()
         self._stopped = False
 
     @staticmethod
@@ -248,6 +251,9 @@ class GenesisKinematicDevBackend:
         self._stopped = False
         self._pose = Pose2D(self._spawn_xyz[0], self._spawn_xyz[1], self._spawn_yaw)
         self._write_robot_pose()
+        self._last_rgb_sha256 = None
+        self._collision_observed = self._fall_observed = False
+        self._claimed_colors.clear()
 
     def render_rgb(self) -> np.ndarray:
         if self._stopped:
@@ -311,7 +317,9 @@ class GenesisKinematicDevBackend:
         up = np.cross(right, forward)
         up /= np.linalg.norm(up)
         self._last_camera_body = (origin, np.stack((forward, right, up)))
-        return np.ascontiguousarray(rgb, dtype=np.uint8)
+        result = np.ascontiguousarray(rgb, dtype=np.uint8)
+        self._last_rgb_sha256 = hashlib.sha256(result.tobytes(order="C")).hexdigest()
+        return result
 
     def preprocess_rgb(self, frame: np.ndarray) -> torch.Tensor:
         if not isinstance(frame, np.ndarray) or frame.ndim != 3 or frame.shape[2] != 3:
@@ -363,6 +371,32 @@ class GenesisKinematicDevBackend:
         ) - math.pi
         self._pose = Pose2D(self._pose.x_m + world_dx, self._pose.y_m + world_dy, yaw)
         self._write_robot_pose()
+        from lewm_genesis.rollout import RolloutRunner
+
+        position = np.asarray(RolloutRunner._as_np(self.build.robot.get_pos())).reshape(-1, 3)[0]
+        quaternion = np.asarray(RolloutRunner._as_np(self.build.robot.get_quat())).reshape(-1, 4)[0]
+        self._collision_observed = math.hypot(float(position[0]) - self._pose.x_m,
+                                              float(position[1]) - self._pose.y_m) > 1.0e-3
+        self._fall_observed = bool(
+            float(position[2]) < self._spawn_xyz[2] - 0.15
+            or 1.0 - 2.0 * (float(quaternion[1]) ** 2 + float(quaternion[2]) ** 2)
+            < math.cos(math.radians(45.0)))
+        self._pose = Pose2D(float(position[0]), float(position[1]), self._pose.yaw_rad)
+
+    def attempt_claim(self, *, tick_index: int, color: str, intent_sha256: str) -> dict[str, object]:
+        if color in self._claimed_colors: raise RuntimeError("semantic color claim was already attempted")
+        self._claimed_colors.add(color)
+        core = {"schema": "lewm_shared_v5_dev_claim_attempt_v1", "tick_index": tick_index,
+                "color": color, "intent_sha256": intent_sha256}
+        return {**core, "content_sha256": _canonical_sha256(core)}
+
+    def navigation_evidence(self, *, tick_index: int) -> dict[str, object]:
+        if self._last_rgb_sha256 is None: raise RuntimeError("navigation evidence requires one rendered frame")
+        core = {"schema": "lewm_shared_v5_dev_backend_evidence_v1", "tick_index": tick_index,
+                "coverage_pose_xy_yaw": list(as_pose_tuple(self._pose)), "visibility_opportunity_sha256": self._last_rgb_sha256,
+                "collision_observed": self._collision_observed, "fall_observed": self._fall_observed,
+                "source_sha256": hashlib.sha256(b"genesis-kinematic-readback-v1").hexdigest()}
+        return {**core, "content_sha256": _canonical_sha256(core)}
 
     def stop(self) -> None:
         if self._stopped:

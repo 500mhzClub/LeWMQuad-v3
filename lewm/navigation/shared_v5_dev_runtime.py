@@ -12,7 +12,9 @@ returned immutable run only after :meth:`run_controller` has sealed the loop.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+import hashlib
+import json
 import math
 import re
 from typing import Any, Mapping, Sequence
@@ -22,6 +24,10 @@ import torch
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _TARGET_COLORS = ("red", "yellow", "blue", "green")
+_CHAIN_GENESIS = hashlib.sha256(b"shared-v5-dev-tick-chain-v1").hexdigest()
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(json.dumps(
+        value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
 
 
 class SharedV5DevRuntimeError(RuntimeError):
@@ -186,9 +192,9 @@ class DevelopmentPhysicalFuseReceipt:
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise SharedV5DevRuntimeError(f"{name} must be nonnegative")
-        if self.revision_after <= self.revision_before:
+        if self.revision_after != self.revision_before + 1:
             raise SharedV5DevRuntimeError(
-                "physical fuse must advance the supplied memory revision"
+                "physical fuse must advance the supplied memory revision by exactly one"
             )
 
 
@@ -246,7 +252,37 @@ class TickDecision:
     target_presence_probability: float
     target_quality: float
     target_uncertainty: float
+    claim_intent_sha256: str | None
+    claim_receipt: Mapping[str, object] | None
     command: MotionCommand
+
+
+@dataclass(frozen=True)
+class TickEvidence:
+    tick_index: int; decision_sha256: str
+    physical_revision: int; physical_content_sha256: str
+    coverage_pose_xy_yaw: tuple[float, float, float]; visibility_opportunity_sha256: str
+    collision_observed: bool; fall_observed: bool
+    backend_evidence_sha256: str; claim_attempt_sha256: str | None
+    previous_chain_sha256: str; content_sha256: str = field(init=False)
+    chain_sha256: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        core = {"schema": "lewm_shared_v5_dev_tick_evidence_v1", **self.__dict__}; content = _canonical_sha256(core)
+        object.__setattr__(self, "content_sha256", content)
+        object.__setattr__(self, "chain_sha256", _canonical_sha256({"previous": self.previous_chain_sha256, "content": content}))
+@dataclass(frozen=True)
+class TerminalFaultRecord:
+    tick_index: int; stage: str; exception_type: str
+    physical_revision: int; physical_content_sha256: str; post_fuse_mutation: bool
+    claim_journal: tuple[Mapping[str, object], ...]; last_claim_intent_sha256: str | None
+    last_command: MotionCommand | None; counters: Mapping[str, int]; previous_chain_sha256: str
+    schema: str = field(init=False, default="lewm_shared_v5_dev_terminal_fault_v1")
+    content_sha256: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        core = {**self.__dict__, "last_command": asdict(self.last_command) if self.last_command else None}
+        object.__setattr__(self, "content_sha256", _canonical_sha256({"schema": "lewm_shared_v5_dev_terminal_fault_v1", **core}))
 
 
 @dataclass(frozen=True)
@@ -280,13 +316,28 @@ class RuntimeCounters:
 
 @dataclass(frozen=True)
 class ControllerRun:
-    decisions: tuple[TickDecision, ...]
-    counters: RuntimeCounters
+    artifacts: RuntimeArtifactBindings; decisions: tuple[TickDecision, ...]
+    tick_evidence: tuple[TickEvidence, ...]; claim_journal: tuple[Mapping[str, object], ...]
+    counters: RuntimeCounters; reset_state_sha256: str
+    content_sha256: str = field(init=False)
 
     def __post_init__(self) -> None:
         self.counters.assert_one_frame_per_tick()
         if len(self.decisions) != self.counters.visual_ticks:
             raise SharedV5DevRuntimeError("decision count differs from visual ticks")
+        if len(self.tick_evidence) != len(self.decisions): raise SharedV5DevRuntimeError("tick evidence count differs from decisions")
+        previous = _CHAIN_GENESIS
+        projected_claims = []
+        for decision, evidence in zip(self.decisions, self.tick_evidence, strict=True):
+            if evidence.previous_chain_sha256 != previous: raise SharedV5DevRuntimeError("tick evidence hash chain changed")
+            if evidence.decision_sha256 != _canonical_sha256(asdict(decision)): raise SharedV5DevRuntimeError("tick evidence decision binding changed")
+            if decision.claim_receipt is not None: projected_claims.append(decision.claim_receipt)
+            previous = evidence.chain_sha256
+        if tuple(projected_claims) != self.claim_journal: raise SharedV5DevRuntimeError("claim journal projection changed")
+        object.__setattr__(self, "content_sha256", _canonical_sha256(
+            {"schema": "lewm_shared_v5_dev_controller_run_v1", "artifacts": asdict(self.artifacts), "decisions": [asdict(x) for x in self.decisions],
+             "tick_evidence": [asdict(x) for x in self.tick_evidence], "claims": list(self.claim_journal),
+             "counters": asdict(self.counters), "reset_state_sha256": self.reset_state_sha256}))
 
 
 class SharedV5DevMazeRuntime:
@@ -342,6 +393,14 @@ class SharedV5DevMazeRuntime:
             raise SharedV5DevRuntimeConfigurationError(
                 "projection must consume the exact supplied physical memory"
             )
+        initial_state = _callable_attr(physical_memory, "to_dict")()
+        empty_fields = ("seen_observation_ids", "seen_transaction_keys", "seen_semantic_transaction_keys",
+                        "transactions", "active_observations", "traversals", "execution_blocks")
+        if (type(initial_state) is not dict or initial_state.get("revision") != 0
+                or initial_state.get("physical_content_sha256") != getattr(physical_memory, "physical_content_sha256", None)
+                or any(initial_state.get(name) for name in empty_fields)):
+            raise SharedV5DevRuntimeConfigurationError("controller requires canonical fresh revision-zero physical memory")
+        self._initial_physical_state_sha256 = _canonical_sha256(initial_state)
         if artifacts.has_trained_g4:
             if g4_head is None or g4_candidate_builder is None:
                 raise SharedV5DevRuntimeConfigurationError(
@@ -371,6 +430,12 @@ class SharedV5DevMazeRuntime:
         self._reset_done = False
         self._sealed = False
         self._tick_index = 0
+        self._decisions: list[TickDecision] = []; self._tick_evidence: list[TickEvidence] = []
+        self._claim_attempts: dict[str, Mapping[str, object]] = {}
+        self._last_claim_intent_sha256: str | None = None; self._last_command: MotionCommand | None = None
+        self._previous_chain_sha256 = _CHAIN_GENESIS
+        self._stage = "constructed"
+        self.terminal_fault: TerminalFaultRecord | None = None
         self._counts = {
             "rgb_renders": 0,
             "rgb_preprocesses": 0,
@@ -386,6 +451,9 @@ class SharedV5DevMazeRuntime:
             raise SharedV5DevRuntimeOrderError("sealed controller cannot be reset")
         if self._reset_done:
             raise SharedV5DevRuntimeOrderError("controller was already reset")
+        if (_canonical_sha256(_callable_attr(self.physical_memory, "to_dict")())
+                != self._initial_physical_state_sha256 or self._claim_attempts):
+            raise SharedV5DevRuntimeOrderError("reset requires canonical revision zero and empty controller journals")
         _callable_attr(backend, "reset")()
         self._reset_done = True
         self._tick_index = 0
@@ -396,6 +464,7 @@ class SharedV5DevMazeRuntime:
         if not self._reset_done:
             raise SharedV5DevRuntimeOrderError("reset must precede the first tick")
 
+        self._stage = "render"
         raw_rgb = _callable_attr(backend, "render_rgb")()
         self._counts["rgb_renders"] += 1
         image = _callable_attr(backend, "preprocess_rgb")(raw_rgb)
@@ -426,6 +495,7 @@ class SharedV5DevMazeRuntime:
         pose_value = _callable_attr(backend, "pose_xy_yaw")()
         pose = pose_value if type(pose_value) is Pose2D else Pose2D(*pose_value)
         revision_before = getattr(self.physical_memory, "revision", None)
+        self._stage = "physical_fuse"
         receipt = self.physical_fuser.fuse(
             evidence=evidence,
             pose=pose,
@@ -453,6 +523,7 @@ class SharedV5DevMazeRuntime:
             raise SharedV5DevRuntimeError(
                 "physical fuse receipt does not bind the exact updated memory"
             )
+        self._stage = "post_fuse"
         snapshot = self.projection.project()
         if (
             getattr(snapshot, "physical_revision", None) != receipt.revision_after
@@ -528,12 +599,26 @@ class SharedV5DevMazeRuntime:
                         _cell(item, name="path cell") for item in path.cells
                     )
 
-        command = self._command_for_path(
-            pose=pose,
-            route_kind=route_kind,
-            path_cells=path_cells,
-            configuration_frame=configuration_frame,
+        claim_sha = None
+        claim_ready = confirmed and goal == current and self.target_color not in self._claim_attempts
+        if claim_ready:
+            intent = _canonical_sha256({"tick": self._tick_index, "color": self.target_color, "goal": current})
+            self._last_claim_intent_sha256 = intent
+            receipt_value = _callable_attr(backend, "attempt_claim")(
+                tick_index=self._tick_index, color=self.target_color, intent_sha256=intent)
+            if type(receipt_value) is not dict or set(receipt_value) != {
+                    "schema", "tick_index", "color", "intent_sha256", "content_sha256"}:
+                raise SharedV5DevRuntimeError("claim receipt fields changed")
+            core = dict(receipt_value)
+            claim_sha = core.pop("content_sha256", None)
+            if (receipt_value["schema"], receipt_value["tick_index"], receipt_value["color"], receipt_value["intent_sha256"], claim_sha) != (
+                    "lewm_shared_v5_dev_claim_attempt_v1", self._tick_index, self.target_color, intent, _canonical_sha256(core)):
+                raise SharedV5DevRuntimeError("claim receipt binding changed")
+            self._claim_attempts[self.target_color] = receipt_value
+        command = MotionCommand("hold", 0.0, 0.0, 0.0) if claim_ready else self._command_for_path(
+            pose=pose, route_kind=route_kind, path_cells=path_cells, configuration_frame=configuration_frame
         )
+        self._last_command = command
         _callable_attr(backend, "apply_command")(command)
         self._counts["commands_applied"] += 1
         decision = TickDecision(
@@ -547,9 +632,38 @@ class SharedV5DevMazeRuntime:
             target_presence_probability=target["presence"],
             target_quality=target["quality"],
             target_uncertainty=target["uncertainty"],
+            claim_intent_sha256=intent if claim_ready else None,
+            claim_receipt=receipt_value if claim_ready else None,
             command=command,
         )
+        evidence = _callable_attr(backend, "navigation_evidence")(tick_index=self._tick_index)
+        if type(evidence) is not dict or set(evidence) != {
+            "schema", "tick_index", "coverage_pose_xy_yaw", "visibility_opportunity_sha256",
+            "collision_observed", "fall_observed", "source_sha256", "content_sha256"
+        }:
+            raise SharedV5DevRuntimeError("backend navigation evidence fields changed")
+        evidence_core = dict(evidence)
+        evidence_sha = evidence_core.pop("content_sha256", None)
+        if evidence["schema"] != "lewm_shared_v5_dev_backend_evidence_v1" or evidence["tick_index"] != self._tick_index or evidence_sha != _canonical_sha256(evidence_core):
+            raise SharedV5DevRuntimeError("backend navigation evidence binding changed")
+        coverage_pose = Pose2D(*evidence["coverage_pose_xy_yaw"])
+        if type(evidence["collision_observed"]) is not bool or type(evidence["fall_observed"]) is not bool: raise SharedV5DevRuntimeError("backend collision/fall evidence type changed")
+        _sha256(evidence["visibility_opportunity_sha256"], name="visibility opportunity")
+        _sha256(evidence["source_sha256"], name="backend evidence source")
+        tick_evidence = TickEvidence(
+            tick_index=self._tick_index, decision_sha256=_canonical_sha256(asdict(decision)),
+            physical_revision=receipt.revision_after, physical_content_sha256=receipt.physical_content_sha256,
+            coverage_pose_xy_yaw=(coverage_pose.x_m, coverage_pose.y_m, coverage_pose.yaw_rad),
+            visibility_opportunity_sha256=evidence["visibility_opportunity_sha256"],
+            collision_observed=evidence["collision_observed"], fall_observed=evidence["fall_observed"],
+            backend_evidence_sha256=evidence_sha, claim_attempt_sha256=claim_sha,
+            previous_chain_sha256=self._previous_chain_sha256,
+        )
+        self._decisions.append(decision)
+        self._tick_evidence.append(tick_evidence)
+        self._previous_chain_sha256 = tick_evidence.chain_sha256
         self._tick_index += 1
+        self._stage = "tick_complete"
         return decision
 
     def run_controller(self, backend: object, *, visual_ticks: int) -> ControllerRun:
@@ -560,15 +674,21 @@ class SharedV5DevMazeRuntime:
             if type(visual_ticks) is not int or visual_ticks <= 0:
                 raise ValueError("visual_ticks must be a positive exact integer")
             self.reset(backend)
-            decisions = tuple(self.tick(backend) for _ in range(visual_ticks))
+            reset_state_sha256 = _canonical_sha256({"physical_state_sha256": self._initial_physical_state_sha256, "claim_journal": []})
+            for _ in range(visual_ticks):
+                self.tick(backend)
             counters = RuntimeCounters(
                 visual_ticks=visual_ticks,
                 **self._counts,
             )
             counters.assert_one_frame_per_tick()
-            return ControllerRun(decisions=decisions, counters=counters)
+            return ControllerRun(
+                artifacts=self.artifacts, decisions=tuple(self._decisions), tick_evidence=tuple(self._tick_evidence),
+                claim_journal=tuple(self._claim_attempts.values()), counters=counters, reset_state_sha256=reset_state_sha256)
         except BaseException as exc:
             primary_error = exc
+            if self._reset_done:
+                self._record_fault(exc)
             raise
         finally:
             self._sealed = True
@@ -576,11 +696,25 @@ class SharedV5DevMazeRuntime:
                 _callable_attr(backend, "stop")()
             except BaseException as stop_error:
                 if primary_error is None:
+                    self._stage = "stop"
+                    self._record_fault(stop_error)
                     raise
                 primary_error.add_note(
                     "backend.stop() also failed: "
                     f"{type(stop_error).__name__}: {stop_error}"
                 )
+
+    def _record_fault(self, exc: BaseException) -> None:
+        self.terminal_fault = TerminalFaultRecord(
+            tick_index=self._tick_index, stage=self._stage, exception_type=type(exc).__name__,
+            physical_revision=getattr(self.physical_memory, "revision", 0),
+            physical_content_sha256=getattr(self.physical_memory, "physical_content_sha256", ""),
+            post_fuse_mutation=getattr(self.physical_memory, "revision", 0) > len(self._decisions),
+            claim_journal=tuple(self._claim_attempts.values()), last_claim_intent_sha256=self._last_claim_intent_sha256,
+            last_command=self._last_command, counters={"visual_ticks_completed": len(self._decisions), **self._counts},
+            previous_chain_sha256=self._previous_chain_sha256,
+        )
+        setattr(exc, "lewm_terminal_fault_record", self.terminal_fault)
 
     def _target_reading(self, output: object) -> dict[str, float]:
         colors = tuple(getattr(output, "colors", ()))
@@ -726,5 +860,7 @@ __all__ = [
     "SharedV5DevRuntimeError",
     "SharedV5DevRuntimeOrderError",
     "TargetConfirmationCalibration",
+    "TerminalFaultRecord",
     "TickDecision",
+    "TickEvidence",
 ]
