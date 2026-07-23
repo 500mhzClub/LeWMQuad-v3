@@ -105,6 +105,52 @@ def _read_bound_experiment(
     return raw
 
 
+def _install_raw_input_read_ledger(
+    stack: Any,
+    *,
+    ledger: list[dict[str, Any]],
+) -> Any:
+    original = stack._read_regular
+
+    def recorded(path: Path, *args: Any, **kwargs: Any) -> bytes:
+        try:
+            relative = path.relative_to(ROOT).as_posix()
+        except ValueError:
+            relative = str(path)
+        event = {
+            "sequence": len(ledger) + 1,
+            "kind": "raw_inputs_delegated_read",
+            "path": relative,
+            "status": "read_started",
+        }
+        ledger.append(event)
+        try:
+            raw = original(path, *args, **kwargs)
+        except BaseException as error:
+            event["status"] = "read_failed"
+            event["error_type"] = type(error).__name__
+            raise
+        event.update(
+            {
+                "observed_byte_count": len(raw),
+                "observed_file_sha256": _sha256(raw),
+                "status": "read_completed",
+            }
+        )
+        return raw
+
+    stack._read_regular = recorded
+    return original
+
+
+def _restore_raw_input_reader(stack: Any, original: Any) -> None:
+    if original is None:
+        return
+    stack._read_regular = original
+    if stack._read_regular is not original:
+        raise RuntimeError("raw input reader restoration failed")
+
+
 def _parse_json(raw: bytes, *, name: str) -> dict[str, Any]:
     try:
         value = json.loads(raw)
@@ -913,6 +959,8 @@ def run(
     top_level_reads: list[dict[str, Any]] = []
     operations = _initial_operation_counts()
     inputs: Any | None = None
+    stack: Any | None = None
+    original_raw_input_reader: Any | None = None
     try:
         v6_contract_path = (
             ROOT
@@ -959,6 +1007,10 @@ def run(
         )
         operations["sidecar_read_count"] += 1
         stage = "raw_checkpoint_selection_input_validation"
+        original_raw_input_reader = _install_raw_input_read_ledger(
+            stack,
+            ledger=top_level_reads,
+        )
         inputs = stack.RawInputs.__new__(stack.RawInputs)
         stack.RawInputs.__init__(inputs, runtime, authorization)
         trainer = stack.Trainer(runtime, inputs, output_root, reservation)
@@ -982,6 +1034,8 @@ def run(
             selection_pairs=selection_pairs,
             operations=operations,
         )
+        _restore_raw_input_reader(stack, original_raw_input_reader)
+        original_raw_input_reader = None
         stage = "immutable_soft_reproduction"
         baseline_metric = sidecar["metric"]
         baseline_scopes = baseline_metric["scopes"]
@@ -1132,6 +1186,16 @@ def run(
         )
         return 0
     except BaseException as error:
+        if stack is not None and original_raw_input_reader is not None:
+            try:
+                _restore_raw_input_reader(stack, original_raw_input_reader)
+                original_raw_input_reader = None
+            except BaseException as restore_error:
+                error = RuntimeError(
+                    "raw input reader restoration failed after "
+                    f"{type(error).__name__}: {error}; "
+                    f"{type(restore_error).__name__}: {restore_error}"
+                )
         failure_access_core = _current_access_core(
             status=f"FAIL_prefix_at_{stage}",
             top_level_reads=top_level_reads,

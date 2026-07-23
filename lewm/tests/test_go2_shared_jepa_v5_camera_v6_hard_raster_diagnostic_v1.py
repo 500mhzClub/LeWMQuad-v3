@@ -385,3 +385,32 @@ def test_failure_access_core_keeps_partial_raw_input_records() -> None:
     assert access["records"] == [inputs.consumed["selection.bin"]]
     assert access["top_level_reads"][0]["kind"] == "v6_update8000_checkpoint"
     assert access["forbidden_role_open_counts"]["train"] == 0
+
+
+def test_delegated_raw_reader_records_before_later_validation(
+    tmp_path: Path,
+) -> None:
+    runner = _runner_module()
+    artifact = tmp_path / "raw.bin"
+    artifact.write_bytes(b"raw")
+
+    def original(path: Path, *, reject: bool = False) -> bytes:
+        raw = path.read_bytes()
+        if reject:
+            raise PermissionError("synthetic later validation")
+        return raw
+
+    stack = SimpleNamespace(_read_regular=original)
+    ledger: list[dict[str, object]] = []
+    restored = runner._install_raw_input_read_ledger(stack, ledger=ledger)
+    assert stack._read_regular(artifact) == b"raw"
+    with pytest.raises(PermissionError, match="later validation"):
+        stack._read_regular(artifact, reject=True)
+    runner._restore_raw_input_reader(stack, restored)
+
+    assert [event["status"] for event in ledger] == [
+        "read_completed",
+        "read_failed",
+    ]
+    assert ledger[0]["observed_file_sha256"] == runner._sha256(b"raw")
+    assert stack._read_regular is original
