@@ -95,6 +95,25 @@ navigation data, production data, and held-out data are denied. No input,
 decoded RGB, raw model output, or per-frame prediction may be written to the
 diagnostic root.
 
+## Exact execution environment
+
+The one forward-only execution must use the same single visible discrete AMD
+Radeon AI PRO R9700 on logical GPU 0 as V6, selected by
+`HIP_VISIBLE_DEVICES=0`. `ROCR_VISIBLE_DEVICES`, `CUDA_VISIBLE_DEVICES`, and
+`HSA_OVERRIDE_GFX_VERSION` must be absent. `BLIS_NUM_THREADS`,
+`MKL_NUM_THREADS`, `NUMEXPR_NUM_THREADS`, `OMP_NUM_THREADS`,
+`OPENBLAS_NUM_THREADS`, and `VECLIB_MAXIMUM_THREADS` must each equal `1`.
+Inference is float32 with no autocast.
+
+The final no-tensor visibility preflight must establish exactly that
+environment, no competing GPU work, no other `.generated` mutator or KFD
+training process, and an absent output root. No GPU-management query or
+competing GPU workload may intervene between that preflight and launch. A
+failed preflight must leave the root absent and opens no experiment input; the
+same unchanged preflight may be repeated after environment remediation.
+There is no CPU fallback, alternate GPU, multi-GPU path, or in-run environment
+recovery.
+
 ## One fixed hard-evidence adapter
 
 Each matched or wrong RGB is forwarded once. The same unchanged raw output is
