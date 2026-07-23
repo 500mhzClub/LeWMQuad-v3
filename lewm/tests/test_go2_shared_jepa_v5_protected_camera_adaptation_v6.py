@@ -192,7 +192,7 @@ def test_informational_tail_checkpoints_and_exact_terminal_gate() -> None:
     assert qualified["qualifies"] is True
 
 
-def test_fixed_source_and_evidence_hashes_without_payload_access() -> None:
+def test_real_source_closure_and_fixed_evidence_hashes() -> None:
     assert contract.PREREGISTRATION_COMMIT == (
         "48712ffe5379324847f027d10c2305e82b351397"
     )
@@ -208,6 +208,42 @@ def test_fixed_source_and_evidence_hashes_without_payload_access() -> None:
     ] == "6fc0a114386ee2fb0ae98704a970d38a7194db192283b904138015498fb02384"
     assert set(contract.V5_SOURCE_SHA256) <= set(contract.SOURCE_PATHS)
     assert set(contract.FIXED_EVIDENCE_SHA256) <= set(contract.SOURCE_PATHS)
+    bindings = contract.current_source_bindings(ROOT)
+    assert set(bindings) == set(contract.SOURCE_PATHS)
+    assert bindings[contract.V5_RECOVERY_TERMINAL_AUDIT_RELATIVE_PATH] == (
+        "4284014d283a94d4a45decb9aee5164a45f35a93c36afd2e31a93685564ad5de"
+    )
+
+
+def test_pretty_fixed_json_is_duplicate_safe_finite_and_self_hashed() -> None:
+    raw = (
+        ROOT / contract.V5_RECOVERY_TERMINAL_AUDIT_RELATIVE_PATH
+    ).read_bytes()
+    parsed = contract._parse_fixed_json_evidence(
+        raw, name="committed pretty V5 recovery audit"
+    )
+    assert parsed["content_sha256"] == (
+        contract.FIXED_EVIDENCE_CONTENT_SHA256[
+            contract.V5_RECOVERY_TERMINAL_AUDIT_RELATIVE_PATH
+        ]
+    )
+    invalid = (
+        b'{"content_sha256":"'
+        + b"0" * 64
+        + b'","nested":{"duplicate":1,"duplicate":2}}'
+    )
+    with pytest.raises(PermissionError, match="duplicate-safe"):
+        contract._parse_fixed_json_evidence(invalid, name="duplicate evidence")
+    for raw_value in (
+        b"[]",
+        b'{"content_sha256":"' + b"0" * 64 + b'","value":NaN}',
+        b'{"content_sha256":"' + b"0" * 64 + b'","value":1e999}',
+        b'{"content_sha256":"' + b"0" * 64 + b'","value":1}',
+    ):
+        with pytest.raises(PermissionError):
+            contract._parse_fixed_json_evidence(
+                raw_value, name="invalid fixed evidence"
+            )
 
 
 def test_review_authorization_and_visibility_preflight_round_trip() -> None:
@@ -262,6 +298,20 @@ def test_review_authorization_and_visibility_preflight_round_trip() -> None:
             review_binding=review_binding,
             reviewer=review["reviewer"],
         )
+
+
+def test_current_formal_review_validates_when_present() -> None:
+    review_path = ROOT / contract.REVIEW_RELATIVE_PATH
+    if not review_path.exists():
+        pytest.skip("formal independent review has not been published")
+    raw = review_path.read_bytes()
+    review = contract.parse_canonical_json(
+        raw, name="current formal Camera V6 independent review"
+    )
+    sources = contract.current_source_bindings(ROOT)
+    assert contract.validate_review(
+        review, expected_sources=sources
+    ) == review
 
 
 def test_thin_runner_installs_and_restores_only_v6_hooks(

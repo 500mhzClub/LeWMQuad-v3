@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import importlib.util
+import json
 import math
 from pathlib import Path
 from types import ModuleType
@@ -473,6 +474,53 @@ def reporting_contract() -> dict[str, Any]:
     return value
 
 
+def _parse_fixed_json_evidence(raw: bytes, *, name: str) -> dict[str, Any]:
+    """Parse representation-fixed JSON while allowing committed indentation."""
+
+    def reject_constant(value: str) -> None:
+        raise ValueError(f"{name} contains nonfinite constant {value}")
+
+    def reject_duplicates(
+        pairs: Sequence[tuple[str, Any]],
+    ) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f"{name} contains duplicate key {key}")
+            result[key] = value
+        return result
+
+    try:
+        value = json.loads(
+            raw.decode("ascii"),
+            parse_constant=reject_constant,
+            object_pairs_hook=reject_duplicates,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+        raise PermissionError(f"{name} is not duplicate-safe finite JSON") from error
+    if type(value) is not dict:
+        raise PermissionError(f"{name} is not one JSON object")
+
+    pending: list[object] = [value]
+    while pending:
+        item = pending.pop()
+        if type(item) is float and not math.isfinite(item):
+            raise PermissionError(f"{name} contains a nonfinite number")
+        if type(item) is dict:
+            pending.extend(item.values())
+        elif type(item) is list:
+            pending.extend(item)
+
+    core = dict(value)
+    declared = core.pop("content_sha256", None)
+    if (
+        not _v1.is_sha256(declared)
+        or canonical_json_sha256(core) != declared
+    ):
+        raise PermissionError(f"{name} canonical content hash changed")
+    return dict(value)
+
+
 def current_source_bindings(root: Path = ROOT) -> dict[str, str]:
     inherited = _v5_contract.current_source_bindings(root)
     if any(inherited.get(path) != digest for path, digest in V5_SOURCE_SHA256.items()):
@@ -494,7 +542,7 @@ def current_source_bindings(root: Path = ROOT) -> dict[str, str]:
                 raise PermissionError(f"fixed Camera V6 evidence changed: {path}")
             expected_content = FIXED_EVIDENCE_CONTENT_SHA256.get(path)
             if expected_content is not None:
-                parsed = parse_canonical_json(
+                parsed = _parse_fixed_json_evidence(
                     raw, name=f"fixed Camera V6 evidence {path}"
                 )
                 if parsed.get("content_sha256") != expected_content:
