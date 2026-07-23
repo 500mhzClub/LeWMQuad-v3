@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import copy
+import importlib.util
+from pathlib import Path
+import sys
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -29,6 +33,22 @@ DOWNWARD_BASIS_FRU = np.asarray(
     ((0.0, 0.0, -1.0), (0.0, -1.0, 0.0), (1.0, 0.0, 0.0)),
     dtype=np.float32,
 )
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def _runner_module() -> object:
+    path = (
+        ROOT
+        / "scripts/run_go2_shared_jepa_v5_camera_v6_"
+        "hard_raster_diagnostic_v1.py"
+    )
+    name = "_lewm_test_camera_v6_hard_raster_diagnostic_v1_runner"
+    specification = importlib.util.spec_from_file_location(name, path)
+    assert specification is not None and specification.loader is not None
+    module = importlib.util.module_from_spec(specification)
+    sys.modules[name] = module
+    specification.loader.exec_module(module)
+    return module
 
 
 def _raw_output(
@@ -270,6 +290,19 @@ def test_authority_is_forward_only_and_denies_downstream_actions() -> None:
         assert diagnostic.EXECUTION_AUTHORITY[denied] is False
 
 
+def test_sidecar_local_checkpoint_path_normalizes_to_repository_binding() -> None:
+    sidecar_binding = dict(diagnostic.V6_CHECKPOINT_BINDING)
+    sidecar_binding["path"] = diagnostic.V6_SIDECAR_LOCAL_CHECKPOINT_PATH
+    assert (
+        diagnostic.validate_v6_sidecar_checkpoint_binding(sidecar_binding)
+        == sidecar_binding
+    )
+    wrong = dict(sidecar_binding)
+    wrong["path"] = diagnostic.V6_CHECKPOINT_BINDING["path"]
+    with pytest.raises(PermissionError, match="sidecar checkpoint"):
+        diagnostic.validate_v6_sidecar_checkpoint_binding(wrong)
+
+
 def test_canonical_content_hash_rejects_mutation() -> None:
     value = diagnostic.with_content_sha256(
         {"schema": diagnostic.REVIEW_SCHEMA, "status": "PASS"}
@@ -286,3 +319,69 @@ def test_canonical_content_hash_rejects_mutation() -> None:
         diagnostic.validate_content_sha256(
             changed, schema=diagnostic.REVIEW_SCHEMA
         )
+
+
+def test_experiment_read_ledger_retains_success_and_binding_failure(
+    tmp_path: Path,
+) -> None:
+    runner = _runner_module()
+    artifact = tmp_path / "input.bin"
+    artifact.write_bytes(b"bound")
+    binding = {
+        "path": str(artifact),
+        "byte_count": 5,
+        "file_sha256": diagnostic.canonical_json_sha256("not-the-file"),
+    }
+    ledger: list[dict[str, object]] = []
+
+    with pytest.raises(PermissionError, match="binding changed"):
+        runner._read_bound_experiment(
+            binding,
+            kind="synthetic",
+            ledger=ledger,
+        )
+
+    assert ledger == [
+        {
+            "sequence": 1,
+            "kind": "synthetic",
+            "path": str(artifact),
+            "expected_byte_count": 5,
+            "expected_file_sha256": binding["file_sha256"],
+            "status": "binding_mismatch",
+            "observed_byte_count": 5,
+            "observed_file_sha256": runner._sha256(b"bound"),
+        }
+    ]
+
+
+def test_failure_access_core_keeps_partial_raw_input_records() -> None:
+    runner = _runner_module()
+    inputs = SimpleNamespace(
+        consumed={
+            "selection.bin": {
+                "path": "selection.bin",
+                "roles": ["checkpoint_selection"],
+            }
+        }
+    )
+    operations = runner._initial_operation_counts()
+    operations["checkpoint_filesystem_read_attempt_count"] = 1
+
+    access = runner._current_access_core(
+        status="FAIL_prefix_at_evaluation",
+        top_level_reads=[
+            {
+                "sequence": 1,
+                "kind": "v6_update8000_checkpoint",
+                "status": "read_completed",
+            }
+        ],
+        inputs=inputs,
+        operations=operations,
+    )
+
+    assert access["status"] == "FAIL_prefix_at_evaluation"
+    assert access["records"] == [inputs.consumed["selection.bin"]]
+    assert access["top_level_reads"][0]["kind"] == "v6_update8000_checkpoint"
+    assert access["forbidden_role_open_counts"]["train"] == 0

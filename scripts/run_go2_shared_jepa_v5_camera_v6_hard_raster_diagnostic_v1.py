@@ -48,6 +48,10 @@ DIRECT_SOURCE_RELATIVE_PATHS = (
     "lewm/models/observable_camera_ray_evidence_v4_training.py",
     "lewm/models/shared_observable_camera_ray_jepa_v5.py",
     "lewm/models/shared_observable_camera_ray_jepa_v5_full_training_v4_loss.py",
+    "lewm/models/encoders.py",
+    "lewm/models/egomotion_bev_jepa.py",
+    "lewm/models/observable_camera_ray_evidence_v4_gate_aligned_raster_nll_v12.py",
+    "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py",
 )
 
 
@@ -61,6 +65,43 @@ def _read_regular(path: Path, *, expected_sha256: str | None = None) -> bytes:
     raw = path.read_bytes()
     if expected_sha256 is not None and _sha256(raw) != expected_sha256:
         raise PermissionError(f"required file hash changed: {path}")
+    return raw
+
+
+def _read_bound_experiment(
+    binding: Mapping[str, Any],
+    *,
+    kind: str,
+    ledger: list[dict[str, Any]],
+) -> bytes:
+    event = {
+        "sequence": len(ledger) + 1,
+        "kind": kind,
+        "path": str(binding["path"]),
+        "expected_byte_count": int(binding["byte_count"]),
+        "expected_file_sha256": str(binding["file_sha256"]),
+        "status": "read_started",
+    }
+    ledger.append(event)
+    try:
+        raw = _read_regular(ROOT / str(binding["path"]))
+    except BaseException as error:
+        event["status"] = "read_failed"
+        event["error_type"] = type(error).__name__
+        raise
+    event.update(
+        {
+            "observed_byte_count": len(raw),
+            "observed_file_sha256": _sha256(raw),
+            "status": "read_completed",
+        }
+    )
+    if (
+        len(raw) != binding["byte_count"]
+        or event["observed_file_sha256"] != binding["file_sha256"]
+    ):
+        event["status"] = "binding_mismatch"
+        raise PermissionError(f"{kind} binding changed")
     return raw
 
 
@@ -432,11 +473,17 @@ def _reserve(
     return output_root, reservation, raw
 
 
-def _validate_v6_terminal_audit(v6_contract: Any) -> tuple[dict[str, Any], bytes]:
+def _validate_v6_terminal_audit(
+    v6_contract: Any,
+    *,
+    ledger: list[dict[str, Any]],
+) -> tuple[dict[str, Any], bytes]:
     binding = contract.V6_TERMINAL_AUDIT_BINDING
-    raw = _read_regular(ROOT / binding["path"], expected_sha256=binding["file_sha256"])
-    if len(raw) != binding["byte_count"]:
-        raise PermissionError("V6 terminal audit byte count changed")
+    raw = _read_bound_experiment(
+        binding,
+        kind="v6_terminal_audit",
+        ledger=ledger,
+    )
     value = _parse_json(raw, name="V6 terminal audit")
     if (
         value.get("content_sha256") != binding["content_sha256"]
@@ -448,21 +495,24 @@ def _validate_v6_terminal_audit(v6_contract: Any) -> tuple[dict[str, Any], bytes
     return value, raw
 
 
-def _load_baseline_sidecar(v6_contract: Any) -> tuple[dict[str, Any], bytes]:
+def _load_baseline_sidecar(
+    v6_contract: Any,
+    *,
+    ledger: list[dict[str, Any]],
+) -> tuple[dict[str, Any], bytes]:
     binding = contract.V6_SIDECAR_BINDING
-    raw = _read_regular(ROOT / binding["path"], expected_sha256=binding["file_sha256"])
-    if len(raw) != binding["byte_count"]:
-        raise PermissionError("V6 sidecar byte count changed")
+    raw = _read_bound_experiment(
+        binding,
+        kind="v6_update8000_sidecar",
+        ledger=ledger,
+    )
     value = v6_contract.validate_metric_sidecar(
         _parse_json(raw, name="V6 update-8000 sidecar"),
         update=8000,
     )
     if value["content_sha256"] != binding["content_sha256"]:
         raise PermissionError("V6 sidecar content hash changed")
-    checkpoint = value["checkpoint"]
-    expected_checkpoint = contract.V6_CHECKPOINT_BINDING
-    if any(checkpoint.get(key) != expected_checkpoint[key] for key in expected_checkpoint):
-        raise PermissionError("V6 sidecar checkpoint binding changed")
+    contract.validate_v6_sidecar_checkpoint_binding(value["checkpoint"])
     return value, raw
 
 
@@ -486,16 +536,24 @@ def _load_checkpoint_once(
     v6_contract: Any,
     *,
     device: Any,
+    ledger: list[dict[str, Any]],
+    operations: dict[str, Any],
 ) -> tuple[Any, bytes]:
     binding = contract.V6_CHECKPOINT_BINDING
-    raw = _read_regular(ROOT / binding["path"], expected_sha256=binding["file_sha256"])
-    if len(raw) != binding["byte_count"]:
-        raise PermissionError("V6 checkpoint byte count changed")
+    operations["checkpoint_filesystem_read_attempt_count"] += 1
+    raw = _read_bound_experiment(
+        binding,
+        kind="v6_update8000_checkpoint",
+        ledger=ledger,
+    )
+    operations["checkpoint_filesystem_read_count"] += 1
+    operations["checkpoint_deserialization_attempt_count"] += 1
     value = runtime.torch.load(
         io.BytesIO(raw),
         map_location="cpu",
         weights_only=True,
     )
+    operations["checkpoint_deserialization_count"] += 1
     expected_fields = {
         "schema",
         "update",
@@ -516,6 +574,7 @@ def _load_checkpoint_once(
         raise PermissionError("V6 checkpoint payload fields changed")
     state = value["model_state_dict"]
     model = runtime.model_module.SharedObservableCameraRayJepaV5()
+    operations["model_construction_count"] += 1
     semantic = {key: value[key] for key in expected_fields - {"content_sha256", "model_state_dict"}}
     state_sha = runtime.model_module.tensor_state_dict_sha256(state)
     frozen_sha = _subset_state_sha256(runtime, state, v6_contract.FROZEN_STATE_PREFIXES)
@@ -559,7 +618,8 @@ def _run_evaluation(
     model: Any,
     device: Any,
     selection_pairs: Sequence[Mapping[str, Any]],
-) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    operations: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
     torch = runtime.torch
     families = tuple(stack.contract.FAMILIES)
     if set(stack.contract.SCOPES) != set(contract.ALL_SCOPES):
@@ -588,9 +648,6 @@ def _run_evaluation(
     hard_correct = {scope: contract.HardRasterConfusion() for scope in contract.ALL_SCOPES}
     hard_wrong = {scope: contract.HardRasterConfusion() for scope in contract.ALL_SCOPES}
     model_state_before = runtime.model_module.tensor_state_dict_sha256(model.state_dict())
-    matched_presentations = 0
-    wrong_presentations = 0
-
     with torch.inference_mode():
         for family in families:
             ids = ids_by_family[family]
@@ -669,9 +726,13 @@ def _run_evaluation(
                             supervision.target_raster_labels,
                         )
                     if arm_index == 0:
-                        matched_presentations += len(target)
+                        operations["matched_forward_frame_presentation_count"] += len(
+                            target
+                        )
                     else:
-                        wrong_presentations += len(target)
+                        operations[
+                            "wrong_rgb_forward_frame_presentation_count"
+                        ] += len(target)
 
     model_state_after = runtime.model_module.tensor_state_dict_sha256(model.state_dict())
     if model_state_before != model_state_after:
@@ -695,15 +756,40 @@ def _run_evaluation(
             ),
             "hard_nll_excluded": True,
         }
-    operations = {
-        "model_construction_count": 1,
-        "checkpoint_filesystem_read_count": 1,
-        "checkpoint_deserialization_count": 1,
-        "sidecar_read_count": 1,
-        "selection_pair_count": len(selection_pairs),
-        "unique_endpoint_count": sum(len(ids) for ids in ids_by_family.values()),
-        "matched_forward_frame_presentation_count": matched_presentations,
-        "wrong_rgb_forward_frame_presentation_count": wrong_presentations,
+    operations.update(
+        {
+            "selection_pair_count": len(selection_pairs),
+            "unique_endpoint_count": sum(
+                len(ids) for ids in ids_by_family.values()
+            ),
+            "model_state_mutation_count": 0,
+            "state_sha256_before": model_state_before,
+            "state_sha256_after": model_state_after,
+        }
+    )
+    if (
+        operations["matched_forward_frame_presentation_count"]
+        != contract.SELECTION_ENDPOINT_COUNT
+        or operations["wrong_rgb_forward_frame_presentation_count"]
+        != contract.SELECTION_ENDPOINT_COUNT
+    ):
+        raise PermissionError("forward presentation count changed")
+    return soft_scopes, hard_scopes
+
+
+def _initial_operation_counts() -> dict[str, Any]:
+    return {
+        "model_construction_count": 0,
+        "checkpoint_filesystem_read_attempt_count": 0,
+        "checkpoint_filesystem_read_count": 0,
+        "checkpoint_deserialization_attempt_count": 0,
+        "checkpoint_deserialization_count": 0,
+        "sidecar_read_attempt_count": 0,
+        "sidecar_read_count": 0,
+        "selection_pair_count": 0,
+        "unique_endpoint_count": 0,
+        "matched_forward_frame_presentation_count": 0,
+        "wrong_rgb_forward_frame_presentation_count": 0,
         "optimizer_construction_count": 0,
         "optimizer_step_count": 0,
         "backward_count": 0,
@@ -716,12 +802,45 @@ def _run_evaluation(
         "train_role_payload_open_count": 0,
         "probability_calibration_role_payload_open_count": 0,
         "g2_navigation_runtime_or_heldout_count": 0,
-        "state_sha256_before": model_state_before,
-        "state_sha256_after": model_state_after,
+        "state_sha256_before": None,
+        "state_sha256_after": None,
     }
-    if matched_presentations != contract.SELECTION_ENDPOINT_COUNT or wrong_presentations != contract.SELECTION_ENDPOINT_COUNT:
-        raise PermissionError("forward presentation count changed")
-    return soft_scopes, hard_scopes, operations
+
+
+def _current_access_core(
+    *,
+    status: str,
+    top_level_reads: Sequence[Mapping[str, Any]],
+    inputs: Any | None,
+    operations: Mapping[str, Any],
+) -> dict[str, Any]:
+    consumed = getattr(inputs, "consumed", {})
+    records = (
+        [consumed[name] for name in sorted(consumed)]
+        if type(consumed) is dict
+        else []
+    )
+    return {
+        "schema": contract.ACCESS_SCHEMA,
+        "status": status,
+        "top_level_reads": [dict(item) for item in top_level_reads],
+        "records": records,
+        "unique_input_file_count": len(records),
+        "operation_counts": dict(operations),
+        "forbidden_role_open_counts": {
+            "train": sum(
+                "train" in record.get("roles", ()) for record in records
+            ),
+            "probability_calibration": sum(
+                "probability_calibration" in record.get("roles", ())
+                for record in records
+            ),
+            "g2": 0,
+            "navigation": 0,
+            "runtime_or_production": 0,
+            "heldout": 0,
+        },
+    }
 
 
 def _publish_failure(
@@ -791,7 +910,9 @@ def run(
         preregistration=preregistration,
     )
     stage = "post_reservation_runtime_import"
-    access_core: dict[str, Any] | None = None
+    top_level_reads: list[dict[str, Any]] = []
+    operations = _initial_operation_counts()
+    inputs: Any | None = None
     try:
         v6_contract_path = (
             ROOT
@@ -818,21 +939,40 @@ def run(
         stack = stack_loader.install()
         runtime = stack._load_runtime()
         stage = "device_validation"
-        inputs = stack.RawInputs(runtime, authorization)
-        trainer = stack.Trainer(runtime, inputs, output_root, reservation)
-        device, device_record = trainer.device()
+        device_trainer = stack.Trainer(
+            runtime,
+            None,
+            output_root,
+            reservation,
+        )
+        device, device_record = device_trainer.device()
+        del device_trainer
         stage = "v6_terminal_and_baseline_validation"
-        terminal_audit, terminal_raw = _validate_v6_terminal_audit(v6_contract)
-        sidecar, sidecar_raw = _load_baseline_sidecar(v6_contract)
+        terminal_audit, terminal_raw = _validate_v6_terminal_audit(
+            v6_contract,
+            ledger=top_level_reads,
+        )
+        operations["sidecar_read_attempt_count"] += 1
+        sidecar, sidecar_raw = _load_baseline_sidecar(
+            v6_contract,
+            ledger=top_level_reads,
+        )
+        operations["sidecar_read_count"] += 1
+        stage = "raw_checkpoint_selection_input_validation"
+        inputs = stack.RawInputs.__new__(stack.RawInputs)
+        stack.RawInputs.__init__(inputs, runtime, authorization)
+        trainer = stack.Trainer(runtime, inputs, output_root, reservation)
         stage = "checkpoint_single_read_and_deserialization"
         model, checkpoint_raw = _load_checkpoint_once(
             runtime,
             v6_contract,
             device=device,
+            ledger=top_level_reads,
+            operations=operations,
         )
         stage = "checkpoint_selection_forward_only_evaluation"
         selection_pairs = inputs.role_pairs("checkpoint_selection")
-        soft_scopes, hard_scopes, operations = _run_evaluation(
+        soft_scopes, hard_scopes = _run_evaluation(
             runtime=runtime,
             stack=stack,
             trainer=trainer,
@@ -840,6 +980,7 @@ def run(
             model=model,
             device=device,
             selection_pairs=selection_pairs,
+            operations=operations,
         )
         stage = "immutable_soft_reproduction"
         baseline_metric = sidecar["metric"]
@@ -853,50 +994,41 @@ def run(
             raise RuntimeError("immutable V6 soft physical metrics did not reproduce exactly")
         stage = "fixed_materiality_decision"
         materiality = contract.evaluate_materiality(hard_scopes)
-        access_records = [
-            inputs.consumed[name] for name in sorted(inputs.consumed)
-        ]
+        access_core = _current_access_core(
+            status="PASS_exact_permitted_reads_only",
+            top_level_reads=top_level_reads,
+            inputs=inputs,
+            operations=operations,
+        )
+        access_records = access_core["records"]
         if any(
             role in {"train", "probability_calibration"}
             for record in access_records
             for role in record["roles"]
         ):
             raise PermissionError("forbidden development role was consumed")
-        access_core = {
-            "schema": contract.ACCESS_SCHEMA,
-            "status": "PASS_exact_permitted_reads_only",
-            "records": access_records,
-            "unique_input_file_count": len(access_records),
-            "bindings": {
-                "v6_terminal_audit": _binding(
-                    contract.V6_TERMINAL_AUDIT_BINDING["path"],
-                    terminal_raw,
-                    content_sha256=terminal_audit["content_sha256"],
+        if any(access_core["forbidden_role_open_counts"].values()):
+            raise PermissionError("forbidden input role was consumed")
+        access_core["bindings"] = {
+            "v6_terminal_audit": _binding(
+                contract.V6_TERMINAL_AUDIT_BINDING["path"],
+                terminal_raw,
+                content_sha256=terminal_audit["content_sha256"],
+            ),
+            "v6_update8000_sidecar": _binding(
+                contract.V6_SIDECAR_BINDING["path"],
+                sidecar_raw,
+                content_sha256=sidecar["content_sha256"],
+            ),
+            "v6_update8000_checkpoint": {
+                **_binding(
+                    contract.V6_CHECKPOINT_BINDING["path"],
+                    checkpoint_raw,
+                    content_sha256=contract.V6_CHECKPOINT_BINDING[
+                        "content_sha256"
+                    ],
                 ),
-                "v6_update8000_sidecar": _binding(
-                    contract.V6_SIDECAR_BINDING["path"],
-                    sidecar_raw,
-                    content_sha256=sidecar["content_sha256"],
-                ),
-                "v6_update8000_checkpoint": {
-                    **_binding(
-                        contract.V6_CHECKPOINT_BINDING["path"],
-                        checkpoint_raw,
-                        content_sha256=contract.V6_CHECKPOINT_BINDING[
-                            "content_sha256"
-                        ],
-                    ),
-                    "state_sha256": contract.V6_CHECKPOINT_BINDING["state_sha256"],
-                },
-            },
-            "operation_counts": operations,
-            "forbidden_role_open_counts": {
-                "train": 0,
-                "probability_calibration": 0,
-                "g2": 0,
-                "navigation": 0,
-                "runtime_or_production": 0,
-                "heldout": 0,
+                "state_sha256": contract.V6_CHECKPOINT_BINDING["state_sha256"],
             },
         }
         access, access_raw = _publish_json(output_root / "access.json", access_core)
@@ -1000,11 +1132,17 @@ def run(
         )
         return 0
     except BaseException as error:
+        failure_access_core = _current_access_core(
+            status=f"FAIL_prefix_at_{stage}",
+            top_level_reads=top_level_reads,
+            inputs=inputs,
+            operations=operations,
+        )
         _publish_failure(
             output_root,
             stage=stage,
             error=error,
-            access_core=access_core,
+            access_core=failure_access_core,
         )
         raise
 

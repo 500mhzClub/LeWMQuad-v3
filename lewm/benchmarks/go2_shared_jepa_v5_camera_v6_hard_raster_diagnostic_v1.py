@@ -64,6 +64,7 @@ V6_CHECKPOINT_BINDING = {
     "frozen_state_sha256": "3f5cce294f840be4c6c8cfa43b2818bae68da739b13348fe45a3d5087fe2524e",
     "trainable_state_sha256": "6b01b16355d940133b6683b420f2e4f182d0535264aef595a97727d813919e96",
 }
+V6_SIDECAR_LOCAL_CHECKPOINT_PATH = "checkpoints/update_8000.pt"
 V6_TERMINAL_AUDIT_BINDING = {
     "path": (
         "docs/lewm_go2_shared_jepa_v5_protected_camera_adaptation_v6_"
@@ -206,6 +207,16 @@ def validate_content_sha256(value: object, *, schema: str) -> dict[str, Any]:
         or canonical_json_sha256(core) != declared
     ):
         raise PermissionError(f"{schema} content hash changed")
+    return dict(value)
+
+
+def validate_v6_sidecar_checkpoint_binding(value: object) -> dict[str, Any]:
+    if type(value) is not dict:
+        raise PermissionError("V6 sidecar checkpoint binding changed")
+    expected = dict(V6_CHECKPOINT_BINDING)
+    expected["path"] = V6_SIDECAR_LOCAL_CHECKPOINT_PATH
+    if value != expected:
+        raise PermissionError("V6 sidecar checkpoint binding changed")
     return dict(value)
 
 
@@ -493,6 +504,7 @@ __all__ = [
     "SOFT_AGGREGATE_OCCUPIED_RECALL",
     "SOFT_RASTER_BALANCED_ACCURACY",
     "V6_CHECKPOINT_BINDING",
+    "V6_SIDECAR_LOCAL_CHECKPOINT_PATH",
     "V6_SIDECAR_BINDING",
     "V6_TERMINAL_AUDIT_BINDING",
     "canonical_json_bytes",
@@ -502,5 +514,6 @@ __all__ = [
     "evaluate_materiality",
     "hard_raster_labels_from_raw_output",
     "validate_content_sha256",
+    "validate_v6_sidecar_checkpoint_binding",
     "with_content_sha256",
 ]
