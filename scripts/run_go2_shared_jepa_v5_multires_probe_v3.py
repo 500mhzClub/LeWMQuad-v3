@@ -2369,6 +2369,14 @@ def _execute_after_reservation(
         del fit
         commanded = commanded_cpu.to(device)
 
+        original_from_numpy = runtime.torch.from_numpy
+
+        def from_numpy_with_scalar(value: Any) -> Any:
+            if isinstance(value, runtime.np.generic):
+                return runtime.torch.as_tensor(value)
+            return original_from_numpy(value)
+
+        runtime.torch.from_numpy = from_numpy_with_scalar
         with warnings.catch_warnings(record=True) as determinism_warnings:
             warnings.simplefilter("once")
             runtime.torch.use_deterministic_algorithms(True, warn_only=True)
@@ -2391,6 +2399,7 @@ def _execute_after_reservation(
                     progress,
                 )
             finally:
+                runtime.torch.from_numpy = original_from_numpy
                 runtime.torch.use_deterministic_algorithms(
                     True, warn_only=False
                 )

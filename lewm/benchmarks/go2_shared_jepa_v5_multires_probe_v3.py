@@ -187,7 +187,7 @@ AUTHORIZATION_RELATIVE_PATH = (
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-    "rgb_multiresolution_perception_probe_v3_retry1"
+    "rgb_multiresolution_perception_probe_v3_retry2"
 )
 V1_OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_shared_observable_camera_ray_jepa_v5/"
