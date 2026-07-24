@@ -1,0 +1,6 @@
+# Never expose sealed benchmark manifests through ordinary source searches.
+# Only an audited one-shot launcher may access an active sealed role.
+config/go2_generalization_*/sealed_test.json
+**/sealed_test.json
+**/sealed/**
+**/sealed_*/**

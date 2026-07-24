@@ -2,6 +2,13 @@
 
 Date: 2026-07-24 10:03 BST
 
+> **Authority correction:** this handoff's V4 custody conclusion, definition
+> of fully learned JEPA navigation, freeze semantics, clean-checkout closure,
+> and G8 instructions are superseded by
+> `docs/lewm_go2_heldout_maze_authority_correction_2026-07-24.md`. The
+> chronology and negative experimental evidence remain useful, but this file
+> is no longer sufficient execution authority.
+
 Repository snapshot:
 
 - branch: `jepa-spatial-world-model-nav`
