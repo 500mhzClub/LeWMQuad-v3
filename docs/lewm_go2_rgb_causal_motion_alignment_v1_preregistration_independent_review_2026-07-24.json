@@ -1,0 +1,102 @@
+{
+  "schema": "lewm_go2_rgb_causal_motion_alignment_v1_preregistration_independent_review_v1",
+  "date": "2026-07-24",
+  "reviewer": "/root/execution_readiness_audit",
+  "status": "BLOCK_PREREGISTRATION_UNDER_SPECIFIED_NO_EXECUTION_AUTHORITY",
+  "verdict": "BLOCK",
+  "preregistration_binding": {
+    "path": "docs/lewm_go2_rgb_causal_motion_alignment_v1_preregistration_2026-07-24.md",
+    "file_sha256": "7435dc653d8ef0b1f2630c8298e68e65fe328961677dc1f9761662774fef6bdc",
+    "byte_count": 11218
+  },
+  "review_scope": {
+    "source_only_preregistration_review": true,
+    "generated_content_open_count": 0,
+    "dataset_or_rgb_open_count": 0,
+    "checkpoint_or_tensor_open_count": 0,
+    "gpu_or_hardware_operation_count": 0,
+    "training_run_count": 0,
+    "sealed_protected_or_heldout_open_count": 0
+  },
+  "checks": {
+    "exactly_one_materially_different_mechanism": true,
+    "encoder_architecture_unchanged_and_encoder_weights_trainable": true,
+    "five_value_condition_excludes_per_sample_realized_se2_and_exact_pose": true,
+    "incoming_prior_command_binding_is_frozen_unambiguously": false,
+    "roll_pitch_formula_matches_yaw_aligned_forward_right_up_basis": true,
+    "basis_validity_and_cold_fallback_tolerances_are_exact": false,
+    "dense_warp_grid_axis_order_sign_and_base_grid_are_exact": false,
+    "alignment_topology_and_parameter_arithmetic_are_exact": true,
+    "alignment_hidden_parameter_initialization_is_exact": false,
+    "encoder_evidence_head_and_total_parameter_counts_are_arithmetically_correct": true,
+    "optimizer_losses_updates_checkpoints_pass_gates_and_16000_presentation_cap_are_preserved": true,
+    "exact_schedule_prefix_identity_is_bound": false,
+    "n320_is_the_only_tensor_initialization_and_rejected_checkpoints_are_forbidden": true,
+    "receipt_pattern_is_narrowly_anchored_to_development_render_rgb": true,
+    "completed_attempt_requires_full_frozen_parser_success": false,
+    "authority_remains_source_only": true
+  },
+  "verified_facts": {
+    "alignment_parameter_count": 12832,
+    "alignment_parameter_tensor_count": 4,
+    "retained_temporal_parameter_count": 3160,
+    "retained_temporal_parameter_tensor_count": 5,
+    "evidence_head_parameter_count": 368681,
+    "evidence_head_parameter_tensor_count": 35,
+    "encoder_parameter_count": 2747520,
+    "encoder_parameter_tensor_count": 78,
+    "total_trainable_parameter_count": 3116201,
+    "total_trainable_parameter_tensor_count": 113,
+    "maximum_optimizer_updates": 1000,
+    "maximum_pair_presentations": 16000,
+    "checkpoint_updates": [
+      100,
+      400,
+      1000
+    ],
+    "terminal_gate_conjunct_count": 6
+  },
+  "blockers": [
+    {
+      "id": "dense_warp_convention_and_initialization",
+      "finding": "The document fixes align_corners, the 2/15 scale, padding, interpolation, and the final zero projection, but does not freeze which output channel is column/x versus row/y, whether offsets are added to or subtracted from the base grid, how the base grid is laid out, or the initializer and bias values for the first and depthwise alignment convolutions. Those choices change the learned mechanism despite the local seed.",
+      "required_correction": "Freeze one explicit sample-grid equation including tensor layouts, x/y channel order, row/column orientation, base-grid endpoints, offset sign, and the exact initializer for every nonzero-initialized alignment tensor and bias."
+    },
+    {
+      "id": "causal_condition_binding_and_basis_validation",
+      "finding": "The five-value condition is causal in intent and excludes the row's realized SE(2), but 'prior issued primitive' is not bound explicitly to the unique incoming half-second transition whose next endpoint is the current frame; an endpoint may also be the current side of an outgoing transition. The non-orthonormal validity rule also has no frozen tolerance or handedness test.",
+      "required_correction": "Bind the lookup key to predecessor_by_target[current_endpoint][primitive], forbid use of any outgoing/current-side primitive, define the cold value, and freeze the finite, norm, orthogonality, determinant/handedness, timing, and angle-validation tolerances that decide warm versus cold."
+    },
+    {
+      "id": "schedule_identity",
+      "finding": "The seed, batch geometry, updates, and 16000-presentation cap are fixed, but the exact existing presentation sequence is not bound by its already established cumulative prefix identities. A seed alone does not identify immutable schedule bytes across implementation or library changes.",
+      "required_correction": "Bind the existing cumulative schedule-prefix SHA-256 values at 1600, 6400, and 16000 presentations, and state that execution must reproduce those exact prefixes before model construction."
+    },
+    {
+      "id": "full_parser_terminal_requirement",
+      "finding": "The receipt correction narrowly names the intended render-RGB pattern and asks for a synthetic full-ledger test, but it does not explicitly require the completed real attempt's entire frozen partial-access ledger to pass the corrected canonical parser before integrity or scientific admissibility can be asserted.",
+      "required_correction": "Require full parse_partial_access_ledger success on the finalized real ledger, including terminal rehash records, before integrity_pass or any scientifically admissible result may be emitted; parser failure must terminalize the consumed attempt as contract-invalid with no retry."
+    }
+  ],
+  "nonblocking_observations": [
+    "Treating the five-value motion-conditioned alignment plus its retained residual as one integrated mechanism is coherent; the receipt repair is an integrity correction rather than a second scientific change.",
+    "The roll and pitch equations are consistent with camera_basis_body_fru storing forward, right, and up in a yaw-aligned body frame, with rotation columns reconstructed as forward, negative-right, and up.",
+    "The parameter totals, optimizer family, seeds, update checkpoints, strict terminal gates, one-attempt rule, 1000-update maximum, and 16000-presentation cap are internally consistent.",
+    "The preregistration explicitly forbids failed temporal, multiresolution, rejected adaptation, JEPA, target, predictor, and occupancy state as initialization inputs."
+  ],
+  "authority": {
+    "preregistration_revision_authorized_by_this_review": true,
+    "source_implementation_authorized_by_this_review": false,
+    "generated_input_or_dataset_open_authorized": false,
+    "rgb_open_authorized": false,
+    "checkpoint_or_tensor_open_authorized": false,
+    "gpu_or_hardware_authorized": false,
+    "training_or_probe_execution_authorized": false,
+    "output_root_inspection_reservation_or_mutation_authorized": false,
+    "retry_resume_repair_second_seed_extension_or_replacement_authorized": false,
+    "perception_qualification_authorized": false,
+    "jepa_training_authorized": false,
+    "g2_navigation_heldout_production_promotion_or_deployment_authorized": false
+  },
+  "content_sha256": "7d5d8a5a21f2bb90a929c9e7d9a4f2a94db0a7098b19fe48906ef6cde329e554"
+}
