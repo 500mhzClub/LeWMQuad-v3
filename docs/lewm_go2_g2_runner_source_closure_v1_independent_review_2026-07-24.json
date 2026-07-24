@@ -1,0 +1,107 @@
+{
+  "content_sha256": "01c6459f2b210c5f42630ac80b2ba1533775a7754884519d98145c9cf119aa18",
+  "date": "2026-07-24",
+  "dirty_source_allowlist": [
+    "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g2.py",
+    "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g3.py",
+    "lewm/benchmarks/go2_shared_jepa_v5_full_training_v4_policy.py",
+    "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_finalizer_core.py",
+    "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_runner_policy.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_authority.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_registry_policy.py",
+    "lewm/models/shared_v5_target_observation_head_v1.py",
+    "lewm/models/two_resolution_frontier_value_head_v1.py",
+    "lewm/planning/revisioned_physical_configuration_memory.py",
+    "lewm/planning/two_resolution_configuration_projection_v2.py",
+    "lewm_genesis/lewm_genesis/scene_builder.py",
+    "lewm_genesis/lewm_genesis/scene_loader.py",
+    "scripts/finalize_go2_shared_jepa_v5_gate.py",
+    "scripts/go2_shared_jepa_v5_launcher.py",
+    "scripts/go2_shared_jepa_v5_one_shot.py",
+    "scripts/publish_go2_shared_jepa_v5_checkpoint.py",
+    "scripts/run_go2_shared_jepa_v5_gate.py"
+  ],
+  "findings": [
+    {
+      "code": "recursive_local_source_graph",
+      "evidence": {
+        "manifest_content_sha256": "82c6ced9fbf1885267d4267009987df57345bd2bdc78676d94b3192b654c6496",
+        "source_bindings_sha256": "3546d03194238a1500093c587300faa7f8f858d594edf17afc115948d084d10f",
+        "source_count": 72
+      },
+      "status": "PASS"
+    },
+    {
+      "code": "all_dirty_sources_graph_reachable",
+      "evidence": {
+        "modified_tracked": 2,
+        "untracked": 16
+      },
+      "status": "PASS"
+    },
+    {
+      "code": "production_authorities_fail_closed",
+      "evidence": {
+        "model_hash_bindings_none": 6,
+        "pending_authority_jsons_absent": 6,
+        "wrapper_hash_bindings_none": 6
+      },
+      "status": "PASS"
+    },
+    {
+      "code": "genesis_camera_fov_contract",
+      "evidence": {
+        "genesis_vertical_fov_deg": 62.8370386364,
+        "manifest_horizontal_fov_deg": 78.323,
+        "native_resolution": [
+          640,
+          480
+        ],
+        "old_implied_horizontal_fov_deg_approx": 94.719
+      },
+      "status": "PASS"
+    },
+    {
+      "code": "development_controller_not_promotion_authority",
+      "status": "PASS"
+    }
+  ],
+  "predecessor_commit": "f3568880ecdda0d3f01ff8f661b19eb0753b58c9",
+  "review_scope": {
+    "checkpoint_opened": false,
+    "config_or_custody_root_inspected": false,
+    "dataset_opened": false,
+    "generated_artifact_opened": false,
+    "gpu_used": false,
+    "heldout_opened": false,
+    "navigation_or_runtime_executed": false,
+    "source_modified_by_reviewer": false,
+    "training_executed": false
+  },
+  "reviewed_sources": {
+    "docs/lewm_go2_g2_runner_source_closure_v1_manifest_2026-07-24.json": "f7250f0c4ccca8673511a775f931670e745e4de1f7bc27435052f9652f9f3029",
+    "lewm/tests/test_go2_g2_runner_source_closure.py": "586d174cef740a0c7cf375e271d6587ec2eae01c516db518b9e62056531186d6",
+    "lewm/tests/test_go2_shared_v5_closure_components.py": "edfd4a241f1720c6f481a8194e5b1538386eb34f248e9f4f9c877c9268eea3fe",
+    "lewm/tests/test_shared_observable_camera_ray_jepa_v5.py": "848aa8be369b89c973a4da916f9c7abeff47eca12aceb4304cf612ed4d53227b",
+    "lewm/tests/test_shared_observable_camera_ray_jepa_v5_one_shot.py": "0d531e1147615db70935c3539c1698edf06028de3f6e59e5a23cb0d2a5d55d26",
+    "lewm/tests/test_shared_v5_target_observation_head_v1.py": "384e8784d56f0cb10e186fbeb39aa5a49d3f2923f8a08cdfa6859eeb3bb01d1f",
+    "lewm/tests/test_two_resolution_frontier_value_head_v1.py": "77db598a0d208db517938d25d88544174c6c749361180b3e823d291bc4879ad2",
+    "lewm_genesis/lewm_genesis/tests/test_scene_loader.py": "eb8dbc1ec406f461708bcd952dc35348f5eac1983c59f12c719ebae37972af05",
+    "scripts/check_go2_shared_v5_source_closure.py": "1f2bb49f04dff857c86aeecfd014fa8fb8a1124bf73a855b944fa569d7fc2a2b"
+  },
+  "reviewer": "/root/architecture_audit",
+  "schema": "lewm_go2_g2_runner_source_closure_v1_independent_review",
+  "status": "PASS_SOURCE_ONLY_COMMIT_GATED",
+  "test_execution": {
+    "accelerators_hidden": true,
+    "closure_tests": "3 passed",
+    "external_plugins_disabled_for_independent_closure_test": true
+  },
+  "unresolved_runtime_dependencies": [
+    "all six stage authority JSONs remain deliberately absent",
+    "candidate checkpoints, calibrations, roles, scene packs, ledgers, reports, and publications remain bind-later artifacts",
+    "production lifecycle remains intentionally canonical-root-bound",
+    "the current controller remains development-only and barred from G3 through G8"
+  ],
+  "verdict": "PASS_SOURCE_ONLY_NO_G2_NAVIGATION_RUNTIME_PRODUCTION_OR_HELDOUT_AUTHORITY"
+}

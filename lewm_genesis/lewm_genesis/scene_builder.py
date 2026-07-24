@@ -28,7 +28,11 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from lewm_genesis.scene_loader import ScenePack, effective_camera_mount_xyz_rpy
+from lewm_genesis.scene_loader import (
+    ScenePack,
+    effective_camera_mount_xyz_rpy,
+    genesis_vertical_fov_deg,
+)
 from lewm_genesis.textures import (
     cached_box_obj,
     category_for_kind,
@@ -262,7 +266,7 @@ def build_scene_from_pack(
         res=pack.camera.native_resolution,
         pos=cam_pos_world,
         lookat=cam_lookat_world,
-        fov=float(pack.camera.fov_deg),
+        fov=genesis_vertical_fov_deg(pack.camera),
         near=float(pack.camera.near_m),
         far=float(pack.camera.far_m),
         GUI=False,
