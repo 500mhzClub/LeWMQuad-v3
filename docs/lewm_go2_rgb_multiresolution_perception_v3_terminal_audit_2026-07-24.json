@@ -1,0 +1,260 @@
+{
+  "schema": "lewm_go2_rgb_multiresolution_perception_v3_terminal_audit_v1",
+  "status": "PASS_VALID_SEALED_TERMINAL_SCIENTIFIC_FAIL_MECHANISM_TERMINATED_NO_RETRY",
+  "date": "2026-07-24",
+  "auditor": "/root",
+  "attempt": {
+    "attempt_identity": "0d9f8cc6dc189e228f038d71c786d07dd7da911434ea1966e70c10a4d97e5141",
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_multiresolution_perception_probe_v3_retry2",
+    "source_commit": "97824b2",
+    "science_contract_sha256": "e181381c00585fa5df41a71fff918b5599acc955d59283ce397ba6dd530dc23f",
+    "one_science_delta": "progressive_multiresolution_spatial_decoder_only",
+    "model_family": "shared_observable_camera_ray_jepa_v5_multires_v1",
+    "seed": 20260713,
+    "complete_optimizer_updates": 1000,
+    "pair_index_presentations": 16000,
+    "checkpoint_updates": [
+      100,
+      400,
+      1000
+    ]
+  },
+  "authority_bindings": {
+    "source_review": {
+      "path": "docs/lewm_go2_rgb_multiresolution_perception_v3_source_review_2026-07-24.json",
+      "file_sha256": "0b1e94b490db414f4b521a4b395bd8349d320d7f17c0a4caa086bf3c465b3da3",
+      "content_sha256": "be2f3eebdcb83abf5d76d835c789f0392ad3e9879b99f625ccd4f319124a3762",
+      "byte_count": 14643
+    },
+    "execution_authorization": {
+      "path": "docs/lewm_go2_rgb_multiresolution_perception_v3_execution_authorization_2026-07-24.json",
+      "file_sha256": "066188669029d3e76eb2eb4079e693e3525529bd9c63e9cf65ee27df6a283ce6",
+      "content_sha256": "2010d133112609b2f75fabc61daffbe801a25340f4f965c77b0203b02a3d38a8",
+      "byte_count": 8437
+    }
+  },
+  "terminal_artifacts": {
+    "exact_file_count": 13,
+    "exact_directory_count_including_root": 2,
+    "all_files_regular_mode_0444": true,
+    "all_directories_mode_0555": true,
+    "symlink_count": 0,
+    "reservation": {
+      "path": "reservation.json",
+      "file_sha256": "1f27b7d7d7b31b8a61792e80b3ea7b9b53ee69469eea388a7142da68492f84f5",
+      "content_sha256": "128a192301a9d8838e45a6976a166da67190edc3b2ef2be73dbc8933e45f00bd",
+      "byte_count": 13767
+    },
+    "metric_sidecars": [
+      {
+        "update": 100,
+        "path": "checkpoints/update_100.metrics.json",
+        "file_sha256": "603797b056accff950d37f0ce7d4869c1bf850dab1a17beeec86815d471dbc96",
+        "content_sha256": "63a847222b550dbc2c7b2eecd71540161467fc4afb9a4f6a77901fb1dcaf3a90",
+        "byte_count": 15971
+      },
+      {
+        "update": 400,
+        "path": "checkpoints/update_400.metrics.json",
+        "file_sha256": "894004a18f8c351b79f906a6c71abe0f7471831b2af7ab3c724957e1cca19b24",
+        "content_sha256": "058bfe9d88fc5b60f1404489fe55e0c281bd7f4b917c739ab201822ed8c7baff",
+        "byte_count": 15934
+      },
+      {
+        "update": 1000,
+        "path": "checkpoints/update_1000.metrics.json",
+        "file_sha256": "09bcbfb7b5ea679de3926ac35b93e230314e97a169e258bb41eee29a79b8c91f",
+        "content_sha256": "158378524d3d6560a7f9be444037eac55aebd71236d951599393396384711684",
+        "byte_count": 15921
+      }
+    ],
+    "checkpoint_metrics": {
+      "path": "checkpoint_metrics.json",
+      "file_sha256": "cd3eb8e11f529d86f05fa2ea2c433254b95aa39ad750a69e28fdc83af648aba8",
+      "content_sha256": "abf6c1fd3d79a7575f3bc3d6588d37ef0bfd09c6791accf7765d3ffd0d7ebc0c",
+      "byte_count": 45656
+    },
+    "result": {
+      "path": "result.json",
+      "file_sha256": "65e6f402155cd99ed5033e7c32ae26b67566ffee9d5ba5a286aa12d0575858b9",
+      "content_sha256": "77d805791768cbbff708d2b7633f19683494368ded58013192e56ed20e347766",
+      "byte_count": 10902
+    },
+    "completed": {
+      "path": "completed.json",
+      "file_sha256": "313839d3cde9f015a8f1df973861dc873ab6a90e050df7337678591551af593f",
+      "content_sha256": "9281d0938e4ef12e007edc219d3a9852a526ad3a5c266244f051630b13169a83",
+      "byte_count": 5410
+    },
+    "partial_access_ledger": {
+      "path": "partial_access.jsonl",
+      "file_sha256": "9d10965cb0ca3dbb5492613a207f56161b113dca9957373deaf5932dd0701014",
+      "byte_count": 26937299,
+      "records_content_sha256": "742a74d78a8d21a37f53ed7bfa3eeda2dba4112a0862284d6e8066ba7f8c173c",
+      "last_record_content_sha256": "95d60b1c962579c5d628de5d77745dd554d2a27ed1bc023e56f5015ca5c4fce8",
+      "record_count": 37714,
+      "attempted_open_count": 18856,
+      "accepted_open_count": 18856,
+      "rejected_or_failed_open_count": 0
+    }
+  },
+  "operation_accounting": {
+    "optimizer_construction_count": 1,
+    "complete_optimizer_updates": 1000,
+    "pair_index_presentations": 16000,
+    "camera_objective_count": 4000,
+    "backward_call_count": 4000,
+    "head_clip_invocation_count": 1000,
+    "encoder_clip_invocation_count": 1000,
+    "checkpoint_selection_evaluation_count": 3,
+    "checkpoint_selection_evaluation_updates": [
+      100,
+      400,
+      1000
+    ],
+    "jepa_objective_count": 0,
+    "jepa_backward_count": 0,
+    "ema_update_count_after_initial_hard_sync": 0,
+    "observer_evaluation_rerun_count": 0,
+    "all_caps_and_exact_counts_valid": true
+  },
+  "checkpoint_metrics": [
+    {
+      "update": 100,
+      "aggregate_loss": 3.1743858194712438,
+      "complete_physical_scope_count": 0,
+      "passed_margin_count": 27,
+      "total_shortfall": 141.38589054039798,
+      "worst_margin": -10.141759300231934,
+      "rough_pixel_balanced_accuracy": 0.521016614834807,
+      "rough_ground_balanced_accuracy": 0.6083327568603192,
+      "rough_depth_p95_m": 2.7854398250579835
+    },
+    {
+      "update": 400,
+      "aggregate_loss": 1.956380585023077,
+      "complete_physical_scope_count": 0,
+      "passed_margin_count": 84,
+      "total_shortfall": 60.263539225631185,
+      "worst_margin": -4.588708639144899,
+      "rough_pixel_balanced_accuracy": 0.6769715874970352,
+      "rough_ground_balanced_accuracy": 0.6124060972271407,
+      "rough_depth_p95_m": 1.3475544095039367
+    },
+    {
+      "update": 1000,
+      "aggregate_loss": 1.4684436688465732,
+      "complete_physical_scope_count": 0,
+      "passed_margin_count": 111,
+      "total_shortfall": 33.247456241393685,
+      "worst_margin": -3.280096387863159,
+      "rough_pixel_balanced_accuracy": 0.7415505748284441,
+      "rough_ground_balanced_accuracy": 0.6220155782326704,
+      "rough_depth_p95_m": 1.0238167285919189
+    }
+  ],
+  "terminal_gate": {
+    "action": "FAIL_TERMINAL_NO_RETRY",
+    "integrity_pass": true,
+    "conjuncts": {
+      "complete_physical_scope_count_at_least_1": {
+        "observed": 0,
+        "threshold": 1,
+        "pass": false
+      },
+      "passed_margin_count_at_least_98": {
+        "observed": 111,
+        "threshold": 98,
+        "pass": true
+      },
+      "total_shortfall_strictly_below_threshold": {
+        "observed": 33.247456241393685,
+        "threshold": 41.01776266878769,
+        "pass": true
+      },
+      "rough_pixel_balanced_accuracy_strictly_above_threshold": {
+        "observed": 0.7415505748284441,
+        "threshold": 0.8198594673963917,
+        "pass": false,
+        "shortfall": 0.0783088925679476
+      },
+      "rough_ground_balanced_accuracy_strictly_above_threshold": {
+        "observed": 0.6220155782326704,
+        "threshold": 0.647134926562893,
+        "pass": false,
+        "shortfall": 0.025119348330222557
+      },
+      "rough_depth_p95_strictly_below_threshold": {
+        "observed_m": 1.0238167285919189,
+        "threshold_m": 0.9777327477931971,
+        "pass": false,
+        "excess_m": 0.04608398079872178
+      }
+    }
+  },
+  "scientific_interpretation": {
+    "progressive_decoder_materially_improved_joint_encoder_decoder_learning": true,
+    "update_400_to_1000_core_metric_improvement_count": 54,
+    "update_400_to_1000_core_metric_regression_count": 0,
+    "update_400_to_1000_wrong_rgb_dependence_improvement_count": 54,
+    "update_400_to_1000_wrong_rgb_dependence_regression_count": 0,
+    "rgb_dependence_demonstrated": true,
+    "learning_still_improving_at_cap": true,
+    "learning_rate_of_improvement_decelerating": true,
+    "rough_local_dynamics_passed_margin_count": 6,
+    "rough_local_dynamics_margin_count": 21,
+    "best_scope_passed_margin_count": 15,
+    "best_scope_margin_count": 21,
+    "scope_closure_was_not_a_single_near_threshold_miss": true,
+    "encoder_sufficiency_isolated": false,
+    "jepa_scientific_result_observed": false
+  },
+  "decision": {
+    "mechanism": "progressive_multiresolution_spatial_decoder_only",
+    "mechanism_terminated": true,
+    "seed_change_schedule_extension_threshold_change_or_retry_authorized": false,
+    "probe_checkpoint_qualified": false,
+    "perception_qualification_authorized": false,
+    "jepa_training_authorized": false,
+    "g2_navigation_runtime_or_heldout_authorized": false,
+    "proposed_next_materially_different_mechanism": "learned ego_motion_conditioned temporal fusion of previous and current visual tokens using deployment_equivalent odometry_imu and executed_command context before the retained multiresolution decoder",
+    "proposal_is_execution_authority": false,
+    "reason": "The spatial decoder unlocked broad RGB-conditioned learning, but static final-frame tokens remained weakest under rough motion and open-field depth tails; temporal motion cues target those residuals while aligning with the eventual action-conditioned JEPA stack."
+  },
+  "validation": {
+    "terminal_inventory_and_modes_valid": true,
+    "canonical_json_and_self_hashes_valid": true,
+    "metric_sidecar_controls_recomputed": true,
+    "checkpoint_file_bindings_valid": true,
+    "training_trace_1000_rows_canonical_finite_and_exact": true,
+    "partial_access_ledger_hash_chain_and_open_pairs_valid": true,
+    "operation_counts_and_caps_valid": true,
+    "result_completed_and_terminal_control_cross_bindings_valid": true,
+    "v3_source_and_contract_test_count": 58,
+    "v3_source_and_contract_test_pass_count": 55,
+    "v3_source_and_contract_test_fail_count": 3,
+    "source_test_failure_class": "STALE_SCIENCE_IDENTITY_CHECKER_OUTPUT_ROOT_CONSTANT",
+    "source_test_failure_affects_terminal_artifact_integrity": false,
+    "source_test_failure_detail": "scripts/check_go2_multires_probe_v3_science_identity.py still hard-codes the consumed base probe_v3 output root, while the reviewed and authorized retry uses probe_v3_retry2; reviewed source was not changed after execution merely to green this stale checker."
+  },
+  "authority": {
+    "retry_authorized": false,
+    "probe_checkpoint_qualified": false,
+    "perception_qualification_authorized": false,
+    "jepa_training_authorized": false,
+    "g2_authorized": false,
+    "navigation_authorized": false,
+    "heldout_authorized": false,
+    "production_authorized": false,
+    "deployment_authorized": false,
+    "promotion_authorized": false
+  },
+  "findings": [
+    {
+      "severity": "non_blocking_terminal_audit_limitation",
+      "code": "STALE_SCIENCE_IDENTITY_CHECKER_OUTPUT_ROOT_CONSTANT",
+      "disposition": "recorded_not_patched_post_execution"
+    }
+  ],
+  "content_sha256": "bdb0059fe50af205e570a1c3d867c9107e9bc1d78b39a67e5e22b2aee83a0e76"
+}
