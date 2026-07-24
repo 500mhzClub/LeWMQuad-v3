@@ -43,6 +43,24 @@ These instructions apply to the entire repository.
   exception grants no generated-input, checkpoint, tensor, GPU, training,
   qualification, navigation, held-out, production, promotion, deployment,
   retry, resume, or replacement-attempt authority.
+- The RGB multiresolution perception V3 source may additionally be clean
+  exported only from frozen source-and-review commit
+  `d433e0101f96b0c67d59751918d31ed2547d36d3`, and only as (a) the 39
+  paths in the committed V3 recursive source manifest and (b) the 27
+  source-review, checker, test, frozen-V2 identity-witness, and
+  authority/terminal/strict-evidence paths explicitly enumerated and
+  SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_multiresolution_perception_v3_clean_export_certification_2026-07-24.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied V2 witnesses and authority, terminal, and
+  strict-failure documents are source-only identity evidence and grant no
+  V1, V2, or V3 runtime-output or execution authority. This exception grants
+  no generated-input, runtime-artifact, checkpoint, tensor, dataset, RGB,
+  GPU, training, qualification, G2, navigation, held-out, production,
+  promotion, deployment, retry, resume, replacement-attempt, or compatibility
+  run authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
