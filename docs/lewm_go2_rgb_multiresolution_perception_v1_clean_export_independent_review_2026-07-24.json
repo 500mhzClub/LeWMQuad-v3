@@ -1,0 +1,118 @@
+{
+  "authority": "independent_clean_export_source_review_only_no_generated_input_checkpoint_training_gpu_qualification_g2_navigation_heldout_production_or_promotion_authority",
+  "authority_matrix": {
+    "checkpoint_open_authorized": false,
+    "execution_authorized": false,
+    "g2_authorized": false,
+    "generated_input_open_authorized": false,
+    "gpu_authorized": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "perception_qualification_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "training_authorized": false
+  },
+  "certification": {
+    "canonical_self_hash_match": true,
+    "certified_commit": "cd0193da8fb25175b1201a0fa7b898d679434765",
+    "computed_content_sha256": "23e24566a3107816949d801594a78612916bea2917f6710e5a070a7536ba1db6",
+    "declared_content_sha256": "23e24566a3107816949d801594a78612916bea2917f6710e5a070a7536ba1db6",
+    "file_sha256": "4bb3bc0a47b13cecac26a6814216ef9c1fa7bfcda03d37857c95faf67ebfcbdf",
+    "path": "docs/lewm_go2_rgb_multiresolution_perception_v1_clean_export_certification_2026-07-24.json"
+  },
+  "commit_correspondence": {
+    "certified_commit_byte_mismatch_count": 0,
+    "git_archive_used": false,
+    "git_grep_used": false,
+    "git_worktree_used": false,
+    "method": "individual git show of each explicit declared path only",
+    "paths_checked": 45,
+    "snapshot_binding_mismatch_count": 0,
+    "workspace_tree_compared": false
+  },
+  "content_sha256": "69c5730188ebdd47bd52e55f5b48d0a4a45cc6402cba0322a6927d315264cb98",
+  "custody": {
+    "accelerator_use_count": 0,
+    "benchmark_run_count": 0,
+    "configuration_or_data_path_content_open_count": 0,
+    "existing_file_edit_count": 0,
+    "generated_runtime_input_open_count": 0,
+    "navigation_run_count": 0,
+    "sealed_or_heldout_content_open_count": 0,
+    "tensor_checkpoint_open_count": 0,
+    "training_run_count": 0
+  },
+  "date": "2026-07-24",
+  "findings": [],
+  "results": {
+    "accelerator_hidden_pytest": {
+      "duration_seconds": 2.02,
+      "environment": {
+        "CUDA_VISIBLE_DEVICES": "",
+        "HIP_VISIBLE_DEVICES": "",
+        "JAX_PLATFORMS": "cpu",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "ROCR_VISIBLE_DEVICES": "",
+        "ZE_AFFINITY_MASK": "",
+        "pytest_cacheprovider_enabled": false
+      },
+      "failed": 0,
+      "passed": 40,
+      "result": "PASS",
+      "test_paths": [
+        "lewm/tests/test_shared_observable_camera_ray_jepa_v5_multires_v1.py",
+        "lewm/tests/test_go2_shared_jepa_v5_multires_probe_v1.py",
+        "lewm/tests/test_go2_multires_probe_source_closure.py"
+      ]
+    },
+    "manifest_checker": {
+      "result": "PASS",
+      "source_only_snapshot_without_git_index": true
+    }
+  },
+  "reviewed_bindings": {
+    "checker": {
+      "file_sha256": "ac9fcaa9107ad43201b5082581c0743ebb46653ff8b51a6f09c33fc992142911",
+      "path": "scripts/check_go2_multires_probe_source_closure.py"
+    },
+    "manifest": {
+      "canonical_self_hash_match": true,
+      "content_sha256": "a4d2662c26bede46b15473d85dcf0fbf2830e5cf2817217b748ade49637279b8",
+      "file_sha256": "54d145e120b7eacb11f608cac7fa410175f6289f3c8da24de91286dd039649ec",
+      "path": "docs/lewm_go2_rgb_multiresolution_perception_v1_source_manifest_2026-07-24.json",
+      "source_bindings_sha256": "13cb7d2ab37bbe976e35f51df4ae0a85ef1c28c4d4ed1b150d7aec58f0406705"
+    },
+    "source_review": {
+      "canonical_self_hash_match": true,
+      "content_sha256": "e28792f644dc11c8ac3ebc06208a7ff3a748934604522ab693b99e504fb098df",
+      "file_sha256": "c1ac5d6103a47b81b7b9ecae88ea3ec3e5a2f203b0e089b68ce895211c861934",
+      "path": "docs/lewm_go2_rgb_multiresolution_perception_v1_source_review_2026-07-24.json"
+    }
+  },
+  "reviewer": "/root/multires_source_design",
+  "schema": "lewm_go2_rgb_multiresolution_perception_v1_clean_export_independent_review",
+  "snapshot": {
+    "all_45_snapshot_file_bindings_sha256": "4566a40a50289154ac8c21bf5b328579235eb68f62e530d84e7c991d9ea3bfdd",
+    "duplicate_declared_path_count": 0,
+    "expected_file_count": 45,
+    "forbidden_path_match_count": 0,
+    "manifest_source_count": 35,
+    "missing_file_count": 0,
+    "nonregular_file_count": 0,
+    "observed_file_count_after_tests": 45,
+    "observed_file_count_before_tests": 45,
+    "post_test_binding_hash_unchanged": true,
+    "root": "/tmp/lewm-multires-source-n52R1ZwV",
+    "symlink_count": 0,
+    "unexpected_directory_count": 0,
+    "unexpected_file_count": 0,
+    "verification_path_count": 10
+  },
+  "status": "PASS_SOURCE_ONLY_NO_EXECUTION_AUTHORITY",
+  "unresolved": [
+    "the clean source snapshot and this review grant no execution authority",
+    "generated runtime inputs and the N320 tensor checkpoint remain unopened",
+    "training, perception qualification, G2, navigation, held-out evaluation, production, and promotion remain unauthorized"
+  ]
+}
