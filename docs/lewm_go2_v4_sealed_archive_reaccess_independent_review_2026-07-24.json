@@ -1,0 +1,53 @@
+{
+  "content_sha256": "65b022cdc63c4b81cdfea3318305a671f5f7d96f0100a968e2cdb1547f183f57",
+  "date": "2026-07-24",
+  "findings": [
+    {
+      "code": "archive_reaccess_classification",
+      "detail": "PASS: the record conservatively treats whole-tree archive creation and extraction as protected-byte access even though no protected content was printed, parsed, or used.",
+      "status": "PASS"
+    },
+    {
+      "code": "incident_containment",
+      "detail": "PASS subject to the stated review limitations: the record names the exact temporary root, records its approved deletion, states that verification stopped before commands ran inside the extracted tree, and forbids scientific use of archived bytes.",
+      "status": "PASS"
+    },
+    {
+      "code": "authority_consequence",
+      "detail": "PASS: the record grants no promotion or execution authority, leaves V4 permanently ineligible for G8, and AGENTS.md continues to make every legacy sealed role inaccessible.",
+      "status": "PASS"
+    },
+    {
+      "code": "whole_tree_export_prohibition",
+      "detail": "PASS as a narrow procedural guard: it covers git archive, worktree export, checkout copies, source packages, and equivalent clean-tree materialization while legacy sealed blobs remain tracked. It is not an operating-system access-control boundary.",
+      "status": "PASS"
+    },
+    {
+      "code": "source_only_allowlist_contradiction",
+      "detail": "BLOCK: AGENTS.md currently permits only paths in the 72-path committed source-closure manifest, while the incident record requires those paths plus separately reviewed checker and synthetic-test files; the governing closure also has nine explicit checker, guard, and synthetic-test paths. The current wording either forbids required verification files or invites an undocumented exception.",
+      "required_agents_wording": "Clean source verification must export only (a) the 72 validated paths in the committed source-closure manifest and (b) the nine checker, guard, and synthetic-test paths explicitly enumerated and SHA-256-bound in the governing source-closure review receipt; every exported path must be validated against its binding before copying.",
+      "required_incident_wording": "Clean source certification must construct a source-only snapshot from exactly the 72 paths bound by the committed closure manifest plus the nine checker, guard, and synthetic-test paths explicitly enumerated and SHA-256-bound in the governing source-closure review receipt.",
+      "status": "BLOCK"
+    }
+  ],
+  "limitations": [
+    "This source-only review did not inspect Git object membership, protected paths, sealed bytes, config or custody roots, the archive, the extracted tree, the deleted temporary root, or retained command logs.",
+    "Claims about exact archived membership, deletion, absence of downstream protected-byte use, and the 72-plus-9 closure inventory are assessed as documented custody assertions rather than independently re-executed facts.",
+    "The proposed wording remains procedural defense in depth; a safe exporter must enforce the exact allowlist and hashes fail-closed."
+  ],
+  "review_scope": {
+    "archive_or_checkout_materialized": false,
+    "config_or_custody_root_inspected": false,
+    "git_grep_used": false,
+    "protected_or_sealed_file_inspected": false,
+    "source_modified_by_reviewer": false
+  },
+  "reviewed_sources": {
+    "AGENTS.md": "6825da641335553d65b4b6e0ec4f2923a032945c3af1ddc3b5a5329c9a9f417f",
+    "docs/lewm_go2_v4_sealed_archive_reaccess_2026-07-24.md": "b219f03f884d7156e882c35a4ac59819936b81198fb61a5c18e9b0baba04e2e7"
+  },
+  "reviewer": "/root/handoff_audit",
+  "schema": "lewm_go2_v4_sealed_archive_reaccess_independent_review_v1",
+  "status": "BLOCK",
+  "verdict": "BLOCK_SOURCE_EXPORT_ALLOWLIST_CONTRADICTION_NO_EXECUTION_AUTHORITY"
+}

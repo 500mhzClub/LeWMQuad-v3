@@ -1,0 +1,85 @@
+{
+  "authority": "source_only_clean_export_certification_no_data_training_g2_navigation_runtime_production_or_heldout_authority",
+  "certified_commit": "031568aac537f7c707a8e27b13a243ec1a02c646",
+  "content_sha256": "2617a97bf21d62c85515d4837bc6490747295b83bf9e001b1a63dd9879c3a268",
+  "date": "2026-07-24",
+  "export": {
+    "construction": "source-only tar assembled from the validated manifest paths and nine explicitly enumerated verification files",
+    "exported_file_count": 81,
+    "forbidden_path_match_count": 0,
+    "forbidden_path_patterns": [
+      "config/",
+      "custody/",
+      "data/",
+      "datasets/",
+      "artifacts/",
+      ".generated/",
+      "generated/",
+      "checkpoints/",
+      "sealed/",
+      "sealed_*/",
+      "sealed_test.json"
+    ],
+    "manifest_source_count": 72,
+    "verification_paths": [
+      ".ignore",
+      ".rgignore",
+      "docs/lewm_go2_g2_runner_source_closure_v1_manifest_2026-07-24.json",
+      "scripts/check_go2_shared_v5_source_closure.py",
+      "lewm/tests/test_go2_g2_runner_source_closure.py",
+      "lewm/tests/test_go2_shared_v5_closure_components.py",
+      "lewm/tests/test_sealed_search_guard.py",
+      "lewm/tests/test_shared_v5_target_observation_head_v1.py",
+      "lewm/tests/test_two_resolution_frontier_value_head_v1.py"
+    ],
+    "verification_paths_sha256": {
+      ".ignore": "b8cec05a9d3a6f7917a042e0067ba33e2acfa03c2d29c8e698b365c0ae6350ba",
+      ".rgignore": "dee54db8d929288cf39a2d256088c5346da53df3ad30ad91291dfe337d65a22c",
+      "docs/lewm_go2_g2_runner_source_closure_v1_manifest_2026-07-24.json": "f7250f0c4ccca8673511a775f931670e745e4de1f7bc27435052f9652f9f3029",
+      "lewm/tests/test_go2_g2_runner_source_closure.py": "586d174cef740a0c7cf375e271d6587ec2eae01c516db518b9e62056531186d6",
+      "lewm/tests/test_go2_shared_v5_closure_components.py": "edfd4a241f1720c6f481a8194e5b1538386eb34f248e9f4f9c877c9268eea3fe",
+      "lewm/tests/test_sealed_search_guard.py": "3106a824e1cc10af73710d08c36e4a53ea601e2af40831388c979a859273c3cd",
+      "lewm/tests/test_shared_v5_target_observation_head_v1.py": "384e8784d56f0cb10e186fbeb39aa5a49d3f2923f8a08cdfa6859eeb3bb01d1f",
+      "lewm/tests/test_two_resolution_frontier_value_head_v1.py": "77db598a0d208db517938d25d88544174c6c749361180b3e823d291bc4879ad2",
+      "scripts/check_go2_shared_v5_source_closure.py": "1f2bb49f04dff857c86aeecfd014fa8fb8a1124bf73a855b944fa569d7fc2a2b"
+    },
+    "working_bytes_equal_certified_commit": true
+  },
+  "manifest": {
+    "content_sha256": "82c6ced9fbf1885267d4267009987df57345bd2bdc78676d94b3192b654c6496",
+    "file_sha256": "f7250f0c4ccca8673511a775f931670e745e4de1f7bc27435052f9652f9f3029",
+    "path": "docs/lewm_go2_g2_runner_source_closure_v1_manifest_2026-07-24.json",
+    "source_bindings_sha256": "3546d03194238a1500093c587300faa7f8f858d594edf17afc115948d084d10f"
+  },
+  "production_authority_state": "all_six_wrapper_authority_hashes_remain_none",
+  "results": {
+    "accelerator_environment": "CUDA_VISIBLE_DEVICES, HIP_VISIBLE_DEVICES, ROCR_VISIBLE_DEVICES, and ZE_AFFINITY_MASK hidden; JAX_PLATFORMS=cpu",
+    "entrypoint_imports": {
+      "scripts.go2_shared_jepa_v5_one_shot": "PASS",
+      "scripts.run_go2_shared_v5_dev_maze": "PASS"
+    },
+    "manifest_checker": {
+      "certified_working_tree_with_require_tracked": "PASS",
+      "source_only_snapshot_with_require_tracked": "NOT_APPLICABLE_NO_GIT_INDEX",
+      "source_only_snapshot_without_require_tracked": "PASS"
+    },
+    "pytest": {
+      "duration_seconds": 1.1,
+      "passed": 16,
+      "test_paths": [
+        "lewm/tests/test_go2_g2_runner_source_closure.py",
+        "lewm/tests/test_go2_shared_v5_closure_components.py",
+        "lewm/tests/test_sealed_search_guard.py",
+        "lewm/tests/test_shared_v5_target_observation_head_v1.py",
+        "lewm/tests/test_two_resolution_frontier_value_head_v1.py"
+      ]
+    }
+  },
+  "schema": "lewm_go2_g2_runner_source_closure_v1_clean_export_certification",
+  "status": "PASS_SOURCE_ONLY_NO_EXECUTION_AUTHORITY",
+  "unresolved": [
+    "production lifecycle remains intentionally bound to the canonical repository root",
+    "six generated lifecycle authority documents are absent",
+    "no configuration, dataset, checkpoint, artifact, runtime outcome, or held-out material is part of this certification"
+  ]
+}

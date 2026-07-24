@@ -14,6 +14,14 @@ These instructions apply to the entire repository.
   equivalent bypass across a custody root.
 - When a search tool or command does not honor `.ignore`, give it explicit
   exclusions for `**/sealed_test.json`, `**/sealed/**`, and `**/sealed_*/**`.
+- Do not use a whole-tree `git archive`, worktree export, checkout copy, source
+  package, or equivalent clean-tree materialization while legacy sealed blobs
+  remain tracked. Clean source verification must export only (a) the 72
+  validated paths in the committed source-closure manifest and (b) the nine
+  checker, guard, and synthetic-test paths explicitly enumerated and
+  SHA-256-bound in
+  `docs/lewm_go2_g2_runner_source_closure_v1_clean_export_certification_2026-07-24.json`.
+  Validate every exported path against its binding before copying.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must

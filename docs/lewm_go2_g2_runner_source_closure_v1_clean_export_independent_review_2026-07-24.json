@@ -1,0 +1,157 @@
+{
+  "authority": "independent_source_only_review_no_data_training_g2_navigation_runtime_production_or_heldout_authority",
+  "bindings": {
+    "all_81_snapshot_file_bindings_sha256": "a611435f612edd0beccb012b2422be96cc932f4e910af06be7f7c98f7848200c",
+    "certification": {
+      "content_sha256": "2617a97bf21d62c85515d4837bc6490747295b83bf9e001b1a63dd9879c3a268",
+      "file_sha256": "f69fee2f7438ec13b21e132c48bd8f2895f6eac837f1b4178a85a6c8d4666183",
+      "path": "docs/lewm_go2_g2_runner_source_closure_v1_clean_export_certification_2026-07-24.json"
+    },
+    "certified_commit": "031568aac537f7c707a8e27b13a243ec1a02c646",
+    "checker": {
+      "file_sha256": "1f2bb49f04dff857c86aeecfd014fa8fb8a1124bf73a855b944fa569d7fc2a2b",
+      "path": "scripts/check_go2_shared_v5_source_closure.py"
+    },
+    "manifest": {
+      "content_sha256": "82c6ced9fbf1885267d4267009987df57345bd2bdc78676d94b3192b654c6496",
+      "file_sha256": "f7250f0c4ccca8673511a775f931670e745e4de1f7bc27435052f9652f9f3029",
+      "path": "docs/lewm_go2_g2_runner_source_closure_v1_manifest_2026-07-24.json",
+      "source_bindings_sha256": "3546d03194238a1500093c587300faa7f8f858d594edf17afc115948d084d10f"
+    },
+    "verification_paths_sha256": {
+      ".ignore": "b8cec05a9d3a6f7917a042e0067ba33e2acfa03c2d29c8e698b365c0ae6350ba",
+      ".rgignore": "dee54db8d929288cf39a2d256088c5346da53df3ad30ad91291dfe337d65a22c",
+      "docs/lewm_go2_g2_runner_source_closure_v1_manifest_2026-07-24.json": "f7250f0c4ccca8673511a775f931670e745e4de1f7bc27435052f9652f9f3029",
+      "lewm/tests/test_go2_g2_runner_source_closure.py": "586d174cef740a0c7cf375e271d6587ec2eae01c516db518b9e62056531186d6",
+      "lewm/tests/test_go2_shared_v5_closure_components.py": "edfd4a241f1720c6f481a8194e5b1538386eb34f248e9f4f9c877c9268eea3fe",
+      "lewm/tests/test_sealed_search_guard.py": "3106a824e1cc10af73710d08c36e4a53ea601e2af40831388c979a859273c3cd",
+      "lewm/tests/test_shared_v5_target_observation_head_v1.py": "384e8784d56f0cb10e186fbeb39aa5a49d3f2923f8a08cdfa6859eeb3bb01d1f",
+      "lewm/tests/test_two_resolution_frontier_value_head_v1.py": "77db598a0d208db517938d25d88544174c6c749361180b3e823d291bc4879ad2",
+      "scripts/check_go2_shared_v5_source_closure.py": "1f2bb49f04dff857c86aeecfd014fa8fb8a1124bf73a855b944fa569d7fc2a2b"
+    }
+  },
+  "blockers": [],
+  "content_sha256": "358f943f110a09682f3ab88235490152a521bafb4b5c6dfa7f179a6fcba979ce",
+  "date": "2026-07-24",
+  "hash_algorithms": {
+    "all_81_snapshot_file_bindings_sha256": "sha256 of canonical JSON for the path-sorted list of 81 objects containing path and file_sha256",
+    "content_sha256": "sha256 of canonical JSON after removing content_sha256; sort_keys=true, separators comma/colon, ensure_ascii=true, allow_nan=false"
+  },
+  "independent_results": {
+    "accelerator_isolation": {
+      "environment": {
+        "CUDA_VISIBLE_DEVICES": "",
+        "HIP_VISIBLE_DEVICES": "",
+        "JAX_PLATFORMS": "cpu",
+        "ROCR_VISIBLE_DEVICES": "",
+        "ZE_AFFINITY_MASK": ""
+      },
+      "torch_cuda_available": false,
+      "torch_cuda_device_count": 0,
+      "verdict": "PASS"
+    },
+    "authority_fail_closed": {
+      "generated_lifecycle_authorities_absent": 6,
+      "model_authority_bindings_none": 6,
+      "production_execution_authority_granted": false,
+      "verdict": "PASS",
+      "wrapper_authority_bindings_none": 6
+    },
+    "certification_canonical_self_hash": {
+      "claimed": "2617a97bf21d62c85515d4837bc6490747295b83bf9e001b1a63dd9879c3a268",
+      "computed": "2617a97bf21d62c85515d4837bc6490747295b83bf9e001b1a63dd9879c3a268",
+      "verdict": "PASS"
+    },
+    "commit_correspondence": {
+      "absent_commit_paths": [],
+      "byte_mismatch_paths": [],
+      "method": "explicit git show of each declared path only; no tree enumeration, archive, worktree, export, or git grep",
+      "paths_checked": 81,
+      "verdict": "PASS"
+    },
+    "entrypoint_imports": {
+      "scripts.go2_shared_jepa_v5_one_shot": "PASS",
+      "scripts.run_go2_shared_v5_dev_maze": "PASS",
+      "verdict": "PASS"
+    },
+    "forbidden_paths": {
+      "matches": [],
+      "patterns_checked": [
+        "config/",
+        "custody/",
+        "data/",
+        "datasets/",
+        "artifacts/",
+        ".generated/",
+        "generated/",
+        "checkpoints/",
+        "sealed/",
+        "sealed_*/",
+        "sealed_test.json"
+      ],
+      "verdict": "PASS"
+    },
+    "manifest": {
+      "canonical_content_hash_match": true,
+      "declared_source_count": 72,
+      "recomputed_source_bindings_hash_match": true,
+      "source_path_count": 72,
+      "unique_source_path_count": 72,
+      "verdict": "PASS"
+    },
+    "manifest_checker": {
+      "command_mode": "source-only snapshot without --require-tracked",
+      "output": "Shared V5 G2/runner source closure: PASS",
+      "verdict": "PASS"
+    },
+    "pytest": {
+      "duration_seconds": 1.12,
+      "passed": 16,
+      "test_paths": [
+        "lewm/tests/test_go2_g2_runner_source_closure.py",
+        "lewm/tests/test_go2_shared_v5_closure_components.py",
+        "lewm/tests/test_sealed_search_guard.py",
+        "lewm/tests/test_shared_v5_target_observation_head_v1.py",
+        "lewm/tests/test_two_resolution_frontier_value_head_v1.py"
+      ],
+      "verdict": "PASS"
+    },
+    "snapshot_inventory": {
+      "declared_exported_file_count": 81,
+      "duplicate_declared_paths": [],
+      "expected_union_count": 81,
+      "manifest_source_paths": 72,
+      "missing_paths": [],
+      "observed_file_count_after_checks": 81,
+      "unexpected_paths": [],
+      "verification_paths": 9,
+      "verdict": "PASS"
+    },
+    "verification_file_bindings": {
+      "declared_hash_count": 9,
+      "hash_mismatch_paths": [],
+      "path_set_matches_declared_verification_paths": true,
+      "verdict": "PASS"
+    }
+  },
+  "limitations": [
+    "The supplied temporary snapshot was not independently constructed; this review instead enumerated it and byte-compared every one of its 81 declared files with the certified commit.",
+    "The source-only snapshot intentionally has no Git index, so checker --require-tracked is not applicable there and was not used; all 81 paths were independently shown to exist with identical bytes in the certified commit.",
+    "This review inspected only the certification, closure manifest and checker, and files inside the supplied source-only snapshot. It did not inspect configuration, custody, data, dataset, artifact, generated, checkpoint, sealed, runtime-outcome, or held-out paths.",
+    "The checker, two imports, and five unit-test files establish source closure, importability, bounded component behavior, and fail-closed authority only. They do not establish training quality, navigation performance, G2 passage, production readiness, or held-out generalization.",
+    "Production lifecycle operation remains bound to the canonical repository root, and the six generated lifecycle authority documents remain absent."
+  ],
+  "review_scope": {
+    "allowed_inputs": [
+      "docs/lewm_go2_g2_runner_source_closure_v1_clean_export_certification_2026-07-24.json",
+      "docs/lewm_go2_g2_runner_source_closure_v1_manifest_2026-07-24.json",
+      "scripts/check_go2_shared_v5_source_closure.py",
+      "/tmp/lewm-source-closure-Wbo0JJ/repo"
+    ],
+    "source_snapshot": "/tmp/lewm-source-closure-Wbo0JJ/repo"
+  },
+  "reviewer": "/root/architecture_audit",
+  "schema": "lewm_go2_g2_runner_source_closure_v1_clean_export_independent_review",
+  "status": "PASS_SOURCE_ONLY_NO_EXECUTION_AUTHORITY",
+  "verdict": "PASS"
+}

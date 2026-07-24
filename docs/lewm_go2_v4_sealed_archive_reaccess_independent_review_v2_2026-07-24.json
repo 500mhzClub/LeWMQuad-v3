@@ -1,0 +1,58 @@
+{
+  "content_sha256": "3118e276c95e07efb658521b8f42e978ea13061a30ee32215aeb020a2c4ddc91",
+  "date": "2026-07-24",
+  "findings": [
+    {
+      "code": "prior_v1_allowlist_block_resolved",
+      "detail": "PASS: AGENTS.md and the incident record now both require exactly the 72 committed manifest paths plus the nine checker, guard, and synthetic-test paths explicitly enumerated and SHA-256-bound in docs/lewm_go2_g2_runner_source_closure_v1_clean_export_certification_2026-07-24.json, with validation before copying.",
+      "status": "PASS"
+    },
+    {
+      "code": "clean_export_certification_allowlist_structure",
+      "detail": "PASS: the certification contains nine unique verification paths, nine SHA-256 bindings with exactly the same key set, a manifest_source_count of 72, and an exported_file_count of 81.",
+      "status": "PASS"
+    },
+    {
+      "code": "clean_export_certification_self_hash",
+      "detail": "PASS: canonical compact sorted-key JSON after removing content_sha256 hashes to 2617a97bf21d62c85515d4837bc6490747295b83bf9e001b1a63dd9879c3a268, exactly matching the certification.",
+      "status": "PASS"
+    },
+    {
+      "code": "whole_tree_export_guard_scope",
+      "detail": "PASS as narrow procedural defense in depth: whole-tree archive, worktree export, checkout copy, source package, and equivalent materialization remain forbidden while legacy sealed blobs are tracked; the sole clean-verification exception is the exact 72-plus-9 hash-bound allowlist.",
+      "status": "PASS"
+    },
+    {
+      "code": "incident_containment_and_authority",
+      "detail": "PASS subject to the stated limitations: the incident remains recorded and contained, grants no promotion or execution authority, leaves V4 permanently ineligible for G8, and does not authorize any protected-byte use.",
+      "status": "PASS"
+    },
+    {
+      "code": "v1_review_history_preserved",
+      "detail": "PASS: this v2 receipt records resolution without replacing or weakening the prior BLOCK receipt.",
+      "status": "PASS"
+    }
+  ],
+  "limitations": [
+    "This review inspected only AGENTS.md, the archive re-access incident record, and the clean-export certification.",
+    "It did not open or rehash any of the 72 manifest paths or nine verification-path targets; it verified only the certification's explicit path/hash structure, counts, and canonical self-hash.",
+    "It did not inspect protected or sealed files, config or custody roots, Git object membership, an archive or checkout, the deleted temporary root, command logs, or the certified commit.",
+    "The guard remains procedural defense in depth rather than an operating-system access-control boundary."
+  ],
+  "review_scope": {
+    "archive_or_checkout_materialized": false,
+    "config_or_custody_root_inspected": false,
+    "git_grep_used": false,
+    "protected_or_sealed_file_inspected": false,
+    "reviewed_source_modified_by_reviewer": false
+  },
+  "reviewed_sources": {
+    "AGENTS.md": "6e81d5e63f8f7b984e39e191ca454450de4d9d43d1a37ff6b79cff86f42727b5",
+    "docs/lewm_go2_g2_runner_source_closure_v1_clean_export_certification_2026-07-24.json": "f69fee2f7438ec13b21e132c48bd8f2895f6eac837f1b4178a85a6c8d4666183",
+    "docs/lewm_go2_v4_sealed_archive_reaccess_2026-07-24.md": "a209b105c8ea50e90e0c5c2bfc760a567d3f6705c6e334015e7f9d5c37465da5"
+  },
+  "reviewer": "/root/handoff_audit",
+  "schema": "lewm_go2_v4_sealed_archive_reaccess_independent_review_v2",
+  "status": "PASS",
+  "verdict": "PASS_PRIOR_ALLOWLIST_BLOCK_RESOLVED_SOURCE_ONLY_NO_EXECUTION_AUTHORITY"
+}
