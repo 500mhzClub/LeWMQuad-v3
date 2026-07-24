@@ -22,6 +22,13 @@ These instructions apply to the entire repository.
   SHA-256-bound in
   `docs/lewm_go2_g2_runner_source_closure_v1_clean_export_certification_2026-07-24.json`.
   Validate every exported path against its binding before copying.
+- The RGB multiresolution perception V1 source may additionally be clean
+  exported only as (a) the 35 paths in the committed V1 recursive source
+  manifest and (b) the ten custody, review, checker, and test paths explicitly
+  enumerated and SHA-256-bound in
+  `docs/lewm_go2_rgb_multiresolution_perception_v1_clean_export_certification_2026-07-24.json`.
+  This exception grants no generated-input, checkpoint, training, GPU,
+  qualification, navigation, held-out, production, or promotion authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
