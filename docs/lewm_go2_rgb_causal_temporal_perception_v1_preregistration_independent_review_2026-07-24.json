@@ -1,0 +1,63 @@
+{
+  "schema": "lewm_go2_rgb_causal_temporal_perception_v1_preregistration_independent_review_v1",
+  "date": "2026-07-24",
+  "reviewer": "/root/runtime_reuse_audit",
+  "status": "PASS_SOURCE_ONLY_PREREGISTRATION_NO_EXECUTION_AUTHORITY",
+  "verdict": "PASS",
+  "preregistration_binding": {
+    "path": "docs/lewm_go2_rgb_causal_temporal_perception_v1_preregistration_2026-07-24.md",
+    "file_sha256": "72377d64dcc70c15eaadac0130d2f9244ca93141d2948c01ebe2011102bca405"
+  },
+  "review_scope": {
+    "source_only_preregistration_review": true,
+    "implementation_source_reviewed": false,
+    "generated_input_open_count": 0,
+    "dataset_or_rgb_open_count": 0,
+    "checkpoint_or_tensor_open_count": 0,
+    "gpu_or_hardware_operation_count": 0,
+    "sealed_or_heldout_open_count": 0
+  },
+  "checks": {
+    "preregistration_path_and_sha256_exact": true,
+    "governing_authority_correction_applied": true,
+    "one_changed_mechanism_is_pure_visual_fixed_lag_token_difference": true,
+    "requested_primitive_median_motion_and_exact_simulator_se2_excluded_from_model_inputs": true,
+    "fixed_lag_is_exactly_one_reset_safe_half_second_command_block": true,
+    "topology_initialization_parameter_counts_and_rng_restoration_frozen": true,
+    "n320_is_only_tensor_initialization_and_rejected_checkpoint_open_count_is_zero": true,
+    "raw_roles_outputs_losses_optimizer_and_frozen_partitions_preserved": true,
+    "primary_selection_population_remains_924_endpoints_9_scopes_and_189_margins": true,
+    "495_warm_and_429_cold_mapping_is_bound_and_warm_only_view_is_informational": true,
+    "presentation_bound_is_16000_with_exact_1600_6400_and_16000_prefix_hashes": true,
+    "one_attempt_no_retry_resume_repair_second_seed_extension_or_threshold_search": true,
+    "terminal_pass_is_the_frozen_strict_six_part_conjunction_with_equality_failing": true,
+    "execution_remains_conditional_on_committed_source_independent_source_review_exact_runtime_authorization_and_fail_closed_preflight": true,
+    "later_perception_qualification_jepa_no_jepa_g2_through_g7_and_fresh_g8_boundaries_preserved": true,
+    "reviewer_is_independent_of_preregistration_author": true
+  },
+  "findings": [],
+  "limitations": [
+    "This artifact reviews only the bound preregistration and governing committed contracts; it does not review an implementation, tests, source closure, launcher, execution authorization, runtime inputs, or results.",
+    "No generated input, dataset, RGB, checkpoint, tensor, GPU, hardware, navigation, held-out, or sealed material was opened or operated by this review.",
+    "PASS does not qualify a checkpoint, authorize source mutation or execution, or grant perception qualification, JEPA, G2, navigation, held-out, production, promotion, or deployment authority.",
+    "A future implementation must independently prove the frozen topology, migration, population, schedule, custody, and fail-closed lifecycle before the user-authorized bounded attempt may be reserved."
+  ],
+  "authority": {
+    "source_implementation_authorized_by_this_review": false,
+    "generated_input_or_dataset_open_authorized": false,
+    "rgb_open_authorized": false,
+    "checkpoint_or_tensor_open_authorized": false,
+    "gpu_or_hardware_authorized": false,
+    "training_or_probe_execution_authorized": false,
+    "retry_resume_repair_second_seed_extension_observer_rerun_or_replacement_authorized": false,
+    "perception_qualification_authorized": false,
+    "jepa_training_authorized": false,
+    "g2_authorized": false,
+    "navigation_authorized": false,
+    "heldout_or_sealed_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "deployment_authorized": false
+  },
+  "content_sha256": "dbe1018af69583e63282782d49012500909b26a6ec0af321674ce3b528c253df"
+}
