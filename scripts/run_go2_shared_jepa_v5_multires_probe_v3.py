@@ -19,6 +19,7 @@ import stat
 import sys
 from types import SimpleNamespace
 from typing import Any, Mapping, Sequence
+import warnings
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -2330,7 +2331,6 @@ def _execute_after_reservation(
         trainer = matched.Trainer(runtime, inputs, output_root, reservation)
         progress.enter("reserved_runtime_device_validation")
         device, hardware = trainer.device()
-        runtime.torch.use_deterministic_algorithms(True, warn_only=True)
         if (
             hardware["visible_device_count"] != 1
             or "r9700" not in hardware["name"].casefold().replace(" ", "")
@@ -2355,23 +2355,44 @@ def _execute_after_reservation(
         del fit
         commanded = commanded_cpu.to(device)
 
-        training = _train(
-            runtime,
-            trainer,
-            model,
-            head,
-            encoder,
-            frozen,
-            train_pairs,
-            selection_pairs,
-            indices,
-            vocabulary,
-            commanded,
-            device,
-            output_root,
-            partition,
-            progress,
+        with warnings.catch_warnings(record=True) as determinism_warnings:
+            warnings.simplefilter("once")
+            runtime.torch.use_deterministic_algorithms(True, warn_only=True)
+            try:
+                training = _train(
+                    runtime,
+                    trainer,
+                    model,
+                    head,
+                    encoder,
+                    frozen,
+                    train_pairs,
+                    selection_pairs,
+                    indices,
+                    vocabulary,
+                    commanded,
+                    device,
+                    output_root,
+                    partition,
+                    progress,
+                )
+            finally:
+                runtime.torch.use_deterministic_algorithms(
+                    True, warn_only=False
+                )
+        expected_warning_prefix = (
+            "grid_sampler_2d_backward_cuda does not have a deterministic "
+            "implementation, but you set "
+            "'torch.use_deterministic_algorithms(True, warn_only=True)'."
         )
+        if not determinism_warnings or any(
+            item.category is not UserWarning
+            or not str(item.message).startswith(expected_warning_prefix)
+            for item in determinism_warnings
+        ):
+            raise RuntimeError(
+                "training emitted an unexpected determinism warning set"
+            )
         progress.enter("training_record_publication")
         trace_binding, metrics_binding = _publish_training_records(
             output_root, training

@@ -1,7 +1,7 @@
 {
   "authority": "source_closure_only_no_generated_input_checkpoint_training_gpu_qualification_g2_navigation_heldout_production_or_promotion_authority",
   "consumed_adaptation_runner_source_count": 0,
-  "content_sha256": "534c9de0e2722830c4bf1289ee3749dc1f1f5c26f37b207a786e5ec7f970e21f",
+  "content_sha256": "9a98c552bc3fb62f61436df259363bc5d5dcd77ebfd65b4a1a0484027d04bada",
   "date": "2026-07-24",
   "entrypoints": [
     "scripts/launch_go2_shared_jepa_v5_multires_probe_v3.py",
@@ -219,12 +219,12 @@
       "path": "scripts/run_go2_shared_jepa_v5_matched_training_v1.py"
     },
     {
-      "byte_count": 96056,
-      "file_sha256": "3c7c203d2cd5d2cc145a0d319073fd95c4ca09d3502850790ba7081b97d09f11",
+      "byte_count": 97062,
+      "file_sha256": "73632db5333fb6010a3cae328f30808f1dbc5414d9f9934e9aed3cc71d5b684d",
       "path": "scripts/run_go2_shared_jepa_v5_multires_probe_v3.py"
     }
   ],
-  "source_bindings_sha256": "7cd65be8791e0ef61dcc3161f7c010a3d1129edf90dc8ec6c8e50ccdbfc4dc10",
+  "source_bindings_sha256": "8d9fe7069f59cee409581ff88b886d8b7803374738ebceea606b2cc8b26b39da",
   "source_count": 39,
   "source_paths": [
     "lewm/__init__.py",
