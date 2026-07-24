@@ -2330,6 +2330,7 @@ def _execute_after_reservation(
         trainer = matched.Trainer(runtime, inputs, output_root, reservation)
         progress.enter("reserved_runtime_device_validation")
         device, hardware = trainer.device()
+        runtime.torch.use_deterministic_algorithms(True, warn_only=True)
         if (
             hardware["visible_device_count"] != 1
             or "r9700" not in hardware["name"].casefold().replace(" ", "")
