@@ -1,0 +1,142 @@
+{
+  "schema": "lewm_go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1_terminal_audit_v1",
+  "status": "PASS_VALID_TERMINAL_STRICT_KERNEL_COMPATIBILITY_FAILURE_NO_ENCODER_RESULT",
+  "date": "2026-07-24",
+  "auditor": "/root",
+  "authority_commit": "7b08a48dfbf6094eec63ec7efb406f1b98c6a7bb",
+  "contract": {
+    "path": "lewm/benchmarks/go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py",
+    "file_sha256": "ae2a291512ef62b0f38dfa3d0f7801b82050f04e325d694b7cbd2594da84fddb",
+    "byte_count": 43338,
+    "operation_contract_sha256": "c7c3afad5a428b76718e5f51411f6b0272773f047f71f786b9c5ce6b702eb5a9",
+    "output_contract_sha256": "8f35ba40f8e8bc3197371930d829fc96612525307458e683b48b65474eb8e23e"
+  },
+  "source_review": {
+    "path": "docs/lewm_go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1_source_review_2026-07-24.json",
+    "file_sha256": "9edb54e829edd0bbe2baf5928d35fce0261e5e410406ded6599e8b5a2e02e9a3",
+    "content_sha256": "ef52a8ff04836c69fecf605dd909905a726a84ae68783be51631d84d689d3700",
+    "byte_count": 3749
+  },
+  "execution_authorization": {
+    "path": "docs/lewm_go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1_execution_authorization_2026-07-24.json",
+    "file_sha256": "a463ceaf2a932d36433ea75213aa653e48263b892826815d663ce6500cb61751",
+    "content_sha256": "231bdff5df243c257fb40c167e45b823eb9c063296ae3c7ea5e5a25699fc1f1a",
+    "byte_count": 1991
+  },
+  "execution": {
+    "process_exit_code": 10,
+    "attempt_index": 1,
+    "maximum_attempts": 1,
+    "attempt_consumed": true,
+    "retry_authorized": false,
+    "fallback_authorized": false,
+    "warn_only_authorized": false,
+    "attempt_identity": "d020a1c4f55d0726d24eb6a69fae1fa14360b32f1619b53e1f7d3a391dd05c3b"
+  },
+  "output": {
+    "root": ".generated/go2_rgb_multiresolution_perception_r9700_strict_compatibility_v1",
+    "root_mode": "0555",
+    "inventory": [
+      {
+        "path": "access.json",
+        "file_sha256": "0c0e20497111d0bff311d43a9937be61c5c66607fd70f74a130e31ee578ff2cb",
+        "content_sha256": "02365b1a6065ab6bc9b67a7bf5980f434484afd9d3875fbb4a4939cffc53a736",
+        "byte_count": 1997,
+        "mode": "0444"
+      },
+      {
+        "path": "completed.json",
+        "file_sha256": "de360bd62ff96a8436a5ce2c11fdf5232a4df633f0046514dd76dd6e25397ad6",
+        "content_sha256": "96f7bd79f0efc92da979fcc4bbd95df62960c303d6a15da0e734ecbda2559a07",
+        "byte_count": 1790,
+        "mode": "0444"
+      },
+      {
+        "path": "reservation.json",
+        "file_sha256": "3322d298f1ceb11493b2b34b45ff19212921d5b19aa82f8649a1c30672c3d998",
+        "content_sha256": "d514f04117eabc730bf8990528b97d625f3e17393eab9d86ca1669e19b94ac49",
+        "byte_count": 3744,
+        "mode": "0444"
+      },
+      {
+        "path": "result.json",
+        "file_sha256": "15ceb4c51a8341395db5b74d89162964427dddff41fc90882cdc61baa1b1655f",
+        "content_sha256": "eaefdb1ae77e62ef2c24065e89ab5c686f78e569c9e6f3c924ad8ad36286cce6",
+        "byte_count": 8696,
+        "mode": "0444"
+      }
+    ]
+  },
+  "runtime_identity": {
+    "device": {
+      "visible_device_count": 1,
+      "visible_device_index": 0,
+      "visible_device_name": "AMD Radeon AI PRO R9700",
+      "total_memory_bytes": 34208743424
+    },
+    "stack": {
+      "torch_version": "2.10.0.dev20250926+rocm6.3",
+      "torch_git_version": "f64285495cb21b5188b954bf0992f1811756c3c1",
+      "hip_version": "6.3.42131-fa1d09cbd"
+    }
+  },
+  "outcome": {
+    "result_status": "FAIL_STRICT_KERNEL_COMPATIBILITY_UNSUPPORTED",
+    "completion_status": "TERMINAL_COMPATIBILITY_FAIL_NO_RETRY_NO_FALLBACK",
+    "subprobes": {
+      "grid_sample": {
+        "outcome": "COMPATIBILITY_FAIL",
+        "stage": "grid_backward",
+        "exception_type": "RuntimeError",
+        "message_sha256": "d188915b3cbd7b1d0edb6d12c7ba36b53c1b8c985316f6019170274aa6bec9a7",
+        "message_matches_expected_strict_error": true
+      },
+      "scatter_add": {
+        "outcome": "PASS",
+        "stage": "completed",
+        "exception": null
+      }
+    },
+    "scientific_metric": null,
+    "checkpoint_qualified": false,
+    "encoder_or_model_instantiated": false,
+    "encoder_or_model_trained": false,
+    "interpretation": "The exact synthetic strict-kernel gate is incompatible at grid_sample backward on this stack. This is not an encoder learning or quality result."
+  },
+  "access_and_training": {
+    "all_prohibited_open_counts_zero": true,
+    "all_training_counts_zero": true,
+    "v3_probe_root_inspection_count": 0,
+    "model_instantiation_count": 0,
+    "model_training_count": 0,
+    "optimizer_step_count": 0,
+    "checkpoint_write_count": 0,
+    "learned_state_mutation_count": 0
+  },
+  "authority": {
+    "retry_resume_extension_replacement_or_fallback_authorized": false,
+    "warn_only_or_strict_disable_authorized": false,
+    "v3_probe_execution_authorized": false,
+    "v3_probe_root_inspection_or_reservation_authorized": false,
+    "jepa_training_authorized": false,
+    "perception_qualification_authorized": false,
+    "g2_authorized": false,
+    "navigation_authorized": false,
+    "heldout_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "deployment_authorized": false
+  },
+  "validation": {
+    "canonical_receipt_count": 4,
+    "binding_chain_valid": true,
+    "exact_inventory_valid": true,
+    "receipt_modes_valid": true,
+    "terminal_root_mode_valid": true,
+    "contract_validation_passed": true,
+    "independent_receipt_validation": "/root/schedule_mismatch_forensics",
+    "v3_probe_root_inspected": false
+  },
+  "findings": [],
+  "content_sha256": "a738e5ba41a34efb28cb1462765a00f6b84029c2f6b0c2194e06277ac0a0b30a"
+}
