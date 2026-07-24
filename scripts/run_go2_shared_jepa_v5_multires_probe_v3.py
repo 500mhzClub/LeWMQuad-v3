@@ -2328,6 +2328,20 @@ def _execute_after_reservation(
         )
         progress.enter("raw_authority_and_index_validation", role="authority")
         inputs = matched.RawInputs(runtime, adapted_authorization)
+        for endpoint in inputs.endpoints.values():
+            image_path = Path(str(endpoint["image_path_metadata_only"]))
+            if image_path.is_absolute():
+                try:
+                    image_path = image_path.relative_to(ROOT)
+                except ValueError as error:
+                    raise PermissionError(
+                        "development RGB path is outside the repository"
+                    ) from error
+            relative_image_path = image_path.as_posix()
+            matched.contract.safe_relative_path(
+                relative_image_path, name="development RGB path"
+            )
+            endpoint["image_path_metadata_only"] = relative_image_path
         trainer = matched.Trainer(runtime, inputs, output_root, reservation)
         progress.enter("reserved_runtime_device_validation")
         device, hardware = trainer.device()

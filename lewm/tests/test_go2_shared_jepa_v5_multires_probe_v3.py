@@ -182,7 +182,7 @@ def test_v3_identity_and_fresh_operational_envelope() -> None:
         "a8a5d870382ad505edd907f96dfae8a6ed737caf7ff424d2b52f8e4bc020e5d5"
     )
     assert contract.OUTPUT_ROOT_RELATIVE_PATH.endswith(
-        "rgb_multiresolution_perception_probe_v3"
+        "rgb_multiresolution_perception_probe_v3_retry1"
     )
     assert contract.V1_OUTPUT_ROOT_RELATIVE_PATH.endswith(
         "rgb_multiresolution_perception_probe_v1"

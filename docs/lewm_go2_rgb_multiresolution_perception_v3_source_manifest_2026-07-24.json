@@ -1,7 +1,7 @@
 {
   "authority": "source_closure_only_no_generated_input_checkpoint_training_gpu_qualification_g2_navigation_heldout_production_or_promotion_authority",
   "consumed_adaptation_runner_source_count": 0,
-  "content_sha256": "9a98c552bc3fb62f61436df259363bc5d5dcd77ebfd65b4a1a0484027d04bada",
+  "content_sha256": "5fea50a92121d5a30eef3b6d376ceb7054d8f57ae403c244ac45c2a4396bb1ef",
   "date": "2026-07-24",
   "entrypoints": [
     "scripts/launch_go2_shared_jepa_v5_multires_probe_v3.py",
@@ -79,8 +79,8 @@
       "path": "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v2_schedule.py"
     },
     {
-      "byte_count": 77048,
-      "file_sha256": "ab36fccdcae059cdbcdc4d24648226e7096993151500a37595b5d74e54480b1e",
+      "byte_count": 77055,
+      "file_sha256": "b841e657b5cd0bcd06cd744bd99534d03d6bcaef0911c766add696bf795b1d52",
       "path": "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py"
     },
     {
@@ -219,12 +219,12 @@
       "path": "scripts/run_go2_shared_jepa_v5_matched_training_v1.py"
     },
     {
-      "byte_count": 97062,
-      "file_sha256": "73632db5333fb6010a3cae328f30808f1dbc5414d9f9934e9aed3cc71d5b684d",
+      "byte_count": 97758,
+      "file_sha256": "5e53d7994d46e82e071140e14e35f64b6c2cde5b47c67aa19dd82b618e6985d4",
       "path": "scripts/run_go2_shared_jepa_v5_multires_probe_v3.py"
     }
   ],
-  "source_bindings_sha256": "8d9fe7069f59cee409581ff88b886d8b7803374738ebceea606b2cc8b26b39da",
+  "source_bindings_sha256": "842f3a4512c8eb605472e0d86e077dd8522fde94489eabf0e1263c0712abe038",
   "source_count": 39,
   "source_paths": [
     "lewm/__init__.py",
