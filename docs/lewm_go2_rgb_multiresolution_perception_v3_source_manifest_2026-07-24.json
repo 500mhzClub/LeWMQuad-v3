@@ -1,0 +1,273 @@
+{
+  "authority": "source_closure_only_no_generated_input_checkpoint_training_gpu_qualification_g2_navigation_heldout_production_or_promotion_authority",
+  "consumed_adaptation_runner_source_count": 0,
+  "content_sha256": "7f5693e8ef3d616e628adb988ac34ed73aa4cf3305d5354bb0179a6705fbf0de",
+  "date": "2026-07-24",
+  "entrypoints": [
+    "scripts/launch_go2_shared_jepa_v5_multires_probe_v3.py",
+    "scripts/run_go2_shared_jepa_v5_multires_probe_v3.py",
+    "scripts/launch_go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py",
+    "scripts/run_go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py"
+  ],
+  "excluded_runtime_categories": [
+    ".generated artifacts and attempt registries",
+    "tensor checkpoints and metric sidecars",
+    "raw RGB, scene shards, datasets, and role payloads",
+    "configuration and custody roots",
+    "sealed or held-out benchmark material",
+    "review, authorization, result, and completion records"
+  ],
+  "forced_dynamic_sources": [
+    "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py",
+    "lewm/benchmarks/go2_shared_jepa_v5_matched_training_v1.py",
+    "scripts/run_go2_shared_jepa_v5_matched_training_v1.py",
+    "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v2_schedule.py",
+    "lewm/benchmarks/go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py"
+  ],
+  "generated_input_open_count": 0,
+  "schema": "lewm_go2_rgb_multiresolution_perception_v3_source_manifest",
+  "sealed_or_heldout_open_count": 0,
+  "source_bindings": [
+    {
+      "byte_count": 313,
+      "file_sha256": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c",
+      "path": "lewm/__init__.py"
+    },
+    {
+      "byte_count": 362,
+      "file_sha256": "edc7a30d5bf35c1bc9e099621e8f5bbe6d757180d0a6e4771c36ae5d06b81fed",
+      "path": "lewm/benchmarks/__init__.py"
+    },
+    {
+      "byte_count": 10300,
+      "file_sha256": "3d20b87560aa14e3ce672baec1077c7b2919a8679e89dfb88352b59a762d70df",
+      "path": "lewm/benchmarks/counterfactual.py"
+    },
+    {
+      "byte_count": 1676,
+      "file_sha256": "108b1ec543501b885aebd37a328e9a62ae2e9cd96a722c9e6dc74ddab0ca91ad",
+      "path": "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g2.py"
+    },
+    {
+      "byte_count": 1668,
+      "file_sha256": "99350461def8e99a09f0061531ea4a0b4ae6fd109795c0bafd12016a951ec8b8",
+      "path": "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g3.py"
+    },
+    {
+      "byte_count": 23757,
+      "file_sha256": "708d368e461fe60aacb860dda5b0cbfd1acaf43e5cb3ae18a77bb48de739fb85",
+      "path": "lewm/benchmarks/go2_observable_camera_ray_evidence_v4.py"
+    },
+    {
+      "byte_count": 14068,
+      "file_sha256": "6a0e40f9dcb496831553dc5bbc6d1efcdf6d82676d6f18aa20e417f8de4fa6a0",
+      "path": "lewm/benchmarks/go2_observable_camera_ray_fit_v4_metrics.py"
+    },
+    {
+      "byte_count": 43338,
+      "file_sha256": "ae2a291512ef62b0f38dfa3d0f7801b82050f04e325d694b7cbd2594da84fddb",
+      "path": "lewm/benchmarks/go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py"
+    },
+    {
+      "byte_count": 41189,
+      "file_sha256": "53a7fac793a1b46764d49e7259fd637ec02b20111927effd01cdcd09682c206a",
+      "path": "lewm/benchmarks/go2_shared_jepa_v5_matched_training_v1.py"
+    },
+    {
+      "byte_count": 14233,
+      "file_sha256": "a8efe19da92c9c2107f11be38db8ed80e66aedca3ef41af0428ab13d50f56bd1",
+      "path": "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v2_schedule.py"
+    },
+    {
+      "byte_count": 77048,
+      "file_sha256": "ab36fccdcae059cdbcdc4d24648226e7096993151500a37595b5d74e54480b1e",
+      "path": "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py"
+    },
+    {
+      "byte_count": 12035,
+      "file_sha256": "9e93930100f4369c7a95d8564a4ba81e68d78ecd06fca47c3be3b6b60f5deb06",
+      "path": "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_finalizer_core.py"
+    },
+    {
+      "byte_count": 16570,
+      "file_sha256": "8f13a504777f020f49cc8103897193f6a8b6a572691c9b0644aa2c4344b3bf07",
+      "path": "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_runner_policy.py"
+    },
+    {
+      "byte_count": 2210,
+      "file_sha256": "9ee35fa5531413081219069ba2ef67d3cedb3643cda8d20544a189e329331b36",
+      "path": "lewm/models/__init__.py"
+    },
+    {
+      "byte_count": 85584,
+      "file_sha256": "c4006e9804182b077399229d43bc8c9be64b5af12c81fff4076d5a78e6ef359b",
+      "path": "lewm/models/egomotion_bev_jepa.py"
+    },
+    {
+      "byte_count": 7028,
+      "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "path": "lewm/models/encoders.py"
+    },
+    {
+      "byte_count": 13068,
+      "file_sha256": "0378bb5334fa7b40e801405d6d20c5a05ecb543ee9820efbd20acf83946e8b2a",
+      "path": "lewm/models/lewm.py"
+    },
+    {
+      "byte_count": 23144,
+      "file_sha256": "6238f7fb2b9c0c5201c9d7ebb5343ceef72fa97b423dddb466465b6c594cc882",
+      "path": "lewm/models/observable_camera_ray_evidence_v4.py"
+    },
+    {
+      "byte_count": 14344,
+      "file_sha256": "735563f811c5d7b9efb9e37dca8348825a8467bd0a059f83ab94d41d45d57662",
+      "path": "lewm/models/observable_camera_ray_evidence_v4_gate_aligned_raster_nll_v12.py"
+    },
+    {
+      "byte_count": 9240,
+      "file_sha256": "52bc99f0ba59c2cf7444221931169ba57af61f343308b85625877c7a257adffd",
+      "path": "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py"
+    },
+    {
+      "byte_count": 32751,
+      "file_sha256": "c0f3f944883987950edb7579a9e108171486122a9a3ae9d84d2a1abb6ac015ed",
+      "path": "lewm/models/observable_camera_ray_evidence_v4_training.py"
+    },
+    {
+      "byte_count": 37610,
+      "file_sha256": "5c64535cc8933bae4a4f5008354afc19e85d3ed3705dbd98e37231d2641f0987",
+      "path": "lewm/models/phase2d_spatial_lewm.py"
+    },
+    {
+      "byte_count": 14275,
+      "file_sha256": "cc7fd43fc7554a94d603d13fc630a02b2b3990ddc298948257f671b69723a305",
+      "path": "lewm/models/predictor.py"
+    },
+    {
+      "byte_count": 17334,
+      "file_sha256": "540fa027307e69c3ff5b93f321dbc2e2d30dbf46090fbc557ab0044b35d83c8e",
+      "path": "lewm/models/primitive_affordance.py"
+    },
+    {
+      "byte_count": 183559,
+      "file_sha256": "b438295d7ec5cb0897cc953a229f461da7fca16322c4c936555d37833a36e4b9",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5.py"
+    },
+    {
+      "byte_count": 3395,
+      "file_sha256": "a024b9e28c2572bfefa6cd630bf4f7798cae946b353e41033e884529bb0ca20c",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_authority.py"
+    },
+    {
+      "byte_count": 9538,
+      "file_sha256": "8422c253c3eca3b34dd42b4f823dab4ac67f0e90fb2cff8eeaa67a1310b3c53a",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_full_training_v4_loss.py"
+    },
+    {
+      "byte_count": 21903,
+      "file_sha256": "a63da1137539953b2f40d184def1652ae05f63d7b434084b1a91787e1fc83d0b",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_multires_v1.py"
+    },
+    {
+      "byte_count": 7374,
+      "file_sha256": "6fc0a114386ee2fb0ae98704a970d38a7194db192283b904138015498fb02384",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_protected_camera_adaptation_v4_tail_depth.py"
+    },
+    {
+      "byte_count": 2359,
+      "file_sha256": "3c15410607f10a5b82b5c1e3dd86acccb6ac9bc2c538a907b7b3ad62a90c759f",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_registry_policy.py"
+    },
+    {
+      "byte_count": 3045,
+      "file_sha256": "7ea956e8a62ee36aeddb8a26cca77a98d266778be2d999846dead7755eb677ae",
+      "path": "lewm/models/sigreg.py"
+    },
+    {
+      "byte_count": 12899,
+      "file_sha256": "40485d9d3d9670ae0529a606d34021308abd34d0716b694f41a6742e440b3ee1",
+      "path": "lewm/models/source_action_utility.py"
+    },
+    {
+      "byte_count": 11337,
+      "file_sha256": "36890539ec79e170174bdcc86815e79e2e383a5c8874029d4a4e11935bf69983",
+      "path": "lewm/models/spatial_lewm.py"
+    },
+    {
+      "byte_count": 5543,
+      "file_sha256": "f7a2d179697c49d0476ff32079ffded6bc40fbe07372d6894e1b9b423a28d04c",
+      "path": "lewm/models/spatial_predictor.py"
+    },
+    {
+      "byte_count": 13583,
+      "file_sha256": "0142906e9c68d8c0179b77cec23593fac73e2802b613aff4955f0c6368c96eb9",
+      "path": "scripts/launch_go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py"
+    },
+    {
+      "byte_count": 10750,
+      "file_sha256": "5883c8ddccef463d64bb8e32ac00de724d99da306c0a6f14d726cb556446f062",
+      "path": "scripts/launch_go2_shared_jepa_v5_multires_probe_v3.py"
+    },
+    {
+      "byte_count": 46971,
+      "file_sha256": "c63d9961fe493bacc237e739b89f8d98ebbbe9fb10bfde1b8aea52d573e9cb84",
+      "path": "scripts/run_go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py"
+    },
+    {
+      "byte_count": 103456,
+      "file_sha256": "e98bd8cceed26288ebcbf8a02eac03c72be6d06a539953927754353e049a5578",
+      "path": "scripts/run_go2_shared_jepa_v5_matched_training_v1.py"
+    },
+    {
+      "byte_count": 95983,
+      "file_sha256": "1990cc76a9d2e1c7e115a61f554b14790ca60c3f05e15fa005c5db5d290064e1",
+      "path": "scripts/run_go2_shared_jepa_v5_multires_probe_v3.py"
+    }
+  ],
+  "source_bindings_sha256": "e318ecaecfdfbf408ccddc5e917b11125f62104961c8ca2755c68e6387f99ddb",
+  "source_count": 39,
+  "source_paths": [
+    "lewm/__init__.py",
+    "lewm/benchmarks/__init__.py",
+    "lewm/benchmarks/counterfactual.py",
+    "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g2.py",
+    "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g3.py",
+    "lewm/benchmarks/go2_observable_camera_ray_evidence_v4.py",
+    "lewm/benchmarks/go2_observable_camera_ray_fit_v4_metrics.py",
+    "lewm/benchmarks/go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py",
+    "lewm/benchmarks/go2_shared_jepa_v5_matched_training_v1.py",
+    "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v2_schedule.py",
+    "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py",
+    "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_finalizer_core.py",
+    "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_runner_policy.py",
+    "lewm/models/__init__.py",
+    "lewm/models/egomotion_bev_jepa.py",
+    "lewm/models/encoders.py",
+    "lewm/models/lewm.py",
+    "lewm/models/observable_camera_ray_evidence_v4.py",
+    "lewm/models/observable_camera_ray_evidence_v4_gate_aligned_raster_nll_v12.py",
+    "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py",
+    "lewm/models/observable_camera_ray_evidence_v4_training.py",
+    "lewm/models/phase2d_spatial_lewm.py",
+    "lewm/models/predictor.py",
+    "lewm/models/primitive_affordance.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_authority.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_full_training_v4_loss.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_multires_v1.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_protected_camera_adaptation_v4_tail_depth.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_registry_policy.py",
+    "lewm/models/sigreg.py",
+    "lewm/models/source_action_utility.py",
+    "lewm/models/spatial_lewm.py",
+    "lewm/models/spatial_predictor.py",
+    "scripts/launch_go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py",
+    "scripts/launch_go2_shared_jepa_v5_multires_probe_v3.py",
+    "scripts/run_go2_rgb_multiresolution_perception_v3_r9700_strict_compatibility_v1.py",
+    "scripts/run_go2_shared_jepa_v5_matched_training_v1.py",
+    "scripts/run_go2_shared_jepa_v5_multires_probe_v3.py"
+  ],
+  "status": "SOURCE_ONLY_RECURSIVE_CLOSURE",
+  "tensor_checkpoint_open_count": 0,
+  "whole_tree_export_authorized": false
+}
