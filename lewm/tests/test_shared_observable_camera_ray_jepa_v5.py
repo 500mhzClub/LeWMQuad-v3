@@ -92,6 +92,51 @@ def _canonical_hash(value: object) -> str:
     return hashlib.sha256(_canonical_bytes(value)).hexdigest()
 
 
+def test_tensor_state_dict_sha256_is_scalar_safe_and_legacy_compatible() -> None:
+    scalar_state = {"step": torch.tensor(17, dtype=torch.int64)}
+    first = tensor_state_dict_sha256(scalar_state)
+    assert first == tensor_state_dict_sha256(scalar_state)
+    assert first != tensor_state_dict_sha256(
+        {"step": torch.tensor(18, dtype=torch.int64)}
+    )
+    assert len(first) == 64
+
+    non_scalar_state = {
+        "weight": torch.arange(12, dtype=torch.float32).reshape(3, 4),
+        "count": torch.tensor([3, 5], dtype=torch.int64),
+    }
+    assert tensor_state_dict_sha256(non_scalar_state) == (
+        tensor_state_dict_sha256(dict(reversed(tuple(non_scalar_state.items()))))
+    )
+    legacy = hashlib.sha256()
+    for name in sorted(non_scalar_state):
+        tensor = non_scalar_state[name].detach().cpu().contiguous()
+        header = {
+            "name": name,
+            "dtype": str(tensor.dtype),
+            "shape": list(tensor.shape),
+        }
+        encoded = json.dumps(
+            header,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("ascii")
+        legacy.update(len(encoded).to_bytes(8, "little"))
+        legacy.update(encoded)
+        legacy.update(tensor.view(torch.uint8).numpy().tobytes(order="C"))
+    assert tensor_state_dict_sha256(non_scalar_state) == legacy.hexdigest()
+
+    batch_norm = torch.nn.BatchNorm1d(4)
+    tracked = batch_norm.state_dict()["num_batches_tracked"]
+    assert tracked.ndim == 0 and tracked.dtype == torch.int64
+    tracked_hash = tensor_state_dict_sha256({"num_batches_tracked": tracked})
+    batch_norm.num_batches_tracked.add_(1)
+    assert tracked_hash != tensor_state_dict_sha256(
+        {"num_batches_tracked": batch_norm.num_batches_tracked}
+    )
+
+
 def _calibration(batch: int = 1):
     origin = torch.tensor((0.326, 0.02, 0.043))[None].expand(batch, -1).clone()
     basis = torch.tensor(

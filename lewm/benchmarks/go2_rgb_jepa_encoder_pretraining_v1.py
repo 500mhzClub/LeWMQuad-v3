@@ -108,25 +108,25 @@ CAMERA_FIT_METRICS_RELATIVE_PATH = (
 )
 
 PREREGISTRATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v2_integrity_"
+    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
     "replacement_amendment_2026-07-25.md"
 )
-PREREGISTRATION_COMMIT = "ef3d23cc32c662416e1fd25037254613632029e5"
+PREREGISTRATION_COMMIT = "074eb833e51e2b09d581870062d51f2cf82f8074"
 PREREGISTRATION_FILE_SHA256 = (
-    "ca9681811be3e3558214f74ac0ef25cde1c6908058211ed5a106c747e4efdb49"
+    "62f302902bee659eff492b77725e76cc2ebaf66fdd8257ee4ef3ff95ffcbe469"
 )
-PREREGISTRATION_BYTE_COUNT = 4_429
+PREREGISTRATION_BYTE_COUNT = 4_823
 
 SOURCE_MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v2_integrity_"
+    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
     "replacement_source_manifest_2026-07-25.json"
 )
 REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v2_integrity_"
+    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
     "replacement_source_review_2026-07-25.json"
 )
 AUTHORIZATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v2_integrity_"
+    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
     "replacement_execution_authorization_2026-07-25.json"
 )
 SOURCE_MANIFEST_SCHEMA = f"{SCHEMA_PREFIX}_source_manifest_v1"
@@ -182,7 +182,7 @@ SOURCE_REVIEW_ADDITIONAL_PATHS = (
 
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-    "rgb_jepa_encoder_pretraining_probe_v2_integrity_replacement"
+    "rgb_jepa_encoder_pretraining_probe_v3_integrity_replacement"
 )
 
 RAW_ROOT_RELATIVE_PATH = (

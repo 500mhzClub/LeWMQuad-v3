@@ -1260,7 +1260,9 @@ def tensor_state_dict_sha256(state: Mapping[str, torch.Tensor]) -> str:
         ).encode("ascii")
         digest.update(len(encoded).to_bytes(8, "little"))
         digest.update(encoded)
-        digest.update(tensor.view(torch.uint8).numpy().tobytes(order="C"))
+        digest.update(
+            tensor.reshape(-1).view(torch.uint8).numpy().tobytes(order="C")
+        )
     return digest.hexdigest()
 
 
