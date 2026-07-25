@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify the RGB JEPA encoder-pretraining V1 source closure.
+"""Build or verify Patch-Whitened Action-Residual JEPA V1 source closure.
 
 This is a source-only AST walk.  It imports no tensor library and opens no
 generated input, checkpoint, RGB payload, attempt output, or protected role.
@@ -37,6 +37,8 @@ REQUIRED_DYNAMIC_SOURCE_PATHS = frozenset({
     "lewm/benchmarks/go2_shared_jepa_v5_matched_training_v1.py",
     "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v2_schedule.py",
     "lewm/models/phase2d_spatial_lewm.py",
+    "lewm/models/patch_whitened_action_residual_jepa.py",
+    "lewm/tests/test_patch_whitened_action_residual_jepa.py",
     "lewm/models/shared_observable_camera_ray_jepa_v5_multires_v1.py",
     (
         "lewm/models/shared_observable_camera_ray_jepa_v5_"
@@ -177,7 +179,7 @@ def main() -> int:
         _write_manifest_exclusive(build_manifest())
         return 0
     verify_manifest(require_tracked=args.require_tracked)
-    print("Go2 RGB JEPA encoder-pretraining V1 source closure: PASS")
+    print("Go2 Patch-Whitened Action-Residual JEPA V1 source closure: PASS")
     return 0
 
 

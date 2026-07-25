@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Isolated authority-first launcher for RGB JEPA encoder pretraining V1."""
+"""Authority-first launcher for Patch-Whitened Action-Residual JEPA V1."""
 from __future__ import annotations
 
 import importlib.util
@@ -10,7 +10,7 @@ from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 PREFLIGHT_ENVIRONMENT_KEY = (
-    "LEWM_RGB_JEPA_ENCODER_PRETRAINING_V1_PREFLIGHT_JSON"
+    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_V1_PREFLIGHT_JSON"
 )
 
 

@@ -33,7 +33,9 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 assert "torch" not in sys.modules
 assert not any(name.startswith("torch.") for name in sys.modules)
-assert module.PREFLIGHT_ENVIRONMENT_KEY == "LEWM_RGB_JEPA_ENCODER_PRETRAINING_V1_PREFLIGHT_JSON"
+assert module.PREFLIGHT_ENVIRONMENT_KEY == (
+    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_V1_PREFLIGHT_JSON"
+)
 print("PASS")
 """
     completed = subprocess.run(
@@ -50,6 +52,7 @@ print("PASS")
 
 def _tiny_model(torch):
     nn = torch.nn
+    latent_dim = 192
 
     class Encoder(nn.Module):
         def __init__(self) -> None:
@@ -60,9 +63,14 @@ def _tiny_model(torch):
         def forward_tokens(self, image):
             self.seen.append(image.detach().clone())
             pooled = image.mean(dim=(1, 2, 3))[:, None] * self.scale
-            base = torch.cat(
-                [pooled + float(index) for index in range(4)], dim=1
+            offsets = torch.linspace(
+                -0.5,
+                0.5,
+                latent_dim,
+                device=image.device,
+                dtype=image.dtype,
             )
+            base = pooled + offsets[None]
             cls = base[:, None, :]
             patches = torch.stack((base, base + 0.25), dim=1)
             return torch.cat((cls, patches), dim=1)
@@ -70,8 +78,8 @@ def _tiny_model(torch):
     class Predictor(nn.Module):
         def __init__(self) -> None:
             super().__init__()
-            self.state = nn.Linear(4, 4, bias=False)
-            self.action = nn.Linear(9, 4, bias=False)
+            self.state = nn.Linear(latent_dim, latent_dim, bias=False)
+            self.action = nn.Linear(9, latent_dim, bias=False)
 
         def predict_step(self, state, action):
             return self.state(state) + self.action(action)[:, None, :]
@@ -81,40 +89,25 @@ def _tiny_model(torch):
             super().__init__()
             self.encoder = Encoder()
             self.online_geometry = nn.Identity()
-            self.appearance_projector = nn.Linear(4, 4)
-            self.online_target_projector = nn.Linear(4, 4)
-            self.prediction_projector = nn.Linear(4, 4)
+            self.appearance_projector = nn.Linear(latent_dim, latent_dim)
+            self.online_target_projector = nn.Linear(latent_dim, latent_dim)
+            self.prediction_projector = nn.Linear(latent_dim, latent_dim)
             self.predictor = Predictor()
             self.target_encoder = Encoder()
             self.target_geometry_module = nn.Identity()
-            self.target_projector = nn.Linear(4, 4)
+            self.target_projector = nn.Linear(latent_dim, latent_dim)
             for module in (
                 self.target_encoder,
                 self.target_geometry_module,
                 self.target_projector,
             ):
                 module.requires_grad_(False)
-            self.action_margin_fraction = 0.10
-            self.action_margin_floor = 1e-4
-            self.sigreg_projections = 4
-            self.sigreg_knots = 3
-            self.spatial_target_std = 0.5
-            self.action_identifiability_lambda = 1.0
-            self.zero_action_lambda = 1.0
-            self.appearance_sigreg_lambda = 0.09
-            self.spatial_variance_lambda = 1.0
 
     return Tiny()
 
 
-def test_current_only_adapter_isolates_next_rgb_and_target_gradients() -> None:
+def test_residual_whitening_adapter_composes_loss_and_routes_gradients() -> None:
     torch = pytest.importorskip("torch")
-    from lewm.models.phase2d_spatial_lewm import (
-        action_identifiability_losses,
-        normalize_spatial_tokens,
-    )
-    from lewm.models.sigreg import sigreg_stepwise
-    from lewm.models.spatial_lewm import spatial_variance_floor_loss
 
     module = _load_runner("_jepa_encoder_v1_current_only")
     model = _tiny_model(torch)
@@ -123,14 +116,8 @@ def test_current_only_adapter_isolates_next_rgb_and_target_gradients() -> None:
     )
     next_rgb = (current + 1000.0).requires_grad_(True)
     action = torch.zeros((3, 9), dtype=torch.float32)
-    action[torch.arange(3), torch.tensor([0, 4, 8])] = 1.0
+    action[torch.arange(3), torch.tensor([0, 6, 8])] = 1.0
     non_hold = torch.tensor([True, False, True])
-    ops = SimpleNamespace(
-        action_identifiability_losses=action_identifiability_losses,
-        normalize_spatial_tokens=normalize_spatial_tokens,
-        sigreg_stepwise=sigreg_stepwise,
-        spatial_variance_floor_loss=spatial_variance_floor_loss,
-    )
 
     output = module._phase_a_current_only_loss(
         model,
@@ -138,8 +125,45 @@ def test_current_only_adapter_isolates_next_rgb_and_target_gradients() -> None:
         next_rgb,
         action,
         non_hold,
-        ops=ops,
     )
+    expected = (
+        output["jepa_loss"]
+        + output["wrong_action_loss"]
+        + output["hold_action_loss"]
+        + module.contract.WHITENING_VARIANCE_WEIGHT
+        * (
+            output["raw_whitening_variance_loss"]
+            + output["projected_whitening_variance_loss"]
+        )
+        + module.contract.WHITENING_COVARIANCE_WEIGHT
+        * (
+            output["raw_whitening_covariance_loss"]
+            + output["projected_whitening_covariance_loss"]
+        )
+    )
+    assert torch.equal(output["loss"], expected)
+    assert output["prediction"].shape == (3, 2, 192)
+    assert output["control_predictions"].shape == (3, 8, 2, 192)
+    assert output["control_indices"].shape == (3, 8)
+    requested = action.argmax(dim=1)
+    assert torch.all(output["control_indices"] != requested[:, None])
+    assert set(output) == {
+        "loss",
+        "jepa_loss",
+        "wrong_action_loss",
+        "hold_action_loss",
+        "raw_whitening_variance_loss",
+        "raw_whitening_covariance_loss",
+        "projected_whitening_variance_loss",
+        "projected_whitening_covariance_loss",
+        "prediction",
+        "control_predictions",
+        "control_indices",
+        "online_state",
+        "raw_target_next",
+        "projected_target_next",
+        "projected_target_current",
+    }
     output["loss"].backward()
 
     assert len(model.encoder.seen) == 1
@@ -149,24 +173,59 @@ def test_current_only_adapter_isolates_next_rgb_and_target_gradients() -> None:
     assert torch.equal(model.target_encoder.seen[1], next_rgb.detach())
     assert next_rgb.grad is None
     assert model.encoder.scale.grad is not None
+    assert torch.count_nonzero(model.encoder.scale.grad).item() > 0
+    for parameter in (
+        model.predictor.state.weight,
+        model.predictor.action.weight,
+        model.prediction_projector.weight,
+        model.prediction_projector.bias,
+        model.online_target_projector.weight,
+    ):
+        assert parameter.grad is not None
+        assert torch.isfinite(parameter.grad).all()
+        assert torch.count_nonzero(parameter.grad).item() > 0
+    assert all(
+        parameter.grad is None
+        for parameter in model.appearance_projector.parameters()
+    )
     assert all(
         parameter.grad is None and not parameter.requires_grad
         for target in (model.target_encoder, model.target_projector)
         for parameter in target.parameters()
     )
-    expected_wrong = action.roll(shifts=1, dims=-1).argmax(dim=-1)
-    assert torch.equal(expected_wrong, torch.tensor([1, 5, 0]))
 
 
-def test_phase_a_partition_is_exact_and_rejects_an_extra_parameter() -> None:
+def test_phase_a_partition_freezes_and_excludes_appearance_exactly() -> None:
     torch = pytest.importorskip("torch")
     module = _load_runner("_jepa_encoder_v1_partition")
     model = _tiny_model(torch)
+    with pytest.raises(PermissionError, match="frozen parameter became trainable"):
+        module._phase_a_parameter_partition(model)
+
+    model.appearance_projector.requires_grad_(False)
+    model.appearance_projector.eval()
     partition = module._phase_a_parameter_partition(model)
     assert partition["encoder"]
     assert partition["other"]
-    assert partition["target"]
-    assert all(not parameter.requires_grad for parameter in partition["target"])
+    assert partition["frozen"]
+    assert all(not parameter.requires_grad for parameter in partition["frozen"])
+    appearance_ids = {
+        id(parameter) for parameter in model.appearance_projector.parameters()
+    }
+    assert appearance_ids.issubset({
+        id(parameter) for parameter in partition["frozen"]
+    })
+    assert appearance_ids.isdisjoint({
+        id(parameter)
+        for parameter in (*partition["encoder"], *partition["other"])
+    })
+    assert partition["receipt"]["appearance_projector_frozen"] is True
+    assert (
+        partition["receipt"][
+            "appearance_projector_excluded_from_optimizer_and_clip"
+        ]
+        is True
+    )
 
     model.unregistered_science_delta = torch.nn.Parameter(torch.ones(()))
     with pytest.raises(PermissionError, match="partition changed"):
@@ -221,12 +280,182 @@ def test_scene_derangements_are_deterministic_local_and_identity_safe() -> None:
         )
 
 
+def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    torch = pytest.importorskip("torch")
+    module = _load_runner("_jepa_encoder_v1_diagnostics")
+    latent_dim = 192
+    patch_count = 256
+
+    class TokenEncoder(torch.nn.Module):
+        def forward_tokens(self, image):
+            scalar = image[:, 0, 0, 0]
+            patches = scalar[:, None, None].expand(
+                -1, patch_count, latent_dim
+            )
+            cls = torch.zeros(
+                image.shape[0],
+                1,
+                latent_dim,
+                dtype=image.dtype,
+                device=image.device,
+            )
+            return torch.cat((cls, patches), dim=1)
+
+    class DiagnosticModel(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.encoder = TokenEncoder()
+            self.online_geometry = torch.nn.Identity()
+            self.target_encoder = TokenEncoder()
+            self.target_geometry_module = torch.nn.Identity()
+            self.target_projector = torch.nn.Identity()
+            self.predictor = torch.nn.Identity()
+            self.prediction_projector = torch.nn.Identity()
+            self.appearance_projector = torch.nn.Linear(
+                latent_dim, latent_dim
+            )
+
+    class Loader:
+        def batch(
+            self,
+            pairs,
+            indices,
+            _device,
+            *,
+            role,
+            stage,
+        ):
+            assert role == "checkpoint_selection"
+            assert stage == "phase_a_diagnostic_update_17"
+            current = torch.tensor(
+                [float(index + 1) for index in indices]
+            ).reshape(-1, 1, 1, 1)
+            next_rgb = torch.zeros_like(current)
+            requested = torch.tensor(
+                [int(pairs[index]["requested_index"]) for index in indices]
+            )
+            action = torch.nn.functional.one_hot(
+                requested, num_classes=9
+            ).to(torch.float32)
+            return current, next_rgb, action, requested != 6
+
+    pair_rows = [
+        {
+            "scene_id": "scene",
+            "family": "all_actions",
+            "content_sha256": f"content_{index}",
+            "current_endpoint_sha256": f"current_{index}",
+            "next_endpoint_sha256": f"next_{index}",
+            "requested_index": index,
+        }
+        for index in range(9)
+    ]
+    monkeypatch.setitem(
+        module.contract.SELECTION_ROLE_COUNTS, "pairs", len(pair_rows)
+    )
+    monkeypatch.setattr(
+        module.contract, "SELECTION_NON_HOLD_PAIR_COUNT", 8
+    )
+    monkeypatch.setattr(
+        module.contract, "SCENE_FAMILIES", ("all_actions",)
+    )
+    monkeypatch.setattr(
+        module.contract, "MICROBATCH_SIZE", len(pair_rows)
+    )
+    monkeypatch.setattr(module, "_effective_rank", lambda *_args: 12.0)
+    monkeypatch.setattr(module, "_state_sha", lambda *_args: "a" * 64)
+
+    state_skip_pairs: list[tuple[object, object]] = []
+    requested_seen: list[int] = []
+
+    def predict_residuals(
+        _predictor,
+        _projector,
+        state,
+        requested_actions,
+        ema_current,
+    ):
+        requested = requested_actions.argmax(dim=1)
+        requested_seen.extend(requested.tolist())
+        state_skip_pairs.append((
+            state[:, 0, 0].detach().clone(),
+            ema_current[:, 0, 0].detach().clone(),
+        ))
+        grid = torch.arange(9).expand(state.shape[0], -1)
+        eligible = grid != requested[:, None]
+        control_indices = grid[eligible].reshape(state.shape[0], 8)
+        control_energy = control_indices.to(torch.float32) + 2.0
+        controls = control_energy.sqrt()[:, :, None, None].expand(
+            -1, -1, state.shape[1], state.shape[2]
+        )
+        return SimpleNamespace(
+            true=torch.ones_like(state),
+            controls=controls,
+            layout=SimpleNamespace(
+                control_indices=control_indices,
+                non_hold_mask=requested != 6,
+            ),
+        )
+
+    monkeypatch.setattr(
+        module,
+        "_phase_a_ops",
+        lambda: SimpleNamespace(
+            normalize_spatial_tokens=lambda tokens: tokens,
+            predict_live_and_control_residuals=predict_residuals,
+        ),
+    )
+    model = DiagnosticModel()
+    model.train()
+    model.appearance_projector.eval()
+    observation = module._phase_a_diagnostics(
+        SimpleNamespace(torch=torch),
+        model,
+        Loader(),
+        pair_rows,
+        torch.device("cpu"),
+        update=17,
+    )
+    metric = observation["metric"]
+
+    assert set(requested_seen) == set(range(9))
+    assert len(requested_seen) == 18
+    assert all(
+        torch.equal(state_values, skip_values)
+        for state_values, skip_values in state_skip_pairs
+    )
+    assert metric["pair_count"] == 9
+    assert metric["cyclic_wrong_action_pair_count"] == 9
+    assert metric["all_wrong_action_candidate_count"] == 72
+    assert metric["non_hold_pair_count"] == 8
+    assert metric["hold_action_pair_count"] == 8
+    assert metric["hold_action_rows_match_non_hold_rows"] is True
+    assert metric["true_pair_mse"] == pytest.approx(1.0)
+    assert metric["cyclic_wrong_action_mse"] == pytest.approx(6.0)
+    assert metric["hardest_wrong_action_mse"] == pytest.approx(19.0 / 9.0)
+    assert metric["hold_action_mse"] == pytest.approx(8.0)
+    family = metric["per_family"]["all_actions"]
+    assert family["cyclic_wrong_action_minus_true_mse"] == pytest.approx(5.0)
+    assert family["hardest_wrong_action_minus_true_mse"] == pytest.approx(
+        10.0 / 9.0
+    )
+    assert family["hold_action_minus_non_hold_true_mse"] == pytest.approx(7.0)
+    assert family["hold_action_rows_match_non_hold_rows"] is True
+    assert observation["rng_state_preserved"] is True
+    assert observation["state_mutation_count"] == 0
+    assert model.training is True
+    assert model.appearance_projector.training is False
+
+
 def _passing_phase_a_metric(contract) -> dict[str, object]:
     per_family = {
         family: {
-            "wrong_action_minus_true_mse": 0.2,
-            "zero_action_minus_non_hold_true_mse": 0.2,
-            "zero_action_rows_match_non_hold_rows": True,
+            "cyclic_wrong_action_minus_true_mse": 0.2,
+            "hardest_wrong_action_minus_true_mse": -100.0,
+            "hold_action_minus_non_hold_true_mse": 0.2,
+            "hold_action_rows_match_non_hold_rows": True,
         }
         for family in contract.SCENE_FAMILIES
     }
@@ -235,10 +464,11 @@ def _passing_phase_a_metric(contract) -> dict[str, object]:
         "ema_target_gradient_free": True,
         "pair_count": 495,
         "scene_family_count": 8,
-        "wrong_action_pair_count": 495,
-        "non_hold_pair_count": 400,
-        "zero_action_pair_count": 400,
-        "zero_action_rows_match_non_hold_rows": True,
+        "cyclic_wrong_action_pair_count": 495,
+        "all_wrong_action_candidate_count": 3_960,
+        "non_hold_pair_count": contract.SELECTION_NON_HOLD_PAIR_COUNT,
+        "hold_action_pair_count": contract.SELECTION_NON_HOLD_PAIR_COUNT,
+        "hold_action_rows_match_non_hold_rows": True,
         "centered_raw_patch_effective_rank": 60.0,
         "centered_projected_target_effective_rank": 60.0,
         "raw_cross_sample_variance": 0.5,
@@ -246,9 +476,10 @@ def _passing_phase_a_metric(contract) -> dict[str, object]:
         "true_pair_mse": 0.8,
         "shuffled_next_mse": 1.0,
         "mean_target_mse": 1.0,
-        "wrong_action_mse": 1.0,
+        "cyclic_wrong_action_mse": 1.0,
+        "hardest_wrong_action_mse": 0.01,
         "non_hold_true_pair_mse": 0.8,
-        "zero_action_mse": 1.0,
+        "hold_action_mse": 1.0,
         "shuffled_current_mse": 1.0,
         "per_family": per_family,
     }
@@ -262,10 +493,58 @@ def test_exact_phase_gates_keep_strict_and_population_boundaries() -> None:
         "raw_cross_sample_variance": 1.0,
         "content_residual_spatial_diversity": 1.0,
     }
-    assert contract.evaluate_phase_a(metric, update0)["passed"] is True
-    metric["zero_action_pair_count"] = 399
+    integrity = {
+        "rng_state_preserved": True,
+        "state_mutation_count": 0,
+    }
+    terminal = contract.evaluate_phase_a(metric, update0, integrity)
+    assert terminal["passed"] is True
+    assert (
+        terminal["ratios"][
+            "true_to_hardest_wrong_action_informational"
+        ]
+        == pytest.approx(80.0)
+    )
+    assert not any(
+        "hardest" in name for name in terminal["conjuncts"]
+    )
+    assert contract.evaluate_phase_a_continuation(
+        100, metric, update0, integrity
+    )["passed"] is True
+    assert contract.evaluate_phase_a_continuation(
+        400, metric, update0, integrity
+    )["passed"] is True
+
+    metric["all_wrong_action_candidate_count"] = 3_959
     with pytest.raises(ValueError, match="control populations"):
-        contract.evaluate_phase_a(metric, update0)
+        contract.evaluate_phase_a(metric, update0, integrity)
+    metric["all_wrong_action_candidate_count"] = 3_960
+
+    strict_boundary = _passing_phase_a_metric(contract)
+    strict_boundary["cyclic_wrong_action_mse"] = (
+        strict_boundary["true_pair_mse"] / 0.99
+    )
+    update100 = contract.evaluate_phase_a_continuation(
+        100,
+        strict_boundary,
+        update0,
+        integrity,
+    )
+    assert update100["passed"] is False
+    assert update100["control"] == contract.CONTROL_PHASE_A_UPDATE_100_FAIL
+
+    bad_integrity = {
+        "rng_state_preserved": True,
+        "state_mutation_count": 1,
+    }
+    update400 = contract.evaluate_phase_a_continuation(
+        400,
+        _passing_phase_a_metric(contract),
+        update0,
+        bad_integrity,
+    )
+    assert update400["passed"] is False
+    assert update400["control"] == contract.CONTROL_PHASE_A_UPDATE_400_FAIL
 
     threshold = contract.PHASE_B_PASS_THRESHOLDS
     phase_b = {
@@ -292,6 +571,179 @@ def test_exact_phase_gates_keep_strict_and_population_boundaries() -> None:
         "total_shortfall_strictly_less_than"
     ]
     assert contract.evaluate_phase_b(phase_b)["passed"] is False
+
+
+def test_update100_continuation_failure_stops_and_preserves_status(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    torch = pytest.importorskip("torch")
+    module = _load_runner("_jepa_encoder_v1_early_stop")
+
+    class TrainModel(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.encoder = torch.nn.Linear(1, 1, bias=False)
+            self.auxiliary = torch.nn.Linear(1, 1, bias=False)
+            self.frozen = torch.nn.Linear(1, 1, bias=False)
+            self.frozen.requires_grad_(False)
+            self.ema_updates = 0
+
+        def update_target_encoder(self) -> None:
+            self.ema_updates += 1
+
+    model = TrainModel()
+    partition = {
+        "encoder": list(model.encoder.parameters()),
+        "other": list(model.auxiliary.parameters()),
+        "frozen": list(model.frozen.parameters()),
+        "receipt": {"status": "BOUND"},
+    }
+    initialization = {"status": "INITIALIZED"}
+    monkeypatch.setattr(
+        module,
+        "_phase_a_model",
+        lambda *_args: (model, partition, initialization),
+    )
+    monkeypatch.setattr(module, "_check_gpu_time", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(module.contract, "PHASE_A_MAXIMUM_UPDATE", 100)
+    monkeypatch.setattr(module.contract, "CHECKPOINT_UPDATES", (100,))
+    monkeypatch.setattr(module.contract, "MICROBATCH_SIZE", 1)
+    monkeypatch.setattr(module.contract, "MICROBATCHES_PER_UPDATE", 1)
+    monkeypatch.setattr(module.contract, "EFFECTIVE_BATCH_SIZE", 1)
+
+    def loss_stub(*_args, **_kwargs):
+        objective = (
+            model.encoder.weight.square().mean()
+            + model.auxiliary.weight.square().mean()
+        )
+        zero = objective * 0.0
+        return {
+            "loss": objective,
+            "jepa_loss": objective,
+            "wrong_action_loss": zero,
+            "hold_action_loss": zero,
+            "raw_whitening_variance_loss": zero,
+            "raw_whitening_covariance_loss": zero,
+            "projected_whitening_variance_loss": zero,
+            "projected_whitening_covariance_loss": zero,
+        }
+
+    monkeypatch.setattr(module, "_phase_a_current_only_loss", loss_stub)
+
+    diagnostic_updates: list[int] = []
+
+    def diagnostic_stub(*_args, update, **_kwargs):
+        diagnostic_updates.append(update)
+        return {
+            "update": update,
+            "metric": {
+                "raw_cross_sample_variance": 1.0,
+                "content_residual_spatial_diversity": 1.0,
+            },
+            "rng_state_preserved": True,
+            "state_mutation_count": 0,
+        }
+
+    monkeypatch.setattr(module, "_phase_a_diagnostics", diagnostic_stub)
+    continuation_calls: list[tuple[object, ...]] = []
+
+    def continuation_stub(*args):
+        continuation_calls.append(args)
+        return {
+            "update": 100,
+            "passed": False,
+            "control": module.contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+            "conjuncts": {"deliberate_test_failure": False},
+        }
+
+    monkeypatch.setattr(
+        module.contract,
+        "evaluate_phase_a_continuation",
+        continuation_stub,
+    )
+    snapshot_updates: list[int] = []
+
+    def snapshot_stub(*_args, update, **_kwargs):
+        snapshot_updates.append(update)
+        return {
+            "path": f"phase_a/checkpoints/update_{update}.pt",
+            "file_sha256": "1" * 64,
+            "content_sha256": "2" * 64,
+            "byte_count": 1,
+            "state_sha256": "3" * 64,
+        }
+
+    monkeypatch.setattr(module, "_snapshot_model", snapshot_stub)
+    published: dict[str, dict[str, object]] = {}
+
+    def publish_stub(path, core):
+        value = module.contract.with_content_sha256(dict(core))
+        raw = module.contract.canonical_json_bytes(value) + b"\n"
+        published[path.name] = value
+        return value, raw
+
+    monkeypatch.setattr(module, "_publish_json", publish_stub)
+
+    class Loader:
+        supervision_array_open_count = 0
+        general_frame_loader_call_count = 0
+
+        @staticmethod
+        def batch(*_args, **_kwargs):
+            return (
+                torch.zeros(1, 1),
+                torch.zeros(1, 1),
+                torch.zeros(1, 9),
+                torch.ones(1, dtype=torch.bool),
+            )
+
+    runtime = SimpleNamespace(
+        torch=torch,
+        model_module=SimpleNamespace(
+            tensor_state_dict_sha256=lambda _state: "4" * 64
+        ),
+    )
+    progress: dict[str, object] = {}
+    returned_model, artifact = module._phase_a_train(
+        runtime,
+        object(),
+        object(),
+        Loader(),
+        [{}],
+        [{}],
+        [0] * 100,
+        torch.device("cpu"),
+        tmp_path,
+        gpu_started=0.0,
+        progress=progress,
+    )
+
+    expected_status = module.contract.CONTROL_PHASE_A_UPDATE_100_FAIL
+    assert returned_model is model
+    assert diagnostic_updates == [0, 100]
+    assert len(continuation_calls) == 1
+    assert continuation_calls[0][0] == 100
+    assert continuation_calls[0][3] == {
+        "rng_state_preserved": True,
+        "state_mutation_count": 0,
+    }
+    assert snapshot_updates == [100]
+    assert model.ema_updates == 100
+    assert artifact["updates"] == 100
+    assert artifact["presentations"] == 100
+    assert artifact["ema_update_count"] == 100
+    assert artifact["status"] == expected_status
+    assert artifact["gate"]["control"] == expected_status
+    assert artifact["training_trace"]["row_count"] == 100
+    assert published["metrics.json"]["status"] == expected_status
+    assert published["metrics.json"]["selection_evaluation_updates"] == [
+        0,
+        100,
+    ]
+    assert len(published["metrics.json"]["continuation_gates"]) == 1
+    assert progress["phase_a_updates"] == 100
+    assert progress["phase_a_presentations"] == 100
 
 
 def test_rng_observation_wrapper_restores_cpu_and_gpu_streams() -> None:

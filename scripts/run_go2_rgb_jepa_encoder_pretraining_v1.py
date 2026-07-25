@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the one bounded RGB JEPA encoder-pretraining V1 experiment.
+"""Run the one bounded Patch-Whitened Action-Residual JEPA V1 experiment.
 
 Importing this module is source-only.  Torch, PIL, NumPy, generated inputs,
 RGB payloads, and checkpoints are first reachable after exact source
@@ -38,7 +38,7 @@ contract = importlib.util.module_from_spec(_CONTRACT_SPEC)
 _CONTRACT_SPEC.loader.exec_module(contract)
 
 PREFLIGHT_ENVIRONMENT_KEY = (
-    "LEWM_RGB_JEPA_ENCODER_PRETRAINING_V1_PREFLIGHT_JSON"
+    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_V1_PREFLIGHT_JSON"
 )
 THREAD_ENVIRONMENT = (
     "OMP_NUM_THREADS",
@@ -58,14 +58,6 @@ CONFLICTING_ACCELERATOR_ENVIRONMENT = (
     "ONEAPI_DEVICE_SELECTOR",
     "ZE_AFFINITY_MASK",
 )
-PHASE_A_OTHER_PREFIXES = (
-    "appearance_projector.",
-    "online_target_projector.",
-    "prediction_projector.",
-    "predictor.",
-)
-
-
 class ScientificGateFailure(RuntimeError):
     """The experiment completed valid science but did not pass a fixed gate."""
 
@@ -459,21 +451,26 @@ def _seal_terminal(output_root: Path) -> dict[str, Any]:
 
 
 def _phase_a_ops() -> SimpleNamespace:
-    """Load only the four existing objective helpers at the point of use."""
+    """Load the exact frozen Phase-A objective helpers at the point of use."""
     from lewm.models.phase2d_spatial_lewm import (  # type: ignore
-        action_identifiability_losses,
         normalize_spatial_tokens,
     )
-    from lewm.models.sigreg import sigreg_stepwise  # type: ignore
-    from lewm.models.spatial_lewm import (  # type: ignore
-        spatial_variance_floor_loss,
+    from lewm.models.patch_whitened_action_residual_jepa import (  # type: ignore
+        action_residual_losses,
+        build_action_layout,
+        initialize_action_gate_rows,
+        patch_whitening_terms,
+        predict_live_and_control_residuals,
     )
 
     return SimpleNamespace(
-        action_identifiability_losses=action_identifiability_losses,
+        action_residual_losses=action_residual_losses,
+        build_action_layout=build_action_layout,
+        initialize_action_gate_rows=initialize_action_gate_rows,
         normalize_spatial_tokens=normalize_spatial_tokens,
-        sigreg_stepwise=sigreg_stepwise,
-        spatial_variance_floor_loss=spatial_variance_floor_loss,
+        patch_whitening_terms=patch_whitening_terms,
+        predict_live_and_control_residuals=
+            predict_live_and_control_residuals,
     )
 
 
@@ -486,7 +483,7 @@ def _phase_a_current_only_loss(
     *,
     ops: Any | None = None,
 ) -> dict[str, Any]:
-    """Exact current-only Phase2D adapter; the online path never sees next RGB."""
+    """Exact residual Phase-A objective; the online path sees current RGB only."""
     ops = _phase_a_ops() if ops is None else ops
     if (
         current_rgb.ndim != 4
@@ -498,23 +495,15 @@ def _phase_a_current_only_loss(
         raise ValueError("Phase-A current-only batch shape changed")
 
     online_tokens = model.encoder.forward_tokens(current_rgb)
-    online_cls = online_tokens[:, 0]
     online_patches = online_tokens[:, 1:]
     online_state = model.online_geometry(online_patches)
-
-    def predict(state: Any, actions: Any) -> Any:
-        raw = model.predictor.predict_step(state, actions)
-        return ops.normalize_spatial_tokens(model.prediction_projector(raw))
-
-    prediction = predict(online_state, action)
-    wrong_action = action.roll(shifts=1, dims=-1)
-    control_state = online_state.detach()
-    wrong_prediction = predict(control_state, wrong_action)
-    zero_prediction = predict(control_state, action.new_zeros(action.shape))
+    online_projected = ops.normalize_spatial_tokens(
+        model.online_target_projector(online_state)
+    )
 
     import torch  # deferred: this function is called only after reservation
 
-    # The target modules are structurally frozen; no online value enters them.
+    # Both EMA branches and the current-state skip are exact stop-gradients.
     with torch.no_grad():
         target_current_tokens = model.target_encoder.forward_tokens(current_rgb)
         target_next_tokens = model.target_encoder.forward_tokens(next_rgb)
@@ -528,53 +517,46 @@ def _phase_a_current_only_loss(
         target_next_pre = model.target_projector(target_next_raw)
         target_current = ops.normalize_spatial_tokens(target_current_pre)
         target_next = ops.normalize_spatial_tokens(target_next_pre)
-
-    valid = action.new_ones((action.shape[0], 1), dtype=torch.bool)
-    controls = ops.action_identifiability_losses(
-        real_prediction=prediction[:, None],
-        targets=target_next[:, None],
-        previous_targets=target_current[:, None],
-        wrong_predictions=wrong_prediction[:, None, None],
-        wrong_mask=valid[:, :, None],
-        zero_prediction=zero_prediction[:, None],
-        non_hold_mask=non_hold_mask[:, None].bool(),
-        transition_mask=valid,
-        margin_fraction=model.action_margin_fraction,
-        margin_floor=model.action_margin_floor,
+    predictions = ops.predict_live_and_control_residuals(
+        model.predictor,
+        model.prediction_projector,
+        online_state,
+        action,
+        target_current,
     )
-    prediction_loss = (prediction - target_next).square().mean()
-    appearance_projected = model.appearance_projector(online_cls)
-    appearance_sigreg = ops.sigreg_stepwise(
-        appearance_projected[:, None],
-        n_projections=model.sigreg_projections,
-        n_knots=model.sigreg_knots,
-    )
-    online_projected = ops.normalize_spatial_tokens(
-        model.online_target_projector(online_state)
-    )
-    spatial_variance = ops.spatial_variance_floor_loss(
-        online_projected[:, None],
-        target_std=model.spatial_target_std,
+    if not torch.equal(
+        predictions.layout.non_hold_mask,
+        non_hold_mask.bool(),
+    ):
+        raise PermissionError("Phase-A real-hold mask changed")
+    action_losses = ops.action_residual_losses(predictions, target_next)
+    raw_whitening = ops.patch_whitening_terms(online_state.float())
+    projected_whitening = ops.patch_whitening_terms(
+        online_projected.float()
     )
     total = (
-        prediction_loss
-        + model.action_identifiability_lambda
-        * controls["action_identifiability_loss"]
-        + model.zero_action_lambda * controls["zero_action_loss"]
-        + model.appearance_sigreg_lambda * appearance_sigreg
-        + model.spatial_variance_lambda * spatial_variance
+        action_losses.jepa
+        + action_losses.wrong
+        + action_losses.hold
+        + contract.WHITENING_VARIANCE_WEIGHT
+        * (raw_whitening.variance + projected_whitening.variance)
+        + contract.WHITENING_COVARIANCE_WEIGHT
+        * (raw_whitening.covariance + projected_whitening.covariance)
     )
     return {
         "loss": total,
-        "prediction_loss": prediction_loss,
-        "action_identifiability_loss":
-            controls["action_identifiability_loss"],
-        "zero_action_loss": controls["zero_action_loss"],
-        "appearance_sigreg_loss": appearance_sigreg,
-        "spatial_variance_loss": spatial_variance,
-        "prediction": prediction,
-        "wrong_prediction": wrong_prediction,
-        "zero_prediction": zero_prediction,
+        "jepa_loss": action_losses.jepa,
+        "wrong_action_loss": action_losses.wrong,
+        "hold_action_loss": action_losses.hold,
+        "raw_whitening_variance_loss": raw_whitening.variance,
+        "raw_whitening_covariance_loss": raw_whitening.covariance,
+        "projected_whitening_variance_loss":
+            projected_whitening.variance,
+        "projected_whitening_covariance_loss":
+            projected_whitening.covariance,
+        "prediction": predictions.true,
+        "control_predictions": predictions.controls,
+        "control_indices": predictions.layout.control_indices,
         "online_state": online_state,
         "raw_target_next": target_next_raw,
         "projected_target_next": target_next,
@@ -745,7 +727,7 @@ class RGBOnlyLoader:
 def _phase_a_parameter_partition(model: Any) -> dict[str, Any]:
     encoder: list[tuple[str, Any]] = []
     other: list[tuple[str, Any]] = []
-    target: list[tuple[str, Any]] = []
+    frozen: list[tuple[str, Any]] = []
     unexpected: list[str] = []
     for name, parameter in model.named_parameters():
         if name.startswith(contract.PHASE_A_ENCODER_PARAMETER_PREFIXES):
@@ -753,23 +735,23 @@ def _phase_a_parameter_partition(model: Any) -> dict[str, Any]:
         elif name.startswith(contract.PHASE_A_AUXILIARY_PARAMETER_PREFIXES):
             other.append((name, parameter))
         elif name.startswith(contract.PHASE_A_FROZEN_PARAMETER_PREFIXES):
-            target.append((name, parameter))
+            frozen.append((name, parameter))
         elif parameter.numel() > 0:
             unexpected.append(name)
     if unexpected:
         raise PermissionError(
             f"Phase-A parameter partition changed: {unexpected[:4]}"
         )
-    if not encoder or not other or not target:
+    if not encoder or not other or not frozen:
         raise PermissionError("Phase-A parameter partition is empty")
-    if any(parameter.requires_grad for _, parameter in target):
-        raise PermissionError("Phase-A target parameter became trainable")
+    if any(parameter.requires_grad for _, parameter in frozen):
+        raise PermissionError("Phase-A frozen parameter became trainable")
     if any(not parameter.requires_grad for _, parameter in (*encoder, *other)):
         raise PermissionError("Phase-A online parameter became frozen")
     return {
         "encoder": [parameter for _, parameter in encoder],
         "other": [parameter for _, parameter in other],
-        "target": [parameter for _, parameter in target],
+        "frozen": [parameter for _, parameter in frozen],
         "receipt": {
             "encoder_parameter_count":
                 sum(parameter.numel() for _, parameter in encoder),
@@ -777,15 +759,20 @@ def _phase_a_parameter_partition(model: Any) -> dict[str, Any]:
             "other_parameter_count":
                 sum(parameter.numel() for _, parameter in other),
             "other_tensor_count": len(other),
-            "target_parameter_count":
-                sum(parameter.numel() for _, parameter in target),
-            "target_tensor_count": len(target),
+            "frozen_parameter_count":
+                sum(parameter.numel() for _, parameter in frozen),
+            "frozen_tensor_count": len(frozen),
+            "appearance_projector_frozen": all(
+                not parameter.requires_grad
+                for parameter in model.appearance_projector.parameters()
+            ),
+            "appearance_projector_excluded_from_optimizer_and_clip": True,
             "encoder_names_sha256":
                 contract.canonical_json_sha256([name for name, _ in encoder]),
             "other_names_sha256":
                 contract.canonical_json_sha256([name for name, _ in other]),
-            "target_names_sha256":
-                contract.canonical_json_sha256([name for name, _ in target]),
+            "frozen_names_sha256":
+                contract.canonical_json_sha256([name for name, _ in frozen]),
         },
     }
 
@@ -809,6 +796,7 @@ def _load_post_reservation_stack(
         contract.MATCHED_V1_RUNNER_RELATIVE_PATH,
         contract.SCHEDULE_ADAPTER_RELATIVE_PATH,
         contract.PHASE2D_MODEL_RELATIVE_PATH,
+        contract.OBJECTIVE_MODEL_RELATIVE_PATH,
         contract.MULTIRES_MODEL_RELATIVE_PATH,
         contract.TAIL_DEPTH_LOSS_RELATIVE_PATH,
     )
@@ -846,6 +834,13 @@ def _load_post_reservation_stack(
         )
         from lewm.models import phase2d_spatial_lewm as phase2d  # type: ignore
         _read_regular(
+            ROOT / contract.OBJECTIVE_MODEL_RELATIVE_PATH,
+            expected_sha256=sources[contract.OBJECTIVE_MODEL_RELATIVE_PATH],
+        )
+        from lewm.models import (  # type: ignore
+            patch_whitened_action_residual_jepa as objective,
+        )
+        _read_regular(
             ROOT / contract.MULTIRES_MODEL_RELATIVE_PATH,
             expected_sha256=sources[contract.MULTIRES_MODEL_RELATIVE_PATH],
         )
@@ -864,6 +859,7 @@ def _load_post_reservation_stack(
         sys.path[:] = original_path
     for module, relative in (
         (phase2d, contract.PHASE2D_MODEL_RELATIVE_PATH),
+        (objective, contract.OBJECTIVE_MODEL_RELATIVE_PATH),
         (multires, contract.MULTIRES_MODEL_RELATIVE_PATH),
         (tail_depth, contract.TAIL_DEPTH_LOSS_RELATIVE_PATH),
     ):
@@ -964,6 +960,18 @@ def _run_with_rng_preserved(runtime: Any, operation: Any) -> Any:
     finally:
         torch.random.set_rng_state(cpu_before)
         torch.cuda.set_rng_state_all(cuda_before)
+        if (
+            not torch.equal(torch.random.get_rng_state(), cpu_before)
+            or any(
+                not torch.equal(before, after)
+                for before, after in zip(
+                    cuda_before,
+                    torch.cuda.get_rng_state_all(),
+                    strict=True,
+                )
+            )
+        ):
+            raise RuntimeError("observation RNG state was not restored exactly")
 
 
 def _check_gpu_time(
@@ -1095,11 +1103,45 @@ def _phase_a_model(
     device: Any,
 ) -> tuple[Any, dict[str, Any], dict[str, Any]]:
     torch = runtime.torch
+    ops = _phase_a_ops()
     torch.manual_seed(contract.BASE_INITIALIZATION_SEED)
     torch.cuda.manual_seed_all(contract.BASE_INITIALIZATION_SEED)
     model = phase2d.Phase2DSpatialLeWorldModel(
         **contract.phase_a_model_config()
     )
+    cpu_rng_before_gate = torch.random.get_rng_state().clone()
+    cuda_rng_before_gate = [
+        value.clone() for value in torch.cuda.get_rng_state_all()
+    ]
+    gate_initialization = ops.initialize_action_gate_rows(model.predictor)
+    expected_gate_initialization = {
+        "seed": contract.BASE_INITIALIZATION_SEED,
+        "block_count": len(model.predictor.blocks),
+        "latent_dim": 192,
+        "attention_gate_rows": [384, 576],
+        "mlp_gate_rows": [960, 1_152],
+        "weight_std": contract.ACTION_GATE_WEIGHT_STD,
+        "bias": contract.ACTION_GATE_BIAS,
+        "changed_weight_scalar_count":
+            len(model.predictor.blocks) * 2 * 192 * 192,
+        "changed_bias_scalar_count":
+            len(model.predictor.blocks) * 2 * 192,
+    }
+    if gate_initialization != expected_gate_initialization:
+        raise RuntimeError("action-gate initialization receipt changed")
+    if (
+        not torch.equal(torch.random.get_rng_state(), cpu_rng_before_gate)
+        or any(
+            not torch.equal(before, after)
+            for before, after in zip(
+                cuda_rng_before_gate,
+                torch.cuda.get_rng_state_all(),
+                strict=True,
+            )
+        )
+    ):
+        raise RuntimeError("isolated action-gate initialization changed global RNG")
+    gate_predictor_sha = _state_sha(runtime, model.predictor)
     n320_encoder = {
         name: value.detach().to(device="cpu").contiguous().clone()
         for name, value in fit.encoder.state_dict().items()
@@ -1112,8 +1154,11 @@ def _phase_a_model(
         or _state_sha(runtime, model.target_encoder) != n320_sha
     ):
         raise RuntimeError("Phase-A N320 encoder copy changed")
+    model.appearance_projector.requires_grad_(False)
+    model.appearance_projector.eval()
     model = model.to(device)
     model.train()
+    model.appearance_projector.eval()
     partition = _phase_a_parameter_partition(model)
     receipt = {
         "schema": f"{contract.SCHEMA_PREFIX}_phase_a_initialization_v1",
@@ -1123,6 +1168,17 @@ def _phase_a_model(
         "n320_ema_encoder_state_sha256": n320_sha,
         "online_and_ema_encoder_exactly_equal": True,
         "predictor_and_projectors_fixed_seed_initialized": True,
+        "action_gate_initialization": gate_initialization,
+        "action_gate_initialization_preserved_global_rng": True,
+        "predictor_state_sha256_after_action_gate_initialization":
+            gate_predictor_sha,
+        "appearance_projector_frozen_and_eval": (
+            not model.appearance_projector.training
+            and all(
+                not parameter.requires_grad
+                for parameter in model.appearance_projector.parameters()
+            )
+        ),
         "n320_evidence_head_copy_count": 0,
         "rejected_checkpoint_open_count": 0,
         "complete_initial_state_sha256": _state_sha(runtime, model),
@@ -1149,10 +1205,11 @@ def _phase_a_diagnostics(
     def observe() -> dict[str, Any]:
         model.eval()
         states: list[Any] = []
+        ema_current_skips: list[Any] = []
         actions: list[Any] = []
         predictions: list[Any] = []
-        wrong_predictions: list[Any] = []
-        zero_predictions: list[Any] = []
+        control_energies: list[Any] = []
+        control_indices: list[Any] = []
         raw_targets: list[Any] = []
         projected_targets: list[Any] = []
         non_hold_rows: list[Any] = []
@@ -1170,39 +1227,65 @@ def _phase_a_diagnostics(
                 )
                 online_tokens = model.encoder.forward_tokens(current)
                 state = model.online_geometry(online_tokens[:, 1:])
-
-                def predict(state_value: Any, action_value: Any) -> Any:
-                    raw = model.predictor.predict_step(state_value, action_value)
-                    return ops.normalize_spatial_tokens(
-                        model.prediction_projector(raw)
-                    )
-
-                prediction = predict(state, action)
-                wrong_prediction = predict(
-                    state.detach(), action.roll(shifts=1, dims=-1)
+                current_target_tokens = (
+                    model.target_encoder.forward_tokens(current)
                 )
-                zero_prediction = predict(
-                    state.detach(), torch.zeros_like(action)
+                current_target_raw = model.target_geometry_module(
+                    current_target_tokens[:, 1:]
                 )
-                target_tokens = model.target_encoder.forward_tokens(next_rgb)
-                raw_target = model.target_geometry_module(target_tokens[:, 1:])
+                current_skip = ops.normalize_spatial_tokens(
+                    model.target_projector(current_target_raw)
+                )
+                next_target_tokens = model.target_encoder.forward_tokens(
+                    next_rgb
+                )
+                raw_target = model.target_geometry_module(
+                    next_target_tokens[:, 1:]
+                )
                 projected_target = ops.normalize_spatial_tokens(
                     model.target_projector(raw_target)
                 )
+                residual_predictions = (
+                    ops.predict_live_and_control_residuals(
+                        model.predictor,
+                        model.prediction_projector,
+                        state,
+                        action,
+                        current_skip,
+                    )
+                )
+                if not torch.equal(
+                    residual_predictions.layout.non_hold_mask,
+                    non_hold,
+                ):
+                    raise PermissionError(
+                        "Phase-A diagnostic real-hold mask changed"
+                    )
                 states.append(state.detach().cpu())
+                ema_current_skips.append(current_skip.detach().cpu())
                 actions.append(action.detach().cpu())
-                predictions.append(prediction.detach().cpu())
-                wrong_predictions.append(wrong_prediction.detach().cpu())
-                zero_predictions.append(zero_prediction.detach().cpu())
+                predictions.append(
+                    residual_predictions.true.detach().cpu()
+                )
+                control_energies.append(
+                    (
+                        residual_predictions.controls
+                        - projected_target[:, None]
+                    ).square().mean(dim=(2, 3)).detach().cpu()
+                )
+                control_indices.append(
+                    residual_predictions.layout.control_indices.detach().cpu()
+                )
                 raw_targets.append(raw_target.detach().cpu())
                 projected_targets.append(projected_target.detach().cpu())
                 non_hold_rows.append(non_hold.detach().cpu())
 
         state = torch.cat(states)
+        ema_current_skip = torch.cat(ema_current_skips)
         action = torch.cat(actions)
         prediction = torch.cat(predictions)
-        wrong_prediction = torch.cat(wrong_predictions)
-        zero_prediction = torch.cat(zero_predictions)
+        control_mse = torch.cat(control_energies).float()
+        candidate_indices = torch.cat(control_indices)
         raw_target = torch.cat(raw_targets).float()
         target = torch.cat(projected_targets).float()
         non_hold = torch.cat(non_hold_rows).bool()
@@ -1210,6 +1293,10 @@ def _phase_a_diagnostics(
             len(pairs) != contract.SELECTION_ROLE_COUNTS["pairs"]
             or state.shape[0] != len(pairs)
             or tuple(raw_target.shape[1:]) != (256, 192)
+            or tuple(control_mse.shape) != (len(pairs), 8)
+            or tuple(candidate_indices.shape) != (len(pairs), 8)
+            or int(non_hold.sum())
+            != contract.SELECTION_NON_HOLD_PAIR_COUNT
         ):
             raise PermissionError("Phase-A selection population changed")
 
@@ -1230,14 +1317,18 @@ def _phase_a_diagnostics(
             for start in range(0, len(pairs), contract.MICROBATCH_SIZE):
                 stop = min(start + contract.MICROBATCH_SIZE, len(pairs))
                 shuffled_state = state[current_mapping[start:stop]].to(device)
+                shuffled_skip = ema_current_skip[
+                    current_mapping[start:stop]
+                ].to(device)
                 original_action = action[start:stop].to(device)
-                raw = model.predictor.predict_step(
-                    shuffled_state, original_action
-                )
                 shuffled_current_predictions.append(
-                    ops.normalize_spatial_tokens(
-                        model.prediction_projector(raw)
-                    ).cpu()
+                    ops.predict_live_and_control_residuals(
+                        model.predictor,
+                        model.prediction_projector,
+                        shuffled_state,
+                        original_action,
+                        shuffled_skip,
+                    ).true.cpu()
                 )
         shuffled_current = torch.cat(shuffled_current_predictions)
         shuffled_next = target[next_mapping]
@@ -1247,8 +1338,32 @@ def _phase_a_diagnostics(
             return (left.float() - right.float()).square().mean(dim=(1, 2))
 
         true_mse = row_mse(prediction, target)
-        wrong_mse = row_mse(wrong_prediction, target)
-        zero_mse = row_mse(zero_prediction, target)
+        requested_indices = action.argmax(dim=1)
+        cyclic_indices = (requested_indices + 1) % len(
+            contract.ACTION_VOCABULARY
+        )
+        cyclic_matches = candidate_indices == cyclic_indices[:, None]
+        if not bool((cyclic_matches.sum(dim=1) == 1).all()):
+            raise PermissionError(
+                "Phase-A cyclic wrong-action population changed"
+            )
+        cyclic_positions = cyclic_matches.to(torch.int64).argmax(dim=1)
+        rows = torch.arange(len(pairs), dtype=torch.long)
+        cyclic_wrong_mse = control_mse[rows, cyclic_positions]
+        hardest_wrong_mse = control_mse.min(dim=1).values
+        hold_matches = (
+            candidate_indices[non_hold] == contract.HOLD_ACTION_INDEX
+        )
+        if not bool((hold_matches.sum(dim=1) == 1).all()):
+            raise PermissionError(
+                "Phase-A real-hold control population changed"
+            )
+        hold_positions = hold_matches.to(torch.int64).argmax(dim=1)
+        non_hold_rows_index = rows[non_hold]
+        hold_mse = control_mse[
+            non_hold_rows_index,
+            hold_positions,
+        ]
         shuffled_next_mse = row_mse(prediction, shuffled_next)
         mean_target_mse = row_mse(prediction, mean_target)
         shuffled_current_mse = row_mse(shuffled_current, target)
@@ -1270,24 +1385,39 @@ def _phase_a_diagnostics(
                     f"Phase-A control population is empty: {family}"
                 )
             per_family[family] = {
-                "wrong_action_minus_true_mse":
-                    float((wrong_mse[family_mask] - true_mse[family_mask]).mean()),
-                "zero_action_minus_non_hold_true_mse":
-                    float((zero_mse[family_non_hold] - true_mse[family_non_hold]).mean()),
-                "zero_action_rows_match_non_hold_rows": True,
+                "cyclic_wrong_action_minus_true_mse": float(
+                    (
+                        cyclic_wrong_mse[family_mask]
+                        - true_mse[family_mask]
+                    ).mean()
+                ),
+                "hardest_wrong_action_minus_true_mse": float(
+                    (
+                        hardest_wrong_mse[family_mask]
+                        - true_mse[family_mask]
+                    ).mean()
+                ),
+                "hold_action_minus_non_hold_true_mse": float(
+                    (
+                        hold_mse[family_non_hold[non_hold]]
+                        - true_mse[family_non_hold]
+                    ).mean()
+                ),
+                "hold_action_rows_match_non_hold_rows": True,
             }
 
         finite_tensors = (
             state,
+            ema_current_skip,
             prediction,
-            wrong_prediction,
-            zero_prediction,
+            control_mse,
             raw_target,
             target,
             shuffled_current,
             true_mse,
-            wrong_mse,
-            zero_mse,
+            cyclic_wrong_mse,
+            hardest_wrong_mse,
+            hold_mse,
         )
         metric = {
             "all_values_finite": bool(
@@ -1308,10 +1438,12 @@ def _phase_a_diagnostics(
             ),
             "pair_count": len(pairs),
             "scene_family_count": len(contract.SCENE_FAMILIES),
-            "wrong_action_pair_count": len(pairs),
+            "cyclic_wrong_action_pair_count": len(pairs),
+            "all_wrong_action_candidate_count":
+                int(control_mse.numel()),
             "non_hold_pair_count": int(non_hold.sum()),
-            "zero_action_pair_count": int(non_hold.sum()),
-            "zero_action_rows_match_non_hold_rows": True,
+            "hold_action_pair_count": int(hold_mse.numel()),
+            "hold_action_rows_match_non_hold_rows": True,
             "centered_raw_patch_effective_rank":
                 _effective_rank(torch, raw_target),
             "centered_projected_target_effective_rank":
@@ -1322,9 +1454,12 @@ def _phase_a_diagnostics(
             "true_pair_mse": float(true_mse.mean()),
             "shuffled_next_mse": float(shuffled_next_mse.mean()),
             "mean_target_mse": float(mean_target_mse.mean()),
-            "wrong_action_mse": float(wrong_mse.mean()),
+            "cyclic_wrong_action_mse":
+                float(cyclic_wrong_mse.mean()),
+            "hardest_wrong_action_mse":
+                float(hardest_wrong_mse.mean()),
             "non_hold_true_pair_mse": float(true_mse[non_hold].mean()),
-            "zero_action_mse": float(zero_mse[non_hold].mean()),
+            "hold_action_mse": float(hold_mse.mean()),
             "shuffled_current_mse": float(shuffled_current_mse.mean()),
             "per_family": per_family,
         }
@@ -1337,6 +1472,7 @@ def _phase_a_diagnostics(
     finally:
         if was_training:
             model.train()
+            model.appearance_projector.eval()
     if _state_sha(runtime, model) != before_state:
         raise RuntimeError("Phase-A diagnostics mutated model state")
     return {
@@ -1403,6 +1539,8 @@ def _phase_a_train(
     }
     trace: list[dict[str, Any]] = []
     snapshots: list[dict[str, Any]] = []
+    continuation_gates: list[dict[str, Any]] = []
+    early_failure: dict[str, Any] | None = None
     ema_update_count = 0
     for update in range(1, contract.PHASE_A_MAXIMUM_UPDATE + 1):
         _check_gpu_time(
@@ -1440,19 +1578,21 @@ def _phase_a_train(
             (loss["loss"] / contract.MICROBATCHES_PER_UPDATE).backward()
             for name in (
                 "loss",
-                "prediction_loss",
-                "action_identifiability_loss",
-                "zero_action_loss",
-                "appearance_sigreg_loss",
-                "spatial_variance_loss",
+                "jepa_loss",
+                "wrong_action_loss",
+                "hold_action_loss",
+                "raw_whitening_variance_loss",
+                "raw_whitening_covariance_loss",
+                "projected_whitening_variance_loss",
+                "projected_whitening_covariance_loss",
             ):
                 contribution = (
                     loss[name].detach()
                     / contract.MICROBATCHES_PER_UPDATE
                 )
                 sums[name] = sums.get(name, contribution.new_zeros(())) + contribution
-        if any(parameter.grad is not None for parameter in partition["target"]):
-            raise RuntimeError("Phase-A EMA target acquired a gradient")
+        if any(parameter.grad is not None for parameter in partition["frozen"]):
+            raise RuntimeError("Phase-A frozen parameter acquired a gradient")
         gradient_before = torch.nn.utils.clip_grad_norm_(
             trainable, max_norm=1.0
         )
@@ -1498,6 +1638,30 @@ def _phase_a_train(
             },
         })
         if update in contract.CHECKPOINT_UPDATES:
+            diagnostic = _phase_a_diagnostics(
+                runtime,
+                model,
+                loader,
+                selection_pairs,
+                device,
+                update=update,
+            )
+            diagnostics.append(diagnostic)
+            if update in {100, 400}:
+                continuation = contract.evaluate_phase_a_continuation(
+                    update,
+                    diagnostic["metric"],
+                    update0_health,
+                    {
+                        "rng_state_preserved":
+                            diagnostic["rng_state_preserved"],
+                        "state_mutation_count":
+                            diagnostic["state_mutation_count"],
+                    },
+                )
+                continuation_gates.append(continuation)
+                if not continuation["passed"]:
+                    early_failure = continuation
             snapshot = _snapshot_model(
                 runtime,
                 model,
@@ -1510,27 +1674,37 @@ def _phase_a_train(
                 },
             )
             snapshots.append(snapshot)
-            diagnostics.append(
-                _phase_a_diagnostics(
-                    runtime,
-                    model,
-                    loader,
-                    selection_pairs,
-                    device,
-                    update=update,
-                )
-            )
         _check_gpu_time(
             gpu_started,
             maximum_minutes=contract.PHASE_A_GPU_ACTIVE_TIME_CAP_MINUTES,
             stage="Phase A",
         )
-    if ema_update_count != contract.PHASE_A_MAXIMUM_UPDATE:
+        if early_failure is not None:
+            break
+    if ema_update_count != len(trace):
         raise RuntimeError("Phase-A EMA update count changed")
-    terminal_gate = contract.evaluate_phase_a(
-        diagnostics[-1]["metric"],
-        update0_health,
-    )
+    if early_failure is not None:
+        terminal_gate = early_failure
+        phase_status = str(early_failure["control"])
+    else:
+        if ema_update_count != contract.PHASE_A_MAXIMUM_UPDATE:
+            raise RuntimeError("Phase-A terminal update count changed")
+        terminal_observation = diagnostics[-1]
+        terminal_gate = contract.evaluate_phase_a(
+            terminal_observation["metric"],
+            update0_health,
+            {
+                "rng_state_preserved":
+                    terminal_observation["rng_state_preserved"],
+                "state_mutation_count":
+                    terminal_observation["state_mutation_count"],
+            },
+        )
+        phase_status = (
+            "PASS_PHASE_A"
+            if terminal_gate["passed"]
+            else "FAIL_PHASE_A_TERMINAL"
+        )
     trace_raw = b"".join(
         contract.canonical_json_bytes(row) + b"\n" for row in trace
     )
@@ -1539,15 +1713,14 @@ def _phase_a_train(
         output_root / "phase_a/metrics.json",
         {
             "schema": contract.PHASE_A_METRICS_SCHEMA,
-            "status": (
-                "PASS_PHASE_A"
-                if terminal_gate["passed"]
-                else "FAIL_PHASE_A_TERMINAL"
-            ),
+            "status": phase_status,
             "observations": diagnostics,
             "update0_health": update0_health,
+            "continuation_gates": continuation_gates,
             "terminal_gate": terminal_gate,
-            "selection_evaluation_updates": [0, 100, 400, 1_000],
+            "selection_evaluation_updates": [
+                observation["update"] for observation in diagnostics
+            ],
             "observer_rerun_count": 0,
             "rng_state_preserved_at_every_observation": True,
             "retry_authorized": False,
@@ -1559,7 +1732,7 @@ def _phase_a_train(
         "status": (
             "QUALIFIED_FOR_CONDITIONAL_PHASE_B"
             if terminal_gate["passed"]
-            else "UNQUALIFIED_TERMINAL"
+            else phase_status
         ),
         "initialization": initialization,
         "partition": partition["receipt"],
@@ -1578,6 +1751,8 @@ def _phase_a_train(
         "terminal_online_encoder_state_sha256":
             _state_sha(runtime, model.encoder),
         "target_state_gradient_count": 0,
+        "frozen_state_gradient_count": 0,
+        "appearance_projector_gradient_count": 0,
         "camera_supervision_array_open_count":
             loader.supervision_array_open_count,
         "general_raw_v13_frame_loader_call_count":
@@ -2486,7 +2661,14 @@ def _execute_after_reservation(
 
     passed = bool(phase_b is not None and phase_b["gate"]["passed"])
     if not phase_a["gate"]["passed"]:
-        status = "FAIL_PHASE_A_MECHANISM_TERMINATED_NO_PHASE_B"
+        phase_a_control = str(phase_a["gate"]["control"])
+        if phase_a_control in {
+            contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+            contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
+        }:
+            status = phase_a_control
+        else:
+            status = "FAIL_PHASE_A_MECHANISM_TERMINATED_NO_PHASE_B"
         terminal_control = phase_a["gate"]
     elif not passed:
         status = "FAIL_PHASE_B_MECHANISM_TERMINATED"
@@ -2536,7 +2718,14 @@ def _execute_after_reservation(
         output_root / "completed.json",
         {
             "schema": contract.COMPLETION_SCHEMA,
-            "status": "TERMINAL_PASS" if passed else "TERMINAL_FAIL",
+            "status": (
+                status
+                if status in {
+                    contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+                    contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
+                }
+                else ("TERMINAL_PASS" if passed else "TERMINAL_FAIL")
+            ),
             "attempt_identity": reservation["attempt_identity"],
             "result": _binding("result.json", result, result_raw),
             "phase_b_entered": bool(progress["phase_b_entered"]),

@@ -1,4 +1,4 @@
-"""Source-only contract for the RGB JEPA encoder pretraining V1 probe.
+"""Source-only contract for Patch-Whitened Action-Residual JEPA V1.
 
 Importing this module reads no generated input, RGB payload, checkpoint,
 runtime output, or accelerator state and imports no tensor library.  The
@@ -17,8 +17,8 @@ from typing import Any, Mapping, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[2]
-IMPLEMENTATION_AUTHOR = "/root/jepa_contract_impl"
-SCHEMA_PREFIX = "lewm_go2_rgb_jepa_encoder_pretraining_v1"
+IMPLEMENTATION_AUTHOR = "/root"
+SCHEMA_PREFIX = "lewm_go2_rgb_patch_whitened_action_residual_jepa_v1"
 
 CONTRACT_RELATIVE_PATH = (
     "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
@@ -34,6 +34,12 @@ CONTRACT_TEST_RELATIVE_PATH = (
 )
 RUNNER_TEST_RELATIVE_PATH = (
     "lewm/tests/test_go2_rgb_jepa_encoder_pretraining_v1_runner.py"
+)
+OBJECTIVE_MODEL_RELATIVE_PATH = (
+    "lewm/models/patch_whitened_action_residual_jepa.py"
+)
+OBJECTIVE_TEST_RELATIVE_PATH = (
+    "lewm/tests/test_patch_whitened_action_residual_jepa.py"
 )
 SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_jepa_encoder_pretraining_v1_source_closure.py"
@@ -108,26 +114,40 @@ CAMERA_FIT_METRICS_RELATIVE_PATH = (
 )
 
 PREREGISTRATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
-    "replacement_amendment_2026-07-25.md"
+    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v1_"
+    "preregistration_2026-07-25.md"
 )
-PREREGISTRATION_COMMIT = "074eb833e51e2b09d581870062d51f2cf82f8074"
+PREREGISTRATION_COMMIT = "feea6738b66c6647f428a7466af6aab2528a3ef9"
 PREREGISTRATION_FILE_SHA256 = (
-    "62f302902bee659eff492b77725e76cc2ebaf66fdd8257ee4ef3ff95ffcbe469"
+    "e3dfde80ed6f666f7c65663fe0c15965b2119e8ee76ca11d8c527f07c0d8d8f3"
 )
-PREREGISTRATION_BYTE_COUNT = 4_823
+PREREGISTRATION_BYTE_COUNT = 14_020
+PRIOR_TERMINAL_AUDIT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
+    "replacement_terminal_audit_2026-07-25.json"
+)
+PRIOR_TERMINAL_AUDIT_COMMIT = (
+    "2f96c3f436f0b43f84cb09c9f375542d537e35ec"
+)
+PRIOR_TERMINAL_AUDIT_FILE_SHA256 = (
+    "b6f74ff0a212ac4cf363e59c8fe2f07ed474b8ce4e6ee1ddbd5dafc0c19fe8de"
+)
+PRIOR_TERMINAL_AUDIT_CONTENT_SHA256 = (
+    "ccc145e1cd7ed863ae97123b3f91c3a89b5833dbaa5483cff77ced8bcd33341c"
+)
+PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 11_594
 
 SOURCE_MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
-    "replacement_source_manifest_2026-07-25.json"
+    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v1_"
+    "source_manifest_2026-07-25.json"
 )
 REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
-    "replacement_source_review_2026-07-25.json"
+    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v1_"
+    "source_review_2026-07-25.json"
 )
 AUTHORIZATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
-    "replacement_execution_authorization_2026-07-25.json"
+    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v1_"
+    "execution_authorization_2026-07-25.json"
 )
 SOURCE_MANIFEST_SCHEMA = f"{SCHEMA_PREFIX}_source_manifest_v1"
 REVIEW_SCHEMA = f"{SCHEMA_PREFIX}_source_review_v1"
@@ -139,6 +159,8 @@ ADDITIVE_SOURCE_PATHS = tuple(sorted((
     LAUNCHER_RELATIVE_PATH,
     CONTRACT_TEST_RELATIVE_PATH,
     RUNNER_TEST_RELATIVE_PATH,
+    OBJECTIVE_MODEL_RELATIVE_PATH,
+    OBJECTIVE_TEST_RELATIVE_PATH,
     SOURCE_CLOSURE_CHECKER_RELATIVE_PATH,
     SOURCE_CLOSURE_TEST_RELATIVE_PATH,
 )))
@@ -178,11 +200,12 @@ SOURCE_MANIFEST_FORCED_DYNAMIC_SOURCES = SOURCE_PATHS
 SOURCE_REVIEW_ADDITIONAL_PATHS = (
     SOURCE_MANIFEST_RELATIVE_PATH,
     PREREGISTRATION_RELATIVE_PATH,
+    PRIOR_TERMINAL_AUDIT_RELATIVE_PATH,
 )
 
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-    "rgb_jepa_encoder_pretraining_probe_v3_integrity_replacement"
+    "rgb_patch_whitened_action_residual_jepa_probe_v1"
 )
 
 RAW_ROOT_RELATIVE_PATH = (
@@ -248,6 +271,7 @@ SELECTION_ROLE_COUNTS = {
     "unique_endpoints": 924,
     "scenes": 8,
 }
+SELECTION_NON_HOLD_PAIR_COUNT = 435
 ACTION_VOCABULARY = (
     "arc_left",
     "arc_right",
@@ -272,6 +296,13 @@ SCENE_FAMILIES = (
 
 BASE_INITIALIZATION_SEED = 20260712
 SCHEDULE_SEED = 20260713
+HOLD_ACTION_INDEX = 6
+RESIDUAL_SCALE = 0.1 / math.sqrt(192.0)
+WHITENING_EPSILON = 1e-4
+WHITENING_VARIANCE_WEIGHT = 0.50
+WHITENING_COVARIANCE_WEIGHT = 0.02
+ACTION_GATE_BIAS = 0.01
+ACTION_GATE_WEIGHT_STD = 0.01 / math.sqrt(192.0)
 PHASE_A_MAXIMUM_UPDATE = 1_000
 PHASE_B_MAXIMUM_UPDATE = 1_000
 MAXIMUM_UPDATE = 1_000
@@ -305,10 +336,26 @@ PHASE_A_PASS_THRESHOLDS = {
     "update_zero_health_fraction_minimum": 0.25,
     "shuffled_next_ratio_maximum": 0.90,
     "mean_target_ratio_maximum": 0.90,
-    "wrong_action_ratio_maximum": 0.95,
-    "zero_action_ratio_maximum": 0.95,
+    "cyclic_wrong_action_ratio_maximum": 0.95,
+    "hold_action_ratio_maximum": 0.95,
     "positive_family_margin_count_minimum": 6,
     "shuffled_current_ratio_maximum": 0.95,
+}
+PHASE_A_UPDATE_100_THRESHOLDS = {
+    "centered_raw_patch_effective_rank_strictly_greater_than":
+        27.717458724975586,
+    "centered_projected_target_effective_rank_strictly_greater_than":
+        17.426651000976562,
+    "cyclic_wrong_action_ratio_strictly_less_than": 0.99,
+    "hold_action_ratio_strictly_less_than": 0.99,
+    "positive_family_margin_count_minimum": 6,
+}
+PHASE_A_UPDATE_400_THRESHOLDS = {
+    "centered_raw_patch_effective_rank_minimum": 37.85872936248779,
+    "centered_projected_target_effective_rank_minimum": 32.71332550048828,
+    "cyclic_wrong_action_ratio_maximum": 0.975,
+    "hold_action_ratio_maximum": 0.975,
+    "positive_family_margin_count_minimum": 6,
 }
 PHASE_B_PASS_THRESHOLDS = {
     "complete_physical_scope_count_minimum": 1,
@@ -325,7 +372,6 @@ MARGIN_COUNT = 189
 
 PHASE_A_ENCODER_PARAMETER_PREFIXES = ("encoder.",)
 PHASE_A_AUXILIARY_PARAMETER_PREFIXES = (
-    "appearance_projector.",
     "online_target_projector.",
     "prediction_projector.",
     "predictor.",
@@ -335,6 +381,7 @@ PHASE_A_TRAINABLE_PARAMETER_PREFIXES = (
     *PHASE_A_AUXILIARY_PARAMETER_PREFIXES,
 )
 PHASE_A_FROZEN_PARAMETER_PREFIXES = (
+    "appearance_projector.",
     "target_encoder.",
     "target_geometry_module.",
     "target_projector.",
@@ -361,13 +408,15 @@ PHASE_A_METRIC_FIELDS = frozenset({
     "true_pair_mse",
     "shuffled_next_mse",
     "mean_target_mse",
-    "wrong_action_mse",
-    "wrong_action_pair_count",
+    "cyclic_wrong_action_mse",
+    "cyclic_wrong_action_pair_count",
+    "all_wrong_action_candidate_count",
+    "hardest_wrong_action_mse",
     "non_hold_pair_count",
     "non_hold_true_pair_mse",
-    "zero_action_mse",
-    "zero_action_pair_count",
-    "zero_action_rows_match_non_hold_rows",
+    "hold_action_mse",
+    "hold_action_pair_count",
+    "hold_action_rows_match_non_hold_rows",
     "shuffled_current_mse",
     "per_family",
 })
@@ -375,10 +424,20 @@ PHASE_A_UPDATE0_FIELDS = frozenset({
     "raw_cross_sample_variance",
     "content_residual_spatial_diversity",
 })
+PHASE_A_OBSERVATION_INTEGRITY_FIELDS = frozenset({
+    "rng_state_preserved",
+    "state_mutation_count",
+})
 
 CONTROL_CONTINUE = "CONTINUE_INFORMATIONAL"
 CONTROL_PHASE_A_PASS = "PASS_PHASE_A_ENTER_FROZEN_PHYSICAL_PROBE"
 CONTROL_PHASE_A_FAIL = "FAIL_PHASE_A_TERMINAL_NO_PHASE_B_NO_RETRY"
+CONTROL_PHASE_A_UPDATE_100_FAIL = (
+    "FAIL_PHASE_A_UPDATE_100_CONTINUATION_GATE_TERMINAL"
+)
+CONTROL_PHASE_A_UPDATE_400_FAIL = (
+    "FAIL_PHASE_A_UPDATE_400_CONTINUATION_GATE_TERMINAL"
+)
 CONTROL_PASS = "PASS_BOUNDED_FALSIFICATION"
 CONTROL_FAIL = "FAIL_TERMINAL_NO_RETRY"
 CONTROL_INTEGRITY_FAIL = "INTEGRITY_FAILURE_TERMINAL_NO_RETRY"
@@ -415,6 +474,19 @@ SOURCE_ONLY_AUTHORITY = {
     **DOWNSTREAM_DENIALS,
 }
 REVIEW_AUTHORITY = dict(SOURCE_ONLY_AUTHORITY)
+SCIENTIFIC_REVIEW_CHECKS = {
+    "prior_v3_terminal_audit_bound": True,
+    "new_mechanism_is_not_v3_retry": True,
+    "ema_current_residual_skip_exact": True,
+    "patch_whitening_matches_preregistration": True,
+    "all_nine_real_actions_and_hold_exact": True,
+    "cyclic_acceptance_distinct_from_all_candidate_training": True,
+    "zero_vector_absent": True,
+    "continuation_gates_exact": True,
+    "terminal_phase_a_gate_exact": True,
+    "phase_b_conditional_and_unchanged": True,
+    "no_threshold_role_seed_schedule_or_cap_drift": True,
+}
 EXECUTION_AUTHORITY = {
     "one_exact_fresh_attempt_authorized": True,
     "phase_a_authorized": True,
@@ -583,6 +655,16 @@ def preregistration_binding() -> dict[str, Any]:
     }
 
 
+def prior_terminal_audit_binding() -> dict[str, Any]:
+    return {
+        "path": PRIOR_TERMINAL_AUDIT_RELATIVE_PATH,
+        "commit": PRIOR_TERMINAL_AUDIT_COMMIT,
+        "file_sha256": PRIOR_TERMINAL_AUDIT_FILE_SHA256,
+        "content_sha256": PRIOR_TERMINAL_AUDIT_CONTENT_SHA256,
+        "byte_count": PRIOR_TERMINAL_AUDIT_BYTE_COUNT,
+    }
+
+
 def _runtime_leaf(path: str) -> dict[str, Any]:
     return {
         "path": path,
@@ -658,10 +740,10 @@ def phase_a_model_config() -> dict[str, Any]:
         "encoder_heads": 6,
         "encoder_mlp_ratio": 4,
         "encoder_dropout": 0.0,
-        "appearance_sigreg_lambda": 0.09,
-        "spatial_variance_lambda": 1.0,
-        "action_identifiability_lambda": 1.0,
-        "zero_action_lambda": 1.0,
+        "appearance_sigreg_lambda": 0.0,
+        "spatial_variance_lambda": 0.0,
+        "action_identifiability_lambda": 0.0,
+        "zero_action_lambda": 0.0,
         "action_margin_fraction": 0.10,
         "action_margin_floor": 1e-4,
         "detach_action_control_state": True,
@@ -717,13 +799,25 @@ def science_contract() -> dict[str, Any]:
     return {
         "schema": f"{SCHEMA_PREFIX}_science_contract_v1",
         "scientific_question":
-            "n320_initialized_action_conditioned_jepa_adapted_frozen_rgb_"
-            "encoder_passes_absolute_scene_disjoint_physical_gate",
+            "n320_initialized_patch_whitened_action_residual_jepa_encoder_"
+            "passes_rank_action_and_scene_disjoint_physical_gates",
         "initialization": {
             "seed": BASE_INITIALIZATION_SEED,
             "n320_online_encoder_copy": True,
             "n320_ema_encoder_copy": True,
             "predictor_and_projectors_from_fixed_seed": True,
+            "adalan_gate_generator": {
+                "device": "cpu",
+                "dtype": "float32",
+                "seed": BASE_INITIALIZATION_SEED,
+                "seed_count": 1,
+                "draw_order":
+                    "block_order_attention_gate_then_mlp_gate",
+                "gate_row_slices": ["2D:3D", "5D:6D"],
+                "weight_std": ACTION_GATE_WEIGHT_STD,
+                "bias": ACTION_GATE_BIAS,
+                "all_non_gate_modulation_rows_zero": True,
+            },
             "rejected_checkpoint_open_count": 0,
         },
         "data": {
@@ -736,6 +830,17 @@ def science_contract() -> dict[str, Any]:
         "phase_a": {
             "model_class": "Phase2DSpatialLeWorldModel",
             "model_config": phase_a_model_config(),
+            "inert_constructor_compatibility": {
+                "appearance_sigreg_lambda": 0.0,
+                "spatial_variance_lambda": 0.0,
+                "action_identifiability_lambda": 0.0,
+                "zero_action_lambda": 0.0,
+                "action_margin_fraction_unused": 0.10,
+                "action_margin_floor_unused": 1e-4,
+                "sigreg_projections_unused": 64,
+                "sigreg_knots_unused": 9,
+                "legacy_objective_call_count": 0,
+            },
             "current_only_adapter_required": True,
             "model_forward_call_authorized": False,
             "rgb_preprocessing": {
@@ -749,8 +854,50 @@ def science_contract() -> dict[str, Any]:
                 "std": [0.229, 0.224, 0.225],
             },
             "action_vocabulary": list(ACTION_VOCABULARY),
-            "wrong_action": "cyclic_index_plus_one_mod_9_for_every_row",
-            "zero_action_mask": "requested_primitive_is_not_hold",
+            "hold_action_index": HOLD_ACTION_INDEX,
+            "training_action_candidates":
+                "all_nine_real_one_hot_primitives_no_zero_vector",
+            "acceptance_wrong_action":
+                "cyclic_index_plus_one_mod_9_for_every_row",
+            "hold_action_mask": "requested_primitive_is_not_hold",
+            "objective": {
+                "ema_current_skip_stop_gradient": True,
+                "ema_next_target_stop_gradient": True,
+                "residual_scale": RESIDUAL_SCALE,
+                "prediction":
+                    "normalize(z_current_ema+alpha*"
+                    "P_prediction(Predictor(raw_online_current,action)))",
+                "jepa_loss":
+                    "mean_patch_feature_mse(true_prediction,z_next_ema)",
+                "wrong_action_loss":
+                    "mean_rows(mean_eligible_candidates(relu("
+                    "stop_gradient(E_true)/0.95-E_wrong)))",
+                "hold_action_loss":
+                    "mean_non_hold(relu(stop_gradient(E_true)/0.95-E_hold))",
+                "empty_hold_microbatch_loss": 0.0,
+                "true_path_online_state_detached": False,
+                "non_true_control_state_detached": True,
+                "appearance_projector_frozen": True,
+                "old_cls_sigreg_count": 0,
+                "old_marginal_spatial_variance_count": 0,
+                "whitening": {
+                    "branches": [
+                        "online_raw_current_patch",
+                        "normalized_online_projected_current_patch",
+                    ],
+                    "position_centering": "subtract_batch_mean_per_patch",
+                    "matrix_shape": ["B*N", 192],
+                    "rms_denominator_stop_gradient": True,
+                    "epsilon": WHITENING_EPSILON,
+                    "covariance_denominator": "B*N-1",
+                    "variance":
+                        "mean(relu(1-sqrt(diag(C)+epsilon)))",
+                    "covariance":
+                        "sum(square(off_diagonal(C)))/D",
+                    "variance_weight": WHITENING_VARIANCE_WEIGHT,
+                    "covariance_weight": WHITENING_COVARIANCE_WEIGHT,
+                },
+            },
             "optimizer": {
                 "name": "AdamW",
                 "betas": [0.9, 0.999],
@@ -762,17 +909,26 @@ def science_contract() -> dict[str, Any]:
                 "encoder_learning_rate": 1e-4,
                 "other_learning_rate": 3e-4,
                 "other_prefixes": [
-                    "appearance_projector.",
                     "online_target_projector.",
                     "prediction_projector.",
                     "predictor.",
+                ],
+                "frozen_compatibility_prefixes": [
+                    "appearance_projector.",
                 ],
                 "target_parameters_excluded": True,
             },
             "schedule": build_schedule_identity("phase_a"),
             "gate": {
                 "thresholds": dict(PHASE_A_PASS_THRESHOLDS),
+                "update_100_continuation_thresholds":
+                    dict(PHASE_A_UPDATE_100_THRESHOLDS),
+                "update_400_continuation_thresholds":
+                    dict(PHASE_A_UPDATE_400_THRESHOLDS),
                 "selection_pair_count": 495,
+                "selection_non_hold_pair_count":
+                    SELECTION_NON_HOLD_PAIR_COUNT,
+                "all_wrong_action_candidate_count": 3_960,
                 "scene_family_count": 8,
                 "position_centering":
                     "subtract_population_mean_independently_per_patch",
@@ -784,10 +940,15 @@ def science_contract() -> dict[str, Any]:
                     "exp(-sum(p_i_log_p_i))_of_covariance_eigenvalues",
                 "mse_reduction":
                     "per_row_mean_patch_feature_then_population_mean",
-                "wrong_action_population":
+                "cyclic_wrong_action_population":
                     "all_495_rows_same_rows_as_true_pair_population",
-                "zero_action_population":
+                "hold_action_population":
                     "exact_same_non_hold_rows_as_non_hold_true_pair_population",
+                "hardest_wrong_action":
+                    "informational_minimum_mse_over_eight_wrong_candidates",
+                "shuffled_current":
+                    "shuffle_online_raw_current_and_matching_ema_current_skip_"
+                    "together_keep_action_and_ema_next_fixed",
             },
         },
         "phase_b": {
@@ -870,6 +1031,7 @@ def _positive_denominator_ratio(
 def evaluate_phase_a(
     metrics: Mapping[str, Any],
     update0_metrics: Mapping[str, Any],
+    observation_integrity: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Evaluate the exact preregistered Phase-A terminal conjunction."""
 
@@ -880,6 +1042,15 @@ def evaluate_phase_a(
         or set(update0_metrics) != PHASE_A_UPDATE0_FIELDS
     ):
         raise ValueError("Phase-A update-zero fields changed")
+    if (
+        type(observation_integrity) is not dict
+        or set(observation_integrity)
+        != PHASE_A_OBSERVATION_INTEGRITY_FIELDS
+        or type(observation_integrity["rng_state_preserved"]) is not bool
+        or type(observation_integrity["state_mutation_count"]) is not int
+        or observation_integrity["state_mutation_count"] < 0
+    ):
+        raise ValueError("Phase-A observation-integrity fields changed")
     if type(metrics["all_values_finite"]) is not bool:
         raise TypeError("all_values_finite must be Boolean")
     if type(metrics["ema_target_gradient_free"]) is not bool:
@@ -894,15 +1065,19 @@ def evaluate_phase_a(
     non_hold_count = metrics["non_hold_pair_count"]
     if (
         type(non_hold_count) is not int
-        or not 1 <= non_hold_count <= metrics["pair_count"]
+        or non_hold_count != SELECTION_NON_HOLD_PAIR_COUNT
     ):
         raise ValueError("Phase-A non-hold population changed")
     if (
-        type(metrics["wrong_action_pair_count"]) is not int
-        or metrics["wrong_action_pair_count"] != metrics["pair_count"]
-        or type(metrics["zero_action_pair_count"]) is not int
-        or metrics["zero_action_pair_count"] != non_hold_count
-        or type(metrics["zero_action_rows_match_non_hold_rows"]) is not bool
+        type(metrics["cyclic_wrong_action_pair_count"]) is not int
+        or metrics["cyclic_wrong_action_pair_count"]
+        != metrics["pair_count"]
+        or type(metrics["all_wrong_action_candidate_count"]) is not int
+        or metrics["all_wrong_action_candidate_count"]
+        != metrics["pair_count"] * 8
+        or type(metrics["hold_action_pair_count"]) is not int
+        or metrics["hold_action_pair_count"] != non_hold_count
+        or type(metrics["hold_action_rows_match_non_hold_rows"]) is not bool
     ):
         raise ValueError("Phase-A control populations changed")
 
@@ -911,10 +1086,11 @@ def evaluate_phase_a(
         "ema_target_gradient_free",
         "pair_count",
         "scene_family_count",
-        "wrong_action_pair_count",
+        "cyclic_wrong_action_pair_count",
+        "all_wrong_action_candidate_count",
         "non_hold_pair_count",
-        "zero_action_pair_count",
-        "zero_action_rows_match_non_hold_rows",
+        "hold_action_pair_count",
+        "hold_action_rows_match_non_hold_rows",
         "per_family",
     }
     values = {
@@ -932,37 +1108,43 @@ def evaluate_phase_a(
     if type(per_family) is not dict or tuple(per_family) != SCENE_FAMILIES:
         raise ValueError("Phase-A scene-family order changed")
     wrong_positive = 0
-    zero_positive = 0
+    hold_positive = 0
     normalized_families: dict[str, dict[str, float]] = {}
     for family in SCENE_FAMILIES:
         row = per_family[family]
         if type(row) is not dict or set(row) != {
-            "wrong_action_minus_true_mse",
-            "zero_action_minus_non_hold_true_mse",
-            "zero_action_rows_match_non_hold_rows",
+            "cyclic_wrong_action_minus_true_mse",
+            "hardest_wrong_action_minus_true_mse",
+            "hold_action_minus_non_hold_true_mse",
+            "hold_action_rows_match_non_hold_rows",
         }:
             raise ValueError(f"Phase-A family metrics changed: {family}")
-        if type(row["zero_action_rows_match_non_hold_rows"]) is not bool:
+        if type(row["hold_action_rows_match_non_hold_rows"]) is not bool:
             raise TypeError(
-                f"{family} zero-action population identity must be Boolean"
+                f"{family} hold-action population identity must be Boolean"
             )
         wrong = _finite_signed(
-            row["wrong_action_minus_true_mse"],
-            name=f"{family} wrong-action margin",
+            row["cyclic_wrong_action_minus_true_mse"],
+            name=f"{family} cyclic-wrong-action margin",
         )
-        zero = _finite_signed(
-            row["zero_action_minus_non_hold_true_mse"],
-            name=f"{family} zero-action margin",
+        hardest = _finite_signed(
+            row["hardest_wrong_action_minus_true_mse"],
+            name=f"{family} hardest-wrong-action margin",
+        )
+        hold = _finite_signed(
+            row["hold_action_minus_non_hold_true_mse"],
+            name=f"{family} hold-action margin",
         )
         wrong_positive += int(wrong > 0.0)
-        zero_positive += int(
-            zero > 0.0 and row["zero_action_rows_match_non_hold_rows"]
+        hold_positive += int(
+            hold > 0.0 and row["hold_action_rows_match_non_hold_rows"]
         )
         normalized_families[family] = {
-            "wrong_action_minus_true_mse": wrong,
-            "zero_action_minus_non_hold_true_mse": zero,
-            "zero_action_rows_match_non_hold_rows":
-                row["zero_action_rows_match_non_hold_rows"],
+            "cyclic_wrong_action_minus_true_mse": wrong,
+            "hardest_wrong_action_minus_true_mse": hardest,
+            "hold_action_minus_non_hold_true_mse": hold,
+            "hold_action_rows_match_non_hold_rows":
+                row["hold_action_rows_match_non_hold_rows"],
         }
 
     ratios = {
@@ -982,16 +1164,22 @@ def evaluate_phase_a(
             values["mean_target_mse"],
             name="mean-target ratio",
         ),
-        "true_to_wrong_action": _positive_denominator_ratio(
+        "true_to_cyclic_wrong_action": _positive_denominator_ratio(
             values["true_pair_mse"],
-            values["wrong_action_mse"],
-            name="wrong-action ratio",
+            values["cyclic_wrong_action_mse"],
+            name="cyclic-wrong-action ratio",
         ),
-        "non_hold_true_to_zero_action": _positive_denominator_ratio(
+        "non_hold_true_to_hold_action": _positive_denominator_ratio(
             values["non_hold_true_pair_mse"],
-            values["zero_action_mse"],
-            name="zero-action ratio",
+            values["hold_action_mse"],
+            name="hold-action ratio",
         ),
+        "true_to_hardest_wrong_action_informational":
+            _positive_denominator_ratio(
+                values["true_pair_mse"],
+                values["hardest_wrong_action_mse"],
+                name="hardest-wrong-action ratio",
+            ),
         "true_to_shuffled_current": _positive_denominator_ratio(
             values["true_pair_mse"],
             values["shuffled_current_mse"],
@@ -1000,13 +1188,19 @@ def evaluate_phase_a(
     }
     threshold = PHASE_A_PASS_THRESHOLDS
     conjuncts = {
+        "diagnostic_rng_and_model_state_preserved":
+            observation_integrity["rng_state_preserved"]
+            and observation_integrity["state_mutation_count"] == 0,
         "finite_and_ema_gradient_free":
             metrics["all_values_finite"]
             and metrics["ema_target_gradient_free"],
         "control_populations_exact":
-            metrics["wrong_action_pair_count"] == metrics["pair_count"]
-            and metrics["zero_action_pair_count"] == non_hold_count
-            and metrics["zero_action_rows_match_non_hold_rows"],
+            metrics["cyclic_wrong_action_pair_count"]
+            == metrics["pair_count"]
+            and metrics["all_wrong_action_candidate_count"]
+            == metrics["pair_count"] * 8
+            and metrics["hold_action_pair_count"] == non_hold_count
+            and metrics["hold_action_rows_match_non_hold_rows"],
         "centered_raw_rank_at_least_48":
             values["centered_raw_patch_effective_rank"]
             >= threshold["centered_raw_patch_effective_rank_minimum"],
@@ -1025,17 +1219,17 @@ def evaluate_phase_a(
         "true_at_most_point90_mean_target":
             ratios["true_to_mean_target"]
             <= threshold["mean_target_ratio_maximum"],
-        "true_at_most_point95_wrong_action":
-            ratios["true_to_wrong_action"]
-            <= threshold["wrong_action_ratio_maximum"],
-        "non_hold_true_at_most_point95_zero_action":
-            ratios["non_hold_true_to_zero_action"]
-            <= threshold["zero_action_ratio_maximum"],
-        "wrong_action_margin_positive_in_at_least_six_families":
+        "true_at_most_point95_cyclic_wrong_action":
+            ratios["true_to_cyclic_wrong_action"]
+            <= threshold["cyclic_wrong_action_ratio_maximum"],
+        "non_hold_true_at_most_point95_hold_action":
+            ratios["non_hold_true_to_hold_action"]
+            <= threshold["hold_action_ratio_maximum"],
+        "cyclic_wrong_action_margin_positive_in_at_least_six_families":
             wrong_positive
             >= threshold["positive_family_margin_count_minimum"],
-        "zero_action_margin_positive_in_at_least_six_families":
-            zero_positive
+        "hold_action_margin_positive_in_at_least_six_families":
+            hold_positive
             >= threshold["positive_family_margin_count_minimum"],
         "true_at_most_point95_shuffled_current":
             ratios["true_to_shuffled_current"]
@@ -1049,14 +1243,126 @@ def evaluate_phase_a(
         "ratios": ratios,
         "counts": {
             "pair_count": 495,
-            "wrong_action_pair_count": metrics["wrong_action_pair_count"],
+            "cyclic_wrong_action_pair_count":
+                metrics["cyclic_wrong_action_pair_count"],
+            "all_wrong_action_candidate_count":
+                metrics["all_wrong_action_candidate_count"],
             "non_hold_pair_count": non_hold_count,
-            "zero_action_pair_count": metrics["zero_action_pair_count"],
+            "hold_action_pair_count": metrics["hold_action_pair_count"],
             "scene_family_count": 8,
-            "wrong_action_positive_family_count": wrong_positive,
-            "zero_action_positive_family_count": zero_positive,
+            "cyclic_wrong_action_positive_family_count": wrong_positive,
+            "hold_action_positive_family_count": hold_positive,
         },
         "per_family": normalized_families,
+    }
+
+
+def evaluate_phase_a_continuation(
+    update: int,
+    metrics: Mapping[str, Any],
+    update0_metrics: Mapping[str, Any],
+    observation_integrity: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Evaluate the exact update-100 or update-400 continuation gate."""
+
+    if update not in {100, 400}:
+        raise ValueError("continuation gate update must be 100 or 400")
+    terminal = evaluate_phase_a(
+        metrics,
+        update0_metrics,
+        observation_integrity,
+    )
+    ratios = terminal["ratios"]
+    counts = terminal["counts"]
+    conjuncts = {
+        "diagnostic_rng_and_model_state_preserved":
+            terminal["conjuncts"][
+                "diagnostic_rng_and_model_state_preserved"
+            ],
+        "finite_and_ema_gradient_free":
+            terminal["conjuncts"]["finite_and_ema_gradient_free"],
+        "control_populations_exact":
+            terminal["conjuncts"]["control_populations_exact"],
+    }
+    if update == 100:
+        threshold = PHASE_A_UPDATE_100_THRESHOLDS
+        conjuncts.update({
+            "centered_raw_rank_above_v3_update_zero":
+                float(metrics["centered_raw_patch_effective_rank"])
+                > threshold[
+                    "centered_raw_patch_effective_rank_strictly_greater_than"
+                ],
+            "centered_projected_rank_above_v3_update_zero":
+                float(metrics["centered_projected_target_effective_rank"])
+                > threshold[
+                    "centered_projected_target_effective_rank_"
+                    "strictly_greater_than"
+                ],
+            "true_strictly_below_point99_cyclic_wrong_action":
+                ratios["true_to_cyclic_wrong_action"]
+                < threshold[
+                    "cyclic_wrong_action_ratio_strictly_less_than"
+                ],
+            "non_hold_true_strictly_below_point99_hold_action":
+                ratios["non_hold_true_to_hold_action"]
+                < threshold["hold_action_ratio_strictly_less_than"],
+            "cyclic_wrong_action_margin_positive_in_at_least_six_families":
+                counts["cyclic_wrong_action_positive_family_count"]
+                >= threshold["positive_family_margin_count_minimum"],
+            "hold_action_margin_positive_in_at_least_six_families":
+                counts["hold_action_positive_family_count"]
+                >= threshold["positive_family_margin_count_minimum"],
+        })
+        failure_control = CONTROL_PHASE_A_UPDATE_100_FAIL
+    else:
+        threshold = PHASE_A_UPDATE_400_THRESHOLDS
+        conjuncts.update({
+            "centered_raw_rank_at_least_halfway_to_48":
+                float(metrics["centered_raw_patch_effective_rank"])
+                >= threshold["centered_raw_patch_effective_rank_minimum"],
+            "centered_projected_rank_at_least_halfway_to_48":
+                float(metrics["centered_projected_target_effective_rank"])
+                >= threshold[
+                    "centered_projected_target_effective_rank_minimum"
+                ],
+            "true_at_most_point975_cyclic_wrong_action":
+                ratios["true_to_cyclic_wrong_action"]
+                <= threshold["cyclic_wrong_action_ratio_maximum"],
+            "non_hold_true_at_most_point975_hold_action":
+                ratios["non_hold_true_to_hold_action"]
+                <= threshold["hold_action_ratio_maximum"],
+            "cyclic_wrong_action_margin_positive_in_at_least_six_families":
+                counts["cyclic_wrong_action_positive_family_count"]
+                >= threshold["positive_family_margin_count_minimum"],
+            "hold_action_margin_positive_in_at_least_six_families":
+                counts["hold_action_positive_family_count"]
+                >= threshold["positive_family_margin_count_minimum"],
+            "raw_cross_sample_variance_at_least_quarter_update0":
+                terminal["conjuncts"][
+                    "raw_cross_sample_variance_at_least_quarter_update0"
+                ],
+            "spatial_diversity_at_least_quarter_update0":
+                terminal["conjuncts"][
+                    "spatial_diversity_at_least_quarter_update0"
+                ],
+            "true_at_most_point90_shuffled_next":
+                terminal["conjuncts"]["true_at_most_point90_shuffled_next"],
+            "true_at_most_point90_mean_target":
+                terminal["conjuncts"]["true_at_most_point90_mean_target"],
+            "true_at_most_point95_shuffled_current":
+                terminal["conjuncts"]["true_at_most_point95_shuffled_current"],
+        })
+        failure_control = CONTROL_PHASE_A_UPDATE_400_FAIL
+    passed = all(conjuncts.values())
+    return {
+        "update": update,
+        "passed": passed,
+        "control": CONTROL_CONTINUE if passed else failure_control,
+        "conjuncts": conjuncts,
+        "ratios": ratios,
+        "counts": counts,
+        "thresholds": dict(threshold),
+        "per_family": terminal["per_family"],
     }
 
 
@@ -1286,6 +1592,21 @@ def current_source_bindings(root: Path = ROOT) -> dict[str, str]:
         manifest_raw
     ).hexdigest()
     result[PREREGISTRATION_RELATIVE_PATH] = PREREGISTRATION_FILE_SHA256
+    prior_raw = _read_regular_source(
+        root / PRIOR_TERMINAL_AUDIT_RELATIVE_PATH
+    )
+    if (
+        len(prior_raw) != PRIOR_TERMINAL_AUDIT_BYTE_COUNT
+        or hashlib.sha256(prior_raw).hexdigest()
+        != PRIOR_TERMINAL_AUDIT_FILE_SHA256
+        or parse_canonical_json(
+            prior_raw, name="prior terminal audit"
+        )["content_sha256"] != PRIOR_TERMINAL_AUDIT_CONTENT_SHA256
+    ):
+        raise PermissionError("prior terminal audit changed")
+    result[PRIOR_TERMINAL_AUDIT_RELATIVE_PATH] = (
+        PRIOR_TERMINAL_AUDIT_FILE_SHA256
+    )
     return result
 
 
@@ -1302,8 +1623,10 @@ def validate_review(
         "reviewed_sources",
         "source_manifest",
         "preregistration",
+        "prior_terminal_audit",
         "science_contract",
         "source_only_checks",
+        "scientific_checks",
         "findings",
         "authority",
         "content_sha256",
@@ -1323,7 +1646,7 @@ def validate_review(
     del manifest_binding
     if (
         value["schema"] != REVIEW_SCHEMA
-        or value["status"] != "PASS_SOURCE_ONLY"
+        or value["status"] != "PASS_SOURCE_AND_SCIENCE"
         or value["implementation_author"] != IMPLEMENTATION_AUTHOR
         or type(reviewer) is not str
         or not reviewer.startswith("/root/")
@@ -1334,6 +1657,7 @@ def validate_review(
         or expected_sources.get(PREREGISTRATION_RELATIVE_PATH)
         != PREREGISTRATION_FILE_SHA256
         or value["preregistration"] != preregistration_binding()
+        or value["prior_terminal_audit"] != prior_terminal_audit_binding()
         or value["science_contract"] != science_contract()
         or value["source_only_checks"] != {
             "stdlib_only_contract_import": True,
@@ -1341,6 +1665,7 @@ def validate_review(
             "checkpoints_or_tensors_opened": [],
             "sealed_or_heldout_opened": [],
         }
+        or value["scientific_checks"] != SCIENTIFIC_REVIEW_CHECKS
         or value["findings"] != []
         or value["authority"] != REVIEW_AUTHORITY
         or not is_sha256(declared)
@@ -1407,6 +1732,7 @@ __all__ = [
         "canonical_json_sha256",
         "current_source_bindings",
         "evaluate_phase_a",
+        "evaluate_phase_a_continuation",
         "evaluate_phase_b",
         "evaluate_physical_scopes",
         "is_sha256",
@@ -1415,6 +1741,7 @@ __all__ = [
         "phase_a_model_config",
         "physical_margins",
         "preregistration_binding",
+        "prior_terminal_audit_binding",
         "runtime_authorization_template",
         "safe_relative_path",
         "science_contract",

@@ -39,20 +39,25 @@ def _passing_phase_a_metrics() -> dict[str, Any]:
         "true_pair_mse": 0.85,
         "shuffled_next_mse": 1.0,
         "mean_target_mse": 1.0,
-        "wrong_action_mse": 0.90,
-        "wrong_action_pair_count": 495,
-        "non_hold_pair_count": 440,
+        "cyclic_wrong_action_mse": 0.90,
+        "cyclic_wrong_action_pair_count": 495,
+        "all_wrong_action_candidate_count": 3_960,
+        "hardest_wrong_action_mse": 0.90,
+        "non_hold_pair_count": contract.SELECTION_NON_HOLD_PAIR_COUNT,
         "non_hold_true_pair_mse": 0.85,
-        "zero_action_mse": 0.90,
-        "zero_action_pair_count": 440,
-        "zero_action_rows_match_non_hold_rows": True,
+        "hold_action_mse": 0.90,
+        "hold_action_pair_count": contract.SELECTION_NON_HOLD_PAIR_COUNT,
+        "hold_action_rows_match_non_hold_rows": True,
         "shuffled_current_mse": 0.90,
         "per_family": {
             family: {
-                "wrong_action_minus_true_mse": 0.01 if index < 6 else 0.0,
-                "zero_action_minus_non_hold_true_mse":
+                "cyclic_wrong_action_minus_true_mse":
                     0.01 if index < 6 else 0.0,
-                "zero_action_rows_match_non_hold_rows": True,
+                "hardest_wrong_action_minus_true_mse":
+                    0.005 if index < 6 else 0.0,
+                "hold_action_minus_non_hold_true_mse":
+                    0.01 if index < 6 else 0.0,
+                "hold_action_rows_match_non_hold_rows": True,
             }
             for index, family in enumerate(contract.SCENE_FAMILIES)
         },
@@ -63,6 +68,13 @@ def _update0_metrics() -> dict[str, float]:
     return {
         "raw_cross_sample_variance": 4.0,
         "content_residual_spatial_diversity": 8.0,
+    }
+
+
+def _observation_integrity() -> dict[str, Any]:
+    return {
+        "rng_state_preserved": True,
+        "state_mutation_count": 0,
     }
 
 
@@ -115,13 +127,17 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         }))
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "074eb833e51e2b09d581870062d51f2cf82f8074",
+            "feea6738b66c6647f428a7466af6aab2528a3ef9",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(len(raw), 4_823)
+        self.assertEqual(len(raw), 14_020)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "62f302902bee659eff492b77725e76cc2ebaf66fdd8257ee4ef3ff95ffcbe469",
+            "e3dfde80ed6f666f7c65663fe0c15965b2119e8ee76ca11d8c527f07c0d8d8f3",
+        )
+        self.assertEqual(
+            contract.SCHEMA_PREFIX,
+            "lewm_go2_rgb_patch_whitened_action_residual_jepa_v1",
         )
         self.assertEqual(contract.preregistration_binding(), {
             "path": contract.PREREGISTRATION_RELATIVE_PATH,
@@ -136,7 +152,7 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(
             contract.OUTPUT_ROOT_RELATIVE_PATH,
             ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-            "rgb_jepa_encoder_pretraining_probe_v3_integrity_replacement",
+            "rgb_patch_whitened_action_residual_jepa_probe_v1",
         )
 
     def test_phase_a_model_and_optimizer_contract_are_exact(self) -> None:
@@ -158,12 +174,41 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(config["sigreg_projections"], 64)
         self.assertEqual(config["sigreg_knots"], 9)
         self.assertTrue(config["detach_action_control_state"])
+        self.assertEqual(config["appearance_sigreg_lambda"], 0.0)
+        self.assertEqual(config["spatial_variance_lambda"], 0.0)
+        self.assertEqual(config["action_identifiability_lambda"], 0.0)
+        self.assertEqual(config["zero_action_lambda"], 0.0)
         science = contract.science_contract()
+        objective = science["phase_a"]["objective"]
+        self.assertEqual(objective["residual_scale"], contract.RESIDUAL_SCALE)
+        self.assertTrue(objective["ema_current_skip_stop_gradient"])
+        self.assertTrue(objective["ema_next_target_stop_gradient"])
+        self.assertTrue(objective["appearance_projector_frozen"])
+        self.assertEqual(
+            objective["whitening"]["variance_weight"],
+            contract.WHITENING_VARIANCE_WEIGHT,
+        )
+        self.assertEqual(
+            objective["whitening"]["covariance_weight"],
+            contract.WHITENING_COVARIANCE_WEIGHT,
+        )
+        self.assertEqual(
+            science["phase_a"]["training_action_candidates"],
+            "all_nine_real_one_hot_primitives_no_zero_vector",
+        )
         optimizer = science["phase_a"]["optimizer"]
         self.assertEqual(optimizer["encoder_learning_rate"], 1e-4)
         self.assertEqual(optimizer["other_learning_rate"], 3e-4)
         self.assertEqual(
             tuple(optimizer["other_prefixes"]),
+            contract.PHASE_A_AUXILIARY_PARAMETER_PREFIXES,
+        )
+        self.assertIn(
+            "appearance_projector.",
+            contract.PHASE_A_FROZEN_PARAMETER_PREFIXES,
+        )
+        self.assertNotIn(
+            "appearance_projector.",
             contract.PHASE_A_AUXILIARY_PARAMETER_PREFIXES,
         )
         self.assertEqual(
@@ -246,6 +291,7 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         result = contract.evaluate_phase_a(
             _passing_phase_a_metrics(),
             _update0_metrics(),
+            _observation_integrity(),
         )
         self.assertTrue(result["passed"])
         self.assertEqual(result["control"], contract.CONTROL_PHASE_A_PASS)
@@ -255,12 +301,18 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             0.25,
         )
         self.assertEqual(
-            result["counts"]["wrong_action_positive_family_count"],
+            result["counts"][
+                "cyclic_wrong_action_positive_family_count"
+            ],
             6,
         )
         self.assertEqual(
-            result["counts"]["zero_action_positive_family_count"],
+            result["counts"]["hold_action_positive_family_count"],
             6,
+        )
+        self.assertEqual(
+            result["counts"]["all_wrong_action_candidate_count"],
+            3_960,
         )
 
     def test_phase_a_each_gate_fails_closed(self) -> None:
@@ -275,15 +327,19 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 ("content_residual_spatial_diversity", 1.999),
             "shuffled_next": ("shuffled_next_mse", 0.90),
             "mean_target": ("mean_target_mse", 0.90),
-            "wrong_action": ("wrong_action_mse", 0.85),
-            "zero_action": ("zero_action_mse", 0.85),
+            "cyclic_wrong_action": ("cyclic_wrong_action_mse", 0.85),
+            "hold_action": ("hold_action_mse", 0.85),
             "shuffled_current": ("shuffled_current_mse", 0.85),
         }
         for name, (field, value) in mutations.items():
             with self.subTest(name=name):
                 metrics = _passing_phase_a_metrics()
                 metrics[field] = value
-                result = contract.evaluate_phase_a(metrics, _update0_metrics())
+                result = contract.evaluate_phase_a(
+                    metrics,
+                    _update0_metrics(),
+                    _observation_integrity(),
+                )
                 self.assertFalse(result["passed"])
                 self.assertEqual(
                     result["control"],
@@ -291,48 +347,295 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 )
         metrics = _passing_phase_a_metrics()
         metrics["per_family"][contract.SCENE_FAMILIES[5]][
-            "wrong_action_minus_true_mse"
+            "cyclic_wrong_action_minus_true_mse"
         ] = 0.0
         self.assertFalse(
-            contract.evaluate_phase_a(metrics, _update0_metrics())["passed"]
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )["passed"]
         )
         metrics = _passing_phase_a_metrics()
         metrics["per_family"][contract.SCENE_FAMILIES[5]][
-            "zero_action_minus_non_hold_true_mse"
+            "hold_action_minus_non_hold_true_mse"
         ] = 0.0
         self.assertFalse(
-            contract.evaluate_phase_a(metrics, _update0_metrics())["passed"]
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )["passed"]
         )
 
     def test_phase_a_invalid_populations_and_denominators_are_rejected(self) -> None:
         metrics = _passing_phase_a_metrics()
         metrics["pair_count"] = 494
         with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(metrics, _update0_metrics())
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
         metrics = _passing_phase_a_metrics()
-        metrics["zero_action_rows_match_non_hold_rows"] = False
+        metrics["hold_action_rows_match_non_hold_rows"] = False
         self.assertFalse(
-            contract.evaluate_phase_a(metrics, _update0_metrics())["passed"]
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )["passed"]
         )
         metrics = _passing_phase_a_metrics()
-        metrics["zero_action_pair_count"] += 1
+        metrics["hold_action_pair_count"] += 1
         with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(metrics, _update0_metrics())
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+        metrics = _passing_phase_a_metrics()
+        metrics["all_wrong_action_candidate_count"] -= 1
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
         metrics = _passing_phase_a_metrics()
         metrics["shuffled_next_mse"] = 0.0
         with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(metrics, _update0_metrics())
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
         update0 = _update0_metrics()
         update0["raw_cross_sample_variance"] = 0.0
         with self.assertRaises(ValueError):
             contract.evaluate_phase_a(
                 _passing_phase_a_metrics(),
                 update0,
+                _observation_integrity(),
             )
         metrics = _passing_phase_a_metrics()
         metrics["per_family"] = dict(reversed(metrics["per_family"].items()))
         with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(metrics, _update0_metrics())
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+
+    def test_phase_a_observation_integrity_receipt_fails_closed(self) -> None:
+        for name, integrity in {
+            "rng_changed": {
+                "rng_state_preserved": False,
+                "state_mutation_count": 0,
+            },
+            "state_changed": {
+                "rng_state_preserved": True,
+                "state_mutation_count": 1,
+            },
+        }.items():
+            with self.subTest(name=name):
+                result = contract.evaluate_phase_a(
+                    _passing_phase_a_metrics(),
+                    _update0_metrics(),
+                    integrity,
+                )
+                self.assertFalse(result["passed"])
+                self.assertEqual(
+                    result["control"],
+                    contract.CONTROL_PHASE_A_FAIL,
+                )
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                _passing_phase_a_metrics(),
+                _update0_metrics(),
+                {"rng_state_preserved": True},
+            )
+
+    def test_hardest_wrong_action_is_recorded_but_informational(self) -> None:
+        metrics = _passing_phase_a_metrics()
+        metrics["hardest_wrong_action_mse"] = 0.01
+        for row in metrics["per_family"].values():
+            row["hardest_wrong_action_minus_true_mse"] = -10.0
+        result = contract.evaluate_phase_a(
+            metrics,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertTrue(result["passed"])
+        self.assertEqual(
+            result["ratios"][
+                "true_to_hardest_wrong_action_informational"
+            ],
+            85.0,
+        )
+
+    def test_phase_a_update_100_continuation_gate_is_strict(self) -> None:
+        thresholds = contract.PHASE_A_UPDATE_100_THRESHOLDS
+        passing = _passing_phase_a_metrics()
+        passing["centered_raw_patch_effective_rank"] = (
+            thresholds[
+                "centered_raw_patch_effective_rank_strictly_greater_than"
+            ] + 1e-12
+        )
+        passing["centered_projected_target_effective_rank"] = (
+            thresholds[
+                "centered_projected_target_effective_rank_"
+                "strictly_greater_than"
+            ] + 1e-12
+        )
+        result = contract.evaluate_phase_a_continuation(
+            100,
+            passing,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertTrue(result["passed"])
+        self.assertEqual(result["control"], contract.CONTROL_CONTINUE)
+
+        exact_failures = {
+            "raw_rank": (
+                "centered_raw_patch_effective_rank",
+                thresholds[
+                    "centered_raw_patch_effective_rank_"
+                    "strictly_greater_than"
+                ],
+            ),
+            "projected_rank": (
+                "centered_projected_target_effective_rank",
+                thresholds[
+                    "centered_projected_target_effective_rank_"
+                    "strictly_greater_than"
+                ],
+            ),
+            "cyclic_ratio": (
+                "cyclic_wrong_action_mse",
+                passing["true_pair_mse"]
+                / thresholds[
+                    "cyclic_wrong_action_ratio_strictly_less_than"
+                ],
+            ),
+            "hold_ratio": (
+                "hold_action_mse",
+                passing["non_hold_true_pair_mse"]
+                / thresholds["hold_action_ratio_strictly_less_than"],
+            ),
+        }
+        for name, (field, value) in exact_failures.items():
+            with self.subTest(name=name):
+                metrics = deepcopy(passing)
+                metrics[field] = value
+                result = contract.evaluate_phase_a_continuation(
+                    100,
+                    metrics,
+                    _update0_metrics(),
+                    _observation_integrity(),
+                )
+                self.assertFalse(result["passed"])
+                self.assertEqual(
+                    result["control"],
+                    contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+                )
+
+        result = contract.evaluate_phase_a_continuation(
+            100,
+            passing,
+            _update0_metrics(),
+            {
+                "rng_state_preserved": False,
+                "state_mutation_count": 0,
+            },
+        )
+        self.assertFalse(result["passed"])
+        self.assertEqual(
+            result["control"],
+            contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+        )
+
+    def test_phase_a_update_400_continuation_boundaries_are_inclusive(
+        self,
+    ) -> None:
+        thresholds = contract.PHASE_A_UPDATE_400_THRESHOLDS
+        passing = _passing_phase_a_metrics()
+        passing["centered_raw_patch_effective_rank"] = thresholds[
+            "centered_raw_patch_effective_rank_minimum"
+        ]
+        passing["centered_projected_target_effective_rank"] = thresholds[
+            "centered_projected_target_effective_rank_minimum"
+        ]
+        passing["cyclic_wrong_action_mse"] = (
+            passing["true_pair_mse"]
+            / thresholds["cyclic_wrong_action_ratio_maximum"]
+        )
+        passing["hold_action_mse"] = (
+            passing["non_hold_true_pair_mse"]
+            / thresholds["hold_action_ratio_maximum"]
+        )
+        result = contract.evaluate_phase_a_continuation(
+            400,
+            passing,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertTrue(result["passed"])
+        self.assertEqual(result["control"], contract.CONTROL_CONTINUE)
+
+        failing = deepcopy(passing)
+        failing["centered_raw_patch_effective_rank"] -= 1e-12
+        result = contract.evaluate_phase_a_continuation(
+            400,
+            failing,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertEqual(
+            result["control"],
+            contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
+        )
+
+        failing = deepcopy(passing)
+        failing["hold_action_mse"] = (
+            failing["non_hold_true_pair_mse"]
+            / (thresholds["hold_action_ratio_maximum"] + 1e-6)
+        )
+        result = contract.evaluate_phase_a_continuation(
+            400,
+            failing,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertEqual(
+            result["control"],
+            contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
+        )
+
+        result = contract.evaluate_phase_a_continuation(
+            400,
+            passing,
+            _update0_metrics(),
+            {
+                "rng_state_preserved": True,
+                "state_mutation_count": 1,
+            },
+        )
+        self.assertFalse(result["passed"])
+        self.assertEqual(
+            result["control"],
+            contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
+        )
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a_continuation(
+                1_000,
+                passing,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
 
     def test_phase_b_thresholds_are_strict_where_preregistered(self) -> None:
         passing = {
@@ -439,6 +742,18 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             preregistration_path.write_bytes(
                 (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
             )
+            prior_terminal_audit_path = (
+                root / contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH
+            )
+            prior_terminal_audit_path.parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+            prior_terminal_audit_path.write_bytes(
+                (
+                    ROOT / contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH
+                ).read_bytes()
+            )
             self.assertEqual(
                 contract.current_source_bindings(root),
                 {
@@ -450,6 +765,8 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                         hashlib.sha256(manifest_raw).hexdigest(),
                     contract.PREREGISTRATION_RELATIVE_PATH:
                         contract.PREREGISTRATION_FILE_SHA256,
+                    contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH:
+                        contract.PRIOR_TERMINAL_AUDIT_FILE_SHA256,
                 },
             )
             (root / contract.CONTRACT_RELATIVE_PATH).write_bytes(b"changed\n")
@@ -476,14 +793,19 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         sources[contract.PREREGISTRATION_RELATIVE_PATH] = (
             contract.PREREGISTRATION_FILE_SHA256
         )
+        sources[contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH] = (
+            contract.PRIOR_TERMINAL_AUDIT_FILE_SHA256
+        )
         review_core = {
             "schema": contract.REVIEW_SCHEMA,
-            "status": "PASS_SOURCE_ONLY",
+            "status": "PASS_SOURCE_AND_SCIENCE",
             "implementation_author": contract.IMPLEMENTATION_AUTHOR,
             "reviewer": "/root/independent_reviewer",
             "reviewed_sources": sources,
             "source_manifest": manifest_binding,
             "preregistration": contract.preregistration_binding(),
+            "prior_terminal_audit":
+                contract.prior_terminal_audit_binding(),
             "science_contract": contract.science_contract(),
             "source_only_checks": {
                 "stdlib_only_contract_import": True,
@@ -491,6 +813,8 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 "checkpoints_or_tensors_opened": [],
                 "sealed_or_heldout_opened": [],
             },
+            "scientific_checks":
+                dict(contract.SCIENTIFIC_REVIEW_CHECKS),
             "findings": [],
             "authority": dict(contract.REVIEW_AUTHORITY),
         }
@@ -499,6 +823,17 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             contract.validate_review(review, expected_sources=sources),
             review,
         )
+        changed_review = deepcopy(review)
+        changed_review["scientific_checks"][
+            "continuation_gates_exact"
+        ] = False
+        changed_review.pop("content_sha256")
+        changed_review = contract.with_content_sha256(changed_review)
+        with self.assertRaises(PermissionError):
+            contract.validate_review(
+                changed_review,
+                expected_sources=sources,
+            )
         review_raw = _canonical_line(review)
         review_binding = contract.artifact_binding(
             contract.REVIEW_RELATIVE_PATH,
