@@ -1,8 +1,8 @@
-"""Exact helpers for Patch-Whitened Action-Residual JEPA V5 Latent Flow.
+"""Exact helpers for Patch-Whitened Action-Residual JEPA V6 Inverse Dynamics.
 
 This module intentionally contains no data, schedule, runner, or custody
-logic.  It only implements the frozen mathematical mechanism registered in
-the V5 State-Dependent Latent-Flow preregistration.
+logic.  It preserves the frozen V5 State-Dependent Latent-Flow mechanism and
+adds only the training-time inverse-dynamics mechanism registered for V6.
 """
 from __future__ import annotations
 
@@ -59,8 +59,17 @@ class ActionIndexedLosses(NamedTuple):
     identification_per_row: torch.Tensor
 
 
+class InverseDynamicsTerms(NamedTuple):
+    """Inverse logits, unscaled diagnostics, and row-scaled training loss."""
+
+    loss: torch.Tensor
+    unscaled_cross_entropy: torch.Tensor
+    cross_entropy_per_row: torch.Tensor
+    logits: torch.Tensor
+
+
 class ActionConditionedLatentFlow(nn.Module):
-    """Wrap the shared projector with one exact-zero, bias-free flow map."""
+    """Wrap the shared projector with exact-zero flow and inverse maps."""
 
     def __init__(self, shared_projector: nn.Module):
         super().__init__()
@@ -76,6 +85,14 @@ class ActionConditionedLatentFlow(nn.Module):
             torch.zeros(
                 FLOW_DIM,
                 LATENT_DIM,
+                device=reference.device,
+                dtype=reference.dtype,
+            )
+        )
+        self.inverse_weight = nn.Parameter(
+            torch.zeros(
+                LATENT_DIM,
+                3 * LATENT_DIM,
                 device=reference.device,
                 dtype=reference.dtype,
             )
@@ -123,6 +140,25 @@ class ActionConditionedLatentFlow(nn.Module):
                 f"flow interactions must contain exactly {TOKEN_COUNT} tokens"
             )
         return F.linear(interactions, self.flow_weight, bias=None)
+
+    def project_inverse(self, pair_features: torch.Tensor) -> torch.Tensor:
+        """Map concatenated current, next, and normalized delta features."""
+
+        if (
+            pair_features.ndim != 3
+            or pair_features.shape[-1] != 3 * LATENT_DIM
+        ):
+            raise ValueError(
+                "inverse pair features must have shape (B,N,576)"
+            )
+        if (
+            pair_features.shape[0] < 1
+            or pair_features.shape[1] != TOKEN_COUNT
+        ):
+            raise ValueError(
+                f"inverse pair features must contain {TOKEN_COUNT} tokens"
+            )
+        return F.linear(pair_features, self.inverse_weight, bias=None)
 
 
 def initialize_action_gate_rows(predictor: nn.Module) -> dict[str, object]:
@@ -315,6 +351,142 @@ def relative_action_embeddings(
     if bool(torch.count_nonzero(relative[HOLD_ACTION_INDEX]).item()):
         raise RuntimeError("hold-relative action embedding is not exact zero")
     return relative
+
+
+def centered_action_embeddings(
+    predictor: nn.Module,
+    *,
+    device: torch.device,
+    dtype: torch.dtype,
+) -> torch.Tensor:
+    """Return the existing nine action embeddings centered over actions."""
+
+    action_embed = getattr(predictor, "action_embed", None)
+    if not isinstance(action_embed, nn.Module):
+        raise TypeError("predictor must expose an action_embed module")
+    candidates = torch.eye(
+        ACTION_DIM,
+        device=device,
+        dtype=dtype,
+    )[:, None, :]
+    embeddings = action_embed(candidates)
+    if tuple(embeddings.shape) != (ACTION_DIM, 1, LATENT_DIM):
+        raise ValueError(
+            "action_embed must map (9,1,9) to (9,1,192)"
+        )
+    if embeddings.device != device or embeddings.dtype != dtype:
+        raise TypeError("action embeddings must align with the online states")
+    if not bool(torch.isfinite(embeddings).all()):
+        raise FloatingPointError("action embeddings contain a nonfinite value")
+
+    centered = embeddings[:, 0] - embeddings[:, 0].mean(
+        dim=0,
+        keepdim=True,
+    )
+    if bool((centered == 0).all(dim=1).any().item()):
+        raise RuntimeError("a centered action embedding is exact zero")
+    pairwise_equal = (
+        centered[:, None] == centered[None, :]
+    ).all(dim=-1)
+    pairwise_equal.fill_diagonal_(False)
+    if bool(pairwise_equal.any().item()):
+        raise RuntimeError("centered action embeddings are not distinct")
+    return centered
+
+
+def inverse_dynamics_terms(
+    predictor: nn.Module,
+    prediction_projector: ActionConditionedLatentFlow,
+    online_current: torch.Tensor,
+    online_next: torch.Tensor,
+    executed_indices: torch.Tensor,
+    row_scale: torch.Tensor,
+) -> InverseDynamicsTerms:
+    """Compute the frozen V6 inverse-action objective and diagnostics."""
+
+    if not isinstance(
+        prediction_projector,
+        ActionConditionedLatentFlow,
+    ):
+        raise TypeError(
+            "prediction_projector must be ActionConditionedLatentFlow"
+        )
+    _validate_tokens(online_current, name="online_current")
+    _validate_tokens(online_next, name="online_next")
+    if tuple(online_current.shape[1:]) != (TOKEN_COUNT, LATENT_DIM):
+        raise ValueError(
+            f"online_current must contain {TOKEN_COUNT} tokens"
+        )
+    if online_next.shape != online_current.shape:
+        raise ValueError("online_next must align exactly with online_current")
+    if (
+        online_current.dtype != torch.float32
+        or online_next.dtype != online_current.dtype
+        or online_next.device != online_current.device
+    ):
+        raise TypeError("online states must be aligned float32 tensors")
+    if (
+        not bool(torch.isfinite(online_current).all())
+        or not bool(torch.isfinite(online_next).all())
+    ):
+        raise FloatingPointError("online states contain a nonfinite value")
+
+    batch = online_current.shape[0]
+    _validate_action_indices(executed_indices, batch=batch)
+    if executed_indices.device != online_current.device:
+        raise TypeError("action indices must align with the online states")
+    if row_scale.ndim != 1 or tuple(row_scale.shape) != (batch,):
+        raise ValueError(f"row_scale must have shape ({batch},)")
+    if (
+        row_scale.device != online_current.device
+        or row_scale.dtype != torch.float32
+    ):
+        raise TypeError("row_scale must be aligned float32")
+    if (
+        not bool(torch.isfinite(row_scale).all())
+        or not bool((row_scale > 0).all().item())
+    ):
+        raise FloatingPointError("row_scale must be finite and positive")
+
+    normalized_delta = F.layer_norm(
+        online_next - online_current,
+        normalized_shape=(LATENT_DIM,),
+        weight=None,
+        bias=None,
+        eps=1e-5,
+    )
+    pair_features = torch.cat(
+        (online_current, online_next, normalized_delta),
+        dim=-1,
+    )
+    query = prediction_projector.project_inverse(pair_features).mean(dim=1)
+    prototypes = centered_action_embeddings(
+        predictor,
+        device=online_current.device,
+        dtype=online_current.dtype,
+    )
+    logits = F.linear(query, prototypes, bias=None) / math.sqrt(LATENT_DIM)
+    if (
+        tuple(logits.shape) != (batch, ACTION_DIM)
+        or not bool(torch.isfinite(logits).all())
+    ):
+        raise FloatingPointError("inverse logits are invalid")
+
+    cross_entropy_per_row = F.cross_entropy(
+        logits,
+        executed_indices,
+        reduction="none",
+    )
+    unscaled_cross_entropy = cross_entropy_per_row.mean()
+    loss = (
+        row_scale.detach() * cross_entropy_per_row
+    ).mean()
+    return InverseDynamicsTerms(
+        loss=loss,
+        unscaled_cross_entropy=unscaled_cross_entropy,
+        cross_entropy_per_row=cross_entropy_per_row,
+        logits=logits,
+    )
 
 
 def bounded_flow_cells(raw_flow: torch.Tensor) -> torch.Tensor:
@@ -670,6 +842,7 @@ __all__ = [
     "ActionIndexedLosses",
     "ActionIndexedPredictions",
     "ActionConditionedLatentFlow",
+    "InverseDynamicsTerms",
     "LATENT_DIM",
     "MAXIMUM_FLOW_CELL_DISPLACEMENT",
     "RESIDUAL_ALPHA",
@@ -680,8 +853,10 @@ __all__ = [
     "action_independent_trunk",
     "action_indexed_energy_nll",
     "bounded_flow_cells",
+    "centered_action_embeddings",
     "flow_residual_reconstruct",
     "initialize_action_gate_rows",
+    "inverse_dynamics_terms",
     "patch_whitening_terms",
     "predict_action_conditioned_flow_warps",
     "relative_action_embeddings",

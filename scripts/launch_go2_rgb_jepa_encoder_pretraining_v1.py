@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authority-first launcher for State-Dependent Latent-Flow JEPA V5."""
+"""Authority-first launcher for Existing-Pair Inverse-Dynamics JEPA V6."""
 from __future__ import annotations
 
 import importlib.util
@@ -11,7 +11,7 @@ from typing import Sequence
 ROOT = Path(__file__).resolve().parents[1]
 PREFLIGHT_ENVIRONMENT_KEY = (
     "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
-    "V5_STATE_DEPENDENT_LATENT_FLOW_PREFLIGHT_JSON"
+    "V6_EXISTING_PAIR_INVERSE_DYNAMICS_PREFLIGHT_JSON"
 )
 
 
@@ -28,14 +28,14 @@ def _source_only_module(name: str, path: Path):
 contract = _source_only_module(
     (
         "_lewm_go2_rgb_jepa_encoder_pretraining_"
-        "v5_state_dependent_latent_flow_launcher_contract"
+        "v6_existing_pair_inverse_dynamics_launcher_contract"
     ),
     ROOT / "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py",
 )
 _BASE = _source_only_module(
     (
         "_lewm_go2_rgb_jepa_encoder_pretraining_"
-        "v5_state_dependent_latent_flow_base_launcher"
+        "v6_existing_pair_inverse_dynamics_base_launcher"
     ),
     ROOT / "scripts/launch_go2_rgb_causal_temporal_perception_v1.py",
 )

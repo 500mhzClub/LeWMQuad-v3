@@ -35,7 +35,7 @@ assert "torch" not in sys.modules
 assert not any(name.startswith("torch.") for name in sys.modules)
 assert module.PREFLIGHT_ENVIRONMENT_KEY == (
     "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
-    "V5_STATE_DEPENDENT_LATENT_FLOW_PREFLIGHT_JSON"
+    "V6_EXISTING_PAIR_INVERSE_DYNAMICS_PREFLIGHT_JSON"
 )
 print("PASS")
 """
@@ -97,7 +97,7 @@ def _tiny_model(torch):
             self.action_embed = nn.Linear(9, latent_dim, bias=False)
 
         def predict_step(self, state, action):
-            raise AssertionError("V5 must bypass predictor.predict_step")
+            raise AssertionError("V6 must bypass predictor.predict_step")
 
     class Block(nn.Module):
         def __init__(self) -> None:
@@ -135,7 +135,7 @@ def _tiny_model(torch):
     return Tiny()
 
 
-def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
+def test_v6_adapter_composes_forward_and_inverse_losses_and_routes_gradients() -> None:
     torch = pytest.importorskip("torch")
 
     module = _load_runner("_jepa_encoder_v1_current_only")
@@ -163,6 +163,8 @@ def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
         output["jepa_loss"]
         + module.contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT
         * output["action_identification_loss"]
+        + module.contract.INVERSE_DYNAMICS_LOSS_WEIGHT
+        * output["inverse_dynamics_loss"]
         + module.contract.WHITENING_VARIANCE_WEIGHT
         * (
             output["raw_whitening_variance_loss"]
@@ -188,6 +190,10 @@ def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
         "loss",
         "jepa_loss",
         "action_identification_loss",
+        "inverse_dynamics_loss",
+        "inverse_unscaled_cross_entropy",
+        "inverse_cross_entropy_per_row",
+        "inverse_logits",
         "raw_whitening_variance_loss",
         "raw_whitening_covariance_loss",
         "projected_whitening_variance_loss",
@@ -198,18 +204,21 @@ def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
         "control_indices",
         "all_flows_cell",
         "online_state",
+        "online_next_state",
         "raw_target_next",
         "projected_target_next",
         "projected_target_current",
     }
     output["loss"].backward()
 
-    assert len(model.encoder.seen) == 1
+    assert len(model.encoder.seen) == 2
     assert torch.equal(model.encoder.seen[0], current)
+    assert torch.equal(model.encoder.seen[1], next_rgb.detach())
     assert len(model.target_encoder.seen) == 2
     assert torch.equal(model.target_encoder.seen[0], current)
     assert torch.equal(model.target_encoder.seen[1], next_rgb.detach())
-    assert next_rgb.grad is None
+    assert next_rgb.grad is not None
+    assert torch.count_nonzero(next_rgb.grad).item() == 0
     assert model.encoder.scale.grad is not None
     assert torch.count_nonzero(model.encoder.scale.grad).item() > 0
     for parameter in (
@@ -222,6 +231,16 @@ def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
         assert parameter.grad is not None
         assert torch.isfinite(parameter.grad).all()
         assert torch.count_nonzero(parameter.grad).item() > 0
+    assert model.prediction_projector.inverse_weight.grad is not None
+    assert torch.isfinite(
+        model.prediction_projector.inverse_weight.grad
+    ).all()
+    assert (
+        torch.count_nonzero(
+            model.prediction_projector.inverse_weight.grad
+        ).item()
+        > 0
+    )
     assert all(
         parameter.grad is None
         or torch.count_nonzero(parameter.grad).item() == 0
@@ -275,7 +294,7 @@ def test_phase_a_partition_freezes_and_excludes_appearance_exactly() -> None:
         module._phase_a_parameter_partition(model)
 
 
-def test_phase_a_initialization_receipt_binds_zero_bias_free_shared_flow(
+def test_phase_a_initialization_receipt_binds_zero_bias_free_flow_and_inverse(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     torch = pytest.importorskip("torch")
@@ -355,6 +374,22 @@ def test_phase_a_initialization_receipt_binds_zero_bias_free_shared_flow(
     assert initialization["grid_sample_align_corners"] is True
     assert initialization["zero_initialized_without_rng_draw"] is True
     assert initialization["global_rng_state_preserved"] is True
+    inverse = receipt[
+        "existing_pair_inverse_dynamics_initialization"
+    ]
+    assert inverse["parameter_path"] == (
+        "prediction_projector.inverse_weight"
+    )
+    assert inverse["weight_shape"] == [192, 576]
+    assert inverse["weight_scalar_count"] == 110_592
+    assert inverse["exact_zero_weight_scalar_count"] == 110_592
+    assert inverse["nonzero_weight_scalar_count"] == 0
+    assert inverse["bias_parameter_count"] == 0
+    assert inverse["layer_norm_affine_parameter_count"] == 0
+    assert inverse["layer_norm_epsilon"] == 1e-5
+    assert inverse["auxiliary_optimizer_learning_rate"] == 3e-4
+    assert inverse["phase_b_copy_count"] == 0
+    assert inverse["phase_b_optimizer_inclusion_count"] == 0
     assert model.prediction_projector.flow_weight.shape == (2, 192)
     assert (
         torch.count_nonzero(
@@ -362,11 +397,26 @@ def test_phase_a_initialization_receipt_binds_zero_bias_free_shared_flow(
         ).item()
         == 0
     )
-    assert "flow_bias" not in dict(
-        model.prediction_projector.named_parameters(recurse=False)
+    assert model.prediction_projector.inverse_weight.shape == (192, 576)
+    assert (
+        torch.count_nonzero(
+            model.prediction_projector.inverse_weight
+        ).item()
+        == 0
     )
+    assert set(
+        dict(
+            model.prediction_projector.named_parameters(
+                recurse=False
+            )
+        )
+    ) == {"flow_weight", "inverse_weight"}
     assert any(
         parameter is model.prediction_projector.flow_weight
+        for parameter in partition["other"]
+    )
+    assert any(
+        parameter is model.prediction_projector.inverse_weight
         for parameter in partition["other"]
     )
 
@@ -462,7 +512,7 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
     latent_dim = 192
     patch_count = 256
 
-    class TokenEncoder(torch.nn.Module):
+    class OnlineTokenEncoder(torch.nn.Module):
         def forward_tokens(self, image):
             scalar = image[:, 0, 0, 0]
             patches = scalar[:, None, None].expand(
@@ -477,16 +527,30 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
             )
             return torch.cat((cls, patches), dim=1)
 
+    class TargetTokenEncoder(torch.nn.Module):
+        def forward_tokens(self, image):
+            return torch.zeros(
+                image.shape[0],
+                patch_count + 1,
+                latent_dim,
+                dtype=image.dtype,
+                device=image.device,
+            )
+
     class DiagnosticModel(torch.nn.Module):
         def __init__(self) -> None:
             super().__init__()
-            self.encoder = TokenEncoder()
+            self.encoder = OnlineTokenEncoder()
             self.online_geometry = torch.nn.Identity()
-            self.target_encoder = TokenEncoder()
+            self.target_encoder = TargetTokenEncoder()
             self.target_geometry_module = torch.nn.Identity()
             self.target_projector = torch.nn.Identity()
             self.predictor = torch.nn.Identity()
-            self.prediction_projector = torch.nn.Identity()
+            self.prediction_projector = torch.nn.Module()
+            self.prediction_projector.register_parameter(
+                "inverse_weight",
+                torch.nn.Parameter(torch.ones(1)),
+            )
             self.appearance_projector = torch.nn.Linear(
                 latent_dim, latent_dim
             )
@@ -506,7 +570,9 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
             current = torch.tensor(
                 [float(index + 1) for index in indices]
             ).reshape(-1, 1, 1, 1)
-            next_rgb = torch.zeros_like(current)
+            next_rgb = torch.tensor(
+                [float(index + 101) for index in indices]
+            ).reshape(-1, 1, 1, 1)
             requested = torch.tensor(
                 [int(pairs[index]["requested_index"]) for index in indices]
             )
@@ -542,6 +608,7 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
     monkeypatch.setattr(module, "_state_sha", lambda *_args: "a" * 64)
 
     state_skip_pairs: list[tuple[object, object]] = []
+    inverse_state_pairs: list[tuple[object, object]] = []
     requested_seen: list[int] = []
 
     def predict_residuals(
@@ -588,12 +655,43 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
             all_flows_cell=all_flows_cell,
         )
 
+    def inverse_terms(
+        _predictor,
+        _projector,
+        current_state,
+        _next_state,
+        executed_indices,
+        row_scale,
+    ):
+        inverse_state_pairs.append((
+            current_state[:, 0, 0].detach().cpu().clone(),
+            _next_state[:, 0, 0].detach().cpu().clone(),
+        ))
+        logits = torch.zeros(
+            current_state.shape[0],
+            9,
+            dtype=current_state.dtype,
+            device=current_state.device,
+        )
+        per_row = torch.nn.functional.cross_entropy(
+            logits,
+            executed_indices,
+            reduction="none",
+        )
+        return SimpleNamespace(
+            loss=(row_scale * per_row).mean(),
+            unscaled_cross_entropy=per_row.mean(),
+            cross_entropy_per_row=per_row,
+            logits=logits,
+        )
+
     monkeypatch.setattr(
         module,
         "_phase_a_ops",
         lambda: SimpleNamespace(
             normalize_spatial_tokens=lambda tokens: tokens,
             predict_action_conditioned_flow_warps=predict_residuals,
+            inverse_dynamics_terms=inverse_terms,
         ),
     )
     model = DiagnosticModel()
@@ -612,8 +710,25 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
     assert set(requested_seen) == set(range(9))
     assert len(requested_seen) == 18
     assert all(
-        torch.equal(state_values, skip_values)
-        for state_values, skip_values in state_skip_pairs
+        torch.count_nonzero(skip_values).item() == 0
+        for _state_values, skip_values in state_skip_pairs
+    )
+    assert len(inverse_state_pairs) == 2
+    assert torch.equal(
+        inverse_state_pairs[0][0],
+        torch.arange(1.0, 10.0),
+    )
+    assert torch.equal(
+        inverse_state_pairs[0][1],
+        torch.arange(101.0, 110.0),
+    )
+    next_mapping = module._scene_derangement(
+        pair_rows,
+        endpoint_key="next_endpoint_sha256",
+    )
+    assert torch.equal(
+        inverse_state_pairs[1][1],
+        inverse_state_pairs[0][1][list(next_mapping)],
     )
     assert metric["pair_count"] == 9
     assert metric["cyclic_wrong_action_pair_count"] == 9
@@ -643,6 +758,22 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
             for name in module.contract.ACTION_VOCABULARY
         },
     }
+    inverse = metric["inverse_dynamics"]
+    assert inverse["all_values_finite"] is True
+    assert inverse["weight_any_nonzero"] is True
+    assert inverse["maximum_absolute_logit"] == 0.0
+    assert inverse["correct_unscaled_cross_entropy"] == pytest.approx(
+        torch.log(torch.tensor(9.0)).item()
+    )
+    assert inverse["deranged_unscaled_cross_entropy"] == pytest.approx(
+        inverse["correct_unscaled_cross_entropy"]
+    )
+    assert inverse[
+        "correct_to_deranged_cross_entropy_ratio"
+    ] == pytest.approx(1.0)
+    assert inverse["top1_accuracy"] == pytest.approx(1.0 / 9.0)
+    assert inverse["macro_balanced_accuracy"] == pytest.approx(1.0 / 9.0)
+    assert inverse["positive_family_margin_count"] == 0
     assert observation["rng_state_preserved"] is True
     assert observation["state_mutation_count"] == 0
     assert model.training is True
@@ -693,6 +824,20 @@ def _passing_phase_a_metric(contract) -> dict[str, object]:
                 for name in contract.ACTION_VOCABULARY
             },
         },
+        "inverse_dynamics": {
+            "all_values_finite": True,
+            "weight_any_nonzero": True,
+            "maximum_absolute_logit": 0.5,
+            "correct_unscaled_cross_entropy": 1.0,
+            "deranged_unscaled_cross_entropy": 1.2,
+            "correct_to_deranged_cross_entropy_ratio": 1.0 / 1.2,
+            "top1_accuracy": 0.5,
+            "macro_balanced_accuracy": 0.5,
+            "positive_family_margin_count": 8,
+            "per_family_deranged_minus_correct_cross_entropy": {
+                family: 0.2 for family in contract.SCENE_FAMILIES
+            },
+        },
     }
 
 
@@ -716,6 +861,22 @@ def test_exact_phase_gates_keep_strict_and_population_boundaries() -> None:
                 name: False for name in contract.ACTION_VOCABULARY
             },
         },
+        "inverse_dynamics": {
+            "all_values_finite": True,
+            "weight_any_nonzero": False,
+            "maximum_absolute_logit": 0.0,
+            "correct_unscaled_cross_entropy": 2.1972245773362196,
+            "deranged_unscaled_cross_entropy": 2.1972245773362196,
+            "correct_to_deranged_cross_entropy_ratio": 1.0,
+            "top1_accuracy": 1.0 / 9.0,
+            "macro_balanced_accuracy": 1.0 / 9.0,
+            "positive_family_margin_count": 0,
+            "per_family_deranged_minus_correct_cross_entropy": {
+                family: 0.0 for family in contract.SCENE_FAMILIES
+            },
+        },
+        "all_inverse_logits_bitwise_zero": True,
+        "correct_and_deranged_cross_entropy_bitwise_equal": True,
     }
     integrity = {
         "rng_state_preserved": True,
@@ -849,6 +1010,8 @@ def test_update100_continuation_failure_stops_and_preserves_status(
             "loss": objective,
             "jepa_loss": objective,
             "action_identification_loss": zero,
+            "inverse_dynamics_loss": zero,
+            "inverse_unscaled_cross_entropy": zero,
             "raw_whitening_variance_loss": zero,
             "raw_whitening_covariance_loss": zero,
             "projected_whitening_variance_loss": zero,
@@ -879,12 +1042,43 @@ def test_update100_continuation_failure_stops_and_preserves_status(
                         for name in module.contract.ACTION_VOCABULARY
                     },
                 },
+                "inverse_dynamics": {
+                    "all_values_finite": True,
+                    "weight_any_nonzero": update != 0,
+                    "maximum_absolute_logit":
+                        0.0 if update == 0 else 0.5,
+                    "correct_unscaled_cross_entropy":
+                        2.1972245773362196 if update == 0 else 1.0,
+                    "deranged_unscaled_cross_entropy":
+                        2.1972245773362196 if update == 0 else 1.2,
+                    "correct_to_deranged_cross_entropy_ratio":
+                        1.0 if update == 0 else 1.0 / 1.2,
+                    "top1_accuracy":
+                        1.0 / 9.0 if update == 0 else 0.5,
+                    "macro_balanced_accuracy":
+                        1.0 / 9.0 if update == 0 else 0.5,
+                    "positive_family_margin_count":
+                        0 if update == 0 else 8,
+                    "per_family_deranged_minus_correct_cross_entropy": {
+                        family: 0.0 if update == 0 else 0.2
+                        for family in module.contract.SCENE_FAMILIES
+                    },
+                },
             },
             "action_indexed_symmetry": (
                 {
                     "all_action_predictions_bitwise_equal": True,
                     "all_action_unordered_pair_count": 36,
                     "all_action_prediction_row_count": 495,
+                }
+                if update == 0
+                else None
+            ),
+            "inverse_dynamics_update_zero": (
+                {
+                    "all_inverse_logits_bitwise_zero": True,
+                    "correct_and_deranged_cross_entropy_bitwise_equal":
+                        True,
                 }
                 if update == 0
                 else None

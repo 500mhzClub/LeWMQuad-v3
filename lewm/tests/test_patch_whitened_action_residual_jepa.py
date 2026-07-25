@@ -22,11 +22,14 @@ from lewm.models.patch_whitened_action_residual_jepa import (
     ActionIndexedLosses,
     ActionIndexedPredictions,
     ActionConditionedLatentFlow,
+    InverseDynamicsTerms,
     action_independent_trunk,
     action_indexed_energy_nll,
     bounded_flow_cells,
+    centered_action_embeddings,
     flow_residual_reconstruct,
     initialize_action_gate_rows,
+    inverse_dynamics_terms,
     patch_whitening_terms,
     predict_action_conditioned_flow_warps,
     relative_action_embeddings,
@@ -171,10 +174,17 @@ def test_flow_wrapper_is_zero_bias_free_rng_free_and_has_exact_grid() -> None:
     assert tuple(wrapper.flow_weight.shape) == (2, LATENT_DIM)
     assert wrapper.flow_weight.numel() == 384
     assert torch.count_nonzero(wrapper.flow_weight).item() == 0
+    assert tuple(wrapper.inverse_weight.shape) == (
+        LATENT_DIM,
+        3 * LATENT_DIM,
+    )
+    assert wrapper.inverse_weight.numel() == 110592
+    assert torch.count_nonzero(wrapper.inverse_weight).item() == 0
     assert tuple(wrapper.identity_grid_xy.shape) == (1, 16, 16, 2)
     assert "identity_grid_xy" not in wrapper.state_dict()
     assert [name for name, _ in wrapper.named_parameters()] == [
         "flow_weight",
+        "inverse_weight",
         "shared_projector.linear.weight",
         "shared_projector.linear.bias",
     ]
@@ -367,6 +377,243 @@ def test_action_embeddings_are_distinct_with_exact_hold_reference() -> None:
     for left in range(ACTION_DIM):
         for right in range(left + 1, ACTION_DIM):
             assert not torch.equal(relative[left], relative[right])
+
+
+def _inverse_state_pair(
+    batch: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    current = _spatial_latents(batch)
+    feature_axis = torch.linspace(-0.2, 0.3, LATENT_DIM)
+    token_axis = torch.linspace(-0.1, 0.15, TOKEN_COUNT)[:, None]
+    next_state = torch.stack([
+        F.normalize(
+            current[index]
+            + float(index + 1) * token_axis * feature_axis[None],
+            dim=-1,
+        )
+        for index in range(batch)
+    ])
+    return current, next_state
+
+
+def test_inverse_dynamics_matches_exact_registered_formula() -> None:
+    predictor, projector = _spatial_fixture()
+    current, next_state = _inverse_state_pair(3)
+    indices = torch.tensor([0, 4, 8], dtype=torch.long)
+    row_scale = torch.tensor(
+        [0.15, 0.25, 0.40],
+        dtype=torch.float32,
+        requires_grad=True,
+    )
+    with torch.no_grad():
+        projector.inverse_weight.copy_(
+            torch.linspace(
+                -0.002,
+                0.003,
+                projector.inverse_weight.numel(),
+            ).reshape_as(projector.inverse_weight)
+        )
+
+    terms = inverse_dynamics_terms(
+        predictor,
+        projector,
+        current,
+        next_state,
+        indices,
+        row_scale,
+    )
+    delta = F.layer_norm(
+        next_state - current,
+        normalized_shape=(LATENT_DIM,),
+        weight=None,
+        bias=None,
+        eps=1e-5,
+    )
+    features = torch.cat((current, next_state, delta), dim=-1)
+    query = F.linear(
+        features,
+        projector.inverse_weight,
+        bias=None,
+    ).mean(dim=1)
+    raw_embeddings = predictor.action_embed(
+        torch.eye(ACTION_DIM)[:, None]
+    )[:, 0]
+    prototypes = raw_embeddings - raw_embeddings.mean(
+        dim=0,
+        keepdim=True,
+    )
+    expected_logits = F.linear(
+        query,
+        prototypes,
+        bias=None,
+    ) / math.sqrt(LATENT_DIM)
+    expected_per_row = F.cross_entropy(
+        expected_logits,
+        indices,
+        reduction="none",
+    )
+
+    assert isinstance(terms, InverseDynamicsTerms)
+    assert torch.equal(
+        centered_action_embeddings(
+            predictor,
+            device=torch.device("cpu"),
+            dtype=torch.float32,
+        ),
+        prototypes,
+    )
+    assert torch.equal(terms.logits, expected_logits)
+    assert torch.equal(terms.cross_entropy_per_row, expected_per_row)
+    assert torch.equal(
+        terms.unscaled_cross_entropy,
+        expected_per_row.mean(),
+    )
+    assert torch.equal(
+        terms.loss,
+        (row_scale.detach() * expected_per_row).mean(),
+    )
+    assert torch.autograd.grad(
+        terms.loss,
+        row_scale,
+        allow_unused=True,
+    )[0] is None
+
+
+def test_inverse_zero_initialization_and_activated_gradient_topology() -> None:
+    predictor, projector = _spatial_fixture()
+    current_value, next_value = _inverse_state_pair(3)
+    shared_encoder = nn.Linear(LATENT_DIM, LATENT_DIM, bias=False)
+    with torch.no_grad():
+        shared_encoder.weight.copy_(torch.eye(LATENT_DIM))
+    current_input = current_value.detach().clone().requires_grad_()
+    next_input = next_value.detach().clone().requires_grad_()
+    current = shared_encoder(current_input)
+    next_state = shared_encoder(next_input)
+    indices = torch.tensor([0, 3, 8], dtype=torch.long)
+    row_scale = torch.tensor([0.2, 0.3, 0.5])
+    action_parameters = tuple(predictor.action_embed.parameters())
+
+    initial = inverse_dynamics_terms(
+        predictor,
+        projector,
+        current,
+        next_state,
+        indices,
+        row_scale,
+    )
+    initial_gradients = torch.autograd.grad(
+        initial.loss,
+        (
+            projector.inverse_weight,
+            current_input,
+            next_input,
+            shared_encoder.weight,
+            *action_parameters,
+        ),
+        allow_unused=True,
+    )
+
+    assert torch.count_nonzero(projector.inverse_weight).item() == 0
+    assert torch.count_nonzero(initial.logits).item() == 0
+    assert torch.equal(
+        initial.cross_entropy_per_row,
+        F.cross_entropy(
+            torch.zeros_like(initial.logits),
+            indices,
+            reduction="none",
+        ),
+    )
+    inverse_gradient = initial_gradients[0]
+    assert inverse_gradient is not None
+    assert torch.isfinite(inverse_gradient).all()
+    assert torch.count_nonzero(inverse_gradient).item() > 0
+    assert all(
+        gradient is None
+        or (
+            torch.isfinite(gradient).all()
+            and torch.count_nonzero(gradient).item() == 0
+        )
+        for gradient in initial_gradients[1:]
+    )
+
+    with torch.no_grad():
+        projector.inverse_weight.copy_(
+            -0.01
+            * inverse_gradient
+            / inverse_gradient.norm().clamp_min(1e-8)
+        )
+    active_current = current_value.detach().clone().requires_grad_()
+    active_next = next_value.detach().clone().requires_grad_()
+    encoded_active_current = shared_encoder(active_current)
+    encoded_active_next = shared_encoder(active_next)
+    activated = inverse_dynamics_terms(
+        predictor,
+        projector,
+        encoded_active_current,
+        encoded_active_next,
+        indices,
+        row_scale,
+    )
+    activated_gradients = torch.autograd.grad(
+        activated.loss,
+        (
+            projector.inverse_weight,
+            active_current,
+            active_next,
+            shared_encoder.weight,
+            *action_parameters,
+        ),
+        allow_unused=True,
+    )
+
+    assert torch.count_nonzero(projector.inverse_weight).item() > 0
+    assert torch.count_nonzero(activated.logits).item() > 0
+    assert all(
+        gradient is not None
+        and torch.isfinite(gradient).all()
+        and torch.count_nonzero(gradient).item() > 0
+        for gradient in activated_gradients[:4]
+    )
+    assert any(
+        gradient is not None
+        and torch.isfinite(gradient).all()
+        and torch.count_nonzero(gradient).item() > 0
+        for gradient in activated_gradients[4:]
+    )
+
+
+def test_inverse_dynamics_rejects_invalid_executed_indices() -> None:
+    predictor, projector = _spatial_fixture()
+    current, next_state = _inverse_state_pair(2)
+    row_scale = torch.ones(2)
+
+    with pytest.raises(TypeError, match="torch.long"):
+        inverse_dynamics_terms(
+            predictor,
+            projector,
+            current,
+            next_state,
+            torch.tensor([0, 1], dtype=torch.int32),
+            row_scale,
+        )
+    with pytest.raises(ValueError, match=r"shape \(2,\)"):
+        inverse_dynamics_terms(
+            predictor,
+            projector,
+            current,
+            next_state,
+            torch.tensor([[0], [1]], dtype=torch.long),
+            row_scale,
+        )
+    with pytest.raises(ValueError, match=r"lie in \[0, 9\)"):
+        inverse_dynamics_terms(
+            predictor,
+            projector,
+            current,
+            next_state,
+            torch.tensor([0, ACTION_DIM], dtype=torch.long),
+            row_scale,
+        )
 
 
 def test_all_flow_predictions_start_bitwise_equal_and_gather_exactly() -> None:

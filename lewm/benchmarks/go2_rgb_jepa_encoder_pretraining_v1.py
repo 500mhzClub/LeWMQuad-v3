@@ -1,4 +1,4 @@
-"""Source-only contract for Action-Residual JEPA V5 Latent-Flow.
+"""Source-only contract for Action-Residual JEPA V6 Inverse Dynamics.
 
 Importing this module reads no generated input, RGB payload, checkpoint,
 runtime output, or accelerator state and imports no tensor library.  The
@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 IMPLEMENTATION_AUTHOR = "/root"
 SCHEMA_PREFIX = (
     "lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v5_state_dependent_latent_flow"
+    "v6_existing_pair_inverse_dynamics"
 )
 
 CONTRACT_RELATIVE_PATH = (
@@ -118,42 +118,56 @@ CAMERA_FIT_METRICS_RELATIVE_PATH = (
 
 PREREGISTRATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v5_state_dependent_latent_flow_"
+    "v6_existing_pair_inverse_dynamics_"
     "preregistration_2026-07-25.md"
 )
-PREREGISTRATION_COMMIT = "d2379f74bb16d66ea0b0175bb890ddbf6be3c1fd"
+PREREGISTRATION_COMMIT = "d552c16ebc813e49dca015354c080720b6bcd3a6"
 PREREGISTRATION_FILE_SHA256 = (
-    "9c435592d0b9771b71503fc43c7d915be6d26b32ac6f60c35aa6781696ba8ae0"
+    "43efa19c33d81795386940d138f5609a7a381240c3b3952e6ed6094ce646f703"
 )
-PREREGISTRATION_BYTE_COUNT = 12_019
+PREREGISTRATION_BYTE_COUNT = 14_178
 PRIOR_TERMINAL_AUDIT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v4_action_indexed_energy_nll_terminal_audit_2026-07-25.json"
+    "v5_state_dependent_latent_flow_terminal_audit_2026-07-25.json"
 )
 PRIOR_TERMINAL_AUDIT_COMMIT = (
-    "20a5099f17a6da17bb2858d96724f9f8e88ae3f9"
+    "c7bd138cf9a7a8195c968199fcbda5025564fe55"
 )
 PRIOR_TERMINAL_AUDIT_FILE_SHA256 = (
-    "ddb3c784382f92161b82d7321c8ad3c70901cb8d5a813c3ecc7153083480d809"
+    "aed6af35922d55cfa292c243fee8cf0cd27b43b01d96caca8bf12562f042406d"
 )
 PRIOR_TERMINAL_AUDIT_CONTENT_SHA256 = (
-    "c3edbe1932c5647e576b25216cee38ad904f5b5fa581d39f70c1d8cef3e92f01"
+    "f55b6854ca873e49598909ce2f238f098945a11d320bbe9a734f59479add9164"
 )
-PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 15_366
+PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 16_222
+TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_causal_two_frame_latent_motion_state_"
+    "source_feasibility_audit_2026-07-25.json"
+)
+TEMPORAL_FEASIBILITY_AUDIT_COMMIT = (
+    "6598b49e40be12da008de47590c129a611e8ae43"
+)
+TEMPORAL_FEASIBILITY_AUDIT_FILE_SHA256 = (
+    "2e34e4f4ef22abdc8d5ecd89c1c12acff8541e41b8440a307ba8cbeb4a432c3d"
+)
+TEMPORAL_FEASIBILITY_AUDIT_CONTENT_SHA256 = (
+    "2d947ea6857ddcbed82d778692c18831b2c920da6b3aa7c5723833ecb495a929"
+)
+TEMPORAL_FEASIBILITY_AUDIT_BYTE_COUNT = 3_261
 
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v5_state_dependent_latent_flow_"
+    "v6_existing_pair_inverse_dynamics_"
     "source_manifest_2026-07-25.json"
 )
 REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v5_state_dependent_latent_flow_"
+    "v6_existing_pair_inverse_dynamics_"
     "source_review_2026-07-25.json"
 )
 AUTHORIZATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v5_state_dependent_latent_flow_"
+    "v6_existing_pair_inverse_dynamics_"
     "execution_authorization_2026-07-25.json"
 )
 SOURCE_MANIFEST_SCHEMA = f"{SCHEMA_PREFIX}_source_manifest_v1"
@@ -208,12 +222,13 @@ SOURCE_REVIEW_ADDITIONAL_PATHS = (
     SOURCE_MANIFEST_RELATIVE_PATH,
     PREREGISTRATION_RELATIVE_PATH,
     PRIOR_TERMINAL_AUDIT_RELATIVE_PATH,
+    TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH,
 )
 
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_shared_observable_camera_ray_jepa_v5/"
     "rgb_patch_whitened_action_residual_jepa_"
-    "probe_v5_state_dependent_latent_flow"
+    "probe_v6_existing_pair_inverse_dynamics"
 )
 
 RAW_ROOT_RELATIVE_PATH = (
@@ -320,6 +335,12 @@ FLOW_Y_COMPONENT_INDEX = 1
 FLOW_GRID_SAMPLE_MODE = "bilinear"
 FLOW_GRID_SAMPLE_PADDING_MODE = "border"
 FLOW_GRID_SAMPLE_ALIGN_CORNERS = True
+INVERSE_INPUT_DIM = 3 * LATENT_DIM
+INVERSE_PROJECTION_SHAPE = (LATENT_DIM, INVERSE_INPUT_DIM)
+INVERSE_PROJECTION_PARAMETER_COUNT = LATENT_DIM * INVERSE_INPUT_DIM
+INVERSE_LAYER_NORM_EPSILON = 1e-5
+INVERSE_LOGIT_SCALE = 1.0 / math.sqrt(float(LATENT_DIM))
+INVERSE_DYNAMICS_LOSS_WEIGHT = 1.0
 PHASE_A_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX = (
     "grid_sampler_2d_backward_cuda does not have a deterministic "
     "implementation, but you set "
@@ -392,6 +413,15 @@ PHASE_A_UPDATE_400_THRESHOLDS = {
     "hold_action_ratio_maximum": 0.975,
     "positive_family_margin_count_minimum": 6,
 }
+PHASE_A_INVERSE_DYNAMICS_THRESHOLDS = {
+    "correct_unscaled_cross_entropy_strictly_less_than": math.log(
+        len(ACTION_VOCABULARY)
+    ),
+    "correct_to_deranged_cross_entropy_ratio_strictly_less_than": 0.99,
+    "macro_balanced_accuracy_strictly_greater_than":
+        2.0 / float(len(ACTION_VOCABULARY)),
+    "positive_family_margin_count_minimum": 6,
+}
 PHASE_B_PASS_THRESHOLDS = {
     "complete_physical_scope_count_minimum": 1,
     "passed_margin_count_minimum": 98,
@@ -455,6 +485,7 @@ PHASE_A_METRIC_FIELDS = frozenset({
     "shuffled_current_mse",
     "per_family",
     "latent_flow",
+    "inverse_dynamics",
 })
 PHASE_A_UPDATE0_FIELDS = frozenset({
     "raw_cross_sample_variance",
@@ -463,6 +494,9 @@ PHASE_A_UPDATE0_FIELDS = frozenset({
     "all_action_unordered_pair_count",
     "all_action_prediction_row_count",
     "latent_flow",
+    "inverse_dynamics",
+    "all_inverse_logits_bitwise_zero",
+    "correct_and_deranged_cross_entropy_bitwise_equal",
 })
 PHASE_A_UPDATE0_HEALTH_FIELDS = frozenset({
     "raw_cross_sample_variance",
@@ -479,6 +513,18 @@ LATENT_FLOW_OBSERVATION_FIELDS = frozenset({
     "maximum_absolute_flow_cell",
     "non_hold_action_nonzero_count",
     "per_action_any_nonzero",
+})
+INVERSE_DYNAMICS_OBSERVATION_FIELDS = frozenset({
+    "all_values_finite",
+    "weight_any_nonzero",
+    "maximum_absolute_logit",
+    "correct_unscaled_cross_entropy",
+    "deranged_unscaled_cross_entropy",
+    "correct_to_deranged_cross_entropy_ratio",
+    "top1_accuracy",
+    "macro_balanced_accuracy",
+    "positive_family_margin_count",
+    "per_family_deranged_minus_correct_cross_entropy",
 })
 
 CONTROL_CONTINUE = "CONTINUE_INFORMATIONAL"
@@ -527,13 +573,22 @@ SOURCE_ONLY_AUTHORITY = {
 }
 REVIEW_AUTHORITY = dict(SOURCE_ONLY_AUTHORITY)
 SCIENTIFIC_REVIEW_CHECKS = {
-    "prior_v4_terminal_audit_bound": True,
-    "fresh_v5_is_not_v4_retry_or_resume": True,
-    "v4_action_indexed_operator_bank_removed_exact": True,
+    "prior_v5_terminal_audit_bound": True,
+    "causal_two_frame_source_infeasibility_receipt_bound": True,
+    "fresh_v6_is_not_v5_retry_or_resume": True,
+    "v5_forward_latent_flow_mechanism_preserved_exact": True,
     "action_independent_zero_adaln_conditioning_exact": True,
-    "existing_action_embedder_reused_outside_adaln_exact": True,
+    "existing_action_embedder_reused_by_flow_and_inverse_exact": True,
     "shared_bias_free_zero_initialized_flow_projection_exact": True,
     "flow_projection_parameter_count_exactly_384": True,
+    "bias_free_zero_initialized_inverse_projection_exact": True,
+    "inverse_projection_parameter_count_exactly_110592": True,
+    "parameter_free_inverse_difference_layer_norm_exact": True,
+    "centered_existing_action_prototypes_and_sqrt192_logit_scale_exact": True,
+    "inverse_loss_uses_detached_forward_energy_scale_and_weight_one": True,
+    "inverse_zero_initialization_gradient_topology_exact": True,
+    "inverse_projection_in_auxiliary_optimizer_and_excluded_from_phase_b":
+        True,
     "hold_relative_action_embedding_exact": True,
     "one_patch_tanh_bound_and_two_over_fifteen_xy_grid_exact": True,
     "bilinear_border_align_corners_true_grid_sample_exact": True,
@@ -550,6 +605,9 @@ SCIENTIFIC_REVIEW_CHECKS = {
     "diagnostic_sentinels_absent_from_training": True,
     "hardest_wrong_action_gate_preserved_exact": True,
     "flow_observation_and_update100_activation_gates_exact": True,
+    "inverse_update0_observation_exact": True,
+    "inverse_update100_update400_and_final_gates_exact": True,
+    "within_scene_next_endpoint_derangement_exact": True,
     "update100_true_below_mean_target_gate_exact": True,
     "continuation_gates_exact": True,
     "terminal_phase_a_gate_exact": True,
@@ -586,7 +644,7 @@ def _load_static_physical_contract() -> Any:
     if hashlib.sha256(raw).hexdigest() != STATIC_PHYSICAL_CONTRACT_FILE_SHA256:
         raise ImportError("frozen static physical contract source changed")
     spec = importlib.util.spec_from_file_location(
-        "_lewm_jepa_encoder_v5_state_dependent_latent_flow_static_physical_contract",
+        "_lewm_jepa_encoder_v6_inverse_dynamics_static_physical_contract",
         source,
     )
     if spec is None or spec.loader is None:
@@ -734,6 +792,16 @@ def prior_terminal_audit_binding() -> dict[str, Any]:
     }
 
 
+def temporal_feasibility_audit_binding() -> dict[str, Any]:
+    return {
+        "path": TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH,
+        "commit": TEMPORAL_FEASIBILITY_AUDIT_COMMIT,
+        "file_sha256": TEMPORAL_FEASIBILITY_AUDIT_FILE_SHA256,
+        "content_sha256": TEMPORAL_FEASIBILITY_AUDIT_CONTENT_SHA256,
+        "byte_count": TEMPORAL_FEASIBILITY_AUDIT_BYTE_COUNT,
+    }
+
+
 def _runtime_leaf(path: str) -> dict[str, Any]:
     return {
         "path": path,
@@ -868,9 +936,9 @@ def science_contract() -> dict[str, Any]:
     return {
         "schema": f"{SCHEMA_PREFIX}_science_contract_v1",
         "scientific_question":
-            "shared_state_dependent_action_conditioned_latent_flow_and_"
-            "all_action_energy_nll_separate_the_executed_future_without_"
-            "collapsing_whitened_rank",
+            "training_only_existing_pair_inverse_dynamics_forces_the_rgb_"
+            "representation_and_shared_action_embeddings_to_preserve_"
+            "action_discriminative_change_while_all_v5_forward_gates_hold",
         "initialization": {
             "seed": BASE_INITIALIZATION_SEED,
             "n320_online_encoder_copy": True,
@@ -885,12 +953,22 @@ def science_contract() -> dict[str, Any]:
                 "rng_draw_count": 0,
                 "output_component_order": ["grid_x_column", "grid_y_row"],
             },
+            "inverse_projection": {
+                "path": "prediction_projector.inverse_weight",
+                "shape": list(INVERSE_PROJECTION_SHAPE),
+                "bias": False,
+                "parameter_count": INVERSE_PROJECTION_PARAMETER_COUNT,
+                "value": 0.0,
+                "rng_draw_count": 0,
+                "trainable_parameter_tensor_count": 1,
+            },
             "existing_action_embedder": {
                 "path": "predictor.action_embed",
                 "reused_without_reset": True,
                 "used_outside_adaln_only": True,
                 "trainable": True,
                 "hold_relative_self_subtraction": True,
+                "centered_prototypes_reused_by_inverse": True,
             },
             "zero_initialization_gradient_fixture": {
                 "required_before_execution_authorization": True,
@@ -898,6 +976,20 @@ def science_contract() -> dict[str, Any]:
                 "w_flow_value": 0.0,
                 "w_flow_gradient_finite": True,
                 "w_flow_gradient_nonzero": True,
+                "runtime_continuation_gate": False,
+            },
+            "inverse_zero_initialization_gradient_fixture": {
+                "required_before_execution_authorization": True,
+                "source_only": True,
+                "inverse_weight_value": 0.0,
+                "inverse_weight_gradient_finite": True,
+                "inverse_weight_gradient_nonzero": True,
+                "online_current_state_gradient_exactly_zero": True,
+                "online_next_state_gradient_exactly_zero": True,
+                "shared_encoder_gradient_exactly_zero": True,
+                "action_embedding_gradient_exactly_zero": True,
+                "all_four_blocked_paths_finite_and_nonzero_after_inverse_"
+                "weight_is_bitwise_nonzero": True,
                 "runtime_continuation_gate": False,
             },
             "adalan_gate_generator": {
@@ -919,6 +1011,9 @@ def science_contract() -> dict[str, Any]:
             "raw_v13_reused_exactly": True,
             "train": dict(TRAIN_ROLE_COUNTS),
             "checkpoint_selection": dict(SELECTION_ROLE_COUNTS),
+            "existing_current_next_pairs_reused_exactly": True,
+            "extra_online_next_encoder_call_is_not_a_new_presentation": True,
+            "temporal_predecessor_backfill_or_render_count": 0,
             "probability_calibration_open_count": 0,
             "rebuild_refine_rebalance_filter_or_resample": False,
         },
@@ -936,7 +1031,9 @@ def science_contract() -> dict[str, Any]:
                 "sigreg_knots_unused": 9,
                 "legacy_objective_call_count": 0,
             },
-            "current_only_adapter_required": True,
+            "existing_pair_adapter_required": True,
+            "online_current_and_next_encoder_calls_required": True,
+            "one_scheduled_pair_is_one_presentation": True,
             "model_forward_call_authorized": False,
             "rgb_preprocessing": {
                 "decode": "PIL",
@@ -1031,10 +1128,49 @@ def science_contract() -> dict[str, Any]:
                     "-E_i_all/m_i,executed_action_i))",
                 "action_indexed_energy_nll_weight":
                     ACTION_INDEXED_ENERGY_NLL_WEIGHT,
+                "inverse_dynamics": {
+                    "training_only": True,
+                    "current_state":
+                        "c_i=online_geometry(online_encoder(current_rgb))_i",
+                    "next_state":
+                        "n_i=online_geometry(online_encoder(next_rgb))_i",
+                    "normalized_difference":
+                        "d_i=F.layer_norm(n_i-c_i,(192,),weight=None,"
+                        "bias=None,eps=1e-5)",
+                    "layer_norm_affine_parameter_count": 0,
+                    "layer_norm_epsilon": INVERSE_LAYER_NORM_EPSILON,
+                    "concatenation":
+                        "x_i=concat(c_i,n_i,d_i)_in_that_exact_order",
+                    "input_dimension": INVERSE_INPUT_DIM,
+                    "projection_path":
+                        "prediction_projector.inverse_weight",
+                    "projection_shape": list(INVERSE_PROJECTION_SHAPE),
+                    "projection_bias": False,
+                    "projection_parameter_count":
+                        INVERSE_PROJECTION_PARAMETER_COUNT,
+                    "query":
+                        "q=mean_i(F.linear(x_i,inverse_weight,bias=None))",
+                    "action_embedder_path": "predictor.action_embed",
+                    "centered_action_prototypes":
+                        "p_a=E(a)-mean_b(E(b))",
+                    "logits": "ell_a=dot(q,p_a)/sqrt(192)",
+                    "logit_scale": INVERSE_LOGIT_SCALE,
+                    "per_row_cross_entropy":
+                        "cross_entropy(ell_i,executed_action_i)",
+                    "loss":
+                        "mean_i(m_i*cross_entropy("
+                        "ell_i,executed_action_i))",
+                    "loss_weight": INVERSE_DYNAMICS_LOSS_WEIGHT,
+                    "row_energy_scale_detached_and_shared_with_forward":
+                        True,
+                    "ema_tensor_count": 0,
+                    "inverse_mlp_attention_selector_bias_temperature_or_"
+                    "prototype_bank_count": 0,
+                },
                 "jepa_loss":
                     "mean_patch_feature_mse(true_prediction,z_next_ema)",
                 "total_loss":
-                    "jepa_loss+action_indexed_energy_nll+"
+                    "jepa_loss+action_indexed_energy_nll+inverse_dynamics_loss+"
                     "0.50*(V_raw+V_projected)+"
                     "0.02*(K_raw+K_projected)",
                 "wrong_action_hinge_count": 0,
@@ -1045,6 +1181,11 @@ def science_contract() -> dict[str, Any]:
                 "wrong_action_shared_h_and_r_shared_detached": True,
                 "wrong_action_flow_projection_detached": False,
                 "wrong_action_action_embedder_detached": False,
+                "inverse_current_online_state_detached": False,
+                "inverse_next_online_state_detached": False,
+                "inverse_action_embedder_detached": False,
+                "inverse_weight_detached": False,
+                "inverse_derangement_observation_no_grad": True,
                 "appearance_projector_frozen": True,
                 "old_cls_sigreg_count": 0,
                 "old_marginal_spatial_variance_count": 0,
@@ -1078,6 +1219,15 @@ def science_contract() -> dict[str, Any]:
                 "other_learning_rate": 3e-4,
                 "other_prefixes":
                     list(PHASE_A_AUXILIARY_PARAMETER_PREFIXES),
+                "inverse_projection": {
+                    "path": "prediction_projector.inverse_weight",
+                    "parameter_tensor_count": 1,
+                    "parameter_count": INVERSE_PROJECTION_PARAMETER_COUNT,
+                    "learning_rate": 3e-4,
+                    "weight_decay": 1e-4,
+                    "included_in_global_clip_norm": True,
+                    "phase_b_optimizer_included": False,
+                },
                 "frozen_compatibility_prefixes": [
                     "appearance_projector.",
                 ],
@@ -1141,10 +1291,67 @@ def science_contract() -> dict[str, Any]:
                     "update_100_non_hold_action_nonzero_count":
                         NON_HOLD_ACTION_COUNT,
                 },
+                "inverse_dynamics_observation": {
+                    "fields": [
+                        "all_values_finite",
+                        "weight_any_nonzero",
+                        "maximum_absolute_logit",
+                        "correct_unscaled_cross_entropy",
+                        "deranged_unscaled_cross_entropy",
+                        "correct_to_deranged_cross_entropy_ratio",
+                        "top1_accuracy",
+                        "macro_balanced_accuracy",
+                        "positive_family_margin_count",
+                        "per_family_deranged_minus_correct_cross_entropy",
+                    ],
+                    "pair_count": 495,
+                    "action_count": len(ACTION_VOCABULARY),
+                    "all_actions_required_present": True,
+                    "correct_cross_entropy":
+                        "unscaled_arithmetic_mean_standard_cross_entropy",
+                    "deranged_cross_entropy":
+                        "unscaled_arithmetic_mean_standard_cross_entropy",
+                    "ratio":
+                        "correct_unscaled_cross_entropy_divided_by_"
+                        "strictly_positive_deranged_unscaled_cross_entropy",
+                    "top1_tie_rule":
+                        "torch_argmax_dim_1_first_maximum_lowest_index",
+                    "macro_balanced_accuracy":
+                        "arithmetic_mean_of_nine_per_action_recalls",
+                    "per_family_margin":
+                        "deranged_minus_correct_unscaled_cross_entropy",
+                    "training_loss_alone_uses_detached_row_energy_scale":
+                        True,
+                    "within_scene_next_endpoint_derangement": {
+                        "group_by": "scene_id",
+                        "sort_rows_by": "content_sha256",
+                        "walk":
+                            "cyclic_forward_from_next_sorted_position",
+                        "select":
+                            "first_row_with_different_next_endpoint_sha256",
+                        "fixed_inputs": [
+                            "current_rgb",
+                            "executed_action",
+                        ],
+                        "replaced_input": "online_next_state",
+                        "no_grad": True,
+                        "fail_if_no_distinct_endpoint": True,
+                        "fail_if_selected_endpoint_unchanged": True,
+                    },
+                    "update_zero": {
+                        "all_495_by_9_logits_bitwise_zero": True,
+                        "correct_and_deranged_cross_entropy_bitwise_equal":
+                            True,
+                        "inverse_weight_any_nonzero": False,
+                    },
+                    "update_100_update_400_and_final_thresholds":
+                        dict(PHASE_A_INVERSE_DYNAMICS_THRESHOLDS),
+                },
                 "update_100_additional_gates": {
                     "all_eight_non_hold_actions_have_nonzero_flow": True,
                     "true_pair_mse_over_mean_target_mse_strictly_less_than":
                         1.0,
+                    "all_inverse_gates": True,
                 },
                 "shuffled_current":
                     "shuffle_online_raw_current_and_matching_ema_current_skip_"
@@ -1154,6 +1361,10 @@ def science_contract() -> dict[str, Any]:
         "phase_b": {
             "entered_only_after_phase_a_pass": True,
             "copied_state": "phase_a_terminal_online_raw_encoder_only",
+            "inverse_projection_frozen": True,
+            "inverse_projection_optimizer_included": False,
+            "inverse_projection_copied_into_phase_b_model": False,
+            "inverse_dynamics_training_or_metric_target_count": 0,
             "trainable_prefixes": ["evidence_head."],
             "frozen_prefixes": [
                 "encoder.",
@@ -1292,6 +1503,104 @@ def _validate_latent_flow_observation(
     }
 
 
+def _validate_inverse_dynamics_observation(
+    value: object,
+    *,
+    name: str,
+    require_update_zero: bool = False,
+) -> dict[str, Any]:
+    if (
+        type(value) is not dict
+        or set(value) != INVERSE_DYNAMICS_OBSERVATION_FIELDS
+    ):
+        raise ValueError(f"{name} fields changed")
+    for field in ("all_values_finite", "weight_any_nonzero"):
+        if type(value[field]) is not bool:
+            raise TypeError(f"{name} {field} must be Boolean")
+    maximum_logit = _finite_nonnegative(
+        value["maximum_absolute_logit"],
+        name=f"{name} maximum absolute logit",
+    )
+    correct_ce = _finite_nonnegative(
+        value["correct_unscaled_cross_entropy"],
+        name=f"{name} correct unscaled cross-entropy",
+    )
+    deranged_ce = _finite_nonnegative(
+        value["deranged_unscaled_cross_entropy"],
+        name=f"{name} deranged unscaled cross-entropy",
+    )
+    expected_ratio = _positive_denominator_ratio(
+        correct_ce,
+        deranged_ce,
+        name=f"{name} correct-to-deranged cross-entropy ratio",
+    )
+    ratio = _finite_nonnegative(
+        value["correct_to_deranged_cross_entropy_ratio"],
+        name=f"{name} reported correct-to-deranged cross-entropy ratio",
+    )
+    if not math.isclose(
+        ratio,
+        expected_ratio,
+        rel_tol=1e-6,
+        abs_tol=1e-8,
+    ):
+        raise ValueError(f"{name} cross-entropy ratio is inconsistent")
+    top1 = _finite_nonnegative(
+        value["top1_accuracy"],
+        name=f"{name} top-1 accuracy",
+    )
+    macro = _finite_nonnegative(
+        value["macro_balanced_accuracy"],
+        name=f"{name} macro balanced accuracy",
+    )
+    if top1 > 1.0 or macro > 1.0:
+        raise ValueError(f"{name} accuracy is outside [0,1]")
+    per_family = value[
+        "per_family_deranged_minus_correct_cross_entropy"
+    ]
+    if type(per_family) is not dict or tuple(per_family) != SCENE_FAMILIES:
+        raise ValueError(f"{name} scene-family order changed")
+    normalized_families = {
+        family: _finite_signed(
+            per_family[family],
+            name=f"{name} {family} deranged-minus-correct cross-entropy",
+        )
+        for family in SCENE_FAMILIES
+    }
+    positive_count = value["positive_family_margin_count"]
+    expected_positive_count = sum(
+        int(margin > 0.0) for margin in normalized_families.values()
+    )
+    if (
+        type(positive_count) is not int
+        or positive_count != expected_positive_count
+    ):
+        raise ValueError(f"{name} positive family count is inconsistent")
+    if require_update_zero and (
+        not value["all_values_finite"]
+        or value["weight_any_nonzero"]
+        or maximum_logit != 0.0
+        or correct_ce != deranged_ce
+        or ratio != 1.0
+        or positive_count != 0
+        or any(margin != 0.0 for margin in normalized_families.values())
+    ):
+        raise ValueError(f"{name} update-zero inverse receipt changed")
+    return {
+        "all_values_finite": value["all_values_finite"],
+        "weight_any_nonzero": value["weight_any_nonzero"],
+        "maximum_absolute_logit": maximum_logit,
+        "correct_unscaled_cross_entropy": correct_ce,
+        "deranged_unscaled_cross_entropy": deranged_ce,
+        "correct_to_deranged_cross_entropy_ratio": ratio,
+        "top1_accuracy": top1,
+        "macro_balanced_accuracy": macro,
+        "positive_family_margin_count": positive_count,
+        "per_family_deranged_minus_correct_cross_entropy":
+            normalized_families,
+    }
+
+
 def evaluate_phase_a(
     metrics: Mapping[str, Any],
     update0_metrics: Mapping[str, Any],
@@ -1317,6 +1626,12 @@ def evaluate_phase_a(
         raise ValueError("Phase-A observation-integrity fields changed")
     if (
         type(update0_metrics["all_action_predictions_bitwise_equal"]) is not bool
+        or type(update0_metrics["all_inverse_logits_bitwise_zero"]) is not bool
+        or type(
+            update0_metrics[
+                "correct_and_deranged_cross_entropy_bitwise_equal"
+            ]
+        ) is not bool
         or type(update0_metrics["all_action_unordered_pair_count"]) is not int
         or update0_metrics["all_action_unordered_pair_count"] != 36
         or type(update0_metrics["all_action_prediction_row_count"]) is not int
@@ -1331,6 +1646,15 @@ def evaluate_phase_a(
     latent_flow = _validate_latent_flow_observation(
         metrics["latent_flow"],
         name="Phase-A latent flow",
+    )
+    update0_inverse = _validate_inverse_dynamics_observation(
+        update0_metrics["inverse_dynamics"],
+        name="Phase-A update-zero inverse dynamics",
+        require_update_zero=True,
+    )
+    inverse = _validate_inverse_dynamics_observation(
+        metrics["inverse_dynamics"],
+        name="Phase-A inverse dynamics",
     )
     if type(metrics["all_values_finite"]) is not bool:
         raise TypeError("all_values_finite must be Boolean")
@@ -1374,6 +1698,7 @@ def evaluate_phase_a(
         "hold_action_rows_match_non_hold_rows",
         "per_family",
         "latent_flow",
+        "inverse_dynamics",
     }
     values = {
         name: _finite_nonnegative(metrics[name], name=name)
@@ -1466,8 +1791,11 @@ def evaluate_phase_a(
             values["shuffled_current_mse"],
             name="shuffled-current ratio",
         ),
+        "inverse_correct_to_deranged_cross_entropy":
+            inverse["correct_to_deranged_cross_entropy_ratio"],
     }
     threshold = PHASE_A_PASS_THRESHOLDS
+    inverse_threshold = PHASE_A_INVERSE_DYNAMICS_THRESHOLDS
     conjuncts = {
         "diagnostic_rng_and_model_state_preserved":
             observation_integrity["rng_state_preserved"]
@@ -1478,6 +1806,15 @@ def evaluate_phase_a(
             update0_flow["non_hold_action_nonzero_count"] == 0
             and update0_flow["maximum_absolute_flow_cell"] == 0.0
             and not any(update0_flow["per_action_any_nonzero"].values()),
+        "inverse_update_zero_logits_and_cross_entropy_exact":
+            update0_metrics["all_inverse_logits_bitwise_zero"]
+            and update0_metrics[
+                "correct_and_deranged_cross_entropy_bitwise_equal"
+            ]
+            and not update0_inverse["weight_any_nonzero"]
+            and update0_inverse["maximum_absolute_logit"] == 0.0
+            and update0_inverse["correct_unscaled_cross_entropy"]
+            == update0_inverse["deranged_unscaled_cross_entropy"],
         "latent_flow_finite_within_bound_and_hold_exactly_zero":
             latent_flow["all_values_finite"]
             and latent_flow[
@@ -1487,6 +1824,30 @@ def evaluate_phase_a(
         "finite_and_ema_gradient_free":
             metrics["all_values_finite"]
             and metrics["ema_target_gradient_free"],
+        "inverse_values_finite_and_weight_nonzero":
+            inverse["all_values_finite"]
+            and inverse["weight_any_nonzero"],
+        "inverse_correct_ce_strictly_below_log9":
+            inverse["correct_unscaled_cross_entropy"]
+            < inverse_threshold[
+                "correct_unscaled_cross_entropy_strictly_less_than"
+            ],
+        "inverse_correct_to_deranged_ratio_strictly_below_point99":
+            inverse["correct_to_deranged_cross_entropy_ratio"]
+            < inverse_threshold[
+                "correct_to_deranged_cross_entropy_ratio_"
+                "strictly_less_than"
+            ],
+        "inverse_macro_balanced_accuracy_strictly_above_two_ninths":
+            inverse["macro_balanced_accuracy"]
+            > inverse_threshold[
+                "macro_balanced_accuracy_strictly_greater_than"
+            ],
+        "inverse_deranged_margin_positive_in_at_least_six_families":
+            inverse["positive_family_margin_count"]
+            >= inverse_threshold[
+                "positive_family_margin_count_minimum"
+            ],
         "control_populations_exact":
             metrics["cyclic_wrong_action_pair_count"]
             == metrics["pair_count"]
@@ -1550,9 +1911,12 @@ def evaluate_phase_a(
             "hold_action_positive_family_count": hold_positive,
             "non_hold_action_nonzero_flow_count":
                 latent_flow["non_hold_action_nonzero_count"],
+            "inverse_positive_family_margin_count":
+                inverse["positive_family_margin_count"],
         },
         "per_family": normalized_families,
         "latent_flow": latent_flow,
+        "inverse_dynamics": inverse,
     }
 
 
@@ -1586,12 +1950,36 @@ def evaluate_phase_a_continuation(
             terminal["conjuncts"][
                 "update_zero_all_action_flows_exactly_zero"
             ],
+        "inverse_update_zero_logits_and_cross_entropy_exact":
+            terminal["conjuncts"][
+                "inverse_update_zero_logits_and_cross_entropy_exact"
+            ],
         "latent_flow_finite_within_bound_and_hold_exactly_zero":
             terminal["conjuncts"][
                 "latent_flow_finite_within_bound_and_hold_exactly_zero"
             ],
         "finite_and_ema_gradient_free":
             terminal["conjuncts"]["finite_and_ema_gradient_free"],
+        "inverse_values_finite_and_weight_nonzero":
+            terminal["conjuncts"][
+                "inverse_values_finite_and_weight_nonzero"
+            ],
+        "inverse_correct_ce_strictly_below_log9":
+            terminal["conjuncts"][
+                "inverse_correct_ce_strictly_below_log9"
+            ],
+        "inverse_correct_to_deranged_ratio_strictly_below_point99":
+            terminal["conjuncts"][
+                "inverse_correct_to_deranged_ratio_strictly_below_point99"
+            ],
+        "inverse_macro_balanced_accuracy_strictly_above_two_ninths":
+            terminal["conjuncts"][
+                "inverse_macro_balanced_accuracy_strictly_above_two_ninths"
+            ],
+        "inverse_deranged_margin_positive_in_at_least_six_families":
+            terminal["conjuncts"][
+                "inverse_deranged_margin_positive_in_at_least_six_families"
+            ],
         "control_populations_exact":
             terminal["conjuncts"]["control_populations_exact"],
     }
@@ -1690,6 +2078,7 @@ def evaluate_phase_a_continuation(
         "counts": counts,
         "thresholds": dict(threshold),
         "per_family": terminal["per_family"],
+        "inverse_dynamics": terminal["inverse_dynamics"],
     }
 
 
@@ -1934,6 +2323,21 @@ def current_source_bindings(root: Path = ROOT) -> dict[str, str]:
     result[PRIOR_TERMINAL_AUDIT_RELATIVE_PATH] = (
         PRIOR_TERMINAL_AUDIT_FILE_SHA256
     )
+    feasibility_raw = _read_regular_source(
+        root / TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH
+    )
+    if (
+        len(feasibility_raw) != TEMPORAL_FEASIBILITY_AUDIT_BYTE_COUNT
+        or hashlib.sha256(feasibility_raw).hexdigest()
+        != TEMPORAL_FEASIBILITY_AUDIT_FILE_SHA256
+        or parse_canonical_json(
+            feasibility_raw, name="temporal source feasibility audit"
+        )["content_sha256"] != TEMPORAL_FEASIBILITY_AUDIT_CONTENT_SHA256
+    ):
+        raise PermissionError("temporal source feasibility audit changed")
+    result[TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH] = (
+        TEMPORAL_FEASIBILITY_AUDIT_FILE_SHA256
+    )
     return result
 
 
@@ -1951,6 +2355,7 @@ def validate_review(
         "source_manifest",
         "preregistration",
         "prior_terminal_audit",
+        "temporal_feasibility_audit",
         "science_contract",
         "source_only_checks",
         "scientific_checks",
@@ -1983,8 +2388,14 @@ def validate_review(
         != value["source_manifest"]["file_sha256"]
         or expected_sources.get(PREREGISTRATION_RELATIVE_PATH)
         != PREREGISTRATION_FILE_SHA256
+        or expected_sources.get(PRIOR_TERMINAL_AUDIT_RELATIVE_PATH)
+        != PRIOR_TERMINAL_AUDIT_FILE_SHA256
+        or expected_sources.get(TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH)
+        != TEMPORAL_FEASIBILITY_AUDIT_FILE_SHA256
         or value["preregistration"] != preregistration_binding()
         or value["prior_terminal_audit"] != prior_terminal_audit_binding()
+        or value["temporal_feasibility_audit"]
+        != temporal_feasibility_audit_binding()
         or value["science_contract"] != science_contract()
         or value["source_only_checks"] != {
             "stdlib_only_contract_import": True,
@@ -2072,6 +2483,7 @@ __all__ = [
         "runtime_authorization_template",
         "safe_relative_path",
         "science_contract",
+        "temporal_feasibility_audit_binding",
         "validate_authorization",
         "validate_binding",
         "validate_review",

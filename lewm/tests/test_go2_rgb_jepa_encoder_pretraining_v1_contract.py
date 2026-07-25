@@ -4,6 +4,7 @@ from copy import deepcopy
 import hashlib
 import importlib.util
 import json
+import math
 from pathlib import Path
 import sys
 import tempfile
@@ -57,6 +58,48 @@ def _latent_flow_observation(
     }
 
 
+def _inverse_dynamics_observation(
+    *,
+    update_zero: bool = False,
+) -> dict[str, Any]:
+    if update_zero:
+        correct = float(math.log(len(contract.ACTION_VOCABULARY)))
+        deranged = correct
+        margins = {
+            family: 0.0 for family in contract.SCENE_FAMILIES
+        }
+        return {
+            "all_values_finite": True,
+            "weight_any_nonzero": False,
+            "maximum_absolute_logit": 0.0,
+            "correct_unscaled_cross_entropy": correct,
+            "deranged_unscaled_cross_entropy": deranged,
+            "correct_to_deranged_cross_entropy_ratio": 1.0,
+            "top1_accuracy": 1.0 / 9.0,
+            "macro_balanced_accuracy": 1.0 / 9.0,
+            "positive_family_margin_count": 0,
+            "per_family_deranged_minus_correct_cross_entropy": margins,
+        }
+    correct = 2.0
+    deranged = 2.1
+    margins = {
+        family: 0.01 if index < 6 else 0.0
+        for index, family in enumerate(contract.SCENE_FAMILIES)
+    }
+    return {
+        "all_values_finite": True,
+        "weight_any_nonzero": True,
+        "maximum_absolute_logit": 1.0,
+        "correct_unscaled_cross_entropy": correct,
+        "deranged_unscaled_cross_entropy": deranged,
+        "correct_to_deranged_cross_entropy_ratio": correct / deranged,
+        "top1_accuracy": 0.4,
+        "macro_balanced_accuracy": 0.3,
+        "positive_family_margin_count": 6,
+        "per_family_deranged_minus_correct_cross_entropy": margins,
+    }
+
+
 def _passing_phase_a_metrics() -> dict[str, Any]:
     return {
         "all_values_finite": True,
@@ -81,6 +124,7 @@ def _passing_phase_a_metrics() -> dict[str, Any]:
         "hold_action_rows_match_non_hold_rows": True,
         "shuffled_current_mse": 0.90,
         "latent_flow": _latent_flow_observation(),
+        "inverse_dynamics": _inverse_dynamics_observation(),
         "per_family": {
             family: {
                 "cyclic_wrong_action_minus_true_mse":
@@ -107,6 +151,11 @@ def _update0_metrics() -> dict[str, Any]:
             active_non_hold_count=0,
             maximum_absolute_flow_cell=0.0,
         ),
+        "inverse_dynamics": _inverse_dynamics_observation(
+            update_zero=True,
+        ),
+        "all_inverse_logits_bitwise_zero": True,
+        "correct_and_deranged_cross_entropy_bitwise_equal": True,
     }
 
 
@@ -166,28 +215,29 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         }))
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "d2379f74bb16d66ea0b0175bb890ddbf6be3c1fd",
+            "d552c16ebc813e49dca015354c080720b6bcd3a6",
         )
         self.assertEqual(
             contract.PREREGISTRATION_RELATIVE_PATH,
             "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-            "v5_state_dependent_latent_flow_preregistration_2026-07-25.md",
+            "v6_existing_pair_inverse_dynamics_"
+            "preregistration_2026-07-25.md",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(contract.PREREGISTRATION_BYTE_COUNT, 12_019)
+        self.assertEqual(contract.PREREGISTRATION_BYTE_COUNT, 14_178)
         self.assertEqual(
             contract.PREREGISTRATION_FILE_SHA256,
-            "9c435592d0b9771b71503fc43c7d915be6d26b32ac6f60c35aa6781696ba8ae0",
+            "43efa19c33d81795386940d138f5609a7a381240c3b3952e6ed6094ce646f703",
         )
-        self.assertEqual(len(raw), 12_019)
+        self.assertEqual(len(raw), 14_178)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "9c435592d0b9771b71503fc43c7d915be6d26b32ac6f60c35aa6781696ba8ae0",
+            "43efa19c33d81795386940d138f5609a7a381240c3b3952e6ed6094ce646f703",
         )
         self.assertEqual(
             contract.SCHEMA_PREFIX,
             "lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-            "v5_state_dependent_latent_flow",
+            "v6_existing_pair_inverse_dynamics",
         )
         self.assertEqual(contract.preregistration_binding(), {
             "path": contract.PREREGISTRATION_RELATIVE_PATH,
@@ -198,13 +248,24 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(contract.prior_terminal_audit_binding(), {
             "path":
                 "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-                "v4_action_indexed_energy_nll_terminal_audit_2026-07-25.json",
-            "commit": "20a5099f17a6da17bb2858d96724f9f8e88ae3f9",
+                "v5_state_dependent_latent_flow_terminal_audit_2026-07-25.json",
+            "commit": "c7bd138cf9a7a8195c968199fcbda5025564fe55",
             "file_sha256":
-                "ddb3c784382f92161b82d7321c8ad3c70901cb8d5a813c3ecc7153083480d809",
+                "aed6af35922d55cfa292c243fee8cf0cd27b43b01d96caca8bf12562f042406d",
             "content_sha256":
-                "c3edbe1932c5647e576b25216cee38ad904f5b5fa581d39f70c1d8cef3e92f01",
-            "byte_count": 15_366,
+                "f55b6854ca873e49598909ce2f238f098945a11d320bbe9a734f59479add9164",
+            "byte_count": 16_222,
+        })
+        self.assertEqual(contract.temporal_feasibility_audit_binding(), {
+            "path":
+                "docs/lewm_go2_rgb_causal_two_frame_latent_motion_state_"
+                "source_feasibility_audit_2026-07-25.json",
+            "commit": "6598b49e40be12da008de47590c129a611e8ae43",
+            "file_sha256":
+                "2e34e4f4ef22abdc8d5ecd89c1c12acff8541e41b8440a307ba8cbeb4a432c3d",
+            "content_sha256":
+                "2d947ea6857ddcbed82d778692c18831b2c920da6b3aa7c5723833ecb495a929",
+            "byte_count": 3_261,
         })
         self.assertIn(
             contract.SOURCE_CLOSURE_BASE_CHECKER_RELATIVE_PATH,
@@ -214,7 +275,7 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             contract.OUTPUT_ROOT_RELATIVE_PATH,
             ".generated/go2_shared_observable_camera_ray_jepa_v5/"
             "rgb_patch_whitened_action_residual_jepa_"
-            "probe_v5_state_dependent_latent_flow",
+            "probe_v6_existing_pair_inverse_dynamics",
         )
 
     def test_phase_a_model_and_optimizer_contract_are_exact(self) -> None:
@@ -275,8 +336,71 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 "used_outside_adaln_only": True,
                 "trainable": True,
                 "hold_relative_self_subtraction": True,
+                "centered_prototypes_reused_by_inverse": True,
             },
         )
+        inverse_projection = science["initialization"][
+            "inverse_projection"
+        ]
+        self.assertEqual(
+            inverse_projection["path"],
+            "prediction_projector.inverse_weight",
+        )
+        self.assertEqual(inverse_projection["shape"], [192, 576])
+        self.assertFalse(inverse_projection["bias"])
+        self.assertEqual(inverse_projection["parameter_count"], 110_592)
+        self.assertEqual(inverse_projection["value"], 0.0)
+        self.assertEqual(inverse_projection["rng_draw_count"], 0)
+        self.assertEqual(
+            contract.INVERSE_PROJECTION_SHAPE,
+            (192, 576),
+        )
+        self.assertEqual(
+            contract.INVERSE_PROJECTION_PARAMETER_COUNT,
+            110_592,
+        )
+        self.assertEqual(contract.INVERSE_DYNAMICS_LOSS_WEIGHT, 1.0)
+        self.assertEqual(
+            contract.PHASE_A_INVERSE_DYNAMICS_THRESHOLDS,
+            {
+                "correct_unscaled_cross_entropy_strictly_less_than":
+                    math.log(9.0),
+                "correct_to_deranged_cross_entropy_ratio_strictly_less_than":
+                    0.99,
+                "macro_balanced_accuracy_strictly_greater_than": 2.0 / 9.0,
+                "positive_family_margin_count_minimum": 6,
+            },
+        )
+        inverse_objective = objective["inverse_dynamics"]
+        self.assertEqual(
+            inverse_objective["normalized_difference"],
+            "d_i=F.layer_norm(n_i-c_i,(192,),weight=None,"
+            "bias=None,eps=1e-5)",
+        )
+        self.assertEqual(
+            inverse_objective["concatenation"],
+            "x_i=concat(c_i,n_i,d_i)_in_that_exact_order",
+        )
+        self.assertEqual(inverse_objective["input_dimension"], 576)
+        self.assertEqual(
+            inverse_objective["projection_path"],
+            "prediction_projector.inverse_weight",
+        )
+        self.assertEqual(
+            inverse_objective["projection_shape"],
+            [192, 576],
+        )
+        self.assertEqual(
+            inverse_objective["centered_action_prototypes"],
+            "p_a=E(a)-mean_b(E(b))",
+        )
+        self.assertEqual(
+            inverse_objective["logits"],
+            "ell_a=dot(q,p_a)/sqrt(192)",
+        )
+        self.assertEqual(inverse_objective["loss_weight"], 1.0)
+        self.assertTrue(inverse_objective["training_only"])
+        self.assertEqual(inverse_objective["ema_tensor_count"], 0)
         self.assertEqual(contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT, 1.0)
         self.assertEqual(
             objective["action_indexed_energy_nll_weight"],
@@ -394,6 +518,15 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             tuple(optimizer["other_prefixes"]),
             contract.PHASE_A_AUXILIARY_PARAMETER_PREFIXES,
         )
+        self.assertEqual(optimizer["inverse_projection"], {
+            "path": "prediction_projector.inverse_weight",
+            "parameter_tensor_count": 1,
+            "parameter_count": 110_592,
+            "learning_rate": 3e-4,
+            "weight_decay": 1e-4,
+            "included_in_global_clip_norm": True,
+            "phase_b_optimizer_included": False,
+        })
         self.assertIn(
             "appearance_projector.",
             contract.PHASE_A_FROZEN_PARAMETER_PREFIXES,
@@ -408,6 +541,13 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         )
         self.assertFalse(
             science["phase_b"]["promotable_shared_v5_checkpoint"]
+        )
+        self.assertTrue(science["phase_b"]["inverse_projection_frozen"])
+        self.assertFalse(
+            science["phase_b"]["inverse_projection_optimizer_included"]
+        )
+        self.assertFalse(
+            science["phase_b"]["inverse_projection_copied_into_phase_b_model"]
         )
         self.assertEqual(science["phase_b"]["hard_sync"], {
             "count": 1,
@@ -518,6 +658,19 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             result["conjuncts"][
                 "update_zero_all_action_flows_exactly_zero"
             ]
+        )
+        self.assertTrue(
+            result["conjuncts"][
+                "inverse_update_zero_logits_and_cross_entropy_exact"
+            ]
+        )
+        self.assertEqual(
+            result["counts"]["inverse_positive_family_margin_count"],
+            6,
+        )
+        self.assertEqual(
+            result["inverse_dynamics"],
+            _inverse_dynamics_observation(),
         )
 
     def test_phase_a_each_gate_fails_closed(self) -> None:
@@ -741,6 +894,119 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 _observation_integrity(),
             )
 
+    def test_inverse_dynamics_observation_and_gates_fail_closed(self) -> None:
+        metrics = _passing_phase_a_metrics()
+        metrics["inverse_dynamics"].pop("top1_accuracy")
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+
+        metrics = _passing_phase_a_metrics()
+        metrics["inverse_dynamics"][
+            "correct_to_deranged_cross_entropy_ratio"
+        ] += 1e-3
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+
+        metrics = _passing_phase_a_metrics()
+        metrics["inverse_dynamics"][
+            "deranged_unscaled_cross_entropy"
+        ] = 0.0
+        metrics["inverse_dynamics"][
+            "correct_to_deranged_cross_entropy_ratio"
+        ] = 0.0
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+
+        for name, mutate in {
+            "finite": lambda row: row.update(
+                all_values_finite=False
+            ),
+            "weight": lambda row: row.update(weight_any_nonzero=False),
+            "chance_ce": lambda row: (
+                row.update({
+                    "correct_unscaled_cross_entropy": math.log(9.0),
+                    "deranged_unscaled_cross_entropy": 3.0,
+                    "correct_to_deranged_cross_entropy_ratio":
+                        math.log(9.0) / 3.0,
+                })
+            ),
+            "ratio": lambda row: (
+                row.update({
+                    "deranged_unscaled_cross_entropy": 2.0 / 0.99,
+                    "correct_to_deranged_cross_entropy_ratio": 0.99,
+                })
+            ),
+            "macro": lambda row: row.update(
+                macro_balanced_accuracy=2.0 / 9.0
+            ),
+        }.items():
+            with self.subTest(name=name):
+                metrics = _passing_phase_a_metrics()
+                mutate(metrics["inverse_dynamics"])
+                result = contract.evaluate_phase_a(
+                    metrics,
+                    _update0_metrics(),
+                    _observation_integrity(),
+                )
+                self.assertFalse(result["passed"])
+                self.assertEqual(
+                    result["control"],
+                    contract.CONTROL_PHASE_A_FAIL,
+                )
+
+        metrics = _passing_phase_a_metrics()
+        family = contract.SCENE_FAMILIES[5]
+        metrics["inverse_dynamics"][
+            "per_family_deranged_minus_correct_cross_entropy"
+        ][family] = 0.0
+        metrics["inverse_dynamics"]["positive_family_margin_count"] = 5
+        result = contract.evaluate_phase_a(
+            metrics,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"][
+                "inverse_deranged_margin_positive_in_at_least_six_families"
+            ]
+        )
+
+        update0 = _update0_metrics()
+        update0["all_inverse_logits_bitwise_zero"] = False
+        result = contract.evaluate_phase_a(
+            _passing_phase_a_metrics(),
+            update0,
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"][
+                "inverse_update_zero_logits_and_cross_entropy_exact"
+            ]
+        )
+
+        update0 = _update0_metrics()
+        update0["inverse_dynamics"]["weight_any_nonzero"] = True
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                _passing_phase_a_metrics(),
+                update0,
+                _observation_integrity(),
+            )
+
     def test_hardest_wrong_action_terminal_gate_is_inclusive(self) -> None:
         metrics = _passing_phase_a_metrics()
         metrics["hardest_wrong_action_mse"] = (
@@ -872,6 +1138,27 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
         )
 
+        inverse_failure = deepcopy(passing)
+        inverse_failure["inverse_dynamics"][
+            "macro_balanced_accuracy"
+        ] = 2.0 / 9.0
+        result = contract.evaluate_phase_a_continuation(
+            100,
+            inverse_failure,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"][
+                "inverse_macro_balanced_accuracy_strictly_above_two_ninths"
+            ]
+        )
+        self.assertEqual(
+            result["control"],
+            contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+        )
+
         result = contract.evaluate_phase_a_continuation(
             100,
             passing,
@@ -962,6 +1249,25 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             _observation_integrity(),
         )
         self.assertFalse(result["passed"])
+        self.assertEqual(
+            result["control"],
+            contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
+        )
+
+        inverse_failure = deepcopy(passing)
+        inverse_failure["inverse_dynamics"]["weight_any_nonzero"] = False
+        result = contract.evaluate_phase_a_continuation(
+            400,
+            inverse_failure,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"][
+                "inverse_values_finite_and_weight_nonzero"
+            ]
+        )
         self.assertEqual(
             result["control"],
             contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
@@ -1106,6 +1412,19 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                     ROOT / contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH
                 ).read_bytes()
             )
+            temporal_feasibility_audit_path = (
+                root / contract.TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH
+            )
+            temporal_feasibility_audit_path.parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+            temporal_feasibility_audit_path.write_bytes(
+                (
+                    ROOT
+                    / contract.TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH
+                ).read_bytes()
+            )
             self.assertEqual(
                 contract.current_source_bindings(root),
                 {
@@ -1119,6 +1438,8 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                         contract.PREREGISTRATION_FILE_SHA256,
                     contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH:
                         contract.PRIOR_TERMINAL_AUDIT_FILE_SHA256,
+                    contract.TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH:
+                        contract.TEMPORAL_FEASIBILITY_AUDIT_FILE_SHA256,
                 },
             )
             (root / contract.CONTRACT_RELATIVE_PATH).write_bytes(b"changed\n")
@@ -1148,6 +1469,9 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         sources[contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH] = (
             contract.PRIOR_TERMINAL_AUDIT_FILE_SHA256
         )
+        sources[contract.TEMPORAL_FEASIBILITY_AUDIT_RELATIVE_PATH] = (
+            contract.TEMPORAL_FEASIBILITY_AUDIT_FILE_SHA256
+        )
         review_core = {
             "schema": contract.REVIEW_SCHEMA,
             "status": "PASS_SOURCE_AND_SCIENCE",
@@ -1158,6 +1482,8 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             "preregistration": contract.preregistration_binding(),
             "prior_terminal_audit":
                 contract.prior_terminal_audit_binding(),
+            "temporal_feasibility_audit":
+                contract.temporal_feasibility_audit_binding(),
             "science_contract": contract.science_contract(),
             "source_only_checks": {
                 "stdlib_only_contract_import": True,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the V5 State-Dependent Latent-Flow JEPA probe.
+"""Run the V6 Existing-Pair Inverse-Dynamics JEPA probe.
 
 Importing this module is source-only.  Torch, PIL, NumPy, generated inputs,
 RGB payloads, and checkpoints are first reachable after exact source
@@ -29,7 +29,7 @@ _CONTRACT_PATH = (
     ROOT / "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
 )
 _CONTRACT_SPEC = importlib.util.spec_from_file_location(
-    "_lewm_go2_rgb_jepa_encoder_pretraining_v5_latent_flow_contract",
+    "_lewm_go2_rgb_jepa_encoder_pretraining_v6_inverse_dynamics_contract",
     _CONTRACT_PATH,
 )
 if _CONTRACT_SPEC is None or _CONTRACT_SPEC.loader is None:
@@ -39,7 +39,7 @@ _CONTRACT_SPEC.loader.exec_module(contract)
 
 PREFLIGHT_ENVIRONMENT_KEY = (
     "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
-    "V5_STATE_DEPENDENT_LATENT_FLOW_PREFLIGHT_JSON"
+    "V6_EXISTING_PAIR_INVERSE_DYNAMICS_PREFLIGHT_JSON"
 )
 THREAD_ENVIRONMENT = (
     "OMP_NUM_THREADS",
@@ -460,6 +460,7 @@ def _phase_a_ops() -> SimpleNamespace:
         ActionConditionedLatentFlow,
         action_indexed_energy_nll,
         initialize_action_gate_rows,
+        inverse_dynamics_terms,
         patch_whitening_terms,
         predict_action_conditioned_flow_warps,
     )
@@ -468,6 +469,7 @@ def _phase_a_ops() -> SimpleNamespace:
         ActionConditionedLatentFlow=ActionConditionedLatentFlow,
         action_indexed_energy_nll=action_indexed_energy_nll,
         initialize_action_gate_rows=initialize_action_gate_rows,
+        inverse_dynamics_terms=inverse_dynamics_terms,
         normalize_spatial_tokens=normalize_spatial_tokens,
         patch_whitening_terms=patch_whitening_terms,
         predict_action_conditioned_flow_warps=
@@ -483,7 +485,7 @@ def _phase_a_current_only_loss(
     *,
     ops: Any | None = None,
 ) -> dict[str, Any]:
-    """Exact residual Phase-A objective; the online path sees current RGB only."""
+    """Exact V6 Phase-A objective over one frozen current/next RGB pair."""
     ops = _phase_a_ops() if ops is None else ops
     if (
         current_rgb.ndim != 4
@@ -491,7 +493,7 @@ def _phase_a_current_only_loss(
         or action.ndim != 2
         or action.shape != (current_rgb.shape[0], 9)
     ):
-        raise ValueError("Phase-A current-only batch shape changed")
+        raise ValueError("Phase-A current/next pair batch shape changed")
 
     online_tokens = model.encoder.forward_tokens(current_rgb)
     online_patches = online_tokens[:, 1:]
@@ -499,6 +501,9 @@ def _phase_a_current_only_loss(
     online_projected = ops.normalize_spatial_tokens(
         model.online_target_projector(online_state)
     )
+    online_next_tokens = model.encoder.forward_tokens(next_rgb)
+    online_next_patches = online_next_tokens[:, 1:]
+    online_next_state = model.online_geometry(online_next_patches)
 
     import torch  # deferred: this function is called only after reservation
 
@@ -527,6 +532,14 @@ def _phase_a_current_only_loss(
         predictions,
         target_next,
     )
+    inverse = ops.inverse_dynamics_terms(
+        model.predictor,
+        model.prediction_projector,
+        online_state,
+        online_next_state,
+        predictions.executed_indices,
+        action_losses.row_scale,
+    )
     raw_whitening = ops.patch_whitening_terms(online_state.float())
     projected_whitening = ops.patch_whitening_terms(
         online_projected.float()
@@ -535,6 +548,7 @@ def _phase_a_current_only_loss(
         action_losses.jepa
         + contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT
         * action_losses.identification
+        + contract.INVERSE_DYNAMICS_LOSS_WEIGHT * inverse.loss
         + contract.WHITENING_VARIANCE_WEIGHT
         * (raw_whitening.variance + projected_whitening.variance)
         + contract.WHITENING_COVARIANCE_WEIGHT
@@ -544,6 +558,12 @@ def _phase_a_current_only_loss(
         "loss": total,
         "jepa_loss": action_losses.jepa,
         "action_identification_loss": action_losses.identification,
+        "inverse_dynamics_loss": inverse.loss,
+        "inverse_unscaled_cross_entropy":
+            inverse.unscaled_cross_entropy,
+        "inverse_cross_entropy_per_row":
+            inverse.cross_entropy_per_row,
+        "inverse_logits": inverse.logits,
         "raw_whitening_variance_loss": raw_whitening.variance,
         "raw_whitening_covariance_loss": raw_whitening.covariance,
         "projected_whitening_variance_loss":
@@ -556,6 +576,7 @@ def _phase_a_current_only_loss(
         "control_indices": predictions.control_indices,
         "all_flows_cell": predictions.all_flows_cell,
         "online_state": online_state,
+        "online_next_state": online_next_state,
         "raw_target_next": target_next_raw,
         "projected_target_next": target_next,
         "projected_target_current": target_current,
@@ -1238,6 +1259,9 @@ def _phase_a_model(
     )
     action_one_hot = torch.eye(9, dtype=torch.float32)[:, None, :]
     action_embeddings = model.predictor.action_embed(action_one_hot)[:, 0, :]
+    centered_action_embeddings = (
+        action_embeddings - action_embeddings.mean(dim=0, keepdim=True)
+    )
     relative_action_embeddings = (
         action_embeddings
         - action_embeddings[contract.HOLD_ACTION_INDEX]
@@ -1250,9 +1274,16 @@ def _phase_a_model(
     action_embeddings_valid = (
         tuple(action_embeddings.shape) == (9, 192)
         and bool(torch.isfinite(action_embeddings).all().item())
+        and bool(torch.isfinite(centered_action_embeddings).all().item())
         and torch.equal(
             pairwise_embedding_equality,
             expected_embedding_equality,
+        )
+        and bool(
+            torch.count_nonzero(
+                centered_action_embeddings,
+                dim=1,
+            ).ne(0).all().item()
         )
         and int(
             torch.count_nonzero(
@@ -1288,10 +1319,16 @@ def _phase_a_model(
         "flow_weight",
         None,
     )
+    inverse_weight = getattr(
+        model.prediction_projector,
+        "inverse_weight",
+        None,
+    )
     direct_parameters = dict(
         model.prediction_projector.named_parameters(recurse=False)
     )
     flow_scalar_count = 2 * 192
+    inverse_scalar_count = 192 * 576
     if (
         getattr(model.prediction_projector, "shared_projector", None)
         is not shared_projector
@@ -1299,11 +1336,18 @@ def _phase_a_model(
         or not isinstance(flow_weight, torch.nn.Parameter)
         or tuple(flow_weight.shape) != (2, 192)
         or flow_weight.dtype != torch.float32
-        or set(direct_parameters) != {"flow_weight"}
+        or set(direct_parameters) != {"flow_weight", "inverse_weight"}
         or direct_parameters["flow_weight"] is not flow_weight
+        or not isinstance(inverse_weight, torch.nn.Parameter)
+        or direct_parameters["inverse_weight"] is not inverse_weight
+        or tuple(inverse_weight.shape) != (192, 576)
+        or inverse_weight.dtype != torch.float32
+        or int(inverse_weight.numel()) != inverse_scalar_count
+        or int(torch.count_nonzero(inverse_weight).item()) != 0
         or int(flow_weight.numel()) != flow_scalar_count
         or int(torch.count_nonzero(flow_weight).item()) != 0
         or hasattr(model.prediction_projector, "flow_bias")
+        or hasattr(model.prediction_projector, "inverse_bias")
         or not action_embeddings_valid
     ):
         raise RuntimeError(
@@ -1333,6 +1377,27 @@ def _phase_a_model(
         "wrapped_existing_shared_projector": True,
         "shared_projector_state_sha256_before_and_after":
             shared_projector_sha,
+        "zero_initialized_without_rng_draw": True,
+        "global_rng_state_preserved": True,
+    }
+    inverse_initialization = {
+        "parameter_path": "prediction_projector.inverse_weight",
+        "weight_shape": [192, 576],
+        "weight_scalar_count": inverse_scalar_count,
+        "exact_zero_weight_scalar_count": inverse_scalar_count,
+        "nonzero_weight_scalar_count": 0,
+        "bias_parameter_count": 0,
+        "bias": False,
+        "layer_norm_affine_parameter_count": 0,
+        "layer_norm_epsilon": 1e-5,
+        "action_embedding_shape": [9, 192],
+        "centered_action_embeddings_pairwise_distinct": True,
+        "all_centered_action_embeddings_nonzero": True,
+        "auxiliary_optimizer_learning_rate": 3e-4,
+        "optimizer_weight_decay": 1e-4,
+        "global_gradient_clip": 1.0,
+        "phase_b_copy_count": 0,
+        "phase_b_optimizer_inclusion_count": 0,
         "zero_initialized_without_rng_draw": True,
         "global_rng_state_preserved": True,
     }
@@ -1368,6 +1433,8 @@ def _phase_a_model(
             gate_predictor_sha,
         "state_dependent_latent_flow_initialization":
             flow_initialization,
+        "existing_pair_inverse_dynamics_initialization":
+            inverse_initialization,
         "appearance_projector_frozen_and_eval": (
             not model.appearance_projector.training
             and all(
@@ -1401,6 +1468,7 @@ def _phase_a_diagnostics(
     def observe() -> dict[str, Any]:
         model.eval()
         states: list[Any] = []
+        online_next_states: list[Any] = []
         ema_current_skips: list[Any] = []
         actions: list[Any] = []
         predictions: list[Any] = []
@@ -1426,6 +1494,10 @@ def _phase_a_diagnostics(
                 )
                 online_tokens = model.encoder.forward_tokens(current)
                 state = model.online_geometry(online_tokens[:, 1:])
+                online_next_tokens = model.encoder.forward_tokens(next_rgb)
+                online_next_state = model.online_geometry(
+                    online_next_tokens[:, 1:]
+                )
                 current_target_tokens = (
                     model.target_encoder.forward_tokens(current)
                 )
@@ -1469,6 +1541,9 @@ def _phase_a_diagnostics(
                             "update-zero action-pair count changed by batch"
                         )
                 states.append(state.detach().cpu())
+                online_next_states.append(
+                    online_next_state.detach().cpu()
+                )
                 ema_current_skips.append(current_skip.detach().cpu())
                 actions.append(action.detach().cpu())
                 predictions.append(
@@ -1491,6 +1566,7 @@ def _phase_a_diagnostics(
                 non_hold_rows.append(non_hold.detach().cpu())
 
         state = torch.cat(states)
+        online_next_state = torch.cat(online_next_states)
         ema_current_skip = torch.cat(ema_current_skips)
         action = torch.cat(actions)
         prediction = torch.cat(predictions)
@@ -1504,6 +1580,7 @@ def _phase_a_diagnostics(
         if (
             len(pairs) != contract.SELECTION_ROLE_COUNTS["pairs"]
             or state.shape[0] != len(pairs)
+            or online_next_state.shape != state.shape
             or tuple(raw_target.shape[1:]) != (256, 192)
             or tuple(all_flows_cell.shape) != (len(pairs), 9, 256, 2)
             or tuple(control_mse.shape) != (len(pairs), 8)
@@ -1570,6 +1647,10 @@ def _phase_a_diagnostics(
             dtype=torch.long,
         )
         shuffled_current_predictions: list[Any] = []
+        inverse_logits: list[Any] = []
+        deranged_inverse_logits: list[Any] = []
+        correct_inverse_cross_entropy: list[Any] = []
+        deranged_inverse_cross_entropy: list[Any] = []
         with torch.no_grad():
             for start in range(0, len(pairs), contract.MICROBATCH_SIZE):
                 stop = min(start + contract.MICROBATCH_SIZE, len(pairs))
@@ -1587,7 +1668,50 @@ def _phase_a_diagnostics(
                         shuffled_skip,
                     ).executed.cpu()
                 )
+                inverse_row_scale = torch.ones(
+                    stop - start,
+                    dtype=state.dtype,
+                    device=device,
+                )
+                correct_inverse = ops.inverse_dynamics_terms(
+                    model.predictor,
+                    model.prediction_projector,
+                    state[start:stop].to(device),
+                    online_next_state[start:stop].to(device),
+                    requested_indices[start:stop].to(device),
+                    inverse_row_scale,
+                )
+                deranged_inverse = ops.inverse_dynamics_terms(
+                    model.predictor,
+                    model.prediction_projector,
+                    state[start:stop].to(device),
+                    online_next_state[
+                        next_mapping[start:stop]
+                    ].to(device),
+                    requested_indices[start:stop].to(device),
+                    inverse_row_scale,
+                )
+                inverse_logits.append(correct_inverse.logits.cpu())
+                deranged_inverse_logits.append(
+                    deranged_inverse.logits.cpu()
+                )
+                correct_inverse_cross_entropy.append(
+                    correct_inverse.cross_entropy_per_row.cpu()
+                )
+                deranged_inverse_cross_entropy.append(
+                    deranged_inverse.cross_entropy_per_row.cpu()
+                )
         shuffled_current = torch.cat(shuffled_current_predictions)
+        correct_inverse_logits = torch.cat(inverse_logits).float()
+        deranged_inverse_logits_tensor = torch.cat(
+            deranged_inverse_logits
+        ).float()
+        correct_inverse_ce = torch.cat(
+            correct_inverse_cross_entropy
+        ).float()
+        deranged_inverse_ce = torch.cat(
+            deranged_inverse_cross_entropy
+        ).float()
         shuffled_next = target[next_mapping]
         mean_target = target.mean(dim=0, keepdim=True).expand_as(target)
 
@@ -1626,10 +1750,50 @@ def _phase_a_diagnostics(
         if not bool(non_hold.any()):
             raise PermissionError("Phase-A selection has no non-hold rows")
 
+        if (
+            tuple(correct_inverse_logits.shape) != (len(pairs), 9)
+            or deranged_inverse_logits_tensor.shape
+            != correct_inverse_logits.shape
+            or tuple(correct_inverse_ce.shape) != (len(pairs),)
+            or tuple(deranged_inverse_ce.shape) != (len(pairs),)
+        ):
+            raise PermissionError(
+                "Phase-A inverse diagnostic population changed"
+            )
+        correct_inverse_mean = correct_inverse_ce.mean()
+        deranged_inverse_mean = deranged_inverse_ce.mean()
+        if not bool(
+            torch.isfinite(deranged_inverse_mean).item()
+            and (deranged_inverse_mean > 0).item()
+        ):
+            raise FloatingPointError(
+                "inverse deranged cross-entropy denominator changed"
+            )
+        inverse_predictions = correct_inverse_logits.argmax(dim=1)
+        inverse_top1 = (
+            inverse_predictions == requested_indices
+        ).to(torch.float32).mean()
+        inverse_recalls: list[Any] = []
+        for action_index in range(len(contract.ACTION_VOCABULARY)):
+            action_rows = requested_indices == action_index
+            if not bool(action_rows.any()):
+                raise PermissionError(
+                    "inverse diagnostic action population is incomplete"
+                )
+            inverse_recalls.append(
+                (
+                    inverse_predictions[action_rows] == action_index
+                ).to(torch.float32).mean()
+            )
+        inverse_macro_balanced_accuracy = torch.stack(
+            inverse_recalls
+        ).mean()
+
         q_raw = raw_target - raw_target.mean(dim=0, keepdim=True)
         raw_variance = raw_target.var(dim=0, unbiased=False).mean()
         spatial_diversity = q_raw.var(dim=1, unbiased=False).mean()
         per_family: dict[str, dict[str, Any]] = {}
+        inverse_per_family: dict[str, float] = {}
         for family in contract.SCENE_FAMILIES:
             family_mask = torch.tensor(
                 [row["family"] == family for row in pairs],
@@ -1661,9 +1825,89 @@ def _phase_a_diagnostics(
                 ),
                 "hold_action_rows_match_non_hold_rows": True,
             }
+            inverse_per_family[family] = float(
+                (
+                    deranged_inverse_ce[family_mask]
+                    - correct_inverse_ce[family_mask]
+                ).mean()
+            )
+
+        inverse_dynamics = {
+            "all_values_finite": bool(
+                torch.isfinite(
+                    model.prediction_projector.inverse_weight
+                ).all().item()
+                and torch.isfinite(correct_inverse_logits).all().item()
+                and torch.isfinite(
+                    deranged_inverse_logits_tensor
+                ).all().item()
+                and torch.isfinite(correct_inverse_ce).all().item()
+                and torch.isfinite(deranged_inverse_ce).all().item()
+            ),
+            "weight_any_nonzero": bool(
+                torch.count_nonzero(
+                    model.prediction_projector.inverse_weight
+                ).item()
+            ),
+            "maximum_absolute_logit":
+                float(
+                    torch.maximum(
+                        correct_inverse_logits.abs().max(),
+                        deranged_inverse_logits_tensor.abs().max(),
+                    )
+                ),
+            "correct_unscaled_cross_entropy":
+                float(correct_inverse_mean),
+            "deranged_unscaled_cross_entropy":
+                float(deranged_inverse_mean),
+            "correct_to_deranged_cross_entropy_ratio":
+                float(correct_inverse_mean / deranged_inverse_mean),
+            "top1_accuracy": float(inverse_top1),
+            "macro_balanced_accuracy":
+                float(inverse_macro_balanced_accuracy),
+            "positive_family_margin_count": sum(
+                int(value > 0.0)
+                for value in inverse_per_family.values()
+            ),
+            "per_family_deranged_minus_correct_cross_entropy":
+                inverse_per_family,
+        }
+        inverse_update_zero = (
+            {
+                "all_inverse_logits_bitwise_zero":
+                    int(
+                        torch.count_nonzero(
+                            correct_inverse_logits
+                        ).item()
+                        + torch.count_nonzero(
+                            deranged_inverse_logits_tensor
+                        ).item()
+                    )
+                    == 0,
+                "correct_and_deranged_cross_entropy_bitwise_equal":
+                    torch.equal(
+                        correct_inverse_ce,
+                        deranged_inverse_ce,
+                    ),
+            }
+            if update == 0
+            else None
+        )
+        if (
+            update == 0
+            and inverse_update_zero
+            != {
+                "all_inverse_logits_bitwise_zero": True,
+                "correct_and_deranged_cross_entropy_bitwise_equal": True,
+            }
+        ):
+            raise PermissionError(
+                "update-zero inverse symmetry changed"
+            )
 
         finite_tensors = (
             state,
+            online_next_state,
             ema_current_skip,
             prediction,
             control_mse,
@@ -1675,6 +1919,10 @@ def _phase_a_diagnostics(
             hardest_wrong_mse,
             hold_mse,
             all_flows_cell,
+            correct_inverse_logits,
+            deranged_inverse_logits_tensor,
+            correct_inverse_ce,
+            deranged_inverse_ce,
         )
         metric = {
             "all_values_finite": bool(
@@ -1720,12 +1968,14 @@ def _phase_a_diagnostics(
             "shuffled_current_mse": float(shuffled_current_mse.mean()),
             "per_family": per_family,
             "latent_flow": latent_flow,
+            "inverse_dynamics": inverse_dynamics,
         }
         if set(metric) != contract.PHASE_A_METRIC_FIELDS:
             raise RuntimeError("Phase-A diagnostic fields changed")
         return {
             "metric": metric,
             "action_indexed_symmetry": action_indexed_symmetry,
+            "inverse_dynamics_update_zero": inverse_update_zero,
         }
 
     try:
@@ -1741,6 +1991,8 @@ def _phase_a_diagnostics(
         "role": "checkpoint_selection",
         "metric": observed["metric"],
         "action_indexed_symmetry": observed["action_indexed_symmetry"],
+        "inverse_dynamics_update_zero":
+            observed["inverse_dynamics_update_zero"],
         "model_state_sha256_before_and_after": before_state,
         "rng_state_preserved": True,
         "state_mutation_count": 0,
@@ -1804,6 +2056,12 @@ def _phase_a_train(
     }
     update0_health.update(diagnostics[0]["action_indexed_symmetry"])
     update0_health["latent_flow"] = diagnostics[0]["metric"]["latent_flow"]
+    update0_health["inverse_dynamics"] = (
+        diagnostics[0]["metric"]["inverse_dynamics"]
+    )
+    update0_health.update(
+        diagnostics[0]["inverse_dynamics_update_zero"]
+    )
     if set(update0_health) != contract.PHASE_A_UPDATE0_FIELDS:
         raise RuntimeError("Phase-A update-zero receipt fields changed")
     trace: list[dict[str, Any]] = []
@@ -1849,6 +2107,8 @@ def _phase_a_train(
                 "loss",
                 "jepa_loss",
                 "action_identification_loss",
+                "inverse_dynamics_loss",
+                "inverse_unscaled_cross_entropy",
                 "raw_whitening_variance_loss",
                 "raw_whitening_covariance_loss",
                 "projected_whitening_variance_loss",
@@ -2175,6 +2435,8 @@ def _phase_b_model(
         },
         "shared_v5_bev_decoder_or_predictor_copy_count": 0,
         "jepa_predictor_projector_or_ema_transfer_count": 0,
+        "inverse_dynamics_projection_transfer_count": 0,
+        "inverse_dynamics_phase_b_optimizer_inclusion_count": 0,
         "trainable_prefixes":
             list(contract.PHASE_B_TRAINABLE_PARAMETER_PREFIXES),
         "frozen_prefixes": list(contract.PHASE_B_FROZEN_PARAMETER_PREFIXES),
