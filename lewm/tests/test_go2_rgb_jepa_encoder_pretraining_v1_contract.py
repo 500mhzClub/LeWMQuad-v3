@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 import hashlib
 import importlib.util
+import json
 import math
 from pathlib import Path
 import sys
@@ -25,164 +26,104 @@ _SPEC.loader.exec_module(contract)
 _MODULES_IMPORTED_BY_CONTRACT = set(sys.modules) - _MODULES_BEFORE
 
 
-def _per_action(value: Any) -> dict[str, Any]:
-    return {action: deepcopy(value) for action in contract.ACTION_VOCABULARY}
-
-
-def _per_executed_action_identification(
-    *,
-    update_zero: bool,
-) -> dict[str, dict[str, int | float]]:
-    mean_nll = math.log(9.0) if update_zero else 1.0
-    return {
-        action: {
-            "row_count": 55,
-            "mean_nll": mean_nll,
-            "recall": (
-                (1.0 if index == 0 else 0.0)
-                if update_zero
-                else 15.0 / 55.0
-            ),
-        }
-        for index, action in enumerate(contract.ACTION_VOCABULARY)
-    }
-
-
-def _local_correspondence(*, update_zero: bool = False) -> dict[str, Any]:
-    if update_zero:
-        correct = math.log(9.0)
-        deranged = correct
-        hardest = correct
-        deranged_margins = {
-            family: 0.0 for family in contract.SCENE_FAMILIES
-        }
-        hardest_margins = dict(deranged_margins)
-        different = _per_action(False)
-        return {
-            "all_values_finite": True,
-            "target_all_values_finite": True,
-            "target_all_strictly_positive": True,
-            "target_rows_normalized": True,
-            "student_all_strictly_positive": True,
-            "student_rows_normalized": True,
-            "transport_weight_all_values_finite": True,
-            "transport_weight_any_nonzero": False,
-            "maximum_absolute_student_logit": 0.0,
-            "correct_centered_log_cross_entropy": correct,
-            "deranged_centered_log_cross_entropy": deranged,
-            "correct_to_deranged_cross_entropy_ratio": 1.0,
-            "deranged_positive_family_margin_count": 0,
-            "per_family_deranged_minus_correct_cross_entropy":
-                deranged_margins,
-            "per_action_correct_target_centered_log_cross_entropy":
-                _per_action(correct),
-            "hardest_wrong_centered_log_cross_entropy": hardest,
-            "executed_to_hardest_wrong_cross_entropy_ratio": 1.0,
-            "hardest_wrong_positive_family_margin_count": 0,
-            "per_family_hardest_wrong_minus_executed_cross_entropy":
-                hardest_margins,
-            "mean_target_kl_to_uniform": 0.05,
-            "per_action_probability_rows_positive_and_normalized":
-                _per_action(True),
-            "non_hold_action_distribution_different_from_hold_count": 0,
-            "per_action_distribution_different_from_hold": different,
-            "maximum_absolute_expected_offset_component": 0.0,
-            "hold_probabilities_bitwise_uniform": True,
-            "hold_expected_offset_exactly_zero": True,
-            "hold_transport_identity_exact": True,
-            "all_action_distributions_bitwise_equal_to_hold": True,
-            "all_action_distributions_bitwise_equal_to_uniform": True,
-            "correct_and_deranged_cross_entropy_bitwise_equal": True,
-            "all_action_transports_identity_exact": True,
-            "unscaled_correspondence_action_nll": correct,
-            "correspondence_action_probabilities_all_values_finite": True,
-            "correspondence_action_probability_rows_normalized": True,
-            "correspondence_action_top1_accuracy": 1.0 / 9.0,
-            "per_executed_action_correspondence_identification":
-                _per_executed_action_identification(update_zero=True),
-            "correspondence_action_macro_balanced_accuracy": 1.0 / 9.0,
-            "all_candidate_correspondence_costs_bitwise_equal": True,
-            "all_candidate_correspondence_scores_bitwise_equal": True,
-            "correspondence_action_posterior_bitwise_equal_to_uniform":
-                True,
-            "correspondence_action_nll_bitwise_equal_to_zero_logit_reference":
-                True,
-        }
-
-    correct = 1.90
-    deranged = 2.00
-    hardest = 2.00
-    deranged_margins = {
-        family: 0.02 if index < 6 else 0.0
-        for index, family in enumerate(contract.SCENE_FAMILIES)
-    }
-    hardest_margins = {
-        family: 0.01 if index < 6 else 0.0
-        for index, family in enumerate(contract.SCENE_FAMILIES)
-    }
-    different = {
-        action: action != "hold" for action in contract.ACTION_VOCABULARY
+def _latent_flow(*, update_zero: bool = False) -> dict[str, Any]:
+    per_action = {
+        action: (False if update_zero else action != "hold")
+        for action in contract.ACTION_VOCABULARY
     }
     return {
         "all_values_finite": True,
-        "target_all_values_finite": True,
-        "target_all_strictly_positive": True,
-        "target_rows_normalized": True,
-        "student_all_strictly_positive": True,
-        "student_rows_normalized": True,
-        "transport_weight_all_values_finite": True,
-        "transport_weight_any_nonzero": True,
-        "maximum_absolute_student_logit": 1.0,
-        "correct_centered_log_cross_entropy": correct,
-        "deranged_centered_log_cross_entropy": deranged,
-        "correct_to_deranged_cross_entropy_ratio": correct / deranged,
-        "deranged_positive_family_margin_count": 6,
-        "per_family_deranged_minus_correct_cross_entropy":
-            deranged_margins,
-        "per_action_correct_target_centered_log_cross_entropy":
-            _per_action(1.95),
-        "hardest_wrong_centered_log_cross_entropy": hardest,
-        "executed_to_hardest_wrong_cross_entropy_ratio":
-            correct / hardest,
-        "hardest_wrong_positive_family_margin_count": 6,
-        "per_family_hardest_wrong_minus_executed_cross_entropy":
-            hardest_margins,
-        "mean_target_kl_to_uniform": 0.05,
-        "per_action_probability_rows_positive_and_normalized":
-            _per_action(True),
-        "non_hold_action_distribution_different_from_hold_count": 8,
-        "per_action_distribution_different_from_hold": different,
-        "maximum_absolute_expected_offset_component": 0.5,
-        "hold_probabilities_bitwise_uniform": True,
-        "hold_expected_offset_exactly_zero": True,
-        "hold_transport_identity_exact": True,
-        "all_action_distributions_bitwise_equal_to_hold": False,
-        "all_action_distributions_bitwise_equal_to_uniform": False,
-        "correct_and_deranged_cross_entropy_bitwise_equal": False,
-        "all_action_transports_identity_exact": False,
-        "unscaled_correspondence_action_nll": 1.0,
-        "correspondence_action_probabilities_all_values_finite": True,
-        "correspondence_action_probability_rows_normalized": True,
-        "correspondence_action_top1_accuracy": 15.0 / 55.0,
-        "per_executed_action_correspondence_identification":
-            _per_executed_action_identification(update_zero=False),
-        "correspondence_action_macro_balanced_accuracy": 15.0 / 55.0,
-        "all_candidate_correspondence_costs_bitwise_equal": False,
-        "all_candidate_correspondence_scores_bitwise_equal": False,
-        "correspondence_action_posterior_bitwise_equal_to_uniform": False,
-        "correspondence_action_nll_bitwise_equal_to_zero_logit_reference":
-            False,
+        "all_components_within_closed_one_patch_bound": True,
+        "hold_flow_exactly_zero": True,
+        "maximum_absolute_flow_cell": 0.0 if update_zero else 0.5,
+        "non_hold_action_nonzero_count": 0 if update_zero else 8,
+        "per_action_any_nonzero": per_action,
     }
 
 
-def _passing_phase_a_metrics() -> dict[str, Any]:
+def _dense_pairwise_inverse(
+    *,
+    nll: float,
+    correct_per_action: int = 15,
+) -> dict[str, Any]:
+    row_counts = {
+        action: (
+            60
+            if action == "hold"
+            else (55 if index < 3 else 54)
+        )
+        for index, action in enumerate(contract.ACTION_VOCABULARY)
+    }
+    recalls = {
+        action: float(correct_per_action) / float(row_count)
+        for action, row_count in row_counts.items()
+    }
+    ratio = 0.95
+    family_margins = {
+        family: 0.01 if index < 6 else 0.0
+        for index, family in enumerate(contract.SCENE_FAMILIES)
+    }
+    return {
+        "all_values_finite": True,
+        "probabilities_all_values_finite": True,
+        "probability_rows_normalized": True,
+        "volume_all_values_finite": True,
+        "volume_values_within_closed_unit_interval": True,
+        "volume_channel_conservation": True,
+        "displacement_all_values_finite": True,
+        "displacement_values_within_closed_two_bound": True,
+        "maximum_absolute_displacement_component": 0.5,
+        "cross_pair_displacement_rms": 0.1,
+        "cross_pair_displacement_value_count": 495 * 2 * 16 * 16,
+        "same_tensor_diff_exact_zero": True,
+        "same_tensor_volume_exact_zero": True,
+        "same_tensor_displacement_exact_zero": True,
+        "head_parameters_all_values_finite": True,
+        "head_parameter_count": 8_713,
+        "head_weight_tensors_all_nonzero": True,
+        "zero_logit_reference_nll": math.log(9.0),
+        "unscaled_dense_inverse_nll": nll,
+        "dense_inverse_top1_accuracy":
+            (correct_per_action * len(contract.ACTION_VOCABULARY)) / 495.0,
+        "per_executed_action_dense_inverse": {
+            action: {
+                "row_count": row_counts[action],
+                "mean_nll": nll,
+                "recall": recalls[action],
+            }
+            for action in contract.ACTION_VOCABULARY
+        },
+        "dense_inverse_macro_balanced_accuracy":
+            sum(recalls.values()) / float(len(recalls)),
+        "correct_pair_nll": nll,
+        "correct_pair_count": 495,
+        "deranged_next_nll": nll / ratio,
+        "deranged_next_pair_count": 495,
+        "correct_to_deranged_nll_ratio": ratio,
+        "non_hold_correct_pair_nll": nll,
+        "non_hold_correct_pair_count": 435,
+        "non_hold_current_current_nll": nll / ratio,
+        "non_hold_current_current_pair_count": 435,
+        "non_hold_correct_to_current_current_nll_ratio": ratio,
+        "deranged_positive_family_margin_count": 6,
+        "per_family_deranged_minus_correct_nll": family_margins,
+    }
+
+
+def _metrics(
+    *,
+    nll: float,
+    raw_rank: float,
+    projected_rank: float,
+    correct_per_action: int = 15,
+) -> dict[str, Any]:
     return {
         "all_values_finite": True,
         "ema_target_gradient_free": True,
         "pair_count": 495,
         "scene_family_count": 8,
-        "centered_raw_patch_effective_rank": 48.0,
-        "centered_projected_target_effective_rank": 48.0,
+        "centered_raw_patch_effective_rank": raw_rank,
+        "centered_projected_target_effective_rank": projected_rank,
         "raw_cross_sample_variance": 1.0,
         "content_residual_spatial_diversity": 2.0,
         "true_pair_mse": 0.85,
@@ -192,19 +133,23 @@ def _passing_phase_a_metrics() -> dict[str, Any]:
         "cyclic_wrong_action_pair_count": 495,
         "all_wrong_action_candidate_count": 3_960,
         "hardest_wrong_action_mse": 0.90,
-        "non_hold_pair_count": contract.SELECTION_NON_HOLD_PAIR_COUNT,
+        "non_hold_pair_count": 435,
         "non_hold_true_pair_mse": 0.85,
         "hold_action_mse": 0.90,
-        "hold_action_pair_count": contract.SELECTION_NON_HOLD_PAIR_COUNT,
+        "hold_action_pair_count": 435,
         "hold_action_rows_match_non_hold_rows": True,
-        "shuffled_current_mse": 0.90,
-        "local_correspondence": _local_correspondence(),
+        "shuffled_current_mse": 1.0,
+        "latent_flow": _latent_flow(),
+        "dense_pairwise_inverse": _dense_pairwise_inverse(
+            nll=nll,
+            correct_per_action=correct_per_action,
+        ),
         "per_family": {
             family: {
                 "cyclic_wrong_action_minus_true_mse":
                     0.01 if index < 6 else 0.0,
                 "hardest_wrong_action_minus_true_mse":
-                    0.005 if index < 6 else 0.0,
+                    0.01 if index < 6 else 0.0,
                 "hold_action_minus_non_hold_true_mse":
                     0.01 if index < 6 else 0.0,
                 "hold_action_rows_match_non_hold_rows": True,
@@ -221,12 +166,46 @@ def _update0_metrics() -> dict[str, Any]:
         "all_action_predictions_bitwise_equal": True,
         "all_action_unordered_pair_count": 36,
         "all_action_prediction_row_count": 495,
-        "local_correspondence": _local_correspondence(update_zero=True),
+        "latent_flow": _latent_flow(update_zero=True),
+        "dense_pairwise_inverse": _dense_pairwise_inverse(
+            nll=math.log(9.0),
+            correct_per_action=10,
+        ),
     }
 
 
-def _observation_integrity() -> dict[str, Any]:
+def _integrity() -> dict[str, Any]:
     return {"rng_state_preserved": True, "state_mutation_count": 0}
+
+
+def _set_dense_nll(metrics: dict[str, Any], nll: float) -> None:
+    dense = metrics["dense_pairwise_inverse"]
+    ratio = float(dense["correct_to_deranged_nll_ratio"])
+    dense["unscaled_dense_inverse_nll"] = nll
+    dense["correct_pair_nll"] = nll
+    dense["deranged_next_nll"] = nll / ratio
+    dense["non_hold_correct_pair_nll"] = nll
+    dense["non_hold_current_current_nll"] = nll / ratio
+    for row in dense["per_executed_action_dense_inverse"].values():
+        row["mean_nll"] = nll
+
+
+def _set_action_correct_counts(
+    metrics: dict[str, Any],
+    correct_counts: list[int],
+) -> None:
+    assert len(correct_counts) == len(contract.ACTION_VOCABULARY)
+    dense = metrics["dense_pairwise_inverse"]
+    total_correct = 0
+    recalls: list[float] = []
+    for action, correct in zip(contract.ACTION_VOCABULARY, correct_counts):
+        row = dense["per_executed_action_dense_inverse"][action]
+        recall = float(correct) / float(row["row_count"])
+        row["recall"] = recall
+        recalls.append(recall)
+        total_correct += correct
+    dense["dense_inverse_top1_accuracy"] = total_correct / 495.0
+    dense["dense_inverse_macro_balanced_accuracy"] = sum(recalls) / 9.0
 
 
 def _source_manifest_core() -> dict[str, Any]:
@@ -258,8 +237,8 @@ def _source_manifest_core() -> dict[str, Any]:
     }
 
 
-class JepaEncoderPretrainingContractTests(unittest.TestCase):
-    def test_import_and_frozen_v8_evidence_are_exact(self) -> None:
+class JepaEncoderPretrainingV9ContractTests(unittest.TestCase):
+    def test_import_and_frozen_evidence_are_exact(self) -> None:
         imported_roots = {
             name.partition(".")[0]
             for name in _MODULES_IMPORTED_BY_CONTRACT
@@ -269,550 +248,413 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         }))
         self.assertEqual(
             contract.SCHEMA_PREFIX,
-            "lewm_go2_rgb_action_conditioned_local_correspondence_"
-            "all_candidate_identification_jepa_v8",
+            "lewm_go2_rgb_dense_pairwise_spatial_cost_volume_inverse_jepa_v9",
         )
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "2d5e3c01e363d4910f09597119393c57e7e8ca34",
+            "b775093897669c91d8c1b9e7d148e257881bcedf",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(len(raw), 18_744)
+        self.assertEqual(len(raw), 22_115)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "3c532525fbd3109ec005bc32ad145ad1a7349a3602029ebc47177b7d986c81f7",
+            "bfb0f1c2bd77ee78f6d4bf34cff8ec8d3d3c4bced8fb7b4269fa0a3f0bb30f2b",
         )
         self.assertEqual(contract.prior_terminal_audit_binding(), {
             "path":
-                "docs/lewm_go2_rgb_action_conditioned_local_"
-                "correspondence_transport_jepa_v7_terminal_audit_"
+                "docs/lewm_go2_rgb_action_conditioned_local_correspondence_"
+                "all_candidate_identification_jepa_v8_terminal_audit_"
                 "2026-07-25.json",
-            "commit": "cf21f4a3ed2caed103a765584bcadd29284c9282",
+            "commit": "9f3e2bc96a6e4ea419574f109c890299d0608659",
             "file_sha256":
-                "1e284375a5d1c79419aa21c553e48a5d396c1d33b27e3a56c0e58c4dae08e28f",
+                "3ea4a8cc4405b0880d2e05217e4b4acefc5b9df5fad9bcdd9a682db42e273173",
             "content_sha256":
-                "6b30ac4bb3784ea58822de7114197d184cd3a0a257ca29a60b858ab97b99c6f3",
-            "byte_count": 23_123,
+                "ff8339aa6109933e85d60ad118dc912fd091dddf7dfd80b18d00453ce7c01367",
+            "byte_count": 20_028,
         })
         self.assertEqual(
             contract.OUTPUT_ROOT_RELATIVE_PATH,
             ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-            "rgb_action_conditioned_local_correspondence_"
-            "all_candidate_identification_jepa_probe_v8",
+            "rgb_dense_pairwise_spatial_cost_volume_inverse_jepa_probe_v9",
         )
 
-    def test_exact_transport_architecture_and_determinism_contract(self) -> None:
-        self.assertEqual(contract.TRANSPORT_PROJECTION_SHAPE, (8, 192))
-        self.assertEqual(contract.TRANSPORT_PROJECTION_PARAMETER_COUNT, 1_536)
-        self.assertEqual(contract.LOCAL_CORRESPONDENCE_CENTER_INDEX, 4)
-        self.assertEqual(contract.LOCAL_CORRESPONDENCE_FULL_OFFSETS, (
-            (-1, -1), (-1, 0), (-1, 1),
-            (0, -1), (0, 0), (0, 1),
-            (1, -1), (1, 0), (1, 1),
-        ))
-        self.assertEqual(
-            contract.LOCAL_CORRESPONDENCE_NONCENTER_OFFSETS,
-            contract.LOCAL_CORRESPONDENCE_FULL_OFFSETS[:4]
-            + contract.LOCAL_CORRESPONDENCE_FULL_OFFSETS[5:],
-        )
+    def test_exact_v5_base_and_v9_head_contract(self) -> None:
+        self.assertEqual(contract.FLOW_PROJECTION_SHAPE, (2, 192))
+        self.assertEqual(contract.FLOW_PROJECTION_PARAMETER_COUNT, 384)
+        self.assertEqual(contract.DENSE_PAIRWISE_HEAD_PARAMETER_COUNT, 8_713)
+        self.assertEqual(contract.DENSE_PAIRWISE_HEAD_INITIALIZATION_SEED, 20260725)
+        self.assertEqual(contract.DENSE_PAIRWISE_VOLUME_INPUT_CHANNELS, 256)
+        self.assertEqual(contract.DENSE_PAIRWISE_HEAD_HIDDEN_CHANNELS, 16)
         science = contract.science_contract()
-        projection = science["initialization"]["transport_projection"]
         self.assertEqual(
-            projection["path"],
-            "prediction_projector.transport_weight",
+            science["phase_a"]["reviewed_forward_base_commit"],
+            "c93124b15387acf1fd440d281e9c4503a9e8355a",
         )
-        self.assertEqual(projection["shape"], [8, 192])
-        self.assertFalse(projection["bias"])
-        self.assertEqual(projection["parameter_count"], 1_536)
-        self.assertEqual(projection["value"], 0.0)
-        target = science["phase_a"]["objective"][
-            "detached_correspondence_target"
-        ]
-        self.assertEqual(
-            target["target_logit"],
-            "dot(LN(zn_i),LN(zc_J(i,o)))/sqrt(192)",
+        objective = science["phase_a"]["objective"]
+        self.assertTrue(
+            objective["preserved_v5_forward"]
+            ["current_plus_action_state_dependent_latent_flow"]
         )
-        transport = science["phase_a"]["objective"][
-            "local_correspondence_transport"
-        ]
+        volume = objective["dense_pairwise_spatial_cost_volume"]
         self.assertEqual(
-            transport["center_logit"],
-            "g_center=-sum_noncenter(g_noncenter)",
+            volume["volume"],
+            "diff.transpose(1,2).reshape(B,256,16,16).contiguous()",
         )
         self.assertEqual(
-            transport["centered_coefficients"],
-            "C_i_a_o=P_i_a_o-U_i_a_o",
+            volume["volume_axes"],
+            ["batch", "target_token_channel", "source_y", "source_x"],
         )
-        self.assertEqual(transport["forbidden_operations"], [
-            "grid_sample",
-            "unfold",
-            "differentiable_padding",
-            "materialize_B_by_9_by_256_by_9_by_192",
-        ])
-        centered = science["phase_a"]["objective"][
-            "centered_log_soft_cross_entropy"
-        ]
-        self.assertEqual(
-            centered["formula"],
-            "Hc(Q,logP)=-logP_4-sum_o(Q_o*(logP_o-logP_4))",
+        self.assertEqual(volume["head_input"], "V_only")
+        displacement = objective["displacement_observation_only"]
+        self.assertEqual(displacement["coordinate_columns"], ["dy", "dx"])
+        self.assertEqual(displacement["head_or_loss_input_count"], 0)
+        head = science["initialization"]["dense_pairwise_inverse_head"]
+        self.assertEqual(head["parameter_count"], 8_713)
+        self.assertEqual(head["linear_bias"], 0.0)
+        self.assertTrue(
+            head["all_three_weight_tensors_every_scalar_nonzero"]
         )
-        self.assertEqual(centered["loss_weight"], 1.0)
-        identification = science["phase_a"]["objective"][
-            "correspondence_action_identification"
-        ]
-        self.assertEqual(
-            contract.CORRESPONDENCE_ACTION_IDENTIFICATION_LOSS_WEIGHT,
-            1.0,
-        )
-        self.assertEqual(identification["loss_weight"], 1.0)
-        self.assertEqual(
-            identification["candidate_token_cost_helper"],
-            "centered_log_soft_cross_entropy(Q[:,None,:,:],g)",
-        )
-        self.assertEqual(identification["new_parameter_count"], 0)
-        self.assertFalse(
-            identification["shared_residual_or_online_target_projector_path"]
-        )
-        self.assertEqual(
-            science["phase_a"]["optimizer"]["determinism"],
-            {
-                "strict_deterministic_algorithms": True,
-                "warn_only": False,
-                "expected_warning_count": 0,
-                "permitted_warning_count": 0,
-                "strict_state_restored": True,
-            },
-        )
-        self.assertFalse(
-            science["phase_b"]["transport_projection_optimizer_included"]
-        )
-        self.assertFalse(
-            science["phase_b"]["transport_projection_copied_into_phase_b_model"]
-        )
+        serialized = json.dumps(science, sort_keys=True)
+        self.assertNotIn("centered_log_soft_cross_entropy", serialized)
+        self.assertNotIn("correspondence_action_identification", serialized)
 
-    def test_exact_budgets_schedule_and_runtime_authority(self) -> None:
+    def test_optimizer_schedule_caps_roles_and_denials_are_exact(self) -> None:
+        self.assertEqual(contract.PHASE_A_ENCODER_PARAMETER_PREFIXES, ("encoder.",))
+        self.assertEqual(contract.PHASE_A_AUXILIARY_PARAMETER_PREFIXES, (
+            "online_target_projector.",
+            "prediction_projector.",
+            "predictor.",
+            "dense_pairwise_inverse_head.",
+        ))
+        optimizer = contract.science_contract()["phase_a"]["optimizer"]
+        self.assertEqual(optimizer["encoder_learning_rate"], 1e-4)
+        self.assertEqual(optimizer["other_learning_rate"], 3e-4)
+        self.assertEqual(optimizer["global_clip_norm"], 1.0)
         self.assertEqual(contract.CHECKPOINT_UPDATES, (100, 400, 1_000))
         self.assertEqual(contract.PHASE_A_MAXIMUM_PRESENTATIONS, 16_000)
         self.assertEqual(contract.CUMULATIVE_MAXIMUM_PRESENTATIONS, 32_000)
         self.assertEqual(contract.CUMULATIVE_MAXIMUM_UPDATE, 2_000)
         self.assertEqual(contract.PHASE_A_GPU_ACTIVE_TIME_CAP_MINUTES, 60)
         self.assertEqual(contract.PHASE_B_GPU_ACTIVE_TIME_CAP_MINUTES, 60)
-        self.assertEqual(contract.CUMULATIVE_GPU_ACTIVE_TIME_CAP_MINUTES, 120)
-        self.assertEqual(
-            contract.science_contract()["cumulative_caps"][
-                "phase_b_gpu_active_minutes"
-            ],
-            60,
-        )
         for phase in ("phase_a", "phase_b"):
             identity = contract.build_schedule_identity(phase)
             self.assertEqual(identity["updates"], 1_000)
             self.assertEqual(identity["presentations"], 16_000)
-            self.assertEqual(identity["effective_batch_size"], 16)
             self.assertEqual(
                 contract.validate_schedule_identity(identity, phase=phase),
                 identity,
             )
         runtime = contract.runtime_authorization_template()
         self.assertEqual(contract.validate_runtime_inputs(runtime), runtime)
-        self.assertFalse(
-            runtime["raw"]["phase_a_grant"][
-                "general_raw_v13_frame_loader_authorized"
-            ]
+        self.assertEqual(
+            runtime["raw"]["role_policy"]["metadata_only_roles"],
+            ["authority", "index"],
         )
+        self.assertEqual(
+            runtime["raw"]["role_policy"]["model_facing_roles"],
+            ["train", "checkpoint_selection"],
+        )
+        self.assertTrue(all(value is False
+                            for value in contract.DOWNSTREAM_DENIALS.values()))
 
-    def test_phase_a_terminal_and_continuation_pass(self) -> None:
-        metrics = _passing_phase_a_metrics()
+    def test_receipt_status_and_forbidden_access_contracts(self) -> None:
+        self.assertEqual(contract.ATTEMPT_INDEX, 1)
+        self.assertEqual(contract.MAXIMUM_ATTEMPTS, 1)
+        self.assertEqual(contract.NORMAL_PHASE_A_RECEIPT_PATHS, (
+            "reservation.json",
+            "phase_a/metrics.json",
+            "phase_a/artifact.json",
+            "access.json",
+            "result.json",
+            "completed.json",
+        ))
+        lifecycle = contract.science_contract()["lifecycle"]
+        self.assertTrue(
+            lifecycle["operational_failure"]
+            ["missing_receipts_never_synthesized_or_fabricated"]
+        )
+        self.assertEqual(
+            lifecycle["operational_failure"]
+            ["reservation_publication_failure_status"],
+            "TERMINAL_RESERVATION_PUBLICATION_FAILURE",
+        )
+        counters = {field: 0 for field in contract.ACCESS_ZERO_COUNTER_FIELDS}
+        self.assertEqual(contract.validate_access_zero_counters(counters), counters)
+        changed = dict(counters)
+        changed["production_input_open_count"] = 1
+        with self.assertRaises(PermissionError):
+            contract.validate_access_zero_counters(changed)
+        for control in contract.PHASE_A_FAILURE_CONTROLS:
+            chain = {
+                "metrics": control,
+                "artifact": control,
+                "result": control,
+                "completion": control,
+            }
+            self.assertEqual(
+                contract.validate_phase_a_failure_status_chain(chain),
+                chain,
+            )
+            broken = dict(chain)
+            broken["completion"] = "TERMINAL_FAIL"
+            with self.assertRaises(ValueError):
+                contract.validate_phase_a_failure_status_chain(broken)
+
+    def test_staged_update100_update400_and_terminal_pass(self) -> None:
         update0 = _update0_metrics()
+        update100 = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        first = contract.evaluate_phase_a_continuation(
+            100, update100, update0, _integrity()
+        )
+        self.assertTrue(first["passed"])
+        self.assertEqual(first["control"], contract.CONTROL_CONTINUE)
+        update400 = _metrics(nll=1.9, raw_rank=38.0, projected_rank=33.0)
+        second = contract.evaluate_phase_a_continuation(
+            400,
+            update400,
+            update0,
+            _integrity(),
+            previous_metrics=update100,
+        )
+        self.assertTrue(second["passed"])
+        self.assertEqual(second["control"], contract.CONTROL_CONTINUE)
+        update1000 = _metrics(nll=1.8, raw_rank=48.0, projected_rank=48.0)
         terminal = contract.evaluate_phase_a(
-            metrics, update0, _observation_integrity()
+            update1000,
+            update0,
+            _integrity(),
+            update400,
         )
         self.assertTrue(terminal["passed"])
+        self.assertEqual(terminal["control"], contract.CONTROL_PHASE_A_PASS)
+        self.assertEqual(terminal["latent_flow"], _latent_flow())
         self.assertEqual(
-            terminal["control"],
-            contract.CONTROL_PHASE_A_PASS,
+            terminal["dense_pairwise_inverse"],
+            _dense_pairwise_inverse(nll=1.8),
         )
-        self.assertEqual(
-            terminal["local_correspondence"],
-            _local_correspondence(),
-        )
-        for update in (100, 400):
-            result = contract.evaluate_phase_a_continuation(
-                update, metrics, update0, _observation_integrity()
-            )
-            self.assertTrue(result["passed"])
-            self.assertEqual(result["control"], contract.CONTROL_CONTINUE)
 
-    def test_each_local_correspondence_mechanism_gate_fails_closed(self) -> None:
-        cases: list[tuple[str, str, Any]] = [
-            (
-                "transport_weight_finite_and_bitwise_nonzero",
-                "transport_weight_any_nonzero",
-                False,
-            ),
-            (
-                "correct_correspondence_cross_entropy_strictly_below_"
-                "update_zero",
-                "correct_centered_log_cross_entropy",
-                math.log(9.0),
-            ),
-            (
-                "deranged_correspondence_margin_positive_in_at_least_six_"
-                "families",
-                "deranged_family_count",
-                5,
-            ),
-            (
-                "hardest_wrong_correspondence_margin_positive_in_six_"
-                "families",
-                "hardest_family_count",
-                5,
-            ),
-            (
-                "all_eight_non_hold_distributions_differ_from_hold",
-                "active_count",
-                7,
-            ),
-            (
-                "hold_uniform_zero_offset_and_identity_transport_exact",
-                "hold_transport_identity_exact",
-                False,
-            ),
-            (
-                "expected_offset_components_within_closed_unit_bound",
-                "maximum_absolute_expected_offset_component",
-                1.000001,
-            ),
-            (
-                "local_correspondence_values_finite_positive_and_normalized",
-                "target_rows_normalized",
-                False,
-            ),
-        ]
-        for conjunct, field, value in cases:
+    def test_update100_is_staged_and_does_not_require_forward_ordering(self) -> None:
+        metrics = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        metrics["mean_target_mse"] = 0.80
+        metrics["cyclic_wrong_action_mse"] = 0.80
+        metrics["hardest_wrong_action_mse"] = 0.80
+        metrics["hold_action_mse"] = 0.80
+        for row in metrics["per_family"].values():
+            row["cyclic_wrong_action_minus_true_mse"] = -0.1
+            row["hold_action_minus_non_hold_true_mse"] = -0.1
+        result = contract.evaluate_phase_a_continuation(
+            100, metrics, _update0_metrics(), _integrity()
+        )
+        self.assertTrue(result["passed"])
+        self.assertNotIn(
+            "true_strictly_below_point99_cyclic_wrong_action",
+            result["conjuncts"],
+        )
+
+    def test_every_update100_dense_gate_is_strict(self) -> None:
+        update0 = _update0_metrics()
+        cases: list[tuple[str, Any]] = []
+        nll_boundary = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        _set_dense_nll(
+            nll_boundary,
+            0.98
+            * nll_boundary["dense_pairwise_inverse"]
+            ["zero_logit_reference_nll"],
+        )
+        cases.append(("dense_inverse_nll_strictly_below_point98_log9", nll_boundary))
+
+        macro_boundary = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        _set_action_correct_counts(macro_boundary, [55, 55, 0, 0, 0, 0, 0, 0, 0])
+        cases.append((
+            "dense_inverse_macro_balanced_accuracy_strictly_above_two_ninths",
+            macro_boundary,
+        ))
+        deranged_ratio = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        dense = deranged_ratio["dense_pairwise_inverse"]
+        dense["correct_to_deranged_nll_ratio"] = 0.99
+        dense["deranged_next_nll"] = dense["correct_pair_nll"] / 0.99
+        cases.append(("correct_to_deranged_nll_ratio_strictly_below_point99", deranged_ratio))
+        current_ratio = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        dense = current_ratio["dense_pairwise_inverse"]
+        dense["non_hold_correct_to_current_current_nll_ratio"] = 0.99
+        dense["non_hold_current_current_nll"] = dense["non_hold_correct_pair_nll"] / 0.99
+        cases.append((
+            "non_hold_correct_to_current_current_nll_ratio_strictly_below_point99",
+            current_ratio,
+        ))
+        family_count = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        dense = family_count["dense_pairwise_inverse"]
+        dense["per_family_deranged_minus_correct_nll"] = {
+            family: 0.01 if index < 5 else 0.0
+            for index, family in enumerate(contract.SCENE_FAMILIES)
+        }
+        dense["deranged_positive_family_margin_count"] = 5
+        cases.append(("deranged_nll_margin_positive_in_at_least_six_families", family_count))
+        raw_rank = _metrics(
+            nll=2.0,
+            raw_rank=contract.PHASE_A_UPDATE_100_THRESHOLDS[
+                "centered_raw_patch_effective_rank_strictly_greater_than"
+            ],
+            projected_rank=20.0,
+        )
+        cases.append(("centered_raw_rank_above_v3_update_zero", raw_rank))
+        projected_rank = _metrics(
+            nll=2.0,
+            raw_rank=30.0,
+            projected_rank=contract.PHASE_A_UPDATE_100_THRESHOLDS[
+                "centered_projected_target_effective_rank_strictly_greater_than"
+            ],
+        )
+        cases.append(("centered_projected_rank_above_v3_update_zero", projected_rank))
+        health = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        health["raw_cross_sample_variance"] = 0.999
+        cases.append(("raw_cross_sample_variance_at_least_quarter_update0", health))
+        flow = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        flow["latent_flow"]["per_action_any_nonzero"]["arc_left"] = False
+        flow["latent_flow"]["non_hold_action_nonzero_count"] = 7
+        cases.append(("all_eight_non_hold_actions_have_nonzero_flow", flow))
+
+        for conjunct, metrics in cases:
             with self.subTest(conjunct=conjunct):
-                metrics = _passing_phase_a_metrics()
-                observation = metrics["local_correspondence"]
-                if field == "deranged_family_count":
-                    margins = observation[
-                        "per_family_deranged_minus_correct_cross_entropy"
-                    ]
-                    margins[contract.SCENE_FAMILIES[5]] = 0.0
-                    observation[
-                        "deranged_positive_family_margin_count"
-                    ] = value
-                elif field == "hardest_family_count":
-                    margins = observation[
-                        "per_family_hardest_wrong_minus_executed_cross_entropy"
-                    ]
-                    margins[contract.SCENE_FAMILIES[5]] = 0.0
-                    observation[
-                        "hardest_wrong_positive_family_margin_count"
-                    ] = value
-                elif field == "active_count":
-                    action = next(
-                        item for item in contract.ACTION_VOCABULARY
-                        if item != "hold"
-                    )
-                    observation[
-                        "per_action_distribution_different_from_hold"
-                    ][action] = False
-                    observation[
-                        "non_hold_action_distribution_different_from_hold_count"
-                    ] = value
-                else:
-                    observation[field] = value
-                    if field == "correct_centered_log_cross_entropy":
-                        observation[
-                            "correct_to_deranged_cross_entropy_ratio"
-                        ] = (
-                            value
-                            / observation[
-                                "deranged_centered_log_cross_entropy"
-                            ]
-                        )
-                        observation[
-                            "executed_to_hardest_wrong_cross_entropy_ratio"
-                        ] = (
-                            value
-                            / observation[
-                                "hardest_wrong_centered_log_cross_entropy"
-                            ]
-                        )
-                result = contract.evaluate_phase_a(
-                    metrics, _update0_metrics(), _observation_integrity()
+                result = contract.evaluate_phase_a_continuation(
+                    100, metrics, update0, _integrity()
                 )
                 self.assertFalse(result["passed"])
                 self.assertFalse(result["conjuncts"][conjunct])
+                self.assertEqual(
+                    result["control"],
+                    contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+                )
 
-    def test_correspondence_ratios_are_strict_and_internally_bound(self) -> None:
-        metrics = _passing_phase_a_metrics()
-        corr = metrics["local_correspondence"]
-        corr["deranged_centered_log_cross_entropy"] = (
-            corr["correct_centered_log_cross_entropy"] / 0.99
-        )
-        corr["correct_to_deranged_cross_entropy_ratio"] = 0.99
-        result = contract.evaluate_phase_a(
-            metrics, _update0_metrics(), _observation_integrity()
-        )
-        self.assertFalse(result["passed"])
-        self.assertFalse(
-            result["conjuncts"][
-                "correct_to_deranged_correspondence_ratio_strictly_below_"
-                "point99"
-            ]
-        )
-
-        metrics = _passing_phase_a_metrics()
-        corr = metrics["local_correspondence"]
-        corr["hardest_wrong_centered_log_cross_entropy"] = (
-            corr["correct_centered_log_cross_entropy"] / 0.99
-        )
-        corr["executed_to_hardest_wrong_cross_entropy_ratio"] = 0.99
-        result = contract.evaluate_phase_a(
-            metrics, _update0_metrics(), _observation_integrity()
-        )
-        self.assertFalse(result["passed"])
-        self.assertFalse(
-            result["conjuncts"][
-                "executed_to_hardest_wrong_correspondence_ratio_below_point99"
-            ]
-        )
-
-        malformed = _passing_phase_a_metrics()
-        malformed["local_correspondence"][
-            "correct_to_deranged_cross_entropy_ratio"
-        ] = 0.5
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(
-                malformed, _update0_metrics(), _observation_integrity()
-            )
-
-    def test_correspondence_action_identification_gates_are_exact(self) -> None:
-        metrics = _passing_phase_a_metrics()
+    def test_update400_requires_progress_and_new_forward_gates(self) -> None:
         update0 = _update0_metrics()
-        result = contract.evaluate_phase_a(
-            metrics,
-            update0,
-            _observation_integrity(),
-        )
-        self.assertTrue(
-            result["conjuncts"][
-                "finite_unscaled_correspondence_action_nll_strictly_below_"
-                "frozen_update_zero_log9"
-            ]
-        )
-        self.assertTrue(
-            result["conjuncts"][
-                "correspondence_action_identification_macro_balanced_"
-                "accuracy_strictly_above_two_ninths"
-            ]
-        )
-
-        nll_boundary = _passing_phase_a_metrics()
-        nll = update0["local_correspondence"][
-            "unscaled_correspondence_action_nll"
-        ]
-        nll_observation = nll_boundary["local_correspondence"]
-        nll_observation["unscaled_correspondence_action_nll"] = nll
-        for row in nll_observation[
-            "per_executed_action_correspondence_identification"
-        ].values():
-            row["mean_nll"] = nll
-        result = contract.evaluate_phase_a(
-            nll_boundary,
-            update0,
-            _observation_integrity(),
-        )
-        self.assertFalse(result["passed"])
-        self.assertFalse(
-            result["conjuncts"][
-                "finite_unscaled_correspondence_action_nll_strictly_below_"
-                "frozen_update_zero_log9"
-            ]
-        )
-        for update in (100, 400):
-            continuation = contract.evaluate_phase_a_continuation(
-                update,
-                nll_boundary,
-                update0,
-                _observation_integrity(),
-            )
-            self.assertFalse(continuation["passed"])
-            self.assertFalse(
-                continuation["conjuncts"][
-                    "finite_unscaled_correspondence_action_nll_strictly_"
-                    "below_frozen_update_zero_log9"
-                ]
-            )
-
-        macro_boundary = _passing_phase_a_metrics()
-        macro_observation = macro_boundary["local_correspondence"]
-        macro_observation[
-            "correspondence_action_macro_balanced_accuracy"
-        ] = 2.0 / 9.0
-        macro_observation["correspondence_action_top1_accuracy"] = 2.0 / 9.0
-        for index, row in enumerate(macro_observation[
-            "per_executed_action_correspondence_identification"
-        ].values()):
-            row["recall"] = (13.0 if index < 2 else 12.0) / 55.0
-        result = contract.evaluate_phase_a(
-            macro_boundary,
-            update0,
-            _observation_integrity(),
-        )
-        self.assertFalse(result["passed"])
-        self.assertFalse(
-            result["conjuncts"][
-                "correspondence_action_identification_macro_balanced_"
-                "accuracy_strictly_above_two_ninths"
-            ]
-        )
-        for update in (100, 400):
-            continuation = contract.evaluate_phase_a_continuation(
-                update,
-                macro_boundary,
-                update0,
-                _observation_integrity(),
-            )
-            self.assertFalse(continuation["passed"])
-            self.assertFalse(
-                continuation["conjuncts"][
-                    "correspondence_action_identification_macro_balanced_"
-                    "accuracy_strictly_above_two_ninths"
-                ]
-            )
-
-    def test_correspondence_action_identification_receipt_is_strict(self) -> None:
-        malformed = _passing_phase_a_metrics()
-        del malformed["local_correspondence"][
-            "correspondence_action_top1_accuracy"
-        ]
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(
-                malformed,
-                _update0_metrics(),
-                _observation_integrity(),
-            )
-
-        malformed = _passing_phase_a_metrics()
-        first = contract.ACTION_VOCABULARY[0]
-        malformed["local_correspondence"][
-            "per_executed_action_correspondence_identification"
-        ][first]["mean_nll"] = 0.5
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(
-                malformed,
-                _update0_metrics(),
-                _observation_integrity(),
-            )
-
-        changed_population = _passing_phase_a_metrics()
-        rows = changed_population["local_correspondence"][
-            "per_executed_action_correspondence_identification"
-        ]
-        rows[contract.ACTION_VOCABULARY[0]]["row_count"] += 1
-        rows[contract.ACTION_VOCABULARY[1]]["row_count"] -= 1
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(
-                changed_population,
-                _update0_metrics(),
-                _observation_integrity(),
-            )
-
-        update0 = _update0_metrics()
-        update0["local_correspondence"][
-            "correspondence_action_nll_bitwise_equal_to_zero_logit_reference"
-        ] = False
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(
-                _passing_phase_a_metrics(),
-                update0,
-                _observation_integrity(),
-            )
-
-        malformed_finiteness = _passing_phase_a_metrics()
-        malformed_finiteness["local_correspondence"][
-            "correspondence_action_probabilities_all_values_finite"
-        ] = False
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(
-                malformed_finiteness,
-                _update0_metrics(),
-                _observation_integrity(),
-            )
-
-    def test_update_zero_correspondence_is_exact_and_target_is_viable(
-        self,
-    ) -> None:
-        update0 = _update0_metrics()
-        update0["local_correspondence"]["mean_target_kl_to_uniform"] = 0.0
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(
-                _passing_phase_a_metrics(),
-                update0,
-                _observation_integrity(),
-            )
-        update0 = _update0_metrics()
-        update0["local_correspondence"][
-            "transport_weight_any_nonzero"
-        ] = True
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(
-                _passing_phase_a_metrics(),
-                update0,
-                _observation_integrity(),
-            )
-
-    def test_forward_boundary_semantics_are_preserved(self) -> None:
-        metrics = _passing_phase_a_metrics()
-        threshold100 = contract.PHASE_A_UPDATE_100_THRESHOLDS
-        metrics["centered_raw_patch_effective_rank"] = threshold100[
-            "centered_raw_patch_effective_rank_strictly_greater_than"
-        ]
+        update100 = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        equal_nll = _metrics(nll=2.0, raw_rank=38.0, projected_rank=33.0)
         result = contract.evaluate_phase_a_continuation(
-            100, metrics, _update0_metrics(), _observation_integrity()
+            400, equal_nll, update0, _integrity(), update100
         )
         self.assertFalse(result["passed"])
-        self.assertEqual(
-            result["control"],
-            contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+        self.assertFalse(
+            result["conjuncts"]["dense_inverse_nll_strictly_lower_than_update100"]
         )
-
-        metrics = _passing_phase_a_metrics()
-        threshold400 = contract.PHASE_A_UPDATE_400_THRESHOLDS
-        metrics["centered_raw_patch_effective_rank"] = threshold400[
-            "centered_raw_patch_effective_rank_minimum"
-        ]
-        metrics["centered_projected_target_effective_rank"] = threshold400[
-            "centered_projected_target_effective_rank_minimum"
-        ]
-        self.assertTrue(contract.evaluate_phase_a_continuation(
-            400, metrics, _update0_metrics(), _observation_integrity()
-        )["passed"])
+        no_macro_regression = _metrics(
+            nll=1.9,
+            raw_rank=38.0,
+            projected_rank=33.0,
+            correct_per_action=15,
+        )
+        prior_better_macro = deepcopy(update100)
+        _set_action_correct_counts(prior_better_macro, [16] * 9)
+        result = contract.evaluate_phase_a_continuation(
+            400,
+            no_macro_regression,
+            update0,
+            _integrity(),
+            prior_better_macro,
+        )
+        self.assertFalse(
+            result["conjuncts"]
+            ["dense_inverse_macro_balanced_accuracy_not_below_update100"]
+        )
+        cyclic_boundary = _metrics(nll=1.9, raw_rank=38.0, projected_rank=33.0)
+        cyclic_boundary["true_pair_mse"] = 0.99
+        cyclic_boundary["cyclic_wrong_action_mse"] = 1.0
+        result = contract.evaluate_phase_a_continuation(
+            400,
+            cyclic_boundary,
+            update0,
+            _integrity(),
+            update100,
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"]
+            ["true_strictly_below_point99_cyclic_wrong_action"]
+        )
         with self.assertRaises(ValueError):
             contract.evaluate_phase_a_continuation(
-                1_000,
-                metrics,
-                _update0_metrics(),
-                _observation_integrity(),
+                400,
+                _metrics(nll=1.9, raw_rank=38.0, projected_rank=33.0),
+                update0,
+                _integrity(),
             )
 
-    def test_observation_integrity_and_populations_fail_closed(self) -> None:
+    def test_terminal_requires_update400_progress_and_complete_v5_gate(self) -> None:
+        update0 = _update0_metrics()
+        update400 = _metrics(nll=1.9, raw_rank=38.0, projected_rank=33.0)
+        equal_nll = _metrics(nll=1.9, raw_rank=48.0, projected_rank=48.0)
         result = contract.evaluate_phase_a(
-            _passing_phase_a_metrics(),
-            _update0_metrics(),
-            {"rng_state_preserved": False, "state_mutation_count": 0},
+            equal_nll, update0, _integrity(), update400
         )
         self.assertFalse(result["passed"])
-        changed = _passing_phase_a_metrics()
-        changed["pair_count"] = 494
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a(
-                changed, _update0_metrics(), _observation_integrity()
-            )
+        self.assertFalse(
+            result["conjuncts"]["dense_inverse_nll_strictly_lower_than_update400"]
+        )
+        boundary = _metrics(nll=1.8, raw_rank=48.0, projected_rank=48.0)
+        boundary["true_pair_mse"] = 0.90
+        boundary["mean_target_mse"] = 1.0
+        boundary["cyclic_wrong_action_mse"] = 0.90 / 0.95
+        boundary["hardest_wrong_action_mse"] = 0.90 / 0.95
+        boundary["non_hold_true_pair_mse"] = 0.90
+        boundary["hold_action_mse"] = 0.90 / 0.95
+        result = contract.evaluate_phase_a(
+            boundary, update0, _integrity(), update400
+        )
+        self.assertTrue(result["passed"])
 
-    def test_phase_b_thresholds_remain_exact(self) -> None:
+    def test_dense_receipt_populations_ratios_and_health_fail_closed(self) -> None:
+        base = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
+        malformed = deepcopy(base)
+        malformed["dense_pairwise_inverse"]["correct_pair_count"] = 494
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a_continuation(
+                100, malformed, _update0_metrics(), _integrity()
+            )
+        impossible_action_population = deepcopy(base)
+        action_rows = impossible_action_population["dense_pairwise_inverse"][
+            "per_executed_action_dense_inverse"
+        ]
+        action_rows["arc_left"]["row_count"] += 1
+        action_rows["hold"]["row_count"] -= 1
+        _set_action_correct_counts(
+            impossible_action_population,
+            [15] * len(contract.ACTION_VOCABULARY),
+        )
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a_continuation(
+                100,
+                impossible_action_population,
+                _update0_metrics(),
+                _integrity(),
+            )
+        malformed = deepcopy(base)
+        malformed["dense_pairwise_inverse"][
+            "cross_pair_displacement_value_count"
+        ] -= 1
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a_continuation(
+                100, malformed, _update0_metrics(), _integrity()
+            )
+        malformed = deepcopy(base)
+        malformed["dense_pairwise_inverse"][
+            "per_executed_action_dense_inverse"
+        ]["arc_left"]["recall"] = 0.1
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a_continuation(
+                100, malformed, _update0_metrics(), _integrity()
+            )
+        unhealthy = deepcopy(base)
+        unhealthy["dense_pairwise_inverse"]["volume_channel_conservation"] = False
+        result = contract.evaluate_phase_a_continuation(
+            100, unhealthy, _update0_metrics(), _integrity()
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"]
+            ["dense_pairwise_values_probabilities_volume_and_displacement_healthy"]
+        )
+
+    def test_phase_b_thresholds_are_unchanged(self) -> None:
         passing = {
             "complete_physical_scope_count": 1,
             "margin_count": 189,
@@ -820,42 +662,43 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             "total_shortfall": 41.0,
             "rough_motion": {
                 "pixel_balanced_accuracy": 0.82,
-                "ground_balanced_accuracy": 0.648,
-                "depth_p95_m": 0.977,
+                "ground_balanced_accuracy": 0.65,
+                "depth_p95_m": 0.97,
             },
         }
         self.assertTrue(contract.evaluate_phase_b(passing)["passed"])
-        passing["total_shortfall"] = 41.01776266878769
-        self.assertFalse(contract.evaluate_phase_b(passing)["passed"])
+        boundary = deepcopy(passing)
+        boundary["passed_margin_count"] = 97
+        self.assertFalse(contract.evaluate_phase_b(boundary)["passed"])
 
-    def test_manifest_review_and_authorization_templates_bind_v8(self) -> None:
-        manifest = contract.with_content_sha256(_source_manifest_core())
-        raw = contract.canonical_json_bytes(manifest) + b"\n"
-        self.assertEqual(contract.validate_source_manifest(raw), manifest)
-        manifest_binding = contract.artifact_binding(
-            contract.SOURCE_MANIFEST_RELATIVE_PATH,
-            raw,
-            content_sha256=manifest["content_sha256"],
-        )
-        sources = {
-            path: hashlib.sha256(path.encode("ascii")).hexdigest()
-            for path in contract.SOURCE_PATHS
+    def test_canonical_json_manifest_review_and_authorization_validators(self) -> None:
+        manifest_raw = contract.canonical_json_bytes(
+            contract.with_content_sha256(_source_manifest_core())
+        ) + b"\n"
+        manifest = contract.validate_source_manifest(manifest_raw)
+        expected_sources = {
+            binding["path"]: binding["file_sha256"]
+            for binding in manifest["source_bindings"]
         }
-        sources[contract.SOURCE_MANIFEST_RELATIVE_PATH] = (
-            manifest_binding["file_sha256"]
-        )
-        sources[contract.PREREGISTRATION_RELATIVE_PATH] = (
+        expected_sources[contract.SOURCE_MANIFEST_RELATIVE_PATH] = "a" * 64
+        expected_sources[contract.PREREGISTRATION_RELATIVE_PATH] = (
             contract.PREREGISTRATION_FILE_SHA256
         )
-        sources[contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH] = (
+        expected_sources[contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH] = (
             contract.PRIOR_TERMINAL_AUDIT_FILE_SHA256
         )
+        manifest_binding = {
+            "path": contract.SOURCE_MANIFEST_RELATIVE_PATH,
+            "file_sha256": "a" * 64,
+            "content_sha256": manifest["content_sha256"],
+            "byte_count": len(manifest_raw),
+        }
         review_core = {
             "schema": contract.REVIEW_SCHEMA,
             "status": "PASS_SOURCE_AND_SCIENCE",
             "implementation_author": contract.IMPLEMENTATION_AUTHOR,
-            "reviewer": "/root/independent_reviewer",
-            "reviewed_sources": sources,
+            "reviewer": "/root/independent_v9_reviewer",
+            "reviewed_sources": expected_sources,
             "source_manifest": manifest_binding,
             "preregistration": contract.preregistration_binding(),
             "prior_terminal_audit": contract.prior_terminal_audit_binding(),
@@ -866,14 +709,13 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 "checkpoints_or_tensors_opened": [],
                 "sealed_or_heldout_opened": [],
             },
-            "scientific_checks":
-                dict(contract.SCIENTIFIC_REVIEW_CHECKS),
+            "scientific_checks": dict(contract.SCIENTIFIC_REVIEW_CHECKS),
             "findings": [],
             "authority": dict(contract.REVIEW_AUTHORITY),
         }
         review = contract.with_content_sha256(review_core)
         self.assertEqual(
-            contract.validate_review(review, expected_sources=sources),
+            contract.validate_review(review, expected_sources=expected_sources),
             review,
         )
         review_raw = contract.canonical_json_bytes(review) + b"\n"
@@ -882,52 +724,25 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             review_raw,
             content_sha256=review["content_sha256"],
         )
-        authorization = contract.with_content_sha256({
+        authorization_core = {
             "schema": contract.AUTHORIZATION_SCHEMA,
             "status": "AUTHORIZED_ONE_EXACT_TWO_PHASE_PROBE",
-            "authorizer": "/root/independent_authorizer",
+            "authorizer": "/root/independent_v9_authorizer",
             "independent_source_review": review_binding,
             "preregistration": contract.preregistration_binding(),
             "runtime_inputs": contract.runtime_authorization_template(),
             "experiment": contract.science_contract(),
             "authority": dict(contract.EXECUTION_AUTHORITY),
-        })
+        }
+        authorization = contract.with_content_sha256(authorization_core)
         self.assertEqual(
             contract.validate_authorization(
                 authorization,
                 review_binding=review_binding,
-                reviewer="/root/independent_reviewer",
+                reviewer=review["reviewer"],
             ),
             authorization,
         )
-
-    def test_authorities_deny_retry_and_downstream_access(self) -> None:
-        self.assertTrue(
-            all(
-                value is False
-                for value in contract.SOURCE_ONLY_AUTHORITY.values()
-            )
-        )
-        self.assertFalse(contract.EXECUTION_AUTHORITY["g2_authorized"])
-        self.assertFalse(contract.EXECUTION_AUTHORITY["heldout_authorized"])
-        self.assertFalse(contract.EXECUTION_AUTHORITY["sealed_authorized"])
-        self.assertFalse(
-            contract.EXECUTION_AUTHORITY[
-                "retry_resume_second_seed_schedule_extension_or_"
-                "replacement_authorized"
-            ]
-        )
-
-    def test_static_phase_b_adapter_remains_hash_bound(self) -> None:
-        raw = (
-            ROOT / contract.STATIC_PHYSICAL_CONTRACT_RELATIVE_PATH
-        ).read_bytes()
-        self.assertEqual(
-            hashlib.sha256(raw).hexdigest(),
-            contract.STATIC_PHYSICAL_CONTRACT_FILE_SHA256,
-        )
-        self.assertEqual(len(contract.SCOPES), 9)
-        self.assertEqual(contract.MARGIN_COUNT, 189)
 
 
 if __name__ == "__main__":

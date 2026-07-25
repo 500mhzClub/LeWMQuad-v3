@@ -53,13 +53,12 @@ class SourceClosureTest(unittest.TestCase):
         self.assertTrue(expected.issubset(checker.contract.SOURCE_PATHS))
         self.assertEqual(
             checker.contract.SCHEMA_PREFIX,
-            "lewm_go2_rgb_action_conditioned_local_correspondence_"
-            "all_candidate_identification_jepa_v8",
+            "lewm_go2_rgb_dense_pairwise_spatial_cost_volume_inverse_jepa_v9",
         )
         self.assertTrue(
             checker.contract.OUTPUT_ROOT_RELATIVE_PATH.endswith(
-                "/rgb_action_conditioned_local_correspondence_"
-                "all_candidate_identification_jepa_probe_v8"
+                "/rgb_dense_pairwise_spatial_cost_volume_"
+                "inverse_jepa_probe_v9"
             )
         )
 

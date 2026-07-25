@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the V8 Local-Correspondence All-Candidate Identification JEPA probe.
+"""Run the V9 Dense Pairwise Spatial Cost-Volume Inverse JEPA probe.
 
 Importing this module is source-only.  Torch, PIL, NumPy, generated inputs,
 RGB payloads, and checkpoints are first reachable after exact source
@@ -33,7 +33,7 @@ _CONTRACT_PATH = (
 _CONTRACT_SPEC = importlib.util.spec_from_file_location(
     (
         "_lewm_go2_rgb_jepa_encoder_pretraining_"
-        "v8_all_candidate_identification_contract"
+        "v9_dense_pairwise_cost_volume_contract"
     ),
     _CONTRACT_PATH,
 )
@@ -43,8 +43,8 @@ contract = importlib.util.module_from_spec(_CONTRACT_SPEC)
 _CONTRACT_SPEC.loader.exec_module(contract)
 
 PREFLIGHT_ENVIRONMENT_KEY = (
-    "LEWM_RGB_ACTION_CONDITIONED_LOCAL_CORRESPONDENCE_"
-    "ALL_CANDIDATE_IDENTIFICATION_JEPA_V8_PREFLIGHT_JSON"
+    "LEWM_RGB_DENSE_PAIRWISE_SPATIAL_COST_VOLUME_"
+    "INVERSE_JEPA_V9_PREFLIGHT_JSON"
 )
 THREAD_ENVIRONMENT = (
     "OMP_NUM_THREADS",
@@ -68,6 +68,10 @@ class ScientificGateFailure(RuntimeError):
     """The experiment completed valid science but did not pass a fixed gate."""
 
 
+_OUTPUT_REGISTRY_ROOT: Path | None = None
+_OUTPUT_BINDING_REGISTRY: dict[str, dict[str, Any]] = {}
+
+
 def _fingerprint(value: os.stat_result) -> tuple[int, ...]:
     return (
         int(value.st_dev),
@@ -77,6 +81,132 @@ def _fingerprint(value: os.stat_result) -> tuple[int, ...]:
         int(value.st_mtime_ns),
         int(value.st_ctime_ns),
     )
+
+
+def _fingerprint_receipt(value: os.stat_result) -> dict[str, int]:
+    return {
+        "device": int(value.st_dev),
+        "inode": int(value.st_ino),
+        "mode": int(value.st_mode),
+        "size": int(value.st_size),
+        "mtime_ns": int(value.st_mtime_ns),
+        "ctime_ns": int(value.st_ctime_ns),
+    }
+
+
+def _reset_output_binding_registry(output_root: Path) -> None:
+    global _OUTPUT_REGISTRY_ROOT
+    if output_root.is_symlink() or not output_root.is_dir():
+        raise PermissionError("output registry root is not a real directory")
+    _OUTPUT_REGISTRY_ROOT = Path(os.path.abspath(output_root))
+    _OUTPUT_BINDING_REGISTRY.clear()
+
+
+def _output_relative(path: Path) -> str:
+    if _OUTPUT_REGISTRY_ROOT is None:
+        raise RuntimeError("output binding registry is not initialized")
+    absolute = Path(os.path.abspath(path))
+    try:
+        return absolute.relative_to(_OUTPUT_REGISTRY_ROOT).as_posix()
+    except ValueError as error:
+        raise PermissionError("output escaped the registered attempt root") from error
+
+
+def _register_output_binding(
+    path: Path,
+    *,
+    file_sha256: str,
+    byte_count: int,
+    content_sha256: str | None = None,
+) -> None:
+    relative = _output_relative(path)
+    if not contract.is_sha256(file_sha256) or byte_count < 0:
+        raise ValueError("output binding identity changed")
+    observed = path.stat(follow_symlinks=False)
+    if (
+        path.is_symlink()
+        or not stat.S_ISREG(observed.st_mode)
+        or observed.st_size != byte_count
+    ):
+        raise PermissionError("registered output file metadata changed")
+    binding: dict[str, Any] = {
+        "path": relative,
+        "file_sha256": file_sha256,
+        "byte_count": byte_count,
+        "filesystem_fingerprint": _fingerprint_receipt(observed),
+    }
+    if content_sha256 is not None:
+        if not contract.is_sha256(content_sha256):
+            raise ValueError("output content SHA-256 changed")
+        binding["content_sha256"] = content_sha256
+    previous = _OUTPUT_BINDING_REGISTRY.get(relative)
+    if previous is not None and previous != binding:
+        raise RuntimeError("output binding was registered inconsistently")
+    _OUTPUT_BINDING_REGISTRY[relative] = binding
+
+
+def _register_output_content_sha256(
+    path: Path,
+    content_sha256: str,
+) -> None:
+    _register_output_semantic_metadata(
+        path,
+        content_sha256=content_sha256,
+    )
+
+
+def _register_output_semantic_metadata(
+    path: Path,
+    *,
+    content_sha256: str,
+    state_sha256: str | None = None,
+    phase: str | None = None,
+    update: int | None = None,
+    schedule_prefix_sha256: str | None = None,
+    row_count: int | None = None,
+) -> None:
+    relative = _output_relative(path)
+    binding = _OUTPUT_BINDING_REGISTRY.get(relative)
+    if binding is None:
+        raise RuntimeError("semantic output lacks its write-time binding")
+    if not contract.is_sha256(content_sha256):
+        raise ValueError("semantic output content SHA-256 changed")
+    checkpoint_fields = (
+        state_sha256,
+        phase,
+        update,
+        schedule_prefix_sha256,
+    )
+    if any(value is not None for value in checkpoint_fields):
+        if (
+            not all(value is not None for value in checkpoint_fields)
+            or not contract.is_sha256(state_sha256)
+            or phase not in {"phase_a", "phase_b"}
+            or type(update) is not int
+            or update not in contract.CHECKPOINT_UPDATES
+            or not contract.is_sha256(schedule_prefix_sha256)
+            or row_count is not None
+        ):
+            raise ValueError("checkpoint semantic binding changed")
+    elif row_count is not None and (
+        type(row_count) is not int or row_count < 0
+    ):
+        raise ValueError("trace row count changed")
+    metadata: dict[str, Any] = {"content_sha256": content_sha256}
+    if state_sha256 is not None:
+        metadata.update({
+            "state_sha256": state_sha256,
+            "phase": phase,
+            "update": update,
+            "schedule_prefix_sha256": schedule_prefix_sha256,
+        })
+    if row_count is not None:
+        metadata["row_count"] = row_count
+    for name, value in metadata.items():
+        declared = binding.get(name)
+        if declared is not None and declared != value:
+            raise RuntimeError("semantic output binding changed")
+        binding[name] = value
 
 
 def _read_regular(
@@ -123,7 +253,57 @@ def _read_regular(
     return raw
 
 
-def _write_exclusive(path: Path, raw: bytes, *, mode: int = 0o644) -> None:
+def _preserve_partial_evidence(
+    path: Path,
+    *,
+    byte_count: int,
+    file_sha256: str,
+) -> Path | None:
+    """Move incomplete bytes aside without deleting or overwriting evidence."""
+    if not path.exists() and not path.is_symlink():
+        return None
+    if path.is_symlink() or not path.is_file():
+        raise PermissionError(
+            f"partial output is not a regular file: {path}"
+        )
+    stem = (
+        f"{path.name}.partial-evidence."
+        f"{byte_count}.{file_sha256}"
+    )
+    for nonce in range(1_000):
+        candidate = path.with_name(f"{stem}.{nonce}")
+        if candidate.exists() or candidate.is_symlink():
+            continue
+        original_relative = _output_relative(path)
+        previous = _OUTPUT_BINDING_REGISTRY.get(original_relative)
+        if previous is not None and (
+            previous["file_sha256"] != file_sha256
+            or previous["byte_count"] != byte_count
+        ):
+            raise RuntimeError("partial-evidence transfer binding changed")
+        os.rename(path, candidate)
+        os.chmod(candidate, 0o444, follow_symlinks=False)
+        _OUTPUT_BINDING_REGISTRY.pop(original_relative, None)
+        _register_output_binding(
+            candidate,
+            file_sha256=file_sha256,
+            byte_count=byte_count,
+        )
+        if previous is not None:
+            transferred = _OUTPUT_BINDING_REGISTRY[_output_relative(candidate)]
+            for name, value in previous.items():
+                if name not in {
+                    "path",
+                    "file_sha256",
+                    "byte_count",
+                    "filesystem_fingerprint",
+                }:
+                    transferred[name] = value
+        return candidate
+    raise RuntimeError("could not allocate a unique partial-evidence name")
+
+
+def _write_exclusive(path: Path, raw: bytes, *, mode: int = 0o444) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor = os.open(
         path,
@@ -134,17 +314,20 @@ def _write_exclusive(path: Path, raw: bytes, *, mode: int = 0o644) -> None:
         | getattr(os, "O_CLOEXEC", 0),
         mode,
     )
+    written = 0
+    digest = hashlib.sha256()
     try:
-        try:
-            with os.fdopen(descriptor, "wb", closefd=False) as stream:
-                written = stream.write(raw)
-                if written != len(raw):
-                    raise OSError("exclusive output write was incomplete")
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.fchmod(descriptor, mode)
-        finally:
-            os.close(descriptor)
+        while written < len(raw):
+            count = os.write(descriptor, raw[written:])
+            if count <= 0:
+                raise OSError("exclusive output write made no progress")
+            digest.update(raw[written : written + count])
+            written += count
+        os.fsync(descriptor)
+        os.fchmod(descriptor, mode)
+        closing_descriptor = descriptor
+        descriptor = -1
+        os.close(closing_descriptor)
         directory = os.open(
             path.parent,
             os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
@@ -153,11 +336,22 @@ def _write_exclusive(path: Path, raw: bytes, *, mode: int = 0o644) -> None:
             os.fsync(directory)
         finally:
             os.close(directory)
+        _register_output_binding(
+            path,
+            file_sha256=digest.hexdigest(),
+            byte_count=written,
+        )
     except BaseException:
-        try:
-            os.unlink(path)
-        except FileNotFoundError:
-            pass
+        if descriptor >= 0:
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+        _preserve_partial_evidence(
+            path,
+            byte_count=written,
+            file_sha256=digest.hexdigest(),
+        )
         raise
 
 
@@ -168,6 +362,7 @@ def _publish_json(
     value = contract.with_content_sha256(dict(core))
     raw = contract.canonical_json_bytes(value) + b"\n"
     _write_exclusive(path, raw)
+    _register_output_content_sha256(path, str(value["content_sha256"]))
     return value, raw
 
 
@@ -353,18 +548,36 @@ def _reserve(
     }
     output_root.parent.mkdir(parents=True, exist_ok=True)
     os.mkdir(output_root, mode=0o700)
+    _reset_output_binding_registry(output_root)
     try:
         return _publish_json(output_root / "reservation.json", core)
     except BaseException as error:
         try:
+            partial_inventory = _terminal_inventory(output_root)
             failure, failure_raw = _publish_json(
                 output_root / "failure.json",
                 {
                     "schema": contract.FAILURE_SCHEMA,
-                    "status": "TERMINAL_RESERVATION_PUBLICATION_FAILURE",
+                    "status":
+                        contract.RESERVATION_PUBLICATION_FAILURE_STATUS,
                     "attempt_identity": attempt_identity,
                     "reservation_publication_succeeded": False,
                     "error": _error_evidence(error),
+                    "exact_partial_inventory_before_failure_receipt":
+                        partial_inventory,
+                    "normal_receipts_present": [],
+                    "normal_receipt_bindings_present": [],
+                    "missing_normal_receipts":
+                        list(contract.NORMAL_PHASE_A_RECEIPT_PATHS),
+                    "missing_normal_receipts_synthesized": False,
+                    "operation_counts": {
+                        "optimizer_updates": 0,
+                        "pair_presentations": 0,
+                        "observer_reruns": 0,
+                    },
+                    "forbidden_access_counts": {
+                        name: 0 for name in contract.ACCESS_ZERO_COUNTER_FIELDS
+                    },
                     "retry_resume_repair_or_replacement_authorized": False,
                     "checkpoint_qualified": False,
                     "authority": dict(contract.DOWNSTREAM_DENIALS),
@@ -375,11 +588,16 @@ def _reserve(
                 output_root / "completed.json",
                 {
                     "schema": contract.COMPLETION_SCHEMA,
-                    "status": "TERMINAL_FAILURE",
+                    "status":
+                        contract.RESERVATION_PUBLICATION_FAILURE_STATUS,
                     "attempt_identity": attempt_identity,
                     "failure":
                         _binding("failure.json", failure, failure_raw),
                     "exact_precompletion_files": inventory["files"],
+                    "exact_precompletion_file_bindings":
+                        inventory["file_bindings"],
+                    "partial_evidence_bindings":
+                        inventory["partial_evidence_bindings"],
                     "exact_terminal_files":
                         sorted([*inventory["files"], "completed.json"]),
                     "exact_terminal_directories_including_root":
@@ -460,7 +678,7 @@ def _run_preflight_after_reservation(
         expected_sha256=launcher_source_sha256,
     )
     launcher = _load_source_module(
-        "_lewm_v8_deferred_hardware_preflight_launcher",
+        "_lewm_v9_deferred_hardware_preflight_launcher",
         ROOT / contract.LAUNCHER_RELATIVE_PATH,
     )
     program = getattr(launcher, "NO_TENSOR_PREFLIGHT_PROGRAM", None)
@@ -512,7 +730,8 @@ def _seal_terminal(output_root: Path) -> dict[str, Any]:
             path = current_path / name
             if path.is_symlink() or not path.is_file():
                 raise PermissionError("terminal output contains a nonregular file")
-            os.chmod(path, 0o444, follow_symlinks=False)
+            if stat.S_IMODE(path.stat(follow_symlinks=False).st_mode) != 0o444:
+                os.chmod(path, 0o444, follow_symlinks=False)
             files.append(path.relative_to(output_root).as_posix())
         for name in names:
             path = current_path / name
@@ -544,33 +763,29 @@ def _phase_a_ops() -> SimpleNamespace:
         normalize_spatial_tokens,
     )
     from lewm.models.patch_whitened_action_residual_jepa import (  # type: ignore
-        ActionConditionedLocalCorrespondenceTransport,
+        ActionConditionedLatentFlow,
+        DensePairwiseSpatialCostVolumeInverseHead,
         action_indexed_energy_nll,
-        centered_log_soft_cross_entropy,
-        correspondence_action_identification_nll,
+        dense_pairwise_spatial_cost_volume_inverse_terms,
         initialize_action_gate_rows,
-        local_correspondence_targets,
-        local_correspondence_terms,
         patch_whitening_terms,
-        predict_action_conditioned_local_transports,
+        predict_action_conditioned_flow_warps,
     )
 
     return SimpleNamespace(
-        ActionConditionedLocalCorrespondenceTransport=(
-            ActionConditionedLocalCorrespondenceTransport
+        ActionConditionedLatentFlow=ActionConditionedLatentFlow,
+        DensePairwiseSpatialCostVolumeInverseHead=(
+            DensePairwiseSpatialCostVolumeInverseHead
         ),
         action_indexed_energy_nll=action_indexed_energy_nll,
-        centered_log_soft_cross_entropy=centered_log_soft_cross_entropy,
-        correspondence_action_identification_nll=(
-            correspondence_action_identification_nll
+        dense_pairwise_spatial_cost_volume_inverse_terms=(
+            dense_pairwise_spatial_cost_volume_inverse_terms
         ),
         initialize_action_gate_rows=initialize_action_gate_rows,
-        local_correspondence_targets=local_correspondence_targets,
-        local_correspondence_terms=local_correspondence_terms,
         normalize_spatial_tokens=normalize_spatial_tokens,
         patch_whitening_terms=patch_whitening_terms,
-        predict_action_conditioned_local_transports=(
-            predict_action_conditioned_local_transports
+        predict_action_conditioned_flow_warps=(
+            predict_action_conditioned_flow_warps
         ),
     )
 
@@ -583,7 +798,7 @@ def _phase_a_current_only_loss(
     *,
     ops: Any | None = None,
 ) -> dict[str, Any]:
-    """Exact V8 Phase-A objective over one frozen current/next RGB pair."""
+    """Exact V9 objective: V5 JEPA plus the live RGB-pair inverse head."""
     ops = _phase_a_ops() if ops is None else ops
     if (
         current_rgb.ndim != 4
@@ -594,8 +809,9 @@ def _phase_a_current_only_loss(
         raise ValueError("Phase-A current/next pair batch shape changed")
 
     online_tokens = model.encoder.forward_tokens(current_rgb)
-    online_patches = online_tokens[:, 1:]
-    online_state = model.online_geometry(online_patches)
+    online_state = model.online_geometry(online_tokens[:, 1:])
+    online_next_tokens = model.encoder.forward_tokens(next_rgb)
+    online_next_state = model.online_geometry(online_next_tokens[:, 1:])
     online_projected = ops.normalize_spatial_tokens(
         model.online_target_projector(online_state)
     )
@@ -616,12 +832,7 @@ def _phase_a_current_only_loss(
         target_next_pre = model.target_projector(target_next_raw)
         target_current = ops.normalize_spatial_tokens(target_current_pre)
         target_next = ops.normalize_spatial_tokens(target_next_pre)
-        correspondence_target = ops.local_correspondence_targets(
-            model.prediction_projector,
-            target_current,
-            target_next,
-        )
-    predictions = ops.predict_action_conditioned_local_transports(
+    predictions = ops.predict_action_conditioned_flow_warps(
         model.predictor,
         model.prediction_projector,
         online_state,
@@ -632,14 +843,11 @@ def _phase_a_current_only_loss(
         predictions,
         target_next,
     )
-    correspondence = ops.local_correspondence_terms(
-        correspondence_target.probabilities,
-        predictions,
-        action_losses.row_scale,
-    )
-    correspondence_action = ops.correspondence_action_identification_nll(
-        correspondence_target.probabilities,
-        predictions,
+    dense_inverse = ops.dense_pairwise_spatial_cost_volume_inverse_terms(
+        model.dense_pairwise_inverse_head,
+        online_state,
+        online_next_state,
+        action.argmax(dim=1),
         action_losses.row_scale,
     )
     raw_whitening = ops.patch_whitening_terms(online_state.float())
@@ -650,10 +858,8 @@ def _phase_a_current_only_loss(
         action_losses.jepa
         + contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT
         * action_losses.identification
-        + contract.LOCAL_CORRESPONDENCE_LOSS_WEIGHT
-        * correspondence.loss
-        + contract.CORRESPONDENCE_ACTION_IDENTIFICATION_LOSS_WEIGHT
-        * correspondence_action.loss
+        + contract.DENSE_PAIRWISE_INVERSE_LOSS_WEIGHT
+        * dense_inverse.loss
         + contract.WHITENING_VARIANCE_WEIGHT
         * (raw_whitening.variance + projected_whitening.variance)
         + contract.WHITENING_COVARIANCE_WEIGHT
@@ -663,22 +869,22 @@ def _phase_a_current_only_loss(
         "loss": total,
         "jepa_loss": action_losses.jepa,
         "action_identification_loss": action_losses.identification,
-        "local_correspondence_loss": correspondence.loss,
-        "local_correspondence_unscaled_cross_entropy":
-            correspondence.centered_cross_entropy,
-        "local_correspondence_cross_entropy_per_row":
-            correspondence.cross_entropy_per_row,
-        "correspondence_action_identification_loss":
-            correspondence_action.loss,
-        "unscaled_correspondence_action_nll":
-            correspondence_action.unscaled_nll,
-        "correspondence_action_nll_per_row":
-            correspondence_action.nll_per_row,
-        "all_candidate_correspondence_costs":
-            correspondence_action.all_candidate_costs,
-        "correspondence_action_scores": correspondence_action.scores,
-        "correspondence_action_probabilities":
-            correspondence_action.action_probabilities,
+        "dense_pairwise_inverse_loss": dense_inverse.loss,
+        "unscaled_dense_pairwise_inverse_nll": dense_inverse.unscaled_nll,
+        "dense_pairwise_inverse_nll_per_row": dense_inverse.nll_per_row,
+        "dense_pairwise_inverse_logits": dense_inverse.logits,
+        "dense_pairwise_current_next_cost_volume":
+            dense_inverse.current_next_cost_volume,
+        "dense_pairwise_current_current_cost_volume":
+            dense_inverse.current_current_cost_volume,
+        "dense_pairwise_current_next_probabilities":
+            dense_inverse.current_next_probabilities,
+        "dense_pairwise_current_current_probabilities":
+            dense_inverse.current_current_probabilities,
+        "dense_pairwise_probability_difference":
+            dense_inverse.probability_difference,
+        "dense_pairwise_volume": dense_inverse.volume,
+        "dense_pairwise_displacement": dense_inverse.displacement,
         "raw_whitening_variance_loss": raw_whitening.variance,
         "raw_whitening_covariance_loss": raw_whitening.covariance,
         "projected_whitening_variance_loss":
@@ -689,13 +895,9 @@ def _phase_a_current_only_loss(
         "all_action_predictions": predictions.all_predictions,
         "control_predictions": predictions.controls,
         "control_indices": predictions.control_indices,
-        "all_transport_logits": predictions.all_transport_logits,
-        "all_transport_probabilities":
-            predictions.all_transport_probabilities,
-        "all_expected_offsets": predictions.all_expected_offsets,
-        "all_transports": predictions.all_transports,
-        "local_correspondence_target": correspondence_target,
+        "all_flows_cell": predictions.all_flows_cell,
         "online_state": online_state,
+        "online_next_state": online_next_state,
         "raw_target_next": target_next_raw,
         "projected_target_next": target_next,
         "projected_target_current": target_current,
@@ -1001,7 +1203,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.MATCHED_V1_RUNNER_RELATIVE_PATH],
     )
     matched = _load_source_module(
-        "_lewm_jepa_encoder_v8_correspondence_matched_loader",
+        "_lewm_jepa_encoder_v9_cost_volume_matched_loader",
         matched_path,
     )
     runtime = matched._load_runtime()
@@ -1010,7 +1212,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.SCHEDULE_ADAPTER_RELATIVE_PATH],
     )
     schedule_adapter = _load_source_module(
-        "_lewm_jepa_encoder_v8_correspondence_schedule_adapter",
+        "_lewm_jepa_encoder_v9_cost_volume_schedule_adapter",
         ROOT / contract.SCHEDULE_ADAPTER_RELATIVE_PATH,
     )
 
@@ -1287,7 +1489,7 @@ def _run_phase_b_with_reviewed_determinism(
 ) -> tuple[Any, dict[str, Any]]:
     """Install the two reviewed matched-V1 ROCm/NumPy compatibility seams."""
     expected_prefix = (
-        contract.PHASE_B_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX
+        contract.PHASE_A_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX
     )
     original_from_numpy = runtime.torch.from_numpy
     scalar_adaptation_count = 0
@@ -1342,27 +1544,35 @@ def _run_phase_a_with_reviewed_determinism(
     runtime: Any,
     operation: Any,
 ) -> tuple[Any, dict[str, Any]]:
-    """Run all of Phase A under strict determinism with zero warnings."""
+    """Permit only the preregistered latent-warp ROCm backward warning."""
 
+    expected_prefix = (
+        contract.PHASE_A_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX
+    )
     with warnings.catch_warnings(record=True) as observed:
-        warnings.simplefilter("always")
-        runtime.torch.use_deterministic_algorithms(True, warn_only=False)
+        warnings.simplefilter("once")
+        runtime.torch.use_deterministic_algorithms(True, warn_only=True)
         try:
             result = operation()
         finally:
             runtime.torch.use_deterministic_algorithms(
                 True, warn_only=False
             )
-    if observed:
+    if not observed or any(
+        item.category is not UserWarning
+        or not str(item.message).startswith(expected_prefix)
+        for item in observed
+    ):
         raise RuntimeError(
-            "Phase-A training emitted a determinism warning"
+            "Phase-A training emitted an unexpected determinism warning set"
         )
+    messages = [str(item.message) for item in observed]
     return result, {
         "strict_deterministic_algorithms_restored": True,
-        "warn_only_scope": "none",
-        "expected_determinism_warning_count": 0,
+        "warn_only_scope": "phase_a_training_and_checkpoint_selection",
+        "expected_grid_sampler_warning_count": len(messages),
         "warning_messages_sha256":
-            contract.canonical_json_sha256([]),
+            contract.canonical_json_sha256(messages),
         "unexpected_warning_count": 0,
     }
 
@@ -1407,12 +1617,26 @@ def _snapshot_model(
     raw = buffer.getvalue()
     relative = f"{phase}/checkpoints/update_{update}.pt"
     _write_exclusive(output_root / relative, raw)
+    schedule_prefix_sha256 = (
+        contract.CHECKPOINT_SCHEDULE_PREFIX_SHA256[update]
+    )
+    _register_output_semantic_metadata(
+        output_root / relative,
+        content_sha256=content_sha256,
+        state_sha256=state_sha256,
+        phase=phase,
+        update=update,
+        schedule_prefix_sha256=schedule_prefix_sha256,
+    )
     return {
         "path": relative,
         "file_sha256": hashlib.sha256(raw).hexdigest(),
         "content_sha256": content_sha256,
         "byte_count": len(raw),
         "state_sha256": state_sha256,
+        "phase": phase,
+        "update": update,
+        "schedule_prefix_sha256": schedule_prefix_sha256,
     }
 
 
@@ -1462,22 +1686,17 @@ def _phase_a_model(
     ):
         raise RuntimeError("isolated action-gate initialization changed global RNG")
     gate_predictor_sha = _state_sha(runtime, model.predictor)
-    cpu_rng_before_transport_install = torch.random.get_rng_state().clone()
-    cuda_rng_before_transport_install = [
+    cpu_rng_before_flow_install = torch.random.get_rng_state().clone()
+    cuda_rng_before_flow_install = [
         value.clone() for value in torch.cuda.get_rng_state_all()
     ]
     shared_projector = model.prediction_projector
     shared_projector_sha = _state_sha(runtime, shared_projector)
-    model.prediction_projector = (
-        ops.ActionConditionedLocalCorrespondenceTransport(
-            shared_projector
-        )
+    model.prediction_projector = ops.ActionConditionedLatentFlow(
+        shared_projector
     )
     action_one_hot = torch.eye(9, dtype=torch.float32)[:, None, :]
     action_embeddings = model.predictor.action_embed(action_one_hot)[:, 0, :]
-    centered_action_embeddings = (
-        action_embeddings - action_embeddings.mean(dim=0, keepdim=True)
-    )
     relative_action_embeddings = (
         action_embeddings
         - action_embeddings[contract.HOLD_ACTION_INDEX]
@@ -1490,16 +1709,9 @@ def _phase_a_model(
     action_embeddings_valid = (
         tuple(action_embeddings.shape) == (9, 192)
         and bool(torch.isfinite(action_embeddings).all().item())
-        and bool(torch.isfinite(centered_action_embeddings).all().item())
         and torch.equal(
             pairwise_embedding_equality,
             expected_embedding_equality,
-        )
-        and bool(
-            torch.count_nonzero(
-                centered_action_embeddings,
-                dim=1,
-            ).ne(0).all().item()
         )
         and int(
             torch.count_nonzero(
@@ -1516,55 +1728,53 @@ def _phase_a_model(
     if (
         not torch.equal(
             torch.random.get_rng_state(),
-            cpu_rng_before_transport_install,
+            cpu_rng_before_flow_install,
         )
         or any(
             not torch.equal(before, after)
             for before, after in zip(
-                cuda_rng_before_transport_install,
+                cuda_rng_before_flow_install,
                 torch.cuda.get_rng_state_all(),
                 strict=True,
             )
         )
     ):
         raise RuntimeError(
-            "local-correspondence transport installation changed global RNG"
+            "latent-flow installation changed global RNG"
         )
-    transport_weight = getattr(
+    flow_weight = getattr(
         model.prediction_projector,
-        "transport_weight",
+        "flow_weight",
         None,
     )
     direct_parameters = dict(
         model.prediction_projector.named_parameters(recurse=False)
     )
-    transport_scalar_count = 8 * 192
+    flow_scalar_count = 2 * 192
     if (
         getattr(model.prediction_projector, "shared_projector", None)
         is not shared_projector
         or _state_sha(runtime, shared_projector) != shared_projector_sha
-        or not isinstance(transport_weight, torch.nn.Parameter)
-        or tuple(transport_weight.shape) != (8, 192)
-        or transport_weight.dtype != torch.float32
-        or set(direct_parameters) != {"transport_weight"}
-        or direct_parameters["transport_weight"] is not transport_weight
-        or int(transport_weight.numel()) != transport_scalar_count
-        or int(torch.count_nonzero(transport_weight).item()) != 0
-        or hasattr(model.prediction_projector, "transport_bias")
+        or not isinstance(flow_weight, torch.nn.Parameter)
+        or tuple(flow_weight.shape) != (2, 192)
+        or flow_weight.dtype != torch.float32
+        or set(direct_parameters) != {"flow_weight"}
+        or direct_parameters["flow_weight"] is not flow_weight
+        or int(flow_weight.numel()) != flow_scalar_count
+        or int(torch.count_nonzero(flow_weight).item()) != 0
+        or hasattr(model.prediction_projector, "flow_bias")
         or not action_embeddings_valid
     ):
         raise RuntimeError(
-            "local-correspondence transport initialization changed"
+            "state-dependent latent-flow initialization changed"
         )
-    transport_initialization = {
-        "parameter_path": "prediction_projector.transport_weight",
+    flow_initialization = {
         "action_count": 9,
         "latent_dim": 192,
-        "noncenter_logit_count": 8,
-        "full_neighborhood_count": 9,
-        "weight_shape": [8, 192],
-        "weight_scalar_count": transport_scalar_count,
-        "exact_zero_weight_scalar_count": transport_scalar_count,
+        "flow_dim": 2,
+        "weight_shape": [2, 192],
+        "weight_scalar_count": flow_scalar_count,
+        "exact_zero_weight_scalar_count": flow_scalar_count,
         "nonzero_weight_scalar_count": 0,
         "bias_parameter_count": 0,
         "bias": False,
@@ -1572,27 +1782,73 @@ def _phase_a_model(
         "action_embeddings_pairwise_distinct": True,
         "all_eight_non_hold_relative_embeddings_nonzero": True,
         "hold_relative_embedding_exactly_zero": True,
+        "maximum_absolute_displacement_patch_cells": 1.0,
+        "normalized_patch_step": 2.0 / 15.0,
         "grid_shape": [16, 16],
-        "full_offset_order": [
-            list(offset)
-            for offset in contract.LOCAL_CORRESPONDENCE_FULL_OFFSETS
-        ],
-        "center_offset_index":
-            contract.LOCAL_CORRESPONDENCE_CENTER_INDEX,
-        "border_rule": "integer_index_clamp",
-        "neighbor_table_persistent": False,
-        "centered_nine_logit_row_sum_exact_zero_by_construction": True,
-        "uniform_student_identity_transport_at_initialization": True,
+        "grid_component_order": ["x_column", "y_row"],
+        "grid_sample_mode": "bilinear",
+        "grid_sample_padding_mode": "border",
+        "grid_sample_align_corners": True,
         "wrapped_existing_shared_projector": True,
         "shared_projector_state_sha256_before_and_after":
             shared_projector_sha,
-        "auxiliary_optimizer_learning_rate": 3e-4,
-        "optimizer_weight_decay": 1e-4,
-        "global_gradient_clip": 1.0,
-        "phase_b_copy_count": 0,
-        "phase_b_optimizer_inclusion_count": 0,
         "zero_initialized_without_rng_draw": True,
         "global_rng_state_preserved": True,
+    }
+    cpu_rng_before_dense_head = torch.random.get_rng_state().clone()
+    cuda_rng_before_dense_head = [
+        value.clone() for value in torch.cuda.get_rng_state_all()
+    ]
+    model.dense_pairwise_inverse_head = (
+        ops.DensePairwiseSpatialCostVolumeInverseHead()
+    )
+    dense_head_weights = (
+        model.dense_pairwise_inverse_head.channel_projection.weight,
+        model.dense_pairwise_inverse_head.spatial_projection.weight,
+        model.dense_pairwise_inverse_head.classifier.weight,
+    )
+    dense_head_bias = model.dense_pairwise_inverse_head.classifier.bias
+    dense_head_parameter_count = sum(
+        parameter.numel()
+        for parameter in model.dense_pairwise_inverse_head.parameters()
+    )
+    if (
+        dense_head_parameter_count
+        != contract.DENSE_PAIRWISE_HEAD_PARAMETER_COUNT
+        or tuple(dense_head_weights[0].shape) != (16, 256, 1, 1)
+        or tuple(dense_head_weights[1].shape) != (16, 16, 3, 3)
+        or tuple(dense_head_weights[2].shape) != (9, 256)
+        or dense_head_bias is None
+        or tuple(dense_head_bias.shape) != (9,)
+        or any(weight.dtype != torch.float32 for weight in dense_head_weights)
+        or dense_head_bias.dtype != torch.float32
+        or any(
+            int(torch.count_nonzero(weight).item()) != weight.numel()
+            for weight in dense_head_weights
+        )
+        or int(torch.count_nonzero(dense_head_bias).item()) != 0
+    ):
+        raise RuntimeError("dense pairwise inverse-head initialization changed")
+    dense_head_initialization = {
+        "seed": contract.DENSE_PAIRWISE_HEAD_INITIALIZATION_SEED,
+        "parameter_count": dense_head_parameter_count,
+        "channel_projection_weight_shape": [16, 256, 1, 1],
+        "spatial_projection_weight_shape": [16, 16, 3, 3],
+        "classifier_weight_shape": [9, 256],
+        "classifier_bias_shape": [9],
+        "all_three_weights_every_scalar_nonzero": True,
+        "classifier_bias_exact_zero": True,
+        "construction_device": "cpu",
+        "construction_dtype": "float32",
+        "draw_order": [
+            "channel_projection.weight",
+            "spatial_projection.weight",
+            "classifier.weight",
+        ],
+        "coordinates_component_order": ["dy_row", "dx_column"],
+        "global_rng_state_preserved": True,
+        "phase_b_copy_count": 0,
+        "phase_b_optimizer_inclusion_count": 0,
     }
     n320_encoder = {
         name: value.detach().to(device="cpu").contiguous().clone()
@@ -1609,6 +1865,22 @@ def _phase_a_model(
     model.appearance_projector.requires_grad_(False)
     model.appearance_projector.eval()
     model = model.to(device)
+    if (
+        not torch.equal(
+            torch.random.get_rng_state(), cpu_rng_before_dense_head
+        )
+        or any(
+            not torch.equal(before, after)
+            for before, after in zip(
+                cuda_rng_before_dense_head,
+                torch.cuda.get_rng_state_all(),
+                strict=True,
+            )
+        )
+    ):
+        raise RuntimeError(
+            "dense inverse-head construction or transfer changed global RNG"
+        )
     model.train()
     model.appearance_projector.eval()
     partition = _phase_a_parameter_partition(model)
@@ -1624,8 +1896,10 @@ def _phase_a_model(
         "action_gate_initialization_preserved_global_rng": True,
         "predictor_state_sha256_after_action_gate_initialization":
             gate_predictor_sha,
-        "local_correspondence_transport_initialization":
-            transport_initialization,
+        "state_dependent_latent_flow_initialization":
+            flow_initialization,
+        "dense_pairwise_inverse_head_initialization":
+            dense_head_initialization,
         "appearance_projector_frozen_and_eval": (
             not model.appearance_projector.training
             and all(
@@ -1650,7 +1924,7 @@ def _phase_a_diagnostics(
     *,
     update: int,
 ) -> dict[str, Any]:
-    """Compute the exact 495-row controls while preserving all RNG streams."""
+    """Observe the exact 495-row V5 and dense-pairwise V9 controls once."""
     torch = runtime.torch
     ops = _phase_a_ops()
     before_state = _state_sha(runtime, model)
@@ -1659,26 +1933,25 @@ def _phase_a_diagnostics(
     def observe() -> dict[str, Any]:
         model.eval()
         states: list[Any] = []
+        next_states: list[Any] = []
         ema_current_skips: list[Any] = []
         actions: list[Any] = []
         predictions: list[Any] = []
-        transport_logits: list[Any] = []
-        transport_probabilities: list[Any] = []
-        expected_offsets: list[Any] = []
-        correct_targets: list[Any] = []
-        update_zero_action_row_count = 0
-        update_zero_action_pair_count: int | None = None
-        hold_transport_identity = True
-        all_action_transports_identity = True
+        flows_cell: list[Any] = []
         control_energies: list[Any] = []
         control_indices: list[Any] = []
         raw_targets: list[Any] = []
         projected_targets: list[Any] = []
         non_hold_rows: list[Any] = []
+        update_zero_action_row_count = 0
+        update_zero_action_pair_count: int | None = None
         with torch.no_grad():
             for start in range(0, len(pairs), contract.MICROBATCH_SIZE):
                 indices = list(
-                    range(start, min(start + contract.MICROBATCH_SIZE, len(pairs)))
+                    range(
+                        start,
+                        min(start + contract.MICROBATCH_SIZE, len(pairs)),
+                    )
                 )
                 current, next_rgb, action, non_hold = loader.batch(
                     pairs,
@@ -1687,33 +1960,26 @@ def _phase_a_diagnostics(
                     role="checkpoint_selection",
                     stage=f"phase_a_diagnostic_update_{update}",
                 )
-                online_tokens = model.encoder.forward_tokens(current)
-                state = model.online_geometry(online_tokens[:, 1:])
-                current_target_tokens = (
-                    model.target_encoder.forward_tokens(current)
+                state = model.online_geometry(
+                    model.encoder.forward_tokens(current)[:, 1:]
+                )
+                next_state = model.online_geometry(
+                    model.encoder.forward_tokens(next_rgb)[:, 1:]
                 )
                 current_target_raw = model.target_geometry_module(
-                    current_target_tokens[:, 1:]
+                    model.target_encoder.forward_tokens(current)[:, 1:]
                 )
                 current_skip = ops.normalize_spatial_tokens(
                     model.target_projector(current_target_raw)
                 )
-                next_target_tokens = model.target_encoder.forward_tokens(
-                    next_rgb
-                )
                 raw_target = model.target_geometry_module(
-                    next_target_tokens[:, 1:]
+                    model.target_encoder.forward_tokens(next_rgb)[:, 1:]
                 )
                 projected_target = ops.normalize_spatial_tokens(
                     model.target_projector(raw_target)
                 )
-                correspondence_target = ops.local_correspondence_targets(
-                    model.prediction_projector,
-                    current_skip,
-                    projected_target,
-                )
                 residual_predictions = (
-                    ops.predict_action_conditioned_local_transports(
+                    ops.predict_action_conditioned_flow_warps(
                         model.predictor,
                         model.prediction_projector,
                         state,
@@ -1721,31 +1987,12 @@ def _phase_a_diagnostics(
                         current_skip,
                     )
                 )
-                hold_transport_identity = (
-                    hold_transport_identity
-                    and torch.equal(
-                        residual_predictions.all_transports[
-                            :, contract.HOLD_ACTION_INDEX
-                        ],
-                        current_skip,
-                    )
-                )
-                all_action_transports_identity = (
-                    all_action_transports_identity
-                    and torch.equal(
-                        residual_predictions.all_transports,
-                        current_skip[:, None].expand_as(
-                            residual_predictions.all_transports
-                        ),
-                    )
-                )
                 if update == 0:
-                    (
-                        verified_rows,
-                        verified_pairs,
-                    ) = _verify_update_zero_action_symmetry_batch(
-                        torch,
-                        residual_predictions.all_predictions,
+                    verified_rows, verified_pairs = (
+                        _verify_update_zero_action_symmetry_batch(
+                            torch,
+                            residual_predictions.all_predictions,
+                        )
                     )
                     update_zero_action_row_count += verified_rows
                     if update_zero_action_pair_count is None:
@@ -1755,22 +2002,14 @@ def _phase_a_diagnostics(
                             "update-zero action-pair count changed by batch"
                         )
                 states.append(state.detach().cpu())
+                next_states.append(next_state.detach().cpu())
                 ema_current_skips.append(current_skip.detach().cpu())
                 actions.append(action.detach().cpu())
                 predictions.append(
                     residual_predictions.executed.detach().cpu()
                 )
-                transport_logits.append(
-                    residual_predictions.all_transport_logits.detach().cpu()
-                )
-                transport_probabilities.append(
-                    residual_predictions.all_transport_probabilities.detach().cpu()
-                )
-                expected_offsets.append(
-                    residual_predictions.all_expected_offsets.detach().cpu()
-                )
-                correct_targets.append(
-                    correspondence_target.probabilities.detach().cpu()
+                flows_cell.append(
+                    residual_predictions.all_flows_cell.detach().cpu()
                 )
                 control_energies.append(
                     (
@@ -1785,34 +2024,24 @@ def _phase_a_diagnostics(
                 projected_targets.append(projected_target.detach().cpu())
                 non_hold_rows.append(non_hold.detach().cpu())
 
-        state = torch.cat(states)
-        ema_current_skip = torch.cat(ema_current_skips)
-        action = torch.cat(actions)
-        prediction = torch.cat(predictions)
-        all_transport_logits = torch.cat(transport_logits).float()
-        all_transport_probabilities = torch.cat(
-            transport_probabilities
-        ).float()
-        all_expected_offsets = torch.cat(expected_offsets).float()
-        correct_target_probabilities = torch.cat(correct_targets).float()
+        state = torch.cat(states).float()
+        next_state = torch.cat(next_states).float()
+        ema_current_skip = torch.cat(ema_current_skips).float()
+        action = torch.cat(actions).float()
+        prediction = torch.cat(predictions).float()
+        all_flows_cell = torch.cat(flows_cell).float()
         control_mse = torch.cat(control_energies).float()
-        candidate_indices = torch.cat(control_indices)
+        candidate_indices = torch.cat(control_indices).long()
         raw_target = torch.cat(raw_targets).float()
         target = torch.cat(projected_targets).float()
         non_hold = torch.cat(non_hold_rows).bool()
         requested_indices = action.argmax(dim=1)
         if (
             len(pairs) != contract.SELECTION_ROLE_COUNTS["pairs"]
-            or state.shape[0] != len(pairs)
-            or tuple(raw_target.shape[1:]) != (256, 192)
-            or tuple(all_transport_logits.shape)
-            != (len(pairs), 9, 256, 9)
-            or all_transport_probabilities.shape
-            != all_transport_logits.shape
-            or tuple(all_expected_offsets.shape)
-            != (len(pairs), 9, 256, 2)
-            or tuple(correct_target_probabilities.shape)
-            != (len(pairs), 256, 9)
+            or state.shape != (len(pairs), 256, 192)
+            or next_state.shape != state.shape
+            or raw_target.shape != state.shape
+            or tuple(all_flows_cell.shape) != (len(pairs), 9, 256, 2)
             or tuple(control_mse.shape) != (len(pairs), 8)
             or tuple(candidate_indices.shape) != (len(pairs), 8)
             or int(non_hold.sum())
@@ -1832,6 +2061,39 @@ def _phase_a_diagnostics(
             else None
         )
 
+        per_action_any_nonzero = {
+            action_name: bool(
+                torch.count_nonzero(all_flows_cell[:, action_index]).item()
+            )
+            for action_index, action_name in enumerate(
+                contract.ACTION_VOCABULARY
+            )
+        }
+        latent_flow = {
+            "all_values_finite": bool(
+                torch.isfinite(all_flows_cell).all().item()
+            ),
+            "all_components_within_closed_one_patch_bound": bool(
+                (all_flows_cell.abs() <= 1.0).all().item()
+            ),
+            "hold_flow_exactly_zero": (
+                int(
+                    torch.count_nonzero(
+                        all_flows_cell[:, contract.HOLD_ACTION_INDEX]
+                    ).item()
+                )
+                == 0
+            ),
+            "maximum_absolute_flow_cell":
+                float(all_flows_cell.abs().max()),
+            "non_hold_action_nonzero_count": sum(
+                int(active)
+                for action_name, active in per_action_any_nonzero.items()
+                if action_name != "hold"
+            ),
+            "per_action_any_nonzero": per_action_any_nonzero,
+        }
+
         current_mapping = torch.tensor(
             _scene_derangement(
                 pairs, endpoint_key="current_endpoint_sha256"
@@ -1845,33 +2107,21 @@ def _phase_a_diagnostics(
             dtype=torch.long,
         )
         shuffled_current_predictions: list[Any] = []
-        deranged_targets: list[Any] = []
         with torch.no_grad():
             for start in range(0, len(pairs), contract.MICROBATCH_SIZE):
                 stop = min(start + contract.MICROBATCH_SIZE, len(pairs))
-                shuffled_state = state[current_mapping[start:stop]].to(device)
-                shuffled_skip = ema_current_skip[
-                    current_mapping[start:stop]
-                ].to(device)
-                original_action = action[start:stop].to(device)
                 shuffled_current_predictions.append(
-                    ops.predict_action_conditioned_local_transports(
+                    ops.predict_action_conditioned_flow_warps(
                         model.predictor,
                         model.prediction_projector,
-                        shuffled_state,
-                        original_action,
-                        shuffled_skip,
-                    ).executed.cpu()
+                        state[current_mapping[start:stop]].to(device),
+                        action[start:stop].to(device),
+                        ema_current_skip[
+                            current_mapping[start:stop]
+                        ].to(device),
+                    ).executed.detach().cpu()
                 )
-                deranged_targets.append(
-                    ops.local_correspondence_targets(
-                        model.prediction_projector,
-                        ema_current_skip[start:stop].to(device),
-                        target[next_mapping[start:stop]].to(device),
-                    ).probabilities.cpu()
-                )
-        shuffled_current = torch.cat(shuffled_current_predictions)
-        deranged_target_probabilities = torch.cat(deranged_targets).float()
+        shuffled_current = torch.cat(shuffled_current_predictions).float()
         shuffled_next = target[next_mapping]
         mean_target = target.mean(dim=0, keepdim=True).expand_as(target)
 
@@ -1899,176 +2149,383 @@ def _phase_a_diagnostics(
                 "Phase-A real-hold control population changed"
             )
         hold_positions = hold_matches.to(torch.int64).argmax(dim=1)
-        non_hold_rows_index = rows[non_hold]
         hold_mse = control_mse[
-            non_hold_rows_index,
+            rows[non_hold],
             hold_positions,
         ]
         shuffled_next_mse = row_mse(prediction, shuffled_next)
         mean_target_mse = row_mse(prediction, mean_target)
         shuffled_current_mse = row_mse(shuffled_current, target)
-        if not bool(non_hold.any()):
-            raise PermissionError("Phase-A selection has no non-hold rows")
 
-        rows = torch.arange(len(pairs), dtype=torch.long)
-        executed_logits = all_transport_logits[
-            rows,
-            requested_indices,
-        ]
-        correct_ce_tokens = ops.centered_log_soft_cross_entropy(
-            correct_target_probabilities,
-            executed_logits,
-        )
-        deranged_ce_tokens = ops.centered_log_soft_cross_entropy(
-            deranged_target_probabilities,
-            executed_logits,
-        )
-        all_candidate_ce_tokens = ops.centered_log_soft_cross_entropy(
-            correct_target_probabilities[:, None],
-            all_transport_logits,
-        )
-        correct_ce = correct_ce_tokens.mean(dim=1)
-        deranged_ce = deranged_ce_tokens.mean(dim=1)
-        all_candidate_ce = all_candidate_ce_tokens.mean(dim=2)
-        correspondence_action_scores = -all_candidate_ce
-        correspondence_action_probabilities = torch.softmax(
-            correspondence_action_scores,
-            dim=1,
-        )
-        correspondence_action_nll_per_row = (
-            torch.nn.functional.cross_entropy(
-                correspondence_action_scores,
-                requested_indices,
-                reduction="none",
+        correct_nll_rows: list[Any] = []
+        deranged_nll_rows: list[Any] = []
+        current_current_nll_rows: list[Any] = []
+        correct_logits_rows: list[Any] = []
+        displacement_rows: list[Any] = []
+        probabilities_finite = True
+        probability_rows_normalized = True
+        volume_finite = True
+        volume_bounded = True
+        volume_conserved = True
+        displacement_finite = True
+        displacement_bounded = True
+        same_diff_zero = True
+        same_volume_zero = True
+        same_displacement_zero = True
+        with torch.no_grad():
+            for start in range(0, len(pairs), contract.MICROBATCH_SIZE):
+                stop = min(start + contract.MICROBATCH_SIZE, len(pairs))
+                current_batch = state[start:stop].to(device)
+                next_batch = next_state[start:stop].to(device)
+                label_batch = requested_indices[start:stop].to(device)
+                scale = torch.ones(
+                    stop - start,
+                    dtype=torch.float32,
+                    device=device,
+                )
+                correct = (
+                    ops.dense_pairwise_spatial_cost_volume_inverse_terms(
+                        model.dense_pairwise_inverse_head,
+                        current_batch,
+                        next_batch,
+                        label_batch,
+                        scale,
+                    )
+                )
+                deranged = (
+                    ops.dense_pairwise_spatial_cost_volume_inverse_terms(
+                        model.dense_pairwise_inverse_head,
+                        current_batch,
+                        next_state[next_mapping[start:stop]].to(device),
+                        label_batch,
+                        scale,
+                    )
+                )
+                current_current = (
+                    ops.dense_pairwise_spatial_cost_volume_inverse_terms(
+                        model.dense_pairwise_inverse_head,
+                        current_batch,
+                        current_batch,
+                        label_batch,
+                        scale,
+                    )
+                )
+                correct_nll_rows.append(correct.nll_per_row.cpu())
+                deranged_nll_rows.append(deranged.nll_per_row.cpu())
+                current_current_nll_rows.append(
+                    current_current.nll_per_row.cpu()
+                )
+                correct_logits_rows.append(correct.logits.cpu())
+                displacement_rows.append(correct.displacement.cpu())
+                probability_values = (
+                    correct.current_next_probabilities,
+                    correct.current_current_probabilities,
+                    deranged.current_next_probabilities,
+                    deranged.current_current_probabilities,
+                    current_current.current_next_probabilities,
+                    current_current.current_current_probabilities,
+                )
+                probabilities_finite = (
+                    probabilities_finite
+                    and all(
+                        bool(torch.isfinite(value).all().item())
+                        for value in probability_values
+                    )
+                )
+                probability_rows_normalized = (
+                    probability_rows_normalized
+                    and all(
+                        bool(
+                            torch.allclose(
+                                value.sum(dim=-1),
+                                torch.ones_like(value[..., 0]),
+                                rtol=0.0,
+                                atol=1e-6,
+                            )
+                        )
+                        for value in probability_values
+                    )
+                )
+                volume_finite = (
+                    volume_finite
+                    and all(
+                        bool(torch.isfinite(value).all().item())
+                        for value in (
+                            correct.volume,
+                            deranged.volume,
+                            current_current.volume,
+                        )
+                    )
+                )
+                volume_bounded = (
+                    volume_bounded
+                    and all(
+                        bool(
+                            (
+                                value.abs()
+                                <= contract.DENSE_PAIRWISE_VOLUME_VALUE_BOUND
+                            ).all().item()
+                        )
+                        for value in (
+                            correct.volume,
+                            deranged.volume,
+                            current_current.volume,
+                        )
+                    )
+                )
+                volume_conserved = (
+                    volume_conserved
+                    and all(
+                        bool(
+                            torch.allclose(
+                                value.sum(dim=1),
+                                torch.zeros_like(value[:, 0]),
+                                rtol=0.0,
+                                atol=1e-6,
+                            )
+                        )
+                        for value in (
+                            correct.volume,
+                            deranged.volume,
+                            current_current.volume,
+                        )
+                    )
+                )
+                displacement_finite = (
+                    displacement_finite
+                    and all(
+                        bool(torch.isfinite(value).all().item())
+                        for value in (
+                            correct.displacement,
+                            deranged.displacement,
+                            current_current.displacement,
+                        )
+                    )
+                )
+                displacement_bounded = (
+                    displacement_bounded
+                    and all(
+                        bool(
+                            (
+                                value.abs()
+                                <= contract.DENSE_PAIRWISE_DISPLACEMENT_COMPONENT_BOUND
+                            ).all().item()
+                        )
+                        for value in (
+                            correct.displacement,
+                            deranged.displacement,
+                            current_current.displacement,
+                        )
+                    )
+                )
+                same_diff_zero = (
+                    same_diff_zero
+                    and int(
+                        torch.count_nonzero(
+                            current_current.probability_difference
+                        ).item()
+                    )
+                    == 0
+                )
+                same_volume_zero = (
+                    same_volume_zero
+                    and int(
+                        torch.count_nonzero(current_current.volume).item()
+                    )
+                    == 0
+                )
+                same_displacement_zero = (
+                    same_displacement_zero
+                    and int(
+                        torch.count_nonzero(
+                            current_current.displacement
+                        ).item()
+                    )
+                    == 0
+                )
+
+        correct_nll = torch.cat(correct_nll_rows).float()
+        deranged_nll = torch.cat(deranged_nll_rows).float()
+        current_current_nll = torch.cat(current_current_nll_rows).float()
+        correct_logits = torch.cat(correct_logits_rows).float()
+        displacement = torch.cat(displacement_rows).float()
+        if (
+            correct_nll.shape != (len(pairs),)
+            or deranged_nll.shape != correct_nll.shape
+            or current_current_nll.shape != correct_nll.shape
+            or correct_logits.shape != (len(pairs), 9)
+            or displacement.shape != (len(pairs), 2, 16, 16)
+            or int(non_hold.sum()) != 435
+        ):
+            raise PermissionError(
+                "dense inverse diagnostic population changed"
             )
-        )
-        correspondence_action_predictions = (
-            correspondence_action_scores.argmax(dim=1)
-        )
-        correspondence_action_nll = (
-            correspondence_action_nll_per_row.mean()
-        )
-        correspondence_action_top1 = (
-            int(
-                (
-                    correspondence_action_predictions == requested_indices
-                ).sum().item()
-            )
-            / float(len(pairs))
-        )
-        per_executed_action_correspondence: dict[
-            str, dict[str, int | float]
-        ] = {}
-        per_action_recalls: list[float] = []
+        dense_predictions = correct_logits.argmax(dim=1)
+        per_action: dict[str, dict[str, int | float]] = {}
+        recalls: list[float] = []
         for action_index, action_name in enumerate(
             contract.ACTION_VOCABULARY
         ):
-            action_mask = requested_indices == action_index
-            action_count = int(action_mask.sum().item())
-            if action_count < 1:
+            mask = requested_indices == action_index
+            count = int(mask.sum().item())
+            if count < 1:
                 raise PermissionError(
-                    "Phase-A correspondence-action population is empty: "
-                    f"{action_name}"
+                    f"dense inverse action population is empty: {action_name}"
                 )
-            action_recall = (
-                int(
-                    (
-                        correspondence_action_predictions[action_mask]
-                        == action_index
-                    ).sum().item()
-                )
-                / float(action_count)
+            recall = (
+                int((dense_predictions[mask] == action_index).sum().item())
+                / float(count)
             )
-            per_action_recalls.append(action_recall)
-            per_executed_action_correspondence[action_name] = {
-                "row_count": action_count,
-                "mean_nll": float(
-                    correspondence_action_nll_per_row[action_mask].mean()
-                ),
-                "recall": action_recall,
+            recalls.append(recall)
+            per_action[action_name] = {
+                "row_count": count,
+                "mean_nll": float(correct_nll[mask].mean()),
+                "recall": recall,
             }
         if (
-            tuple(per_executed_action_correspondence)
-            != contract.ACTION_VOCABULARY
-            or sum(
-                int(value["row_count"])
-                for value in per_executed_action_correspondence.values()
-            )
+            tuple(per_action) != contract.ACTION_VOCABULARY
+            or sum(int(row["row_count"]) for row in per_action.values())
             != len(pairs)
         ):
             raise PermissionError(
-                "Phase-A correspondence-action populations changed"
+                "dense inverse per-action populations changed"
             )
-        correspondence_action_macro_balanced_accuracy = (
-            sum(per_action_recalls) / float(len(per_action_recalls))
-        )
-        zero_correspondence_action_scores = torch.zeros_like(
-            correspondence_action_scores
-        )
-        uniform_correspondence_action_probabilities = torch.softmax(
-            zero_correspondence_action_scores,
-            dim=1,
-        )
-        zero_logit_correspondence_action_nll_per_row = (
-            torch.nn.functional.cross_entropy(
-                zero_correspondence_action_scores,
-                requested_indices,
-                reduction="none",
+        per_family_dense: dict[str, float] = {}
+        for family in contract.SCENE_FAMILIES:
+            mask = torch.tensor(
+                [row["family"] == family for row in pairs],
+                dtype=torch.bool,
             )
-        )
-        wrong_candidate_ce = all_candidate_ce.gather(
-            1,
-            candidate_indices,
-        )
-        hardest_wrong_ce = wrong_candidate_ce.min(dim=1).values
-        if (
-            tuple(correct_ce_tokens.shape) != (len(pairs), 256)
-            or deranged_ce_tokens.shape != correct_ce_tokens.shape
-            or tuple(all_candidate_ce_tokens.shape)
-            != (len(pairs), 9, 256)
-            or tuple(correspondence_action_scores.shape) != (len(pairs), 9)
-            or correspondence_action_probabilities.shape
-            != correspondence_action_scores.shape
-            or tuple(correspondence_action_nll_per_row.shape)
-            != (len(pairs),)
-            or tuple(correspondence_action_predictions.shape)
-            != (len(pairs),)
-            or tuple(correct_ce.shape) != (len(pairs),)
-            or tuple(deranged_ce.shape) != (len(pairs),)
-            or tuple(hardest_wrong_ce.shape) != (len(pairs),)
-        ):
-            raise PermissionError(
-                "Phase-A correspondence diagnostic population changed"
+            if not bool(mask.any()):
+                raise PermissionError(
+                    f"dense inverse family population is empty: {family}"
+                )
+            per_family_dense[family] = float(
+                (deranged_nll[mask] - correct_nll[mask]).mean()
             )
-        correct_ce_mean = correct_ce.mean()
-        deranged_ce_mean = deranged_ce.mean()
-        hardest_wrong_ce_mean = hardest_wrong_ce.mean()
+        correct_mean = correct_nll.mean()
+        deranged_mean = deranged_nll.mean()
+        non_hold_correct_mean = correct_nll[non_hold].mean()
+        non_hold_identity_mean = current_current_nll[non_hold].mean()
+        zero_logit_reference_nll = torch.nn.functional.cross_entropy(
+            torch.zeros(
+                (len(pairs), len(contract.ACTION_VOCABULARY)),
+                dtype=torch.float32,
+                device=device,
+            ),
+            requested_indices.to(device),
+            reduction="mean",
+        )
         if not bool(
-            torch.isfinite(deranged_ce_mean).item()
-            and (deranged_ce_mean > 0).item()
-            and torch.isfinite(hardest_wrong_ce_mean).item()
-            and (hardest_wrong_ce_mean > 0).item()
-            and torch.isfinite(correspondence_action_nll).item()
-            and (correspondence_action_nll > 0).item()
-            and math.isfinite(correspondence_action_top1)
-            and correspondence_action_top1 >= 0.0
-            and correspondence_action_top1 <= 1.0
-            and math.isfinite(
-                correspondence_action_macro_balanced_accuracy
-            )
-            and correspondence_action_macro_balanced_accuracy >= 0.0
-            and correspondence_action_macro_balanced_accuracy <= 1.0
+            torch.isfinite(correct_mean).item()
+            and torch.isfinite(deranged_mean).item()
+            and torch.isfinite(non_hold_correct_mean).item()
+            and torch.isfinite(non_hold_identity_mean).item()
+            and (deranged_mean > 0).item()
+            and (non_hold_identity_mean > 0).item()
         ):
             raise FloatingPointError(
-                "correspondence cross-entropy denominator changed"
+                "dense inverse NLL denominator changed"
+            )
+        head_parameters = tuple(
+            model.dense_pairwise_inverse_head.parameters()
+        )
+        head_weights = (
+            model.dense_pairwise_inverse_head.channel_projection.weight,
+            model.dense_pairwise_inverse_head.spatial_projection.weight,
+            model.dense_pairwise_inverse_head.classifier.weight,
+        )
+        dense_pairwise_inverse = {
+            "all_values_finite": bool(
+                probabilities_finite
+                and volume_finite
+                and displacement_finite
+                and all(
+                    torch.isfinite(parameter).all().item()
+                    for parameter in head_parameters
+                )
+                and
+                all(
+                    torch.isfinite(value).all().item()
+                    for value in (
+                        correct_nll,
+                        deranged_nll,
+                        current_current_nll,
+                        correct_logits,
+                        displacement,
+                    )
+                )
+            ),
+            "probabilities_all_values_finite": probabilities_finite,
+            "probability_rows_normalized": probability_rows_normalized,
+            "volume_all_values_finite": volume_finite,
+            "volume_values_within_closed_unit_interval": volume_bounded,
+            "volume_channel_conservation": volume_conserved,
+            "displacement_all_values_finite": displacement_finite,
+            "displacement_values_within_closed_two_bound":
+                displacement_bounded,
+            "maximum_absolute_displacement_component":
+                float(displacement.abs().max()),
+            "cross_pair_displacement_rms":
+                float(displacement.square().mean().sqrt()),
+            "cross_pair_displacement_value_count": displacement.numel(),
+            "same_tensor_diff_exact_zero": same_diff_zero,
+            "same_tensor_volume_exact_zero": same_volume_zero,
+            "same_tensor_displacement_exact_zero":
+                same_displacement_zero,
+            "head_parameters_all_values_finite": all(
+                bool(torch.isfinite(parameter).all().item())
+                for parameter in head_parameters
+            ),
+            "head_parameter_count": sum(
+                parameter.numel() for parameter in head_parameters
+            ),
+            "head_weight_tensors_all_nonzero": all(
+                int(torch.count_nonzero(weight).item()) == weight.numel()
+                for weight in head_weights
+            ),
+            "unscaled_dense_inverse_nll": float(correct_mean),
+            "zero_logit_reference_nll":
+                float(zero_logit_reference_nll),
+            "dense_inverse_top1_accuracy": (
+                int(
+                    (dense_predictions == requested_indices).sum().item()
+                )
+                / float(len(pairs))
+            ),
+            "per_executed_action_dense_inverse": per_action,
+            "dense_inverse_macro_balanced_accuracy":
+                sum(recalls) / float(len(recalls)),
+            "correct_pair_nll": float(correct_mean),
+            "correct_pair_count": len(pairs),
+            "deranged_next_nll": float(deranged_mean),
+            "deranged_next_pair_count": len(pairs),
+            "correct_to_deranged_nll_ratio":
+                float(correct_mean / deranged_mean),
+            "non_hold_correct_pair_nll": float(non_hold_correct_mean),
+            "non_hold_correct_pair_count": int(non_hold.sum()),
+            "non_hold_current_current_nll":
+                float(non_hold_identity_mean),
+            "non_hold_current_current_pair_count": int(non_hold.sum()),
+            "non_hold_correct_to_current_current_nll_ratio":
+                float(non_hold_correct_mean / non_hold_identity_mean),
+            "deranged_positive_family_margin_count": sum(
+                int(value > 0.0) for value in per_family_dense.values()
+            ),
+            "per_family_deranged_minus_correct_nll": per_family_dense,
+        }
+        if (
+            set(dense_pairwise_inverse)
+            != contract.DENSE_PAIRWISE_INVERSE_OBSERVATION_FIELDS
+        ):
+            raise RuntimeError(
+                "dense pairwise inverse diagnostic fields changed"
             )
 
         q_raw = raw_target - raw_target.mean(dim=0, keepdim=True)
         raw_variance = raw_target.var(dim=0, unbiased=False).mean()
         spatial_diversity = q_raw.var(dim=1, unbiased=False).mean()
         per_family: dict[str, dict[str, Any]] = {}
-        deranged_per_family: dict[str, float] = {}
-        hardest_per_family: dict[str, float] = {}
         for family in contract.SCENE_FAMILIES:
             family_mask = torch.tensor(
                 [row["family"] == family for row in pairs],
@@ -2100,321 +2557,10 @@ def _phase_a_diagnostics(
                 ),
                 "hold_action_rows_match_non_hold_rows": True,
             }
-            deranged_per_family[family] = float(
-                (
-                    deranged_ce[family_mask]
-                    - correct_ce[family_mask]
-                ).mean()
-            )
-            hardest_per_family[family] = float(
-                (
-                    hardest_wrong_ce[family_mask]
-                    - correct_ce[family_mask]
-                ).mean()
-            )
-
-        uniform_student = torch.softmax(
-            torch.zeros_like(all_transport_logits),
-            dim=-1,
-        )
-        probability_row_sums = all_transport_probabilities.sum(dim=-1)
-        target_row_sums = correct_target_probabilities.sum(dim=-1)
-        per_action_probability_health = {
-            action_name: bool(
-                (
-                    all_transport_probabilities[:, action_index] > 0
-                ).all().item()
-                and torch.allclose(
-                    probability_row_sums[:, action_index],
-                    torch.ones_like(
-                        probability_row_sums[:, action_index]
-                    ),
-                    rtol=0.0,
-                    atol=1e-6,
-                )
-            )
-            for action_index, action_name in enumerate(
-                contract.ACTION_VOCABULARY
-            )
-        }
-        hold_probabilities = all_transport_probabilities[
-            :, contract.HOLD_ACTION_INDEX
-        ]
-        per_action_different_from_hold = {
-            action_name: not torch.equal(
-                all_transport_probabilities[:, action_index],
-                hold_probabilities,
-            )
-            for action_index, action_name in enumerate(
-                contract.ACTION_VOCABULARY
-            )
-        }
-        target_kl = (
-            correct_target_probabilities
-            * (
-                correct_target_probabilities.log()
-                + math.log(contract.LOCAL_CORRESPONDENCE_NEIGHBOR_COUNT)
-            )
-        ).sum(dim=-1)
-        local_correspondence = {
-            "all_values_finite": bool(
-                all(
-                    torch.isfinite(value).all().item()
-                    for value in (
-                        all_transport_logits,
-                        all_transport_probabilities,
-                        all_expected_offsets,
-                        correct_target_probabilities,
-                        deranged_target_probabilities,
-                        correct_ce,
-                        deranged_ce,
-                        all_candidate_ce,
-                        hardest_wrong_ce,
-                        correspondence_action_scores,
-                        correspondence_action_probabilities,
-                        correspondence_action_nll_per_row,
-                        correspondence_action_nll,
-                        target_kl,
-                    )
-                )
-            ),
-            "target_all_values_finite": bool(
-                torch.isfinite(correct_target_probabilities).all().item()
-                and torch.isfinite(
-                    deranged_target_probabilities
-                ).all().item()
-            ),
-            "target_all_strictly_positive": bool(
-                (correct_target_probabilities > 0).all().item()
-                and (deranged_target_probabilities > 0).all().item()
-            ),
-            "target_rows_normalized": bool(
-                torch.allclose(
-                    target_row_sums,
-                    torch.ones_like(target_row_sums),
-                    rtol=0.0,
-                    atol=1e-6,
-                )
-                and torch.allclose(
-                    deranged_target_probabilities.sum(dim=-1),
-                    torch.ones_like(
-                        deranged_target_probabilities[..., 0]
-                    ),
-                    rtol=0.0,
-                    atol=1e-6,
-                )
-            ),
-            "student_all_strictly_positive": bool(
-                (all_transport_probabilities > 0).all().item()
-            ),
-            "student_rows_normalized": bool(
-                torch.allclose(
-                    probability_row_sums,
-                    torch.ones_like(probability_row_sums),
-                    rtol=0.0,
-                    atol=1e-6,
-                )
-            ),
-            "transport_weight_all_values_finite": bool(
-                torch.isfinite(
-                    model.prediction_projector.transport_weight
-                ).all().item()
-            ),
-            "transport_weight_any_nonzero": bool(
-                torch.count_nonzero(
-                    model.prediction_projector.transport_weight
-                ).item()
-            ),
-            "maximum_absolute_student_logit":
-                float(all_transport_logits.abs().max()),
-            "unscaled_correspondence_action_nll":
-                float(correspondence_action_nll),
-            "correspondence_action_probabilities_all_values_finite": bool(
-                torch.isfinite(
-                    correspondence_action_probabilities
-                ).all().item()
-            ),
-            "correspondence_action_probability_rows_normalized": bool(
-                torch.allclose(
-                    correspondence_action_probabilities.sum(dim=1),
-                    torch.ones_like(
-                        correspondence_action_probabilities[:, 0]
-                    ),
-                    rtol=0.0,
-                    atol=1e-6,
-                )
-            ),
-            "correspondence_action_top1_accuracy":
-                correspondence_action_top1,
-            "per_executed_action_correspondence_identification":
-                per_executed_action_correspondence,
-            "correspondence_action_macro_balanced_accuracy":
-                correspondence_action_macro_balanced_accuracy,
-            "all_candidate_correspondence_costs_bitwise_equal": torch.equal(
-                all_candidate_ce,
-                all_candidate_ce[:, :1].expand_as(all_candidate_ce),
-            ),
-            "all_candidate_correspondence_scores_bitwise_equal": torch.equal(
-                correspondence_action_scores,
-                correspondence_action_scores[:, :1].expand_as(
-                    correspondence_action_scores
-                ),
-            ),
-            "correspondence_action_posterior_bitwise_equal_to_uniform":
-                torch.equal(
-                    correspondence_action_probabilities,
-                    uniform_correspondence_action_probabilities,
-                ),
-            "correspondence_action_nll_bitwise_equal_to_zero_logit_reference":
-                torch.equal(
-                    correspondence_action_nll_per_row,
-                    zero_logit_correspondence_action_nll_per_row,
-                )
-                and torch.equal(
-                    correspondence_action_nll,
-                    zero_logit_correspondence_action_nll_per_row.mean(),
-                ),
-            "correct_centered_log_cross_entropy":
-                float(correct_ce_mean),
-            "deranged_centered_log_cross_entropy":
-                float(deranged_ce_mean),
-            "correct_to_deranged_cross_entropy_ratio":
-                float(correct_ce_mean / deranged_ce_mean),
-            "deranged_positive_family_margin_count": sum(
-                int(value > 0.0)
-                for value in deranged_per_family.values()
-            ),
-            "per_family_deranged_minus_correct_cross_entropy":
-                deranged_per_family,
-            "per_action_correct_target_centered_log_cross_entropy": {
-                action_name: float(
-                    all_candidate_ce[:, action_index].mean()
-                )
-                for action_index, action_name in enumerate(
-                    contract.ACTION_VOCABULARY
-                )
-            },
-            "hardest_wrong_centered_log_cross_entropy":
-                float(hardest_wrong_ce_mean),
-            "executed_to_hardest_wrong_cross_entropy_ratio":
-                float(correct_ce_mean / hardest_wrong_ce_mean),
-            "hardest_wrong_positive_family_margin_count": sum(
-                int(value > 0.0)
-                for value in hardest_per_family.values()
-            ),
-            "per_family_hardest_wrong_minus_executed_cross_entropy":
-                hardest_per_family,
-            "mean_target_kl_to_uniform": float(target_kl.mean()),
-            "per_action_probability_rows_positive_and_normalized":
-                per_action_probability_health,
-            "non_hold_action_distribution_different_from_hold_count":
-                sum(
-                    int(different)
-                    for action_name, different
-                    in per_action_different_from_hold.items()
-                    if action_name != "hold"
-                ),
-            "per_action_distribution_different_from_hold":
-                per_action_different_from_hold,
-            "maximum_absolute_expected_offset_component":
-                float(all_expected_offsets.abs().max()),
-            "hold_probabilities_bitwise_uniform": torch.equal(
-                hold_probabilities,
-                uniform_student[:, contract.HOLD_ACTION_INDEX],
-            ),
-            "hold_expected_offset_exactly_zero": (
-                int(
-                    torch.count_nonzero(
-                        all_expected_offsets[
-                            :, contract.HOLD_ACTION_INDEX
-                        ]
-                    ).item()
-                )
-                == 0
-            ),
-            "hold_transport_identity_exact": hold_transport_identity,
-            "all_action_distributions_bitwise_equal_to_hold": all(
-                not different
-                for different in per_action_different_from_hold.values()
-            ),
-            "all_action_distributions_bitwise_equal_to_uniform":
-                torch.equal(
-                    all_transport_probabilities,
-                    uniform_student,
-                ),
-            "correct_and_deranged_cross_entropy_bitwise_equal":
-                torch.equal(correct_ce, deranged_ce),
-            "all_action_transports_identity_exact":
-                all_action_transports_identity,
-        }
-        if set(local_correspondence) != (
-            contract.LOCAL_CORRESPONDENCE_OBSERVATION_FIELDS
-        ):
-            raise RuntimeError(
-                "local-correspondence diagnostic fields changed"
-            )
-        if update == 0 and (
-            not local_correspondence["all_values_finite"]
-            or not local_correspondence["target_all_strictly_positive"]
-            or not local_correspondence["target_rows_normalized"]
-            or not local_correspondence["student_all_strictly_positive"]
-            or not local_correspondence["student_rows_normalized"]
-            or local_correspondence["transport_weight_any_nonzero"]
-            or local_correspondence["maximum_absolute_student_logit"] != 0.0
-            or not local_correspondence[
-                "correspondence_action_probabilities_all_values_finite"
-            ]
-            or not local_correspondence[
-                "correspondence_action_probability_rows_normalized"
-            ]
-            or not local_correspondence[
-                "all_candidate_correspondence_costs_bitwise_equal"
-            ]
-            or not local_correspondence[
-                "all_candidate_correspondence_scores_bitwise_equal"
-            ]
-            or not local_correspondence[
-                "correspondence_action_posterior_bitwise_equal_to_uniform"
-            ]
-            or not local_correspondence[
-                "correspondence_action_nll_bitwise_equal_to_zero_logit_"
-                "reference"
-            ]
-            or not bool(
-                (correspondence_action_predictions == 0).all().item()
-            )
-            or correspondence_action_macro_balanced_accuracy != 1.0 / 9.0
-            or per_executed_action_correspondence[
-                contract.ACTION_VOCABULARY[0]
-            ]["recall"] != 1.0
-            or any(
-                per_executed_action_correspondence[action_name]["recall"]
-                != 0.0
-                for action_name in contract.ACTION_VOCABULARY[1:]
-            )
-            or not local_correspondence[
-                "all_action_distributions_bitwise_equal_to_hold"
-            ]
-            or not local_correspondence[
-                "all_action_distributions_bitwise_equal_to_uniform"
-            ]
-            or not local_correspondence[
-                "correct_and_deranged_cross_entropy_bitwise_equal"
-            ]
-            or not local_correspondence["hold_transport_identity_exact"]
-            or not local_correspondence[
-                "all_action_transports_identity_exact"
-            ]
-            or not (
-                local_correspondence["mean_target_kl_to_uniform"] > 0.0
-            )
-        ):
-            raise PermissionError(
-                "update-zero local-correspondence symmetry changed"
-            )
 
         finite_tensors = (
             state,
+            next_state,
             ema_current_skip,
             prediction,
             control_mse,
@@ -2425,18 +2571,12 @@ def _phase_a_diagnostics(
             cyclic_wrong_mse,
             hardest_wrong_mse,
             hold_mse,
-            all_transport_logits,
-            all_transport_probabilities,
-            all_expected_offsets,
-            correct_target_probabilities,
-            deranged_target_probabilities,
-            correct_ce,
-            deranged_ce,
-            hardest_wrong_ce,
-            correspondence_action_scores,
-            correspondence_action_probabilities,
-            correspondence_action_nll_per_row,
-            correspondence_action_nll,
+            all_flows_cell,
+            correct_nll,
+            deranged_nll,
+            current_current_nll,
+            correct_logits,
+            displacement,
         )
         metric = {
             "all_values_finite": bool(
@@ -2444,22 +2584,19 @@ def _phase_a_diagnostics(
                     torch.isfinite(value).all() for value in finite_tensors
                 ]).all()
             ),
-            "ema_target_gradient_free": (
-                all(
-                    parameter.grad is None and not parameter.requires_grad
-                    for module in (
-                        model.target_encoder,
-                        model.target_geometry_module,
-                        model.target_projector,
-                    )
-                    for parameter in module.parameters()
+            "ema_target_gradient_free": all(
+                parameter.grad is None and not parameter.requires_grad
+                for module in (
+                    model.target_encoder,
+                    model.target_geometry_module,
+                    model.target_projector,
                 )
+                for parameter in module.parameters()
             ),
             "pair_count": len(pairs),
             "scene_family_count": len(contract.SCENE_FAMILIES),
             "cyclic_wrong_action_pair_count": len(pairs),
-            "all_wrong_action_candidate_count":
-                int(control_mse.numel()),
+            "all_wrong_action_candidate_count": int(control_mse.numel()),
             "non_hold_pair_count": int(non_hold.sum()),
             "hold_action_pair_count": int(hold_mse.numel()),
             "hold_action_rows_match_non_hold_rows": True,
@@ -2473,15 +2610,14 @@ def _phase_a_diagnostics(
             "true_pair_mse": float(true_mse.mean()),
             "shuffled_next_mse": float(shuffled_next_mse.mean()),
             "mean_target_mse": float(mean_target_mse.mean()),
-            "cyclic_wrong_action_mse":
-                float(cyclic_wrong_mse.mean()),
-            "hardest_wrong_action_mse":
-                float(hardest_wrong_mse.mean()),
+            "cyclic_wrong_action_mse": float(cyclic_wrong_mse.mean()),
+            "hardest_wrong_action_mse": float(hardest_wrong_mse.mean()),
             "non_hold_true_pair_mse": float(true_mse[non_hold].mean()),
             "hold_action_mse": float(hold_mse.mean()),
             "shuffled_current_mse": float(shuffled_current_mse.mean()),
             "per_family": per_family,
-            "local_correspondence": local_correspondence,
+            "latent_flow": latent_flow,
+            "dense_pairwise_inverse": dense_pairwise_inverse,
         }
         if set(metric) != contract.PHASE_A_METRIC_FIELDS:
             raise RuntimeError("Phase-A diagnostic fields changed")
@@ -2565,8 +2701,11 @@ def _phase_a_train(
         )
     }
     update0_health.update(diagnostics[0]["action_indexed_symmetry"])
-    update0_health["local_correspondence"] = (
-        diagnostics[0]["metric"]["local_correspondence"]
+    update0_health["latent_flow"] = (
+        diagnostics[0]["metric"]["latent_flow"]
+    )
+    update0_health["dense_pairwise_inverse"] = (
+        diagnostics[0]["metric"]["dense_pairwise_inverse"]
     )
     if set(update0_health) != contract.PHASE_A_UPDATE0_FIELDS:
         raise RuntimeError("Phase-A update-zero receipt fields changed")
@@ -2622,10 +2761,8 @@ def _phase_a_train(
                 "loss",
                 "jepa_loss",
                 "action_identification_loss",
-                "local_correspondence_loss",
-                "local_correspondence_unscaled_cross_entropy",
-                "correspondence_action_identification_loss",
-                "unscaled_correspondence_action_nll",
+                "dense_pairwise_inverse_loss",
+                "unscaled_dense_pairwise_inverse_nll",
                 "raw_whitening_variance_loss",
                 "raw_whitening_covariance_loss",
                 "projected_whitening_variance_loss",
@@ -2651,7 +2788,13 @@ def _phase_a_train(
         if gradient_after > 1.00001:
             raise RuntimeError("Phase-A global clip norm changed")
         optimizer.step()
+        progress["phase_a_optimizer_updates"] = int(
+            progress.get("phase_a_optimizer_updates", 0)
+        ) + 1
         model.update_target_encoder()
+        progress["phase_a_ema_updates"] = int(
+            progress.get("phase_a_ema_updates", 0)
+        ) + 1
         ema_update_count += 1
         progress["phase_a_updates"] = update
         progress["phase_a_presentations"] = (
@@ -2693,6 +2836,11 @@ def _phase_a_train(
             )
             diagnostics.append(diagnostic)
             if update in {100, 400}:
+                previous_metric = (
+                    None
+                    if update == 100
+                    else diagnostics[-2]["metric"]
+                )
                 continuation = contract.evaluate_phase_a_continuation(
                     update,
                     diagnostic["metric"],
@@ -2703,6 +2851,7 @@ def _phase_a_train(
                         "state_mutation_count":
                             diagnostic["state_mutation_count"],
                     },
+                    previous_metric,
                 )
                 continuation_gates.append(continuation)
                 if not continuation["passed"]:
@@ -2744,16 +2893,20 @@ def _phase_a_train(
                 "state_mutation_count":
                     terminal_observation["state_mutation_count"],
             },
+            diagnostics[-2]["metric"],
         )
-        phase_status = (
-            "PASS_PHASE_A"
-            if terminal_gate["passed"]
-            else "FAIL_PHASE_A_TERMINAL"
-        )
+        phase_status = str(terminal_gate["control"])
     trace_raw = b"".join(
         contract.canonical_json_bytes(row) + b"\n" for row in trace
     )
-    _write_exclusive(output_root / "phase_a/training_trace.jsonl", trace_raw)
+    phase_a_trace_path = output_root / "phase_a/training_trace.jsonl"
+    phase_a_trace_content_sha256 = contract.canonical_json_sha256(trace)
+    _write_exclusive(phase_a_trace_path, trace_raw)
+    _register_output_semantic_metadata(
+        phase_a_trace_path,
+        content_sha256=phase_a_trace_content_sha256,
+        row_count=len(trace),
+    )
     metrics, metrics_raw = _publish_json(
         output_root / "phase_a/metrics.json",
         {
@@ -2775,7 +2928,7 @@ def _phase_a_train(
     artifact = {
         "schema": contract.PHASE_A_ARTIFACT_SCHEMA,
         "status": (
-            "QUALIFIED_FOR_CONDITIONAL_PHASE_B"
+            contract.CONTROL_PHASE_A_PASS
             if terminal_gate["passed"]
             else phase_status
         ),
@@ -2788,7 +2941,7 @@ def _phase_a_train(
             "file_sha256": hashlib.sha256(trace_raw).hexdigest(),
             "byte_count": len(trace_raw),
             "row_count": len(trace),
-            "content_sha256": contract.canonical_json_sha256(trace),
+            "content_sha256": phase_a_trace_content_sha256,
         },
         "updates": len(trace),
         "presentations": len(trace) * contract.EFFECTIVE_BATCH_SIZE,
@@ -2871,6 +3024,16 @@ def _phase_b_model(
         )
     )
     migration = _receipt_dict(raw_migration)
+    if (
+        hasattr(model, "dense_pairwise_inverse_head")
+        or any(
+            name.startswith("dense_pairwise_inverse_head.")
+            for name, _ in model.named_parameters()
+        )
+    ):
+        raise PermissionError(
+            "fresh Phase-B model unexpectedly contains the V9 inverse head"
+        )
     initialized_state = {
         name: value.detach().clone()
         for name, value in model.state_dict().items()
@@ -2952,8 +3115,8 @@ def _phase_b_model(
         },
         "shared_v5_bev_decoder_or_predictor_copy_count": 0,
         "jepa_predictor_projector_or_ema_transfer_count": 0,
-        "local_correspondence_transport_transfer_count": 0,
-        "local_correspondence_phase_b_optimizer_inclusion_count": 0,
+        "dense_pairwise_inverse_head_transfer_count": 0,
+        "dense_pairwise_inverse_head_phase_b_optimizer_inclusion_count": 0,
         "trainable_prefixes":
             list(contract.PHASE_B_TRAINABLE_PARAMETER_PREFIXES),
         "frozen_prefixes": list(contract.PHASE_B_FROZEN_PARAMETER_PREFIXES),
@@ -3248,6 +3411,9 @@ def _phase_b_train(
         if gradient_after > 1.00001:
             raise RuntimeError("Phase-B head clip norm changed")
         optimizer.step()
+        progress["phase_b_optimizer_updates"] = int(
+            progress.get("phase_b_optimizer_updates", 0)
+        ) + 1
         progress["phase_b_updates"] = update
         progress["phase_b_presentations"] = (
             update * contract.EFFECTIVE_BATCH_SIZE
@@ -3336,7 +3502,14 @@ def _phase_b_train(
     trace_raw = b"".join(
         contract.canonical_json_bytes(row) + b"\n" for row in trace
     )
-    _write_exclusive(output_root / "phase_b/training_trace.jsonl", trace_raw)
+    phase_b_trace_path = output_root / "phase_b/training_trace.jsonl"
+    phase_b_trace_content_sha256 = contract.canonical_json_sha256(trace)
+    _write_exclusive(phase_b_trace_path, trace_raw)
+    _register_output_semantic_metadata(
+        phase_b_trace_path,
+        content_sha256=phase_b_trace_content_sha256,
+        row_count=len(trace),
+    )
     metrics_value, metrics_raw = _publish_json(
         output_root / "phase_b/metrics.json",
         {
@@ -3374,7 +3547,7 @@ def _phase_b_train(
             "file_sha256": hashlib.sha256(trace_raw).hexdigest(),
             "byte_count": len(trace_raw),
             "row_count": len(trace),
-            "content_sha256": contract.canonical_json_sha256(trace),
+            "content_sha256": phase_b_trace_content_sha256,
         },
         "updates": len(trace),
         "presentations": len(trace) * contract.EFFECTIVE_BATCH_SIZE,
@@ -3393,8 +3566,15 @@ def _phase_b_train(
 
 
 def _terminal_inventory(output_root: Path) -> dict[str, Any]:
+    if (
+        _OUTPUT_REGISTRY_ROOT is None
+        or Path(os.path.abspath(output_root)) != _OUTPUT_REGISTRY_ROOT
+    ):
+        raise RuntimeError("terminal inventory root is not registered")
     files: list[str] = []
+    file_bindings: list[dict[str, Any]] = []
     directories: list[str] = ["."]
+    partial_evidence: list[dict[str, Any]] = []
     for current, names, filenames in os.walk(output_root):
         current_path = Path(current)
         for name in names:
@@ -3406,11 +3586,84 @@ def _terminal_inventory(output_root: Path) -> dict[str, Any]:
             path = current_path / name
             if path.is_symlink() or not path.is_file():
                 raise PermissionError("terminal output contains a nonregular file")
-            files.append(path.relative_to(output_root).as_posix())
+            relative = path.relative_to(output_root).as_posix()
+            files.append(relative)
+            registered = _OUTPUT_BINDING_REGISTRY.get(relative)
+            observed = path.stat(follow_symlinks=False)
+            if (
+                registered is None
+                or registered.get("path") != relative
+                or registered.get("byte_count") != int(observed.st_size)
+                or registered.get("filesystem_fingerprint")
+                != _fingerprint_receipt(observed)
+            ):
+                raise PermissionError(
+                    "terminal file lacks an unchanged write-time binding"
+                )
+            file_binding = dict(registered)
+            file_bindings.append(file_binding)
+            marker = ".partial-evidence."
+            if marker in name:
+                encoded = name.split(marker, 1)[1].rsplit(".", 1)[0]
+                declared_count, declared_sha = encoded.split(".", 1)
+                if (
+                    not declared_count.isdigit()
+                    or not contract.is_sha256(declared_sha)
+                    or path.stat(follow_symlinks=False).st_size
+                    != int(declared_count)
+                    or file_binding["file_sha256"] != declared_sha
+                ):
+                    raise PermissionError(
+                        "partial-evidence binding name changed"
+                    )
+                partial_evidence.append({
+                    "path": relative,
+                    "byte_count": int(declared_count),
+                    "file_sha256": declared_sha,
+                })
+    if set(files) != set(_OUTPUT_BINDING_REGISTRY):
+        raise PermissionError(
+            "terminal registry and filesystem inventories differ"
+        )
     return {
         "files": sorted(files),
+        "file_bindings": sorted(
+            file_bindings,
+            key=lambda row: str(row["path"]),
+        ),
         "directories_including_root": sorted(directories),
+        "partial_evidence_bindings": sorted(
+            partial_evidence,
+            key=lambda row: str(row["path"]),
+        ),
     }
+
+
+def _canonical_receipt_present(output_root: Path, relative: str) -> bool:
+    path = output_root / relative
+    if not path.exists() or path.is_symlink() or not path.is_file():
+        return False
+    binding = _OUTPUT_BINDING_REGISTRY.get(relative)
+    if binding is None or "content_sha256" not in binding:
+        return False
+    try:
+        raw = _read_regular(
+            path,
+            expected_sha256=str(binding["file_sha256"]),
+            expected_byte_count=int(binding["byte_count"]),
+        )
+        value = contract.parse_canonical_json(
+            raw,
+            name=f"partial receipt {relative}",
+        )
+        observed = path.stat(follow_symlinks=False)
+    except (OSError, PermissionError, RuntimeError, ValueError):
+        return False
+    return (
+        value["content_sha256"] == binding["content_sha256"]
+        and _fingerprint_receipt(observed)
+        == binding["filesystem_fingerprint"]
+    )
 
 
 def _error_evidence(error: BaseException) -> dict[str, str]:
@@ -3655,7 +3908,9 @@ def _failure_custody_attestation(
     phase_a_updates = int(progress.get("phase_a_updates", 0))
     phase_b_updates = int(progress.get("phase_b_updates", 0))
     operation_counts = {
-        "phase_a_optimizer_updates": phase_a_updates,
+        "phase_a_optimizer_updates": int(
+            progress.get("phase_a_optimizer_updates", phase_a_updates)
+        ),
         "phase_a_completed_pair_presentations":
             int(progress.get("phase_a_presentations", 0)),
         "phase_a_loaded_pair_presentations":
@@ -3664,8 +3919,12 @@ def _failure_custody_attestation(
             int(progress.get("phase_a_objective_evaluations", 0)),
         "phase_a_backward_calls":
             int(progress.get("phase_a_backward_calls", 0)),
-        "phase_a_ema_updates": phase_a_updates,
-        "phase_b_optimizer_updates": phase_b_updates,
+        "phase_a_ema_updates": int(
+            progress.get("phase_a_ema_updates", phase_a_updates)
+        ),
+        "phase_b_optimizer_updates": int(
+            progress.get("phase_b_optimizer_updates", phase_b_updates)
+        ),
         "phase_b_completed_pair_presentations":
             int(progress.get("phase_b_presentations", 0)),
         "phase_b_loaded_pair_presentations":
@@ -3676,7 +3935,8 @@ def _failure_custody_attestation(
             int(progress.get("phase_b_backward_calls", 0)),
         "observer_reruns": 0,
         "cumulative_optimizer_updates":
-            phase_a_updates + phase_b_updates,
+            int(progress.get("phase_a_optimizer_updates", phase_a_updates))
+            + int(progress.get("phase_b_optimizer_updates", phase_b_updates)),
         "cumulative_pair_presentations":
             int(progress.get("phase_a_presentations", 0))
             + int(progress.get("phase_b_presentations", 0)),
@@ -3716,9 +3976,17 @@ def _failure_custody_attestation(
             "probability_calibration_open_count": 0,
             "prior_runtime_output_open_count": 0,
             "rejected_checkpoint_open_count": 0,
-            "g2_navigation_open_count": 0,
+            "phase_a_camera_supervision_array_open_count":
+                phase_a_loader["camera_supervision_array_open_count"],
+            "phase_a_general_raw_loader_call_count":
+                phase_a_loader["general_raw_v13_frame_loader_call_count"],
+            "g2_open_count": 0,
+            "navigation_open_count": 0,
             "heldout_open_count": 0,
             "sealed_open_count": 0,
+            "production_input_open_count": 0,
+            "deployment_input_open_count": 0,
+            "observer_rerun_count": 0,
         },
         "reviewed_source_rehash": {
             "passed": source_rehash_passed,
@@ -3749,22 +4017,62 @@ def _terminal_failure(
             raise PermissionError(
                 "incomplete completion output is not a regular file"
             )
-        os.chmod(completion_path, 0o600, follow_symlinks=False)
-        os.unlink(completion_path)
+        completed_raw = _read_regular(completion_path)
+        _preserve_partial_evidence(
+            completion_path,
+            byte_count=len(completed_raw),
+            file_sha256=hashlib.sha256(completed_raw).hexdigest(),
+        )
     public_progress = {
         name: value
         for name, value in progress.items()
         if not name.startswith("_")
     }
+    partial_inventory = _terminal_inventory(output_root)
+    expected_normal_receipts = [*contract.NORMAL_PHASE_A_RECEIPT_PATHS]
+    if bool(progress.get("phase_b_entered", False)):
+        expected_normal_receipts.extend(contract.PHASE_B_RECEIPT_PATHS)
+    present_normal_receipts = [
+        path
+        for path in expected_normal_receipts
+        if _canonical_receipt_present(output_root, path)
+    ]
+    inventory_binding_by_path = {
+        str(binding["path"]): dict(binding)
+        for binding in partial_inventory["file_bindings"]
+    }
+    present_normal_receipt_bindings = [
+        inventory_binding_by_path[path]
+        for path in present_normal_receipts
+    ]
+    if any(
+        "content_sha256" not in binding
+        for binding in present_normal_receipt_bindings
+    ):
+        raise RuntimeError(
+            "a present normal receipt lacks its canonical content binding"
+        )
+    missing_normal_receipts = [
+        path
+        for path in expected_normal_receipts
+        if path not in present_normal_receipts
+    ]
     failure, failure_raw = _publish_json(
         output_root / "failure.json",
         {
             "schema": contract.FAILURE_SCHEMA,
-            "status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY",
+            "status": contract.OPERATIONAL_FAILURE_STATUS,
             "reservation":
                 _binding("reservation.json", reservation, reservation_raw),
             "progress": public_progress,
             "error": _error_evidence(error),
+            "exact_partial_inventory_before_failure_receipt":
+                partial_inventory,
+            "normal_receipts_present": present_normal_receipts,
+            "normal_receipt_bindings_present":
+                present_normal_receipt_bindings,
+            "missing_normal_receipts": missing_normal_receipts,
+            "missing_normal_receipts_synthesized": False,
             "custody_attestation": _failure_custody_attestation(
                 authorization,
                 reservation,
@@ -3782,10 +4090,14 @@ def _terminal_failure(
         output_root / "completed.json",
         {
             "schema": contract.COMPLETION_SCHEMA,
-            "status": "TERMINAL_FAILURE",
+            "status": contract.OPERATIONAL_FAILURE_COMPLETION_STATUS,
             "attempt_identity": reservation["attempt_identity"],
             "failure": _binding("failure.json", failure, failure_raw),
             "exact_precompletion_files": inventory["files"],
+            "exact_precompletion_file_bindings":
+                inventory["file_bindings"],
+            "partial_evidence_bindings":
+                inventory["partial_evidence_bindings"],
             "exact_terminal_files":
                 sorted([*inventory["files"], "completed.json"]),
             "exact_terminal_directories_including_root":
@@ -4039,6 +4351,27 @@ def _execute_after_reservation(
     ):
         raise PermissionError("experiment consumed an unauthorized role or source")
     runtime_rehash = _terminal_runtime_rehash(authorization)
+    access_zero_counters = {
+        "probability_calibration_open_count": 0,
+        "prior_runtime_output_open_count": 0,
+        "rejected_checkpoint_open_count": 0,
+        "phase_a_camera_supervision_array_open_count":
+            loader.supervision_array_open_count,
+        "phase_a_general_raw_loader_call_count":
+            loader.general_frame_loader_call_count,
+        "g2_open_count": 0,
+        "navigation_open_count": 0,
+        "heldout_open_count": 0,
+        "sealed_open_count": 0,
+        "production_input_open_count": 0,
+        "deployment_input_open_count": 0,
+        "observer_rerun_count": 0,
+    }
+    if (
+        tuple(access_zero_counters) != contract.ACCESS_ZERO_COUNTER_FIELDS
+        or any(access_zero_counters.values())
+    ):
+        raise PermissionError("a forbidden runtime access counter changed")
     access, access_raw = _publish_json(
         output_root / "access.json",
         {
@@ -4046,7 +4379,11 @@ def _execute_after_reservation(
             "status": "ALL_CONSUMED_DEVELOPMENT_INPUTS_REHASHED",
             "reservation":
                 _binding("reservation.json", reservation, reservation_raw),
-            "roles_opened": ["train", "checkpoint_selection"],
+            "roles_opened": sorted(consumed_roles),
+            "model_facing_roles_opened": [
+                "train",
+                "checkpoint_selection",
+            ],
             "phase_a": {
                 "dedicated_rgb_only_loader": True,
                 "general_raw_v13_frame_loader_call_count":
@@ -4068,10 +4405,7 @@ def _execute_after_reservation(
                 "bindings": dict(sources),
                 "all_rehashed": True,
             },
-            "probability_calibration_open_count": 0,
-            "prior_runtime_output_open_count": 0,
-            "rejected_checkpoint_open_count": 0,
-            "g2_navigation_heldout_or_sealed_open_count": 0,
+            **access_zero_counters,
             "all_consumed_inputs_rehashed": True,
             "authority": dict(contract.DOWNSTREAM_DENIALS),
         },
@@ -4080,13 +4414,9 @@ def _execute_after_reservation(
     passed = bool(phase_b is not None and phase_b["gate"]["passed"])
     if not phase_a["gate"]["passed"]:
         phase_a_control = str(phase_a["gate"]["control"])
-        if phase_a_control in {
-            contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
-            contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
-        }:
-            status = phase_a_control
-        else:
-            status = "FAIL_PHASE_A_MECHANISM_TERMINATED_NO_PHASE_B"
+        if phase_a_control not in contract.PHASE_A_FAILURE_CONTROLS:
+            raise RuntimeError("unregistered Phase-A failure control")
+        status = phase_a_control
         terminal_control = phase_a["gate"]
     elif not passed:
         status = "FAIL_PHASE_B_MECHANISM_TERMINATED"
@@ -4138,16 +4468,17 @@ def _execute_after_reservation(
             "schema": contract.COMPLETION_SCHEMA,
             "status": (
                 status
-                if status in {
-                    contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
-                    contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
-                }
+                if status in contract.PHASE_A_FAILURE_CONTROLS
                 else ("TERMINAL_PASS" if passed else "TERMINAL_FAIL")
             ),
             "attempt_identity": reservation["attempt_identity"],
             "result": _binding("result.json", result, result_raw),
             "phase_b_entered": bool(progress["phase_b_entered"]),
             "exact_precompletion_files": inventory["files"],
+            "exact_precompletion_file_bindings":
+                inventory["file_bindings"],
+            "partial_evidence_bindings":
+                inventory["partial_evidence_bindings"],
             "exact_terminal_files":
                 sorted([*inventory["files"], "completed.json"]),
             "exact_terminal_directories_including_root":
@@ -4201,6 +4532,8 @@ def run_parent(
         "phase_a_determinism_scope_entered": False,
         "phase_a_determinism_restored": False,
         "phase_a_updates": 0,
+        "phase_a_optimizer_updates": 0,
+        "phase_a_ema_updates": 0,
         "phase_a_presentations": 0,
         "phase_a_pair_loads": 0,
         "phase_a_objective_evaluations": 0,
@@ -4210,6 +4543,7 @@ def run_parent(
         "phase_b_determinism_scope_entered": False,
         "phase_b_determinism_restored": False,
         "phase_b_updates": 0,
+        "phase_b_optimizer_updates": 0,
         "phase_b_presentations": 0,
         "phase_b_pair_loads": 0,
         "phase_b_camera_objectives": 0,
