@@ -1,4 +1,4 @@
-"""Source-only contract for Patch-Whitened Action-Residual JEPA V1.
+"""Source-only contract for Patch-Whitened Action-Residual JEPA V2 Action-Gain.
 
 Importing this module reads no generated input, RGB payload, checkpoint,
 runtime output, or accelerator state and imports no tensor library.  The
@@ -18,7 +18,9 @@ from typing import Any, Mapping, Sequence
 
 ROOT = Path(__file__).resolve().parents[2]
 IMPLEMENTATION_AUTHOR = "/root"
-SCHEMA_PREFIX = "lewm_go2_rgb_patch_whitened_action_residual_jepa_v1"
+SCHEMA_PREFIX = (
+    "lewm_go2_rgb_patch_whitened_action_residual_jepa_v2_action_gain"
+)
 
 CONTRACT_RELATIVE_PATH = (
     "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
@@ -114,39 +116,39 @@ CAMERA_FIT_METRICS_RELATIVE_PATH = (
 )
 
 PREREGISTRATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v1_"
+    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v2_action_gain_"
     "preregistration_2026-07-25.md"
 )
-PREREGISTRATION_COMMIT = "feea6738b66c6647f428a7466af6aab2528a3ef9"
+PREREGISTRATION_COMMIT = "85b8bd6ae41652af744a011794060323c47be172"
 PREREGISTRATION_FILE_SHA256 = (
-    "e3dfde80ed6f666f7c65663fe0c15965b2119e8ee76ca11d8c527f07c0d8d8f3"
+    "1897c6841e88b7ab9116649b5f8f8af009a70bbe6d49938ee59d14683efcb095"
 )
-PREREGISTRATION_BYTE_COUNT = 14_020
+PREREGISTRATION_BYTE_COUNT = 5_711
 PRIOR_TERMINAL_AUDIT_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_jepa_encoder_pretraining_v3_integrity_"
-    "replacement_terminal_audit_2026-07-25.json"
+    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v1_"
+    "terminal_audit_2026-07-25.json"
 )
 PRIOR_TERMINAL_AUDIT_COMMIT = (
-    "2f96c3f436f0b43f84cb09c9f375542d537e35ec"
+    "5c1ebb2b5f07f7be9ee152ea75b409358fb41477"
 )
 PRIOR_TERMINAL_AUDIT_FILE_SHA256 = (
-    "b6f74ff0a212ac4cf363e59c8fe2f07ed474b8ce4e6ee1ddbd5dafc0c19fe8de"
+    "a87d1a706b912e8774a8e13b858e568ae91fbc1529ea4744adb189f0569457c7"
 )
 PRIOR_TERMINAL_AUDIT_CONTENT_SHA256 = (
-    "ccc145e1cd7ed863ae97123b3f91c3a89b5833dbaa5483cff77ced8bcd33341c"
+    "ad6a97738c7143f6649d43a85376507f82c3522d79de667406a9a73ecffb5a8c"
 )
-PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 11_594
+PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 13_309
 
 SOURCE_MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v1_"
+    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v2_action_gain_"
     "source_manifest_2026-07-25.json"
 )
 REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v1_"
+    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v2_action_gain_"
     "source_review_2026-07-25.json"
 )
 AUTHORIZATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v1_"
+    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_v2_action_gain_"
     "execution_authorization_2026-07-25.json"
 )
 SOURCE_MANIFEST_SCHEMA = f"{SCHEMA_PREFIX}_source_manifest_v1"
@@ -205,7 +207,7 @@ SOURCE_REVIEW_ADDITIONAL_PATHS = (
 
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-    "rgb_patch_whitened_action_residual_jepa_probe_v1"
+    "rgb_patch_whitened_action_residual_jepa_probe_v2_action_gain"
 )
 
 RAW_ROOT_RELATIVE_PATH = (
@@ -298,6 +300,7 @@ BASE_INITIALIZATION_SEED = 20260712
 SCHEDULE_SEED = 20260713
 HOLD_ACTION_INDEX = 6
 RESIDUAL_SCALE = 0.1 / math.sqrt(192.0)
+ACTION_DISCRIMINATION_WEIGHT = 10.0
 WHITENING_EPSILON = 1e-4
 WHITENING_VARIANCE_WEIGHT = 0.50
 WHITENING_COVARIANCE_WEIGHT = 0.02
@@ -475,8 +478,10 @@ SOURCE_ONLY_AUTHORITY = {
 }
 REVIEW_AUTHORITY = dict(SOURCE_ONLY_AUTHORITY)
 SCIENTIFIC_REVIEW_CHECKS = {
-    "prior_v3_terminal_audit_bound": True,
-    "new_mechanism_is_not_v3_retry": True,
+    "prior_v1_terminal_audit_bound": True,
+    "fresh_v2_is_not_v1_retry_or_resume": True,
+    "action_discrimination_weight_exactly_10": True,
+    "only_action_weight_and_fresh_identity_changed": True,
     "ema_current_residual_skip_exact": True,
     "patch_whitening_matches_preregistration": True,
     "all_nine_real_actions_and_hold_exact": True,
@@ -517,7 +522,7 @@ def _load_static_physical_contract() -> Any:
     if hashlib.sha256(raw).hexdigest() != STATIC_PHYSICAL_CONTRACT_FILE_SHA256:
         raise ImportError("frozen static physical contract source changed")
     spec = importlib.util.spec_from_file_location(
-        "_lewm_jepa_encoder_v1_static_physical_contract",
+        "_lewm_jepa_encoder_v2_action_gain_static_physical_contract",
         source,
     )
     if spec is None or spec.loader is None:
@@ -799,8 +804,8 @@ def science_contract() -> dict[str, Any]:
     return {
         "schema": f"{SCHEMA_PREFIX}_science_contract_v1",
         "scientific_question":
-            "n320_initialized_patch_whitened_action_residual_jepa_encoder_"
-            "passes_rank_action_and_scene_disjoint_physical_gates",
+            "tenfold_action_discrimination_gain_preserves_whitened_rank_and_"
+            "passes_action_and_scene_disjoint_physical_gates",
         "initialization": {
             "seed": BASE_INITIALIZATION_SEED,
             "n320_online_encoder_copy": True,
@@ -869,6 +874,8 @@ def science_contract() -> dict[str, Any]:
                     "P_prediction(Predictor(raw_online_current,action)))",
                 "jepa_loss":
                     "mean_patch_feature_mse(true_prediction,z_next_ema)",
+                "action_discrimination_weight":
+                    ACTION_DISCRIMINATION_WEIGHT,
                 "wrong_action_loss":
                     "mean_rows(mean_eligible_candidates(relu("
                     "stop_gradient(E_true)/0.95-E_wrong)))",

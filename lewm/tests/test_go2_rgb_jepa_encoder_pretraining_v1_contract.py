@@ -127,23 +127,45 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         }))
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "feea6738b66c6647f428a7466af6aab2528a3ef9",
+            "85b8bd6ae41652af744a011794060323c47be172",
+        )
+        self.assertEqual(
+            contract.PREREGISTRATION_RELATIVE_PATH,
+            "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
+            "v2_action_gain_preregistration_2026-07-25.md",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(len(raw), 14_020)
+        self.assertEqual(contract.PREREGISTRATION_BYTE_COUNT, 5_711)
+        self.assertEqual(
+            contract.PREREGISTRATION_FILE_SHA256,
+            "1897c6841e88b7ab9116649b5f8f8af009a70bbe6d49938ee59d14683efcb095",
+        )
+        self.assertEqual(len(raw), 5_711)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "e3dfde80ed6f666f7c65663fe0c15965b2119e8ee76ca11d8c527f07c0d8d8f3",
+            "1897c6841e88b7ab9116649b5f8f8af009a70bbe6d49938ee59d14683efcb095",
         )
         self.assertEqual(
             contract.SCHEMA_PREFIX,
-            "lewm_go2_rgb_patch_whitened_action_residual_jepa_v1",
+            "lewm_go2_rgb_patch_whitened_action_residual_jepa_"
+            "v2_action_gain",
         )
         self.assertEqual(contract.preregistration_binding(), {
             "path": contract.PREREGISTRATION_RELATIVE_PATH,
             "commit": contract.PREREGISTRATION_COMMIT,
             "file_sha256": contract.PREREGISTRATION_FILE_SHA256,
             "byte_count": contract.PREREGISTRATION_BYTE_COUNT,
+        })
+        self.assertEqual(contract.prior_terminal_audit_binding(), {
+            "path":
+                "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
+                "v1_terminal_audit_2026-07-25.json",
+            "commit": "5c1ebb2b5f07f7be9ee152ea75b409358fb41477",
+            "file_sha256":
+                "a87d1a706b912e8774a8e13b858e568ae91fbc1529ea4744adb189f0569457c7",
+            "content_sha256":
+                "ad6a97738c7143f6649d43a85376507f82c3522d79de667406a9a73ecffb5a8c",
+            "byte_count": 13_309,
         })
         self.assertIn(
             contract.SOURCE_CLOSURE_BASE_CHECKER_RELATIVE_PATH,
@@ -152,7 +174,7 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(
             contract.OUTPUT_ROOT_RELATIVE_PATH,
             ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-            "rgb_patch_whitened_action_residual_jepa_probe_v1",
+            "rgb_patch_whitened_action_residual_jepa_probe_v2_action_gain",
         )
 
     def test_phase_a_model_and_optimizer_contract_are_exact(self) -> None:
@@ -180,6 +202,11 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(config["zero_action_lambda"], 0.0)
         science = contract.science_contract()
         objective = science["phase_a"]["objective"]
+        self.assertEqual(contract.ACTION_DISCRIMINATION_WEIGHT, 10.0)
+        self.assertEqual(
+            objective["action_discrimination_weight"],
+            contract.ACTION_DISCRIMINATION_WEIGHT,
+        )
         self.assertEqual(objective["residual_scale"], contract.RESIDUAL_SCALE)
         self.assertTrue(objective["ema_current_skip_stop_gradient"])
         self.assertTrue(objective["ema_next_target_stop_gradient"])

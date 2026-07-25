@@ -34,7 +34,8 @@ spec.loader.exec_module(module)
 assert "torch" not in sys.modules
 assert not any(name.startswith("torch.") for name in sys.modules)
 assert module.PREFLIGHT_ENVIRONMENT_KEY == (
-    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_V1_PREFLIGHT_JSON"
+    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
+    "V2_ACTION_GAIN_PREFLIGHT_JSON"
 )
 print("PASS")
 """
@@ -128,8 +129,11 @@ def test_residual_whitening_adapter_composes_loss_and_routes_gradients() -> None
     )
     expected = (
         output["jepa_loss"]
-        + output["wrong_action_loss"]
-        + output["hold_action_loss"]
+        + module.contract.ACTION_DISCRIMINATION_WEIGHT
+        * (
+            output["wrong_action_loss"]
+            + output["hold_action_loss"]
+        )
         + module.contract.WHITENING_VARIANCE_WEIGHT
         * (
             output["raw_whitening_variance_loss"]
@@ -141,6 +145,13 @@ def test_residual_whitening_adapter_composes_loss_and_routes_gradients() -> None
             + output["projected_whitening_covariance_loss"]
         )
     )
+    assert module.contract.ACTION_DISCRIMINATION_WEIGHT == 10.0
+    assert float(
+        (
+            output["wrong_action_loss"]
+            + output["hold_action_loss"]
+        ).detach()
+    ) > 0.0
     assert torch.equal(output["loss"], expected)
     assert output["prediction"].shape == (3, 2, 192)
     assert output["control_predictions"].shape == (3, 8, 2, 192)

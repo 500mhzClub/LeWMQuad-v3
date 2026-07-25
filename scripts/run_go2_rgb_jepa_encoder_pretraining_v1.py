@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the one bounded Patch-Whitened Action-Residual JEPA V1 experiment.
+"""Run the bounded Patch-Whitened Action-Residual JEPA V2 Action-Gain probe.
 
 Importing this module is source-only.  Torch, PIL, NumPy, generated inputs,
 RGB payloads, and checkpoints are first reachable after exact source
@@ -29,7 +29,7 @@ _CONTRACT_PATH = (
     ROOT / "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
 )
 _CONTRACT_SPEC = importlib.util.spec_from_file_location(
-    "_lewm_go2_rgb_jepa_encoder_pretraining_v1_contract",
+    "_lewm_go2_rgb_jepa_encoder_pretraining_v2_action_gain_contract",
     _CONTRACT_PATH,
 )
 if _CONTRACT_SPEC is None or _CONTRACT_SPEC.loader is None:
@@ -38,7 +38,7 @@ contract = importlib.util.module_from_spec(_CONTRACT_SPEC)
 _CONTRACT_SPEC.loader.exec_module(contract)
 
 PREFLIGHT_ENVIRONMENT_KEY = (
-    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_V1_PREFLIGHT_JSON"
+    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_V2_ACTION_GAIN_PREFLIGHT_JSON"
 )
 THREAD_ENVIRONMENT = (
     "OMP_NUM_THREADS",
@@ -536,8 +536,8 @@ def _phase_a_current_only_loss(
     )
     total = (
         action_losses.jepa
-        + action_losses.wrong
-        + action_losses.hold
+        + contract.ACTION_DISCRIMINATION_WEIGHT
+        * (action_losses.wrong + action_losses.hold)
         + contract.WHITENING_VARIANCE_WEIGHT
         * (raw_whitening.variance + projected_whitening.variance)
         + contract.WHITENING_COVARIANCE_WEIGHT
@@ -811,7 +811,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.MATCHED_V1_RUNNER_RELATIVE_PATH],
     )
     matched = _load_source_module(
-        "_lewm_jepa_encoder_v1_matched_loader",
+        "_lewm_jepa_encoder_v2_action_gain_matched_loader",
         matched_path,
     )
     runtime = matched._load_runtime()
@@ -820,7 +820,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.SCHEDULE_ADAPTER_RELATIVE_PATH],
     )
     schedule_adapter = _load_source_module(
-        "_lewm_jepa_encoder_v1_schedule_adapter",
+        "_lewm_jepa_encoder_v2_action_gain_schedule_adapter",
         ROOT / contract.SCHEDULE_ADAPTER_RELATIVE_PATH,
     )
 
@@ -1849,7 +1849,7 @@ def _phase_b_model(
         raise RuntimeError("Phase-B online encoder copy escaped its scope")
 
     # Deliberately do not call hard_sync_ema_target_from_online(): that helper
-    # also copies target_bev_decoder.  V1 permits exactly this encoder-only sync.
+    # also copies target_bev_decoder. V2 permits exactly this encoder-only sync.
     model.target_encoder.load_state_dict(model.encoder.state_dict(), strict=True)
     model.target_encoder.requires_grad_(False)
     model.target_encoder.eval()
