@@ -1,0 +1,161 @@
+{
+  "schema": "lewm_go2_rgb_overlapping_tokenization_v2_integrity_replacement_preregistration_independent_review_v1",
+  "status": "PASS_SOURCE_ONLY_SCIENCE_IDENTICAL_TWO_BINDING_REPLACEMENT_FRESH_ONE_SHOT_CUSTODY",
+  "date": "2026-07-25",
+  "reviewer": "/root/overlap_terminal_audit",
+  "reviewed_preregistration": {
+    "path": "docs/lewm_go2_rgb_overlapping_tokenization_v2_integrity_replacement_preregistration_2026-07-25.json",
+    "commit": "311d06fc0ccfd79c347d4f89edc0f5f9c9654ff9",
+    "byte_count": 7606,
+    "file_sha256": "eff10e7113d3fd3821064e526ff9a724b6acb664906d15e317177410228daf54",
+    "matches_committed_bytes": true
+  },
+  "evidence_bindings": {
+    "v1_execution_authorization": {
+      "path": "docs/lewm_go2_rgb_overlapping_tokenization_v1_execution_authorization_2026-07-25.json",
+      "commit": "9b752b264807c5f49c7e2f7e0db43c7fa22e9985",
+      "byte_count": 13853,
+      "file_sha256": "c73e89a5389187a64e1b7a6ac5e91be18662908c9a296c25af5a90a20e1166db",
+      "content_sha256": "1ef6a3e25c47a58e98b66f50dd58d42540de68e719ab87e02fc0e1d116fa96a1"
+    },
+    "v1_terminal_audit": {
+      "path": "docs/lewm_go2_rgb_overlapping_tokenization_v1_terminal_audit_2026-07-25.json",
+      "commit": "311d06fc0ccfd79c347d4f89edc0f5f9c9654ff9",
+      "byte_count": 10536,
+      "file_sha256": "30fc8f1f0d1d66b6f9f4ccc3a01f7af87124745216b3b50055b96b756c74ff3b",
+      "content_sha256": "70c1abf887567a59962484e5897092c27c18e9b54cb3e057acee476e7c8d5491"
+    },
+    "preexisting_exact_raw_binding_witness": {
+      "path": "docs/lewm_go2_rgb_causal_motion_alignment_v1_execution_authorization_2026-07-24.json",
+      "commit": "94ec9c122a99453632a35b14f08c737831d99172",
+      "byte_count": 13827,
+      "file_sha256": "54cee192cee4a0e61802b4d1b0930f08aa4b17b602155a8b5e73b7c907344b83",
+      "content_sha256": "484ae4debe9e7ce3f551ba68e2ca071d711fd8a3c2ea529428b294b43af74c32",
+      "source_document_only": true,
+      "runtime_material_opened": false
+    }
+  },
+  "review_activity": {
+    "source_and_committed_document_only": true,
+    "generated_or_runtime_root_open_count": 0,
+    "checkpoint_or_tensor_open_count": 0,
+    "dataset_or_rgb_open_count": 0,
+    "accelerator_query_or_use_count": 0,
+    "sealed_protected_or_heldout_open_count": 0,
+    "v1_terminal_root_open_count": 0,
+    "v2_output_root_inspection_or_mutation_count": 0,
+    "training_or_evaluation_operation_count": 0
+  },
+  "science_identity_review": {
+    "canonicalization": {
+      "json_pointer": "/experiment",
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "ensure_ascii": true,
+      "allow_nan": false
+    },
+    "v1_experiment_canonical_byte_count": 6100,
+    "v1_experiment_canonical_sha256": "48fc6115db5e43e53b6b3da425be6ffaa5e88dd9b3db8363c1ab8ae26a6b192a",
+    "declared_anchor_matches_v1_authorization": true,
+    "v2_preregistered_experiment_definition": "canonical_deep_equality_to_the_complete_v1_experiment_object",
+    "v2_science_delta_count": 0,
+    "v2_science_deep_equal_to_v1_required": true,
+    "preserved_exactly": [
+      "model_family_and_architecture_contract",
+      "data_roles_counts_payload_and_order",
+      "base_decoder_and_schedule_seeds",
+      "schedule_prefixes_updates_and_presentations",
+      "losses_optimizer_precision_clipping_and_learning_rate_horizon",
+      "initialization_and_n320_migration",
+      "checkpoint_selection_updates_and_thresholds",
+      "operation_caps",
+      "zero_jepa_objective_and_zero_target_ema_after_initial_hard_sync"
+    ],
+    "operational_v2_identity_may_not_change_the_experiment_model_runtime_version_or_any_other_experiment_leaf": true,
+    "future_v2_authorization_must_reproduce_the_same_6100_byte_canonical_experiment": true,
+    "verdict": "PASS_EXACT_SCIENCE_IDENTITY_CONTRACT"
+  },
+  "runtime_binding_delta_review": {
+    "v1_runtime_inputs_canonical_byte_count": 2191,
+    "v1_runtime_inputs_canonical_sha256": "b5ff5c96b944d5f2561bbb43f9c1756c0ca5f155ab78d321a6c4dd0cafa0fb63",
+    "v2_corrected_runtime_inputs_canonical_byte_count": 2200,
+    "v2_corrected_runtime_inputs_canonical_sha256": "1a93c1349ea859ee459a1dd03d5ed316be519f943e15b00e815f984ffdc707bb",
+    "recursive_leaf_difference_count": 2,
+    "differences": [
+      {
+        "json_pointer": "/raw/audit/byte_count",
+        "v1": 1,
+        "v2": 26975
+      },
+      {
+        "json_pointer": "/raw/manifest/byte_count",
+        "v1": 1,
+        "v2": 311598
+      }
+    ],
+    "raw_audit_corrected_binding": {
+      "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1.audit_v13.json",
+      "byte_count": 26975,
+      "file_sha256": "0680e1680f30c45feda60498792c3f208c28313e8f087dfbdd1c5807bcf1fe76",
+      "content_sha256": "0c16e368c9de258d0fbf46e3123d7a3cfcdf60162fd9efa6440d4a7773056aca",
+      "supported_by_preexisting_committed_authority_document": true,
+      "opened_during_review": false
+    },
+    "raw_manifest_corrected_binding": {
+      "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/manifest.json",
+      "byte_count": 311598,
+      "file_sha256": "e102b3c64e99029f118597353966edaaaddbc11efe49b9081d5d7a9c9d974360",
+      "content_sha256": "74ae5799919ff4d9a06f56d98929cb4cb702d64db52ecdfc93cfa9a8e82fb35a",
+      "byte_count_and_file_hash_also_witnessed_by_the_v1_terminal_receipt": true,
+      "opened_during_review": false
+    },
+    "path_file_sha256_and_content_sha256_changes": 0,
+    "all_other_runtime_input_leaf_changes": 0,
+    "allowed_source_delta": "exact_byte_count_enforcement_plus_fresh_v2_operational_identity_only",
+    "science_or_data_delta": false,
+    "verdict": "PASS_EXACTLY_TWO_BYTE_COUNT_REPLACEMENTS"
+  },
+  "standing_authority_review": {
+    "user_scope_verbatim_in_preregistration": "you have permission to iterate as long as metrics are improvng, and you can change scientific scope as long as we dont violate the constraint of a perception only learned jepa for maze nav, validated on held out mazes - beyond that scope is flexible",
+    "prospective_user_instruction_to_skip_repeated_authorization_commands_observed": true,
+    "additional_copy_paste_user_authorization_required": false,
+    "v1_execution_authorization_itself_reused_as_v2_execution_authority": false,
+    "standing_user_authority_supports_one_science_identical_integrity_replacement": true,
+    "rationale": "The user granted autonomous iteration within the learned-JEPA held-out-maze goal and prospectively asked to stop requiring repeated authorization incantations. V2 is narrower than a scientific-scope change: it preserves the complete experiment and repairs a zero-training authorization-integrity defect.",
+    "v1_no_replacement_boundary_superseded_only_for_this_versioned_science_identical_v2": true,
+    "exact_machine_authorization_document_still_required_after_source_freeze_and_independent_source_pass": true,
+    "review_artifact_itself_authorizes_runtime_execution": false,
+    "verdict": "PASS_STANDING_USER_AUTHORITY_WITH_INTERNAL_EXECUTION_GATES"
+  },
+  "fresh_attempt_custody_review": {
+    "v1_attempt_consumed": true,
+    "v1_scientific_result": null,
+    "v1_mechanism_supported_or_falsified": false,
+    "v1_root_must_remain_sealed_immutable_and_unopened": true,
+    "v1_retry_resume_repair_or_mutation_authorized": false,
+    "v2_output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_overlapping_tokenization_probe_v2_integrity_replacement",
+    "v2_root_is_distinct_from_and_not_nested_under_v1_root": true,
+    "v2_root_must_be_absent_at_reservation": true,
+    "v2_root_absence_inspected_during_this_review": false,
+    "v2_root_absence_must_be_checked_fail_closed_by_the_future_launcher": true,
+    "v2_attempt_index": 1,
+    "v2_maximum_attempts": 1,
+    "v2_reservation_consumes_attempt": true,
+    "v2_retry_resume_repair_recovery_second_seed_extension_or_observer_rerun_authorized": false,
+    "verdict": "PASS_FRESH_ROOT_ONE_SHOT_NO_RETRY_CUSTODY"
+  },
+  "downstream_and_access_boundary": {
+    "source_implementation_and_source_review_may_proceed": true,
+    "generated_input_checkpoint_gpu_or_training_access_before_frozen_source_review_and_machine_authorization": false,
+    "heldout_material_may_be_opened_by_v2": false,
+    "jepa_training_occurs_in_v2": false,
+    "g2_navigation_perception_qualification_production_promotion_or_deployment_authorized": false,
+    "v2_pass_licenses": "separately_preregistered_perception_qualification_only",
+    "v4_remains_permanently_ineligible": true
+  },
+  "findings": [],
+  "content_sha256": "ba43b9c31764d7c00cec9b1493c3a844a57c66808aaf192873312e1c7812ac48"
+}
