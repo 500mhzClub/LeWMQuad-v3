@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify Existing-Pair Inverse-Dynamics JEPA V6 source closure.
+"""Build or verify Local-Correspondence Transport JEPA V7 source closure.
 
 This is a source-only AST walk.  It imports no tensor library and opens no
 generated input, checkpoint, RGB payload, attempt output, or protected role.
@@ -62,14 +62,14 @@ def _source_module(name: str, relative: str) -> Any:
 contract = _source_module(
     (
         "_lewm_rgb_jepa_encoder_pretraining_"
-        "v6_existing_pair_inverse_dynamics_closure_contract"
+        "v7_local_correspondence_transport_closure_contract"
     ),
     CONTRACT_RELATIVE_PATH,
 )
 _BASE = _source_module(
     (
         "_lewm_rgb_jepa_encoder_pretraining_"
-        "v6_existing_pair_inverse_dynamics_closure_base"
+        "v7_local_correspondence_transport_closure_base"
     ),
     BASE_CHECKER_RELATIVE_PATH,
 )
@@ -185,7 +185,7 @@ def main() -> int:
         _write_manifest_exclusive(build_manifest())
         return 0
     verify_manifest(require_tracked=args.require_tracked)
-    print("Go2 Existing-Pair Inverse-Dynamics JEPA V6 source closure: PASS")
+    print("Go2 Local-Correspondence Transport JEPA V7 source closure: PASS")
     return 0
 
 

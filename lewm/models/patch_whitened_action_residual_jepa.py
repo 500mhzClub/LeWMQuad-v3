@@ -1,8 +1,8 @@
-"""Exact helpers for Patch-Whitened Action-Residual JEPA V6 Inverse Dynamics.
+"""Exact helpers for V7 Local-Correspondence Transport JEPA.
 
 This module intentionally contains no data, schedule, runner, or custody
-logic.  It preserves the frozen V5 State-Dependent Latent-Flow mechanism and
-adds only the training-time inverse-dynamics mechanism registered for V6.
+logic.  It implements the deterministic centered-softmax residual local
+transport registered for V7.
 """
 from __future__ import annotations
 
@@ -19,9 +19,9 @@ ACTION_DIM = 9
 HOLD_ACTION_INDEX = 6
 TOKEN_SIDE = 16
 TOKEN_COUNT = TOKEN_SIDE * TOKEN_SIDE
-FLOW_DIM = 2
-MAXIMUM_FLOW_CELL_DISPLACEMENT = 1.0
-FLOW_GRID_SCALE = 2.0 / float(TOKEN_SIDE - 1)
+NEIGHBOR_COUNT = 9
+NONCENTER_NEIGHBOR_COUNT = 8
+CENTER_OFFSET_INDEX = 4
 WHITENING_EPS = 1e-4
 ACTION_GATE_INITIALIZATION_SEED = 20260712
 ACTION_GATE_WEIGHT_STD = 0.01 / math.sqrt(LATENT_DIM)
@@ -30,14 +30,33 @@ RESIDUAL_ALPHA = 0.1 / math.sqrt(LATENT_DIM)
 
 
 class ActionIndexedPredictions(NamedTuple):
-    """Uniformly ordered nine-action predictions, flows, and gathers."""
+    """Uniformly ordered nine-action predictions and correspondence state."""
 
     executed_indices: torch.Tensor
     all_predictions: torch.Tensor
-    all_flows_cell: torch.Tensor
+    all_transport_logits: torch.Tensor
+    all_transport_probabilities: torch.Tensor
+    all_expected_offsets: torch.Tensor
+    all_transports: torch.Tensor
     executed: torch.Tensor
     control_indices: torch.Tensor
     controls: torch.Tensor
+
+
+class CorrespondenceTargets(NamedTuple):
+    """Detached EMA local-correspondence targets and viability statistic."""
+
+    logits: torch.Tensor
+    probabilities: torch.Tensor
+    mean_kl_to_uniform: torch.Tensor
+
+
+class CorrespondenceTerms(NamedTuple):
+    """Executed correspondence diagnostics and detached-scale loss."""
+
+    loss: torch.Tensor
+    centered_cross_entropy: torch.Tensor
+    cross_entropy_per_row: torch.Tensor
 
 
 class WhiteningTerms(NamedTuple):
@@ -59,17 +78,8 @@ class ActionIndexedLosses(NamedTuple):
     identification_per_row: torch.Tensor
 
 
-class InverseDynamicsTerms(NamedTuple):
-    """Inverse logits, unscaled diagnostics, and row-scaled training loss."""
-
-    loss: torch.Tensor
-    unscaled_cross_entropy: torch.Tensor
-    cross_entropy_per_row: torch.Tensor
-    logits: torch.Tensor
-
-
-class ActionConditionedLatentFlow(nn.Module):
-    """Wrap the shared projector with exact-zero flow and inverse maps."""
+class ActionConditionedLocalCorrespondenceTransport(nn.Module):
+    """Wrap the shared projector with the exact V7 local transport map."""
 
     def __init__(self, shared_projector: nn.Module):
         super().__init__()
@@ -81,38 +91,53 @@ class ActionConditionedLatentFlow(nn.Module):
         if reference.dtype != torch.float32:
             raise TypeError("shared_projector parameters must be float32")
         self.shared_projector = shared_projector
-        self.flow_weight = nn.Parameter(
+        self.transport_weight = nn.Parameter(
             torch.zeros(
-                FLOW_DIM,
+                NONCENTER_NEIGHBOR_COUNT,
                 LATENT_DIM,
                 device=reference.device,
                 dtype=reference.dtype,
             )
-        )
-        self.inverse_weight = nn.Parameter(
-            torch.zeros(
-                LATENT_DIM,
-                3 * LATENT_DIM,
-                device=reference.device,
-                dtype=reference.dtype,
-            )
-        )
-        coordinates = torch.linspace(
-            -1.0,
-            1.0,
-            TOKEN_SIDE,
-            device=reference.device,
-            dtype=reference.dtype,
         )
         rows, columns = torch.meshgrid(
-            coordinates,
-            coordinates,
+            torch.arange(
+                TOKEN_SIDE,
+                device=reference.device,
+                dtype=torch.long,
+            ),
+            torch.arange(
+                TOKEN_SIDE,
+                device=reference.device,
+                dtype=torch.long,
+            ),
             indexing="ij",
         )
-        identity_grid_xy = torch.stack((columns, rows), dim=-1)[None]
+        centers = torch.stack(
+            (rows.reshape(-1), columns.reshape(-1)),
+            dim=-1,
+        )
+        offsets = torch.tensor(
+            [
+                (-1, -1),
+                (-1, 0),
+                (-1, 1),
+                (0, -1),
+                (0, 0),
+                (0, 1),
+                (1, -1),
+                (1, 0),
+                (1, 1),
+            ],
+            device=reference.device,
+            dtype=torch.long,
+        )
+        neighbors = centers[:, None] + offsets[None]
+        neighbor_rows = neighbors[..., 0].clamp(0, TOKEN_SIDE - 1)
+        neighbor_columns = neighbors[..., 1].clamp(0, TOKEN_SIDE - 1)
+        neighbor_indices = TOKEN_SIDE * neighbor_rows + neighbor_columns
         self.register_buffer(
-            "identity_grid_xy",
-            identity_grid_xy,
+            "neighbor_indices",
+            neighbor_indices,
             persistent=False,
         )
 
@@ -124,41 +149,28 @@ class ActionConditionedLatentFlow(nn.Module):
             raise ValueError("shared projector output must align with tokens")
         return projected
 
-    def project_flow(self, interactions: torch.Tensor) -> torch.Tensor:
-        """Map state/action interactions to raw ``(x, y)`` cell offsets."""
+    def project_noncenter_logits(
+        self,
+        interactions: torch.Tensor,
+    ) -> torch.Tensor:
+        """Map state/action interactions to the eight learned local logits."""
 
         if (
-            interactions.ndim not in {3, 4}
+            interactions.ndim != 4
             or interactions.shape[-1] != LATENT_DIM
         ):
             raise ValueError(
-                "flow interactions must have shape (B,N,192) "
-                "or (B,9,N,192)"
-            )
-        if interactions.shape[0] < 1 or interactions.shape[-2] != TOKEN_COUNT:
-            raise ValueError(
-                f"flow interactions must contain exactly {TOKEN_COUNT} tokens"
-            )
-        return F.linear(interactions, self.flow_weight, bias=None)
-
-    def project_inverse(self, pair_features: torch.Tensor) -> torch.Tensor:
-        """Map concatenated current, next, and normalized delta features."""
-
-        if (
-            pair_features.ndim != 3
-            or pair_features.shape[-1] != 3 * LATENT_DIM
-        ):
-            raise ValueError(
-                "inverse pair features must have shape (B,N,576)"
+                "transport interactions must have shape (B,9,256,192)"
             )
         if (
-            pair_features.shape[0] < 1
-            or pair_features.shape[1] != TOKEN_COUNT
+            interactions.shape[0] < 1
+            or tuple(interactions.shape[1:3])
+            != (ACTION_DIM, TOKEN_COUNT)
         ):
             raise ValueError(
-                f"inverse pair features must contain {TOKEN_COUNT} tokens"
+                "transport interactions must have shape (B,9,256,192)"
             )
-        return F.linear(pair_features, self.inverse_weight, bias=None)
+        return F.linear(interactions, self.transport_weight, bias=None)
 
 
 def initialize_action_gate_rows(predictor: nn.Module) -> dict[str, object]:
@@ -353,336 +365,296 @@ def relative_action_embeddings(
     return relative
 
 
-def centered_action_embeddings(
-    predictor: nn.Module,
+def _local_offsets_yx(
     *,
     device: torch.device,
     dtype: torch.dtype,
 ) -> torch.Tensor:
-    """Return the existing nine action embeddings centered over actions."""
+    """Return the frozen full-offset order as ``(dy, dx)`` rows."""
 
-    action_embed = getattr(predictor, "action_embed", None)
-    if not isinstance(action_embed, nn.Module):
-        raise TypeError("predictor must expose an action_embed module")
-    candidates = torch.eye(
-        ACTION_DIM,
+    return torch.tensor(
+        [
+            (-1, -1),
+            (-1, 0),
+            (-1, 1),
+            (0, -1),
+            (0, 0),
+            (0, 1),
+            (1, -1),
+            (1, 0),
+            (1, 1),
+        ],
         device=device,
         dtype=dtype,
-    )[:, None, :]
-    embeddings = action_embed(candidates)
-    if tuple(embeddings.shape) != (ACTION_DIM, 1, LATENT_DIM):
-        raise ValueError(
-            "action_embed must map (9,1,9) to (9,1,192)"
-        )
-    if embeddings.device != device or embeddings.dtype != dtype:
-        raise TypeError("action embeddings must align with the online states")
-    if not bool(torch.isfinite(embeddings).all()):
-        raise FloatingPointError("action embeddings contain a nonfinite value")
-
-    centered = embeddings[:, 0] - embeddings[:, 0].mean(
-        dim=0,
-        keepdim=True,
     )
-    if bool((centered == 0).all(dim=1).any().item()):
-        raise RuntimeError("a centered action embedding is exact zero")
-    pairwise_equal = (
-        centered[:, None] == centered[None, :]
-    ).all(dim=-1)
-    pairwise_equal.fill_diagonal_(False)
-    if bool(pairwise_equal.any().item()):
-        raise RuntimeError("centered action embeddings are not distinct")
-    return centered
 
 
-def inverse_dynamics_terms(
-    predictor: nn.Module,
-    prediction_projector: ActionConditionedLatentFlow,
-    online_current: torch.Tensor,
-    online_next: torch.Tensor,
-    executed_indices: torch.Tensor,
-    row_scale: torch.Tensor,
-) -> InverseDynamicsTerms:
-    """Compute the frozen V6 inverse-action objective and diagnostics."""
-
+def _validate_local_transport_projector(
+    projector: ActionConditionedLocalCorrespondenceTransport,
+    *,
+    device: torch.device,
+) -> None:
     if not isinstance(
-        prediction_projector,
-        ActionConditionedLatentFlow,
+        projector,
+        ActionConditionedLocalCorrespondenceTransport,
     ):
         raise TypeError(
-            "prediction_projector must be ActionConditionedLatentFlow"
+            "projector must be "
+            "ActionConditionedLocalCorrespondenceTransport"
         )
-    _validate_tokens(online_current, name="online_current")
-    _validate_tokens(online_next, name="online_next")
-    if tuple(online_current.shape[1:]) != (TOKEN_COUNT, LATENT_DIM):
+    if (
+        tuple(projector.neighbor_indices.shape)
+        != (TOKEN_COUNT, NEIGHBOR_COUNT)
+        or projector.neighbor_indices.dtype != torch.long
+        or projector.neighbor_indices.device != device
+    ):
+        raise TypeError("neighbor_indices changed or are misaligned")
+    if not bool(
+        (
+            (projector.neighbor_indices >= 0)
+            & (projector.neighbor_indices < TOKEN_COUNT)
+        ).all().item()
+    ):
+        raise RuntimeError("neighbor_indices left the token grid")
+
+
+def _validate_spatial_float32(
+    tokens: torch.Tensor,
+    *,
+    name: str,
+) -> None:
+    _validate_tokens(tokens, name=name)
+    if tuple(tokens.shape[1:]) != (TOKEN_COUNT, LATENT_DIM):
         raise ValueError(
-            f"online_current must contain {TOKEN_COUNT} tokens"
+            f"{name} must have shape (B, {TOKEN_COUNT}, {LATENT_DIM})"
         )
-    if online_next.shape != online_current.shape:
-        raise ValueError("online_next must align exactly with online_current")
-    if (
-        online_current.dtype != torch.float32
-        or online_next.dtype != online_current.dtype
-        or online_next.device != online_current.device
-    ):
-        raise TypeError("online states must be aligned float32 tensors")
-    if (
-        not bool(torch.isfinite(online_current).all())
-        or not bool(torch.isfinite(online_next).all())
-    ):
-        raise FloatingPointError("online states contain a nonfinite value")
+    if tokens.dtype != torch.float32:
+        raise TypeError(f"{name} must have dtype torch.float32")
+    if not bool(torch.isfinite(tokens).all()):
+        raise FloatingPointError(f"{name} contains a nonfinite value")
 
-    batch = online_current.shape[0]
-    _validate_action_indices(executed_indices, batch=batch)
-    if executed_indices.device != online_current.device:
-        raise TypeError("action indices must align with the online states")
-    if row_scale.ndim != 1 or tuple(row_scale.shape) != (batch,):
-        raise ValueError(f"row_scale must have shape ({batch},)")
-    if (
-        row_scale.device != online_current.device
-        or row_scale.dtype != torch.float32
-    ):
-        raise TypeError("row_scale must be aligned float32")
-    if (
-        not bool(torch.isfinite(row_scale).all())
-        or not bool((row_scale > 0).all().item())
-    ):
-        raise FloatingPointError("row_scale must be finite and positive")
 
-    normalized_delta = F.layer_norm(
-        online_next - online_current,
+def local_correspondence_targets(
+    projector: ActionConditionedLocalCorrespondenceTransport,
+    ema_current: torch.Tensor,
+    ema_next: torch.Tensor,
+) -> CorrespondenceTargets:
+    """Construct the exact detached nine-neighbor EMA target distribution."""
+
+    _validate_spatial_float32(ema_current, name="ema_current")
+    _validate_spatial_float32(ema_next, name="ema_next")
+    if (
+        ema_next.shape != ema_current.shape
+        or ema_next.device != ema_current.device
+    ):
+        raise ValueError("EMA current and next states must align exactly")
+    _validate_local_transport_projector(
+        projector,
+        device=ema_current.device,
+    )
+
+    current = ema_current.detach()
+    next_state = ema_next.detach()
+    normalized_current = F.layer_norm(
+        current,
         normalized_shape=(LATENT_DIM,),
         weight=None,
         bias=None,
         eps=1e-5,
     )
-    pair_features = torch.cat(
-        (online_current, online_next, normalized_delta),
-        dim=-1,
+    normalized_next = F.layer_norm(
+        next_state,
+        normalized_shape=(LATENT_DIM,),
+        weight=None,
+        bias=None,
+        eps=1e-5,
     )
-    query = prediction_projector.project_inverse(pair_features).mean(dim=1)
-    prototypes = centered_action_embeddings(
-        predictor,
-        device=online_current.device,
-        dtype=online_current.dtype,
-    )
-    logits = F.linear(query, prototypes, bias=None) / math.sqrt(LATENT_DIM)
+    neighbor_current = normalized_current[:, projector.neighbor_indices]
+    logits = (
+        neighbor_current * normalized_next[:, :, None]
+    ).sum(dim=-1) / math.sqrt(LATENT_DIM)
+    probabilities = torch.softmax(logits, dim=-1)
     if (
-        tuple(logits.shape) != (batch, ACTION_DIM)
-        or not bool(torch.isfinite(logits).all())
-    ):
-        raise FloatingPointError("inverse logits are invalid")
-
-    cross_entropy_per_row = F.cross_entropy(
-        logits,
-        executed_indices,
-        reduction="none",
-    )
-    unscaled_cross_entropy = cross_entropy_per_row.mean()
-    loss = (
-        row_scale.detach() * cross_entropy_per_row
-    ).mean()
-    return InverseDynamicsTerms(
-        loss=loss,
-        unscaled_cross_entropy=unscaled_cross_entropy,
-        cross_entropy_per_row=cross_entropy_per_row,
-        logits=logits,
-    )
-
-
-def bounded_flow_cells(raw_flow: torch.Tensor) -> torch.Tensor:
-    """Map raw flow to the preregistered closed one-cell range."""
-
-    if (
-        raw_flow.ndim != 4
-        or tuple(raw_flow.shape[1::2]) != (ACTION_DIM, FLOW_DIM)
-        or raw_flow.shape[2] != TOKEN_COUNT
-    ):
-        raise ValueError(
-            "raw_flow must have shape (B,9,256,2)"
+        tuple(probabilities.shape)
+        != (ema_current.shape[0], TOKEN_COUNT, NEIGHBOR_COUNT)
+        or not bool(torch.isfinite(probabilities).all())
+        or not bool((probabilities > 0).all().item())
+        or not bool(
+            torch.allclose(
+                probabilities.sum(dim=-1),
+                torch.ones_like(probabilities[..., 0]),
+                rtol=0.0,
+                atol=1e-6,
+            )
         )
-    if not bool(torch.isfinite(raw_flow).all()):
-        raise FloatingPointError("raw flow contains a nonfinite value")
-    flow = MAXIMUM_FLOW_CELL_DISPLACEMENT * torch.tanh(raw_flow)
-    if (
-        not bool(torch.isfinite(flow).all())
-        or bool((flow.abs() > MAXIMUM_FLOW_CELL_DISPLACEMENT).any())
     ):
-        raise FloatingPointError("bounded flow left the closed one-cell range")
-    return flow
+        raise FloatingPointError(
+            "local correspondence target is invalid"
+        )
+    mean_kl_to_uniform = (
+        probabilities
+        * (probabilities.log() + math.log(NEIGHBOR_COUNT))
+    ).sum(dim=-1).mean()
+    if not bool(torch.isfinite(mean_kl_to_uniform)):
+        raise FloatingPointError(
+            "local correspondence target KL is nonfinite"
+        )
+    return CorrespondenceTargets(
+        logits=logits.detach(),
+        probabilities=probabilities.detach(),
+        mean_kl_to_uniform=mean_kl_to_uniform.detach(),
+    )
 
 
-def warp_ema_current_latents(
-    prediction_projector: ActionConditionedLatentFlow,
-    ema_current: torch.Tensor,
-    all_flows_cell: torch.Tensor,
+def centered_log_soft_cross_entropy(
+    target_probs: torch.Tensor,
+    student_logits: torch.Tensor,
 ) -> torch.Tensor:
-    """Warp detached EMA-current values on the exact row-major 16x16 grid."""
+    """Evaluate exact registered ``Hc`` with full center offset index four."""
 
-    if not isinstance(prediction_projector, ActionConditionedLatentFlow):
-        raise TypeError(
-            "prediction_projector must be ActionConditionedLatentFlow"
-        )
-    if tuple(ema_current.shape[1:]) != (TOKEN_COUNT, LATENT_DIM):
+    if (
+        target_probs.ndim < 2
+        or student_logits.ndim < 2
+        or target_probs.shape[-1] != NEIGHBOR_COUNT
+        or student_logits.shape[-1] != NEIGHBOR_COUNT
+    ):
         raise ValueError(
-            f"ema_current must have shape (B, {TOKEN_COUNT}, {LATENT_DIM})"
+            "target_probs and student_logits must have broadcastable "
+            "shape (...,9)"
         )
-    if tuple(all_flows_cell.shape) != (
-        ema_current.shape[0],
-        ACTION_DIM,
-        TOKEN_COUNT,
-        FLOW_DIM,
-    ):
-        raise ValueError("all_flows_cell must have shape (B,9,256,2)")
+    try:
+        torch.broadcast_shapes(
+            target_probs.shape[:-1],
+            student_logits.shape[:-1],
+        )
+    except RuntimeError as error:
+        raise ValueError(
+            "target_probs and student_logits must have broadcastable "
+            "shape (...,9)"
+        ) from error
     if (
-        ema_current.dtype != torch.float32
-        or all_flows_cell.dtype != ema_current.dtype
-        or all_flows_cell.device != ema_current.device
+        target_probs.dtype != torch.float32
+        or student_logits.dtype != torch.float32
+        or target_probs.device != student_logits.device
     ):
-        raise TypeError("warp inputs must be aligned float32 tensors")
+        raise TypeError(
+            "cross-entropy inputs must be aligned float32 tensors"
+        )
+    target = target_probs.detach()
     if (
-        not bool(torch.isfinite(ema_current).all())
-        or not bool(torch.isfinite(all_flows_cell).all())
-        or bool(
-            (
-                all_flows_cell.abs()
-                > MAXIMUM_FLOW_CELL_DISPLACEMENT
-            ).any()
+        not bool(torch.isfinite(target).all())
+        or not bool(torch.isfinite(student_logits).all())
+        or bool((target < 0).any().item())
+        or not bool(
+            torch.allclose(
+                target.sum(dim=-1),
+                torch.ones_like(target[..., 0]),
+                rtol=0.0,
+                atol=1e-6,
+            )
         )
     ):
-        raise FloatingPointError("warp inputs are nonfinite or out of bounds")
+        raise FloatingPointError(
+            "cross-entropy probabilities or logits are invalid"
+        )
+    log_probabilities = F.log_softmax(student_logits, dim=-1)
+    center_log_probability = log_probabilities[..., CENTER_OFFSET_INDEX]
+    return (
+        -center_log_probability
+        - (
+            target
+            * (
+                log_probabilities
+                - center_log_probability.unsqueeze(-1)
+            )
+        ).sum(dim=-1)
+    )
+
+
+def _residual_local_transport(
+    projector: ActionConditionedLocalCorrespondenceTransport,
+    ema_current: torch.Tensor,
+    probabilities: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Apply centered-softmax transport without a five-dimensional gather."""
 
     batch = ema_current.shape[0]
-    source = ema_current.detach().transpose(1, 2).reshape(
-        batch,
-        LATENT_DIM,
-        TOKEN_SIDE,
-        TOKEN_SIDE,
-    )
-    source = source[:, None].expand(
-        -1,
-        ACTION_DIM,
-        -1,
-        -1,
-        -1,
-    ).reshape(
-        batch * ACTION_DIM,
-        LATENT_DIM,
-        TOKEN_SIDE,
-        TOKEN_SIDE,
-    )
-    flow_grid = all_flows_cell.reshape(
+    if tuple(probabilities.shape) != (
         batch,
         ACTION_DIM,
-        TOKEN_SIDE,
-        TOKEN_SIDE,
-        FLOW_DIM,
-    )
-    identity = prediction_projector.identity_grid_xy
-    if (
-        tuple(identity.shape) != (1, TOKEN_SIDE, TOKEN_SIDE, FLOW_DIM)
-        or identity.device != ema_current.device
-        or identity.dtype != ema_current.dtype
-    ):
-        raise TypeError("identity sampling grid changed or is misaligned")
-    sample_grid = (
-        identity[:, None]
-        + FLOW_GRID_SCALE * flow_grid
-    ).reshape(
-        batch * ACTION_DIM,
-        TOKEN_SIDE,
-        TOKEN_SIDE,
-        FLOW_DIM,
-    )
-    warped = F.grid_sample(
-        source,
-        sample_grid,
-        mode="bilinear",
-        padding_mode="border",
-        align_corners=True,
-    )
-    warped = warped.reshape(
-        batch,
-        ACTION_DIM,
-        LATENT_DIM,
-        TOKEN_SIDE,
-        TOKEN_SIDE,
-    ).flatten(3).transpose(2, 3)
-    if (
-        tuple(warped.shape)
-        != (batch, ACTION_DIM, TOKEN_COUNT, LATENT_DIM)
-        or not bool(torch.isfinite(warped).all())
-    ):
-        raise FloatingPointError("latent warp produced invalid output")
-    return warped
-
-
-def flow_residual_reconstruct(
-    warped_ema_current: torch.Tensor,
-    shared_residuals: torch.Tensor,
-) -> torch.Tensor:
-    """Add the shared output-grid residual after the latent spatial warp."""
-
-    if (
-        warped_ema_current.ndim != 4
-        or warped_ema_current.shape[1:] != (
-            ACTION_DIM,
-            TOKEN_COUNT,
-            LATENT_DIM,
-        )
-        or shared_residuals.shape != warped_ema_current.shape
+        TOKEN_COUNT,
+        NEIGHBOR_COUNT,
     ):
         raise ValueError(
-            "warped EMA current and shared residuals must have "
-            "shape (B,9,256,192)"
+            "transport probabilities must have shape (B,9,256,9)"
         )
-    return F.normalize(
-        warped_ema_current + RESIDUAL_ALPHA * shared_residuals,
-        p=2,
-        dim=-1,
-        eps=1e-8,
+    source = ema_current.detach()
+    neighbor_source = source[:, projector.neighbor_indices]
+    neighbor_deltas = neighbor_source - source[:, :, None]
+    uniform = torch.softmax(torch.zeros_like(probabilities), dim=-1)
+    centered_probabilities = probabilities - uniform
+    token_action_coefficients = centered_probabilities.permute(0, 2, 1, 3)
+    displacement = torch.matmul(
+        token_action_coefficients,
+        neighbor_deltas,
+    ).permute(0, 2, 1, 3)
+    transports = source[:, None] + displacement
+    offsets = _local_offsets_yx(
+        device=probabilities.device,
+        dtype=probabilities.dtype,
     )
+    expected_offsets = torch.matmul(centered_probabilities, offsets)
+    if (
+        tuple(transports.shape)
+        != (batch, ACTION_DIM, TOKEN_COUNT, LATENT_DIM)
+        or tuple(expected_offsets.shape)
+        != (batch, ACTION_DIM, TOKEN_COUNT, 2)
+        or not bool(torch.isfinite(transports).all())
+        or not bool(torch.isfinite(expected_offsets).all())
+        or bool((expected_offsets.abs() > 1.0).any().item())
+    ):
+        raise FloatingPointError("local transport output is invalid")
+    return transports, expected_offsets
 
 
-def predict_action_conditioned_flow_warps(
+def predict_action_conditioned_local_transports(
     predictor: nn.Module,
-    prediction_projector: ActionConditionedLatentFlow,
+    projector: ActionConditionedLocalCorrespondenceTransport,
     online_state: torch.Tensor,
     requested_actions: torch.Tensor,
     ema_current: torch.Tensor,
 ) -> ActionIndexedPredictions:
-    """Predict all nine candidates through the shared bilinear latent flow."""
+    """Predict all candidates through exact centered-softmax local transport."""
 
-    if not isinstance(
-        prediction_projector, ActionConditionedLatentFlow
-    ):
-        raise TypeError(
-            "prediction_projector must be ActionConditionedLatentFlow"
-        )
-    _validate_tokens(online_state, name="online_state")
-    if online_state.shape[1] != TOKEN_COUNT:
-        raise ValueError(f"online_state must contain {TOKEN_COUNT} tokens")
-    if online_state.shape[0] != requested_actions.shape[0]:
-        raise ValueError("online_state and requested_actions batch sizes differ")
-    if ema_current.shape != online_state.shape:
-        raise ValueError("ema_current must align exactly with online_state")
+    _validate_spatial_float32(online_state, name="online_state")
+    _validate_spatial_float32(ema_current, name="ema_current")
     if (
-        online_state.dtype != torch.float32
-        or ema_current.dtype != torch.float32
-        or requested_actions.device != online_state.device
+        ema_current.shape != online_state.shape
         or ema_current.device != online_state.device
     ):
-        raise TypeError("prediction inputs must be aligned float32 tensors")
+        raise ValueError("ema_current must align exactly with online_state")
+    if (
+        requested_actions.shape[0] != online_state.shape[0]
+        or requested_actions.device != online_state.device
+        or requested_actions.dtype != torch.float32
+    ):
+        raise TypeError(
+            "requested_actions must be aligned float32 one-hot rows"
+        )
+    _validate_local_transport_projector(
+        projector,
+        device=online_state.device,
+    )
     executed_indices = requested_action_indices(requested_actions)
     batch, tokens, dim = online_state.shape
 
     shared_hidden = action_independent_trunk(predictor, online_state)
-    shared_residual = prediction_projector.project_shared(shared_hidden)
+    shared_residual = projector.project_shared(shared_hidden)
     relative_embeddings = relative_action_embeddings(
         predictor,
         device=shared_hidden.device,
         dtype=shared_hidden.dtype,
     )
-
     detached_interactions = (
         shared_hidden.detach()[:, None]
         * relative_embeddings[None, :, None]
@@ -703,22 +675,51 @@ def predict_action_conditioned_flow_warps(
         executed_interaction[:, None],
         detached_interactions,
     )
-    all_flows_cell = bounded_flow_cells(
-        prediction_projector.project_flow(interactions)
+    noncenter_logits = projector.project_noncenter_logits(interactions)
+    center_logits = -noncenter_logits.sum(dim=-1, keepdim=True)
+    all_transport_logits = torch.cat(
+        (
+            noncenter_logits[..., :CENTER_OFFSET_INDEX],
+            center_logits,
+            noncenter_logits[..., CENTER_OFFSET_INDEX:],
+        ),
+        dim=-1,
+    )
+    all_transport_probabilities = torch.softmax(
+        all_transport_logits,
+        dim=-1,
+    )
+    if (
+        not bool(torch.isfinite(all_transport_logits).all())
+        or not bool(torch.isfinite(all_transport_probabilities).all())
+        or not bool((all_transport_probabilities > 0).all().item())
+        or not bool(
+            torch.allclose(
+                all_transport_probabilities.sum(dim=-1),
+                torch.ones_like(all_transport_probabilities[..., 0]),
+                rtol=0.0,
+                atol=1e-6,
+            )
+        )
+    ):
+        raise FloatingPointError(
+            "student correspondence distribution is invalid"
+        )
+    all_transports, all_expected_offsets = _residual_local_transport(
+        projector,
+        ema_current,
+        all_transport_probabilities,
     )
     shared_residuals = torch.where(
         executed_mask,
         shared_residual[:, None],
         shared_residual.detach()[:, None],
     )
-    warped_ema_current = warp_ema_current_latents(
-        prediction_projector,
-        ema_current,
-        all_flows_cell,
-    )
-    all_predictions = flow_residual_reconstruct(
-        warped_ema_current,
-        shared_residuals,
+    all_predictions = F.normalize(
+        all_transports + RESIDUAL_ALPHA * shared_residuals,
+        p=2,
+        dim=-1,
+        eps=1e-8,
     )
 
     candidate_indices = torch.arange(
@@ -737,14 +738,90 @@ def predict_action_conditioned_flow_warps(
     )
     controls = all_predictions.gather(1, control_gather)
     executed = all_predictions.gather(1, executed_gather).squeeze(1)
-
     return ActionIndexedPredictions(
         executed_indices=executed_indices,
         all_predictions=all_predictions,
-        all_flows_cell=all_flows_cell,
+        all_transport_logits=all_transport_logits,
+        all_transport_probabilities=all_transport_probabilities,
+        all_expected_offsets=all_expected_offsets,
+        all_transports=all_transports,
         executed=executed,
         control_indices=control_indices,
         controls=controls,
+    )
+
+
+def local_correspondence_terms(
+    targets: CorrespondenceTargets | torch.Tensor,
+    predictions: ActionIndexedPredictions,
+    row_scale: torch.Tensor,
+) -> CorrespondenceTerms:
+    """Compute executed ``Hc`` and its detached JEPA-row-scaled loss."""
+
+    target_probs = (
+        targets.probabilities
+        if isinstance(targets, CorrespondenceTargets)
+        else targets
+    )
+    logits = predictions.all_transport_logits
+    if (
+        logits.ndim != 4
+        or tuple(logits.shape[1:])
+        != (
+            ACTION_DIM,
+            TOKEN_COUNT,
+            NEIGHBOR_COUNT,
+        )
+    ):
+        raise ValueError(
+            "all_transport_logits must have shape (B,9,256,9)"
+        )
+    batch = logits.shape[0]
+    if tuple(target_probs.shape) != (
+        batch,
+        TOKEN_COUNT,
+        NEIGHBOR_COUNT,
+    ):
+        raise ValueError("target probabilities must have shape (B,256,9)")
+    _validate_action_indices(predictions.executed_indices, batch=batch)
+    if predictions.executed_indices.device != logits.device:
+        raise TypeError("executed indices must align with transport logits")
+    if (
+        row_scale.ndim != 1
+        or tuple(row_scale.shape) != (batch,)
+    ):
+        raise ValueError(f"row_scale must have shape ({batch},)")
+    if (
+        row_scale.device != logits.device
+        or row_scale.dtype != torch.float32
+        or not bool(torch.isfinite(row_scale).all())
+        or not bool((row_scale > 0).all().item())
+    ):
+        raise FloatingPointError(
+            "row_scale must be aligned, finite, and positive"
+        )
+    executed_logits = logits.gather(
+        1,
+        predictions.executed_indices[:, None, None, None].expand(
+            -1,
+            1,
+            TOKEN_COUNT,
+            NEIGHBOR_COUNT,
+        ),
+    ).squeeze(1)
+    token_cross_entropy = centered_log_soft_cross_entropy(
+        target_probs,
+        executed_logits,
+    )
+    cross_entropy_per_row = token_cross_entropy.mean(dim=1)
+    centered_cross_entropy = cross_entropy_per_row.mean()
+    loss = (
+        row_scale.detach() * cross_entropy_per_row
+    ).mean()
+    return CorrespondenceTerms(
+        loss=loss,
+        centered_cross_entropy=centered_cross_entropy,
+        cross_entropy_per_row=cross_entropy_per_row,
     )
 
 
@@ -836,15 +913,16 @@ __all__ = [
     "ACTION_GATE_BIAS",
     "ACTION_GATE_INITIALIZATION_SEED",
     "ACTION_GATE_WEIGHT_STD",
-    "FLOW_DIM",
-    "FLOW_GRID_SCALE",
+    "CENTER_OFFSET_INDEX",
     "HOLD_ACTION_INDEX",
+    "NEIGHBOR_COUNT",
+    "NONCENTER_NEIGHBOR_COUNT",
     "ActionIndexedLosses",
     "ActionIndexedPredictions",
-    "ActionConditionedLatentFlow",
-    "InverseDynamicsTerms",
+    "ActionConditionedLocalCorrespondenceTransport",
+    "CorrespondenceTargets",
+    "CorrespondenceTerms",
     "LATENT_DIM",
-    "MAXIMUM_FLOW_CELL_DISPLACEMENT",
     "RESIDUAL_ALPHA",
     "TOKEN_COUNT",
     "TOKEN_SIDE",
@@ -852,14 +930,12 @@ __all__ = [
     "WhiteningTerms",
     "action_independent_trunk",
     "action_indexed_energy_nll",
-    "bounded_flow_cells",
-    "centered_action_embeddings",
-    "flow_residual_reconstruct",
+    "centered_log_soft_cross_entropy",
     "initialize_action_gate_rows",
-    "inverse_dynamics_terms",
+    "local_correspondence_targets",
+    "local_correspondence_terms",
     "patch_whitening_terms",
-    "predict_action_conditioned_flow_warps",
+    "predict_action_conditioned_local_transports",
     "relative_action_embeddings",
     "requested_action_indices",
-    "warp_ema_current_latents",
 ]

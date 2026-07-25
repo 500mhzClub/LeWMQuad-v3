@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import importlib.util
 from pathlib import Path
 import subprocess
@@ -34,8 +35,8 @@ spec.loader.exec_module(module)
 assert "torch" not in sys.modules
 assert not any(name.startswith("torch.") for name in sys.modules)
 assert module.PREFLIGHT_ENVIRONMENT_KEY == (
-    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
-    "V6_EXISTING_PAIR_INVERSE_DYNAMICS_PREFLIGHT_JSON"
+    "LEWM_RGB_ACTION_CONDITIONED_LOCAL_CORRESPONDENCE_"
+    "TRANSPORT_JEPA_V7_PREFLIGHT_JSON"
 )
 print("PASS")
 """
@@ -49,6 +50,29 @@ print("PASS")
     assert completed.returncode == 0, completed.stderr
     assert completed.stdout == "PASS\n"
     assert completed.stderr == ""
+
+
+def test_deferred_preflight_accepts_exact_unsigned_child_observation() -> None:
+    module = _load_runner("_jepa_encoder_v1_preflight_observation")
+    observation = {
+        "preflight_child_process_id": 123,
+        "visible_device_count": 1,
+        "visible_device_index": 0,
+        "visible_device_name": "AMD Radeon PRO R9700",
+        "total_memory_bytes": 32_000_000_000,
+        "torch_version": "test",
+        "hip_version": "test",
+        "tensor_allocation_count": 0,
+        "payload_open_count": 0,
+        "torch_device_api_call_count": 3,
+    }
+    stdout = (
+        module.contract.canonical_json_bytes(observation).decode("ascii")
+        + "\n"
+    )
+    assert module._parse_preflight_observation(stdout) == observation
+    with pytest.raises(RuntimeError, match="not canonical"):
+        module._parse_preflight_observation(stdout + "\n")
 
 
 def _tiny_model(torch):
@@ -97,7 +121,7 @@ def _tiny_model(torch):
             self.action_embed = nn.Linear(9, latent_dim, bias=False)
 
         def predict_step(self, state, action):
-            raise AssertionError("V6 must bypass predictor.predict_step")
+            raise AssertionError("V7 must bypass predictor.predict_step")
 
     class Block(nn.Module):
         def __init__(self) -> None:
@@ -135,14 +159,14 @@ def _tiny_model(torch):
     return Tiny()
 
 
-def test_v6_adapter_composes_forward_and_inverse_losses_and_routes_gradients() -> None:
+def test_v7_adapter_composes_transport_losses_and_routes_gradients() -> None:
     torch = pytest.importorskip("torch")
 
     module = _load_runner("_jepa_encoder_v1_current_only")
     model = _tiny_model(torch)
     shared_projector = model.prediction_projector
     model.prediction_projector = (
-        module._phase_a_ops().ActionConditionedLatentFlow(
+        module._phase_a_ops().ActionConditionedLocalCorrespondenceTransport(
             shared_projector
         )
     )
@@ -163,8 +187,8 @@ def test_v6_adapter_composes_forward_and_inverse_losses_and_routes_gradients() -
         output["jepa_loss"]
         + module.contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT
         * output["action_identification_loss"]
-        + module.contract.INVERSE_DYNAMICS_LOSS_WEIGHT
-        * output["inverse_dynamics_loss"]
+        + module.contract.LOCAL_CORRESPONDENCE_LOSS_WEIGHT
+        * output["local_correspondence_loss"]
         + module.contract.WHITENING_VARIANCE_WEIGHT
         * (
             output["raw_whitening_variance_loss"]
@@ -183,17 +207,24 @@ def test_v6_adapter_composes_forward_and_inverse_losses_and_routes_gradients() -
     assert output["all_action_predictions"].shape == (3, 9, 256, 192)
     assert output["control_predictions"].shape == (3, 8, 256, 192)
     assert output["control_indices"].shape == (3, 8)
-    assert output["all_flows_cell"].shape == (3, 9, 256, 2)
+    assert output["all_transport_logits"].shape == (3, 9, 256, 9)
+    assert output["all_transport_probabilities"].shape == (3, 9, 256, 9)
+    assert output["all_expected_offsets"].shape == (3, 9, 256, 2)
+    assert output["all_transports"].shape == (3, 9, 256, 192)
+    assert output["local_correspondence_target"].probabilities.shape == (
+        3,
+        256,
+        9,
+    )
     requested = action.argmax(dim=1)
     assert torch.all(output["control_indices"] != requested[:, None])
     assert set(output) == {
         "loss",
         "jepa_loss",
         "action_identification_loss",
-        "inverse_dynamics_loss",
-        "inverse_unscaled_cross_entropy",
-        "inverse_cross_entropy_per_row",
-        "inverse_logits",
+        "local_correspondence_loss",
+        "local_correspondence_unscaled_cross_entropy",
+        "local_correspondence_cross_entropy_per_row",
         "raw_whitening_variance_loss",
         "raw_whitening_covariance_loss",
         "projected_whitening_variance_loss",
@@ -202,45 +233,36 @@ def test_v6_adapter_composes_forward_and_inverse_losses_and_routes_gradients() -
         "all_action_predictions",
         "control_predictions",
         "control_indices",
-        "all_flows_cell",
+        "all_transport_logits",
+        "all_transport_probabilities",
+        "all_expected_offsets",
+        "all_transports",
+        "local_correspondence_target",
         "online_state",
-        "online_next_state",
         "raw_target_next",
         "projected_target_next",
         "projected_target_current",
     }
     output["loss"].backward()
 
-    assert len(model.encoder.seen) == 2
+    assert len(model.encoder.seen) == 1
     assert torch.equal(model.encoder.seen[0], current)
-    assert torch.equal(model.encoder.seen[1], next_rgb.detach())
     assert len(model.target_encoder.seen) == 2
     assert torch.equal(model.target_encoder.seen[0], current)
     assert torch.equal(model.target_encoder.seen[1], next_rgb.detach())
-    assert next_rgb.grad is not None
-    assert torch.count_nonzero(next_rgb.grad).item() == 0
+    assert next_rgb.grad is None
     assert model.encoder.scale.grad is not None
     assert torch.count_nonzero(model.encoder.scale.grad).item() > 0
     for parameter in (
         model.predictor.blocks[0].projection.weight,
         model.prediction_projector.shared_projector.weight,
         model.prediction_projector.shared_projector.bias,
-        model.prediction_projector.flow_weight,
+        model.prediction_projector.transport_weight,
         model.online_target_projector.weight,
     ):
         assert parameter.grad is not None
         assert torch.isfinite(parameter.grad).all()
         assert torch.count_nonzero(parameter.grad).item() > 0
-    assert model.prediction_projector.inverse_weight.grad is not None
-    assert torch.isfinite(
-        model.prediction_projector.inverse_weight.grad
-    ).all()
-    assert (
-        torch.count_nonzero(
-            model.prediction_projector.inverse_weight.grad
-        ).item()
-        > 0
-    )
     assert all(
         parameter.grad is None
         or torch.count_nonzero(parameter.grad).item() == 0
@@ -294,7 +316,7 @@ def test_phase_a_partition_freezes_and_excludes_appearance_exactly() -> None:
         module._phase_a_parameter_partition(model)
 
 
-def test_phase_a_initialization_receipt_binds_zero_bias_free_flow_and_inverse(
+def test_phase_a_initialization_binds_zero_bias_free_transport(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     torch = pytest.importorskip("torch")
@@ -348,11 +370,14 @@ def test_phase_a_initialization_receipt_binds_zero_bias_free_flow_and_inverse(
     )
 
     initialization = receipt[
-        "state_dependent_latent_flow_initialization"
+        "local_correspondence_transport_initialization"
     ]
-    assert initialization["weight_shape"] == [2, 192]
-    assert initialization["weight_scalar_count"] == 384
-    assert initialization["exact_zero_weight_scalar_count"] == 384
+    assert initialization["parameter_path"] == (
+        "prediction_projector.transport_weight"
+    )
+    assert initialization["weight_shape"] == [8, 192]
+    assert initialization["weight_scalar_count"] == 1_536
+    assert initialization["exact_zero_weight_scalar_count"] == 1_536
     assert initialization["nonzero_weight_scalar_count"] == 0
     assert initialization["bias_parameter_count"] == 0
     assert initialization["bias"] is False
@@ -362,45 +387,35 @@ def test_phase_a_initialization_receipt_binds_zero_bias_free_flow_and_inverse(
         is True
     )
     assert initialization["hold_relative_embedding_exactly_zero"] is True
-    assert initialization["maximum_absolute_displacement_patch_cells"] == 1.0
-    assert initialization["normalized_patch_step"] == 2.0 / 15.0
     assert initialization["grid_shape"] == [16, 16]
-    assert initialization["grid_component_order"] == [
-        "x_column",
-        "y_row",
+    assert initialization["full_offset_order"] == [
+        list(offset)
+        for offset in module.contract.LOCAL_CORRESPONDENCE_FULL_OFFSETS
     ]
-    assert initialization["grid_sample_mode"] == "bilinear"
-    assert initialization["grid_sample_padding_mode"] == "border"
-    assert initialization["grid_sample_align_corners"] is True
+    assert initialization["center_offset_index"] == 4
+    assert initialization["border_rule"] == "integer_index_clamp"
+    assert initialization["neighbor_table_persistent"] is False
+    assert (
+        initialization[
+            "centered_nine_logit_row_sum_exact_zero_by_construction"
+        ]
+        is True
+    )
+    assert (
+        initialization[
+            "uniform_student_identity_transport_at_initialization"
+        ]
+        is True
+    )
     assert initialization["zero_initialized_without_rng_draw"] is True
     assert initialization["global_rng_state_preserved"] is True
-    inverse = receipt[
-        "existing_pair_inverse_dynamics_initialization"
-    ]
-    assert inverse["parameter_path"] == (
-        "prediction_projector.inverse_weight"
-    )
-    assert inverse["weight_shape"] == [192, 576]
-    assert inverse["weight_scalar_count"] == 110_592
-    assert inverse["exact_zero_weight_scalar_count"] == 110_592
-    assert inverse["nonzero_weight_scalar_count"] == 0
-    assert inverse["bias_parameter_count"] == 0
-    assert inverse["layer_norm_affine_parameter_count"] == 0
-    assert inverse["layer_norm_epsilon"] == 1e-5
-    assert inverse["auxiliary_optimizer_learning_rate"] == 3e-4
-    assert inverse["phase_b_copy_count"] == 0
-    assert inverse["phase_b_optimizer_inclusion_count"] == 0
-    assert model.prediction_projector.flow_weight.shape == (2, 192)
+    assert initialization["auxiliary_optimizer_learning_rate"] == 3e-4
+    assert initialization["phase_b_copy_count"] == 0
+    assert initialization["phase_b_optimizer_inclusion_count"] == 0
+    assert model.prediction_projector.transport_weight.shape == (8, 192)
     assert (
         torch.count_nonzero(
-            model.prediction_projector.flow_weight
-        ).item()
-        == 0
-    )
-    assert model.prediction_projector.inverse_weight.shape == (192, 576)
-    assert (
-        torch.count_nonzero(
-            model.prediction_projector.inverse_weight
+            model.prediction_projector.transport_weight
         ).item()
         == 0
     )
@@ -410,13 +425,9 @@ def test_phase_a_initialization_receipt_binds_zero_bias_free_flow_and_inverse(
                 recurse=False
             )
         )
-    ) == {"flow_weight", "inverse_weight"}
+    ) == {"transport_weight"}
     assert any(
-        parameter is model.prediction_projector.flow_weight
-        for parameter in partition["other"]
-    )
-    assert any(
-        parameter is model.prediction_projector.inverse_weight
+        parameter is model.prediction_projector.transport_weight
         for parameter in partition["other"]
     )
 
@@ -504,7 +515,7 @@ def test_scene_derangements_are_deterministic_local_and_identity_safe() -> None:
         )
 
 
-def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
+def test_diagnostics_use_exact_row_correspondence_aggregations_and_controls(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     torch = pytest.importorskip("torch")
@@ -529,12 +540,11 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
 
     class TargetTokenEncoder(torch.nn.Module):
         def forward_tokens(self, image):
-            return torch.zeros(
-                image.shape[0],
+            scalar = image[:, 0, 0, 0]
+            return scalar[:, None, None].expand(
+                -1,
                 patch_count + 1,
                 latent_dim,
-                dtype=image.dtype,
-                device=image.device,
             )
 
     class DiagnosticModel(torch.nn.Module):
@@ -548,7 +558,7 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
             self.predictor = torch.nn.Identity()
             self.prediction_projector = torch.nn.Module()
             self.prediction_projector.register_parameter(
-                "inverse_weight",
+                "transport_weight",
                 torch.nn.Parameter(torch.ones(1)),
             )
             self.appearance_projector = torch.nn.Linear(
@@ -608,10 +618,9 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
     monkeypatch.setattr(module, "_state_sha", lambda *_args: "a" * 64)
 
     state_skip_pairs: list[tuple[object, object]] = []
-    inverse_state_pairs: list[tuple[object, object]] = []
     requested_seen: list[int] = []
 
-    def predict_residuals(
+    def predict_transports(
         _predictor,
         _projector,
         state,
@@ -639,50 +648,79 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
             -1, -1, state.shape[1], state.shape[2]
         )
         controls = all_predictions.gather(1, control_gather)
-        all_flows_cell = torch.full(
-            (state.shape[0], 9, state.shape[1], 2),
-            0.25,
+        logit_basis = torch.arange(
+            9,
+            dtype=state.dtype,
+            device=state.device,
+        ) - 4.0
+        action_scale = (
+            torch.arange(9, dtype=state.dtype, device=state.device)
+            - 6.0
+        )
+        all_logits = (
+            action_scale[None, :, None, None]
+            * logit_basis[None, None, None, :]
+            * 0.01
+        ).expand(state.shape[0], -1, state.shape[1], -1).clone()
+        probabilities = torch.softmax(all_logits, dim=-1)
+        offsets = torch.tensor(
+            module.contract.LOCAL_CORRESPONDENCE_FULL_OFFSETS,
             dtype=state.dtype,
             device=state.device,
         )
-        all_flows_cell[:, 6].zero_()
+        expected_offsets = probabilities @ offsets
+        expected_offsets[:, module.contract.HOLD_ACTION_INDEX].zero_()
+        all_transports = ema_current[:, None].expand(
+            -1, 9, -1, -1
+        ).clone()
+        for action_index in range(9):
+            if action_index != module.contract.HOLD_ACTION_INDEX:
+                all_transports[:, action_index].add_(0.1)
         return SimpleNamespace(
             executed_indices=requested,
             all_predictions=all_predictions,
+            all_transport_logits=all_logits,
+            all_transport_probabilities=probabilities,
+            all_expected_offsets=expected_offsets,
+            all_transports=all_transports,
             executed=torch.ones_like(state),
             controls=controls,
             control_indices=control_indices,
-            all_flows_cell=all_flows_cell,
         )
 
-    def inverse_terms(
-        _predictor,
+    def targets(
         _projector,
-        current_state,
-        _next_state,
-        executed_indices,
-        row_scale,
+        _ema_current,
+        ema_next,
     ):
-        inverse_state_pairs.append((
-            current_state[:, 0, 0].detach().cpu().clone(),
-            _next_state[:, 0, 0].detach().cpu().clone(),
-        ))
-        logits = torch.zeros(
-            current_state.shape[0],
+        basis = torch.arange(
             9,
-            dtype=current_state.dtype,
-            device=current_state.device,
+            dtype=ema_next.dtype,
+            device=ema_next.device,
         )
-        per_row = torch.nn.functional.cross_entropy(
-            logits,
-            executed_indices,
-            reduction="none",
-        )
+        logits = (
+            ema_next[:, :1, :1] * basis[None, None, :] * 0.001
+        ).expand(-1, patch_count, -1)
+        probabilities = torch.softmax(logits, dim=-1)
+        kl = (
+            probabilities
+            * (probabilities.log() + torch.log(torch.tensor(9.0)))
+        ).sum(dim=-1).mean()
         return SimpleNamespace(
-            loss=(row_scale * per_row).mean(),
-            unscaled_cross_entropy=per_row.mean(),
-            cross_entropy_per_row=per_row,
             logits=logits,
+            probabilities=probabilities,
+            mean_kl_to_uniform=kl,
+        )
+
+    def centered_ce(target_probabilities, student_logits):
+        log_probability = torch.log_softmax(student_logits, dim=-1)
+        center = log_probability[..., 4]
+        return (
+            -center
+            - (
+                target_probabilities
+                * (log_probability - center[..., None])
+            ).sum(dim=-1)
         )
 
     monkeypatch.setattr(
@@ -690,8 +728,9 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
         "_phase_a_ops",
         lambda: SimpleNamespace(
             normalize_spatial_tokens=lambda tokens: tokens,
-            predict_action_conditioned_flow_warps=predict_residuals,
-            inverse_dynamics_terms=inverse_terms,
+            predict_action_conditioned_local_transports=predict_transports,
+            local_correspondence_targets=targets,
+            centered_log_soft_cross_entropy=centered_ce,
         ),
     )
     model = DiagnosticModel()
@@ -709,26 +748,9 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
 
     assert set(requested_seen) == set(range(9))
     assert len(requested_seen) == 18
-    assert all(
-        torch.count_nonzero(skip_values).item() == 0
-        for _state_values, skip_values in state_skip_pairs
-    )
-    assert len(inverse_state_pairs) == 2
-    assert torch.equal(
-        inverse_state_pairs[0][0],
-        torch.arange(1.0, 10.0),
-    )
-    assert torch.equal(
-        inverse_state_pairs[0][1],
-        torch.arange(101.0, 110.0),
-    )
     next_mapping = module._scene_derangement(
         pair_rows,
         endpoint_key="next_endpoint_sha256",
-    )
-    assert torch.equal(
-        inverse_state_pairs[1][1],
-        inverse_state_pairs[0][1][list(next_mapping)],
     )
     assert metric["pair_count"] == 9
     assert metric["cyclic_wrong_action_pair_count"] == 9
@@ -736,48 +758,124 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
     assert metric["non_hold_pair_count"] == 8
     assert metric["hold_action_pair_count"] == 8
     assert metric["hold_action_rows_match_non_hold_rows"] is True
-    assert metric["true_pair_mse"] == pytest.approx(1.0)
-    assert metric["cyclic_wrong_action_mse"] == pytest.approx(6.0)
-    assert metric["hardest_wrong_action_mse"] == pytest.approx(19.0 / 9.0)
-    assert metric["hold_action_mse"] == pytest.approx(8.0)
     family = metric["per_family"]["all_actions"]
-    assert family["cyclic_wrong_action_minus_true_mse"] == pytest.approx(5.0)
-    assert family["hardest_wrong_action_minus_true_mse"] == pytest.approx(
-        10.0 / 9.0
-    )
-    assert family["hold_action_minus_non_hold_true_mse"] == pytest.approx(7.0)
     assert family["hold_action_rows_match_non_hold_rows"] is True
-    assert metric["latent_flow"] == {
-        "all_values_finite": True,
-        "all_components_within_closed_one_patch_bound": True,
-        "hold_flow_exactly_zero": True,
-        "maximum_absolute_flow_cell": 0.25,
-        "non_hold_action_nonzero_count": 8,
-        "per_action_any_nonzero": {
-            name: name != "hold"
-            for name in module.contract.ACTION_VOCABULARY
-        },
-    }
-    inverse = metric["inverse_dynamics"]
-    assert inverse["all_values_finite"] is True
-    assert inverse["weight_any_nonzero"] is True
-    assert inverse["maximum_absolute_logit"] == 0.0
-    assert inverse["correct_unscaled_cross_entropy"] == pytest.approx(
-        torch.log(torch.tensor(9.0)).item()
+    correspondence = metric["local_correspondence"]
+    correct_next = torch.arange(101.0, 110.0)
+    deranged_next = correct_next[list(next_mapping)]
+    basis = torch.arange(9.0)
+    correct_q = torch.softmax(
+        correct_next[:, None] * basis[None] * 0.001,
+        dim=-1,
     )
-    assert inverse["deranged_unscaled_cross_entropy"] == pytest.approx(
-        inverse["correct_unscaled_cross_entropy"]
+    deranged_q = torch.softmax(
+        deranged_next[:, None] * basis[None] * 0.001,
+        dim=-1,
     )
-    assert inverse[
+    action_scale = torch.arange(9.0) - 6.0
+    all_logits = action_scale[:, None] * (basis[None] - 4.0) * 0.01
+    executed_logits = all_logits[torch.arange(9)]
+    expected_c = centered_ce(correct_q, executed_logits)
+    expected_d = centered_ce(deranged_q, executed_logits)
+    expanded_q = correct_q[:, None].expand(-1, 9, -1)
+    expanded_logits = all_logits[None].expand(9, -1, -1)
+    all_ce = centered_ce(expanded_q, expanded_logits)
+    wrong_mask = ~torch.eye(9, dtype=torch.bool)
+    expected_h = all_ce[wrong_mask].reshape(9, 8).min(dim=1).values
+    assert correspondence["correct_centered_log_cross_entropy"] == (
+        pytest.approx(float(expected_c.mean()))
+    )
+    assert correspondence["deranged_centered_log_cross_entropy"] == (
+        pytest.approx(float(expected_d.mean()))
+    )
+    assert correspondence[
         "correct_to_deranged_cross_entropy_ratio"
-    ] == pytest.approx(1.0)
-    assert inverse["top1_accuracy"] == pytest.approx(1.0 / 9.0)
-    assert inverse["macro_balanced_accuracy"] == pytest.approx(1.0 / 9.0)
-    assert inverse["positive_family_margin_count"] == 0
+    ] == pytest.approx(float(expected_c.mean() / expected_d.mean()))
+    assert correspondence[
+        "hardest_wrong_centered_log_cross_entropy"
+    ] == pytest.approx(float(expected_h.mean()))
+    assert correspondence[
+        "executed_to_hardest_wrong_cross_entropy_ratio"
+    ] == pytest.approx(float(expected_c.mean() / expected_h.mean()))
+    assert correspondence[
+        "per_family_deranged_minus_correct_cross_entropy"
+    ]["all_actions"] == pytest.approx(
+        float((expected_d - expected_c).mean()),
+        abs=1e-7,
+    )
+    assert correspondence[
+        "per_family_hardest_wrong_minus_executed_cross_entropy"
+    ]["all_actions"] == pytest.approx(
+        float((expected_h - expected_c).mean()),
+        abs=1e-7,
+    )
+    assert correspondence[
+        "non_hold_action_distribution_different_from_hold_count"
+    ] == 8
+    assert correspondence["hold_probabilities_bitwise_uniform"] is True
+    assert correspondence["hold_expected_offset_exactly_zero"] is True
+    assert correspondence["hold_transport_identity_exact"] is True
+    assert correspondence["all_action_transports_identity_exact"] is False
     assert observation["rng_state_preserved"] is True
     assert observation["state_mutation_count"] == 0
     assert model.training is True
     assert model.appearance_projector.training is False
+
+
+def _local_correspondence_metric(contract, *, update_zero: bool) -> dict[str, object]:
+    baseline = float(torch.log(torch.tensor(9.0))) if "torch" in globals() else 2.1972245773362196
+    correct = baseline if update_zero else 1.0
+    comparison = baseline if update_zero else 1.2
+    return {
+        "all_values_finite": True,
+        "target_all_values_finite": True,
+        "target_all_strictly_positive": True,
+        "target_rows_normalized": True,
+        "student_all_strictly_positive": True,
+        "student_rows_normalized": True,
+        "transport_weight_all_values_finite": True,
+        "transport_weight_any_nonzero": not update_zero,
+        "maximum_absolute_student_logit": 0.0 if update_zero else 0.5,
+        "correct_centered_log_cross_entropy": correct,
+        "deranged_centered_log_cross_entropy": comparison,
+        "correct_to_deranged_cross_entropy_ratio": correct / comparison,
+        "deranged_positive_family_margin_count": 0 if update_zero else 8,
+        "per_family_deranged_minus_correct_cross_entropy": {
+            family: 0.0 if update_zero else 0.2
+            for family in contract.SCENE_FAMILIES
+        },
+        "per_action_correct_target_centered_log_cross_entropy": {
+            action: correct for action in contract.ACTION_VOCABULARY
+        },
+        "hardest_wrong_centered_log_cross_entropy": comparison,
+        "executed_to_hardest_wrong_cross_entropy_ratio":
+            correct / comparison,
+        "hardest_wrong_positive_family_margin_count":
+            0 if update_zero else 8,
+        "per_family_hardest_wrong_minus_executed_cross_entropy": {
+            family: 0.0 if update_zero else 0.2
+            for family in contract.SCENE_FAMILIES
+        },
+        "mean_target_kl_to_uniform": 0.1,
+        "per_action_probability_rows_positive_and_normalized": {
+            action: True for action in contract.ACTION_VOCABULARY
+        },
+        "non_hold_action_distribution_different_from_hold_count":
+            0 if update_zero else 8,
+        "per_action_distribution_different_from_hold": {
+            action: False if update_zero else action != "hold"
+            for action in contract.ACTION_VOCABULARY
+        },
+        "maximum_absolute_expected_offset_component":
+            0.0 if update_zero else 0.5,
+        "hold_probabilities_bitwise_uniform": True,
+        "hold_expected_offset_exactly_zero": True,
+        "hold_transport_identity_exact": True,
+        "all_action_distributions_bitwise_equal_to_hold": update_zero,
+        "all_action_distributions_bitwise_equal_to_uniform": update_zero,
+        "correct_and_deranged_cross_entropy_bitwise_equal": update_zero,
+        "all_action_transports_identity_exact": update_zero,
+    }
 
 
 def _passing_phase_a_metric(contract) -> dict[str, object]:
@@ -813,31 +911,8 @@ def _passing_phase_a_metric(contract) -> dict[str, object]:
         "hold_action_mse": 1.0,
         "shuffled_current_mse": 1.0,
         "per_family": per_family,
-        "latent_flow": {
-            "all_values_finite": True,
-            "all_components_within_closed_one_patch_bound": True,
-            "hold_flow_exactly_zero": True,
-            "maximum_absolute_flow_cell": 0.5,
-            "non_hold_action_nonzero_count": 8,
-            "per_action_any_nonzero": {
-                name: name != "hold"
-                for name in contract.ACTION_VOCABULARY
-            },
-        },
-        "inverse_dynamics": {
-            "all_values_finite": True,
-            "weight_any_nonzero": True,
-            "maximum_absolute_logit": 0.5,
-            "correct_unscaled_cross_entropy": 1.0,
-            "deranged_unscaled_cross_entropy": 1.2,
-            "correct_to_deranged_cross_entropy_ratio": 1.0 / 1.2,
-            "top1_accuracy": 0.5,
-            "macro_balanced_accuracy": 0.5,
-            "positive_family_margin_count": 8,
-            "per_family_deranged_minus_correct_cross_entropy": {
-                family: 0.2 for family in contract.SCENE_FAMILIES
-            },
-        },
+        "local_correspondence":
+            _local_correspondence_metric(contract, update_zero=False),
     }
 
 
@@ -851,32 +926,8 @@ def test_exact_phase_gates_keep_strict_and_population_boundaries() -> None:
         "all_action_predictions_bitwise_equal": True,
         "all_action_unordered_pair_count": 36,
         "all_action_prediction_row_count": 495,
-        "latent_flow": {
-            "all_values_finite": True,
-            "all_components_within_closed_one_patch_bound": True,
-            "hold_flow_exactly_zero": True,
-            "maximum_absolute_flow_cell": 0.0,
-            "non_hold_action_nonzero_count": 0,
-            "per_action_any_nonzero": {
-                name: False for name in contract.ACTION_VOCABULARY
-            },
-        },
-        "inverse_dynamics": {
-            "all_values_finite": True,
-            "weight_any_nonzero": False,
-            "maximum_absolute_logit": 0.0,
-            "correct_unscaled_cross_entropy": 2.1972245773362196,
-            "deranged_unscaled_cross_entropy": 2.1972245773362196,
-            "correct_to_deranged_cross_entropy_ratio": 1.0,
-            "top1_accuracy": 1.0 / 9.0,
-            "macro_balanced_accuracy": 1.0 / 9.0,
-            "positive_family_margin_count": 0,
-            "per_family_deranged_minus_correct_cross_entropy": {
-                family: 0.0 for family in contract.SCENE_FAMILIES
-            },
-        },
-        "all_inverse_logits_bitwise_zero": True,
-        "correct_and_deranged_cross_entropy_bitwise_equal": True,
+        "local_correspondence":
+            _local_correspondence_metric(contract, update_zero=True),
     }
     integrity = {
         "rng_state_preserved": True,
@@ -1010,8 +1061,8 @@ def test_update100_continuation_failure_stops_and_preserves_status(
             "loss": objective,
             "jepa_loss": objective,
             "action_identification_loss": zero,
-            "inverse_dynamics_loss": zero,
-            "inverse_unscaled_cross_entropy": zero,
+            "local_correspondence_loss": zero,
+            "local_correspondence_unscaled_cross_entropy": zero,
             "raw_whitening_variance_loss": zero,
             "raw_whitening_covariance_loss": zero,
             "projected_whitening_variance_loss": zero,
@@ -1029,56 +1080,16 @@ def test_update100_continuation_failure_stops_and_preserves_status(
             "metric": {
                 "raw_cross_sample_variance": 1.0,
                 "content_residual_spatial_diversity": 1.0,
-                "latent_flow": {
-                    "all_values_finite": True,
-                    "all_components_within_closed_one_patch_bound": True,
-                    "hold_flow_exactly_zero": True,
-                    "maximum_absolute_flow_cell":
-                        0.0 if update == 0 else 0.5,
-                    "non_hold_action_nonzero_count":
-                        0 if update == 0 else 8,
-                    "per_action_any_nonzero": {
-                        name: update != 0 and name != "hold"
-                        for name in module.contract.ACTION_VOCABULARY
-                    },
-                },
-                "inverse_dynamics": {
-                    "all_values_finite": True,
-                    "weight_any_nonzero": update != 0,
-                    "maximum_absolute_logit":
-                        0.0 if update == 0 else 0.5,
-                    "correct_unscaled_cross_entropy":
-                        2.1972245773362196 if update == 0 else 1.0,
-                    "deranged_unscaled_cross_entropy":
-                        2.1972245773362196 if update == 0 else 1.2,
-                    "correct_to_deranged_cross_entropy_ratio":
-                        1.0 if update == 0 else 1.0 / 1.2,
-                    "top1_accuracy":
-                        1.0 / 9.0 if update == 0 else 0.5,
-                    "macro_balanced_accuracy":
-                        1.0 / 9.0 if update == 0 else 0.5,
-                    "positive_family_margin_count":
-                        0 if update == 0 else 8,
-                    "per_family_deranged_minus_correct_cross_entropy": {
-                        family: 0.0 if update == 0 else 0.2
-                        for family in module.contract.SCENE_FAMILIES
-                    },
-                },
+                "local_correspondence": _local_correspondence_metric(
+                    module.contract,
+                    update_zero=update == 0,
+                ),
             },
             "action_indexed_symmetry": (
                 {
                     "all_action_predictions_bitwise_equal": True,
                     "all_action_unordered_pair_count": 36,
                     "all_action_prediction_row_count": 495,
-                }
-                if update == 0
-                else None
-            ),
-            "inverse_dynamics_update_zero": (
-                {
-                    "all_inverse_logits_bitwise_zero": True,
-                    "correct_and_deranged_cross_entropy_bitwise_equal":
-                        True,
                 }
                 if update == 0
                 else None
@@ -1257,17 +1268,341 @@ def test_schedule_adapter_is_reused_deterministically_and_mutation_fails(
             return list(indices), dict(binding), {"status": "PASS"}
 
     monkeypatch.setattr(module, "_read_bound", lambda *_args, **_kwargs: b"x")
+    first_progress: dict[str, object] = {}
+    second_progress: dict[str, object] = {}
     first, _ = module._load_schedule(
-        Adapter, authorization, train_pairs
+        Adapter,
+        authorization,
+        train_pairs,
+        progress=first_progress,
     )
     second, _ = module._load_schedule(
-        Adapter, authorization, train_pairs
+        Adapter,
+        authorization,
+        train_pairs,
+        progress=second_progress,
     )
     assert first == second == indices
+    assert first_progress["schedule_open_attempted"] is True
+    assert first_progress["schedule_open_succeeded"] is True
+    assert first_progress["schedule_validated"] is True
 
     indices[-1] = 0
     with pytest.raises(PermissionError, match="schedule changed"):
-        module._load_schedule(Adapter, authorization, train_pairs)
+        module._load_schedule(
+            Adapter,
+            authorization,
+            train_pairs,
+            progress={},
+        )
+
+
+def test_failure_custody_receipt_is_explicit_before_any_runtime_input(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_runner("_jepa_encoder_v1_failure_custody")
+    monkeypatch.setattr(module, "sys", SimpleNamespace(modules={}))
+
+    def binding(path: str, marker: str) -> dict[str, object]:
+        return {
+            "path": path,
+            "file_sha256": marker * 64,
+            "content_sha256": marker * 64,
+            "byte_count": 1,
+        }
+
+    authorization = {
+        "runtime_inputs": {
+            "schedule": binding("runtime/schedule.json", "1"),
+            "camera": {
+                "gate": binding("runtime/gate.json", "2"),
+                "checkpoint": binding("runtime/checkpoint.pt", "3"),
+            },
+        },
+    }
+    reservation = {"reviewed_sources": {}}
+    monkeypatch.setattr(
+        module.contract,
+        "current_source_bindings",
+        lambda _root: {},
+    )
+    receipt = module._failure_custody_attestation(
+        authorization,
+        reservation,
+        {
+            "phase_a_updates": 0,
+            "phase_a_presentations": 0,
+            "phase_b_updates": 0,
+            "phase_b_presentations": 0,
+            "phase_b_entered": False,
+        },
+    )
+
+    assert receipt["consumed"]["status"] == "TRACKER_NOT_YET_CONSTRUCTED"
+    assert receipt["roles_opened"] == []
+    assert all(
+        row["status"] == "NOT_OPENED"
+        for row in receipt["fixed_runtime_input_rehash"].values()
+    )
+    assert receipt["schedule"]["phase_a_identity"]["presentations"] == 16_000
+    assert receipt["schedule"]["phase_b_identity"]["presentations"] == 16_000
+    assert receipt["determinism"]["torch_runtime_imported"] is False
+    assert receipt["operation_counts"]["cumulative_optimizer_updates"] == 0
+    assert set(receipt["forbidden_access_counts"].values()) == {0}
+    assert receipt["reviewed_source_rehash"]["passed"] is True
+
+
+def test_partial_raw_constructor_failure_retains_exact_read_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module = _load_runner("_jepa_encoder_v1_partial_raw_constructor")
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    relative = "raw/manifest.json"
+    path = tmp_path / relative
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"manifest")
+    digest = hashlib.sha256(b"manifest").hexdigest()
+    matched = SimpleNamespace()
+
+    def read_regular(path, *, expected_sha256=None):
+        raw = Path(path).read_bytes()
+        assert hashlib.sha256(raw).hexdigest() == expected_sha256
+        return raw
+
+    class RawInputs:
+        def __init__(self, _runtime, _authorization):
+            self.consumed = {}
+            matched._read_regular(path, expected_sha256=digest)
+            raise RuntimeError("injected after manifest read")
+
+        def rehash_consumed(self):
+            return {
+                "unique_file_count": 0,
+                "records": [],
+                "all_consumed_files_rehashed": True,
+            }
+
+    matched._read_regular = read_regular
+    matched.RawInputs = RawInputs
+    progress: dict[str, object] = {}
+    with pytest.raises(RuntimeError, match="injected"):
+        module._construct_raw_inputs_with_progress(
+            matched,
+            object(),
+            {},
+            progress,
+        )
+    assert matched._read_regular is read_regular
+    assert progress["raw_inputs_constructed"] is not True
+    assert progress["_raw_constructor_reads"] == {
+        relative: {
+            "path": relative,
+            "expected_sha256": digest,
+            "read_attempt_count": 1,
+            "read_success_count": 1,
+            "last_observed_file_sha256": digest,
+            "last_observed_byte_count": len(b"manifest"),
+        },
+    }
+    leaf = {
+        "path": "unused",
+        "file_sha256": "1" * 64,
+        "content_sha256": "2" * 64,
+        "byte_count": 1,
+    }
+    receipt = module._failure_custody_attestation(
+        {
+            "runtime_inputs": {
+                "raw": {
+                    "manifest": {
+                        "path": relative,
+                        "file_sha256": digest,
+                        "content_sha256": "3" * 64,
+                        "byte_count": len(b"manifest"),
+                    },
+                },
+                "schedule": leaf,
+                "camera": {"gate": leaf, "checkpoint": leaf},
+            },
+        },
+        {"reviewed_sources": {}},
+        progress,
+    )
+    raw_reads = receipt["raw_constructor_read_rehash"]
+    assert raw_reads["record_count"] == 1
+    assert raw_reads["all_attempted_reads_rehashed"] is True
+    assert raw_reads["records"][0]["role"] == "authority"
+    assert raw_reads["records"][0]["rehash_passed"] is True
+    assert receipt["roles_opened"] == ["authority"]
+
+
+def test_reservation_precomputation_failure_does_not_consume_root(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module = _load_runner("_jepa_encoder_v1_reservation_precompute")
+    output_root = tmp_path / "attempt"
+    monkeypatch.setattr(
+        module.contract,
+        "science_contract",
+        lambda: (_ for _ in ()).throw(RuntimeError("injected science")),
+    )
+    with pytest.raises(RuntimeError, match="injected science"):
+        module._reserve(
+            output_root,
+            review={"content_sha256": "1" * 64},
+            review_raw=b"review",
+            authorization={"content_sha256": "2" * 64},
+            authorization_raw=b"authorization",
+            sources={},
+        )
+    assert not output_root.exists()
+
+
+def test_reservation_publication_failure_completes_and_seals(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module = _load_runner("_jepa_encoder_v1_reservation_publication")
+    output_root = tmp_path / "attempt"
+    real_publish = module._publish_json
+
+    def fail_reservation_only(path, core):
+        if path.name == "reservation.json":
+            raise RuntimeError("injected reservation publication")
+        return real_publish(path, core)
+
+    monkeypatch.setattr(module, "_publish_json", fail_reservation_only)
+    with pytest.raises(RuntimeError, match="injected reservation"):
+        module._reserve(
+            output_root,
+            review={"content_sha256": "1" * 64},
+            review_raw=b"review",
+            authorization={"content_sha256": "2" * 64},
+            authorization_raw=b"authorization",
+            sources={},
+        )
+    assert sorted(path.name for path in output_root.iterdir()) == [
+        "completed.json",
+        "failure.json",
+    ]
+    assert (output_root.stat().st_mode & 0o777) == 0o555
+    assert all(
+        (path.stat().st_mode & 0o777) == 0o444
+        for path in output_root.iterdir()
+    )
+
+
+def test_exclusive_write_failure_removes_its_partial_path(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module = _load_runner("_jepa_encoder_v1_partial_write_cleanup")
+    path = tmp_path / "partial.json"
+    monkeypatch.setattr(
+        module.os,
+        "fsync",
+        lambda _descriptor: (_ for _ in ()).throw(
+            OSError("injected fsync failure")
+        ),
+    )
+    with pytest.raises(OSError, match="injected fsync"):
+        module._write_exclusive(path, b"partial")
+    assert not path.exists()
+
+
+def test_terminal_failure_replaces_unpublished_partial_completion(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module = _load_runner("_jepa_encoder_v1_partial_completion_repair")
+    output_root = tmp_path / "attempt"
+    output_root.mkdir()
+    reservation, reservation_raw = module._publish_json(
+        output_root / "reservation.json",
+        {
+            "schema": "test_reservation",
+            "attempt_identity": "1" * 64,
+            "reviewed_sources": {},
+        },
+    )
+    (output_root / "completed.json").write_bytes(b"partial")
+    monkeypatch.setattr(
+        module,
+        "_failure_custody_attestation",
+        lambda *_args, **_kwargs: {"status": "TEST"},
+    )
+    module._terminal_failure(
+        output_root,
+        reservation,
+        reservation_raw,
+        authorization={},
+        error=RuntimeError("injected completion publication failure"),
+        progress={"completion_published": False, "phase_b_entered": False},
+    )
+    assert (output_root / "failure.json").is_file()
+    completed = module.contract.parse_canonical_json(
+        (output_root / "completed.json").read_bytes(),
+        name="repaired test completion",
+    )
+    assert completed["status"] == "TERMINAL_FAILURE"
+    assert (output_root.stat().st_mode & 0o777) == 0o555
+
+
+def test_terminal_sealing_repairs_one_transient_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_runner("_jepa_encoder_v1_terminal_seal_repair")
+    calls = 0
+
+    def flaky_seal(_output_root):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OSError("injected transient chmod failure")
+        return {"all_files_mode": "0444", "all_directories_mode": "0555"}
+
+    monkeypatch.setattr(module, "_seal_terminal", flaky_seal)
+    receipt = module._seal_terminal_with_repair(Path("/unused"))
+    assert calls == 2
+    assert receipt["all_files_mode"] == "0444"
+
+
+def test_failure_receipt_detects_partial_torch_import(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_runner("_jepa_encoder_v1_partial_torch_import")
+    fake_torch = SimpleNamespace(
+        are_deterministic_algorithms_enabled=lambda: False,
+        is_deterministic_algorithms_warn_only_enabled=lambda: False,
+    )
+    monkeypatch.setitem(module.sys.modules, "torch", fake_torch)
+    monkeypatch.setattr(
+        module.contract,
+        "current_source_bindings",
+        lambda _root: {},
+    )
+    leaf = {
+        "path": "unused",
+        "file_sha256": "1" * 64,
+        "content_sha256": "2" * 64,
+        "byte_count": 1,
+    }
+    receipt = module._failure_custody_attestation(
+        {
+            "runtime_inputs": {
+                "raw": {},
+                "schedule": leaf,
+                "camera": {"gate": leaf, "checkpoint": leaf},
+            },
+        },
+        {"reviewed_sources": {}},
+        {},
+    )
+    determinism = receipt["determinism"]
+    assert determinism["torch_runtime_imported"] is True
+    assert determinism["runtime_object_constructed"] is False
 
 
 def test_phase_b_training_mode_forces_every_frozen_module_to_eval() -> None:
@@ -1304,7 +1639,7 @@ def test_phase_b_training_mode_forces_every_frozen_module_to_eval() -> None:
     )
 
 
-def test_phase_a_installs_warn_only_then_restores_strict_determinism() -> None:
+def test_phase_a_uses_strict_determinism_and_requires_zero_warnings() -> None:
     module = _load_runner("_jepa_encoder_v1_phase_a_determinism")
     calls: list[tuple[bool, bool]] = []
 
@@ -1313,14 +1648,7 @@ def test_phase_a_installs_warn_only_then_restores_strict_determinism() -> None:
         def use_deterministic_algorithms(enabled, *, warn_only):
             calls.append((enabled, warn_only))
 
-    expected = (
-        "grid_sampler_2d_backward_cuda does not have a deterministic "
-        "implementation, but you set "
-        "'torch.use_deterministic_algorithms(True, warn_only=True)'."
-    )
-
     def operation():
-        warnings.warn(expected, UserWarning)
         return "trained"
 
     result, receipt = module._run_phase_a_with_reviewed_determinism(
@@ -1328,16 +1656,21 @@ def test_phase_a_installs_warn_only_then_restores_strict_determinism() -> None:
         operation,
     )
     assert result == "trained"
-    assert calls == [(True, True), (True, False)]
+    assert calls == [(True, False), (True, False)]
     assert receipt == {
         "strict_deterministic_algorithms_restored": True,
-        "warn_only_scope":
-            "phase_a_training_and_checkpoint_selection",
-        "expected_grid_sampler_warning_count": 1,
+        "warn_only_scope": "none",
+        "expected_determinism_warning_count": 0,
         "warning_messages_sha256":
-            module.contract.canonical_json_sha256([expected]),
+            module.contract.canonical_json_sha256([]),
         "unexpected_warning_count": 0,
     }
+
+    with pytest.raises(RuntimeError, match="determinism warning"):
+        module._run_phase_a_with_reviewed_determinism(
+            SimpleNamespace(torch=FakeTorch),
+            lambda: warnings.warn("unexpected", UserWarning),
+        )
 
 
 def test_phase_b_installs_warn_only_then_restores_strict_determinism() -> None:
