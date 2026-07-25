@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import importlib.util
 from pathlib import Path
 import subprocess
@@ -452,3 +453,35 @@ def test_phase_b_installs_warn_only_then_restores_strict_determinism() -> None:
     assert receipt["torch_from_numpy_restored"] is True
     assert FakeTorch.from_numpy(Scalar()) == "array"
     assert len(original_from_numpy_calls) == 1
+
+
+def test_tail_depth_adapter_replaces_frozen_runtime_without_mutation() -> None:
+    module = _load_runner("_jepa_encoder_v1_frozen_runtime")
+    original_adapter = object()
+    preserved_runtime_field = object()
+
+    @dataclass(frozen=True)
+    class FrozenRuntime:
+        preserved: object
+        loss_adapter: object
+
+    expected_loss = object()
+    runtime = FrozenRuntime(
+        preserved=preserved_runtime_field,
+        loss_adapter=original_adapter,
+    )
+    replacement = module._runtime_with_tail_depth_loss_adapter(
+        runtime,
+        SimpleNamespace(
+            observable_camera_ray_v4_tail_depth_loss_v4=expected_loss
+        ),
+    )
+
+    assert replacement is not runtime
+    assert runtime.loss_adapter is original_adapter
+    assert runtime.preserved is preserved_runtime_field
+    assert replacement.preserved is preserved_runtime_field
+    assert (
+        replacement.loss_adapter.observable_camera_ray_v4_loss_v4
+        is expected_loss
+    )

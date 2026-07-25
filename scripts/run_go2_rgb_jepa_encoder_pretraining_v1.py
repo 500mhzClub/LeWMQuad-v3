@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 from collections import OrderedDict
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, replace
 import hashlib
 import importlib.util
 import io
@@ -790,6 +790,17 @@ def _phase_a_parameter_partition(model: Any) -> dict[str, Any]:
     }
 
 
+def _runtime_with_tail_depth_loss_adapter(runtime: Any, tail_depth: Any) -> Any:
+    return replace(
+        runtime,
+        loss_adapter=SimpleNamespace(
+            observable_camera_ray_v4_loss_v4=(
+                tail_depth.observable_camera_ray_v4_tail_depth_loss_v4
+            )
+        ),
+    )
+
+
 def _load_post_reservation_stack(
     sources: Mapping[str, str],
 ) -> tuple[Any, Any, Any, Any, Any]:
@@ -865,11 +876,7 @@ def _load_post_reservation_stack(
         ):
             raise PermissionError(f"imported runtime source changed: {relative}")
         _read_regular(expected, expected_sha256=sources[relative])
-    runtime.loss_adapter = SimpleNamespace(
-        observable_camera_ray_v4_loss_v4=(
-            tail_depth.observable_camera_ray_v4_tail_depth_loss_v4
-        )
-    )
+    runtime = _runtime_with_tail_depth_loss_adapter(runtime, tail_depth)
     return matched, runtime, schedule_adapter, phase2d, multires
 
 

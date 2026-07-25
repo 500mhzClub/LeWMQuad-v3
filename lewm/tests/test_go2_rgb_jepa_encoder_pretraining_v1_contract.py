@@ -115,13 +115,13 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         }))
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "51dd74e3a74faab6e575d66761e31f0372285ead",
+            "ef3d23cc32c662416e1fd25037254613632029e5",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(len(raw), 12_417)
+        self.assertEqual(len(raw), 4_429)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "2008ab643faa19a410283ef0fe9ec57ad824ded4429789f65a0ff78ea73bd744",
+            "ca9681811be3e3558214f74ac0ef25cde1c6908058211ed5a106c747e4efdb49",
         )
         self.assertEqual(contract.preregistration_binding(), {
             "path": contract.PREREGISTRATION_RELATIVE_PATH,
@@ -132,6 +132,11 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertIn(
             contract.SOURCE_CLOSURE_BASE_CHECKER_RELATIVE_PATH,
             contract.SOURCE_MANIFEST_FORCED_DYNAMIC_SOURCES,
+        )
+        self.assertEqual(
+            contract.OUTPUT_ROOT_RELATIVE_PATH,
+            ".generated/go2_shared_observable_camera_ray_jepa_v5/"
+            "rgb_jepa_encoder_pretraining_probe_v2_integrity_replacement",
         )
 
     def test_phase_a_model_and_optimizer_contract_are_exact(self) -> None:
