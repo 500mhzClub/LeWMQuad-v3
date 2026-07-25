@@ -288,12 +288,18 @@ That root must be absent before reservation. V1 through V5 runtime roots,
 checkpoints, and traces are historical evidence only and cannot be runtime
 inputs.
 
-Runtime may open only the already-bound raw-V13 pair index, endpoint index,
-train and checkpoint-selection current/next RGB leaves, executed actions, the
-qualified N320 initialization checkpoint, its gate, and the frozen schedule.
-Probability-calibration stays unopened. The general raw-V13 frame loader,
-camera-supervision arrays, prior runtime outputs, rejected checkpoints, and
-every non-authorized role remain denied with zero calls/opens.
+During Phase A, runtime may open only the already-bound raw-V13 pair index,
+endpoint index, train and checkpoint-selection current/next RGB leaves,
+executed actions, the qualified N320 initialization checkpoint, its gate, and
+the frozen schedule. During Phase A, the general raw-V13 frame loader and
+camera-supervision arrays remain denied with zero calls/opens.
+
+Conditional Phase B is the preserved V5 physical probe and is the sole
+exception: only after an exact final Phase-A pass, it may use the existing
+reviewed matched-training frame path and the exact already-bound train and
+checkpoint-selection camera-supervision leaves required by that frozen
+physical evaluator. Probability-calibration, prior runtime outputs, rejected
+checkpoints, and every non-authorized role remain denied throughout.
 
 ## Cap and terminal rule
 
