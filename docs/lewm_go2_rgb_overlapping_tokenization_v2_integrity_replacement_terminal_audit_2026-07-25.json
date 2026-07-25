@@ -1,0 +1,382 @@
+{
+  "schema": "lewm_go2_rgb_overlapping_tokenization_v2_integrity_replacement_terminal_audit_v1",
+  "status": "PASS_TERMINAL_AUDIT_SCIENTIFIC_FAIL",
+  "date": "2026-07-25",
+  "auditor": "/root/overlap_v2_terminal_audit",
+  "content_sha256": "24b815f53934251f2d4a50d595e7c165292242594f6769e5e872d2a1e1ca857a",
+  "scope": {
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_overlapping_tokenization_probe_v2_integrity_replacement",
+    "output_root_open_authorized_for_terminal_audit": true,
+    "sibling_or_prior_runtime_root_open_count": 0,
+    "checkpoint_tensor_deserialization_count": 0,
+    "rgb_open_count": 0,
+    "gpu_query_or_allocation_count": 0,
+    "sealed_or_heldout_open_count": 0
+  },
+  "source_authority_revalidation": {
+    "source_manifest": {
+      "path": "docs/lewm_go2_rgb_overlapping_tokenization_v2_integrity_replacement_source_manifest_2026-07-25.json",
+      "file_sha256": "98fc87e869970b4cdd83e10b57650e8aca9507e646706b143362c61ac03caab0",
+      "content_sha256": "be15b8fe96fa1e9e065e26bd00ab41719048e00176b6b4d1e8d8024eb53d00e2",
+      "byte_count": 20740
+    },
+    "source_review": {
+      "path": "docs/lewm_go2_rgb_overlapping_tokenization_v2_integrity_replacement_source_review_2026-07-25.json",
+      "file_sha256": "4ba2ce1ed4e5deded6e8c0a567c839d7853f0177f73ade6daddf48b471d4e9f6",
+      "content_sha256": "a352f19ee4dfa2cbd99103638154f35517ed5fad8f04e211329231d446b34986",
+      "byte_count": 23460,
+      "reviewer": "/root/overlap_v2_source_review"
+    },
+    "execution_authorization": {
+      "path": "docs/lewm_go2_rgb_overlapping_tokenization_v2_integrity_replacement_execution_authorization_2026-07-25.json",
+      "file_sha256": "57a3c0608af572160c7d5835bd238468434fce1e4fc25b28f874237dc1d6af1e",
+      "content_sha256": "c2e4f606b30bc1cce697533ba36dad7259dc06ca008eeb0117f664310752c7d2",
+      "byte_count": 14068,
+      "authorizer": "/root/overlap_v2_execution_authorizer"
+    },
+    "reviewed_source_count": 81,
+    "all_reviewed_source_file_sha256_bindings_match": true,
+    "source_manifest_validator_pass": true,
+    "source_review_validator_pass": true,
+    "execution_authorization_validator_pass": true
+  },
+  "terminal_inventory": {
+    "directories": [
+      {
+        "path": ".",
+        "mode": "0555",
+        "byte_count": 4096
+      },
+      {
+        "path": "checkpoints",
+        "mode": "0555",
+        "byte_count": 164
+      }
+    ],
+    "files": [
+      {
+        "path": "access.json",
+        "mode": "0444",
+        "byte_count": 16900159,
+        "file_sha256": "4f97cccd98022222394a0530452470a4992267b6ca84186aaa09062171d22521",
+        "content_sha256": "489e4da89508b814a0a92b6a466f9c2fa2754fce392eac603a1a384cee965429"
+      },
+      {
+        "path": "checkpoint_metrics.json",
+        "mode": "0444",
+        "byte_count": 42956,
+        "file_sha256": "596a936fdfd811398ce69c5d4a09e031d85e590c54ded5f39a60c6c777a4e86a",
+        "content_sha256": "bd2371b7558bdd8f676b73b44f643f0c9f64341a37313251cccfa0255a62ffdc"
+      },
+      {
+        "path": "checkpoints/update_100.metrics.json",
+        "mode": "0444",
+        "byte_count": 15201,
+        "file_sha256": "47421ed8783e26f27a9ba47b515bfa9a12de5265510516905cf89755b58cba49",
+        "content_sha256": "9406de4cb80d28fa60701905c6d80263f35fc5d1cdc9f1989921ed0099673c24"
+      },
+      {
+        "path": "checkpoints/update_100.pt",
+        "mode": "0444",
+        "byte_count": 29792105,
+        "file_sha256": "53393ac6ebabb7d4349498c29d36e7c948f687efdcea780605acbbb7cd98ec93",
+        "content_sha256": "c75d3ab92ea11a0ccc03bf50f769dbe06d5594e60798c6268ea7a21107a4108c"
+      },
+      {
+        "path": "checkpoints/update_1000.metrics.json",
+        "mode": "0444",
+        "byte_count": 15127,
+        "file_sha256": "a4a229126a16e01926b4c57844f2364237c3c90a81f47e9d6b08f70cd59cb012",
+        "content_sha256": "16805beadfa6eedceffee80438c1128af4b52ebff253c0301269ae104e84ead1"
+      },
+      {
+        "path": "checkpoints/update_1000.pt",
+        "mode": "0444",
+        "byte_count": 29792105,
+        "file_sha256": "c7311c0e744995e27839bdc626e131cbc02d3d2b07a1dea4de9ee25b0cab9a4b",
+        "content_sha256": "eb43821cf9ca78f1d1dc6d19e4e0ba9f3f60a407609f7d45f00abf78da8d8377"
+      },
+      {
+        "path": "checkpoints/update_400.metrics.json",
+        "mode": "0444",
+        "byte_count": 15134,
+        "file_sha256": "f9229e4a3011bc38b43af2d12e5b771eec67a59fcf3888c0a209b9091a061bd4",
+        "content_sha256": "771bab02ac3d4f7db0ac1ce491433cb97a6ef760be70e420232d528b7ad7cdb4"
+      },
+      {
+        "path": "checkpoints/update_400.pt",
+        "mode": "0444",
+        "byte_count": 29792105,
+        "file_sha256": "3b79d5e7975bd50a3de009f3e67003d70e581a509d055052cc86a83425028a33",
+        "content_sha256": "8504c84bf0c24f1ddcaf5bc8829ba07a78408c91ff144bb716cdb2a42e9d878c"
+      },
+      {
+        "path": "completed.json",
+        "mode": "0444",
+        "byte_count": 5783,
+        "file_sha256": "4c00e3d2e0186803b460d73396a064b221e4f6e60d0e415a34d69a9363f1bffb",
+        "content_sha256": "d7706548d4645557555a2de71e3a5ba304d5bdc109af82cc81814809569ca679"
+      },
+      {
+        "path": "partial_access.jsonl",
+        "mode": "0444",
+        "byte_count": 27729368,
+        "file_sha256": "31552fdafb533d711fbfec4f744578eb16dcb4fb61459409be897b9c9ab91d4a",
+        "records_content_sha256": "d1bc68fb2bd634246e1ce21df44e6f0118e0f311d9dafa820f700ec7120d2c72"
+      },
+      {
+        "path": "reservation.json",
+        "mode": "0444",
+        "byte_count": 23299,
+        "file_sha256": "71650cfdcf1e2794eb825358e467b873982ca1ee0d4da045a6e0cfde4cbf35a2",
+        "content_sha256": "51df3758a606c34838a306773aa11ea4fbfc74654ebf3f63977d56db61a9a443"
+      },
+      {
+        "path": "result.json",
+        "mode": "0444",
+        "byte_count": 16885,
+        "file_sha256": "699fc0541b787cc1619a3fe05c3bcbed1d02df4a500915ae4f3ec68f5ced6e83",
+        "content_sha256": "5d11e075581f9a091fe1ecb80ecfc613c9052d33ec15ead50c087836434495e5"
+      },
+      {
+        "path": "training_trace.jsonl",
+        "mode": "0444",
+        "byte_count": 1431111,
+        "file_sha256": "9f4a9b67f283da1ea26db944c74702b67b1779a7e8f860d436079da3f0ea364c",
+        "content_sha256": "0a651985dddaa9bfee297920e40b61e99119149fd3a029ebdf8d466e0c3c420e",
+        "row_count": 1000
+      }
+    ],
+    "exact_terminal_inventory_matches_completion_receipt": true,
+    "all_regular_files": true,
+    "symlink_count": 0,
+    "all_files_mode_0444": true,
+    "all_directories_mode_0555": true,
+    "checkpoint_files_hashed_as_opaque_bytes_only": true,
+    "failed_json_present": false
+  },
+  "canonical_receipt_validation": {
+    "canonical_json_with_single_terminal_newline": [
+      "reservation.json",
+      "checkpoints/update_100.metrics.json",
+      "checkpoints/update_400.metrics.json",
+      "checkpoints/update_1000.metrics.json",
+      "checkpoint_metrics.json",
+      "access.json",
+      "result.json",
+      "completed.json"
+    ],
+    "all_declared_content_sha256_self_hashes_match": true,
+    "all_three_metric_sidecars_validate": true,
+    "all_three_checkpoint_file_bindings_match_opaque_bytes": true,
+    "training_trace_is_1000_canonical_rows_and_binding_matches": true,
+    "result_and_completion_cross_bindings_match": true
+  },
+  "finalized_access_ledger": {
+    "validator": "contract.validate_finalized_access_ledger",
+    "validator_pass": true,
+    "record_count": 37714,
+    "record_type_counts": {
+      "LEDGER_OPENED": 1,
+      "OPEN_ATTEMPTED": 18856,
+      "OPEN_OUTCOME": 18856,
+      "RUNTIME_INPUT_ACCESS_FINALIZED": 1
+    },
+    "attempted_open_count": 18856,
+    "descriptor_opened_count": 18856,
+    "read_completed_count": 18856,
+    "accepted_open_count": 18856,
+    "rejected_or_failed_open_count": 0,
+    "terminal_record_type": "RUNTIME_INPUT_ACCESS_FINALIZED",
+    "last_record_content_sha256": "79470a0e79b2138282990005774fe4da9a3d9be2244f40f3389719cde04261d8",
+    "terminal_error": null,
+    "all_inputs_rehashed": true
+  },
+  "operation_counts": {
+    "maximum_optimizer_updates": 1000,
+    "complete_optimizer_updates": 1000,
+    "maximum_pair_index_presentations": 16000,
+    "pair_index_presentations": 16000,
+    "microbatch_size": 4,
+    "microbatches_per_update": 4,
+    "camera_objective_count": 4000,
+    "backward_call_count": 4000,
+    "head_clip_invocation_count": 1000,
+    "encoder_clip_invocation_count": 1000,
+    "global_clip_invocation_count": 0,
+    "optimizer_construction_count": 1,
+    "checkpoint_selection_evaluation_count": 3,
+    "checkpoint_selection_evaluation_updates": [
+      100,
+      400,
+      1000
+    ],
+    "observer_evaluation_rerun_count": 0,
+    "jepa_objective_count": 0,
+    "jepa_backward_count": 0,
+    "ema_update_count_after_initial_hard_sync": 0,
+    "probability_calibration_open_count": 0,
+    "prior_runtime_output_open_count": 0
+  },
+  "partial_operation_counts_validation": {
+    "validator_pass": true,
+    "training_entered": true,
+    "optimizer_update_attempt_count": 1000,
+    "complete_optimizer_updates": 1000,
+    "pair_index_presentations_attempted": 16000,
+    "pair_index_presentations_materialized": 16000,
+    "microbatch_attempt_count": 4000,
+    "microbatch_completion_count": 4000,
+    "finite_camera_objective_count": 4000,
+    "backward_attempt_count": 4000,
+    "backward_completion_count": 4000,
+    "optimizer_step_attempt_count": 1000,
+    "optimizer_step_completion_count": 1000,
+    "checkpoint_snapshot_completion_count": 3,
+    "checkpoint_selection_evaluation_attempt_count": 3,
+    "checkpoint_selection_evaluation_completion_count": 3,
+    "metric_sidecar_publication_count": 3,
+    "jepa_objective_count": 0,
+    "jepa_backward_count": 0,
+    "observer_evaluation_rerun_count": 0
+  },
+  "checkpoint_trend": [
+    {
+      "update": 100,
+      "aggregate_complete_v4_tail_depth_loss": 3.1550470736377685,
+      "complete_physical_scope_count": 0,
+      "passed_margin_count": 26,
+      "margin_count": 189,
+      "total_shortfall": 140.73526436822635,
+      "worst_margin": -10.179278850555418,
+      "rough_pixel_balanced_accuracy": 0.5211475519655021,
+      "rough_ground_balanced_accuracy": 0.6067537572420738,
+      "rough_depth_p95_m": 2.7948197126388545
+    },
+    {
+      "update": 400,
+      "aggregate_complete_v4_tail_depth_loss": 2.065783132270817,
+      "complete_physical_scope_count": 0,
+      "passed_margin_count": 82,
+      "margin_count": 189,
+      "total_shortfall": 62.404225623558,
+      "worst_margin": -4.698116731643679,
+      "rough_pixel_balanced_accuracy": 0.6768097694795896,
+      "rough_ground_balanced_accuracy": 0.6132298690727378,
+      "rough_depth_p95_m": 1.3497374057769775
+    },
+    {
+      "update": 1000,
+      "aggregate_complete_v4_tail_depth_loss": 1.4658899426911816,
+      "complete_physical_scope_count": 0,
+      "passed_margin_count": 110,
+      "margin_count": 189,
+      "total_shortfall": 33.23816988994585,
+      "worst_margin": -3.450133419036864,
+      "rough_pixel_balanced_accuracy": 0.7255067837300611,
+      "rough_ground_balanced_accuracy": 0.621232782145277,
+      "rough_depth_p95_m": 1.112533354759216
+    }
+  ],
+  "trend_assessment": {
+    "aggregate_loss_strictly_improved_100_to_400_to_1000": true,
+    "passed_margin_count_strictly_improved_100_to_400_to_1000": true,
+    "total_shortfall_strictly_improved_100_to_400_to_1000": true,
+    "worst_margin_strictly_improved_100_to_400_to_1000": true,
+    "rough_pixel_balanced_accuracy_strictly_improved_100_to_400_to_1000": true,
+    "rough_ground_balanced_accuracy_strictly_improved_100_to_400_to_1000": true,
+    "rough_depth_p95_strictly_improved_100_to_400_to_1000": true,
+    "complete_physical_scope_count_improved": false,
+    "metrics_still_improving_at_cap": true
+  },
+  "tracked_static_v3_comparison": {
+    "source": {
+      "path": "docs/lewm_go2_rgb_multiresolution_perception_v3_terminal_audit_2026-07-24.json",
+      "file_sha256": "89efda083621fe97d0aad75346dd376527dae0deb6cc662c57c2d47f952cd57a",
+      "content_sha256": "bdb0059fe50af205e570a1c3d867c9107e9bc1d78b39a67e5e22b2aee83a0e76",
+      "byte_count": 11025
+    },
+    "static_v3_checkpoint_trend": [
+      {
+        "update": 100,
+        "aggregate_loss": 3.1743858194712438,
+        "complete_physical_scope_count": 0,
+        "passed_margin_count": 27,
+        "total_shortfall": 141.38589054039798,
+        "worst_margin": -10.141759300231934,
+        "rough_pixel_balanced_accuracy": 0.521016614834807,
+        "rough_ground_balanced_accuracy": 0.6083327568603192,
+        "rough_depth_p95_m": 2.7854398250579835
+      },
+      {
+        "update": 400,
+        "aggregate_loss": 1.956380585023077,
+        "complete_physical_scope_count": 0,
+        "passed_margin_count": 84,
+        "total_shortfall": 60.263539225631185,
+        "worst_margin": -4.588708639144899,
+        "rough_pixel_balanced_accuracy": 0.6769715874970352,
+        "rough_ground_balanced_accuracy": 0.6124060972271407,
+        "rough_depth_p95_m": 1.3475544095039367
+      },
+      {
+        "update": 1000,
+        "aggregate_loss": 1.4684436688465732,
+        "complete_physical_scope_count": 0,
+        "passed_margin_count": 111,
+        "total_shortfall": 33.247456241393685,
+        "worst_margin": -3.280096387863159,
+        "rough_pixel_balanced_accuracy": 0.7415505748284441,
+        "rough_ground_balanced_accuracy": 0.6220155782326704,
+        "rough_depth_p95_m": 1.0238167285919189
+      }
+    ],
+    "overlap_minus_static_v3_at_update_1000": {
+      "aggregate_loss": -0.0025537261553916224,
+      "complete_physical_scope_count": 0,
+      "passed_margin_count": -1,
+      "total_shortfall": -0.009286351447833852,
+      "worst_margin": -0.17003703117370517,
+      "rough_pixel_balanced_accuracy": -0.016043791098383053,
+      "rough_ground_balanced_accuracy": -0.0007827960873934003,
+      "rough_depth_p95_m": 0.08871662616729714
+    },
+    "update_100_and_400_curves_nearly_identical": true,
+    "overlap_endpoint_materially_better_than_static_v3": false,
+    "interpretation": "The negligible loss and shortfall differences do not offset one fewer passed margin, worse pixel and ground accuracy, worse depth p95, and a worse worst margin. Overlapping tokenization did not improve the static V3 mechanism."
+  },
+  "recomputed_terminal_control": {
+    "integrity_pass": true,
+    "update": 1000,
+    "action": "FAIL_TERMINAL_NO_RETRY",
+    "terminal": true,
+    "qualifies_probe": false,
+    "retry_authorized": false,
+    "conjuncts": {
+      "complete_physical_scope_count_at_least_1": false,
+      "passed_margin_count_at_least_98": true,
+      "total_shortfall_strictly_below_threshold": true,
+      "rough_pixel_balanced_accuracy_strictly_above_threshold": false,
+      "rough_ground_balanced_accuracy_strictly_above_threshold": false,
+      "rough_depth_p95_strictly_below_threshold": false
+    }
+  },
+  "terminal_conclusion": {
+    "attempt_identity": "8bb7863e3522dc067327d06b4f560707fd7449e5985e616fdcdb1aa1b34c5355",
+    "result_status": "FAIL_BOUNDED_FALSIFICATION_MECHANISM_TERMINATED",
+    "completion_status": "TERMINAL_FAIL",
+    "classification": "SCIENTIFIC_FAIL_NOT_OPERATIONAL_OR_INTEGRITY_FAILURE",
+    "v2_attempt_consumed": true,
+    "v2_retry_or_resume_authorized": false,
+    "schedule_extension_warranted": false,
+    "overlapping_tokenization_mechanism_family_terminated": true,
+    "next_scientific_step": "MATERIALLY_DIFFERENT_JEPA_ALIGNED_PERCEPTION_MECHANISM",
+    "update_1000_checkpoint_qualified": false,
+    "perception_qualification_authorized": false,
+    "jepa_training_authorized": false,
+    "g2_authorized": false,
+    "navigation_authorized": false,
+    "heldout_authorized": false,
+    "production_or_deployment_authorized": false
+  }
+}
