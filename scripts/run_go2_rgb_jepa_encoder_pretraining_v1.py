@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the V4 Action-Indexed Energy-NLL JEPA probe.
+"""Run the V5 State-Dependent Latent-Flow JEPA probe.
 
 Importing this module is source-only.  Torch, PIL, NumPy, generated inputs,
 RGB payloads, and checkpoints are first reachable after exact source
@@ -29,7 +29,7 @@ _CONTRACT_PATH = (
     ROOT / "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
 )
 _CONTRACT_SPEC = importlib.util.spec_from_file_location(
-    "_lewm_go2_rgb_jepa_encoder_pretraining_v4_action_indexed_contract",
+    "_lewm_go2_rgb_jepa_encoder_pretraining_v5_latent_flow_contract",
     _CONTRACT_PATH,
 )
 if _CONTRACT_SPEC is None or _CONTRACT_SPEC.loader is None:
@@ -39,7 +39,7 @@ _CONTRACT_SPEC.loader.exec_module(contract)
 
 PREFLIGHT_ENVIRONMENT_KEY = (
     "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
-    "V4_ACTION_INDEXED_ENERGY_NLL_PREFLIGHT_JSON"
+    "V5_STATE_DEPENDENT_LATENT_FLOW_PREFLIGHT_JSON"
 )
 THREAD_ENVIRONMENT = (
     "OMP_NUM_THREADS",
@@ -457,21 +457,21 @@ def _phase_a_ops() -> SimpleNamespace:
         normalize_spatial_tokens,
     )
     from lewm.models.patch_whitened_action_residual_jepa import (  # type: ignore
-        ActionIndexedResidualOperators,
+        ActionConditionedLatentFlow,
         action_indexed_energy_nll,
         initialize_action_gate_rows,
         patch_whitening_terms,
-        predict_action_indexed_residuals,
+        predict_action_conditioned_flow_warps,
     )
 
     return SimpleNamespace(
-        ActionIndexedResidualOperators=ActionIndexedResidualOperators,
+        ActionConditionedLatentFlow=ActionConditionedLatentFlow,
         action_indexed_energy_nll=action_indexed_energy_nll,
         initialize_action_gate_rows=initialize_action_gate_rows,
         normalize_spatial_tokens=normalize_spatial_tokens,
         patch_whitening_terms=patch_whitening_terms,
-        predict_action_indexed_residuals=
-            predict_action_indexed_residuals,
+        predict_action_conditioned_flow_warps=
+            predict_action_conditioned_flow_warps,
     )
 
 
@@ -516,7 +516,7 @@ def _phase_a_current_only_loss(
         target_next_pre = model.target_projector(target_next_raw)
         target_current = ops.normalize_spatial_tokens(target_current_pre)
         target_next = ops.normalize_spatial_tokens(target_next_pre)
-    predictions = ops.predict_action_indexed_residuals(
+    predictions = ops.predict_action_conditioned_flow_warps(
         model.predictor,
         model.prediction_projector,
         online_state,
@@ -554,6 +554,7 @@ def _phase_a_current_only_loss(
         "all_action_predictions": predictions.all_predictions,
         "control_predictions": predictions.controls,
         "control_indices": predictions.control_indices,
+        "all_flows_cell": predictions.all_flows_cell,
         "online_state": online_state,
         "raw_target_next": target_next_raw,
         "projected_target_next": target_next,
@@ -860,7 +861,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.MATCHED_V1_RUNNER_RELATIVE_PATH],
     )
     matched = _load_source_module(
-        "_lewm_jepa_encoder_v4_action_indexed_matched_loader",
+        "_lewm_jepa_encoder_v5_latent_flow_matched_loader",
         matched_path,
     )
     runtime = matched._load_runtime()
@@ -869,7 +870,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.SCHEDULE_ADAPTER_RELATIVE_PATH],
     )
     schedule_adapter = _load_source_module(
-        "_lewm_jepa_encoder_v4_action_indexed_schedule_adapter",
+        "_lewm_jepa_encoder_v5_latent_flow_schedule_adapter",
         ROOT / contract.SCHEDULE_ADAPTER_RELATIVE_PATH,
     )
 
@@ -1043,9 +1044,7 @@ def _run_phase_b_with_reviewed_determinism(
 ) -> tuple[Any, dict[str, Any]]:
     """Install the two reviewed matched-V1 ROCm/NumPy compatibility seams."""
     expected_prefix = (
-        "grid_sampler_2d_backward_cuda does not have a deterministic "
-        "implementation, but you set "
-        "'torch.use_deterministic_algorithms(True, warn_only=True)'."
+        contract.PHASE_A_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX
     )
     original_from_numpy = runtime.torch.from_numpy
     scalar_adaptation_count = 0
@@ -1093,6 +1092,43 @@ def _run_phase_b_with_reviewed_determinism(
         "numpy_scalar_from_numpy_adaptation_count":
             scalar_adaptation_count,
         "torch_from_numpy_restored": True,
+    }
+
+
+def _run_phase_a_with_reviewed_determinism(
+    runtime: Any,
+    operation: Any,
+) -> tuple[Any, dict[str, Any]]:
+    """Permit only the preregistered latent-warp ROCm backward warning."""
+
+    expected_prefix = (
+        contract.PHASE_A_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX
+    )
+    with warnings.catch_warnings(record=True) as observed:
+        warnings.simplefilter("once")
+        runtime.torch.use_deterministic_algorithms(True, warn_only=True)
+        try:
+            result = operation()
+        finally:
+            runtime.torch.use_deterministic_algorithms(
+                True, warn_only=False
+            )
+    if not observed or any(
+        item.category is not UserWarning
+        or not str(item.message).startswith(expected_prefix)
+        for item in observed
+    ):
+        raise RuntimeError(
+            "Phase-A training emitted an unexpected determinism warning set"
+        )
+    messages = [str(item.message) for item in observed]
+    return result, {
+        "strict_deterministic_algorithms_restored": True,
+        "warn_only_scope": "phase_a_training_and_checkpoint_selection",
+        "expected_grid_sampler_warning_count": len(messages),
+        "warning_messages_sha256":
+            contract.canonical_json_sha256(messages),
+        "unexpected_warning_count": 0,
     }
 
 
@@ -1191,66 +1227,109 @@ def _phase_a_model(
     ):
         raise RuntimeError("isolated action-gate initialization changed global RNG")
     gate_predictor_sha = _state_sha(runtime, model.predictor)
-    cpu_rng_before_operator_wrap = torch.random.get_rng_state().clone()
-    cuda_rng_before_operator_wrap = [
+    cpu_rng_before_flow_install = torch.random.get_rng_state().clone()
+    cuda_rng_before_flow_install = [
         value.clone() for value in torch.cuda.get_rng_state_all()
     ]
     shared_projector = model.prediction_projector
     shared_projector_sha = _state_sha(runtime, shared_projector)
-    model.prediction_projector = ops.ActionIndexedResidualOperators(
+    model.prediction_projector = ops.ActionConditionedLatentFlow(
         shared_projector
+    )
+    action_one_hot = torch.eye(9, dtype=torch.float32)[:, None, :]
+    action_embeddings = model.predictor.action_embed(action_one_hot)[:, 0, :]
+    relative_action_embeddings = (
+        action_embeddings
+        - action_embeddings[contract.HOLD_ACTION_INDEX]
+    )
+    pairwise_embedding_equality = (
+        action_embeddings[:, None] == action_embeddings[None, :]
+    ).all(dim=-1)
+    expected_embedding_equality = torch.eye(9, dtype=torch.bool)
+    non_hold_embedding_rows = torch.arange(9) != contract.HOLD_ACTION_INDEX
+    action_embeddings_valid = (
+        tuple(action_embeddings.shape) == (9, 192)
+        and bool(torch.isfinite(action_embeddings).all().item())
+        and torch.equal(
+            pairwise_embedding_equality,
+            expected_embedding_equality,
+        )
+        and int(
+            torch.count_nonzero(
+                relative_action_embeddings[non_hold_embedding_rows],
+                dim=1,
+            ).eq(0).sum().item()
+        ) == 0
+        and int(
+            torch.count_nonzero(
+                relative_action_embeddings[contract.HOLD_ACTION_INDEX]
+            ).item()
+        ) == 0
     )
     if (
         not torch.equal(
             torch.random.get_rng_state(),
-            cpu_rng_before_operator_wrap,
+            cpu_rng_before_flow_install,
         )
         or any(
             not torch.equal(before, after)
             for before, after in zip(
-                cuda_rng_before_operator_wrap,
+                cuda_rng_before_flow_install,
                 torch.cuda.get_rng_state_all(),
                 strict=True,
             )
         )
     ):
         raise RuntimeError(
-            "action-indexed operator installation changed global RNG"
+            "latent-flow installation changed global RNG"
         )
-    action_weights = getattr(
+    flow_weight = getattr(
         model.prediction_projector,
-        "action_weights",
+        "flow_weight",
         None,
     )
     direct_parameters = dict(
         model.prediction_projector.named_parameters(recurse=False)
     )
-    operator_scalar_count = 9 * 192 * 192
+    flow_scalar_count = 2 * 192
     if (
         getattr(model.prediction_projector, "shared_projector", None)
         is not shared_projector
         or _state_sha(runtime, shared_projector) != shared_projector_sha
-        or not isinstance(action_weights, torch.nn.Parameter)
-        or tuple(action_weights.shape) != (9, 192, 192)
-        or action_weights.dtype != torch.float32
-        or set(direct_parameters) != {"action_weights"}
-        or direct_parameters["action_weights"] is not action_weights
-        or int(action_weights.numel()) != operator_scalar_count
-        or int(torch.count_nonzero(action_weights).item()) != 0
-        or hasattr(model.prediction_projector, "action_bias")
+        or not isinstance(flow_weight, torch.nn.Parameter)
+        or tuple(flow_weight.shape) != (2, 192)
+        or flow_weight.dtype != torch.float32
+        or set(direct_parameters) != {"flow_weight"}
+        or direct_parameters["flow_weight"] is not flow_weight
+        or int(flow_weight.numel()) != flow_scalar_count
+        or int(torch.count_nonzero(flow_weight).item()) != 0
+        or hasattr(model.prediction_projector, "flow_bias")
+        or not action_embeddings_valid
     ):
         raise RuntimeError(
-            "action-indexed residual-operator initialization changed"
+            "state-dependent latent-flow initialization changed"
         )
-    operator_initialization = {
+    flow_initialization = {
         "action_count": 9,
         "latent_dim": 192,
-        "weight_shape": [9, 192, 192],
-        "weight_scalar_count": operator_scalar_count,
-        "exact_zero_weight_scalar_count": operator_scalar_count,
+        "flow_dim": 2,
+        "weight_shape": [2, 192],
+        "weight_scalar_count": flow_scalar_count,
+        "exact_zero_weight_scalar_count": flow_scalar_count,
         "nonzero_weight_scalar_count": 0,
         "bias_parameter_count": 0,
         "bias": False,
+        "action_embedding_shape": [9, 192],
+        "action_embeddings_pairwise_distinct": True,
+        "all_eight_non_hold_relative_embeddings_nonzero": True,
+        "hold_relative_embedding_exactly_zero": True,
+        "maximum_absolute_displacement_patch_cells": 1.0,
+        "normalized_patch_step": 2.0 / 15.0,
+        "grid_shape": [16, 16],
+        "grid_component_order": ["x_column", "y_row"],
+        "grid_sample_mode": "bilinear",
+        "grid_sample_padding_mode": "border",
+        "grid_sample_align_corners": True,
         "wrapped_existing_shared_projector": True,
         "shared_projector_state_sha256_before_and_after":
             shared_projector_sha,
@@ -1287,8 +1366,8 @@ def _phase_a_model(
         "action_gate_initialization_preserved_global_rng": True,
         "predictor_state_sha256_after_action_gate_initialization":
             gate_predictor_sha,
-        "action_indexed_residual_operator_initialization":
-            operator_initialization,
+        "state_dependent_latent_flow_initialization":
+            flow_initialization,
         "appearance_projector_frozen_and_eval": (
             not model.appearance_projector.training
             and all(
@@ -1325,6 +1404,7 @@ def _phase_a_diagnostics(
         ema_current_skips: list[Any] = []
         actions: list[Any] = []
         predictions: list[Any] = []
+        flows_cell: list[Any] = []
         update_zero_action_row_count = 0
         update_zero_action_pair_count: int | None = None
         control_energies: list[Any] = []
@@ -1365,7 +1445,7 @@ def _phase_a_diagnostics(
                     model.target_projector(raw_target)
                 )
                 residual_predictions = (
-                    ops.predict_action_indexed_residuals(
+                    ops.predict_action_conditioned_flow_warps(
                         model.predictor,
                         model.prediction_projector,
                         state,
@@ -1394,6 +1474,9 @@ def _phase_a_diagnostics(
                 predictions.append(
                     residual_predictions.executed.detach().cpu()
                 )
+                flows_cell.append(
+                    residual_predictions.all_flows_cell.detach().cpu()
+                )
                 control_energies.append(
                     (
                         residual_predictions.controls
@@ -1411,6 +1494,7 @@ def _phase_a_diagnostics(
         ema_current_skip = torch.cat(ema_current_skips)
         action = torch.cat(actions)
         prediction = torch.cat(predictions)
+        all_flows_cell = torch.cat(flows_cell).float()
         control_mse = torch.cat(control_energies).float()
         candidate_indices = torch.cat(control_indices)
         raw_target = torch.cat(raw_targets).float()
@@ -1421,6 +1505,7 @@ def _phase_a_diagnostics(
             len(pairs) != contract.SELECTION_ROLE_COUNTS["pairs"]
             or state.shape[0] != len(pairs)
             or tuple(raw_target.shape[1:]) != (256, 192)
+            or tuple(all_flows_cell.shape) != (len(pairs), 9, 256, 2)
             or tuple(control_mse.shape) != (len(pairs), 8)
             or tuple(candidate_indices.shape) != (len(pairs), 8)
             or int(non_hold.sum())
@@ -1439,6 +1524,38 @@ def _phase_a_diagnostics(
             if update == 0
             else None
         )
+        per_action_any_nonzero = {
+            action_name: bool(
+                torch.count_nonzero(all_flows_cell[:, action_index]).item()
+            )
+            for action_index, action_name in enumerate(
+                contract.ACTION_VOCABULARY
+            )
+        }
+        latent_flow = {
+            "all_values_finite": bool(
+                torch.isfinite(all_flows_cell).all().item()
+            ),
+            "all_components_within_closed_one_patch_bound": bool(
+                (all_flows_cell.abs() <= 1.0).all().item()
+            ),
+            "hold_flow_exactly_zero": (
+                int(
+                    torch.count_nonzero(
+                        all_flows_cell[:, contract.HOLD_ACTION_INDEX]
+                    ).item()
+                )
+                == 0
+            ),
+            "maximum_absolute_flow_cell":
+                float(all_flows_cell.abs().max()),
+            "non_hold_action_nonzero_count": sum(
+                int(active)
+                for action_name, active in per_action_any_nonzero.items()
+                if action_name != "hold"
+            ),
+            "per_action_any_nonzero": per_action_any_nonzero,
+        }
 
         current_mapping = torch.tensor(
             _scene_derangement(
@@ -1462,7 +1579,7 @@ def _phase_a_diagnostics(
                 ].to(device)
                 original_action = action[start:stop].to(device)
                 shuffled_current_predictions.append(
-                    ops.predict_action_indexed_residuals(
+                    ops.predict_action_conditioned_flow_warps(
                         model.predictor,
                         model.prediction_projector,
                         shuffled_state,
@@ -1557,6 +1674,7 @@ def _phase_a_diagnostics(
             cyclic_wrong_mse,
             hardest_wrong_mse,
             hold_mse,
+            all_flows_cell,
         )
         metric = {
             "all_values_finite": bool(
@@ -1601,6 +1719,7 @@ def _phase_a_diagnostics(
             "hold_action_mse": float(hold_mse.mean()),
             "shuffled_current_mse": float(shuffled_current_mse.mean()),
             "per_family": per_family,
+            "latent_flow": latent_flow,
         }
         if set(metric) != contract.PHASE_A_METRIC_FIELDS:
             raise RuntimeError("Phase-A diagnostic fields changed")
@@ -1684,6 +1803,7 @@ def _phase_a_train(
         )
     }
     update0_health.update(diagnostics[0]["action_indexed_symmetry"])
+    update0_health["latent_flow"] = diagnostics[0]["metric"]["latent_flow"]
     if set(update0_health) != contract.PHASE_A_UPDATE0_FIELDS:
         raise RuntimeError("Phase-A update-zero receipt fields changed")
     trace: list[dict[str, Any]] = []
@@ -1997,7 +2117,7 @@ def _phase_b_model(
         raise RuntimeError("Phase-B online encoder copy escaped its scope")
 
     # Deliberately do not call hard_sync_ema_target_from_online(): that helper
-    # also copies target_bev_decoder. V4 permits exactly this encoder-only sync.
+    # also copies target_bev_decoder. V5 permits exactly this encoder-only sync.
     model.target_encoder.load_state_dict(model.encoder.state_dict(), strict=True)
     model.target_encoder.requires_grad_(False)
     model.target_encoder.eval()
@@ -2671,18 +2791,27 @@ def _execute_after_reservation(
     progress["n320_checkpoint_loaded"] = True
     progress["stage"] = "phase_a"
     loader = RGBOnlyLoader(runtime, inputs)
-    phase_a_model, phase_a = _phase_a_train(
+    (
+        (phase_a_model, phase_a),
+        phase_a_determinism_receipt,
+    ) = _run_phase_a_with_reviewed_determinism(
         runtime,
-        phase2d,
-        fit,
-        loader,
-        train_pairs,
-        selection_pairs,
-        schedule,
-        device,
-        output_root,
-        gpu_started=gpu_started,
-        progress=progress,
+        lambda: _phase_a_train(
+            runtime,
+            phase2d,
+            fit,
+            loader,
+            train_pairs,
+            selection_pairs,
+            schedule,
+            device,
+            output_root,
+            gpu_started=gpu_started,
+            progress=progress,
+        ),
+    )
+    phase_a["determinism_compatibility"] = (
+        phase_a_determinism_receipt
     )
     progress["phase_a_updates"] = phase_a["updates"]
     progress["phase_a_presentations"] = phase_a["presentations"]

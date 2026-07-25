@@ -1,8 +1,8 @@
-"""Exact helpers for Patch-Whitened Action-Residual JEPA V4 Energy-NLL.
+"""Exact helpers for Patch-Whitened Action-Residual JEPA V5 Latent Flow.
 
 This module intentionally contains no data, schedule, runner, or custody
 logic.  It only implements the frozen mathematical mechanism registered in
-the V4 Action-Indexed Energy-NLL preregistration.
+the V5 State-Dependent Latent-Flow preregistration.
 """
 from __future__ import annotations
 
@@ -16,6 +16,12 @@ import torch.nn.functional as F
 
 LATENT_DIM = 192
 ACTION_DIM = 9
+HOLD_ACTION_INDEX = 6
+TOKEN_SIDE = 16
+TOKEN_COUNT = TOKEN_SIDE * TOKEN_SIDE
+FLOW_DIM = 2
+MAXIMUM_FLOW_CELL_DISPLACEMENT = 1.0
+FLOW_GRID_SCALE = 2.0 / float(TOKEN_SIDE - 1)
 WHITENING_EPS = 1e-4
 ACTION_GATE_INITIALIZATION_SEED = 20260712
 ACTION_GATE_WEIGHT_STD = 0.01 / math.sqrt(LATENT_DIM)
@@ -24,10 +30,11 @@ RESIDUAL_ALPHA = 0.1 / math.sqrt(LATENT_DIM)
 
 
 class ActionIndexedPredictions(NamedTuple):
-    """Uniformly ordered nine-action predictions and diagnostic gathers."""
+    """Uniformly ordered nine-action predictions, flows, and gathers."""
 
     executed_indices: torch.Tensor
     all_predictions: torch.Tensor
+    all_flows_cell: torch.Tensor
     executed: torch.Tensor
     control_indices: torch.Tensor
     controls: torch.Tensor
@@ -52,13 +59,8 @@ class ActionIndexedLosses(NamedTuple):
     identification_per_row: torch.Tensor
 
 
-class ActionIndexedResidualOperators(nn.Module):
-    """Wrap the shared projector with nine exact-zero tokenwise operators.
-
-    ``action_weights[a]`` uses :class:`torch.nn.Linear`'s weight orientation,
-    but is allocated directly so construction consumes no RNG and introduces
-    no bias parameter.
-    """
+class ActionConditionedLatentFlow(nn.Module):
+    """Wrap the shared projector with one exact-zero, bias-free flow map."""
 
     def __init__(self, shared_projector: nn.Module):
         super().__init__()
@@ -70,14 +72,31 @@ class ActionIndexedResidualOperators(nn.Module):
         if reference.dtype != torch.float32:
             raise TypeError("shared_projector parameters must be float32")
         self.shared_projector = shared_projector
-        self.action_weights = nn.Parameter(
+        self.flow_weight = nn.Parameter(
             torch.zeros(
-                ACTION_DIM,
-                LATENT_DIM,
+                FLOW_DIM,
                 LATENT_DIM,
                 device=reference.device,
                 dtype=reference.dtype,
             )
+        )
+        coordinates = torch.linspace(
+            -1.0,
+            1.0,
+            TOKEN_SIDE,
+            device=reference.device,
+            dtype=reference.dtype,
+        )
+        rows, columns = torch.meshgrid(
+            coordinates,
+            coordinates,
+            indexing="ij",
+        )
+        identity_grid_xy = torch.stack((columns, rows), dim=-1)[None]
+        self.register_buffer(
+            "identity_grid_xy",
+            identity_grid_xy,
+            persistent=False,
         )
 
     def project_shared(self, tokens: torch.Tensor) -> torch.Tensor:
@@ -88,23 +107,22 @@ class ActionIndexedResidualOperators(nn.Module):
             raise ValueError("shared projector output must align with tokens")
         return projected
 
-    def project_all(self, tokens: torch.Tensor) -> torch.Tensor:
-        """Apply every action operator, returning ``(B, 9, N, 192)``."""
+    def project_flow(self, interactions: torch.Tensor) -> torch.Tensor:
+        """Map state/action interactions to raw ``(x, y)`` cell offsets."""
 
-        _validate_tokens(tokens, name="operator tokens")
-        return torch.einsum("bnd,aed->bane", tokens, self.action_weights)
-
-    def project_selected(
-        self,
-        tokens: torch.Tensor,
-        action_indices: torch.Tensor,
-    ) -> torch.Tensor:
-        """Apply each row's executed-action operator."""
-
-        _validate_tokens(tokens, name="operator tokens")
-        _validate_action_indices(action_indices, batch=tokens.shape[0])
-        selected_weights = self.action_weights.index_select(0, action_indices)
-        return torch.einsum("bnd,bed->bne", tokens, selected_weights)
+        if (
+            interactions.ndim not in {3, 4}
+            or interactions.shape[-1] != LATENT_DIM
+        ):
+            raise ValueError(
+                "flow interactions must have shape (B,N,192) "
+                "or (B,9,N,192)"
+            )
+        if interactions.shape[0] < 1 or interactions.shape[-2] != TOKEN_COUNT:
+            raise ValueError(
+                f"flow interactions must contain exactly {TOKEN_COUNT} tokens"
+            )
+        return F.linear(interactions, self.flow_weight, bias=None)
 
 
 def initialize_action_gate_rows(predictor: nn.Module) -> dict[str, object]:
@@ -268,93 +286,267 @@ def action_independent_trunk(
     return hidden
 
 
-def residual_reconstruct(
-    ema_current: torch.Tensor,
-    residual: torch.Tensor,
+def relative_action_embeddings(
+    predictor: nn.Module,
+    *,
+    device: torch.device,
+    dtype: torch.dtype,
 ) -> torch.Tensor:
-    """Reconstruct normalized future tokens from a detached EMA-current skip."""
+    """Return all action embeddings relative to the exact hold embedding."""
+
+    action_embed = getattr(predictor, "action_embed", None)
+    if not isinstance(action_embed, nn.Module):
+        raise TypeError("predictor must expose an action_embed module")
+    candidates = torch.eye(
+        ACTION_DIM,
+        device=device,
+        dtype=dtype,
+    )[:, None, :]
+    embeddings = action_embed(candidates)
+    if tuple(embeddings.shape) != (ACTION_DIM, 1, LATENT_DIM):
+        raise ValueError(
+            "action_embed must map (9,1,9) to (9,1,192)"
+        )
+    if embeddings.device != device or embeddings.dtype != dtype:
+        raise TypeError("action embeddings must align with the online state")
+    if not bool(torch.isfinite(embeddings).all()):
+        raise FloatingPointError("action embeddings contain a nonfinite value")
+    relative = embeddings[:, 0] - embeddings[HOLD_ACTION_INDEX, 0]
+    if bool(torch.count_nonzero(relative[HOLD_ACTION_INDEX]).item()):
+        raise RuntimeError("hold-relative action embedding is not exact zero")
+    return relative
+
+
+def bounded_flow_cells(raw_flow: torch.Tensor) -> torch.Tensor:
+    """Map raw flow to the preregistered closed one-cell range."""
 
     if (
-        ema_current.ndim != 3
-        or ema_current.shape[-1] != LATENT_DIM
+        raw_flow.ndim != 4
+        or tuple(raw_flow.shape[1::2]) != (ACTION_DIM, FLOW_DIM)
+        or raw_flow.shape[2] != TOKEN_COUNT
     ):
         raise ValueError(
-            f"ema_current must have shape (B, N, {LATENT_DIM})"
+            "raw_flow must have shape (B,9,256,2)"
         )
-    if residual.ndim == 3:
-        if residual.shape != ema_current.shape:
-            raise ValueError("3-D residual must have the EMA-current shape")
-        skip = ema_current.detach()
-    elif residual.ndim == 4:
-        if (
-            residual.shape[0] != ema_current.shape[0]
-            or residual.shape[2:] != ema_current.shape[1:]
-        ):
-            raise ValueError(
-                "4-D residual must have shape (B, K, N, D) aligned "
-                "with ema_current"
-            )
-        skip = ema_current.detach()[:, None]
-    else:
-        raise ValueError("residual must have shape (B, N, D) or (B, K, N, D)")
+    if not bool(torch.isfinite(raw_flow).all()):
+        raise FloatingPointError("raw flow contains a nonfinite value")
+    flow = MAXIMUM_FLOW_CELL_DISPLACEMENT * torch.tanh(raw_flow)
+    if (
+        not bool(torch.isfinite(flow).all())
+        or bool((flow.abs() > MAXIMUM_FLOW_CELL_DISPLACEMENT).any())
+    ):
+        raise FloatingPointError("bounded flow left the closed one-cell range")
+    return flow
+
+
+def warp_ema_current_latents(
+    prediction_projector: ActionConditionedLatentFlow,
+    ema_current: torch.Tensor,
+    all_flows_cell: torch.Tensor,
+) -> torch.Tensor:
+    """Warp detached EMA-current values on the exact row-major 16x16 grid."""
+
+    if not isinstance(prediction_projector, ActionConditionedLatentFlow):
+        raise TypeError(
+            "prediction_projector must be ActionConditionedLatentFlow"
+        )
+    if tuple(ema_current.shape[1:]) != (TOKEN_COUNT, LATENT_DIM):
+        raise ValueError(
+            f"ema_current must have shape (B, {TOKEN_COUNT}, {LATENT_DIM})"
+        )
+    if tuple(all_flows_cell.shape) != (
+        ema_current.shape[0],
+        ACTION_DIM,
+        TOKEN_COUNT,
+        FLOW_DIM,
+    ):
+        raise ValueError("all_flows_cell must have shape (B,9,256,2)")
+    if (
+        ema_current.dtype != torch.float32
+        or all_flows_cell.dtype != ema_current.dtype
+        or all_flows_cell.device != ema_current.device
+    ):
+        raise TypeError("warp inputs must be aligned float32 tensors")
+    if (
+        not bool(torch.isfinite(ema_current).all())
+        or not bool(torch.isfinite(all_flows_cell).all())
+        or bool(
+            (
+                all_flows_cell.abs()
+                > MAXIMUM_FLOW_CELL_DISPLACEMENT
+            ).any()
+        )
+    ):
+        raise FloatingPointError("warp inputs are nonfinite or out of bounds")
+
+    batch = ema_current.shape[0]
+    source = ema_current.detach().transpose(1, 2).reshape(
+        batch,
+        LATENT_DIM,
+        TOKEN_SIDE,
+        TOKEN_SIDE,
+    )
+    source = source[:, None].expand(
+        -1,
+        ACTION_DIM,
+        -1,
+        -1,
+        -1,
+    ).reshape(
+        batch * ACTION_DIM,
+        LATENT_DIM,
+        TOKEN_SIDE,
+        TOKEN_SIDE,
+    )
+    flow_grid = all_flows_cell.reshape(
+        batch,
+        ACTION_DIM,
+        TOKEN_SIDE,
+        TOKEN_SIDE,
+        FLOW_DIM,
+    )
+    identity = prediction_projector.identity_grid_xy
+    if (
+        tuple(identity.shape) != (1, TOKEN_SIDE, TOKEN_SIDE, FLOW_DIM)
+        or identity.device != ema_current.device
+        or identity.dtype != ema_current.dtype
+    ):
+        raise TypeError("identity sampling grid changed or is misaligned")
+    sample_grid = (
+        identity[:, None]
+        + FLOW_GRID_SCALE * flow_grid
+    ).reshape(
+        batch * ACTION_DIM,
+        TOKEN_SIDE,
+        TOKEN_SIDE,
+        FLOW_DIM,
+    )
+    warped = F.grid_sample(
+        source,
+        sample_grid,
+        mode="bilinear",
+        padding_mode="border",
+        align_corners=True,
+    )
+    warped = warped.reshape(
+        batch,
+        ACTION_DIM,
+        LATENT_DIM,
+        TOKEN_SIDE,
+        TOKEN_SIDE,
+    ).flatten(3).transpose(2, 3)
+    if (
+        tuple(warped.shape)
+        != (batch, ACTION_DIM, TOKEN_COUNT, LATENT_DIM)
+        or not bool(torch.isfinite(warped).all())
+    ):
+        raise FloatingPointError("latent warp produced invalid output")
+    return warped
+
+
+def flow_residual_reconstruct(
+    warped_ema_current: torch.Tensor,
+    shared_residuals: torch.Tensor,
+) -> torch.Tensor:
+    """Add the shared output-grid residual after the latent spatial warp."""
+
+    if (
+        warped_ema_current.ndim != 4
+        or warped_ema_current.shape[1:] != (
+            ACTION_DIM,
+            TOKEN_COUNT,
+            LATENT_DIM,
+        )
+        or shared_residuals.shape != warped_ema_current.shape
+    ):
+        raise ValueError(
+            "warped EMA current and shared residuals must have "
+            "shape (B,9,256,192)"
+        )
     return F.normalize(
-        skip + RESIDUAL_ALPHA * residual,
+        warped_ema_current + RESIDUAL_ALPHA * shared_residuals,
         p=2,
         dim=-1,
         eps=1e-8,
     )
 
 
-def predict_action_indexed_residuals(
+def predict_action_conditioned_flow_warps(
     predictor: nn.Module,
-    prediction_projector: ActionIndexedResidualOperators,
+    prediction_projector: ActionConditionedLatentFlow,
     online_state: torch.Tensor,
     requested_actions: torch.Tensor,
     ema_current: torch.Tensor,
 ) -> ActionIndexedPredictions:
-    """Predict all nine actions with the preregistered gradient isolation."""
+    """Predict all nine candidates through the shared bilinear latent flow."""
 
     if not isinstance(
-        prediction_projector, ActionIndexedResidualOperators
+        prediction_projector, ActionConditionedLatentFlow
     ):
         raise TypeError(
-            "prediction_projector must be ActionIndexedResidualOperators"
+            "prediction_projector must be ActionConditionedLatentFlow"
         )
     _validate_tokens(online_state, name="online_state")
+    if online_state.shape[1] != TOKEN_COUNT:
+        raise ValueError(f"online_state must contain {TOKEN_COUNT} tokens")
     if online_state.shape[0] != requested_actions.shape[0]:
         raise ValueError("online_state and requested_actions batch sizes differ")
     if ema_current.shape != online_state.shape:
         raise ValueError("ema_current must align exactly with online_state")
+    if (
+        online_state.dtype != torch.float32
+        or ema_current.dtype != torch.float32
+        or requested_actions.device != online_state.device
+        or ema_current.device != online_state.device
+    ):
+        raise TypeError("prediction inputs must be aligned float32 tensors")
     executed_indices = requested_action_indices(requested_actions)
     batch, tokens, dim = online_state.shape
 
     shared_hidden = action_independent_trunk(predictor, online_state)
     shared_residual = prediction_projector.project_shared(shared_hidden)
-
-    detached_action_residuals = prediction_projector.project_all(
-        shared_hidden.detach()
+    relative_embeddings = relative_action_embeddings(
+        predictor,
+        device=shared_hidden.device,
+        dtype=shared_hidden.dtype,
     )
-    executed_action_residual = prediction_projector.project_selected(
-        shared_hidden,
-        executed_indices,
+
+    detached_interactions = (
+        shared_hidden.detach()[:, None]
+        * relative_embeddings[None, :, None]
+    )
+    executed_interaction = (
+        shared_hidden
+        * relative_embeddings.index_select(
+            0,
+            executed_indices,
+        )[:, None]
     )
     executed_mask = F.one_hot(
         executed_indices,
         num_classes=ACTION_DIM,
     ).to(dtype=torch.bool)[:, :, None, None]
-    action_residuals = torch.where(
+    interactions = torch.where(
         executed_mask,
-        executed_action_residual[:, None],
-        detached_action_residuals,
+        executed_interaction[:, None],
+        detached_interactions,
+    )
+    all_flows_cell = bounded_flow_cells(
+        prediction_projector.project_flow(interactions)
     )
     shared_residuals = torch.where(
         executed_mask,
         shared_residual[:, None],
         shared_residual.detach()[:, None],
     )
-    all_predictions = residual_reconstruct(
+    warped_ema_current = warp_ema_current_latents(
+        prediction_projector,
         ema_current,
-        shared_residuals + action_residuals,
+        all_flows_cell,
+    )
+    all_predictions = flow_residual_reconstruct(
+        warped_ema_current,
+        shared_residuals,
     )
 
     candidate_indices = torch.arange(
@@ -377,6 +569,7 @@ def predict_action_indexed_residuals(
     return ActionIndexedPredictions(
         executed_indices=executed_indices,
         all_predictions=all_predictions,
+        all_flows_cell=all_flows_cell,
         executed=executed,
         control_indices=control_indices,
         controls=controls,
@@ -471,18 +664,27 @@ __all__ = [
     "ACTION_GATE_BIAS",
     "ACTION_GATE_INITIALIZATION_SEED",
     "ACTION_GATE_WEIGHT_STD",
+    "FLOW_DIM",
+    "FLOW_GRID_SCALE",
+    "HOLD_ACTION_INDEX",
     "ActionIndexedLosses",
     "ActionIndexedPredictions",
-    "ActionIndexedResidualOperators",
+    "ActionConditionedLatentFlow",
     "LATENT_DIM",
+    "MAXIMUM_FLOW_CELL_DISPLACEMENT",
     "RESIDUAL_ALPHA",
+    "TOKEN_COUNT",
+    "TOKEN_SIDE",
     "WHITENING_EPS",
     "WhiteningTerms",
     "action_independent_trunk",
     "action_indexed_energy_nll",
+    "bounded_flow_cells",
+    "flow_residual_reconstruct",
     "initialize_action_gate_rows",
     "patch_whitening_terms",
-    "predict_action_indexed_residuals",
+    "predict_action_conditioned_flow_warps",
+    "relative_action_embeddings",
     "requested_action_indices",
-    "residual_reconstruct",
+    "warp_ema_current_latents",
 ]

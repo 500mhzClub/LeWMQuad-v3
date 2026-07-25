@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify Action-Indexed Energy-NLL JEPA V4 source closure.
+"""Build or verify State-Dependent Latent-Flow JEPA V5 source closure.
 
 This is a source-only AST walk.  It imports no tensor library and opens no
 generated input, checkpoint, RGB payload, attempt output, or protected role.
@@ -60,11 +60,17 @@ def _source_module(name: str, relative: str) -> Any:
 
 
 contract = _source_module(
-    "_lewm_rgb_jepa_encoder_pretraining_v4_action_indexed_closure_contract",
+    (
+        "_lewm_rgb_jepa_encoder_pretraining_"
+        "v5_state_dependent_latent_flow_closure_contract"
+    ),
     CONTRACT_RELATIVE_PATH,
 )
 _BASE = _source_module(
-    "_lewm_rgb_jepa_encoder_pretraining_v4_action_indexed_closure_base",
+    (
+        "_lewm_rgb_jepa_encoder_pretraining_"
+        "v5_state_dependent_latent_flow_closure_base"
+    ),
     BASE_CHECKER_RELATIVE_PATH,
 )
 
@@ -179,7 +185,7 @@ def main() -> int:
         _write_manifest_exclusive(build_manifest())
         return 0
     verify_manifest(require_tracked=args.require_tracked)
-    print("Go2 Action-Indexed Energy-NLL JEPA V4 source closure: PASS")
+    print("Go2 State-Dependent Latent-Flow JEPA V5 source closure: PASS")
     return 0
 
 

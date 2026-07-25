@@ -35,7 +35,7 @@ assert "torch" not in sys.modules
 assert not any(name.startswith("torch.") for name in sys.modules)
 assert module.PREFLIGHT_ENVIRONMENT_KEY == (
     "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
-    "V4_ACTION_INDEXED_ENERGY_NLL_PREFLIGHT_JSON"
+    "V5_STATE_DEPENDENT_LATENT_FLOW_PREFLIGHT_JSON"
 )
 print("PASS")
 """
@@ -73,24 +73,31 @@ def _tiny_model(torch):
             )
             base = pooled + offsets[None]
             cls = base[:, None, :]
-            patches = torch.stack((base, base + 0.25), dim=1)
+            spatial = torch.linspace(
+                -0.5,
+                0.5,
+                256,
+                device=image.device,
+                dtype=image.dtype,
+            )
+            patches = base[:, None, :] + spatial[None, :, None]
             return torch.cat((cls, patches), dim=1)
 
     class Predictor(nn.Module):
         def __init__(self) -> None:
             super().__init__()
             self.latent_dim = latent_dim
-            self.num_spatial_tokens = 2
+            self.num_spatial_tokens = 256
             self.spatial_pos_embed = nn.Parameter(
-                torch.zeros(1, 2, latent_dim)
+                torch.zeros(1, 256, latent_dim)
             )
             self.input_drop = nn.Identity()
             self.blocks = nn.ModuleList([Block()])
             self.norm = nn.LayerNorm(latent_dim)
-            self.action_embed = ForbiddenActionEmbed(9, latent_dim)
+            self.action_embed = nn.Linear(9, latent_dim, bias=False)
 
         def predict_step(self, state, action):
-            raise AssertionError("V4 must bypass predictor.predict_step")
+            raise AssertionError("V5 must bypass predictor.predict_step")
 
     class Block(nn.Module):
         def __init__(self) -> None:
@@ -105,10 +112,6 @@ def _tiny_model(torch):
             assert causal is False
             assert torch.count_nonzero(condition).item() == 0
             return state + self.projection(state)
-
-    class ForbiddenActionEmbed(nn.Linear):
-        def forward(self, _action):
-            raise AssertionError("V4 must bypass predictor.action_embed")
 
     class Tiny(nn.Module):
         def __init__(self) -> None:
@@ -139,7 +142,7 @@ def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
     model = _tiny_model(torch)
     shared_projector = model.prediction_projector
     model.prediction_projector = (
-        module._phase_a_ops().ActionIndexedResidualOperators(
+        module._phase_a_ops().ActionConditionedLatentFlow(
             shared_projector
         )
     )
@@ -174,10 +177,11 @@ def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
     assert module.contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT == 1.0
     assert float(output["action_identification_loss"].detach()) > 0.0
     assert torch.equal(output["loss"], expected)
-    assert output["prediction"].shape == (3, 2, 192)
-    assert output["all_action_predictions"].shape == (3, 9, 2, 192)
-    assert output["control_predictions"].shape == (3, 8, 2, 192)
+    assert output["prediction"].shape == (3, 256, 192)
+    assert output["all_action_predictions"].shape == (3, 9, 256, 192)
+    assert output["control_predictions"].shape == (3, 8, 256, 192)
     assert output["control_indices"].shape == (3, 8)
+    assert output["all_flows_cell"].shape == (3, 9, 256, 2)
     requested = action.argmax(dim=1)
     assert torch.all(output["control_indices"] != requested[:, None])
     assert set(output) == {
@@ -192,6 +196,7 @@ def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
         "all_action_predictions",
         "control_predictions",
         "control_indices",
+        "all_flows_cell",
         "online_state",
         "raw_target_next",
         "projected_target_next",
@@ -211,7 +216,7 @@ def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
         model.predictor.blocks[0].projection.weight,
         model.prediction_projector.shared_projector.weight,
         model.prediction_projector.shared_projector.bias,
-        model.prediction_projector.action_weights,
+        model.prediction_projector.flow_weight,
         model.online_target_projector.weight,
     ):
         assert parameter.grad is not None
@@ -219,6 +224,7 @@ def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
         assert torch.count_nonzero(parameter.grad).item() > 0
     assert all(
         parameter.grad is None
+        or torch.count_nonzero(parameter.grad).item() == 0
         for parameter in model.predictor.action_embed.parameters()
     )
     assert all(
@@ -269,7 +275,7 @@ def test_phase_a_partition_freezes_and_excludes_appearance_exactly() -> None:
         module._phase_a_parameter_partition(model)
 
 
-def test_phase_a_initialization_receipt_binds_zero_bias_free_operator_bank(
+def test_phase_a_initialization_receipt_binds_zero_bias_free_shared_flow(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     torch = pytest.importorskip("torch")
@@ -290,6 +296,7 @@ def test_phase_a_initialization_receipt_binds_zero_bias_free_operator_bank(
         def __init__(self) -> None:
             super().__init__()
             self.blocks = nn.ModuleList([GateBlock()])
+            self.action_embed = nn.Linear(9, 192, bias=False)
 
     class InitializationModel(nn.Module):
         def __init__(self) -> None:
@@ -322,32 +329,44 @@ def test_phase_a_initialization_receipt_binds_zero_bias_free_operator_bank(
     )
 
     initialization = receipt[
-        "action_indexed_residual_operator_initialization"
+        "state_dependent_latent_flow_initialization"
     ]
-    assert initialization["weight_shape"] == [9, 192, 192]
-    assert initialization["weight_scalar_count"] == 331_776
-    assert initialization["exact_zero_weight_scalar_count"] == 331_776
+    assert initialization["weight_shape"] == [2, 192]
+    assert initialization["weight_scalar_count"] == 384
+    assert initialization["exact_zero_weight_scalar_count"] == 384
     assert initialization["nonzero_weight_scalar_count"] == 0
     assert initialization["bias_parameter_count"] == 0
     assert initialization["bias"] is False
+    assert initialization["action_embeddings_pairwise_distinct"] is True
+    assert (
+        initialization["all_eight_non_hold_relative_embeddings_nonzero"]
+        is True
+    )
+    assert initialization["hold_relative_embedding_exactly_zero"] is True
+    assert initialization["maximum_absolute_displacement_patch_cells"] == 1.0
+    assert initialization["normalized_patch_step"] == 2.0 / 15.0
+    assert initialization["grid_shape"] == [16, 16]
+    assert initialization["grid_component_order"] == [
+        "x_column",
+        "y_row",
+    ]
+    assert initialization["grid_sample_mode"] == "bilinear"
+    assert initialization["grid_sample_padding_mode"] == "border"
+    assert initialization["grid_sample_align_corners"] is True
     assert initialization["zero_initialized_without_rng_draw"] is True
     assert initialization["global_rng_state_preserved"] is True
-    assert model.prediction_projector.action_weights.shape == (
-        9,
-        192,
-        192,
-    )
+    assert model.prediction_projector.flow_weight.shape == (2, 192)
     assert (
         torch.count_nonzero(
-            model.prediction_projector.action_weights
+            model.prediction_projector.flow_weight
         ).item()
         == 0
     )
-    assert "action_bias" not in dict(
+    assert "flow_bias" not in dict(
         model.prediction_projector.named_parameters(recurse=False)
     )
     assert any(
-        parameter is model.prediction_projector.action_weights
+        parameter is model.prediction_projector.flow_weight
         for parameter in partition["other"]
     )
 
@@ -553,12 +572,20 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
             -1, -1, state.shape[1], state.shape[2]
         )
         controls = all_predictions.gather(1, control_gather)
+        all_flows_cell = torch.full(
+            (state.shape[0], 9, state.shape[1], 2),
+            0.25,
+            dtype=state.dtype,
+            device=state.device,
+        )
+        all_flows_cell[:, 6].zero_()
         return SimpleNamespace(
             executed_indices=requested,
             all_predictions=all_predictions,
             executed=torch.ones_like(state),
             controls=controls,
             control_indices=control_indices,
+            all_flows_cell=all_flows_cell,
         )
 
     monkeypatch.setattr(
@@ -566,7 +593,7 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
         "_phase_a_ops",
         lambda: SimpleNamespace(
             normalize_spatial_tokens=lambda tokens: tokens,
-            predict_action_indexed_residuals=predict_residuals,
+            predict_action_conditioned_flow_warps=predict_residuals,
         ),
     )
     model = DiagnosticModel()
@@ -605,6 +632,17 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
     )
     assert family["hold_action_minus_non_hold_true_mse"] == pytest.approx(7.0)
     assert family["hold_action_rows_match_non_hold_rows"] is True
+    assert metric["latent_flow"] == {
+        "all_values_finite": True,
+        "all_components_within_closed_one_patch_bound": True,
+        "hold_flow_exactly_zero": True,
+        "maximum_absolute_flow_cell": 0.25,
+        "non_hold_action_nonzero_count": 8,
+        "per_action_any_nonzero": {
+            name: name != "hold"
+            for name in module.contract.ACTION_VOCABULARY
+        },
+    }
     assert observation["rng_state_preserved"] is True
     assert observation["state_mutation_count"] == 0
     assert model.training is True
@@ -644,6 +682,17 @@ def _passing_phase_a_metric(contract) -> dict[str, object]:
         "hold_action_mse": 1.0,
         "shuffled_current_mse": 1.0,
         "per_family": per_family,
+        "latent_flow": {
+            "all_values_finite": True,
+            "all_components_within_closed_one_patch_bound": True,
+            "hold_flow_exactly_zero": True,
+            "maximum_absolute_flow_cell": 0.5,
+            "non_hold_action_nonzero_count": 8,
+            "per_action_any_nonzero": {
+                name: name != "hold"
+                for name in contract.ACTION_VOCABULARY
+            },
+        },
     }
 
 
@@ -657,6 +706,16 @@ def test_exact_phase_gates_keep_strict_and_population_boundaries() -> None:
         "all_action_predictions_bitwise_equal": True,
         "all_action_unordered_pair_count": 36,
         "all_action_prediction_row_count": 495,
+        "latent_flow": {
+            "all_values_finite": True,
+            "all_components_within_closed_one_patch_bound": True,
+            "hold_flow_exactly_zero": True,
+            "maximum_absolute_flow_cell": 0.0,
+            "non_hold_action_nonzero_count": 0,
+            "per_action_any_nonzero": {
+                name: False for name in contract.ACTION_VOCABULARY
+            },
+        },
     }
     integrity = {
         "rng_state_preserved": True,
@@ -807,6 +866,19 @@ def test_update100_continuation_failure_stops_and_preserves_status(
             "metric": {
                 "raw_cross_sample_variance": 1.0,
                 "content_residual_spatial_diversity": 1.0,
+                "latent_flow": {
+                    "all_values_finite": True,
+                    "all_components_within_closed_one_patch_bound": True,
+                    "hold_flow_exactly_zero": True,
+                    "maximum_absolute_flow_cell":
+                        0.0 if update == 0 else 0.5,
+                    "non_hold_action_nonzero_count":
+                        0 if update == 0 else 8,
+                    "per_action_any_nonzero": {
+                        name: update != 0 and name != "hold"
+                        for name in module.contract.ACTION_VOCABULARY
+                    },
+                },
             },
             "action_indexed_symmetry": (
                 {
@@ -1036,6 +1108,42 @@ def test_phase_b_training_mode_forces_every_frozen_module_to_eval() -> None:
             "target_bev_decoder",
         )
     )
+
+
+def test_phase_a_installs_warn_only_then_restores_strict_determinism() -> None:
+    module = _load_runner("_jepa_encoder_v1_phase_a_determinism")
+    calls: list[tuple[bool, bool]] = []
+
+    class FakeTorch:
+        @staticmethod
+        def use_deterministic_algorithms(enabled, *, warn_only):
+            calls.append((enabled, warn_only))
+
+    expected = (
+        "grid_sampler_2d_backward_cuda does not have a deterministic "
+        "implementation, but you set "
+        "'torch.use_deterministic_algorithms(True, warn_only=True)'."
+    )
+
+    def operation():
+        warnings.warn(expected, UserWarning)
+        return "trained"
+
+    result, receipt = module._run_phase_a_with_reviewed_determinism(
+        SimpleNamespace(torch=FakeTorch),
+        operation,
+    )
+    assert result == "trained"
+    assert calls == [(True, True), (True, False)]
+    assert receipt == {
+        "strict_deterministic_algorithms_restored": True,
+        "warn_only_scope":
+            "phase_a_training_and_checkpoint_selection",
+        "expected_grid_sampler_warning_count": 1,
+        "warning_messages_sha256":
+            module.contract.canonical_json_sha256([expected]),
+        "unexpected_warning_count": 0,
+    }
 
 
 def test_phase_b_installs_warn_only_then_restores_strict_determinism() -> None:

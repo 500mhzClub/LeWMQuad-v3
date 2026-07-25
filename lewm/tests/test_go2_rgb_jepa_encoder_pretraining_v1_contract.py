@@ -26,6 +26,37 @@ _SPEC.loader.exec_module(contract)
 _MODULES_IMPORTED_BY_CONTRACT = set(sys.modules) - _MODULES_BEFORE
 
 
+def _latent_flow_observation(
+    *,
+    active_non_hold_count: int = 8,
+    maximum_absolute_flow_cell: float = 0.5,
+) -> dict[str, Any]:
+    per_action = {
+        action: (
+            action != "hold"
+            and index < active_non_hold_count
+        )
+        for index, action in enumerate(
+            action
+            for action in contract.ACTION_VOCABULARY
+            if action != "hold"
+        )
+    }
+    per_action = {
+        action: per_action.get(action, False)
+        for action in contract.ACTION_VOCABULARY
+    }
+    return {
+        "all_values_finite": True,
+        "all_components_within_closed_one_patch_bound":
+            maximum_absolute_flow_cell <= contract.FLOW_CELL_BOUND,
+        "hold_flow_exactly_zero": True,
+        "maximum_absolute_flow_cell": maximum_absolute_flow_cell,
+        "non_hold_action_nonzero_count": active_non_hold_count,
+        "per_action_any_nonzero": per_action,
+    }
+
+
 def _passing_phase_a_metrics() -> dict[str, Any]:
     return {
         "all_values_finite": True,
@@ -49,6 +80,7 @@ def _passing_phase_a_metrics() -> dict[str, Any]:
         "hold_action_pair_count": contract.SELECTION_NON_HOLD_PAIR_COUNT,
         "hold_action_rows_match_non_hold_rows": True,
         "shuffled_current_mse": 0.90,
+        "latent_flow": _latent_flow_observation(),
         "per_family": {
             family: {
                 "cyclic_wrong_action_minus_true_mse":
@@ -71,6 +103,10 @@ def _update0_metrics() -> dict[str, Any]:
         "all_action_predictions_bitwise_equal": True,
         "all_action_unordered_pair_count": 36,
         "all_action_prediction_row_count": 495,
+        "latent_flow": _latent_flow_observation(
+            active_non_hold_count=0,
+            maximum_absolute_flow_cell=0.0,
+        ),
     }
 
 
@@ -130,28 +166,28 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         }))
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "521b83c4555fb02211186953e86ac1aa93e16e20",
+            "d2379f74bb16d66ea0b0175bb890ddbf6be3c1fd",
         )
         self.assertEqual(
             contract.PREREGISTRATION_RELATIVE_PATH,
             "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-            "v4_action_indexed_energy_nll_preregistration_2026-07-25.md",
+            "v5_state_dependent_latent_flow_preregistration_2026-07-25.md",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(contract.PREREGISTRATION_BYTE_COUNT, 9_156)
+        self.assertEqual(contract.PREREGISTRATION_BYTE_COUNT, 12_019)
         self.assertEqual(
             contract.PREREGISTRATION_FILE_SHA256,
-            "dc007342d15a2b3cb3b85ed3c29ad5d0e973db91bfe43a9a696f1b331514f139",
+            "9c435592d0b9771b71503fc43c7d915be6d26b32ac6f60c35aa6781696ba8ae0",
         )
-        self.assertEqual(len(raw), 9_156)
+        self.assertEqual(len(raw), 12_019)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "dc007342d15a2b3cb3b85ed3c29ad5d0e973db91bfe43a9a696f1b331514f139",
+            "9c435592d0b9771b71503fc43c7d915be6d26b32ac6f60c35aa6781696ba8ae0",
         )
         self.assertEqual(
             contract.SCHEMA_PREFIX,
             "lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-            "v4_action_indexed_energy_nll",
+            "v5_state_dependent_latent_flow",
         )
         self.assertEqual(contract.preregistration_binding(), {
             "path": contract.PREREGISTRATION_RELATIVE_PATH,
@@ -162,13 +198,13 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(contract.prior_terminal_audit_binding(), {
             "path":
                 "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-                "v3_live_reference_hinge_terminal_audit_2026-07-25.json",
-            "commit": "3202cbecf2b6042ca3b4e4b8b6485b4f06cfd574",
+                "v4_action_indexed_energy_nll_terminal_audit_2026-07-25.json",
+            "commit": "20a5099f17a6da17bb2858d96724f9f8e88ae3f9",
             "file_sha256":
-                "ed0a911f009cd1f7f7fb1849178b3478ad963f135fa41809411adf61f501553c",
+                "ddb3c784382f92161b82d7321c8ad3c70901cb8d5a813c3ecc7153083480d809",
             "content_sha256":
-                "80d840d8f012b6343f26691e08b47290f44c04fe1eefbae65e0f77b9514acd6a",
-            "byte_count": 14_731,
+                "c3edbe1932c5647e576b25216cee38ad904f5b5fa581d39f70c1d8cef3e92f01",
+            "byte_count": 15_366,
         })
         self.assertIn(
             contract.SOURCE_CLOSURE_BASE_CHECKER_RELATIVE_PATH,
@@ -178,7 +214,7 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             contract.OUTPUT_ROOT_RELATIVE_PATH,
             ".generated/go2_shared_observable_camera_ray_jepa_v5/"
             "rgb_patch_whitened_action_residual_jepa_"
-            "probe_v4_action_indexed_energy_nll",
+            "probe_v5_state_dependent_latent_flow",
         )
 
     def test_phase_a_model_and_optimizer_contract_are_exact(self) -> None:
@@ -206,18 +242,40 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(config["zero_action_lambda"], 0.0)
         science = contract.science_contract()
         objective = science["phase_a"]["objective"]
-        operators = science["initialization"][
-            "action_indexed_residual_operators"
+        flow = science["initialization"][
+            "shared_flow_projection"
         ]
-        self.assertEqual(operators["path"], "prediction_projector.action_weights")
-        self.assertEqual(operators["shape"], [9, 192, 192])
-        self.assertFalse(operators["bias"])
-        self.assertEqual(operators["parameter_count"], 331_776)
-        self.assertEqual(operators["value"], 0.0)
-        self.assertEqual(operators["rng_draw_count"], 0)
         self.assertEqual(
-            contract.ACTION_INDEXED_OPERATOR_PARAMETER_COUNT,
-            331_776,
+            flow["path"],
+            "prediction_projector.flow_weight",
+        )
+        self.assertEqual(flow["shape"], [2, 192])
+        self.assertFalse(flow["bias"])
+        self.assertEqual(flow["parameter_count"], 384)
+        self.assertEqual(flow["value"], 0.0)
+        self.assertEqual(flow["rng_draw_count"], 0)
+        self.assertEqual(
+            flow["output_component_order"],
+            ["grid_x_column", "grid_y_row"],
+        )
+        self.assertEqual(
+            contract.FLOW_PROJECTION_PARAMETER_COUNT,
+            384,
+        )
+        self.assertEqual(contract.FLOW_PROJECTION_SHAPE, (2, 192))
+        self.assertEqual(contract.FLOW_CELL_BOUND, 1.0)
+        self.assertEqual(contract.FLOW_GRID_SCALE, 2.0 / 15.0)
+        self.assertEqual(contract.FLOW_X_COMPONENT_INDEX, 0)
+        self.assertEqual(contract.FLOW_Y_COMPONENT_INDEX, 1)
+        self.assertEqual(
+            science["initialization"]["existing_action_embedder"],
+            {
+                "path": "predictor.action_embed",
+                "reused_without_reset": True,
+                "used_outside_adaln_only": True,
+                "trainable": True,
+                "hold_relative_self_subtraction": True,
+            },
         )
         self.assertEqual(contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT, 1.0)
         self.assertEqual(
@@ -237,9 +295,14 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             "mean_i(m_i*cross_entropy("
             "-E_i_all/m_i,executed_action_i))",
         )
+        self.assertFalse(
+            objective["action_independent_shared_trunk"][
+                "action_embedder_passed_to_adaln"
+            ]
+        )
         self.assertTrue(
             objective["action_independent_shared_trunk"][
-                "action_embedder_bypassed"
+                "action_embedder_reused_by_flow"
             ]
         )
         self.assertEqual(
@@ -259,7 +322,40 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertTrue(
             objective["wrong_action_shared_h_and_r_shared_detached"]
         )
-        self.assertFalse(objective["wrong_action_operator_detached"])
+        self.assertFalse(
+            objective["wrong_action_flow_projection_detached"]
+        )
+        self.assertFalse(
+            objective["wrong_action_action_embedder_detached"]
+        )
+        latent_flow = objective["latent_flow_transition"]
+        self.assertEqual(
+            latent_flow["cell_displacement"],
+            "delta_cell_i_a=tanh(W_flow*u_i_a)",
+        )
+        self.assertEqual(
+            latent_flow["cell_displacement_closed_bound"],
+            [-1.0, 1.0],
+        )
+        self.assertEqual(
+            latent_flow["normalized_grid_displacement"],
+            "delta_grid_i_a=(2/15)*delta_cell_i_a",
+        )
+        self.assertEqual(latent_flow["grid_shape"], [16, 16])
+        self.assertEqual(
+            latent_flow["flow_output_component_order"],
+            ["grid_x_column", "grid_y_row"],
+        )
+        self.assertEqual(latent_flow["grid_sample"], {
+            "mode": "bilinear",
+            "padding_mode": "border",
+            "align_corners": True,
+            "coordinates": "identity_grid_plus_delta_grid_i_a",
+        })
+        self.assertTrue(
+            latent_flow["hold_flow_exactly_zero_by_self_subtraction"]
+        )
+        self.assertEqual(latent_flow["per_action_flow_bank_count"], 0)
         self.assertEqual(objective["residual_scale"], contract.RESIDUAL_SCALE)
         self.assertTrue(objective["ema_current_skip_stop_gradient"])
         self.assertTrue(objective["ema_next_target_stop_gradient"])
@@ -283,6 +379,17 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         optimizer = science["phase_a"]["optimizer"]
         self.assertEqual(optimizer["encoder_learning_rate"], 1e-4)
         self.assertEqual(optimizer["other_learning_rate"], 3e-4)
+        self.assertEqual(
+            optimizer["determinism_compatibility"],
+            {
+                "strict_deterministic_algorithms_before_and_after": True,
+                "warn_only_scope":
+                    "phase_a_training_and_checkpoint_selection",
+                "sole_permitted_warning_prefix":
+                    contract.PHASE_A_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX,
+                "unexpected_warning_count": 0,
+            },
+        )
         self.assertEqual(
             tuple(optimizer["other_prefixes"]),
             contract.PHASE_A_AUXILIARY_PARAMETER_PREFIXES,
@@ -397,6 +504,20 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(
             result["counts"]["all_wrong_action_candidate_count"],
             3_960,
+        )
+        self.assertEqual(
+            result["counts"]["non_hold_action_nonzero_flow_count"],
+            8,
+        )
+        self.assertTrue(
+            result["conjuncts"][
+                "latent_flow_finite_within_bound_and_hold_exactly_zero"
+            ]
+        )
+        self.assertTrue(
+            result["conjuncts"][
+                "update_zero_all_action_flows_exactly_zero"
+            ]
         )
 
     def test_phase_a_each_gate_fails_closed(self) -> None:
@@ -562,6 +683,64 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 {"rng_state_preserved": True},
             )
 
+    def test_latent_flow_observation_is_exact_and_fails_closed(self) -> None:
+        metrics = _passing_phase_a_metrics()
+        metrics["latent_flow"]["all_values_finite"] = False
+        result = contract.evaluate_phase_a(
+            metrics,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"][
+                "latent_flow_finite_within_bound_and_hold_exactly_zero"
+            ]
+        )
+
+        metrics = _passing_phase_a_metrics()
+        metrics["latent_flow"]["maximum_absolute_flow_cell"] = 1.01
+        metrics["latent_flow"][
+            "all_components_within_closed_one_patch_bound"
+        ] = False
+        result = contract.evaluate_phase_a(
+            metrics,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+
+        metrics = _passing_phase_a_metrics()
+        metrics["latent_flow"]["hold_flow_exactly_zero"] = False
+        metrics["latent_flow"]["per_action_any_nonzero"]["hold"] = True
+        result = contract.evaluate_phase_a(
+            metrics,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+
+        metrics = _passing_phase_a_metrics()
+        metrics["latent_flow"]["non_hold_action_nonzero_count"] = 7
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+
+        update0 = _update0_metrics()
+        update0["latent_flow"] = _latent_flow_observation(
+            active_non_hold_count=1,
+            maximum_absolute_flow_cell=0.01,
+        )
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                _passing_phase_a_metrics(),
+                update0,
+                _observation_integrity(),
+            )
+
     def test_hardest_wrong_action_terminal_gate_is_inclusive(self) -> None:
         metrics = _passing_phase_a_metrics()
         metrics["hardest_wrong_action_mse"] = (
@@ -650,6 +829,11 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 passing["non_hold_true_pair_mse"]
                 / thresholds["hold_action_ratio_strictly_less_than"],
             ),
+            "mean_target_ratio": (
+                "mean_target_mse",
+                passing["true_pair_mse"]
+                / thresholds["mean_target_ratio_strictly_less_than"],
+            ),
         }
         for name, (field, value) in exact_failures.items():
             with self.subTest(name=name):
@@ -666,6 +850,27 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                     result["control"],
                     contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
                 )
+
+        inactive_flow = deepcopy(passing)
+        inactive_flow["latent_flow"] = _latent_flow_observation(
+            active_non_hold_count=7,
+        )
+        result = contract.evaluate_phase_a_continuation(
+            100,
+            inactive_flow,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"][
+                "all_eight_non_hold_actions_have_nonzero_flow"
+            ]
+        )
+        self.assertEqual(
+            result["control"],
+            contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+        )
 
         result = contract.evaluate_phase_a_continuation(
             100,

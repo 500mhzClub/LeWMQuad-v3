@@ -1,4 +1,4 @@
-"""Source-only contract for Action-Residual JEPA V4 Action-Indexed Energy-NLL.
+"""Source-only contract for Action-Residual JEPA V5 Latent-Flow.
 
 Importing this module reads no generated input, RGB payload, checkpoint,
 runtime output, or accelerator state and imports no tensor library.  The
@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 IMPLEMENTATION_AUTHOR = "/root"
 SCHEMA_PREFIX = (
     "lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v4_action_indexed_energy_nll"
+    "v5_state_dependent_latent_flow"
 )
 
 CONTRACT_RELATIVE_PATH = (
@@ -118,42 +118,42 @@ CAMERA_FIT_METRICS_RELATIVE_PATH = (
 
 PREREGISTRATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v4_action_indexed_energy_nll_"
+    "v5_state_dependent_latent_flow_"
     "preregistration_2026-07-25.md"
 )
-PREREGISTRATION_COMMIT = "521b83c4555fb02211186953e86ac1aa93e16e20"
+PREREGISTRATION_COMMIT = "d2379f74bb16d66ea0b0175bb890ddbf6be3c1fd"
 PREREGISTRATION_FILE_SHA256 = (
-    "dc007342d15a2b3cb3b85ed3c29ad5d0e973db91bfe43a9a696f1b331514f139"
+    "9c435592d0b9771b71503fc43c7d915be6d26b32ac6f60c35aa6781696ba8ae0"
 )
-PREREGISTRATION_BYTE_COUNT = 9_156
+PREREGISTRATION_BYTE_COUNT = 12_019
 PRIOR_TERMINAL_AUDIT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v3_live_reference_hinge_terminal_audit_2026-07-25.json"
+    "v4_action_indexed_energy_nll_terminal_audit_2026-07-25.json"
 )
 PRIOR_TERMINAL_AUDIT_COMMIT = (
-    "3202cbecf2b6042ca3b4e4b8b6485b4f06cfd574"
+    "20a5099f17a6da17bb2858d96724f9f8e88ae3f9"
 )
 PRIOR_TERMINAL_AUDIT_FILE_SHA256 = (
-    "ed0a911f009cd1f7f7fb1849178b3478ad963f135fa41809411adf61f501553c"
+    "ddb3c784382f92161b82d7321c8ad3c70901cb8d5a813c3ecc7153083480d809"
 )
 PRIOR_TERMINAL_AUDIT_CONTENT_SHA256 = (
-    "80d840d8f012b6343f26691e08b47290f44c04fe1eefbae65e0f77b9514acd6a"
+    "c3edbe1932c5647e576b25216cee38ad904f5b5fa581d39f70c1d8cef3e92f01"
 )
-PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 14_731
+PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 15_366
 
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v4_action_indexed_energy_nll_"
+    "v5_state_dependent_latent_flow_"
     "source_manifest_2026-07-25.json"
 )
 REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v4_action_indexed_energy_nll_"
+    "v5_state_dependent_latent_flow_"
     "source_review_2026-07-25.json"
 )
 AUTHORIZATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v4_action_indexed_energy_nll_"
+    "v5_state_dependent_latent_flow_"
     "execution_authorization_2026-07-25.json"
 )
 SOURCE_MANIFEST_SCHEMA = f"{SCHEMA_PREFIX}_source_manifest_v1"
@@ -213,7 +213,7 @@ SOURCE_REVIEW_ADDITIONAL_PATHS = (
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_shared_observable_camera_ray_jepa_v5/"
     "rgb_patch_whitened_action_residual_jepa_"
-    "probe_v4_action_indexed_energy_nll"
+    "probe_v5_state_dependent_latent_flow"
 )
 
 RAW_ROOT_RELATIVE_PATH = (
@@ -306,13 +306,26 @@ BASE_INITIALIZATION_SEED = 20260712
 SCHEDULE_SEED = 20260713
 HOLD_ACTION_INDEX = 6
 RESIDUAL_SCALE = 0.1 / math.sqrt(192.0)
-ACTION_INDEXED_OPERATOR_COUNT = 9
-ACTION_INDEXED_OPERATOR_DIM = 192
-ACTION_INDEXED_OPERATOR_PARAMETER_COUNT = (
-    ACTION_INDEXED_OPERATOR_COUNT
-    * ACTION_INDEXED_OPERATOR_DIM
-    * ACTION_INDEXED_OPERATOR_DIM
+LATENT_DIM = 192
+LATENT_GRID_HEIGHT = 16
+LATENT_GRID_WIDTH = 16
+LATENT_GRID_TOKEN_COUNT = LATENT_GRID_HEIGHT * LATENT_GRID_WIDTH
+FLOW_OUTPUT_DIM = 2
+FLOW_PROJECTION_SHAPE = (FLOW_OUTPUT_DIM, LATENT_DIM)
+FLOW_PROJECTION_PARAMETER_COUNT = FLOW_OUTPUT_DIM * LATENT_DIM
+FLOW_CELL_BOUND = 1.0
+FLOW_GRID_SCALE = 2.0 / float(LATENT_GRID_WIDTH - 1)
+FLOW_X_COMPONENT_INDEX = 0
+FLOW_Y_COMPONENT_INDEX = 1
+FLOW_GRID_SAMPLE_MODE = "bilinear"
+FLOW_GRID_SAMPLE_PADDING_MODE = "border"
+FLOW_GRID_SAMPLE_ALIGN_CORNERS = True
+PHASE_A_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX = (
+    "grid_sampler_2d_backward_cuda does not have a deterministic "
+    "implementation, but you set "
+    "'torch.use_deterministic_algorithms(True, warn_only=True)'."
 )
+NON_HOLD_ACTION_COUNT = len(ACTION_VOCABULARY) - 1
 ACTION_INDEXED_ENERGY_NLL_WEIGHT = 1.0
 ACTION_ENERGY_SCALE_EPSILON = 1e-8
 WHITENING_EPSILON = 1e-4
@@ -367,7 +380,9 @@ PHASE_A_UPDATE_100_THRESHOLDS = {
     "cyclic_wrong_action_ratio_strictly_less_than": 0.99,
     "hardest_wrong_action_ratio_strictly_less_than": 0.99,
     "hold_action_ratio_strictly_less_than": 0.99,
+    "mean_target_ratio_strictly_less_than": 1.0,
     "positive_family_margin_count_minimum": 6,
+    "non_hold_action_nonzero_flow_count_required": NON_HOLD_ACTION_COUNT,
 }
 PHASE_A_UPDATE_400_THRESHOLDS = {
     "centered_raw_patch_effective_rank_minimum": 37.85872936248779,
@@ -439,6 +454,7 @@ PHASE_A_METRIC_FIELDS = frozenset({
     "hold_action_rows_match_non_hold_rows",
     "shuffled_current_mse",
     "per_family",
+    "latent_flow",
 })
 PHASE_A_UPDATE0_FIELDS = frozenset({
     "raw_cross_sample_variance",
@@ -446,6 +462,7 @@ PHASE_A_UPDATE0_FIELDS = frozenset({
     "all_action_predictions_bitwise_equal",
     "all_action_unordered_pair_count",
     "all_action_prediction_row_count",
+    "latent_flow",
 })
 PHASE_A_UPDATE0_HEALTH_FIELDS = frozenset({
     "raw_cross_sample_variance",
@@ -454,6 +471,14 @@ PHASE_A_UPDATE0_HEALTH_FIELDS = frozenset({
 PHASE_A_OBSERVATION_INTEGRITY_FIELDS = frozenset({
     "rng_state_preserved",
     "state_mutation_count",
+})
+LATENT_FLOW_OBSERVATION_FIELDS = frozenset({
+    "all_values_finite",
+    "all_components_within_closed_one_patch_bound",
+    "hold_flow_exactly_zero",
+    "maximum_absolute_flow_cell",
+    "non_hold_action_nonzero_count",
+    "per_action_any_nonzero",
 })
 
 CONTROL_CONTINUE = "CONTINUE_INFORMATIONAL"
@@ -502,21 +527,30 @@ SOURCE_ONLY_AUTHORITY = {
 }
 REVIEW_AUTHORITY = dict(SOURCE_ONLY_AUTHORITY)
 SCIENTIFIC_REVIEW_CHECKS = {
-    "prior_v3_terminal_audit_bound": True,
-    "fresh_v4_is_not_v3_retry_or_resume": True,
-    "action_embedder_bypassed_and_zero_block_conditioning_exact": True,
-    "nine_bias_free_zero_initialized_residual_operators_exact": True,
-    "operator_bank_parameter_count_exactly_331776": True,
+    "prior_v4_terminal_audit_bound": True,
+    "fresh_v5_is_not_v4_retry_or_resume": True,
+    "v4_action_indexed_operator_bank_removed_exact": True,
+    "action_independent_zero_adaln_conditioning_exact": True,
+    "existing_action_embedder_reused_outside_adaln_exact": True,
+    "shared_bias_free_zero_initialized_flow_projection_exact": True,
+    "flow_projection_parameter_count_exactly_384": True,
+    "hold_relative_action_embedding_exact": True,
+    "one_patch_tanh_bound_and_two_over_fifteen_xy_grid_exact": True,
+    "bilinear_border_align_corners_true_grid_sample_exact": True,
+    "source_only_zero_initialization_flow_gradient_fixture_passed": True,
+    "phase_a_grid_sample_warn_only_scope_and_strict_restore_exact": True,
     "all_action_update_zero_bitwise_identity_exact": True,
     "detached_row_mean_energy_scaled_cross_entropy_exact": True,
     "action_indexed_energy_nll_weight_exactly_1": True,
-    "wrong_action_shared_path_detached_and_operator_live": True,
+    "wrong_action_shared_path_detached_flow_and_action_embedder_live": True,
     "no_hinge_fixed_temperature_margin_or_sentinel_specific_training": True,
-    "ema_current_residual_skip_exact": True,
+    "ema_current_warp_and_postwarp_shared_residual_exact": True,
     "patch_whitening_matches_preregistration": True,
     "all_nine_real_actions_and_hold_exact": True,
     "diagnostic_sentinels_absent_from_training": True,
-    "hardest_wrong_action_gate_promotion_exact": True,
+    "hardest_wrong_action_gate_preserved_exact": True,
+    "flow_observation_and_update100_activation_gates_exact": True,
+    "update100_true_below_mean_target_gate_exact": True,
     "continuation_gates_exact": True,
     "terminal_phase_a_gate_exact": True,
     "phase_b_conditional_and_unchanged": True,
@@ -552,7 +586,7 @@ def _load_static_physical_contract() -> Any:
     if hashlib.sha256(raw).hexdigest() != STATIC_PHYSICAL_CONTRACT_FILE_SHA256:
         raise ImportError("frozen static physical contract source changed")
     spec = importlib.util.spec_from_file_location(
-        "_lewm_jepa_encoder_v4_action_indexed_energy_nll_static_physical_contract",
+        "_lewm_jepa_encoder_v5_state_dependent_latent_flow_static_physical_contract",
         source,
     )
     if spec is None or spec.loader is None:
@@ -834,24 +868,37 @@ def science_contract() -> dict[str, Any]:
     return {
         "schema": f"{SCHEMA_PREFIX}_science_contract_v1",
         "scientific_question":
-            "action_indexed_residual_operators_and_all_action_energy_nll_"
-            "separate_the_executed_future_without_collapsing_whitened_rank",
+            "shared_state_dependent_action_conditioned_latent_flow_and_"
+            "all_action_energy_nll_separate_the_executed_future_without_"
+            "collapsing_whitened_rank",
         "initialization": {
             "seed": BASE_INITIALIZATION_SEED,
             "n320_online_encoder_copy": True,
             "n320_ema_encoder_copy": True,
             "predictor_and_projectors_from_fixed_seed": True,
-            "action_indexed_residual_operators": {
-                "path": "prediction_projector.action_weights",
-                "shape": [
-                    ACTION_INDEXED_OPERATOR_COUNT,
-                    ACTION_INDEXED_OPERATOR_DIM,
-                    ACTION_INDEXED_OPERATOR_DIM,
-                ],
+            "shared_flow_projection": {
+                "path": "prediction_projector.flow_weight",
+                "shape": list(FLOW_PROJECTION_SHAPE),
                 "bias": False,
-                "parameter_count": ACTION_INDEXED_OPERATOR_PARAMETER_COUNT,
+                "parameter_count": FLOW_PROJECTION_PARAMETER_COUNT,
                 "value": 0.0,
                 "rng_draw_count": 0,
+                "output_component_order": ["grid_x_column", "grid_y_row"],
+            },
+            "existing_action_embedder": {
+                "path": "predictor.action_embed",
+                "reused_without_reset": True,
+                "used_outside_adaln_only": True,
+                "trainable": True,
+                "hold_relative_self_subtraction": True,
+            },
+            "zero_initialization_gradient_fixture": {
+                "required_before_execution_authorization": True,
+                "source_only": True,
+                "w_flow_value": 0.0,
+                "w_flow_gradient_finite": True,
+                "w_flow_gradient_nonzero": True,
+                "runtime_continuation_gate": False,
             },
             "adalan_gate_generator": {
                 "device": "cpu",
@@ -916,37 +963,62 @@ def science_contract() -> dict[str, Any]:
             ],
             "acceptance_wrong_action":
                 "cyclic_index_plus_one_mod_9_for_every_row",
-            "hold_action_mask": "requested_primitive_is_not_hold",
+            "observation_hold_action_population_mask":
+                "requested_primitive_is_not_hold",
             "objective": {
                 "ema_current_skip_stop_gradient": True,
                 "ema_next_target_stop_gradient": True,
                 "residual_scale": RESIDUAL_SCALE,
                 "action_independent_shared_trunk": {
                     "formula": "h=H(raw_online_current,zero_condition)",
-                    "action_embedder_bypassed": True,
+                    "action_embedder_passed_to_adaln": False,
+                    "action_embedder_reused_by_flow": True,
                     "block_conditioning":
                         "same_exact_all_zero_tensor_for_all_rows_and_candidates",
                     "executed_or_candidate_action_passed_to_adaln_count": 0,
                 },
-                "prediction_projector_wrapper": {
+                "latent_flow_transition": {
                     "shared_projector_path":
                         "prediction_projector.shared_projector",
-                    "operator_bank_path":
-                        "prediction_projector.action_weights",
-                    "operator_count": ACTION_INDEXED_OPERATOR_COUNT,
-                    "operator_shape": [
-                        ACTION_INDEXED_OPERATOR_DIM,
-                        ACTION_INDEXED_OPERATOR_DIM,
-                    ],
-                    "operator_bias": False,
-                    "operator_parameter_count":
-                        ACTION_INDEXED_OPERATOR_PARAMETER_COUNT,
-                    "residual":
-                        "r_a=r_shared+A_a_h_where_r_shared=P(h)",
+                    "flow_projection_path":
+                        "prediction_projector.flow_weight",
+                    "flow_projection_shape": list(FLOW_PROJECTION_SHAPE),
+                    "flow_projection_bias": False,
+                    "flow_projection_parameter_count":
+                        FLOW_PROJECTION_PARAMETER_COUNT,
+                    "action_embedder_path": "predictor.action_embed",
+                    "action_embedding":
+                        "e_a=action_embed(one_hot(a)[:,None,:])[:,0,:]",
+                    "hold_relative_embedding": "e_rel_a=e_a-e_hold",
+                    "state_action_interaction": "u_i_a=h_i*e_rel_a",
+                    "cell_displacement":
+                        "delta_cell_i_a=tanh(W_flow*u_i_a)",
+                    "cell_displacement_closed_bound":
+                        [-FLOW_CELL_BOUND, FLOW_CELL_BOUND],
+                    "grid_shape":
+                        [LATENT_GRID_HEIGHT, LATENT_GRID_WIDTH],
+                    "grid_layout": "row_major",
+                    "grid_coordinate_order": ["x", "y"],
+                    "flow_output_component_order":
+                        ["grid_x_column", "grid_y_row"],
+                    "normalized_grid_displacement":
+                        "delta_grid_i_a=(2/15)*delta_cell_i_a",
+                    "normalized_grid_scale": FLOW_GRID_SCALE,
+                    "grid_sample": {
+                        "mode": FLOW_GRID_SAMPLE_MODE,
+                        "padding_mode": FLOW_GRID_SAMPLE_PADDING_MODE,
+                        "align_corners": FLOW_GRID_SAMPLE_ALIGN_CORNERS,
+                        "coordinates":
+                            "identity_grid_plus_delta_grid_i_a",
+                    },
+                    "hold_flow_exactly_zero_by_self_subtraction": True,
+                    "per_action_flow_bank_count": 0,
+                    "hidden_correction_or_occlusion_head_count": 0,
+                    "flow_supervision_or_regularizer_count": 0,
                 },
                 "prediction":
-                    "normalize(z_current_ema+alpha*"
-                    "(r_shared+A_a_h))",
+                    "normalize(grid_sample(z_current_ema,identity_grid+"
+                    "delta_grid_a)+alpha*r_shared_a)",
                 "candidate_energy":
                     "E_i_a=mean_patch_feature_mse("
                     "prediction_i_a,z_next_ema_i)",
@@ -971,7 +1043,8 @@ def science_contract() -> dict[str, Any]:
                 "margin_or_sentinel_specific_training_term_count": 0,
                 "executed_action_shared_h_and_r_shared_detached": False,
                 "wrong_action_shared_h_and_r_shared_detached": True,
-                "wrong_action_operator_detached": False,
+                "wrong_action_flow_projection_detached": False,
+                "wrong_action_action_embedder_detached": False,
                 "appearance_projector_frozen": True,
                 "old_cls_sigreg_count": 0,
                 "old_marginal_spatial_variance_count": 0,
@@ -1009,6 +1082,15 @@ def science_contract() -> dict[str, Any]:
                     "appearance_projector.",
                 ],
                 "target_parameters_excluded": True,
+                "determinism_compatibility": {
+                    "strict_deterministic_algorithms_before_and_after":
+                        True,
+                    "warn_only_scope":
+                        "phase_a_training_and_checkpoint_selection",
+                    "sole_permitted_warning_prefix":
+                        PHASE_A_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX,
+                    "unexpected_warning_count": 0,
+                },
             },
             "schedule": build_schedule_identity("phase_a"),
             "gate": {
@@ -1042,6 +1124,27 @@ def science_contract() -> dict[str, Any]:
                     "all_action_prediction_row_count": 495,
                     "all_action_unordered_pair_count": 36,
                     "all_action_predictions_bitwise_equal": True,
+                },
+                "latent_flow_observation": {
+                    "fields": [
+                        "all_values_finite",
+                        "all_components_within_closed_one_patch_bound",
+                        "hold_flow_exactly_zero",
+                        "maximum_absolute_flow_cell",
+                        "non_hold_action_nonzero_count",
+                        "per_action_any_nonzero",
+                    ],
+                    "action_order": list(ACTION_VOCABULARY),
+                    "closed_cell_bound":
+                        [-FLOW_CELL_BOUND, FLOW_CELL_BOUND],
+                    "update_zero_non_hold_action_nonzero_count": 0,
+                    "update_100_non_hold_action_nonzero_count":
+                        NON_HOLD_ACTION_COUNT,
+                },
+                "update_100_additional_gates": {
+                    "all_eight_non_hold_actions_have_nonzero_flow": True,
+                    "true_pair_mse_over_mean_target_mse_strictly_less_than":
+                        1.0,
                 },
                 "shuffled_current":
                     "shuffle_online_raw_current_and_matching_ema_current_skip_"
@@ -1125,6 +1228,70 @@ def _positive_denominator_ratio(
     return numerator / denominator
 
 
+def _validate_latent_flow_observation(
+    value: object,
+    *,
+    name: str,
+    require_update_zero: bool = False,
+) -> dict[str, Any]:
+    if type(value) is not dict or set(value) != LATENT_FLOW_OBSERVATION_FIELDS:
+        raise ValueError(f"{name} fields changed")
+    for field in (
+        "all_values_finite",
+        "all_components_within_closed_one_patch_bound",
+        "hold_flow_exactly_zero",
+    ):
+        if type(value[field]) is not bool:
+            raise TypeError(f"{name} {field} must be Boolean")
+    maximum = _finite_nonnegative(
+        value["maximum_absolute_flow_cell"],
+        name=f"{name} maximum absolute flow cell",
+    )
+    count = value["non_hold_action_nonzero_count"]
+    if (
+        type(count) is not int
+        or not 0 <= count <= NON_HOLD_ACTION_COUNT
+    ):
+        raise ValueError(f"{name} non-hold action count changed")
+    per_action = value["per_action_any_nonzero"]
+    if (
+        type(per_action) is not dict
+        or tuple(per_action) != ACTION_VOCABULARY
+        or any(type(item) is not bool for item in per_action.values())
+    ):
+        raise ValueError(f"{name} per-action flow receipt changed")
+    observed_count = sum(
+        int(per_action[action])
+        for action in ACTION_VOCABULARY
+        if action != "hold"
+    )
+    if (
+        count != observed_count
+        or value["hold_flow_exactly_zero"] is per_action["hold"]
+        or value["all_components_within_closed_one_patch_bound"]
+        is not (maximum <= FLOW_CELL_BOUND)
+    ):
+        raise ValueError(f"{name} flow receipt is internally inconsistent")
+    if require_update_zero and (
+        not value["all_values_finite"]
+        or not value["all_components_within_closed_one_patch_bound"]
+        or not value["hold_flow_exactly_zero"]
+        or maximum != 0.0
+        or count != 0
+        or any(per_action.values())
+    ):
+        raise ValueError(f"{name} update-zero flow is not exact zero")
+    return {
+        "all_values_finite": value["all_values_finite"],
+        "all_components_within_closed_one_patch_bound":
+            value["all_components_within_closed_one_patch_bound"],
+        "hold_flow_exactly_zero": value["hold_flow_exactly_zero"],
+        "maximum_absolute_flow_cell": maximum,
+        "non_hold_action_nonzero_count": count,
+        "per_action_any_nonzero": dict(per_action),
+    }
+
+
 def evaluate_phase_a(
     metrics: Mapping[str, Any],
     update0_metrics: Mapping[str, Any],
@@ -1156,6 +1323,15 @@ def evaluate_phase_a(
         or update0_metrics["all_action_prediction_row_count"] != 495
     ):
         raise ValueError("Phase-A update-zero action symmetry receipt changed")
+    update0_flow = _validate_latent_flow_observation(
+        update0_metrics["latent_flow"],
+        name="Phase-A update-zero latent flow",
+        require_update_zero=True,
+    )
+    latent_flow = _validate_latent_flow_observation(
+        metrics["latent_flow"],
+        name="Phase-A latent flow",
+    )
     if type(metrics["all_values_finite"]) is not bool:
         raise TypeError("all_values_finite must be Boolean")
     if type(metrics["ema_target_gradient_free"]) is not bool:
@@ -1197,6 +1373,7 @@ def evaluate_phase_a(
         "hold_action_pair_count",
         "hold_action_rows_match_non_hold_rows",
         "per_family",
+        "latent_flow",
     }
     values = {
         name: _finite_nonnegative(metrics[name], name=name)
@@ -1297,6 +1474,16 @@ def evaluate_phase_a(
             and observation_integrity["state_mutation_count"] == 0,
         "update_zero_all_action_predictions_bitwise_equal":
             update0_metrics["all_action_predictions_bitwise_equal"],
+        "update_zero_all_action_flows_exactly_zero":
+            update0_flow["non_hold_action_nonzero_count"] == 0
+            and update0_flow["maximum_absolute_flow_cell"] == 0.0
+            and not any(update0_flow["per_action_any_nonzero"].values()),
+        "latent_flow_finite_within_bound_and_hold_exactly_zero":
+            latent_flow["all_values_finite"]
+            and latent_flow[
+                "all_components_within_closed_one_patch_bound"
+            ]
+            and latent_flow["hold_flow_exactly_zero"],
         "finite_and_ema_gradient_free":
             metrics["all_values_finite"]
             and metrics["ema_target_gradient_free"],
@@ -1361,8 +1548,11 @@ def evaluate_phase_a(
             "scene_family_count": 8,
             "cyclic_wrong_action_positive_family_count": wrong_positive,
             "hold_action_positive_family_count": hold_positive,
+            "non_hold_action_nonzero_flow_count":
+                latent_flow["non_hold_action_nonzero_count"],
         },
         "per_family": normalized_families,
+        "latent_flow": latent_flow,
     }
 
 
@@ -1391,6 +1581,14 @@ def evaluate_phase_a_continuation(
         "update_zero_all_action_predictions_bitwise_equal":
             terminal["conjuncts"][
                 "update_zero_all_action_predictions_bitwise_equal"
+            ],
+        "update_zero_all_action_flows_exactly_zero":
+            terminal["conjuncts"][
+                "update_zero_all_action_flows_exactly_zero"
+            ],
+        "latent_flow_finite_within_bound_and_hold_exactly_zero":
+            terminal["conjuncts"][
+                "latent_flow_finite_within_bound_and_hold_exactly_zero"
             ],
         "finite_and_ema_gradient_free":
             terminal["conjuncts"]["finite_and_ema_gradient_free"],
@@ -1424,6 +1622,14 @@ def evaluate_phase_a_continuation(
             "non_hold_true_strictly_below_point99_hold_action":
                 ratios["non_hold_true_to_hold_action"]
                 < threshold["hold_action_ratio_strictly_less_than"],
+            "true_strictly_below_mean_target":
+                ratios["true_to_mean_target"]
+                < threshold["mean_target_ratio_strictly_less_than"],
+            "all_eight_non_hold_actions_have_nonzero_flow":
+                counts["non_hold_action_nonzero_flow_count"]
+                == threshold[
+                    "non_hold_action_nonzero_flow_count_required"
+                ],
             "cyclic_wrong_action_margin_positive_in_at_least_six_families":
                 counts["cyclic_wrong_action_positive_family_count"]
                 >= threshold["positive_family_margin_count_minimum"],

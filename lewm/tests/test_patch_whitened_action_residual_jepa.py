@@ -12,21 +12,29 @@ from lewm.models.patch_whitened_action_residual_jepa import (
     ACTION_GATE_BIAS,
     ACTION_GATE_INITIALIZATION_SEED,
     ACTION_GATE_WEIGHT_STD,
+    FLOW_GRID_SCALE,
+    HOLD_ACTION_INDEX,
     LATENT_DIM,
+    MAXIMUM_FLOW_CELL_DISPLACEMENT,
     RESIDUAL_ALPHA,
+    TOKEN_COUNT,
+    TOKEN_SIDE,
     ActionIndexedLosses,
     ActionIndexedPredictions,
-    ActionIndexedResidualOperators,
+    ActionConditionedLatentFlow,
     action_independent_trunk,
     action_indexed_energy_nll,
+    bounded_flow_cells,
+    flow_residual_reconstruct,
     initialize_action_gate_rows,
     patch_whitening_terms,
-    predict_action_indexed_residuals,
+    predict_action_conditioned_flow_warps,
+    relative_action_embeddings,
     requested_action_indices,
-    residual_reconstruct,
+    warp_ema_current_latents,
 )
 from lewm.models.phase2d_spatial_lewm import LinearTokenProjector
-from lewm.models.spatial_predictor import SpatialTokenPredictor
+from lewm.models.predictor import ActionEmbedder
 
 
 class _GateBlock(nn.Module):
@@ -151,88 +159,168 @@ def test_requested_actions_are_exact_uniform_vocabulary_indices() -> None:
         )
 
 
-def test_action_operator_wrapper_is_zero_bias_free_and_rng_free() -> None:
-    shared = nn.Linear(LATENT_DIM, LATENT_DIM)
+def test_flow_wrapper_is_zero_bias_free_rng_free_and_has_exact_grid() -> None:
+    shared = LinearTokenProjector(LATENT_DIM)
     torch.manual_seed(812)
     rng_before = torch.random.get_rng_state().clone()
 
-    wrapper = ActionIndexedResidualOperators(shared)
+    wrapper = ActionConditionedLatentFlow(shared)
 
     assert torch.equal(torch.random.get_rng_state(), rng_before)
     assert wrapper.shared_projector is shared
-    assert tuple(wrapper.action_weights.shape) == (
-        ACTION_DIM,
-        LATENT_DIM,
-        LATENT_DIM,
-    )
-    assert wrapper.action_weights.numel() == 331_776
-    assert torch.count_nonzero(wrapper.action_weights).item() == 0
+    assert tuple(wrapper.flow_weight.shape) == (2, LATENT_DIM)
+    assert wrapper.flow_weight.numel() == 384
+    assert torch.count_nonzero(wrapper.flow_weight).item() == 0
+    assert tuple(wrapper.identity_grid_xy.shape) == (1, 16, 16, 2)
+    assert "identity_grid_xy" not in wrapper.state_dict()
     assert [name for name, _ in wrapper.named_parameters()] == [
-        "action_weights",
-        "shared_projector.weight",
-        "shared_projector.bias",
+        "flow_weight",
+        "shared_projector.linear.weight",
+        "shared_projector.linear.bias",
     ]
     assert not hasattr(wrapper, "bias")
+    assert not hasattr(wrapper, "action_embed")
 
 
-def test_residual_reconstruction_has_fixed_scale_and_detached_skip() -> None:
+def _spatial_latents(batch: int) -> torch.Tensor:
+    coordinates = torch.linspace(-1.0, 1.0, TOKEN_SIDE)
+    rows, columns = torch.meshgrid(
+        coordinates,
+        coordinates,
+        indexing="ij",
+    )
+    base = torch.linspace(0.25, 1.25, LATENT_DIM)
+    horizontal = torch.linspace(-0.7, 0.9, LATENT_DIM)
+    vertical = torch.cos(torch.linspace(0.0, 2.0 * math.pi, LATENT_DIM))
+    tokens = (
+        base[None]
+        + columns.reshape(TOKEN_COUNT, 1) * horizontal[None]
+        + rows.reshape(TOKEN_COUNT, 1) * vertical[None]
+    )
+    tokens = F.normalize(tokens, dim=-1)
+    return torch.stack(
+        [torch.roll(tokens, shifts=index, dims=0) for index in range(batch)]
+    )
+
+
+def test_flow_grid_axes_bound_border_and_post_warp_residual() -> None:
     assert RESIDUAL_ALPHA == 0.1 / math.sqrt(192)
-    ema_current = F.normalize(
-        torch.randn(2, 3, LATENT_DIM), dim=-1
-    ).requires_grad_()
-    residual = torch.randn(2, 3, LATENT_DIM, requires_grad=True)
+    assert TOKEN_SIDE == 16
+    assert TOKEN_COUNT == 256
+    assert MAXIMUM_FLOW_CELL_DISPLACEMENT == 1.0
+    assert FLOW_GRID_SCALE == 2.0 / 15.0
+    wrapper = ActionConditionedLatentFlow(
+        LinearTokenProjector(LATENT_DIM)
+    )
+    values = (
+        100.0 * torch.arange(TOKEN_SIDE)[:, None]
+        + torch.arange(TOKEN_SIDE)[None, :]
+    ).reshape(1, TOKEN_COUNT, 1).expand(-1, -1, LATENT_DIM)
+    ema_current = values.to(torch.float32).requires_grad_()
+    flows = torch.zeros(1, ACTION_DIM, TOKEN_COUNT, 2)
+    flows[:, 0, :, 0] = 1.0
+    flows[:, 1, :, 1] = 1.0
+    warped = warp_ema_current_latents(wrapper, ema_current, flows)
 
-    result = residual_reconstruct(ema_current, residual)
+    source_map = values.reshape(1, TOKEN_SIDE, TOKEN_SIDE, LATENT_DIM)
+    expected_right = torch.cat(
+        (source_map[:, :, 1:], source_map[:, :, -1:]),
+        dim=2,
+    ).reshape(1, TOKEN_COUNT, LATENT_DIM)
+    expected_down = torch.cat(
+        (source_map[:, 1:], source_map[:, -1:]),
+        dim=1,
+    ).reshape(1, TOKEN_COUNT, LATENT_DIM)
+    assert torch.allclose(warped[:, 0], expected_right, atol=1e-5)
+    assert torch.allclose(warped[:, 1], expected_down, atol=1e-5)
+    assert torch.allclose(warped[:, HOLD_ACTION_INDEX], values, atol=1e-5)
+    assert torch.allclose(
+        warped[:, 0].reshape(1, TOKEN_SIDE, TOKEN_SIDE, LATENT_DIM)[
+            :, :, -1
+        ],
+        source_map[:, :, -1],
+        atol=1e-5,
+    )
+
+    raw = torch.full((1, ACTION_DIM, TOKEN_COUNT, 2), 100.0)
+    bounded = bounded_flow_cells(raw)
+    assert bounded.max().item() <= 1.0
+    assert bounded.min().item() >= -1.0
+    with pytest.raises(FloatingPointError, match="out of bounds"):
+        warp_ema_current_latents(wrapper, values, flows * 1.01)
+
+    residual = torch.randn(
+        1,
+        ACTION_DIM,
+        TOKEN_COUNT,
+        LATENT_DIM,
+        requires_grad=True,
+    )
+    result = flow_residual_reconstruct(warped, residual)
     expected = F.normalize(
-        ema_current.detach() + RESIDUAL_ALPHA * residual,
+        warped + RESIDUAL_ALPHA * residual,
         dim=-1,
         eps=1e-8,
     )
-
     assert torch.allclose(result, expected)
     assert torch.allclose(
-        result.norm(dim=-1), torch.ones(2, 3), atol=1e-6
+        result.norm(dim=-1),
+        torch.ones(1, ACTION_DIM, TOKEN_COUNT),
+        atol=1e-6,
     )
-    result.square().sum().backward()
+    (warped[:, 0, :, 0].sum() + result[..., 0].sum()).backward()
     assert ema_current.grad is None
     assert residual.grad is not None
     assert torch.isfinite(residual.grad).all()
 
-    controls = residual_reconstruct(
-        ema_current.detach(),
-        torch.randn(2, 8, 3, LATENT_DIM),
-    )
-    assert controls.shape == (2, 8, 3, LATENT_DIM)
-    with pytest.raises(ValueError, match="aligned"):
-        residual_reconstruct(
-            ema_current.detach(),
-            torch.randn(2, 8, 4, LATENT_DIM),
-        )
-
 
 class _ForbiddenActionEmbed(nn.Module):
     def forward(self, actions: torch.Tensor) -> torch.Tensor:
-        raise AssertionError("V4 trunk must bypass action_embed")
+        raise AssertionError("shared trunk must bypass action_embed")
+
+
+class _FlowBlock(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.projection = nn.Linear(LATENT_DIM, LATENT_DIM, bias=False)
+
+    def forward(
+        self,
+        state: torch.Tensor,
+        condition: torch.Tensor,
+        *,
+        causal: bool,
+    ) -> torch.Tensor:
+        assert causal is False
+        assert torch.count_nonzero(condition).item() == 0
+        return state + 0.05 * self.projection(state)
+
+
+class _FlowPredictor(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.latent_dim = LATENT_DIM
+        self.num_spatial_tokens = TOKEN_COUNT
+        self.spatial_pos_embed = nn.Parameter(
+            torch.zeros(1, TOKEN_COUNT, LATENT_DIM)
+        )
+        self.input_drop = nn.Identity()
+        self.blocks = nn.ModuleList([_FlowBlock()])
+        self.norm = nn.LayerNorm(LATENT_DIM)
+        self.action_embed = ActionEmbedder(
+            input_dim=ACTION_DIM,
+            smoothed_dim=10,
+            emb_dim=LATENT_DIM,
+        )
 
 
 def _spatial_fixture() -> tuple[
-    SpatialTokenPredictor,
-    ActionIndexedResidualOperators,
+    _FlowPredictor,
+    ActionConditionedLatentFlow,
 ]:
     torch.manual_seed(101)
-    predictor = SpatialTokenPredictor(
-        latent_dim=LATENT_DIM,
-        cmd_dim=ACTION_DIM,
-        num_spatial_tokens=3,
-        n_layers=1,
-        n_heads=1,
-        dim_head=32,
-        mlp_dim=64,
-        dropout=0.0,
-    )
-    initialize_action_gate_rows(predictor)
-    predictor.action_embed = _ForbiddenActionEmbed()
-    projector = ActionIndexedResidualOperators(
+    predictor = _FlowPredictor()
+    projector = ActionConditionedLatentFlow(
         LinearTokenProjector(LATENT_DIM)
     )
     return predictor, projector
@@ -253,7 +341,8 @@ def test_action_independent_trunk_bypasses_embed_and_uses_exact_zero() -> None:
         capture_condition,
         with_kwargs=True,
     )
-    state = torch.randn(2, 3, LATENT_DIM)
+    predictor.action_embed = _ForbiddenActionEmbed()
+    state = torch.randn(2, TOKEN_COUNT, LATENT_DIM)
     hidden = action_independent_trunk(predictor, state)
     handle.remove()
 
@@ -263,13 +352,30 @@ def test_action_independent_trunk_bypasses_embed_and_uses_exact_zero() -> None:
     assert captured[0][1] is False
 
 
-def test_all_action_predictions_start_bitwise_equal_and_gather_exactly() -> None:
+def test_action_embeddings_are_distinct_with_exact_hold_reference() -> None:
+    predictor, _ = _spatial_fixture()
+    relative = relative_action_embeddings(
+        predictor,
+        device=torch.device("cpu"),
+        dtype=torch.float32,
+    )
+    assert relative.shape == (ACTION_DIM, LATENT_DIM)
+    assert torch.count_nonzero(relative[HOLD_ACTION_INDEX]).item() == 0
+    for action in range(ACTION_DIM):
+        if action != HOLD_ACTION_INDEX:
+            assert torch.count_nonzero(relative[action]).item() > 0
+    for left in range(ACTION_DIM):
+        for right in range(left + 1, ACTION_DIM):
+            assert not torch.equal(relative[left], relative[right])
+
+
+def test_all_flow_predictions_start_bitwise_equal_and_gather_exactly() -> None:
     predictor, projector = _spatial_fixture()
-    state = torch.randn(2, 3, LATENT_DIM)
-    skip = F.normalize(torch.randn(2, 3, LATENT_DIM), dim=-1)
+    state = torch.randn(2, TOKEN_COUNT, LATENT_DIM)
+    skip = _spatial_latents(2)
     requested = _one_hot([0, 6])
 
-    predictions = predict_action_indexed_residuals(
+    predictions = predict_action_conditioned_flow_warps(
         predictor,
         projector,
         state,
@@ -278,18 +384,26 @@ def test_all_action_predictions_start_bitwise_equal_and_gather_exactly() -> None
     )
 
     assert predictions.all_predictions.shape == (
-        2, ACTION_DIM, 3, LATENT_DIM
+        2, ACTION_DIM, TOKEN_COUNT, LATENT_DIM
     )
-    assert predictions.executed.shape == (2, 3, LATENT_DIM)
+    assert predictions.all_flows_cell.shape == (
+        2, ACTION_DIM, TOKEN_COUNT, 2
+    )
+    assert torch.count_nonzero(predictions.all_flows_cell).item() == 0
+    assert predictions.executed.shape == (2, TOKEN_COUNT, LATENT_DIM)
     assert predictions.controls.shape == (
-        2, ACTION_DIM - 1, 3, LATENT_DIM
+        2, ACTION_DIM - 1, TOKEN_COUNT, LATENT_DIM
     )
     assert predictions.control_indices.shape == (2, ACTION_DIM - 1)
-    for action in range(1, ACTION_DIM):
-        assert torch.equal(
-            predictions.all_predictions[:, 0],
-            predictions.all_predictions[:, action],
-        )
+    comparison_count = 0
+    for left in range(ACTION_DIM):
+        for right in range(left + 1, ACTION_DIM):
+            comparison_count += 1
+            assert torch.equal(
+                predictions.all_predictions[:, left],
+                predictions.all_predictions[:, right],
+            )
+    assert comparison_count == 36
     assert torch.equal(
         predictions.executed,
         predictions.all_predictions[
@@ -301,47 +415,161 @@ def test_all_action_predictions_start_bitwise_equal_and_gather_exactly() -> None
         predictions.all_predictions.gather(
             1,
             predictions.control_indices[:, :, None, None].expand(
-                -1, -1, 3, LATENT_DIM
+                -1, -1, TOKEN_COUNT, LATENT_DIM
             ),
         ),
     )
 
 
-def test_action_operator_changes_only_its_candidate() -> None:
+def test_shared_flow_separates_nonhold_actions_and_hold_stays_zero() -> None:
     predictor, projector = _spatial_fixture()
-    state = torch.randn(1, 3, LATENT_DIM)
-    skip = F.normalize(torch.randn(1, 3, LATENT_DIM), dim=-1)
+    state = torch.randn(1, TOKEN_COUNT, LATENT_DIM)
+    skip = _spatial_latents(1)
     requested = _one_hot([2])
-    baseline = predict_action_indexed_residuals(
+    baseline = predict_action_conditioned_flow_warps(
         predictor, projector, state, requested, skip
-    ).all_predictions.detach()
+    )
 
     with torch.no_grad():
-        projector.action_weights[4].copy_(torch.eye(LATENT_DIM))
-    changed = predict_action_indexed_residuals(
+        projector.flow_weight.copy_(
+            torch.stack((
+                torch.linspace(-0.02, 0.02, LATENT_DIM),
+                torch.linspace(0.015, -0.015, LATENT_DIM),
+            ))
+        )
+    changed = predict_action_conditioned_flow_warps(
         predictor, projector, state, requested, skip
-    ).all_predictions.detach()
+    )
 
-    assert not torch.equal(changed[:, 4], baseline[:, 4])
-    for action in range(ACTION_DIM):
-        if action != 4:
-            assert torch.equal(changed[:, action], baseline[:, action])
+    assert torch.count_nonzero(
+        changed.all_flows_cell[:, HOLD_ACTION_INDEX]
+    ).item() == 0
+    assert torch.count_nonzero(
+        changed.all_flows_cell[:, 0]
+    ).item() > 0
+    assert not torch.equal(
+        changed.all_flows_cell[:, 0],
+        changed.all_flows_cell[:, 1],
+    )
+    assert torch.equal(
+        changed.all_predictions[:, HOLD_ACTION_INDEX],
+        baseline.all_predictions[:, HOLD_ACTION_INDEX],
+    )
 
 
-def test_executed_path_is_live_while_wrong_shared_path_is_detached() -> None:
+def test_zero_flow_projection_opens_then_state_and_action_become_live() -> None:
     predictor, projector = _spatial_fixture()
-    state = torch.randn(1, 3, LATENT_DIM, requires_grad=True)
-    skip = F.normalize(
-        torch.randn(1, 3, LATENT_DIM), dim=-1
-    ).requires_grad_()
-    predictions = predict_action_indexed_residuals(
+    state = torch.randn(
+        1,
+        TOKEN_COUNT,
+        LATENT_DIM,
+        requires_grad=True,
+    )
+    skip = _spatial_latents(1)
+    requested = _one_hot([0])
+    predictions = predict_action_conditioned_flow_warps(
+        predictor,
+        projector,
+        state,
+        requested,
+        skip,
+    )
+    target_flow = torch.zeros_like(predictions.all_flows_cell)
+    target_flow[:, 0, :, 0] = 0.5
+    desired = warp_ema_current_latents(
+        projector,
+        skip,
+        target_flow,
+    )[:, 0].detach()
+    warped = warp_ema_current_latents(
+        projector,
+        skip,
+        predictions.all_flows_cell,
+    )[:, 0]
+    action_parameters = tuple(predictor.action_embed.parameters())
+    initial_loss = (warped - desired).square().mean()
+    initial_gradients = torch.autograd.grad(
+        initial_loss,
+        (projector.flow_weight, state, *action_parameters),
+        allow_unused=True,
+    )
+    initial_flow_gradient = initial_gradients[0]
+    assert initial_flow_gradient is not None
+    assert torch.isfinite(initial_flow_gradient).all()
+    assert torch.count_nonzero(initial_flow_gradient).item() > 0
+    assert initial_gradients[1] is None or (
+        torch.count_nonzero(initial_gradients[1]).item() == 0
+    )
+    assert all(
+        gradient is None or torch.count_nonzero(gradient).item() == 0
+        for gradient in initial_gradients[2:]
+    )
+
+    with torch.no_grad():
+        projector.flow_weight.copy_(
+            -0.01
+            * initial_flow_gradient
+            / initial_flow_gradient.norm().clamp_min(1e-8)
+        )
+    post_state = state.detach().clone().requires_grad_()
+    post_predictions = predict_action_conditioned_flow_warps(
+        predictor,
+        projector,
+        post_state,
+        requested,
+        skip,
+    )
+    post_warped = warp_ema_current_latents(
+        projector,
+        skip,
+        post_predictions.all_flows_cell,
+    )[:, 0]
+    post_loss = (post_warped - desired).square().mean()
+    post_gradients = torch.autograd.grad(
+        post_loss,
+        (post_state, *action_parameters),
+        allow_unused=True,
+    )
+    assert post_gradients[0] is not None
+    assert torch.count_nonzero(post_gradients[0]).item() > 0
+    assert any(
+        gradient is not None
+        and torch.count_nonzero(gradient).item() > 0
+        for gradient in post_gradients[1:]
+    )
+
+
+def test_executed_path_is_live_while_wrong_shared_state_is_detached() -> None:
+    predictor, projector = _spatial_fixture()
+    with torch.no_grad():
+        projector.flow_weight.copy_(
+            torch.stack((
+                torch.linspace(-0.03, 0.03, LATENT_DIM),
+                torch.linspace(0.02, -0.02, LATENT_DIM),
+            ))
+        )
+    state = torch.randn(
+        1,
+        TOKEN_COUNT,
+        LATENT_DIM,
+        requires_grad=True,
+    )
+    skip = _spatial_latents(1).requires_grad_()
+    predictions = predict_action_conditioned_flow_warps(
         predictor, projector, state, _one_hot([2]), skip
     )
     shared_weight = projector.shared_projector.linear.weight
+    action_parameters = tuple(predictor.action_embed.parameters())
 
     wrong_gradients = torch.autograd.grad(
         predictions.all_predictions[:, 4, :, 0].sum(),
-        (state, shared_weight, projector.action_weights, skip),
+        (
+            state,
+            shared_weight,
+            projector.flow_weight,
+            *action_parameters,
+            skip,
+        ),
         retain_graph=True,
         allow_unused=True,
     )
@@ -352,13 +580,23 @@ def test_executed_path_is_live_while_wrong_shared_path_is_detached() -> None:
         torch.count_nonzero(wrong_gradients[1]).item() == 0
     )
     assert wrong_gradients[2] is not None
-    assert torch.count_nonzero(wrong_gradients[2][4]).item() > 0
-    assert torch.count_nonzero(wrong_gradients[2][2]).item() == 0
-    assert wrong_gradients[3] is None
+    assert torch.count_nonzero(wrong_gradients[2]).item() > 0
+    assert any(
+        gradient is not None
+        and torch.count_nonzero(gradient).item() > 0
+        for gradient in wrong_gradients[3:-1]
+    )
+    assert wrong_gradients[-1] is None
 
     executed_gradients = torch.autograd.grad(
         predictions.executed[..., 0].sum(),
-        (state, shared_weight, projector.action_weights, skip),
+        (
+            state,
+            shared_weight,
+            projector.flow_weight,
+            *action_parameters,
+            skip,
+        ),
         allow_unused=True,
     )
     assert executed_gradients[0] is not None
@@ -366,9 +604,13 @@ def test_executed_path_is_live_while_wrong_shared_path_is_detached() -> None:
     assert executed_gradients[1] is not None
     assert torch.count_nonzero(executed_gradients[1]).item() > 0
     assert executed_gradients[2] is not None
-    assert torch.count_nonzero(executed_gradients[2][2]).item() > 0
-    assert torch.count_nonzero(executed_gradients[2][4]).item() == 0
-    assert executed_gradients[3] is None
+    assert torch.count_nonzero(executed_gradients[2]).item() > 0
+    assert any(
+        gradient is not None
+        and torch.count_nonzero(gradient).item() > 0
+        for gradient in executed_gradients[3:-1]
+    )
+    assert executed_gradients[-1] is None
 
 
 def _manual_whitening(tokens: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -466,6 +708,12 @@ def _predictions_from_energies(
     return ActionIndexedPredictions(
         executed_indices=indices,
         all_predictions=all_predictions,
+        all_flows_cell=torch.zeros(
+            batch,
+            ACTION_DIM,
+            TOKEN_COUNT,
+            2,
+        ),
         executed=all_predictions[
             torch.arange(batch), indices
         ],

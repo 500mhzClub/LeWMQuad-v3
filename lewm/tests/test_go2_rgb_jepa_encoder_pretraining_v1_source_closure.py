@@ -54,12 +54,12 @@ class SourceClosureTest(unittest.TestCase):
         self.assertEqual(
             checker.contract.SCHEMA_PREFIX,
             "lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-            "v4_action_indexed_energy_nll",
+            "v5_state_dependent_latent_flow",
         )
         self.assertTrue(
             checker.contract.OUTPUT_ROOT_RELATIVE_PATH.endswith(
                 "/rgb_patch_whitened_action_residual_jepa_"
-                "probe_v4_action_indexed_energy_nll"
+                "probe_v5_state_dependent_latent_flow"
             )
         )
 
