@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the Action-Residual JEPA V3 Live-Reference Hinge probe.
+"""Run the V4 Action-Indexed Energy-NLL JEPA probe.
 
 Importing this module is source-only.  Torch, PIL, NumPy, generated inputs,
 RGB payloads, and checkpoints are first reachable after exact source
@@ -29,7 +29,7 @@ _CONTRACT_PATH = (
     ROOT / "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
 )
 _CONTRACT_SPEC = importlib.util.spec_from_file_location(
-    "_lewm_go2_rgb_jepa_encoder_pretraining_v3_live_reference_contract",
+    "_lewm_go2_rgb_jepa_encoder_pretraining_v4_action_indexed_contract",
     _CONTRACT_PATH,
 )
 if _CONTRACT_SPEC is None or _CONTRACT_SPEC.loader is None:
@@ -39,7 +39,7 @@ _CONTRACT_SPEC.loader.exec_module(contract)
 
 PREFLIGHT_ENVIRONMENT_KEY = (
     "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
-    "V3_LIVE_REFERENCE_HINGE_PREFLIGHT_JSON"
+    "V4_ACTION_INDEXED_ENERGY_NLL_PREFLIGHT_JSON"
 )
 THREAD_ENVIRONMENT = (
     "OMP_NUM_THREADS",
@@ -457,21 +457,21 @@ def _phase_a_ops() -> SimpleNamespace:
         normalize_spatial_tokens,
     )
     from lewm.models.patch_whitened_action_residual_jepa import (  # type: ignore
-        action_residual_losses,
-        build_action_layout,
+        ActionIndexedResidualOperators,
+        action_indexed_energy_nll,
         initialize_action_gate_rows,
         patch_whitening_terms,
-        predict_live_and_control_residuals,
+        predict_action_indexed_residuals,
     )
 
     return SimpleNamespace(
-        action_residual_losses=action_residual_losses,
-        build_action_layout=build_action_layout,
+        ActionIndexedResidualOperators=ActionIndexedResidualOperators,
+        action_indexed_energy_nll=action_indexed_energy_nll,
         initialize_action_gate_rows=initialize_action_gate_rows,
         normalize_spatial_tokens=normalize_spatial_tokens,
         patch_whitening_terms=patch_whitening_terms,
-        predict_live_and_control_residuals=
-            predict_live_and_control_residuals,
+        predict_action_indexed_residuals=
+            predict_action_indexed_residuals,
     )
 
 
@@ -480,7 +480,6 @@ def _phase_a_current_only_loss(
     current_rgb: Any,
     next_rgb: Any,
     action: Any,
-    non_hold_mask: Any,
     *,
     ops: Any | None = None,
 ) -> dict[str, Any]:
@@ -491,7 +490,6 @@ def _phase_a_current_only_loss(
         or next_rgb.shape != current_rgb.shape
         or action.ndim != 2
         or action.shape != (current_rgb.shape[0], 9)
-        or non_hold_mask.shape != (current_rgb.shape[0],)
     ):
         raise ValueError("Phase-A current-only batch shape changed")
 
@@ -518,27 +516,25 @@ def _phase_a_current_only_loss(
         target_next_pre = model.target_projector(target_next_raw)
         target_current = ops.normalize_spatial_tokens(target_current_pre)
         target_next = ops.normalize_spatial_tokens(target_next_pre)
-    predictions = ops.predict_live_and_control_residuals(
+    predictions = ops.predict_action_indexed_residuals(
         model.predictor,
         model.prediction_projector,
         online_state,
         action,
         target_current,
     )
-    if not torch.equal(
-        predictions.layout.non_hold_mask,
-        non_hold_mask.bool(),
-    ):
-        raise PermissionError("Phase-A real-hold mask changed")
-    action_losses = ops.action_residual_losses(predictions, target_next)
+    action_losses = ops.action_indexed_energy_nll(
+        predictions,
+        target_next,
+    )
     raw_whitening = ops.patch_whitening_terms(online_state.float())
     projected_whitening = ops.patch_whitening_terms(
         online_projected.float()
     )
     total = (
         action_losses.jepa
-        + contract.ACTION_DISCRIMINATION_WEIGHT
-        * (action_losses.wrong + action_losses.hold)
+        + contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT
+        * action_losses.identification
         + contract.WHITENING_VARIANCE_WEIGHT
         * (raw_whitening.variance + projected_whitening.variance)
         + contract.WHITENING_COVARIANCE_WEIGHT
@@ -547,21 +543,70 @@ def _phase_a_current_only_loss(
     return {
         "loss": total,
         "jepa_loss": action_losses.jepa,
-        "wrong_action_loss": action_losses.wrong,
-        "hold_action_loss": action_losses.hold,
+        "action_identification_loss": action_losses.identification,
         "raw_whitening_variance_loss": raw_whitening.variance,
         "raw_whitening_covariance_loss": raw_whitening.covariance,
         "projected_whitening_variance_loss":
             projected_whitening.variance,
         "projected_whitening_covariance_loss":
             projected_whitening.covariance,
-        "prediction": predictions.true,
+        "prediction": predictions.executed,
+        "all_action_predictions": predictions.all_predictions,
         "control_predictions": predictions.controls,
-        "control_indices": predictions.layout.control_indices,
+        "control_indices": predictions.control_indices,
         "online_state": online_state,
         "raw_target_next": target_next_raw,
         "projected_target_next": target_next,
         "projected_target_current": target_current,
+    }
+
+
+def _verify_update_zero_action_symmetry_batch(
+    torch: Any,
+    all_predictions: Any,
+) -> tuple[int, int]:
+    """Compare all 36 candidate pairs for one update-zero microbatch."""
+    if (
+        all_predictions.ndim != 4
+        or all_predictions.shape[0] < 1
+        or all_predictions.shape[1] != 9
+    ):
+        raise PermissionError(
+            "update-zero all-action prediction population changed"
+        )
+    comparison_count = 0
+    for left in range(9):
+        for right in range(left + 1, 9):
+            comparison_count += 1
+            if not torch.equal(
+                all_predictions[:, left],
+                all_predictions[:, right],
+            ):
+                raise PermissionError(
+                    "update-zero all-action predictions are not bitwise equal"
+                )
+    return int(all_predictions.shape[0]), comparison_count
+
+
+def _update_zero_action_symmetry_receipt(
+    *,
+    row_count: int,
+    comparison_count: int | None,
+) -> dict[str, Any]:
+    """Bind the complete update-zero action-symmetry population."""
+    expected_rows = contract.SELECTION_ROLE_COUNTS["pairs"]
+    if row_count != expected_rows:
+        raise PermissionError(
+            "update-zero all-action prediction row count changed"
+        )
+    if comparison_count != 36:
+        raise RuntimeError(
+            "update-zero unordered action-pair comparison count changed"
+        )
+    return {
+        "all_action_predictions_bitwise_equal": True,
+        "all_action_unordered_pair_count": comparison_count,
+        "all_action_prediction_row_count": row_count,
     }
 
 
@@ -684,7 +729,8 @@ class RGBOnlyLoader:
         *,
         role: str,
         stage: str,
-    ) -> tuple[Any, Any, Any, Any]:
+        include_non_hold: bool = True,
+    ) -> tuple[Any, ...]:
         selected = [pairs[index] for index in indices]
         if any(row.get("dataset_role") != role for row in selected):
             raise PermissionError("RGB-only batch crossed dataset roles")
@@ -717,6 +763,8 @@ class RGBOnlyLoader:
             self.runtime.torch.arange(len(selected), device=device),
             self.runtime.torch.tensor(action_indices, device=device),
         ] = 1.0
+        if not include_non_hold:
+            return current, next_rgb, actions
         non_hold = self.runtime.torch.tensor(
             [row["primitive"] != "hold" for row in selected],
             dtype=self.runtime.torch.bool,
@@ -812,7 +860,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.MATCHED_V1_RUNNER_RELATIVE_PATH],
     )
     matched = _load_source_module(
-        "_lewm_jepa_encoder_v3_live_reference_matched_loader",
+        "_lewm_jepa_encoder_v4_action_indexed_matched_loader",
         matched_path,
     )
     runtime = matched._load_runtime()
@@ -821,7 +869,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.SCHEDULE_ADAPTER_RELATIVE_PATH],
     )
     schedule_adapter = _load_source_module(
-        "_lewm_jepa_encoder_v3_live_reference_schedule_adapter",
+        "_lewm_jepa_encoder_v4_action_indexed_schedule_adapter",
         ROOT / contract.SCHEDULE_ADAPTER_RELATIVE_PATH,
     )
 
@@ -1143,6 +1191,72 @@ def _phase_a_model(
     ):
         raise RuntimeError("isolated action-gate initialization changed global RNG")
     gate_predictor_sha = _state_sha(runtime, model.predictor)
+    cpu_rng_before_operator_wrap = torch.random.get_rng_state().clone()
+    cuda_rng_before_operator_wrap = [
+        value.clone() for value in torch.cuda.get_rng_state_all()
+    ]
+    shared_projector = model.prediction_projector
+    shared_projector_sha = _state_sha(runtime, shared_projector)
+    model.prediction_projector = ops.ActionIndexedResidualOperators(
+        shared_projector
+    )
+    if (
+        not torch.equal(
+            torch.random.get_rng_state(),
+            cpu_rng_before_operator_wrap,
+        )
+        or any(
+            not torch.equal(before, after)
+            for before, after in zip(
+                cuda_rng_before_operator_wrap,
+                torch.cuda.get_rng_state_all(),
+                strict=True,
+            )
+        )
+    ):
+        raise RuntimeError(
+            "action-indexed operator installation changed global RNG"
+        )
+    action_weights = getattr(
+        model.prediction_projector,
+        "action_weights",
+        None,
+    )
+    direct_parameters = dict(
+        model.prediction_projector.named_parameters(recurse=False)
+    )
+    operator_scalar_count = 9 * 192 * 192
+    if (
+        getattr(model.prediction_projector, "shared_projector", None)
+        is not shared_projector
+        or _state_sha(runtime, shared_projector) != shared_projector_sha
+        or not isinstance(action_weights, torch.nn.Parameter)
+        or tuple(action_weights.shape) != (9, 192, 192)
+        or action_weights.dtype != torch.float32
+        or set(direct_parameters) != {"action_weights"}
+        or direct_parameters["action_weights"] is not action_weights
+        or int(action_weights.numel()) != operator_scalar_count
+        or int(torch.count_nonzero(action_weights).item()) != 0
+        or hasattr(model.prediction_projector, "action_bias")
+    ):
+        raise RuntimeError(
+            "action-indexed residual-operator initialization changed"
+        )
+    operator_initialization = {
+        "action_count": 9,
+        "latent_dim": 192,
+        "weight_shape": [9, 192, 192],
+        "weight_scalar_count": operator_scalar_count,
+        "exact_zero_weight_scalar_count": operator_scalar_count,
+        "nonzero_weight_scalar_count": 0,
+        "bias_parameter_count": 0,
+        "bias": False,
+        "wrapped_existing_shared_projector": True,
+        "shared_projector_state_sha256_before_and_after":
+            shared_projector_sha,
+        "zero_initialized_without_rng_draw": True,
+        "global_rng_state_preserved": True,
+    }
     n320_encoder = {
         name: value.detach().to(device="cpu").contiguous().clone()
         for name, value in fit.encoder.state_dict().items()
@@ -1173,6 +1287,8 @@ def _phase_a_model(
         "action_gate_initialization_preserved_global_rng": True,
         "predictor_state_sha256_after_action_gate_initialization":
             gate_predictor_sha,
+        "action_indexed_residual_operator_initialization":
+            operator_initialization,
         "appearance_projector_frozen_and_eval": (
             not model.appearance_projector.training
             and all(
@@ -1209,6 +1325,8 @@ def _phase_a_diagnostics(
         ema_current_skips: list[Any] = []
         actions: list[Any] = []
         predictions: list[Any] = []
+        update_zero_action_row_count = 0
+        update_zero_action_pair_count: int | None = None
         control_energies: list[Any] = []
         control_indices: list[Any] = []
         raw_targets: list[Any] = []
@@ -1247,7 +1365,7 @@ def _phase_a_diagnostics(
                     model.target_projector(raw_target)
                 )
                 residual_predictions = (
-                    ops.predict_live_and_control_residuals(
+                    ops.predict_action_indexed_residuals(
                         model.predictor,
                         model.prediction_projector,
                         state,
@@ -1255,18 +1373,26 @@ def _phase_a_diagnostics(
                         current_skip,
                     )
                 )
-                if not torch.equal(
-                    residual_predictions.layout.non_hold_mask,
-                    non_hold,
-                ):
-                    raise PermissionError(
-                        "Phase-A diagnostic real-hold mask changed"
+                if update == 0:
+                    (
+                        verified_rows,
+                        verified_pairs,
+                    ) = _verify_update_zero_action_symmetry_batch(
+                        torch,
+                        residual_predictions.all_predictions,
                     )
+                    update_zero_action_row_count += verified_rows
+                    if update_zero_action_pair_count is None:
+                        update_zero_action_pair_count = verified_pairs
+                    elif update_zero_action_pair_count != verified_pairs:
+                        raise RuntimeError(
+                            "update-zero action-pair count changed by batch"
+                        )
                 states.append(state.detach().cpu())
                 ema_current_skips.append(current_skip.detach().cpu())
                 actions.append(action.detach().cpu())
                 predictions.append(
-                    residual_predictions.true.detach().cpu()
+                    residual_predictions.executed.detach().cpu()
                 )
                 control_energies.append(
                     (
@@ -1275,7 +1401,7 @@ def _phase_a_diagnostics(
                     ).square().mean(dim=(2, 3)).detach().cpu()
                 )
                 control_indices.append(
-                    residual_predictions.layout.control_indices.detach().cpu()
+                    residual_predictions.control_indices.detach().cpu()
                 )
                 raw_targets.append(raw_target.detach().cpu())
                 projected_targets.append(projected_target.detach().cpu())
@@ -1290,6 +1416,7 @@ def _phase_a_diagnostics(
         raw_target = torch.cat(raw_targets).float()
         target = torch.cat(projected_targets).float()
         non_hold = torch.cat(non_hold_rows).bool()
+        requested_indices = action.argmax(dim=1)
         if (
             len(pairs) != contract.SELECTION_ROLE_COUNTS["pairs"]
             or state.shape[0] != len(pairs)
@@ -1298,8 +1425,20 @@ def _phase_a_diagnostics(
             or tuple(candidate_indices.shape) != (len(pairs), 8)
             or int(non_hold.sum())
             != contract.SELECTION_NON_HOLD_PAIR_COUNT
+            or not torch.equal(
+                non_hold,
+                requested_indices != contract.HOLD_ACTION_INDEX,
+            )
         ):
             raise PermissionError("Phase-A selection population changed")
+        action_indexed_symmetry = (
+            _update_zero_action_symmetry_receipt(
+                row_count=update_zero_action_row_count,
+                comparison_count=update_zero_action_pair_count,
+            )
+            if update == 0
+            else None
+        )
 
         current_mapping = torch.tensor(
             _scene_derangement(
@@ -1323,13 +1462,13 @@ def _phase_a_diagnostics(
                 ].to(device)
                 original_action = action[start:stop].to(device)
                 shuffled_current_predictions.append(
-                    ops.predict_live_and_control_residuals(
+                    ops.predict_action_indexed_residuals(
                         model.predictor,
                         model.prediction_projector,
                         shuffled_state,
                         original_action,
                         shuffled_skip,
-                    ).true.cpu()
+                    ).executed.cpu()
                 )
         shuffled_current = torch.cat(shuffled_current_predictions)
         shuffled_next = target[next_mapping]
@@ -1339,7 +1478,6 @@ def _phase_a_diagnostics(
             return (left.float() - right.float()).square().mean(dim=(1, 2))
 
         true_mse = row_mse(prediction, target)
-        requested_indices = action.argmax(dim=1)
         cyclic_indices = (requested_indices + 1) % len(
             contract.ACTION_VOCABULARY
         )
@@ -1466,10 +1604,13 @@ def _phase_a_diagnostics(
         }
         if set(metric) != contract.PHASE_A_METRIC_FIELDS:
             raise RuntimeError("Phase-A diagnostic fields changed")
-        return metric
+        return {
+            "metric": metric,
+            "action_indexed_symmetry": action_indexed_symmetry,
+        }
 
     try:
-        metric = _run_with_rng_preserved(runtime, observe)
+        observed = _run_with_rng_preserved(runtime, observe)
     finally:
         if was_training:
             model.train()
@@ -1479,7 +1620,8 @@ def _phase_a_diagnostics(
     return {
         "update": update,
         "role": "checkpoint_selection",
-        "metric": metric,
+        "metric": observed["metric"],
+        "action_indexed_symmetry": observed["action_indexed_symmetry"],
         "model_state_sha256_before_and_after": before_state,
         "rng_state_preserved": True,
         "state_mutation_count": 0,
@@ -1536,8 +1678,14 @@ def _phase_a_train(
     ]
     update0_health = {
         name: diagnostics[0]["metric"][name]
-        for name in contract.PHASE_A_UPDATE0_FIELDS
+        for name in (
+            "raw_cross_sample_variance",
+            "content_residual_spatial_diversity",
+        )
     }
+    update0_health.update(diagnostics[0]["action_indexed_symmetry"])
+    if set(update0_health) != contract.PHASE_A_UPDATE0_FIELDS:
+        raise RuntimeError("Phase-A update-zero receipt fields changed")
     trace: list[dict[str, Any]] = []
     snapshots: list[dict[str, Any]] = []
     continuation_gates: list[dict[str, Any]] = []
@@ -1560,19 +1708,19 @@ def _phase_a_train(
         for microbatch in range(contract.MICROBATCHES_PER_UPDATE):
             low = microbatch * contract.MICROBATCH_SIZE
             indices = update_indices[low : low + contract.MICROBATCH_SIZE]
-            current, next_rgb, action, non_hold = loader.batch(
+            current, next_rgb, action = loader.batch(
                 train_pairs,
                 indices,
                 device,
                 role="train",
                 stage="phase_a_gradient",
+                include_non_hold=False,
             )
             loss = _phase_a_current_only_loss(
                 model,
                 current,
                 next_rgb,
                 action,
-                non_hold,
             )
             if not bool(torch.isfinite(loss["loss"]).item()):
                 raise FloatingPointError("Phase-A objective became nonfinite")
@@ -1580,8 +1728,7 @@ def _phase_a_train(
             for name in (
                 "loss",
                 "jepa_loss",
-                "wrong_action_loss",
-                "hold_action_loss",
+                "action_identification_loss",
                 "raw_whitening_variance_loss",
                 "raw_whitening_covariance_loss",
                 "projected_whitening_variance_loss",
@@ -1850,7 +1997,7 @@ def _phase_b_model(
         raise RuntimeError("Phase-B online encoder copy escaped its scope")
 
     # Deliberately do not call hard_sync_ema_target_from_online(): that helper
-    # also copies target_bev_decoder. V3 permits exactly this encoder-only sync.
+    # also copies target_bev_decoder. V4 permits exactly this encoder-only sync.
     model.target_encoder.load_state_dict(model.encoder.state_dict(), strict=True)
     model.target_encoder.requires_grad_(False)
     model.target_encoder.eval()

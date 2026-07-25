@@ -1,4 +1,4 @@
-"""Source-only contract for Action-Residual JEPA V3 Live-Reference Hinge.
+"""Source-only contract for Action-Residual JEPA V4 Action-Indexed Energy-NLL.
 
 Importing this module reads no generated input, RGB payload, checkpoint,
 runtime output, or accelerator state and imports no tensor library.  The
@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 IMPLEMENTATION_AUTHOR = "/root"
 SCHEMA_PREFIX = (
     "lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v3_live_reference_hinge"
+    "v4_action_indexed_energy_nll"
 )
 
 CONTRACT_RELATIVE_PATH = (
@@ -118,42 +118,42 @@ CAMERA_FIT_METRICS_RELATIVE_PATH = (
 
 PREREGISTRATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v3_live_reference_hinge_"
+    "v4_action_indexed_energy_nll_"
     "preregistration_2026-07-25.md"
 )
-PREREGISTRATION_COMMIT = "caa8bda04b8fc5b6255d10ad9c6e900d2330147e"
+PREREGISTRATION_COMMIT = "521b83c4555fb02211186953e86ac1aa93e16e20"
 PREREGISTRATION_FILE_SHA256 = (
-    "8e3aaabcf868e215ba3a60da1cdc1caebec91613d1076347ed23bb02c8dcd550"
+    "dc007342d15a2b3cb3b85ed3c29ad5d0e973db91bfe43a9a696f1b331514f139"
 )
-PREREGISTRATION_BYTE_COUNT = 6_715
+PREREGISTRATION_BYTE_COUNT = 9_156
 PRIOR_TERMINAL_AUDIT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v2_action_gain_terminal_audit_2026-07-25.json"
+    "v3_live_reference_hinge_terminal_audit_2026-07-25.json"
 )
 PRIOR_TERMINAL_AUDIT_COMMIT = (
-    "e7670b82bd4d31cba2b6d9b76fb8c11c04e1f18d"
+    "3202cbecf2b6042ca3b4e4b8b6485b4f06cfd574"
 )
 PRIOR_TERMINAL_AUDIT_FILE_SHA256 = (
-    "cb0d0f789bfd6d0ec861b19c597a9c203d9d93eb1f0f2c89c04876579eb2b405"
+    "ed0a911f009cd1f7f7fb1849178b3478ad963f135fa41809411adf61f501553c"
 )
 PRIOR_TERMINAL_AUDIT_CONTENT_SHA256 = (
-    "1deef9dd068ade6556dd3eecb87f1ee7896acc0394e8eb9dab943d03749d2c87"
+    "80d840d8f012b6343f26691e08b47290f44c04fe1eefbae65e0f77b9514acd6a"
 )
-PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 14_618
+PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 14_731
 
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v3_live_reference_hinge_"
+    "v4_action_indexed_energy_nll_"
     "source_manifest_2026-07-25.json"
 )
 REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v3_live_reference_hinge_"
+    "v4_action_indexed_energy_nll_"
     "source_review_2026-07-25.json"
 )
 AUTHORIZATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v3_live_reference_hinge_"
+    "v4_action_indexed_energy_nll_"
     "execution_authorization_2026-07-25.json"
 )
 SOURCE_MANIFEST_SCHEMA = f"{SCHEMA_PREFIX}_source_manifest_v1"
@@ -213,7 +213,7 @@ SOURCE_REVIEW_ADDITIONAL_PATHS = (
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_shared_observable_camera_ray_jepa_v5/"
     "rgb_patch_whitened_action_residual_jepa_"
-    "probe_v3_live_reference_hinge"
+    "probe_v4_action_indexed_energy_nll"
 )
 
 RAW_ROOT_RELATIVE_PATH = (
@@ -306,7 +306,15 @@ BASE_INITIALIZATION_SEED = 20260712
 SCHEDULE_SEED = 20260713
 HOLD_ACTION_INDEX = 6
 RESIDUAL_SCALE = 0.1 / math.sqrt(192.0)
-ACTION_DISCRIMINATION_WEIGHT = 10.0
+ACTION_INDEXED_OPERATOR_COUNT = 9
+ACTION_INDEXED_OPERATOR_DIM = 192
+ACTION_INDEXED_OPERATOR_PARAMETER_COUNT = (
+    ACTION_INDEXED_OPERATOR_COUNT
+    * ACTION_INDEXED_OPERATOR_DIM
+    * ACTION_INDEXED_OPERATOR_DIM
+)
+ACTION_INDEXED_ENERGY_NLL_WEIGHT = 1.0
+ACTION_ENERGY_SCALE_EPSILON = 1e-8
 WHITENING_EPSILON = 1e-4
 WHITENING_VARIANCE_WEIGHT = 0.50
 WHITENING_COVARIANCE_WEIGHT = 0.02
@@ -346,6 +354,7 @@ PHASE_A_PASS_THRESHOLDS = {
     "shuffled_next_ratio_maximum": 0.90,
     "mean_target_ratio_maximum": 0.90,
     "cyclic_wrong_action_ratio_maximum": 0.95,
+    "hardest_wrong_action_ratio_maximum": 0.95,
     "hold_action_ratio_maximum": 0.95,
     "positive_family_margin_count_minimum": 6,
     "shuffled_current_ratio_maximum": 0.95,
@@ -356,6 +365,7 @@ PHASE_A_UPDATE_100_THRESHOLDS = {
     "centered_projected_target_effective_rank_strictly_greater_than":
         17.426651000976562,
     "cyclic_wrong_action_ratio_strictly_less_than": 0.99,
+    "hardest_wrong_action_ratio_strictly_less_than": 0.99,
     "hold_action_ratio_strictly_less_than": 0.99,
     "positive_family_margin_count_minimum": 6,
 }
@@ -363,6 +373,7 @@ PHASE_A_UPDATE_400_THRESHOLDS = {
     "centered_raw_patch_effective_rank_minimum": 37.85872936248779,
     "centered_projected_target_effective_rank_minimum": 32.71332550048828,
     "cyclic_wrong_action_ratio_maximum": 0.975,
+    "hardest_wrong_action_ratio_maximum": 0.975,
     "hold_action_ratio_maximum": 0.975,
     "positive_family_margin_count_minimum": 6,
 }
@@ -432,6 +443,13 @@ PHASE_A_METRIC_FIELDS = frozenset({
 PHASE_A_UPDATE0_FIELDS = frozenset({
     "raw_cross_sample_variance",
     "content_residual_spatial_diversity",
+    "all_action_predictions_bitwise_equal",
+    "all_action_unordered_pair_count",
+    "all_action_prediction_row_count",
+})
+PHASE_A_UPDATE0_HEALTH_FIELDS = frozenset({
+    "raw_cross_sample_variance",
+    "content_residual_spatial_diversity",
 })
 PHASE_A_OBSERVATION_INTEGRITY_FIELDS = frozenset({
     "rng_state_preserved",
@@ -484,21 +502,25 @@ SOURCE_ONLY_AUTHORITY = {
 }
 REVIEW_AUTHORITY = dict(SOURCE_ONLY_AUTHORITY)
 SCIENTIFIC_REVIEW_CHECKS = {
-    "prior_v2_terminal_audit_bound": True,
-    "fresh_v3_is_not_v2_retry_or_resume": True,
-    "live_reference_true_energy_not_detached": True,
-    "control_state_and_ema_target_remain_detached": True,
-    "action_discrimination_weight_remains_exactly_10": True,
-    "only_true_energy_gradient_edge_and_fresh_identity_changed": True,
+    "prior_v3_terminal_audit_bound": True,
+    "fresh_v4_is_not_v3_retry_or_resume": True,
+    "action_embedder_bypassed_and_zero_block_conditioning_exact": True,
+    "nine_bias_free_zero_initialized_residual_operators_exact": True,
+    "operator_bank_parameter_count_exactly_331776": True,
+    "all_action_update_zero_bitwise_identity_exact": True,
+    "detached_row_mean_energy_scaled_cross_entropy_exact": True,
+    "action_indexed_energy_nll_weight_exactly_1": True,
+    "wrong_action_shared_path_detached_and_operator_live": True,
+    "no_hinge_fixed_temperature_margin_or_sentinel_specific_training": True,
     "ema_current_residual_skip_exact": True,
     "patch_whitening_matches_preregistration": True,
     "all_nine_real_actions_and_hold_exact": True,
-    "cyclic_acceptance_distinct_from_all_candidate_training": True,
-    "zero_vector_absent": True,
+    "diagnostic_sentinels_absent_from_training": True,
+    "hardest_wrong_action_gate_promotion_exact": True,
     "continuation_gates_exact": True,
     "terminal_phase_a_gate_exact": True,
     "phase_b_conditional_and_unchanged": True,
-    "no_threshold_role_seed_schedule_or_cap_drift": True,
+    "no_data_whitening_base_init_role_seed_schedule_or_cap_drift": True,
 }
 EXECUTION_AUTHORITY = {
     "one_exact_fresh_attempt_authorized": True,
@@ -530,7 +552,7 @@ def _load_static_physical_contract() -> Any:
     if hashlib.sha256(raw).hexdigest() != STATIC_PHYSICAL_CONTRACT_FILE_SHA256:
         raise ImportError("frozen static physical contract source changed")
     spec = importlib.util.spec_from_file_location(
-        "_lewm_jepa_encoder_v3_live_reference_static_physical_contract",
+        "_lewm_jepa_encoder_v4_action_indexed_energy_nll_static_physical_contract",
         source,
     )
     if spec is None or spec.loader is None:
@@ -812,13 +834,25 @@ def science_contract() -> dict[str, Any]:
     return {
         "schema": f"{SCHEMA_PREFIX}_science_contract_v1",
         "scientific_question":
-            "live_reference_relative_hinge_preserves_whitened_rank_and_passes_"
-            "action_and_scene_disjoint_physical_gates",
+            "action_indexed_residual_operators_and_all_action_energy_nll_"
+            "separate_the_executed_future_without_collapsing_whitened_rank",
         "initialization": {
             "seed": BASE_INITIALIZATION_SEED,
             "n320_online_encoder_copy": True,
             "n320_ema_encoder_copy": True,
             "predictor_and_projectors_from_fixed_seed": True,
+            "action_indexed_residual_operators": {
+                "path": "prediction_projector.action_weights",
+                "shape": [
+                    ACTION_INDEXED_OPERATOR_COUNT,
+                    ACTION_INDEXED_OPERATOR_DIM,
+                    ACTION_INDEXED_OPERATOR_DIM,
+                ],
+                "bias": False,
+                "parameter_count": ACTION_INDEXED_OPERATOR_PARAMETER_COUNT,
+                "value": 0.0,
+                "rng_draw_count": 0,
+            },
             "adalan_gate_generator": {
                 "device": "cpu",
                 "dtype": "float32",
@@ -831,6 +865,7 @@ def science_contract() -> dict[str, Any]:
                 "bias": ACTION_GATE_BIAS,
                 "all_non_gate_modulation_rows_zero": True,
             },
+            "global_rng_state_preserved": True,
             "rejected_checkpoint_open_count": 0,
         },
         "data": {
@@ -869,7 +904,16 @@ def science_contract() -> dict[str, Any]:
             "action_vocabulary": list(ACTION_VOCABULARY),
             "hold_action_index": HOLD_ACTION_INDEX,
             "training_action_candidates":
-                "all_nine_real_one_hot_primitives_no_zero_vector",
+                "all_nine_real_actions_in_frozen_vocabulary_order",
+            "training_action_input":
+                "executed_action_index_and_uniformly_ordered_nine_energies_only",
+            "training_forbidden_diagnostic_inputs": [
+                "cyclic_mapping",
+                "hold_specific_mask_or_weight",
+                "scene_family_identity",
+                "hardest_wrong_index",
+                "diagnostic_sentinel_identity",
+            ],
             "acceptance_wrong_action":
                 "cyclic_index_plus_one_mod_9_for_every_row",
             "hold_action_mask": "requested_primitive_is_not_hold",
@@ -877,22 +921,57 @@ def science_contract() -> dict[str, Any]:
                 "ema_current_skip_stop_gradient": True,
                 "ema_next_target_stop_gradient": True,
                 "residual_scale": RESIDUAL_SCALE,
+                "action_independent_shared_trunk": {
+                    "formula": "h=H(raw_online_current,zero_condition)",
+                    "action_embedder_bypassed": True,
+                    "block_conditioning":
+                        "same_exact_all_zero_tensor_for_all_rows_and_candidates",
+                    "executed_or_candidate_action_passed_to_adaln_count": 0,
+                },
+                "prediction_projector_wrapper": {
+                    "shared_projector_path":
+                        "prediction_projector.shared_projector",
+                    "operator_bank_path":
+                        "prediction_projector.action_weights",
+                    "operator_count": ACTION_INDEXED_OPERATOR_COUNT,
+                    "operator_shape": [
+                        ACTION_INDEXED_OPERATOR_DIM,
+                        ACTION_INDEXED_OPERATOR_DIM,
+                    ],
+                    "operator_bias": False,
+                    "operator_parameter_count":
+                        ACTION_INDEXED_OPERATOR_PARAMETER_COUNT,
+                    "residual":
+                        "r_a=r_shared+A_a_h_where_r_shared=P(h)",
+                },
                 "prediction":
                     "normalize(z_current_ema+alpha*"
-                    "P_prediction(Predictor(raw_online_current,action)))",
+                    "(r_shared+A_a_h))",
+                "candidate_energy":
+                    "E_i_a=mean_patch_feature_mse("
+                    "prediction_i_a,z_next_ema_i)",
+                "detached_row_energy_scale":
+                    "m_i=stop_gradient(mean_a(E_i_a)).clamp_min(1e-8)",
+                "detached_row_energy_scale_epsilon":
+                    ACTION_ENERGY_SCALE_EPSILON,
+                "action_indexed_energy_nll":
+                    "mean_i(m_i*cross_entropy("
+                    "-E_i_all/m_i,executed_action_i))",
+                "action_indexed_energy_nll_weight":
+                    ACTION_INDEXED_ENERGY_NLL_WEIGHT,
                 "jepa_loss":
                     "mean_patch_feature_mse(true_prediction,z_next_ema)",
-                "action_discrimination_weight":
-                    ACTION_DISCRIMINATION_WEIGHT,
-                "action_hinge_true_energy_detached": False,
-                "wrong_action_loss":
-                    "mean_rows(mean_eligible_candidates(relu("
-                    "E_true/0.95-E_wrong)))",
-                "hold_action_loss":
-                    "mean_non_hold(relu(E_true/0.95-E_hold))",
-                "empty_hold_microbatch_loss": 0.0,
-                "true_path_online_state_detached": False,
-                "non_true_control_state_detached": True,
+                "total_loss":
+                    "jepa_loss+action_indexed_energy_nll+"
+                    "0.50*(V_raw+V_projected)+"
+                    "0.02*(K_raw+K_projected)",
+                "wrong_action_hinge_count": 0,
+                "hold_action_hinge_count": 0,
+                "fixed_temperature_or_temperature_sweep": False,
+                "margin_or_sentinel_specific_training_term_count": 0,
+                "executed_action_shared_h_and_r_shared_detached": False,
+                "wrong_action_shared_h_and_r_shared_detached": True,
+                "wrong_action_operator_detached": False,
                 "appearance_projector_frozen": True,
                 "old_cls_sigreg_count": 0,
                 "old_marginal_spatial_variance_count": 0,
@@ -924,11 +1003,8 @@ def science_contract() -> dict[str, Any]:
                 "global_clip_norm": 1.0,
                 "encoder_learning_rate": 1e-4,
                 "other_learning_rate": 3e-4,
-                "other_prefixes": [
-                    "online_target_projector.",
-                    "prediction_projector.",
-                    "predictor.",
-                ],
+                "other_prefixes":
+                    list(PHASE_A_AUXILIARY_PARAMETER_PREFIXES),
                 "frozen_compatibility_prefixes": [
                     "appearance_projector.",
                 ],
@@ -961,7 +1037,12 @@ def science_contract() -> dict[str, Any]:
                 "hold_action_population":
                     "exact_same_non_hold_rows_as_non_hold_true_pair_population",
                 "hardest_wrong_action":
-                    "informational_minimum_mse_over_eight_wrong_candidates",
+                    "required_rowwise_minimum_mse_over_eight_wrong_candidates",
+                "update_zero_action_indexed_symmetry": {
+                    "all_action_prediction_row_count": 495,
+                    "all_action_unordered_pair_count": 36,
+                    "all_action_predictions_bitwise_equal": True,
+                },
                 "shuffled_current":
                     "shuffle_online_raw_current_and_matching_ema_current_skip_"
                     "together_keep_action_and_ema_next_fixed",
@@ -1067,6 +1148,14 @@ def evaluate_phase_a(
         or observation_integrity["state_mutation_count"] < 0
     ):
         raise ValueError("Phase-A observation-integrity fields changed")
+    if (
+        type(update0_metrics["all_action_predictions_bitwise_equal"]) is not bool
+        or type(update0_metrics["all_action_unordered_pair_count"]) is not int
+        or update0_metrics["all_action_unordered_pair_count"] != 36
+        or type(update0_metrics["all_action_prediction_row_count"]) is not int
+        or update0_metrics["all_action_prediction_row_count"] != 495
+    ):
+        raise ValueError("Phase-A update-zero action symmetry receipt changed")
     if type(metrics["all_values_finite"]) is not bool:
         raise TypeError("all_values_finite must be Boolean")
     if type(metrics["ema_target_gradient_free"]) is not bool:
@@ -1115,7 +1204,7 @@ def evaluate_phase_a(
     }
     update0 = {
         name: _finite_nonnegative(update0_metrics[name], name=f"update0 {name}")
-        for name in PHASE_A_UPDATE0_FIELDS
+        for name in PHASE_A_UPDATE0_HEALTH_FIELDS
     }
     if any(value <= 0.0 for value in update0.values()):
         raise ValueError("Phase-A update-zero health denominators must be positive")
@@ -1190,12 +1279,11 @@ def evaluate_phase_a(
             values["hold_action_mse"],
             name="hold-action ratio",
         ),
-        "true_to_hardest_wrong_action_informational":
-            _positive_denominator_ratio(
-                values["true_pair_mse"],
-                values["hardest_wrong_action_mse"],
-                name="hardest-wrong-action ratio",
-            ),
+        "true_to_hardest_wrong_action": _positive_denominator_ratio(
+            values["true_pair_mse"],
+            values["hardest_wrong_action_mse"],
+            name="hardest-wrong-action ratio",
+        ),
         "true_to_shuffled_current": _positive_denominator_ratio(
             values["true_pair_mse"],
             values["shuffled_current_mse"],
@@ -1207,6 +1295,8 @@ def evaluate_phase_a(
         "diagnostic_rng_and_model_state_preserved":
             observation_integrity["rng_state_preserved"]
             and observation_integrity["state_mutation_count"] == 0,
+        "update_zero_all_action_predictions_bitwise_equal":
+            update0_metrics["all_action_predictions_bitwise_equal"],
         "finite_and_ema_gradient_free":
             metrics["all_values_finite"]
             and metrics["ema_target_gradient_free"],
@@ -1238,6 +1328,9 @@ def evaluate_phase_a(
         "true_at_most_point95_cyclic_wrong_action":
             ratios["true_to_cyclic_wrong_action"]
             <= threshold["cyclic_wrong_action_ratio_maximum"],
+        "true_at_most_point95_hardest_wrong_action":
+            ratios["true_to_hardest_wrong_action"]
+            <= threshold["hardest_wrong_action_ratio_maximum"],
         "non_hold_true_at_most_point95_hold_action":
             ratios["non_hold_true_to_hold_action"]
             <= threshold["hold_action_ratio_maximum"],
@@ -1295,6 +1388,10 @@ def evaluate_phase_a_continuation(
             terminal["conjuncts"][
                 "diagnostic_rng_and_model_state_preserved"
             ],
+        "update_zero_all_action_predictions_bitwise_equal":
+            terminal["conjuncts"][
+                "update_zero_all_action_predictions_bitwise_equal"
+            ],
         "finite_and_ema_gradient_free":
             terminal["conjuncts"]["finite_and_ema_gradient_free"],
         "control_populations_exact":
@@ -1318,6 +1415,11 @@ def evaluate_phase_a_continuation(
                 ratios["true_to_cyclic_wrong_action"]
                 < threshold[
                     "cyclic_wrong_action_ratio_strictly_less_than"
+                ],
+            "true_strictly_below_point99_hardest_wrong_action":
+                ratios["true_to_hardest_wrong_action"]
+                < threshold[
+                    "hardest_wrong_action_ratio_strictly_less_than"
                 ],
             "non_hold_true_strictly_below_point99_hold_action":
                 ratios["non_hold_true_to_hold_action"]
@@ -1344,6 +1446,9 @@ def evaluate_phase_a_continuation(
             "true_at_most_point975_cyclic_wrong_action":
                 ratios["true_to_cyclic_wrong_action"]
                 <= threshold["cyclic_wrong_action_ratio_maximum"],
+            "true_at_most_point975_hardest_wrong_action":
+                ratios["true_to_hardest_wrong_action"]
+                <= threshold["hardest_wrong_action_ratio_maximum"],
             "non_hold_true_at_most_point975_hold_action":
                 ratios["non_hold_true_to_hold_action"]
                 <= threshold["hold_action_ratio_maximum"],

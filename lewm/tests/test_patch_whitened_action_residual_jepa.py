@@ -12,16 +12,17 @@ from lewm.models.patch_whitened_action_residual_jepa import (
     ACTION_GATE_BIAS,
     ACTION_GATE_INITIALIZATION_SEED,
     ACTION_GATE_WEIGHT_STD,
-    HOLD_ACTION_INDEX,
     LATENT_DIM,
     RESIDUAL_ALPHA,
-    ActionResidualLosses,
-    ResidualPredictions,
-    action_residual_losses,
-    build_action_layout,
+    ActionIndexedLosses,
+    ActionIndexedPredictions,
+    ActionIndexedResidualOperators,
+    action_independent_trunk,
+    action_indexed_energy_nll,
     initialize_action_gate_rows,
     patch_whitening_terms,
-    predict_live_and_control_residuals,
+    predict_action_indexed_residuals,
+    requested_action_indices,
     residual_reconstruct,
 )
 from lewm.models.phase2d_spatial_lewm import LinearTokenProjector
@@ -45,19 +46,6 @@ class _GatePredictor(nn.Module):
         self.blocks = nn.ModuleList([
             _GateBlock(output_rows) for _ in range(blocks)
         ])
-
-
-class _ToyPredictor(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.action = nn.Linear(ACTION_DIM, LATENT_DIM, bias=False)
-
-    def predict_step(
-        self,
-        state: torch.Tensor,
-        actions: torch.Tensor,
-    ) -> torch.Tensor:
-        return state + self.action(actions)[:, None]
 
 
 def _one_hot(indices: list[int]) -> torch.Tensor:
@@ -149,39 +137,42 @@ def test_gate_initialization_is_repeatable_but_not_reentrant() -> None:
         )
 
 
-def test_action_layout_contains_only_real_one_hot_controls() -> None:
-    requested = _one_hot([0, HOLD_ACTION_INDEX, ACTION_DIM - 1])
-    layout = build_action_layout(requested)
-
-    assert layout.all_actions.shape == (3, ACTION_DIM, ACTION_DIM)
-    assert torch.equal(layout.all_actions[0], torch.eye(ACTION_DIM))
-    assert torch.equal(layout.requested_indices, torch.tensor([0, 6, 8]))
-    assert layout.control_indices.shape == (3, ACTION_DIM - 1)
-    assert layout.control_actions.shape == (3, ACTION_DIM - 1, ACTION_DIM)
-    assert torch.all(layout.control_actions.sum(dim=-1) == 1)
-    assert torch.all((layout.control_actions == 0) | (layout.control_actions == 1))
-    assert torch.all(
-        layout.control_indices != layout.requested_indices[:, None]
-    )
+def test_requested_actions_are_exact_uniform_vocabulary_indices() -> None:
+    requested = _one_hot([0, 6, ACTION_DIM - 1])
     assert torch.equal(
-        layout.wrong_loss_mask.sum(dim=1),
-        torch.tensor([7, 8, 7]),
+        requested_action_indices(requested),
+        torch.tensor([0, 6, 8]),
     )
-    assert torch.equal(
-        layout.non_hold_mask,
-        torch.tensor([True, False, True]),
-    )
-    assert torch.equal(
-        (layout.control_indices == HOLD_ACTION_INDEX).sum(dim=1),
-        torch.tensor([1, 0, 1]),
-    )
-
     with pytest.raises(ValueError, match="exact one-hot"):
-        build_action_layout(torch.zeros(2, ACTION_DIM))
+        requested_action_indices(torch.zeros(2, ACTION_DIM))
     with pytest.raises(TypeError, match="floating point"):
-        build_action_layout(
+        requested_action_indices(
             F.one_hot(torch.tensor([0]), num_classes=ACTION_DIM)
         )
+
+
+def test_action_operator_wrapper_is_zero_bias_free_and_rng_free() -> None:
+    shared = nn.Linear(LATENT_DIM, LATENT_DIM)
+    torch.manual_seed(812)
+    rng_before = torch.random.get_rng_state().clone()
+
+    wrapper = ActionIndexedResidualOperators(shared)
+
+    assert torch.equal(torch.random.get_rng_state(), rng_before)
+    assert wrapper.shared_projector is shared
+    assert tuple(wrapper.action_weights.shape) == (
+        ACTION_DIM,
+        LATENT_DIM,
+        LATENT_DIM,
+    )
+    assert wrapper.action_weights.numel() == 331_776
+    assert torch.count_nonzero(wrapper.action_weights).item() == 0
+    assert [name for name, _ in wrapper.named_parameters()] == [
+        "action_weights",
+        "shared_projector.weight",
+        "shared_projector.bias",
+    ]
+    assert not hasattr(wrapper, "bias")
 
 
 def test_residual_reconstruction_has_fixed_scale_and_detached_skip() -> None:
@@ -219,101 +210,165 @@ def test_residual_reconstruction_has_fixed_scale_and_detached_skip() -> None:
         )
 
 
-def test_live_and_control_predictions_use_projector_and_isolate_gradients() -> None:
-    torch.manual_seed(73)
-    predictor = _ToyPredictor()
-    projector = nn.Linear(LATENT_DIM, LATENT_DIM)
-    with torch.no_grad():
-        projector.weight.copy_(torch.eye(LATENT_DIM))
-        projector.bias.fill_(123.0)
-    state = torch.randn(2, 3, LATENT_DIM, requires_grad=True)
-    ema_current = F.normalize(
-        torch.randn(2, 3, LATENT_DIM), dim=-1
-    ).requires_grad_()
-    requested = _one_hot([0, HOLD_ACTION_INDEX])
-
-    predictions = predict_live_and_control_residuals(
-        predictor,
-        projector,
-        state,
-        requested,
-        ema_current,
-    )
-
-    assert predictions.true.shape == (2, 3, LATENT_DIM)
-    assert predictions.controls.shape == (2, 8, 3, LATENT_DIM)
-    manual_raw = predictor.predict_step(state, requested)
-    manual_residual = projector(manual_raw)
-    manual = F.normalize(
-        ema_current.detach() + RESIDUAL_ALPHA * manual_residual,
-        dim=-1,
-        eps=1e-8,
-    )
-    assert torch.allclose(predictions.true, manual)
-
-    projector_without_bias = nn.Linear(LATENT_DIM, LATENT_DIM)
-    with torch.no_grad():
-        projector_without_bias.weight.copy_(projector.weight)
-        projector_without_bias.bias.fill_(-987.0)
-    comparison = predict_live_and_control_residuals(
-        predictor,
-        projector_without_bias,
-        state,
-        requested,
-        ema_current,
-    )
-    assert not torch.allclose(predictions.true, comparison.true)
-    assert not torch.allclose(predictions.controls, comparison.controls)
-
-    control_gradient = torch.autograd.grad(
-        predictions.controls[..., 0].sum(),
-        (state, predictor.action.weight, projector.bias, ema_current),
-        retain_graph=True,
-        allow_unused=True,
-    )
-    assert control_gradient[0] is None
-    assert control_gradient[1] is not None
-    assert torch.count_nonzero(control_gradient[1]).item() > 0
-    assert control_gradient[2] is not None
-    assert torch.count_nonzero(control_gradient[2]).item() > 0
-    assert control_gradient[3] is None
-    true_state_gradient = torch.autograd.grad(
-        predictions.true[..., 0].sum(),
-        state,
-    )[0]
-    assert torch.count_nonzero(true_state_gradient).item() > 0
+class _ForbiddenActionEmbed(nn.Module):
+    def forward(self, actions: torch.Tensor) -> torch.Tensor:
+        raise AssertionError("V4 trunk must bypass action_embed")
 
 
-def test_helpers_integrate_with_registered_spatial_predictor() -> None:
+def _spatial_fixture() -> tuple[
+    SpatialTokenPredictor,
+    ActionIndexedResidualOperators,
+]:
     torch.manual_seed(101)
     predictor = SpatialTokenPredictor(
         latent_dim=LATENT_DIM,
         cmd_dim=ACTION_DIM,
-        num_spatial_tokens=4,
-        n_layers=2,
+        num_spatial_tokens=3,
+        n_layers=1,
         n_heads=1,
         dim_head=32,
         mlp_dim=64,
         dropout=0.0,
     )
-    projector = LinearTokenProjector(LATENT_DIM)
     initialize_action_gate_rows(predictor)
-    shared_state = torch.randn(1, 4, LATENT_DIM).expand(2, -1, -1).clone()
-    shared_skip = F.normalize(
-        torch.randn(1, 4, LATENT_DIM), dim=-1
-    ).expand(2, -1, -1).clone()
+    predictor.action_embed = _ForbiddenActionEmbed()
+    projector = ActionIndexedResidualOperators(
+        LinearTokenProjector(LATENT_DIM)
+    )
+    return predictor, projector
 
-    predictions = predict_live_and_control_residuals(
+
+def test_action_independent_trunk_bypasses_embed_and_uses_exact_zero() -> None:
+    predictor, _ = _spatial_fixture()
+    captured: list[tuple[torch.Tensor, bool]] = []
+
+    def capture_condition(
+        _module: nn.Module,
+        args: tuple[torch.Tensor, torch.Tensor],
+        kwargs: dict[str, object],
+    ) -> None:
+        captured.append((args[1].detach().clone(), bool(kwargs["causal"])))
+
+    handle = predictor.blocks[0].register_forward_pre_hook(
+        capture_condition,
+        with_kwargs=True,
+    )
+    state = torch.randn(2, 3, LATENT_DIM)
+    hidden = action_independent_trunk(predictor, state)
+    handle.remove()
+
+    assert hidden.shape == state.shape
+    assert len(captured) == 1
+    assert torch.count_nonzero(captured[0][0]).item() == 0
+    assert captured[0][1] is False
+
+
+def test_all_action_predictions_start_bitwise_equal_and_gather_exactly() -> None:
+    predictor, projector = _spatial_fixture()
+    state = torch.randn(2, 3, LATENT_DIM)
+    skip = F.normalize(torch.randn(2, 3, LATENT_DIM), dim=-1)
+    requested = _one_hot([0, 6])
+
+    predictions = predict_action_indexed_residuals(
         predictor,
         projector,
-        shared_state,
-        _one_hot([0, 1]),
-        shared_skip,
+        state,
+        requested,
+        skip,
     )
 
-    assert predictions.true.shape == (2, 4, LATENT_DIM)
-    assert predictions.controls.shape == (2, 8, 4, LATENT_DIM)
-    assert not torch.equal(predictions.true[0], predictions.true[1])
+    assert predictions.all_predictions.shape == (
+        2, ACTION_DIM, 3, LATENT_DIM
+    )
+    assert predictions.executed.shape == (2, 3, LATENT_DIM)
+    assert predictions.controls.shape == (
+        2, ACTION_DIM - 1, 3, LATENT_DIM
+    )
+    assert predictions.control_indices.shape == (2, ACTION_DIM - 1)
+    for action in range(1, ACTION_DIM):
+        assert torch.equal(
+            predictions.all_predictions[:, 0],
+            predictions.all_predictions[:, action],
+        )
+    assert torch.equal(
+        predictions.executed,
+        predictions.all_predictions[
+            torch.arange(2), torch.tensor([0, 6])
+        ],
+    )
+    assert torch.equal(
+        predictions.controls,
+        predictions.all_predictions.gather(
+            1,
+            predictions.control_indices[:, :, None, None].expand(
+                -1, -1, 3, LATENT_DIM
+            ),
+        ),
+    )
+
+
+def test_action_operator_changes_only_its_candidate() -> None:
+    predictor, projector = _spatial_fixture()
+    state = torch.randn(1, 3, LATENT_DIM)
+    skip = F.normalize(torch.randn(1, 3, LATENT_DIM), dim=-1)
+    requested = _one_hot([2])
+    baseline = predict_action_indexed_residuals(
+        predictor, projector, state, requested, skip
+    ).all_predictions.detach()
+
+    with torch.no_grad():
+        projector.action_weights[4].copy_(torch.eye(LATENT_DIM))
+    changed = predict_action_indexed_residuals(
+        predictor, projector, state, requested, skip
+    ).all_predictions.detach()
+
+    assert not torch.equal(changed[:, 4], baseline[:, 4])
+    for action in range(ACTION_DIM):
+        if action != 4:
+            assert torch.equal(changed[:, action], baseline[:, action])
+
+
+def test_executed_path_is_live_while_wrong_shared_path_is_detached() -> None:
+    predictor, projector = _spatial_fixture()
+    state = torch.randn(1, 3, LATENT_DIM, requires_grad=True)
+    skip = F.normalize(
+        torch.randn(1, 3, LATENT_DIM), dim=-1
+    ).requires_grad_()
+    predictions = predict_action_indexed_residuals(
+        predictor, projector, state, _one_hot([2]), skip
+    )
+    shared_weight = projector.shared_projector.linear.weight
+
+    wrong_gradients = torch.autograd.grad(
+        predictions.all_predictions[:, 4, :, 0].sum(),
+        (state, shared_weight, projector.action_weights, skip),
+        retain_graph=True,
+        allow_unused=True,
+    )
+    assert wrong_gradients[0] is None or (
+        torch.count_nonzero(wrong_gradients[0]).item() == 0
+    )
+    assert wrong_gradients[1] is None or (
+        torch.count_nonzero(wrong_gradients[1]).item() == 0
+    )
+    assert wrong_gradients[2] is not None
+    assert torch.count_nonzero(wrong_gradients[2][4]).item() > 0
+    assert torch.count_nonzero(wrong_gradients[2][2]).item() == 0
+    assert wrong_gradients[3] is None
+
+    executed_gradients = torch.autograd.grad(
+        predictions.executed[..., 0].sum(),
+        (state, shared_weight, projector.action_weights, skip),
+        allow_unused=True,
+    )
+    assert executed_gradients[0] is not None
+    assert torch.count_nonzero(executed_gradients[0]).item() > 0
+    assert executed_gradients[1] is not None
+    assert torch.count_nonzero(executed_gradients[1]).item() > 0
+    assert executed_gradients[2] is not None
+    assert torch.count_nonzero(executed_gradients[2][2]).item() > 0
+    assert torch.count_nonzero(executed_gradients[2][4]).item() == 0
+    assert executed_gradients[3] is None
 
 
 def _manual_whitening(tokens: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -396,112 +451,98 @@ def test_whitening_is_float32_differentiable_and_validates_shapes() -> None:
 
 
 def _predictions_from_energies(
-    requested_indices: list[int],
-    true_energy: torch.Tensor,
-    control_energy: torch.Tensor,
-) -> ResidualPredictions:
-    batch = len(requested_indices)
-    layout = build_action_layout(_one_hot(requested_indices))
-    true = true_energy.sqrt()[:, None, None].expand(
-        batch, 1, LATENT_DIM
+    executed_indices: list[int],
+    energies: torch.Tensor,
+) -> ActionIndexedPredictions:
+    batch = len(executed_indices)
+    indices = torch.tensor(executed_indices, dtype=torch.long)
+    all_predictions = energies.sqrt()[:, :, None, None].expand(
+        batch, ACTION_DIM, 1, LATENT_DIM
     )
-    controls = control_energy.sqrt()[:, :, None, None].expand(
-        batch, ACTION_DIM - 1, 1, LATENT_DIM
+    candidates = torch.arange(ACTION_DIM).unsqueeze(0).expand(batch, -1)
+    control_indices = candidates[
+        candidates != indices[:, None]
+    ].reshape(batch, ACTION_DIM - 1)
+    return ActionIndexedPredictions(
+        executed_indices=indices,
+        all_predictions=all_predictions,
+        executed=all_predictions[
+            torch.arange(batch), indices
+        ],
+        control_indices=control_indices,
+        controls=all_predictions.gather(
+            1,
+            control_indices[:, :, None, None].expand(
+                -1, -1, 1, LATENT_DIM
+            ),
+        ),
     )
-    return ResidualPredictions(layout=layout, true=true, controls=controls)
 
 
-def test_action_hinges_use_row_means_and_real_hold_separately() -> None:
-    requested_indices = [0, HOLD_ACTION_INDEX]
-    layout = build_action_layout(_one_hot(requested_indices))
-    true_energy = torch.full((2,), 0.95)
-    control_energy = torch.empty(2, ACTION_DIM - 1)
-    control_energy[0].fill_(0.50)
-    control_energy[0, layout.control_indices[0] == HOLD_ACTION_INDEX] = 0.80
-    control_energy[1].fill_(0.75)
-    predictions = _predictions_from_energies(
-        requested_indices, true_energy, control_energy
+def test_energy_nll_matches_exact_manual_formula() -> None:
+    energies = torch.tensor(
+        [
+            [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60],
+            [0.90, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10],
+        ],
+        dtype=torch.float32,
     )
-
-    losses = action_residual_losses(
+    predictions = _predictions_from_energies([0, 8], energies)
+    losses = action_indexed_energy_nll(
         predictions,
         torch.zeros(2, 1, LATENT_DIM),
     )
-
-    assert isinstance(losses, ActionResidualLosses)
-    assert losses.jepa.item() == pytest.approx(0.95, abs=2e-6)
-    assert losses.wrong_per_row.tolist() == pytest.approx([0.50, 0.25])
-    assert losses.wrong.item() == pytest.approx(0.375)
-    assert losses.hold.item() == pytest.approx(0.20)
-
-
-def test_action_hinge_boundary_empty_hold_and_live_reference_gradient() -> None:
-    boundary_layout = build_action_layout(_one_hot([0]))
-    boundary_predictions = _predictions_from_energies(
-        [0],
-        torch.tensor([0.95]),
-        torch.ones(1, ACTION_DIM - 1),
+    expected_scale = energies.mean(dim=1).detach().clamp_min(1e-8)
+    expected_logits = -energies / expected_scale[:, None]
+    expected_per_row = expected_scale * F.cross_entropy(
+        expected_logits,
+        torch.tensor([0, 8]),
+        reduction="none",
     )
-    boundary = action_residual_losses(
-        boundary_predictions,
-        torch.zeros(1, 1, LATENT_DIM),
-    )
-    assert boundary.wrong.item() == pytest.approx(0.0, abs=1e-6)
-    assert boundary.hold.item() == pytest.approx(0.0, abs=1e-6)
-    assert boundary_layout.wrong_loss_mask.sum().item() == 7
+    expected_jepa = torch.tensor([energies[0, 0], energies[1, 8]]).mean()
 
-    all_hold_predictions = _predictions_from_energies(
-        [HOLD_ACTION_INDEX, HOLD_ACTION_INDEX],
-        torch.tensor([0.95, 0.95]),
-        torch.full((2, ACTION_DIM - 1), 0.75),
+    assert isinstance(losses, ActionIndexedLosses)
+    assert torch.allclose(losses.energies, energies)
+    assert torch.allclose(losses.row_scale, expected_scale)
+    assert not losses.row_scale.requires_grad
+    assert torch.allclose(losses.logits, expected_logits)
+    assert torch.allclose(losses.identification_per_row, expected_per_row)
+    assert torch.allclose(losses.identification, expected_per_row.mean())
+    assert torch.allclose(losses.jepa, expected_jepa)
+    assert torch.allclose(
+        losses.total,
+        expected_jepa + expected_per_row.mean(),
     )
-    all_hold = action_residual_losses(
-        all_hold_predictions,
-        torch.zeros(2, 1, LATENT_DIM),
-    )
-    assert all_hold.hold.shape == torch.Size([])
-    assert all_hold.hold.dtype == torch.float32
-    assert all_hold.hold.item() == 0.0
-    assert all_hold.wrong.item() == pytest.approx(0.25)
 
-    layout = build_action_layout(_one_hot([0]))
-    true = torch.full(
-        (1, 1, LATENT_DIM),
-        math.sqrt(0.95),
+
+def test_equal_energy_nll_attracts_executed_and_repels_every_wrong() -> None:
+    equal = torch.full(
+        (1, ACTION_DIM),
+        0.5,
+        dtype=torch.float32,
         requires_grad=True,
     )
-    controls = torch.full(
-        (1, ACTION_DIM - 1, 1, LATENT_DIM),
-        math.sqrt(0.50),
-        requires_grad=True,
-    )
+    predictions = _predictions_from_energies([3], equal)
     target = torch.zeros(
         1, 1, LATENT_DIM, requires_grad=True
     )
-    predictions = ResidualPredictions(
-        layout=layout,
-        true=true,
-        controls=controls,
-    )
-    losses = action_residual_losses(predictions, target)
-    wrong_and_hold_gradients = torch.autograd.grad(
-        losses.wrong + losses.hold,
-        (true, controls, target),
+    losses = action_indexed_energy_nll(predictions, target)
+    energy_gradient = torch.autograd.grad(
+        losses.identification,
+        losses.energies,
         retain_graph=True,
+    )[0]
+
+    assert energy_gradient[0, 3].item() == pytest.approx(8.0 / 9.0)
+    wrong = torch.cat(
+        [energy_gradient[0, :3], energy_gradient[0, 4:]]
+    )
+    assert wrong.tolist() == pytest.approx([-1.0 / 9.0] * 8)
+    prediction_and_target_gradients = torch.autograd.grad(
+        losses.total,
+        (predictions.all_predictions, target),
         allow_unused=True,
     )
-    assert wrong_and_hold_gradients[0] is not None
-    assert torch.isfinite(wrong_and_hold_gradients[0]).all()
-    assert torch.count_nonzero(wrong_and_hold_gradients[0]).item() > 0
-    assert wrong_and_hold_gradients[1] is not None
-    assert torch.isfinite(wrong_and_hold_gradients[1]).all()
-    assert torch.count_nonzero(wrong_and_hold_gradients[1]).item() > 0
-    assert wrong_and_hold_gradients[2] is None
-    jepa_gradients = torch.autograd.grad(
-        losses.jepa,
-        (true, target),
-        allow_unused=True,
-    )
-    assert jepa_gradients[0] is not None
-    assert torch.count_nonzero(jepa_gradients[0]).item() > 0
-    assert jepa_gradients[1] is None
+    assert prediction_and_target_gradients[0] is not None
+    assert torch.isfinite(prediction_and_target_gradients[0]).all()
+    assert prediction_and_target_gradients[1] is None

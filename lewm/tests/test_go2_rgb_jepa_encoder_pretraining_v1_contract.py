@@ -64,10 +64,13 @@ def _passing_phase_a_metrics() -> dict[str, Any]:
     }
 
 
-def _update0_metrics() -> dict[str, float]:
+def _update0_metrics() -> dict[str, Any]:
     return {
         "raw_cross_sample_variance": 4.0,
         "content_residual_spatial_diversity": 8.0,
+        "all_action_predictions_bitwise_equal": True,
+        "all_action_unordered_pair_count": 36,
+        "all_action_prediction_row_count": 495,
     }
 
 
@@ -127,28 +130,28 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         }))
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "caa8bda04b8fc5b6255d10ad9c6e900d2330147e",
+            "521b83c4555fb02211186953e86ac1aa93e16e20",
         )
         self.assertEqual(
             contract.PREREGISTRATION_RELATIVE_PATH,
             "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-            "v3_live_reference_hinge_preregistration_2026-07-25.md",
+            "v4_action_indexed_energy_nll_preregistration_2026-07-25.md",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(contract.PREREGISTRATION_BYTE_COUNT, 6_715)
+        self.assertEqual(contract.PREREGISTRATION_BYTE_COUNT, 9_156)
         self.assertEqual(
             contract.PREREGISTRATION_FILE_SHA256,
-            "8e3aaabcf868e215ba3a60da1cdc1caebec91613d1076347ed23bb02c8dcd550",
+            "dc007342d15a2b3cb3b85ed3c29ad5d0e973db91bfe43a9a696f1b331514f139",
         )
-        self.assertEqual(len(raw), 6_715)
+        self.assertEqual(len(raw), 9_156)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "8e3aaabcf868e215ba3a60da1cdc1caebec91613d1076347ed23bb02c8dcd550",
+            "dc007342d15a2b3cb3b85ed3c29ad5d0e973db91bfe43a9a696f1b331514f139",
         )
         self.assertEqual(
             contract.SCHEMA_PREFIX,
             "lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-            "v3_live_reference_hinge",
+            "v4_action_indexed_energy_nll",
         )
         self.assertEqual(contract.preregistration_binding(), {
             "path": contract.PREREGISTRATION_RELATIVE_PATH,
@@ -159,13 +162,13 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(contract.prior_terminal_audit_binding(), {
             "path":
                 "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-                "v2_action_gain_terminal_audit_2026-07-25.json",
-            "commit": "e7670b82bd4d31cba2b6d9b76fb8c11c04e1f18d",
+                "v3_live_reference_hinge_terminal_audit_2026-07-25.json",
+            "commit": "3202cbecf2b6042ca3b4e4b8b6485b4f06cfd574",
             "file_sha256":
-                "cb0d0f789bfd6d0ec861b19c597a9c203d9d93eb1f0f2c89c04876579eb2b405",
+                "ed0a911f009cd1f7f7fb1849178b3478ad963f135fa41809411adf61f501553c",
             "content_sha256":
-                "1deef9dd068ade6556dd3eecb87f1ee7896acc0394e8eb9dab943d03749d2c87",
-            "byte_count": 14_618,
+                "80d840d8f012b6343f26691e08b47290f44c04fe1eefbae65e0f77b9514acd6a",
+            "byte_count": 14_731,
         })
         self.assertIn(
             contract.SOURCE_CLOSURE_BASE_CHECKER_RELATIVE_PATH,
@@ -175,7 +178,7 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             contract.OUTPUT_ROOT_RELATIVE_PATH,
             ".generated/go2_shared_observable_camera_ray_jepa_v5/"
             "rgb_patch_whitened_action_residual_jepa_"
-            "probe_v3_live_reference_hinge",
+            "probe_v4_action_indexed_energy_nll",
         )
 
     def test_phase_a_model_and_optimizer_contract_are_exact(self) -> None:
@@ -203,12 +206,60 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(config["zero_action_lambda"], 0.0)
         science = contract.science_contract()
         objective = science["phase_a"]["objective"]
-        self.assertEqual(contract.ACTION_DISCRIMINATION_WEIGHT, 10.0)
+        operators = science["initialization"][
+            "action_indexed_residual_operators"
+        ]
+        self.assertEqual(operators["path"], "prediction_projector.action_weights")
+        self.assertEqual(operators["shape"], [9, 192, 192])
+        self.assertFalse(operators["bias"])
+        self.assertEqual(operators["parameter_count"], 331_776)
+        self.assertEqual(operators["value"], 0.0)
+        self.assertEqual(operators["rng_draw_count"], 0)
         self.assertEqual(
-            objective["action_discrimination_weight"],
-            contract.ACTION_DISCRIMINATION_WEIGHT,
+            contract.ACTION_INDEXED_OPERATOR_PARAMETER_COUNT,
+            331_776,
         )
-        self.assertIs(objective["action_hinge_true_energy_detached"], False)
+        self.assertEqual(contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT, 1.0)
+        self.assertEqual(
+            objective["action_indexed_energy_nll_weight"],
+            contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT,
+        )
+        self.assertEqual(
+            objective["detached_row_energy_scale_epsilon"],
+            1e-8,
+        )
+        self.assertEqual(
+            objective["detached_row_energy_scale"],
+            "m_i=stop_gradient(mean_a(E_i_a)).clamp_min(1e-8)",
+        )
+        self.assertEqual(
+            objective["action_indexed_energy_nll"],
+            "mean_i(m_i*cross_entropy("
+            "-E_i_all/m_i,executed_action_i))",
+        )
+        self.assertTrue(
+            objective["action_independent_shared_trunk"][
+                "action_embedder_bypassed"
+            ]
+        )
+        self.assertEqual(
+            objective["action_independent_shared_trunk"][
+                "block_conditioning"
+            ],
+            "same_exact_all_zero_tensor_for_all_rows_and_candidates",
+        )
+        self.assertFalse(
+            objective["fixed_temperature_or_temperature_sweep"]
+        )
+        self.assertEqual(objective["wrong_action_hinge_count"], 0)
+        self.assertEqual(objective["hold_action_hinge_count"], 0)
+        self.assertFalse(
+            objective["executed_action_shared_h_and_r_shared_detached"]
+        )
+        self.assertTrue(
+            objective["wrong_action_shared_h_and_r_shared_detached"]
+        )
+        self.assertFalse(objective["wrong_action_operator_detached"])
         self.assertEqual(objective["residual_scale"], contract.RESIDUAL_SCALE)
         self.assertTrue(objective["ema_current_skip_stop_gradient"])
         self.assertTrue(objective["ema_next_target_stop_gradient"])
@@ -223,7 +274,11 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         )
         self.assertEqual(
             science["phase_a"]["training_action_candidates"],
-            "all_nine_real_one_hot_primitives_no_zero_vector",
+            "all_nine_real_actions_in_frozen_vocabulary_order",
+        )
+        self.assertEqual(
+            science["phase_a"]["training_action_input"],
+            "executed_action_index_and_uniformly_ordered_nine_energies_only",
         )
         optimizer = science["phase_a"]["optimizer"]
         self.assertEqual(optimizer["encoder_learning_rate"], 1e-4)
@@ -357,6 +412,7 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             "shuffled_next": ("shuffled_next_mse", 0.90),
             "mean_target": ("mean_target_mse", 0.90),
             "cyclic_wrong_action": ("cyclic_wrong_action_mse", 0.85),
+            "hardest_wrong_action": ("hardest_wrong_action_mse", 0.85),
             "hold_action": ("hold_action_mse", 0.85),
             "shuffled_current": ("shuffled_current_mse", 0.85),
         }
@@ -447,6 +503,27 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 update0,
                 _observation_integrity(),
             )
+        update0 = _update0_metrics()
+        update0["all_action_predictions_bitwise_equal"] = False
+        result = contract.evaluate_phase_a(
+            _passing_phase_a_metrics(),
+            update0,
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"][
+                "update_zero_all_action_predictions_bitwise_equal"
+            ]
+        )
+        update0 = _update0_metrics()
+        update0["all_action_unordered_pair_count"] = 35
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                _passing_phase_a_metrics(),
+                update0,
+                _observation_integrity(),
+            )
         metrics = _passing_phase_a_metrics()
         metrics["per_family"] = dict(reversed(metrics["per_family"].items()))
         with self.assertRaises(ValueError):
@@ -485,9 +562,14 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 {"rng_state_preserved": True},
             )
 
-    def test_hardest_wrong_action_is_recorded_but_informational(self) -> None:
+    def test_hardest_wrong_action_terminal_gate_is_inclusive(self) -> None:
         metrics = _passing_phase_a_metrics()
-        metrics["hardest_wrong_action_mse"] = 0.01
+        metrics["hardest_wrong_action_mse"] = (
+            metrics["true_pair_mse"]
+            / contract.PHASE_A_PASS_THRESHOLDS[
+                "hardest_wrong_action_ratio_maximum"
+            ]
+        )
         for row in metrics["per_family"].values():
             row["hardest_wrong_action_minus_true_mse"] = -10.0
         result = contract.evaluate_phase_a(
@@ -496,11 +578,19 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             _observation_integrity(),
         )
         self.assertTrue(result["passed"])
-        self.assertEqual(
-            result["ratios"][
-                "true_to_hardest_wrong_action_informational"
-            ],
-            85.0,
+        self.assertAlmostEqual(
+            result["ratios"]["true_to_hardest_wrong_action"],
+            0.95,
+        )
+        metrics["hardest_wrong_action_mse"] = (
+            metrics["true_pair_mse"] / (0.95 + 1e-6)
+        )
+        self.assertFalse(
+            contract.evaluate_phase_a(
+                metrics,
+                _update0_metrics(),
+                _observation_integrity(),
+            )["passed"]
         )
 
     def test_phase_a_update_100_continuation_gate_is_strict(self) -> None:
@@ -546,6 +636,13 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 passing["true_pair_mse"]
                 / thresholds[
                     "cyclic_wrong_action_ratio_strictly_less_than"
+                ],
+            ),
+            "hardest_wrong_ratio": (
+                "hardest_wrong_action_mse",
+                passing["true_pair_mse"]
+                / thresholds[
+                    "hardest_wrong_action_ratio_strictly_less_than"
                 ],
             ),
             "hold_ratio": (
@@ -600,6 +697,10 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             passing["true_pair_mse"]
             / thresholds["cyclic_wrong_action_ratio_maximum"]
         )
+        passing["hardest_wrong_action_mse"] = (
+            passing["true_pair_mse"]
+            / thresholds["hardest_wrong_action_ratio_maximum"]
+        )
         passing["hold_action_mse"] = (
             passing["non_hold_true_pair_mse"]
             / thresholds["hold_action_ratio_maximum"]
@@ -615,6 +716,23 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
 
         failing = deepcopy(passing)
         failing["centered_raw_patch_effective_rank"] -= 1e-12
+        result = contract.evaluate_phase_a_continuation(
+            400,
+            failing,
+            _update0_metrics(),
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertEqual(
+            result["control"],
+            contract.CONTROL_PHASE_A_UPDATE_400_FAIL,
+        )
+
+        failing = deepcopy(passing)
+        failing["hardest_wrong_action_mse"] = (
+            failing["true_pair_mse"]
+            / (thresholds["hardest_wrong_action_ratio_maximum"] + 1e-6)
+        )
         result = contract.evaluate_phase_a_continuation(
             400,
             failing,

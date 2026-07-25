@@ -1,8 +1,8 @@
-"""Exact helpers for Patch-Whitened Action-Residual JEPA V3 Live-Reference.
+"""Exact helpers for Patch-Whitened Action-Residual JEPA V4 Energy-NLL.
 
 This module intentionally contains no data, schedule, runner, or custody
 logic.  It only implements the frozen mathematical mechanism registered in
-the V3 Live-Reference Hinge preregistration.
+the V4 Action-Indexed Energy-NLL preregistration.
 """
 from __future__ import annotations
 
@@ -16,8 +16,6 @@ import torch.nn.functional as F
 
 LATENT_DIM = 192
 ACTION_DIM = 9
-HOLD_ACTION_INDEX = 6
-ACTION_RATIO = 0.95
 WHITENING_EPS = 1e-4
 ACTION_GATE_INITIALIZATION_SEED = 20260712
 ACTION_GATE_WEIGHT_STD = 0.01 / math.sqrt(LATENT_DIM)
@@ -25,22 +23,13 @@ ACTION_GATE_BIAS = 0.01
 RESIDUAL_ALPHA = 0.1 / math.sqrt(LATENT_DIM)
 
 
-class ActionLayout(NamedTuple):
-    """All real actions and the eight non-true controls for each row."""
+class ActionIndexedPredictions(NamedTuple):
+    """Uniformly ordered nine-action predictions and diagnostic gathers."""
 
-    all_actions: torch.Tensor
-    requested_indices: torch.Tensor
+    executed_indices: torch.Tensor
+    all_predictions: torch.Tensor
+    executed: torch.Tensor
     control_indices: torch.Tensor
-    control_actions: torch.Tensor
-    wrong_loss_mask: torch.Tensor
-    non_hold_mask: torch.Tensor
-
-
-class ResidualPredictions(NamedTuple):
-    """Live requested-action prediction and detached-state controls."""
-
-    layout: ActionLayout
-    true: torch.Tensor
     controls: torch.Tensor
 
 
@@ -51,15 +40,71 @@ class WhiteningTerms(NamedTuple):
     covariance: torch.Tensor
 
 
-class ActionResidualLosses(NamedTuple):
-    """JEPA, wrong-action, and real-hold loss components."""
+class ActionIndexedLosses(NamedTuple):
+    """Executed JEPA energy and detached-scale all-action identification NLL."""
 
     jepa: torch.Tensor
-    wrong: torch.Tensor
-    hold: torch.Tensor
-    true_energy: torch.Tensor
-    control_energy: torch.Tensor
-    wrong_per_row: torch.Tensor
+    identification: torch.Tensor
+    total: torch.Tensor
+    energies: torch.Tensor
+    row_scale: torch.Tensor
+    logits: torch.Tensor
+    identification_per_row: torch.Tensor
+
+
+class ActionIndexedResidualOperators(nn.Module):
+    """Wrap the shared projector with nine exact-zero tokenwise operators.
+
+    ``action_weights[a]`` uses :class:`torch.nn.Linear`'s weight orientation,
+    but is allocated directly so construction consumes no RNG and introduces
+    no bias parameter.
+    """
+
+    def __init__(self, shared_projector: nn.Module):
+        super().__init__()
+        if not isinstance(shared_projector, nn.Module):
+            raise TypeError("shared_projector must be an nn.Module")
+        reference = next(shared_projector.parameters(), None)
+        if reference is None:
+            raise ValueError("shared_projector must have parameters")
+        if reference.dtype != torch.float32:
+            raise TypeError("shared_projector parameters must be float32")
+        self.shared_projector = shared_projector
+        self.action_weights = nn.Parameter(
+            torch.zeros(
+                ACTION_DIM,
+                LATENT_DIM,
+                LATENT_DIM,
+                device=reference.device,
+                dtype=reference.dtype,
+            )
+        )
+
+    def project_shared(self, tokens: torch.Tensor) -> torch.Tensor:
+        """Apply the preserved shared projector exactly once."""
+
+        projected = self.shared_projector(tokens)
+        if projected.shape != tokens.shape:
+            raise ValueError("shared projector output must align with tokens")
+        return projected
+
+    def project_all(self, tokens: torch.Tensor) -> torch.Tensor:
+        """Apply every action operator, returning ``(B, 9, N, 192)``."""
+
+        _validate_tokens(tokens, name="operator tokens")
+        return torch.einsum("bnd,aed->bane", tokens, self.action_weights)
+
+    def project_selected(
+        self,
+        tokens: torch.Tensor,
+        action_indices: torch.Tensor,
+    ) -> torch.Tensor:
+        """Apply each row's executed-action operator."""
+
+        _validate_tokens(tokens, name="operator tokens")
+        _validate_action_indices(action_indices, batch=tokens.shape[0])
+        selected_weights = self.action_weights.index_select(0, action_indices)
+        return torch.einsum("bnd,bed->bne", tokens, selected_weights)
 
 
 def initialize_action_gate_rows(predictor: nn.Module) -> dict[str, object]:
@@ -143,8 +188,24 @@ def initialize_action_gate_rows(predictor: nn.Module) -> dict[str, object]:
     }
 
 
-def build_action_layout(requested_actions: torch.Tensor) -> ActionLayout:
-    """Return the frozen nine-action grid and exact per-row control masks."""
+def _validate_tokens(tokens: torch.Tensor, *, name: str) -> None:
+    if tokens.ndim != 3 or tokens.shape[-1] != LATENT_DIM:
+        raise ValueError(f"{name} must have shape (B, N, {LATENT_DIM})")
+    if tokens.shape[0] < 1 or tokens.shape[1] < 1:
+        raise ValueError(f"{name} must have positive batch and token counts")
+
+
+def _validate_action_indices(indices: torch.Tensor, *, batch: int) -> None:
+    if indices.ndim != 1 or tuple(indices.shape) != (batch,):
+        raise ValueError(f"action indices must have shape ({batch},)")
+    if indices.dtype != torch.long:
+        raise TypeError("action indices must have dtype torch.long")
+    if not bool(((indices >= 0) & (indices < ACTION_DIM)).all().item()):
+        raise ValueError(f"action indices must lie in [0, {ACTION_DIM})")
+
+
+def requested_action_indices(requested_actions: torch.Tensor) -> torch.Tensor:
+    """Validate exact one-hot executed actions and return their indices."""
 
     if (
         requested_actions.ndim != 2
@@ -161,48 +222,50 @@ def build_action_layout(requested_actions: torch.Tensor) -> ActionLayout:
     row_sums = requested_actions.sum(dim=1)
     if not bool(is_binary.all().item()) or not bool((row_sums == 1).all().item()):
         raise ValueError("requested_actions must be exact one-hot rows")
+    return requested_actions.argmax(dim=1)
 
-    batch = requested_actions.shape[0]
-    eye = torch.eye(
-        ACTION_DIM,
-        device=requested_actions.device,
-        dtype=requested_actions.dtype,
-    )
-    all_actions = eye.unsqueeze(0).expand(batch, -1, -1)
-    requested_indices = requested_actions.argmax(dim=1)
-    candidate_indices = torch.arange(
-        ACTION_DIM,
-        device=requested_actions.device,
-        dtype=torch.long,
-    ).unsqueeze(0).expand(batch, -1)
-    all_wrong_mask = candidate_indices != requested_indices[:, None]
-    control_indices = candidate_indices[all_wrong_mask].reshape(
-        batch, ACTION_DIM - 1
-    )
-    control_actions = eye[control_indices]
-    non_hold_mask = requested_indices != HOLD_ACTION_INDEX
-    wrong_loss_mask = (
-        (control_indices != HOLD_ACTION_INDEX)
-        | ~non_hold_mask[:, None]
-    )
-    expected_counts = torch.where(
-        non_hold_mask,
-        torch.full_like(requested_indices, ACTION_DIM - 2),
-        torch.full_like(requested_indices, ACTION_DIM - 1),
-    )
-    if not bool(
-        (wrong_loss_mask.sum(dim=1) == expected_counts).all().item()
+
+def action_independent_trunk(
+    predictor: nn.Module,
+    state: torch.Tensor,
+) -> torch.Tensor:
+    """Run one spatial trunk pass with exact-zero block conditioning.
+
+    This deliberately bypasses both ``predict_step`` and ``action_embed``.
+    The existing position embedding, input dropout, transformer blocks, and
+    final normalization are preserved.
+    """
+
+    _validate_tokens(state, name="state")
+    if getattr(predictor, "latent_dim", None) != LATENT_DIM:
+        raise ValueError(f"predictor latent_dim must be {LATENT_DIM}")
+    if getattr(predictor, "num_spatial_tokens", None) != state.shape[1]:
+        raise ValueError("predictor spatial-token count must align with state")
+    position = getattr(predictor, "spatial_pos_embed", None)
+    if not isinstance(position, nn.Parameter) or tuple(position.shape) != (
+        1,
+        state.shape[1],
+        LATENT_DIM,
     ):
-        raise RuntimeError("action-control mask construction changed")
+        raise TypeError("predictor must expose the exact spatial_pos_embed")
+    input_drop = getattr(predictor, "input_drop", None)
+    blocks = getattr(predictor, "blocks", None)
+    norm = getattr(predictor, "norm", None)
+    if not isinstance(input_drop, nn.Module):
+        raise TypeError("predictor must expose input_drop")
+    if not isinstance(blocks, nn.ModuleList) or len(blocks) < 1:
+        raise TypeError("predictor.blocks must be a non-empty ModuleList")
+    if not isinstance(norm, nn.Module):
+        raise TypeError("predictor must expose norm")
 
-    return ActionLayout(
-        all_actions=all_actions,
-        requested_indices=requested_indices,
-        control_indices=control_indices,
-        control_actions=control_actions,
-        wrong_loss_mask=wrong_loss_mask,
-        non_hold_mask=non_hold_mask,
-    )
+    hidden = input_drop(state + position)
+    zero_condition = torch.zeros_like(hidden)
+    for block in blocks:
+        hidden = block(hidden, zero_condition, causal=False)
+    hidden = norm(hidden)
+    if hidden.shape != state.shape:
+        raise ValueError("predictor trunk output must align with state")
+    return hidden
 
 
 def residual_reconstruct(
@@ -242,76 +305,81 @@ def residual_reconstruct(
     )
 
 
-def _predict_residual(
+def predict_action_indexed_residuals(
     predictor: nn.Module,
-    prediction_projector: nn.Module,
-    state: torch.Tensor,
-    actions: torch.Tensor,
-    ema_current: torch.Tensor,
-) -> torch.Tensor:
-    if state.ndim != 3 or state.shape[-1] != LATENT_DIM:
-        raise ValueError(f"state must have shape (B, N, {LATENT_DIM})")
-    if actions.ndim != 2 or actions.shape != (state.shape[0], ACTION_DIM):
-        raise ValueError(
-            f"actions must have shape ({state.shape[0]}, {ACTION_DIM})"
-        )
-    if ema_current.shape != state.shape:
-        raise ValueError("ema_current must align exactly with state")
-    predict_step = getattr(predictor, "predict_step", None)
-    if not callable(predict_step):
-        raise TypeError("predictor must expose predict_step(state, action)")
-    predicted_raw = predict_step(state, actions)
-    if predicted_raw.shape != state.shape:
-        raise ValueError("predictor output must align exactly with state")
-    residual = prediction_projector(predicted_raw)
-    if residual.shape != state.shape:
-        raise ValueError("prediction-projector output must align with state")
-    return residual_reconstruct(ema_current, residual)
-
-
-def predict_live_and_control_residuals(
-    predictor: nn.Module,
-    prediction_projector: nn.Module,
+    prediction_projector: ActionIndexedResidualOperators,
     online_state: torch.Tensor,
     requested_actions: torch.Tensor,
     ema_current: torch.Tensor,
-) -> ResidualPredictions:
-    """Predict one live true action and exactly eight detached-state controls."""
+) -> ActionIndexedPredictions:
+    """Predict all nine actions with the preregistered gradient isolation."""
 
-    layout = build_action_layout(requested_actions)
+    if not isinstance(
+        prediction_projector, ActionIndexedResidualOperators
+    ):
+        raise TypeError(
+            "prediction_projector must be ActionIndexedResidualOperators"
+        )
+    _validate_tokens(online_state, name="online_state")
     if online_state.shape[0] != requested_actions.shape[0]:
         raise ValueError("online_state and requested_actions batch sizes differ")
-    true_prediction = _predict_residual(
-        predictor,
-        prediction_projector,
-        online_state,
-        requested_actions,
-        ema_current,
-    )
-
+    if ema_current.shape != online_state.shape:
+        raise ValueError("ema_current must align exactly with online_state")
+    executed_indices = requested_action_indices(requested_actions)
     batch, tokens, dim = online_state.shape
-    control_count = ACTION_DIM - 1
-    control_state = online_state.detach()[:, None].expand(
-        -1, control_count, -1, -1
-    ).reshape(batch * control_count, tokens, dim)
-    control_actions = layout.control_actions.reshape(
-        batch * control_count, ACTION_DIM
-    )
-    control_skip = ema_current[:, None].expand(
-        -1, control_count, -1, -1
-    ).reshape(batch * control_count, tokens, dim)
-    control_predictions = _predict_residual(
-        predictor,
-        prediction_projector,
-        control_state,
-        control_actions,
-        control_skip,
-    ).reshape(batch, control_count, tokens, dim)
 
-    return ResidualPredictions(
-        layout=layout,
-        true=true_prediction,
-        controls=control_predictions,
+    shared_hidden = action_independent_trunk(predictor, online_state)
+    shared_residual = prediction_projector.project_shared(shared_hidden)
+
+    detached_action_residuals = prediction_projector.project_all(
+        shared_hidden.detach()
+    )
+    executed_action_residual = prediction_projector.project_selected(
+        shared_hidden,
+        executed_indices,
+    )
+    executed_mask = F.one_hot(
+        executed_indices,
+        num_classes=ACTION_DIM,
+    ).to(dtype=torch.bool)[:, :, None, None]
+    action_residuals = torch.where(
+        executed_mask,
+        executed_action_residual[:, None],
+        detached_action_residuals,
+    )
+    shared_residuals = torch.where(
+        executed_mask,
+        shared_residual[:, None],
+        shared_residual.detach()[:, None],
+    )
+    all_predictions = residual_reconstruct(
+        ema_current,
+        shared_residuals + action_residuals,
+    )
+
+    candidate_indices = torch.arange(
+        ACTION_DIM,
+        device=executed_indices.device,
+        dtype=torch.long,
+    ).unsqueeze(0).expand(batch, -1)
+    control_indices = candidate_indices[
+        candidate_indices != executed_indices[:, None]
+    ].reshape(batch, ACTION_DIM - 1)
+    control_gather = control_indices[:, :, None, None].expand(
+        -1, -1, tokens, dim
+    )
+    executed_gather = executed_indices[:, None, None, None].expand(
+        -1, 1, tokens, dim
+    )
+    controls = all_predictions.gather(1, control_gather)
+    executed = all_predictions.gather(1, executed_gather).squeeze(1)
+
+    return ActionIndexedPredictions(
+        executed_indices=executed_indices,
+        all_predictions=all_predictions,
+        executed=executed,
+        control_indices=control_indices,
+        controls=controls,
     )
 
 
@@ -351,76 +419,50 @@ def patch_whitening_terms(tokens: torch.Tensor) -> WhiteningTerms:
     )
 
 
-def action_residual_losses(
-    predictions: ResidualPredictions,
+def action_indexed_energy_nll(
+    predictions: ActionIndexedPredictions,
     ema_next: torch.Tensor,
-) -> ActionResidualLosses:
-    """Compute live JEPA energy and exact row-balanced action hinges."""
+) -> ActionIndexedLosses:
+    """Compute executed JEPA plus detached-row-scale all-action Energy-NLL."""
 
-    true_prediction = predictions.true
-    controls = predictions.controls
-    layout = predictions.layout
-    if (
-        true_prediction.ndim != 3
-        or true_prediction.shape[-1] != LATENT_DIM
+    all_predictions = predictions.all_predictions
+    if all_predictions.ndim != 4 or tuple(all_predictions.shape[1::2]) != (
+        ACTION_DIM,
+        LATENT_DIM,
     ):
         raise ValueError(
-            f"true prediction must have shape (B, N, {LATENT_DIM})"
+            "all_predictions must have shape "
+            f"(B, {ACTION_DIM}, N, {LATENT_DIM})"
         )
-    expected_controls = (
-        true_prediction.shape[0],
-        ACTION_DIM - 1,
-        true_prediction.shape[1],
-        LATENT_DIM,
-    )
-    if tuple(controls.shape) != expected_controls:
-        raise ValueError(f"controls must have shape {expected_controls}")
-    if ema_next.shape != true_prediction.shape:
-        raise ValueError("ema_next must align exactly with true prediction")
+    batch, _, tokens, _ = all_predictions.shape
+    if tuple(ema_next.shape) != (batch, tokens, LATENT_DIM):
+        raise ValueError("ema_next must align with all_predictions")
+    _validate_action_indices(predictions.executed_indices, batch=batch)
 
     target = ema_next.detach()
-    true_energy = (true_prediction - target).square().mean(dim=(1, 2))
-    control_energy = (
-        controls - target[:, None]
+    energies = (
+        all_predictions - target[:, None]
     ).square().mean(dim=(2, 3))
-    threshold = true_energy / ACTION_RATIO
-    hinges = F.relu(threshold[:, None] - control_energy)
-
-    wrong_mask = layout.wrong_loss_mask
-    if tuple(wrong_mask.shape) != tuple(control_energy.shape):
-        raise ValueError("wrong-action mask does not align with controls")
-    wrong_counts = wrong_mask.sum(dim=1)
-    if not bool((wrong_counts > 0).all().item()):
-        raise RuntimeError("every row must have eligible wrong actions")
-    wrong_per_row = (
-        hinges.masked_fill(~wrong_mask, 0.0).sum(dim=1)
-        / wrong_counts.to(dtype=hinges.dtype)
+    row_scale = energies.mean(dim=1).detach().clamp_min(1e-8)
+    logits = -energies / row_scale[:, None]
+    identification_per_row = row_scale * F.cross_entropy(
+        logits,
+        predictions.executed_indices,
+        reduction="none",
     )
-    wrong_loss = wrong_per_row.mean()
-
-    hold_control_mask = (
-        (layout.control_indices == HOLD_ACTION_INDEX)
-        & layout.non_hold_mask[:, None]
-    )
-    if bool(layout.non_hold_mask.any().item()):
-        if not bool(
-            (
-                hold_control_mask.sum(dim=1)
-                == layout.non_hold_mask.to(dtype=torch.long)
-            ).all().item()
-        ):
-            raise RuntimeError("real-hold control population changed")
-        hold_loss = hinges.masked_select(hold_control_mask).mean()
-    else:
-        hold_loss = true_energy.new_zeros(())
-
-    return ActionResidualLosses(
-        jepa=true_energy.mean(),
-        wrong=wrong_loss,
-        hold=hold_loss,
-        true_energy=true_energy,
-        control_energy=control_energy,
-        wrong_per_row=wrong_per_row,
+    identification = identification_per_row.mean()
+    executed_energy = energies.gather(
+        1, predictions.executed_indices[:, None]
+    ).squeeze(1)
+    jepa = executed_energy.mean()
+    return ActionIndexedLosses(
+        jepa=jepa,
+        identification=identification,
+        total=jepa + identification,
+        energies=energies,
+        row_scale=row_scale,
+        logits=logits,
+        identification_per_row=identification_per_row,
     )
 
 
@@ -429,19 +471,18 @@ __all__ = [
     "ACTION_GATE_BIAS",
     "ACTION_GATE_INITIALIZATION_SEED",
     "ACTION_GATE_WEIGHT_STD",
-    "ACTION_RATIO",
-    "ActionLayout",
-    "ActionResidualLosses",
-    "HOLD_ACTION_INDEX",
+    "ActionIndexedLosses",
+    "ActionIndexedPredictions",
+    "ActionIndexedResidualOperators",
     "LATENT_DIM",
     "RESIDUAL_ALPHA",
-    "ResidualPredictions",
     "WHITENING_EPS",
     "WhiteningTerms",
-    "action_residual_losses",
-    "build_action_layout",
+    "action_independent_trunk",
+    "action_indexed_energy_nll",
     "initialize_action_gate_rows",
     "patch_whitening_terms",
-    "predict_live_and_control_residuals",
+    "predict_action_indexed_residuals",
+    "requested_action_indices",
     "residual_reconstruct",
 ]

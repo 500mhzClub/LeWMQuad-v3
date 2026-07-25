@@ -35,7 +35,7 @@ assert "torch" not in sys.modules
 assert not any(name.startswith("torch.") for name in sys.modules)
 assert module.PREFLIGHT_ENVIRONMENT_KEY == (
     "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
-    "V3_LIVE_REFERENCE_HINGE_PREFLIGHT_JSON"
+    "V4_ACTION_INDEXED_ENERGY_NLL_PREFLIGHT_JSON"
 )
 print("PASS")
 """
@@ -79,11 +79,36 @@ def _tiny_model(torch):
     class Predictor(nn.Module):
         def __init__(self) -> None:
             super().__init__()
-            self.state = nn.Linear(latent_dim, latent_dim, bias=False)
-            self.action = nn.Linear(9, latent_dim, bias=False)
+            self.latent_dim = latent_dim
+            self.num_spatial_tokens = 2
+            self.spatial_pos_embed = nn.Parameter(
+                torch.zeros(1, 2, latent_dim)
+            )
+            self.input_drop = nn.Identity()
+            self.blocks = nn.ModuleList([Block()])
+            self.norm = nn.LayerNorm(latent_dim)
+            self.action_embed = ForbiddenActionEmbed(9, latent_dim)
 
         def predict_step(self, state, action):
-            return self.state(state) + self.action(action)[:, None, :]
+            raise AssertionError("V4 must bypass predictor.predict_step")
+
+    class Block(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.projection = nn.Linear(
+                latent_dim,
+                latent_dim,
+                bias=False,
+            )
+
+        def forward(self, state, condition, *, causal):
+            assert causal is False
+            assert torch.count_nonzero(condition).item() == 0
+            return state + self.projection(state)
+
+    class ForbiddenActionEmbed(nn.Linear):
+        def forward(self, _action):
+            raise AssertionError("V4 must bypass predictor.action_embed")
 
     class Tiny(nn.Module):
         def __init__(self) -> None:
@@ -107,33 +132,34 @@ def _tiny_model(torch):
     return Tiny()
 
 
-def test_residual_whitening_adapter_composes_loss_and_routes_gradients() -> None:
+def test_action_indexed_adapter_composes_loss_and_routes_gradients() -> None:
     torch = pytest.importorskip("torch")
 
     module = _load_runner("_jepa_encoder_v1_current_only")
     model = _tiny_model(torch)
+    shared_projector = model.prediction_projector
+    model.prediction_projector = (
+        module._phase_a_ops().ActionIndexedResidualOperators(
+            shared_projector
+        )
+    )
     current = torch.arange(3 * 3 * 4 * 4, dtype=torch.float32).reshape(
         3, 3, 4, 4
     )
     next_rgb = (current + 1000.0).requires_grad_(True)
     action = torch.zeros((3, 9), dtype=torch.float32)
     action[torch.arange(3), torch.tensor([0, 6, 8])] = 1.0
-    non_hold = torch.tensor([True, False, True])
 
     output = module._phase_a_current_only_loss(
         model,
         current,
         next_rgb,
         action,
-        non_hold,
     )
     expected = (
         output["jepa_loss"]
-        + module.contract.ACTION_DISCRIMINATION_WEIGHT
-        * (
-            output["wrong_action_loss"]
-            + output["hold_action_loss"]
-        )
+        + module.contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT
+        * output["action_identification_loss"]
         + module.contract.WHITENING_VARIANCE_WEIGHT
         * (
             output["raw_whitening_variance_loss"]
@@ -145,15 +171,11 @@ def test_residual_whitening_adapter_composes_loss_and_routes_gradients() -> None
             + output["projected_whitening_covariance_loss"]
         )
     )
-    assert module.contract.ACTION_DISCRIMINATION_WEIGHT == 10.0
-    assert float(
-        (
-            output["wrong_action_loss"]
-            + output["hold_action_loss"]
-        ).detach()
-    ) > 0.0
+    assert module.contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT == 1.0
+    assert float(output["action_identification_loss"].detach()) > 0.0
     assert torch.equal(output["loss"], expected)
     assert output["prediction"].shape == (3, 2, 192)
+    assert output["all_action_predictions"].shape == (3, 9, 2, 192)
     assert output["control_predictions"].shape == (3, 8, 2, 192)
     assert output["control_indices"].shape == (3, 8)
     requested = action.argmax(dim=1)
@@ -161,13 +183,13 @@ def test_residual_whitening_adapter_composes_loss_and_routes_gradients() -> None
     assert set(output) == {
         "loss",
         "jepa_loss",
-        "wrong_action_loss",
-        "hold_action_loss",
+        "action_identification_loss",
         "raw_whitening_variance_loss",
         "raw_whitening_covariance_loss",
         "projected_whitening_variance_loss",
         "projected_whitening_covariance_loss",
         "prediction",
+        "all_action_predictions",
         "control_predictions",
         "control_indices",
         "online_state",
@@ -186,15 +208,19 @@ def test_residual_whitening_adapter_composes_loss_and_routes_gradients() -> None
     assert model.encoder.scale.grad is not None
     assert torch.count_nonzero(model.encoder.scale.grad).item() > 0
     for parameter in (
-        model.predictor.state.weight,
-        model.predictor.action.weight,
-        model.prediction_projector.weight,
-        model.prediction_projector.bias,
+        model.predictor.blocks[0].projection.weight,
+        model.prediction_projector.shared_projector.weight,
+        model.prediction_projector.shared_projector.bias,
+        model.prediction_projector.action_weights,
         model.online_target_projector.weight,
     ):
         assert parameter.grad is not None
         assert torch.isfinite(parameter.grad).all()
         assert torch.count_nonzero(parameter.grad).item() > 0
+    assert all(
+        parameter.grad is None
+        for parameter in model.predictor.action_embed.parameters()
+    )
     assert all(
         parameter.grad is None
         for parameter in model.appearance_projector.parameters()
@@ -241,6 +267,124 @@ def test_phase_a_partition_freezes_and_excludes_appearance_exactly() -> None:
     model.unregistered_science_delta = torch.nn.Parameter(torch.ones(()))
     with pytest.raises(PermissionError, match="partition changed"):
         module._phase_a_parameter_partition(model)
+
+
+def test_phase_a_initialization_receipt_binds_zero_bias_free_operator_bank(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    torch = pytest.importorskip("torch")
+    module = _load_runner("_jepa_encoder_v1_operator_initialization")
+    nn = torch.nn
+
+    class GateBlock(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.adaLN_modulation = nn.Sequential(
+                nn.SiLU(),
+                nn.Linear(192, 6 * 192),
+            )
+            nn.init.zeros_(self.adaLN_modulation[-1].weight)
+            nn.init.zeros_(self.adaLN_modulation[-1].bias)
+
+    class Predictor(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.blocks = nn.ModuleList([GateBlock()])
+
+    class InitializationModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.encoder = nn.Linear(2, 2)
+            self.online_target_projector = nn.Linear(192, 192)
+            self.prediction_projector = nn.Linear(192, 192)
+            self.predictor = Predictor()
+            self.appearance_projector = nn.Linear(192, 192)
+            self.target_encoder = nn.Linear(2, 2)
+            self.target_geometry_module = nn.Identity()
+            self.target_projector = nn.Linear(192, 192)
+            for frozen in (
+                self.target_encoder,
+                self.target_geometry_module,
+                self.target_projector,
+            ):
+                frozen.requires_grad_(False)
+
+    monkeypatch.setattr(module, "_state_sha", lambda *_args: "a" * 64)
+    phase2d = SimpleNamespace(
+        Phase2DSpatialLeWorldModel=lambda **_kwargs: InitializationModel()
+    )
+    fit = SimpleNamespace(encoder=nn.Linear(2, 2))
+    model, partition, receipt = module._phase_a_model(
+        SimpleNamespace(torch=torch),
+        phase2d,
+        fit,
+        torch.device("cpu"),
+    )
+
+    initialization = receipt[
+        "action_indexed_residual_operator_initialization"
+    ]
+    assert initialization["weight_shape"] == [9, 192, 192]
+    assert initialization["weight_scalar_count"] == 331_776
+    assert initialization["exact_zero_weight_scalar_count"] == 331_776
+    assert initialization["nonzero_weight_scalar_count"] == 0
+    assert initialization["bias_parameter_count"] == 0
+    assert initialization["bias"] is False
+    assert initialization["zero_initialized_without_rng_draw"] is True
+    assert initialization["global_rng_state_preserved"] is True
+    assert model.prediction_projector.action_weights.shape == (
+        9,
+        192,
+        192,
+    )
+    assert (
+        torch.count_nonzero(
+            model.prediction_projector.action_weights
+        ).item()
+        == 0
+    )
+    assert "action_bias" not in dict(
+        model.prediction_projector.named_parameters(recurse=False)
+    )
+    assert any(
+        parameter is model.prediction_projector.action_weights
+        for parameter in partition["other"]
+    )
+
+
+def test_update_zero_compares_all_36_action_pairs_across_495_rows() -> None:
+    torch = pytest.importorskip("torch")
+    module = _load_runner("_jepa_encoder_v1_update_zero_symmetry")
+    base = torch.arange(495 * 2 * 3, dtype=torch.float32).reshape(
+        495, 1, 2, 3
+    )
+    predictions = base.expand(-1, 9, -1, -1).clone()
+    row_count = 0
+    comparison_count = None
+    for batch in predictions.split(16):
+        rows, pairs = module._verify_update_zero_action_symmetry_batch(
+            torch,
+            batch,
+        )
+        row_count += rows
+        comparison_count = pairs if comparison_count is None else comparison_count
+        assert pairs == comparison_count
+    receipt = module._update_zero_action_symmetry_receipt(
+        row_count=row_count,
+        comparison_count=comparison_count,
+    )
+    assert receipt == {
+        "all_action_predictions_bitwise_equal": True,
+        "all_action_unordered_pair_count": 36,
+        "all_action_prediction_row_count": 495,
+    }
+
+    predictions[494, 8, 1, 2] += 1.0
+    with pytest.raises(PermissionError, match="not bitwise equal"):
+        module._verify_update_zero_action_symmetry_batch(
+            torch,
+            predictions[-15:],
+        )
 
 
 def _pair(
@@ -397,17 +541,24 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
         grid = torch.arange(9).expand(state.shape[0], -1)
         eligible = grid != requested[:, None]
         control_indices = grid[eligible].reshape(state.shape[0], 8)
-        control_energy = control_indices.to(torch.float32) + 2.0
-        controls = control_energy.sqrt()[:, :, None, None].expand(
+        all_energy = grid.to(torch.float32) + 2.0
+        all_predictions = all_energy.sqrt()[:, :, None, None].expand(
+            -1, -1, state.shape[1], state.shape[2]
+        ).clone()
+        all_predictions[
+            torch.arange(state.shape[0]),
+            requested,
+        ] = 1.0
+        control_gather = control_indices[:, :, None, None].expand(
             -1, -1, state.shape[1], state.shape[2]
         )
+        controls = all_predictions.gather(1, control_gather)
         return SimpleNamespace(
-            true=torch.ones_like(state),
+            executed_indices=requested,
+            all_predictions=all_predictions,
+            executed=torch.ones_like(state),
             controls=controls,
-            layout=SimpleNamespace(
-                control_indices=control_indices,
-                non_hold_mask=requested != 6,
-            ),
+            control_indices=control_indices,
         )
 
     monkeypatch.setattr(
@@ -415,7 +566,7 @@ def test_diagnostics_use_all_nine_cyclic_hardest_and_real_hold_controls(
         "_phase_a_ops",
         lambda: SimpleNamespace(
             normalize_spatial_tokens=lambda tokens: tokens,
-            predict_live_and_control_residuals=predict_residuals,
+            predict_action_indexed_residuals=predict_residuals,
         ),
     )
     model = DiagnosticModel()
@@ -464,7 +615,7 @@ def _passing_phase_a_metric(contract) -> dict[str, object]:
     per_family = {
         family: {
             "cyclic_wrong_action_minus_true_mse": 0.2,
-            "hardest_wrong_action_minus_true_mse": -100.0,
+            "hardest_wrong_action_minus_true_mse": 0.2,
             "hold_action_minus_non_hold_true_mse": 0.2,
             "hold_action_rows_match_non_hold_rows": True,
         }
@@ -488,7 +639,7 @@ def _passing_phase_a_metric(contract) -> dict[str, object]:
         "shuffled_next_mse": 1.0,
         "mean_target_mse": 1.0,
         "cyclic_wrong_action_mse": 1.0,
-        "hardest_wrong_action_mse": 0.01,
+        "hardest_wrong_action_mse": 1.0,
         "non_hold_true_pair_mse": 0.8,
         "hold_action_mse": 1.0,
         "shuffled_current_mse": 1.0,
@@ -503,6 +654,9 @@ def test_exact_phase_gates_keep_strict_and_population_boundaries() -> None:
     update0 = {
         "raw_cross_sample_variance": 1.0,
         "content_residual_spatial_diversity": 1.0,
+        "all_action_predictions_bitwise_equal": True,
+        "all_action_unordered_pair_count": 36,
+        "all_action_prediction_row_count": 495,
     }
     integrity = {
         "rng_state_preserved": True,
@@ -512,12 +666,15 @@ def test_exact_phase_gates_keep_strict_and_population_boundaries() -> None:
     assert terminal["passed"] is True
     assert (
         terminal["ratios"][
-            "true_to_hardest_wrong_action_informational"
+            "true_to_hardest_wrong_action"
         ]
-        == pytest.approx(80.0)
+        == pytest.approx(0.8)
     )
-    assert not any(
-        "hardest" in name for name in terminal["conjuncts"]
+    assert (
+        terminal["conjuncts"][
+            "true_at_most_point95_hardest_wrong_action"
+        ]
+        is True
     )
     assert contract.evaluate_phase_a_continuation(
         100, metric, update0, integrity
@@ -632,8 +789,7 @@ def test_update100_continuation_failure_stops_and_preserves_status(
         return {
             "loss": objective,
             "jepa_loss": objective,
-            "wrong_action_loss": zero,
-            "hold_action_loss": zero,
+            "action_identification_loss": zero,
             "raw_whitening_variance_loss": zero,
             "raw_whitening_covariance_loss": zero,
             "projected_whitening_variance_loss": zero,
@@ -652,6 +808,15 @@ def test_update100_continuation_failure_stops_and_preserves_status(
                 "raw_cross_sample_variance": 1.0,
                 "content_residual_spatial_diversity": 1.0,
             },
+            "action_indexed_symmetry": (
+                {
+                    "all_action_predictions_bitwise_equal": True,
+                    "all_action_unordered_pair_count": 36,
+                    "all_action_prediction_row_count": 495,
+                }
+                if update == 0
+                else None
+            ),
             "rng_state_preserved": True,
             "state_mutation_count": 0,
         }
@@ -701,11 +866,16 @@ def test_update100_continuation_failure_stops_and_preserves_status(
         general_frame_loader_call_count = 0
 
         @staticmethod
-        def batch(*_args, **_kwargs):
-            return (
+        def batch(*_args, include_non_hold=True, **_kwargs):
+            core = (
                 torch.zeros(1, 1),
                 torch.zeros(1, 1),
                 torch.zeros(1, 9),
+            )
+            if not include_non_hold:
+                return core
+            return (
+                *core,
                 torch.ones(1, dtype=torch.bool),
             )
 
