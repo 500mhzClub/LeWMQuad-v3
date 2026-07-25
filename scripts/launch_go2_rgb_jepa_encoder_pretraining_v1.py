@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authority-first launcher for Local-Correspondence Transport JEPA V7."""
+"""Authority-first launcher for All-Candidate Correspondence JEPA V8."""
 from __future__ import annotations
 
 import importlib.util
@@ -12,7 +12,7 @@ from typing import Sequence
 ROOT = Path(__file__).resolve().parents[1]
 PREFLIGHT_ENVIRONMENT_KEY = (
     "LEWM_RGB_ACTION_CONDITIONED_LOCAL_CORRESPONDENCE_"
-    "TRANSPORT_JEPA_V7_PREFLIGHT_JSON"
+    "ALL_CANDIDATE_IDENTIFICATION_JEPA_V8_PREFLIGHT_JSON"
 )
 
 
@@ -29,20 +29,20 @@ def _source_only_module(name: str, path: Path):
 contract = _source_only_module(
     (
         "_lewm_go2_rgb_jepa_encoder_pretraining_"
-        "v7_local_correspondence_transport_launcher_contract"
+        "v8_all_candidate_correspondence_launcher_contract"
     ),
     ROOT / "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py",
 )
 _BASE = _source_only_module(
     (
         "_lewm_go2_rgb_jepa_encoder_pretraining_"
-        "v7_local_correspondence_transport_base_launcher"
+        "v8_all_candidate_correspondence_base_launcher"
     ),
     ROOT / "scripts/launch_go2_rgb_causal_temporal_perception_v1.py",
 )
 
 # Reuse the reviewed source-authority validation and isolated environment.
-# V7 deliberately defers the Torch-importing hardware child until after the
+# V8 deliberately defers the Torch-importing hardware child until after the
 # runner has reserved the one-shot output root.
 _BASE.contract = contract
 _BASE.RUNNER_PATH = ROOT / contract.RUNNER_RELATIVE_PATH

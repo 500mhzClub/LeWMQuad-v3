@@ -29,6 +29,25 @@ def _per_action(value: Any) -> dict[str, Any]:
     return {action: deepcopy(value) for action in contract.ACTION_VOCABULARY}
 
 
+def _per_executed_action_identification(
+    *,
+    update_zero: bool,
+) -> dict[str, dict[str, int | float]]:
+    mean_nll = math.log(9.0) if update_zero else 1.0
+    return {
+        action: {
+            "row_count": 55,
+            "mean_nll": mean_nll,
+            "recall": (
+                (1.0 if index == 0 else 0.0)
+                if update_zero
+                else 15.0 / 55.0
+            ),
+        }
+        for index, action in enumerate(contract.ACTION_VOCABULARY)
+    }
+
+
 def _local_correspondence(*, update_zero: bool = False) -> dict[str, Any]:
     if update_zero:
         correct = math.log(9.0)
@@ -75,6 +94,19 @@ def _local_correspondence(*, update_zero: bool = False) -> dict[str, Any]:
             "all_action_distributions_bitwise_equal_to_uniform": True,
             "correct_and_deranged_cross_entropy_bitwise_equal": True,
             "all_action_transports_identity_exact": True,
+            "unscaled_correspondence_action_nll": correct,
+            "correspondence_action_probabilities_all_values_finite": True,
+            "correspondence_action_probability_rows_normalized": True,
+            "correspondence_action_top1_accuracy": 1.0 / 9.0,
+            "per_executed_action_correspondence_identification":
+                _per_executed_action_identification(update_zero=True),
+            "correspondence_action_macro_balanced_accuracy": 1.0 / 9.0,
+            "all_candidate_correspondence_costs_bitwise_equal": True,
+            "all_candidate_correspondence_scores_bitwise_equal": True,
+            "correspondence_action_posterior_bitwise_equal_to_uniform":
+                True,
+            "correspondence_action_nll_bitwise_equal_to_zero_logit_reference":
+                True,
         }
 
     correct = 1.90
@@ -128,6 +160,18 @@ def _local_correspondence(*, update_zero: bool = False) -> dict[str, Any]:
         "all_action_distributions_bitwise_equal_to_uniform": False,
         "correct_and_deranged_cross_entropy_bitwise_equal": False,
         "all_action_transports_identity_exact": False,
+        "unscaled_correspondence_action_nll": 1.0,
+        "correspondence_action_probabilities_all_values_finite": True,
+        "correspondence_action_probability_rows_normalized": True,
+        "correspondence_action_top1_accuracy": 15.0 / 55.0,
+        "per_executed_action_correspondence_identification":
+            _per_executed_action_identification(update_zero=False),
+        "correspondence_action_macro_balanced_accuracy": 15.0 / 55.0,
+        "all_candidate_correspondence_costs_bitwise_equal": False,
+        "all_candidate_correspondence_scores_bitwise_equal": False,
+        "correspondence_action_posterior_bitwise_equal_to_uniform": False,
+        "correspondence_action_nll_bitwise_equal_to_zero_logit_reference":
+            False,
     }
 
 
@@ -215,7 +259,7 @@ def _source_manifest_core() -> dict[str, Any]:
 
 
 class JepaEncoderPretrainingContractTests(unittest.TestCase):
-    def test_import_and_frozen_v7_evidence_are_exact(self) -> None:
+    def test_import_and_frozen_v8_evidence_are_exact(self) -> None:
         imported_roots = {
             name.partition(".")[0]
             for name in _MODULES_IMPORTED_BY_CONTRACT
@@ -226,35 +270,35 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(
             contract.SCHEMA_PREFIX,
             "lewm_go2_rgb_action_conditioned_local_correspondence_"
-            "transport_jepa_v7",
+            "all_candidate_identification_jepa_v8",
         )
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "094a478d219488a953b008bd7487b0a4a729a5bb",
+            "2d5e3c01e363d4910f09597119393c57e7e8ca34",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(len(raw), 21_190)
+        self.assertEqual(len(raw), 18_744)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "b17b543bc63b4201e8a049c90dfa43eaaf78b6035ccf4d94235c5bbc110b8aa0",
+            "3c532525fbd3109ec005bc32ad145ad1a7349a3602029ebc47177b7d986c81f7",
         )
         self.assertEqual(contract.prior_terminal_audit_binding(), {
             "path":
-                "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-                "v6_existing_pair_inverse_dynamics_terminal_audit_"
+                "docs/lewm_go2_rgb_action_conditioned_local_"
+                "correspondence_transport_jepa_v7_terminal_audit_"
                 "2026-07-25.json",
-            "commit": "c3259adc3b48a3f1d5784a1ada0eaac8b12f7855",
+            "commit": "cf21f4a3ed2caed103a765584bcadd29284c9282",
             "file_sha256":
-                "9ab15ff2100e46fd341d4266c534c289bd453f74517743886ceccea165e15d01",
+                "1e284375a5d1c79419aa21c553e48a5d396c1d33b27e3a56c0e58c4dae08e28f",
             "content_sha256":
-                "aed1a84c890ae5a7b5ad068cffe7cc1b3260bc4b39919366fcb9bee888666c6d",
-            "byte_count": 19_590,
+                "6b30ac4bb3784ea58822de7114197d184cd3a0a257ca29a60b858ab97b99c6f3",
+            "byte_count": 23_123,
         })
         self.assertEqual(
             contract.OUTPUT_ROOT_RELATIVE_PATH,
             ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-            "rgb_action_conditioned_local_correspondence_transport_jepa_"
-            "probe_v7",
+            "rgb_action_conditioned_local_correspondence_"
+            "all_candidate_identification_jepa_probe_v8",
         )
 
     def test_exact_transport_architecture_and_determinism_contract(self) -> None:
@@ -313,6 +357,22 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             "Hc(Q,logP)=-logP_4-sum_o(Q_o*(logP_o-logP_4))",
         )
         self.assertEqual(centered["loss_weight"], 1.0)
+        identification = science["phase_a"]["objective"][
+            "correspondence_action_identification"
+        ]
+        self.assertEqual(
+            contract.CORRESPONDENCE_ACTION_IDENTIFICATION_LOSS_WEIGHT,
+            1.0,
+        )
+        self.assertEqual(identification["loss_weight"], 1.0)
+        self.assertEqual(
+            identification["candidate_token_cost_helper"],
+            "centered_log_soft_cross_entropy(Q[:,None,:,:],g)",
+        )
+        self.assertEqual(identification["new_parameter_count"], 0)
+        self.assertFalse(
+            identification["shared_residual_or_online_target_projector_path"]
+        )
         self.assertEqual(
             science["phase_a"]["optimizer"]["determinism"],
             {
@@ -528,6 +588,160 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
                 malformed, _update0_metrics(), _observation_integrity()
             )
 
+    def test_correspondence_action_identification_gates_are_exact(self) -> None:
+        metrics = _passing_phase_a_metrics()
+        update0 = _update0_metrics()
+        result = contract.evaluate_phase_a(
+            metrics,
+            update0,
+            _observation_integrity(),
+        )
+        self.assertTrue(
+            result["conjuncts"][
+                "finite_unscaled_correspondence_action_nll_strictly_below_"
+                "frozen_update_zero_log9"
+            ]
+        )
+        self.assertTrue(
+            result["conjuncts"][
+                "correspondence_action_identification_macro_balanced_"
+                "accuracy_strictly_above_two_ninths"
+            ]
+        )
+
+        nll_boundary = _passing_phase_a_metrics()
+        nll = update0["local_correspondence"][
+            "unscaled_correspondence_action_nll"
+        ]
+        nll_observation = nll_boundary["local_correspondence"]
+        nll_observation["unscaled_correspondence_action_nll"] = nll
+        for row in nll_observation[
+            "per_executed_action_correspondence_identification"
+        ].values():
+            row["mean_nll"] = nll
+        result = contract.evaluate_phase_a(
+            nll_boundary,
+            update0,
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"][
+                "finite_unscaled_correspondence_action_nll_strictly_below_"
+                "frozen_update_zero_log9"
+            ]
+        )
+        for update in (100, 400):
+            continuation = contract.evaluate_phase_a_continuation(
+                update,
+                nll_boundary,
+                update0,
+                _observation_integrity(),
+            )
+            self.assertFalse(continuation["passed"])
+            self.assertFalse(
+                continuation["conjuncts"][
+                    "finite_unscaled_correspondence_action_nll_strictly_"
+                    "below_frozen_update_zero_log9"
+                ]
+            )
+
+        macro_boundary = _passing_phase_a_metrics()
+        macro_observation = macro_boundary["local_correspondence"]
+        macro_observation[
+            "correspondence_action_macro_balanced_accuracy"
+        ] = 2.0 / 9.0
+        macro_observation["correspondence_action_top1_accuracy"] = 2.0 / 9.0
+        for index, row in enumerate(macro_observation[
+            "per_executed_action_correspondence_identification"
+        ].values()):
+            row["recall"] = (13.0 if index < 2 else 12.0) / 55.0
+        result = contract.evaluate_phase_a(
+            macro_boundary,
+            update0,
+            _observation_integrity(),
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"][
+                "correspondence_action_identification_macro_balanced_"
+                "accuracy_strictly_above_two_ninths"
+            ]
+        )
+        for update in (100, 400):
+            continuation = contract.evaluate_phase_a_continuation(
+                update,
+                macro_boundary,
+                update0,
+                _observation_integrity(),
+            )
+            self.assertFalse(continuation["passed"])
+            self.assertFalse(
+                continuation["conjuncts"][
+                    "correspondence_action_identification_macro_balanced_"
+                    "accuracy_strictly_above_two_ninths"
+                ]
+            )
+
+    def test_correspondence_action_identification_receipt_is_strict(self) -> None:
+        malformed = _passing_phase_a_metrics()
+        del malformed["local_correspondence"][
+            "correspondence_action_top1_accuracy"
+        ]
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                malformed,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+
+        malformed = _passing_phase_a_metrics()
+        first = contract.ACTION_VOCABULARY[0]
+        malformed["local_correspondence"][
+            "per_executed_action_correspondence_identification"
+        ][first]["mean_nll"] = 0.5
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                malformed,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+
+        changed_population = _passing_phase_a_metrics()
+        rows = changed_population["local_correspondence"][
+            "per_executed_action_correspondence_identification"
+        ]
+        rows[contract.ACTION_VOCABULARY[0]]["row_count"] += 1
+        rows[contract.ACTION_VOCABULARY[1]]["row_count"] -= 1
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                changed_population,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+
+        update0 = _update0_metrics()
+        update0["local_correspondence"][
+            "correspondence_action_nll_bitwise_equal_to_zero_logit_reference"
+        ] = False
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                _passing_phase_a_metrics(),
+                update0,
+                _observation_integrity(),
+            )
+
+        malformed_finiteness = _passing_phase_a_metrics()
+        malformed_finiteness["local_correspondence"][
+            "correspondence_action_probabilities_all_values_finite"
+        ] = False
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a(
+                malformed_finiteness,
+                _update0_metrics(),
+                _observation_integrity(),
+            )
+
     def test_update_zero_correspondence_is_exact_and_target_is_viable(
         self,
     ) -> None:
@@ -614,7 +828,7 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         passing["total_shortfall"] = 41.01776266878769
         self.assertFalse(contract.evaluate_phase_b(passing)["passed"])
 
-    def test_manifest_review_and_authorization_templates_bind_v7(self) -> None:
+    def test_manifest_review_and_authorization_templates_bind_v8(self) -> None:
         manifest = contract.with_content_sha256(_source_manifest_core())
         raw = contract.canonical_json_bytes(manifest) + b"\n"
         self.assertEqual(contract.validate_source_manifest(raw), manifest)

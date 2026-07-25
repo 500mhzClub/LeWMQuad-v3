@@ -23,11 +23,13 @@ from lewm.models.patch_whitened_action_residual_jepa import (
     ActionIndexedLosses,
     ActionIndexedPredictions,
     ActionConditionedLocalCorrespondenceTransport,
+    CorrespondenceActionIdentificationTerms,
     CorrespondenceTargets,
     CorrespondenceTerms,
     action_independent_trunk,
     action_indexed_energy_nll,
     centered_log_soft_cross_entropy,
+    correspondence_action_identification_nll,
     initialize_action_gate_rows,
     local_correspondence_targets,
     local_correspondence_terms,
@@ -683,6 +685,353 @@ def test_correspondence_terms_match_exact_executed_formula_and_scale_detaches() 
         row_scale,
         allow_unused=True,
     )[0] is None
+
+
+def _predictions_with_transport_logits(
+    executed_indices: list[int],
+    logits: torch.Tensor,
+) -> ActionIndexedPredictions:
+    indices = torch.tensor(
+        executed_indices,
+        device=logits.device,
+        dtype=torch.long,
+    )
+    unused = torch.empty(0, device=logits.device, dtype=logits.dtype)
+    return ActionIndexedPredictions(
+        executed_indices=indices,
+        all_predictions=unused,
+        all_transport_logits=logits,
+        all_transport_probabilities=unused,
+        all_expected_offsets=unused,
+        all_transports=unused,
+        executed=unused,
+        control_indices=torch.empty(
+            0,
+            device=logits.device,
+            dtype=torch.long,
+        ),
+        controls=unused,
+    )
+
+
+def test_correspondence_action_identification_matches_exact_aggregation() -> None:
+    torch.manual_seed(20260725)
+    target_probabilities = torch.softmax(
+        torch.randn(2, TOKEN_COUNT, NEIGHBOR_COUNT),
+        dim=-1,
+    ).requires_grad_()
+    student_logits = torch.randn(
+        2,
+        ACTION_DIM,
+        TOKEN_COUNT,
+        NEIGHBOR_COUNT,
+        requires_grad=True,
+    )
+    predictions = _predictions_with_transport_logits(
+        [2, 7],
+        student_logits,
+    )
+    row_scale = torch.tensor([0.125, 0.375], requires_grad=True)
+
+    terms = correspondence_action_identification_nll(
+        target_probabilities,
+        predictions,
+        row_scale,
+    )
+    expected_token_hc = centered_log_soft_cross_entropy(
+        target_probabilities.detach()[:, None],
+        student_logits,
+    )
+    expected_costs = expected_token_hc.mean(dim=2)
+    expected_scores = -expected_costs
+    expected_nll = F.cross_entropy(
+        expected_scores,
+        torch.tensor([2, 7]),
+        reduction="none",
+    )
+
+    assert isinstance(terms, CorrespondenceActionIdentificationTerms)
+    assert torch.equal(terms.all_candidate_costs, expected_costs)
+    assert torch.equal(terms.scores, expected_scores)
+    assert torch.equal(terms.nll_per_row, expected_nll)
+    assert torch.equal(terms.unscaled_nll, expected_nll.mean())
+    assert torch.equal(
+        terms.loss,
+        (row_scale.detach() * expected_nll).mean(),
+    )
+    assert torch.equal(
+        terms.action_probabilities,
+        torch.softmax(expected_scores, dim=-1),
+    )
+    gradients = torch.autograd.grad(
+        terms.loss,
+        (student_logits, target_probabilities, row_scale),
+        allow_unused=True,
+    )
+    assert gradients[0] is not None
+    assert torch.isfinite(gradients[0]).all()
+    assert torch.count_nonzero(gradients[0]).item() > 0
+    assert gradients[1] is None
+    assert gradients[2] is None
+
+
+def test_zero_transport_correspondence_action_identification_opens_only_weight() -> None:
+    predictor, projector = _spatial_fixture()
+    current = _spatial_latents(3).requires_grad_()
+    next_state = _next_spatial_latents(current.detach()).requires_grad_()
+    online = torch.randn(
+        3,
+        TOKEN_COUNT,
+        LATENT_DIM,
+        requires_grad=True,
+    )
+    row_scale = torch.tensor(
+        [0.2, 0.3, 0.4],
+        requires_grad=True,
+    )
+    targets = local_correspondence_targets(
+        projector,
+        current,
+        next_state,
+    )
+    predictions = predict_action_conditioned_local_transports(
+        predictor,
+        projector,
+        online,
+        _one_hot([0, HOLD_ACTION_INDEX, 8]),
+        current,
+    )
+    terms = correspondence_action_identification_nll(
+        targets,
+        predictions,
+        row_scale,
+    )
+    zero_scores = torch.zeros_like(terms.scores)
+    expected_nll = F.cross_entropy(
+        zero_scores,
+        predictions.executed_indices,
+        reduction="none",
+    )
+
+    assert torch.equal(
+        terms.all_candidate_costs,
+        terms.all_candidate_costs[:, :1].expand_as(
+            terms.all_candidate_costs
+        ),
+    )
+    assert torch.equal(
+        terms.scores,
+        terms.scores[:, :1].expand_as(terms.scores),
+    )
+    assert torch.equal(
+        terms.action_probabilities,
+        torch.softmax(zero_scores, dim=-1),
+    )
+    assert torch.equal(terms.nll_per_row, expected_nll)
+    assert torch.equal(terms.unscaled_nll, expected_nll.mean())
+    assert torch.equal(
+        predictions.all_transport_probabilities[:, HOLD_ACTION_INDEX],
+        torch.softmax(
+            torch.zeros_like(
+                predictions.all_transport_logits[:, HOLD_ACTION_INDEX]
+            ),
+            dim=-1,
+        ),
+    )
+
+    action_parameters = tuple(predictor.action_embed.parameters())
+    gradients = torch.autograd.grad(
+        terms.loss,
+        (
+            projector.transport_weight,
+            online,
+            *action_parameters,
+            current,
+            next_state,
+            row_scale,
+        ),
+        allow_unused=True,
+    )
+    assert gradients[0] is not None
+    assert torch.isfinite(gradients[0]).all()
+    assert torch.count_nonzero(gradients[0]).item() > 0
+    assert all(
+        gradient is None
+        or (
+            torch.isfinite(gradient).all()
+            and torch.count_nonzero(gradient).item() == 0
+        )
+        for gradient in gradients[1:]
+    )
+
+
+def test_active_correspondence_action_identification_routing_and_hold() -> None:
+    predictor, projector = _spatial_fixture()
+    _install_deterministic_transport_weight(projector)
+    current = _spatial_latents(1).requires_grad_()
+    next_state = _next_spatial_latents(current.detach()).requires_grad_()
+    online = torch.randn(
+        1,
+        TOKEN_COUNT,
+        LATENT_DIM,
+        requires_grad=True,
+    )
+    row_scale = torch.tensor([0.3], requires_grad=True)
+    targets = local_correspondence_targets(
+        projector,
+        current,
+        next_state,
+    )
+    predictions = predict_action_conditioned_local_transports(
+        predictor,
+        projector,
+        online,
+        _one_hot([2]),
+        current,
+    )
+    terms = correspondence_action_identification_nll(
+        targets,
+        predictions,
+        row_scale,
+    )
+    uniform_hold_logits = torch.zeros_like(
+        predictions.all_transport_logits[:, HOLD_ACTION_INDEX]
+    )
+    expected_hold_cost = centered_log_soft_cross_entropy(
+        targets.probabilities,
+        uniform_hold_logits,
+    ).mean(dim=1)
+
+    assert torch.count_nonzero(
+        predictions.all_transport_logits[:, HOLD_ACTION_INDEX]
+    ).item() == 0
+    assert torch.equal(
+        terms.all_candidate_costs[:, HOLD_ACTION_INDEX],
+        expected_hold_cost,
+    )
+    assert torch.count_nonzero(
+        predictions.all_expected_offsets[:, HOLD_ACTION_INDEX]
+    ).item() == 0
+    assert torch.equal(
+        predictions.all_transports[:, HOLD_ACTION_INDEX],
+        current.detach(),
+    )
+
+    action_parameters = tuple(predictor.action_embed.parameters())
+    wrong_gradients = torch.autograd.grad(
+        terms.all_candidate_costs[:, 4].sum(),
+        (
+            online,
+            projector.transport_weight,
+            *action_parameters,
+            current,
+            next_state,
+        ),
+        retain_graph=True,
+        allow_unused=True,
+    )
+    assert wrong_gradients[0] is None or (
+        torch.count_nonzero(wrong_gradients[0]).item() == 0
+    )
+    assert wrong_gradients[1] is not None
+    assert torch.count_nonzero(wrong_gradients[1]).item() > 0
+    assert any(
+        gradient is not None
+        and torch.count_nonzero(gradient).item() > 0
+        for gradient in wrong_gradients[2:-2]
+    )
+    assert wrong_gradients[-2] is None
+    assert wrong_gradients[-1] is None
+
+    gradients = torch.autograd.grad(
+        terms.loss,
+        (
+            projector.transport_weight,
+            online,
+            *action_parameters,
+            current,
+            next_state,
+            row_scale,
+        ),
+        allow_unused=True,
+    )
+    assert gradients[0] is not None
+    assert torch.count_nonzero(gradients[0]).item() > 0
+    assert gradients[1] is not None
+    assert torch.count_nonzero(gradients[1]).item() > 0
+    assert any(
+        gradient is not None
+        and torch.count_nonzero(gradient).item() > 0
+        for gradient in gradients[2:-3]
+    )
+    assert gradients[-3] is None
+    assert gradients[-2] is None
+    assert gradients[-1] is None
+
+
+def test_correspondence_action_scores_are_executed_label_value_invariant() -> None:
+    predictor, projector = _spatial_fixture()
+    _install_deterministic_transport_weight(projector)
+    current = _spatial_latents(2)
+    next_state = _next_spatial_latents(current)
+    online = torch.randn(2, TOKEN_COUNT, LATENT_DIM)
+    targets = local_correspondence_targets(
+        projector,
+        current,
+        next_state,
+    )
+    left_predictions = predict_action_conditioned_local_transports(
+        predictor,
+        projector,
+        online,
+        _one_hot([1, 3]),
+        current,
+    )
+    right_predictions = predict_action_conditioned_local_transports(
+        predictor,
+        projector,
+        online,
+        _one_hot([5, 8]),
+        current,
+    )
+    left = correspondence_action_identification_nll(
+        targets,
+        left_predictions,
+        torch.tensor([0.2, 0.4]),
+    )
+    right = correspondence_action_identification_nll(
+        targets,
+        right_predictions,
+        torch.tensor([0.2, 0.4]),
+    )
+
+    assert torch.equal(
+        left_predictions.all_transport_logits,
+        right_predictions.all_transport_logits,
+    )
+    assert torch.equal(
+        left_predictions.all_transport_probabilities,
+        right_predictions.all_transport_probabilities,
+    )
+    assert torch.equal(left.all_candidate_costs, right.all_candidate_costs)
+    assert torch.equal(left.scores, right.scores)
+    assert torch.equal(left.action_probabilities, right.action_probabilities)
+    assert torch.equal(
+        left.nll_per_row,
+        F.cross_entropy(
+            left.scores,
+            left_predictions.executed_indices,
+            reduction="none",
+        ),
+    )
+    assert torch.equal(
+        right.nll_per_row,
+        F.cross_entropy(
+            right.scores,
+            right_predictions.executed_indices,
+            reduction="none",
+        ),
+    )
 
 
 def test_zero_transport_opens_then_online_and_action_paths_become_live() -> None:

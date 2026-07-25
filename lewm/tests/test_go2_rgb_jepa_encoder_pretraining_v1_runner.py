@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -36,7 +37,10 @@ assert "torch" not in sys.modules
 assert not any(name.startswith("torch.") for name in sys.modules)
 assert module.PREFLIGHT_ENVIRONMENT_KEY == (
     "LEWM_RGB_ACTION_CONDITIONED_LOCAL_CORRESPONDENCE_"
-    "TRANSPORT_JEPA_V7_PREFLIGHT_JSON"
+    "ALL_CANDIDATE_IDENTIFICATION_JEPA_V8_PREFLIGHT_JSON"
+)
+assert module.contract.PREREGISTRATION_COMMIT == (
+    "2d5e3c01e363d4910f09597119393c57e7e8ca34"
 )
 print("PASS")
 """
@@ -121,7 +125,7 @@ def _tiny_model(torch):
             self.action_embed = nn.Linear(9, latent_dim, bias=False)
 
         def predict_step(self, state, action):
-            raise AssertionError("V7 must bypass predictor.predict_step")
+            raise AssertionError("V8 must bypass predictor.predict_step")
 
     class Block(nn.Module):
         def __init__(self) -> None:
@@ -159,7 +163,7 @@ def _tiny_model(torch):
     return Tiny()
 
 
-def test_v7_adapter_composes_transport_losses_and_routes_gradients() -> None:
+def test_v8_adapter_adds_all_candidate_identification_and_routes_gradients() -> None:
     torch = pytest.importorskip("torch")
 
     module = _load_runner("_jepa_encoder_v1_current_only")
@@ -189,6 +193,8 @@ def test_v7_adapter_composes_transport_losses_and_routes_gradients() -> None:
         * output["action_identification_loss"]
         + module.contract.LOCAL_CORRESPONDENCE_LOSS_WEIGHT
         * output["local_correspondence_loss"]
+        + module.contract.CORRESPONDENCE_ACTION_IDENTIFICATION_LOSS_WEIGHT
+        * output["correspondence_action_identification_loss"]
         + module.contract.WHITENING_VARIANCE_WEIGHT
         * (
             output["raw_whitening_variance_loss"]
@@ -201,7 +207,13 @@ def test_v7_adapter_composes_transport_losses_and_routes_gradients() -> None:
         )
     )
     assert module.contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT == 1.0
+    assert (
+        module.contract.CORRESPONDENCE_ACTION_IDENTIFICATION_LOSS_WEIGHT
+        == 1.0
+    )
     assert float(output["action_identification_loss"].detach()) > 0.0
+    assert float(output["correspondence_action_identification_loss"].detach()) > 0.0
+    assert float(output["unscaled_correspondence_action_nll"].detach()) > 0.0
     assert torch.equal(output["loss"], expected)
     assert output["prediction"].shape == (3, 256, 192)
     assert output["all_action_predictions"].shape == (3, 9, 256, 192)
@@ -211,6 +223,24 @@ def test_v7_adapter_composes_transport_losses_and_routes_gradients() -> None:
     assert output["all_transport_probabilities"].shape == (3, 9, 256, 9)
     assert output["all_expected_offsets"].shape == (3, 9, 256, 2)
     assert output["all_transports"].shape == (3, 9, 256, 192)
+    assert output["correspondence_action_nll_per_row"].shape == (3,)
+    assert output["all_candidate_correspondence_costs"].shape == (3, 9)
+    assert output["correspondence_action_scores"].shape == (3, 9)
+    assert output["correspondence_action_probabilities"].shape == (3, 9)
+    assert torch.equal(
+        output["correspondence_action_scores"],
+        -output["all_candidate_correspondence_costs"],
+    )
+    assert torch.equal(
+        output["unscaled_correspondence_action_nll"],
+        output["correspondence_action_nll_per_row"].mean(),
+    )
+    assert torch.allclose(
+        output["correspondence_action_probabilities"].sum(dim=1),
+        torch.ones(3),
+        rtol=0.0,
+        atol=1e-6,
+    )
     assert output["local_correspondence_target"].probabilities.shape == (
         3,
         256,
@@ -225,6 +255,12 @@ def test_v7_adapter_composes_transport_losses_and_routes_gradients() -> None:
         "local_correspondence_loss",
         "local_correspondence_unscaled_cross_entropy",
         "local_correspondence_cross_entropy_per_row",
+        "correspondence_action_identification_loss",
+        "unscaled_correspondence_action_nll",
+        "correspondence_action_nll_per_row",
+        "all_candidate_correspondence_costs",
+        "correspondence_action_scores",
+        "correspondence_action_probabilities",
         "raw_whitening_variance_loss",
         "raw_whitening_covariance_loss",
         "projected_whitening_variance_loss",
@@ -780,6 +816,18 @@ def test_diagnostics_use_exact_row_correspondence_aggregations_and_controls(
     expanded_q = correct_q[:, None].expand(-1, 9, -1)
     expanded_logits = all_logits[None].expand(9, -1, -1)
     all_ce = centered_ce(expanded_q, expanded_logits)
+    expected_scores = -all_ce
+    expected_probabilities = torch.softmax(expected_scores, dim=1)
+    expected_nll_rows = torch.nn.functional.cross_entropy(
+        expected_scores,
+        torch.arange(9),
+        reduction="none",
+    )
+    expected_predictions = expected_scores.argmax(dim=1)
+    expected_recalls = torch.tensor([
+        float(expected_predictions[action_index] == action_index)
+        for action_index in range(9)
+    ])
     wrong_mask = ~torch.eye(9, dtype=torch.bool)
     expected_h = all_ce[wrong_mask].reshape(9, 8).min(dim=1).values
     assert correspondence["correct_centered_log_cross_entropy"] == (
@@ -809,6 +857,48 @@ def test_diagnostics_use_exact_row_correspondence_aggregations_and_controls(
         float((expected_h - expected_c).mean()),
         abs=1e-7,
     )
+    assert correspondence["unscaled_correspondence_action_nll"] == (
+        pytest.approx(float(expected_nll_rows.mean()))
+    )
+    assert correspondence[
+        "correspondence_action_probabilities_all_values_finite"
+    ] is True
+    assert correspondence[
+        "correspondence_action_probability_rows_normalized"
+    ] is True
+    assert correspondence["correspondence_action_top1_accuracy"] == (
+        pytest.approx(
+            float((expected_predictions == torch.arange(9)).float().mean())
+        )
+    )
+    per_action = correspondence[
+        "per_executed_action_correspondence_identification"
+    ]
+    assert tuple(per_action) == module.contract.ACTION_VOCABULARY
+    for action_index, action_name in enumerate(
+        module.contract.ACTION_VOCABULARY
+    ):
+        assert per_action[action_name] == {
+            "row_count": 1,
+            "mean_nll": pytest.approx(float(expected_nll_rows[action_index])),
+            "recall": float(expected_recalls[action_index]),
+        }
+    assert correspondence[
+        "correspondence_action_macro_balanced_accuracy"
+    ] == pytest.approx(float(expected_recalls.mean()))
+    assert torch.isfinite(expected_probabilities).all()
+    assert correspondence[
+        "all_candidate_correspondence_costs_bitwise_equal"
+    ] is False
+    assert correspondence[
+        "all_candidate_correspondence_scores_bitwise_equal"
+    ] is False
+    assert correspondence[
+        "correspondence_action_posterior_bitwise_equal_to_uniform"
+    ] is False
+    assert correspondence[
+        "correspondence_action_nll_bitwise_equal_to_zero_logit_reference"
+    ] is False
     assert correspondence[
         "non_hold_action_distribution_different_from_hold_count"
     ] == 8
@@ -823,9 +913,22 @@ def test_diagnostics_use_exact_row_correspondence_aggregations_and_controls(
 
 
 def _local_correspondence_metric(contract, *, update_zero: bool) -> dict[str, object]:
-    baseline = float(torch.log(torch.tensor(9.0))) if "torch" in globals() else 2.1972245773362196
+    baseline = 2.1972246170043945
     correct = baseline if update_zero else 1.0
     comparison = baseline if update_zero else 1.2
+    action_counts = (55,) * 9
+    per_executed_action = {
+        action: {
+            "row_count": action_counts[index],
+            "mean_nll": baseline if update_zero else 1.0,
+            "recall": (
+                1.0
+                if (not update_zero or index == 0)
+                else 0.0
+            ),
+        }
+        for index, action in enumerate(contract.ACTION_VOCABULARY)
+    }
     return {
         "all_values_finite": True,
         "target_all_values_finite": True,
@@ -836,6 +939,22 @@ def _local_correspondence_metric(contract, *, update_zero: bool) -> dict[str, ob
         "transport_weight_all_values_finite": True,
         "transport_weight_any_nonzero": not update_zero,
         "maximum_absolute_student_logit": 0.0 if update_zero else 0.5,
+        "unscaled_correspondence_action_nll":
+            baseline if update_zero else 1.0,
+        "correspondence_action_probabilities_all_values_finite": True,
+        "correspondence_action_probability_rows_normalized": True,
+        "correspondence_action_top1_accuracy":
+            action_counts[0] / 495.0 if update_zero else 1.0,
+        "per_executed_action_correspondence_identification":
+            per_executed_action,
+        "correspondence_action_macro_balanced_accuracy":
+            1.0 / 9.0 if update_zero else 1.0,
+        "all_candidate_correspondence_costs_bitwise_equal": update_zero,
+        "all_candidate_correspondence_scores_bitwise_equal": update_zero,
+        "correspondence_action_posterior_bitwise_equal_to_uniform":
+            update_zero,
+        "correspondence_action_nll_bitwise_equal_to_zero_logit_reference":
+            update_zero,
         "correct_centered_log_cross_entropy": correct,
         "deranged_centered_log_cross_entropy": comparison,
         "correct_to_deranged_cross_entropy_ratio": correct / comparison,
@@ -1063,6 +1182,8 @@ def test_update100_continuation_failure_stops_and_preserves_status(
             "action_identification_loss": zero,
             "local_correspondence_loss": zero,
             "local_correspondence_unscaled_cross_entropy": zero,
+            "correspondence_action_identification_loss": zero,
+            "unscaled_correspondence_action_nll": zero,
             "raw_whitening_variance_loss": zero,
             "raw_whitening_covariance_loss": zero,
             "projected_whitening_variance_loss": zero,
@@ -1194,6 +1315,17 @@ def test_update100_continuation_failure_stops_and_preserves_status(
     assert artifact["status"] == expected_status
     assert artifact["gate"]["control"] == expected_status
     assert artifact["training_trace"]["row_count"] == 100
+    trace_rows = [
+        json.loads(row)
+        for row in (
+            tmp_path / "phase_a/training_trace.jsonl"
+        ).read_text(encoding="ascii").splitlines()
+    ]
+    assert len(trace_rows) == 100
+    assert {
+        "correspondence_action_identification_loss",
+        "unscaled_correspondence_action_nll",
+    }.issubset(trace_rows[-1]["losses"])
     assert published["metrics.json"]["status"] == expected_status
     assert published["metrics.json"]["selection_evaluation_updates"] == [
         0,

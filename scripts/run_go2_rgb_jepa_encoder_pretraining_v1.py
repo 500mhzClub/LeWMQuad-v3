@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the V7 Action-Conditioned Local-Correspondence Transport JEPA probe.
+"""Run the V8 Local-Correspondence All-Candidate Identification JEPA probe.
 
 Importing this module is source-only.  Torch, PIL, NumPy, generated inputs,
 RGB payloads, and checkpoints are first reachable after exact source
@@ -31,7 +31,10 @@ _CONTRACT_PATH = (
     ROOT / "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
 )
 _CONTRACT_SPEC = importlib.util.spec_from_file_location(
-    "_lewm_go2_rgb_jepa_encoder_pretraining_v7_correspondence_contract",
+    (
+        "_lewm_go2_rgb_jepa_encoder_pretraining_"
+        "v8_all_candidate_identification_contract"
+    ),
     _CONTRACT_PATH,
 )
 if _CONTRACT_SPEC is None or _CONTRACT_SPEC.loader is None:
@@ -41,7 +44,7 @@ _CONTRACT_SPEC.loader.exec_module(contract)
 
 PREFLIGHT_ENVIRONMENT_KEY = (
     "LEWM_RGB_ACTION_CONDITIONED_LOCAL_CORRESPONDENCE_"
-    "TRANSPORT_JEPA_V7_PREFLIGHT_JSON"
+    "ALL_CANDIDATE_IDENTIFICATION_JEPA_V8_PREFLIGHT_JSON"
 )
 THREAD_ENVIRONMENT = (
     "OMP_NUM_THREADS",
@@ -457,7 +460,7 @@ def _run_preflight_after_reservation(
         expected_sha256=launcher_source_sha256,
     )
     launcher = _load_source_module(
-        "_lewm_v7_deferred_hardware_preflight_launcher",
+        "_lewm_v8_deferred_hardware_preflight_launcher",
         ROOT / contract.LAUNCHER_RELATIVE_PATH,
     )
     program = getattr(launcher, "NO_TENSOR_PREFLIGHT_PROGRAM", None)
@@ -544,6 +547,7 @@ def _phase_a_ops() -> SimpleNamespace:
         ActionConditionedLocalCorrespondenceTransport,
         action_indexed_energy_nll,
         centered_log_soft_cross_entropy,
+        correspondence_action_identification_nll,
         initialize_action_gate_rows,
         local_correspondence_targets,
         local_correspondence_terms,
@@ -557,6 +561,9 @@ def _phase_a_ops() -> SimpleNamespace:
         ),
         action_indexed_energy_nll=action_indexed_energy_nll,
         centered_log_soft_cross_entropy=centered_log_soft_cross_entropy,
+        correspondence_action_identification_nll=(
+            correspondence_action_identification_nll
+        ),
         initialize_action_gate_rows=initialize_action_gate_rows,
         local_correspondence_targets=local_correspondence_targets,
         local_correspondence_terms=local_correspondence_terms,
@@ -576,7 +583,7 @@ def _phase_a_current_only_loss(
     *,
     ops: Any | None = None,
 ) -> dict[str, Any]:
-    """Exact V7 Phase-A objective over one frozen current/next RGB pair."""
+    """Exact V8 Phase-A objective over one frozen current/next RGB pair."""
     ops = _phase_a_ops() if ops is None else ops
     if (
         current_rgb.ndim != 4
@@ -630,6 +637,11 @@ def _phase_a_current_only_loss(
         predictions,
         action_losses.row_scale,
     )
+    correspondence_action = ops.correspondence_action_identification_nll(
+        correspondence_target.probabilities,
+        predictions,
+        action_losses.row_scale,
+    )
     raw_whitening = ops.patch_whitening_terms(online_state.float())
     projected_whitening = ops.patch_whitening_terms(
         online_projected.float()
@@ -640,6 +652,8 @@ def _phase_a_current_only_loss(
         * action_losses.identification
         + contract.LOCAL_CORRESPONDENCE_LOSS_WEIGHT
         * correspondence.loss
+        + contract.CORRESPONDENCE_ACTION_IDENTIFICATION_LOSS_WEIGHT
+        * correspondence_action.loss
         + contract.WHITENING_VARIANCE_WEIGHT
         * (raw_whitening.variance + projected_whitening.variance)
         + contract.WHITENING_COVARIANCE_WEIGHT
@@ -654,6 +668,17 @@ def _phase_a_current_only_loss(
             correspondence.centered_cross_entropy,
         "local_correspondence_cross_entropy_per_row":
             correspondence.cross_entropy_per_row,
+        "correspondence_action_identification_loss":
+            correspondence_action.loss,
+        "unscaled_correspondence_action_nll":
+            correspondence_action.unscaled_nll,
+        "correspondence_action_nll_per_row":
+            correspondence_action.nll_per_row,
+        "all_candidate_correspondence_costs":
+            correspondence_action.all_candidate_costs,
+        "correspondence_action_scores": correspondence_action.scores,
+        "correspondence_action_probabilities":
+            correspondence_action.action_probabilities,
         "raw_whitening_variance_loss": raw_whitening.variance,
         "raw_whitening_covariance_loss": raw_whitening.covariance,
         "projected_whitening_variance_loss":
@@ -976,7 +1001,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.MATCHED_V1_RUNNER_RELATIVE_PATH],
     )
     matched = _load_source_module(
-        "_lewm_jepa_encoder_v7_correspondence_matched_loader",
+        "_lewm_jepa_encoder_v8_correspondence_matched_loader",
         matched_path,
     )
     runtime = matched._load_runtime()
@@ -985,7 +1010,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.SCHEDULE_ADAPTER_RELATIVE_PATH],
     )
     schedule_adapter = _load_source_module(
-        "_lewm_jepa_encoder_v7_correspondence_schedule_adapter",
+        "_lewm_jepa_encoder_v8_correspondence_schedule_adapter",
         ROOT / contract.SCHEDULE_ADAPTER_RELATIVE_PATH,
     )
 
@@ -1905,6 +1930,92 @@ def _phase_a_diagnostics(
         correct_ce = correct_ce_tokens.mean(dim=1)
         deranged_ce = deranged_ce_tokens.mean(dim=1)
         all_candidate_ce = all_candidate_ce_tokens.mean(dim=2)
+        correspondence_action_scores = -all_candidate_ce
+        correspondence_action_probabilities = torch.softmax(
+            correspondence_action_scores,
+            dim=1,
+        )
+        correspondence_action_nll_per_row = (
+            torch.nn.functional.cross_entropy(
+                correspondence_action_scores,
+                requested_indices,
+                reduction="none",
+            )
+        )
+        correspondence_action_predictions = (
+            correspondence_action_scores.argmax(dim=1)
+        )
+        correspondence_action_nll = (
+            correspondence_action_nll_per_row.mean()
+        )
+        correspondence_action_top1 = (
+            int(
+                (
+                    correspondence_action_predictions == requested_indices
+                ).sum().item()
+            )
+            / float(len(pairs))
+        )
+        per_executed_action_correspondence: dict[
+            str, dict[str, int | float]
+        ] = {}
+        per_action_recalls: list[float] = []
+        for action_index, action_name in enumerate(
+            contract.ACTION_VOCABULARY
+        ):
+            action_mask = requested_indices == action_index
+            action_count = int(action_mask.sum().item())
+            if action_count < 1:
+                raise PermissionError(
+                    "Phase-A correspondence-action population is empty: "
+                    f"{action_name}"
+                )
+            action_recall = (
+                int(
+                    (
+                        correspondence_action_predictions[action_mask]
+                        == action_index
+                    ).sum().item()
+                )
+                / float(action_count)
+            )
+            per_action_recalls.append(action_recall)
+            per_executed_action_correspondence[action_name] = {
+                "row_count": action_count,
+                "mean_nll": float(
+                    correspondence_action_nll_per_row[action_mask].mean()
+                ),
+                "recall": action_recall,
+            }
+        if (
+            tuple(per_executed_action_correspondence)
+            != contract.ACTION_VOCABULARY
+            or sum(
+                int(value["row_count"])
+                for value in per_executed_action_correspondence.values()
+            )
+            != len(pairs)
+        ):
+            raise PermissionError(
+                "Phase-A correspondence-action populations changed"
+            )
+        correspondence_action_macro_balanced_accuracy = (
+            sum(per_action_recalls) / float(len(per_action_recalls))
+        )
+        zero_correspondence_action_scores = torch.zeros_like(
+            correspondence_action_scores
+        )
+        uniform_correspondence_action_probabilities = torch.softmax(
+            zero_correspondence_action_scores,
+            dim=1,
+        )
+        zero_logit_correspondence_action_nll_per_row = (
+            torch.nn.functional.cross_entropy(
+                zero_correspondence_action_scores,
+                requested_indices,
+                reduction="none",
+            )
+        )
         wrong_candidate_ce = all_candidate_ce.gather(
             1,
             candidate_indices,
@@ -1915,6 +2026,13 @@ def _phase_a_diagnostics(
             or deranged_ce_tokens.shape != correct_ce_tokens.shape
             or tuple(all_candidate_ce_tokens.shape)
             != (len(pairs), 9, 256)
+            or tuple(correspondence_action_scores.shape) != (len(pairs), 9)
+            or correspondence_action_probabilities.shape
+            != correspondence_action_scores.shape
+            or tuple(correspondence_action_nll_per_row.shape)
+            != (len(pairs),)
+            or tuple(correspondence_action_predictions.shape)
+            != (len(pairs),)
             or tuple(correct_ce.shape) != (len(pairs),)
             or tuple(deranged_ce.shape) != (len(pairs),)
             or tuple(hardest_wrong_ce.shape) != (len(pairs),)
@@ -1930,6 +2048,16 @@ def _phase_a_diagnostics(
             and (deranged_ce_mean > 0).item()
             and torch.isfinite(hardest_wrong_ce_mean).item()
             and (hardest_wrong_ce_mean > 0).item()
+            and torch.isfinite(correspondence_action_nll).item()
+            and (correspondence_action_nll > 0).item()
+            and math.isfinite(correspondence_action_top1)
+            and correspondence_action_top1 >= 0.0
+            and correspondence_action_top1 <= 1.0
+            and math.isfinite(
+                correspondence_action_macro_balanced_accuracy
+            )
+            and correspondence_action_macro_balanced_accuracy >= 0.0
+            and correspondence_action_macro_balanced_accuracy <= 1.0
         ):
             raise FloatingPointError(
                 "correspondence cross-entropy denominator changed"
@@ -2042,6 +2170,10 @@ def _phase_a_diagnostics(
                         deranged_ce,
                         all_candidate_ce,
                         hardest_wrong_ce,
+                        correspondence_action_scores,
+                        correspondence_action_probabilities,
+                        correspondence_action_nll_per_row,
+                        correspondence_action_nll,
                         target_kl,
                     )
                 )
@@ -2095,6 +2227,53 @@ def _phase_a_diagnostics(
             ),
             "maximum_absolute_student_logit":
                 float(all_transport_logits.abs().max()),
+            "unscaled_correspondence_action_nll":
+                float(correspondence_action_nll),
+            "correspondence_action_probabilities_all_values_finite": bool(
+                torch.isfinite(
+                    correspondence_action_probabilities
+                ).all().item()
+            ),
+            "correspondence_action_probability_rows_normalized": bool(
+                torch.allclose(
+                    correspondence_action_probabilities.sum(dim=1),
+                    torch.ones_like(
+                        correspondence_action_probabilities[:, 0]
+                    ),
+                    rtol=0.0,
+                    atol=1e-6,
+                )
+            ),
+            "correspondence_action_top1_accuracy":
+                correspondence_action_top1,
+            "per_executed_action_correspondence_identification":
+                per_executed_action_correspondence,
+            "correspondence_action_macro_balanced_accuracy":
+                correspondence_action_macro_balanced_accuracy,
+            "all_candidate_correspondence_costs_bitwise_equal": torch.equal(
+                all_candidate_ce,
+                all_candidate_ce[:, :1].expand_as(all_candidate_ce),
+            ),
+            "all_candidate_correspondence_scores_bitwise_equal": torch.equal(
+                correspondence_action_scores,
+                correspondence_action_scores[:, :1].expand_as(
+                    correspondence_action_scores
+                ),
+            ),
+            "correspondence_action_posterior_bitwise_equal_to_uniform":
+                torch.equal(
+                    correspondence_action_probabilities,
+                    uniform_correspondence_action_probabilities,
+                ),
+            "correspondence_action_nll_bitwise_equal_to_zero_logit_reference":
+                torch.equal(
+                    correspondence_action_nll_per_row,
+                    zero_logit_correspondence_action_nll_per_row,
+                )
+                and torch.equal(
+                    correspondence_action_nll,
+                    zero_logit_correspondence_action_nll_per_row.mean(),
+                ),
             "correct_centered_log_cross_entropy":
                 float(correct_ce_mean),
             "deranged_centered_log_cross_entropy":
@@ -2183,6 +2362,37 @@ def _phase_a_diagnostics(
             or local_correspondence["transport_weight_any_nonzero"]
             or local_correspondence["maximum_absolute_student_logit"] != 0.0
             or not local_correspondence[
+                "correspondence_action_probabilities_all_values_finite"
+            ]
+            or not local_correspondence[
+                "correspondence_action_probability_rows_normalized"
+            ]
+            or not local_correspondence[
+                "all_candidate_correspondence_costs_bitwise_equal"
+            ]
+            or not local_correspondence[
+                "all_candidate_correspondence_scores_bitwise_equal"
+            ]
+            or not local_correspondence[
+                "correspondence_action_posterior_bitwise_equal_to_uniform"
+            ]
+            or not local_correspondence[
+                "correspondence_action_nll_bitwise_equal_to_zero_logit_"
+                "reference"
+            ]
+            or not bool(
+                (correspondence_action_predictions == 0).all().item()
+            )
+            or correspondence_action_macro_balanced_accuracy != 1.0 / 9.0
+            or per_executed_action_correspondence[
+                contract.ACTION_VOCABULARY[0]
+            ]["recall"] != 1.0
+            or any(
+                per_executed_action_correspondence[action_name]["recall"]
+                != 0.0
+                for action_name in contract.ACTION_VOCABULARY[1:]
+            )
+            or not local_correspondence[
                 "all_action_distributions_bitwise_equal_to_hold"
             ]
             or not local_correspondence[
@@ -2223,6 +2433,10 @@ def _phase_a_diagnostics(
             correct_ce,
             deranged_ce,
             hardest_wrong_ce,
+            correspondence_action_scores,
+            correspondence_action_probabilities,
+            correspondence_action_nll_per_row,
+            correspondence_action_nll,
         )
         metric = {
             "all_values_finite": bool(
@@ -2410,6 +2624,8 @@ def _phase_a_train(
                 "action_identification_loss",
                 "local_correspondence_loss",
                 "local_correspondence_unscaled_cross_entropy",
+                "correspondence_action_identification_loss",
+                "unscaled_correspondence_action_nll",
                 "raw_whitening_variance_loss",
                 "raw_whitening_covariance_loss",
                 "projected_whitening_variance_loss",

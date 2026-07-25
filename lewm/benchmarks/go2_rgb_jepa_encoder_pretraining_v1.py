@@ -1,4 +1,4 @@
-"""Source-only contract for Local-Correspondence Transport JEPA V7.
+"""Source-only contract for All-Candidate Correspondence JEPA V8.
 
 Importing this module reads no generated input, RGB payload, checkpoint,
 runtime output, or accelerator state and imports no tensor library.  The
@@ -19,7 +19,8 @@ from typing import Any, Mapping, Sequence
 ROOT = Path(__file__).resolve().parents[2]
 IMPLEMENTATION_AUTHOR = "/root"
 SCHEMA_PREFIX = (
-    "lewm_go2_rgb_action_conditioned_local_correspondence_transport_jepa_v7"
+    "lewm_go2_rgb_action_conditioned_local_correspondence_"
+    "all_candidate_identification_jepa_v8"
 )
 
 CONTRACT_RELATIVE_PATH = (
@@ -116,43 +117,43 @@ CAMERA_FIT_METRICS_RELATIVE_PATH = (
 )
 
 PREREGISTRATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_action_conditioned_local_correspondence_transport_"
-    "jepa_v7_"
+    "docs/lewm_go2_rgb_action_conditioned_local_correspondence_"
+    "all_candidate_identification_jepa_v8_"
     "preregistration_2026-07-25.md"
 )
-PREREGISTRATION_COMMIT = "094a478d219488a953b008bd7487b0a4a729a5bb"
+PREREGISTRATION_COMMIT = "2d5e3c01e363d4910f09597119393c57e7e8ca34"
 PREREGISTRATION_FILE_SHA256 = (
-    "b17b543bc63b4201e8a049c90dfa43eaaf78b6035ccf4d94235c5bbc110b8aa0"
+    "3c532525fbd3109ec005bc32ad145ad1a7349a3602029ebc47177b7d986c81f7"
 )
-PREREGISTRATION_BYTE_COUNT = 21_190
+PREREGISTRATION_BYTE_COUNT = 18_744
 PRIOR_TERMINAL_AUDIT_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-    "v6_existing_pair_inverse_dynamics_terminal_audit_2026-07-25.json"
+    "docs/lewm_go2_rgb_action_conditioned_local_correspondence_transport_"
+    "jepa_v7_terminal_audit_2026-07-25.json"
 )
 PRIOR_TERMINAL_AUDIT_COMMIT = (
-    "c3259adc3b48a3f1d5784a1ada0eaac8b12f7855"
+    "cf21f4a3ed2caed103a765584bcadd29284c9282"
 )
 PRIOR_TERMINAL_AUDIT_FILE_SHA256 = (
-    "9ab15ff2100e46fd341d4266c534c289bd453f74517743886ceccea165e15d01"
+    "1e284375a5d1c79419aa21c553e48a5d396c1d33b27e3a56c0e58c4dae08e28f"
 )
 PRIOR_TERMINAL_AUDIT_CONTENT_SHA256 = (
-    "aed1a84c890ae5a7b5ad068cffe7cc1b3260bc4b39919366fcb9bee888666c6d"
+    "6b30ac4bb3784ea58822de7114197d184cd3a0a257ca29a60b858ab97b99c6f3"
 )
-PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 19_590
+PRIOR_TERMINAL_AUDIT_BYTE_COUNT = 23_123
 
 SOURCE_MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_action_conditioned_local_correspondence_transport_"
-    "jepa_v7_"
+    "docs/lewm_go2_rgb_action_conditioned_local_correspondence_"
+    "all_candidate_identification_jepa_v8_"
     "source_manifest_2026-07-25.json"
 )
 REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_action_conditioned_local_correspondence_transport_"
-    "jepa_v7_"
+    "docs/lewm_go2_rgb_action_conditioned_local_correspondence_"
+    "all_candidate_identification_jepa_v8_"
     "source_review_2026-07-25.json"
 )
 AUTHORIZATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_action_conditioned_local_correspondence_transport_"
-    "jepa_v7_"
+    "docs/lewm_go2_rgb_action_conditioned_local_correspondence_"
+    "all_candidate_identification_jepa_v8_"
     "execution_authorization_2026-07-25.json"
 )
 SOURCE_MANIFEST_SCHEMA = f"{SCHEMA_PREFIX}_source_manifest_v1"
@@ -211,7 +212,8 @@ SOURCE_REVIEW_ADDITIONAL_PATHS = (
 
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-    "rgb_action_conditioned_local_correspondence_transport_jepa_probe_v7"
+    "rgb_action_conditioned_local_correspondence_"
+    "all_candidate_identification_jepa_probe_v8"
 )
 
 RAW_ROOT_RELATIVE_PATH = (
@@ -339,6 +341,10 @@ LOCAL_CORRESPONDENCE_TARGET_LOGIT_SCALE = (
     1.0 / math.sqrt(float(LATENT_DIM))
 )
 LOCAL_CORRESPONDENCE_LOSS_WEIGHT = 1.0
+CORRESPONDENCE_ACTION_IDENTIFICATION_LOSS_WEIGHT = 1.0
+CORRESPONDENCE_ACTION_MACRO_BALANCED_ACCURACY_STRICTLY_GREATER_THAN = (
+    2.0 / 9.0
+)
 EXPECTED_OFFSET_COMPONENT_BOUND = 1.0
 PHASE_B_GRID_SAMPLE_DETERMINISM_WARNING_PREFIX = (
     "grid_sampler_2d_backward_cuda does not have a deterministic "
@@ -535,6 +541,16 @@ LOCAL_CORRESPONDENCE_OBSERVATION_FIELDS = frozenset({
     "all_action_distributions_bitwise_equal_to_uniform",
     "correct_and_deranged_cross_entropy_bitwise_equal",
     "all_action_transports_identity_exact",
+    "unscaled_correspondence_action_nll",
+    "correspondence_action_probabilities_all_values_finite",
+    "correspondence_action_probability_rows_normalized",
+    "correspondence_action_top1_accuracy",
+    "per_executed_action_correspondence_identification",
+    "correspondence_action_macro_balanced_accuracy",
+    "all_candidate_correspondence_costs_bitwise_equal",
+    "all_candidate_correspondence_scores_bitwise_equal",
+    "correspondence_action_posterior_bitwise_equal_to_uniform",
+    "correspondence_action_nll_bitwise_equal_to_zero_logit_reference",
 })
 
 CONTROL_CONTINUE = "CONTINUE_INFORMATIONAL"
@@ -583,8 +599,9 @@ SOURCE_ONLY_AUTHORITY = {
 }
 REVIEW_AUTHORITY = dict(SOURCE_ONLY_AUTHORITY)
 SCIENTIFIC_REVIEW_CHECKS = {
-    "prior_v6_terminal_audit_bound": True,
-    "fresh_v7_is_not_v5_or_v6_retry_or_resume": True,
+    "prior_v7_terminal_audit_bound": True,
+    "fresh_v8_is_not_v7_retry_resume_or_checkpoint_continuation": True,
+    "v7_model_encoder_transport_and_objective_preserved_exact": True,
     "v5_v6_flow_and_inverse_tensors_removed_exact": True,
     "action_independent_zero_adaln_conditioning_exact": True,
     "existing_action_embedder_reused_by_transport_exact": True,
@@ -609,6 +626,12 @@ SCIENTIFIC_REVIEW_CHECKS = {
     "detached_row_mean_energy_scaled_cross_entropy_exact": True,
     "action_indexed_energy_nll_weight_exactly_1": True,
     "correspondence_loss_weight_exactly_1": True,
+    "parameter_free_all_candidate_correspondence_identification_exact": True,
+    "correspondence_action_identification_loss_weight_exactly_1": True,
+    "all_candidate_cost_score_and_detach_topology_exact": True,
+    "executed_label_value_invariance_fixture_exact": True,
+    "correspondence_action_update_zero_equal_logit_reference_exact": True,
+    "correspondence_action_nll_and_macro_balanced_accuracy_gates_exact": True,
     "wrong_action_shared_path_detached_transport_and_action_embedder_live":
         True,
     "no_hinge_fixed_temperature_margin_or_sentinel_specific_training": True,
@@ -659,7 +682,7 @@ def _load_static_physical_contract() -> Any:
     if hashlib.sha256(raw).hexdigest() != STATIC_PHYSICAL_CONTRACT_FILE_SHA256:
         raise ImportError("frozen static physical contract source changed")
     spec = importlib.util.spec_from_file_location(
-        "_lewm_jepa_encoder_v7_local_correspondence_static_physical_contract",
+        "_lewm_jepa_encoder_v8_all_candidate_static_physical_contract",
         source,
     )
     if spec is None or spec.loader is None:
@@ -941,8 +964,9 @@ def science_contract() -> dict[str, Any]:
     return {
         "schema": f"{SCHEMA_PREFIX}_science_contract_v1",
         "scientific_question":
-            "rgb_only_local_patch_correspondence_before_spatial_pooling_"
-            "preserves_action_specific_short_range_motion_while_all_"
+            "explicit_parameter_free_all_candidate_correspondence_"
+            "identification_binds_the_existing_rgb_only_v7_local_"
+            "correspondence_signal_to_the_executed_action_while_all_v7_"
             "forward_jepa_gates_hold",
         "initialization": {
             "seed": BASE_INITIALIZATION_SEED,
@@ -986,6 +1010,13 @@ def science_contract() -> dict[str, Any]:
                     "shared_trunk_gradient_exactly_zero": True,
                     "online_encoder_gradient_exactly_zero": True,
                     "action_embedding_gradient_exactly_zero": True,
+                    "all_candidate_correspondence_costs_bitwise_equal": True,
+                    "all_candidate_correspondence_scores_bitwise_equal": True,
+                    "correspondence_action_posterior_uniform_exact": True,
+                    "correspondence_action_nll_equal_to_same_device_"
+                    "zero_logit_reference": True,
+                    "correspondence_action_identification_loss_transport_"
+                    "weight_gradient_finite_and_nonzero": True,
                 },
                 "bitwise_nonzero_weight": {
                     "transport_weight_gradient_finite_and_nonzero": True,
@@ -993,6 +1024,16 @@ def science_contract() -> dict[str, Any]:
                     "online_state_gradient_finite_and_nonzero": True,
                     "action_embedding_gradient_finite_and_nonzero": True,
                     "ema_gradient_absent": True,
+                    "correspondence_action_identification_loss_transport_"
+                    "weight_gradient_finite_and_nonzero": True,
+                    "wrong_candidate_online_path_gradient_absent": True,
+                },
+                "executed_label_value_invariance": {
+                    "rgb_states_and_model_tensors_fixed": True,
+                    "candidate_logits_probabilities_costs_and_scores_"
+                    "bitwise_identical": True,
+                    "only_cross_entropy_target_and_gradient_may_change":
+                        True,
                 },
                 "runtime_continuation_gate": False,
             },
@@ -1092,7 +1133,8 @@ def science_contract() -> dict[str, Any]:
                 "all_nine_real_actions_in_frozen_vocabulary_order",
             "training_action_input":
                 "executed_action_index_and_ordered_nine_candidate_energies_"
-                "plus_executed_correspondence_only",
+                "plus_executed_correspondence_and_all_candidate_"
+                "correspondence_identification",
             "training_forbidden_diagnostic_inputs": [
                 "cyclic_mapping",
                 "hold_specific_mask_or_weight",
@@ -1208,11 +1250,43 @@ def science_contract() -> dict[str, Any]:
                         True,
                     "wrong_candidate_correspondence_training_count": 0,
                 },
+                "correspondence_action_identification": {
+                    "target": "detach(Q_i) broadcast as Q[:,None,:,:]",
+                    "candidate_transport_logits":
+                        "existing_g_with_shape_B_by_9_by_256_by_9",
+                    "candidate_token_cost_helper":
+                        "centered_log_soft_cross_entropy(Q[:,None,:,:],g)",
+                    "helper_log_softmax_count": 1,
+                    "candidate_cost":
+                        "C_i_a=mean_256_tokens(Hc(Q_i,logP_i_a))",
+                    "candidate_score": "S_i_a=-C_i_a",
+                    "unscaled_nll":
+                        "mean_i(cross_entropy(S_i_all,executed_action_i))",
+                    "loss":
+                        "mean_i(m_i*cross_entropy("
+                        "S_i_all,executed_action_i))",
+                    "loss_weight":
+                        CORRESPONDENCE_ACTION_IDENTIFICATION_LOSS_WEIGHT,
+                    "row_energy_scale":
+                        "exact_existing_detached_action_losses.row_scale",
+                    "score_division_by_row_energy_scale": False,
+                    "new_parameter_count": 0,
+                    "new_encoder_predictor_or_transport_forward_count": 0,
+                    "target_candidate_materialization_count": 0,
+                    "candidate_count": len(ACTION_VOCABULARY),
+                    "executed_non_hold_h_and_online_encoder_live": True,
+                    "wrong_candidate_h_and_online_encoder_detached": True,
+                    "hold_relative_embedding_exact_zero": True,
+                    "shared_residual_or_online_target_projector_path": False,
+                    "temperature_margin_bias_class_weight_label_smoothing_"
+                    "or_candidate_subsampling": False,
+                },
                 "jepa_loss":
                     "mean_patch_feature_mse(true_prediction,z_next_ema)",
                 "total_loss":
                     "jepa_loss+action_indexed_energy_nll+"
                     "local_correspondence_loss+"
+                    "correspondence_action_identification_loss+"
                     "0.50*(V_raw+V_projected)+"
                     "0.02*(K_raw+K_projected)",
                 "wrong_action_hinge_count": 0,
@@ -1336,6 +1410,23 @@ def science_contract() -> dict[str, Any]:
                         "mean_i_in_family(h_i-c_i)",
                     "training_loss_alone_uses_detached_row_energy_scale":
                         True,
+                    "correspondence_action_identification": {
+                        "unscaled_nll_field":
+                            "unscaled_correspondence_action_nll",
+                        "posterior": "softmax_a(-C_i_a)",
+                        "top1_tie_break":
+                            "lowest_index_in_frozen_action_vocabulary",
+                        "per_executed_action_fields": [
+                            "row_count",
+                            "mean_nll",
+                            "recall",
+                        ],
+                        "per_executed_action_order":
+                            list(ACTION_VOCABULARY),
+                        "macro_balanced_accuracy":
+                            "arithmetic_mean_of_nine_per_action_recalls",
+                        "row_count_total": SELECTION_ROLE_COUNTS["pairs"],
+                    },
                     "within_scene_next_endpoint_derangement": {
                         "group_by": "scene_id",
                         "sort_rows_by": "content_sha256",
@@ -1362,9 +1453,26 @@ def science_contract() -> dict[str, Any]:
                             True,
                         "mean_target_kl_to_uniform":
                             "finite_and_strictly_positive",
+                        "all_candidate_correspondence_costs_bitwise_equal":
+                            True,
+                        "all_candidate_correspondence_scores_bitwise_equal":
+                            True,
+                        "correspondence_action_posterior_bitwise_equal_to_"
+                        "zeros_like_score_softmax": True,
+                        "correspondence_action_nll_bitwise_equal_to_"
+                        "zeros_like_score_cross_entropy": True,
+                        "correspondence_action_macro_balanced_accuracy":
+                            1.0 / float(len(ACTION_VOCABULARY)),
                     },
                     "update_100_update_400_and_final_thresholds":
                         dict(PHASE_A_LOCAL_CORRESPONDENCE_THRESHOLDS),
+                    "update_100_update_400_and_final_correspondence_action_"
+                    "identification_gates": {
+                        "unscaled_nll":
+                            "finite_and_strictly_below_frozen_update_zero",
+                        "macro_balanced_accuracy_strictly_greater_than":
+                            CORRESPONDENCE_ACTION_MACRO_BALANCED_ACCURACY_STRICTLY_GREATER_THAN,
+                    },
                 },
                 "update_100_additional_gates": {
                     "true_pair_mse_over_mean_target_mse_strictly_less_than":
@@ -1383,6 +1491,8 @@ def science_contract() -> dict[str, Any]:
             "transport_projection_optimizer_included": False,
             "transport_projection_copied_into_phase_b_model": False,
             "local_correspondence_training_or_metric_target_count": 0,
+            "correspondence_action_identification_training_or_metric_"
+            "target_count": 0,
             "trainable_prefixes": ["evidence_head."],
             "frozen_prefixes": [
                 "encoder.",
@@ -1447,6 +1557,13 @@ def _finite_nonnegative(value: object, *, name: str) -> float:
     return result
 
 
+def _finite_unit_interval(value: object, *, name: str) -> float:
+    result = _finite_nonnegative(value, name=name)
+    if result > 1.0:
+        raise ValueError(f"{name} must be at most one")
+    return result
+
+
 def _positive_denominator_ratio(
     numerator: float,
     denominator: float,
@@ -1485,6 +1602,12 @@ def _validate_local_correspondence_observation(
         "all_action_distributions_bitwise_equal_to_uniform",
         "correct_and_deranged_cross_entropy_bitwise_equal",
         "all_action_transports_identity_exact",
+        "correspondence_action_probabilities_all_values_finite",
+        "correspondence_action_probability_rows_normalized",
+        "all_candidate_correspondence_costs_bitwise_equal",
+        "all_candidate_correspondence_scores_bitwise_equal",
+        "correspondence_action_posterior_bitwise_equal_to_uniform",
+        "correspondence_action_nll_bitwise_equal_to_zero_logit_reference",
     )
     for field in boolean_fields:
         if type(value[field]) is not bool:
@@ -1543,6 +1666,112 @@ def _validate_local_correspondence_observation(
         value["maximum_absolute_expected_offset_component"],
         name=f"{name} maximum absolute expected-offset component",
     )
+    correspondence_action_nll = _finite_nonnegative(
+        value["unscaled_correspondence_action_nll"],
+        name=f"{name} unscaled correspondence-action NLL",
+    )
+    correspondence_action_top1 = _finite_unit_interval(
+        value["correspondence_action_top1_accuracy"],
+        name=f"{name} correspondence-action top-1 accuracy",
+    )
+    correspondence_action_macro = _finite_unit_interval(
+        value["correspondence_action_macro_balanced_accuracy"],
+        name=f"{name} correspondence-action macro balanced accuracy",
+    )
+    per_executed_action = value[
+        "per_executed_action_correspondence_identification"
+    ]
+    if (
+        type(per_executed_action) is not dict
+        or tuple(per_executed_action) != ACTION_VOCABULARY
+    ):
+        raise ValueError(
+            f"{name} executed-action identification order changed"
+        )
+    normalized_identification: dict[str, dict[str, int | float]] = {}
+    total_rows = 0
+    weighted_nll = 0.0
+    weighted_correct = 0.0
+    recalls: list[float] = []
+    for action in ACTION_VOCABULARY:
+        row = per_executed_action[action]
+        if type(row) is not dict or set(row) != {
+            "row_count",
+            "mean_nll",
+            "recall",
+        }:
+            raise ValueError(
+                f"{name} {action} identification fields changed"
+            )
+        row_count = row["row_count"]
+        if type(row_count) is not int or row_count <= 0:
+            raise ValueError(
+                f"{name} {action} row count must be a positive integer"
+            )
+        mean_nll = _finite_nonnegative(
+            row["mean_nll"],
+            name=f"{name} {action} mean NLL",
+        )
+        recall = _finite_unit_interval(
+            row["recall"],
+            name=f"{name} {action} recall",
+        )
+        correct_count = round(float(row_count) * recall)
+        if not math.isclose(
+            float(row_count) * recall,
+            float(correct_count),
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ):
+            raise ValueError(
+                f"{name} {action} recall is not an integer-count ratio"
+            )
+        normalized_identification[action] = {
+            "row_count": row_count,
+            "mean_nll": mean_nll,
+            "recall": recall,
+        }
+        total_rows += row_count
+        weighted_nll += float(row_count) * mean_nll
+        weighted_correct += float(row_count) * recall
+        recalls.append(recall)
+    if total_rows != SELECTION_ROLE_COUNTS["pairs"]:
+        raise ValueError(f"{name} executed-action row total changed")
+    recomputed_nll = weighted_nll / float(total_rows)
+    recomputed_top1 = weighted_correct / float(total_rows)
+    recomputed_macro = sum(recalls) / float(len(recalls))
+    if (
+        not math.isclose(
+            correspondence_action_nll,
+            recomputed_nll,
+            rel_tol=1e-6,
+            abs_tol=1e-8,
+        )
+        or not math.isclose(
+            correspondence_action_top1,
+            recomputed_top1,
+            rel_tol=1e-6,
+            abs_tol=1e-8,
+        )
+        or not math.isclose(
+            correspondence_action_macro,
+            recomputed_macro,
+            rel_tol=1e-6,
+            abs_tol=1e-8,
+        )
+    ):
+        raise ValueError(
+            f"{name} correspondence-action aggregations are inconsistent"
+        )
+    if (
+        value["all_values_finite"]
+        and not value[
+            "correspondence_action_probabilities_all_values_finite"
+        ]
+    ):
+        raise ValueError(
+            f"{name} all-values-finite omits correspondence-action values"
+        )
 
     per_family_deranged = value[
         "per_family_deranged_minus_correct_cross_entropy"
@@ -1671,6 +1900,50 @@ def _validate_local_correspondence_observation(
         or not value["all_action_distributions_bitwise_equal_to_uniform"]
         or not value["correct_and_deranged_cross_entropy_bitwise_equal"]
         or not value["all_action_transports_identity_exact"]
+        or not value[
+            "correspondence_action_probabilities_all_values_finite"
+        ]
+        or not value[
+            "correspondence_action_probability_rows_normalized"
+        ]
+        or not value[
+            "all_candidate_correspondence_costs_bitwise_equal"
+        ]
+        or not value[
+            "all_candidate_correspondence_scores_bitwise_equal"
+        ]
+        or not value[
+            "correspondence_action_posterior_bitwise_equal_to_uniform"
+        ]
+        or not value[
+            "correspondence_action_nll_bitwise_equal_to_zero_logit_reference"
+        ]
+        or correspondence_action_macro
+        != 1.0 / float(len(ACTION_VOCABULARY))
+        or normalized_identification[ACTION_VOCABULARY[0]]["recall"]
+        != 1.0
+        or any(
+            normalized_identification[action]["recall"] != 0.0
+            for action in ACTION_VOCABULARY[1:]
+        )
+        or any(
+            not math.isclose(
+                float(row["mean_nll"]),
+                correspondence_action_nll,
+                rel_tol=1e-6,
+                abs_tol=1e-8,
+            )
+            for row in normalized_identification.values()
+        )
+        or correspondence_action_top1
+        != (
+            float(
+                normalized_identification[ACTION_VOCABULARY[0]][
+                    "row_count"
+                ]
+            )
+            / float(SELECTION_ROLE_COUNTS["pairs"])
+        )
     ):
         raise ValueError(
             f"{name} update-zero local-correspondence receipt changed"
@@ -1729,6 +2002,31 @@ def _validate_local_correspondence_observation(
             value["correct_and_deranged_cross_entropy_bitwise_equal"],
         "all_action_transports_identity_exact":
             value["all_action_transports_identity_exact"],
+        "unscaled_correspondence_action_nll": correspondence_action_nll,
+        "correspondence_action_probabilities_all_values_finite":
+            value[
+                "correspondence_action_probabilities_all_values_finite"
+            ],
+        "correspondence_action_probability_rows_normalized":
+            value["correspondence_action_probability_rows_normalized"],
+        "correspondence_action_top1_accuracy": correspondence_action_top1,
+        "per_executed_action_correspondence_identification":
+            normalized_identification,
+        "correspondence_action_macro_balanced_accuracy":
+            correspondence_action_macro,
+        "all_candidate_correspondence_costs_bitwise_equal":
+            value["all_candidate_correspondence_costs_bitwise_equal"],
+        "all_candidate_correspondence_scores_bitwise_equal":
+            value["all_candidate_correspondence_scores_bitwise_equal"],
+        "correspondence_action_posterior_bitwise_equal_to_uniform":
+            value[
+                "correspondence_action_posterior_bitwise_equal_to_uniform"
+            ],
+        "correspondence_action_nll_bitwise_equal_to_zero_logit_reference":
+            value[
+                "correspondence_action_nll_bitwise_equal_to_"
+                "zero_logit_reference"
+            ],
     }
 
 
@@ -1772,6 +2070,18 @@ def evaluate_phase_a(
         metrics["local_correspondence"],
         name="Phase-A local correspondence",
     )
+    for action in ACTION_VOCABULARY:
+        if (
+            correspondence[
+                "per_executed_action_correspondence_identification"
+            ][action]["row_count"]
+            != update0_correspondence[
+                "per_executed_action_correspondence_identification"
+            ][action]["row_count"]
+        ):
+            raise ValueError(
+                "Phase-A correspondence-action populations changed"
+            )
     if type(metrics["all_values_finite"]) is not bool:
         raise TypeError("all_values_finite must be Boolean")
     if type(metrics["ema_target_gradient_free"]) is not bool:
@@ -1912,6 +2222,14 @@ def evaluate_phase_a(
             correspondence[
                 "executed_to_hardest_wrong_cross_entropy_ratio"
             ],
+        "correspondence_action_nll_to_update_zero":
+            _positive_denominator_ratio(
+                correspondence["unscaled_correspondence_action_nll"],
+                update0_correspondence[
+                    "unscaled_correspondence_action_nll"
+                ],
+                name="correspondence-action update-zero NLL ratio",
+            ),
     }
     threshold = PHASE_A_PASS_THRESHOLDS
     correspondence_threshold = PHASE_A_LOCAL_CORRESPONDENCE_THRESHOLDS
@@ -1939,6 +2257,24 @@ def evaluate_phase_a(
                 "all_action_transports_identity_exact"
             ]
             and update0_correspondence["mean_target_kl_to_uniform"] > 0.0,
+        "update_zero_correspondence_action_identification_uniform_exact":
+            update0_correspondence[
+                "all_candidate_correspondence_costs_bitwise_equal"
+            ]
+            and update0_correspondence[
+                "all_candidate_correspondence_scores_bitwise_equal"
+            ]
+            and update0_correspondence[
+                "correspondence_action_posterior_bitwise_equal_to_uniform"
+            ]
+            and update0_correspondence[
+                "correspondence_action_nll_bitwise_equal_to_"
+                "zero_logit_reference"
+            ]
+            and update0_correspondence[
+                "correspondence_action_macro_balanced_accuracy"
+            ]
+            == 1.0 / float(len(ACTION_VOCABULARY)),
         "finite_and_ema_gradient_free":
             metrics["all_values_finite"]
             and metrics["ema_target_gradient_free"],
@@ -1950,11 +2286,29 @@ def evaluate_phase_a(
             and correspondence["student_all_strictly_positive"]
             and correspondence["student_rows_normalized"]
             and correspondence["transport_weight_all_values_finite"]
+            and correspondence[
+                "correspondence_action_probabilities_all_values_finite"
+            ]
+            and correspondence[
+                "correspondence_action_probability_rows_normalized"
+            ]
             and all(
                 correspondence[
                     "per_action_probability_rows_positive_and_normalized"
                 ].values()
             ),
+        "finite_unscaled_correspondence_action_nll_strictly_below_frozen_"
+        "update_zero_log9":
+            correspondence["unscaled_correspondence_action_nll"]
+            < update0_correspondence[
+                "unscaled_correspondence_action_nll"
+            ],
+        "correspondence_action_identification_macro_balanced_accuracy_"
+        "strictly_above_two_ninths":
+            correspondence[
+                "correspondence_action_macro_balanced_accuracy"
+            ]
+            > CORRESPONDENCE_ACTION_MACRO_BALANCED_ACCURACY_STRICTLY_GREATER_THAN,
         "transport_weight_finite_and_bitwise_nonzero":
             correspondence["transport_weight_all_values_finite"]
             and correspondence["transport_weight_any_nonzero"],
@@ -2116,11 +2470,28 @@ def evaluate_phase_a_continuation(
                 "update_zero_local_correspondence_uniform_identity_and_"
                 "target_viable"
             ],
+        "update_zero_correspondence_action_identification_uniform_exact":
+            terminal["conjuncts"][
+                "update_zero_correspondence_action_identification_uniform_"
+                "exact"
+            ],
         "finite_and_ema_gradient_free":
             terminal["conjuncts"]["finite_and_ema_gradient_free"],
         "local_correspondence_values_finite_positive_and_normalized":
             terminal["conjuncts"][
                 "local_correspondence_values_finite_positive_and_normalized"
+            ],
+        "finite_unscaled_correspondence_action_nll_strictly_below_frozen_"
+        "update_zero_log9":
+            terminal["conjuncts"][
+                "finite_unscaled_correspondence_action_nll_strictly_below_"
+                "frozen_update_zero_log9"
+            ],
+        "correspondence_action_identification_macro_balanced_accuracy_"
+        "strictly_above_two_ninths":
+            terminal["conjuncts"][
+                "correspondence_action_identification_macro_balanced_"
+                "accuracy_strictly_above_two_ninths"
             ],
         "transport_weight_finite_and_bitwise_nonzero":
             terminal["conjuncts"][

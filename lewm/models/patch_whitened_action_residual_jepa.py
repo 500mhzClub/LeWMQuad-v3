@@ -4,6 +4,9 @@ This module intentionally contains no data, schedule, runner, or custody
 logic.  It implements the deterministic centered-softmax residual local
 transport registered for V7.
 """
+# V8 preregistration binding:
+# commit 2d5e3c01e363d4910f09597119393c57e7e8ca34
+# SHA-256 3c532525fbd3109ec005bc32ad145ad1a7349a3602029ebc47177b7d986c81f7
 from __future__ import annotations
 
 import math
@@ -57,6 +60,17 @@ class CorrespondenceTerms(NamedTuple):
     loss: torch.Tensor
     centered_cross_entropy: torch.Tensor
     cross_entropy_per_row: torch.Tensor
+
+
+class CorrespondenceActionIdentificationTerms(NamedTuple):
+    """Parameter-free V8 all-candidate correspondence identification."""
+
+    loss: torch.Tensor
+    unscaled_nll: torch.Tensor
+    nll_per_row: torch.Tensor
+    all_candidate_costs: torch.Tensor
+    scores: torch.Tensor
+    action_probabilities: torch.Tensor
 
 
 class WhiteningTerms(NamedTuple):
@@ -825,6 +839,98 @@ def local_correspondence_terms(
     )
 
 
+def correspondence_action_identification_nll(
+    targets: CorrespondenceTargets | torch.Tensor,
+    predictions: ActionIndexedPredictions,
+    row_scale: torch.Tensor,
+) -> CorrespondenceActionIdentificationTerms:
+    """Compute exact V8 all-candidate correspondence action NLL."""
+
+    target_probs = (
+        targets.probabilities
+        if isinstance(targets, CorrespondenceTargets)
+        else targets
+    )
+    logits = predictions.all_transport_logits
+    if (
+        logits.ndim != 4
+        or tuple(logits.shape[1:])
+        != (
+            ACTION_DIM,
+            TOKEN_COUNT,
+            NEIGHBOR_COUNT,
+        )
+    ):
+        raise ValueError(
+            "all_transport_logits must have shape (B,9,256,9)"
+        )
+    batch = logits.shape[0]
+    if tuple(target_probs.shape) != (
+        batch,
+        TOKEN_COUNT,
+        NEIGHBOR_COUNT,
+    ):
+        raise ValueError("target probabilities must have shape (B,256,9)")
+    _validate_action_indices(predictions.executed_indices, batch=batch)
+    if predictions.executed_indices.device != logits.device:
+        raise TypeError("executed indices must align with transport logits")
+    if row_scale.ndim != 1 or tuple(row_scale.shape) != (batch,):
+        raise ValueError(f"row_scale must have shape ({batch},)")
+    if (
+        row_scale.device != logits.device
+        or row_scale.dtype != torch.float32
+        or not bool(torch.isfinite(row_scale).all())
+        or not bool((row_scale > 0).all().item())
+    ):
+        raise FloatingPointError(
+            "row_scale must be aligned, finite, and positive"
+        )
+
+    all_candidate_token_hc = centered_log_soft_cross_entropy(
+        target_probs[:, None],
+        logits,
+    )
+    all_candidate_costs = all_candidate_token_hc.mean(dim=2)
+    scores = -all_candidate_costs
+    nll_per_row = F.cross_entropy(
+        scores,
+        predictions.executed_indices,
+        reduction="none",
+    )
+    unscaled_nll = nll_per_row.mean()
+    loss = (row_scale.detach() * nll_per_row).mean()
+    action_probabilities = torch.softmax(scores, dim=-1)
+    if (
+        tuple(all_candidate_costs.shape) != (batch, ACTION_DIM)
+        or tuple(action_probabilities.shape) != (batch, ACTION_DIM)
+        or not bool(torch.isfinite(all_candidate_costs).all())
+        or not bool(torch.isfinite(scores).all())
+        or not bool(torch.isfinite(nll_per_row).all())
+        or not bool(torch.isfinite(unscaled_nll))
+        or not bool(torch.isfinite(loss))
+        or not bool(torch.isfinite(action_probabilities).all())
+        or not bool(
+            torch.allclose(
+                action_probabilities.sum(dim=-1),
+                torch.ones_like(action_probabilities[:, 0]),
+                rtol=0.0,
+                atol=1e-6,
+            )
+        )
+    ):
+        raise FloatingPointError(
+            "correspondence action identification output is invalid"
+        )
+    return CorrespondenceActionIdentificationTerms(
+        loss=loss,
+        unscaled_nll=unscaled_nll,
+        nll_per_row=nll_per_row,
+        all_candidate_costs=all_candidate_costs,
+        scores=scores,
+        action_probabilities=action_probabilities,
+    )
+
+
 def patch_whitening_terms(tokens: torch.Tensor) -> WhiteningTerms:
     """Compute the exact per-microbatch rank-matrix V and K terms."""
 
@@ -920,6 +1026,7 @@ __all__ = [
     "ActionIndexedLosses",
     "ActionIndexedPredictions",
     "ActionConditionedLocalCorrespondenceTransport",
+    "CorrespondenceActionIdentificationTerms",
     "CorrespondenceTargets",
     "CorrespondenceTerms",
     "LATENT_DIM",
@@ -931,6 +1038,7 @@ __all__ = [
     "action_independent_trunk",
     "action_indexed_energy_nll",
     "centered_log_soft_cross_entropy",
+    "correspondence_action_identification_nll",
     "initialize_action_gate_rows",
     "local_correspondence_targets",
     "local_correspondence_terms",
