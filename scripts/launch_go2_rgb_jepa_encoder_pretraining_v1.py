@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authority-first launcher for Action-Residual JEPA V2 Action-Gain."""
+"""Authority-first launcher for Action-Residual JEPA V3 Live-Reference."""
 from __future__ import annotations
 
 import importlib.util
@@ -10,7 +10,8 @@ from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 PREFLIGHT_ENVIRONMENT_KEY = (
-    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_V2_ACTION_GAIN_PREFLIGHT_JSON"
+    "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
+    "V3_LIVE_REFERENCE_HINGE_PREFLIGHT_JSON"
 )
 
 
@@ -25,11 +26,11 @@ def _source_only_module(name: str, path: Path):
 
 
 contract = _source_only_module(
-    "_lewm_go2_rgb_jepa_encoder_pretraining_v2_action_gain_launcher_contract",
+    "_lewm_go2_rgb_jepa_encoder_pretraining_v3_live_reference_launcher_contract",
     ROOT / "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py",
 )
 _BASE = _source_only_module(
-    "_lewm_go2_rgb_jepa_encoder_pretraining_v2_action_gain_base_launcher",
+    "_lewm_go2_rgb_jepa_encoder_pretraining_v3_live_reference_base_launcher",
     ROOT / "scripts/launch_go2_rgb_causal_temporal_perception_v1.py",
 )
 

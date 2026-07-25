@@ -127,28 +127,28 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         }))
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "85b8bd6ae41652af744a011794060323c47be172",
+            "caa8bda04b8fc5b6255d10ad9c6e900d2330147e",
         )
         self.assertEqual(
             contract.PREREGISTRATION_RELATIVE_PATH,
             "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-            "v2_action_gain_preregistration_2026-07-25.md",
+            "v3_live_reference_hinge_preregistration_2026-07-25.md",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(contract.PREREGISTRATION_BYTE_COUNT, 5_711)
+        self.assertEqual(contract.PREREGISTRATION_BYTE_COUNT, 6_715)
         self.assertEqual(
             contract.PREREGISTRATION_FILE_SHA256,
-            "1897c6841e88b7ab9116649b5f8f8af009a70bbe6d49938ee59d14683efcb095",
+            "8e3aaabcf868e215ba3a60da1cdc1caebec91613d1076347ed23bb02c8dcd550",
         )
-        self.assertEqual(len(raw), 5_711)
+        self.assertEqual(len(raw), 6_715)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "1897c6841e88b7ab9116649b5f8f8af009a70bbe6d49938ee59d14683efcb095",
+            "8e3aaabcf868e215ba3a60da1cdc1caebec91613d1076347ed23bb02c8dcd550",
         )
         self.assertEqual(
             contract.SCHEMA_PREFIX,
             "lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-            "v2_action_gain",
+            "v3_live_reference_hinge",
         )
         self.assertEqual(contract.preregistration_binding(), {
             "path": contract.PREREGISTRATION_RELATIVE_PATH,
@@ -159,13 +159,13 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(contract.prior_terminal_audit_binding(), {
             "path":
                 "docs/lewm_go2_rgb_patch_whitened_action_residual_jepa_"
-                "v1_terminal_audit_2026-07-25.json",
-            "commit": "5c1ebb2b5f07f7be9ee152ea75b409358fb41477",
+                "v2_action_gain_terminal_audit_2026-07-25.json",
+            "commit": "e7670b82bd4d31cba2b6d9b76fb8c11c04e1f18d",
             "file_sha256":
-                "a87d1a706b912e8774a8e13b858e568ae91fbc1529ea4744adb189f0569457c7",
+                "cb0d0f789bfd6d0ec861b19c597a9c203d9d93eb1f0f2c89c04876579eb2b405",
             "content_sha256":
-                "ad6a97738c7143f6649d43a85376507f82c3522d79de667406a9a73ecffb5a8c",
-            "byte_count": 13_309,
+                "1deef9dd068ade6556dd3eecb87f1ee7896acc0394e8eb9dab943d03749d2c87",
+            "byte_count": 14_618,
         })
         self.assertIn(
             contract.SOURCE_CLOSURE_BASE_CHECKER_RELATIVE_PATH,
@@ -174,7 +174,8 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
         self.assertEqual(
             contract.OUTPUT_ROOT_RELATIVE_PATH,
             ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-            "rgb_patch_whitened_action_residual_jepa_probe_v2_action_gain",
+            "rgb_patch_whitened_action_residual_jepa_"
+            "probe_v3_live_reference_hinge",
         )
 
     def test_phase_a_model_and_optimizer_contract_are_exact(self) -> None:
@@ -207,6 +208,7 @@ class JepaEncoderPretrainingContractTests(unittest.TestCase):
             objective["action_discrimination_weight"],
             contract.ACTION_DISCRIMINATION_WEIGHT,
         )
+        self.assertIs(objective["action_hinge_true_energy_detached"], False)
         self.assertEqual(objective["residual_scale"], contract.RESIDUAL_SCALE)
         self.assertTrue(objective["ema_current_skip_stop_gradient"])
         self.assertTrue(objective["ema_next_target_stop_gradient"])

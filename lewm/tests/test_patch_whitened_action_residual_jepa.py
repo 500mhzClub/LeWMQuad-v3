@@ -435,7 +435,7 @@ def test_action_hinges_use_row_means_and_real_hold_separately() -> None:
     assert losses.hold.item() == pytest.approx(0.20)
 
 
-def test_action_hinge_boundary_empty_hold_and_stop_gradient() -> None:
+def test_action_hinge_boundary_empty_hold_and_live_reference_gradient() -> None:
     boundary_layout = build_action_layout(_one_hot([0]))
     boundary_predictions = _predictions_from_energies(
         [0],
@@ -490,8 +490,11 @@ def test_action_hinge_boundary_empty_hold_and_stop_gradient() -> None:
         retain_graph=True,
         allow_unused=True,
     )
-    assert wrong_and_hold_gradients[0] is None
+    assert wrong_and_hold_gradients[0] is not None
+    assert torch.isfinite(wrong_and_hold_gradients[0]).all()
+    assert torch.count_nonzero(wrong_and_hold_gradients[0]).item() > 0
     assert wrong_and_hold_gradients[1] is not None
+    assert torch.isfinite(wrong_and_hold_gradients[1]).all()
     assert torch.count_nonzero(wrong_and_hold_gradients[1]).item() > 0
     assert wrong_and_hold_gradients[2] is None
     jepa_gradients = torch.autograd.grad(

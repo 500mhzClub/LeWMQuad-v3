@@ -35,7 +35,7 @@ assert "torch" not in sys.modules
 assert not any(name.startswith("torch.") for name in sys.modules)
 assert module.PREFLIGHT_ENVIRONMENT_KEY == (
     "LEWM_RGB_PATCH_WHITENED_ACTION_RESIDUAL_JEPA_"
-    "V2_ACTION_GAIN_PREFLIGHT_JSON"
+    "V3_LIVE_REFERENCE_HINGE_PREFLIGHT_JSON"
 )
 print("PASS")
 """

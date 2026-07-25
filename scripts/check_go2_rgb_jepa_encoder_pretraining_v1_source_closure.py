@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify Action-Residual JEPA V2 Action-Gain source closure.
+"""Build or verify Action-Residual JEPA V3 Live-Reference source closure.
 
 This is a source-only AST walk.  It imports no tensor library and opens no
 generated input, checkpoint, RGB payload, attempt output, or protected role.
@@ -60,11 +60,11 @@ def _source_module(name: str, relative: str) -> Any:
 
 
 contract = _source_module(
-    "_lewm_rgb_jepa_encoder_pretraining_v2_action_gain_closure_contract",
+    "_lewm_rgb_jepa_encoder_pretraining_v3_live_reference_closure_contract",
     CONTRACT_RELATIVE_PATH,
 )
 _BASE = _source_module(
-    "_lewm_rgb_jepa_encoder_pretraining_v2_action_gain_closure_base",
+    "_lewm_rgb_jepa_encoder_pretraining_v3_live_reference_closure_base",
     BASE_CHECKER_RELATIVE_PATH,
 )
 
@@ -179,7 +179,7 @@ def main() -> int:
         _write_manifest_exclusive(build_manifest())
         return 0
     verify_manifest(require_tracked=args.require_tracked)
-    print("Go2 Action-Residual JEPA V2 Action-Gain source closure: PASS")
+    print("Go2 Action-Residual JEPA V3 Live-Reference source closure: PASS")
     return 0
 
 

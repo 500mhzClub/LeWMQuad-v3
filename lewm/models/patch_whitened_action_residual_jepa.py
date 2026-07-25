@@ -1,8 +1,8 @@
-"""Exact objective helpers for Patch-Whitened Action-Residual JEPA V1.
+"""Exact helpers for Patch-Whitened Action-Residual JEPA V3 Live-Reference.
 
 This module intentionally contains no data, schedule, runner, or custody
 logic.  It only implements the frozen mathematical mechanism registered in
-the V1 preregistration.
+the V3 Live-Reference Hinge preregistration.
 """
 from __future__ import annotations
 
@@ -383,7 +383,7 @@ def action_residual_losses(
     control_energy = (
         controls - target[:, None]
     ).square().mean(dim=(2, 3))
-    threshold = true_energy.detach() / ACTION_RATIO
+    threshold = true_energy / ACTION_RATIO
     hinges = F.relu(threshold[:, None] - control_energy)
 
     wrong_mask = layout.wrong_loss_mask
