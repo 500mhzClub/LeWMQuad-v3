@@ -1,0 +1,152 @@
+{
+  "schema": "lewm_go2_rgb_masked_current_next_pair_tubelet_jepa_v13_learning_curve_continuation_preregistration_v1",
+  "status": "PREREGISTERED_SOURCE_ONLY_FINAL_LEARNING_CURVE_CONTINUATION_PENDING_IMPLEMENTATION_REVIEW_AND_SEPARATE_AUTHORIZATION",
+  "date": "2026-07-26",
+  "repository_goal": "fully_learned_perception_only_rgb_jepa_navigation_validated_once_on_externally_custodied_heldout_mazes",
+  "scientific_question": "Does the unchanged masked current-to-next pair-tubelet JEPA convert its verified update-100 directional learning into the complete preregistered absolute mechanism gate by update 400?",
+  "predecessor": {
+    "experiment": "V12 gate-timing successor",
+    "closed": true,
+    "terminal_status": "FAIL_PHASE_A_UPDATE_100_CONTINUATION_GATE_TERMINAL",
+    "terminal_audit": {
+      "path": "docs/lewm_go2_rgb_masked_current_next_pair_tubelet_jepa_v12_gate_timing_terminal_audit_2026-07-26.json",
+      "commit": "19ddee22a04772538870004c3179f5f8ea19f7d3",
+      "byte_count": 40794,
+      "file_sha256": "cfa2f75f932e4afe95071838653e8a7ce6b1c575e070a665206985f95b525b99",
+      "content_sha256": "64ffef189a08493ab4944627a5578b56dfcbcfe961d29c6d0ab21c6a5c5fe356"
+    },
+    "optimizer_updates": 100,
+    "pair_presentations": 1600,
+    "checkpoint_qualified": false,
+    "checkpoint_or_training_trace_reuse_authorized": false,
+    "directional_learning_witnesses": {
+      "normalized_projected_future_effective_rank": {"update_0": 42.52288818359375, "update_100": 99.0425033569336},
+      "action_retrieval_nll": {"update_0": 2.1972239017486572, "update_100": 2.1962249279022217},
+      "action_retrieval_macro_balanced_accuracy": {"update_0": 0.1111111111111111, "update_100": 0.11819767036339542},
+      "target_retrieval_nll": {"update_0": 1.0483659505844116, "update_100": 1.0360678434371948},
+      "same_action_target_retrieval_nll": {"update_0": 1.0483002662658691, "update_100": 1.0360008478164673},
+      "same_action_two_target_nll": {"update_0": 0.6921065449714661, "update_100": 0.6736655235290527},
+      "same_action_strict_win_rate": {"update_0": 0.52834008097166, "update_100": 0.5951417004048583},
+      "same_action_correct_to_deranged_ratio": {"update_0": 0.9924365282058716, "update_100": 0.9759560227394104},
+      "true_to_mean_target_ratio": {"update_0": 1.6174312015798973, "update_100": 1.3812083279836236}
+    },
+    "warning_witnesses": {
+      "masked_future_jepa_loss": {"update_0": 0.005849023349583149, "update_100": 0.009162237867712975},
+      "true_to_shuffled_next": {"update_0": 0.9396466177962249, "update_100": 0.9720841018307778},
+      "true_to_shuffled_current": {"update_0": 0.9385997076898901, "update_100": 0.9729033465204676}
+    }
+  },
+  "decision": {
+    "scientifically_justified": true,
+    "maximum_learning_curve_successors": 1,
+    "reason": "V12 produced exact directional improvement across action retrieval, target retrieval, pair discrimination, and representation rank while all integrity checks remained valid, but it did not meet the mature absolute gate. One fresh continuation can test the learning curve without treating V12 as a pass.",
+    "hard_stop": "Any V13 failure at update 100 or update 400 permanently closes masked pair-tubelet timing successors. No V14 timing successor is authorized.",
+    "does_not_claim_v12_passed_or_qualified": true
+  },
+  "unchanged_scientific_identity": {
+    "model_architecture_and_forward_semantics": true,
+    "data_roles_rows_rgb_and_mappings": true,
+    "loss_formulas_and_weights": true,
+    "optimizer_learning_rates_precision_clip_and_determinism": true,
+    "initialization_draw_order_and_n320_encoder_migration": true,
+    "ema_inventory_momentum_and_update_rule": true,
+    "base_seed": 20260712,
+    "schedule_seed": 20260713,
+    "schedule_file_sha256": "08f54578febbc182d936a999d6cf86263b8cd03a5f640da064c1538dd53dc270",
+    "schedule_prefix_sha256": {
+      "100": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+      "400": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92",
+      "1000": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528"
+    },
+    "observation_updates": [0, 100, 400, 1000],
+    "microbatch_size": 4,
+    "microbatches_per_update": 4,
+    "effective_batch_size": 16,
+    "maximum_updates": 1000,
+    "maximum_presentations": 16000,
+    "gpu_active_minutes_maximum": 60,
+    "threshold_numeric_values_changed": false
+  },
+  "update_zero_gate": {
+    "identity": "exact_V12_update_zero_gate",
+    "terminal_conjuncts": [
+      "control_populations_and_one_scene_per_family_exact",
+      "ema_inventory_and_update_count_exact",
+      "factorized_retrieval_health_exact",
+      "finite_and_ema_gradient_free",
+      "future_leakage_target_nonavuity_and_autograd_isolation",
+      "normalized_population_and_all_nine_candidates_exact",
+      "normalized_projected_future_spatial_diversity_at_least_quarter_update0",
+      "normalized_projected_future_variance_at_least_quarter_update0",
+      "observation_rng_and_model_state_preserved",
+      "retrieval_references_and_mappings_immutable",
+      "update_zero_action_symmetry_and_chance_exact",
+      "update_zero_factorized_retrieval_health_exact"
+    ]
+  },
+  "update_100_directional_continuation_gate": {
+    "all_update_zero_structural_conjuncts_remain_true": true,
+    "absolute_conjuncts_retained": {
+      "non_hold_correct_to_fixed_current_strictly_below_one": true
+    },
+    "strict_directional_conjuncts_without_epsilon": [
+      "normalized_projected_future_effective_rank_strictly_above_update0",
+      "action_retrieval_nll_strictly_below_update0",
+      "action_retrieval_macro_balanced_accuracy_strictly_above_update0",
+      "target_retrieval_nll_strictly_below_update0",
+      "same_action_target_retrieval_nll_strictly_below_update0",
+      "same_action_two_target_nll_strictly_below_update0",
+      "same_action_strict_win_rate_strictly_above_update0",
+      "same_action_correct_to_deranged_ratio_strictly_below_update0",
+      "true_to_mean_target_ratio_strictly_below_update0"
+    ],
+    "measured_but_not_update_100_terminal_conjuncts": [
+      "masked_future_jepa_loss",
+      "true_to_shuffled_next",
+      "true_to_shuffled_current",
+      "mature_action_target_and_family_margin_absolute_thresholds"
+    ],
+    "failure_is_terminal": true
+  },
+  "update_400_gate": {
+    "identity": "complete_frozen_V12_V11_update_400_evaluator",
+    "restores_every_original_update_100_absolute_conjunct": true,
+    "enforces_every_original_update_400_mechanism_and_progress_conjunct": true,
+    "threshold_values_and_comparators_unchanged": true,
+    "failure_permanently_closes_masked_pair_tubelet_timing_successors": true
+  },
+  "update_1000_gate": {
+    "identity": "complete_frozen_V12_V11_terminal_evaluator",
+    "threshold_values_and_comparators_unchanged": true
+  },
+  "lifecycle": {
+    "experiment_id": "go2_rgb_masked_current_next_pair_tubelet_jepa_v13_learning_curve_continuation",
+    "fresh_output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_masked_current_next_pair_tubelet_jepa_probe_v13",
+    "attempt_index": 1,
+    "maximum_attempts": 1,
+    "reservation_before_torch_or_runtime_input_access": true,
+    "initialize_fresh_from_original_bound_n320_encoder": true,
+    "v11_or_v12_checkpoint_root_trace_or_runtime_output_reuse_authorized": false,
+    "retry_resume_repair_recovery_replacement_or_second_attempt_authorized": false,
+    "write_only_checkpoint_and_training_trace_payloads": true
+  },
+  "authority": {
+    "execution_authorized_by_this_preregistration_alone": false,
+    "source_implementation_tests_manifest_freeze_and_independent_review_authorized": true,
+    "one_fresh_attempt_may_be_separately_authorized_after_source_review": true,
+    "phase_b_authorized": false,
+    "checkpoint_qualified": false,
+    "perception_qualification_authorized": false,
+    "navigation_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "sealed_authorized": false,
+    "calibration_promotion_deployment_or_production_authorized": false
+  },
+  "protected_access": {
+    "v12_training_trace_opened": false,
+    "v12_checkpoint_or_tensor_payload_opened": false,
+    "heldout_or_sealed_material_opened": false
+  },
+  "content_sha256": "ece8762df23610bb820c92dd2c17a98f90847aa3810dee436e64fdc12643582b"
+}
