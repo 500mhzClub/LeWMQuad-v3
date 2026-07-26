@@ -44,6 +44,21 @@ def test_contract_freezes_exact_science_caps_schedule_and_governance() -> None:
     assert contract.MAXIMUM_UPDATES == 250
     assert contract.MAXIMUM_PRESENTATIONS == 4_000
     assert contract.GPU_ACTIVE_TIME_CAP_MINUTES == 30
+    assert contract.EXECUTION_AUTHORITY["maximum_updates"] == 250
+    assert contract.EXECUTION_AUTHORITY["maximum_presentations"] == 4_000
+    assert contract.EXECUTION_AUTHORITY["gpu_active_minutes_maximum"] == 30
+    assert contract.EXECUTION_AUTHORITY[
+        "science_identical_v7_runner_integrity_replacement_only"
+    ] is False
+    assert contract.EXECUTION_AUTHORITY[
+        "coordinate_aware_film_unet_predictor_only"
+    ] is False
+    assert contract.EXECUTION_AUTHORITY[
+        "phase_separated_frozen_state_prediction_only"
+    ] is False
+    assert contract.EXECUTION_AUTHORITY[
+        "learned_bev_query_prototype_perception_only"
+    ] is True
     assert contract.OBSERVATION_UPDATES == (0, 50, 100, 250)
     assert contract.CHECKPOINT_UPDATES == (50, 100, 250)
     assert contract.SCHEDULE_PREFIX_SHA256 == {

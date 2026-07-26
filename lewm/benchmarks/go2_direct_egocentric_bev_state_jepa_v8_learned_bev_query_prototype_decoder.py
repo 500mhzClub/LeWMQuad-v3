@@ -249,12 +249,19 @@ AUTHORIZATION_STATUS = (
 PRESENT_AUTHORITY = dict(SOURCE_ONLY_AUTHORITY)
 EXECUTION_AUTHORITY = {
     **dict(_V7.EXECUTION_AUTHORITY),
+    "maximum_updates": 250,
+    "maximum_presentations": 4_000,
+    "gpu_active_minutes_maximum": 30,
     "output_root": OUTPUT_ROOT_RELATIVE_PATH,
+    "coordinate_aware_film_unet_predictor_only": False,
+    "phase_separated_frozen_state_prediction_only": False,
+    "science_identical_v7_runner_integrity_replacement_only": False,
     "v7_retry_resume_repair_or_extension_authorized": False,
     "v7_checkpoint_tensor_trace_receipt_or_runtime_output_reuse_authorized": (
         False
     ),
     "one_fresh_v8_learned_bev_query_prototype_perception_attempt_only": True,
+    "learned_bev_query_prototype_perception_only": True,
     "predictor_training_or_evaluation_authorized": False,
     "g2_authorized": False,
     "navigation_authorized": False,
