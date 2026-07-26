@@ -210,6 +210,48 @@ Every condition at a stage is conjunctive. Comparators are strict or
 non-strict exactly as written. Stop permanently at the first failure; a later
 stage may be reached only after every earlier stage passes.
 
+### Observation populations and reductions
+
+At every registered observation, `G` and `J` are the plain row means over all
+495 checkpoint-selection pairs, using the same formulas and calls as the
+training objective under no gradient. Action retrieval uses all 495 rows. Its
+nine logits are the nine action-candidate negative energies divided by the
+same detached row scale used by `C`; cross-entropy targets the executed action,
+top-1 uses lowest-vocabulary-index tie breaking, and macro balanced accuracy is
+the arithmetic mean of the nine per-executed-action recalls. For each row the
+hardest wrong action is the minimum-energy one of the other eight. A selection
+scene has a positive hardest-wrong margin exactly when the row mean of
+`hardest_wrong_energy - executed_energy` is strictly positive.
+
+Correct-vs-deranged target NLL uses only the 494 same-action-eligible rows and
+plain two-logit cross-entropy over the correctly ordered pair
+`[-correct_energy/row_scale, -deranged_energy/row_scale]`. Strict win means
+`correct_energy < deranged_energy`. A selection scene has a positive target
+margin exactly when the eligible-row mean of
+`deranged_energy - correct_energy` is strictly positive. The one fallback row
+is absent from these same-action metrics but remains in `C` and all-row
+controls.
+
+Raster quality follows the established checkpoint-selection endpoint
+protocol. Within each family, deduplicate the current and next endpoint
+identities, sort them, and evaluate no-gradient `O(endpoint_rgb)` exactly once
+against that endpoint's own `target_raster_labels`. The aggregate scope pools
+all 924 unique endpoints; their ordered identity SHA-256 is
+`dd84fc73e14056c9d6c8f7c066c2dcafe9726827193c42982d51f412ea744fa4`.
+The rough scope pools the 123 unique endpoints whose frozen family is
+`rough_local_dynamics`. These endpoint metrics are separate from the 495-pair
+wrong-RGB control.
+
+For each raster scope, predicted class is argmax in UNKNOWN/FREE/OCCUPIED
+order, retaining the lowest class index on a tie. Publish the integer `3x3`
+confusion matrix with target rows and predicted columns. Each class recall is
+the diagonal divided by its target-row count; balanced accuracy is the plain
+mean of recalls for target classes present in that scope. Raster NLL is the
+plain per-cell mean of negative log direct softmax probability assigned to the
+hard label, clamped below by float32 machine epsilon. Free recall and occupied
+recall are the corresponding class recalls. The endpoint count, family
+membership, label identity, confusion counts, and NLL count must be recorded.
+
 ### Update 0: integrity only
 
 - Prove the exact three-logit bottleneck and absence of every bypass.

@@ -1,8 +1,8 @@
 {
   "architecture_decision": {
-    "bytes": 13514,
+    "bytes": 16096,
     "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v1_architecture_decision_2026-07-26.md",
-    "sha256": "ab47d2119fc044534263f3381dd7790b68f77981a0dff4c08df08f8e8856f423"
+    "sha256": "9d56f98f33ab501b1f1298a1a94f640305aa4c38de1e09440f8249c716a772fc"
   },
   "authority": {
     "allowed_now": [
@@ -22,7 +22,7 @@
     "runtime_artifact_or_checkpoint_access_authority": false,
     "training_or_evaluation_authority": false
   },
-  "content_sha256": "b1fb0a96c40c85d1b8fb73029966c7e3452f11f6384c409b644c1bd6faaf8e63",
+  "content_sha256": "8d97a9f4769f8ce1ebf69c7665c9fe4a57f693eb5b02acd6a9b3224b796c0943",
   "content_sha256_method": "sha256(canonical_sorted_compact_json_without_top_level_content_sha256)",
   "data": {
     "checkpoint_selection": {
@@ -278,8 +278,18 @@
   "staged_falsification": {
     "failure_receipt_required": "Bind the stopping gate, consumed updates, presentations and GPU-active time, every metric/control, terminal classification, and permanent checkpoint ineligibility.",
     "gate_logic": "Every condition is conjunctive. Comparators are strict or non-strict exactly as written.",
+    "metric_definitions": {
+      "action_retrieval": "All 495 selection pairs. Use the nine action-candidate negative energies divided by the same detached per-row scale used by C. Action NLL is plain cross-entropy targeting the executed action; top-1 uses lowest-vocabulary-index tie breaking; macro balanced accuracy is the arithmetic mean of all nine per-executed-action recalls. Per row, hardest wrong is the minimum-energy other action. A scene is hardest-wrong positive iff mean(hardest_wrong_energy - executed_energy) over all its rows is strictly positive.",
+      "aggregate_raster": "Within each checkpoint-selection family, deduplicate current and next endpoint identities and sort them. Evaluate no-gradient O(endpoint_rgb) exactly once against that endpoint's own target_raster_labels. Aggregate pools all 924 unique endpoints with ordered identity SHA-256 dd84fc73e14056c9d6c8f7c066c2dcafe9726827193c42982d51f412ea744fa4. Predicted class is argmax UNKNOWN/FREE/OCCUPIED with lowest-index tie break. Publish target-row/predicted-column 3x3 confusion; each recall is diagonal/target-row count; balanced accuracy is the plain mean of present-class recalls; NLL is the plain per-cell mean negative log direct softmax target probability clamped below by float32 machine epsilon.",
+      "G_and_J": "Plain row means over all 495 checkpoint-selection pairs under no gradient, using the exact training formulas and call isolation.",
+      "rough_raster": "The identical endpoint-level confusion, recall, balanced-accuracy, and NLL reduction restricted exactly to the 123 unique checkpoint-selection endpoints whose frozen family is rough_local_dynamics.",
+      "same_action_target": "Only the 494 same-action-eligible selection rows. NLL is plain two-logit cross-entropy on [-correct_energy/row_scale,-deranged_energy/row_scale], where row_scale is the same detached C scale. Strict win is correct_energy < deranged_energy. A scene is target-positive iff its eligible-row mean(deranged_energy - correct_energy) is strictly positive. Exclude the one fallback row.",
+      "wrong_RGB": "The separate pairwise all-495 control registered under objective.wrong_rgb_control; it is not the 924-endpoint raster population."
+    },
     "metric_populations": {
-      "aggregate_C_and_wrong_RGB_control": "all 495 checkpoint-selection rows, including the one frozen mapped-negative fallback row",
+      "aggregate_C_action_metrics_and_wrong_RGB_control": "all 495 checkpoint-selection rows, including the one frozen mapped-negative fallback row",
+      "aggregate_raster": "all 924 unique checkpoint-selection endpoints, each evaluated exactly once; ordered endpoint identity SHA-256 dd84fc73e14056c9d6c8f7c066c2dcafe9726827193c42982d51f412ea744fa4",
+      "rough_raster": "the 123 unique checkpoint-selection endpoints whose frozen family is rough_local_dynamics",
       "same_action_correct_vs_deranged_target_NLL_and_strict_win": "only the 494 same-action-eligible checkpoint-selection rows; the one fallback row is excluded",
       "training_C": "all 4262 train rows, including all 25 frozen mapped-negative fallback rows"
     },
