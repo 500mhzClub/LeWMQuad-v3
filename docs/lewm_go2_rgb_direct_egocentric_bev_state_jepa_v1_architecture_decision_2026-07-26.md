@@ -31,9 +31,31 @@ current three-logit BEV state + nine-way one-hot executed action
 The three UNKNOWN/FREE/OCCUPIED logits, and their probabilities, are the sole
 JEPA, predictor, and later navigation state. The decoder's hidden 64-channel
 features may not bypass the three-logit bottleneck. During training only, a
-detached EMA copy sees the bound next RGB and produces the target next
-three-logit state. Raster labels ground outputs but never enter an encoder or
-the transition.
+detached EMA copy produces the target states used by the JEPA objective.
+Raster labels ground online outputs but never enter an encoder or the
+transition.
+
+The complete RGB-to-state call graph is frozen as follows. `O` is the one
+weight-shared online encoder+decoder+state-head stack and `T` is its detached
+EMA copy.
+
+- `O(current_rgb)` supplies `G_current` and is the sole learned-state input to
+  the causal predictor.
+- `O(next_rgb)` is a training-only grounding call. It supplies `G_next` only;
+  gradients may reach `O` only through `G_next`.
+- `T(next_rgb)` supplies the detached true-next target to `J` and `C`.
+- `T(current_rgb)` supplies the detached current-target negative to `C` on
+  non-hold rows only.
+- `T(fixed_negative_rgb)` supplies the detached mapped-negative target to `C`.
+- `O(fixed_negative_rgb)` is an observation-time, no-gradient diagnostic call
+  used only by the wrong-RGB grounding control.
+
+No output or hidden feature from the `O(next_rgb)` grounding call or
+`O(fixed_negative_rgb)` diagnostic call may feed `J`, `C`, the transition,
+prediction, action retrieval, optimizer loss other than `G_next`, later
+navigation, or deployment. The current-RGB-only declaration describes the
+causal prediction and inference path. Next RGB, fixed-negative RGB, and hard
+labels are unavailable to that path and to later navigation.
 
 This is a change to the learned state and transition contract, not another
 action-residual timing, loss-weight, schedule, seed, or encoder-tokenization
@@ -110,9 +132,17 @@ The existing `target_raster_labels` endpoint view grounds both bound current
 and next endpoints. Raw-V13 remains unchanged: exactly 4,262 train pairs from
 72 scenes and 495 checkpoint-selection pairs from eight scenes, with its
 existing endpoint mappings, fixed negatives, row ordering, action
-permutation, family binding, and schedule. No rendering, relabeling,
-filtering, resampling, new rows, role changes, or dataset changes are allowed.
-The accompanying JSON preregistration binds every source hash.
+permutation, family binding, and schedule. The frozen mapped-negative binding
+is same-action eligible for 4,237/4,262 train rows and 494/495 selection rows.
+Non-singleton `(scene, primitive)` groups map cyclically to the next row and
+therefore preserve action. For a singleton group, the already-frozen rule maps
+to the next row in the complete scene sorted by `content_sha256`; the remaining
+25 train rows and one selection row are consequently same-scene fallbacks not
+guaranteed to preserve action. Those fallback rows are included in training
+`C` and in the wrong-RGB diagnostic exactly like every other row, but are
+excluded from metrics named same-action. No rendering, relabeling, filtering,
+resampling, new rows, role changes, or dataset changes are allowed. The
+accompanying JSON preregistration binds every source hash.
 
 ## Frozen objective
 
@@ -120,10 +150,11 @@ Let the state probabilities be the softmax of the direct three logits. There
 is no Camera head, ray/depth/ground objective, rasterizer, equivariance loss,
 warp loss, variance loss, or auxiliary loss.
 
-`G` is the mean of the current and next hard-label grounding losses. Each
-grounding loss uses exact `hierarchical_raster_cross_entropy_v4` reduction on
-the direct probabilities: balanced OCCUPIED-vs-rest BCE and balanced
-FREE-vs-UNKNOWN BCE restricted to non-occupied labels, combined `0.5/0.5`.
+`G` is the mean of `G_current` from `O(current_rgb)` and `G_next` from the
+separate weight-shared `O(next_rgb)` call. Each hard-label grounding loss uses
+exact `hierarchical_raster_cross_entropy_v4` reduction on the direct
+probabilities: balanced OCCUPIED-vs-rest BCE and balanced FREE-vs-UNKNOWN BCE
+restricted to non-occupied labels, combined `0.5/0.5`.
 
 `J` applies the analogous soft-target hierarchy from the executed-action
 predicted probabilities to detached EMA next-state probabilities: BCE against
@@ -131,14 +162,25 @@ detached target occupied probability plus target-nonoccupied-weighted BCE on
 conditional free probability, combined `0.5/0.5`.
 
 `C` is one joint conditional NCE. Its positive is the executed-action
-prediction against the true detached next target. Its negatives are all eight
-wrong-action predictions against that same true target, the executed-action
-prediction against the bound fixed same-action deranged target, and, for a
-non-hold row only, the executed-action prediction against the current target.
-The candidate count is therefore exactly `10` for hold and `11` for non-hold.
-Candidate energy is the same soft-target hierarchical energy used by `J`.
-Each NCE logit is negative energy divided by the detached mean candidate
-energy for that row, clamped below at `1e-6`.
+prediction against `T(next_rgb)`. Its negatives are all eight wrong-action
+predictions against that same detached target, the executed-action prediction
+against `T(fixed_negative_rgb)`, and, for a non-hold row only, the
+executed-action prediction against `T(current_rgb)`. The mapped-negative
+candidate is same-action where the frozen mapping is eligible and is the
+frozen deterministic fallback on the 26 singleton-group rows; all rows remain
+in `C`. The candidate count is therefore exactly `10` for hold and `11` for
+non-hold. Candidate energy is the same soft-target hierarchical energy used
+by `J`. Each NCE logit is negative energy divided by the detached mean
+candidate energy for that row, clamped below at `1e-6`.
+
+At each registered observation, the wrong-RGB control evaluates
+`O(next_rgb)` and `O(fixed_negative_rgb)` under no gradient against the same
+true-next raster label. For each of the eight selection scenes, separately
+average the exact hard-label hierarchical grounding loss over all its rows;
+that scene is a strict correct-RGB win exactly when the correct mean is lower
+than the mapped-negative mean. Same-action target NLL and strict-win metrics
+use only the 494 eligible selection rows; aggregate `C` and the wrong-RGB
+control retain all 495 rows.
 
 Normalize `G` and `J` by `log(2)`. Normalize `C` per row by
 `log(candidate_count)` before row averaging. The total is exactly:

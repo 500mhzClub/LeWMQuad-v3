@@ -1,8 +1,8 @@
 {
   "architecture_decision": {
-    "bytes": 10953,
+    "bytes": 13514,
     "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v1_architecture_decision_2026-07-26.md",
-    "sha256": "305f2a7e89781e24fc1249262b2a7dc9bb12e65aac4311255f6fc45a1e61e3a3"
+    "sha256": "ab47d2119fc044534263f3381dd7790b68f77981a0dff4c08df08f8e8856f423"
   },
   "authority": {
     "allowed_now": [
@@ -22,12 +22,14 @@
     "runtime_artifact_or_checkpoint_access_authority": false,
     "training_or_evaluation_authority": false
   },
-  "content_sha256": "8fb6bd859f8ef9383680db50412a32740187c119ac711aa899c44df3bc822508",
+  "content_sha256": "b1fb0a96c40c85d1b8fb73029966c7e3452f11f6384c409b644c1bd6faaf8e63",
   "content_sha256_method": "sha256(canonical_sorted_compact_json_without_top_level_content_sha256)",
   "data": {
     "checkpoint_selection": {
+      "fixed_mapped_negative_fallback_count": 1,
       "input_row_sha256": "81f85cdf0ad00ec68918f5eeb7637bf20aa3f17f5615bedfb10e6a4859eb91f1",
       "pairs": 495,
+      "same_action_eligible_count": 494,
       "scenes": 8,
       "target_mapping_sha256": "95d42273a8319316ad68781cb2158146e7672eda529984c3aeddc0937d87a9c1",
       "unique_endpoints": 924
@@ -44,12 +46,15 @@
       "file_sha256": "e102b3c64e99029f118597353966edaaaddbc11efe49b9081d5d7a9c9d974360",
       "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/manifest.json"
     },
+    "fixed_mapped_negative_rule": "Within every non-singleton (scene, primitive) group, map cyclically to the next content_sha256-sorted row, preserving action. For a singleton group, map to the next row in the complete content_sha256-sorted scene; this is same-scene but not guaranteed same-action. Preserve the already-bound mapping hashes exactly.",
     "preservation": "Use exactly the Raw-V13 train and checkpoint-selection rows, roles, endpoint mappings, ordering, and schedule. No filtering, resampling, new rendering, new labels, role changes, or dataset changes.",
     "selection_action_permutation_sha256": "2740be362829c172a06aebae0d077e69ede8af80cbf6f00569eb460dc559bb0f",
     "selection_family_binding_sha256": "c39efe48afd6d4c02a24af77f1f11e7f6cd5a69d571b0a9416924b07bbacbb11",
     "train": {
+      "fixed_mapped_negative_fallback_count": 25,
       "input_row_sha256": "bb119abb33b7c56f3c1d96e7cb1b52fbe4d2db27d80df4f95a5b1cd9d0cf729e",
       "pairs": 4262,
+      "same_action_eligible_count": 4237,
       "scenes": 72,
       "target_mapping_sha256": "c9c914422927670ffce8e2a967bf264725b9ae3c55c353ee0a1a16e44044196b",
       "unique_endpoints": 7777
@@ -119,15 +124,24 @@
   "mechanism": {
     "action_encoding": "nine_way_one_hot",
     "bottleneck": "The three UNKNOWN/FREE/OCCUPIED logits and probabilities are the sole JEPA, predictor, and navigation state. No hidden 64D or other bypass is allowed.",
-    "online_encoder_input": [
+    "causal_prediction_and_inference_online_encoder_input": [
       "current_rgb"
     ],
+    "complete_training_and_control_call_graph": {
+      "O_current_rgb": "Weight-shared online encoder+decoder+state-head. Supplies G_current and the sole learned-state input to the causal predictor.",
+      "O_fixed_negative_rgb": "Observation-time no-gradient diagnostic only. Supplies the wrong-RGB grounding control and is excluded from every optimizer loss, EMA update, J, C, transition, prediction, action retrieval, navigation, and deployment path.",
+      "O_next_rgb": "Training-only weight-shared online grounding call. Supplies G_next only; gradients may reach online parameters only through G_next. Its output and hidden features are forbidden from J, C, transition, prediction, action retrieval, navigation, and deployment.",
+      "T_current_rgb": "Detached EMA target call used only as the non-hold current-target negative in C.",
+      "T_fixed_negative_rgb": "Detached EMA target call used only as the frozen mapped-negative target in C.",
+      "T_next_rgb": "Detached EMA target call used only as the true-next target in J and C."
+    },
+    "input_declaration_scope": "The current-RGB-only declaration applies to the causal prediction, inference, and later navigation path. Training may additionally supply next RGB only to isolated O_next_rgb and T_next_rgb calls; fixed-negative RGB only to isolated T_fixed_negative_rgb and diagnostic O_fixed_negative_rgb calls; and current RGB to detached T_current_rgb. None is a causal predictor or navigation input.",
     "online_output": "direct_64x64x3_unknown_free_occupied_logits",
     "runtime_inputs_only": [
       "current_rgb",
       "executed_action_identity"
     ],
-    "target_path_training_only": "Hard-sync encoder+decoder+state-head once, then update that target copy with EMA decay 0.996 after every optimizer update. It receives bound next RGB only. The predictor has no target copy. Labels ground outputs but never enter either encoder or transition.",
+    "target_path_training_only": "Hard-sync encoder+decoder+state-head once, then update that target copy with EMA decay 0.996 after every optimizer update. Under no gradient it receives bound next RGB for the true-next target, bound current RGB for the non-hold current-target negative, and bound fixed-negative RGB for the mapped-negative target. The predictor has no target copy. Labels ground online outputs but never enter either encoder or transition.",
     "transition": {
       "action_dim": 9,
       "bev_dim": 3,
@@ -188,8 +202,8 @@
     "state_head": "one_1x1_projection_to_three_logits"
   },
   "objective": {
-    "C": "One joint conditional NCE. Positive: executed prediction vs true detached next target. Negatives: eight wrong-action predictions vs that target; executed prediction vs fixed same-action deranged target; and, on non-hold rows only, executed prediction vs current target. Candidate count is 10 hold or 11 non-hold. Candidate energy is the J soft hierarchy. Each logit is negative energy divided by detached per-row mean candidate energy clamped at 1e-6. Divide each row by log(candidate_count), then average rows.",
-    "G": "Mean current+next hierarchical_raster_cross_entropy_v4 on direct three-class probabilities: balanced OCCUPIED-vs-rest BCE, then balanced FREE-vs-UNKNOWN BCE on non-occupied labels, combined 0.5/0.5.",
+    "C": "One joint conditional NCE over every row. Positive: executed prediction vs detached T(next_rgb). Negatives: eight wrong-action predictions vs that target; executed prediction vs detached T(fixed_negative_rgb); and, on non-hold rows only, executed prediction vs detached T(current_rgb). The mapped negative is same-action on 4237/4262 train rows and 494/495 selection rows. Each non-singleton (scene, primitive) group maps cyclically to its next content_sha256-sorted row; each of the 26 singleton-group rows retains the frozen same-scene next-content_sha256 fallback, which is not guaranteed same-action. Candidate count is 10 hold or 11 non-hold for every row. Candidate energy is the J soft hierarchy. Each logit is negative energy divided by detached per-row mean candidate energy clamped at 1e-6. Divide each row by log(candidate_count), then average rows.",
+    "G": "Mean of G_current from O(current_rgb) and G_next from a separate weight-shared O(next_rgb) call, each using hierarchical_raster_cross_entropy_v4 on direct three-class probabilities: balanced OCCUPIED-vs-rest BCE, then balanced FREE-vs-UNKNOWN BCE on non-occupied labels, combined 0.5/0.5. O(next_rgb) may receive gradients only through G_next and may feed no other objective or causal path.",
     "J": "Executed predicted probabilities vs detached EMA next-state probabilities: occupied-probability BCE plus target-nonoccupied-weighted BCE on conditional free probability, combined 0.5/0.5.",
     "absent": [
       "camera_loss",
@@ -202,7 +216,8 @@
       "variance_loss",
       "auxiliary_loss"
     ],
-    "total": "1*G/log(2) + 1*J/log(2) + 1*normalized_C"
+    "total": "1*G/log(2) + 1*J/log(2) + 1*normalized_C",
+    "wrong_rgb_control": "At each registered observation, run O(next_rgb) and O(fixed_negative_rgb) under no gradient and score both against the same true-next raster label with the exact hard-label hierarchical grounding loss. Within each selection scene, separately average correct and mapped-negative losses over every row; a scene is a strict correct-RGB win iff its correct mean is lower. This control is excluded from the optimizer loss and EMA update."
   },
   "optimization": {
     "batch_size": 16,
@@ -255,7 +270,7 @@
         64
       ]
     },
-    "grounding_contract": "Ground both bound current and next endpoint outputs through target_raster_labels backed only by raster_labels.u1, using the registered narrow _row_array loader.",
+    "grounding_contract": "Ground O(current_rgb) and the isolated weight-shared O(next_rgb) through their respective bound endpoint target_raster_labels backed only by raster_labels.u1, using the registered narrow _row_array loader. For the observation-only wrong-RGB control, compare no-gradient O(next_rgb) and O(fixed_negative_rgb) against the same bound true-next label.",
     "raw_array": "raster_labels.u1",
     "raw_dtype": "uint8",
     "schema_name": "lewm_go2_observable_camera_ray_raster_v4"
@@ -263,6 +278,11 @@
   "staged_falsification": {
     "failure_receipt_required": "Bind the stopping gate, consumed updates, presentations and GPU-active time, every metric/control, terminal classification, and permanent checkpoint ineligibility.",
     "gate_logic": "Every condition is conjunctive. Comparators are strict or non-strict exactly as written.",
+    "metric_populations": {
+      "aggregate_C_and_wrong_RGB_control": "all 495 checkpoint-selection rows, including the one frozen mapped-negative fallback row",
+      "same_action_correct_vs_deranged_target_NLL_and_strict_win": "only the 494 same-action-eligible checkpoint-selection rows; the one fallback row is excluded",
+      "training_C": "all 4262 train rows, including all 25 frozen mapped-negative fallback rows"
+    },
     "numeric_gate_state": "FROZEN_PREREGISTERED",
     "observations": [
       0,
