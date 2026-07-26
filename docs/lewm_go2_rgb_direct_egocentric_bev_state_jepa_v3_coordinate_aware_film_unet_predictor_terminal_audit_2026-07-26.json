@@ -1,0 +1,193 @@
+{
+  "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v3_coordinate_aware_film_unet_predictor_terminal_audit_v1",
+  "status": "PASS_VALID_UPDATE_ZERO_INTEGRITY_INSTRUMENTATION_FAILURE_CLOSES_V3_NO_RETRY",
+  "classification": "VALID_UPDATE_ZERO_INTEGRITY_HARNESS_FAILURE_OUTER_PREDICTOR_FORWARD_HOOK_INCOMPATIBLE_WITH_DIRECT_ALL_ACTIONS_METHOD_ZERO_SCIENTIFIC_WORK_V3_PERMANENTLY_CLOSED",
+  "auditor": "/root/direct_bev_independent_review",
+  "encoding_agent": "/root",
+  "frozen_source": {
+    "implementation_commit": "551bff22aaf69a369f887b9984cccb97e2ffd90a",
+    "source_review_commit": "38cb19326d5c01f55e8d5f596cc45d327354f9d1",
+    "execution_authorization_commit": "0a1888406aaa27de4ddf276c37204066c154e36f",
+    "source_manifest_file_sha256": "5669974b4a4b5410bc06ad6f0d3c0038b418755b024be18bfa0b8ece4aa01cb3",
+    "source_review_file_sha256": "29f7512f992c89bbe1fce1e3dc4df62d1d83da9794d9cbafdae25fe5d0845418",
+    "execution_authorization_file_sha256": "dd09784bbdfebbf577634b8cd014adcce06a891cc3c939486b2b5b4307bd7f5b"
+  },
+  "receipt_policy": {
+    "opened_receipts": [
+      "reservation.json",
+      "metrics.json",
+      "artifact.json",
+      "access.json",
+      "result.json",
+      "completed.json"
+    ],
+    "training_trace_exists_from_terminal_inventory": true,
+    "training_trace_opened": false,
+    "checkpoint_or_tensor_opened": false,
+    "other_generated_or_protected_material_opened": false
+  },
+  "receipts": [
+    {
+      "path": "reservation.json",
+      "file_sha256": "28bc9b61451609b08759a24ec3b8023f6a27c5254fd9b0ff31cdb54a74a70e7b",
+      "content_sha256": "e99c275184a003330c2068c055e22bf7bdf8dfcf6c03760de8e87381135f71ef",
+      "byte_count": 40830,
+      "status": "RESERVED_0700_BEFORE_TORCH_RUNTIME_RGB_RASTER_OR_CHECKPOINT"
+    },
+    {
+      "path": "metrics.json",
+      "file_sha256": "bf13d1fa0cb7182f66aaa6120a9704d3f4a2b5c3f305c16bf463d4f8c14e0a17",
+      "content_sha256": "9b920d8873a5232bc3ee10044e216efeef5e1f32da208960d3bf69b4eaaac30a",
+      "byte_count": 8974,
+      "status": "FAIL_UPDATE_ZERO_INTEGRITY_GATE_TERMINAL_NO_RETRY"
+    },
+    {
+      "path": "artifact.json",
+      "file_sha256": "fc9826c7a535fd2a72dab0b24314a33b421ccfa92ec2b4a7ffdf51fca147110a",
+      "content_sha256": "0f7389b3d09629bd8a33731cc9a5a51e16e132ccc9528b6ab28b66ba74cbc116",
+      "byte_count": 20416,
+      "status": "FAIL_UPDATE_ZERO_INTEGRITY_GATE_TERMINAL_NO_RETRY"
+    },
+    {
+      "path": "access.json",
+      "file_sha256": "98a5c992733f486e12805ef822efba9968476d34cc93e4f41a1552abe88ae906",
+      "content_sha256": "77624e8cee1fe34f66e246c8e68862e0eb4e5912c67d1e032fdd177af5949d7a",
+      "byte_count": 335451,
+      "status": "ALL_AUTHORIZED_DEVELOPMENT_INPUTS_REHASHED"
+    },
+    {
+      "path": "result.json",
+      "file_sha256": "b18ecc2abae833f614321ff4b3639f955b59e6e221952f8f8a1b9943e6880508",
+      "content_sha256": "196796edbe1d62a4d3405ba8cdcf7f377edd90b8768f4bf89b4fd8a145f877f4",
+      "byte_count": 2430,
+      "status": "FAIL_UPDATE_ZERO_INTEGRITY_GATE_TERMINAL_NO_RETRY"
+    },
+    {
+      "path": "completed.json",
+      "file_sha256": "59bae849ad776216af32dfc526906fad5d205917b55eb1e7dc61dcbdd692061f",
+      "content_sha256": "e3de966896f487f4d243ef2a047ced53a1c64c276b5c0b5645e81b3c69e7d0da",
+      "byte_count": 3637,
+      "status": "FAIL_UPDATE_ZERO_INTEGRITY_GATE_TERMINAL_NO_RETRY"
+    }
+  ],
+  "receipt_validation": {
+    "all_six_json_receipts_parse": true,
+    "all_six_content_self_hashes_valid": true,
+    "completed_cross_bindings_valid": true,
+    "terminal_status_chain_valid": true,
+    "terminal_files_sealed_read_only": true,
+    "all_inputs_rehashed": true
+  },
+  "execution_accounting": {
+    "updates": 0,
+    "presentations": 0,
+    "objective_evaluations": 0,
+    "backward_calls": 0,
+    "optimizer_updates": 0,
+    "ema_updates": 0,
+    "registered_observations": 1,
+    "observer_reruns": 0,
+    "gpu_active_elapsed_seconds": 15.959265090990812
+  },
+  "terminal_gate": {
+    "update": 0,
+    "passed": false,
+    "control": "FAIL_UPDATE_ZERO_INTEGRITY_GATE_TERMINAL_NO_RETRY",
+    "sole_failed_conjunct": "six_call_graph_isolation_exact",
+    "all_other_conjuncts_passed": true
+  },
+  "gradient_integrity": {
+    "observed_training_objective_call_counts": {
+      "online_state_stack": 3,
+      "predictor": 0,
+      "target_state_stack": 3
+    },
+    "online_group_absolute_gradient_sums": {
+      "encoder": 1190.0869489833713,
+      "decoder_state": 1536.8357818126678,
+      "predictor": 5.07173465937376
+    },
+    "intended_online_path_gradient_nonzero": true,
+    "target_parameters_gradient_free": true,
+    "next_online_gradient_equals_G_next_only": true,
+    "fixed_negative_rgb_optimizer_gradient_absent": true,
+    "observation_only_fixed_negative_output_requires_grad": false
+  },
+  "instrumentation_diagnosis": {
+    "frozen_hook_target": "model.predictor forward hook",
+    "v3_training_call": "model.predictor.predict_all_actions(current_state_logits)",
+    "outer_module_call_operator_invoked": false,
+    "outer_predictor_forward_hook_expected_count": 0,
+    "residual_head_forward_hook_expected_count": 1,
+    "predictor_executed_and_received_nonzero_finite_gradient": true,
+    "failure_is_call_count_witness_incompatibility_not_model_or_gradient_failure": true,
+    "cpu_synthetic_outer_zero_residual_head_one_reproduction_passed": true,
+    "model_forward_computation_changed_by_diagnosis": false
+  },
+  "state_identity": {
+    "initial_model_state_sha256": "84748bc66f0639b9dae1c81880f5c0fa756f4c4d9e75d0ffddac1310c7d05d0a",
+    "terminal_model_state_sha256": "84748bc66f0639b9dae1c81880f5c0fa756f4c4d9e75d0ffddac1310c7d05d0a",
+    "initial_equals_terminal": true
+  },
+  "access_audit": {
+    "roles_opened": [
+      "authority",
+      "checkpoint_selection",
+      "index"
+    ],
+    "model_facing_roles_opened": [
+      "checkpoint_selection"
+    ],
+    "allowed_supervision_arrays_opened": [
+      "raster_labels.u1"
+    ],
+    "forbidden_supervision_arrays_opened": [],
+    "all_forbidden_access_counters_zero": true,
+    "general_raw_frame_loader_call_count": 0,
+    "prior_runtime_output_open_count": 0,
+    "rejected_checkpoint_open_count": 0,
+    "training_trace_read_count": 0,
+    "written_checkpoint_read_count": 0,
+    "g2_open_count": 0,
+    "navigation_open_count": 0,
+    "heldout_open_count": 0,
+    "sealed_open_count": 0,
+    "production_input_open_count": 0,
+    "deployment_input_open_count": 0
+  },
+  "scientific_consequence": {
+    "valid_scientific_training_result_produced": false,
+    "v3_predictor_hypothesis_tested": false,
+    "v3_permanently_closed": true,
+    "v3_retry_resume_repair_or_checkpoint_reuse_authorized": false,
+    "separate_science_identical_v4_integrity_successor_scientifically_justified": true,
+    "v4_authorized_by_this_audit": false,
+    "v4_permitted_delta_if_separately_governed": "redirect_only_the_update_zero_predictor_call_count_hook_to_the_exact_once_per_all_actions_residual_head_witness",
+    "v4_must_preserve": [
+      "model",
+      "data",
+      "seed",
+      "initialization",
+      "schedule",
+      "losses",
+      "optimizer",
+      "ema",
+      "gates",
+      "thresholds",
+      "caps"
+    ],
+    "v4_may_reuse_v3_checkpoint_tensor_trace_or_runtime_output": false,
+    "v4_must_construct_fresh_state": true
+  },
+  "authority": {
+    "checkpoint_qualified": false,
+    "navigation_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "sealed_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "deployment_authorized": false
+  },
+  "content_sha256": "ee7caf34174bdab3fbaf8765950140cc09eb618dda59bfc21dc285062e64d203"
+}
