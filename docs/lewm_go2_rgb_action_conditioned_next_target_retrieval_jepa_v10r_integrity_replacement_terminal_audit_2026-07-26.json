@@ -1,0 +1,301 @@
+{
+  "schema": "lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_terminal_audit_v1",
+  "status": "PASS_TERMINAL_AUDIT_CONFIRMED_SCIENTIFIC_GATE_FAILURE_NO_CHECKPOINT_QUALIFIED",
+  "date": "2026-07-26",
+  "auditor": "/root/plan_efficiency",
+  "content_sha256": "ab6b9d9ad3b6de1462fe142c42e18bf30751cc483aceaa9fabb632b2999cca73",
+  "scope": {
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_action_conditioned_next_target_retrieval_jepa_probe_v10r_integrity_replacement",
+    "canonical_receipt_json_open_count": 6,
+    "runtime_checkpoint_or_trace_payload_open_count": 0,
+    "checkpoint_tensor_deserialization_count": 0,
+    "opaque_runtime_artifact_metadata_checks": 2,
+    "rgb_open_count": 0,
+    "gpu_query_or_allocation_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "audit_is_read_only_except_for_this_audit_document": true
+  },
+  "governance_bindings": {
+    "frozen_source_commit": "cb70ba749c02051a49046669f17dc2076543e717",
+    "source_review_commit": "f39e93bdbf5b1a884c50678af98bfff051757141",
+    "execution_authorization_commit": "df1318517eb2722295d366c0ff9c0bf32f6a2d1d",
+    "independent_source_review": {
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_source_review_2026-07-26.json",
+      "byte_count": 30953,
+      "file_sha256": "4c871af2fe7931f7a9bb267c44f9fd7bb08a9b4eb9c8b0c732ba65ae8c81f56d",
+      "content_sha256": "78d34990fcde2cb611d33d7d8a7fe82a2e8106df0c54f62e88ea931192f746cc"
+    },
+    "execution_authorization": {
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_execution_authorization_2026-07-26.json",
+      "byte_count": 26152,
+      "file_sha256": "b6e20ed7b0b923bda1c1897772806378345f2ab1fdf8d4d186d7ac6113b9524c",
+      "content_sha256": "67cb27c88d2bc4ec9da151ab06740f4243ddc6cdebeea0acad1feecfb759df6b"
+    }
+  },
+  "terminal_inventory": {
+    "root_mode": "0555",
+    "exact_terminal_directories_including_root": [
+      ".",
+      "phase_a",
+      "phase_a/checkpoints"
+    ],
+    "exact_terminal_files": [
+      "access.json",
+      "completed.json",
+      "phase_a/artifact.json",
+      "phase_a/checkpoints/update_100.pt",
+      "phase_a/metrics.json",
+      "phase_a/training_trace.jsonl",
+      "reservation.json",
+      "result.json"
+    ],
+    "canonical_json_receipts": [
+      {
+        "path": "reservation.json",
+        "mode": "0444",
+        "byte_count": 28621,
+        "file_sha256": "570d98ad71bd2397036c9f3bc97e35c59d63ac896e3dcad35b4e0466587614f2",
+        "content_sha256": "e5e3d7eb9a1aa655c8ff67359fe8114de99d957403d499432691ffc379eb98cb"
+      },
+      {
+        "path": "phase_a/metrics.json",
+        "mode": "0444",
+        "byte_count": 54069,
+        "file_sha256": "57d925f9989041c267cac59d7cd5d1a519cd513eeca9a5a922f7b1c2dcdfc8a9",
+        "content_sha256": "852b75e5c9e8b123bf464ed1f57c22a7c19af89504c05610c0d3ea1c2dae7355"
+      },
+      {
+        "path": "phase_a/artifact.json",
+        "mode": "0444",
+        "byte_count": 23629,
+        "file_sha256": "056382b94758666ca4d18f8cd17277a58c25fbb4c2555bbfd69f1073a708f0ba",
+        "content_sha256": "cea382eed94ea440353c2b191f148ea20fe758f76d03da032a6b0c348b95e94f"
+      },
+      {
+        "path": "access.json",
+        "mode": "0444",
+        "byte_count": 1651329,
+        "file_sha256": "77007edf43623474a3dec23e55d0bc661d028eaf049231c5dff396f72aa62e16",
+        "content_sha256": "14acaed47d5f347502803aff4a90afa75eda463452c0e349438dee15f39c3a44"
+      },
+      {
+        "path": "result.json",
+        "mode": "0444",
+        "byte_count": 16454,
+        "file_sha256": "1d4bb7e89f7115468ff9ad35598425e09e2220f04d16bbdd43d97986f8c9ffdb",
+        "content_sha256": "12a1405512c70320ab80db7e6d641647754d374ae816986f2b3f32352cc0002c"
+      },
+      {
+        "path": "completed.json",
+        "mode": "0444",
+        "byte_count": 4293,
+        "file_sha256": "2cf9ed2e84686d8d0b2dde21c3285f45dd7b32323468c77ce2ad0cfbf97ceb54",
+        "content_sha256": "4c2642240995b31670cca8b01d386126aa1001d4b2194ac39b27187f6d2e2511"
+      }
+    ],
+    "opaque_runtime_artifacts": [
+      {
+        "path": "phase_a/checkpoints/update_100.pt",
+        "mode": "0444",
+        "byte_count": 30657377,
+        "receipt_declared_file_sha256": "fbf67bec4dbbbac502474d53ed8bf4b4d8241b3760addf77463357c9750b7a3e",
+        "receipt_declared_content_sha256": "ac59efef1dd242ff3f0b171ab0b966b2d4053c7b00e10514fb0e09213f62d7c4",
+        "receipt_declared_state_sha256": "c9daf78c87a4b86276cde6e66e1f1a81ef5a66d883eee6d218d188cd483566ae",
+        "receipt_declared_schedule_prefix_sha256": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+        "payload_opened_or_independently_hashed_by_auditor": false,
+        "qualified": false
+      },
+      {
+        "path": "phase_a/training_trace.jsonl",
+        "mode": "0444",
+        "byte_count": 89074,
+        "receipt_declared_file_sha256": "9b2634dc66f8a4ea061bcff778640f57bfe5542dcedc9330108a01e4939ef57f",
+        "receipt_declared_content_sha256": "e8723a4a55f02b79b393ae924d91c9f3624597e0dd5e4ec3fde3a01e6d8044b1",
+        "receipt_declared_row_count": 100,
+        "payload_opened_or_independently_hashed_by_auditor": false
+      }
+    ],
+    "all_terminal_files_mode_0444": true,
+    "all_terminal_directories_mode_0555": true,
+    "all_inputs_rehashed_before_completion": true,
+    "partial_evidence_bindings": []
+  },
+  "attempt": {
+    "attempt_identity": "47ca1e12974bf093bb5ce02623f4897f1719af3ed6ecd21597bae9ca1cc4aba8",
+    "attempt_index": 1,
+    "maximum_attempts": 1,
+    "reservation_status": "RESERVED_0700_BEFORE_TORCH_RUNTIME_INPUT_RGB_OR_CHECKPOINT",
+    "terminal_status": "FAIL_PHASE_A_UPDATE_100_CONTINUATION_GATE_TERMINAL",
+    "checkpoint_qualified": false,
+    "phase_a_passed": false,
+    "phase_b_entered": false,
+    "retry_authorized": false,
+    "pass_authorizes": "nothing"
+  },
+  "operation_counts": {
+    "gpu_active_elapsed_seconds": 26.237838283006568,
+    "phase_a_optimizer_updates": 100,
+    "phase_a_pair_presentations": 1600,
+    "phase_a_ema_updates": 100,
+    "selection_observation_count": 2,
+    "observer_reruns": 0,
+    "phase_b_jepa_objectives": 0,
+    "phase_b_optimizer_updates": 0,
+    "phase_b_pair_presentations": 0,
+    "phase_a_mapped_negative_io": {
+      "endpoint_request_count": 2590,
+      "cache_hit_count": 1090,
+      "cache_miss_count": 1500,
+      "physical_read_attempt_count": 1500,
+      "physical_read_success_count": 1500
+    }
+  },
+  "forbidden_access_counts": {
+    "probability_calibration_open_count": 0,
+    "prior_runtime_output_open_count": 0,
+    "rejected_checkpoint_open_count": 0,
+    "phase_a_camera_supervision_array_open_count": 0,
+    "phase_a_general_raw_loader_call_count": 0,
+    "g2_open_count": 0,
+    "navigation_open_count": 0,
+    "heldout_open_count": 0,
+    "sealed_open_count": 0,
+    "production_input_open_count": 0,
+    "deployment_input_open_count": 0,
+    "observer_rerun_count": 0
+  },
+  "update_100_terminal_gate": {
+    "control": "FAIL_PHASE_A_UPDATE_100_CONTINUATION_GATE_TERMINAL",
+    "passed": false,
+    "conjunct_count": 23,
+    "passed_conjunct_count": 19,
+    "failed_conjuncts": [
+      "action_macro_balanced_accuracy_strictly_above_one_ninth",
+      "hold_margin_positive_in_at_least_six_families",
+      "permuted_margin_positive_in_at_least_six_families",
+      "same_action_two_target_nll_strictly_below_update0"
+    ],
+    "population": {
+      "pair_count": 495,
+      "non_hold_pair_count": 435,
+      "hold_pair_count": 60,
+      "same_action_pair_count": 494,
+      "scene_family_count": 8,
+      "action_candidate_count": 9,
+      "target_candidate_count": 1425
+    },
+    "action_identification": {
+      "equal_logit_reference_nll": 2.1972241401672363,
+      "update_0_nll": 2.1972239017486572,
+      "update_100_nll": 2.1951920986175537,
+      "chance_macro_balanced_accuracy": 0.1111111111111111,
+      "update_0_macro_balanced_accuracy": 0.1111111111111111,
+      "update_100_macro_balanced_accuracy": 0.0898672257162823,
+      "update_100_top1_accuracy": 0.09696969389915466,
+      "update_100_per_action_recall": {
+        "arc_left": 0.0,
+        "arc_right": 0.0,
+        "backward": 0.0,
+        "forward_fast": 0.0,
+        "forward_medium": 0.07547169811320754,
+        "forward_slow": 0.0,
+        "hold": 0.7333333333333333,
+        "yaw_left": 0.0,
+        "yaw_right": 0.0
+      },
+      "update_100_energy_ratios": {
+        "executed_to_cyclic": 0.9917178153991699,
+        "executed_to_permuted": 0.9945083260536194,
+        "executed_to_hardest_wrong": 1.1647224426269531,
+        "non_hold_executed_to_hold": 1.180145025253296
+      },
+      "positive_family_margin_counts": {
+        "cyclic": 5,
+        "permuted": 5,
+        "hold": 0,
+        "required_for_permuted_and_hold": 6
+      }
+    },
+    "target_retrieval": {
+      "two_target_equal_logit_reference_nll": 0.6931472420692444,
+      "same_action_two_target_nll_update_0": 0.5034472346305847,
+      "same_action_two_target_nll_update_100": 0.6282996535301208,
+      "all_target_nll_update_0": 1.0955723524093628,
+      "all_target_nll_update_100": 1.0267847776412964,
+      "all_target_top1_update_0": {
+        "count": 57,
+        "accuracy": 0.11515151515151516
+      },
+      "all_target_top1_update_100": {
+        "count": 100,
+        "accuracy": 0.20202020202020202
+      },
+      "same_action_target_nll_update_0": 1.0953514575958252,
+      "same_action_target_nll_update_100": 1.0266040563583374,
+      "same_action_correct_to_deranged_ratio_update_0": 0.4657268822193146,
+      "same_action_correct_to_deranged_ratio_update_100": 0.6169242262840271,
+      "same_action_strict_win_update_0": {
+        "count": 435,
+        "denominator": 494,
+        "rate": 0.8805668016194332
+      },
+      "same_action_strict_win_update_100": {
+        "count": 424,
+        "denominator": 494,
+        "rate": 0.8582995951417004
+      },
+      "deranged_positive_family_margin_count": 8,
+      "current_target_positive_family_margin_count": 0,
+      "non_hold_correct_to_current_ratio_update_100": 1.4476982355117798
+    },
+    "representation_health": {
+      "centered_raw_patch_effective_rank_update_0": 27.717458724975586,
+      "centered_raw_patch_effective_rank_update_100": 53.50478744506836,
+      "centered_projected_target_effective_rank_update_0": 17.426651000976562,
+      "centered_projected_target_effective_rank_update_100": 41.31734848022461,
+      "raw_cross_sample_variance_to_update_0": 0.3374891529132014,
+      "content_residual_spatial_diversity_to_update_0": 0.4056420136213109,
+      "true_to_shuffled_current": 0.612398632892964,
+      "true_to_shuffled_next": 0.6119594705095768,
+      "true_to_mean_target": 1.1648538664049926,
+      "all_values_finite": true,
+      "ema_target_gradient_free": true
+    },
+    "latent_flow": {
+      "non_hold_action_nonzero_count": 8,
+      "required_non_hold_action_nonzero_count": 8,
+      "hold_flow_exactly_zero": true,
+      "maximum_absolute_flow_cell": 0.9901721477508545,
+      "all_components_within_closed_one_patch_bound": true
+    }
+  },
+  "scientific_conclusion": {
+    "science_evaluable": true,
+    "v10r_mechanism_passed": false,
+    "v10r_mechanism_scientifically_failed": true,
+    "integrity_or_operational_failure": false,
+    "result_interpretation": "The representation retained strong scene and next-target discrimination, but the single-frame current-plus-action interface did not identify which action caused the transition. Action macro balanced accuracy fell below chance, seven of nine action recalls were zero, hold dominated, and the registered action-necessity margins failed.",
+    "single_frame_current_plus_action_family_closed": true,
+    "phase_b_began": false,
+    "checkpoint_rejected_and_unopened": true,
+    "perception_qualification_authorized": false,
+    "g2_navigation_heldout_or_sealed_evaluation_authorized": false
+  },
+  "terminal_authority_and_successor_boundary": {
+    "v10r_attempt_consumed": true,
+    "v10r_retry_or_resume_authorized": false,
+    "same_output_root_reuse_authorized": false,
+    "checkpoint_promotion_or_use_authorized": false,
+    "v10r_loss_temperature_negative_set_threshold_seed_schedule_or_flow_tweak_authorized": false,
+    "automatic_successor_execution_authorized": false,
+    "next_scientific_mechanism_for_separate_preregistration": "MASKED_CURRENT_TO_NEXT_PAIR_TUBELET_JEPA",
+    "successor_inputs": [
+      "current_rgb_visible_context",
+      "masked_future_slot",
+      "candidate_action",
+      "detached_ema_full_current_next_tubelet_target_during_training_only"
+    ],
+    "successor_must_preserve_perception_only_learned_jepa_goal": true,
+    "g2_navigation_heldout_sealed_production_promotion_and_deployment_remain_denied": true
+  }
+}
