@@ -1,0 +1,359 @@
+{
+  "access_and_accounting": {
+    "authorized_fixed_runtime_access": {
+      "n320_checkpoint_loaded": true,
+      "n320_checkpoint_open_attempted": true,
+      "n320_checkpoint_open_succeeded": true,
+      "n320_gate_open_attempted": true,
+      "n320_gate_open_succeeded": true,
+      "schedule_open_attempted": true,
+      "schedule_open_succeeded": true,
+      "schedule_validated": true
+    },
+    "consumed_input_ledger": {
+      "arms": [
+        "rgb_direct_egocentric_bev_state_jepa_v1",
+        "shared"
+      ],
+      "entry_count": 3292,
+      "entry_counts_by_kind": {
+        "development_rgb": 3128,
+        "raw_audit": 1,
+        "raw_manifest": 1,
+        "raw_supervision": 162
+      },
+      "post_failure_payload_rehash_attempted": false,
+      "roles": [
+        "authority",
+        "checkpoint_selection",
+        "index",
+        "train"
+      ],
+      "unique_path_count": 3292
+    },
+    "development_index_constructor_access": {
+      "ledger_entry_count": 4,
+      "total_read_attempt_count": 4,
+      "total_read_success_count": 4
+    },
+    "loader_access": {
+      "allowed_supervision_array": "raster_labels.u1",
+      "allowed_supervision_array_open_attempt_count": 80,
+      "allowed_supervision_array_open_success_count": 80,
+      "failure_and_progress_loader_receipts_equal": true,
+      "forbidden_semantic_counters_all_zero": true,
+      "general_raw_frame_loader_call_count": 0,
+      "physical_development_rgb_file_count": 3128,
+      "physical_raster_array_path_count": 80,
+      "raster_row_array_call_count": 2504,
+      "raw_inputs_frame_attribute_invocation_count": 0
+    },
+    "scope_conclusion": "The complete consumed-input ledger in the allowed failure receipt contains only authorized development RGB, raw-index/audit/manifest material, and raster_labels.u1 supervision. Every recorded forbidden semantic counter is zero. This audit did not reopen any payload named by that ledger."
+  },
+  "auditor": "/root/v8_terminal_failure_audit",
+  "authority": {
+    "audit_only": true,
+    "authorizes_nothing": true,
+    "checkpoint_or_runtime_reuse_authorized": false,
+    "checkpoint_qualified": false,
+    "deployment_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "retry_resume_repair_recovery_replacement_or_second_seed_authorized": false,
+    "sealed_authorized": false,
+    "training_authorized": false
+  },
+  "classification": "VALID_ONE_SHOT_OPERATIONAL_INTEGRITY_FAILURE_AFTER_PASSED_UPDATE_ZERO_AND_UPDATE_50_HEALTH_GATES_BEFORE_UPDATE_100_NO_TERMINAL_PERCEPTION_RESULT_V8_PERMANENTLY_CLOSED_NO_RETRY",
+  "content_sha256": "22bbdb2a9d6ca76732776591679fc8beb6525d809407c8df2c10368ee4abe0ad",
+  "execution_accounting": {
+    "active_training_scope": "perception_only",
+    "backward_calls": 200,
+    "caps": {
+      "gpu_active_minutes_maximum": 30,
+      "maximum_attempts": 1,
+      "maximum_presentations": 4000,
+      "maximum_updates": 250
+    },
+    "ema_updates": 50,
+    "last_training_gradients_finite": true,
+    "objective_evaluations": 200,
+    "online_perception_optimizer_updates": 50,
+    "optimizer_rebuilt_or_reset": false,
+    "optimizer_updates": 50,
+    "pair_loads": 800,
+    "predictor_backward_calls": 0,
+    "predictor_forward_calls": 0,
+    "predictor_objective_evaluations": 0,
+    "predictor_optimizer_membership_count": 0,
+    "predictor_optimizer_updates": 0,
+    "predictor_requires_grad_parameter_count": 0,
+    "presentations": 800,
+    "registered_observations": 2,
+    "target_ema_updates": 50,
+    "target_update_callbacks": 50,
+    "updates": 50
+  },
+  "execution_attempt": {
+    "attempt_identity": "d40a3534703601ca9dd8230209481e176d59ac7136c9499c22769e42a67522e9",
+    "attempt_index": 1,
+    "maximum_attempts": 1,
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v8/rgb_direct_egocentric_bev_state_jepa_probe_v8_learned_bev_query_prototype_decoder_v1",
+    "retry_authorized": false,
+    "sole_v8_attempt_consumed": true
+  },
+  "gate_progress": {
+    "receipt_evidence": {
+      "last_gate_control": "CONTINUE_AFTER_UPDATE_50_V8_HEALTH_GATE",
+      "progress_stage": "observation_update_50",
+      "registered_observations": 2,
+      "updates": 50
+    },
+    "update_0": {
+      "control": "CONTINUE_AFTER_UPDATE_ZERO_V8_INTEGRITY_GATE",
+      "passed": true,
+      "reason": "The committed loop can enter training only when the update-zero gate passes; the failure receipt records 50 completed updates and two registered observations."
+    },
+    "update_50": {
+      "control": "CONTINUE_AFTER_UPDATE_50_V8_HEALTH_GATE",
+      "passed": true,
+      "reason": "The failure receipt directly records this as its last gate control. The committed loop assigns that control before attempting the update-50 snapshot that raised."
+    },
+    "update_100": {
+      "reached": false,
+      "result": "not_tested"
+    },
+    "update_250": {
+      "reached": false,
+      "result": "not_tested"
+    },
+    "update_50_metrics_recoverable_from_allowed_failure_receipt": false,
+    "update_50_result_scope": "health_continuation_only_not_terminal_perception_qualification"
+  },
+  "governance_validation": {
+    "execution_authorization": {
+      "authorizer": "/root/v8_execution_authorizer",
+      "byte_count": 57483,
+      "commit": "49e60fab48475492bbceea5d2b05db79eb1e63a4",
+      "content_sha256": "d7d29a3198155d5234d479100ba6d9fc6d02d036ce1772b33ea5cb8b515b0dc4",
+      "file_sha256": "7dcb8a99fe241fc095e943e3fc99654565e1df9c30fa7729422b6a38be49728b",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_execution_authorization_2026-07-26.json",
+      "status": "AUTHORIZED_ONE_EXACT_DIRECT_BEV_V8_LEARNED_BEV_QUERY_PROTOTYPE_PERCEPTION_FALSIFICATION"
+    },
+    "independent_source_review": {
+      "byte_count": 67864,
+      "commit": "d9c3d66e606d62023d2b4d8006764991803db67a",
+      "content_sha256": "f916c7bad3d2ad46a379b08d8cd0423c4165e6b458aedf2ee23ef1e6a68d2dfa",
+      "file_sha256": "74f047fb6c75fd42eff75e09a6b3c0cc4009f1522f1213bdfc797dfdffe82ca5",
+      "findings": [],
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_source_review_2026-07-26.json",
+      "reviewer": "/root/v8_independent_source_review",
+      "status": "PASS_SOURCE_AND_LEARNED_BEV_QUERY_PROTOTYPE_SCIENCE"
+    },
+    "preregistration": {
+      "byte_count": 22649,
+      "commit": "a9b54a57c7ce7a29c898e941d2649ad6cfbd6e81",
+      "content_sha256": "065e0befce1c55b6545a442f26bd78d14dd035bc8e2e84eaa2af40bb53368d05",
+      "file_sha256": "22310aaaf69ee8544c9022fb337883ed98613e936f3f86d2d78bb49bbcd0c34e",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_preregistration_2026-07-26.json",
+      "status": "PREREGISTERED_ONE_FRESH_RGB_ONLY_LEARNED_BEV_QUERY_PROTOTYPE_PERCEPTION_FALSIFICATION_PENDING_SOURCE_FREEZE_INDEPENDENT_REVIEW_AND_MACHINE_AUTHORIZATION"
+    },
+    "source_manifest": {
+      "byte_count": 42411,
+      "commit": "ae179bb65192eced558104ab53822162163d83d2",
+      "content_sha256": "90d45fc2c6b4b8207de5ac0eed4181762940a2fa85eb0cfca98691efa4927cd5",
+      "file_sha256": "3553309facdd9da0eef1d4e28442ef087d98677de89bd6eeec3f70eb3811c2f2",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_source_manifest_2026-07-26.json",
+      "source_count": 122,
+      "status": "PASS_SOURCE_CLOSURE"
+    }
+  },
+  "operational_failure": {
+    "error": {
+      "message": "ValueError: checkpoint semantic binding changed",
+      "message_sha256": "07e60ff65e07d786a4144746b5b192774d0b01077fc784140ea356ca61f2344d",
+      "module": "builtins",
+      "type": "ValueError"
+    },
+    "failure_point": "after_update_50_observation_and_health_gate_during_update_50_checkpoint_semantic_registry_registration",
+    "inspected_source_bindings": [
+      {
+        "byte_count": 59156,
+        "file_sha256": "923f2925e21b83cc9380faa17b9d719b8fccaf8ff51708f12d4583ff00ffe296",
+        "path": "lewm/benchmarks/go2_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder.py"
+      },
+      {
+        "byte_count": 124355,
+        "file_sha256": "8c35f0cbafe78185ac74d4412914c177de20f899b0f009a9b9dc7aafdf7695a5",
+        "path": "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
+      },
+      {
+        "byte_count": 113094,
+        "file_sha256": "33617086a5481f2fa0bf8ae6993110c40bf8db85f066d1d6e874dde12fb07000",
+        "path": "scripts/run_go2_direct_egocentric_bev_state_jepa_v1.py"
+      },
+      {
+        "byte_count": 38012,
+        "file_sha256": "b5080988ea8edaae63a9d885533adf4c3f58891e0a7b261b08f3707aa8c10050",
+        "path": "scripts/run_go2_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder.py"
+      },
+      {
+        "byte_count": 183259,
+        "file_sha256": "ce256dcb1ef67dff313855680365ce07d867aca986dfcad7b8e9493373fe099c",
+        "path": "scripts/run_go2_rgb_jepa_encoder_pretraining_v1.py"
+      }
+    ],
+    "source_cause": "The V8 contract preregisters checkpoint updates 50, 100, and 250. The V8 snapshot seam delegates checkpoint serialization to the frozen Direct-BEV V1 snapshot function. That function writes checkpoints/update_50.pt and then calls the encoder-pretraining base runner's semantic registry function. The registry function resolves its own lexical base contract, whose CHECKPOINT_UPDATES are 100, 400, and 1000, so it rejects V8 update 50 at the exact `update not in contract.CHECKPOINT_UPDATES` check and raises the recorded ValueError. This is a checkpoint-schema adapter defect after the health gate, not a model, data, seed, schedule, loss, threshold, initialization, gradient, or cap failure.",
+    "source_evidence": [
+      {
+        "effect": "registers V8 checkpoints at updates 50, 100, and 250",
+        "location": "288-303",
+        "path": "lewm/benchmarks/go2_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder.py"
+      },
+      {
+        "effect": "delegates the V8 snapshot to the frozen inherited snapshot implementation",
+        "location": "830-856",
+        "path": "scripts/run_go2_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder.py"
+      },
+      {
+        "effect": "writes update_50.pt and then registers phase, update, state hash, and schedule-prefix metadata",
+        "location": "890-929",
+        "path": "scripts/run_go2_direct_egocentric_bev_state_jepa_v1.py"
+      },
+      {
+        "effect": "rejects any checkpoint update outside the lexical encoder-pretraining contract CHECKPOINT_UPDATES and emits the exact recorded error",
+        "location": "158-190",
+        "path": "scripts/run_go2_rgb_jepa_encoder_pretraining_v1.py"
+      },
+      {
+        "effect": "defines that lexical checkpoint registry as updates 100, 400, and 1000",
+        "location": "456-468",
+        "path": "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
+      },
+      {
+        "effect": "records the observation and its gate control before invoking the checkpoint snapshot",
+        "location": "1778-1811",
+        "path": "scripts/run_go2_direct_egocentric_bev_state_jepa_v1.py"
+      }
+    ]
+  },
+  "receipt_validation": {
+    "allowed_runtime_receipt_paths_opened": [
+      "failure.json",
+      "completed.json"
+    ],
+    "canonical_receipt_count": 2,
+    "canonical_receipts_duplicate_safe_ascii_finite_and_content_hash_valid": true,
+    "completed_to_failure_binding_exact": true,
+    "normal_science_result_present": false,
+    "receipts": {
+      "completed": {
+        "attempt_identity": "d40a3534703601ca9dd8230209481e176d59ac7136c9499c22769e42a67522e9",
+        "byte_count": 2380,
+        "content_sha256": "8fa0a2a137f10b14228ef340972804298571b943cc1f2a7738508a03029b25ca",
+        "file_sha256": "5ae914090d5b7bf3d3931fa52dd2384b31e44c4e0712fc5b3b415ae9d884a281",
+        "path": "completed.json",
+        "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_completion_v1",
+        "status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY"
+      },
+      "failure": {
+        "byte_count": 1146907,
+        "content_sha256": "159214c4d08d4735b981764470a3ab4dd1bba4fcbcd4248c9cbd70d39cd6d690",
+        "file_sha256": "c382f144a22d44f4d23d9e3d1a626fb8dcfac32461f3f819eb797b34d00162b8",
+        "path": "failure.json",
+        "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_failure_v1",
+        "status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY"
+      }
+    },
+    "terminal_inventory": {
+      "exact_precompletion_files": [
+        "checkpoints/update_50.pt",
+        "failure.json",
+        "reservation.json"
+      ],
+      "exact_terminal_directories_including_root": [
+        ".",
+        "checkpoints"
+      ],
+      "exact_terminal_files": [
+        "checkpoints/update_50.pt",
+        "completed.json",
+        "failure.json",
+        "reservation.json"
+      ],
+      "missing_normal_receipts_at_failure": [
+        "metrics.json",
+        "artifact.json",
+        "access.json",
+        "result.json",
+        "completed.json"
+      ],
+      "missing_normal_receipts_synthesized": false,
+      "normal_receipts_present_at_failure": [
+        "reservation.json"
+      ],
+      "partial_evidence_bindings": []
+    }
+  },
+  "replacement_recommendation": {
+    "authority_effect": "recommendation_only_requires_separate_preregistration_source_freeze_independent_review_and_machine_authorization",
+    "checkpoint_or_runtime_reuse_authorized": false,
+    "changes_allowed": [
+      "checkpoint_semantic_registry_adapter_accepting_only_the_active_contracts_exact_checkpoint_updates_and_schedule_prefix_bindings",
+      "complete_failure_receipts_that_embed_every_completed_observation_gate_and_metric_binding_before_any_snapshot_registry_call"
+    ],
+    "exactly_one_fresh_science_identical_v9_integrity_replacement_recommended": true,
+    "justification": "The sole V8 attempt passed its update-zero integrity gate and update-50 health gate, then stopped solely because a frozen base registry validated update 50 against the wrong checkpoint-update namespace. The u100 continuation and u250 qualification questions remain unanswered.",
+    "must_preserve_exactly": [
+      "learned_query_prototype_model",
+      "N320_encoder_initialization_and_all_fresh_initialization",
+      "development_data_and_roles",
+      "seed_and_exact_schedule_prefix",
+      "perception_only_G_over_log2_loss",
+      "optimizer_and_EMA",
+      "observation_updates_gates_thresholds_and_metrics",
+      "250_update_4000_presentation_30_GPU_minute_caps",
+      "predictor_frozen_excluded_and_zero_call_scope",
+      "custody_and_downstream_denials"
+    ],
+    "new_output_root_and_fresh_initialization_required": true,
+    "no_retry_resume_repair_or_reuse_of_v8": true,
+    "recommendation_count": 1
+  },
+  "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_terminal_audit_v1",
+  "scientific_consequence": {
+    "checkpoint_qualified": false,
+    "mechanism_terminal_qualification_result_produced": false,
+    "predictor_hypothesis_tested": false,
+    "predictor_training_or_evaluation_entered": false,
+    "scientific_implication": "V8 supplies valid evidence that the fresh learned-query/prototype stack passed update-zero integrity and showed enough early improvement to pass the frozen update-50 health screen. It supplies no recoverable metric vector in the allowed failure receipt and never reached the preregistered update-100 or update-250 decision gates, so it cannot establish whether the perception mechanism qualifies or fails. It provides no evidence about predictor learnability.",
+    "update_0_integrity_gate_passed": true,
+    "update_50_health_gate_passed": true,
+    "update_100_continuation_gate_tested": false,
+    "update_250_qualification_gate_tested": false,
+    "v8_attempt_consumed": true,
+    "v8_checkpoint_qualified": false,
+    "v8_permanently_closed": true,
+    "v8_retry_resume_repair_recovery_replacement_or_second_seed_authorized": false
+  },
+  "sealing": {
+    "audit_opened_checkpoint_reservation_tensor_trace_or_other_runtime_output": false,
+    "audit_opened_only_exact_authorized_failure_and_completion_receipts": true,
+    "checkpoint_binding_from_allowed_receipt_only": {
+      "byte_count": 24047403,
+      "file_sha256": "33e126d21062f7ca40349aaa142abbad7c754af06c340b60c0bbdeb9007a4184",
+      "filesystem_mode_decimal": 33060,
+      "path": "checkpoints/update_50.pt",
+      "qualified": false,
+      "read_or_reuse_authorized": false
+    },
+    "completed_observed_mode": "0444",
+    "failure_fingerprint_matches_completion_binding_exactly": true,
+    "failure_observed_mode": "0444",
+    "receipt_reported_all_precompletion_files_as_regular_mode_0444": true,
+    "terminal_inventory_bound_by_completion_receipt": true
+  },
+  "status": "PASS_VALID_TERMINAL_UPDATE_50_CHECKPOINT_REGISTRY_OPERATIONAL_FAILURE_CLOSES_V8_NO_RETRY"
+}
