@@ -1,0 +1,516 @@
+{
+  "schema": "lewm_go2_rgb_masked_current_next_pair_tubelet_jepa_v11_preregistration_v1",
+  "authority": {
+    "additional_copy_paste_user_authorization_required": false,
+    "basis": "The user granted autonomous scientific iteration inside the perception-only learned-JEPA maze-navigation goal while metrics improve. Frozen V10R preregistration names a masked current-to-next pair-tubelet JEPA as the sole scientific successor after a real V10R gate failure.",
+    "execution_authorized_by_this_preregistration_alone": false,
+    "execution_requires": [
+      "frozen_and_committed_V11_source_manifest",
+      "independent_source_science_custody_PASS_on_the_exact_frozen_source",
+      "separate_exact_machine_authorization_binding_the_commit_review_inputs_root_and_single_attempt"
+    ],
+    "generated_input_rgb_tensor_checkpoint_gpu_training_or_evaluation_access_before_execution_authorization": false,
+    "one_fresh_v11_attempt_may_be_machine_authorized_after_all_gates": true,
+    "source_only_implementation_focused_tests_manifest_freeze_and_independent_review_authorized": true
+  },
+  "content_sha256": "b7d4c6a59e2bad1e9dfa399a01a83c29658b88a0f11236a49265c8f7eccd15d9",
+  "content_sha256_state": "BOUND_CANONICAL_CONTENT_SHA256_VALIDATED",
+  "data": {
+    "checkpoint_selection": {
+      "input_rows_sha256": "81f85cdf0ad00ec68918f5eeb7637bf20aa3f17f5615bedfb10e6a4859eb91f1",
+      "pairs": 495,
+      "scenes": 8,
+      "unique_endpoints": 924
+    },
+    "exact_existing_roles_only": true,
+    "forbidden": [
+      "new_or_rerendered_RGB",
+      "predecessor_or_third_frame_lookup",
+      "history_metadata_backfill",
+      "row_filtering_subsetting_padding_duplication_or_resampling",
+      "role_scene_or_pair_reassignment",
+      "new_negative_mining_or_runtime_remapping",
+      "pose_depth_odometry_optical_flow_occupancy_traversability_navigation_or_calibration_input"
+    ],
+    "model_facing_roles": [
+      "train",
+      "checkpoint_selection"
+    ],
+    "one_pair_equals_one_presentation": true,
+    "pair_tubelet_definition": "Each existing row itself supplies the complete two-slot tubelet: visible current RGB in slot zero and the same row's next RGB only to the detached EMA target in slot one. No row needs an in-index predecessor.",
+    "predecessor_dependency": false,
+    "same_action_derangement": {
+      "candidate_order": [
+        "correct_next",
+        "same_scene_same_action_deranged_next",
+        "current_only_for_non_hold"
+      ],
+      "checkpoint_selection": {
+        "fallback_count": 1,
+        "mapping_sha256": "95d42273a8319316ad68781cb2158146e7672eda529984c3aeddc0937d87a9c1",
+        "same_action_eligible_count": 494
+      },
+      "train": {
+        "fallback_count": 25,
+        "mapping_sha256": "c9c914422927670ffce8e2a967bf264725b9ae3c55c353ee0a1a16e44044196b",
+        "same_action_eligible_count": 4237
+      },
+      "unchanged_from_v10_v10r": true
+    },
+    "train": {
+      "input_rows_sha256": "bb119abb33b7c56f3c1d96e7cb1b52fbe4d2db27d80df4f95a5b1cd9d0cf729e",
+      "pairs": 4262,
+      "scenes": 72,
+      "unique_endpoints": 7777
+    }
+  },
+  "date": "2026-07-26",
+  "downstream_and_access_boundary": {
+    "calibration_authorized": false,
+    "deployment_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "perception_qualification_authorized": false,
+    "probability_calibration_role_open_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "rejected_or_prior_checkpoint_payload_access_authorized": false,
+    "repository_goal": "fully_learned_perception_only_RGB_JEPA_navigation_validated_once_on_externally_custodied_heldout_mazes",
+    "sealed_authorized": false,
+    "v11_pass_licenses": "only_a_separate_preregistration_for_bounded_perception_requalification_and_the_mandatory_matched_no_JEPA_development_arm",
+    "v4_legacy_sealed_role_remains_permanently_ineligible": true
+  },
+  "governing_evidence": {
+    "frozen_history_feasibility_audit": {
+      "byte_count": 3261,
+      "content_sha256": "2d947ea6857ddcbed82d778692c18831b2c920da6b3aa7c5723833ecb495a929",
+      "file_sha256": "2e34e4f4ef22abdc8d5ecd89c1c12acff8541e41b8440a307ba8cbeb4a432c3d",
+      "path": "docs/lewm_go2_rgb_causal_two_frame_latent_motion_state_source_feasibility_audit_2026-07-25.json",
+      "relevance": "Proves that a predecessor-dependent all-row history model is impossible without new data, while this current-next pair-tubelet uses every existing pair unchanged."
+    },
+    "v10r_preregistration": {
+      "byte_count": 16613,
+      "commit": "bdf30305645efbcde56c7e52711e2ded7bf728fb",
+      "content_sha256": "4100001b5217091bea6b917057eb33cb9331b77c47dd24468c036d5535e8d97e",
+      "file_sha256": "38e3f4d9378d4974f77b4a10b069a704b6722caea31bd97f237f0eac00f2308a",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_preregistration_2026-07-26.json",
+      "successor_named": "MASKED_CURRENT_TO_NEXT_PAIR_TUBELET_JEPA"
+    },
+    "v10r_terminal_audit": {
+      "binding_state": "COMMITTED_AND_INDEPENDENTLY_VALIDATED",
+      "byte_count": 12862,
+      "commit": "79d6de74b795065f7a5a47b32f1a56fc4fd4580a",
+      "content_sha256": "ab6b9d9ad3b6de1462fe142c42e18bf30751cc483aceaa9fabb632b2999cca73",
+      "file_sha256": "8cd27a7d21e9ce1875d322cad2ea5aae8a846a301247f774d4da86074ebd28a5",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_terminal_audit_2026-07-26.json",
+      "required_classification": "VALID_SCIENTIFIC_GATE_FAILURE_CLOSES_SINGLE_FRAME_CURRENT_PLUS_ACTION_RETRIEVAL_FAMILY"
+    },
+    "v10r_terminal_audit_independent_review": {
+      "byte_count": 6204,
+      "commit": "79d6de74b795065f7a5a47b32f1a56fc4fd4580a",
+      "content_sha256": "d9584441c8d9d3ee5136426a2aec899aeb121d750eb3de1658c8334490b5a730",
+      "file_sha256": "58b742f449ce5017e4056ef32607781edf90f0d475610c250072bd182eaf0e05",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_terminal_audit_independent_review_2026-07-26.json",
+      "status": "PASS_INDEPENDENT_TERMINAL_AUDIT_REVIEW_CONFIRMED_VALID_SCIENTIFIC_FAILURE_NO_CHECKPOINT_QUALIFIED"
+    }
+  },
+  "initialization": {
+    "base_seed": 20260712,
+    "evidence_head_or_non_encoder_n320_tensor_migrated": false,
+    "exact_n320_encoder_only_migration": true,
+    "migrated_encoder_tensors": [
+      "patch_embed.weight_and_bias",
+      "cls_token_for_state_provenance_only_frozen_and_never_used_by_the_512_token_forward",
+      "pos_embed_spatial_entries_1_through_256_without_interpolation",
+      "blocks.0_through_5_all_parameters",
+      "norm_all_parameters"
+    ],
+    "new_parameter_draw_order": [
+      "online_future_mask_token_trunc_normal_std_0_02",
+      "online_future_temporal_embedding_trunc_normal_std_0_02",
+      "online_action_embedding.weight_exact_zeros",
+      "online_future_projector.weight_xavier_uniform",
+      "online_future_projector.bias_exact_zeros"
+    ],
+    "new_parameters_initialized_once_from_base_seed_after_exact_n320_migration": true,
+    "new_transformer_block_count": 0,
+    "prior_v1_through_v10r_runtime_output_loaded": false,
+    "target_ema_inventory_hard_synced_once_before_update_zero": true
+  },
+  "lifecycle": {
+    "attempt_index": 1,
+    "maximum_attempts": 1,
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_masked_current_next_pair_tubelet_jepa_probe_v11",
+    "output_root_must_be_absent_before_mode_0700_reservation": true,
+    "reservation_before_torch_import_or_runtime_input_open": true,
+    "reservation_consumes_attempt": true,
+    "retry_resume_repair_recovery_replacement_second_seed_schedule_extension_threshold_change_or_observer_rerun_authorized": false,
+    "runtime_checkpoint_and_training_trace_payloads_are_write_only": true,
+    "terminal_root_and_files_are_sealed_read_only": true
+  },
+  "model": {
+    "action_conditioning": {
+      "candidate_action_is_added_to_every_online_future_mask_token_before_encoder_block_zero": true,
+      "exact_parameter_name": "online_action_embedding.weight",
+      "initialization": "all_nine_rows_exact_zero_at_update_zero",
+      "shape": [
+        9,
+        192
+      ],
+      "hold_action_index": 6,
+      "target_action_embedding_exists": false,
+      "vocabulary": [
+        "arc_left",
+        "arc_right",
+        "backward",
+        "forward_fast",
+        "forward_medium",
+        "forward_slow",
+        "hold",
+        "yaw_left",
+        "yaw_right"
+      ]
+    },
+    "future_leakage_prohibition": {
+      "context_forward_signature_must_not_accept_next_rgb_next_tokens_next_hash_or_target_object": true,
+      "context_inputs": [
+        "current_rgb",
+        "constant_future_mask_tokens",
+        "candidate_action"
+      ],
+      "counterfactual_context_and_predictions_must_be_computed_without_target_branch_outputs": true,
+      "future_slot_online_input_must_be_bitwise_constant_across_all_rows_before_action_addition": true,
+      "next_rgb_allowed_only_inside_no_grad_detached_ema_target_forward": true,
+      "next_rgb_decode_buffer_storage_alias_cache_key_or_content_statistic_may_not_enter_online_context_or_predictor": true,
+      "required_full_path_test": "Hold current RGB and all nine candidate actions fixed, replace correct-next, deranged-next, and current-target tensors independently with distinct synthetic tensors, and prove bitwise equality of patch embeddings, the exact 512-token online input, outputs after each of blocks 0 through 5, normalized projected future predictions, candidate ordering, RNG, and online model state. Final target-dependent energies are deliberately outside this equality claim.",
+      "required_online_autograd_test": "No online future prediction has an autograd path to any next or deranged RGB tensor; each target tensor and target parameter remains gradient-free.",
+      "target_action_input_forbidden": true,
+      "target_path_nonvacuity_test": "Changing only next RGB must change at least one detached normalized projected target-future element while every online prediction remains bitwise fixed."
+    },
+    "fixed_current_candidate_semantics": {
+      "all_nine_action_candidates_reuse_one_bitwise_identical_online_current_patch_tensor": true,
+      "current_rgb_online_patch_embedding_compute_count_per_row": 1,
+      "detached_target_candidates": [
+        "correct_next_from_EMA_pair(current_i,next_i)",
+        "same_action_deranged_next_from_EMA_pair(current_i,next_d_i)",
+        "no_change_current_from_EMA_pair(current_i,current_i)_for_non_hold_only"
+      ],
+      "EMA_current_patch_tensor_is_computed_once_and_reused_bitwise_across_all_three_target_candidates": true,
+      "mapped_row_current_RGB_may_never_replace_current_i": true
+    },
+    "geometry": {
+      "feature_dim": 192,
+      "future_slot_count": 256,
+      "image_size": 112,
+      "patch_size": 7,
+      "spatial_tokens_per_frame": 256,
+      "tubelet_token_count": 512,
+      "tubelet_slot_order": [
+        "current",
+        "future"
+      ]
+    },
+    "online_context": {
+      "current_tokens_before_block_zero": "N320_patch_embed(current_rgb)+exact_N320_pos_embed_spatial_entries+fixed_zero_current_temporal_embedding",
+      "future_tokens_before_block_zero": "online_future_mask_token_broadcast_to_256+the_same_exact_N320_pos_embed_spatial_entries+online_future_temporal_embedding+online_action_embedding(candidate_action)",
+      "input_sequence_shape": [
+        512,
+        192
+      ],
+      "joint_mixing": "concatenated_current_and_masked_future_tokens_pass_together_through_inherited_N320_blocks_0_through_5",
+      "output": "future_slot_outputs_after_inherited_block_5_then_inherited_norm_then_online_future_projector_then_per_token_L2_normalization"
+    },
+    "projected_future": {
+      "normalization_epsilon": 1e-08,
+      "online_projector": "online_future_projector_is_one_192_by_192_linear_with_bias",
+      "rank_and_whitening_population": "centered_per_token_L2_normalized_online_projected_future_tokens_for_the_executed_action_over_all_495_selection_rows",
+      "target_projector": "target_future_projector_is_the_detached_EMA_copy"
+    },
+    "reused_encoder": {
+      "all_six_n320_blocks_are_early_joint_tubelet_blocks": true,
+      "depth": 6,
+      "dropout": 0.0,
+      "heads": 6,
+      "hidden_dim": 192,
+      "new_transformer_blocks": 0
+    },
+    "spatial_position_semantics": {
+      "current_and_future_token_at_index_n_use_the_same_exact_N320_pos_embed_entry_1_plus_n": true,
+      "current_temporal_embedding": "fixed_exact_zero_buffer",
+      "future_temporal_embedding": "learned_online_parameter_with_detached_EMA_target_copy",
+      "interpolation_reindexing_resizing_or_new_spatial_position_parameter_forbidden": true,
+      "spatial_index_order": "unchanged_row_major_16_by_16_N320_order"
+    },
+    "target": {
+      "detached": true,
+      "ema_momentum": 0.996,
+      "full_pair_sequence": "target_patch_embed(current_or_fixed_current_once)_and_target_patch_embed(candidate_future)+exact_target_N320_spatial_positions+zero_current_temporal_or_target_future_temporal_embedding_then_jointly_through_target_blocks_0_through_5",
+      "future_temporal_embedding_source": "target_future_temporal_embedding_updated_only_by_EMA_from_online_future_temporal_embedding",
+      "gradient_allowed": false,
+      "next_future_slot_output_is_the_only_JEPA_target": true
+    },
+    "target_ema_inventory": {
+      "ema_parameter_pairs": [
+        "encoder.patch_embed_to_target_encoder.patch_embed",
+        "encoder.cls_token_to_target_encoder.cls_token_provenance_only_unused_by_forward",
+        "encoder.pos_embed_to_target_encoder.pos_embed",
+        "encoder.blocks.0_through_5_to_target_encoder.blocks.0_through_5",
+        "encoder.norm_to_target_encoder.norm",
+        "online_future_temporal_embedding_to_target_future_temporal_embedding",
+        "online_future_projector_to_target_future_projector"
+      ],
+      "ema_update_count_equals_optimizer_update_count": true,
+      "excluded_online_only_parameters": [
+        "online_future_mask_token",
+        "online_action_embedding.weight"
+      ],
+      "momentum": 0.996,
+      "target_parameters_eval_only_requires_grad_false_and_optimizer_excluded": true
+    }
+  },
+  "objective": {
+    "action_retrieval": {
+      "energy": "mean_token(sum_feature((l2norm(predicted_future_for_candidate_action)-l2norm(detached_ema_true_future_target))**2))",
+      "logits": "negative_energy_for_all_nine_candidate_actions",
+      "target": "executed_action_index",
+      "temperature_scale_margin_outer_multiplier_or_class_weight": false,
+      "weight": 1.0
+    },
+    "anti_collapse": {
+      "covariance_epsilon": 0.0001,
+      "covariance_weight": 0.02,
+      "representation_branches": [
+        "per_token_L2_normalized_online_projected_future_tokens_for_the_executed_action"
+      ],
+      "effective_rank_uses_the_same_centered_normalized_projected_future_matrix": true,
+      "variance_weight": 0.5,
+      "whitening_formula": "V10_position_centered_variance_and_off_diagonal_covariance_formula_applied_only_to_the_registered_normalized_projected_future_population"
+    },
+    "masked_future_jepa": {
+      "formula": "mean_token_feature((l2norm(predicted_executed_action_future)-l2norm(detached_ema_true_future_target))**2)",
+      "target_gradient": false,
+      "weight": 1.0
+    },
+    "target_retrieval": {
+      "candidate_order_and_mapping": "exact_frozen_V10_V10R_same_action_derangement_contract",
+      "fixed_current_semantics": "every_target_candidate_reuses_current_i_exactly_as_registered_in_model.fixed_current_candidate_semantics",
+      "logits": "negative_energy_between_executed_action_prediction_and_each_detached_target_candidate",
+      "target_index": 0,
+      "temperature_scale_margin_outer_multiplier_class_or_stratum_weight": false,
+      "weight": 1.0
+    },
+    "total": "L_masked_future_JEPA + L_action_retrieval + L_target_retrieval + 0.50*V_normalized_projected_future + 0.02*K_normalized_projected_future"
+  },
+  "observations_and_controls": {
+    "action_counterfactuals": [
+      "executed_action",
+      "cyclic_wrong_action",
+      "hardest_of_eight_wrong_actions",
+      "hold_action_on_non_hold_rows",
+      "frozen_within_scene_action_permutation"
+    ],
+    "frozen_selection_action_permutation": {
+      "changed_action_count": 495,
+      "mapping_sha256": "2740be362829c172a06aebae0d077e69ede8af80cbf6f00569eb460dc559bb0f",
+      "scene_shifts": "8_for_each_of_seven_64_row_scenes_and_13_for_the_47_row_scene"
+    },
+    "observation_population": "all_495_checkpoint_selection_rows_exactly_once_per_observation",
+    "observation_updates": [
+      0,
+      100,
+      400,
+      1000
+    ],
+    "record_at_minimum": [
+      "masked_future_JEPA_loss",
+      "nine_action_NLL_top1_macro_balanced_accuracy_and_per_action_recall",
+      "same_action_correct_deranged_two_target_CE_strict_win_rate_and_energy_ratio",
+      "non_hold_correct_next_to_fixed_current_energy_ratio_and_eight_family_margins",
+      "executed_cyclic_hardest_hold_and_permuted_energy_ratios_and_eight_family_margins",
+      "normalized_projected_predicted_future_and_detached_target_future_effective_rank_variance_covariance_and_spatial_diversity",
+      "true_to_shuffled_current_true_to_shuffled_next_and_true_to_mean_target_ratios",
+      "future_leakage_EMA_gradient_finiteness_population_RNG_and_mutation_invariants"
+    ],
+    "reporting_tie_break": "lowest_frozen_candidate_or_action_index",
+    "rng_and_model_state_preserved_bitwise_by_observation": true
+  },
+  "optimizer": {
+    "autocast": false,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "encoder_learning_rate": 0.0001,
+    "epsilon": 1e-08,
+    "global_clip_norm": 1.0,
+    "name": "AdamW",
+    "frozen_excluded_parameter_names": [
+      "encoder.cls_token",
+      "all_target_inventory_parameters"
+    ],
+    "other_learning_rate": 0.0003,
+    "other_trainable_prefixes": [
+      "online_future_mask_token",
+      "online_future_temporal_embedding",
+      "online_action_embedding.weight",
+      "online_future_projector"
+    ],
+    "precision": "float32",
+    "strict_deterministic_algorithms": true,
+    "target_parameters_excluded": true,
+    "weight_decay": 0.0001
+  },
+  "required_source_acceptance": [
+    "prove_exact_4262_train_and_495_selection_rows_scenes_endpoint_counts_role_hashes_and_schedule_prefixes",
+    "prove_no_predecessor_third_frame_history_lookup_filter_pad_subset_or_new_data_surface_exists",
+    "prove_exact_N320_encoder_only_migration_with_no_evidence_head_or_prior_runtime_state_and_no_new_transformer_block",
+    "prove_the_exact_512_token_sequence_enters_inherited_block_0_and_remains_joint_through_inherited_block_5_with_no_late_fusion_or_bypass",
+    "prove_current_and_future_positions reuse exact N320 spatial entries 1_through_256 in unchanged row_major order with no interpolation and only the registered temporal difference",
+    "prove_online_context_has_no_next_RGB_or_target_argument_and_pass_the_full_path_bitwise_future_replacement_test_after_every_inherited_block_and_projector",
+    "prove_changing_only_current_RGB_changes_online predictions and changing only a synthetic nonzero candidate action embedding changes projected future predictions after block_0 and block_5",
+    "prove_changing_only_next_RGB changes detached target future while leaving every online candidate prediction bitwise fixed",
+    "prove_all_nine_action_counterfactuals share one exact current patch tensor and each correct_deranged_and_current target candidate reuses the exact same EMA current tensor",
+    "prove_action_and_target_logits_are_bitwise_negative_registered_energy_with_no_temperature_scale_or_hidden_weight",
+    "prove_masked_future_action_retrieval_target_retrieval_and_whitening_losses separately give finite nonzero gradients through online_projected_future block_5 block_0 and online current patch embedding with the registered action mask temporal and projector gradients where applicable",
+    "prove autograd has no path from any online prediction to correct deranged or current target RGB and no target tensor or target parameter receives gradient",
+    "prove_constant_action_ignoring_predictions fail the action gates and constant future predictions fail target_retrieval_or_anti_collapse",
+    "prove the explicit target EMA inventory is complete exact hard_synced at update_zero eval_only gradient_free optimizer_excluded and updated once per optimizer update at momentum_0_996",
+    "prove normalized projected future is the exact shared population used by energy effective_rank variance covariance and spatial_diversity without a raw_or_unnormalized substitution",
+    "prove the update_100_400_1000 gate comparators and chance factors reconstruct exactly from synthetic boundary fixtures",
+    "prove_observation_is_RNG_preserving_mutation_free_and_single_pass",
+    "prove_no_prior_runtime_checkpoint_trace_calibration_G2_navigation_heldout_sealed_or_general_loader_open_path",
+    "keep_implementation_local_to_one_V11_model_helper_contract_runner_launcher_and_focused_tests_without_a_generic_framework"
+  ],
+  "required_terminal_receipts": {
+    "missing_receipts_may_never_be_synthesized_or_fabricated": true,
+    "normal_scientific_terminal_chain": [
+      "reservation.json",
+      "phase_a/metrics.json",
+      "phase_a/artifact.json",
+      "access.json",
+      "result.json",
+      "completed.json"
+    ],
+    "operational_or_integrity_failure_chain": [
+      "reservation.json_if_published",
+      "failure.json",
+      "completed.json"
+    ],
+    "retain_and_seal_every_real_partial_file": true,
+    "runtime_checkpoint_and_trace_payloads_may_not_be_opened_by_terminal_auditors": true
+  },
+  "schedule_and_caps": {
+    "base_seed": 20260712,
+    "effective_batch_size": 16,
+    "gpu_active_minutes_maximum": 60,
+    "microbatch_size": 4,
+    "microbatches_per_update": 4,
+    "observation_prefixes": {
+      "100": {
+        "presentations": 1600,
+        "sha256": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51"
+      },
+      "1000": {
+        "presentations": 16000,
+        "sha256": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528"
+      },
+      "400": {
+        "presentations": 6400,
+        "sha256": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92"
+      }
+    },
+    "primary_presentations_maximum": 16000,
+    "schedule_seed": 20260713,
+    "updates_maximum": 1000
+  },
+  "scientific_question": "Can a masked two-slot current-to-next tubelet make action-specific future structure accessible to the RGB encoder and predictor, when the online path sees only current RGB plus a future mask and candidate action and the detached EMA target alone sees the actual next RGB?",
+  "staged_falsification_gates": {
+    "common_invariants_at_every_observation": [
+      "full_path_future_leakage_and_target_nonvacuity_tests_pass",
+      "all_values_finite_and_registered_populations_exact",
+      "explicit_EMA_inventory_complete_gradient_free_and_0_996_update_count_exact",
+      "RNG_and_model_state_observation_invariance_passes",
+      "normalized_projected_future_variance_and_spatial_diversity_each_at_least_one_quarter_update_zero",
+      "normalized_projected_future_whitening_population_formula_and_effective_rank_population_exact",
+      "true_to_shuffled_next_at_most_0_90_and_true_to_shuffled_current_at_most_0_95",
+      "all_nine_candidate_actions_evaluated_for_all_495_rows"
+    ],
+    "equal_logit_references": {
+      "action": "one_post_reservation_execution_device_float32_CE_zeros_495_by_9_reused_at_all_observations",
+      "same_action_two_target": "one_post_reservation_execution_device_float32_CE_zeros_494_by_2_reused_at_all_observations"
+    },
+    "failure_rule": "Failure of any conjunct stops immediately, publishes the normal scientific failure receipts, rejects the checkpoint, and closes this exact masked pair-tubelet mechanism with no retry or threshold/loss/seed/schedule tweak.",
+    "update_100_presentations_1600": {
+      "action_macro_balanced_accuracy": {
+        "comparator": "greater_than_or_equal",
+        "threshold": 0.15
+      },
+      "action_nll_to_equal_logit_chance": {
+        "comparator": "less_than_or_equal",
+        "factor": 0.99
+      },
+      "masked_future_JEPA_loss": "strictly_below_update_zero",
+      "non_hold_correct_next_to_fixed_current": {
+        "energy_ratio_comparator": "strictly_less_than",
+        "energy_ratio_threshold": 1.0,
+        "positive_family_margin_count_minimum": 6
+      },
+      "normalized_projected_future_effective_rank": {
+        "comparator": "strictly_greater_than",
+        "threshold": 17.426651000976562
+      },
+      "permuted_and_non_hold_hold_minus_executed_positive_family_margin_count_minimum": 6,
+      "same_action_two_target": {
+        "nll_comparator": "less_than_or_equal",
+        "nll_equal_logit_reference_factor": 0.95,
+        "strict_correct_win_rate_comparator": "greater_than_or_equal",
+        "strict_correct_win_rate_threshold": 0.6
+      }
+    },
+    "update_400_presentations_6400": {
+      "action_macro_balanced_accuracy": {
+        "also_at_least_update_100": true,
+        "comparator": "strictly_greater_than",
+        "threshold": 0.2222222222222222
+      },
+      "action_nll_to_equal_logit_chance": {
+        "also_strictly_lower_than_update_100": true,
+        "comparator": "less_than_or_equal",
+        "factor": 0.95
+      },
+      "all_update_100_gates_still_pass": true,
+      "masked_future_JEPA_all_row_target_same_action_target_and_same_action_two_target_losses": "each_strictly_lower_than_update_100",
+      "normalized_projected_future_effective_rank_minimum": 32.71332550048828,
+      "same_action_correct_deranged_non_hold_correct_fixed_current_executed_cyclic_executed_hardest_non_hold_executed_hold_and_executed_permuted_energy_ratios": "each_strictly_below_0_99",
+      "cyclic_hold_and_frozen_permutation_positive_family_margin_count_minimum": 6,
+      "true_to_mean_target": "strictly_below_1_0"
+    },
+    "update_1000_presentations_16000": {
+      "action_macro_balanced_accuracy": {
+        "also_at_least_update_400": true,
+        "comparator": "greater_than_or_equal",
+        "threshold": 0.3333333333333333
+      },
+      "action_nll_to_equal_logit_chance": {
+        "also_strictly_lower_than_update_400": true,
+        "comparator": "less_than_or_equal",
+        "factor": 0.9
+      },
+      "all_update_400_gates_still_pass": true,
+      "masked_future_JEPA_all_row_target_same_action_target_and_same_action_two_target_losses": "each_strictly_lower_than_update_400",
+      "normalized_projected_future_effective_rank_minimum": 48.0,
+      "same_action_correct_deranged_non_hold_correct_fixed_current_and_all_four_action_control_energy_ratios": "each_at_most_0_95",
+      "cyclic_hold_and_frozen_permutation_positive_family_margin_count_minimum": 6,
+      "true_to_mean_target": "at_most_0_90"
+    }
+  },
+  "status": "PREREGISTERED_SOURCE_ONLY_V11_BLOCK_REMEDIATED_PENDING_SOURCE_FREEZE_INDEPENDENT_PASS_AND_MACHINE_AUTHORIZATION",
+  "successor_boundary": {
+    "automatic_phase_b_or_downstream_execution_authorized": false,
+    "failure_closes": "this_exact_early_joint_six_inherited_block_masked_current_next_pair_tubelet_with_fixed_current_V10_retrieval_controls",
+    "pass_does_not_qualify_checkpoint_or_perception": true,
+    "pass_next_step": "separate_preregistered_physical_perception_requalification_plus_mandatory_matched_no_JEPA_development_arm",
+    "runtime_meaning_if_later_qualified": "candidate_action_conditioned_prediction_uses_current_RGB_plus_mask_only_and_can_causally_score_navigation_actions_without_future_observation"
+  }
+}

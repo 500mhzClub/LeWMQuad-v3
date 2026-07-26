@@ -1,0 +1,157 @@
+{
+  "schema": "lewm_go2_rgb_masked_current_next_pair_tubelet_jepa_v11_preregistration_independent_review_v1",
+  "status": "PASS_INDEPENDENT_PREREGISTRATION_REVIEW_SOURCE_IMPLEMENTABLE_NO_EXECUTION_AUTHORITY",
+  "date": "2026-07-26",
+  "reviewer": "/root/plan_efficiency",
+  "content_sha256": "d88c282b89ad5d55ba393ae40f63989f05882cc49f3a7dc4d90ca6b1956aedc2",
+  "reviewed_preregistration": {
+    "path": "docs/lewm_go2_rgb_masked_current_next_pair_tubelet_jepa_v11_preregistration_2026-07-26.json",
+    "schema": "lewm_go2_rgb_masked_current_next_pair_tubelet_jepa_v11_preregistration_v1",
+    "status": "PREREGISTERED_SOURCE_ONLY_V11_BLOCK_REMEDIATED_PENDING_SOURCE_FREEZE_INDEPENDENT_PASS_AND_MACHINE_AUTHORIZATION",
+    "byte_count": 27808,
+    "file_sha256": "bbc4fa556788ce8df90c417aaa074bb7daf2aea47e4465434a4f119e18530dee",
+    "content_sha256": "b7d4c6a59e2bad1e9dfa399a01a83c29658b88a0f11236a49265c8f7eccd15d9",
+    "raw_and_canonical_content_hashes_independently_reproduced": true
+  },
+  "review_scope": {
+    "source_and_committed_governance_only": true,
+    "generated_input_or_rgb_open_count": 0,
+    "checkpoint_or_tensor_payload_open_count": 0,
+    "training_trace_payload_open_count": 0,
+    "gpu_or_hardware_query_count": 0,
+    "g2_navigation_heldout_or_sealed_open_count": 0,
+    "runtime_execution_or_mutation_performed": false
+  },
+  "governing_evidence_verification": {
+    "frozen_history_feasibility_audit": {
+      "byte_count": 3261,
+      "file_sha256": "2e34e4f4ef22abdc8d5ecd89c1c12acff8541e41b8440a307ba8cbeb4a432c3d",
+      "content_sha256": "2d947ea6857ddcbed82d778692c18831b2c920da6b3aa7c5723833ecb495a929",
+      "verified": true
+    },
+    "v10r_preregistration": {
+      "commit": "bdf30305645efbcde56c7e52711e2ded7bf728fb",
+      "byte_count": 16613,
+      "file_sha256": "38e3f4d9378d4974f77b4a10b069a704b6722caea31bd97f237f0eac00f2308a",
+      "content_sha256": "4100001b5217091bea6b917057eb33cb9331b77c47dd24468c036d5535e8d97e",
+      "verified": true
+    },
+    "v10r_terminal_audit": {
+      "commit": "79d6de74b795065f7a5a47b32f1a56fc4fd4580a",
+      "byte_count": 12862,
+      "file_sha256": "8cd27a7d21e9ce1875d322cad2ea5aae8a846a301247f774d4da86074ebd28a5",
+      "content_sha256": "ab6b9d9ad3b6de1462fe142c42e18bf30751cc483aceaa9fabb632b2999cca73",
+      "valid_scientific_failure_closes_single_frame_family": true,
+      "verified": true
+    },
+    "v10r_terminal_audit_independent_review": {
+      "commit": "79d6de74b795065f7a5a47b32f1a56fc4fd4580a",
+      "byte_count": 6204,
+      "file_sha256": "58b742f449ce5017e4056ef32607781edf90f0d475610c250072bd182eaf0e05",
+      "content_sha256": "d9584441c8d9d3ee5136426a2aec899aeb121d750eb3de1658c8334490b5a730",
+      "verified": true
+    },
+    "all_declared_evidence_file_byte_and_content_bindings_match": true
+  },
+  "data_and_schedule_verification": {
+    "train": {
+      "pairs": 4262,
+      "scenes": 72,
+      "unique_endpoints": 7777,
+      "input_rows_sha256": "bb119abb33b7c56f3c1d96e7cb1b52fbe4d2db27d80df4f95a5b1cd9d0cf729e"
+    },
+    "checkpoint_selection": {
+      "pairs": 495,
+      "scenes": 8,
+      "unique_endpoints": 924,
+      "input_rows_sha256": "81f85cdf0ad00ec68918f5eeb7637bf20aa3f17f5615bedfb10e6a4859eb91f1"
+    },
+    "same_action_mapping_sha256": {
+      "train": "c9c914422927670ffce8e2a967bf264725b9ae3c55c353ee0a1a16e44044196b",
+      "checkpoint_selection": "95d42273a8319316ad68781cb2158146e7672eda529984c3aeddc0937d87a9c1"
+    },
+    "selection_action_permutation_sha256": "2740be362829c172a06aebae0d077e69ede8af80cbf6f00569eb460dc559bb0f",
+    "schedule": {
+      "seed": 20260713,
+      "effective_batch_size": 16,
+      "microbatch_size": 4,
+      "microbatches_per_update": 4,
+      "update_100_prefix_sha256": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+      "update_400_prefix_sha256": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92",
+      "update_1000_prefix_sha256": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528",
+      "maximum_updates": 1000,
+      "maximum_presentations": 16000
+    },
+    "predecessor_third_frame_subset_padding_resample_or_new_data_required": false,
+    "all_facts_match_frozen_source_and_governing_evidence": true
+  },
+  "prior_blockers_and_implementation_clarifications": {
+    "v10r_terminal_audit_placeholder_removed_and_committed_binding_valid": true,
+    "n320_migration_is_encoder_only_with_no_unused_evidence_head": true,
+    "target_future_temporal_embedding_is_in_the_exact_ema_inventory": true,
+    "target_candidates_reuse_fixed_current_i_with_correct_deranged_and_current_future_semantics": true,
+    "rank_whitening_and_energy_share_normalized_projected_future_tokens": true,
+    "spatial_positions_reuse_exact_n320_entries_without_interpolation_reindexing_or_double_addition": true,
+    "inherited_blocks_zero_through_five_are_the_early_joint_tubelet_mixer_and_no_new_transformer_block_exists": true,
+    "all_previously_identified_preregistration_blockers_are_remediated": true
+  },
+  "architecture_and_objective_review": {
+    "materially_different_from_closed_v10r_single_frame_flow_family": true,
+    "complete_512_token_sequence_enters_inherited_block_zero": true,
+    "current_patch_embedding_is_computed_once_and_reused_for_all_nine_actions": true,
+    "candidate_action_enters_only_the_online_masked_future_slots": true,
+    "target_action_input_or_embedding_exists": false,
+    "target_is_full_current_candidate_future_pair_and_detached": true,
+    "target_ema_inventory_is_explicit_complete_and_excludes_online_only_mask_and_action_parameters": true,
+    "three_scientific_losses_and_single_registered_anti_collapse_population_are_unambiguous": true,
+    "all_energy_logits_have_no_temperature_scale_margin_outer_multiplier_or_class_weight": true,
+    "parameter_draw_order_hard_sync_optimizer_partition_and_ema_update_order_are_implementable": true,
+    "small_additive_model_contract_runner_launcher_and_focused_test_implementation_is_feasible": true
+  },
+  "leakage_and_custody_review": {
+    "online_context_signature_excludes_next_rgb_target_tokens_hashes_and_objects": true,
+    "target_forward_is_no_grad_detached_and_action_free": true,
+    "full_path_bitwise_target_replacement_test_covers_patch_input_every_inherited_block_and_projection": true,
+    "target_nonvacuity_and_online_autograd_separation_tests_are_required": true,
+    "observation_must_preserve_rng_and_model_state_bitwise": true,
+    "reservation_precedes_torch_runtime_input_and_rgb_access": true,
+    "checkpoint_and_trace_payloads_remain_write_only": true,
+    "prior_runtime_calibration_g2_navigation_heldout_sealed_production_and_deployment_access_remain_denied": true,
+    "legacy_v4_sealed_role_remains_ineligible": true
+  },
+  "gate_and_stop_rule_review": {
+    "observations_are_fixed_at_updates": [
+      0,
+      100,
+      400,
+      1000
+    ],
+    "update_100_requires_action_target_current_negative_rank_and_anti_collapse_evidence": true,
+    "updates_400_and_1000_require_strict_multimetric_progress_not_loss_only": true,
+    "terminal_action_macro_balanced_accuracy_minimum": 0.3333333333333333,
+    "terminal_action_nll_maximum_equal_logit_factor": 0.9,
+    "terminal_energy_ratio_maximum": 0.95,
+    "terminal_rank_minimum": 48.0,
+    "failure_is_immediate_terminal_and_rejects_checkpoint": true,
+    "retry_resume_seed_schedule_loss_threshold_or_observer_rerun_authorized": false,
+    "pass_licenses_only_separate_perception_requalification_and_matched_no_jepa_preregistration": true,
+    "automatic_phase_b_g2_navigation_heldout_or_promotion_authorized": false
+  },
+  "source_review_obligations": [
+    "prove_the_runner_terminates_after_the_registered_phase_a_proxy_result_and_does_not_inherit_v10s_unconditional_phase_b_path",
+    "prove_torch_backed_model_imports_occur_only_after_mode_0700_reservation_and authority rehash",
+    "prove_the_exact_target_ema_inventory_hard_sync_eval_freeze_and_one_update_per_optimizer_step",
+    "prove_online_action_rows_are_exact_zero_at_update_zero_and_all_nine_candidate_ordering_is_frozen",
+    "prove_every_required_acceptance_test_and recursive source binding from the preregistration on the committed source"
+  ],
+  "findings": [],
+  "verdict": {
+    "decision": "PASS",
+    "scientific_blocker_count": 0,
+    "implementation_blocker_count": 0,
+    "custody_or_authority_blocker_count": 0,
+    "source_only_implementation_and_focused_testing_may_proceed_after_preregistration_commit": true,
+    "gpu_training_evaluation_or_runtime_execution_authorized_by_this_review": false,
+    "execution_requires_frozen_committed_source_manifest_independent_exact_source_pass_and_separate_machine_authorization": true
+  }
+}
