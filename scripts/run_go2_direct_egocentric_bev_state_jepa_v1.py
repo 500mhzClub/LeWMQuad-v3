@@ -920,7 +920,10 @@ def _snapshot_model(
         output_root / relative,
         content_sha256=content_sha256,
         state_sha256=state_sha256,
-        phase="direct_bev_v1",
+        # The reviewed custody registry exposes only its Phase-A/Phase-B
+        # namespace.  This perception-only probe is the Phase-A arm; the
+        # direct-BEV identity remains bound by the checkpoint schema/content.
+        phase="phase_a",
         update=update,
         schedule_prefix_sha256=contract.SCHEDULE_PREFIX_SHA256[update],
     )

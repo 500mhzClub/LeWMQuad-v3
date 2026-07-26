@@ -409,6 +409,7 @@ def test_snapshot_is_write_only_and_binds_preregistered_update(
     assert receipt["write_only"] is True
     assert receipt["read_count_after_write"] == 0
     assert registrations[0][1]["update"] == 100
+    assert registrations[0][1]["phase"] == "phase_a"
     with pytest.raises(ValueError, match="not preregistered"):
         runner._snapshot_model(
             SimpleNamespace(torch=FakeTorch()),
@@ -417,6 +418,37 @@ def test_snapshot_is_write_only_and_binds_preregistered_update(
             update=101,
             metadata={},
         )
+
+
+def test_snapshot_uses_real_inherited_semantic_registry(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    """Exercise the inherited registry instead of mocking its phase check."""
+
+    runner = _load_runner()
+
+    class FakeTorch:
+        @staticmethod
+        def save(value, stream) -> None:
+            stream.write(b"direct-bev-real-registry-fixture")
+
+    monkeypatch.setattr(runner, "_state_sha", lambda runtime, value: "e" * 64)
+    runner._reset_output_binding_registry(tmp_path)
+    runner._snapshot_model(
+        SimpleNamespace(torch=FakeTorch()),
+        SimpleNamespace(
+            state_dict=lambda: {"only": _FakeStateValue()}
+        ),
+        tmp_path,
+        update=100,
+        metadata={"gate": "fixture"},
+    )
+    inventory = runner._terminal_inventory(tmp_path)
+    binding = inventory["file_bindings"][0]
+    assert binding["path"] == "checkpoints/update_100.pt"
+    assert binding["phase"] == "phase_a"
+    assert binding["update"] == 100
 
 
 def test_cli_delegates_only_exact_explicit_one_shot_hashes(monkeypatch) -> None:
