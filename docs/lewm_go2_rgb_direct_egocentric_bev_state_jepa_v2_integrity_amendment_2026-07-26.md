@@ -64,10 +64,14 @@ V2 uses the distinct output root
 The root must be absent before reservation and is consumed by any reservation
 or partial attempt. V1 output is terminal evidence and is never a V2 input.
 
-Before any generated input, checkpoint tensor, Torch runtime, or accelerator
-access, V2 still requires a frozen recursive source manifest, independent
-source-and-science review, and a separate authorization for exactly one fresh
-attempt. A pass authorizes only later perception-gate requalification work.
+Source implementation and independent review may import Torch in CPU-only
+mode, construct the model from synthetic tensors, and run synthetic tests.
+That work may not open generated inputs, checkpoint tensors, runtime outputs,
+traces, accelerators, navigation, held-out, or sealed material. Before any of
+those runtime or protected categories is accessed, V2 still requires a frozen
+recursive source manifest, independent source-and-science review, and a
+separate authorization for exactly one fresh attempt. A pass authorizes only
+later perception-gate requalification work.
 It does not authorize G2, navigation, held-out or sealed evaluation,
 production, promotion, deployment, retry, resume, repair, a second seed, or a
 parameter/loss/schedule/timing successor.
