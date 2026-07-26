@@ -558,6 +558,11 @@ def science_contract() -> dict[str, Any]:
         },
         "gates": {
             "updates": list(CHECKPOINT_UPDATES),
+            "observation_updates": [0, *CHECKPOINT_UPDATES],
+            "update_0": {
+                "common_invariants_only": True,
+                "failure_control": CONTROL_PHASE_A_UPDATE_ZERO_FAIL,
+            },
             "update_100": dict(PHASE_A_UPDATE_100_THRESHOLDS),
             "update_400": dict(PHASE_A_UPDATE_400_THRESHOLDS),
             "terminal": dict(PHASE_A_PASS_THRESHOLDS),

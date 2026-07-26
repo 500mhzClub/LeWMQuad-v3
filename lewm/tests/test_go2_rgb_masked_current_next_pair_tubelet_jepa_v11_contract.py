@@ -396,6 +396,11 @@ def test_parameter_and_ema_ownership_are_complete_and_phase_b_is_denied() -> Non
     )
     science = contract.science_contract()
     assert science["initialization"]["new_transformer_block_count"] == 0
+    assert science["gates"]["observation_updates"] == [0, 100, 400, 1_000]
+    assert science["gates"]["update_0"] == {
+        "common_invariants_only": True,
+        "failure_control": contract.CONTROL_PHASE_A_UPDATE_ZERO_FAIL,
+    }
     assert science["lifecycle"]["phase_b_authorized"] is False
     assert science["lifecycle"]["maximum_attempts"] == 1
     assert contract.EXECUTION_AUTHORITY["maximum_presentations"] == 16_000
