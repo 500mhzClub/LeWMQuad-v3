@@ -1,0 +1,260 @@
+{
+  "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v4_residual_head_hook_integrity_terminal_audit_v1",
+  "status": "PASS_VALID_UPDATE_100_SCIENTIFIC_PREDICTOR_GATE_FAILURE_AND_POST_GATE_RECEIPT_PACKAGING_FAILURE_CLOSES_V4_NO_RETRY",
+  "classification": "VALID_UPDATE_100_SCIENTIFIC_FAILURE_STRONG_PERCEPTION_WEAK_ACTION_SIGNAL_THEN_STALE_LEXICAL_FAILURE_CONTROL_VALIDATOR_OPERATIONAL_ERROR_V4_PERMANENTLY_CLOSED",
+  "auditor": "/root/v4_terminal_receipt_audit",
+  "encoding_agent": "/root",
+  "frozen_source": {
+    "source_commit": "d82e386c1b846442fa4f2f66d6233ca98380fd74",
+    "review_commit": "478ca4845249f2ab1d79e09c31c46e88a25c5c89",
+    "authorization_commit": "d9cc2fad0c1f953487756b34226e03a9607f8d3e",
+    "source_manifest": {
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v4_residual_head_hook_integrity_source_manifest_2026-07-26.json",
+      "file_sha256": "299a54b683d6926cf2cec4d3887991d4b5df53b0540a10d936c06679d2dc6d98",
+      "content_sha256": "f78fbed617f7f1319ededbf5ae76cb5f822d146c9d407c10f4379052e6cb97be",
+      "byte_count": 29853,
+      "source_count": 91
+    },
+    "source_review": {
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v4_residual_head_hook_integrity_source_review_2026-07-26.json",
+      "file_sha256": "41efdcb4d1cfd7ff60252a396f3d97ec86da986ad01ba48c8ac998acd00aaa7f",
+      "content_sha256": "0a0de65fdadfcc51aae3ca5e6c154bf168e7f4a56e8417f14c475fd29b614f59",
+      "byte_count": 49781,
+      "status": "PASS_SOURCE_AND_SCIENCE_IDENTICAL_HOOK_INTEGRITY"
+    },
+    "execution_authorization": {
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v4_residual_head_hook_integrity_execution_authorization_2026-07-26.json",
+      "file_sha256": "18bf0f511c816d2d4155262069bc9b262344c9cc5ea7b123023524e267679273",
+      "content_sha256": "f9ae84e1a9abb36daff35bfb11765010565c26c6b295530b524f186f1029659f",
+      "byte_count": 42722,
+      "status": "AUTHORIZED_ONE_EXACT_DIRECT_BEV_V4_HOOK_INTEGRITY_PROBE"
+    }
+  },
+  "receipt_policy": {
+    "opened_normal_receipts": [
+      "reservation.json",
+      "metrics.json",
+      "artifact.json",
+      "access.json",
+      "failure.json",
+      "completed.json"
+    ],
+    "training_trace_opened": false,
+    "checkpoint_directory_contents_listed": false,
+    "checkpoint_opened": false,
+    "checkpoint_and_trace_facts_are_normal_receipt_assertions_only": true,
+    "result_receipt_present": false,
+    "protected_heldout_or_sealed_material_opened": false
+  },
+  "receipts": [
+    {
+      "path": "reservation.json",
+      "file_sha256": "2892c82e3cb2a84620f7cfc7a878ff65f7b692ac908d3b7cda6897706f19438e",
+      "content_sha256": "0a0df8719c519c53b4c69ec0309ea42f1cdcaef71406e640b7a7849a825505f8",
+      "byte_count": 47076,
+      "status": "RESERVED_0700_BEFORE_TORCH_RUNTIME_RGB_RASTER_OR_CHECKPOINT"
+    },
+    {
+      "path": "metrics.json",
+      "file_sha256": "349eb5a73bcf99eab96b712419403573dd3bbf9408d36cef8841ff17d100d133",
+      "content_sha256": "23017c712e475f5091ba0ff60cb97daf9b45b28b64106a467fa2fa0cf9b11c83",
+      "byte_count": 16844,
+      "status": "FAIL_UPDATE_100_V3_PREDICTOR_GATE_TERMINAL_NO_RETRY"
+    },
+    {
+      "path": "artifact.json",
+      "file_sha256": "f7686b5d6f745cf9caeba4c8be2adf1f46608c80d11f4f326d90425cf00b3829",
+      "content_sha256": "3a143c11b58b6e78999827f7afbda8c4a453c33147f08eeba92e37cb6cc11d27",
+      "byte_count": 30523,
+      "status": "FAIL_UPDATE_100_V3_PREDICTOR_GATE_TERMINAL_NO_RETRY"
+    },
+    {
+      "path": "access.json",
+      "file_sha256": "d007e4166cf114847170877c24db371f76479a3e069bc681b9120614808e6d2a",
+      "content_sha256": "1dd8647b57d5c40664dd0411f6084697690cc87a652bf55dcf4ecb79c0f7aec8",
+      "byte_count": 1769256,
+      "status": "ALL_AUTHORIZED_DEVELOPMENT_INPUTS_REHASHED"
+    },
+    {
+      "path": "failure.json",
+      "file_sha256": "c5c10110e822a360a93e2324b6b1355f8c000b0d75edd492b1acda26275e3b02",
+      "content_sha256": "ec32df5d7202bd75c04b6e52402e98bcc90543d246601388b686293e5ebf9a85",
+      "byte_count": 1774337,
+      "status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY"
+    },
+    {
+      "path": "completed.json",
+      "file_sha256": "5d199e0dfc3740156c41c7225f30d490ed10744cef15a9dbf23ef3bba38d8d75",
+      "content_sha256": "77aa90670b704cb605c8657e32949a9241208ae5e2259e4aad682982860cde60",
+      "byte_count": 4232,
+      "status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY"
+    }
+  ],
+  "receipt_validation": {
+    "normal_receipt_self_content_hashes_recomputed": 6,
+    "normal_receipt_self_content_hash_failures": 0,
+    "normal_receipt_cross_bindings_verified": 18,
+    "normal_receipt_cross_binding_failures": 0,
+    "metrics_artifact_scientific_status_identical": true,
+    "failure_and_completed_operational_status_identical": true,
+    "missing_result_is_explained_by_pre_result_validator_exception": true,
+    "receipt_set_sufficient_to_classify_scientific_gate": true
+  },
+  "execution_accounting": {
+    "updates": 100,
+    "presentations": 1600,
+    "pair_loads": 1600,
+    "objective_evaluations": 400,
+    "backward_calls": 400,
+    "optimizer_updates": 100,
+    "ema_updates": 100,
+    "registered_observations": 2,
+    "last_training_gradients_finite": true,
+    "stopped_at_first_failed_gate": true,
+    "maximum_updates": 1000,
+    "maximum_presentations": 16000,
+    "caps_respected": true
+  },
+  "update_zero_integrity": {
+    "passed": true,
+    "control": "CONTINUE_AFTER_UPDATE_ZERO_GATE",
+    "initial_model_state_sha256": "84748bc66f0639b9dae1c81880f5c0fa756f4c4d9e75d0ffddac1310c7d05d0a",
+    "matches_frozen_v3_initial_state": true,
+    "prediction_is_exact_persistence": true,
+    "all_nine_action_predictions_bitwise_equal": true,
+    "action_macro_balanced_accuracy": 0.1111111111111111,
+    "action_nll": 2.1972246170043945,
+    "training_objective_call_counts": {
+      "online_state_stack": 3,
+      "predictor": 1,
+      "target_state_stack": 3
+    },
+    "online_group_absolute_gradient_sums": {
+      "encoder": 1190.0869489833713,
+      "decoder_state": 1536.8357818126678,
+      "predictor": 5.07173465937376
+    },
+    "target_parameters_gradient_free": true,
+    "next_online_gradient_equals_G_next_only": true,
+    "fixed_negative_rgb_optimizer_gradient_absent": true,
+    "no_hidden_or_auxiliary_bypass": true
+  },
+  "update_100_scientific_gate": {
+    "status": "FAIL_UPDATE_100_V3_PREDICTOR_GATE_TERMINAL_NO_RETRY",
+    "passed": false,
+    "perception_signal": {
+      "aggregate_raster_balanced_accuracy_update_zero": 0.31409209183876236,
+      "aggregate_raster_balanced_accuracy_update_100": 0.6635896329705784,
+      "aggregate_raster_balanced_accuracy_minimum": 0.65,
+      "aggregate_raster_balanced_accuracy_passed": true,
+      "aggregate_occupied_recall_update_zero": 0.13193743693239152,
+      "aggregate_occupied_recall_update_100": 0.8839556004036327,
+      "aggregate_free_recall_update_100": 0.22432059994929546,
+      "G_update_zero": 0.7755021562479963,
+      "G_update_100": 0.25036157474975396,
+      "G_strictly_decreased": true,
+      "correct_rgb_scene_win_count": 8
+    },
+    "predictor_signal": {
+      "J_update_zero": 0.6530795473040957,
+      "J_update_100": 0.6246209078364902,
+      "J_maximum": 0.6,
+      "J_passed": false,
+      "action_macro_balanced_accuracy_update_zero": 0.1111111111111111,
+      "action_macro_balanced_accuracy_update_100": 0.12183883000980973,
+      "action_macro_balanced_accuracy_minimum": 0.13,
+      "action_macro_balanced_accuracy_passed": false,
+      "action_nll_update_zero": 2.1972246170043945,
+      "action_nll_update_100": 2.1964272181193034,
+      "action_nll_maximum": 2.187,
+      "action_nll_passed": false,
+      "hardest_wrong_positive_scene_count": 0,
+      "hardest_wrong_positive_scene_count_minimum": 2,
+      "hardest_wrong_positive_scene_count_passed": false,
+      "all_eight_scene_hardest_wrong_margins_negative": true,
+      "weak_directional_improvement_but_no_preregistered_action_mechanism_pass": true
+    },
+    "failed_preregistered_predictor_conjunct_count": 4,
+    "no_update_400_or_update_1000_observation": true
+  },
+  "terminal_packaging_diagnosis": {
+    "error_type": "ValueError",
+    "error_message": "failure receipt statuses are not one exact gate control",
+    "error_message_sha256": "0e30a94e17ffa56a1f2167332036d5377fbe03e27188b328d0cc7eb910230a68",
+    "stage": "access_publication",
+    "happened_after_scientific_gate_and_access_receipt_publication": true,
+    "happened_before_normal_result_publication": true,
+    "scientific_failure_status_passed_identically_for_metrics_artifact_result_completion": true,
+    "root_cause": "inherited_v1_validate_failure_status_chain_lexically_closes_over_v1_failure_controls_and_rejects_the_v3_specific_update_100_control",
+    "v4_exported_failure_controls_were_correct": true,
+    "receipt_bug_caused_scientific_failure": false,
+    "receipt_bug_invalidates_scientific_metrics": false,
+    "minimum_successor_adapter": "define_a_version_local_validate_failure_status_chain_against_the_successor_failure_controls",
+    "required_behavioral_test": "accept_every_successor_failure_control_and_reject_pass_controls_or_mismatched_chains"
+  },
+  "state_and_snapshot": {
+    "initial_model_state_sha256": "84748bc66f0639b9dae1c81880f5c0fa756f4c4d9e75d0ffddac1310c7d05d0a",
+    "terminal_model_state_sha256": "98d8afda05a634f424cc776ae5ab38067b3a14c50b2442541e48fe15a5578a73",
+    "initial_equals_terminal": false,
+    "snapshot_reported_in_normal_receipt": true,
+    "snapshot_update": 100,
+    "snapshot_file_sha256": "ea326e98c4b4ae1fb088cfe0f7876f3d6bdceae977e14a38ad7a5bd23655eec0",
+    "snapshot_state_sha256": "98d8afda05a634f424cc776ae5ab38067b3a14c50b2442541e48fe15a5578a73",
+    "snapshot_write_only": true,
+    "snapshot_read_after_write_count": 0,
+    "snapshot_checkpoint_qualified": false,
+    "snapshot_opened_by_audit": false,
+    "snapshot_permanently_rejected": true
+  },
+  "access_audit": {
+    "all_consumed_inputs_rehashed": true,
+    "allowed_supervision_arrays_opened": [
+      "raster_labels.u1"
+    ],
+    "forbidden_supervision_arrays_opened": [],
+    "general_raw_frame_loader_call_count": 0,
+    "checkpoint_or_training_trace_read_after_write_count": 0,
+    "n320_checkpoint_open_count": 1,
+    "n320_gate_open_count": 1,
+    "prior_runtime_output_open_count": 0,
+    "rejected_checkpoint_open_count": 0,
+    "written_checkpoint_read_count": 0,
+    "training_trace_read_count": 0,
+    "camera_supervision_array_open_count": 0,
+    "depth_supervision_array_open_count": 0,
+    "ground_supervision_array_open_count": 0,
+    "ray_supervision_array_open_count": 0,
+    "other_supervision_array_open_count": 0,
+    "g2_open_count": 0,
+    "navigation_open_count": 0,
+    "heldout_open_count": 0,
+    "sealed_open_count": 0,
+    "deployment_input_open_count": 0,
+    "production_input_open_count": 0
+  },
+  "scientific_consequence": {
+    "v4_permanently_closed": true,
+    "v4_retry_resume_repair_or_checkpoint_reuse_authorized": false,
+    "v4_checkpoint_qualified": false,
+    "v4_did_not_earn_g2_navigation_heldout_or_promotion_authority": true,
+    "encoder_and_learned_rgb_to_bev_perception_are_not_the_current_bottleneck": true,
+    "coordinate_aware_film_unet_predictor_did_not_earn_action_mechanism_qualification": true,
+    "do_not_rerun_v4_to_regenerate_boilerplate_receipts": true,
+    "next_successor_must_be_fresh_and_may_not_reuse_v4_checkpoint_tensor_trace_or_runtime_output": true,
+    "next_mechanism_should_directly_emphasize_action_conditioned_state_change": true,
+    "recommended_mechanism": "rgb_only_all_actions_contrastive_state_delta_residual_jepa",
+    "same_v3_v4_predictor_scaling_authorized_by_this_audit": false
+  },
+  "authority": {
+    "audit_only": true,
+    "training_authorized": false,
+    "retry_authorized": false,
+    "checkpoint_or_runtime_reuse_authorized": false,
+    "g2_authorized": false,
+    "navigation_authorized": false,
+    "heldout_authorized": false,
+    "sealed_authorized": false,
+    "promotion_authorized": false
+  },
+  "content_sha256": "c4e04e181c713c16c14a4fcf259ede41d160bf1ba5b56e31705ba2eaff88d5ed"
+}
