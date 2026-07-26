@@ -1,0 +1,150 @@
+{
+  "schema": "lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_terminal_audit_v1",
+  "status": "PASS_TERMINAL_AUDIT_OPERATIONAL_INTEGRITY_FAILURE_SCIENCE_NON_EVALUABLE",
+  "date": "2026-07-26",
+  "auditor": "/root/v10_failure_receipt_audit",
+  "content_sha256": "9ab2aec125e2d8ced8f35da7dab6c2d2794035d33c3888c28f8584b6e7070eb4",
+  "scope": {
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_action_conditioned_next_target_retrieval_jepa_probe_v10",
+    "canonical_receipt_json_open_count": 3,
+    "runtime_checkpoint_or_trace_payload_open_count": 0,
+    "checkpoint_tensor_deserialization_count": 0,
+    "rgb_open_count": 0,
+    "gpu_query_or_allocation_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "audit_is_read_only": true
+  },
+  "terminal_inventory": {
+    "root_mode": "0555",
+    "exact_terminal_directories_including_root": [
+      "."
+    ],
+    "files": [
+      {
+        "path": "reservation.json",
+        "mode": "0444",
+        "byte_count": 27192,
+        "file_sha256": "c548cbe9ed0c409bb7c42dc4725e0d32f8749842f20f56a92e8a02038cd2a8c8",
+        "content_sha256": "cfd32c8eaa27b648023f3fb08cb48141fd91cf84565fb2f792263200e14d974c"
+      },
+      {
+        "path": "failure.json",
+        "mode": "0444",
+        "byte_count": 1651346,
+        "file_sha256": "857762480026e01d5c25ed1e5750a8bc13fa9ebc07395a59ba7aa95cab3b0fd3",
+        "content_sha256": "880e4bfed0e63b0161668743419a02c32f29a916c163b3f41c81920d86da5185"
+      },
+      {
+        "path": "completed.json",
+        "mode": "0444",
+        "byte_count": 1798,
+        "file_sha256": "821c65ccf14e5f8bb2c1bf8f5a807caa3c5669c6180ffc1c12bf396c8de9f4b2",
+        "content_sha256": "b8e6f66f7a221b8e5da3d4fa8082db2cd40a2a1c1eb9704ed8198a922ae41118"
+      }
+    ],
+    "exact_terminal_files": [
+      "completed.json",
+      "failure.json",
+      "reservation.json"
+    ],
+    "partial_inventory_before_failure_receipt": {
+      "files": [
+        "reservation.json"
+      ],
+      "partial_evidence_bindings": []
+    },
+    "runtime_checkpoint_or_trace_artifact_present": false,
+    "all_receipt_file_and_content_bindings_match": true,
+    "all_files_mode_0444": true,
+    "root_mode_0555": true
+  },
+  "attempt": {
+    "attempt_identity": "180f0a41560d584cd47d9a4aff19a419054a9ab1118e8f3b0cd083c2d953fd24",
+    "attempt_index": 1,
+    "maximum_attempts": 1,
+    "reservation_status": "RESERVED_0700_BEFORE_TORCH_RUNTIME_INPUT_RGB_OR_CHECKPOINT",
+    "failure_status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY",
+    "completion_status": "TERMINAL_FAILURE",
+    "checkpoint_qualified": false,
+    "phase_a_passed": false,
+    "phase_b_entered": false
+  },
+  "operation_counts": {
+    "cumulative_optimizer_updates": 100,
+    "cumulative_pair_presentations": 1600,
+    "observer_reruns": 0,
+    "phase_a_backward_calls": 400,
+    "phase_a_completed_pair_presentations": 1600,
+    "phase_a_ema_updates": 100,
+    "phase_a_loaded_pair_presentations": 1600,
+    "phase_a_objective_evaluations": 400,
+    "phase_a_optimizer_updates": 100,
+    "phase_a_mapped_negative_io": {
+      "total_endpoint_request_count": 2590,
+      "total_cache_hit_count": 1090,
+      "total_cache_miss_count": 1500,
+      "total_physical_read_attempt_count": 1500,
+      "total_physical_read_success_count": 1500
+    },
+    "phase_b_backward_calls": 0,
+    "phase_b_camera_objectives": 0,
+    "phase_b_completed_pair_presentations": 0,
+    "phase_b_loaded_pair_presentations": 0,
+    "phase_b_optimizer_updates": 0
+  },
+  "forbidden_access_counts": {
+    "deployment_input_open_count": 0,
+    "g2_open_count": 0,
+    "heldout_open_count": 0,
+    "navigation_open_count": 0,
+    "observer_rerun_count": 0,
+    "phase_a_camera_supervision_array_open_count": 0,
+    "phase_a_general_raw_loader_call_count": 0,
+    "prior_runtime_output_open_count": 0,
+    "probability_calibration_open_count": 0,
+    "production_input_open_count": 0,
+    "rejected_checkpoint_open_count": 0,
+    "sealed_open_count": 0
+  },
+  "failure_receipt": {
+    "stage": "phase_a",
+    "failed_at_continuation_evaluation_after_update": 100,
+    "error_type": "ValueError",
+    "error_message": "Phase-A update-zero action symmetry and chance receipt changed",
+    "error_message_sha256": "8a9c5aea9ecc093219e536da11e0a977d9b92740fb28f20e3a89cb30646cab75",
+    "root_cause_classification": "DETERMINISTIC_FLOAT32_REDUCTION_PATH_RECEIPT_MISMATCH",
+    "classification": "OPERATIONAL_INTEGRITY_FAILURE_NOT_A_SCIENTIFIC_GATE_RESULT",
+    "determinism_scope_entered_and_restored_to_strict": true,
+    "missing_normal_receipts_at_failure": [
+      "phase_a/metrics.json",
+      "phase_a/artifact.json",
+      "access.json",
+      "result.json",
+      "completed.json"
+    ],
+    "missing_normal_receipts_synthesized": false,
+    "terminal_failure_completion_later_published": true,
+    "normal_scientific_metrics_or_result_published": false
+  },
+  "scientific_conclusion": {
+    "science_evaluable": false,
+    "v10_mechanism_passed": false,
+    "v10_mechanism_scientifically_failed": false,
+    "reason": "The first continuation evaluation terminated on a deterministic float32 reduction-path receipt mismatch before Phase-A metrics or a scientific gate result were published.",
+    "phase_b_began": false,
+    "checkpoint_qualified": false,
+    "perception_qualification_authorized": false,
+    "g2_navigation_heldout_or_sealed_evaluation_authorized": false
+  },
+  "terminal_authority": {
+    "v10_attempt_consumed": true,
+    "v10_retry_or_resume_authorized": false,
+    "same_output_root_reuse_authorized": false,
+    "replacement_authorized_by_this_audit": false,
+    "replacement_must_be_separately_versioned": true,
+    "replacement_requires_explicit_dated_supersession": true,
+    "replacement_requires_new_reviewed_source_and_execution_authority": true,
+    "replacement_requires_distinct_output_root": true,
+    "current_authorized_action": "NO_V10_RETRY_RESUME_OR_REPLACEMENT_UNTIL_EXPLICIT_DATED_SUPERSESSION"
+  }
+}
