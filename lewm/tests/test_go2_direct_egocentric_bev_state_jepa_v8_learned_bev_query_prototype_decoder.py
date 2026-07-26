@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -31,9 +32,9 @@ def _load(path: Path, name: str) -> Any:
 
 def _accounting(contract: Any, update: int) -> dict[str, Any]:
     return {
-        **contract.PHASE_ACCOUNTING[update],
+        **contract.PERCEPTION_ACCOUNTING[update],
         "v8_mechanism_receipt_ready": True,
-        "active_phase_v6": "phase_one",
+        "active_training_scope_v8": "perception_only",
         "all_registered_values_finite": True,
         "state_nonconstant": True,
     }
@@ -44,6 +45,16 @@ def test_contract_freezes_exact_science_caps_schedule_and_governance() -> None:
     assert contract.MAXIMUM_UPDATES == 250
     assert contract.MAXIMUM_PRESENTATIONS == 4_000
     assert contract.GPU_ACTIVE_TIME_CAP_MINUTES == 30
+    for stale_name in (
+        "CONTROL_CONTINUE_UPDATE_400",
+        "CONTROL_UPDATE_400_FAIL",
+        "CONTROL_UPDATE_1000_FAIL",
+        "INTEGRITY_REPLACEMENT_DELTA",
+        "PHASE_ACCOUNTING",
+        "PHASE_ADAPTER_CONFIG",
+    ):
+        assert not hasattr(contract, stale_name)
+        assert stale_name not in contract.__all__
     assert contract.EXECUTION_AUTHORITY["maximum_updates"] == 250
     assert contract.EXECUTION_AUTHORITY["maximum_presentations"] == 4_000
     assert contract.EXECUTION_AUTHORITY["gpu_active_minutes_maximum"] == 30
@@ -83,6 +94,16 @@ def test_contract_freezes_exact_science_caps_schedule_and_governance() -> None:
     )
     science = contract.science_contract()
     assert science["scientific_delta"]["scientific_delta_count"] == 1
+    assert science["objective"]["J_and_C_scope"] == (
+        "inherited_persistence_diagnostics_only_non_gating"
+    )
+    assert science["objective"]["J_and_C_predictor_forward_call_count"] == 0
+    assert science["optimizer"]["predictor_no_grad_clip_compatibility"] == {
+        "inherited_clip_grad_norm_call_per_update": 1,
+        "required_preclip_gradient_norm": 0.0,
+        "effective_clip_count": 0,
+        "optimizer_update_count": 0,
+    }
     assert science["model"]["state_head"]["separate_registered_module"] is True
     assert science["model"]["target"]["inventory"] == [
         "encoder",
@@ -366,6 +387,14 @@ def test_runner_initializer_optimizer_and_schedule_prefix_are_exact(
         runner.contract.V8_INITIAL_DECODER_STATE_SHA256
     )
     assert optimizer_receipt["predictor_parameters_excluded"] is True
+    assert optimizer_receipt[
+        "inherited_predictor_clip_call_is_zero_gradient_noop"
+    ] is True
+    assert optimizer_receipt["predictor_effective_clip_or_update_count"] == 0
+    assert "predictor_separate_clip_norm" not in optimizer_receipt
+    assert runner._v8_perception_accounting(model, update=0) == (
+        runner.contract.PERCEPTION_ACCOUNTING[0]
+    )
     optimizer_ids = {
         id(parameter)
         for group in optimizer.param_groups
@@ -410,6 +439,128 @@ def test_runner_initializer_optimizer_and_schedule_prefix_are_exact(
     assert schedule_receipt["source_adapter_returned_presentations"] == 16_000
     assert schedule_receipt["used_presentation_count"] == 4_000
     assert progress["schedule_validated"] is True
+
+
+def test_native_receipt_adapters_strip_inherited_phase_schema(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    runner = _load(RUNNER, "_direct_bev_v8_native_receipt_test")
+
+    class FakePredictor:
+        @staticmethod
+        def parameters():
+            return ()
+
+    class FakeModel:
+        active_phase_v6 = "phase_one"
+        predictor = FakePredictor()
+        _v8_predictor_call_counter = {"count": 0}
+        _v8_predictor_optimizer_membership_count = 0
+
+        @staticmethod
+        def phase_counters_v6():
+            return {
+                "phase_policy_armed": True,
+                "global_target_update_callback_count": 50,
+                "target_update_callback_count": 50,
+                "ema_arithmetic_update_count": 50,
+                "boundary_hard_sync_count": 0,
+                "phase_two_target_noop_count": 0,
+                "perception_optimizer_update_count": 50,
+                "predictor_optimizer_update_count": 0,
+            }
+
+    model = FakeModel()
+    legacy = runner._V6._phase_receipt(model)
+    inherited_result = {
+        "updates": 50,
+        "optimizer_updates": 50,
+        "ema_updates": 50,
+        **legacy,
+        "global_target_update_callback_count": 50,
+        "optimizer_rebuilt_or_reset_at_phase_boundary": False,
+    }
+    monkeypatch.setattr(
+        runner._V6,
+        "_v6_train_probe",
+        lambda *args, **kwargs: (model, dict(inherited_result)),
+    )
+    observed_model, train_receipt = runner._v8_train_probe()
+    assert observed_model is model
+    assert train_receipt["online_perception_optimizer_update_count"] == 50
+    assert train_receipt["target_ema_update_count"] == 50
+
+    captured: dict[str, Any] = {}
+
+    def write_trace(output_root, rows):
+        captured["trace"] = list(rows)
+        return {"path": "training_trace.json"}
+
+    monkeypatch.setattr(runner._V6, "_FROZEN_WRITE_TRAINING_TRACE", write_trace)
+    runner._v8_write_training_trace(tmp_path, [{
+        "update": 50,
+        "presentations": 800,
+        "ema_update_count": 50,
+        "predictor_preclip_norm": 0.0,
+        "predictor_clip_max_norm": 1.0,
+    }])
+
+    def snapshot(runtime, observed_model, output_root, *, update, metadata):
+        captured["snapshot"] = dict(metadata)
+        return {"path": "checkpoint.pt"}
+
+    monkeypatch.setattr(runner._V6, "_FROZEN_SNAPSHOT_MODEL", snapshot)
+    runner._v8_snapshot_model(
+        object(),
+        model,
+        tmp_path,
+        update=50,
+        metadata={
+            "optimizer_updates": 50,
+            "presentations": 800,
+            "ema_updates": 50,
+        },
+    )
+
+    def terminal_failure(
+        output_root, reservation, reservation_raw, *, error, progress
+    ):
+        captured["failure"] = dict(progress)
+
+    monkeypatch.setattr(runner._V6, "_FROZEN_TERMINAL_FAILURE", terminal_failure)
+    runner._v8_terminal_failure(
+        tmp_path,
+        {"attempt_identity": "synthetic"},
+        b"{}\n",
+        error=RuntimeError("synthetic"),
+        progress={
+            "updates": 50,
+            "optimizer_updates": 50,
+            "ema_updates": 50,
+            "presentations": 800,
+        },
+    )
+
+    public = {
+        "train": train_receipt,
+        "trace": captured["trace"],
+        "snapshot": captured["snapshot"],
+        "failure": captured["failure"],
+    }
+    text = json.dumps(public, sort_keys=True).casefold()
+    for stale in (
+        "frozen_v3",
+        "phase_two",
+        "boundary_hard_sync",
+        "v6_phase_receipt_ready",
+        "optimizer_rebuilt_or_reset_at_phase_boundary",
+    ):
+        assert stale not in text
+    assert captured["trace"][0][
+        "inherited_predictor_no_grad_clip_noop_preclip_norm"
+    ] == 0.0
+    assert captured["trace"][0]["predictor_effective_clip_or_update_count"] == 0
 
 
 def test_launcher_and_source_closure_use_only_six_additive_files() -> None:

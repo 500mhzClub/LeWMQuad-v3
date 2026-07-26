@@ -131,7 +131,6 @@ def _v8_initialize_model(
     _install_predictor_call_witness(model)
     object.__setattr__(model, "_v6_initial_predictor_state_sha256", predictor_sha)
     object.__setattr__(model, "_v6_initial_online_perception_sha256", online_sha)
-    object.__setattr__(model, "_v6_update400_baseline", None)
     object.__setattr__(
         model,
         "_v6_no_prior_runtime_or_protected_input",
@@ -210,7 +209,9 @@ def _v8_build_optimizer(
         "encoder_learning_rate": 1e-4,
         "decoder_and_prototype_learning_rate": 3e-4,
         "encoder_decoder_state_joint_clip_norm": 1.0,
-        "predictor_separate_clip_norm": 1.0,
+        "inherited_predictor_clip_call_is_zero_gradient_noop": True,
+        "predictor_expected_preclip_gradient_norm": 0.0,
+        "predictor_effective_clip_or_update_count": 0,
         "predictor_parameters_excluded": True,
         "target_parameters_excluded": True,
         "optimizer_group_count": 2,
@@ -423,10 +424,7 @@ def _v8_gradient_integrity_probe(
         "v8_perception_only": receipt,
         "v8_perception_gradient_isolation_exact": exact,
         "v8_gradient_probe_nonmutating_exact": nonmutating,
-        # Compatibility keys consumed by the frozen V6 observation adapter.
-        "phase_one_gradient_isolation_exact": exact,
-        "phase_two_gradient_isolation_exact": True,
-        "dual_gradient_probe_nonmutating_exact": nonmutating,
+        # Compatibility keys consumed by the deep frozen metric evaluator.
         "target_parameters_gradient_free": receipt["target_gradients_absent"],
         "intended_online_path_gradient_nonzero": receipt[
             "all_required_component_gradients_finite_nonzero"
@@ -480,6 +478,42 @@ def _architecture_receipt(runtime: Any, model: Any) -> dict[str, Any]:
     }
 
 
+_LEGACY_V6_ACCOUNTING_FIELDS = (
+    "target_update_callback_count",
+    "perception_optimizer_updates",
+    "predictor_optimizer_updates",
+    "ema_arithmetic_updates",
+    "boundary_hard_sync_count",
+    "phase_two_target_noop_count",
+)
+
+
+def _v8_perception_accounting(model: Any, *, update: int) -> dict[str, int]:
+    """Validate internal V6 counters and expose only native V8 semantics."""
+
+    legacy = _V6._phase_receipt(model)
+    expected_legacy = {
+        "target_update_callback_count": update,
+        "perception_optimizer_updates": update,
+        "predictor_optimizer_updates": 0,
+        "ema_arithmetic_updates": update,
+        "boundary_hard_sync_count": 0,
+        "phase_two_target_noop_count": 0,
+    }
+    predictor_requires_grad = sum(
+        int(parameter.requires_grad) for parameter in model.predictor.parameters()
+    )
+    if (
+        legacy != expected_legacy
+        or model.active_phase_v6 != "phase_one"
+        or model._v8_predictor_call_counter["count"] != 0
+        or model._v8_predictor_optimizer_membership_count != 0
+        or predictor_requires_grad != 0
+    ):
+        raise RuntimeError("V8 perception-only accounting changed")
+    return contract.perception_accounting(update)
+
+
 def _v8_evaluate_observation_impl(
     runtime: Any,
     model_api: Any,
@@ -496,7 +530,7 @@ def _v8_evaluate_observation_impl(
 ) -> dict[str, Any]:
     """Add exact V8 mechanism/predictor receipts and evaluate V8 gates."""
 
-    result = _V6._v6_evaluate_observation_impl(
+    result = _V6._FROZEN_EVALUATE_OBSERVATION_IMPL(
         runtime,
         model_api,
         model,
@@ -510,24 +544,12 @@ def _v8_evaluate_observation_impl(
         prior_gates_passed=prior_gates_passed,
     )
     metrics = result["metrics"]
-    phase = _V6._phase_receipt(model)
-    predictor_requires_grad = sum(
-        int(parameter.requires_grad) for parameter in model.predictor.parameters()
-    )
+    metrics.pop("three_logit_bottleneck_exact", None)
+    accounting = _v8_perception_accounting(model, update=update)
     metrics.update({
-        **phase,
-        "presentations": update * contract.EFFECTIVE_BATCH_SIZE,
+        **accounting,
         "v8_mechanism_receipt_ready": True,
-        "active_phase_v8": "perception_only",
-        "predictor_forward_call_count": int(
-            model._v8_predictor_call_counter["count"]
-        ),
-        "predictor_objective_evaluation_count": 0,
-        "predictor_backward_call_count": 0,
-        "predictor_optimizer_membership_count": int(
-            model._v8_predictor_optimizer_membership_count
-        ),
-        "predictor_requires_grad_parameter_count": predictor_requires_grad,
+        "active_training_scope_v8": "perception_only",
         "architecture_receipt": _architecture_receipt(runtime, model),
     })
     if update == 0:
@@ -674,6 +696,12 @@ def _v8_evaluate_observation_impl(
         update_100=update_100,
         prior_gates_passed=prior_gates_passed,
     )
+    result["call_graph"].update({
+        "predictor_forward_call_count": 0,
+        "predictor_objective_evaluation_count": 0,
+        "predictor_backward_call_count": 0,
+        "predictor_optimizer_update_count": 0,
+    })
     result["loader_access_after_observation"] = loader.receipt()
     return result
 
@@ -739,16 +767,156 @@ def _v8_load_schedule(
     }
 
 
+def _v8_train_probe(*args: Any, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
+    """Reuse the reviewed loop and translate its terminal accounting to V8."""
+
+    model, result = _V6._v6_train_probe(*args, **kwargs)
+    update = int(result["updates"])
+    accounting = _v8_perception_accounting(model, update=update)
+    observed_legacy = {
+        name: result.get(name) for name in _LEGACY_V6_ACCOUNTING_FIELDS
+    }
+    expected_legacy = _V6._phase_receipt(model)
+    if (
+        observed_legacy != expected_legacy
+        or int(result.get("global_target_update_callback_count", -1)) != update
+        or result.get("optimizer_rebuilt_or_reset_at_phase_boundary") is not False
+        or int(result["optimizer_updates"]) != update
+        or int(result["ema_updates"]) != update
+    ):
+        raise RuntimeError("V8 inherited terminal accounting changed")
+    for name in (
+        *_LEGACY_V6_ACCOUNTING_FIELDS,
+        "global_target_update_callback_count",
+        "optimizer_rebuilt_or_reset_at_phase_boundary",
+    ):
+        result.pop(name, None)
+    result.update(accounting)
+    result["optimizer_rebuilt_or_reset"] = False
+    return model, result
+
+
+def _v8_write_training_trace(
+    output_root: Path,
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Write native perception accounting around the inherited loop rows."""
+
+    translated: list[dict[str, Any]] = []
+    for source in rows:
+        row = dict(source)
+        update = int(row["update"])
+        ema_updates = int(row.pop("ema_update_count"))
+        predictor_norm = float(row.pop("predictor_preclip_norm"))
+        predictor_max_norm = float(row.pop("predictor_clip_max_norm"))
+        accounting = contract.perception_accounting(update)
+        if (
+            ema_updates != update
+            or int(row["presentations"]) != accounting["presentations"]
+            or predictor_norm != 0.0
+            or predictor_max_norm != 1.0
+        ):
+            raise RuntimeError("V8 inherited trace accounting changed")
+        row.update(accounting)
+        row.update({
+            "inherited_predictor_no_grad_clip_noop_call_count": 1,
+            "inherited_predictor_no_grad_clip_noop_preclip_norm": 0.0,
+            "predictor_effective_clip_or_update_count": 0,
+        })
+        translated.append(row)
+    return _V6._FROZEN_WRITE_TRAINING_TRACE(output_root, translated)
+
+
+def _v8_snapshot_model(
+    runtime: Any,
+    model: Any,
+    output_root: Path,
+    *,
+    update: int,
+    metadata: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Write checkpoints with only native V8 perception accounting."""
+
+    translated = dict(metadata)
+    ema_updates = int(translated.pop("ema_updates"))
+    accounting = _v8_perception_accounting(model, update=update)
+    if (
+        ema_updates != update
+        or int(translated["optimizer_updates"]) != update
+        or int(translated["presentations"]) != accounting["presentations"]
+    ):
+        raise RuntimeError("V8 inherited snapshot accounting changed")
+    translated.update(accounting)
+    return _V6._FROZEN_SNAPSHOT_MODEL(
+        runtime,
+        model,
+        output_root,
+        update=update,
+        metadata=translated,
+    )
+
+
+def _v8_terminal_failure(
+    output_root: Path,
+    reservation: Mapping[str, Any],
+    reservation_raw: bytes,
+    *,
+    error: BaseException,
+    progress: Mapping[str, Any],
+) -> None:
+    """Publish truthful partial V8 accounting without a fictitious boundary."""
+
+    translated = dict(progress)
+    callbacks = int(translated.get("ema_updates", 0))
+    optimizer_updates = int(translated.get("optimizer_updates", 0))
+    presentations = int(translated.get("presentations", 0))
+    if (
+        callbacks < 0
+        or optimizer_updates < 0
+        or callbacks > optimizer_updates
+        or optimizer_updates > contract.MAXIMUM_UPDATES
+        or presentations < 0
+        or presentations > contract.MAXIMUM_PRESENTATIONS
+    ):
+        raise RuntimeError("V8 partial failure accounting is inconsistent")
+    for name in (
+        *_LEGACY_V6_ACCOUNTING_FIELDS,
+        "global_target_update_callback_count",
+        "optimizer_rebuilt_or_reset_at_phase_boundary",
+    ):
+        translated.pop(name, None)
+    translated.update({
+        "active_training_scope_v8": "perception_only",
+        "target_update_callback_count": callbacks,
+        "online_perception_optimizer_update_count": optimizer_updates,
+        "target_ema_update_count": callbacks,
+        "predictor_forward_call_count": 0,
+        "predictor_objective_evaluation_count": 0,
+        "predictor_backward_call_count": 0,
+        "predictor_optimizer_update_count": 0,
+        "predictor_optimizer_membership_count": 0,
+        "predictor_requires_grad_parameter_count": 0,
+        "optimizer_rebuilt_or_reset": False,
+    })
+    _V6._FROZEN_TERMINAL_FAILURE(
+        output_root,
+        reservation,
+        reservation_raw,
+        error=error,
+        progress=translated,
+    )
+
+
 _V8_SEAM_TABLE = (
     ("_initialize_model", _v8_initialize_model),
     ("_build_optimizer", _v8_build_optimizer),
     ("_gradient_integrity_probe", _v8_gradient_integrity_probe),
     ("_evaluate_observation_impl", _v8_evaluate_observation_impl),
     ("_load_schedule", _v8_load_schedule),
-    ("_train_probe", _V6._v6_train_probe),
-    ("_write_training_trace", _V6._v6_write_training_trace),
-    ("_snapshot_model", _V6._v6_snapshot_model),
-    ("_terminal_failure", _V6._v6_terminal_failure),
+    ("_train_probe", _v8_train_probe),
+    ("_write_training_trace", _v8_write_training_trace),
+    ("_snapshot_model", _v8_snapshot_model),
+    ("_terminal_failure", _v8_terminal_failure),
 )
 
 

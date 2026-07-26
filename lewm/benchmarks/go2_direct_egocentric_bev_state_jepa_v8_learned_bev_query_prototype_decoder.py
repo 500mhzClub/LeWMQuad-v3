@@ -48,6 +48,17 @@ _V7 = _source_only_module(
 for _name in _V7.__all__:
     globals()[_name] = getattr(_V7, _name)
 
+_removed_inherited_public_names = frozenset({
+    "CONTROL_CONTINUE_UPDATE_400",
+    "CONTROL_UPDATE_400_FAIL",
+    "CONTROL_UPDATE_1000_FAIL",
+    "INTEGRITY_REPLACEMENT_DELTA",
+    "PHASE_ACCOUNTING",
+    "PHASE_ADAPTER_CONFIG",
+})
+for _stale_active_name in _removed_inherited_public_names:
+    globals().pop(_stale_active_name, None)
+
 canonical_json_bytes = _V7.canonical_json_bytes
 canonical_json_sha256 = _V7.canonical_json_sha256
 is_sha256 = _V7.is_sha256
@@ -439,21 +450,25 @@ SCIENTIFIC_DELTA = {
     "prior_checkpoint_tensor_trace_receipt_or_runtime_output_reuse": False,
 }
 
-PHASE_ACCOUNTING = {
-    update: {
+def perception_accounting(update: int) -> dict[str, int]:
+    if type(update) is not int or not 0 <= update <= MAXIMUM_UPDATES:
+        raise ValueError("V8 perception-accounting update is out of bounds")
+    return {
         "target_update_callback_count": update,
-        "perception_optimizer_updates": update,
-        "predictor_optimizer_updates": 0,
-        "ema_arithmetic_updates": update,
-        "boundary_hard_sync_count": 0,
-        "phase_two_target_noop_count": 0,
+        "online_perception_optimizer_update_count": update,
+        "target_ema_update_count": update,
         "presentations": update * EFFECTIVE_BATCH_SIZE,
         "predictor_forward_call_count": 0,
         "predictor_objective_evaluation_count": 0,
         "predictor_backward_call_count": 0,
+        "predictor_optimizer_update_count": 0,
         "predictor_optimizer_membership_count": 0,
         "predictor_requires_grad_parameter_count": 0,
     }
+
+
+PERCEPTION_ACCOUNTING = {
+    update: perception_accounting(update)
     for update in OBSERVATION_UPDATES
 }
 
@@ -536,6 +551,8 @@ SCIENTIFIC_REVIEW_CHECKS = {
         True
     ),
     "predictor_frozen_excluded_and_zero_forward_objective_backward_update": True,
+    "public_receipts_use_native_v8_perception_accounting_only": True,
+    "inherited_predictor_clip_call_is_proven_zero_gradient_noop": True,
     "u0_u50_u100_u250_gates_and_accounting_fail_closed": True,
     "one_fresh_attempt_caps_and_downstream_denials_exact": True,
     "no_runtime_or_protected_material_opened_by_source_work": True,
@@ -671,6 +688,11 @@ def objective_contract() -> dict[str, Any]:
     value["total"] = "G/log(2)"
     value["G_formula_and_hierarchical_three_state_energy"] = "exact_frozen_V7"
     value["predictor_J_C_or_v5_A_in_total"] = False
+    value["J_and_C_scope"] = (
+        "inherited_persistence_diagnostics_only_non_gating"
+    )
+    value["J_and_C_predictor_forward_call_count"] = 0
+    value["J_and_C_predictor_gradient_or_optimizer_update_authorized"] = False
     value["auxiliary_loss"] = None
     value["class_weighting"] = None
     value["temperature"] = None
@@ -697,6 +719,12 @@ def optimizer_contract() -> dict[str, Any]:
         "reset_or_rebuild": False,
         "predictor_parameters_excluded": True,
         "target_parameters_excluded": True,
+        "predictor_no_grad_clip_compatibility": {
+            "inherited_clip_grad_norm_call_per_update": 1,
+            "required_preclip_gradient_norm": 0.0,
+            "effective_clip_count": 0,
+            "optimizer_update_count": 0,
+        },
     }
 
 
@@ -763,7 +791,7 @@ def _accounting_conjuncts(
         f"{field}_equals_{expected}": (
             _exact_int(metrics.get(field), name=field) == expected
         )
-        for field, expected in PHASE_ACCOUNTING[update].items()
+        for field, expected in PERCEPTION_ACCOUNTING[update].items()
     }
 
 
@@ -805,7 +833,7 @@ def evaluate_gate(
             "v8_mechanism_receipt_ready": False,
             "conjuncts": {"preliminary_integration_only": True},
             "thresholds": dict(GATE_THRESHOLDS[update]),
-            "phase_accounting": dict(PHASE_ACCOUNTING[update]),
+            "perception_accounting": dict(PERCEPTION_ACCOUNTING[update]),
         }
 
     ready = _exact_bool(
@@ -815,8 +843,8 @@ def evaluate_gate(
     conjuncts: dict[str, bool] = {
         "prior_gates_passed": prior_gates_passed,
         "v8_mechanism_receipt_ready": ready,
-        "active_phase_is_perception_only": (
-            metrics.get("active_phase_v6") == "phase_one"
+        "active_training_scope_is_perception_only": (
+            metrics.get("active_training_scope_v8") == "perception_only"
         ),
     }
     conjuncts.update(_accounting_conjuncts(update, metrics))
@@ -1018,7 +1046,7 @@ def evaluate_gate(
         "v8_mechanism_receipt_ready": ready,
         "conjuncts": conjuncts,
         "thresholds": dict(GATE_THRESHOLDS[update]),
-        "phase_accounting": dict(PHASE_ACCOUNTING[update]),
+        "perception_accounting": dict(PERCEPTION_ACCOUNTING[update]),
     }
 
 
@@ -1076,8 +1104,8 @@ def science_contract() -> dict[str, Any]:
             str(update): list(GATE_CONTROLS[update])
             for update in OBSERVATION_UPDATES
         },
-        "phase_accounting": {
-            str(update): dict(PHASE_ACCOUNTING[update])
+        "perception_accounting": {
+            str(update): dict(PERCEPTION_ACCOUNTING[update])
             for update in OBSERVATION_UPDATES
         },
         "preliminary_mode_authorizes_execution": False,
@@ -1457,7 +1485,7 @@ def validate_authorization(
 
 
 __all__ = sorted({
-    *_V7.__all__,
+    *(name for name in _V7.__all__ if name not in _removed_inherited_public_names),
     *(name for name in globals() if name.isupper()),
     "build_schedule_identity",
     "current_source_bindings",
@@ -1468,6 +1496,7 @@ __all__ = sorted({
     "model_config",
     "objective_contract",
     "optimizer_contract",
+    "perception_accounting",
     "preregistration_binding",
     "runtime_authorization_template",
     "science_contract",
