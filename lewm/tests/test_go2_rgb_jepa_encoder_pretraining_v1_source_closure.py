@@ -4,6 +4,7 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -53,12 +54,12 @@ class SourceClosureTest(unittest.TestCase):
         self.assertTrue(expected.issubset(checker.contract.SOURCE_PATHS))
         self.assertEqual(
             checker.contract.SCHEMA_PREFIX,
-            "lewm_go2_rgb_dense_pairwise_spatial_cost_volume_inverse_jepa_v9",
+            "lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10",
         )
         self.assertTrue(
             checker.contract.OUTPUT_ROOT_RELATIVE_PATH.endswith(
-                "/rgb_dense_pairwise_spatial_cost_volume_"
-                "inverse_jepa_probe_v9"
+                "/rgb_action_conditioned_next_target_"
+                "retrieval_jepa_probe_v10"
             )
         )
 
@@ -96,6 +97,32 @@ class SourceClosureTest(unittest.TestCase):
             checker.contract.OBJECTIVE_TEST_RELATIVE_PATH,
             bound_paths,
         )
+
+    def test_heldout_paths_fail_before_any_inherited_read(self) -> None:
+        for forbidden in (
+            "lewm/heldout/synthetic.py",
+            "lewm/heldout_future/synthetic.py",
+        ):
+            with self.subTest(path=forbidden):
+                with self.assertRaises(PermissionError):
+                    checker._safe_source_path(forbidden)
+                with (
+                    mock.patch.object(
+                        checker,
+                        "discover_source_closure",
+                        return_value=(forbidden,),
+                    ),
+                    mock.patch.object(
+                        checker,
+                        "_read_regular_source",
+                        side_effect=AssertionError(
+                            "forbidden source bytes were opened"
+                        ),
+                    ) as inherited_read,
+                ):
+                    with self.assertRaises(PermissionError):
+                        checker.build_manifest()
+                    inherited_read.assert_not_called()
 
 
 if __name__ == "__main__":

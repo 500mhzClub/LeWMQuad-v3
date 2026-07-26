@@ -24,17 +24,20 @@ from lewm.models.patch_whitened_action_residual_jepa import (
     RESIDUAL_ALPHA,
     TOKEN_COUNT,
     TOKEN_SIDE,
+    ActionConditionedNextTargetRetrievalTerms,
     ActionIndexedLosses,
     ActionIndexedPredictions,
     ActionConditionedLatentFlow,
     DensePairwiseSpatialCostVolumeInverseHead,
     DensePairwiseSpatialCostVolumeInverseTerms,
+    action_conditioned_next_target_retrieval_terms,
     action_independent_trunk,
     action_indexed_energy_nll,
     bounded_flow_cells,
     dense_pairwise_spatial_cost_volume_inverse_terms,
     flow_residual_reconstruct,
     initialize_action_gate_rows,
+    normalized_token_l2_energy,
     patch_whitening_terms,
     predict_action_conditioned_flow_warps,
     relative_action_embeddings,
@@ -803,6 +806,377 @@ def test_equal_energy_nll_attracts_executed_and_repels_every_wrong() -> None:
     assert prediction_and_target_gradients[0] is not None
     assert torch.isfinite(prediction_and_target_gradients[0]).all()
     assert prediction_and_target_gradients[1] is None
+
+
+def _retrieval_predictions(
+    all_predictions: torch.Tensor,
+    executed_indices: list[int],
+) -> ActionIndexedPredictions:
+    batch = all_predictions.shape[0]
+    indices = torch.tensor(
+        executed_indices,
+        dtype=torch.long,
+        device=all_predictions.device,
+    )
+    rows = torch.arange(batch, device=all_predictions.device)
+    candidates = torch.arange(
+        ACTION_DIM,
+        device=all_predictions.device,
+    ).unsqueeze(0).expand(batch, -1)
+    control_indices = candidates[
+        candidates != indices[:, None]
+    ].reshape(batch, ACTION_DIM - 1)
+    controls = all_predictions.gather(
+        1,
+        control_indices[:, :, None, None].expand(
+            -1,
+            -1,
+            TOKEN_COUNT,
+            LATENT_DIM,
+        ),
+    )
+    return ActionIndexedPredictions(
+        executed_indices=indices,
+        all_predictions=all_predictions,
+        all_flows_cell=torch.zeros(
+            batch,
+            ACTION_DIM,
+            TOKEN_COUNT,
+            2,
+            dtype=all_predictions.dtype,
+            device=all_predictions.device,
+        ),
+        executed=all_predictions[rows, indices],
+        control_indices=control_indices,
+        controls=controls,
+    )
+
+
+def test_normalized_token_l2_energy_matches_exact_registered_formula() -> None:
+    query = torch.zeros(3, TOKEN_COUNT, LATENT_DIM)
+    target = torch.zeros_like(query)
+    query[:, :, 0] = 1.0
+    target[0, :, 0] = 1.0
+    target[1, :, 0] = -1.0
+    target[2, :, 1] = 1.0
+
+    energy = normalized_token_l2_energy(query, target)
+
+    assert torch.equal(energy, torch.tensor([0.0, 4.0, 2.0]))
+    assert torch.equal(
+        energy,
+        normalized_token_l2_energy(target, query),
+    )
+    assert torch.equal(
+        energy,
+        (query - target).square().sum(dim=-1).mean(dim=-1),
+    )
+    with pytest.raises(ValueError, match="L2-normalized"):
+        normalized_token_l2_energy(query * 2.0, target)
+    with pytest.raises(TypeError, match="float32"):
+        normalized_token_l2_energy(query.double(), target.double())
+
+
+def test_v10_factorized_retrieval_matches_exact_formula_and_candidate_order() -> None:
+    torch.manual_seed(761)
+    batch = 2
+    all_predictions = F.normalize(
+        torch.randn(batch, ACTION_DIM, TOKEN_COUNT, LATENT_DIM),
+        p=2,
+        dim=-1,
+        eps=1e-8,
+    )
+    predictions = _retrieval_predictions(all_predictions, [2, HOLD_ACTION_INDEX])
+    ema_current = F.normalize(
+        torch.randn(batch, TOKEN_COUNT, LATENT_DIM),
+        p=2,
+        dim=-1,
+        eps=1e-8,
+    )
+    ema_next = F.normalize(
+        torch.randn(batch, TOKEN_COUNT, LATENT_DIM),
+        p=2,
+        dim=-1,
+        eps=1e-8,
+    )
+    ema_deranged = F.normalize(
+        torch.randn(batch, TOKEN_COUNT, LATENT_DIM),
+        p=2,
+        dim=-1,
+        eps=1e-8,
+    )
+    non_hold = torch.tensor([True, False])
+
+    terms = action_conditioned_next_target_retrieval_terms(
+        predictions,
+        ema_current,
+        ema_next,
+        ema_deranged,
+        non_hold,
+    )
+
+    expected_action_energies = (
+        all_predictions - ema_next[:, None]
+    ).square().sum(dim=-1).mean(dim=-1)
+    expected_target_candidates = torch.stack(
+        (ema_next, ema_deranged, ema_current),
+        dim=1,
+    )
+    expected_target_energies = (
+        predictions.executed[:, None] - expected_target_candidates
+    ).square().sum(dim=-1).mean(dim=-1)
+    expected_action_rows = F.cross_entropy(
+        -expected_action_energies,
+        predictions.executed_indices,
+        reduction="none",
+    )
+    expected_target_rows = torch.stack((
+        F.cross_entropy(
+            -expected_target_energies[0:1],
+            torch.zeros(1, dtype=torch.long),
+        ),
+        F.cross_entropy(
+            -expected_target_energies[1:2, :2],
+            torch.zeros(1, dtype=torch.long),
+        ),
+    ))
+    expected_jepa = (
+        all_predictions - ema_next[:, None]
+    ).square().mean(dim=(2, 3)).gather(
+        1,
+        predictions.executed_indices[:, None],
+    ).mean()
+
+    assert isinstance(terms, ActionConditionedNextTargetRetrievalTerms)
+    assert torch.equal(terms.action_energies, expected_action_energies)
+    assert torch.equal(terms.action_logits, -terms.action_energies)
+    assert torch.equal(terms.action_nll_per_row, expected_action_rows)
+    assert torch.equal(terms.action_retrieval, expected_action_rows.mean())
+    assert torch.equal(terms.target_energies, expected_target_energies)
+    assert torch.equal(terms.target_logits, -terms.target_energies)
+    assert torch.equal(terms.target_nll_per_row, expected_target_rows)
+    assert torch.equal(terms.target_retrieval, expected_target_rows.mean())
+    assert torch.equal(
+        terms.target_candidate_mask,
+        torch.tensor([[True, True, True], [True, True, False]]),
+    )
+    assert torch.equal(terms.jepa, expected_jepa)
+    assert torch.equal(
+        terms.total,
+        expected_jepa
+        + expected_action_rows.mean()
+        + expected_target_rows.mean(),
+    )
+    assert bool((terms.action_energies >= 0.0).all())
+    assert bool((terms.action_energies <= 4.0).all())
+    assert bool((terms.target_energies >= 0.0).all())
+    assert bool((terms.target_energies <= 4.0).all())
+    for wrong_non_hold in (
+        torch.tensor([False, False]),
+        torch.tensor([True, True]),
+    ):
+        with pytest.raises(ValueError, match="exactly match"):
+            action_conditioned_next_target_retrieval_terms(
+                predictions,
+                ema_current,
+                ema_next,
+                ema_deranged,
+                wrong_non_hold,
+            )
+
+
+def test_v10_equal_energy_gradients_and_hold_mask_are_exact() -> None:
+    batch = 2
+    all_predictions = torch.zeros(
+        batch,
+        ACTION_DIM,
+        TOKEN_COUNT,
+        LATENT_DIM,
+    )
+    all_predictions[..., 0] = 1.0
+    all_predictions.requires_grad_()
+    predictions = _retrieval_predictions(
+        all_predictions,
+        [3, HOLD_ACTION_INDEX],
+    )
+    targets = torch.zeros(batch, TOKEN_COUNT, LATENT_DIM)
+    targets[..., 1] = 1.0
+    terms = action_conditioned_next_target_retrieval_terms(
+        predictions,
+        targets,
+        targets,
+        targets,
+        torch.tensor([True, False]),
+    )
+
+    action_gradient = torch.autograd.grad(
+        terms.action_retrieval,
+        terms.action_energies,
+        retain_graph=True,
+    )[0]
+    target_gradient = torch.autograd.grad(
+        terms.target_retrieval,
+        terms.target_energies,
+        retain_graph=True,
+    )[0]
+
+    assert terms.action_nll_per_row.tolist() == pytest.approx(
+        [math.log(9.0), math.log(9.0)]
+    )
+    for row, executed in enumerate((3, HOLD_ACTION_INDEX)):
+        assert action_gradient[row, executed].item() == pytest.approx(4.0 / 9.0)
+        wrong = torch.cat((
+            action_gradient[row, :executed],
+            action_gradient[row, executed + 1 :],
+        ))
+        assert wrong.tolist() == pytest.approx([-1.0 / 18.0] * 8)
+    assert terms.target_nll_per_row.tolist() == pytest.approx(
+        [math.log(3.0), math.log(2.0)]
+    )
+    assert target_gradient[0].tolist() == pytest.approx(
+        [1.0 / 3.0, -1.0 / 6.0, -1.0 / 6.0]
+    )
+    assert target_gradient[1].tolist() == pytest.approx(
+        [1.0 / 4.0, -1.0 / 4.0, 0.0]
+    )
+    prediction_gradient = torch.autograd.grad(
+        terms.total,
+        all_predictions,
+    )[0]
+    assert torch.isfinite(prediction_gradient).all()
+    assert torch.count_nonzero(prediction_gradient).item() > 0
+
+
+def test_v10_retrieval_targets_are_detached_and_each_ce_reaches_queries() -> None:
+    torch.manual_seed(9203)
+    batch = 2
+    prediction_raw = torch.randn(
+        batch,
+        ACTION_DIM,
+        TOKEN_COUNT,
+        LATENT_DIM,
+        requires_grad=True,
+    )
+    all_predictions = F.normalize(
+        prediction_raw,
+        p=2,
+        dim=-1,
+        eps=1e-8,
+    )
+    predictions = _retrieval_predictions(all_predictions, [1, 7])
+    target_raw = [
+        torch.randn(
+            batch,
+            TOKEN_COUNT,
+            LATENT_DIM,
+            requires_grad=True,
+        )
+        for _ in range(3)
+    ]
+    ema_current, ema_next, ema_deranged = [
+        F.normalize(value, p=2, dim=-1, eps=1e-8)
+        for value in target_raw
+    ]
+    terms = action_conditioned_next_target_retrieval_terms(
+        predictions,
+        ema_current,
+        ema_next,
+        ema_deranged,
+        torch.tensor([True, True]),
+    )
+
+    action_query_gradient = torch.autograd.grad(
+        terms.action_retrieval,
+        prediction_raw,
+        retain_graph=True,
+    )[0]
+    target_query_gradient = torch.autograd.grad(
+        terms.target_retrieval,
+        prediction_raw,
+        retain_graph=True,
+    )[0]
+    target_gradients = torch.autograd.grad(
+        terms.total,
+        target_raw,
+        allow_unused=True,
+    )
+
+    for gradient in (action_query_gradient, target_query_gradient):
+        assert torch.isfinite(gradient).all()
+        assert torch.count_nonzero(gradient).item() > 0
+    assert target_gradients == (None, None, None)
+
+
+def test_v10_each_ce_and_their_sum_reach_the_registered_live_paths() -> None:
+    torch.manual_seed(8119)
+    encoder = VisionEncoder(
+        image_size=16,
+        patch_size=1,
+        hidden_dim=LATENT_DIM,
+        depth=1,
+        n_heads=3,
+        mlp_ratio=1,
+        dropout=0.0,
+    )
+    predictor, projector = _spatial_fixture()
+    with torch.no_grad():
+        projector.flow_weight.copy_(
+            torch.stack((
+                torch.linspace(-0.02, 0.02, LATENT_DIM),
+                torch.linspace(0.015, -0.015, LATENT_DIM),
+            ))
+        )
+    online_state = F.normalize(
+        encoder.forward_tokens(torch.randn(1, 3, 16, 16))[:, 1:],
+        p=2,
+        dim=-1,
+        eps=1e-8,
+    )
+    ema_current, ema_next, ema_deranged = (
+        F.normalize(
+            torch.randn(1, TOKEN_COUNT, LATENT_DIM),
+            p=2,
+            dim=-1,
+            eps=1e-8,
+        )
+        for _ in range(3)
+    )
+    predictions = predict_action_conditioned_flow_warps(
+        predictor,
+        projector,
+        online_state,
+        _one_hot([2]),
+        ema_current,
+    )
+    terms = action_conditioned_next_target_retrieval_terms(
+        predictions,
+        ema_current,
+        ema_next,
+        ema_deranged,
+        torch.tensor([True]),
+    )
+    action_parameters = tuple(predictor.action_embed.parameters())
+
+    for loss in (terms.action_retrieval, terms.target_retrieval):
+        gradients = torch.autograd.grad(
+            loss,
+            (projector.flow_weight, *action_parameters),
+            retain_graph=True,
+            allow_unused=True,
+        )
+        _assert_finite_nonzero_gradient(gradients[0])
+        assert any(
+            gradient is not None
+            and bool(torch.isfinite(gradient).all())
+            and torch.count_nonzero(gradient).item() > 0
+            for gradient in gradients[1:]
+        )
+
+    encoder_gradient = torch.autograd.grad(
+        terms.action_retrieval + terms.target_retrieval,
+        encoder.patch_embed.weight,
+    )[0]
+    _assert_finite_nonzero_gradient(encoder_gradient)
 
 
 def _assert_finite_nonzero_gradient(gradient: torch.Tensor | None) -> None:

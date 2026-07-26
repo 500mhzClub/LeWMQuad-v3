@@ -1,11 +1,11 @@
-"""V9 dense-pairwise RGB inverse head on the exact V5 latent-flow base.
+"""V10 parameter-free retrieval objective on the exact V5 latent-flow base.
 
 This module intentionally contains no data, schedule, runner, or custody
 logic.  It preserves the exact V5 State-Dependent Latent-Flow mechanism from
-reviewed commit ``c93124b15387acf1fd440d281e9c4503a9e8355a`` and adds only
-the V9 mechanism preregistered at source commit
-``b775093897669c91d8c1b9e7d148e257881bcedf`` with preregistration file
-SHA-256 beginning ``bfb0f1c2``.
+reviewed commit ``c93124b15387acf1fd440d281e9c4503a9e8355a``.  The V10 API
+adds only direct normalized-token energies and factorized retrieval losses;
+the legacy V9 definitions below remain inert compatibility surface and are
+not part of the V10 graph, parameter inventory, or optimizer.
 """
 from __future__ import annotations
 
@@ -60,6 +60,22 @@ class ActionIndexedLosses(NamedTuple):
     row_scale: torch.Tensor
     logits: torch.Tensor
     identification_per_row: torch.Tensor
+
+
+class ActionConditionedNextTargetRetrievalTerms(NamedTuple):
+    """Parameter-free V10 action and target retrieval terms."""
+
+    jepa: torch.Tensor
+    action_retrieval: torch.Tensor
+    target_retrieval: torch.Tensor
+    total: torch.Tensor
+    action_energies: torch.Tensor
+    action_logits: torch.Tensor
+    action_nll_per_row: torch.Tensor
+    target_energies: torch.Tensor
+    target_logits: torch.Tensor
+    target_nll_per_row: torch.Tensor
+    target_candidate_mask: torch.Tensor
 
 
 class ActionConditionedLatentFlow(nn.Module):
@@ -662,6 +678,202 @@ def action_indexed_energy_nll(
     )
 
 
+def normalized_token_l2_energy(
+    query: torch.Tensor,
+    target: torch.Tensor,
+) -> torch.Tensor:
+    """Return the exact V10 unit-scale energy over normalized patch tokens."""
+
+    if query.shape != target.shape or query.ndim < 3:
+        raise ValueError("query and target must have the same token shape")
+    if tuple(query.shape[-2:]) != (TOKEN_COUNT, LATENT_DIM):
+        raise ValueError(
+            "query and target must end in shape (256,192)"
+        )
+    if query.shape[0] < 1:
+        raise ValueError("query and target must contain at least one row")
+    if query.dtype != torch.float32 or target.dtype != torch.float32:
+        raise TypeError("retrieval energy requires float32 tensors")
+    if query.device != target.device:
+        raise TypeError("query and target must share a device")
+    if not bool(torch.isfinite(query).all()) or not bool(
+        torch.isfinite(target).all()
+    ):
+        raise FloatingPointError("retrieval tokens contain a nonfinite value")
+
+    query_norms = query.square().sum(dim=-1)
+    target_norms = target.square().sum(dim=-1)
+    if not torch.allclose(
+        query_norms,
+        torch.ones_like(query_norms),
+        rtol=1e-5,
+        atol=1e-5,
+    ) or not torch.allclose(
+        target_norms,
+        torch.ones_like(target_norms),
+        rtol=1e-5,
+        atol=1e-5,
+    ):
+        raise ValueError("retrieval tokens must be per-token L2-normalized")
+
+    energy = (query - target).square().sum(dim=-1).mean(dim=-1)
+    if not bool(torch.isfinite(energy).all()) or bool(
+        (energy < 0.0).any()
+    ) or bool((energy > 4.0).any()):
+        raise FloatingPointError("retrieval energy left the closed [0,4] range")
+    return energy
+
+
+def action_conditioned_next_target_retrieval_terms(
+    predictions: ActionIndexedPredictions,
+    ema_current: torch.Tensor,
+    ema_next: torch.Tensor,
+    ema_deranged_next: torch.Tensor,
+    non_hold_mask: torch.Tensor,
+) -> ActionConditionedNextTargetRetrievalTerms:
+    """Compute the exact parameter-free factorized V10 retrieval objective."""
+
+    all_predictions = predictions.all_predictions
+    if all_predictions.ndim != 4 or tuple(all_predictions.shape[1:]) != (
+        ACTION_DIM,
+        TOKEN_COUNT,
+        LATENT_DIM,
+    ):
+        raise ValueError(
+            "all_predictions must have shape (B,9,256,192)"
+        )
+    batch = all_predictions.shape[0]
+    if batch < 1:
+        raise ValueError("all_predictions must contain at least one row")
+    _validate_action_indices(predictions.executed_indices, batch=batch)
+    if predictions.executed_indices.device != all_predictions.device:
+        raise TypeError("action indices and predictions must share a device")
+    if predictions.executed.shape != (
+        batch,
+        TOKEN_COUNT,
+        LATENT_DIM,
+    ):
+        raise ValueError("executed predictions must have shape (B,256,192)")
+    expected_executed = all_predictions.gather(
+        1,
+        predictions.executed_indices[:, None, None, None].expand(
+            -1,
+            1,
+            TOKEN_COUNT,
+            LATENT_DIM,
+        ),
+    ).squeeze(1)
+    if not torch.equal(predictions.executed, expected_executed):
+        raise ValueError("executed predictions do not match the action gather")
+
+    targets = (ema_current, ema_next, ema_deranged_next)
+    if any(
+        target.shape != (batch, TOKEN_COUNT, LATENT_DIM)
+        for target in targets
+    ):
+        raise ValueError("EMA targets must have shape (B,256,192)")
+    if any(
+        target.dtype != torch.float32
+        or target.device != all_predictions.device
+        for target in targets
+    ):
+        raise TypeError("predictions and EMA targets must be aligned float32")
+    if non_hold_mask.shape != (batch,) or non_hold_mask.dtype != torch.bool:
+        raise TypeError("non_hold_mask must be a boolean tensor with shape (B,)")
+    if non_hold_mask.device != all_predictions.device:
+        raise TypeError("non_hold_mask and predictions must share a device")
+    expected_non_hold_mask = predictions.executed_indices.ne(
+        HOLD_ACTION_INDEX
+    )
+    if not torch.equal(non_hold_mask, expected_non_hold_mask):
+        raise ValueError(
+            "non_hold_mask must exactly match executed non-hold actions"
+        )
+
+    detached_current = ema_current.detach()
+    detached_next = ema_next.detach()
+    detached_deranged = ema_deranged_next.detach()
+    action_targets = detached_next[:, None].expand_as(all_predictions)
+    action_energies = normalized_token_l2_energy(
+        all_predictions,
+        action_targets,
+    )
+    action_logits = -action_energies
+    action_nll_per_row = F.cross_entropy(
+        action_logits,
+        predictions.executed_indices,
+        reduction="none",
+    )
+    action_retrieval = action_nll_per_row.mean()
+
+    target_candidates = torch.stack(
+        (detached_next, detached_deranged, detached_current),
+        dim=1,
+    )
+    target_queries = predictions.executed[:, None].expand_as(
+        target_candidates
+    )
+    target_energies = normalized_token_l2_energy(
+        target_queries,
+        target_candidates,
+    )
+    target_logits = -target_energies
+    target_indices = torch.zeros(
+        batch,
+        dtype=torch.long,
+        device=all_predictions.device,
+    )
+    three_candidate_nll = F.cross_entropy(
+        target_logits,
+        target_indices,
+        reduction="none",
+    )
+    two_candidate_nll = F.cross_entropy(
+        target_logits[:, :2],
+        target_indices,
+        reduction="none",
+    )
+    target_nll_per_row = torch.where(
+        non_hold_mask,
+        three_candidate_nll,
+        two_candidate_nll,
+    )
+    target_retrieval = target_nll_per_row.mean()
+    target_candidate_mask = torch.ones(
+        (batch, 3),
+        dtype=torch.bool,
+        device=all_predictions.device,
+    )
+    target_candidate_mask[:, 2] = non_hold_mask
+
+    # Preserve the exact V5 mean-patch-feature executed JEPA regression.
+    v5_energies = (
+        all_predictions - detached_next[:, None]
+    ).square().mean(dim=(2, 3))
+    executed_v5_energy = v5_energies.gather(
+        1,
+        predictions.executed_indices[:, None],
+    ).squeeze(1)
+    jepa = executed_v5_energy.mean()
+    total = jepa + action_retrieval + target_retrieval
+    if not bool(torch.isfinite(total)):
+        raise FloatingPointError("V10 retrieval objective is nonfinite")
+
+    return ActionConditionedNextTargetRetrievalTerms(
+        jepa=jepa,
+        action_retrieval=action_retrieval,
+        target_retrieval=target_retrieval,
+        total=total,
+        action_energies=action_energies,
+        action_logits=action_logits,
+        action_nll_per_row=action_nll_per_row,
+        target_energies=target_energies,
+        target_logits=target_logits,
+        target_nll_per_row=target_nll_per_row,
+        target_candidate_mask=target_candidate_mask,
+    )
+
+
 DENSE_PAIRWISE_INVERSE_INITIALIZATION_SEED = 20260725
 DENSE_PAIRWISE_LAYER_NORM_EPS = 1e-5
 DENSE_PAIRWISE_HEAD_CHANNELS = 16
@@ -1042,6 +1254,7 @@ __all__ = [
     "HOLD_ACTION_INDEX",
     "ActionIndexedLosses",
     "ActionIndexedPredictions",
+    "ActionConditionedNextTargetRetrievalTerms",
     "ActionConditionedLatentFlow",
     "LATENT_DIM",
     "MAXIMUM_FLOW_CELL_DISPLACEMENT",
@@ -1051,10 +1264,12 @@ __all__ = [
     "WHITENING_EPS",
     "WhiteningTerms",
     "action_independent_trunk",
+    "action_conditioned_next_target_retrieval_terms",
     "action_indexed_energy_nll",
     "bounded_flow_cells",
     "flow_residual_reconstruct",
     "initialize_action_gate_rows",
+    "normalized_token_l2_energy",
     "patch_whitening_terms",
     "predict_action_conditioned_flow_warps",
     "relative_action_embeddings",

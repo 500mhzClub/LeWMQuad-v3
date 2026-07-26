@@ -7,6 +7,7 @@ import json
 import math
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 from typing import Any
 
@@ -26,6 +27,24 @@ _SPEC.loader.exec_module(contract)
 _MODULES_IMPORTED_BY_CONTRACT = set(sys.modules) - _MODULES_BEFORE
 
 
+_ACTION_ROW_COUNTS = {
+    action: (60 if action == "hold" else (55 if index < 3 else 54))
+    for index, action in enumerate(contract.ACTION_VOCABULARY)
+}
+_FAMILY_ROW_COUNTS = tuple(
+    contract.SELECTION_FAMILY_BINDINGS[family]["row_count"]
+    for family in contract.SCENE_FAMILIES
+)
+_FAMILY_SAME_ACTION_COUNTS = tuple(
+    contract.SELECTION_FAMILY_BINDINGS[family]["same_action_row_count"]
+    for family in contract.SCENE_FAMILIES
+)
+_FAMILY_NON_HOLD_COUNTS = tuple(
+    contract.SELECTION_FAMILY_BINDINGS[family]["non_hold_row_count"]
+    for family in contract.SCENE_FAMILIES
+)
+
+
 def _latent_flow(*, update_zero: bool = False) -> dict[str, Any]:
     per_action = {
         action: (False if update_zero else action != "hold")
@@ -41,81 +60,125 @@ def _latent_flow(*, update_zero: bool = False) -> dict[str, Any]:
     }
 
 
-def _dense_pairwise_inverse(
+def _retrieval(
     *,
-    nll: float,
-    correct_per_action: int = 15,
+    action_nll: float,
+    target_nll: float,
+    same_action_target_nll: float,
+    two_target_nll: float,
+    correct_per_action: int | list[int],
+    energy_ratio: float,
+    strict_win_count: int,
+    positive_family_count: int,
 ) -> dict[str, Any]:
-    row_counts = {
-        action: (
-            60
-            if action == "hold"
-            else (55 if index < 3 else 54)
-        )
-        for index, action in enumerate(contract.ACTION_VOCABULARY)
-    }
-    recalls = {
-        action: float(correct_per_action) / float(row_count)
-        for action, row_count in row_counts.items()
-    }
-    ratio = 0.95
-    family_margins = {
-        family: 0.01 if index < 6 else 0.0
-        for index, family in enumerate(contract.SCENE_FAMILIES)
-    }
+    if type(correct_per_action) is int:
+        correct_counts = [correct_per_action] * len(contract.ACTION_VOCABULARY)
+    else:
+        correct_counts = list(correct_per_action)
+    per_action: dict[str, dict[str, int | float]] = {}
+    recalls: list[float] = []
+    total_correct = 0
+    for action, correct in zip(contract.ACTION_VOCABULARY, correct_counts):
+        count = _ACTION_ROW_COUNTS[action]
+        recall = correct / count
+        per_action[action] = {
+            "row_count": count,
+            "mean_nll": action_nll,
+            "recall": recall,
+        }
+        recalls.append(recall)
+        total_correct += correct
+
+    families: dict[str, dict[str, int | float | bool]] = {}
+    for index, family in enumerate(contract.SCENE_FAMILIES):
+        margin = 0.2 if index < positive_family_count else 0.0
+        families[family] = {
+            "scene_id":
+                contract.SELECTION_FAMILY_BINDINGS[family]["scene_id"],
+            "row_count": _FAMILY_ROW_COUNTS[index],
+            "same_action_row_count": _FAMILY_SAME_ACTION_COUNTS[index],
+            "non_hold_row_count": _FAMILY_NON_HOLD_COUNTS[index],
+            "deranged_minus_correct_energy": margin,
+            "current_target_minus_correct_energy": margin,
+            "cyclic_wrong_minus_executed_energy": margin,
+            "hardest_wrong_minus_executed_energy": margin,
+            "hold_minus_non_hold_executed_energy": margin,
+            "permuted_minus_executed_energy": margin,
+            "hold_action_rows_match_non_hold_rows": True,
+        }
+
     return {
         "all_values_finite": True,
-        "probabilities_all_values_finite": True,
-        "probability_rows_normalized": True,
-        "volume_all_values_finite": True,
-        "volume_values_within_closed_unit_interval": True,
-        "volume_channel_conservation": True,
-        "displacement_all_values_finite": True,
-        "displacement_values_within_closed_two_bound": True,
-        "maximum_absolute_displacement_component": 0.5,
-        "cross_pair_displacement_rms": 0.1,
-        "cross_pair_displacement_value_count": 495 * 2 * 16 * 16,
-        "same_tensor_diff_exact_zero": True,
-        "same_tensor_volume_exact_zero": True,
-        "same_tensor_displacement_exact_zero": True,
-        "head_parameters_all_values_finite": True,
-        "head_parameter_count": 8_713,
-        "head_weight_tensors_all_nonzero": True,
-        "zero_logit_reference_nll": math.log(9.0),
-        "unscaled_dense_inverse_nll": nll,
-        "dense_inverse_top1_accuracy":
-            (correct_per_action * len(contract.ACTION_VOCABULARY)) / 495.0,
-        "per_executed_action_dense_inverse": {
-            action: {
-                "row_count": row_counts[action],
-                "mean_nll": nll,
-                "recall": recalls[action],
-            }
-            for action in contract.ACTION_VOCABULARY
-        },
-        "dense_inverse_macro_balanced_accuracy":
-            sum(recalls.values()) / float(len(recalls)),
-        "correct_pair_nll": nll,
-        "correct_pair_count": 495,
-        "deranged_next_nll": nll / ratio,
-        "deranged_next_pair_count": 495,
-        "correct_to_deranged_nll_ratio": ratio,
-        "non_hold_correct_pair_nll": nll,
-        "non_hold_correct_pair_count": 435,
-        "non_hold_current_current_nll": nll / ratio,
-        "non_hold_current_current_pair_count": 435,
-        "non_hold_correct_to_current_current_nll_ratio": ratio,
-        "deranged_positive_family_margin_count": 6,
-        "per_family_deranged_minus_correct_nll": family_margins,
+        "energy_values_within_closed_zero_four": True,
+        "target_candidate_order_and_counts_exact": True,
+        "same_action_target_mapping_exact": True,
+        "selection_action_permutation_exact": True,
+        "reference_values_immutable": True,
+        "action_equal_logit_reference": math.log(9.0),
+        "two_target_equal_logit_reference": math.log(2.0),
+        "action_retrieval_nll": action_nll,
+        "action_retrieval_top1_accuracy": total_correct / 495,
+        "per_executed_action_action_retrieval": per_action,
+        "action_retrieval_macro_balanced_accuracy": sum(recalls) / 9,
+        "target_retrieval_nll": target_nll,
+        "same_action_target_retrieval_nll": same_action_target_nll,
+        "hold_target_retrieval_nll": target_nll,
+        "non_hold_target_retrieval_nll": target_nll,
+        "same_action_two_target_nll": two_target_nll,
+        "target_retrieval_top1_count": 300,
+        "target_retrieval_top1_accuracy": 300 / 495,
+        "same_action_strict_win_count": strict_win_count,
+        "same_action_strict_win_rate": strict_win_count / 494,
+        "same_action_correct_energy": energy_ratio,
+        "same_action_deranged_energy": 1.0,
+        "same_action_correct_to_deranged_ratio": energy_ratio,
+        "non_hold_correct_energy": energy_ratio,
+        "non_hold_current_target_energy": 1.0,
+        "non_hold_correct_to_current_ratio": energy_ratio,
+        "executed_action_energy": energy_ratio,
+        "cyclic_wrong_action_energy": 1.0,
+        "hardest_wrong_action_energy": 1.0,
+        "permuted_action_energy": 1.0,
+        "non_hold_executed_action_energy": energy_ratio,
+        "non_hold_hold_action_energy": 1.0,
+        "executed_to_cyclic_ratio": energy_ratio,
+        "executed_to_hardest_wrong_ratio": energy_ratio,
+        "executed_to_permuted_ratio": energy_ratio,
+        "non_hold_executed_to_hold_ratio": energy_ratio,
+        "all_row_count": 495,
+        "same_action_row_count": 494,
+        "fallback_row_count": 1,
+        "hold_row_count": 60,
+        "non_hold_row_count": 435,
+        "target_candidate_count": 1_425,
+        "action_candidate_count": 9,
+        "all_wrong_action_candidate_count": 3_960,
+        "selection_target_mapping_sha256":
+            contract.TARGET_MAPPING_BINDINGS["checkpoint_selection"]
+            ["mapping_sha256"],
+        "selection_action_permutation_sha256":
+            contract.SELECTION_ACTION_PERMUTATION_BINDING["mapping_sha256"],
+        "per_family": families,
+        "deranged_positive_family_margin_count": positive_family_count,
+        "current_target_positive_family_margin_count": positive_family_count,
+        "cyclic_positive_family_margin_count": positive_family_count,
+        "hold_positive_family_margin_count": positive_family_count,
+        "permuted_positive_family_margin_count": positive_family_count,
     }
 
 
 def _metrics(
     *,
-    nll: float,
+    action_nll: float,
+    target_nll: float,
+    same_action_target_nll: float,
+    two_target_nll: float,
     raw_rank: float,
     projected_rank: float,
-    correct_per_action: int = 15,
+    correct_per_action: int | list[int],
+    energy_ratio: float = 0.8,
+    strict_win_count: int = 300,
+    positive_family_count: int = 6,
 ) -> dict[str, Any]:
     return {
         "all_values_finite": True,
@@ -129,33 +192,19 @@ def _metrics(
         "true_pair_mse": 0.85,
         "shuffled_next_mse": 1.0,
         "mean_target_mse": 1.0,
-        "cyclic_wrong_action_mse": 0.90,
-        "cyclic_wrong_action_pair_count": 495,
-        "all_wrong_action_candidate_count": 3_960,
-        "hardest_wrong_action_mse": 0.90,
         "non_hold_pair_count": 435,
-        "non_hold_true_pair_mse": 0.85,
-        "hold_action_mse": 0.90,
-        "hold_action_pair_count": 435,
-        "hold_action_rows_match_non_hold_rows": True,
         "shuffled_current_mse": 1.0,
         "latent_flow": _latent_flow(),
-        "dense_pairwise_inverse": _dense_pairwise_inverse(
-            nll=nll,
+        "factorized_retrieval": _retrieval(
+            action_nll=action_nll,
+            target_nll=target_nll,
+            same_action_target_nll=same_action_target_nll,
+            two_target_nll=two_target_nll,
             correct_per_action=correct_per_action,
+            energy_ratio=energy_ratio,
+            strict_win_count=strict_win_count,
+            positive_family_count=positive_family_count,
         ),
-        "per_family": {
-            family: {
-                "cyclic_wrong_action_minus_true_mse":
-                    0.01 if index < 6 else 0.0,
-                "hardest_wrong_action_minus_true_mse":
-                    0.01 if index < 6 else 0.0,
-                "hold_action_minus_non_hold_true_mse":
-                    0.01 if index < 6 else 0.0,
-                "hold_action_rows_match_non_hold_rows": True,
-            }
-            for index, family in enumerate(contract.SCENE_FAMILIES)
-        },
     }
 
 
@@ -167,45 +216,118 @@ def _update0_metrics() -> dict[str, Any]:
         "all_action_unordered_pair_count": 36,
         "all_action_prediction_row_count": 495,
         "latent_flow": _latent_flow(update_zero=True),
-        "dense_pairwise_inverse": _dense_pairwise_inverse(
-            nll=math.log(9.0),
-            correct_per_action=10,
+        "factorized_retrieval": _retrieval(
+            action_nll=math.log(9.0),
+            target_nll=contract.SELECTION_EQUAL_LOGIT_REFERENCE_BINARY64,
+            same_action_target_nll=
+                contract.SELECTION_SAME_ACTION_EQUAL_LOGIT_REFERENCE_BINARY64,
+            two_target_nll=math.log(2.0),
+            correct_per_action=[55, 0, 0, 0, 0, 0, 0, 0, 0],
+            energy_ratio=1.0,
+            strict_win_count=0,
+            positive_family_count=0,
         ),
     }
 
 
-def _integrity() -> dict[str, Any]:
-    return {"rng_state_preserved": True, "state_mutation_count": 0}
+def _update100_metrics() -> dict[str, Any]:
+    return _metrics(
+        action_nll=2.1,
+        target_nll=0.95,
+        same_action_target_nll=0.94,
+        two_target_nll=0.65,
+        raw_rank=30.0,
+        projected_rank=20.0,
+        correct_per_action=12,
+    )
 
 
-def _set_dense_nll(metrics: dict[str, Any], nll: float) -> None:
-    dense = metrics["dense_pairwise_inverse"]
-    ratio = float(dense["correct_to_deranged_nll_ratio"])
-    dense["unscaled_dense_inverse_nll"] = nll
-    dense["correct_pair_nll"] = nll
-    dense["deranged_next_nll"] = nll / ratio
-    dense["non_hold_correct_pair_nll"] = nll
-    dense["non_hold_current_current_nll"] = nll / ratio
-    for row in dense["per_executed_action_dense_inverse"].values():
-        row["mean_nll"] = nll
+def _update400_metrics() -> dict[str, Any]:
+    return _metrics(
+        action_nll=2.0,
+        target_nll=0.85,
+        same_action_target_nll=0.84,
+        two_target_nll=0.60,
+        raw_rank=38.0,
+        projected_rank=33.0,
+        correct_per_action=14,
+    )
+
+
+def _terminal_metrics(*, energy_ratio: float = 0.8) -> dict[str, Any]:
+    return _metrics(
+        action_nll=1.9,
+        target_nll=0.75,
+        same_action_target_nll=0.74,
+        two_target_nll=0.55,
+        raw_rank=48.0,
+        projected_rank=48.0,
+        correct_per_action=15,
+        energy_ratio=energy_ratio,
+    )
+
+
+def _set_action_nll(metrics: dict[str, Any], value: float) -> None:
+    retrieval = metrics["factorized_retrieval"]
+    retrieval["action_retrieval_nll"] = value
+    for row in retrieval["per_executed_action_action_retrieval"].values():
+        row["mean_nll"] = value
 
 
 def _set_action_correct_counts(
     metrics: dict[str, Any],
     correct_counts: list[int],
 ) -> None:
-    assert len(correct_counts) == len(contract.ACTION_VOCABULARY)
-    dense = metrics["dense_pairwise_inverse"]
-    total_correct = 0
+    retrieval = metrics["factorized_retrieval"]
     recalls: list[float] = []
+    total = 0
     for action, correct in zip(contract.ACTION_VOCABULARY, correct_counts):
-        row = dense["per_executed_action_dense_inverse"][action]
-        recall = float(correct) / float(row["row_count"])
-        row["recall"] = recall
-        recalls.append(recall)
-        total_correct += correct
-    dense["dense_inverse_top1_accuracy"] = total_correct / 495.0
-    dense["dense_inverse_macro_balanced_accuracy"] = sum(recalls) / 9.0
+        row = retrieval["per_executed_action_action_retrieval"][action]
+        row["recall"] = correct / row["row_count"]
+        recalls.append(row["recall"])
+        total += correct
+    retrieval["action_retrieval_top1_accuracy"] = total / 495
+    retrieval["action_retrieval_macro_balanced_accuracy"] = sum(recalls) / 9
+
+
+def _selection_metadata_rows() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    global_row = 4_262
+    for scene_index, scene_size in enumerate(_FAMILY_ROW_COUNTS):
+        if scene_size == 47:
+            remaining = [
+                action for action in contract.ACTION_VOCABULARY
+                if action != "forward_slow"
+            ]
+            counts = dict(zip(remaining, (13, 5, 5, 5, 5, 5, 4, 4)))
+            counts["forward_slow"] = 1
+        else:
+            counts = {
+                action: (8 if index == 0 else 7)
+                for index, action in enumerate(contract.ACTION_VOCABULARY)
+            }
+        local_row = 0
+        for action in contract.ACTION_VOCABULARY:
+            for _ in range(counts[action]):
+                identity = f"scene-{scene_index}-row-{local_row}"
+                rows.append({
+                    "dataset_role": "checkpoint_selection",
+                    "global_row": global_row,
+                    "scene_id": f"scene-{scene_index}",
+                    "primitive": action,
+                    "content_sha256":
+                        hashlib.sha256(identity.encode("ascii")).hexdigest(),
+                    "next_endpoint_sha256": hashlib.sha256(
+                        f"next-{identity}".encode("ascii")
+                    ).hexdigest(),
+                })
+                global_row += 1
+                local_row += 1
+    return rows
+
+
+def _integrity() -> dict[str, Any]:
+    return {"rng_state_preserved": True, "state_mutation_count": 0}
 
 
 def _source_manifest_core() -> dict[str, Any]:
@@ -237,8 +359,8 @@ def _source_manifest_core() -> dict[str, Any]:
     }
 
 
-class JepaEncoderPretrainingV9ContractTests(unittest.TestCase):
-    def test_import_and_frozen_evidence_are_exact(self) -> None:
+class ActionConditionedRetrievalV10ContractTests(unittest.TestCase):
+    def test_import_identity_and_frozen_evidence_are_exact(self) -> None:
         imported_roots = {
             name.partition(".")[0]
             for name in _MODULES_IMPORTED_BY_CONTRACT
@@ -248,88 +370,161 @@ class JepaEncoderPretrainingV9ContractTests(unittest.TestCase):
         }))
         self.assertEqual(
             contract.SCHEMA_PREFIX,
-            "lewm_go2_rgb_dense_pairwise_spatial_cost_volume_inverse_jepa_v9",
+            "lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10",
         )
         self.assertEqual(
             contract.PREREGISTRATION_COMMIT,
-            "b775093897669c91d8c1b9e7d148e257881bcedf",
+            "25b93c92fbfb2816d52f0dfc27603c759e7c3c68",
         )
         raw = (ROOT / contract.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-        self.assertEqual(len(raw), 22_115)
+        self.assertEqual(len(raw), 23_010)
         self.assertEqual(
             hashlib.sha256(raw).hexdigest(),
-            "bfb0f1c2bd77ee78f6d4bf34cff8ec8d3d3c4bced8fb7b4269fa0a3f0bb30f2b",
+            "b199d396a9aa9196fa3acc50837f492edef9d4255634e44f399f470a7489785b",
         )
         self.assertEqual(contract.prior_terminal_audit_binding(), {
             "path":
-                "docs/lewm_go2_rgb_action_conditioned_local_correspondence_"
-                "all_candidate_identification_jepa_v8_terminal_audit_"
-                "2026-07-25.json",
-            "commit": "9f3e2bc96a6e4ea419574f109c890299d0608659",
+                "docs/lewm_go2_rgb_dense_pairwise_spatial_cost_volume_inverse_"
+                "jepa_v9_terminal_audit_2026-07-25.json",
+            "commit": "f02fdb02db328b339df5ec897424a42fe45a258b",
             "file_sha256":
-                "3ea4a8cc4405b0880d2e05217e4b4acefc5b9df5fad9bcdd9a682db42e273173",
+                "a95b81c30e619c0fe5ef06c46e7cc60270ef27751c4588291482bdf9d0319ad8",
             "content_sha256":
-                "ff8339aa6109933e85d60ad118dc912fd091dddf7dfd80b18d00453ce7c01367",
-            "byte_count": 20_028,
+                "82038aecd65d1d9b844903c768c7a0cee0750f981f4d824c05731fff95970120",
+            "byte_count": 18_408,
         })
-        self.assertEqual(
-            contract.OUTPUT_ROOT_RELATIVE_PATH,
-            ".generated/go2_shared_observable_camera_ray_jepa_v5/"
-            "rgb_dense_pairwise_spatial_cost_volume_inverse_jepa_probe_v9",
-        )
 
-    def test_exact_v5_base_and_v9_head_contract(self) -> None:
-        self.assertEqual(contract.FLOW_PROJECTION_SHAPE, (2, 192))
-        self.assertEqual(contract.FLOW_PROJECTION_PARAMETER_COUNT, 384)
-        self.assertEqual(contract.DENSE_PAIRWISE_HEAD_PARAMETER_COUNT, 8_713)
-        self.assertEqual(contract.DENSE_PAIRWISE_HEAD_INITIALIZATION_SEED, 20260725)
-        self.assertEqual(contract.DENSE_PAIRWISE_VOLUME_INPUT_CHANNELS, 256)
-        self.assertEqual(contract.DENSE_PAIRWISE_HEAD_HIDDEN_CHANNELS, 16)
+    def test_objective_has_exact_parameter_free_v10_retrieval_boundary(self) -> None:
         science = contract.science_contract()
         self.assertEqual(
             science["phase_a"]["reviewed_forward_base_commit"],
             "c93124b15387acf1fd440d281e9c4503a9e8355a",
         )
+        initialization = science["initialization"]
+        self.assertEqual(initialization["v10_new_parameter_count"], 0)
+        self.assertEqual(initialization["v10_new_initialization_draw_count"], 0)
         objective = science["phase_a"]["objective"]
-        self.assertTrue(
-            objective["preserved_v5_forward"]
-            ["current_plus_action_state_dependent_latent_flow"]
-        )
-        volume = objective["dense_pairwise_spatial_cost_volume"]
+        retrieval = objective["factorized_retrieval"]
+        self.assertEqual(retrieval["energy"], "mean_token(sum_feature((q-t)**2))")
+        self.assertEqual(retrieval["energy_closed_bound"], [0.0, 4.0])
+        self.assertEqual(retrieval["action_retrieval_loss_weight"], 1.0)
+        self.assertEqual(retrieval["target_retrieval_loss_weight"], 1.0)
+        self.assertEqual(retrieval["new_trainable_parameter_count"], 0)
         self.assertEqual(
-            volume["volume"],
-            "diff.transpose(1,2).reshape(B,256,16,16).contiguous()",
+            objective["total_loss"],
+            "L_JEPA+L_action_retrieval+L_target_retrieval+"
+            "0.50*(V_raw+V_projected)+0.02*(K_raw+K_projected)",
         )
-        self.assertEqual(
-            volume["volume_axes"],
-            ["batch", "target_token_channel", "source_y", "source_x"],
-        )
-        self.assertEqual(volume["head_input"], "V_only")
-        displacement = objective["displacement_observation_only"]
-        self.assertEqual(displacement["coordinate_columns"], ["dy", "dx"])
-        self.assertEqual(displacement["head_or_loss_input_count"], 0)
-        head = science["initialization"]["dense_pairwise_inverse_head"]
-        self.assertEqual(head["parameter_count"], 8_713)
-        self.assertEqual(head["linear_bias"], 0.0)
-        self.assertTrue(
-            head["all_three_weight_tensors_every_scalar_nonzero"]
-        )
-        serialized = json.dumps(science, sort_keys=True)
-        self.assertNotIn("centered_log_soft_cross_entropy", serialized)
-        self.assertNotIn("correspondence_action_identification", serialized)
-
-    def test_optimizer_schedule_caps_roles_and_denials_are_exact(self) -> None:
-        self.assertEqual(contract.PHASE_A_ENCODER_PARAMETER_PREFIXES, ("encoder.",))
-        self.assertEqual(contract.PHASE_A_AUXILIARY_PARAMETER_PREFIXES, (
-            "online_target_projector.",
-            "prediction_projector.",
-            "predictor.",
+        self.assertNotIn("dense_pairwise_inverse", contract.PHASE_A_METRIC_FIELDS)
+        self.assertNotIn(
             "dense_pairwise_inverse_head.",
+            contract.PHASE_A_AUXILIARY_PARAMETER_PREFIXES,
+        )
+        self.assertNotIn(
+            "dense_pairwise_inverse_head",
+            json.dumps(objective, sort_keys=True),
+        )
+        phase_b = science["phase_b"]
+        self.assertEqual(
+            phase_b["copied_state"],
+            "phase_a_terminal_in_memory_online_encoder_only",
+        )
+        self.assertFalse(phase_b["factorized_retrieval_state_copied"])
+        self.assertFalse(phase_b["latent_flow_predictor_or_projector_copied"])
+        self.assertFalse(phase_b["optimizer_copied"])
+
+    def test_mapping_bindings_and_population_constants_are_exact(self) -> None:
+        self.assertEqual(contract.PAIR_INDEX_FILE_SHA256, (
+            "5a6f7de405206aba855051bd9e14cab5262cfbfebc070ed02ef81d8cf62afc8d"
         ))
-        optimizer = contract.science_contract()["phase_a"]["optimizer"]
-        self.assertEqual(optimizer["encoder_learning_rate"], 1e-4)
-        self.assertEqual(optimizer["other_learning_rate"], 3e-4)
-        self.assertEqual(optimizer["global_clip_norm"], 1.0)
+        self.assertEqual(contract.PAIR_INDEX_BYTE_COUNT, 6_207_286)
+        self.assertEqual(
+            contract.TARGET_MAPPING_BINDINGS["train"]["mapping_sha256"],
+            "c9c914422927670ffce8e2a967bf264725b9ae3c55c353ee0a1a16e44044196b",
+        )
+        self.assertEqual(
+            contract.TARGET_MAPPING_BINDINGS["checkpoint_selection"]
+            ["mapping_sha256"],
+            "95d42273a8319316ad68781cb2158146e7672eda529984c3aeddc0937d87a9c1",
+        )
+        self.assertEqual(
+            contract.SELECTION_ACTION_PERMUTATION_BINDING["mapping_sha256"],
+            "2740be362829c172a06aebae0d077e69ede8af80cbf6f00569eb460dc559bb0f",
+        )
+        self.assertEqual(
+            contract.SELECTION_FAMILY_BINDINGS_SHA256,
+            "c39efe48afd6d4c02a24af77f1f11e7f6cd5a69d571b0a9416924b07bbacbb11",
+        )
+        self.assertEqual(
+            contract.canonical_json_sha256(contract.SELECTION_FAMILY_BINDINGS),
+            contract.SELECTION_FAMILY_BINDINGS_SHA256,
+        )
+        self.assertEqual(
+            contract.SELECTION_FAMILY_BINDINGS["small_enclosed_maze"],
+            {
+                "scene_id": "small_enclosed_maze_16b0fc2c449b",
+                "row_count": 47,
+                "same_action_row_count": 46,
+                "non_hold_row_count": 37,
+            },
+        )
+        self.assertEqual(contract.TRAIN_SAME_ACTION_ELIGIBLE_COUNT, 4_237)
+        self.assertEqual(contract.TRAIN_SAME_ACTION_FALLBACK_COUNT, 25)
+        self.assertEqual(contract.SELECTION_SAME_ACTION_PAIR_COUNT, 494)
+        self.assertEqual(contract.SELECTION_FALLBACK_PAIR_COUNT, 1)
+        self.assertEqual(contract.SELECTION_TARGET_CANDIDATE_COUNT, 1_425)
+        self.assertEqual(
+            contract.SELECTION_EQUAL_LOGIT_REFERENCE_BINARY64,
+            1.049465002836817,
+        )
+        self.assertEqual(
+            contract.SELECTION_SAME_ACTION_EQUAL_LOGIT_REFERENCE_BINARY64,
+            1.0493655144039604,
+        )
+
+    def test_deterministic_target_and_action_mapping_semantics(self) -> None:
+        rows = _selection_metadata_rows()
+        target = contract.build_same_action_target_mapping(
+            rows, role="checkpoint_selection"
+        )
+        self.assertEqual(target["binding"]["row_count"], 495)
+        self.assertEqual(target["binding"]["same_action_eligible_count"], 494)
+        self.assertEqual(target["binding"]["fallback_count"], 1)
+        self.assertEqual(
+            target["binding"]["non_singleton_primitive_group_count"], 71
+        )
+        self.assertEqual(target["binding"]["primitive_group_count"], 72)
+        for index, negative_index in enumerate(target["negative_indices"]):
+            self.assertEqual(
+                rows[index]["scene_id"], rows[negative_index]["scene_id"]
+            )
+            if target["same_action_eligible"][index]:
+                self.assertEqual(
+                    rows[index]["primitive"], rows[negative_index]["primitive"]
+                )
+            else:
+                self.assertNotEqual(
+                    rows[index]["primitive"], rows[negative_index]["primitive"]
+                )
+        action = contract.build_selection_action_permutation(rows)
+        self.assertEqual(action["binding"]["changed_action_count"], 495)
+        self.assertEqual(
+            action["binding"]["scene_size_histogram"], {"47": 1, "64": 7}
+        )
+        self.assertEqual(
+            action["binding"]["shift_histogram"], {"8": 7, "13": 1}
+        )
+        self.assertCountEqual(action["control_actions"], [
+            row["primitive"] for row in rows
+        ])
+        with self.assertRaises(PermissionError):
+            contract.validate_same_action_target_mapping(
+                rows, role="checkpoint_selection"
+            )
+        with self.assertRaises(PermissionError):
+            contract.validate_selection_action_permutation(rows)
+
+    def test_schedule_caps_roles_denials_and_phase_b_thresholds(self) -> None:
         self.assertEqual(contract.CHECKPOINT_UPDATES, (100, 400, 1_000))
         self.assertEqual(contract.PHASE_A_MAXIMUM_PRESENTATIONS, 16_000)
         self.assertEqual(contract.CUMULATIVE_MAXIMUM_PRESENTATIONS, 32_000)
@@ -338,323 +533,24 @@ class JepaEncoderPretrainingV9ContractTests(unittest.TestCase):
         self.assertEqual(contract.PHASE_B_GPU_ACTIVE_TIME_CAP_MINUTES, 60)
         for phase in ("phase_a", "phase_b"):
             identity = contract.build_schedule_identity(phase)
-            self.assertEqual(identity["updates"], 1_000)
-            self.assertEqual(identity["presentations"], 16_000)
             self.assertEqual(
                 contract.validate_schedule_identity(identity, phase=phase),
                 identity,
             )
         runtime = contract.runtime_authorization_template()
         self.assertEqual(contract.validate_runtime_inputs(runtime), runtime)
+        grant = runtime["raw"]["phase_a_grant"]
         self.assertEqual(
-            runtime["raw"]["role_policy"]["metadata_only_roles"],
-            ["authority", "index"],
+            grant["target_mapping_bindings"],
+            contract.TARGET_MAPPING_BINDINGS,
         )
         self.assertEqual(
-            runtime["raw"]["role_policy"]["model_facing_roles"],
-            ["train", "checkpoint_selection"],
+            grant["selection_action_permutation_binding"],
+            contract.SELECTION_ACTION_PERMUTATION_BINDING,
         )
-        self.assertTrue(all(value is False
-                            for value in contract.DOWNSTREAM_DENIALS.values()))
-
-    def test_receipt_status_and_forbidden_access_contracts(self) -> None:
-        self.assertEqual(contract.ATTEMPT_INDEX, 1)
-        self.assertEqual(contract.MAXIMUM_ATTEMPTS, 1)
-        self.assertEqual(contract.NORMAL_PHASE_A_RECEIPT_PATHS, (
-            "reservation.json",
-            "phase_a/metrics.json",
-            "phase_a/artifact.json",
-            "access.json",
-            "result.json",
-            "completed.json",
+        self.assertTrue(all(
+            value is False for value in contract.DOWNSTREAM_DENIALS.values()
         ))
-        lifecycle = contract.science_contract()["lifecycle"]
-        self.assertTrue(
-            lifecycle["operational_failure"]
-            ["missing_receipts_never_synthesized_or_fabricated"]
-        )
-        self.assertEqual(
-            lifecycle["operational_failure"]
-            ["reservation_publication_failure_status"],
-            "TERMINAL_RESERVATION_PUBLICATION_FAILURE",
-        )
-        counters = {field: 0 for field in contract.ACCESS_ZERO_COUNTER_FIELDS}
-        self.assertEqual(contract.validate_access_zero_counters(counters), counters)
-        changed = dict(counters)
-        changed["production_input_open_count"] = 1
-        with self.assertRaises(PermissionError):
-            contract.validate_access_zero_counters(changed)
-        for control in contract.PHASE_A_FAILURE_CONTROLS:
-            chain = {
-                "metrics": control,
-                "artifact": control,
-                "result": control,
-                "completion": control,
-            }
-            self.assertEqual(
-                contract.validate_phase_a_failure_status_chain(chain),
-                chain,
-            )
-            broken = dict(chain)
-            broken["completion"] = "TERMINAL_FAIL"
-            with self.assertRaises(ValueError):
-                contract.validate_phase_a_failure_status_chain(broken)
-
-    def test_staged_update100_update400_and_terminal_pass(self) -> None:
-        update0 = _update0_metrics()
-        update100 = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        first = contract.evaluate_phase_a_continuation(
-            100, update100, update0, _integrity()
-        )
-        self.assertTrue(first["passed"])
-        self.assertEqual(first["control"], contract.CONTROL_CONTINUE)
-        update400 = _metrics(nll=1.9, raw_rank=38.0, projected_rank=33.0)
-        second = contract.evaluate_phase_a_continuation(
-            400,
-            update400,
-            update0,
-            _integrity(),
-            previous_metrics=update100,
-        )
-        self.assertTrue(second["passed"])
-        self.assertEqual(second["control"], contract.CONTROL_CONTINUE)
-        update1000 = _metrics(nll=1.8, raw_rank=48.0, projected_rank=48.0)
-        terminal = contract.evaluate_phase_a(
-            update1000,
-            update0,
-            _integrity(),
-            update400,
-        )
-        self.assertTrue(terminal["passed"])
-        self.assertEqual(terminal["control"], contract.CONTROL_PHASE_A_PASS)
-        self.assertEqual(terminal["latent_flow"], _latent_flow())
-        self.assertEqual(
-            terminal["dense_pairwise_inverse"],
-            _dense_pairwise_inverse(nll=1.8),
-        )
-
-    def test_update100_is_staged_and_does_not_require_forward_ordering(self) -> None:
-        metrics = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        metrics["mean_target_mse"] = 0.80
-        metrics["cyclic_wrong_action_mse"] = 0.80
-        metrics["hardest_wrong_action_mse"] = 0.80
-        metrics["hold_action_mse"] = 0.80
-        for row in metrics["per_family"].values():
-            row["cyclic_wrong_action_minus_true_mse"] = -0.1
-            row["hold_action_minus_non_hold_true_mse"] = -0.1
-        result = contract.evaluate_phase_a_continuation(
-            100, metrics, _update0_metrics(), _integrity()
-        )
-        self.assertTrue(result["passed"])
-        self.assertNotIn(
-            "true_strictly_below_point99_cyclic_wrong_action",
-            result["conjuncts"],
-        )
-
-    def test_every_update100_dense_gate_is_strict(self) -> None:
-        update0 = _update0_metrics()
-        cases: list[tuple[str, Any]] = []
-        nll_boundary = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        _set_dense_nll(
-            nll_boundary,
-            0.98
-            * nll_boundary["dense_pairwise_inverse"]
-            ["zero_logit_reference_nll"],
-        )
-        cases.append(("dense_inverse_nll_strictly_below_point98_log9", nll_boundary))
-
-        macro_boundary = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        _set_action_correct_counts(macro_boundary, [55, 55, 0, 0, 0, 0, 0, 0, 0])
-        cases.append((
-            "dense_inverse_macro_balanced_accuracy_strictly_above_two_ninths",
-            macro_boundary,
-        ))
-        deranged_ratio = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        dense = deranged_ratio["dense_pairwise_inverse"]
-        dense["correct_to_deranged_nll_ratio"] = 0.99
-        dense["deranged_next_nll"] = dense["correct_pair_nll"] / 0.99
-        cases.append(("correct_to_deranged_nll_ratio_strictly_below_point99", deranged_ratio))
-        current_ratio = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        dense = current_ratio["dense_pairwise_inverse"]
-        dense["non_hold_correct_to_current_current_nll_ratio"] = 0.99
-        dense["non_hold_current_current_nll"] = dense["non_hold_correct_pair_nll"] / 0.99
-        cases.append((
-            "non_hold_correct_to_current_current_nll_ratio_strictly_below_point99",
-            current_ratio,
-        ))
-        family_count = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        dense = family_count["dense_pairwise_inverse"]
-        dense["per_family_deranged_minus_correct_nll"] = {
-            family: 0.01 if index < 5 else 0.0
-            for index, family in enumerate(contract.SCENE_FAMILIES)
-        }
-        dense["deranged_positive_family_margin_count"] = 5
-        cases.append(("deranged_nll_margin_positive_in_at_least_six_families", family_count))
-        raw_rank = _metrics(
-            nll=2.0,
-            raw_rank=contract.PHASE_A_UPDATE_100_THRESHOLDS[
-                "centered_raw_patch_effective_rank_strictly_greater_than"
-            ],
-            projected_rank=20.0,
-        )
-        cases.append(("centered_raw_rank_above_v3_update_zero", raw_rank))
-        projected_rank = _metrics(
-            nll=2.0,
-            raw_rank=30.0,
-            projected_rank=contract.PHASE_A_UPDATE_100_THRESHOLDS[
-                "centered_projected_target_effective_rank_strictly_greater_than"
-            ],
-        )
-        cases.append(("centered_projected_rank_above_v3_update_zero", projected_rank))
-        health = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        health["raw_cross_sample_variance"] = 0.999
-        cases.append(("raw_cross_sample_variance_at_least_quarter_update0", health))
-        flow = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        flow["latent_flow"]["per_action_any_nonzero"]["arc_left"] = False
-        flow["latent_flow"]["non_hold_action_nonzero_count"] = 7
-        cases.append(("all_eight_non_hold_actions_have_nonzero_flow", flow))
-
-        for conjunct, metrics in cases:
-            with self.subTest(conjunct=conjunct):
-                result = contract.evaluate_phase_a_continuation(
-                    100, metrics, update0, _integrity()
-                )
-                self.assertFalse(result["passed"])
-                self.assertFalse(result["conjuncts"][conjunct])
-                self.assertEqual(
-                    result["control"],
-                    contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
-                )
-
-    def test_update400_requires_progress_and_new_forward_gates(self) -> None:
-        update0 = _update0_metrics()
-        update100 = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        equal_nll = _metrics(nll=2.0, raw_rank=38.0, projected_rank=33.0)
-        result = contract.evaluate_phase_a_continuation(
-            400, equal_nll, update0, _integrity(), update100
-        )
-        self.assertFalse(result["passed"])
-        self.assertFalse(
-            result["conjuncts"]["dense_inverse_nll_strictly_lower_than_update100"]
-        )
-        no_macro_regression = _metrics(
-            nll=1.9,
-            raw_rank=38.0,
-            projected_rank=33.0,
-            correct_per_action=15,
-        )
-        prior_better_macro = deepcopy(update100)
-        _set_action_correct_counts(prior_better_macro, [16] * 9)
-        result = contract.evaluate_phase_a_continuation(
-            400,
-            no_macro_regression,
-            update0,
-            _integrity(),
-            prior_better_macro,
-        )
-        self.assertFalse(
-            result["conjuncts"]
-            ["dense_inverse_macro_balanced_accuracy_not_below_update100"]
-        )
-        cyclic_boundary = _metrics(nll=1.9, raw_rank=38.0, projected_rank=33.0)
-        cyclic_boundary["true_pair_mse"] = 0.99
-        cyclic_boundary["cyclic_wrong_action_mse"] = 1.0
-        result = contract.evaluate_phase_a_continuation(
-            400,
-            cyclic_boundary,
-            update0,
-            _integrity(),
-            update100,
-        )
-        self.assertFalse(result["passed"])
-        self.assertFalse(
-            result["conjuncts"]
-            ["true_strictly_below_point99_cyclic_wrong_action"]
-        )
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a_continuation(
-                400,
-                _metrics(nll=1.9, raw_rank=38.0, projected_rank=33.0),
-                update0,
-                _integrity(),
-            )
-
-    def test_terminal_requires_update400_progress_and_complete_v5_gate(self) -> None:
-        update0 = _update0_metrics()
-        update400 = _metrics(nll=1.9, raw_rank=38.0, projected_rank=33.0)
-        equal_nll = _metrics(nll=1.9, raw_rank=48.0, projected_rank=48.0)
-        result = contract.evaluate_phase_a(
-            equal_nll, update0, _integrity(), update400
-        )
-        self.assertFalse(result["passed"])
-        self.assertFalse(
-            result["conjuncts"]["dense_inverse_nll_strictly_lower_than_update400"]
-        )
-        boundary = _metrics(nll=1.8, raw_rank=48.0, projected_rank=48.0)
-        boundary["true_pair_mse"] = 0.90
-        boundary["mean_target_mse"] = 1.0
-        boundary["cyclic_wrong_action_mse"] = 0.90 / 0.95
-        boundary["hardest_wrong_action_mse"] = 0.90 / 0.95
-        boundary["non_hold_true_pair_mse"] = 0.90
-        boundary["hold_action_mse"] = 0.90 / 0.95
-        result = contract.evaluate_phase_a(
-            boundary, update0, _integrity(), update400
-        )
-        self.assertTrue(result["passed"])
-
-    def test_dense_receipt_populations_ratios_and_health_fail_closed(self) -> None:
-        base = _metrics(nll=2.0, raw_rank=30.0, projected_rank=20.0)
-        malformed = deepcopy(base)
-        malformed["dense_pairwise_inverse"]["correct_pair_count"] = 494
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a_continuation(
-                100, malformed, _update0_metrics(), _integrity()
-            )
-        impossible_action_population = deepcopy(base)
-        action_rows = impossible_action_population["dense_pairwise_inverse"][
-            "per_executed_action_dense_inverse"
-        ]
-        action_rows["arc_left"]["row_count"] += 1
-        action_rows["hold"]["row_count"] -= 1
-        _set_action_correct_counts(
-            impossible_action_population,
-            [15] * len(contract.ACTION_VOCABULARY),
-        )
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a_continuation(
-                100,
-                impossible_action_population,
-                _update0_metrics(),
-                _integrity(),
-            )
-        malformed = deepcopy(base)
-        malformed["dense_pairwise_inverse"][
-            "cross_pair_displacement_value_count"
-        ] -= 1
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a_continuation(
-                100, malformed, _update0_metrics(), _integrity()
-            )
-        malformed = deepcopy(base)
-        malformed["dense_pairwise_inverse"][
-            "per_executed_action_dense_inverse"
-        ]["arc_left"]["recall"] = 0.1
-        with self.assertRaises(ValueError):
-            contract.evaluate_phase_a_continuation(
-                100, malformed, _update0_metrics(), _integrity()
-            )
-        unhealthy = deepcopy(base)
-        unhealthy["dense_pairwise_inverse"]["volume_channel_conservation"] = False
-        result = contract.evaluate_phase_a_continuation(
-            100, unhealthy, _update0_metrics(), _integrity()
-        )
-        self.assertFalse(result["passed"])
-        self.assertFalse(
-            result["conjuncts"]
-            ["dense_pairwise_values_probabilities_volume_and_displacement_healthy"]
-        )
-
-    def test_phase_b_thresholds_are_unchanged(self) -> None:
         passing = {
             "complete_physical_scope_count": 1,
             "margin_count": 189,
@@ -671,7 +567,274 @@ class JepaEncoderPretrainingV9ContractTests(unittest.TestCase):
         boundary["passed_margin_count"] = 97
         self.assertFalse(contract.evaluate_phase_b(boundary)["passed"])
 
-    def test_canonical_json_manifest_review_and_authorization_validators(self) -> None:
+    def test_staged_update100_update400_and_terminal_pass(self) -> None:
+        update0 = _update0_metrics()
+        update100 = _update100_metrics()
+        first = contract.evaluate_phase_a_continuation(
+            100, update100, update0, _integrity()
+        )
+        self.assertTrue(first["passed"])
+        self.assertEqual(first["control"], contract.CONTROL_CONTINUE)
+        update400 = _update400_metrics()
+        second = contract.evaluate_phase_a_continuation(
+            400, update400, update0, _integrity(), update100
+        )
+        self.assertTrue(second["passed"])
+        terminal = contract.evaluate_phase_a(
+            _terminal_metrics(), update0, _integrity(), update400
+        )
+        self.assertTrue(terminal["passed"])
+        self.assertEqual(terminal["control"], contract.CONTROL_PHASE_A_PASS)
+        self.assertIn("factorized_retrieval", terminal)
+        self.assertNotIn("dense_pairwise_inverse", terminal)
+
+    def test_update100_strict_boundaries_fail(self) -> None:
+        update0 = _update0_metrics()
+        cases: list[tuple[str, dict[str, Any]]] = []
+
+        action_reference = _update100_metrics()
+        _set_action_nll(
+            action_reference,
+            action_reference["factorized_retrieval"]
+            ["action_equal_logit_reference"],
+        )
+        cases.append((
+            "action_retrieval_nll_strictly_below_equal_logit_reference",
+            action_reference,
+        ))
+
+        macro = _update100_metrics()
+        _set_action_correct_counts(macro, [55, 0, 0, 0, 0, 0, 0, 0, 0])
+        cases.append((
+            "action_macro_balanced_accuracy_strictly_above_one_ninth",
+            macro,
+        ))
+
+        two_target = _update100_metrics()
+        two_target["factorized_retrieval"]["same_action_two_target_nll"] = (
+            math.log(2.0)
+        )
+        cases.append((
+            "same_action_two_target_nll_strictly_below_reference",
+            two_target,
+        ))
+
+        strict_win = _update100_metrics()
+        strict_win["factorized_retrieval"]["same_action_strict_win_count"] = 247
+        strict_win["factorized_retrieval"]["same_action_strict_win_rate"] = 0.5
+        cases.append((
+            "same_action_strict_win_rate_strictly_above_half", strict_win
+        ))
+
+        for conjunct, metrics in cases:
+            with self.subTest(conjunct=conjunct):
+                result = contract.evaluate_phase_a_continuation(
+                    100, metrics, update0, _integrity()
+                )
+                self.assertFalse(result["passed"])
+                self.assertFalse(result["conjuncts"][conjunct])
+                self.assertEqual(
+                    result["control"],
+                    contract.CONTROL_PHASE_A_UPDATE_100_FAIL,
+                )
+
+    def test_update400_requires_progress_and_strict_mechanism_ratio(self) -> None:
+        update0 = _update0_metrics()
+        update100 = _update100_metrics()
+        equal_action_nll = _update400_metrics()
+        _set_action_nll(
+            equal_action_nll,
+            update100["factorized_retrieval"]["action_retrieval_nll"],
+        )
+        result = contract.evaluate_phase_a_continuation(
+            400, equal_action_nll, update0, _integrity(), update100
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"]
+            ["action_retrieval_nll_strictly_lower_than_update100"]
+        )
+
+        ratio_boundary = _update400_metrics()
+        retrieval = ratio_boundary["factorized_retrieval"]
+        retrieval["same_action_correct_energy"] = 0.99
+        retrieval["same_action_correct_to_deranged_ratio"] = 0.99
+        result = contract.evaluate_phase_a_continuation(
+            400, ratio_boundary, update0, _integrity(), update100
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"]
+            ["same_action_correct_to_deranged_strictly_below_point99"]
+        )
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a_continuation(
+                400, _update400_metrics(), update0, _integrity()
+            )
+
+    def test_terminal_progress_is_strict_but_point95_is_inclusive(self) -> None:
+        update0 = _update0_metrics()
+        update400 = _update400_metrics()
+        no_target_progress = _terminal_metrics()
+        retrieval = no_target_progress["factorized_retrieval"]
+        retrieval["target_retrieval_nll"] = 0.85
+        retrieval["hold_target_retrieval_nll"] = 0.85
+        retrieval["non_hold_target_retrieval_nll"] = 0.85
+        result = contract.evaluate_phase_a(
+            no_target_progress, update0, _integrity(), update400
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"]
+            ["target_retrieval_nll_strictly_lower_than_update400"]
+        )
+        boundary = contract.evaluate_phase_a(
+            _terminal_metrics(energy_ratio=0.95),
+            update0,
+            _integrity(),
+            update400,
+        )
+        self.assertTrue(boundary["passed"])
+
+    def test_factorized_receipts_fail_closed(self) -> None:
+        base = _update100_metrics()
+        malformed = deepcopy(base)
+        malformed["factorized_retrieval"]["target_candidate_count"] = 1_424
+        with self.assertRaises(ValueError):
+            contract.evaluate_phase_a_continuation(
+                100, malformed, _update0_metrics(), _integrity()
+            )
+        malformed = deepcopy(base)
+        malformed["factorized_retrieval"][
+            "selection_target_mapping_sha256"
+        ] = "0" * 64
+        with self.assertRaises(PermissionError):
+            contract.evaluate_phase_a_continuation(
+                100, malformed, _update0_metrics(), _integrity()
+            )
+        unhealthy = deepcopy(base)
+        unhealthy["factorized_retrieval"][
+            "energy_values_within_closed_zero_four"
+        ] = False
+        result = contract.evaluate_phase_a_continuation(
+            100, unhealthy, _update0_metrics(), _integrity()
+        )
+        self.assertFalse(result["passed"])
+        self.assertFalse(
+            result["conjuncts"]["factorized_retrieval_health_exact"]
+        )
+
+    def test_update0_action_symmetry_binds_chance_and_all_controls(self) -> None:
+        base = _update100_metrics()
+        cases: list[dict[str, Any]] = []
+
+        changed_nll = _update0_metrics()
+        retrieval = changed_nll["factorized_retrieval"]
+        retrieval["action_retrieval_nll"] = 0.0
+        for row in retrieval["per_executed_action_action_retrieval"].values():
+            row["mean_nll"] = 0.0
+        cases.append(changed_nll)
+
+        changed_macro = _update0_metrics()
+        _set_action_correct_counts(
+            {"factorized_retrieval": changed_macro["factorized_retrieval"]},
+            [1] * len(contract.ACTION_VOCABULARY),
+        )
+        cases.append(changed_macro)
+
+        changed_ratios = _update0_metrics()
+        retrieval = changed_ratios["factorized_retrieval"]
+        retrieval["executed_action_energy"] = 0.5
+        retrieval["non_hold_executed_action_energy"] = 0.5
+        for field in (
+            "executed_to_cyclic_ratio",
+            "executed_to_hardest_wrong_ratio",
+            "executed_to_permuted_ratio",
+            "non_hold_executed_to_hold_ratio",
+        ):
+            retrieval[field] = 0.5
+        cases.append(changed_ratios)
+
+        for index, update0 in enumerate(cases):
+            with self.subTest(case=index):
+                with self.assertRaisesRegex(
+                    ValueError, "update-zero action symmetry"
+                ):
+                    contract.evaluate_phase_a_continuation(
+                        100, base, update0, _integrity()
+                    )
+
+    def test_family_scene_identity_and_exact_populations_fail_closed(self) -> None:
+        base = _update100_metrics()
+        per_family = base["factorized_retrieval"]["per_family"]
+        first, second = contract.SCENE_FAMILIES[:2]
+        per_family[first]["scene_id"], per_family[second]["scene_id"] = (
+            per_family[second]["scene_id"],
+            per_family[first]["scene_id"],
+        )
+        with self.assertRaisesRegex(PermissionError, "scene identity changed"):
+            contract.evaluate_phase_a_continuation(
+                100, base, _update0_metrics(), _integrity()
+            )
+
+        changed_count = _update100_metrics()
+        changed_count["factorized_retrieval"]["per_family"][first][
+            "row_count"
+        ] -= 1
+        with self.assertRaisesRegex(ValueError, "row_count changed"):
+            contract.evaluate_phase_a_continuation(
+                100, changed_count, _update0_metrics(), _integrity()
+            )
+
+    def test_receipt_status_and_forbidden_access_contracts(self) -> None:
+        counters = {field: 0 for field in contract.ACCESS_ZERO_COUNTER_FIELDS}
+        self.assertEqual(contract.validate_access_zero_counters(counters), counters)
+        changed = dict(counters)
+        changed["heldout_open_count"] = 1
+        with self.assertRaises(PermissionError):
+            contract.validate_access_zero_counters(changed)
+        for control in contract.PHASE_A_FAILURE_CONTROLS:
+            chain = {
+                "metrics": control,
+                "artifact": control,
+                "result": control,
+                "completion": control,
+            }
+            self.assertEqual(
+                contract.validate_phase_a_failure_status_chain(chain), chain
+            )
+
+    def test_source_manifest_rejects_heldout_path_parts(self) -> None:
+        for forbidden in (
+            "lewm/heldout/synthetic.py",
+            "lewm/heldout_future/synthetic.py",
+        ):
+            with self.subTest(path=forbidden):
+                core = _source_manifest_core()
+                bindings = [
+                    *core["source_bindings"],
+                    {
+                        "path": forbidden,
+                        "file_sha256": hashlib.sha256(
+                            forbidden.encode("ascii")
+                        ).hexdigest(),
+                        "byte_count": len(forbidden),
+                    },
+                ]
+                bindings.sort(key=lambda item: item["path"])
+                core["source_bindings"] = bindings
+                core["source_paths"] = [item["path"] for item in bindings]
+                core["source_bindings_sha256"] = (
+                    contract.canonical_json_sha256(bindings)
+                )
+                core["source_count"] = len(bindings)
+                raw = contract.canonical_json_bytes(
+                    contract.with_content_sha256(core)
+                ) + b"\n"
+                with self.assertRaises(PermissionError):
+                    contract.validate_source_manifest(raw)
+
+    def test_canonical_manifest_review_and_authorization_validators(self) -> None:
         manifest_raw = contract.canonical_json_bytes(
             contract.with_content_sha256(_source_manifest_core())
         ) + b"\n"
@@ -680,24 +843,26 @@ class JepaEncoderPretrainingV9ContractTests(unittest.TestCase):
             binding["path"]: binding["file_sha256"]
             for binding in manifest["source_bindings"]
         }
-        expected_sources[contract.SOURCE_MANIFEST_RELATIVE_PATH] = "a" * 64
+        manifest_file_sha256 = hashlib.sha256(manifest_raw).hexdigest()
+        expected_sources[contract.SOURCE_MANIFEST_RELATIVE_PATH] = (
+            manifest_file_sha256
+        )
         expected_sources[contract.PREREGISTRATION_RELATIVE_PATH] = (
             contract.PREREGISTRATION_FILE_SHA256
         )
         expected_sources[contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH] = (
             contract.PRIOR_TERMINAL_AUDIT_FILE_SHA256
         )
-        manifest_binding = {
-            "path": contract.SOURCE_MANIFEST_RELATIVE_PATH,
-            "file_sha256": "a" * 64,
-            "content_sha256": manifest["content_sha256"],
-            "byte_count": len(manifest_raw),
-        }
+        manifest_binding = contract.artifact_binding(
+            contract.SOURCE_MANIFEST_RELATIVE_PATH,
+            manifest_raw,
+            content_sha256=manifest["content_sha256"],
+        )
         review_core = {
             "schema": contract.REVIEW_SCHEMA,
             "status": "PASS_SOURCE_AND_SCIENCE",
             "implementation_author": contract.IMPLEMENTATION_AUTHOR,
-            "reviewer": "/root/independent_v9_reviewer",
+            "reviewer": "/root/independent_v10_reviewer",
             "reviewed_sources": expected_sources,
             "source_manifest": manifest_binding,
             "preregistration": contract.preregistration_binding(),
@@ -715,26 +880,61 @@ class JepaEncoderPretrainingV9ContractTests(unittest.TestCase):
         }
         review = contract.with_content_sha256(review_core)
         self.assertEqual(
-            contract.validate_review(review, expected_sources=expected_sources),
+            contract.validate_review(
+                review,
+                expected_sources=expected_sources,
+                source_manifest_raw=manifest_raw,
+            ),
             review,
         )
+        original_root = contract.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                contract.ROOT = Path(directory)
+                manifest_path = (
+                    contract.ROOT / contract.SOURCE_MANIFEST_RELATIVE_PATH
+                )
+                manifest_path.parent.mkdir(parents=True, exist_ok=True)
+                manifest_path.write_bytes(manifest_raw)
+                self.assertEqual(
+                    contract.validate_review(
+                        review,
+                        expected_sources=expected_sources,
+                    ),
+                    review,
+                )
+        finally:
+            contract.ROOT = original_root
+        for field, changed_value in (
+            ("content_sha256", "f" * 64),
+            ("byte_count", len(manifest_raw) + 1),
+        ):
+            with self.subTest(manifest_binding_field=field):
+                changed_core = deepcopy(review_core)
+                changed_core["source_manifest"][field] = changed_value
+                changed_review = contract.with_content_sha256(changed_core)
+                with self.assertRaises(PermissionError):
+                    contract.validate_review(
+                        changed_review,
+                        expected_sources=expected_sources,
+                        source_manifest_raw=manifest_raw,
+                    )
         review_raw = contract.canonical_json_bytes(review) + b"\n"
         review_binding = contract.artifact_binding(
             contract.REVIEW_RELATIVE_PATH,
             review_raw,
             content_sha256=review["content_sha256"],
         )
-        authorization_core = {
+        authorization = contract.with_content_sha256({
             "schema": contract.AUTHORIZATION_SCHEMA,
             "status": "AUTHORIZED_ONE_EXACT_TWO_PHASE_PROBE",
-            "authorizer": "/root/independent_v9_authorizer",
+            "authorizer": "/root/independent_v10_authorizer",
             "independent_source_review": review_binding,
             "preregistration": contract.preregistration_binding(),
             "runtime_inputs": contract.runtime_authorization_template(),
             "experiment": contract.science_contract(),
             "authority": dict(contract.EXECUTION_AUTHORITY),
-        }
-        authorization = contract.with_content_sha256(authorization_core)
+        })
         self.assertEqual(
             contract.validate_authorization(
                 authorization,

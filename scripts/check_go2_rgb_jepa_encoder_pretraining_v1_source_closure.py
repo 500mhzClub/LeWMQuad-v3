@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify Dense Spatial Cost-Volume JEPA V9 source closure.
+"""Build or verify Next-Target Retrieval JEPA V10 source closure.
 
 This is a source-only AST walk.  It imports no tensor library and opens no
 generated input, checkpoint, RGB payload, attempt output, or protected role.
@@ -12,7 +12,7 @@ import hashlib
 import importlib.util
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import sys
 from typing import Any
 
@@ -62,14 +62,14 @@ def _source_module(name: str, relative: str) -> Any:
 contract = _source_module(
     (
         "_lewm_rgb_jepa_encoder_pretraining_"
-        "v9_dense_pairwise_cost_volume_closure_contract"
+        "v10_action_conditioned_next_target_retrieval_closure_contract"
     ),
     CONTRACT_RELATIVE_PATH,
 )
 _BASE = _source_module(
     (
         "_lewm_rgb_jepa_encoder_pretraining_"
-        "v9_dense_pairwise_cost_volume_closure_base"
+        "v10_action_conditioned_next_target_retrieval_closure_base"
     ),
     BASE_CHECKER_RELATIVE_PATH,
 )
@@ -88,15 +88,30 @@ _BASE.FORCED_DYNAMIC_SOURCES = tuple(
     contract.SOURCE_MANIFEST_FORCED_DYNAMIC_SOURCES
 )
 
-discover_source_closure = _BASE.discover_source_closure
 _read_regular_source = _BASE._read_regular_source
-_safe_source_path = _BASE._safe_source_path
+_inherited_safe_source_path = _BASE._safe_source_path
+
+
+def _safe_source_path(relative: str) -> None:
+    parts = PurePosixPath(relative).parts
+    if any(
+        part == "heldout" or part.startswith("heldout_")
+        for part in parts
+    ):
+        raise PermissionError(f"forbidden source-closure path: {relative}")
+    _inherited_safe_source_path(relative)
+
+
+# The inherited walk resolves this module global before every source read.
+_BASE._safe_source_path = _safe_source_path
+discover_source_closure = _BASE.discover_source_closure
 
 
 def build_manifest() -> dict[str, object]:
     sources = discover_source_closure()
     bindings = []
     for relative in sources:
+        _safe_source_path(relative)
         raw = _read_regular_source(ROOT / relative)
         bindings.append({
             "path": relative,
@@ -185,7 +200,7 @@ def main() -> int:
         _write_manifest_exclusive(build_manifest())
         return 0
     verify_manifest(require_tracked=args.require_tracked)
-    print("Go2 Dense Spatial Cost-Volume JEPA V9 source closure: PASS")
+    print("Go2 Next-Target Retrieval JEPA V10 source closure: PASS")
     return 0
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the V9 Dense Pairwise Spatial Cost-Volume Inverse JEPA probe.
+"""Run the V10 Action-Conditioned Next-Target Retrieval JEPA probe.
 
 Importing this module is source-only.  Torch, PIL, NumPy, generated inputs,
 RGB payloads, and checkpoints are first reachable after exact source
@@ -33,7 +33,7 @@ _CONTRACT_PATH = (
 _CONTRACT_SPEC = importlib.util.spec_from_file_location(
     (
         "_lewm_go2_rgb_jepa_encoder_pretraining_"
-        "v9_dense_pairwise_cost_volume_contract"
+        "v10_action_conditioned_next_target_retrieval_contract"
     ),
     _CONTRACT_PATH,
 )
@@ -43,8 +43,8 @@ contract = importlib.util.module_from_spec(_CONTRACT_SPEC)
 _CONTRACT_SPEC.loader.exec_module(contract)
 
 PREFLIGHT_ENVIRONMENT_KEY = (
-    "LEWM_RGB_DENSE_PAIRWISE_SPATIAL_COST_VOLUME_"
-    "INVERSE_JEPA_V9_PREFLIGHT_JSON"
+    "LEWM_RGB_ACTION_CONDITIONED_NEXT_TARGET_RETRIEVAL_"
+    "JEPA_V10_PREFLIGHT_JSON"
 )
 THREAD_ENVIRONMENT = (
     "OMP_NUM_THREADS",
@@ -446,6 +446,10 @@ def _load_authority_pre_reservation(
     if "torch" in sys.modules or any(name.startswith("torch.") for name in sys.modules):
         raise PermissionError("Torch imported before attempt reservation")
     sources = contract.current_source_bindings(ROOT)
+    source_manifest_raw = _read_regular(
+        ROOT / contract.SOURCE_MANIFEST_RELATIVE_PATH,
+        expected_sha256=sources[contract.SOURCE_MANIFEST_RELATIVE_PATH],
+    )
     review_raw = _read_regular(
         ROOT / contract.REVIEW_RELATIVE_PATH,
         expected_sha256=review_sha256,
@@ -453,6 +457,7 @@ def _load_authority_pre_reservation(
     review = contract.validate_review(
         contract.parse_canonical_json(review_raw, name="source review"),
         expected_sources=sources,
+        source_manifest_raw=source_manifest_raw,
     )
     review_binding = contract.artifact_binding(
         contract.REVIEW_RELATIVE_PATH,
@@ -573,6 +578,8 @@ def _reserve(
                     "operation_counts": {
                         "optimizer_updates": 0,
                         "pair_presentations": 0,
+                        "phase_a_mapped_negative_io":
+                            _empty_mapped_negative_io_receipt(),
                         "observer_reruns": 0,
                     },
                     "forbidden_access_counts": {
@@ -678,7 +685,7 @@ def _run_preflight_after_reservation(
         expected_sha256=launcher_source_sha256,
     )
     launcher = _load_source_module(
-        "_lewm_v9_deferred_hardware_preflight_launcher",
+        "_lewm_v10_deferred_hardware_preflight_launcher",
         ROOT / contract.LAUNCHER_RELATIVE_PATH,
     )
     program = getattr(launcher, "NO_TENSOR_PREFLIGHT_PROGRAM", None)
@@ -764,25 +771,21 @@ def _phase_a_ops() -> SimpleNamespace:
     )
     from lewm.models.patch_whitened_action_residual_jepa import (  # type: ignore
         ActionConditionedLatentFlow,
-        DensePairwiseSpatialCostVolumeInverseHead,
-        action_indexed_energy_nll,
-        dense_pairwise_spatial_cost_volume_inverse_terms,
+        action_conditioned_next_target_retrieval_terms,
         initialize_action_gate_rows,
+        normalized_token_l2_energy,
         patch_whitening_terms,
         predict_action_conditioned_flow_warps,
     )
 
     return SimpleNamespace(
         ActionConditionedLatentFlow=ActionConditionedLatentFlow,
-        DensePairwiseSpatialCostVolumeInverseHead=(
-            DensePairwiseSpatialCostVolumeInverseHead
-        ),
-        action_indexed_energy_nll=action_indexed_energy_nll,
-        dense_pairwise_spatial_cost_volume_inverse_terms=(
-            dense_pairwise_spatial_cost_volume_inverse_terms
+        action_conditioned_next_target_retrieval_terms=(
+            action_conditioned_next_target_retrieval_terms
         ),
         initialize_action_gate_rows=initialize_action_gate_rows,
         normalize_spatial_tokens=normalize_spatial_tokens,
+        normalized_token_l2_energy=normalized_token_l2_energy,
         patch_whitening_terms=patch_whitening_terms,
         predict_action_conditioned_flow_warps=(
             predict_action_conditioned_flow_warps
@@ -794,44 +797,59 @@ def _phase_a_current_only_loss(
     model: Any,
     current_rgb: Any,
     next_rgb: Any,
+    deranged_next_rgb: Any,
     action: Any,
+    non_hold: Any,
     *,
     ops: Any | None = None,
 ) -> dict[str, Any]:
-    """Exact V9 objective: V5 JEPA plus the live RGB-pair inverse head."""
+    """Exact V10 objective with current-only online-encoder access."""
     ops = _phase_a_ops() if ops is None else ops
     if (
         current_rgb.ndim != 4
         or next_rgb.shape != current_rgb.shape
+        or deranged_next_rgb.shape != current_rgb.shape
         or action.ndim != 2
         or action.shape != (current_rgb.shape[0], 9)
+        or non_hold.shape != (current_rgb.shape[0],)
     ):
-        raise ValueError("Phase-A current/next pair batch shape changed")
+        raise ValueError("Phase-A retrieval batch shape changed")
 
     online_tokens = model.encoder.forward_tokens(current_rgb)
     online_state = model.online_geometry(online_tokens[:, 1:])
-    online_next_tokens = model.encoder.forward_tokens(next_rgb)
-    online_next_state = model.online_geometry(online_next_tokens[:, 1:])
     online_projected = ops.normalize_spatial_tokens(
         model.online_target_projector(online_state)
     )
 
     import torch  # deferred: this function is called only after reservation
 
-    # Both EMA branches and the current-state skip are exact stop-gradients.
+    # Every target candidate is an exact stop-gradient.  The online encoder
+    # receives only current RGB.
     with torch.no_grad():
         target_current_tokens = model.target_encoder.forward_tokens(current_rgb)
         target_next_tokens = model.target_encoder.forward_tokens(next_rgb)
+        target_deranged_next_tokens = model.target_encoder.forward_tokens(
+            deranged_next_rgb
+        )
         target_current_raw = model.target_geometry_module(
             target_current_tokens[:, 1:]
         )
         target_next_raw = model.target_geometry_module(
             target_next_tokens[:, 1:]
         )
+        target_deranged_next_raw = model.target_geometry_module(
+            target_deranged_next_tokens[:, 1:]
+        )
         target_current_pre = model.target_projector(target_current_raw)
         target_next_pre = model.target_projector(target_next_raw)
+        target_deranged_next_pre = model.target_projector(
+            target_deranged_next_raw
+        )
         target_current = ops.normalize_spatial_tokens(target_current_pre)
         target_next = ops.normalize_spatial_tokens(target_next_pre)
+        target_deranged_next = ops.normalize_spatial_tokens(
+            target_deranged_next_pre
+        )
     predictions = ops.predict_action_conditioned_flow_warps(
         model.predictor,
         model.prediction_projector,
@@ -839,27 +857,19 @@ def _phase_a_current_only_loss(
         action,
         target_current,
     )
-    action_losses = ops.action_indexed_energy_nll(
+    retrieval = ops.action_conditioned_next_target_retrieval_terms(
         predictions,
+        target_current,
         target_next,
-    )
-    dense_inverse = ops.dense_pairwise_spatial_cost_volume_inverse_terms(
-        model.dense_pairwise_inverse_head,
-        online_state,
-        online_next_state,
-        action.argmax(dim=1),
-        action_losses.row_scale,
+        target_deranged_next,
+        non_hold,
     )
     raw_whitening = ops.patch_whitening_terms(online_state.float())
     projected_whitening = ops.patch_whitening_terms(
         online_projected.float()
     )
     total = (
-        action_losses.jepa
-        + contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT
-        * action_losses.identification
-        + contract.DENSE_PAIRWISE_INVERSE_LOSS_WEIGHT
-        * dense_inverse.loss
+        retrieval.total
         + contract.WHITENING_VARIANCE_WEIGHT
         * (raw_whitening.variance + projected_whitening.variance)
         + contract.WHITENING_COVARIANCE_WEIGHT
@@ -867,24 +877,16 @@ def _phase_a_current_only_loss(
     )
     return {
         "loss": total,
-        "jepa_loss": action_losses.jepa,
-        "action_identification_loss": action_losses.identification,
-        "dense_pairwise_inverse_loss": dense_inverse.loss,
-        "unscaled_dense_pairwise_inverse_nll": dense_inverse.unscaled_nll,
-        "dense_pairwise_inverse_nll_per_row": dense_inverse.nll_per_row,
-        "dense_pairwise_inverse_logits": dense_inverse.logits,
-        "dense_pairwise_current_next_cost_volume":
-            dense_inverse.current_next_cost_volume,
-        "dense_pairwise_current_current_cost_volume":
-            dense_inverse.current_current_cost_volume,
-        "dense_pairwise_current_next_probabilities":
-            dense_inverse.current_next_probabilities,
-        "dense_pairwise_current_current_probabilities":
-            dense_inverse.current_current_probabilities,
-        "dense_pairwise_probability_difference":
-            dense_inverse.probability_difference,
-        "dense_pairwise_volume": dense_inverse.volume,
-        "dense_pairwise_displacement": dense_inverse.displacement,
+        "jepa_loss": retrieval.jepa,
+        "action_retrieval_loss": retrieval.action_retrieval,
+        "target_retrieval_loss": retrieval.target_retrieval,
+        "action_retrieval_energies": retrieval.action_energies,
+        "action_retrieval_logits": retrieval.action_logits,
+        "action_retrieval_nll_per_row": retrieval.action_nll_per_row,
+        "target_retrieval_energies": retrieval.target_energies,
+        "target_retrieval_logits": retrieval.target_logits,
+        "target_retrieval_nll_per_row": retrieval.target_nll_per_row,
+        "target_candidate_mask": retrieval.target_candidate_mask,
         "raw_whitening_variance_loss": raw_whitening.variance,
         "raw_whitening_covariance_loss": raw_whitening.covariance,
         "projected_whitening_variance_loss":
@@ -897,10 +899,10 @@ def _phase_a_current_only_loss(
         "control_indices": predictions.control_indices,
         "all_flows_cell": predictions.all_flows_cell,
         "online_state": online_state,
-        "online_next_state": online_next_state,
         "raw_target_next": target_next_raw,
         "projected_target_next": target_next,
         "projected_target_current": target_current,
+        "projected_target_deranged_next": target_deranged_next,
     }
 
 
@@ -1007,6 +1009,27 @@ def _effective_rank(torch: Any, tokens: Any) -> float:
     return float(torch.exp(entropy))
 
 
+def _empty_mapped_negative_io_receipt() -> dict[str, Any]:
+    by_scope = {
+        scope: {
+            "endpoint_request_count": 0,
+            "cache_hit_count": 0,
+            "cache_miss_count": 0,
+            "physical_read_attempt_count": 0,
+            "physical_read_success_count": 0,
+        }
+        for scope in ("training", "observation")
+    }
+    return {
+        "by_scope": by_scope,
+        "total_endpoint_request_count": 0,
+        "total_cache_hit_count": 0,
+        "total_cache_miss_count": 0,
+        "total_physical_read_attempt_count": 0,
+        "total_physical_read_success_count": 0,
+    }
+
+
 class RGBOnlyLoader:
     """Decode only bound RGB endpoints; never call RawInputs.frame()."""
 
@@ -1017,6 +1040,35 @@ class RGBOnlyLoader:
         self.cache: OrderedDict[str, Any] = OrderedDict()
         self.supervision_array_open_count = 0
         self.general_frame_loader_call_count = 0
+        self.mapped_negative_io: dict[str, dict[str, int]] = (
+            _empty_mapped_negative_io_receipt()["by_scope"]
+        )
+
+    def mapped_negative_io_receipt(self) -> dict[str, Any]:
+        by_scope = {
+            scope: dict(counters)
+            for scope, counters in self.mapped_negative_io.items()
+        }
+        return {
+            "by_scope": by_scope,
+            "total_endpoint_request_count": sum(
+                row["endpoint_request_count"] for row in by_scope.values()
+            ),
+            "total_cache_hit_count": sum(
+                row["cache_hit_count"] for row in by_scope.values()
+            ),
+            "total_cache_miss_count": sum(
+                row["cache_miss_count"] for row in by_scope.values()
+            ),
+            "total_physical_read_attempt_count": sum(
+                row["physical_read_attempt_count"]
+                for row in by_scope.values()
+            ),
+            "total_physical_read_success_count": sum(
+                row["physical_read_success_count"]
+                for row in by_scope.values()
+            ),
+        }
 
     def image(
         self,
@@ -1024,14 +1076,26 @@ class RGBOnlyLoader:
         *,
         role: str,
         stage: str,
+        mapped_negative_scope: str | None = None,
     ) -> Any:
+        counters = None
+        if mapped_negative_scope is not None:
+            counters = self.mapped_negative_io.get(mapped_negative_scope)
+            if counters is None:
+                raise ValueError("mapped-negative I/O scope changed")
+            counters["endpoint_request_count"] += 1
         endpoint = self.inputs.endpoints.get(endpoint_identity)
         if type(endpoint) is not dict or endpoint.get("dataset_role") != role:
             raise PermissionError("RGB-only endpoint crossed its role")
         cached = self.cache.get(endpoint_identity)
         if cached is not None:
+            if counters is not None:
+                counters["cache_hit_count"] += 1
             self.cache.move_to_end(endpoint_identity)
             return cached
+        if counters is not None:
+            counters["cache_miss_count"] += 1
+            counters["physical_read_attempt_count"] += 1
         raw = self.inputs.read_rgb(
             str(endpoint["image_path_metadata_only"]),
             str(endpoint["image_sha256_commitment_only"]),
@@ -1039,6 +1103,8 @@ class RGBOnlyLoader:
             arm="rgb_jepa_encoder_pretraining_phase_a",
             stage=stage,
         )
+        if counters is not None:
+            counters["physical_read_success_count"] += 1
         with self.runtime.Image.open(io.BytesIO(raw)) as decoded:
             image = decoded.convert("RGB").resize(
                 (112, 112),
@@ -1072,6 +1138,8 @@ class RGBOnlyLoader:
         *,
         role: str,
         stage: str,
+        mapped_negative_indices: Sequence[int] | None = None,
+        mapped_negative_scope: str | None = None,
         include_non_hold: bool = True,
     ) -> tuple[Any, ...]:
         selected = [pairs[index] for index in indices]
@@ -1093,6 +1161,34 @@ class RGBOnlyLoader:
             )
             for row in selected
         ]).to(device)
+        deranged_next = None
+        if mapped_negative_indices is not None:
+            if (
+                len(mapped_negative_indices) != len(pairs)
+                or mapped_negative_scope not in {"training", "observation"}
+            ):
+                raise PermissionError("mapped-negative batch contract changed")
+            mapped = [
+                pairs[int(mapped_negative_indices[index])]
+                for index in indices
+            ]
+            if any(
+                candidate.get("dataset_role") != role
+                or candidate.get("scene_id") != primary.get("scene_id")
+                or candidate.get("next_endpoint_sha256")
+                == primary.get("next_endpoint_sha256")
+                for primary, candidate in zip(selected, mapped, strict=True)
+            ):
+                raise PermissionError("mapped-negative endpoint identity changed")
+            deranged_next = self.runtime.torch.stack([
+                self.image(
+                    str(row["next_endpoint_sha256"]),
+                    role=role,
+                    stage=stage,
+                    mapped_negative_scope=mapped_negative_scope,
+                )
+                for row in mapped
+            ]).to(device)
         actions = self.runtime.torch.zeros(
             (len(selected), 9),
             dtype=self.runtime.torch.float32,
@@ -1107,13 +1203,17 @@ class RGBOnlyLoader:
             self.runtime.torch.tensor(action_indices, device=device),
         ] = 1.0
         if not include_non_hold:
-            return current, next_rgb, actions
+            if deranged_next is None:
+                return current, next_rgb, actions
+            return current, next_rgb, deranged_next, actions
         non_hold = self.runtime.torch.tensor(
             [row["primitive"] != "hold" for row in selected],
             dtype=self.runtime.torch.bool,
             device=device,
         )
-        return current, next_rgb, actions, non_hold
+        if deranged_next is None:
+            return current, next_rgb, actions, non_hold
+        return current, next_rgb, deranged_next, actions, non_hold
 
 
 def _phase_a_parameter_partition(model: Any) -> dict[str, Any]:
@@ -1203,7 +1303,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.MATCHED_V1_RUNNER_RELATIVE_PATH],
     )
     matched = _load_source_module(
-        "_lewm_jepa_encoder_v9_cost_volume_matched_loader",
+        "_lewm_jepa_encoder_v10_retrieval_matched_loader",
         matched_path,
     )
     runtime = matched._load_runtime()
@@ -1212,7 +1312,7 @@ def _load_post_reservation_stack(
         expected_sha256=sources[contract.SCHEDULE_ADAPTER_RELATIVE_PATH],
     )
     schedule_adapter = _load_source_module(
-        "_lewm_jepa_encoder_v9_cost_volume_schedule_adapter",
+        "_lewm_jepa_encoder_v10_retrieval_schedule_adapter",
         ROOT / contract.SCHEDULE_ADAPTER_RELATIVE_PATH,
     )
 
@@ -1795,60 +1895,18 @@ def _phase_a_model(
         "zero_initialized_without_rng_draw": True,
         "global_rng_state_preserved": True,
     }
-    cpu_rng_before_dense_head = torch.random.get_rng_state().clone()
-    cuda_rng_before_dense_head = [
-        value.clone() for value in torch.cuda.get_rng_state_all()
-    ]
-    model.dense_pairwise_inverse_head = (
-        ops.DensePairwiseSpatialCostVolumeInverseHead()
-    )
-    dense_head_weights = (
-        model.dense_pairwise_inverse_head.channel_projection.weight,
-        model.dense_pairwise_inverse_head.spatial_projection.weight,
-        model.dense_pairwise_inverse_head.classifier.weight,
-    )
-    dense_head_bias = model.dense_pairwise_inverse_head.classifier.bias
-    dense_head_parameter_count = sum(
-        parameter.numel()
-        for parameter in model.dense_pairwise_inverse_head.parameters()
-    )
-    if (
-        dense_head_parameter_count
-        != contract.DENSE_PAIRWISE_HEAD_PARAMETER_COUNT
-        or tuple(dense_head_weights[0].shape) != (16, 256, 1, 1)
-        or tuple(dense_head_weights[1].shape) != (16, 16, 3, 3)
-        or tuple(dense_head_weights[2].shape) != (9, 256)
-        or dense_head_bias is None
-        or tuple(dense_head_bias.shape) != (9,)
-        or any(weight.dtype != torch.float32 for weight in dense_head_weights)
-        or dense_head_bias.dtype != torch.float32
-        or any(
-            int(torch.count_nonzero(weight).item()) != weight.numel()
-            for weight in dense_head_weights
-        )
-        or int(torch.count_nonzero(dense_head_bias).item()) != 0
-    ):
-        raise RuntimeError("dense pairwise inverse-head initialization changed")
-    dense_head_initialization = {
-        "seed": contract.DENSE_PAIRWISE_HEAD_INITIALIZATION_SEED,
-        "parameter_count": dense_head_parameter_count,
-        "channel_projection_weight_shape": [16, 256, 1, 1],
-        "spatial_projection_weight_shape": [16, 16, 3, 3],
-        "classifier_weight_shape": [9, 256],
-        "classifier_bias_shape": [9],
-        "all_three_weights_every_scalar_nonzero": True,
-        "classifier_bias_exact_zero": True,
-        "construction_device": "cpu",
-        "construction_dtype": "float32",
-        "draw_order": [
-            "channel_projection.weight",
-            "spatial_projection.weight",
-            "classifier.weight",
-        ],
-        "coordinates_component_order": ["dy_row", "dx_column"],
-        "global_rng_state_preserved": True,
-        "phase_b_copy_count": 0,
-        "phase_b_optimizer_inclusion_count": 0,
+    retrieval_initialization = {
+        "mechanism": "parameter_free_factorized_retrieval",
+        "new_parameter_count": 0,
+        "new_initialization_draw_count": 0,
+        "energy": "mean_tokens_sum_features_squared_l2",
+        "logits": "bitwise_unary_negative_energy",
+        "temperature": None,
+        "row_scale": None,
+        "class_weight": None,
+        "action_retrieval_coefficient": 1.0,
+        "target_retrieval_coefficient": 1.0,
+        "phase_b_transfer_count": 0,
     }
     n320_encoder = {
         name: value.detach().to(device="cpu").contiguous().clone()
@@ -1865,22 +1923,6 @@ def _phase_a_model(
     model.appearance_projector.requires_grad_(False)
     model.appearance_projector.eval()
     model = model.to(device)
-    if (
-        not torch.equal(
-            torch.random.get_rng_state(), cpu_rng_before_dense_head
-        )
-        or any(
-            not torch.equal(before, after)
-            for before, after in zip(
-                cuda_rng_before_dense_head,
-                torch.cuda.get_rng_state_all(),
-                strict=True,
-            )
-        )
-    ):
-        raise RuntimeError(
-            "dense inverse-head construction or transfer changed global RNG"
-        )
     model.train()
     model.appearance_projector.eval()
     partition = _phase_a_parameter_partition(model)
@@ -1898,8 +1940,7 @@ def _phase_a_model(
             gate_predictor_sha,
         "state_dependent_latent_flow_initialization":
             flow_initialization,
-        "dense_pairwise_inverse_head_initialization":
-            dense_head_initialization,
+        "factorized_retrieval_initialization": retrieval_initialization,
         "appearance_projector_frozen_and_eval": (
             not model.appearance_projector.training
             and all(
@@ -1915,6 +1956,72 @@ def _phase_a_model(
     return model, partition, receipt
 
 
+def _phase_a_gate_references(
+    runtime: Any,
+    selection_pairs: Sequence[Mapping[str, Any]],
+    target_mapping: Mapping[str, Any],
+    device: Any,
+) -> dict[str, float]:
+    """Compute the two immutable float32 equal-logit references once."""
+    torch = runtime.torch
+    same_action = torch.tensor(
+        target_mapping["same_action_eligible"],
+        dtype=torch.bool,
+        device=device,
+    )
+    executed = torch.tensor(
+        [
+            contract.ACTION_VOCABULARY.index(str(row["primitive"]))
+            for row in selection_pairs
+        ],
+        dtype=torch.long,
+        device=device,
+    )
+    if (
+        len(selection_pairs) != contract.SELECTION_ROLE_COUNTS["pairs"]
+        or int(same_action.sum().item())
+        != contract.SELECTION_SAME_ACTION_PAIR_COUNT
+    ):
+        raise PermissionError("gate-reference population changed")
+    with torch.no_grad():
+        action_reference = torch.nn.functional.cross_entropy(
+            torch.zeros(
+                (
+                    contract.SELECTION_ROLE_COUNTS["pairs"],
+                    len(contract.ACTION_VOCABULARY),
+                ),
+                dtype=torch.float32,
+                device=device,
+            ),
+            executed,
+            reduction="mean",
+        )
+        two_target_reference = torch.nn.functional.cross_entropy(
+            torch.zeros(
+                (contract.SELECTION_SAME_ACTION_PAIR_COUNT, 2),
+                dtype=torch.float32,
+                device=device,
+            ),
+            torch.zeros(
+                contract.SELECTION_SAME_ACTION_PAIR_COUNT,
+                dtype=torch.long,
+                device=device,
+            ),
+            reduction="mean",
+        )
+    if (
+        action_reference.dtype != torch.float32
+        or two_target_reference.dtype != torch.float32
+        or not bool(torch.isfinite(action_reference).item())
+        or not bool(torch.isfinite(two_target_reference).item())
+    ):
+        raise FloatingPointError("gate-reference computation changed")
+    return {
+        "action_equal_logit_reference": float(action_reference),
+        "two_target_equal_logit_reference": float(two_target_reference),
+    }
+
+
 def _phase_a_diagnostics(
     runtime: Any,
     model: Any,
@@ -1923,26 +2030,37 @@ def _phase_a_diagnostics(
     device: Any,
     *,
     update: int,
+    target_mapping: Mapping[str, Any],
+    action_permutation: Mapping[str, Any],
+    gate_references: Mapping[str, float],
 ) -> dict[str, Any]:
-    """Observe the exact 495-row V5 and dense-pairwise V9 controls once."""
+    """Observe the exact 495-row V5 and V10 retrieval controls once."""
     torch = runtime.torch
     ops = _phase_a_ops()
     before_state = _state_sha(runtime, model)
     was_training = bool(model.training)
+    negative_indices = tuple(target_mapping["negative_indices"])
+    same_action_eligible = tuple(target_mapping["same_action_eligible"])
+    permuted_action_indices = tuple(
+        action_permutation["control_action_indices"]
+    )
 
     def observe() -> dict[str, Any]:
         model.eval()
         states: list[Any] = []
-        next_states: list[Any] = []
         ema_current_skips: list[Any] = []
         actions: list[Any] = []
         predictions: list[Any] = []
         flows_cell: list[Any] = []
-        control_energies: list[Any] = []
-        control_indices: list[Any] = []
         raw_targets: list[Any] = []
         projected_targets: list[Any] = []
+        deranged_targets: list[Any] = []
         non_hold_rows: list[Any] = []
+        action_energy_rows: list[Any] = []
+        action_nll_rows: list[Any] = []
+        target_energy_rows: list[Any] = []
+        target_nll_rows: list[Any] = []
+        target_mask_rows: list[Any] = []
         update_zero_action_row_count = 0
         update_zero_action_pair_count: int | None = None
         with torch.no_grad():
@@ -1953,18 +2071,23 @@ def _phase_a_diagnostics(
                         min(start + contract.MICROBATCH_SIZE, len(pairs)),
                     )
                 )
-                current, next_rgb, action, non_hold = loader.batch(
+                (
+                    current,
+                    next_rgb,
+                    deranged_next_rgb,
+                    action,
+                    non_hold,
+                ) = loader.batch(
                     pairs,
                     indices,
                     device,
                     role="checkpoint_selection",
                     stage=f"phase_a_diagnostic_update_{update}",
+                    mapped_negative_indices=negative_indices,
+                    mapped_negative_scope="observation",
                 )
                 state = model.online_geometry(
                     model.encoder.forward_tokens(current)[:, 1:]
-                )
-                next_state = model.online_geometry(
-                    model.encoder.forward_tokens(next_rgb)[:, 1:]
                 )
                 current_target_raw = model.target_geometry_module(
                     model.target_encoder.forward_tokens(current)[:, 1:]
@@ -1975,8 +2098,16 @@ def _phase_a_diagnostics(
                 raw_target = model.target_geometry_module(
                     model.target_encoder.forward_tokens(next_rgb)[:, 1:]
                 )
-                projected_target = ops.normalize_spatial_tokens(
+                target = ops.normalize_spatial_tokens(
                     model.target_projector(raw_target)
+                )
+                deranged_raw = model.target_geometry_module(
+                    model.target_encoder.forward_tokens(
+                        deranged_next_rgb
+                    )[:, 1:]
+                )
+                deranged = ops.normalize_spatial_tokens(
+                    model.target_projector(deranged_raw)
                 )
                 residual_predictions = (
                     ops.predict_action_conditioned_flow_warps(
@@ -1985,6 +2116,15 @@ def _phase_a_diagnostics(
                         state,
                         action,
                         current_skip,
+                    )
+                )
+                retrieval = (
+                    ops.action_conditioned_next_target_retrieval_terms(
+                        residual_predictions,
+                        current_skip,
+                        target,
+                        deranged,
+                        non_hold,
                     )
                 )
                 if update == 0:
@@ -2002,7 +2142,6 @@ def _phase_a_diagnostics(
                             "update-zero action-pair count changed by batch"
                         )
                 states.append(state.detach().cpu())
-                next_states.append(next_state.detach().cpu())
                 ema_current_skips.append(current_skip.detach().cpu())
                 actions.append(action.detach().cpu())
                 predictions.append(
@@ -2011,47 +2150,81 @@ def _phase_a_diagnostics(
                 flows_cell.append(
                     residual_predictions.all_flows_cell.detach().cpu()
                 )
-                control_energies.append(
-                    (
-                        residual_predictions.controls
-                        - projected_target[:, None]
-                    ).square().mean(dim=(2, 3)).detach().cpu()
-                )
-                control_indices.append(
-                    residual_predictions.control_indices.detach().cpu()
-                )
                 raw_targets.append(raw_target.detach().cpu())
-                projected_targets.append(projected_target.detach().cpu())
+                projected_targets.append(target.detach().cpu())
+                deranged_targets.append(deranged.detach().cpu())
                 non_hold_rows.append(non_hold.detach().cpu())
+                action_energy_rows.append(
+                    retrieval.action_energies.detach().cpu()
+                )
+                action_nll_rows.append(
+                    retrieval.action_nll_per_row.detach().cpu()
+                )
+                target_energy_rows.append(
+                    retrieval.target_energies.detach().cpu()
+                )
+                target_nll_rows.append(
+                    retrieval.target_nll_per_row.detach().cpu()
+                )
+                target_mask_rows.append(
+                    retrieval.target_candidate_mask.detach().cpu()
+                )
 
         state = torch.cat(states).float()
-        next_state = torch.cat(next_states).float()
         ema_current_skip = torch.cat(ema_current_skips).float()
         action = torch.cat(actions).float()
         prediction = torch.cat(predictions).float()
         all_flows_cell = torch.cat(flows_cell).float()
-        control_mse = torch.cat(control_energies).float()
-        candidate_indices = torch.cat(control_indices).long()
         raw_target = torch.cat(raw_targets).float()
         target = torch.cat(projected_targets).float()
+        deranged_target = torch.cat(deranged_targets).float()
         non_hold = torch.cat(non_hold_rows).bool()
+        action_energies = torch.cat(action_energy_rows).float()
+        action_nll = torch.cat(action_nll_rows).float()
+        target_energies = torch.cat(target_energy_rows).float()
+        target_nll = torch.cat(target_nll_rows).float()
+        target_mask = torch.cat(target_mask_rows).bool()
         requested_indices = action.argmax(dim=1)
+        same_action = torch.tensor(
+            same_action_eligible,
+            dtype=torch.bool,
+        )
+        permuted_indices = torch.tensor(
+            permuted_action_indices,
+            dtype=torch.long,
+        )
+        rows = torch.arange(len(pairs), dtype=torch.long)
         if (
             len(pairs) != contract.SELECTION_ROLE_COUNTS["pairs"]
+            or len(negative_indices) != len(pairs)
+            or len(permuted_action_indices) != len(pairs)
             or state.shape != (len(pairs), 256, 192)
-            or next_state.shape != state.shape
             or raw_target.shape != state.shape
+            or target.shape != state.shape
+            or deranged_target.shape != state.shape
             or tuple(all_flows_cell.shape) != (len(pairs), 9, 256, 2)
-            or tuple(control_mse.shape) != (len(pairs), 8)
-            or tuple(candidate_indices.shape) != (len(pairs), 8)
+            or tuple(action_energies.shape) != (len(pairs), 9)
+            or tuple(action_nll.shape) != (len(pairs),)
+            or tuple(target_energies.shape) != (len(pairs), 3)
+            or tuple(target_nll.shape) != (len(pairs),)
+            or tuple(target_mask.shape) != (len(pairs), 3)
             or int(non_hold.sum())
             != contract.SELECTION_NON_HOLD_PAIR_COUNT
+            or int(same_action.sum())
+            != contract.SELECTION_SAME_ACTION_PAIR_COUNT
             or not torch.equal(
                 non_hold,
                 requested_indices != contract.HOLD_ACTION_INDEX,
             )
+            or bool((permuted_indices < 0).any())
+            or bool((permuted_indices >= 9).any())
+            or bool((permuted_indices == requested_indices).any())
         ):
             raise PermissionError("Phase-A selection population changed")
+        expected_mask = torch.ones_like(target_mask)
+        expected_mask[~non_hold, 2] = False
+        if not torch.equal(target_mask, expected_mask):
+            raise PermissionError("target candidate mask changed")
         action_indexed_symmetry = (
             _update_zero_action_symmetry_receipt(
                 row_count=update_zero_action_row_count,
@@ -2128,239 +2301,60 @@ def _phase_a_diagnostics(
         def row_mse(left: Any, right: Any) -> Any:
             return (left.float() - right.float()).square().mean(dim=(1, 2))
 
+        def positive_ratio(numerator: Any, denominator: Any, name: str) -> float:
+            numerator_mean = numerator.float().mean()
+            denominator_mean = denominator.float().mean()
+            if (
+                not bool(torch.isfinite(numerator_mean).item())
+                or not bool(torch.isfinite(denominator_mean).item())
+                or not bool((denominator_mean > 0).item())
+            ):
+                raise FloatingPointError(
+                    f"{name} denominator is not finite and positive"
+                )
+            return float(numerator_mean / denominator_mean)
+
         true_mse = row_mse(prediction, target)
-        cyclic_indices = (requested_indices + 1) % len(
-            contract.ACTION_VOCABULARY
-        )
-        cyclic_matches = candidate_indices == cyclic_indices[:, None]
-        if not bool((cyclic_matches.sum(dim=1) == 1).all()):
-            raise PermissionError(
-                "Phase-A cyclic wrong-action population changed"
-            )
-        cyclic_positions = cyclic_matches.to(torch.int64).argmax(dim=1)
-        rows = torch.arange(len(pairs), dtype=torch.long)
-        cyclic_wrong_mse = control_mse[rows, cyclic_positions]
-        hardest_wrong_mse = control_mse.min(dim=1).values
-        hold_matches = (
-            candidate_indices[non_hold] == contract.HOLD_ACTION_INDEX
-        )
-        if not bool((hold_matches.sum(dim=1) == 1).all()):
-            raise PermissionError(
-                "Phase-A real-hold control population changed"
-            )
-        hold_positions = hold_matches.to(torch.int64).argmax(dim=1)
-        hold_mse = control_mse[
-            rows[non_hold],
-            hold_positions,
-        ]
         shuffled_next_mse = row_mse(prediction, shuffled_next)
         mean_target_mse = row_mse(prediction, mean_target)
         shuffled_current_mse = row_mse(shuffled_current, target)
 
-        correct_nll_rows: list[Any] = []
-        deranged_nll_rows: list[Any] = []
-        current_current_nll_rows: list[Any] = []
-        correct_logits_rows: list[Any] = []
-        displacement_rows: list[Any] = []
-        probabilities_finite = True
-        probability_rows_normalized = True
-        volume_finite = True
-        volume_bounded = True
-        volume_conserved = True
-        displacement_finite = True
-        displacement_bounded = True
-        same_diff_zero = True
-        same_volume_zero = True
-        same_displacement_zero = True
-        with torch.no_grad():
-            for start in range(0, len(pairs), contract.MICROBATCH_SIZE):
-                stop = min(start + contract.MICROBATCH_SIZE, len(pairs))
-                current_batch = state[start:stop].to(device)
-                next_batch = next_state[start:stop].to(device)
-                label_batch = requested_indices[start:stop].to(device)
-                scale = torch.ones(
-                    stop - start,
-                    dtype=torch.float32,
-                    device=device,
-                )
-                correct = (
-                    ops.dense_pairwise_spatial_cost_volume_inverse_terms(
-                        model.dense_pairwise_inverse_head,
-                        current_batch,
-                        next_batch,
-                        label_batch,
-                        scale,
-                    )
-                )
-                deranged = (
-                    ops.dense_pairwise_spatial_cost_volume_inverse_terms(
-                        model.dense_pairwise_inverse_head,
-                        current_batch,
-                        next_state[next_mapping[start:stop]].to(device),
-                        label_batch,
-                        scale,
-                    )
-                )
-                current_current = (
-                    ops.dense_pairwise_spatial_cost_volume_inverse_terms(
-                        model.dense_pairwise_inverse_head,
-                        current_batch,
-                        current_batch,
-                        label_batch,
-                        scale,
-                    )
-                )
-                correct_nll_rows.append(correct.nll_per_row.cpu())
-                deranged_nll_rows.append(deranged.nll_per_row.cpu())
-                current_current_nll_rows.append(
-                    current_current.nll_per_row.cpu()
-                )
-                correct_logits_rows.append(correct.logits.cpu())
-                displacement_rows.append(correct.displacement.cpu())
-                probability_values = (
-                    correct.current_next_probabilities,
-                    correct.current_current_probabilities,
-                    deranged.current_next_probabilities,
-                    deranged.current_current_probabilities,
-                    current_current.current_next_probabilities,
-                    current_current.current_current_probabilities,
-                )
-                probabilities_finite = (
-                    probabilities_finite
-                    and all(
-                        bool(torch.isfinite(value).all().item())
-                        for value in probability_values
-                    )
-                )
-                probability_rows_normalized = (
-                    probability_rows_normalized
-                    and all(
-                        bool(
-                            torch.allclose(
-                                value.sum(dim=-1),
-                                torch.ones_like(value[..., 0]),
-                                rtol=0.0,
-                                atol=1e-6,
-                            )
-                        )
-                        for value in probability_values
-                    )
-                )
-                volume_finite = (
-                    volume_finite
-                    and all(
-                        bool(torch.isfinite(value).all().item())
-                        for value in (
-                            correct.volume,
-                            deranged.volume,
-                            current_current.volume,
-                        )
-                    )
-                )
-                volume_bounded = (
-                    volume_bounded
-                    and all(
-                        bool(
-                            (
-                                value.abs()
-                                <= contract.DENSE_PAIRWISE_VOLUME_VALUE_BOUND
-                            ).all().item()
-                        )
-                        for value in (
-                            correct.volume,
-                            deranged.volume,
-                            current_current.volume,
-                        )
-                    )
-                )
-                volume_conserved = (
-                    volume_conserved
-                    and all(
-                        bool(
-                            torch.allclose(
-                                value.sum(dim=1),
-                                torch.zeros_like(value[:, 0]),
-                                rtol=0.0,
-                                atol=1e-6,
-                            )
-                        )
-                        for value in (
-                            correct.volume,
-                            deranged.volume,
-                            current_current.volume,
-                        )
-                    )
-                )
-                displacement_finite = (
-                    displacement_finite
-                    and all(
-                        bool(torch.isfinite(value).all().item())
-                        for value in (
-                            correct.displacement,
-                            deranged.displacement,
-                            current_current.displacement,
-                        )
-                    )
-                )
-                displacement_bounded = (
-                    displacement_bounded
-                    and all(
-                        bool(
-                            (
-                                value.abs()
-                                <= contract.DENSE_PAIRWISE_DISPLACEMENT_COMPONENT_BOUND
-                            ).all().item()
-                        )
-                        for value in (
-                            correct.displacement,
-                            deranged.displacement,
-                            current_current.displacement,
-                        )
-                    )
-                )
-                same_diff_zero = (
-                    same_diff_zero
-                    and int(
-                        torch.count_nonzero(
-                            current_current.probability_difference
-                        ).item()
-                    )
-                    == 0
-                )
-                same_volume_zero = (
-                    same_volume_zero
-                    and int(
-                        torch.count_nonzero(current_current.volume).item()
-                    )
-                    == 0
-                )
-                same_displacement_zero = (
-                    same_displacement_zero
-                    and int(
-                        torch.count_nonzero(
-                            current_current.displacement
-                        ).item()
-                    )
-                    == 0
-                )
+        executed_energy = action_energies[rows, requested_indices]
+        cyclic_indices = (requested_indices + 1) % len(
+            contract.ACTION_VOCABULARY
+        )
+        cyclic_energy = action_energies[rows, cyclic_indices]
+        wrong_mask = torch.ones_like(action_energies, dtype=torch.bool)
+        wrong_mask[rows, requested_indices] = False
+        hardest_wrong_energy = action_energies.masked_fill(
+            ~wrong_mask, float("inf")
+        ).min(dim=1).values
+        hold_energy = action_energies[
+            non_hold, contract.HOLD_ACTION_INDEX
+        ]
+        permuted_energy = action_energies[rows, permuted_indices]
 
-        correct_nll = torch.cat(correct_nll_rows).float()
-        deranged_nll = torch.cat(deranged_nll_rows).float()
-        current_current_nll = torch.cat(current_current_nll_rows).float()
-        correct_logits = torch.cat(correct_logits_rows).float()
-        displacement = torch.cat(displacement_rows).float()
-        if (
-            correct_nll.shape != (len(pairs),)
-            or deranged_nll.shape != correct_nll.shape
-            or current_current_nll.shape != correct_nll.shape
-            or correct_logits.shape != (len(pairs), 9)
-            or displacement.shape != (len(pairs), 2, 16, 16)
-            or int(non_hold.sum()) != 435
-        ):
-            raise PermissionError(
-                "dense inverse diagnostic population changed"
-            )
-        dense_predictions = correct_logits.argmax(dim=1)
+        correct_energy = target_energies[:, 0]
+        deranged_energy = target_energies[:, 1]
+        current_energy = target_energies[non_hold, 2]
+        same_correct = correct_energy[same_action]
+        same_deranged = deranged_energy[same_action]
+        same_two_logits = -torch.stack(
+            (same_correct, same_deranged), dim=1
+        )
+        same_two_nll_rows = torch.nn.functional.cross_entropy(
+            same_two_logits,
+            torch.zeros(
+                contract.SELECTION_SAME_ACTION_PAIR_COUNT,
+                dtype=torch.long,
+            ),
+            reduction="none",
+        )
+        strict_win_count = int(
+            (same_correct < same_deranged).sum().item()
+        )
+
+        action_predictions = action_energies.argmin(dim=1)
         per_action: dict[str, dict[str, int | float]] = {}
         recalls: list[float] = []
         for action_index, action_name in enumerate(
@@ -2370,219 +2364,303 @@ def _phase_a_diagnostics(
             count = int(mask.sum().item())
             if count < 1:
                 raise PermissionError(
-                    f"dense inverse action population is empty: {action_name}"
+                    f"retrieval action population is empty: {action_name}"
                 )
             recall = (
-                int((dense_predictions[mask] == action_index).sum().item())
+                int((action_predictions[mask] == action_index).sum().item())
                 / float(count)
             )
             recalls.append(recall)
             per_action[action_name] = {
                 "row_count": count,
-                "mean_nll": float(correct_nll[mask].mean()),
+                "mean_nll": float(action_nll[mask].mean()),
                 "recall": recall,
             }
-        if (
-            tuple(per_action) != contract.ACTION_VOCABULARY
-            or sum(int(row["row_count"]) for row in per_action.values())
-            != len(pairs)
-        ):
-            raise PermissionError(
-                "dense inverse per-action populations changed"
-            )
-        per_family_dense: dict[str, float] = {}
-        for family in contract.SCENE_FAMILIES:
-            mask = torch.tensor(
-                [row["family"] == family for row in pairs],
-                dtype=torch.bool,
-            )
-            if not bool(mask.any()):
-                raise PermissionError(
-                    f"dense inverse family population is empty: {family}"
-                )
-            per_family_dense[family] = float(
-                (deranged_nll[mask] - correct_nll[mask]).mean()
-            )
-        correct_mean = correct_nll.mean()
-        deranged_mean = deranged_nll.mean()
-        non_hold_correct_mean = correct_nll[non_hold].mean()
-        non_hold_identity_mean = current_current_nll[non_hold].mean()
-        zero_logit_reference_nll = torch.nn.functional.cross_entropy(
-            torch.zeros(
-                (len(pairs), len(contract.ACTION_VOCABULARY)),
-                dtype=torch.float32,
-                device=device,
-            ),
-            requested_indices.to(device),
-            reduction="mean",
-        )
-        if not bool(
-            torch.isfinite(correct_mean).item()
-            and torch.isfinite(deranged_mean).item()
-            and torch.isfinite(non_hold_correct_mean).item()
-            and torch.isfinite(non_hold_identity_mean).item()
-            and (deranged_mean > 0).item()
-            and (non_hold_identity_mean > 0).item()
-        ):
-            raise FloatingPointError(
-                "dense inverse NLL denominator changed"
-            )
-        head_parameters = tuple(
-            model.dense_pairwise_inverse_head.parameters()
-        )
-        head_weights = (
-            model.dense_pairwise_inverse_head.channel_projection.weight,
-            model.dense_pairwise_inverse_head.spatial_projection.weight,
-            model.dense_pairwise_inverse_head.classifier.weight,
-        )
-        dense_pairwise_inverse = {
-            "all_values_finite": bool(
-                probabilities_finite
-                and volume_finite
-                and displacement_finite
-                and all(
-                    torch.isfinite(parameter).all().item()
-                    for parameter in head_parameters
-                )
-                and
-                all(
-                    torch.isfinite(value).all().item()
-                    for value in (
-                        correct_nll,
-                        deranged_nll,
-                        current_current_nll,
-                        correct_logits,
-                        displacement,
-                    )
-                )
-            ),
-            "probabilities_all_values_finite": probabilities_finite,
-            "probability_rows_normalized": probability_rows_normalized,
-            "volume_all_values_finite": volume_finite,
-            "volume_values_within_closed_unit_interval": volume_bounded,
-            "volume_channel_conservation": volume_conserved,
-            "displacement_all_values_finite": displacement_finite,
-            "displacement_values_within_closed_two_bound":
-                displacement_bounded,
-            "maximum_absolute_displacement_component":
-                float(displacement.abs().max()),
-            "cross_pair_displacement_rms":
-                float(displacement.square().mean().sqrt()),
-            "cross_pair_displacement_value_count": displacement.numel(),
-            "same_tensor_diff_exact_zero": same_diff_zero,
-            "same_tensor_volume_exact_zero": same_volume_zero,
-            "same_tensor_displacement_exact_zero":
-                same_displacement_zero,
-            "head_parameters_all_values_finite": all(
-                bool(torch.isfinite(parameter).all().item())
-                for parameter in head_parameters
-            ),
-            "head_parameter_count": sum(
-                parameter.numel() for parameter in head_parameters
-            ),
-            "head_weight_tensors_all_nonzero": all(
-                int(torch.count_nonzero(weight).item()) == weight.numel()
-                for weight in head_weights
-            ),
-            "unscaled_dense_inverse_nll": float(correct_mean),
-            "zero_logit_reference_nll":
-                float(zero_logit_reference_nll),
-            "dense_inverse_top1_accuracy": (
-                int(
-                    (dense_predictions == requested_indices).sum().item()
-                )
-                / float(len(pairs))
-            ),
-            "per_executed_action_dense_inverse": per_action,
-            "dense_inverse_macro_balanced_accuracy":
-                sum(recalls) / float(len(recalls)),
-            "correct_pair_nll": float(correct_mean),
-            "correct_pair_count": len(pairs),
-            "deranged_next_nll": float(deranged_mean),
-            "deranged_next_pair_count": len(pairs),
-            "correct_to_deranged_nll_ratio":
-                float(correct_mean / deranged_mean),
-            "non_hold_correct_pair_nll": float(non_hold_correct_mean),
-            "non_hold_correct_pair_count": int(non_hold.sum()),
-            "non_hold_current_current_nll":
-                float(non_hold_identity_mean),
-            "non_hold_current_current_pair_count": int(non_hold.sum()),
-            "non_hold_correct_to_current_current_nll_ratio":
-                float(non_hold_correct_mean / non_hold_identity_mean),
-            "deranged_positive_family_margin_count": sum(
-                int(value > 0.0) for value in per_family_dense.values()
-            ),
-            "per_family_deranged_minus_correct_nll": per_family_dense,
-        }
-        if (
-            set(dense_pairwise_inverse)
-            != contract.DENSE_PAIRWISE_INVERSE_OBSERVATION_FIELDS
-        ):
-            raise RuntimeError(
-                "dense pairwise inverse diagnostic fields changed"
-            )
 
-        q_raw = raw_target - raw_target.mean(dim=0, keepdim=True)
-        raw_variance = raw_target.var(dim=0, unbiased=False).mean()
-        spatial_diversity = q_raw.var(dim=1, unbiased=False).mean()
+        masked_target_energies = target_energies.masked_fill(
+            ~target_mask, float("inf")
+        )
+        target_predictions = masked_target_energies.argmin(dim=1)
+        target_top1_count = int((target_predictions == 0).sum().item())
+
         per_family: dict[str, dict[str, Any]] = {}
+        family_scene_ids: set[str] = set()
         for family in contract.SCENE_FAMILIES:
             family_mask = torch.tensor(
                 [row["family"] == family for row in pairs],
                 dtype=torch.bool,
             )
+            family_same = family_mask & same_action
             family_non_hold = family_mask & non_hold
-            if not bool(family_mask.any()) or not bool(family_non_hold.any()):
+            scenes = {
+                str(row["scene_id"])
+                for row in pairs
+                if row["family"] == family
+            }
+            if (
+                int(family_mask.sum()) < 1
+                or int(family_same.sum()) < 1
+                or int(family_non_hold.sum()) < 1
+                or len(scenes) != 1
+            ):
                 raise PermissionError(
-                    f"Phase-A control population is empty: {family}"
+                    f"retrieval family population is empty: {family}"
                 )
+            scene_id = next(iter(scenes))
+            if (
+                scene_id
+                != contract.SELECTION_FAMILY_BINDINGS[family]["scene_id"]
+            ):
+                raise PermissionError(
+                    f"retrieval family scene changed: {family}"
+                )
+            family_scene_ids.add(scene_id)
             per_family[family] = {
-                "cyclic_wrong_action_minus_true_mse": float(
+                "scene_id": scene_id,
+                "row_count": int(family_mask.sum()),
+                "same_action_row_count": int(family_same.sum()),
+                "non_hold_row_count": int(family_non_hold.sum()),
+                "deranged_minus_correct_energy": float(
                     (
-                        cyclic_wrong_mse[family_mask]
-                        - true_mse[family_mask]
+                        deranged_energy[family_same]
+                        - correct_energy[family_same]
                     ).mean()
                 ),
-                "hardest_wrong_action_minus_true_mse": float(
+                "current_target_minus_correct_energy": float(
                     (
-                        hardest_wrong_mse[family_mask]
-                        - true_mse[family_mask]
+                        target_energies[family_non_hold, 2]
+                        - correct_energy[family_non_hold]
                     ).mean()
                 ),
-                "hold_action_minus_non_hold_true_mse": float(
+                "cyclic_wrong_minus_executed_energy": float(
                     (
-                        hold_mse[family_non_hold[non_hold]]
-                        - true_mse[family_non_hold]
+                        cyclic_energy[family_mask]
+                        - executed_energy[family_mask]
+                    ).mean()
+                ),
+                "hardest_wrong_minus_executed_energy": float(
+                    (
+                        hardest_wrong_energy[family_mask]
+                        - executed_energy[family_mask]
+                    ).mean()
+                ),
+                "hold_minus_non_hold_executed_energy": float(
+                    (
+                        action_energies[
+                            family_non_hold, contract.HOLD_ACTION_INDEX
+                        ]
+                        - executed_energy[family_non_hold]
+                    ).mean()
+                ),
+                "permuted_minus_executed_energy": float(
+                    (
+                        permuted_energy[family_mask]
+                        - executed_energy[family_mask]
                     ).mean()
                 ),
                 "hold_action_rows_match_non_hold_rows": True,
             }
+        if len(family_scene_ids) != len(contract.SCENE_FAMILIES):
+            raise PermissionError(
+                "checkpoint-selection families do not bind one scene each"
+            )
+
+        def positive_family_count(field: str) -> int:
+            return sum(
+                int(float(value[field]) > 0.0)
+                for value in per_family.values()
+            )
 
         finite_tensors = (
             state,
-            next_state,
             ema_current_skip,
             prediction,
-            control_mse,
             raw_target,
             target,
+            deranged_target,
+            action_energies,
+            action_nll,
+            target_energies,
+            target_nll,
+            same_two_nll_rows,
+            executed_energy,
+            cyclic_energy,
+            hardest_wrong_energy,
+            hold_energy,
+            permuted_energy,
+            correct_energy,
+            deranged_energy,
+            current_energy,
             shuffled_current,
             true_mse,
-            cyclic_wrong_mse,
-            hardest_wrong_mse,
-            hold_mse,
+            shuffled_next_mse,
+            mean_target_mse,
+            shuffled_current_mse,
             all_flows_cell,
-            correct_nll,
-            deranged_nll,
-            current_current_nll,
-            correct_logits,
-            displacement,
         )
+        energy_tensors = (
+            action_energies,
+            target_energies[target_mask],
+        )
+        factorized_retrieval = {
+            "all_values_finite": bool(
+                all(
+                    torch.isfinite(value).all().item()
+                    for value in finite_tensors
+                )
+            ),
+            "energy_values_within_closed_zero_four": bool(
+                all(
+                    bool(
+                        ((value >= 0.0) & (value <= 4.0)).all().item()
+                    )
+                    for value in energy_tensors
+                )
+            ),
+            "target_candidate_order_and_counts_exact": bool(
+                torch.equal(target_mask, expected_mask)
+            ),
+            "same_action_target_mapping_exact": bool(
+                target_mapping["binding"]
+                == contract.TARGET_MAPPING_BINDINGS[
+                    "checkpoint_selection"
+                ]
+            ),
+            "selection_action_permutation_exact": bool(
+                action_permutation["binding"]
+                == contract.SELECTION_ACTION_PERMUTATION_BINDING
+            ),
+            "reference_values_immutable": True,
+            "action_equal_logit_reference": float(
+                gate_references["action_equal_logit_reference"]
+            ),
+            "two_target_equal_logit_reference": float(
+                gate_references["two_target_equal_logit_reference"]
+            ),
+            "action_retrieval_nll": float(action_nll.mean()),
+            "action_retrieval_top1_accuracy": float(
+                (action_predictions == requested_indices).float().mean()
+            ),
+            "per_executed_action_action_retrieval": per_action,
+            "action_retrieval_macro_balanced_accuracy": (
+                sum(recalls) / float(len(recalls))
+            ),
+            "target_retrieval_nll": float(target_nll.mean()),
+            "same_action_target_retrieval_nll": float(
+                target_nll[same_action].mean()
+            ),
+            "hold_target_retrieval_nll": float(
+                target_nll[~non_hold].mean()
+            ),
+            "non_hold_target_retrieval_nll": float(
+                target_nll[non_hold].mean()
+            ),
+            "same_action_two_target_nll": float(
+                same_two_nll_rows.mean()
+            ),
+            "target_retrieval_top1_count": target_top1_count,
+            "target_retrieval_top1_accuracy": (
+                target_top1_count / float(len(pairs))
+            ),
+            "same_action_strict_win_count": strict_win_count,
+            "same_action_strict_win_rate": (
+                strict_win_count
+                / float(contract.SELECTION_SAME_ACTION_PAIR_COUNT)
+            ),
+            "same_action_correct_energy": float(same_correct.mean()),
+            "same_action_deranged_energy": float(same_deranged.mean()),
+            "same_action_correct_to_deranged_ratio": positive_ratio(
+                same_correct,
+                same_deranged,
+                "same-action correct/deranged energy",
+            ),
+            "non_hold_correct_energy": float(
+                correct_energy[non_hold].mean()
+            ),
+            "non_hold_current_target_energy": float(current_energy.mean()),
+            "non_hold_correct_to_current_ratio": positive_ratio(
+                correct_energy[non_hold],
+                current_energy,
+                "non-hold correct/current energy",
+            ),
+            "executed_action_energy": float(executed_energy.mean()),
+            "cyclic_wrong_action_energy": float(cyclic_energy.mean()),
+            "hardest_wrong_action_energy": float(
+                hardest_wrong_energy.mean()
+            ),
+            "permuted_action_energy": float(permuted_energy.mean()),
+            "non_hold_executed_action_energy": float(
+                executed_energy[non_hold].mean()
+            ),
+            "non_hold_hold_action_energy": float(hold_energy.mean()),
+            "executed_to_cyclic_ratio": positive_ratio(
+                executed_energy, cyclic_energy, "executed/cyclic energy"
+            ),
+            "executed_to_hardest_wrong_ratio": positive_ratio(
+                executed_energy,
+                hardest_wrong_energy,
+                "executed/hardest-wrong energy",
+            ),
+            "executed_to_permuted_ratio": positive_ratio(
+                executed_energy,
+                permuted_energy,
+                "executed/permuted energy",
+            ),
+            "non_hold_executed_to_hold_ratio": positive_ratio(
+                executed_energy[non_hold],
+                hold_energy,
+                "non-hold executed/hold energy",
+            ),
+            "all_row_count": len(pairs),
+            "same_action_row_count": int(same_action.sum()),
+            "fallback_row_count": int((~same_action).sum()),
+            "hold_row_count": int((~non_hold).sum()),
+            "non_hold_row_count": int(non_hold.sum()),
+            "target_candidate_count": int(target_mask.sum()),
+            "action_candidate_count": len(contract.ACTION_VOCABULARY),
+            "all_wrong_action_candidate_count": (
+                len(pairs) * (len(contract.ACTION_VOCABULARY) - 1)
+            ),
+            "selection_target_mapping_sha256": str(
+                target_mapping["binding"]["mapping_sha256"]
+            ),
+            "selection_action_permutation_sha256": str(
+                action_permutation["binding"]["mapping_sha256"]
+            ),
+            "per_family": per_family,
+            "deranged_positive_family_margin_count":
+                positive_family_count(
+                    "deranged_minus_correct_energy"
+                ),
+            "current_target_positive_family_margin_count":
+                positive_family_count(
+                    "current_target_minus_correct_energy"
+                ),
+            "cyclic_positive_family_margin_count":
+                positive_family_count(
+                    "cyclic_wrong_minus_executed_energy"
+                ),
+            "hold_positive_family_margin_count":
+                positive_family_count(
+                    "hold_minus_non_hold_executed_energy"
+                ),
+            "permuted_positive_family_margin_count":
+                positive_family_count(
+                    "permuted_minus_executed_energy"
+                ),
+        }
+        if (
+            set(factorized_retrieval)
+            != contract.FACTORIZED_RETRIEVAL_OBSERVATION_FIELDS
+        ):
+            raise RuntimeError(
+                "factorized retrieval diagnostic fields changed"
+            )
+
+        q_raw = raw_target - raw_target.mean(dim=0, keepdim=True)
         metric = {
             "all_values_finite": bool(
-                torch.stack([
-                    torch.isfinite(value).all() for value in finite_tensors
-                ]).all()
+                factorized_retrieval["all_values_finite"]
             ),
             "ema_target_gradient_free": all(
                 parameter.grad is None and not parameter.requires_grad
@@ -2595,29 +2673,23 @@ def _phase_a_diagnostics(
             ),
             "pair_count": len(pairs),
             "scene_family_count": len(contract.SCENE_FAMILIES),
-            "cyclic_wrong_action_pair_count": len(pairs),
-            "all_wrong_action_candidate_count": int(control_mse.numel()),
-            "non_hold_pair_count": int(non_hold.sum()),
-            "hold_action_pair_count": int(hold_mse.numel()),
-            "hold_action_rows_match_non_hold_rows": True,
             "centered_raw_patch_effective_rank":
                 _effective_rank(torch, raw_target),
             "centered_projected_target_effective_rank":
                 _effective_rank(torch, target),
-            "raw_cross_sample_variance": float(raw_variance),
-            "content_residual_spatial_diversity":
-                float(spatial_diversity),
+            "raw_cross_sample_variance": float(
+                raw_target.var(dim=0, unbiased=False).mean()
+            ),
+            "content_residual_spatial_diversity": float(
+                q_raw.var(dim=1, unbiased=False).mean()
+            ),
             "true_pair_mse": float(true_mse.mean()),
             "shuffled_next_mse": float(shuffled_next_mse.mean()),
             "mean_target_mse": float(mean_target_mse.mean()),
-            "cyclic_wrong_action_mse": float(cyclic_wrong_mse.mean()),
-            "hardest_wrong_action_mse": float(hardest_wrong_mse.mean()),
-            "non_hold_true_pair_mse": float(true_mse[non_hold].mean()),
-            "hold_action_mse": float(hold_mse.mean()),
+            "non_hold_pair_count": int(non_hold.sum()),
             "shuffled_current_mse": float(shuffled_current_mse.mean()),
-            "per_family": per_family,
             "latent_flow": latent_flow,
-            "dense_pairwise_inverse": dense_pairwise_inverse,
+            "factorized_retrieval": factorized_retrieval,
         }
         if set(metric) != contract.PHASE_A_METRIC_FIELDS:
             raise RuntimeError("Phase-A diagnostic fields changed")
@@ -2639,6 +2711,7 @@ def _phase_a_diagnostics(
         "role": "checkpoint_selection",
         "metric": observed["metric"],
         "action_indexed_symmetry": observed["action_indexed_symmetry"],
+        "mapped_negative_io": loader.mapped_negative_io_receipt(),
         "model_state_sha256_before_and_after": before_state,
         "rng_state_preserved": True,
         "state_mutation_count": 0,
@@ -2652,6 +2725,9 @@ def _phase_a_train(
     loader: RGBOnlyLoader,
     train_pairs: Sequence[Mapping[str, Any]],
     selection_pairs: Sequence[Mapping[str, Any]],
+    train_target_mapping: Mapping[str, Any],
+    selection_target_mapping: Mapping[str, Any],
+    selection_action_permutation: Mapping[str, Any],
     schedule: Sequence[int],
     device: Any,
     output_root: Path,
@@ -2663,6 +2739,28 @@ def _phase_a_train(
     model, partition, initialization = _phase_a_model(
         runtime, phase2d, fit, device
     )
+    gate_references = _phase_a_gate_references(
+        runtime,
+        selection_pairs,
+        selection_target_mapping,
+        device,
+    )
+    initialization["factorized_retrieval_gate_references"] = {
+        **gate_references,
+        "computed_once_after_reservation_before_update_zero": True,
+        "action_reference_shape": [495, 9],
+        "two_target_reference_shape": [494, 2],
+        "dtype": "float32",
+    }
+    initialization["target_mappings"] = {
+        "train": dict(train_target_mapping["binding"]),
+        "checkpoint_selection": dict(
+            selection_target_mapping["binding"]
+        ),
+        "selection_action_permutation": dict(
+            selection_action_permutation["binding"]
+        ),
+    }
     trainable = [*partition["encoder"], *partition["other"]]
     optimizer = torch.optim.AdamW(
         [
@@ -2691,6 +2789,9 @@ def _phase_a_train(
             selection_pairs,
             device,
             update=0,
+            target_mapping=selection_target_mapping,
+            action_permutation=selection_action_permutation,
+            gate_references=gate_references,
         )
     ]
     update0_health = {
@@ -2704,8 +2805,8 @@ def _phase_a_train(
     update0_health["latent_flow"] = (
         diagnostics[0]["metric"]["latent_flow"]
     )
-    update0_health["dense_pairwise_inverse"] = (
-        diagnostics[0]["metric"]["dense_pairwise_inverse"]
+    update0_health["factorized_retrieval"] = (
+        diagnostics[0]["metric"]["factorized_retrieval"]
     )
     if set(update0_health) != contract.PHASE_A_UPDATE0_FIELDS:
         raise RuntimeError("Phase-A update-zero receipt fields changed")
@@ -2731,13 +2832,22 @@ def _phase_a_train(
         for microbatch in range(contract.MICROBATCHES_PER_UPDATE):
             low = microbatch * contract.MICROBATCH_SIZE
             indices = update_indices[low : low + contract.MICROBATCH_SIZE]
-            current, next_rgb, action = loader.batch(
+            (
+                current,
+                next_rgb,
+                deranged_next_rgb,
+                action,
+                non_hold,
+            ) = loader.batch(
                 train_pairs,
                 indices,
                 device,
                 role="train",
                 stage="phase_a_gradient",
-                include_non_hold=False,
+                mapped_negative_indices=(
+                    train_target_mapping["negative_indices"]
+                ),
+                mapped_negative_scope="training",
             )
             progress["phase_a_pair_loads"] = int(
                 progress.get("phase_a_pair_loads", 0)
@@ -2746,7 +2856,9 @@ def _phase_a_train(
                 model,
                 current,
                 next_rgb,
+                deranged_next_rgb,
                 action,
+                non_hold,
             )
             progress["phase_a_objective_evaluations"] = int(
                 progress.get("phase_a_objective_evaluations", 0)
@@ -2760,9 +2872,8 @@ def _phase_a_train(
             for name in (
                 "loss",
                 "jepa_loss",
-                "action_identification_loss",
-                "dense_pairwise_inverse_loss",
-                "unscaled_dense_pairwise_inverse_nll",
+                "action_retrieval_loss",
+                "target_retrieval_loss",
                 "raw_whitening_variance_loss",
                 "raw_whitening_covariance_loss",
                 "projected_whitening_variance_loss",
@@ -2833,6 +2944,9 @@ def _phase_a_train(
                 selection_pairs,
                 device,
                 update=update,
+                target_mapping=selection_target_mapping,
+                action_permutation=selection_action_permutation,
+                gate_references=gate_references,
             )
             diagnostics.append(diagnostic)
             if update in {100, 400}:
@@ -2946,6 +3060,16 @@ def _phase_a_train(
         "updates": len(trace),
         "presentations": len(trace) * contract.EFFECTIVE_BATCH_SIZE,
         "ema_update_count": ema_update_count,
+        "selection_observation_count": len(diagnostics),
+        "target_mapping_bindings": {
+            "train": dict(train_target_mapping["binding"]),
+            "checkpoint_selection": dict(
+                selection_target_mapping["binding"]
+            ),
+            "selection_action_permutation": dict(
+                selection_action_permutation["binding"]
+            ),
+        },
         "terminal_online_encoder_state_sha256":
             _state_sha(runtime, model.encoder),
         "target_state_gradient_count": 0,
@@ -2955,6 +3079,7 @@ def _phase_a_train(
             loader.supervision_array_open_count,
         "general_raw_v13_frame_loader_call_count":
             loader.general_frame_loader_call_count,
+        "mapped_negative_io": loader.mapped_negative_io_receipt(),
         "gate": terminal_gate,
         "retry_authorized": False,
         "authority": dict(contract.DOWNSTREAM_DENIALS),
@@ -3024,16 +3149,6 @@ def _phase_b_model(
         )
     )
     migration = _receipt_dict(raw_migration)
-    if (
-        hasattr(model, "dense_pairwise_inverse_head")
-        or any(
-            name.startswith("dense_pairwise_inverse_head.")
-            for name, _ in model.named_parameters()
-        )
-    ):
-        raise PermissionError(
-            "fresh Phase-B model unexpectedly contains the V9 inverse head"
-        )
     initialized_state = {
         name: value.detach().clone()
         for name, value in model.state_dict().items()
@@ -3114,9 +3229,9 @@ def _phase_b_model(
             "target_bev_decoder_state_sha256": initial_target_bev_sha,
         },
         "shared_v5_bev_decoder_or_predictor_copy_count": 0,
-        "jepa_predictor_projector_or_ema_transfer_count": 0,
-        "dense_pairwise_inverse_head_transfer_count": 0,
-        "dense_pairwise_inverse_head_phase_b_optimizer_inclusion_count": 0,
+        "phase_a_predictor_projector_flow_optimizer_transfer_count": 0,
+        "factorized_retrieval_state_transfer_count": 0,
+        "factorized_retrieval_phase_b_optimizer_inclusion_count": 0,
         "trainable_prefixes":
             list(contract.PHASE_B_TRAINABLE_PARAMETER_PREFIXES),
         "frozen_prefixes": list(contract.PHASE_B_FROZEN_PARAMETER_PREFIXES),
@@ -3904,6 +4019,11 @@ def _failure_custody_attestation(
         "camera_supervision_array_open_count":
             0 if loader is None
             else int(loader.supervision_array_open_count),
+        "mapped_negative_io": (
+            _empty_mapped_negative_io_receipt()
+            if loader is None
+            else loader.mapped_negative_io_receipt()
+        ),
     }
     phase_a_updates = int(progress.get("phase_a_updates", 0))
     phase_b_updates = int(progress.get("phase_b_updates", 0))
@@ -3934,6 +4054,9 @@ def _failure_custody_attestation(
         "phase_b_backward_calls":
             int(progress.get("phase_b_backward_calls", 0)),
         "observer_reruns": 0,
+        "phase_a_mapped_negative_io": dict(
+            phase_a_loader["mapped_negative_io"]
+        ),
         "cumulative_optimizer_updates":
             int(progress.get("phase_a_optimizer_updates", phase_a_updates))
             + int(progress.get("phase_b_optimizer_updates", phase_b_updates)),
@@ -3967,6 +4090,11 @@ def _failure_custody_attestation(
         },
         "fixed_runtime_input_rehash": fixed_input_rehash,
         "schedule": schedule,
+        "target_mapping_bindings": (
+            None
+            if progress.get("target_mapping_bindings") is None
+            else dict(progress["target_mapping_bindings"])
+        ),
         "operation_counts": operation_counts,
         "determinism": determinism,
         "phase_a_loader": phase_a_loader,
@@ -4131,6 +4259,83 @@ def _terminal_runtime_rehash(
     return records
 
 
+def _terminal_authority_rehash(
+    *,
+    review: Mapping[str, Any],
+    review_raw: bytes,
+    authorization: Mapping[str, Any],
+    authorization_raw: bytes,
+    sources: Mapping[str, str],
+) -> dict[str, dict[str, Any]]:
+    """Reread and bind both authority artifacts immediately pre-access."""
+
+    source_manifest_raw = _read_regular(
+        ROOT / contract.SOURCE_MANIFEST_RELATIVE_PATH,
+        expected_sha256=sources[contract.SOURCE_MANIFEST_RELATIVE_PATH],
+    )
+    expected_review_binding = contract.artifact_binding(
+        contract.REVIEW_RELATIVE_PATH,
+        review_raw,
+        content_sha256=str(review["content_sha256"]),
+    )
+    observed_review_raw = _read_regular(
+        ROOT / contract.REVIEW_RELATIVE_PATH,
+        expected_sha256=expected_review_binding["file_sha256"],
+        expected_byte_count=expected_review_binding["byte_count"],
+    )
+    observed_review = contract.validate_review(
+        contract.parse_canonical_json(
+            observed_review_raw,
+            name="terminal source review rehash",
+        ),
+        expected_sources=sources,
+        source_manifest_raw=source_manifest_raw,
+    )
+    expected_authorization_binding = contract.artifact_binding(
+        contract.AUTHORIZATION_RELATIVE_PATH,
+        authorization_raw,
+        content_sha256=str(authorization["content_sha256"]),
+    )
+    observed_authorization_raw = _read_regular(
+        ROOT / contract.AUTHORIZATION_RELATIVE_PATH,
+        expected_sha256=expected_authorization_binding["file_sha256"],
+        expected_byte_count=expected_authorization_binding["byte_count"],
+    )
+    observed_authorization = contract.validate_authorization(
+        contract.parse_canonical_json(
+            observed_authorization_raw,
+            name="terminal execution authorization rehash",
+        ),
+        review_binding=expected_review_binding,
+        reviewer=str(review["reviewer"]),
+    )
+    if (
+        observed_review_raw != review_raw
+        or observed_authorization_raw != authorization_raw
+        or observed_review != dict(review)
+        or observed_authorization != dict(authorization)
+    ):
+        raise PermissionError("authority changed before access publication")
+    return {
+        "source_review": {
+            **expected_review_binding,
+            "observed_file_sha256": hashlib.sha256(
+                observed_review_raw
+            ).hexdigest(),
+            "observed_byte_count": len(observed_review_raw),
+            "exact_pre_reservation_bytes_match": True,
+        },
+        "execution_authorization": {
+            **expected_authorization_binding,
+            "observed_file_sha256": hashlib.sha256(
+                observed_authorization_raw
+            ).hexdigest(),
+            "observed_byte_count": len(observed_authorization_raw),
+            "exact_pre_reservation_bytes_match": True,
+        },
+    }
+
+
 def _execute_after_reservation(
     *,
     review: Mapping[str, Any],
@@ -4162,9 +4367,14 @@ def _execute_after_reservation(
     progress["stage"] = "post_preflight_source_authority_rehash"
     if contract.current_source_bindings(ROOT) != dict(sources):
         raise PermissionError("reviewed source changed across reservation")
+    source_manifest_raw = _read_regular(
+        ROOT / contract.SOURCE_MANIFEST_RELATIVE_PATH,
+        expected_sha256=sources[contract.SOURCE_MANIFEST_RELATIVE_PATH],
+    )
     observed_review = contract.validate_review(
         contract.parse_canonical_json(review_raw, name="source review rehash"),
         expected_sources=sources,
+        source_manifest_raw=source_manifest_raw,
     )
     review_binding = contract.artifact_binding(
         contract.REVIEW_RELATIVE_PATH,
@@ -4210,6 +4420,29 @@ def _execute_after_reservation(
         or len(selection_pairs) != contract.SELECTION_ROLE_COUNTS["pairs"]
     ):
         raise PermissionError("development role population changed")
+    progress["target_mapping_bindings"] = {}
+    train_target_mapping = contract.validate_same_action_target_mapping(
+        train_pairs,
+        role="train",
+    )
+    progress["target_mapping_bindings"]["train"] = dict(
+        train_target_mapping["binding"]
+    )
+    selection_target_mapping = (
+        contract.validate_same_action_target_mapping(
+            selection_pairs,
+            role="checkpoint_selection",
+        )
+    )
+    progress["target_mapping_bindings"][
+        "checkpoint_selection"
+    ] = dict(selection_target_mapping["binding"])
+    selection_action_permutation = (
+        contract.validate_selection_action_permutation(selection_pairs)
+    )
+    progress["target_mapping_bindings"][
+        "selection_action_permutation"
+    ] = dict(selection_action_permutation["binding"])
     schedule, schedule_receipt = _load_schedule(
         schedule_adapter,
         authorization,
@@ -4246,13 +4479,16 @@ def _execute_after_reservation(
         phase_a_determinism_receipt,
     ) = _run_phase_a_with_reviewed_determinism(
         runtime,
-        lambda: _phase_a_train(
+        lambda fit_model=fit: _phase_a_train(
             runtime,
             phase2d,
-            fit,
+            fit_model,
             loader,
             train_pairs,
             selection_pairs,
+            train_target_mapping,
+            selection_target_mapping,
+            selection_action_permutation,
             schedule,
             device,
             output_root,
@@ -4294,10 +4530,10 @@ def _execute_after_reservation(
         phase_b, determinism_receipt = (
             _run_phase_b_with_reviewed_determinism(
                 runtime,
-                lambda: _phase_b_train(
+                lambda fit_model=fit: _phase_b_train(
                     runtime,
                     multires,
-                    fit,
+                    fit_model,
                     phase_a_encoder_state,
                     trainer,
                     train_pairs,
@@ -4372,6 +4608,37 @@ def _execute_after_reservation(
         or any(access_zero_counters.values())
     ):
         raise PermissionError("a forbidden runtime access counter changed")
+    mapped_negative_io = loader.mapped_negative_io_receipt()
+    if (
+        mapped_negative_io["by_scope"]["training"][
+            "endpoint_request_count"
+        ]
+        != phase_a["presentations"]
+        or mapped_negative_io["by_scope"]["observation"][
+            "endpoint_request_count"
+        ]
+        != (
+            phase_a["selection_observation_count"]
+            * contract.SELECTION_ROLE_COUNTS["pairs"]
+        )
+        or any(
+            row["endpoint_request_count"]
+            != row["cache_hit_count"] + row["cache_miss_count"]
+            or row["cache_miss_count"]
+            != row["physical_read_attempt_count"]
+            or row["physical_read_attempt_count"]
+            != row["physical_read_success_count"]
+            for row in mapped_negative_io["by_scope"].values()
+        )
+    ):
+        raise PermissionError("mapped-negative request accounting changed")
+    authority_rehash = _terminal_authority_rehash(
+        review=review,
+        review_raw=review_raw,
+        authorization=authorization,
+        authorization_raw=authorization_raw,
+        sources=sources,
+    )
     access, access_raw = _publish_json(
         output_root / "access.json",
         {
@@ -4390,10 +4657,15 @@ def _execute_after_reservation(
                     loader.general_frame_loader_call_count,
                 "camera_supervision_array_open_count":
                     loader.supervision_array_open_count,
+                "mapped_negative_io": mapped_negative_io,
+                "target_mapping_bindings": dict(
+                    phase_a["target_mapping_bindings"]
+                ),
             },
             "phase_b_entered": bool(progress["phase_b_entered"]),
             "consumed": consumed,
             "fixed_runtime_input_rehash": runtime_rehash,
+            "source_authority_rehash": authority_rehash,
             "schedule": schedule_receipt,
             "n320": {
                 "gate_content_sha256": gate["content_sha256"],
@@ -4446,6 +4718,7 @@ def _execute_after_reservation(
                     phase_a["presentations"]
                     + (0 if phase_b is None else phase_b["presentations"]),
                 "phase_a_ema_updates": phase_a["ema_update_count"],
+                "phase_a_mapped_negative_io": mapped_negative_io,
                 "phase_b_jepa_objectives":
                     0 if phase_b is None else phase_b["jepa_objective_count"],
                 "observer_reruns": 0,

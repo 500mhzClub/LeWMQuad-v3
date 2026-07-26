@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNNER_PATH = ROOT / "scripts/run_go2_rgb_jepa_encoder_pretraining_v1.py"
 
 
-def _load_runner(name: str = "_jepa_encoder_v9_runner_test"):
+def _load_runner(name: str = "_jepa_encoder_v10_runner_test"):
     spec = importlib.util.spec_from_file_location(name, RUNNER_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -26,7 +26,7 @@ def _load_runner(name: str = "_jepa_encoder_v9_runner_test"):
     return module
 
 
-def test_runner_import_is_source_only_and_bound_to_v9() -> None:
+def test_runner_import_is_source_only_and_bound_to_v10() -> None:
     program = f"""
 import importlib.util
 import sys
@@ -36,11 +36,11 @@ spec.loader.exec_module(module)
 assert "torch" not in sys.modules
 assert not any(name.startswith("torch.") for name in sys.modules)
 assert module.PREFLIGHT_ENVIRONMENT_KEY == (
-    "LEWM_RGB_DENSE_PAIRWISE_SPATIAL_COST_VOLUME_"
-    "INVERSE_JEPA_V9_PREFLIGHT_JSON"
+    "LEWM_RGB_ACTION_CONDITIONED_NEXT_TARGET_RETRIEVAL_"
+    "JEPA_V10_PREFLIGHT_JSON"
 )
 assert module.contract.PREREGISTRATION_COMMIT == (
-    "b775093897669c91d8c1b9e7d148e257881bcedf"
+    "25b93c92fbfb2816d52f0dfc27603c759e7c3c68"
 )
 print("PASS")
 """
@@ -56,7 +56,7 @@ print("PASS")
     assert completed.stderr == ""
 
 
-def test_runner_source_contains_v9_only_and_phase_b_rejects_the_head() -> None:
+def test_runner_source_contains_only_v10_phase_a_mechanism() -> None:
     source = RUNNER_PATH.read_text(encoding="utf-8")
     for removed in (
         "ActionConditionedLocalCorrespondenceTransport",
@@ -64,19 +64,22 @@ def test_runner_source_contains_v9_only_and_phase_b_rejects_the_head() -> None:
         "local_correspondence",
         "all_candidate_correspondence",
         "transport_weight",
+        "DensePairwiseSpatialCostVolumeInverseHead",
+        "dense_pairwise_spatial_cost_volume_inverse_terms",
+        "dense_pairwise_inverse_head",
+        "action_indexed_energy_nll",
     ):
         assert removed not in source
     assert "ActionConditionedLatentFlow" in source
-    assert "DensePairwiseSpatialCostVolumeInverseHead" in source
     assert "predict_action_conditioned_flow_warps" in source
-    assert (
-        "fresh Phase-B model unexpectedly contains the V9 inverse head"
-        in source
-    )
+    assert "action_conditioned_next_target_retrieval_terms" in source
+    assert "factorized_retrieval_state_transfer_count" in source
+    assert "v9" not in source.casefold()
 
-    module = _load_runner("_jepa_encoder_v9_phase_b_scope")
-    assert "dense_pairwise_inverse_head." not in (
-        module.contract.PHASE_B_FROZEN_PARAMETER_PREFIXES
+    module = _load_runner("_jepa_encoder_v10_phase_b_scope")
+    assert all(
+        "retrieval" not in prefix
+        for prefix in module.contract.PHASE_B_FROZEN_PARAMETER_PREFIXES
     )
 
 
@@ -143,7 +146,7 @@ def _objective_model(torch):
             )
 
     class Model(nn.Module):
-        def __init__(self, head) -> None:
+        def __init__(self) -> None:
             super().__init__()
             self.encoder = Encoder()
             self.online_geometry = nn.Identity()
@@ -154,7 +157,6 @@ def _objective_model(torch):
             self.target_encoder = Encoder()
             self.target_geometry_module = nn.Identity()
             self.target_projector = nn.Identity()
-            self.dense_pairwise_inverse_head = head
             for frozen in (
                 self.target_encoder,
                 self.target_geometry_module,
@@ -167,8 +169,29 @@ def _objective_model(torch):
 
 def _objective_ops(torch, actual_ops):
     def predict(_predictor, _projector, state, action, _target_current):
-        all_predictions = state[:, None].expand(-1, 9, -1, -1)
+        normalized = actual_ops.normalize_spatial_tokens(state)
+        offsets = torch.linspace(
+            -0.04,
+            0.04,
+            9,
+            dtype=state.dtype,
+            device=state.device,
+        )[None, :, None, None]
+        direction = torch.linspace(
+            -1.0,
+            1.0,
+            192,
+            dtype=state.dtype,
+            device=state.device,
+        )[None, None, None, :]
+        all_predictions = actual_ops.normalize_spatial_tokens(
+            normalized[:, None] + offsets * direction
+        )
         requested = action.argmax(dim=1)
+        executed = all_predictions.gather(
+            1,
+            requested[:, None, None, None].expand(-1, 1, 256, 192),
+        ).squeeze(1)
         candidates = torch.stack([
             torch.tensor(
                 [index for index in range(9) if index != int(row)],
@@ -178,7 +201,8 @@ def _objective_ops(torch, actual_ops):
             for row in requested
         ])
         return SimpleNamespace(
-            executed=state,
+            executed_indices=requested,
+            executed=executed,
             all_predictions=all_predictions,
             controls=all_predictions.gather(
                 1,
@@ -190,19 +214,6 @@ def _objective_ops(torch, actual_ops):
             ),
         )
 
-    def indexed_energy(predictions, target):
-        jepa = (predictions.executed - target).square().mean()
-        identification = predictions.executed.square().mean() * 0.01
-        return SimpleNamespace(
-            jepa=jepa,
-            identification=identification,
-            row_scale=torch.ones(
-                predictions.executed.shape[0],
-                dtype=torch.float32,
-                device=predictions.executed.device,
-            ),
-        )
-
     def whitening(value):
         return SimpleNamespace(
             variance=value.square().mean() * 0.001,
@@ -210,43 +221,45 @@ def _objective_ops(torch, actual_ops):
         )
 
     return SimpleNamespace(
-        normalize_spatial_tokens=lambda value: value,
+        normalize_spatial_tokens=actual_ops.normalize_spatial_tokens,
         predict_action_conditioned_flow_warps=predict,
-        action_indexed_energy_nll=indexed_energy,
-        dense_pairwise_spatial_cost_volume_inverse_terms=(
-            actual_ops.dense_pairwise_spatial_cost_volume_inverse_terms
+        action_conditioned_next_target_retrieval_terms=(
+            actual_ops.action_conditioned_next_target_retrieval_terms
         ),
+        normalized_token_l2_energy=actual_ops.normalized_token_l2_energy,
         patch_whitening_terms=whitening,
     )
 
 
-def test_v9_objective_uses_both_live_encoder_branches_and_dense_head() -> None:
+def test_v10_objective_routes_only_current_rgb_through_online_encoder() -> None:
     torch = pytest.importorskip("torch")
     torch.manual_seed(44)
-    module = _load_runner("_jepa_encoder_v9_objective")
+    module = _load_runner("_jepa_encoder_v10_objective")
     actual_ops = module._phase_a_ops()
-    model = _objective_model(torch)(
-        actual_ops.DensePairwiseSpatialCostVolumeInverseHead()
-    )
+    model = _objective_model(torch)()
     ops = _objective_ops(torch, actual_ops)
     current = torch.randn(3, 3, 16, 16, requires_grad=True)
     next_rgb = torch.randn(3, 3, 16, 16, requires_grad=True)
+    deranged_next_rgb = torch.randn(
+        3, 3, 16, 16, requires_grad=True
+    )
     action = torch.zeros(3, 9)
-    action[torch.arange(3), torch.tensor([0, 4, 8])] = 1.0
+    action[torch.arange(3), torch.tensor([0, 6, 8])] = 1.0
+    non_hold = torch.tensor([True, False, True])
 
     output = module._phase_a_current_only_loss(
         model,
         current,
         next_rgb,
+        deranged_next_rgb,
         action,
+        non_hold,
         ops=ops,
     )
     expected = (
         output["jepa_loss"]
-        + module.contract.ACTION_INDEXED_ENERGY_NLL_WEIGHT
-        * output["action_identification_loss"]
-        + module.contract.DENSE_PAIRWISE_INVERSE_LOSS_WEIGHT
-        * output["dense_pairwise_inverse_loss"]
+        + output["action_retrieval_loss"]
+        + output["target_retrieval_loss"]
         + module.contract.WHITENING_VARIANCE_WEIGHT
         * (
             output["raw_whitening_variance_loss"]
@@ -259,37 +272,35 @@ def test_v9_objective_uses_both_live_encoder_branches_and_dense_head() -> None:
         )
     )
     assert torch.equal(output["loss"], expected)
-    assert output["dense_pairwise_inverse_logits"].shape == (3, 9)
-    assert output["dense_pairwise_current_next_cost_volume"].shape == (
-        3, 256, 256
+    assert output["action_retrieval_energies"].shape == (3, 9)
+    assert output["action_retrieval_logits"].shape == (3, 9)
+    assert output["target_retrieval_energies"].shape == (3, 3)
+    assert output["target_retrieval_logits"].shape == (3, 3)
+    assert output["target_candidate_mask"].tolist() == [
+        [True, True, True],
+        [True, True, False],
+        [True, True, True],
+    ]
+    assert torch.equal(
+        output["action_retrieval_logits"],
+        -output["action_retrieval_energies"],
     )
-    assert output["dense_pairwise_current_current_cost_volume"].shape == (
-        3, 256, 256
-    )
-    assert output["dense_pairwise_volume"].shape == (3, 256, 16, 16)
-    assert output["dense_pairwise_displacement"].shape == (3, 2, 16, 16)
-    assert output["all_flows_cell"].shape == (3, 9, 256, 2)
-    assert len(model.encoder.seen) == 2
+    assert len(model.encoder.seen) == 1
     assert torch.equal(model.encoder.seen[0], current.detach())
-    assert torch.equal(model.encoder.seen[1], next_rgb.detach())
-    assert len(model.target_encoder.seen) == 2
+    assert len(model.target_encoder.seen) == 3
+    assert torch.equal(model.target_encoder.seen[0], current.detach())
+    assert torch.equal(model.target_encoder.seen[1], next_rgb.detach())
+    assert torch.equal(
+        model.target_encoder.seen[2], deranged_next_rgb.detach()
+    )
 
     output["loss"].backward()
     assert current.grad is not None
-    assert next_rgb.grad is not None
     assert torch.count_nonzero(current.grad).item() > 0
-    assert torch.count_nonzero(next_rgb.grad).item() > 0
+    assert next_rgb.grad is None
+    assert deranged_next_rgb.grad is None
     assert model.encoder.feature_scale.grad is not None
     assert torch.count_nonzero(model.encoder.feature_scale.grad).item() > 0
-    for parameter in (
-        model.dense_pairwise_inverse_head.channel_projection.weight,
-        model.dense_pairwise_inverse_head.spatial_projection.weight,
-        model.dense_pairwise_inverse_head.classifier.weight,
-        model.dense_pairwise_inverse_head.classifier.bias,
-    ):
-        assert parameter.grad is not None
-        assert torch.isfinite(parameter.grad).all()
-        assert torch.count_nonzero(parameter.grad).item() > 0
     assert all(
         parameter.grad is None and not parameter.requires_grad
         for parameter in model.target_encoder.parameters()
@@ -337,11 +348,11 @@ def _initialization_model(torch):
     return Model
 
 
-def test_phase_a_initialization_restores_v5_flow_and_exact_v9_head(
+def test_phase_a_initialization_restores_v5_flow_without_new_v10_parameters(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     torch = pytest.importorskip("torch")
-    module = _load_runner("_jepa_encoder_v9_initialization")
+    module = _load_runner("_jepa_encoder_v10_initialization")
     monkeypatch.setattr(module, "_state_sha", lambda *_args: "a" * 64)
     phase2d = SimpleNamespace(
         Phase2DSpatialLeWorldModel=lambda **_kwargs: (
@@ -360,23 +371,15 @@ def test_phase_a_initialization_restores_v5_flow_and_exact_v9_head(
     assert flow["weight_shape"] == [2, 192]
     assert flow["exact_zero_weight_scalar_count"] == 384
     assert torch.count_nonzero(model.prediction_projector.flow_weight) == 0
-    head = receipt["dense_pairwise_inverse_head_initialization"]
-    assert head["seed"] == 20260725
-    assert head["parameter_count"] == 8_713
-    assert head["all_three_weights_every_scalar_nonzero"] is True
-    assert head["classifier_bias_exact_zero"] is True
-    assert sum(
-        parameter.numel()
-        for parameter in model.dense_pairwise_inverse_head.parameters()
-    ) == 8_713
-    assert all(
-        any(parameter is candidate for candidate in partition["other"])
-        for parameter in model.dense_pairwise_inverse_head.parameters()
-    )
-    assert all(
-        parameter is not candidate
-        for parameter in model.dense_pairwise_inverse_head.parameters()
-        for candidate in partition["encoder"]
+    retrieval = receipt["factorized_retrieval_initialization"]
+    assert retrieval["new_parameter_count"] == 0
+    assert retrieval["new_initialization_draw_count"] == 0
+    assert retrieval["temperature"] is None
+    assert retrieval["row_scale"] is None
+    assert retrieval["action_retrieval_coefficient"] == 1.0
+    assert retrieval["target_retrieval_coefficient"] == 1.0
+    assert not any(
+        "retrieval" in name for name, _ in model.named_parameters()
     )
     assert partition["receipt"]["appearance_projector_frozen"] is True
 
@@ -415,6 +418,36 @@ def test_update_zero_compares_all_action_pairs_across_495_rows() -> None:
         )
 
 
+def test_gate_references_use_exact_float32_494x2_and_495x9_formulas() -> None:
+    torch = pytest.importorskip("torch")
+    module = _load_runner("_jepa_encoder_v10_gate_references")
+    pairs = [
+        {"primitive": module.contract.ACTION_VOCABULARY[index % 9]}
+        for index in range(495)
+    ]
+    mapping = {
+        "same_action_eligible": (True,) * 494 + (False,),
+    }
+    observed = module._phase_a_gate_references(
+        SimpleNamespace(torch=torch),
+        pairs,
+        mapping,
+        torch.device("cpu"),
+    )
+    expected_action = torch.nn.functional.cross_entropy(
+        torch.zeros((495, 9), dtype=torch.float32),
+        torch.tensor([index % 9 for index in range(495)]),
+    )
+    expected_two = torch.nn.functional.cross_entropy(
+        torch.zeros((494, 2), dtype=torch.float32),
+        torch.zeros(494, dtype=torch.long),
+    )
+    assert observed == {
+        "action_equal_logit_reference": float(expected_action),
+        "two_target_equal_logit_reference": float(expected_two),
+    }
+
+
 def _pair(scene: str, content: str, current: str, next_: str):
     return {
         "scene_id": scene,
@@ -447,6 +480,50 @@ def test_scene_derangement_is_local_deterministic_and_identity_safe() -> None:
         )
 
 
+def test_mapped_negative_requests_are_counted_separately_from_cache_io() -> None:
+    module = _load_runner("_jepa_encoder_v10_candidate_counters")
+    endpoint = "a" * 64
+    loader = module.RGBOnlyLoader(
+        SimpleNamespace(),
+        SimpleNamespace(
+            endpoints={
+                endpoint: {"dataset_role": "train"},
+            }
+        ),
+    )
+    sentinel = object()
+    loader.cache[endpoint] = sentinel
+    assert loader.image(
+        endpoint,
+        role="train",
+        stage="phase_a_gradient",
+        mapped_negative_scope="training",
+    ) is sentinel
+    assert loader.image(
+        endpoint,
+        role="train",
+        stage="phase_a_diagnostic_update_0",
+        mapped_negative_scope="observation",
+    ) is sentinel
+    receipt = loader.mapped_negative_io_receipt()
+    assert receipt["by_scope"]["training"] == {
+        "endpoint_request_count": 1,
+        "cache_hit_count": 1,
+        "cache_miss_count": 0,
+        "physical_read_attempt_count": 0,
+        "physical_read_success_count": 0,
+    }
+    assert receipt["by_scope"]["observation"] == {
+        "endpoint_request_count": 1,
+        "cache_hit_count": 1,
+        "cache_miss_count": 0,
+        "physical_read_attempt_count": 0,
+        "physical_read_success_count": 0,
+    }
+    assert receipt["total_endpoint_request_count"] == 2
+    assert receipt["total_cache_hit_count"] == 2
+
+
 def _latent_flow(contract, *, update_zero: bool):
     active = {
         action: (not update_zero and action != "hold")
@@ -462,77 +539,154 @@ def _latent_flow(contract, *, update_zero: bool):
     }
 
 
-def _dense(contract, nll: float):
-    non_hold_counts = iter((55, 55, 55, 54, 54, 54, 54, 54))
+def _per_action_retrieval(contract, nll: float, *, update_zero: bool):
     counts = {
-        action: (60 if action == "hold" else next(non_hold_counts))
-        for action in contract.ACTION_VOCABULARY
+        action: count
+        for action, count in zip(
+            contract.ACTION_VOCABULARY,
+            (55, 55, 55, 54, 54, 54, 60, 54, 54),
+            strict=True,
+        )
     }
-    correct = {action: count // 2 for action, count in counts.items()}
-    recalls = {
-        action: correct[action] / counts[action]
-        for action in contract.ACTION_VOCABULARY
+    if update_zero:
+        correct = {
+            action: (count if index == 0 else 0)
+            for index, (action, count) in enumerate(counts.items())
+        }
+    else:
+        correct = {
+            action: (count + 1) // 2
+            for action, count in counts.items()
+        }
+    per_action = {
+        action: {
+            "row_count": count,
+            "mean_nll": nll,
+            "recall": correct[action] / count,
+        }
+        for action, count in counts.items()
     }
-    top1 = sum(correct.values()) / 495
-    macro = sum(recalls.values()) / 9
-    deranged = nll / 0.8
-    family = {name: 0.1 for name in contract.SCENE_FAMILIES}
+    return (
+        per_action,
+        sum(correct.values()) / 495,
+        sum(row["recall"] for row in per_action.values()) / 9,
+    )
+
+
+def _factorized(
+    contract,
+    *,
+    action_nll: float,
+    target_nll: float,
+    two_target_nll: float,
+    update_zero: bool,
+):
+    per_action, action_top1, macro = _per_action_retrieval(
+        contract, action_nll, update_zero=update_zero
+    )
+    margin = 0.0 if update_zero else 0.2
+    per_family = {
+        family: {
+            "scene_id":
+                contract.SELECTION_FAMILY_BINDINGS[family]["scene_id"],
+            "row_count":
+                contract.SELECTION_FAMILY_BINDINGS[family]["row_count"],
+            "same_action_row_count":
+                contract.SELECTION_FAMILY_BINDINGS[family]
+                ["same_action_row_count"],
+            "non_hold_row_count":
+                contract.SELECTION_FAMILY_BINDINGS[family]
+                ["non_hold_row_count"],
+            "deranged_minus_correct_energy": margin,
+            "current_target_minus_correct_energy": margin,
+            "cyclic_wrong_minus_executed_energy": margin,
+            "hardest_wrong_minus_executed_energy": margin,
+            "hold_minus_non_hold_executed_energy": margin,
+            "permuted_minus_executed_energy": margin,
+            "hold_action_rows_match_non_hold_rows": True,
+        }
+        for family in contract.SCENE_FAMILIES
+    }
+    correct = 1.0 if update_zero else 0.8
+    control = 1.0
+    strict_wins = 0 if update_zero else 300
+    target_top1 = 495 if update_zero else 350
+    positives = 0 if update_zero else 8
     return {
         "all_values_finite": True,
-        "probabilities_all_values_finite": True,
-        "probability_rows_normalized": True,
-        "volume_all_values_finite": True,
-        "volume_values_within_closed_unit_interval": True,
-        "volume_channel_conservation": True,
-        "displacement_all_values_finite": True,
-        "displacement_values_within_closed_two_bound": True,
-        "maximum_absolute_displacement_component": 0.2,
-        "cross_pair_displacement_rms": 0.05,
-        "cross_pair_displacement_value_count": 495 * 2 * 16 * 16,
-        "same_tensor_diff_exact_zero": True,
-        "same_tensor_volume_exact_zero": True,
-        "same_tensor_displacement_exact_zero": True,
-        "head_parameters_all_values_finite": True,
-        "head_parameter_count": 8_713,
-        "head_weight_tensors_all_nonzero": True,
-        "zero_logit_reference_nll": math.log(9.0),
-        "unscaled_dense_inverse_nll": nll,
-        "dense_inverse_top1_accuracy": top1,
-        "per_executed_action_dense_inverse": {
-            action: {
-                "row_count": counts[action],
-                "mean_nll": nll,
-                "recall": recalls[action],
-            }
-            for action in contract.ACTION_VOCABULARY
-        },
-        "dense_inverse_macro_balanced_accuracy": macro,
-        "correct_pair_nll": nll,
-        "correct_pair_count": 495,
-        "deranged_next_nll": deranged,
-        "deranged_next_pair_count": 495,
-        "correct_to_deranged_nll_ratio": 0.8,
-        "non_hold_correct_pair_nll": nll,
-        "non_hold_correct_pair_count": 435,
-        "non_hold_current_current_nll": deranged,
-        "non_hold_current_current_pair_count": 435,
-        "non_hold_correct_to_current_current_nll_ratio": 0.8,
-        "deranged_positive_family_margin_count": 8,
-        "per_family_deranged_minus_correct_nll": family,
+        "energy_values_within_closed_zero_four": True,
+        "target_candidate_order_and_counts_exact": True,
+        "same_action_target_mapping_exact": True,
+        "selection_action_permutation_exact": True,
+        "reference_values_immutable": True,
+        "action_equal_logit_reference": math.log(9.0),
+        "two_target_equal_logit_reference": math.log(2.0),
+        "action_retrieval_nll": action_nll,
+        "action_retrieval_top1_accuracy": action_top1,
+        "per_executed_action_action_retrieval": per_action,
+        "action_retrieval_macro_balanced_accuracy": macro,
+        "target_retrieval_nll": target_nll,
+        "same_action_target_retrieval_nll": target_nll,
+        "hold_target_retrieval_nll": target_nll,
+        "non_hold_target_retrieval_nll": target_nll,
+        "same_action_two_target_nll": two_target_nll,
+        "target_retrieval_top1_count": target_top1,
+        "target_retrieval_top1_accuracy": target_top1 / 495,
+        "same_action_strict_win_count": strict_wins,
+        "same_action_strict_win_rate": strict_wins / 494,
+        "same_action_correct_energy": correct,
+        "same_action_deranged_energy": control,
+        "same_action_correct_to_deranged_ratio": correct / control,
+        "non_hold_correct_energy": correct,
+        "non_hold_current_target_energy": control,
+        "non_hold_correct_to_current_ratio": correct / control,
+        "executed_action_energy": correct,
+        "cyclic_wrong_action_energy": control,
+        "hardest_wrong_action_energy": control,
+        "permuted_action_energy": control,
+        "non_hold_executed_action_energy": correct,
+        "non_hold_hold_action_energy": control,
+        "executed_to_cyclic_ratio": correct / control,
+        "executed_to_hardest_wrong_ratio": correct / control,
+        "executed_to_permuted_ratio": correct / control,
+        "non_hold_executed_to_hold_ratio": correct / control,
+        "all_row_count": 495,
+        "same_action_row_count": 494,
+        "fallback_row_count": 1,
+        "hold_row_count": 60,
+        "non_hold_row_count": 435,
+        "target_candidate_count": 1_425,
+        "action_candidate_count": 9,
+        "all_wrong_action_candidate_count": 495 * 8,
+        "selection_target_mapping_sha256":
+            contract.TARGET_MAPPING_BINDINGS[
+                "checkpoint_selection"
+            ]["mapping_sha256"],
+        "selection_action_permutation_sha256":
+            contract.SELECTION_ACTION_PERMUTATION_BINDING[
+                "mapping_sha256"
+            ],
+        "per_family": per_family,
+        "deranged_positive_family_margin_count": positives,
+        "current_target_positive_family_margin_count": positives,
+        "cyclic_positive_family_margin_count": positives,
+        "hold_positive_family_margin_count": positives,
+        "permuted_positive_family_margin_count": positives,
     }
 
 
-def _metric(contract, nll: float):
+def _metric(
+    contract,
+    *,
+    action_nll: float,
+    target_nll: float,
+    two_target_nll: float,
+):
     return {
         "all_values_finite": True,
         "ema_target_gradient_free": True,
         "pair_count": 495,
         "scene_family_count": 8,
-        "cyclic_wrong_action_pair_count": 495,
-        "all_wrong_action_candidate_count": 495 * 8,
-        "non_hold_pair_count": 435,
-        "hold_action_pair_count": 435,
-        "hold_action_rows_match_non_hold_rows": True,
         "centered_raw_patch_effective_rank": 50.0,
         "centered_projected_target_effective_rank": 50.0,
         "raw_cross_sample_variance": 1.0,
@@ -540,22 +694,16 @@ def _metric(contract, nll: float):
         "true_pair_mse": 0.8,
         "shuffled_next_mse": 1.0,
         "mean_target_mse": 1.0,
-        "cyclic_wrong_action_mse": 1.0,
-        "hardest_wrong_action_mse": 1.0,
-        "non_hold_true_pair_mse": 0.8,
-        "hold_action_mse": 1.0,
+        "non_hold_pair_count": 435,
         "shuffled_current_mse": 1.0,
-        "per_family": {
-            family: {
-                "cyclic_wrong_action_minus_true_mse": 0.2,
-                "hardest_wrong_action_minus_true_mse": 0.2,
-                "hold_action_minus_non_hold_true_mse": 0.2,
-                "hold_action_rows_match_non_hold_rows": True,
-            }
-            for family in contract.SCENE_FAMILIES
-        },
         "latent_flow": _latent_flow(contract, update_zero=False),
-        "dense_pairwise_inverse": _dense(contract, nll),
+        "factorized_retrieval": _factorized(
+            contract,
+            action_nll=action_nll,
+            target_nll=target_nll,
+            two_target_nll=two_target_nll,
+            update_zero=False,
+        ),
     }
 
 
@@ -567,35 +715,61 @@ def _update0(contract):
         "all_action_unordered_pair_count": 36,
         "all_action_prediction_row_count": 495,
         "latent_flow": _latent_flow(contract, update_zero=True),
-        "dense_pairwise_inverse": _dense(contract, math.log(9.0)),
+        "factorized_retrieval": _factorized(
+            contract,
+            action_nll=math.log(9.0),
+            target_nll=contract.SELECTION_EQUAL_LOGIT_REFERENCE_BINARY64,
+            two_target_nll=math.log(2.0),
+            update_zero=True,
+        ),
     }
 
 
 def test_staged_gates_compare_100_to_400_to_1000_without_retry() -> None:
-    module = _load_runner("_jepa_encoder_v9_staged_gates")
+    module = _load_runner("_jepa_encoder_v10_staged_gates")
     contract = module.contract
     integrity = {"rng_state_preserved": True, "state_mutation_count": 0}
     update0 = _update0(contract)
-    metric100 = _metric(contract, 1.9)
+    metric100 = _metric(
+        contract,
+        action_nll=1.9,
+        target_nll=0.6,
+        two_target_nll=0.6,
+    )
     gate100 = contract.evaluate_phase_a_continuation(
         100, metric100, update0, integrity, None
     )
     assert gate100["passed"] is True
 
-    metric400 = _metric(contract, 1.8)
+    metric400 = _metric(
+        contract,
+        action_nll=1.8,
+        target_nll=0.5,
+        two_target_nll=0.5,
+    )
     gate400 = contract.evaluate_phase_a_continuation(
         400, metric400, update0, integrity, metric100
     )
     assert gate400["passed"] is True
 
-    metric1000 = _metric(contract, 1.7)
+    metric1000 = _metric(
+        contract,
+        action_nll=1.7,
+        target_nll=0.4,
+        two_target_nll=0.4,
+    )
     terminal = contract.evaluate_phase_a(
         metric1000, update0, integrity, metric400
     )
     assert terminal["passed"] is True
     assert terminal["control"] == contract.CONTROL_PHASE_A_PASS
 
-    no_improvement = _metric(contract, 1.9)
+    no_improvement = _metric(
+        contract,
+        action_nll=1.9,
+        target_nll=0.6,
+        two_target_nll=0.6,
+    )
     failed = contract.evaluate_phase_a_continuation(
         400, no_improvement, update0, integrity, metric100
     )
@@ -604,9 +778,125 @@ def test_staged_gates_compare_100_to_400_to_1000_without_retry() -> None:
     assert module.contract.MAXIMUM_ATTEMPTS == 1
 
 
+def test_constant_query_cyclic_same_action_targets_stay_at_exact_log2(
+) -> None:
+    torch = pytest.importorskip("torch")
+    module = _load_runner("_jepa_encoder_v10_constant_query_shortcut")
+    ops = module._phase_a_ops()
+    query = torch.zeros((4, 256, 192), dtype=torch.float32)
+    query[..., 0] = 1.0
+    positive = torch.zeros_like(query)
+    for row, feature in enumerate((1, 2, 3, 4)):
+        positive[row, :, feature] = 1.0
+    cyclic_negative = positive.roll(shifts=1, dims=0)
+    positive_energy = ops.normalized_token_l2_energy(query, positive)
+    negative_energy = ops.normalized_token_l2_energy(
+        query, cyclic_negative
+    )
+    assert torch.equal(positive_energy, negative_energy)
+    logits = -torch.stack((positive_energy, negative_energy), dim=1)
+    labels = torch.zeros(4, dtype=torch.long)
+    nll = torch.nn.functional.cross_entropy(
+        logits, labels, reduction="none"
+    )
+    exact_log2 = torch.log(torch.tensor(2.0, dtype=torch.float32))
+    assert torch.equal(nll, exact_log2.expand_as(nll))
+    assert int((positive_energy < negative_energy).sum()) == 0
+
+    metrics = _metric(
+        module.contract,
+        action_nll=1.9,
+        target_nll=0.6,
+        two_target_nll=float(nll.mean()),
+    )
+    retrieval = metrics["factorized_retrieval"]
+    retrieval["same_action_strict_win_count"] = 0
+    retrieval["same_action_strict_win_rate"] = 0.0
+    gate = module.contract.evaluate_phase_a_continuation(
+        100,
+        metrics,
+        _update0(module.contract),
+        {"rng_state_preserved": True, "state_mutation_count": 0},
+    )
+    assert gate["passed"] is False
+    assert gate["conjuncts"][
+        "same_action_two_target_nll_strictly_below_reference"
+    ] is False
+    assert gate["conjuncts"][
+        "same_action_strict_win_rate_strictly_above_half"
+    ] is False
+
+
+def test_action_ignoring_energies_make_four_exact_unit_ratios_and_fail_100(
+) -> None:
+    torch = pytest.importorskip("torch")
+    module = _load_runner("_jepa_encoder_v10_action_ignoring_shortcut")
+    ops = module._phase_a_ops()
+    rows = 4
+    query = torch.zeros((rows, 256, 192), dtype=torch.float32)
+    query[..., 0] = 1.0
+    target = torch.zeros_like(query)
+    target[..., 1] = 1.0
+    all_predictions = query[:, None].expand(-1, 9, -1, -1)
+    all_targets = target[:, None].expand_as(all_predictions)
+    energies = ops.normalized_token_l2_energy(
+        all_predictions, all_targets
+    )
+    executed_indices = torch.tensor([0, 1, 6, 8], dtype=torch.long)
+    row_indices = torch.arange(rows)
+    executed = energies[row_indices, executed_indices]
+    cyclic = energies[row_indices, (executed_indices + 1) % 9]
+    hardest_wrong = energies[row_indices, (executed_indices + 2) % 9]
+    permuted = energies[row_indices, (executed_indices + 3) % 9]
+    non_hold = executed_indices.ne(module.contract.HOLD_ACTION_INDEX)
+    hold = energies[non_hold, module.contract.HOLD_ACTION_INDEX]
+    ratios = (
+        float(executed.mean() / cyclic.mean()),
+        float(executed.mean() / hardest_wrong.mean()),
+        float(executed.mean() / permuted.mean()),
+        float(executed[non_hold].mean() / hold.mean()),
+    )
+    assert ratios == (1.0, 1.0, 1.0, 1.0)
+
+    metrics = _metric(
+        module.contract,
+        action_nll=math.log(9.0),
+        target_nll=module.contract.SELECTION_EQUAL_LOGIT_REFERENCE_BINARY64,
+        two_target_nll=math.log(2.0),
+    )
+    metrics["factorized_retrieval"] = _factorized(
+        module.contract,
+        action_nll=math.log(9.0),
+        target_nll=module.contract.SELECTION_EQUAL_LOGIT_REFERENCE_BINARY64,
+        two_target_nll=math.log(2.0),
+        update_zero=True,
+    )
+    retrieval = metrics["factorized_retrieval"]
+    assert tuple(
+        retrieval[field]
+        for field in (
+            "executed_to_cyclic_ratio",
+            "executed_to_hardest_wrong_ratio",
+            "executed_to_permuted_ratio",
+            "non_hold_executed_to_hold_ratio",
+        )
+    ) == ratios
+    gate = module.contract.evaluate_phase_a_continuation(
+        100,
+        metrics,
+        _update0(module.contract),
+        {"rng_state_preserved": True, "state_mutation_count": 0},
+    )
+    assert gate["passed"] is False
+    assert gate["control"] == module.contract.CONTROL_PHASE_A_UPDATE_100_FAIL
+
+
 def test_train_wires_previous_metrics_and_exact_phase_a_status() -> None:
-    module = _load_runner("_jepa_encoder_v9_train_wiring")
+    module = _load_runner("_jepa_encoder_v10_train_wiring")
     source = inspect.getsource(module._phase_a_train)
+    assert source.count("_phase_a_gate_references(") == 1
+    assert "train_target_mapping[\"negative_indices\"]" in source
+    assert "mapped_negative_scope=\"training\"" in source
     assert "previous_metric" in source
     assert "diagnostics[-2][\"metric\"]" in source
     assert "phase_status = str(terminal_gate[\"control\"])" in source
@@ -641,6 +931,95 @@ def test_phase_a_determinism_restores_exact_v5_warning_scope() -> None:
         "phase_a_training_and_checkpoint_selection"
     )
     assert receipt["expected_grid_sampler_warning_count"] == 1
+
+
+def test_terminal_authority_rehash_rereads_both_files_and_binds_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_runner("_jepa_encoder_v10_terminal_authority_rehash")
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+
+    manifest = module.contract.with_content_sha256({"kind": "manifest"})
+    review = module.contract.with_content_sha256({
+        "kind": "review",
+        "reviewer": "/root/synthetic_reviewer",
+    })
+    authorization = module.contract.with_content_sha256({
+        "kind": "authorization",
+    })
+    manifest_raw = module.contract.canonical_json_bytes(manifest) + b"\n"
+    review_raw = module.contract.canonical_json_bytes(review) + b"\n"
+    authorization_raw = (
+        module.contract.canonical_json_bytes(authorization) + b"\n"
+    )
+    paths_and_raw = {
+        module.contract.SOURCE_MANIFEST_RELATIVE_PATH: manifest_raw,
+        module.contract.REVIEW_RELATIVE_PATH: review_raw,
+        module.contract.AUTHORIZATION_RELATIVE_PATH: authorization_raw,
+    }
+    for relative, raw in paths_and_raw.items():
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(raw)
+
+    def accept_review(value, *, expected_sources, source_manifest_raw):
+        assert expected_sources == sources
+        assert source_manifest_raw == manifest_raw
+        return value
+
+    def accept_authorization(value, *, review_binding, reviewer):
+        assert review_binding["file_sha256"] == hashlib.sha256(
+            review_raw
+        ).hexdigest()
+        assert reviewer == review["reviewer"]
+        return value
+
+    sources = {
+        module.contract.SOURCE_MANIFEST_RELATIVE_PATH:
+            hashlib.sha256(manifest_raw).hexdigest(),
+    }
+    monkeypatch.setattr(module.contract, "validate_review", accept_review)
+    monkeypatch.setattr(
+        module.contract,
+        "validate_authorization",
+        accept_authorization,
+    )
+    observed = module._terminal_authority_rehash(
+        review=review,
+        review_raw=review_raw,
+        authorization=authorization,
+        authorization_raw=authorization_raw,
+        sources=sources,
+    )
+    assert set(observed) == {"source_review", "execution_authorization"}
+    assert all(
+        binding["exact_pre_reservation_bytes_match"] is True
+        and binding["observed_file_sha256"] == binding["file_sha256"]
+        and binding["observed_byte_count"] == binding["byte_count"]
+        for binding in observed.values()
+    )
+    execute_source = inspect.getsource(module._execute_after_reservation)
+    assert execute_source.index("authority_rehash =") < execute_source.index(
+        "access, access_raw ="
+    )
+    assert '"source_authority_rehash": authority_rehash' in execute_source
+
+    for relative, original_raw in (
+        (module.contract.REVIEW_RELATIVE_PATH, review_raw),
+        (module.contract.AUTHORIZATION_RELATIVE_PATH, authorization_raw),
+    ):
+        path = tmp_path / relative
+        path.write_bytes(original_raw + b" ")
+        with pytest.raises(PermissionError, match="input (hash|byte count) changed"):
+            module._terminal_authority_rehash(
+                review=review,
+                review_raw=review_raw,
+                authorization=authorization,
+                authorization_raw=authorization_raw,
+                sources=sources,
+            )
+        path.write_bytes(original_raw)
 
 
 def _failure_authorization():
@@ -682,6 +1061,12 @@ def test_failure_custody_has_every_distinct_zero_counter() -> None:
     assert all(value == 0 for value in counters.values())
     assert receipt["operation_counts"]["cumulative_optimizer_updates"] == 0
     assert receipt["operation_counts"]["cumulative_pair_presentations"] == 0
+    assert receipt["phase_a_loader"]["mapped_negative_io"][
+        "total_endpoint_request_count"
+    ] == 0
+    assert receipt["operation_counts"]["phase_a_mapped_negative_io"] == (
+        receipt["phase_a_loader"]["mapped_negative_io"]
+    )
     assert receipt["consumed"]["status"] == "TRACKER_NOT_YET_CONSTRUCTED"
 
 
