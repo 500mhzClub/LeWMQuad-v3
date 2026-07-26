@@ -95,6 +95,13 @@ def test_executor_has_one_phase_and_never_enters_phase_b() -> None:
     assert '"checkpoint_qualified": False' in source
     assert "_run_phase_a_with_strict_determinism" in source
     assert "warn_only=False" in source
+    assert "contract.evaluate_phase_a_update_zero(" in source
+    assert 'if early_failure is None\n        else ()' in source
+    assert 'DOWNSTREAM_DENIALS["pass_next_step"]' not in source
+    assert source.count('DOWNSTREAM_DENIALS["pass_authorizes"]') == 2
+    assert 'required_model_facing_roles = {"checkpoint_selection"}' in source
+    assert 'if phase_a["presentations"] > 0:' in source
+    assert 'required_model_facing_roles.add("train")' in source
 
 
 def test_runner_and_contract_gate_api_are_exactly_one_phase() -> None:
@@ -377,6 +384,9 @@ def test_runner_constructs_locked_model_from_n320_before_training(
     assert receipt["n320_loaded_before_registered_new_parameter_draws"]
     assert receipt["target_ema_inventory_exactly_equal_at_update_zero"]
     assert receipt["target_ema_parameter_pair_count"] == len(
+        module.contract.TARGET_EMA_PARAMETER_PAIRS
+    )
+    assert tuple(model.ema_inventory_exact()) == tuple(
         module.contract.TARGET_EMA_PARAMETER_PAIRS
     )
     assert int(model.ema_update_count) == 0

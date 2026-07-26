@@ -247,6 +247,7 @@ def _phase_a_model(
     ema_inventory = tuple(model.ema_inventory_exact())
     if (
         not ema_inventory
+        or ema_inventory != tuple(contract.TARGET_EMA_PARAMETER_PAIRS)
         or any(
             online not in named_parameters
             or target not in named_parameters
@@ -1317,10 +1318,18 @@ def _phase_a_train(
     if set(update0_health) != set(contract.PHASE_A_UPDATE0_FIELDS):
         raise RuntimeError("V11 Phase-A update-zero fields changed")
 
+    update0_gate = contract.evaluate_phase_a_update_zero(
+        diagnostics[0]["metric"],
+        update0_health,
+        diagnostics[0]["integrity"],
+    )
+
     trace: list[dict[str, Any]] = []
     snapshots: list[dict[str, Any]] = []
-    continuation_gates: list[dict[str, Any]] = []
-    early_failure: dict[str, Any] | None = None
+    continuation_gates: list[dict[str, Any]] = [update0_gate]
+    early_failure: dict[str, Any] | None = (
+        None if update0_gate["passed"] else update0_gate
+    )
     ema_update_count = 0
     loss_names = (
         "loss",
@@ -1330,7 +1339,12 @@ def _phase_a_train(
         "whitening_variance_loss",
         "whitening_covariance_loss",
     )
-    for update in range(1, contract.PHASE_A_MAXIMUM_UPDATE + 1):
+    training_updates = (
+        range(1, contract.PHASE_A_MAXIMUM_UPDATE + 1)
+        if early_failure is None
+        else ()
+    )
+    for update in training_updates:
         _check_gpu_time(
             gpu_started,
             maximum_minutes=contract.PHASE_A_GPU_ACTIVE_TIME_CAP_MINUTES,
@@ -1579,7 +1593,7 @@ def _phase_a_train(
         "gate": terminal_gate,
         "phase_b_entered": False,
         "pass_authorizes": (
-            contract.DOWNSTREAM_DENIALS["pass_next_step"]
+            contract.DOWNSTREAM_DENIALS["pass_authorizes"]
             if terminal_gate["passed"]
             else "nothing"
         ),
@@ -1768,6 +1782,9 @@ def _execute_after_reservation(
     consumed_roles = {
         role for record in consumed["records"] for role in record["roles"]
     }
+    required_model_facing_roles = {"checkpoint_selection"}
+    if phase_a["presentations"] > 0:
+        required_model_facing_roles.add("train")
     permitted_roles = {
         "authority",
         "index",
@@ -1777,7 +1794,7 @@ def _execute_after_reservation(
     if (
         "probability_calibration" in consumed_roles
         or not consumed_roles.issubset(permitted_roles)
-        or not {"train", "checkpoint_selection"}.issubset(consumed_roles)
+        or not required_model_facing_roles.issubset(consumed_roles)
         or contract.current_source_bindings(ROOT) != dict(sources)
     ):
         raise PermissionError("V11 consumed an unauthorized role or source")
@@ -1845,10 +1862,9 @@ def _execute_after_reservation(
                 "reservation.json", reservation, reservation_raw
             ),
             "roles_opened": sorted(consumed_roles),
-            "model_facing_roles_opened": [
-                "train",
-                "checkpoint_selection",
-            ],
+            "model_facing_roles_opened": sorted(
+                required_model_facing_roles
+            ),
             "phase_a": {
                 "dedicated_rgb_only_loader": True,
                 "general_raw_v13_frame_loader_call_count": (
@@ -1913,7 +1929,7 @@ def _execute_after_reservation(
             "gpu_active_elapsed_seconds": time.monotonic() - gpu_started,
             "checkpoint_qualified": False,
             "pass_authorizes": (
-                contract.DOWNSTREAM_DENIALS["pass_next_step"]
+                contract.DOWNSTREAM_DENIALS["pass_authorizes"]
                 if passed
                 else "nothing"
             ),

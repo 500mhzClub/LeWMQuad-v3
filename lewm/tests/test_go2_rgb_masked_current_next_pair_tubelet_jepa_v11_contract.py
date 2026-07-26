@@ -211,6 +211,14 @@ def _update0() -> dict[str, Any]:
     }
 
 
+def _update0_metric() -> dict[str, Any]:
+    update0 = _update0()
+    return {
+        field: deepcopy(update0[field])
+        for field in contract.PHASE_A_METRIC_FIELDS
+    }
+
+
 def _integrity(update: int) -> dict[str, Any]:
     return {
         "rng_state_preserved": True,
@@ -297,6 +305,17 @@ def test_contract_import_is_stdlib_only_and_binds_frozen_preregistration() -> No
     )
 
 
+def test_current_source_bindings_accept_bound_pretty_json_documents() -> None:
+    bindings = contract.current_source_bindings(ROOT)
+    assert bindings[contract.PREREGISTRATION_RELATIVE_PATH] == (
+        contract.PREREGISTRATION_FILE_SHA256
+    )
+    assert bindings[contract.PRIOR_TERMINAL_AUDIT_RELATIVE_PATH] == (
+        contract.PRIOR_TERMINAL_AUDIT_FILE_SHA256
+    )
+    assert bindings[contract.SOURCE_MANIFEST_RELATIVE_PATH]
+
+
 def test_model_schedule_mapping_and_source_contract_are_exact() -> None:
     assert contract.v11_model_config() == {
         "image_size": 112,
@@ -332,8 +351,22 @@ def test_model_schedule_mapping_and_source_contract_are_exact() -> None:
         "400": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92",
         "1000": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528",
     }
-    with pytest.raises(ValueError, match="only the phase_a"):
-        contract.build_schedule_identity("phase_b")
+    assert contract.build_schedule_identity("phase_b") == {
+        "phase": "phase_b",
+        "authorized": False,
+        "source": None,
+        "seed": None,
+        "updates": 0,
+        "presentations": 0,
+        "microbatch_size": 0,
+        "microbatches_per_update": 0,
+        "effective_batch_size": 0,
+        "checkpoints": [],
+        "prefix_sha256": {},
+        "reuse_same_frozen_prefix_independently": False,
+    }
+    with pytest.raises(ValueError, match="phase_a or disabled phase_b"):
+        contract.build_schedule_identity("other")
     assert contract.FROZEN_V10_RUNNER_RELATIVE_PATH in contract.SOURCE_PATHS
     assert contract.V11_MODEL_RELATIVE_PATH in contract.SOURCE_PATHS
 
@@ -344,8 +377,8 @@ def test_parameter_and_ema_ownership_are_complete_and_phase_b_is_denied() -> Non
     )
     assert len(contract.TARGET_EMA_PARAMETER_PAIRS) == 81
     assert contract.TARGET_EMA_PARAMETER_PAIRS[0] == (
-        "encoder.patch_embed.weight",
-        "target_encoder.patch_embed.weight",
+        "encoder.cls_token",
+        "target_encoder.cls_token",
     )
     assert contract.TARGET_EMA_PARAMETER_PAIRS[-3:] == (
         (
@@ -379,6 +412,25 @@ def test_parameter_and_ema_ownership_are_complete_and_phase_b_is_denied() -> Non
             "promotion_authorized",
         )
     )
+
+
+def test_update_zero_common_invariants_are_terminal_before_training() -> None:
+    metric = _update0_metric()
+    update0 = _update0()
+    integrity = _integrity(0)
+    gate = contract.evaluate_phase_a_update_zero(
+        metric, update0, integrity
+    )
+    assert gate["passed"] is True
+    assert gate["control"] == contract.CONTROL_CONTINUE
+
+    broken = dict(integrity)
+    broken["future_leakage_prohibition_passed"] = False
+    failed = contract.evaluate_phase_a_update_zero(
+        metric, update0, broken
+    )
+    assert failed["passed"] is False
+    assert failed["control"] == contract.CONTROL_PHASE_A_UPDATE_ZERO_FAIL
 
 
 def test_staged_update_100_400_and_terminal_pass_fixture() -> None:

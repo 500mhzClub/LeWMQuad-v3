@@ -70,6 +70,9 @@ PREREGISTRATION_COMMIT = "46de4c1b6a89dad43550b62a6e9327dec0a7b9da"
 PREREGISTRATION_FILE_SHA256 = (
     "bbc4fa556788ce8df90c417aaa074bb7daf2aea47e4465434a4f119e18530dee"
 )
+PREREGISTRATION_CONTENT_SHA256 = (
+    "b7d4c6a59e2bad1e9dfa399a01a83c29658b88a0f11236a49265c8f7eccd15d9"
+)
 PREREGISTRATION_BYTE_COUNT = 27_808
 PRIOR_TERMINAL_AUDIT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_"
@@ -161,10 +164,10 @@ PHASE_A_FROZEN_PARAMETER_PREFIXES = (
 
 def _target_ema_parameter_pairs() -> tuple[tuple[str, str], ...]:
     encoder_names = [
-        "patch_embed.weight",
-        "patch_embed.bias",
         "cls_token",
         "pos_embed",
+        "patch_embed.weight",
+        "patch_embed.bias",
     ]
     for block in range(6):
         prefix = f"blocks.{block}."
@@ -322,6 +325,9 @@ CONTROL_PHASE_A_PASS = (
     "PASS_MASKED_PAIR_TUBELET_PROXY_SEPARATE_REQUALIFICATION_ONLY"
 )
 CONTROL_PHASE_A_FAIL = "FAIL_PHASE_A_TERMINAL_NO_RETRY"
+CONTROL_PHASE_A_UPDATE_ZERO_FAIL = (
+    "FAIL_PHASE_A_UPDATE_ZERO_INVARIANT_GATE_TERMINAL"
+)
 CONTROL_PHASE_A_UPDATE_100_FAIL = (
     "FAIL_PHASE_A_UPDATE_100_CONTINUATION_GATE_TERMINAL"
 )
@@ -331,6 +337,7 @@ CONTROL_PHASE_A_UPDATE_400_FAIL = (
 CONTROL_PASS = CONTROL_PHASE_A_PASS
 CONTROL_FAIL = CONTROL_PHASE_A_FAIL
 PHASE_A_TERMINAL_CONTROLS = (
+    CONTROL_PHASE_A_UPDATE_ZERO_FAIL,
     CONTROL_PHASE_A_UPDATE_100_FAIL,
     CONTROL_PHASE_A_UPDATE_400_FAIL,
     CONTROL_PHASE_A_FAIL,
@@ -474,8 +481,23 @@ def runtime_authorization_template() -> dict[str, Any]:
 
 
 def build_schedule_identity(phase: str) -> dict[str, Any]:
+    if phase == "phase_b":
+        return {
+            "phase": "phase_b",
+            "authorized": False,
+            "source": None,
+            "seed": None,
+            "updates": 0,
+            "presentations": 0,
+            "microbatch_size": 0,
+            "microbatches_per_update": 0,
+            "effective_batch_size": 0,
+            "checkpoints": [],
+            "prefix_sha256": {},
+            "reuse_same_frozen_prefix_independently": False,
+        }
     if phase != "phase_a":
-        raise ValueError("V11 authorizes only the phase_a schedule")
+        raise ValueError("V11 schedule phase must be phase_a or disabled phase_b")
     return {
         "phase": "phase_a",
         "source": _runtime_leaf(SCHEDULE_RELATIVE_PATH),
@@ -549,6 +571,60 @@ def science_contract() -> dict[str, Any]:
         },
         "authority": dict(DOWNSTREAM_DENIALS),
     }
+
+
+def current_source_bindings(root: Path = ROOT) -> dict[str, str]:
+    """Rehash the frozen source graph and pretty-JSON governing documents."""
+
+    manifest_raw = _read_regular_source(root / SOURCE_MANIFEST_RELATIVE_PATH)
+    manifest = validate_source_manifest(manifest_raw)
+    result: dict[str, str] = {}
+    for binding in manifest["source_bindings"]:
+        relative = binding["path"]
+        raw = _read_regular_source(root / relative)
+        digest = hashlib.sha256(raw).hexdigest()
+        if (
+            len(raw) != binding["byte_count"]
+            or digest != binding["file_sha256"]
+        ):
+            raise PermissionError(f"manifest-bound source changed: {relative}")
+        result[relative] = digest
+
+    result[SOURCE_MANIFEST_RELATIVE_PATH] = hashlib.sha256(
+        manifest_raw
+    ).hexdigest()
+    documents = (
+        (
+            PREREGISTRATION_RELATIVE_PATH,
+            PREREGISTRATION_BYTE_COUNT,
+            PREREGISTRATION_FILE_SHA256,
+            PREREGISTRATION_CONTENT_SHA256,
+            "V11 preregistration",
+        ),
+        (
+            PRIOR_TERMINAL_AUDIT_RELATIVE_PATH,
+            PRIOR_TERMINAL_AUDIT_BYTE_COUNT,
+            PRIOR_TERMINAL_AUDIT_FILE_SHA256,
+            PRIOR_TERMINAL_AUDIT_CONTENT_SHA256,
+            "V10R terminal audit",
+        ),
+    )
+    for relative, byte_count, file_sha256, content_sha256, name in documents:
+        raw = _read_regular_source(root / relative)
+        digest = hashlib.sha256(raw).hexdigest()
+        try:
+            value = json.loads(raw, object_pairs_hook=_reject_duplicates)
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+            raise PermissionError(f"{name} changed") from error
+        if (
+            len(raw) != byte_count
+            or digest != file_sha256
+            or type(value) is not dict
+            or value.get("content_sha256") != content_sha256
+        ):
+            raise PermissionError(f"{name} changed")
+        result[relative] = digest
+    return result
 
 
 def _normalize_v11_phase_a_inputs(
@@ -877,6 +953,34 @@ def _v11_update_100_conjuncts(
     }
 
 
+def evaluate_phase_a_update_zero(
+    metrics: Mapping[str, Any],
+    update0_metrics: Mapping[str, Any],
+    observation_integrity: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Enforce every registered common invariant before the first update."""
+
+    normalized = _normalize_v11_phase_a_inputs(
+        metrics, update0_metrics, observation_integrity
+    )
+    conjuncts = dict(normalized["common"])
+    passed = all(conjuncts.values())
+    return {
+        "update": 0,
+        "passed": passed,
+        "control": (
+            CONTROL_CONTINUE
+            if passed
+            else CONTROL_PHASE_A_UPDATE_ZERO_FAIL
+        ),
+        "conjuncts": conjuncts,
+        "ratios": dict(normalized["ratios"]),
+        "thresholds": {"common_invariants_only": True},
+        "per_family": dict(normalized["per_family"]),
+        "factorized_retrieval": dict(normalized["retrieval"]),
+    }
+
+
 def _v11_loss_progress_conjuncts(
     normalized: Mapping[str, Any],
     previous_metrics: Mapping[str, Any],
@@ -1162,6 +1266,7 @@ __all__ = sorted(set(__all__) | {
         "build_schedule_identity",
         "evaluate_phase_a",
         "evaluate_phase_a_continuation",
+        "evaluate_phase_a_update_zero",
         "phase_a_model_config",
         "runtime_authorization_template",
         "science_contract",
