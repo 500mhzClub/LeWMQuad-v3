@@ -83,7 +83,51 @@ def test_contract_freezes_exact_science_caps_schedule_and_governance() -> None:
     )
     science = contract.science_contract()
     assert science["scientific_delta"]["scientific_delta_count"] == 1
+    assert science["model"]["state_head"]["separate_registered_module"] is True
+    assert science["model"]["target"]["inventory"] == [
+        "encoder",
+        "bev_decoder",
+        "state_head",
+    ]
     assert science["lifecycle"]["predictor_phase_or_update"] is False
+    assert science["lifecycle"]["gpu_active_minutes_maximum"] == 30
+    assert "maximum_active_gpu_minutes" not in science["lifecycle"]
+    assert science["phase_adapter"] == {
+        "scope": "v8_learned_bev_query_prototype_perception_only",
+        "updates": [1, 250],
+        "presentations": [1, 4_000],
+        "total": "G/log(2)",
+        "trainable": "online_encoder_decoder_state",
+        "frozen": "predictor_and_detached_target",
+        "target_callback": "ema_0point996_once_after_every_update",
+        "initial_online_to_target_hard_sync_count": 1,
+        "optimizer": "one_v8_adamw_constructed_once_never_reset",
+        "predictor_forward_objective_backward_or_update_count": 0,
+        "second_phase_present": False,
+    }
+    assert "phase_successor" not in science
+    assert "predictor_successor" not in science
+    assert "frozen_v2_integrity_provenance" not in science
+    active_science = dict(science)
+    active_science.pop("frozen_v7_integrity_provenance")
+
+    def walk(value: Any):
+        if isinstance(value, dict):
+            for key, child in value.items():
+                yield str(key)
+                yield from walk(child)
+        elif isinstance(value, list):
+            for child in value:
+                yield from walk(child)
+        else:
+            yield value
+
+    stale_scalars = {400, 401, 1_000, 6_400, 6_401, 16_000, 60}
+    stale_text = ("ema_update_400", "j/log(2)+c", "phase_two_total")
+    for scalar in walk(active_science):
+        assert not (type(scalar) is int and scalar in stale_scalars)
+        if isinstance(scalar, str):
+            assert not any(token in scalar.casefold() for token in stale_text)
     governing = contract.validate_governing_documents()
     assert governing[contract.PREREGISTRATION_RELATIVE_PATH] == (
         contract.PREREGISTRATION_FILE_SHA256

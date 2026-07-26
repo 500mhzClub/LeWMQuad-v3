@@ -603,7 +603,7 @@ def model_config() -> dict[str, Any]:
     value = _V7.model_config()
     value["bev_decoder"] = deepcopy(LEARNED_QUERY_PROTOTYPE_CONFIG)
     value["state_head"] = {
-        "integrated_into_decoder": True,
+        "separate_registered_module": True,
         **deepcopy(LEARNED_QUERY_PROTOTYPE_CONFIG["prototype_state_head"]),
         "sole_three_channel_state_bottleneck": True,
         "hidden_or_auxiliary_bypass_authorized": False,
@@ -617,7 +617,7 @@ def model_config() -> dict[str, Any]:
         "action_metric_or_gate_authorized": False,
     }
     value["target"] = {
-        "inventory": ["encoder", "bev_decoder"],
+        "inventory": ["encoder", "bev_decoder", "state_head"],
         "fresh_hard_sync_count_before_update_zero": 1,
         "ema_decay": TARGET_EMA_MOMENTUM,
         "ema_updates": "once_after_every_perception_optimizer_update",
@@ -1038,7 +1038,16 @@ def validate_failure_status_chain(value: object) -> dict[str, str]:
 
 def science_contract() -> dict[str, Any]:
     value = _V7.science_contract()
-    frozen_v7_integrity_provenance = value.pop("integrity_replacement", None)
+    frozen_v7_predecessor_provenance = {
+        name: value.pop(name, None)
+        for name in (
+            "integrity_replacement",
+            "frozen_v2_integrity_provenance",
+            "predictor_successor",
+            "phase_successor",
+            "phase_adapter",
+        )
+    }
     value["schema"] = f"{SCHEMA_PREFIX}_science_contract_v1"
     value["scientific_question"] = (
         "Can fully learned factorized BEV queries and normalized class prototypes "
@@ -1075,25 +1084,47 @@ def science_contract() -> dict[str, Any]:
         "final_mode_requires_v8_mechanism_receipt_ready": True,
         "stop_at_first_failed_gate": True,
     }
-    lifecycle = dict(value["lifecycle"])
+    frozen_v7_lifecycle = dict(value["lifecycle"])
     value["lifecycle"] = {
-        **lifecycle,
         "output_root": OUTPUT_ROOT_RELATIVE_PATH,
+        "output_root_must_be_absent_before_reservation": True,
         "scientific_successor_of": _V7.EXPERIMENT_ID,
         "one_fresh_attempt": True,
         "maximum_attempts": MAXIMUM_ATTEMPTS,
+        "attempt_index": ATTEMPT_INDEX,
         "maximum_updates": MAXIMUM_UPDATES,
         "maximum_presentations": MAXIMUM_PRESENTATIONS,
-        "maximum_active_gpu_minutes": GPU_ACTIVE_TIME_CAP_MINUTES,
+        "gpu_active_minutes_maximum": GPU_ACTIVE_TIME_CAP_MINUTES,
+        "checkpoint_and_training_trace_write_only": True,
+        "normal_receipts": list(frozen_v7_lifecycle["normal_receipts"]),
+        "operational_failure_receipts": list(
+            frozen_v7_lifecycle["operational_failure_receipts"]
+        ),
+        "perception_only": True,
         "predictor_phase_or_update": False,
+        "phase_b_authorized": False,
         "v7_retry_resume_repair_or_extension": False,
         "v7_checkpoint_tensor_trace_receipt_or_runtime_output_reuse": False,
         "retry_resume_extension_second_seed_or_replacement_attempt": False,
     }
+    value["phase_adapter"] = {
+        "scope": "v8_learned_bev_query_prototype_perception_only",
+        "updates": [1, MAXIMUM_UPDATES],
+        "presentations": [1, MAXIMUM_PRESENTATIONS],
+        "total": "G/log(2)",
+        "trainable": "online_encoder_decoder_state",
+        "frozen": "predictor_and_detached_target",
+        "target_callback": "ema_0point996_once_after_every_update",
+        "initial_online_to_target_hard_sync_count": 1,
+        "optimizer": "one_v8_adamw_constructed_once_never_reset",
+        "predictor_forward_objective_backward_or_update_count": 0,
+        "second_phase_present": False,
+    }
     value["frozen_v7_integrity_provenance"] = {
         "scope": "historical_v6_to_v7_runner_integrity_replacement_only",
         "not_a_v8_unchanged_architecture_claim": True,
-        "v6_to_v7": frozen_v7_integrity_provenance,
+        "not_active_v8_science": True,
+        "predecessor_claims": frozen_v7_predecessor_provenance,
     }
     value["scientific_delta"] = deepcopy(SCIENTIFIC_DELTA)
     value["authority"] = {
