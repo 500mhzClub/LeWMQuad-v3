@@ -1,0 +1,328 @@
+{
+  "architecture_decision": {
+    "bytes": 10953,
+    "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v1_architecture_decision_2026-07-26.md",
+    "sha256": "305f2a7e89781e24fc1249262b2a7dc9bb12e65aac4311255f6fc45a1e61e3a3"
+  },
+  "authority": {
+    "allowed_now": [
+      "source_only_implementation",
+      "source_only_focused_tests",
+      "source_closure_manifest_construction",
+      "independent_source_and_science_review"
+    ],
+    "execution_authority": false,
+    "generated_input_access_authority": false,
+    "gpu_authority": false,
+    "heldout_or_sealed_authority": false,
+    "implementation_authority": true,
+    "label_array_access_authority": false,
+    "navigation_or_g2_authority": false,
+    "production_or_promotion_authority": false,
+    "runtime_artifact_or_checkpoint_access_authority": false,
+    "training_or_evaluation_authority": false
+  },
+  "content_sha256": "8fb6bd859f8ef9383680db50412a32740187c119ac711aa899c44df3bc822508",
+  "content_sha256_method": "sha256(canonical_sorted_compact_json_without_top_level_content_sha256)",
+  "data": {
+    "checkpoint_selection": {
+      "input_row_sha256": "81f85cdf0ad00ec68918f5eeb7637bf20aa3f17f5615bedfb10e6a4859eb91f1",
+      "pairs": 495,
+      "scenes": 8,
+      "target_mapping_sha256": "95d42273a8319316ad68781cb2158146e7672eda529984c3aeddc0937d87a9c1",
+      "unique_endpoints": 924
+    },
+    "development_raw_supervision_audit": {
+      "bytes": 26975,
+      "content_sha256": "0c16e368c9de258d0fbf46e3123d7a3cfcdf60162fd9efa6440d4a7773056aca",
+      "file_sha256": "0680e1680f30c45feda60498792c3f208c28313e8f087dfbdd1c5807bcf1fe76",
+      "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1.audit_v13.json"
+    },
+    "development_raw_supervision_manifest": {
+      "bytes": 311598,
+      "content_sha256": "74ae5799919ff4d9a06f56d98929cb4cb702d64db52ecdfc93cfa9a8e82fb35a",
+      "file_sha256": "e102b3c64e99029f118597353966edaaaddbc11efe49b9081d5d7a9c9d974360",
+      "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/manifest.json"
+    },
+    "preservation": "Use exactly the Raw-V13 train and checkpoint-selection rows, roles, endpoint mappings, ordering, and schedule. No filtering, resampling, new rendering, new labels, role changes, or dataset changes.",
+    "selection_action_permutation_sha256": "2740be362829c172a06aebae0d077e69ede8af80cbf6f00569eb460dc559bb0f",
+    "selection_family_binding_sha256": "c39efe48afd6d4c02a24af77f1f11e7f6cd5a69d571b0a9416924b07bbacbb11",
+    "train": {
+      "input_row_sha256": "bb119abb33b7c56f3c1d96e7cb1b52fbe4d2db27d80df4f95a5b1cd9d0cf729e",
+      "pairs": 4262,
+      "scenes": 72,
+      "target_mapping_sha256": "c9c914422927670ffce8e2a967bf264725b9ae3c55c353ee0a1a16e44044196b",
+      "unique_endpoints": 7777
+    }
+  },
+  "date": "2026-07-26",
+  "distinctions": {
+    "camera_v1_v6_multiresolution_and_overlap": "No ray-hazard, depth-offset, ground-clear, Camera evidence, or fixed evidence-rasterizer head or loss. The direct learned BEV is the primary grounded state and output.",
+    "phase2z": "No privileged map, occupancy, clearance, goal, swept path, pose, or geometry input. BEV is inferred from RGB and is the JEPA state, not a supplied action-ranking grid.",
+    "shared_v5": "No Camera deployment path, zero-weight occupancy side head, commanded-pose warp, nominal SE(2) warp, realized pose delta, odometry, attitude, or calibration input. The transition receives only current learned BEV plus one-hot action."
+  },
+  "governing_predecessor_terminal_audit": {
+    "bytes": 30116,
+    "classification": "VALID_SCIENTIFIC_GATE_FAILURE_AT_UPDATE_400_CLOSES_EXACT_V13_LEARNING_CURVE_AND_ALL_MASKED_PAIR_TUBELET_TIMING_SUCCESSORS",
+    "commit": "e03f6eb2dbfadad188e2cb07d5451096b4179969",
+    "content_sha256": "eea443eca48a6cc85bd054f93fb38c94f3d7e6fd4050cd15f442406ffa09b28e",
+    "file_sha256": "1486a102b010d06dc8b8a91130eb6c79a95d9a8ca426dea9a4833fc4aee488d8",
+    "path": "docs/lewm_go2_rgb_masked_current_next_pair_tubelet_jepa_v13_learning_curve_continuation_terminal_audit_2026-07-26.json",
+    "status": "PASS_VALID_SCIENTIFIC_UPDATE_400_GATE_FAILURE_PERMANENTLY_CLOSES_MASKED_PAIR_TUBELET_TIMING_SUCCESSORS"
+  },
+  "initialization": {
+    "base_initialization_seed": 20260712,
+    "n320_checkpoint": {
+      "bytes": 13777100,
+      "content_sha256": "9dcca536943f89acfd7d463fdab591e19a030ef3dc8f3f19a050b1b10025fc2b",
+      "file_sha256": "ece874b53941e841fffc61b724a86d4383b881549afa453b746dd5d68aba11b0",
+      "path": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/checkpoint.pt"
+    },
+    "n320_fit_gate": {
+      "bytes": 7960,
+      "checks": 26,
+      "content_sha256": "76ce5ab703560d171f7c84684b90eed18e8b4cdcc2d8ed3eff6d48496f4de67b",
+      "file_sha256": "4943b4060e88296503c09fc714e55e40fd762527cfccb70a3a341f0df800efe6",
+      "fit_seed": 20260710,
+      "fit_size": 320,
+      "fit_updates": 40000,
+      "path": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/gate.json"
+    },
+    "rule": "Migrate only the RGB encoder from the original bound N320 state. Initialize decoder, state head, and predictor deterministically fresh with seed 20260712; initialize the predictor final residual layer to exact zero. No V1-V13 runtime checkpoint or trace may be reused."
+  },
+  "lifecycle": {
+    "attempts": 1,
+    "gpu_active_minutes_cap": 60,
+    "presentations_cap": 16000,
+    "prohibited": [
+      "retry",
+      "resume",
+      "repair",
+      "recovery",
+      "replacement_attempt",
+      "second_seed",
+      "v2_parameter_loss_or_timing_successor"
+    ],
+    "updates_cap": 1000
+  },
+  "loader": {
+    "allowed_values_only": [
+      "current_rgb",
+      "next_rgb",
+      "fixed_negative_rgb",
+      "raster_labels.u1"
+    ],
+    "implementation": "narrow__row_array_only",
+    "prohibited": "No general frame loader and no other supervision array.",
+    "preserve": "Existing Raw-V13 train/selection counts, roles, rows, mappings, fixed negatives, ordering, action permutation, family binding, and schedule."
+  },
+  "mechanism": {
+    "action_encoding": "nine_way_one_hot",
+    "bottleneck": "The three UNKNOWN/FREE/OCCUPIED logits and probabilities are the sole JEPA, predictor, and navigation state. No hidden 64D or other bypass is allowed.",
+    "online_encoder_input": [
+      "current_rgb"
+    ],
+    "online_output": "direct_64x64x3_unknown_free_occupied_logits",
+    "runtime_inputs_only": [
+      "current_rgb",
+      "executed_action_identity"
+    ],
+    "target_path_training_only": "Hard-sync encoder+decoder+state-head once, then update that target copy with EMA decay 0.996 after every optimizer update. It receives bound next RGB only. The predictor has no target copy. Labels ground outputs but never enter either encoder or transition.",
+    "transition": {
+      "action_dim": 9,
+      "bev_dim": 3,
+      "final_residual_layer_initialization": "exact_zero",
+      "hidden_dim": 128,
+      "legacy_three_vector": "internally_supplied_exact_zero_vector",
+      "shape": "BevResidualPredictor",
+      "update_0_consequence": "exact_persistence_and_action_symmetry",
+      "warp_calls": 0
+    },
+    "transition_inputs_exactly": [
+      "current_learned_bev_state",
+      "nine_way_one_hot_action"
+    ],
+    "transition_prohibited_inputs": [
+      "realized_pose",
+      "odometry",
+      "attitude",
+      "commanded_pose_delta",
+      "realized_pose_delta",
+      "camera_calibration",
+      "nominal_se2_warp",
+      "deterministic_se2_warp",
+      "map",
+      "goal",
+      "clearance",
+      "swept_path",
+      "next_rgb",
+      "raster_labels"
+    ]
+  },
+  "model": {
+    "bev_decoder": {
+      "attention": "learned_global_cross_attention",
+      "forward_cell_centres_metres": [
+        -0.95,
+        5.35
+      ],
+      "internal_dim": 64,
+      "left_cell_centres_metres": [
+        -3.15,
+        3.15
+      ],
+      "output_shape": [
+        64,
+        64,
+        64
+      ]
+    },
+    "encoder": {
+      "depth": 6,
+      "dim": 192,
+      "heads": 6,
+      "mlp_ratio": 4,
+      "patch_size": 7,
+      "rgb_resolution": 112
+    },
+    "state_head": "one_1x1_projection_to_three_logits"
+  },
+  "objective": {
+    "C": "One joint conditional NCE. Positive: executed prediction vs true detached next target. Negatives: eight wrong-action predictions vs that target; executed prediction vs fixed same-action deranged target; and, on non-hold rows only, executed prediction vs current target. Candidate count is 10 hold or 11 non-hold. Candidate energy is the J soft hierarchy. Each logit is negative energy divided by detached per-row mean candidate energy clamped at 1e-6. Divide each row by log(candidate_count), then average rows.",
+    "G": "Mean current+next hierarchical_raster_cross_entropy_v4 on direct three-class probabilities: balanced OCCUPIED-vs-rest BCE, then balanced FREE-vs-UNKNOWN BCE on non-occupied labels, combined 0.5/0.5.",
+    "J": "Executed predicted probabilities vs detached EMA next-state probabilities: occupied-probability BCE plus target-nonoccupied-weighted BCE on conditional free probability, combined 0.5/0.5.",
+    "absent": [
+      "camera_loss",
+      "ray_loss",
+      "depth_loss",
+      "ground_loss",
+      "rasterizer",
+      "equivariance_loss",
+      "warp_loss",
+      "variance_loss",
+      "auxiliary_loss"
+    ],
+    "total": "1*G/log(2) + 1*J/log(2) + 1*normalized_C"
+  },
+  "optimization": {
+    "batch_size": 16,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "epsilon": 1e-8,
+    "gradient_clipping": {
+      "encoder_decoder_state_joint_norm": 1.0,
+      "predictor_separate_norm": 1.0
+    },
+    "learning_rates": {
+      "decoder_state_predictor": 0.0003,
+      "encoder": 0.0001
+    },
+    "optimizer": "AdamW",
+    "precision": "float32",
+    "weight_decay": 0.0001
+  },
+  "repository_goal": "A perception-only learned JEPA state and transition suitable for a fully learned maze-navigation stack, with any later navigation claim requiring separately authorized validation on untouched held-out mazes.",
+  "retirement_boundary": {
+    "already_closed": "All masked pair-tubelet timing successors and further scalar action-gain, live-reference hinge, action-indexed energy, latent-flow, inverse-dynamics, local-correspondence, cost-volume, next-target-retrieval, action-embedding, gate-timing, seed, schedule, and loss-weight successors on rejected image-token/action-residual families.",
+    "v1_failure_effect": "Failure at any finalized staged gate permanently closes Direct Egocentric BEV-State JEPA V1. No V2 tweak, retry, or replacement is implied or authorized."
+  },
+  "schedule": {
+    "bytes": 607373,
+    "content_sha256": "274c0cbd9a87cbbc5bbc3123fff046f02ac3555014b5ec750d4a32b552650a15",
+    "file_sha256": "08f54578febbc182d936a999d6cf86263b8cd03a5f640da064c1538dd53dc270",
+    "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/matched_training_v4/schedule.json",
+    "prefix_sha256": {
+      "update_100": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+      "update_1000": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528",
+      "update_400": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92"
+    },
+    "schedule_seed": 20260713
+  },
+  "schema": {
+    "classes": {
+      "FREE": 1,
+      "OCCUPIED": 2,
+      "UNKNOWN": 0
+    },
+    "grid": {
+      "cell_metres": 0.1,
+      "forward_min_edge_metres": -1.0,
+      "left_min_edge_metres": -3.2,
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "grounding_contract": "Ground both bound current and next endpoint outputs through target_raster_labels backed only by raster_labels.u1, using the registered narrow _row_array loader.",
+    "raw_array": "raster_labels.u1",
+    "raw_dtype": "uint8",
+    "schema_name": "lewm_go2_observable_camera_ray_raster_v4"
+  },
+  "staged_falsification": {
+    "failure_receipt_required": "Bind the stopping gate, consumed updates, presentations and GPU-active time, every metric/control, terminal classification, and permanent checkpoint ineligibility.",
+    "gate_logic": "Every condition is conjunctive. Comparators are strict or non-strict exactly as written.",
+    "numeric_gate_state": "FROZEN_PREREGISTERED",
+    "observations": [
+      0,
+      100,
+      400,
+      1000
+    ],
+    "stages": {
+      "update_0": [
+        "exact three-logit bottleneck and no bypass",
+        "exact persistence, action symmetry, and chance action metrics",
+        "target isolation and nonzero correct-path gradients"
+      ],
+      "update_100": [
+        "G < G_at_update_0",
+        "J < J_at_update_0",
+        "action_NLL < log(9)",
+        "action_macro_balanced_accuracy > 1/9",
+        "correct_RGB_grounding_strictly_beats_fixed_wrong_RGB_in_at_least_6_of_8_selection_scenes",
+        "registered states losses controls and gradients finite; state nonconstant"
+      ],
+      "update_400": [
+        "G <= 0.90 * G_at_update_0",
+        "J <= 0.90 * J_at_update_0",
+        "action_NLL < 0.99 * log(9)",
+        "action_macro_balanced_accuracy > 0.15",
+        "executed_action_strictly_beats_hardest_wrong_action_in_at_least_4_of_8_selection_scenes",
+        "correct_vs_deranged_target_NLL < 0.99 * log(2)",
+        "correct_vs_deranged_strict_win_rate >= 0.60",
+        "correct_RGB_grounding_strictly_beats_fixed_wrong_RGB_in_8_of_8_selection_scenes"
+      ],
+      "update_1000": [
+        "aggregate_raster_balanced_accuracy > 0.9009460724448773",
+        "aggregate_free_recall > 0.91637020862468",
+        "aggregate_occupied_recall > 0.8059679976935274",
+        "aggregate_raster_NLL < 0.18704089070408247",
+        "rough_raster_balanced_accuracy > 0.7719525130620232",
+        "rough_raster_occupied_recall > 0.4319466882067851",
+        "correct_RGB_grounding_strictly_beats_fixed_wrong_RGB_in_8_of_8_selection_scenes",
+        "action_NLL < 0.95 * log(9)",
+        "action_macro_balanced_accuracy > 2/9",
+        "hardest_wrong_positive_in_at_least_6_of_8_selection_scenes",
+        "target_NLL < 0.95 * log(2)",
+        "target_strict_win_rate >= 0.65",
+        "target_positive_in_at_least_6_of_8_selection_scenes"
+      ]
+    },
+    "stop_rule": "Stop permanently at the first failed gate; reach a later observation only after every earlier gate passes. Any failure closes V1 with no retry, resume, replacement, or V2.",
+    "success_boundary": "A full pass makes the checkpoint eligible only for separately authorized physical requalification plus a mandatory matched no-JEPA development arm; neither is authorized here."
+  },
+  "source_only_requirements_before_execution_authorization": [
+    "implementation",
+    "narrow loader",
+    "metrics and complete failure receipts",
+    "focused tests",
+    "source closure manifest",
+    "independent science custody and source review",
+    "committed hash-bound freeze",
+    "separate one-attempt authorization"
+  ],
+  "status": "SOURCE_ONLY_PREREGISTERED_PENDING_IMPLEMENTATION_REVIEW_AND_SEPARATE_AUTHORIZATION_NO_EXECUTION_AUTHORITY",
+  "version": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v1_preregistration_v1"
+}
