@@ -1,0 +1,269 @@
+{
+  "authority": {
+    "additional_copy_paste_user_authorization_required": false,
+    "basis": "The user granted standing autonomous iteration authority within the perception-only learned-JEPA held-out-maze goal and explicitly clarified that retrying an obvious mechanical defect is allowed. This V10R uses less than the granted scientific flexibility because its science is exactly V10.",
+    "execution_authorized_by_this_preregistration_alone": false,
+    "execution_authorized_only_after_committed_source_freeze_independent_source_and_science_pass_and_exact_machine_authorization": true,
+    "generated_input_checkpoint_tensor_rgb_gpu_training_or_evaluation_access_authorized_before_all_execution_gates_pass": false,
+    "one_fresh_v10r_attempt_may_be_machine_authorized_after_all_execution_gates_pass": true,
+    "source_implementation_focused_testing_freeze_and_independent_review_authorized": true,
+    "standing_authority_precedent": {
+      "independent_review_commit": "68f5c23f1303482ad58a24f667bfb6c7e1785415",
+      "independent_review_path": "docs/lewm_go2_rgb_overlapping_tokenization_v2_integrity_replacement_preregistration_independent_review_2026-07-25.json",
+      "preregistration_commit": "311d06fc0ccfd79c347d4f89edc0f5f9c9654ff9",
+      "preregistration_path": "docs/lewm_go2_rgb_overlapping_tokenization_v2_integrity_replacement_preregistration_2026-07-25.json",
+      "role": "source_only_precedent_not_runtime_authority"
+    },
+    "user_clarification_verbatim": "when i said dont iterate earlier, i more meant dont waste 30+ versions on an idea that clearly doesnt work - not that you cant retry when an obvious tweak may fix things",
+    "user_scope_verbatim": "you have permission to iterate as long as metrics are improvng, and you can change scientific scope as long as we dont violate the constraint of a perception only learned jepa for maze nav, validated on held out mazes - beyond that scope is flexible"
+  },
+  "content_sha256": "4100001b5217091bea6b917057eb33cb9331b77c47dd24468c036d5535e8d97e",
+  "date": "2026-07-26",
+  "downstream_and_access_boundary": {
+    "deployment_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "perception_qualification_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "repository_goal": "fully_learned_perception_only_JEPA_navigation_validated_once_on_externally_custodied_heldout_mazes",
+    "sealed_authorized": false,
+    "v10r_pass_licenses": "only_the_same_conditional_phase_b_and_separate_downstream_steps_already_preregistered_by_v10",
+    "v4_legacy_sealed_role_remains_permanently_ineligible": true
+  },
+  "exact_limited_supersession": {
+    "effect": "Permit exactly one separately versioned fresh V10R integrity replacement while leaving the consumed V10 root and every scientific and downstream boundary unchanged.",
+    "superseded_only_to_the_minimum_extent_needed_for_v10r": [
+      "V10 statements that a post-reservation operational failure permits no separately versioned replacement",
+      "V10 statements that the single-frame current-plus-action V5 family has no science-identical integrity replacement",
+      "V10 statements that only a materially different tubelet or direct-physical successor may follow, solely before the one V10R attempt reaches a real scientific decision"
+    ],
+    "not_superseded": [
+      "V10 attempt_index_1_and_maximum_attempts_1",
+      "V10_reservation_consumed_the_V10_attempt",
+      "V10_root_is_terminal_sealed_immutable_and_ineligible_for_retry_resume_repair_mutation_or_reuse",
+      "V10_checkpoint_trace_tensor_and_runtime_payload_access_denials",
+      "all_V10_model_data_seed_schedule_initialization_loss_optimizer_threshold_gate_and_cap_terms",
+      "all_G2_navigation_heldout_sealed_qualification_production_promotion_and_deployment_denials"
+    ],
+    "scope": "one_named_v10r_integrity_replacement_only",
+    "v10_authorization_document_is_not_mutated_or_reused_as_v10r_machine_authority": true,
+    "v10_same_root_retry_resume_or_repair_authorized": false,
+    "v10r_failure_creates_no_further_integrity_replacement_authority": true
+  },
+  "fresh_v10r_attempt": {
+    "attempt_index": 1,
+    "maximum_attempts": 1,
+    "new_output_root_must_be_absent_before_mode_0700_reservation": true,
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_action_conditioned_next_target_retrieval_jepa_probe_v10r_integrity_replacement",
+    "reservation_consumes_attempt": true,
+    "retry_resume_repair_recovery_replacement_second_seed_schedule_extension_threshold_change_or_observer_rerun_authorized": false,
+    "runtime_checkpoint_and_trace_payloads_are_write_only": true,
+    "v10_output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_action_conditioned_next_target_retrieval_jepa_probe_v10",
+    "v10_output_root_must_remain_sealed_immutable_and_unopened": true,
+    "v10_runtime_output_reuse_or_initialization_authorized": false,
+    "v10r_root_is_distinct_from_and_not_nested_under_v10_root": true
+  },
+  "governing_v10_evidence": {
+    "execution_authorization": {
+      "byte_count": 25989,
+      "commit": "15fa1673ac29959f6c0073a95d261b88d9fe036c",
+      "content_sha256": "0e916ff2a8da52cc8422cfff269ec2bb4a9adc2731b4e67d3f380fe194912cf1",
+      "file_sha256": "b66516454ce23a6c777729526ea909be1868c65cc5da64d0bc81278c23e54684",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_execution_authorization_2026-07-25.json"
+    },
+    "preregistration": {
+      "byte_count": 23010,
+      "commit": "25b93c92fbfb2816d52f0dfc27603c759e7c3c68",
+      "file_sha256": "b199d396a9aa9196fa3acc50837f492edef9d4255634e44f399f470a7489785b",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_preregistration_2026-07-25.md"
+    },
+    "source_and_review_commit": "824bac6e7b4c96c055d6341371e46e889ee80f61",
+    "source_manifest": {
+      "byte_count": 13143,
+      "content_sha256": "cdc8ee69a5296ba038d34c7e065a11de18493a4d61814ed314356a7e1ec4abb9",
+      "file_sha256": "84a88a392cf3462be801440df33f2fe40e98297b2b9c7e7b1fe750f3a2e8c8d6",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_source_manifest_2026-07-25.json"
+    },
+    "source_review": {
+      "byte_count": 29328,
+      "content_sha256": "8cd109a58d576fca6a3fc5594ef1f6a32d7672051894e6d3d9fc68bfdf9e0e27",
+      "file_sha256": "14ad3a4cfe18fc4cfdfcfec0b40bdc081d4d99d433eaf9c31536d5f810984663",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_source_review_2026-07-25.json",
+      "status": "PASS_SOURCE_AND_SCIENCE"
+    },
+    "terminal_audit": {
+      "byte_count": 5999,
+      "commit": "b590e50af272ae046618819eed4b88f1cd7a0cab",
+      "content_sha256": "9ab2aec125e2d8ced8f35da7dab6c2d2794035d33c3888c28f8584b6e7070eb4",
+      "file_sha256": "e33030f59c1d36aecf61d98750213daa89d7aeb8ee0daf83ff92812ca31ce4e5",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_terminal_audit_2026-07-26.json",
+      "status": "PASS_TERMINAL_AUDIT_OPERATIONAL_INTEGRITY_FAILURE_SCIENCE_NON_EVALUABLE"
+    },
+    "terminal_attempt": {
+      "attempt_identity": "180f0a41560d584cd47d9a4aff19a419054a9ab1118e8f3b0cd083c2d953fd24",
+      "attempt_index": 1,
+      "checkpoint_qualified": false,
+      "completed_pair_presentations": 1600,
+      "completed_updates": 100,
+      "failure": {
+        "byte_count": 1651346,
+        "content_sha256": "880e4bfed0e63b0161668743419a02c32f29a916c163b3f41c81920d86da5185",
+        "error_message_sha256": "8a9c5aea9ecc093219e536da11e0a977d9b92740fb28f20e3a89cb30646cab75",
+        "file_sha256": "857762480026e01d5c25ed1e5750a8bc13fa9ebc07395a59ba7aa95cab3b0fd3",
+        "path_relative_to_v10_root": "failure.json",
+        "root_cause_classification": "DETERMINISTIC_FLOAT32_REDUCTION_PATH_RECEIPT_MISMATCH",
+        "status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY"
+      },
+      "maximum_attempts": 1,
+      "normal_scientific_metrics_or_result_published": false,
+      "phase_b_entered": false,
+      "receipts": {
+        "completed": {
+          "byte_count": 1798,
+          "content_sha256": "b8e6f66f7a221b8e5da3d4fa8082db2cd40a2a1c1eb9704ed8198a922ae41118",
+          "file_sha256": "821c65ccf14e5f8bb2c1bf8f5a807caa3c5669c6180ffc1c12bf396c8de9f4b2",
+          "path_relative_to_v10_root": "completed.json"
+        },
+        "reservation": {
+          "byte_count": 27192,
+          "content_sha256": "cfd32c8eaa27b648023f3fb08cb48141fd91cf84565fb2f792263200e14d974c",
+          "file_sha256": "c548cbe9ed0c409bb7c42dc4725e0d32f8749842f20f56a92e8a02038cd2a8c8",
+          "path_relative_to_v10_root": "reservation.json"
+        }
+      },
+      "root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_action_conditioned_next_target_retrieval_jepa_probe_v10",
+      "science_evaluable": false,
+      "scientific_failure_observed": false,
+      "scientific_pass_observed": false
+    }
+  },
+  "integrity_replacement_delta": {
+    "allowed_behavioral_source_delta_count": 1,
+    "allowed_nonbehavioral_identity_deltas": [
+      "v10r_version_labels",
+      "fresh_v10r_output_root_and_attempt_identity",
+      "v10r_source_manifest_review_authorization_and_receipt_bindings"
+    ],
+    "comparison": "update0_factorized_retrieval.action_retrieval_nll versus the immutable post-reservation execution-device float32 action_equal_logit_reference",
+    "function": "_normalize_phase_a_inputs",
+    "new_absolute_tolerance": {
+      "exact_expression": "8*2^-23",
+      "numeric_value": 9.5367431640625e-07
+    },
+    "old_absolute_tolerance": {
+      "exact_expression": "1e-7",
+      "numeric_value": 1e-07
+    },
+    "relative_tolerance_remains": 0.0,
+    "sole_behavioral_delta": "replace_only_this_comparison_abs_tol_from_1e-7_to_8*2^-23",
+    "source_path": "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py",
+    "tolerance_is_integrity_validation_only_and_may_not_change_any_training_or_gate_value": true,
+    "unchanged_neighboring_checks": [
+      "action_retrieval_macro_balanced_accuracy_equals_1_over_9_with_abs_tol_1e-12",
+      "all_four_update0_action_control_ratios_equal_exactly_1",
+      "all_per_family_update0_action_margins_equal_exactly_0",
+      "all_action_predictions_bitwise_equal",
+      "equal_logit_reference_values_are_computed_once_after_reservation_and_never_recomputed",
+      "the_separate_equal_logit_reference_to_log9_and_log2_validation_tolerances",
+      "every_scientific_gate_comparator_and_threshold"
+    ]
+  },
+  "required_preexecution_gates": [
+    "implement_only_the_one_named_tolerance_delta_plus_fresh_v10r_custody_identity",
+    "add_a_focused_regression_that_accepts_the_observed_valid_float32_reduction_difference_and_rejects_a_difference_strictly_greater_than_8*2^-23",
+    "prove_all_neighboring_update0_integrity_checks_and_every_scientific_gate_are_unchanged",
+    "run_accelerator_hidden_focused_source_and_synthetic_tests_without_opening_generated_runtime_or_protected_material",
+    "freeze_and_commit_an_exact_recursive_v10r_source_manifest",
+    "obtain_an_independent_source_science_identity_and_custody_pass",
+    "materialize_an_exact_machine_execution_authorization_binding_the_frozen_commit_review_science_identity_new_root_and_one_attempt",
+    "fail_closed_if_the_v10r_root_is_not_absent_before_reservation",
+    "execute_at_most_one_fresh_v10r_attempt"
+  ],
+  "required_terminal_receipts": {
+    "missing_receipts_may_never_be_synthesized_or_fabricated": true,
+    "normal_scientific_terminal_chain": [
+      "reservation.json",
+      "phase_a/metrics.json",
+      "phase_a/artifact.json",
+      "access.json",
+      "result.json",
+      "completed.json"
+    ],
+    "operational_or_integrity_failure_chain": [
+      "reservation.json_if_successfully_published",
+      "failure.json",
+      "completed.json"
+    ],
+    "operational_failure_receipt_must_record": [
+      "exact_failure_stage_type_and_message",
+      "exact_partial_inventory_and_missing_normal_receipts",
+      "completed_updates_presentations_and_operation_counts",
+      "determinism_and_access_state",
+      "all_available_source_authority_and_input_bindings"
+    ],
+    "retain_and_seal_every_real_partial_file": true
+  },
+  "schema": "lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_preregistration_v1",
+  "science_identity": {
+    "canonicalization": {
+      "allow_nan": false,
+      "ensure_ascii": true,
+      "json_pointer": "/experiment",
+      "separators": [
+        ",",
+        ":"
+      ],
+      "sort_keys": true
+    },
+    "forbidden_scientific_deltas": [
+      "model_family_architecture_width_depth_parameters_or_forward_graph",
+      "data_role_scene_row_payload_mapping_negative_candidate_filter_balance_or_order",
+      "base_seed_schedule_seed_schedule_prefix_batch_accumulation_update_or_presentation_count",
+      "initialization_checkpoint_migration_draw_order_value_or_rng_rule",
+      "loss_term_coefficient_normalization_temperature_margin_or_gradient_route",
+      "optimizer_parameter_group_learning_rate_beta_epsilon_weight_decay_clip_precision_or_ema",
+      "observation_population_timing_metric_formula_control_mapping_or_tie_break",
+      "continuation_or_terminal_gate_threshold_comparator_rank_or_health_requirement",
+      "phase_b_entry_transfer_trainable_boundary_schedule_metric_or_threshold",
+      "gpu_time_update_presentation_attempt_or_role_cap",
+      "checkpoint_selection_calibration_qualification_promotion_or_downstream_authority",
+      "fallback_compatibility_refactor_cleanup_framework_or_unrelated_source_change"
+    ],
+    "future_v10r_machine_authorization_requirement": "After normalizing only the declared fresh-version custody identities and the sole integrity tolerance declaration, the complete experiment must be recursively science-identical to V10 and an independent reviewer must report zero unregistered leaf differences.",
+    "preserved_exactly": [
+      "N320_initialization_and_all_V5_initialization_draw_order_values_and_rng_preservation",
+      "V5_current_plus_action_state_dependent_latent_flow_predictor_and_nine_action_order",
+      "Raw_V13_4262_train_and_495_checkpoint_selection_pairs_and_all_mapping_hashes",
+      "base_seed_20260712_schedule_seed_20260713_and_exact_1600_6400_16000_prefixes",
+      "microbatch_4_four_microbatches_per_update_effective_batch_16",
+      "executed_JEPA_action_retrieval_target_retrieval_and_whitening_objective_terms_and_coefficients",
+      "AdamW_parameter_groups_learning_rates_betas_epsilon_weight_decay_global_clip_and_float32_determinism",
+      "EMA_momentum_0.996_target_detachment_and_gradient_boundaries",
+      "updates_0_100_400_1000_observations_and_all_V10_continuation_and_terminal_gates",
+      "Phase_A_cap_1000_updates_16000_presentations_60_GPU_active_minutes",
+      "Phase_B_entry_copy_trainable_state_schedule_caps_physical_metrics_and_thresholds",
+      "one_seed_one_attempt_no_retry_no_resume_no_observer_rerun"
+    ],
+    "v10_authorization_experiment_canonical_byte_count": 19524,
+    "v10_authorization_experiment_canonical_sha256": "3dfcc168a570c9e69be57d03b0281fb66ce08b7acc33f1929a0b9e54237f158c",
+    "v10_scientific_delta_count": 0,
+    "v10r_scientific_delta_count_required": 0
+  },
+  "status": "PREREGISTERED_ONE_FRESH_SCIENCE_IDENTICAL_V10R_INTEGRITY_REPLACEMENT_PENDING_IMPLEMENTATION_FREEZE_INDEPENDENT_PASS_AND_MACHINE_AUTHORIZATION",
+  "successor_boundary": {
+    "automatic_successor_execution_authorized": false,
+    "masked_tubelet_successor": "MASKED_CURRENT_TO_NEXT_PAIR_TUBELET_JEPA",
+    "masked_tubelet_successor_inputs": [
+      "current_rgb_visible_context",
+      "masked_future_slot",
+      "candidate_action",
+      "detached_ema_full_current_next_tubelet_target_during_training_only"
+    ],
+    "real_v10r_scientific_gate_failure_definition": "A canonical Phase-A metrics and artifact receipt chain is published and at least one preregistered update-100, update-400, or update-1000 scientific gate fails.",
+    "real_v10r_scientific_gate_failure_disposition": "Close the single-frame current-plus-action retrieval family and make the masked current-to-next pair-tubelet JEPA the next scientific mechanism for separate preregistration.",
+    "successor_must_preserve_perception_only_learned_jepa_goal_and_all_g2_navigation_heldout_and_sealed_denials_until_separately_authorized": true,
+    "v10r_operational_or_integrity_failure_disposition": "terminal_no_retry_no_second_integrity_replacement"
+  }
+}
