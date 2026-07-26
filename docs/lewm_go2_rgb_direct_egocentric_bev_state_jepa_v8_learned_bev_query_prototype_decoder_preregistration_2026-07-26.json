@@ -1,0 +1,515 @@
+{
+  "architecture": {
+    "decoder": {
+      "BEV_shape": [
+        64,
+        64
+      ],
+      "cell_query_formula": "row_query[row]+column_query[column]",
+      "class_order": [
+        "UNKNOWN",
+        "FREE",
+        "OCCUPIED"
+      ],
+      "column_query_parameter_shape": [
+        64,
+        64
+      ],
+      "feature_dimension": 64,
+      "full_per_cell_query_parameter_forbidden": true,
+      "new_online_decoder_parameter_count": 87808,
+      "normalization": {
+        "cell_features": "L2_over_dimension_64_each_forward",
+        "epsilon": 1e-12,
+        "prototype_rows": "L2_over_dimension_64_each_forward"
+      },
+      "numeric_coordinate_feature_or_sinusoid_forbidden": true,
+      "output_formula": "logit[b,class,row,column]=-sum_d((L2(cell_feature[b,row,column])[d]-L2(prototype[class])[d])**2)",
+      "output_logit_range_inclusive": [
+        -4.0,
+        0.0
+      ],
+      "output_shape": [
+        "batch",
+        3,
+        64,
+        64
+      ],
+      "prototype_parameter_shape": [
+        3,
+        64
+      ],
+      "prototype_rows": {
+        "0": "UNKNOWN",
+        "1": "FREE",
+        "2": "OCCUPIED"
+      },
+      "residual_blocks": {
+        "BEV_self_attention": false,
+        "FFN_activation": "GELU",
+        "FFN_hidden_dimension": 128,
+        "attention_dropout": 0.0,
+        "attention_heads": 4,
+        "block_formula": [
+          "x=x+MultiheadAttention(query=LayerNorm(x),key=shared_token_norm(projected_RGB_tokens),value=shared_token_norm(projected_RGB_tokens))",
+          "x=x+Linear_128_to_64(GELU(Linear_64_to_128(LayerNorm(x))))"
+        ],
+        "count": 2,
+        "linear_and_attention_biases": true,
+        "parameters_shared_between_blocks": false,
+        "spatial_convolution": false
+      },
+      "row_query_parameter_shape": [
+        64,
+        64
+      ],
+      "shared_projected_token_layer_norm": {
+        "affine": true,
+        "dimension": 64
+      },
+      "target_decoder_is_fresh_hard_synced_copy": true,
+      "temperature_scale_bias_linear_or_convolutional_state_head": false,
+      "token_projection": {
+        "bias": true,
+        "input_dimension": 192,
+        "output_dimension": 64,
+        "type": "Linear"
+      }
+    },
+    "predictor": {
+      "action_metric_or_predictor_gate_authorized": false,
+      "backward_or_gradient_count_required": 0,
+      "constructed_fresh": true,
+      "forward_call_count_required": 0,
+      "identity": "frozen_V7_coordinate_aware_FiLM_UNet_predictor_control",
+      "objective_evaluation_count_required": 0,
+      "optimizer_membership": false,
+      "optimizer_update_count_required": 0,
+      "prior_checkpoint_or_runtime_parameter_reuse": false,
+      "requires_grad": false
+    },
+    "preserved_encoder": {
+      "attention_heads": 6,
+      "class_token_excluded_from_perception_tokens": true,
+      "depth": 6,
+      "dropout": 0.0,
+      "frozen_means_source_and_initial_state_identity_not_frozen_online_parameters": true,
+      "image_size": 112,
+      "mlp_ratio": 4,
+      "online_phase_trainability_preserved_from_V7": true,
+      "patch_size": 7,
+      "patch_token_count": 256,
+      "patch_token_dimension": 192,
+      "source_and_architecture": "frozen_reviewed_N320_VisionEncoder"
+    },
+    "source_review_must_freeze_exact_parameter_buffer_inventory_and_initial_state_hashes_before_execution": true
+  },
+  "authority": {
+    "G2_authorized": false,
+    "additional_copy_paste_user_authorization_required": false,
+    "basis": "standing autonomous scientific iteration permission within an RGB-only learned-JEPA perception stack for held-out-maze navigation",
+    "checkpoint_or_runtime_reuse_authorized": false,
+    "deployment_authorized": false,
+    "execution_authorized_by_this_document": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "one_fresh_attempt_may_be_machine_authorized_only_after_all_preexecution_gates_pass": true,
+    "predictor_training_authorized": false,
+    "preregistration_only": true,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "sealed_authorized": false,
+    "source_only_implementation_closure_testing_and_independent_review_authorized": true
+  },
+  "content_sha256": "065e0befce1c55b6545a442f26bd78d14dd035bc8e2e84eaa2af40bb53368d05",
+  "date": "2026-07-26",
+  "experiment_id": "go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_v1",
+  "fully_learned_perception_constraint": {
+    "BEV_queries_are_parameters_not_functions_of_metric_coordinates": true,
+    "RGB_is_the_only_model_facing_sensor_modality": true,
+    "allowed_row_values": [
+      "current_rgb",
+      "next_rgb",
+      "fixed_negative_rgb",
+      "raster_labels.u1"
+    ],
+    "allowed_supervision_arrays": [
+      "raster_labels.u1"
+    ],
+    "complete_RGB_to_BEV_mapping_is_learned": true,
+    "forbidden": {
+      "analytic_or_fixed_camera_model": true,
+      "analytic_warp_or_resampling_grid": true,
+      "camera_intrinsics_or_extrinsics": true,
+      "depth_labels_predictions_or_pseudo_depth": true,
+      "fixed_camera_rays_or_ray_marching": true,
+      "hand_coded_projection_or_inverse_projection": true,
+      "non_RGB_model_facing_runtime_input": true,
+      "pose_labels_or_pose_conditioning": true,
+      "privileged_geometry_or_simulator_state": true,
+      "signed_distance_boundary_flood_fill_or_other_analytic_label_transform": true
+    },
+    "native_BEV_cell_identity_is_only_a_learned_row_and_column_embedding": true
+  },
+  "gates": {
+    "comparators_are_frozen_and_may_not_be_relaxed_reinterpreted_or_recomputed_after_observation": true,
+    "update_0_integrity": {
+      "all_required": true,
+      "checks": [
+        "fresh_V8_model_and_optimizer_with_zero_prior_runtime_reuse",
+        "exact_N320_encoder_only_migration_and_registered_seed_draw_order",
+        "exact_87808_parameter_online_decoder_and_three_prototype_inventory",
+        "no_numeric_coordinate_buffer_MLP_full_cell_bias_spatial_Conv_or_linear_state_head",
+        "two_independent_residual_cross_attention_FFN_blocks_and_exact_negative_squared_distance_formula",
+        "online_target_perception_bitwise_equal_before_updates_and_EMA_count_zero",
+        "finite_nonconstant_three_channel_state_with_each_logit_in_closed_interval_minus4_to0",
+        "encoder_token_projection_row_column_queries_both_attention_FFN_blocks_and_all_three_prototypes_receive_finite_nonzero_intended_gradients",
+        "predictor_target_and_fixed_negative_RGB_optimizer_gradients_absent",
+        "predictor_forward_objective_backward_optimizer_counts_all_zero",
+        "no_hidden_auxiliary_bypass_and_all_forbidden_access_counts_zero"
+      ],
+      "on_failure": "terminal_close_V8_no_retry"
+    },
+    "update_100_continuation": {
+      "G_directional_definition": "G_update_100_strictly_less_than_G_update_0",
+      "accounting": {
+        "EMA_updates": 100,
+        "optimizer_updates": 100,
+        "predictor_optimizer_updates": 0,
+        "presentations": 1600
+      },
+      "aggregate_free_recall_minimum_inclusive": 0.5,
+      "aggregate_occupied_recall_minimum_inclusive": 0.8,
+      "aggregate_raster_balanced_accuracy_minimum_inclusive": 0.7,
+      "aggregate_raster_nll_maximum_inclusive": 0.46,
+      "all_registered_values_finite": true,
+      "correct_rgb_scene_win_count_minimum": 8,
+      "on_failure": "terminal_close_V8_no_retry",
+      "rough_noncollapse_definition": [
+        "rough_raster_balanced_accuracy_update_100_strictly_greater_than_update_0",
+        "rough_raster_occupied_recall_update_100_strictly_greater_than_update_0"
+      ],
+      "state_nonconstant": true
+    },
+    "update_250_qualification": {
+      "absolute_free_minus_occupied_recall_gap_maximum_inclusive": 0.25,
+      "accounting": {
+        "EMA_updates": 250,
+        "optimizer_updates": 250,
+        "predictor_optimizer_updates": 0,
+        "presentations": 4000
+      },
+      "aggregate_free_recall_minimum_inclusive": 0.68,
+      "aggregate_occupied_recall_minimum_inclusive": 0.88,
+      "aggregate_raster_balanced_accuracy_minimum_inclusive": 0.8,
+      "aggregate_raster_nll_maximum_inclusive": 0.42,
+      "aggregate_raster_nll_relative_to_update_100": "NLL_update_250<=NLL_update_100+0.01",
+      "all_prior_gates_passed": true,
+      "all_registered_values_finite": true,
+      "correct_rgb_scene_win_count_minimum": 8,
+      "on_failure": "terminal_close_V8_no_retry",
+      "on_pass": "pass_perception_mechanism_only_no_checkpoint_or_downstream_qualification",
+      "predictor_forward_objective_backward_and_update_counts_all_zero": true,
+      "rough_raster_balanced_accuracy_minimum_inclusive": 0.7719525,
+      "rough_raster_occupied_recall_minimum_inclusive": 0.4319467,
+      "state_nonconstant": true
+    },
+    "update_50_health": {
+      "G_strictly_less_than_update_0": true,
+      "accounting": {
+        "EMA_updates": 50,
+        "optimizer_updates": 50,
+        "predictor_optimizer_updates": 0,
+        "presentations": 800
+      },
+      "aggregate_free_recall_strictly_greater_than": 0.0,
+      "aggregate_occupied_recall_strictly_greater_than": 0.0,
+      "aggregate_raster_balanced_accuracy_strictly_greater_than_update_0": true,
+      "all_registered_values_finite": true,
+      "correct_rgb_scene_win_count_minimum": 6,
+      "on_failure": "terminal_close_V8_no_retry",
+      "rough_raster_balanced_accuracy_strictly_greater_than": 0.0,
+      "rough_raster_occupied_recall_strictly_greater_than": 0.0,
+      "state_nonconstant": true
+    }
+  },
+  "goal": {
+    "current_scope": "development_RGB_to_BEV_perception_falsification_only",
+    "heldout_or_navigation_claim_tested": false,
+    "predictor_question_tested": false,
+    "question": "Can a fully learned cell-specific RGB-token retrieval mechanism preserve V7 wall sensitivity while correcting its free-versus-occupied imbalance and late probability overconfidence?",
+    "repository_goal": "fully_learned_perception_only_JEPA_navigation_validated_on_held_out_mazes"
+  },
+  "hypothesis": {
+    "expected_signature": {
+      "by_update_100": "free recall reaches at least 0.50 while occupied recall remains at least 0.80 and aggregate raster NLL remains at most 0.46",
+      "by_update_250": "free recall reaches at least 0.68, occupied recall remains at least 0.88, their absolute gap is at most 0.25, and NLL is at most 0.42 without degrading by more than 0.01 from update 100"
+    },
+    "materially_different_perception_mechanism": true,
+    "mechanism": "Cell-specific learned BEV queries will retrieve distinct evidence from RGB patch tokens instead of spatially broadcasting occupied evidence, and bounded normalized prototype distances will prevent unbounded late logit confidence.",
+    "name": "learned_bev_query_prototype_decoder_v1",
+    "not_a_threshold_schedule_or_loss_weight_tuning_attempt": true
+  },
+  "initialization_and_runtime_inputs": {
+    "N320": {
+      "checkpoint": {
+        "byte_count": 13777100,
+        "content_sha256": "9dcca536943f89acfd7d463fdab591e19a030ef3dc8f3f19a050b1b10025fc2b",
+        "file_sha256": "ece874b53941e841fffc61b724a86d4383b881549afa453b746dd5d68aba11b0",
+        "path": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/checkpoint.pt"
+      },
+      "encoder_only_migration": true,
+      "fit_seed": 20260710,
+      "gate": {
+        "byte_count": 7960,
+        "content_sha256": "76ce5ab703560d171f7c84684b90eed18e8b4cdcc2d8ed3eff6d48496f4de67b",
+        "file_sha256": "4943b4060e88296503c09fc714e55e40fd762527cfccb70a3a341f0df800efe6",
+        "path": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/gate.json"
+      },
+      "open_authority": "one_gate_open_and_one_encoder_only_checkpoint_open_after_reservation_and_preflight_only"
+    },
+    "all_components_fresh_except_exact_N320_encoder_only_migration": true,
+    "base_initialization_seed": 20260712,
+    "development_raw": {
+      "audit": {
+        "byte_count": 26975,
+        "content_sha256": "0c16e368c9de258d0fbf46e3123d7a3cfcdf60162fd9efa6440d4a7773056aca",
+        "file_sha256": "0680e1680f30c45feda60498792c3f208c28313e8f087dfbdd1c5807bcf1fe76",
+        "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1.audit_v13.json"
+      },
+      "general_raw_frame_loader_authorized": false,
+      "manifest": {
+        "byte_count": 311598,
+        "content_sha256": "74ae5799919ff4d9a06f56d98929cb4cb702d64db52ecdfc93cfa9a8e82fb35a",
+        "file_sha256": "e102b3c64e99029f118597353966edaaaddbc11efe49b9081d5d7a9c9d974360",
+        "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/manifest.json"
+      },
+      "roles": {
+        "checkpoint_selection": {
+          "pairs": 495,
+          "scenes": 8
+        },
+        "train": {
+          "pairs": 4262,
+          "scenes": 72
+        }
+      },
+      "same_rows_roles_RGB_endpoints_fixed_negatives_raster_labels_and_mappings_as_V7": true
+    },
+    "fresh_V8_decoder_draw_order": [
+      "row_query",
+      "column_query",
+      "token_projection",
+      "shared_projected_token_layer_norm",
+      "cross_attention_block_1",
+      "FFN_block_1",
+      "cross_attention_block_2",
+      "FFN_block_2",
+      "UNKNOWN_FREE_OCCUPIED_prototypes"
+    ],
+    "prior_V1_through_V7_checkpoint_tensor_trace_receipt_or_runtime_output_reuse_authorized": false
+  },
+  "objective_optimizer_and_target": {
+    "G_formula_and_hierarchical_three_state_energy": "exact_frozen_V7",
+    "auxiliary_loss": null,
+    "class_weighting_authorized": false,
+    "class_weights": null,
+    "correct_RGB_vs_fixed_mapped_wrong_RGB_grounding_control": "exact_frozen_V7",
+    "loss_term_coefficient_change_from_V7": false,
+    "optimizer": {
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "constructed_once": true,
+      "epsilon": 1e-08,
+      "gradient_clip_norm_by_trainable_group": 1.0,
+      "new_decoder_and_prototype_learning_rate": 0.0003,
+      "online_encoder_learning_rate": 0.0001,
+      "precision": "float32",
+      "predictor_parameters_excluded": true,
+      "reset_or_rebuild": false,
+      "target_parameters_excluded": true,
+      "type": "AdamW",
+      "weight_decay": 0.0001
+    },
+    "perception_only_total_objective": "G/log(2)",
+    "predictor_J_C_or_V5_A_in_total": false,
+    "target": {
+      "EMA_after_each_optimizer_update": true,
+      "EMA_momentum": 0.996,
+      "EMA_update_count_at_terminal_if_reached": 250,
+      "fresh_online_to_target_hard_sync_before_update_zero": 1,
+      "target_requires_grad": false
+    },
+    "temperature": null
+  },
+  "registered_scientific_delta": {
+    "all_other_model_data_seed_schedule_objective_optimizer_EMA_metric_and_custody_changes_forbidden_except_mechanical_receipt_schema_adaptation": true,
+    "changed": [
+      "V7_global_numeric_coordinate_feature_MLP_plus_full_per_cell_query_bias",
+      "V7_single_global_cross_attention_block",
+      "V7_two_layer_spatial_Conv2d_refinement",
+      "V7_unbounded_linear_1x1_three_logit_state_head"
+    ],
+    "replacement": [
+      "factorized_fully_learned_row_plus_column_query_for_each_native_BEV_cell",
+      "two_independent_residual_cross_attention_plus_FFN_blocks_over_RGB_patch_tokens",
+      "three_learned_L2_normalized_UNKNOWN_FREE_OCCUPIED_prototypes",
+      "exact_three_channel_negative_squared_normalized_prototype_distances"
+    ],
+    "scientific_delta_count": 1,
+    "scientific_delta_name": "RGB_token_to_BEV_state_decoder_and_state_head_mechanism"
+  },
+  "required_preexecution_gates": [
+    "V8 implementation contains only the registered mechanism and mechanical custody or receipt adapters",
+    "recursive source closure manifest is committed and rehashes every source dependency",
+    "independent source science and custody review reports zero findings and proves exact V7 preservation outside the registered delta",
+    "machine execution authorization binds the exact source manifest review preregistration runtime inputs experiment gates output root and one-attempt cap",
+    "all focused synthetic CPU tests pass including learned-only forbidden-geometry negative tests seam routing gradient isolation accounting and gate boundaries",
+    "fresh output root absence and exact no-reuse policy pass before reservation"
+  ],
+  "schedule_and_caps": {
+    "GPU_active_minutes_maximum": 30,
+    "attempt_index": 1,
+    "effective_batch_size": 16,
+    "maximum_attempts": 1,
+    "maximum_presentations": 4000,
+    "maximum_updates": 250,
+    "microbatch_size": 4,
+    "microbatches_per_update": 4,
+    "observation_updates": [
+      0,
+      50,
+      100,
+      250
+    ],
+    "one_scheduled_pair_is_one_presentation": true,
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v8/rgb_direct_egocentric_bev_state_jepa_probe_v8_learned_bev_query_prototype_decoder_v1",
+    "output_root_must_be_absent_before_reservation": true,
+    "predictor_phase_or_update": false,
+    "prefix_rule": "exact_first_4000_presentation_entries_of_the_frozen_V7_schedule_without_filter_reorder_resample_or_replacement",
+    "prefix_sha256": {
+      "100": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+      "250": "ee3bc0dcf4c36c8cc66daa2ea8cda6653072fb18c8cf6d6fe1fe3bb50ab1218e",
+      "50": "f7e06f741d96af1a3c7796096a38f616f40ee713b6258a217ffd5627afda0788"
+    },
+    "resume_retry_extension_second_seed_or_replacement_attempt": false,
+    "schedule_seed": 20260713,
+    "schedule_source": {
+      "byte_count": 607373,
+      "content_sha256": "274c0cbd9a87cbbc5bbc3123fff046f02ac3555014b5ec750d4a32b552650a15",
+      "file_sha256": "08f54578febbc182d936a999d6cf86263b8cd03a5f640da064c1538dd53dc270",
+      "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/matched_training_v4/schedule.json"
+    }
+  },
+  "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_preregistration_v1",
+  "source_only_boundary": {
+    "GPU_state_opened_while_drafting": [],
+    "checkpoints_tensors_traces_or_runtime_outputs_opened_while_drafting": [],
+    "generated_inputs_opened_while_drafting": [],
+    "heldout_or_sealed_opened_while_drafting": [],
+    "source_governance_documents_opened": [
+      "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v7_runner_integrity_replacement_terminal_audit_2026-07-26.json"
+    ],
+    "this_document_authorizes": [
+      "source_only_implementation",
+      "source_closure",
+      "synthetic_CPU_tests",
+      "independent_source_science_and_custody_review"
+    ],
+    "this_document_does_not_authorize": [
+      "generated_input_access",
+      "dataset_RGB_or_label_access",
+      "N320_gate_or_checkpoint_access",
+      "schedule_access",
+      "GPU_access",
+      "training",
+      "evaluation",
+      "checkpoint_tensor_trace_or_runtime_output_access",
+      "G2",
+      "navigation",
+      "heldout",
+      "sealed",
+      "production",
+      "promotion",
+      "deployment"
+    ]
+  },
+  "status": "PREREGISTERED_ONE_FRESH_RGB_ONLY_LEARNED_BEV_QUERY_PROTOTYPE_PERCEPTION_FALSIFICATION_PENDING_SOURCE_FREEZE_INDEPENDENT_REVIEW_AND_MACHINE_AUTHORIZATION",
+  "terminal_and_successor_policy": {
+    "checkpoint_qualified_on_pass": false,
+    "failure_claim": "this_exact_learned_query_prototype_mechanism_failed_and_is_closed",
+    "no_checkpoint_snapshot_or_training_trace_may_be_read_or_reused": true,
+    "no_retry_resume_extension_threshold_relaxation_temperature_class_weight_schedule_change_or_second_seed": true,
+    "pass_claim": "learned_RGB_to_BEV_query_prototype_perception_mechanism_passed_the_capped_development_falsification",
+    "pass_does_not_authorize": [
+      "V8_checkpoint_use",
+      "V8_runtime_output_reuse",
+      "predictor_training_or_evaluation",
+      "G2",
+      "navigation",
+      "heldout",
+      "sealed",
+      "production",
+      "promotion",
+      "deployment"
+    ],
+    "pass_permits_only": "source_only_design_and_separate_preregistration_of_one_fresh_full_JEPA_predictor_successor",
+    "required_normal_receipts": [
+      "reservation.json",
+      "metrics.json",
+      "artifact.json",
+      "access.json",
+      "result.json",
+      "completed.json"
+    ],
+    "required_operational_failure_receipts": [
+      "failure.json",
+      "completed.json"
+    ],
+    "stop_immediately_on_any_gate_failure_nonfinite_value_accounting_mismatch_custody_violation_or_cap": true
+  },
+  "v7_terminal_evidence": {
+    "byte_count": 14413,
+    "classification": "VALID_UPDATE_400_PERCEPTION_BOUNDARY_SCIENTIFIC_FAILURE_PHASE_ONE_PERCEPTION_IMPROVED_BUT_STRONG_QUALIFICATION_NOT_MET_PREDICTOR_UNTRAINED_V7_PERMANENTLY_CLOSED_NO_RETRY",
+    "commit": "d5b1b1d3b3574d29193e0c675f6a69113faa661e",
+    "content_sha256": "28532867666b76655cdc7154273384f33a0f0d89f4fb6951b48fad016b194f15",
+    "file_sha256": "7e458098ecacfffb275ed4adbbd799309ba4bd91ee44436d9573e5ade8571b44",
+    "observations": {
+      "predictor_hypothesis_tested": false,
+      "predictor_optimizer_updates": 0,
+      "update_0": {
+        "G": 0.7755021562479963,
+        "aggregate_free_recall": 0.48772254798531206,
+        "aggregate_occupied_recall": 0.13193743693239152,
+        "aggregate_raster_balanced_accuracy": 0.31409209183876236,
+        "aggregate_raster_nll": 1.1749295960759545,
+        "correct_rgb_scene_win_count": 6
+      },
+      "update_100": {
+        "G": 0.25752109066404477,
+        "aggregate_free_recall": 0.41214005904626383,
+        "aggregate_occupied_recall": 0.8486737782903272,
+        "aggregate_raster_balanced_accuracy": 0.7178569277306966,
+        "aggregate_raster_nll": 0.41119010735897915,
+        "correct_rgb_scene_win_count": 8
+      },
+      "update_400": {
+        "G": 0.18773906264040205,
+        "aggregate_free_recall": 0.5497640602893431,
+        "aggregate_occupied_recall": 0.9370044687905434,
+        "aggregate_raster_balanced_accuracy": 0.7830719752180078,
+        "aggregate_raster_nll": 0.4690883501992268,
+        "correct_rgb_scene_win_count": 8,
+        "rough_raster_balanced_accuracy": 0.7925575317258534,
+        "rough_raster_occupied_recall": 0.8798465266558966
+      }
+    },
+    "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v7_runner_integrity_replacement_terminal_audit_2026-07-26.json",
+    "registered_interpretation": "V7 learned real RGB-conditioned obstacle geometry, but its decoder remained biased toward occupied cells and became less calibrated from update 100 to update 400; no predictor evidence exists.",
+    "status": "PASS_VALID_UPDATE_400_PERCEPTION_SCIENTIFIC_FAILURE_CLOSES_V7_NO_RETRY",
+    "v7_checkpoint_or_runtime_reuse_authorized": false,
+    "v7_retry_resume_repair_or_extension_authorized": false
+  }
+}
