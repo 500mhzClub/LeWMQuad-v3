@@ -217,6 +217,9 @@ def test_contract_inventory_caps_source_closure_and_exact_gates() -> None:
         assert not contract.evaluate_gate(
             100, {**hundred, **mutation}, update_zero=zero
         )["passed"]
+    assert contract.evaluate_gate(
+        100, {**hundred, "G": zero["G"] - epsilon}, update_zero=zero
+    )["passed"]
 
     for mutation in (
         {"G": hundred["G"]},
@@ -233,6 +236,27 @@ def test_contract_inventory_caps_source_closure_and_exact_gates() -> None:
         assert not contract.evaluate_gate(
             400, {**four_hundred, **mutation}, update_100=hundred
         )["passed"]
+    assert contract.evaluate_gate(
+        400,
+        {**four_hundred, "G": hundred["G"] - epsilon},
+        update_100=hundred,
+    )["passed"]
+    gap_400 = {
+        **four_hundred,
+        "aggregate_free_recall": 0.50,
+        "aggregate_occupied_recall": 0.50 + 0.35,
+    }
+    assert contract.evaluate_gate(400, gap_400, update_100=hundred)["passed"]
+    assert not contract.evaluate_gate(
+        400,
+        {
+            **gap_400,
+            "aggregate_occupied_recall": (
+                gap_400["aggregate_free_recall"] + 0.35 + epsilon
+            ),
+        },
+        update_100=hundred,
+    )["passed"]
     relative_hundred = {
         **hundred,
         "aggregate_raster_nll": 0.50,
@@ -287,6 +311,27 @@ def test_contract_inventory_caps_source_closure_and_exact_gates() -> None:
         assert not contract.evaluate_gate(
             1_000, {**thousand, **mutation}, update_400=four_hundred
         )["passed"]
+    assert contract.evaluate_gate(
+        1_000,
+        {**thousand, "G": four_hundred["G"] - epsilon},
+        update_400=four_hundred,
+    )["passed"]
+    gap_1000 = {
+        **thousand,
+        "aggregate_free_recall": 0.75,
+        "aggregate_occupied_recall": 1.0,
+    }
+    assert contract.evaluate_gate(
+        1_000, gap_1000, update_400=four_hundred
+    )["passed"]
+    assert not contract.evaluate_gate(
+        1_000,
+        {
+            **gap_1000,
+            "aggregate_free_recall": 0.75 - epsilon,
+        },
+        update_400=four_hundred,
+    )["passed"]
     late_reference = {
         **four_hundred,
         "aggregate_raster_nll": 0.30,
