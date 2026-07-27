@@ -142,6 +142,42 @@ def test_integrity_scope_excludes_encoder_attention_and_artifact_schema_is_exact
     )
 
 
+def test_determinism_warning_allowlist_is_exact_and_rejects_mixed_warnings() -> None:
+    runner = _load("_geometry_anchored_joint_jepa_warning_test")
+    exact = runner.ROCM_GRID_SAMPLE_DETERMINISM_WARNING
+    assert exact.startswith("grid_sampler_2d_backward_cuda does not have")
+    assert "warn_only=True" in exact
+    assert runner._is_allowed_rocm_determinism_warning(exact) is True
+    rejected = (
+        "some_other_cuda_op does not have a deterministic implementation",
+        "grid_sampler_2d_backward_cuda emitted an unrelated warning",
+        exact + " An unrelated warning was mixed into this message.",
+    )
+    assert all(
+        runner._is_allowed_rocm_determinism_warning(message) is False
+        for message in rejected
+    )
+    source = inspect.getsource(runner._run_deterministic)
+    assert "not _is_allowed_rocm_determinism_warning(message)" in source
+    assert '"does not have a deterministic implementation" not in message' not in source
+
+
+def test_state_nonconstant_requires_within_channel_learned_variation() -> None:
+    runner = _load("_geometry_anchored_joint_jepa_state_range_test")
+    # Cross-channel class biases differ, but every learned cell has one
+    # constant state vector: this must not satisfy the nonconstant-state gate.
+    assert runner._learned_state_channels_nonconstant(
+        [0.0, -20.0, 7.0], [0.0, -20.0, 7.0]
+    ) is False
+    assert runner._learned_state_channels_nonconstant(
+        [0.0, -20.0, 7.0], [0.1, -20.0, 7.0]
+    ) is True
+    observation_source = inspect.getsource(runner._evaluate_observation)
+    assert "learned_logits = logits[:, :, visible]" in observation_source
+    assert "_learned_state_channels_nonconstant(" in observation_source
+    assert "state_min = min(state_min, _scalar(logits.min()))" not in observation_source
+
+
 def test_shared_gradient_gate_measures_semantic_and_dynamics_directly() -> None:
     runner = _load("_geometry_anchored_joint_jepa_gradient_scope_test")
     source = inspect.getsource(runner._train_probe)

@@ -40,6 +40,19 @@ MATCHED_RUNNER_PATH = ROOT / "scripts/run_go2_shared_jepa_v5_matched_training_v1
 SCHEDULE_ADAPTER_PATH = (
     ROOT / "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v2_schedule.py"
 )
+ROCM_GRID_SAMPLE_DETERMINISM_WARNING = (
+    "grid_sampler_2d_backward_cuda does not have a deterministic "
+    "implementation, but you set "
+    "'torch.use_deterministic_algorithms(True, warn_only=True)'. You can file "
+    "an issue at https://github.com/pytorch/pytorch/issues to help us "
+    "prioritize adding deterministic support for this operation."
+)
+
+
+def _is_allowed_rocm_determinism_warning(message: str) -> bool:
+    """Allow only the frozen runtime's one known grid-sampler warning."""
+
+    return message == ROCM_GRID_SAMPLE_DETERMINISM_WARNING
 
 
 def _source_module(name: str, path: Path) -> Any:
@@ -357,6 +370,25 @@ def _action_balanced_accuracy(actual: Sequence[int], predicted: Sequence[int]) -
     return sum(recalls) / 9.0, recalls
 
 
+def _learned_state_channels_nonconstant(
+    channel_minimum: Sequence[float],
+    channel_maximum: Sequence[float],
+) -> bool:
+    """Require variation within a learned state channel, not between biases."""
+
+    if len(channel_minimum) != 3 or len(channel_maximum) != 3:
+        raise ValueError("semantic state must have exactly three channels")
+    values = [*channel_minimum, *channel_maximum]
+    if not all(math.isfinite(float(value)) for value in values):
+        raise FloatingPointError("learned semantic state range is nonfinite")
+    return any(
+        float(maximum) > float(minimum)
+        for minimum, maximum in zip(
+            channel_minimum, channel_maximum, strict=True
+        )
+    )
+
+
 def _target_statistics(runtime: Any, model: Any, loader: Any, identities: Sequence[str], device: Any, *, update: int) -> dict[str, float]:
     torch = runtime.torch
     channel_sum = torch.zeros(64, dtype=torch.float64, device=device)
@@ -603,9 +635,12 @@ def _evaluate_observation(
             rough_cells = 0
             rough_set = set(rough_endpoints)
             invalid_unknown_exact = True
-            state_min = math.inf
-            state_max = -math.inf
+            state_channel_minimum = [math.inf, math.inf, math.inf]
+            state_channel_maximum = [-math.inf, -math.inf, -math.inf]
             invalid = ~model.bev_lift.anchor_in_frustum.to(device=device)
+            visible = ~invalid
+            if not bool(visible.any()):
+                raise RuntimeError("registered BEV has no in-frustum learned cells")
             for start in range(0, len(aggregate_endpoints), contract.MICROBATCH_SIZE):
                 identities = aggregate_endpoints[start : start + contract.MICROBATCH_SIZE]
                 images, labels = loader.endpoint_batch(
@@ -640,8 +675,16 @@ def _evaluate_observation(
                     rough_confusion += torch.bincount(rough_codes, minlength=9).cpu()
                     rough_nll_sum += float(cell_nll.index_select(0, index).double().sum().cpu())
                     rough_cells += int(rough_labels.numel())
-                state_min = min(state_min, _scalar(logits.min()))
-                state_max = max(state_max, _scalar(logits.max()))
+                learned_logits = logits[:, :, visible]
+                for channel in range(3):
+                    state_channel_minimum[channel] = min(
+                        state_channel_minimum[channel],
+                        _scalar(learned_logits[:, channel].min()),
+                    )
+                    state_channel_maximum[channel] = max(
+                        state_channel_maximum[channel],
+                        _scalar(learned_logits[:, channel].max()),
+                    )
                 all_values_finite = all_values_finite and bool(
                     torch.isfinite(logits).all()
                     and torch.isfinite(probabilities).all()
@@ -707,7 +750,9 @@ def _evaluate_observation(
             "paired_rgb_margin": (wrong_rgb_sum - correct_rgb_sum) / row_count,
             "paired_rgb_scene_wins": correct_rgb_scene_wins,
             "all_values_finite": all_values_finite,
-            "state_nonconstant": state_max > state_min,
+            "state_nonconstant": _learned_state_channels_nonconstant(
+                state_channel_minimum, state_channel_maximum
+            ),
             "paired_rgb_latents_nonidentical": latent_nonidentical,
             "out_of_frustum_semantic_unknown_exact": invalid_unknown_exact,
             "scene_metrics": scene_metrics,
@@ -1636,8 +1681,7 @@ def _run_deterministic(runtime: Any, operation: Any) -> tuple[Any, dict[str, Any
         messages = [str(item.message) for item in caught]
         unexpected = [
             message for message in messages
-            if "grid_sampler_2d_backward_cuda" not in message
-            and "does not have a deterministic implementation" not in message
+            if not _is_allowed_rocm_determinism_warning(message)
         ]
         if unexpected:
             raise RuntimeError(
