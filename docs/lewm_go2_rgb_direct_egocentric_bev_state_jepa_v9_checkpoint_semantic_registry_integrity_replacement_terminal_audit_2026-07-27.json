@@ -1,0 +1,432 @@
+{
+  "access_and_custody": {
+    "access_counter_contract_validation_passed": true,
+    "all_consumed_inputs_rehashed": true,
+    "allowed_supervision_arrays_opened": [
+      "raster_labels.u1"
+    ],
+    "audit_opened_checkpoint_or_training_trace": false,
+    "audit_opened_dataset_gpu_navigation_heldout_or_sealed_material": false,
+    "audit_opened_only_the_exact_six_authorized_normal_receipts": true,
+    "checkpoint_or_training_trace_read_after_write_count": 0,
+    "forbidden_access_counters_all_zero": true,
+    "forbidden_supervision_arrays_opened": []
+  },
+  "auditor": "/root/v8_contract_implementation",
+  "authority": {
+    "audit_only": true,
+    "authorizes_nothing": true,
+    "checkpoint_or_runtime_reuse_authorized": false,
+    "checkpoint_qualified": false,
+    "deployment_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "retry_resume_repair_recovery_replacement_or_second_seed_authorized": false,
+    "sealed_authorized": false,
+    "training_authorized": false
+  },
+  "classification": "VALID_ONE_SHOT_TERMINAL_SCIENTIFIC_FAILURE_AT_UPDATE_100_AFTER_PASSED_UPDATE_ZERO_AND_UPDATE_50_GATES_ONLY_THREE_CLASS_BALANCE_THRESHOLDS_FAILED_V9_PERMANENTLY_CLOSED_NO_RETRY",
+  "content_sha256": "f43745ae1329775f36a0b9ad01b34588e662387bca98c34430324cf09a0cd69c",
+  "execution_accounting": {
+    "active_training_scope": "perception_only",
+    "backward_calls": 400,
+    "checkpoint_qualified": false,
+    "ema_updates": 100,
+    "last_training_gradients_finite": true,
+    "objective_evaluations": 400,
+    "optimizer_updates": 100,
+    "predictor_backward_calls": 0,
+    "predictor_forward_calls": 0,
+    "predictor_objective_evaluations": 0,
+    "predictor_optimizer_membership_count": 0,
+    "predictor_optimizer_updates": 0,
+    "predictor_requires_grad_parameter_count": 0,
+    "presentations": 1600,
+    "registered_observations": 3,
+    "updates": 100
+  },
+  "execution_attempt": {
+    "attempt_identity": "4828c48d37eec3932953b12d16527262b2dd8c76c517eadd6b1d0711c76dfdea",
+    "attempt_index": 1,
+    "gpu_active_elapsed_seconds": 69.05569330300204,
+    "maximum_attempts": 1,
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v9/rgb_direct_egocentric_bev_state_jepa_probe_v9_checkpoint_semantic_registry_integrity_replacement_v1",
+    "output_root_absent_before_reservation": true,
+    "retry_authorized": false,
+    "sole_attempt_consumed": true,
+    "terminal_presentations": 1600,
+    "terminal_update": 100
+  },
+  "gate_progress": {
+    "metric_trajectory": [
+      {
+        "G": 0.6998085592732285,
+        "aggregate_free_recall": 0.9390318702617827,
+        "aggregate_occupied_recall": 0.2989404641775984,
+        "aggregate_raster_balanced_accuracy": 0.41963369748256985,
+        "aggregate_raster_nll": 1.1666669072256057,
+        "correct_rgb_scene_win_count": 8,
+        "gate_control": "CONTINUE_AFTER_UPDATE_ZERO_V8_INTEGRITY_GATE",
+        "gate_passed": true,
+        "update": 0
+      },
+      {
+        "G": 0.3883358774763165,
+        "aggregate_free_recall": 0.23569641060869992,
+        "aggregate_occupied_recall": 0.8315554274181923,
+        "aggregate_raster_balanced_accuracy": 0.6253017056273226,
+        "aggregate_raster_nll": 0.7351933152575567,
+        "correct_rgb_scene_win_count": 8,
+        "gate_control": "CONTINUE_AFTER_UPDATE_50_V8_HEALTH_GATE",
+        "gate_passed": true,
+        "update": 50
+      },
+      {
+        "G": 0.2974271838713174,
+        "aggregate_free_recall": 0.15401097508116818,
+        "aggregate_occupied_recall": 0.8571428571428571,
+        "aggregate_raster_balanced_accuracy": 0.6292200074101383,
+        "aggregate_raster_nll": 0.5243744905949164,
+        "correct_rgb_scene_win_count": 8,
+        "gate_control": "FAIL_UPDATE_100_V8_PERCEPTION_CONTINUATION_GATE_TERMINAL_NO_RETRY",
+        "gate_passed": false,
+        "update": 100
+      }
+    ],
+    "stopped_at_first_failure": true,
+    "update_0": {
+      "control": "CONTINUE_AFTER_UPDATE_ZERO_V8_INTEGRITY_GATE",
+      "passed": true
+    },
+    "update_100": {
+      "control": "FAIL_UPDATE_100_V8_PERCEPTION_CONTINUATION_GATE_TERMINAL_NO_RETRY",
+      "decisive_passes": {
+        "aggregate_occupied_recall": {
+          "minimum_inclusive": 0.8,
+          "observed": 0.8571428571428571
+        },
+        "correct_rgb_scene_win_count": {
+          "minimum_inclusive": 8,
+          "observed": 8,
+          "scene_count": 8
+        }
+      },
+      "failed_conjuncts_only": [
+        "aggregate_free_recall_at_least_point50",
+        "aggregate_raster_balanced_accuracy_at_least_point70",
+        "aggregate_raster_nll_at_most_point46"
+      ],
+      "failed_thresholds": {
+        "aggregate_free_recall": {
+          "minimum_inclusive": 0.5,
+          "observed": 0.15401097508116818
+        },
+        "aggregate_raster_balanced_accuracy": {
+          "minimum_inclusive": 0.7,
+          "observed": 0.6292200074101383
+        },
+        "aggregate_raster_nll": {
+          "maximum_inclusive": 0.46,
+          "observed": 0.5243744905949164
+        }
+      },
+      "passed": false
+    },
+    "update_250": {
+      "reached": false,
+      "result": "not_tested"
+    },
+    "update_50": {
+      "control": "CONTINUE_AFTER_UPDATE_50_V8_HEALTH_GATE",
+      "passed": true
+    }
+  },
+  "governance_validation": {
+    "all_127_sources_and_governing_documents_rehashed_through_contract": true,
+    "execution_authorization": {
+      "authorizer": "/root/v9_preregistration_author",
+      "byte_count": 58605,
+      "commit": "a4d31f688ccd05cea283db318fb73b988fbf087d",
+      "content_sha256": "f9f4c3acd33ff6de559c0815d980519e1f8e1d48f42e899747aca340715de498",
+      "file_sha256": "e61545300c9902cd9786f636049a143b945977e76f9fe5cc49abe7d84d02412e",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_execution_authorization_2026-07-27.json",
+      "status": "AUTHORIZED_ONE_EXACT_DIRECT_BEV_V9_CHECKPOINT_SEMANTIC_REGISTRY_INTEGRITY_REPLACEMENT"
+    },
+    "frozen_source_commit": "2c349f8225e8525e691c77e2fb0fe5573d92cb89",
+    "independent_source_review": {
+      "byte_count": 70484,
+      "commit": "c0c7d4c6d26dc284b521cf696e7718bfabe73062",
+      "content_sha256": "65cb9734019cd7f7d78a7e9d9ae2d442bde59115c0e22b18dba9dda64efe853b",
+      "file_sha256": "f7e45b7085696c20f472376b06020bec27623075e95acd7df8b1bb986708219f",
+      "findings": [],
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_source_review_2026-07-27.json",
+      "reviewer": "/root/v8_contract_implementation",
+      "status": "PASS_SOURCE_SCIENCE_IDENTITY_CHECKPOINT_REGISTRY_ADAPTER_AND_COMPLETE_FAILURE_RECEIPTS"
+    },
+    "preregistration": {
+      "byte_count": 13511,
+      "commit": "ef37e850c5f7b03c31b24fb86680f5f4cb8bd95f",
+      "content_sha256": "9cbe395fe4b192517c0977c4c3842af06645842d1914c86f5cc216c591e10cc7",
+      "file_sha256": "b8139b980df66d5c6d5fd1f73d0656a18fb78b9bd9b9428342f7175fa6baa603",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_preregistration_2026-07-27.json",
+      "status": "PREREGISTERED_ONE_FRESH_SCIENCE_IDENTICAL_V9_CHECKPOINT_SEMANTIC_REGISTRY_INTEGRITY_REPLACEMENT_PENDING_SOURCE_FREEZE_INDEPENDENT_REVIEW_AND_SEPARATE_MACHINE_AUTHORIZATION"
+    },
+    "reservation_review_and_authorization_bindings_exact": true,
+    "science_contract_exact": true,
+    "source_manifest": {
+      "byte_count": 44703,
+      "commit": "2c349f8225e8525e691c77e2fb0fe5573d92cb89",
+      "content_sha256": "2003108a6a13a9532210f31839a632d44d7cd47e14965ad93a870d4633e5073a",
+      "file_sha256": "1da8e6fe8babac775ae6a977e2b480ecb852f4cd2edbefca49d9e3105c9ab474",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_source_manifest_2026-07-27.json",
+      "source_count": 127,
+      "status": "PASS_SOURCE_CLOSURE"
+    }
+  },
+  "receipt_validation": {
+    "access_status": "ALL_AUTHORIZED_DEVELOPMENT_INPUTS_REHASHED",
+    "allowed_runtime_receipt_paths_opened": [
+      "reservation.json",
+      "metrics.json",
+      "artifact.json",
+      "access.json",
+      "result.json",
+      "completed.json"
+    ],
+    "binding_chain_exact": true,
+    "canonical_ascii_finite_duplicate_safe_and_content_hash_valid": true,
+    "canonical_receipt_count": 6,
+    "completion_to_result_binding_exact": true,
+    "receipt_bindings": {
+      "access.json": {
+        "byte_count": 1769323,
+        "content_sha256": "d1547a0dfe012e59bc2ac46dc792f7c5843f7681d45854c497d5d664e917d2eb",
+        "file_sha256": "02c55fec7bf115c542e667b65eed1678486b1f5bf64842e91eec9ea1d008d727",
+        "path": "access.json"
+      },
+      "artifact.json": {
+        "byte_count": 53408,
+        "content_sha256": "905edef5a3446be479d30367c39e8ad98d03e6c6bced7985553f699d8f101865",
+        "file_sha256": "35be29db3f771bdafb73f909be0b12e051482c4e46159c455fcbc7b769d3f988",
+        "path": "artifact.json"
+      },
+      "completed.json": {
+        "byte_count": 4959,
+        "content_sha256": "e565d54e2a49882ad7863e6497e2ce4bf8ca4dcadd4620f6585212d0c231d13d",
+        "file_sha256": "20ba444bce85f0b2c310582a95f3fb721663e714353d0e605b9f3ac5d5730853",
+        "path": "completed.json"
+      },
+      "metrics.json": {
+        "byte_count": 35488,
+        "content_sha256": "41d3243eb445a247c1be518740e877760f566215407c2f722fe4e4b512079f06",
+        "file_sha256": "f18204d8635202acacc8cc29728b0a41e1afaa01d28543f6725457a84c911f4b",
+        "path": "metrics.json"
+      },
+      "reservation.json": {
+        "byte_count": 66196,
+        "content_sha256": "1fe7648e38555aa9022c3114c1a21b2e6fade3c2aeeac5f6e4e7eff027d86852",
+        "file_sha256": "b48097c0c1c6a56d87e2c6b78d7d0d59aa4e7739fcce4f41a6aa4bdcf5e9e24c",
+        "path": "reservation.json"
+      },
+      "result.json": {
+        "byte_count": 4037,
+        "content_sha256": "c741b077d68f85ca9b6f4847c2c35eb5d9a514793c2ce5af2d3b1345d030dc8e",
+        "file_sha256": "45d2c53664244de57a9d4bc8a7e2821772d12df08ebe1e09e829d154f0f5e4d7",
+        "path": "result.json"
+      }
+    },
+    "reservation_status": "RESERVED_0700_BEFORE_TORCH_RUNTIME_RGB_RASTER_OR_CHECKPOINT",
+    "status_chain": {
+      "artifact": "FAIL_UPDATE_100_V8_PERCEPTION_CONTINUATION_GATE_TERMINAL_NO_RETRY",
+      "completion": "FAIL_UPDATE_100_V8_PERCEPTION_CONTINUATION_GATE_TERMINAL_NO_RETRY",
+      "metrics": "FAIL_UPDATE_100_V8_PERCEPTION_CONTINUATION_GATE_TERMINAL_NO_RETRY",
+      "result": "FAIL_UPDATE_100_V8_PERCEPTION_CONTINUATION_GATE_TERMINAL_NO_RETRY"
+    },
+    "status_chain_exact": true,
+    "terminal_inventory": {
+      "exact_precompletion_file_bindings_from_completed": [
+        {
+          "byte_count": 1769323,
+          "content_sha256": "d1547a0dfe012e59bc2ac46dc792f7c5843f7681d45854c497d5d664e917d2eb",
+          "file_sha256": "02c55fec7bf115c542e667b65eed1678486b1f5bf64842e91eec9ea1d008d727",
+          "filesystem_fingerprint": {
+            "ctime_ns": 1785111352102885282,
+            "device": 66311,
+            "inode": 524414375,
+            "mode": 33060,
+            "mtime_ns": 1785111352095885210,
+            "size": 1769323
+          },
+          "path": "access.json"
+        },
+        {
+          "byte_count": 53408,
+          "content_sha256": "905edef5a3446be479d30367c39e8ad98d03e6c6bced7985553f699d8f101865",
+          "file_sha256": "35be29db3f771bdafb73f909be0b12e051482c4e46159c455fcbc7b769d3f988",
+          "filesystem_fingerprint": {
+            "ctime_ns": 1785111351900883207,
+            "device": 66311,
+            "inode": 524414374,
+            "mode": 33060,
+            "mtime_ns": 1785111351896883166,
+            "size": 53408
+          },
+          "path": "artifact.json"
+        },
+        {
+          "byte_count": 24047531,
+          "content_sha256": "5295f3969b10af32e1028fd9cd7ac96964b1ec81e3cad2597f6c8df10670f1f7",
+          "file_sha256": "20b569f5bd54c84c7599b557d9501ed2bf9865716c825898b7e545970c60195b",
+          "filesystem_fingerprint": {
+            "ctime_ns": 1785111351830882489,
+            "device": 66311,
+            "inode": 3213833974,
+            "mode": 33060,
+            "mtime_ns": 1785111351807882252,
+            "size": 24047531
+          },
+          "path": "checkpoints/update_100.pt",
+          "phase": "phase_a",
+          "schedule_prefix_sha256": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+          "state_sha256": "6c8959faf7c4cae69966b064f09f57de64dea86c24999dfbf4331d16709a2efd",
+          "update": 100
+        },
+        {
+          "byte_count": 24047403,
+          "content_sha256": "6e6d99b850cbb5509dcb7974d79efd3ba6f46c2b695aac7c617953f925566af9",
+          "file_sha256": "35bcc5c1b7194f1f7f2f97e876da3a74c456bab5cf79c030515fa4ebed1b0cc1",
+          "filesystem_fingerprint": {
+            "ctime_ns": 1785111323498591480,
+            "device": 66311,
+            "inode": 3213833973,
+            "mode": 33060,
+            "mtime_ns": 1785111323476591254,
+            "size": 24047403
+          },
+          "path": "checkpoints/update_50.pt",
+          "phase": "phase_a",
+          "schedule_prefix_sha256": "f7e06f741d96af1a3c7796096a38f616f40ee713b6258a217ffd5627afda0788",
+          "state_sha256": "2cd84774ffd3b6a972b868f2acfef950061d070274f8590a59c01aca85fc796f",
+          "update": 50
+        },
+        {
+          "byte_count": 35488,
+          "content_sha256": "41d3243eb445a247c1be518740e877760f566215407c2f722fe4e4b512079f06",
+          "file_sha256": "f18204d8635202acacc8cc29728b0a41e1afaa01d28543f6725457a84c911f4b",
+          "filesystem_fingerprint": {
+            "ctime_ns": 1785111351896883166,
+            "device": 66311,
+            "inode": 524414373,
+            "mode": 33060,
+            "mtime_ns": 1785111351892883125,
+            "size": 35488
+          },
+          "path": "metrics.json"
+        },
+        {
+          "byte_count": 66196,
+          "content_sha256": "1fe7648e38555aa9022c3114c1a21b2e6fade3c2aeeac5f6e4e7eff027d86852",
+          "file_sha256": "b48097c0c1c6a56d87e2c6b78d7d0d59aa4e7739fcce4f41a6aa4bdcf5e9e24c",
+          "filesystem_fingerprint": {
+            "ctime_ns": 1785111277938123513,
+            "device": 66311,
+            "inode": 524414371,
+            "mode": 33060,
+            "mtime_ns": 1785111277932123452,
+            "size": 66196
+          },
+          "path": "reservation.json"
+        },
+        {
+          "byte_count": 4037,
+          "content_sha256": "c741b077d68f85ca9b6f4847c2c35eb5d9a514793c2ce5af2d3b1345d030dc8e",
+          "file_sha256": "45d2c53664244de57a9d4bc8a7e2821772d12df08ebe1e09e829d154f0f5e4d7",
+          "filesystem_fingerprint": {
+            "ctime_ns": 1785111352107885334,
+            "device": 66311,
+            "inode": 524414376,
+            "mode": 33060,
+            "mtime_ns": 1785111352103885292,
+            "size": 4037
+          },
+          "path": "result.json"
+        },
+        {
+          "byte_count": 83590,
+          "content_sha256": "5ebd4f9819401b763dcb20e01e0df6dae1e20f1f350d066d0d259cd295304524",
+          "file_sha256": "003ae05b499a46050ed3b23f33d7161766fd5dde2c07ea2a69f1dadd6dd8b029",
+          "filesystem_fingerprint": {
+            "ctime_ns": 1785111351844882632,
+            "device": 66311,
+            "inode": 524414372,
+            "mode": 33060,
+            "mtime_ns": 1785111351840882591,
+            "size": 83590
+          },
+          "path": "training_trace.json"
+        }
+      ],
+      "exact_precompletion_files": [
+        "access.json",
+        "artifact.json",
+        "checkpoints/update_100.pt",
+        "checkpoints/update_50.pt",
+        "metrics.json",
+        "reservation.json",
+        "result.json",
+        "training_trace.json"
+      ],
+      "exact_terminal_directories_including_root": [
+        ".",
+        "checkpoints"
+      ],
+      "exact_terminal_files": [
+        "access.json",
+        "artifact.json",
+        "checkpoints/update_100.pt",
+        "checkpoints/update_50.pt",
+        "completed.json",
+        "metrics.json",
+        "reservation.json",
+        "result.json",
+        "training_trace.json"
+      ],
+      "partial_evidence_bindings": []
+    }
+  },
+  "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_terminal_audit_v1",
+  "scientific_consequence": {
+    "checkpoint_qualified": false,
+    "diagnosis": "The learned RGB-only perception stack improved its aggregate raster NLL, balanced accuracy, occupied recall, and G through update 100, but became strongly occupied-biased: occupied recall passed while free recall collapsed. The exact failure is therefore diagnostic class imbalance, not absent visual learning or an execution defect.",
+    "downstream_navigation_heldout_production_or_promotion_authorized": false,
+    "operational_integrity_failure": false,
+    "perception_continuation_gate_failed_at_update_100": true,
+    "predictor_hypothesis_tested": false,
+    "predictor_training_or_evaluation_entered": false,
+    "terminal_scientific_result_produced": true,
+    "v9_attempt_consumed": true,
+    "v9_permanently_closed": true,
+    "v9_retry_resume_repair_recovery_reuse_or_second_seed_authorized": false
+  },
+  "sealing": {
+    "all_terminal_files_reported_sealed_read_only_by_completed": true,
+    "checkpoint_bindings_observed_only_inside_authorized_receipts": true,
+    "checkpoints_or_training_trace_opened_by_audit": false,
+    "terminal_inventory_bound_only_from_completed_receipt": true,
+    "v9_closed_no_retry_resume_reuse_or_downstream": true
+  },
+  "status": "PASS_VALID_TERMINAL_UPDATE_100_SCIENTIFIC_FAILURE_CLOSES_V9_NO_RETRY",
+  "successor_recommendation": {
+    "authority_effect": "recommendation_only_authorizes_nothing",
+    "fresh_initialization_new_output_root_and_no_v9_runtime_or_checkpoint_reuse_required": true,
+    "not_an_identical_v9_attempt": true,
+    "one_materially_targeted_class_balance_objective_successor_recommended": true,
+    "recommendation_count": 1,
+    "recommended_change": "Replace the perception raster objective with a preregistered class-balanced objective that directly prevents occupied-class dominance while preserving learned RGB-only JEPA perception and held-out-maze navigation as the repository goal.",
+    "requires_separate_preregistration_source_freeze_independent_review_and_execution_authorization": true,
+    "why_targeted": "NLL improved from 1.1666669072256057 to 0.5243744905949164, balanced accuracy improved from 0.41963369748256985 to 0.6292200074101383, occupied recall reached 0.8571428571428571, and correct RGB won 8 of 8 scenes, while free recall fell to 0.15401097508116818. This is a specific objective-balance defect with continued useful learning signal."
+  }
+}
