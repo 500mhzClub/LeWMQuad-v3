@@ -264,7 +264,7 @@ AUTHORIZATION_STATUS = (
 SCHEDULE_SCHEMA_ADAPTER_CHANGED = False
 TRAINING_SCIENCE_DELTA_COUNT = 0
 EVALUATION_DECISION_PROTOCOL_DELTA_COUNT = 1
-SCIENCE_DELTA_COUNT = TRAINING_SCIENCE_DELTA_COUNT
+SCIENCE_DELTA_COUNT = EVALUATION_DECISION_PROTOCOL_DELTA_COUNT
 _FROZEN_V2_SCIENCE_CONTRACT = deepcopy(_V2.science_contract())
 FROZEN_V2_SCIENCE_CONTRACT_SHA256 = canonical_json_sha256(
     _FROZEN_V2_SCIENCE_CONTRACT
@@ -511,6 +511,7 @@ def runtime_authorization_template() -> dict[str, Any]:
         "prior_runtime_or_checkpoint_reuse": False,
         "v2_runtime_output_reuse": False,
         "v2_retry_resume_repair_or_recovery": False,
+        "signed_boundary_semantic_anchor_state_v1_only": False,
         "semantic_anchor_state_v3_update100_trend_gate_timing_only": True,
         "output_root_must_be_absent_before_reservation": True,
         "reservation_consumes_the_sole_attempt": True,
@@ -532,6 +533,7 @@ EXECUTION_AUTHORITY.update({
     "one_fresh_semantic_anchor_v2_runtime_interpreter_integrity_replacement_only": False,
     "one_fresh_semantic_anchor_v3_update100_trend_gate_timing_only": True,
     "training_science_identical_to_frozen_semantic_anchor_v2": True,
+    "science_identical_to_frozen_semantic_anchor_v1": False,
     "evaluation_decision_protocol_delta_count": 1,
     "exact_reviewed_runtime_interpreter_handoff_only": True,
     "runtime_interpreter_path": RUNTIME_INTERPRETER_PATH,

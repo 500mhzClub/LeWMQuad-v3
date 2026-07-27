@@ -117,6 +117,7 @@ def test_training_mechanism_is_exact_v2_and_decision_delta_is_disclosed() -> Non
     assert receipt["normalized_exactly_equals_v2"] is True
     assert receipt["training_science_delta_count"] == 0
     assert receipt["evaluation_decision_protocol_delta_count"] == 1
+    assert contract.SCIENCE_DELTA_COUNT == 1
     assert receipt["changed_evaluation_paths"] == [
         "schema",
         "gates.controls",
@@ -348,6 +349,10 @@ def test_no_u200_and_caps_schedule_interpreter_root_are_exact() -> None:
     assert scope["maximum_presentations"] == 16_000
     assert scope["output_root"] == EXPECTED_OUTPUT_ROOT
     assert scope["prior_runtime_or_checkpoint_reuse"] is False
+    assert scope["signed_boundary_semantic_anchor_state_v1_only"] is False
+    assert scope[
+        "semantic_anchor_state_v3_update100_trend_gate_timing_only"
+    ] is True
     assert scope[
         "retry_resume_repair_recovery_extension_second_seed_or_second_attempt"
     ] is False
@@ -374,6 +379,10 @@ def test_failure_chain_and_downstream_reuse_denials_are_exact() -> None:
         contract.validate_failure_status_chain(mismatch)
 
     authority = contract.EXECUTION_AUTHORITY
+    assert authority["science_identical_to_frozen_semantic_anchor_v1"] is False
+    assert authority[
+        "training_science_identical_to_frozen_semantic_anchor_v2"
+    ] is True
     for key in (
         "predictor_training_or_evaluation_authorized",
         "g2_authorized",
