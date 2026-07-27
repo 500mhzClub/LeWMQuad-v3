@@ -108,6 +108,14 @@ def test_contract_inventory_caps_source_closure_and_exact_gates() -> None:
     assert contract.MAXIMUM_ATTEMPTS == 1
     assert contract.MAXIMUM_UPDATES == 1_000
     assert contract.MAXIMUM_PRESENTATIONS == 16_000
+    assert contract.EXECUTION_AUTHORITY["maximum_updates"] == 1_000
+    assert contract.EXECUTION_AUTHORITY["maximum_presentations"] == 16_000
+    assert not contract.EXECUTION_AUTHORITY[
+        "learned_bev_query_prototype_perception_only"
+    ]
+    assert not contract.EXECUTION_AUTHORITY[
+        "final_class_macro_grounding_perception_only"
+    ]
     assert contract.OBSERVATION_UPDATES == (0, 100, 400, 1_000)
     assert contract.SCHEDULE_PREFIX_SHA256 == {
         100: "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
@@ -191,6 +199,116 @@ def test_contract_inventory_caps_source_closure_and_exact_gates() -> None:
         {**thousand, "paired_rgb_aggregate_margin": 0.0},
         update_400=four_hundred,
     )["passed"] is False
+
+    epsilon = 1e-7
+    for mutation in (
+        {"G": zero["G"]},
+        {"aggregate_raster_nll": zero["aggregate_raster_nll"] - 0.15 + epsilon},
+        {
+            "aggregate_raster_balanced_accuracy": (
+                zero["aggregate_raster_balanced_accuracy"] + 0.08 - epsilon
+            )
+        },
+        {"aggregate_free_recall": 0.10 - epsilon},
+        {"aggregate_occupied_recall": 0.10 - epsilon},
+        {"paired_rgb_aggregate_margin": 0.0},
+        {"correct_rgb_scene_win_count": 5},
+    ):
+        assert not contract.evaluate_gate(
+            100, {**hundred, **mutation}, update_zero=zero
+        )["passed"]
+
+    for mutation in (
+        {"G": hundred["G"]},
+        {"aggregate_raster_nll": 0.55 + epsilon},
+        {"aggregate_raster_balanced_accuracy": 0.68 - epsilon},
+        {"aggregate_free_recall": 0.50 - epsilon},
+        {"aggregate_occupied_recall": 0.55 - epsilon},
+        {"aggregate_free_recall": 0.50, "aggregate_occupied_recall": 0.86},
+        {"rough_raster_balanced_accuracy": 0.65 - epsilon},
+        {"rough_raster_occupied_recall": 0.50 - epsilon},
+        {"paired_rgb_aggregate_margin": 0.0},
+        {"correct_rgb_scene_win_count": 6},
+    ):
+        assert not contract.evaluate_gate(
+            400, {**four_hundred, **mutation}, update_100=hundred
+        )["passed"]
+    relative_hundred = {
+        **hundred,
+        "aggregate_raster_nll": 0.50,
+        "aggregate_raster_balanced_accuracy": 0.80,
+        "rough_raster_balanced_accuracy": 0.75,
+        "rough_raster_occupied_recall": 0.60,
+    }
+    relative_four_hundred = {
+        **four_hundred,
+        "aggregate_raster_nll": relative_hundred["aggregate_raster_nll"] - 0.03,
+        "aggregate_raster_balanced_accuracy": (
+            relative_hundred["aggregate_raster_balanced_accuracy"] + 0.03
+        ),
+        "rough_raster_balanced_accuracy": (
+            relative_hundred["rough_raster_balanced_accuracy"] + 0.02
+        ),
+        "rough_raster_occupied_recall": (
+            relative_hundred["rough_raster_occupied_recall"] + 0.05
+        ),
+    }
+    assert contract.evaluate_gate(
+        400, relative_four_hundred, update_100=relative_hundred
+    )["passed"]
+    for field, direction in (
+        ("aggregate_raster_nll", 1.0),
+        ("aggregate_raster_balanced_accuracy", -1.0),
+        ("rough_raster_balanced_accuracy", -1.0),
+        ("rough_raster_occupied_recall", -1.0),
+    ):
+        assert not contract.evaluate_gate(
+            400,
+            {
+                **relative_four_hundred,
+                field: relative_four_hundred[field] + direction * epsilon,
+            },
+            update_100=relative_hundred,
+        )["passed"]
+
+    for mutation in (
+        {"G": four_hundred["G"]},
+        {"aggregate_raster_nll": 0.42 + epsilon},
+        {"aggregate_raster_balanced_accuracy": 0.80 - epsilon},
+        {"aggregate_unknown_recall": 0.80 - epsilon},
+        {"aggregate_free_recall": 0.68 - epsilon},
+        {"aggregate_occupied_recall": 0.88 - epsilon},
+        {"aggregate_free_recall": 0.68, "aggregate_occupied_recall": 0.94},
+        {"rough_raster_balanced_accuracy": 0.772 - epsilon},
+        {"rough_raster_occupied_recall": 0.65 - epsilon},
+        {"paired_rgb_aggregate_margin": 0.0},
+        {"correct_rgb_scene_win_count": 6},
+    ):
+        assert not contract.evaluate_gate(
+            1_000, {**thousand, **mutation}, update_400=four_hundred
+        )["passed"]
+    late_reference = {
+        **four_hundred,
+        "aggregate_raster_nll": 0.30,
+        "aggregate_raster_balanced_accuracy": 0.85,
+    }
+    late_pass = {
+        **thousand,
+        "aggregate_raster_nll": 0.30,
+        "aggregate_raster_balanced_accuracy": 0.85,
+    }
+    assert contract.evaluate_gate(
+        1_000, late_pass, update_400=late_reference
+    )["passed"]
+    for field, threshold in (
+        ("aggregate_raster_nll", 0.30 + epsilon),
+        ("aggregate_raster_balanced_accuracy", 0.85 - epsilon),
+    ):
+        assert not contract.evaluate_gate(
+            1_000,
+            {**late_pass, field: threshold},
+            update_400=late_reference,
+        )["passed"]
 
 
 def test_runner_three_seams_preserve_v9_custody_and_synthetic_mechanism() -> None:
@@ -395,6 +513,19 @@ def test_scale_16_hierarchical_adapter_is_normalized_stable_and_semantic() -> No
     extreme_logits = api.hierarchical_class_log_probabilities_v1(extreme)
     assert bool(torch.isfinite(extreme_logits).all())
     assert int(extreme_logits[0, :, 0, 2].argmax()) == 0
+    for code in (0, 1, 2):
+        saturated_labels = torch.full((1, 3, 3), code, dtype=torch.long)
+        saturated_fields, _ = api.signed_boundary_distance_targets_v1(
+            saturated_labels
+        )
+        saturated_logits = api.hierarchical_class_log_probabilities_v1(
+            saturated_fields
+        )
+        assert torch.equal(saturated_logits.argmax(dim=1), saturated_labels)
+    free_occupied_tie = torch.tensor([[[[1.0]], [[0.0]]]])
+    tie_logits = api.hierarchical_class_log_probabilities_v1(free_occupied_tie)
+    assert torch.equal(tie_logits[0, 1], tie_logits[0, 2])
+    assert int(tie_logits.argmax(dim=1)) == 1
     assert api.HIERARCHICAL_ADAPTER_SCALE_V1 == 16.0
 
 

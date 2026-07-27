@@ -499,7 +499,13 @@ FINAL_MARKERS = (
 
 EXECUTION_AUTHORITY = {
     **dict(_V12.EXECUTION_AUTHORITY),
+    "maximum_updates": MAXIMUM_UPDATES,
+    "maximum_presentations": MAXIMUM_PRESENTATIONS,
     "output_root": OUTPUT_ROOT_RELATIVE_PATH,
+    "one_fresh_v8_learned_bev_query_prototype_perception_attempt_only": False,
+    "learned_bev_query_prototype_perception_only": False,
+    "one_fresh_v10_final_class_macro_grounding_perception_attempt_only": False,
+    "final_class_macro_grounding_perception_only": False,
     "one_fresh_v12_update50_trend_gate_timing_only": False,
     "science_identical_to_frozen_v11": False,
     "model_data_seed_schedule_loss_optimizer_and_ema_identical_to_frozen_v11": (
