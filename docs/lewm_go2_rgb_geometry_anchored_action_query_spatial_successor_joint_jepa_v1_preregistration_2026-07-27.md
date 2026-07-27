@@ -359,6 +359,13 @@ role, do not advance the schedule, and preserve model/optimizer/RNG hashes.
   constant actions, feeds each `p_a` directly as the next predictor state with
   no renormalization, and has every intermediate and final value finite. It
   uses no future RGB and performs no objective, backward, step, or EMA update.
+  At rollout steps two through eight, evaluate only the trajectory's already
+  fixed action query through the exact same downsampler, position encoding,
+  action embedding, two query blocks, output head, and residual addition. A
+  source-bound CPU test must show this selected-action path agrees with the
+  corresponding slice of the vectorized all-nine path within float32
+  `rtol=1e-5, atol=1e-6`. This observation-only compute elision changes no
+  training call, parameter, loss, action, trajectory, state, or threshold.
 - Every predictor component and the online encoder/lift remain displaced from
   initialization; target gradients/optimizer membership remain zero; all
   source, schedule, access, custody, optimizer, EMA, objective, backward,
@@ -389,8 +396,8 @@ One scheduled pair is one presentation. A complete attempt has exactly:
 
 Observation and synthetic calls have separate counters and never enter those
 totals. No caching observations into training, mixed precision, compile mode,
-candidate reduction, retry, resume, schedule regeneration, or cap extension is
-permitted.
+training-candidate reduction, rollout-action substitution, retry, resume,
+schedule regeneration, or cap extension is permitted.
 
 Reservation precedes Torch/data/RGB/checkpoint/GPU access and consumes the sole
 attempt. Public reservation, metrics, artifact, access, result, completed, and
