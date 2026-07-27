@@ -62,7 +62,14 @@ zero training presentations.
 This V1 does not narrow or silently ignore those conclusions. It explicitly
 reopens the broad current-plus-action interface under the later standing user
 authority in this thread to change scientific scope while preserving a fully
-learned perception-only JEPA and sealed held-out-maze goal. It is a separately
+learned perception-only JEPA and sealed held-out-maze goal. That verbatim scope
+authority is durably recorded in
+`docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_preregistration_2026-07-26.json`
+(commit `bdf30305645efbcde56c7e52711e2ded7bf728fb`, file SHA-256
+`38e3f4d9378d4974f77b4a10b069a704b6722caea31bd97f237f0eac00f2308a`,
+content SHA-256
+`4100001b5217091bea6b917057eb33cb9331b77c47dd24468c036d5535e8d97e`,
+16,613 bytes). It is a separately
 preregistered direct physical-perception mechanism informed by the subsequent
 geometry-BEV evidence, not an automatic V10R/V11 successor or retry. The one
 new hypothesis is that geometry-grounded future queries plus token-local
