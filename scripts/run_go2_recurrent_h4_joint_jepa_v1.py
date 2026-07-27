@@ -108,6 +108,14 @@ EMA_MOMENTUM = 0.996
 VARIANCE_WEIGHT = 0.05
 ACTION_RANKING_WEIGHT = 1.0
 ACTION_RANKING_MARGIN = 0.05
+OBJECTIVE_DESCRIPTION = (
+    "prediction + 0.05*variance + 1.0*cyclic_wrong_action_margin_0.05"
+)
+PASS_DECISION = "PASS_MAIN_POOL_RECURRENT_H4_JOINT_JEPA_V1_PROBE"
+STOP_DECISION = "STOP_MAIN_POOL_RECURRENT_H4_JOINT_JEPA_V1_PROBE"
+ADDITIONAL_SCIENCE: dict[str, Any] = {}
+EXECUTION_SOURCE_BINDINGS: dict[str, dict[str, Any]] = {}
+AUXILIARY_TRAINING_CONTROL_MULTIPLIER = 0
 MAX_GPU_SECONDS = 90 * 60
 SEED = 20260727
 BOOTSTRAP_REPLICATES = 1_000
@@ -1147,11 +1155,7 @@ def _decision(observations: Sequence[Mapping[str, Any]], updates_completed: int)
         diagnostics = {"selected_update": None, "selected_presentations": None}
     passed = all(gates.values())
     return {
-        "decision": (
-            "PASS_MAIN_POOL_RECURRENT_H4_JOINT_JEPA_V1_PROBE"
-            if passed
-            else "STOP_MAIN_POOL_RECURRENT_H4_JOINT_JEPA_V1_PROBE"
-        ),
+        "decision": PASS_DECISION if passed else STOP_DECISION,
         "gates": gates,
         "failed_gates": sorted(name for name, passed_gate in gates.items() if not passed_gate),
         "diagnostics": diagnostics,
@@ -1260,12 +1264,12 @@ def _run(
     checkpoints: dict[str, dict[str, Any]] = {}
     updates_completed = 0
     presentations_completed = 0
-    training_loss_sums = {
+    training_loss_sums: defaultdict[str, float] = defaultdict(float, {
         "prediction": 0.0,
         "variance": 0.0,
         "wrong_action_ranking": 0.0,
         "total": 0.0,
-    }
+    })
     last_training_losses: dict[str, float] | None = None
     torch.cuda.synchronize()
     gpu_started = time.monotonic()
@@ -1311,10 +1315,33 @@ def _run(
             wrong_action_ranking_loss = torch.relu(
                 ACTION_RANKING_MARGIN + real_distance - wrong_distance
             ).mean()
+            auxiliary_losses: Mapping[str, Any] = {}
+            auxiliary_method = getattr(model, "training_auxiliary_losses", None)
+            if callable(auxiliary_method):
+                auxiliary_losses = auxiliary_method(
+                    history_rgb=history,
+                    past_actions=past,
+                    future_actions=future,
+                    target_latents=target,
+                    output=output,
+                )
+                if (
+                    not isinstance(auxiliary_losses, Mapping)
+                    or not auxiliary_losses
+                    or any(
+                        not isinstance(name, str)
+                        or not name
+                        or getattr(value, "ndim", None) != 0
+                        or not bool(torch.isfinite(value))
+                        for name, value in auxiliary_losses.items()
+                    )
+                ):
+                    raise ContractError("model auxiliary training losses are invalid")
             loss = (
                 prediction_loss
                 + VARIANCE_WEIGHT * variance_loss
                 + ACTION_RANKING_WEIGHT * wrong_action_ranking_loss
+                + sum(auxiliary_losses.values(), start=prediction_loss.new_zeros(()))
             )
             if not torch.isfinite(loss):
                 raise ContractError("non-finite joint JEPA objective")
@@ -1329,12 +1356,19 @@ def _run(
             access["optimizer_update_count"] = updates_completed
             access["target_ema_update_count"] = updates_completed
             access["wrong_action_counterfactual_sequence_count"] += BATCH_SIZE
+            access["auxiliary_training_control_sequence_count"] += (
+                AUXILIARY_TRAINING_CONTROL_MULTIPLIER * BATCH_SIZE
+            )
             last_training_losses = {
                 "prediction": float(prediction_loss.detach().item()),
                 "variance": float(variance_loss.detach().item()),
                 "wrong_action_ranking": float(
                     wrong_action_ranking_loss.detach().item()
                 ),
+                **{
+                    name: float(value.detach().item())
+                    for name, value in auxiliary_losses.items()
+                },
                 "total": float(loss.detach().item()),
             }
             if not all(math.isfinite(value) for value in last_training_losses.values()):
@@ -1379,9 +1413,7 @@ def _run(
                 for name, value in training_loss_sums.items()
             },
             "last_completed_update": last_training_losses,
-            "objective": (
-                "prediction + 0.05*variance + 1.0*cyclic_wrong_action_margin_0.05"
-            ),
+            "objective": OBJECTIVE_DESCRIPTION,
         },
         "selection_rule": (
             "minimum mean H1-H4 normalized real-action validation error among "
@@ -1398,6 +1430,10 @@ def _run(
             "train": train_binding,
             "val": val_binding,
             "n320_encoder_initialization": n320_binding,
+        },
+        "execution_source_bindings": {
+            name: dict(binding)
+            for name, binding in sorted(EXECUTION_SOURCE_BINDINGS.items())
         },
         "fresh_recurrent_and_predictor_initialization": True,
         "n320_encoder_initialization_checkpoint_open_count": 1,
@@ -1574,6 +1610,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "file_sha256": args.model_sha256,
                     "byte_count": args.model_bytes,
                 },
+                "execution_source_closure": {
+                    name: dict(binding)
+                    for name, binding in sorted(EXECUTION_SOURCE_BINDINGS.items())
+                },
                 "n320_encoder_initialization": {
                     "path": str(N320_CHECKPOINT.relative_to(ROOT)),
                     "file_sha256": N320_CHECKPOINT_SHA256,
@@ -1605,6 +1645,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "weight": ACTION_RANKING_WEIGHT,
                     "margin": ACTION_RANKING_MARGIN,
                 },
+                "additional_science": dict(ADDITIONAL_SCIENCE),
                 "retry_resume_or_arbitrary_checkpoint_input": False,
             },
         },
