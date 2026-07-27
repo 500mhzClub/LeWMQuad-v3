@@ -239,8 +239,8 @@ eligible graph roles. Every integrity counter is an integer and must be zero.
 
 No row identity, endpoint identity, row-derived path, RGB commitment, label
 commitment, relative pose, timestamp, or chain membership may appear in the
-receipt. The only paths allowed are the two exact public input paths and the
-one exact output path bound above.
+receipt. The only paths allowed are the fixed public preregistration path, the
+two exact public input paths, and the one exact output path bound above.
 
 ## Adequacy rule
 
