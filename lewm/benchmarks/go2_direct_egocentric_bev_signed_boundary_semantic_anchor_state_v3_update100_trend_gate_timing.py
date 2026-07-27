@@ -256,7 +256,8 @@ REVIEW_STATUS = (
     "GATE_TIMING_SCIENCE_AND_CUSTODY"
 )
 AUTHORIZATION_STATUS = (
-    "AUTHORIZED_ONE_EXACT_SCIENCE_IDENTICAL_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_"
+    "AUTHORIZED_ONE_EXACT_TRAINING_SCIENCE_IDENTICAL_SIGNED_BOUNDARY_"
+    "SEMANTIC_ANCHOR_"
     "STATE_V3_UPDATE100_TREND_GATE_TIMING_SUCCESSOR"
 )
 
@@ -800,13 +801,14 @@ REVIEW_CHECKS = {
     "source_only_imports_pass": True,
     "focused_cpu_tests_pass": True,
     "full_recursive_cpu_tests_pass": True,
-    "exactly_five_additive_sources_over_frozen_v2_155_sources": True,
+    "exactly_five_additive_sources_over_frozen_v2_160_sources": True,
     "frozen_v2_model_architecture_parameters_and_initialization_unchanged": True,
-    "science_contract_and_schedule_adapter_exactly_frozen_v2": True,
+    "normalized_training_science_and_schedule_adapter_exactly_frozen_v2": True,
+    "sole_evaluation_decision_protocol_delta_disclosed": True,
     "exact_pre_reservation_runtime_interpreter_handoff": True,
     "direct_wrong_interpreter_runner_rejected_before_reservation": True,
     "inherited_gate_schedule_snapshot_and_failure_receipt_seams_exact": True,
-    "v1_zero_work_terminal_audit_bound_and_v1_closed": True,
+    "v2_scientific_failure_terminal_audit_bound_and_v2_closed": True,
     "one_attempt_caps_output_root_and_downstream_denials_exact": True,
     "source_freeze_commit_matches_reviewed_tree": True,
     "all_implementation_authors_excluded": True,
@@ -824,15 +826,15 @@ def _review_source_freeze_commit(
         len(raw) != binding["byte_count"]
         or hashlib.sha256(raw).hexdigest() != binding["file_sha256"]
     ):
-        raise PermissionError("semantic-anchor V2 review binding changed")
-    review = parse_canonical_json(raw, name="semantic-anchor V2 source review")
+        raise PermissionError("semantic-anchor V3 review binding changed")
+    review = parse_canonical_json(raw, name="semantic-anchor V3 source review")
     core = dict(review)
     declared = core.pop("content_sha256", None)
     if (
         declared != binding["content_sha256"]
         or canonical_json_sha256(core) != declared
     ):
-        raise PermissionError("semantic-anchor V2 source review content changed")
+        raise PermissionError("semantic-anchor V3 source review content changed")
     return _source_freeze_commit(
         review.get("source_freeze_commit"),
         name="review.source_freeze_commit",
@@ -866,7 +868,7 @@ def validate_review(
         "content_sha256",
     }
     if type(value) is not dict or set(value) != fields:
-        raise PermissionError("semantic-anchor V2 source review fields changed")
+        raise PermissionError("semantic-anchor V3 source review fields changed")
     core = dict(value)
     declared = core.pop("content_sha256", None)
     reviewer = value["reviewer"]
@@ -902,7 +904,7 @@ def validate_review(
         or not is_sha256(declared)
         or canonical_json_sha256(core) != declared
     ):
-        raise PermissionError("semantic-anchor V2 source review did not pass")
+        raise PermissionError("semantic-anchor V3 source review did not pass")
     return dict(value)
 
 
@@ -930,7 +932,7 @@ def validate_authorization(
         "content_sha256",
     }
     if type(value) is not dict or set(value) != fields:
-        raise PermissionError("semantic-anchor V2 authorization fields changed")
+        raise PermissionError("semantic-anchor V3 authorization fields changed")
     core = dict(value)
     declared = core.pop("content_sha256", None)
     authorizer = value["authorizer"]
@@ -961,7 +963,7 @@ def validate_authorization(
         or not is_sha256(declared)
         or canonical_json_sha256(core) != declared
     ):
-        raise PermissionError("semantic-anchor V2 authorization changed")
+        raise PermissionError("semantic-anchor V3 authorization changed")
     return dict(value)
 
 
