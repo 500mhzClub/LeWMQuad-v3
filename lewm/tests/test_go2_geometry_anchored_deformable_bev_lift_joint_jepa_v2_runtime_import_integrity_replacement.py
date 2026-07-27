@@ -225,6 +225,7 @@ def test_runner_and_launcher_delegate_with_v2_bindings(
 
 def test_failure_receipts_and_one_shot_denials_are_preserved() -> None:
     contract = _load("_joint_jepa_v2_import_failure_contract", CONTRACT)
+    runner = _load("_joint_jepa_v2_import_failure_runner", RUNNER)
     assert contract.NORMAL_RECEIPT_PATHS == contract._v1.NORMAL_RECEIPT_PATHS
     assert contract.OPERATIONAL_FAILURE_RECEIPT_PATHS == (
         contract._v1.OPERATIONAL_FAILURE_RECEIPT_PATHS
@@ -232,6 +233,14 @@ def test_failure_receipts_and_one_shot_denials_are_preserved() -> None:
     assert contract.OPERATIONAL_FAILURE_RECEIPT_PATHS == (
         "metrics.json", "artifact.json", "access.json", "result.json",
         "failure.json", "completed.json",
+    )
+    assert contract.CONTROL_FAIL_OPERATIONAL == contract.OPERATIONAL_FAILURE_STATUS
+    assert "V2_RUNTIME_IMPORT_INTEGRITY_REPLACEMENT" in (
+        contract.CONTROL_FAIL_OPERATIONAL
+    )
+    assert "_terminal_failure" in runner._V1.__dict__
+    assert runner._V1.contract.CONTROL_FAIL_OPERATIONAL == (
+        contract.OPERATIONAL_FAILURE_STATUS
     )
     assert contract.EXECUTION_AUTHORITY["maximum_attempts"] == 1
     assert contract.EXECUTION_AUTHORITY[
