@@ -47,11 +47,30 @@ identification route. V10R's audit
 `docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_terminal_audit_2026-07-26.json`
 (commit `79d6de74b795065f7a5a47b32f1a56fc4fd4580a`, file SHA-256
 `8cd27a7d21e9ce1875d322cad2ea5aae8a846a301247f774d4da86074ebd28a5`)
-closed the V5 bounded latent-flow/projector-token retrieval family. The present
-mechanism has no operator bank, correspondence/transport distribution, flow,
-projector-token retrieval list, or detached wrong-action route: nonzero
-action-query cross-attention predicts a continuous geometry-BEV successor,
-and all candidate gradients are trained by token-local energy CE before SSM.
+records the broader conclusion
+`single_frame_current_plus_action_family_closed=true` and named a masked
+current-to-next pair tubelet as its separately preregistered successor. That
+successor was executed as V11 and its audit
+`docs/lewm_go2_rgb_masked_current_next_pair_tubelet_jepa_v11_terminal_audit_2026-07-26.json`
+(commit `4d3e967f1d30bc3843626a9b5aaecd79e6f1dca0`, file SHA-256
+`89ac1155e7108118133d6eb0648437e3a337f03e31c6c93e6ca63cc590f27044`,
+content SHA-256
+`9641274f58e84b4a3c3603f7cf19714e006ec27d062d57a0f24f0bb38677aec9`,
+7,876 bytes) closed exact V11 at its registered update-0 scientific gate with
+zero training presentations.
+
+This V1 does not narrow or silently ignore those conclusions. It explicitly
+reopens the broad current-plus-action interface under the later standing user
+authority in this thread to change scientific scope while preserving a fully
+learned perception-only JEPA and sealed held-out-maze goal. It is a separately
+preregistered direct physical-perception mechanism informed by the subsequent
+geometry-BEV evidence, not an automatic V10R/V11 successor or retry. The one
+new hypothesis is that geometry-grounded future queries plus token-local
+all-candidate contrast expose sparse action evidence that every globally
+reduced predecessor erased. The mechanism has no operator bank,
+correspondence/transport distribution, flow, projector-token retrieval list,
+masked tubelet, or detached wrong-action route. One failure closes this exact
+reopened hypothesis; it does not justify another current-plus-action variant.
 
 The V3 representation result is public evidence, not reusable state. This V1
 constructs a fresh model and changes the predictive mechanism. It is not a
@@ -401,9 +420,11 @@ model/contract/runner/launcher/closure-checker/focused tests; run CPU-only
 synthetic and source-closure checks; freeze a recursive source manifest and
 source commit; obtain an independent science/source/custody review with zero
 unresolved findings; obtain a distinct one-attempt machine authorization that
-binds every source and runtime identity plus the absent root; execute once;
-then obtain a fresh independent audit limited to public receipts. None of
-those later stages is authorized by this document alone.
+binds every source and runtime identity plus the requirement that the sole
+output root be absent; have the launcher prove that absence immediately before
+mode-`0700` reservation; execute once; then obtain a fresh independent audit
+limited to public receipts. None of those later stages is authorized by this
+document alone.
 
 No generated input, dataset row, RGB/raster payload, N320 payload, checkpoint,
 runtime output, trace, GPU, navigation, held-out, sealed, or rejected material
