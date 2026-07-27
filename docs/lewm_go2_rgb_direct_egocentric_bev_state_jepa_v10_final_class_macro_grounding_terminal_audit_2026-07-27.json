@@ -1,0 +1,212 @@
+{
+  "access_and_custody": {
+    "allowed_observation_access_occurred_before_failure": true,
+    "consumed_input_ledger_entry_count": 944,
+    "consumed_input_payloads_reopened_by_audit": false,
+    "consumed_input_rehash_attempted_after_failure": false,
+    "forbidden_semantic_counters": {
+      "camera_basis_array_open_count": 0,
+      "camera_origin_array_open_count": 0,
+      "depth_array_open_count": 0,
+      "general_raw_frame_loader_call_count": 0,
+      "ground_array_open_count": 0,
+      "other_supervision_array_open_count": 0,
+      "ray_direction_array_open_count": 0,
+      "ray_label_array_open_count": 0
+    },
+    "forbidden_semantic_counter_zero_count": 8,
+    "n320_checkpoint_authorized_initialization_input_loaded": true,
+    "output_checkpoint_or_training_trace_created": false,
+    "protected_navigation_G2_heldout_sealed_production_or_deployment_access": false,
+    "runtime_receipts_opened_by_this_audit": [
+      ".generated/go2_shared_observable_camera_ray_jepa_v10/rgb_direct_egocentric_bev_state_jepa_probe_v10_final_class_macro_grounding_v1/completed.json",
+      ".generated/go2_shared_observable_camera_ray_jepa_v10/rgb_direct_egocentric_bev_state_jepa_probe_v10_final_class_macro_grounding_v1/failure.json",
+      ".generated/go2_shared_observable_camera_ray_jepa_v10/rgb_direct_egocentric_bev_state_jepa_probe_v10_final_class_macro_grounding_v1/reservation.json"
+    ],
+    "unlisted_generated_path_open_count": 0
+  },
+  "attempt": {
+    "attempt_identity": "7c7699e120d7974dc68c364cec1fb3cda643ad03c68e21ca86cbf66a3d742ed0",
+    "attempt_index": 1,
+    "maximum_attempts": 1,
+    "output_root_absent_before_reservation": true,
+    "output_root_mode_at_reservation": "0700",
+    "reservation_consumed_sole_attempt": true,
+    "runtime_input_opened_before_reservation": false,
+    "torch_imported_before_reservation": false
+  },
+  "binding_validation": {
+    "attempt_identity_matches_reservation_completion_and_failure_context": true,
+    "canonical_content_hashes_recomputed_with_reviewed_contract_canonicalization": true,
+    "completed_binds_exact_failure_receipt": true,
+    "completed_binds_exact_precompletion_failure_and_reservation_receipts": true,
+    "completed_exact_terminal_directories_including_root": [
+      "."
+    ],
+    "completed_exact_terminal_files": [
+      "completed.json",
+      "failure.json",
+      "reservation.json"
+    ],
+    "failure_binds_exact_reservation_receipt": true,
+    "failure_context_science_contract_sha256": "bf839c0897d73f21b789b8e4c0d9277cba6c2c387e4ccbe347aa4cf91eadff43",
+    "partial_evidence_bindings": [],
+    "raw_file_hashes_and_byte_counts_recomputed": true,
+    "receipt_binding_mismatch_count": 0,
+    "receipt_canonical_content_hash_mismatch_count": 0,
+    "receipt_raw_hash_or_byte_count_mismatch_count": 0,
+    "reservation_science_contract_matches_failure_context": true
+  },
+  "classification": "VALID_ONE_SHOT_OPERATIONAL_INTEGRITY_FAILURE_DURING_NESTED_OBSERVATION_UPDATE_ZERO_BEFORE_ANY_REGISTERED_OBSERVATION_OR_SCIENTIFIC_WORK_V10_PERMANENTLY_CLOSED_NO_RETRY",
+  "closure": {
+    "checkpoint_qualified": false,
+    "deployment_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "no_qualification_inferred_from_source_or_initialization_checks": true,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "retry_resume_repair_or_replacement_authorized_for_v10": false,
+    "sealed_authorized": false,
+    "v10_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_reuse_authorized": false,
+    "v10_output_root_permanently_terminal_sealed_immutable_and_unopened_after_this_audit": true,
+    "v10_permanently_closed": true
+  },
+  "content_sha256": "3827a5fd6782352155bae14c17ef6b0ef792ad9023fe656dcad78a11f3c86517",
+  "date": "2026-07-27",
+  "failure": {
+    "completed_observation_determinism_witnesses": [],
+    "completed_observation_receipt_bindings": [],
+    "completed_observation_receipts": [],
+    "error_message": "ValueError: v8_mechanism_receipt_ready must be bool",
+    "error_message_sha256": "84c281dfe99541cdc0527b3d2594029fcd55a98f005ec9569900a8b8fac90a27",
+    "error_module": "builtins",
+    "error_type": "ValueError",
+    "exact_mechanism": {
+      "failed_dispatch": "nested inherited observation evaluator called the strict V10 evaluate_gate before the outer frozen V8 observer appended v8_mechanism_receipt_ready",
+      "marker_value_at_nested_dispatch": "missing",
+      "outer_observer_would_have_appended_marker_before_final_gate": true,
+      "registered_observation_count_when_exception_raised": 0,
+      "root_cause": "nested_observer_dispatch_order_not_final_V10_science_or_data",
+      "stage": "observation_update_0",
+      "strict_final_V10_gate_reached_too_early": true
+    },
+    "failure_status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY",
+    "missing_normal_receipts_at_failure_publication": [
+      "metrics.json",
+      "artifact.json",
+      "access.json",
+      "result.json",
+      "completed.json"
+    ],
+    "missing_normal_receipts_synthesized": false,
+    "normal_receipts_present_at_failure_publication": [
+      "reservation.json"
+    ],
+    "terminal_completion_later_published": true
+  },
+  "operation_accounting": {
+    "backward_calls": 0,
+    "ema_updates": 0,
+    "objective_evaluations": 0,
+    "online_perception_optimizer_update_count": 0,
+    "optimizer_rebuilt_or_reset": false,
+    "optimizer_updates": 0,
+    "pair_loads": 0,
+    "predictor_backward_call_count": 0,
+    "predictor_forward_call_count": 0,
+    "predictor_objective_evaluation_count": 0,
+    "predictor_optimizer_membership_count": 0,
+    "predictor_optimizer_update_count": 0,
+    "predictor_requires_grad_parameter_count": 0,
+    "presentations": 0,
+    "registered_observations": 0,
+    "target_ema_update_count": 0,
+    "target_update_callback_count": 0,
+    "training_passed": false,
+    "updates": 0
+  },
+  "receipt_bindings": {
+    "completed": {
+      "byte_count": 2010,
+      "content_sha256": "8a43bfce85ec41f80713d06e408ec763fec8c986a8fb7d479333b4875dde8baf",
+      "file_mode": "0444",
+      "file_sha256": "706c6a2b34b8640c5f5eb3e2b8586caf3462ccc16352e00df909c6be7ef54ec7",
+      "path": ".generated/go2_shared_observable_camera_ray_jepa_v10/rgb_direct_egocentric_bev_state_jepa_probe_v10_final_class_macro_grounding_v1/completed.json",
+      "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v10_final_class_macro_grounding_completion_v1",
+      "status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY"
+    },
+    "failure": {
+      "byte_count": 339096,
+      "content_sha256": "f297643e22383d585ce0f0f3de046c17c6799a348dc6842e21467596e4c6fdb9",
+      "file_mode": "0444",
+      "file_sha256": "8da352de328834b0523748aba7c81f57dc467d98c29be85747ec47cee0c47595",
+      "path": ".generated/go2_shared_observable_camera_ray_jepa_v10/rgb_direct_egocentric_bev_state_jepa_probe_v10_final_class_macro_grounding_v1/failure.json",
+      "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v10_final_class_macro_grounding_failure_v1",
+      "status": "TERMINAL_INTEGRITY_OR_OPERATIONAL_FAILURE_NO_RETRY"
+    },
+    "reservation": {
+      "byte_count": 73431,
+      "content_sha256": "8ec4ca701c3442d9ad61f024537008a47d5ce486fa9797e0029c59f2f3113c70",
+      "file_mode": "0444",
+      "file_sha256": "35e20c8a20f50cf122f89f33d2dc925783906111e5192e7bb918661a6109cf7a",
+      "path": ".generated/go2_shared_observable_camera_ray_jepa_v10/rgb_direct_egocentric_bev_state_jepa_probe_v10_final_class_macro_grounding_v1/reservation.json",
+      "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v10_final_class_macro_grounding_reservation_v1",
+      "status": "RESERVED_0700_BEFORE_TORCH_RUNTIME_RGB_RASTER_OR_CHECKPOINT"
+    }
+  },
+  "repository_goal": "fully_learned_perception_only_RGB_JEPA_navigation_validated_later_on_untouched_externally_custodied_heldout_mazes",
+  "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v10_final_class_macro_grounding_terminal_audit_v1",
+  "science_conclusion": {
+    "final_class_macro_grounding_hypothesis_tested": false,
+    "mechanism_scientific_failure_observed": false,
+    "mechanism_scientific_pass_observed": false,
+    "metric_receipt_produced": false,
+    "perception_mechanism_qualified": false,
+    "predictor_trained_or_evaluated": false,
+    "terminal_scientific_result_produced": false,
+    "update_0_integrity_gate_evaluated_to_a_final_control": false,
+    "v10_science_status": "UNTESTED_DUE_PRE_SCIENTIFIC_NESTED_OBSERVER_DISPATCH_FAILURE"
+  },
+  "status": "PASS_VALID_TERMINAL_NESTED_OBSERVER_UPDATE_ZERO_OPERATIONAL_INTEGRITY_FAILURE_CLOSES_V10_NO_RETRY",
+  "successor_boundary": {
+    "automatic_execution_authorized_by_this_audit": false,
+    "eligible_successor_count": 1,
+    "eligible_successors": [
+      {
+        "attempt_policy": {
+          "fresh_initialization_required": true,
+          "maximum_attempts": 1,
+          "maximum_presentations": 4000,
+          "maximum_updates": 250,
+          "no_retry_resume_repair_recovery_extension_second_seed_or_second_attempt": true
+        },
+        "identifier": "V11_NESTED_OBSERVER_PRELIMINARY_DISPATCH_INTEGRITY_REPLACEMENT",
+        "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v11/rgb_direct_egocentric_bev_state_jepa_probe_v11_nested_observer_preliminary_dispatch_integrity_replacement_v1",
+        "required_mechanical_delta": {
+          "final_dispatch": "when v8_mechanism_receipt_ready is present and true, evaluate the exact frozen V10 final gate without any threshold comparator control or metric change",
+          "nested_dispatch": "when the inherited nested observer calls before v8_mechanism_receipt_ready exists, return only a nonterminal preliminary dispatch receipt so the frozen outer V8 observer can append its exact readiness and accounting fields and invoke the final V10 gate",
+          "nested_preliminary_dispatch_may_count_as_scientific_gate_evidence": false,
+          "sole_behavioral_delta": "nested_observer_preliminary_dispatch_only"
+        },
+        "required_preexecution_controls": [
+          "fresh_V11_preregistration",
+          "source_only_implementation_and_focused_nested_then_final_dispatch_tests",
+          "exact_recursive_source_manifest_and_source_freeze",
+          "independent_science_identity_runner_custody_and_dispatch_review_with_zero_findings",
+          "separate_exact_machine_execution_authorization",
+          "absent_fresh_V11_output_root_before_reservation"
+        ],
+        "science_identity": {
+          "data_seed_schedule_model_objective_optimizer_EMA_gates_thresholds_initialization_and_caps": "exact_frozen_V10",
+          "frozen_V10_science_contract_sha256": "bf839c0897d73f21b789b8e4c0d9277cba6c2c387e4ccbe347aa4cf91eadff43",
+          "scientific_delta_count": 0
+        },
+        "v10_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_reuse_authorized": false,
+        "v10_output_root_access_or_mutation_authorized": false
+      }
+    ],
+    "other_successor_or_retry_authorized": false
+  }
+}
