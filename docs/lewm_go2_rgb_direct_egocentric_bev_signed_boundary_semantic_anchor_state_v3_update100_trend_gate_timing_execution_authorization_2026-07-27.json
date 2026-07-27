@@ -1,0 +1,1986 @@
+{
+  "authority": {
+    "all_actions_state_delta_contrast_loss_only": false,
+    "allowed_row_array_values": [
+      "current_rgb",
+      "next_rgb",
+      "fixed_negative_rgb",
+      "raster_labels.u1"
+    ],
+    "allowed_supervision_arrays": [
+      "raster_labels.u1"
+    ],
+    "architecture_parameters_data_seed_schedule_optimizer_adapter_and_caps_identical_to_frozen_signed_boundary_v1": false,
+    "attempt_index": 1,
+    "checkpoint_qualified": false,
+    "coordinate_aware_film_unet_predictor_only": false,
+    "deployment_authorized": false,
+    "evaluation_decision_protocol_delta_count": 1,
+    "exact_full_direct_bev_16000_presentation_schedule_only": true,
+    "exact_reviewed_runtime_interpreter_handoff_only": true,
+    "final_class_macro_grounding_perception_only": false,
+    "further_semantic_anchor_gate_timing_successor_authorized": false,
+    "g2_authorized": false,
+    "general_raw_frame_loader_authorized": false,
+    "gpu_active_minutes_maximum": 30,
+    "heldout_authorized": false,
+    "learned_bev_query_prototype_perception_only": false,
+    "matched_no_jepa_arm_authorized": false,
+    "maximum_attempts": 1,
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "model_data_seed_schedule_loss_optimizer_and_ema_identical_to_frozen_v11": false,
+    "multiprototype_v2_or_v13_timing_successor_authorized": false,
+    "n320_encoder_initialization_only_authorized": true,
+    "narrow_row_array_loader_only_authorized": true,
+    "navigation_authorized": false,
+    "one_exact_fresh_attempt_authorized": true,
+    "one_fresh_semantic_anchor_v2_runtime_interpreter_integrity_replacement_only": false,
+    "one_fresh_semantic_anchor_v3_update100_trend_gate_timing_only": true,
+    "one_fresh_signed_boundary_distance_state_v1_perception_attempt_only": false,
+    "one_fresh_signed_boundary_semantic_anchor_state_v1_perception_attempt_only": false,
+    "one_fresh_v10_final_class_macro_grounding_perception_attempt_only": false,
+    "one_fresh_v11_nested_observer_gate_dispatch_integrity_replacement_only": false,
+    "one_fresh_v12_update50_trend_gate_timing_only": false,
+    "one_fresh_v8_learned_bev_query_prototype_perception_attempt_only": false,
+    "one_fresh_v9_checkpoint_semantic_registry_integrity_replacement_only": false,
+    "other_supervision_array_access_authorized": false,
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_signed_boundary_semantic_anchor_state_v3/rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_probe_v3_update100_trend_gate_timing_v1",
+    "output_root_must_be_absent_before_reservation": true,
+    "phase_b_authorized": false,
+    "phase_separated_frozen_state_prediction_only": false,
+    "physical_requalification_authorized": false,
+    "predictor_training_or_evaluation_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "retry_resume_repair_recovery_replacement_or_second_seed_authorized": false,
+    "runtime_interpreter_path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-torch291-rocm64/bin/python",
+    "runtime_sys_prefix": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-torch291-rocm64",
+    "science_identical_hook_integrity_replacement_only": false,
+    "science_identical_rng_integrity_replacement_only": false,
+    "science_identical_to_frozen_semantic_anchor_v1": false,
+    "science_identical_to_frozen_signed_boundary_v1": false,
+    "science_identical_to_frozen_v10": false,
+    "science_identical_to_frozen_v11": false,
+    "science_identical_to_frozen_v12": false,
+    "science_identical_to_frozen_v8": false,
+    "science_identical_v7_runner_integrity_replacement_only": false,
+    "sealed_authorized": false,
+    "semantic_anchor_weight_tune_authorized": false,
+    "signed_boundary_v1_runtime_output_or_state_reuse_authorized": false,
+    "sole_scientific_delta_is_fixed_one_over_64_semantic_anchor": false,
+    "sole_trainable_mechanism_delta_is_two_field_signed_boundary_state": false,
+    "train_and_checkpoint_selection_roles_only_authorized": true,
+    "training_science_identical_to_frozen_semantic_anchor_v2": true,
+    "v10_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_reuse_authorized": false,
+    "v10_retry_resume_repair_recovery_or_extension_authorized": false,
+    "v11_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_reuse_authorized": false,
+    "v11_retry_resume_repair_recovery_or_extension_authorized": false,
+    "v12_or_multiprototype_runtime_output_or_state_reuse_authorized": false,
+    "v1_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_reuse_authorized": false,
+    "v1_retry_authorized": false,
+    "v1_retry_resume_repair_recovery_or_extension_authorized": false,
+    "v2_checkpoint_or_runtime_output_reuse_authorized": false,
+    "v2_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_reuse_authorized": false,
+    "v2_parameter_loss_or_timing_successor_authorized": false,
+    "v2_retry_authorized": false,
+    "v2_retry_resume_repair_recovery_or_extension_authorized": false,
+    "v2_runtime_output_or_state_reuse_authorized": false,
+    "v3_checkpoint_or_runtime_output_reuse_authorized": false,
+    "v3_retry_authorized": false,
+    "v4_checkpoint_tensor_trace_or_runtime_output_reuse_authorized": false,
+    "v4_retry_authorized": false,
+    "v5_checkpoint_tensor_trace_or_runtime_output_reuse_authorized": false,
+    "v5_retry_authorized": false,
+    "v6_checkpoint_tensor_trace_receipt_or_runtime_output_reuse_authorized": false,
+    "v6_retry_resume_or_repair_authorized": false,
+    "v7_checkpoint_tensor_trace_receipt_or_runtime_output_reuse_authorized": false,
+    "v7_retry_resume_repair_or_extension_authorized": false,
+    "v8_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_reuse_authorized": false,
+    "v8_retry_resume_repair_recovery_or_extension_authorized": false,
+    "v9_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_reuse_authorized": false,
+    "v9_retry_resume_repair_recovery_or_extension_authorized": false
+  },
+  "authorizer": "/root/semantic_v3_machine_authorizer",
+  "content_sha256": "80caf5b8738424fac68cd20f717fd3ab051110eec0f4f65f5d4d548f42f25124",
+  "experiment": {
+    "access_policy": {
+      "accounting_equations": {
+        "raster_labels.u1": "row_requests=row_cache_hits+row_cache_misses;row_cache_misses=underlying_array_cache_hits+underlying_array_cache_misses;underlying_array_cache_misses=physical_array_opens",
+        "rgb": "sum_current_next_fixed_endpoint_rgb_row_requests=rgb_cache_hits+rgb_cache_misses;rgb_cache_misses=rgb_physical_file_opens"
+      },
+      "authorized_nonnegative_counters": [
+        "raw_manifest_open_count",
+        "raw_audit_open_count",
+        "pair_index_open_count",
+        "endpoint_index_open_count",
+        "current_rgb_row_request_count",
+        "next_rgb_row_request_count",
+        "fixed_negative_rgb_row_request_count",
+        "endpoint_rgb_row_request_count",
+        "rgb_cache_hit_count",
+        "rgb_cache_miss_count",
+        "rgb_physical_file_open_count",
+        "raster_label_row_request_count",
+        "raster_label_row_cache_hit_count",
+        "raster_label_row_cache_miss_count",
+        "raster_label_underlying_array_cache_hit_count",
+        "raster_label_underlying_array_cache_miss_count",
+        "raster_label_physical_array_open_count",
+        "n320_gate_open_count",
+        "n320_checkpoint_open_count",
+        "schedule_open_count"
+      ],
+      "forbidden_zero_counters": [
+        "camera_supervision_array_open_count",
+        "ray_supervision_array_open_count",
+        "depth_supervision_array_open_count",
+        "ground_supervision_array_open_count",
+        "other_supervision_array_open_count",
+        "general_raw_frame_loader_call_count",
+        "prior_runtime_output_open_count",
+        "rejected_checkpoint_open_count",
+        "training_trace_read_count",
+        "written_checkpoint_read_count",
+        "g2_open_count",
+        "navigation_open_count",
+        "heldout_open_count",
+        "sealed_open_count",
+        "production_input_open_count",
+        "deployment_input_open_count",
+        "observer_rerun_count"
+      ],
+      "prohibited_runtime_categories": [
+        "other_supervision_arrays",
+        "general_raw_frame_loader",
+        "prior_attempt_roots",
+        "rejected_checkpoints",
+        "checkpoint_or_trace_reads_after_write",
+        "g2",
+        "navigation",
+        "heldout",
+        "sealed",
+        "production",
+        "deployment"
+      ],
+      "runner_counter_mapping": {
+        "current_rgb_row_request_count": "rgb_request_count.current",
+        "endpoint_rgb_row_request_count": "rgb_request_count.endpoint",
+        "fixed_negative_rgb_row_request_count": "rgb_request_count.fixed_negative",
+        "next_rgb_row_request_count": "rgb_request_count.next",
+        "raster_label_physical_array_open_count": "raster_physical_array_open_success_count",
+        "raster_label_row_cache_hit_count": "sum(raster_row_cache_hit_count.*)",
+        "raster_label_row_cache_miss_count": "sum(raster_row_cache_miss_count.*)",
+        "raster_label_row_request_count": "sum(raster_row_request_count.*)",
+        "raster_label_underlying_array_cache_hit_count": "raster_underlying_array_cache_hit_count",
+        "raster_label_underlying_array_cache_miss_count": "raster_underlying_array_cache_miss_count",
+        "rgb_cache_hit_count": "sum(rgb_cache_hit_count.*)",
+        "rgb_cache_miss_count": "sum(rgb_cache_miss_count.*)",
+        "rgb_physical_file_open_count": "sum(rgb_physical_read_success_count.*)"
+      }
+    },
+    "authority": {
+      "checkpoint_qualified": false,
+      "deployment_authorized": false,
+      "g2_authorized": false,
+      "g2_navigation_heldout_sealed_production_promotion_or_deployment_authorized": false,
+      "heldout_authorized": false,
+      "matched_no_jepa_arm_authorized": false,
+      "navigation_authorized": false,
+      "physical_requalification_authorized": false,
+      "predictor_training_or_evaluation_authorized": false,
+      "production_authorized": false,
+      "promotion_authorized": false,
+      "retry_resume_repair_recovery_replacement_or_second_seed_authorized": false,
+      "sealed_authorized": false,
+      "signed_boundary_distance_v1_execution_authorized_by_source_contract": false,
+      "signed_boundary_semantic_anchor_v1_execution_authorized_by_source_contract": false,
+      "signed_boundary_v1_runtime_output_reuse_authorized": false,
+      "v10_execution_authorized_by_source_contract": false,
+      "v12_or_multiprototype_runtime_output_reuse_authorized": false,
+      "v2_checkpoint_or_runtime_output_reuse_authorized": false,
+      "v2_parameter_loss_or_timing_successor_authorized": false,
+      "v3_checkpoint_or_runtime_output_reuse_authorized": false,
+      "v3_execution_authorized_by_source_contract": false,
+      "v4_execution_authorized_by_source_contract": false,
+      "v5_checkpoint_or_runtime_output_reuse_authorized": false,
+      "v6_checkpoint_tensor_trace_or_runtime_output_reuse_authorized": false,
+      "v6_execution_authorized_by_source_contract": false,
+      "v7_checkpoint_or_runtime_output_reuse_authorized": false,
+      "v7_execution_authorized_by_source_contract": false,
+      "v8_execution_authorized_by_source_contract": false,
+      "v9_checkpoint_or_runtime_output_reuse_authorized": false
+    },
+    "data": {
+      "checkpoint_selection": {
+        "pairs": 495,
+        "scenes": 8,
+        "unique_endpoints": 924
+      },
+      "fixed_mapped_negative_rule": {
+        "different_next_endpoint_required": true,
+        "mapped_value": "next_rgb_endpoint_only",
+        "non_singleton": "cyclic_next_row_within_same_scene_and_primitive_group_wrapping_once",
+        "random_draw_count": 0,
+        "same_role_and_scene_required": true,
+        "singleton": "cyclic_next_row_in_complete_same_scene_content_order_wrapping_once",
+        "sort_key": "lowercase_hex_content_sha256_bytewise_ascending"
+      },
+      "new_render_label_row_role_filter_resample_or_mapping": false,
+      "roles": [
+        "train",
+        "checkpoint_selection"
+      ],
+      "selection_action_permutation_binding": {
+        "changed_action_count": 495,
+        "input_rows_sha256": "81f85cdf0ad00ec68918f5eeb7637bf20aa3f17f5615bedfb10e6a4859eb91f1",
+        "mapping_sha256": "2740be362829c172a06aebae0d077e69ede8af80cbf6f00569eb460dc559bb0f",
+        "row_count": 495,
+        "scene_count": 8,
+        "scene_size_histogram": {
+          "47": 1,
+          "64": 7
+        },
+        "shift_histogram": {
+          "13": 1,
+          "8": 7
+        }
+      },
+      "selection_family_bindings_sha256": "c39efe48afd6d4c02a24af77f1f11e7f6cd5a69d571b0a9416924b07bbacbb11",
+      "target_mapping_bindings": {
+        "checkpoint_selection": {
+          "fallback_count": 1,
+          "input_rows_sha256": "81f85cdf0ad00ec68918f5eeb7637bf20aa3f17f5615bedfb10e6a4859eb91f1",
+          "mapping_sha256": "95d42273a8319316ad68781cb2158146e7672eda529984c3aeddc0937d87a9c1",
+          "non_singleton_primitive_group_count": 71,
+          "primitive_group_count": 72,
+          "row_count": 495,
+          "same_action_eligible_count": 494
+        },
+        "train": {
+          "fallback_count": 25,
+          "input_rows_sha256": "bb119abb33b7c56f3c1d96e7cb1b52fbe4d2db27d80df4f95a5b1cd9d0cf729e",
+          "mapping_sha256": "c9c914422927670ffce8e2a967bf264725b9ae3c55c353ee0a1a16e44044196b",
+          "non_singleton_primitive_group_count": 578,
+          "primitive_group_count": 603,
+          "row_count": 4262,
+          "same_action_eligible_count": 4237
+        }
+      },
+      "train": {
+        "pairs": 4262,
+        "scenes": 72,
+        "unique_endpoints": 7777
+      }
+    },
+    "frozen_v7_integrity_provenance": {
+      "not_a_v8_unchanged_architecture_claim": true,
+      "not_active_v8_science": true,
+      "predecessor_claims": {
+        "frozen_v2_integrity_provenance": {
+          "not_a_v3_unchanged_architecture_claim": true,
+          "scope": "historical_v1_to_v2_integrity_replacement_only",
+          "v1_to_v2": {
+            "architecture_data_objective_optimizer_schedule_gate_or_cap_changed": false,
+            "caller_cpu_rng_preserved": true,
+            "every_device_rng_preserved": true,
+            "frozen_v1_science_component_sha256": {
+              "gate_thresholds": "18a62d22d0bd2b1b7b93e469d6a9d4954d517b7fcbe2961c64d7a675bc53f1b0",
+              "model": "90a2d725ce3694235d5aca2ecdda8b9e0d38df0f11e29a4d571dd0e7c2d76c5b",
+              "objective": "a3e48bb32f35d5d66c21572c9aa5fe5b5673833be768759a7875f5c07630e19a",
+              "optimizer": "af379468031d4dc7c7bf26ec9e0a0d30ca29fc16a9b34c44e688994e41372715",
+              "schedule": "f156cc0274590be295bac0607790b61e2ed6aed9528a236bfb157cd5dd4beba2"
+            },
+            "frozen_v1_science_contract_sha256": "9cd985135ad9fef2ce324d4389b01d95f800d186724729626cbe895e1d8bdfb9",
+            "initialized_parameter_bytes_changed": false,
+            "parameter_draw_order_changed": false,
+            "scope": "fresh_module_cpu_default_generator_seeding_only",
+            "v1_call": "torch.random.manual_seed(20260712)",
+            "v2_call": "torch.random.default_generator.manual_seed(20260712)"
+          }
+        },
+        "integrity_replacement": {
+          "model_data_seed_schedule_initialization_objectives_optimizer_gates_thresholds_or_caps_changed": false,
+          "science_changed": false,
+          "sole_behavioral_delta": "install_complete_frozen_v6_seams_then_delegate_directly_to_deepest_v1_entrypoints",
+          "v6_output_root": ".generated/go2_shared_observable_camera_ray_jepa_v6/rgb_direct_egocentric_bev_state_jepa_probe_v6_phase_separated_frozen_state_prediction",
+          "v6_retry_resume_or_repair_authorized": false,
+          "v6_runtime_output_open_or_reuse_authorized": false,
+          "v7_maximum_attempts": 1,
+          "v7_output_root": ".generated/go2_shared_observable_camera_ray_jepa_v7/rgb_direct_egocentric_bev_state_jepa_probe_v7_runner_integrity_replacement"
+        },
+        "phase_adapter": {
+          "base_model": "fresh_frozen_v3_coordinate_aware_film_unet_predictor",
+          "boundary": {
+            "after_ema_update": 400,
+            "online_to_target_hard_sync_count": 1,
+            "reset_global_update_counter": false
+          },
+          "optimizer": "one_frozen_v3_adamw_constructed_once_never_reset",
+          "parameter_buffer_or_module_addition": false,
+          "phase_one": {
+            "frozen": "predictor_and_detached_target",
+            "presentations": [
+              1,
+              6400
+            ],
+            "target_callback": "ema_0point996",
+            "total": "G/log(2)",
+            "trainable": "online_encoder_decoder_state",
+            "updates": [
+              1,
+              400
+            ]
+          },
+          "phase_two": {
+            "frozen": "online_and_target_perception",
+            "perception_mode": "deterministic_eval",
+            "presentations": [
+              6401,
+              16000
+            ],
+            "target_callback": "counted_noop",
+            "total": "J/log(2)+C",
+            "trainable": "predictor_only",
+            "updates": [
+              401,
+              1000
+            ]
+          },
+          "public_seams": [
+            "active_phase_v6",
+            "phase_counters_v6",
+            "set_phase_override_for_integrity_probe_v6",
+            "apply_phase_policy_v6"
+          ],
+          "v5_A_present": false
+        },
+        "phase_successor": {
+          "boundary": "one_online_to_target_hard_sync_after_ema_update_400",
+          "data_seed_schedule_optimizer_hyperparameter_delta": false,
+          "model_architecture_parameter_inventory_and_initialization_delta": false,
+          "phase_one_total": "G/log(2)",
+          "phase_two_total": "J/log(2)+C",
+          "prior_checkpoint_tensor_trace_or_runtime_output_reuse": false,
+          "scope": "phase_separated_frozen_state_prediction",
+          "shared_gradient_or_moving_phase_two_perception": false,
+          "v5_all_actions_state_delta_contrast_A": "absent"
+        },
+        "predictor_successor": {
+          "all_actions_path_changed_only_to_share_state_encoding": true,
+          "predictor_config": {
+            "action_embedding": {
+              "count": 9,
+              "dim": 64
+            },
+            "action_vocabulary_in_order": [
+              "arc_left",
+              "arc_right",
+              "backward",
+              "forward_fast",
+              "forward_medium",
+              "forward_slow",
+              "hold",
+              "yaw_left",
+              "yaw_right"
+            ],
+            "activation": "GELU",
+            "all_actions": "encode_once_decode_nine_film_conditions",
+            "block": "Conv-GN4-GELU-Conv-GN4-GELU",
+            "construction_draw_order": [
+              "unchanged_v2_perception",
+              "action_embedding",
+              "enc64",
+              "down32",
+              "enc32",
+              "down16",
+              "enc16",
+              "down8",
+              "bottleneck",
+              "film64",
+              "dec16",
+              "film48",
+              "dec32",
+              "film32",
+              "dec64",
+              "film16",
+              "residual_head"
+            ],
+            "convolution": {
+              "bias": true,
+              "kernel": 3,
+              "padding": 1
+            },
+            "coordinate_construction": {
+              "column": "linspace(-1,1,W) expanded along rows",
+              "dtype_and_device": "current_state_logits",
+              "metric_pose_or_geometry": false,
+              "persistent_buffer": false,
+              "row": "linspace(-1,1,H) expanded along columns"
+            },
+            "film": {
+              "channel_order": [
+                64,
+                48,
+                32,
+                16
+              ],
+              "embedding_to_channels_in_order": [
+                [
+                  64,
+                  128
+                ],
+                [
+                  64,
+                  96
+                ],
+                [
+                  64,
+                  64
+                ],
+                [
+                  64,
+                  32
+                ]
+              ],
+              "formula": "x*(1+gamma)+beta",
+              "placement": "after_each_listed_block"
+            },
+            "forbidden": [
+              "pose",
+              "odometry",
+              "depth",
+              "flow_target",
+              "metric_motion",
+              "geometry_label",
+              "hand_coded_transform",
+              "analytical_warp",
+              "grid_sample",
+              "attention",
+              "auxiliary_loss",
+              "bypass"
+            ],
+            "hold_action_index": 6,
+            "inputs_in_order": [
+              "current_three_logit_state",
+              "normalized_row_index",
+              "normalized_column_index"
+            ],
+            "normalization": {
+              "affine": true,
+              "groups": 4,
+              "type": "GroupNorm"
+            },
+            "prediction": "current_state_logits+zero_head_residual",
+            "rng": {
+              "accelerator_seed_calls": 0,
+              "caller_cpu_rng_restored": true,
+              "seed": 20260712,
+              "seed_target": "torch.random.default_generator_only"
+            },
+            "shape": "CoordinateAwareFilmUnetResidualPredictorV3",
+            "stages_in_forward_order": [
+              "enc64:block:5-16-16:save16",
+              "down32:stride2:16-32:GN4:GELU",
+              "enc32:block:32-32-32:save32",
+              "down16:stride2:32-48:GN4:GELU",
+              "enc16:block:48-48-48:save48",
+              "down8:stride2:48-64:GN4:GELU",
+              "bottleneck8:block:64-64-64:FiLM64",
+              "dec16:nearest2x+skip:block:112-48-48:FiLM48",
+              "dec32:nearest2x+skip:block:80-32-32:FiLM32",
+              "dec64:nearest2x+skip:block:48-16-16:FiLM16",
+              "head:Conv3x3:16-3:zero_weight_and_bias"
+            ]
+          },
+          "sole_scientific_delta": "coordinate_aware_film_unet_predictor",
+          "u100_thresholds": {
+            "v3_J_maximum": 0.6,
+            "v3_action_macro_balanced_accuracy_minimum": 0.13,
+            "v3_action_nll_maximum": 2.187,
+            "v3_aggregate_raster_balanced_accuracy_minimum": 0.65,
+            "v3_hardest_wrong_positive_scene_count_minimum": 2
+          }
+        }
+      },
+      "scope": "historical_v6_to_v7_runner_integrity_replacement_only"
+    },
+    "frozen_v9_scientific_provenance": {
+      "inherited_v8_architecture_delta": {
+        "model_data_seed_schedule_G_optimizer_EMA_metrics_and_custody_preserved": true,
+        "predictor_constructed_fresh_frozen_not_called_not_optimized": true,
+        "prior_checkpoint_tensor_trace_receipt_or_runtime_output_reuse": false,
+        "removed": [
+          "global_numeric_coordinate_feature_MLP_plus_full_per_cell_query_bias",
+          "single_global_cross_attention_block",
+          "two_layer_spatial_Conv2d_refinement",
+          "unbounded_linear_1x1_three_logit_state_head"
+        ],
+        "replacement": {
+          "input": "256_RGB_patch_tokens_of_dimension_192",
+          "online_decoder_parameter_count": 87808,
+          "online_decoder_parameter_tensor_count": 31,
+          "output_shape": [
+            64,
+            64,
+            64
+          ],
+          "prototype_state_head": {
+            "cell_and_prototype_l2_epsilon": 1e-12,
+            "class_order": [
+              "UNKNOWN",
+              "FREE",
+              "OCCUPIED"
+            ],
+            "output_formula": "negative_squared_distance_between_L2_normalized_cell_feature_and_L2_normalized_class_prototype",
+            "output_logit_range_inclusive": [
+              -4.0,
+              0.0
+            ],
+            "output_shape": [
+              "batch",
+              3,
+              64,
+              64
+            ],
+            "prototype_parameter_shape": [
+              3,
+              64
+            ],
+            "temperature_scale_bias_linear_or_convolutional_head": false
+          },
+          "queries": {
+            "column_parameter_shape": [
+              64,
+              64
+            ],
+            "formula": "row_query[row]+column_query[column]",
+            "full_per_cell_query_parameter": false,
+            "numeric_coordinate_features_or_sinusoids": false,
+            "row_parameter_shape": [
+              64,
+              64
+            ]
+          },
+          "residual_cross_attention_ffn_blocks": {
+            "attention_dropout": 0.0,
+            "attention_heads": 4,
+            "bev_self_attention": false,
+            "count": 2,
+            "ffn_activation": "GELU",
+            "ffn_hidden_dimension": 128,
+            "formula": [
+              "x=x+MHA(LN(x),shared_token_norm(projected_RGB_tokens),shared_token_norm(projected_RGB_tokens))",
+              "x=x+Linear128to64(GELU(Linear64to128(LN(x))))"
+            ],
+            "linear_and_attention_biases": true,
+            "parameters_shared": false,
+            "spatial_convolution": false
+          },
+          "shared_projected_token_layer_norm": {
+            "affine": true,
+            "dimension": 64
+          },
+          "token_projection": {
+            "bias": true,
+            "input_dimension": 192,
+            "output_dimension": 64,
+            "type": "Linear"
+          }
+        },
+        "scientific_delta_count": 1,
+        "scientific_delta_name": "RGB_token_to_BEV_state_decoder_and_state_head_mechanism"
+      },
+      "not_the_active_v10_delta": true,
+      "science_contract_sha256": "bacb31b0eb2070821bbd37862e6f3b9a39d7ecb0ab14ed8d758894c36f06f728"
+    },
+    "gates": {
+      "controls": {
+        "0": [
+          "FAIL_UPDATE_ZERO_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_TIMING_STRUCTURAL_INTEGRITY_GATE_TERMINAL_NO_RETRY",
+          "CONTINUE_AFTER_UPDATE_ZERO_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_TIMING_STRUCTURAL_INTEGRITY_GATE"
+        ],
+        "100": [
+          "FAIL_UPDATE_100_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_TIMING_TERMINAL_NO_RETRY",
+          "CONTINUE_AFTER_UPDATE_100_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_WITH_BALANCED_ACCURACY_RECORDED_AND_DEFERRED"
+        ],
+        "1000": [
+          "FAIL_UPDATE_1000_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_TIMING_QUALIFICATION_GATE_TERMINAL_NO_RETRY",
+          "PASS_RGB_ONLY_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_TIMING_PERCEPTION_MECHANISM_ONLY"
+        ],
+        "400": [
+          "FAIL_UPDATE_400_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_TIMING_ANTI_COLLAPSE_GATE_TERMINAL_NO_RETRY",
+          "CONTINUE_AFTER_UPDATE_400_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_TIMING_ANTI_COLLAPSE_GATE"
+        ]
+      },
+      "evaluation_decision_protocol": {
+        "continue_iff_all_original_non_balanced_accuracy_conjuncts_true": true,
+        "deferred_conjunct": "balanced_accuracy_at_least_max_point68_or_update_zero_plus_point08",
+        "delta_count": 1,
+        "further_timing_successor_or_weight_tune_authorized": false,
+        "original_v2_conjunct_map_recorded_unchanged": true,
+        "scope": "final_update_100_balanced_accuracy_terminal_application_only",
+        "threshold_formula": "max(0.68,BA_0+0.08)",
+        "threshold_or_comparator_changed": false,
+        "update_0_update_400_update_1000_gate_math_changed": false,
+        "update_200_present": false,
+        "update_400_failure_hard_closes_semantic_anchor_mechanism": true
+      },
+      "frozen_v8_runtime_readiness_markers_required": false,
+      "perception_accounting": {
+        "0": {
+          "online_perception_optimizer_update_count": 0,
+          "predictor_backward_call_count": 0,
+          "predictor_forward_call_count": 0,
+          "predictor_objective_evaluation_count": 0,
+          "predictor_optimizer_membership_count": 0,
+          "predictor_optimizer_update_count": 0,
+          "predictor_requires_grad_parameter_count": 0,
+          "presentations": 0,
+          "target_ema_update_count": 0,
+          "target_update_callback_count": 0
+        },
+        "100": {
+          "online_perception_optimizer_update_count": 100,
+          "predictor_backward_call_count": 0,
+          "predictor_forward_call_count": 0,
+          "predictor_objective_evaluation_count": 0,
+          "predictor_optimizer_membership_count": 0,
+          "predictor_optimizer_update_count": 0,
+          "predictor_requires_grad_parameter_count": 0,
+          "presentations": 1600,
+          "target_ema_update_count": 100,
+          "target_update_callback_count": 100
+        },
+        "1000": {
+          "online_perception_optimizer_update_count": 1000,
+          "predictor_backward_call_count": 0,
+          "predictor_forward_call_count": 0,
+          "predictor_objective_evaluation_count": 0,
+          "predictor_optimizer_membership_count": 0,
+          "predictor_optimizer_update_count": 0,
+          "predictor_requires_grad_parameter_count": 0,
+          "presentations": 16000,
+          "target_ema_update_count": 1000,
+          "target_update_callback_count": 1000
+        },
+        "400": {
+          "online_perception_optimizer_update_count": 400,
+          "predictor_backward_call_count": 0,
+          "predictor_forward_call_count": 0,
+          "predictor_objective_evaluation_count": 0,
+          "predictor_optimizer_membership_count": 0,
+          "predictor_optimizer_update_count": 0,
+          "predictor_requires_grad_parameter_count": 0,
+          "presentations": 6400,
+          "target_ema_update_count": 400,
+          "target_update_callback_count": 400
+        }
+      },
+      "preliminary_dispatch_is_scientific_evidence": false,
+      "separate_v10_observation_seam_or_marker_present": false,
+      "signed_boundary_semantic_anchor_markers_required": [
+        "signed_boundary_semantic_anchor_mechanism_receipt_ready",
+        "active_training_scope_signed_boundary_semantic_anchor_v1"
+      ],
+      "stop_at_first_failed_gate": true,
+      "thresholds": {
+        "0": {
+          "semantic_rgb_direction_applied": false,
+          "structural_integrity_only": true
+        },
+        "100": {
+          "G_distance_strictly_less_than_update_0": true,
+          "G_semantic_macro_nll_strictly_less_than_update_0": true,
+          "balanced_accuracy_minimum_absolute": 0.68,
+          "balanced_accuracy_minimum_relative_to_update_0": 0.08,
+          "combined_G_strictly_less_than_update_0": true,
+          "correct_rgb_scene_wins_minimum": 6,
+          "free_occupied_gap_maximum": 0.5,
+          "free_recall_minimum": 0.6,
+          "occupied_recall_minimum": 0.3,
+          "paired_rgb_aggregate_margin_strictly_greater_than_update_0": true,
+          "raster_nll_maximum_relative_to_update_0": -0.15
+        },
+        "1000": {
+          "G_distance_at_most_update_400": true,
+          "G_semantic_macro_nll_at_most_update_400": true,
+          "balanced_accuracy_at_least_update_400": true,
+          "balanced_accuracy_minimum_absolute": 0.8,
+          "combined_G_at_most_update_400": true,
+          "correct_rgb_scene_wins_minimum": 7,
+          "free_occupied_gap_maximum": 0.25,
+          "free_recall_minimum": 0.68,
+          "occupied_recall_minimum": 0.88,
+          "paired_rgb_aggregate_margin_strictly_positive": true,
+          "raster_nll_at_most_update_400": true,
+          "raster_nll_maximum_absolute_scale16_calibration": 0.42,
+          "rough_balanced_accuracy_minimum": 0.772,
+          "rough_occupied_recall_minimum": 0.65,
+          "unknown_recall_minimum": 0.8
+        },
+        "400": {
+          "G_distance_strictly_less_than_update_100": true,
+          "G_semantic_macro_nll_strictly_less_than_update_100": true,
+          "balanced_accuracy_minimum_absolute": 0.72,
+          "balanced_accuracy_minimum_relative_to_update_100": -0.01,
+          "combined_G_strictly_less_than_update_100": true,
+          "correct_rgb_scene_wins_minimum": 7,
+          "free_occupied_gap_maximum": 0.35,
+          "free_recall_minimum": 0.65,
+          "occupied_recall_minimum": "max(0.55,occupied_update_100)",
+          "paired_rgb_aggregate_margin_strictly_positive": true,
+          "raster_nll_at_most_update_100": true,
+          "raster_nll_maximum_absolute": 0.55,
+          "rough_balanced_accuracy_minimum_absolute": 0.65,
+          "rough_balanced_accuracy_minimum_relative_to_update_100": 0.02,
+          "rough_occupied_recall_minimum": "max(0.50,rough_occupied_update_100+0.05)"
+        }
+      },
+      "update_zero_semantic_directional_gate": false,
+      "updates": [
+        0,
+        100,
+        400,
+        1000
+      ]
+    },
+    "governing_documents": {
+      "active_preregistration": {
+        "byte_count": 29731,
+        "commit": "b2a15f7f288b0bf0b858410a1ec7b959d21df3b8",
+        "content_sha256": "b2051217245797c48540ad455c878c997394afb5f1abec0e56244f9e36499953",
+        "file_sha256": "66526612ca82b6a98d72757cac5f8bd05e5356033674f5173df490d80e9aa793",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_v1_preregistration_2026-07-27.json",
+        "status": "PREREGISTERED_ONE_FRESH_RGB_ONLY_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V1_PERCEPTION_FALSIFICATION_PENDING_SOURCE_FREEZE_INDEPENDENT_REVIEW_AND_SEPARATE_MACHINE_AUTHORIZATION"
+      },
+      "architecture_decision": {
+        "byte_count": 16096,
+        "commit": "4831f77d9ddae15fa8504ffb1d06f73e0af427a4",
+        "file_sha256": "9d56f98f33ab501b1f1298a1a94f640305aa4c38de1e09440f8249c716a772fc",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v1_architecture_decision_2026-07-26.md"
+      },
+      "frozen_v1_source_manifest": {
+        "byte_count": 19505,
+        "commit": "51ce1480ab2cfdcf9df7e984c7be6e58890811af",
+        "content_sha256": "e41e6cee37d5e2a69dafdb07e3219dbbf7cf484c16e5b99bd0e2975b8fba94d9",
+        "file_sha256": "a2fc88e015e51f2d17263fc9f00cd26bb21964bc2fe1cb046f828b33805e07c7",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v1_source_manifest_2026-07-26.json",
+        "status": "PASS_SOURCE_CLOSURE"
+      },
+      "frozen_v2_source_manifest": {
+        "byte_count": 22507,
+        "commit": "acf43bcf3e31729df7498d33539132fda205e27c",
+        "content_sha256": "158fb914ec24c5f893cfee92a02fc951a28c2c0bad9b31b1a3ad8bd27445a3f8",
+        "file_sha256": "a52b99f13cdbb3e8841e9c87e451d4ab5aa09db3c943acb8b14e67a49ec2e510",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v2_integrity_source_manifest_2026-07-26.json",
+        "source_count": 73,
+        "status": "PASS_SOURCE_CLOSURE"
+      },
+      "frozen_v3_execution_authorization": {
+        "byte_count": 37345,
+        "commit": "0a1888406aaa27de4ddf276c37204066c154e36f",
+        "content_sha256": "25976dfcd1203717dec8e99dc9054724d185a48000858cf3ffcc9ffb09f6d32d",
+        "file_sha256": "dd09784bbdfebbf577634b8cd014adcce06a891cc3c939486b2b5b4307bd7f5b",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v3_coordinate_aware_film_unet_predictor_execution_authorization_2026-07-26.json",
+        "status": "AUTHORIZED_ONE_EXACT_DIRECT_BEV_V3_FILM_UNET_PROBE"
+      },
+      "frozen_v3_source_manifest": {
+        "byte_count": 26713,
+        "commit": "551bff22aaf69a369f887b9984cccb97e2ffd90a",
+        "content_sha256": "bbe08609e842d1465a3983aa6f3965b5d0cd37511d28193aef50a795bbd0811f",
+        "file_sha256": "5669974b4a4b5410bc06ad6f0d3c0038b418755b024be18bfa0b8ece4aa01cb3",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v3_coordinate_aware_film_unet_predictor_source_manifest_2026-07-26.json",
+        "source_count": 83,
+        "status": "PASS_SOURCE_CLOSURE"
+      },
+      "frozen_v3_source_review": {
+        "byte_count": 42157,
+        "commit": "38cb19326d5c01f55e8d5f596cc45d327354f9d1",
+        "content_sha256": "9deaa7450b2cdf5822b340be683e9933720fc8ef4e2834180718ce7969c19e30",
+        "file_sha256": "29f7512f992c89bbe1fce1e3dc4df62d1d83da9794d9cbafdae25fe5d0845418",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v3_coordinate_aware_film_unet_predictor_source_review_2026-07-26.json",
+        "status": "PASS_SOURCE_AND_PREDICTOR_ONLY_SCIENCE"
+      },
+      "frozen_v5_execution_authorization": {
+        "byte_count": 47414,
+        "commit": "76751cd9fcac3c297dbea7930c18f6fc026f499f",
+        "content_sha256": "29025ab95b724bf57b8a0a9cad0ecf5ff05c4530f1112c74f87753be5868b2ff",
+        "file_sha256": "dd8459918253ab360c182ac75eb0998c9382e688f8160c89f29806d5d3833680",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v5_all_actions_state_delta_contrast_execution_authorization_2026-07-26.json",
+        "status": "AUTHORIZED_ONE_EXACT_DIRECT_BEV_V5_ALL_ACTIONS_STATE_DELTA_CONTRAST_PROBE"
+      },
+      "frozen_v5_source_manifest": {
+        "byte_count": 33870,
+        "commit": "ce64d674af4d653694689889316e87d2b9fd8397",
+        "content_sha256": "2bc5b4d435eb64af6c4044b6ac1114f0030a0b4f290dfbe9a06e14fcc22d5e32",
+        "file_sha256": "ce87211bbc288f637fe3ced7b4e1fc1d46e7c360d5df249e84aa775de0c10d6d",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v5_all_actions_state_delta_contrast_source_manifest_2026-07-26.json",
+        "source_count": 101,
+        "status": "PASS_SOURCE_CLOSURE"
+      },
+      "frozen_v5_source_review": {
+        "byte_count": 57000,
+        "commit": "5fa005220c9b536172ec503cf2e65c2a90994157",
+        "content_sha256": "1b561de18b637502b1b27447ba6f950a77c99ceecdfb76b067c713439a8ab755",
+        "file_sha256": "159db622fd3a52779f1418d8025f050c73bf40bed3b5054aa57d8a2443d38112",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v5_all_actions_state_delta_contrast_source_review_2026-07-26.json",
+        "status": "PASS_SOURCE_AND_ALL_ACTIONS_STATE_DELTA_CONTRAST_SCIENCE"
+      },
+      "frozen_v6_execution_authorization": {
+        "byte_count": 45278,
+        "commit": "6daeab8b10fcc7a63e26c86f75e51dfc8c3bd4dc",
+        "content_sha256": "79e12a84a5e2a2f142dd6b31eab7d34cbfd4cd1bbbad294825895350211070c5",
+        "file_sha256": "00bb82292ef52b5005ac8bb18ad582f14c0266786a40637abc560b2fb98904a1",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v6_phase_separated_frozen_state_prediction_execution_authorization_2026-07-26.json",
+        "status": "AUTHORIZED_ONE_EXACT_DIRECT_BEV_V6_PHASE_SEPARATED_FROZEN_STATE_PREDICTION_PROBE"
+      },
+      "frozen_v6_source_manifest": {
+        "byte_count": 38109,
+        "commit": "d8da3404d4382b0c1b427504ad73e0a6a8dcb462",
+        "content_sha256": "aef47b3ae970d38d9a7851a924b4562629704bd68d7abe21761465ef52278a01",
+        "file_sha256": "2d1fda7c437156877f9a3d89a8f7b276c92faaa4ba372e1ca31ba0dca5136861",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v6_phase_separated_frozen_state_prediction_source_manifest_2026-07-26.json",
+        "source_count": 111,
+        "status": "PASS_SOURCE_CLOSURE"
+      },
+      "frozen_v6_source_review": {
+        "byte_count": 57240,
+        "commit": "6c96135af925f87a63b3bd36af37f38d367a06ed",
+        "content_sha256": "ea4b8ea5479e753002fa7bb9bdf35a1424b31a272a6560cd309854ceca3993d6",
+        "file_sha256": "88d2f07da9bdb8a7284069690de6cc65e09c4e3abf6752207390cd4e17ff750b",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v6_phase_separated_frozen_state_prediction_source_review_2026-07-26.json",
+        "status": "PASS_SOURCE_AND_PHASE_SEPARATED_FROZEN_STATE_PREDICTION_SCIENCE"
+      },
+      "frozen_v7_execution_authorization": {
+        "byte_count": 49174,
+        "commit": "2802fc416c09534b937592e3d9ac6712659f3079",
+        "content_sha256": "9ef30e19f771477c483862450cb89f788717cac3982faa63ad9266f8b1c8b0d8",
+        "file_sha256": "3d294396645a5d409a74eacbd6afc40378ae554fd3452b56ff72e2ff7b6ce1b9",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v7_runner_integrity_replacement_execution_authorization_2026-07-26.json",
+        "status": "AUTHORIZED_ONE_EXACT_DIRECT_BEV_V7_RUNNER_INTEGRITY_REPLACEMENT"
+      },
+      "frozen_v7_source_manifest": {
+        "byte_count": 39992,
+        "commit": "ee13ea91cfbdfa8eae339b57b0e12e16ba7d4638",
+        "content_sha256": "a84416e0e59dd8ced92f5475c1a2130e2909a26eb4678a6b3741ad61c7757e14",
+        "file_sha256": "175c66ac47ccdfe318ac27239b0091a6c694b0e0dc61fe174a138bc5d97c2a20",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v7_runner_integrity_replacement_source_manifest_2026-07-26.json",
+        "source_count": 116,
+        "status": "PASS_SOURCE_CLOSURE"
+      },
+      "frozen_v7_source_review": {
+        "byte_count": 58296,
+        "commit": "61714d05189740fac59d8204419ef6884bd70332",
+        "content_sha256": "d1b4a35488bc191e47186b46814349506068710b04649830d7d823b9b8b2d8c9",
+        "file_sha256": "501e59905ab15414f9b9f1d88f1c556644c980eaf13ddeb9450c6a279b955739",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v7_runner_integrity_replacement_source_review_2026-07-26.json",
+        "status": "PASS_SOURCE_SCIENCE_IDENTITY_AND_RUNNER_INTEGRITY"
+      },
+      "frozen_v9_execution_authorization": {
+        "byte_count": 58605,
+        "commit": "a4d31f688ccd05cea283db318fb73b988fbf087d",
+        "content_sha256": "f9f4c3acd33ff6de559c0815d980519e1f8e1d48f42e899747aca340715de498",
+        "file_sha256": "e61545300c9902cd9786f636049a143b945977e76f9fe5cc49abe7d84d02412e",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_execution_authorization_2026-07-27.json",
+        "status": "AUTHORIZED_ONE_EXACT_DIRECT_BEV_V9_CHECKPOINT_SEMANTIC_REGISTRY_INTEGRITY_REPLACEMENT"
+      },
+      "frozen_v9_source_manifest": {
+        "byte_count": 44703,
+        "commit": "2c349f8225e8525e691c77e2fb0fe5573d92cb89",
+        "content_sha256": "2003108a6a13a9532210f31839a632d44d7cd47e14965ad93a870d4633e5073a",
+        "file_sha256": "1da8e6fe8babac775ae6a977e2b480ecb852f4cd2edbefca49d9e3105c9ab474",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_source_manifest_2026-07-27.json",
+        "source_count": 127,
+        "status": "PASS_SOURCE_CLOSURE"
+      },
+      "frozen_v9_source_review": {
+        "byte_count": 70484,
+        "commit": "c0c7d4c6d26dc284b521cf696e7718bfabe73062",
+        "content_sha256": "65cb9734019cd7f7d78a7e9d9ae2d442bde59115c0e22b18dba9dda64efe853b",
+        "file_sha256": "f7e45b7085696c20f472376b06020bec27623075e95acd7df8b1bb986708219f",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_source_review_2026-07-27.json",
+        "status": "PASS_SOURCE_SCIENCE_IDENTITY_CHECKPOINT_REGISTRY_ADAPTER_AND_COMPLETE_FAILURE_RECEIPTS"
+      },
+      "multiprototype_terminal_audit": {
+        "byte_count": 18277,
+        "classification": "VALID_UPDATE_ZERO_GROUNDING_CONTROL_FAILURE_ONLY_CORRECT_RGB_SCENE_WINS_7_OF_8_NO_TRAINING_MULTIPROTOTYPE_V1_CLOSED_NO_RETRY",
+        "commit": "c956c4c2ebb76f8e9e489c7024601ae399842eaf",
+        "content_sha256": "4d5e0f611195cf1eeaeb266b51b805e9dc67230d5dac5ac32e8aba9ed95ee79c",
+        "file_sha256": "700db3735b167b0108fca7d33ab6eba08c1ac8b5d721da59a3ad67784b037481",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_multiprototype_state_head_v1_terminal_audit_2026-07-27.json",
+        "status": "PASS_VALID_TERMINAL_RECEIPT_CHAIN_UPDATE_ZERO_GROUNDING_FAILURE_MULTIPROTOTYPE_V1_CLOSED_NO_RETRY"
+      },
+      "preregistration": {
+        "byte_count": 21561,
+        "commit": "4831f77d9ddae15fa8504ffb1d06f73e0af427a4",
+        "content_sha256": "8d97a9f4769f8ce1ebf69c7665c9fe4a57f693eb5b02acd6a9b3224b796c0943",
+        "file_sha256": "6863041a0a498a297c92c011ede97f1ffebaeb2121eebbf61054243a185bb3c0",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v1_preregistration_2026-07-26.json"
+      },
+      "preregistration_independent_review": {
+        "byte_count": 10374,
+        "commit": "f2301d78554d000d99bcc733f0a502127525cda8",
+        "content_sha256": "b7de0581b3d782c264ca12019448201151696efc3a6a87436e8ef5b5989e7bce",
+        "file_sha256": "0af804ca375c1fd8503f4b2800cb8f40d5c713219e39b0ea7282d4b98dac0f73",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v1_preregistration_independent_review_2026-07-26.json"
+      },
+      "prior_terminal_audit": {
+        "byte_count": 30116,
+        "commit": "e03f6eb2dbfadad188e2cb07d5451096b4179969",
+        "content_sha256": "eea443eca48a6cc85bd054f93fb38c94f3d7e6fd4050cd15f442406ffa09b28e",
+        "file_sha256": "1486a102b010d06dc8b8a91130eb6c79a95d9a8ca426dea9a4833fc4aee488d8",
+        "path": "docs/lewm_go2_rgb_masked_current_next_pair_tubelet_jepa_v13_learning_curve_continuation_terminal_audit_2026-07-26.json"
+      },
+      "signed_boundary_v1_terminal_audit": {
+        "byte_count": 12848,
+        "classification": "VALID_UPDATE_400_BALANCED_SEMANTIC_GATE_FAILURE_AFTER_STRONG_G_NLL_FREE_AND_RGB_IMPROVEMENT_BUT_OCCUPIED_RECALL_CLASS_BALANCE_AND_ROUGH_RASTER_FAILED_SIGNED_BOUNDARY_DISTANCE_STATE_V1_CLOSED_NO_RETRY",
+        "commit": "f4581298e1ea86468be2afe4825b7b39cc149985",
+        "content_sha256": "4842e8054c73aa5083036f1b627cda7a951be253ad3e8f48b32419537915b7fc",
+        "file_sha256": "d1c00dc53dd3d829537a71d0106704333ed52247639530b89f904d765f0d9688",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_signed_boundary_distance_state_v1_terminal_audit_2026-07-27.json",
+        "status": "PASS_VALID_TERMINAL_RECEIPT_CHAIN_UPDATE_400_SCIENTIFIC_FAILURE_SIGNED_BOUNDARY_DISTANCE_STATE_V1_CLOSED_NO_RETRY"
+      },
+      "v10_preregistration": {
+        "byte_count": 19648,
+        "commit": "7c1886942a298964b083457f335329259e594593",
+        "content_sha256": "341239f40885c5a55042cd88d49b4e6401a332fa066f3b7bb0d7062880105b83",
+        "file_sha256": "3e901a8847c21d44d6d1f1a41e7a71deb8da221043dd6ed461926ced9e2fe4a6",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v10_final_class_macro_grounding_preregistration_2026-07-27.json",
+        "status": "PREREGISTERED_ONE_FRESH_RGB_ONLY_V10_FINAL_CLASS_MACRO_GROUNDING_PERCEPTION_FALSIFICATION_PENDING_SOURCE_FREEZE_INDEPENDENT_REVIEW_AND_SEPARATE_MACHINE_AUTHORIZATION"
+      },
+      "v12_terminal_audit": {
+        "byte_count": 14828,
+        "classification": "VALID_UPDATE_100_SCIENTIFIC_GATE_FAILURE_AFTER_STRONG_CONTINUED_LEARNING_OCCUPIED_RECALL_MATERIALLY_FAILED_AND_NLL_NARROWLY_FAILED_V12_CLOSED_MODEL_LOSS_LINE_RETIRED_NO_V13",
+        "commit": "8c0015822cfaf0c845c345711c27b8907681ae7a",
+        "content_sha256": "40cd42094b143c69fcb009948316a5ba2141fa792455b38ba5c1f17b4429061c",
+        "file_sha256": "e5cbe568253a287e6018f5def20b988158ea4192a345e483d8f946836b29a7c5",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v12_update50_trend_gate_timing_terminal_audit_2026-07-27.json",
+        "status": "PASS_VALID_TERMINAL_RECEIPT_CHAIN_UPDATE_100_SCIENTIFIC_FAILURE_V12_CLOSED_MODEL_LOSS_LINE_RETIRED_NO_V13"
+      },
+      "v1_terminal_audit": {
+        "byte_count": 9291,
+        "commit": "ae94021d44711bf9ba5fbb1386b4f8caf2617dac",
+        "content_sha256": "2974d914f9cde1ae93c34d76d07b1740d8c5ac17beb3b5f4922500bd242df956",
+        "file_sha256": "f928c11a2e52349145701b25a21f8b1b987ee80a365aaa2c3858d3cf650220c4",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v1_terminal_audit_2026-07-26.json"
+      },
+      "v2_integrity_amendment": {
+        "byte_count": 4248,
+        "commit": "0221d4ddd5e266a9c715d8ccb788107c0671f6ee",
+        "file_sha256": "ff06e8834a96cab616a8a8c5ed7589fb73de202166ad278253258a55ad688509",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v2_integrity_amendment_2026-07-26.md"
+      },
+      "v2_terminal_audit": {
+        "byte_count": 11802,
+        "commit": "625a79dbfc85fbf32d0925b4668574828d433ca9",
+        "content_sha256": "4ed33359075c9cda7ddac16854ccbfd902e0dfe900a38aa83cd94d5fb74f1340",
+        "file_sha256": "93132058a0f94f652864e73e00cfb050c35f901e73d06277e13e3897825ef5a0",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v2_integrity_terminal_audit_2026-07-26.json"
+      },
+      "v3_preregistration": {
+        "byte_count": 7951,
+        "commit": "6b1566ba3786485b89e0a702a5e25418fcb0ed18",
+        "file_sha256": "be75f268816f422f1a40b7ee56dbf4bf544cd6893f9d3b296540ff4a98176c02",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v3_coordinate_aware_film_unet_predictor_preregistration_2026-07-26.md"
+      },
+      "v3_terminal_audit": {
+        "byte_count": 7684,
+        "classification": "VALID_UPDATE_ZERO_INTEGRITY_HARNESS_FAILURE_OUTER_PREDICTOR_FORWARD_HOOK_INCOMPATIBLE_WITH_DIRECT_ALL_ACTIONS_METHOD_ZERO_SCIENTIFIC_WORK_V3_PERMANENTLY_CLOSED",
+        "commit": "2496bfac12c3841c2ead46cb582bc1a25a9ce2b2",
+        "content_sha256": "ee7caf34174bdab3fbaf8765950140cc09eb618dda59bfc21dc285062e64d203",
+        "file_sha256": "c298a56fe3f4c7ab9d7a02447f6dfdd16ad28c0909b6cd67d6c2b0900bd1f324",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v3_coordinate_aware_film_unet_predictor_terminal_audit_2026-07-26.json",
+        "status": "PASS_VALID_UPDATE_ZERO_INTEGRITY_INSTRUMENTATION_FAILURE_CLOSES_V3_NO_RETRY"
+      },
+      "v4_integrity_amendment": {
+        "byte_count": 6465,
+        "commit": "beb26e475a8939c1e23c35249c04917060522381",
+        "file_sha256": "87c3c43cf44e71e95e4c9ee5315d721799613f95e528278743be7f9043f071b2",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v4_residual_head_hook_integrity_amendment_2026-07-26.md"
+      },
+      "v5_terminal_audit": {
+        "byte_count": 11272,
+        "classification": "VALID_UPDATE_100_SCIENTIFIC_FAILURE_ALL_ACTIONS_STATE_DELTA_CONTRAST_FAILED_ACTION_DISCRIMINATION_AND_DEGRADED_BALANCED_PERCEPTION_V5_PERMANENTLY_CLOSED_NO_RETRY",
+        "commit": "458f590605178f1460d043a48ed629c181f593a4",
+        "content_sha256": "b89afbcfaff1a703bb924f5cc028613bd927c316db5a0c1066bccae3e567526e",
+        "file_sha256": "e4c9a329322e641b9c096ae3bc163876991e4d90c1bb24dc48146a2dd30acd20",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v5_all_actions_state_delta_contrast_terminal_audit_2026-07-26.json",
+        "status": "PASS_VALID_UPDATE_100_SCIENTIFIC_FAILURE_CLOSES_V5_NO_RETRY"
+      },
+      "v6_preregistration": {
+        "byte_count": 14618,
+        "commit": "2ec3c7a2e216544acab6f43b29b113fdc538a74f",
+        "file_sha256": "e71dac233d89aa49e97998afdeaadc6c806671945e25101ceb078fcbac0af4e7",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v6_phase_separated_frozen_state_prediction_preregistration_2026-07-26.md"
+      },
+      "v6_terminal_audit": {
+        "byte_count": 7789,
+        "commit": "690c24602de3345dd73e879ef46a095406665f0c",
+        "content_sha256": "87ffbef5cfaee479549a33ccb1163528cc4ccc416efcb21b5b8804bce04d253c",
+        "file_sha256": "6e0e28dda42eda83308d4b25a30ff6d2757e4f24cc7d200a596a243e7113b849",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v6_phase_separated_frozen_state_prediction_terminal_audit_2026-07-26.json",
+        "status": "PASS_VALID_TERMINAL_OPERATIONAL_REBIND_FAILURE_AT_ZERO_SCIENTIFIC_WORK_CLOSES_V6_NO_RETRY"
+      },
+      "v7_preregistration": {
+        "byte_count": 17693,
+        "commit": "50e5f49aebcde5973902eb42766159d80e9a3e66",
+        "content_sha256": "3b81cdb18a29f005e82f7b59463436f8bf037f3e6924a5b5af7a5e66247c4152",
+        "file_sha256": "4cfb40ddaf8d5d0bbca22038c15633dcb5e89a8661260fee5791ef5103e64635",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v7_runner_integrity_replacement_preregistration_2026-07-26.json"
+      },
+      "v7_terminal_audit": {
+        "byte_count": 14413,
+        "classification": "VALID_UPDATE_400_PERCEPTION_BOUNDARY_SCIENTIFIC_FAILURE_PHASE_ONE_PERCEPTION_IMPROVED_BUT_STRONG_QUALIFICATION_NOT_MET_PREDICTOR_UNTRAINED_V7_PERMANENTLY_CLOSED_NO_RETRY",
+        "commit": "d5b1b1d3b3574d29193e0c675f6a69113faa661e",
+        "content_sha256": "28532867666b76655cdc7154273384f33a0f0d89f4fb6951b48fad016b194f15",
+        "file_sha256": "7e458098ecacfffb275ed4adbbd799309ba4bd91ee44436d9573e5ade8571b44",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v7_runner_integrity_replacement_terminal_audit_2026-07-26.json",
+        "status": "PASS_VALID_UPDATE_400_PERCEPTION_SCIENTIFIC_FAILURE_CLOSES_V7_NO_RETRY"
+      },
+      "v8_preregistration": {
+        "byte_count": 22649,
+        "commit": "a9b54a57c7ce7a29c898e941d2649ad6cfbd6e81",
+        "content_sha256": "065e0befce1c55b6545a442f26bd78d14dd035bc8e2e84eaa2af40bb53368d05",
+        "file_sha256": "22310aaaf69ee8544c9022fb337883ed98613e936f3f86d2d78bb49bbcd0c34e",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v8_learned_bev_query_prototype_decoder_preregistration_2026-07-26.json",
+        "status": "PREREGISTERED_ONE_FRESH_RGB_ONLY_LEARNED_BEV_QUERY_PROTOTYPE_PERCEPTION_FALSIFICATION_PENDING_SOURCE_FREEZE_INDEPENDENT_REVIEW_AND_MACHINE_AUTHORIZATION"
+      },
+      "v9_terminal_audit": {
+        "byte_count": 18951,
+        "classification": "VALID_ONE_SHOT_TERMINAL_SCIENTIFIC_FAILURE_AT_UPDATE_100_AFTER_PASSED_UPDATE_ZERO_AND_UPDATE_50_GATES_ONLY_THREE_CLASS_BALANCE_THRESHOLDS_FAILED_V9_PERMANENTLY_CLOSED_NO_RETRY",
+        "commit": "7984c7749cc44c6444bf7229a809c6e9f01063bf",
+        "content_sha256": "f43745ae1329775f36a0b9ad01b34588e662387bca98c34430324cf09a0cd69c",
+        "file_sha256": "af5f82c809aae3f3954e64147b3a71af96286436e1790440fdd161bc86bd4c03",
+        "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_terminal_audit_2026-07-27.json",
+        "status": "PASS_VALID_TERMINAL_UPDATE_100_SCIENTIFIC_FAILURE_CLOSES_V9_NO_RETRY"
+      }
+    },
+    "lifecycle": {
+      "architecture_unchanged_from_frozen_signed_boundary_v1": true,
+      "attempt_index": 1,
+      "checkpoint_and_training_trace_write_only": true,
+      "gpu_active_minutes_maximum": 30,
+      "maximum_attempts": 1,
+      "maximum_presentations": 16000,
+      "maximum_updates": 1000,
+      "new_architecture_family_not_multiprototype_v2_or_v13": true,
+      "normal_receipts": [
+        "reservation.json",
+        "metrics.json",
+        "artifact.json",
+        "access.json",
+        "result.json",
+        "completed.json"
+      ],
+      "objective_successor_not_exact_v1_retry": true,
+      "one_fresh_attempt": true,
+      "operational_failure_receipts": [
+        "failure.json",
+        "completed.json"
+      ],
+      "output_root": ".generated/go2_shared_observable_camera_ray_jepa_signed_boundary_semantic_anchor_state_v1/rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_probe_v1",
+      "output_root_must_be_absent_before_reservation": true,
+      "perception_only": true,
+      "phase_b_authorized": false,
+      "predictor_phase_or_update": false,
+      "retry_resume_extension_second_seed_or_replacement_attempt": false,
+      "scientific_successor_of": "go2_rgb_direct_egocentric_bev_signed_boundary_distance_state_v1",
+      "signed_boundary_v1_checkpoint_tensor_trace_receipt_parameter_optimizer_registry_snapshot_or_rng_reuse": false,
+      "v12_or_multiprototype_checkpoint_tensor_trace_receipt_parameter_optimizer_registry_snapshot_or_rng_reuse": false,
+      "v7_checkpoint_tensor_trace_receipt_or_runtime_output_reuse": false,
+      "v7_retry_resume_repair_or_extension": false,
+      "v9_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_reuse": false,
+      "v9_retry_resume_repair_recovery_or_extension": false
+    },
+    "loader": {
+      "allowed_supervision_arrays": [
+        "raster_labels.u1"
+      ],
+      "allowed_values": [
+        "current_rgb",
+        "next_rgb",
+        "fixed_negative_rgb",
+        "raster_labels.u1"
+      ],
+      "implementation": "narrow__row_array_only",
+      "other_supervision_array_or_general_loader": false
+    },
+    "model": {
+      "bev_decoder": {
+        "counts_include_state_head": true,
+        "input": "256_RGB_patch_tokens_of_dimension_192",
+        "online_decoder_parameter_count": 87746,
+        "online_decoder_parameter_tensor_count": 32,
+        "output_shape": [
+          64,
+          64,
+          64
+        ],
+        "queries": {
+          "column_parameter_shape": [
+            64,
+            64
+          ],
+          "formula": "row_query[row]+column_query[column]",
+          "full_per_cell_query_parameter": false,
+          "numeric_coordinate_features_or_sinusoids": false,
+          "row_parameter_shape": [
+            64,
+            64
+          ]
+        },
+        "residual_cross_attention_ffn_blocks": {
+          "attention_dropout": 0.0,
+          "attention_heads": 4,
+          "bev_self_attention": false,
+          "count": 2,
+          "ffn_activation": "GELU",
+          "ffn_hidden_dimension": 128,
+          "formula": [
+            "x=x+MHA(LN(x),shared_token_norm(projected_RGB_tokens),shared_token_norm(projected_RGB_tokens))",
+            "x=x+Linear128to64(GELU(Linear64to128(LN(x))))"
+          ],
+          "linear_and_attention_biases": true,
+          "parameters_shared": false,
+          "spatial_convolution": false
+        },
+        "shared_projected_token_layer_norm": {
+          "affine": true,
+          "dimension": 64
+        },
+        "signed_boundary_distance_state_head": {
+          "bias_shape": [
+            2
+          ],
+          "channel_order": [
+            "K_known_signed_boundary_distance",
+            "O_free_occupied_signed_boundary_distance"
+          ],
+          "input_shape": [
+            "B",
+            64,
+            64,
+            64
+          ],
+          "learned_temperature_scale_class_weight_or_auxiliary_head": false,
+          "operator": "Conv2d(64,2,kernel_size=1,bias=True)_then_tanh",
+          "output_range_inclusive": [
+            -1.0,
+            1.0
+          ],
+          "output_shape": [
+            "B",
+            2,
+            64,
+            64
+          ],
+          "parameter_count": 130,
+          "parameter_tensor_count": 2,
+          "weight_shape": [
+            2,
+            64,
+            1,
+            1
+          ]
+        },
+        "token_projection": {
+          "bias": true,
+          "input_dimension": 192,
+          "output_dimension": 64,
+          "type": "Linear"
+        }
+      },
+      "call_graph": {
+        "forbidden_inputs": [
+          "pose",
+          "odometry",
+          "depth",
+          "ray",
+          "flow",
+          "metric_geometry",
+          "analytic_projection",
+          "warp",
+          "raster_labels_to_encoder"
+        ],
+        "online_current_and_next_RGB": "weight_shared_encoder_learned_query_decoder_two_tanh_fields_for_G",
+        "online_fixed_negative_RGB": "grounding_observation_only_no_gradient",
+        "predictor": "zero_forward_calls",
+        "target_perception": "fresh_detached_EMA_no_gradient"
+      },
+      "encoder": {
+        "depth": 6,
+        "dim": 192,
+        "heads": 6,
+        "mlp_ratio": 4,
+        "patch_size": 7,
+        "rgb_resolution": 112
+      },
+      "initialization": {
+        "fresh_parameter_seed": 20260712,
+        "fresh_v8_draw_order": [
+          "factorized_row_queries",
+          "factorized_column_queries",
+          "token_projection",
+          "shared_projected_token_layer_norm",
+          "cross_attention_block_1",
+          "ffn_block_1",
+          "cross_attention_block_2",
+          "ffn_block_2",
+          "signed_boundary_distance_conv1x1_weight_and_bias"
+        ],
+        "initial_state_component_binding": {
+          "complete_runtime_state_hash_recorded_after_authorized_encoder_load": true,
+          "fresh_decoder_local_state_sha256": "1567c7ebe049bb4046e800534e6fe00059414673388814407a605ebb04ba37e5",
+          "fresh_predictor_normalized_state_sha256": "ab62170c9b6c950ad0a21524abe3637d61cf51ff01d04e4bb4848818c144c8b3",
+          "fresh_signed_boundary_distance_head_local_state_sha256": "a3582ca41e41963592f4bf76ba7de432b51fed783408dcda3e3de9c070c9f40f",
+          "model_bindings_frozen": true,
+          "n320_encoder_checkpoint": {
+            "byte_count": 13777100,
+            "content_sha256": "9dcca536943f89acfd7d463fdab591e19a030ef3dc8f3f19a050b1b10025fc2b",
+            "file_sha256": "ece874b53941e841fffc61b724a86d4383b881549afa453b746dd5d68aba11b0",
+            "path": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/checkpoint.pt"
+          },
+          "online_target_decoder_head_hard_sync_required": true
+        },
+        "initial_state_component_binding_sha256": "6861bb48afeca2df21e58903fb873e656bfb85fd35bdae76121af004c3dc129e",
+        "n320_encoder_only_migration": true,
+        "n320_fit_seed": 20260710,
+        "predictor_constructed_fresh_then_frozen": true,
+        "prior_signed_boundary_v1_runtime_or_parameter_reuse": false,
+        "prior_v12_or_multiprototype_runtime_or_parameter_reuse": false,
+        "prior_v1_through_v7_runtime_reuse": false
+      },
+      "parameter_inventory": {
+        "decoder_state": {
+          "ordered_parameter_name_sha256": "93facb8b8d4059e7270ebb90dbff26572c6f1700bb302d8a2b7177bb5777c147",
+          "parameter_count": 87746,
+          "tensor_count": 32
+        },
+        "detached_target_encoder_decoder_state": {
+          "ordered_parameter_name_sha256": "5c96af932aa8bfd597c619b4481038eff912feb1c2103b82f7bfb44f29d0bd1b",
+          "parameter_count": 2835266,
+          "tensor_count": 110
+        },
+        "encoder": {
+          "ordered_parameter_name_sha256": "8b83921e9766a68b59b35d1c5ef15dea6db13aeb4a6c91c2c13ab2e22d8b1c5e",
+          "parameter_count": 2747520,
+          "tensor_count": 78
+        },
+        "predictor": {
+          "ordered_parameter_name_sha256": "0398031cb776c10a23b14c7935d2566f4a3087175213e87b49c2a05cadf6e1dd",
+          "parameter_count": 317107,
+          "tensor_count": 79
+        },
+        "total": {
+          "parameter_count": 5987639,
+          "tensor_count": 299
+        }
+      },
+      "runtime_source": "lewm/models/direct_egocentric_bev_signed_boundary_semantic_anchor_state_v1.py",
+      "state_head": {
+        "bias_shape": [
+          2
+        ],
+        "channel_order": [
+          "K_known_signed_boundary_distance",
+          "O_free_occupied_signed_boundary_distance"
+        ],
+        "input_shape": [
+          "B",
+          64,
+          64,
+          64
+        ],
+        "learned_temperature_scale_class_weight_or_auxiliary_head": false,
+        "operator": "Conv2d(64,2,kernel_size=1,bias=True)_then_tanh",
+        "output_range_inclusive": [
+          -1.0,
+          1.0
+        ],
+        "output_shape": [
+          "B",
+          2,
+          64,
+          64
+        ],
+        "parameter_count": 130,
+        "parameter_tensor_count": 2,
+        "weight_shape": [
+          2,
+          64,
+          1,
+          1
+        ]
+      },
+      "target": {
+        "ema_decay": 0.996,
+        "ema_updates": "once_after_every_perception_optimizer_update",
+        "fresh_hard_sync_count_before_update_zero": 1,
+        "gradient": "none",
+        "inventory": [
+          "encoder",
+          "bev_decoder",
+          "state_head"
+        ],
+        "predictor_target_copy": false
+      },
+      "transition": {
+        "action_embedding": {
+          "count": 9,
+          "dim": 64
+        },
+        "action_metric_or_gate_authorized": false,
+        "action_vocabulary_in_order": [
+          "arc_left",
+          "arc_right",
+          "backward",
+          "forward_fast",
+          "forward_medium",
+          "forward_slow",
+          "hold",
+          "yaw_left",
+          "yaw_right"
+        ],
+        "activation": "GELU",
+        "all_actions": "encode_once_decode_nine_film_conditions",
+        "block": "Conv-GN4-GELU-Conv-GN4-GELU",
+        "constructed_fresh": true,
+        "construction_draw_order": [
+          "unchanged_v2_perception",
+          "action_embedding",
+          "enc64",
+          "down32",
+          "enc32",
+          "down16",
+          "enc16",
+          "down8",
+          "bottleneck",
+          "film64",
+          "dec16",
+          "film48",
+          "dec32",
+          "film32",
+          "dec64",
+          "film16",
+          "residual_head"
+        ],
+        "convolution": {
+          "bias": true,
+          "kernel": 3,
+          "padding": 1
+        },
+        "coordinate_construction": {
+          "column": "linspace(-1,1,W) expanded along rows",
+          "dtype_and_device": "current_state_logits",
+          "metric_pose_or_geometry": false,
+          "persistent_buffer": false,
+          "row": "linspace(-1,1,H) expanded along columns"
+        },
+        "film": {
+          "channel_order": [
+            64,
+            48,
+            32,
+            16
+          ],
+          "embedding_to_channels_in_order": [
+            [
+              64,
+              128
+            ],
+            [
+              64,
+              96
+            ],
+            [
+              64,
+              64
+            ],
+            [
+              64,
+              32
+            ]
+          ],
+          "formula": "x*(1+gamma)+beta",
+          "placement": "after_each_listed_block"
+        },
+        "forbidden": [
+          "pose",
+          "odometry",
+          "depth",
+          "flow_target",
+          "metric_motion",
+          "geometry_label",
+          "hand_coded_transform",
+          "analytical_warp",
+          "grid_sample",
+          "attention",
+          "auxiliary_loss",
+          "bypass"
+        ],
+        "forward_objective_backward_and_update_count_required": 0,
+        "hold_action_index": 6,
+        "inputs_in_order": [
+          "current_three_logit_state",
+          "normalized_row_index",
+          "normalized_column_index"
+        ],
+        "normalization": {
+          "affine": true,
+          "groups": 4,
+          "type": "GroupNorm"
+        },
+        "optimizer_membership": false,
+        "prediction": "current_state_logits+zero_head_residual",
+        "requires_grad": false,
+        "rng": {
+          "accelerator_seed_calls": 0,
+          "caller_cpu_rng_restored": true,
+          "seed": 20260712,
+          "seed_target": "torch.random.default_generator_only"
+        },
+        "shape": "CoordinateAwareFilmUnetResidualPredictorV3",
+        "stages_in_forward_order": [
+          "enc64:block:5-16-16:save16",
+          "down32:stride2:16-32:GN4:GELU",
+          "enc32:block:32-32-32:save32",
+          "down16:stride2:32-48:GN4:GELU",
+          "enc16:block:48-48-48:save48",
+          "down8:stride2:48-64:GN4:GELU",
+          "bottleneck8:block:64-64-64:FiLM64",
+          "dec16:nearest2x+skip:block:112-48-48:FiLM48",
+          "dec32:nearest2x+skip:block:80-32-32:FiLM32",
+          "dec64:nearest2x+skip:block:48-16-16:FiLM16",
+          "head:Conv3x3:16-3:zero_weight_and_bias"
+        ]
+      }
+    },
+    "objective": {
+      "A_final_class_semantic_anchor": {
+        "A_current": "mean_rows(equal_macro_over_present_UNKNOWN_FREE_OCCUPIED_target_NLL_on_current_online_scale16_adapter_logits)",
+        "A_next": "mean_rows(equal_macro_over_present_UNKNOWN_FREE_OCCUPIED_target_NLL_on_next_online_scale16_adapter_logits)",
+        "formula": "A=0.5*A_current+0.5*A_next",
+        "implementation_leaf": "inherited_V10_equal_present_final_class_macro_NLL",
+        "new_parameters": 0,
+        "training_labels": "scheduled_current_and_next_raster_labels.u1_only",
+        "weight": 0.015625
+      },
+      "D_signed_boundary_distance": {
+        "D_current": "mean_rows(current_row_boundary_loss)",
+        "D_next": "mean_rows(next_row_boundary_loss)",
+        "field_weighting": "equal_0.5_K_0.5_O_when_O_available_else_K_only",
+        "formula": "D=0.5*D_current+0.5*D_next",
+        "hard_label_array": "raster_labels.u1_training_side_only",
+        "per_row_K": "equal_macro_over_present_UNKNOWN_and_known_sign_groups",
+        "per_row_O": "equal_macro_over_present_FREE_and_OCCUPIED_sign_groups_with_UNKNOWN_completely_masked",
+        "pointwise_loss": "torch_huber_delta_1_over_8",
+        "row_weighting": "equal_after_each_row_macro_is_formed"
+      },
+      "G": "D+A/64",
+      "fixed_hierarchical_adapter": {
+        "FREE_logit": "logsigmoid(16*K)+logsigmoid(16*O)",
+        "OCCUPIED_logit": "logsigmoid(16*K)+logsigmoid(-16*O)",
+        "UNKNOWN_logit": "logsigmoid(-16*K)",
+        "class_order": [
+          "UNKNOWN",
+          "FREE",
+          "OCCUPIED"
+        ],
+        "inherited_observer_softmax_preserved": true,
+        "learned_parameters": 0,
+        "scale": 16.0
+      },
+      "log3_normalization_warmup_annealing_learned_weight_focal_margin_label_smoothing_extra_class_weight_or_auxiliary_head": false,
+      "perception_only_total": "D+A/64",
+      "predictor_forward_objective_backward_or_update_count": 0,
+      "target_transform": {
+        "K_signs": "known_positive_UNKNOWN_negative",
+        "O_signs": "FREE_positive_OCCUPIED_negative_UNKNOWN_zero_masked",
+        "empty_opposite_magnitude": 1.0,
+        "exact_cell_square_interface_geometry_claimed": false,
+        "half_cell_correction": 0.5,
+        "kind": "half_cell_corrected_center_EDT_surrogate",
+        "radius_cells": 8.0
+      },
+      "total": "G",
+      "wrong_rgb_control": {
+        "adapter": "fixed_scale16_hierarchical_log_probability_logits",
+        "aggregate_margin": "mapped_negative_minus_correct",
+        "gradient": "none",
+        "loss": "inherited_V10_equal_present_final_class_macro_NLL",
+        "scene_win": "correct_strictly_less_than_mapped_negative",
+        "tie_is_win": false
+      }
+    },
+    "optimizer": {
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "constructed_once": true,
+      "epsilon": 1e-08,
+      "gradient_clipping": {
+        "encoder_decoder_state_joint_norm": 1.0
+      },
+      "learning_rates": {
+        "decoder_state": 0.0003,
+        "encoder": 0.0001
+      },
+      "name": "AdamW",
+      "precision": "float32",
+      "predictor_no_grad_clip_compatibility": {
+        "effective_clip_count": 0,
+        "inherited_clip_grad_norm_call_per_update": 1,
+        "optimizer_update_count": 0,
+        "required_preclip_gradient_norm": 0.0
+      },
+      "predictor_parameters_excluded": true,
+      "reset_or_rebuild": false,
+      "target_parameters_excluded": true,
+      "weight_decay": 0.0001
+    },
+    "phase_adapter": {
+      "frozen": "predictor_and_detached_target",
+      "initial_online_to_target_hard_sync_count": 1,
+      "optimizer": "one_exact_frozen_signed_boundary_v1_adamw_constructed_once_never_reset",
+      "predictor_forward_objective_backward_or_update_count": 0,
+      "presentations": [
+        1,
+        16000
+      ],
+      "scope": "signed_boundary_semantic_anchor_state_v1_perception_only",
+      "second_phase_present": false,
+      "target_callback": "ema_0point996_once_after_every_update",
+      "total": "G=D+A/64",
+      "trainable": "online_encoder_decoder_state",
+      "updates": [
+        1,
+        1000
+      ]
+    },
+    "repository_goal": "fully_learned_RGB_only_perception_JEPA_navigation_stack_validated_later_on_untouched_externally_custodied_heldout_mazes",
+    "schedule": {
+      "checkpoints": [
+        100,
+        400,
+        1000
+      ],
+      "effective_batch_size": 16,
+      "microbatch_size": 4,
+      "microbatches_per_update": 4,
+      "observation_updates": [
+        0,
+        100,
+        400,
+        1000
+      ],
+      "one_scheduled_pair_is_one_presentation": true,
+      "prefix_rule": "exact_existing_frozen_full_Direct_BEV_16000_presentation_schedule_without_filter_reorder_resample_replacement_or_extension",
+      "prefix_sha256": {
+        "100": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+        "1000": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528",
+        "400": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92"
+      },
+      "presentations": 16000,
+      "preserve_rows_roles_order_and_mappings": true,
+      "seed": 20260713,
+      "source": {
+        "byte_count": 607373,
+        "content_sha256": "274c0cbd9a87cbbc5bbc3123fff046f02ac3555014b5ec750d4a32b552650a15",
+        "file_sha256": "08f54578febbc182d936a999d6cf86263b8cd03a5f640da064c1538dd53dc270",
+        "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/matched_training_v4/schedule.json"
+      },
+      "updates": 1000
+    },
+    "schema": "lewm_go2_rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_v3_update100_trend_gate_timing_science_contract_v1",
+    "scientific_checks": {
+      "D_A_and_combined_gradients_finite_nonzero": true,
+      "G_and_total_equal_D_plus_A_over_64": true,
+      "all_four_gates_match_committed_preregistration": true,
+      "architecture_parameters_and_public_K_O_state_identical_to_frozen_signed_boundary_v1": true,
+      "distance_D_is_exact_inherited_row_macro_Huber": true,
+      "exact_full_16000_presentation_schedule_bound": true,
+      "fresh_initialization_and_zero_prior_runtime_reuse": true,
+      "no_runtime_or_protected_material_opened_by_source_work": true,
+      "one_fresh_attempt_caps_and_downstream_denials_exact": true,
+      "paired_RGB_control_is_inherited_V10_class_macro_NLL": true,
+      "predictor_frozen_excluded_and_zero_forward_objective_backward_update": true,
+      "semantic_A_is_exact_inherited_present_final_class_macro_NLL": true,
+      "semantic_anchor_training_labels_limited_to_scheduled_current_next": true,
+      "semantic_anchor_weight_exactly_one_over_64": true,
+      "six_additive_sources_over_frozen_signed_boundary_149_source_base": true,
+      "update_zero_is_structural_only_direction_free_RGB_nonidentity": true
+    },
+    "scientific_delta": {
+      "architecture_or_parameter_delta_count": 0,
+      "decision_contract_is_new_family_specific": true,
+      "fixed_adapter_scale": 16.0,
+      "mechanism": "fixed_one_over_64_final_class_semantic_anchor",
+      "new_training_objective": "D_plus_A_over_64",
+      "not_exact_signed_boundary_v1_retry_or_weight_sweep": true,
+      "objective_delta_count": 1,
+      "old_training_objective": "D_signed_boundary_distance_only",
+      "preserved_representation": "two_tanh_signed_boundary_distance_fields"
+    },
+    "scientific_question": "Can one fixed class-balanced semantic anchor prevent the observed occupied-recall collapse while preserving learned RGB signed-distance geometry?"
+  },
+  "frozen_v2_execution_authorization": {
+    "byte_count": 70537,
+    "commit": "a40b4e228a2b741c171bf3d714228a772d5a9833",
+    "content_sha256": "49aa85e872607f9af9b9703141bd9955b7d8354e3b5dfa003158508c1f5741b0",
+    "file_sha256": "ab8bef03eadb56fd7f3da39d332e08918a65370e6b74d03ecda4c3cda1f31859",
+    "path": "docs/lewm_go2_rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_v2_runtime_interpreter_integrity_replacement_execution_authorization_2026-07-27.json",
+    "status": "AUTHORIZED_ONE_EXACT_SCIENCE_IDENTICAL_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V2_RUNTIME_INTERPRETER_INTEGRITY_REPLACEMENT"
+  },
+  "frozen_v2_source_manifest": {
+    "byte_count": 58065,
+    "commit": "bdf5ef34d2353da7e9f321c69664f0891e3fb373",
+    "content_sha256": "b15cee9ef92d76e50e9a60008975f62b3fd54c47f2053772d39ae7cc28ed5ec6",
+    "file_sha256": "fb6ce9b735051766840e7f0aaf52e3161087bc93544ed384854a0d28b8d0db0b",
+    "path": "docs/lewm_go2_rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_v2_runtime_interpreter_integrity_replacement_source_manifest_2026-07-27.json",
+    "source_count": 160,
+    "status": "PASS_SOURCE_CLOSURE"
+  },
+  "frozen_v2_source_review": {
+    "byte_count": 90179,
+    "commit": "a6a8b4de2073166e4ae9acb134f2dc79b40ac93e",
+    "content_sha256": "1c8f5d48f7fce0c56f4cb13d1e66eaaf84f56eb904e242e60bff68e44d56d4d9",
+    "file_sha256": "ed8195c9c8b0bf2dbfa788816597ee569202ccb2d4925b02f3b0e30240cd1c8c",
+    "path": "docs/lewm_go2_rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_v2_runtime_interpreter_integrity_replacement_source_review_2026-07-27.json",
+    "status": "PASS_SOURCE_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V2_RUNTIME_INTERPRETER_INTEGRITY_REPLACEMENT_SCIENCE_AND_CUSTODY"
+  },
+  "frozen_v2_terminal_audit": {
+    "byte_count": 23895,
+    "classification": "VALID_UPDATE_100_SINGLE_BALANCED_ACCURACY_CONJUNCT_SCIENTIFIC_FAILURE_AFTER_STRONG_OBJECTIVE_NLL_AND_SEMANTIC_IMPROVEMENT_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V2_RUNTIME_INTERPRETER_INTEGRITY_REPLACEMENT_CLOSED_NO_RETRY",
+    "commit": "ef8dfcf5ed659b64cf6adf7480c904cbeb61357c",
+    "content_sha256": "3e31ce22a5c19b553299c32155291936d033aedb4a2588842c3251bc0d8c7bc3",
+    "file_sha256": "88a0b03fde5f5cda2088576ae0fd12ef5c8d5dc47925a4df7e7defa85c8132b8",
+    "path": "docs/lewm_go2_rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_v2_runtime_interpreter_integrity_replacement_terminal_audit_2026-07-27.json",
+    "status": "PASS_VALID_TERMINAL_RECEIPT_CHAIN_UPDATE_100_SCIENTIFIC_FAILURE_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V2_RUNTIME_INTERPRETER_INTEGRITY_REPLACEMENT_CLOSED_NO_RETRY"
+  },
+  "independent_source_review": {
+    "byte_count": 93568,
+    "content_sha256": "3ec8a136e0cd93f46db6e93ada63864833c03d7b2c05e3accf82fab50a418ee3",
+    "file_sha256": "d918795ddba109a1394b5eba137cc81073735bf64c5b4fbe82751aedb0b1e41a",
+    "path": "docs/lewm_go2_rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_v3_update100_trend_gate_timing_source_review_2026-07-27.json"
+  },
+  "preregistration": {
+    "byte_count": 15878,
+    "commit": "ef830dd92f923ba36276b44fe0fc0eaf656ef8d4",
+    "content_sha256": "716860d02eb7e8f98cccd2f3f8eef0ecd8e21d230b44787bf388160a519ef319",
+    "file_sha256": "e63bcb9b127d62a300bd5447c6e1e37284081c50a39d2b35c00acc3190982a31",
+    "path": "docs/lewm_go2_rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_v3_update100_trend_gate_timing_preregistration_2026-07-27.json",
+    "status": "PREREGISTERED_ONE_SCIENCE_IDENTICAL_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_TIMING_SUCCESSOR_PENDING_SOURCE_FREEZE_INDEPENDENT_REVIEW_AND_SEPARATE_MACHINE_AUTHORIZATION"
+  },
+  "runtime_inputs": {
+    "access_counter_fields": {
+      "authorized_nonnegative": [
+        "raw_manifest_open_count",
+        "raw_audit_open_count",
+        "pair_index_open_count",
+        "endpoint_index_open_count",
+        "current_rgb_row_request_count",
+        "next_rgb_row_request_count",
+        "fixed_negative_rgb_row_request_count",
+        "endpoint_rgb_row_request_count",
+        "rgb_cache_hit_count",
+        "rgb_cache_miss_count",
+        "rgb_physical_file_open_count",
+        "raster_label_row_request_count",
+        "raster_label_row_cache_hit_count",
+        "raster_label_row_cache_miss_count",
+        "raster_label_underlying_array_cache_hit_count",
+        "raster_label_underlying_array_cache_miss_count",
+        "raster_label_physical_array_open_count",
+        "n320_gate_open_count",
+        "n320_checkpoint_open_count",
+        "schedule_open_count"
+      ],
+      "equations": {
+        "raster_labels.u1": "row_requests_equal_row_cache_hits_plus_row_cache_misses;row_cache_misses_equal_underlying_array_hits_plus_underlying_array_misses;underlying_array_misses_equal_physical_array_opens",
+        "rgb": "current_plus_next_plus_fixed_negative_plus_endpoint_requests_equals_cache_hits_plus_cache_misses_and_misses_equal_physical_opens"
+      },
+      "forbidden_exact_zero": [
+        "camera_supervision_array_open_count",
+        "ray_supervision_array_open_count",
+        "depth_supervision_array_open_count",
+        "ground_supervision_array_open_count",
+        "other_supervision_array_open_count",
+        "general_raw_frame_loader_call_count",
+        "prior_runtime_output_open_count",
+        "rejected_checkpoint_open_count",
+        "training_trace_read_count",
+        "written_checkpoint_read_count",
+        "g2_open_count",
+        "navigation_open_count",
+        "heldout_open_count",
+        "sealed_open_count",
+        "production_input_open_count",
+        "deployment_input_open_count",
+        "observer_rerun_count"
+      ],
+      "runner_counter_mapping": {
+        "current_rgb_row_request_count": "rgb_request_count.current",
+        "endpoint_rgb_row_request_count": "rgb_request_count.endpoint",
+        "fixed_negative_rgb_row_request_count": "rgb_request_count.fixed_negative",
+        "next_rgb_row_request_count": "rgb_request_count.next",
+        "raster_label_physical_array_open_count": "raster_physical_array_open_success_count",
+        "raster_label_row_cache_hit_count": "sum(raster_row_cache_hit_count.*)",
+        "raster_label_row_cache_miss_count": "sum(raster_row_cache_miss_count.*)",
+        "raster_label_row_request_count": "sum(raster_row_request_count.*)",
+        "raster_label_underlying_array_cache_hit_count": "raster_underlying_array_cache_hit_count",
+        "raster_label_underlying_array_cache_miss_count": "raster_underlying_array_cache_miss_count",
+        "rgb_cache_hit_count": "sum(rgb_cache_hit_count.*)",
+        "rgb_cache_miss_count": "sum(rgb_cache_miss_count.*)",
+        "rgb_physical_file_open_count": "sum(rgb_physical_read_success_count.*)"
+      }
+    },
+    "experiment_scope": {
+      "attempt_index": 1,
+      "fresh_initialization_required": true,
+      "maximum_active_gpu_minutes": 30,
+      "maximum_attempts": 1,
+      "maximum_presentations": 16000,
+      "maximum_updates": 1000,
+      "multiprototype_runtime_output_reuse": false,
+      "one_fresh_attempt": true,
+      "output_root": ".generated/go2_shared_observable_camera_ray_jepa_signed_boundary_semantic_anchor_state_v3/rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_probe_v3_update100_trend_gate_timing_v1",
+      "output_root_must_be_absent_before_reservation": true,
+      "perception_only": true,
+      "predictor_forward_or_training": false,
+      "prior_runtime_or_checkpoint_reuse": false,
+      "reservation_consumes_the_sole_attempt": true,
+      "retry_resume_repair_recovery_extension_second_seed_or_second_attempt": false,
+      "runtime_interpreter_path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-torch291-rocm64/bin/python",
+      "runtime_sys_prefix": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-torch291-rocm64",
+      "schedule_schema_adapter_changed": false,
+      "semantic_anchor_state_v3_update100_trend_gate_timing_only": true,
+      "signed_boundary_distance_state_v1_only": false,
+      "signed_boundary_semantic_anchor_state_v1_only": false,
+      "signed_boundary_v1_runtime_output_or_state_reuse": false,
+      "v10_retry_resume_repair_or_recovery": false,
+      "v10_runtime_output_reuse": false,
+      "v11_retry_resume_repair_or_recovery": false,
+      "v11_runtime_output_reuse": false,
+      "v12_retry_resume_repair_or_recovery": false,
+      "v12_runtime_output_reuse": false,
+      "v1_retry_resume_repair_or_recovery": false,
+      "v1_runtime_output_reuse": false,
+      "v2_retry_resume_repair_or_recovery": false,
+      "v2_runtime_output_reuse": false,
+      "v8_retry_resume_repair_or_recovery": false,
+      "v8_runtime_output_reuse": false,
+      "v9_retry_resume_repair_or_recovery": false,
+      "v9_runtime_output_reuse": false
+    },
+    "n320": {
+      "checkpoint": {
+        "byte_count": 13777100,
+        "content_sha256": "9dcca536943f89acfd7d463fdab591e19a030ef3dc8f3f19a050b1b10025fc2b",
+        "file_sha256": "ece874b53941e841fffc61b724a86d4383b881549afa453b746dd5d68aba11b0",
+        "path": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/checkpoint.pt"
+      },
+      "encoder_only_migration": true,
+      "fit_seed": 20260710,
+      "fit_size": 320,
+      "fit_updates": 40000,
+      "gate": {
+        "byte_count": 7960,
+        "content_sha256": "76ce5ab703560d171f7c84684b90eed18e8b4cdcc2d8ed3eff6d48496f4de67b",
+        "file_sha256": "4943b4060e88296503c09fc714e55e40fd762527cfccb70a3a341f0df800efe6",
+        "path": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/gate.json"
+      },
+      "required_gate_check_count": 26,
+      "root": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1"
+    },
+    "raw": {
+      "audit": {
+        "byte_count": 26975,
+        "content_sha256": "0c16e368c9de258d0fbf46e3123d7a3cfcdf60162fd9efa6440d4a7773056aca",
+        "file_sha256": "0680e1680f30c45feda60498792c3f208c28313e8f087dfbdd1c5807bcf1fe76",
+        "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1.audit_v13.json"
+      },
+      "grant": {
+        "allowed_supervision_arrays": [
+          "raster_labels.u1"
+        ],
+        "allowed_values": [
+          "current_rgb",
+          "next_rgb",
+          "fixed_negative_rgb",
+          "raster_labels.u1"
+        ],
+        "fixed_mapped_negative_rule": {
+          "different_next_endpoint_required": true,
+          "mapped_value": "next_rgb_endpoint_only",
+          "non_singleton": "cyclic_next_row_within_same_scene_and_primitive_group_wrapping_once",
+          "random_draw_count": 0,
+          "same_role_and_scene_required": true,
+          "singleton": "cyclic_next_row_in_complete_same_scene_content_order_wrapping_once",
+          "sort_key": "lowercase_hex_content_sha256_bytewise_ascending"
+        },
+        "general_raw_frame_loader_authorized": false,
+        "narrow_loader": "_row_array_only",
+        "other_supervision_array_access_authorized": false,
+        "selection_action_permutation_binding": {
+          "changed_action_count": 495,
+          "input_rows_sha256": "81f85cdf0ad00ec68918f5eeb7637bf20aa3f17f5615bedfb10e6a4859eb91f1",
+          "mapping_sha256": "2740be362829c172a06aebae0d077e69ede8af80cbf6f00569eb460dc559bb0f",
+          "row_count": 495,
+          "scene_count": 8,
+          "scene_size_histogram": {
+            "47": 1,
+            "64": 7
+          },
+          "shift_histogram": {
+            "13": 1,
+            "8": 7
+          }
+        },
+        "selection_family_bindings": {
+          "large_enclosed_maze": {
+            "non_hold_row_count": 57,
+            "row_count": 64,
+            "same_action_row_count": 64,
+            "scene_id": "large_enclosed_maze_d78318b1e87b"
+          },
+          "local_composite_motifs": {
+            "non_hold_row_count": 56,
+            "row_count": 64,
+            "same_action_row_count": 64,
+            "scene_id": "local_composite_motifs_811b818f1914"
+          },
+          "loop_alias_stress": {
+            "non_hold_row_count": 57,
+            "row_count": 64,
+            "same_action_row_count": 64,
+            "scene_id": "loop_alias_stress_aeb36ab10bc1"
+          },
+          "medium_enclosed_maze": {
+            "non_hold_row_count": 57,
+            "row_count": 64,
+            "same_action_row_count": 64,
+            "scene_id": "medium_enclosed_maze_f30352cb052e"
+          },
+          "open_obstacle_field": {
+            "non_hold_row_count": 57,
+            "row_count": 64,
+            "same_action_row_count": 64,
+            "scene_id": "open_obstacle_field_25cc6fe2de4f"
+          },
+          "rough_local_dynamics": {
+            "non_hold_row_count": 57,
+            "row_count": 64,
+            "same_action_row_count": 64,
+            "scene_id": "rough_local_dynamics_0e631dbfbd46"
+          },
+          "small_enclosed_maze": {
+            "non_hold_row_count": 37,
+            "row_count": 47,
+            "same_action_row_count": 46,
+            "scene_id": "small_enclosed_maze_16b0fc2c449b"
+          },
+          "visual_sensor_stress": {
+            "non_hold_row_count": 57,
+            "row_count": 64,
+            "same_action_row_count": 64,
+            "scene_id": "visual_sensor_stress_dc440a3fb679"
+          }
+        },
+        "selection_family_bindings_sha256": "c39efe48afd6d4c02a24af77f1f11e7f6cd5a69d571b0a9416924b07bbacbb11",
+        "target_mapping_bindings": {
+          "checkpoint_selection": {
+            "fallback_count": 1,
+            "input_rows_sha256": "81f85cdf0ad00ec68918f5eeb7637bf20aa3f17f5615bedfb10e6a4859eb91f1",
+            "mapping_sha256": "95d42273a8319316ad68781cb2158146e7672eda529984c3aeddc0937d87a9c1",
+            "non_singleton_primitive_group_count": 71,
+            "primitive_group_count": 72,
+            "row_count": 495,
+            "same_action_eligible_count": 494
+          },
+          "train": {
+            "fallback_count": 25,
+            "input_rows_sha256": "bb119abb33b7c56f3c1d96e7cb1b52fbe4d2db27d80df4f95a5b1cd9d0cf729e",
+            "mapping_sha256": "c9c914422927670ffce8e2a967bf264725b9ae3c55c353ee0a1a16e44044196b",
+            "non_singleton_primitive_group_count": 578,
+            "primitive_group_count": 603,
+            "row_count": 4262,
+            "same_action_eligible_count": 4237
+          }
+        }
+      },
+      "manifest": {
+        "byte_count": 311598,
+        "content_sha256": "74ae5799919ff4d9a06f56d98929cb4cb702d64db52ecdfc93cfa9a8e82fb35a",
+        "file_sha256": "e102b3c64e99029f118597353966edaaaddbc11efe49b9081d5d7a9c9d974360",
+        "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/manifest.json"
+      },
+      "roles": {
+        "checkpoint_selection": {
+          "pairs": 495,
+          "scenes": 8,
+          "unique_endpoints": 924
+        },
+        "train": {
+          "pairs": 4262,
+          "scenes": 72,
+          "unique_endpoints": 7777
+        }
+      },
+      "root": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1"
+    },
+    "schedule": {
+      "checkpoints": [
+        100,
+        400,
+        1000
+      ],
+      "effective_batch_size": 16,
+      "microbatch_size": 4,
+      "microbatches_per_update": 4,
+      "observation_updates": [
+        0,
+        100,
+        400,
+        1000
+      ],
+      "one_scheduled_pair_is_one_presentation": true,
+      "prefix_rule": "exact_existing_frozen_full_Direct_BEV_16000_presentation_schedule_without_filter_reorder_resample_replacement_or_extension",
+      "prefix_sha256": {
+        "100": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+        "1000": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528",
+        "400": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92"
+      },
+      "presentations": 16000,
+      "preserve_rows_roles_order_and_mappings": true,
+      "seed": 20260713,
+      "source": {
+        "byte_count": 607373,
+        "content_sha256": "274c0cbd9a87cbbc5bbc3123fff046f02ac3555014b5ec750d4a32b552650a15",
+        "file_sha256": "08f54578febbc182d936a999d6cf86263b8cd03a5f640da064c1538dd53dc270",
+        "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/matched_training_v4/schedule.json"
+      },
+      "updates": 1000
+    }
+  },
+  "schema": "lewm_go2_rgb_direct_egocentric_bev_signed_boundary_semantic_anchor_state_v3_update100_trend_gate_timing_execution_authorization_v1",
+  "science_identity": {
+    "changed_evaluation_paths": [
+      "schema",
+      "gates.controls",
+      "gates.evaluation_decision_protocol"
+    ],
+    "evaluation_decision_protocol_delta_count": 1,
+    "inherited_v2_science_contract_sha256": "2d42031e0586c205cfcae783991a497a4b3f4a5b1c5b8013aa3e65ac5ca673f1",
+    "normalized_exactly_equals_v2": true,
+    "normalized_v3_decision_protocol_sha256": "2d42031e0586c205cfcae783991a497a4b3f4a5b1c5b8013aa3e65ac5ca673f1",
+    "predictor_training_or_evaluation_authorized": false,
+    "schedule_schema_adapter_changed": false,
+    "training_science_delta_count": 0,
+    "v2_runtime_reuse_authorized": false,
+    "v3_full_evaluation_contract_sha256": "331621380bdde4b0ccc72505297f702cff7c6d83bd358c6c73765dcc09282ba5"
+  },
+  "source_freeze_commit": "7e07fe1a18bd1e6b2288cdcee7adf008b356f026",
+  "status": "AUTHORIZED_ONE_EXACT_TRAINING_SCIENCE_IDENTICAL_SIGNED_BOUNDARY_SEMANTIC_ANCHOR_STATE_V3_UPDATE100_TREND_GATE_TIMING_SUCCESSOR"
+}
