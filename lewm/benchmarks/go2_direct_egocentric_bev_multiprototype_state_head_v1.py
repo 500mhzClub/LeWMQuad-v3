@@ -363,13 +363,13 @@ MULTIPROTOTYPE_UTILIZATION = {
         "labels": "current_labels",
         "rgb": "current_rgb",
     },
-    "reported_per_target_class": (
+    "reported_per_target_class": [
         "target_class_valid_cell_count",
         "per_component_posterior_responsibility_mean",
         "per_component_winner_share",
         "mean_responsibility_entropy_nats",
         "effective_component_count",
-    ),
+    ],
 }
 
 EXECUTION_AUTHORITY = {

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import inspect
+import json
 import math
 from pathlib import Path
 import subprocess
@@ -183,6 +184,11 @@ def test_contract_caps_denials_inventories_custody_and_149_source_closure() -> N
         contract.LAUNCHER_RELATIVE_PATH,
     }
     science = contract.science_contract()
+    assert json.loads(contract.canonical_json_bytes(science)) == science
+    runtime_authorization = contract.runtime_authorization_template()
+    assert json.loads(
+        contract.canonical_json_bytes(runtime_authorization)
+    ) == runtime_authorization
     state_head = science["model"]["state_head"]
     assert set(state_head) == {
         "prototype_shape",
