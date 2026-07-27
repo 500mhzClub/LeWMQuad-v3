@@ -105,9 +105,13 @@ VAL_PRESENTATIONS = 2_048
 OBSERVATION_UPDATES = (0, 250, 500, 750, 1_000)
 IMAGE_SIZE = 112
 EMA_MOMENTUM = 0.996
+PREDICTION_WEIGHT = 1.0
 VARIANCE_WEIGHT = 0.05
 ACTION_RANKING_WEIGHT = 1.0
 ACTION_RANKING_MARGIN = 0.05
+TRAIN_WRONG_ACTION_CONTRAST = True
+UPDATE_TARGET_EMA = True
+TARGET_DESCRIPTION = "initial_hard_sync_then_ema_stop_gradient"
 OBJECTIVE_DESCRIPTION = (
     "prediction + 0.05*variance + 1.0*cyclic_wrong_action_margin_0.05"
 )
@@ -1229,6 +1233,13 @@ def _run(
     output_fd: int,
     access: Counter[str],
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    for name in (
+        "target_ema_update_count",
+        "optimizer_updates_with_fixed_target_count",
+        "wrong_action_counterfactual_sequence_count",
+        "auxiliary_training_control_sequence_count",
+    ):
+        access[name] += 0
     train_rows, val_rows, train_binding, val_binding = _load_index_contract(
         args,
         access=access,
@@ -1248,6 +1259,11 @@ def _run(
     model = _build_model(runtime, n320_encoder).to(device)
     del n320_encoder
     model.hard_sync_target()
+    fixed_target_initial_state_sha256 = (
+        _state_sha256(model.target_encoder, runtime)
+        if not UPDATE_TARGET_EMA
+        else None
+    )
     groups = _parameter_groups(model)
     optimizer = torch.optim.AdamW(
         [
@@ -1308,13 +1324,20 @@ def _run(
                 target = _target_encode(model, future_rgb)
             prediction_loss = _normalized_error(predicted, target, runtime).mean()
             variance_loss = _extract_tensor(output, "variance_loss")
-            wrong_future = (future + 1) % len(PRIMITIVES)
-            wrong_predicted = model.predict_from_belief(belief, wrong_future)
-            real_distance = _token_distance(predicted, target, runtime)
-            wrong_distance = _token_distance(wrong_predicted, target, runtime)
-            wrong_action_ranking_loss = torch.relu(
-                ACTION_RANKING_MARGIN + real_distance - wrong_distance
-            ).mean()
+            if TRAIN_WRONG_ACTION_CONTRAST:
+                wrong_future = (future + 1) % len(PRIMITIVES)
+                wrong_predicted = model.predict_from_belief(belief, wrong_future)
+                real_distance = _token_distance(predicted, target, runtime)
+                wrong_distance = _token_distance(wrong_predicted, target, runtime)
+                wrong_action_ranking_loss = torch.relu(
+                    ACTION_RANKING_MARGIN + real_distance - wrong_distance
+                ).mean()
+            else:
+                if ACTION_RANKING_WEIGHT != 0.0:
+                    raise ContractError(
+                        "disabled wrong-action training requires zero ranking weight"
+                    )
+                wrong_action_ranking_loss = prediction_loss.new_zeros(())
             auxiliary_losses: Mapping[str, Any] = {}
             auxiliary_method = getattr(model, "training_auxiliary_losses", None)
             if callable(auxiliary_method):
@@ -1338,7 +1361,7 @@ def _run(
                 ):
                     raise ContractError("model auxiliary training losses are invalid")
             loss = (
-                prediction_loss
+                PREDICTION_WEIGHT * prediction_loss
                 + VARIANCE_WEIGHT * variance_loss
                 + ACTION_RANKING_WEIGHT * wrong_action_ranking_loss
                 + sum(auxiliary_losses.values(), start=prediction_loss.new_zeros(()))
@@ -1349,13 +1372,17 @@ def _run(
             for values in groups.values():
                 torch.nn.utils.clip_grad_norm_(values, max_norm=1.0)
             optimizer.step()
-            model.update_target(EMA_MOMENTUM)
+            if UPDATE_TARGET_EMA:
+                model.update_target(EMA_MOMENTUM)
+                access["target_ema_update_count"] += 1
+            else:
+                access["optimizer_updates_with_fixed_target_count"] += 1
             updates_completed = update
             presentations_completed = update * BATCH_SIZE
             access["train_sequence_presentation_count"] = presentations_completed
             access["optimizer_update_count"] = updates_completed
-            access["target_ema_update_count"] = updates_completed
-            access["wrong_action_counterfactual_sequence_count"] += BATCH_SIZE
+            if TRAIN_WRONG_ACTION_CONTRAST:
+                access["wrong_action_counterfactual_sequence_count"] += BATCH_SIZE
             access["auxiliary_training_control_sequence_count"] += (
                 AUXILIARY_TRAINING_CONTROL_MULTIPLIER * BATCH_SIZE
             )
@@ -1403,6 +1430,20 @@ def _run(
     elapsed = time.monotonic() - gpu_started
     if presentations_completed != PRESENTATIONS or updates_completed != UPDATES:
         raise ContractError("exact presentation/update cap was not completed")
+    fixed_target_final_state_sha256 = (
+        _state_sha256(model.target_encoder, runtime)
+        if not UPDATE_TARGET_EMA
+        else None
+    )
+    fixed_target_ema_update_count = (
+        int(model.ema_update_count.detach().cpu().item())
+        if not UPDATE_TARGET_EMA
+        else None
+    )
+    if fixed_target_final_state_sha256 != fixed_target_initial_state_sha256:
+        raise ContractError("fixed target encoder state changed during training")
+    if fixed_target_ema_update_count not in (None, 0):
+        raise ContractError("fixed target encoder recorded an EMA update")
     decision = _decision(observations, updates_completed)
     metrics = {
         "schema": f"{SCHEMA}_metrics_v1",
@@ -1436,6 +1477,18 @@ def _run(
             for name, binding in sorted(EXECUTION_SOURCE_BINDINGS.items())
         },
         "fresh_recurrent_and_predictor_initialization": True,
+        "target_ema_update_enabled": UPDATE_TARGET_EMA,
+        "fixed_target_identity": (
+            {
+                "initial_state_sha256": fixed_target_initial_state_sha256,
+                "final_state_sha256": fixed_target_final_state_sha256,
+                "ema_update_count": fixed_target_ema_update_count,
+                "unchanged": True,
+            }
+            if fixed_target_initial_state_sha256 is not None
+            else None
+        ),
+        "wrong_action_training_contrast_enabled": TRAIN_WRONG_ACTION_CONTRAST,
         "n320_encoder_initialization_checkpoint_open_count": 1,
         "retry_or_resume_checkpoint_input_open_count": 0,
         "retry_or_resume": False,
@@ -1636,15 +1689,18 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "past_actions": 2,
                 "future_actions_and_targets": 4,
                 "joint_online_components": ["encoder", "history", "predictor"],
-                "target": "initial_hard_sync_then_ema_stop_gradient",
+                "target": TARGET_DESCRIPTION,
                 "initialization": (
                     "accepted_N320_encoder_only; history_and_predictor_fresh"
                 ),
                 "wrong_action_contrast": {
+                    "training_enabled": TRAIN_WRONG_ACTION_CONTRAST,
                     "mapping": "cyclic_plus_one_modulo_nine",
                     "weight": ACTION_RANKING_WEIGHT,
                     "margin": ACTION_RANKING_MARGIN,
                 },
+                "variance_weight": VARIANCE_WEIGHT,
+                "direct_prediction_weight": PREDICTION_WEIGHT,
                 "additional_science": dict(ADDITIONAL_SCIENCE),
                 "retry_resume_or_arbitrary_checkpoint_input": False,
             },
