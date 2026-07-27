@@ -371,6 +371,7 @@ def test_receipt_is_self_hashed_and_contains_no_row_level_witnesses() -> None:
         access=contract.default_access_receipt(),
         work=contract.default_work_receipt(),
     )
+    assert "aggregate_sha256" not in receipt["graph"]
     assert contract.validate_receipt(receipt) == receipt
     raw = contract.canonical_json_bytes(receipt) + b"\n"
     assert contract.parse_canonical_json_line(raw, name="synthetic receipt") == receipt
@@ -426,6 +427,23 @@ def test_runner_output_root_reservation_is_exclusive(tmp_path: Path) -> None:
     assert list(output_root.iterdir()) == []
 
 
+def test_runner_rejects_symlinked_ancestors_for_reads_and_output(
+    tmp_path: Path,
+) -> None:
+    runner = _load_runner("_test_h4_census_runner_symlink_ancestors")
+    runner.ROOT = tmp_path
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "input.json").write_bytes(b"outside")
+    (tmp_path / ".generated").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(OSError):
+        runner._read_regular(tmp_path / ".generated/input.json")
+    with pytest.raises(OSError):
+        runner._reserve_output_root()
+    assert sorted(path.name for path in outside.iterdir()) == ["input.json"]
+
+
 def test_runner_synthetic_normal_stop_publishes_one_canonical_receipt(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -479,3 +497,42 @@ def test_runner_synthetic_normal_stop_publishes_one_canonical_receipt(
     assert runner.contract.validate_receipt(receipt) == receipt
     assert receipt["decision"] == "STOP_H4_METADATA_INADEQUATE"
     assert list(receipt_path.parent.iterdir()) == [receipt_path]
+
+
+def test_runner_read_failure_receipt_counts_attempt_before_success(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    runner = _load_runner("_test_h4_census_runner_read_failure")
+    runner.ROOT = tmp_path
+    (tmp_path / ".generated").mkdir()
+    monkeypatch.setattr(runner, "_validate_preregistration", lambda: None)
+    monkeypatch.setattr(runner, "_source_bindings", lambda: [])
+
+    def read_with_manifest_failure(path: Path) -> bytes:
+        relative = path.relative_to(tmp_path).as_posix()
+        if relative == runner.contract.AUTHORIZATION_PATH:
+            return b"authorization"
+        if relative == runner.contract.MANIFEST_PATH:
+            raise OSError("synthetic failure after manifest read attempt")
+        raise AssertionError(f"unexpected synthetic read: {relative}")
+
+    monkeypatch.setattr(runner, "_read_regular", read_with_manifest_failure)
+    monkeypatch.setattr(
+        runner.contract,
+        "validate_authorization",
+        lambda *args, **kwargs: {},
+    )
+
+    assert runner.run_parent(authorization_file_sha256="0" * 64) == 2
+    receipt_path = tmp_path / runner.contract.OUTPUT_PATH
+    receipt = runner.contract.parse_canonical_json_line(
+        receipt_path.read_bytes(), name="synthetic read-failure receipt"
+    )
+    assert receipt["access"]["allowed"] == {
+        "manifest_open_attempt_count": 1,
+        "manifest_read_success_count": 0,
+        "pairs_open_attempt_count": 0,
+        "pairs_read_success_count": 0,
+    }
+    assert receipt["adequacy"]["predicates"]["allowed_input_opens_exact"] is False

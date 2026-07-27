@@ -451,7 +451,6 @@ def census_rows(rows: Sequence[Mapping[str, Any]]) -> tuple[dict[str, Any], dict
     paths_by_role: dict[str, list[list[Mapping[str, Any]]]] = {
         role: [] for role in ELIGIBLE_ROLES
     }
-    membership_hash_rows: dict[str, list[list[str]]] = {role: [] for role in ELIGIBLE_ROLES}
     for role in ELIGIBLE_ROLES:
         role_rows = [row for row in rows if row["dataset_role"] == role]
         outgoing = {str(row["current_endpoint_sha256"]): row for row in role_rows}
@@ -470,9 +469,6 @@ def census_rows(rows: Sequence[Mapping[str, Any]]) -> tuple[dict[str, Any], dict
                 row = outgoing.get(str(row["next_endpoint_sha256"]))
             if path:
                 paths_by_role[role].append(path)
-                membership_hash_rows[role].append(
-                    [str(item["content_sha256"]) for item in path]
-                )
         unvisited = [row for row in role_rows if row["content_sha256"] not in visited]
         remaining = {str(row["content_sha256"]): row for row in unvisited}
         while remaining:
@@ -598,10 +594,6 @@ def census_rows(rows: Sequence[Mapping[str, Any]]) -> tuple[dict[str, Any], dict
         "train_future_primitive_histograms": train_histograms,
         "train_future_primitive_tuple_multiset_sha256_by_family": tuple_hashes,
         "train_future_primitive_tuple_multiset_sha256": aggregate_tuple_hash,
-        "aggregate_sha256": canonical_json_sha256({
-            "domain": "recurrent_h4_graph_membership_v1",
-            "paths": membership_hash_rows,
-        }),
     }
     adequacy = {"predicates": predicates, "failed_predicates": failed}
     return {"counts": integrity, "all_zero": integrity_all_zero}, graph, adequacy
@@ -637,8 +629,10 @@ def build_receipt(
         and access_value.get("all_forbidden_zero") is True
     )
     predicates["allowed_input_opens_exact"] = access_value.get("allowed") == {
-        "manifest_open_count": 1,
-        "pairs_open_count": 1,
+        "manifest_open_attempt_count": 1,
+        "manifest_read_success_count": 1,
+        "pairs_open_attempt_count": 1,
+        "pairs_read_success_count": 1,
     }
     predicates["work_scope_exact"] = work_value == default_work_receipt()
     failed = sorted(name for name, passed in predicates.items() if passed is not True)
@@ -743,10 +737,6 @@ def build_stop_receipt(
             "role": "train",
             "family": "aggregate",
             "tuples": [],
-        }),
-        "aggregate_sha256": canonical_json_sha256({
-            "domain": "recurrent_h4_graph_membership_v1",
-            "paths": {role: [] for role in ELIGIBLE_ROLES},
         }),
     }
     predicate_names = (
@@ -894,7 +884,12 @@ def default_access_receipt() -> dict[str, Any]:
         "heldout_sealed_g2_g8_open_count": 0,
     }
     return {
-        "allowed": {"manifest_open_count": 1, "pairs_open_count": 1},
+        "allowed": {
+            "manifest_open_attempt_count": 1,
+            "manifest_read_success_count": 1,
+            "pairs_open_attempt_count": 1,
+            "pairs_read_success_count": 1,
+        },
         "forbidden": forbidden,
         "all_forbidden_zero": True,
     }
