@@ -394,6 +394,63 @@ def test_receipt_is_self_hashed_and_contains_no_row_level_witnesses() -> None:
         contract.validate_receipt(mutated)
 
 
+def test_authorization_accepts_exact_git_commit_identity() -> None:
+    source_bindings = [
+        {"path": "contract.py", "file_sha256": "a" * 64, "byte_count": 1},
+        {"path": "runner.py", "file_sha256": "b" * 64, "byte_count": 2},
+    ]
+    core = {
+        "schema": contract.AUTHORIZATION_SCHEMA,
+        "status": "PASS_EXACTLY_ONE_METADATA_CENSUS",
+        "authority": "execute_exactly_one_recurrent_h4_metadata_census",
+        "preregistration": dict(contract.PREREGISTRATION),
+        "source_bindings": source_bindings,
+        "review": {
+            "path": contract.REVIEW_PATH,
+            "source_commit": "c" * 40,
+            "file_sha256": "d" * 64,
+            "content_sha256": "e" * 64,
+            "byte_count": 1,
+            "status": "PASS_SOURCE_ONLY_ZERO_FINDINGS",
+        },
+        "runtime_inputs": {
+            "manifest": {
+                "path": contract.MANIFEST_PATH,
+                "file_sha256": contract.MANIFEST_FILE_SHA256,
+                "content_sha256": contract.MANIFEST_CONTENT_SHA256,
+                "byte_count": contract.MANIFEST_BYTE_COUNT,
+            },
+            "pairs": {
+                "path": contract.PAIRS_PATH,
+                "file_sha256": contract.PAIRS_FILE_SHA256,
+                "byte_count": contract.PAIRS_BYTE_COUNT,
+                "row_count": contract.PAIR_COUNT,
+                "ordered_content_sha256": contract.ORDERED_PAIR_CONTENT_SHA256,
+            },
+        },
+        "output": {"path": contract.OUTPUT_PATH, "must_be_fresh": True},
+        "attempt": {"maximum_execution_count": 1, "retry_authorized": False},
+    }
+    authorization = contract.with_content_sha256(core)
+    raw = contract.canonical_json_bytes(authorization) + b"\n"
+    assert contract.validate_authorization(
+        raw,
+        expected_file_sha256=hashlib.sha256(raw).hexdigest(),
+        source_bindings=source_bindings,
+    ) == authorization
+
+    invalid = deepcopy(authorization)
+    invalid["review"]["source_commit"] = "c" * 64
+    invalid = _rehash(invalid)
+    invalid_raw = contract.canonical_json_bytes(invalid) + b"\n"
+    with pytest.raises(contract.CensusValidationError, match="contract changed"):
+        contract.validate_authorization(
+            invalid_raw,
+            expected_file_sha256=hashlib.sha256(invalid_raw).hexdigest(),
+            source_bindings=source_bindings,
+        )
+
+
 def _load_runner(name: str) -> Any:
     spec = importlib.util.spec_from_file_location(name, RUNNER_PATH)
     assert spec is not None and spec.loader is not None

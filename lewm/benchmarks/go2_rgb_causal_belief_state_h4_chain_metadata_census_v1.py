@@ -220,6 +220,14 @@ def is_sha256(value: object) -> bool:
     )
 
 
+def is_git_sha1(value: object) -> bool:
+    return (
+        type(value) is str
+        and len(value) == 40
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 def with_content_sha256(core: Mapping[str, Any]) -> dict[str, Any]:
     if type(core) is not dict or "content_sha256" in core:
         raise TypeError("self-hashed core must be a plain dict without its hash")
@@ -858,7 +866,7 @@ def validate_authorization(
             "byte_count": value["review"].get("byte_count"),
             "status": "PASS_SOURCE_ONLY_ZERO_FINDINGS",
         }
-        or not is_sha256(value["review"].get("source_commit"))
+        or not is_git_sha1(value["review"].get("source_commit"))
         or not is_sha256(value["review"].get("file_sha256"))
         or not is_sha256(value["review"].get("content_sha256"))
         or not _plain_nonnegative_int(value["review"].get("byte_count"))
