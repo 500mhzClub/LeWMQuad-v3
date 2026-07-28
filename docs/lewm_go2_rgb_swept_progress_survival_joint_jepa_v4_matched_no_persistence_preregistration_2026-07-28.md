@@ -130,9 +130,13 @@
   training. Evaluate it once using the exact V4 calibration/selection order,
   metrics, semantic/progress gates, eight family gates, and four inference
   controls.
-- Report the control's absolute gates and every full-V4-minus-control semantic,
-  progress, calibration, control, scene, and family delta. These are reports,
-  not new qualification, selection, or promotion gates.
+- Report the control's complete absolute semantic, progress, calibration,
+  family, and inference-control metrics and gates. The only exact cross-arm
+  deltas registered here are the eight embedded full-V4-minus-control family
+  utility deltas and their aggregate predicate. Do not invent other deltas from
+  rounded prose or reopen generated V4 artifacts; the committed V4 result may
+  be cited qualitatively for context. None of these reports is a new
+  qualification, selection, or promotion gate.
 - For each of the same eight fixed selection scenes/families, let `d_f` be full
   V4 minus control normalized chosen-prefix utility. The positive treatment
   predicate is true only when all are true:
