@@ -1,5 +1,22 @@
 # Go2 RGB fixed-teacher factual shared-transition trajectory-H4 JEPA V1 result — 2026-07-28
 
+## Superseding causal-alignment correction
+
+- This correction supersedes only the prior no-rebuild/factorized-next
+  consequence recorded in commit
+  `dab0e31dd25194b07efb9a542f3d677bb62201c9`. Every V1 observation, metric,
+  receipt, failure gate, custody finding, and terminal STOP below is unchanged.
+- The later causal adjudication distinguishes correlation from a valid
+  candidate-planning transition. V1 labels `F(i,1) -> F(i+1,1)` with requested
+  primitive `p_i`: its input is already one post-request tick into `p_i`, and
+  its target is already one post-request tick into unseen `p_(i+1)`.
+- The valid requested-action edge is same-episode
+  `F(i-1,5) -> F(i,5)`, labeled `p_i`. One fresh, mechanism-identical,
+  schedule-corrected V2 integrity replacement is therefore required before
+  changing the model. The factorized conditional-increment mechanism is
+  deferred and may be reconsidered only if corrected V2 still stops on the
+  unchanged gates.
+
 ## Terminal outcome
 
 - Decision:
@@ -15,10 +32,10 @@
 - The exact one-block, K=4, factual 50/50 shared spatial-transition mechanism
   on the frozen V1 schedule is closed. There is no retry, resume, second seed,
   longer run, block-depth change, coefficient change, same-schedule nearby V2,
-  schedule replacement, checkpoint inspection, or checkpoint reuse. The
-  post-run temporal audit below found a one-tick schema quirk but also showed
-  that a boundary-corrected schedule is less aligned with realized motion; it
-  therefore does not reopen this attempt or justify a replacement run.
+  checkpoint inspection, or checkpoint reuse. This does not prohibit the one
+  fresh mechanism-identical, schedule-corrected V2 integrity replacement
+  defined by the superseding correction: V2 starts again from the accepted
+  N320 encoder and consumes no V1 runtime artifact.
 - This result is a bounded development perception/world-model result. It does
   not establish a navigation policy and grants no navigation, held-out,
   sealed-benchmark, scaling, promotion, deployment, or checkpoint authority.
@@ -168,17 +185,17 @@ and floor gates, and the all-hold family floor.
 - Weight sharing and factual one-step supervision were sufficient to learn a
   strong generic latent successor prior, including useful pre-observation
   `p0/p1` predictions and stable four-step open-loop prediction.
-- They were not sufficient to learn a controllable predictive state. The
-  transition can explain average visual evolution while effectively ignoring
-  which primitive was applied; its retained hidden state does not add useful
-  ordered evidence under the registered controls.
-- This makes encoder collapse, lack of particle support, absence of a factual
-  training signal, and inability to roll open-loop poor explanations for the
-  present failure. On the frozen V1 schedule, the unfactorized proper score
-  allowed a current-view/dataset-prior shortcut and did not make conditional
-  history or action information necessary. The receipts alone do not identify
-  whether the remaining failure is target accessibility, predictor use, or
-  temporal input semantics.
+- On the V1 mixed-boundary schedule they were not sufficient to learn a
+  controllable predictive state. The transition explained average visual
+  evolution while effectively ignoring which indexed primitive was applied;
+  its retained hidden state did not add useful ordered evidence under the
+  registered controls.
+- This makes encoder collapse, lack of particle support, and inability to roll
+  open-loop poor explanations for the descriptive V1 failure. It does not
+  establish that a causally aligned factual signal is insufficient: the V1
+  input already contains one tick of the labeled action and its target contains
+  one tick of an unseen destination action. A corrected integrity replacement
+  is required to separate model failure from temporal input semantics.
 - The 2.896 TB allowlisted pool contains far more unused RGB and rollout data,
   but this curve does not justify exposing more of it to the same objective.
   Data scale follows mechanism qualification; it does not replace it.
@@ -218,48 +235,36 @@ and floor gates, and the all-hold family floor.
   weaker at `0.5196 / 0.4680 / 0.3492`.
 - This ordering is consistent with actuator/body inertia: the first tick under
   a new request still contains substantial response to the preceding command.
-  V1's shifted interval is impure in request-time semantics but accidentally
-  aligns better with realized motion. Rebuilding the index is therefore not
-  an evidence-based fix and no corrected-schedule replacement should run.
+  It explains why V1's impure interval is more class-separable, but does not
+  make that interval valid for planning. Separability cannot license an input
+  observed after candidate `p_i` began or a target affected by unseen
+  `p_(i+1)`.
 - The evidence does not convert the completed V1 result into a PASS or
-  authorize any V1 checkpoint. It localizes the next problem more sharply:
-  an RGB/action state must represent latent motion and controller lag from
-  ordered history, rather than treating each requested primitive as an
-  instantaneous state change.
+  authorize any V1 checkpoint. It authorizes no model change by itself. The
+  next scientific comparison must first repeat the exact V1 model and science
+  once on reset-safe `F(i-1,5) -> F(i,5)` requested-action edges.
 
 ## Ordered next category
 
-- Do not rebuild or shift the H6 schedule, merge forward-speed classes, expose
-  executed commands, deepen the shared transition, or add a corruption margin.
-- The next admissible mechanism is one fresh **factorized conditional-increment
-  H4 JEPA** that separates three predictive questions on the same rows and
-  fixed-teacher targets:
-  1. `B(e2)`: a K=4 H4 baseline structurally blind to all earlier history and
-     every action, trained to absorb generic view evolution;
-  2. `H(e0:e2,p0:p1)`: a reset-centered history increment trained to improve
-     detached `B`, so a nonzero contribution must come from ordered history;
-  3. `A(state,p2:p5)`: a bias-free, vocabulary-centered action increment
-     trained to improve detached `B+H`, so it cannot supply an
-     action-independent correction.
-- Lower tiers receive their own proper JEPA scores. Higher-tier scores consume
-  detached lower-tier atoms, preventing branches from colluding to move generic
-  prediction error into the nominal history/action path. All tiers train in
-  one backward; this is not separately trained prediction.
-- Selection and PASS must require same-row, same-target incremental value with
-  positive bootstrap and family breadth: `B` beats persistence, `B+H` beats
-  `B`, and `B+H+A` beats `B+H`. Existing future prediction, distribution,
-  cyclic-action, all-hold, ordered/reset-history, noncollapse, floor, and
-  custody gates remain controlling.
-- Cyclic, all-hold, reordered, and reset sequences remain evaluation-only
-  controls; centering is an architectural zero-reference, not a corruption
-  ranking loss. Do not add a learned target projector, inverse classifier,
-  action NLL/retrieval objective, flow/warp, whitening compressor, navigation
-  label, or privileged state. Those nearby categories are already closed.
-- Retain requested primitive identity because it is the action available to a
-  future navigation policy. The learned ordered RGB state must infer actuator
-  and motion lag. Start fresh from the accepted encoder only, keep the existing
-  development schedule and 16,000-presentation cap, and consume no artifact
-  from any stopped branch.
+- Run at most one fresh **factual shared-transition trajectory-H4 JEPA V2
+  schedule-integrity replacement**. It must retain requested primitives and
+  the exact V1 model, initialization, seed, losses, weights, optimizer,
+  observations, selection rule, gates, thresholds, and
+  1,000-update/16,000-presentation cap.
+- The only scientific changes are the reset-safe endpoint/index schema and the
+  deterministic same-seed backfill needed to restore the fixed family quotas.
+  New schedule hashes, output namespace, receipt schema, and source bindings
+  are operational consequences of that integrity repair, not model changes.
+- Every edge labeled `p_i` must be same-episode
+  `F(i-1,5) -> F(i,5)`. Six consecutive complete primitive blocks must yield
+  seven shared boundaries; no destination-action tick may enter an edge and no
+  missing pre-command boundary may be synthesized.
+- Do not merge forward-speed classes, expose executed/clipped commands, change
+  a model or loss scalar, relax a gate, reuse a V1 checkpoint, retry, resume,
+  or scale data. V2 starts fresh from the accepted encoder only.
+- The factorized conditional-increment H4 JEPA is deferred. It becomes an
+  admissible fallback only after a clean corrected V2 STOP still demonstrates
+  generic prediction without the unchanged required action/history value.
 
 ## Execution and custody audit
 

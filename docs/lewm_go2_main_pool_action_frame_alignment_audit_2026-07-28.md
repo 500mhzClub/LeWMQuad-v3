@@ -1,5 +1,32 @@
 # Go2 main-pool action/frame alignment audit — 2026-07-28
 
+## Superseding causal correction
+
+- This section supersedes the original no-rebuild/factorized-next decision
+  recorded with this audit in commit
+  `dab0e31dd25194b07efb9a542f3d677bb62201c9`. The measurements, populations,
+  and numerical results below are unchanged; their candidate-planning
+  interpretation was incomplete.
+- Write `F(i,j)` for the `j`th post-request frame of primitive block `i`.
+  V1 labels the interval `F(i,1) -> F(i+1,1)` with requested primitive `p_i`.
+  That interval begins after `p_i` has already acted for one tick and ends
+  after the unseen destination primitive `p_(i+1)` has acted for one tick.
+- High separability of `p_i` over that mixed interval establishes correlation,
+  but not a deployable candidate transition. At planning time the model must
+  receive a state from before candidate `p_i` begins and may not target a
+  state containing any effect of an action it was not given.
+- The candidate-valid edge is therefore the same-episode boundary transition
+  `F(i-1,5) -> F(i,5)`, labeled by requested primitive `p_i`. Six consecutive
+  primitives require seven such shared boundaries. Rows without a real
+  same-episode predecessor boundary must be filtered and deterministically
+  backfilled; they must not be synthesized.
+- Consequently, the V1 schedule is not valid evidence for candidate-planning
+  action conditioning. Its completed model run remains a terminal V1 STOP,
+  but one mechanism-identical, schedule-corrected V2 integrity replacement
+  must precede any factorized conditional-increment model. The factorized
+  proposal is a contingent fallback only if that corrected replacement still
+  fails its unchanged action/history gates.
+
 ## Scope and custody
 
 - This was a read-only semantic audit of the exact active development
@@ -114,21 +141,27 @@ Validation recall under the strongest V1 current-lag diagnostic was:
 - The H6 V1 adapter has a real request-time endpoint impurity: 0.4 seconds of
   current request plus 0.1 seconds of destination request. Its raw timing and
   action IDs are otherwise correct.
-- Do **not** answer this finding with a boundary-shifted schedule replacement.
-  The temporally pure alternatives are measurably less predictive of the
-  requested action because actuator/body response lags the request. V1's
-  shifted interval accidentally aligns best with realized motion.
+- The original inference that lower action separability made a boundary
+  replacement scientifically inappropriate is withdrawn. Actuator/body lag
+  explains why the mixed V1 interval is more class-separable, but it cannot
+  authorize conditioning on one already-observed action tick or targeting one
+  unseen destination-action tick.
+- Use exactly one reset-safe schedule-integrity replacement whose edge for
+  requested `p_i` is `F(i-1,5) -> F(i,5)`. Preserve the V1 model, accepted
+  encoder, seed, objective, optimizer, thresholds, observations, and
+  1,000-update/16,000-presentation cap. Only the endpoint/index schema,
+  deterministic same-seed quota backfill, schedule hashes, output identity,
+  and receipt identity may change.
 - Do not expose executed/clipped future commands to the world model. A
   navigation policy knows requested actions, not future post-controller
   outcomes. The RGB/action state must learn incoming velocity, controller lag,
   contacts, and action response from ordered visual/action history.
-- The data contains ample action signal: validation balanced separability is
-  `0.4793`, more than four times chance. The factual shared-transition JEPA's
-  approximately zero action gap therefore cannot be explained by an absent or
-  wholesale-shifted action label.
-- The next bounded model should explicitly isolate the incremental predictive
-  value of ordered history and requested action after an action/history-blind
-  branch has absorbed generic visual evolution. A factorized
-  conditional-increment H4 JEPA is justified; another endpoint adapter,
-  data-scale run, simple transition-depth change, or trained corruption margin
-  is not.
+- The data contains requested-action signal: validation balanced separability
+  is `0.4793` on the V1 mixed interval and `0.4523` on the corrected boundary
+  interval, both far above `1/9` chance. Those diagnostics support attempting
+  the corrected factual model, but they do not rescue V1's causal alignment.
+- If and only if the one mechanism-identical, schedule-corrected V2
+  replacement stops on the unchanged action/history gates, a separately
+  preregistered factorized conditional-increment H4 JEPA may be reconsidered.
+  No data-scale run, transition-depth tweak, trained corruption margin, retry,
+  or V1 checkpoint reuse is justified before that result.
