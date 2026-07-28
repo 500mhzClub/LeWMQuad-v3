@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from copy import deepcopy
 import hashlib
 from pathlib import Path
@@ -41,6 +42,7 @@ _CORE_MUTABLE_NAMES = (
     "_evaluate",
     "_decision",
     "_run",
+    "_terminal_failure",
 )
 _BASE_MUTABLE_NAMES = (
     "MODEL_MODULE",
@@ -245,14 +247,68 @@ def test_configuration_keeps_exact_v2_indexes_and_argument_lock() -> None:
         assert args.val_index == runner.v2.VAL_INDEX
         assert args.val_index_sha256 == runner.v2.VAL_INDEX_SHA256
         assert args.val_index_bytes == runner.v2.VAL_INDEX_BYTES
+        assert runner.core.UPDATES == 1_000
+        assert runner.core.BATCH_SIZE == 16
+        assert runner.core.PRESENTATIONS == 16_000
+        assert runner.core.VAL_PRESENTATIONS == 2_048
+        assert runner.core.OBSERVATION_UPDATES == (0, 250, 500, 750, 1_000)
+        assert runner.core.MAX_GPU_SECONDS == 5_400
+        assert runner.core.SEED == 20_260_727
+        assert (
+            runner.core.PRESENTATIONS
+            + len(runner.core.OBSERVATION_UPDATES)
+            * runner.core.VAL_PRESENTATIONS
+        ) * 7 == 183_680
+    finally:
+        _restore(core_original, base_original)
+
+
+@pytest.mark.parametrize(
+    ("flag", "value"),
+    (
+        ("--train-index", ".generated/other/train.jsonl"),
+        ("--train-index-sha256", "0" * 64),
+        ("--train-index-bytes", str(runner.v2.TRAIN_INDEX_BYTES + 1)),
+        ("--val-index", ".generated/other/val.jsonl"),
+        ("--val-index-sha256", "0" * 64),
+        ("--val-index-bytes", str(runner.v2.VAL_INDEX_BYTES + 1)),
+        ("--model-sha256", "0" * 64),
+        ("--model-bytes", str(runner.MODEL_SOURCE_BYTES + 1)),
+    ),
+)
+def test_argument_lock_rejects_every_bound_input_override(
+    flag: str,
+    value: str,
+) -> None:
+    core_original, base_original = _snapshots()
+    try:
+        runner._configure_core({})
         with pytest.raises(SystemExit):
-            runner.core.parse_args(
-                [
-                    "--preflight-only",
-                    "--train-index",
-                    str(runner.ROOT / ".generated/other/train.jsonl"),
-                ]
-            )
+            runner.core.parse_args(["--preflight-only", flag, value])
+    finally:
+        _restore(core_original, base_original)
+
+
+@pytest.mark.parametrize(
+    "override",
+    (
+        ("--resume",),
+        ("--seed", "1"),
+        ("--updates", "999"),
+        ("--presentations", "15984"),
+        ("--batch-size", "8"),
+        ("--max-gpu-seconds", "1"),
+        ("--checkpoint", "checkpoint.pt"),
+    ),
+)
+def test_argument_lock_rejects_resume_seed_and_cap_surfaces(
+    override: tuple[str, ...],
+) -> None:
+    core_original, base_original = _snapshots()
+    try:
+        runner._configure_core({})
+        with pytest.raises(SystemExit):
+            runner.core.parse_args(["--preflight-only", *override])
     finally:
         _restore(core_original, base_original)
 
@@ -302,8 +358,9 @@ def test_run_wraps_only_v1_factual_artifact_fields(
         "_V1_FACTUAL_RUN",
         lambda *args, **kwargs: (metrics, artifact, decision),
     )
+    access: dict[str, int] = {}
     observed_metrics, observed_artifact, observed_decision = (
-        runner._factorized_conditional_increment_run("x", access={})
+        runner._factorized_conditional_increment_run("x", access=access)
     )
     assert observed_metrics is metrics
     assert observed_decision is decision
@@ -320,6 +377,9 @@ def test_run_wraps_only_v1_factual_artifact_fields(
     assert observed_artifact["factual_shared_transition_score_weights"] == (
         artifact["factual_shared_transition_score_weights"]
     )
+    assert {
+        name: access[name] for name in runner._FORBIDDEN_ACCESS_COUNTER_NAMES
+    } == {name: 0 for name in runner._FORBIDDEN_ACCESS_COUNTER_NAMES}
 
 
 def test_run_fails_closed_if_inherited_initialization_receipt_changes(
@@ -330,6 +390,28 @@ def test_run_fails_closed_if_inherited_initialization_receipt_changes(
         "_V1_FACTUAL_RUN",
         lambda *args, **kwargs: ({}, {}, {}),
     )
+    with pytest.raises(runner.core.ContractError):
+        runner._factorized_conditional_increment_run(access={})
+
+
+def test_run_fails_closed_if_a_forbidden_counter_changes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def forbidden_run(*args: object, **kwargs: object) -> tuple[dict, dict, dict]:
+        access = kwargs["access"]
+        assert isinstance(access, dict)
+        access["navigation_open_count"] = 1
+        return (
+            {},
+            {
+                "fresh_shared_transition_mode_and_residual_head_initialization": (
+                    True
+                )
+            },
+            {},
+        )
+
+    monkeypatch.setattr(runner, "_V1_FACTUAL_RUN", forbidden_run)
     with pytest.raises(runner.core.ContractError):
         runner._factorized_conditional_increment_run(access={})
 
@@ -347,9 +429,101 @@ def test_runtime_install_preserves_v2_evaluator_and_wraps_run_decision() -> None
             runner.core._decision
             is runner._factorized_conditional_increment_decision
         )
+        assert (
+            runner.core._terminal_failure
+            is runner._factorized_conditional_increment_terminal_failure
+        )
         runner._install_runtime_adapters()
     finally:
         _restore(core_original, base_original)
+
+
+@pytest.mark.parametrize("forbidden_count", (0, 1))
+def test_terminal_failure_writes_complete_truthful_no_authority_receipts(
+    monkeypatch: pytest.MonkeyPatch,
+    forbidden_count: int,
+) -> None:
+    published: list[tuple[str, dict, dict]] = []
+
+    def fake_publish(
+        output_fd: int,
+        name: str,
+        payload: dict,
+    ) -> tuple[dict, dict]:
+        assert output_fd == 17
+        content_sha256 = hashlib.sha256(name.encode("utf-8")).hexdigest()
+        observed = {**payload, "content_sha256": content_sha256}
+        binding = {
+            "path": name,
+            "byte_count": len(name),
+            "file_sha256": hashlib.sha256(
+                f"file:{name}".encode("utf-8")
+            ).hexdigest(),
+            "content_sha256": content_sha256,
+        }
+        published.append((name, observed, binding))
+        return observed, binding
+
+    monkeypatch.setattr(runner.core, "_publish_json", fake_publish)
+    reservation = {
+        "path": "reservation.json",
+        "byte_count": 1,
+        "file_sha256": "1" * 64,
+        "content_sha256": "2" * 64,
+    }
+    access = Counter(
+        {
+            "optimizer_update_count": 7,
+            "train_sequence_presentation_count": 112,
+            "rgb_physical_open_attempt_count": 784,
+            "rgb_physical_open_success_count": 784,
+            "test_or_heldout_open_count": forbidden_count,
+            "mechanism_specific_counter": 3,
+        }
+    )
+    runner._factorized_conditional_increment_terminal_failure(
+        17,
+        error=RuntimeError("synthetic terminal failure"),
+        reservation_binding=reservation,
+        access=access,
+    )
+
+    assert [name for name, _payload, _binding in published] == [
+        "failure.json",
+        "failure_access.json",
+        "completed.json",
+    ]
+    failure = published[0][1]
+    failure_access = published[1][1]
+    completed = published[2][1]
+    assert failure["schema"] == f"{runner.core.SCHEMA}_failure_v1"
+    assert failure["updates_completed"] == 7
+    assert failure["presentations_completed"] == 112
+    assert "no retry" in failure["authority"]
+    assert "held-out" in failure["authority"]
+    assert failure_access["counts_complete"] is True
+    assert "caught in-process" in failure_access["counts_complete_scope"]
+    assert "terminal handler entry" in failure_access["counts_complete_scope"]
+    assert failure_access["counts"]["train_index_open_attempt_count"] == 0
+    assert failure_access["counts"]["mechanism_specific_counter"] == 3
+    assert (
+        failure_access["forbidden"]["test_or_heldout_open_count"]
+        == forbidden_count
+    )
+    assert failure_access["forbidden"]["navigation_open_count"] == 0
+    assert (
+        failure_access["forbidden"][
+            "predecessor_predictor_checkpoint_tensor_open_count"
+        ]
+        == 0
+    )
+    assert failure_access["forbidden_all_zero"] is (forbidden_count == 0)
+    assert completed["status"] == "TERMINAL_FAILURE_COMPLETE"
+    assert completed["reservation"] == reservation
+    assert completed["failure"] == published[0][2]
+    assert completed["access"] == published[1][2]
+    assert completed["failure_content_sha256"] == failure["content_sha256"]
+    assert completed["access_content_sha256"] == failure_access["content_sha256"]
 
 
 def test_source_closure_requires_external_self_binding_and_is_complete(

@@ -11,6 +11,8 @@ Importing this module is source-only and opens no runtime input.
 """
 from __future__ import annotations
 
+from collections import Counter
+import hashlib
 import os
 from pathlib import Path
 import sys
@@ -71,6 +73,41 @@ STOP_DECISION = (
 
 _V2_DECISION = v2._schedule_integrity_decision
 _V1_FACTUAL_RUN = v1._factual_shared_transition_run
+_CORE_TERMINAL_FAILURE = core._terminal_failure
+
+_ACCESS_COUNTER_NAMES = (
+    "census_receipt_open_count",
+    "train_index_open_attempt_count",
+    "train_index_open_success_count",
+    "val_index_open_attempt_count",
+    "val_index_open_success_count",
+    "model_source_open_attempt_count",
+    "model_source_open_success_count",
+    "model_source_post_import_recheck_attempt_count",
+    "model_source_post_import_recheck_success_count",
+    "n320_initialization_checkpoint_open_attempt_count",
+    "n320_initialization_checkpoint_open_success_count",
+    "rgb_physical_open_attempt_count",
+    "rgb_physical_open_success_count",
+    "rgb_physical_byte_count",
+    "train_sequence_presentation_count",
+    "validation_sequence_presentation_count",
+    "optimizer_update_count",
+    "target_ema_update_count",
+    "optimizer_updates_with_fixed_target_count",
+    "wrong_action_counterfactual_sequence_count",
+    "auxiliary_training_control_sequence_count",
+)
+_FORBIDDEN_ACCESS_COUNTER_NAMES = (
+    "test_or_heldout_open_count",
+    "sealed_open_count",
+    "navigation_open_count",
+    "label_open_count",
+    "predecessor_predictor_checkpoint_tensor_open_count",
+    "retry_or_resume_checkpoint_input_open_count",
+    "arbitrary_initialization_checkpoint_open_count",
+    "retry_or_resume_count",
+)
 
 
 def _verify_source_closure() -> dict[str, dict[str, Any]]:
@@ -308,7 +345,14 @@ def _factorized_conditional_increment_run(
 ) -> tuple[dict[str, Any], ...]:
     """Reuse the V1 factual run adapter and relabel mechanism artifacts."""
 
+    access = kwargs.get("access")
+    if access is None:
+        raise core.ContractError("factorized run requires access accounting")
+    for name in _FORBIDDEN_ACCESS_COUNTER_NAMES:
+        access[name] = int(access.get(name, 0))
     metrics, artifact, decision = _V1_FACTUAL_RUN(*args, **kwargs)
+    if any(int(access[name]) != 0 for name in _FORBIDDEN_ACCESS_COUNTER_NAMES):
+        raise core.ContractError("a forbidden factorized-run access occurred")
     adapted = dict(artifact)
     inherited_initialization = adapted.pop(
         "fresh_shared_transition_mode_and_residual_head_initialization",
@@ -335,6 +379,77 @@ def _factorized_conditional_increment_run(
     return metrics, adapted, decision
 
 
+def _factorized_conditional_increment_terminal_failure(
+    output_fd: int,
+    *,
+    error: BaseException,
+    reservation_binding: Mapping[str, Any],
+    access: Counter[str],
+) -> None:
+    """Publish a complete, truthful terminal receipt set for this attempt."""
+
+    registered = (*_ACCESS_COUNTER_NAMES, *_FORBIDDEN_ACCESS_COUNTER_NAMES)
+    counts = {name: int(access.get(name, 0)) for name in registered}
+    counts.update({str(name): int(value) for name, value in access.items()})
+    if any(value < 0 for value in counts.values()):
+        raise core.ContractError("terminal access counters must be nonnegative")
+    forbidden = {
+        name: counts[name] for name in _FORBIDDEN_ACCESS_COUNTER_NAMES
+    }
+
+    failure, failure_binding = core._publish_json(
+        output_fd,
+        "failure.json",
+        {
+            "schema": f"{core.SCHEMA}_failure_v1",
+            "status": "TERMINAL_EXECUTION_FAILURE",
+            "failure_class": type(error).__name__,
+            "failure_message_sha256": hashlib.sha256(
+                str(error).encode("utf-8")
+            ).hexdigest(),
+            "updates_completed": counts["optimizer_update_count"],
+            "presentations_completed": counts[
+                "train_sequence_presentation_count"
+            ],
+            "authority": (
+                "Failure grants no retry, resume, checkpoint, navigation, "
+                "held-out, promotion, deployment, or downstream authority."
+            ),
+        },
+    )
+    access_payload, access_binding = core._publish_json(
+        output_fd,
+        "failure_access.json",
+        {
+            "schema": f"{core.SCHEMA}_access_v1",
+            "counts_complete": True,
+            "counts_complete_scope": (
+                "caught in-process execution failures only; complete "
+                "registered counter snapshot through terminal handler entry; "
+                "terminal receipt writes excluded"
+            ),
+            "counts": dict(sorted(counts.items())),
+            "forbidden": forbidden,
+            "forbidden_all_zero": all(
+                value == 0 for value in forbidden.values()
+            ),
+        },
+    )
+    core._publish_json(
+        output_fd,
+        "completed.json",
+        {
+            "schema": f"{core.SCHEMA}_completion_v1",
+            "status": "TERMINAL_FAILURE_COMPLETE",
+            "reservation": dict(reservation_binding),
+            "failure": failure_binding,
+            "access": access_binding,
+            "failure_content_sha256": failure["content_sha256"],
+            "access_content_sha256": access_payload["content_sha256"],
+        },
+    )
+
+
 def _install_runtime_adapters() -> None:
     """Install V2, retaining its evaluator and wrapping only run/decision."""
 
@@ -343,8 +458,15 @@ def _install_runtime_adapters() -> None:
             raise core.ContractError("factorized evaluator identity changed")
         if core._run is not _factorized_conditional_increment_run:
             raise core.ContractError("factorized run handler identity changed")
+        if (
+            core._terminal_failure
+            is not _factorized_conditional_increment_terminal_failure
+        ):
+            raise core.ContractError("factorized failure handler identity changed")
         return
 
+    if core._terminal_failure is not _CORE_TERMINAL_FAILURE:
+        raise core.ContractError("inherited terminal failure handler changed")
     v2._install_runtime_adapters()
     if core._evaluate is not v1._factual_shared_transition_evaluate:
         raise core.ContractError("V2 factual evaluator was not preserved")
@@ -354,6 +476,7 @@ def _install_runtime_adapters() -> None:
         raise core.ContractError("V2 decision adapter was not preserved")
     core._run = _factorized_conditional_increment_run
     core._decision = _factorized_conditional_increment_decision
+    core._terminal_failure = _factorized_conditional_increment_terminal_failure
 
 
 def main(argv: Sequence[str] | None = None) -> int:

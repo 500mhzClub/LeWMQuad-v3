@@ -469,15 +469,27 @@ def test_zero_w0_stages_factorized_gradients_until_the_head_opens() -> None:
     _open_w0(model, scale=0.02)
     opened = model(history, past, future)
     opened_score = _observed_prior_score(model, history, opened)
+    encoder_parameters = tuple(model.encoder.parameters())
     opened_gradients = torch.autograd.grad(
         opened_score,
-        upstream,
+        (*encoder_parameters, *upstream),
         allow_unused=True,
     )
-    assert all(gradient is not None for gradient in opened_gradients)
+    encoder_gradients = opened_gradients[: len(encoder_parameters)]
+    factor_gradients = opened_gradients[len(encoder_parameters) :]
+    active_encoder_gradients = [
+        gradient for gradient in encoder_gradients if gradient is not None
+    ]
+    assert active_encoder_gradients
+    assert all(
+        bool(torch.isfinite(gradient).all())
+        for gradient in active_encoder_gradients
+    )
+    assert sum(float(gradient.norm()) for gradient in active_encoder_gradients) > 0.0
+    assert all(gradient is not None for gradient in factor_gradients)
     assert all(
         bool(torch.isfinite(gradient).all()) and float(gradient.norm()) > 0.0
-        for gradient in opened_gradients
+        for gradient in factor_gradients
         if gradient is not None
     )
 
