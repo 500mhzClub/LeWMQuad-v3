@@ -109,7 +109,8 @@ the full receipt precision.
 - Only `open_obstacle_field` beat persistence at H4. The other seven families
   were negative; `rough_local_dynamics` was closest to a tie.
 - Ordered-history gap was negative in all eight families. The history mechanism
-  therefore did not beat the registered reset/reordered controls in any family.
+  therefore did not beat the better of the registered reset/reordered controls
+  in any family; this metric does not say that both controls won separately.
 - Hold gap was positive only in `open_obstacle_field` and negative in the
   other seven families.
 
@@ -145,8 +146,9 @@ the full receipt precision.
   separately identified.
 - Positive action gaps show that the learned predictor responded to proposed
   actions. They do not show that it mapped those actions to the correct future
-  state. Stable rank and a fixed teacher also make representation collapse and
-  moving-target drift poor explanations for this run's failure.
+  state. Stable registered online/target encoder-rank metrics and a fixed
+  teacher also make encoder-rank collapse and moving-target drift poor
+  explanations for this run's failure.
 - The combination of action sensitivity, persistence dominance, and uniformly
   negative history is consistent with a deterministic squared-error predictor
   averaging view-dependent or partially observed future outcomes. That is a
@@ -209,7 +211,10 @@ the full receipt precision.
   `5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30`;
   wrapper source SHA-256:
   `30838feadc6e211df0d8b32638abdcab761f9e77132dc52b90aedace232db142`.
-- This result draft used only the six JSON receipts and committed source,
+- This result draft used the six current JSON receipts, the committed V3
+  metrics receipt for the exact numerical comparison, and committed source,
   preregistration, review, authorization, and predecessor-result documents.
-  No checkpoint, tensor, RGB, index, held-out, sealed, or protected bytes were
-  opened or hashed while preparing it.
+  The independent terminal audit separately inspected checkpoint filename,
+  type, and size metadata by `lstat` only. No checkpoint content, tensor, RGB,
+  index, held-out, sealed, or protected bytes were opened or hashed while
+  preparing or auditing it.
