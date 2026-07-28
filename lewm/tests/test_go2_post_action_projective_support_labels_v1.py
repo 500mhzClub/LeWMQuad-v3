@@ -134,6 +134,13 @@ def _execution_binding() -> dict[str, object]:
                 name: dict(binding)
                 for name, binding in contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS.items()
             },
+            "schedule_schema_adapter_amendment": (
+                contract.schedule_schema_adapter_amendment_binding()
+            ),
+            "label_v2_terminal_predecessor_bindings": {
+                name: dict(binding)
+                for name, binding in contract.LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS.items()
+            },
             "authority": {
                 "development_label_preflight_authorized": True,
                 "training_authorized": False,
@@ -188,6 +195,178 @@ def test_raw_endpoint_index_rejects_the_distinct_metadata_plan_digest(
     labels._validate_raw_endpoint_content_order_v1(endpoints)
     with pytest.raises(labels.LabelContractError, match="raw endpoint ordering"):
         labels._validate_raw_endpoint_content_order_v1(tuple(reversed(endpoints)))
+
+
+def test_matched_training_v4_schedule_is_exact_and_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert labels.MATCHED_TRAINING_V4_SCHEDULE_SCHEMA == (
+        "lewm_go2_shared_jepa_v5_matched_training_v4_schedule_v1"
+    )
+    assert labels.MATCHED_TRAINING_V4_SCHEDULE_IDENTITY_SHA256 == {
+        "ordered_pair_ids_sha256": (
+            "74b90f10347a89d2151c4f65f76d6fc3c6a94fb3e8caa350d2a92e934e80840a"
+        ),
+        "indices_sha256": (
+            "a6f4fda5eb570336fb360631af3629832cccbe4cba21bdbb325dcb8a21963663"
+        ),
+        "presentation_pair_ids_sha256": (
+            "1534dcdd85feb8421639a0dc433473913f6674556e22e0fa9f515be455b7b79a"
+        ),
+        "per_update_pair_ids_sha256": (
+            "fe4aab82bd05b5e3438e8623319211ae75220f8bf3143223f6b6e375d91d46f0"
+        ),
+    }
+    assert labels.LABEL_OUTPUT_RELATIVE_PATH.endswith("labels_v3")
+    assert labels.SOURCE_MANIFEST_RELATIVE_PATH.endswith(
+        "source_manifest_v3_2026-07-28.json"
+    )
+    assert labels.SOURCE_REVIEW_RELATIVE_PATH.endswith(
+        "source_review_v3_2026-07-28.json"
+    )
+
+    pair_ids = [
+        _sha(f"synthetic-pair-{index}".encode())
+        for index in range(
+            labels.MATCHED_TRAINING_V4_SCHEDULE_DIMENSIONS["train_pair_count"]
+        )
+    ]
+    indices = [
+        index % len(pair_ids)
+        for index in range(
+            labels.MATCHED_TRAINING_V4_SCHEDULE_DIMENSIONS["presentation_count"]
+        )
+    ]
+    identities = dict(labels.MATCHED_TRAINING_V4_SCHEDULE_IDENTITY_SHA256)
+    identities["ordered_pair_ids_sha256"] = labels.canonical_json_sha256(pair_ids)
+    identities["indices_sha256"] = labels.canonical_json_sha256(indices)
+    monkeypatch.setattr(
+        labels,
+        "MATCHED_TRAINING_V4_SCHEDULE_IDENTITY_SHA256",
+        identities,
+    )
+    monkeypatch.setattr(
+        labels,
+        "SCHEDULE_PREFIX_SHA256",
+        labels.canonical_json_sha256(indices[:16_000]),
+    )
+    schedule = labels.with_content_sha256(
+        {
+            "schema": labels.MATCHED_TRAINING_V4_SCHEDULE_SCHEMA,
+            **labels.MATCHED_TRAINING_V4_SCHEDULE_DIMENSIONS,
+            **identities,
+            "presentation_indices": indices,
+        }
+    )
+    monkeypatch.setattr(
+        labels,
+        "SCHEDULE_CONTENT_SHA256",
+        schedule["content_sha256"],
+    )
+    schedule_raw = labels.canonical_json_bytes(schedule) + b"\n"
+    schedule_path = tmp_path / "schedule.json"
+    schedule_path.write_bytes(schedule_raw)
+    monkeypatch.setattr(labels, "SCHEDULE_FILE_SHA256", _sha(schedule_raw))
+    raw_indexes = labels.RawIndexesV1(
+        manifest={},
+        pairs=tuple(
+            {"dataset_role": "train", "content_sha256": pair_id}
+            for pair_id in pair_ids
+        ),
+        endpoints=(),
+        endpoint_by_sha256={},
+        shard_by_scene={},
+    )
+    assert labels.load_schedule_indices_v1(
+        schedule_path,
+        raw_indexes=raw_indexes,
+    ) == tuple(indices[:16_000])
+
+    def rehashed(changes: dict[str, object]) -> dict[str, object]:
+        core = copy.deepcopy(schedule)
+        core.pop("content_sha256")
+        core.update(changes)
+        return labels.with_content_sha256(core)
+
+    extra_field = rehashed({"ordered_train_pair_ids": pair_ids})
+    with pytest.raises(labels.LabelContractError, match="fields changed"):
+        labels._validate_matched_training_v4_schedule_v1(
+            extra_field,
+            raw_indexes=raw_indexes,
+        )
+
+    wrong_schema = rehashed(
+        {"schema": "lewm_go2_shared_jepa_v5_full_training_v4_schedule_v1"}
+    )
+    monkeypatch.setattr(
+        labels,
+        "SCHEDULE_CONTENT_SHA256",
+        wrong_schema["content_sha256"],
+    )
+    with pytest.raises(labels.LabelContractError, match="identity changed"):
+        labels._validate_matched_training_v4_schedule_v1(
+            wrong_schema,
+            raw_indexes=raw_indexes,
+        )
+
+    wrong_dimensions = rehashed({"update_count": 7_999})
+    monkeypatch.setattr(
+        labels,
+        "SCHEDULE_CONTENT_SHA256",
+        wrong_dimensions["content_sha256"],
+    )
+    with pytest.raises(labels.LabelContractError, match="dimensions changed"):
+        labels._validate_matched_training_v4_schedule_v1(
+            wrong_dimensions,
+            raw_indexes=raw_indexes,
+        )
+
+    wrong_hashes = rehashed({"presentation_pair_ids_sha256": "0" * 64})
+    monkeypatch.setattr(
+        labels,
+        "SCHEDULE_CONTENT_SHA256",
+        wrong_hashes["content_sha256"],
+    )
+    with pytest.raises(labels.LabelContractError, match="hashes changed"):
+        labels._validate_matched_training_v4_schedule_v1(
+            wrong_hashes,
+            raw_indexes=raw_indexes,
+        )
+
+    changed_indices = list(indices)
+    changed_indices[-1] = (changed_indices[-1] + 1) % len(pair_ids)
+    wrong_indices = rehashed({"presentation_indices": changed_indices})
+    monkeypatch.setattr(
+        labels,
+        "SCHEDULE_CONTENT_SHA256",
+        wrong_indices["content_sha256"],
+    )
+    with pytest.raises(labels.LabelContractError, match="index hash changed"):
+        labels._validate_matched_training_v4_schedule_v1(
+            wrong_indices,
+            raw_indexes=raw_indexes,
+        )
+
+    wrong_pairs = list(raw_indexes.pairs)
+    wrong_pairs[0] = {"dataset_role": "train", "content_sha256": "f" * 64}
+    mismatched_raw_indexes = labels.RawIndexesV1(
+        manifest={},
+        pairs=tuple(wrong_pairs),
+        endpoints=(),
+        endpoint_by_sha256={},
+        shard_by_scene={},
+    )
+    monkeypatch.setattr(
+        labels,
+        "SCHEDULE_CONTENT_SHA256",
+        schedule["content_sha256"],
+    )
+    with pytest.raises(labels.LabelContractError, match="train-pair identity"):
+        labels._validate_matched_training_v4_schedule_v1(
+            schedule,
+            raw_indexes=mismatched_raw_indexes,
+        )
 
 
 def test_exact_integrator_and_remote_sampler() -> None:
@@ -510,6 +689,28 @@ def test_binding_envelope_requires_full_commit_and_every_exact_path() -> None:
         labels.LabelContractError, match="label_v1_terminal_predecessor_bindings"
     ):
         labels.validate_execution_binding_envelope_v1(_rehash(wrong_predecessor))
+
+    wrong_schedule_amendment = copy.deepcopy(binding)
+    wrong_schedule_amendment["schedule_schema_adapter_amendment"][
+        "file_sha256"
+    ] = "0" * 64
+    with pytest.raises(
+        labels.LabelContractError, match="schedule_schema_adapter_amendment"
+    ):
+        labels.validate_execution_binding_envelope_v1(
+            _rehash(wrong_schedule_amendment)
+        )
+
+    wrong_v2_predecessor = copy.deepcopy(binding)
+    wrong_v2_predecessor["label_v2_terminal_predecessor_bindings"]["failure"][
+        "file_sha256"
+    ] = "0" * 64
+    with pytest.raises(
+        labels.LabelContractError, match="label_v2_terminal_predecessor_bindings"
+    ):
+        labels.validate_execution_binding_envelope_v1(
+            _rehash(wrong_v2_predecessor)
+        )
 
 
 def test_reservation_is_atomic_exact_and_failure_is_canonical(tmp_path: Path) -> None:

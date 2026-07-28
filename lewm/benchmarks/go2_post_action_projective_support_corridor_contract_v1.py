@@ -37,6 +37,14 @@ INTEGRITY_ADAPTER_AMENDMENT_FILE_SHA256: Final = (
     "40e07c1daa388ed56a0473577af758d9085dfac26133cbbf83eaa849f9726d45"
 )
 INTEGRITY_ADAPTER_AMENDMENT_BYTE_COUNT: Final = 3_645
+SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_RELATIVE_PATH: Final = (
+    "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
+    "label_preflight_v3_schedule_schema_adapter_amendment_2026-07-28.md"
+)
+SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_FILE_SHA256: Final = (
+    "276f2dfc7cdb7355904858cdbd9f58fd5991051296414dc52e3f02a468516e1d"
+)
+SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_BYTE_COUNT: Final = 4_445
 LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS: Final = {
     "reservation": {
         "path": (
@@ -63,6 +71,34 @@ LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS: Final = {
             "ffc40032c6dea96307255c9557cff377386571fee5545d79e487e39af30947da"
         ),
         "byte_count": 2_409,
+    },
+}
+LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS: Final = {
+    "reservation": {
+        "path": (
+            ".generated/go2_post_action_projective_support_labels_v2/"
+            "reservation.json"
+        ),
+        "file_sha256": (
+            "48eaec32a56bf0f872c0141ed359f2b673653c71bc76b5db96f4cf040b4bb165"
+        ),
+        "content_sha256": (
+            "2cce455b5bf302cd4b43a263caf9b427b8b9512f1388b2eeb00dbf655939e803"
+        ),
+        "byte_count": 2_362,
+    },
+    "failure": {
+        "path": (
+            ".generated/go2_post_action_projective_support_labels_v2/"
+            "failure.json"
+        ),
+        "file_sha256": (
+            "4fd4e3ec067564a423e8dba41a75862df5b3c5051d4ae2a3ca8b015936a18ecd"
+        ),
+        "content_sha256": (
+            "7b3cd79f76924ad12907303ca1d214bf260ace9d64c63bed5fa5814a71e74528"
+        ),
+        "byte_count": 2_417,
     },
 }
 
@@ -216,7 +252,7 @@ GEOMETRY_BINDINGS: Final = {
 }
 
 LABEL_ROOT_RELATIVE_PATH: Final = (
-    ".generated/go2_post_action_projective_support_labels_v2"
+    ".generated/go2_post_action_projective_support_labels_v3"
 )
 LABEL_MANIFEST_RELATIVE_PATH: Final = f"{LABEL_ROOT_RELATIVE_PATH}/manifest.json"
 LABEL_ROLE_RELATIVE_PATHS: Final = {
@@ -339,6 +375,14 @@ def integrity_adapter_amendment_binding() -> dict[str, Any]:
     }
 
 
+def schedule_schema_adapter_amendment_binding() -> dict[str, Any]:
+    return {
+        "path": SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_RELATIVE_PATH,
+        "file_sha256": SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_FILE_SHA256,
+        "byte_count": SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_BYTE_COUNT,
+    }
+
+
 def validate_label_v1_terminal_predecessor(
     *, root: Path = ROOT
 ) -> dict[str, dict[str, Any]]:
@@ -389,15 +433,87 @@ def validate_label_v1_terminal_predecessor(
     return values
 
 
+def validate_label_v2_terminal_predecessor(
+    *, root: Path = ROOT
+) -> dict[str, dict[str, Any]]:
+    """Validate the exact terminal V2 receipts before any V3 reservation."""
+
+    values: dict[str, dict[str, Any]] = {}
+    for name, binding in LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS.items():
+        path = Path(root).absolute() / str(binding["path"])
+        if path.is_symlink() or not path.is_file():
+            raise PermissionError(f"terminal V2 {name} receipt is absent")
+        raw = path.read_bytes()
+        if (
+            len(raw) != binding["byte_count"]
+            or hashlib.sha256(raw).hexdigest() != binding["file_sha256"]
+        ):
+            raise PermissionError(f"terminal V2 {name} receipt changed")
+        value = parse_canonical_json(raw, name=f"terminal V2 {name}")
+        if value.get("content_sha256") != binding["content_sha256"]:
+            raise PermissionError(f"terminal V2 {name} content changed")
+        values[name] = value
+    reservation = values["reservation"]
+    failure = values["failure"]
+    ledger = failure.get("access_ledger")
+    opened_once = (
+        "raw_manifest_opens",
+        "raw_pairs_opens",
+        "raw_endpoints_opens",
+        "raw_audit_opens",
+        "schedule_opens",
+    )
+    protected = (
+        "geometry_contract_opens",
+        "geometry_contract_validation_calls",
+        "directional_policy_opens",
+        "primitive_registry_opens",
+        "scene_join_calls_started",
+        "render_summary_opens",
+        "source_frames_jsonl_opens",
+        "scene_manifest_opens",
+        "rgb_opens",
+        "checkpoint_opens",
+        "runtime_output_opens",
+        "g2_opens",
+        "navigation_opens",
+        "heldout_opens",
+        "sealed_opens",
+        "production_opens",
+    )
+    if (
+        reservation.get("status")
+        != "RESERVED_ONE_EXACT_DEVELOPMENT_LABEL_PREFLIGHT"
+        or failure.get("status") != "FAILED_TERMINAL_NO_RETRY"
+        or failure.get("phase") != "prepare_execution_binding"
+        or failure.get("reservation_content_sha256")
+        != reservation.get("content_sha256")
+        or failure.get("error", {}).get("message")
+        != "frozen presentation schedule identity changed"
+        or type(ledger) is not dict
+        or any(ledger.get(key) != 1 for key in opened_once)
+        or any(ledger.get(key) != 0 for key in protected)
+    ):
+        raise PermissionError("terminal V2 failure semantics changed")
+    return values
+
+
 def science_contract() -> dict[str, Any]:
     return {
         "experiment_id": EXPERIMENT_ID,
         "integrity_adapter_amendment": integrity_adapter_amendment_binding(),
+        "schedule_schema_adapter_amendment": (
+            schedule_schema_adapter_amendment_binding()
+        ),
         "label_v1_terminal_predecessor_bindings": {
             name: dict(binding)
             for name, binding in LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS.items()
         },
-        "label_preflight_attempt": "v2_science_identical_integrity_adapter",
+        "label_v2_terminal_predecessor_bindings": {
+            name: dict(binding)
+            for name, binding in LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS.items()
+        },
+        "label_preflight_attempt": "v3_science_identical_schedule_schema_adapter",
         "actions": list(ACTION_VOCABULARY),
         "roles": {role: dict(ROLE_COUNTS[role]) for role in ROLE_ORDER},
         "updates": MAXIMUM_UPDATES,
@@ -446,8 +562,10 @@ __all__ = [name for name in globals() if name.isupper()] + [
     "parse_canonical_json",
     "preregistration_binding",
     "integrity_adapter_amendment_binding",
+    "schedule_schema_adapter_amendment_binding",
     "science_contract",
     "validate_label_v1_terminal_predecessor",
+    "validate_label_v2_terminal_predecessor",
     "validate_static_contract",
     "with_content_sha256",
 ]

@@ -65,11 +65,12 @@ def test_closure_is_exact_recursive_entrypoint_and_dynamic_source_closure() -> N
         *discovered,
         authority.contract.PREREGISTRATION_RELATIVE_PATH,
         authority.contract.INTEGRITY_ADAPTER_AMENDMENT_RELATIVE_PATH,
+        authority.contract.SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_RELATIVE_PATH,
     }))
     assert len(discovered) == 109
-    assert len(authority.SOURCE_PATHS) == len(discovered) + 2 == 111
+    assert len(authority.SOURCE_PATHS) == len(discovered) + 3 == 112
     assert len(authority.INHERITED_GEOMETRY_SOURCE_PATHS) == 74
-    assert len(authority.ADDITIVE_SOURCE_PATHS) == 19
+    assert len(authority.ADDITIVE_SOURCE_PATHS) == 20
     assert set(authority.IMPLEMENTATION_AUTHORS) == {
         "/root",
         "/root/counterfactual_label_mapping",
@@ -80,21 +81,25 @@ def test_closure_is_exact_recursive_entrypoint_and_dynamic_source_closure() -> N
         "/root/attempt_runner",
         "/root/authority_source_review",
         "/root/authority_v2_adapter",
+        "/root/v3_authority",
     }
     assert authority.SOURCE_MANIFEST_RELATIVE_PATH.endswith(
-        "source_manifest_v2_2026-07-28.json"
+        "source_manifest_v3_2026-07-28.json"
     )
     assert authority.SOURCE_REVIEW_RELATIVE_PATH.endswith(
-        "source_review_v2_2026-07-28.json"
+        "source_review_v3_2026-07-28.json"
     )
     assert authority.EXECUTION_BINDING_RELATIVE_PATH.endswith(
-        "execution_binding_v2_2026-07-28.json"
+        "execution_binding_v3_2026-07-28.json"
     )
-    assert "labels_v2_execution_binding" in (
+    assert "labels_v3_execution_binding" in (
         authority.LABEL_BUILDER_EXECUTION_BINDING_RELATIVE_PATH
     )
     assert authority.LABEL_PREFLIGHT_RECEIPT_RELATIVE_PATH.endswith(
-        "labels_v2_preflight_receipt.json"
+        "labels_v3_preflight_receipt.json"
+    )
+    assert authority.LABEL_PREFLIGHT_FAILURE_RELATIVE_PATH.endswith(
+        "labels_v3_preflight_failure.json"
     )
     assert authority.contract.SOURCE_MANIFEST_SCHEMA.endswith(
         "_source_manifest_v1"
@@ -116,6 +121,7 @@ def test_closure_is_exact_recursive_entrypoint_and_dynamic_source_closure() -> N
         authority.AUTHORITY_RELATIVE_PATH,
         authority.contract.PREREGISTRATION_RELATIVE_PATH,
         authority.contract.INTEGRITY_ADAPTER_AMENDMENT_RELATIVE_PATH,
+        authority.contract.SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_RELATIVE_PATH,
         authority.PREFLIGHT_TEST_RELATIVE_PATH,
         authority.EXECUTE_TEST_RELATIVE_PATH,
     ):
@@ -146,11 +152,13 @@ def _install_synthetic_source_layout(
 ) -> None:
     preregistration = "docs/synthetic_preregistration.md"
     amendment = "docs/synthetic_integrity_adapter_amendment.md"
+    schedule_amendment = "docs/synthetic_schedule_schema_adapter_amendment.md"
     files = {
         "base.py": b"BASE = True\n",
         "entry.py": b"ENTRY = True\n",
         preregistration: b"# synthetic preregistration\n",
         amendment: b"# synthetic integrity-adapter amendment\n",
+        schedule_amendment: b"# synthetic schedule-schema adapter amendment\n",
     }
     for relative, raw in files.items():
         path = tmp_path / relative
@@ -161,12 +169,18 @@ def _install_synthetic_source_layout(
     monkeypatch.setattr(
         authority,
         "ADDITIVE_SOURCE_PATHS",
-        tuple(sorted(("entry.py", preregistration, amendment))),
+        tuple(sorted(("entry.py", preregistration, amendment, schedule_amendment))),
     )
     monkeypatch.setattr(
         authority,
         "SOURCE_PATHS",
-        tuple(sorted(("base.py", "entry.py", preregistration, amendment))),
+        tuple(sorted((
+            "base.py",
+            "entry.py",
+            preregistration,
+            amendment,
+            schedule_amendment,
+        ))),
     )
     monkeypatch.setattr(
         authority,
@@ -213,6 +227,21 @@ def _install_synthetic_source_layout(
         "INTEGRITY_ADAPTER_AMENDMENT_BYTE_COUNT",
         len(files[amendment]),
     )
+    monkeypatch.setattr(
+        authority.contract,
+        "SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_RELATIVE_PATH",
+        schedule_amendment,
+    )
+    monkeypatch.setattr(
+        authority.contract,
+        "SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_FILE_SHA256",
+        hashlib.sha256(files[schedule_amendment]).hexdigest(),
+    )
+    monkeypatch.setattr(
+        authority.contract,
+        "SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_BYTE_COUNT",
+        len(files[schedule_amendment]),
+    )
 
 
 def _manifest_and_review(
@@ -251,22 +280,37 @@ def test_manifest_and_review_are_exact_and_fail_closed(
     review = authority.contract.parse_canonical_json(
         review_raw, name="synthetic review"
     )
-    assert manifest["source_count"] == 4
+    assert manifest["source_count"] == 5
     assert manifest["integrity_adapter_amendment"] == (
         authority.contract.integrity_adapter_amendment_binding()
+    )
+    assert manifest["schedule_schema_adapter_amendment"] == (
+        authority.contract.schedule_schema_adapter_amendment_binding()
     )
     assert manifest["label_v1_terminal_predecessor_bindings"] == (
         authority.contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS
     )
-    assert not set(
-        binding["path"]
-        for binding in authority.contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS.values()
-    ).intersection(manifest["source_paths"])
+    assert manifest["label_v2_terminal_predecessor_bindings"] == (
+        authority.contract.LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS
+    )
+    for predecessor_bindings in (
+        authority.contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS,
+        authority.contract.LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS,
+    ):
+        assert not {
+            binding["path"] for binding in predecessor_bindings.values()
+        }.intersection(manifest["source_paths"])
     assert review["integrity_adapter_amendment"] == manifest[
         "integrity_adapter_amendment"
     ]
+    assert review["schedule_schema_adapter_amendment"] == manifest[
+        "schedule_schema_adapter_amendment"
+    ]
     assert review["label_v1_terminal_predecessor_bindings"] == manifest[
         "label_v1_terminal_predecessor_bindings"
+    ]
+    assert review["label_v2_terminal_predecessor_bindings"] == manifest[
+        "label_v2_terminal_predecessor_bindings"
     ]
     assert review["science_contract"]["integrity_adapter_amendment"] == (
         manifest["integrity_adapter_amendment"]
@@ -274,10 +318,16 @@ def test_manifest_and_review_are_exact_and_fail_closed(
     assert review["science_contract"][
         "label_v1_terminal_predecessor_bindings"
     ] == manifest["label_v1_terminal_predecessor_bindings"]
+    assert review["science_contract"][
+        "schedule_schema_adapter_amendment"
+    ] == manifest["schedule_schema_adapter_amendment"]
+    assert review["science_contract"][
+        "label_v2_terminal_predecessor_bindings"
+    ] == manifest["label_v2_terminal_predecessor_bindings"]
 
     changed_manifest = copy.deepcopy(manifest)
     changed_manifest.pop("content_sha256")
-    changed_manifest["label_v1_terminal_predecessor_bindings"]["failure"][
+    changed_manifest["label_v2_terminal_predecessor_bindings"]["failure"][
         "file_sha256"
     ] = "0" * 64
     with pytest.raises(PermissionError, match="exact current closure"):
@@ -290,7 +340,9 @@ def test_manifest_and_review_are_exact_and_fail_closed(
 
     changed_review = copy.deepcopy(review)
     changed_review.pop("content_sha256")
-    changed_review["integrity_adapter_amendment"]["file_sha256"] = "0" * 64
+    changed_review["schedule_schema_adapter_amendment"]["file_sha256"] = (
+        "0" * 64
+    )
     with pytest.raises(PermissionError, match="source review receipt changed"):
         authority.validate_source_review_receipt(
             authority.canonical_document_bytes(
@@ -309,6 +361,20 @@ def test_manifest_and_review_are_exact_and_fail_closed(
         authority.build_source_manifest(root=tmp_path)
     amendment_path.write_bytes(amendment_raw)
 
+    schedule_amendment_path = (
+        tmp_path
+        / authority.contract.SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_RELATIVE_PATH
+    )
+    schedule_amendment_raw = schedule_amendment_path.read_bytes()
+    schedule_amendment_path.write_bytes(
+        b"# changed schedule-schema adapter amendment\n"
+    )
+    with pytest.raises(
+        PermissionError, match="schedule-schema adapter amendment identity changed"
+    ):
+        authority.build_source_manifest(root=tmp_path)
+    schedule_amendment_path.write_bytes(schedule_amendment_raw)
+
     (tmp_path / "entry.py").write_bytes(b"ENTRY = False\n")
     with pytest.raises(PermissionError, match="exact current closure"):
         authority.validate_source_manifest(manifest_raw, root=tmp_path)
@@ -318,6 +384,15 @@ def test_manifest_and_review_are_exact_and_fail_closed(
                 authority.build_source_manifest(root=tmp_path)
             ),
             reviewer="/root/joint_jepa_integration",
+            source_freeze_commit="a" * 40,
+            root=tmp_path,
+        )
+    with pytest.raises(PermissionError, match="not independent"):
+        authority.build_source_review_receipt(
+            authority.canonical_document_bytes(
+                authority.build_source_manifest(root=tmp_path)
+            ),
+            reviewer="/root/v3_authority",
             source_freeze_commit="a" * 40,
             root=tmp_path,
         )
@@ -498,8 +573,14 @@ def _label_fixture(
             "integrity_adapter_amendment": label_builder[
                 "integrity_adapter_amendment"
             ],
+            "schedule_schema_adapter_amendment": label_builder[
+                "schedule_schema_adapter_amendment"
+            ],
             "label_v1_terminal_predecessor_bindings": label_builder[
                 "label_v1_terminal_predecessor_bindings"
+            ],
+            "label_v2_terminal_predecessor_bindings": label_builder[
+                "label_v2_terminal_predecessor_bindings"
             ],
             "source_manifest": label_builder["source_manifest"],
             "independent_source_review": label_builder[
@@ -544,8 +625,14 @@ def _label_builder_binding_fixture(
         "integrity_adapter_amendment": (
             authority.contract.integrity_adapter_amendment_binding()
         ),
+        "schedule_schema_adapter_amendment": (
+            authority.contract.schedule_schema_adapter_amendment_binding()
+        ),
         "label_v1_terminal_predecessor_bindings": copy.deepcopy(
             authority.contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS
+        ),
+        "label_v2_terminal_predecessor_bindings": copy.deepcopy(
+            authority.contract.LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS
         ),
         "source_manifest": source_manifest,
         "independent_source_review": source_review,
@@ -584,7 +671,12 @@ def _wrong_rgb_mapping_fixture(authority: Any) -> dict[str, Any]:
 
 @pytest.mark.parametrize(
     "field",
-    ("integrity_adapter_amendment", "label_v1_terminal_predecessor_bindings"),
+    (
+        "integrity_adapter_amendment",
+        "schedule_schema_adapter_amendment",
+        "label_v1_terminal_predecessor_bindings",
+        "label_v2_terminal_predecessor_bindings",
+    ),
 )
 def test_label_builder_rejects_changed_adapter_governance(field: str) -> None:
     authority = _load(f"_post_action_source_authority_builder_{field}")
@@ -594,7 +686,10 @@ def test_label_builder_rejects_changed_adapter_governance(field: str) -> None:
     )
     value = copy.deepcopy(value)
     value.pop("content_sha256")
-    if field == "integrity_adapter_amendment":
+    if field in {
+        "integrity_adapter_amendment",
+        "schedule_schema_adapter_amendment",
+    }:
         value[field]["file_sha256"] = "0" * 64
     else:
         value[field]["failure"]["content_sha256"] = "0" * 64
@@ -694,8 +789,14 @@ def test_label_preflight_receipt_is_exact_train_only_and_fail_closed() -> None:
     assert chain["integrity_adapter_amendment"] == (
         authority.contract.integrity_adapter_amendment_binding()
     )
+    assert chain["schedule_schema_adapter_amendment"] == (
+        authority.contract.schedule_schema_adapter_amendment_binding()
+    )
     assert chain["label_v1_terminal_predecessor_bindings"] == (
         authority.contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS
+    )
+    assert chain["label_v2_terminal_predecessor_bindings"] == (
+        authority.contract.LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS
     )
 
     escaped_manifest = authority.contract.parse_canonical_json(
@@ -725,7 +826,7 @@ def test_label_preflight_receipt_is_exact_train_only_and_fail_closed() -> None:
     escaped_governance = copy.deepcopy(escaped_governance)
     escaped_governance.pop("content_sha256")
     escaped_governance["input_bindings"][
-        "label_v1_terminal_predecessor_bindings"
+        "label_v2_terminal_predecessor_bindings"
     ]["reservation"]["file_sha256"] = "0" * 64
     escaped_governance = authority.contract.with_content_sha256(
         escaped_governance
@@ -882,8 +983,14 @@ def test_execution_binding_binds_all_inputs_caps_and_denials(
     assert binding["integrity_adapter_amendment"] == (
         authority.contract.integrity_adapter_amendment_binding()
     )
+    assert binding["schedule_schema_adapter_amendment"] == (
+        authority.contract.schedule_schema_adapter_amendment_binding()
+    )
     assert binding["label_v1_terminal_predecessor_bindings"] == (
         authority.contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS
+    )
+    assert binding["label_v2_terminal_predecessor_bindings"] == (
+        authority.contract.LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS
     )
     assert binding["attempt"] == {
         "index": 1,

@@ -49,19 +49,19 @@ PREREGISTRATION_FILE_SHA256 = (
 )
 PREREGISTRATION_BYTE_COUNT = 29_487
 LABEL_EXECUTION_BINDING_RELATIVE_PATH = (
-    "docs/lewm_go2_post_action_projective_support_labels_v2_"
+    "docs/lewm_go2_post_action_projective_support_labels_v3_"
     "execution_binding_2026-07-28.json"
 )
-LABEL_OUTPUT_RELATIVE_PATH = ".generated/go2_post_action_projective_support_labels_v2"
+LABEL_OUTPUT_RELATIVE_PATH = ".generated/go2_post_action_projective_support_labels_v3"
 LABEL_RESERVATION_RELATIVE_PATH = f"{LABEL_OUTPUT_RELATIVE_PATH}/reservation.json"
 LABEL_BUILDER_CLAIM_RELATIVE_PATH = f"{LABEL_OUTPUT_RELATIVE_PATH}/builder_claim.json"
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "source_manifest_v2_2026-07-28.json"
+    "source_manifest_v3_2026-07-28.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "source_review_v2_2026-07-28.json"
+    "source_review_v3_2026-07-28.json"
 )
 LABEL_RESERVATION_SCHEMA = (
     "lewm_go2_post_action_projective_support_labels_v1_reservation_v1"
@@ -144,6 +144,50 @@ SCHEDULE_FILE_SHA256 = (
 SCHEDULE_CONTENT_SHA256 = (
     "274c0cbd9a87cbbc5bbc3123fff046f02ac3555014b5ec750d4a32b552650a15"
 )
+MATCHED_TRAINING_V4_SCHEDULE_SCHEMA = (
+    "lewm_go2_shared_jepa_v5_matched_training_v4_schedule_v1"
+)
+MATCHED_TRAINING_V4_SCHEDULE_FIELDS = frozenset(
+    {
+        "schema",
+        "seed",
+        "train_pair_count",
+        "presentation_count",
+        "update_count",
+        "microbatch_size",
+        "accumulation_steps",
+        "effective_batch_size",
+        "ordered_pair_ids_sha256",
+        "indices_sha256",
+        "presentation_pair_ids_sha256",
+        "per_update_pair_ids_sha256",
+        "presentation_indices",
+        "content_sha256",
+    }
+)
+MATCHED_TRAINING_V4_SCHEDULE_DIMENSIONS = {
+    "seed": 20_260_713,
+    "train_pair_count": 4_262,
+    "presentation_count": 128_000,
+    "update_count": 8_000,
+    "microbatch_size": 4,
+    "accumulation_steps": 4,
+    "effective_batch_size": 16,
+}
+MATCHED_TRAINING_V4_SCHEDULE_IDENTITY_SHA256 = {
+    "ordered_pair_ids_sha256": (
+        "74b90f10347a89d2151c4f65f76d6fc3c6a94fb3e8caa350d2a92e934e80840a"
+    ),
+    "indices_sha256": (
+        "a6f4fda5eb570336fb360631af3629832cccbe4cba21bdbb325dcb8a21963663"
+    ),
+    "presentation_pair_ids_sha256": (
+        "1534dcdd85feb8421639a0dc433473913f6674556e22e0fa9f515be455b7b79a"
+    ),
+    "per_update_pair_ids_sha256": (
+        "fe4aab82bd05b5e3438e8623319211ae75220f8bf3143223f6b6e375d91d46f0"
+    ),
+}
 RAW_ORDERED_PAIR_SHA256 = (
     "76810dba883f3aaffb92fccb593d382daf7edca74a9bb5559a977e7e88b7b5ea"
 )
@@ -769,25 +813,73 @@ def load_schedule_indices_v1(
         ),
         name="frozen presentation schedule",
     )
+    return _validate_matched_training_v4_schedule_v1(
+        schedule,
+        raw_indexes=raw_indexes,
+    )
+
+
+def _validate_matched_training_v4_schedule_v1(
+    schedule: Mapping[str, Any],
+    *,
+    raw_indexes: RawIndexesV1,
+) -> tuple[int, ...]:
+    if type(schedule) is not dict or set(schedule) != set(
+        MATCHED_TRAINING_V4_SCHEDULE_FIELDS
+    ):
+        raise LabelContractError("frozen presentation schedule fields changed")
+    _validate_content_hash(schedule, name="frozen presentation schedule")
+    if (
+        schedule.get("schema") != MATCHED_TRAINING_V4_SCHEDULE_SCHEMA
+        or schedule.get("content_sha256") != SCHEDULE_CONTENT_SHA256
+    ):
+        raise LabelContractError("frozen presentation schedule identity changed")
+    for name, expected in MATCHED_TRAINING_V4_SCHEDULE_DIMENSIONS.items():
+        observed = _exact_int(schedule.get(name), name=f"schedule.{name}", minimum=0)
+        if observed != expected:
+            raise LabelContractError("frozen presentation schedule dimensions changed")
+    if {
+        name: schedule.get(name)
+        for name in MATCHED_TRAINING_V4_SCHEDULE_IDENTITY_SHA256
+    } != MATCHED_TRAINING_V4_SCHEDULE_IDENTITY_SHA256:
+        raise LabelContractError("frozen presentation schedule hashes changed")
+
     train_pair_ids = [
         str(pair["content_sha256"])
         for pair in raw_indexes.pairs
         if pair["dataset_role"] == "train"
     ]
-    indices = schedule.get("presentation_indices")
+    ordered_pair_ids_sha256 = canonical_json_sha256(train_pair_ids)
     if (
-        schedule.get("schema")
-        != "lewm_go2_shared_jepa_v5_full_training_v4_schedule_v1"
-        or schedule.get("content_sha256") != SCHEDULE_CONTENT_SHA256
-        or schedule.get("seed") != 20260713
-        or schedule.get("train_pair_count") != 4_262
-        or schedule.get("presentation_count") != 128_000
-        or schedule.get("ordered_train_pair_ids") != train_pair_ids
-        or not isinstance(indices, list)
-        or len(indices) != 128_000
+        len(train_pair_ids)
+        != MATCHED_TRAINING_V4_SCHEDULE_DIMENSIONS["train_pair_count"]
+        or ordered_pair_ids_sha256 != schedule["ordered_pair_ids_sha256"]
     ):
-        raise LabelContractError("frozen presentation schedule identity changed")
-    prefix, _ = _schedule_prefix_identity_v1(indices, require_frozen=True)
+        raise LabelContractError("frozen schedule train-pair identity changed")
+
+    indices = schedule.get("presentation_indices")
+    if type(indices) is not list or len(indices) != MATCHED_TRAINING_V4_SCHEDULE_DIMENSIONS[
+        "presentation_count"
+    ]:
+        raise LabelContractError("frozen presentation schedule indices changed")
+    normalized_indices = tuple(
+        _exact_int(value, name=f"schedule index {position}", minimum=0)
+        for position, value in enumerate(indices)
+    )
+    if any(
+        index >= MATCHED_TRAINING_V4_SCHEDULE_DIMENSIONS["train_pair_count"]
+        for index in normalized_indices
+    ):
+        raise LabelContractError("frozen presentation schedule escaped the train role")
+    if (
+        canonical_json_sha256(list(normalized_indices))
+        != schedule["indices_sha256"]
+    ):
+        raise LabelContractError("frozen presentation schedule index hash changed")
+    prefix, _ = _schedule_prefix_identity_v1(
+        normalized_indices,
+        require_frozen=True,
+    )
     return prefix
 
 
@@ -1782,6 +1874,19 @@ def validate_execution_binding_envelope_v1(
         raise LabelContractError(
             "execution label_v1_terminal_predecessor_bindings changed"
         )
+    if value.get(
+        "schedule_schema_adapter_amendment"
+    ) != contract.schedule_schema_adapter_amendment_binding():
+        raise LabelContractError(
+            "execution schedule_schema_adapter_amendment changed"
+        )
+    if (
+        value.get("label_v2_terminal_predecessor_bindings")
+        != contract.LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS
+    ):
+        raise LabelContractError(
+            "execution label_v2_terminal_predecessor_bindings changed"
+        )
     authority = value.get("authority")
     if (
         not isinstance(authority, Mapping)
@@ -2412,6 +2517,15 @@ def materialize_role_labels_v1(
                         name: dict(binding)
                         for name, binding in execution_binding[
                             "label_v1_terminal_predecessor_bindings"
+                        ].items()
+                    },
+                    "schedule_schema_adapter_amendment": dict(
+                        execution_binding["schedule_schema_adapter_amendment"]
+                    ),
+                    "label_v2_terminal_predecessor_bindings": {
+                        name: dict(binding)
+                        for name, binding in execution_binding[
+                            "label_v2_terminal_predecessor_bindings"
                         ].items()
                     },
                     "source_manifest": dict(execution_binding["source_manifest"]),
