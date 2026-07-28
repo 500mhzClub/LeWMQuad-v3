@@ -52,6 +52,23 @@ class ThresholdSelection:
     passing_candidate_count: int
 
 
+@dataclass(frozen=True)
+class _TraversabilityEvaluationContext:
+    unknown_probability: np.ndarray
+    free_probability: np.ndarray
+    occupied_probability: np.ndarray
+    valid: np.ndarray
+    true_free: np.ndarray
+    true_unknown: np.ndarray
+    near_occupied: np.ndarray
+    true_free_count: int
+    true_occupied_count: int
+    true_occupied_within_range_count: int
+    true_unknown_count: int
+    free_probability_brier: float
+    free_probability_ece: float
+
+
 def _validate_inputs(
     probabilities: np.ndarray,
     labels: np.ndarray,
@@ -106,6 +123,112 @@ def _binary_ece(
         accuracy = float(targets[selected].mean())
         error += float(selected.sum()) / total * abs(confidence - accuracy)
     return float(error)
+
+
+def _prepare_evaluation_context(
+    probabilities: np.ndarray,
+    labels: np.ndarray,
+    distances_m: np.ndarray,
+    *,
+    evaluation_mask: np.ndarray | None,
+    obstacle_range_m: float,
+    calibration_bins: int,
+) -> _TraversabilityEvaluationContext:
+    probabilities, labels, distances_m, valid = _validate_inputs(
+        probabilities,
+        labels,
+        distances_m,
+        evaluation_mask,
+    )
+    unknown_probability = probabilities[:, UNKNOWN_CLASS]
+    free_probability = probabilities[:, FREE_CLASS]
+    occupied_probability = probabilities[:, OCCUPIED_CLASS]
+    true_free = valid & (labels == FREE_CLASS)
+    true_occupied = valid & (labels == OCCUPIED_CLASS)
+    true_unknown = valid & (labels == UNKNOWN_CLASS)
+    near_occupied = true_occupied & (distances_m <= float(obstacle_range_m))
+    known = valid & (labels != UNKNOWN_CLASS)
+    known_free_probability = free_probability[known]
+    known_free_target = (labels[known] == FREE_CLASS).astype(np.float64)
+    true_free_count = int(true_free.sum())
+    true_occupied_count = int(true_occupied.sum())
+    true_occupied_within_range_count = int(near_occupied.sum())
+    true_unknown_count = int(true_unknown.sum())
+    return _TraversabilityEvaluationContext(
+        unknown_probability=unknown_probability,
+        free_probability=free_probability,
+        occupied_probability=occupied_probability,
+        valid=valid,
+        true_free=true_free,
+        true_unknown=true_unknown,
+        near_occupied=near_occupied,
+        true_free_count=true_free_count,
+        true_occupied_count=true_occupied_count,
+        true_occupied_within_range_count=true_occupied_within_range_count,
+        true_unknown_count=true_unknown_count,
+        free_probability_brier=(
+            0.0
+            if known_free_probability.size == 0
+            else float(
+                np.square(known_free_probability - known_free_target).mean()
+            )
+        ),
+        free_probability_ece=_binary_ece(
+            known_free_probability,
+            known_free_target,
+            bins=int(calibration_bins),
+        ),
+    )
+
+
+def _evaluate_prepared_context(
+    context: _TraversabilityEvaluationContext,
+    thresholds: TraversabilityThresholds,
+) -> TraversabilityMetrics:
+    admitted = (
+        context.valid
+        & (context.free_probability >= thresholds.free_probability_min)
+        & (context.occupied_probability <= thresholds.occupied_probability_max)
+        & (context.unknown_probability <= thresholds.unknown_probability_max)
+    )
+    admitted_free_count = int(admitted.sum())
+    admitted_true_free_count = int((admitted & context.true_free).sum())
+    return TraversabilityMetrics(
+        admitted_free_count=admitted_free_count,
+        true_free_count=context.true_free_count,
+        true_occupied_count=context.true_occupied_count,
+        true_occupied_within_range_count=context.true_occupied_within_range_count,
+        planner_admitted_free_precision=_safe_ratio(
+            admitted_true_free_count,
+            admitted_free_count,
+        ),
+        useful_traversable_recall=_safe_ratio(
+            admitted_true_free_count,
+            context.true_free_count,
+        ),
+        obstacle_exclusion_recall_within_range=_safe_ratio(
+            int((context.near_occupied & ~admitted).sum()),
+            context.true_occupied_within_range_count,
+        ),
+        obstacle_detection_recall_within_range=_safe_ratio(
+            int(
+                (
+                    context.near_occupied
+                    & (
+                        context.occupied_probability
+                        >= thresholds.occupied_detection_min
+                    )
+                ).sum()
+            ),
+            context.true_occupied_within_range_count,
+        ),
+        unknown_admission_rate=_safe_ratio(
+            int((admitted & context.true_unknown).sum()),
+            context.true_unknown_count,
+        ),
+        free_probability_brier=context.free_probability_brier,
+        free_probability_ece=context.free_probability_ece,
+    )
 
 
 def evaluate_traversability(
@@ -189,6 +312,7 @@ def select_conservative_thresholds(
     free_probability_candidates: Sequence[float],
     occupied_probability_candidates: Sequence[float],
     unknown_probability_candidates: Sequence[float],
+    occupied_detection_probability_candidates: Sequence[float] = (0.5,),
     evaluation_mask: np.ndarray | None = None,
     minimum_free_precision: float = 0.99,
     minimum_obstacle_exclusion_recall: float = 0.95,
@@ -198,44 +322,72 @@ def select_conservative_thresholds(
     """Choose the highest-recall threshold tuple satisfying safety gates."""
 
     evaluated: list[tuple[TraversabilityThresholds, TraversabilityMetrics]] = []
+    compatible: list[tuple[TraversabilityThresholds, TraversabilityMetrics]] = []
     passing: list[tuple[TraversabilityThresholds, TraversabilityMetrics]] = []
+    context: _TraversabilityEvaluationContext | None = None
     for free_min in free_probability_candidates:
         for occupied_max in occupied_probability_candidates:
             for unknown_max in unknown_probability_candidates:
-                thresholds = TraversabilityThresholds(
-                    free_probability_min=float(free_min),
-                    occupied_probability_max=float(occupied_max),
-                    unknown_probability_max=float(unknown_max),
-                )
-                metrics = evaluate_traversability(
-                    probabilities,
-                    labels,
-                    distances_m,
-                    thresholds=thresholds,
-                    evaluation_mask=evaluation_mask,
-                    obstacle_range_m=obstacle_range_m,
-                )
-                item = (thresholds, metrics)
-                evaluated.append(item)
-                if (
-                    metrics.admitted_free_count > 0
-                    and metrics.planner_admitted_free_precision
-                    >= float(minimum_free_precision)
-                    and metrics.obstacle_exclusion_recall_within_range
-                    >= float(minimum_obstacle_exclusion_recall)
-                    and metrics.obstacle_detection_recall_within_range
-                    >= float(minimum_obstacle_detection_recall)
+                for occupied_detection_min in (
+                    occupied_detection_probability_candidates
                 ):
-                    passing.append(item)
+                    thresholds = TraversabilityThresholds(
+                        free_probability_min=float(free_min),
+                        occupied_probability_max=float(occupied_max),
+                        unknown_probability_max=float(unknown_max),
+                        occupied_detection_min=float(occupied_detection_min),
+                    )
+                    thresholds.validate()
+                    if context is None:
+                        if (
+                            not math.isfinite(obstacle_range_m)
+                            or obstacle_range_m <= 0.0
+                        ):
+                            raise ValueError("obstacle_range_m must be positive")
+                        context = _prepare_evaluation_context(
+                            probabilities,
+                            labels,
+                            distances_m,
+                            evaluation_mask=evaluation_mask,
+                            obstacle_range_m=float(obstacle_range_m),
+                            calibration_bins=15,
+                        )
+                    metrics = _evaluate_prepared_context(context, thresholds)
+                    item = (thresholds, metrics)
+                    evaluated.append(item)
+                    # Admission and detection comparisons are both inclusive.
+                    # A compatible operating point cannot classify one cell as
+                    # both planner-free and occupied evidence.
+                    if (
+                        thresholds.occupied_detection_min
+                        <= thresholds.occupied_probability_max
+                    ):
+                        continue
+                    compatible.append(item)
+                    if (
+                        metrics.admitted_free_count > 0
+                        and metrics.planner_admitted_free_precision
+                        >= float(minimum_free_precision)
+                        and metrics.obstacle_exclusion_recall_within_range
+                        >= float(minimum_obstacle_exclusion_recall)
+                        and metrics.obstacle_detection_recall_within_range
+                        >= float(minimum_obstacle_detection_recall)
+                    ):
+                        passing.append(item)
     if not evaluated:
         raise ValueError("threshold candidate grid is empty")
-    pool = passing if passing else evaluated
+    if not compatible:
+        raise ValueError(
+            "threshold candidate grid has no disjoint admission/detection tuple"
+        )
+    pool = passing if passing else compatible
     thresholds, metrics = max(
         pool,
         key=lambda item: (
             item[1].useful_traversable_recall,
             item[1].planner_admitted_free_precision,
             item[1].obstacle_detection_recall_within_range,
+            item[0].occupied_detection_min,
             -item[0].free_probability_min,
         ),
     )
