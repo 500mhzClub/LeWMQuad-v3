@@ -1,0 +1,78 @@
+{
+  "schema": "lewm_go2_rgb_fixed_teacher_factual_shared_transition_trajectory_h4_jepa_v1_execution_authorization_v1",
+  "status": "AUTHORIZED_ONE_EXACT_FRESH_CAPPED_PROBE",
+  "date": "2026-07-28",
+  "repository_goal": "fully_learned_perception_only_rgb_jepa_navigation_validated_on_externally_custodied_heldout_mazes",
+  "authority": {
+    "fresh_attempts": 1,
+    "optimizer_updates": 1000,
+    "training_presentations": 16000,
+    "validation_presentations": 10240,
+    "observation_updates": [0, 250, 500, 750, 1000],
+    "maximum_gpu_active_seconds": 5400,
+    "retry_or_resume": false,
+    "alternate_seed": false,
+    "replacement_attempt": false,
+    "checkpoint_reuse": false,
+    "scale_up": false,
+    "navigation": false,
+    "heldout": false,
+    "sealed": false,
+    "promotion": false,
+    "production": false,
+    "deployment": false
+  },
+  "frozen_commits": {
+    "preregistration": "5c038f054f17d7d8928518723b12e1166db2d17a",
+    "implementation": "065bae4069d53a4d2c87f781df5ae9e29d5027a2"
+  },
+  "source": {
+    "preregistration": {"path": "docs/lewm_go2_rgb_fixed_teacher_factual_shared_transition_trajectory_h4_jepa_v1_preregistration_2026-07-28.md", "sha256": "6a4fbe6cd8832e5dd3f961d0a6ffb8c7485042e4456e8eeeb49a6adda3564f89", "bytes": 11985},
+    "model": {"path": "lewm/models/go2_rgb_fixed_teacher_factual_shared_transition_trajectory_h4_jepa_v1.py", "sha256": "38e264f8e18ffa3c3da4775fdd7d4a38549e8544f99cd863bfd2534999cd5b36", "bytes": 21734},
+    "model_test": {"path": "lewm/tests/test_go2_rgb_fixed_teacher_factual_shared_transition_trajectory_h4_jepa_v1.py", "sha256": "c1c68e80a731a05cb0cc5f455863c0c272b5d1a46409179d61ad871fff6a0703", "bytes": 12382},
+    "runner": {"path": "scripts/run_go2_rgb_fixed_teacher_factual_shared_transition_trajectory_h4_jepa_v1.py", "sha256": "693cbea45b2a49f0f3edfb7cabce347b852a67af78df1ecf5462c65be48cd977", "bytes": 34730},
+    "runner_test": {"path": "lewm/tests/test_run_go2_rgb_fixed_teacher_factual_shared_transition_trajectory_h4_jepa_v1.py", "sha256": "9154052cebd7ea67ed5a3ce6ca8aba7704eb2ee25697b8c479ceee7e55e80329", "bytes": 15538}
+  },
+  "inputs": {
+    "train_index": {"path": ".generated/go2_recurrent_h4_rgb_sequence_index_v1/train.jsonl", "sha256": "f3f4dbe9ddd830427cc86bd27b0adb0b0fd0cebf64e937626088711748d9dd6b", "bytes": 10024000, "rows": 16000},
+    "validation_index": {"path": ".generated/go2_recurrent_h4_rgb_sequence_index_v1/val.jsonl", "sha256": "86ab3130e5ba3468bd7f7f3e3cb1759d0e4a30d2326496e06845b4af7cb66880", "bytes": 1278976, "rows": 2048},
+    "main_pool_census": {"path": ".generated/go2_recurrent_jepa_main_pool_census_v2/receipt.json", "sha256": "aac85f1016dca12e57e0cf612cd51a745becb2941adf361c0b4a752fe10a5408", "bytes": 54695},
+    "accepted_n320_encoder": {"path": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/checkpoint.pt", "sha256": "ece874b53941e841fffc61b724a86d4383b881549afa453b746dd5d68aba11b0", "bytes": 13777100, "content_sha256": "9dcca536943f89acfd7d463fdab591e19a030ef3dc8f3f19a050b1b10025fc2b", "allowed_prefix": "encoder.", "allowed_tensor_count": 78}
+  },
+  "science": {
+    "target": "fixed_accepted_N320_no_ema",
+    "transition": "one_shared_spatial_transformer_block_for_p0_through_p5",
+    "particles": 4,
+    "loss": "0.5_all_six_factual_local_energy_score_plus_0.5_open_loop_future_cumulative_energy_score_plus_1.0_three_frame_alignment",
+    "training_controls": [],
+    "evaluation_only_controls": ["cyclic_wrong_action", "all_hold", "reordered_history", "reset_history", "persistence", "collapsed_centroid"],
+    "gate_count": 32,
+    "selection": "minimum_future_cumulative_combined_score_among_trained_noncollapsed_observations"
+  },
+  "preflight": {
+    "decision": "PREFLIGHT_PASS_NO_OUTPUT_RESERVED_NO_RGB_OPENED",
+    "rgb_open_count": 0,
+    "output_reservation_count": 0,
+    "trainable_parameters": {"encoder": 2747520, "history": 87360, "predictor": 558528},
+    "synthetic_batch16_peak_allocated_bytes": 4815493120,
+    "synthetic_batch16_peak_reserved_bytes": 5597298688,
+    "target_gradient_count": 0
+  },
+  "execution": {
+    "interpreter": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-torch291-rocm64/bin/python",
+    "working_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3",
+    "environment": {
+      "LEWM_FACTUAL_SHARED_TRANSITION_TRAJECTORY_H4_WRAPPER_SHA256": "693cbea45b2a49f0f3edfb7cabce347b852a67af78df1ecf5462c65be48cd977",
+      "LEWM_FACTUAL_SHARED_TRANSITION_TRAJECTORY_H4_WRAPPER_BYTES": "34730"
+    },
+    "argv": ["scripts/run_go2_rgb_fixed_teacher_factual_shared_transition_trajectory_h4_jepa_v1.py", "--execute"],
+    "output_root": ".generated/go2_rgb_fixed_teacher_factual_shared_transition_trajectory_h4_jepa_v1/probe_v1",
+    "output_root_must_be_absent_before_reservation": true,
+    "post_reservation_outcome": "the sole attempt is consumed by PASS, scientific STOP, or complete operational failure receipts"
+  },
+  "custody": {
+    "forbidden_inputs": ["stopped_or_rejected_checkpoint", "prior_predictor_tensor", "retry_or_resume_state", "test_role", "heldout", "sealed", "label", "navigation", "benchmark"],
+    "checkpoint_files_written_by_this_attempt": "receipt_inventory_only_until_a_separate_pass_authority",
+    "legacy_v4_sealed_benchmark": "unopened_development_only_ineligible_for_final_evaluation"
+  }
+}
