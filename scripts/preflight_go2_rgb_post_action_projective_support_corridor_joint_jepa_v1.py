@@ -49,7 +49,7 @@ SOURCE_PURPOSES = (
     "source_scene_manifest",
 )
 LABEL_PREFLIGHT_FAILURE_RELATIVE_PATH = (
-    ".generated/go2_post_action_projective_support_labels_v1_preflight_failure.json"
+    ".generated/go2_post_action_projective_support_labels_v2_preflight_failure.json"
 )
 
 
@@ -223,6 +223,7 @@ def prepare_label_execution_binding_v1(
     """Reserve once, validate metadata-only inputs, and write the exact binding."""
 
     root = Path(repository_root).absolute()
+    contract.validate_label_v1_terminal_predecessor(root=root)
     _, _, source_manifest, source_review = _source_custody(root)
     labels.reserve_label_root_v1(
         root,
@@ -263,6 +264,15 @@ def prepare_label_execution_binding_v1(
                 "schema": labels.EXECUTION_BINDING_SCHEMA,
                 "status": "AUTHORIZED_ONE_EXACT_DEVELOPMENT_LABEL_PREFLIGHT",
                 "preregistration_commit": contract.PREREGISTRATION_COMMIT,
+                "integrity_adapter_amendment": (
+                    contract.integrity_adapter_amendment_binding()
+                ),
+                "label_v1_terminal_predecessor_bindings": {
+                    name: dict(binding)
+                    for name, binding in (
+                        contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS.items()
+                    )
+                },
                 "source_manifest": source_manifest,
                 "independent_source_review": source_review,
                 "inputs": input_bindings,

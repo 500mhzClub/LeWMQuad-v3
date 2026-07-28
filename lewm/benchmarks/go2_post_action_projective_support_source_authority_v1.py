@@ -117,6 +117,7 @@ ADDITIVE_SOURCE_PATHS: Final = tuple(sorted({
     PREFLIGHT_TEST_RELATIVE_PATH,
     EXECUTE_TEST_RELATIVE_PATH,
     contract.PREREGISTRATION_RELATIVE_PATH,
+    contract.INTEGRITY_ADAPTER_AMENDMENT_RELATIVE_PATH,
 }))
 SOURCE_MANIFEST_ENTRYPOINTS: Final = (
     LABEL_BUILDER_RELATIVE_PATH,
@@ -142,18 +143,18 @@ _LOCAL_PACKAGE_ROOTS: Final = (
 
 SOURCE_MANIFEST_RELATIVE_PATH: Final = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "source_manifest_2026-07-28.json"
+    "source_manifest_v2_2026-07-28.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH: Final = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "source_review_2026-07-28.json"
+    "source_review_v2_2026-07-28.json"
 )
 EXECUTION_BINDING_RELATIVE_PATH: Final = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "execution_binding_2026-07-28.json"
+    "execution_binding_v2_2026-07-28.json"
 )
 LABEL_BUILDER_EXECUTION_BINDING_RELATIVE_PATH: Final = (
-    "docs/lewm_go2_post_action_projective_support_labels_v1_"
+    "docs/lewm_go2_post_action_projective_support_labels_v2_"
     "execution_binding_2026-07-28.json"
 )
 LABEL_RESERVATION_RELATIVE_PATH: Final = (
@@ -164,7 +165,7 @@ LABEL_BUILDER_CLAIM_RELATIVE_PATH: Final = (
 )
 LABEL_PREFLIGHT_RECEIPT_RELATIVE_PATH: Final = (
     ".generated/"
-    "go2_post_action_projective_support_labels_v1_preflight_receipt.json"
+    "go2_post_action_projective_support_labels_v2_preflight_receipt.json"
 )
 LABEL_PREFLIGHT_RECEIPT_SCHEMA: Final = (
     f"{contract.SCHEMA_PREFIX}_label_preflight_receipt_v1"
@@ -204,6 +205,7 @@ IMPLEMENTATION_AUTHORS: Final = (
     "/root/execution_authority_fix",
     "/root/attempt_runner",
     "/root/authority_source_review",
+    "/root/authority_v2_adapter",
 )
 SOURCE_ONLY_AUTHORITY: Final = {
     "source_implementation_authorized": True,
@@ -217,6 +219,8 @@ REVIEW_CHECKS: Final = {
     "source_manifest_exact_and_regular_files_hash_bound": True,
     "geometry_source_closure_inherited_without_omission": True,
     "preregistration_identity_exact": True,
+    "integrity_adapter_amendment_identity_exact": True,
+    "label_v1_terminal_predecessor_bindings_literal_without_runtime_open": True,
     "labels_scores_metrics_and_runner_match_preregistration": True,
     "actual_execution_and_preflight_entrypoints_in_closure": True,
     "one_attempt_caps_inputs_output_and_denials_exact": True,
@@ -369,7 +373,10 @@ def _require_hex(value: object, length: int, *, name: str) -> str:
 
 def _safe_source_path(value: object) -> str:
     path = _geometry.safe_relative_path(value)
-    if path == contract.PREREGISTRATION_RELATIVE_PATH:
+    if path in {
+        contract.PREREGISTRATION_RELATIVE_PATH,
+        contract.INTEGRITY_ADAPTER_AMENDMENT_RELATIVE_PATH,
+    }:
         return path
     return _geometry.safe_relative_source_path(path)
 
@@ -589,6 +596,7 @@ RECURSIVE_PYTHON_SOURCE_PATHS: Final = discover_recursive_source_closure_v1()
 SOURCE_PATHS: Final = tuple(sorted({
     *RECURSIVE_PYTHON_SOURCE_PATHS,
     contract.PREREGISTRATION_RELATIVE_PATH,
+    contract.INTEGRITY_ADAPTER_AMENDMENT_RELATIVE_PATH,
 }))
 
 
@@ -666,6 +674,7 @@ def build_source_manifest(*, root: Path = ROOT) -> dict[str, Any]:
     expected_paths = tuple(sorted({
         *discovered,
         contract.PREREGISTRATION_RELATIVE_PATH,
+        contract.INTEGRITY_ADAPTER_AMENDMENT_RELATIVE_PATH,
     }))
     if (
         set(INHERITED_GEOMETRY_SOURCE_PATHS) != set(_geometry.SOURCE_PATHS)
@@ -693,6 +702,16 @@ def build_source_manifest(*, root: Path = ROOT) -> dict[str, Any]:
         "byte_count": preregistration["byte_count"],
     }:
         raise PermissionError("governing preregistration identity changed")
+    amendment = contract.integrity_adapter_amendment_binding()
+    amendment_source = next(
+        (row for row in bindings if row["path"] == amendment["path"]),
+        None,
+    )
+    if amendment_source != amendment:
+        raise PermissionError("integrity-adapter amendment identity changed")
+    predecessor_bindings = copy.deepcopy(
+        contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS
+    )
     return contract.with_content_sha256({
         "schema": contract.SOURCE_MANIFEST_SCHEMA,
         "status": "PASS_SOURCE_CLOSURE",
@@ -718,6 +737,8 @@ def build_source_manifest(*, root: Path = ROOT) -> dict[str, Any]:
         "source_bindings_sha256": contract.canonical_json_sha256(bindings),
         "source_count": len(bindings),
         "preregistration": preregistration,
+        "integrity_adapter_amendment": amendment,
+        "label_v1_terminal_predecessor_bindings": predecessor_bindings,
         "generated_input_open_count": 0,
         "checkpoint_or_tensor_open_count": 0,
         "heldout_or_sealed_open_count": 0,
@@ -776,6 +797,12 @@ def build_source_review_receipt(
         "reviewed_source_count": manifest["source_count"],
         "reviewed_source_bindings_sha256": manifest["source_bindings_sha256"],
         "preregistration": preregistration_binding(),
+        "integrity_adapter_amendment": copy.deepcopy(
+            manifest["integrity_adapter_amendment"]
+        ),
+        "label_v1_terminal_predecessor_bindings": copy.deepcopy(
+            manifest["label_v1_terminal_predecessor_bindings"]
+        ),
         "science_contract": contract.science_contract(),
         "source_only_checks": {
             "generated_inputs_opened": [],
@@ -828,6 +855,10 @@ def _label_builder_execution_binding(raw: bytes) -> dict[str, Any]:
         or value.get("status")
         != "AUTHORIZED_ONE_EXACT_DEVELOPMENT_LABEL_PREFLIGHT"
         or value.get("preregistration_commit") != contract.PREREGISTRATION_COMMIT
+        or value.get("integrity_adapter_amendment")
+        != contract.integrity_adapter_amendment_binding()
+        or value.get("label_v1_terminal_predecessor_bindings")
+        != contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS
         or value.get("output_directory") != contract.LABEL_ROOT_RELATIVE_PATH
         or value.get("schedule_prefix_sha256") != contract.SCHEDULE_PREFIX_SHA256
         or type(source_records) is not list
@@ -1144,6 +1175,8 @@ def _label_materialization_chain(
     required = {
         "label_reservation",
         "label_builder_claim",
+        "integrity_adapter_amendment",
+        "label_v1_terminal_predecessor_bindings",
         "source_manifest",
         "independent_source_review",
         "execution_binding_content_sha256",
@@ -1155,6 +1188,14 @@ def _label_materialization_chain(
     if (
         manifest.get("preregistration_commit")
         != contract.PREREGISTRATION_COMMIT
+        or provenance.get("integrity_adapter_amendment")
+        != contract.integrity_adapter_amendment_binding()
+        or provenance.get("integrity_adapter_amendment")
+        != label_builder.get("integrity_adapter_amendment")
+        or provenance.get("label_v1_terminal_predecessor_bindings")
+        != contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS
+        or provenance.get("label_v1_terminal_predecessor_bindings")
+        != label_builder.get("label_v1_terminal_predecessor_bindings")
         or provenance.get("source_manifest")
         != label_builder.get("source_manifest")
         or provenance.get("independent_source_review")
@@ -1208,6 +1249,12 @@ def _label_materialization_chain(
     claim_raw = canonical_document_bytes(expected_claim)
     return {
         "preregistration": preregistration_binding(),
+        "integrity_adapter_amendment": copy.deepcopy(
+            provenance["integrity_adapter_amendment"]
+        ),
+        "label_v1_terminal_predecessor_bindings": copy.deepcopy(
+            provenance["label_v1_terminal_predecessor_bindings"]
+        ),
         "source_manifest": copy.deepcopy(label_builder["source_manifest"]),
         "independent_source_review": copy.deepcopy(
             label_builder["independent_source_review"]
@@ -1444,6 +1491,12 @@ def build_execution_binding(
         "source_manifest": source_manifest_binding(source_manifest_raw),
         "independent_source_review": source_review_binding(source_review_raw),
         "preregistration": preregistration_binding(),
+        "integrity_adapter_amendment": copy.deepcopy(
+            review["integrity_adapter_amendment"]
+        ),
+        "label_v1_terminal_predecessor_bindings": copy.deepcopy(
+            review["label_v1_terminal_predecessor_bindings"]
+        ),
         "label_bundle": _label_bundle(label_manifest_raw, label_file_bindings),
         "label_preflight_receipt": label_preflight_receipt_binding(
             label_preflight_receipt_raw

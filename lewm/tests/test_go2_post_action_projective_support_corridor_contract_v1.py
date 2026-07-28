@@ -52,6 +52,18 @@ def test_counts_schedule_and_hashes_are_frozen() -> None:
     assert contract.REMOTE_POSE_SHA256 == (
         "df96a4d23e9f2a297467c7384e54e9d7f8eac64609e937392f0db51e3c87abc3"
     )
+    assert contract.LABEL_ROOT_RELATIVE_PATH.endswith("labels_v2")
+    assert contract.integrity_adapter_amendment_binding() == {
+        "path": contract.INTEGRITY_ADAPTER_AMENDMENT_RELATIVE_PATH,
+        "file_sha256": (
+            "40e07c1daa388ed56a0473577af758d9085dfac26133cbbf83eaa849f9726d45"
+        ),
+        "byte_count": 3_645,
+    }
+    assert set(contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS) == {
+        "reservation",
+        "failure",
+    }
 
 
 def test_canonical_receipt_rejects_duplicate_or_noncanonical_json() -> None:

@@ -29,6 +29,43 @@ PREREGISTRATION_FILE_SHA256: Final = (
 )
 PREREGISTRATION_BYTE_COUNT: Final = 29_487
 
+INTEGRITY_ADAPTER_AMENDMENT_RELATIVE_PATH: Final = (
+    "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
+    "label_preflight_v2_integrity_adapter_amendment_2026-07-28.md"
+)
+INTEGRITY_ADAPTER_AMENDMENT_FILE_SHA256: Final = (
+    "40e07c1daa388ed56a0473577af758d9085dfac26133cbbf83eaa849f9726d45"
+)
+INTEGRITY_ADAPTER_AMENDMENT_BYTE_COUNT: Final = 3_645
+LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS: Final = {
+    "reservation": {
+        "path": (
+            ".generated/go2_post_action_projective_support_labels_v1/"
+            "reservation.json"
+        ),
+        "file_sha256": (
+            "93cae83c890ffaa71aca7791306055be87927f89d60b4c3db99acd11c1f2806c"
+        ),
+        "content_sha256": (
+            "d314e741fefc900df06f3a24e8d6a1700a0cb1d74c8748de93291249cd6b3041"
+        ),
+        "byte_count": 2_356,
+    },
+    "failure": {
+        "path": (
+            ".generated/go2_post_action_projective_support_labels_v1/"
+            "failure.json"
+        ),
+        "file_sha256": (
+            "b01baa82df0b0f44e0c1f6b856cd99399daa154ce2f81c4481f5498388fda141"
+        ),
+        "content_sha256": (
+            "ffc40032c6dea96307255c9557cff377386571fee5545d79e487e39af30947da"
+        ),
+        "byte_count": 2_409,
+    },
+}
+
 ACTION_VOCABULARY: Final = (
     "arc_left",
     "arc_right",
@@ -179,7 +216,7 @@ GEOMETRY_BINDINGS: Final = {
 }
 
 LABEL_ROOT_RELATIVE_PATH: Final = (
-    ".generated/go2_post_action_projective_support_labels_v1"
+    ".generated/go2_post_action_projective_support_labels_v2"
 )
 LABEL_MANIFEST_RELATIVE_PATH: Final = f"{LABEL_ROOT_RELATIVE_PATH}/manifest.json"
 LABEL_ROLE_RELATIVE_PATHS: Final = {
@@ -294,9 +331,73 @@ def preregistration_binding() -> dict[str, Any]:
     }
 
 
+def integrity_adapter_amendment_binding() -> dict[str, Any]:
+    return {
+        "path": INTEGRITY_ADAPTER_AMENDMENT_RELATIVE_PATH,
+        "file_sha256": INTEGRITY_ADAPTER_AMENDMENT_FILE_SHA256,
+        "byte_count": INTEGRITY_ADAPTER_AMENDMENT_BYTE_COUNT,
+    }
+
+
+def validate_label_v1_terminal_predecessor(
+    *, root: Path = ROOT
+) -> dict[str, dict[str, Any]]:
+    """Validate the exact terminal V1 receipts before any V2 reservation."""
+
+    values: dict[str, dict[str, Any]] = {}
+    for name, binding in LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS.items():
+        path = Path(root).absolute() / str(binding["path"])
+        if path.is_symlink() or not path.is_file():
+            raise PermissionError(f"terminal V1 {name} receipt is absent")
+        raw = path.read_bytes()
+        if (
+            len(raw) != binding["byte_count"]
+            or hashlib.sha256(raw).hexdigest() != binding["file_sha256"]
+        ):
+            raise PermissionError(f"terminal V1 {name} receipt changed")
+        value = parse_canonical_json(raw, name=f"terminal V1 {name}")
+        if value.get("content_sha256") != binding["content_sha256"]:
+            raise PermissionError(f"terminal V1 {name} content changed")
+        values[name] = value
+    reservation = values["reservation"]
+    failure = values["failure"]
+    ledger = failure.get("access_ledger")
+    protected = (
+        "rgb_opens",
+        "checkpoint_opens",
+        "runtime_output_opens",
+        "g2_opens",
+        "navigation_opens",
+        "heldout_opens",
+        "sealed_opens",
+        "production_opens",
+    )
+    if (
+        reservation.get("status")
+        != "RESERVED_ONE_EXACT_DEVELOPMENT_LABEL_PREFLIGHT"
+        or failure.get("status") != "FAILED_TERMINAL_NO_RETRY"
+        or failure.get("phase") != "prepare_execution_binding"
+        or failure.get("reservation_content_sha256")
+        != reservation.get("content_sha256")
+        or failure.get("error", {}).get("message")
+        != "raw manifest identity or population changed"
+        or type(ledger) is not dict
+        or ledger.get("raw_manifest_opens") != 1
+        or any(ledger.get(key) != 0 for key in protected)
+    ):
+        raise PermissionError("terminal V1 failure semantics changed")
+    return values
+
+
 def science_contract() -> dict[str, Any]:
     return {
         "experiment_id": EXPERIMENT_ID,
+        "integrity_adapter_amendment": integrity_adapter_amendment_binding(),
+        "label_v1_terminal_predecessor_bindings": {
+            name: dict(binding)
+            for name, binding in LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS.items()
+        },
+        "label_preflight_attempt": "v2_science_identical_integrity_adapter",
         "actions": list(ACTION_VOCABULARY),
         "roles": {role: dict(ROLE_COUNTS[role]) for role in ROLE_ORDER},
         "updates": MAXIMUM_UPDATES,
@@ -344,7 +445,9 @@ __all__ = [name for name in globals() if name.isupper()] + [
     "canonical_json_sha256",
     "parse_canonical_json",
     "preregistration_binding",
+    "integrity_adapter_amendment_binding",
     "science_contract",
+    "validate_label_v1_terminal_predecessor",
     "validate_static_contract",
     "with_content_sha256",
 ]

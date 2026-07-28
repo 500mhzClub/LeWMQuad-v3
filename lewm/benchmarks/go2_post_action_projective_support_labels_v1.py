@@ -20,6 +20,9 @@ from typing import Any, BinaryIO, Iterable, Iterator, Mapping, MutableMapping, S
 import numpy as np
 import yaml
 
+from lewm.benchmarks import (
+    go2_post_action_projective_support_corridor_contract_v1 as contract,
+)
 from lewm.planning.geometry_contract import GeometryContract, load_geometry_contract
 from lewm.planning.oriented_footprint import (
     DirectionalSupportFootprint,
@@ -46,19 +49,19 @@ PREREGISTRATION_FILE_SHA256 = (
 )
 PREREGISTRATION_BYTE_COUNT = 29_487
 LABEL_EXECUTION_BINDING_RELATIVE_PATH = (
-    "docs/lewm_go2_post_action_projective_support_labels_v1_"
+    "docs/lewm_go2_post_action_projective_support_labels_v2_"
     "execution_binding_2026-07-28.json"
 )
-LABEL_OUTPUT_RELATIVE_PATH = ".generated/go2_post_action_projective_support_labels_v1"
+LABEL_OUTPUT_RELATIVE_PATH = ".generated/go2_post_action_projective_support_labels_v2"
 LABEL_RESERVATION_RELATIVE_PATH = f"{LABEL_OUTPUT_RELATIVE_PATH}/reservation.json"
 LABEL_BUILDER_CLAIM_RELATIVE_PATH = f"{LABEL_OUTPUT_RELATIVE_PATH}/builder_claim.json"
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "source_manifest_2026-07-28.json"
+    "source_manifest_v2_2026-07-28.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "source_review_2026-07-28.json"
+    "source_review_v2_2026-07-28.json"
 )
 LABEL_RESERVATION_SCHEMA = (
     "lewm_go2_post_action_projective_support_labels_v1_reservation_v1"
@@ -144,7 +147,10 @@ SCHEDULE_CONTENT_SHA256 = (
 RAW_ORDERED_PAIR_SHA256 = (
     "76810dba883f3aaffb92fccb593d382daf7edca74a9bb5559a977e7e88b7b5ea"
 )
-RAW_ORDERED_ENDPOINT_SHA256 = (
+RAW_ENDPOINT_INDEX_ORDER_SHA256 = (
+    "ab21c1a89b37ef60a056de390d59d3983705ab2e40de061d0cb163d1837e850f"
+)
+RAW_METADATA_PLAN_ENDPOINT_ORDER_SHA256 = (
     "8130e961b7b5c04944b178fa4f73c1fa157776f7702ab5cdc213cf16c922f698"
 )
 
@@ -802,6 +808,19 @@ def _schedule_prefix_identity_v1(
     return prefix, digest
 
 
+def _validate_raw_manifest_endpoint_order_v1(value: object) -> None:
+    if value != RAW_ENDPOINT_INDEX_ORDER_SHA256:
+        raise LabelContractError("raw manifest identity or population changed")
+
+
+def _validate_raw_endpoint_content_order_v1(
+    endpoints: Sequence[Mapping[str, Any]],
+) -> None:
+    digest = canonical_json_sha256([row["content_sha256"] for row in endpoints])
+    if digest != RAW_ENDPOINT_INDEX_ORDER_SHA256:
+        raise LabelContractError("raw endpoint ordering changed")
+
+
 def load_and_validate_raw_indexes(
     manifest_path: Path,
     pairs_path: Path,
@@ -832,9 +851,9 @@ def load_and_validate_raw_indexes(
         != {role: ROLE_STATE_COUNTS[role] for role in RAW_ROLE_ORDER}
         or manifest.get("scene_shard_count") != 88
         or manifest.get("ordered_pair_sha256") != RAW_ORDERED_PAIR_SHA256
-        or manifest.get("ordered_endpoint_sha256") != RAW_ORDERED_ENDPOINT_SHA256
     ):
         raise LabelContractError("raw manifest identity or population changed")
+    _validate_raw_manifest_endpoint_order_v1(manifest.get("ordered_endpoint_sha256"))
 
     pair_record = manifest.get("pair_index")
     endpoint_record = manifest.get("endpoint_index")
@@ -880,8 +899,7 @@ def load_and_validate_raw_indexes(
         raise LabelContractError("raw pair/endpoint row counts changed")
     if canonical_json_sha256([row["content_sha256"] for row in pairs]) != RAW_ORDERED_PAIR_SHA256:
         raise LabelContractError("raw pair ordering changed")
-    if canonical_json_sha256([row["content_sha256"] for row in endpoints]) != RAW_ORDERED_ENDPOINT_SHA256:
-        raise LabelContractError("raw endpoint ordering changed")
+    _validate_raw_endpoint_content_order_v1(endpoints)
 
     shards = manifest.get("shards")
     if not isinstance(shards, list) or len(shards) != 88:
@@ -1753,6 +1771,17 @@ def validate_execution_binding_envelope_v1(
         or value.get("preregistration_commit") != PREREGISTRATION_COMMIT
     ):
         raise LabelContractError("label execution binding identity changed")
+    if value.get(
+        "integrity_adapter_amendment"
+    ) != contract.integrity_adapter_amendment_binding():
+        raise LabelContractError("execution integrity_adapter_amendment changed")
+    if (
+        value.get("label_v1_terminal_predecessor_bindings")
+        != contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS
+    ):
+        raise LabelContractError(
+            "execution label_v1_terminal_predecessor_bindings changed"
+        )
     authority = value.get("authority")
     if (
         not isinstance(authority, Mapping)
@@ -2376,6 +2405,15 @@ def materialize_role_labels_v1(
                 "input_bindings": {
                     "label_reservation": dict(reservation),
                     "label_builder_claim": dict(claim),
+                    "integrity_adapter_amendment": dict(
+                        execution_binding["integrity_adapter_amendment"]
+                    ),
+                    "label_v1_terminal_predecessor_bindings": {
+                        name: dict(binding)
+                        for name, binding in execution_binding[
+                            "label_v1_terminal_predecessor_bindings"
+                        ].items()
+                    },
                     "source_manifest": dict(execution_binding["source_manifest"]),
                     "independent_source_review": dict(
                         execution_binding["independent_source_review"]

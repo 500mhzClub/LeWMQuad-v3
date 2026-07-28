@@ -12,6 +12,9 @@ import numpy as np
 import pytest
 
 from lewm.benchmarks import go2_post_action_projective_support_labels_v1 as labels
+from lewm.benchmarks import (
+    go2_post_action_projective_support_corridor_contract_v1 as contract,
+)
 from lewm.planning.oriented_footprint import Pose2D
 from lewm_worlds.manifest import (
     BoxObject,
@@ -124,6 +127,13 @@ def _execution_binding() -> dict[str, object]:
             "schema": labels.EXECUTION_BINDING_SCHEMA,
             "status": "AUTHORIZED_ONE_EXACT_DEVELOPMENT_LABEL_PREFLIGHT",
             "preregistration_commit": labels.PREREGISTRATION_COMMIT,
+            "integrity_adapter_amendment": (
+                contract.integrity_adapter_amendment_binding()
+            ),
+            "label_v1_terminal_predecessor_bindings": {
+                name: dict(binding)
+                for name, binding in contract.LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS.items()
+            },
             "authority": {
                 "development_label_preflight_authorized": True,
                 "training_authorized": False,
@@ -150,6 +160,34 @@ def _builder_module():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def test_raw_endpoint_index_rejects_the_distinct_metadata_plan_digest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert labels.RAW_ENDPOINT_INDEX_ORDER_SHA256 == (
+        "ab21c1a89b37ef60a056de390d59d3983705ab2e40de061d0cb163d1837e850f"
+    )
+    assert labels.RAW_METADATA_PLAN_ENDPOINT_ORDER_SHA256 == (
+        "8130e961b7b5c04944b178fa4f73c1fa157776f7702ab5cdc213cf16c922f698"
+    )
+    labels._validate_raw_manifest_endpoint_order_v1(
+        labels.RAW_ENDPOINT_INDEX_ORDER_SHA256
+    )
+    with pytest.raises(labels.LabelContractError, match="raw manifest identity"):
+        labels._validate_raw_manifest_endpoint_order_v1(
+            labels.RAW_METADATA_PLAN_ENDPOINT_ORDER_SHA256
+        )
+
+    endpoints = ({"content_sha256": "1" * 64}, {"content_sha256": "2" * 64})
+    monkeypatch.setattr(
+        labels,
+        "RAW_ENDPOINT_INDEX_ORDER_SHA256",
+        labels.canonical_json_sha256([row["content_sha256"] for row in endpoints]),
+    )
+    labels._validate_raw_endpoint_content_order_v1(endpoints)
+    with pytest.raises(labels.LabelContractError, match="raw endpoint ordering"):
+        labels._validate_raw_endpoint_content_order_v1(tuple(reversed(endpoints)))
 
 
 def test_exact_integrator_and_remote_sampler() -> None:
@@ -458,6 +496,20 @@ def test_binding_envelope_requires_full_commit_and_every_exact_path() -> None:
     wrong_review["independent_source_review"]["path"] += ".copy"
     with pytest.raises(labels.LabelContractError, match="source_review"):
         labels.validate_execution_binding_envelope_v1(_rehash(wrong_review))
+
+    wrong_amendment = copy.deepcopy(binding)
+    wrong_amendment["integrity_adapter_amendment"]["file_sha256"] = "0" * 64
+    with pytest.raises(labels.LabelContractError, match="integrity_adapter_amendment"):
+        labels.validate_execution_binding_envelope_v1(_rehash(wrong_amendment))
+
+    wrong_predecessor = copy.deepcopy(binding)
+    wrong_predecessor["label_v1_terminal_predecessor_bindings"]["failure"][
+        "file_sha256"
+    ] = "0" * 64
+    with pytest.raises(
+        labels.LabelContractError, match="label_v1_terminal_predecessor_bindings"
+    ):
+        labels.validate_execution_binding_envelope_v1(_rehash(wrong_predecessor))
 
 
 def test_reservation_is_atomic_exact_and_failure_is_canonical(tmp_path: Path) -> None:
