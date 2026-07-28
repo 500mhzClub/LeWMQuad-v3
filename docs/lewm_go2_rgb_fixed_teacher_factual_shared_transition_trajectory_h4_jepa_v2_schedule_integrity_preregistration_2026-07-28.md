@@ -113,10 +113,12 @@
   No label, pose, motion, timing, reset, or command-array payload is serialized
   for the model.
 - Preserve the exact V1 action vocabulary and ordering, source roles, scene
-  split, preprocessing, packed row-disjoint H6 policy, per-scene candidate cap
-  64, train quota 2,000 rows per family, validation quota 256 rows per family,
-  family interleave, train cap, and train/validation scene and manifest
-  disjointness.
+  split, preprocessing, packed transition-disjoint H6 policy, per-scene
+  candidate cap 64, train quota 2,000 rows per family, validation quota 256
+  rows per family, family interleave, train cap, and train/validation scene and
+  manifest disjointness. Consecutive packed H6 groups may share their single
+  boundary RGB while never sharing an action transition; this must be reported
+  truthfully rather than described as RGB-row disjointness.
 - Preserve seed string
   `go2_recurrent_h4_rgb_sequence_index_v1_20260727` and V1 rank values for each
   surviving logical six-block candidate. The adapter must enumerate the full
