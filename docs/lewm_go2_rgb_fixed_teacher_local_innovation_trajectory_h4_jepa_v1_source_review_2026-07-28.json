@@ -1,0 +1,174 @@
+{
+  "schema": "lewm_go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1_source_review_v1",
+  "status": "PASS_SOURCE_SCIENCE_CLOSURE_AND_CUSTODY_RESOLVED_FINDINGS",
+  "frozen_source_commit": {
+    "commit": "aa4d441c837258c9f24052949e06a36cf3325522",
+    "parent": "d4db6949be8b708e75c96d0bdbf85eeb2c21b5d6",
+    "author": "500mhzClub",
+    "committed_at": "2026-07-28T04:32:21+01:00",
+    "subject": "add local-innovation trajectory H4 JEPA probe"
+  },
+  "review_scope": {
+    "reviewers": [
+      "/root/trajectory_result_audit",
+      "/root/trajectory_test_plan",
+      "/root/wdps_source_review"
+    ],
+    "frozen_source_and_synthetic_evidence_only": true,
+    "generated_runtime_receipt_rgb_or_predictor_checkpoint_access_count": 0,
+    "heldout_sealed_navigation_or_protected_access_count": 0,
+    "stopped_or_predecessor_predictor_checkpoint_trace_or_tensor_access_count": 0
+  },
+  "resolved_findings": [
+    {
+      "finding": "a deterministic local-innovation variant would discard the only predecessor that already beat persistence broadly",
+      "resolution": "the final mechanism retains the four-atom proper-score trajectory substrate and changes only its target to successive innovations plus action/history ranking"
+    },
+    {
+      "finding": "history counterfactual paths were initially detached and could not directly train separation",
+      "resolution": "reversed and reset paths remain in the autograd graph; the hinge reduces the real score and increases the better control score"
+    },
+    {
+      "finding": "a silent active-sample mask excluded near-zero innovation targets from ranking means",
+      "resolution": "the mask was removed; every row contributes and only the detached denominator is clamped at the documented 1e-6 epsilon"
+    },
+    {
+      "finding": "preregistration wording called action/history controls evaluation-only and understated auxiliary evaluations",
+      "resolution": "training counterparts, three auxiliary predictor evaluations per row, zero extra scheduled rows, and zero extra RGB-file opens are now explicit"
+    },
+    {
+      "finding": "inherited receipt fields could imply an absolute-future objective or missing action training",
+      "resolution": "absolute centroid error is relabeled as a weight-zero diagnostic; inherited variance and centroid-action terms are listed as disabled; action and history access counts are separated"
+    }
+  ],
+  "remaining_findings": [
+    {
+      "severity": "interpretation_only",
+      "finding": "the exact cyclic-action and reverse/reset-history interventions occur in both training and validation",
+      "consequence": "a PASS is bounded evidence for this trained mechanism, not proof of unseen-action causality or navigation-useful memory; an unseen action mapping and plausible untrained history ablation are required before scale"
+    }
+  ],
+  "new_file_bindings": [
+    {
+      "path": "docs/lewm_go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1_preregistration_2026-07-28.md",
+      "file_sha256": "f786ac73962e847ac67ffcbcd40ac0342f832d3ddafed5d03459360f126162a6",
+      "byte_count": 10036
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1.py",
+      "file_sha256": "f71639ee80bcadfa0e5c3238b55164deb57d196c2bdfa4bd0ced3bb5cba1bb71",
+      "byte_count": 17248
+    },
+    {
+      "path": "lewm/tests/test_go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1.py",
+      "file_sha256": "356ee33ae914d6de784f45b349c1fb53c3a4b7a53c16c86a09048f16cdc9c4ae",
+      "byte_count": 11241
+    },
+    {
+      "path": "lewm/tests/test_run_go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1.py",
+      "file_sha256": "60c6119f0f63a514a942bf7bc644102e1c8071c9d8e9a7b0641e409041e736b5",
+      "byte_count": 9337
+    },
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1.py",
+      "file_sha256": "8f2e84ec28fb67440fa624720a7e15fab9aaf88537413872a2f723cf43301a66",
+      "byte_count": 11453
+    }
+  ],
+  "runtime_source_closure": [
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1.py",
+      "file_sha256": "8f2e84ec28fb67440fa624720a7e15fab9aaf88537413872a2f723cf43301a66",
+      "byte_count": 11453
+    },
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "ce133263ec17feae9c729072153567253bd1529c3b27d350cb0c290fc6552b4c",
+      "byte_count": 32000
+    },
+    {
+      "path": "scripts/run_go2_recurrent_h4_joint_jepa_v1.py",
+      "file_sha256": "fc35d535e1c07b56c667474e6e10c5c7587fa01e627567148c022331983616fc",
+      "byte_count": 70301
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1.py",
+      "file_sha256": "f71639ee80bcadfa0e5c3238b55164deb57d196c2bdfa4bd0ced3bb5cba1bb71",
+      "byte_count": 17248
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "1d07f8f67ab7f3e93534454a2aaf2ff8626f984b5346a2717c1643a331eb6d8e",
+      "byte_count": 15967
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+      "file_sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30",
+      "byte_count": 23712
+    },
+    {
+      "path": "lewm/models/go2_recurrent_h4_joint_jepa.py",
+      "file_sha256": "ddd84561aba5a36df1255ab942bb29db943cc1bf7b0e496ae41b3d1cdc218f55",
+      "byte_count": 21166
+    },
+    {
+      "path": "lewm/models/encoders.py",
+      "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "byte_count": 7028
+    }
+  ],
+  "scientific_checks": {
+    "genuine_joint_perception_only_jepa_plus_intervention_ranking": true,
+    "online_encoder_history_action_mode_and_predictor_share_one_backward": true,
+    "complete_fixed_N320_target_frozen_outside_optimizer_zero_ema": true,
+    "future_rgb_only_reaches_fixed_stop_gradient_target": true,
+    "target_registration": [
+      "T(e3)-T(e2)_paired_with_p2",
+      "T(e4)-T(e3)_paired_with_p3",
+      "T(e5)-T(e4)_paired_with_p4",
+      "T(e6)-T(e5)_paired_with_p5"
+    ],
+    "predicted_and_target_innovations_telescope_to_cumulative_trajectory": true,
+    "proper_uniform_four_atom_50_50_joint_plus_marginal_energy_score": true,
+    "wrong_action_same_target_normalized_margin_point05": true,
+    "ordered_history_beats_both_reversed_and_reset_margin_point03": true,
+    "all_rows_contribute_with_detached_denominator_clamped_at_1e_6": true,
+    "exact_zero_head_is_exact_four_atom_persistence_with_opening_gradient": true,
+    "learned_target_compressor_whitening_reconstruction_and_navigation_loss_absent": true,
+    "schedule": {
+      "seed": 20260727,
+      "batch_size": 16,
+      "updates": 1000,
+      "presentations": 16000,
+      "observation_updates": [0, 250, 500, 750, 1000],
+      "retry_or_resume": false
+    }
+  },
+  "verification": {
+    "focused_plus_parent_dense_and_shared_regression_suite": "46_passed_in_5.73_seconds",
+    "python_compile": "PASS",
+    "git_diff_check": "PASS",
+    "source_bound_preflight": "PREFLIGHT_PASS_NO_OUTPUT_RESERVED_NO_RGB_OPENED",
+    "b16_production_shape_synthetic_gpu_smoke": {
+      "runtime": "torch_2.9.1+rocm6.4_hip_6.4.43484-123eb5128",
+      "device": "AMD Radeon AI PRO R9700",
+      "device_total_gib": 31.859375,
+      "forward_loss_backward_seconds": 2.0582391169737093,
+      "peak_allocated_gib": 16.960559368133545,
+      "history_teacher_alignment": 4.4605714521334106e-13,
+      "local_innovation_energy_score": 0.8994401693344116,
+      "cyclic_wrong_action_ranking": 0.04999995231628418,
+      "history_counterfactual_ranking": 0.029999971389770508,
+      "total_loss": 0.9794400930404663,
+      "final_head_gradient_norm": 1.2730162143707275,
+      "teacher_gradient_tensor_count": 0,
+      "presentations_optimizer_steps_or_artifact_writes": 0
+    }
+  },
+  "authority": {
+    "source_review_complete": true,
+    "execution_training_gpu_or_rgb_authorized_by_this_receipt": false,
+    "checkpoint_or_tensor_access_authorized": false,
+    "navigation_heldout_sealed_promotion_or_deployment_authorized": false
+  }
+}
