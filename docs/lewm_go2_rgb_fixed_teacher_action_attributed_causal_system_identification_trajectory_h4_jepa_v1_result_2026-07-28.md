@@ -10,9 +10,10 @@
 - Update 1,000 / presentation 16,000 was selected by the frozen minimum
   combined-energy rule. The result passed 27 of 32 gates.
 - This is a scientific STOP, not an execution, receipt, target-integrity,
-  collapse, action, prediction, or custody failure. The exact mechanism is
-  closed without retry, resume, extension, second seed, checkpoint opening,
-  post-hoc checkpoint choice, or nearby matrix/writer repair.
+  collapse, action, generic-prediction, persistence, or custody failure. The
+  exact mechanism is closed without retry, resume, extension, second seed,
+  checkpoint opening, post-hoc checkpoint choice, or nearby matrix/writer
+  repair.
 - The existing held-out, sealed, navigation, and G2--G8 authorities remain
   unopened and unchanged.
 
@@ -68,9 +69,9 @@
 | H4 centroid normalized squared error | 1.986105853975 |
 
 - Generic prediction was strong and noncollapsed. Combined, joint, every
-  future marginal horizon, and both observed priors beat persistence. H4 and
-  observed-prior persistence gaps had positive bootstrap bounds and eight-
-  family breadth.
+  future marginal horizon, and the combined pre-observation `p0:p1`
+  local-prior score beat persistence. H4 and observed-prior persistence gaps
+  had positive bootstrap bounds and eight-family breadth.
 - Requested-action sensitivity remained decisive: the aggregate H4 action gap
   exceeded `0.05`, its lower bound was positive, and all eight families were
   positive.
