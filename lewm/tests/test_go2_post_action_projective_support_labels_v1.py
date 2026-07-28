@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import importlib.util
+import inspect
 import json
 import math
 import os
@@ -141,6 +142,13 @@ def _execution_binding() -> dict[str, object]:
                 name: dict(binding)
                 for name, binding in contract.LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS.items()
             },
+            "source_episode_id_adapter_amendment": (
+                contract.source_episode_id_adapter_amendment_binding()
+            ),
+            "label_v3_terminal_predecessor_bindings": {
+                name: dict(binding)
+                for name, binding in contract.LABEL_V3_TERMINAL_PREDECESSOR_BINDINGS.items()
+            },
             "authority": {
                 "development_label_preflight_authorized": True,
                 "training_authorized": False,
@@ -218,12 +226,15 @@ def test_matched_training_v4_schedule_is_exact_and_fail_closed(
             "fe4aab82bd05b5e3438e8623319211ae75220f8bf3143223f6b6e375d91d46f0"
         ),
     }
-    assert labels.LABEL_OUTPUT_RELATIVE_PATH.endswith("labels_v3")
+    assert labels.LABEL_OUTPUT_RELATIVE_PATH.endswith("labels_v4")
+    assert labels.LABEL_EXECUTION_BINDING_RELATIVE_PATH.endswith(
+        "labels_v4_execution_binding_2026-07-28.json"
+    )
     assert labels.SOURCE_MANIFEST_RELATIVE_PATH.endswith(
-        "source_manifest_v3_2026-07-28.json"
+        "source_manifest_v4_2026-07-28.json"
     )
     assert labels.SOURCE_REVIEW_RELATIVE_PATH.endswith(
-        "source_review_v3_2026-07-28.json"
+        "source_review_v4_2026-07-28.json"
     )
 
     pair_ids = [
@@ -465,7 +476,27 @@ def test_state_labels_report_polygon_collisions_and_flat_schema(
         assert labels.canonical_json_sha256(core) == declared
 
 
-def test_narrow_scene_join_reconstructs_current_endpoint_without_rgb(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("source_episode_id", "expected_error"),
+    (
+        pytest.param(3, None, id="integer-source-decimal-metadata"),
+        pytest.param(
+            "3", "source episode_id must be an exact integer", id="string-source"
+        ),
+        pytest.param(
+            True, "source episode_id must be an exact integer", id="boolean-source"
+        ),
+        pytest.param(
+            -1, "source episode_id must be at least 0", id="negative-source"
+        ),
+        pytest.param(4, "pair/source episode join changed", id="mismatched-decimal"),
+    ),
+)
+def test_narrow_scene_join_reconstructs_current_endpoint_without_rgb(
+    tmp_path: Path,
+    source_episode_id: object,
+    expected_error: str | None,
+) -> None:
     scene = _scene()
     manifest_path = tmp_path / "manifest.json"
     manifest_raw = _write_json(manifest_path, scene.to_dict())
@@ -476,7 +507,11 @@ def test_narrow_scene_join_reconstructs_current_endpoint_without_rgb(tmp_path: P
         "frame_index": 12,
         "env_index": 2,
         "timestamp_ns": 1234,
-        "episode": {"episode_id": "episode-a", "reset_count": 3, "episode_step": 9},
+        "episode": {
+            "episode_id": source_episode_id,
+            "reset_count": 3,
+            "episode_step": 9,
+        },
         "base_pose_world": {"position": {"x": 1.0, "y": -2.0, "z": 0.33}},
         "base_rpy_rad": {"roll": 0.0, "pitch": 0.0, "yaw": 0.25},
         "forbidden_but_unread_rgb_payload": "metadata_only",
@@ -486,7 +521,7 @@ def test_narrow_scene_join_reconstructs_current_endpoint_without_rgb(tmp_path: P
     identity = {
         "dataset_role": "train",
         "scene_id": scene.scene_id,
-        "episode_id": "episode-a",
+        "episode_id": "3",
         "env_index": 2,
         "episode_step": 9,
         "frame_index": 12,
@@ -507,7 +542,7 @@ def test_narrow_scene_join_reconstructs_current_endpoint_without_rgb(tmp_path: P
         "dataset_role": "train",
         "scene_id": scene.scene_id,
         "family": scene.family,
-        "episode_id": "episode-a",
+        "episode_id": "3",
         "env_index": 2,
         "reset_count": 3,
         "frames_jsonl_sha256": _sha(frames_raw),
@@ -594,6 +629,16 @@ def test_narrow_scene_join_reconstructs_current_endpoint_without_rgb(tmp_path: P
             }
         },
     )
+    if expected_error is not None:
+        with pytest.raises(labels.LabelContractError, match=expected_error):
+            labels.load_joined_scene_v1(
+                raw_indexes=raw,
+                scene_id=scene.scene_id,
+                source_records=source_records,
+                repository_root=tmp_path,
+            )
+        assert not image_path.exists()
+        return
     parsed, joined = labels.load_joined_scene_v1(
         raw_indexes=raw,
         scene_id=scene.scene_id,
@@ -689,7 +734,6 @@ def test_binding_envelope_requires_full_commit_and_every_exact_path() -> None:
         labels.LabelContractError, match="label_v1_terminal_predecessor_bindings"
     ):
         labels.validate_execution_binding_envelope_v1(_rehash(wrong_predecessor))
-
     wrong_schedule_amendment = copy.deepcopy(binding)
     wrong_schedule_amendment["schedule_schema_adapter_amendment"][
         "file_sha256"
@@ -711,6 +755,37 @@ def test_binding_envelope_requires_full_commit_and_every_exact_path() -> None:
         labels.validate_execution_binding_envelope_v1(
             _rehash(wrong_v2_predecessor)
         )
+
+    wrong_source_episode_amendment = copy.deepcopy(binding)
+    wrong_source_episode_amendment["source_episode_id_adapter_amendment"][
+        "file_sha256"
+    ] = "0" * 64
+    with pytest.raises(
+        labels.LabelContractError, match="source_episode_id_adapter_amendment"
+    ):
+        labels.validate_execution_binding_envelope_v1(
+            _rehash(wrong_source_episode_amendment)
+        )
+
+    wrong_v3_predecessor = copy.deepcopy(binding)
+    wrong_v3_predecessor["label_v3_terminal_predecessor_bindings"][
+        "builder_failure"
+    ]["file_sha256"] = "0" * 64
+    with pytest.raises(
+        labels.LabelContractError, match="label_v3_terminal_predecessor_bindings"
+    ):
+        labels.validate_execution_binding_envelope_v1(
+            _rehash(wrong_v3_predecessor)
+        )
+
+
+def test_real_materializer_publishes_v4_governance_bindings() -> None:
+    source = inspect.getsource(labels.materialize_role_labels_v1)
+    compact = "".join(source.split())
+    assert '"source_episode_id_adapter_amendment":dict(' in compact
+    assert 'execution_binding["source_episode_id_adapter_amendment"]' in compact
+    assert '"label_v3_terminal_predecessor_bindings":{' in compact
+    assert 'execution_binding["label_v3_terminal_predecessor_bindings"]' in compact
 
 
 def test_reservation_is_atomic_exact_and_failure_is_canonical(tmp_path: Path) -> None:

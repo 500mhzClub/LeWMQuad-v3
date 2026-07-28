@@ -34,7 +34,7 @@ AUTHORITY_RELATIVE_PATH = (
 )
 EXECUTION_BINDING_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "execution_binding_v3_2026-07-28.json"
+    "execution_binding_v4_2026-07-28.json"
 )
 LABELS_RELATIVE_PATH = (
     "lewm/benchmarks/go2_post_action_projective_support_labels_v1.py"
@@ -1577,7 +1577,7 @@ def _load_role_labels_bound_v1(
     progress: dict[str, Any],
 ) -> tuple[Mapping[str, Any], ...]:
     relative = (
-        ".generated/go2_post_action_projective_support_labels_v3/"
+        ".generated/go2_post_action_projective_support_labels_v4/"
         f"{role}.jsonl"
     )
     files = execution_binding["label_bundle"]["files"]

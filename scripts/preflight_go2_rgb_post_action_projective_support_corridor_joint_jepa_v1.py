@@ -49,7 +49,7 @@ SOURCE_PURPOSES = (
     "source_scene_manifest",
 )
 LABEL_PREFLIGHT_FAILURE_RELATIVE_PATH = (
-    ".generated/go2_post_action_projective_support_labels_v3_preflight_failure.json"
+    ".generated/go2_post_action_projective_support_labels_v4_preflight_failure.json"
 )
 
 
@@ -225,6 +225,7 @@ def prepare_label_execution_binding_v1(
     root = Path(repository_root).absolute()
     contract.validate_label_v1_terminal_predecessor(root=root)
     contract.validate_label_v2_terminal_predecessor(root=root)
+    contract.validate_label_v3_terminal_predecessor(root=root)
     _, _, source_manifest, source_review = _source_custody(root)
     labels.reserve_label_root_v1(
         root,
@@ -271,6 +272,9 @@ def prepare_label_execution_binding_v1(
                 "schedule_schema_adapter_amendment": (
                     contract.schedule_schema_adapter_amendment_binding()
                 ),
+                "source_episode_id_adapter_amendment": (
+                    contract.source_episode_id_adapter_amendment_binding()
+                ),
                 "label_v1_terminal_predecessor_bindings": {
                     name: dict(binding)
                     for name, binding in (
@@ -281,6 +285,12 @@ def prepare_label_execution_binding_v1(
                     name: dict(binding)
                     for name, binding in (
                         contract.LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS.items()
+                    )
+                },
+                "label_v3_terminal_predecessor_bindings": {
+                    name: dict(binding)
+                    for name, binding in (
+                        contract.LABEL_V3_TERMINAL_PREDECESSOR_BINDINGS.items()
                     )
                 },
                 "source_manifest": source_manifest,

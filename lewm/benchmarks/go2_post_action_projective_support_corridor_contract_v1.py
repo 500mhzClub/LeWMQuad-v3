@@ -45,6 +45,14 @@ SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_FILE_SHA256: Final = (
     "276f2dfc7cdb7355904858cdbd9f58fd5991051296414dc52e3f02a468516e1d"
 )
 SCHEDULE_SCHEMA_ADAPTER_AMENDMENT_BYTE_COUNT: Final = 4_445
+SOURCE_EPISODE_ID_ADAPTER_AMENDMENT_RELATIVE_PATH: Final = (
+    "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
+    "label_preflight_v4_source_episode_id_adapter_amendment_2026-07-28.md"
+)
+SOURCE_EPISODE_ID_ADAPTER_AMENDMENT_FILE_SHA256: Final = (
+    "5b848d5c5163c4f12b7d5071264a545f491bdbbea47c7e1116464813e4c37509"
+)
+SOURCE_EPISODE_ID_ADAPTER_AMENDMENT_BYTE_COUNT: Final = 5_501
 LABEL_V1_TERMINAL_PREDECESSOR_BINDINGS: Final = {
     "reservation": {
         "path": (
@@ -99,6 +107,73 @@ LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS: Final = {
             "7b3cd79f76924ad12907303ca1d214bf260ace9d64c63bed5fa5814a71e74528"
         ),
         "byte_count": 2_417,
+    },
+}
+LABEL_V3_TERMINAL_PREDECESSOR_BINDINGS: Final = {
+    "reservation": {
+        "path": (
+            ".generated/go2_post_action_projective_support_labels_v3/"
+            "reservation.json"
+        ),
+        "file_sha256": (
+            "387c7dc37fa3f34fc048e3bab64a82196811689ddd5fbd8648ad017f182bb28e"
+        ),
+        "content_sha256": (
+            "22fa973b1ac0afb6b8f1ef8a0d3fe7f2da75e275fbd338f0e91385b592ed4627"
+        ),
+        "byte_count": 2_362,
+    },
+    "builder_claim": {
+        "path": (
+            ".generated/go2_post_action_projective_support_labels_v3/"
+            "builder_claim.json"
+        ),
+        "file_sha256": (
+            "f451a9105cb3cf9baf8035fda7d04530d6044ecc0ae8a898adf4de447732fea9"
+        ),
+        "content_sha256": (
+            "b96c94c1aebbe862f04361414338e6fa38a58fe17db71b1c5cb64e16ef680e92"
+        ),
+        "byte_count": 504,
+    },
+    "builder_failure": {
+        "path": (
+            ".generated/go2_post_action_projective_support_labels_v3/"
+            "failure.json"
+        ),
+        "file_sha256": (
+            "998a5bca429ba2db13dc2996aadd57ff64d3cedef3f3c00420786040f3aa73d8"
+        ),
+        "content_sha256": (
+            "86a57a2ec562e9395b967778fa9133e11e3b1711acae4846b855130745a6271e"
+        ),
+        "byte_count": 2_551,
+    },
+    "preflight_failure": {
+        "path": (
+            ".generated/"
+            "go2_post_action_projective_support_labels_v3_preflight_failure.json"
+        ),
+        "file_sha256": (
+            "6eb23a50388a4a10f755dee494848cbfb7750045e84beb900f091adbc26465d7"
+        ),
+        "content_sha256": (
+            "ad0536d7aba6544c797913b7e993a3e900c2ae443b9da6f7ba2771bfff21164e"
+        ),
+        "byte_count": 2_585,
+    },
+    "builder_execution_binding": {
+        "path": (
+            "docs/lewm_go2_post_action_projective_support_labels_v3_"
+            "execution_binding_2026-07-28.json"
+        ),
+        "file_sha256": (
+            "ada9f377db4f3adf6fe6e796bc5f8410f01a69c4a6ecb271ee353435fe2944d7"
+        ),
+        "content_sha256": (
+            "12a5c9ccc2c001f9116e8bfafb31c4029e62cd91fc999e580eda16124a6534bb"
+        ),
+        "byte_count": 111_848,
     },
 }
 
@@ -252,7 +327,7 @@ GEOMETRY_BINDINGS: Final = {
 }
 
 LABEL_ROOT_RELATIVE_PATH: Final = (
-    ".generated/go2_post_action_projective_support_labels_v3"
+    ".generated/go2_post_action_projective_support_labels_v4"
 )
 LABEL_MANIFEST_RELATIVE_PATH: Final = f"{LABEL_ROOT_RELATIVE_PATH}/manifest.json"
 LABEL_ROLE_RELATIVE_PATHS: Final = {
@@ -383,6 +458,14 @@ def schedule_schema_adapter_amendment_binding() -> dict[str, Any]:
     }
 
 
+def source_episode_id_adapter_amendment_binding() -> dict[str, Any]:
+    return {
+        "path": SOURCE_EPISODE_ID_ADAPTER_AMENDMENT_RELATIVE_PATH,
+        "file_sha256": SOURCE_EPISODE_ID_ADAPTER_AMENDMENT_FILE_SHA256,
+        "byte_count": SOURCE_EPISODE_ID_ADAPTER_AMENDMENT_BYTE_COUNT,
+    }
+
+
 def validate_label_v1_terminal_predecessor(
     *, root: Path = ROOT
 ) -> dict[str, dict[str, Any]]:
@@ -498,12 +581,105 @@ def validate_label_v2_terminal_predecessor(
     return values
 
 
+def validate_label_v3_terminal_predecessor(
+    *, root: Path = ROOT
+) -> dict[str, dict[str, Any]]:
+    """Validate the exact terminal V3 receipts before any V4 reservation."""
+
+    values: dict[str, dict[str, Any]] = {}
+    for name, binding in LABEL_V3_TERMINAL_PREDECESSOR_BINDINGS.items():
+        path = Path(root).absolute() / str(binding["path"])
+        if path.is_symlink() or not path.is_file():
+            raise PermissionError(f"terminal V3 {name} receipt is absent")
+        raw = path.read_bytes()
+        if (
+            len(raw) != binding["byte_count"]
+            or hashlib.sha256(raw).hexdigest() != binding["file_sha256"]
+        ):
+            raise PermissionError(f"terminal V3 {name} receipt changed")
+        value = parse_canonical_json(raw, name=f"terminal V3 {name}")
+        if value.get("content_sha256") != binding["content_sha256"]:
+            raise PermissionError(f"terminal V3 {name} content changed")
+        values[name] = value
+
+    reservation = values["reservation"]
+    claim = values["builder_claim"]
+    builder_failure = values["builder_failure"]
+    preflight_failure = values["preflight_failure"]
+    execution_binding = values["builder_execution_binding"]
+    builder_error = builder_failure.get("error")
+    builder_ledger = builder_failure.get("access_ledger")
+    preflight_protected = preflight_failure.get("protected_access_counts")
+    protected = (
+        "rgb_opens",
+        "checkpoint_opens",
+        "runtime_output_opens",
+        "g2_opens",
+        "navigation_opens",
+        "heldout_opens",
+        "sealed_opens",
+        "production_opens",
+    )
+    expected_builder_binding = {
+        "path": LABEL_V3_TERMINAL_PREDECESSOR_BINDINGS[
+            "builder_execution_binding"
+        ]["path"],
+        "file_sha256": LABEL_V3_TERMINAL_PREDECESSOR_BINDINGS[
+            "builder_execution_binding"
+        ]["file_sha256"],
+        "byte_count": LABEL_V3_TERMINAL_PREDECESSOR_BINDINGS[
+            "builder_execution_binding"
+        ]["byte_count"],
+    }
+    if (
+        reservation.get("status")
+        != "RESERVED_ONE_EXACT_DEVELOPMENT_LABEL_PREFLIGHT"
+        or claim.get("status") != "CLAIMED_ONE_EXACT_LABEL_BUILDER_INVOCATION"
+        or claim.get("reservation_content_sha256")
+        != reservation.get("content_sha256")
+        or claim.get("execution_binding_content_sha256")
+        != execution_binding.get("content_sha256")
+        or claim.get("retry_authorized") is not False
+        or claim.get("resume_authorized") is not False
+        or claim.get("second_invocation_authorized") is not False
+        or builder_failure.get("status") != "FAILED_TERMINAL_NO_RETRY"
+        or builder_failure.get("phase")
+        != "materialize_and_publish_manifest_last"
+        or type(builder_error) is not dict
+        or builder_error.get("message")
+        != "source episode_id must be a nonempty string"
+        or builder_failure.get("reservation_content_sha256")
+        != reservation.get("content_sha256")
+        or builder_failure.get("execution_binding_content_sha256")
+        != execution_binding.get("content_sha256")
+        or builder_failure.get("schedule_prefix_sha256") != SCHEDULE_PREFIX_SHA256
+        or type(builder_ledger) is not dict
+        or any(builder_ledger.get(key) != 0 for key in protected)
+        or preflight_failure.get("status") != "TERMINAL_LABEL_PREFLIGHT_STOP"
+        or preflight_failure.get("phase") != "materialize_label_bundle"
+        or preflight_failure.get("error_message")
+        != "source episode_id must be a nonempty string"
+        or preflight_failure.get("label_builder_execution_binding")
+        != expected_builder_binding
+        or preflight_failure.get("retry") is not False
+        or preflight_failure.get("resume") is not False
+        or preflight_failure.get("training_authorized") is not False
+        or type(preflight_protected) is not dict
+        or any(preflight_protected.get(key) != 0 for key in protected)
+    ):
+        raise PermissionError("terminal V3 failure semantics changed")
+    return values
+
+
 def science_contract() -> dict[str, Any]:
     return {
         "experiment_id": EXPERIMENT_ID,
         "integrity_adapter_amendment": integrity_adapter_amendment_binding(),
         "schedule_schema_adapter_amendment": (
             schedule_schema_adapter_amendment_binding()
+        ),
+        "source_episode_id_adapter_amendment": (
+            source_episode_id_adapter_amendment_binding()
         ),
         "label_v1_terminal_predecessor_bindings": {
             name: dict(binding)
@@ -513,7 +689,11 @@ def science_contract() -> dict[str, Any]:
             name: dict(binding)
             for name, binding in LABEL_V2_TERMINAL_PREDECESSOR_BINDINGS.items()
         },
-        "label_preflight_attempt": "v3_science_identical_schedule_schema_adapter",
+        "label_v3_terminal_predecessor_bindings": {
+            name: dict(binding)
+            for name, binding in LABEL_V3_TERMINAL_PREDECESSOR_BINDINGS.items()
+        },
+        "label_preflight_attempt": "v4_science_identical_source_episode_id_adapter",
         "actions": list(ACTION_VOCABULARY),
         "roles": {role: dict(ROLE_COUNTS[role]) for role in ROLE_ORDER},
         "updates": MAXIMUM_UPDATES,
@@ -563,9 +743,11 @@ __all__ = [name for name in globals() if name.isupper()] + [
     "preregistration_binding",
     "integrity_adapter_amendment_binding",
     "schedule_schema_adapter_amendment_binding",
+    "source_episode_id_adapter_amendment_binding",
     "science_contract",
     "validate_label_v1_terminal_predecessor",
     "validate_label_v2_terminal_predecessor",
+    "validate_label_v3_terminal_predecessor",
     "validate_static_contract",
     "with_content_sha256",
 ]

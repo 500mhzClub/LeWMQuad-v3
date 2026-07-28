@@ -49,19 +49,19 @@ PREREGISTRATION_FILE_SHA256 = (
 )
 PREREGISTRATION_BYTE_COUNT = 29_487
 LABEL_EXECUTION_BINDING_RELATIVE_PATH = (
-    "docs/lewm_go2_post_action_projective_support_labels_v3_"
+    "docs/lewm_go2_post_action_projective_support_labels_v4_"
     "execution_binding_2026-07-28.json"
 )
-LABEL_OUTPUT_RELATIVE_PATH = ".generated/go2_post_action_projective_support_labels_v3"
+LABEL_OUTPUT_RELATIVE_PATH = ".generated/go2_post_action_projective_support_labels_v4"
 LABEL_RESERVATION_RELATIVE_PATH = f"{LABEL_OUTPUT_RELATIVE_PATH}/reservation.json"
 LABEL_BUILDER_CLAIM_RELATIVE_PATH = f"{LABEL_OUTPUT_RELATIVE_PATH}/builder_claim.json"
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "source_manifest_v3_2026-07-28.json"
+    "source_manifest_v4_2026-07-28.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1_"
-    "source_review_v3_2026-07-28.json"
+    "source_review_v4_2026-07-28.json"
 )
 LABEL_RESERVATION_SCHEMA = (
     "lewm_go2_post_action_projective_support_labels_v1_reservation_v1"
@@ -1887,6 +1887,19 @@ def validate_execution_binding_envelope_v1(
         raise LabelContractError(
             "execution label_v2_terminal_predecessor_bindings changed"
         )
+    if value.get(
+        "source_episode_id_adapter_amendment"
+    ) != contract.source_episode_id_adapter_amendment_binding():
+        raise LabelContractError(
+            "execution source_episode_id_adapter_amendment changed"
+        )
+    if (
+        value.get("label_v3_terminal_predecessor_bindings")
+        != contract.LABEL_V3_TERMINAL_PREDECESSOR_BINDINGS
+    ):
+        raise LabelContractError(
+            "execution label_v3_terminal_predecessor_bindings changed"
+        )
     authority = value.get("authority")
     if (
         not isinstance(authority, Mapping)
@@ -2256,7 +2269,10 @@ def load_joined_scene_v1(
         episode = frame.get("episode")
         if not isinstance(episode, Mapping):
             raise LabelContractError("source frame lacks episode provenance")
-        episode_id = _exact_str(episode.get("episode_id"), name="source episode_id")
+        source_episode_id = _exact_int(
+            episode.get("episode_id"), name="source episode_id", minimum=0
+        )
+        episode_id = str(source_episode_id)
         reset_count = _exact_int(episode.get("reset_count"), name="source reset_count", minimum=0)
         episode_step = _exact_int(episode.get("episode_step"), name="source episode_step", minimum=0)
         if (
@@ -2526,6 +2542,15 @@ def materialize_role_labels_v1(
                         name: dict(binding)
                         for name, binding in execution_binding[
                             "label_v2_terminal_predecessor_bindings"
+                        ].items()
+                    },
+                    "source_episode_id_adapter_amendment": dict(
+                        execution_binding["source_episode_id_adapter_amendment"]
+                    ),
+                    "label_v3_terminal_predecessor_bindings": {
+                        name: dict(binding)
+                        for name, binding in execution_binding[
+                            "label_v3_terminal_predecessor_bindings"
                         ].items()
                     },
                     "source_manifest": dict(execution_binding["source_manifest"]),
