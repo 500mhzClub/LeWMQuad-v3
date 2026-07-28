@@ -1,0 +1,200 @@
+{
+  "schema": "lewm_go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1_source_review_v1",
+  "status": "PASS_SOURCE_SCIENCE_CLOSURE_AND_CUSTODY_RESOLVED_FINDINGS",
+  "frozen_source_commit": {
+    "commit": "53ffe6fc8ac188045c10c5ed726f66f9c15e8f52",
+    "parent": "0ee589ee756fbb836f007dace2551c7aa0be265a",
+    "committed_at": "2026-07-28T05:44:04+01:00",
+    "subject": "add dual-domain trajectory H4 JEPA probe"
+  },
+  "review_scope": {
+    "reviewers": [
+      "/root/trajectory_test_plan",
+      "/root/trajectory_test_plan/dual_score_critic",
+      "/root/wdps_source_review",
+      "/root/wdps_source_review/model_tests_review"
+    ],
+    "source_and_synthetic_evidence_reviewed": true,
+    "authorized_preflight_reads": {
+      "census_receipt": 1,
+      "train_index": 1,
+      "validation_index": 1,
+      "accepted_n320_initialization": 1
+    },
+    "generated_experiment_output_rgb_or_predictor_checkpoint_access_count": 0,
+    "heldout_sealed_navigation_or_protected_access_count": 0,
+    "stopped_or_predecessor_predictor_checkpoint_trace_or_tensor_access_count": 0
+  },
+  "resolved_findings": [
+    {
+      "finding": "fitting a dual score while ranking only local innovations would create an incoherent hybrid",
+      "resolution": "real, cyclic-action, reversed-history, and reset-history paths all use the same per-row 50/50 local-plus-cumulative score"
+    },
+    {
+      "finding": "the ranking normalizer could accidentally depend on the trainable online anchor",
+      "resolution": "the denominator is detached target-only persistence: zero local innovations plus fixed-teacher e2 repeated in the cumulative domain; a perturbed-online-encoder numerical oracle covers it"
+    },
+    {
+      "finding": "the inherited all-hold gate admitted a positive aggregate supported by only two of eight families",
+      "resolution": "the existing aggregate-positive gate is retained and supplemented only with six-family breadth and minus-0.02 family-floor gates using already computed metrics"
+    },
+    {
+      "finding": "the draft preregistration misstated predictor learning rate and online-encoder initialization",
+      "resolution": "it now records the exact 3e-4 predictor rate, N320 initialization of online and target encoders, and fresh non-encoder trainables"
+    },
+    {
+      "finding": "the new wrapper bypassed the parent main guard for the imported trajectory wrapper",
+      "resolution": "main now validates shared-runner, local-wrapper, and intermediate trajectory-wrapper import identities before source binding"
+    },
+    {
+      "finding": "inherited receipt wording could make active dual controls appear disabled",
+      "resolution": "additional-science and terminal artifact semantics explicitly distinguish the disabled built-in centroid contrast from active dual-domain action/history controls"
+    }
+  ],
+  "remaining_findings": [
+    {
+      "severity": "interpretation_only",
+      "finding": "local and cumulative targets contain the same trajectory information given the fixed anchor",
+      "consequence": "this probe tests error geometry and temporal credit assignment, not additional model capacity"
+    },
+    {
+      "severity": "interpretation_only",
+      "finding": "cyclic actions and reverse/reset histories remain trained interventions while all-hold is only one untrained action diagnostic",
+      "consequence": "a PASS is bounded development evidence and still requires separately authorized unseen-control evaluation before scale"
+    }
+  ],
+  "new_file_bindings": [
+    {
+      "path": "docs/lewm_go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1_preregistration_2026-07-28.md",
+      "file_sha256": "efc513e6d67938f799a0536ce27fbb7473935a6130f18ff8f2d1ff8703a2b67c",
+      "byte_count": 10673
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1.py",
+      "file_sha256": "001bc8507dfe7c4e9f815e67e09f96c898628b9aa7bffa3ad1e0f8a1777b971f",
+      "byte_count": 9608
+    },
+    {
+      "path": "lewm/tests/test_go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1.py",
+      "file_sha256": "c7d0f503b9120fc3c8008f14066baccfcb305cdf6c26418c8f653a2c4c831973",
+      "byte_count": 12278
+    },
+    {
+      "path": "lewm/tests/test_run_go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1.py",
+      "file_sha256": "bbc8bdc6004330105b66f705ab2fe87017370c15e9ec3a004c44df7bc9d03bb6",
+      "byte_count": 10638
+    },
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1.py",
+      "file_sha256": "c56dea5ef9b63834ad9af40a022bfac2279d28848eedd8871b6c3b47c85005c1",
+      "byte_count": 13156
+    }
+  ],
+  "runtime_source_closure": [
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1.py",
+      "file_sha256": "c56dea5ef9b63834ad9af40a022bfac2279d28848eedd8871b6c3b47c85005c1",
+      "byte_count": 13156
+    },
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1.py",
+      "file_sha256": "8f2e84ec28fb67440fa624720a7e15fab9aaf88537413872a2f723cf43301a66",
+      "byte_count": 11453
+    },
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "ce133263ec17feae9c729072153567253bd1529c3b27d350cb0c290fc6552b4c",
+      "byte_count": 32000
+    },
+    {
+      "path": "scripts/run_go2_recurrent_h4_joint_jepa_v1.py",
+      "file_sha256": "fc35d535e1c07b56c667474e6e10c5c7587fa01e627567148c022331983616fc",
+      "byte_count": 70301
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1.py",
+      "file_sha256": "001bc8507dfe7c4e9f815e67e09f96c898628b9aa7bffa3ad1e0f8a1777b971f",
+      "byte_count": 9608
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_local_innovation_trajectory_h4_jepa_v1.py",
+      "file_sha256": "f71639ee80bcadfa0e5c3238b55164deb57d196c2bdfa4bd0ced3bb5cba1bb71",
+      "byte_count": 17248
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "1d07f8f67ab7f3e93534454a2aaf2ff8626f984b5346a2717c1643a331eb6d8e",
+      "byte_count": 15967
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+      "file_sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30",
+      "byte_count": 23712
+    },
+    {
+      "path": "lewm/models/go2_recurrent_h4_joint_jepa.py",
+      "file_sha256": "ddd84561aba5a36df1255ab942bb29db943cc1bf7b0e496ae41b3d1cdc218f55",
+      "byte_count": 21166
+    },
+    {
+      "path": "lewm/models/encoders.py",
+      "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "byte_count": 7028
+    }
+  ],
+  "scientific_checks": {
+    "genuine_joint_perception_only_jepa_plus_intervention_ranking": true,
+    "online_encoder_history_action_mode_and_predictor_share_one_backward": true,
+    "complete_fixed_n320_target_frozen_outside_optimizer_zero_ema": true,
+    "future_rgb_only_reaches_fixed_stop_gradient_target": true,
+    "same_four_particles_scored_as_realized_innovations_and_integrated_trajectories": true,
+    "raw_prediction_score_is_exact_equal_weight_sum_of_two_proper_scores": true,
+    "complete_hinge_augmented_objective_not_claimed_proper": true,
+    "mixed_action_and_history_scores_use_target_only_detached_persistence_denominator": true,
+    "every_row_contributes_with_clamp_only_and_no_low_motion_filter": true,
+    "wrong_reverse_and_reset_control_predictor_call_count_per_row": 3,
+    "all_hold_training_control_absent": true,
+    "exact_zero_head_is_exact_four_atom_persistence_with_opening_gradient": true,
+    "new_trainable_parameter_count": 0,
+    "schedule": {
+      "seed": 20260727,
+      "batch_size": 16,
+      "updates": 1000,
+      "presentations": 16000,
+      "observation_updates": [0, 250, 500, 750, 1000],
+      "retry_or_resume": false
+    }
+  },
+  "verification": {
+    "focused_plus_parent_dense_and_shared_regression_suite": "57_passed_in_5.85_seconds",
+    "python_compile": "PASS",
+    "git_diff_check": "PASS",
+    "source_bound_preflight": "PREFLIGHT_PASS_NO_OUTPUT_RESERVED_NO_RGB_OPENED",
+    "preflight_trainable_parameter_counts": {
+      "encoder": 2747520,
+      "history": 939840,
+      "predictor": 1412352
+    },
+    "b16_production_shape_synthetic_gpu_smoke": {
+      "device": "AMD Radeon AI PRO R9700",
+      "device_total_gib": 31.859375,
+      "forward_loss_backward_seconds": 2.105346427008044,
+      "peak_allocated_gib": 18.85120964050293,
+      "history_teacher_alignment": 4.086397832527705e-13,
+      "half_local_innovation_energy_score": 0.46925991773605347,
+      "half_cumulative_trajectory_energy_score": 0.4668901860713959,
+      "dual_domain_cyclic_wrong_action_ranking": 0.04999995231628418,
+      "dual_domain_history_counterfactual_ranking": 0.029999971389770508,
+      "total_loss": 1.0161499977111816,
+      "final_head_gradient_norm": 6.450034141540527,
+      "teacher_gradient_tensor_count": 0,
+      "presentations_optimizer_steps_or_artifact_writes": 0
+    }
+  },
+  "authority": {
+    "source_review_complete": true,
+    "execution_training_gpu_or_rgb_authorized_by_this_receipt": false,
+    "checkpoint_or_tensor_access_authorized": false,
+    "navigation_heldout_sealed_promotion_or_deployment_authorized": false
+  }
+}

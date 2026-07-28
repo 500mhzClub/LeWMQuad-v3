@@ -1,0 +1,104 @@
+{
+  "schema": "lewm_go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1_execution_authorization_v1",
+  "date": "2026-07-28",
+  "status": "AUTHORIZED_EXACTLY_ONE_FRESH_CAPPED_EXECUTION_AFTER_CLEAN_PREFLIGHT",
+  "authority_basis": {
+    "user_standing_authority": "The user authorized autonomous scientific iteration and scientific-scope changes while evidence improves within a perception-only learned JEPA for held-out-maze navigation, directed inspection and use of the main training pool, and directed continuation without repeated authorization commands.",
+    "frozen_source_commit": "53ffe6fc8ac188045c10c5ed726f66f9c15e8f52",
+    "source_review": {
+      "path": "docs/lewm_go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1_source_review_2026-07-28.json",
+      "file_sha256": "99d4c2349b92d2cd4eeaafe1012996bfe6cb5876b1e85622e9e64a3dc97beb7e",
+      "byte_count": 9373,
+      "status": "PASS_SOURCE_SCIENCE_CLOSURE_AND_CUSTODY_RESOLVED_FINDINGS"
+    }
+  },
+  "runtime": {
+    "working_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3",
+    "python": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-torch291-rocm64/bin/python",
+    "torch": "2.9.1+rocm6.4",
+    "hip": "6.4.43484-123eb5128",
+    "accelerator": "AMD Radeon AI PRO R9700",
+    "visible_device_index": 0,
+    "precision": "float32_no_autocast",
+    "environment": {
+      "HIP_VISIBLE_DEVICES": "0",
+      "ROCR_VISIBLE_DEVICES": "0",
+      "CUDA_VISIBLE_DEVICES": "0",
+      "GPU_DEVICE_ORDINAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "LEWM_DUAL_DOMAIN_TRAJECTORY_H4_WRAPPER_SHA256": "c56dea5ef9b63834ad9af40a022bfac2279d28848eedd8871b6c3b47c85005c1",
+      "LEWM_DUAL_DOMAIN_TRAJECTORY_H4_WRAPPER_BYTES": "13156"
+    },
+    "unset_environment": [
+      "HSA_OVERRIDE_GFX_VERSION",
+      "PYTHONHOME",
+      "PYTHONPATH",
+      "PYTHONSTARTUP",
+      "PYTHONUSERBASE"
+    ]
+  },
+  "preflight": {
+    "completed_count": 1,
+    "arguments": ["--preflight-only", "--device", "cuda"],
+    "receipt": "PREFLIGHT_PASS_NO_OUTPUT_RESERVED_NO_RGB_OPENED",
+    "row_counts": {
+      "train": 16000,
+      "val": 2048
+    },
+    "trainable_parameter_counts": {
+      "encoder": 2747520,
+      "history": 939840,
+      "predictor": 1412352
+    },
+    "rgb_open_count": 0,
+    "output_reservation_count": 0,
+    "training_update_count": 0
+  },
+  "execution": {
+    "authorized_fresh_attempt_count": 1,
+    "arguments": ["--execute", "--device", "cuda"],
+    "output_root": ".generated/go2_rgb_fixed_teacher_dual_domain_trajectory_h4_jepa_v1/probe_v1",
+    "output_root_must_be_absent_before_launch": true,
+    "optimizer_updates": 1000,
+    "effective_batch_size": 16,
+    "training_presentations": 16000,
+    "validation_presentations": 10240,
+    "observation_updates": [0, 250, 500, 750, 1000],
+    "maximum_gpu_active_seconds": 5400,
+    "only_checkpoint_input": "exact_bound_accepted_n320_encoder_prefix",
+    "stopped_or_predecessor_predictor_checkpoint_input_count": 0,
+    "early_scientific_stop": false,
+    "retry_resume_replacement_second_seed_or_cli_override": false
+  },
+  "frozen_science": {
+    "architecture": "unchanged four-atom recursively integrated local-increment trajectory JEPA with dense three-frame history and ordered action prefixes",
+    "target": "fixed N320 successive innovations and fixed N320 cumulative future normalized patch latents",
+    "joint_training": "online encoder history action mode and predictor modules in one optimizer and one backward with fixed target",
+    "prediction_loss": "raw 0.5 local proper energy score plus raw 0.5 cumulative proper energy score; each domain is 0.5 joint plus 0.5 mean marginal",
+    "control_loss": "same mixed score with detached target-only mixed persistence denominator; cyclic-action margin 0.05 and ordered-history margin 0.03",
+    "normalization": "every row contributes; denominator clamp at 1e-6; no low-motion mask or filter",
+    "absent_training_terms": "centroid squared error + learned target compressor + best_of_K + learned scale_or_weights + diversity bonus + variance_covariance_whitening + reconstruction + navigation + all-hold training",
+    "selection": "minimum cumulative validation 50_50 joint-plus-marginal normalized energy score among registered noncollapsed trained observations",
+    "evaluation_and_pass_gate": "full inherited cumulative trajectory gate plus selected-checkpoint all-hold positive in six families and no all-hold family below minus 0.02"
+  },
+  "prohibited": [
+    "heldout_test_or_sealed_access",
+    "label_semantic_pose_depth_flow_map_or_navigation_target_access",
+    "dataset_or_index_regeneration_reordering_filtering_or_substitution",
+    "stopped_or_predecessor_predictor_checkpoint_trace_or_tensor_access",
+    "navigation_g2_g8_qualification_promotion_production_or_deployment",
+    "schedule_loss_margin_threshold_seed_atom_count_architecture_or_domain_weight_change",
+    "retry_resume_extension_replacement_second_seed_or_same_mechanism_v2"
+  ],
+  "terminal_rules": {
+    "pre_execution_source_or_root_mismatch": "Do not launch and do not reserve another output root.",
+    "post_reservation_termination": "Consumes the sole execution attempt regardless of outcome.",
+    "stop": "Closes this exact 50/50 dual-domain mechanism; every written checkpoint remains inaccessible.",
+    "pass": "Establishes bounded dual-domain trajectory JEPA feasibility only; checkpoint access and scale require a separate decision and unseen-control evaluation."
+  }
+}
