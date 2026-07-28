@@ -41,7 +41,8 @@
 
 ## Post-result authority deviation
 
-- After the CLI had reported `FAIL_FULL_ARM`, the root audit command mistakenly included `checkpoint_update_1000.pt` in a three-file `sha256sum` invocation.
-- Scope: one sequential byte-level read sufficient to compute SHA-256 `b8da881507c6b95d5a2b8cfaf42327a09f18465050373f36725737d5fc0ce8d6`, which was already present in `result.json`.
+- After the CLI had reported `FAIL_FULL_ARM`, the root audit command mistakenly included the rejected checkpoint in: `sha256sum "$dir"/result.json "$dir"/training_trace.json "$dir"/checkpoint_update_1000.pt`, where `dir=.generated/go2_rgb_swept_progress_survival_joint_jepa_v1/attempt_v1`.
+- Scope: one sequential byte-level read exposed only the checkpoint path, byte count, mtime, and SHA-256 `b8da881507c6b95d5a2b8cfaf42327a09f18465050373f36725737d5fc0ce8d6`; all were already present in or derivable from the terminal inventory and `result.json`.
+- Recipients were limited to the local command/tool output and the root-agent thread context; no artifact bytes were copied or sent elsewhere.
 - No checkpoint deserialization, tensor/model-state inspection, copy, evaluation, promotion, retry, resume, or scientific use occurred.
 - The read cannot alter or invalidate the already-completed training or gate result, but it violated the inherited no-read boundary for a rejected checkpoint. No further access to that checkpoint is authorized or will occur.
