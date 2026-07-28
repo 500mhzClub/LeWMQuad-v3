@@ -84,15 +84,32 @@ def test_swept_progress_masks_preserve_reviewed_geometry_and_identity() -> None:
     assert masks.device.type == "cpu"
     assert masks.is_contiguous()
     assert bool(masks.flatten(start_dim=2).any(dim=-1).all())
-    regression = projective.build_immediate_footprint_support_regression_v1()
     assert tuple(int(mask.sum()) for mask in masks[:, 0]) == (
-        regression.action_mask_cell_counts
+        59,
+        56,
+        57,
+        58,
+        57,
+        57,
+        51,
+        54,
+        52,
     )
+    assert torch.equal(
+        masks[:, 1:], masks[0, 1:].unsqueeze(0).expand_as(masks[:, 1:])
+    )
+    assert tuple(int(mask.sum()) for mask in masks[0, 1:]) == (57,) * 15
+    for action in api.ACTION_ORDER:
+        endpoint = projective._integrated_action_endpoint(action)
+        relative = api._pose_in_endpoint_frame_v1(endpoint, endpoint)
+        assert relative.x_m == pytest.approx(0.0)
+        assert relative.y_m == pytest.approx(0.0)
+        assert relative.yaw_rad == pytest.approx(0.0)
     identity = hashlib.sha256(
         bytes(masks.to(torch.uint8).reshape(-1).tolist())
     ).hexdigest()
     assert identity == (
-        "c4b8c475032433e448cd7df9decfead2c0800426219098f45306a0540154d2ff"
+        "11ae5e26b182da85c8a7ca866ee4914c72b5b84b8b601dd807903097d754485c"
     )
 
 

@@ -193,46 +193,61 @@ def _continuation_segment_poses_v1(
     )
 
 
+def _pose_in_endpoint_frame_v1(
+    pose: _projective.Pose2D,
+    endpoint: _projective.Pose2D,
+) -> _projective.Pose2D:
+    """Express a current-frame pose in the action endpoint's ego frame."""
+
+    delta_x = pose.x_m - endpoint.x_m
+    delta_y = pose.y_m - endpoint.y_m
+    cos_yaw = math.cos(endpoint.yaw_rad)
+    sin_yaw = math.sin(endpoint.yaw_rad)
+    return _projective.Pose2D(
+        cos_yaw * delta_x + sin_yaw * delta_y,
+        -sin_yaw * delta_x + cos_yaw * delta_y,
+        _projective.wrap_angle_pi(pose.yaw_rad - endpoint.yaw_rad),
+    )
+
+
 def build_swept_progress_masks_v1() -> torch.Tensor:
-    """Build fixed current-BEV masks ``[action, immediate+15 segments, H, W]``."""
+    """Build post-action-BEV masks ``[action, immediate+15 segments, H, W]``."""
 
     footprint = _projective.DirectionalSupportFootprint(
         vertices_xy_m=_projective._FOOTPRINT_VERTICES_XY_M
     )
     forward_centers, left_centers = _projective._lattice_centers()
-    action_masks: list[torch.Tensor] = []
-    for action in ACTION_ORDER:
-        immediate_poses = _projective._interpolated_action_sweep_v1(
-            footprint, action
+    continuation_masks: list[torch.Tensor] = []
+    for segment_index in range(CONTINUATION_COUNT):
+        start = _projective.Pose2D(
+            segment_index * PROGRESS_SEGMENT_M, 0.0, 0.0
         )
-        bins = [_projective._rasterize_polygon_union(
-            tuple(footprint.vertices_at(pose) for pose in immediate_poses),
+        end = _projective.Pose2D(
+            (segment_index + 1) * PROGRESS_SEGMENT_M, 0.0, 0.0
+        )
+        samples = _continuation_segment_poses_v1(footprint, start, end)
+        continuation_masks.append(_projective._rasterize_polygon_union(
+            tuple(footprint.vertices_at(pose) for pose in samples),
             forward_centers=forward_centers,
             left_centers=left_centers,
-        ).bool()]
+        ).bool())
+
+    action_masks: list[torch.Tensor] = []
+    for action in ACTION_ORDER:
+        current_frame_poses = _projective._interpolated_action_sweep_v1(
+            footprint, action
+        )
         endpoint = _projective._integrated_action_endpoint(action)
-        cos_yaw = math.cos(endpoint.yaw_rad)
-        sin_yaw = math.sin(endpoint.yaw_rad)
-        for segment_index in range(CONTINUATION_COUNT):
-            start_distance = segment_index * PROGRESS_SEGMENT_M
-            end_distance = (segment_index + 1) * PROGRESS_SEGMENT_M
-            start = _projective.Pose2D(
-                endpoint.x_m + start_distance * cos_yaw,
-                endpoint.y_m + start_distance * sin_yaw,
-                endpoint.yaw_rad,
-            )
-            end = _projective.Pose2D(
-                endpoint.x_m + end_distance * cos_yaw,
-                endpoint.y_m + end_distance * sin_yaw,
-                endpoint.yaw_rad,
-            )
-            samples = _continuation_segment_poses_v1(footprint, start, end)
-            bins.append(_projective._rasterize_polygon_union(
-                tuple(footprint.vertices_at(pose) for pose in samples),
-                forward_centers=forward_centers,
-                left_centers=left_centers,
-            ).bool())
-        action_masks.append(torch.stack(bins))
+        endpoint_frame_poses = tuple(
+            _pose_in_endpoint_frame_v1(pose, endpoint)
+            for pose in current_frame_poses
+        )
+        immediate_mask = _projective._rasterize_polygon_union(
+            tuple(footprint.vertices_at(pose) for pose in endpoint_frame_poses),
+            forward_centers=forward_centers,
+            left_centers=left_centers,
+        ).bool()
+        action_masks.append(torch.stack((immediate_mask, *continuation_masks)))
     masks = torch.stack(action_masks).contiguous()
     _validate_swept_progress_masks_v1(masks)
     return masks
