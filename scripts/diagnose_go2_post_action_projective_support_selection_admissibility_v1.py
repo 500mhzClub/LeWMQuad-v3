@@ -211,7 +211,7 @@ def run_census_v1() -> Mapping[str, Any]:
     binding = json.loads(raw_binding)
     if (
         not isinstance(binding, dict)
-        or labels.canonical_json_bytes(binding) != raw_binding
+        or labels.canonical_json_bytes(binding) + b"\n" != raw_binding
         or binding.get("content_sha256") != V4_BINDING_CONTENT_SHA256
     ):
         raise labels.LabelContractError("exact V4 execution binding content changed")
