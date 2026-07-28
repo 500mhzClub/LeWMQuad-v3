@@ -46,3 +46,11 @@
 - Recipients were limited to the local command/tool output and the root-agent thread context; no artifact bytes were copied or sent elsewhere.
 - No checkpoint deserialization, tensor/model-state inspection, copy, evaluation, promotion, retry, resume, or scientific use occurred.
 - The read cannot alter or invalidate the already-completed training or gate result, but it violated the inherited no-read boundary for a rejected checkpoint. No further access to that checkpoint is authorized or will occur.
+
+## Search-guard deviation
+
+- During live-run duration estimation, root ran: `find .generated -maxdepth 3 -type d \( -name '*corridor*' -o -name '*geometry_anchored*' \) -print | head -n 80`.
+- The filename-only command bypassed `.ignore` and omitted the required explicit sealed-directory prunes. It may therefore have enumerated directory-entry metadata beneath `.generated` while walking to depth three.
+- Printed fields were limited to eight ordinary predecessor directory paths matching `corridor` or `geometry_anchored`; no sealed path, manifest, file content, benchmark row, or protected value was printed or used.
+- Recipients were limited to the local `find`/shell process, tool transcript, and root-model context in this thread. The command was used only for a rough runtime comparison and cannot affect the completed scientific result.
+- No further whole-`.generated` search is authorized. Subsequent discovery must use known exact paths or honor `.ignore` and explicit sealed-path exclusions.
