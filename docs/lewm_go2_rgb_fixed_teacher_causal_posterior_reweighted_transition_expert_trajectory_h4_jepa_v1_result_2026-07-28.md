@@ -4,16 +4,17 @@
 
 - Decision:
   `STOP_MAIN_POOL_RGB_FIXED_TEACHER_CAUSAL_POSTERIOR_REWEIGHTED_TRANSITION_EXPERT_TRAJECTORY_H4_JEPA_V1`.
-- The sole reserved attempt completed normally at the exact cap: 1,000
-  optimizer updates, 16,000 ordered training presentations, 10,240 validation
-  presentations, and `714.138882839994` active-GPU seconds.
+- The sole reserved attempt completed normally at the exact update and
+  training-presentation caps: 1,000 optimizer updates and 16,000 ordered
+  training presentations, with 10,240 registered validation presentations
+  and `714.138882839994` active-GPU seconds below the 5,400-second cap.
 - Update 1,000 / presentation 16,000 was selected by the frozen minimum
   posterior-weighted combined-energy rule. The result passed 26 of 32 gates.
 - This is a scientific STOP, not an execution, receipt, source-binding,
   target-integrity, collapse, generic-prediction, persistence, action, or
-  custody failure. The exact fixed posterior-reweighted K4 mechanism is closed
-  without retry, resume, repair, expert-count/likelihood/epsilon variant,
-  second seed, extension, or checkpoint opening.
+  custody failure. The exact fixed-rule posterior-reweighted K4 mechanism is
+  closed without retry, resume, repair, expert-count/likelihood/epsilon
+  variant, second seed, extension, or checkpoint opening.
 - The existing navigation, G2--G8, held-out, and sealed authorities remain
   unopened and unchanged.
 
@@ -68,10 +69,10 @@
 | H4 best-atom normalized squared error | 2.012896610122 |
 | H4 centroid normalized squared error | 1.513293575121 |
 
-- Generic prediction, persistence, distribution value, action conditioning,
-  noncollapse, fixed-target identity, and the pre-observation local-prior
-  diagnostic all passed decisively. Action was positive in every family and
-  substantially exceeded its threshold.
+- The registered distributional prediction, persistence, distribution-value,
+  action-conditioning, noncollapse, fixed-target-identity, and pre-observation
+  local-prior gates all passed decisively. Action was positive in every family
+  and substantially exceeded its threshold.
 - Correct ordered history remained harmful in every family. Its aggregate H4
   gap and bootstrap lower bound were negative, and zero of eight families were
   positive. Fixed Bayesian-style expert mass therefore did not become useful
@@ -81,8 +82,8 @@
   a near-threshold miss.
 - Distribution readout remained valuable, but the best support atom's H4
   point error was `2.012897`, well above persistence-normalized parity. The
-  posterior improved the weighted centroid relative to the immediate
-  predecessor but did not identify a reliably better trajectory expert.
+  posterior-weighted successor had lower centroid error than its immediate
+  predecessor but did not yield a reliably better trajectory expert.
 
 ## Learning trajectory
 
@@ -101,8 +102,8 @@
   families. Correct history was negative in all eight families at every
   trained observation; more optimization did not repair its sign.
 - HOLD breadth fell from eight families at updates 250/500 to seven at 750 and
-  two at 1,000. Extending or resuming this consumed run would optimize the
-  wrong tradeoff and is scientifically unjustified.
+  two at 1,000. Later observed optimization favored the wrong tradeoff,
+  providing no evidence for extension or resume of this consumed run.
 
 ## Selected per-family findings
 
@@ -152,8 +153,9 @@ The six failed gates were:
   (`+0.229353` to `+0.226252`). The model could predict observed transitions,
   but the resulting error-derived posterior did not help the future sequence.
 - The weighted centroid point error improved from `1.986106` to `1.513294`,
-  while the best atom deteriorated sharply. Posterior mass produced a better
-  mixture readout without learning a correct persistent response regime.
+  while the best atom deteriorated sharply. The posterior-weighted successor
+  produced a better mixture readout without evidence of a correct persistent
+  response regime.
 
 ## Receipt and custody audit
 
@@ -169,10 +171,10 @@ The six failed gates were:
 - Root and independent receipt-only audits returned CLEAR. All six files are
   strict, finite, canonical, self-bound JSON; `completed.json` exactly binds
   and cross-binds the other five. Its file SHA-256 matches the terminal stdout
-  hash. The independent audit reconciled every cap and access count, confirmed
-  that the six failed gates exactly equal the six false booleans, and
-  independently recomputed all 30 gates whose numeric thresholds are present
-  in the receipts.
+  hash. The independent audit receipt-internally reconciled every cap and
+  access count, confirmed that the six failed gates exactly equal the six
+  false booleans, and independently recomputed all 30 gates whose numeric
+  thresholds are present in the receipts.
 - Access is complete: 1,000 optimizer updates, 16,000 train presentations,
   10,240 validation presentations, and exactly 183,680 RGB open attempts and
   successes. Active GPU time remained below the registered cap.
@@ -193,9 +195,10 @@ The six failed gates were:
   continue to provide broad action sensitivity, persistence improvement, and
   distribution value.
 - Close this exact causal posterior-regime mechanism. The two observed
-  full-lattice prior errors did not select a future-useful expert, and the
-  mechanism may not be retried with a different expert count, likelihood,
-  epsilon, temperature, seed, duration, score coefficient, or checkpoint.
+  full-lattice prior errors did not yield a future-useful expert readout or
+  positive ordered-history benefit, and the mechanism may not be retried with
+  a different expert count, likelihood, epsilon, temperature, seed, duration,
+  score coefficient, or checkpoint.
 - Together with recurrent, dense-history, factorized-increment, momentum,
   writable system-ID, and posterior-regime failures, another small temporal
   carrier or nearby gating variant is not justified. The next falsification
