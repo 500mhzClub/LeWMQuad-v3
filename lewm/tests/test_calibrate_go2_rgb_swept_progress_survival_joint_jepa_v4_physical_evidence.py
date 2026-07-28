@@ -179,6 +179,15 @@ class _MockInputs:
 
 
 class _MockAccessLoader:
+    def receipt(self) -> dict[str, Any]:
+        return {
+            "raw_inputs_frame_attribute_invocation_count": 0,
+            "forbidden_semantic_counters": {
+                "general_raw_frame_loader_call_count": 0,
+                "other_supervision_array_open_count": 0,
+            },
+        }
+
     def model_facing_access_counts(self) -> dict[str, int]:
         total = sum(runner.ROLE_COUNTS.values())
         return {
@@ -224,7 +233,13 @@ def _patch_successful_boundaries(
         return torch.zeros((1, 3, 2, 2)), torch.zeros((1, 2, 2), dtype=torch.long), receipt
 
     monkeypatch.setattr(runner, "_collect_role", collect)
-    monkeypatch.setattr(runner, "_fit_select_score", lambda *args, **kwargs: science)
+    def fit_select(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        counts = kwargs["operation_counts"]
+        counts["calibration_fit_calls"] += 1
+        counts["threshold_selection_calls"] += 1
+        return science
+
+    monkeypatch.setattr(runner, "_fit_select_score", fit_select)
     return roles
 
 
@@ -269,3 +284,24 @@ def test_operational_candidate_failure_writes_only_failure(
     assert (output / "failure.json").is_file()
     assert not (output / "calibration.json").exists()
     assert not (output / "result.json").exists()
+
+
+def test_post_data_failure_preserves_raw_access_snapshot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(runner, "OUTPUT_RELATIVE_PATH", "output/attempt_v1")
+    _patch_successful_boundaries(monkeypatch, science=_mock_science())
+    monkeypatch.setattr(
+        runner,
+        "_fit_select_score",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("fit failed")),
+    )
+    result = runner.execute(repository_root=tmp_path)
+    raw_access = result["raw_access"]
+    assert result["status"] == "FAILED_OPERATIONALLY"
+    assert raw_access["loader_full_receipt"][
+        "raw_inputs_frame_attribute_invocation_count"
+    ] == 0
+    assert raw_access["consumed_unique_file_count"] == 2
+    assert len(raw_access["consumed_records_sha256"]) == 64

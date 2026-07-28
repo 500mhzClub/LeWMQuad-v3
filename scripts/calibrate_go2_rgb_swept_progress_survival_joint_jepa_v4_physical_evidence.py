@@ -204,8 +204,8 @@ def _load_candidate(repository_root: Path, access: dict[str, int]) -> Any:
     )
 
     root = repository_root / CANDIDATE_ROOT_RELATIVE_PATH
-    receipt_raw = _read_regular(root / "candidate_receipt.json")
     access["candidate_receipt_reads"] += 1
+    receipt_raw = _read_regular(root / "candidate_receipt.json")
     if hashlib.sha256(receipt_raw).hexdigest() != CANDIDATE_RECEIPT_FILE_SHA256:
         raise PermissionError("candidate receipt file hash changed")
     receipt = _parse_canonical(receipt_raw, name="candidate receipt")
@@ -224,8 +224,8 @@ def _load_candidate(repository_root: Path, access: dict[str, int]) -> Any:
         }
     ):
         raise PermissionError("candidate receipt contract changed")
-    checkpoint_raw = _read_regular(root / "candidate_checkpoint.pt")
     access["candidate_checkpoint_reads"] += 1
+    checkpoint_raw = _read_regular(root / "candidate_checkpoint.pt")
     if (
         len(checkpoint_raw) != CANDIDATE_CHECKPOINT_BYTE_COUNT
         or hashlib.sha256(checkpoint_raw).hexdigest() != CANDIDATE_CHECKPOINT_SHA256
@@ -359,6 +359,7 @@ def _fit_select_score(
     selection_labels: Any,
     *,
     provenance: Mapping[str, Any],
+    operation_counts: dict[str, int] | None = None,
 ) -> Mapping[str, Any]:
     import numpy as np
     from lewm.benchmarks.traversability_metrics import (
@@ -372,6 +373,8 @@ def _fit_select_score(
         validate_hierarchical_probability_calibration,
     )
 
+    if operation_counts is not None:
+        operation_counts["calibration_fit_calls"] += 1
     calibration = fit_hierarchical_probability_calibration(
         calibration_logits,
         calibration_labels,
@@ -395,6 +398,8 @@ def _fit_select_score(
         distance_grid, tuple(calibration_labels.shape)
     )
     selection_distances = np.broadcast_to(distance_grid, tuple(selection_labels.shape))
+    if operation_counts is not None:
+        operation_counts["threshold_selection_calls"] += 1
     threshold_selection = select_conservative_thresholds(
         calibration_probabilities,
         calibration_labels.numpy(),
@@ -509,11 +514,49 @@ def _new_access() -> dict[str, int]:
     }
 
 
+def _raw_access_snapshot(
+    inputs: Any | None,
+    loader: Any | None,
+    progress: Mapping[str, Any] | None,
+) -> Mapping[str, Any]:
+    snapshot: dict[str, Any] = {
+        "constructor_reads": (
+            {} if progress is None else progress.get("_raw_constructor_reads", {})
+        ),
+        "loader_full_receipt": None,
+        "model_facing": None,
+        "consumed_unique_file_count": 0,
+        "consumed_records_sha256": None,
+        "consumed_records": [],
+    }
+    if loader is not None:
+        try:
+            snapshot["loader_full_receipt"] = loader.receipt()
+            snapshot["model_facing"] = loader.model_facing_access_counts()
+        except Exception as error:  # preserve the original failure plus snapshot error
+            snapshot["loader_snapshot_error"] = {
+                "type": type(error).__name__,
+                "message": str(error),
+            }
+    if inputs is not None and isinstance(getattr(inputs, "consumed", None), Mapping):
+        records = [inputs.consumed[name] for name in sorted(inputs.consumed)]
+        snapshot["consumed_unique_file_count"] = len(records)
+        snapshot["consumed_records"] = records
+        snapshot["consumed_records_sha256"] = hashlib.sha256(
+            _canonical_bytes(records)
+        ).hexdigest()
+    return snapshot
+
+
 def execute(*, repository_root: Path = ROOT) -> Mapping[str, Any]:
     repository_root = Path(repository_root).absolute()
     output = _fresh_output(repository_root)
     access = _new_access()
     stage = "reserved_output"
+    runtime = None
+    inputs = None
+    loader = None
+    progress: Mapping[str, Any] | None = None
     try:
         stage = "validated_sources"
         source_hashes = _validate_sources(repository_root)
@@ -536,8 +579,6 @@ def execute(*, repository_root: Path = ROOT) -> Mapping[str, Any]:
             role_arrays[role] = (logits, labels)
             role_receipts[role] = receipt
         stage = "fit_select_score"
-        access["calibration_fit_calls"] += 1
-        access["threshold_selection_calls"] += 1
         science = _fit_select_score(
             *role_arrays["probability_calibration"],
             *role_arrays["checkpoint_selection"],
@@ -552,9 +593,11 @@ def execute(*, repository_root: Path = ROOT) -> Mapping[str, Any]:
                 ]["next_endpoint_order_sha256"],
                 "all_cells_used": True,
             },
+            operation_counts=access,
         )
         stage = "validated_access"
         loader_counts = loader.model_facing_access_counts()
+        loader_receipt = loader.receipt()
         if (
             loader_counts["endpoint_rgb_row_request_count"] != sum(ROLE_COUNTS.values())
             or loader_counts["raster_label_row_request_count"]
@@ -569,6 +612,16 @@ def execute(*, repository_root: Path = ROOT) -> Mapping[str, Any]:
             )
         ):
             raise PermissionError("model-facing development access changed")
+        if (
+            loader_receipt.get("raw_inputs_frame_attribute_invocation_count") != 0
+            or any(
+                int(value) != 0
+                for value in loader_receipt.get(
+                    "forbidden_semantic_counters", {}
+                ).values()
+            )
+        ):
+            raise PermissionError("forbidden development access was recorded")
         payload_records = [
             record
             for record in inputs.consumed.values()
@@ -608,16 +661,7 @@ def execute(*, repository_root: Path = ROOT) -> Mapping[str, Any]:
                     "reason": "physical_evidence_is_not_configuration_space",
                     "deferred_to": "G3_post_memory_multi_view_fusion",
                 },
-                "raw_access": {
-                    "constructor_reads": progress.get("_raw_constructor_reads", {}),
-                    "model_facing": loader_counts,
-                    "consumed_unique_file_count": len(inputs.consumed),
-                    "consumed_records_sha256": hashlib.sha256(
-                        _canonical_bytes(
-                            [inputs.consumed[name] for name in sorted(inputs.consumed)]
-                        )
-                    ).hexdigest(),
-                },
+                "raw_access": _raw_access_snapshot(inputs, loader, progress),
                 "access": access,
                 "authority": {
                     "development_only": True,
@@ -645,6 +689,7 @@ def execute(*, repository_root: Path = ROOT) -> Mapping[str, Any]:
                     "message": str(error),
                     "traceback": traceback.format_exc(),
                 },
+                "raw_access": _raw_access_snapshot(inputs, loader, progress),
                 "access": access,
                 "authority": {
                     "development_only": True,
