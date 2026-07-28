@@ -170,13 +170,32 @@ def occupied_safety_aux_loss_v2(
 ) -> OccupiedSafetyAuxLossTermsV2:
     """Compute coefficient-one normalized term ``O`` for current and next."""
 
+    return _occupied_safety_aux_loss_with_coefficient_v2(
+        current_logits,
+        current_labels,
+        next_logits,
+        next_labels,
+        coefficient=OCCUPIED_SAFETY_AUX_COEFFICIENT,
+    )
+
+
+def _occupied_safety_aux_loss_with_coefficient_v2(
+    current_logits: Any,
+    current_labels: Any,
+    next_logits: Any,
+    next_labels: Any,
+    *,
+    coefficient: float,
+) -> OccupiedSafetyAuxLossTermsV2:
+    """Shared immutable implementation used by coefficient-frozen variants."""
+
     if current_logits.shape != next_logits.shape:
         raise ValueError("current and next semantic logits must have matching shapes")
     if current_labels.shape != next_labels.shape:
         raise ValueError("current and next semantic labels must have matching shapes")
     current_rows = _occupied_vs_rest_per_row_v2(current_logits, current_labels)
     next_rows = _occupied_vs_rest_per_row_v2(next_logits, next_labels)
-    loss = OCCUPIED_SAFETY_AUX_COEFFICIENT * (
+    loss = coefficient * (
         0.5 * current_rows.mean() + 0.5 * next_rows.mean()
     ) / OCCUPIED_SAFETY_AUX_NORMALIZATION
     return OccupiedSafetyAuxLossTermsV2(
@@ -186,14 +205,15 @@ def occupied_safety_aux_loss_v2(
     )
 
 
-def joint_training_update_v2(
+def _joint_training_update_with_occupied_coefficient_v2(
     model: Any,
     optimizer: Any,
     microbatches: Sequence[Mapping[str, Any]],
     *,
+    occupied_coefficient: float,
     accounting: JointTrainingAccountingV1 | None = None,
 ) -> JointUpdateResultV2:
-    """Accumulate four V1 graphs plus ``O``, then step and EMA once."""
+    """Shared joint update for variants with one frozen ``O`` coefficient."""
 
     torch, semantic_api, survival_api = _v1._runtime_apis()
     _v1._validate_microbatches(torch, microbatches)
@@ -221,11 +241,12 @@ def joint_training_update_v2(
             next_logits,
             batch[NEXT_LABELS_KEY],
         )
-        occupied = occupied_safety_aux_loss_v2(
+        occupied = _occupied_safety_aux_loss_with_coefficient_v2(
             current_logits,
             batch[CURRENT_LABELS_KEY],
             next_logits,
             batch[NEXT_LABELS_KEY],
+            coefficient=occupied_coefficient,
         )
         prediction = model.predict_all_actions_with_survival(current_latent)
         predicted, survival_logits = _v1._prediction_parts(prediction)
@@ -315,7 +336,25 @@ def joint_training_update_v2(
     )
 
 
-def run_fixed_training_v2(
+def joint_training_update_v2(
+    model: Any,
+    optimizer: Any,
+    microbatches: Sequence[Mapping[str, Any]],
+    *,
+    accounting: JointTrainingAccountingV1 | None = None,
+) -> JointUpdateResultV2:
+    """Accumulate four V1 graphs plus coefficient-one ``O``, then step once."""
+
+    return _joint_training_update_with_occupied_coefficient_v2(
+        model,
+        optimizer,
+        microbatches,
+        occupied_coefficient=OCCUPIED_SAFETY_AUX_COEFFICIENT,
+        accounting=accounting,
+    )
+
+
+def _run_fixed_training_core_v2(
     model: Any,
     optimizer: Any,
     loader: Any,
@@ -326,8 +365,10 @@ def run_fixed_training_v2(
     *,
     action_order: Sequence[str] = ACTION_ORDER,
     maximum_updates: int = MAXIMUM_UPDATES,
+    microbatch_builder: Any,
+    joint_update: Any,
 ) -> tuple[JointTrainingAccountingV1, tuple[dict[str, Any], ...], dict[str, Any]]:
-    """Consume the exact V1 cap and schedule with ``O`` active from update one."""
+    """Shared fixed driver with immutable builder and update dependencies."""
 
     if maximum_updates != MAXIMUM_UPDATES or len(schedule) != MAXIMUM_PRESENTATIONS:
         raise PermissionError("training cap or schedule length changed")
@@ -347,7 +388,7 @@ def run_fixed_training_v2(
         if len(update_indices) != PRESENTATIONS_PER_UPDATE:
             raise RuntimeError("training schedule exhausted before update 1000")
         microbatches = [
-            build_microbatch_v1(
+            microbatch_builder(
                 loader,
                 train_pairs,
                 train_labels,
@@ -358,7 +399,7 @@ def run_fixed_training_v2(
             )
             for offset in range(0, PRESENTATIONS_PER_UPDATE, MICROBATCH_SIZE)
         ]
-        result = joint_training_update_v2(
+        result = joint_update(
             model, optimizer, microbatches, accounting=accounting
         )
         accounting = result.accounting
@@ -395,6 +436,35 @@ def run_fixed_training_v2(
         "minimum_gradient_l2": min_gradients,
         "maximum_gradient_l2": max_gradients,
     }
+
+
+def run_fixed_training_v2(
+    model: Any,
+    optimizer: Any,
+    loader: Any,
+    train_pairs: Sequence[Mapping[str, Any]],
+    train_labels: FrozenSurvivalRoleLabelsV1,
+    schedule: Sequence[int],
+    device: Any,
+    *,
+    action_order: Sequence[str] = ACTION_ORDER,
+    maximum_updates: int = MAXIMUM_UPDATES,
+) -> tuple[JointTrainingAccountingV1, tuple[dict[str, Any], ...], dict[str, Any]]:
+    """Consume the exact V1 schedule with coefficient-one ``O`` from update one."""
+
+    return _run_fixed_training_core_v2(
+        model,
+        optimizer,
+        loader,
+        train_pairs,
+        train_labels,
+        schedule,
+        device,
+        action_order=action_order,
+        maximum_updates=maximum_updates,
+        microbatch_builder=build_microbatch_v1,
+        joint_update=joint_training_update_v2,
+    )
 
 
 __all__ = [
