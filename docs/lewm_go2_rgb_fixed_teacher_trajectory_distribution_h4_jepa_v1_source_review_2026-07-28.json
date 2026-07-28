@@ -1,0 +1,131 @@
+{
+  "schema": "lewm_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1_source_review_v1",
+  "status": "PASS_SOURCE_SCIENCE_CLOSURE_AND_CUSTODY_ZERO_FINDINGS",
+  "frozen_source_commit": {
+    "commit": "de660439a890c9074a59e0d67141180a80d9b7a9",
+    "parent": "ce19288530638b2bf0161e0ec8157d4956221cba",
+    "author": "500mhzClub",
+    "committed_at": "2026-07-28T01:49:59+01:00",
+    "subject": "add trajectory-distribution H4 JEPA probe"
+  },
+  "review_scope": {
+    "reviewer": "/root/trajectory_source_review",
+    "frozen_source_and_synthetic_evidence_only": true,
+    "generated_index_rgb_checkpoint_runtime_receipt_or_tensor_access_count": 0,
+    "heldout_sealed_navigation_or_protected_access_count": 0,
+    "predecessor_checkpoint_trace_or_tensor_access_count": 0
+  },
+  "findings": [],
+  "new_file_bindings": [
+    {
+      "path": "docs/lewm_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1_preregistration_2026-07-28.md",
+      "file_sha256": "69554c52b49f7352098bee5c9c286dee9ba74bf23de7f5b90c901c0a9f0c9234",
+      "byte_count": 10552
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "1d07f8f67ab7f3e93534454a2aaf2ff8626f984b5346a2717c1643a331eb6d8e",
+      "byte_count": 15967
+    },
+    {
+      "path": "lewm/tests/test_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "27c2c873200f3e2b480e941a114e7c3a3916daa81b8a1a032b1abfc009cdcc05",
+      "byte_count": 7570
+    },
+    {
+      "path": "lewm/tests/test_run_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "ff5d065769065bfb0966b7116c1e40993ca986a4d133143897998adf80c42f62",
+      "byte_count": 10017
+    },
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "ce133263ec17feae9c729072153567253bd1529c3b27d350cb0c290fc6552b4c",
+      "byte_count": 32000
+    }
+  ],
+  "runtime_source_closure": [
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "ce133263ec17feae9c729072153567253bd1529c3b27d350cb0c290fc6552b4c",
+      "byte_count": 32000
+    },
+    {
+      "path": "scripts/run_go2_recurrent_h4_joint_jepa_v1.py",
+      "file_sha256": "fc35d535e1c07b56c667474e6e10c5c7587fa01e627567148c022331983616fc",
+      "byte_count": 70301
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1.py",
+      "file_sha256": "1d07f8f67ab7f3e93534454a2aaf2ff8626f984b5346a2717c1643a331eb6d8e",
+      "byte_count": 15967
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+      "file_sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30",
+      "byte_count": 23712
+    },
+    {
+      "path": "lewm/models/go2_recurrent_h4_joint_jepa.py",
+      "file_sha256": "ddd84561aba5a36df1255ab942bb29db943cc1bf7b0e496ae41b3d1cdc218f55",
+      "byte_count": 21166
+    },
+    {
+      "path": "lewm/models/encoders.py",
+      "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "byte_count": 7028
+    }
+  ],
+  "scientific_checks": {
+    "genuine_joint_jepa": true,
+    "online_encoder_history_action_mode_decoder_and_head_share_one_backward": true,
+    "fixed_teacher_frozen_outside_optimizer_zero_ema": true,
+    "four_equal_mass_coherent_h1_h4_trajectory_atoms": true,
+    "proper_energy_score_all_ordered_k_squared_pairs_including_diagonal": true,
+    "joint_and_marginal_energy_score_weights": [0.5, 0.5],
+    "selection_matches_combined_training_score": true,
+    "combined_centroid_comparator_tests_distributional_value": true,
+    "zero_head_gives_exact_update_zero_persistence": true,
+    "learned_variance_scale_weights_best_of_k_or_diversity_bonus_absent": true,
+    "control_ranking_reconstruction_semantic_and_navigation_losses_absent": true,
+    "future_rgb_absent_from_online_path": true,
+    "recurrent_bev_warp_flow_offset_cost_volume_retrieval_transport_absent": true,
+    "schedule": {
+      "seed": 20260727,
+      "batch_size": 16,
+      "updates": 1000,
+      "presentations": 16000,
+      "observation_updates": [0, 250, 500, 750, 1000],
+      "retry_or_resume": false
+    }
+  },
+  "verification": {
+    "focused_source_suite": "13_passed_in_5.50_seconds",
+    "focused_plus_dense_and_v3_regression_suite": "36_passed_in_5.60_seconds",
+    "independent_energy_math": "matches_explicit_nested_loop_to_1e-7",
+    "independent_ast_parse": "PASS",
+    "two_step_mode_symmetry_breaking": "PASS",
+    "b16_synthetic_gpu_smoke": {
+      "runtime": "torch_2.9.1+rocm6.4_hip_6.4.43484-123eb5128",
+      "device": "AMD Radeon AI PRO R9700",
+      "atoms_shape": [16, 4, 4, 256, 192],
+      "belief_shape": [16, 1026, 192],
+      "exact_persistence_max_abs": 0.0,
+      "teacher_gradient_tensor_count": 0,
+      "online_gradient_tensor_count": 152,
+      "final_head_gradient_norm": 4.6926798820495605,
+      "first_backward_mode_gradient_norm": 0.0,
+      "peak_allocated_gib": 5.419437408447266,
+      "peak_reserved_gib": 5.87890625,
+      "forward_backward_seconds": 0.8689918959862553,
+      "total_parameter_count": 7847232,
+      "trainable_parameter_count": 5099712,
+      "presentations_optimizer_steps_or_artifact_writes": 0
+    }
+  },
+  "authority": {
+    "source_review_complete": true,
+    "execution_training_gpu_or_rgb_authorized_by_this_receipt": false,
+    "checkpoint_or_tensor_access_authorized": false,
+    "navigation_heldout_sealed_promotion_or_deployment_authorized": false
+  }
+}
