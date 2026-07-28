@@ -253,6 +253,51 @@ def build_swept_progress_masks_v1() -> torch.Tensor:
     return masks
 
 
+def build_current_frame_swept_progress_masks_v1() -> torch.Tensor:
+    """Build the matched current-BEV mask stack for the persistence control."""
+
+    footprint = _projective.DirectionalSupportFootprint(
+        vertices_xy_m=_projective._FOOTPRINT_VERTICES_XY_M
+    )
+    forward_centers, left_centers = _projective._lattice_centers()
+    action_masks: list[torch.Tensor] = []
+    for action in ACTION_ORDER:
+        immediate_poses = _projective._interpolated_action_sweep_v1(
+            footprint, action
+        )
+        bins = [_projective._rasterize_polygon_union(
+            tuple(footprint.vertices_at(pose) for pose in immediate_poses),
+            forward_centers=forward_centers,
+            left_centers=left_centers,
+        ).bool()]
+        endpoint = _projective._integrated_action_endpoint(action)
+        cos_yaw = math.cos(endpoint.yaw_rad)
+        sin_yaw = math.sin(endpoint.yaw_rad)
+        for segment_index in range(CONTINUATION_COUNT):
+            start_distance = segment_index * PROGRESS_SEGMENT_M
+            end_distance = (segment_index + 1) * PROGRESS_SEGMENT_M
+            start = _projective.Pose2D(
+                endpoint.x_m + start_distance * cos_yaw,
+                endpoint.y_m + start_distance * sin_yaw,
+                endpoint.yaw_rad,
+            )
+            end = _projective.Pose2D(
+                endpoint.x_m + end_distance * cos_yaw,
+                endpoint.y_m + end_distance * sin_yaw,
+                endpoint.yaw_rad,
+            )
+            samples = _continuation_segment_poses_v1(footprint, start, end)
+            bins.append(_projective._rasterize_polygon_union(
+                tuple(footprint.vertices_at(pose) for pose in samples),
+                forward_centers=forward_centers,
+                left_centers=left_centers,
+            ).bool())
+        action_masks.append(torch.stack(bins))
+    masks = torch.stack(action_masks).contiguous()
+    _validate_swept_progress_masks_v1(masks)
+    return masks
+
+
 def at_risk_survival_bce_loss_v1(
     logits: torch.Tensor,
     immediate_feasible: torch.Tensor,
@@ -422,6 +467,7 @@ __all__ = [
     "SURVIVAL_LOGIT_COUNT",
     "SurvivalScoreTermsV1",
     "at_risk_survival_bce_loss_v1",
+    "build_current_frame_swept_progress_masks_v1",
     "build_swept_progress_masks_v1",
     "joint_survival_loss_v1",
     "prefix_ranking_loss_v1",

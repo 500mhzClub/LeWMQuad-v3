@@ -112,6 +112,23 @@ def test_swept_progress_masks_preserve_reviewed_geometry_and_identity() -> None:
         "11ae5e26b182da85c8a7ca866ee4914c72b5b84b8b601dd807903097d754485c"
     )
 
+    current_masks = api.build_current_frame_swept_progress_masks_v1()
+    assert current_masks.shape == (9, 16, 64, 64)
+    assert current_masks.dtype == torch.bool
+    assert current_masks.device.type == "cpu"
+    assert current_masks.is_contiguous()
+    assert bool(current_masks.flatten(start_dim=2).any(dim=-1).all())
+    assert not torch.equal(current_masks[0, 1:], current_masks[1, 1:])
+    assert torch.equal(
+        masks[:, 1:], masks[0, 1:].unsqueeze(0).expand_as(masks[:, 1:])
+    )
+    current_identity = hashlib.sha256(
+        bytes(current_masks.to(torch.uint8).reshape(-1).tolist())
+    ).hexdigest()
+    assert current_identity == (
+        "c4b8c475032433e448cd7df9decfead2c0800426219098f45306a0540154d2ff"
+    )
+
 
 def test_ranking_uses_all_better_non_hold_pairs_and_gradients_point_correctly() -> None:
     prefixes = torch.full((1, 9), 5, dtype=torch.long)
