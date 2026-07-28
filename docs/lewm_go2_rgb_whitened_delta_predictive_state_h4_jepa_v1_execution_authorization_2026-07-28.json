@@ -1,0 +1,96 @@
+{
+  "schema": "lewm_go2_rgb_whitened_delta_predictive_state_h4_jepa_v1_execution_authorization_v1",
+  "date": "2026-07-28",
+  "status": "AUTHORIZED_EXACTLY_ONE_PREFLIGHT_THEN_ONE_FRESH_CAPPED_EXECUTION",
+  "authority_basis": {
+    "user_standing_authority": "The user authorized autonomous scientific iteration and scientific-scope changes while metrics improve, within a perception-only learned JEPA for held-out-maze navigation, directed inspection and use of the main training pool, and directed continuation until the goal is met.",
+    "frozen_source_commit": "bc889a3fb6f7cf29ea6b2b2c6b45ddd4b4d83a12",
+    "source_review": {
+      "path": "docs/lewm_go2_rgb_whitened_delta_predictive_state_h4_jepa_v1_source_review_2026-07-28.json",
+      "file_sha256": "5d8ec3031ca2b0f782a79ffa2cbfbeaeb557a606c8bf70e2a76c759371fd974b",
+      "byte_count": 6460,
+      "status": "PASS_SOURCE_SCIENCE_CLOSURE_AND_CUSTODY_RESOLVED_FINDINGS"
+    }
+  },
+  "runtime": {
+    "working_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3",
+    "python": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-torch291-rocm64/bin/python",
+    "torch": "2.9.1+rocm6.4",
+    "hip": "6.4.43484-123eb5128",
+    "pillow": "10.2.0",
+    "accelerator": "AMD Radeon AI PRO R9700",
+    "visible_device_index": 0,
+    "precision": "float32_no_autocast",
+    "environment": {
+      "HIP_VISIBLE_DEVICES": "0",
+      "ROCR_VISIBLE_DEVICES": "0",
+      "CUDA_VISIBLE_DEVICES": "0",
+      "GPU_DEVICE_ORDINAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "LEWM_WDPS_H4_WRAPPER_SHA256": "00ccb04b0541a597b4a9b73e55c4c9cf6daa40d1ea07728a058afe2473397746",
+      "LEWM_WDPS_H4_WRAPPER_BYTES": "38611"
+    },
+    "unset_environment": [
+      "HSA_OVERRIDE_GFX_VERSION",
+      "PYTHONHOME",
+      "PYTHONPATH",
+      "PYTHONSTARTUP",
+      "PYTHONUSERBASE"
+    ]
+  },
+  "preflight": {
+    "authorized_count": 1,
+    "arguments": ["--preflight-only", "--device", "cuda"],
+    "may_open": [
+      "bound_main_pool_census_receipt",
+      "bound_train_index",
+      "bound_validation_index",
+      "bound_six_file_runtime_source_closure",
+      "bound_accepted_n320_initialization_checkpoint"
+    ],
+    "required_receipt": "PREFLIGHT_PASS_NO_OUTPUT_RESERVED_NO_RGB_OPENED"
+  },
+  "execution": {
+    "authorized_fresh_attempt_count": 1,
+    "arguments": ["--execute", "--device", "cuda"],
+    "output_root": ".generated/go2_rgb_whitened_delta_predictive_state_h4_jepa_v1/probe_v1",
+    "output_root_must_be_absent_before_launch": true,
+    "optimizer_updates": 1000,
+    "effective_batch_size": 16,
+    "training_presentations": 16000,
+    "validation_presentations": 10240,
+    "observation_updates": [0, 250, 500, 750, 1000],
+    "maximum_gpu_active_seconds": 5400,
+    "only_checkpoint_input": "exact_bound_accepted_n320_encoder_prefix",
+    "predecessor_predictor_checkpoint_input_count": 0,
+    "retry_resume_replacement_second_seed_or_cli_override": false
+  },
+  "frozen_science": {
+    "target": "shared_zero_preserving_D8_pool_of_fixed_N320_future_minus_e2_patch_deltas",
+    "prediction": "dense_three_RGB_frame_history_plus_ordered_action_prefix",
+    "joint_training": "online_encoder_history_action_predictor_and_target_pool_one_optimizer_one_backward",
+    "loss": "25_similarity+25_mean_variance_floor+25_mean_zero_mean+1_mean_covariance+1_history_teacher_alignment",
+    "target_value_calibration": "orthonormal_rows_times_fixed_sqrt_256_spatial_averaging_compensation",
+    "selection": "minimum_mean_H1_H4_normalized_error_among_eligible_noncollapsed_bounded_zero_mean_states"
+  },
+  "prohibited": [
+    "heldout_test_or_sealed_access",
+    "label_semantic_pose_depth_flow_map_or_navigation_target_access",
+    "dataset_or_index_regeneration_reordering_filtering_or_substitution",
+    "predecessor_checkpoint_trace_or_tensor_access",
+    "navigation_g2_g8_qualification_promotion_production_or_deployment",
+    "schedule_loss_threshold_seed_state_width_or_architecture_change",
+    "retry_resume_extension_replacement_second_seed_or_same_mechanism_v2"
+  ],
+  "terminal_rules": {
+    "preflight_failure": "Do not execute; no attempt is consumed because the output root is not reserved.",
+    "post_reservation_termination": "Consumes the sole execution attempt regardless of outcome.",
+    "stop": "Closes this exact WDPS-D8 formulation; every written checkpoint remains inaccessible.",
+    "pass": "Establishes bounded compact predictive-state JEPA feasibility only; checkpoint access, navigation, held-out evaluation, promotion, and deployment remain unauthorized."
+  }
+}
