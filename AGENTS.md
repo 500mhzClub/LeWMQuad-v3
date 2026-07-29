@@ -218,6 +218,28 @@ These instructions apply to the entire repository.
   qualification, probability-calibration, G2, navigation, held-out,
   production, promotion, deployment, retry, resume, recovery, extension,
   second-integrity-replacement, or further-attempt authority.
+- The RGB ego-motion-aligned ray-consistency joint-JEPA V16 integrity
+  replacement V2 source may additionally be clean exported only from frozen
+  source-and-review commit
+  `5a86cb20332d5cd353c0a850f8d81ca002381041`, and only as (a) the 88 paths
+  in its committed recursive source manifest and (b) the eighteen V2/V1
+  preregistration, predecessor identity/failure witnesses, manifest,
+  source-review, recursive-checker, and focused V16 test paths explicitly
+  enumerated and SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_integrity_replacement_v2_clean_export_certification_2026-07-29.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied V14/V15/V16/V1 predecessor documents are
+  source-only identity evidence and grant no predecessor runtime-output,
+  checkpoint, resume, or execution authority. The V2 certification itself and
+  later one-shot authority may be added to the narrow export only at their
+  exact reviewed paths after their respective commits and exact
+  file-SHA-256 validation. This source-only exception grants no
+  generated-input, runtime-artifact, checkpoint, tensor, schedule, dataset,
+  RGB, GPU, training, qualification, probability-calibration, G2, navigation,
+  held-out, production, promotion, deployment, retry, resume, recovery,
+  extension, further-integrity-replacement, or further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
