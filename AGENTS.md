@@ -132,6 +132,27 @@ These instructions apply to the entire repository.
   runtime-artifact, checkpoint, tensor, dataset, RGB, GPU, training,
   qualification, probability-calibration, G2, navigation, held-out,
   production, promotion, deployment, retry, or resume authority.
+- The RGB unified ray-survival joint-JEPA V15 extended-horizon source may
+  additionally be clean exported only from frozen source-and-review commit
+  `7c9ac5a91fdcc3a620e3e9c9bbbaa88141ca2aa5`, and only as (a) the 86 paths
+  in its committed recursive source manifest and (b) the fourteen
+  preregistration, frozen-V14 source/result identity-witness, manifest,
+  source-review, checker, and focused V15 test paths explicitly enumerated
+  and SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_clean_export_certification_2026-07-29.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied V13/V14 preregistration, V14 clean-export
+  certification, and V14 scientific-result witnesses are source-only
+  identity evidence and grant no predecessor runtime-output or execution
+  authority. The V15 certification itself and later one-shot authority may
+  be added to the narrow export only at their exact reviewed paths after
+  their respective commits and exact file-SHA-256 validation. This
+  source-only exception grants no generated-input, runtime-artifact,
+  checkpoint, tensor, schedule, dataset, RGB, GPU, training, qualification,
+  probability-calibration, G2, navigation, held-out, production, promotion,
+  deployment, retry, resume, or further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
