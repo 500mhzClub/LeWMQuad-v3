@@ -42,6 +42,23 @@ SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
     "source_closure.py"
 )
+EXECUTOR_MODULE_NAME = (
+    "scripts.execute_go2_rgb_swept_progress_survival_joint_jepa_v13_"
+    "camera_evidence_bottleneck"
+)
+MODEL_MODULE_NAME = (
+    "lewm.models.geometry_anchored_swept_progress_survival_joint_jepa_v13_"
+    "camera_evidence_bottleneck"
+)
+TRAINING_MODULE_NAME = (
+    "scripts.run_go2_rgb_swept_progress_survival_joint_jepa_v13_"
+    "camera_evidence_bottleneck"
+)
+SOURCE_EVIDENCE_SCHEMA_PREFIX = (
+    "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13"
+)
+EXPERIMENT_ARM_NAME = "camera_evidence_bottleneck_v13"
+LAUNCHER_SCHEMA = f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_launcher_v1"
 ALLOWED_LABEL_ROLES = ("train", "checkpoint_selection")
 FORBIDDEN_LABEL_ROLE = "probability_calibration"
 EXPERIMENT_SEED = 20_260_728
@@ -350,7 +367,7 @@ def _validate_source_evidence_v13(
     manifest_identity = _manifest_identity_v13(manifest, manifest_raw)
     if (
         manifest.get("schema")
-        != "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_source_manifest"
+        != f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_source_manifest"
         or manifest.get("status") != "SOURCE_ONLY_RECURSIVE_CLOSURE"
         or type(source_bindings) is not list
         or manifest.get("source_count") != len(source_bindings)
@@ -378,7 +395,7 @@ def _validate_source_evidence_v13(
     if (
         set(review) != expected_review_keys
         or review.get("schema")
-        != "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_source_review_v1"
+        != f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_source_review_v1"
         or review.get("status") != "PASS_SOURCE_ONLY"
         or review.get("source_only") is not True
         or type(reviewed_commit) is not str
@@ -408,10 +425,7 @@ def _validate_source_evidence_v13(
     if (
         set(certification) != expected_certification_keys
         or certification.get("schema")
-        != (
-            "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-            "clean_export_certification_v1"
-        )
+        != f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_clean_export_certification_v1"
         or certification.get("status") != "PASS_EXACT_NARROW_SOURCE_EXPORT"
         or certification.get("source_only") is not True
         or certification.get("frozen_source_and_review_commit")
@@ -902,7 +916,7 @@ def _build_one_microbatch_v13(
         runtime.raw_inputs,
         [str(pair["current_endpoint_sha256"]) for pair in selected],
         role="train",
-        arm="camera_evidence_bottleneck_v13",
+        arm=EXPERIMENT_ARM_NAME,
         stage=stage,
         torch=runtime.torch,
     )
@@ -910,7 +924,7 @@ def _build_one_microbatch_v13(
         runtime.raw_inputs,
         [str(pair["next_endpoint_sha256"]) for pair in selected],
         role="train",
-        arm="camera_evidence_bottleneck_v13",
+        arm=EXPERIMENT_ARM_NAME,
         stage=stage,
         torch=runtime.torch,
     )
@@ -1311,7 +1325,13 @@ class V13ComposedRuntime:
         self._initialized = True
         rng_before = self.torch.random.get_rng_state().clone()
         cuda_rng_before = [value.clone() for value in self.torch.cuda.get_rng_state_all()]
-        model = self.model_module.GeometryAnchoredSweptProgressSurvivalJointJepaV13(
+        model_class_name = getattr(self.executor_api, "MODEL_CLASS_NAME", None)
+        if not isinstance(model_class_name, str):
+            raise RuntimeError("V13 executor-selected model class is absent")
+        model_class = getattr(self.model_module, model_class_name, None)
+        if not isinstance(model_class, type):
+            raise RuntimeError("V13 executor-selected model class is absent")
+        model = model_class(
             self.n320_fit,
             self.sweep_masks,
         )
@@ -1694,10 +1714,7 @@ def compose_runtime_v13(
     repository = Path(repository_root).absolute()
     if repository.resolve() != ROOT.resolve():
         raise PermissionError("V13 launcher accepts only its certified export root")
-    executor_api = importlib.import_module(
-        "scripts.execute_go2_rgb_swept_progress_survival_joint_jepa_v13_"
-        "camera_evidence_bottleneck"
-    )
+    executor_api = importlib.import_module(EXECUTOR_MODULE_NAME)
     executor_api.validate_content_bound_v13(reservation)
     executor_api.validate_future_execution_prerequisites_v13(authority)
     runtime_data_root = _validate_runtime_data_root_v13(repository, authority)
@@ -1747,14 +1764,8 @@ def compose_runtime_v13(
     labels_api = importlib.import_module(
         "lewm.benchmarks.go2_swept_progress_survival_labels_v1"
     )
-    model_module = importlib.import_module(
-        "lewm.models.geometry_anchored_swept_progress_survival_joint_jepa_v13_"
-        "camera_evidence_bottleneck"
-    )
-    training_module = importlib.import_module(
-        "scripts.run_go2_rgb_swept_progress_survival_joint_jepa_v13_"
-        "camera_evidence_bottleneck"
-    )
+    model_module = importlib.import_module(MODEL_MODULE_NAME)
+    training_module = importlib.import_module(TRAINING_MODULE_NAME)
     survival_scoring = importlib.import_module(
         "lewm.benchmarks.go2_swept_progress_survival_joint_jepa_v1"
     )
@@ -2050,10 +2061,7 @@ def execute_future_authorized_v13(
         raise PermissionError("V13 execution must run from its certified source export")
     _validate_certified_source_root_v13(repository, authority)
     _activate_certified_source_root_v13(repository)
-    executor_api = importlib.import_module(
-        "scripts.execute_go2_rgb_swept_progress_survival_joint_jepa_v13_"
-        "camera_evidence_bottleneck"
-    )
+    executor_api = importlib.import_module(EXECUTOR_MODULE_NAME)
     fixed_authority = _load_authority_file_v13(ROOT / AUTHORITY_RELATIVE_PATH)
     if type(authority) is not dict or authority != fixed_authority:
         raise PermissionError("supplied V13 authority differs from the fixed document")
@@ -2124,7 +2132,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             json.dumps(
                 {
-                    "schema": "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_launcher_v1",
+                    "schema": LAUNCHER_SCHEMA,
                     "status": "DENIED_NO_FUTURE_AUTHORITY",
                     "scientific_payload_opened": False,
                     "reservation_created": False,

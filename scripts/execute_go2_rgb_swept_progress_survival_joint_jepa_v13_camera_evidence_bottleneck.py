@@ -153,6 +153,12 @@ FINAL_PHYSICAL_THRESHOLDS = {
     "rough_depth_p95_m_strictly_less_than": 0.9777327477931971,
 }
 
+# Optional successor-only hook.  The frozen V13 path leaves this unset, so its
+# update-400 decision and receipt remain unchanged.  A privately loaded
+# successor executor may install exact matched-control thresholds without
+# mutating the process-global V13 module.
+MATCHED_UPDATE400_THRESHOLDS: Mapping[str, int | float] | None = None
+
 # These are the preregistered parent implementations that define the fine
 # losses and physical metric arithmetic.  V13's own recursive closure must be
 # independently bound later; these entries do not grant execution authority.
@@ -1013,6 +1019,7 @@ def evaluate_update400_gate_v13(
     controls: Mapping[str, Mapping[str, bool]],
     *,
     integrity_pass: bool,
+    matched_update400_thresholds: Mapping[str, int | float] | None = None,
 ) -> dict[str, Any]:
     if type(integrity_pass) is not bool:
         raise TypeError("update-400 structural-integrity decision must be Boolean")
@@ -1049,8 +1056,46 @@ def evaluate_update400_gate_v13(
             sum(rough_checks.values()) >= 2,
         "all_twelve_causal_control_checks_true": all(control_checks.values()),
     }
+    matched = (
+        MATCHED_UPDATE400_THRESHOLDS
+        if matched_update400_thresholds is None
+        else matched_update400_thresholds
+    )
+    if matched is not None:
+        expected = {
+            "passed_margin_count_strictly_greater_than",
+            "total_shortfall_strictly_less_than",
+            "rough_depth_p95_m_strictly_less_than",
+        }
+        if type(matched) is not dict or set(matched) != expected:
+            raise ValueError("matched update-400 threshold schema changed")
+        passed_threshold = matched[
+            "passed_margin_count_strictly_greater_than"
+        ]
+        if type(passed_threshold) is not int or not 0 <= passed_threshold < PHYSICAL_MARGIN_COUNT:
+            raise ValueError("matched update-400 margin threshold is invalid")
+        shortfall_threshold = _finite(
+            matched["total_shortfall_strictly_less_than"],
+            name="matched update-400 total shortfall threshold",
+        )
+        depth_threshold = _finite(
+            matched["rough_depth_p95_m_strictly_less_than"],
+            name="matched update-400 rough depth p95 threshold",
+        )
+        if shortfall_threshold <= 0.0 or depth_threshold <= 0.0:
+            raise ValueError("matched update-400 continuous thresholds must be positive")
+        checks.update(
+            {
+                "passed_physical_margin_count_strictly_above_matched_update400":
+                    after["passed_margin_count"] > passed_threshold,
+                "total_physical_shortfall_strictly_below_matched_update400":
+                    after["total_shortfall"] < shortfall_threshold,
+                "rough_depth_p95_strictly_below_matched_update400":
+                    rough_after["depth_p95_m"] < depth_threshold,
+            }
+        )
     passed = all(checks.values())
-    return {
+    result = {
         "schema": f"{SCHEMA_PREFIX}_update400_directional_gate_v1",
         "checks": checks,
         "rough_direction_checks": rough_checks,
@@ -1061,6 +1106,9 @@ def evaluate_update400_gate_v13(
         "retry_authorized": False,
         "resume_authorized": False,
     }
+    if matched is not None:
+        result["matched_update400_thresholds"] = dict(matched)
+    return result
 
 
 def evaluate_final_gate_v13(
@@ -2029,6 +2077,9 @@ def run_future_authorized_engine_v13(
                     observations[400]["physical"],
                     controls,
                     integrity_pass=structural_pass,
+                    matched_update400_thresholds=(
+                        MATCHED_UPDATE400_THRESHOLDS
+                    ),
                 )
                 trace.append(
                     {
