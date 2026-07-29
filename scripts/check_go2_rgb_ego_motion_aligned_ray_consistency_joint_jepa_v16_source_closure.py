@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify the V16 ray-consistency recursive source closure."""
+"""Build or verify the V17 delayed ray-consistency source closure."""
 from __future__ import annotations
 
 import argparse
@@ -17,12 +17,12 @@ BASE_CHECKER_PATH = (
 )
 MANIFEST_PATH = (
     ROOT
-    / "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2_source_manifest_2026-07-29.json"
+    / "docs/lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17_source_manifest_2026-07-29.json"
 )
 SCHEMA = (
-    "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2_source_manifest"
+    "lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17_source_manifest"
 )
 
 
@@ -148,7 +148,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             _write_manifest_exclusive(manifest)
         return 0
     verify_manifest(require_tracked=args.require_tracked)
-    print("Go2 RGB V16 ego-motion-aligned ray-consistency source closure: PASS")
+    print("Go2 RGB V17 delayed ray-consistency source closure: PASS")
     return 0
 
 

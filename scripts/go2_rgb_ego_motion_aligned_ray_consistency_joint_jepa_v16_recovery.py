@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Narrow full-state recovery seam for the preregistered V16 joint JEPA.
+"""Narrow full-state recovery seam for the preregistered V17 joint JEPA.
 
 This module performs no discovery, data access, accelerator selection, or
 execution.  The reviewed caller supplies the live Torch API, exact V13
@@ -22,11 +22,11 @@ from scripts import (
 
 
 SCHEMA_PREFIX_V16 = (
-    "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2"
+    "lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17"
 )
 PREREGISTRATION_COMMIT_V16 = (
-    "9f713b44459b0db7835fe652d8fcf426cf7cc250"
+    "eddd958c1f10f5b1e603e306d1a1c14e4583c2eb"
 )
 RECOVERY_UPDATES_V16 = (400, 1_000)
 PRESENTATIONS_PER_UPDATE_V16 = 16

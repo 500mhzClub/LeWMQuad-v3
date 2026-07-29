@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Denied-by-default executor adapter for V16 ray consistency."""
+"""Denied-by-default executor adapter for V17 delayed ray consistency."""
 from __future__ import annotations
 
 import json
@@ -26,18 +26,40 @@ PRIVATE_V14_MODULE_NAME = f"{__name__}.__private_v14_executor"
 _PUBLIC_V14_WAS_LOADED_BEFORE_ADAPTER = V14_PUBLIC_MODULE_NAME in sys.modules
 
 SCHEMA_PREFIX = (
-    "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2"
+    "lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17"
 )
-PREREGISTRATION_COMMIT = "9f713b44459b0db7835fe652d8fcf426cf7cc250"
+PREREGISTRATION_COMMIT = "eddd958c1f10f5b1e603e306d1a1c14e4583c2eb"
 PREREGISTRATION_PATH = (
+    "docs/lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17_preregistration_2026-07-29.md"
+)
+PREREGISTRATION_FILE_SHA256 = (
+    "7a6920167a12be721734764fdf6f3b9561ff0780897fce590bed50bcaee554c9"
+)
+PREREGISTRATION_BYTE_COUNT = 5_129
+V16_IR2_PREREGISTRATION_COMMIT = (
+    "9f713b44459b0db7835fe652d8fcf426cf7cc250"
+)
+V16_IR2_PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
     "integrity_replacement_v2_preregistration_2026-07-29.md"
 )
-PREREGISTRATION_FILE_SHA256 = (
+V16_IR2_PREREGISTRATION_FILE_SHA256 = (
     "7bd26e2133bfa29ecd72499a5cf39a559bef530150d104afd7998361e3227a2d"
 )
-PREREGISTRATION_BYTE_COUNT = 5_237
+V16_IR2_PREREGISTRATION_BYTE_COUNT = 5_237
+V16_IR2_SCIENTIFIC_RESULT_COMMIT = (
+    "5f5092f528beafe5c3c8ded67b0e368f1a2d992e"
+)
+V16_IR2_SCIENTIFIC_RESULT_PATH = (
+    "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
+    "integrity_replacement_v2_scientific_result_2026-07-29.json"
+)
+V16_IR2_SCIENTIFIC_RESULT_FILE_SHA256 = (
+    "e858c0473ea6f159a1697732d658ae495ec5ee88813d2dd9b5f4769ea5ef92e8"
+)
+V16_IR2_SCIENTIFIC_RESULT_BYTE_COUNT = 10_681
 V1_PREREGISTRATION_COMMIT = "2ac4b08d94ee249ae42194b3c737190d39fd2396"
 V1_PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
@@ -90,11 +112,12 @@ V15_RESULT_FILE_SHA256 = (
 )
 V15_RESULT_BYTE_COUNT = 10_935
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2/attempt_v1"
+    ".generated/go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17/attempt_v1"
 )
 MODEL_CLASS_NAME = "GeometryAnchoredSweptProgressSurvivalJointJepaV14"
 REALIZED_RELATIVE_SE2_KEY = "realized_relative_se2_current_frame"
+RAY_CONSISTENCY_ONSET_UPDATE_V17 = 101
 
 MATCHED_UPDATE400_THRESHOLDS = {
     "passed_margin_count_strictly_greater_than": 71,
@@ -167,11 +190,20 @@ _base = _load_private_v14_executor()
 _assert_pristine_v14_defaults(_base)
 _engine = _base._engine
 _original_validate_update_integrity = _engine._validate_update_integrity_v13
+_original_validate_training_api = _engine.validate_training_api_v13
 
 _bound_parent_sources = dict(_engine.BOUND_PARENT_SOURCES)
 _bound_parent_sources[PREREGISTRATION_PATH] = (
     PREREGISTRATION_FILE_SHA256,
     PREREGISTRATION_BYTE_COUNT,
+)
+_bound_parent_sources[V16_IR2_PREREGISTRATION_PATH] = (
+    V16_IR2_PREREGISTRATION_FILE_SHA256,
+    V16_IR2_PREREGISTRATION_BYTE_COUNT,
+)
+_bound_parent_sources[V16_IR2_SCIENTIFIC_RESULT_PATH] = (
+    V16_IR2_SCIENTIFIC_RESULT_FILE_SHA256,
+    V16_IR2_SCIENTIFIC_RESULT_BYTE_COUNT,
 )
 _bound_parent_sources[V1_PREREGISTRATION_PATH] = (
     V1_PREREGISTRATION_FILE_SHA256,
@@ -212,7 +244,7 @@ _engine.DEVELOPMENT_CHECKPOINT_BINDING_RELATIVE_PATH = (
 )
 _engine.CURRENT_EXECUTION_AUTHORIZED = False
 _engine.CURRENT_EXECUTION_DENIAL = (
-    "V16 scientific execution is denied until recursive source closure, "
+    "V17 scientific execution is denied until recursive source closure, "
     "independent review, narrow clean-export certification, and one-shot "
     "execution authority are committed and validated"
 )
@@ -226,7 +258,7 @@ def validate_update_integrity_v16(
     update: int,
     access_receipt: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Retain every V13 integrity check and validate the two V16 loss fields."""
+    """Retain every V13 check and validate the fixed V17 loss schedule."""
 
     losses = dict(result.mean_losses)
     old_names = {"S", "P", "U", "R", "O", "N", "C", "L"}
@@ -239,13 +271,14 @@ def validate_update_integrity_v16(
         for value in losses.values()
     ):
         raise FloatingPointError("V16 mean-loss receipt is nonfinite")
+    loss_weight = 0.0 if update < RAY_CONSISTENCY_ONSET_UPDATE_V17 else 0.1
     if losses["M"] < -1e-7 or not math.isclose(
         losses["C"],
-        losses["C_base"] + 0.1 * losses["M"],
+        losses["C_base"] + loss_weight * losses["M"],
         rel_tol=2e-6,
         abs_tol=2e-6,
     ):
-        raise RuntimeError("V16 Camera loss equation changed")
+        raise RuntimeError("V17 Camera loss schedule changed")
 
     proxy_values = dict(vars(result))
     proxy_values["mean_losses"] = {
@@ -279,7 +312,7 @@ def validate_update_integrity_v16(
         "shared_valid_cell_count": valid_count,
         "positive_weight_cell_count": weighted_count,
         "weight_sum": float(weight_sum),
-        "loss_weight": 0.1,
+        "loss_weight": loss_weight,
     }
     return receipt
 
@@ -360,7 +393,27 @@ def validate_bound_sources_v16(
 
 
 validate_model_api_v16 = _engine.validate_model_api_v13
-validate_training_api_v16 = _engine.validate_training_api_v13
+
+
+def validate_training_api_v16(module: Any) -> dict[str, Any]:
+    receipt = _original_validate_training_api(module)
+    weight_reader = getattr(module, "ray_consistency_weight_v17", None)
+    if (
+        getattr(module, "RAY_CONSISTENCY_ONSET_UPDATE_V17", None)
+        != RAY_CONSISTENCY_ONSET_UPDATE_V17
+        or not callable(weight_reader)
+        or weight_reader(1) != 0.0
+        or weight_reader(100) != 0.0
+        or weight_reader(101) != 0.1
+        or weight_reader(1_000) != 0.1
+    ):
+        raise RuntimeError("V17 delayed-onset training API changed")
+    return {
+        **receipt,
+        "ray_consistency_onset_update": RAY_CONSISTENCY_ONSET_UPDATE_V17,
+    }
+
+
 validate_future_execution_prerequisites_v16 = (
     _engine.validate_future_execution_prerequisites_v13
 )
@@ -399,6 +452,7 @@ def evaluate_update400_gate_v16(
 
 
 _engine.evaluate_update400_gate_v13 = evaluate_update400_gate_v16
+_engine.validate_training_api_v13 = validate_training_api_v16
 evaluate_final_gate_v16 = _engine.evaluate_final_gate_v13
 validate_schedule_v16 = _engine.validate_schedule_v13
 validate_attempt_reservation_v16 = _engine.validate_attempt_reservation_v13
@@ -447,6 +501,8 @@ def private_adapter_receipt_v16() -> dict[str, Any]:
         "public_v14_loaded_by_adapter": False,
         "private_module_registered": PRIVATE_V14_MODULE_NAME in sys.modules,
         "preregistration_commit": PREREGISTRATION_COMMIT,
+        "v16_ir2_preregistration_commit": V16_IR2_PREREGISTRATION_COMMIT,
+        "v16_ir2_scientific_result_commit": V16_IR2_SCIENTIFIC_RESULT_COMMIT,
         "v1_preregistration_commit": V1_PREREGISTRATION_COMMIT,
         "v1_terminal_failure_result_commit": (
             V1_TERMINAL_FAILURE_RESULT_COMMIT
@@ -461,6 +517,7 @@ def private_adapter_receipt_v16() -> dict[str, Any]:
         "output_root": OUTPUT_ROOT_RELATIVE_PATH,
         "model_class": MODEL_CLASS_NAME,
         "ray_consistency_weight": 0.1,
+        "ray_consistency_onset_update": RAY_CONSISTENCY_ONSET_UPDATE_V17,
         "execution_authorized": False,
     }
 
@@ -468,7 +525,7 @@ def private_adapter_receipt_v16() -> dict[str, Any]:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = tuple(sys.argv[1:] if argv is None else argv)
     if arguments:
-        raise ValueError("the denied V16 source shell accepts no arguments")
+        raise ValueError("the denied V17 source shell accepts no arguments")
     print(json.dumps(execution_denial_receipt_v16(), sort_keys=True))
     return 4
 

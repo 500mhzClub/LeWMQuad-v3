@@ -67,6 +67,22 @@ def _microbatches() -> tuple[dict[str, torch.Tensor], ...]:
     return tuple(_one_microbatch(0.01 * index) for index in range(4))
 
 
+def _accounting_after(completed_updates: int) -> Any:
+    return runner.JointTrainingAccountingV13(
+        updates=completed_updates,
+        presentations=16 * completed_updates,
+        microbatch_graphs=4 * completed_updates,
+        backward_calls=8 * completed_updates,
+        camera_route_grad_calls=4 * completed_updates,
+        joint_route_grad_calls=4 * completed_updates,
+        camera_frame_objectives=32 * completed_updates,
+        optimizer_steps=completed_updates,
+        ema_steps=completed_updates,
+        predictor_forwards=4 * completed_updates,
+        predictor_objectives=4 * completed_updates,
+    )
+
+
 class _TinyModel(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -238,6 +254,38 @@ def test_adapter_preserves_caps_and_executor_compatibility_hooks() -> None:
     assert runner._validate_microbatches_v13 is runner._validate_microbatches_v16
 
 
+def test_delayed_onset_weight_has_one_exact_boundary() -> None:
+    assert runner.RAY_CONSISTENCY_ONSET_UPDATE_V17 == 101
+    assert runner.ray_consistency_weight_v17(1) == 0.0
+    assert runner.ray_consistency_weight_v17(100) == 0.0
+    assert runner.ray_consistency_weight_v17(101) == 0.1
+    assert runner.ray_consistency_weight_v17(1_000) == 0.1
+    for update in (0, 1_001, True):
+        with pytest.raises(ValueError, match="integer in"):
+            runner.ray_consistency_weight_v17(update)
+
+
+def test_update100_computes_m_but_does_not_add_it_to_camera_loss(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = _TinyModel()
+    partition, _ = _install_tiny_update_apis(monkeypatch, model)
+    optimizer = _CountingSgd(list(partition.online))
+    model.ema_update_count.fill_(99)
+    result = runner.joint_training_update_v16(
+        model,
+        optimizer,
+        _microbatches(),
+        accounting=_accounting_after(99),
+    )
+
+    assert result.accounting.updates == 100
+    assert result.mean_losses["M"] > 0.0
+    assert result.mean_losses["C"] == pytest.approx(
+        result.mean_losses["C_base"]
+    )
+
+
 def test_one_update_routes_weighted_m_only_through_camera_and_receipts(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -252,18 +300,21 @@ def test_one_update_routes_weighted_m_only_through_camera_and_receipts(
         return original_grad(*args, **kwargs)
 
     monkeypatch.setattr(torch.autograd, "grad", counted_grad)
+    model.ema_update_count.fill_(100)
     result = runner.joint_training_update_v16(
         model,
         optimizer,
         _microbatches(),
+        accounting=_accounting_after(100),
     )
 
     assert grad_calls == [1, 3] * 4
     assert optimizer.step_calls == 1
-    assert int(model.ema_update_count.item()) == 1
+    assert int(model.ema_update_count.item()) == 101
+    assert result.accounting.updates == 101
     assert result.optimizer_steps_this_update == result.ema_steps_this_update == 1
-    assert result.accounting.camera_route_grad_calls == 4
-    assert result.accounting.joint_route_grad_calls == 4
+    assert result.accounting.camera_route_grad_calls == 404
+    assert result.accounting.joint_route_grad_calls == 404
     assert result.target_gradient_tensor_count == 0
     assert model.target_parameter.grad is None
     assert len(realized_rows) == 4

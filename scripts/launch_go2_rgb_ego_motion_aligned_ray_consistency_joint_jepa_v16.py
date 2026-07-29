@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Denied-by-default one-shot launcher for V16 ray consistency.
+"""Denied-by-default one-shot launcher for V17 delayed ray consistency.
 
 The reviewed V13 launcher retains custody, data loading, evaluation, and
 write-once publication.  This adapter changes the experiment selectors and
@@ -22,20 +22,20 @@ BASE_LAUNCHER_RELATIVE_PATH = (
     "camera_evidence_bottleneck.py"
 )
 AUTHORITY_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2_execution_authorization_2026-07-29.json"
+    "docs/lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17_execution_authorization_2026-07-29.json"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2_source_manifest_2026-07-29.json"
+    "docs/lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17_source_manifest_2026-07-29.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2_source_review_2026-07-29.json"
+    "docs/lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17_source_review_2026-07-29.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2_clean_export_certification_2026-07-29.json"
+    "docs/lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17_clean_export_certification_2026-07-29.json"
 )
 SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
@@ -52,11 +52,11 @@ TRAINING_MODULE_NAME = (
     "scripts.run_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16"
 )
 SOURCE_EVIDENCE_SCHEMA_PREFIX = (
-    "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "integrity_replacement_v2"
+    "lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_"
+    "joint_jepa_v17"
 )
 EXPERIMENT_ARM_NAME = (
-    "ego_motion_aligned_ray_consistency_v16_integrity_replacement_v2"
+    "delayed_onset_ego_motion_aligned_ray_consistency_v17"
 )
 LAUNCHER_SCHEMA = f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_launcher_v1"
 
@@ -305,7 +305,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if isinstance(status, str) and status.startswith("FAIL_"):
         return 2
-    raise RuntimeError("V16 controller returned a nonterminal status")
+    raise RuntimeError("V17 controller returned a nonterminal status")
 
 
 if __name__ == "__main__":

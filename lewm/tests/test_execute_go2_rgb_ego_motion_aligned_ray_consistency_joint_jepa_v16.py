@@ -17,7 +17,8 @@ from scripts import (
 )
 
 
-def _result(**changes: object) -> SimpleNamespace:
+def _result(*, loss_weight: float = 0.0, **changes: object) -> SimpleNamespace:
+    camera_loss = 2.0 + loss_weight * 0.5
     losses = {
         "S": 1.0,
         "P": 2.0,
@@ -27,8 +28,8 @@ def _result(**changes: object) -> SimpleNamespace:
         "N": 15.0,
         "C_base": 2.0,
         "M": 0.5,
-        "C": 2.05,
-        "L": 17.05,
+        "C": camera_loss,
+        "L": 15.0 + camera_loss,
     }
     values = {
         "mean_losses": losses,
@@ -49,6 +50,7 @@ def test_v16_adapts_only_the_registered_model_and_training_contract() -> None:
     training = executor.validate_training_api_v16(training_module)
     model = executor.validate_model_api_v16(model_module)
     assert training["required_batch_key_count"] == 22
+    assert training["ray_consistency_onset_update"] == 101
     assert model["online_trainable_parameter_count"] == 3_383_917
     denial = executor.execution_denial_receipt_v16()
     assert denial["status"] == "DENIED_SOURCE_ONLY"
@@ -56,7 +58,7 @@ def test_v16_adapts_only_the_registered_model_and_training_contract() -> None:
     assert denial["reservation_created"] is False
 
 
-def test_update_integrity_retains_base_checks_and_adds_exact_v16_equation(
+def test_update_integrity_retains_base_checks_and_adds_exact_v17_schedule(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     observed: dict[str, object] = {}
@@ -72,28 +74,39 @@ def test_update_integrity_retains_base_checks_and_adds_exact_v16_equation(
         "_original_validate_update_integrity",
         base_validator,
     )
-    receipt = executor.validate_update_integrity_v16(
+    pre_onset = executor.validate_update_integrity_v16(
         object(),
         object(),
         _result(),
-        update=7,
+        update=100,
         access_receipt={},
     )
     assert set(observed["losses"]) == {"S", "P", "U", "R", "O", "N", "C", "L"}
-    assert observed["update"] == 7
-    assert receipt["mean_losses"]["C"] == pytest.approx(2.05)
-    assert receipt["ray_consistency"] == {
+    assert observed["update"] == 100
+    assert pre_onset["mean_losses"]["C"] == pytest.approx(2.0)
+    assert pre_onset["ray_consistency"] == {
         "shared_valid_cell_count": 100,
         "positive_weight_cell_count": 80,
         "weight_sum": 31.5,
-        "loss_weight": 0.1,
+        "loss_weight": 0.0,
     }
+
+    post_onset = executor.validate_update_integrity_v16(
+        object(),
+        object(),
+        _result(loss_weight=0.1),
+        update=101,
+        access_receipt={},
+    )
+    assert observed["update"] == 101
+    assert post_onset["mean_losses"]["C"] == pytest.approx(2.05)
+    assert post_onset["ray_consistency"]["loss_weight"] == 0.1
 
     bad = _result()
     bad.mean_losses["C"] = 2.2
-    with pytest.raises(RuntimeError, match="Camera loss equation"):
+    with pytest.raises(RuntimeError, match="Camera loss schedule"):
         executor.validate_update_integrity_v16(
-            object(), object(), bad, update=7, access_receipt={}
+            object(), object(), bad, update=100, access_receipt={}
         )
 
 

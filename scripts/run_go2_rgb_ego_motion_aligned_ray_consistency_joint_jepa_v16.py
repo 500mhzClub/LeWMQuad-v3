@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Source-only V16 joint-training adapter.
+"""Source-only V17 delayed-onset ray-consistency training adapter.
 
-V16 preserves the reviewed V13 joint-JEPA update and adds the preregistered
-ego-motion-aligned ray-consistency term only to the Camera/shared-encoder
-route.  This module performs no data discovery, checkpoint access,
-accelerator selection, or experiment I/O.
+V17 preserves the reviewed V16 mechanism but delays its contribution to the
+Camera/shared-encoder route until update 101.  This module performs no data
+discovery, checkpoint access, accelerator selection, or experiment I/O.
 """
 from __future__ import annotations
 
@@ -45,6 +44,17 @@ for _name in _base.__all__:
 REALIZED_RELATIVE_SE2_KEY = "realized_relative_se2_current_frame"
 CAMERA_BATCH_KEYS = (*_base.CAMERA_BATCH_KEYS, REALIZED_RELATIVE_SE2_KEY)
 REQUIRED_BATCH_KEYS = (*_base.REQUIRED_BATCH_KEYS, REALIZED_RELATIVE_SE2_KEY)
+RAY_CONSISTENCY_ONSET_UPDATE_V17 = 101
+
+
+def ray_consistency_weight_v17(update: int) -> float:
+    """Return the single preregistered delayed-onset coefficient."""
+
+    if type(update) is not int or not 1 <= update <= MAXIMUM_UPDATES:
+        raise ValueError("V17 update must be an integer in [1,1000]")
+    if update < RAY_CONSISTENCY_ONSET_UPDATE_V17:
+        return 0.0
+    return EGO_MOTION_ALIGNED_RAY_CONSISTENCY_WEIGHT_V16
 
 
 @dataclass(frozen=True)
@@ -107,11 +117,13 @@ def joint_training_update_v16(
     *,
     accounting: JointTrainingAccountingV13 | None = None,
 ) -> JointUpdateResultV16:
-    """Run one four-microbatch V16 update with C=C_base+0.1*M."""
+    """Run one four-microbatch update with the fixed V17 onset schedule."""
 
     torch, semantic_api, survival_api, *_ = _base._runtime_apis()
     state = JointTrainingAccountingV13() if accounting is None else accounting
     _base._validate_update_capacity_v13(state)
+    update = state.updates + 1
+    consistency_weight = ray_consistency_weight_v17(update)
     _validate_microbatches_v16(torch, microbatches)
     partition = partition_parameters_v13(model)
     validate_optimizer_v13(optimizer, partition)
@@ -213,7 +225,7 @@ def joint_training_update_v16(
         )
         _validate_consistency_receipt_v16(consistency)
         camera_v16 = camera.total + (
-            EGO_MOTION_ALIGNED_RAY_CONSISTENCY_WEIGHT_V16 * consistency.loss
+            consistency_weight * consistency.loss
         )
         for name, value in (
             ("current latent", current_latent),
@@ -371,9 +383,11 @@ __all__ = tuple(
             "EGO_MOTION_ALIGNED_RAY_CONSISTENCY_WEIGHT_V16",
             "EgoMotionAlignedRayConsistencyReceiptV16",
             "JointUpdateResultV16",
+            "RAY_CONSISTENCY_ONSET_UPDATE_V17",
             "REALIZED_RELATIVE_SE2_KEY",
             "ego_motion_aligned_ray_consistency_v16",
             "joint_training_update_v16",
+            "ray_consistency_weight_v17",
         )
     )
 )
