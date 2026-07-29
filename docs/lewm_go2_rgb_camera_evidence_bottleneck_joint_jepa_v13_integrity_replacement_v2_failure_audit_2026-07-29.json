@@ -1,0 +1,136 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 7,
+    "certified_source_bindings_sha256": "16079695ec051bd0a4d4385b3c1cda748ff048d99e5cf97f7c45b046d39f7bc9",
+    "certified_source_rehash_count": 91,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 1158,
+    "raw_consumed_inputs_rehashed": true,
+    "raw_consumed_records_sha256": "28b98655c483a502317975322c5887973b2ef37d11291cf523f2ad1f9fbb06a2",
+    "raw_consumed_unique_file_count": 1158,
+    "raw_development_rgb_file_count": 956,
+    "raw_supervision_file_count": 200,
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "0dcb15baf81c29b280ac271acdb25f91c0ab4b957a4ace94b75503506f811daf",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "reservation_created_utc": "2026-07-29T13:21:05Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "date": "2026-07-29",
+  "diagnosis": {
+    "exception_message": "dense features and ground queries must share a device",
+    "exception_message_sha256": "0ca8702f2c7d335909cb2ac55c05cbb8b4630fa66ce4f256b2e11254b9265169",
+    "exception_message_sha256_match": true,
+    "exception_type": "ValueError",
+    "failure_stage": "train_update_1",
+    "failure_status": "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME",
+    "root_cause": {
+      "contract_fact": "the inherited V1 builder moved RGB and label tensors to cuda:0, while all fourteen camera-evidence additions returned by _stack_camera_rows_v13 remained on CPU",
+      "failure_boundary": "the first current-frame encode_online_training call reached the auxiliary ground sampler with GPU dense features and CPU ground queries",
+      "location": "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py::_build_one_microbatch_v13",
+      "minimal_repair": "move the completed fourteen-entry additions mapping to runtime.device before merging it with the V1 base batch",
+      "scope": "runtime tensor-device adapter failure before the first completed forward or optimizer update; not a model, representation, predictor, metric, or scientific result"
+    }
+  },
+  "receipt_artifacts": {
+    "failure": {
+      "byte_count": 1100,
+      "content_sha256": "399931ec0965ed5c9861810f02431309b84ea0e53c44f61533d444c2c0ac69c8",
+      "file_sha256": "cf4d38ba7be81bf5244ab0b8cd645059e25af7b46d38521b5ba8060ce68e8fce",
+      "mode": "0444",
+      "path": "failure.json",
+      "regular_nonsymlink": true
+    },
+    "metric_update_0": {
+      "byte_count": 8007,
+      "content_sha256": "76b869adf8e6da911eabc4e3d7cb2d90e8e0a1e41a2694c88d29fe33372611ab",
+      "file_sha256": "3ca5b03ba8e6375a4e8a17ddbf0db9bcb6dfabdec986130297b2a1a449f670a9",
+      "integrity_pass": true,
+      "mode": "0444",
+      "path": "metrics/update_0.json",
+      "regular_nonsymlink": true
+    },
+    "reservation": {
+      "byte_count": 493,
+      "content_sha256": "3982547846a6334a399b3bdb2a48ceedd2497af63ab134c17be31b3a454d4e37",
+      "file_sha256": "28ef58ec9cbee225171b4d030dc552065283c37d28ec96c5381abf9a2f38f709",
+      "mode": "0444",
+      "path": "reservation.json",
+      "regular_nonsymlink": true
+    },
+    "success": {
+      "path": "success.json",
+      "present": false
+    },
+    "terminal_access": {
+      "byte_count": 447266,
+      "content_sha256": "6a524946a1f897b2163215293b9d0c4f2c6d992b229291bb04ab6121225ead31",
+      "file_sha256": "bdca6df486b85f334ff965e3d9e31ffe74760328e9d98a85d2cfa1b060dda122",
+      "mode": "0444",
+      "path": "receipts/terminal_access.json",
+      "regular_nonsymlink": true
+    },
+    "trace": {
+      "byte_count": 2770,
+      "file_sha256": "be2635dca67a6feb203a3492fc3f2824228441a0a09f1c73cc150983638b9b0b",
+      "mode": "0444",
+      "path": "trace.jsonl",
+      "regular_nonsymlink": true,
+      "row_count": 1
+    }
+  },
+  "scientific_accounting": {
+    "checkpoint_published": false,
+    "completed_forward_passes": 0,
+    "completed_optimizer_updates": 0,
+    "completed_presentations": 0,
+    "ema_updates": 0,
+    "probability_calibration_opened": false,
+    "scientific_gate_evaluated": false,
+    "terminal_update": null
+  },
+  "sequencing": {
+    "all_sixteen_scheduled_update_1_rows_loaded": true,
+    "initial_model_and_optimizer_validation_completed": true,
+    "initial_structural_integrity_passed": true,
+    "metric_update_0_published": true,
+    "optimizer_step_entered": false,
+    "training_loop_entered": true,
+    "training_update_1_entered": true
+  },
+  "status": "PASS_COMPLETE_FAILURE_AUDIT_ZERO_SCIENTIFIC_PRESENTATIONS",
+  "trace_content_binding_defect": {
+    "aggregate_file_binding_valid": true,
+    "declared_row_content_sha256": "af85d5f0c918e78be0074e967af22aea41f687ed4baf80356de6417db90e6a5b",
+    "diagnosis": "validate_schedule_v13 returned integer keys 100, 400, and 1000 in schedule.prefix_sha256. JSON serialized them as strings; reparsing then sorted the string keys lexicographically, so the canonical row hash changed.",
+    "minimal_repair": "return the three prefix_sha256 receipt keys as strings; schedule values and verification remain unchanged",
+    "post_parse_recomputed_row_content_sha256": "58e1209571c41ae248d237032baa7efa517bcc20f55bb6924bf5e08cc03da769",
+    "row_content_binding_valid_after_parse": false,
+    "scope": "receipt representation defect only; it does not affect schedule generation, row order, model execution, or scientific state"
+  },
+  "validation": {
+    "failure_access_receipt_sha256_matches_terminal_inner_receipt": true,
+    "failure_terminal_access_binding_crosslinks_valid": true,
+    "immutable_artifact_modes_valid": true,
+    "non_trace_receipt_content_hashes_valid": true,
+    "reservation_authority_crosslink_valid": true,
+    "source_sequence_reviewed": true,
+    "trace_file_sha256_and_byte_count_crosslink_valid": true,
+    "trace_row_content_hash_roundtrip_valid": false
+  }
+}
