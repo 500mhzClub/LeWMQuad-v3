@@ -1,0 +1,110 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 9,
+    "certified_source_bindings_sha256": "2ac5cdde08f3db3f3e2f63da9aed03419ca94135098f09d3683a1f7d8b498609",
+    "certified_source_rehash_count": 100,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 1158,
+    "raw_consumed_records_sha256": "b20eb4d21fd4aa374ef48f4563131a7aeb6c64691351d624931b2733c6a62d3d",
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "d474aa86492263d60a03307557d371cbed09943ffe519e79b0da5737cd654982",
+    "authority_commit": "325f96eecbe148ed35fa234904e7237c9363e992",
+    "authority_file_sha256": "2223c7ffaeee7bdd137f5ad4085377a9c4f7d7dd1c941711fb6fa97ab8e7f3a3",
+    "maximum_presentations": 32000,
+    "maximum_updates": 2000,
+    "one_shot_attempt": 1,
+    "output_root": ".generated/go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon/attempt_v1",
+    "reservation_created_utc": "2026-07-29T18:40:45Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "content_sha256": "e761a2dff774bdd6715a768ea683cd9aa9924b96f92f6f4d2b40ea5267e1f49e",
+  "date": "2026-07-29",
+  "decision": {
+    "checkpoint_published": false,
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "longer_horizon_hypothesis_tested": false,
+    "navigation_authorized": false,
+    "original_attempt_retry_authorized": false,
+    "probability_calibration_authorized": false,
+    "scientific_interpretation": "The attempt failed before its first optimizer update. It supplies no evidence for or against the preregistered longer-training hypothesis.",
+    "status": "PASS_COMPLETE_ZERO_UPDATE_INFRASTRUCTURE_FAILURE"
+  },
+  "failure": {
+    "exception_message_literal": "V13 training microbatch validator is absent",
+    "exception_message_sha256": "2d6a68d12cbf21023c3afe53179efb3bc53d7b5b1ae572e4f86447a032ce24a6",
+    "exception_type": "RuntimeError",
+    "stage": "train_update_1",
+    "status": "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME"
+  },
+  "receipt_artifacts": [
+    {
+      "byte_count": 1113,
+      "file_sha256": "c8f4e89f1eac2dfbfb2f1f6ec3bc4c2162818c9c8805da0fdab7fc25adaef6f5",
+      "path": "failure.json"
+    },
+    {
+      "byte_count": 8029,
+      "file_sha256": "aaa8fa3e047ef6852e7e82833bdc1e528019443f397c0443bdf2481aa4147d5b",
+      "path": "metrics/update_0.json"
+    },
+    {
+      "byte_count": 450232,
+      "file_sha256": "faf7af69ae9b7a53e3db2ea5f9b144fc77658c5bc52c0dda3c73cee7d0f5e085",
+      "path": "receipts/terminal_access.json"
+    },
+    {
+      "byte_count": 504,
+      "file_sha256": "1111296063a825890dbd7384935833ff28f5debea86e92ea43ecaf409b424722",
+      "path": "reservation.json"
+    },
+    {
+      "byte_count": 2899,
+      "file_sha256": "24ec393b7f4593b015f2fb745295f9ddc3a35571a55a612c01bbb7333eb0a711",
+      "path": "trace.jsonl"
+    }
+  ],
+  "root_cause": {
+    "adapter_defect": "the V15 training adapter re-exported only the frozen V13 public __all__, which does not contain the private validator",
+    "executor_contract": "requires the inherited private microbatch validator before every joint update",
+    "missing_training_module_attribute": "_validate_microbatches_v13",
+    "permitted_integrity_repair": "expose the exact already-frozen private validator object; preserve every scientific setting and use a distinct one-shot replacement root"
+  },
+  "schema": "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_terminal_failure_result_v1",
+  "scientific_accounting": {
+    "accounted_presentations": 0,
+    "backward_calls": 0,
+    "completed_updates": 0,
+    "ema_steps": 0,
+    "first_training_microbatches_built": true,
+    "model_state_mutation_count_after_initialization": 0,
+    "optimizer_steps": 0,
+    "predictor_forwards": 0,
+    "published_observation_updates": [
+      0
+    ],
+    "trace_row_count": 1
+  },
+  "validation": {
+    "checkpoint_artifact_count": 0,
+    "content_binding_mismatch_count": 0,
+    "file_binding_mismatch_count": 0,
+    "immutable_regular_file_count": 5,
+    "independent_audit_passed": true,
+    "success_artifact_count": 0,
+    "symlink_count": 0
+  }
+}
