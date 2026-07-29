@@ -650,6 +650,23 @@ def test_model_and_training_public_apis_are_exact() -> None:
     assert training["presentations_per_update"] == 16
 
 
+def test_schedule_receipt_and_trace_row_round_trip_content_binding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    schedule = _frozen_schedule(monkeypatch)
+    receipt = v13.validate_schedule_v13(schedule)
+    assert set(receipt["prefix_sha256"]) == {"100", "400", "1000"}
+    row = v13._content_bound(
+        {
+            "schema": f"{v13.SCHEMA_PREFIX}_trace_row_v1",
+            "event": "initialized",
+            "schedule": receipt,
+        }
+    )
+    parsed = json.loads(v13._canonical_json_bytes(row))
+    assert v13.validate_content_bound_v13(parsed) == parsed
+
+
 def test_future_authority_is_conjunctive_and_receipts_are_write_once(
     tmp_path: Path,
 ) -> None:
@@ -999,7 +1016,9 @@ def test_engine_passes_update1000_and_publishes_only_bound_development_checkpoin
     assert v13.SCIENTIFIC_FAILURE_RELATIVE_PATH not in publisher.files
     assert v13.TERMINAL_ACCESS_RECEIPT_RELATIVE_PATH in publisher.files
     trace = publisher.files[v13.TRACE_RELATIVE_PATH].decode("utf-8").splitlines()
-    assert json.loads(trace[-1])["event"] == "update1000_final_gate"
+    parsed_trace = [json.loads(row) for row in trace]
+    assert parsed_trace[-1]["event"] == "update1000_final_gate"
+    assert all(v13.validate_content_bound_v13(row) == row for row in parsed_trace)
 
 
 def test_engine_update1000_scientific_failure_never_serializes_checkpoint(

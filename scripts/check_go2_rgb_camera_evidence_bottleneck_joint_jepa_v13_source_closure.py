@@ -18,7 +18,7 @@ BASE_CHECKER_PATH = "scripts/check_go2_multires_probe_source_closure_v3.py"
 MANIFEST_PATH = (
     ROOT
     / "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "integrity_replacement_v2_source_manifest_2026-07-29.json"
+    "integrity_replacement_v3_source_manifest_2026-07-29.json"
 )
 SCHEMA = "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_source_manifest"
 

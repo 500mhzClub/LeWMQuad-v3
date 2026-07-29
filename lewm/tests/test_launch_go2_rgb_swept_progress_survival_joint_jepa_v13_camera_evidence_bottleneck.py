@@ -295,6 +295,92 @@ def test_structural_probe_skips_duplicate_rgb_commitments() -> None:
     ) == ("b", "c")
 
 
+def test_composed_microbatch_moves_all_camera_additions_to_runtime_device(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    torch = importlib.import_module("torch")
+    training_module = importlib.import_module(
+        "scripts.run_go2_rgb_swept_progress_survival_joint_jepa_v13_"
+        "camera_evidence_bottleneck"
+    )
+    base_keys = training_module.REQUIRED_BATCH_KEYS[:7]
+    source_rows: list[dict[str, object]] = []
+
+    def stack_rows(*args: object, **kwargs: object) -> dict[str, object]:
+        del args, kwargs
+        row = {
+            "camera_origin": torch.arange(12, dtype=torch.float32).reshape(4, 3),
+            "camera_basis": torch.arange(36, dtype=torch.float32).reshape(
+                4, 3, 3
+            ),
+            "ground": torch.arange(4, dtype=torch.float32),
+            "pixel_hit": torch.zeros((4, 84, 112), dtype=torch.bool),
+            "pixel_distance": torch.ones((4, 84, 112), dtype=torch.float32),
+            "ground_in_frustum": torch.zeros(
+                (4, 128, 128, 5), dtype=torch.bool
+            ),
+            "ground_clear": torch.ones((4, 128, 128, 5), dtype=torch.bool),
+        }
+        source_rows.append(row)
+        return row
+
+    monkeypatch.setattr(launcher, "_stack_camera_rows_v13", stack_rows)
+    runtime = SimpleNamespace(
+        v1_training=SimpleNamespace(
+            build_microbatch_v1=lambda *args, **kwargs: {
+                key: torch.empty((), device="meta") for key in base_keys
+            }
+        ),
+        loader=object(),
+        pairs={
+            "train": [
+                {
+                    "current_endpoint_sha256": f"current-{index}",
+                    "next_endpoint_sha256": f"next-{index}",
+                }
+                for index in range(4)
+            ]
+        },
+        labels={"train": object()},
+        raw_inputs=object(),
+        torch=torch,
+        device=torch.device("meta"),
+        training_module=training_module,
+    )
+    batch = launcher._build_one_microbatch_v13(
+        runtime=runtime,
+        indices=(0, 1, 2, 3),
+        stage="synthetic",
+    )
+    assert tuple(batch) == training_module.REQUIRED_BATCH_KEYS
+    current, next_ = source_rows
+    expected_sources = tuple(
+        row[name]
+        for name in (
+            "camera_origin",
+            "camera_basis",
+            "ground",
+            "pixel_hit",
+            "pixel_distance",
+            "ground_in_frustum",
+            "ground_clear",
+        )
+        for row in (current, next_)
+    )
+    assert all(source.device.type == "cpu" for source in expected_sources)
+    rgb_device = batch[training_module.CURRENT_RGB_KEY].device
+    assert batch[training_module.NEXT_RGB_KEY].device == rgb_device
+    for key, source in zip(
+        training_module.CAMERA_BATCH_KEYS,
+        expected_sources,
+        strict=True,
+    ):
+        placed = batch[key]
+        assert placed.device == rgb_device == runtime.device
+        assert placed.dtype == source.dtype
+        assert placed.shape == source.shape
+
+
 def test_runtime_data_root_is_canonical_and_distinct(tmp_path: Path) -> None:
     source = tmp_path / "source"
     data = tmp_path / "data"

@@ -153,7 +153,7 @@ def test_discovery_reads_only_returned_safe_source_paths(
 def test_integrity_replacement_uses_a_fresh_manifest_without_schema_drift() -> None:
     assert checker.MANIFEST_PATH.relative_to(ROOT).as_posix() == (
         "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-        "integrity_replacement_v2_source_manifest_2026-07-29.json"
+        "integrity_replacement_v3_source_manifest_2026-07-29.json"
     )
     assert checker.SCHEMA == (
         "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_source_manifest"

@@ -24,19 +24,19 @@ from typing import Any, Callable, Mapping, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "integrity_replacement_v2_execution_authorization_2026-07-29.json"
+    "integrity_replacement_v3_execution_authorization_2026-07-29.json"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "integrity_replacement_v2_source_manifest_2026-07-29.json"
+    "integrity_replacement_v3_source_manifest_2026-07-29.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "integrity_replacement_v2_source_review_2026-07-29.json"
+    "integrity_replacement_v3_source_review_2026-07-29.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "integrity_replacement_v2_clean_export_certification_2026-07-29.json"
+    "integrity_replacement_v3_clean_export_certification_2026-07-29.json"
 )
 SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
@@ -933,6 +933,9 @@ def _build_one_microbatch_v13(
         ],
         runtime.training_module.CURRENT_GROUND_CLEAR_KEY: current["ground_clear"],
         runtime.training_module.NEXT_GROUND_CLEAR_KEY: next_["ground_clear"],
+    }
+    additions = {
+        name: value.to(device=runtime.device) for name, value in additions.items()
     }
     if set(base) & set(additions):
         raise RuntimeError("V13 fine arrays overlap the V1 base batch")
