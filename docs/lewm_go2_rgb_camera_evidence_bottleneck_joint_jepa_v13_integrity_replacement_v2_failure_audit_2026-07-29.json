@@ -44,7 +44,7 @@
       "failure_boundary": "the first current-frame encode_online_training call reached the auxiliary ground sampler with GPU dense features and CPU ground queries",
       "location": "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py::_build_one_microbatch_v13",
       "minimal_repair": "move the completed fourteen-entry additions mapping to runtime.device before merging it with the V1 base batch",
-      "scope": "runtime tensor-device adapter failure before the first completed forward or optimizer update; not a model, representation, predictor, metric, or scientific result"
+      "scope": "runtime tensor-device adapter failure before the first completed training forward or optimizer update; not a trained-model or hypothesis result, while the published update-0 baseline remains valid"
     }
   },
   "receipt_artifacts": {
@@ -96,12 +96,12 @@
   },
   "scientific_accounting": {
     "checkpoint_published": false,
-    "completed_forward_passes": 0,
+    "completed_training_forward_passes": 0,
     "completed_optimizer_updates": 0,
     "completed_presentations": 0,
     "ema_updates": 0,
     "probability_calibration_opened": false,
-    "scientific_gate_evaluated": false,
+    "terminal_scientific_decision_gate_evaluated": false,
     "terminal_update": null
   },
   "sequencing": {
