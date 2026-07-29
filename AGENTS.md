@@ -61,6 +61,20 @@ These instructions apply to the entire repository.
   GPU, training, qualification, G2, navigation, held-out, production,
   promotion, deployment, retry, resume, replacement-attempt, or compatibility
   run authority.
+- The RGB camera-evidence bottleneck joint-JEPA V13 source may additionally be
+  clean exported only from frozen source-and-review commit
+  `4ae0535f5b3b268250721de09dc869835bada7de`, and only as (a) the 64 paths in
+  the committed V13 recursive source manifest and (b) the nine preregistration,
+  manifest, source-review, checker, and test paths explicitly enumerated and
+  SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_clean_export_certification_2026-07-29.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. This is a source-only export exception and grants no
+  generated-input, runtime-artifact, checkpoint, tensor, dataset, RGB, GPU,
+  training, qualification, G2, navigation, held-out, production, promotion,
+  deployment, retry, resume, or replacement-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
