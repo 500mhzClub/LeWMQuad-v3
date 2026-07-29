@@ -64,8 +64,9 @@ These instructions apply to the entire repository.
 - The RGB camera-evidence bottleneck joint-JEPA V13 source may additionally be
   clean exported only from frozen source-and-review commit
   `4ae0535f5b3b268250721de09dc869835bada7de`, and only as (a) the 64 paths in
-  the committed V13 recursive source manifest and (b) the nine preregistration,
-  manifest, source-review, checker, and test paths explicitly enumerated and
+  the committed V13 recursive source manifest and (b) the ten
+  preregistration, manifest, source-review, checker-helper, checker, and test
+  paths explicitly enumerated and
   SHA-256-and-byte-count-bound in
   `docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_clean_export_certification_2026-07-29.json`.
   Validate every path against both that certification and the frozen commit
