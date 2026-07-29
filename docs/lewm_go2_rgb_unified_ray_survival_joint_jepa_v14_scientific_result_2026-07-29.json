@@ -1,0 +1,238 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 7,
+    "certified_source_bindings_sha256": "c6762498b2eb25e39c0e288d6445c0f0202081855f55ead2dcee5f89bbda84c7",
+    "certified_source_rehash_count": 98,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 9425,
+    "raw_consumed_inputs_rehashed": true,
+    "raw_consumed_records_sha256": "b9708f530f395b5982e5d021b91e77ab11aadf5d4d3fd16e539c1f8d21266272",
+    "raw_consumed_unique_file_count": 9425,
+    "raw_development_rgb_file_count": 8701,
+    "raw_supervision_file_count": 722,
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "cdc6bb56c80a5bd370b82477c6dac8c83c7515d67f9ce16614c306e21617ce4a",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "reservation_created_utc": "2026-07-29T15:59:01Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "comparison_to_v3_update1000": {
+    "delta_v14_minus_v3": {
+      "complete_scope_count": 0,
+      "depth_p95_m": -0.10108261108398375,
+      "ground_balanced_accuracy": 0.008211494912523376,
+      "inherited_v12_passed_check_count": -1,
+      "passed_margin_count": 7,
+      "pixel_balanced_accuracy": -0.0036816015781592215,
+      "total_shortfall": 0.2688804924297159,
+      "worst_margin": 0.2274019241332903
+    },
+    "interpretation": "Unified ray survival redistributed the physical errors and improved depth, ground accuracy, worst margin, and seven boundary decisions, but it did not reduce total shortfall or complete a scope and it lost one inherited semantic check. This is partial directional support, not validation of the mechanism."
+  },
+  "date": "2026-07-29",
+  "decision": {
+    "checkpoint_published": false,
+    "failure_status": "FAIL_SCIENTIFIC_UPDATE1000_GATE_TERMINAL",
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "probability_calibration_authorized": false,
+    "scientific_interpretation": "The unified ray-survival joint JEPA legitimately beat the matched V3 update-400 falsification thresholds and kept improving through the full cap, but its final physical evidence remained inconsistent: total shortfall did not improve over V3, exact depth was too imprecise, no complete scope passed, and one inherited semantic check remained false.",
+    "status": "PASS_COMPLETE_SCIENTIFIC_FAILURE"
+  },
+  "final_gate": {
+    "checks": {
+      "complete_physical_scope_count_at_least_1": false,
+      "inherited_v12_full_arm_24_of_24": false,
+      "passed_physical_margin_count_at_least_112": false,
+      "rough_depth_p95_strictly_below_threshold": false,
+      "rough_ground_balanced_accuracy_strictly_above_threshold": true,
+      "rough_pixel_balanced_accuracy_strictly_above_threshold": true,
+      "structural_integrity_pass": true,
+      "total_physical_shortfall_strictly_below_threshold": false
+    },
+    "observed": {
+      "complete_physical_scope_count": 0,
+      "inherited_v12_failed_checks": [
+        "semantic_free_recall"
+      ],
+      "inherited_v12_passed_checks": 23,
+      "passed_physical_margin_count": 89,
+      "rough_depth_p95_m": 1.5208376884460448,
+      "rough_ground_balanced_accuracy": 0.6861817193868919,
+      "rough_pixel_balanced_accuracy": 0.8895425123513051,
+      "total_physical_shortfall": 41.41604892978589,
+      "worst_physical_margin": -5.260279273986824
+    },
+    "required": {
+      "complete_physical_scope_count_minimum": 1,
+      "inherited_v12_passed_checks": 24,
+      "passed_physical_margin_count_minimum": 112,
+      "rough_depth_p95_m_strict_upper_bound": 0.9777327477931971,
+      "rough_ground_balanced_accuracy_strict_lower_bound": 0.647134926562893,
+      "rough_pixel_balanced_accuracy_strict_lower_bound": 0.8198594673963917,
+      "total_physical_shortfall_strict_upper_bound": 33.05143763708337
+    }
+  },
+  "progression": [
+    {
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 2,
+      "passed_physical_margin_count": 32,
+      "rough_depth_p95_m": 4.869073963165282,
+      "rough_ground_balanced_accuracy": 0.541935563806034,
+      "rough_pixel_balanced_accuracy": 0.6326792707919727,
+      "total_physical_shortfall": 184.61066427463246,
+      "update": 0,
+      "worst_physical_margin": -18.476295852661128
+    },
+    {
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 13,
+      "passed_physical_margin_count": 57,
+      "rough_depth_p95_m": 2.3493779182434067,
+      "rough_ground_balanced_accuracy": 0.6273470490459583,
+      "rough_pixel_balanced_accuracy": 0.846268455145257,
+      "total_physical_shortfall": 96.44642586033721,
+      "update": 100,
+      "worst_physical_margin": -8.825397634506226
+    },
+    {
+      "complete_physical_scope_count": 0,
+      "directional_control_gate": "PASS_CONTINUE_MATCHED_V3",
+      "inherited_v12_passed_checks": 21,
+      "passed_physical_margin_count": 72,
+      "rough_depth_p95_m": 1.8582415819168085,
+      "rough_ground_balanced_accuracy": 0.6388506985089961,
+      "rough_pixel_balanced_accuracy": 0.8536718157084265,
+      "total_physical_shortfall": 68.96964862816927,
+      "update": 400,
+      "worst_physical_margin": -6.432966327667234
+    },
+    {
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 23,
+      "passed_physical_margin_count": 89,
+      "rough_depth_p95_m": 1.5208376884460448,
+      "rough_ground_balanced_accuracy": 0.6861817193868919,
+      "rough_pixel_balanced_accuracy": 0.8895425123513051,
+      "total_physical_shortfall": 41.41604892978589,
+      "update": 1000,
+      "worst_physical_margin": -5.260279273986824
+    }
+  ],
+  "receipt_artifacts": {
+    "checkpoint": {
+      "path": "checkpoints/update_1000.pt",
+      "present": false
+    },
+    "failure": {
+      "byte_count": 2951,
+      "content_sha256": "a98fe88bea8454e3dc4dc810bda4813449f8f44e83536d78f56eea83ec5a2311",
+      "file_sha256": "285f1fca7a3c044516c3772cb3d2d87bd3bbaa9d7ab66532838bce984b4ad83e",
+      "mode": "0444",
+      "path": "failure.json",
+      "regular_nonsymlink": true
+    },
+    "metrics": {
+      "update_0_file_sha256": "617fef5884beca351901aabfdb7a35f9c55f10157b2e07071c25c3ec6b1a9bb1",
+      "update_1000_file_sha256": "228ddb901baac7ee2b5c5e2ed057a885150b3e3c2f34d0137858a9e9a499ef50",
+      "update_100_file_sha256": "9a81282bac9e261ef967c880205347477491025f8e8973d0a4900f60d8b330ff",
+      "update_400_file_sha256": "97a03d1096f86b557e9f0e87c757e03b7cdb18a1145c9f0aae16a3afd0131294"
+    },
+    "reservation": {
+      "byte_count": 487,
+      "content_sha256": "568af93064dd1c3ee51ab4d09753a38c95b22c6f1cbacc5d410a7f8a1ac0a67b",
+      "file_sha256": "d7c6f208f3041d34f75af6fab76f2a070f9ad3d9f5c72a7e0d5b019ace021f9d",
+      "mode": "0444",
+      "path": "reservation.json",
+      "regular_nonsymlink": true
+    },
+    "success": {
+      "path": "success.json",
+      "present": false
+    },
+    "terminal_access": {
+      "byte_count": 3288892,
+      "content_sha256": "77824ce2ff9626c93d7dbf6262f94e555deb51694abdeb3b7f1cede3a6e2f95f",
+      "file_sha256": "e1ee1d9952f3fc8ecccd4d9394879ec53fe8b1705ff108ee9445088614b13aa7",
+      "mode": "0444",
+      "path": "receipts/terminal_access.json",
+      "regular_nonsymlink": true
+    },
+    "trace": {
+      "byte_count": 1601419,
+      "file_sha256": "6e01992cf59cbe06cb61281a4aef10666dbb7f7cf119aa921dc9afb06355cd54",
+      "mode": "0444",
+      "path": "trace.jsonl",
+      "regular_nonsymlink": true,
+      "row_count": 1003
+    }
+  },
+  "scientific_accounting": {
+    "backward_calls": 8000,
+    "camera_frame_objectives": 32000,
+    "camera_route_grad_calls": 4000,
+    "ema_steps": 1000,
+    "joint_route_grad_calls": 4000,
+    "microbatch_graphs": 4000,
+    "optimizer_steps": 1000,
+    "predictor_forwards": 4000,
+    "predictor_objectives": 4000,
+    "presentations": 16000,
+    "updates": 1000
+  },
+  "update400_gate": {
+    "action": "CONTINUE_TO_UPDATE_1000",
+    "all_twelve_causal_control_checks_true": true,
+    "checks": {
+      "all_twelve_causal_control_checks_true": true,
+      "at_least_two_rough_metrics_strictly_improved": true,
+      "passed_physical_margin_count_strictly_above_matched_update400": true,
+      "passed_physical_margin_count_strictly_increased": true,
+      "rough_depth_p95_strictly_below_matched_update400": true,
+      "structural_integrity_pass": true,
+      "total_physical_shortfall_strictly_below_matched_update400": true,
+      "total_physical_shortfall_strictly_decreased": true
+    },
+    "matched_v3_thresholds": {
+      "passed_margin_count_strictly_greater_than": 71,
+      "rough_depth_p95_m_strictly_less_than": 1.936374711990354,
+      "total_shortfall_strictly_less_than": 71.67935936391197
+    },
+    "observed": {
+      "passed_physical_margin_count": 72,
+      "rough_depth_p95_m": 1.8582415819168085,
+      "total_physical_shortfall": 68.96964862816927
+    },
+    "passed": true,
+    "rough_direction_check_count": 3
+  },
+  "validation": {
+    "all_1003_trace_rows_byte_canonical_and_content_valid": true,
+    "failure_metric_and_access_crosslinks_valid": true,
+    "final_gate_independently_recomputed_exactly": true,
+    "immutable_artifact_modes_valid": true,
+    "independent_audit_count": 2,
+    "output_inventory_exactly_eight_files": true,
+    "schedule_and_accounting_sequence_exact": true,
+    "source_and_raw_input_rehashes_valid": true,
+    "update400_gate_independently_recomputed_exactly": true,
+    "v3_terminal_comparison_independently_recomputed_exactly": true
+  }
+}
