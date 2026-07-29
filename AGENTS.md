@@ -90,6 +90,20 @@ These instructions apply to the entire repository.
   runtime-artifact, checkpoint, tensor, dataset, RGB, GPU, training,
   qualification, G2, navigation, held-out, production, promotion, deployment,
   retry, resume, or further replacement-attempt authority.
+- The science-identical V13 integrity replacement V2 source may additionally
+  be clean exported only from frozen source-and-review commit
+  `d7f88b006ce528d79b5fb9e063b68645693e6222`, and only as (a) the 80 paths
+  in its committed recursive source manifest and (b) the eleven
+  preregistration, manifest, source-review, checker, and test paths explicitly
+  enumerated and SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_integrity_replacement_v2_clean_export_certification_2026-07-29.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. This source-only exception grants no generated-input,
+  runtime-artifact, checkpoint, tensor, dataset, RGB, GPU, training,
+  qualification, G2, navigation, held-out, production, promotion, deployment,
+  retry, resume, or further replacement-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
