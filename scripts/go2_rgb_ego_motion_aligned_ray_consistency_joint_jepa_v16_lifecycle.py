@@ -430,7 +430,7 @@ def run_future_authorized_engine_v16(
                         engine=engine,
                     )
                 )
-            else:
+            elif update == 1_000:
                 scientific_decision = engine.evaluate_final_gate_v13(
                     observations[1_000]["v12_gate"],
                     observations[1_000]["physical"],

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import ast
+import inspect
+import textwrap
 from types import SimpleNamespace
 
 from scripts import (
@@ -137,3 +140,20 @@ def test_extension_eligibility_rejects_one_failed_control() -> None:
     )
     assert decision["passed"] is False
     assert decision["checks"]["all_twelve_causal_control_checks_true"] is False
+
+
+def test_update100_cannot_enter_the_update1000_final_gate_branch() -> None:
+    source = textwrap.dedent(
+        inspect.getsource(lifecycle.run_future_authorized_engine_v16)
+    )
+    tree = ast.parse(source)
+    update400_branch = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.If) and ast.unparse(node.test) == "update == 400"
+    )
+
+    assert len(update400_branch.orelse) == 1
+    update1000_branch = update400_branch.orelse[0]
+    assert isinstance(update1000_branch, ast.If)
+    assert ast.unparse(update1000_branch.test) == "update == 1000"
