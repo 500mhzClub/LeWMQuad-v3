@@ -58,7 +58,10 @@ depth sensor, privileged raster, target label, or future observation.
 ## Registered survival transform
 
 For each ground query, bilinearly sample all 64 learned hazard logits at the
-query's calibrated image coordinate. Let sampled logit `h[j]` define
+query's calibrated image coordinate with `align_corners=False` and
+`padding_mode="border"`. Border padding is fixed so a geometrically valid query
+at an image boundary cannot acquire an artificial zero logit from padding. Let
+sampled logit `h[j]` define
 `ell[j] = log(sigmoid(-h[j]))`, the log probability of surviving depth bin
 `j`. The registered near edge is `0.05` m, bin width is `0.10` m, and bin count
 is 64.
@@ -68,14 +71,19 @@ For target distance `r`:
 1. `u = clamp((r - 0.05) / 0.10, 0, 64)`.
 2. `n = floor(u)` and `f = u - n`.
 3. `log S(r) = sum(j < n, ell[j]) + I[n < 64] * f * ell[n]`.
-4. Return the finite clear logit `log S(r) - log(1 - S(r))`, computed with
-   stable `expm1` arithmetic. Invalid queries return neutral zero and remain
-   excluded by the unchanged validity mask.
+4. Retain this exact `log S(r)` for the registered near/far identities. For
+   BCE-logit conversion only, upper-clamp it to
+   `log(1 - torch.finfo(dtype).eps)`, then return
+   `log S_clamped - log(1 - exp(log S_clamped))` using stable `expm1`
+   arithmetic. Invalid queries return neutral zero and remain excluded by the
+   unchanged validity mask.
 
 The fractional final bin is the constant-integrated-hazard interpretation.
-At the near edge survival is one; at the far edge it exactly equals the
-existing learned no-hit probability. Query sampling and the transform must be
-differentiable with respect to the hazard field.
+At the near edge exact survival is one; at the far edge it exactly equals the
+existing learned no-hit probability. The fixed conversion clamp resolves the
+otherwise infinite near-edge logit without changing either identity. Query
+sampling and the transform must be differentiable with respect to the hazard
+field.
 
 ## Frozen optimization and accounting
 
