@@ -22,10 +22,11 @@ from scripts import (
 
 
 SCHEMA_PREFIX_V16 = (
-    "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16"
+    "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
+    "integrity_replacement_v1"
 )
 PREREGISTRATION_COMMIT_V16 = (
-    "2792343e14d3376add9d6adbda7f29346a3e9e29"
+    "2ac4b08d94ee249ae42194b3c737190d39fd2396"
 )
 RECOVERY_UPDATES_V16 = (400, 1_000)
 PRESENTATIONS_PER_UPDATE_V16 = 16

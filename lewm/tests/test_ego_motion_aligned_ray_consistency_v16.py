@@ -15,7 +15,11 @@ from lewm.models.ego_motion_aligned_ray_consistency_v16 import (
 )
 from lewm.models.observable_camera_ray_evidence_v4 import (
     DEPTH_BIN_COUNT,
+    ObservableCameraRayEvidenceV4Model,
     ObservableCameraRayEvidenceV4RawOutput,
+)
+from lewm.models.geometry_anchored_swept_progress_survival_joint_jepa_v14_unified_ray_survival import (
+    GeometryAnchoredSweptProgressSurvivalJointJepaV14,
 )
 
 
@@ -39,8 +43,8 @@ def _evidence(
         pixel_within_bin_offset_m=offsets,
         ground_clear_to_target_logits=torch.full(ground_shape, 10.0),
         ground_query_in_frustum=torch.full(ground_shape, valid, dtype=torch.bool),
-        ground_query_uv_px=torch.zeros((*ground_shape, 2)),
-        ground_target_distance_m=torch.ones(ground_shape),
+        ground_query_uv_px=torch.zeros((*ground_shape, 2), dtype=torch.float64),
+        ground_target_distance_m=torch.ones(ground_shape, dtype=torch.float64),
     )
     return evidence, hazards, offsets
 
@@ -190,3 +194,40 @@ def test_changed_pair_batch_shape_fails_closed() -> None:
             next_camera_basis_body_fru=_calibration(2)[1],
             relative_se2_current_frame=torch.zeros((1, 3), dtype=torch.float32),
         )
+
+
+def test_exact_v14_production_shape_and_geometry_dtypes_are_admitted() -> None:
+    masks = torch.zeros((9, 16, 64, 64), dtype=torch.bool)
+    masks[:, :, 31:33, 31:33] = True
+    model = GeometryAnchoredSweptProgressSurvivalJointJepaV14(
+        ObservableCameraRayEvidenceV4Model(), masks
+    ).eval()
+    tokens = torch.randn(
+        (1, 256, 192), generator=torch.Generator().manual_seed(16_001)
+    )
+    origin = model.bev_lift.nominal_camera_origin_body_m[None].float()
+    basis = model.bev_lift.nominal_camera_basis_body_fru[None].float()
+    ground = model.bev_lift.nominal_ground_plane_z_body_m[None].float()
+    with torch.no_grad():
+        output = model.bev_lift.forward_with_auxiliary_evidence(
+            tokens,
+            camera_origin_body_m=origin,
+            camera_basis_body_fru=basis,
+            ground_plane_z_body_m=ground,
+        )
+    evidence = output.auxiliary_evidence
+    assert evidence.pixel_first_hit_hazard_logits.dtype == torch.float32
+    assert evidence.ground_query_uv_px.dtype == torch.float64
+    assert evidence.ground_target_distance_m.dtype == torch.float64
+    receipt = ego_motion_aligned_ray_consistency_v16(
+        evidence,
+        evidence,
+        current_camera_origin_body_m=origin,
+        current_camera_basis_body_fru=basis,
+        next_camera_origin_body_m=origin,
+        next_camera_basis_body_fru=basis,
+        relative_se2_current_frame=torch.zeros((1, 3), dtype=torch.float32),
+    )
+    assert torch.isfinite(receipt.loss)
+    assert receipt.shared_valid_cell_count > 0
+    assert receipt.positive_weight_cell_count > 0

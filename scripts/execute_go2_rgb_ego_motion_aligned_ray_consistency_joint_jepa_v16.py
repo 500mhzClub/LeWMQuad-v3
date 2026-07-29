@@ -25,16 +25,41 @@ V14_PUBLIC_MODULE_NAME = (
 PRIVATE_V14_MODULE_NAME = f"{__name__}.__private_v14_executor"
 _PUBLIC_V14_WAS_LOADED_BEFORE_ADAPTER = V14_PUBLIC_MODULE_NAME in sys.modules
 
-SCHEMA_PREFIX = "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16"
-PREREGISTRATION_COMMIT = "2792343e14d3376add9d6adbda7f29346a3e9e29"
+SCHEMA_PREFIX = (
+    "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
+    "integrity_replacement_v1"
+)
+PREREGISTRATION_COMMIT = "2ac4b08d94ee249ae42194b3c737190d39fd2396"
 PREREGISTRATION_PATH = (
+    "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
+    "integrity_replacement_v1_preregistration_2026-07-29.md"
+)
+PREREGISTRATION_FILE_SHA256 = (
+    "af9c5efd9949c0c2e118e31d456a6010fbef142e685a91c992ed28c1c0e307a1"
+)
+PREREGISTRATION_BYTE_COUNT = 4_784
+ORIGINAL_V16_PREREGISTRATION_COMMIT = (
+    "2792343e14d3376add9d6adbda7f29346a3e9e29"
+)
+ORIGINAL_V16_PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
     "preregistration_2026-07-29.md"
 )
-PREREGISTRATION_FILE_SHA256 = (
+ORIGINAL_V16_PREREGISTRATION_FILE_SHA256 = (
     "f984a34baa8c5541fd1d35ea744c8ced051b92882fd8e153d3be8b2f9f62747d"
 )
-PREREGISTRATION_BYTE_COUNT = 9_844
+ORIGINAL_V16_PREREGISTRATION_BYTE_COUNT = 9_844
+V16_TERMINAL_FAILURE_RESULT_COMMIT = (
+    "12d5b77d2707f4cf263786286ba6118880e835c0"
+)
+V16_TERMINAL_FAILURE_RESULT_PATH = (
+    "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
+    "terminal_failure_result_2026-07-29.md"
+)
+V16_TERMINAL_FAILURE_RESULT_FILE_SHA256 = (
+    "99343e18fba804fd93f752aa69a644926eb7eacfe6161640d0062e0589a9f6eb"
+)
+V16_TERMINAL_FAILURE_RESULT_BYTE_COUNT = 2_856
 V15_RESULT_COMMIT = "7a0dbc1f850bc8917bc45566425116fdef87ef42"
 V15_RESULT_PATH = (
     "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
@@ -45,8 +70,8 @@ V15_RESULT_FILE_SHA256 = (
 )
 V15_RESULT_BYTE_COUNT = 10_935
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16/"
-    "attempt_v1"
+    ".generated/go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
+    "integrity_replacement_v1/attempt_v1"
 )
 MODEL_CLASS_NAME = "GeometryAnchoredSweptProgressSurvivalJointJepaV14"
 REALIZED_RELATIVE_SE2_KEY = "realized_relative_se2_current_frame"
@@ -127,6 +152,14 @@ _bound_parent_sources = dict(_engine.BOUND_PARENT_SOURCES)
 _bound_parent_sources[PREREGISTRATION_PATH] = (
     PREREGISTRATION_FILE_SHA256,
     PREREGISTRATION_BYTE_COUNT,
+)
+_bound_parent_sources[ORIGINAL_V16_PREREGISTRATION_PATH] = (
+    ORIGINAL_V16_PREREGISTRATION_FILE_SHA256,
+    ORIGINAL_V16_PREREGISTRATION_BYTE_COUNT,
+)
+_bound_parent_sources[V16_TERMINAL_FAILURE_RESULT_PATH] = (
+    V16_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+    V16_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
 )
 _bound_parent_sources[V15_RESULT_PATH] = (
     V15_RESULT_FILE_SHA256,
@@ -386,6 +419,12 @@ def private_adapter_receipt_v16() -> dict[str, Any]:
         "public_v14_loaded_by_adapter": False,
         "private_module_registered": PRIVATE_V14_MODULE_NAME in sys.modules,
         "preregistration_commit": PREREGISTRATION_COMMIT,
+        "original_v16_preregistration_commit": (
+            ORIGINAL_V16_PREREGISTRATION_COMMIT
+        ),
+        "v16_terminal_failure_result_commit": (
+            V16_TERMINAL_FAILURE_RESULT_COMMIT
+        ),
         "v15_result_commit": V15_RESULT_COMMIT,
         "output_root": OUTPUT_ROOT_RELATIVE_PATH,
         "model_class": MODEL_CLASS_NAME,

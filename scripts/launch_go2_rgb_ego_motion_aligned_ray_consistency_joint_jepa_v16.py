@@ -23,19 +23,19 @@ BASE_LAUNCHER_RELATIVE_PATH = (
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "execution_authorization_2026-07-29.json"
+    "integrity_replacement_v1_execution_authorization_2026-07-29.json"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "source_manifest_2026-07-29.json"
+    "integrity_replacement_v1_source_manifest_2026-07-29.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "source_review_2026-07-29.json"
+    "integrity_replacement_v1_source_review_2026-07-29.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
-    "clean_export_certification_2026-07-29.json"
+    "integrity_replacement_v1_clean_export_certification_2026-07-29.json"
 )
 SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
@@ -52,9 +52,12 @@ TRAINING_MODULE_NAME = (
     "scripts.run_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16"
 )
 SOURCE_EVIDENCE_SCHEMA_PREFIX = (
-    "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16"
+    "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_"
+    "integrity_replacement_v1"
 )
-EXPERIMENT_ARM_NAME = "ego_motion_aligned_ray_consistency_v16"
+EXPERIMENT_ARM_NAME = (
+    "ego_motion_aligned_ray_consistency_v16_integrity_replacement_v1"
+)
 LAUNCHER_SCHEMA = f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_launcher_v1"
 
 

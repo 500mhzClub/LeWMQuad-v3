@@ -61,16 +61,24 @@ def _validate_evidence_v16(
         GROUND_SUPPORT_COUNT,
     ):
         raise ValueError(f"{name} ground evidence must have shape (B,128,128,5)")
-    floating = (
-        hazard,
-        offset,
-        ground,
+    ground_shape = (hazard.shape[0], 128, 128, GROUND_SUPPORT_COUNT)
+    if (
+        tuple(evidence.ground_query_in_frustum.shape) != ground_shape
+        or evidence.ground_query_in_frustum.dtype != torch.bool
+        or tuple(evidence.ground_target_distance_m.shape) != ground_shape
+        or tuple(evidence.ground_query_uv_px.shape) != (*ground_shape, 2)
+    ):
+        raise ValueError(f"{name} ground-query geometry shape or dtype changed")
+    learned = (hazard, offset, ground)
+    if any(value.dtype != torch.float32 for value in learned):
+        raise ValueError(f"{name} learned evidence must be float32")
+    geometry = (
         evidence.ground_query_uv_px,
         evidence.ground_target_distance_m,
     )
-    if any(value.dtype != torch.float32 for value in floating):
-        raise ValueError(f"{name} floating evidence must be float32")
-    if any(value.device != hazard.device for value in floating) or (
+    if any(value.dtype != torch.float64 for value in geometry):
+        raise ValueError(f"{name} inherited query geometry must be float64")
+    if any(value.device != hazard.device for value in (*learned, *geometry)) or (
         evidence.ground_query_in_frustum.device != hazard.device
     ):
         raise ValueError(f"{name} evidence fields must share one device")
