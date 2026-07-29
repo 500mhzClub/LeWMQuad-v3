@@ -175,6 +175,27 @@ These instructions apply to the entire repository.
   training, qualification, probability-calibration, G2, navigation,
   held-out, production, promotion, deployment, retry, resume, or further
   replacement-attempt authority.
+- The RGB ego-motion-aligned ray-consistency joint-JEPA V16 source may
+  additionally be clean exported only from frozen source-and-review commit
+  `913ffec009649e347144084a8cb68a3fcc546f29`, and only as (a) the 88 paths
+  in its committed recursive source manifest and (b) the fourteen V16
+  preregistration, V14/V15 identity-witness, manifest, source-review,
+  recursive-checker, and focused V16 test paths explicitly enumerated and
+  SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_clean_export_certification_2026-07-29.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied V14 preregistration and terminal V15 result are
+  source-only identity evidence and grant no predecessor runtime-output or
+  execution authority. The V16 certification itself and later one-shot
+  authority may be added to the narrow export only at their exact reviewed
+  paths after their respective commits and exact file-SHA-256 validation.
+  This source-only exception grants no generated-input, runtime-artifact,
+  checkpoint, tensor, schedule, dataset, RGB, GPU, training, qualification,
+  probability-calibration, G2, navigation, held-out, production, promotion,
+  deployment, retry, resume, recovery, extension, or further-attempt
+  authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
