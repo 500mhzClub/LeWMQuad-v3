@@ -1,9 +1,14 @@
 {
-  "content_sha256": "23aec4074e419a6424d518bc0ad04202f9b1434ff67d636897fe442fbbae2ce5",
+  "content_sha256": "3907e282fe93b9c09308b446ab1088063ca11e01a7f3cbedbebea6c1a2f9492c",
   "frozen_source_and_review_commit": "ea9205eb4601e8b7ec6fc1c91cc28b19558476b0",
   "inventory": {
-    "binding_count": 97,
+    "binding_count": 98,
     "bindings": [
+      {
+        "byte_count": 4005,
+        "file_sha256": "cd800bb409054947bbfa1159ef362a0d465799238ed1862b0af7acc9ab883a08",
+        "path": "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_integrity_replacement_v3_preregistration_2026-07-29.md"
+      },
       {
         "byte_count": 8214,
         "file_sha256": "7fb608208e2e76dfefa3e039b0ab1128230423642b783fe9f79376cae107e16f",
@@ -490,7 +495,7 @@
         "path": "scripts/run_go2_shared_jepa_v5_matched_training_v1.py"
       }
     ],
-    "bindings_sha256": "bb023ea5e315b70958bd7091b4d1439bab28eb62d64fc7833995d1b83dbbc1e7"
+    "bindings_sha256": "c6762498b2eb25e39c0e288d6445c0f0202081855f55ead2dcee5f89bbda84c7"
   },
   "manifest": {
     "content_sha256": "a500a7ef722c0d83ae044349f10ec2a54e2928daa4dab5d33cdab53013a94731",
@@ -508,6 +513,6 @@
   "validation": {
     "binding_mismatch_count": 0,
     "protected_path_match_count": 0,
-    "working_bytes_match_count": 97
+    "working_bytes_match_count": 98
   }
 }

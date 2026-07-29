@@ -121,7 +121,7 @@ These instructions apply to the entire repository.
 - The RGB unified ray-survival joint-JEPA V14 source may additionally be
   clean exported only from frozen source-and-review commit
   `ea9205eb4601e8b7ec6fc1c91cc28b19558476b0`, and only as (a) the 83 paths
-  in its committed recursive source manifest and (b) the fourteen
+  in its committed recursive source manifest and (b) the fifteen
   preregistration, manifest, source-review, checker, and focused V13/V14 test
   paths explicitly enumerated and SHA-256-and-byte-count-bound in
   `docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v14_clean_export_certification_2026-07-29.json`.
