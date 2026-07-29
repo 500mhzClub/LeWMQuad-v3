@@ -24,19 +24,19 @@ BASE_LAUNCHER_RELATIVE_PATH = (
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
-    "execution_authorization_2026-07-29.json"
+    "integrity_replacement_v1_execution_authorization_2026-07-29.json"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
-    "source_manifest_2026-07-29.json"
+    "integrity_replacement_v1_source_manifest_2026-07-29.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
-    "source_review_2026-07-29.json"
+    "integrity_replacement_v1_source_review_2026-07-29.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
-    "clean_export_certification_2026-07-29.json"
+    "integrity_replacement_v1_clean_export_certification_2026-07-29.json"
 )
 SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_"
@@ -53,9 +53,12 @@ TRAINING_MODULE_NAME = (
     "scripts.run_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon"
 )
 SOURCE_EVIDENCE_SCHEMA_PREFIX = (
-    "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon"
+    "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
+    "integrity_replacement_v1"
 )
-EXPERIMENT_ARM_NAME = "unified_ray_survival_v15_extended_horizon"
+EXPERIMENT_ARM_NAME = (
+    "unified_ray_survival_v15_extended_horizon_integrity_replacement_v1"
+)
 LAUNCHER_SCHEMA = f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_launcher_v1"
 
 BASE_MAXIMUM_UPDATES = 1_000

@@ -67,7 +67,7 @@ def _v12_gate(*, passed: bool = True) -> dict[str, object]:
     return {"passed": passed, "checks": checks}
 
 
-def test_v15_changes_only_identity_horizon_and_lifecycle_from_v14() -> None:
+def test_v15_replacement_preserves_science_and_changes_only_attempt_identity() -> None:
     assert v15._base is not canonical_v14
     assert v15.PRIVATE_V14_MODULE_NAME not in sys.modules
     assert canonical_v14.MAXIMUM_UPDATES == 1_000
@@ -79,10 +79,19 @@ def test_v15_changes_only_identity_horizon_and_lifecycle_from_v14() -> None:
     )
 
     assert v15.SCHEMA_PREFIX == (
-        "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon"
+        "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
+        "integrity_replacement_v1"
     )
     assert v15.PREREGISTRATION_COMMIT == (
-        "af0f786841b1404d1f42542b507ad198ee574250"
+        "86d19b29171ee8d08dda6b04361466f420aec42d"
+    )
+    assert v15.PREREGISTRATION_PATH.endswith(
+        "v15_extended_horizon_integrity_replacement_v1_"
+        "preregistration_2026-07-29.md"
+    )
+    assert v15.OUTPUT_ROOT_RELATIVE_PATH == (
+        ".generated/go2_rgb_unified_ray_survival_joint_jepa_v15_"
+        "extended_horizon_integrity_replacement_v1/attempt_v1"
     )
     assert v15.MAXIMUM_UPDATES == 2_000
     assert v15.MAXIMUM_PRESENTATIONS == 32_000
@@ -104,6 +113,38 @@ def test_v15_changes_only_identity_horizon_and_lifecycle_from_v14() -> None:
     assert receipt["public_v14_loaded_by_adapter"] is False
     assert receipt["private_module_registered"] is False
     assert receipt["execution_authorized"] is False
+    assert receipt["original_v15_preregistration_commit"] == (
+        "af0f786841b1404d1f42542b507ad198ee574250"
+    )
+    assert receipt["v15_terminal_failure_result_commit"] == (
+        "51cfeb7fd5dbc1743bf043d21f350937755c0647"
+    )
+
+
+def test_v15_replacement_binds_preregistrations_and_failure_receipt() -> None:
+    expected = {
+        v15.PREREGISTRATION_PATH: (
+            v15.PREREGISTRATION_FILE_SHA256,
+            v15.PREREGISTRATION_BYTE_COUNT,
+        ),
+        v15.ORIGINAL_V15_PREREGISTRATION_PATH: (
+            v15.ORIGINAL_V15_PREREGISTRATION_FILE_SHA256,
+            v15.ORIGINAL_V15_PREREGISTRATION_BYTE_COUNT,
+        ),
+        v15.V15_TERMINAL_FAILURE_RESULT_PATH: (
+            v15.V15_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            v15.V15_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
+        ),
+        v15.V14_RESULT_PATH: (
+            v15.V14_RESULT_FILE_SHA256,
+            v15.V14_RESULT_BYTE_COUNT,
+        ),
+    }
+    for path, binding in expected.items():
+        assert v15.BOUND_PARENT_SOURCES[path] == binding
+    assert v15.validate_bound_sources_v15(ROOT, expected)[
+        "validated_path_count"
+    ] == len(expected)
 
 
 def test_private_training_adapter_extends_caps_without_mutating_public_base() -> None:

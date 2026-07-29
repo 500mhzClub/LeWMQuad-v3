@@ -45,7 +45,7 @@ def test_checker_import_is_source_only_and_private() -> None:
     )
     assert checker.SCHEMA == (
         "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
-        "source_manifest"
+        "integrity_replacement_v1_source_manifest"
     )
     assert checker._V13._BASE.SCHEMA == checker.SCHEMA
 
@@ -126,7 +126,7 @@ def test_discovered_closure_contains_adapters_and_only_safe_python() -> None:
 def test_manifest_path_and_cli_modes_are_fresh_v15_contracts() -> None:
     assert checker.MANIFEST_PATH.relative_to(ROOT).as_posix() == (
         "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_"
-        "horizon_source_manifest_2026-07-29.json"
+        "horizon_integrity_replacement_v1_source_manifest_2026-07-29.json"
     )
     source = V15_CHECKER_PATH.read_text(encoding="utf-8")
     assert 'mode.add_argument("--emit"' in source

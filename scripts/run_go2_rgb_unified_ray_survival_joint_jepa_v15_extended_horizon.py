@@ -87,6 +87,8 @@ _training.MAXIMUM_PRESENTATIONS = MAXIMUM_PRESENTATIONS_V15
 for _name in _training.__all__:
     globals()[_name] = getattr(_training, _name)
 
+_validate_microbatches_v13 = _training._validate_microbatches_v13
+
 __all__ = tuple(_training.__all__)
 
 
@@ -109,4 +111,3 @@ def private_training_adapter_receipt_v15() -> dict[str, Any]:
         "presentations_per_update": PRESENTATIONS_PER_UPDATE,
         "scientific_change": "terminal_accounting_caps_only",
     }
-

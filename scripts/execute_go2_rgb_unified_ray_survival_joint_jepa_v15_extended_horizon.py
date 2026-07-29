@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Denied-by-default executor adapter for V15 extended-horizon training.
+"""Denied-by-default executor adapter for the V15 integrity replacement.
 
 V15 keeps the exact V14 model and scientific training mechanism.  It loads
 the frozen V14 adapter into a private module object, changes only the
 preregistered lifecycle constants, and delegates the longer one-shot
-controller to a V15-only helper.  Importing this module grants no execution
-authority and opens no scientific payload.
+controller to a V15-only helper.  Integrity replacement V1 changes only the
+attempt identity and evidence bindings here; importing this module grants no
+execution authority and opens no scientific payload.
 """
 from __future__ import annotations
 
@@ -32,17 +33,41 @@ PRIVATE_V14_MODULE_NAME = f"{__name__}.__private_v14_executor"
 _PUBLIC_V14_WAS_LOADED_BEFORE_ADAPTER = V14_PUBLIC_MODULE_NAME in sys.modules
 
 SCHEMA_PREFIX = (
-    "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon"
+    "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
+    "integrity_replacement_v1"
 )
-PREREGISTRATION_COMMIT = "af0f786841b1404d1f42542b507ad198ee574250"
+PREREGISTRATION_COMMIT = "86d19b29171ee8d08dda6b04361466f420aec42d"
 PREREGISTRATION_PATH = (
+    "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_"
+    "extended_horizon_integrity_replacement_v1_"
+    "preregistration_2026-07-29.md"
+)
+PREREGISTRATION_FILE_SHA256 = (
+    "69277c8b069ae75b6d57f9827a845a46bf5100b0c6ab0fba5a99d0d2346f8bd7"
+)
+PREREGISTRATION_BYTE_COUNT = 5_297
+ORIGINAL_V15_PREREGISTRATION_COMMIT = (
+    "af0f786841b1404d1f42542b507ad198ee574250"
+)
+ORIGINAL_V15_PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_"
     "extended_horizon_preregistration_2026-07-29.md"
 )
-PREREGISTRATION_FILE_SHA256 = (
+ORIGINAL_V15_PREREGISTRATION_FILE_SHA256 = (
     "bbecbb533abee54fff408ccbcdb648b922a883c6c81a9c5ee8795367e2f6a187"
 )
-PREREGISTRATION_BYTE_COUNT = 8_806
+ORIGINAL_V15_PREREGISTRATION_BYTE_COUNT = 8_806
+V15_TERMINAL_FAILURE_RESULT_COMMIT = (
+    "51cfeb7fd5dbc1743bf043d21f350937755c0647"
+)
+V15_TERMINAL_FAILURE_RESULT_PATH = (
+    "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_"
+    "extended_horizon_terminal_failure_result_2026-07-29.json"
+)
+V15_TERMINAL_FAILURE_RESULT_FILE_SHA256 = (
+    "03ec7227f1a4deb072b5f059568d6655648bd0587f3c0991978f0d2555a4842d"
+)
+V15_TERMINAL_FAILURE_RESULT_BYTE_COUNT = 4_399
 V14_RESULT_COMMIT = "d54dfea445dc9bc80cee6421c1b0aea2639463f1"
 V14_RESULT_PATH = (
     "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v14_"
@@ -54,7 +79,7 @@ V14_RESULT_FILE_SHA256 = (
 V14_RESULT_BYTE_COUNT = 9_806
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_rgb_unified_ray_survival_joint_jepa_v15_"
-    "extended_horizon/attempt_v1"
+    "extended_horizon_integrity_replacement_v1/attempt_v1"
 )
 MODEL_CLASS_NAME = "GeometryAnchoredSweptProgressSurvivalJointJepaV14"
 
@@ -142,6 +167,14 @@ _bound_parent_sources[PREREGISTRATION_PATH] = (
     PREREGISTRATION_FILE_SHA256,
     PREREGISTRATION_BYTE_COUNT,
 )
+_bound_parent_sources[ORIGINAL_V15_PREREGISTRATION_PATH] = (
+    ORIGINAL_V15_PREREGISTRATION_FILE_SHA256,
+    ORIGINAL_V15_PREREGISTRATION_BYTE_COUNT,
+)
+_bound_parent_sources[V15_TERMINAL_FAILURE_RESULT_PATH] = (
+    V15_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+    V15_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
+)
 _bound_parent_sources[V14_RESULT_PATH] = (
     V14_RESULT_FILE_SHA256,
     V14_RESULT_BYTE_COUNT,
@@ -165,10 +198,11 @@ _engine.DEVELOPMENT_CHECKPOINT_BINDING_RELATIVE_PATH = (
 )
 _engine.CURRENT_EXECUTION_AUTHORIZED = False
 _engine.CURRENT_EXECUTION_DENIAL = (
-    "V15 scientific execution is denied until its recursive source closure, "
-    "independent exact-binding review, custody clean-export exception and "
-    "certification, frozen-export validation, and one-shot execution binding "
-    "are committed and validated by the custodian-owned launcher"
+    "V15 integrity-replacement scientific execution is denied until its "
+    "recursive source closure, independent exact-binding review, custody "
+    "clean-export exception and certification, frozen-export validation, "
+    "and one-shot execution binding are committed and validated by the "
+    "custodian-owned launcher"
 )
 
 
@@ -386,6 +420,12 @@ def private_adapter_receipt_v15() -> dict[str, Any]:
         "public_v14_loaded_by_adapter": False,
         "private_module_registered": PRIVATE_V14_MODULE_NAME in sys.modules,
         "preregistration_commit": PREREGISTRATION_COMMIT,
+        "original_v15_preregistration_commit": (
+            ORIGINAL_V15_PREREGISTRATION_COMMIT
+        ),
+        "v15_terminal_failure_result_commit": (
+            V15_TERMINAL_FAILURE_RESULT_COMMIT
+        ),
         "v14_result_commit": V14_RESULT_COMMIT,
         "output_root": OUTPUT_ROOT_RELATIVE_PATH,
         "model_class": MODEL_CLASS_NAME,

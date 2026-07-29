@@ -75,7 +75,7 @@ def test_import_is_source_only_and_no_argument_cli_is_denied(
         "reservation_created": False,
         "schema": (
             "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
-            "launcher_v1"
+            "integrity_replacement_v1_launcher_v1"
         ),
         "scientific_payload_opened": False,
         "status": "DENIED_NO_FUTURE_AUTHORITY",
@@ -98,6 +98,30 @@ def test_private_adapter_does_not_mutate_the_canonical_launcher() -> None:
     assert adapted._validate_schedule_v13 is launcher._validate_schedule_v15
     assert adapted._v12_observation_v13 is launcher._v12_observation_v15
     launcher._assert_configured_base_v15()
+
+
+def test_integrity_replacement_uses_fresh_evidence_and_arm_identities() -> None:
+    prefix = (
+        "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
+        "integrity_replacement_v1"
+    )
+    assert launcher.SOURCE_EVIDENCE_SCHEMA_PREFIX == prefix
+    assert launcher.LAUNCHER_SCHEMA == f"{prefix}_launcher_v1"
+    assert launcher.EXPERIMENT_ARM_NAME == (
+        "unified_ray_survival_v15_extended_horizon_integrity_replacement_v1"
+    )
+    assert launcher.AUTHORITY_RELATIVE_PATH.endswith(
+        "integrity_replacement_v1_execution_authorization_2026-07-29.json"
+    )
+    assert launcher.SOURCE_MANIFEST_RELATIVE_PATH.endswith(
+        "integrity_replacement_v1_source_manifest_2026-07-29.json"
+    )
+    assert launcher.SOURCE_REVIEW_RELATIVE_PATH.endswith(
+        "integrity_replacement_v1_source_review_2026-07-29.json"
+    )
+    assert launcher.CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH.endswith(
+        "integrity_replacement_v1_clean_export_certification_2026-07-29.json"
+    )
 
 
 def test_schedule_is_validated_at_16000_then_repeated_exactly_in_memory() -> None:
@@ -201,4 +225,3 @@ def test_isolated_import_does_not_load_runtime_or_touch_payload() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stderr
-

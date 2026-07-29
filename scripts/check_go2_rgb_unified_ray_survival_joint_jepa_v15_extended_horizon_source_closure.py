@@ -18,11 +18,11 @@ BASE_CHECKER_PATH = (
 MANIFEST_PATH = (
     ROOT
     / "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_"
-    "horizon_source_manifest_2026-07-29.json"
+    "horizon_integrity_replacement_v1_source_manifest_2026-07-29.json"
 )
 SCHEMA = (
     "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_"
-    "source_manifest"
+    "integrity_replacement_v1_source_manifest"
 )
 
 
