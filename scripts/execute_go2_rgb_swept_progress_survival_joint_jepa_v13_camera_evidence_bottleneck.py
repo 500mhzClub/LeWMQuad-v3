@@ -22,7 +22,7 @@ from typing import Any, Mapping, Sequence
 
 
 SCHEMA_PREFIX = "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13"
-PREREGISTRATION_COMMIT = "ba735b4c2a66168c6dd058fcfb0ed3095d350ac3"
+PREREGISTRATION_COMMIT = "26b62c97f0dcd3e73b95fd345e6c0440b80c0f13"
 EXPECTED_RUNTIME_FINGERPRINT = {
     "executable": (
         "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/bin/python"
@@ -35,11 +35,11 @@ EXPECTED_RUNTIME_FINGERPRINT = {
 }
 PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "integrity_replacement_v1_preregistration_2026-07-29.md"
+    "integrity_replacement_v2_preregistration_2026-07-29.md"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "integrity_replacement_v1/attempt_v1"
+    "integrity_replacement_v2/attempt_v1"
 )
 
 # A later committed binding is necessary but cannot silently change this
@@ -158,8 +158,8 @@ FINAL_PHYSICAL_THRESHOLDS = {
 # independently bound later; these entries do not grant execution authority.
 BOUND_PARENT_SOURCES = {
     PREREGISTRATION_PATH: (
-        "3721e937106f837fa7877dd18d8899779f9a0c747b92d7d177850af1de92ea54",
-        3_571,
+        "695d534bb59ce7a844d4f5f7be9efa78cb658f81e87f55fb58287eb36115ec1f",
+        3_924,
     ),
     "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py": (
         "52bc99f0ba59c2cf7444221931169ba57af61f343308b85625877c7a257adffd",
@@ -174,8 +174,8 @@ BOUND_PARENT_SOURCES = {
         32_751,
     ),
     "scripts/run_go2_shared_jepa_v5_matched_training_v1.py": (
-        "e98bd8cceed26288ebcbf8a02eac03c72be6d06a539953927754353e049a5578",
-        103_456,
+        "392bd9c5e3b6f803f829aa11935ef60b9667d0919c8fbb5c181bc8a5d235db80",
+        103_481,
     ),
     "lewm/benchmarks/go2_observable_camera_ray_fit_v4_metrics.py": (
         "6a0e40f9dcb496831553dc5bbc6d1efcdf6d82676d6f18aa20e417f8de4fa6a0",
@@ -1386,22 +1386,28 @@ def _derive_initial_structural_integrity_v13(runtime: Any, model: Any) -> dict[s
     torch = runtime.torch
     if torch.equal(probe["rgb"], probe["wrong_rgb"]):
         raise PermissionError("V13 structural wrong-RGB probe is not distinct")
-    first = model.encode_online_with_auxiliary_evidence(
-        probe["rgb"],
-        camera_origin_body_m=probe["camera_origin_a"],
-        camera_basis_body_fru=probe["camera_basis"],
-        ground_plane_z_body_m=probe["ground_plane_z"],
-    )
-    second = model.encode_online_with_auxiliary_evidence(
-        probe["rgb"],
-        camera_origin_body_m=probe["camera_origin_b"],
-        camera_basis_body_fru=probe["camera_basis"],
-        ground_plane_z_body_m=probe["ground_plane_z"],
-    )
-    nominal = model.encode_online_with_evidence(probe["rgb"])
-    direct = model.encode_online(probe["rgb"])
-    target = model.encode_target(probe["rgb"])
-    wrong = model.encode_online_with_evidence(probe["wrong_rgb"])
+    was_training = bool(model.training)
+    model.eval()
+    try:
+        with torch.no_grad():
+            first = model.encode_online_with_auxiliary_evidence(
+                probe["rgb"],
+                camera_origin_body_m=probe["camera_origin_a"],
+                camera_basis_body_fru=probe["camera_basis"],
+                ground_plane_z_body_m=probe["ground_plane_z"],
+            )
+            second = model.encode_online_with_auxiliary_evidence(
+                probe["rgb"],
+                camera_origin_body_m=probe["camera_origin_b"],
+                camera_basis_body_fru=probe["camera_basis"],
+                ground_plane_z_body_m=probe["ground_plane_z"],
+            )
+            nominal = model.encode_online_with_evidence(probe["rgb"])
+            direct = model.encode_online(probe["rgb"])
+            target = model.encode_target(probe["rgb"])
+            wrong = model.encode_online_with_evidence(probe["wrong_rgb"])
+    finally:
+        model.train(was_training)
     raw_fields = (
         "pixel_first_hit_hazard_logits",
         "pixel_within_bin_offset_m",

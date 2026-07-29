@@ -747,7 +747,7 @@ class RawInputs:
         row = int(endpoint["shard_row"])
         if not 0 <= row < cache.shape[0]:
             raise PermissionError("Raw V13 shard row escaped")
-        return self.runtime.torch.from_numpy(cache[row])
+        return self.runtime.torch.from_numpy(self.runtime.np.asarray(cache[row]))
 
     def frame(self, endpoint_id: str, *, role: str, arm: str, stage: str) -> dict[str, Any]:
         endpoint = self.endpoints.get(endpoint_id)

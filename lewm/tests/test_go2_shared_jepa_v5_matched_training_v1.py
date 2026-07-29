@@ -8,6 +8,7 @@ import subprocess
 import sys
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 import torch
 
@@ -279,6 +280,70 @@ def test_runner_endpoint_index_order_accepts_exact_digest_not_plan_digest(
     )
     with pytest.raises(PermissionError, match="population or ordering changed"):
         inputs._validate_indexes(endpoint_rows)
+
+
+def test_raw_row_loader_preserves_arrays_and_adapts_ground_scalar() -> None:
+    inputs = object.__new__(runner.RawInputs)
+    inputs.runtime = SimpleNamespace(np=np, torch=torch)
+    inputs.array_cache = {
+        "shards/demo/camera_origin_body_m.f4": np.asarray(
+            [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]], dtype="<f4"
+        ),
+        "shards/demo/ground_plane_z_body_m.f4": np.asarray(
+            [-0.1, -0.2], dtype="<f4"
+        ),
+    }
+    inputs.inventory = {
+        path: {"file_sha256": f"{index + 1:064x}"}
+        for index, path in enumerate(inputs.array_cache)
+    }
+    endpoint = {
+        "dataset_role": "train",
+        "scene_shard": "shards/demo/shard.json",
+        "shard_row": 1,
+    }
+    shard = {
+        "files": [
+            {
+                "path": "camera_origin_body_m.f4",
+                "dtype": "<f4",
+                "shape": [2, 3],
+                "file_sha256": inputs.inventory[
+                    "shards/demo/camera_origin_body_m.f4"
+                ]["file_sha256"],
+            },
+            {
+                "path": "ground_plane_z_body_m.f4",
+                "dtype": "<f4",
+                "shape": [2],
+                "file_sha256": inputs.inventory[
+                    "shards/demo/ground_plane_z_body_m.f4"
+                ]["file_sha256"],
+            },
+        ]
+    }
+
+    origin = inputs._row_array(
+        endpoint,
+        shard,
+        "camera_origin_body_m.f4",
+        arm="test",
+        stage="test",
+    )
+    ground = inputs._row_array(
+        endpoint,
+        shard,
+        "ground_plane_z_body_m.f4",
+        arm="test",
+        stage="test",
+    )
+
+    assert torch.equal(origin, torch.tensor([0.4, 0.5, 0.6]))
+    assert origin.shape == (3,)
+    assert ground.shape == torch.Size([])
+    assert ground.dtype == torch.float32
+    assert ground.item() == pytest.approx(-0.2)
+    assert torch.stack((ground, ground)).shape == (2,)
 
 
 def test_raw_audit_exact_denials_require_retry_field_absent(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -28,6 +29,10 @@ from lewm.models.geometry_anchored_swept_progress_survival_joint_jepa_v13_camera
     GeometryAnchoredSweptProgressSurvivalJointJepaV13,
     neutral_disjoint_ternary_log_probabilities_v12,
     retained_occupied_evidence_planes_v13,
+)
+from scripts import (
+    execute_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck
+    as executor_v13,
 )
 
 
@@ -320,6 +325,52 @@ def test_nominal_and_auxiliary_paths_are_isolated_and_decode_once(
         v13_model.encode_online_with_sampling(rgb)
     with pytest.raises(RuntimeError, match="removed encode_target_with_sampling"):
         v13_model.encode_target_with_sampling(rgb)
+
+
+def test_initial_structural_probe_is_deterministic_and_restores_training(
+    v13_model: GeometryAnchoredSweptProgressSurvivalJointJepaV13,
+) -> None:
+    rgb = torch.randn(
+        (1, 3, 112, 112),
+        generator=torch.Generator().manual_seed(97),
+    )
+    origin_a = torch.tensor([NOMINAL_CAMERA_ORIGIN_BODY_M_V13])
+    origin_b = origin_a.clone()
+    origin_b[:, 0] += 0.125
+    probe = {
+        "rgb": rgb,
+        "wrong_rgb": rgb.flip(-1),
+        "camera_origin_a": origin_a,
+        "camera_origin_b": origin_b,
+        "camera_basis": torch.tensor([NOMINAL_CAMERA_BASIS_BODY_FRU_V13]),
+        "ground_plane_z": torch.tensor([NOMINAL_GROUND_PLANE_Z_BODY_M_V13]),
+    }
+    runtime = SimpleNamespace(
+        torch=torch,
+        structural_probe_inputs_v13=lambda: dict(probe),
+    )
+    v13_model.zero_grad(set_to_none=True)
+    v13_model.train()
+    state_before = {
+        name: value.detach().clone() for name, value in v13_model.state_dict().items()
+    }
+    rng_before = torch.random.get_rng_state().clone()
+
+    result = executor_v13._derive_initial_structural_integrity_v13(
+        runtime,
+        v13_model,
+    )
+
+    assert result["passed"] is True
+    assert v13_model.training is True
+    assert all(not module.training for module in v13_model.target_modules())
+    assert torch.equal(torch.random.get_rng_state(), rng_before)
+    assert all(
+        torch.equal(value, state_before[name])
+        for name, value in v13_model.state_dict().items()
+    )
+    assert all(parameter.grad is None for parameter in v13_model.parameters())
+    v13_model.eval()
 
 
 def test_v13_masks_drive_semantics_and_ema_updates_only_final_bottleneck(

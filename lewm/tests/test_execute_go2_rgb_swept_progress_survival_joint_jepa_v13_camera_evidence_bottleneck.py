@@ -180,6 +180,7 @@ class _FakeTargetModule:
 
 class GeometryAnchoredSweptProgressSurvivalJointJepaV13:
     def __init__(self) -> None:
+        self.training = True
         self.config = _FakeConfig()
         self.target_hard_sync_count = torch.tensor(1, dtype=torch.long)
         self.ema_update_count = torch.tensor(0, dtype=torch.long)
@@ -198,6 +199,15 @@ class GeometryAnchoredSweptProgressSurvivalJointJepaV13:
                 ground_query_geometry=self._ground_query_geometry
             )
         )
+
+    def train(
+        self, mode: bool = True
+    ) -> "GeometryAnchoredSweptProgressSurvivalJointJepaV13":
+        self.training = mode
+        return self
+
+    def eval(self) -> "GeometryAnchoredSweptProgressSurvivalJointJepaV13":
+        return self.train(False)
 
     @staticmethod
     def _ground_query_geometry(
