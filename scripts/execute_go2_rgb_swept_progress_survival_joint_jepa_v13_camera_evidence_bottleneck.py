@@ -22,7 +22,7 @@ from typing import Any, Mapping, Sequence
 
 
 SCHEMA_PREFIX = "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13"
-PREREGISTRATION_COMMIT = "307d70aa75a99ca982ad0437f9080e7aa9aebe1f"
+PREREGISTRATION_COMMIT = "ba735b4c2a66168c6dd058fcfb0ed3095d350ac3"
 EXPECTED_RUNTIME_FINGERPRINT = {
     "executable": (
         "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/bin/python"
@@ -35,10 +35,11 @@ EXPECTED_RUNTIME_FINGERPRINT = {
 }
 PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "preregistration_2026-07-29.md"
+    "integrity_replacement_v1_preregistration_2026-07-29.md"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_camera_evidence_bottleneck_joint_jepa_v13/attempt_v1"
+    ".generated/go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
+    "integrity_replacement_v1/attempt_v1"
 )
 
 # A later committed binding is necessary but cannot silently change this
@@ -157,8 +158,8 @@ FINAL_PHYSICAL_THRESHOLDS = {
 # independently bound later; these entries do not grant execution authority.
 BOUND_PARENT_SOURCES = {
     PREREGISTRATION_PATH: (
-        "821859ca20432fdedb041e9124af3385bbd64f61912210e2ee042b54ca4e4fa6",
-        21_902,
+        "3721e937106f837fa7877dd18d8899779f9a0c747b92d7d177850af1de92ea54",
+        3_571,
     ),
     "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py": (
         "52bc99f0ba59c2cf7444221931169ba57af61f343308b85625877c7a257adffd",

@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath
+import subprocess
 import sys
 from typing import Any, Mapping, Sequence
 
@@ -17,7 +18,7 @@ BASE_CHECKER_PATH = "scripts/check_go2_multires_probe_source_closure_v3.py"
 MANIFEST_PATH = (
     ROOT
     / "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "source_manifest_2026-07-29.json"
+    "integrity_replacement_v1_source_manifest_2026-07-29.json"
 )
 SCHEMA = "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_source_manifest"
 
@@ -61,6 +62,7 @@ ENTRYPOINTS = (
 # Exact local modules reached through importlib by the deferred V13 composer,
 # V13 tensor core, and the reused V1/Shared-V5 loading and scoring surfaces.
 FORCED_DYNAMIC_SOURCES = (
+    "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py",
     "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v1.py",
     "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v1.py",
     "scripts/run_go2_shared_jepa_v5_matched_training_v1.py",
@@ -121,6 +123,96 @@ def _safe_source_path(relative: str) -> None:
         raise PermissionError(f"forbidden V13 source-closure path: {relative}")
 
 
+PACKAGE_ROOTS = (
+    ("lewm", ROOT / "lewm"),
+    ("scripts", ROOT / "scripts"),
+    ("lewm_worlds", ROOT / "lewm_worlds/lewm_worlds"),
+)
+
+
+def _module_index() -> tuple[dict[str, Path], dict[Path, str]]:
+    """Index the V13 source roots without changing the frozen V3 checker."""
+
+    by_module: dict[str, Path] = {}
+    by_path: dict[Path, str] = {}
+    discovered = subprocess.run(
+        [
+            "rg",
+            "--files",
+            "--glob",
+            "*.py",
+            "--glob",
+            "!**/sealed_test.json",
+            "--glob",
+            "!**/sealed/**",
+            "--glob",
+            "!**/sealed_*/**",
+            "--glob",
+            "!**/.generated/**",
+            "--glob",
+            "!**/artifacts/**",
+            "--glob",
+            "!**/checkpoints/**",
+            "--glob",
+            "!**/config/**",
+            "--glob",
+            "!**/configs/**",
+            "--glob",
+            "!**/custody/**",
+            "--glob",
+            "!**/data/**",
+            "--glob",
+            "!**/datasets/**",
+            "--glob",
+            "!**/generated/**",
+            "--glob",
+            "!scripts/run_go2_shared_jepa_v5_protected_camera_adaptation_v*.py",
+            "lewm",
+            "scripts",
+            "lewm_worlds/lewm_worlds",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if discovered.returncode != 0:
+        raise RuntimeError(
+            "ignore-honoring V13 Python source discovery failed:\n"
+            + discovered.stderr.strip()
+        )
+    relative_paths = [
+        Path(line) for line in discovered.stdout.splitlines() if line
+    ]
+    if not relative_paths:
+        raise RuntimeError("ignore-honoring V13 Python source discovery was empty")
+    for prefix, package_root in PACKAGE_ROOTS:
+        if not package_root.is_dir():
+            continue
+        candidates = sorted(
+            ROOT / relative
+            for relative in relative_paths
+            if (ROOT / relative).is_relative_to(package_root)
+        )
+        for path in candidates:
+            relative_from_root = path.relative_to(ROOT).as_posix()
+            _safe_source_path(relative_from_root)
+            relative = path.relative_to(package_root)
+            parts = list(relative.with_suffix("").parts)
+            if parts[-1] == "__init__":
+                parts.pop()
+            module = ".".join((prefix, *parts)) if parts else prefix
+            resolved = path.resolve()
+            existing = by_module.get(module)
+            if existing is not None and existing != resolved:
+                raise RuntimeError(
+                    f"duplicate local V13 module {module}: {existing}, {path}"
+                )
+            by_module[module] = resolved
+            by_path[resolved] = module
+    return by_module, by_path
+
+
 # Rebind the reviewed AST walker once; no project, Torch, data, or GPU module is
 # imported by discovery.  A protected filename discovered by `rg --files`
 # fails closed before its contents can be opened.
@@ -131,6 +223,7 @@ _BASE.FORCED_DYNAMIC_SOURCES = FORCED_DYNAMIC_SOURCES
 _BASE.EXCLUDED_RUNTIME_CATEGORIES = EXCLUDED_RUNTIME_CATEGORIES
 _BASE.FORBIDDEN_PATH_PARTS = set(FORBIDDEN_PATH_PARTS)
 _BASE._safe_source_path = _safe_source_path
+_BASE._module_index = _module_index
 
 _base_build_manifest = _BASE.build_manifest
 

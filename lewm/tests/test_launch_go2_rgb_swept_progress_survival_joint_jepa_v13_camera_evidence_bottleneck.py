@@ -19,6 +19,9 @@ LAUNCHER_PATH = (
     / "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_"
     "camera_evidence_bottleneck.py"
 )
+FROZEN_RUNTIME_PYTHON = Path(
+    "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/bin/python"
+)
 _IMPORTED_BEFORE = set(sys.modules)
 _SPEC = importlib.util.spec_from_file_location(
     "_test_v13_camera_evidence_bottleneck_launcher",
@@ -66,6 +69,7 @@ def test_isolated_interpreter_can_import_from_certified_source_root() -> None:
         f"ns=runpy.run_path({str(LAUNCHER_PATH)!r});"
         "root=ns['_activate_certified_source_root_v13'](ns['ROOT']);"
         "assert sys.path[0]==str(root);"
+        "assert sys.path[1]==str(root/'lewm_worlds');"
         "importlib.import_module('scripts.execute_go2_rgb_swept_progress_survival_"
         "joint_jepa_v13_camera_evidence_bottleneck');"
         "assert 'torch' not in sys.modules"
@@ -105,6 +109,98 @@ def test_isolated_interpreter_can_import_from_certified_source_root() -> None:
         check=False,
     )
     assert without_b.returncode == 0, without_b.stderr
+
+
+def test_isolated_source_import_smoke_reaches_labels_without_runtime_access() -> None:
+    modules = (
+        "scripts.execute_go2_rgb_swept_progress_survival_joint_jepa_v13_"
+        "camera_evidence_bottleneck",
+        "numpy",
+        "PIL",
+        "PIL.Image",
+        "torch",
+        "lewm.models.observable_camera_ray_evidence_v4",
+        "lewm.models.observable_camera_ray_evidence_v4_training",
+        "lewm.benchmarks.go2_observable_camera_ray_fit_v4_metrics",
+        "scripts.execute_go2_rgb_swept_progress_survival_joint_jepa_v1",
+        "scripts.run_go2_rgb_swept_progress_survival_joint_jepa_v1",
+        "scripts.run_go2_shared_jepa_v5_matched_training_v1",
+        "scripts.run_go2_direct_egocentric_bev_state_jepa_v1",
+        "lewm.benchmarks.go2_direct_egocentric_bev_state_jepa_v1",
+        "lewm.benchmarks.go2_swept_progress_survival_labels_v1",
+        "lewm.models.geometry_anchored_swept_progress_survival_joint_jepa_"
+        "v13_camera_evidence_bottleneck",
+        "scripts.run_go2_rgb_swept_progress_survival_joint_jepa_v13_"
+        "camera_evidence_bottleneck",
+        "lewm.benchmarks.go2_swept_progress_survival_joint_jepa_v1",
+        "lewm.benchmarks.go2_post_action_projective_support_metrics_v1",
+    )
+    code = f"""
+import builtins
+import importlib
+import pathlib
+import runpy
+
+ns = runpy.run_path({str(LAUNCHER_PATH)!r})
+root = ns["_activate_certified_source_root_v13"](ns["ROOT"])
+real_open = builtins.open
+real_path_open = pathlib.Path.open
+
+def guarded_open(file, *args, **kwargs):
+    path = pathlib.Path(file) if isinstance(file, (str, pathlib.Path)) else None
+    if path is not None and ".generated" in path.parts:
+        raise AssertionError("generated input opened during source import")
+    return real_open(file, *args, **kwargs)
+
+def guarded_path_open(path, *args, **kwargs):
+    if ".generated" in path.parts:
+        raise AssertionError("generated input opened during source import")
+    return real_path_open(path, *args, **kwargs)
+
+builtins.open = guarded_open
+pathlib.Path.open = guarded_path_open
+modules = {modules!r}
+for name in modules:
+    importlib.import_module(name)
+torch = importlib.import_module("torch")
+assert not torch.cuda.is_initialized()
+"""
+    environment = dict(os.environ)
+    environment.update(
+        {
+            "HIP_VISIBLE_DEVICES": "",
+            "ROCR_VISIBLE_DEVICES": "",
+            "CUDA_VISIBLE_DEVICES": "",
+            "PYTHONDONTWRITEBYTECODE": "1",
+        }
+    )
+    result = subprocess.run(
+        [str(FROZEN_RUNTIME_PYTHON), "-I", "-B", "-c", code],
+        cwd="/",
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_certified_source_activation_rejects_nested_package_symlink(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    external = tmp_path / "external"
+    (source / "lewm_worlds").mkdir(parents=True)
+    external.mkdir()
+    (source / "lewm_worlds/lewm_worlds").symlink_to(
+        external, target_is_directory=True
+    )
+    monkeypatch.setattr(launcher, "ROOT", source)
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+    monkeypatch.setattr(sys, "flags", SimpleNamespace(isolated=1))
+    with pytest.raises(PermissionError):
+        launcher._activate_certified_source_root_v13(source)
 
 
 def test_authority_loader_accepts_only_fixed_canonical_regular_file(

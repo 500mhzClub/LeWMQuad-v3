@@ -24,19 +24,19 @@ from typing import Any, Callable, Mapping, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "execution_authorization_2026-07-29.json"
+    "integrity_replacement_v1_execution_authorization_2026-07-29.json"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "source_manifest_2026-07-29.json"
+    "integrity_replacement_v1_source_manifest_2026-07-29.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "source_review_2026-07-29.json"
+    "integrity_replacement_v1_source_review_2026-07-29.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
-    "clean_export_certification_2026-07-29.json"
+    "integrity_replacement_v1_clean_export_certification_2026-07-29.json"
 )
 SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
@@ -112,10 +112,31 @@ def _activate_certified_source_root_v13(source_root: Path) -> Path:
         raise PermissionError(
             "authorized V13 execution requires its certified root under python -I -B"
         )
-    source = str(resolved)
-    while source in sys.path:
-        sys.path.remove(source)
-    sys.path.insert(0, source)
+    nested_root = resolved / "lewm_worlds"
+    package_directory = nested_root / "lewm_worlds"
+    try:
+        nested_resolved = nested_root.resolve(strict=True)
+        package_resolved = package_directory.resolve(strict=True)
+    except (FileNotFoundError, OSError) as error:
+        raise PermissionError("V13 nested lewm_worlds package is absent") from error
+    if (
+        nested_root.is_symlink()
+        or package_directory.is_symlink()
+        or not nested_root.is_dir()
+        or not package_directory.is_dir()
+        or nested_resolved != nested_root.absolute()
+        or package_resolved != package_directory.absolute()
+        or not nested_resolved.is_relative_to(resolved)
+        or not package_resolved.is_relative_to(nested_resolved)
+    ):
+        raise PermissionError(
+            "V13 nested lewm_worlds package escaped the certified source root"
+        )
+    sources = (str(resolved), str(nested_resolved))
+    for source in sources:
+        while source in sys.path:
+            sys.path.remove(source)
+    sys.path[0:0] = sources
     return resolved
 
 

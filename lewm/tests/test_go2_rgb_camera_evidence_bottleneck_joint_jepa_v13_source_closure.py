@@ -33,6 +33,8 @@ def test_candidate_accounts_for_every_discovered_source_byte() -> None:
         or name.startswith("lewm.")
         or name == "scripts"
         or name.startswith("scripts.")
+        or name == "lewm_worlds"
+        or name.startswith("lewm_worlds.")
     }
     manifest = checker.build_manifest()
     imported_after = {
@@ -44,6 +46,8 @@ def test_candidate_accounts_for_every_discovered_source_byte() -> None:
         or name.startswith("lewm.")
         or name == "scripts"
         or name.startswith("scripts.")
+        or name == "lewm_worlds"
+        or name.startswith("lewm_worlds.")
     }
     assert imported_after == imported_before
     assert manifest["source_count"] == len(manifest["source_paths"])
@@ -73,6 +77,10 @@ def test_all_entrypoints_and_forced_dynamic_edges_are_in_closure() -> None:
         "lewm/models/shared_observable_camera_ray_jepa_v5.py",
         "lewm/models/observable_camera_ray_evidence_v4.py",
         "lewm/models/observable_camera_ray_evidence_v4_training.py",
+        "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py",
+        "lewm_worlds/lewm_worlds/__init__.py",
+        "lewm_worlds/lewm_worlds/manifest.py",
+        "lewm_worlds/lewm_worlds/families.py",
         "scripts/run_go2_shared_jepa_v5_matched_training_v1.py",
     }.issubset(paths)
     assert not any(
@@ -99,6 +107,8 @@ def test_discovery_honors_ignores_and_source_reads_reject_symlinks(
     base_source = (ROOT / checker.BASE_CHECKER_PATH).read_text(encoding="utf-8")
     assert ".rglob(" not in base_source
     assert '"rg",\n            "--files"' in base_source
+    assert '("lewm_worlds", ROOT / "lewm_worlds/lewm_worlds")' in source
+    assert '"lewm_worlds/lewm_worlds"' in source
     assert "--no-ignore" not in base_source
     assert '"-u"' not in base_source
     for exclusion in (
@@ -117,6 +127,37 @@ def test_discovery_honors_ignores_and_source_reads_reject_symlinks(
     link.symlink_to(target)
     with pytest.raises((OSError, PermissionError)):
         checker._read_regular_source(link)
+
+
+def test_discovery_reads_only_returned_safe_source_paths(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    accessed: list[str] = []
+    original_read = checker._BASE._read_regular_source
+
+    def recording_read(path: Path) -> bytes:
+        relative = path.resolve().relative_to(ROOT.resolve()).as_posix()
+        checker._safe_source_path(relative)
+        accessed.append(relative)
+        return original_read(path)
+
+    monkeypatch.setattr(checker._BASE, "_read_regular_source", recording_read)
+    paths = set(checker.discover_source_closure())
+    assert set(accessed) == paths
+    assert "lewm_worlds/lewm_worlds/manifest.py" in accessed
+    assert not any("sealed" in Path(path).parts for path in accessed)
+    assert not any("heldout" in Path(path).parts for path in accessed)
+    assert not any("held_out" in Path(path).parts for path in accessed)
+
+
+def test_integrity_replacement_uses_a_fresh_manifest_without_schema_drift() -> None:
+    assert checker.MANIFEST_PATH.relative_to(ROOT).as_posix() == (
+        "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_"
+        "integrity_replacement_v1_source_manifest_2026-07-29.json"
+    )
+    assert checker.SCHEMA == (
+        "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_source_manifest"
+    )
 
 
 def test_cli_exposes_emit_write_verify_and_tracked_modes() -> None:
