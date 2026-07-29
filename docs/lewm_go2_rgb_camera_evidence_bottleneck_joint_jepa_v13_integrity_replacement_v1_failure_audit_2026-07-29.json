@@ -1,0 +1,132 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 7,
+    "bound_parent_source_validation_execution_authority_granted": false,
+    "certified_source_bindings_sha256": "de9d2e53c8a8e9f32fb1b5ddc597c3e8161e8cbda205181b7c3208b1ac4c04c4",
+    "certified_source_rehash_count": 90,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_role_count": 4,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 10,
+    "raw_consumed_inputs_rehashed": true,
+    "raw_consumed_kind_counts": {
+      "development_rgb": 2,
+      "raw_audit": 1,
+      "raw_manifest": 1,
+      "raw_supervision": 6
+    },
+    "raw_consumed_records_sha256": "b7e478ea0e0dd8bf1366a72aea1b8b04a99922ffd122a992a2880fc741efce6c",
+    "raw_consumed_unique_file_count": 10,
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "reservation_created_utc": "2026-07-29T12:44:25Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "authority": {
+    "canonical_sha256": "2a795c38f02df46dfc5b00ed10543b2766f337c2510a51a797c775c8da23c93f",
+    "reservation_authority_crosslink_valid": true,
+    "runtime_data_root_matches": true,
+    "runtime_fingerprint_matches": true,
+    "source_root_matches": true
+  },
+  "date": "2026-07-29",
+  "diagnosis": {
+    "exception_message": "expected np.ndarray (got numpy.float32)",
+    "exception_message_sha256": "95a3f88e1ce4a464ac435817a54f6f98158940e77375155f0fb1ab23393922a6",
+    "exception_message_sha256_match": true,
+    "exception_type": "TypeError",
+    "failure_stage": "initialize_n320_v13_model_optimizer",
+    "failure_status": "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME",
+    "root_cause": {
+      "adapter_operation": "torch.from_numpy(cache[row])",
+      "contract_fact": "ground_plane_z_body_m.f4 has an empty trailing shape, so selecting one row produces a numpy.float32 scalar rather than an ndarray",
+      "location": "scripts/run_go2_shared_jepa_v5_matched_training_v1.py::_row_array",
+      "scope": "runtime row-shape adapter integrity failure before any scientific update; not a model or metric result"
+    }
+  },
+  "receipt_artifacts": {
+    "failure": {
+      "byte_count": 1116,
+      "content_sha256": "11ceb95951b282d9157fc51104d7f829c87f310c895d2f8d8c276b3beb94cf3b",
+      "file_sha256": "bf1657416337afb620283b7f85333e132ae505676bf9599abcdb1e1b003fe6d3",
+      "mode": "0444",
+      "path": "failure.json",
+      "regular_nonsymlink": true
+    },
+    "reservation": {
+      "byte_count": 493,
+      "content_sha256": "e99665811991cf6a5816124a12441b9db32f48efd1a9a7c3e6327c4082c257ed",
+      "file_sha256": "ec78a09ae915ea506fc4688f29fe0f8ead274d36362c65e411099e472e948c2e",
+      "mode": "0444",
+      "path": "reservation.json",
+      "regular_nonsymlink": true
+    },
+    "success": {
+      "path": "success.json",
+      "present": false
+    },
+    "terminal_access": {
+      "byte_count": 21213,
+      "content_sha256": "20628f1f34ad965c119c4c043e88c54bc6f3b1c98bdc5e4809789af0f316fb9a",
+      "file_sha256": "eacdccac98b9709a9b1d5f1416c7095a02e9fab812fdc7b83f5addbee19514ec",
+      "mode": "0444",
+      "path": "receipts/terminal_access.json",
+      "regular_nonsymlink": true
+    },
+    "trace_binding": {
+      "byte_count": 0,
+      "file_opened_during_this_audit": false,
+      "file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "trace.jsonl"
+    }
+  },
+  "schema": "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_integrity_replacement_v1_failure_audit_v1",
+  "scientific_accounting": {
+    "checkpoint_published": false,
+    "completed_optimizer_updates": 0,
+    "completed_presentations": 0,
+    "probability_calibration_opened": false,
+    "scientific_gate_evaluated": false,
+    "terminal_update": null
+  },
+  "sequencing": {
+    "model_and_optimizer_initialization_completed": true,
+    "model_initialization_validation_completed": true,
+    "post_structural_initialized_trace_row_published": false,
+    "structural_probe_entered": true,
+    "structural_probe_inputs_observed_before_exception": [
+      "two fixed checkpoint-selection RGB files",
+      "camera_basis_body_fru.f4",
+      "camera_origin_body_m.f4",
+      "ground_plane_z_body_m.f4",
+      "the bound scene shard"
+    ],
+    "training_loop_entered": false
+  },
+  "status": "PASS_COMPLETE_FAILURE_AUDIT_ZERO_SCIENTIFIC_PRESENTATIONS",
+  "validation": {
+    "failure_access_receipt_sha256": "842a3e503344178fdbc2ef4ba81d63a9c259a239bde23b42f02681e46e077fd1",
+    "failure_access_receipt_sha256_matches_terminal_inner_receipt": true,
+    "failure_terminal_access_byte_count_crosslink_valid": true,
+    "failure_terminal_access_content_sha256_crosslink_valid": true,
+    "failure_terminal_access_file_sha256_crosslink_valid": true,
+    "failure_terminal_access_path_crosslink_valid": true,
+    "receipt_content_hashes_valid": true,
+    "receipt_modes_immutable": true,
+    "source_sequence_reviewed": true
+  }
+}
