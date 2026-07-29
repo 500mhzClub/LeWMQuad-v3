@@ -1,0 +1,201 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 11,
+    "certified_source_bindings_sha256": "78b0005852005bc617c7ed325736a8f17789cb3accd032b73db620deba265c7c",
+    "certified_source_rehash_count": 104,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 4732,
+    "raw_consumed_records_sha256": "be7732ca68f2b62c29c7d38343c7be52eb40c4449668c61ebfc15ec952ead259",
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "2ecb06716c72e1c98acc1d32f9ebac653cef953b6931aaf3ae02a2383458be81",
+    "authority_commit": "111cfe94eec28623d5b99e52a8d81a1a3308e2e3",
+    "authority_file_sha256": "255700afe01b61249b78827747700083eba07460c20722acc6b0b022fc078ff2",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "output_root": ".generated/go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_integrity_replacement_v1/attempt_v1",
+    "reservation_created_utc": "2026-07-29T21:52:48Z",
+    "reservation_content_sha256": "5972b2d8bf3763205527cfbaaaf9ec2713f723d5b7e943877dc04a19e2b41a23",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "content_sha256": "34359c99117359bb18832496ec1f73695fcf8c86c9f4f36f850c954f015971ed",
+  "date": "2026-07-29",
+  "decision": {
+    "checkpoint_published": false,
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "original_attempt_retry_authorized": false,
+    "probability_calibration_authorized": false,
+    "scientific_gate_reached": false,
+    "scientific_interpretation": "The replacement completed 100 valid joint JEPA optimizer/EMA updates and improved all selected directional summary measures while complete-scope count remained zero, then failed in controller control flow before the preregistered update-400 falsification gate. This is promising interim evidence but neither a V16 pass nor a V16 scientific failure.",
+    "status": "PASS_COMPLETE_FAILURE_AUDIT_POST_UPDATE_100_INFRASTRUCTURE_FAILURE"
+  },
+  "failure": {
+    "exception_message_literal_reconstructed_from_source_and_hash": "1000",
+    "exception_message_sha256": "40510175845988f13f6162ed8526f0b09f73384467fa855e1e79b44a56562a58",
+    "exception_type": "KeyError",
+    "failure_content_sha256": "920e711ea51782017e3d930ac76647c0eb4827d74865843788b668b78bdfb28f",
+    "stage": "observe_update_100",
+    "status": "FAIL_EXCEPTION_TERMINAL_REVIEW_RECOVERY_MILESTONE"
+  },
+  "interim_scientific_evidence": {
+    "deltas_update_0_to_100": {
+      "ground_balanced_accuracy": 0.08330870341937135,
+      "inherited_passed_check_count": 11,
+      "passed_physical_margin_count": 25,
+      "pixel_balanced_accuracy": 0.2056774891249994,
+      "rough_depth_p95_m": -2.436332249641419,
+      "total_physical_shortfall": -87.10587134482374
+    },
+    "first_preregistered_v16_gate_update": 400,
+    "individual_physical_margins_worsened_count": 39,
+    "update_0": {
+      "complete_physical_scope_count": 0,
+      "ground_balanced_accuracy": 0.541935563806034,
+      "inherited_failed_check_count": 22,
+      "inherited_passed_check_count": 2,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 32,
+      "pixel_balanced_accuracy": 0.6326792707919727,
+      "rough_depth_p95_m": 4.869073963165282,
+      "total_physical_margin_count": 189,
+      "total_physical_shortfall": 184.61066427463246,
+      "worst_physical_margin": -18.476295852661128
+    },
+    "update_100": {
+      "complete_physical_scope_count": 0,
+      "ground_balanced_accuracy": 0.6252442672254054,
+      "inherited_failed_check_count": 11,
+      "inherited_passed_check_count": 13,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 57,
+      "pixel_balanced_accuracy": 0.8383567599169721,
+      "rough_depth_p95_m": 2.432741713523863,
+      "total_physical_margin_count": 189,
+      "total_physical_shortfall": 97.50479292980872,
+      "worst_physical_margin": -9.392284774780274
+    },
+    "v16_scientific_classification": "INDETERMINATE_BEFORE_UPDATE_400_GATE"
+  },
+  "receipt_artifacts": [
+    {
+      "byte_count": 1203,
+      "content_sha256": "920e711ea51782017e3d930ac76647c0eb4827d74865843788b668b78bdfb28f",
+      "file_sha256": "6fb049b6fc976b209f9ebdebd03c930def6e987f66227c9d6f22f2354288d1e7",
+      "path": "failure.json"
+    },
+    {
+      "byte_count": 8073,
+      "content_sha256": "c5879df20fa7dc8777ae37f7b677d87aff538419500145305e0437d07ffef12a",
+      "file_sha256": "31711b433d9c3e60b94e6d29c637e0a117019bf1f3b74e2da1e27959f318f682",
+      "path": "metrics/update_0.json"
+    },
+    {
+      "byte_count": 7668,
+      "content_sha256": "6f154ae581ef3a9bc3c3a94388a3dc9b5a1b65d63da15c068593db44e4566e",
+      "file_sha256": "38bca76c27cbeb03d8685dec36b66e06c1b58860d9c23e3a92f0eee60ea64d6b",
+      "path": "metrics/update_100.json"
+    },
+    {
+      "byte_count": 1705428,
+      "content_sha256": "7bd8ebdd42a28a92c6e9b2287bba3a15d38a3baf086ca664039582e6a8c24af7",
+      "file_sha256": "e15ce6ad68047243e575ecf9c1e5feadbeb0ae27c914941c20a8bf3e0cb58f73",
+      "path": "receipts/terminal_access.json"
+    },
+    {
+      "byte_count": 526,
+      "content_sha256": "5972b2d8bf3763205527cfbaaaf9ec2713f723d5b7e943877dc04a19e2b41a23",
+      "file_sha256": "4342465ad48e0b2e3b15e7cd71690f2afbc23b9a5a676100f8b74eda9b289a79",
+      "path": "reservation.json"
+    },
+    {
+      "byte_count": 184161,
+      "file_sha256": "60dcec0b7fea4af230d8d0e78ae40e5f8bedf5214223de445da5bde11a4c57c7",
+      "path": "trace.jsonl",
+      "row_count": 101
+    }
+  ],
+  "root_cause": {
+    "exact_fault": "The update-400 branch used a bare else for its final-gate branch, so update 100 was incorrectly treated as update 1000 and observations[1000] raised KeyError(1000).",
+    "inherited_reference": "The frozen V13 predecessor uses elif update == 1_000 for the same branch.",
+    "minimal_science_identical_repair": "Replace else with elif update == 1_000 and add one lightweight controller lifecycle regression covering update 100.",
+    "model_or_data_fault": false,
+    "source_location": "scripts/go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_lifecycle.py:433"
+  },
+  "schema": "lewm_go2_rgb_ego_motion_aligned_ray_consistency_joint_jepa_v16_integrity_replacement_v1_terminal_failure_result_v1",
+  "scientific_accounting": {
+    "backward_calls": 800,
+    "camera_frame_objectives": 3200,
+    "camera_route_grad_calls": 400,
+    "completed_updates": 100,
+    "ema_steps": 100,
+    "joint_route_grad_calls": 400,
+    "microbatch_graphs": 400,
+    "optimizer_steps": 100,
+    "predictor_forwards": 400,
+    "predictor_objectives": 400,
+    "presentations": 1600,
+    "published_observation_updates": [
+      0,
+      100
+    ],
+    "trace_row_count": 101
+  },
+  "scientific_identity": {
+    "clean_export_certification_sha256": "cdd3d1eff365ede108db7b4ab7786ca84a6f7d759bea26dd79f74d197314eb03",
+    "frozen_source_and_review_commit": "d9828ddffa71517734bf1abd41d2af5bbd401ed8",
+    "original_v16_preregistration_commit": "2792343e14d3376add9d6adbda7f29346a3e9e29",
+    "replacement_preregistration_commit": "2ac4b08d94ee249ae42194b3c737190d39fd2396",
+    "replacement_preregistration_file_sha256": "af9c5efd9949c0c2e118e31d456a6010fbef142e685a91c992ed28c1c0e307a1",
+    "science_identity_preserved": {
+      "data": true,
+      "initialization": true,
+      "losses": true,
+      "model": true,
+      "optimizer_and_ema": true,
+      "schedule": true,
+      "seed": true,
+      "thresholds": true,
+      "update_and_presentation_caps": true
+    },
+    "source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-v16-ray-consistency-integrity-replacement-v1-source"
+  },
+  "trace_integrity": {
+    "all_100_optimizer_rows_integrity_pass": true,
+    "all_100_optimizer_rows_positive_ray_support": true,
+    "all_100_optimizer_rows_single_ema_step": true,
+    "all_100_optimizer_rows_single_optimizer_step": true,
+    "all_100_optimizer_rows_target_gradient_absent": true,
+    "all_losses_finite": true,
+    "all_ray_consistency_losses_nonnegative": true,
+    "camera_loss_identity": "C = C_base + 0.1*M",
+    "canonical_content_valid_row_count": 101,
+    "maximum_camera_loss_identity_absolute_error": 3.501772871672415e-08,
+    "required_loss_keys_exact": true,
+    "sequential_update_rows_1_through_100": true
+  },
+  "validation": {
+    "checkpoint_artifact_count": 0,
+    "content_binding_mismatch_count": 0,
+    "file_binding_mismatch_count": 0,
+    "immutable_regular_file_count": 6,
+    "independent_failure_review_passed": true,
+    "scientific_gate_artifact_count": 0,
+    "success_artifact_count": 0,
+    "symlink_count": 0
+  }
+}
