@@ -681,6 +681,30 @@ These instructions apply to the entire repository.
   calibration, G2 payload, navigation, memory integration, held-out, sealed,
   production, promotion, deployment, retry, resume, recovery, extension,
   second integrity replacement, or further-attempt authority.
+- The distinct RGB memory-role factorized joint-JEPA V2 source may
+  additionally be clean exported only from frozen source-and-review commit
+  `6c2ca35edbddb664e7a71ae4ed535fb9a69c49bc`, and only as (a) the 114 paths
+  in its committed recursive source manifest and (b) the sixteen V2
+  preregistration, retrieval-metadata-preflight, source-manifest,
+  source-review, original-V1 preregistration, split-integrity-amendment,
+  integrity-replacement preregistration, both predecessor terminal-failure
+  results, V28 terminal-scientific-result identity-witness, and six focused
+  runtime-test paths explicitly enumerated and SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_clean_export_certification_2026-07-30.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied predecessor and V28 documents are source-only
+  chronology and identity evidence and grant no predecessor runtime-output,
+  checkpoint, retry, resume, or execution authority. The V2 certification
+  itself and any later one-shot authority may be added to the narrow export
+  only at their exact reviewed paths after their respective commits and exact
+  file-SHA-256 validation. This source-only exception grants no
+  generated-input, runtime-artifact, checkpoint, tensor, schedule,
+  dataset-payload, RGB, GPU, training, qualification, benchmark, probability-
+  calibration, G2 payload, navigation, memory integration, held-out, sealed,
+  production, promotion, deployment, retry, resume, recovery, extension,
+  second V2 attempt, integrity replacement, or further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
