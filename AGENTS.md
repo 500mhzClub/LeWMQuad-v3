@@ -490,6 +490,29 @@ These instructions apply to the entire repository.
   held-out, production, promotion, deployment, retry, resume, recovery,
   extension, local-output-ranking successor, integrity replacement, second
   attempt, or further-attempt authority.
+- The RGB predictor-core-protected survival-output joint-JEPA V24 source may
+  additionally be clean exported only from frozen source-and-review commit
+  `2b6178a4d876dc17c45fb340a4ab03ee302649b0`, and only as (a) the 101
+  paths in its committed recursive source manifest and (b) the fifty-six V24
+  and predecessor preregistration/result identity, manifest, source-review,
+  recursive-checker, focused V24/V23 test, and frozen predecessor-certified
+  inventory paths explicitly enumerated and SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24_clean_export_certification_2026-07-30.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied V23/V22/V21/V20/V19/V18 and earlier predecessor
+  documents are source-only identity evidence and grant no predecessor
+  runtime-output, checkpoint, resume, calibration, or execution authority.
+  The V24 certification itself and later one-shot authority may be added to
+  the narrow export only at their exact reviewed paths after their respective
+  commits and exact file-SHA-256 validation. This source-only exception grants
+  no generated-input, runtime-artifact, checkpoint, tensor, schedule, dataset,
+  RGB, GPU, training, qualification, probability-calibration, G2, navigation,
+  held-out, production, promotion, deployment, retry, resume, recovery,
+  extension, coefficient or onset variant, gradient-projection variant,
+  further local-output-auxiliary variant, integrity replacement, second
+  attempt, or further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
