@@ -635,7 +635,7 @@ These instructions apply to the entire repository.
   gamma, second-attempt, or further-attempt authority.
 - The RGB memory-role factorized joint-JEPA V1 source may additionally be
   clean exported only from frozen source-and-review commit
-  `34af2b0aa6377a1b5804c26722524e268f130eba`, and only as (a) the 114 paths
+  `2d3934055fdc33e528fcc55e36b35df98fe488f7`, and only as (a) the 114 paths
   in its committed recursive source manifest and (b) the eleven
   preregistration, split-integrity-amendment, source-manifest, source-review,
   V28 terminal-scientific-result identity-witness, and six focused runtime
