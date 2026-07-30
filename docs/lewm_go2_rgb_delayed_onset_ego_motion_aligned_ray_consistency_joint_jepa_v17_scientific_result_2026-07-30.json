@@ -1,0 +1,294 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 15,
+    "certified_source_bindings_sha256": "31efe26662f1af6778468a3a2ef81d1ac1cb3750f08d61e15a0262a9ffdf5368",
+    "certified_source_rehash_count": 108,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 9425,
+    "raw_consumed_records_sha256": "8d27ed9e0aff51e455b7051b27fe8aac42935d6536747b5ab14a2cbf96c13f2b",
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "8cb0f75941a2f0e87a54db7d93aa2d72fbb7a9b6d1030d0fb76a60890a23cc2a",
+    "authority_commit": "fe898444bf46efe125f742b310ac394bcbf42bfa",
+    "authority_file_sha256": "32564a17071b093e2720551268481c8e99ca93a9681b52032a8325dfb95bcaba",
+    "one_shot_attempt": 1,
+    "output_root": ".generated/go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_joint_jepa_v17/attempt_v1",
+    "reservation_content_sha256": "9560b4aa88e7166c34ca0caedf37899f7ffe230a811eb82657729d7cedb95eed",
+    "reservation_created_utc": "2026-07-29T23:35:17Z",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "terminal_update": 400
+  },
+  "classification": "TERMINAL_SCIENTIFIC_FAILURE_NOT_INFRASTRUCTURE_FAILURE",
+  "comparison_to_v15_matched_training": {
+    "interpretation": "The zero-weight prefix recovered the V14/V15 update-100 trajectory to numerical tolerance, but after 300 active consistency updates V17 remained worse than the unchanged V14/V15 matched comparator on every update-400 gate metric.",
+    "update_100_v17_minus_v15": {
+      "passed_physical_margin_count": 0,
+      "rough_depth_p95_m": 0.0,
+      "rough_ground_balanced_accuracy": 0.0,
+      "rough_pixel_balanced_accuracy": 0.0,
+      "total_physical_shortfall": 0.000333476464817295,
+      "worst_physical_margin": -4.7683716530855236e-08
+    },
+    "update_400_v17_minus_v15": {
+      "passed_physical_margin_count": -1,
+      "rough_depth_p95_m": 0.05759326219558769,
+      "rough_ground_balanced_accuracy": -0.0031408203130697254,
+      "rough_pixel_balanced_accuracy": -0.010962555942420127,
+      "total_physical_shortfall": 0.23040902160995813,
+      "worst_physical_margin": -0.23037304878235076
+    }
+  },
+  "comparison_to_v16_early_onset": {
+    "interpretation": "Delaying onset removed the clear update-100 interference and improved V16 update-400 shortfall, depth p95, and worst margin, but it did not recover the V14/V15 comparator and ground/pixel balanced accuracy remained worse. The added temporal objective therefore lacks evidence of net representational benefit.",
+    "update_100_v17_minus_v16": {
+      "passed_physical_margin_count": 0,
+      "rough_depth_p95_m": -0.08336412906646684,
+      "rough_ground_balanced_accuracy": 0.002097983985222096,
+      "rough_pixel_balanced_accuracy": 0.007905341507689845,
+      "total_physical_shortfall": -1.0576289868998572,
+      "worst_physical_margin": 0.5668861389160149
+    },
+    "update_400_v17_minus_v16": {
+      "passed_physical_margin_count": 0,
+      "rough_depth_p95_m": -0.013799130916594793,
+      "rough_ground_balanced_accuracy": -0.0014322772761429237,
+      "rough_pixel_balanced_accuracy": -0.007888467944890731,
+      "total_physical_shortfall": -0.8202655709131221,
+      "worst_physical_margin": 0.05519652366637917
+    }
+  },
+  "content_sha256": "d6873e58ddd6ae901b9274cd60103f743cb6d8e4bf08b954998cab684cbf802d",
+  "date": "2026-07-30",
+  "decision": {
+    "checkpoint_authorized": false,
+    "checkpoint_published": false,
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "probability_calibration_authorized": false,
+    "reason": "Delayed onset removed the V16 early-training interference and modestly improved V16 at update 400, but V17 still missed all three strict V14/V15 physical comparators and completed zero physical scopes. The temporal ray-consistency family is closed.",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "same_mechanism_scale_to_update1000_rejected": true,
+    "status": "PASS_COMPLETE_SCIENTIFIC_FAILURE_AUDIT"
+  },
+  "mechanism_family_conclusion": {
+    "alternate_onset_authorized": false,
+    "coefficient_search_authorized": false,
+    "delayed_onset_v17_rejected": true,
+    "early_onset_v16_rejected": true,
+    "next_scientific_step_must_be_materially_different": true,
+    "retry_resume_or_extension_authorized": false,
+    "temporal_ray_consistency_family_closed": true
+  },
+  "pre_onset_control": {
+    "active_optimizer_row_count": 300,
+    "inactive_optimizer_row_count": 100,
+    "ray_consistency_computed_with_positive_support_every_update": true,
+    "update_100_weight": 0.0,
+    "update_101_weight": 0.1
+  },
+  "progression": [
+    {
+      "causal_control_passed_checks": null,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 2,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 32,
+      "rough_depth_p95_m": 4.869073963165282,
+      "rough_ground_balanced_accuracy": 0.541935563806034,
+      "rough_pixel_balanced_accuracy": 0.6326792707919727,
+      "total_physical_shortfall": 184.61066427463246,
+      "update": 0,
+      "worst_physical_margin": -18.476295852661128
+    },
+    {
+      "causal_control_passed_checks": null,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 13,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 57,
+      "rough_depth_p95_m": 2.3493779182434067,
+      "rough_ground_balanced_accuracy": 0.6273470490459583,
+      "rough_pixel_balanced_accuracy": 0.846268455145257,
+      "total_physical_shortfall": 96.44630370374996,
+      "update": 100,
+      "worst_physical_margin": -8.825397682189942
+    },
+    {
+      "causal_control_passed_checks": 12,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 21,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 71,
+      "rough_depth_p95_m": 1.9158348441123962,
+      "rough_ground_balanced_accuracy": 0.6357098781959264,
+      "rough_pixel_balanced_accuracy": 0.8427092597660064,
+      "total_physical_shortfall": 69.19995602966834,
+      "update": 400,
+      "worst_physical_margin": -6.663339376449585
+    }
+  ],
+  "receipt_artifacts": [
+    {
+      "byte_count": 3545,
+      "content_sha256": "55639a15e5768c2d4f8fcc27b307607697801a7e8249bc35f584266cec87187c",
+      "file_sha256": "9e017dc40a3a7ac0d92c5f2b1b8391e43bb3ff07083b9f46f1bd3aa77c0d7d55",
+      "mode": "0444",
+      "path": "failure.json"
+    },
+    {
+      "byte_count": 8051,
+      "content_sha256": "b0da78bd36eb6c431877f5d75e56e63d048620a3b857812bef96b476f6105973",
+      "file_sha256": "370a146599f11e3eff2762ae8b56820168edd64c812c9443401eb05438e5371b",
+      "mode": "0444",
+      "path": "metrics/update_0.json"
+    },
+    {
+      "byte_count": 7643,
+      "content_sha256": "aee7c66128a15abef90be2d4baabb38ff91d563ec5289d319218fdff9970c9a4",
+      "file_sha256": "ffea56dc3c680d7ac38cc946153200d4eddcc42647a5db96a26213661be107c4",
+      "mode": "0444",
+      "path": "metrics/update_100.json"
+    },
+    {
+      "byte_count": 7802,
+      "content_sha256": "6a60bdae0cb9815d454366533a1e7174e9736408bd663499d523ee0dafc7f2ff",
+      "file_sha256": "1f64feda6239147a159dd40335aff237a6d119ab95c2883fdea0f36b529d16a0",
+      "mode": "0444",
+      "path": "metrics/update_400.json"
+    },
+    {
+      "byte_count": 3306185,
+      "content_sha256": "36c972d459dadc8860b985e897596ef34a2a1fc899b94177b4a36caf9e5231e3",
+      "file_sha256": "e9274e8c69c5d272cb861c8e47349a976df58a3a0375936f6c839c4178d11335",
+      "mode": "0444",
+      "path": "receipts/terminal_access.json"
+    },
+    {
+      "byte_count": 515,
+      "content_sha256": "9560b4aa88e7166c34ca0caedf37899f7ffe230a811eb82657729d7cedb95eed",
+      "file_sha256": "13eb77af70773d9fcb2bf088b243c2fc9b0b6ac8fc9c5f2cde9ae19fcee48558",
+      "mode": "0444",
+      "path": "reservation.json"
+    },
+    {
+      "byte_count": 726889,
+      "file_sha256": "6d885ea9f7a581cf974b6ab4abdbeb0a442e0b330e758d79879680e1b2d610f5",
+      "mode": "0444",
+      "path": "trace.jsonl",
+      "row_count": 402
+    }
+  ],
+  "schema": "lewm_go2_rgb_delayed_onset_ego_motion_aligned_ray_consistency_joint_jepa_v17_scientific_result_v1",
+  "scientific_accounting": {
+    "backward_calls": 3200,
+    "camera_frame_objectives": 12800,
+    "camera_route_grad_calls": 1600,
+    "ema_steps": 400,
+    "joint_route_grad_calls": 1600,
+    "microbatch_graphs": 1600,
+    "optimizer_steps": 400,
+    "predictor_forwards": 1600,
+    "predictor_objectives": 1600,
+    "presentations": 6400,
+    "updates": 400
+  },
+  "scientific_identity": {
+    "clean_export_certification_file_sha256": "596623e05a7608c1b430e352dbb1c1f691f29a1ca27e0f1f252028d30be9ed26",
+    "fresh_initialization_no_predecessor_state_reused": true,
+    "frozen_source_and_review_commit": "0047383cac00df81d4292904269293e63c3e4376",
+    "implementation_commit": "9cb117fc19f6681ce35c511845b8bac4d800b9f2",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "original_v16_preregistration_commit": "2792343e14d3376add9d6adbda7f29346a3e9e29",
+    "sole_scientific_change": "w_M(u)=0.0 for updates 1-100 and 0.1 for updates 101-1000",
+    "v16_ir2_scientific_result_commit": "5f5092f528beafe5c3c8ded67b0e368f1a2d992e",
+    "v17_preregistration_commit": "eddd958c1f10f5b1e603e306d1a1c14e4583c2eb"
+  },
+  "status": "FAIL_SCIENTIFIC_UPDATE400_GATE_TERMINAL",
+  "trace_integrity": {
+    "active_weight_row_count": 300,
+    "all_400_optimizer_rows_integrity_pass": true,
+    "all_400_optimizer_rows_positive_ray_support": true,
+    "all_400_optimizer_rows_single_ema_step": true,
+    "all_400_optimizer_rows_single_optimizer_step": true,
+    "all_400_optimizer_rows_target_gradient_absent": true,
+    "all_losses_finite": true,
+    "all_normal_and_total_loss_identities_pass": true,
+    "all_ray_consistency_losses_nonnegative": true,
+    "camera_loss_identity": "C=C_base for u<=100; C=C_base+0.1*M for u>=101",
+    "canonical_content_valid_row_count": 402,
+    "inactive_weight_row_count": 100,
+    "maximum_camera_loss_identity_absolute_error": 2.2444874070437493e-08,
+    "maximum_normal_loss_identity_absolute_error": 4.246830940246582e-07,
+    "maximum_total_loss_identity_absolute_error": 3.5762786865234375e-07,
+    "ray_positive_weight_cell_count_range": [
+      22432,
+      26652
+    ],
+    "ray_shared_valid_cell_count_range": [
+      22432,
+      26652
+    ],
+    "ray_weight_sum_range": [
+      2756.8326416015625,
+      13554.2783203125
+    ],
+    "required_loss_keys_exact": true,
+    "sequential_update_rows_1_through_400": true
+  },
+  "update400_gate": {
+    "action": "FAIL_TERMINAL_NO_RETRY_NO_RESUME",
+    "all_twelve_causal_control_checks_true": true,
+    "checks": {
+      "all_twelve_causal_control_checks_true": true,
+      "passed_physical_margin_count_at_least_72": false,
+      "rough_depth_p95_strictly_below_v14_v15_update400": false,
+      "structural_integrity_pass": true,
+      "total_physical_shortfall_strictly_below_v14_v15_update400": false
+    },
+    "miss": {
+      "passed_physical_margin_count_below_minimum": 1,
+      "rough_depth_p95_m_above_strict_threshold": 0.05759326219558769,
+      "total_physical_shortfall_above_strict_threshold": 0.23030740149907558
+    },
+    "observed": {
+      "passed_physical_margin_count": 71,
+      "rough_depth_p95_m": 1.9158348441123962,
+      "total_physical_shortfall": 69.19995602966834
+    },
+    "passed": false,
+    "thresholds": {
+      "passed_margin_count_minimum": 72,
+      "rough_depth_p95_m_strictly_less_than": 1.8582415819168085,
+      "total_shortfall_strictly_less_than": 68.96964862816927
+    }
+  },
+  "validation": {
+    "content_binding_mismatch_count": 0,
+    "failure_metric_trace_and_access_crosslinks_valid": true,
+    "file_binding_mismatch_count": 0,
+    "immutable_regular_file_count": 7,
+    "independent_terminal_audit_passed": true,
+    "output_inventory_exactly_seven_files": true,
+    "recovery_checkpoint_count": 0,
+    "schedule_and_accounting_sequence_exact": true,
+    "source_and_raw_input_rehashes_valid": true,
+    "success_artifact_count": 0,
+    "symlink_count": 0,
+    "update400_gate_independently_recomputed_exactly": true
+  }
+}
