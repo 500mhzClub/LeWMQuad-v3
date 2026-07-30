@@ -1,0 +1,13 @@
+{
+  "content_sha256": "b66d7fd67c848e9568aefa5d46f5c41a65ca52f7c9e4130a451b87e2c0128d3c",
+  "manifest": {
+    "content_sha256": "550bf2ff56dd145218635c35cab616a96e52e2d281dddfc9e6e7267ce2137657",
+    "file_sha256": "ea94bba08c5afcb07b1df7ad1ad5c2adcda2c7b06b37530503e7d50c04592544",
+    "path": "docs/lewm_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "b9f1ce585124cc8cee708f983983ed2e40391696f4542740ad0f70613c72df8c"
+  },
+  "reviewed_source_commit": "75ec3019a74b331314650e6e6ab10a026dcdcffb",
+  "schema": "lewm_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24_source_review_v1",
+  "source_only": true,
+  "status": "PASS_SOURCE_ONLY"
+}
