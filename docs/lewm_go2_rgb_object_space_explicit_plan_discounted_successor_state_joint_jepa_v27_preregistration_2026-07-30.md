@@ -205,7 +205,11 @@ NumPy `Generator(PCG64(20260730))`; within each family independently resample
 that family's complete scene-mean vector with replacement, average each
 resampled family, then average the eight family values equally. Draw 2,000
 replicates. The lower 95% bound is element at zero-based index 50 after sorting
-the 2,000 finite replicate means ascending; no interpolation is used.
+the 2,000 finite replicate means ascending; no interpolation is used. For each
+`(observation_update, metric_name)` instantiate a fresh generator with that
+same seed, iterate families in lexicographic name order, and make exactly one
+`integers(0, scene_count, size=(2000, scene_count))` call per family. No other
+draw may occur from those generators.
 
 ## Hard update-400 gate
 
