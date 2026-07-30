@@ -13,6 +13,13 @@ therefore occurred in H6 train, and three place-train scenes occurred in H6
 validation. Using those panels unchanged would leak scene identity across the
 combined probe's development train/selection boundary.
 
+The place-role split is derived from the same frozen raw role namespace as the
+physical route: all eight place checkpoint-selection scenes are the eight
+physical checkpoint-selection scenes, and all place-train scenes are a subset
+of the 72 physical training scenes. Runtime must verify those identities and
+apply the exclusions against the complete physical 72/8 scene inventories,
+not merely infer them from the selected place rows.
+
 The science-identical adapter correction is exact:
 
 - Preserve the model, accepted N320 initialization, all source indexes and
