@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import hashlib
 import importlib.util
 from pathlib import Path
@@ -17,6 +18,7 @@ from lewm.datasets.go2_memory_role_place_triplets_v1 import (
     PlaceTripletContractError,
     canonical_json_bytes,
     canonical_json_sha256,
+    decode_rgb_bytes,
     load_index,
     load_rgb_triplet,
 )
@@ -268,11 +270,16 @@ def test_default_schedule_matches_measured_support_without_cycling() -> None:
         )
 
 
-def _write_png(path: Path, color: tuple[int, int, int]) -> str:
+def _write_png(
+    path: Path,
+    color: tuple[int, int, int],
+    *,
+    size: tuple[int, int] = (224, 168),
+) -> str:
     from PIL import Image
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    image = Image.new("RGB", (224, 224), color=color)
+    image = Image.new("RGB", size, color=color)
     image.save(path, format="PNG")
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -334,11 +341,51 @@ def test_runtime_emits_only_rgb_tensors_and_checks_manifest_hash(tmp_path: Path)
         with pytest.raises(PlaceTripletContractError, match="Pillow and torch"):
             load_rgb_triplet(tmp_path, rows[0])
     else:
-        batch = load_rgb_triplet(tmp_path, rows[0])
+        access_events: list[tuple[str, str]] = []
+        batch = load_rgb_triplet(
+            tmp_path,
+            rows[0],
+            record_reference_access=lambda role, event: access_events.append(
+                (role, event)
+            ),
+        )
         assert tuple(batch.anchor_rgb.shape) == (3, 112, 112)
         assert tuple(batch.positive_rgb.shape) == (3, 112, 112)
         assert tuple(batch.negative_rgb.shape) == (3, 112, 112)
         assert not hasattr(batch, "cell_id") and not hasattr(batch, "yaw_bin")
+        assert access_events == [
+            (role, event)
+            for role in ("anchor", "positive", "negative")
+            for event in ("attempt", "sha256_verified", "success")
+        ]
+
+        positive_path = tmp_path / rows[0].positive.rgb_path
+        square_sha256 = _write_png(
+            positive_path,
+            (40, 50, 60),
+            size=(224, 224),
+        )
+        square_positive_row = replace(
+            rows[0],
+            positive=replace(rows[0].positive, image_sha256=square_sha256),
+        )
+        partial_events: list[tuple[str, str]] = []
+        with pytest.raises(PlaceTripletContractError, match="exact 224x168"):
+            load_rgb_triplet(
+                tmp_path,
+                square_positive_row,
+                record_reference_access=lambda role, event: partial_events.append(
+                    (role, event)
+                ),
+            )
+        assert partial_events == [
+            ("anchor", "attempt"),
+            ("anchor", "sha256_verified"),
+            ("anchor", "success"),
+            ("positive", "attempt"),
+            ("positive", "sha256_verified"),
+            ("positive", "failure"),
+        ]
 
     with pytest.raises(PlaceTripletContractError):
         load_index(
@@ -347,3 +394,27 @@ def test_runtime_emits_only_rgb_tensors_and_checks_manifest_hash(tmp_path: Path)
             role="checkpoint_selection",
             expected_manifest_sha256="0" * 64,
         )
+
+
+def test_rgb_decoder_accepts_exact_render_geometry_and_rejects_square_source(
+    tmp_path: Path,
+) -> None:
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("torch is unavailable")
+    import torch
+
+    render_rgb = tmp_path / "render.png"
+    _write_png(render_rgb, (10, 20, 30))
+    tensor = decode_rgb_bytes(render_rgb.read_bytes())
+
+    assert tuple(tensor.shape) == (3, 112, 112)
+    assert tensor.dtype == torch.float32
+    assert bool(torch.isfinite(tensor).all())
+
+    square_rgb = tmp_path / "square.png"
+    _write_png(square_rgb, (10, 20, 30), size=(224, 224))
+    with pytest.raises(
+        PlaceTripletContractError,
+        match="image must be exact 224x168 RGB PNG",
+    ):
+        decode_rgb_bytes(square_rgb.read_bytes())

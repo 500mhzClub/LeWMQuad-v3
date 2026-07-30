@@ -44,11 +44,29 @@ def test_checker_is_denied_and_binds_frozen_preregistration(capsys) -> None:
     assert receipt["dataset_payload_or_rgb_opened"] is False
     assert receipt["checkpoint_opened"] is False
     assert checker.PREREGISTRATION_COMMIT == (
-        "01d78284a22a52816a41f31a78411491714b4f9c"
+        "ba6e37d63f099cd51184642dea39808ae1f2f99e"
     )
-    raw = (ROOT / checker.PREREGISTRATION_RELATIVE_PATH).read_bytes()
-    assert len(raw) == checker.PREREGISTRATION_BYTE_COUNT
-    assert hashlib.sha256(raw).hexdigest() == checker.PREREGISTRATION_FILE_SHA256
+    bindings = (
+        (
+            checker.PREREGISTRATION_RELATIVE_PATH,
+            checker.PREREGISTRATION_FILE_SHA256,
+            checker.PREREGISTRATION_BYTE_COUNT,
+        ),
+        (
+            checker.ORIGINAL_PREREGISTRATION_RELATIVE_PATH,
+            checker.ORIGINAL_PREREGISTRATION_FILE_SHA256,
+            checker.ORIGINAL_PREREGISTRATION_BYTE_COUNT,
+        ),
+        (
+            checker.TERMINAL_FAILURE_RESULT_RELATIVE_PATH,
+            checker.TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            checker.TERMINAL_FAILURE_RESULT_BYTE_COUNT,
+        ),
+    )
+    for relative, expected_sha256, expected_bytes in bindings:
+        raw = (ROOT / relative).read_bytes()
+        assert len(raw) == expected_bytes
+        assert hashlib.sha256(raw).hexdigest() == expected_sha256
     assert checker.main(["--emit"]) == 0
     assert checker.SCHEMA in capsys.readouterr().out
 
@@ -115,7 +133,10 @@ raise SystemExit(status)
     )
     assert result.returncode == 4, result.stderr
     assert json.loads(result.stdout) == {
-        "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_launcher_v1",
+        "schema": (
+            "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
+            "integrity_replacement_v1_launcher_v1"
+        ),
         "status": "DENIED_NO_FUTURE_AUTHORITY",
         "scientific_payload_opened": False,
         "reservation_created": False,

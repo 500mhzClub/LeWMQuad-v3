@@ -311,10 +311,18 @@ def test_role_training_schedule_uses_exact_noncycling_eight_row_windows() -> Non
                 "action": row.index % 9,
             }
 
+        @staticmethod
+        def access_receipt():
+            return {"rgb_open_attempt_count": 0}
+
     class PlaceData:
         @staticmethod
-        def load_rgb_triplet(_root, row):
+        def load_rgb_triplet(_root, row, *, record_reference_access):
             place_seen.append(row.index)
+            for role in ("anchor", "positive", "negative"):
+                record_reference_access(role, "attempt")
+                record_reference_access(role, "sha256_verified")
+                record_reference_access(role, "success")
             return SimpleNamespace(
                 anchor_rgb=torch.zeros(3, 112, 112),
                 positive_rgb=torch.ones(3, 112, 112),
@@ -354,6 +362,12 @@ def test_role_training_schedule_uses_exact_noncycling_eight_row_windows() -> Non
     runtime.place_data = PlaceData()
     runtime._place_loader_calls = 0
     runtime._place_loaded_row_keys = set()
+    runtime._place_reference_counts = {
+        "attempt": 0,
+        "sha256_verified": 0,
+        "success": 0,
+        "failure": 0,
+    }
 
     local_batches = runtime.build_local_train_microbatches(400, "cpu")
     place_batches = runtime.build_place_train_microbatches(400, "cpu")
@@ -363,6 +377,37 @@ def test_role_training_schedule_uses_exact_noncycling_eight_row_windows() -> Non
     assert all(batch["current_rgb"].shape == (4, 3, 112, 112) for batch in local_batches)
     assert all(batch["anchor_rgb"].shape == (4, 3, 112, 112) for batch in place_batches)
     assert runtime._place_loader_calls == 8
+    successful = runtime.failure_access_snapshot()
+    assert successful["place_triplet_loader_call_count"] == 8
+    assert successful["place_rgb_reference_attempt_count"] == 24
+    assert successful["place_rgb_sha256_verified_per_access_count"] == 24
+    assert successful["place_rgb_reference_success_count"] == 24
+    assert successful["place_rgb_reference_failure_count"] == 0
+
+    class PartialFailurePlaceData:
+        @staticmethod
+        def load_rgb_triplet(_root, _row, *, record_reference_access):
+            record_reference_access("anchor", "attempt")
+            record_reference_access("anchor", "sha256_verified")
+            record_reference_access("anchor", "success")
+            record_reference_access("positive", "attempt")
+            record_reference_access("positive", "sha256_verified")
+            record_reference_access("positive", "failure")
+            raise RuntimeError("synthetic decode failure")
+
+    runtime.place_data = PartialFailurePlaceData()
+    with pytest.raises(RuntimeError, match="synthetic"):
+        runtime._load_place_triplet(runtime.place_train_rows[0])
+    partial = runtime.failure_access_snapshot()
+    assert partial["place_triplet_loader_call_count"] == 8
+    assert partial["place_rgb_reference_attempt_count"] == 26
+    assert partial["place_rgb_sha256_verified_per_access_count"] == 26
+    assert partial["place_rgb_reference_success_count"] == 25
+    assert partial["place_rgb_reference_failure_count"] == 1
+    assert partial["place_unique_row_count_opened"] == 8
+    runtime._place_reference_counts["attempt"] += 1
+    with pytest.raises(RuntimeError, match="accounting is incomplete"):
+        runtime.failure_access_snapshot()
 
     with pytest.raises(PermissionError):
         runtime.build_local_train_microbatches(401, "cpu")

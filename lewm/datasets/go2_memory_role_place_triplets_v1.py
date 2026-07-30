@@ -14,7 +14,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import stat
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 import re
 
 
@@ -22,7 +22,7 @@ SCHEMA = "lewm_go2_memory_role_place_triplet_index_v1"
 MANIFEST_SCHEMA = "lewm_go2_memory_role_place_triplet_index_manifest_v1"
 RECEIPT_SCHEMA = "lewm_go2_memory_role_place_triplet_index_build_receipt_v1"
 ALLOWED_ROLES = ("train", "checkpoint_selection")
-SOURCE_IMAGE_SIZE = (224, 224)
+SOURCE_IMAGE_SIZE = (224, 168)
 MODEL_IMAGE_SIZE = (112, 112)
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -423,7 +423,7 @@ def decode_rgb_bytes(raw: bytes) -> Any:
     try:
         with Image.open(io.BytesIO(raw)) as image:
             if image.format != "PNG" or image.mode != "RGB" or image.size != SOURCE_IMAGE_SIZE:
-                raise PlaceTripletContractError("image must be exact 224x224 RGB PNG")
+                raise PlaceTripletContractError("image must be exact 224x168 RGB PNG")
             image.load()
             image = image.resize(MODEL_IMAGE_SIZE, Image.Resampling.BILINEAR)
             pixels = bytearray(image.tobytes())
@@ -441,15 +441,37 @@ def decode_rgb_bytes(raw: bytes) -> Any:
     return tensor
 
 
-def load_rgb_triplet(repo_root: Path, row: PlaceTripletRow) -> RGBTriplet:
+def load_rgb_triplet(
+    repo_root: Path,
+    row: PlaceTripletRow,
+    *,
+    record_reference_access: Callable[[str, str], None] | None = None,
+) -> RGBTriplet:
     """Return RGB tensors only; no cell/yaw/pose value crosses this boundary."""
 
     if not isinstance(row, PlaceTripletRow):
         raise TypeError("row must be a PlaceTripletRow")
+
+    def load_reference(role: str, reference: RGBReference) -> Any:
+        if record_reference_access is not None:
+            record_reference_access(role, "attempt")
+        try:
+            raw = _read_rgb_reference(repo_root, reference)
+            if record_reference_access is not None:
+                record_reference_access(role, "sha256_verified")
+            tensor = decode_rgb_bytes(raw)
+        except BaseException:
+            if record_reference_access is not None:
+                record_reference_access(role, "failure")
+            raise
+        if record_reference_access is not None:
+            record_reference_access(role, "success")
+        return tensor
+
     return RGBTriplet(
-        anchor_rgb=decode_rgb_bytes(_read_rgb_reference(repo_root, row.anchor)),
-        positive_rgb=decode_rgb_bytes(_read_rgb_reference(repo_root, row.positive)),
-        negative_rgb=decode_rgb_bytes(_read_rgb_reference(repo_root, row.negative)),
+        anchor_rgb=load_reference("anchor", row.anchor),
+        positive_rgb=load_reference("positive", row.positive),
+        negative_rgb=load_reference("negative", row.negative),
     )
 
 

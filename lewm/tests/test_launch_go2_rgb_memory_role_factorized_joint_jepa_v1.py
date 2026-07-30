@@ -147,6 +147,25 @@ def test_adapter_keeps_exact_v25_builder_and_fixed_three_way_budget() -> None:
     assert receipt["resume_authorized"] is False
 
 
+def test_integrity_replacement_uses_fresh_lifecycle_identity() -> None:
+    module = _load("_memory_role_launcher_replacement_identity")
+    assert module.SCHEMA_PREFIX.endswith("_integrity_replacement_v1")
+    assert module.EXPERIMENT_ARM_NAME.endswith("_integrity_replacement_v1")
+    assert module.PREREGISTRATION_COMMIT == (
+        "ba6e37d63f099cd51184642dea39808ae1f2f99e"
+    )
+    assert "integrity-replacement-v1-source" in module.CERTIFIED_SOURCE_ROOT
+    assert "integrity_replacement_v1/attempt_v1" in (
+        module.OUTPUT_ROOT_RELATIVE_PATH
+    )
+    assert module.PREREGISTRATION_RELATIVE_PATH in (
+        module.REQUIRED_CERTIFIED_SOURCE_PATHS
+    )
+    assert module.TERMINAL_FAILURE_RESULT_RELATIVE_PATH in (
+        module.REQUIRED_CERTIFIED_SOURCE_PATHS
+    )
+
+
 def test_pre_reservation_gpu_visibility_is_exact() -> None:
     module = _load("_memory_role_launcher_gpu")
     receipt = module.validate_pre_reservation_gpu_visibility_v1(

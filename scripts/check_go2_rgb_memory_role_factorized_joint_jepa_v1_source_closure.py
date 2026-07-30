@@ -33,33 +33,61 @@ BASE_CHECKER_BYTE_COUNT = 10_554
 
 MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "source_manifest_2026-07-30.json"
+    "integrity_replacement_v1_source_manifest_2026-07-30.json"
 )
 MANIFEST_PATH = ROOT / MANIFEST_RELATIVE_PATH
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "source_review_2026-07-30.json"
+    "integrity_replacement_v1_source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "clean_export_certification_2026-07-30.json"
+    "integrity_replacement_v1_clean_export_certification_2026-07-30.json"
 )
 EXECUTION_AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "execution_authorization_2026-07-30.json"
+    "integrity_replacement_v1_execution_authorization_2026-07-30.json"
 )
-SCHEMA = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_source_manifest"
-PASS_STATUS_TEXT = "Go2 RGB memory-role factorized V1 source closure: PASS"
+SCHEMA = (
+    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
+    "integrity_replacement_v1_source_manifest"
+)
+PASS_STATUS_TEXT = (
+    "Go2 RGB memory-role factorized V1 integrity replacement V1 "
+    "source closure: PASS"
+)
 
 PREREGISTRATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
+    "integrity_replacement_v1_preregistration_2026-07-30.md"
+)
+PREREGISTRATION_COMMIT = "ba6e37d63f099cd51184642dea39808ae1f2f99e"
+PREREGISTRATION_FILE_SHA256 = (
+    "a7c757f4a58b9a7d068ceb2e6676573843d58e72606b55713868ddfe86b97820"
+)
+PREREGISTRATION_BYTE_COUNT = 7_211
+ORIGINAL_PREREGISTRATION_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "01d78284a22a52816a41f31a78411491714b4f9c"
-PREREGISTRATION_FILE_SHA256 = (
+ORIGINAL_PREREGISTRATION_COMMIT = (
+    "01d78284a22a52816a41f31a78411491714b4f9c"
+)
+ORIGINAL_PREREGISTRATION_FILE_SHA256 = (
     "a9deae0b3335540b26791302566cdcb6a7d8397e96618b691dba1fa8db0c85c7"
 )
-PREREGISTRATION_BYTE_COUNT = 11_170
+ORIGINAL_PREREGISTRATION_BYTE_COUNT = 11_170
+TERMINAL_FAILURE_RESULT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
+    "terminal_infrastructure_failure_result_2026-07-30.json"
+)
+TERMINAL_FAILURE_RESULT_COMMIT = (
+    "291a7bcfaf95f24d5c84bd3d590afd54556d5b3d"
+)
+TERMINAL_FAILURE_RESULT_FILE_SHA256 = (
+    "80eaeb508a988b54e655df5b530fa3adab6a89bb13b6f5c45902ac851bc464f4"
+)
+TERMINAL_FAILURE_RESULT_BYTE_COUNT = 6_060
 SPLIT_INTEGRITY_AMENDMENT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "split_integrity_amendment_2026-07-30.md"
@@ -154,6 +182,8 @@ ALLOWED_DATASET_SOURCES = frozenset(
 
 LIFECYCLE_PATHS = {
     "preregistration": PREREGISTRATION_RELATIVE_PATH,
+    "original_preregistration": ORIGINAL_PREREGISTRATION_RELATIVE_PATH,
+    "terminal_failure_result": TERMINAL_FAILURE_RESULT_RELATIVE_PATH,
     "split_integrity_amendment": SPLIT_INTEGRITY_AMENDMENT_RELATIVE_PATH,
     "source_manifest": MANIFEST_RELATIVE_PATH,
     "source_review": SOURCE_REVIEW_RELATIVE_PATH,
@@ -162,7 +192,8 @@ LIFECYCLE_PATHS = {
 }
 EXECUTION_AUTHORIZED = False
 CURRENT_EXECUTION_DENIAL = (
-    "memory-role factorized V1 execution remains denied until recursive "
+    "memory-role factorized V1 integrity-replacement execution remains denied "
+    "until recursive "
     "closure, independent source review, narrow clean-export certification, "
     "and separate one-shot authority are complete and exact-bound"
 )
@@ -345,6 +376,18 @@ def build_manifest() -> dict[str, object]:
                 "commit": PREREGISTRATION_COMMIT,
                 "file_sha256": PREREGISTRATION_FILE_SHA256,
                 "byte_count": PREREGISTRATION_BYTE_COUNT,
+            },
+            "original_preregistration": {
+                "path": ORIGINAL_PREREGISTRATION_RELATIVE_PATH,
+                "commit": ORIGINAL_PREREGISTRATION_COMMIT,
+                "file_sha256": ORIGINAL_PREREGISTRATION_FILE_SHA256,
+                "byte_count": ORIGINAL_PREREGISTRATION_BYTE_COUNT,
+            },
+            "terminal_failure_result": {
+                "path": TERMINAL_FAILURE_RESULT_RELATIVE_PATH,
+                "commit": TERMINAL_FAILURE_RESULT_COMMIT,
+                "file_sha256": TERMINAL_FAILURE_RESULT_FILE_SHA256,
+                "byte_count": TERMINAL_FAILURE_RESULT_BYTE_COUNT,
             },
             "split_integrity_amendment": {
                 "path": SPLIT_INTEGRITY_AMENDMENT_RELATIVE_PATH,

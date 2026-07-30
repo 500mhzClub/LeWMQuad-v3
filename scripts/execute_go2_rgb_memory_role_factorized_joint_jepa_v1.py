@@ -29,12 +29,15 @@ from scripts import (
 )
 
 
-SCHEMA_PREFIX = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1"
+SCHEMA_PREFIX = (
+    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
+    "integrity_replacement_v1"
+)
 PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "preregistration_2026-07-30.md"
+    "integrity_replacement_v1_preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "01d78284a22a52816a41f31a78411491714b4f9c"
+PREREGISTRATION_COMMIT = "ba6e37d63f099cd51184642dea39808ae1f2f99e"
 SPLIT_INTEGRITY_AMENDMENT_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "split_integrity_amendment_2026-07-30.md"
@@ -44,26 +47,28 @@ SPLIT_INTEGRITY_AMENDMENT_COMMIT = (
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "source_manifest_2026-07-30.json"
+    "integrity_replacement_v1_source_manifest_2026-07-30.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "source_review_2026-07-30.json"
+    "integrity_replacement_v1_source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "clean_export_certification_2026-07-30.json"
+    "integrity_replacement_v1_clean_export_certification_2026-07-30.json"
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "execution_authorization_2026-07-30.json"
+    "integrity_replacement_v1_execution_authorization_2026-07-30.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v1/attempt_v1"
+    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v1_"
+    "integrity_replacement_v1/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v1-source"
+    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v1-"
+    "integrity-replacement-v1-source"
 )
 MODEL_CLASS_NAME = "MemoryRoleFactorizedJointJepaV1"
 MODEL_MODULE_NAME = "lewm.models.memory_role_factorized_joint_jepa_v1"
@@ -933,18 +938,50 @@ class MemoryRoleRuntimeV1:
         }
         self._place_loader_calls = 0
         self._place_loaded_row_keys: set[tuple[str, int]] = set()
+        self._place_reference_counts = {
+            "attempt": 0,
+            "sha256_verified": 0,
+            "success": 0,
+            "failure": 0,
+        }
         self._closed = False
 
     def _require_open(self) -> None:
         if self._closed:
             raise RuntimeError("memory-role role runtime is closed")
 
+    def _record_place_reference_access(self, role: str, event: str) -> None:
+        if role not in ("anchor", "positive", "negative"):
+            raise RuntimeError("memory-role place RGB reference role changed")
+        if event not in self._place_reference_counts:
+            raise RuntimeError("memory-role place RGB access event changed")
+        self._place_reference_counts[event] += 1
+
+    def _place_access_counts(self) -> dict[str, Any]:
+        counts = self._place_reference_counts
+        if counts["attempt"] != counts["success"] + counts["failure"]:
+            raise RuntimeError("memory-role place RGB access accounting is incomplete")
+        return {
+            "place_triplet_loader_call_count": self._place_loader_calls,
+            "place_rgb_reference_attempt_count": counts["attempt"],
+            "place_rgb_reference_success_count": counts["success"],
+            "place_rgb_reference_failure_count": counts["failure"],
+            "place_rgb_sha256_verified_per_access_count": counts[
+                "sha256_verified"
+            ],
+            "place_unique_row_count_opened": len(self._place_loaded_row_keys),
+        }
+
     def _load_place_triplet(self, row: Any) -> Any:
         self._require_open()
         registered = self._place_rows.get((getattr(row, "role", ""), getattr(row, "index", -1)))
         if registered is None or registered != row:
             raise PermissionError("memory-role place row is not registered")
-        result = self.place_data.load_rgb_triplet(self.runtime_data_root, registered)
+        result = self.place_data.load_rgb_triplet(
+            self.runtime_data_root,
+            registered,
+            record_reference_access=self._record_place_reference_access,
+        )
         self._place_loader_calls += 1
         self._place_loaded_row_keys.add((registered.role, registered.index))
         return result
@@ -964,7 +1001,10 @@ class MemoryRoleRuntimeV1:
 
     def preflight_receipt(self) -> dict[str, Any]:
         self._require_open()
-        if any(self._local_loader.access_receipt().values()) or self._place_loader_calls:
+        if (
+            any(self._local_loader.access_receipt().values())
+            or self._place_reference_counts["attempt"]
+        ):
             raise RuntimeError("memory-role preflight must precede RGB access")
         return {
             "schema": f"{SCHEMA_PREFIX}_role_runtime_preflight_v1",
@@ -1132,9 +1172,7 @@ class MemoryRoleRuntimeV1:
             "terminal_index_rehash_count": 4,
             "local_rgb": self._local_loader.access_receipt(),
             "local_terminal_rehash": local_rehash,
-            "place_triplet_loader_call_count": self._place_loader_calls,
-            "place_rgb_sha256_verified_per_access_count": 3 * self._place_loader_calls,
-            "place_unique_row_count_opened": len(self._place_loaded_row_keys),
+            **self._place_access_counts(),
             "place_index_terminal_rehash_count": 2,
             "place_rgb_terminal_rehash_count": 0,
             "place_rgb_terminal_rehash_not_required_reason": (
@@ -1152,11 +1190,7 @@ class MemoryRoleRuntimeV1:
         return {
             "schema": f"{SCHEMA_PREFIX}_role_failure_access_snapshot_v1",
             "local_rgb": self._local_loader.access_receipt(),
-            "place_triplet_loader_call_count": self._place_loader_calls,
-            "place_rgb_sha256_verified_per_access_count": (
-                3 * self._place_loader_calls
-            ),
-            "place_unique_row_count_opened": len(self._place_loaded_row_keys),
+            **self._place_access_counts(),
             "new_file_open_count": 0,
             "terminal_rehash_count": 0,
             "probability_calibration_opened": False,
