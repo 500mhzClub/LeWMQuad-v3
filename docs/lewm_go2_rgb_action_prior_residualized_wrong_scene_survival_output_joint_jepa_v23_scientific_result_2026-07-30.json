@@ -1,0 +1,428 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 29,
+    "certified_source_bindings_sha256": "b72abb7cbf323e27a7ad726ad74d11f15baf78a181dab4341b34b01801ec56fd",
+    "certified_source_rehash_count": 145,
+    "forbidden_input_count": 0,
+    "held_out_or_sealed_role_opened": false,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 9425,
+    "raw_consumed_inputs_rehashed": true,
+    "raw_consumed_records_sha256": "ebb273d9ec6a7229c33490a98c0d38a3e27d293b180a74c29766bdc8bf80e7d5",
+    "terminal_access_receipt_record_sha256": "1ffdbe33bec4aca342631b8c02357b5ad7fccb5f5960abe75800f297d8279eea",
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "65c75becfcb58f8f5d4e15a0acabbecea83b21d62ae8c174d89dfa766c4391f4",
+    "authority_commit": "198d42fb1aa9a5801929150e8fc9232f95cf8a03",
+    "authority_file_sha256": "0803d9d4bc9abf6551adb046589d991113326be86f74a003671d6a3bb14f14ff",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "output_root": ".generated/go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23/attempt_v1",
+    "reservation_content_sha256": "b7628ebc5126c9a3d942cffa3e86c8679c3288659cd6f9a862b00730c5de9e65",
+    "reservation_created_utc": "2026-07-30T09:26:45Z",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "terminal_update": 400
+  },
+  "classification": "TERMINAL_SCIENTIFIC_FAILURE_NOT_INFRASTRUCTURE_FAILURE",
+  "comparison_to_v22": {
+    "causal_transfer_materially_improved": true,
+    "predecessor_result": {
+      "commit": "f184a41ac99b1c66ea4db1e0b0a0845f23b48bbd",
+      "content_sha256": "d9c0376f381bb65c4246c9ff12611f4b563698a0539f81c63b95e8b083de18a2",
+      "file_sha256": "1f4896e8f0ae8cadbf09e6f6f34417f3fa6362f9321cfd5abd0aeb09735453d0",
+      "path": "docs/lewm_go2_rgb_scene_action_contrastive_innovation_joint_jepa_v22_scientific_result_2026-07-30.json"
+    },
+    "v22_update400": {
+      "causal_control_passed_check_count": 6,
+      "complete_physical_scope_count": 0,
+      "full_arm_passed_check_count": 14,
+      "passed_physical_margin_count": 88,
+      "rough_depth_p95_m": 1.60185489654541,
+      "rough_ground_balanced_accuracy": 0.6639278011467937,
+      "rough_pixel_balanced_accuracy": 0.8630266420813066,
+      "total_physical_shortfall": 53.24504507538326,
+      "worst_physical_margin": -6.514497709274292
+    },
+    "v23_minus_v22": {
+      "causal_control_passed_check_count": 4,
+      "complete_physical_scope_count": 0,
+      "full_arm_passed_check_count": 4,
+      "passed_physical_margin_count": -2,
+      "rough_depth_p95_m": 0.06579735279083265,
+      "rough_ground_balanced_accuracy": -0.005854242646049834,
+      "rough_pixel_balanced_accuracy": -0.02583322195160631,
+      "total_physical_shortfall": -0.4518862472114762,
+      "worst_physical_margin": 0.07803294658660853
+    },
+    "v23_update400": {
+      "causal_control_passed_check_count": 10,
+      "complete_physical_scope_count": 0,
+      "full_arm_passed_check_count": 18,
+      "passed_physical_margin_count": 86,
+      "rough_depth_p95_m": 1.6676522493362427,
+      "rough_ground_balanced_accuracy": 0.6580735585007439,
+      "rough_pixel_balanced_accuracy": 0.8371934201297003,
+      "total_physical_shortfall": 52.793158828171784,
+      "worst_physical_margin": -6.436464762687684
+    }
+  },
+  "content_sha256": "a5a6b8aa7312706d2ae3a5b53e39370462e9de6eda6b7a2ca4e2e0226a518ed8",
+  "date": "2026-07-30",
+  "decision": {
+    "checkpoint_authorized": false,
+    "checkpoint_published": false,
+    "family_stop_triggered": false,
+    "further_scientific_successor_authorized_by_this_result": false,
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "probability_calibration_authorized": false,
+    "probability_calibration_opened": false,
+    "reason": "V23 passed structural integrity and all three registered update-400 physical thresholds. It passed all shuffled-action, wrong-RGB, and train-action-prior triplets, proving action sensitivity, current-scene dependence, and improvement over the frozen train action prior. Coordinate-matched persistence passed its positive mean check but failed its bootstrap lower-95 and six-family checks, so the inherited twelve-check causal gate failed at ten of twelve.",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "same_mechanism_retry_resume_extension_or_update1000_rejected": true,
+    "sealed_authorized": false,
+    "status": "PASS_COMPLETE_SCIENTIFIC_FAILURE_AUDIT"
+  },
+  "gradient_and_integrity_audit": {
+    "absent_gradient_tensor_count_all_routes": 0,
+    "all_400_j23_route_parameter_tensor_counts_equal_109": true,
+    "all_400_j23_route_receipts_passed": true,
+    "all_400_optimizer_rows_integrity_passed": true,
+    "all_400_target_gradient_tensor_counts_zero": true,
+    "ema_count_sequence_exact": true,
+    "initial_structural_integrity_check_count": 13,
+    "initial_structural_integrity_passed": true,
+    "j23_clipped_update_count": 101,
+    "j23_online_parameter_count": 3365417,
+    "j23_online_parameter_tensor_count": 109,
+    "j23_route_includes_encoder_representation_latent_predictor_and_survival_head": true,
+    "j23_route_excludes_semantic_and_target": true,
+    "optimizer_step_count_per_completed_update": 1,
+    "target_ema_step_count_per_completed_update": 1
+  },
+  "mechanism_conclusion": {
+    "causal_bottleneck": "V23 fixed the exact V22 deficits: wrong-RGB and train-action-prior changed from zero of six checks to six of six, while shuffled action remained three of three. The terminal output therefore used both the current scene and requested action and beat the frozen action-conditioned training mean. The remaining failure was heterogeneous advantage over coordinate-matched persistence: the mean was positive, but the confidence interval crossed zero and only five of eight families were positive.",
+    "encoder_conclusion": "This is not an encoder-inactivity result. J23 gradients reached the learned RGB encoder, object-space representation, latent predictor, and survival output on every update, and current RGB acquired registered causal utility. Physical prediction also passed every update-400 threshold. The model remains unqualified because temporal persistence was not beaten robustly and there were zero complete physical scopes.",
+    "family_stop_conclusion": "The preregistered local-family stop does not trigger because both wrong-RGB and train-action-prior triplets passed three of three. V23 itself is nevertheless consumed and terminal and cannot be retried, resumed, extended, coefficient-tuned, or continued to update 1000.",
+    "joint_jepa_conclusion": "V23 remained a jointly trained JEPA. The inherited prediction objective trained the online encoder, object-space representation, and latent predictor together against a stop-gradient EMA target on every microbatch. J23 was an additional direct survival-output objective through that same learned path, not a separately trained downstream predictor.",
+    "local_objective_conclusion": "J23 fit energy fell from 0.12122041545808315 at update 1 to 0.02193028014153242 at update 400. Scene advantage rose from approximately zero to 0.09103782911752832 and prior advantage rose from -0.06493160454556346 to 0.047873977571725845, so the registered auxiliary learned its intended separation. In contrast, inherited prediction loss P rose from 1.0 at update 1 to 9.32626724243164 at update 400 and its 100-update window mean rose monotonically after the first window. This is consistent with, but does not by itself prove, destructive interference in the latent dynamics core.",
+    "non_authorizing_guidance": "A separately preregistered successor may preserve J23 while removing only its direct gradient into the latent predictor core, retaining its gradients through learned RGB perception, object-space representation, and the swept-progress head. The inherited EMA-target JEPA objective must continue training the complete encoder and predictor jointly. This is the smallest change aimed at the observed persistence failure while preserving V23's scene/prior breakthrough; this result itself grants no successor execution authority.",
+    "v23_retry_resume_extension_or_update1000_authorized": false
+  },
+  "progression": [
+    {
+      "causal_control_passed_checks": 0,
+      "complete_physical_scope_count": 0,
+      "full_arm_passed_checks": 4,
+      "gate_applied": false,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 39,
+      "prior_advantage_mean": null,
+      "rough_depth_p95_m": 4.869073963165282,
+      "rough_ground_balanced_accuracy": 0.541935563806034,
+      "rough_pixel_balanced_accuracy": 0.6326792707919727,
+      "scene_advantage_mean": null,
+      "total_physical_shortfall": 191.5839970395566,
+      "update": 0,
+      "worst_physical_margin": -18.476295852661128
+    },
+    {
+      "causal_control_passed_checks": 1,
+      "complete_physical_scope_count": 0,
+      "full_arm_passed_checks": 8,
+      "gate_applied": false,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 68,
+      "prior_advantage_mean": 0.018423154018819332,
+      "rough_depth_p95_m": 2.222048616409301,
+      "rough_ground_balanced_accuracy": 0.6264422437141811,
+      "rough_pixel_balanced_accuracy": 0.8357244001376172,
+      "scene_advantage_mean": 0.08920090198516846,
+      "total_physical_shortfall": 75.82525696372204,
+      "update": 100,
+      "worst_physical_margin": -8.602284765243532
+    },
+    {
+      "causal_control_passed_checks": 10,
+      "complete_physical_scope_count": 0,
+      "full_arm_passed_checks": 18,
+      "gate_applied": true,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 86,
+      "prior_advantage_mean": 0.047873977571725845,
+      "rough_depth_p95_m": 1.6676522493362427,
+      "rough_ground_balanced_accuracy": 0.6580735585007439,
+      "rough_pixel_balanced_accuracy": 0.8371934201297003,
+      "scene_advantage_mean": 0.09103782911752832,
+      "total_physical_shortfall": 52.793158828171784,
+      "update": 400,
+      "worst_physical_margin": -6.436464762687684
+    }
+  ],
+  "receipt_artifacts": [
+    {
+      "byte_count": 3803,
+      "content_sha256": "8ee598228c10f906526d0c3646725bd4dd90f8fd1ebe00e8934bc4e4ef40c76a",
+      "file_sha256": "44876ecc3f27e2a4e56fc42aea37980e8eda7d0b37f69578d8c05f2055832a52",
+      "mode": "0444",
+      "path": "failure.json"
+    },
+    {
+      "byte_count": 11245,
+      "content_sha256": "d304ea3254aa65525032302f3e70cb5ec10aeb287f3363af4b7645cc95ab59da",
+      "file_sha256": "5b9131bb35d2cd353e992c4342a43582ced9286674d68029edfbe973416a470a",
+      "mode": "0444",
+      "path": "metrics/update_0.json"
+    },
+    {
+      "byte_count": 12280,
+      "content_sha256": "3b06f57db0b24954d25d8608ab83646b49323d169b4a53498153cf7331d8c7e7",
+      "file_sha256": "71c83efc73a316857fbda64f5301cf9274af81c8b2b693b1ccf0ac07552befda",
+      "mode": "0444",
+      "path": "metrics/update_100.json"
+    },
+    {
+      "byte_count": 12745,
+      "content_sha256": "5a11e92e7afe6f295bf7b3e64f7aecaa7fa392caa8c2888ab3c63e239ce17a26",
+      "file_sha256": "a6011dc5ef1faa82cb141924b20ded2a79452c37c8a466addccfdcf7f7ad362f",
+      "mode": "0444",
+      "path": "metrics/update_400.json"
+    },
+    {
+      "byte_count": 3318629,
+      "content_sha256": "f4365d91b61b9d2a6e12c6dc0279c44b66a496df1e29486bb334a37121a38bb4",
+      "file_sha256": "843a2f11433c69ddbee44866d2d0a5e49b11f4c5cbe9c9a818b8175ad75de770",
+      "mode": "0444",
+      "path": "receipts/terminal_access.json"
+    },
+    {
+      "byte_count": 520,
+      "content_sha256": "b7628ebc5126c9a3d942cffa3e86c8679c3288659cd6f9a862b00730c5de9e65",
+      "file_sha256": "af4d1fedbb4f4da5b69ebd34e7ecc484ac81a0e38db26c732b350482ae615340",
+      "mode": "0444",
+      "path": "reservation.json"
+    },
+    {
+      "byte_count": 1286367,
+      "file_sha256": "a84e311ffe6658f7e478d420456b8f58ce0fa6fd5dea03106f396d06dc7d074b",
+      "mode": "0444",
+      "path": "trace.jsonl",
+      "row_count": 402
+    }
+  ],
+  "schema": "lewm_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23_scientific_result_v1",
+  "scientific_accounting": {
+    "backward_calls": 4800,
+    "camera_frame_objectives": 12800,
+    "camera_route_grad_calls": 1600,
+    "ema_steps": 400,
+    "joint_route_grad_calls": 1600,
+    "microbatch_graphs": 1600,
+    "optimizer_steps": 400,
+    "predictor_forwards": 1600,
+    "predictor_objectives": 3200,
+    "presentations": 6400,
+    "state_residual_survival_grad_calls": 1600,
+    "state_residual_survival_objectives": 1600,
+    "updates": 400
+  },
+  "scientific_identity": {
+    "authority_commit": "198d42fb1aa9a5801929150e8fc9232f95cf8a03",
+    "authority_file_sha256": "0803d9d4bc9abf6551adb046589d991113326be86f74a003671d6a3bb14f14ff",
+    "clean_export_certification_binding_commit": "ee28497c402e73518000265f22ba919713774352",
+    "clean_export_certification_file_sha256": "71dc0f066199195f6b52ee8da2b275869e25e616f8470398e3117a6d37047388",
+    "frozen_source_and_review_commit": "44938145362e5accdf8e12b906bfbaa970d62f25",
+    "implementation_commit": "d3e75ca316e004787d18825eea82ec5399681282",
+    "preregistration_commit": "a7cf9692dd93212a82cb598d3175ff1c3598941b",
+    "recursive_source_manifest_commit": "9dcbedabc10fe95d358109c9d238386539f9e447",
+    "recursive_source_manifest_file_sha256": "b551bc964981b3396b3fc63b9a13e6e9685e1723e12da8036519c41375ffb143",
+    "science_identity_preserved_from_v18": {
+      "data": true,
+      "inherited_joint_jepa_losses": true,
+      "initialization": true,
+      "model_and_encoder": true,
+      "optimizer_and_ema": true,
+      "schedule": true,
+      "seed": true,
+      "thresholds": true,
+      "update_and_presentation_caps": true
+    },
+    "source_review_file_sha256": "4b52c290097d773863201dce14d53ff713f2568cf2196461fc4c03720ff5b4d2",
+    "source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-v23-survival-output-contrast-source",
+    "v23_only_scientific_change": "V22's predictor-core latent two-axis objective was removed and replaced by J23=F+R, a direct action-prior-residualized survival-output fit and wrong-scene/action-prior ranking objective through the full learned online path. The inherited joint JEPA route continued training encoder, representation, and predictor together against the EMA target."
+  },
+  "state_residual_survival_trace_audit": {
+    "all_400_updates_ranked_all_four_microbatches": true,
+    "all_400_updates_used_exactly_eight_non_hold_actions_per_row": true,
+    "fit_energy_mean": {
+      "maximum": 0.2502481285482645,
+      "mean": 0.045193972853885496,
+      "minimum": 0.009981730137951672
+    },
+    "inherited_prediction_loss_p": {
+      "maximum": 22.061434268951416,
+      "mean": 8.202115592956543,
+      "minimum": 1.0,
+      "update_1": 1.0,
+      "update_100": 5.446629047393799,
+      "update_400": 9.32626724243164,
+      "window_means": [
+        {
+          "mean": 5.910986719727516,
+          "updates": "1-100"
+        },
+        {
+          "mean": 6.3907791584730145,
+          "updates": "101-200"
+        },
+        {
+          "mean": 8.823022493720055,
+          "updates": "201-300"
+        },
+        {
+          "mean": 11.683673999905587,
+          "updates": "301-400"
+        }
+      ]
+    },
+    "j23_loss": {
+      "maximum": 1.346217155456543,
+      "mean": 1.0172923795133828,
+      "minimum": 0.9294816553592682,
+      "update_1": 1.1483933329582214,
+      "update_100": 1.0299091041088104,
+      "update_400": 0.9752582162618637
+    },
+    "j23_preclip_l2": {
+      "maximum": 3.8604865074157715,
+      "mean": 0.7817753581516445,
+      "minimum": 0.08440284430980682
+    },
+    "prior_advantage_mean": {
+      "maximum": 0.07688804995268583,
+      "mean": 0.0191357244381652,
+      "minimum": -0.1742631085216999,
+      "update_1": -0.06493160454556346,
+      "update_100": 0.018423154018819332,
+      "update_400": 0.047873977571725845
+    },
+    "scene_advantage_mean": {
+      "maximum": 0.1913131383332339,
+      "mean": 0.06729198745344067,
+      "minimum": 0.0000010914608455178412,
+      "update_1": 0.0000013932502150793771,
+      "update_100": 0.08920090198516846,
+      "update_400": 0.09103782911752832
+    }
+  },
+  "terminal_causal_controls": {
+    "coordinate_matched_persistence": {
+      "bootstrap_lower_95": -0.0028518293937047426,
+      "equal_scene_mean_delta": 0.032683944750712256,
+      "negative_families": {
+        "local_composite_motifs": -0.005808842573548455,
+        "loop_alias_stress": -0.013844534336337613,
+        "visual_sensor_stress": -0.05966299325674325
+      },
+      "positive_bootstrap_lower_95": false,
+      "positive_equal_scene_delta": true,
+      "positive_family_count": false,
+      "positive_family_count_value": 5
+    },
+    "interpretation": "Shuffled action, wrong RGB, and the train-action mean prior each passed all three registered checks. Persistence had a positive equal-scene mean but failed its bootstrap lower bound and family count because three of eight families were negative. V23 therefore learned scene- and action-conditioned utility beyond the train prior but did not beat persistence robustly across maze families.",
+    "passed_check_count": 10,
+    "shuffled_action": {
+      "bootstrap_lower_95": 0.16275776143539972,
+      "equal_scene_mean_delta": 0.2337300678951903,
+      "positive_bootstrap_lower_95": true,
+      "positive_equal_scene_delta": true,
+      "positive_family_count": true,
+      "positive_family_count_value": 8
+    },
+    "train_action_mean_prior": {
+      "bootstrap_lower_95": 0.0007156742996586724,
+      "equal_scene_mean_delta": 0.023215881481820137,
+      "positive_bootstrap_lower_95": true,
+      "positive_equal_scene_delta": true,
+      "positive_family_count": true,
+      "positive_family_count_value": 6
+    },
+    "wrong_rgb": {
+      "bootstrap_lower_95": 0.021554901048689474,
+      "equal_scene_mean_delta": 0.03724640492628666,
+      "positive_bootstrap_lower_95": true,
+      "positive_equal_scene_delta": true,
+      "positive_family_count": true,
+      "positive_family_count_value": 8
+    },
+    "wrong_rgb_and_train_action_mean_prior_passed_check_count": 6
+  },
+  "update400_gate": {
+    "action": "FAIL_TERMINAL_NO_RETRY_NO_RESUME",
+    "causal_triplet_pass_counts": {
+      "coordinate_matched_persistence": 1,
+      "shuffled_action": 3,
+      "train_action_mean_prior": 3,
+      "wrong_rgb": 3
+    },
+    "checks": {
+      "all_twelve_causal_control_checks_true": false,
+      "passed_physical_margin_count_strictly_above_matched_update400": true,
+      "rough_depth_p95_strictly_below_matched_update400": true,
+      "structural_integrity_pass": true,
+      "total_physical_shortfall_strictly_below_matched_update400": true
+    },
+    "incomplete_causal_control_triplets": [
+      "coordinate_matched_persistence"
+    ],
+    "inherited_gate_schema": "lewm_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21_update400_falsification_gate_v1",
+    "matched_thresholds": {
+      "passed_physical_margin_count_strictly_greater_than": 72,
+      "rough_depth_p95_m_strictly_less_than": 1.8582415819168085,
+      "total_physical_shortfall_strictly_less_than": 68.96954700805838
+    },
+    "next_update": null,
+    "passed": false,
+    "passed_causal_control_check_count": 10,
+    "physical_threshold_clearance": {
+      "passed_margin_count_above_strict_threshold": 14,
+      "rough_depth_p95_m_below_threshold": 0.19058933258056587,
+      "total_shortfall_below_threshold": 16.176388179886597
+    },
+    "terminal_status": "FAIL_SCIENTIFIC_UPDATE400_GATE_TERMINAL"
+  },
+  "validation": {
+    "authority_and_source_binding_mismatch_count": 0,
+    "canonical_json_content_mismatch_count": 0,
+    "checkpoint_artifact_count": 0,
+    "downstream_artifact_count": 0,
+    "file_binding_mismatch_count": 0,
+    "held_out_or_sealed_artifact_count": 0,
+    "immutable_regular_file_count": 7,
+    "metric_artifact_count": 3,
+    "probability_calibration_artifact_count": 0,
+    "public_artifact_count": 7,
+    "retry_or_resume_artifact_count": 0,
+    "success_artifact_count": 0,
+    "symlink_count": 0,
+    "terminal_access_receipt_count": 1,
+    "trace_content_mismatch_count": 0,
+    "trace_optimizer_row_count": 400,
+    "trace_row_count": 402,
+    "trace_update400_control_row_count": 1
+  }
+}
