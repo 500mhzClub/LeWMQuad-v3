@@ -29,38 +29,38 @@ from scripts import (
 
 SCHEMA_PREFIX = (
     "lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_integrity_replacement_v1"
+    "joint_jepa_v27_integrity_replacement_v2"
 )
 PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_integrity_replacement_v1_preregistration_2026-07-30.md"
+    "joint_jepa_v27_integrity_replacement_v2_preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "374899de71f59fca4c4ad646e783a1662e0ed1f5"
+PREREGISTRATION_COMMIT = "7975f1894108a883d45a31109695e3a474997397"
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_integrity_replacement_v1_source_manifest_2026-07-30.json"
+    "joint_jepa_v27_integrity_replacement_v2_source_manifest_2026-07-30.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_integrity_replacement_v1_source_review_2026-07-30.json"
+    "joint_jepa_v27_integrity_replacement_v2_source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_integrity_replacement_v1_clean_export_certification_"
+    "joint_jepa_v27_integrity_replacement_v2_clean_export_certification_"
     "2026-07-30.json"
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_integrity_replacement_v1_execution_authorization_"
+    "joint_jepa_v27_integrity_replacement_v2_execution_authorization_"
     "2026-07-30.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_integrity_replacement_v1/attempt_v1"
+    "joint_jepa_v27_integrity_replacement_v2/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-v27-explicit-plan-successor-integrity-replacement-v1-source"
+    "LeWMQuad-v3-v27-explicit-plan-successor-integrity-replacement-v2-source"
 )
 MODEL_CLASS_NAME = (
     "GeometryAnchoredExplicitPlanDiscountedSuccessorStateJointJepaV27"

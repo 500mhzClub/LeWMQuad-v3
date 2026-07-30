@@ -139,9 +139,9 @@ def test_import_and_no_argument_path_open_no_scientific_payload(capsys) -> None:
 def test_adapter_keeps_v25_builder_and_full_v13_physical_schedule() -> None:
     module = _load("_v27_launcher_adapter")
     module._assert_runtime_adapter_v27()
-    assert module.SCHEMA_PREFIX.endswith("v27_integrity_replacement_v1")
-    assert "integrity-replacement-v1-source" in module.CERTIFIED_SOURCE_ROOT
-    assert "integrity_replacement_v1" in module.OUTPUT_ROOT_RELATIVE_PATH
+    assert module.SCHEMA_PREFIX.endswith("v27_integrity_replacement_v2")
+    assert "integrity-replacement-v2-source" in module.CERTIFIED_SOURCE_ROOT
+    assert "integrity_replacement_v2" in module.OUTPUT_ROOT_RELATIVE_PATH
     assert module._BASE_LAUNCHER._build_one_microbatch_v13 is (
         module._V25_LAUNCHER._build_one_microbatch_v25
     )
@@ -153,6 +153,52 @@ def test_adapter_keeps_v25_builder_and_full_v13_physical_schedule() -> None:
     assert receipt["maximum_updates"] == 400
     assert receipt["maximum_presentations"] == 12_800
     assert receipt["execution_authorized_by_source"] is False
+
+
+def test_runtime_selected_training_module_exposes_exact_v25_builder_facade() -> None:
+    module = _load("_v27_launcher_training_facade")
+    training = importlib.import_module(module.TRAINING_MODULE_NAME)
+    v25 = training.v25
+    facade_names = (
+        "CURRENT_RGB_KEY",
+        "REQUIRED_BATCH_KEYS",
+        "CURRENT_CAMERA_ORIGIN_KEY",
+        "NEXT_CAMERA_ORIGIN_KEY",
+        "CURRENT_CAMERA_BASIS_KEY",
+        "NEXT_CAMERA_BASIS_KEY",
+        "CURRENT_GROUND_PLANE_Z_KEY",
+        "NEXT_GROUND_PLANE_Z_KEY",
+        "CURRENT_PIXEL_HIT_KEY",
+        "NEXT_PIXEL_HIT_KEY",
+        "CURRENT_PIXEL_DISTANCE_KEY",
+        "NEXT_PIXEL_DISTANCE_KEY",
+        "CURRENT_GROUND_IN_FRUSTUM_KEY",
+        "NEXT_GROUND_IN_FRUSTUM_KEY",
+        "CURRENT_GROUND_CLEAR_KEY",
+        "NEXT_GROUND_CLEAR_KEY",
+        "SCENE_INNOVATION_NEGATIVE_ROW_KEY_V21",
+        "REQUIRED_BATCH_KEYS_V21",
+        "ACTION_PRIOR_M_KEY_V23",
+        "REQUIRED_BATCH_KEYS_V23",
+        "REQUIRED_BATCH_KEYS_V24",
+        "REQUIRED_BATCH_KEYS_V25",
+    )
+
+    assert len(facade_names) == 22
+    assert all(
+        getattr(training, name) == getattr(v25, name) for name in facade_names
+    )
+    assert training.REQUIRED_BATCH_KEYS_V21 == (
+        *training.REQUIRED_BATCH_KEYS,
+        training.SCENE_INNOVATION_NEGATIVE_ROW_KEY_V21,
+    )
+    assert training.REQUIRED_BATCH_KEYS_V23 == (
+        *training.REQUIRED_BATCH_KEYS_V21,
+        training.ACTION_PRIOR_M_KEY_V23,
+    )
+    assert training.REQUIRED_BATCH_KEYS_V24 == training.REQUIRED_BATCH_KEYS_V23
+    assert training.REQUIRED_BATCH_KEYS_V25 == training.REQUIRED_BATCH_KEYS_V24
+    assert training.REQUIRED_BATCH_KEYS_V27 == training.REQUIRED_BATCH_KEYS_V25
 
 
 def test_pre_reservation_gpu_visibility_contract_is_exact() -> None:

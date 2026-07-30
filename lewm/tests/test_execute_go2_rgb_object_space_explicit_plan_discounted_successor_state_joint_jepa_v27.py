@@ -63,8 +63,8 @@ def _authority() -> dict:
 
 
 def test_authority_and_one_shot_reservation_are_fail_closed(tmp_path: Path) -> None:
-    assert executor.SCHEMA_PREFIX.endswith("v27_integrity_replacement_v1")
-    assert "integrity-replacement-v1-source" in executor.CERTIFIED_SOURCE_ROOT
+    assert executor.SCHEMA_PREFIX.endswith("v27_integrity_replacement_v2")
+    assert "integrity-replacement-v2-source" in executor.CERTIFIED_SOURCE_ROOT
     authority = _authority()
     assert executor.validate_future_execution_prerequisites_v27(authority) == authority
     reservation = executor.reserve_attempt_v27(
