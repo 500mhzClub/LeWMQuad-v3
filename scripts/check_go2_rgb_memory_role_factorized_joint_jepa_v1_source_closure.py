@@ -102,12 +102,38 @@ IMPLEMENTATION_PATHS = (
 )
 ENTRYPOINTS = IMPLEMENTATION_PATHS
 
-# These exact modules are reached through importlib or __import__ calls.  The
-# V13 roots retain the reviewed physical-data composer closure.  The V25
-# launcher and H6 adapter are the only candidate-specific dynamic additions.
-V25_LAUNCHER_DYNAMIC_SOURCE = (
-    "scripts/launch_go2_rgb_per_row_persistence_contrastive_temporal_joint_"
-    "jepa_v25.py"
+# These exact predecessor modules are loaded through read_bytes/exec or
+# importlib.  They therefore cannot be discovered from ordinary import ASTs.
+# Keep the complete frozen chains explicit so a source-only export can import
+# the runner, executor, and denied-by-default launcher without the worktree.
+RUNNER_PREDECESSOR_SOURCES = (
+    "scripts/run_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py",
+    "scripts/run_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py",
+    "scripts/run_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py",
+    "scripts/run_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py",
+    "scripts/run_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py",
+    "scripts/run_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+)
+EXECUTOR_PREDECESSOR_SOURCES = (
+    "scripts/execute_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v26.py",
+    "scripts/execute_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py",
+    "scripts/execute_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py",
+    "scripts/execute_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py",
+    "scripts/execute_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py",
+    "scripts/execute_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py",
+    "scripts/execute_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
+    "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v14.py",
+    "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+)
+LAUNCHER_PREDECESSOR_SOURCES = (
+    "scripts/launch_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py",
+    "scripts/launch_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py",
+    "scripts/launch_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py",
+    "scripts/launch_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py",
+    "scripts/launch_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py",
+    "scripts/launch_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
+    "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
 )
 H6_DATASET_DYNAMIC_SOURCE = (
     "lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py"
@@ -187,7 +213,9 @@ FORCED_DYNAMIC_SOURCES = tuple(
     dict.fromkeys(
         (
             *_V13.FORCED_DYNAMIC_SOURCES,
-            V25_LAUNCHER_DYNAMIC_SOURCE,
+            *RUNNER_PREDECESSOR_SOURCES,
+            *EXECUTOR_PREDECESSOR_SOURCES,
+            *LAUNCHER_PREDECESSOR_SOURCES,
             H6_DATASET_DYNAMIC_SOURCE,
         )
     )

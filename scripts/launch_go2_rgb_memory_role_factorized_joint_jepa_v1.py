@@ -173,6 +173,15 @@ REQUIRED_CERTIFIED_SOURCE_PATHS = frozenset(
         "lewm/datasets/go2_memory_role_place_triplets_v1.py",
         "lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py",
         BASE_LAUNCHER_RELATIVE_PATH,
+        "scripts/launch_go2_rgb_predictor_core_protected_survival_output_"
+        "joint_jepa_v24.py",
+        "scripts/launch_go2_rgb_action_prior_residualized_wrong_scene_survival_"
+        "output_joint_jepa_v23.py",
+        "scripts/launch_go2_rgb_same_action_cross_scene_contrastive_innovation_"
+        "joint_jepa_v21.py",
+        "scripts/launch_go2_rgb_object_space_height_volume_executed_successor_"
+        "semantic_grounding_joint_jepa_v19.py",
+        "scripts/launch_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
         "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_"
         "camera_evidence_bottleneck.py",
     }
