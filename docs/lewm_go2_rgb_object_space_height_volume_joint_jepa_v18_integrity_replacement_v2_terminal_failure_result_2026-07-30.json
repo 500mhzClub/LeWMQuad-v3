@@ -1,0 +1,143 @@
+{
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "9c1cb47ba04224a2651b920441c64b19480439540092d12e7598feb52b963eae",
+    "authority_commit": "1b98365c860acfacacfff1957b858180f833ea54",
+    "authority_file_sha256": "bf1167c069ccbef4e033bbe4ecbb89f4ffb4c0dfa21ca52e5f8c489e9f4c80d3",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "output_root": ".generated/go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_replacement_v2/attempt_v1",
+    "reservation_content_sha256": "1163b89d9abe14ce456c321f0e9706ccf042add2fa0414eee48951f4d4c38e6c",
+    "reservation_created_utc": "2026-07-30T02:11:46Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "content_sha256": "8435d611d11bcda2deb42b27725ab14269fd93a839cceb5ae98809b118a92271",
+  "date": "2026-07-30",
+  "decision": {
+    "checkpoint_published": false,
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "probability_calibration_authorized": false,
+    "replacement_v3_authorized_by_this_result": false,
+    "replacement_v2_retry_authorized": false,
+    "scientific_gate_reached": false,
+    "scientific_interpretation": "The attempt terminated during post-reservation runtime composition before V18 model construction, observation, or training. It supplies no evidence for or against the V18 object-space height-volume hypothesis.",
+    "status": "PASS_COMPLETE_PRE_MODEL_PRE_TRAINING_INFRASTRUCTURE_FAILURE_AUDIT"
+  },
+  "failure": {
+    "exception_message_literal_reconstructed_from_source_and_hash": "exactly one visible GPU is required",
+    "exception_message_sha256": "bed30c5dd9ab17ac5302891c58c219720bcb9ad8781c0840719622f773b0ada7",
+    "exception_type": "RuntimeError",
+    "failure_content_sha256": "c8df9a2dd9dfca2b172ab2336f023d9d4d2bbd8cc27788b1ab0029edbeceab06",
+    "stage": "post_reservation_runtime_composition",
+    "status": "FAIL_TERMINAL_NO_RETRY_NO_RESUME"
+  },
+  "launch_invocation_audit": {
+    "consumed_attempt_environment": {
+      "CUDA_VISIBLE_DEVICES": "",
+      "HIP_VISIBLE_DEVICES": "0",
+      "ROCR_VISIBLE_DEVICES": ""
+    },
+    "exact_fault": "Defining blank ROCR_VISIBLE_DEVICES and CUDA_VISIBLE_DEVICES alongside HIP_VISIBLE_DEVICES=0 left the ROCm runtime with other than exactly one visible GPU; the terminal receipt does not isolate which blank compatibility variable took precedence.",
+    "initial_pre_reservation_rejection_from_operator_launch_log": "A preceding invocation omitted Python -I and was rejected before output-root creation, reservation, payload access, or attempt consumption.",
+    "minimal_successor_correction": "Invoke the unchanged frozen source with python -I -B and HIP_VISIBLE_DEVICES=0; leave ROCR_VISIBLE_DEVICES and CUDA_VISIBLE_DEVICES undefined.",
+    "model_or_data_fault": false,
+    "source_defect": false
+  },
+  "receipt_artifacts": [
+    {
+      "byte_count": 622,
+      "content_sha256": "c8df9a2dd9dfca2b172ab2336f023d9d4d2bbd8cc27788b1ab0029edbeceab06",
+      "file_sha256": "b0d2655fe4e64145653c97600c45aec9505ed10246c87c89f82c99ca76c55273",
+      "path": "failure.json"
+    },
+    {
+      "byte_count": 518,
+      "content_sha256": "1163b89d9abe14ce456c321f0e9706ccf042add2fa0414eee48951f4d4c38e6c",
+      "file_sha256": "70d5ca3504f6e1a231c6130014abf7cc0dfb113efe56e75f8275834f349412a2",
+      "path": "reservation.json"
+    }
+  ],
+  "runtime_composition_access": {
+    "access_receipt_published": false,
+    "authorized_content_read_call_count_reconstructed": 14,
+    "authorized_unique_files_opened_before_failure_reconstructed_from_frozen_call_order": [
+      ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/checkpoint.pt",
+      ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/gate.json",
+      ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1.audit_v13.json",
+      ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/endpoints.jsonl",
+      ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/manifest.json",
+      ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/pairs.jsonl",
+      ".generated/go2_shared_observable_camera_ray_jepa_v5/matched_training_v4/schedule.json",
+      ".generated/go2_swept_progress_survival_labels_v1/manifest.json",
+      ".generated/go2_swept_progress_survival_labels_v1/selection.jsonl",
+      ".generated/go2_swept_progress_survival_labels_v1/train.jsonl"
+    ],
+    "authorized_unique_opened_file_count": 10,
+    "forbidden_or_protected_input_open_count": 0,
+    "gpu_device_selected": false,
+    "gpu_kernel_or_training_workload_count": 0,
+    "gpu_properties_query_reached": false,
+    "gpu_visibility_api_check_attempted": true,
+    "n320_checkpoint_deserialized_on_cpu": true,
+    "n320_fit_model_constructed_on_cpu": true,
+    "per_frame_raw_supervision_array_open_count": 0,
+    "probability_calibration_open_count": 0,
+    "raw_manifest_audit_pairs_endpoints_read_count_each": 2,
+    "rgb_decode_count": 0,
+    "runtime_roles_opened": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "source_evidence_binding_count_revalidated_before_reservation": 107,
+    "source_manifest_path_count_revalidated_before_reservation": 86,
+    "terminal_full_access_rehash_count": 0
+  },
+  "schema": "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_replacement_v2_terminal_failure_result_v1",
+  "scientific_accounting": {
+    "backward_calls": 0,
+    "checkpoint_artifact_count": 0,
+    "completed_training_presentations": 0,
+    "completed_updates": 0,
+    "ema_steps": 0,
+    "evaluation_observation_count": 0,
+    "metric_artifact_count": 0,
+    "optimizer_steps": 0,
+    "scheduled_microbatches_built": 0,
+    "training_predictor_forwards": 0,
+    "v18_model_construction_count": 0
+  },
+  "scientific_identity": {
+    "clean_export_certification_sha256": "16c24bc34485562fde3a9cfb61e673c28b44ae5afb2ccdc94db00c004109a655",
+    "frozen_source_and_review_commit": "4af4e2c6e349355b540a98443e5dcca6b37e7197",
+    "original_v18_preregistration_commit": "5522b226e845907b091ff98ebac3b6f6315a4ca7",
+    "preregistration_commit": "baad8efaf524bb3f88f2d4516db7ef368f15684e",
+    "science_identity_preserved_through_failure": {
+      "data": true,
+      "initialization": true,
+      "losses": true,
+      "model": true,
+      "optimizer_and_ema": true,
+      "schedule": true,
+      "seed": true,
+      "thresholds": true,
+      "update_and_presentation_caps": true
+    },
+    "source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-v18-object-space-height-volume-integrity-replacement-v2-source"
+  },
+  "validation": {
+    "content_binding_mismatch_count": 0,
+    "file_binding_mismatch_count": 0,
+    "immutable_regular_file_count": 2,
+    "independent_failure_review_passed": true,
+    "success_artifact_count": 0,
+    "symlink_count": 0,
+    "terminal_access_receipt_count": 0,
+    "trace_artifact_count": 0
+  }
+}
