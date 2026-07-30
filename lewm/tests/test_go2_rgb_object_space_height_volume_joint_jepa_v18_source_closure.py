@@ -34,12 +34,13 @@ def test_checker_import_is_source_only_and_uses_fresh_v18_identity() -> None:
         for prefix in ("torch", "numpy", "PIL", "lewm", "scripts")
     )
     assert checker.SCHEMA == (
-        "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_source_manifest"
+        "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
+        "replacement_v1_source_manifest"
     )
     assert checker._V13._BASE.SCHEMA == checker.SCHEMA
     assert checker.MANIFEST_PATH.relative_to(ROOT).as_posix() == (
-        "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_"
-        "source_manifest_2026-07-30.json"
+        "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
+        "replacement_v1_source_manifest_2026-07-30.json"
     )
 
 

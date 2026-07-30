@@ -54,7 +54,9 @@ def test_private_adapter_preserves_public_v14_and_is_denied(capsys) -> None:
     assert v18.PRIVATE_V14_MODULE_NAME not in sys.modules
     assert v14.SCHEMA_PREFIX == "lewm_go2_rgb_unified_ray_survival_joint_jepa_v14"
     assert v14.MODEL_CLASS_NAME == "GeometryAnchoredSweptProgressSurvivalJointJepaV14"
-    assert v18.SCHEMA_PREFIX.endswith("object_space_height_volume_joint_jepa_v18")
+    assert v18.SCHEMA_PREFIX.endswith(
+        "object_space_height_volume_joint_jepa_v18_integrity_replacement_v1"
+    )
     assert v18.MODEL_CLASS_NAME == "GeometryAnchoredSweptProgressSurvivalJointJepaV18"
     assert v18.main([]) == 4
     denial = v18.validate_content_bound_v18(__import__("json").loads(capsys.readouterr().out))
@@ -89,6 +91,14 @@ def test_parent_bindings_include_exact_prereg_and_scientific_witnesses() -> None
             v18.PREREGISTRATION_FILE_SHA256,
             v18.PREREGISTRATION_BYTE_COUNT,
         ),
+        v18.ORIGINAL_V18_PREREGISTRATION_PATH: (
+            v18.ORIGINAL_V18_PREREGISTRATION_FILE_SHA256,
+            v18.ORIGINAL_V18_PREREGISTRATION_BYTE_COUNT,
+        ),
+        v18.V18_TERMINAL_FAILURE_RESULT_PATH: (
+            v18.V18_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            v18.V18_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
+        ),
         v18.V14_RESULT_PATH: (
             v18.V14_RESULT_FILE_SHA256,
             v18.V14_RESULT_BYTE_COUNT,
@@ -105,6 +115,44 @@ def test_parent_bindings_include_exact_prereg_and_scientific_witnesses() -> None
     for path, binding in expected.items():
         assert v18.BOUND_PARENT_SOURCES[path] == binding
         assert path in receipt["validated_paths"]
+
+
+def test_inherited_runtime_executor_surface_is_complete_and_exact() -> None:
+    required_constants = {
+        "CHECKPOINT_SCHEDULE_PREFIX_SHA256",
+        "MODEL_CLASS_NAME",
+        "OUTPUT_ROOT_RELATIVE_PATH",
+        "REGISTERED_FAMILIES",
+        "RUNTIME_INPUT_BINDING_NAMES",
+        "SCOPES",
+        "V12_GATE_CHECK_NAMES",
+    }
+    required_callables = {
+        "_canonical_json_bytes",
+        "_write_immutable_json_v13",
+        "flatten_physical_metrics_v13",
+        "registered_wrong_rgb_mapping_v13",
+        "reserve_attempt_v13",
+        "run_future_authorized_engine_v13",
+        "terminalize_failure_v13",
+        "validate_bound_sources_v13",
+        "validate_content_bound_v13",
+        "validate_future_execution_prerequisites_v13",
+    }
+    assert all(hasattr(v18, name) for name in required_constants)
+    assert all(callable(getattr(v18, name, None)) for name in required_callables)
+    assert (
+        v18.registered_wrong_rgb_mapping_v13
+        is v18.registered_wrong_rgb_mapping_v18
+        is v18._engine.registered_wrong_rgb_mapping_v13
+    )
+    assert v18.registered_wrong_rgb_mapping_v13.__globals__ is v18._engine.__dict__
+    assert (
+        v18.flatten_physical_metrics_v13
+        is v18.flatten_physical_metrics_v18
+        is v18._engine.flatten_physical_metrics_v13
+    )
+    assert v18.flatten_physical_metrics_v13.__globals__ is v18._engine.__dict__
 
 
 def test_update400_gate_uses_only_registered_five_authoritative_checks() -> None:

@@ -19,16 +19,41 @@ V14_PUBLIC_MODULE_NAME = (
 PRIVATE_V14_MODULE_NAME = f"{__name__}.__private_v14_executor"
 _PUBLIC_V14_WAS_LOADED_BEFORE_ADAPTER = V14_PUBLIC_MODULE_NAME in sys.modules
 
-SCHEMA_PREFIX = "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18"
-PREREGISTRATION_COMMIT = "5522b226e845907b091ff98ebac3b6f6315a4ca7"
+SCHEMA_PREFIX = (
+    "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_"
+    "integrity_replacement_v1"
+)
+PREREGISTRATION_COMMIT = "402f61522d59943e0def9df0b90ebf785867d366"
 PREREGISTRATION_PATH = (
+    "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
+    "replacement_v1_preregistration_2026-07-30.md"
+)
+PREREGISTRATION_FILE_SHA256 = (
+    "0b50421844b09544c0de259ae8cf9386baf49f02ec50166ded72d9f8f5497daf"
+)
+PREREGISTRATION_BYTE_COUNT = 5_800
+ORIGINAL_V18_PREREGISTRATION_COMMIT = (
+    "5522b226e845907b091ff98ebac3b6f6315a4ca7"
+)
+ORIGINAL_V18_PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_"
     "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_FILE_SHA256 = (
+ORIGINAL_V18_PREREGISTRATION_FILE_SHA256 = (
     "c9997c6f335d6a7788e9cf8badb971ad2929d67094903d6e3676ec873bb8cae5"
 )
-PREREGISTRATION_BYTE_COUNT = 9_718
+ORIGINAL_V18_PREREGISTRATION_BYTE_COUNT = 9_718
+V18_TERMINAL_FAILURE_RESULT_COMMIT = (
+    "0c0b0804730028bdd5dadf4e5180685b4bc33e0e"
+)
+V18_TERMINAL_FAILURE_RESULT_PATH = (
+    "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_"
+    "terminal_failure_result_2026-07-30.json"
+)
+V18_TERMINAL_FAILURE_RESULT_FILE_SHA256 = (
+    "a04b90e31298d5aa0a0764478ce4794d21f5120b981c6f16edac5fda103ee66f"
+)
+V18_TERMINAL_FAILURE_RESULT_BYTE_COUNT = 5_828
 V14_RESULT_PATH = (
     "docs/lewm_go2_rgb_unified_ray_survival_joint_jepa_v14_"
     "scientific_result_2026-07-29.json"
@@ -72,7 +97,8 @@ V10_CALIBRATION_RESULT_FILE_SHA256 = (
 V10_CALIBRATION_RESULT_BYTE_COUNT = 3_688
 
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_object_space_height_volume_joint_jepa_v18/attempt_v1"
+    ".generated/go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
+    "replacement_v1/attempt_v1"
 )
 MODEL_CLASS_NAME = "GeometryAnchoredSweptProgressSurvivalJointJepaV18"
 MODEL_REQUIRED_METHODS = (
@@ -214,6 +240,14 @@ for _path, _binding in {
         PREREGISTRATION_FILE_SHA256,
         PREREGISTRATION_BYTE_COUNT,
     ),
+    ORIGINAL_V18_PREREGISTRATION_PATH: (
+        ORIGINAL_V18_PREREGISTRATION_FILE_SHA256,
+        ORIGINAL_V18_PREREGISTRATION_BYTE_COUNT,
+    ),
+    V18_TERMINAL_FAILURE_RESULT_PATH: (
+        V18_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+        V18_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
+    ),
     V14_RESULT_PATH: (V14_RESULT_FILE_SHA256, V14_RESULT_BYTE_COUNT),
     V15_RESULT_PATH: (V15_RESULT_FILE_SHA256, V15_RESULT_BYTE_COUNT),
     V17_RESULT_PATH: (V17_RESULT_FILE_SHA256, V17_RESULT_BYTE_COUNT),
@@ -236,9 +270,10 @@ _engine.MODEL_REQUIRED_CONSTANTS = dict(MODEL_REQUIRED_CONSTANTS)
 _engine.MATCHED_UPDATE400_THRESHOLDS = dict(MATCHED_UPDATE400_THRESHOLDS)
 _engine.CURRENT_EXECUTION_AUTHORIZED = False
 _engine.CURRENT_EXECUTION_DENIAL = (
-    "V18 scientific execution is denied until recursive source closure, "
-    "independent exact-binding review, narrow clean-export certification, "
-    "and one-shot authority are committed and validated"
+    "V18 integrity-replacement scientific execution is denied until "
+    "recursive source closure, independent exact-binding review, narrow "
+    "clean-export certification, and one-shot authority are committed and "
+    "validated"
 )
 
 
@@ -412,6 +447,8 @@ validate_attempt_reservation_v18 = _engine.validate_attempt_reservation_v13
 run_future_authorized_engine_v18 = _engine.run_future_authorized_engine_v13
 validate_terminal_accounting_v18 = _engine.validate_terminal_accounting_v13
 execute_v18 = _engine.execute_v13
+flatten_physical_metrics_v18 = _engine.flatten_physical_metrics_v13
+registered_wrong_rgb_mapping_v18 = _engine.registered_wrong_rgb_mapping_v13
 
 # Compatibility names consumed by the private V13 custody launcher/runtime.
 _canonical_json_bytes = _engine._canonical_json_bytes
@@ -426,6 +463,8 @@ validate_future_execution_prerequisites_v13 = (
 execution_denial_receipt_v13 = execution_denial_receipt_v18
 reserve_attempt_v13 = reserve_attempt_v18
 terminalize_failure_v13 = terminalize_failure_v18
+flatten_physical_metrics_v13 = flatten_physical_metrics_v18
+registered_wrong_rgb_mapping_v13 = registered_wrong_rgb_mapping_v18
 evaluate_update400_gate_v13 = evaluate_update400_gate_v18
 evaluate_final_gate_v13 = evaluate_final_gate_v18
 validate_schedule_v13 = validate_schedule_v18
@@ -445,6 +484,12 @@ def private_adapter_receipt_v18() -> dict[str, Any]:
         "public_v14_loaded_by_adapter": False,
         "private_module_registered": PRIVATE_V14_MODULE_NAME in sys.modules,
         "preregistration_commit": PREREGISTRATION_COMMIT,
+        "original_v18_preregistration_commit": (
+            ORIGINAL_V18_PREREGISTRATION_COMMIT
+        ),
+        "v18_terminal_failure_result_commit": (
+            V18_TERMINAL_FAILURE_RESULT_COMMIT
+        ),
         "output_root": OUTPUT_ROOT_RELATIVE_PATH,
         "model_class": MODEL_CLASS_NAME,
         "matched_update400_thresholds": dict(MATCHED_UPDATE400_THRESHOLDS),

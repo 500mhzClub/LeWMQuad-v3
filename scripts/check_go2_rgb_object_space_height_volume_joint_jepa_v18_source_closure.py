@@ -17,11 +17,12 @@ BASE_CHECKER_PATH = (
 )
 MANIFEST_PATH = (
     ROOT
-    / "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_"
-    "source_manifest_2026-07-30.json"
+    / "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
+    "replacement_v1_source_manifest_2026-07-30.json"
 )
 SCHEMA = (
-    "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_source_manifest"
+    "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
+    "replacement_v1_source_manifest"
 )
 
 

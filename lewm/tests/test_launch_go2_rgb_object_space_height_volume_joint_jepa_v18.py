@@ -33,7 +33,8 @@ def test_source_only_import_and_no_argument_denial(capsys) -> None:
     assert json.loads(capsys.readouterr().out) == {
         "reservation_created": False,
         "schema": (
-            "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_launcher_v1"
+            "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
+            "replacement_v1_launcher_v1"
         ),
         "scientific_payload_opened": False,
         "status": "DENIED_NO_FUTURE_AUTHORITY",
@@ -53,11 +54,28 @@ def test_private_base_has_only_exact_v18_selectors_and_caps() -> None:
     assert base.TRAINING_MODULE_NAME == (
         "scripts.run_go2_rgb_object_space_height_volume_joint_jepa_v18"
     )
-    assert base.EXPERIMENT_ARM_NAME == "object_space_height_volume_v18"
+    assert base.EXPERIMENT_ARM_NAME == (
+        "object_space_height_volume_v18_integrity_replacement_v1"
+    )
     assert base.MAXIMUM_UPDATES == 1_000
     assert base.MAXIMUM_PRESENTATIONS == 16_000
     assert base.OBSERVATION_UPDATES == (0, 100, 400, 1_000)
     assert launcher.private_launcher_adapter_receipt_v18()["execution_authorized"] is False
+
+
+def test_integrity_replacement_uses_fresh_evidence_paths() -> None:
+    prefix = (
+        "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_"
+        "integrity_replacement_v1"
+    )
+    assert launcher.SOURCE_EVIDENCE_SCHEMA_PREFIX == prefix
+    for relative in (
+        launcher.AUTHORITY_RELATIVE_PATH,
+        launcher.SOURCE_MANIFEST_RELATIVE_PATH,
+        launcher.SOURCE_REVIEW_RELATIVE_PATH,
+        launcher.CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH,
+    ):
+        assert "integrity_replacement_v1" in relative
 
 
 def test_selector_mutation_fails_closed(monkeypatch) -> None:
