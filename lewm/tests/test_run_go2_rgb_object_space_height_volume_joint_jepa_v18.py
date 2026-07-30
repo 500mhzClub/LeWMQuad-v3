@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -46,6 +47,45 @@ class _NamedParameterModel:
 
     def parameters(self):
         return (parameter for _, parameter in self._named)
+
+
+class _SyntheticTensor:
+    def __init__(self, shape: tuple[int, ...]) -> None:
+        self.shape = shape
+
+
+class _SyntheticTorch:
+    Tensor = _SyntheticTensor
+
+    @staticmethod
+    def equal(left: object, right: object) -> bool:
+        return left is right
+
+
+def _synthetic_microbatch(
+    adapter,
+    visibility: _SyntheticTensor,
+) -> dict[str, object]:
+    size = adapter.MICROBATCH_SIZE
+    batch = {
+        key: _SyntheticTensor((size,))
+        for key in adapter.REQUIRED_BATCH_KEYS
+    }
+    batch.update(
+        {
+            adapter.CURRENT_CAMERA_ORIGIN_KEY: _SyntheticTensor((size, 3)),
+            adapter.NEXT_CAMERA_ORIGIN_KEY: _SyntheticTensor((size, 3)),
+            adapter.CURRENT_CAMERA_BASIS_KEY: _SyntheticTensor((size, 3, 3)),
+            adapter.NEXT_CAMERA_BASIS_KEY: _SyntheticTensor((size, 3, 3)),
+            adapter.CURRENT_GROUND_PLANE_Z_KEY: _SyntheticTensor((size,)),
+            adapter.NEXT_GROUND_PLANE_Z_KEY: _SyntheticTensor((size,)),
+            adapter.IMMEDIATE_FEASIBLE_KEY: _SyntheticTensor((size, 9)),
+            adapter.PREFIX_LENGTHS_KEY: _SyntheticTensor((size, 9)),
+            adapter.CURRENT_GROUND_IN_FRUSTUM_KEY: visibility,
+            adapter.NEXT_GROUND_IN_FRUSTUM_KEY: visibility,
+        }
+    )
+    return batch
 
 
 def test_private_adapter_does_not_mutate_public_v13_training() -> None:
@@ -122,3 +162,93 @@ def test_training_adapter_preserves_caps_batch_schema_and_denial_receipt() -> No
     assert adapter.MAXIMUM_UPDATES == 1_000
     assert adapter.MAXIMUM_PRESENTATIONS == 16_000
     assert tuple(adapter.REQUIRED_BATCH_KEYS) == tuple(adapter._base.REQUIRED_BATCH_KEYS)
+
+
+def test_private_microbatch_validator_bridge_reaches_inherited_engine_guard(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    adapter = importlib.import_module(V18_NAME)
+    executor = importlib.import_module(
+        "scripts.execute_go2_rgb_object_space_height_volume_joint_jepa_v18"
+    )
+    assert (
+        adapter._validate_microbatches_v13
+        is adapter._base._validate_microbatches_v13
+    )
+    assert adapter._validate_microbatches_v13.__globals__ is adapter._base.__dict__
+    assert "_validate_microbatches_v13" not in adapter.__all__
+
+    public_surface = {
+        "partition_parameters_v13",
+        "build_frozen_optimizer_v13",
+        "validate_optimizer_v13",
+        "joint_training_update_v13",
+        "validate_accounting_v13",
+        "MICROBATCH_SIZE",
+        "MICROBATCHES_PER_UPDATE",
+        "PRESENTATIONS_PER_UPDATE",
+        "MAXIMUM_UPDATES",
+        "MAXIMUM_PRESENTATIONS",
+        "REQUIRED_BATCH_KEYS",
+        "CURRENT_CAMERA_BASIS_KEY",
+        "CURRENT_CAMERA_ORIGIN_KEY",
+        "CURRENT_GROUND_CLEAR_KEY",
+        "CURRENT_GROUND_IN_FRUSTUM_KEY",
+        "CURRENT_GROUND_PLANE_Z_KEY",
+        "CURRENT_PIXEL_DISTANCE_KEY",
+        "CURRENT_PIXEL_HIT_KEY",
+        "NEXT_CAMERA_BASIS_KEY",
+        "NEXT_CAMERA_ORIGIN_KEY",
+        "NEXT_GROUND_CLEAR_KEY",
+        "NEXT_GROUND_IN_FRUSTUM_KEY",
+        "NEXT_GROUND_PLANE_Z_KEY",
+        "NEXT_PIXEL_DISTANCE_KEY",
+        "NEXT_PIXEL_HIT_KEY",
+    }
+    complete_surface = {*public_surface, "_validate_microbatches_v13"}
+    assert len(public_surface) == 25
+    assert len(complete_surface) == 26
+    assert all(hasattr(adapter, name) for name in complete_surface)
+    assert public_surface.issubset(adapter.__all__)
+    assert all(
+        callable(getattr(adapter, name))
+        for name in (
+            "partition_parameters_v13",
+            "build_frozen_optimizer_v13",
+            "validate_optimizer_v13",
+            "joint_training_update_v13",
+            "validate_accounting_v13",
+            "_validate_microbatches_v13",
+        )
+    )
+    executor._engine.validate_training_api_v13(adapter)
+
+    monkeypatch.setitem(sys.modules, "torch", _SyntheticTorch)
+    size = adapter.MICROBATCH_SIZE
+    visibility = _SyntheticTensor((size,))
+    runtime = SimpleNamespace(torch=_SyntheticTorch, training_module=adapter)
+    model = SimpleNamespace(
+        bev_lift=SimpleNamespace(
+            evidence_head=SimpleNamespace(
+                ground_query_geometry=lambda *_args: SimpleNamespace(
+                    in_frustum=visibility
+                )
+            )
+        )
+    )
+    microbatches = [
+        _synthetic_microbatch(adapter, visibility)
+        for _ in range(adapter.MICROBATCHES_PER_UPDATE)
+    ]
+    executor._engine._validate_microbatches_for_engine_v13(
+        runtime, model, microbatches
+    )
+
+    malformed = [dict(batch) for batch in microbatches]
+    malformed[0][adapter.CURRENT_CAMERA_ORIGIN_KEY] = _SyntheticTensor(
+        (size, 2)
+    )
+    with pytest.raises(ValueError, match="current_camera_origin_body_m"):
+        executor._engine._validate_microbatches_for_engine_v13(
+            runtime, model, malformed
+        )

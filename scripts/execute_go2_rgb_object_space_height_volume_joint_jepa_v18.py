@@ -21,17 +21,39 @@ _PUBLIC_V14_WAS_LOADED_BEFORE_ADAPTER = V14_PUBLIC_MODULE_NAME in sys.modules
 
 SCHEMA_PREFIX = (
     "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_"
-    "integrity_replacement_v1"
+    "integrity_replacement_v2"
 )
-PREREGISTRATION_COMMIT = "402f61522d59943e0def9df0b90ebf785867d366"
+PREREGISTRATION_COMMIT = "baad8efaf524bb3f88f2d4516db7ef368f15684e"
 PREREGISTRATION_PATH = (
+    "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
+    "replacement_v2_preregistration_2026-07-30.md"
+)
+PREREGISTRATION_FILE_SHA256 = (
+    "71d3530df714719381df45d08fc8818d7def712c7c8647ac9db80690c0bf5167"
+)
+PREREGISTRATION_BYTE_COUNT = 6_507
+REPLACEMENT_V1_PREREGISTRATION_COMMIT = (
+    "402f61522d59943e0def9df0b90ebf785867d366"
+)
+REPLACEMENT_V1_PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
     "replacement_v1_preregistration_2026-07-30.md"
 )
-PREREGISTRATION_FILE_SHA256 = (
+REPLACEMENT_V1_PREREGISTRATION_FILE_SHA256 = (
     "0b50421844b09544c0de259ae8cf9386baf49f02ec50166ded72d9f8f5497daf"
 )
-PREREGISTRATION_BYTE_COUNT = 5_800
+REPLACEMENT_V1_PREREGISTRATION_BYTE_COUNT = 5_800
+REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_COMMIT = (
+    "8acbb240a59c22d65ab5082a81596dcc24de86ee"
+)
+REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_PATH = (
+    "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
+    "replacement_v1_terminal_failure_result_2026-07-30.json"
+)
+REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_FILE_SHA256 = (
+    "4b6246a94bd5ce8265807d255620deb46fb32406dfc1c92c396e87aa42bc8dc8"
+)
+REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_BYTE_COUNT = 7_828
 ORIGINAL_V18_PREREGISTRATION_COMMIT = (
     "5522b226e845907b091ff98ebac3b6f6315a4ca7"
 )
@@ -98,7 +120,7 @@ V10_CALIBRATION_RESULT_BYTE_COUNT = 3_688
 
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
-    "replacement_v1/attempt_v1"
+    "replacement_v2/attempt_v1"
 )
 MODEL_CLASS_NAME = "GeometryAnchoredSweptProgressSurvivalJointJepaV18"
 MODEL_REQUIRED_METHODS = (
@@ -239,6 +261,14 @@ for _path, _binding in {
     PREREGISTRATION_PATH: (
         PREREGISTRATION_FILE_SHA256,
         PREREGISTRATION_BYTE_COUNT,
+    ),
+    REPLACEMENT_V1_PREREGISTRATION_PATH: (
+        REPLACEMENT_V1_PREREGISTRATION_FILE_SHA256,
+        REPLACEMENT_V1_PREREGISTRATION_BYTE_COUNT,
+    ),
+    REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_PATH: (
+        REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+        REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
     ),
     ORIGINAL_V18_PREREGISTRATION_PATH: (
         ORIGINAL_V18_PREREGISTRATION_FILE_SHA256,
@@ -484,6 +514,12 @@ def private_adapter_receipt_v18() -> dict[str, Any]:
         "public_v14_loaded_by_adapter": False,
         "private_module_registered": PRIVATE_V14_MODULE_NAME in sys.modules,
         "preregistration_commit": PREREGISTRATION_COMMIT,
+        "replacement_v1_preregistration_commit": (
+            REPLACEMENT_V1_PREREGISTRATION_COMMIT
+        ),
+        "replacement_v1_terminal_failure_result_commit": (
+            REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_COMMIT
+        ),
         "original_v18_preregistration_commit": (
             ORIGINAL_V18_PREREGISTRATION_COMMIT
         ),

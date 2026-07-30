@@ -129,6 +129,7 @@ def partition_parameters_v18(model: Any) -> Any:
 # the private module, where only the registered partition hook is replaced.
 for _name in _base.__all__:
     globals()[_name] = getattr(_base, _name)
+_validate_microbatches_v13 = _base._validate_microbatches_v13
 _base.partition_parameters_v13 = partition_parameters_v18
 partition_parameters_v13 = partition_parameters_v18
 joint_training_update_v13 = _base.joint_training_update_v13
