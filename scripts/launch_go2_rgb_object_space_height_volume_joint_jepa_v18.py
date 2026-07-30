@@ -22,19 +22,19 @@ BASE_LAUNCHER_RELATIVE_PATH = (
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
-    "replacement_v2_execution_authorization_2026-07-30.json"
+    "replacement_v3_execution_authorization_2026-07-30.json"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
-    "replacement_v2_source_manifest_2026-07-30.json"
+    "replacement_v3_source_manifest_2026-07-30.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
-    "replacement_v2_source_review_2026-07-30.json"
+    "replacement_v3_source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
-    "replacement_v2_clean_export_certification_2026-07-30.json"
+    "replacement_v3_clean_export_certification_2026-07-30.json"
 )
 SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_object_space_height_volume_joint_jepa_v18_"
@@ -52,9 +52,9 @@ TRAINING_MODULE_NAME = (
 )
 SOURCE_EVIDENCE_SCHEMA_PREFIX = (
     "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_"
-    "integrity_replacement_v2"
+    "integrity_replacement_v3"
 )
-EXPERIMENT_ARM_NAME = "object_space_height_volume_v18_integrity_replacement_v2"
+EXPERIMENT_ARM_NAME = "object_space_height_volume_v18_integrity_replacement_v3"
 LAUNCHER_SCHEMA = f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_launcher_v1"
 
 

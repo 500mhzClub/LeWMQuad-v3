@@ -55,7 +55,7 @@ def test_private_adapter_preserves_public_v14_and_is_denied(capsys) -> None:
     assert v14.SCHEMA_PREFIX == "lewm_go2_rgb_unified_ray_survival_joint_jepa_v14"
     assert v14.MODEL_CLASS_NAME == "GeometryAnchoredSweptProgressSurvivalJointJepaV14"
     assert v18.SCHEMA_PREFIX.endswith(
-        "object_space_height_volume_joint_jepa_v18_integrity_replacement_v2"
+        "object_space_height_volume_joint_jepa_v18_integrity_replacement_v3"
     )
     assert v18.MODEL_CLASS_NAME == "GeometryAnchoredSweptProgressSurvivalJointJepaV18"
     assert v18.main([]) == 4
@@ -90,6 +90,14 @@ def test_parent_bindings_include_exact_prereg_and_scientific_witnesses() -> None
         v18.PREREGISTRATION_PATH: (
             v18.PREREGISTRATION_FILE_SHA256,
             v18.PREREGISTRATION_BYTE_COUNT,
+        ),
+        v18.REPLACEMENT_V2_PREREGISTRATION_PATH: (
+            v18.REPLACEMENT_V2_PREREGISTRATION_FILE_SHA256,
+            v18.REPLACEMENT_V2_PREREGISTRATION_BYTE_COUNT,
+        ),
+        v18.REPLACEMENT_V2_TERMINAL_FAILURE_RESULT_PATH: (
+            v18.REPLACEMENT_V2_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            v18.REPLACEMENT_V2_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
         ),
         v18.REPLACEMENT_V1_PREREGISTRATION_PATH: (
             v18.REPLACEMENT_V1_PREREGISTRATION_FILE_SHA256,

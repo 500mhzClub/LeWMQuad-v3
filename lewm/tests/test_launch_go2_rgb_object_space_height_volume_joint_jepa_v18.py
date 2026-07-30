@@ -34,7 +34,7 @@ def test_source_only_import_and_no_argument_denial(capsys) -> None:
         "reservation_created": False,
         "schema": (
             "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
-            "replacement_v2_launcher_v1"
+            "replacement_v3_launcher_v1"
         ),
         "scientific_payload_opened": False,
         "status": "DENIED_NO_FUTURE_AUTHORITY",
@@ -55,7 +55,7 @@ def test_private_base_has_only_exact_v18_selectors_and_caps() -> None:
         "scripts.run_go2_rgb_object_space_height_volume_joint_jepa_v18"
     )
     assert base.EXPERIMENT_ARM_NAME == (
-        "object_space_height_volume_v18_integrity_replacement_v2"
+        "object_space_height_volume_v18_integrity_replacement_v3"
     )
     assert base.MAXIMUM_UPDATES == 1_000
     assert base.MAXIMUM_PRESENTATIONS == 16_000
@@ -66,7 +66,7 @@ def test_private_base_has_only_exact_v18_selectors_and_caps() -> None:
 def test_integrity_replacement_uses_fresh_evidence_paths() -> None:
     prefix = (
         "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_"
-        "integrity_replacement_v2"
+        "integrity_replacement_v3"
     )
     assert launcher.SOURCE_EVIDENCE_SCHEMA_PREFIX == prefix
     for relative in (
@@ -75,7 +75,7 @@ def test_integrity_replacement_uses_fresh_evidence_paths() -> None:
         launcher.SOURCE_REVIEW_RELATIVE_PATH,
         launcher.CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH,
     ):
-        assert "integrity_replacement_v2" in relative
+        assert "integrity_replacement_v3" in relative
 
 
 def test_selector_mutation_fails_closed(monkeypatch) -> None:
@@ -114,14 +114,18 @@ def test_isolated_import_does_not_load_runtime_or_touch_payload() -> None:
         "assert 'PIL' not in sys.modules"
     )
     environment = dict(os.environ)
-    environment.update(
-        {
-            "HIP_VISIBLE_DEVICES": "",
-            "ROCR_VISIBLE_DEVICES": "",
-            "CUDA_VISIBLE_DEVICES": "",
-            "PYTHONDONTWRITEBYTECODE": "1",
-        }
-    )
+    for name in (
+        "CUDA_VISIBLE_DEVICES",
+        "ROCR_VISIBLE_DEVICES",
+        "GPU_DEVICE_ORDINAL",
+        "HSA_VISIBLE_DEVICES",
+        "HSA_OVERRIDE_GFX_VERSION",
+        "NVIDIA_VISIBLE_DEVICES",
+        "ONEAPI_DEVICE_SELECTOR",
+        "ZE_AFFINITY_MASK",
+    ):
+        environment.pop(name, None)
+    environment["HIP_VISIBLE_DEVICES"] = "0"
     result = subprocess.run(
         [sys.executable, "-I", "-B", "-c", code],
         cwd="/",

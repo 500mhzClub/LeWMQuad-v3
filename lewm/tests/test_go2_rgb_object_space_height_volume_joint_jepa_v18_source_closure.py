@@ -35,12 +35,12 @@ def test_checker_import_is_source_only_and_uses_fresh_v18_identity() -> None:
     )
     assert checker.SCHEMA == (
         "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
-        "replacement_v2_source_manifest"
+        "replacement_v3_source_manifest"
     )
     assert checker._V13._BASE.SCHEMA == checker.SCHEMA
     assert checker.MANIFEST_PATH.relative_to(ROOT).as_posix() == (
         "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
-        "replacement_v2_source_manifest_2026-07-30.json"
+        "replacement_v3_source_manifest_2026-07-30.json"
     )
 
 
