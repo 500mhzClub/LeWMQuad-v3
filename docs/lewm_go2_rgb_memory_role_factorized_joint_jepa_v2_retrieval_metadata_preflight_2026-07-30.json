@@ -1,0 +1,90 @@
+{
+  "access": {
+    "attempt_reservation_count": 0,
+    "checkpoint_open_count": 0,
+    "checkpoint_selection_index_open_count": 1,
+    "gpu_query_count": 0,
+    "held_out_or_sealed_open_count": 0,
+    "manifest_open_count": 1,
+    "memory_execution_count": 0,
+    "navigation_execution_count": 0,
+    "probability_calibration_open_count": 0,
+    "rgb_decode_count": 0,
+    "rgb_open_count": 0,
+    "train_index_open_count": 0,
+    "training_execution_count": 0
+  },
+  "bindings": {
+    "implementation": {
+      "commit": "24af5eb332e905740a735466a0a3be775efdbe5c",
+      "evaluator_source": {
+        "byte_count": 44559,
+        "file_sha256": "83a615e520468695d7b00cabc30fdf58d42b909fc11ef2b6a6bb513a4665f363",
+        "path": "scripts/evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+      }
+    },
+    "place_checkpoint_selection_index": {
+      "byte_count": 473508,
+      "file_sha256": "a628a1047b6f15223a4fd7d30c5c87fa1914efef0955d70d9bd2f5330c77dcb0",
+      "path": ".generated/go2_memory_role_place_triplet_index_v1/checkpoint_selection.jsonl",
+      "row_count": 320
+    },
+    "place_index_manifest": {
+      "byte_count": 42308,
+      "content_sha256": "cd3f894969422b924056a576e3acfb3b2be5e4d4d72e6ddd0e8d025618b14543",
+      "file_sha256": "a5997d93838419cabaaf8e262db70ed51f6f928195f1a312cadc4768f74ca6ca",
+      "path": ".generated/go2_memory_role_place_triplet_index_v1/manifest.json"
+    },
+    "preregistration": {
+      "byte_count": 7194,
+      "commit": "429cb57bd89348502cd5b695a25ae864d33fdfa7",
+      "file_sha256": "1fc6201b6137d57b5c97cf2b042b1f987476facdee28ce430b1aa0da3d0c2ba3",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_preregistration_2026-07-30.md"
+    }
+  },
+  "checks": {
+    "all_candidate_counts_within_32_64": true,
+    "all_paired_positives_present": true,
+    "exact_eight_families": true,
+    "exact_eight_scenes": true,
+    "exact_ordered_candidate_counts": true,
+    "exact_row_count_320": true,
+    "metadata_only_access": true,
+    "rgb_open_count_zero": true
+  },
+  "content_sha256": "225e0c647c8619ac7271dad574b71477e8242e1b8d438c20702fbc508dd4394b",
+  "date": "2026-07-30",
+  "preflight": {
+    "all_candidate_counts_within_registered_bounds": true,
+    "all_paired_positives_present": true,
+    "candidate_counts_by_family": {
+      "large_enclosed_maze": 63,
+      "local_composite_motifs": 64,
+      "loop_alias_stress": 59,
+      "medium_enclosed_maze": 59,
+      "open_obstacle_field": 64,
+      "rough_local_dynamics": 64,
+      "small_enclosed_maze": 32,
+      "visual_sensor_stress": 48
+    },
+    "family_count": 8,
+    "maximum_candidate_count": 64,
+    "minimum_candidate_count": 32,
+    "ordered_family_candidate_counts": [
+      63,
+      64,
+      59,
+      59,
+      64,
+      64,
+      32,
+      48
+    ],
+    "rgb_open_count": 0,
+    "row_count": 320,
+    "scene_count": 8,
+    "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_place_retrieval_metadata_preflight_v1"
+  },
+  "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_retrieval_metadata_preflight_result_v1",
+  "status": "PASS_EXACT_METADATA_ONLY_RETRIEVAL_PREFLIGHT"
+}
