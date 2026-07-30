@@ -448,10 +448,10 @@ These instructions apply to the entire repository.
 - The RGB scene-action contrastive-innovation joint-JEPA V22 source may
   additionally be clean exported only from frozen source-and-review commit
   `e0697a6f2b8498ec64484b216f7366a8d7f199a5`, and only as (a) the 95 paths
-  in its committed recursive source manifest and (b) the thirty-five V22 and
+  in its committed recursive source manifest and (b) the thirty-seven V22 and
   predecessor preregistration/result identity, manifest, source-review,
-  recursive-checker, and focused V22 test paths explicitly enumerated and
-  SHA-256-and-byte-count-bound in
+  recursive-checker, focused V22 test, and frozen predecessor-fixture test
+  paths explicitly enumerated and SHA-256-and-byte-count-bound in
   `docs/lewm_go2_rgb_scene_action_contrastive_innovation_joint_jepa_v22_clean_export_certification_2026-07-30.json`.
   Validate every path against both that certification and the frozen commit
   before copying. Do not use a whole-tree archive, worktree, checkout copy,
