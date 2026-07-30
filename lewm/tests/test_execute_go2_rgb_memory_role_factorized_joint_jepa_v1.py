@@ -173,13 +173,16 @@ def test_private_restart_state_is_exact_and_never_self_authorizes_resume() -> No
         )
 
 
-def test_exception_terminalizer_receipts_orphan_restart_state(tmp_path: Path) -> None:
+@pytest.mark.parametrize("update", (100, 400))
+def test_exception_terminalizer_receipts_orphan_restart_state(
+    tmp_path: Path, update: int
+) -> None:
     authority = _authority()
     reservation = executor.reserve_attempt_v1(
         tmp_path, authority, created_utc="2026-07-30T00:00:00Z"
     )
     output = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
-    restart = output / "private_restart/update_100.pt"
+    restart = output / f"private_restart/update_{update}.pt"
     restart.parent.mkdir(mode=0o700)
     raw = b"published state before metadata publication failed"
     restart.write_bytes(raw)
@@ -188,7 +191,7 @@ def test_exception_terminalizer_receipts_orphan_restart_state(tmp_path: Path) ->
     failure = executor.terminalize_failure_v1(
         output,
         reservation,
-        stage="publish_private_restart_update_100",
+        stage=f"publish_private_restart_update_{update}",
         error=RuntimeError("synthetic metadata publication failure"),
         created_utc="2026-07-30T00:00:01Z",
     )
@@ -200,9 +203,9 @@ def test_exception_terminalizer_receipts_orphan_restart_state(tmp_path: Path) ->
     assert failure["private_restart_resume_authorized"] is False
     assert failure["private_restart_states"] == [
         {
-            "update": 100,
+            "update": update,
             "state": {
-                "path": "private_restart/update_100.pt",
+                "path": f"private_restart/update_{update}.pt",
                 "file_sha256": hashlib.sha256(raw).hexdigest(),
                 "byte_count": len(raw),
             },
