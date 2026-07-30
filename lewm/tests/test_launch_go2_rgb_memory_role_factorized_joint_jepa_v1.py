@@ -159,6 +159,9 @@ def test_v2_uses_fresh_lifecycle_identity() -> None:
     assert module.PREREGISTRATION_RELATIVE_PATH in (
         module.REQUIRED_CERTIFIED_SOURCE_PATHS
     )
+    assert module.RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH in (
+        module.REQUIRED_CERTIFIED_SOURCE_PATHS
+    )
     assert module.TERMINAL_FAILURE_RESULT_RELATIVE_PATH in (
         module.REQUIRED_CERTIFIED_SOURCE_PATHS
     )

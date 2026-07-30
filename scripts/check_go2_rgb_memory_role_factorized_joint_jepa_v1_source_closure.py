@@ -64,6 +64,17 @@ PREREGISTRATION_FILE_SHA256 = (
     "1fc6201b6137d57b5c97cf2b042b1f987476facdee28ce430b1aa0da3d0c2ba3"
 )
 PREREGISTRATION_BYTE_COUNT = 7_194
+RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "retrieval_metadata_preflight_2026-07-30.json"
+)
+RETRIEVAL_METADATA_PREFLIGHT_COMMIT = (
+    "11f861428a3a5d3ca8bf25488d67a013b3af0db2"
+)
+RETRIEVAL_METADATA_PREFLIGHT_FILE_SHA256 = (
+    "87d48203af83ac151f15f690f1e170a1fdb9bbd97cd7fae1f5c15f84c9b4c074"
+)
+RETRIEVAL_METADATA_PREFLIGHT_BYTE_COUNT = 3_153
 ORIGINAL_PREREGISTRATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "preregistration_2026-07-30.md"
@@ -203,6 +214,9 @@ ALLOWED_DATASET_SOURCES = frozenset(
 
 LIFECYCLE_PATHS = {
     "preregistration": PREREGISTRATION_RELATIVE_PATH,
+    "retrieval_metadata_preflight": (
+        RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH
+    ),
     "original_preregistration": ORIGINAL_PREREGISTRATION_RELATIVE_PATH,
     "integrity_replacement_preregistration": (
         INTEGRITY_REPLACEMENT_PREREGISTRATION_RELATIVE_PATH
@@ -402,6 +416,12 @@ def build_manifest() -> dict[str, object]:
                 "commit": PREREGISTRATION_COMMIT,
                 "file_sha256": PREREGISTRATION_FILE_SHA256,
                 "byte_count": PREREGISTRATION_BYTE_COUNT,
+            },
+            "retrieval_metadata_preflight": {
+                "path": RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH,
+                "commit": RETRIEVAL_METADATA_PREFLIGHT_COMMIT,
+                "file_sha256": RETRIEVAL_METADATA_PREFLIGHT_FILE_SHA256,
+                "byte_count": RETRIEVAL_METADATA_PREFLIGHT_BYTE_COUNT,
             },
             "original_preregistration": {
                 "path": ORIGINAL_PREREGISTRATION_RELATIVE_PATH,

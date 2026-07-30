@@ -53,6 +53,11 @@ def test_checker_is_denied_and_binds_frozen_preregistration(capsys) -> None:
             checker.PREREGISTRATION_BYTE_COUNT,
         ),
         (
+            checker.RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH,
+            checker.RETRIEVAL_METADATA_PREFLIGHT_FILE_SHA256,
+            checker.RETRIEVAL_METADATA_PREFLIGHT_BYTE_COUNT,
+        ),
+        (
             checker.ORIGINAL_PREREGISTRATION_RELATIVE_PATH,
             checker.ORIGINAL_PREREGISTRATION_FILE_SHA256,
             checker.ORIGINAL_PREREGISTRATION_BYTE_COUNT,
@@ -91,6 +96,7 @@ def test_recursive_closure_contains_candidate_and_dynamic_sources() -> None:
     assert all(path in paths for path in checker.ALLOWED_DATASET_SOURCES)
     assert checker.BASE_CHECKER_PATH not in paths
     assert checker.PREREGISTRATION_RELATIVE_PATH not in paths
+    assert checker.RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH not in paths
     assert manifest["entrypoints"] == list(checker.ENTRYPOINTS)
     assert manifest["execution_authorized"] is False
 

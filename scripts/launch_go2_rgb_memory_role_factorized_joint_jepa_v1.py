@@ -44,6 +44,10 @@ PREREGISTRATION_RELATIVE_PATH = (
     "preregistration_2026-07-30.md"
 )
 PREREGISTRATION_COMMIT = "429cb57bd89348502cd5b695a25ae864d33fdfa7"
+RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "retrieval_metadata_preflight_2026-07-30.json"
+)
 ORIGINAL_PREREGISTRATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "preregistration_2026-07-30.md"
@@ -191,6 +195,7 @@ REQUIRED_CERTIFIED_SOURCE_PATHS = frozenset(
     {
         "scripts/launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
         PREREGISTRATION_RELATIVE_PATH,
+        RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH,
         ORIGINAL_PREREGISTRATION_RELATIVE_PATH,
         INTEGRITY_REPLACEMENT_PREREGISTRATION_RELATIVE_PATH,
         TERMINAL_FAILURE_RESULT_RELATIVE_PATH,
