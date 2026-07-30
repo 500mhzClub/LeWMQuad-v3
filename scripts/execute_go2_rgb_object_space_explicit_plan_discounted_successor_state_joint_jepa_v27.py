@@ -8,11 +8,14 @@ route, its validation controls, and the V27 terminal gate.
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
+from datetime import datetime, timezone
 import hashlib
 import io
 import json
 import math
+import os
 from pathlib import Path
+import stat
 from typing import Any, Mapping, Sequence
 
 from scripts import (
@@ -323,8 +326,31 @@ def terminalize_failure_v27(
     stage: str,
     error: BaseException,
     created_utc: str,
+    partial_checkpoint_binding: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     validate_attempt_reservation_v27(dict(reservation))
+    checkpoint_path = Path(output_root) / "checkpoint_update_400.pt"
+    checkpoint_binding: dict[str, Any] | None = None
+    checkpoint_quarantined = False
+    if checkpoint_path.exists() or checkpoint_path.is_symlink():
+        info = os.lstat(checkpoint_path)
+        if checkpoint_path.is_symlink() or not stat.S_ISREG(info.st_mode):
+            raise PermissionError("V27 partial checkpoint changed type")
+        if partial_checkpoint_binding is not None:
+            checkpoint_binding = _binding(
+                partial_checkpoint_binding, name="partial checkpoint"
+            )
+            if (
+                checkpoint_binding["path"] != "checkpoint_update_400.pt"
+                or checkpoint_binding["byte_count"] != info.st_size
+            ):
+                raise PermissionError("V27 partial checkpoint binding changed")
+        os.chmod(checkpoint_path, 0o000, follow_symlinks=False)
+        if stat.S_IMODE(os.lstat(checkpoint_path).st_mode) != 0o000:
+            raise PermissionError("V27 partial checkpoint quarantine failed")
+        checkpoint_quarantined = True
+    elif partial_checkpoint_binding is not None:
+        raise PermissionError("V27 bound partial checkpoint is absent")
     core = {
         "schema": f"{SCHEMA_PREFIX}_exception_failure_v1",
         "status": "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME",
@@ -335,7 +361,12 @@ def terminalize_failure_v27(
             str(error).encode("utf-8")
         ).hexdigest(),
         "attempt_consumed": True,
-        "checkpoint_published": False,
+        "checkpoint_published": checkpoint_binding is not None,
+        "checkpoint_present_at_terminal": checkpoint_binding is not None,
+        "checkpoint_quarantined": checkpoint_quarantined,
+        "checkpoint": checkpoint_binding,
+        "checkpoint_binding_available": checkpoint_binding is not None,
+        "checkpoint_access_authorized": False,
         "retry_authorized": False,
         "resume_authorized": False,
     }
@@ -600,7 +631,7 @@ def run_future_authorized_engine_v27(
     accounting: Any = None
     model: Any = None
     optimizer: Any = None
-    terminal_published = False
+    partial_checkpoint_binding: Mapping[str, Any] | None = None
     stage = "initialize"
     try:
         model, optimizer, initialization = runtime.initialize_model_v13()
@@ -751,7 +782,6 @@ def run_future_authorized_engine_v27(
                     "resume_authorized": False,
                 },
             )
-            terminal_published = True
             return value
 
         stage = "publish_pass_checkpoint"
@@ -761,6 +791,7 @@ def run_future_authorized_engine_v27(
         checkpoint_binding = publisher.publish_bytes(
             "checkpoint_update_400.pt", checkpoint_raw
         )
+        partial_checkpoint_binding = checkpoint_binding
         checkpoint_value, checkpoint_metadata_binding = _publish_json(
             publisher,
             "checkpoint_update_400.binding.json",
@@ -785,38 +816,18 @@ def run_future_authorized_engine_v27(
                 "held_out_authorized": False,
             },
         )
-        terminal_published = True
         return value
     except BaseException as error:
-        if terminal_published:
-            raise
-        try:
-            trace_raw = b"".join(
-                _canonical_json_bytes(_content_bound(row)) + b"\n"
-                for row in trace
-            )
-            trace_binding = publisher.publish_bytes("trace.jsonl", trace_raw)
-            value, _ = _publish_json(
-                publisher,
-                "failure.json",
-                {
-                    "schema": f"{SCHEMA_PREFIX}_exception_failure_v1",
-                    "status": "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME",
-                    "stage": stage,
-                    "exception_type": type(error).__name__,
-                    "exception_message_sha256": hashlib.sha256(
-                        str(error).encode("utf-8")
-                    ).hexdigest(),
-                    "trace": trace_binding,
-                    "attempt_consumed": True,
-                    "checkpoint_published": False,
-                    "retry_authorized": False,
-                    "resume_authorized": False,
-                },
-            )
-            return value
-        except BaseException:
-            raise error
+        return terminalize_failure_v27(
+            Path(publisher.output_root),
+            validated_reservation,
+            stage=stage,
+            error=error,
+            created_utc=datetime.now(timezone.utc)
+            .isoformat(timespec="seconds")
+            .replace("+00:00", "Z"),
+            partial_checkpoint_binding=partial_checkpoint_binding,
+        )
     finally:
         h6_runtime.close()
 

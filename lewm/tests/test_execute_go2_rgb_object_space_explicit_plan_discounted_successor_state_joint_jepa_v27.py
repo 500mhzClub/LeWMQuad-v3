@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import os
 from pathlib import Path
+import stat
 from types import SimpleNamespace
 
 import pytest
@@ -80,6 +83,65 @@ def test_authority_and_one_shot_reservation_are_fail_closed(tmp_path: Path) -> N
     )
     with pytest.raises(PermissionError):
         executor.validate_future_execution_prerequisites_v27(changed)
+
+
+def test_exception_terminalizer_truthfully_quarantines_partial_checkpoint(
+    tmp_path: Path,
+) -> None:
+    authority = _authority()
+    reservation = executor.reserve_attempt_v27(
+        tmp_path, authority, created_utc="2026-07-30T00:00:00Z"
+    )
+    output = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
+    raw = b"synthetic partial pass checkpoint"
+    checkpoint = output / "checkpoint_update_400.pt"
+    checkpoint.write_bytes(raw)
+    checkpoint.chmod(0o444)
+    checkpoint_binding = {
+        "path": "checkpoint_update_400.pt",
+        "file_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+    }
+
+    failure = executor.terminalize_failure_v27(
+        output,
+        reservation,
+        stage="publish_pass_checkpoint",
+        error=RuntimeError("synthetic metadata publication failure"),
+        created_utc="2026-07-30T00:00:01Z",
+        partial_checkpoint_binding=checkpoint_binding,
+    )
+
+    assert failure["checkpoint_published"] is True
+    assert failure["checkpoint_present_at_terminal"] is True
+    assert failure["checkpoint_quarantined"] is True
+    assert failure["checkpoint_access_authorized"] is False
+    assert failure["checkpoint"] == checkpoint_binding
+    assert failure["checkpoint_binding_available"] is True
+    assert stat.S_IMODE(os.lstat(checkpoint).st_mode) == 0o000
+    assert failure["retry_authorized"] is False
+    assert failure["resume_authorized"] is False
+
+
+def test_exception_terminalizer_reports_absent_checkpoint(tmp_path: Path) -> None:
+    authority = _authority()
+    reservation = executor.reserve_attempt_v27(
+        tmp_path, authority, created_utc="2026-07-30T00:00:00Z"
+    )
+    output = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
+    failure = executor.terminalize_failure_v27(
+        output,
+        reservation,
+        stage="initialize",
+        error=RuntimeError("synthetic initialization failure"),
+        created_utc="2026-07-30T00:00:01Z",
+    )
+    assert failure["checkpoint_published"] is False
+    assert failure["checkpoint_present_at_terminal"] is False
+    assert failure["checkpoint_quarantined"] is False
+    assert failure["checkpoint"] is None
+    assert failure["checkpoint_binding_available"] is False
+    assert failure["checkpoint_access_authorized"] is False
 
 
 def _plan_metrics() -> dict:
