@@ -62,6 +62,14 @@ def _authority() -> dict:
 
 def test_authority_and_reservation_are_exactly_one_shot(tmp_path: Path) -> None:
     authority = _authority()
+    runtime_inputs = dict(authority["runtime_inputs"])
+    runtime_inputs["raw_manifest"] = {
+        **runtime_inputs["raw_manifest"],
+        "content_sha256": "d" * 64,
+    }
+    authority = executor._content_bound(
+        {**authority, "runtime_inputs": runtime_inputs}
+    )
     assert executor.validate_future_execution_prerequisites_v1(authority) == authority
     reservation = executor.reserve_attempt_v1(
         tmp_path, authority, created_utc="2026-07-30T00:00:00Z"
@@ -82,6 +90,18 @@ def test_authority_and_reservation_are_exactly_one_shot(tmp_path: Path) -> None:
     changed = executor._content_bound(changed)
     with pytest.raises(PermissionError):
         executor.validate_future_execution_prerequisites_v1(changed)
+
+    malformed = dict(authority)
+    malformed_inputs = dict(authority["runtime_inputs"])
+    malformed_inputs["raw_manifest"] = {
+        **malformed_inputs["raw_manifest"],
+        "content_sha256": "not-a-sha256",
+    }
+    malformed["runtime_inputs"] = malformed_inputs
+    with pytest.raises(TypeError):
+        executor.validate_future_execution_prerequisites_v1(
+            executor._content_bound(malformed)
+        )
 
 
 def test_exception_terminalizer_quarantines_partial_checkpoint(tmp_path: Path) -> None:

@@ -158,12 +158,17 @@ def validate_content_bound_v1(value: Any) -> dict[str, Any]:
     return dict(value)
 
 
-def _binding(value: Any, *, name: str) -> dict[str, Any]:
+def _binding(
+    value: Any, *, name: str, allow_content_sha256: bool = False
+) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         raise TypeError(f"memory-role {name} binding is absent")
     result = dict(value)
+    expected_keys = {"path", "file_sha256", "byte_count"}
+    if allow_content_sha256 and "content_sha256" in result:
+        expected_keys.add("content_sha256")
     if (
-        set(result) != {"path", "file_sha256", "byte_count"}
+        set(result) != expected_keys
         or type(result["path"]) is not str
         or not result["path"]
         or type(result["file_sha256"]) is not str
@@ -171,6 +176,17 @@ def _binding(value: Any, *, name: str) -> dict[str, Any]:
         or any(character not in "0123456789abcdef" for character in result["file_sha256"])
         or type(result["byte_count"]) is not int
         or result["byte_count"] <= 0
+        or (
+            "content_sha256" in result
+            and (
+                type(result["content_sha256"]) is not str
+                or len(result["content_sha256"]) != 64
+                or any(
+                    character not in "0123456789abcdef"
+                    for character in result["content_sha256"]
+                )
+            )
+        )
     ):
         raise TypeError(f"memory-role {name} binding changed")
     return result
@@ -215,7 +231,7 @@ def validate_future_execution_prerequisites_v1(authority: Any) -> dict[str, Any]
     ):
         raise PermissionError("memory-role runtime input inventory changed")
     for name in RUNTIME_INPUT_BINDING_NAMES:
-        _binding(runtime_inputs[name], name=name)
+        _binding(runtime_inputs[name], name=name, allow_content_sha256=True)
     certification = value.get("clean_export_certification")
     if not isinstance(certification, Mapping) or set(certification) != {
         "path",
