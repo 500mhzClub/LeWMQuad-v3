@@ -13,6 +13,7 @@ import hashlib
 import importlib
 import importlib.util
 import json
+import os
 from pathlib import Path, PurePosixPath
 import sys
 from typing import Any, Mapping, Sequence
@@ -32,28 +33,32 @@ PRIVATE_BASE_MODULE_NAME = "_lewm_v27_explicit_plan_private_v25_launcher"
 
 SCHEMA_PREFIX = (
     "lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27"
+    "joint_jepa_v27_integrity_replacement_v1"
 )
 LAUNCHER_SCHEMA = f"{SCHEMA_PREFIX}_launcher_v1"
 AUTHORITY_SCHEMA = f"{SCHEMA_PREFIX}_future_execution_authority_v1"
 CERTIFICATION_SCHEMA = f"{SCHEMA_PREFIX}_clean_export_certification_v1"
-EXPERIMENT_ARM_NAME = "explicit_plan_discounted_successor_state_v27"
-PREREGISTRATION_COMMIT = "4e0d1a10412e0992c69886a628c5b29c7d16b624"
+EXPERIMENT_ARM_NAME = (
+    "explicit_plan_discounted_successor_state_v27_integrity_replacement_v1"
+)
+PREREGISTRATION_COMMIT = "374899de71f59fca4c4ad646e783a1662e0ed1f5"
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-v27-explicit-plan-successor-source"
+    "LeWMQuad-v3-v27-explicit-plan-successor-integrity-replacement-v1-source"
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_execution_authorization_2026-07-30.json"
+    "joint_jepa_v27_integrity_replacement_v1_execution_authorization_"
+    "2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_clean_export_certification_2026-07-30.json"
+    "joint_jepa_v27_integrity_replacement_v1_clean_export_certification_"
+    "2026-07-30.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27/attempt_v1"
+    "joint_jepa_v27_integrity_replacement_v1/attempt_v1"
 )
 EXECUTOR_MODULE_NAME = (
     "scripts.execute_go2_rgb_object_space_explicit_plan_discounted_successor_"
@@ -78,6 +83,17 @@ MAXIMUM_UPDATES = 400
 MAXIMUM_PRESENTATIONS = 12_800
 RUNTIME_DATA_ROOT = "/home/andrewknowles/Workspace/LeWMQuad-v3"
 RGB_ROOT_RELATIVE_PATH = ".generated/datagen_full/render_textured_v03"
+REQUIRED_HIP_VISIBLE_DEVICES = "0"
+CONFLICTING_GPU_VISIBILITY_ENVIRONMENT_KEYS = (
+    "CUDA_VISIBLE_DEVICES",
+    "ROCR_VISIBLE_DEVICES",
+    "GPU_DEVICE_ORDINAL",
+    "HSA_VISIBLE_DEVICES",
+    "HSA_OVERRIDE_GFX_VERSION",
+    "NVIDIA_VISIBLE_DEVICES",
+    "ONEAPI_DEVICE_SELECTOR",
+    "ZE_AFFINITY_MASK",
+)
 
 PHYSICAL_RUNTIME_INPUT_NAMES = (
     "raw_manifest",
@@ -246,6 +262,34 @@ def _is_commit_v27(value: Any) -> bool:
         and len(value) == 40
         and all(character in "0123456789abcdef" for character in value)
     )
+
+
+def validate_pre_reservation_gpu_visibility_v27(
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Require the exact reviewed ROCm selector without querying hardware."""
+
+    observed = os.environ if environment is None else environment
+    if observed.get("HIP_VISIBLE_DEVICES") != REQUIRED_HIP_VISIBLE_DEVICES:
+        raise PermissionError(
+            "V27 replacement requires HIP_VISIBLE_DEVICES=0 before reservation"
+        )
+    conflicting = tuple(
+        name
+        for name in CONFLICTING_GPU_VISIBILITY_ENVIRONMENT_KEYS
+        if name in observed
+    )
+    if conflicting:
+        raise PermissionError(
+            "V27 replacement GPU visibility has a conflicting selector"
+        )
+    return {
+        "schema": f"{SCHEMA_PREFIX}_pre_reservation_gpu_visibility_v1",
+        "hip_visible_devices": REQUIRED_HIP_VISIBLE_DEVICES,
+        "conflicting_selectors_present": [],
+        "hardware_queried": False,
+        "passed": True,
+    }
 
 
 def _load_private_v25_launcher() -> Any:
@@ -602,6 +646,7 @@ def execute_future_authorized_v27(
     if type(authority) is not dict or authority != fixed_authority:
         raise PermissionError("supplied V27 authority differs from its fixed file")
     validated_authority = validate_authority_v27(fixed_authority)
+    validate_pre_reservation_gpu_visibility_v27()
     _BASE_LAUNCHER._validate_certified_source_root_v13(
         repository, validated_authority
     )

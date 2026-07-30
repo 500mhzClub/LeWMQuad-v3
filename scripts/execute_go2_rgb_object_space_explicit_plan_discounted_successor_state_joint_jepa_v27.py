@@ -29,36 +29,38 @@ from scripts import (
 
 SCHEMA_PREFIX = (
     "lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27"
+    "joint_jepa_v27_integrity_replacement_v1"
 )
 PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_preregistration_2026-07-30.md"
+    "joint_jepa_v27_integrity_replacement_v1_preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "4e0d1a10412e0992c69886a628c5b29c7d16b624"
+PREREGISTRATION_COMMIT = "374899de71f59fca4c4ad646e783a1662e0ed1f5"
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_source_manifest_2026-07-30.json"
+    "joint_jepa_v27_integrity_replacement_v1_source_manifest_2026-07-30.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_source_review_2026-07-30.json"
+    "joint_jepa_v27_integrity_replacement_v1_source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_clean_export_certification_2026-07-30.json"
+    "joint_jepa_v27_integrity_replacement_v1_clean_export_certification_"
+    "2026-07-30.json"
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27_execution_authorization_2026-07-30.json"
+    "joint_jepa_v27_integrity_replacement_v1_execution_authorization_"
+    "2026-07-30.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_rgb_object_space_explicit_plan_discounted_successor_state_"
-    "joint_jepa_v27/attempt_v1"
+    "joint_jepa_v27_integrity_replacement_v1/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-v27-explicit-plan-successor-source"
+    "LeWMQuad-v3-v27-explicit-plan-successor-integrity-replacement-v1-source"
 )
 MODEL_CLASS_NAME = (
     "GeometryAnchoredExplicitPlanDiscountedSuccessorStateJointJepaV27"
@@ -281,7 +283,14 @@ def reserve_attempt_v27(
     validated = validate_future_execution_prerequisites_v27(dict(authority))
     output = root / OUTPUT_ROOT_RELATIVE_PATH
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.mkdir()
+    output.mkdir(mode=0o700)
+    os.chmod(output, 0o700, follow_symlinks=False)
+    output_info = os.lstat(output)
+    if (
+        not stat.S_ISDIR(output_info.st_mode)
+        or stat.S_IMODE(output_info.st_mode) != 0o700
+    ):
+        raise PermissionError("V27 reserved attempt root mode changed")
     core = {
         "schema": f"{SCHEMA_PREFIX}_attempt_reservation_v1",
         "status": "RESERVED_ONE_SHOT",
@@ -298,6 +307,13 @@ def reserve_attempt_v27(
     path = output / "reservation.json"
     with path.open("xb") as handle:
         handle.write(_canonical_json_bytes(reservation) + b"\n")
+    os.chmod(path, 0o444, follow_symlinks=False)
+    reservation_info = os.lstat(path)
+    if (
+        not stat.S_ISREG(reservation_info.st_mode)
+        or stat.S_IMODE(reservation_info.st_mode) != 0o444
+    ):
+        raise PermissionError("V27 reservation file mode changed")
     return reservation
 
 

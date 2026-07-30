@@ -63,11 +63,17 @@ def _authority() -> dict:
 
 
 def test_authority_and_one_shot_reservation_are_fail_closed(tmp_path: Path) -> None:
+    assert executor.SCHEMA_PREFIX.endswith("v27_integrity_replacement_v1")
+    assert "integrity-replacement-v1-source" in executor.CERTIFIED_SOURCE_ROOT
     authority = _authority()
     assert executor.validate_future_execution_prerequisites_v27(authority) == authority
     reservation = executor.reserve_attempt_v27(
         tmp_path, authority, created_utc="2026-07-30T00:00:00Z"
     )
+    output = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
+    reservation_path = output / "reservation.json"
+    assert stat.S_IMODE(os.lstat(output).st_mode) == 0o700
+    assert stat.S_IMODE(os.lstat(reservation_path).st_mode) == 0o444
     assert executor.validate_attempt_reservation_v27(reservation) == reservation
     assert reservation["maximum_updates"] == 400
     assert reservation["maximum_presentations"] == 12_800

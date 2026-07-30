@@ -139,6 +139,9 @@ def test_import_and_no_argument_path_open_no_scientific_payload(capsys) -> None:
 def test_adapter_keeps_v25_builder_and_full_v13_physical_schedule() -> None:
     module = _load("_v27_launcher_adapter")
     module._assert_runtime_adapter_v27()
+    assert module.SCHEMA_PREFIX.endswith("v27_integrity_replacement_v1")
+    assert "integrity-replacement-v1-source" in module.CERTIFIED_SOURCE_ROOT
+    assert "integrity_replacement_v1" in module.OUTPUT_ROOT_RELATIVE_PATH
     assert module._BASE_LAUNCHER._build_one_microbatch_v13 is (
         module._V25_LAUNCHER._build_one_microbatch_v25
     )
@@ -150,6 +153,30 @@ def test_adapter_keeps_v25_builder_and_full_v13_physical_schedule() -> None:
     assert receipt["maximum_updates"] == 400
     assert receipt["maximum_presentations"] == 12_800
     assert receipt["execution_authorized_by_source"] is False
+
+
+def test_pre_reservation_gpu_visibility_contract_is_exact() -> None:
+    module = _load("_v27_launcher_gpu_visibility")
+    assert module.validate_pre_reservation_gpu_visibility_v27(
+        {"HIP_VISIBLE_DEVICES": "0"}
+    ) == {
+        "schema": (
+            f"{module.SCHEMA_PREFIX}_pre_reservation_gpu_visibility_v1"
+        ),
+        "hip_visible_devices": "0",
+        "conflicting_selectors_present": [],
+        "hardware_queried": False,
+        "passed": True,
+    }
+
+    for environment in ({}, {"HIP_VISIBLE_DEVICES": ""}, {"HIP_VISIBLE_DEVICES": "1"}):
+        with pytest.raises(PermissionError, match="HIP_VISIBLE_DEVICES=0"):
+            module.validate_pre_reservation_gpu_visibility_v27(environment)
+    for name in module.CONFLICTING_GPU_VISIBILITY_ENVIRONMENT_KEYS:
+        with pytest.raises(PermissionError, match="conflicting selector"):
+            module.validate_pre_reservation_gpu_visibility_v27(
+                {"HIP_VISIBLE_DEVICES": "0", name: ""}
+            )
 
 
 def test_authority_is_exact_and_rejects_scientific_drift() -> None:
@@ -269,6 +296,9 @@ def test_source_validator_rejects_protected_paths_before_open(
 
 
 def _patch_execution_shell(monkeypatch, module, authority, *, compose):
+    monkeypatch.setenv("HIP_VISIBLE_DEVICES", "0")
+    for name in module.CONFLICTING_GPU_VISIBILITY_ENVIRONMENT_KEYS:
+        monkeypatch.delenv(name, raising=False)
     events = []
     runtime = SimpleNamespace(close_v13=lambda: events.append("close"))
     publisher = object()
@@ -341,6 +371,31 @@ def _patch_execution_shell(monkeypatch, module, authority, *, compose):
         lambda *_: publisher,
     )
     return events, executor, runtime, publisher, reservation
+
+
+def test_invalid_gpu_visibility_is_rejected_before_reservation(monkeypatch) -> None:
+    module = _load("_v27_launcher_gpu_visibility_ordering")
+    authority = _authority(module)
+
+    def compose(*_args, **_kwargs):
+        pytest.fail("runtime composed after GPU visibility rejection")
+
+    events, executor, _runtime, _publisher, _reservation = _patch_execution_shell(
+        monkeypatch, module, authority, compose=compose
+    )
+    executor.run_future_authorized_engine_v27 = lambda **_: pytest.fail(
+        "engine ran after GPU visibility rejection"
+    )
+    executor.terminalize_failure_v27 = lambda *_args, **_kwargs: pytest.fail(
+        "an unreserved visibility rejection was terminalized"
+    )
+    monkeypatch.delenv("HIP_VISIBLE_DEVICES")
+
+    with pytest.raises(PermissionError, match="HIP_VISIBLE_DEVICES=0"):
+        module.execute_future_authorized_v27(
+            repository_root=module.ROOT, authority=authority
+        )
+    assert events == []
 
 
 def test_execution_reserves_then_composes_calls_exact_v27_engine_and_closes(
