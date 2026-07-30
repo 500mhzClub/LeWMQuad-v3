@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify the V19 integrity-replacement V1 source closure."""
+"""Build or verify the V20 accounting-isolation source closure."""
 from __future__ import annotations
 
 import argparse
@@ -18,13 +18,13 @@ BASE_CHECKER_PATH = (
 MANIFEST_PATH = (
     ROOT
     / "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
-    "source_manifest_2026-07-30.json"
+    "semantic_grounding_joint_jepa_v20_source_manifest_2026-07-30.json"
 )
 SCHEMA = (
     "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
-    "grounding_joint_jepa_v19_integrity_replacement_v1_source_manifest"
+    "grounding_joint_jepa_v20_source_manifest"
 )
+PASS_STATUS_TEXT = "Go2 RGB V20 accounting-isolation source closure: PASS"
 
 
 def _source_only_module(name: str, relative: str) -> Any:
@@ -57,11 +57,11 @@ def _source_only_module(name: str, relative: str) -> Any:
 
 
 _V18 = _source_only_module(
-    "_lewm_v19_semantic_grounding_source_closure_base",
+    "_lewm_v20_accounting_isolation_source_closure_base",
     BASE_CHECKER_PATH,
 )
 if Path(_V18.ROOT).resolve(strict=True) != ROOT.resolve(strict=True):
-    raise PermissionError("V19 source-closure base escaped the repository")
+    raise PermissionError("V20 source-closure base escaped the repository")
 
 ENTRYPOINTS = (
     (
@@ -139,7 +139,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             _write_manifest_exclusive(manifest)
         return 0
     verify_manifest(require_tracked=args.require_tracked)
-    print("Go2 RGB V19 integrity-replacement V1 source closure: PASS")
+    print(PASS_STATUS_TEXT)
     return 0
 
 

@@ -191,12 +191,10 @@ def test_private_adapter_binds_frozen_v18_without_mutating_public_module(
         "5ce4259126c21d0f474c0548f0ee6757f78225daa8ed778540f83764496d0e92"
     )
     assert v18.SCHEMA_PREFIX.endswith("joint_jepa_v18_integrity_replacement_v3")
-    assert v19.SCHEMA_PREFIX.endswith(
-        "semantic_grounding_joint_jepa_v19_integrity_replacement_v1"
-    )
+    assert v19.SCHEMA_PREFIX.endswith("semantic_grounding_joint_jepa_v20")
     assert v19.OUTPUT_ROOT_RELATIVE_PATH == (
         ".generated/go2_rgb_object_space_height_volume_executed_successor_"
-        "semantic_grounding_joint_jepa_v19_integrity_replacement_v1/attempt_v1"
+        "semantic_grounding_joint_jepa_v20/attempt_v1"
     )
     assert v19.MODEL_CLASS_NAME == v18.MODEL_CLASS_NAME
     assert v19.MAXIMUM_UPDATES == v18.MAXIMUM_UPDATES == 1_000
@@ -204,9 +202,25 @@ def test_private_adapter_binds_frozen_v18_without_mutating_public_module(
     assert v19.OBSERVATION_UPDATES == v18.OBSERVATION_UPDATES
     assert v19.TERMINAL_UPDATES == v18.TERMINAL_UPDATES
     assert v19.MATCHED_UPDATE400_THRESHOLDS == v18.MATCHED_UPDATE400_THRESHOLDS
+    assert v19._engine.ACCOUNTING_MULTIPLIERS == (
+        v19.INHERITED_ACCOUNTING_MULTIPLIERS_V13
+    )
+    assert v19._INHERITED_ACCOUNTING_MULTIPLIERS == (
+        v19.INHERITED_ACCOUNTING_MULTIPLIERS_V13
+    )
+    assert "factual_successor_grad_calls" not in (
+        v19._engine.ACCOUNTING_MULTIPLIERS
+    )
     adapter = v19.private_adapter_receipt_v19()
     assert adapter["preregistration_commit"] == (
+        "c99837b91aeb959e07da94e898e3ba11ccbb4c04"
+    )
+    assert adapter["v19_integrity_replacement_v1_preregistration_commit"] == (
         "691ed5d39f0b8d1b40071045dc181b9a4b215573"
+    )
+    assert (
+        adapter["v19_integrity_replacement_v1_terminal_failure_result_commit"]
+        == "7105e2d9ed6e724f364c837e84177b6b4c4cd163"
     )
     assert adapter["original_v19_preregistration_commit"] == (
         "6255a9a2cccffde4e777169eacf95105a828cf7e"
@@ -215,6 +229,10 @@ def test_private_adapter_binds_frozen_v18_without_mutating_public_module(
         "37a87ac49ebcdebe57263476c20b1476877e36c2"
     )
     assert adapter["output_root"] == v19.OUTPUT_ROOT_RELATIVE_PATH
+    assert adapter["inherited_accounting_registry"] == (
+        v19.INHERITED_ACCOUNTING_MULTIPLIERS_V13
+    )
+    assert adapter["extended_accounting_is_local"] is True
     assert adapter["execution_authorized"] is False
     assert v19.main([]) == 4
     denial = v19.validate_content_bound_v19(json.loads(capsys.readouterr().out))
@@ -228,6 +246,14 @@ def test_parent_bindings_include_exact_preregistration_and_v18_result() -> None:
         v19.PREREGISTRATION_PATH: (
             v19.PREREGISTRATION_FILE_SHA256,
             v19.PREREGISTRATION_BYTE_COUNT,
+        ),
+        v19.V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_PATH: (
+            v19.V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_FILE_SHA256,
+            v19.V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_BYTE_COUNT,
+        ),
+        v19.V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_PATH: (
+            v19.V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            v19.V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
         ),
         v19.ORIGINAL_V19_PREREGISTRATION_PATH: (
             v19.ORIGINAL_V19_PREREGISTRATION_FILE_SHA256,
@@ -243,7 +269,13 @@ def test_parent_bindings_include_exact_preregistration_and_v18_result() -> None:
         ),
     }
     assert v19.PREREGISTRATION_COMMIT == (
+        "c99837b91aeb959e07da94e898e3ba11ccbb4c04"
+    )
+    assert v19.V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_COMMIT == (
         "691ed5d39f0b8d1b40071045dc181b9a4b215573"
+    )
+    assert v19.V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_COMMIT == (
+        "7105e2d9ed6e724f364c837e84177b6b4c4cd163"
     )
     assert v19.ORIGINAL_V19_PREREGISTRATION_COMMIT == (
         "6255a9a2cccffde4e777169eacf95105a828cf7e"
@@ -307,6 +339,108 @@ def test_update_integrity_validates_q_route_losses_diagnostics_and_subset(
     assert grounding["parameter_count"] == 259_008
     assert grounding["representation_gradient_from_q"] is False
     assert grounding["passed"] is True
+
+
+def test_real_synthetic_update_crosses_unmocked_inherited_accounting_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    synthetic = importlib.import_module(
+        "lewm.tests.test_run_go2_rgb_object_space_height_volume_executed_"
+        "successor_semantic_grounding_joint_jepa_v19"
+    )
+    torch = synthetic.torch
+    model = synthetic._TinyModel()
+    partition = synthetic._partition(model)
+    synthetic._install_tiny_apis(monkeypatch, model, partition)
+    optimizer = synthetic._CountingSgd(list(partition.online))
+    result = synthetic.runner.joint_training_update_v19(
+        model,
+        optimizer,
+        synthetic._microbatches(),
+    )
+
+    class _TargetView:
+        training = False
+
+        def parameters(self):
+            return (model.target,)
+
+    class _RegisteredModelView:
+        target_hard_sync_count = torch.tensor(1, dtype=torch.long)
+
+        def __getattr__(self, name):
+            return getattr(model, name)
+
+        def named_parameters(self):
+            return (
+                ("encoder.synthetic", model.shared),
+                ("semantic_head.synthetic", model.representation),
+                *tuple(
+                    zip(
+                        synthetic.TRANSITION_NAMES,
+                        model.transition,
+                        strict=True,
+                    )
+                ),
+                *tuple(
+                    zip(
+                        synthetic.SURVIVAL_NAMES,
+                        model.survival,
+                        strict=True,
+                    )
+                ),
+                ("target_encoder.synthetic", model.target),
+            )
+
+        def target_modules(self):
+            return (_TargetView(),)
+
+    runtime = SimpleNamespace(torch=torch)
+    receipt = v19.validate_update_integrity_v19(
+        runtime,
+        _RegisteredModelView(),
+        result,
+        update=1,
+        access_receipt={
+            "forbidden_input_count": 0,
+            "probability_calibration_open_count": 0,
+            "opened_roles": ("train",),
+        },
+    )
+    assert receipt["passed"] is True
+    assert receipt["accounting"] == _accounting(1)
+    assert receipt["gradient_routes"][
+        "factual_successor_predictor"
+    ]["parameter_tensor_count"] == 13
+    assert receipt["gradient_routes"][
+        "factual_successor_predictor"
+    ]["absent_tensor_gradient_count"] == 0
+    assert receipt["v19_executed_successor_semantic_grounding"] == {
+        "parameter_tensor_count": 13,
+        "parameter_count": 259_008,
+        "representation_gradient_from_q": False,
+        "semantic_head_gradient_from_q": False,
+        "target_gradient_from_q": False,
+        "passed": True,
+    }
+
+    monkeypatch.setattr(
+        v19._engine,
+        "ACCOUNTING_MULTIPLIERS",
+        dict(v19.ACCOUNTING_MULTIPLIERS_V19),
+    )
+    with pytest.raises(RuntimeError, match="inherited accounting registry changed"):
+        v19.validate_update_integrity_v19(
+            runtime,
+            _RegisteredModelView(),
+            result,
+            update=1,
+            access_receipt={
+                "forbidden_input_count": 0,
+                "probability_calibration_open_count": 0,
+                "opened_roles": ("train",),
+            },
+        )
 
 
 @pytest.mark.parametrize(

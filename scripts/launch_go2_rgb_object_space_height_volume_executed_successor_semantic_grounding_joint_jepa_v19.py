@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Denied-by-default launcher for V19 executed-successor grounding.
+"""Denied-by-default launcher for V20 accounting-isolated grounding.
 
 The frozen V18/V3 launcher is loaded in a private namespace and retains its
 custody, data loading, evaluation, and write-once execution surface.  This
-source-only adapter selects the V19 executor and training core while retaining
-the exact V18 model.  Its sole runtime hook keeps the numeric paired-control
-comparisons that the inherited evaluator already computes; it performs no
-additional scoring or input access.
+source-only lifecycle adapter selects the accounting-isolated V19 executor and
+unchanged V19 training core while retaining the exact V18 model.  Its sole
+runtime hook keeps the numeric paired-control comparisons that the inherited
+evaluator already computes; it performs no additional scoring or input access.
 """
 from __future__ import annotations
 
@@ -25,33 +25,51 @@ BASE_LAUNCHER_RELATIVE_PATH = (
 )
 PREREGISTRATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
-    "preregistration_2026-07-30.md"
+    "semantic_grounding_joint_jepa_v20_preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "691ed5d39f0b8d1b40071045dc181b9a4b215573"
+PREREGISTRATION_COMMIT = "c99837b91aeb959e07da94e898e3ba11ccbb4c04"
 PREREGISTRATION_FILE_SHA256 = (
-    "9a1910e6c12ce27bf7951fe4bddbcfc80d19e1d0fc33d03359cc27d12dd1b79b"
+    "3f450b8949022514f82448d122de637d4cefd91829a72d0ac3f8b14a789a42bd"
 )
-PREREGISTRATION_BYTE_COUNT = 8_107
-AUTHORITY_RELATIVE_PATH = (
+PREREGISTRATION_BYTE_COUNT = 9_732
+V19_V1_TERMINAL_FAILURE_RESULT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
     "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
-    "execution_authorization_2026-07-30.json"
+    "terminal_failure_result_2026-07-30.json"
+)
+V19_V1_TERMINAL_FAILURE_RESULT_COMMIT = (
+    "7105e2d9ed6e724f364c837e84177b6b4c4cd163"
+)
+V19_V1_TERMINAL_FAILURE_RESULT_FILE_SHA256 = (
+    "1b155248194ffd6d7943f84d88c25e29843fb9c977fc5b9bd8053e381c49b886"
+)
+V19_V1_TERMINAL_FAILURE_RESULT_BYTE_COUNT = 9_497
+V19_V1_TERMINAL_FAILURE_RESULT_CONTENT_SHA256 = (
+    "fb794750c9efcc1430235478c3f4da02dcaf5211c131ca4e15084950a8cbd4e3"
+)
+CERTIFIED_SOURCE_ROOT = (
+    "/home/andrewknowles/Workspace/"
+    "LeWMQuad-v3-v20-accounting-isolation-source"
+)
+OUTPUT_ROOT_RELATIVE_PATH = (
+    ".generated/go2_rgb_object_space_height_volume_executed_successor_"
+    "semantic_grounding_joint_jepa_v20/attempt_v1"
+)
+AUTHORITY_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
+    "semantic_grounding_joint_jepa_v20_execution_authorization_2026-07-30.json"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
-    "source_manifest_2026-07-30.json"
+    "semantic_grounding_joint_jepa_v20_source_manifest_2026-07-30.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
-    "source_review_2026-07-30.json"
+    "semantic_grounding_joint_jepa_v20_source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
-    "clean_export_certification_2026-07-30.json"
+    "semantic_grounding_joint_jepa_v20_clean_export_certification_2026-07-30.json"
 )
 SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_object_space_height_volume_executed_successor_"
@@ -71,11 +89,10 @@ TRAINING_MODULE_NAME = (
 )
 SOURCE_EVIDENCE_SCHEMA_PREFIX = (
     "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
-    "grounding_joint_jepa_v19_integrity_replacement_v1"
+    "grounding_joint_jepa_v20"
 )
 EXPERIMENT_ARM_NAME = (
-    "object_space_height_volume_executed_successor_semantic_grounding_v19_"
-    "integrity_replacement_v1"
+    "object_space_height_volume_executed_successor_semantic_grounding_v20"
 )
 LAUNCHER_SCHEMA = f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_launcher_v1"
 
@@ -371,12 +388,24 @@ def private_launcher_adapter_receipt_v19() -> dict[str, Any]:
             "file_sha256": PREREGISTRATION_FILE_SHA256,
             "byte_count": PREREGISTRATION_BYTE_COUNT,
         },
+        "predecessor_terminal_failure": {
+            "path": V19_V1_TERMINAL_FAILURE_RESULT_RELATIVE_PATH,
+            "commit": V19_V1_TERMINAL_FAILURE_RESULT_COMMIT,
+            "file_sha256": V19_V1_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            "byte_count": V19_V1_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
+            "content_sha256": V19_V1_TERMINAL_FAILURE_RESULT_CONTENT_SHA256,
+        },
         "model_module": MODEL_MODULE_NAME,
         "training_module": TRAINING_MODULE_NAME,
         "executor_module": EXECUTOR_MODULE_NAME,
+        "certified_source_root": CERTIFIED_SOURCE_ROOT,
+        "output_root": OUTPUT_ROOT_RELATIVE_PATH,
         "maximum_updates": _BASE_LAUNCHER.MAXIMUM_UPDATES,
         "maximum_presentations": _BASE_LAUNCHER.MAXIMUM_PRESENTATIONS,
         "numeric_comparisons_retained_without_rescoring": True,
+        "one_shot_attempt_count": 1,
+        "retry_authorized": False,
+        "resume_authorized": False,
         "execution_authorized": False,
     }
 
@@ -414,7 +443,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if isinstance(status, str) and status.startswith("FAIL_"):
         return 2
-    raise RuntimeError("V19 controller returned a nonterminal status")
+    raise RuntimeError("V20 controller returned a nonterminal status")
 
 
 if __name__ == "__main__":

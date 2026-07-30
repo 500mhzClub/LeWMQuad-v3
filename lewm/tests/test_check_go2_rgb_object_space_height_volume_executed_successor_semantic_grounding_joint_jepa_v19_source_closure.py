@@ -22,11 +22,11 @@ def _load(name: str, path: Path) -> object:
 
 
 _IMPORTED_BEFORE = set(sys.modules)
-checker = _load("_test_v19_semantic_grounding_source_closure", CHECKER_PATH)
+checker = _load("_test_v20_accounting_isolation_source_closure", CHECKER_PATH)
 _IMPORTED_BY_CHECKER = set(sys.modules) - _IMPORTED_BEFORE
 
 
-def test_checker_import_is_source_only_and_uses_v19_identity() -> None:
+def test_checker_import_is_source_only_and_uses_v20_identity() -> None:
     assert not any(
         name == prefix or name.startswith(f"{prefix}.")
         for name in _IMPORTED_BY_CHECKER
@@ -34,17 +34,18 @@ def test_checker_import_is_source_only_and_uses_v19_identity() -> None:
     )
     assert checker.SCHEMA == (
         "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
-        "grounding_joint_jepa_v19_integrity_replacement_v1_source_manifest"
+        "grounding_joint_jepa_v20_source_manifest"
     )
     assert checker._V18._V13._BASE.SCHEMA == checker.SCHEMA
     assert checker.MANIFEST_PATH.relative_to(ROOT).as_posix() == (
         "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-        "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
-        "source_manifest_2026-07-30.json"
+        "semantic_grounding_joint_jepa_v20_source_manifest_2026-07-30.json"
+    )
+    assert checker.PASS_STATUS_TEXT == (
+        "Go2 RGB V20 accounting-isolation source closure: PASS"
     )
 
-
-def test_entrypoints_keep_exact_v18_model_and_select_v19_surfaces() -> None:
+def test_entrypoints_keep_exact_v18_model_and_reuse_v19_surfaces() -> None:
     assert checker.ENTRYPOINTS == (
         (
             "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_"

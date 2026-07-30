@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Denied-by-default executor adapter for V19 successor grounding.
+"""Denied-by-default executor adapter for V20 accounting isolation.
 
-The exact frozen V18 executor is loaded into a private module object.  V19
-changes only accounting/integrity for the preregistered factual-successor
-predictor route and retains already-computed numeric causal comparisons in
-observation receipts.  This source shell grants no execution authority.
+The exact frozen V18 executor is loaded into a private module object.  V20
+preserves V19's factual-successor route while isolating its extended accounting
+from the inherited V13 receipt validator.  This source shell grants no
+execution authority.
 """
 from __future__ import annotations
 
@@ -35,18 +35,41 @@ _PUBLIC_V18_WAS_LOADED_BEFORE_ADAPTER = V18_PUBLIC_MODULE_NAME in sys.modules
 
 SCHEMA_PREFIX = (
     "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
-    "grounding_joint_jepa_v19_integrity_replacement_v1"
+    "grounding_joint_jepa_v20"
 )
-PREREGISTRATION_COMMIT = "691ed5d39f0b8d1b40071045dc181b9a4b215573"
+PREREGISTRATION_COMMIT = "c99837b91aeb959e07da94e898e3ba11ccbb4c04"
 PREREGISTRATION_PATH = (
+    "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
+    "semantic_grounding_joint_jepa_v20_preregistration_2026-07-30.md"
+)
+PREREGISTRATION_FILE_SHA256 = (
+    "3f450b8949022514f82448d122de637d4cefd91829a72d0ac3f8b14a789a42bd"
+)
+PREREGISTRATION_BYTE_COUNT = 9_732
+V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_COMMIT = (
+    "691ed5d39f0b8d1b40071045dc181b9a4b215573"
+)
+V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
     "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
     "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_FILE_SHA256 = (
+V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_FILE_SHA256 = (
     "9a1910e6c12ce27bf7951fe4bddbcfc80d19e1d0fc33d03359cc27d12dd1b79b"
 )
-PREREGISTRATION_BYTE_COUNT = 8_107
+V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_BYTE_COUNT = 8_107
+V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_COMMIT = (
+    "7105e2d9ed6e724f364c837e84177b6b4c4cd163"
+)
+V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_PATH = (
+    "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
+    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+    "terminal_failure_result_2026-07-30.json"
+)
+V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_FILE_SHA256 = (
+    "1b155248194ffd6d7943f84d88c25e29843fb9c977fc5b9bd8053e381c49b886"
+)
+V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_BYTE_COUNT = 9_497
 ORIGINAL_V19_PREREGISTRATION_COMMIT = (
     "6255a9a2cccffde4e777169eacf95105a828cf7e"
 )
@@ -81,7 +104,7 @@ V18_SCIENTIFIC_RESULT_BYTE_COUNT = 11_380
 
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1/attempt_v1"
+    "semantic_grounding_joint_jepa_v20/attempt_v1"
 )
 MODEL_CLASS_NAME = "GeometryAnchoredSweptProgressSurvivalJointJepaV18"
 
@@ -119,6 +142,21 @@ _INHERITED_ACCOUNTING_MULTIPLIERS = {
 }
 _INHERITED_ACCOUNTING_MULTIPLIERS["backward_calls"] = 8
 _INHERITED_ACCOUNTING_MULTIPLIERS["predictor_objectives"] = 4
+INHERITED_ACCOUNTING_MULTIPLIERS_V13 = {
+    "updates": 1,
+    "presentations": 16,
+    "microbatch_graphs": 4,
+    "backward_calls": 8,
+    "camera_route_grad_calls": 4,
+    "joint_route_grad_calls": 4,
+    "camera_frame_objectives": 32,
+    "optimizer_steps": 1,
+    "ema_steps": 1,
+    "predictor_forwards": 4,
+    "predictor_objectives": 4,
+}
+if _INHERITED_ACCOUNTING_MULTIPLIERS != INHERITED_ACCOUNTING_MULTIPLIERS_V13:
+    raise RuntimeError("V20 inherited accounting projection changed")
 
 _PRISTINE_V18_DEFAULTS = {
     "SCHEMA_PREFIX": (
@@ -199,12 +237,29 @@ _original_validate_update_integrity = _engine._validate_update_integrity_v13
 _original_observation = _engine._observation_v13
 _original_evaluate_update400_gate = _engine.evaluate_update400_gate_v13
 
+
+def _assert_inherited_accounting_registry_v20() -> None:
+    observed = getattr(_engine, "ACCOUNTING_MULTIPLIERS", None)
+    if observed != INHERITED_ACCOUNTING_MULTIPLIERS_V13:
+        raise RuntimeError("V20 inherited accounting registry changed")
+
+
+_assert_inherited_accounting_registry_v20()
+
 _bound_parent_sources = dict(_engine.BOUND_PARENT_SOURCES)
 _bound_parent_sources.update(
     {
         PREREGISTRATION_PATH: (
             PREREGISTRATION_FILE_SHA256,
             PREREGISTRATION_BYTE_COUNT,
+        ),
+        V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_PATH: (
+            V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_FILE_SHA256,
+            V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_BYTE_COUNT,
+        ),
+        V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_PATH: (
+            V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
         ),
         ORIGINAL_V19_PREREGISTRATION_PATH: (
             ORIGINAL_V19_PREREGISTRATION_FILE_SHA256,
@@ -226,10 +281,9 @@ _engine.PREREGISTRATION_COMMIT = PREREGISTRATION_COMMIT
 _engine.PREREGISTRATION_PATH = PREREGISTRATION_PATH
 _engine.OUTPUT_ROOT_RELATIVE_PATH = OUTPUT_ROOT_RELATIVE_PATH
 _engine.BOUND_PARENT_SOURCES = _bound_parent_sources
-_engine.ACCOUNTING_MULTIPLIERS = dict(ACCOUNTING_MULTIPLIERS_V19)
 _engine.CURRENT_EXECUTION_AUTHORIZED = False
 _engine.CURRENT_EXECUTION_DENIAL = (
-    "V19 integrity-replacement scientific execution is denied until "
+    "V20 accounting-isolation scientific execution is denied until "
     "recursive source closure, "
     "independent exact-binding review, narrow clean-export certification, "
     "and one-shot authority are committed and validated"
@@ -322,6 +376,7 @@ def validate_update_integrity_v19(
     update: int,
     access_receipt: Mapping[str, Any],
 ) -> dict[str, Any]:
+    _assert_inherited_accounting_registry_v20()
     if type(update) is not int or not 1 <= update <= _engine.MAXIMUM_UPDATES:
         raise ValueError("V19 update integrity index escaped the cap")
 
@@ -621,6 +676,7 @@ def validate_terminal_accounting_v19(
     *,
     terminal_update: int,
 ) -> dict[str, int]:
+    _assert_inherited_accounting_registry_v20()
     if terminal_update not in _engine.TERMINAL_UPDATES:
         raise ValueError("V19 terminal update must be exactly 400 or 1000")
     value = _receipt_mapping_v19(accounting, name="V19 terminal accounting")
@@ -728,6 +784,7 @@ execute_v13 = execute_v19
 
 
 def private_adapter_receipt_v19() -> dict[str, Any]:
+    _assert_inherited_accounting_registry_v20()
     return {
         "schema": f"{SCHEMA_PREFIX}_private_v18_executor_adapter_v1",
         "base_executor": str(V18_EXECUTOR_PATH.relative_to(ROOT)),
@@ -738,6 +795,12 @@ def private_adapter_receipt_v19() -> dict[str, Any]:
         "public_v18_loaded_by_adapter": False,
         "private_module_registered": PRIVATE_V18_MODULE_NAME in sys.modules,
         "preregistration_commit": PREREGISTRATION_COMMIT,
+        "v19_integrity_replacement_v1_preregistration_commit": (
+            V19_INTEGRITY_REPLACEMENT_V1_PREREGISTRATION_COMMIT
+        ),
+        "v19_integrity_replacement_v1_terminal_failure_result_commit": (
+            V19_INTEGRITY_REPLACEMENT_V1_TERMINAL_FAILURE_RESULT_COMMIT
+        ),
         "original_v19_preregistration_commit": (
             ORIGINAL_V19_PREREGISTRATION_COMMIT
         ),
@@ -752,6 +815,10 @@ def private_adapter_receipt_v19() -> dict[str, Any]:
             FACTUAL_SUCCESSOR_PARAMETER_TENSOR_COUNT
         ),
         "factual_successor_parameter_count": FACTUAL_SUCCESSOR_PARAMETER_COUNT,
+        "inherited_accounting_registry": dict(
+            INHERITED_ACCOUNTING_MULTIPLIERS_V13
+        ),
+        "extended_accounting_is_local": True,
         "execution_authorized": False,
     }
 
@@ -759,7 +826,7 @@ def private_adapter_receipt_v19() -> dict[str, Any]:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = tuple(sys.argv[1:] if argv is None else argv)
     if arguments:
-        raise ValueError("the denied V19 source shell accepts no arguments")
+        raise ValueError("the denied V20 source shell accepts no arguments")
     print(json.dumps(execution_denial_receipt_v19(), sort_keys=True))
     return 4
 

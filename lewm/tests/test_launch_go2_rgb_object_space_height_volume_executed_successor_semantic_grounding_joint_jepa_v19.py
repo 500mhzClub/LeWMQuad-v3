@@ -61,8 +61,7 @@ def test_import_is_source_only_and_no_argument_cli_is_denied(capsys) -> None:
         "reservation_created": False,
         "schema": (
             "lewm_go2_rgb_object_space_height_volume_executed_successor_"
-            "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
-            "launcher_v1"
+            "semantic_grounding_joint_jepa_v20_launcher_v1"
         ),
         "scientific_payload_opened": False,
         "status": "DENIED_NO_FUTURE_AUTHORITY",
@@ -85,24 +84,26 @@ def test_private_v18_adapter_selects_only_v19_training_and_executor() -> None:
         "semantic_grounding_joint_jepa_v19"
     )
     assert base.EXPERIMENT_ARM_NAME == (
-        "object_space_height_volume_executed_successor_semantic_grounding_v19_"
-        "integrity_replacement_v1"
+        "object_space_height_volume_executed_successor_semantic_grounding_v20"
     )
     assert base.SOURCE_EVIDENCE_SCHEMA_PREFIX == (
         "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
-        "grounding_joint_jepa_v19_integrity_replacement_v1"
+        "grounding_joint_jepa_v20"
     )
     assert base.AUTHORITY_RELATIVE_PATH.endswith(
-        "v19_integrity_replacement_v1_execution_authorization_2026-07-30.json"
+        "joint_jepa_v20_execution_authorization_2026-07-30.json"
     )
     assert base.SOURCE_MANIFEST_RELATIVE_PATH.endswith(
-        "v19_integrity_replacement_v1_source_manifest_2026-07-30.json"
+        "joint_jepa_v20_source_manifest_2026-07-30.json"
     )
     assert base.SOURCE_REVIEW_RELATIVE_PATH.endswith(
-        "v19_integrity_replacement_v1_source_review_2026-07-30.json"
+        "joint_jepa_v20_source_review_2026-07-30.json"
     )
     assert base.CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH.endswith(
-        "v19_integrity_replacement_v1_clean_export_certification_2026-07-30.json"
+        "joint_jepa_v20_clean_export_certification_2026-07-30.json"
+    )
+    assert base.SOURCE_CLOSURE_CHECKER_RELATIVE_PATH.endswith(
+        "semantic_grounding_joint_jepa_v19_source_closure.py"
     )
     assert base.MAXIMUM_UPDATES == 1_000
     assert base.MAXIMUM_PRESENTATIONS == 16_000
@@ -115,16 +116,41 @@ def test_preregistration_identity_is_bound_in_adapter_receipt() -> None:
     assert receipt["preregistration"] == {
         "path": (
             "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-            "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
-            "preregistration_2026-07-30.md"
+            "semantic_grounding_joint_jepa_v20_preregistration_2026-07-30.md"
         ),
-        "commit": "691ed5d39f0b8d1b40071045dc181b9a4b215573",
+        "commit": "c99837b91aeb959e07da94e898e3ba11ccbb4c04",
         "file_sha256": (
-            "9a1910e6c12ce27bf7951fe4bddbcfc80d19e1d0fc33d03359cc27d12dd1b79b"
+            "3f450b8949022514f82448d122de637d4cefd91829a72d0ac3f8b14a789a42bd"
         ),
-        "byte_count": 8_107,
+        "byte_count": 9_732,
+    }
+    assert receipt["predecessor_terminal_failure"] == {
+        "path": (
+            "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
+            "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+            "terminal_failure_result_2026-07-30.json"
+        ),
+        "commit": "7105e2d9ed6e724f364c837e84177b6b4c4cd163",
+        "file_sha256": (
+            "1b155248194ffd6d7943f84d88c25e29843fb9c977fc5b9bd8053e381c49b886"
+        ),
+        "byte_count": 9_497,
+        "content_sha256": (
+            "fb794750c9efcc1430235478c3f4da02dcaf5211c131ca4e15084950a8cbd4e3"
+        ),
     }
     assert receipt["numeric_comparisons_retained_without_rescoring"] is True
+    assert receipt["certified_source_root"] == (
+        "/home/andrewknowles/Workspace/"
+        "LeWMQuad-v3-v20-accounting-isolation-source"
+    )
+    assert receipt["output_root"] == (
+        ".generated/go2_rgb_object_space_height_volume_executed_successor_"
+        "semantic_grounding_joint_jepa_v20/attempt_v1"
+    )
+    assert receipt["one_shot_attempt_count"] == 1
+    assert receipt["retry_authorized"] is False
+    assert receipt["resume_authorized"] is False
     assert receipt["execution_authorized"] is False
 
 
