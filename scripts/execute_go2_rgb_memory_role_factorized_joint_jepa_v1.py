@@ -465,9 +465,9 @@ def terminalize_failure_v1(
                 "resume_authorized": False,
             }
         )
-    if set(supplied_restart_bindings) != {
-        value["state"]["path"] for value in restart_states
-    }:
+    if not set(supplied_restart_bindings).issubset(
+        {value["state"]["path"] for value in restart_states}
+    ):
         raise PermissionError("memory-role bound private restart state is absent")
     core = {
         "schema": f"{SCHEMA_PREFIX}_exception_failure_v1",

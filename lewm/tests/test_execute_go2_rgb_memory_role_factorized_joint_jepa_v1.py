@@ -173,6 +173,46 @@ def test_private_restart_state_is_exact_and_never_self_authorizes_resume() -> No
         )
 
 
+def test_exception_terminalizer_receipts_orphan_restart_state(tmp_path: Path) -> None:
+    authority = _authority()
+    reservation = executor.reserve_attempt_v1(
+        tmp_path, authority, created_utc="2026-07-30T00:00:00Z"
+    )
+    output = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
+    restart = output / "private_restart/update_100.pt"
+    restart.parent.mkdir(mode=0o700)
+    raw = b"published state before metadata publication failed"
+    restart.write_bytes(raw)
+    restart.chmod(0o444)
+
+    failure = executor.terminalize_failure_v1(
+        output,
+        reservation,
+        stage="publish_private_restart_update_100",
+        error=RuntimeError("synthetic metadata publication failure"),
+        created_utc="2026-07-30T00:00:01Z",
+    )
+
+    assert failure["status"] == "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME"
+    assert failure["private_restart_state_published"] is True
+    assert failure["private_restart_state_hash_read_count"] == 1
+    assert failure["private_restart_state_deserialized"] is False
+    assert failure["private_restart_resume_authorized"] is False
+    assert failure["private_restart_states"] == [
+        {
+            "update": 100,
+            "state": {
+                "path": "private_restart/update_100.pt",
+                "file_sha256": hashlib.sha256(raw).hexdigest(),
+                "byte_count": len(raw),
+            },
+            "immutable_mode": True,
+            "state_deserialized": False,
+            "resume_authorized": False,
+        }
+    ]
+
+
 def test_engine_exception_publishes_complete_in_memory_failure_context(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
