@@ -265,7 +265,7 @@ These instructions apply to the entire repository.
 - The RGB object-space height-volume joint-JEPA V18 source may additionally
   be clean exported only from frozen source-and-review commit
   `8b348f60d941921ce80ef95786a8e12b915376d9`, and only as (a) the 86 paths
-  in its committed recursive source manifest and (b) the fourteen V18 and
+  in its committed recursive source manifest and (b) the seventeen V18 and
   predecessor preregistration/result witnesses, manifest, source-review,
   recursive-checker, and focused V18 test paths explicitly enumerated and
   SHA-256-and-byte-count-bound in
