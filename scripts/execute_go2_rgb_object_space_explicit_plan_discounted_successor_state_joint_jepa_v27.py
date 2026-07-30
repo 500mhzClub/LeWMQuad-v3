@@ -332,19 +332,25 @@ def terminalize_failure_v27(
     checkpoint_path = Path(output_root) / "checkpoint_update_400.pt"
     checkpoint_binding: dict[str, Any] | None = None
     checkpoint_quarantined = False
+    checkpoint_terminalization_hash_read_count = 0
     if checkpoint_path.exists() or checkpoint_path.is_symlink():
         info = os.lstat(checkpoint_path)
         if checkpoint_path.is_symlink() or not stat.S_ISREG(info.st_mode):
             raise PermissionError("V27 partial checkpoint changed type")
+        raw = checkpoint_path.read_bytes()
+        checkpoint_terminalization_hash_read_count = 1
+        observed_binding = {
+            "path": "checkpoint_update_400.pt",
+            "file_sha256": hashlib.sha256(raw).hexdigest(),
+            "byte_count": len(raw),
+        }
         if partial_checkpoint_binding is not None:
-            checkpoint_binding = _binding(
+            supplied_binding = _binding(
                 partial_checkpoint_binding, name="partial checkpoint"
             )
-            if (
-                checkpoint_binding["path"] != "checkpoint_update_400.pt"
-                or checkpoint_binding["byte_count"] != info.st_size
-            ):
+            if supplied_binding != observed_binding:
                 raise PermissionError("V27 partial checkpoint binding changed")
+        checkpoint_binding = observed_binding
         os.chmod(checkpoint_path, 0o000, follow_symlinks=False)
         if stat.S_IMODE(os.lstat(checkpoint_path).st_mode) != 0o000:
             raise PermissionError("V27 partial checkpoint quarantine failed")
@@ -366,6 +372,10 @@ def terminalize_failure_v27(
         "checkpoint_quarantined": checkpoint_quarantined,
         "checkpoint": checkpoint_binding,
         "checkpoint_binding_available": checkpoint_binding is not None,
+        "checkpoint_terminalization_hash_read_count": (
+            checkpoint_terminalization_hash_read_count
+        ),
+        "checkpoint_deserialized": False,
         "checkpoint_access_authorized": False,
         "retry_authorized": False,
         "resume_authorized": False,

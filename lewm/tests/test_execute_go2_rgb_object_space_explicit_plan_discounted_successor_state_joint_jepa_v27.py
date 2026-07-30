@@ -118,6 +118,8 @@ def test_exception_terminalizer_truthfully_quarantines_partial_checkpoint(
     assert failure["checkpoint_access_authorized"] is False
     assert failure["checkpoint"] == checkpoint_binding
     assert failure["checkpoint_binding_available"] is True
+    assert failure["checkpoint_terminalization_hash_read_count"] == 1
+    assert failure["checkpoint_deserialized"] is False
     assert stat.S_IMODE(os.lstat(checkpoint).st_mode) == 0o000
     assert failure["retry_authorized"] is False
     assert failure["resume_authorized"] is False
@@ -141,7 +143,73 @@ def test_exception_terminalizer_reports_absent_checkpoint(tmp_path: Path) -> Non
     assert failure["checkpoint_quarantined"] is False
     assert failure["checkpoint"] is None
     assert failure["checkpoint_binding_available"] is False
+    assert failure["checkpoint_terminalization_hash_read_count"] == 0
+    assert failure["checkpoint_deserialized"] is False
     assert failure["checkpoint_access_authorized"] is False
+
+
+def test_exception_terminalizer_binds_checkpoint_when_publish_return_was_lost(
+    tmp_path: Path,
+) -> None:
+    authority = _authority()
+    reservation = executor.reserve_attempt_v27(
+        tmp_path, authority, created_utc="2026-07-30T00:00:00Z"
+    )
+    output = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
+    raw = b"checkpoint materialized before publisher exception"
+    checkpoint = output / "checkpoint_update_400.pt"
+    checkpoint.write_bytes(raw)
+    checkpoint.chmod(0o444)
+
+    failure = executor.terminalize_failure_v27(
+        output,
+        reservation,
+        stage="publish_pass_checkpoint",
+        error=RuntimeError("synthetic publisher return failure"),
+        created_utc="2026-07-30T00:00:01Z",
+    )
+
+    assert failure["checkpoint_published"] is True
+    assert failure["checkpoint_present_at_terminal"] is True
+    assert failure["checkpoint_quarantined"] is True
+    assert failure["checkpoint"] == {
+        "path": "checkpoint_update_400.pt",
+        "file_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+    }
+    assert failure["checkpoint_binding_available"] is True
+    assert stat.S_IMODE(os.lstat(checkpoint).st_mode) == 0o000
+
+
+def test_exception_terminalizer_rejects_same_size_wrong_checkpoint_binding(
+    tmp_path: Path,
+) -> None:
+    authority = _authority()
+    reservation = executor.reserve_attempt_v27(
+        tmp_path, authority, created_utc="2026-07-30T00:00:00Z"
+    )
+    output = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
+    raw = b"checkpoint bytes"
+    checkpoint = output / "checkpoint_update_400.pt"
+    checkpoint.write_bytes(raw)
+    checkpoint.chmod(0o444)
+    wrong = {
+        "path": "checkpoint_update_400.pt",
+        "file_sha256": "0" * 64,
+        "byte_count": len(raw),
+    }
+
+    with pytest.raises(PermissionError, match="binding changed"):
+        executor.terminalize_failure_v27(
+            output,
+            reservation,
+            stage="publish_pass_checkpoint",
+            error=RuntimeError("synthetic metadata publication failure"),
+            created_utc="2026-07-30T00:00:01Z",
+            partial_checkpoint_binding=wrong,
+        )
+    assert not (output / "failure.json").exists()
+    assert stat.S_IMODE(os.lstat(checkpoint).st_mode) == 0o444
 
 
 def _plan_metrics() -> dict:
