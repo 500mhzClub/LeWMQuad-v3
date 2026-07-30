@@ -609,6 +609,30 @@ These instructions apply to the entire repository.
   promotion, deployment, retry, resume, recovery, extension, third V27
   infrastructure replacement, second V2 attempt, or further-attempt
   authority.
+- The RGB object-space explicit-plan terminal-successor-state joint-JEPA V28
+  source may additionally be clean exported only from frozen
+  source-and-review commit
+  `b54a81cf08caae022a442e776521a8b50f4e6645`, and only as (a) the 117
+  paths in its committed recursive source manifest and (b) the eight V28
+  preregistration, manifest, source-review, V27-V2 terminal-scientific-result
+  identity-witness, and focused V28 test paths explicitly enumerated and
+  SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_object_space_explicit_plan_terminal_successor_state_joint_jepa_v28_clean_export_certification_2026-07-30.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied V27-V2 result is source-only chronology and
+  scientific-identity evidence and grants no predecessor runtime-output,
+  checkpoint, retry, resume, or execution authority. Do not export any
+  predecessor clean-export certification or execution authority. The V28
+  certification itself and any later one-shot authority may be added to the
+  narrow export only at their exact reviewed paths after their respective
+  commits and exact file-SHA-256 validation. This source-only exception grants
+  no generated-input, runtime-artifact, checkpoint, tensor, schedule,
+  dataset-payload, RGB, GPU, training, qualification, benchmark, G2,
+  navigation, held-out, sealed, production, promotion, deployment, retry,
+  resume, recovery, extension, endpoint-V2, alternate-endpoint, coefficient,
+  gamma, second-attempt, or further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
