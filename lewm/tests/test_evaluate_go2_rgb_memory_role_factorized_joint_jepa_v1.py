@@ -340,7 +340,100 @@ def test_selection_boundary_rejects_role_overlap_and_bad_loader() -> None:
         )
 
 
-def test_terminal_gate_keeps_depth_tail_prior_and_memory_controls_diagnostic() -> None:
+def _all_controls_pass() -> dict[str, dict[str, bool]]:
+    return {
+        control: {
+            check: True for check in evaluation.PHYSICAL_CONTROL_CHECK_NAMES_V1
+        }
+        for control in evaluation.PHYSICAL_CONTROL_NAMES_V1
+    }
+
+
+def test_update100_continuation_gate_applies_exact_v3_thresholds() -> None:
+    model = _TinyRoleModel()
+    place100 = evaluation.evaluate_place_checkpoint_selection_v1(
+        model,
+        _place_rows(),
+        load_triplet=_load_triplet,
+        device="cpu",
+        training_scene_ids={"train_scene"},
+        update=100,
+    )
+    chance = place100["retrieval"]["exact_chance_recall_at_5"]
+    place100["retrieval"]["recall_at_5"] = 1.5 * chance
+    place100["noncollapse"]["target_place_key_effective_rank"] = 2.0
+    place100["energy"]["negative_minus_positive_bootstrap_lower_95"] = 1.0e-9
+    place100["energy"]["positive_family_count"] = 6
+    local100 = evaluation.evaluate_local_checkpoint_selection_v1(
+        model,
+        _local_rows(),
+        load_pair=_load_local,
+        device="cpu",
+        training_scene_ids={"train_scene"},
+        update=100,
+    )
+    physical = {
+        "margin_count": 189,
+        "passed_margin_count": 60,
+        "rough_motion": {"depth_p95_m": 999.0},
+    }
+
+    gate = evaluation.evaluate_update100_continuation_gate_v3(
+        update100_place=place100,
+        update100_local=local100,
+        physical_summary=physical,
+        integrity_pass=True,
+    )
+    assert gate["schema"].startswith(
+        "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    )
+    assert gate["passed"] is True
+    assert gate["action"] == "CONTINUE_SAME_ATTEMPT_TO_UPDATE_400"
+    assert gate["retry_authorized"] is False
+    assert gate["resume_authorized"] is False
+
+    failures = []
+    below_chance = copy.deepcopy(place100)
+    below_chance["retrieval"]["recall_at_5"] = 1.5 * chance - 1.0e-9
+    failures.append((below_chance, physical, True))
+    low_rank = copy.deepcopy(place100)
+    low_rank["noncollapse"]["target_place_key_effective_rank"] = 1.999
+    failures.append((low_rank, physical, True))
+    zero_bootstrap = copy.deepcopy(place100)
+    zero_bootstrap["energy"]["negative_minus_positive_bootstrap_lower_95"] = 0.0
+    failures.append((zero_bootstrap, physical, True))
+    five_families = copy.deepcopy(place100)
+    five_families["energy"]["positive_family_count"] = 5
+    failures.append((five_families, physical, True))
+    low_physical = {**physical, "passed_margin_count": 59}
+    failures.append((place100, low_physical, True))
+    failures.append((place100, physical, False))
+    bad_access = copy.deepcopy(place100)
+    bad_access["access"]["rgb_tensor_count"] -= 1
+    failures.append((bad_access, physical, True))
+
+    for failed_place, failed_physical, integrity in failures:
+        failed = evaluation.evaluate_update100_continuation_gate_v3(
+            update100_place=failed_place,
+            update100_local=local100,
+            physical_summary=failed_physical,
+            integrity_pass=integrity,
+        )
+        assert failed["passed"] is False
+        assert failed["action"] == "STOP_VALID_SCIENTIFIC_FAILURE_AT_UPDATE_100"
+
+    bad_local_access = copy.deepcopy(local100)
+    bad_local_access["access"]["pair_loader_call_count"] -= 1
+    failed = evaluation.evaluate_update100_continuation_gate_v3(
+        update100_place=place100,
+        update100_local=bad_local_access,
+        physical_summary=physical,
+        integrity_pass=True,
+    )
+    assert failed["passed"] is False
+
+
+def test_terminal_gate_uses_lean_v3_memory_entry_checks() -> None:
     model = _TinyRoleModel()
     place0 = evaluation.evaluate_place_checkpoint_selection_v1(
         model,
@@ -350,8 +443,18 @@ def test_terminal_gate_keeps_depth_tail_prior_and_memory_controls_diagnostic() -
         training_scene_ids={"train_scene"},
         update=0,
     )
+    place0["noncollapse"]["target_place_key_effective_rank"] = 100.0
     place400 = copy.deepcopy(place0)
     place400["update"] = 400
+    chance = place400["retrieval"]["exact_chance_recall_at_5"]
+    place400["retrieval"]["recall_at_5"] = 3.0 * chance
+    place400["retrieval"]["scene_count_above_chance"] = 6
+    place400["noncollapse"]["target_place_key_effective_rank"] = 4.0
+    place400["energy"]["negative_minus_positive_mean"] = 0.0
+    for name in place400["checks"]:
+        if name != "target_integrity_pass":
+            place400["checks"][name] = False
+    place400["passed"] = False
     local400 = evaluation.evaluate_local_checkpoint_selection_v1(
         model,
         _local_rows(),
@@ -360,12 +463,11 @@ def test_terminal_gate_keeps_depth_tail_prior_and_memory_controls_diagnostic() -
         training_scene_ids={"train_scene"},
         update=400,
     )
-    controls = {
-        control: {
-            check: True for check in evaluation.PHYSICAL_CONTROL_CHECK_NAMES_V1
-        }
-        for control in evaluation.PHYSICAL_CONTROL_NAMES_V1
-    }
+    for name in local400["checks"]:
+        if name != "target_integrity_pass":
+            local400["checks"][name] = False
+    local400["passed"] = False
+    controls = _all_controls_pass()
     physical = {
         "margin_count": 189,
         "passed_margin_count": 73,
@@ -385,28 +487,58 @@ def test_terminal_gate_keeps_depth_tail_prior_and_memory_controls_diagnostic() -
     assert gate["diagnostic_only"]["rough_depth_is_a_gate"] is False
     assert gate["diagnostic_only"]["tail_metric_is_a_gate"] is False
     assert gate["diagnostic_only"]["prior_metric_is_a_gate"] is False
+    assert gate["diagnostic_only"]["place_fixed_point10_energy_gap_is_a_gate"] is False
+    assert gate["diagnostic_only"]["place_absolute_r5_point40_is_a_gate"] is False
+    assert gate["diagnostic_only"]["place_rank_retention_is_a_gate"] is False
+    assert gate["diagnostic_only"]["local_metrics_are_a_gate"] is False
+    assert gate["diagnostic_only"]["place_legacy_conjunction_passed"] is False
+    assert gate["diagnostic_only"]["local_legacy_conjunction_passed"] is False
+    assert gate["observed"]["target_place_key_rank_retention_ratio"] == pytest.approx(
+        0.04
+    )
     assert gate["memory_reset_reverse_shuffle_required"] is False
     assert gate["navigation_evaluation_required"] is False
     assert len(gate["causal_control_checks"]) == 12
-
-    physical["passed_margin_count"] = 72
-    failed = evaluation.evaluate_terminal_gate_v1(
-        update0_place=place0,
-        update400_place=place400,
-        update400_local=local400,
-        physical_summary=physical,
-        controls=controls,
-        integrity_pass=True,
+    assert gate["action"] == (
+        "PASS_MEMORY_ENTRY_ELIGIBLE_FOR_LEARNED_MEMORY_INTEGRATION"
     )
-    assert failed["passed"] is False
-    assert failed["action"] == "FAIL_TERMINAL_NO_MEMORY_INTEGRATION"
+
+    failing_inputs = []
+    below_chance = copy.deepcopy(place400)
+    below_chance["retrieval"]["recall_at_5"] = 3.0 * chance - 1.0e-9
+    failing_inputs.append((below_chance, physical, controls, True))
+    five_scenes = copy.deepcopy(place400)
+    five_scenes["retrieval"]["scene_count_above_chance"] = 5
+    failing_inputs.append((five_scenes, physical, controls, True))
+    low_rank = copy.deepcopy(place400)
+    low_rank["noncollapse"]["target_place_key_effective_rank"] = 3.999
+    failing_inputs.append((low_rank, physical, controls, True))
+    failing_inputs.append(
+        (place400, {**physical, "passed_margin_count": 72}, controls, True)
+    )
+    failed_controls = copy.deepcopy(controls)
+    failed_controls["wrong_rgb"]["positive_family_count"] = False
+    failing_inputs.append((place400, physical, failed_controls, True))
+    failing_inputs.append((place400, physical, controls, False))
+
+    for failed_place, failed_physical, failed_controls, integrity in failing_inputs:
+        failed = evaluation.evaluate_terminal_gate_v1(
+            update0_place=place0,
+            update400_place=failed_place,
+            update400_local=local400,
+            physical_summary=failed_physical,
+            controls=failed_controls,
+            integrity_pass=integrity,
+        )
+        assert failed["passed"] is False
+        assert failed["action"] == "FAIL_TERMINAL_NO_MEMORY_INTEGRATION"
 
     with pytest.raises(evaluation.MemoryRoleEvaluationContractError, match="nonfinite"):
         evaluation.evaluate_terminal_gate_v1(
             update0_place=place0,
             update400_place=place400,
             update400_local=local400,
-            physical_summary={**physical, "passed_margin_count": 73},
+            physical_summary=physical,
             controls=controls,
             integrity_pass=True,
             diagnostics={"tail_energy": float("nan")},

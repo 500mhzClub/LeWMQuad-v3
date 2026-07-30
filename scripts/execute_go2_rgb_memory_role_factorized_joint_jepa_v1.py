@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-shot controller for the memory-role factorized joint-JEPA V1 probe.
+"""One-shot controller for the spatial-contrastive memory-role JEPA V3 probe.
 
 The controller keeps V25's reviewed physical route and adds two RGB-only
 four-row routes: corrected-H6 immediate control and manifest-bound place
@@ -29,14 +29,12 @@ from scripts import (
 )
 
 
-SCHEMA_PREFIX = (
-    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2"
-)
+SCHEMA_PREFIX = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3"
 PREREGISTRATION_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "429cb57bd89348502cd5b695a25ae864d33fdfa7"
+PREREGISTRATION_COMMIT = "8c719c2ba9458faa824eccbe7eb660f4adb56cbc"
 SPLIT_INTEGRITY_AMENDMENT_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "split_integrity_amendment_2026-07-30.md"
@@ -45,30 +43,30 @@ SPLIT_INTEGRITY_AMENDMENT_COMMIT = (
     "5a1535567bf00b8e47d67d8966ef42a52726bd5b"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "source_manifest_2026-07-30.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "clean_export_certification_2026-07-30.json"
 )
 AUTHORITY_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "execution_authorization_2026-07-30.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v2/attempt_v1"
+    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v3/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v2-source"
+    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v3-source"
 )
-MODEL_CLASS_NAME = "MemoryRoleFactorizedJointJepaV1"
-MODEL_MODULE_NAME = "lewm.models.memory_role_factorized_joint_jepa_v1"
+MODEL_CLASS_NAME = "MemoryRoleSpatialContrastiveJointJepaV3"
+MODEL_MODULE_NAME = "lewm.models.memory_role_spatial_contrastive_joint_jepa_v3"
 TRAINING_MODULE_NAME = (
     "scripts.run_go2_rgb_memory_role_factorized_joint_jepa_v1"
 )
@@ -83,7 +81,7 @@ LOCAL_PRESENTATIONS_PER_UPDATE = 8
 PLACE_PRESENTATIONS_PER_UPDATE = 8
 PRESENTATIONS_PER_UPDATE = 32
 OBSERVATION_UPDATES = (0, 100, 400)
-TERMINAL_UPDATES = (400,)
+TERMINAL_UPDATES = (100, 400)
 RGB_ROOT_RELATIVE_PATH = Path(".generated/datagen_full/render_textured_v03")
 PLACE_TRIPLET_ROOT_RELATIVE_PATH = Path(
     ".generated/go2_memory_role_place_triplet_index_v1"
@@ -405,6 +403,7 @@ def terminalize_failure_v1(
     error: BaseException,
     created_utc: str,
     partial_checkpoint_binding: Mapping[str, Any] | None = None,
+    private_restart_bindings: Sequence[Mapping[str, Any]] = (),
     failure_context: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     validate_attempt_reservation_v1(dict(reservation))
@@ -432,6 +431,44 @@ def terminalize_failure_v1(
         checkpoint_quarantined = True
     elif partial_checkpoint_binding is not None:
         raise PermissionError("memory-role bound partial checkpoint is absent")
+    supplied_restart_bindings = {
+        binding["path"]: binding
+        for binding in (
+            _binding(value, name="private restart state")
+            for value in private_restart_bindings
+        )
+    }
+    restart_states: list[dict[str, Any]] = []
+    for update in (100, 400):
+        relative = f"private_restart/update_{update}.pt"
+        path = Path(output_root) / relative
+        if not (path.exists() or path.is_symlink()):
+            continue
+        info = os.lstat(path)
+        if path.is_symlink() or not stat.S_ISREG(info.st_mode):
+            raise PermissionError("memory-role private restart state changed type")
+        raw = path.read_bytes()
+        observed = {
+            "path": relative,
+            "file_sha256": hashlib.sha256(raw).hexdigest(),
+            "byte_count": len(raw),
+        }
+        supplied = supplied_restart_bindings.get(relative)
+        if supplied is not None and supplied != observed:
+            raise PermissionError("memory-role private restart binding changed")
+        restart_states.append(
+            {
+                "update": update,
+                "state": observed,
+                "immutable_mode": stat.S_IMODE(info.st_mode) == 0o444,
+                "state_deserialized": False,
+                "resume_authorized": False,
+            }
+        )
+    if set(supplied_restart_bindings) != {
+        value["state"]["path"] for value in restart_states
+    }:
+        raise PermissionError("memory-role bound private restart state is absent")
     core = {
         "schema": f"{SCHEMA_PREFIX}_exception_failure_v1",
         "status": "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME",
@@ -450,6 +487,11 @@ def terminalize_failure_v1(
         "checkpoint_terminalization_hash_read_count": hash_reads,
         "checkpoint_deserialized": False,
         "checkpoint_access_authorized": False,
+        "private_restart_state_published": bool(restart_states),
+        "private_restart_states": restart_states,
+        "private_restart_state_hash_read_count": len(restart_states),
+        "private_restart_state_deserialized": False,
+        "private_restart_resume_authorized": False,
         "failure_context": (
             None if failure_context is None else dict(failure_context)
         ),
@@ -501,8 +543,8 @@ def validate_update_integrity_v1(
         "ema_target_rgb_encodings": 24,
         "physical_microbatch_graphs": 4,
         "local_microbatch_graphs": 2,
-        "place_microbatch_graphs": 2,
-        "autograd_grad_calls": 16,
+        "place_microbatch_graphs": 1,
+        "autograd_grad_calls": 15,
         "optimizer_steps": 1,
         "ema_steps": 1,
     }
@@ -634,6 +676,57 @@ def _serialize_checkpoint_v1(
         "update": 400,
         "byte_count": len(raw),
         "file_sha256": hashlib.sha256(raw).hexdigest(),
+        "resume_authorized": False,
+        "navigation_authorized": False,
+        "held_out_authorized": False,
+    }
+
+
+def _serialize_private_restart_state_v3(
+    runtime: Any,
+    model: Any,
+    optimizer: Any,
+    accounting: Any,
+    authority: Mapping[str, Any],
+    *,
+    update: int,
+) -> tuple[bytes, dict[str, Any]]:
+    if update not in TERMINAL_UPDATES:
+        raise ValueError("memory-role private restart update is not registered")
+    state = {
+        "schema": f"{SCHEMA_PREFIX}_private_restart_state_v1",
+        "update": update,
+        "model_module": MODEL_MODULE_NAME,
+        "model_class": MODEL_CLASS_NAME,
+        "model_state_dict": {
+            name: value.detach().cpu().contiguous().clone()
+            for name, value in model.state_dict().items()
+        },
+        "optimizer_state_dict": optimizer.state_dict(),
+        "accounting": _mapping(accounting, name="private restart accounting"),
+        "rng": {
+            "torch_cpu": runtime.torch.random.get_rng_state().clone(),
+            "visible_gpu": tuple(
+                value.clone() for value in runtime.torch.cuda.get_rng_state_all()
+            ),
+        },
+        "authority_sha256": hashlib.sha256(
+            _canonical_json_bytes(authority)
+        ).hexdigest(),
+        "private_restart_state": True,
+        "scientific_promotion": False,
+        "resume_authorized": False,
+    }
+    buffer = io.BytesIO()
+    runtime.torch.save(state, buffer)
+    raw = buffer.getvalue()
+    return raw, {
+        "schema": f"{SCHEMA_PREFIX}_private_restart_state_binding_v1",
+        "update": update,
+        "byte_count": len(raw),
+        "file_sha256": hashlib.sha256(raw).hexdigest(),
+        "private_restart_state": True,
+        "scientific_promotion": False,
         "resume_authorized": False,
         "navigation_authorized": False,
         "held_out_authorized": False,
@@ -1295,7 +1388,7 @@ def run_future_authorized_engine_v1(
     runtime: Any,
     publisher: Any,
 ) -> dict[str, Any]:
-    """Execute observations 0/100/400 and exactly 400 mixed updates."""
+    """Execute the gated V3 attempt for at most 400 mixed updates."""
 
     validated_authority = validate_future_execution_prerequisites_v1(dict(authority))
     validated_reservation = validate_attempt_reservation_v1(dict(reservation))
@@ -1329,9 +1422,81 @@ def run_future_authorized_engine_v1(
     model: Any = None
     optimizer: Any = None
     partial_checkpoint_binding: Mapping[str, Any] | None = None
+    private_restart_records: list[dict[str, Any]] = []
     stage = "initialize"
     try:
         model, optimizer, initialization = runtime.initialize_model_v13()
+
+        def publish_private_restart(update: int) -> dict[str, Any]:
+            if accounting is None:
+                raise RuntimeError("memory-role private restart lacks accounting")
+            raw, metadata = _serialize_private_restart_state_v3(
+                runtime,
+                model,
+                optimizer,
+                accounting,
+                validated_authority,
+                update=update,
+            )
+            state_binding = dict(
+                publisher.publish_bytes(
+                    f"private_restart/update_{update}.pt", raw
+                )
+            )
+            metadata_value, metadata_binding = _publish_json(
+                publisher,
+                f"private_restart/update_{update}.binding.json",
+                {**metadata, "state": state_binding},
+            )
+            record = {
+                "update": update,
+                "state": state_binding,
+                "metadata": metadata_binding,
+                "metadata_content_sha256": metadata_value["content_sha256"],
+                "private_restart_state": True,
+                "scientific_promotion": False,
+                "resume_authorized": False,
+            }
+            private_restart_records.append(record)
+            return record
+
+        def publish_terminal_evidence(
+            *, terminal_update: int, decision: Mapping[str, Any]
+        ) -> dict[str, Any]:
+            trace_raw = b"".join(
+                _canonical_json_bytes(_content_bound(row)) + b"\n"
+                for row in trace
+            )
+            trace_binding = publisher.publish_bytes("trace.jsonl", trace_raw)
+            terminal_access = {
+                "schema": f"{SCHEMA_PREFIX}_terminal_access_receipt_v1",
+                "physical": runtime.terminal_access_receipt_v13(),
+                "roles": role_runtime.terminal_access_receipt(),
+                "probability_calibration_opened": False,
+                "navigation_executed": False,
+                "held_out_or_sealed_opened": False,
+            }
+            access_value, access_binding = _publish_json(
+                publisher, "receipts/terminal_access.json", terminal_access
+            )
+            return {
+                "terminal_update": terminal_update,
+                "decision": dict(decision),
+                "accounting": _mapping(accounting, name="terminal accounting"),
+                "metrics": metric_bindings,
+                "trace": trace_binding,
+                "terminal_access": access_binding,
+                "terminal_access_content_sha256": access_value["content_sha256"],
+                "private_restart_state_published": bool(private_restart_records),
+                "private_restart_states": [
+                    dict(value) for value in private_restart_records
+                ],
+                "attempt_consumed": True,
+                "probability_calibration_opened": False,
+                "navigation_executed": False,
+                "held_out_or_sealed_opened": False,
+            }
+
         initial_structural = physical_executor._derive_initial_structural_integrity_v13(
             runtime, model
         )
@@ -1415,6 +1580,53 @@ def run_future_authorized_engine_v1(
             )
             metric_bindings.append(binding)
 
+            if update in TERMINAL_UPDATES:
+                stage = f"publish_private_restart_update_{update}"
+                publish_private_restart(update)
+
+            if update == 100:
+                stage = "classify_update100_continuation"
+                continuation_gate = (
+                    evaluation.evaluate_update100_continuation_gate_v3(
+                        update100_place=observation["roles"]["place"],
+                        update100_local=observation["roles"]["local"],
+                        physical_summary=observation["physical"]["physical"],
+                        integrity_pass=all(
+                            value["integrity_pass"]
+                            for value in observations.values()
+                        ),
+                    )
+                )
+                trace.append(
+                    {
+                        "schema": f"{SCHEMA_PREFIX}_trace_row_v1",
+                        "event": "update100_continuation_gate",
+                        "update": 100,
+                        "decision": continuation_gate,
+                    }
+                )
+                if continuation_gate.get("passed") is not True:
+                    stage = "publish_update100_scientific_failure"
+                    common = publish_terminal_evidence(
+                        terminal_update=100, decision=continuation_gate
+                    )
+                    value, _ = _publish_json(
+                        publisher,
+                        "failure.json",
+                        {
+                            "schema": f"{SCHEMA_PREFIX}_scientific_failure_v1",
+                            "status": (
+                                "FAIL_SCIENTIFIC_UPDATE100_CONTINUATION_GATE_"
+                                "TERMINAL"
+                            ),
+                            **common,
+                            "checkpoint_published": False,
+                            "retry_authorized": False,
+                            "resume_authorized": False,
+                        },
+                    )
+                    return value
+
         if accounting is None or set(observations) != set(OBSERVATION_UPDATES):
             raise RuntimeError("memory-role controller did not complete exact schedule")
         stage = "classify_update400"
@@ -1436,34 +1648,7 @@ def run_future_authorized_engine_v1(
                 "decision": gate,
             }
         )
-        trace_raw = b"".join(
-            _canonical_json_bytes(_content_bound(row)) + b"\n" for row in trace
-        )
-        trace_binding = publisher.publish_bytes("trace.jsonl", trace_raw)
-        terminal_access = {
-            "schema": f"{SCHEMA_PREFIX}_terminal_access_receipt_v1",
-            "physical": runtime.terminal_access_receipt_v13(),
-            "roles": role_runtime.terminal_access_receipt(),
-            "probability_calibration_opened": False,
-            "navigation_executed": False,
-            "held_out_or_sealed_opened": False,
-        }
-        access_value, access_binding = _publish_json(
-            publisher, "receipts/terminal_access.json", terminal_access
-        )
-        common = {
-            "terminal_update": 400,
-            "decision": gate,
-            "accounting": _mapping(accounting, name="terminal accounting"),
-            "metrics": metric_bindings,
-            "trace": trace_binding,
-            "terminal_access": access_binding,
-            "terminal_access_content_sha256": access_value["content_sha256"],
-            "attempt_consumed": True,
-            "probability_calibration_opened": False,
-            "navigation_executed": False,
-            "held_out_or_sealed_opened": False,
-        }
+        common = publish_terminal_evidence(terminal_update=400, decision=gate)
         if gate.get("passed") is not True:
             value, _ = _publish_json(
                 publisher,
@@ -1537,6 +1722,9 @@ def run_future_authorized_engine_v1(
             "accounting": accounting_snapshot,
             "completed_observation_updates": sorted(observations),
             "published_metric_bindings": [dict(value) for value in metric_bindings],
+            "private_restart_states": [
+                dict(value) for value in private_restart_records
+            ],
             "trace_event_count": len(trace),
             "trace_rows_content_sha256": hashlib.sha256(
                 _canonical_json_bytes(trace)
@@ -1560,6 +1748,9 @@ def run_future_authorized_engine_v1(
             .isoformat(timespec="seconds")
             .replace("+00:00", "Z"),
             partial_checkpoint_binding=partial_checkpoint_binding,
+            private_restart_bindings=tuple(
+                value["state"] for value in private_restart_records
+            ),
             failure_context=failure_context,
         )
     finally:

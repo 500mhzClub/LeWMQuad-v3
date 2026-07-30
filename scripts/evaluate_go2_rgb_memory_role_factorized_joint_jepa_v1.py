@@ -36,9 +36,7 @@ from lewm.models.memory_role_factorized_joint_jepa_v1 import (
 )
 
 
-SCHEMA_PREFIX_V1 = (
-    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2"
-)
+SCHEMA_PREFIX_V1 = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3"
 CHECKPOINT_SELECTION_ROLE_V1 = "checkpoint_selection"
 FAMILIES_V1 = (
     "large_enclosed_maze",
@@ -71,6 +69,9 @@ PLACE_RETRIEVAL_CHANCE_MULTIPLIER_MINIMUM_V1 = 3.0
 PLACE_RETRIEVAL_SCENE_COUNT_MINIMUM_V1 = 6
 PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V1 = 4.0
 PLACE_TARGET_RANK_RETENTION_MINIMUM_V1 = 0.75
+UPDATE100_PLACE_RETRIEVAL_CHANCE_MULTIPLIER_MINIMUM_V3 = 1.5
+UPDATE100_PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V3 = 2.0
+UPDATE100_PHYSICAL_MARGIN_COUNT_MINIMUM_V3 = 60
 PHYSICAL_CONTROL_NAMES_V1 = (
     "coordinate_matched_persistence",
     "shuffled_action",
@@ -1012,6 +1013,156 @@ def _validate_physical_summary(value: Any) -> dict[str, float]:
     }
 
 
+def _target_integrity_pass(value: Mapping[str, Any], *, kind: str) -> bool:
+    target = value.get("target_integrity")
+    if (
+        type(target) is not dict
+        or type(target.get("checks")) is not dict
+        or not target["checks"]
+        or any(type(decision) is not bool for decision in target["checks"].values())
+        or type(target.get("passed")) is not bool
+        or target["passed"] != all(target["checks"].values())
+    ):
+        raise MemoryRoleEvaluationContractError(
+            f"{kind} target-integrity contract changed"
+        )
+    return target["passed"]
+
+
+def _place_access_integrity_pass(value: Mapping[str, Any]) -> bool:
+    return value.get("access") == {
+        "triplet_loader_call_count": PLACE_SELECTION_ROW_COUNT_V1,
+        "rgb_tensor_count": 3 * PLACE_SELECTION_ROW_COUNT_V1,
+        "privileged_label_fields_passed_to_model": 0,
+        "retained_place_key_rows": 4 * PLACE_SELECTION_ROW_COUNT_V1,
+        "retained_non_scalar_local_rows": 0,
+    }
+
+
+def _local_access_integrity_pass(value: Mapping[str, Any]) -> bool:
+    row_count = value.get("row_count")
+    if (
+        type(row_count) is not int
+        or not 8 <= row_count <= LOCAL_SELECTION_MAXIMUM_ROWS_V1
+    ):
+        return False
+    return value.get("access") == {
+        "pair_loader_call_count": row_count,
+        "rgb_tensor_count": 2 * row_count,
+        "privileged_label_fields_passed_to_model": 0,
+        "retained_non_scalar_local_rows": 0,
+        "retained_scalar_energy_count": 3 * row_count,
+    }
+
+
+def _place_gate_metrics(value: Mapping[str, Any]) -> dict[str, float | int]:
+    retrieval = value.get("retrieval")
+    noncollapse = value.get("noncollapse")
+    energy = value.get("energy")
+    if (
+        type(retrieval) is not dict
+        or type(noncollapse) is not dict
+        or type(energy) is not dict
+    ):
+        raise MemoryRoleEvaluationContractError("place gate metric schema changed")
+    recall = _finite(retrieval.get("recall_at_5"), name="place retrieval R@5")
+    chance = _finite(
+        retrieval.get("exact_chance_recall_at_5"), name="place exact chance R@5"
+    )
+    rank = _finite(
+        noncollapse.get("target_place_key_effective_rank"),
+        name="target place-key effective rank",
+    )
+    bootstrap = _finite(
+        energy.get("negative_minus_positive_bootstrap_lower_95"),
+        name="place separation bootstrap lower 95",
+    )
+    scene_count = retrieval.get("scene_count_above_chance")
+    family_count = energy.get("positive_family_count")
+    if (
+        not 0.0 < chance <= 1.0
+        or not 0.0 <= recall <= 1.0
+        or rank < 0.0
+        or type(scene_count) is not int
+        or not 0 <= scene_count <= len(FAMILIES_V1)
+        or type(family_count) is not int
+        or not 0 <= family_count <= len(FAMILIES_V1)
+    ):
+        raise MemoryRoleEvaluationContractError("place gate metric value changed")
+    return {
+        "recall_at_5": recall,
+        "exact_chance_recall_at_5": chance,
+        "chance_multiple": recall / chance,
+        "target_place_key_effective_rank": rank,
+        "negative_minus_positive_bootstrap_lower_95": bootstrap,
+        "positive_family_count": family_count,
+        "scene_count_above_chance": scene_count,
+    }
+
+
+def evaluate_update100_continuation_gate_v3(
+    *,
+    update100_place: Mapping[str, Any],
+    update100_local: Mapping[str, Any],
+    physical_summary: Mapping[str, Any],
+    integrity_pass: bool,
+) -> dict[str, Any]:
+    """Apply V3's lean, immutable update-100 continuation decision."""
+
+    if type(integrity_pass) is not bool:
+        raise MemoryRoleEvaluationContractError("structural integrity must be Boolean")
+    place = _validate_role_result(update100_place, kind="place", update=100)
+    local = _validate_role_result(update100_local, kind="local", update=100)
+    physical = _validate_physical_summary(physical_summary)
+    metrics = _place_gate_metrics(place)
+    checks = {
+        "structural_integrity_pass": integrity_pass,
+        "place_target_integrity_pass": _target_integrity_pass(place, kind="place"),
+        "local_target_integrity_pass": _target_integrity_pass(local, kind="local"),
+        "place_access_integrity_pass": _place_access_integrity_pass(place),
+        "local_access_integrity_pass": _local_access_integrity_pass(local),
+        "place_retrieval_r5_at_least_1_50x_exact_chance": (
+            metrics["chance_multiple"]
+            >= UPDATE100_PLACE_RETRIEVAL_CHANCE_MULTIPLIER_MINIMUM_V3
+        ),
+        "target_place_key_effective_rank_at_least_2": (
+            metrics["target_place_key_effective_rank"]
+            >= UPDATE100_PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V3
+        ),
+        "place_separation_bootstrap_lower_95_positive": (
+            metrics["negative_minus_positive_bootstrap_lower_95"] > 0.0
+        ),
+        "place_positive_family_count_at_least_6_of_8": (
+            metrics["positive_family_count"] >= POSITIVE_FAMILY_COUNT_MINIMUM_V1
+        ),
+        "passed_physical_margin_count_at_least_60_of_189": (
+            physical["passed_margin_count"]
+            >= UPDATE100_PHYSICAL_MARGIN_COUNT_MINIMUM_V3
+        ),
+    }
+    passed = all(checks.values())
+    result = {
+        "schema": f"{SCHEMA_PREFIX_V1}_update100_continuation_gate_v1",
+        "update": 100,
+        "checks": checks,
+        "passed": passed,
+        "observed": {
+            **metrics,
+            "passed_physical_margin_count": physical["passed_margin_count"],
+            "physical_margin_count": physical["margin_count"],
+        },
+        "action": (
+            "CONTINUE_SAME_ATTEMPT_TO_UPDATE_400"
+            if passed
+            else "STOP_VALID_SCIENTIFIC_FAILURE_AT_UPDATE_100"
+        ),
+        "retry_authorized": False,
+        "resume_authorized": False,
+    }
+    _json_safe(result)
+    return result
+
+
 def evaluate_terminal_gate_v1(
     *,
     update0_place: Mapping[str, Any],
@@ -1022,7 +1173,7 @@ def evaluate_terminal_gate_v1(
     integrity_pass: bool,
     diagnostics: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Apply only the role-appropriate update-400 falsification gates."""
+    """Apply V3's lean update-400 memory-entry gate."""
 
     if type(integrity_pass) is not bool:
         raise MemoryRoleEvaluationContractError("structural integrity must be Boolean")
@@ -1031,6 +1182,7 @@ def evaluate_terminal_gate_v1(
     local = _validate_role_result(update400_local, kind="local", update=400)
     physical = _validate_physical_summary(physical_summary)
     causal = _flatten_controls(controls)
+    metrics = _place_gate_metrics(place)
     baseline_rank = _finite(
         baseline["noncollapse"].get("target_place_key_effective_rank"),
         name="update-0 target place rank",
@@ -1041,11 +1193,21 @@ def evaluate_terminal_gate_v1(
     )
     checks = {
         "structural_integrity_pass": integrity_pass,
-        "place_update400_checks_pass": bool(place["passed"]),
-        "place_target_rank_retains_at_least_75_percent_of_update0": (
-            final_rank >= PLACE_TARGET_RANK_RETENTION_MINIMUM_V1 * baseline_rank
+        "place_target_integrity_pass": _target_integrity_pass(place, kind="place"),
+        "local_target_integrity_pass": _target_integrity_pass(local, kind="local"),
+        "place_access_integrity_pass": _place_access_integrity_pass(place),
+        "local_access_integrity_pass": _local_access_integrity_pass(local),
+        "place_retrieval_r5_at_least_3x_exact_chance": (
+            metrics["chance_multiple"]
+            >= PLACE_RETRIEVAL_CHANCE_MULTIPLIER_MINIMUM_V1
         ),
-        "local_update400_checks_pass": bool(local["passed"]),
+        "place_scene_count_above_chance_at_least_6_of_8": (
+            metrics["scene_count_above_chance"]
+            >= PLACE_RETRIEVAL_SCENE_COUNT_MINIMUM_V1
+        ),
+        "target_place_key_effective_rank_at_least_4": (
+            final_rank >= PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V1
+        ),
         "all_twelve_causal_control_checks_true": all(causal.values()),
         "passed_physical_margin_count_strictly_greater_than_72_of_189": (
             physical["passed_margin_count"] > 72
@@ -1056,6 +1218,12 @@ def evaluate_terminal_gate_v1(
         "rough_depth_is_a_gate": False,
         "tail_metric_is_a_gate": False,
         "prior_metric_is_a_gate": False,
+        "place_fixed_point10_energy_gap_is_a_gate": False,
+        "place_absolute_r5_point40_is_a_gate": False,
+        "place_rank_retention_is_a_gate": False,
+        "local_metrics_are_a_gate": False,
+        "place_legacy_conjunction_passed": bool(place["passed"]),
+        "local_legacy_conjunction_passed": bool(local["passed"]),
     }
     if diagnostics is not None:
         if type(diagnostics) is not dict:
@@ -1074,6 +1242,10 @@ def evaluate_terminal_gate_v1(
             "target_place_key_rank_retention_ratio": (
                 final_rank / baseline_rank if baseline_rank > 0.0 else 0.0
             ),
+            "place_retrieval_r5": metrics["recall_at_5"],
+            "place_exact_chance_r5": metrics["exact_chance_recall_at_5"],
+            "place_retrieval_chance_multiple": metrics["chance_multiple"],
+            "place_scene_count_above_chance": metrics["scene_count_above_chance"],
             "passed_physical_margin_count": physical["passed_margin_count"],
             "physical_margin_count": physical["margin_count"],
         },
@@ -1082,7 +1254,7 @@ def evaluate_terminal_gate_v1(
         "memory_reset_reverse_shuffle_required": False,
         "navigation_evaluation_required": False,
         "action": (
-            "PASS_ROLE_FACTORIZED_JEPA_PROBE_ELIGIBLE_FOR_MEMORY_INTEGRATION"
+            "PASS_MEMORY_ENTRY_ELIGIBLE_FOR_LEARNED_MEMORY_INTEGRATION"
             if passed
             else "FAIL_TERMINAL_NO_MEMORY_INTEGRATION"
         ),
@@ -1112,5 +1284,6 @@ __all__ = [
     "evaluate_local_checkpoint_selection_v1",
     "evaluate_place_checkpoint_selection_v1",
     "evaluate_terminal_gate_v1",
+    "evaluate_update100_continuation_gate_v3",
     "preflight_place_retrieval_candidate_counts_v1",
 ]

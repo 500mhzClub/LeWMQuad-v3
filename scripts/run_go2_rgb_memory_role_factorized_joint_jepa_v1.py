@@ -21,6 +21,8 @@ MICROBATCH_SIZE_V1 = 4
 PHYSICAL_MICROBATCHES_PER_UPDATE_V1 = 4
 LOCAL_MICROBATCHES_PER_UPDATE_V1 = 2
 PLACE_MICROBATCHES_PER_UPDATE_V1 = 2
+PLACE_GRAPH_BATCH_SIZE_V3 = 8
+PLACE_GRAPHS_PER_UPDATE_V3 = 1
 PHYSICAL_PRESENTATIONS_PER_UPDATE_V1 = 16
 LOCAL_PRESENTATIONS_PER_UPDATE_V1 = 8
 PLACE_PRESENTATIONS_PER_UPDATE_V1 = 8
@@ -37,7 +39,11 @@ EMA_TARGET_RGB_ENCODINGS_PER_UPDATE_V1 = 24
 
 ACTION_COUNT_V1 = 9
 LOCAL_WRONG_ACTION_MARGIN_V1 = 0.05
-PLACE_HARD_NEGATIVE_MARGIN_V1 = 0.10
+PLACE_CONTRAST_TEMPERATURE_V3 = 0.10
+PLACE_VARIANCE_FLOOR_V3 = 0.05
+PLACE_VARIANCE_EPSILON_V3 = 1.0e-4
+PLACE_COVARIANCE_WEIGHT_V3 = 0.10
+PLACE_KEY_DIMENSION_V3 = 64
 LOCAL_ROUTE_NAME_V1 = "immediate_action_local_control"
 PLACE_ROUTE_NAME_V1 = "same_place_retrieval_key"
 
@@ -230,6 +236,18 @@ class JointUpdateResultV1:
     ema_steps_this_update: int
 
 
+@dataclass(frozen=True)
+class PlaceObjectiveTermsV3:
+    loss: Any
+    alignment: Any
+    contrast: Any
+    variance: Any
+    covariance: Any
+    positive_energy: Any
+    negative_energy: Any
+    logits: Any
+
+
 def partition_parameters_v1(model: Any) -> ParameterPartitionV1:
     groups: dict[str, list[Any]] = {
         "encoder": [],
@@ -417,12 +435,12 @@ def validate_accounting_v1(accounting: JointTrainingAccountingV1) -> None:
             updates * PHYSICAL_MICROBATCHES_PER_UPDATE_V1
         ),
         local_microbatch_graphs=updates * LOCAL_MICROBATCHES_PER_UPDATE_V1,
-        place_microbatch_graphs=updates * PLACE_MICROBATCHES_PER_UPDATE_V1,
+        place_microbatch_graphs=updates * PLACE_GRAPHS_PER_UPDATE_V3,
         autograd_grad_calls=updates
         * (
             3 * PHYSICAL_MICROBATCHES_PER_UPDATE_V1
             + LOCAL_MICROBATCHES_PER_UPDATE_V1
-            + PLACE_MICROBATCHES_PER_UPDATE_V1
+            + PLACE_GRAPHS_PER_UPDATE_V3
         ),
         optimizer_steps=updates,
         ema_steps=updates,
@@ -474,13 +492,13 @@ def _advance_accounting_v1(
         ),
         place_microbatch_graphs=(
             accounting.place_microbatch_graphs
-            + PLACE_MICROBATCHES_PER_UPDATE_V1
+            + PLACE_GRAPHS_PER_UPDATE_V3
         ),
         autograd_grad_calls=(
             accounting.autograd_grad_calls
             + 3 * PHYSICAL_MICROBATCHES_PER_UPDATE_V1
             + LOCAL_MICROBATCHES_PER_UPDATE_V1
-            + PLACE_MICROBATCHES_PER_UPDATE_V1
+            + PLACE_GRAPHS_PER_UPDATE_V3
         ),
         optimizer_steps=accounting.optimizer_steps + 1,
         ema_steps=accounting.ema_steps + 1,
@@ -571,7 +589,10 @@ def _place_energy_per_row_v1(torch: Any, predicted: Any, target: Any) -> Any:
     if (
         not isinstance(predicted, torch.Tensor)
         or not isinstance(target, torch.Tensor)
-        or tuple(predicted.shape) != (MICROBATCH_SIZE_V1, 64)
+        or tuple(predicted.shape) != (
+            PLACE_GRAPH_BATCH_SIZE_V3,
+            PLACE_KEY_DIMENSION_V3,
+        )
         or predicted.shape != target.shape
         or predicted.dtype != torch.float32
         or target.dtype != torch.float32
@@ -583,6 +604,106 @@ def _place_energy_per_row_v1(torch: Any, predicted: Any, target: Any) -> Any:
         raise RuntimeError("memory-role place-energy operands are invalid")
     return 1.0 - torch.nn.functional.cosine_similarity(
         predicted, target, dim=1, eps=1.0e-6
+    )
+
+
+def place_objective_v3(
+    torch: Any,
+    online_anchor_keys: Any,
+    predictions: Any,
+    positive_targets: Any,
+    negative_targets: Any,
+) -> PlaceObjectiveTermsV3:
+    """Compute the exact preregistered V3 eight-row place objective."""
+
+    expected_shape = (PLACE_GRAPH_BATCH_SIZE_V3, PLACE_KEY_DIMENSION_V3)
+    values = (
+        online_anchor_keys,
+        predictions,
+        positive_targets,
+        negative_targets,
+    )
+    if any(
+        not isinstance(value, torch.Tensor)
+        or tuple(value.shape) != expected_shape
+        or value.dtype != torch.float32
+        or value.device != online_anchor_keys.device
+        or not bool(torch.isfinite(value).all())
+        for value in values
+    ):
+        raise RuntimeError("V3 place-objective operands are invalid")
+    if (
+        not online_anchor_keys.requires_grad
+        or not predictions.requires_grad
+        or positive_targets.requires_grad
+        or negative_targets.requires_grad
+    ):
+        raise RuntimeError("V3 place-objective gradient topology changed")
+
+    positive_energy = _place_energy_per_row_v1(
+        torch, predictions, positive_targets
+    )
+    negative_energy = _place_energy_per_row_v1(
+        torch, predictions, negative_targets
+    )
+    alignment = positive_energy.mean()
+
+    candidates = torch.cat((positive_targets, negative_targets), dim=0)
+    logits = (
+        predictions @ candidates.transpose(0, 1)
+    ) / PLACE_CONTRAST_TEMPERATURE_V3
+    labels = torch.arange(
+        PLACE_GRAPH_BATCH_SIZE_V3,
+        dtype=torch.long,
+        device=predictions.device,
+    )
+    contrast = torch.nn.functional.cross_entropy(logits, labels)
+
+    centered = online_anchor_keys - online_anchor_keys.mean(
+        dim=0, keepdim=True
+    )
+    covariance_matrix = (
+        centered.transpose(0, 1) @ centered
+    ) / float(PLACE_GRAPH_BATCH_SIZE_V3 - 1)
+    standard_deviation = torch.sqrt(
+        covariance_matrix.diagonal() + PLACE_VARIANCE_EPSILON_V3
+    )
+    variance = torch.relu(
+        PLACE_VARIANCE_FLOOR_V3 - standard_deviation
+    ).mean()
+    off_diagonal_mask = ~torch.eye(
+        PLACE_KEY_DIMENSION_V3,
+        dtype=torch.bool,
+        device=online_anchor_keys.device,
+    )
+    covariance = covariance_matrix.square().masked_select(
+        off_diagonal_mask
+    ).sum() / float(PLACE_KEY_DIMENSION_V3)
+    loss = (
+        alignment
+        + contrast
+        + variance
+        + PLACE_COVARIANCE_WEIGHT_V3 * covariance
+    )
+    for name, value in (
+        ("alignment", alignment),
+        ("contrast", contrast),
+        ("variance", variance),
+        ("covariance", covariance),
+        ("loss", loss),
+    ):
+        v25._tensor_core._finite_tensor(torch, value, f"V3 place {name}")
+    if not loss.requires_grad:
+        raise RuntimeError("V3 place objective must retain a gradient graph")
+    return PlaceObjectiveTermsV3(
+        loss=loss,
+        alignment=alignment,
+        contrast=contrast,
+        variance=variance,
+        covariance=covariance,
+        positive_energy=positive_energy,
+        negative_energy=negative_energy,
+        logits=logits,
     )
 
 
@@ -896,47 +1017,41 @@ def joint_training_update_v1(
         local_wrong_rows.extend(_row_values(wrong_energy))
         local_margin_rows.extend(_row_values(margin))
 
-    place_loss_sum = 0.0
-    place_positive_rows: list[float] = []
-    place_negative_rows: list[float] = []
-    place_margin_rows: list[float] = []
-    for batch in place_microbatches:
-        anchor = model.encode_online_roles(batch[PLACE_ANCHOR_RGB_KEY_V1])
-        predicted = model.place_predictor(anchor.place_key)
-        target_rgb = torch.cat(
-            (
-                batch[PLACE_POSITIVE_RGB_KEY_V1],
-                batch[PLACE_NEGATIVE_RGB_KEY_V1],
-            ),
-            dim=0,
-        )
-        targets = _target_roles_v1(model, target_rgb).place_key
-        positive_target, negative_target = targets.split(MICROBATCH_SIZE_V1)
-        positive_energy = _place_energy_per_row_v1(
-            torch, predicted, positive_target
-        )
-        negative_energy = _place_energy_per_row_v1(
-            torch, predicted, negative_target
-        )
-        margin = torch.relu(
-            PLACE_HARD_NEGATIVE_MARGIN_V1 + positive_energy - negative_energy
-        )
-        place_loss = positive_energy.mean() + margin.mean()
-        v25._tensor_core._finite_tensor(torch, place_loss, "place role loss")
-        if not place_loss.requires_grad:
-            raise RuntimeError("place role loss must retain a gradient graph")
-        gradients = torch.autograd.grad(
-            place_loss / PLACE_MICROBATCHES_PER_UPDATE_V1,
-            partition.place_recipients,
-            allow_unused=True,
-        )
-        absent[PLACE_ROUTE_NAME_V1] += v25._tensor_core._accumulate_gradients(
-            place_gradients, gradients
-        )
-        place_loss_sum += v25._tensor_core._scalar(place_loss)
-        place_positive_rows.extend(_row_values(positive_energy))
-        place_negative_rows.extend(_row_values(negative_energy))
-        place_margin_rows.extend(_row_values(margin))
+    anchor_rgb = torch.cat(
+        tuple(batch[PLACE_ANCHOR_RGB_KEY_V1] for batch in place_microbatches),
+        dim=0,
+    )
+    positive_rgb = torch.cat(
+        tuple(batch[PLACE_POSITIVE_RGB_KEY_V1] for batch in place_microbatches),
+        dim=0,
+    )
+    negative_rgb = torch.cat(
+        tuple(batch[PLACE_NEGATIVE_RGB_KEY_V1] for batch in place_microbatches),
+        dim=0,
+    )
+    anchor = model.encode_online_roles(anchor_rgb)
+    predicted = model.place_predictor(anchor.place_key)
+    targets = _target_roles_v1(
+        model, torch.cat((positive_rgb, negative_rgb), dim=0)
+    ).place_key
+    positive_target, negative_target = targets.split(PLACE_GRAPH_BATCH_SIZE_V3)
+    place_terms = place_objective_v3(
+        torch,
+        anchor.place_key,
+        predicted,
+        positive_target,
+        negative_target,
+    )
+    gradients = torch.autograd.grad(
+        place_terms.loss,
+        partition.place_recipients,
+        allow_unused=True,
+    )
+    absent[PLACE_ROUTE_NAME_V1] += v25._tensor_core._accumulate_gradients(
+        place_gradients, gradients
+    )
+    place_positive_rows = list(_row_values(place_terms.positive_energy))
+    place_negative_rows = list(_row_values(place_terms.negative_energy))
 
     route_tensors = {
         "camera_shared": (partition.shared, camera_shared),
@@ -1101,7 +1216,7 @@ def joint_training_update_v1(
         for name, value in sums.items()
     }
     mean_losses["local"] = local_loss_sum / LOCAL_MICROBATCHES_PER_UPDATE_V1
-    mean_losses["place"] = place_loss_sum / PLACE_MICROBATCHES_PER_UPDATE_V1
+    mean_losses["place"] = v25._tensor_core._scalar(place_terms.loss)
     mean_losses["total"] = (
         mean_losses["L"] + mean_losses["local"] + mean_losses["place"]
     )
@@ -1141,14 +1256,24 @@ def joint_training_update_v1(
         },
         place_diagnostics={
             "mechanism": PLACE_ROUTE_NAME_V1,
+            "objective_version": 3,
             "positive_energy_per_row": tuple(place_positive_rows),
             "negative_energy_per_row": tuple(place_negative_rows),
             "negative_minus_positive_per_row": place_advantage,
-            "margin_loss_per_row": tuple(place_margin_rows),
             "positive_energy": summary(place_positive_rows),
             "negative_energy": summary(place_negative_rows),
             "negative_minus_positive": summary(place_advantage),
-            "hard_negative_margin": PLACE_HARD_NEGATIVE_MARGIN_V1,
+            "alignment": v25._tensor_core._scalar(place_terms.alignment),
+            "contrast": v25._tensor_core._scalar(place_terms.contrast),
+            "variance": v25._tensor_core._scalar(place_terms.variance),
+            "covariance": v25._tensor_core._scalar(place_terms.covariance),
+            "candidate_count": 2 * PLACE_GRAPH_BATCH_SIZE_V3,
+            "positive_candidate_count": PLACE_GRAPH_BATCH_SIZE_V3,
+            "negative_candidate_count": PLACE_GRAPH_BATCH_SIZE_V3,
+            "contrast_temperature": PLACE_CONTRAST_TEMPERATURE_V3,
+            "variance_floor": PLACE_VARIANCE_FLOOR_V3,
+            "variance_epsilon": PLACE_VARIANCE_EPSILON_V3,
+            "covariance_weight": PLACE_COVARIANCE_WEIGHT_V3,
         },
         predictor_core_protected_survival_diagnostics={
             **auxiliary_sums,
@@ -1199,17 +1324,26 @@ __all__ = [
     "MICROBATCH_SIZE_V1",
     "ONLINE_RGB_ENCODINGS_PER_UPDATE_V1",
     "PLACE_ANCHOR_RGB_KEY_V1",
+    "PLACE_CONTRAST_TEMPERATURE_V3",
+    "PLACE_COVARIANCE_WEIGHT_V3",
+    "PLACE_GRAPH_BATCH_SIZE_V3",
+    "PLACE_GRAPHS_PER_UPDATE_V3",
+    "PLACE_KEY_DIMENSION_V3",
     "PLACE_NEGATIVE_RGB_KEY_V1",
     "PLACE_POSITIVE_RGB_KEY_V1",
     "PLACE_ROUTE_NAME_V1",
+    "PLACE_VARIANCE_EPSILON_V3",
+    "PLACE_VARIANCE_FLOOR_V3",
     "PRESENTATIONS_PER_UPDATE_V1",
     "ParameterPartitionV1",
+    "PlaceObjectiveTermsV3",
     "REQUIRED_LOCAL_BATCH_KEYS_V1",
     "REQUIRED_PLACE_BATCH_KEYS_V1",
     "RGB_DECODES_PER_UPDATE_V1",
     "build_frozen_optimizer_v13",
     "build_optimizer_v1",
     "joint_training_update_v1",
+    "place_objective_v3",
     "partition_parameters_v1",
     "partition_parameters_v13",
     "validate_accounting_v1",

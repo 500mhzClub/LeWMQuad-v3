@@ -113,7 +113,7 @@ def test_import_and_no_argument_path_open_no_scientific_payload(capsys) -> None:
     before = {name for name in sys.modules if name.split(".", 1)[0] in watched}
     scientific_names = (
         "scripts.execute_go2_rgb_memory_role_factorized_joint_jepa_v1",
-        "lewm.models.memory_role_factorized_joint_jepa_v1",
+        "lewm.models.memory_role_spatial_contrastive_joint_jepa_v3",
         "scripts.run_go2_rgb_memory_role_factorized_joint_jepa_v1",
         "scripts.evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1",
     )
@@ -147,19 +147,22 @@ def test_adapter_keeps_exact_v25_builder_and_fixed_three_way_budget() -> None:
     assert receipt["resume_authorized"] is False
 
 
-def test_v2_uses_fresh_lifecycle_identity() -> None:
-    module = _load("_memory_role_launcher_v2_identity")
-    assert module.SCHEMA_PREFIX.endswith("_v2")
-    assert module.EXPERIMENT_ARM_NAME.endswith("_v2")
+def test_v3_uses_fresh_lifecycle_identity() -> None:
+    module = _load("_memory_role_launcher_v3_identity")
+    assert module.SCHEMA_PREFIX.endswith("_v3")
+    assert module.EXPERIMENT_ARM_NAME.endswith("_v3")
     assert module.PREREGISTRATION_COMMIT == (
-        "429cb57bd89348502cd5b695a25ae864d33fdfa7"
+        "8c719c2ba9458faa824eccbe7eb660f4adb56cbc"
     )
-    assert module.CERTIFIED_SOURCE_ROOT.endswith("joint-jepa-v2-source")
-    assert module.OUTPUT_ROOT_RELATIVE_PATH.endswith("v2/attempt_v1")
+    assert module.CERTIFIED_SOURCE_ROOT.endswith("joint-jepa-v3-source")
+    assert module.OUTPUT_ROOT_RELATIVE_PATH.endswith("v3/attempt_v1")
     assert module.PREREGISTRATION_RELATIVE_PATH in (
         module.REQUIRED_CERTIFIED_SOURCE_PATHS
     )
     assert module.RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH in (
+        module.REQUIRED_CERTIFIED_SOURCE_PATHS
+    )
+    assert module.V2_SCIENTIFIC_RESULT_RELATIVE_PATH in (
         module.REQUIRED_CERTIFIED_SOURCE_PATHS
     )
     assert module.TERMINAL_FAILURE_RESULT_RELATIVE_PATH in (

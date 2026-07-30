@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import os
 from pathlib import Path
 import stat
@@ -138,6 +139,40 @@ def test_exception_terminalizer_quarantines_partial_checkpoint(tmp_path: Path) -
     assert stat.S_IMODE(os.lstat(checkpoint).st_mode) == 0o000
 
 
+def test_private_restart_state_is_exact_and_never_self_authorizes_resume() -> None:
+    model = torch.nn.Linear(2, 2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+    accounting = {"updates": 100, "presentations": 3_200}
+    raw, metadata = executor._serialize_private_restart_state_v3(
+        SimpleNamespace(torch=torch),
+        model,
+        optimizer,
+        accounting,
+        _authority(),
+        update=100,
+    )
+    state = torch.load(io.BytesIO(raw), map_location="cpu", weights_only=False)
+    assert state["schema"].endswith("_private_restart_state_v1")
+    assert state["update"] == 100
+    assert state["accounting"] == accounting
+    assert state["model_module"] == executor.MODEL_MODULE_NAME
+    assert state["model_class"] == executor.MODEL_CLASS_NAME
+    assert state["private_restart_state"] is True
+    assert state["scientific_promotion"] is False
+    assert state["resume_authorized"] is False
+    assert metadata["file_sha256"] == hashlib.sha256(raw).hexdigest()
+    assert metadata["resume_authorized"] is False
+    with pytest.raises(ValueError, match="not registered"):
+        executor._serialize_private_restart_state_v3(
+            SimpleNamespace(torch=torch),
+            model,
+            optimizer,
+            accounting,
+            _authority(),
+            update=101,
+        )
+
+
 def test_engine_exception_publishes_complete_in_memory_failure_context(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -195,6 +230,177 @@ def test_engine_exception_publishes_complete_in_memory_failure_context(
     assert role_runtime.closed is True
 
 
+def test_engine_stops_at_update100_and_keeps_nonresumable_restart(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    authority = _authority()
+    reservation = executor.reserve_attempt_v1(
+        tmp_path, authority, created_utc="2026-07-30T00:00:00Z"
+    )
+
+    class Publisher:
+        output_root = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
+
+        def __init__(self):
+            self.raw: dict[str, bytes] = {}
+            self.values: dict[str, dict] = {}
+
+        @staticmethod
+        def _binding(path: str, raw: bytes, *, content_sha256=None):
+            value = {
+                "path": path,
+                "file_sha256": hashlib.sha256(raw).hexdigest(),
+                "byte_count": len(raw),
+            }
+            if content_sha256 is not None:
+                value["content_sha256"] = content_sha256
+            return value
+
+        def publish_bytes(self, path, raw):
+            assert path not in self.raw
+            self.raw[path] = raw
+            return self._binding(path, raw)
+
+        def publish_json(self, path, core):
+            assert path not in self.values
+            value = executor._content_bound(core)
+            raw = executor._canonical_json_bytes(value) + b"\n"
+            self.values[path] = value
+            return {
+                "value": value,
+                "binding": self._binding(
+                    path, raw, content_sha256=value["content_sha256"]
+                ),
+            }
+
+    class RoleRuntime:
+        closed = False
+
+        @staticmethod
+        def preflight_receipt():
+            return {"passed": True}
+
+        @staticmethod
+        def build_local_train_microbatches(update, device):
+            return (update, device)
+
+        @staticmethod
+        def build_place_train_microbatches(update, device):
+            return (update, device)
+
+        @staticmethod
+        def evaluate_role_metrics(model, *, update, device):
+            return {
+                "place": {"update": update},
+                "local": {"update": update},
+                "integrity": {"passed": True},
+            }
+
+        @staticmethod
+        def terminal_access_receipt():
+            return {"passed": True}
+
+        @staticmethod
+        def failure_access_snapshot():
+            return {"passed": True}
+
+        def close(self):
+            self.closed = True
+
+    role_runtime = RoleRuntime()
+    monkeypatch.setattr(
+        executor, "load_memory_role_runtime_v1", lambda *args, **kwargs: role_runtime
+    )
+    monkeypatch.setattr(
+        executor.physical_executor,
+        "_derive_initial_structural_integrity_v13",
+        lambda runtime, model: {"passed": True},
+    )
+    monkeypatch.setattr(
+        executor.physical_executor,
+        "_observation_v13",
+        lambda runtime, model, *, update, integrity_pass: {
+            "integrity_pass": True,
+            "physical": {
+                "margin_count": 189,
+                "passed_margin_count": 60,
+                "rough_motion": {"depth_p95_m": 1.0},
+            },
+            "controls": {},
+        },
+    )
+    monkeypatch.setattr(
+        executor,
+        "validate_update_integrity_v1",
+        lambda runtime, model, result, *, update: {
+            "schema": "synthetic_update_integrity",
+            "update": update,
+            "passed": True,
+        },
+    )
+    from scripts import evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1 as evaluation
+
+    monkeypatch.setattr(
+        evaluation,
+        "evaluate_update100_continuation_gate_v3",
+        lambda **kwargs: {"update": 100, "passed": False},
+    )
+
+    model = torch.nn.Linear(2, 2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+
+    class Training:
+        calls = 0
+
+        @classmethod
+        def joint_training_update_v1(
+            cls, model, optimizer, physical, local, place, *, accounting
+        ):
+            cls.calls += 1
+            return SimpleNamespace(
+                accounting={
+                    "updates": cls.calls,
+                    "presentations": 32 * cls.calls,
+                }
+            )
+
+    runtime = SimpleNamespace(
+        runtime_data_root=ROOT,
+        pairs={
+            "train": ({"scene_id": "train"},),
+            "checkpoint_selection": ({"scene_id": "selection"},),
+        },
+        schedule=tuple(range(1_600)),
+        device="cpu",
+        torch=torch,
+        training_module=Training,
+        initialize_model_v13=lambda: (model, optimizer, {"fresh": True}),
+        build_microbatches_v13=lambda indices, *, update: (indices, update),
+        terminal_access_receipt_v13=lambda: {"passed": True},
+        access_receipt_v13=lambda: {"passed": True},
+    )
+    publisher = Publisher()
+    failure = executor.run_future_authorized_engine_v1(
+        authority=authority,
+        reservation=reservation,
+        runtime=runtime,
+        publisher=publisher,
+    )
+
+    assert failure["status"] == (
+        "FAIL_SCIENTIFIC_UPDATE100_CONTINUATION_GATE_TERMINAL"
+    )
+    assert failure["terminal_update"] == 100
+    assert failure["accounting"] == {"updates": 100, "presentations": 3_200}
+    assert failure["private_restart_state_published"] is True
+    assert failure["private_restart_states"][0]["resume_authorized"] is False
+    assert Training.calls == 100
+    assert "private_restart/update_100.pt" in publisher.raw
+    assert "private_restart/update_400.pt" not in publisher.raw
+    assert "metrics/update_400.json" not in publisher.values
+    assert role_runtime.closed is True
+
+
 def _route() -> dict:
     return {
         "preclip_l2": 1.0,
@@ -220,8 +426,8 @@ def test_update_integrity_accepts_only_exact_three_route_accounting() -> None:
         "ema_target_rgb_encodings": 24,
         "physical_microbatch_graphs": 4,
         "local_microbatch_graphs": 2,
-        "place_microbatch_graphs": 2,
-        "autograd_grad_calls": 16,
+        "place_microbatch_graphs": 1,
+        "autograd_grad_calls": 15,
         "optimizer_steps": 1,
         "ema_steps": 1,
     }

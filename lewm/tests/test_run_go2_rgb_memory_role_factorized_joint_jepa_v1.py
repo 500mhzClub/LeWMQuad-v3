@@ -37,8 +37,8 @@ def _accounting(updates: int) -> Any:
         ema_target_rgb_encodings=24 * updates,
         physical_microbatch_graphs=4 * updates,
         local_microbatch_graphs=2 * updates,
-        place_microbatch_graphs=2 * updates,
-        autograd_grad_calls=16 * updates,
+        place_microbatch_graphs=updates,
+        autograd_grad_calls=15 * updates,
         optimizer_steps=updates,
         ema_steps=updates,
     )
@@ -227,6 +227,67 @@ def _physical_batch() -> dict[str, torch.Tensor]:
     return batch
 
 
+def test_v3_place_objective_matches_exact_registered_formula() -> None:
+    generator = torch.Generator().manual_seed(19)
+    online_anchor_keys = torch.randn(
+        8, 64, generator=generator, dtype=torch.float32
+    ).requires_grad_()
+    predictions = F.normalize(online_anchor_keys + 0.07, dim=1)
+    positive_targets = F.normalize(
+        torch.randn(8, 64, generator=generator, dtype=torch.float32), dim=1
+    )
+    negative_targets = F.normalize(
+        torch.randn(8, 64, generator=generator, dtype=torch.float32), dim=1
+    )
+
+    terms = runner.place_objective_v3(
+        torch,
+        online_anchor_keys,
+        predictions,
+        positive_targets,
+        negative_targets,
+    )
+
+    candidates = torch.cat((positive_targets, negative_targets), dim=0)
+    expected_logits = predictions @ candidates.T / 0.10
+    expected_alignment = (
+        1.0 - F.cosine_similarity(predictions, positive_targets, dim=1, eps=1e-6)
+    ).mean()
+    expected_contrast = F.cross_entropy(expected_logits, torch.arange(8))
+    centered = online_anchor_keys - online_anchor_keys.mean(dim=0, keepdim=True)
+    expected_covariance_matrix = centered.T @ centered / 7.0
+    expected_variance = F.relu(
+        0.05 - torch.sqrt(expected_covariance_matrix.diagonal() + 1e-4)
+    ).mean()
+    off_diagonal = ~torch.eye(64, dtype=torch.bool)
+    expected_covariance = (
+        expected_covariance_matrix.square().masked_select(off_diagonal).sum()
+        / 64.0
+    )
+    expected_loss = (
+        expected_alignment
+        + expected_contrast
+        + expected_variance
+        + 0.10 * expected_covariance
+    )
+
+    torch.testing.assert_close(terms.logits, expected_logits)
+    torch.testing.assert_close(terms.alignment, expected_alignment)
+    torch.testing.assert_close(terms.contrast, expected_contrast)
+    torch.testing.assert_close(terms.variance, expected_variance)
+    torch.testing.assert_close(terms.covariance, expected_covariance)
+    torch.testing.assert_close(terms.loss, expected_loss)
+    torch.testing.assert_close(
+        terms.logits[:, :8], predictions @ positive_targets.T / 0.10
+    )
+    torch.testing.assert_close(
+        terms.logits[:, 8:], predictions @ negative_targets.T / 0.10
+    )
+    terms.loss.backward()
+    assert online_anchor_keys.grad is not None
+    assert bool(torch.isfinite(online_anchor_keys.grad).all())
+
+
 def test_one_mixed_update_has_exact_routes_counts_and_one_step(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -353,20 +414,20 @@ def test_one_mixed_update_has_exact_routes_counts_and_one_step(
     )
 
     assert [len(values) for values in gradient_parameter_ids] == (
-        [1, 5, 2] * 4 + [4] * 2 + [4] * 2
+        [1, 5, 2] * 4 + [4] * 2 + [4]
     )
     assert gradient_parameter_ids[12:14] == [
         tuple(map(id, partition.local_recipients))
     ] * 2
-    assert gradient_parameter_ids[14:16] == [
+    assert gradient_parameter_ids[14:] == [
         tuple(map(id, partition.place_recipients))
-    ] * 2
+    ]
     assert optimizer.step_calls == 1
     assert model.ema_calls == 1
     assert int(model.ema_update_count) == 1
     assert model.physical_forwards == 8
-    assert model.role_forwards == 4
-    assert model.target_calls == 4
+    assert model.role_forwards == 3
+    assert model.target_calls == 3
     assert model.target_rows == 24
     assert model.target.grad is None
     assert result.target_gradient_tensor_count == 0
@@ -378,6 +439,13 @@ def test_one_mixed_update_has_exact_routes_counts_and_one_step(
     assert result.place_diagnostics["mechanism"] == runner.PLACE_ROUTE_NAME_V1
     assert result.local_diagnostics["correct_energy"]["count"] == 8
     assert result.place_diagnostics["positive_energy"]["count"] == 8
+    assert result.place_diagnostics["objective_version"] == 3
+    assert result.place_diagnostics["candidate_count"] == 16
+    assert result.place_diagnostics["contrast_temperature"] == 0.10
+    assert result.place_diagnostics["variance_floor"] == 0.05
+    assert result.place_diagnostics["covariance_weight"] == 0.10
+    assert "margin_loss_per_row" not in result.place_diagnostics
+    assert "hard_negative_margin" not in result.place_diagnostics
     assert zero_temporal_terms == [0.0] * 4
     assert {id(model.semantic), id(model.old_transition)}.isdisjoint(
         map(id, partition.local_recipients)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify the memory-role factorized joint-JEPA V1 source closure.
+"""Build or verify the spatial-contrastive memory-role JEPA V3 source closure.
 
 The checker extends the reviewed V13 AST walker with only the exact dataset
 adapter modules required by this candidate.  Discovery reads Python source
@@ -32,38 +32,47 @@ BASE_CHECKER_FILE_SHA256 = (
 BASE_CHECKER_BYTE_COUNT = 10_554
 
 MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "source_manifest_2026-07-30.json"
 )
 MANIFEST_PATH = ROOT / MANIFEST_RELATIVE_PATH
 SOURCE_REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "clean_export_certification_2026-07-30.json"
 )
 EXECUTION_AUTHORITY_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "execution_authorization_2026-07-30.json"
 )
 SCHEMA = (
-    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_source_manifest"
+    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_source_manifest"
 )
 PASS_STATUS_TEXT = (
-    "Go2 RGB memory-role factorized V2 source closure: PASS"
+    "Go2 RGB spatial-contrastive memory-role V3 source closure: PASS"
 )
 
 PREREGISTRATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "429cb57bd89348502cd5b695a25ae864d33fdfa7"
+PREREGISTRATION_COMMIT = "8c719c2ba9458faa824eccbe7eb660f4adb56cbc"
 PREREGISTRATION_FILE_SHA256 = (
-    "1fc6201b6137d57b5c97cf2b042b1f987476facdee28ce430b1aa0da3d0c2ba3"
+    "858844624d76fd92a8d1d9e547540a58b98ecb9dfa8f2e7955d8e54c2eb5e723"
 )
-PREREGISTRATION_BYTE_COUNT = 7_194
+PREREGISTRATION_BYTE_COUNT = 6_969
+V2_SCIENTIFIC_RESULT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "scientific_result_2026-07-30.json"
+)
+V2_SCIENTIFIC_RESULT_COMMIT = "5e7f52794e8b6da63b0c66f8c88696ad71c0212c"
+V2_SCIENTIFIC_RESULT_FILE_SHA256 = (
+    "11c0c89f82abedb95dd1253a9ddb32d82444915f0d94ecd589f319890c047039"
+)
+V2_SCIENTIFIC_RESULT_BYTE_COUNT = 17_889
 RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
     "retrieval_metadata_preflight_2026-07-30.json"
@@ -132,7 +141,9 @@ SPLIT_INTEGRITY_AMENDMENT_FILE_SHA256 = (
 )
 SPLIT_INTEGRITY_AMENDMENT_BYTE_COUNT = 3_136
 
-MODEL_RELATIVE_PATH = "lewm/models/memory_role_factorized_joint_jepa_v1.py"
+MODEL_RELATIVE_PATH = (
+    "lewm/models/memory_role_spatial_contrastive_joint_jepa_v3.py"
+)
 PLACE_DATASET_RELATIVE_PATH = (
     "lewm/datasets/go2_memory_role_place_triplets_v1.py"
 )
@@ -214,6 +225,7 @@ ALLOWED_DATASET_SOURCES = frozenset(
 
 LIFECYCLE_PATHS = {
     "preregistration": PREREGISTRATION_RELATIVE_PATH,
+    "v2_scientific_result": V2_SCIENTIFIC_RESULT_RELATIVE_PATH,
     "retrieval_metadata_preflight": (
         RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH
     ),
@@ -233,7 +245,7 @@ LIFECYCLE_PATHS = {
 }
 EXECUTION_AUTHORIZED = False
 CURRENT_EXECUTION_DENIAL = (
-    "memory-role factorized V2 execution remains denied until recursive "
+    "spatial-contrastive memory-role V3 execution remains denied until recursive "
     "closure, independent source review, narrow clean-export certification, "
     "and separate one-shot authority are complete and exact-bound"
 )
@@ -416,6 +428,12 @@ def build_manifest() -> dict[str, object]:
                 "commit": PREREGISTRATION_COMMIT,
                 "file_sha256": PREREGISTRATION_FILE_SHA256,
                 "byte_count": PREREGISTRATION_BYTE_COUNT,
+            },
+            "v2_scientific_result": {
+                "path": V2_SCIENTIFIC_RESULT_RELATIVE_PATH,
+                "commit": V2_SCIENTIFIC_RESULT_COMMIT,
+                "file_sha256": V2_SCIENTIFIC_RESULT_FILE_SHA256,
+                "byte_count": V2_SCIENTIFIC_RESULT_BYTE_COUNT,
             },
             "retrieval_metadata_preflight": {
                 "path": RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH,

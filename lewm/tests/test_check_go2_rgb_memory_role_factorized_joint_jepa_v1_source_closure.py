@@ -44,13 +44,18 @@ def test_checker_is_denied_and_binds_frozen_preregistration(capsys) -> None:
     assert receipt["dataset_payload_or_rgb_opened"] is False
     assert receipt["checkpoint_opened"] is False
     assert checker.PREREGISTRATION_COMMIT == (
-        "429cb57bd89348502cd5b695a25ae864d33fdfa7"
+        "8c719c2ba9458faa824eccbe7eb660f4adb56cbc"
     )
     bindings = (
         (
             checker.PREREGISTRATION_RELATIVE_PATH,
             checker.PREREGISTRATION_FILE_SHA256,
             checker.PREREGISTRATION_BYTE_COUNT,
+        ),
+        (
+            checker.V2_SCIENTIFIC_RESULT_RELATIVE_PATH,
+            checker.V2_SCIENTIFIC_RESULT_FILE_SHA256,
+            checker.V2_SCIENTIFIC_RESULT_BYTE_COUNT,
         ),
         (
             checker.RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH,
@@ -150,7 +155,7 @@ raise SystemExit(status)
     assert result.returncode == 4, result.stderr
     assert json.loads(result.stdout) == {
         "schema": (
-            "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_launcher_v1"
+            "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_launcher_v1"
         ),
         "status": "DENIED_NO_FUTURE_AUTHORITY",
         "scientific_payload_opened": False,
