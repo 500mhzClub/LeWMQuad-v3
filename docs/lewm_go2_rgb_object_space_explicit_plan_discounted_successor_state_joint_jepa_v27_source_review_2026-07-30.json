@@ -1,0 +1,53 @@
+{
+  "access": {
+    "dataset_payload_or_rgb_open_count": 0,
+    "generated_or_runtime_artifact_open_count": 0,
+    "gpu_or_training_run_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "navigation_run_count": 0,
+    "tensor_checkpoint_open_count": 0
+  },
+  "content_sha256": "20810d4a76be50c304101c0c1db56a876bc69f02258ac1dd6c13956a75abda36",
+  "implementation_commit": "65df879f200654c0220b244558ea8015ae2c15e1",
+  "independent_reviews": [
+    {
+      "reviewer": "/root/v25_science_design",
+      "status": "PASS",
+      "scope": "full_scientific_source_then_partial_checkpoint_terminalization_re_review",
+      "finding": "joint_JEPA_science_exact_and_partial_checkpoint_failure_is_truthfully_bound_hash_checked_and_mode_0000_quarantined"
+    },
+    {
+      "reviewer": "/root/v27_successor_feasibility",
+      "status": "PASS",
+      "scope": "scientific_identity_runtime_import_and_recursive_source_closure",
+      "finding": "science_identity_unchanged_and_exact_117_path_closure_complete"
+    }
+  ],
+  "manifest": {
+    "byte_count": 36080,
+    "content_sha256": "c3471023020df05d8fdcd9bd05c8cbf949520a9aa08ad2add042eb24acb748e2",
+    "file_sha256": "68f103df44ec9bec423c9e19492a7521fa74585a92db311f47c2ad1a5927516a",
+    "path": "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "056c13a5ef32f9656d4d5aed83430fc466acbf6a72c4916769c17909c8930d92",
+    "source_count": 117,
+    "source_paths_sha256": "1dfe0f87fc1514e240b72c5a2b0af83498ff8152059351dc396686036af214ad"
+  },
+  "preregistration_commit": "4e0d1a10412e0992c69886a628c5b29c7d16b624",
+  "reviewed_source_commit": "57f7290d87b2e6649da7060abcd0c6d50f03268c",
+  "schema": "lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_source_review_v1",
+  "science_identity": {
+    "data_seed_schedule_losses_thresholds_initialization_and_cap_unchanged": true,
+    "joint_optimizer_and_ema_per_update": true,
+    "maximum_presentations": 12800,
+    "maximum_updates": 400,
+    "perception_only_learned_jepa_scope": true,
+    "physical_route_preserved": true
+  },
+  "source_only": true,
+  "status": "PASS_SOURCE_ONLY",
+  "tests": {
+    "command_scope": "six_focused_v27_test_files_warnings_as_errors_cpu_only",
+    "passed": 56,
+    "failed": 0
+  }
+}
