@@ -1,0 +1,109 @@
+{
+  "attempt": {
+    "authority_commit": "d5ce60030477edf78f66a27327fca41a7c2138cf",
+    "authority_content_sha256": "acf51c9cdaee916a5e67884935f5622e0cc5649fa0d400d59e51ededd28afff9",
+    "authority_file_sha256": "6c30c112d21c3931917eecfbbb75275d7e1dd8042704cc067ca7da51eea9fc5f",
+    "certified_source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-v27-explicit-plan-successor-source",
+    "one_shot_consumed": true,
+    "output_root": ".generated/go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27/attempt_v1",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "classification": "TERMINAL_PRE_ENGINE_GPU_VISIBILITY_INFRASTRUCTURE_FAILURE_NOT_SCIENTIFIC_RESULT",
+  "content_sha256": "ef12a0b6ce5f6fa7dae142c2e7278802236f8d6b5690d8092c5333f54532f5f1",
+  "date": "2026-07-30",
+  "decision": {
+    "exact_original_attempt_closed": true,
+    "integrity_replacement_count_authorized": 1,
+    "integrity_replacement_scope": "require_HIP_VISIBLE_DEVICES_0_before_reservation_use_fresh_source_and_output_roots_and_correct_reserved_artifact_modes_only",
+    "model_data_seed_schedule_losses_thresholds_initialization_and_12800_presentation_cap_must_remain_identical": true,
+    "original_attempt_retry_or_resume_authorized": false,
+    "scientific_conclusion_available": false,
+    "status": "AUTHORIZE_ONE_SCIENCE_IDENTICAL_GPU_VISIBILITY_INTEGRITY_REPLACEMENT"
+  },
+  "failure": {
+    "exception_message": "exactly one visible GPU is required",
+    "exception_message_sha256": "bed30c5dd9ab17ac5302891c58c219720bcb9ad8781c0840719622f773b0ada7",
+    "exception_type": "RuntimeError",
+    "reported_stage": "post_reservation_runtime_composition",
+    "root_cause": "ROCm_exposed_the_discrete_R9700_and_integrated_Ryzen_graphics_as_two_visible_devices_while_the_reviewed_runtime_requires_exactly_one",
+    "visibility_probe": {
+      "HIP_VISIBLE_DEVICES_0": {
+        "device_count": 1,
+        "device_name": "AMD Radeon AI PRO R9700",
+        "total_memory_bytes": 34208743424
+      },
+      "unfiltered": {
+        "device_count": 2,
+        "device_0_name": "AMD Radeon AI PRO R9700",
+        "device_0_total_memory_bytes": 34208743424,
+        "device_1_name": "AMD Ryzen 9 9950X3D 16-Core Processor",
+        "device_1_total_memory_bytes": 49368350720
+      }
+    }
+  },
+  "pre_failure_authorized_composition_scope": {
+    "h6_index_opened": false,
+    "h6_rgb_opened": false,
+    "physical_metadata_schedule_and_label_bundle_validation_reached": true,
+    "physical_rgb_batch_decode_reached": false,
+    "reviewed_n320_gate_and_initialization_checkpoint_load_reached": true,
+    "v27_model_and_training_modules_imported_from_certified_source": true
+  },
+  "physical_runtime_input_access": {
+    "checkpoint_selection_labels_open_count": 1,
+    "derived_endpoints_index": {
+      "byte_count": 9108028,
+      "file_sha256": "34e47ddcc40ad8c1f092c73193d16773cf4dedae05e7f4f684abb385cc2c0d01"
+    },
+    "derived_raw_pairs_index": {
+      "byte_count": 6207286,
+      "file_sha256": "5a6f7de405206aba855051bd9e14cab5262cfbfebc070ed02ef81d8cf62afc8d"
+    },
+    "n320_gate_open_count": 1,
+    "n320_input_checkpoint_deserialized_on_cpu_weights_only": true,
+    "n320_input_checkpoint_open_count": 1,
+    "raw_audit_open_count": 2,
+    "raw_endpoints_index_open_count": 2,
+    "raw_manifest_open_count": 2,
+    "raw_pairs_index_open_count": 2,
+    "schedule_open_count": 1,
+    "swept_label_manifest_open_count": 1,
+    "train_labels_open_count": 1
+  },
+  "receipts": {
+    "failure": {
+      "byte_count": 809,
+      "content_sha256": "b69e9249f340548d05c3c477ec3baeb9967cc0ebd45831433311bc8b7505b0d4",
+      "file_sha256": "f139691d63fde52c99a0f548cc1cfdecfb8290a2d201df3312cdb26d5979b73a",
+      "mode_at_audit": "0444",
+      "path": "failure.json"
+    },
+    "reservation": {
+      "byte_count": 533,
+      "content_sha256": "8f9f621d0ae67520da25261aadcb82a3ff30121c26d96523ddd899e8928f3645",
+      "file_sha256": "bef27a031471fb594c53787ff69d84567df5b65ec384ce97dbda3079fc704a1e",
+      "mode_at_audit": "0664",
+      "path": "reservation.json"
+    },
+    "reserved_root_mode_at_audit": "0775"
+  },
+  "schema": "lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_terminal_infrastructure_failure_result_v1",
+  "scientific_accounting": {
+    "ema_steps": 0,
+    "h6_presentations": 0,
+    "optimizer_steps": 0,
+    "output_checkpoint_count": 0,
+    "physical_presentations": 0,
+    "presentations": 0,
+    "updates": 0,
+    "v27_model_initialized": false
+  },
+  "status": "PASS_COMPLETE_TERMINAL_INFRASTRUCTURE_FAILURE_AUDIT",
+  "unauthorized_access": {
+    "heldout_or_sealed_opened": false,
+    "navigation_executed": false,
+    "probability_calibration_opened": false,
+    "rejected_or_output_checkpoint_opened": false
+  }
+}
