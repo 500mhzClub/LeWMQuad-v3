@@ -1,6 +1,6 @@
 {
   "authority": "source_closure_only_no_generated_or_runtime_input_checkpoint_dataset_rgb_training_gpu_probability_calibration_g2_navigation_heldout_production_or_promotion_authority",
-  "content_sha256": "b56e57540ccf81ee224d43691adc2d54c1281c7a9ea3265276480a28256c730e",
+  "content_sha256": "456109f18d02d488f3c2c6c549796ec53d0b66b2807cd85063b683acf120a1cc",
   "dataset_or_rgb_open_count": 0,
   "dataset_payload_or_rgb_open_count": 0,
   "date": "2026-07-30",
@@ -486,8 +486,8 @@
       "path": "scripts/execute_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py"
     },
     {
-      "byte_count": 63272,
-      "file_sha256": "307b99bd2d5c86661cb3079af7e817edf4f768d6583e43c84532343467b12e72",
+      "byte_count": 63846,
+      "file_sha256": "1b8b3c19b6e5312eed1efbb40a20dfc30ecc15558fe3f12312da86959ee82103",
       "path": "scripts/execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
     },
     {
@@ -651,7 +651,7 @@
       "path": "scripts/run_go2_shared_jepa_v5_matched_training_v1.py"
     }
   ],
-  "source_bindings_sha256": "3a2989c2b8aca1d8d1c2203c484eebcc97ed9b0fa9ed98b244dc6b866b6f18da",
+  "source_bindings_sha256": "774260e908de790332f2ec935a18fe9d5471edb222679787c48ff1574fd7d353",
   "source_count": 114,
   "source_paths": [
     "lewm/__init__.py",
