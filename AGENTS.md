@@ -633,6 +633,29 @@ These instructions apply to the entire repository.
   navigation, held-out, sealed, production, promotion, deployment, retry,
   resume, recovery, extension, endpoint-V2, alternate-endpoint, coefficient,
   gamma, second-attempt, or further-attempt authority.
+- The RGB memory-role factorized joint-JEPA V1 source may additionally be
+  clean exported only from frozen source-and-review commit
+  `34af2b0aa6377a1b5804c26722524e268f130eba`, and only as (a) the 114 paths
+  in its committed recursive source manifest and (b) the eleven
+  preregistration, split-integrity-amendment, source-manifest, source-review,
+  V28 terminal-scientific-result identity-witness, and six focused runtime
+  test paths explicitly enumerated and SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_clean_export_certification_2026-07-30.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied V28 result is source-only chronology and
+  scientific-identity evidence and grants no predecessor runtime-output,
+  checkpoint, retry, resume, or execution authority. Do not export any
+  predecessor clean-export certification or execution authority. The V1
+  certification itself and any later one-shot authority may be added to the
+  narrow export only at their exact reviewed paths after their respective
+  commits and exact file-SHA-256 validation. This source-only exception grants
+  no generated-input, runtime-artifact, checkpoint, tensor, schedule,
+  dataset-payload, RGB, GPU, training, qualification, benchmark, probability-
+  calibration, G2 payload, navigation, memory integration, held-out, sealed,
+  production, promotion, deployment, retry, resume, recovery, extension,
+  alternate seed, second attempt, or further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
