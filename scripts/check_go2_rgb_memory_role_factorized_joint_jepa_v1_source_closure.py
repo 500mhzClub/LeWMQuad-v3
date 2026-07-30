@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify the spatial-contrastive memory-role JEPA V3 source closure.
+"""Build or verify the science-identical memory-role JEPA V4 source closure.
 
 The checker extends the reviewed V13 AST walker with only the exact dataset
 adapter modules required by this candidate.  Discovery reads Python source
@@ -32,38 +32,49 @@ BASE_CHECKER_FILE_SHA256 = (
 BASE_CHECKER_BYTE_COUNT = 10_554
 
 MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "source_manifest_2026-07-30.json"
 )
 MANIFEST_PATH = ROOT / MANIFEST_RELATIVE_PATH
 SOURCE_REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "clean_export_certification_2026-07-30.json"
 )
 EXECUTION_AUTHORITY_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "execution_authorization_2026-07-30.json"
 )
 SCHEMA = (
-    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_source_manifest"
+    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_source_manifest"
 )
 PASS_STATUS_TEXT = (
-    "Go2 RGB spatial-contrastive memory-role V3 source closure: PASS"
+    "Go2 RGB spatial-contrastive memory-role V4 source closure: PASS"
 )
 
 PREREGISTRATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "8c719c2ba9458faa824eccbe7eb660f4adb56cbc"
+PREREGISTRATION_COMMIT = "b079504940103f2cbd127552d337a90b6028b749"
 PREREGISTRATION_FILE_SHA256 = (
-    "858844624d76fd92a8d1d9e547540a58b98ecb9dfa8f2e7955d8e54c2eb5e723"
+    "ff745081af96bf77c3c982c962348a0eef107cc0eead034bada07839afb6d3b1"
 )
-PREREGISTRATION_BYTE_COUNT = 6_969
+PREREGISTRATION_BYTE_COUNT = 4_273
+V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "terminal_infrastructure_failure_result_2026-07-30.json"
+)
+V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_COMMIT = (
+    "617c44322034b85fe0d89cb88e8f5967fdbe1e42"
+)
+V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_FILE_SHA256 = (
+    "a7b2bbac590221ee574f77d03945c5224687a6703f7041c8c74f07f666aca6eb"
+)
+V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_BYTE_COUNT = 3_244
 V2_SCIENTIFIC_RESULT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
     "scientific_result_2026-07-30.json"
@@ -225,6 +236,9 @@ ALLOWED_DATASET_SOURCES = frozenset(
 
 LIFECYCLE_PATHS = {
     "preregistration": PREREGISTRATION_RELATIVE_PATH,
+    "v3_terminal_infrastructure_failure_result": (
+        V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_RELATIVE_PATH
+    ),
     "v2_scientific_result": V2_SCIENTIFIC_RESULT_RELATIVE_PATH,
     "retrieval_metadata_preflight": (
         RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH
@@ -245,7 +259,7 @@ LIFECYCLE_PATHS = {
 }
 EXECUTION_AUTHORIZED = False
 CURRENT_EXECUTION_DENIAL = (
-    "spatial-contrastive memory-role V3 execution remains denied until recursive "
+    "spatial-contrastive memory-role V4 execution remains denied until recursive "
     "closure, independent source review, narrow clean-export certification, "
     "and separate one-shot authority are complete and exact-bound"
 )
@@ -428,6 +442,16 @@ def build_manifest() -> dict[str, object]:
                 "commit": PREREGISTRATION_COMMIT,
                 "file_sha256": PREREGISTRATION_FILE_SHA256,
                 "byte_count": PREREGISTRATION_BYTE_COUNT,
+            },
+            "v3_terminal_infrastructure_failure_result": {
+                "path": V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_RELATIVE_PATH,
+                "commit": V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_COMMIT,
+                "file_sha256": (
+                    V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_FILE_SHA256
+                ),
+                "byte_count": (
+                    V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_BYTE_COUNT
+                ),
             },
             "v2_scientific_result": {
                 "path": V2_SCIENTIFIC_RESULT_RELATIVE_PATH,

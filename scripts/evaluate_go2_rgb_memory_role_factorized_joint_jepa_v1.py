@@ -36,7 +36,7 @@ from lewm.models.memory_role_factorized_joint_jepa_v1 import (
 )
 
 
-SCHEMA_PREFIX_V1 = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3"
+SCHEMA_PREFIX_V1 = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4"
 CHECKPOINT_SELECTION_ROLE_V1 = "checkpoint_selection"
 FAMILIES_V1 = (
     "large_enclosed_maze",

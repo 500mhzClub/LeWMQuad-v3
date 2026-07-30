@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-shot controller for the spatial-contrastive memory-role JEPA V3 probe.
+"""One-shot controller for the science-identical memory-role JEPA V4 probe.
 
 The controller keeps V25's reviewed physical route and adds two RGB-only
 four-row routes: corrected-H6 immediate control and manifest-bound place
@@ -29,12 +29,12 @@ from scripts import (
 )
 
 
-SCHEMA_PREFIX = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3"
+SCHEMA_PREFIX = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4"
 PREREGISTRATION_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "8c719c2ba9458faa824eccbe7eb660f4adb56cbc"
+PREREGISTRATION_COMMIT = "b079504940103f2cbd127552d337a90b6028b749"
 SPLIT_INTEGRITY_AMENDMENT_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "split_integrity_amendment_2026-07-30.md"
@@ -43,27 +43,27 @@ SPLIT_INTEGRITY_AMENDMENT_COMMIT = (
     "5a1535567bf00b8e47d67d8966ef42a52726bd5b"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "source_manifest_2026-07-30.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "clean_export_certification_2026-07-30.json"
 )
 AUTHORITY_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     "execution_authorization_2026-07-30.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v3/attempt_v1"
+    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v4/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v3-source"
+    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v4-source"
 )
 MODEL_CLASS_NAME = "MemoryRoleSpatialContrastiveJointJepaV3"
 MODEL_MODULE_NAME = "lewm.models.memory_role_spatial_contrastive_joint_jepa_v3"

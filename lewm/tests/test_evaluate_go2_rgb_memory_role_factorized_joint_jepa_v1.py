@@ -385,7 +385,7 @@ def test_update100_continuation_gate_applies_exact_v3_thresholds() -> None:
         integrity_pass=True,
     )
     assert gate["schema"].startswith(
-        "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
+        "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
     )
     assert gate["passed"] is True
     assert gate["action"] == "CONTINUE_SAME_ATTEMPT_TO_UPDATE_400"

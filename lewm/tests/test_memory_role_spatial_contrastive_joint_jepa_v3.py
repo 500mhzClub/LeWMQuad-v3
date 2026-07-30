@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 import copy
 import sys
 
@@ -12,6 +13,7 @@ if str(ROOT) not in sys.path:
 import torch
 import torch.nn.functional as F
 
+from lewm.models import memory_role_spatial_contrastive_joint_jepa_v3 as v3_module
 from lewm.models.memory_role_factorized_joint_jepa_v1 import (
     MemoryRoleFactorizedJointJepaV1,
     MemoryRoleFactorizerV1,
@@ -25,12 +27,20 @@ from lewm.models.memory_role_spatial_contrastive_joint_jepa_v3 import (
 from lewm.models.observable_camera_ray_evidence_v4 import (
     ObservableCameraRayEvidenceV4Model,
 )
+from scripts import run_go2_rgb_memory_role_factorized_joint_jepa_v1 as v3_training
+from scripts.launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck import (
+    V13ComposedRuntime,
+)
 
 
 def _sweep_masks() -> torch.Tensor:
     masks = torch.zeros((9, 16, 64, 64), dtype=torch.bool)
     masks[:, :, 31:33, 31:33] = True
     return masks
+
+
+def test_module_exports_inherited_runtime_projection_seed() -> None:
+    assert v3_module.PROJECTION_INITIALIZATION_SEED_V13 == 20_260_729
 
 
 def _fitted_model() -> ObservableCameraRayEvidenceV4Model:
@@ -40,6 +50,33 @@ def _fitted_model() -> ObservableCameraRayEvidenceV4Model:
         return ObservableCameraRayEvidenceV4Model().eval()
     finally:
         torch.random.set_rng_state(caller_rng)
+
+
+def test_real_v13_runtime_initializer_accepts_v3_model_adapter() -> None:
+    runtime = object.__new__(V13ComposedRuntime)
+    runtime._initialized = False
+    runtime.torch = torch
+    runtime.executor_api = SimpleNamespace(
+        MODEL_CLASS_NAME="MemoryRoleSpatialContrastiveJointJepaV3"
+    )
+    runtime.model_module = v3_module
+    runtime.training_module = v3_training
+    runtime.n320_fit = _fitted_model()
+    runtime.sweep_masks = _sweep_masks()
+    runtime.device = torch.device("cpu")
+    runtime.n320_gate = {"passes": True}
+    runtime.hardware = {"synthetic_cpu_test": True}
+    runtime.runtime_fingerprint = {"synthetic_cpu_test": True}
+    runtime.determinism = {"synthetic_cpu_test": True}
+    runtime.runtime_path_containment = {"synthetic_cpu_test": True}
+
+    model, optimizer, receipt = runtime.initialize_model_v13()
+
+    assert type(model) is MemoryRoleSpatialContrastiveJointJepaV3
+    assert isinstance(optimizer, torch.optim.AdamW)
+    assert receipt["projection_initialization_seed"] == 20_260_729
+    assert receipt["target_hard_sync_count"] == 1
+    assert receipt["ema_update_count"] == 0
 
 
 def test_v3_factorizer_retains_spatial_grid_and_v1_local_route() -> None:

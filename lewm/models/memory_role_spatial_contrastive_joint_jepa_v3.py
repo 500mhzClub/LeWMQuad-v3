@@ -14,6 +14,7 @@ import torch.nn.functional as F
 
 from lewm.models.geometry_anchored_swept_progress_survival_joint_jepa_v18_object_space_height_volume import (
     GeometryAnchoredDeformableBevLiftJointJepaV1Config,
+    PROJECTION_INITIALIZATION_SEED_V13,
 )
 from lewm.models.memory_role_factorized_joint_jepa_v1 import (
     LOCAL_CONTROL_SHAPE_MEMORY_ROLE_FACTORIZED_V1,
@@ -146,5 +147,6 @@ __all__ = [
     "PLACE_PREDICTOR_HIDDEN_WIDTH_MEMORY_ROLE_V3",
     "PLACE_SPATIAL_CHANNELS_MEMORY_ROLE_V3",
     "PLACE_SPATIAL_GRID_MEMORY_ROLE_V3",
+    "PROJECTION_INITIALIZATION_SEED_V13",
     "PlaceKeyIdentityResidualPredictorV3",
 ]
