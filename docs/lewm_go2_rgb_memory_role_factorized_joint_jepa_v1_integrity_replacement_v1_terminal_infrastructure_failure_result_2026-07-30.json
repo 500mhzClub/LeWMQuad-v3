@@ -1,0 +1,210 @@
+{
+  "attempt": {
+    "certified_source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-memory-role-factorized-joint-jepa-v1-integrity-replacement-v1-source",
+    "failure_created_utc": "2026-07-30T22:10:22Z",
+    "one_shot_consumed": true,
+    "output_root": ".generated/go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1/attempt_v1",
+    "reservation_created_utc": "2026-07-30T22:09:38Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "classification": "TERMINAL_UPDATE0_PLACE_RETRIEVAL_CANDIDATE_CARDINALITY_CONTRACT_FAILURE_NOT_SCIENTIFIC_RESULT",
+  "content_sha256": "da6cc6a2bb6c859a3996341a3e5e2faf1ab82d5377177f75a8427d50afe03b79",
+  "date": "2026-07-30",
+  "decision": {
+    "exact_integrity_replacement_attempt_closed": true,
+    "exact_original_attempt_closed": true,
+    "further_integrity_replacement_authorized_by_this_result": false,
+    "memory_role_factorization_hypothesis_conclusion_available": false,
+    "mechanism_rejected": false,
+    "original_attempt_retry_or_resume_authorized": false,
+    "recommended_next_action": "close_both_attempts_without_a_mechanism_conclusion_and_require_a_separately_preregistered_distinct_successor_with_fresh_roots_review_certification_and_authority_if_work_continues",
+    "replacement_attempt_retry_or_resume_authorized": false,
+    "status": "CLOSE_MEMORY_ROLE_FACTORIZED_JOINT_JEPA_V1_INTEGRITY_REPLACEMENT_V1_WITHOUT_SCIENTIFIC_CONCLUSION"
+  },
+  "failure": {
+    "exception_message_literal_reconstructed_from_frozen_source_and_hash": "retrieval scene candidate count left [40,64]",
+    "exception_message_sha256": "cc6f93b9982aaf7d04ca997311d0761c75e84d437c2925c84e77979562bf025f",
+    "exception_type": "MemoryRoleEvaluationContractError",
+    "reported_stage": "observe_update_0",
+    "root_cause": "the_frozen_update0_place_retrieval_evaluator_required_every_scene_to_supply_between_40_and_64_unique_endpoint_candidates_but_the_frozen_selection_metadata_contains_one_scene_with_only_32_candidates",
+    "source": {
+      "byte_count": 41611,
+      "file_sha256": "61c17eb59c126e0034d8050ffb51fa88451fba06f0117079401623a5bd3dad15",
+      "line": 484,
+      "literal_line": 485,
+      "path": "scripts/evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "pinned_source_and_review_commit": "57ddeb95f2822fa36c9a71f0741b086fb11f953c",
+      "reviewed_source_commit": "a3ea38002abf96aa2b97e5e7a7180429705ba4b5"
+    }
+  },
+  "lifecycle_bindings": {
+    "clean_export_certification": {
+      "binding_count": 127,
+      "bindings_sha256": "b3635b599fa4a4fd092dd15015c577fe1f5691f40466aea668fd0f84cac1e103",
+      "byte_count": 22867,
+      "commit": "29957ef30efeeb2171993edcd42f9347d314cae3",
+      "content_sha256": "962210772cac7b962b47b37a22969e51d688a601f8ef67c8f89d4dfcafc8785b",
+      "file_sha256": "7a97212a483401cb8755162787ebecb5d267bcd5d3873f0e7ae6de9d5c3209cc",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_clean_export_certification_2026-07-30.json",
+      "pinned_source_and_review_commit": "57ddeb95f2822fa36c9a71f0741b086fb11f953c"
+    },
+    "execution_authority": {
+      "byte_count": 5585,
+      "commit": "d786366061496ba9eaacd9b20d121a1f5a66efb3",
+      "content_sha256": "af1ceaf51dd67014a699d0ffb806c50baa86493dd4c2668e3602818a14a95eb6",
+      "file_sha256": "a085c6f6cfa0c8ca54eb96f62b84d23de6abf2240055646a810d5230a8b7fc6d",
+      "implementation_commit": "a3ea38002abf96aa2b97e5e7a7180429705ba4b5",
+      "maximum_presentations": 12800,
+      "maximum_updates": 400,
+      "one_shot": true,
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_execution_authorization_2026-07-30.json",
+      "pinned_source_and_review_commit": "57ddeb95f2822fa36c9a71f0741b086fb11f953c",
+      "preregistration_commit": "ba6e37d63f099cd51184642dea39808ae1f2f99e",
+      "resume_authorized": false,
+      "retry_authorized": false,
+      "validated_authority_sha256_from_reservation": "60a2df2d94f5291fb1b852016be0a76286e4dffe1b32331366302939a348c5d5"
+    },
+    "original_terminal_failure_result": {
+      "byte_count": 6060,
+      "commit": "291a7bcfaf95f24d5c84bd3d590afd54556d5b3d",
+      "content_sha256": "e4d85114aa7e9f5187f237c65b72690c05662dcee8fe8bfcead8712368ba53e8",
+      "file_sha256": "80eaeb508a988b54e655df5b530fa3adab6a89bb13b6f5c45902ac851bc464f4",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_terminal_infrastructure_failure_result_2026-07-30.json",
+      "scientific_conclusion_available": false,
+      "status": "PASS_COMPLETE_TERMINAL_UPDATE0_INFRASTRUCTURE_FAILURE_AUDIT"
+    },
+    "preregistration": {
+      "byte_count": 7211,
+      "commit": "ba6e37d63f099cd51184642dea39808ae1f2f99e",
+      "file_sha256": "a7c757f4a58b9a7d068ceb2e6676573843d58e72606b55713868ddfe86b97820",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_preregistration_2026-07-30.md"
+    },
+    "source_manifest": {
+      "byte_count": 38175,
+      "commit": "220895c3318512b8f08639f2235356d02896b14c",
+      "content_sha256": "52f21d2c18f036c50a774e8e469ce146632b28d42e4bd33e3940c20cf8b6a427",
+      "file_sha256": "d82c36c9e88c91408f8639d90e4d88f2d14862ffa3e3b91f682d056f7001e6af",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_source_manifest_2026-07-30.json",
+      "source_bindings_sha256": "dc4ec31374c00376f19fe7dfdf44a4da11b802eca041ecf39eb9e7cf120b5b56",
+      "source_count": 114
+    },
+    "source_review": {
+      "byte_count": 13230,
+      "commit": "57ddeb95f2822fa36c9a71f0741b086fb11f953c",
+      "content_sha256": "44285ee543c0147eeb150eb0d53f9f90eecd63737bd7839f0665df6f8c5f6740",
+      "file_sha256": "b3d482f8d86d955b25c384924e9025f280ef1be78bc4881cca713d668b167f30",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_source_review_2026-07-30.json",
+      "reviewed_source_commit": "a3ea38002abf96aa2b97e5e7a7180429705ba4b5"
+    }
+  },
+  "post_terminal_metadata_only_diagnostic": {
+    "candidate_counts_in_frozen_eight_scene_order": [
+      63,
+      64,
+      59,
+      59,
+      64,
+      64,
+      32,
+      48
+    ],
+    "diagnostic_outside_failed_attempt": true,
+    "maximum_candidate_count": 64,
+    "minimum_candidate_count": 32,
+    "registered_candidate_interval": [
+      40,
+      64
+    ],
+    "rgb_open_count": 0,
+    "scene_count": 8,
+    "unsupported_minimum_explanation": "the_registered_minimum_of_40_is_not_supported_by_the_frozen_selection_metadata_because_one_of_the_eight_scenes_has_exactly_32_unique_candidates",
+    "violating_scene_count": 1
+  },
+  "receipts": {
+    "attempt_directory_mode_at_audit": "0700",
+    "failure": {
+      "byte_count": 2170,
+      "content_sha256": "c25ce1fd3b67ead8ff039f3be3b016ec684b0b23a0deb85aee0aa8f56fad9024",
+      "file_sha256": "a42497dcaefdacf24b9bd360bee6817a2ff7a040b04c9ff681ed1cfa5df8e15c",
+      "mode_at_audit": "0444",
+      "path": "failure.json",
+      "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_exception_failure_v1",
+      "status": "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME"
+    },
+    "reservation": {
+      "byte_count": 519,
+      "content_sha256": "df0d6ed2e7aa756e0ed7fe11fe011811881b788a388be6dbe8cfc3ccb0b9780a",
+      "file_sha256": "1a3d77e7fe38d1516585f5e7f5682256c719cb59327091d42013809c41e3ee0a",
+      "mode_at_audit": "0444",
+      "path": "reservation.json",
+      "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_attempt_reservation_v1",
+      "status": "RESERVED_ONE_SHOT"
+    },
+    "terminal_file_count": 2,
+    "terminal_file_names": [
+      "failure.json",
+      "reservation.json"
+    ]
+  },
+  "scientific_accounting": {
+    "completed_observation_count": 0,
+    "completed_observation_updates": [],
+    "ema_steps": 0,
+    "last_completed_update_reported": 0,
+    "maximum_presentations": 12800,
+    "maximum_updates": 400,
+    "model_and_optimizer_initialized": true,
+    "optimizer_steps": 0,
+    "output_checkpoint_count": 0,
+    "place_reference_access": {
+      "place_rgb_reference_attempt_count": 960,
+      "place_rgb_reference_failure_count": 0,
+      "place_rgb_reference_success_count": 960,
+      "place_rgb_sha256_verified_per_access_count": 960,
+      "place_triplet_loader_call_count": 320,
+      "place_unique_row_count_opened": 320
+    },
+    "presentations": 0,
+    "published_metric_binding_count": 0,
+    "scientific_terminal_gate_reached": false,
+    "successful_updates": 0,
+    "trace_event_count": 1,
+    "trace_rows_content_sha256": "6ebcd3aedcdc678d06d455c929fb5313f7db7bed17e594d7e000a993eab965f9",
+    "training_loss_receipt_count": 0,
+    "update0_observation_completed": false
+  },
+  "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_terminal_infrastructure_failure_result_v1",
+  "status": "PASS_COMPLETE_TERMINAL_UPDATE0_INFRASTRUCTURE_FAILURE_AUDIT",
+  "terminal_access": {
+    "checkpoint": {
+      "access_authorized": false,
+      "binding_available": false,
+      "deserialized": false,
+      "present_at_terminal": false,
+      "published": false,
+      "quarantined": false,
+      "terminalization_hash_read_count": 0
+    },
+    "forbidden_input_count": 0,
+    "heldout_or_sealed_opened": false,
+    "local_rgb": {
+      "rgb_byte_count": 0,
+      "rgb_decode_success_count": 0,
+      "rgb_open_attempt_count": 0,
+      "rgb_open_success_count": 0,
+      "rgb_tensor_request_count": 0,
+      "unique_rgb_leaf_count": 0
+    },
+    "navigation_executed": false,
+    "new_file_open_count_during_failure_snapshot": 0,
+    "physical_opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_opened": false,
+    "terminal_rehash_count": 0
+  }
+}
