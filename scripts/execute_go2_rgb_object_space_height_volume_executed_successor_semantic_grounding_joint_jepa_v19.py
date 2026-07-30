@@ -35,17 +35,40 @@ _PUBLIC_V18_WAS_LOADED_BEFORE_ADAPTER = V18_PUBLIC_MODULE_NAME in sys.modules
 
 SCHEMA_PREFIX = (
     "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
-    "grounding_joint_jepa_v19"
+    "grounding_joint_jepa_v19_integrity_replacement_v1"
 )
-PREREGISTRATION_COMMIT = "6255a9a2cccffde4e777169eacf95105a828cf7e"
+PREREGISTRATION_COMMIT = "691ed5d39f0b8d1b40071045dc181b9a4b215573"
 PREREGISTRATION_PATH = (
+    "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
+    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+    "preregistration_2026-07-30.md"
+)
+PREREGISTRATION_FILE_SHA256 = (
+    "9a1910e6c12ce27bf7951fe4bddbcfc80d19e1d0fc33d03359cc27d12dd1b79b"
+)
+PREREGISTRATION_BYTE_COUNT = 8_107
+ORIGINAL_V19_PREREGISTRATION_COMMIT = (
+    "6255a9a2cccffde4e777169eacf95105a828cf7e"
+)
+ORIGINAL_V19_PREREGISTRATION_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
     "semantic_grounding_joint_jepa_v19_preregistration_2026-07-30.md"
 )
-PREREGISTRATION_FILE_SHA256 = (
+ORIGINAL_V19_PREREGISTRATION_FILE_SHA256 = (
     "350885460f1efbd0bcb5640d4657cdd34ec0244d71d2174103e53ce37daf4a4f"
 )
-PREREGISTRATION_BYTE_COUNT = 13_376
+ORIGINAL_V19_PREREGISTRATION_BYTE_COUNT = 13_376
+V19_TERMINAL_FAILURE_RESULT_COMMIT = (
+    "37a87ac49ebcdebe57263476c20b1476877e36c2"
+)
+V19_TERMINAL_FAILURE_RESULT_PATH = (
+    "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
+    "semantic_grounding_joint_jepa_v19_terminal_failure_result_2026-07-30.json"
+)
+V19_TERMINAL_FAILURE_RESULT_FILE_SHA256 = (
+    "1f1708d615cbf375c99fa49efd11699882c302ad92ae436e925af152e18da36d"
+)
+V19_TERMINAL_FAILURE_RESULT_BYTE_COUNT = 9_292
 V18_SCIENTIFIC_RESULT_COMMIT = "f2e290ce42f7b0cd142131f3272d1119b7b5d3d1"
 V18_SCIENTIFIC_RESULT_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_"
@@ -58,7 +81,7 @@ V18_SCIENTIFIC_RESULT_BYTE_COUNT = 11_380
 
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19/attempt_v1"
+    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1/attempt_v1"
 )
 MODEL_CLASS_NAME = "GeometryAnchoredSweptProgressSurvivalJointJepaV18"
 
@@ -183,6 +206,14 @@ _bound_parent_sources.update(
             PREREGISTRATION_FILE_SHA256,
             PREREGISTRATION_BYTE_COUNT,
         ),
+        ORIGINAL_V19_PREREGISTRATION_PATH: (
+            ORIGINAL_V19_PREREGISTRATION_FILE_SHA256,
+            ORIGINAL_V19_PREREGISTRATION_BYTE_COUNT,
+        ),
+        V19_TERMINAL_FAILURE_RESULT_PATH: (
+            V19_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            V19_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
+        ),
         V18_SCIENTIFIC_RESULT_PATH: (
             V18_SCIENTIFIC_RESULT_FILE_SHA256,
             V18_SCIENTIFIC_RESULT_BYTE_COUNT,
@@ -198,7 +229,8 @@ _engine.BOUND_PARENT_SOURCES = _bound_parent_sources
 _engine.ACCOUNTING_MULTIPLIERS = dict(ACCOUNTING_MULTIPLIERS_V19)
 _engine.CURRENT_EXECUTION_AUTHORIZED = False
 _engine.CURRENT_EXECUTION_DENIAL = (
-    "V19 scientific execution is denied until recursive source closure, "
+    "V19 integrity-replacement scientific execution is denied until "
+    "recursive source closure, "
     "independent exact-binding review, narrow clean-export certification, "
     "and one-shot authority are committed and validated"
 )
@@ -706,6 +738,12 @@ def private_adapter_receipt_v19() -> dict[str, Any]:
         "public_v18_loaded_by_adapter": False,
         "private_module_registered": PRIVATE_V18_MODULE_NAME in sys.modules,
         "preregistration_commit": PREREGISTRATION_COMMIT,
+        "original_v19_preregistration_commit": (
+            ORIGINAL_V19_PREREGISTRATION_COMMIT
+        ),
+        "v19_terminal_failure_result_commit": (
+            V19_TERMINAL_FAILURE_RESULT_COMMIT
+        ),
         "v18_scientific_result_commit": V18_SCIENTIFIC_RESULT_COMMIT,
         "model_class": MODEL_CLASS_NAME,
         "output_root": OUTPUT_ROOT_RELATIVE_PATH,

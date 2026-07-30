@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build or verify the V19 executed-successor source closure."""
+"""Build or verify the V19 integrity-replacement V1 source closure."""
 from __future__ import annotations
 
 import argparse
@@ -18,11 +18,12 @@ BASE_CHECKER_PATH = (
 MANIFEST_PATH = (
     ROOT
     / "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_source_manifest_2026-07-30.json"
+    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+    "source_manifest_2026-07-30.json"
 )
 SCHEMA = (
     "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
-    "grounding_joint_jepa_v19_source_manifest"
+    "grounding_joint_jepa_v19_integrity_replacement_v1_source_manifest"
 )
 
 
@@ -138,7 +139,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             _write_manifest_exclusive(manifest)
         return 0
     verify_manifest(require_tracked=args.require_tracked)
-    print("Go2 RGB V19 executed-successor source closure: PASS")
+    print("Go2 RGB V19 integrity-replacement V1 source closure: PASS")
     return 0
 
 

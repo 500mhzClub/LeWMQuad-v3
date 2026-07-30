@@ -61,7 +61,8 @@ def test_import_is_source_only_and_no_argument_cli_is_denied(capsys) -> None:
         "reservation_created": False,
         "schema": (
             "lewm_go2_rgb_object_space_height_volume_executed_successor_"
-            "semantic_grounding_joint_jepa_v19_launcher_v1"
+            "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+            "launcher_v1"
         ),
         "scientific_payload_opened": False,
         "status": "DENIED_NO_FUTURE_AUTHORITY",
@@ -84,7 +85,24 @@ def test_private_v18_adapter_selects_only_v19_training_and_executor() -> None:
         "semantic_grounding_joint_jepa_v19"
     )
     assert base.EXPERIMENT_ARM_NAME == (
-        "object_space_height_volume_executed_successor_semantic_grounding_v19"
+        "object_space_height_volume_executed_successor_semantic_grounding_v19_"
+        "integrity_replacement_v1"
+    )
+    assert base.SOURCE_EVIDENCE_SCHEMA_PREFIX == (
+        "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
+        "grounding_joint_jepa_v19_integrity_replacement_v1"
+    )
+    assert base.AUTHORITY_RELATIVE_PATH.endswith(
+        "v19_integrity_replacement_v1_execution_authorization_2026-07-30.json"
+    )
+    assert base.SOURCE_MANIFEST_RELATIVE_PATH.endswith(
+        "v19_integrity_replacement_v1_source_manifest_2026-07-30.json"
+    )
+    assert base.SOURCE_REVIEW_RELATIVE_PATH.endswith(
+        "v19_integrity_replacement_v1_source_review_2026-07-30.json"
+    )
+    assert base.CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH.endswith(
+        "v19_integrity_replacement_v1_clean_export_certification_2026-07-30.json"
     )
     assert base.MAXIMUM_UPDATES == 1_000
     assert base.MAXIMUM_PRESENTATIONS == 16_000
@@ -97,16 +115,74 @@ def test_preregistration_identity_is_bound_in_adapter_receipt() -> None:
     assert receipt["preregistration"] == {
         "path": (
             "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-            "semantic_grounding_joint_jepa_v19_preregistration_2026-07-30.md"
+            "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+            "preregistration_2026-07-30.md"
         ),
-        "commit": "6255a9a2cccffde4e777169eacf95105a828cf7e",
+        "commit": "691ed5d39f0b8d1b40071045dc181b9a4b215573",
         "file_sha256": (
-            "350885460f1efbd0bcb5640d4657cdd34ec0244d71d2174103e53ce37daf4a4f"
+            "9a1910e6c12ce27bf7951fe4bddbcfc80d19e1d0fc33d03359cc27d12dd1b79b"
         ),
-        "byte_count": 13_376,
+        "byte_count": 8_107,
     }
     assert receipt["numeric_comparisons_retained_without_rescoring"] is True
     assert receipt["execution_authorized"] is False
+
+
+def test_registered_families_match_the_frozen_inherited_registry_exactly() -> None:
+    assert launcher.REGISTERED_FAMILIES == (
+        "large_enclosed_maze",
+        "local_composite_motifs",
+        "loop_alias_stress",
+        "medium_enclosed_maze",
+        "open_obstacle_field",
+        "rough_local_dynamics",
+        "small_enclosed_maze",
+        "visual_sensor_stress",
+    )
+
+
+def test_comparison_sanitizer_accepts_inherited_mapping_and_rejects_change() -> None:
+    inherited = _comparison(0)
+    assert launcher._sanitize_comparison_v19(inherited) == inherited
+
+    changed = _comparison(0)
+    family_deltas = dict(changed["family_deltas"])
+    family_deltas["structured_corridor_rooms"] = family_deltas.pop(
+        "visual_sensor_stress"
+    )
+    changed["family_deltas"] = family_deltas
+    with pytest.raises(RuntimeError, match="grouping changed"):
+        launcher._sanitize_comparison_v19(changed)
+
+
+@pytest.mark.parametrize("changed_registry", ["evaluator", "checkpoint_selection"])
+def test_observation_binds_both_inherited_family_registries(
+    changed_registry: str,
+) -> None:
+    stale = (*launcher.REGISTERED_FAMILIES[:-1], "structured_corridor_rooms")
+    evaluator_registry = (
+        stale if changed_registry == "evaluator" else launcher.REGISTERED_FAMILIES
+    )
+    checkpoint_registry = (
+        stale
+        if changed_registry == "checkpoint_selection"
+        else launcher.REGISTERED_FAMILIES
+    )
+
+    def must_not_score() -> None:
+        raise AssertionError("registry check must precede scoring")
+
+    runtime = SimpleNamespace(
+        executor_api=SimpleNamespace(REGISTERED_FAMILIES=checkpoint_registry),
+        v1_executor=SimpleNamespace(
+            CONTROL_NAMES=launcher.CONTROL_NAMES,
+            REGISTERED_FAMILIES=evaluator_registry,
+            paired_control_comparison_v1=must_not_score,
+        ),
+    )
+    with pytest.raises(RuntimeError, match="family registry changed"):
+        launcher._v12_observation_v19(runtime, object(), update=100)
+    assert not hasattr(runtime, "causal_comparisons_v19")
 
 
 def test_numeric_comparisons_are_captured_from_the_existing_four_calls(
@@ -120,9 +196,15 @@ def test_numeric_comparisons_are_captured_from_the_existing_four_calls(
 
     executor = SimpleNamespace(
         CONTROL_NAMES=launcher.CONTROL_NAMES,
+        REGISTERED_FAMILIES=launcher.REGISTERED_FAMILIES,
         paired_control_comparison_v1=paired,
     )
-    runtime = SimpleNamespace(v1_executor=executor)
+    runtime = SimpleNamespace(
+        executor_api=SimpleNamespace(
+            REGISTERED_FAMILIES=launcher.REGISTERED_FAMILIES
+        ),
+        v1_executor=executor,
+    )
     controls = {
         name: {
             "positive_equal_scene_delta": True,
@@ -169,9 +251,15 @@ def test_comparison_hook_fails_closed_and_restores_inherited_callable(
 
     executor = SimpleNamespace(
         CONTROL_NAMES=launcher.CONTROL_NAMES,
+        REGISTERED_FAMILIES=launcher.REGISTERED_FAMILIES,
         paired_control_comparison_v1=malformed,
     )
-    runtime = SimpleNamespace(v1_executor=executor)
+    runtime = SimpleNamespace(
+        executor_api=SimpleNamespace(
+            REGISTERED_FAMILIES=launcher.REGISTERED_FAMILIES
+        ),
+        v1_executor=executor,
+    )
 
     def inherited(runtime_value: object, model: object, *, update: int):
         runtime_value.v1_executor.paired_control_comparison_v1()

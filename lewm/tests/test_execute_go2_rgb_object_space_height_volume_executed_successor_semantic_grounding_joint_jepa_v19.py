@@ -191,13 +191,31 @@ def test_private_adapter_binds_frozen_v18_without_mutating_public_module(
         "5ce4259126c21d0f474c0548f0ee6757f78225daa8ed778540f83764496d0e92"
     )
     assert v18.SCHEMA_PREFIX.endswith("joint_jepa_v18_integrity_replacement_v3")
-    assert v19.SCHEMA_PREFIX.endswith("semantic_grounding_joint_jepa_v19")
+    assert v19.SCHEMA_PREFIX.endswith(
+        "semantic_grounding_joint_jepa_v19_integrity_replacement_v1"
+    )
+    assert v19.OUTPUT_ROOT_RELATIVE_PATH == (
+        ".generated/go2_rgb_object_space_height_volume_executed_successor_"
+        "semantic_grounding_joint_jepa_v19_integrity_replacement_v1/attempt_v1"
+    )
     assert v19.MODEL_CLASS_NAME == v18.MODEL_CLASS_NAME
     assert v19.MAXIMUM_UPDATES == v18.MAXIMUM_UPDATES == 1_000
     assert v19.MAXIMUM_PRESENTATIONS == v18.MAXIMUM_PRESENTATIONS == 16_000
     assert v19.OBSERVATION_UPDATES == v18.OBSERVATION_UPDATES
     assert v19.TERMINAL_UPDATES == v18.TERMINAL_UPDATES
     assert v19.MATCHED_UPDATE400_THRESHOLDS == v18.MATCHED_UPDATE400_THRESHOLDS
+    adapter = v19.private_adapter_receipt_v19()
+    assert adapter["preregistration_commit"] == (
+        "691ed5d39f0b8d1b40071045dc181b9a4b215573"
+    )
+    assert adapter["original_v19_preregistration_commit"] == (
+        "6255a9a2cccffde4e777169eacf95105a828cf7e"
+    )
+    assert adapter["v19_terminal_failure_result_commit"] == (
+        "37a87ac49ebcdebe57263476c20b1476877e36c2"
+    )
+    assert adapter["output_root"] == v19.OUTPUT_ROOT_RELATIVE_PATH
+    assert adapter["execution_authorized"] is False
     assert v19.main([]) == 4
     denial = v19.validate_content_bound_v19(json.loads(capsys.readouterr().out))
     assert denial["status"] == "DENIED_SOURCE_ONLY"
@@ -211,13 +229,27 @@ def test_parent_bindings_include_exact_preregistration_and_v18_result() -> None:
             v19.PREREGISTRATION_FILE_SHA256,
             v19.PREREGISTRATION_BYTE_COUNT,
         ),
+        v19.ORIGINAL_V19_PREREGISTRATION_PATH: (
+            v19.ORIGINAL_V19_PREREGISTRATION_FILE_SHA256,
+            v19.ORIGINAL_V19_PREREGISTRATION_BYTE_COUNT,
+        ),
+        v19.V19_TERMINAL_FAILURE_RESULT_PATH: (
+            v19.V19_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            v19.V19_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
+        ),
         v19.V18_SCIENTIFIC_RESULT_PATH: (
             v19.V18_SCIENTIFIC_RESULT_FILE_SHA256,
             v19.V18_SCIENTIFIC_RESULT_BYTE_COUNT,
         ),
     }
     assert v19.PREREGISTRATION_COMMIT == (
+        "691ed5d39f0b8d1b40071045dc181b9a4b215573"
+    )
+    assert v19.ORIGINAL_V19_PREREGISTRATION_COMMIT == (
         "6255a9a2cccffde4e777169eacf95105a828cf7e"
+    )
+    assert v19.V19_TERMINAL_FAILURE_RESULT_COMMIT == (
+        "37a87ac49ebcdebe57263476c20b1476877e36c2"
     )
     assert v19.V18_SCIENTIFIC_RESULT_COMMIT == (
         "f2e290ce42f7b0cd142131f3272d1119b7b5d3d1"
@@ -225,7 +257,7 @@ def test_parent_bindings_include_exact_preregistration_and_v18_result() -> None:
     for path, binding in expected.items():
         assert v19.BOUND_PARENT_SOURCES[path] == binding
     receipt = v19.validate_bound_sources_v19(ROOT, expected)
-    assert receipt["validated_path_count"] == 2
+    assert receipt["validated_path_count"] == len(expected)
 
 
 def test_v19_accounting_is_exactly_twelve_backward_and_eight_predictor_objectives() -> None:

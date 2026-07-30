@@ -25,28 +25,33 @@ BASE_LAUNCHER_RELATIVE_PATH = (
 )
 PREREGISTRATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_preregistration_2026-07-30.md"
+    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+    "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "6255a9a2cccffde4e777169eacf95105a828cf7e"
+PREREGISTRATION_COMMIT = "691ed5d39f0b8d1b40071045dc181b9a4b215573"
 PREREGISTRATION_FILE_SHA256 = (
-    "350885460f1efbd0bcb5640d4657cdd34ec0244d71d2174103e53ce37daf4a4f"
+    "9a1910e6c12ce27bf7951fe4bddbcfc80d19e1d0fc33d03359cc27d12dd1b79b"
 )
-PREREGISTRATION_BYTE_COUNT = 13_376
+PREREGISTRATION_BYTE_COUNT = 8_107
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_execution_authorization_2026-07-30.json"
+    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+    "execution_authorization_2026-07-30.json"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_source_manifest_2026-07-30.json"
+    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+    "source_manifest_2026-07-30.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_source_review_2026-07-30.json"
+    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+    "source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-    "semantic_grounding_joint_jepa_v19_clean_export_certification_2026-07-30.json"
+    "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+    "clean_export_certification_2026-07-30.json"
 )
 SOURCE_CLOSURE_CHECKER_RELATIVE_PATH = (
     "scripts/check_go2_rgb_object_space_height_volume_executed_successor_"
@@ -66,10 +71,11 @@ TRAINING_MODULE_NAME = (
 )
 SOURCE_EVIDENCE_SCHEMA_PREFIX = (
     "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
-    "grounding_joint_jepa_v19"
+    "grounding_joint_jepa_v19_integrity_replacement_v1"
 )
 EXPERIMENT_ARM_NAME = (
-    "object_space_height_volume_executed_successor_semantic_grounding_v19"
+    "object_space_height_volume_executed_successor_semantic_grounding_v19_"
+    "integrity_replacement_v1"
 )
 LAUNCHER_SCHEMA = f"{SOURCE_EVIDENCE_SCHEMA_PREFIX}_launcher_v1"
 
@@ -87,7 +93,7 @@ REGISTERED_FAMILIES = (
     "open_obstacle_field",
     "rough_local_dynamics",
     "small_enclosed_maze",
-    "structured_corridor_rooms",
+    "visual_sensor_stress",
 )
 COMPARISON_FIELDS = (
     "scene_count",
@@ -276,6 +282,12 @@ def _v12_observation_v19(
     executor = runtime.v1_executor
     if tuple(executor.CONTROL_NAMES) != CONTROL_NAMES:
         raise RuntimeError("V19 inherited control order changed")
+    if (
+        tuple(executor.REGISTERED_FAMILIES) != REGISTERED_FAMILIES
+        or tuple(runtime.executor_api.REGISTERED_FAMILIES)
+        != REGISTERED_FAMILIES
+    ):
+        raise RuntimeError("V19 inherited family registry changed")
     stored = getattr(runtime, "causal_comparisons_v19", None)
     if stored is None:
         stored = {}

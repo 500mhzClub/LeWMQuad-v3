@@ -34,12 +34,13 @@ def test_checker_import_is_source_only_and_uses_v19_identity() -> None:
     )
     assert checker.SCHEMA == (
         "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_"
-        "grounding_joint_jepa_v19_source_manifest"
+        "grounding_joint_jepa_v19_integrity_replacement_v1_source_manifest"
     )
     assert checker._V18._V13._BASE.SCHEMA == checker.SCHEMA
     assert checker.MANIFEST_PATH.relative_to(ROOT).as_posix() == (
         "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_"
-        "semantic_grounding_joint_jepa_v19_source_manifest_2026-07-30.json"
+        "semantic_grounding_joint_jepa_v19_integrity_replacement_v1_"
+        "source_manifest_2026-07-30.json"
     )
 
 
