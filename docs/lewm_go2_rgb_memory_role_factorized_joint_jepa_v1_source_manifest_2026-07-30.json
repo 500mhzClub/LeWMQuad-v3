@@ -1,6 +1,6 @@
 {
   "authority": "source_closure_only_no_generated_or_runtime_input_checkpoint_dataset_rgb_training_gpu_probability_calibration_g2_navigation_heldout_production_or_promotion_authority",
-  "content_sha256": "551bfedce449bdd68d4f2445b21378258da7d19778c61ee8f5e3b5f36858f570",
+  "content_sha256": "b56e57540ccf81ee224d43691adc2d54c1281c7a9ea3265276480a28256c730e",
   "dataset_or_rgb_open_count": 0,
   "dataset_payload_or_rgb_open_count": 0,
   "date": "2026-07-30",
@@ -43,7 +43,29 @@
     "lewm/models/observable_camera_ray_evidence_v4_training.py",
     "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py",
     "lewm/models/shared_observable_camera_ray_jepa_v5.py",
+    "scripts/run_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py",
+    "scripts/run_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py",
+    "scripts/run_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py",
+    "scripts/run_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py",
+    "scripts/run_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py",
+    "scripts/run_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+    "scripts/execute_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v26.py",
+    "scripts/execute_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py",
+    "scripts/execute_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py",
+    "scripts/execute_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py",
+    "scripts/execute_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py",
+    "scripts/execute_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py",
+    "scripts/execute_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
+    "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v14.py",
+    "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
     "scripts/launch_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py",
+    "scripts/launch_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py",
+    "scripts/launch_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py",
+    "scripts/launch_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py",
+    "scripts/launch_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py",
+    "scripts/launch_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
+    "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
     "lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py"
   ],
   "g2_or_heldout_open_count": 0,
@@ -459,14 +481,44 @@
       "path": "scripts/evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
     },
     {
+      "byte_count": 31407,
+      "file_sha256": "9f816eff5353984cd8335de49bb914f23fe4affeefcdeb0cab40b210e6db1884",
+      "path": "scripts/execute_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py"
+    },
+    {
       "byte_count": 63272,
       "file_sha256": "307b99bd2d5c86661cb3079af7e817edf4f768d6583e43c84532343467b12e72",
       "path": "scripts/execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
     },
     {
+      "byte_count": 33138,
+      "file_sha256": "dc4f2504424b55f0c8fadee213c5a88016dea41e1c5b14adb9bb147c4b877b2e",
+      "path": "scripts/execute_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py"
+    },
+    {
+      "byte_count": 22830,
+      "file_sha256": "5ce4259126c21d0f474c0548f0ee6757f78225daa8ed778540f83764496d0e92",
+      "path": "scripts/execute_go2_rgb_object_space_height_volume_joint_jepa_v18.py"
+    },
+    {
+      "byte_count": 53074,
+      "file_sha256": "31e7e802220b8c5aee71fe25398352050618eb060c5c071d267b86a9281225ab",
+      "path": "scripts/execute_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py"
+    },
+    {
       "byte_count": 11124,
       "file_sha256": "fb8f1cbd2badb9b6697a247322f1301b96a42402c136d71a45b8618bd4fcf737",
       "path": "scripts/execute_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v26.py"
+    },
+    {
+      "byte_count": 35114,
+      "file_sha256": "87ee973802e87cc5e3d98aeb14a8c08f02c92f50649d923000a36b51f0e8f03e",
+      "path": "scripts/execute_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py"
+    },
+    {
+      "byte_count": 29263,
+      "file_sha256": "f8f919fc1e05d60d12e84409643b2dffc97a953635a33b0e3931b6d8ae8741d7",
+      "path": "scripts/execute_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py"
     },
     {
       "byte_count": 47494,
@@ -479,9 +531,29 @@
       "path": "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py"
     },
     {
-      "byte_count": 29034,
-      "file_sha256": "0bc7dfedbee82670c54dd94d9d93855db82a60d4c25d1e0da8cc103d96574529",
+      "byte_count": 13830,
+      "file_sha256": "bc9be8a0edfcfa2609e3948d266c4788ffd991b4b1832187aafe0e9de45af951",
+      "path": "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v14.py"
+    },
+    {
+      "byte_count": 20923,
+      "file_sha256": "d189433cc2e10352f15deec5c81109e9cf4b52047ba90867a1e30aa33dd10fcb",
+      "path": "scripts/launch_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py"
+    },
+    {
+      "byte_count": 29572,
+      "file_sha256": "5a46f66e556a751ed7838a97a400b6d468467a25c973670d18b8af4cd625c011",
       "path": "scripts/launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 17196,
+      "file_sha256": "be51d8da0c7f564124afa0f9f647b8f0c28e821078adc14c315fca8b91d422da",
+      "path": "scripts/launch_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py"
+    },
+    {
+      "byte_count": 8542,
+      "file_sha256": "d16360f051cb25fc9bb6adc363c4df722120edb7732ebbd36fe3433ea0585b88",
+      "path": "scripts/launch_go2_rgb_object_space_height_volume_joint_jepa_v18.py"
     },
     {
       "byte_count": 14818,
@@ -489,9 +561,29 @@
       "path": "scripts/launch_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py"
     },
     {
+      "byte_count": 14684,
+      "file_sha256": "40c43ecdbaf9dc41a7b09ca2f42730538e2645033d5c0a24809d4bec82a80c5b",
+      "path": "scripts/launch_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py"
+    },
+    {
+      "byte_count": 22650,
+      "file_sha256": "4cb6fb3302919d6090e3ef456068ba209890237d65c87c8515a723628ee5b486",
+      "path": "scripts/launch_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py"
+    },
+    {
+      "byte_count": 85583,
+      "file_sha256": "b08656ff7de49d0d498dea966202663788e0c8da3964f947f7ebf2742974c23a",
+      "path": "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py"
+    },
+    {
       "byte_count": 113094,
       "file_sha256": "33617086a5481f2fa0bf8ae6993110c40bf8db85f066d1d6e874dde12fb07000",
       "path": "scripts/run_go2_direct_egocentric_bev_state_jepa_v1.py"
+    },
+    {
+      "byte_count": 36255,
+      "file_sha256": "b12bf477313f6c227d1a76c4abcf37209f14a221b6a3ce3f74f015b9a207d911",
+      "path": "scripts/run_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py"
     },
     {
       "byte_count": 183259,
@@ -504,6 +596,16 @@
       "path": "scripts/run_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
     },
     {
+      "byte_count": 29417,
+      "file_sha256": "43ef44effd03587287e0c461e4f4feeb80e8670446335b2dff490d9ee3e7c8f7",
+      "path": "scripts/run_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py"
+    },
+    {
+      "byte_count": 6608,
+      "file_sha256": "453de0f1b718cca7ce727f50213acd08880ad0f7a98491a7fe29dda710b710e9",
+      "path": "scripts/run_go2_rgb_object_space_height_volume_joint_jepa_v18.py"
+    },
+    {
       "byte_count": 37737,
       "file_sha256": "063c397c6b4f274b5331c659256631203b143823cb1ed34f6167294ebec91046",
       "path": "scripts/run_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py"
@@ -514,9 +616,34 @@
       "path": "scripts/run_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1.py"
     },
     {
+      "byte_count": 34726,
+      "file_sha256": "0a149aadfc8f4f0860c4bdfd9fe330e96ab95cbbe556e5b2c16ef1e390e819c6",
+      "path": "scripts/run_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py"
+    },
+    {
+      "byte_count": 37115,
+      "file_sha256": "6229e0bf863f29e0f407286a76ba0f2fa42089bef498e50491b55125e5020d7c",
+      "path": "scripts/run_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py"
+    },
+    {
       "byte_count": 23805,
       "file_sha256": "0d0d5b30c4674ac678de8898c6a55e5103268636cbdff7dc2388461ceb38b662",
       "path": "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 32558,
+      "file_sha256": "f194d0451855d49c5338bfd06f66f8b13b0312a71662d24e140cb151bbccbe08",
+      "path": "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py"
+    },
+    {
+      "byte_count": 18988,
+      "file_sha256": "6f76dd5b098ff360a3ada5bbb18f74a13342f3a5212e871da6db8f5f3a5bb1bf",
+      "path": "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v2_occupied_safety_aux.py"
+    },
+    {
+      "byte_count": 5497,
+      "file_sha256": "7cab73752593b12b638b55710714ff956a2441e92df2fe775902472a7b69a8cb",
+      "path": "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v3_half_occupied_safety_aux.py"
     },
     {
       "byte_count": 103481,
@@ -524,8 +651,8 @@
       "path": "scripts/run_go2_shared_jepa_v5_matched_training_v1.py"
     }
   ],
-  "source_bindings_sha256": "b25ff48d694b907d51e0a05b3ae9508acc77cf7a28cd11b89cd437acbc707bc9",
-  "source_count": 93,
+  "source_bindings_sha256": "3a2989c2b8aca1d8d1c2203c484eebcc97ed9b0fa9ed98b244dc6b866b6f18da",
+  "source_count": 114,
   "source_paths": [
     "lewm/__init__.py",
     "lewm/benchmarks/__init__.py",
@@ -607,18 +734,39 @@
     "scripts/diagnose_go2_post_action_projective_support_selection_admissibility_v1.py",
     "scripts/diagnose_go2_swept_progress_selection_v1.py",
     "scripts/evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+    "scripts/execute_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py",
     "scripts/execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+    "scripts/execute_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py",
+    "scripts/execute_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
+    "scripts/execute_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py",
     "scripts/execute_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v26.py",
+    "scripts/execute_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py",
+    "scripts/execute_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py",
     "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v1.py",
     "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+    "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v14.py",
+    "scripts/launch_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py",
     "scripts/launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+    "scripts/launch_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py",
+    "scripts/launch_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
     "scripts/launch_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py",
+    "scripts/launch_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py",
+    "scripts/launch_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py",
+    "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
     "scripts/run_go2_direct_egocentric_bev_state_jepa_v1.py",
+    "scripts/run_go2_rgb_action_prior_residualized_wrong_scene_survival_output_joint_jepa_v23.py",
     "scripts/run_go2_rgb_jepa_encoder_pretraining_v1.py",
     "scripts/run_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+    "scripts/run_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19.py",
+    "scripts/run_go2_rgb_object_space_height_volume_joint_jepa_v18.py",
     "scripts/run_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v25.py",
     "scripts/run_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1.py",
+    "scripts/run_go2_rgb_predictor_core_protected_survival_output_joint_jepa_v24.py",
+    "scripts/run_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py",
     "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v1.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v2_occupied_safety_aux.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v3_half_occupied_safety_aux.py",
     "scripts/run_go2_shared_jepa_v5_matched_training_v1.py"
   ],
   "split_integrity_amendment": {
