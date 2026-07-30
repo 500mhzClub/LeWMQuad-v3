@@ -306,6 +306,29 @@ These instructions apply to the entire repository.
   probability-calibration, G2, navigation, held-out, production, promotion,
   deployment, retry, resume, recovery, extension, architecture change,
   second-integrity-replacement, or further-attempt authority.
+- The RGB object-space height-volume joint-JEPA V18 integrity replacement V2
+  source may additionally be clean exported only from frozen
+  source-and-review commit
+  `4af4e2c6e349355b540a98443e5dcca6b37e7197`, and only as (a) the 86 paths
+  in its committed recursive source manifest and (b) the twenty-one V2/V1
+  preregistration and terminal-failure witnesses, predecessor identity/result
+  witnesses, manifest, source-review, recursive-checkers, and focused V18 test
+  paths explicitly enumerated and SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_replacement_v2_clean_export_certification_2026-07-30.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied original-V18, V1, and V10/V14/V15/V17
+  predecessor documents are source-only identity evidence and grant no
+  predecessor runtime-output, checkpoint, resume, calibration, or execution
+  authority. The V2 certification itself and later one-shot authority may be
+  added to the narrow export only at their exact reviewed paths after their
+  respective commits and exact file-SHA-256 validation. This source-only
+  exception grants no generated-input, runtime-artifact, checkpoint, tensor,
+  schedule, dataset, RGB, GPU, training, qualification,
+  probability-calibration, G2, navigation, held-out, production, promotion,
+  deployment, retry, resume, recovery, extension, architecture change,
+  further-integrity-replacement, or further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
