@@ -1,0 +1,268 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 19,
+    "certified_source_bindings_sha256": "df475b523c6a50cbaf5dbf380246c08435d36eba402c97fc8fcd403499c431e7",
+    "certified_source_rehash_count": 109,
+    "development_rgb_file_count": 8701,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 9425,
+    "raw_consumed_inputs_rehashed": true,
+    "raw_consumed_records_sha256": "36f15fa1648484dfde94a966cdc89cbd844490d28f8324d98dedec6ae8c525d0",
+    "raw_consumed_unique_file_count": 9425,
+    "raw_supervision_file_count": 722,
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "f479441847fe13724e302507aced588843803070f8bd68f1b0d1b9e3c00dea1f",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "output_root": ".generated/go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_replacement_v3/attempt_v1",
+    "reservation_created_utc": "2026-07-30T02:37:19Z",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "terminal_update": 400
+  },
+  "classification": "TERMINAL_SCIENTIFIC_FAILURE_NOT_INFRASTRUCTURE_FAILURE",
+  "comparison_to_matched_update400": {
+    "matched_thresholds": {
+      "passed_physical_margin_count_strictly_greater_than": 72,
+      "rough_depth_p95_m_strictly_less_than": 1.8582415819168085,
+      "total_physical_shortfall_strictly_less_than": 68.96954700805838
+    },
+    "v18_advantage": {
+      "additional_passed_physical_margins": 17,
+      "rough_depth_p95_reduction_m": 0.23645257949829057,
+      "total_physical_shortfall_reduction": 15.82866469898256
+    }
+  },
+  "content_sha256": "b30742fb5f66a414c8789124e0eda0562b9efa2732f1f31db26333abb2018703",
+  "date": "2026-07-30",
+  "decision": {
+    "checkpoint_authorized": false,
+    "checkpoint_published": false,
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "probability_calibration_authorized": false,
+    "reason": "V18 passed every registered update-400 physical and integrity check, but the correct state failed to beat both a wrong-scene RGB state and the train-action mean transition prior on every registered causal statistic. The identical six-of-twelve control pattern at updates 100 and 400 rejects a longer same-mechanism run.",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "same_mechanism_scale_to_update1000_rejected": true,
+    "status": "PASS_COMPLETE_SCIENTIFIC_FAILURE_AUDIT"
+  },
+  "gradient_and_integrity_audit": {
+    "absent_gradient_tensor_count_all_routes": 0,
+    "all_400_optimizer_rows_integrity_passed": true,
+    "gradient_route_preclip_l2": {
+      "camera": {
+        "clipped_update_count": 209,
+        "maximum": 8.970195,
+        "mean": 1.370684,
+        "minimum": 0.601351,
+        "update400": 1.012689
+      },
+      "joint": {
+        "clipped_update_count": 400,
+        "maximum": 16.454782,
+        "mean": 3.775125,
+        "minimum": 1.429479,
+        "update400": 4.625879
+      },
+      "predictor": {
+        "clipped_update_count": 400,
+        "maximum": 137.812225,
+        "mean": 13.243314,
+        "minimum": 1.994123,
+        "update400": 7.617548
+      },
+      "representation": {
+        "clipped_update_count": 400,
+        "maximum": 21.686808,
+        "mean": 5.263762,
+        "minimum": 1.338378,
+        "update400": 8.367237
+      }
+    },
+    "representation_route_active_update_count": 400,
+    "structural_integrity_pass": true,
+    "target_gradient_tensor_count": 0,
+    "target_integrity_pass": true
+  },
+  "mechanism_conclusion": {
+    "causal_bottleneck": "The predictor learned useful action dependence but insufficient current-state-by-action interaction; a generic action-conditioned transition prior remained competitive with the nominal prediction.",
+    "encoder_conclusion": "The learned RGB encoder and object-space height volume contain useful physical geometry, supported by strong monotonic physical gains and nonzero wrong-RGB dependence. Zero complete scopes and the rough occupied-recall failure mean the representation is promising rather than qualified.",
+    "next_mechanism": "Retain the V18 RGB height-volume encoder and jointly train a counterfactual innovation predictor: predict the EMA future-minus-current latent change with multiplicative state-by-action conditioning, no action-only additive path, and same-action wrong-scene contrast. Require both failed causal-control triplets to flip while preserving physical progress.",
+    "next_mechanism_must_be_materially_different": true,
+    "predictor_gradient_or_connectivity_failure": false,
+    "v18_retry_resume_or_extension_authorized": false
+  },
+  "progression": [
+    {
+      "causal_control_passed_checks": null,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 4,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 39,
+      "rough_depth_p95_m": 4.869073963165282,
+      "rough_ground_balanced_accuracy": 0.541935563806034,
+      "rough_pixel_balanced_accuracy": 0.6326792707919727,
+      "total_physical_shortfall": 191.5839970395566,
+      "update": 0,
+      "worst_physical_margin": -18.476295852661128
+    },
+    {
+      "causal_control_passed_checks": 6,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 15,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 66,
+      "rough_depth_p95_m": 2.1620017528533935,
+      "rough_ground_balanced_accuracy": 0.616806049133202,
+      "rough_pixel_balanced_accuracy": 0.8114829150424683,
+      "total_physical_shortfall": 75.86224175583095,
+      "update": 100,
+      "worst_physical_margin": -8.380256557464623
+    },
+    {
+      "causal_control_passed_checks": 6,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 14,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 89,
+      "rough_depth_p95_m": 1.621789002418518,
+      "rough_ground_balanced_accuracy": 0.6584312740044068,
+      "rough_pixel_balanced_accuracy": 0.8515713859400101,
+      "total_physical_shortfall": 53.14088230907582,
+      "update": 400,
+      "worst_physical_margin": -6.692063236236576
+    }
+  ],
+  "receipt_artifacts": [
+    {
+      "byte_count": 3722,
+      "content_sha256": "40c8e97878adddd26123ddb64b89bc8df1240e25b7b37c9babd515fc20229cbd",
+      "file_sha256": "0f9487bd25232078412bb02158df0522d9f6fdf84a028e08c9bae411888e60e5",
+      "mode": "0444",
+      "path": "failure.json"
+    },
+    {
+      "byte_count": 8024,
+      "content_sha256": "f8ed5ebd81b0a7c6f740d2c9f66845c22209bbdca2ba43e171ac12563be19a18",
+      "file_sha256": "da70a7451ead1125cc2b946aecc0c21a03195f9ba4d5f05cea55157195988868",
+      "mode": "0444",
+      "path": "metrics/update_0.json"
+    },
+    {
+      "byte_count": 7579,
+      "content_sha256": "c5d931f278467e6e3e1409ee33e8dc62ceb57024f117e9f80106ffc510bb7fb2",
+      "file_sha256": "596db116adfe1f57ea81425b51ae5ab64a5c81ef80741fee2dec979444260a0f",
+      "mode": "0444",
+      "path": "metrics/update_100.json"
+    },
+    {
+      "byte_count": 8099,
+      "content_sha256": "d92a43a1d7edd53a98b6f4c97f5f35d6feceafe06fb4f1071f0db757effa73c0",
+      "file_sha256": "9fb3f8099cb2ab1409d0fd29562bffb563bcfd2f57d21e2950b7200798d478aa",
+      "mode": "0444",
+      "path": "metrics/update_400.json"
+    },
+    {
+      "byte_count": 3308481,
+      "content_sha256": "f42d04266c75f50b1f5597e17051419c8891cdbc3fc91e85a5b6e84e3f41735a",
+      "file_sha256": "3877d4247600a4101933d9d0180e72827697e2a8256bdf90c1d5f631239678b4",
+      "mode": "0444",
+      "path": "receipts/terminal_access.json"
+    },
+    {
+      "byte_count": 518,
+      "content_sha256": "efc212caf4c9b9d865425a389b5082246bfb48615c729132b911bce137930fa8",
+      "file_sha256": "7581eee1f9cac576b3075f49f51b5ba614aaf7b3640b6f65dd31e857f558ee1c",
+      "mode": "0444",
+      "path": "reservation.json"
+    },
+    {
+      "byte_count": 708076,
+      "file_sha256": "2834bb56cc7acd94faad751d67ec1fb7c6e585cde5495bc0f1da45bfe8669a6d",
+      "mode": "0444",
+      "path": "trace.jsonl",
+      "row_count": 402
+    }
+  ],
+  "schema": "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_replacement_v3_scientific_result_v1",
+  "scientific_accounting": {
+    "backward_calls": 3200,
+    "camera_frame_objectives": 12800,
+    "camera_route_grad_calls": 1600,
+    "ema_steps": 400,
+    "joint_route_grad_calls": 1600,
+    "microbatch_graphs": 1600,
+    "optimizer_steps": 400,
+    "predictor_forwards": 1600,
+    "predictor_objectives": 1600,
+    "presentations": 6400,
+    "updates": 400
+  },
+  "scientific_identity": {
+    "authority_commit": "e0076713e832f5772dc2ac60de7ad8540f669481",
+    "authority_file_sha256": "ea96602c83f99314b239a6cc412189a7056577bf6bd72d2dca1878cf3689b806",
+    "clean_export_certification_binding_commit": "169e1c85003785f69cb2a70b6f22055a8c0a517a",
+    "clean_export_certification_file_sha256": "556d15e2e7dd610972edd8141818a0bd873611d973ec4cf82366fb2939b9bb57",
+    "frozen_source_and_review_commit": "0e771562d6b6ad32f5d7d146c9f7c99bfa0651d3",
+    "implementation_commit": "5567c9aa152b8aedcc085cfff46a7975668f7bfa",
+    "preregistration_commit": "81d1557cce55a448a84e00b5e822923b590e6f7d",
+    "recursive_source_manifest_commit": "b0f2b776d3b7217ae6aeeee815220c0dad565a34",
+    "recursive_source_manifest_file_sha256": "8eb7b2b4b80f4657ca4b05f7e5bbeb417cd91797340adfd4f7c241f186b926f2",
+    "source_review_file_sha256": "9624dcf6fea1566f80b35c8cd68c9372836d4965d3257fcc72e991eefc7e4234"
+  },
+  "terminal_causal_controls": {
+    "coordinate_matched_persistence": {
+      "positive_bootstrap_lower_95": true,
+      "positive_equal_scene_delta": true,
+      "positive_family_count": true
+    },
+    "interpretation": "Nominal prediction beats persistence and shuffled actions, so prediction and action routes are live. It does not beat same-action wrong-scene RGB or an action-conditioned mean prior, so scene-specific conditional dynamics are not established.",
+    "shuffled_action": {
+      "positive_bootstrap_lower_95": true,
+      "positive_equal_scene_delta": true,
+      "positive_family_count": true
+    },
+    "train_action_mean_prior": {
+      "positive_bootstrap_lower_95": false,
+      "positive_equal_scene_delta": false,
+      "positive_family_count": false
+    },
+    "wrong_rgb": {
+      "positive_bootstrap_lower_95": false,
+      "positive_equal_scene_delta": false,
+      "positive_family_count": false
+    }
+  },
+  "update400_gate": {
+    "action": "FAIL_TERMINAL_NO_RETRY_NO_RESUME",
+    "checks": {
+      "all_twelve_causal_control_checks_true": false,
+      "passed_physical_margin_count_strictly_above_matched_update400": true,
+      "rough_depth_p95_strictly_below_matched_update400": true,
+      "structural_integrity_pass": true,
+      "total_physical_shortfall_strictly_below_matched_update400": true
+    },
+    "failed_causal_control_triplets": [
+      "wrong_rgb",
+      "train_action_mean_prior"
+    ],
+    "passed_causal_control_check_count": 6,
+    "passed": false,
+    "terminal_status": "FAIL_SCIENTIFIC_UPDATE400_GATE_TERMINAL"
+  }
+}
