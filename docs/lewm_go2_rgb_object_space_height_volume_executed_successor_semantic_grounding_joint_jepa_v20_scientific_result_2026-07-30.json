@@ -1,0 +1,378 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 25,
+    "certified_source_bindings_sha256": "d43488892e8c5d5f5594c5703e507c0802491cfa9c93d69f472d0cea20394b5b",
+    "certified_source_rehash_count": 118,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 9425,
+    "raw_consumed_inputs_rehashed": true,
+    "raw_consumed_records_sha256": "9ad6a00cd21a70e4a74b8cfa0a326fb975a2298faf7504d51ec4e05e030bb0e6",
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "3880ed1868621e3086a682e036db48b26234b0aec8c4241f84c93160af7a6f89",
+    "authority_commit": "1022c92cf2024ea2d00f0375a6f4aba707104c47",
+    "authority_file_sha256": "bb70b71160bf592eb61f26a06f17e2d7e3334c9c7902a1beed96cbdcf1ec1f89",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "output_root": ".generated/go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v20/attempt_v1",
+    "reservation_content_sha256": "c583fcdc8b1fc0cb1699fa6c87fc87948e91c50ca45694580d8c22f74d5810be",
+    "reservation_created_utc": "2026-07-30T04:51:30Z",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "terminal_update": 400
+  },
+  "classification": "TERMINAL_SCIENTIFIC_FAILURE_NOT_INFRASTRUCTURE_FAILURE",
+  "comparison_to_controlling_v18": {
+    "controlling_result": {
+      "commit": "f2e290ce42f7b0cd142131f3272d1119b7b5d3d1",
+      "content_sha256": "b30742fb5f66a414c8789124e0eda0562b9efa2732f1f31db26333abb2018703",
+      "file_sha256": "48f1168b33b6bf8cc7c437940ed0dabef9b5a29802813e3a1351e8bba1e2875a",
+      "path": "docs/lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_integrity_replacement_v3_scientific_result_2026-07-30.json"
+    },
+    "identical_terminal_causal_pattern": true,
+    "v18_update400": {
+      "causal_control_passed_check_count": 6,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_check_count": 14,
+      "passed_physical_margin_count": 89,
+      "rough_depth_p95_m": 1.621789002418518,
+      "rough_ground_balanced_accuracy": 0.6584312740044068,
+      "rough_pixel_balanced_accuracy": 0.8515713859400101,
+      "total_physical_shortfall": 53.14088230907582
+    },
+    "v20_minus_v18": {
+      "causal_control_passed_check_count": 0,
+      "inherited_v12_passed_check_count": 0,
+      "passed_physical_margin_count": 3,
+      "rough_depth_p95_m": 0.008464050292967595,
+      "rough_ground_balanced_accuracy": -0.003903646369776137,
+      "rough_pixel_balanced_accuracy": -0.00010353699123200055,
+      "total_physical_shortfall": -0.8963891463547213
+    },
+    "v20_update400": {
+      "causal_control_passed_check_count": 6,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_check_count": 14,
+      "passed_physical_margin_count": 92,
+      "rough_depth_p95_m": 1.6302530527114856,
+      "rough_ground_balanced_accuracy": 0.6545276276346307,
+      "rough_pixel_balanced_accuracy": 0.8514678489487781,
+      "total_physical_shortfall": 52.2444931627211
+    }
+  },
+  "content_sha256": "37f683c1b2a5086c92d9cb081e9ba55b4fef4ed61f8cefea99fb0e5760e5cab2",
+  "date": "2026-07-30",
+  "decision": {
+    "checkpoint_authorized": false,
+    "checkpoint_published": false,
+    "further_scientific_successor_authorized_by_this_result": false,
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "probability_calibration_authorized": false,
+    "probability_calibration_opened": false,
+    "reason": "V20 passed structural integrity and every registered update-400 physical threshold, but failed both the same-action wrong-RGB and train-action-mean-prior causal triplets. The resulting six-of-twelve causal pattern is identical to controlling V18, so factual executed-successor semantic grounding did not establish scene-specific state-by-action dynamics.",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "same_mechanism_retry_resume_extension_or_update1000_rejected": true,
+    "sealed_authorized": false,
+    "status": "PASS_COMPLETE_SCIENTIFIC_FAILURE_AUDIT"
+  },
+  "gradient_and_integrity_audit": {
+    "absent_gradient_tensor_count_all_routes": 0,
+    "all_400_optimizer_rows_integrity_passed": true,
+    "all_400_q_route_parameter_tensor_counts_equal_13": true,
+    "all_400_q_route_receipts_passed": true,
+    "all_400_target_gradient_tensor_counts_zero": true,
+    "all_loss_equations_passed": true,
+    "ema_count_sequence_exact": true,
+    "initial_structural_integrity_check_count": 13,
+    "initial_structural_integrity_passed": true,
+    "optimizer_step_count_per_completed_update": 1,
+    "q_route_excludes_representation_semantic_head_and_target": true,
+    "target_ema_step_count_per_completed_update": 1
+  },
+  "mechanism_conclusion": {
+    "accounting_isolation_conclusion": "V20 corrected the inherited accounting-registry boundary: all 400 full V19-shaped receipts crossed the projected V18-to-V13 validator and passed integrity. The earlier V19/V1 failure was plumbing-only and is closed.",
+    "causal_bottleneck": "The predictor beats persistence and shuffled actions but remains indistinguishable from both same-action wrong-scene RGB and an action-conditioned mean transition prior. Scene-specific current-state-by-action interaction is still not established.",
+    "encoder_conclusion": "The learned RGB encoder and object-space height volume retain useful physical geometry: V20 passed all three matched update-400 physical thresholds. Zero complete physical scopes and the failed rough occupied-recall check mean the representation remains promising rather than qualified.",
+    "next_mechanism": "If future work is separately preregistered, retain the learned-perception JEPA constraint but use a materially different state-specific transition mechanism, such as counterfactual future-minus-current latent innovation with multiplicative state-by-action conditioning and an explicit same-action wrong-scene contrast. Do not extend or retune the V19/V20 factual-successor mechanism.",
+    "next_mechanism_must_be_materially_different": true,
+    "q_objective_conclusion": "The Q route was live and learned its local factual target: its normalized successor NLL was below persistence on 372 of 400 update receipts and its predictor gradient was nonzero on every update. That local success did not transfer to the registered wrong-scene or action-prior causal comparisons, so the objective is insufficient rather than disconnected.",
+    "v20_retry_resume_extension_or_update1000_authorized": false
+  },
+  "progression": [
+    {
+      "causal_control_passed_checks": null,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 4,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 39,
+      "rough_depth_p95_m": 4.869073963165282,
+      "rough_ground_balanced_accuracy": 0.541935563806034,
+      "rough_pixel_balanced_accuracy": 0.6326792707919727,
+      "total_physical_shortfall": 191.5839970395566,
+      "update": 0,
+      "worst_physical_margin": -18.476295852661128
+    },
+    {
+      "causal_control_passed_checks": null,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 14,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 66,
+      "rough_depth_p95_m": 2.162057900428772,
+      "rough_ground_balanced_accuracy": 0.6146265193330216,
+      "rough_pixel_balanced_accuracy": 0.8057829404017935,
+      "total_physical_shortfall": 74.72164299547984,
+      "update": 100,
+      "worst_physical_margin": -8.279276514053349
+    },
+    {
+      "causal_control_passed_checks": 6,
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 14,
+      "integrity_pass": true,
+      "passed_physical_margin_count": 92,
+      "rough_depth_p95_m": 1.6302530527114856,
+      "rough_ground_balanced_accuracy": 0.6545276276346307,
+      "rough_pixel_balanced_accuracy": 0.8514678489487781,
+      "total_physical_shortfall": 52.2444931627211,
+      "update": 400,
+      "worst_physical_margin": -6.580973553657534
+    }
+  ],
+  "q_trace_audit": {
+    "changed_cell_fraction": {
+      "maximum": 0.06903076171875,
+      "mean": 0.030725021362304688,
+      "minimum": 0.0092926025390625
+    },
+    "matching_predictor_gradient_cosine": {
+      "maximum": 0.5088443756103516,
+      "mean": 0.04724539932532935,
+      "minimum": -0.265667587518692,
+      "negative_update_count": 150,
+      "positive_update_count": 250
+    },
+    "non_hold_row_count": {
+      "maximum_per_update": 16,
+      "mean_per_update": 14.335,
+      "minimum_per_update": 10,
+      "total": 5734
+    },
+    "normalized_successor_semantic_nll_q": {
+      "maximum": 1.3743017464876175,
+      "mean": 0.864066875083372,
+      "minimum": 0.4196346402168274,
+      "update_1": 0.98970727622509,
+      "update_100": 0.6376950666308403,
+      "update_400": 0.9348555505275726
+    },
+    "predictor_parameter_count": 259008,
+    "predictor_parameter_tensor_count": 13,
+    "q_route_preclip_l2": {
+      "clipped_update_count": 390,
+      "maximum": 11.70028305053711,
+      "mean": 3.5493307523429394,
+      "minimum": 0.6785002946853638,
+      "update_1": 1.8006213903427124,
+      "update_100": 2.4447567462921143,
+      "update_400": 2.219309091567993
+    },
+    "successor_minus_persistence_nll_normalized": {
+      "maximum": 0.10754653811454773,
+      "mean": -0.2136381621658802,
+      "minimum": -1.0051713585853577,
+      "strictly_negative_update_count": 372,
+      "strictly_positive_update_count": 27,
+      "update_1": 0.0,
+      "update_100": -0.07515128701925278,
+      "update_400": -0.294779896736145,
+      "zero_update_count": 1
+    }
+  },
+  "receipt_artifacts": [
+    {
+      "byte_count": 3824,
+      "content_sha256": "3609fc565ee9985e90e8a96f2843e3739b022e79eebda7bf8de5c372fb6bef35",
+      "file_sha256": "7f27e560bab5bd259889da38ea320cff91b6b321e2e4c08344a02557f90fc36b",
+      "mode": "0444",
+      "path": "failure.json"
+    },
+    {
+      "byte_count": 11224,
+      "content_sha256": "cedbbddf962ae8bd1ca600dde3e47cde521be60d92764c60c02f066eaad24689",
+      "file_sha256": "b48865a3aea891da56d5b9f553bf0f028c96e1bb0d0a66e7d2e79c99b176a79a",
+      "mode": "0444",
+      "path": "metrics/update_0.json"
+    },
+    {
+      "byte_count": 11200,
+      "content_sha256": "9e85437b43c6932d23d4e3bdef8215358570d23bd0b472dcb4262caff0748b51",
+      "file_sha256": "17decc5590ac87315eb7138efc963a6052fcee9ab9f787a2040b0c67fe4727cb",
+      "mode": "0444",
+      "path": "metrics/update_100.json"
+    },
+    {
+      "byte_count": 11678,
+      "content_sha256": "d7b1733ae96a9cf776924306957d432ec446355f9d2f8a2be1536c3451f80dcd",
+      "file_sha256": "8a3f822ccd7963dc898b3cc73c361db8dee6601a0e2f7af522f400cf2a823afb",
+      "mode": "0444",
+      "path": "metrics/update_400.json"
+    },
+    {
+      "byte_count": 3318212,
+      "content_sha256": "ef0c68a97237c31f07be31a8020abe1c4241275fcd5c41f915e6920d220c0b9e",
+      "file_sha256": "572d734e16064f6a22b56c8bbb392235b0b69c5321220272d091c5ab78b341fb",
+      "mode": "0444",
+      "path": "receipts/terminal_access.json"
+    },
+    {
+      "byte_count": 531,
+      "content_sha256": "c583fcdc8b1fc0cb1699fa6c87fc87948e91c50ca45694580d8c22f74d5810be",
+      "file_sha256": "360f65e1eca76820ab6a0ea82602ea43ffe06703890892de9f11f1f7bac3bb01",
+      "mode": "0444",
+      "path": "reservation.json"
+    },
+    {
+      "byte_count": 1037301,
+      "file_sha256": "1db55725a83f1b107d17fea33c079ae6b87808953416bd934b9e131c376df1df",
+      "mode": "0444",
+      "path": "trace.jsonl",
+      "row_count": 402
+    }
+  ],
+  "schema": "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v20_scientific_result_v1",
+  "scientific_accounting": {
+    "backward_calls": 4800,
+    "camera_frame_objectives": 12800,
+    "camera_route_grad_calls": 1600,
+    "ema_steps": 400,
+    "factual_successor_grad_calls": 1600,
+    "factual_successor_objectives": 1600,
+    "joint_route_grad_calls": 1600,
+    "microbatch_graphs": 1600,
+    "optimizer_steps": 400,
+    "predictor_forwards": 1600,
+    "predictor_objectives": 3200,
+    "presentations": 6400,
+    "updates": 400
+  },
+  "scientific_identity": {
+    "authority_commit": "1022c92cf2024ea2d00f0375a6f4aba707104c47",
+    "authority_file_sha256": "bb70b71160bf592eb61f26a06f17e2d7e3334c9c7902a1beed96cbdcf1ec1f89",
+    "clean_export_certification_binding_commit": "589e76e07755b5a9d3eeda99d59de0276eb319fa",
+    "clean_export_certification_file_sha256": "cab9bc9f549c92d9d2e32cb6102eac003ac1888cd3a7201020c64aeffdfaaee1",
+    "frozen_source_and_review_commit": "1692c6029d9e772ad2a7d65447ad70fc634a7afc",
+    "implementation_commit": "04c383183dab586bb3395acfceaaa749e55ff3ce",
+    "preregistration_commit": "c99837b91aeb959e07da94e898e3ba11ccbb4c04",
+    "recursive_source_manifest_commit": "f1ea5f9cce2234033056c80e6ed8b8e11a3b0ade",
+    "recursive_source_manifest_file_sha256": "d87e6f884caaad0367c366912ecde8f4ec9ede776865608eb97913942830a99d",
+    "science_identity_preserved_from_v19_v1": {
+      "data": true,
+      "initialization": true,
+      "losses_and_q_route": true,
+      "model": true,
+      "optimizer_and_ema": true,
+      "schedule": true,
+      "seed": true,
+      "thresholds": true,
+      "update_and_presentation_caps": true
+    },
+    "source_review_file_sha256": "a9fd365f9a6e52049b7cf1f210b3968d42060f4c69a2f1d3b3ace900d47df1ef",
+    "source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-v20-accounting-isolation-source",
+    "v19_integrity_replacement_v1_terminal_failure_result_commit": "7105e2d9ed6e724f364c837e84177b6b4c4cd163",
+    "v20_only_scientific_runtime_change": "Inherited V13 accounting registry remained isolated from the unchanged extended V19 accounting receipt."
+  },
+  "terminal_causal_controls": {
+    "coordinate_matched_persistence": {
+      "bootstrap_lower_95": 0.23834416069020847,
+      "equal_scene_mean_delta": 0.30444945936597445,
+      "positive_bootstrap_lower_95": true,
+      "positive_equal_scene_delta": true,
+      "positive_family_count": true,
+      "positive_family_count_value": 8
+    },
+    "interpretation": "Nominal prediction decisively beats persistence and shuffled actions, so the predictor and action paths are live. It obtains exactly zero advantage over both wrong-scene RGB and the train-action mean prior on every registered causal statistic, so scene-specific conditional dynamics are not established.",
+    "shuffled_action": {
+      "bootstrap_lower_95": 0.14046857153657583,
+      "equal_scene_mean_delta": 0.21051418641337016,
+      "positive_bootstrap_lower_95": true,
+      "positive_equal_scene_delta": true,
+      "positive_family_count": true,
+      "positive_family_count_value": 8
+    },
+    "train_action_mean_prior": {
+      "bootstrap_lower_95": 0.0,
+      "equal_scene_mean_delta": 0.0,
+      "positive_bootstrap_lower_95": false,
+      "positive_equal_scene_delta": false,
+      "positive_family_count": false,
+      "positive_family_count_value": 0
+    },
+    "wrong_rgb": {
+      "bootstrap_lower_95": 0.0,
+      "equal_scene_mean_delta": 0.0,
+      "positive_bootstrap_lower_95": false,
+      "positive_equal_scene_delta": false,
+      "positive_family_count": false,
+      "positive_family_count_value": 0
+    }
+  },
+  "update400_gate": {
+    "action": "FAIL_TERMINAL_NO_RETRY_NO_RESUME",
+    "checks": {
+      "all_twelve_causal_control_checks_true": false,
+      "passed_physical_margin_count_strictly_above_matched_update400": true,
+      "rough_depth_p95_strictly_below_matched_update400": true,
+      "structural_integrity_pass": true,
+      "total_physical_shortfall_strictly_below_matched_update400": true
+    },
+    "failed_causal_control_triplets": [
+      "wrong_rgb",
+      "train_action_mean_prior"
+    ],
+    "matched_thresholds": {
+      "passed_physical_margin_count_strictly_greater_than": 72,
+      "rough_depth_p95_m_strictly_less_than": 1.8582415819168085,
+      "total_physical_shortfall_strictly_less_than": 68.96954700805838
+    },
+    "next_update": null,
+    "passed_causal_control_check_count": 6,
+    "passed": false,
+    "physical_threshold_clearance": {
+      "passed_margin_count_above_strict_threshold": 20,
+      "rough_depth_p95_m_below_threshold": 0.22798852920532298,
+      "total_shortfall_below_threshold": 16.725053845337285
+    },
+    "terminal_status": "FAIL_SCIENTIFIC_UPDATE400_GATE_TERMINAL"
+  },
+  "validation": {
+    "canonical_json_content_mismatch_count": 0,
+    "checkpoint_artifact_count": 0,
+    "file_binding_mismatch_count": 0,
+    "immutable_regular_file_count": 7,
+    "metric_artifact_count": 3,
+    "public_artifact_count": 7,
+    "success_artifact_count": 0,
+    "symlink_count": 0,
+    "terminal_access_receipt_count": 1,
+    "trace_content_mismatch_count": 0,
+    "trace_optimizer_row_count": 400,
+    "trace_row_count": 402,
+    "trace_update400_control_row_count": 1
+  }
+}
