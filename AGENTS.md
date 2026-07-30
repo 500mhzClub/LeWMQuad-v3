@@ -559,6 +559,31 @@ These instructions apply to the entire repository.
   probability-calibration, G2, navigation, held-out, sealed, production,
   promotion, deployment, retry, resume, recovery, extension, second attempt,
   or further-attempt authority.
+- The science-identical RGB explicit-plan discounted-successor-state
+  joint-JEPA V27 integrity replacement V1 source may additionally be clean
+  exported only from frozen source-and-review commit
+  `c076d4159cad83af5c4660f7d7dbd2ac06dc2414`, and only as (a) the 117
+  paths in its committed recursive source manifest and (b) the twelve
+  original-V27 preregistration and terminal-infrastructure-failure witnesses,
+  replacement preregistration, manifest, source-review, V26 result-identity
+  witness, and focused V27 test paths explicitly enumerated and
+  SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_integrity_replacement_v1_clean_export_certification_2026-07-30.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied original-V27 terminal-failure and V26 result
+  documents are source-only identity evidence and grant no predecessor
+  runtime-output, checkpoint, retry, resume, or execution authority. Do not
+  export the original V27 clean-export certification or execution authority.
+  The replacement certification itself and later one-shot authority may be
+  added to the narrow export only at their exact reviewed paths after their
+  respective commits and exact file-SHA-256 validation. This source-only
+  exception grants no generated-input, runtime-artifact, checkpoint, tensor,
+  schedule, dataset-payload, RGB, GPU, training, qualification,
+  probability-calibration, G2, navigation, held-out, sealed, production,
+  promotion, deployment, retry, resume, recovery, extension, second attempt,
+  further integrity replacement, or further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
