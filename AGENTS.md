@@ -445,6 +445,28 @@ These instructions apply to the entire repository.
   held-out, production, promotion, deployment, retry, resume, recovery,
   extension, architecture variant, integrity replacement, second attempt, or
   further-attempt authority.
+- The RGB scene-action contrastive-innovation joint-JEPA V22 source may
+  additionally be clean exported only from frozen source-and-review commit
+  `e0697a6f2b8498ec64484b216f7366a8d7f199a5`, and only as (a) the 95 paths
+  in its committed recursive source manifest and (b) the thirty-five V22 and
+  predecessor preregistration/result identity, manifest, source-review,
+  recursive-checker, and focused V22 test paths explicitly enumerated and
+  SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_scene_action_contrastive_innovation_joint_jepa_v22_clean_export_certification_2026-07-30.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied V21/V20/V19/V18 and earlier predecessor
+  documents are source-only identity evidence and grant no predecessor
+  runtime-output, checkpoint, resume, calibration, or execution authority.
+  The V22 certification itself and later one-shot authority may be added to
+  the narrow export only at their exact reviewed paths after their respective
+  commits and exact file-SHA-256 validation. This source-only exception grants
+  no generated-input, runtime-artifact, checkpoint, tensor, schedule, dataset,
+  RGB, GPU, training, qualification, probability-calibration, G2, navigation,
+  held-out, production, promotion, deployment, retry, resume, recovery,
+  extension, architecture variant, integrity replacement, second attempt, or
+  further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
