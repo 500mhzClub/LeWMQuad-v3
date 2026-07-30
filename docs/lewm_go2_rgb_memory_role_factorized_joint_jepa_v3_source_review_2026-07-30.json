@@ -1,0 +1,87 @@
+{
+  "access": {
+    "attempt_reservation_count": 0,
+    "checkpoint_open_count": 0,
+    "dataset_payload_or_rgb_open_count": 0,
+    "g2_payload_open_count": 0,
+    "generated_or_runtime_artifact_open_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "navigation_run_count": 0,
+    "probability_calibration_open_count": 0,
+    "scientific_gpu_or_training_run_count": 0,
+    "source_only_cpu_test_run_count": 5
+  },
+  "authority": "source_review_only_no_execution_generated_payload_checkpoint_tensor_dataset_rgb_gpu_training_probability_calibration_g2_navigation_memory_integration_heldout_sealed_production_promotion_retry_or_resume_authority",
+  "blockers": [],
+  "content_sha256": "189f8423386a0d829e7c0fff928039980ba5158862b41724b11f2da145c401d7",
+  "date": "2026-07-30",
+  "execution_authorized": false,
+  "implementation_commit": "935de69b98e05ec4a67eb499b1373e604f4b662c",
+  "independent_audit": {
+    "blockers_closed": [
+      "update100_local_target_and_access_integrity_now_conjunctive_with_corruption_regression",
+      "terminalizer_now_custody_binds_registered_orphan_update100_and_update400_states"
+    ],
+    "blockers_found": [
+      "update100_local_access_integrity_was_not_explicitly_conjunctive",
+      "orphan_restart_publication_window_could_prevent_failure_receipt"
+    ],
+    "remaining_blocker_count": 0,
+    "reviewer_count": 3
+  },
+  "lifecycle_review": {
+    "attempt_count": 1,
+    "denied_by_default_launcher": true,
+    "fresh_model_initialization": true,
+    "orphan_restart_state_receipted_without_deserialization": true,
+    "output_root": ".generated/go2_rgb_memory_role_factorized_joint_jepa_v3/attempt_v1",
+    "private_restart_self_authorizes_resume": false,
+    "private_restart_updates": [
+      100,
+      400
+    ],
+    "promoted_checkpoint_requires_terminal_pass": true,
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-memory-role-factorized-joint-jepa-v3-source"
+  },
+  "manifest": {
+    "byte_count": 39756,
+    "content_sha256": "0fa4a4f6e25d8c4589820baa520ea9a97e01fee3bea1eeb3484d04aa8ac12d4d",
+    "file_sha256": "acafa4270b03101428a09c9563de56ced9ffb9f6890a5ac373d98a0448c57fa6",
+    "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "3848d8407df73d6ea4a842bad2f01a48ab01b024b305c40781351e1d8974b576",
+    "source_count": 115
+  },
+  "manifest_commit": "11b787dbb1db26d83ed15d13a7afa6a4c318290e",
+  "passed": true,
+  "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_source_review_v1",
+  "scientific_delta_review": {
+    "exact_eight_row_sixteen_candidate_objective": true,
+    "exact_preregistered_place_architecture": true,
+    "heldout_or_sealed_access_authorized": false,
+    "local_learned_metrics_terminal_gating": false,
+    "maximum_presentations": 12800,
+    "maximum_updates": 400,
+    "observation_updates": [
+      0,
+      100,
+      400
+    ],
+    "one_optimizer_then_one_ema_step": true,
+    "physical_and_local_training_controls_preserved": true,
+    "update100_continuation_gate_exact": true,
+    "update400_memory_entry_gate_exact": true
+  },
+  "status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+  "verification": {
+    "clean_export_test_required_before_certification": true,
+    "focused_worktree_test_count": 59,
+    "focused_worktree_test_failures": 0,
+    "gpu_hidden_for_source_tests": true,
+    "source_binding_failure_count": 0,
+    "source_closure_require_tracked_pass": true,
+    "warnings_as_errors": true,
+    "worktree_binding_failure_count": 0
+  }
+}
