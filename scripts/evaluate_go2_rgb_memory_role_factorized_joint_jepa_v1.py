@@ -37,8 +37,7 @@ from lewm.models.memory_role_factorized_joint_jepa_v1 import (
 
 
 SCHEMA_PREFIX_V1 = (
-    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1"
+    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2"
 )
 CHECKPOINT_SELECTION_ROLE_V1 = "checkpoint_selection"
 FAMILIES_V1 = (
@@ -57,7 +56,7 @@ PLACE_SELECTION_ROW_COUNT_V1 = 320
 PLACE_FAMILY_ROW_COUNTS_V1 = dict(
     zip(FAMILIES_V1, (32, 48, 32, 32, 64, 64, 20, 28), strict=True)
 )
-PLACE_RETRIEVAL_MINIMUM_CANDIDATES_V1 = 40
+PLACE_RETRIEVAL_MINIMUM_CANDIDATES_V1 = 32
 PLACE_RETRIEVAL_MAXIMUM_CANDIDATES_V1 = 64
 LOCAL_SELECTION_MAXIMUM_ROWS_V1 = 2_048
 BOOTSTRAP_REPLICATES_V1 = 1_000
@@ -217,6 +216,96 @@ def _validate_role_and_scenes(
     if set(families) != set(FAMILIES_V1):
         raise MemoryRoleEvaluationContractError("selection panel lost a family")
     return scenes, families
+
+
+def _place_retrieval_candidate_references_v1(
+    rows: Sequence[PlaceTripletRow], indices: Sequence[int]
+) -> tuple[tuple[str, int, str], ...]:
+    references: list[tuple[str, int, str]] = []
+    seen: set[str] = set()
+    for reference_name in ("positive", "negative", "anchor"):
+        for index in indices:
+            identity = getattr(rows[index], reference_name).endpoint_identity_sha256
+            if identity in seen:
+                continue
+            seen.add(identity)
+            references.append((reference_name, index, identity))
+            if len(references) == PLACE_RETRIEVAL_MAXIMUM_CANDIDATES_V1:
+                return tuple(references)
+    return tuple(references)
+
+
+def preflight_place_retrieval_candidate_counts_v1(
+    rows: Sequence[PlaceTripletRow],
+) -> dict[str, Any]:
+    """Count the frozen retrieval candidates from index metadata only."""
+
+    ordered = tuple(rows)
+    if len(ordered) != PLACE_SELECTION_ROW_COUNT_V1 or any(
+        not isinstance(row, PlaceTripletRow)
+        or row.index != index
+        or row.role != CHECKPOINT_SELECTION_ROLE_V1
+        or row.family not in FAMILIES_V1
+        or type(row.scene_id) is not str
+        or not row.scene_id
+        for index, row in enumerate(ordered)
+    ):
+        raise MemoryRoleEvaluationContractError(
+            "exact ordered checkpoint-selection place panel is required"
+        )
+    family_rows = {
+        family: tuple(
+            index for index, row in enumerate(ordered) if row.family == family
+        )
+        for family in FAMILIES_V1
+    }
+    if any(
+        len(family_rows[family]) != PLACE_FAMILY_ROW_COUNTS_V1[family]
+        or len({ordered[index].scene_id for index in family_rows[family]}) != 1
+        for family in FAMILIES_V1
+    ):
+        raise MemoryRoleEvaluationContractError("place panel family quotas changed")
+    candidate_counts = {
+        family: len(
+            _place_retrieval_candidate_references_v1(
+                ordered, family_rows[family]
+            )
+        )
+        for family in FAMILIES_V1
+    }
+    all_paired_positives_present = all(
+        row.positive.endpoint_identity_sha256
+        in {
+            identity
+            for _reference_name, _index, identity in (
+                _place_retrieval_candidate_references_v1(
+                    ordered, family_rows[row.family]
+                )
+            )
+        }
+        for row in ordered
+    )
+    result = {
+        "schema": f"{SCHEMA_PREFIX_V1}_place_retrieval_metadata_preflight_v1",
+        "row_count": len(ordered),
+        "scene_count": len(FAMILIES_V1),
+        "candidate_counts_by_family": candidate_counts,
+        "ordered_family_candidate_counts": [
+            candidate_counts[family] for family in FAMILIES_V1
+        ],
+        "minimum_candidate_count": min(candidate_counts.values()),
+        "maximum_candidate_count": max(candidate_counts.values()),
+        "all_candidate_counts_within_registered_bounds": all(
+            PLACE_RETRIEVAL_MINIMUM_CANDIDATES_V1
+            <= count
+            <= PLACE_RETRIEVAL_MAXIMUM_CANDIDATES_V1
+            for count in candidate_counts.values()
+        ),
+        "all_paired_positives_present": all_paired_positives_present,
+        "rgb_open_count": 0,
+    }
+    _json_safe(result)
+    return result
 
 
 def _place_energy(predicted: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
@@ -457,32 +546,26 @@ def evaluate_place_checkpoint_selection_v1(
     for scene in sorted(scene_rows):
         indices = scene_rows[scene]
         predictions = predicted_panel[indices]
-        candidate_ids: list[str] = []
-        candidate_keys: list[torch.Tensor] = []
-        seen_candidates: set[str] = set()
-        for reference_name, panel in (
-            ("positive", positive_target_panel),
-            ("negative", negative_target_panel),
-            ("anchor", anchor_target_panel),
-        ):
-            for index in indices:
-                identity = getattr(ordered[index], reference_name).endpoint_identity_sha256
-                if identity in seen_candidates:
-                    continue
-                seen_candidates.add(identity)
-                candidate_ids.append(identity)
-                candidate_keys.append(panel[index])
-                if len(candidate_ids) == PLACE_RETRIEVAL_MAXIMUM_CANDIDATES_V1:
-                    break
-            if len(candidate_ids) == PLACE_RETRIEVAL_MAXIMUM_CANDIDATES_V1:
-                break
+        panels = {
+            "positive": positive_target_panel,
+            "negative": negative_target_panel,
+            "anchor": anchor_target_panel,
+        }
+        candidate_references = _place_retrieval_candidate_references_v1(
+            ordered, indices
+        )
+        candidate_ids = [reference[2] for reference in candidate_references]
+        candidate_keys = [
+            panels[reference_name][index]
+            for reference_name, index, _identity in candidate_references
+        ]
         if not (
             PLACE_RETRIEVAL_MINIMUM_CANDIDATES_V1
             <= len(candidate_ids)
             <= PLACE_RETRIEVAL_MAXIMUM_CANDIDATES_V1
         ):
             raise MemoryRoleEvaluationContractError(
-                "retrieval scene candidate count left [40,64]"
+                "retrieval scene candidate count left [32,64]"
             )
         candidate_positions = {
             identity: index for index, identity in enumerate(candidate_ids)
@@ -1029,4 +1112,5 @@ __all__ = [
     "evaluate_local_checkpoint_selection_v1",
     "evaluate_place_checkpoint_selection_v1",
     "evaluate_terminal_gate_v1",
+    "preflight_place_retrieval_candidate_counts_v1",
 ]

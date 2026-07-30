@@ -147,21 +147,22 @@ def test_adapter_keeps_exact_v25_builder_and_fixed_three_way_budget() -> None:
     assert receipt["resume_authorized"] is False
 
 
-def test_integrity_replacement_uses_fresh_lifecycle_identity() -> None:
-    module = _load("_memory_role_launcher_replacement_identity")
-    assert module.SCHEMA_PREFIX.endswith("_integrity_replacement_v1")
-    assert module.EXPERIMENT_ARM_NAME.endswith("_integrity_replacement_v1")
+def test_v2_uses_fresh_lifecycle_identity() -> None:
+    module = _load("_memory_role_launcher_v2_identity")
+    assert module.SCHEMA_PREFIX.endswith("_v2")
+    assert module.EXPERIMENT_ARM_NAME.endswith("_v2")
     assert module.PREREGISTRATION_COMMIT == (
-        "ba6e37d63f099cd51184642dea39808ae1f2f99e"
+        "429cb57bd89348502cd5b695a25ae864d33fdfa7"
     )
-    assert "integrity-replacement-v1-source" in module.CERTIFIED_SOURCE_ROOT
-    assert "integrity_replacement_v1/attempt_v1" in (
-        module.OUTPUT_ROOT_RELATIVE_PATH
-    )
+    assert module.CERTIFIED_SOURCE_ROOT.endswith("joint-jepa-v2-source")
+    assert module.OUTPUT_ROOT_RELATIVE_PATH.endswith("v2/attempt_v1")
     assert module.PREREGISTRATION_RELATIVE_PATH in (
         module.REQUIRED_CERTIFIED_SOURCE_PATHS
     )
     assert module.TERMINAL_FAILURE_RESULT_RELATIVE_PATH in (
+        module.REQUIRED_CERTIFIED_SOURCE_PATHS
+    )
+    assert module.INTEGRITY_REPLACEMENT_TERMINAL_FAILURE_RESULT_RELATIVE_PATH in (
         module.REQUIRED_CERTIFIED_SOURCE_PATHS
     )
 

@@ -44,7 +44,7 @@ def test_checker_is_denied_and_binds_frozen_preregistration(capsys) -> None:
     assert receipt["dataset_payload_or_rgb_opened"] is False
     assert receipt["checkpoint_opened"] is False
     assert checker.PREREGISTRATION_COMMIT == (
-        "ba6e37d63f099cd51184642dea39808ae1f2f99e"
+        "429cb57bd89348502cd5b695a25ae864d33fdfa7"
     )
     bindings = (
         (
@@ -58,9 +58,19 @@ def test_checker_is_denied_and_binds_frozen_preregistration(capsys) -> None:
             checker.ORIGINAL_PREREGISTRATION_BYTE_COUNT,
         ),
         (
+            checker.INTEGRITY_REPLACEMENT_PREREGISTRATION_RELATIVE_PATH,
+            checker.INTEGRITY_REPLACEMENT_PREREGISTRATION_FILE_SHA256,
+            checker.INTEGRITY_REPLACEMENT_PREREGISTRATION_BYTE_COUNT,
+        ),
+        (
             checker.TERMINAL_FAILURE_RESULT_RELATIVE_PATH,
             checker.TERMINAL_FAILURE_RESULT_FILE_SHA256,
             checker.TERMINAL_FAILURE_RESULT_BYTE_COUNT,
+        ),
+        (
+            checker.INTEGRITY_REPLACEMENT_TERMINAL_FAILURE_RESULT_RELATIVE_PATH,
+            checker.INTEGRITY_REPLACEMENT_TERMINAL_FAILURE_RESULT_FILE_SHA256,
+            checker.INTEGRITY_REPLACEMENT_TERMINAL_FAILURE_RESULT_BYTE_COUNT,
         ),
     )
     for relative, expected_sha256, expected_bytes in bindings:
@@ -134,8 +144,7 @@ raise SystemExit(status)
     assert result.returncode == 4, result.stderr
     assert json.loads(result.stdout) == {
         "schema": (
-            "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-            "integrity_replacement_v1_launcher_v1"
+            "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_launcher_v1"
         ),
         "status": "DENIED_NO_FUTURE_AUTHORITY",
         "scientific_payload_opened": False,

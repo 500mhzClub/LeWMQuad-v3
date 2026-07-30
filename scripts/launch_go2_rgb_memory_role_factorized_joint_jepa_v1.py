@@ -31,27 +31,35 @@ BASE_LAUNCHER_BYTE_COUNT = 14_818
 PRIVATE_BASE_MODULE_NAME = "_lewm_memory_role_v1_private_v25_launcher"
 
 SCHEMA_PREFIX = (
-    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1"
+    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2"
 )
 LAUNCHER_SCHEMA = f"{SCHEMA_PREFIX}_launcher_v1"
 AUTHORITY_SCHEMA = f"{SCHEMA_PREFIX}_future_execution_authority_v1"
 CERTIFICATION_SCHEMA = f"{SCHEMA_PREFIX}_clean_export_certification_v1"
 EXPERIMENT_ARM_NAME = (
-    "memory_role_factorized_joint_jepa_v1_integrity_replacement_v1"
+    "memory_role_factorized_joint_jepa_v2"
 )
 PREREGISTRATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1_preregistration_2026-07-30.md"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "ba6e37d63f099cd51184642dea39808ae1f2f99e"
+PREREGISTRATION_COMMIT = "429cb57bd89348502cd5b695a25ae864d33fdfa7"
 ORIGINAL_PREREGISTRATION_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "preregistration_2026-07-30.md"
 )
+INTEGRITY_REPLACEMENT_PREREGISTRATION_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
+    "integrity_replacement_v1_preregistration_2026-07-30.md"
+)
 TERMINAL_FAILURE_RESULT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "terminal_infrastructure_failure_result_2026-07-30.json"
+)
+INTEGRITY_REPLACEMENT_TERMINAL_FAILURE_RESULT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
+    "integrity_replacement_v1_terminal_infrastructure_failure_result_"
+    "2026-07-30.json"
 )
 SPLIT_INTEGRITY_AMENDMENT_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
@@ -62,20 +70,18 @@ SPLIT_INTEGRITY_AMENDMENT_COMMIT = (
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v1-"
-    "integrity-replacement-v1-source"
+    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v2-source"
 )
 AUTHORITY_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1_execution_authorization_2026-07-30.json"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "execution_authorization_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1_clean_export_certification_2026-07-30.json"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "clean_export_certification_2026-07-30.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1/attempt_v1"
+    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v2/attempt_v1"
 )
 EXECUTOR_MODULE_NAME = (
     "scripts.execute_go2_rgb_memory_role_factorized_joint_jepa_v1"
@@ -186,7 +192,9 @@ REQUIRED_CERTIFIED_SOURCE_PATHS = frozenset(
         "scripts/launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
         PREREGISTRATION_RELATIVE_PATH,
         ORIGINAL_PREREGISTRATION_RELATIVE_PATH,
+        INTEGRITY_REPLACEMENT_PREREGISTRATION_RELATIVE_PATH,
         TERMINAL_FAILURE_RESULT_RELATIVE_PATH,
+        INTEGRITY_REPLACEMENT_TERMINAL_FAILURE_RESULT_RELATIVE_PATH,
         SPLIT_INTEGRITY_AMENDMENT_PATH,
         "scripts/execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
         "scripts/run_go2_rgb_memory_role_factorized_joint_jepa_v1.py",

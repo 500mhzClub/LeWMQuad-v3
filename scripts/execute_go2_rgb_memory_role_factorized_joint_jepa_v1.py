@@ -30,14 +30,13 @@ from scripts import (
 
 
 SCHEMA_PREFIX = (
-    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1"
+    "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2"
 )
 PREREGISTRATION_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1_preregistration_2026-07-30.md"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "preregistration_2026-07-30.md"
 )
-PREREGISTRATION_COMMIT = "ba6e37d63f099cd51184642dea39808ae1f2f99e"
+PREREGISTRATION_COMMIT = "429cb57bd89348502cd5b695a25ae864d33fdfa7"
 SPLIT_INTEGRITY_AMENDMENT_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "split_integrity_amendment_2026-07-30.md"
@@ -46,29 +45,27 @@ SPLIT_INTEGRITY_AMENDMENT_COMMIT = (
     "5a1535567bf00b8e47d67d8966ef42a52726bd5b"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1_source_manifest_2026-07-30.json"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "source_manifest_2026-07-30.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1_source_review_2026-07-30.json"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "source_review_2026-07-30.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1_clean_export_certification_2026-07-30.json"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "clean_export_certification_2026-07-30.json"
 )
 AUTHORITY_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1_execution_authorization_2026-07-30.json"
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_"
+    "execution_authorization_2026-07-30.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v1_"
-    "integrity_replacement_v1/attempt_v1"
+    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v2/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v1-"
-    "integrity-replacement-v1-source"
+    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v2-source"
 )
 MODEL_CLASS_NAME = "MemoryRoleFactorizedJointJepaV1"
 MODEL_MODULE_NAME = "lewm.models.memory_role_factorized_joint_jepa_v1"

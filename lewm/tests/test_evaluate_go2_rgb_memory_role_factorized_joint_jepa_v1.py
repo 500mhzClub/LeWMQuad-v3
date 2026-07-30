@@ -25,22 +25,46 @@ def _sha(value: int) -> str:
     return f"{value:064x}"
 
 
-def _place_rows() -> tuple[PlaceTripletRow, ...]:
+_FROZEN_FAMILY_CANDIDATE_COUNTS = (63, 64, 59, 59, 64, 64, 32, 48)
+
+
+def _place_rows(
+    candidate_counts: tuple[int, ...] = _FROZEN_FAMILY_CANDIDATE_COUNTS,
+) -> tuple[PlaceTripletRow, ...]:
+    assert len(candidate_counts) == len(evaluation.FAMILIES_V1)
     rows = []
-    for family in evaluation.FAMILIES_V1:
+    for family_index, (family, candidate_count) in enumerate(
+        zip(evaluation.FAMILIES_V1, candidate_counts, strict=True)
+    ):
         scene = f"{family}_selection"
-        for _key in range(evaluation.PLACE_FAMILY_ROW_COUNTS_V1[family]):
+        quota = evaluation.PLACE_FAMILY_ROW_COUNTS_V1[family]
+        extra_negative_count = candidate_count - quota
+        assert 0 <= extra_negative_count <= quota
+        identity_base = 100_000 * (family_index + 1)
+        positive_ids = [_sha(identity_base + key) for key in range(quota)]
+        for key in range(quota):
             index = len(rows)
+            negative_identity = (
+                _sha(identity_base + 10_000 + key % extra_negative_count)
+                if extra_negative_count
+                else positive_ids[(key + 2) % quota]
+            )
             rows.append(
                 PlaceTripletRow(
                     index=index,
                     role=evaluation.CHECKPOINT_SELECTION_ROLE_V1,
                     family=family,
                     scene_id=scene,
-                    anchor=RGBReference(_sha(1_000 + index), f"a/{index}", _sha(1)),
-                    positive=RGBReference(_sha(2_000 + index), f"p/{index}", _sha(2)),
-                    negative=RGBReference(_sha(3_000 + index), f"n/{index}", _sha(3)),
-                    content_sha256=_sha(4_000 + index),
+                    anchor=RGBReference(
+                        positive_ids[(key + 1) % quota], f"a/{index}", _sha(1)
+                    ),
+                    positive=RGBReference(
+                        positive_ids[key], f"p/{index}", _sha(2)
+                    ),
+                    negative=RGBReference(
+                        negative_identity, f"n/{index}", _sha(3)
+                    ),
+                    content_sha256=_sha(1_000_000 + index),
                 )
             )
     return tuple(rows)
@@ -158,8 +182,11 @@ def test_place_evaluation_is_bounded_retrieval_aware_and_noncollapsed() -> None:
     assert result["energy"]["negative_minus_positive_mean"] == pytest.approx(1.0)
     assert result["energy"]["negative_minus_positive_bootstrap_lower_95"] > 0.0
     assert result["energy"]["positive_family_count"] == 8
-    assert result["retrieval"]["minimum_candidate_count"] == 60
+    assert result["retrieval"]["minimum_candidate_count"] == 32
     assert result["retrieval"]["maximum_candidate_count"] == 64
+    assert result["retrieval"]["by_scene"][
+        "small_enclosed_maze_selection"
+    ]["exact_chance_recall_at_5"] == pytest.approx(5.0 / 32.0)
     assert result["retrieval"]["recall_at_5"] == 1.0
     assert result["retrieval"]["chance_multiple"] > 3.0
     assert result["retrieval"]["scene_count_above_chance"] == 8
@@ -183,6 +210,57 @@ def test_place_evaluation_is_bounded_retrieval_aware_and_noncollapsed() -> None:
     } for row in result["per_row"])
     assert model.training is True
     assert all(type(shape) is tuple for shape in model.model_input_shapes)
+
+
+def test_place_candidate_preflight_matches_frozen_metadata_topology() -> None:
+    result = evaluation.preflight_place_retrieval_candidate_counts_v1(_place_rows())
+
+    assert result["ordered_family_candidate_counts"] == list(
+        _FROZEN_FAMILY_CANDIDATE_COUNTS
+    )
+    assert result["candidate_counts_by_family"] == dict(
+        zip(
+            evaluation.FAMILIES_V1,
+            _FROZEN_FAMILY_CANDIDATE_COUNTS,
+            strict=True,
+        )
+    )
+    assert result["minimum_candidate_count"] == 32
+    assert result["maximum_candidate_count"] == 64
+    assert result["all_candidate_counts_within_registered_bounds"] is True
+    assert result["all_paired_positives_present"] is True
+    assert result["rgb_open_count"] == 0
+
+
+def test_place_evaluation_rejects_31_candidates_after_bounded_loads() -> None:
+    counts = list(_FROZEN_FAMILY_CANDIDATE_COUNTS)
+    counts[evaluation.FAMILIES_V1.index("small_enclosed_maze")] = 31
+    rows = _place_rows(tuple(counts))
+    preflight = evaluation.preflight_place_retrieval_candidate_counts_v1(rows)
+    assert preflight["minimum_candidate_count"] == 31
+    assert preflight["rgb_open_count"] == 0
+
+    load_count = 0
+
+    def counted_load(row: PlaceTripletRow) -> RGBTriplet:
+        nonlocal load_count
+        load_count += 1
+        return _load_triplet(row)
+
+    model = _TinyRoleModel()
+    with pytest.raises(
+        evaluation.MemoryRoleEvaluationContractError, match=r"\[32,64\]"
+    ):
+        evaluation.evaluate_place_checkpoint_selection_v1(
+            model,
+            rows,
+            load_triplet=counted_load,
+            device="cpu",
+            training_scene_ids={"train_scene"},
+            update=0,
+        )
+    assert load_count == evaluation.PLACE_SELECTION_ROW_COUNT_V1
+    assert model.training is True
 
 
 def test_local_evaluation_uses_cyclic_action_and_non_hold_persistence() -> None:
