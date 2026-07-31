@@ -147,16 +147,19 @@ def test_adapter_keeps_exact_v25_builder_and_fixed_three_way_budget() -> None:
     assert receipt["resume_authorized"] is False
 
 
-def test_v4_uses_fresh_lifecycle_identity() -> None:
-    module = _load("_memory_role_launcher_v4_identity")
-    assert module.SCHEMA_PREFIX.endswith("_v4")
-    assert module.EXPERIMENT_ARM_NAME.endswith("_v4")
+def test_v5_uses_fresh_lifecycle_identity() -> None:
+    module = _load("_memory_role_launcher_v5_identity")
+    assert module.SCHEMA_PREFIX.endswith("_v5")
+    assert module.EXPERIMENT_ARM_NAME.endswith("_v5")
     assert module.PREREGISTRATION_COMMIT == (
-        "b079504940103f2cbd127552d337a90b6028b749"
+        "6aa16589540db55ebc0442977f0b5fbb47c01454"
     )
-    assert module.CERTIFIED_SOURCE_ROOT.endswith("joint-jepa-v4-source")
-    assert module.OUTPUT_ROOT_RELATIVE_PATH.endswith("v4/attempt_v1")
+    assert module.CERTIFIED_SOURCE_ROOT.endswith("joint-jepa-v5-source")
+    assert module.OUTPUT_ROOT_RELATIVE_PATH.endswith("v5/attempt_v1")
     assert module.PREREGISTRATION_RELATIVE_PATH in (
+        module.REQUIRED_CERTIFIED_SOURCE_PATHS
+    )
+    assert module.SCHEDULE_PREFLIGHT_RELATIVE_PATH in (
         module.REQUIRED_CERTIFIED_SOURCE_PATHS
     )
     assert module.RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH in (
@@ -166,6 +169,9 @@ def test_v4_uses_fresh_lifecycle_identity() -> None:
         module.REQUIRED_CERTIFIED_SOURCE_PATHS
     )
     assert module.V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_RELATIVE_PATH in (
+        module.REQUIRED_CERTIFIED_SOURCE_PATHS
+    )
+    assert module.V4_SCIENTIFIC_RESULT_RELATIVE_PATH in (
         module.REQUIRED_CERTIFIED_SOURCE_PATHS
     )
     assert module.TERMINAL_FAILURE_RESULT_RELATIVE_PATH in (

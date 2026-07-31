@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Denied-by-default launcher for science-identical memory-role JEPA V4.
+"""Denied-by-default launcher for scene-local place joint-JEPA V5.
 
 Import and the no-argument path open no scientific payload.  A run requires
 the exact future authority, exact clean-source certification, an unused output
@@ -30,18 +30,32 @@ BASE_LAUNCHER_FILE_SHA256 = (
 BASE_LAUNCHER_BYTE_COUNT = 14_818
 PRIVATE_BASE_MODULE_NAME = "_lewm_memory_role_v1_private_v25_launcher"
 
-SCHEMA_PREFIX = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4"
+SCHEMA_PREFIX = "lewm_go2_rgb_scene_local_place_joint_jepa_v5"
 LAUNCHER_SCHEMA = f"{SCHEMA_PREFIX}_launcher_v1"
 AUTHORITY_SCHEMA = f"{SCHEMA_PREFIX}_future_execution_authority_v1"
 CERTIFICATION_SCHEMA = f"{SCHEMA_PREFIX}_clean_export_certification_v1"
-EXPERIMENT_ARM_NAME = (
-    "memory_role_spatial_contrastive_joint_jepa_v4"
-)
+EXPERIMENT_ARM_NAME = "memory_role_scene_local_place_joint_jepa_v5"
 PREREGISTRATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
-    "preregistration_2026-07-30.md"
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "preregistration_2026-07-31.md"
 )
-PREREGISTRATION_COMMIT = "b079504940103f2cbd127552d337a90b6028b749"
+PREREGISTRATION_COMMIT = "6aa16589540db55ebc0442977f0b5fbb47c01454"
+SCHEDULE_PREFLIGHT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "schedule_preflight_2026-07-31.json"
+)
+SOURCE_MANIFEST_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "source_manifest_2026-07-31.json"
+)
+SOURCE_REVIEW_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "source_review_2026-07-31.json"
+)
+V4_SCIENTIFIC_RESULT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
+    "scientific_result_2026-07-31.json"
+)
 V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_RELATIVE_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_"
     "terminal_infrastructure_failure_result_2026-07-30.json"
@@ -80,18 +94,18 @@ SPLIT_INTEGRITY_AMENDMENT_COMMIT = (
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v4-source"
+    "LeWMQuad-v3-scene-local-place-joint-jepa-v5-source"
 )
 AUTHORITY_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
-    "execution_authorization_2026-07-30.json"
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "execution_authorization_2026-07-31.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
-    "clean_export_certification_2026-07-30.json"
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "clean_export_certification_2026-07-31.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v4/attempt_v1"
+    ".generated/go2_rgb_scene_local_place_joint_jepa_v5/attempt_v1"
 )
 EXECUTOR_MODULE_NAME = (
     "scripts.execute_go2_rgb_memory_role_factorized_joint_jepa_v1"
@@ -201,6 +215,10 @@ REQUIRED_CERTIFIED_SOURCE_PATHS = frozenset(
     {
         "scripts/launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
         PREREGISTRATION_RELATIVE_PATH,
+        SCHEDULE_PREFLIGHT_RELATIVE_PATH,
+        SOURCE_MANIFEST_RELATIVE_PATH,
+        SOURCE_REVIEW_RELATIVE_PATH,
+        V4_SCIENTIFIC_RESULT_RELATIVE_PATH,
         V3_TERMINAL_INFRASTRUCTURE_FAILURE_RESULT_RELATIVE_PATH,
         V2_SCIENTIFIC_RESULT_RELATIVE_PATH,
         RETRIEVAL_METADATA_PREFLIGHT_RELATIVE_PATH,

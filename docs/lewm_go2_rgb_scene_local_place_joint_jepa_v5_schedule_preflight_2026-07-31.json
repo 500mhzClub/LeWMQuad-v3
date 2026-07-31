@@ -1,0 +1,186 @@
+{
+  "date": "2026-07-31",
+  "execution_authorized": false,
+  "gpu_use_count": 0,
+  "heldout_or_sealed_opened": false,
+  "navigation_executed": false,
+  "probability_calibration_opened": false,
+  "receipt": {
+    "access_ledger": {
+      "heldout_or_sealed_open_count": 0,
+      "privileged_cell_yaw_emitted_count": 0,
+      "rgb_byte_open_count": 0,
+      "rgb_decode_count": 0
+    },
+    "accounting": {
+      "by_family": {
+        "large_enclosed_maze": {
+          "dropped_source_row_count": 14,
+          "eligible_source_scene_count": 7,
+          "repeated_row_presentation_count": 172,
+          "scheduled_group_count": 100,
+          "scheduled_row_presentation_count": 400,
+          "scheduled_scene_count": 7,
+          "source_row_count": 242,
+          "source_scene_count": 9,
+          "unique_source_row_presented_count": 228
+        },
+        "local_composite_motifs": {
+          "dropped_source_row_count": 58,
+          "eligible_source_scene_count": 6,
+          "repeated_row_presentation_count": 2,
+          "scheduled_group_count": 100,
+          "scheduled_row_presentation_count": 400,
+          "scheduled_scene_count": 6,
+          "source_row_count": 456,
+          "source_scene_count": 7,
+          "unique_source_row_presented_count": 398
+        },
+        "loop_alias_stress": {
+          "dropped_source_row_count": 0,
+          "eligible_source_scene_count": 9,
+          "repeated_row_presentation_count": 75,
+          "scheduled_group_count": 100,
+          "scheduled_row_presentation_count": 400,
+          "scheduled_scene_count": 9,
+          "source_row_count": 325,
+          "source_scene_count": 9,
+          "unique_source_row_presented_count": 325
+        },
+        "medium_enclosed_maze": {
+          "dropped_source_row_count": 18,
+          "eligible_source_scene_count": 7,
+          "repeated_row_presentation_count": 95,
+          "scheduled_group_count": 100,
+          "scheduled_row_presentation_count": 400,
+          "scheduled_scene_count": 7,
+          "source_row_count": 323,
+          "source_scene_count": 9,
+          "unique_source_row_presented_count": 305
+        },
+        "open_obstacle_field": {
+          "dropped_source_row_count": 128,
+          "eligible_source_scene_count": 9,
+          "repeated_row_presentation_count": 0,
+          "scheduled_group_count": 100,
+          "scheduled_row_presentation_count": 400,
+          "scheduled_scene_count": 9,
+          "source_row_count": 528,
+          "source_scene_count": 9,
+          "unique_source_row_presented_count": 400
+        },
+        "rough_local_dynamics": {
+          "dropped_source_row_count": 127,
+          "eligible_source_scene_count": 9,
+          "repeated_row_presentation_count": 0,
+          "scheduled_group_count": 100,
+          "scheduled_row_presentation_count": 400,
+          "scheduled_scene_count": 9,
+          "source_row_count": 527,
+          "source_scene_count": 9,
+          "unique_source_row_presented_count": 400
+        },
+        "small_enclosed_maze": {
+          "dropped_source_row_count": 9,
+          "eligible_source_scene_count": 9,
+          "repeated_row_presentation_count": 22,
+          "scheduled_group_count": 100,
+          "scheduled_row_presentation_count": 400,
+          "scheduled_scene_count": 9,
+          "source_row_count": 387,
+          "source_scene_count": 9,
+          "unique_source_row_presented_count": 378
+        },
+        "visual_sensor_stress": {
+          "dropped_source_row_count": 23,
+          "eligible_source_scene_count": 8,
+          "repeated_row_presentation_count": 11,
+          "scheduled_group_count": 100,
+          "scheduled_row_presentation_count": 400,
+          "scheduled_scene_count": 8,
+          "source_row_count": 412,
+          "source_scene_count": 9,
+          "unique_source_row_presented_count": 389
+        }
+      },
+      "dropped_source_row_count": 377,
+      "repeated_row_presentation_count": 377
+    },
+    "content_sha256": "61c53fe7df05b532dde5bf67efb20ef05fc17325043b551233eafb986d9c967e",
+    "input": {
+      "family_row_counts": {
+        "large_enclosed_maze": 242,
+        "local_composite_motifs": 456,
+        "loop_alias_stress": 325,
+        "medium_enclosed_maze": 323,
+        "open_obstacle_field": 528,
+        "rough_local_dynamics": 527,
+        "small_enclosed_maze": 387,
+        "visual_sensor_stress": 412
+      },
+      "ordered_content_sha256": "7242ed674c92dc9df5c42a35738d8cb19c55a3dafa11f5e50ff1ffbe4e7ce044",
+      "role": "train",
+      "row_count": 3200
+    },
+    "integrity": {
+      "every_group_four_distinct_place_identities": true,
+      "every_group_one_scene": true,
+      "exact_100_groups_per_family": true,
+      "exact_3200_row_presentations": true,
+      "exact_800_b4_groups": true
+    },
+    "schedule": {
+      "group_count": 800,
+      "group_size": 4,
+      "groups_per_family": {
+        "large_enclosed_maze": 100,
+        "local_composite_motifs": 100,
+        "loop_alias_stress": 100,
+        "medium_enclosed_maze": 100,
+        "open_obstacle_field": 100,
+        "rough_local_dynamics": 100,
+        "small_enclosed_maze": 100,
+        "visual_sensor_stress": 100
+      },
+      "ordered_group_binding_sha256": "2e00cd27f6ec26412bd5c2fb09cd9fd17765e67299c44fa8bb014395a79a53f9",
+      "row_presentation_count": 3200,
+      "row_presentations_per_family": {
+        "large_enclosed_maze": 400,
+        "local_composite_motifs": 400,
+        "loop_alias_stress": 400,
+        "medium_enclosed_maze": 400,
+        "open_obstacle_field": 400,
+        "rough_local_dynamics": 400,
+        "small_enclosed_maze": 400,
+        "visual_sensor_stress": 400
+      }
+    },
+    "schema": "lewm_go2_memory_role_scene_local_place_schedule_v5",
+    "selection_seed": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v5_scene_local_b4",
+    "status": "PASS_METADATA_ONLY"
+  },
+  "rgb_open_count": 0,
+  "schema": "lewm_go2_rgb_scene_local_place_joint_jepa_v5_schedule_preflight_v1",
+  "source_bindings": {
+    "load_audit": {
+      "index_file_sha256": "72044c597286631be6133b45663ef975e222cd10d3f0cee1d0a9c038f0d422b6",
+      "manifest_file_sha256": "a5997d93838419cabaaf8e262db70ed51f6f928195f1a312cadc4768f74ca6ca",
+      "privileged_label_fields_emitted_to_model": 0,
+      "rgb_open_count": 0,
+      "role": "train",
+      "row_count": 3200,
+      "schema": "lewm_go2_memory_role_place_triplet_index_v1"
+    },
+    "manifest": {
+      "byte_count": 42308,
+      "file_sha256": "a5997d93838419cabaaf8e262db70ed51f6f928195f1a312cadc4768f74ca6ca",
+      "path": ".generated/go2_memory_role_place_triplet_index_v1/manifest.json"
+    },
+    "train_index": {
+      "byte_count": 4687348,
+      "file_sha256": "72044c597286631be6133b45663ef975e222cd10d3f0cee1d0a9c038f0d422b6",
+      "path": ".generated/go2_memory_role_place_triplet_index_v1/train.jsonl"
+    }
+  },
+  "status": "PASS_COMMITTED_METADATA_ONLY_PREFLIGHT"
+}

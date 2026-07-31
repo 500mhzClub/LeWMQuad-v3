@@ -86,6 +86,7 @@ class PlaceTripletRow:
     positive: RGBReference
     negative: RGBReference
     content_sha256: str
+    place_identity_sha256: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -207,7 +208,9 @@ def _decode_proof_endpoint(value: object, *, name: str) -> dict[str, Any]:
     }
 
 
-def _validate_selection_proof(value: object) -> None:
+def _validate_selection_proof(
+    value: object, *, family: str, scene_id: str
+) -> str:
     if type(value) is not dict or set(value) != _PROOF_FIELDS:
         raise PlaceTripletContractError("selection-proof fields changed")
     anchor = _decode_proof_endpoint(value.get("anchor"), name="anchor")
@@ -231,6 +234,15 @@ def _validate_selection_proof(value: object) -> None:
         "positive_separation"
     ) != expected:
         raise PlaceTripletContractError("positive endpoint lacks the required separation")
+    return canonical_json_sha256(
+        {
+            "schema": "lewm_go2_memory_role_place_identity_v1",
+            "family": family,
+            "scene_id": scene_id,
+            "cell_id": anchor["cell_id"],
+            "yaw_bin": anchor["yaw_bin"],
+        }
+    )
 
 
 def decode_index_row(value: object, *, index: int, role: str) -> PlaceTripletRow:
@@ -257,7 +269,9 @@ def decode_index_row(value: object, *, index: int, role: str) -> PlaceTripletRow
         }
     ) != 3 or len({anchor.rgb_path, positive.rgb_path, negative.rgb_path}) != 3:
         raise PlaceTripletContractError("triplet endpoint identities or RGB paths overlap")
-    _validate_selection_proof(value.get("selection_proof"))
+    place_identity_sha256 = _validate_selection_proof(
+        value.get("selection_proof"), family=family, scene_id=scene_id
+    )
     return PlaceTripletRow(
         index=index,
         role=role,
@@ -267,6 +281,7 @@ def decode_index_row(value: object, *, index: int, role: str) -> PlaceTripletRow
         positive=positive,
         negative=negative,
         content_sha256=str(declared),
+        place_identity_sha256=place_identity_sha256,
     )
 
 

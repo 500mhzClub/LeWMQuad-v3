@@ -273,8 +273,15 @@ def test_engine_exception_publishes_complete_in_memory_failure_context(
     assert role_runtime.closed is True
 
 
-def test_engine_stops_at_update100_and_keeps_nonresumable_restart(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    ("continue_at_update100", "expected_terminal_update"),
+    ((False, 100), (True, 400)),
+)
+def test_engine_uses_v5_gates_and_keeps_nonresumable_restarts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    continue_at_update100: bool,
+    expected_terminal_update: int,
 ) -> None:
     authority = _authority()
     reservation = executor.reserve_attempt_v1(
@@ -318,10 +325,16 @@ def test_engine_stops_at_update100_and_keeps_nonresumable_restart(
 
     class RoleRuntime:
         closed = False
+        schedule_integrity_pass = True
+        split_integrity_pass = True
 
         @staticmethod
         def preflight_receipt():
-            return {"passed": True}
+            return {
+                "passed": True,
+                "scene_local_place_schedule_integrity_pass": True,
+                "split_integrity_pass": True,
+            }
 
         @staticmethod
         def build_local_train_microbatches(update, device):
@@ -383,10 +396,26 @@ def test_engine_stops_at_update100_and_keeps_nonresumable_restart(
     )
     from scripts import evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1 as evaluation
 
+    update100_gate_calls: list[dict] = []
+    terminal_gate_calls: list[dict] = []
+
+    def update100_gate(**kwargs):
+        update100_gate_calls.append(kwargs)
+        return {"update": 100, "passed": continue_at_update100}
+
+    def terminal_gate(**kwargs):
+        terminal_gate_calls.append(kwargs)
+        return {"update": 400, "passed": False}
+
     monkeypatch.setattr(
         evaluation,
-        "evaluate_update100_continuation_gate_v3",
-        lambda **kwargs: {"update": 100, "passed": False},
+        "evaluate_update100_continuation_gate_v5",
+        update100_gate,
+    )
+    monkeypatch.setattr(
+        evaluation,
+        "evaluate_terminal_gate_v5",
+        terminal_gate,
     )
 
     model = torch.nn.Linear(2, 2)
@@ -394,11 +423,22 @@ def test_engine_stops_at_update100_and_keeps_nonresumable_restart(
 
     class Training:
         calls = 0
+        place_objective_versions: list[int] = []
 
         @classmethod
         def joint_training_update_v1(
-            cls, model, optimizer, physical, local, place, *, accounting
+            cls,
+            model,
+            optimizer,
+            physical,
+            local,
+            place,
+            *,
+            accounting,
+            place_objective_version,
         ):
+            assert place_objective_version == 5
+            cls.place_objective_versions.append(place_objective_version)
             cls.calls += 1
             return SimpleNamespace(
                 accounting={
@@ -430,17 +470,43 @@ def test_engine_stops_at_update100_and_keeps_nonresumable_restart(
         publisher=publisher,
     )
 
-    assert failure["status"] == (
+    expected_status = (
         "FAIL_SCIENTIFIC_UPDATE100_CONTINUATION_GATE_TERMINAL"
+        if expected_terminal_update == 100
+        else "FAIL_SCIENTIFIC_UPDATE400_GATE_TERMINAL"
     )
-    assert failure["terminal_update"] == 100
-    assert failure["accounting"] == {"updates": 100, "presentations": 3_200}
+    assert failure["status"] == expected_status
+    assert failure["terminal_update"] == expected_terminal_update
+    assert failure["accounting"] == {
+        "updates": expected_terminal_update,
+        "presentations": 32 * expected_terminal_update,
+    }
     assert failure["private_restart_state_published"] is True
     assert failure["private_restart_states"][0]["resume_authorized"] is False
-    assert Training.calls == 100
+    assert Training.calls == expected_terminal_update
+    assert Training.place_objective_versions == [5] * expected_terminal_update
     assert "private_restart/update_100.pt" in publisher.raw
-    assert "private_restart/update_400.pt" not in publisher.raw
-    assert "metrics/update_400.json" not in publisher.values
+    assert ("private_restart/update_400.pt" in publisher.raw) is (
+        expected_terminal_update == 400
+    )
+    assert ("metrics/update_400.json" in publisher.values) is (
+        expected_terminal_update == 400
+    )
+    assert len(update100_gate_calls) == 1
+    update100_call = update100_gate_calls[0]
+    assert update100_call["update0_place"] == {"update": 0}
+    assert update100_call["update100_place"] == {"update": 100}
+    assert update100_call["schedule_integrity_pass"] is True
+    assert update100_call["split_integrity_pass"] is True
+    if expected_terminal_update == 400:
+        assert len(terminal_gate_calls) == 1
+        terminal_call = terminal_gate_calls[0]
+        assert terminal_call["update0_place"] == {"update": 0}
+        assert terminal_call["update400_place"] == {"update": 400}
+        assert terminal_call["schedule_integrity_pass"] is True
+        assert terminal_call["split_integrity_pass"] is True
+    else:
+        assert terminal_gate_calls == []
     assert role_runtime.closed is True
 
 
@@ -509,6 +575,11 @@ def test_update_integrity_accepts_only_exact_three_route_accounting() -> None:
         },
         place_diagnostics={
             "mechanism": "same_place_retrieval_key",
+            "objective_version": 5,
+            "scene_local_group_count": 2,
+            "scene_local_group_size": 4,
+            "cross_group_candidates": 0,
+            "ranking_comparison_count": 32,
             "positive_energy_per_row": (0.1,) * 8,
             "negative_energy_per_row": (0.2,) * 8,
         },
@@ -527,6 +598,18 @@ def test_update_integrity_accepts_only_exact_three_route_accounting() -> None:
     assert receipt["passed"] is True
     assert receipt["accounting"]["presentations"] == 96
 
+    result.place_diagnostics = {
+        **result.place_diagnostics,
+        "objective_version": 3,
+    }
+    with pytest.raises(RuntimeError, match="route diagnostics"):
+        executor.validate_update_integrity_v1(
+            SimpleNamespace(torch=torch), model, result, update=update
+        )
+    result.place_diagnostics = {
+        **result.place_diagnostics,
+        "objective_version": 5,
+    }
     result.accounting = {**result.accounting, "local_presentations": 23}
     with pytest.raises(RuntimeError, match="accounting"):
         executor.validate_update_integrity_v1(
@@ -546,7 +629,7 @@ def test_source_path_filter_rejects_protected_roots_without_open(tmp_path: Path)
     assert executor._protected_source_path("lewm/datasets/safe.py") is False
 
 
-def test_role_training_schedule_uses_exact_noncycling_eight_row_windows() -> None:
+def test_role_training_uses_flattened_v5_schedule_not_source_row_order() -> None:
     local_seen: list[int] = []
     place_seen: list[int] = []
 
@@ -605,6 +688,9 @@ def test_role_training_schedule_uses_exact_noncycling_eight_row_windows() -> Non
     runtime.place_train_rows = tuple(
         SimpleNamespace(role="train", index=index) for index in range(3_200)
     )
+    runtime.place_train_schedule_rows = (
+        runtime.place_train_rows[8:] + runtime.place_train_rows[:8]
+    )
     runtime._place_rows = {
         (row.role, row.index): row for row in runtime.place_train_rows
     }
@@ -621,7 +707,13 @@ def test_role_training_schedule_uses_exact_noncycling_eight_row_windows() -> Non
     local_batches = runtime.build_local_train_microbatches(400, "cpu")
     place_batches = runtime.build_place_train_microbatches(400, "cpu")
     assert local_seen == list(range(3_192, 3_200))
-    assert place_seen == list(range(3_192, 3_200))
+    assert place_seen == list(range(8))
+    assert tuple(row.index for row in runtime.place_train_rows[-8:]) == tuple(
+        range(3_192, 3_200)
+    )
+    assert tuple(
+        row.index for row in runtime.place_train_schedule_rows[-8:]
+    ) == tuple(range(8))
     assert len(local_batches) == len(place_batches) == 2
     assert all(batch["current_rgb"].shape == (4, 3, 112, 112) for batch in local_batches)
     assert all(batch["anchor_rgb"].shape == (4, 3, 112, 112) for batch in place_batches)

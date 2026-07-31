@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""One-shot controller for the science-identical memory-role JEPA V4 probe.
+"""One-shot controller for the scene-local place joint-JEPA V5 probe.
 
 The controller keeps V25's reviewed physical route and adds two RGB-only
-four-row routes: corrected-H6 immediate control and manifest-bound place
-triplets.  It owns lifecycle and accounting only; tensor work and evaluation
-remain in their dedicated modules.
+four-row routes: corrected-H6 immediate control and deterministically grouped
+scene-local place triplets.  It owns lifecycle and accounting only; tensor work
+and evaluation remain in their dedicated modules.
 """
 from __future__ import annotations
 
@@ -19,6 +19,9 @@ from pathlib import Path, PurePosixPath
 import stat
 from typing import Any, Mapping, Sequence
 
+from lewm.datasets.go2_memory_role_scene_local_place_schedule_v5 import (
+    build_scene_local_place_schedule_v5,
+)
 from scripts import (
     execute_go2_rgb_per_row_persistence_contrastive_temporal_joint_jepa_v26
     as v26,
@@ -29,12 +32,24 @@ from scripts import (
 )
 
 
-SCHEMA_PREFIX = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4"
+SCHEMA_PREFIX = "lewm_go2_rgb_scene_local_place_joint_jepa_v5"
 PREREGISTRATION_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
-    "preregistration_2026-07-30.md"
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "preregistration_2026-07-31.md"
 )
-PREREGISTRATION_COMMIT = "b079504940103f2cbd127552d337a90b6028b749"
+PREREGISTRATION_COMMIT = "6aa16589540db55ebc0442977f0b5fbb47c01454"
+SCHEDULE_PREFLIGHT_RELATIVE_PATH = (
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "schedule_preflight_2026-07-31.json"
+)
+SCHEDULE_RECEIPT_CONTENT_SHA256 = (
+    "61c53fe7df05b532dde5bf67efb20ef05fc17325043b551233eafb986d9c967e"
+)
+SCHEDULE_ORDERED_GROUP_BINDING_SHA256 = (
+    "2e00cd27f6ec26412bd5c2fb09cd9fd17765e67299c44fa8bb014395a79a53f9"
+)
+SCHEDULE_REPEATED_ROW_PRESENTATION_COUNT = 377
+SCHEDULE_DROPPED_SOURCE_ROW_COUNT = 377
 SPLIT_INTEGRITY_AMENDMENT_PATH = (
     "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_"
     "split_integrity_amendment_2026-07-30.md"
@@ -43,27 +58,27 @@ SPLIT_INTEGRITY_AMENDMENT_COMMIT = (
     "5a1535567bf00b8e47d67d8966ef42a52726bd5b"
 )
 SOURCE_MANIFEST_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
-    "source_manifest_2026-07-30.json"
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "source_manifest_2026-07-31.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
-    "source_review_2026-07-30.json"
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "source_review_2026-07-31.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
-    "clean_export_certification_2026-07-30.json"
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "clean_export_certification_2026-07-31.json"
 )
 AUTHORITY_RELATIVE_PATH = (
-    "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_"
-    "execution_authorization_2026-07-30.json"
+    "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+    "execution_authorization_2026-07-31.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_rgb_memory_role_factorized_joint_jepa_v4/attempt_v1"
+    ".generated/go2_rgb_scene_local_place_joint_jepa_v5/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-memory-role-factorized-joint-jepa-v4-source"
+    "LeWMQuad-v3-scene-local-place-joint-jepa-v5-source"
 )
 MODEL_CLASS_NAME = "MemoryRoleSpatialContrastiveJointJepaV3"
 MODEL_MODULE_NAME = "lewm.models.memory_role_spatial_contrastive_joint_jepa_v3"
@@ -592,6 +607,11 @@ def validate_update_integrity_v1(
         or len(local.get("wrong_energy_per_row", ())) != 8
         or len(place.get("positive_energy_per_row", ())) != 8
         or len(place.get("negative_energy_per_row", ())) != 8
+        or place.get("objective_version") != 5
+        or place.get("scene_local_group_count") != 2
+        or place.get("scene_local_group_size") != 4
+        or place.get("cross_group_candidates") != 0
+        or place.get("ranking_comparison_count") != 32
     ):
         raise RuntimeError("memory-role route diagnostics changed")
     for values in (
@@ -931,6 +951,8 @@ class MemoryRoleRuntimeV1:
         h6_train_rows: Sequence[Any],
         h6_selection_rows: Sequence[Any],
         place_train_rows: Sequence[Any],
+        place_train_groups: Sequence[Any],
+        place_schedule_receipt: Mapping[str, Any],
         place_selection_rows: Sequence[Any],
         physical_train_scene_ids: Sequence[str],
         physical_selection_scene_ids: Sequence[str],
@@ -944,9 +966,60 @@ class MemoryRoleRuntimeV1:
         self.training = training
         self.h6_train_rows = tuple(h6_train_rows)
         self.h6_selection_rows = tuple(h6_selection_rows)
+        # Keep the frozen source rows intact for registration and terminal rehash.
         self.place_train_rows = tuple(place_train_rows)
+        self.place_train_groups = tuple(place_train_groups)
+        self.place_train_schedule_rows = tuple(
+            row for group in self.place_train_groups for row in group.rows
+        )
+        self.place_schedule_receipt = dict(place_schedule_receipt)
         self.place_selection_rows = tuple(place_selection_rows)
         self.audits = {name: dict(value) for name, value in audits.items()}
+
+        schedule_receipt_core = dict(self.place_schedule_receipt)
+        schedule_receipt_content_sha256 = schedule_receipt_core.pop(
+            "content_sha256", None
+        )
+        schedule_metadata = self.place_schedule_receipt.get("schedule")
+        schedule_accounting = self.place_schedule_receipt.get("accounting")
+        schedule_integrity = self.place_schedule_receipt.get("integrity")
+        if (
+            schedule_receipt_content_sha256 != SCHEDULE_RECEIPT_CONTENT_SHA256
+            or hashlib.sha256(
+                _canonical_json_bytes(schedule_receipt_core)
+            ).hexdigest()
+            != schedule_receipt_content_sha256
+            or type(schedule_metadata) is not dict
+            or schedule_metadata.get("ordered_group_binding_sha256")
+            != SCHEDULE_ORDERED_GROUP_BINDING_SHA256
+            or type(schedule_accounting) is not dict
+            or schedule_accounting.get("repeated_row_presentation_count")
+            != SCHEDULE_REPEATED_ROW_PRESENTATION_COUNT
+            or schedule_accounting.get("dropped_source_row_count")
+            != SCHEDULE_DROPPED_SOURCE_ROW_COUNT
+            or type(schedule_integrity) is not dict
+            or not schedule_integrity
+            or any(type(value) is not bool for value in schedule_integrity.values())
+        ):
+            raise PermissionError(
+                "memory-role V5 committed schedule preflight binding changed"
+            )
+        self.schedule_integrity_pass = all(
+            self.place_schedule_receipt["integrity"].values()
+        )
+        if (
+            not self.schedule_integrity_pass
+            or len(self.place_train_groups) * ROLE_MICROBATCH_SIZE
+            != MAXIMUM_UPDATES * PLACE_TRAIN_ROWS_PER_UPDATE
+            or len(self.place_train_schedule_rows)
+            != MAXIMUM_UPDATES * PLACE_TRAIN_ROWS_PER_UPDATE
+            or any(
+                group.index != index
+                or len(group.rows) != ROLE_MICROBATCH_SIZE
+                for index, group in enumerate(self.place_train_groups)
+            )
+        ):
+            raise PermissionError("memory-role V5 scene-local schedule changed")
 
         physical_train_scenes = frozenset(physical_train_scene_ids)
         physical_selection_scenes = frozenset(physical_selection_scene_ids)
@@ -1017,6 +1090,7 @@ class MemoryRoleRuntimeV1:
             or place_family_counts != self.evaluation.PLACE_FAMILY_ROW_COUNTS_V1
         ):
             raise PermissionError("memory-role place selection quota contract changed")
+        self.split_integrity_pass = True
         self._local_loader = _SafeLocalRGBLoaderV1(
             self.runtime_data_root,
             (*self.local_train_rows, *self.local_selection_source_rows),
@@ -1026,6 +1100,11 @@ class MemoryRoleRuntimeV1:
             (row.role, row.index): row
             for row in (*self.place_train_rows, *self.place_selection_rows)
         }
+        if any(
+            self._place_rows.get((row.role, row.index)) != row
+            for row in self.place_train_schedule_rows
+        ):
+            raise PermissionError("memory-role V5 schedule left registered source rows")
         self._place_loader_calls = 0
         self._place_loaded_row_keys: set[tuple[str, int]] = set()
         self._place_reference_counts = {
@@ -1111,8 +1190,22 @@ class MemoryRoleRuntimeV1:
                 LOCAL_SELECTION_SOURCE_INDEX_SHA256
             ),
             "place_train_row_count": len(self.place_train_rows),
+            "place_train_schedule_row_presentation_count": len(
+                self.place_train_schedule_rows
+            ),
+            "committed_scene_local_place_schedule_preflight_path": (
+                SCHEDULE_PREFLIGHT_RELATIVE_PATH
+            ),
+            "scene_local_place_schedule": dict(self.place_schedule_receipt),
+            "scene_local_place_schedule_integrity": dict(
+                self.place_schedule_receipt["integrity"]
+            ),
+            "scene_local_place_schedule_integrity_pass": (
+                self.schedule_integrity_pass
+            ),
             "place_checkpoint_selection_row_count": len(self.place_selection_rows),
             "training_scene_count": len(self.training_scene_ids),
+            "split_integrity_pass": self.split_integrity_pass,
             "probability_calibration_opened": False,
             "held_out_or_sealed_opened": False,
             "rgb_open_count": 0,
@@ -1173,7 +1266,9 @@ class MemoryRoleRuntimeV1:
             raise PermissionError("memory-role place update left 1..400")
         torch = self.training.v25._tensor_core._runtime_apis()[0]
         first = PLACE_TRAIN_ROWS_PER_UPDATE * (update - 1)
-        selected = self.place_train_rows[first : first + PLACE_TRAIN_ROWS_PER_UPDATE]
+        selected = self.place_train_schedule_rows[
+            first : first + PLACE_TRAIN_ROWS_PER_UPDATE
+        ]
         if len(selected) != PLACE_TRAIN_ROWS_PER_UPDATE:
             raise RuntimeError("memory-role place train schedule exhausted")
         batches: list[dict[str, Any]] = []
@@ -1328,6 +1423,9 @@ def load_memory_role_runtime_v1(
         role="train",
         expected_manifest_sha256=manifest_binding["file_sha256"],
     )
+    place_train_groups, place_schedule_receipt = (
+        build_scene_local_place_schedule_v5(place_train_rows)
+    )
     place_selection_rows, place_selection_audit = place_data.load_index(
         root,
         PLACE_TRIPLET_ROOT_RELATIVE_PATH,
@@ -1369,6 +1467,8 @@ def load_memory_role_runtime_v1(
         h6_train_rows=h6_train_rows,
         h6_selection_rows=h6_selection_rows,
         place_train_rows=place_train_rows,
+        place_train_groups=place_train_groups,
+        place_schedule_receipt=place_schedule_receipt,
         place_selection_rows=place_selection_rows,
         physical_train_scene_ids=physical_train_scene_ids,
         physical_selection_scene_ids=physical_selection_scene_ids,
@@ -1388,7 +1488,7 @@ def run_future_authorized_engine_v1(
     runtime: Any,
     publisher: Any,
 ) -> dict[str, Any]:
-    """Execute the gated V3 attempt for at most 400 mixed updates."""
+    """Execute the gated scene-local place V5 attempt for at most 400 updates."""
 
     validated_authority = validate_future_execution_prerequisites_v1(dict(authority))
     validated_reservation = validate_attempt_reservation_v1(dict(reservation))
@@ -1534,6 +1634,7 @@ def run_future_authorized_engine_v1(
                     local_batches,
                     place_batches,
                     accounting=accounting,
+                    place_objective_version=5,
                 )
                 accounting = result.accounting
                 integrity = validate_update_integrity_v1(
@@ -1587,7 +1688,8 @@ def run_future_authorized_engine_v1(
             if update == 100:
                 stage = "classify_update100_continuation"
                 continuation_gate = (
-                    evaluation.evaluate_update100_continuation_gate_v3(
+                    evaluation.evaluate_update100_continuation_gate_v5(
+                        update0_place=observations[0]["roles"]["place"],
                         update100_place=observation["roles"]["place"],
                         update100_local=observation["roles"]["local"],
                         physical_summary=observation["physical"]["physical"],
@@ -1595,6 +1697,10 @@ def run_future_authorized_engine_v1(
                             value["integrity_pass"]
                             for value in observations.values()
                         ),
+                        schedule_integrity_pass=(
+                            role_runtime.schedule_integrity_pass
+                        ),
+                        split_integrity_pass=role_runtime.split_integrity_pass,
                     )
                 )
                 trace.append(
@@ -1630,7 +1736,7 @@ def run_future_authorized_engine_v1(
         if accounting is None or set(observations) != set(OBSERVATION_UPDATES):
             raise RuntimeError("memory-role controller did not complete exact schedule")
         stage = "classify_update400"
-        gate = evaluation.evaluate_terminal_gate_v1(
+        gate = evaluation.evaluate_terminal_gate_v5(
             update0_place=observations[0]["roles"]["place"],
             update400_place=observations[400]["roles"]["place"],
             update400_local=observations[400]["roles"]["local"],
@@ -1639,6 +1745,8 @@ def run_future_authorized_engine_v1(
             integrity_pass=all(
                 observation["integrity_pass"] for observation in observations.values()
             ),
+            schedule_integrity_pass=role_runtime.schedule_integrity_pass,
+            split_integrity_pass=role_runtime.split_integrity_pass,
         )
         trace.append(
             {
@@ -1776,6 +1884,11 @@ __all__ = [
     "OUTPUT_ROOT_RELATIVE_PATH",
     "REGISTERED_FAMILIES",
     "RUNTIME_INPUT_BINDING_NAMES",
+    "SCHEDULE_DROPPED_SOURCE_ROW_COUNT",
+    "SCHEDULE_ORDERED_GROUP_BINDING_SHA256",
+    "SCHEDULE_PREFLIGHT_RELATIVE_PATH",
+    "SCHEDULE_RECEIPT_CONTENT_SHA256",
+    "SCHEDULE_REPEATED_ROW_PRESENTATION_COUNT",
     "SCHEMA_PREFIX",
     "SCOPES",
     "TRAINING_MODULE_NAME",

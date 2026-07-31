@@ -44,6 +44,9 @@ PLACE_VARIANCE_FLOOR_V3 = 0.05
 PLACE_VARIANCE_EPSILON_V3 = 1.0e-4
 PLACE_COVARIANCE_WEIGHT_V3 = 0.10
 PLACE_KEY_DIMENSION_V3 = 64
+PLACE_SCENE_LOCAL_GROUP_SIZE_V5 = MICROBATCH_SIZE_V1
+PLACE_SCENE_LOCAL_GROUP_COUNT_V5 = PLACE_GRAPH_BATCH_SIZE_V3 // MICROBATCH_SIZE_V1
+PLACE_SCENE_LOCAL_RANKING_MARGIN_V5 = 0.05
 LOCAL_ROUTE_NAME_V1 = "immediate_action_local_control"
 PLACE_ROUTE_NAME_V1 = "same_place_retrieval_key"
 
@@ -246,6 +249,21 @@ class PlaceObjectiveTermsV3:
     positive_energy: Any
     negative_energy: Any
     logits: Any
+
+
+@dataclass(frozen=True)
+class PlaceObjectiveTermsV5:
+    loss: Any
+    alignment: Any
+    ranking: Any
+    variance: Any
+    covariance: Any
+    positive_energy: Any
+    negative_energy: Any
+    other_positive_energy: Any
+    competitor_energy: Any
+    ranking_hinge: Any
+    hardest_competitor_energy: Any
 
 
 def partition_parameters_v1(model: Any) -> ParameterPartitionV1:
@@ -707,6 +725,173 @@ def place_objective_v3(
     )
 
 
+def place_objective_v5(
+    torch: Any,
+    online_anchor_keys: Any,
+    predictions: Any,
+    positive_targets: Any,
+    negative_targets: Any,
+) -> PlaceObjectiveTermsV5:
+    """Rank each positive ahead of four competitors from its own B4 group."""
+
+    expected_shape = (PLACE_GRAPH_BATCH_SIZE_V3, PLACE_KEY_DIMENSION_V3)
+    values = (
+        online_anchor_keys,
+        predictions,
+        positive_targets,
+        negative_targets,
+    )
+    if any(
+        not isinstance(value, torch.Tensor)
+        or tuple(value.shape) != expected_shape
+        or value.dtype != torch.float32
+        or value.device != online_anchor_keys.device
+        or not bool(torch.isfinite(value).all())
+        for value in values
+    ):
+        raise RuntimeError("V5 place-objective operands are invalid")
+    if (
+        not online_anchor_keys.requires_grad
+        or not predictions.requires_grad
+        or positive_targets.requires_grad
+        or negative_targets.requires_grad
+    ):
+        raise RuntimeError("V5 place-objective gradient topology changed")
+
+    positive_energy = _place_energy_per_row_v1(
+        torch, predictions, positive_targets
+    )
+    negative_energy = _place_energy_per_row_v1(
+        torch, predictions, negative_targets
+    )
+    alignment = positive_energy.mean()
+
+    grouped_predictions = predictions.reshape(
+        PLACE_SCENE_LOCAL_GROUP_COUNT_V5,
+        PLACE_SCENE_LOCAL_GROUP_SIZE_V5,
+        1,
+        PLACE_KEY_DIMENSION_V3,
+    )
+    grouped_positive_targets = positive_targets.reshape(
+        PLACE_SCENE_LOCAL_GROUP_COUNT_V5,
+        1,
+        PLACE_SCENE_LOCAL_GROUP_SIZE_V5,
+        PLACE_KEY_DIMENSION_V3,
+    )
+    all_group_positive_energy = 1.0 - torch.nn.functional.cosine_similarity(
+        grouped_predictions,
+        grouped_positive_targets,
+        dim=3,
+        eps=1.0e-6,
+    )
+    other_positive_mask = ~torch.eye(
+        PLACE_SCENE_LOCAL_GROUP_SIZE_V5,
+        dtype=torch.bool,
+        device=predictions.device,
+    )
+    other_positive_energy = all_group_positive_energy.masked_select(
+        other_positive_mask.unsqueeze(0)
+    ).reshape(PLACE_GRAPH_BATCH_SIZE_V3, PLACE_SCENE_LOCAL_GROUP_SIZE_V5 - 1)
+    competitor_energy = torch.cat(
+        (negative_energy.unsqueeze(1), other_positive_energy), dim=1
+    )
+    ranking_hinge = torch.relu(
+        PLACE_SCENE_LOCAL_RANKING_MARGIN_V5
+        + positive_energy.unsqueeze(1)
+        - competitor_energy
+    )
+    ranking = ranking_hinge.mean()
+    hardest_competitor_energy = competitor_energy.min(dim=1).values
+
+    centered = online_anchor_keys - online_anchor_keys.mean(
+        dim=0, keepdim=True
+    )
+    covariance_matrix = (
+        centered.transpose(0, 1) @ centered
+    ) / float(PLACE_GRAPH_BATCH_SIZE_V3 - 1)
+    standard_deviation = torch.sqrt(
+        covariance_matrix.diagonal() + PLACE_VARIANCE_EPSILON_V3
+    )
+    variance = torch.relu(
+        PLACE_VARIANCE_FLOOR_V3 - standard_deviation
+    ).mean()
+    off_diagonal_mask = ~torch.eye(
+        PLACE_KEY_DIMENSION_V3,
+        dtype=torch.bool,
+        device=online_anchor_keys.device,
+    )
+    covariance = covariance_matrix.square().masked_select(
+        off_diagonal_mask
+    ).sum() / float(PLACE_KEY_DIMENSION_V3)
+    loss = (
+        alignment
+        + ranking
+        + variance
+        + PLACE_COVARIANCE_WEIGHT_V3 * covariance
+    )
+    for name, value in (
+        ("positive energy", positive_energy),
+        ("registered-negative energy", negative_energy),
+        ("other-positive energy", other_positive_energy),
+        ("competitor energy", competitor_energy),
+        ("ranking hinge", ranking_hinge),
+        ("hardest-competitor energy", hardest_competitor_energy),
+        ("alignment", alignment),
+        ("ranking", ranking),
+        ("variance", variance),
+        ("covariance", covariance),
+        ("loss", loss),
+    ):
+        v25._tensor_core._finite_tensor(torch, value, f"V5 place {name}")
+    if not loss.requires_grad:
+        raise RuntimeError("V5 place objective must retain a gradient graph")
+    return PlaceObjectiveTermsV5(
+        loss=loss,
+        alignment=alignment,
+        ranking=ranking,
+        variance=variance,
+        covariance=covariance,
+        positive_energy=positive_energy,
+        negative_energy=negative_energy,
+        other_positive_energy=other_positive_energy,
+        competitor_energy=competitor_energy,
+        ranking_hinge=ranking_hinge,
+        hardest_competitor_energy=hardest_competitor_energy,
+    )
+
+
+def place_objective_by_version_v1(
+    torch: Any,
+    online_anchor_keys: Any,
+    predictions: Any,
+    positive_targets: Any,
+    negative_targets: Any,
+    *,
+    place_objective_version: int = 3,
+) -> PlaceObjectiveTermsV3 | PlaceObjectiveTermsV5:
+    """Select the frozen V3 objective or the explicit scene-local V5 path."""
+
+    if type(place_objective_version) is not int:
+        raise ValueError("place objective version must be integer 3 or 5")
+    if place_objective_version == 3:
+        return place_objective_v3(
+            torch,
+            online_anchor_keys,
+            predictions,
+            positive_targets,
+            negative_targets,
+        )
+    if place_objective_version == 5:
+        return place_objective_v5(
+            torch,
+            online_anchor_keys,
+            predictions,
+            positive_targets,
+            negative_targets,
+        )
+    raise ValueError("place objective version must be 3 or 5")
+
+
 def _target_roles_v1(model: Any, rgb: Any) -> Any:
     torch, *_ = v25._tensor_core._runtime_apis()
     with torch.no_grad():
@@ -734,6 +919,16 @@ def _row_values(value: Any) -> tuple[float, ...]:
     return result
 
 
+def _matrix_row_values(value: Any, columns: int) -> tuple[tuple[float, ...], ...]:
+    flat = _row_values(value)
+    if columns <= 0 or len(flat) % columns:
+        raise RuntimeError("memory-role diagnostic matrix shape changed")
+    return tuple(
+        tuple(flat[start : start + columns])
+        for start in range(0, len(flat), columns)
+    )
+
+
 def joint_training_update_v1(
     model: Any,
     optimizer: Any,
@@ -742,10 +937,16 @@ def joint_training_update_v1(
     place_microbatches: Sequence[Mapping[str, Any]],
     *,
     accounting: JointTrainingAccountingV1 | None = None,
+    place_objective_version: int = 3,
 ) -> JointUpdateResultV1:
     """Accumulate all three routes, then perform one optimizer and EMA step."""
 
     torch, semantic_api, survival_api, *_ = v25._tensor_core._runtime_apis()
+    if type(place_objective_version) is not int or place_objective_version not in (
+        3,
+        5,
+    ):
+        raise ValueError("place objective version must be integer 3 or 5")
     state = JointTrainingAccountingV1() if accounting is None else accounting
     _validate_capacity_v1(state)
     v25._validate_microbatches_v25(torch, physical_microbatches)
@@ -1035,12 +1236,13 @@ def joint_training_update_v1(
         model, torch.cat((positive_rgb, negative_rgb), dim=0)
     ).place_key
     positive_target, negative_target = targets.split(PLACE_GRAPH_BATCH_SIZE_V3)
-    place_terms = place_objective_v3(
+    place_terms = place_objective_by_version_v1(
         torch,
         anchor.place_key,
         predicted,
         positive_target,
         negative_target,
+        place_objective_version=place_objective_version,
     )
     gradients = torch.autograd.grad(
         place_terms.loss,
@@ -1239,22 +1441,9 @@ def joint_training_update_v1(
             place_positive_rows, place_negative_rows, strict=True
         )
     )
-    return JointUpdateResultV1(
-        accounting=advanced,
-        mean_losses=mean_losses,
-        gradient_routes=receipts,
-        local_diagnostics={
-            "mechanism": LOCAL_ROUTE_NAME_V1,
-            "correct_energy_per_row": tuple(local_correct_rows),
-            "wrong_energy_per_row": tuple(local_wrong_rows),
-            "wrong_minus_correct_per_row": local_advantage,
-            "margin_loss_per_row": tuple(local_margin_rows),
-            "correct_energy": summary(local_correct_rows),
-            "wrong_energy": summary(local_wrong_rows),
-            "wrong_minus_correct": summary(local_advantage),
-            "cyclic_wrong_action_margin": LOCAL_WRONG_ACTION_MARGIN_V1,
-        },
-        place_diagnostics={
+    if place_objective_version == 3:
+        # Preserve the V3 receipt exactly, including insertion order.
+        place_diagnostics: dict[str, Any] = {
             "mechanism": PLACE_ROUTE_NAME_V1,
             "objective_version": 3,
             "positive_energy_per_row": tuple(place_positive_rows),
@@ -1274,7 +1463,87 @@ def joint_training_update_v1(
             "variance_floor": PLACE_VARIANCE_FLOOR_V3,
             "variance_epsilon": PLACE_VARIANCE_EPSILON_V3,
             "covariance_weight": PLACE_COVARIANCE_WEIGHT_V3,
+        }
+    else:
+        other_positive_flat = _row_values(place_terms.other_positive_energy)
+        competitor_flat = _row_values(place_terms.competitor_energy)
+        ranking_hinge_flat = _row_values(place_terms.ranking_hinge)
+        hardest_competitor_rows = _row_values(
+            place_terms.hardest_competitor_energy
+        )
+        hardest_advantage = tuple(
+            competitor - positive
+            for positive, competitor in zip(
+                place_positive_rows, hardest_competitor_rows, strict=True
+            )
+        )
+        place_diagnostics = {
+            "mechanism": PLACE_ROUTE_NAME_V1,
+            "objective_version": 5,
+            "positive_energy_per_row": tuple(place_positive_rows),
+            "negative_energy_per_row": tuple(place_negative_rows),
+            "negative_minus_positive_per_row": place_advantage,
+            "positive_energy": summary(place_positive_rows),
+            "negative_energy": summary(place_negative_rows),
+            "negative_minus_positive": summary(place_advantage),
+            "alignment": v25._tensor_core._scalar(place_terms.alignment),
+            "ranking": v25._tensor_core._scalar(place_terms.ranking),
+            "variance": v25._tensor_core._scalar(place_terms.variance),
+            "covariance": v25._tensor_core._scalar(place_terms.covariance),
+            "alignment_weight": 1.0,
+            "ranking_margin": PLACE_SCENE_LOCAL_RANKING_MARGIN_V5,
+            "scene_local_group_count": PLACE_SCENE_LOCAL_GROUP_COUNT_V5,
+            "scene_local_group_size": PLACE_SCENE_LOCAL_GROUP_SIZE_V5,
+            "cross_group_candidates": 0,
+            "candidate_count_per_row": PLACE_SCENE_LOCAL_GROUP_SIZE_V5 + 1,
+            "competitor_count_per_row": PLACE_SCENE_LOCAL_GROUP_SIZE_V5,
+            "registered_negative_competitor_count_per_row": 1,
+            "other_positive_competitor_count_per_row": (
+                PLACE_SCENE_LOCAL_GROUP_SIZE_V5 - 1
+            ),
+            "other_positive_energy_per_row": _matrix_row_values(
+                place_terms.other_positive_energy,
+                PLACE_SCENE_LOCAL_GROUP_SIZE_V5 - 1,
+            ),
+            "competitor_energy_per_row": _matrix_row_values(
+                place_terms.competitor_energy,
+                PLACE_SCENE_LOCAL_GROUP_SIZE_V5,
+            ),
+            "ranking_hinge_per_row": _matrix_row_values(
+                place_terms.ranking_hinge,
+                PLACE_SCENE_LOCAL_GROUP_SIZE_V5,
+            ),
+            "hardest_competitor_energy_per_row": hardest_competitor_rows,
+            "hardest_competitor_minus_positive_per_row": hardest_advantage,
+            "other_positive_energy": summary(other_positive_flat),
+            "competitor_energy": summary(competitor_flat),
+            "ranking_hinge": summary(ranking_hinge_flat),
+            "hardest_competitor_energy": summary(hardest_competitor_rows),
+            "hardest_competitor_minus_positive": summary(hardest_advantage),
+            "active_ranking_hinge_count": sum(
+                value > 0.0 for value in ranking_hinge_flat
+            ),
+            "ranking_comparison_count": len(ranking_hinge_flat),
+            "variance_floor": PLACE_VARIANCE_FLOOR_V3,
+            "variance_epsilon": PLACE_VARIANCE_EPSILON_V3,
+            "covariance_weight": PLACE_COVARIANCE_WEIGHT_V3,
+        }
+    return JointUpdateResultV1(
+        accounting=advanced,
+        mean_losses=mean_losses,
+        gradient_routes=receipts,
+        local_diagnostics={
+            "mechanism": LOCAL_ROUTE_NAME_V1,
+            "correct_energy_per_row": tuple(local_correct_rows),
+            "wrong_energy_per_row": tuple(local_wrong_rows),
+            "wrong_minus_correct_per_row": local_advantage,
+            "margin_loss_per_row": tuple(local_margin_rows),
+            "correct_energy": summary(local_correct_rows),
+            "wrong_energy": summary(local_wrong_rows),
+            "wrong_minus_correct": summary(local_advantage),
+            "cyclic_wrong_action_margin": LOCAL_WRONG_ACTION_MARGIN_V1,
         },
+        place_diagnostics=place_diagnostics,
         predictor_core_protected_survival_diagnostics={
             **auxiliary_sums,
             "positive_energy_count": positive_count,
@@ -1332,18 +1601,24 @@ __all__ = [
     "PLACE_NEGATIVE_RGB_KEY_V1",
     "PLACE_POSITIVE_RGB_KEY_V1",
     "PLACE_ROUTE_NAME_V1",
+    "PLACE_SCENE_LOCAL_GROUP_COUNT_V5",
+    "PLACE_SCENE_LOCAL_GROUP_SIZE_V5",
+    "PLACE_SCENE_LOCAL_RANKING_MARGIN_V5",
     "PLACE_VARIANCE_EPSILON_V3",
     "PLACE_VARIANCE_FLOOR_V3",
     "PRESENTATIONS_PER_UPDATE_V1",
     "ParameterPartitionV1",
     "PlaceObjectiveTermsV3",
+    "PlaceObjectiveTermsV5",
     "REQUIRED_LOCAL_BATCH_KEYS_V1",
     "REQUIRED_PLACE_BATCH_KEYS_V1",
     "RGB_DECODES_PER_UPDATE_V1",
     "build_frozen_optimizer_v13",
     "build_optimizer_v1",
     "joint_training_update_v1",
+    "place_objective_by_version_v1",
     "place_objective_v3",
+    "place_objective_v5",
     "partition_parameters_v1",
     "partition_parameters_v13",
     "validate_accounting_v1",

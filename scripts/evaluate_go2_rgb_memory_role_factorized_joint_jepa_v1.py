@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded development evaluation for memory-role factorized joint-JEPA V1.
+"""Bounded development evaluation for scene-local place joint-JEPA V5.
 
 The evaluator consumes only registered checkpoint-selection RGB callbacks.  It
 never opens an index, image, checkpoint, or protected role itself, and it never
@@ -37,6 +37,7 @@ from lewm.models.memory_role_factorized_joint_jepa_v1 import (
 
 
 SCHEMA_PREFIX_V1 = "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4"
+SCHEMA_PREFIX_V5 = "lewm_go2_rgb_scene_local_place_joint_jepa_v5"
 CHECKPOINT_SELECTION_ROLE_V1 = "checkpoint_selection"
 FAMILIES_V1 = (
     "large_enclosed_maze",
@@ -72,6 +73,10 @@ PLACE_TARGET_RANK_RETENTION_MINIMUM_V1 = 0.75
 UPDATE100_PLACE_RETRIEVAL_CHANCE_MULTIPLIER_MINIMUM_V3 = 1.5
 UPDATE100_PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V3 = 2.0
 UPDATE100_PHYSICAL_MARGIN_COUNT_MINIMUM_V3 = 60
+PLACE_RETRIEVAL_CHANCE_MULTIPLIER_MINIMUM_V5 = 2.0
+PLACE_RETRIEVAL_UPDATE0_RETENTION_MINIMUM_V5 = 0.90
+PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V5 = 2.0
+PLACE_TARGET_RANK_RETENTION_MINIMUM_V5 = 0.80
 PHYSICAL_CONTROL_NAMES_V1 = (
     "coordinate_matched_persistence",
     "shuffled_action",
@@ -1077,12 +1082,16 @@ def _place_gate_metrics(value: Mapping[str, Any]) -> dict[str, float | int]:
         energy.get("negative_minus_positive_bootstrap_lower_95"),
         name="place separation bootstrap lower 95",
     )
+    positive_mean = _finite(
+        energy.get("positive_mean"), name="place positive revisit energy"
+    )
     scene_count = retrieval.get("scene_count_above_chance")
     family_count = energy.get("positive_family_count")
     if (
         not 0.0 < chance <= 1.0
         or not 0.0 <= recall <= 1.0
         or rank < 0.0
+        or positive_mean < 0.0
         or type(scene_count) is not int
         or not 0 <= scene_count <= len(FAMILIES_V1)
         or type(family_count) is not int
@@ -1095,6 +1104,7 @@ def _place_gate_metrics(value: Mapping[str, Any]) -> dict[str, float | int]:
         "chance_multiple": recall / chance,
         "target_place_key_effective_rank": rank,
         "negative_minus_positive_bootstrap_lower_95": bootstrap,
+        "positive_revisit_energy_mean": positive_mean,
         "positive_family_count": family_count,
         "scene_count_above_chance": scene_count,
     }
@@ -1143,6 +1153,128 @@ def evaluate_update100_continuation_gate_v3(
     passed = all(checks.values())
     result = {
         "schema": f"{SCHEMA_PREFIX_V1}_update100_continuation_gate_v1",
+        "update": 100,
+        "checks": checks,
+        "passed": passed,
+        "observed": {
+            **metrics,
+            "passed_physical_margin_count": physical["passed_margin_count"],
+            "physical_margin_count": physical["margin_count"],
+        },
+        "action": (
+            "CONTINUE_SAME_ATTEMPT_TO_UPDATE_400"
+            if passed
+            else "STOP_VALID_SCIENTIFIC_FAILURE_AT_UPDATE_100"
+        ),
+        "retry_authorized": False,
+        "resume_authorized": False,
+    }
+    _json_safe(result)
+    return result
+
+
+def _v5_place_comparison(
+    baseline: Mapping[str, Any], current: Mapping[str, Any]
+) -> dict[str, float | int]:
+    baseline_metrics = _place_gate_metrics(baseline)
+    current_metrics = _place_gate_metrics(current)
+    baseline_multiple = float(baseline_metrics["chance_multiple"])
+    baseline_rank = float(baseline_metrics["target_place_key_effective_rank"])
+    baseline_positive = float(baseline_metrics["positive_revisit_energy_mean"])
+    if baseline_multiple <= 0.0 or baseline_rank <= 0.0:
+        raise MemoryRoleEvaluationContractError(
+            "V5 update-zero place denominator is nonpositive"
+        )
+    return {
+        **current_metrics,
+        "update0_chance_multiple": baseline_multiple,
+        "chance_multiple_retention_ratio": (
+            float(current_metrics["chance_multiple"]) / baseline_multiple
+        ),
+        "update0_target_place_key_effective_rank": baseline_rank,
+        "target_place_key_rank_retention_ratio": (
+            float(current_metrics["target_place_key_effective_rank"])
+            / baseline_rank
+        ),
+        "update0_positive_revisit_energy_mean": baseline_positive,
+        "positive_revisit_energy_change": (
+            float(current_metrics["positive_revisit_energy_mean"])
+            - baseline_positive
+        ),
+    }
+
+
+def evaluate_update100_continuation_gate_v5(
+    *,
+    update0_place: Mapping[str, Any],
+    update100_place: Mapping[str, Any],
+    update100_local: Mapping[str, Any],
+    physical_summary: Mapping[str, Any],
+    integrity_pass: bool,
+    split_integrity_pass: bool,
+    schedule_integrity_pass: bool,
+) -> dict[str, Any]:
+    """Apply the preregistered V5 anti-regression continuation gate."""
+
+    if (
+        type(integrity_pass) is not bool
+        or type(split_integrity_pass) is not bool
+        or type(schedule_integrity_pass) is not bool
+    ):
+        raise MemoryRoleEvaluationContractError(
+            "V5 structural, split, and schedule integrity must be Boolean"
+        )
+    baseline = _validate_role_result(update0_place, kind="place", update=0)
+    place = _validate_role_result(update100_place, kind="place", update=100)
+    local = _validate_role_result(update100_local, kind="local", update=100)
+    physical = _validate_physical_summary(physical_summary)
+    metrics = _v5_place_comparison(baseline, place)
+    checks = {
+        "structural_integrity_pass": integrity_pass,
+        "split_integrity_pass": split_integrity_pass,
+        "scene_local_schedule_integrity_pass": schedule_integrity_pass,
+        "place_target_integrity_pass": _target_integrity_pass(place, kind="place"),
+        "local_target_integrity_pass": _target_integrity_pass(local, kind="local"),
+        "place_access_integrity_pass": _place_access_integrity_pass(place),
+        "local_access_integrity_pass": _local_access_integrity_pass(local),
+        "place_retrieval_r5_at_least_2x_exact_chance": (
+            metrics["chance_multiple"]
+            >= PLACE_RETRIEVAL_CHANCE_MULTIPLIER_MINIMUM_V5
+        ),
+        "place_retrieval_retains_at_least_90_percent_of_update0": (
+            metrics["chance_multiple_retention_ratio"]
+            >= PLACE_RETRIEVAL_UPDATE0_RETENTION_MINIMUM_V5
+        ),
+        "place_scene_count_above_chance_at_least_6_of_8": (
+            metrics["scene_count_above_chance"]
+            >= PLACE_RETRIEVAL_SCENE_COUNT_MINIMUM_V1
+        ),
+        "target_place_key_effective_rank_at_least_2": (
+            metrics["target_place_key_effective_rank"]
+            >= PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V5
+        ),
+        "target_place_key_rank_retains_at_least_80_percent_of_update0": (
+            metrics["target_place_key_rank_retention_ratio"]
+            >= PLACE_TARGET_RANK_RETENTION_MINIMUM_V5
+        ),
+        "positive_revisit_energy_strictly_below_update0": (
+            metrics["positive_revisit_energy_mean"]
+            < metrics["update0_positive_revisit_energy_mean"]
+        ),
+        "place_separation_bootstrap_lower_95_positive": (
+            metrics["negative_minus_positive_bootstrap_lower_95"] > 0.0
+        ),
+        "place_positive_family_count_at_least_6_of_8": (
+            metrics["positive_family_count"] >= POSITIVE_FAMILY_COUNT_MINIMUM_V1
+        ),
+        "passed_physical_margin_count_at_least_60_of_189": (
+            physical["passed_margin_count"]
+            >= UPDATE100_PHYSICAL_MARGIN_COUNT_MINIMUM_V3
+        ),
+    }
+    passed = all(checks.values())
+    result = {
+        "schema": f"{SCHEMA_PREFIX_V5}_update100_continuation_gate_v1",
         "update": 100,
         "checks": checks,
         "passed": passed,
@@ -1263,6 +1395,114 @@ def evaluate_terminal_gate_v1(
     return result
 
 
+def evaluate_terminal_gate_v5(
+    *,
+    update0_place: Mapping[str, Any],
+    update400_place: Mapping[str, Any],
+    update400_local: Mapping[str, Any],
+    physical_summary: Mapping[str, Any],
+    controls: Mapping[str, Mapping[str, bool]],
+    integrity_pass: bool,
+    split_integrity_pass: bool,
+    schedule_integrity_pass: bool,
+    diagnostics: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Apply the preregistered V5 anti-regression memory-entry gate."""
+
+    if (
+        type(integrity_pass) is not bool
+        or type(split_integrity_pass) is not bool
+        or type(schedule_integrity_pass) is not bool
+    ):
+        raise MemoryRoleEvaluationContractError(
+            "V5 structural, split, and schedule integrity must be Boolean"
+        )
+    baseline = _validate_role_result(update0_place, kind="place", update=0)
+    place = _validate_role_result(update400_place, kind="place", update=400)
+    local = _validate_role_result(update400_local, kind="local", update=400)
+    physical = _validate_physical_summary(physical_summary)
+    causal = _flatten_controls(controls)
+    metrics = _v5_place_comparison(baseline, place)
+    checks = {
+        "structural_integrity_pass": integrity_pass,
+        "split_integrity_pass": split_integrity_pass,
+        "scene_local_schedule_integrity_pass": schedule_integrity_pass,
+        "place_target_integrity_pass": _target_integrity_pass(place, kind="place"),
+        "local_target_integrity_pass": _target_integrity_pass(local, kind="local"),
+        "place_access_integrity_pass": _place_access_integrity_pass(place),
+        "local_access_integrity_pass": _local_access_integrity_pass(local),
+        "place_retrieval_r5_at_least_2x_exact_chance": (
+            metrics["chance_multiple"]
+            >= PLACE_RETRIEVAL_CHANCE_MULTIPLIER_MINIMUM_V5
+        ),
+        "place_scene_count_above_chance_at_least_6_of_8": (
+            metrics["scene_count_above_chance"]
+            >= PLACE_RETRIEVAL_SCENE_COUNT_MINIMUM_V1
+        ),
+        "target_place_key_effective_rank_at_least_2": (
+            metrics["target_place_key_effective_rank"]
+            >= PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V5
+        ),
+        "target_place_key_rank_retains_at_least_80_percent_of_update0": (
+            metrics["target_place_key_rank_retention_ratio"]
+            >= PLACE_TARGET_RANK_RETENTION_MINIMUM_V5
+        ),
+        "positive_revisit_energy_strictly_below_update0": (
+            metrics["positive_revisit_energy_mean"]
+            < metrics["update0_positive_revisit_energy_mean"]
+        ),
+        "place_separation_bootstrap_lower_95_positive": (
+            metrics["negative_minus_positive_bootstrap_lower_95"] > 0.0
+        ),
+        "place_positive_family_count_at_least_6_of_8": (
+            metrics["positive_family_count"] >= POSITIVE_FAMILY_COUNT_MINIMUM_V1
+        ),
+        "all_twelve_causal_control_checks_true": all(causal.values()),
+        "passed_physical_margin_count_strictly_greater_than_72_of_189": (
+            physical["passed_margin_count"] > 72
+        ),
+    }
+    diagnostic_only: dict[str, Any] = {
+        "rough_depth_p95_m": physical["rough_depth_p95_m"],
+        "rough_depth_is_a_gate": False,
+        "tail_metric_is_a_gate": False,
+        "prior_metric_is_a_gate": False,
+        "place_fixed_point10_energy_gap_is_a_gate": False,
+        "place_absolute_r5_point40_is_a_gate": False,
+        "local_metrics_are_a_gate": False,
+        "place_legacy_conjunction_passed": bool(place["passed"]),
+        "local_legacy_conjunction_passed": bool(local["passed"]),
+    }
+    if diagnostics is not None:
+        if type(diagnostics) is not dict:
+            raise MemoryRoleEvaluationContractError("diagnostics must be a plain object")
+        _json_safe(diagnostics, name="diagnostics")
+        diagnostic_only["reported"] = dict(diagnostics)
+    passed = all(checks.values())
+    result = {
+        "schema": f"{SCHEMA_PREFIX_V5}_terminal_gate_v1",
+        "update": 400,
+        "checks": checks,
+        "passed": passed,
+        "observed": {
+            **metrics,
+            "passed_physical_margin_count": physical["passed_margin_count"],
+            "physical_margin_count": physical["margin_count"],
+        },
+        "causal_control_checks": causal,
+        "diagnostic_only": diagnostic_only,
+        "memory_reset_reverse_shuffle_required": False,
+        "navigation_evaluation_required": False,
+        "action": (
+            "PASS_MEMORY_ENTRY_ELIGIBLE_FOR_LEARNED_MEMORY_INTEGRATION"
+            if passed
+            else "FAIL_TERMINAL_NO_MEMORY_INTEGRATION"
+        ),
+    }
+    _json_safe(result)
+    return result
+
+
 __all__ = [
     "BOOTSTRAP_REPLICATES_V1",
     "CHECKPOINT_SELECTION_ROLE_V1",
@@ -1280,10 +1520,17 @@ __all__ = [
     "PLACE_RETRIEVAL_R5_MINIMUM_V1",
     "PLACE_SELECTION_ROW_COUNT_V1",
     "PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V1",
+    "PLACE_RETRIEVAL_CHANCE_MULTIPLIER_MINIMUM_V5",
+    "PLACE_RETRIEVAL_UPDATE0_RETENTION_MINIMUM_V5",
+    "PLACE_TARGET_EFFECTIVE_RANK_MINIMUM_V5",
+    "PLACE_TARGET_RANK_RETENTION_MINIMUM_V5",
+    "SCHEMA_PREFIX_V5",
     "evaluate_checkpoint_selection_v1",
     "evaluate_local_checkpoint_selection_v1",
     "evaluate_place_checkpoint_selection_v1",
     "evaluate_terminal_gate_v1",
+    "evaluate_terminal_gate_v5",
     "evaluate_update100_continuation_gate_v3",
+    "evaluate_update100_continuation_gate_v5",
     "preflight_place_retrieval_candidate_counts_v1",
 ]

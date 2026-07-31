@@ -349,6 +349,290 @@ def _all_controls_pass() -> dict[str, dict[str, bool]]:
     }
 
 
+def _v5_gate_role_results(
+    *, update: int, update0_multiple: float, current_multiple: float
+) -> tuple[dict, dict, dict]:
+    model = _TinyRoleModel()
+    place0 = evaluation.evaluate_place_checkpoint_selection_v1(
+        model,
+        _place_rows(),
+        load_triplet=_load_triplet,
+        device="cpu",
+        training_scene_ids={"train_scene"},
+        update=0,
+    )
+    chance = place0["retrieval"]["exact_chance_recall_at_5"]
+    place0["retrieval"]["recall_at_5"] = update0_multiple * chance
+    place0["noncollapse"]["target_place_key_effective_rank"] = 2.5
+    place0["energy"]["positive_mean"] = 0.5
+    current = copy.deepcopy(place0)
+    current["update"] = update
+    current["retrieval"]["recall_at_5"] = current_multiple * chance
+    current["retrieval"]["scene_count_above_chance"] = 6
+    current["noncollapse"]["target_place_key_effective_rank"] = 2.0
+    current["energy"]["positive_mean"] = 0.49
+    current["energy"]["negative_minus_positive_bootstrap_lower_95"] = 1.0e-9
+    current["energy"]["positive_family_count"] = 6
+    local = evaluation.evaluate_local_checkpoint_selection_v1(
+        model,
+        _local_rows(),
+        load_pair=_load_local,
+        device="cpu",
+        training_scene_ids={"train_scene"},
+        update=update,
+    )
+    return place0, current, local
+
+
+def test_v5_update100_gate_applies_anti_regression_boundaries() -> None:
+    place0, place100, local100 = _v5_gate_role_results(
+        update=100,
+        update0_multiple=2.5,
+        current_multiple=2.25,
+    )
+    physical = {
+        "margin_count": 189,
+        "passed_margin_count": 60,
+        "rough_motion": {"depth_p95_m": 999.0},
+    }
+
+    gate = evaluation.evaluate_update100_continuation_gate_v5(
+        update0_place=place0,
+        update100_place=place100,
+        update100_local=local100,
+        physical_summary=physical,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=True,
+    )
+
+    assert gate["schema"] == (
+        "lewm_go2_rgb_scene_local_place_joint_jepa_v5_"
+        "update100_continuation_gate_v1"
+    )
+    assert gate["passed"] is True
+    assert all(gate["checks"].values())
+    assert gate["observed"]["chance_multiple_retention_ratio"] == pytest.approx(0.9)
+    assert gate["observed"]["target_place_key_rank_retention_ratio"] == 0.8
+    assert gate["observed"]["positive_revisit_energy_change"] < 0.0
+
+    no_schedule = evaluation.evaluate_update100_continuation_gate_v5(
+        update0_place=place0,
+        update100_place=place100,
+        update100_local=local100,
+        physical_summary=physical,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=False,
+    )
+    assert no_schedule["checks"]["scene_local_schedule_integrity_pass"] is False
+    assert no_schedule["passed"] is False
+
+    no_split = evaluation.evaluate_update100_continuation_gate_v5(
+        update0_place=place0,
+        update100_place=place100,
+        update100_local=local100,
+        physical_summary=physical,
+        integrity_pass=True,
+        split_integrity_pass=False,
+        schedule_integrity_pass=True,
+    )
+    assert no_split["checks"]["split_integrity_pass"] is False
+    assert no_split["passed"] is False
+
+    below_retention = copy.deepcopy(place100)
+    chance = below_retention["retrieval"]["exact_chance_recall_at_5"]
+    below_retention["retrieval"]["recall_at_5"] = 2.249 * chance
+    failed_retention = evaluation.evaluate_update100_continuation_gate_v5(
+        update0_place=place0,
+        update100_place=below_retention,
+        update100_local=local100,
+        physical_summary=physical,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=True,
+    )
+    assert (
+        failed_retention["checks"][
+            "place_retrieval_retains_at_least_90_percent_of_update0"
+        ]
+        is False
+    )
+    assert failed_retention["checks"]["place_retrieval_r5_at_least_2x_exact_chance"]
+    assert failed_retention["passed"] is False
+
+    equal_positive_energy = copy.deepcopy(place100)
+    equal_positive_energy["energy"]["positive_mean"] = 0.5
+    failed_energy = evaluation.evaluate_update100_continuation_gate_v5(
+        update0_place=place0,
+        update100_place=equal_positive_energy,
+        update100_local=local100,
+        physical_summary=physical,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=True,
+    )
+    assert (
+        failed_energy["checks"]["positive_revisit_energy_strictly_below_update0"]
+        is False
+    )
+    assert failed_energy["passed"] is False
+
+    high_rank_baseline = copy.deepcopy(place0)
+    high_rank_baseline["noncollapse"]["target_place_key_effective_rank"] = 2.51
+    failed_rank = evaluation.evaluate_update100_continuation_gate_v5(
+        update0_place=high_rank_baseline,
+        update100_place=place100,
+        update100_local=local100,
+        physical_summary=physical,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=True,
+    )
+    assert failed_rank["checks"]["target_place_key_effective_rank_at_least_2"]
+    assert (
+        failed_rank["checks"][
+            "target_place_key_rank_retains_at_least_80_percent_of_update0"
+        ]
+        is False
+    )
+    assert failed_rank["passed"] is False
+
+
+def test_v5_update400_gate_applies_memory_entry_boundaries_and_all_controls() -> None:
+    place0, place400, local400 = _v5_gate_role_results(
+        update=400,
+        update0_multiple=5.0,
+        current_multiple=2.0,
+    )
+    physical = {
+        "margin_count": 189,
+        "passed_margin_count": 73,
+        "rough_motion": {"depth_p95_m": 999.0},
+    }
+    controls = _all_controls_pass()
+
+    gate = evaluation.evaluate_terminal_gate_v5(
+        update0_place=place0,
+        update400_place=place400,
+        update400_local=local400,
+        physical_summary=physical,
+        controls=controls,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=True,
+    )
+
+    assert gate["schema"] == (
+        "lewm_go2_rgb_scene_local_place_joint_jepa_v5_terminal_gate_v1"
+    )
+    assert gate["passed"] is True
+    assert all(gate["checks"].values())
+    assert gate["observed"]["chance_multiple_retention_ratio"] == pytest.approx(0.4)
+    assert gate["observed"]["target_place_key_rank_retention_ratio"] == 0.8
+    assert gate["observed"]["positive_revisit_energy_change"] < 0.0
+    assert len(gate["causal_control_checks"]) == 12
+    assert all(gate["causal_control_checks"].values())
+
+    no_schedule = evaluation.evaluate_terminal_gate_v5(
+        update0_place=place0,
+        update400_place=place400,
+        update400_local=local400,
+        physical_summary=physical,
+        controls=controls,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=False,
+    )
+    assert no_schedule["checks"]["scene_local_schedule_integrity_pass"] is False
+    assert no_schedule["passed"] is False
+
+    no_split = evaluation.evaluate_terminal_gate_v5(
+        update0_place=place0,
+        update400_place=place400,
+        update400_local=local400,
+        physical_summary=physical,
+        controls=controls,
+        integrity_pass=True,
+        split_integrity_pass=False,
+        schedule_integrity_pass=True,
+    )
+    assert no_split["checks"]["split_integrity_pass"] is False
+    assert no_split["passed"] is False
+
+    equal_positive_energy = copy.deepcopy(place400)
+    equal_positive_energy["energy"]["positive_mean"] = 0.5
+    failed_energy = evaluation.evaluate_terminal_gate_v5(
+        update0_place=place0,
+        update400_place=equal_positive_energy,
+        update400_local=local400,
+        physical_summary=physical,
+        controls=controls,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=True,
+    )
+    assert (
+        failed_energy["checks"]["positive_revisit_energy_strictly_below_update0"]
+        is False
+    )
+    assert failed_energy["passed"] is False
+
+    high_rank_baseline = copy.deepcopy(place0)
+    high_rank_baseline["noncollapse"]["target_place_key_effective_rank"] = 2.51
+    failed_rank = evaluation.evaluate_terminal_gate_v5(
+        update0_place=high_rank_baseline,
+        update400_place=place400,
+        update400_local=local400,
+        physical_summary=physical,
+        controls=controls,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=True,
+    )
+    assert failed_rank["checks"]["target_place_key_effective_rank_at_least_2"]
+    assert (
+        failed_rank["checks"][
+            "target_place_key_rank_retains_at_least_80_percent_of_update0"
+        ]
+        is False
+    )
+    assert failed_rank["passed"] is False
+
+    failed_controls = copy.deepcopy(controls)
+    failed_controls["wrong_rgb"]["positive_family_count"] = False
+    failed_control = evaluation.evaluate_terminal_gate_v5(
+        update0_place=place0,
+        update400_place=place400,
+        update400_local=local400,
+        physical_summary=physical,
+        controls=failed_controls,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=True,
+    )
+    assert failed_control["checks"]["all_twelve_causal_control_checks_true"] is False
+    assert failed_control["passed"] is False
+
+    failed_physical = evaluation.evaluate_terminal_gate_v5(
+        update0_place=place0,
+        update400_place=place400,
+        update400_local=local400,
+        physical_summary={**physical, "passed_margin_count": 72},
+        controls=controls,
+        integrity_pass=True,
+        split_integrity_pass=True,
+        schedule_integrity_pass=True,
+    )
+    assert (
+        failed_physical["checks"][
+            "passed_physical_margin_count_strictly_greater_than_72_of_189"
+        ]
+        is False
+    )
+    assert failed_physical["passed"] is False
+
+
 def test_update100_continuation_gate_applies_exact_v3_thresholds() -> None:
     model = _TinyRoleModel()
     place100 = evaluation.evaluate_place_checkpoint_selection_v1(
