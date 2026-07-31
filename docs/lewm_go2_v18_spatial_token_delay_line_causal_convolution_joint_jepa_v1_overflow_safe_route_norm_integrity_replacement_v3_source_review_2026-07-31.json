@@ -1,0 +1,287 @@
+{
+  "schema": "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3_source_review_v1",
+  "status": "PASS_SOURCE_ONLY_SCIENCE_IDENTICAL_OVERFLOW_SAFE_ROUTE_NORM_INTEGRITY_REPLACEMENT_V3",
+  "date": "2026-07-31",
+  "reviewer": "/root/delay_line_independent_review",
+  "source_only": true,
+  "execution_authorized": false,
+  "reviewed_source_commit": "08eb564f198bd5139008a9b9db62a8095a1b07e8",
+  "preregistration": {
+    "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3_preregistration_2026-07-31.md",
+    "file_sha256": "28355cb05a52e6e47a16a5d9b19087415f1fb5ecaf382745a440a68dde3410ff",
+    "byte_count": 6741,
+    "commit": "68a9684568eeb6ce80751c17077abb1a3b62db87"
+  },
+  "manifest": {
+    "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3_source_manifest_2026-07-31.json",
+    "file_sha256": "9a316e47a2e1977b2c9674ea5014d09884851072e8c78e86b9b8f04cf80717ff",
+    "byte_count": 43620,
+    "content_sha256": "b37761e60dd7eb9dfd7d79d2bc90672aee1c5594bce5a1ff9a36a35b374131eb",
+    "source_bindings_sha256": "0a142df011a10465583520d9c754f2b587889cb81dcff3ecefba40e1f9b5efa4",
+    "source_count": 125
+  },
+  "predecessor": {
+    "v2_attempt_consumed": true,
+    "v2_update_zero_gate_passed": true,
+    "v2_atomically_completed_training_updates": 0,
+    "v2_attempted_presentations_before_failure": 24,
+    "v2_returned_autograd_calls_before_failure": 14,
+    "v2_optimizer_steps": 0,
+    "v2_ema_steps": 0,
+    "v2_checkpoint_or_recovery_state_available": false,
+    "retry_or_resume_v2_authorized": false,
+    "v2_terminal_numerical_failure_result": {
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_update_zero_gate_timing_integrity_replacement_v2_terminal_numerical_failure_result_2026-07-31.json",
+      "file_sha256": "519385bdf2b61b68671086b5509a3d28b736bb349d5616de5dc11b1467048c8a",
+      "byte_count": 14344,
+      "content_sha256": "67c7e27294ac671aeb6c65bb93d3321abda42c8e92942534bfbf582e1373719a",
+      "commit": "dfa9693135fa59973c5dbd930a596fce32c1003b"
+    },
+    "v2_source_manifest": {
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_update_zero_gate_timing_integrity_replacement_v2_source_manifest_2026-07-31.json",
+      "file_sha256": "3e4494b38d86c7c402913eaec2be91cbaf646bddeb9068fc8341755f54d6fd36",
+      "byte_count": 41233,
+      "content_sha256": "94ef34c6a7ec735623bcc411432ab17c93fbb42b4704e58c4394d841851452fa",
+      "source_bindings_sha256": "409c0bff2dcc08669e43ab98c44a6c71d338516a62e67356448663c5956ce710",
+      "source_count": 125,
+      "commit": "4fcd8a732fa701c0045ec426fa7db0fdcc7df333"
+    },
+    "v2_source_review": {
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_update_zero_gate_timing_integrity_replacement_v2_source_review_2026-07-31.json",
+      "file_sha256": "d9f33d98b6e483f216318a997882aa693a380ef01dc03f14a3dae20d72d73355",
+      "byte_count": 11900,
+      "content_sha256": "3f9eb9b219f265282b5dda83cfac769731d111e36e9b1a72a7fd37685761b8b7",
+      "commit": "4fcd8a732fa701c0045ec426fa7db0fdcc7df333"
+    }
+  },
+  "implementation_delta_review": {
+    "implementation_commit": "08eb564f198bd5139008a9b9db62a8095a1b07e8",
+    "implementation_commit_parent": "68a9684568eeb6ce80751c17077abb1a3b62db87",
+    "implementation_commit_changed_paths": [
+      "lewm/tests/test_run_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+      "scripts/evaluate_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+      "scripts/execute_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+      "scripts/launch_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+      "scripts/run_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py"
+    ],
+    "changed_manifest_source_binding_count": 4,
+    "changed_manifest_source_bindings": [
+      {
+        "path": "scripts/evaluate_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+        "permitted_delta": "fresh_v3_schema_identity_only",
+        "predecessor": {
+          "file_sha256": "dfead0426d787a072274a5137e187726a49472da8b05159ba5fe555a3f39f716",
+          "byte_count": 35150
+        },
+        "replacement": {
+          "file_sha256": "2ed9d05e5639206e6633715a19cf4afb63d680f388f29c53ac7614cf2653a7db",
+          "byte_count": 35151
+        }
+      },
+      {
+        "path": "scripts/execute_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+        "permitted_delta": "fresh_v3_preregistration_manifest_review_certification_authority_source_and_output_identities_only",
+        "predecessor": {
+          "file_sha256": "9433c23f0c72c59b92e3b247f89ddce9e94b474f43c788f1a486a73a4e4b18b6",
+          "byte_count": 60596
+        },
+        "replacement": {
+          "file_sha256": "1e37f6d3873991f70f226c35cfed6a14442fb3fd0b600fd13371fcf0474a219a",
+          "byte_count": 60615
+        }
+      },
+      {
+        "path": "scripts/launch_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+        "permitted_delta": "fresh_v3_schema_arm_certification_authority_source_and_output_identities_only",
+        "predecessor": {
+          "file_sha256": "22b4329ad810a07aa95f2c7ecdbda99d5640cd3b923d809df3498742757e5503",
+          "byte_count": 13526
+        },
+        "replacement": {
+          "file_sha256": "6a06ff5c4ff5e560e7dc0a13befc0b5c0e07d5f7645b6565f2c7916002f68b91",
+          "byte_count": 13543
+        }
+      },
+      {
+        "path": "scripts/run_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+        "permitted_delta": "V18_local_float64_route_norm_raw_finiteness_checks_route_rich_receipts_and_all_six_route_callsite_substitution_only",
+        "predecessor": {
+          "file_sha256": "052caade3fe695bace3035e98a0039f801131047fa6b32c95141aa37756e0af9",
+          "byte_count": 33789
+        },
+        "replacement": {
+          "file_sha256": "348de570f7d9d1c4523274cab908caf44a457fbf60177fcb556231bad984bd63",
+          "byte_count": 41149
+        }
+      }
+    ],
+    "source_binding_unchanged_count": 121,
+    "changed_test_path_count": 1,
+    "changed_test_paths": [
+      "lewm/tests/test_run_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py"
+    ],
+    "test_changes_are_source_only_and_within_preregistered_scope": true
+  },
+  "overflow_safe_route_norm_review": {
+    "helper_is_V18_local": true,
+    "shared_V13_V25_route_norm_helper_unchanged": true,
+    "each_raw_gradient_tensor_is_checked_finite_before_norm_reduction": true,
+    "nonfinite_raw_gradient_fails_closed_with_exact_route_name": true,
+    "maximum_absolute_raw_gradient_is_recorded_when_defined": true,
+    "sum_of_squares_and_norm_are_float64": true,
+    "float32_tiny_floor_is_preserved": true,
+    "zero_norm_applied_scale_is_exactly_one": true,
+    "mathematical_scale_is_min_one_reciprocal_max_norm_float32_tiny": true,
+    "only_applied_scale_is_cast_to_common_route_gradient_dtype": true,
+    "nan_to_num_or_nonfinite_clamping_added": false,
+    "gradient_recipient_or_combination_order_change_count": 0,
+    "routed_buffers": [
+      "camera_shared",
+      "joint_shared",
+      "representation",
+      "predictor",
+      "predictor_core_protected_survival_output",
+      "spatial_token_delay_line_causal_convolution"
+    ],
+    "all_six_routes_use_local_helper": true,
+    "successful_receipts_include_route_raw_finiteness_maximum_norm_and_scale": true,
+    "failures_include_route_stage_and_available_diagnostics": true,
+    "exact_registered_H4_overflow_regression_present": true,
+    "registered_synthetic_loss": "(full + 0.5 * masked) / 8",
+    "synthetic_maximum_absolute_raw_gradient": 200303170150278900000,
+    "synthetic_legacy_float32_norm_is_infinite": true,
+    "synthetic_float64_norm": 1.2587330137152002e+21,
+    "clipped_float64_l2_within_1e_6_of_one": true,
+    "normal_range_legacy_parity_within_1e_7": true,
+    "injected_nan_and_infinity_named_fail_closed_tests_present": true
+  },
+  "lifecycle_identity_review": {
+    "evaluation_schema_identity_change_count": 1,
+    "execution_lifecycle_identity_change_count": 9,
+    "launch_lifecycle_identity_change_count": 6,
+    "preregistration_commit_is_exact": true,
+    "fresh_certified_source_root": true,
+    "fresh_output_root_and_attempt": true,
+    "consumed_v2_output_or_state_reuse_count": 0
+  },
+  "science_identity_review": {
+    "architecture_model_encoder_representation_memory_predictor_and_initialization_unchanged": true,
+    "persistence_normalization_epsilon_and_checkerboard_mask_unchanged": true,
+    "dataset_runtime_adapter_and_memory_metrics_sources_unchanged": true,
+    "seed_schedule_optimizer_losses_gradient_recipients_and_ema_unchanged": true,
+    "data_identities_splits_loaders_and_schedule_order_unchanged": true,
+    "physical_batch_content_and_order_unchanged": true,
+    "memory_presentations_per_update": 16,
+    "physical_presentations_per_update": 8,
+    "optimizer_steps_per_update": 1,
+    "ema_steps_per_update": 1,
+    "observation_updates": [
+      0,
+      100,
+      250,
+      500,
+      750,
+      1000
+    ],
+    "maximum_updates": 1000,
+    "stage_a_updates": 500,
+    "maximum_memory_presentations": 16000,
+    "maximum_physical_presentations": 8000,
+    "maximum_total_presentations": 24000,
+    "fresh_initialization_and_output_root_required": true,
+    "retry_authorized": false,
+    "scientific_resume_authorized": false,
+    "close_if_any_raw_route_gradient_is_nonfinite": true,
+    "no_v4_norm_only_replacement_after_corrected_named_route_failure": true,
+    "close_mechanism_if_update_250_noncollapse_fails": true,
+    "perception_only_fully_learned_joint_jepa_scope": true
+  },
+  "closure_and_custody_review": {
+    "source_count": 125,
+    "source_path_set_equal_to_original": true,
+    "source_path_set_equal_to_predecessor_v1": true,
+    "source_path_set_equal_to_predecessor_v2": true,
+    "ordered_source_paths_equal_to_predecessor_v2": true,
+    "implementation_commit_binding_pass_count": 125,
+    "implementation_commit_binding_failure_count": 0,
+    "replacement_only_source_path_count": 0,
+    "manifest_canonical_content_hash_valid": true,
+    "manifest_source_binding_hash_valid": true,
+    "whole_tree_export_authorized": false,
+    "execution_authorized": false,
+    "generated_or_runtime_artifact_open_count": 0,
+    "tensor_checkpoint_open_count": 0,
+    "dataset_payload_or_rgb_open_count": 0,
+    "probability_calibration_open_count": 0,
+    "g2_payload_open_count": 0,
+    "navigation_run_count": 0,
+    "heldout_or_sealed_open_count": 0
+  },
+  "independent_review": {
+    "reviewer": "/root/delay_line_independent_review",
+    "patch_issue_count": 0,
+    "patch_review_status": "PASS_NO_BLOCKER",
+    "consolidated_patch_review_status": "PASS_NO_ISSUES",
+    "lifecycle_identity_issue_count": 0,
+    "lifecycle_identity_review_status": "PASS_SCIENCE_IDENTICAL",
+    "manifest_reconstruction_issue_count": 0,
+    "manifest_reconstruction_status": "PASS_INDEPENDENT_REHASH",
+    "independently_reconstructed_source_bindings_sha256": "0a142df011a10465583520d9c754f2b587889cb81dcff3ecefba40e1f9b5efa4",
+    "protected_or_runtime_artifact_access_count": 0
+  },
+  "tests": {
+    "interpreter": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/bin/python",
+    "cpu_only": true,
+    "synthetic_inputs_only": true,
+    "test_files_commit": "08eb564f198bd5139008a9b9db62a8095a1b07e8",
+    "test_file_bindings": [
+      {
+        "path": "lewm/tests/test_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+        "file_sha256": "eaf959df26065fa6dfd269cb4d0e3da1ddeb8b2913ff1df5e6551280a76ff115",
+        "byte_count": 15426
+      },
+      {
+        "path": "lewm/tests/test_run_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+        "file_sha256": "035ab16ef8cfa8c4fc3792cd73f07b10c41bb623cddc1c8e8626158c6d5d4831",
+        "byte_count": 25618
+      },
+      {
+        "path": "lewm/tests/test_go2_v18_delay_line_memory_metrics_v1.py",
+        "file_sha256": "a07553793bc270110d78df4fd70eb4e16ae662eef335ac1678884b37ff00af92",
+        "byte_count": 12352
+      },
+      {
+        "path": "lewm/tests/test_go2_v18_delay_line_h6_runtime_v1.py",
+        "file_sha256": "5e14eccd3b8ad2931e0978ad6443376d9f03c8527df6c69ca598cadd48c59695",
+        "byte_count": 1675
+      },
+      {
+        "path": "lewm/tests/test_evaluate_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+        "file_sha256": "de9edbd4a74a40d54305d0b60f059b0d17a0391d5dba270c303b44c319ba9b7a",
+        "byte_count": 14071
+      },
+      {
+        "path": "lewm/tests/test_execute_launch_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1.py",
+        "file_sha256": "9f44ab5c45f9a740095f8f44bc496beb2242411b3c1fcc2abb373de86db4999c",
+        "byte_count": 16771
+      }
+    ],
+    "passed": 51,
+    "failed": 0,
+    "total": 51,
+    "root_full_suite_output": "51 passed in 4.17s",
+    "independent_full_suite_output": "51 passed in 4.14s"
+  },
+  "access": {
+    "scientific_gpu_or_training_run_count": 0,
+    "attempt_reservation_count": 0,
+    "generated_or_runtime_artifact_open_count": 0,
+    "tensor_checkpoint_open_count": 0,
+    "dataset_payload_or_rgb_open_count": 0,
+    "probability_calibration_open_count": 0,
+    "g2_payload_open_count": 0,
+    "navigation_run_count": 0,
+    "heldout_or_sealed_open_count": 0
+  },
+  "content_sha256": "5814b94b3ffa83b9ff9107f6070f2836c5ec5e15165040fc5b826e78ff67f3c9"
+}
