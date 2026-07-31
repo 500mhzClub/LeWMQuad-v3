@@ -70,6 +70,13 @@ def test_authority_binds_staged_caps_and_runtime_selectors() -> None:
         executor.validate_future_execution_prerequisites_v1(changed)
 
 
+def test_every_observation_uses_the_controls_producing_physical_panel() -> None:
+    assert set(executor.PHYSICAL_OBSERVATION_ALIAS) == set(
+        executor.OBSERVATION_UPDATES
+    )
+    assert set(executor.PHYSICAL_OBSERVATION_ALIAS.values()) == {400}
+
+
 def test_reservation_is_one_shot_and_recovery_requires_snapshot(tmp_path: Path) -> None:
     parent = tmp_path / Path(executor.OUTPUT_ROOT_RELATIVE_PATH).parent
     parent.mkdir(parents=True)
