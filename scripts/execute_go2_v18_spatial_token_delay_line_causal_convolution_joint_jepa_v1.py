@@ -742,11 +742,231 @@ class ExactRecoveryReplayPublisherV1:
             }
 
 
+def _content_bound_json_artifact_binding_v1(
+    relative: str, value: Mapping[str, Any]
+) -> dict[str, Any]:
+    validated = validate_content_bound_v1(dict(value))
+    raw = _canonical_json_bytes(validated) + b"\n"
+    return {
+        "path": relative,
+        "file_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "content_sha256": validated["content_sha256"],
+    }
+
+
+def _nonnegative_integer_mapping_v1(
+    value: Any, *, expected_keys: set[str], name: str
+) -> dict[str, int]:
+    if (
+        type(value) is not dict
+        or set(value) != expected_keys
+        or any(type(item) is not int or item < 0 for item in value.values())
+    ):
+        raise PermissionError(f"delay-line recovery {name} changed")
+    return {str(key): int(item) for key, item in value.items()}
+
+
+def _capture_exact_access_state_v1(
+    runtime: Any, h6_runtime: Any, role_runtime: Any
+) -> dict[str, Any]:
+    h6_loader = h6_runtime._require_loader()
+    local_loader = role_runtime._local_loader
+    return {
+        "schema": f"{SCHEMA_PREFIX}_exact_access_state_v1",
+        "physical_consumed": _jsonable(runtime.raw_inputs.consumed),
+        "h6_access": dict(h6_loader._access),
+        "role_local_consumed": _jsonable(local_loader._consumed),
+        "role_local_access": {
+            "tensor_requests": local_loader._tensor_requests,
+            "open_attempts": local_loader._open_attempts,
+            "open_successes": local_loader._open_successes,
+            "decode_successes": local_loader._decode_successes,
+            "byte_count": local_loader._byte_count,
+        },
+        "role_place_access": dict(role_runtime._place_reference_counts),
+        "role_place_loader_calls": role_runtime._place_loader_calls,
+        "role_place_loaded_row_keys": [
+            [role, index]
+            for role, index in sorted(role_runtime._place_loaded_row_keys)
+        ],
+    }
+
+
+def _restore_exact_access_state_v1(
+    runtime: Any,
+    h6_runtime: Any,
+    role_runtime: Any,
+    value: Any,
+) -> None:
+    expected_keys = {
+        "schema",
+        "physical_consumed",
+        "h6_access",
+        "role_local_consumed",
+        "role_local_access",
+        "role_place_access",
+        "role_place_loader_calls",
+        "role_place_loaded_row_keys",
+    }
+    if (
+        type(value) is not dict
+        or set(value) != expected_keys
+        or value.get("schema") != f"{SCHEMA_PREFIX}_exact_access_state_v1"
+    ):
+        raise PermissionError("delay-line recovery access-state schema changed")
+
+    physical = value["physical_consumed"]
+    if type(physical) is not dict:
+        raise PermissionError("delay-line recovery physical ledger changed")
+    physical_copy: dict[str, dict[str, Any]] = {}
+    record_keys = {
+        "path",
+        "file_sha256",
+        "byte_count",
+        "kind",
+        "roles",
+        "arms",
+        "stages",
+    }
+    for path, record in physical.items():
+        if (
+            type(path) is not str
+            or type(record) is not dict
+            or set(record) != record_keys
+            or record.get("path") != path
+            or type(record.get("file_sha256")) is not str
+            or len(record["file_sha256"]) != 64
+            or type(record.get("byte_count")) is not int
+            or record["byte_count"] <= 0
+            or type(record.get("kind")) is not str
+            or any(
+                type(record.get(name)) is not list
+                or not record[name]
+                or any(type(item) is not str for item in record[name])
+                or len(record[name]) != len(set(record[name]))
+                for name in ("roles", "arms", "stages")
+            )
+        ):
+            raise PermissionError("delay-line recovery physical record changed")
+        physical_copy[path] = {
+            **record,
+            "roles": list(record["roles"]),
+            "arms": list(record["arms"]),
+            "stages": list(record["stages"]),
+        }
+    for path, current in runtime.raw_inputs.consumed.items():
+        restored = physical_copy.get(path)
+        if (
+            restored is None
+            or any(
+                current.get(name) != restored.get(name)
+                for name in ("path", "file_sha256", "byte_count", "kind")
+            )
+            or any(
+                not set(current.get(name, ())).issubset(restored[name])
+                for name in ("roles", "arms", "stages")
+            )
+        ):
+            raise PermissionError("delay-line recovery physical baseline changed")
+    runtime.raw_inputs.consumed = physical_copy
+    runtime._access_consumed_count = -1
+    runtime._access_opened_roles = ()
+
+    h6_loader = h6_runtime._require_loader()
+    h6_access = _nonnegative_integer_mapping_v1(
+        value["h6_access"],
+        expected_keys=set(h6_loader._access),
+        name="H6 access counters",
+    )
+    h6_loader._access.clear()
+    h6_loader._access.update(h6_access)
+
+    local_loader = role_runtime._local_loader
+    local_consumed = value["role_local_consumed"]
+    if type(local_consumed) is not dict:
+        raise PermissionError("delay-line recovery role-local ledger changed")
+    local_record_keys = {
+        "path",
+        "file_sha256",
+        "byte_count",
+        "role",
+        "row_index",
+        "leaf",
+    }
+    local_copy: dict[str, dict[str, Any]] = {}
+    for path, record in local_consumed.items():
+        if (
+            type(path) is not str
+            or type(record) is not dict
+            or set(record) != local_record_keys
+            or record.get("path") != path
+            or type(record.get("file_sha256")) is not str
+            or len(record["file_sha256"]) != 64
+            or type(record.get("byte_count")) is not int
+            or record["byte_count"] <= 0
+            or type(record.get("role")) is not str
+            or type(record.get("row_index")) is not int
+            or type(record.get("leaf")) is not str
+        ):
+            raise PermissionError("delay-line recovery role-local record changed")
+        local_copy[path] = dict(record)
+    local_access = _nonnegative_integer_mapping_v1(
+        value["role_local_access"],
+        expected_keys={
+            "tensor_requests",
+            "open_attempts",
+            "open_successes",
+            "decode_successes",
+            "byte_count",
+        },
+        name="role-local access counters",
+    )
+    local_loader._consumed = local_copy
+    local_loader._tensor_requests = local_access["tensor_requests"]
+    local_loader._open_attempts = local_access["open_attempts"]
+    local_loader._open_successes = local_access["open_successes"]
+    local_loader._decode_successes = local_access["decode_successes"]
+    local_loader._byte_count = local_access["byte_count"]
+
+    place_access = _nonnegative_integer_mapping_v1(
+        value["role_place_access"],
+        expected_keys={"attempt", "sha256_verified", "success", "failure"},
+        name="role-place access counters",
+    )
+    if place_access["attempt"] != place_access["success"] + place_access["failure"]:
+        raise PermissionError("delay-line recovery role-place accounting changed")
+    loader_calls = value["role_place_loader_calls"]
+    row_keys = value["role_place_loaded_row_keys"]
+    if (
+        type(loader_calls) is not int
+        or loader_calls < 0
+        or type(row_keys) is not list
+        or any(
+            type(item) is not list
+            or len(item) != 2
+            or type(item[0]) is not str
+            or type(item[1]) is not int
+            or (item[0], item[1]) not in role_runtime._place_rows
+            for item in row_keys
+        )
+        or len(row_keys) != len({(item[0], item[1]) for item in row_keys})
+    ):
+        raise PermissionError("delay-line recovery role-place rows changed")
+    role_runtime._place_reference_counts = place_access
+    role_runtime._place_loader_calls = loader_calls
+    role_runtime._place_loaded_row_keys = {
+        (role, index) for role, index in row_keys
+    }
+
+
 def _serialize_snapshot(
     runtime: Any,
     model: Any,
     optimizer: Any,
     *,
+    h6_runtime: Any,
+    role_runtime: Any,
     authority: Mapping[str, Any],
     update: int,
     accounting: Any,
@@ -774,6 +994,9 @@ def _serialize_snapshot(
         "snapshot_records": [dict(value) for value in snapshot_records],
         "update0_place_rank": update0_place_rank,
         "pending_decision": pending_decision,
+        "access_state": _capture_exact_access_state_v1(
+            runtime, h6_runtime, role_runtime
+        ),
         "rng": {
             "torch_cpu": runtime.torch.random.get_rng_state().clone(),
             "visible_gpu": tuple(value.clone() for value in runtime.torch.cuda.get_rng_state_all()),
@@ -902,6 +1125,12 @@ def run_future_authorized_engine_v1(
         if recovery is not None:
             stage = "restore_latest_exact_snapshot"
             restored = _restore_snapshot(runtime, model, optimizer, recovery, validated_authority)
+            _restore_exact_access_state_v1(
+                runtime,
+                h6_runtime,
+                role_runtime,
+                restored.get("access_state"),
+            )
             start_update = int(restored["update"])
             accounting = restored["accounting"]
             observations = dict(restored["observations"])
@@ -915,10 +1144,10 @@ def run_future_authorized_engine_v1(
                     {
                         "update": start_update,
                         "state": dict(recovery_metadata["state"]),
-                        "metadata": {
-                            "path": f"snapshots/update_{start_update}.binding.json",
-                            "content_sha256": recovery_metadata["content_sha256"],
-                        },
+                        "metadata": _content_bound_json_artifact_binding_v1(
+                            f"snapshots/update_{start_update}.binding.json",
+                            recovery_metadata,
+                        ),
                         "metadata_content_sha256": recovery_metadata["content_sha256"],
                         "same_attempt_infrastructure_recovery_only": True,
                     }
@@ -1063,6 +1292,8 @@ def run_future_authorized_engine_v1(
                         runtime,
                         model,
                         optimizer,
+                        h6_runtime=h6_runtime,
+                        role_runtime=role_runtime,
                         authority=validated_authority,
                         update=update,
                         accounting=accounting,
@@ -1217,6 +1448,9 @@ __all__ = [
     "run_future_authorized_engine_v1",
     "terminalize_failure_v1",
     "ExactRecoveryReplayPublisherV1",
+    "_capture_exact_access_state_v1",
+    "_content_bound_json_artifact_binding_v1",
+    "_restore_exact_access_state_v1",
     "evaluate_observation_integrity_v1",
     "evaluate_update0_gate_v1",
     "validate_content_bound_v1",

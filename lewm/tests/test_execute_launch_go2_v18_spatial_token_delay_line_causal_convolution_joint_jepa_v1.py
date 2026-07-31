@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -219,6 +220,108 @@ def test_exact_recovery_reuses_only_identical_write_once_artifacts(
         recovery.publish_json("metrics/update_500.json", {"value": 2})
     with pytest.raises(PermissionError, match="byte replay changed"):
         recovery.publish_bytes("snapshots/update_500.pt", b"changed-state")
+
+
+def _access_runtime_triplet(*, populated: bool):
+    physical_record = {
+        "path": "raw/file.bin",
+        "file_sha256": "1" * 64,
+        "byte_count": 10,
+        "kind": "raw_supervision",
+        "roles": ["authority", "train"] if populated else ["authority"],
+        "arms": ["shared", "correct"] if populated else ["shared"],
+        "stages": ["input_validation", "training"] if populated else ["input_validation"],
+    }
+    runtime = SimpleNamespace(
+        raw_inputs=SimpleNamespace(
+            consumed={"raw/file.bin": copy.deepcopy(physical_record)}
+        ),
+        _access_consumed_count=1,
+        _access_opened_roles=("authority",),
+    )
+    h6_loader = SimpleNamespace(
+        _access={"rgb_open_success_count": 7 if populated else 0}
+    )
+    h6_runtime = SimpleNamespace(_loader=h6_loader)
+    h6_runtime._require_loader = lambda: h6_runtime._loader
+    local_record = {
+        "path": "scene/frame.png",
+        "file_sha256": "2" * 64,
+        "byte_count": 20,
+        "role": "train",
+        "row_index": 4,
+        "leaf": "scene/frame.png",
+    }
+    local_loader = SimpleNamespace(
+        _consumed=(
+            {"scene/frame.png": copy.deepcopy(local_record)} if populated else {}
+        ),
+        _tensor_requests=5 if populated else 0,
+        _open_attempts=5 if populated else 0,
+        _open_successes=5 if populated else 0,
+        _decode_successes=5 if populated else 0,
+        _byte_count=100 if populated else 0,
+    )
+    role_runtime = SimpleNamespace(
+        _local_loader=local_loader,
+        _place_reference_counts={
+            "attempt": 3 if populated else 0,
+            "sha256_verified": 3 if populated else 0,
+            "success": 3 if populated else 0,
+            "failure": 0,
+        },
+        _place_loader_calls=1 if populated else 0,
+        _place_loaded_row_keys=(
+            {("checkpoint_selection", 3)} if populated else set()
+        ),
+        _place_rows={("checkpoint_selection", 3): object()},
+    )
+    return runtime, h6_runtime, role_runtime
+
+
+def _add_post_snapshot_access(runtime, h6_runtime, role_runtime) -> None:
+    runtime.raw_inputs.consumed["raw/file.bin"]["stages"].append("post_recovery")
+    h6_runtime._loader._access["rgb_open_success_count"] += 2
+    role_runtime._local_loader._tensor_requests += 2
+    role_runtime._local_loader._open_attempts += 2
+    role_runtime._local_loader._open_successes += 2
+    role_runtime._local_loader._decode_successes += 2
+    role_runtime._local_loader._byte_count += 40
+    role_runtime._place_reference_counts["attempt"] += 1
+    role_runtime._place_reference_counts["sha256_verified"] += 1
+    role_runtime._place_reference_counts["success"] += 1
+    role_runtime._place_loader_calls += 1
+
+
+def test_recovery_restores_cumulative_access_ledgers_exactly() -> None:
+    uninterrupted = _access_runtime_triplet(populated=True)
+    snapshot_access = executor._capture_exact_access_state_v1(*uninterrupted)
+
+    recovered = _access_runtime_triplet(populated=False)
+    executor._restore_exact_access_state_v1(*recovered, snapshot_access)
+    assert executor._capture_exact_access_state_v1(*recovered) == snapshot_access
+
+    _add_post_snapshot_access(*uninterrupted)
+    _add_post_snapshot_access(*recovered)
+    assert executor._capture_exact_access_state_v1(
+        *recovered
+    ) == executor._capture_exact_access_state_v1(*uninterrupted)
+
+
+def test_recovered_snapshot_metadata_binding_is_complete() -> None:
+    value = executor._content_bound({"schema": "synthetic_snapshot_binding"})
+    binding = executor._content_bound_json_artifact_binding_v1(
+        "snapshots/update_1000.binding.json", value
+    )
+    assert set(binding) == {
+        "path",
+        "file_sha256",
+        "byte_count",
+        "content_sha256",
+    }
+    assert binding["content_sha256"] == value["content_sha256"]
+    assert len(binding["file_sha256"]) == 64
+    assert binding["byte_count"] > 0
 
 
 def test_launcher_without_authority_denies_before_reservation(capsys) -> None:
