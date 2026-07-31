@@ -1,0 +1,223 @@
+{
+  "access_and_custody": {
+    "denied_rgb_position_request_count": 0,
+    "forbidden_rgb_open_count": 0,
+    "g2_executed": false,
+    "held_out_or_sealed_opened": false,
+    "navigation_executed": false,
+    "predecessor_checkpoint_deserialize_count": 1,
+    "predecessor_checkpoint_open_count": 1,
+    "predecessor_checkpoint_reopen_count": 0,
+    "rgb_decode_success_count": 15824,
+    "rgb_open_attempt_count": 15824,
+    "rgb_open_success_count": 15824,
+    "rgb_tensor_request_count": 15824
+  },
+  "accounting": {
+    "backward_calls": 250,
+    "ema_steps": 50,
+    "ema_target_frame_encodings": 500,
+    "global_gradient_clips": 50,
+    "logical_rgb_presentations": 2000,
+    "microbatch_graphs": 250,
+    "online_frame_encodings": 1500,
+    "optimizer_steps": 50,
+    "sequence_rows": 500,
+    "updates": 50
+  },
+  "artifact_integrity_passed": true,
+  "attempt": {
+    "attempt_consumed": true,
+    "checkpoint_selected": false,
+    "checkpoint_written": false,
+    "created_utc": "2026-07-31T09:41:55Z",
+    "maximum_presentations": 16000,
+    "maximum_updates": 400,
+    "output_root": ".generated/go2_rgb_recurrent_patch_memory_temporal_jepa_v1/attempt_v1",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "terminal_update": 50
+  },
+  "content_sha256": "2f9dc04d9e8697c696d1ecb88327bc15b295a7559ccc9301ab573a0cc6852295",
+  "controls": {
+    "update_0_sentinel": {
+      "current_only_reset": {
+        "bootstrap_lower_95": 0.006999499592071736,
+        "positive_family_count": 8,
+        "primary_ratio": 0.9836070346555159
+      },
+      "persistence": {
+        "bootstrap_lower_95": -0.5227120384924709,
+        "positive_family_count": 0,
+        "primary_ratio": 4.5768613940195095
+      },
+      "wrong_action": {
+        "bootstrap_lower_95": -0.012074820101854794,
+        "positive_family_count": 2,
+        "primary_ratio": 1.0105525398095443
+      },
+      "wrong_history": {
+        "bootstrap_lower_95": -0.0051988687166532,
+        "positive_family_count": 4,
+        "primary_ratio": 1.001857941388138
+      }
+    },
+    "update_50_sentinel": {
+      "current_only_reset": {
+        "bootstrap_lower_95": 0.008577899593751288,
+        "positive_family_count": 8,
+        "primary_ratio": 0.9573620215993977
+      },
+      "persistence": {
+        "bootstrap_lower_95": -0.10496838033224347,
+        "positive_family_count": 0,
+        "primary_ratio": 1.6588369985532556
+      },
+      "wrong_action": {
+        "bootstrap_lower_95": 0.0009509407709791993,
+        "positive_family_count": 6,
+        "primary_ratio": 0.9921385865755673
+      },
+      "wrong_history": {
+        "bootstrap_lower_95": 0.0051384431003384376,
+        "positive_family_count": 8,
+        "primary_ratio": 0.968443315992345
+      }
+    }
+  },
+  "date": "2026-07-31",
+  "execution_authority": {
+    "byte_count": 3915,
+    "commit": "17b162ebd37a15d757b304a52f2943a1e371fd23",
+    "content_sha256": "72707559052bd5c297cbce85d802d05171219d0adda8b24b5b548ae2aafecdec",
+    "file_sha256": "28cbbe4d9304ff98721229ea6be1b4f31e23be302127728b1a2fef71a6f10b1b",
+    "path": "docs/lewm_go2_rgb_recurrent_patch_memory_temporal_jepa_v1_execution_authorization_2026-07-31.json"
+  },
+  "failure_classification": {
+    "infrastructure_failure": false,
+    "scientific_failure": true,
+    "status": "FAIL_SCIENTIFIC_CONTINUATION_GATE_NOT_MET"
+  },
+  "gate_failure": {
+    "all_other_survival_checks_passed": true,
+    "failed_checks": [
+      "prediction_effective_rank_retention"
+    ],
+    "matching_target_effective_rank": 22.584776977416883,
+    "minimum_prediction_to_target_rank_ratio": 0.25,
+    "observed_prediction_effective_rank": 4.097434069233478,
+    "observed_prediction_to_target_rank_ratio": 0.1814245973440699,
+    "required_prediction_effective_rank": 5.646194244354221,
+    "shortfall": 1.548760175120743,
+    "terminal_action": "TERMINAL",
+    "terminal_gate_status": "FAIL_OBSERVATION_SURVIVAL"
+  },
+  "health": {
+    "update_0_sentinel": {
+      "prediction_cross_sample_variance": 0.22898116846545777,
+      "prediction_effective_rank": 19.696742432153524,
+      "recurrent_effective_rank": 35.50339988396564,
+      "target_cross_sample_variance": 0.8010001660110606,
+      "target_effective_rank": 22.973048787188993
+    },
+    "update_50_sentinel": {
+      "prediction_cross_sample_variance": 0.5019950926067326,
+      "prediction_effective_rank": 4.097434069233478,
+      "recurrent_effective_rank": 35.48617288941308,
+      "target_cross_sample_variance": 0.8042580632792093,
+      "target_effective_rank": 22.584776977416883
+    }
+  },
+  "interpretation": {
+    "causal_control_trend_improved": true,
+    "inference": "the_joint_model_learned_history_and_action_dependence_but_concentrated_future_prediction_variance_into_too_few_feature_directions",
+    "persistence_baseline_beaten": false,
+    "prediction_constant_output_collapse": false,
+    "prediction_rank_drop_fraction_from_update_0": 0.7919740239612054,
+    "recurrent_memory_rank_remained_healthy": true,
+    "spatial_encoder_retention_at_update_50_measured": false,
+    "target_rank_remained_healthy": true,
+    "this_configuration_qualified": false
+  },
+  "metadata_preflight": {
+    "byte_count": 4814,
+    "content_sha256": "dfeb5ba76fc5ecc39f0a1fb57beb2a4a4a449d80c9a9bef78caa69a3145fa348",
+    "file_sha256": "07ea90271628a22b3348f9767f2c0035af313c97e42871421dcbd12636ee2b5c",
+    "path": ".generated/go2_rgb_recurrent_patch_memory_temporal_jepa_v1_metadata_preflight/attempt_v1/receipt.json",
+    "status": "PASS_METADATA_PREFLIGHT"
+  },
+  "output_bindings": {
+    "failure": {
+      "byte_count": 2258,
+      "content_sha256": "728a4827415221ceca2ba84974b92a0ec5e159eee75da92ac1f50e2566ef35f3",
+      "file_sha256": "9ff5c9884638721f945ba8e2bc61d9df6c55e74aa687157eaa4959cb81be292d",
+      "path": "failure.json"
+    },
+    "metrics": [
+      {
+        "byte_count": 114820,
+        "content_sha256": "8f6ea0699d05c1b97cfcae4158c65251dbbb5fcb16c01bf79c411cae942427b6",
+        "file_sha256": "e98017b6c7e371d366ffb63273a964a822ebe8dbfcea8708045de414212c3cf9",
+        "path": "metrics/update_0_full.json"
+      },
+      {
+        "byte_count": 83302,
+        "content_sha256": "3327ea9d22b69f4da1b37669e1f15340e0d94c9a0105452b84d1b377911ca7d3",
+        "file_sha256": "5a8d8267a0a02244cbb9d986d394a8dd4852255362855c6cd647de0f566ce1ec",
+        "path": "metrics/update_0_predecessor.json"
+      },
+      {
+        "byte_count": 110124,
+        "content_sha256": "dbe744197cbfb12f348ea8c51eb991fd22bc8103c156a5189c809bbfa2df3299",
+        "file_sha256": "31168fef63a1990761f000177c94135a909d89b552d7130826af97aee3833497",
+        "path": "metrics/update_0_sentinel.json"
+      },
+      {
+        "byte_count": 115634,
+        "content_sha256": "793337739ee5614cb9bbd6bb887e87273a1ede54b5884f36afb9d4066a67a278",
+        "file_sha256": "b5f13792435d3d3c3f27f1420b41f947812596d0afced6e5b05493149b559e92",
+        "path": "metrics/update_50_sentinel.json"
+      }
+    ],
+    "reservation": {
+      "byte_count": 634,
+      "content_sha256": "a4e5d10459c41317fa3b5ba4f52aec38ffda4d14e60aa563b09069ef3ec932e0",
+      "file_sha256": "233463c52cee54900a43ae4a54e164b57a6c8ab6e59a8f4efdcdcd6fdb73712d",
+      "path": "reservation.json"
+    },
+    "terminal_access": {
+      "byte_count": 10802,
+      "content_sha256": "36aa07caef7c766b62a3a84d9b845d0d21fe9d665fd9bde5e6ca2508e4337cc4",
+      "file_sha256": "72e36e3d40a4e46bd3d03a42958257cbc6d1650d40f32a7ea4566c4af1d55113",
+      "path": "receipts/terminal_access.json"
+    },
+    "trace": {
+      "byte_count": 347786,
+      "file_sha256": "51e749cc093c3c8af8b45febae5f4f45b725e1903d4fd7bacecc20cbeeef7f77",
+      "path": "trace.jsonl",
+      "row_count": 50
+    }
+  },
+  "preregistration_commit": "1ac341cd97ab7a7d1a1b8c46695cf2fd3382ed60",
+  "schedule": {
+    "consumed_schedule_row_count": 500,
+    "consumed_schedule_rows_canonical_sha256": "c96dc8400b7b58de477c37c6fd1d9c5aac16240298b88e62b521c5696b788a29",
+    "consumed_schedule_rows_equal_runtime_prefix": true,
+    "consumed_schedule_rows_unique": true,
+    "registered_full_schedule_row_count": 4000,
+    "registered_full_schedule_sha256": "853aad503738baed6bfbba18f3ac55c4715d7f164e71d4d0ef96c861befee7fc"
+  },
+  "schema": "lewm_go2_rgb_recurrent_patch_memory_temporal_jepa_v1_scientific_result_v1",
+  "scientific_claim": "recurrent_patch_memory_temporal_jepa_v1_did_not_qualify",
+  "source_and_review_commit": "e61d447428d4e1f4e32749f6a7a3a609510c6d3c",
+  "status": "FAIL_SCIENTIFIC_CONTINUATION_GATE_NOT_MET",
+  "training_curve": {
+    "all_50_training_receipts_passed": true,
+    "first_5_mean_loss": 0.5233758985996246,
+    "last_5_mean_loss": 0.23761655151844024,
+    "minimum_loss": 0.20457186698913574,
+    "minimum_loss_update": 36,
+    "update_1_loss": 0.6367972016334533,
+    "update_50_loss": 0.21541486382484437
+  }
+}
