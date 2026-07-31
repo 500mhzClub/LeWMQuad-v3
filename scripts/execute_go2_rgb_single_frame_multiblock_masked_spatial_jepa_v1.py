@@ -255,8 +255,11 @@ def validate_future_execution_prerequisites_v1(
     ):
         raise PermissionError("V1 clean-export certification changed")
     inputs = value.get("runtime_inputs")
-    if type(inputs) is not dict or tuple(inputs) != RUNTIME_INPUT_BINDING_NAMES:
-        raise PermissionError("V1 runtime input order or inventory changed")
+    if (
+        type(inputs) is not dict
+        or set(inputs) != set(RUNTIME_INPUT_BINDING_NAMES)
+    ):
+        raise PermissionError("V1 runtime input inventory changed")
     for name, expected in RUNTIME_INPUT_BINDINGS.items():
         if _binding(inputs[name], content="content_sha256" in expected) != expected:
             raise PermissionError(f"V1 runtime binding changed: {name}")

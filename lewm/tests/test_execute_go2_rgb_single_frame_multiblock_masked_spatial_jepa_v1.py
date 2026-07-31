@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 from pathlib import Path
 import stat
 from types import SimpleNamespace
@@ -273,6 +274,11 @@ def test_authority_and_absent_root_reservation_are_exact(
 ) -> None:
     authority = _authority()
     assert executor.validate_future_execution_prerequisites_v1(authority) == authority
+    canonical_round_trip = json.loads(executor._canonical_json_bytes(authority))
+    assert (
+        executor.validate_future_execution_prerequisites_v1(canonical_round_trip)
+        == canonical_round_trip
+    )
     reservation = executor.reserve_attempt_v1(
         tmp_path, authority, created_utc="2026-07-31T00:00:00Z"
     )
