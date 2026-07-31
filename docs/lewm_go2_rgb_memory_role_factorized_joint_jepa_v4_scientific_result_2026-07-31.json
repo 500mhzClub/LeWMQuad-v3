@@ -2,7 +2,7 @@
   "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_scientific_result_v1",
   "status": "PASS_COMPLETE_VALID_SCIENTIFIC_FAILURE_AUDIT",
   "date": "2026-07-31",
-  "content_sha256": "dfa335aa9405e0a3e771a8bc21051d0279278bf1d1c3edf59ad49446da5b64fe",
+  "content_sha256": "41b38c28730675be79c359900d42bf4c7e4c4c8163d82339456fa1a78e3f3173",
   "classification": "VALID_UPDATE100_TERMINAL_SCIENTIFIC_FAILURE_NOT_INFRASTRUCTURE_FAILURE",
   "attempt": {
     "attempt_number": 1,
@@ -151,7 +151,7 @@
     "place_target_effective_rank": -0.46634745597839355,
     "place_predicted_effective_rank": -0.24588799476623535,
     "local_wrong_action_gap_mean": 0.012171174721419158,
-    "local_persistence_ratio": -28.907684001375314,
+    "local_persistence_ratio": -28.907685001375315,
     "physical_passed_margin_count": 31,
     "physical_total_shortfall": -117.47011385723896
   },
