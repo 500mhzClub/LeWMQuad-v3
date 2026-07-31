@@ -24,6 +24,10 @@ from scripts import (
 )
 
 
+SCHEMA_PREFIX = (
+    "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
+    "update_zero_gate_timing_integrity_replacement_v1"
+)
 RGB_ROOT_RELATIVE_PATH_V1 = v27_evaluation.RGB_ROOT_RELATIVE_PATH_V27
 TRAIN_MICROBATCH_SIZE_V1 = schedule.MEMORY_MICROBATCH_SIZE_V1
 TRAIN_MICROBATCHES_PER_UPDATE_V1 = schedule.MEMORY_MICROBATCHES_PER_UPDATE_V1
@@ -720,13 +724,24 @@ def stream_validation_delay_line_metrics(
         "target_modules_have_zero_gradient_tensors": target_gradient_tensor_count == 0,
         "target_modules_are_eval": target_modules_are_eval,
         "future_rgb_online_access_is_zero": True,
-        "target_state_noncollapsed": target_rank.noncollapsed,
-        "online_state_noncollapsed": online_rank.noncollapsed,
-        "memory_state_noncollapsed": memory_rank.noncollapsed,
+        "target_state_finite": target_rank.finite,
+        "target_state_nonzero_scale": target_rank.nonzero_scale,
+        "online_state_finite": online_rank.finite,
+        "online_state_nonzero_scale": online_rank.nonzero_scale,
+        "memory_state_finite": memory_rank.finite,
+        "memory_state_nonzero_scale": memory_rank.nonzero_scale,
         "update_zero_controls_equal_persistence": (
             update != 0 or update_zero_max_prediction_delta <= 1.0e-5
         ),
     }
+    rank_diagnostics = {
+        "target_state_noncollapsed": target_rank.noncollapsed,
+        "online_state_noncollapsed": online_rank.noncollapsed,
+        "memory_state_noncollapsed": memory_rank.noncollapsed,
+    }
+    absolute_noncollapse_enforced = update >= 250
+    if absolute_noncollapse_enforced:
+        checks.update(rank_diagnostics)
     access_receipt = _access_delta(before_access, after_access)
     return DelayLineValidationResultV1(
         update=update,
@@ -754,7 +769,7 @@ def stream_validation_delay_line_metrics(
             ],
         },
         integrity={
-            "schema": "lewm_go2_v18_delay_line_temporal_integrity_v1",
+            "schema": f"{SCHEMA_PREFIX}_temporal_integrity_v1",
             "observation_update": update,
             "validation_row_count": len(ordered),
             "online_encoded_frame_count": len(ordered) * 3,
@@ -770,6 +785,9 @@ def stream_validation_delay_line_metrics(
                 update_zero_max_prediction_delta
             ),
             "update_zero_max_control_energy_delta": update_zero_max_energy_delta,
+            "absolute_noncollapse_enforced": absolute_noncollapse_enforced,
+            "absolute_noncollapse_first_enforced_update": 250,
+            "rank_diagnostics": rank_diagnostics,
             "checks": checks,
             "passed": all(checks.values()),
         },

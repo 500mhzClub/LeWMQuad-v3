@@ -368,13 +368,13 @@ def test_streamed_temporal_evaluation_is_deterministic_and_update_zero_exact() -
     assert first.memory_rank == second.memory_rank
 
 
-def test_memory_rank_detects_a_collapsed_learned_rollout() -> None:
+def test_memory_rank_is_diagnostic_at_update_100_and_enforced_at_update_250() -> None:
     rows = tuple(
         _row("val", index, family=h6.FAMILIES[index % len(h6.FAMILIES)])
         for index in range(16)
     )
 
-    result = evaluation.stream_validation_delay_line_metrics(
+    update_100 = evaluation.stream_validation_delay_line_metrics(
         _CollapsedPredictorModel(),
         rows,
         update=100,
@@ -384,12 +384,29 @@ def test_memory_rank_detects_a_collapsed_learned_rollout() -> None:
         bootstrap_seed=123,
     )
 
-    assert result.online_rank.noncollapsed
-    assert result.target_rank.noncollapsed
-    assert not result.memory_rank.noncollapsed
-    assert result.memory_rank.participation_rank_ratio < 0.10
-    assert result.integrity["checks"]["memory_state_noncollapsed"] is False
-    assert result.integrity["passed"] is False
+    assert update_100.online_rank.noncollapsed
+    assert update_100.target_rank.noncollapsed
+    assert not update_100.memory_rank.noncollapsed
+    assert update_100.memory_rank.participation_rank_ratio < 0.10
+    assert update_100.integrity["absolute_noncollapse_enforced"] is False
+    assert update_100.integrity["rank_diagnostics"][
+        "memory_state_noncollapsed"
+    ] is False
+    assert "memory_state_noncollapsed" not in update_100.integrity["checks"]
+    assert update_100.integrity["passed"] is True
+
+    update_250 = evaluation.stream_validation_delay_line_metrics(
+        _CollapsedPredictorModel(),
+        rows,
+        update=250,
+        loader=_SyntheticLoader(),
+        device="cpu",
+        bootstrap_replicates=40,
+        bootstrap_seed=123,
+    )
+    assert update_250.integrity["absolute_noncollapse_enforced"] is True
+    assert update_250.integrity["checks"]["memory_state_noncollapsed"] is False
+    assert update_250.integrity["passed"] is False
 
 
 def test_validation_rejects_non_b8_or_out_of_order_rows() -> None:

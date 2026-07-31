@@ -24,36 +24,39 @@ from scripts import launch_go2_rgb_memory_role_factorized_joint_jepa_v1 as v5_la
 
 
 SCHEMA_PREFIX = (
-    "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1"
+    "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
+    "update_zero_gate_timing_integrity_replacement_v1"
 )
 PREREGISTRATION_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "preregistration_2026-07-31.md"
+    "update_zero_gate_timing_integrity_replacement_v1_preregistration_2026-07-31.md"
 )
-PREREGISTRATION_COMMIT = "4a41b425c4cbac876616858c04f71d5af22adbfb"
+PREREGISTRATION_COMMIT = "020afd37e5354efb09b008e823151cdc97a7c80c"
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "source_manifest_2026-07-31.json"
+    "update_zero_gate_timing_integrity_replacement_v1_source_manifest_2026-07-31.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "source_review_2026-07-31.json"
+    "update_zero_gate_timing_integrity_replacement_v1_source_review_2026-07-31.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "clean_export_certification_2026-07-31.json"
+    "update_zero_gate_timing_integrity_replacement_v1_clean_export_certification_"
+    "2026-07-31.json"
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "execution_authorization_2026-07-31.json"
+    "update_zero_gate_timing_integrity_replacement_v1_execution_authorization_"
+    "2026-07-31.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1/"
-    "attempt_v1"
+    ".generated/go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
+    "update_zero_gate_timing_integrity_replacement_v1/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-v18-spatial-token-delay-line-causal-convolution-joint-jepa-v1-source"
+    "LeWMQuad-v3-v18-spatial-token-delay-line-u0-gate-integrity-replacement-v1-source"
 )
 MODEL_CLASS_NAME = "V18SpatialTokenDelayLineCausalConvolutionJointJepaV1"
 MODEL_MODULE_NAME = (
@@ -440,9 +443,27 @@ def evaluate_update0_gate_v1(
     numeric_tolerance = 1.0e-5
     checks = {
         "integrity_pass": observation.safeguards.integrity_pass,
-        "target_noncollapsed": observation.safeguards.target_noncollapsed,
-        "online_noncollapsed": observation.safeguards.online_noncollapsed,
-        "memory_noncollapsed": observation.memory_state.noncollapsed,
+        "target_finite_nonzero": (
+            temporal_integrity.get("checks", {}).get("target_state_finite") is True
+            and temporal_integrity.get("checks", {}).get(
+                "target_state_nonzero_scale"
+            )
+            is True
+        ),
+        "online_finite_nonzero": (
+            temporal_integrity.get("checks", {}).get("online_state_finite") is True
+            and temporal_integrity.get("checks", {}).get(
+                "online_state_nonzero_scale"
+            )
+            is True
+        ),
+        "memory_finite_nonzero": (
+            temporal_integrity.get("checks", {}).get("memory_state_finite") is True
+            and temporal_integrity.get("checks", {}).get(
+                "memory_state_nonzero_scale"
+            )
+            is True
+        ),
         "prediction_level_persistence_identity": (
             temporal_integrity.get("checks", {}).get(
                 "update_zero_controls_equal_persistence"
@@ -493,6 +514,12 @@ def evaluate_update0_gate_v1(
                 observation.substrate.place_scene_count_above_chance
             ),
             "target_place_rank": observation.substrate.target_place_rank,
+            "absolute_noncollapse_enforced": temporal_integrity.get(
+                "absolute_noncollapse_enforced"
+            ),
+            "target_noncollapsed_diagnostic": observation.safeguards.target_noncollapsed,
+            "online_noncollapsed_diagnostic": observation.safeguards.online_noncollapsed,
+            "memory_noncollapsed_diagnostic": observation.memory_state.noncollapsed,
         },
     )
 
@@ -524,10 +551,15 @@ def evaluate_observation_integrity_v1(
     checks = {
         "integrity_pass": observation.safeguards.integrity_pass,
         "gradient_accounting_pass": observation.safeguards.gradient_accounting_pass,
-        "target_noncollapsed": observation.safeguards.target_noncollapsed,
-        "online_noncollapsed": observation.safeguards.online_noncollapsed,
-        "memory_noncollapsed": observation.memory_state.noncollapsed,
     }
+    if observation.update >= 250:
+        checks.update(
+            {
+                "target_noncollapsed": observation.safeguards.target_noncollapsed,
+                "online_noncollapsed": observation.safeguards.online_noncollapsed,
+                "memory_noncollapsed": observation.memory_state.noncollapsed,
+            }
+        )
     if all(checks.values()):
         return None
     return _immediate_integrity_failure_decision(

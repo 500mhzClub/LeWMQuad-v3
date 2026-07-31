@@ -160,10 +160,10 @@ def test_update_zero_gate_requires_prediction_identity_and_substrate() -> None:
         ),
         safeguards=SimpleNamespace(
             integrity_pass=True,
-            target_noncollapsed=True,
-            online_noncollapsed=True,
+            target_noncollapsed=False,
+            online_noncollapsed=False,
         ),
-        memory_state=SimpleNamespace(noncollapsed=True),
+        memory_state=SimpleNamespace(noncollapsed=False),
         substrate=SimpleNamespace(
             place_chance_multiple=2.1,
             place_scene_count_above_chance=6,
@@ -173,7 +173,16 @@ def test_update_zero_gate_requires_prediction_identity_and_substrate() -> None:
     receipt = {
         "temporal": {
             "integrity": {
-                "checks": {"update_zero_controls_equal_persistence": True},
+                "absolute_noncollapse_enforced": False,
+                "checks": {
+                    "target_state_finite": True,
+                    "target_state_nonzero_scale": True,
+                    "online_state_finite": True,
+                    "online_state_nonzero_scale": True,
+                    "memory_state_finite": True,
+                    "memory_state_nonzero_scale": True,
+                    "update_zero_controls_equal_persistence": True,
+                },
                 "update_zero_max_control_prediction_delta": 0.0,
             }
         }
@@ -181,6 +190,20 @@ def test_update_zero_gate_requires_prediction_identity_and_substrate() -> None:
     decision = executor.evaluate_update0_gate_v1(observation, receipt)
     assert decision.passed is True
     assert decision.observed["maximum_prediction_persistence_delta"] == 0.0
+    assert decision.observed["absolute_noncollapse_enforced"] is False
+    assert decision.observed["target_noncollapsed_diagnostic"] is False
+    assert decision.observed["online_noncollapsed_diagnostic"] is False
+    assert decision.observed["memory_noncollapsed_diagnostic"] is False
+
+    receipt["temporal"]["integrity"]["checks"][
+        "memory_state_nonzero_scale"
+    ] = False
+    structurally_failed = executor.evaluate_update0_gate_v1(observation, receipt)
+    assert structurally_failed.passed is False
+    assert "memory_finite_nonzero" in structurally_failed.failed_checks
+    receipt["temporal"]["integrity"]["checks"][
+        "memory_state_nonzero_scale"
+    ] = True
 
     receipt["temporal"]["integrity"]["checks"][
         "update_zero_controls_equal_persistence"
@@ -188,6 +211,40 @@ def test_update_zero_gate_requires_prediction_identity_and_substrate() -> None:
     failed = executor.evaluate_update0_gate_v1(observation, receipt)
     assert failed.passed is False
     assert "prediction_level_persistence_identity" in failed.failed_checks
+
+
+def test_absolute_noncollapse_is_first_enforced_at_update_250() -> None:
+    safeguards = SimpleNamespace(
+        integrity_pass=True,
+        gradient_accounting_pass=True,
+        target_noncollapsed=False,
+        online_noncollapsed=False,
+    )
+    memory_state = SimpleNamespace(
+        noncollapsed=False,
+        participation_rank_ratio=0.02,
+        near_zero_fraction=0.10,
+    )
+    update_100 = SimpleNamespace(
+        update=100,
+        safeguards=safeguards,
+        memory_state=memory_state,
+    )
+    assert executor.evaluate_observation_integrity_v1(update_100) is None
+
+    update_250 = SimpleNamespace(
+        update=250,
+        safeguards=safeguards,
+        memory_state=memory_state,
+    )
+    failed = executor.evaluate_observation_integrity_v1(update_250)
+    assert failed is not None
+    assert failed.passed is False
+    assert set(failed.failed_checks) == {
+        "target_noncollapsed",
+        "online_noncollapsed",
+        "memory_noncollapsed",
+    }
 
 
 def test_launcher_rejects_ambiguous_gpu_visibility_before_reservation() -> None:

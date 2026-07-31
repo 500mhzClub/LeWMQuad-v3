@@ -16,23 +16,26 @@ from scripts import launch_go2_rgb_memory_role_factorized_joint_jepa_v1 as v5_la
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PREFIX = (
-    "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1"
+    "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
+    "update_zero_gate_timing_integrity_replacement_v1"
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "execution_authorization_2026-07-31.json"
+    "update_zero_gate_timing_integrity_replacement_v1_execution_authorization_"
+    "2026-07-31.json"
 )
 CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "clean_export_certification_2026-07-31.json"
+    "update_zero_gate_timing_integrity_replacement_v1_clean_export_certification_"
+    "2026-07-31.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
-    ".generated/go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1/"
-    "attempt_v1"
+    ".generated/go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
+    "update_zero_gate_timing_integrity_replacement_v1/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-v18-spatial-token-delay-line-causal-convolution-joint-jepa-v1-source"
+    "LeWMQuad-v3-v18-spatial-token-delay-line-u0-gate-integrity-replacement-v1-source"
 )
 EXECUTOR_MODULE_NAME = (
     "scripts.execute_go2_v18_spatial_token_delay_line_causal_convolution_"
@@ -44,7 +47,10 @@ MODEL_MODULE_NAME = (
 TRAINING_MODULE_NAME = (
     "scripts.run_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1"
 )
-EXPERIMENT_ARM_NAME = "v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1"
+EXPERIMENT_ARM_NAME = (
+    "v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
+    "update_zero_gate_timing_integrity_replacement_v1"
+)
 
 
 def _canonical_json_bytes(value: Any) -> bytes:
