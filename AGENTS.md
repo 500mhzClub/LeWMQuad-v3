@@ -816,6 +816,38 @@ These instructions apply to the entire repository.
   held-out, sealed, production, promotion, deployment, retry, scientific
   resume, recovery execution, second V3 attempt, fourth norm-only integrity
   replacement, architecture variant, or further-attempt authority.
+- The science-identical V18 spatial-token delay-line causal-convolution
+  joint-JEPA V1 physical-comparison alias-state integrity replacement V4
+  source may additionally be clean exported only from frozen
+  source-and-review commit
+  `bbb3cef31ace9f00ff743a26537e9e32b9854b45`, and only as (a) the 125
+  paths in its committed recursive source manifest and (b) the nineteen V5
+  scientific-result/source-manifest identity witnesses, original-V18
+  preregistration and terminal update-zero scientific-result witnesses, V1
+  replacement preregistration and terminal-infrastructure-failure witnesses,
+  V2 replacement preregistration and terminal-numerical-failure witnesses,
+  V3 replacement preregistration and terminal-observation-alias-infrastructure-
+  failure witnesses, V4 preregistration/source-manifest/independent-source-
+  review, and six focused V18 synthetic-test paths explicitly enumerated and
+  SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_physical_comparison_alias_state_integrity_replacement_v4_clean_export_certification_2026-07-31.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied original-V18, V1, V2, V3, and V5 documents are
+  source-only chronology and scientific-identity evidence and grant no
+  predecessor runtime-output, checkpoint, retry, resume, recovery, or
+  execution authority. Do not export the original V18, V1, V2, or V3 source
+  manifests, source reviews, clean-export certifications, or execution
+  authorities. The V4 certification itself and later one-shot authority may
+  be added to the narrow export only at their exact reviewed paths after
+  their respective commits and exact file-SHA-256 validation. This
+  source-only exception grants no generated-input, runtime-artifact,
+  checkpoint, tensor, schedule, dataset-payload, RGB, GPU, training,
+  qualification, benchmark, probability-calibration, G2 payload, navigation,
+  held-out, sealed, production, promotion, deployment, retry, scientific
+  resume, recovery execution, second V4 attempt, fifth integrity replacement,
+  architecture variant, or further-attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
