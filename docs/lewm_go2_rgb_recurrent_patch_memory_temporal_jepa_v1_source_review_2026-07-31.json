@@ -1,0 +1,123 @@
+{
+  "access": {
+    "checkpoint_open_count": 0,
+    "data_payload_open_count": 0,
+    "generated_or_runtime_artifact_open_count": 0,
+    "gpu_run_count": 0,
+    "heldout_open_count": 0,
+    "metadata_payload_open_count": 0,
+    "navigation_run_count": 0,
+    "rgb_payload_open_count": 0,
+    "scientific_training_run_count": 0,
+    "sealed_open_count": 0,
+    "tensor_checkpoint_open_count": 0
+  },
+  "blocker_corrections_verified": [
+    "exact_cumulative_schedule_offset_prefix_and_no_repeat_enforcement",
+    "content_bound_predecessor_result_success_checkpoint_and_update_zero_baseline_provenance",
+    "recursive_model_optimizer_and_observation_state_finiteness_gates",
+    "exact_requested_attempted_successful_decoded_access_equality_with_zero_denials",
+    "checkpoint_creation_restricted_to_updates_200_and_400",
+    "actual_model_cross_module_gradient_ema_and_evaluator_smoke_coverage",
+    "certified_source_rehash_and_exact_one_hip_amd_r9700_guard_inside_executor",
+    "guard_issued_content_bound_attestation_required_by_reservation_and_engine",
+    "metadata_preflight_success_writes_only_receipt_json"
+  ],
+  "blockers": [],
+  "content_sha256": "5ad6799e894ff2938d55cf9bd0ec6b0d20ca5715dfd986a015b05968edaf6621",
+  "date": "2026-07-31",
+  "execution_authorized": false,
+  "implementation_commit": "e61031ca1fcb5d149c919ff1c44ce0979410097e",
+  "lifecycle_review": {
+    "attempt_count": 1,
+    "certified_narrow_export_required": true,
+    "complete_checkpoints_only_at_updates": [
+      200,
+      400
+    ],
+    "maximum_presentations": 16000,
+    "maximum_updates": 400,
+    "metadata_preflight_receipt_required": true,
+    "output_root_must_be_absent_before_reservation": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "terminal_failure_or_success_receipt_required": true
+  },
+  "manifest": {
+    "byte_count": 10926,
+    "content_sha256": "ff40b63a562cff4ffd053978a02e7ec78749cf953d7325ba609e82d0ed102fff",
+    "file_sha256": "45ba953f6bce746feecbbe65b834b222d6a9f639989a10cff7d305bf4c48ce21",
+    "path": "docs/lewm_go2_rgb_recurrent_patch_memory_temporal_jepa_v1_source_manifest_2026-07-31.json",
+    "source_bindings_sha256": "baee97581f241de10d6d51006017a0ded8287064be1b87db3ce63c860d7bc4c3",
+    "source_count": 39
+  },
+  "passed": true,
+  "preregistration": {
+    "commit": "1ac341cd97ab7a7d1a1b8c46695cf2fd3382ed60",
+    "path": "docs/lewm_go2_rgb_recurrent_patch_memory_temporal_jepa_v1_preregistration_2026-07-31.md"
+  },
+  "review_scope": [
+    "warm_start_inventory_and_fresh_ema_target_semantics",
+    "joint_online_encoder_predictor_and_recurrent_memory_training",
+    "future_only_masked_latent_prediction_and_target_isolation",
+    "action_conditioned_ordered_history_and_zero_state_gru_semantics",
+    "registered_temporal_controls_health_retention_and_continuation_gates",
+    "fixed_schedule_cap_and_logical_presentation_accounting",
+    "metadata_only_preflight_and_runtime_access_boundaries",
+    "one_shot_lifecycle_direct_entry_guards_and_terminal_receipts",
+    "recursive_source_closure_and_narrow_clean_export_safety"
+  ],
+  "reviewers": [
+    "/root/masked_spatial_core_review",
+    "/root/masked_spatial_executor",
+    "/root/masked_spatial_metrics_eval"
+  ],
+  "schema": "lewm_go2_rgb_recurrent_patch_memory_temporal_jepa_v1_source_review_v1",
+  "scientific_correctness": {
+    "actions_consumed": [
+      0,
+      1,
+      2
+    ],
+    "controls_required": [
+      "persistence",
+      "current_only_reset",
+      "wrong_history",
+      "wrong_action"
+    ],
+    "ema_future_target_rgb_position": 3,
+    "encoder_predictor_and_memory_trained_jointly": true,
+    "future_rgb_enters_online_encoder": false,
+    "initial_recurrent_state": "exact_zero",
+    "maximum_unique_sequence_rows": 4000,
+    "navigation_or_heldout_claim": false,
+    "observation_updates": [
+      0,
+      50,
+      100,
+      200,
+      400
+    ],
+    "online_context_rgb_positions": [
+      0,
+      1,
+      2
+    ],
+    "predecessor_warmstart": "rgb_single_frame_multiblock_masked_spatial_jepa_v1_update_1000_selected_checkpoint",
+    "sole_training_objective": "normalized_half_squared_masked_future_jepa_loss",
+    "target_encoder_is_stop_gradient_ema": true,
+    "target_gradient_tensor_count_required": 0,
+    "train_schedule_sha256": "853aad503738baed6bfbba18f3ac55c4715d7f164e71d4d0ef96c861befee7fc",
+    "training_input": "three_ordered_rgb_context_frames_three_outgoing_actions_and_detached_next_rgb_target"
+  },
+  "source_only": true,
+  "status": "PASS_SOURCE_AND_ONE_SHOT_LIFECYCLE_REVIEWED",
+  "tests": {
+    "command_scope": "eight_focused_model_metrics_preflight_evaluator_runner_executor_launcher_and_source_closure_test_files",
+    "cpu_only": true,
+    "failed": 0,
+    "passed": 40,
+    "synthetic_inputs_only": true,
+    "total": 40
+  }
+}
