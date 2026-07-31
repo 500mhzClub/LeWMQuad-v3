@@ -1,0 +1,325 @@
+{
+  "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_scientific_result_v1",
+  "status": "PASS_COMPLETE_VALID_SCIENTIFIC_FAILURE_AUDIT",
+  "date": "2026-07-31",
+  "content_sha256": "dfa335aa9405e0a3e771a8bc21051d0279278bf1d1c3edf59ad49446da5b64fe",
+  "classification": "VALID_UPDATE100_TERMINAL_SCIENTIFIC_FAILURE_NOT_INFRASTRUCTURE_FAILURE",
+  "attempt": {
+    "attempt_number": 1,
+    "certified_source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-memory-role-factorized-joint-jepa-v4-source",
+    "output_root": ".generated/go2_rgb_memory_role_factorized_joint_jepa_v4/attempt_v1",
+    "reservation_created_utc": "2026-07-31T00:05:19Z",
+    "one_shot_consumed": true,
+    "terminal_status": "FAIL_SCIENTIFIC_UPDATE100_CONTINUATION_GATE_TERMINAL",
+    "terminal_action": "STOP_VALID_SCIENTIFIC_FAILURE_AT_UPDATE_100",
+    "terminal_update": 100,
+    "attempt_consumed": true,
+    "checkpoint_published": false,
+    "private_restart_state_published": true,
+    "private_restart_state_scientific_promotion": false,
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "memory_integration_executed": false,
+    "navigation_executed": false
+  },
+  "scientific_identity": {
+    "architecture": "joint_RGB_encoder_physical_JEPA_immediate_action_local_control_spatial_place_key_predictor_and_stop_gradient_EMA_target",
+    "model_and_predictor_jointly_trained": true,
+    "predictor_trained_separately": false,
+    "place_mechanism": "identity_anchored_spatial_grid_multi_negative_variance_covariance_place_key_JEPA",
+    "maximum_updates": 400,
+    "maximum_presentations": 12800,
+    "observations": [0, 100, 400],
+    "actual_updates": 100,
+    "actual_presentations": 3200
+  },
+  "accounting": {
+    "autograd_grad_calls": 1500,
+    "ema_steps": 100,
+    "ema_target_rgb_encodings": 2400,
+    "local_microbatch_graphs": 200,
+    "local_presentations": 800,
+    "local_rgb_decodes": 1600,
+    "online_rgb_encodings": 4800,
+    "optimizer_steps": 100,
+    "physical_microbatch_graphs": 400,
+    "physical_presentations": 1600,
+    "physical_rgb_decodes": 3200,
+    "place_microbatch_graphs": 100,
+    "place_presentations": 800,
+    "place_rgb_decodes": 2400,
+    "presentations": 3200,
+    "rgb_decodes": 7200,
+    "updates": 100
+  },
+  "terminal_gate": {
+    "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_update100_continuation_gate_v1",
+    "passed": false,
+    "action": "STOP_VALID_SCIENTIFIC_FAILURE_AT_UPDATE_100",
+    "failed_checks": [
+      "place_retrieval_r5_at_least_1_50x_exact_chance"
+    ],
+    "passed_checks": [
+      "structural_integrity_pass",
+      "place_target_integrity_pass",
+      "place_access_integrity_pass",
+      "local_target_integrity_pass",
+      "local_access_integrity_pass",
+      "place_positive_family_count_at_least_6_of_8",
+      "place_separation_bootstrap_lower_95_positive",
+      "target_place_key_effective_rank_at_least_2",
+      "passed_physical_margin_count_at_least_60_of_189"
+    ],
+    "observed": {
+      "recall_at_5": 0.1263206845238095,
+      "exact_chance_recall_at_5": 0.09295603393193436,
+      "chance_multiple": 1.3589293688702975,
+      "scene_count_above_chance": 6,
+      "negative_minus_positive_bootstrap_lower_95": 0.01321166693898184,
+      "positive_family_count": 7,
+      "target_place_key_effective_rank": 2.1479299068450928,
+      "passed_physical_margin_count": 70,
+      "physical_margin_count": 189
+    }
+  },
+  "metric_trajectory": [
+    {
+      "update": 0,
+      "integrity_pass": true,
+      "place": {
+        "recall_at_5": 0.22297247023809524,
+        "exact_chance_recall_at_5": 0.09295603393193436,
+        "chance_multiple": 2.3986874311070916,
+        "scene_count_above_chance": 8,
+        "negative_minus_positive_mean": 0.00854231808334589,
+        "negative_minus_positive_bootstrap_lower_95": 0.005780303399522035,
+        "positive_family_count": 7,
+        "target_place_key_effective_rank": 2.6142773628234863,
+        "predicted_place_key_effective_rank": 2.5714104175567627
+      },
+      "local": {
+        "wrong_minus_correct_mean": 0.0008675515840396121,
+        "wrong_minus_correct_bootstrap_lower_95": 0.0008056318364562502,
+        "wrong_action_positive_family_count": 8,
+        "correct_to_persistence_energy_ratio": 73.23038233039364,
+        "persistence_advantage_bootstrap_lower_95": -0.011829995419075945,
+        "persistence_positive_family_count": 0
+      },
+      "physical": {
+        "passed_margin_count": 39,
+        "margin_count": 189,
+        "total_shortfall": 191.5839970395566,
+        "worst_margin": -18.476295852661128
+      }
+    },
+    {
+      "update": 100,
+      "integrity_pass": true,
+      "place": {
+        "recall_at_5": 0.1263206845238095,
+        "exact_chance_recall_at_5": 0.09295603393193436,
+        "chance_multiple": 1.3589293688702975,
+        "scene_count_above_chance": 6,
+        "negative_minus_positive_mean": 0.018049177154898642,
+        "negative_minus_positive_bootstrap_lower_95": 0.01321166693898184,
+        "positive_family_count": 7,
+        "target_place_key_effective_rank": 2.1479299068450928,
+        "predicted_place_key_effective_rank": 2.3255224227905273
+      },
+      "local": {
+        "wrong_minus_correct_mean": 0.01303872630545877,
+        "wrong_minus_correct_bootstrap_lower_95": 0.01202055335923641,
+        "wrong_action_positive_family_count": 8,
+        "correct_to_persistence_energy_ratio": 44.322697329018325,
+        "persistence_advantage_bootstrap_lower_95": -0.00592238336502677,
+        "persistence_positive_family_count": 0
+      },
+      "physical": {
+        "passed_margin_count": 70,
+        "margin_count": 189,
+        "total_shortfall": 74.11388318231765,
+        "worst_margin": -9.815362691879272
+      }
+    }
+  ],
+  "metric_deltas_update0_to_update100": {
+    "place_recall_at_5": -0.09665178571428574,
+    "place_chance_multiple": -1.039758062236794,
+    "place_scene_count_above_chance": -2,
+    "place_separation_mean": 0.009506859071552752,
+    "place_separation_bootstrap_lower_95": 0.007431363539459805,
+    "place_target_effective_rank": -0.46634745597839355,
+    "place_predicted_effective_rank": -0.24588799476623535,
+    "local_wrong_action_gap_mean": 0.012171174721419158,
+    "local_persistence_ratio": -28.907684001375314,
+    "physical_passed_margin_count": 31,
+    "physical_total_shortfall": -117.47011385723896
+  },
+  "scientific_findings": {
+    "earned": [
+      "all_structural_target_and_access_integrity_checks_passed",
+      "physical_margin_count_improved_from_39_to_70_and_cleared_the_update100_floor",
+      "place_pair_separation_remained_robustly_positive_in_7_of_8_families",
+      "local_wrong_action_ordering_strengthened_and_remained_positive_in_8_of_8_families"
+    ],
+    "not_earned": [
+      "update100_continuation",
+      "place_retrieval_at_least_1_50_times_exact_chance",
+      "update400_memory_entry_evaluation",
+      "checkpoint_publication",
+      "learned_memory_integration",
+      "navigation_or_G2_evaluation"
+    ],
+    "interpretation": "The V3/V4 spatial place head exposed strong untrained same-place structure, and training increased the registered positive-versus-negative energy separation. However, it simultaneously degraded global candidate retrieval and reduced effective rank. This is a train-objective-to-memory-use mismatch, not evidence that RGB lacks place information and not a reason to continue the same loss for more updates.",
+    "identical_longer_run_warranted": false,
+    "identical_retry_or_resume_warranted": false
+  },
+  "metric_scope_decision": {
+    "single_frame_place_retrieval_is_not_a_complete_memory_test": true,
+    "single_frame_place_retrieval_remains_a_required_sanity_check_for_any_single_frame_place_key_claim": true,
+    "local_immediate_predictor_is_diagnostic_for_memory_entry": true,
+    "physical_JEPA_route_remains_required": true,
+    "next_memory_relevant_required_tests": [
+      "ordered_history_improves_over_reset_or_shuffled_history",
+      "action_conditioned_prediction_beats_identity_persistence",
+      "memory_state_remains_noncollapsed_and_scene_disjoint",
+      "physical_integrity_and_causal_dependence_remain_clean"
+    ]
+  },
+  "successor_boundary": {
+    "do_not_do": [
+      "retry_or_resume_V4",
+      "extend_V4_to_update400",
+      "publish_or_open_the_private_restart_state_for_scientific_reuse",
+      "relax_the_failed_preregistered_gate_post_hoc",
+      "treat_pairwise_energy_separation_as_global_retrieval_success"
+    ],
+    "diagnosed_mechanism_mismatch": "V4 batches interleaved one row from each of eight scene families, while its 16-way contrastive objective treated all other targets as negatives. Fourteen of fifteen alternatives were therefore easy cross-scene shortcuts, but evaluation ranks candidates only within a scene. Training could improve the registered aggregate gap while worsening the positive energy and within-scene retrieval needed by memory.",
+    "selected_next_mechanism": "scene_local_multi_negative_spatial_place_key_joint_JEPA",
+    "selected_change": "form scene-homogeneous place graphs from the existing metadata-bound triplets and rank each paired positive only against same-scene distinct-place candidates while retaining direct positive alignment and anti-collapse terms",
+    "selected_u100_guard": "require_R5_at_least_2_times_exact_chance_and_at_least_90_percent_of_its_own_update0_value_in_addition_to_integrity_rank_family_and_physical_floors",
+    "selected_terminal_memory_entry_essentials": "within_scene_R5_at_least_2_times_chance_in_at_least_6_of_8_scenes_target_rank_at_least_2_and_at_least_80_percent_of_update0_physical_above_72_and_all_12_controls",
+    "held_out_or_sealed_access_authorized": false,
+    "G2_authorized": false,
+    "navigation_authorized": false
+  },
+  "access_and_custody": {
+    "held_out_or_sealed_opened": false,
+    "probability_calibration_opened": false,
+    "navigation_executed": false,
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 133,
+    "certified_source_rehash_count": 133,
+    "label_source_rehash_count": 3,
+    "raw_consumed_file_rehash_count": 4732,
+    "local_rgb_open_attempt_count": 9576,
+    "local_rgb_open_success_count": 9576,
+    "local_unique_rgb_leaf_terminal_rehash_count": 5588,
+    "place_rgb_reference_attempt_count": 4320,
+    "place_rgb_reference_success_count": 4320,
+    "place_rgb_reference_failure_count": 0,
+    "place_rgb_sha256_verified_per_access_count": 4320,
+    "forbidden_input_count": 0
+  },
+  "artifact_audit": {
+    "root_mode_octal": "0700",
+    "file_mode_octal": "0444",
+    "symlink_count": 0,
+    "success_artifact_count": 0,
+    "public_checkpoint_count": 0,
+    "trace_row_count": 102,
+    "trace_expected_composition": "one_initialization_plus_100_contiguous_optimizer_ema_updates_plus_one_update100_terminal_gate",
+    "trace_all_rows_content_bound": true,
+    "reservation": {
+      "path": "reservation.json",
+      "byte_count": 469,
+      "file_sha256": "c80a4af70a9dd0dd14fcd877d676120687560b95f7d13ab92cf7faccec738cf2",
+      "content_sha256": "3e3b7d57037e3d5aa4b25ec972cc33db632222bb6718461752c6bdb2adff4645"
+    },
+    "update_0": {
+      "path": "metrics/update_0.json",
+      "byte_count": 730184,
+      "file_sha256": "dac4cee02c77eed4b8ca83d2b03f7c73c06cf59ad912d4e841e3ddc296a90c8b",
+      "content_sha256": "21b0c7db1a07dc95bb146cda7f043a1af9d63ab82597aac63d8741b83291e34c"
+    },
+    "update_100": {
+      "path": "metrics/update_100.json",
+      "byte_count": 729011,
+      "file_sha256": "d756cf5cec0340ffdcacec29bd0fadf1f69659dcbcd44f96118333cfac60de99",
+      "content_sha256": "11108be34e08ff58ce3c14d6994e96ed58147b32bb56bfcaef86d43e6236124d"
+    },
+    "failure": {
+      "path": "failure.json",
+      "byte_count": 3539,
+      "file_sha256": "48597b9ec3d573db2726c01f9afa67ba9e86ba8bce11998d9a145b46fefbddc7",
+      "content_sha256": "7e97c0686d0413052bf69ef5ca99bf6b94ca360bfc58e79e1ebea1b2e91c6eb7"
+    },
+    "terminal_access": {
+      "path": "receipts/terminal_access.json",
+      "byte_count": 1725542,
+      "file_sha256": "bf4159c80af0ba9e6537efeeab2b3b5d7af74d7f1ceb4e17728e040c3386e773",
+      "content_sha256": "dbbecb04f6293361e73ce5cd641b0e9194c6d08d6460f84f00006fce9cede339"
+    },
+    "trace": {
+      "path": "trace.jsonl",
+      "byte_count": 466436,
+      "file_sha256": "d37ccc0eab1d664c5516842b72ce30ea146025c00a8bdc6d22c90847983c3c8d"
+    },
+    "private_restart_metadata": {
+      "path": "private_restart/update_100.binding.json",
+      "byte_count": 590,
+      "file_sha256": "b18e86a9ba28c9417c7bf6166fae6e3750cb62fdfa5535fa406f4faffd1a9f33",
+      "content_sha256": "ac85b242bf265f818a0ef3907aa02f70bd73d0680054045621dd3b92c74ba029"
+    },
+    "private_restart_state_declared_without_payload_open": {
+      "path": "private_restart/update_100.pt",
+      "byte_count": 60182477,
+      "file_sha256": "b716e2030a97a3205d76e4da41eac73d3ae5f7ef105aff218f2c9ca396bff98c",
+      "resume_authorized": false,
+      "scientific_promotion": false
+    }
+  },
+  "lifecycle": {
+    "implementation_commit": "65820a728ef199bc0251f461ed5c23a6eeb99f64",
+    "preregistration": {
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_preregistration_2026-07-30.md",
+      "commit": "b079504940103f2cbd127552d337a90b6028b749",
+      "byte_count": 4273,
+      "file_sha256": "ff745081af96bf77c3c982c962348a0eef107cc0eead034bada07839afb6d3b1"
+    },
+    "source_manifest": {
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_source_manifest_2026-07-30.json",
+      "commit": "1dea3dcab7852ab6748e14deb2bc8ce60196f917",
+      "byte_count": 40103,
+      "file_sha256": "25d1144aefdbb140b87d0755d5f5511de595144abe97b83bdd31b2c24576f0ff",
+      "content_sha256": "0974e8717b9467b10a3fa45f37ab37faac0f8d8f9bcfe35703dd15d41bb56ba2"
+    },
+    "source_review": {
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_source_review_2026-07-30.json",
+      "commit": "b26cfefb6e8a96b324f9d014fa6d1336998cd5dd",
+      "byte_count": 3757,
+      "file_sha256": "cc7b76d9228d4ff0211b04434fbce8fbd39bfa253b47f34eefa85bbc7ea76e9d",
+      "content_sha256": "0ab3186c83d4b27bd01bf73ad272c0bb0ec39e36a64a942dd66a2799355d100d"
+    },
+    "clean_export_certification": {
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_clean_export_certification_2026-07-30.json",
+      "commit": "c22a96a7359c0643b065e732ddde3a3332414599",
+      "byte_count": 23952,
+      "file_sha256": "bfed3dd3b5cfa6799e9db60572798f047c0333e0af26eee2d007b2fc1a8ab8be",
+      "content_sha256": "d309146cd0d296d2b3680125cfe85e2636a4b8b91aff8c2b3ba5a70952358635"
+    },
+    "execution_authorization": {
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_execution_authorization_2026-07-30.json",
+      "commit": "98e3d4537e87ae199199ce443e52b4d7861701b0",
+      "byte_count": 5502,
+      "file_sha256": "5905beb85178b007055622510818612c997efa0702533d90e7ebccc33824f426",
+      "content_sha256": "7485b3df89390501d316dd08b8500905fc1604303c6a9d7fbf278b5cfe56c585"
+    }
+  },
+  "independent_review": {
+    "reviewer": "/root/v4_gate_audit",
+    "status": "PASS",
+    "finding": "The terminal decision, one failed gate, all other passed gates, 102 content-bound trace rows, exact cumulative accounting, artifact hashes and modes, access custody, and no-retry closure independently recompute from the immutable receipts. The private restart tensor was not opened."
+  },
+  "authority": "terminal_result_and_materially_different_successor_design_only_no_V4_retry_resume_private_restart_open_checkpoint_recovery_memory_navigation_probability_calibration_G2_heldout_sealed_production_promotion_or_deployment_authority"
+}
