@@ -1,0 +1,87 @@
+{
+  "access": {
+    "checkpoint_open_count": 0,
+    "data_payload_open_count": 0,
+    "generated_or_runtime_artifact_open_count": 0,
+    "gpu_run_count": 0,
+    "heldout_open_count": 0,
+    "navigation_run_count": 0,
+    "rgb_payload_open_count": 0,
+    "scientific_training_run_count": 0,
+    "sealed_open_count": 0,
+    "tensor_checkpoint_open_count": 0
+  },
+  "blockers": [],
+  "content_sha256": "78b8583728c8ca8241888bd7782ff49df56f528fd63337aead366831f8d78214",
+  "date": "2026-07-31",
+  "execution_authorized": false,
+  "implementation_commit": "2856b07935bcb0e23c15ec8ab861bef73f358dad",
+  "lifecycle_review": {
+    "attempt_count": 1,
+    "certified_narrow_export_required": true,
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "output_root_must_be_absent_before_reservation": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "terminal_failure_or_success_receipt_required": true
+  },
+  "manifest": {
+    "byte_count": 15785,
+    "content_sha256": "b3637498b3fe9fdff5b0e679ba5fc5abc9d5dd58dc1fd20f9c924242f6ceb22a",
+    "file_sha256": "7881df4f3223d420f688c09057ee57caf3c7ea3cb1823295c5384ff0e851ea7c",
+    "path": "docs/lewm_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1_source_manifest_2026-07-31.json",
+    "source_bindings_sha256": "818e307130e3c88e676fedec458cf9dcc03b533eeef657a9f6b4557f050dd84f",
+    "source_count": 57
+  },
+  "passed": true,
+  "preregistration": {
+    "commit": "55d07f54408237723db641f95a22eb113a7965ad",
+    "path": "docs/lewm_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1_preregistration_2026-07-31.md"
+  },
+  "review_scope": [
+    "masked_spatial_architecture_and_leakage_prevention",
+    "joint_online_encoder_and_predictor_gradient_semantics",
+    "ema_target_isolation",
+    "registered_metrics_and_perception_only_gate_semantics",
+    "fixed_schedule_cap_and_presentation_accounting",
+    "one_shot_lifecycle_and_runtime_custody",
+    "recursive_source_closure_and_clean_export_safety"
+  ],
+  "reviewers": [
+    "/root/masked_spatial_core_review",
+    "/root/masked_spatial_executor",
+    "/root/masked_spatial_metrics_eval"
+  ],
+  "schema": "lewm_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1_source_review_v1",
+  "scientific_correctness": {
+    "actions_consumed": false,
+    "encoder_and_predictor_trained_jointly": true,
+    "encoder_warmstart": "reviewed_n320_encoder_state",
+    "future_rgb_consumed": false,
+    "hidden_patches_removed_before_online_self_attention": true,
+    "memory_or_temporal_claim": false,
+    "observation_updates": [
+      0,
+      250,
+      500,
+      750,
+      1000
+    ],
+    "place_retrieval_is_lightweight_perception_substrate_gate": true,
+    "target_encoder_is_stop_gradient_ema": true,
+    "target_gradient_tensor_count_required": 0,
+    "training_input": "current_rgb_only",
+    "wrong_target_wrong_context_and_position_mean_controls_required": true
+  },
+  "source_only": true,
+  "status": "PASS_SOURCE_AND_ONE_SHOT_LIFECYCLE_REVIEWED",
+  "tests": {
+    "command_scope": "six_focused_model_metrics_runner_executor_launcher_and_source_closure_test_files",
+    "cpu_only": true,
+    "failed": 0,
+    "passed": 30,
+    "synthetic_inputs_only": true,
+    "total": 30
+  }
+}
