@@ -850,7 +850,7 @@ These instructions apply to the entire repository.
   architecture variant, or further-attempt authority.
 - The RGB single-frame multiblock masked-spatial JEPA V1 source may
   additionally be clean exported only from frozen source-and-review commit
-  `d3eeb50389b1a5a587cb9ae55d7acd81d1f7b068`, and only as (a) the 57
+  `f8847d740289394b4b05845efddb709332fc7589`, and only as (a) the 33
   paths in its committed recursive source manifest and (b) its exact
   preregistration, source manifest, and independent source review paths
   explicitly enumerated and SHA-256-and-byte-count-bound in
