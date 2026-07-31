@@ -25,38 +25,38 @@ from scripts import launch_go2_rgb_memory_role_factorized_joint_jepa_v1 as v5_la
 
 SCHEMA_PREFIX = (
     "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "update_zero_gate_timing_integrity_replacement_v1"
+    "update_zero_gate_timing_integrity_replacement_v2"
 )
 PREREGISTRATION_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "update_zero_gate_timing_integrity_replacement_v1_preregistration_2026-07-31.md"
+    "update_zero_gate_timing_integrity_replacement_v2_preregistration_2026-07-31.md"
 )
-PREREGISTRATION_COMMIT = "020afd37e5354efb09b008e823151cdc97a7c80c"
+PREREGISTRATION_COMMIT = "21f271b101ce1a7134119e8636770cc492f31c1d"
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "update_zero_gate_timing_integrity_replacement_v1_source_manifest_2026-07-31.json"
+    "update_zero_gate_timing_integrity_replacement_v2_source_manifest_2026-07-31.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "update_zero_gate_timing_integrity_replacement_v1_source_review_2026-07-31.json"
+    "update_zero_gate_timing_integrity_replacement_v2_source_review_2026-07-31.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "update_zero_gate_timing_integrity_replacement_v1_clean_export_certification_"
+    "update_zero_gate_timing_integrity_replacement_v2_clean_export_certification_"
     "2026-07-31.json"
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "update_zero_gate_timing_integrity_replacement_v1_execution_authorization_"
+    "update_zero_gate_timing_integrity_replacement_v2_execution_authorization_"
     "2026-07-31.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "update_zero_gate_timing_integrity_replacement_v1/attempt_v1"
+    "update_zero_gate_timing_integrity_replacement_v2/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-v18-spatial-token-delay-line-u0-gate-integrity-replacement-v1-source"
+    "LeWMQuad-v3-v18-spatial-token-delay-line-batch-schema-integrity-replacement-v2-source"
 )
 MODEL_CLASS_NAME = "V18SpatialTokenDelayLineCausalConvolutionJointJepaV1"
 MODEL_MODULE_NAME = (

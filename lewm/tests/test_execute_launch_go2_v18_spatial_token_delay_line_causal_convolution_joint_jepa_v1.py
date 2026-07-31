@@ -247,6 +247,79 @@ def test_absolute_noncollapse_is_first_enforced_at_update_250() -> None:
     }
 
 
+def test_frozen_nested_v25_physical_builder_accepts_v18_schema(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    v25_builder = executor.v5_launcher._V25_LAUNCHER._build_one_microbatch_v25
+    v25_globals = v25_builder.__globals__
+    v24_builder = v25_globals["_INHERITED_BUILD_ONE_MICROBATCH_V24"]
+    v24_globals = v24_builder.__globals__
+    v23_builder = v24_globals["_INHERITED_BUILD_ONE_MICROBATCH_V23"]
+    v23_globals = v23_builder.__globals__
+    v21_builder = v23_globals["_INHERITED_BUILD_ONE_MICROBATCH_V21"]
+    v21_globals = v21_builder.__globals__
+
+    monkeypatch.setitem(
+        v25_globals,
+        "preflight_schedule_per_row_persistence_contrastive_v25",
+        lambda _runtime: {"passed": True},
+    )
+    monkeypatch.setitem(
+        v24_globals,
+        "preflight_schedule_predictor_core_protected_survival_v24",
+        lambda _runtime: {"passed": True},
+    )
+    monkeypatch.setitem(
+        v23_globals,
+        "preflight_schedule_state_residual_survival_v23",
+        lambda _runtime: {"passed": True},
+    )
+    monkeypatch.setitem(
+        v21_globals,
+        "preflight_schedule_negative_rows_v21",
+        lambda _runtime: {"passed": True},
+    )
+    monkeypatch.setitem(
+        v21_globals,
+        "negative_rows_from_train_metadata_v21",
+        lambda _runtime, _indices: (1, 2, 3, 0),
+    )
+    base = {
+        key: torch.zeros((4, 1), dtype=torch.float32)
+        for key in training.REQUIRED_BATCH_KEYS
+    }
+    monkeypatch.setitem(
+        v21_globals,
+        "_ORIGINAL_BUILD_ONE_MICROBATCH_V13",
+        lambda **_kwargs: dict(base),
+    )
+    runtime = SimpleNamespace(
+        training_module=training,
+        torch=torch,
+        action_prior_m=(0.0,) * 9,
+    )
+
+    result = v25_builder(
+        runtime=runtime,
+        indices=(0, 1, 2, 3),
+        stage="synthetic_schema_only",
+    )
+
+    assert tuple(result) == training.REQUIRED_BATCH_KEYS_V25
+    assert tuple(result)[: len(base)] == training.REQUIRED_BATCH_KEYS
+    assert tuple(result)[-2:] == (
+        training.SCENE_INNOVATION_NEGATIVE_ROW_KEY_V21,
+        training.ACTION_PRIOR_M_KEY_V23,
+    )
+    assert result[
+        training.SCENE_INNOVATION_NEGATIVE_ROW_KEY_V21
+    ].tolist() == [1, 2, 3, 0]
+    prior = result[training.ACTION_PRIOR_M_KEY_V23]
+    assert tuple(prior.shape) == (9,)
+    assert prior.dtype == torch.float32
+    assert prior.requires_grad is False
+
+
 def test_launcher_rejects_ambiguous_gpu_visibility_before_reservation() -> None:
     receipt = launcher.validate_pre_reservation_gpu_visibility_v1(
         {"HIP_VISIBLE_DEVICES": "0"}

@@ -50,6 +50,22 @@ def test_accounting_and_1000_update_24000_presentation_cap_are_exact() -> None:
         )
 
 
+def test_nested_physical_builder_schema_aliases_are_exact() -> None:
+    assert runner.REQUIRED_BATCH_KEYS_V21 == (
+        *runner.REQUIRED_BATCH_KEYS,
+        runner.SCENE_INNOVATION_NEGATIVE_ROW_KEY_V21,
+    )
+    assert runner.REQUIRED_BATCH_KEYS_V23 == (
+        *runner.REQUIRED_BATCH_KEYS_V21,
+        runner.ACTION_PRIOR_M_KEY_V23,
+    )
+    assert runner.REQUIRED_BATCH_KEYS_V24 == runner.REQUIRED_BATCH_KEYS_V23
+    assert runner.REQUIRED_BATCH_KEYS_V25 == runner.REQUIRED_BATCH_KEYS_V24
+    assert runner.REQUIRED_BATCH_KEYS_V21 == runner.v25.REQUIRED_BATCH_KEYS_V21
+    assert runner.REQUIRED_BATCH_KEYS_V23 == runner.v25.REQUIRED_BATCH_KEYS_V23
+    assert runner.REQUIRED_BATCH_KEYS_V24 == runner.v25.REQUIRED_BATCH_KEYS_V24
+
+
 def _strict_memory_batch() -> dict[str, torch.Tensor]:
     return {
         runner.MEMORY_HISTORY_RGB_KEY_V1: torch.zeros(
