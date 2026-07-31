@@ -78,6 +78,145 @@ def test_every_observation_uses_the_controls_producing_physical_panel() -> None:
     assert set(executor.PHYSICAL_OBSERVATION_ALIAS.values()) == {400}
 
 
+def _comparison_payload(call: int) -> dict[str, dict[str, int]]:
+    return {name: {"call": call} for name in executor.CONTROL_NAMES}
+
+
+def test_physical_alias_adapter_rescores_current_model_at_all_six_observations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = SimpleNamespace()
+    calls: list[tuple[object, int, bool]] = []
+
+    def observe(
+        observed_runtime: object,
+        model: object,
+        *,
+        update: int,
+        integrity_pass: bool,
+    ) -> dict[str, object]:
+        assert observed_runtime is runtime
+        cache = getattr(runtime, "causal_comparisons_v19", None)
+        if cache is None:
+            cache = {}
+            runtime.causal_comparisons_v19 = cache
+        assert cache == {}
+        calls.append((model, update, integrity_pass))
+        cache[update] = _comparison_payload(len(calls))
+        return {"model": model, "call": len(calls)}
+
+    monkeypatch.setattr(executor.physical_executor, "_observation_v13", observe)
+    models = {update: object() for update in executor.OBSERVATION_UPDATES}
+    returned = [
+        executor._physical_observation_v1(
+            runtime,
+            models[update],
+            outer_update=update,
+            integrity_pass=True,
+        )
+        for update in executor.OBSERVATION_UPDATES
+    ]
+    assert [call[0] for call in calls] == list(models.values())
+    assert [call[1] for call in calls] == [400] * 6
+    assert all(call[2] is True for call in calls)
+    assert [value["model"] for value in returned] == list(models.values())
+    assert [value["call"] for value in returned] == list(range(1, 7))
+    assert runtime.causal_comparisons_v19 == {}
+
+
+def test_physical_alias_adapter_preserves_partial_state_when_observer_raises(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = SimpleNamespace()
+    payload = _comparison_payload(1)
+
+    def fail_after_population(*args: object, **kwargs: object) -> object:
+        runtime.causal_comparisons_v19 = {400: payload}
+        raise LookupError("inherited observation failed")
+
+    monkeypatch.setattr(
+        executor.physical_executor,
+        "_observation_v13",
+        fail_after_population,
+    )
+    with pytest.raises(LookupError, match="inherited observation failed"):
+        executor._physical_observation_v1(
+            runtime,
+            object(),
+            outer_update=0,
+            integrity_pass=True,
+        )
+    assert runtime.causal_comparisons_v19 == {400: payload}
+
+
+@pytest.mark.parametrize(
+    "initial_cache",
+    (None, [], {400: _comparison_payload(0)}),
+    ids=("none", "non_dict", "preexisting_alias"),
+)
+def test_physical_alias_adapter_rejects_invalid_pre_call_state(
+    monkeypatch: pytest.MonkeyPatch,
+    initial_cache: object,
+) -> None:
+    runtime = SimpleNamespace(causal_comparisons_v19=initial_cache)
+    calls = 0
+
+    def observe(*args: object, **kwargs: object) -> object:
+        nonlocal calls
+        calls += 1
+        return {}
+
+    monkeypatch.setattr(executor.physical_executor, "_observation_v13", observe)
+    with pytest.raises(RuntimeError, match="malformed or nonempty before"):
+        executor._physical_observation_v1(
+            runtime,
+            object(),
+            outer_update=0,
+            integrity_pass=True,
+        )
+    assert calls == 0
+
+
+@pytest.mark.parametrize(
+    "mode",
+    ("missing", "wrong_key", "extra_key", "malformed_controls"),
+)
+def test_physical_alias_adapter_rejects_invalid_post_call_state(
+    monkeypatch: pytest.MonkeyPatch,
+    mode: str,
+) -> None:
+    runtime = SimpleNamespace()
+
+    def observe(*args: object, **kwargs: object) -> object:
+        if mode == "missing":
+            runtime.causal_comparisons_v19 = {}
+        elif mode == "wrong_key":
+            runtime.causal_comparisons_v19 = {100: _comparison_payload(1)}
+        elif mode == "extra_key":
+            runtime.causal_comparisons_v19 = {
+                400: _comparison_payload(1),
+                100: _comparison_payload(2),
+            }
+        else:
+            runtime.causal_comparisons_v19 = {
+                400: {executor.CONTROL_NAMES[0]: {"call": 1}}
+            }
+        return {"unchanged": True}
+
+    monkeypatch.setattr(executor.physical_executor, "_observation_v13", observe)
+    with pytest.raises(RuntimeError, match="alias cache"):
+        executor._physical_observation_v1(
+            runtime,
+            object(),
+            outer_update=0,
+            integrity_pass=True,
+        )
+    if mode == "missing":
+        assert runtime.causal_comparisons_v19 == {}
+    else:
+        assert runtime.causal_comparisons_v19
+
+
 def test_reservation_is_one_shot_and_recovery_requires_snapshot(tmp_path: Path) -> None:
     parent = tmp_path / Path(executor.OUTPUT_ROOT_RELATIVE_PATH).parent
     parent.mkdir(parents=True)

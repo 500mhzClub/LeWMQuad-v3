@@ -26,7 +26,7 @@ from scripts import (
 
 SCHEMA_PREFIX = (
     "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "overflow_safe_route_norm_integrity_replacement_v3"
+    "physical_comparison_alias_state_integrity_replacement_v4"
 )
 RGB_ROOT_RELATIVE_PATH_V1 = v27_evaluation.RGB_ROOT_RELATIVE_PATH_V27
 TRAIN_MICROBATCH_SIZE_V1 = schedule.MEMORY_MICROBATCH_SIZE_V1

@@ -25,38 +25,38 @@ from scripts import launch_go2_rgb_memory_role_factorized_joint_jepa_v1 as v5_la
 
 SCHEMA_PREFIX = (
     "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "overflow_safe_route_norm_integrity_replacement_v3"
+    "physical_comparison_alias_state_integrity_replacement_v4"
 )
 PREREGISTRATION_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "overflow_safe_route_norm_integrity_replacement_v3_preregistration_2026-07-31.md"
+    "physical_comparison_alias_state_integrity_replacement_v4_preregistration_2026-07-31.md"
 )
-PREREGISTRATION_COMMIT = "68a9684568eeb6ce80751c17077abb1a3b62db87"
+PREREGISTRATION_COMMIT = "1d81275ab86e98bc909f7716afbc42d963e99131"
 SOURCE_MANIFEST_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "overflow_safe_route_norm_integrity_replacement_v3_source_manifest_2026-07-31.json"
+    "physical_comparison_alias_state_integrity_replacement_v4_source_manifest_2026-07-31.json"
 )
 SOURCE_REVIEW_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "overflow_safe_route_norm_integrity_replacement_v3_source_review_2026-07-31.json"
+    "physical_comparison_alias_state_integrity_replacement_v4_source_review_2026-07-31.json"
 )
 CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "overflow_safe_route_norm_integrity_replacement_v3_clean_export_certification_"
+    "physical_comparison_alias_state_integrity_replacement_v4_clean_export_certification_"
     "2026-07-31.json"
 )
 AUTHORITY_RELATIVE_PATH = (
     "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "overflow_safe_route_norm_integrity_replacement_v3_execution_authorization_"
+    "physical_comparison_alias_state_integrity_replacement_v4_execution_authorization_"
     "2026-07-31.json"
 )
 OUTPUT_ROOT_RELATIVE_PATH = (
     ".generated/go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_"
-    "overflow_safe_route_norm_integrity_replacement_v3/attempt_v1"
+    "physical_comparison_alias_state_integrity_replacement_v4/attempt_v1"
 )
 CERTIFIED_SOURCE_ROOT = (
     "/home/andrewknowles/Workspace/"
-    "LeWMQuad-v3-v18-spatial-token-delay-line-overflow-safe-route-norm-integrity-replacement-v3-source"
+    "LeWMQuad-v3-v18-spatial-token-delay-line-physical-comparison-alias-state-integrity-replacement-v4-source"
 )
 MODEL_CLASS_NAME = "V18SpatialTokenDelayLineCausalConvolutionJointJepaV1"
 MODEL_MODULE_NAME = (
@@ -602,6 +602,44 @@ def _physical_control_count(controls: Mapping[str, Any]) -> int:
     return sum(value is True for value in flattened.values())
 
 
+def _physical_observation_v1(
+    runtime: Any,
+    model: Any,
+    *,
+    outer_update: int,
+    integrity_pass: bool,
+) -> Mapping[str, Any]:
+    """Release V19's inner alias receipt after one complete V18 observation."""
+
+    alias = PHYSICAL_OBSERVATION_ALIAS[outer_update]
+    missing = object()
+    before = getattr(runtime, "causal_comparisons_v19", missing)
+    if before is not missing and (type(before) is not dict or before):
+        raise RuntimeError(
+            "V18 physical comparison alias cache is malformed or nonempty before observation"
+        )
+    result = physical_executor._observation_v13(
+        runtime,
+        model,
+        update=alias,
+        integrity_pass=integrity_pass,
+    )
+    after = getattr(runtime, "causal_comparisons_v19", None)
+    if type(after) is not dict or set(after) != {alias}:
+        raise RuntimeError(
+            "V18 physical comparison alias cache has missing or unexpected keys"
+        )
+    captured = after[alias]
+    if type(captured) is not dict or tuple(captured) != tuple(CONTROL_NAMES):
+        raise RuntimeError(
+            "V18 physical comparison alias cache control structure changed"
+        )
+    del after[alias]
+    if after:
+        raise RuntimeError("V18 physical comparison alias cache cleanup is incomplete")
+    return result
+
+
 def _observation(
     *,
     runtime: Any,
@@ -614,8 +652,11 @@ def _observation(
 ) -> tuple[dict[str, Any], metrics.ObservationMetrics, float]:
     physical_alias = PHYSICAL_OBSERVATION_ALIAS[update]
     place_alias = PLACE_OBSERVATION_ALIAS[update]
-    physical = physical_executor._observation_v13(
-        runtime, model, update=physical_alias, integrity_pass=training_integrity_pass
+    physical = _physical_observation_v1(
+        runtime,
+        model,
+        outer_update=update,
+        integrity_pass=training_integrity_pass,
     )
     roles = role_runtime.evaluate_role_metrics(
         model, update=place_alias, device=runtime.device
