@@ -848,6 +848,24 @@ These instructions apply to the entire repository.
   held-out, sealed, production, promotion, deployment, retry, scientific
   resume, recovery execution, second V4 attempt, fifth integrity replacement,
   architecture variant, or further-attempt authority.
+- The RGB single-frame multiblock masked-spatial JEPA V1 source may
+  additionally be clean exported only from frozen source-and-review commit
+  `d3eeb50389b1a5a587cb9ae55d7acd81d1f7b068`, and only as (a) the 57
+  paths in its committed recursive source manifest and (b) its exact
+  preregistration, source manifest, and independent source review paths
+  explicitly enumerated and SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1_clean_export_certification_2026-07-31.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The certification itself and later one-shot authority may
+  be added to the narrow export only at their exact reviewed paths after their
+  respective commits and exact file-SHA-256 validation. This source-only
+  exception grants no generated-input, runtime-artifact, checkpoint, tensor,
+  schedule, dataset-payload, RGB, GPU, training, qualification, benchmark,
+  memory, temporal-prediction, navigation, G2, held-out, sealed, production,
+  promotion, deployment, retry, resume, recovery, second attempt, or further-
+  attempt authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
