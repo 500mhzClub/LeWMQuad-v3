@@ -1,0 +1,473 @@
+{
+  "schema": "lewm_go2_rgb_scene_local_place_joint_jepa_v5_scientific_result_v1",
+  "status": "PASS_COMPLETE_VALID_SCIENTIFIC_FAILURE_AUDIT",
+  "date": "2026-07-31",
+  "content_sha256": "c7ff442f924877da7fb8907c9e4153ebfcd194775b9f9e938bd4c945e1c3c1c8",
+  "classification": "VALID_UPDATE100_TERMINAL_SCIENTIFIC_FAILURE_NOT_INFRASTRUCTURE_FAILURE",
+  "attempt": {
+    "attempt_number": 1,
+    "certified_source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-scene-local-place-joint-jepa-v5-source",
+    "output_root": ".generated/go2_rgb_scene_local_place_joint_jepa_v5/attempt_v1",
+    "reservation_created_utc": "2026-07-31T01:05:39Z",
+    "one_shot_consumed": true,
+    "terminal_status": "FAIL_SCIENTIFIC_UPDATE100_CONTINUATION_GATE_TERMINAL",
+    "terminal_action": "STOP_VALID_SCIENTIFIC_FAILURE_AT_UPDATE_100",
+    "terminal_update": 100,
+    "attempt_consumed": true,
+    "checkpoint_published": false,
+    "private_restart_state_published": true,
+    "private_restart_state_scientific_promotion": false,
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "memory_integration_executed": false,
+    "navigation_executed": false
+  },
+  "scientific_identity": {
+    "architecture": "joint_RGB_encoder_physical_JEPA_immediate_action_local_control_spatial_place_predictor_and_stop_gradient_EMA_target",
+    "model_class": "MemoryRoleSpatialContrastiveJointJepaV3",
+    "model_and_predictor_jointly_trained": true,
+    "predictor_trained_separately": false,
+    "place_mechanism": "direct_positive_alignment_plus_scene_local_distinct_place_ranking_with_variance_and_covariance_anti_collapse",
+    "place_objective_version": 5,
+    "place_graph_batch_size": 8,
+    "scene_local_group_count": 2,
+    "scene_local_group_size": 4,
+    "competitors_per_query": 4,
+    "cross_group_or_cross_scene_competitors": 0,
+    "ranking_margin": 0.05,
+    "model_seed": 20260732,
+    "projection_seed": 20260729,
+    "maximum_updates": 400,
+    "maximum_presentations": 12800,
+    "observations": [0, 100, 400],
+    "actual_updates": 100,
+    "actual_presentations": 3200,
+    "fresh_initialization": true,
+    "v4_state_reused": false,
+    "physical_and_local_routes_unchanged": true,
+    "optimizer_ema_data_roles_and_rgb_normalization_unchanged": true
+  },
+  "accounting": {
+    "autograd_grad_calls": 1500,
+    "ema_steps": 100,
+    "ema_target_rgb_encodings": 2400,
+    "local_microbatch_graphs": 200,
+    "local_presentations": 800,
+    "local_rgb_decodes": 1600,
+    "online_rgb_encodings": 4800,
+    "optimizer_steps": 100,
+    "physical_microbatch_graphs": 400,
+    "physical_presentations": 1600,
+    "physical_rgb_decodes": 3200,
+    "place_microbatch_graphs": 100,
+    "place_presentations": 800,
+    "place_rgb_decodes": 2400,
+    "presentations": 3200,
+    "rgb_decodes": 7200,
+    "updates": 100
+  },
+  "terminal_gate": {
+    "schema": "lewm_go2_rgb_scene_local_place_joint_jepa_v5_update100_continuation_gate_v1",
+    "passed": false,
+    "action": "STOP_VALID_SCIENTIFIC_FAILURE_AT_UPDATE_100",
+    "check_count": 16,
+    "passed_check_count": 14,
+    "failed_check_count": 2,
+    "failed_checks": [
+      "place_retrieval_retains_at_least_90_percent_of_update0",
+      "positive_revisit_energy_strictly_below_update0"
+    ],
+    "passed_checks": [
+      "structural_integrity_pass",
+      "split_integrity_pass",
+      "scene_local_schedule_integrity_pass",
+      "place_target_integrity_pass",
+      "place_access_integrity_pass",
+      "local_target_integrity_pass",
+      "local_access_integrity_pass",
+      "place_retrieval_r5_at_least_2x_exact_chance",
+      "place_scene_count_above_chance_at_least_6_of_8",
+      "target_place_key_effective_rank_at_least_2",
+      "target_place_key_rank_retains_at_least_80_percent_of_update0",
+      "place_separation_bootstrap_lower_95_positive",
+      "place_positive_family_count_at_least_6_of_8",
+      "passed_physical_margin_count_at_least_60_of_189"
+    ],
+    "observed": {
+      "recall_at_5": 0.19813988095238094,
+      "exact_chance_recall_at_5": 0.09295603393193436,
+      "chance_multiple": 2.131544049065883,
+      "update0_chance_multiple": 2.3986874311070916,
+      "chance_multiple_retention_ratio": 0.8886293484608325,
+      "recall_at_5_required_for_90_percent_retention": 0.20067522321428571,
+      "recall_at_5_shortfall_to_retention_floor": 0.0025353422619047716,
+      "scene_count_above_chance": 7,
+      "target_place_key_effective_rank": 2.4472920894622803,
+      "update0_target_place_key_effective_rank": 2.6142773628234863,
+      "target_place_key_rank_retention_ratio": 0.9361256476700477,
+      "positive_revisit_energy_mean": 0.019800817221403123,
+      "update0_positive_revisit_energy_mean": 0.014541243016719819,
+      "positive_revisit_energy_change": 0.0052595742046833045,
+      "negative_minus_positive_bootstrap_lower_95": 0.005546950706325117,
+      "positive_family_count": 8,
+      "passed_physical_margin_count": 73,
+      "physical_margin_count": 189
+    },
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "metric_trajectory": [
+    {
+      "update": 0,
+      "integrity_pass": true,
+      "place": {
+        "recall_at_5": 0.22297247023809524,
+        "exact_chance_recall_at_5": 0.09295603393193436,
+        "chance_multiple": 2.3986874311070916,
+        "scene_count_above_chance": 8,
+        "positive_energy_mean": 0.014541243016719819,
+        "negative_energy_mean": 0.023083561100065708,
+        "negative_minus_positive_mean": 0.00854231808334589,
+        "negative_minus_positive_bootstrap_lower_95": 0.005780303399522035,
+        "positive_family_count": 7,
+        "target_place_key_effective_rank": 2.6142773628234863,
+        "predicted_place_key_effective_rank": 2.5714104175567627
+      },
+      "local": {
+        "wrong_minus_correct_mean": 0.0008675515840396121,
+        "wrong_minus_correct_bootstrap_lower_95": 0.0008056318364562502,
+        "wrong_action_positive_family_count": 8,
+        "correct_to_persistence_energy_ratio": 73.23038233039364,
+        "persistence_advantage_bootstrap_lower_95": -0.011829995419075945,
+        "persistence_positive_family_count": 0
+      },
+      "physical": {
+        "passed_margin_count": 39,
+        "margin_count": 189,
+        "total_shortfall": 191.5839970395566,
+        "worst_margin": -18.476295852661128
+      }
+    },
+    {
+      "update": 100,
+      "integrity_pass": true,
+      "place": {
+        "recall_at_5": 0.19813988095238094,
+        "exact_chance_recall_at_5": 0.09295603393193436,
+        "chance_multiple": 2.131544049065883,
+        "scene_count_above_chance": 7,
+        "positive_energy_mean": 0.019800817221403123,
+        "negative_energy_mean": 0.0279307559132576,
+        "negative_minus_positive_mean": 0.008129938691854476,
+        "negative_minus_positive_bootstrap_lower_95": 0.005546950706325117,
+        "positive_family_count": 8,
+        "target_place_key_effective_rank": 2.4472920894622803,
+        "predicted_place_key_effective_rank": 2.418463945388794
+      },
+      "local": {
+        "wrong_minus_correct_mean": 0.013398949676130244,
+        "wrong_minus_correct_bootstrap_lower_95": 0.012361665301151377,
+        "wrong_action_positive_family_count": 8,
+        "correct_to_persistence_energy_ratio": 44.20467631799331,
+        "persistence_advantage_bootstrap_lower_95": -0.0057698388046992155,
+        "persistence_positive_family_count": 0
+      },
+      "physical": {
+        "passed_margin_count": 73,
+        "margin_count": 189,
+        "total_shortfall": 73.81835255721995,
+        "worst_margin": -9.674666833877565
+      }
+    }
+  ],
+  "metric_deltas_update0_to_update100": {
+    "place_recall_at_5": -0.0248325892857143,
+    "place_chance_multiple": -0.2671433820412088,
+    "place_scene_count_above_chance": -1,
+    "place_positive_energy": 0.0052595742046833045,
+    "place_negative_energy": 0.004847194813191891,
+    "place_separation_mean": -0.0004123793914914131,
+    "place_separation_bootstrap_lower_95": -0.0002333526931969183,
+    "place_target_effective_rank": -0.16698527336120605,
+    "place_predicted_effective_rank": -0.15294647216796875,
+    "local_wrong_action_gap_mean": 0.012531398092090633,
+    "local_persistence_ratio": -29.025706012400327,
+    "physical_passed_margin_count": 34,
+    "physical_total_shortfall": -117.76564448233665,
+    "physical_worst_margin": 8.801629018783563
+  },
+  "comparison_to_v4_update100": {
+    "v4_result": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_scientific_result_2026-07-31.json",
+    "v4_result_file_sha256": "fa93b8b135927d8866a0c9c9ae9e975567c943e4242efb5fb546380e614fe03d",
+    "v4_result_content_sha256": "41b38c28730675be79c359900d42bf4c7e4c4c8163d82339456fa1a78e3f3173",
+    "v4_recall_at_5": 0.1263206845238095,
+    "v5_recall_at_5": 0.19813988095238094,
+    "recall_at_5_absolute_improvement": 0.07181919642857143,
+    "recall_at_5_relative_improvement": 0.5685466058017965,
+    "v4_positive_energy_mean": 0.0813130933791399,
+    "v5_positive_energy_mean": 0.019800817221403123,
+    "positive_energy_absolute_reduction": 0.06151227615773678,
+    "positive_energy_relative_reduction": 0.7564867305062725,
+    "v4_target_place_key_effective_rank": 2.1479299068450928,
+    "v5_target_place_key_effective_rank": 2.4472920894622803,
+    "target_rank_improvement": 0.2993621826171875,
+    "v4_physical_passed_margin_count": 70,
+    "v5_physical_passed_margin_count": 73,
+    "interpretation": "Scene-local competition removed most of V4's easy cross-scene shortcut damage and retained substantially more usable place structure. It did not reverse the remaining training-induced regression on same-place alignment or satisfy the frozen anti-regression guard."
+  },
+  "training_trace_findings": {
+    "last_update": {
+      "place_loss": 0.08047796785831451,
+      "alignment": 0.011668510735034943,
+      "ranking": 0.043218377977609634,
+      "variance": 0.025590375065803528,
+      "covariance": 0.000006985436357354047,
+      "hardest_competitor_minus_positive_mean": -0.0008253529667854309,
+      "active_ranking_hinge_count": 32,
+      "ranking_comparison_count": 32
+    },
+    "all_updates_forced_objective_version_5": true,
+    "all_updates_scene_local_groups": "two_contiguous_B4_groups",
+    "all_updates_cross_group_candidates": 0,
+    "all_updates_target_gradient_tensor_count": 0,
+    "interpretation": "The optimized batch objective remained active, but the hardest in-batch competitors were not cleanly separated and the learned changes did not generalize to the fixed checkpoint-selection revisit panel."
+  },
+  "scientific_findings": {
+    "earned": [
+      "valid_one_shot_scientific_falsification_with_exact_accounting_and_custody",
+      "all_structural_split_schedule_target_and_access_integrity_checks_passed",
+      "update100_R5_remained_2_13_times_exact_chance_in_7_of_8_scenes",
+      "target_effective_rank_retained_93_61_percent_of_update0",
+      "place_separation_bootstrap_lower_95_remained_positive_in_8_of_8_families",
+      "physical_margin_count_improved_from_39_to_73",
+      "scene_local_V5_materially_outperformed_cross_scene_V4_at_update100"
+    ],
+    "not_earned": [
+      "update100_continuation",
+      "positive_same_place_alignment_improvement",
+      "90_percent_update0_R5_retention",
+      "update400_memory_entry_evaluation",
+      "checkpoint_publication_or_reuse",
+      "learned_memory_integration",
+      "navigation_or_G2_evaluation"
+    ],
+    "interpretation": "The initial encoder already exposes useful single-frame place information. Scene-local V5 preserves much more of it than V4, but joint training still moves matching revisits apart and slightly reduces within-scene retrieval. This is evidence of an objective-to-use mismatch, not evidence that RGB lacks useful navigation features and not justification for an identical longer run.",
+    "identical_longer_run_warranted": false,
+    "identical_retry_or_resume_warranted": false,
+    "isolated_place_head_successor_warranted": false
+  },
+  "metric_scope_decision": {
+    "single_frame_place_retrieval_is_not_a_complete_memory_or_navigation_test": true,
+    "v5_single_frame_metrics_were_valid_falsification_guards_for_v5": true,
+    "failed_v5_guards_must_not_be_relaxed_post_hoc_to_promote_v5": true,
+    "all_v5_place_metrics_need_not_be_hard_gates_for_a_temporal_memory_JEPA": true,
+    "single_frame_place_retrieval_should_remain_diagnostic_unless_a_reusable_single_frame_place_key_is_claimed": true,
+    "next_temporal_JEPA_hard_requirements": [
+      "source_split_target_and_access_integrity",
+      "noncollapsed_perception_and_memory_states",
+      "ordered_causal_history_beats_reset_and_shuffled_history",
+      "action_conditioned_prediction_beats_identity_persistence",
+      "scene_disjoint_checkpoint_selection_improvement",
+      "physical_JEPA_quality_does_not_regress_below_a_preregistered_floor"
+    ],
+    "next_temporal_JEPA_diagnostics_not_automatic_hard_gates": [
+      "global_single_frame_place_R5",
+      "single_pair_positive_energy",
+      "single_frame_place_family_count"
+    ],
+    "reason": "Memory is responsible for accumulating an ordered sequence and disambiguating perceptually similar locations. The perception encoder must preserve informative stable evidence, but it need not solve global localization from one ambiguous frame."
+  },
+  "schedule_audit": {
+    "preflight_file_sha256": "092cda74851b3dd35975b828d14c5bda528e9778bede3e919f4cb3e52a50a59f",
+    "receipt_content_sha256": "61c53fe7df05b532dde5bf67efb20ef05fc17325043b551233eafb986d9c967e",
+    "ordered_group_binding_sha256": "2e00cd27f6ec26412bd5c2fb09cd9fd17765e67299c44fa8bb014395a79a53f9",
+    "planned_group_count": 800,
+    "planned_place_presentations": 3200,
+    "planned_groups_per_family": 100,
+    "planned_repeated_row_presentations": 377,
+    "planned_dropped_source_rows": 377,
+    "consumed_prefix_group_count": 200,
+    "consumed_prefix_place_presentations": 800,
+    "consumed_prefix_unique_train_rows": 787,
+    "consumed_prefix_repeated_presentations": 13,
+    "all_consumed_groups_one_scene_and_four_distinct_places": true,
+    "all_updates_two_B4_groups_and_zero_cross_group_candidates": true
+  },
+  "access_and_custody": {
+    "opened_roles": ["authority", "index", "train", "checkpoint_selection"],
+    "held_out_or_sealed_opened": false,
+    "probability_calibration_opened": false,
+    "navigation_executed": false,
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 138,
+    "certified_source_rehash_count": 138,
+    "label_source_rehash_count": 3,
+    "raw_consumed_file_rehash_count": 4732,
+    "local_rgb_open_attempt_count": 9576,
+    "local_rgb_open_success_count": 9576,
+    "local_rgb_decode_success_count": 9576,
+    "local_unique_rgb_leaf_count": 5588,
+    "local_unique_rgb_leaf_terminal_rehash_count": 5588,
+    "local_consumed_rgb_bindings_sha256": "fcf175be21b8dd23f9aeeadd1e8fa349bb459a5572a1bb2c13013ecf311f363f",
+    "place_triplet_loader_call_count": 1440,
+    "place_unique_row_count_opened": 1107,
+    "place_rgb_reference_attempt_count": 4320,
+    "place_rgb_reference_success_count": 4320,
+    "place_rgb_reference_failure_count": 0,
+    "place_rgb_sha256_verified_per_access_count": 4320,
+    "place_index_terminal_rehash_count": 2,
+    "role_index_terminal_rehash_count": 4,
+    "forbidden_input_count": 0,
+    "private_restart_tensor_opened_or_deserialized_during_result_audit": false,
+    "private_restart_tensor_stat_byte_count": 60182477,
+    "private_restart_tensor_declared_file_sha256": "90f5cdc349b32972d523ae360e9400ffe32d190393db52fe6dc8d5a1a56d8cac",
+    "private_restart_tensor_declared_hash_independently_verified": false
+  },
+  "artifact_audit": {
+    "root_mode_octal": "0700",
+    "file_mode_octal": "0444",
+    "symlink_count": 0,
+    "success_artifact_count": 0,
+    "public_checkpoint_count": 0,
+    "trace_row_count": 102,
+    "trace_expected_composition": "one_initialization_plus_100_contiguous_optimizer_ema_updates_plus_one_update100_terminal_gate",
+    "trace_all_rows_content_bound": true,
+    "reservation": {
+      "path": "reservation.json",
+      "byte_count": 459,
+      "file_sha256": "485b89611ff3421ca9d9b413e8a2206d8eae95641005d71b55b8edb7d7d36b3a",
+      "content_sha256": "4d1fe5dd8d6728696f7a4166639d0da38cfec3ca0dcce88809de5d9355b4e757"
+    },
+    "update_0": {
+      "path": "metrics/update_0.json",
+      "byte_count": 730179,
+      "file_sha256": "5e2fc77c7cdd2dc6d099ecd9113c1c49516434558ae26cc19a42756c03d89a6a",
+      "content_sha256": "bfe87a1842c936c8bfdf3933c6dae76f4786141f1aed57a25e19e5c0d9b5ac8e"
+    },
+    "update_100": {
+      "path": "metrics/update_100.json",
+      "byte_count": 729732,
+      "file_sha256": "b6d28d75c1443002b7780ceb627ec31200786f26e9c0e2f0b716bc411fef8787",
+      "content_sha256": "1c566bce0ff05a168a918f022f713d7fef581003a4c70576f3acc0b3f28d4d15"
+    },
+    "failure": {
+      "path": "failure.json",
+      "byte_count": 4222,
+      "file_sha256": "22e39b47d675c00c30fbe897e9f0712a64da8c229e43cc748656c5c03cae05ba",
+      "content_sha256": "8a24758f5c62c5317846f650045cea8d7caea30913496450aaf1c1b514681f9a"
+    },
+    "terminal_access": {
+      "path": "receipts/terminal_access.json",
+      "byte_count": 1726360,
+      "file_sha256": "76c98e4ac0f4693e89dc49e1cc3eb91783480caa55ee3dfcabc9753c321ca261",
+      "content_sha256": "0018df7590f8d8b14c609627a29551f006be3e0c185d1accc34f751e8836bac0"
+    },
+    "trace": {
+      "path": "trace.jsonl",
+      "byte_count": 792454,
+      "file_sha256": "faf01c8a766ab3ef8572cb639608a607ef16a4c6b2d0f8835ea31b50e79d75fd"
+    },
+    "private_restart_binding": {
+      "path": "private_restart/update_100.binding.json",
+      "byte_count": 585,
+      "file_sha256": "5b50f283aaa32e3a21288dc3fa8d89dd3555de6948d2042e7405f8519d58d9ce",
+      "content_sha256": "99e01d2db4be00be27d1788149224b4e049b125115e845bc6b4fbfeaf1477346",
+      "scientific_promotion": false,
+      "resume_authorized": false
+    }
+  },
+  "successor_boundary": {
+    "do_not_do": [
+      "retry_or_resume_V5",
+      "extend_V5_to_update400",
+      "publish_open_or_reuse_the_private_restart_state",
+      "relax_the_failed_preregistered_gates_post_hoc",
+      "run_an_isolated_scene_local_place_head_V6",
+      "claim_memory_or_navigation_readiness_from_single_frame_metrics"
+    ],
+    "diagnosed_mechanism_mismatch": "V5 fixed V4's cross-scene-negative shortcut but continued to optimize a single-frame place representation independently of the ordered temporal evidence that the navigation memory will consume. The batch loss remained active while fixed-panel same-place alignment regressed.",
+    "required_next_activity": "broader_joint_causal_memory_integration_mechanism_audit",
+    "next_mechanism_constraints": [
+      "remain_a_joint_JEPA_with_encoder_memory_and_predictor_trained_together",
+      "use_ordered_scene_disjoint_RGB_sequences_and actions",
+      "make_memory_state_not_a_separately_trained_downstream_probe",
+      "compare_ordered_history_against_reset_shuffled_and_persistence_controls",
+      "retain_physical_perception_quality",
+      "use_a_fresh_capped_falsification_and_no_rejected_checkpoint"
+    ],
+    "successor_experiment_authorized_by_this_result": false,
+    "held_out_or_sealed_access_authorized": false,
+    "G2_authorized": false,
+    "navigation_authorized": false
+  },
+  "lifecycle": {
+    "implementation_commit": "31f53bb8240794f3c453622a85a8c76dad65da86",
+    "source_closure_commit": "a4131a3c76af81a365908c1473a048797af90eb8",
+    "preregistration": {
+      "path": "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_preregistration_2026-07-31.md",
+      "commit": "6aa16589540db55ebc0442977f0b5fbb47c01454",
+      "byte_count": 7431,
+      "file_sha256": "073301798b754f000a9c7777e1641baff0898ebafb1ec03f532c618ef98ecd4e"
+    },
+    "schedule_preflight": {
+      "path": "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_schedule_preflight_2026-07-31.json",
+      "commit": "31f53bb8240794f3c453622a85a8c76dad65da86",
+      "byte_count": 6915,
+      "file_sha256": "092cda74851b3dd35975b828d14c5bda528e9778bede3e919f4cb3e52a50a59f",
+      "receipt_content_sha256": "61c53fe7df05b532dde5bf67efb20ef05fc17325043b551233eafb986d9c967e"
+    },
+    "source_manifest": {
+      "path": "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_source_manifest_2026-07-31.json",
+      "commit": "dfd3e8e9d13defe8789622804bc78d7de9144c18",
+      "byte_count": 41046,
+      "file_sha256": "575126bb22f66e697b89d12c0f0c3b26b1167f867ba1c62332d9b8257cdd4391",
+      "content_sha256": "09262a68e97721e523714404f45169f76b3a68d76c26ff2d264520388cbfecf8",
+      "source_count": 116,
+      "source_bindings_sha256": "b4a096cca9629aac14499bc32992cb39cc263d75d10a442925b7be3b187c72aa"
+    },
+    "source_review": {
+      "path": "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_source_review_2026-07-31.json",
+      "commit": "ce4c806f72042bd91292053009cf624b192a5c6d",
+      "byte_count": 4816,
+      "file_sha256": "7f080660745445f4e73e0350fd24d9984301701d9e8021d930181ab963a57e5d",
+      "content_sha256": "5bae68ed6d3fd162e2a7bc32c7b2d35ed74569211c414628c59cee847ca1cff9",
+      "focused_tests_passed": 77,
+      "focused_tests_failed": 0
+    },
+    "clean_export_certification": {
+      "path": "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_clean_export_certification_2026-07-31.json",
+      "commit": "07ea9d71d00862f196eb921c26ccbc35a6259400",
+      "byte_count": 24865,
+      "file_sha256": "68b7d11cadfc4f1401fade94e6047d0a43aaa06704082741024c5dcf38a8355c",
+      "content_sha256": "bea13f018910058b548681d4e57cc688945b368cfe650a10274bda67de3d2260",
+      "binding_count": 138,
+      "bindings_sha256": "7f6f736d38049e0d3d8f7ec8e25c1c42204452ad2f2309acc55b9a987e6f8e3c"
+    },
+    "execution_authorization": {
+      "path": "docs/lewm_go2_rgb_scene_local_place_joint_jepa_v5_execution_authorization_2026-07-31.json",
+      "commit": "556bf7285d7b383d5270f3899d60d8e03d4f44b5",
+      "byte_count": 5482,
+      "file_sha256": "50903095c1caf0638bcfbf9d3455bf96999e51877d06954c937e02a9957571fe",
+      "content_sha256": "1f7be4752c7150aaab9590125600d244ccddb9420308b3b579adfef9975dfa6f",
+      "canonical_authority_sha256": "08ac2a7c280be2cbd4f7b8be7d087a728914fe29caf1c01718b8c7d68a74a8db"
+    }
+  },
+  "independent_review": {
+    "status": "PASS",
+    "reviewers": [
+      {
+        "reviewer": "/root/v4_result_prep",
+        "finding": "All 16 gate checks, artifact and content hashes, 102 trace rows, exact accounting, authority binding, 138 source bindings, and custody ledgers independently reconcile. The private restart tensor was not opened."
+      },
+      {
+        "reviewer": "/root/v5_schedule_impl",
+        "finding": "The planned schedule and consumed prefix, two B4 group boundaries, zero cross-group candidates, place and local access, terminal rehashes, and absence of protected access independently pass. The private restart tensor was not opened."
+      },
+      {
+        "reviewer": "/root/v5_objective_impl",
+        "finding": "The scientific gate recomputation and V4 comparison independently classify V5 as a materially improved but still valid update100 scientific failure, with no isolated place-head retry or extension warranted."
+      }
+    ]
+  },
+  "authority": "terminal_result_and_broader_joint_memory_mechanism_audit_only_no_V5_retry_resume_private_restart_open_checkpoint_recovery_isolated_place_head_successor_probability_calibration_navigation_G2_heldout_sealed_production_promotion_or_deployment_authority"
+}
