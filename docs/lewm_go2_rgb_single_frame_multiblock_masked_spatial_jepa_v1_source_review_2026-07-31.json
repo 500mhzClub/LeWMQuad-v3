@@ -11,11 +11,16 @@
     "sealed_open_count": 0,
     "tensor_checkpoint_open_count": 0
   },
+  "blocker_corrections_verified": [
+    "canonical_authority_runtime_input_inventory_accepts_sorted_json_key_order",
+    "current_rgb_loader_is_local_current_only_and_no_follow",
+    "isolated_clean_closure_entrypoint_imports_pass"
+  ],
   "blockers": [],
-  "content_sha256": "78b8583728c8ca8241888bd7782ff49df56f528fd63337aead366831f8d78214",
+  "content_sha256": "b6a8e2cbb366654e0e20cb96864bf5be3a2a81a83dee04d8ef935f1546339202",
   "date": "2026-07-31",
   "execution_authorized": false,
-  "implementation_commit": "2856b07935bcb0e23c15ec8ab861bef73f358dad",
+  "implementation_commit": "d2e9f82824b17f75aac0eea9cbeeedd36009cd14",
   "lifecycle_review": {
     "attempt_count": 1,
     "certified_narrow_export_required": true,
@@ -27,12 +32,12 @@
     "terminal_failure_or_success_receipt_required": true
   },
   "manifest": {
-    "byte_count": 15785,
-    "content_sha256": "b3637498b3fe9fdff5b0e679ba5fc5abc9d5dd58dc1fd20f9c924242f6ceb22a",
-    "file_sha256": "7881df4f3223d420f688c09057ee57caf3c7ea3cb1823295c5384ff0e851ea7c",
+    "byte_count": 9295,
+    "content_sha256": "09e359a9c6fc258045fde634262f2376a9ffa0592711c44495bc37f0fc743068",
+    "file_sha256": "56702a78ce1bafa59b9771c13d47c04c282dc7c12c3051d469ce118ad0630722",
     "path": "docs/lewm_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1_source_manifest_2026-07-31.json",
-    "source_bindings_sha256": "818e307130e3c88e676fedec458cf9dcc03b533eeef657a9f6b4557f050dd84f",
-    "source_count": 57
+    "source_bindings_sha256": "3b6cc1be2cac554704074dffae599b374d8045ec433a5d933a8f2650e6a22d0b",
+    "source_count": 33
   },
   "passed": true,
   "preregistration": {
@@ -80,8 +85,8 @@
     "command_scope": "six_focused_model_metrics_runner_executor_launcher_and_source_closure_test_files",
     "cpu_only": true,
     "failed": 0,
-    "passed": 30,
+    "passed": 31,
     "synthetic_inputs_only": true,
-    "total": 30
+    "total": 31
   }
 }
