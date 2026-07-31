@@ -30,6 +30,7 @@ TRAIN_MICROBATCHES_PER_UPDATE_V1 = schedule.MEMORY_MICROBATCHES_PER_UPDATE_V1
 VALIDATION_BATCH_SIZE_V1 = 8
 TOKEN_SHAPE_V1 = (64, 16, 16)
 ACTION_COUNT_V1 = 9
+HOLD_ACTION_INDEX_V1 = 6
 PARTICIPATION_SPATIAL_ROWS_PER_MAP_V1 = 16
 OBSERVATION_UPDATES_V1 = (0, 100, 250, 500, 750, 1_000)
 
@@ -67,6 +68,28 @@ class DelayLineEnergyVectorsV1:
 
 
 @dataclass(frozen=True, slots=True)
+class HoldDiagnosticsV1:
+    """Evaluation-only HOLD slices, never inputs to a continuation gate.
+
+    ``mean_normalized_delta_from_real`` reports ``(E(arm)-E(real))/E(persistence)``
+    for each arm and horizon.  Thus the real arm is zero, the persistence arm
+    is the primary persistence lift, and the wrong-action arm is the primary
+    action lift on HOLD rows.
+    """
+
+    action_index: int
+    row_count: tuple[int, int, int, int]
+    mean_energy: Mapping[str, tuple[float, float, float, float]]
+    mean_normalized_delta_from_real: Mapping[
+        str, tuple[float, float, float, float]
+    ]
+    real_normalized_score: tuple[float, float, float, float]
+    persistence_lift: tuple[float, float, float, float]
+    action_lift: tuple[float, float, float, float]
+    ordered_history_lift: tuple[float, float, float, float]
+
+
+@dataclass(frozen=True, slots=True)
 class DelayLineValidationResultV1:
     """Complete temporal result consumed by observation/gate orchestration."""
 
@@ -76,6 +99,7 @@ class DelayLineValidationResultV1:
     online_rank: metrics.ParticipationRank
     memory_rank: metrics.ParticipationRank
     energies: DelayLineEnergyVectorsV1
+    hold_diagnostics: HoldDiagnosticsV1
     access_receipt: Mapping[str, int]
     memory_receipt: Mapping[str, int | str]
     integrity: Mapping[str, Any]
@@ -344,6 +368,83 @@ def _participation_rows(token_maps: torch.Tensor) -> torch.Tensor:
     return rows[:, ::stride, :].reshape(-1, 64).detach().to(device="cpu")
 
 
+def _hold_diagnostics(
+    energies: DelayLineEnergyVectorsV1,
+    rows: Sequence[h6.H6V2Row],
+) -> HoldDiagnosticsV1:
+    actions = torch.tensor(
+        [row.actions[2:] for row in rows],
+        dtype=torch.long,
+    )
+    arms = {
+        name: getattr(energies, name)
+        for name in (
+            "real",
+            "persistence",
+            "wrong_action",
+            "reset",
+            "reverse",
+            "shuffle",
+        )
+    }
+    counts: list[int] = []
+    mean_energy: dict[str, list[float]] = {name: [] for name in arms}
+    mean_delta: dict[str, list[float]] = {name: [] for name in arms}
+    score: list[float] = []
+    persistence_lift: list[float] = []
+    action_lift: list[float] = []
+    history_lift: list[float] = []
+    for horizon in range(4):
+        selected = actions[:, horizon] == HOLD_ACTION_INDEX_V1
+        count = int(selected.sum())
+        if count <= 0:
+            raise DelayLineEvaluationContractError(
+                f"HOLD diagnostic has no H{horizon + 1} row"
+            )
+        denominator = energies.persistence[selected, horizon]
+        if bool((denominator <= 0.0).any()):
+            raise DelayLineEvaluationContractError(
+                "HOLD persistence denominator is not positive"
+            )
+        real = energies.real[selected, horizon]
+        counts.append(count)
+        for name, arm in arms.items():
+            selected_arm = arm[selected, horizon]
+            mean_energy[name].append(float(selected_arm.mean()))
+            mean_delta[name].append(
+                float(((selected_arm - real) / denominator).mean())
+            )
+        selected_score = real / denominator
+        selected_action_lift = (
+            energies.wrong_action[selected, horizon] - real
+        ) / denominator
+        best_history = torch.minimum(
+            torch.minimum(
+                energies.reset[selected, horizon],
+                energies.reverse[selected, horizon],
+            ),
+            energies.shuffle[selected, horizon],
+        )
+        score.append(float(selected_score.mean()))
+        persistence_lift.append(float((1.0 - selected_score).mean()))
+        action_lift.append(float(selected_action_lift.mean()))
+        history_lift.append(float(((best_history - real) / denominator).mean()))
+    return HoldDiagnosticsV1(
+        action_index=HOLD_ACTION_INDEX_V1,
+        row_count=tuple(counts),
+        mean_energy={
+            name: tuple(values) for name, values in mean_energy.items()
+        },
+        mean_normalized_delta_from_real={
+            name: tuple(values) for name, values in mean_delta.items()
+        },
+        real_normalized_score=tuple(score),
+        persistence_lift=tuple(persistence_lift),
+        action_lift=tuple(action_lift),
+        ordered_history_lift=tuple(history_lift),
+    )
+
+
 def _validate_validation_rows(rows: Sequence[h6.H6V2Row]) -> tuple[h6.H6V2Row, ...]:
     ordered = tuple(rows)
     if (
@@ -553,8 +654,12 @@ def stream_validation_delay_line_metrics(
 
                 target_rows.append(_participation_rows(target_all[:, 2]))
                 online_rows.append(_participation_rows(online[:, 2]))
-                valid_memory_maps = real_state.tokens[real_state.valid]
-                memory_rows.append(_participation_rows(valid_memory_maps))
+                # Memory rank must audit the learned predictor output, not the
+                # already-audited observed encoder tape.  Otherwise a collapsed
+                # causal reader could inherit a healthy online-state rank.
+                memory_rows.append(
+                    _participation_rows(real.reshape(-1, *TOKEN_SHAPE_V1))
+                )
 
             target_modules_are_frozen = all(
                 not parameter.requires_grad
@@ -593,6 +698,7 @@ def stream_validation_delay_line_metrics(
     target_rank = metrics.participation_rank(torch.cat(target_rows, dim=0))
     online_rank = metrics.participation_rank(torch.cat(online_rows, dim=0))
     memory_rank = metrics.participation_rank(torch.cat(memory_rows, dim=0))
+    hold_diagnostics = _hold_diagnostics(energies, ordered)
     after_access = loader.access_snapshot()
 
     update_zero_max_energy_delta = max(
@@ -629,6 +735,7 @@ def stream_validation_delay_line_metrics(
         online_rank=online_rank,
         memory_rank=memory_rank,
         energies=energies,
+        hold_diagnostics=hold_diagnostics,
         access_receipt=access_receipt,
         memory_receipt={
             "algorithm": "one_pass_scalar_energy_bounded_rank_sampling",
@@ -803,8 +910,10 @@ __all__ = [
     "DelayLineValidationResultV1",
     "FUTURE_ACTIONS_KEY_V1",
     "FUTURE_RGB_KEY_V1",
+    "HOLD_ACTION_INDEX_V1",
     "HISTORY_ACTIONS_KEY_V1",
     "HISTORY_RGB_KEY_V1",
+    "HoldDiagnosticsV1",
     "OBSERVATION_UPDATES_V1",
     "REQUIRED_MEMORY_BATCH_KEYS_V1",
     "RGB_ROOT_RELATIVE_PATH_V1",

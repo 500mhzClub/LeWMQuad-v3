@@ -198,6 +198,33 @@ class _TinyDelayLineModel(nn.Module):
         return _Step(prediction, _State(tokens, valid, actions))
 
 
+class _CollapsedPredictorModel(_TinyDelayLineModel):
+    def predict_from_state(
+        self,
+        state: _State,
+        action_one_hot: torch.Tensor,
+    ) -> _Step:
+        prediction = torch.zeros_like(state.tokens[:, 0])
+        prediction[:, 0] = 1.0
+        tokens = torch.cat((prediction[:, None], state.tokens[:, :-1]), dim=1)
+        valid = torch.cat(
+            (
+                torch.ones(
+                    state.valid.shape[0],
+                    1,
+                    dtype=torch.bool,
+                    device=state.valid.device,
+                ),
+                state.valid[:, :-1],
+            ),
+            dim=1,
+        )
+        actions = torch.cat(
+            (action_one_hot[:, None], state.actions[:, :-1]), dim=1
+        )
+        return _Step(prediction, _State(tokens, valid, actions))
+
+
 def test_safe_loader_reads_all_seven_registered_leaves_without_cache(
     tmp_path: Path,
 ) -> None:
@@ -300,11 +327,31 @@ def test_streamed_temporal_evaluation_is_deterministic_and_update_zero_exact() -
     assert first.target_rank.noncollapsed
     assert first.online_rank.noncollapsed
     assert first.memory_rank.noncollapsed
+    assert first.memory_rank.row_count == 16 * 4 * 16
     assert first.integrity["passed"] is True
     assert first.integrity["future_rgb_online_access_count"] == 0
     assert first.access_receipt["rgb_tensor_request_count"] == 16 * 7
     assert first.memory_receipt["retained_full_row_latent_count"] == 0
     assert first.memory_receipt["retained_scalar_energy_count"] == 16 * 4 * 6
+    hold = first.hold_diagnostics
+    assert hold.action_index == 6
+    assert hold.row_count == tuple(
+        sum(row.actions[2 + horizon] == 6 for row in rows)
+        for horizon in range(4)
+    )
+    assert tuple(hold.mean_energy) == (
+        "real",
+        "persistence",
+        "wrong_action",
+        "reset",
+        "reverse",
+        "shuffle",
+    )
+    for values in hold.mean_normalized_delta_from_real.values():
+        assert values == pytest.approx((0.0, 0.0, 0.0, 0.0), abs=1.0e-12)
+    assert hold.persistence_lift == pytest.approx(
+        (0.0, 0.0, 0.0, 0.0), abs=1.0e-12
+    )
 
     second = evaluation.stream_validation_delay_line_metrics(
         model,
@@ -319,6 +366,30 @@ def test_streamed_temporal_evaluation_is_deterministic_and_update_zero_exact() -
     assert first.temporal == second.temporal
     assert first.target_rank == second.target_rank
     assert first.memory_rank == second.memory_rank
+
+
+def test_memory_rank_detects_a_collapsed_learned_rollout() -> None:
+    rows = tuple(
+        _row("val", index, family=h6.FAMILIES[index % len(h6.FAMILIES)])
+        for index in range(16)
+    )
+
+    result = evaluation.stream_validation_delay_line_metrics(
+        _CollapsedPredictorModel(),
+        rows,
+        update=100,
+        loader=_SyntheticLoader(),
+        device="cpu",
+        bootstrap_replicates=40,
+        bootstrap_seed=123,
+    )
+
+    assert result.online_rank.noncollapsed
+    assert result.target_rank.noncollapsed
+    assert not result.memory_rank.noncollapsed
+    assert result.memory_rank.participation_rank_ratio < 0.10
+    assert result.integrity["checks"]["memory_state_noncollapsed"] is False
+    assert result.integrity["passed"] is False
 
 
 def test_validation_rejects_non_b8_or_out_of_order_rows() -> None:
