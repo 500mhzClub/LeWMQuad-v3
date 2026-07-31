@@ -66,6 +66,237 @@ def test_nested_physical_builder_schema_aliases_are_exact() -> None:
     assert runner.REQUIRED_BATCH_KEYS_V24 == runner.v25.REQUIRED_BATCH_KEYS_V24
 
 
+def test_overflow_safe_route_norm_matches_legacy_in_normal_and_zero_ranges() -> None:
+    normal_gradients = (torch.tensor((3.0, 4.0), dtype=torch.float32),)
+    legacy_norm, legacy_scale = (
+        runner.v25._tensor_core._route_norm_and_scale_v13(
+            torch, normal_gradients
+        )
+    )
+    receipt, applied_scale = runner._route_norm_and_scale_v1(
+        torch,
+        "normal_reference",
+        normal_gradients,
+        parameter_tensor_count=1,
+        absent_tensor_gradient_count=0,
+    )
+    assert receipt == runner.GradientRouteReceiptV1(
+        route_name="normal_reference",
+        raw_gradients_finite=True,
+        maximum_absolute_raw_gradient=4.0,
+        preclip_l2=pytest.approx(float(legacy_norm), abs=1.0e-7),
+        applied_scale=pytest.approx(float(legacy_scale), abs=1.0e-7),
+        parameter_tensor_count=1,
+        absent_tensor_gradient_count=0,
+    )
+    assert torch.allclose(
+        applied_scale, legacy_scale, rtol=1.0e-7, atol=1.0e-7
+    )
+
+    zero_gradients = (torch.zeros(5, dtype=torch.float32),)
+    zero_legacy_norm, zero_legacy_scale = (
+        runner.v25._tensor_core._route_norm_and_scale_v13(
+            torch, zero_gradients
+        )
+    )
+    zero_receipt, zero_scale = runner._route_norm_and_scale_v1(
+        torch,
+        "zero_reference",
+        zero_gradients,
+        parameter_tensor_count=1,
+        absent_tensor_gradient_count=0,
+    )
+    assert zero_receipt.preclip_l2 == float(zero_legacy_norm) == 0.0
+    assert zero_receipt.applied_scale == float(zero_legacy_scale) == 1.0
+    assert float(zero_scale) == 1.0
+
+
+@pytest.mark.parametrize("value", (float("nan"), float("inf")))
+def test_overflow_safe_route_norm_rejects_named_nonfinite_raw_gradient(
+    value: float,
+) -> None:
+    route_name = "injected_nonfinite_route"
+    with pytest.raises(FloatingPointError) as caught:
+        runner._route_norm_and_scale_v1(
+            torch,
+            route_name,
+            (torch.tensor((1.0, value), dtype=torch.float32),),
+            parameter_tensor_count=1,
+            absent_tensor_gradient_count=0,
+        )
+    message = str(caught.value)
+    assert f"route={route_name!r}" in message
+    assert "stage=raw_gradient_finiteness" in message
+    assert "raw_gradients_finite=False" in message
+    assert "maximum_absolute_raw_gradient=" in message
+    assert "preclip_l2=not_computed" in message
+    assert "applied_scale=not_computed" in message
+
+
+def _rollout_persistence_predictor(
+    predictor: nn.Module,
+    tokens: torch.Tensor,
+    validity: torch.Tensor,
+    action_tape: torch.Tensor,
+) -> torch.Tensor:
+    predictions = []
+    current_tokens = tokens
+    current_validity = validity
+    for _ in range(4):
+        prediction = predictor(
+            current_tokens,
+            current_validity,
+            action_tape,
+        )
+        predictions.append(prediction)
+        current_tokens = torch.cat(
+            (prediction[:, None], current_tokens[:, :-1]),
+            dim=1,
+        )
+        current_validity = torch.cat(
+            (
+                torch.ones(
+                    (tokens.shape[0], 1),
+                    dtype=torch.bool,
+                    device=tokens.device,
+                ),
+                current_validity[:, :-1],
+            ),
+            dim=1,
+        )
+    return torch.stack(predictions, dim=1)
+
+
+def test_registered_h4_masked_loss_overflow_is_clipped_to_unit_route() -> None:
+    model_api = importlib.import_module(
+        "lewm.models.v18_spatial_token_delay_line_causal_convolution_"
+        "joint_jepa_v1"
+    )
+    torch.manual_seed(7)
+    predictor = model_api.SpatialTokenDelayLineCausalConvolutionPredictorV1(
+        model_api.V18SpatialTokenDelayLineCausalConvolutionJointJepaV1Config()
+    )
+    batch_size = 2
+    tokens = F.normalize(
+        torch.randn(batch_size, 4, 64, 16, 16),
+        dim=2,
+    )
+    validity = torch.tensor(
+        ((True, True, True, False),) * batch_size,
+        dtype=torch.bool,
+    )
+    action_tape = F.one_hot(
+        torch.zeros((batch_size, 4), dtype=torch.long),
+        num_classes=9,
+    ).to(dtype=torch.float32)
+    block_rows = torch.arange(16) // 4
+    keep = (
+        block_rows[:, None] + block_rows[None, :]
+    ).remainder(2).eq(1)
+    masked_tokens = tokens.clone()
+    masked_tokens[:, 0] = (
+        masked_tokens[:, 0]
+        * keep[None, None].to(dtype=masked_tokens.dtype)
+    )
+    target = F.normalize(
+        torch.randn(batch_size, 4, 64, 16, 16),
+        dim=2,
+    )
+
+    full_predictions = _rollout_persistence_predictor(
+        predictor, tokens, validity, action_tape
+    )
+    masked_predictions = _rollout_persistence_predictor(
+        predictor, masked_tokens, validity, action_tape
+    )
+    zero_counts = [
+        int(
+            (
+                masked_predictions[:, horizon]
+                .square()
+                .sum(dim=1)
+                .eq(0)
+            )
+            .sum()
+            .item()
+        )
+        for horizon in range(4)
+    ]
+    assert zero_counts == [256, 256, 256, 256]
+
+    full_loss = (
+        1.0 - (full_predictions * target).sum(dim=2)
+    ).mean()
+    masked_loss = (
+        1.0 - (masked_predictions * target).sum(dim=2)
+    ).mean()
+    registered_loss = (
+        full_loss + 0.5 * masked_loss
+    ) / runner.MEMORY_MICROBATCHES_PER_UPDATE_V1
+    gradients = torch.autograd.grad(
+        registered_loss,
+        tuple(predictor.parameters()),
+    )
+    assert len(gradients) == 8
+    assert all(bool(torch.isfinite(value).all()) for value in gradients)
+    maximum = max(float(value.abs().max()) for value in gradients)
+    assert float(full_loss.detach()) == pytest.approx(
+        1.0020451545715332, abs=1.0e-7
+    )
+    assert float(masked_loss.detach()) == pytest.approx(
+        1.0025625228881836, abs=1.0e-7
+    )
+    assert float(registered_loss.detach()) == pytest.approx(
+        0.18791580200195312, abs=1.0e-7
+    )
+    assert maximum == pytest.approx(
+        2.003031701502789e20, rel=1.0e-6
+    )
+
+    legacy_total = gradients[0].new_zeros((), dtype=torch.float32)
+    for gradient in gradients:
+        legacy_total = legacy_total + (
+            gradient.float() * gradient.float()
+        ).sum(dtype=torch.float32)
+    assert bool(torch.isinf(torch.sqrt(legacy_total)))
+    with pytest.raises(
+        FloatingPointError, match="gradient norm or scale is nonfinite"
+    ):
+        runner.v25._tensor_core._route_norm_and_scale_v13(torch, gradients)
+
+    receipt, applied_scale = runner._route_norm_and_scale_v1(
+        torch,
+        runner.MEMORY_ROUTE_NAME_V1,
+        gradients,
+        parameter_tensor_count=len(gradients),
+        absent_tensor_gradient_count=0,
+    )
+    assert receipt.raw_gradients_finite is True
+    assert receipt.maximum_absolute_raw_gradient == pytest.approx(
+        maximum, rel=1.0e-6
+    )
+    assert receipt.preclip_l2 == pytest.approx(
+        1.2587330137152002e21, rel=1.0e-6
+    )
+    assert math.isfinite(receipt.applied_scale)
+    assert receipt.applied_scale > 0.0
+    assert receipt.applied_scale == pytest.approx(
+        1.0 / receipt.preclip_l2,
+        rel=1.0e-6,
+    )
+    clipped = tuple(applied_scale * gradient for gradient in gradients)
+    assert all(bool(torch.isfinite(value).all()) for value in clipped)
+    clipped_total = clipped[0].new_zeros((), dtype=torch.float64)
+    for gradient in clipped:
+        value = gradient.to(dtype=torch.float64)
+        clipped_total = clipped_total + (value * value).sum(
+            dtype=torch.float64
+        )
+    assert float(torch.sqrt(clipped_total)) == pytest.approx(
+        1.0, abs=1.0e-6
+    )
+
+
 def _strict_memory_batch() -> dict[str, torch.Tensor]:
     return {
         runner.MEMORY_HISTORY_RGB_KEY_V1: torch.zeros(
@@ -476,3 +707,12 @@ def test_one_mixed_cpu_update_has_exact_routes_step_ema_and_action_tape(
         runner.PREDICTOR_CORE_PROTECTED_SURVIVAL_ROUTE_NAME_V25,
         runner.MEMORY_ROUTE_NAME_V1,
     }
+    assert all(
+        isinstance(receipt, runner.GradientRouteReceiptV1)
+        and receipt.route_name == name
+        and receipt.raw_gradients_finite is True
+        and math.isfinite(receipt.maximum_absolute_raw_gradient)
+        and math.isfinite(receipt.preclip_l2)
+        and math.isfinite(receipt.applied_scale)
+        for name, receipt in result.gradient_routes.items()
+    )

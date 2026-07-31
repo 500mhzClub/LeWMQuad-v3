@@ -156,10 +156,21 @@ class JointTrainingAccountingV1:
 
 
 @dataclass(frozen=True)
+class GradientRouteReceiptV1:
+    route_name: str
+    raw_gradients_finite: bool
+    maximum_absolute_raw_gradient: float
+    preclip_l2: float
+    applied_scale: float
+    parameter_tensor_count: int
+    absent_tensor_gradient_count: int
+
+
+@dataclass(frozen=True)
 class JointUpdateResultV1:
     accounting: JointTrainingAccountingV1
     mean_losses: Mapping[str, float]
-    gradient_routes: Mapping[str, Any]
+    gradient_routes: Mapping[str, GradientRouteReceiptV1]
     memory_diagnostics: Mapping[str, Any]
     ranking_active_microbatches: int
     ranking_eligible_pairs: int
@@ -512,6 +523,163 @@ def _scalar(value: Any) -> float:
     return result
 
 
+def _route_diagnostic_value_v1(value: Any | None) -> str:
+    if value is None:
+        return "not_computed"
+    if hasattr(value, "detach"):
+        value = value.detach().cpu().item()
+    return repr(value)
+
+
+def _route_failure_message_v1(
+    route_name: str,
+    *,
+    stage: str,
+    raw_gradients_finite: bool | None,
+    maximum_absolute_raw_gradient: Any | None,
+    preclip_l2: Any | None,
+    applied_scale: Any | None,
+    detail: str,
+) -> str:
+    raw_finite = (
+        "not_computed"
+        if raw_gradients_finite is None
+        else repr(raw_gradients_finite)
+    )
+    return (
+        f"V18 route={route_name!r} stage={stage} "
+        f"raw_gradients_finite={raw_finite} "
+        "maximum_absolute_raw_gradient="
+        f"{_route_diagnostic_value_v1(maximum_absolute_raw_gradient)} "
+        f"preclip_l2={_route_diagnostic_value_v1(preclip_l2)} "
+        f"applied_scale={_route_diagnostic_value_v1(applied_scale)}: "
+        f"{detail}"
+    )
+
+
+def _route_norm_and_scale_v1(
+    torch: Any,
+    route_name: str,
+    gradients: Sequence[Any],
+    *,
+    parameter_tensor_count: int,
+    absent_tensor_gradient_count: int,
+) -> tuple[GradientRouteReceiptV1, Any]:
+    """Compute the registered route clip without float32-square overflow."""
+
+    if not gradients:
+        raise RuntimeError(
+            _route_failure_message_v1(
+                route_name,
+                stage="route_structure",
+                raw_gradients_finite=None,
+                maximum_absolute_raw_gradient=None,
+                preclip_l2=None,
+                applied_scale=None,
+                detail="gradient route is empty",
+            )
+        )
+    common_dtype = gradients[0].dtype
+    common_device = gradients[0].device
+    if (
+        not gradients[0].is_floating_point()
+        or any(
+            not gradient.is_floating_point()
+            or gradient.dtype != common_dtype
+            or gradient.device != common_device
+            for gradient in gradients
+        )
+    ):
+        raise TypeError(
+            _route_failure_message_v1(
+                route_name,
+                stage="route_structure",
+                raw_gradients_finite=None,
+                maximum_absolute_raw_gradient=None,
+                preclip_l2=None,
+                applied_scale=None,
+                detail="route gradients must share one floating dtype and device",
+            )
+        )
+
+    maximum = gradients[0].detach().new_zeros(())
+    raw_finite = True
+    first_nonfinite_index: int | None = None
+    for index, gradient in enumerate(gradients):
+        maximum = torch.maximum(maximum, gradient.detach().abs().max())
+        if not bool(torch.isfinite(gradient).all().item()):
+            raw_finite = False
+            if first_nonfinite_index is None:
+                first_nonfinite_index = index
+    if not raw_finite:
+        raise FloatingPointError(
+            _route_failure_message_v1(
+                route_name,
+                stage="raw_gradient_finiteness",
+                raw_gradients_finite=False,
+                maximum_absolute_raw_gradient=maximum,
+                preclip_l2=None,
+                applied_scale=None,
+                detail=(
+                    "raw gradient tensor "
+                    f"{first_nonfinite_index} is nonfinite"
+                ),
+            )
+        )
+
+    total = gradients[0].detach().new_zeros((), dtype=torch.float64)
+    for gradient in gradients:
+        value = gradient.detach().to(dtype=torch.float64)
+        total = total + (value * value).sum(dtype=torch.float64)
+    norm = torch.sqrt(total)
+    if not bool(torch.isfinite(norm).item()):
+        raise FloatingPointError(
+            _route_failure_message_v1(
+                route_name,
+                stage="preclip_norm",
+                raw_gradients_finite=True,
+                maximum_absolute_raw_gradient=maximum,
+                preclip_l2=norm,
+                applied_scale=None,
+                detail="overflow-safe route norm is nonfinite",
+            )
+        )
+
+    float32_tiny = norm.new_tensor(torch.finfo(torch.float32).tiny)
+    scale_float64 = torch.minimum(
+        norm.new_tensor(1.0),
+        torch.reciprocal(torch.maximum(norm, float32_tiny)),
+    )
+    applied_scale = scale_float64.to(dtype=common_dtype)
+    if (
+        not bool(torch.isfinite(scale_float64).item())
+        or not bool(torch.isfinite(applied_scale).item())
+        or not bool((applied_scale > 0).item())
+    ):
+        raise FloatingPointError(
+            _route_failure_message_v1(
+                route_name,
+                stage="applied_scale",
+                raw_gradients_finite=True,
+                maximum_absolute_raw_gradient=maximum,
+                preclip_l2=norm,
+                applied_scale=applied_scale,
+                detail="overflow-safe route scale is nonfinite or nonpositive",
+            )
+        )
+
+    receipt = GradientRouteReceiptV1(
+        route_name=route_name,
+        raw_gradients_finite=True,
+        maximum_absolute_raw_gradient=_scalar(maximum),
+        preclip_l2=_scalar(norm),
+        applied_scale=_scalar(applied_scale),
+        parameter_tensor_count=parameter_tensor_count,
+        absent_tensor_gradient_count=absent_tensor_gradient_count,
+    )
+    return receipt, applied_scale
+
+
 def joint_training_update_v1(
     model: Any,
     optimizer: Any,
@@ -771,8 +939,14 @@ def joint_training_update_v1(
         ),
     }
     route_values = {
-        name: v25._tensor_core._route_norm_and_scale_v13(torch, gradients)
-        for name, (_, gradients) in route_tensors.items()
+        name: _route_norm_and_scale_v1(
+            torch,
+            name,
+            gradients,
+            parameter_tensor_count=len(parameters),
+            absent_tensor_gradient_count=absent[name],
+        )
+        for name, (parameters, gradients) in route_tensors.items()
     }
     for name in (
         "camera_shared",
@@ -782,12 +956,59 @@ def joint_training_update_v1(
         PREDICTOR_CORE_PROTECTED_SURVIVAL_ROUTE_NAME_V25,
         MEMORY_ROUTE_NAME_V1,
     ):
-        if not (_scalar(route_values[name][0]) > 0.0):
-            raise RuntimeError(f"required delay-line route {name!r} is zero")
+        receipt, _ = route_values[name]
+        if not (receipt.preclip_l2 > 0.0):
+            raise RuntimeError(
+                _route_failure_message_v1(
+                    name,
+                    stage="required_nonzero_route",
+                    raw_gradients_finite=receipt.raw_gradients_finite,
+                    maximum_absolute_raw_gradient=(
+                        receipt.maximum_absolute_raw_gradient
+                    ),
+                    preclip_l2=receipt.preclip_l2,
+                    applied_scale=receipt.applied_scale,
+                    detail="required delay-line route is zero",
+                )
+            )
     if absent[PREDICTOR_CORE_PROTECTED_SURVIVAL_ROUTE_NAME_V25] != 0:
-        raise RuntimeError("delay-line J24 has an absent gradient")
+        name = PREDICTOR_CORE_PROTECTED_SURVIVAL_ROUTE_NAME_V25
+        receipt, _ = route_values[name]
+        raise RuntimeError(
+            _route_failure_message_v1(
+                name,
+                stage="required_gradient_presence",
+                raw_gradients_finite=receipt.raw_gradients_finite,
+                maximum_absolute_raw_gradient=(
+                    receipt.maximum_absolute_raw_gradient
+                ),
+                preclip_l2=receipt.preclip_l2,
+                applied_scale=receipt.applied_scale,
+                detail=(
+                    "delay-line J24 has "
+                    f"{absent[name]} absent gradients"
+                ),
+            )
+        )
     if absent[MEMORY_ROUTE_NAME_V1] != 0:
-        raise RuntimeError("delay-line memory route has an absent gradient")
+        name = MEMORY_ROUTE_NAME_V1
+        receipt, _ = route_values[name]
+        raise RuntimeError(
+            _route_failure_message_v1(
+                name,
+                stage="required_gradient_presence",
+                raw_gradients_finite=receipt.raw_gradients_finite,
+                maximum_absolute_raw_gradient=(
+                    receipt.maximum_absolute_raw_gradient
+                ),
+                preclip_l2=receipt.preclip_l2,
+                applied_scale=receipt.applied_scale,
+                detail=(
+                    "delay-line memory route has "
+                    f"{absent[name]} absent gradients"
+                ),
+            )
+        )
 
     route_gradient_maps = {
         name: {
@@ -834,13 +1055,8 @@ def joint_training_update_v1(
         raise RuntimeError("delay-line EMA accounting differs after update")
 
     receipts = {
-        name: v25._tensor_core._receipt_v13(
-            route_values[name][0],
-            route_values[name][1],
-            parameters,
-            absent[name],
-        )
-        for name, (parameters, _) in route_tensors.items()
+        name: receipt
+        for name, (receipt, _) in route_values.items()
     }
     physical_means = {
         name: value / PHYSICAL_MICROBATCHES_PER_UPDATE_V1
@@ -886,6 +1102,7 @@ build_frozen_optimizer_v13 = build_optimizer_v1
 
 __all__ = [
     "FULL_MEMORY_LOSS_WEIGHT_V1",
+    "GradientRouteReceiptV1",
     "JointTrainingAccountingV1",
     "JointUpdateResultV1",
     "MASKED_MEMORY_LOSS_WEIGHT_V1",
