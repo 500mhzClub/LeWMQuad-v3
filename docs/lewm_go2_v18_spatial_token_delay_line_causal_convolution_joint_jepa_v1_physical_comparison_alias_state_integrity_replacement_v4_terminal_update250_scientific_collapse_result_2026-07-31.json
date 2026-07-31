@@ -1,0 +1,763 @@
+{
+  "access_and_authority": {
+    "G2_payload_opened": false,
+    "held_out_or_sealed_opened": false,
+    "navigation_executed": false,
+    "output_json_artifacts_opened_for_audit": true,
+    "probability_calibration_opened": false,
+    "rejected_update250_snapshot_opened_or_hashed_for_audit": false,
+    "result_document_grants_execution_authority": false,
+    "result_document_grants_source_implementation_authority": false,
+    "runtime_tensor_or_checkpoint_opened_for_audit": false,
+    "snapshot_stat_only_size_check_performed": true,
+    "trace_jsonl_opened_for_audit": true
+  },
+  "classification": {
+    "attempt_consumed": true,
+    "attempt_terminal": true,
+    "checkpoint_selected": false,
+    "failure_class": "preregistered_update250_finite_nonzero_low_rank_collapse_and_persistence_shortcut",
+    "infrastructure_recovery_used": false,
+    "learning_quality_determined": true,
+    "retry_or_resume_v4_authorized": false,
+    "training_infrastructure_and_numerics_passed": true,
+    "update_100_scientific_observation_completed": true,
+    "update_250_futility_gate_reached": true,
+    "v18_delay_line_dynamics_mechanism_passed": false,
+    "v4_alias_state_adapter_validated": true
+  },
+  "content_sha256": "6f6f07113d5680757b959760d68adac16b3aba16f2862ba03d1a592ad2e9ee97",
+  "date": "2026-07-31",
+  "independent_review": {
+    "evidence_reviewers": [
+      "/root/delay_line_independent_review",
+      "/root/v18_replacement_lifecycle_prep",
+      "/root/v18_v2_schema_fix_review"
+    ],
+    "json_evidence_and_accounting_status": "PASS_INDEPENDENT_JSON_ONLY_AND_STAT_ONLY_AUDIT",
+    "snapshot_payload_review_status": "NOT_OPENED_NOT_HASHED_REJECTED_SCIENTIFIC_CHECKPOINT",
+    "terminal_result_document_status": "PASS_INDEPENDENT_FINAL_FILE_READBACK"
+  },
+  "infrastructure_conclusion": {
+    "alias_adapter_complete_observations": [
+      0,
+      100,
+      250
+    ],
+    "alias_adapter_left_reported_state_mutation_count": [
+      0,
+      0,
+      0
+    ],
+    "alias_adapter_physical_integrity_passed_each_observation": true,
+    "former_update100_one_shot_collision_recurred": false,
+    "physical_alias_preserved": 400,
+    "v3_infrastructure_blocker_corrected": true,
+    "v4_terminal_failure_is_infrastructure": false
+  },
+  "lifecycle": {
+    "clean_export_certification": {
+      "byte_count": 26932,
+      "commit": "8e3bf6e327caf50289b64ec577fa3c9f3bae3f75",
+      "content_sha256": "26367556c14d75fadeda3f5aaaacd5f3e9ef13b9b873e8766397e8029f5cd88e",
+      "file_sha256": "72cdab5d8610b77f0b19924f37f35f497c3370c3fb044fa06b2a095713a64c54",
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_physical_comparison_alias_state_integrity_replacement_v4_clean_export_certification_2026-07-31.json"
+    },
+    "custody_exception_commit": "2e069f07e12097155784e87d16a63c24384f4bd0",
+    "execution_authority": {
+      "byte_count": 6671,
+      "canonical_authority_sha256": "16108d1687e596216079ca0d4fda79e5d9c6c696a5c4992ec3f35b099cff07dd",
+      "commit": "1415a0e3f966376c6338dd27689d85caed1016db",
+      "content_sha256": "e72ee2873a7a0712ea5d099ff23950aaba72fe7f76b35f7d8ae129c3859ebfcc",
+      "file_sha256": "b5cfda92faec67c16055a413af1f4fda0003785efbcbb727425c34142fa24b03",
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_physical_comparison_alias_state_integrity_replacement_v4_execution_authorization_2026-07-31.json"
+    },
+    "implementation_commit": "0dfacb0a0059b9b2d14f44cfe2f2a32fbf6497f6",
+    "output_root": ".generated/go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_physical_comparison_alias_state_integrity_replacement_v4/attempt_v1",
+    "preregistration": {
+      "byte_count": 4990,
+      "commit": "1d81275ab86e98bc909f7716afbc42d963e99131",
+      "file_sha256": "d7872e1e4d68e2bf3d807989feb3c390c950192ffaaa1c698dedd01323222d67",
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_physical_comparison_alias_state_integrity_replacement_v4_preregistration_2026-07-31.md"
+    },
+    "source_and_review_commit": "bbb3cef31ace9f00ff743a26537e9e32b9854b45",
+    "source_manifest": {
+      "byte_count": 46072,
+      "content_sha256": "3fb04a65d7eff70b9546e74577cf2f4201dd911a50dfd5b31344513350ecb790",
+      "file_sha256": "84a352853bb0519d68f43189081dce2a74e0f8f50b66d546620d55f526b812b5",
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_physical_comparison_alias_state_integrity_replacement_v4_source_manifest_2026-07-31.json"
+    },
+    "source_review": {
+      "byte_count": 12301,
+      "content_sha256": "663cc1d8ff4b97756a6edb6e0064584558c73c2b51c1afcc5c8668391123d19e",
+      "file_sha256": "2da397e741c5d10ed929b9c718ebe66ea6e263c479a5a25636dd86b8c1e8bb6d",
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_physical_comparison_alias_state_integrity_replacement_v4_source_review_2026-07-31.json"
+    }
+  },
+  "metric_scope_interpretation": {
+    "essential_for_a_future_perception_frontend": [
+      "integrity and finite nonconstant raw spatial features",
+      "correct masked-target prediction beating shuffled wrong-RGB and mean-target controls",
+      "useful place and geometry discrimination with retained substrate quality"
+    ],
+    "essential_for_a_later_dynamics_or_memory_module": [
+      "beating coordinate-matched persistence",
+      "reliable action sensitivity",
+      "ordered-history benefit over reset reverse and shuffle",
+      "multi-horizon temporal prediction"
+    ],
+    "post_hoc_relaxation_of_v18_frozen_gate_permitted": false,
+    "raw_spatial_perception_encoder_proven_useless": false,
+    "reason_not_all_v18_metrics_belong_to_next_perception_probe": "V18 combined perception with a causal delay-line dynamics claim; the navigation stack will use a separate learned memory module",
+    "u250_substrate_remained_partly_useful": {
+      "place_chance_multiple": 1.6244718916932817,
+      "place_scene_count_above_chance": 6,
+      "target_place_rank": 2.1652748584747314,
+      "target_place_rank_retention": 0.8282498595084721
+    },
+    "v18_noncollapse_gate_valid_for_its_preregistered_claim": true
+  },
+  "noncollapse_gate": {
+    "effective_rank_ratio_minimum": 0.1,
+    "near_zero_fraction_maximum": 0.05,
+    "near_zero_std_threshold": 0.02,
+    "terminal_failed_checks": [
+      "integrity_pass",
+      "target_noncollapsed",
+      "online_noncollapsed",
+      "memory_noncollapsed"
+    ],
+    "terminal_gradient_accounting_passed": true,
+    "terminal_integrity_failure_source": "only the three absolute target online and memory noncollapse checks; all finite scale target freeze access and accounting checks passed"
+  },
+  "observation_trajectory": [
+    {
+      "absolute_noncollapse_enforced": false,
+      "integrity_pass": true,
+      "memory_rank": {
+        "effective_rank": 1.7260392829941273,
+        "feature_dimension": 64,
+        "finite": true,
+        "near_zero_fraction": 0.09375,
+        "noncollapsed": false,
+        "nonzero_scale": true,
+        "participation_rank_ratio": 0.02696936379678324,
+        "rms": 0.06250000148568159,
+        "row_count": 131072
+      },
+      "online_rank": {
+        "effective_rank": 1.7260392814385914,
+        "feature_dimension": 64,
+        "finite": true,
+        "near_zero_fraction": 0.09375,
+        "noncollapsed": false,
+        "nonzero_scale": true,
+        "participation_rank_ratio": 0.02696936377247799,
+        "rms": 0.0625000000068654,
+        "row_count": 32768
+      },
+      "perception_safeguards_pass": false,
+      "physical": {
+        "aggregate_gate_passed": false,
+        "causal_control_pass_count": 0,
+        "integrity_pass": true,
+        "passed_margin_count": 39,
+        "total_margin_count": 189
+      },
+      "physical_evaluator_alias_update": 400,
+      "place": {
+        "chance_multiple": 2.3986874311070916,
+        "evaluator_alias_update": 0,
+        "scene_count_above_chance": 8,
+        "target_place_rank": 2.6142773628234863,
+        "target_place_rank_retention": 1.0
+      },
+      "roles_integrity_pass": true,
+      "roles_passed": false,
+      "state_mutation_count": 0,
+      "target_rank": {
+        "effective_rank": 1.726039279386408,
+        "feature_dimension": 64,
+        "finite": true,
+        "near_zero_fraction": 0.09375,
+        "noncollapsed": false,
+        "nonzero_scale": true,
+        "participation_rank_ratio": 0.026969363740412627,
+        "rms": 0.06249999996050791,
+        "row_count": 32768
+      },
+      "temporal": {
+        "action_lift_bootstrap_lower_95": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "action_lift_macro": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "action_lift_positive_family_count": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "energy_means_by_horizon": {
+          "persistence": [
+            0.01772679452719389,
+            0.022252569190009674,
+            0.025466021466660216,
+            0.026507865447273404
+          ],
+          "real": [
+            0.017726794962300896,
+            0.022252569667537136,
+            0.025466021937935124,
+            0.026507866112086775
+          ],
+          "reset": [
+            0.017726794962300896,
+            0.022252569667537136,
+            0.025466021937935124,
+            0.026507866112086775
+          ],
+          "reverse": [
+            0.017726794962300896,
+            0.022252569667537136,
+            0.025466021937935124,
+            0.026507866112086775
+          ],
+          "shuffle": [
+            0.017726794962300896,
+            0.022252569667537136,
+            0.025466021937935124,
+            0.026507866112086775
+          ],
+          "wrong_action": [
+            0.017726794962300896,
+            0.022252569667537136,
+            0.025466021937935124,
+            0.026507866112086775
+          ]
+        },
+        "history_lift_bootstrap_lower_95": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "history_lift_macro": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "history_lift_positive_family_count": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "persistence_lift_bootstrap_lower_95": [
+          -3.296355544219453e-08,
+          -4.522486760930595e-08,
+          -3.404428448347959e-08,
+          -2.770436938486481e-08
+        ],
+        "persistence_lift_macro": [
+          -7.297673330753305e-09,
+          -2.3498572118451367e-08,
+          -1.217870038993128e-08,
+          -1.0262481829200749e-08
+        ],
+        "persistence_lift_positive_family_count": [
+          4,
+          0,
+          3,
+          5
+        ],
+        "real_over_persistence_score_bootstrap_lower_95": [
+          0.999999983484511,
+          1.000000001368496,
+          0.9999999887041413,
+          0.9999999930594916
+        ],
+        "real_over_persistence_score_macro": [
+          1.0000000072976734,
+          1.0000000234985722,
+          1.0000000121787003,
+          1.0000000102624818
+        ]
+      },
+      "update": 0
+    },
+    {
+      "absolute_noncollapse_enforced": false,
+      "integrity_pass": true,
+      "memory_rank": {
+        "effective_rank": 3.0928549900951223,
+        "feature_dimension": 64,
+        "finite": true,
+        "near_zero_fraction": 0.15625,
+        "noncollapsed": false,
+        "nonzero_scale": true,
+        "participation_rank_ratio": 0.048325859220236286,
+        "rms": 0.12500000008385115,
+        "row_count": 131072
+      },
+      "online_rank": {
+        "effective_rank": 1.681139163676021,
+        "feature_dimension": 64,
+        "finite": true,
+        "near_zero_fraction": 0.109375,
+        "noncollapsed": false,
+        "nonzero_scale": true,
+        "participation_rank_ratio": 0.026267799432437827,
+        "rms": 0.062499999980802114,
+        "row_count": 32768
+      },
+      "perception_safeguards_pass": false,
+      "physical": {
+        "aggregate_gate_passed": false,
+        "causal_control_pass_count": 4,
+        "integrity_pass": true,
+        "passed_margin_count": 59,
+        "total_margin_count": 189
+      },
+      "physical_evaluator_alias_update": 400,
+      "place": {
+        "chance_multiple": 2.1777688589921143,
+        "evaluator_alias_update": 100,
+        "scene_count_above_chance": 7,
+        "target_place_rank": 2.456561803817749,
+        "target_place_rank_retention": 0.939671451373698
+      },
+      "roles_integrity_pass": true,
+      "roles_passed": false,
+      "state_mutation_count": 0,
+      "target_rank": {
+        "effective_rank": 1.7474484741873504,
+        "feature_dimension": 64,
+        "finite": true,
+        "near_zero_fraction": 0.09375,
+        "noncollapsed": false,
+        "nonzero_scale": true,
+        "participation_rank_ratio": 0.02730388240917735,
+        "rms": 0.06249999997802956,
+        "row_count": 32768
+      },
+      "temporal": {
+        "action_lift_bootstrap_lower_95": [
+          -0.051773298551965226,
+          -0.1783413400613529,
+          -0.2465675766077091,
+          -0.3807225799558531
+        ],
+        "action_lift_macro": [
+          -0.010889933955742549,
+          0.03520823882418843,
+          -0.00900600287312428,
+          -0.08374521439317296
+        ],
+        "action_lift_positive_family_count": [
+          5,
+          4,
+          4,
+          4
+        ],
+        "energy_means_by_horizon": {
+          "persistence": [
+            0.015389548014581367,
+            0.019807480186279425,
+            0.023050620611809902,
+            0.023999768597069093
+          ],
+          "real": [
+            0.25210696950671263,
+            0.25198959208501037,
+            0.25303895447723335,
+            0.253733879988431
+          ],
+          "reset": [
+            0.25254482297896175,
+            0.2530888546607457,
+            0.2554770948481746,
+            0.2556353123000008
+          ],
+          "reverse": [
+            0.2521091149392305,
+            0.2519881085900124,
+            0.2530130648301565,
+            0.2536996008711867
+          ],
+          "shuffle": [
+            0.2523704827253823,
+            0.252968437904201,
+            0.2543051532411482,
+            0.2548974871606333
+          ],
+          "wrong_action": [
+            0.25212110687425593,
+            0.25202909190556966,
+            0.25310624407575233,
+            0.25384391337865964
+          ]
+        },
+        "history_lift_bootstrap_lower_95": [
+          -0.23636033094216288,
+          -0.8575752765111372,
+          -0.4685352265937091,
+          -0.5194148919392175
+        ],
+        "history_lift_macro": [
+          -0.14493332767662562,
+          -0.4597269485739213,
+          -0.20173137025991913,
+          -0.20523125777259288
+        ],
+        "history_lift_positive_family_count": [
+          0,
+          0,
+          2,
+          2
+        ],
+        "persistence_lift_bootstrap_lower_95": [
+          -940.3359264187845,
+          -856.8479668867393,
+          -765.3263146228021,
+          -503.19113820168474
+        ],
+        "persistence_lift_macro": [
+          -633.2573035306468,
+          -558.9022800191341,
+          -486.465494101743,
+          -319.0268000305058
+        ],
+        "persistence_lift_positive_family_count": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "real_over_persistence_score_bootstrap_lower_95": [
+          371.9001764507534,
+          316.2910318136805,
+          255.87413321081652,
+          162.7898746512799
+        ],
+        "real_over_persistence_score_macro": [
+          634.2573035306468,
+          559.9022800191341,
+          487.465494101743,
+          320.0268000305058
+        ]
+      },
+      "update": 100
+    },
+    {
+      "absolute_noncollapse_enforced": true,
+      "integrity_pass": false,
+      "memory_rank": {
+        "effective_rank": 4.6810727961093,
+        "feature_dimension": 64,
+        "finite": true,
+        "near_zero_fraction": 0.1875,
+        "noncollapsed": false,
+        "nonzero_scale": true,
+        "participation_rank_ratio": 0.07314176243920781,
+        "rms": 0.12499999987190569,
+        "row_count": 131072
+      },
+      "online_rank": {
+        "effective_rank": 1.8324531586975186,
+        "feature_dimension": 64,
+        "finite": true,
+        "near_zero_fraction": 0.078125,
+        "noncollapsed": false,
+        "nonzero_scale": true,
+        "participation_rank_ratio": 0.028632080604648728,
+        "rms": 0.06249999996854773,
+        "row_count": 32768
+      },
+      "perception_safeguards_pass": false,
+      "physical": {
+        "aggregate_gate_passed": false,
+        "causal_control_pass_count": 4,
+        "integrity_pass": true,
+        "passed_margin_count": 77,
+        "total_margin_count": 189
+      },
+      "physical_evaluator_alias_update": 400,
+      "place": {
+        "chance_multiple": 1.6244718916932817,
+        "evaluator_alias_update": 400,
+        "scene_count_above_chance": 6,
+        "target_place_rank": 2.1652748584747314,
+        "target_place_rank_retention": 0.8282498595084721
+      },
+      "roles_integrity_pass": true,
+      "roles_passed": false,
+      "state_mutation_count": 0,
+      "target_rank": {
+        "effective_rank": 1.7712403766044067,
+        "feature_dimension": 64,
+        "finite": true,
+        "near_zero_fraction": 0.09375,
+        "noncollapsed": false,
+        "nonzero_scale": true,
+        "participation_rank_ratio": 0.027675630884443855,
+        "rms": 0.06249999999641735,
+        "row_count": 32768
+      },
+      "temporal": {
+        "action_lift_bootstrap_lower_95": [
+          -0.1674672788001125,
+          -0.04332224551503128,
+          -0.34682483396720887,
+          -0.2196122025721553
+        ],
+        "action_lift_macro": [
+          -0.02380023202927147,
+          0.14316045399378058,
+          0.05677490420911876,
+          0.22611968239075605
+        ],
+        "action_lift_positive_family_count": [
+          3,
+          5,
+          5,
+          7
+        ],
+        "energy_means_by_horizon": {
+          "persistence": [
+            0.012282014247227857,
+            0.016828713145647156,
+            0.020039338197391898,
+            0.02103241106504894
+          ],
+          "real": [
+            0.24542583359288983,
+            0.24668141357688,
+            0.24872161739040166,
+            0.2499185236520134
+          ],
+          "reset": [
+            0.24607995626865886,
+            0.2498134574489086,
+            0.25805080983263906,
+            0.25479557248036144
+          ],
+          "reverse": [
+            0.2454270550442743,
+            0.24669761105178623,
+            0.24870110185293015,
+            0.24988139850756852
+          ],
+          "shuffle": [
+            0.24577412644430296,
+            0.24879355341545306,
+            0.2520353805666673,
+            0.2524244596788776
+          ],
+          "wrong_action": [
+            0.24548031659651315,
+            0.24676715573878027,
+            0.24888103830016917,
+            0.25015620297926944
+          ]
+        },
+        "history_lift_bootstrap_lower_95": [
+          -0.8052774635072562,
+          -2.117390375165052,
+          -0.8253821244706447,
+          -1.040046603103753
+        ],
+        "history_lift_macro": [
+          -0.48291559696872116,
+          -1.1128687680525593,
+          -0.2975676178562776,
+          -0.44102244583752254
+        ],
+        "history_lift_positive_family_count": [
+          0,
+          0,
+          2,
+          2
+        ],
+        "persistence_lift_bootstrap_lower_95": [
+          -968.3422538115173,
+          -836.2003244685005,
+          -812.5257763012123,
+          -504.6300673245123
+        ],
+        "persistence_lift_macro": [
+          -692.1080398403815,
+          -571.9352924981134,
+          -533.1575134419335,
+          -337.00942145627465
+        ],
+        "persistence_lift_positive_family_count": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "real_over_persistence_score_bootstrap_lower_95": [
+          453.92690310777834,
+          353.5795126631718,
+          300.97899670783244,
+          199.35587533808663
+        ],
+        "real_over_persistence_score_macro": [
+          693.1080398403815,
+          572.9352924981134,
+          534.1575134419335,
+          338.00942145627465
+        ]
+      },
+      "update": 250
+    }
+  ],
+  "schema": "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_physical_comparison_alias_state_integrity_replacement_v4_terminal_update250_scientific_collapse_result_v1",
+  "scientific_conclusion": {
+    "all_states_finite_and_nonzero": true,
+    "collapse_means_inadequate_rank_and_channel_diversity_not_nan_or_all_zero": true,
+    "continued_v18_training_or_larger_cap_justified": false,
+    "history_benefit_learned": false,
+    "loss_descent_proves_useful_representation": false,
+    "memory_rank_improved_but_remained_below_gate": true,
+    "physical_margins_improved_but_full_physical_gate_remained_false": true,
+    "place_signal_weakened_but_remained_partly_useful": true,
+    "target_and_online_rank_remained_near_two_effective_dimensions_of_sixty_four": true,
+    "u250_h4_persistence_mean_energy": 0.02103241106504894,
+    "u250_h4_real_over_persistence_macro_score": 338.00942145627465,
+    "u250_h4_real_prediction_mean_energy": 0.2499185236520134,
+    "v18_close_as_dynamics_mechanism": true
+  },
+  "status": "PASS_COMPLETE_TERMINAL_UPDATE250_SCIENTIFIC_COLLAPSE_AUDIT_V18_DYNAMICS_MECHANISM_REJECTED",
+  "successor_recommendation": {
+    "action_history_or_h4_gates_in_this_perception_round": false,
+    "architecture": "single-frame multi-block masked spatial I-JEPA using raw spatial tokens",
+    "cap_presentations": 16000,
+    "checkpoint_or_v4_state_reuse_authorized": false,
+    "eight_thousand_presentation_gate": [
+      "masked prediction beats shuffled wrong-RGB and mean-target controls in at least five of eight scene families",
+      "raw encoder rank and variance retain at least 50 percent of update zero",
+      "place at least 1.5 times chance in at least six scenes",
+      "target place rank at least 2",
+      "target place rank retention at least 0.80"
+    ],
+    "four_thousand_presentation_gate": [
+      "integrity",
+      "no catastrophic raw-feature degradation"
+    ],
+    "fresh_initialization_and_output_root_required": true,
+    "held_out_or_sealed_remains_closed": true,
+    "joint_jepa_training": "jointly train the RGB context encoder and mask predictor against a stop-gradient EMA full-frame target encoder; the predictor is not trained separately",
+    "mechanisms_removed": [
+      "temporal rollout",
+      "action tape",
+      "object-space pooling",
+      "delay-line memory"
+    ],
+    "model_visible_supervision": "RGB only; evaluation labels and controls remain outside the model",
+    "purpose": "qualify a learned perception JEPA whose raw spatial tokens can feed the separate learned memory and navigation stack",
+    "sixteen_thousand_terminal_gate": [
+      "at least 10 percent correct-versus-control advantage",
+      "positive bootstrap lower 95 percent bound",
+      "positive in at least six of eight scene families",
+      "retain the substrate floors from the eight-thousand gate"
+    ],
+    "status": "RECOMMEND_ONE_MATERIALLY_DIFFERENT_PERCEPTION_ONLY_PROBE",
+    "v18_retry_resume_or_longer_run_authorized": false
+  },
+  "terminal_artifacts": {
+    "all_readable_canonical_content_hashes_valid": true,
+    "exact_file_count": 9,
+    "failure": {
+      "byte_count": 2999,
+      "content_sha256": "69ca1007bb658b516dbb2cdfbc9167ea8cedfe0cbac79ed72160934513fd8df0",
+      "file_sha256": "72d818fdd5583f7f700e681cf051fde89aae7418e738e48f7ef48f9706ebad4e",
+      "path": "failure.json"
+    },
+    "json_file_count": 7,
+    "jsonl_file_count": 1,
+    "metric_files": [
+      {
+        "byte_count": 846332,
+        "content_sha256": "2c15c793854b994730f7d3ac01bcb7f8650e3e24465a664d4fa6ed1fff04ac03",
+        "file_sha256": "bcece9767ba7fb65fbef20407f510a9b4ab738561e5621deb1a38f751f837fbc",
+        "path": "metrics/update_0.json"
+      },
+      {
+        "byte_count": 886474,
+        "content_sha256": "5e097e73cca051f40655de414c0df0ec1f4ffce8c5e8dd5fd4b119f4b4fbbdd3",
+        "file_sha256": "6fbacdef5c316837aafeea6ce6967b02b4e4144b9817f50735deefc76842dd04",
+        "path": "metrics/update_100.json"
+      },
+      {
+        "byte_count": 885465,
+        "content_sha256": "df9d3c4638aeea622a2ce2c2361d62abe19e3d1eb282212af0629e6558f68e72",
+        "file_sha256": "e541341b0460a98ecf9a6e4f1148460d61078ea425166bed6c5a638fffb39006",
+        "path": "metrics/update_250.json"
+      }
+    ],
+    "non_json_tensor_file_count": 1,
+    "other_node_count": 0,
+    "reservation": {
+      "byte_count": 687,
+      "content_sha256": "b5243bc33c408ff36d6cc5db2aa483b920e354cf5f4fdf4d218b699c48cc22df",
+      "file_sha256": "d4c7a50e05d224b290e708e9fac908ff45f9efa2e45ed9a0694511e10705c95e",
+      "path": "reservation.json"
+    },
+    "snapshot_binding": {
+      "byte_count": 726,
+      "content_sha256": "c0b85539e8977885596b6dfcad3b84ca55a8ac6cfb0c7a9744375bde006bac07",
+      "file_sha256": "5f98dec07b4f0dce1d188ca6052a70bb716c6dced7c6c398e775aae3cb5c02ce",
+      "path": "snapshots/update_250.binding.json"
+    },
+    "snapshot_state": {
+      "audit_access": "STAT_ONLY_NOT_OPENED_OR_HASHED",
+      "byte_count": 63790789,
+      "launcher_declared_file_sha256": "1ec5ab19914f06011a9ee3ef04bc61535f400423cf512cd12299f7bb9167c099",
+      "path": "snapshots/update_250.pt",
+      "stat_byte_count_matched": true
+    },
+    "symlink_count": 0,
+    "terminal_access": {
+      "byte_count": 2063758,
+      "content_sha256": "6bf3d7063ae3467390cc57fe3268d90e11d82d412d662ab4ed707e434190bd99",
+      "file_sha256": "9eceb33c8d086f9f9e59babaa1f5efc4062e133a47f3ef1546f8e7521f210387",
+      "path": "receipts/terminal_access.json"
+    },
+    "trace": {
+      "all_253_row_content_hashes_valid": true,
+      "byte_count": 890254,
+      "file_sha256": "ddbcd960ca3022a28e5c0bf11d15ec10bf3a63fbe9792e2fa9dae7ce5764915d",
+      "path": "trace.jsonl",
+      "row_count": 253
+    }
+  },
+  "training_accounting": {
+    "all_1500_raw_route_gradients_finite": true,
+    "all_1500_route_norms_and_applied_scales_finite": true,
+    "all_250_update_integrity_receipts_passed": true,
+    "autograd_grad_calls": 3500,
+    "ema_steps": 250,
+    "first_memory_loss": 0.8569522500038147,
+    "first_total_loss": 8.282594501972198,
+    "last_memory_loss": 0.7219698801636696,
+    "last_total_loss": 4.104890741407871,
+    "memory_microbatch_graphs": 2000,
+    "memory_presentations": 4000,
+    "named_route_receipt_count": 1500,
+    "optimizer_steps": 250,
+    "physical_microbatch_graphs": 500,
+    "physical_presentations": 2000,
+    "presentations": 6000,
+    "updates": 250
+  }
+}
