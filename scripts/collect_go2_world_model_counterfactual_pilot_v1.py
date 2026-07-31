@@ -621,6 +621,18 @@ def _capture_runtime_versions() -> dict[str, str]:
     return versions
 
 
+def _failure_receipt(exc: Exception) -> dict[str, Any]:
+    """Preserve bounded JSON diagnostics without weakening failure semantics."""
+
+    failure: dict[str, Any] = {"type": type(exc).__name__, "message": str(exc)}
+    diagnostics = getattr(exc, "diagnostics", None)
+    if diagnostics is not None:
+        failure["diagnostics"] = json.loads(
+            pilot.canonical_json_bytes(diagnostics).decode("utf-8")
+        )
+    return failure
+
+
 def _quat_tip_rad(quat_wxyz: Sequence[float]) -> float:
     qw, qx, qy, qz = (float(value) for value in quat_wxyz)
     roll = math.atan2(
@@ -1765,7 +1777,7 @@ def collect(
         ):
             raise pilot.PilotContractError("observed render work disagrees with caps")
     except Exception as exc:  # fail closed, preserve partial one-shot evidence
-        failure = {"type": type(exc).__name__, "message": str(exc)}
+        failure = _failure_receipt(exc)
     roles: dict[str, int] = defaultdict(int)
     scene_keys: set[tuple[str, str]] = set()
     candidate_branches = 0

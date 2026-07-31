@@ -262,6 +262,14 @@ class PilotContractError(RuntimeError):
     """Raised when a pilot plan, state, or receipt violates the V1 contract."""
 
 
+class PilotDiagnosticError(PilotContractError):
+    """Contract failure carrying JSON-safe diagnostics for a consumed attempt."""
+
+    def __init__(self, message: str, *, diagnostics: Mapping[str, Any]) -> None:
+        super().__init__(message)
+        self.diagnostics = dict(diagnostics)
+
+
 def canonical_json_bytes(value: Any) -> bytes:
     """Return the only JSON encoding used for hash-bound V1 values."""
 
@@ -1378,13 +1386,18 @@ def audit_prebranch_synchronization(
             group = canonical[name][start:stop]
             reference = group[0]
             exact = all(np.array_equal(reference, candidate) for candidate in group[1:])
-            if group.dtype.kind in "f":
-                max_abs = float(np.max(np.abs(group - reference)))
-            else:
-                max_abs = float(np.max(np.abs(group.astype(np.int64) - reference)))
+            delta = group.astype(np.float64) - reference.astype(np.float64)
+            absolute = np.abs(delta)
+            max_abs = float(np.max(absolute))
+            rms = float(np.sqrt(np.mean(np.square(delta), dtype=np.float64)))
+            per_lane_max_abs = np.max(
+                absolute.reshape((lane_count, -1)), axis=1
+            ).tolist()
             component_audits[name] = {
                 "exact_equal": exact,
                 "max_abs_difference": max_abs,
+                "rms_difference": rms,
+                "per_lane_max_abs_difference": per_lane_max_abs,
                 "shape_per_lane": list(reference.shape),
             }
             group_passed = group_passed and exact
@@ -1557,7 +1570,14 @@ def execute_lockstep_trial(
         )
     ]
     if any(not audit["passed"] for audit in history_synchronization_audits[0]):
-        raise PilotContractError("initial cloned environments are not exactly equal")
+        raise PilotDiagnosticError(
+            "initial cloned environments are not exactly equal",
+            diagnostics={
+                "phase": "initial_clone",
+                "sim_time_ns": history_times_ns[0],
+                "synchronization_audits": history_synchronization_audits[0],
+            },
+        )
     render_batches: list[Any] = []
 
     def capture_render_without_physics_mutation() -> Any:
@@ -1587,7 +1607,38 @@ def execute_lockstep_trial(
             start = int(lane_starts[group_index])
             lane_count = lane_counts[group_index]
             requested[start : start + lane_count] = normalized_blocks[action_id]
-        trajectory = runner.execute_requested_block(requested)
+        def audit_history_policy_step(
+            command_tick_index: int, policy_step_index: int
+        ) -> None:
+            checkpoint = audit_prebranch_synchronization(
+                _copy_state_components(capture_components()),
+                state_ids=state_ids,
+                roles=roles,
+            )
+            failed = [row["state_id"] for row in checkpoint if not row["passed"]]
+            if failed:
+                raise PilotDiagnosticError(
+                    f"history block {history_index} first diverged at command tick "
+                    f"{command_tick_index}, policy step {policy_step_index} for states: "
+                    + ", ".join(failed),
+                    diagnostics={
+                        "phase": "common_history_policy_step",
+                        "history_index": history_index,
+                        "command_tick_index": int(command_tick_index),
+                        "policy_step_index": int(policy_step_index),
+                        "block_policy_step_index": (
+                            int(command_tick_index)
+                            * int(getattr(runner, "policy_steps_per_command_tick", 5))
+                            + int(policy_step_index)
+                        ),
+                        "sim_time_ns": int(capture_sim_time_ns()),
+                        "synchronization_audits": checkpoint,
+                    },
+                )
+
+        trajectory = runner.execute_requested_block(
+            requested, after_policy_step=audit_history_policy_step
+        )
         executed = np.asarray(trajectory.executed, dtype=np.float32)
         clipped = np.asarray(trajectory.clipped, dtype=np.bool_)
         if executed.shape != requested.shape or clipped.shape != (expected_envs,):
@@ -1629,9 +1680,15 @@ def execute_lockstep_trial(
             audit["state_id"] for audit in checkpoint_audits if not audit["passed"]
         ]
         if failed_checkpoints:
-            raise PilotContractError(
+            raise PilotDiagnosticError(
                 f"history checkpoint {history_index} diverged for states: "
-                + ", ".join(failed_checkpoints)
+                + ", ".join(failed_checkpoints),
+                diagnostics={
+                    "phase": "common_history_checkpoint",
+                    "history_index": history_index,
+                    "sim_time_ns": history_times_ns[-1],
+                    "synchronization_audits": checkpoint_audits,
+                },
             )
         if capture_render_batch is not None:
             render_batches.append(capture_render_without_physics_mutation())
@@ -1639,9 +1696,14 @@ def execute_lockstep_trial(
     synchronization_audits = history_synchronization_audits[-1]
     failed_sync = [audit["state_id"] for audit in synchronization_audits if not audit["passed"]]
     if failed_sync:
-        raise PilotContractError(
+        raise PilotDiagnosticError(
             "prebranch exact-equality audit failed for states: "
-            + ", ".join(failed_sync)
+            + ", ".join(failed_sync),
+            diagnostics={
+                "phase": "prebranch_checkpoint",
+                "sim_time_ns": history_times_ns[-1],
+                "synchronization_audits": synchronization_audits,
+            },
         )
 
     branch_requested = np.empty(
@@ -1697,9 +1759,14 @@ def execute_lockstep_trial(
         audit["state_id"] for audit in sentinel_audits if not audit["physics_equal"]
     ]
     if failed_sentinels:
-        raise PilotContractError(
+        raise PilotDiagnosticError(
             "duplicate-sentinel exact-equality audit failed for states: "
-            + ", ".join(failed_sentinels)
+            + ", ".join(failed_sentinels),
+            diagnostics={
+                "phase": "duplicate_sentinel_trajectory",
+                "sim_time_ns": int(capture_sim_time_ns()),
+                "sentinel_audits": sentinel_audits,
+            },
         )
     if capture_render_batch is not None:
         render_batches.append(capture_render_without_physics_mutation())
@@ -1755,6 +1822,7 @@ __all__ = [
     "PHYSICS_RESULT_SCHEMA",
     "PLAN_SCHEMA",
     "PilotContractError",
+    "PilotDiagnosticError",
     "RENDER_CONTRACT",
     "EXECUTION_ENVIRONMENT",
     "GRAPHICS_PREFLIGHT_EXPECTATION",

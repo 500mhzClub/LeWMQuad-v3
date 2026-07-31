@@ -1,0 +1,73 @@
+{
+  "attempt_id": "world-model-counterfactual-smoke-v2-attempt-v1",
+  "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v2/attempt_v1",
+  "authority_granted_by_this_document": false,
+  "branch_execution_started": false,
+  "common_history_execution_started": true,
+  "execution_inference": {
+    "basis": "The failure was raised by the post-block history checkpoint 0 audit after execute_requested_block returned. Under the bound five-tick, five-policy-steps-per-tick, ten-physics-steps-per-policy contract, one common HOLD block completed before the gate.",
+    "completed_common_history_blocks": 1,
+    "policy_steps_per_lane_before_gate": 25,
+    "physics_steps_per_lane_before_gate": 250,
+    "total_lane_policy_steps_before_gate": 250,
+    "total_lane_physics_steps_before_gate": 2500
+  },
+  "failure_classification": {
+    "leading_interpretation": "The initial exposed robot/controller state was bitwise equal and the installed policy inference path is deterministic. Equality was lost only after physical stepping, so batched Genesis evolution or unaudited solver/contact state is the leading cause. V2 did not preserve component-level deltas, so the magnitude and precise mechanism remain unmeasured.",
+    "primary_failure": {
+      "message": "history checkpoint 0 diverged for states: world-model-counterfactual-smoke-state-0",
+      "source_location": "lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "type": "PilotContractError"
+    },
+    "root_cause_resolved": false,
+    "supervisor_reporting": "The corrected supervisor retained the nonzero child-exit failure, bound the failed physics receipt, and did not misclassify the owned reservation.",
+    "type": "batched_common_prefix_exact_equality_failure_before_branch"
+  },
+  "graphics_preflight_passed": true,
+  "observed_counts": {
+    "actions": 9,
+    "candidate_branches": 0,
+    "context_frames": 0,
+    "roles": {},
+    "scenes": 0,
+    "sentinel_branches": 0,
+    "states": 0,
+    "target_frames": 0,
+    "total_branches": 0
+  },
+  "receipt_bindings": {
+    "authorized_plan": {
+      "byte_count": 6476,
+      "file_sha256": "1c96d3b9deca331efa5f319bb0b4d7f043dbcae98ea6c5a968f02d4d42aed109",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v2/attempt_v1/authorized_plan.json"
+    },
+    "physics_result": {
+      "byte_count": 21001,
+      "file_sha256": "9904a15f0b1ba1d7221b6b084c37aa9d6ad82460bbea01f9ee53eb6310fc3835",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v2/attempt_v1/physics_result.json"
+    },
+    "reservation": {
+      "byte_count": 1262,
+      "file_sha256": "c920ccda45cb552832ee64b4b6ac0dcf577d7c261fe757709dd49b9b0a5e9466",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v2/attempt_v1/reservation.json"
+    },
+    "terminal_supervision": {
+      "byte_count": 2769,
+      "file_sha256": "b6881d5e9e04e36d27f1cc53fb7be6986f340f77199290002f2723ec31188af8",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v2/attempt_v1/terminal_supervision.json"
+    }
+  },
+  "reviewed_at": "2026-08-01T00:31:13+01:00",
+  "reviewer": "/root/terminal_evidence_reviewer",
+  "schema": "lewm_go2_world_model_counterfactual_smoke_terminal_failure_review_v1",
+  "scientific_disposition": {
+    "citable_as_scientific_evidence": false,
+    "outputs_eligible_for_promotion": false,
+    "outputs_eligible_for_training": false,
+    "pilot_contract_frozen": false,
+    "world_model_result_emitted": false
+  },
+  "status": "CONSUMED_TERMINAL_FAILURE_CONFIRMED",
+  "successor_attempt_authorized_by_this_document": false,
+  "v2_retry_or_resume_authorized": false
+}

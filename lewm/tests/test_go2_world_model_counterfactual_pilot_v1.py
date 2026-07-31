@@ -19,10 +19,23 @@ from lewm.benchmarks import go2_world_model_counterfactual_pilot_v1 as pilot
 
 ROOT = Path(__file__).resolve().parents[2]
 COLLECTOR_PATH = ROOT / "scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
+DETERMINISM_PROBE_PATH = (
+    ROOT / "scripts/dev_probe_go2_counterfactual_lockstep_determinism.py"
+)
 
 
 def _load_collector():
     spec = importlib.util.spec_from_file_location("counterfactual_collector_v1", COLLECTOR_PATH)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_determinism_probe():
+    spec = importlib.util.spec_from_file_location(
+        "counterfactual_lockstep_determinism_probe", DETERMINISM_PROBE_PATH
+    )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -316,6 +329,8 @@ def test_sync_audit_detects_one_bit_of_lane_drift() -> None:
     )[0]
     assert audit["passed"] is False
     assert audit["components"]["qpos"]["exact_equal"] is False
+    assert audit["components"]["qpos"]["rms_difference"] > 0.0
+    assert audit["components"]["qpos"]["per_lane_max_abs_difference"][-1] > 0.0
 
 
 class _Trajectory:
@@ -348,6 +363,25 @@ class _FakeRunner:
                 self.actions.fill(0.0)
                 self.actions[:, :3] = command
                 self.time_ns += 20_000_000
+                if after_policy_step is not None:
+                    after_policy_step(tick, policy_step)
+        self.last = requested[:, -1].copy()
+        return _Trajectory(requested)
+
+
+class _FirstStepDivergenceRunner(_FakeRunner):
+    def execute_requested_block(self, requested: np.ndarray, *, after_policy_step=None):
+        for tick in range(5):
+            command = requested[:, tick]
+            for policy_step in range(5):
+                self.values += command[:, 0] * np.float32(0.01)
+                self.actions.fill(0.0)
+                self.actions[:, :3] = command
+                self.time_ns += 20_000_000
+                if tick == 0 and policy_step == 0:
+                    self.values[-1] = np.nextafter(
+                        self.values[-1], np.float32(1.0)
+                    )
                 if after_policy_step is not None:
                     after_policy_step(tick, policy_step)
         self.last = requested[:, -1].copy()
@@ -588,6 +622,40 @@ def test_sequential_replay_uses_exact_physical_poses_and_non_batched_camera() ->
         )
 
 
+def test_collector_failure_receipt_preserves_json_diagnostics() -> None:
+    collector = _load_collector()
+    error = pilot.PilotDiagnosticError(
+        "fixture divergence",
+        diagnostics={
+            "phase": "common_history_policy_step",
+            "sim_time_ns": 20_000_000,
+            "max_abs_difference": 1.0e-7,
+        },
+    )
+    assert collector._failure_receipt(error) == {
+        "type": "PilotDiagnosticError",
+        "message": "fixture divergence",
+        "diagnostics": {
+            "max_abs_difference": 1.0e-7,
+            "phase": "common_history_policy_step",
+            "sim_time_ns": 20_000_000,
+        },
+    }
+
+
+def test_determinism_probe_binds_and_sanitizes_parallelization_level(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    probe = _load_determinism_probe()
+    monkeypatch.setenv("GS_PARA_LEVEL", "ambient")
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "ambient")
+    plan = {"execution_contract": {"environment": pilot.EXECUTION_ENVIRONMENT}}
+    selected = probe._configure_environment(plan, para_level=0)
+    assert selected == {**pilot.EXECUTION_ENVIRONMENT, "GS_PARA_LEVEL": "0"}
+    assert os.environ["GS_PARA_LEVEL"] == "0"
+    assert "CUDA_VISIBLE_DEVICES" not in os.environ
+
+
 def test_collector_uses_the_real_safety_limits_factory() -> None:
     collector = _load_collector()
     actual_safety_limits = collector._runtime_imports()["SafetyLimits"]
@@ -694,6 +762,28 @@ def test_lockstep_trial_calibration_sentinel_and_live_render() -> None:
     sentinel = trial["sentinel_audits"][0]
     assert sentinel["action_id"] == 6
     assert sentinel["physics_equal"] is True
+
+
+def test_lockstep_trial_preserves_first_common_history_divergence() -> None:
+    runner = _FirstStepDivergenceRunner(10)
+    with pytest.raises(pilot.PilotDiagnosticError) as raised:
+        pilot.execute_lockstep_trial(
+            runner=runner,
+            states=[_state("cal", "calibration", 0, 0)],
+            action_blocks=[_block(index) for index in range(9)],
+            capture_components=runner.capture,
+            capture_sim_time_ns=lambda: runner.time_ns,
+        )
+    diagnostic = raised.value.diagnostics
+    assert diagnostic["phase"] == "common_history_policy_step"
+    assert diagnostic["history_index"] == 0
+    assert diagnostic["command_tick_index"] == 0
+    assert diagnostic["policy_step_index"] == 0
+    assert diagnostic["block_policy_step_index"] == 0
+    assert diagnostic["sim_time_ns"] == 20_000_000
+    audit = diagnostic["synchronization_audits"][0]
+    assert audit["passed"] is False
+    assert audit["components"]["qpos"]["max_abs_difference"] > 0.0
 
 
 def test_lockstep_trial_train_eval_have_no_sentinel() -> None:
