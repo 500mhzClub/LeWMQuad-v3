@@ -1,0 +1,153 @@
+{
+  "schema": "lewm_go2_world_model_substrate_development_authority_proposal_v1",
+  "status": "PROPOSED_NOT_AUTHORIZED",
+  "date": "2026-07-31",
+  "proposal_id": "world_model_substrate_u700_sched3000_v1_attempt_v1",
+  "authority_granted_by_this_document": false,
+  "development_payload_requested": true,
+  "scientific_claim_authorized": false,
+  "qualification_or_promotion_authorized": false,
+  "authorizer": null,
+  "issued_at": null,
+  "requested_scope_summary": "One fresh, fixed H6 pack; one 700-update temporal development run on a separately fixed 3000-update cosine horizon; one matched predecessor retention panel; and eight ordered immutable-snapshot retention panels. No checkpoint selection and no counterfactual operation.",
+  "governing_run_manifest": {
+    "path": "docs/lewm_go2_world_model_substrate_u700_sched3000_run_manifest_2026-07-31.json",
+    "byte_count": 19819,
+    "sha256": "90a2058f28e49030651090c3e0ae5f98d578b81bec95837be2c32bfeb9959805"
+  },
+  "counterfactual_sizing_decision_identity_witness_only": {
+    "path": "docs/lewm_go2_world_model_counterfactual_pilot_sizing_decision_2026-07-31.md",
+    "byte_count": 13671,
+    "sha256": "185f17e1fca2edd1d553fc59b9881f014fed647d1b724e8cb79fe8449cee788c",
+    "grants_counterfactual_authority": false
+  },
+  "source_identity": {
+    "observed_repository_head": "0279294e5679fa81f845f13c9e47326bab291238",
+    "required_reviewed_source_commit": null,
+    "required_source_bindings": "exactly the sixteen bindings in governing_run_manifest.source_bindings",
+    "issue_blocker": "Authority cannot be issued until the exact currently untracked development sources and this contract package are committed and independently reviewed."
+  },
+  "requested_attempt_semantics": {
+    "attempt_id": "attempt_v1",
+    "maximum_attempts": 1,
+    "reserve_before_runtime_access": true,
+    "reservation_mechanism": "exclusive creation of the fresh S0 pack root before either H6 index is loaded",
+    "reservation_receipt": null,
+    "retry": false,
+    "resume": false,
+    "overwrite": false,
+    "cleanup_or_reuse": false,
+    "failure_after_reservation_consumes_attempt": true
+  },
+  "requested_allowed_operations": [
+    "Before reservation, validate only exact source, interpreter, device, and fresh-root bindings without opening a runtime input.",
+    "Create the one immutable H6 uint8 pack as phase S0_pack.",
+    "After S0 exclusively creates the pack root and reserves the attempt, let each phase validate only its own exact runtime inputs in the order fixed by the governing manifest.",
+    "Execute the one fixed 700-update, schedule-horizon-3000 training job as phase S1_train.",
+    "Read only same-attempt snapshots derived and hash-bound by S1 final_trace for the fixed retention panel.",
+    "Execute the matched predecessor baseline as S2_retention_baseline and all eight ordered panels as S3_retention_snapshots.",
+    "Hash and report authorized inputs and same-attempt outputs through the machine receipts current source actually emits."
+  ],
+  "requested_runtime_inputs": {
+    "h6_train_index": {
+      "path": ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/train.jsonl",
+      "row_count": 16000,
+      "byte_count": 10328000,
+      "sha256": "aee2a54cddd849162648f9b8cfd54a0a28a25bd0705b6482e6af7435c85f4d77"
+    },
+    "h6_validation_index": {
+      "path": ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/val.jsonl",
+      "row_count": 2048,
+      "byte_count": 1317888,
+      "sha256": "83592e2fea5927802881f076a58a9710100bea017d658c1b978ba651369beac6"
+    },
+    "h6_rgb_root": {
+      "path": ".generated/datagen_full/render_textured_v03",
+      "open_only_positions": [0, 1, 2, 3],
+      "forbidden_positions": [4, 5, 6]
+    },
+    "predecessor_checkpoint": {
+      "path": ".generated/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1/attempt_v1/snapshots/update_1000.pt",
+      "byte_count": 52282877,
+      "sha256": "f5aac23cf275d73b92ce5609a583dea89f6686a624d4889d9762740535aab873"
+    },
+    "place_triplet_manifest": {
+      "path": ".generated/go2_memory_role_place_triplet_index_v1/manifest.json",
+      "byte_count": 42308,
+      "sha256": "a5997d93838419cabaaf8e262db70ed51f6f928195f1a312cadc4768f74ca6ca"
+    },
+    "place_triplet_checkpoint_selection_index": {
+      "path": ".generated/go2_memory_role_place_triplet_index_v1/checkpoint_selection.jsonl",
+      "byte_count": 473508,
+      "sha256": "a628a1047b6f15223a4fd7d30c5c87fa1914efef0955d70d9bd2f5330c77dcb0"
+    },
+    "derived_same_attempt_snapshots": {
+      "updates": [0, 100, 200, 300, 400, 500, 600, 700],
+      "binding_rule": "path, update, byte count, and SHA-256 must agree with the COMPLETE same-attempt S1 final_trace and an independent re-hash"
+    }
+  },
+  "requested_access_and_compute_caps": {
+    "maximum_pack_h6_rgb_leaf_opens": 72384,
+    "maximum_retention_h6_rgb_leaf_opens": 18432,
+    "maximum_h6_rgb_leaf_opens": 90816,
+    "maximum_place_rgb_leaf_opens": 8640,
+    "maximum_total_rgb_leaf_opens": 99456,
+    "maximum_training_updates": 700,
+    "cosine_schedule_horizon_updates": 3000,
+    "maximum_training_sequence_presentations": 179200,
+    "maximum_training_logical_rgb_presentations": 716800,
+    "retention_panels_including_baseline": 9,
+    "physical_gpu_selector": "HIP_VISIBLE_DEVICES=1",
+    "logical_torch_device": "cuda:0",
+    "wall_clock_ceiling_seconds": 14400,
+    "gpu_wall_clock_ceiling_seconds": 10800,
+    "network_access": false,
+    "caps_are_not_cost_estimates": true
+  },
+  "requested_output_boundary": {
+    "attempt_root": ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1",
+    "must_be_absent_before_reservation": true,
+    "writes_outside_attempt_root": false,
+    "legacy_output_read_or_mutation": false
+  },
+  "required_receipts": [
+    "pack/manifest.json",
+    "train/scaled_u700_sched3000/final_trace.json",
+    "retention/predecessor.json",
+    "retention/update_000000.json",
+    "retention/update_000100.json",
+    "retention/update_000200.json",
+    "retention/update_000300.json",
+    "retention/update_000400.json",
+    "retention/update_000500.json",
+    "retention/update_000600.json",
+    "retention/update_000700.json"
+  ],
+  "receipt_and_supervision_boundary": {
+    "standalone_reservation_receipt_requested": false,
+    "standalone_terminal_receipt_requested": false,
+    "time_ceiling_enforced_by_current_source": false,
+    "required_before_issue": "The authority must identify an external process supervisor for the hard wall/GPU ceilings and the reviewer responsible for the terminal decision record."
+  },
+  "terminal_interpretation_boundary": [
+    "The output is a non-citable development trajectory, not a scientific attempt.",
+    "No automatic checkpoint selection or success verdict is authorized.",
+    "No output is physically requalified.",
+    "The retention panel does not attribute encoder-versus-head drift; component-swap source is still absent.",
+    "A selected checkpoint, counterfactual input, counterfactual generation, counterfactual training, or task integration requires a new reviewed decision and authority."
+  ],
+  "explicitly_excluded_operations": [
+    "Any counterfactual JSONL or RGB read, render, physics replay, generation, fidelity run, capacity training, planner-regret evaluation, or pilot execution.",
+    "Any legacy development pack, mutable latest checkpoint, or historical July 31 runtime output.",
+    "Any sealed, held-out, qualification, G2-G8, navigation, probability-calibration, promotion, production, deployment, retry, resume, overwrite, cleanup, output-root reuse, or network operation."
+  ],
+  "requirements_before_issue": [
+    "Commit the exact source and contract bytes.",
+    "Bind one reviewed source commit containing every required source binding.",
+    "Produce an independent source-and-custody review that validates the schedule-horizon fix and focused synthetic tests.",
+    "Attest the attempt root is absent without opening any undeclared runtime payload.",
+    "Bind the authorizer and issue timestamp.",
+    "Reconfirm the exact GPU selector and the two hard time ceilings, bind their external process supervisor, and name the terminal reviewer."
+  ],
+  "issue_decision": "WITHHOLD_UNTIL_REQUIREMENTS_BEFORE_ISSUE_ARE_SATISFIED"
+}

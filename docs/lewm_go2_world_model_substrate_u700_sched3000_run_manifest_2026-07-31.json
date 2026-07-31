@@ -1,0 +1,388 @@
+{
+  "schema": "lewm_go2_world_model_substrate_u700_sched3000_run_manifest_v1",
+  "status": "DRAFT_NOT_AUTHORIZED_SOURCE_FREEZE_REQUIRED",
+  "date": "2026-07-31",
+  "run_id": "world_model_substrate_u700_sched3000_v1",
+  "purpose": "Recreate a bounded, immutable development substrate through update 700 on the historical 3000-update learning-rate trajectory and measure the complete fixed retention trajectory without selecting or promoting a checkpoint.",
+  "evidence_class": "development_non_citable",
+  "authority_granted_by_this_manifest": false,
+  "downstream_authority_granted": false,
+  "repository_identity": {
+    "observed_head": "0279294e5679fa81f845f13c9e47326bab291238",
+    "required_reviewed_source_commit": null,
+    "issue_blocker": "The three development entrypoints are untracked. Before authority is issued, one reviewed commit must contain the exact bytes bound below; the authority must name that commit."
+  },
+  "attempt": {
+    "attempt_id": "attempt_v1",
+    "maximum_attempts": 1,
+    "reservation_required_before_first_runtime_input_open": true,
+    "reservation_mechanism": "S0_pack exclusively creates the previously absent pack root, including its parents, before loading either bound H6 index. That fresh directory is the attempt reservation; current source emits no separate reservation receipt.",
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "overwrite_authorized": false,
+    "cleanup_or_root_reuse_authorized": false,
+    "terminal_failure_consumes_attempt": true
+  },
+  "runtime": {
+    "working_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3",
+    "interpreter": "/home/andrewknowles/TinyQuadJEPA/bin/python",
+    "observed_interpreter_version": "Python 3.12.3",
+    "environment": {
+      "HIP_VISIBLE_DEVICES": "1"
+    },
+    "logical_torch_device": "cuda:0",
+    "network_access": false,
+    "wall_clock_ceiling_seconds": 14400,
+    "gpu_wall_clock_ceiling_seconds": 10800,
+    "note": "The time values are hard authorization ceilings, not throughput estimates. Exceeding either ceiling is a terminal consumed failure."
+  },
+  "source_bindings": [
+    {
+      "path": "scripts/dev_pack_h6_temporal_frames.py",
+      "byte_count": 14851,
+      "sha256": "cd031a7dc09c7567ac23309a7b8f7f5c59acbc87524ef73849382912ea37bd67",
+      "working_tree_state": "untracked"
+    },
+    {
+      "path": "scripts/dev_train_temporal_jepa_scaled.py",
+      "byte_count": 35478,
+      "sha256": "97154b693d3ca2b96e7e0d88c378c07b349c1d77e0db05548e48823834a35037",
+      "working_tree_state": "untracked"
+    },
+    {
+      "path": "scripts/dev_eval_temporal_retention_and_rollout.py",
+      "byte_count": 15362,
+      "sha256": "04a5e01561f14cbb0d06cc74ab947f947f36fe9961d48b806e2f63d61fca9ed8",
+      "working_tree_state": "untracked"
+    },
+    {
+      "path": "lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py",
+      "byte_count": 33483,
+      "sha256": "c773d739a67159fe82ed3bc539f139f6b8feea019f9a9d2e2e00b418dd8fe056",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "lewm/models/rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "byte_count": 17480,
+      "sha256": "324bd76eb0f8285dac01ccba0741e38546fe93506f5afd51facfaa71826346c3",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "scripts/run_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "byte_count": 22015,
+      "sha256": "761da9e4e9b72e8e96780fc874d887c906b6c2aa8ffaef58c98c92c45f46b53d",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "scripts/evaluate_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "byte_count": 78825,
+      "sha256": "249158c654da3502de57dc9dcd9b0dd7574ced1f1ed5afdc4ec6e0ef64c2b6c3",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "lewm/benchmarks/go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "byte_count": 44605,
+      "sha256": "cec018dade02e4c8217d74792f8fdc6afba84f414d094f4879e353d78fee4f84",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "scripts/evaluate_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+      "byte_count": 24653,
+      "sha256": "54b925ff65a79b59f034dcc265776eeaea94be28b02bb2bb514f756fc7b17313",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "lewm/benchmarks/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+      "byte_count": 30969,
+      "sha256": "ae2480106d535264e8520d26be8e5cdfe92299fdd605a695ae1cefd5f6d87dc7",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "lewm/datasets/go2_memory_role_place_triplets_v1.py",
+      "byte_count": 18890,
+      "sha256": "47a6e8b52148548846a8c391c4b8eb9570743f90cf62c60d7644f5e30d7229aa",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "lewm/models/rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+      "byte_count": 18942,
+      "sha256": "c4dafa5fcf5fbecb6077a435e57e5ee61bfefd327ba0955720d329f8217cb5d2",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "lewm/models/encoders.py",
+      "byte_count": 7028,
+      "sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "lewm/benchmarks/go2_recurrent_jepa_main_pool_census.py",
+      "byte_count": 38981,
+      "sha256": "b594ca7ccc9f398df5d71298340662e2b62492fd837295b8a1e8630603f03f7e",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "lewm/datasets/go2_recurrent_h4_rgb_sequences_v2.py",
+      "byte_count": 21001,
+      "sha256": "3d49e710304ad685f9d161a84586229a6036b652f84df877772afe5b827c51ea",
+      "working_tree_state": "tracked_at_observed_head"
+    },
+    {
+      "path": "lewm/datasets/go2_recurrent_h4_rgb_sequences.py",
+      "byte_count": 27386,
+      "sha256": "3f8c2a89af2934e8225dd98447b952d9e5ce8bedac99a7f834118263957652e6",
+      "working_tree_state": "tracked_at_observed_head"
+    }
+  ],
+  "source_closure_contract": {
+    "kind": "complete_local_recursive_executable_import_closure_for_S0_through_S3",
+    "file_count": 16,
+    "runtime_self_check": "S0 records and revalidates the five-file pack/H6 closure; S1 records and revalidates its fifteen-file training closure; S2/S3 record and revalidate the sixteen-file union including the retention entrypoint.",
+    "unlisted_local_python_module_allowed": false
+  },
+  "runtime_inputs": {
+    "h6_train_index": {
+      "path": ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/train.jsonl",
+      "row_count": 16000,
+      "byte_count": 10328000,
+      "sha256": "aee2a54cddd849162648f9b8cfd54a0a28a25bd0705b6482e6af7435c85f4d77"
+    },
+    "h6_validation_index": {
+      "path": ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/val.jsonl",
+      "row_count": 2048,
+      "byte_count": 1317888,
+      "sha256": "83592e2fea5927802881f076a58a9710100bea017d658c1b978ba651369beac6"
+    },
+    "rgb_root": {
+      "path": ".generated/datagen_full/render_textured_v03",
+      "allowed_path_fields": [0, 1, 2, 3],
+      "forbidden_path_fields": [4, 5, 6],
+      "allowed_open_rule": "Only regular non-symlink RGB leaves named by positions 0 through 3 of either bound H6 index may be opened."
+    },
+    "predecessor_checkpoint": {
+      "path": ".generated/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1/attempt_v1/snapshots/update_1000.pt",
+      "byte_count": 52282877,
+      "sha256": "f5aac23cf275d73b92ce5609a583dea89f6686a624d4889d9762740535aab873"
+    },
+    "place_triplet_manifest": {
+      "path": ".generated/go2_memory_role_place_triplet_index_v1/manifest.json",
+      "byte_count": 42308,
+      "sha256": "a5997d93838419cabaaf8e262db70ed51f6f928195f1a312cadc4768f74ca6ca"
+    },
+    "place_triplet_checkpoint_selection_index": {
+      "path": ".generated/go2_memory_role_place_triplet_index_v1/checkpoint_selection.jsonl",
+      "byte_count": 473508,
+      "sha256": "a628a1047b6f15223a4fd7d30c5c87fa1914efef0955d70d9bd2f5330c77dcb0"
+    },
+    "place_rgb_rule": "Retention may open only regular non-symlink RGB leaves selected by the bound place manifest and checkpoint-selection index."
+  },
+  "output_roots": {
+    "attempt_root": ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1",
+    "pack_root": ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/pack",
+    "training_parent": ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/train",
+    "training_root": ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/train/scaled_u700_sched3000",
+    "retention_root": ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention",
+    "all_roots_must_be_absent_before_reservation": true,
+    "reservation_receipt": null,
+    "reservation_effect": "S0_pack exclusively creates attempt_root and pack_root before opening either H6 index. Training and retention roots remain absent until their owning phase."
+  },
+  "accounting": {
+    "h6_rows": 18048,
+    "visible_frames_per_row": 4,
+    "initial_rgb_leaf_opens": 72192,
+    "verification_rows_per_role": 24,
+    "maximum_verification_rgb_leaf_reopens": 192,
+    "maximum_pack_h6_rgb_leaf_opens": 72384,
+    "retention_h6_current_rgb_leaf_opens": 18432,
+    "maximum_h6_rgb_leaf_opens": 90816,
+    "maximum_place_rgb_leaf_opens": 8640,
+    "maximum_total_rgb_leaf_opens": 99456,
+    "packed_raw_frame_bytes": 2716729344,
+    "training_updates": 700,
+    "training_sequence_batch": 256,
+    "training_sequence_presentations": 179200,
+    "training_logical_rgb_presentations": 716800,
+    "training_corpus_cycles": 11.2,
+    "sentinel_panel_count": 8,
+    "sentinel_rows_per_panel": 256,
+    "retention_panel_count_including_baseline": 9,
+    "checkpoint_count": 8,
+    "measurement_json_count": 8
+  },
+  "phases": [
+    {
+      "phase_id": "S0_pack",
+      "kind": "cpu_pack",
+      "preconditions": [
+        "attempt root, pack root, training root, and retention root are absent",
+        "every source binding and the interpreter identity match without opening a runtime input",
+        "no forbidden RGB leaf has been opened"
+      ],
+      "argv": [
+        "/home/andrewknowles/TinyQuadJEPA/bin/python",
+        "scripts/dev_pack_h6_temporal_frames.py",
+        "--workers",
+        "16",
+        "--verify",
+        "24",
+        "--out",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/pack"
+      ],
+      "required_receipt": ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/pack/manifest.json",
+      "runtime_validation_order": "The packer first creates the fresh pack root, thereby reserving the attempt, and only then opens and validates the bound H6 indexes and their allowed RGB leaves.",
+      "success_condition": "manifest schema dev_h6_temporal_pack_v3 validates both roles, the complete five-file pack/H6 source closure, all declared artifact hashes, all ordered source identities, and zero sampled decode deviation"
+    },
+    {
+      "phase_id": "S1_train",
+      "kind": "single_gpu_fixed_budget_training",
+      "depends_on": ["S0_pack"],
+      "environment": {
+        "HIP_VISIBLE_DEVICES": "1"
+      },
+      "argv": [
+        "/home/andrewknowles/TinyQuadJEPA/bin/python",
+        "scripts/dev_train_temporal_jepa_scaled.py",
+        "--updates",
+        "700",
+        "--schedule-updates",
+        "3000",
+        "--batch",
+        "256",
+        "--microbatch",
+        "32",
+        "--lr-scale",
+        "4.0",
+        "--warmup",
+        "150",
+        "--eval-every",
+        "100",
+        "--device",
+        "cuda:0",
+        "--tag",
+        "scaled_u700_sched3000",
+        "--pack-root",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/pack",
+        "--output-root",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/train"
+      ],
+      "seed": 20260731,
+      "runtime_validation_order": "After S0 has reserved the attempt and validated the pack, S1 validates the pack artifacts and exact predecessor checkpoint before loading them.",
+      "expected_final_learning_rate_fraction": 0.9108889076126225,
+      "expected_checkpoint_updates": [0, 100, 200, 300, 400, 500, 600, 700],
+      "required_receipt": ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/train/scaled_u700_sched3000/final_trace.json",
+      "success_condition": "final trace schema dev_temporal_jepa_scaled_v4 is COMPLETE and binds requested/resolved device cuda:0 with HIP visibility selector 1, the exact pack, predecessor, complete fifteen-file training source closure, configuration, eight immutable snapshots, and eight immutable measurement records"
+    },
+    {
+      "phase_id": "S2_retention_baseline",
+      "kind": "single_gpu_fixed_evaluation",
+      "depends_on": ["S1_train"],
+      "environment": {
+        "HIP_VISIBLE_DEVICES": "1"
+      },
+      "argv": [
+        "/home/andrewknowles/TinyQuadJEPA/bin/python",
+        "scripts/dev_eval_temporal_retention_and_rollout.py",
+        "--migrated-predecessor-baseline",
+        "--device",
+        "cuda:0",
+        "--skip-rollout",
+        "--out",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/predecessor.json"
+      ],
+      "runtime_validation_order": "After S0 reservation and S1 completion, S2 validates the two place indexes and their manifest-selected regular RGB leaves while opening the frozen spatial runtime.",
+      "required_receipt": ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/predecessor.json",
+      "success_condition": "The immutable receipt has schema dev_temporal_retention_composability_v4, status COMPLETE, citable false, requested/resolved device cuda:0 with HIP visibility selector 1, the exact sixteen-file source closure, migrated-predecessor identity, bound H6/place runtime audits, exactly 2,048 successful H6 current-RGB opens and 960 place RGB tensors, and structural_composability.status SKIPPED_BY_REQUEST."
+    },
+    {
+      "phase_id": "S3_retention_snapshots",
+      "kind": "single_gpu_fixed_evaluation_expansion",
+      "depends_on": ["S1_train", "S2_retention_baseline"],
+      "ordered_updates": [0, 100, 200, 300, 400, 500, 600, 700],
+      "expansion_rule": "For each ordered update U, resolve CHECKPOINT_PATH and CHECKPOINT_SHA256 from the same-attempt final_trace record whose update equals U; independently re-hash that regular non-symlink checkpoint; then execute exactly the argv template below with U rendered as six decimal digits in both paths.",
+      "argv_template": [
+        "/home/andrewknowles/TinyQuadJEPA/bin/python",
+        "scripts/dev_eval_temporal_retention_and_rollout.py",
+        "--checkpoint",
+        "{CHECKPOINT_PATH_FROM_S1_FINAL_TRACE}",
+        "--expected-update",
+        "{U}",
+        "--expected-checkpoint-sha256",
+        "{CHECKPOINT_SHA256_FROM_S1_FINAL_TRACE}",
+        "--device",
+        "cuda:0",
+        "--skip-rollout",
+        "--out",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/update_{U:06d}.json"
+      ],
+      "required_receipts": [
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/update_000000.json",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/update_000100.json",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/update_000200.json",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/update_000300.json",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/update_000400.json",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/update_000500.json",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/update_000600.json",
+        ".generated/dev/world_model_substrate_u700_sched3000_v1/attempt_v1/retention/update_000700.json"
+      ],
+      "per_receipt_success_condition": "Each immutable receipt has schema dev_temporal_retention_composability_v4, status COMPLETE, citable false, requested/resolved device cuda:0 with HIP visibility selector 1, the exact sixteen-file source closure, the exact same-attempt snapshot path/update/byte/SHA identity resolved for U, bound H6/place runtime audits, exactly 2,048 successful H6 current-RGB opens and 960 place RGB tensors, and structural_composability.status SKIPPED_BY_REQUEST.",
+      "integrity_gate": "The u0 retention metrics must equal the matched predecessor-baseline metrics to absolute tolerance 1e-7 for every shared finite scalar; otherwise the tranche terminates as a consumed protocol failure."
+    }
+  ],
+  "receipt_and_supervision_limit": {
+    "machine_receipts_implemented": "pack manifest, training measurements/final trace, and nine retention JSON reports only",
+    "standalone_reservation_or_terminal_receipt_writer_implemented": false,
+    "time_ceiling_enforced_by_current_source": false,
+    "authority_issue_requirement": "The issuing authority must bind external process supervision for the two time ceilings and define the terminal review record; this manifest does not pretend those mechanisms exist in current source."
+  },
+  "derived_read_policy": {
+    "allowed": true,
+    "scope": "Only S3 may read S1 snapshots, only from this attempt, only at the eight ordered updates, and only when path, update, byte count, and SHA-256 agree with S1 final_trace and an independent re-hash.",
+    "does_not_authorize_resume": true,
+    "does_not_authorize_arbitrary_generated_output_access": true
+  },
+  "post_run_decision_contract": {
+    "automatic_checkpoint_selection": false,
+    "automatic_success_claim": false,
+    "required_reported_series": [
+      "persistence_ratio",
+      "corrected_non_hold_wrong_action_ratio",
+      "wrong_history_ratio",
+      "prediction_to_target_rank_ratio",
+      "place_retrieval_chance_multiple",
+      "place_key_effective_rank",
+      "raw_encoder_effective_rank",
+      "spatial_diversity",
+      "wrong_target_control",
+      "wrong_context_control",
+      "position_mean_control"
+    ],
+    "reference_values": {
+      "place_retrieval_predecessor_chance_multiple": 4.69,
+      "place_retrieval_90_percent_floor": 4.221,
+      "wrong_action_hold_id": 6
+    },
+    "interpretation_limits": [
+      "This tranche measures a trajectory; it does not establish a known-good or physically requalified substrate.",
+      "Persistence alone cannot select a checkpoint.",
+      "The current retention entrypoint does not perform the component-swap decomposition needed to attribute spatial-control change.",
+      "Any checkpoint selection and every counterfactual read, render, training, or evaluation require a separately reviewed decision and authority."
+    ]
+  },
+  "forbidden_categories": [
+    "sealed or held-out material",
+    "RGB positions 4, 5, or 6 from either H6 index",
+    "legacy development packs, mutable latest checkpoints, or historical July 31 outputs",
+    "counterfactual JSONL, counterfactual RGB, physics replay, rendering, or generation",
+    "geometry audit",
+    "navigation, G2-G8, qualification, probability calibration, promotion, production, or deployment",
+    "resume, retry, overwrite, cleanup, output-root reuse, or network access"
+  ],
+  "requirements_before_authority_issue": [
+    "commit the exact source-bound bytes",
+    "bind the reviewed source commit",
+    "complete independent source/custody review",
+    "verify all output roots are absent",
+    "bind an authorizer and issue timestamp",
+    "confirm the exact GPU selector and hard time ceilings"
+  ]
+}
