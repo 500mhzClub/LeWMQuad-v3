@@ -427,6 +427,120 @@ def validate_update_integrity_v1(runtime: Any, model: Any, result: Any, *, updat
     }
 
 
+def evaluate_update0_gate_v1(
+    observation: metrics.ObservationMetrics,
+    receipt: Mapping[str, Any],
+) -> metrics.GateDecision:
+    if observation.update != 0:
+        raise ValueError("delay-line update-zero gate requires update 0")
+    temporal_integrity = receipt.get("temporal", {}).get("integrity", {})
+    temporal = observation.temporal
+    numeric_tolerance = 1.0e-5
+    checks = {
+        "integrity_pass": observation.safeguards.integrity_pass,
+        "target_noncollapsed": observation.safeguards.target_noncollapsed,
+        "online_noncollapsed": observation.safeguards.online_noncollapsed,
+        "memory_noncollapsed": observation.memory_state.noncollapsed,
+        "prediction_level_persistence_identity": (
+            temporal_integrity.get("checks", {}).get(
+                "update_zero_controls_equal_persistence"
+            )
+            is True
+        ),
+        "score_is_one_within_tolerance": all(
+            abs(value - 1.0) <= numeric_tolerance for value in temporal.score.macro
+        ),
+        "persistence_lift_is_zero_within_tolerance": all(
+            abs(value) <= numeric_tolerance
+            for value in temporal.persistence_lift.macro
+        ),
+        "action_lift_is_zero_within_tolerance": all(
+            abs(value) <= numeric_tolerance for value in temporal.action_lift.macro
+        ),
+        "history_lift_is_zero_within_tolerance": all(
+            abs(value) <= numeric_tolerance for value in temporal.history_lift.macro
+        ),
+        "place_at_least_2x_chance": (
+            observation.substrate.place_chance_multiple >= 2.0
+        ),
+        "place_above_chance_in_six_scenes": (
+            observation.substrate.place_scene_count_above_chance >= 6
+        ),
+        "target_place_rank_at_least_2": (
+            observation.substrate.target_place_rank >= 2.0
+        ),
+    }
+    passed = all(checks.values())
+    return metrics.GateDecision(
+        update=0,
+        status=(
+            "PASS_UPDATE0_INTEGRITY"
+            if passed
+            else "FAIL_UPDATE0_INTEGRITY_TERMINAL"
+        ),
+        action="CONTINUE" if passed else "STOP_TERMINAL",
+        passed=passed,
+        checks=checks,
+        failed_checks=tuple(name for name, value in checks.items() if not value),
+        observed={
+            "maximum_prediction_persistence_delta": temporal_integrity.get(
+                "update_zero_max_control_prediction_delta"
+            ),
+            "place_chance_multiple": observation.substrate.place_chance_multiple,
+            "place_scene_count_above_chance": (
+                observation.substrate.place_scene_count_above_chance
+            ),
+            "target_place_rank": observation.substrate.target_place_rank,
+        },
+    )
+
+
+def _immediate_integrity_failure_decision(
+    *,
+    update: int,
+    status: str,
+    checks: Mapping[str, bool],
+    observed: Mapping[str, float | int | bool | None],
+) -> metrics.GateDecision:
+    failed = tuple(name for name, passed in checks.items() if not passed)
+    if not failed:
+        raise ValueError("immediate integrity failure requires a failed check")
+    return metrics.GateDecision(
+        update=update,
+        status=status,
+        action="STOP_TERMINAL",
+        passed=False,
+        checks=dict(checks),
+        failed_checks=failed,
+        observed=dict(observed),
+    )
+
+
+def evaluate_observation_integrity_v1(
+    observation: metrics.ObservationMetrics,
+) -> metrics.GateDecision | None:
+    checks = {
+        "integrity_pass": observation.safeguards.integrity_pass,
+        "gradient_accounting_pass": observation.safeguards.gradient_accounting_pass,
+        "target_noncollapsed": observation.safeguards.target_noncollapsed,
+        "online_noncollapsed": observation.safeguards.online_noncollapsed,
+        "memory_noncollapsed": observation.memory_state.noncollapsed,
+    }
+    if all(checks.values()):
+        return None
+    return _immediate_integrity_failure_decision(
+        update=observation.update,
+        status=f"STOP_UPDATE{observation.update}_INTEGRITY_OR_COLLAPSE",
+        checks=checks,
+        observed={
+            "memory_participation_rank_ratio": (
+                observation.memory_state.participation_rank_ratio
+            ),
+            "memory_near_zero_fraction": observation.memory_state.near_zero_fraction,
+        },
+    )
+
+
 def _physical_batches(runtime: Any, update: int) -> tuple[Mapping[str, Any], ...]:
     start = (update - 1) * PHYSICAL_PRESENTATIONS_PER_UPDATE
     indices = tuple(runtime.schedule[start : start + PHYSICAL_PRESENTATIONS_PER_UPDATE])
@@ -540,6 +654,7 @@ def _observation(
         "online_rank": asdict(temporal.online_rank),
         "memory_rank": asdict(temporal.memory_rank),
         "energy_means_by_horizon": energy_means,
+        "hold_diagnostics": asdict(temporal.hold_diagnostics),
         "access_receipt": dict(temporal.access_receipt),
         "memory_receipt": dict(temporal.memory_receipt),
         "integrity": temporal_integrity,
@@ -568,6 +683,61 @@ def _publish_json(publisher: Any, relative: str, core: Mapping[str, Any]) -> tup
     if type(result) is not dict or set(result) != {"value", "binding"}:
         raise RuntimeError("delay-line publisher JSON result changed")
     return validate_content_bound_v1(result["value"]), dict(result["binding"])
+
+
+class ExactRecoveryReplayPublisherV1:
+    """Allow recovery to reuse only byte-identical write-once artifacts."""
+
+    def __init__(self, delegate: Any) -> None:
+        self.delegate = delegate
+        self.output_root = Path(delegate.output_root)
+
+    def _path(self, relative: str) -> Path:
+        path = Path(relative)
+        if path.is_absolute() or not path.parts or ".." in path.parts or "." in path.parts:
+            raise PermissionError("delay-line recovery artifact path escaped")
+        return self.output_root.joinpath(*path.parts)
+
+    def publish_json(
+        self, relative: str, core: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        try:
+            return self.delegate.publish_json(relative, core)
+        except FileExistsError:
+            path = self._path(relative)
+            observed = validate_content_bound_v1(
+                _read_json(path, name=f"replayed {relative}")
+            )
+            expected = _content_bound(core)
+            if observed != expected:
+                raise PermissionError(
+                    f"delay-line recovery JSON replay changed: {relative}"
+                )
+            raw = _canonical_json_bytes(observed) + b"\n"
+            return {
+                "value": observed,
+                "binding": {
+                    "path": relative,
+                    "file_sha256": hashlib.sha256(raw).hexdigest(),
+                    "byte_count": len(raw),
+                    "content_sha256": observed["content_sha256"],
+                },
+            }
+
+    def publish_bytes(self, relative: str, raw: bytes) -> Mapping[str, Any]:
+        try:
+            return self.delegate.publish_bytes(relative, raw)
+        except FileExistsError:
+            path = self._path(relative)
+            if path.is_symlink() or not path.is_file() or path.read_bytes() != raw:
+                raise PermissionError(
+                    f"delay-line recovery byte replay changed: {relative}"
+                )
+            return {
+                "path": relative,
+                "file_sha256": hashlib.sha256(raw).hexdigest(),
+                "byte_count": len(raw),
+            }
 
 
 def _serialize_snapshot(
@@ -724,6 +894,8 @@ def run_future_authorized_engine_v1(
     integrity_pass = True
     stage = "initialize"
     try:
+        if recovery is not None:
+            publisher = ExactRecoveryReplayPublisherV1(publisher)
         model, optimizer, initialization = runtime.initialize_model_v13()
         if recovery is not None:
             stage = "restore_latest_exact_snapshot"
@@ -778,7 +950,7 @@ def run_future_authorized_engine_v1(
             )
 
         def observe(update: int) -> None:
-            nonlocal update0_place_rank
+            nonlocal integrity_pass, update0_place_rank
             receipt, gate_value, update0_place_rank = _observation(
                 runtime=runtime,
                 model=model,
@@ -790,12 +962,28 @@ def run_future_authorized_engine_v1(
             )
             observations[update] = gate_value
             observation_receipts[update] = receipt
+            integrity_pass = (
+                integrity_pass and gate_value.safeguards.integrity_pass
+            )
             _, binding = _publish_json(publisher, f"metrics/update_{update}.json", receipt)
             metric_bindings.append(binding)
 
         if recovery is None:
             stage = "observe_update_0"
+            accounting = runtime.training_module.JointTrainingAccountingV1()
             observe(0)
+            update0_decision = evaluate_update0_gate_v1(
+                observations[0], observation_receipts[0]
+            )
+            trace.append(
+                {
+                    "schema": f"{SCHEMA_PREFIX}_trace_row_v1",
+                    "event": "update0_integrity_gate",
+                    "update": 0,
+                    "decision": asdict(update0_decision),
+                }
+            )
+            pending_decision = None if update0_decision.passed else update0_decision
             start_update = 0
 
         if pending_decision is None or pending_decision.passed:
@@ -820,11 +1008,32 @@ def run_future_authorized_engine_v1(
                         **integrity,
                     }
                 )
+                if not integrity["passed"]:
+                    pending_decision = _immediate_integrity_failure_decision(
+                        update=update,
+                        status=f"STOP_UPDATE{update}_TRAINING_INTEGRITY",
+                        checks=integrity["checks"],
+                        observed={"training_update": update},
+                    )
+                    trace.append(
+                        {
+                            "schema": f"{SCHEMA_PREFIX}_trace_row_v1",
+                            "event": "registered_gate",
+                            "update": update,
+                            "decision": asdict(pending_decision),
+                        }
+                    )
+                    break
                 if update not in OBSERVATION_UPDATES:
                     continue
                 stage = f"observe_update_{update}"
                 observe(update)
-                if update == 250:
+                pending_decision = evaluate_observation_integrity_v1(
+                    observations[update]
+                )
+                if pending_decision is not None:
+                    pass
+                elif update == 250:
                     pending_decision = metrics.update250_futility_decision(
                         observations[100], observations[250]
                     )
@@ -947,8 +1156,35 @@ def run_future_authorized_engine_v1(
         )
         return value
     except BaseException as error:
+        output_root = Path(publisher.output_root)
+        interruption_path = output_root / "interruption.json"
+        if (
+            recovery is None
+            and not stage.startswith("terminalize_update_")
+            and not interruption_path.exists()
+            and not interruption_path.is_symlink()
+            and _latest_snapshot(output_root) is not None
+        ):
+            value, _ = _publish_json(
+                publisher,
+                "interruption.json",
+                {
+                    "schema": f"{SCHEMA_PREFIX}_recoverable_infrastructure_interruption_v1",
+                    "status": "INTERRUPTED_LATEST_EXACT_SNAPSHOT_RECOVERY_AVAILABLE",
+                    "stage": stage,
+                    "error_type": type(error).__name__,
+                    "error_message": str(error),
+                    "attempt_consumed": True,
+                    "scientific_retry": False,
+                    "cap_changed": False,
+                    "infrastructure_recovery_available": True,
+                    "navigation_executed": False,
+                    "held_out_or_sealed_opened": False,
+                },
+            )
+            return value
         return terminalize_failure_v1(
-            Path(publisher.output_root),
+            output_root,
             validated_reservation,
             stage=stage,
             error=error,
@@ -978,6 +1214,9 @@ __all__ = [
     "reserve_or_recover_attempt_v1",
     "run_future_authorized_engine_v1",
     "terminalize_failure_v1",
+    "ExactRecoveryReplayPublisherV1",
+    "evaluate_observation_integrity_v1",
+    "evaluate_update0_gate_v1",
     "validate_content_bound_v1",
     "validate_future_execution_prerequisites_v1",
     "validate_update_integrity_v1",

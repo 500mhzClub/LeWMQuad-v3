@@ -107,7 +107,7 @@ def _safe_source_path(relative: str) -> PurePosixPath:
         or "." in path.parts
         or path.suffix not in {".py", ".md", ".json"}
         or any(
-            part == "sealed"
+            part in {"data", "heldout", "held_out", "sealed"}
             or part.startswith(("sealed_", "heldout_", "held_out_"))
             or part in {".generated", "runtime", "runtime_artifacts", "checkpoints"}
             for part in folded
@@ -237,6 +237,14 @@ def _terminal_exists(output_root: Path) -> bool:
     )
 
 
+def validate_pre_reservation_gpu_visibility_v1(
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Reuse the reviewed single-GPU visibility guard before consuming the attempt."""
+
+    return v5_launcher.validate_pre_reservation_gpu_visibility_v1(environment)
+
+
 def execute_future_authorized_v1(
     *, repository_root: Path, authority: Mapping[str, Any]
 ) -> Mapping[str, Any]:
@@ -249,6 +257,7 @@ def execute_future_authorized_v1(
         raise PermissionError("supplied delay-line authority differs from fixed file")
     executor = importlib.import_module(EXECUTOR_MODULE_NAME)
     validated = executor.validate_future_execution_prerequisites_v1(fixed)
+    validate_pre_reservation_gpu_visibility_v1()
     _BASE._validate_certified_source_root_v13(repository, validated)
     _BASE._activate_certified_source_root_v13(repository)
     source_evidence = validate_source_certification_v1(repository, validated)

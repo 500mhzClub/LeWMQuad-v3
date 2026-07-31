@@ -140,6 +140,80 @@ def test_update_integrity_serializes_nested_route_dataclasses() -> None:
     executor._canonical_json_bytes(receipt)
 
 
+def test_update_zero_gate_requires_prediction_identity_and_substrate() -> None:
+    zero = SimpleNamespace(macro=(0.0, 0.0, 0.0, 0.0))
+    observation = SimpleNamespace(
+        update=0,
+        temporal=SimpleNamespace(
+            score=SimpleNamespace(macro=(1.0, 1.0, 1.0, 1.0)),
+            persistence_lift=zero,
+            action_lift=zero,
+            history_lift=zero,
+        ),
+        safeguards=SimpleNamespace(
+            integrity_pass=True,
+            target_noncollapsed=True,
+            online_noncollapsed=True,
+        ),
+        memory_state=SimpleNamespace(noncollapsed=True),
+        substrate=SimpleNamespace(
+            place_chance_multiple=2.1,
+            place_scene_count_above_chance=6,
+            target_place_rank=2.0,
+        ),
+    )
+    receipt = {
+        "temporal": {
+            "integrity": {
+                "checks": {"update_zero_controls_equal_persistence": True},
+                "update_zero_max_control_prediction_delta": 0.0,
+            }
+        }
+    }
+    decision = executor.evaluate_update0_gate_v1(observation, receipt)
+    assert decision.passed is True
+    assert decision.observed["maximum_prediction_persistence_delta"] == 0.0
+
+    receipt["temporal"]["integrity"]["checks"][
+        "update_zero_controls_equal_persistence"
+    ] = False
+    failed = executor.evaluate_update0_gate_v1(observation, receipt)
+    assert failed.passed is False
+    assert "prediction_level_persistence_identity" in failed.failed_checks
+
+
+def test_launcher_rejects_ambiguous_gpu_visibility_before_reservation() -> None:
+    receipt = launcher.validate_pre_reservation_gpu_visibility_v1(
+        {"HIP_VISIBLE_DEVICES": "0"}
+    )
+    assert receipt["passed"] is True
+    with pytest.raises(PermissionError, match="HIP_VISIBLE_DEVICES=0"):
+        launcher.validate_pre_reservation_gpu_visibility_v1({})
+    with pytest.raises(PermissionError, match="conflicting selector"):
+        launcher.validate_pre_reservation_gpu_visibility_v1(
+            {"HIP_VISIBLE_DEVICES": "0", "ROCR_VISIBLE_DEVICES": "0"}
+        )
+
+
+def test_exact_recovery_reuses_only_identical_write_once_artifacts(
+    tmp_path: Path,
+) -> None:
+    delegate = launcher._BASE.V13WriteOncePublisher(tmp_path, executor)
+    delegate.publish_json("metrics/update_500.json", {"value": 1})
+    delegate.publish_bytes("snapshots/update_500.pt", b"exact-state")
+    recovery = executor.ExactRecoveryReplayPublisherV1(delegate)
+
+    replayed = recovery.publish_json("metrics/update_500.json", {"value": 1})
+    assert replayed["value"]["value"] == 1
+    assert recovery.publish_bytes(
+        "snapshots/update_500.pt", b"exact-state"
+    )["byte_count"] == len(b"exact-state")
+    with pytest.raises(PermissionError, match="JSON replay changed"):
+        recovery.publish_json("metrics/update_500.json", {"value": 2})
+    with pytest.raises(PermissionError, match="byte replay changed"):
+        recovery.publish_bytes("snapshots/update_500.pt", b"changed-state")
+
+
 def test_launcher_without_authority_denies_before_reservation(capsys) -> None:
     assert launcher.main([]) == 4
     output = capsys.readouterr().out
