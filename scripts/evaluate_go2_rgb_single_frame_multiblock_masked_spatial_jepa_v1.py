@@ -2,8 +2,11 @@
 """Current-RGB-only runtime and observation evaluator for masked spatial JEPA."""
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
-from pathlib import Path
+import os
+from pathlib import Path, PurePosixPath
+import stat
 from typing import Any, Callable, Mapping, Sequence
 
 import torch
@@ -13,9 +16,6 @@ from lewm.benchmarks import (
 )
 from lewm.datasets import go2_explicit_plan_discounted_successor_state_v27 as h6
 from lewm.datasets import go2_memory_role_place_triplets_v1 as place_data
-from scripts.evaluate_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27 import (
-    SafeV27RGBLoader,
-)
 
 
 PLACE_INDEX_ROOT = Path(".generated/go2_memory_role_place_triplet_index_v1")
@@ -29,10 +29,243 @@ MICROBATCH_SIZE = 4
 MICROBATCHES_PER_UPDATE = 4
 VALIDATION_BATCH_SIZE = 16
 PLACE_BATCH_SIZE = 16
+RGB_ROOT_RELATIVE_PATH = Path(".generated/datagen_full/render_textured_v03")
+MAXIMUM_RGB_FILE_BYTES = 4 * 1024 * 1024
+VALIDATION_RGB_TENSOR_BYTES = 3 * 112 * 112 * 4
+MAXIMUM_VALIDATION_CACHE_ENTRIES = metrics.VALIDATION_ROW_COUNT
+
+_DIR_FLAGS = (
+    os.O_RDONLY
+    | getattr(os, "O_DIRECTORY", 0)
+    | getattr(os, "O_NOFOLLOW", 0)
+    | getattr(os, "O_CLOEXEC", 0)
+)
+_READ_FLAGS = (
+    os.O_RDONLY
+    | getattr(os, "O_NOFOLLOW", 0)
+    | getattr(os, "O_CLOEXEC", 0)
+    | getattr(os, "O_NONBLOCK", 0)
+)
 
 
 class MaskedSpatialEvaluationError(RuntimeError):
     """The current-frame boundary or frozen evaluation contract changed."""
+
+
+def _fingerprint(info: os.stat_result) -> tuple[int, ...]:
+    return (
+        int(info.st_dev),
+        int(info.st_ino),
+        int(info.st_mode),
+        int(info.st_size),
+        int(info.st_mtime_ns),
+        int(info.st_ctime_ns),
+    )
+
+
+def _open_absolute_directory(path: Path) -> int:
+    value = Path(path)
+    if (
+        not value.is_absolute()
+        or any(part in {"", ".", ".."} for part in value.parts[1:])
+        or not getattr(os, "O_NOFOLLOW", 0)
+        or not getattr(os, "O_DIRECTORY", 0)
+    ):
+        raise MaskedSpatialEvaluationError(
+            "RGB root must be canonical absolute and support no-follow opens"
+        )
+    descriptor = os.open(value.anchor, _DIR_FLAGS)
+    try:
+        for component in value.parts[1:]:
+            child = os.open(component, _DIR_FLAGS, dir_fd=descriptor)
+            os.close(descriptor)
+            descriptor = child
+        return descriptor
+    except BaseException:
+        os.close(descriptor)
+        raise
+
+
+class SafeCurrentRGBLoader:
+    """No-follow loader restricted to registered H6 current-frame leaves."""
+
+    def __init__(self, runtime_data_root: Path, rows: Sequence[h6.H6V2Row]) -> None:
+        root = Path(runtime_data_root)
+        if not root.is_absolute():
+            raise MaskedSpatialEvaluationError(
+                "runtime data root must be absolute"
+            )
+        registered: dict[tuple[str, int], h6.H6V2Row] = {}
+        for row in rows:
+            if not isinstance(row, h6.H6V2Row):
+                raise TypeError("registered RGB rows must be H6V2Row values")
+            key = (row.role, row.index)
+            if key in registered:
+                raise MaskedSpatialEvaluationError(
+                    "registered RGB row identity repeats"
+                )
+            registered[key] = row
+        if not registered:
+            raise MaskedSpatialEvaluationError(
+                "RGB loader requires registered rows"
+            )
+        try:
+            descriptor = _open_absolute_directory(root / RGB_ROOT_RELATIVE_PATH)
+        except OSError as error:
+            raise MaskedSpatialEvaluationError("frozen RGB root open failed") from error
+        self._root_fd: int | None = descriptor
+        self._rows = registered
+        self._validation_cache_allowlist = frozenset(
+            row.current_rgb
+            for row in registered.values()
+            if row.role == "val"
+        )
+        self._validation_cache: dict[str, torch.Tensor] = {}
+        if len(self._validation_cache_allowlist) > MAXIMUM_VALIDATION_CACHE_ENTRIES:
+            self.close()
+            raise MaskedSpatialEvaluationError(
+                "validation RGB cache allowlist is too large"
+            )
+        self._access: Counter[str] = Counter(
+            {
+                "rgb_tensor_request_count": 0,
+                "rgb_open_attempt_count": 0,
+                "rgb_open_success_count": 0,
+                "rgb_decode_success_count": 0,
+                "rgb_byte_count": 0,
+                "validation_cache_hit_count": 0,
+                "validation_cache_miss_count": 0,
+                "validation_cache_insert_count": 0,
+            }
+        )
+
+    def _require_open(self) -> int:
+        if self._root_fd is None:
+            raise MaskedSpatialEvaluationError("RGB loader is closed")
+        return self._root_fd
+
+    def _registered(self, row: h6.H6V2Row) -> h6.H6V2Row:
+        if not isinstance(row, h6.H6V2Row):
+            raise TypeError("RGB row must be H6V2Row")
+        registered = self._rows.get((row.role, row.index))
+        if registered is None or registered != row:
+            raise MaskedSpatialEvaluationError(
+                "RGB row is not the registered index row"
+            )
+        return registered
+
+    def _read_current_leaf(self, row: h6.H6V2Row) -> bytes:
+        registered = self._registered(row)
+        leaf = registered.current_rgb
+        try:
+            canonical, _frame, _environment = h6._validate_rgb_leaf(
+                leaf, scene_id=registered.scene_id
+            )
+        except h6.V27DataContractError as error:
+            raise MaskedSpatialEvaluationError(
+                "registered current RGB leaf is invalid"
+            ) from error
+        parts = PurePosixPath(canonical).parts
+        if len(parts) != 3:
+            raise MaskedSpatialEvaluationError(
+                "registered current RGB leaf shape changed"
+            )
+
+        descriptor = os.dup(self._require_open())
+        image_fd: int | None = None
+        try:
+            for component in parts[:-1]:
+                child = os.open(component, _DIR_FLAGS, dir_fd=descriptor)
+                os.close(descriptor)
+                descriptor = child
+            self._access["rgb_open_attempt_count"] += 1
+            image_fd = os.open(parts[-1], _READ_FLAGS, dir_fd=descriptor)
+            before = os.fstat(image_fd)
+            if not stat.S_ISREG(before.st_mode):
+                raise MaskedSpatialEvaluationError(
+                    "current RGB leaf is not a regular file"
+                )
+            if not 0 < before.st_size <= MAXIMUM_RGB_FILE_BYTES:
+                raise MaskedSpatialEvaluationError(
+                    "current RGB leaf byte count is unsafe"
+                )
+            chunks: list[bytes] = []
+            consumed = 0
+            while True:
+                chunk = os.read(image_fd, min(1024 * 1024, MAXIMUM_RGB_FILE_BYTES))
+                if not chunk:
+                    break
+                consumed += len(chunk)
+                if consumed > MAXIMUM_RGB_FILE_BYTES:
+                    raise MaskedSpatialEvaluationError(
+                        "current RGB leaf exceeded its byte cap"
+                    )
+                chunks.append(chunk)
+            after = os.fstat(image_fd)
+            raw = b"".join(chunks)
+            if _fingerprint(before) != _fingerprint(after) or len(raw) != before.st_size:
+                raise MaskedSpatialEvaluationError(
+                    "current RGB leaf changed while being read"
+                )
+            self._access["rgb_open_success_count"] += 1
+            self._access["rgb_byte_count"] += len(raw)
+            return raw
+        except MaskedSpatialEvaluationError:
+            raise
+        except OSError as error:
+            raise MaskedSpatialEvaluationError(
+                "no-follow current RGB leaf open failed"
+            ) from error
+        finally:
+            if image_fd is not None:
+                os.close(image_fd)
+            os.close(descriptor)
+
+    def load_current(self, row: h6.H6V2Row) -> torch.Tensor:
+        registered = self._registered(row)
+        leaf = registered.current_rgb
+        self._access["rgb_tensor_request_count"] += 1
+        cacheable = row.role == "val" and leaf in self._validation_cache_allowlist
+        if row.role == "val" and not cacheable:
+            raise MaskedSpatialEvaluationError(
+                "validation current RGB left cache allowlist"
+            )
+        if cacheable and leaf in self._validation_cache:
+            self._access["validation_cache_hit_count"] += 1
+            return self._validation_cache[leaf]
+        if cacheable:
+            self._access["validation_cache_miss_count"] += 1
+        raw = self._read_current_leaf(registered)
+        try:
+            tensor = h6.rectify_h6_rgb_bytes(raw)
+        except h6.V27DataContractError as error:
+            raise MaskedSpatialEvaluationError(
+                "registered current RGB decode failed"
+            ) from error
+        self._access["rgb_decode_success_count"] += 1
+        if cacheable:
+            if len(self._validation_cache) >= MAXIMUM_VALIDATION_CACHE_ENTRIES:
+                raise MaskedSpatialEvaluationError(
+                    "validation current RGB cache capacity exceeded"
+                )
+            self._validation_cache[leaf] = tensor
+            self._access["validation_cache_insert_count"] += 1
+        return tensor
+
+    def access_snapshot(self) -> dict[str, int]:
+        return {
+            **self._access,
+            "validation_cache_entry_count": len(self._validation_cache),
+            "validation_cache_bytes": (
+                len(self._validation_cache) * VALIDATION_RGB_TENSOR_BYTES
+            ),
+        }
+
+    def close(self) -> None:
+        self._validation_cache.clear()
+        if self._root_fd is not None:
+            os.close(self._root_fd)
+            self._root_fd = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,7 +292,7 @@ class CurrentFrameH6Runtime:
         train_rows: Sequence[h6.H6V2Row],
         validation_rows: Sequence[h6.H6V2Row],
         *,
-        loader: SafeV27RGBLoader,
+        loader: SafeCurrentRGBLoader,
         device: Any,
         place_rows: Sequence[place_data.PlaceTripletRow] = (),
         load_place_triplet: Callable[
@@ -174,7 +407,7 @@ def open_bound_runtime(
     root = Path(repo_root).resolve(strict=True)
     train_rows, train_audit = h6.load_bound_index(root, role="train")
     validation_rows, validation_audit = h6.load_bound_index(root, role="val")
-    loader = SafeV27RGBLoader(root, (*train_rows, *validation_rows))
+    loader = SafeCurrentRGBLoader(root, (*train_rows, *validation_rows))
     place_rows: tuple[place_data.PlaceTripletRow, ...] = ()
     place_audit: Mapping[str, Any] = {}
     place_loader = None

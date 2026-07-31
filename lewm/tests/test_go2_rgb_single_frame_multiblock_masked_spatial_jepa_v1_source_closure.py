@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import subprocess
 import sys
 
 
@@ -41,3 +42,29 @@ def test_source_closure_is_exact_safe_and_reproducible() -> None:
         assert ".generated/" not in folded
         assert "sealed" not in folded
         assert "heldout" not in folded
+
+
+def test_source_closure_supports_isolated_entrypoint_imports(tmp_path: Path) -> None:
+    checker = _module()
+    manifest = checker.build_manifest()
+    for relative in manifest["source_paths"]:
+        destination = tmp_path / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes((ROOT / relative).read_bytes())
+    modules = tuple(
+        relative.removesuffix(".py").replace("/", ".")
+        for relative in checker.ENTRYPOINTS
+    )
+    code = (
+        "import importlib,sys;"
+        f"sys.path.insert(0,{str(tmp_path)!r});"
+        f"[importlib.import_module(name) for name in {modules!r}]"
+    )
+    completed = subprocess.run(
+        [sys.executable, "-I", "-B", "-c", code],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
