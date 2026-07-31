@@ -141,6 +141,191 @@ def test_owned_reservation_requires_exact_keys_and_nonce(tmp_path: Path) -> None
     assert supervisor._owned_reservation(attempt, supervisor_nonce=nonce) is None
 
 
+def test_optional_physics_result_loader_binds_failed_receipt(tmp_path: Path) -> None:
+    supervisor = _load_module()
+    attempt = tmp_path / "attempt"
+    attempt.mkdir()
+    payload = {"schema": supervisor.PHYSICS_RESULT_SCHEMA, "status": "FAILED"}
+    path = attempt / "physics_result.json"
+    path.write_text(json.dumps(payload) + "\n", encoding="utf-8")
+    loaded, binding = supervisor._load_physics_result_if_present(attempt)
+    assert loaded == payload
+    assert binding == supervisor.file_binding(path)
+
+    path.unlink()
+    assert supervisor._load_physics_result_if_present(attempt) == (None, None)
+
+
+def test_failed_collector_receipt_does_not_mask_an_owned_reservation(
+    tmp_path: Path,
+) -> None:
+    supervisor = _load_module()
+    reservation_path = tmp_path / "reservation.json"
+    reservation_path.write_text("{}\n", encoding="utf-8")
+    binding = supervisor.file_binding(reservation_path)
+    attempt = {"id": "fixture"}
+    plan_binding = {"path": "/plan", "file_sha256": "1" * 64, "byte_count": 1}
+    authority_binding = {
+        "path": "/authority",
+        "file_sha256": "2" * 64,
+        "byte_count": 2,
+    }
+    document = {
+        "schema": "lewm_go2_world_model_counterfactual_smoke_reservation_v1",
+        "status": "RESERVED_ATTEMPT_CONSUMED",
+        "attempt": attempt,
+        "plan_binding": plan_binding,
+        "authority_binding": authority_binding,
+        "retry_authorized": False,
+        "resume_authorized": False,
+        "overwrite_authorized": False,
+        "refill_authorized": False,
+    }
+    owned = {"document": document, "binding": binding}
+    authority = {"attempt": attempt}
+    assert supervisor._owned_reservation_contract_changed(
+        owned,
+        authority=authority,
+        authority_binding=authority_binding,
+        plan_binding=plan_binding,
+        physics_result=None,
+    ) is False
+
+    relative_binding = dict(binding)
+    relative_binding["path"] = "reservation.json"
+    assert supervisor._owned_reservation_contract_changed(
+        owned,
+        authority=authority,
+        authority_binding=authority_binding,
+        plan_binding=plan_binding,
+        physics_result={"reservation_binding": relative_binding},
+    ) is False
+
+
+def test_supervise_preserves_child_failure_and_binds_failed_physics_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    supervisor = _load_module()
+    attempt_root = tmp_path / "attempt"
+    plan_binding = {
+        "path": str(tmp_path / "plan.json"),
+        "file_sha256": "1" * 64,
+        "byte_count": 1,
+    }
+    authority_binding = {
+        "path": str(tmp_path / "authority.json"),
+        "file_sha256": "2" * 64,
+        "byte_count": 2,
+    }
+    attempt_contract = {
+        "id": "fixture-attempt",
+        "root": str(attempt_root),
+        "maximum_attempts": 1,
+        "must_be_absent": True,
+        "reservation_consumes_attempt": True,
+        "retry": False,
+        "resume": False,
+        "overwrite": False,
+        "refill": False,
+    }
+    authority = {
+        "plan_binding": plan_binding,
+        "attempt": attempt_contract,
+        "caps": {"wall_seconds": 30.0},
+        "source_commit": "3" * 40,
+        "external_supervisor": {"terminal_reviewer": "/root/reviewer"},
+    }
+    plan = {
+        "attempt_id": "fixture-attempt",
+        "output_root": str(attempt_root),
+    }
+    monkeypatch.setattr(
+        supervisor,
+        "load_and_validate_authority",
+        lambda *_args, **_kwargs: (
+            authority,
+            authority_binding,
+            plan,
+            plan_binding,
+        ),
+    )
+    monkeypatch.setattr(
+        supervisor,
+        "_validate_python_invocation_before_launch",
+        lambda _plan: Path(sys.executable),
+    )
+    monkeypatch.setattr(supervisor, "_child_environment", lambda _plan: {})
+    monkeypatch.setattr(
+        supervisor,
+        "_run_graphics_preflight",
+        lambda _plan, *, child_env: {
+            "phase": "graphics_preflight",
+            "status": "PASS",
+        },
+    )
+    monkeypatch.setattr(
+        supervisor,
+        "_require_fresh_development_root",
+        lambda _path: attempt_root,
+    )
+    monkeypatch.setattr(supervisor, "_git_head", lambda: "4" * 40)
+    launched: list[list[str]] = []
+
+    def fail_after_receipts(argv, *, timeout, env):
+        del timeout, env
+        launched.append(list(argv))
+        nonce = argv[argv.index("--supervisor-nonce") + 1]
+        attempt_root.mkdir()
+        reservation = {
+            "schema": "lewm_go2_world_model_counterfactual_smoke_reservation_v1",
+            "status": "RESERVED_ATTEMPT_CONSUMED",
+            "attempt": attempt_contract,
+            "plan_binding": plan_binding,
+            "authority_binding": authority_binding,
+            "supervisor_nonce": nonce,
+            "retry_authorized": False,
+            "resume_authorized": False,
+            "overwrite_authorized": False,
+            "refill_authorized": False,
+        }
+        reservation_path = attempt_root / "reservation.json"
+        reservation_path.write_text(
+            json.dumps(reservation) + "\n", encoding="utf-8"
+        )
+        reservation_binding = supervisor.file_binding(reservation_path)
+        reservation_binding["path"] = "reservation.json"
+        (attempt_root / "physics_result.json").write_text(
+            json.dumps(
+                {
+                    "schema": supervisor.PHYSICS_RESULT_SCHEMA,
+                    "status": "FAILED",
+                    "reservation_binding": reservation_binding,
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        raise supervisor.SmokeSupervisionError(
+            "supervised command exited with status 2"
+        )
+
+    monkeypatch.setattr(supervisor, "_run_once", fail_after_receipts)
+    terminal, terminal_binding = supervisor.supervise(
+        tmp_path / "authority.json",
+        expected_authority_byte_count=2,
+        expected_authority_sha256="2" * 64,
+    )
+    assert len(launched) == 1
+    assert terminal_binding is not None
+    assert terminal["status"] == "CONSUMED_TERMINAL_FAILURE"
+    assert terminal["physics_result_binding"] == supervisor.file_binding(
+        attempt_root / "physics_result.json"
+    )
+    assert "supervised command exited with status 2" in terminal["failure"]
+    assert "owned reservation contract changed" not in terminal["failure"]
+    assert (attempt_root / "terminal_supervision.json").is_file()
+
+
 def test_unbound_python_invocation_is_rejected_before_popen(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

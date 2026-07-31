@@ -674,6 +674,55 @@ def _owned_reservation(
     return {"document": value, "binding": binding}
 
 
+def _load_physics_result_if_present(
+    attempt_root: Path,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Load one immutable physics receipt when the collector left one behind."""
+
+    path = attempt_root / "physics_result.json"
+    if not path.exists():
+        return None, None
+    if not path.is_file() or path.is_symlink():
+        raise SmokeSupervisionError("physics result is not a regular non-symlink file")
+    binding = file_binding(path)
+    value = strict_json_bytes(path.read_bytes(), label="physics result")
+    if not isinstance(value, dict):
+        raise SmokeSupervisionError("physics result must be a JSON object")
+    if file_binding(path) != binding:
+        raise SmokeSupervisionError("physics result changed while being loaded")
+    return value, binding
+
+
+def _owned_reservation_contract_changed(
+    owned_reservation: Mapping[str, Any],
+    *,
+    authority: Mapping[str, Any],
+    authority_binding: Mapping[str, Any],
+    plan_binding: Mapping[str, Any],
+    physics_result: Mapping[str, Any] | None,
+) -> bool:
+    reservation_document = owned_reservation["document"]
+    owned_reservation_binding = dict(owned_reservation["binding"])
+    owned_reservation_binding["path"] = "reservation.json"
+    return bool(
+        reservation_document.get("schema")
+        != "lewm_go2_world_model_counterfactual_smoke_reservation_v1"
+        or reservation_document.get("status") != "RESERVED_ATTEMPT_CONSUMED"
+        or reservation_document.get("attempt") != authority.get("attempt")
+        or reservation_document.get("plan_binding") != plan_binding
+        or reservation_document.get("authority_binding") != authority_binding
+        or reservation_document.get("retry_authorized") is not False
+        or reservation_document.get("resume_authorized") is not False
+        or reservation_document.get("overwrite_authorized") is not False
+        or reservation_document.get("refill_authorized") is not False
+        or (
+            physics_result is not None
+            and physics_result.get("reservation_binding")
+            != owned_reservation_binding
+        )
+    )
+
+
 def supervise(
     authority_path: Path,
     *,
@@ -718,13 +767,12 @@ def supervise(
     ]
     try:
         phases.append(_run_once(collector_argv, timeout=wall_cap, env=child_env))
-        physics_path = attempt_root / "physics_result.json"
-        physics_binding = file_binding(physics_path)
-        physics_result = strict_json_bytes(
-            physics_path.read_bytes(), label="physics result"
+        physics_result, physics_binding = _load_physics_result_if_present(
+            attempt_root
         )
         if (
             not isinstance(physics_result, dict)
+            or physics_binding is None
             or physics_result.get("schema") != PHYSICS_RESULT_SCHEMA
             or physics_result.get("status") != "PHYSICS_COMPLETE"
             or physics_result.get("physics_validated") is not False
@@ -741,6 +789,7 @@ def supervise(
         ):
             raise SmokeSupervisionError("collector physics result is not an exact success")
         remaining = wall_cap - (time.monotonic() - wall_started)
+        physics_path = attempt_root / "physics_result.json"
         check_path = attempt_root / "receipt_check.json"
         checker_argv = [
             invocation,
@@ -772,30 +821,37 @@ def supervise(
             raise SmokeSupervisionError("receipt-only checker did not exactly pass")
     except BaseException as exc:
         failure = f"{type(exc).__name__}: {exc}"
+        if physics_binding is None:
+            try:
+                physics_result, physics_binding = _load_physics_result_if_present(
+                    attempt_root
+                )
+            except BaseException as receipt_exc:
+                failure = (
+                    f"{failure}; physics receipt load failed: "
+                    f"{type(receipt_exc).__name__}: {receipt_exc}"
+                )
 
     owned_reservation = _owned_reservation(
         attempt_root, supervisor_nonce=supervisor_nonce
     )
-    if owned_reservation is not None:
-        reservation_document = owned_reservation["document"]
-        owned_reservation_binding = dict(owned_reservation["binding"])
-        owned_reservation_binding["path"] = "reservation.json"
-        if (
-            reservation_document.get("schema")
-            != "lewm_go2_world_model_counterfactual_smoke_reservation_v1"
-            or reservation_document.get("status") != "RESERVED_ATTEMPT_CONSUMED"
-            or reservation_document.get("attempt") != authority.get("attempt")
-            or reservation_document.get("plan_binding") != plan_binding
-            or reservation_document.get("authority_binding") != authority_binding
-            or reservation_document.get("retry_authorized") is not False
-            or reservation_document.get("resume_authorized") is not False
-            or reservation_document.get("overwrite_authorized") is not False
-            or reservation_document.get("refill_authorized") is not False
-            or not isinstance(physics_result, dict)
-            or physics_result.get("reservation_binding")
-            != owned_reservation_binding
-        ):
-            failure = "SmokeSupervisionError: owned reservation contract changed"
+    if owned_reservation is not None and _owned_reservation_contract_changed(
+        owned_reservation,
+        authority=authority,
+        authority_binding=authority_binding,
+        plan_binding=plan_binding,
+        physics_result=(
+            physics_result if isinstance(physics_result, Mapping) else None
+        ),
+    ):
+        reservation_failure = (
+            "SmokeSupervisionError: owned reservation contract changed"
+        )
+        failure = (
+            reservation_failure
+            if failure is None
+            else f"{failure}; {reservation_failure}"
+        )
 
     blocked_signals = {signal.SIGINT, signal.SIGTERM}
     previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, blocked_signals)

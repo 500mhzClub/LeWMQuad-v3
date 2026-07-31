@@ -1362,6 +1362,50 @@ def derive_source_integration_smoke_scene(
     }
 
 
+def _build_rollout_runner(
+    *,
+    plan: Mapping[str, Any],
+    runtime: Mapping[str, Any],
+    platform: Mapping[str, Any],
+    build: Any,
+    registry: Any,
+) -> Any:
+    """Construct the production runner through the exact bound runtime API."""
+
+    execution = plan["execution_contract"]
+    policy = runtime["GenesisGo2PPOPolicy"](
+        checkpoint_path=plan["runtime_bindings"]["policy_checkpoint"]["path"],
+        cfg_path=plan["runtime_bindings"]["policy_config"]["path"],
+        device=str(execution["policy_device"]),
+    )
+    config = runtime["RolloutConfig"](
+        n_blocks=0,
+        fall_z_threshold_m=float(execution["fall_z_threshold_m"]),
+        tip_threshold_rad=float(execution["tip_threshold_rad"]),
+        rgb_capture_per_block=False,
+        seed=int(execution["seed"]),
+        randomize_spawn_pose=False,
+    )
+    safety_factory = getattr(runtime["SafetyLimits"], "from_manifest", None)
+    if not callable(safety_factory):
+        raise pilot.PilotContractError(
+            "bound SafetyLimits runtime lacks the from_manifest factory"
+        )
+    runner = runtime["RolloutRunner"](
+        build,
+        policy,
+        registry,
+        safety_factory(dict(platform)),
+        config=config,
+    )
+    if runner._policy_steps_per_command_tick != 5:  # noqa: SLF001
+        raise pilot.PilotContractError("runtime controller cadence disagrees with plan")
+    if runner._physics_steps_per_policy != 10:  # noqa: SLF001
+        raise pilot.PilotContractError("runtime physics decimation disagrees with smoke cap")
+    runner.policy_steps_per_command_tick = 5
+    return runner
+
+
 def _collect_scene(
     *,
     plan: Mapping[str, Any],
@@ -1407,31 +1451,13 @@ def _collect_scene(
     build_wall_seconds = time.perf_counter() - build_started
     if bool(getattr(build.camera, "_is_batched", False)):
         raise pilot.PilotContractError("physical lockstep camera must be non-batched")
-    policy = runtime["GenesisGo2PPOPolicy"](
-        checkpoint_path=plan["runtime_bindings"]["policy_checkpoint"]["path"],
-        cfg_path=plan["runtime_bindings"]["policy_config"]["path"],
-        device=str(execution["policy_device"]),
+    runner = _build_rollout_runner(
+        plan=plan,
+        runtime=runtime,
+        platform=platform,
+        build=build,
+        registry=registry,
     )
-    config = runtime["RolloutConfig"](
-        n_blocks=0,
-        fall_z_threshold_m=float(execution["fall_z_threshold_m"]),
-        tip_threshold_rad=float(execution["tip_threshold_rad"]),
-        rgb_capture_per_block=False,
-        seed=int(execution["seed"]),
-        randomize_spawn_pose=False,
-    )
-    runner = runtime["RolloutRunner"](
-        build,
-        policy,
-        registry,
-        runtime["SafetyLimits"].from_platform_manifest(dict(platform)),
-        config=config,
-    )
-    if runner._policy_steps_per_command_tick != 5:  # noqa: SLF001
-        raise pilot.PilotContractError("runtime controller cadence disagrees with plan")
-    if runner._physics_steps_per_policy != 10:  # noqa: SLF001
-        raise pilot.PilotContractError("runtime physics decimation disagrees with smoke cap")
-    runner.policy_steps_per_command_tick = 5
     _initialize_exact_clones(runner)
     stage_wall_times = _new_stage_wall_times()
     pipeline_started = time.perf_counter()

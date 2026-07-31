@@ -588,6 +588,95 @@ def test_sequential_replay_uses_exact_physical_poses_and_non_batched_camera() ->
         )
 
 
+def test_collector_uses_the_real_safety_limits_factory() -> None:
+    collector = _load_collector()
+    actual_safety_limits = collector._runtime_imports()["SafetyLimits"]
+    calls: dict[str, Any] = {}
+
+    class FakePolicy:
+        def __init__(self, **kwargs: Any) -> None:
+            calls["policy"] = kwargs
+
+    class FakeConfig:
+        def __init__(self, **kwargs: Any) -> None:
+            calls["config"] = kwargs
+
+    class FakeRunner:
+        _policy_steps_per_command_tick = 5
+        _physics_steps_per_policy = 10
+
+        def __init__(
+            self,
+            build: Any,
+            policy: Any,
+            registry: Any,
+            safety_limits: Any,
+            *,
+            config: Any,
+        ) -> None:
+            calls["runner"] = (build, policy, registry, safety_limits, config)
+
+    runtime = {
+        "GenesisGo2PPOPolicy": FakePolicy,
+        "RolloutConfig": FakeConfig,
+        "RolloutRunner": FakeRunner,
+        "SafetyLimits": actual_safety_limits,
+    }
+    plan = {
+        "runtime_bindings": {
+            "policy_checkpoint": {"path": "/fixture/model.pt"},
+            "policy_config": {"path": "/fixture/cfgs.pkl"},
+        },
+        "execution_contract": {
+            "policy_device": "cpu",
+            "fall_z_threshold_m": 0.15,
+            "tip_threshold_rad": math.pi / 3.0,
+            "seed": 20260731,
+        },
+    }
+    platform = {
+        "locomotion": {
+            "safety": {
+                "min_vx_mps": -0.3,
+                "max_vx_mps": 0.4,
+                "min_vy_mps": -0.2,
+                "max_vy_mps": 0.2,
+                "max_yaw_rate_radps": 0.5,
+                "max_command_delta_per_tick": {
+                    "vx_mps": 0.1,
+                    "vy_mps": 0.1,
+                    "yaw_rate_radps": 0.2,
+                },
+            }
+        }
+    }
+    runner = collector._build_rollout_runner(
+        plan=plan,
+        runtime=runtime,
+        platform=platform,
+        build="build",
+        registry="registry",
+    )
+    safety_limits = calls["runner"][3]
+    assert runner.policy_steps_per_command_tick == 5
+    assert safety_limits.min_vx_mps == -0.3
+    assert safety_limits.max_vx_mps == 0.4
+    assert safety_limits.max_yaw_rate_radps == 0.5
+    assert calls["policy"]["device"] == "cpu"
+
+    runtime["SafetyLimits"] = type(
+        "WrongSafetyLimits", (), {"from_platform_manifest": classmethod(lambda cls, value: value)}
+    )
+    with pytest.raises(pilot.PilotContractError, match="from_manifest factory"):
+        collector._build_rollout_runner(
+            plan=plan,
+            runtime=runtime,
+            platform=platform,
+            build="build",
+            registry="registry",
+        )
+
+
 def test_lockstep_trial_calibration_sentinel_and_live_render() -> None:
     runner = _FakeRunner(10)
     states = [_state("cal", "calibration", 0, 0)]
