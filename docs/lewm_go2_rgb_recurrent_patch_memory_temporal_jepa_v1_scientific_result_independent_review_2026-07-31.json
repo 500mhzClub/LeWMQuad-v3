@@ -1,0 +1,72 @@
+{
+  "access": {
+    "calibration_payload_open_count": 0,
+    "checkpoint_or_tensor_open_count": 0,
+    "dataset_index_open_count": 0,
+    "g2_run_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "navigation_run_count": 0,
+    "rgb_payload_open_count": 0
+  },
+  "artifact_integrity_passed": true,
+  "audit_scope": [
+    "execution_authority_and_reservation_binding",
+    "terminal_output_inventory_modes_and_symlink_absence",
+    "json_and_jsonl_content_binding_recomputation",
+    "failure_referenced_file_hash_and_byte_count_binding",
+    "training_schedule_prefix_uniqueness_and_accounting",
+    "rgb_access_request_attempt_success_decode_equality",
+    "predecessor_checkpoint_single_open_and_zero_reopen",
+    "registered_observation_and_continuation_decision",
+    "prediction_target_recurrent_health_and_causal_control_trends",
+    "retry_resume_checkpoint_navigation_g2_and_heldout_boundaries"
+  ],
+  "blockers": [],
+  "content_sha256": "3c529b929227ffdc4fc53a2b437c80bc5e978a2b78e70a2b64a853bb37d6ade6",
+  "date": "2026-07-31",
+  "exact_terminal_facts": {
+    "checkpoint_selected": false,
+    "checkpoint_written": false,
+    "consumed_schedule_rows": 500,
+    "failed_check": "prediction_effective_rank_retention",
+    "logical_rgb_presentations": 2000,
+    "prediction_effective_rank": 4.097434069233478,
+    "prediction_to_target_effective_rank_ratio": 0.1814245973440699,
+    "required_prediction_to_target_effective_rank_ratio": 0.25,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "target_effective_rank": 22.584776977416883,
+    "terminal_update": 50
+  },
+  "interpretation": {
+    "causal_controls_improved": true,
+    "execution_failure": false,
+    "future_prediction_rank_concentrated": true,
+    "persistence_beaten": false,
+    "recurrent_memory_rank_healthy": true,
+    "scientific_failure": true,
+    "spatial_encoder_retention_at_update_50_not_measured": true,
+    "target_rank_healthy": true
+  },
+  "limitations": [
+    "actual_500_schedule_row_ids_were_not_reconstructed_because_dataset_indices_were_outside_review_authority",
+    "pre_reservation_environment_attestation_body_is_not_a_published_output_but_its_content_hash_and_frozen_guard_path_were_verified",
+    "no_update_50_full_spatial_retention_panel_exists_because_the_registered_run_stopped_at_the_earlier_sentinel_gate"
+  ],
+  "passed": true,
+  "result": {
+    "byte_count": 8843,
+    "commit": "b54d96df33529419a76c8ae2beb9518227c6458f",
+    "content_sha256": "2f9dc04d9e8697c696d1ecb88327bc15b295a7559ccc9301ab573a0cc6852295",
+    "file_sha256": "180b348449ef16326cd797087a85251037f1fbd6f722b141f35f72aa3f57821c",
+    "path": "docs/lewm_go2_rgb_recurrent_patch_memory_temporal_jepa_v1_scientific_result_2026-07-31.json",
+    "status": "FAIL_SCIENTIFIC_CONTINUATION_GATE_NOT_MET"
+  },
+  "review_checks_passed": 35,
+  "reviewers": [
+    "/root/temporal_integrity_audit",
+    "/root/temporal_result_audit"
+  ],
+  "schema": "lewm_go2_rgb_recurrent_patch_memory_temporal_jepa_v1_scientific_result_independent_review_v1",
+  "status": "PASS_VALID_SCIENTIFIC_FAILURE_INDEPENDENTLY_AUDITED"
+}
