@@ -12,11 +12,11 @@ Fidelity asks whether the prediction conditioned on `a_i` is closest to the
 TRUE RENDERED OUTCOME of `a_i` among all candidate outcomes from that state.
 Planning needs fidelity, because planning only ever scores untaken actions.
 
-Rows are accepted only when their start frame joins reset-safe H6 metadata at
-the corrected five-tick cadence and supplies the two actions actually executed
-between the three context endpoints.  Physics-validated outcomes are the
-default evidence scope.  Kinematic pose-rendered outcomes require an explicit
-diagnostic mode and remain non-claim-bearing.
+The executable entry point accepts only one caller-pinned, render-joined
+physical pilot manifest.  It requires the corrected five-tick cadence, two
+executed history blocks, exact nine-action groups, and scene-disjoint roles.
+The older kinematic loaders remain pure legacy-test helpers and are never a
+fallback from the executable path.
 
 Method: group rows by (scene_id, source_index). Within a group take the distinct
 first primitives {a_1..a_K} and their true first future frames {y_1..y_K}. For
@@ -64,6 +64,8 @@ metrics = importlib.import_module(
     "lewm.benchmarks.go2_rgb_recurrent_patch_memory_temporal_jepa_v1")
 h6 = importlib.import_module(
     "lewm.datasets.go2_explicit_plan_discounted_successor_state_v27")
+pilot = importlib.import_module(
+    "lewm.datasets.go2_world_model_counterfactual_pilot_v1")
 trainer = importlib.import_module("scripts.dev_train_temporal_jepa_scaled")
 
 PREDECESSOR = (REPO_ROOT
@@ -111,6 +113,60 @@ class ContextProvenance:
 class GroupLoadResult:
     groups_by_role: Mapping[str, tuple[dict, ...]]
     audit: Mapping[str, object]
+
+
+def load_pilot_groups(
+    pilot_root: Path,
+    *,
+    expected_manifest_byte_count: int,
+    expected_manifest_sha256: str,
+) -> tuple[GroupLoadResult, object]:
+    """Load the one caller-pinned physical pilot; there is no legacy fallback."""
+    bundle = pilot.load_bound_pilot_v1(
+        pilot_root,
+        expected_manifest_byte_count=expected_manifest_byte_count,
+        expected_manifest_sha256=expected_manifest_sha256,
+    )
+    converted: dict[str, tuple[dict, ...]] = {}
+    for role in ("train", "eval"):
+        rows = []
+        for group in bundle.groups_by_role[role]:
+            rows.append({
+                "source_role": role,
+                "source_split": role,
+                "group_id": group.state_id,
+                "scene_id": group.scene_id,
+                "source_index": group.state_index_in_scene,
+                "family": group.family,
+                "actions": [branch.action_id for branch in group.branches],
+                "start_frame": group.context_rgb_artifact_ids[-1],
+                "context_frames": list(group.context_rgb_artifact_ids),
+                "historical_actions": list(group.history_action_ids),
+                "targets": [
+                    branch.target_rgb_artifact_id for branch in group.branches
+                ],
+                "progress": [
+                    branch.labels.target_progress_m for branch in group.branches
+                ],
+                "target_evidence_class": "physics_executed",
+                "physical_oracle_dense_ranks": [
+                    branch.oracle_dense_rank for branch in group.branches
+                ],
+            })
+        converted[role] = tuple(rows)
+    audit = {
+        "manifest_binding": dict(bundle.manifest_binding),
+        "rgb_manifest_binding": dict(bundle.rgb_manifest_binding),
+        "role_bindings": {
+            role: dict(bundle.role_bindings[role]) for role in ("train", "eval")
+        },
+        "access_audit": dict(bundle.access_audit),
+        "evidence_scope": "physics_executed",
+        "candidate_actions_per_group": pilot.ACTION_COUNT,
+        "train_eval_scene_overlap_count": 0,
+        "legacy_source_fallback_used": False,
+    }
+    return GroupLoadResult(converted, audit), bundle
 
 
 def _render_leaf(path: str) -> str:
@@ -418,7 +474,10 @@ def load_groups(
     return GroupLoadResult(groups_by_role=groups_by_role, audit=audit)
 
 
-def decode(path: str, device) -> torch.Tensor:
+def decode(path: str, device, *, pilot_bundle=None) -> torch.Tensor:
+    if pilot_bundle is not None:
+        raw = pilot.read_bound_rgb_bytes_v1(pilot_bundle, path)
+        return h6.rectify_h6_rgb_bytes(raw).to(device)
     selected = Path(path)
     candidate = selected if selected.is_absolute() else REPO_ROOT / selected
     resolved = candidate.resolve()
@@ -492,9 +551,9 @@ def write_json_atomic(path: Path, payload: Mapping[str, object]) -> None:
         or temporary.is_symlink()
     ):
         raise FileExistsError(f"refusing to overwrite diagnostic JSON: {path}")
-    with temporary.open("x") as stream:
-        stream.write(json.dumps(payload, indent=2) + "\n")
     try:
+        with temporary.open("x") as stream:
+            stream.write(json.dumps(payload, indent=2, allow_nan=False) + "\n")
         os.link(temporary, path)
     except FileExistsError as exc:
         raise FileExistsError(
@@ -571,7 +630,12 @@ def assert_counterfactual_sources_unchanged(audit: Mapping[str, object]) -> None
             )
 
 
-def build_model(checkpoint, device, expected_checkpoint_sha256=None):
+def build_model(
+    checkpoint,
+    device,
+    expected_checkpoint_sha256=None,
+    expected_update=None,
+):
     predecessor_binding = file_binding(PREDECESSOR)
     if (
         predecessor_binding["byte_count"] != PREDECESSOR_BYTE_COUNT
@@ -605,6 +669,7 @@ def build_model(checkpoint, device, expected_checkpoint_sha256=None):
             or payload.get("authorizes_retry_or_resume") is not False
             or not isinstance(payload.get("model_state_dict"), dict)
             or type(payload.get("update")) is not int
+            or payload.get("update") != expected_update
             or not isinstance(payload.get("pack_bindings"), dict)
             or not isinstance(payload.get("source_bindings"), list)
             or payload.get("predecessor_binding") != predecessor_binding
@@ -727,16 +792,29 @@ def scene_cluster_bootstrap_lower_95(
 
 
 @torch.no_grad()
-def score_group(model, group, device, mask_indices, action_mode: str = "factual"):
+def score_group(
+    model,
+    group,
+    device,
+    mask_indices,
+    action_mode: str = "factual",
+    *,
+    pilot_bundle=None,
+):
     if not group.get("context_frames") or not group.get("historical_actions"):
         raise CounterfactualProtocolError(
             "counterfactual scoring requires verified context/action provenance")
     context = torch.stack(
-        [decode(path, device) for path in group["context_frames"]]).unsqueeze(0)
+        [
+            decode(path, device, pilot_bundle=pilot_bundle)
+            for path in group["context_frames"]
+        ]).unsqueeze(0)
     actions = group["actions"]
     k = len(actions)
     targets = torch.stack([
-        evaluation._target_tokens(model, decode(p, device).unsqueeze(0),
+        evaluation._target_tokens(
+            model,
+            decode(p, device, pilot_bundle=pilot_bundle).unsqueeze(0),
                                   mask_indices)[0]
         for p in group["targets"]])
     conditioned = conditioned_candidate_actions(actions, action_mode)
@@ -769,6 +847,47 @@ def score_group(model, group, device, mask_indices, action_mode: str = "factual"
         "target_separation": target_separation,
         "pred_spread": float(torch.cdist(
             preds.flatten(1).double(), preds.flatten(1).double()).mean()),
+    })
+    return result
+
+
+@torch.no_grad()
+def score_group_four_masks(
+    model,
+    group,
+    device,
+    masks,
+    action_mode: str = "factual",
+    *,
+    pilot_bundle=None,
+):
+    """Average energies from four separately evaluated deterministic masks."""
+    if len(masks) != 4:
+        raise ValueError("fixed four-mask scoring requires exactly four masks")
+    per_mask = [
+        score_group(
+            model,
+            group,
+            device,
+            mask,
+            action_mode,
+            pilot_bundle=pilot_bundle,
+        )
+        for mask in masks
+    ]
+    energy = torch.tensor(
+        [result["energy_matrix"] for result in per_mask], dtype=torch.float64
+    ).mean(dim=0)
+    result = _matrix_metrics(energy, group)
+    result.update({
+        "action_mode": action_mode,
+        "target_separation": statistics.fmean(
+            float(item["target_separation"]) for item in per_mask
+        ),
+        "pred_spread": statistics.fmean(
+            float(item["pred_spread"]) for item in per_mask
+        ),
+        "mask_row_indices": [0, 1, 2, 3],
     })
     return result
 
@@ -897,68 +1016,68 @@ def main() -> int:
         required=True,
         help="Pinned lowercase SHA-256 of the immutable development checkpoint.",
     )
-    ap.add_argument("--device", default="cuda")
-    ap.add_argument("--min-actions", type=int, default=3)
+    ap.add_argument("--expected-update", type=int, required=True)
+    ap.add_argument("--pilot-root", type=Path, required=True)
     ap.add_argument(
-        "--evidence-scope",
-        choices=EVIDENCE_SCOPES,
-        default="physics_validated",
-        help=("physics_validated is claim-bearing; kinematic_diagnostic is "
-              "explicitly limited to rendered-pose diagnostics"),
+        "--expected-pilot-manifest-byte-count", type=int, required=True
     )
+    ap.add_argument("--expected-pilot-manifest-sha256", required=True)
+    ap.add_argument("--device", default="cuda")
     ap.add_argument("--out",
                     default=".generated/dev/counterfactual/wm_a_probe.json")
     args = ap.parse_args()
 
-    if not 2 <= args.min_actions <= len(PRIMITIVES):
-        raise ValueError(
-            f"min-actions must lie in [2,{len(PRIMITIVES)}]"
-        )
+    if args.expected_update < 0:
+        raise ValueError("expected-update must be non-negative")
     if Path(args.checkpoint).name == "latest.pt":
         raise ValueError("mutable latest.pt checkpoints are forbidden")
     if not re.fullmatch(r"[0-9a-f]{64}", args.expected_checkpoint_sha256):
         raise ValueError("expected checkpoint SHA-256 must be lowercase hex")
+    if not re.fullmatch(r"[0-9a-f]{64}", args.expected_pilot_manifest_sha256):
+        raise ValueError("expected pilot manifest SHA-256 must be lowercase hex")
     checkpoint = require_development_checkpoint(Path(args.checkpoint))
     out = require_development_output(Path(args.out))
     code_bindings = [
         file_binding(Path(path))
         for path in (
             __file__, model_module.__file__, evaluation.__file__,
-            metrics.__file__, h6.__file__, trainer.__file__,
+            metrics.__file__, h6.__file__, trainer.__file__, pilot.__file__,
         )
     ]
     device = torch.device(args.device)
-    loaded = load_groups(args.min_actions, evidence_scope=args.evidence_scope)
+    loaded, pilot_bundle = load_pilot_groups(
+        args.pilot_root,
+        expected_manifest_byte_count=args.expected_pilot_manifest_byte_count,
+        expected_manifest_sha256=args.expected_pilot_manifest_sha256,
+    )
     print(json.dumps(loaded.audit, sort_keys=True), flush=True)
     groups = [
         group
         for role in ("train", "eval")
         for group in loaded.groups_by_role[role]
     ]
-    print(f"counterfactual groups (>= {args.min_actions} distinct actions): "
-          f"{len(groups)}", flush=True)
+    print(f"counterfactual groups (exact nine-action pilot): {len(groups)}", flush=True)
     if not groups:
         print("no protocol-valid groups; refusing to open model or RGB", flush=True)
         return 1
     sizes = collections.Counter(len(g["actions"]) for g in groups)
     print(f"  group sizes: {dict(sorted(sizes.items()))}", flush=True)
 
-    mask_indices, _ = metrics.batched_mask_indices("val", [0], device=device)
-    report = {"schema": "dev_counterfactual_action_fidelity_v2",
+    mask_indices = [
+        metrics.batched_mask_indices("val", [row], device=device)[0]
+        for row in (0, 1, 2, 3)
+    ]
+    report = {"schema": "dev_counterfactual_action_fidelity_v3",
               "status": "COMPLETE",
               "citable_as_scientific_evidence": False,
               "authorizes_retry_or_resume": False,
               "source_bindings": code_bindings,
-              "evidence_scope": args.evidence_scope,
-              "claim_scope": (
-                  "physics_validated_action_outcomes"
-                  if args.evidence_scope == "physics_validated"
-                  else "kinematic_render_diagnostic_only"),
+              "evidence_scope": "physics_executed",
+              "claim_scope": "physical_counterfactual_pilot_development_only",
               "mask_protocol": {
                   "role": "val",
-                  "row_indices": [0],
-                  "single_fixed_mask": True,
-                  "claim_limit": "mask_robustness_not_established",
+                  "row_indices": [0, 1, 2, 3],
+                  "fixed_four_mask_contract": True,
               },
               "protocol_audit": loaded.audit,
               "group_count": len(groups),
@@ -984,9 +1103,17 @@ def main() -> int:
             ckpt,
             device,
             expected_checkpoint_sha256=expected_sha256,
+            expected_update=(args.expected_update if ckpt is not None else None),
         )
         for action_mode, name in arm_specs:
-            results = [score_group(model, g, device, mask_indices, action_mode)
+            results = [score_group_four_masks(
+                model,
+                g,
+                device,
+                mask_indices,
+                action_mode,
+                pilot_bundle=pilot_bundle,
+            )
                        for g in groups]
             summaries = {
                 role: summarize(
@@ -1016,7 +1143,13 @@ def main() -> int:
         del model
         torch.cuda.empty_cache()
 
-    assert_counterfactual_sources_unchanged(loaded.audit)
+    reloaded, _ = load_pilot_groups(
+        args.pilot_root,
+        expected_manifest_byte_count=args.expected_pilot_manifest_byte_count,
+        expected_manifest_sha256=args.expected_pilot_manifest_sha256,
+    )
+    if reloaded.audit != loaded.audit:
+        raise CounterfactualProtocolError("pilot receipts changed during evaluation")
     assert_file_bindings_unchanged(code_bindings, kind="diagnostic source")
     write_json_atomic(out, report)
     print(f"wrote {out}", flush=True)

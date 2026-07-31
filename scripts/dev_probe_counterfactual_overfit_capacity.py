@@ -36,13 +36,30 @@ evaluation = importlib.import_module(
 metrics = importlib.import_module(
     "lewm.benchmarks.go2_rgb_recurrent_patch_memory_temporal_jepa_v1")
 
-def group_tensors(group, device):
+
+def json_safe_config(value):
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(key): json_safe_config(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_safe_config(item) for item in value]
+    return value
+
+
+def group_tensors(group, device, *, pilot_bundle=None):
     if not group.get("context_frames") or not group.get("historical_actions"):
         raise probe.CounterfactualProtocolError(
             "capacity diagnostic requires verified H6 context/action provenance")
     context = torch.stack(
-        [probe.decode(p, device) for p in group["context_frames"]]).unsqueeze(0)
-    targets = torch.stack([probe.decode(p, device) for p in group["targets"]])
+        [
+            probe.decode(p, device, pilot_bundle=pilot_bundle)
+            for p in group["context_frames"]
+        ]).unsqueeze(0)
+    targets = torch.stack([
+        probe.decode(p, device, pilot_bundle=pilot_bundle)
+        for p in group["targets"]
+    ])
     actions = group["actions"]
     return context, targets, actions, group
 
@@ -59,24 +76,35 @@ def forward_group(
     action_mode="factual",
 ):
     """Return the K x K energy matrix with gradients attached."""
-    with torch.no_grad():
-        tgt_tokens = torch.stack([
-            evaluation._target_tokens(model, targets[i].unsqueeze(0), mask)[0]
-            for i in range(len(actions))])
     conditioned = probe.conditioned_candidate_actions(actions, action_mode)
-    preds = []
-    for action in conditioned:
-        seq = torch.tensor(
-            [[historical_actions[0], historical_actions[1], action]],
-            dtype=torch.long,
-            device=device,
-        )
-        preds.append(evaluation._predict_future(model, context, seq, mask).prediction[0])
-    preds = torch.stack(preds)
-    k = len(actions)
-    diff = preds.unsqueeze(1) - tgt_tokens.unsqueeze(0)   # (K, K, tokens, dim)
-    energy = 0.5 * diff.square().sum(-1).mean(-1)          # (K, K)
-    return energy
+    masks = mask if isinstance(mask, (list, tuple)) else [mask]
+    if len(masks) != 4:
+        raise ValueError("capacity diagnostic requires the fixed four-mask contract")
+    energies = []
+    for selected_mask in masks:
+        with torch.no_grad():
+            tgt_tokens = torch.stack([
+                evaluation._target_tokens(
+                    model, targets[i].unsqueeze(0), selected_mask
+                )[0]
+                for i in range(len(actions))
+            ])
+        preds = []
+        for action in conditioned:
+            seq = torch.tensor(
+                [[historical_actions[0], historical_actions[1], action]],
+                dtype=torch.long,
+                device=device,
+            )
+            preds.append(
+                evaluation._predict_future(
+                    model, context, seq, selected_mask
+                ).prediction[0]
+            )
+        predictions = torch.stack(preds)
+        diff = predictions.unsqueeze(1) - tgt_tokens.unsqueeze(0)
+        energies.append(0.5 * diff.square().sum(-1).mean(-1))
+    return torch.stack(energies).mean(dim=0)
 
 
 @torch.no_grad()
@@ -185,16 +213,18 @@ def main() -> int:
         required=True,
         help="Pinned lowercase SHA-256 of the immutable development checkpoint.",
     )
+    ap.add_argument("--expected-update", type=int, required=True)
+    ap.add_argument("--pilot-root", type=Path, required=True)
+    ap.add_argument(
+        "--expected-pilot-manifest-byte-count", type=int, required=True
+    )
+    ap.add_argument("--expected-pilot-manifest-sha256", required=True)
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--temperature", type=float, default=0.05)
     ap.add_argument("--mse-weight", type=float, default=1.0)
     ap.add_argument("--capacity-threshold", type=float, default=0.95)
-    ap.add_argument(
-        "--evidence-scope",
-        choices=probe.EVIDENCE_SCOPES,
-        default="physics_validated",
-    )
+    ap.add_argument("--seed", type=int, default=20260731)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--out",
                     default=".generated/dev/counterfactual/overfit_capacity.json")
@@ -208,21 +238,33 @@ def main() -> int:
         raise ValueError("mse-weight must be non-negative")
     if not 0.0 < args.capacity_threshold <= 1.0:
         raise ValueError("capacity threshold must lie in (0,1]")
+    if args.expected_update < 0:
+        raise ValueError("expected-update must be non-negative")
     if Path(args.checkpoint).name == "latest.pt":
         raise ValueError("mutable latest.pt checkpoints are forbidden")
     if not re.fullmatch(r"[0-9a-f]{64}", args.expected_checkpoint_sha256):
         raise ValueError("expected checkpoint SHA-256 must be lowercase hex")
+    if not re.fullmatch(r"[0-9a-f]{64}", args.expected_pilot_manifest_sha256):
+        raise ValueError("expected pilot manifest SHA-256 must be lowercase hex")
     checkpoint = probe.require_development_checkpoint(Path(args.checkpoint))
     out = probe.require_development_output(Path(args.out))
     code_bindings = [
         probe.file_binding(Path(path))
         for path in (
             __file__, probe.__file__, probe.model_module.__file__,
-            training.__file__, metrics.__file__, probe.h6.__file__,
+            training.__file__, evaluation.__file__, metrics.__file__, probe.h6.__file__,
+            probe.pilot.__file__, probe.trainer.__file__,
         )
     ]
     device = torch.device(args.device)
-    loaded = probe.load_groups(3, evidence_scope=args.evidence_scope)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+    loaded, pilot_bundle = probe.load_pilot_groups(
+        args.pilot_root,
+        expected_manifest_byte_count=args.expected_pilot_manifest_byte_count,
+        expected_manifest_sha256=args.expected_pilot_manifest_sha256,
+    )
     train_groups = list(loaded.groups_by_role["train"])
     eval_groups = list(loaded.groups_by_role["eval"])
     print(json.dumps(loaded.audit, sort_keys=True), flush=True)
@@ -237,12 +279,16 @@ def main() -> int:
             flush=True,
         )
         return 1
-    mask, _ = metrics.batched_mask_indices("val", [0], device=device)
+    mask = [
+        metrics.batched_mask_indices("val", [row], device=device)[0]
+        for row in (0, 1, 2, 3)
+    ]
 
     model, label, model_identity = probe.build_model(
         checkpoint,
         device,
         expected_checkpoint_sha256=args.expected_checkpoint_sha256,
+        expected_update=args.expected_update,
     )
     model.train()
     partition = training.partition_parameters_v1(model)
@@ -251,8 +297,14 @@ def main() -> int:
         weight_decay=0.0)
 
     cached_by_role = {
-        "train": [group_tensors(group, device) for group in train_groups],
-        "eval": [group_tensors(group, device) for group in eval_groups],
+        "train": [
+            group_tensors(group, device, pilot_bundle=pilot_bundle)
+            for group in train_groups
+        ],
+        "eval": [
+            group_tensors(group, device, pilot_bundle=pilot_bundle)
+            for group in eval_groups
+        ],
     }
     records = []
     for epoch in range(args.epochs + 1):
@@ -308,35 +360,39 @@ def main() -> int:
         if capacity_present
         else "TRAIN_SET_CAPACITY_NOT_DEMONSTRATED"
     )
-    probe.assert_counterfactual_sources_unchanged(loaded.audit)
+    reloaded, _ = probe.load_pilot_groups(
+        args.pilot_root,
+        expected_manifest_byte_count=args.expected_pilot_manifest_byte_count,
+        expected_manifest_sha256=args.expected_pilot_manifest_sha256,
+    )
+    if reloaded.audit != loaded.audit:
+        raise probe.CounterfactualProtocolError(
+            "pilot receipts changed during capacity diagnostic"
+        )
     probe.assert_file_bindings_unchanged(
         code_bindings, kind="capacity-diagnostic source"
     )
     probe.write_json_atomic(out, {
-        "schema": "dev_counterfactual_overfit_capacity_v2",
+        "schema": "dev_counterfactual_overfit_capacity_v3",
         "status": "COMPLETE",
         "citable_as_scientific_evidence": False,
         "authorizes_retry_or_resume": False,
         "note": (
             "overfitting is the intended outcome; train/eval are scene-role "
             "separated and every metric is a coherent frozen post-epoch snapshot"),
-        "evidence_scope": args.evidence_scope,
-        "claim_scope": (
-            "physics_validated_train_capacity_only"
-            if args.evidence_scope == "physics_validated"
-            else "kinematic_render_fit_only"),
+        "evidence_scope": "physics_executed",
+        "claim_scope": "physical_pilot_train_capacity_only",
         "mask_protocol": {
             "role": "val",
-            "row_indices": [0],
-            "single_fixed_mask": True,
-            "claim_limit": "mask_robustness_not_established",
+            "row_indices": [0, 1, 2, 3],
+            "fixed_four_mask_contract": True,
         },
         "protocol_audit": loaded.audit,
         "checkpoint": str(checkpoint),
         "source_bindings": code_bindings,
         "label": label,
         "model_identity": model_identity,
-        "config": vars(args),
+        "config": json_safe_config(vars(args)),
         "best_train_micro_fidelity": best_record["train_micro_fidelity"],
         "best_snapshot_epoch": best_record["epoch"],
         "terminal_train_micro_fidelity": terminal_record["train_micro_fidelity"],
