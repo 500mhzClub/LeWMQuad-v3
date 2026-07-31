@@ -265,6 +265,263 @@ def _binding(value: Any, *, content: bool = False) -> dict[str, Any]:
     return result
 
 
+def _safe_certified_source_path(relative: str) -> PurePosixPath:
+    value = PurePosixPath(relative)
+    folded = tuple(part.casefold() for part in value.parts)
+    if (
+        value.is_absolute()
+        or not value.parts
+        or any(part in {"", ".", ".."} for part in value.parts)
+        or value.suffix not in {".py", ".md", ".json"}
+        or any(
+            part in {".generated", "sealed", "heldout", "held_out"}
+            or part.startswith(("sealed_", "heldout_", "held_out_"))
+            for part in folded
+        )
+        or "sealed_test" in value.name.casefold()
+    ):
+        raise PermissionError(f"unsafe certified source path: {relative}")
+    return value
+
+
+def _validate_certified_source_binding(
+    source_root: Path,
+    value: Any,
+) -> None:
+    binding = _binding(value)
+    relative = _safe_certified_source_path(binding["path"])
+    path = source_root.joinpath(*relative.parts)
+    try:
+        resolved = path.resolve(strict=True)
+    except (FileNotFoundError, OSError) as error:
+        raise PermissionError(
+            f"certified source is absent: {relative}"
+        ) from error
+    if (
+        resolved != path.absolute()
+        or not resolved.is_relative_to(source_root)
+        or path.is_symlink()
+        or not path.is_file()
+    ):
+        raise PermissionError(f"certified source escaped: {relative}")
+    raw = path.read_bytes()
+    if (
+        len(raw) != binding["byte_count"]
+        or hashlib.sha256(raw).hexdigest() != binding["file_sha256"]
+    ):
+        raise PermissionError(f"certified source changed: {relative}")
+
+
+def validate_certified_source_v1(
+    source_root: Path,
+    authority: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Rehash every certified narrow-source binding before reservation."""
+
+    root = Path(source_root).resolve(strict=True)
+    certification_path = root / CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH
+    info = os.lstat(certification_path)
+    if not stat.S_ISREG(info.st_mode) or stat.S_ISLNK(info.st_mode):
+        raise PermissionError(
+            "clean-export certification must be a regular non-symlink"
+        )
+    raw = certification_path.read_bytes()
+    certification = _decode_content_bound_json(
+        raw,
+        name="clean-export certification",
+    )
+    identity = _binding(
+        authority.get("clean_export_certification"),
+        content=True,
+    )
+    bindings = certification.get("source_bindings")
+    if (
+        identity["path"] != CLEAN_EXPORT_CERTIFICATION_RELATIVE_PATH
+        or identity["byte_count"] != len(raw)
+        or identity["file_sha256"] != hashlib.sha256(raw).hexdigest()
+        or identity["content_sha256"] != certification["content_sha256"]
+        or certification.get("schema")
+        != f"{SCHEMA_PREFIX}_clean_export_certification_v1"
+        or certification.get("status")
+        != "PASS_NARROW_CLEAN_EXPORT_CERTIFIED"
+        or certification.get("certified_source_root") != str(root)
+        or certification.get("pinned_source_and_review_commit")
+        != authority.get("pinned_source_and_review_commit")
+        or type(bindings) is not list
+        or not bindings
+    ):
+        raise PermissionError("clean-export certification identity changed")
+    paths = [dict(item).get("path") for item in bindings]
+    if paths != sorted(paths) or len(paths) != len(set(paths)):
+        raise PermissionError("certified source inventory order changed")
+    bindings_sha256 = hashlib.sha256(
+        _canonical_json_bytes(bindings)
+    ).hexdigest()
+    if certification.get("bindings_sha256") != bindings_sha256:
+        raise PermissionError("certified source inventory binding changed")
+    for binding in bindings:
+        _validate_certified_source_binding(root, binding)
+    return {
+        "status": "PASS_CERTIFIED_SOURCE_REHASH",
+        "validated_path_count": len(bindings),
+        "bindings_sha256": bindings_sha256,
+        "certification_content_sha256": certification["content_sha256"],
+    }
+
+
+def validate_gpu_v1(torch: Any) -> dict[str, Any]:
+    """Require exactly one visible HIP AMD R9700 without tensor allocation."""
+
+    if (
+        not bool(torch.cuda.is_available())
+        or int(torch.cuda.device_count()) != 1
+    ):
+        raise RuntimeError(
+            "temporal V1 requires exactly one visible AMD GPU"
+        )
+    hip = getattr(getattr(torch, "version", None), "hip", None)
+    name = str(torch.cuda.get_device_name(0))
+    normalized = name.replace(" ", "").upper()
+    if (
+        type(hip) is not str
+        or not hip
+        or "AMD" not in normalized
+        or "R9700" not in normalized
+    ):
+        raise RuntimeError("visible GPU is not the registered AMD R9700")
+    return {
+        "status": "PASS_EXACTLY_ONE_VISIBLE_AMD_R9700",
+        "visible_device_count": 1,
+        "visible_device_name": name,
+        "torch_hip_version": hip,
+        "tensor_allocation_count": 0,
+        "dataset_open_count": 0,
+        "checkpoint_open_count": 0,
+    }
+
+
+_EXECUTION_ENVIRONMENT_ATTESTATION_SEAL = object()
+
+
+class _ExecutionEnvironmentAttestationV1:
+    __slots__ = ("receipt", "_seal")
+
+    def __init__(self, receipt: Mapping[str, Any], seal: object) -> None:
+        if seal is not _EXECUTION_ENVIRONMENT_ATTESTATION_SEAL:
+            raise PermissionError(
+                "execution-environment attestation was not guard-issued"
+            )
+        self.receipt = dict(receipt)
+        self._seal = seal
+
+
+def _build_execution_environment_attestation_v1(
+    source_root: Path | str,
+    authority: Mapping[str, Any],
+    *,
+    source_receipt: Mapping[str, Any],
+    gpu_receipt: Mapping[str, Any],
+) -> _ExecutionEnvironmentAttestationV1:
+    source = dict(source_receipt)
+    gpu = dict(gpu_receipt)
+    if (
+        source.get("status") != "PASS_CERTIFIED_SOURCE_REHASH"
+        or gpu.get("status") != "PASS_EXACTLY_ONE_VISIBLE_AMD_R9700"
+        or gpu.get("tensor_allocation_count") != 0
+        or gpu.get("dataset_open_count") != 0
+        or gpu.get("checkpoint_open_count") != 0
+    ):
+        raise PermissionError("execution-environment guard receipt changed")
+    receipt = _content_bound(
+        {
+            "schema": f"{SCHEMA_PREFIX}_execution_environment_attestation_v1",
+            "status": "PASS_PRE_RESERVATION_ENVIRONMENT_GUARDS",
+            "authority_sha256": hashlib.sha256(
+                _canonical_json_bytes(dict(authority))
+            ).hexdigest(),
+            "certified_source_root": str(source_root),
+            "source": source,
+            "gpu": gpu,
+        }
+    )
+    return _ExecutionEnvironmentAttestationV1(
+        receipt,
+        _EXECUTION_ENVIRONMENT_ATTESTATION_SEAL,
+    )
+
+
+def _validate_execution_environment_attestation_v1(
+    attestation: Any,
+    authority: Mapping[str, Any],
+) -> dict[str, Any]:
+    if (
+        type(attestation) is not _ExecutionEnvironmentAttestationV1
+        or attestation._seal is not _EXECUTION_ENVIRONMENT_ATTESTATION_SEAL
+    ):
+        raise PermissionError(
+            "execution requires a guard-issued environment attestation"
+        )
+    receipt = validate_content_bound_v1(attestation.receipt)
+    source = receipt.get("source")
+    gpu = receipt.get("gpu")
+    if (
+        set(receipt)
+        != {
+            "schema",
+            "status",
+            "authority_sha256",
+            "certified_source_root",
+            "source",
+            "gpu",
+            "content_sha256",
+        }
+        or receipt["schema"]
+        != f"{SCHEMA_PREFIX}_execution_environment_attestation_v1"
+        or receipt["status"]
+        != "PASS_PRE_RESERVATION_ENVIRONMENT_GUARDS"
+        or receipt["authority_sha256"]
+        != hashlib.sha256(
+            _canonical_json_bytes(dict(authority))
+        ).hexdigest()
+        or receipt["certified_source_root"]
+        != authority.get("certified_source_root")
+        or type(source) is not dict
+        or source.get("status") != "PASS_CERTIFIED_SOURCE_REHASH"
+        or type(gpu) is not dict
+        or gpu.get("status") != "PASS_EXACTLY_ONE_VISIBLE_AMD_R9700"
+        or gpu.get("tensor_allocation_count") != 0
+        or gpu.get("dataset_open_count") != 0
+        or gpu.get("checkpoint_open_count") != 0
+    ):
+        raise PermissionError(
+            "execution-environment attestation identity changed"
+        )
+    return receipt
+
+
+def validate_execution_environment_v1(
+    source_root: Path,
+    authority: Mapping[str, Any],
+    *,
+    torch_module: Any | None = None,
+) -> _ExecutionEnvironmentAttestationV1:
+    """Enforce both pre-reservation guards for every execution entry path."""
+
+    source = validate_certified_source_v1(source_root, authority)
+    torch = (
+        importlib.import_module("torch")
+        if torch_module is None
+        else torch_module
+    )
+    gpu = validate_gpu_v1(torch)
+    return _build_execution_environment_attestation_v1(
+        Path(source_root).resolve(strict=True),
+        authority,
+        source_receipt=source,
+        gpu_receipt=gpu,
+    )
+
+
 def validate_future_execution_prerequisites_v1(
     authority: Any,
 ) -> dict[str, Any]:
@@ -409,10 +666,15 @@ def reserve_attempt_v1(
     repository_root: Path,
     authority: Mapping[str, Any],
     *,
+    environment_attestation: _ExecutionEnvironmentAttestationV1,
     created_utc: str,
 ) -> dict[str, Any]:
     root = Path(repository_root).resolve(strict=True)
     validated = validate_future_execution_prerequisites_v1(dict(authority))
+    environment = _validate_execution_environment_attestation_v1(
+        environment_attestation,
+        validated,
+    )
     output_relative = _safe_relative_path(OUTPUT_ROOT_RELATIVE_PATH)
     output = root.joinpath(*output_relative.parts)
     if output.exists() or output.is_symlink():
@@ -430,6 +692,9 @@ def reserve_attempt_v1(
             "authority_sha256": hashlib.sha256(
                 _canonical_json_bytes(validated)
             ).hexdigest(),
+            "environment_attestation_content_sha256": environment[
+                "content_sha256"
+            ],
             "output_root": OUTPUT_ROOT_RELATIVE_PATH,
             "attempt": 1,
             "maximum_updates": MAXIMUM_UPDATES,
@@ -458,7 +723,38 @@ def validate_attempt_reservation_v1(value: Any) -> dict[str, Any]:
         "retry_authorized": False,
         "resume_authorized": False,
     }
-    if any(result.get(name) != expected for name, expected in required.items()):
+    environment_sha256 = result.get(
+        "environment_attestation_content_sha256"
+    )
+    authority_sha256 = result.get("authority_sha256")
+    if (
+        set(result)
+        != set(required)
+        | {
+            "created_utc",
+            "authority_sha256",
+            "environment_attestation_content_sha256",
+            "content_sha256",
+        }
+        or any(
+            result.get(name) != expected
+            for name, expected in required.items()
+        )
+        or type(result.get("created_utc")) is not str
+        or not result["created_utc"]
+        or type(authority_sha256) is not str
+        or len(authority_sha256) != 64
+        or any(
+            character not in "0123456789abcdef"
+            for character in authority_sha256
+        )
+        or type(environment_sha256) is not str
+        or len(environment_sha256) != 64
+        or any(
+            character not in "0123456789abcdef"
+            for character in environment_sha256
+        )
+    ):
         raise PermissionError("temporal V1 reservation changed")
     return result
 
@@ -1501,6 +1797,7 @@ def run_authorized_engine_v1(
     *,
     authority: Mapping[str, Any],
     reservation: Mapping[str, Any],
+    environment_attestation: _ExecutionEnvironmentAttestationV1,
     repository_root: Path,
     runtime_data_root: Path,
     device: Any,
@@ -1509,6 +1806,10 @@ def run_authorized_engine_v1(
     """Execute the exact one-shot temporal schedule and terminalize once."""
 
     validated = validate_future_execution_prerequisites_v1(dict(authority))
+    environment = _validate_execution_environment_attestation_v1(
+        environment_attestation,
+        validated,
+    )
     reserved = validate_attempt_reservation_v1(dict(reservation))
     authority_sha256 = hashlib.sha256(
         _canonical_json_bytes(validated)
@@ -1516,6 +1817,13 @@ def run_authorized_engine_v1(
     if reserved["authority_sha256"] != authority_sha256:
         raise PermissionError(
             "temporal reservation does not bind the supplied authority"
+        )
+    if (
+        reserved["environment_attestation_content_sha256"]
+        != environment["content_sha256"]
+    ):
+        raise PermissionError(
+            "temporal reservation does not bind the guarded environment"
         )
     root = Path(repository_root).resolve(strict=True)
     data_root = Path(runtime_data_root).resolve(strict=True)
@@ -2078,15 +2386,18 @@ def execute_authorized_v1(
         raise PermissionError(
             "temporal executor is outside its certified source root"
         )
+    environment = validate_execution_environment_v1(source_root, validated)
     data_root = Path(validated["runtime_data_root"]).resolve(strict=True)
     reservation = reserve_attempt_v1(
         data_root,
         validated,
+        environment_attestation=environment,
         created_utc=_utc_now(),
     )
     return run_authorized_engine_v1(
         authority=validated,
         reservation=reservation,
+        environment_attestation=environment,
         repository_root=data_root,
         runtime_data_root=data_root,
         device=validated["device"],
@@ -2143,12 +2454,12 @@ __all__ = [
     "extract_predecessor_model_state_v1",
     "load_metadata_preflight_receipt_v1",
     "load_predecessor_model_state_v1",
-    "reserve_attempt_v1",
-    "run_authorized_engine_v1",
-    "terminalize_failure_v1",
     "validate_attempt_reservation_v1",
+    "validate_certified_source_v1",
     "validate_content_bound_v1",
+    "validate_execution_environment_v1",
     "validate_future_execution_prerequisites_v1",
+    "validate_gpu_v1",
 ]
 
 

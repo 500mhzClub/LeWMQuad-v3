@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import stat
 from typing import Any, Mapping
 
@@ -59,145 +58,19 @@ def _strict_json(path: Path, *, name: str) -> dict[str, Any]:
     return value
 
 
-def _validate_content_bound(value: Any, *, name: str) -> dict[str, Any]:
-    if type(value) is not dict or type(value.get("content_sha256")) is not str:
-        raise PermissionError(f"{name} lacks a content binding")
-    core = dict(value)
-    observed = core.pop("content_sha256")
-    if observed != hashlib.sha256(_canonical_bytes(core)).hexdigest():
-        raise PermissionError(f"{name} content binding changed")
-    return dict(value)
-
-
-def _binding(value: Any, *, name: str) -> dict[str, Any]:
-    if type(value) is not dict:
-        raise PermissionError(f"{name} binding is absent")
-    required = {"path", "file_sha256", "byte_count"}
-    if (
-        not required.issubset(value)
-        or type(value["path"]) is not str
-        or type(value["file_sha256"]) is not str
-        or len(value["file_sha256"]) != 64
-        or type(value["byte_count"]) is not int
-        or value["byte_count"] <= 0
-    ):
-        raise PermissionError(f"{name} binding changed")
-    return dict(value)
-
-
-def _safe_source_path(relative: str) -> PurePosixPath:
-    value = PurePosixPath(relative)
-    folded = tuple(part.casefold() for part in value.parts)
-    if (
-        value.is_absolute()
-        or not value.parts
-        or any(part in {"", ".", ".."} for part in value.parts)
-        or value.suffix not in {".py", ".md", ".json"}
-        or any(
-            part in {".generated", "sealed", "heldout", "held_out"}
-            or part.startswith(("sealed_", "heldout_", "held_out_"))
-            for part in folded
-        )
-        or "sealed_test" in value.name.casefold()
-    ):
-        raise PermissionError(f"unsafe certified source path: {relative}")
-    return value
-
-
-def _validate_source_binding(source_root: Path, value: Any) -> None:
-    binding = _binding(value, name="source")
-    relative = _safe_source_path(binding["path"])
-    path = source_root.joinpath(*relative.parts)
-    try:
-        resolved = path.resolve(strict=True)
-    except (FileNotFoundError, OSError) as error:
-        raise PermissionError(
-            f"certified source is absent: {relative}"
-        ) from error
-    if (
-        resolved != path.absolute()
-        or not resolved.is_relative_to(source_root)
-        or path.is_symlink()
-        or not path.is_file()
-    ):
-        raise PermissionError(f"certified source escaped: {relative}")
-    raw = path.read_bytes()
-    if (
-        len(raw) != binding["byte_count"]
-        or hashlib.sha256(raw).hexdigest() != binding["file_sha256"]
-    ):
-        raise PermissionError(f"certified source changed: {relative}")
-
-
 def validate_certified_source_v1(
     source_root: Path,
     authority: Mapping[str, Any],
 ) -> dict[str, Any]:
-    root = Path(source_root).resolve(strict=True)
-    certification_path = root / CERTIFICATION_RELATIVE_PATH
-    certification = _validate_content_bound(
-        _strict_json(
-            certification_path,
-            name="clean-export certification",
-        ),
-        name="clean-export certification",
-    )
-    identity = _binding(
-        authority.get("clean_export_certification"),
-        name="certification",
-    )
-    raw = certification_path.read_bytes()
-    bindings = certification.get("source_bindings")
-    if (
-        identity["path"] != CERTIFICATION_RELATIVE_PATH
-        or identity["byte_count"] != len(raw)
-        or identity["file_sha256"] != hashlib.sha256(raw).hexdigest()
-        or identity.get("content_sha256")
-        != certification["content_sha256"]
-        or certification.get("schema")
-        != f"{executor.SCHEMA_PREFIX}_clean_export_certification_v1"
-        or certification.get("status")
-        != "PASS_NARROW_CLEAN_EXPORT_CERTIFIED"
-        or certification.get("certified_source_root") != str(root)
-        or certification.get("pinned_source_and_review_commit")
-        != authority.get("pinned_source_and_review_commit")
-        or type(bindings) is not list
-        or not bindings
-    ):
-        raise PermissionError("clean-export certification identity changed")
-    paths = [dict(item).get("path") for item in bindings]
-    if paths != sorted(paths) or len(paths) != len(set(paths)):
-        raise PermissionError("certified source inventory order changed")
-    expected_sha = hashlib.sha256(_canonical_bytes(bindings)).hexdigest()
-    if certification.get("bindings_sha256") != expected_sha:
-        raise PermissionError("certified source inventory binding changed")
-    for binding in bindings:
-        _validate_source_binding(root, binding)
-    return {
-        "status": "PASS_CERTIFIED_SOURCE_REHASH",
-        "validated_path_count": len(bindings),
-        "bindings_sha256": expected_sha,
-        "certification_content_sha256": certification["content_sha256"],
-    }
+    return executor.validate_certified_source_v1(source_root, authority)
+
+
+def _safe_source_path(relative: str) -> Any:
+    return executor._safe_certified_source_path(relative)
 
 
 def validate_gpu_v1(torch: Any) -> dict[str, Any]:
-    if not bool(torch.cuda.is_available()) or int(torch.cuda.device_count()) != 1:
-        raise RuntimeError("temporal V1 requires exactly one visible AMD GPU")
-    hip = getattr(getattr(torch, "version", None), "hip", None)
-    name = str(torch.cuda.get_device_name(0))
-    normalized = name.replace(" ", "").upper()
-    if type(hip) is not str or not hip or "AMD" not in normalized or "R9700" not in normalized:
-        raise RuntimeError("visible GPU is not the registered AMD R9700")
-    return {
-        "status": "PASS_EXACTLY_ONE_VISIBLE_AMD_R9700",
-        "visible_device_count": 1,
-        "visible_device_name": name,
-        "torch_hip_version": hip,
-        "tensor_allocation_count": 0,
-        "dataset_open_count": 0,
-        "checkpoint_open_count": 0,
-    }
+    return executor.validate_gpu_v1(torch)
 
 
 def launch_authorized_v1(authority_path: Path) -> Mapping[str, Any]:
@@ -211,13 +84,6 @@ def launch_authorized_v1(authority_path: Path) -> Mapping[str, Any]:
         authority["certified_source_root"]
     ).resolve(strict=True):
         raise PermissionError("launcher is outside the certified source root")
-    validate_certified_source_v1(ROOT, authority)
-    output = Path(authority["runtime_data_root"]) / authority["output_root"]
-    if output.exists() or output.is_symlink():
-        raise FileExistsError("one-shot output root is not absent")
-    import torch
-
-    validate_gpu_v1(torch)
     return executor.execute_authorized_v1(ROOT, authority)
 
 

@@ -310,7 +310,7 @@ def test_authority_is_content_bound_and_attempt_root_is_one_shot(
         created_utc="2026-07-31T12:00:00Z",
     )
     assert output == parent / "attempt_v1"
-    assert (output / "reservation.json").is_file()
+    assert list(output.iterdir()) == []
     assert reservation["authority"] == dict(authority.binding)
     with pytest.raises(preflight.MetadataPreflightError, match="not absent"):
         preflight.reserve_attempt_root(

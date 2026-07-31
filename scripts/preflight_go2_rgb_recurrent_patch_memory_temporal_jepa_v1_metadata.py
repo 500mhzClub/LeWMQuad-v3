@@ -297,7 +297,7 @@ def build_reservation(
     *,
     created_utc: str,
 ) -> dict[str, Any]:
-    """Build the content-bound record written by atomic attempt reservation."""
+    """Build the in-memory record bound to the atomic attempt reservation."""
 
     if (
         not isinstance(authority, ValidatedAuthority)
@@ -871,7 +871,6 @@ def reserve_attempt_root(
     finally:
         os.close(parent_fd)
     reservation = build_reservation(authority, created_utc=created_utc)
-    _publish_receipt(output / "reservation.json", reservation)
     return output, reservation
 
 

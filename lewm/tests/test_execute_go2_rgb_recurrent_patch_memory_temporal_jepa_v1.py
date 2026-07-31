@@ -75,6 +75,30 @@ def _authority(preflight_binding: Mapping[str, Any] | None = None) -> dict:
     )
 
 
+def _synthetic_environment_attestation(
+    authority: Mapping[str, Any],
+) -> Any:
+    return executor._build_execution_environment_attestation_v1(
+        authority["certified_source_root"],
+        authority,
+        source_receipt={
+            "status": "PASS_CERTIFIED_SOURCE_REHASH",
+            "validated_path_count": 1,
+            "bindings_sha256": "3" * 64,
+            "certification_content_sha256": "4" * 64,
+        },
+        gpu_receipt={
+            "status": "PASS_EXACTLY_ONE_VISIBLE_AMD_R9700",
+            "visible_device_count": 1,
+            "visible_device_name": "AMD Radeon AI PRO R9700",
+            "torch_hip_version": "synthetic",
+            "tensor_allocation_count": 0,
+            "dataset_open_count": 0,
+            "checkpoint_open_count": 0,
+        },
+    )
+
+
 def _preflight_receipt() -> dict:
     expected = executor.RUNTIME_INPUT_BINDINGS
     return executor._content_bound(
@@ -632,18 +656,31 @@ def test_authority_reservation_and_metadata_preflight_binding(
     )
     assert loaded == receipt
     assert access["receipt_open_count"] == 1
+    output = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
+    with pytest.raises(TypeError, match="environment_attestation"):
+        executor.reserve_attempt_v1(
+            tmp_path,
+            authority,
+            created_utc="2026-07-31T00:00:00Z",
+        )
+    assert not output.exists()
+    environment = _synthetic_environment_attestation(authority)
     reservation = executor.reserve_attempt_v1(
         tmp_path,
         authority,
+        environment_attestation=environment,
         created_utc="2026-07-31T00:00:00Z",
     )
-    output = tmp_path / executor.OUTPUT_ROOT_RELATIVE_PATH
     assert executor.validate_attempt_reservation_v1(reservation) == reservation
+    assert reservation[
+        "environment_attestation_content_sha256"
+    ] == environment.receipt["content_sha256"]
     assert stat.S_IMODE((output / "reservation.json").stat().st_mode) == 0o444
     with pytest.raises(FileExistsError):
         executor.reserve_attempt_v1(
             tmp_path,
             authority,
+            environment_attestation=environment,
             created_utc="2026-07-31T00:00:01Z",
         )
 
@@ -778,9 +815,11 @@ def test_synthetic_engine_runs_exact_schedule_and_selects_update_400(
 ) -> None:
     monkeypatch.setattr(executor, "RUNTIME_DATA_ROOT", str(tmp_path.resolve()))
     authority = _authority()
+    environment = _synthetic_environment_attestation(authority)
     reservation = executor.reserve_attempt_v1(
         tmp_path,
         authority,
+        environment_attestation=environment,
         created_utc="2026-07-31T00:00:00Z",
     )
     apis = _fake_apis()
@@ -793,9 +832,22 @@ def test_synthetic_engine_runs_exact_schedule_and_selects_update_400(
         return original(*args)
 
     apis.evaluate_predecessor = record_predecessor
+    with pytest.raises(PermissionError, match="guard-issued"):
+        executor.run_authorized_engine_v1(
+            authority=authority,
+            reservation=reservation,
+            environment_attestation={},
+            repository_root=tmp_path,
+            runtime_data_root=tmp_path,
+            device="cuda:0",
+            apis=apis,
+        )
+    assert apis.runtime.requested_updates == []
+    assert predecessor_calls == []
     result = executor.run_authorized_engine_v1(
         authority=authority,
         reservation=reservation,
+        environment_attestation=environment,
         repository_root=tmp_path,
         runtime_data_root=tmp_path,
         device="cuda:0",
@@ -843,15 +895,18 @@ def test_observation_exception_consumes_attempt_with_exact_failure_receipt(
 ) -> None:
     monkeypatch.setattr(executor, "RUNTIME_DATA_ROOT", str(tmp_path.resolve()))
     authority = _authority()
+    environment = _synthetic_environment_attestation(authority)
     reservation = executor.reserve_attempt_v1(
         tmp_path,
         authority,
+        environment_attestation=environment,
         created_utc="2026-07-31T00:00:00Z",
     )
     apis = _fake_apis(fail_update=50)
     result = executor.run_authorized_engine_v1(
         authority=authority,
         reservation=reservation,
+        environment_attestation=environment,
         repository_root=tmp_path,
         runtime_data_root=tmp_path,
         device="cuda:0",
@@ -879,9 +934,11 @@ def test_nonunique_runtime_schedule_terminalizes_before_observation(
 ) -> None:
     monkeypatch.setattr(executor, "RUNTIME_DATA_ROOT", str(tmp_path.resolve()))
     authority = _authority()
+    environment = _synthetic_environment_attestation(authority)
     reservation = executor.reserve_attempt_v1(
         tmp_path,
         authority,
+        environment_attestation=environment,
         created_utc="2026-07-31T00:00:00Z",
     )
     apis = _fake_apis()
@@ -891,6 +948,7 @@ def test_nonunique_runtime_schedule_terminalizes_before_observation(
     result = executor.run_authorized_engine_v1(
         authority=authority,
         reservation=reservation,
+        environment_attestation=environment,
         repository_root=tmp_path,
         runtime_data_root=tmp_path,
         device="cuda:0",
@@ -908,15 +966,105 @@ def test_nonunique_runtime_schedule_terminalizes_before_observation(
     assert apis.runtime.closed is True
 
 
+def test_direct_executor_source_guard_fails_before_gpu_or_reservation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_root = tmp_path / "source"
+    runtime_root = tmp_path / "runtime"
+    source_root.mkdir()
+    runtime_root.mkdir()
+    monkeypatch.setattr(
+        executor,
+        "CERTIFIED_SOURCE_ROOT",
+        str(source_root.resolve()),
+    )
+    monkeypatch.setattr(
+        executor,
+        "RUNTIME_DATA_ROOT",
+        str(runtime_root.resolve()),
+    )
+    authority = _authority()
+    events: list[str] = []
+
+    def reject_source(_root: Path, _authority: Mapping[str, Any]) -> dict:
+        events.append("source")
+        raise PermissionError("synthetic source rehash failure")
+
+    def unexpected_gpu(_torch: Any) -> dict:
+        events.append("gpu")
+        raise AssertionError("GPU guard ran after failed source guard")
+
+    def unexpected_reservation(*_args: Any, **_kwargs: Any) -> dict:
+        events.append("reservation")
+        raise AssertionError("reservation ran after failed source guard")
+
+    monkeypatch.setattr(executor, "validate_certified_source_v1", reject_source)
+    monkeypatch.setattr(executor, "validate_gpu_v1", unexpected_gpu)
+    monkeypatch.setattr(executor, "reserve_attempt_v1", unexpected_reservation)
+    with pytest.raises(PermissionError, match="source rehash"):
+        executor.execute_authorized_v1(source_root, authority)
+    assert events == ["source"]
+    assert not (
+        runtime_root / executor.OUTPUT_ROOT_RELATIVE_PATH
+    ).exists()
+
+
+def test_direct_executor_gpu_guard_fails_before_reservation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_root = tmp_path / "source"
+    runtime_root = tmp_path / "runtime"
+    source_root.mkdir()
+    runtime_root.mkdir()
+    monkeypatch.setattr(
+        executor,
+        "CERTIFIED_SOURCE_ROOT",
+        str(source_root.resolve()),
+    )
+    monkeypatch.setattr(
+        executor,
+        "RUNTIME_DATA_ROOT",
+        str(runtime_root.resolve()),
+    )
+    authority = _authority()
+    events: list[str] = []
+
+    def accept_source(_root: Path, _authority: Mapping[str, Any]) -> dict:
+        events.append("source")
+        return {"passed": True}
+
+    def reject_gpu(_torch: Any) -> dict:
+        events.append("gpu")
+        raise RuntimeError("synthetic AMD R9700 failure")
+
+    def unexpected_reservation(*_args: Any, **_kwargs: Any) -> dict:
+        events.append("reservation")
+        raise AssertionError("reservation ran after failed GPU guard")
+
+    monkeypatch.setattr(executor, "validate_certified_source_v1", accept_source)
+    monkeypatch.setattr(executor, "validate_gpu_v1", reject_gpu)
+    monkeypatch.setattr(executor, "reserve_attempt_v1", unexpected_reservation)
+    with pytest.raises(RuntimeError, match="AMD R9700"):
+        executor.execute_authorized_v1(source_root, authority)
+    assert events == ["source", "gpu"]
+    assert not (
+        runtime_root / executor.OUTPUT_ROOT_RELATIVE_PATH
+    ).exists()
+
+
 def test_nonfinite_optimizer_state_fails_before_update_zero_observation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(executor, "RUNTIME_DATA_ROOT", str(tmp_path.resolve()))
     authority = _authority()
+    environment = _synthetic_environment_attestation(authority)
     reservation = executor.reserve_attempt_v1(
         tmp_path,
         authority,
+        environment_attestation=environment,
         created_utc="2026-07-31T00:00:00Z",
     )
     apis = _fake_apis()
@@ -935,6 +1083,7 @@ def test_nonfinite_optimizer_state_fails_before_update_zero_observation(
     result = executor.run_authorized_engine_v1(
         authority=authority,
         reservation=reservation,
+        environment_attestation=environment,
         repository_root=tmp_path,
         runtime_data_root=tmp_path,
         device="cuda:0",
