@@ -729,6 +729,34 @@ These instructions apply to the entire repository.
   production, promotion, deployment, retry, scientific resume, recovery
   execution, second attempt, architecture variant, or further-attempt
   authority.
+- The science-identical V18 spatial-token delay-line causal-convolution
+  joint-JEPA V1 update-zero gate-timing integrity replacement V1 source may
+  additionally be clean exported only from frozen source-and-review commit
+  `5c1ed4ced698a957bee66544141af9d4750a1dcc`, and only as (a) the 125
+  paths in its committed recursive source manifest and (b) the thirteen V5
+  scientific-result/source-manifest identity witnesses, original-V18
+  preregistration and terminal update-zero scientific-result witnesses,
+  replacement preregistration/source-manifest/independent-source-review, and
+  six focused V18 synthetic-test paths explicitly enumerated and
+  SHA-256-and-byte-count-bound in
+  `docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_update_zero_gate_timing_integrity_replacement_v1_clean_export_certification_2026-07-31.json`.
+  Validate every path against both that certification and the frozen commit
+  before copying. Do not use a whole-tree archive, worktree, checkout copy,
+  source package, wildcard, recursive copy, or recursive source
+  materialization. The copied original-V18 terminal result and V5 documents
+  are source-only chronology and scientific-identity evidence and grant no
+  predecessor runtime-output, checkpoint, retry, resume, recovery, or
+  execution authority. Do not export the original V18 source manifest,
+  source review, clean-export certification, or execution authority. The
+  replacement certification itself and later one-shot authority may be added
+  to the narrow export only at their exact reviewed paths after their
+  respective commits and exact file-SHA-256 validation. This source-only
+  exception grants no generated-input, runtime-artifact, checkpoint, tensor,
+  schedule, dataset-payload, RGB, GPU, training, qualification, benchmark,
+  probability-calibration, G2 payload, navigation, held-out, sealed,
+  production, promotion, deployment, retry, scientific resume, recovery
+  execution, second replacement, architecture variant, or further-attempt
+  authority.
 - Filename-only checks may verify that guards exclude protected paths, but
   must not read file contents.
 - No future active G8 manifest belongs in the model-facing checkout. It must
