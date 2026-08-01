@@ -1,0 +1,437 @@
+{
+  "schema": "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_terminal_review_v1",
+  "status": "PASS_COMPLETE_TERMINAL_DEVELOPMENT_REVIEW",
+  "date": "2026-08-01",
+  "citable_as_scientific_evidence": false,
+  "scientific_claim_authorized": false,
+  "runtime_scientific_verdict_emitted": false,
+  "independent_terminal_review_completed": true,
+  "reviewers": {
+    "primary": "/root",
+    "independent": [
+      "/root/v3_terminal_receipt_audit",
+      "/root/v3_scientific_result_audit",
+      "/root/v3_goal_handoff_audit"
+    ]
+  },
+  "attempt": {
+    "id": "world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1",
+    "consumed": true,
+    "completed": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "overwrite_authorized": false,
+    "refill_authorized": false
+  },
+  "execution_identity": {
+    "source_commit": "20a7ad293fa1926e08e1a59db274f82898fc0f09",
+    "review_commit": "12e93654db6da95a70f8f63a0c90e4bdcae57c83",
+    "authority_and_execution_commit": "0ddace8846bedb4b268e4123dfdaf443a15e5d97",
+    "preregistration_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_preregistration_2026-08-01.md",
+      "file_sha256": "0575bda33aac232f08103bf1c0b06d4721fb6e15b5729675b463ce1a3df845b2",
+      "byte_count": 8488
+    },
+    "plan_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_plan_2026-08-01.json",
+      "file_sha256": "053036385837a243509e447ab03d3b177178833c755cdaea33bfbe9b4d60d6dc",
+      "byte_count": 7016
+    },
+    "independent_source_review_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_independent_source_review_2026-08-01.json",
+      "file_sha256": "dd9cd17279b7128abb494f40a26ceeca122626ee571e11b4f0c6fb43fa1ec3d4",
+      "byte_count": 15171
+    },
+    "execution_authority_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_execution_authority_2026-08-01.json",
+      "file_sha256": "d90aba6198dd3e73629106a37c6567505ade90206d58cd593f2315d637bfaaee",
+      "byte_count": 16075
+    },
+    "predecessor_failure_audit_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_terminal_pretraining_source_failure_result_2026-08-01.json",
+      "file_sha256": "8cb652fb8e88d725b187f45d3b2988de440b9feabe253d372de90fb6134a1902",
+      "byte_count": 8487
+    }
+  },
+  "terminal_artifacts": {
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1/reservation.json",
+      "file_sha256": "b217f94e8bce2dc91dc931644bc10f07d0bb979cd540200e241225fb8a2d4a12",
+      "byte_count": 17048
+    },
+    "overlap_audit": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1/overlap_audit.json",
+      "file_sha256": "ec2cfcd008059994d7803f1a14ede5d4ea3b76d50c36d0ca77532ae1deb8c2db",
+      "byte_count": 13368
+    },
+    "shuffle_audit": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1/shuffle_audit.json",
+      "file_sha256": "892280a84967eb51d4a9f2733c79729361df2a0ac308191a1955c6f0a4a6a1bb",
+      "byte_count": 6494146
+    },
+    "result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1/result.json",
+      "file_sha256": "764ee61b7bb8b7e1221f01fc34ba0554d0ca681fde21e99b1a9f5585b3360bd4",
+      "byte_count": 26054
+    },
+    "receipt_check": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1/receipt_check.json",
+      "file_sha256": "bf55ca3e69b87b2bd81abf4b33909fc2b2364302cc7e67a958b3c7abcdf4ff66",
+      "byte_count": 6401
+    },
+    "terminal_supervision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1/terminal_supervision.json",
+      "file_sha256": "313d449b3bd44c0e55e674195b548c444f817d837780faa45769f04b7286c8f4",
+      "byte_count": 4824
+    }
+  },
+  "measurement_receipt_bindings": {
+    "binding_source": "direct_copy_from_sha256_bound_result_json_and_independently_reverified",
+    "blind": [
+      {"path": "arms/blind/measurements/update_000000.json", "file_sha256": "385964e4d6c2c7b8764caaf5a18682e80868f5fe6961c761f711d43332ffb93a", "byte_count": 4924},
+      {"path": "arms/blind/measurements/update_000100.json", "file_sha256": "7fd1975ad9e2ff76fd6618b14c0bb91a8fd84054bb42edc5ae1f45f463f7d2ca", "byte_count": 5029},
+      {"path": "arms/blind/measurements/update_000200.json", "file_sha256": "166030042b8e8b9a9cb94e2cbcc8b0570bb532fe6b8c7284724b390f73a73699", "byte_count": 5027},
+      {"path": "arms/blind/measurements/update_000300.json", "file_sha256": "a164b4c4c216e49a4a04ba7c62842e2c7ffcb547ac2c89fee61ca2703accc9e7", "byte_count": 5033},
+      {"path": "arms/blind/measurements/update_000400.json", "file_sha256": "e8ce5e1edca6e5d4c85a9d511b0845d734bfcb8a73dfd553f4c39b6da062a7ef", "byte_count": 5027},
+      {"path": "arms/blind/measurements/update_000500.json", "file_sha256": "5d103480d062dd0dfa55145ba7170ac568521f338b40712a02e8406eadf6d07a", "byte_count": 5032},
+      {"path": "arms/blind/measurements/update_000600.json", "file_sha256": "9b2af18cd6ca07e0463c66c1f9333ed73c2b06ca4183b8c025d75efb46e9e973", "byte_count": 5031},
+      {"path": "arms/blind/measurements/update_000700.json", "file_sha256": "57c687ea1ad59aa5822fb46e8ee83a012116b87f18bd9587f3ed703eeaf9a3e0", "byte_count": 5344}
+    ],
+    "conditioned": [
+      {"path": "arms/conditioned/measurements/update_000000.json", "file_sha256": "a3ff99728997328c40cb6e02f38dc5097dd51d27e9744d3619547de8a3c5bf86", "byte_count": 4968},
+      {"path": "arms/conditioned/measurements/update_000100.json", "file_sha256": "c7d54219573906271d2a400cadeb23fc6f8c7194567b7649493f2a73397cd99a", "byte_count": 5080},
+      {"path": "arms/conditioned/measurements/update_000200.json", "file_sha256": "ba700dee8399b5ae41d8f7524bb0efc8b064e6e334b96852d0ad425272d6cde4", "byte_count": 5080},
+      {"path": "arms/conditioned/measurements/update_000300.json", "file_sha256": "4451d7b07ea4620214234d1f75c5a65a00a0690aebf3e468a2c021cc2c23769c", "byte_count": 5087},
+      {"path": "arms/conditioned/measurements/update_000400.json", "file_sha256": "9cea236911ee24692df0632edb5e0ed9e744ec7796b78d40067681c624e8f861", "byte_count": 5081},
+      {"path": "arms/conditioned/measurements/update_000500.json", "file_sha256": "ecb9d8ffd31d30e644163e29b23ce992253315dff35e72565639b60c9b891a11", "byte_count": 5084},
+      {"path": "arms/conditioned/measurements/update_000600.json", "file_sha256": "73fbf66c19ec0b5b0388be35d5b7c98fffc780947e5f4804118d445e0ab88119", "byte_count": 5081},
+      {"path": "arms/conditioned/measurements/update_000700.json", "file_sha256": "87bad8bbfb15ce665a2b80477f4d11c3b4a997c4c0c7e7c15ba96c911345cf0b", "byte_count": 5392}
+    ],
+    "shuffled": [
+      {"path": "arms/shuffled/measurements/update_000000.json", "file_sha256": "869b6bdfe253c87e304258bc0f04ed68d1dff9deffece205f51f97e8b51f6bd9", "byte_count": 4965},
+      {"path": "arms/shuffled/measurements/update_000100.json", "file_sha256": "ecf2224539097bfc061f72ec0632cc76fa2164dba4e28ff7a1660aaea7e34963", "byte_count": 5078},
+      {"path": "arms/shuffled/measurements/update_000200.json", "file_sha256": "cf1c47531b54049d6e4c8b73545fc37ce04d662d3eb3b0e152adfbd2695cabbe", "byte_count": 5079},
+      {"path": "arms/shuffled/measurements/update_000300.json", "file_sha256": "539bd1064b84f6d33a9530427ecb91fee5d15e8478991126b82af3a166e45da5", "byte_count": 5081},
+      {"path": "arms/shuffled/measurements/update_000400.json", "file_sha256": "c1d71f33c210a8fe26c037571c856c39a7dedd635fbaf9142205312d152d25fe", "byte_count": 5079},
+      {"path": "arms/shuffled/measurements/update_000500.json", "file_sha256": "9219f9acc9afe03219aa8746cb445f2c8b251055df5aef0e6c862089edb88582", "byte_count": 5080},
+      {"path": "arms/shuffled/measurements/update_000600.json", "file_sha256": "f2a7132a754d9ecc95c783f39aecc12e2c34a97da992f402c1b4c795be97d578", "byte_count": 5082},
+      {"path": "arms/shuffled/measurements/update_000700.json", "file_sha256": "27c234b50917c5e660c97372abcc2d052f553310b52a0a979891eb4fdad85103", "byte_count": 5389}
+    ]
+  },
+  "execution": {
+    "worker_exit_code": 0,
+    "checker_exit_code": 0,
+    "worker_supervised_elapsed_seconds": 1367.1631363329943,
+    "checker_supervised_elapsed_seconds": 0.11378026590682566,
+    "supervisor_wall_elapsed_seconds": 1367.4205699278973,
+    "worker_wall_elapsed_seconds": 1365.9548298260197,
+    "gpu_phase_elapsed_seconds": 1354.635730535956,
+    "maximum_memory_allocated_bytes": 6081984512,
+    "maximum_wall_seconds": 43200,
+    "maximum_gpu_seconds": 36000,
+    "maximum_training_updates": 700,
+    "runtime": {
+      "python_version": "3.12.3",
+      "torch_version": "2.9.1+rocm7.2.1.gitff65f5bc",
+      "torch_hip": "7.2.53211-e1a6bc5663",
+      "numpy_version": "1.26.4",
+      "pillow_version": "11.3.0",
+      "device_name": "AMD Radeon AI PRO R9700",
+      "device_arch": "gfx1201"
+    }
+  },
+  "contract_integrity": {
+    "status": "PASS",
+    "worker_result_status": "COMPLETE_PENDING_TERMINAL_REVIEW",
+    "receipt_checker_status": "PASS",
+    "terminal_supervision_status": "COMPLETE_PENDING_TERMINAL_REVIEW",
+    "output_inventory_count": 57,
+    "measurement_receipt_count": 24,
+    "measurement_receipt_hash_mismatch_count": 0,
+    "snapshot_binding_count": 24,
+    "identity_only_pack_or_snapshot_file_count": 31,
+    "permitted_json_receipts_opened_by_checker": 26,
+    "exact_accounting_recomputed": true,
+    "packed_frame_bytes": 2716729344,
+    "train_rows": 16000,
+    "train_scenes": 1000,
+    "validation_rows": 2048,
+    "validation_scenes": 150,
+    "role_scene_overlap_count": 0,
+    "visible_actions_supported": 9,
+    "adjacent_ordered_pairs_supported": 81,
+    "ordered_triples_supported": 722,
+    "ordered_triples_possible": 729,
+    "missing_triple_gate": false,
+    "derangement_checks_passed": true,
+    "derangement_fixed_candidate_count": 0,
+    "derangement_same_scene_donor_count": 0,
+    "validation_used_for_gradient_updates": false,
+    "frozen_substrate_exact": true,
+    "optimizer_steps_per_arm": 700,
+    "total_optimizer_steps": 2100,
+    "target_ema_steps": 0,
+    "sealed_open_count": 0,
+    "heldout_open_count": 0,
+    "network_access_count": 0
+  },
+  "registered_decision": {
+    "status": "LOCALIZE_ACTION_ALIGNMENT_FAILURE",
+    "positive_claim_passed": false,
+    "localization_stage": "action_alignment",
+    "maximum_interpretation": "aggregate prediction advantage and above-chance candidate discrimination did not establish the registered hardest-action alignment requirement",
+    "gate_precedence": [
+      "INCONCLUSIVE_CONTRACT_FAILURE",
+      "LOCALIZE_TRAIN_FIT_FAILURE",
+      "LOCALIZE_GENERALIZATION_OR_CONFOUNDING",
+      "LOCALIZE_ACTION_ALIGNMENT_FAILURE",
+      "LOCALIZE_PREDICTOR_NOT_USEFUL",
+      "PASS_EXISTING_POOL_FACTUAL_ACTION_LEARNABILITY"
+    ],
+    "gates": {
+      "contract_integrity": {
+        "status": "PASS"
+      },
+      "training_fit": {
+        "status": "PASS",
+        "conditioned_vs_blind_family_equal_log_energy_advantage": 0.011818667248499804,
+        "conditioned_vs_shuffled_family_equal_log_energy_advantage": 0.034996837399121385,
+        "approximate_conditioned_energy_reduction_vs_blind": 0.011749101130041795,
+        "approximate_conditioned_energy_reduction_vs_shuffled": 0.0343915299130666
+      },
+      "scene_disjoint_cross_arm_generalization": {
+        "status": "PASS",
+        "validation_tail": [
+          {
+            "update": 500,
+            "conditioned_vs_blind_log_energy_advantage": 0.004471822515996449,
+            "conditioned_vs_blind_one_sided_95_lower_bound": 0.0008222217577007437,
+            "conditioned_vs_shuffled_log_energy_advantage": 0.021363062752445084,
+            "conditioned_vs_shuffled_one_sided_95_lower_bound": 0.017072338393858195
+          },
+          {
+            "update": 600,
+            "conditioned_vs_blind_log_energy_advantage": 0.005308932191286117,
+            "conditioned_vs_blind_one_sided_95_lower_bound": 0.0013560204002660721,
+            "conditioned_vs_shuffled_log_energy_advantage": 0.02426162942085628,
+            "conditioned_vs_shuffled_one_sided_95_lower_bound": 0.019758121869890174
+          },
+          {
+            "update": 700,
+            "conditioned_vs_blind_log_energy_advantage": 0.006549708002003922,
+            "conditioned_vs_blind_one_sided_95_lower_bound": 0.002513837441489995,
+            "conditioned_vs_shuffled_log_energy_advantage": 0.02632224630926697,
+            "conditioned_vs_shuffled_one_sided_95_lower_bound": 0.02157730247502228
+          }
+        ],
+        "approximate_update_700_conditioned_energy_reduction_vs_blind": 0.006528305416935165,
+        "approximate_update_700_conditioned_energy_reduction_vs_shuffled": 0.025978835694514646
+      },
+      "candidate_action_alignment": {
+        "status": "FAIL",
+        "balanced_accuracy": 0.2469343816883539,
+        "balanced_accuracy_one_sided_95_lower_bound": 0.23014452836846072,
+        "balanced_chance": 0.1111111111111111,
+        "balanced_accuracy_gate_passed": true,
+        "hardest_wrong_action_margin": -0.009453551490358742,
+        "hardest_wrong_action_margin_one_sided_95_lower_bound": -0.01138311990101325,
+        "hardest_wrong_action_margin_gate_passed": false,
+        "failing_action_id_available_in_permitted_receipts": false
+      },
+      "predictor_usefulness_and_noncollapse": {
+        "status": "NOT_REACHED_BY_GATE_PRECEDENCE",
+        "observed_secondary_failure": true,
+        "persistence_log_energy_advantage": -0.14645548512800682,
+        "persistence_one_sided_95_lower_bound": -0.1829122861354923,
+        "persistence_gate_would_pass": false,
+        "approximate_conditioned_energy_excess_over_persistence": 0.1577233937627054,
+        "wrong_history_log_energy_advantage": 0.12255093276460897,
+        "wrong_history_one_sided_95_lower_bound": 0.11766703087321294,
+        "wrong_history_gate_would_pass": true,
+        "prediction_to_target_rank_ratio_tail": {
+          "500": 0.44522386327648744,
+          "600": 0.4727392865692239,
+          "700": 0.46826675978556964
+        },
+        "rank_gate_would_pass": true
+      }
+    }
+  },
+  "update_700_measurements": {
+    "arms": {
+      "conditioned": {
+        "training_loss": 0.11383525561541319,
+        "train_factual_mean_energy": 0.12363772821996827,
+        "validation_family_equal_mean_energy": 0.12548826619149622,
+        "balanced_accuracy": 0.2469343816883539,
+        "unique_winner_accuracy": 0.3046875,
+        "exact_tie_count": 0,
+        "prediction_effective_rank": 11.045233821255216,
+        "target_effective_rank": 23.587482114496208
+      },
+      "blind": {
+        "training_loss": 0.11703687440603971,
+        "train_factual_mean_energy": 0.12713752805354306,
+        "validation_family_equal_mean_energy": 0.12823086853995846,
+        "balanced_accuracy": 0.1111111111111111,
+        "exact_tie_count": 2048
+      },
+      "shuffled": {
+        "training_loss": 0.1178381135687232,
+        "train_factual_mean_energy": 0.12989155009522801,
+        "validation_family_equal_mean_energy": 0.1304972216285023,
+        "balanced_accuracy": 0.08162152585607323,
+        "unique_winner_accuracy": 0.1044921875,
+        "exact_tie_count": 0
+      }
+    },
+    "learning_rate_fraction": 0.9108889076126225,
+    "prediction_to_target_rank_ratio": 0.46826675978556964,
+    "minimum_family_action_supporting_scene_count": 2,
+    "action_identification_bootstrap_replicates": 10000,
+    "action_identification_bootstrap_interpretation": "bayesian_positive_weight_cluster_5th_percentile_not_frequentist_coverage",
+    "training_seed_count": 1,
+    "training_seed": 20260731
+  },
+  "alignment_trajectory": [
+    {
+      "update": 0,
+      "balanced_accuracy": 0.07595372968012228,
+      "hardest_wrong_action_margin": -0.0800686357076074,
+      "conditioned_vs_blind_log_energy_advantage": -0.05666884855546694
+    },
+    {
+      "update": 100,
+      "balanced_accuracy": 0.14929332196276598,
+      "hardest_wrong_action_margin": -0.008999898671666442,
+      "conditioned_vs_blind_log_energy_advantage": -0.08086495755313389
+    },
+    {
+      "update": 200,
+      "balanced_accuracy": 0.20134741214917845,
+      "hardest_wrong_action_margin": -0.006352457868614603,
+      "conditioned_vs_blind_log_energy_advantage": -0.01883991628913342
+    },
+    {
+      "update": 300,
+      "balanced_accuracy": 0.22058950672760547,
+      "hardest_wrong_action_margin": -0.0070586609552496125,
+      "conditioned_vs_blind_log_energy_advantage": -0.004056549565641823
+    },
+    {
+      "update": 400,
+      "balanced_accuracy": 0.22796461025525433,
+      "hardest_wrong_action_margin": -0.0074524817793558,
+      "conditioned_vs_blind_log_energy_advantage": 0.004294394412343521
+    },
+    {
+      "update": 500,
+      "balanced_accuracy": 0.2366173022945756,
+      "hardest_wrong_action_margin": -0.00826160208481948,
+      "conditioned_vs_blind_log_energy_advantage": 0.004471822515996449
+    },
+    {
+      "update": 600,
+      "balanced_accuracy": 0.24424973351781695,
+      "hardest_wrong_action_margin": -0.009096867393675474,
+      "conditioned_vs_blind_log_energy_advantage": 0.005308932191286117
+    },
+    {
+      "update": 700,
+      "balanced_accuracy": 0.2469343816883539,
+      "hardest_wrong_action_margin": -0.009453551490358742,
+      "conditioned_vs_blind_log_energy_advantage": 0.006549708002003922
+    }
+  ],
+  "frozen_substrate": {
+    "encoder_initial_sha256": "41160726b4f713f94dd2a4cf9d6f602033ddceab9cd0f06261feca5947230075",
+    "encoder_final_sha256": "41160726b4f713f94dd2a4cf9d6f602033ddceab9cd0f06261feca5947230075",
+    "target_initial_sha256": "41160726b4f713f94dd2a4cf9d6f602033ddceab9cd0f06261feca5947230075",
+    "target_final_sha256": "41160726b4f713f94dd2a4cf9d6f602033ddceab9cd0f06261feca5947230075",
+    "evaluation_mode": true,
+    "requires_grad": false,
+    "gradient_tensor_count": 0,
+    "ema_update_count": 0,
+    "interpretation": "exact byte-state preservation only; no functional physical/spatial-retention panel was run"
+  },
+  "first_principles_interpretation": {
+    "measured": [
+      "the selected existing pool contains an aggregate factual requested-action signal that the aligned arm learned beyond blind and marginal-preserving deranged controls on disjoint scenes",
+      "aggregate nine-way identification is above chance but at least one action macro is not correctly aligned under the hardest-wrong margin gate",
+      "the learned predictor uses historical context and remains noncollapsed at the registered tail",
+      "the conditioned predictor is still worse than simple latent persistence at update 700",
+      "the frozen visual substrate remained byte-identical throughout this protocol"
+    ],
+    "inferences_not_uniquely_established": [
+      "whether the hardest-action failure is caused by requested-versus-executed command mismatch, objective mismatch, undertraining, frozen features, or architecture",
+      "whether longer training would repair alignment; average effects were still improving but the hardest margin worsened after update 200",
+      "whether more rows from the existing pool would improve the result",
+      "whether a small paired counterfactual role would improve training or only evaluation"
+    ],
+    "prior_claim_disposition": {
+      "on_policy_objective_contains_no_action_signal": "REFUTED_FOR_FACTUAL_SCENE_DISJOINT_LEARNING",
+      "existing_selected_pool_passes_full_factual_action_learnability": "NOT_ESTABLISHED",
+      "bulk_counterfactual_generation_is_the_immediate_critical_path": "NOT_JUSTIFIED",
+      "architecture_cannot_use_action_conditioning": "NOT_SUPPORTED",
+      "architecture_is_generally_sufficient": "NOT ESTABLISHED",
+      "counterfactual_evaluation_may_later_be_needed_for_untaken_actions": "RETAINED_CONDITIONALLY"
+    },
+    "repository_goal_status": {
+      "factual_requested_action_diagnostic": "VALID_LOCALIZED_FAILURE_WITH_PARTIAL_POSITIVE_SIGNAL",
+      "WM-A_untaken_action_utility": "UNMEASURED",
+      "WM-C_composability": "UNMEASURED_AND_DIRECT_REENTRY_STILL_INCOMPATIBLE",
+      "WM-S_spatial_physical_retention": "BYTE_IDENTITY_ONLY_FUNCTIONAL_RETENTION_UNMEASURED",
+      "WM-D_deployed_causal_presence": "UNMEASURED",
+      "formal_G2_G8_or_promotion": "NOT_AUTHORIZED_AND_NOT_PASSED"
+    }
+  },
+  "next_step_boundary": {
+    "this_document_authorizes_execution": false,
+    "reuse_or_resume_v3_attempt": false,
+    "immediate_bulk_data_generation_justified": false,
+    "bulk_data_generation_scope": "this factual requested-action localization only; unrelated repository data needs are outside this review",
+    "recommended_order": [
+      "under fresh read-only authority allowlisting only the bound conditioned update-700 snapshot and exact bound validation-index metadata, extract action-level confusion and per-action margin evidence without opening pack frames, RGB, or any other snapshot",
+      "separately, if a complete exact role-bound realized or executed-command join already exists, audit requested-versus-realized-or-executed separability for the failing action class; otherwise record provenance unavailable and do not infer it or generate data under this recommendation",
+      "after diagnosis, choose either one isolated existing-pool successor changing only additional optimization or only the action-alignment objective, or preregister a matched equal-data equal-budget baseline-versus-optimization-versus-objective design; never resume the consumed V3 attempt",
+      "if alignment passes but persistence remains negative, localize predictor usefulness with a persistence-residual or otherwise explicitly isolated predictor change",
+      "collect only a small scene-disjoint counterfactual evaluation role if factual alignment and predictor usefulness both pass and an untaken-action claim remains required"
+    ]
+  },
+  "claim_boundaries": [
+    "no untaken-action or counterfactual causal claim",
+    "no requested-executed equivalence claim",
+    "no per-action culprit identified from permitted receipts",
+    "no full approximately three-terabyte pool exhaustion claim",
+    "no seed-robustness claim from one training seed",
+    "no functional spatial or physical retention claim",
+    "no composability or rollout claim",
+    "no deployed navigation, WM-A, WM-C, WM-S, WM-D, G2-G8, promotion, or production claim"
+  ],
+  "custody": {
+    "scope": "attempt-root runtime artifacts only; source files and durable documentation were separately inspected",
+    "permitted_attempt_root_runtime_json_opened": [
+      "reservation.json",
+      "overlap_audit.json",
+      "shuffle_audit.json",
+      "result.json",
+      "receipt_check.json",
+      "terminal_supervision.json",
+      "24 measurement JSON receipts"
+    ],
+    "pack_payload_bytes_opened_by_terminal_review": false,
+    "snapshot_or_checkpoint_bytes_opened_by_terminal_review": false,
+    "rgb_bytes_opened_by_terminal_review": false,
+    "sealed_or_heldout_opened_by_terminal_review": false,
+    "network_access_used_by_terminal_review": false,
+    "identity_only_pack_or_snapshot_paths_statted": true
+  },
+  "residual_limitations": [
+    "the bounded result does not expose the hardest action ID, per-action margins, or confusion matrix",
+    "the nine-way action-identification Bayesian-bootstrap lower quantiles are deterministic positive-weight cluster summaries and are not frequentist coverage guarantees",
+    "only one training seed was run",
+    "the 700-update stop retains a learning-rate fraction of 0.9108889076126225 on the 3000-update schedule",
+    "installed Torch and NumPy package bytes are not content-hashed beyond exact observed versions"
+  ]
+}

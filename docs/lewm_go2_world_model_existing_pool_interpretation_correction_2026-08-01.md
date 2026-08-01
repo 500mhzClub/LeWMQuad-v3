@@ -6,8 +6,38 @@ does not authorize data access, packing, GPU work, training, evaluation,
 checkpoint creation, retry, resume, promotion, G2-G8 work, held-out access, or
 sealed access.
 
-Companion experiment contract:
+Original companion experiment contract:
 `docs/lewm_go2_world_model_existing_pool_three_arm_v1_preregistration_2026-08-01.md`.
+After two consumed pretraining source failures, the science-identical successful
+lineage terminated as integrity replacement V3. Its durable result records are:
+
+- `docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_terminal_review_2026-08-01.json`; and
+- `docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_terminal_handoff_2026-08-01.md`.
+
+## Terminal disposition — 2026-08-01
+
+The corrected existing-pool experiment has now run. V3 completed all 700
+updates for each arm, and its external receipt checker passed. The registered
+scientific decision is `LOCALIZE_ACTION_ALIGNMENT_FAILURE`.
+
+The aligned conditioned arm beat both the candidate-blind and action-shuffled
+controls on training fit and scene-disjoint validation. Its balanced action
+identification was `0.246934` against `0.111111` chance. This confirms the core
+correction below: the existing observational pool contains learnable factual
+requested-action signal, and new simulator data was not the immediate critical
+path.
+
+The full positive claim did not pass. The hardest-wrong-action margin was
+`−0.009454` with one-sided lower quantile `−0.011383`; the later
+predictor-usefulness gate was not reached and would also fail against
+persistence. The result therefore establishes neither uniform action alignment
+nor architecture sufficiency. V3 does not justify bulk world-model data
+generation for this factual-action localization. The next bounded diagnosis is
+a separately authorized, read-only action-level extraction allowlisting only
+the bound update-700 conditioned snapshot and exact bound validation-index
+metadata. A requested-versus-executed provenance audit is separate and applies
+only if a complete exact role-bound join already exists; otherwise provenance
+must be recorded as unavailable before any new training or rendering decision.
 
 ## 1. Corrected bottom line
 
@@ -49,8 +79,9 @@ The active non-held-out train/validation pool is approximately 3 TB:
 
 The immediately usable frozen schedule is much smaller than the physical pool:
 16,000 train H6 rows and 2,048 validation H6 rows. Those selected rows cover
-all 1,150 role scenes and only about 0.22% of the available packed candidates
-or textured-RGB allocation. This distinction matters:
+all 1,150 role scenes, 0.998477% of the available row-disjoint packed H6
+candidates, and 0.222618% of the train/validation textured-RGB allocation. This
+distinction matters:
 
 - the repository does **not** need another large corpus before testing factual
   action learnability; and

@@ -14,6 +14,22 @@ Branch: `jepa-spatial-world-model-nav`
 > `docs/lewm_go2_world_model_existing_pool_three_arm_v1_preregistration_2026-08-01.md`.
 > No claim below should be used to bypass those narrower documents.
 
+> **Terminal update (2026-08-01):** the science-identical integrity-replacement
+> V3 experiment completed all 700 updates for each of the conditioned,
+> candidate-blind, and action-shuffled arms using 16,000 existing train rows and
+> 2,048 scene-disjoint validation rows. The external receipt checker passed.
+> The registered result is `LOCALIZE_ACTION_ALIGNMENT_FAILURE`: aggregate
+> factual action signal fit and generalized beyond both controls, but the
+> hardest-action margin failed and predictor usefulness would also fail against
+> persistence. This empirically refutes this handoff's no-action-signal and
+> data-generation-first conclusions without establishing full factual
+> learnability, architecture sufficiency, or untaken-action validity. V3 does
+> not justify bulk data generation for this factual-action diagnosis. The
+> durable terminal records are
+> `docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_terminal_review_2026-08-01.json`
+> and
+> `docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_terminal_handoff_2026-08-01.md`.
+
 **Nothing in this session is committed.** All artifacts are untracked (§8).
 All experimental outputs are development-tier under `.generated/dev/**` and are
 explicitly **not citable as scientific evidence**. No sealed, held-out, or G8
