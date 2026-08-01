@@ -3,7 +3,7 @@
   "status": "PASS_SOURCE_ONLY_NOT_AUTHORITY",
   "citable_as_scientific_evidence": false,
   "execution_authority_granted": false,
-  "source_commit": "9cae17bf72e0d2b722cdbeebf4745ea162fa90eb",
+  "source_commit": "73f51c2ae97cf2a9e3f96243ace4a892e65f3db6",
   "reviewers": [
     {
       "kind": "independent_subagent",
@@ -89,8 +89,8 @@
     },
     "worker": {
       "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/extract_go2_world_model_existing_pool_three_arm_v1_action_localization_v1.py",
-      "file_sha256": "202ff7878b909e6523b9ff57f57a600ff2be55d92a815f74ed5f0a4536efc6b7",
-      "byte_count": 43715
+      "file_sha256": "91a4eb75ddf067debf537c906169af0f419816233e5cbb1fa15f50bed1aae40c",
+      "byte_count": 43960
     },
     "checker": {
       "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_existing_pool_three_arm_v1_action_localization_v1.py",
