@@ -31,18 +31,20 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEVELOPMENT_ROOT = REPO_ROOT / ".generated" / "dev"
 ATTEMPT_ROOT = (
     DEVELOPMENT_ROOT
-    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v1"
+    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v2"
     / "attempt_v1"
 )
 ATTEMPT_ID = (
-    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
 )
 PREDECESSOR_ATTEMPT_ROOT = (
     DEVELOPMENT_ROOT
-    / "world_model_existing_pool_three_arm_v1"
+    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v1"
     / "attempt_v1"
 )
-PREDECESSOR_ATTEMPT_ID = "world_model_existing_pool_three_arm_v1/attempt_v1"
+PREDECESSOR_ATTEMPT_ID = (
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+)
 WORKER_RELATIVE = Path(
     "scripts/execute_go2_world_model_existing_pool_three_arm_v1.py"
 )
@@ -52,49 +54,230 @@ CHECKER_RELATIVE = Path(
 SUPERVISOR_RELATIVE = Path(
     "scripts/run_go2_world_model_existing_pool_three_arm_authorized_v1.py"
 )
+PREREGISTRATION_RELATIVE = Path(
+    "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+    "replacement_v2_preregistration_2026-08-01.md"
+)
+PLAN_RELATIVE = Path(
+    "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+    "replacement_v2_plan_2026-08-01.json"
+)
+REVIEW_RELATIVE = Path(
+    "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+    "replacement_v2_independent_source_review_2026-08-01.json"
+)
+AUTHORITY_RELATIVE = Path(
+    "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+    "replacement_v2_execution_authority_2026-08-01.json"
+)
 
 AUTHORITY_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "execution_authority_v1"
 )
 AUTHORITY_STATUS = (
-    "AUTHORIZED_ONE_EXACT_EXISTING_POOL_THREE_ARM_V1_INTEGRITY_REPLACEMENT_V1_"
+    "AUTHORIZED_ONE_EXACT_EXISTING_POOL_THREE_ARM_V1_INTEGRITY_REPLACEMENT_V2_"
     "ATTEMPT"
 )
 PLAN_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "plan_v1"
 )
 PLAN_PURPOSE = (
-    "existing_pool_three_arm_v1_factual_learning_integrity_replacement_v1"
+    "existing_pool_three_arm_v1_factual_learning_integrity_replacement_v2"
 )
 REVIEW_SCHEMA = (
-    "lewm_go2_world_model_follow_on_v1_integrity_replacement_independent_"
+    "lewm_go2_world_model_follow_on_v2_integrity_replacement_independent_"
     "source_review_v1"
 )
 REVIEW_STATUS = "PASS_SOURCE_ONLY_NOT_AUTHORITY"
+EXPECTED_REVIEW_SCOPE = {
+    "source_only": True,
+    "scientific_plan_normalized_against_integrity_replacement_v1": True,
+    "normalized_scientific_difference_count": 0,
+    "production_source_paths_changed_from_integrity_replacement_v1": [
+        "worker",
+        "checker",
+        "external_supervisor",
+    ],
+    "retained_checkpoint_loader_correction": (
+        "accept exact strided scalar-long ema_update_count=1000 while retaining "
+        "finite strided float32 for every other state entry"
+    ),
+    "arm_trainability_change": (
+        "restore requires_grad=true after all independent ArmCore copies without "
+        "changing parameter values or inventory"
+    ),
+    "lifecycle_change": (
+        "fresh V2 namespace, exact direct-predecessor evidence, exact plan and "
+        "checker validation, and source-review-authority commit ordering"
+    ),
+}
+EXPECTED_REVIEW_VERIFICATION = {
+    "focused_test_count": 74,
+    "focused_tests_passed": 74,
+    "strict_json_passed": True,
+    "python_compilation_passed": True,
+    "git_diff_check_passed": True,
+    "required_source_path_count": 32,
+    "complete_spatial_state_tensor_count": 187,
+    "migrated_state_tensor_count": 108,
+    "rejected_state_tensor_count": 79,
+    "arm_parameter_tensor_count": 36,
+    "predictor_parameter_tensor_count": 30,
+    "memory_parameter_tensor_count": 6,
+    "normalized_plan_diff_empty": True,
+    "predecessor_identity_evidence_live_verified": True,
+    "checker_v2_attempt_envelope_exact": True,
+    "source_review_authority_commit_order_enforced": True,
+    "real_idle_device_preflight_passed": True,
+    "replacement_root_absent_at_review": True,
+}
+EXPECTED_REVIEW_CUSTODY = {
+    "pack_payloads_opened": False,
+    "real_predecessor_or_runtime_checkpoint_or_snapshot_payloads_opened": False,
+    "synthetic_checkpoint_fixtures_used": True,
+    "predecessor_terminal_json_identity_evidence_opened": True,
+    "rgb_payloads_opened": False,
+    "heldout_or_sealed_opened": False,
+    "network_access_used": False,
+    "protected_runtime_payloads_opened": False,
+    "execution_authority_granted": False,
+    "attempt_reserved": False,
+}
 PREDECESSOR_FAILURE_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_terminal_pretraining_"
-    "source_failure_result_v1"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "terminal_pretraining_source_failure_result_v1"
 )
 PREDECESSOR_FAILURE_STATUS = (
     "PASS_COMPLETE_TERMINAL_PRETRAINING_SOURCE_FAILURE_AUDIT"
 )
+PREDECESSOR_FAILURE_BINDING = {
+    "path": str(
+        (
+            REPO_ROOT
+            / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+            "replacement_v1_terminal_pretraining_source_failure_result_"
+            "2026-08-01.json"
+        ).resolve()
+    ),
+    "file_sha256": (
+        "a96f63aeb119163cd24e17272bfbf5228206c498d706578162c310841423ac1b"
+    ),
+    "byte_count": 7008,
+}
+PREDECESSOR_SOURCE_COMMIT = "7acbd3279866a8294fb1798bf09f0d96bb17046f"
+PREDECESSOR_AUTHORITY_COMMIT = "e8eb99ed1c8642fc347779f2f4c160e4d12ef863"
+PREDECESSOR_ORIGINAL_FAILURE_BINDING = {
+    "path": str(
+        (
+            REPO_ROOT
+            / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
+            "terminal_pretraining_source_failure_result_2026-08-01.json"
+        ).resolve()
+    ),
+    "file_sha256": (
+        "e2c219352e9ad770a232641fe0c5a7bdd8d154c61f85b5afa76b0d132856b70f"
+    ),
+    "byte_count": 5796,
+}
+PREDECESSOR_TERMINAL_ARTIFACTS = {
+    "reservation": {
+        "path": str((PREDECESSOR_ATTEMPT_ROOT / "reservation.json").resolve()),
+        "file_sha256": (
+            "1c30664dd235b8d51441f4cbf344c583e27bb06a9686cd1c855acf5257bd88a6"
+        ),
+        "byte_count": 16598,
+    },
+    "failure": {
+        "path": str((PREDECESSOR_ATTEMPT_ROOT / "failure.json").resolve()),
+        "file_sha256": (
+            "baa822feae3a7cfa17ece50d29d0648fc62cfb302d71e9f10fa52f8151bf55be"
+        ),
+        "byte_count": 1588,
+    },
+    "terminal_supervision": {
+        "path": str(
+            (PREDECESSOR_ATTEMPT_ROOT / "terminal_supervision.json").resolve()
+        ),
+        "file_sha256": (
+            "cb7d3cd99e0faf8638fdf6c5e82382d1c9346944098e820ee59d1781fa3a227a"
+        ),
+        "byte_count": 2778,
+    },
+}
+PREDECESSOR_AUTHORIZED_IDENTITY = {
+    "authority_commit": PREDECESSOR_AUTHORITY_COMMIT,
+    "source_commit": PREDECESSOR_SOURCE_COMMIT,
+    "authority_binding": {
+        "path": str(
+            (
+                REPO_ROOT
+                / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
+                "integrity_replacement_v1_execution_authority_2026-08-01.json"
+            ).resolve()
+        ),
+        "file_sha256": (
+            "9d0da7231cd9a0c2c35bef07fbd59d154f336fd6239be9ac1bab38f62be9213c"
+        ),
+        "byte_count": 15682,
+    },
+    "plan_binding": {
+        "path": str(
+            (
+                REPO_ROOT
+                / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
+                "integrity_replacement_v1_plan_2026-08-01.json"
+            ).resolve()
+        ),
+        "file_sha256": (
+            "da8345d4665a99e254e2b0cf4599535a1e71f3208a299c0cefcd730f49c23fd2"
+        ),
+        "byte_count": 5709,
+    },
+    "independent_review_binding": {
+        "path": str(
+            (
+                REPO_ROOT
+                / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
+                "integrity_replacement_v1_independent_source_review_"
+                "2026-08-01.json"
+            ).resolve()
+        ),
+        "file_sha256": (
+            "b5a4392f4e855dde44a0bc2f62921b2979bf7ec20ec4bf800017e15c4676e907"
+        ),
+        "byte_count": 12719,
+    },
+    "preregistration_binding": {
+        "path": str(
+            (
+                REPO_ROOT
+                / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
+                "integrity_replacement_v1_preregistration_2026-08-01.md"
+            ).resolve()
+        ),
+        "file_sha256": (
+            "56ee693a8aeb193b878c0ce414c4c9d0a802d42070f4062bf1282a35696783d1"
+        ),
+        "byte_count": 8116,
+    },
+}
 RESERVATION_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "reservation_v1"
 )
 RESULT_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "result_v1"
 )
 RESULT_STATUS = "COMPLETE_PENDING_TERMINAL_REVIEW"
 CHECK_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "receipt_check_v1"
 )
 TERMINAL_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "supervision_terminal_v1"
 )
 ARM_ORDER = ["conditioned", "blind", "shuffled"]
@@ -136,6 +319,108 @@ EXACT_CHILD_ENVIRONMENT = {
     "GIT_CONFIG_GLOBAL": "/dev/null",
     "GIT_TERMINAL_PROMPT": "0",
     "GIT_OPTIONAL_LOCKS": "0",
+}
+EXPECTED_RUNTIME = {
+    "python_invocation_path": str(
+        REPO_ROOT / ".generated/venvs/world_model_rocm_7_2_1_v1/bin/python"
+    ),
+    "environment": dict(EXACT_CHILD_ENVIRONMENT),
+    "bindings": {
+        "python_executable_target": {
+            "path": "/usr/bin/python3.12",
+            "file_sha256": (
+                "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118"
+            ),
+            "byte_count": 8020928,
+        },
+        "python_environment_config": {
+            "path": str(
+                (
+                    REPO_ROOT
+                    / ".generated/venvs/world_model_rocm_7_2_1_v1/pyvenv.cfg"
+                ).resolve()
+            ),
+            "file_sha256": (
+                "49222cc65a628e83d00d99da60f1dea8d59bc01a3ea9616227f330e2ecd50577"
+            ),
+            "byte_count": 223,
+        },
+        "git_executable": {
+            "path": "/usr/bin/git",
+            "file_sha256": (
+                "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668"
+            ),
+            "byte_count": 4066232,
+        },
+    },
+}
+EXPECTED_INPUT_BINDINGS = {
+    "predecessor_checkpoint": {
+        "path": str(
+            (
+                REPO_ROOT
+                / ".generated/go2_rgb_single_frame_multiblock_masked_spatial_"
+                "jepa_v1/attempt_v1/snapshots/update_1000.pt"
+            ).resolve()
+        ),
+        "file_sha256": (
+            "f5aac23cf275d73b92ce5609a583dea89f6686a624d4889d9762740535aab873"
+        ),
+        "byte_count": 52282877,
+    },
+    "train_index": {
+        "path": str(
+            (
+                REPO_ROOT
+                / ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_"
+                "integrity/train.jsonl"
+            ).resolve()
+        ),
+        "file_sha256": (
+            "aee2a54cddd849162648f9b8cfd54a0a28a25bd0705b6482e6af7435c85f4d77"
+        ),
+        "byte_count": 10328000,
+    },
+    "validation_index": {
+        "path": str(
+            (
+                REPO_ROOT
+                / ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_"
+                "integrity/val.jsonl"
+            ).resolve()
+        ),
+        "file_sha256": (
+            "83592e2fea5927802881f076a58a9710100bea017d658c1b978ba651369beac6"
+        ),
+        "byte_count": 1317888,
+    },
+    "index_manifest": {
+        "path": str(
+            (
+                REPO_ROOT
+                / ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_"
+                "integrity/manifest.json"
+            ).resolve()
+        ),
+        "file_sha256": (
+            "d19fd672d9878e064b20e40a12ce84849f0a13af05a73d2281505ea8d331a36e"
+        ),
+        "byte_count": 26926,
+    },
+}
+AMD_SMI_BINDING = {
+    "path": "/opt/rocm-7.1.1/libexec/amdsmi_cli/amdsmi_cli.py",
+    "file_sha256": (
+        "4f231c2ed6b7e66a2829fa82265f53ffc33b2d6a0c746a86a5f240f0be09bcf8"
+    ),
+    "byte_count": 9693,
+}
+AMD_SMI_ENVIRONMENT = {
+    "PATH": "/usr/bin:/bin",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONNOUSERSITE": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
 }
 GIT_EXECUTABLE = "/usr/bin/git"
 GIT_ENVIRONMENT = {
@@ -223,6 +508,8 @@ _AUTHORITY_KEYS = frozenset(
         "scientific_claim_authorized",
         "network_access",
         "source_commit",
+        "review_commit",
+        "preregistration_binding",
         "plan_binding",
         "review_binding",
         "source_bindings",
@@ -235,6 +522,32 @@ _AUTHORITY_KEYS = frozenset(
         "authorized_command",
         "execution",
         "external_supervisor",
+    }
+)
+_PLAN_KEYS = frozenset(
+    {
+        "schema",
+        "purpose",
+        "citable_as_scientific_evidence",
+        "authorizes_retry_or_resume",
+        "development_only",
+        "claim_scope",
+        "arm_order",
+        "output_root",
+        "attempt",
+        "caps",
+        "runtime",
+        "input_bindings",
+        "input_binding_interpretation",
+        "execution",
+        "network_access",
+        "minimum_free_output_bytes_before_reservation",
+        "result_chain",
+        "replacement_of",
+        "predecessor_terminal_failure_binding",
+        "prior_attempt_runtime_payloads_authorized_as_inputs",
+        "pack_rebuilt_fresh",
+        "integrity_corrections",
     }
 )
 _ATTEMPT_KEYS = frozenset(
@@ -434,6 +747,23 @@ def _require_commit_ancestor(commit: Any, *, label: str) -> str:
     return str(commit)
 
 
+def _require_strict_commit_ancestor(
+    ancestor: str, descendant: str, *, label: str
+) -> None:
+    if ancestor == descendant:
+        _fail(f"{label} commits must be distinct")
+    result = subprocess.run(
+        [GIT_EXECUTABLE, "merge-base", "--is-ancestor", ancestor, descendant],
+        cwd=REPO_ROOT,
+        env=GIT_ENVIRONMENT,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode != 0:
+        _fail(f"{label} commit ordering is invalid")
+
+
 def _require_binding_at_commit(
     binding: Mapping[str, Any], *, commit: str, label: str
 ) -> None:
@@ -496,24 +826,27 @@ def _validate_attempt(value: Any, *, output_root: str) -> dict[str, Any]:
 
 def _validate_caps(value: Any) -> dict[str, Any]:
     caps = _plain_dict(value, label="authority.caps")
+    _exact_keys(
+        caps,
+        ("maximum_wall_seconds", "maximum_gpu_seconds", "maximum_training_updates"),
+        label="authority.caps",
+    )
     wall = caps.get("maximum_wall_seconds")
     gpu = caps.get("maximum_gpu_seconds")
     updates = caps.get("maximum_training_updates")
     if (
         type(wall) not in (int, float)
         or not math.isfinite(float(wall))
-        or float(wall) <= 0.0
-        or float(wall) > 43_200.0
+        or float(wall) != 43_200.0
         or type(gpu) not in (int, float)
         or not math.isfinite(float(gpu))
-        or float(gpu) <= 0.0
-        or float(gpu) > 36_000.0
+        or float(gpu) != 36_000.0
         or type(updates) is not int
         or updates != 700
     ):
         _fail(
-            "authority caps must stay within 43,200 wall seconds, 36,000 GPU "
-            "seconds, and exactly 700 updates"
+            "authority caps must be exactly 43,200 wall seconds, 36,000 GPU "
+            "seconds, and 700 updates"
         )
     return dict(caps)
 
@@ -536,13 +869,13 @@ def _validate_runtime(value: Any, *, verify_files: bool) -> dict[str, Any]:
     bindings = _validate_binding_map(
         runtime["bindings"], label="authority.runtime.bindings", verify_files=verify_files
     )
-    for required in (
+    required_bindings = (
         "python_executable_target",
         "python_environment_config",
         "git_executable",
-    ):
-        if required not in bindings:
-            _fail(f"runtime omits {required}")
+    )
+    if set(bindings) != set(required_bindings):
+        _fail("runtime executable binding inventory changed")
     if verify_files:
         invocation_path = Path(invocation)
         target = _resolve_bound_path(bindings["python_executable_target"]["path"])
@@ -562,37 +895,293 @@ def _validate_runtime(value: Any, *, verify_files: bool) -> dict[str, Any]:
     }
 
 
+def _validate_exact_runtime(value: Any, *, verify_files: bool) -> dict[str, Any]:
+    runtime = _validate_runtime(value, verify_files=verify_files)
+    if runtime != EXPECTED_RUNTIME:
+        _fail("authority runtime differs from the exact preregistered runtime")
+    return runtime
+
+
+def _validate_exact_inputs(
+    value: Any, *, verify_files: bool
+) -> dict[str, dict[str, Any]]:
+    inputs = _validate_binding_map(
+        value,
+        label="authority.input_bindings",
+        verify_files=verify_files,
+    )
+    if inputs != EXPECTED_INPUT_BINDINGS:
+        _fail("authority input bindings differ from the exact preregistered inputs")
+    return inputs
+
+
 def _validate_review(
     review: Mapping[str, Any],
     *,
     source_commit: str,
     source_bindings: list[dict[str, Any]],
     plan_binding: Mapping[str, Any],
+    preregistration_binding: Mapping[str, Any],
     predecessor_failure_binding: Mapping[str, Any],
 ) -> None:
+    _exact_keys(
+        review,
+        (
+            "schema",
+            "status",
+            "authority_granted_by_this_document",
+            "reviewer",
+            "reviewed_source_commit",
+            "reviewed_source_bindings",
+            "reviewed_plan_binding",
+            "reviewed_predecessor_terminal_failure_binding",
+            "reviewed_preregistration_binding",
+            "review_scope",
+            "verification",
+            "custody",
+            "resolved_findings",
+            "remaining_findings",
+        ),
+        label="independent source review",
+    )
+    reviewer = review.get("reviewer")
     if (
         review.get("schema") != REVIEW_SCHEMA
         or review.get("status") != REVIEW_STATUS
         or review.get("authority_granted_by_this_document") is not False
+        or type(reviewer) is not dict
+        or set(reviewer) != {"identity", "materialization"}
+        or type(reviewer.get("identity")) is not str
+        or not reviewer["identity"].strip()
+        or type(reviewer.get("materialization")) is not str
+        or not reviewer["materialization"].strip()
         or review.get("reviewed_source_commit") != source_commit
         or review.get("reviewed_source_bindings") != source_bindings
         or review.get("reviewed_plan_binding") != plan_binding
+        or review.get("reviewed_preregistration_binding")
+        != preregistration_binding
         or review.get("reviewed_predecessor_terminal_failure_binding")
         != predecessor_failure_binding
+        or review.get("review_scope") != EXPECTED_REVIEW_SCOPE
+        or review.get("verification") != EXPECTED_REVIEW_VERIFICATION
+        or review.get("custody") != EXPECTED_REVIEW_CUSTODY
+        or type(review.get("resolved_findings")) is not list
         or review.get("remaining_findings") != []
     ):
         _fail("independent source review is not an exact non-authorizing PASS")
+
+
+def _validate_plan_registered_fields(plan: Mapping[str, Any]) -> None:
+    _exact_keys(plan, _PLAN_KEYS, label="plan")
+    if (
+        plan.get("schema") != PLAN_SCHEMA
+        or plan.get("purpose") != PLAN_PURPOSE
+        or plan.get("citable_as_scientific_evidence") is not False
+        or plan.get("authorizes_retry_or_resume") is not False
+        or plan.get("development_only") is not True
+        or plan.get("claim_scope")
+        != "requested_action_factual_learnability_only"
+        or plan.get("arm_order") != ARM_ORDER
+        or plan.get("input_binding_interpretation")
+        != {
+            "h6_indices_bind_rgb_leaf_paths_transitively": True,
+            "individual_rgb_leaves_prehashed_in_authority": False,
+            "opened_rgb_leaf_bytes_identity_bound_during_fresh_packing": True,
+            "permitted_temporal_positions": [0, 1, 2, 3],
+        }
+        or plan.get("network_access") is not False
+        or plan.get("minimum_free_output_bytes_before_reservation")
+        != MINIMUM_FREE_OUTPUT_BYTES
+        or plan.get("result_chain")
+        != [
+            "integrity_replacement_v2_external_supervisor_reservation",
+            "integrity_replacement_v2_worker_result",
+            "integrity_replacement_v2_receipt_only_checker",
+            "integrity_replacement_v2_external_supervisor_terminal",
+        ]
+        or plan.get("prior_attempt_runtime_payloads_authorized_as_inputs")
+        is not False
+        or plan.get("pack_rebuilt_fresh") is not True
+    ):
+        _fail("bound plan differs from the exact authorized experiment")
+
+
+def _validate_authorizer(value: Any, *, issued_at: Any) -> dict[str, Any]:
+    authorizer = _plain_dict(value, label="authority.authorizer")
+    _exact_keys(authorizer, ("identity",), label="authority.authorizer")
+    if (
+        type(authorizer.get("identity")) is not str
+        or not authorizer["identity"].strip()
+        or type(issued_at) is not str
+        or not issued_at.strip()
+    ):
+        _fail("durable authority authorizer/issue evidence is absent")
+    return dict(authorizer)
 
 
 def _validate_predecessor_failure(
     document: Mapping[str, Any],
 ) -> None:
     attempt = document.get("attempt")
+    terminal_artifacts = document.get("terminal_artifacts")
+    authorized_identity = document.get("authorized_identity")
     accounting = document.get("execution_accounting")
+    terminal_evidence = document.get("terminal_evidence")
+    failure = document.get("failure")
+    root_cause = document.get("root_cause")
+    correction = document.get("narrow_integrity_correction")
+    scientific_conclusion = document.get("scientific_conclusion")
     successor = document.get("successor_boundary")
+    custody = document.get("custody")
+    if any(
+        type(section) is not dict
+        for section in (
+            attempt,
+            terminal_artifacts,
+            authorized_identity,
+            accounting,
+            terminal_evidence,
+            failure,
+            root_cause,
+            correction,
+            scientific_conclusion,
+            successor,
+            custody,
+        )
+    ):
+        _fail("predecessor terminal failure audit is not replacement-safe")
+    _exact_keys(
+        document,
+        (
+            "schema",
+            "status",
+            "date",
+            "attempt",
+            "terminal_artifacts",
+            "authorized_identity",
+            "predecessor_failure_audit",
+            "execution_accounting",
+            "terminal_evidence",
+            "failure",
+            "root_cause",
+            "narrow_integrity_correction",
+            "scientific_conclusion",
+            "successor_boundary",
+            "custody",
+        ),
+        label="predecessor terminal failure audit",
+    )
+    _exact_keys(
+        attempt,
+        (
+            "id",
+            "root",
+            "consumed",
+            "retry_authorized",
+            "resume_authorized",
+            "overwrite_authorized",
+            "refill_authorized",
+        ),
+        label="predecessor terminal failure attempt",
+    )
+    _exact_keys(
+        accounting,
+        (
+            "supervisor_wall_elapsed_seconds_at_terminal",
+            "training_updates_completed",
+            "optimizer_steps_completed",
+            "scientific_verdict_emitted",
+            "worker_result_published",
+            "receipt_checker_run",
+        ),
+        label="predecessor terminal failure accounting",
+    )
+    _exact_keys(
+        failure,
+        (
+            "type",
+            "message",
+            "location",
+            "classification",
+            "checkpoint_loader_integrity_correction_passed",
+            "packing_completed_before_failure",
+        ),
+        label="predecessor terminal failure classification",
+    )
+    _exact_keys(
+        root_cause,
+        (
+            "shared_temporal_substrate_intentionally_frozen_before_arm_allocation",
+            "arm_deepcopy_preserved_template_requires_grad_false",
+            "direct_parameter_clones_defaulted_trainable",
+            "deepcopied_module_parameter_tensors_left_frozen",
+            "registered_arm_parameter_tensor_count",
+            "predictor_parameter_tensor_count",
+            "memory_parameter_tensor_count",
+            "partition_name_coverage_passed",
+            "failed_predicate",
+            "causal_chain",
+        ),
+        label="predecessor terminal failure root cause",
+    )
+    _exact_keys(
+        correction,
+        (
+            "science_identical",
+            "operation",
+            "parameter_values_changed",
+            "parameter_names_shapes_dtypes_or_count_changed",
+            "optimizer_groups_or_hyperparameters_changed",
+            "expected_trainable_parameter_tensor_count",
+            "expected_predictor_parameter_tensor_count",
+            "expected_memory_parameter_tensor_count",
+            "three_arm_identical_initialization_unchanged",
+            "three_arm_independent_allocation_unchanged",
+            "frozen_shared_encoder_and_target_unchanged",
+        ),
+        label="predecessor terminal failure integrity correction",
+    )
+    _exact_keys(
+        scientific_conclusion,
+        (
+            "data_learnability_tested",
+            "objective_learnability_tested",
+            "architecture_learnability_tested",
+            "checkpoint_loader_correction_validated",
+            "only_valid_conclusion",
+        ),
+        label="predecessor terminal failure scientific conclusion",
+    )
+    _exact_keys(
+        successor,
+        (
+            "retry_or_resume_attempt_v1",
+            "reuse_attempt_v1_pack_or_runtime_payloads",
+            "fresh_one_shot_authority_required",
+            "fresh_absent_output_root_required",
+            "fresh_integrity_replacement_v2_preregistration_required",
+            "this_document_authorizes_v2",
+        ),
+        label="predecessor terminal failure successor boundary",
+    )
+    _exact_keys(
+        custody,
+        (
+            "sealed_or_heldout_material_opened",
+            "protected_evaluation_authorized",
+            "network_access_used",
+            "replacement_v1_runtime_tensor_or_pack_payload_reopened_after_terminal",
+        ),
+        label="predecessor terminal failure custody",
+    )
     if (
         document.get("schema") != PREDECESSOR_FAILURE_SCHEMA
         or document.get("status") != PREDECESSOR_FAILURE_STATUS
+        or document.get("date") != "2026-08-01"
+        or terminal_artifacts != PREDECESSOR_TERMINAL_ARTIFACTS
+        or authorized_identity != PREDECESSOR_AUTHORIZED_IDENTITY
+        or document.get("predecessor_failure_audit")
+        != PREDECESSOR_ORIGINAL_FAILURE_BINDING
         or type(attempt) is not dict
         or attempt.get("id") != PREDECESSOR_ATTEMPT_ID
         or attempt.get("root") != str(PREDECESSOR_ATTEMPT_ROOT.resolve())
@@ -607,18 +1196,135 @@ def _validate_predecessor_failure(
             )
         )
         or type(accounting) is not dict
+        or accounting.get("supervisor_wall_elapsed_seconds_at_terminal")
+        != 12.543765088077635
         or accounting.get("training_updates_completed") != 0
         or accounting.get("optimizer_steps_completed") != 0
         or accounting.get("scientific_verdict_emitted") is not False
         or accounting.get("worker_result_published") is not False
         or accounting.get("receipt_checker_run") is not False
+        or type(terminal_evidence) is not dict
+        or terminal_evidence
+        != {
+            "terminal_status": "CONSUMED_TERMINAL_FAILURE",
+            "worker_failure_status": "ATTEMPT_CONSUMED_WORKER_FAILURE",
+            "phase_receipts_empty": True,
+            "result_binding_absent": True,
+            "receipt_check_binding_absent": True,
+            "automatic_checkpoint_selection_performed": False,
+            "citable_as_scientific_evidence": False,
+        }
+        or type(failure) is not dict
+        or failure.get("type") != "ThreeArmWorkerError"
+        or failure.get("message") != "arm parameter partition is invalid"
+        or failure.get("location")
+        != (
+            "build_frozen_substrate_and_arms while constructing the first arm "
+            "optimizer, before update-zero evaluation"
+        )
+        or failure.get("classification")
+        != "SOURCE_ARM_CLONE_PRESERVED_FROZEN_REQUIRES_GRAD_FLAGS"
+        or failure.get("checkpoint_loader_integrity_correction_passed")
+        is not True
+        or failure.get("packing_completed_before_failure") is not True
+        or type(root_cause) is not dict
+        or root_cause.get(
+            "shared_temporal_substrate_intentionally_frozen_before_arm_allocation"
+        )
+        is not True
+        or root_cause.get("arm_deepcopy_preserved_template_requires_grad_false")
+        is not True
+        or root_cause.get("direct_parameter_clones_defaulted_trainable") != 2
+        or root_cause.get("deepcopied_module_parameter_tensors_left_frozen") != 34
+        or root_cause.get("registered_arm_parameter_tensor_count") != 36
+        or root_cause.get("predictor_parameter_tensor_count") != 30
+        or root_cause.get("memory_parameter_tensor_count") != 6
+        or root_cause.get("partition_name_coverage_passed") is not True
+        or root_cause.get("failed_predicate")
+        != (
+            "every partitioned arm parameter must require gradients and have "
+            "dtype torch.float32"
+        )
+        or root_cause.get("causal_chain")
+        != [
+            "the shared temporal template was frozen as required",
+            "ArmCore deep-copied predictor modules, embeddings, and GRU from that frozen template",
+            "deepcopy retained requires_grad=false on 34 parameter tensors",
+            "only the two newly wrapped direct predictor Parameters defaulted to trainable",
+            "the fail-closed arm partition rejected the mixed trainability inventory before optimizer construction",
+        ]
+        or type(correction) is not dict
+        or correction.get("science_identical") is not True
+        or correction.get("operation")
+        != (
+            "call requires_grad_(true) on each independently allocated ArmCore "
+            "after all parameter copies"
+        )
+        or correction.get("parameter_values_changed") is not False
+        or correction.get("parameter_names_shapes_dtypes_or_count_changed")
+        is not False
+        or correction.get("optimizer_groups_or_hyperparameters_changed")
+        is not False
+        or correction.get("expected_trainable_parameter_tensor_count") != 36
+        or correction.get("expected_predictor_parameter_tensor_count") != 30
+        or correction.get("expected_memory_parameter_tensor_count") != 6
+        or correction.get("three_arm_identical_initialization_unchanged")
+        is not True
+        or correction.get("three_arm_independent_allocation_unchanged")
+        is not True
+        or correction.get("frozen_shared_encoder_and_target_unchanged")
+        is not True
+        or type(scientific_conclusion) is not dict
+        or scientific_conclusion.get("data_learnability_tested") is not False
+        or scientific_conclusion.get("objective_learnability_tested") is not False
+        or scientific_conclusion.get("architecture_learnability_tested")
+        is not False
+        or scientific_conclusion.get("checkpoint_loader_correction_validated")
+        is not True
+        or scientific_conclusion.get("only_valid_conclusion")
+        != (
+            "integrity replacement V1 is a consumed pre-training "
+            "arm-trainability source failure"
+        )
         or type(successor) is not dict
         or successor.get("retry_or_resume_attempt_v1") is not False
         or successor.get("reuse_attempt_v1_pack_or_runtime_payloads") is not False
         or successor.get("fresh_one_shot_authority_required") is not True
         or successor.get("fresh_absent_output_root_required") is not True
+        or successor.get("fresh_integrity_replacement_v2_preregistration_required")
+        is not True
+        or successor.get("this_document_authorizes_v2") is not False
+        or type(custody) is not dict
+        or custody.get("sealed_or_heldout_material_opened") is not False
+        or custody.get("protected_evaluation_authorized") is not False
+        or custody.get("network_access_used") is not False
+        or custody.get(
+            "replacement_v1_runtime_tensor_or_pack_payload_reopened_after_terminal"
+        )
+        is not False
     ):
         _fail("predecessor terminal failure audit is not replacement-safe")
+
+
+def _reverify_predecessor_failure_evidence(
+    document: Mapping[str, Any],
+) -> None:
+    for label, binding in document["terminal_artifacts"].items():
+        verify_binding(binding, label=f"predecessor terminal {label}")
+    for label in (
+        "authority_binding",
+        "plan_binding",
+        "independent_review_binding",
+        "preregistration_binding",
+    ):
+        verify_binding(
+            document["authorized_identity"][label],
+            label=f"predecessor {label}",
+        )
+    verify_binding(
+        document["predecessor_failure_audit"],
+        label="original predecessor terminal failure audit",
+    )
 
 
 def load_and_validate_authority(
@@ -635,6 +1341,10 @@ def load_and_validate_authority(
 ]:
     """Validate the complete launch closure before consuming the attempt."""
 
+    if authority_path.resolve(strict=True) != (
+        REPO_ROOT / AUTHORITY_RELATIVE
+    ).resolve(strict=True):
+        _fail("caller selected a different V2 authority path")
     authority_binding = file_binding(authority_path)
     if authority_binding["byte_count"] != expected_byte_count:
         _fail("authority byte count disagrees with caller")
@@ -659,27 +1369,70 @@ def load_and_validate_authority(
         or authority.get("network_access") is not False
     ):
         _fail("authority semantic grant is invalid")
-    authorizer = authority.get("authorizer")
-    if (
-        type(authorizer) is not dict
-        or type(authorizer.get("identity")) is not str
-        or not authorizer["identity"].strip()
-        or type(authority.get("issued_at")) is not str
-        or not authority["issued_at"].strip()
-    ):
-        _fail("durable authority authorizer/issue evidence is absent")
+    authority["authorizer"] = _validate_authorizer(
+        authority.get("authorizer"), issued_at=authority.get("issued_at")
+    )
     source_commit = _require_commit_ancestor(
         authority.get("source_commit"), label="authorized source"
     )
-    plan, plan_binding = _read_bound_json(
-        authority["plan_binding"], label="plan"
+    review_commit = _require_commit_ancestor(
+        authority.get("review_commit"), label="independent review"
     )
-    review, review_binding = _read_bound_json(
+    execution_head = _git_head()
+    _require_strict_commit_ancestor(
+        source_commit,
+        review_commit,
+        label="source-before-review",
+    )
+    _require_strict_commit_ancestor(
+        review_commit,
+        execution_head,
+        label="review-before-authority",
+    )
+    preregistration_binding = binding_shape(
+        authority["preregistration_binding"],
+        label="preregistration",
+    )
+    verify_binding(preregistration_binding, label="preregistration")
+    preregistration_path = _resolve_bound_path(
+        preregistration_binding["path"]
+    ).resolve(strict=True)
+    if preregistration_path != (REPO_ROOT / PREREGISTRATION_RELATIVE).resolve(
+        strict=True
+    ):
+        _fail("authority binds a different V2 preregistration")
+    declared_plan_binding = binding_shape(authority["plan_binding"], label="plan")
+    declared_review_binding = binding_shape(
         authority["review_binding"], label="independent source review"
     )
+    if _resolve_bound_path(declared_plan_binding["path"]).resolve(strict=True) != (
+        REPO_ROOT / PLAN_RELATIVE
+    ).resolve(strict=True):
+        _fail("authority binds a different V2 plan")
+    if _resolve_bound_path(declared_review_binding["path"]).resolve(strict=True) != (
+        REPO_ROOT / REVIEW_RELATIVE
+    ).resolve(strict=True):
+        _fail("authority binds a different V2 independent review")
+    plan, plan_binding = _read_bound_json(declared_plan_binding, label="plan")
+    review, review_binding = _read_bound_json(
+        declared_review_binding, label="independent source review"
+    )
+    _require_binding_at_commit(
+        preregistration_binding,
+        commit=source_commit,
+        label="preregistration",
+    )
+    _require_binding_at_commit(plan_binding, commit=source_commit, label="plan")
     _require_binding_at_commit(plan_binding, commit="HEAD", label="plan")
     _require_binding_at_commit(
-        review_binding, commit="HEAD", label="independent source review"
+        review_binding,
+        commit=review_commit,
+        label="independent source review",
+    )
+    _require_binding_at_commit(
+        review_binding,
+        commit="HEAD",
+        label="independent source review",
     )
 
     raw_sources = authority["source_bindings"]
@@ -701,9 +1454,8 @@ def load_and_validate_authority(
         row_copy = {"name": name, "binding": binding}
         source_bindings.append(row_copy)
         by_name[name] = binding
-    for required in REQUIRED_SOURCE_PATHS:
-        if required not in by_name:
-            _fail(f"source closure omits {required}")
+    if set(by_name) != set(REQUIRED_SOURCE_PATHS):
+        _fail("source closure inventory changed")
     for name, relative_path in REQUIRED_SOURCE_PATHS.items():
         expected = REPO_ROOT / relative_path
         observed = _resolve_bound_path(by_name[name]["path"]).resolve(strict=True)
@@ -715,12 +1467,13 @@ def load_and_validate_authority(
         _fail("authority output_root is invalid")
     attempt = _validate_attempt(authority["attempt"], output_root=output_root)
     caps = _validate_caps(authority["caps"])
-    runtime = _validate_runtime(authority["runtime"], verify_files=True)
-    inputs = _validate_binding_map(
-        authority["input_bindings"],
-        label="authority.input_bindings",
-        verify_files=True,
-    )
+    runtime = _validate_exact_runtime(authority["runtime"], verify_files=True)
+    inputs = _validate_exact_inputs(authority["input_bindings"], verify_files=True)
+    if binding_shape(
+        authority["predecessor_terminal_failure_binding"],
+        label="predecessor terminal failure audit",
+    ) != PREDECESSOR_FAILURE_BINDING:
+        _fail("authority binds a different predecessor terminal failure audit")
     predecessor_failure, predecessor_failure_binding = _read_bound_json(
         authority["predecessor_terminal_failure_binding"],
         label="predecessor terminal failure audit",
@@ -731,6 +1484,7 @@ def load_and_validate_authority(
         label="predecessor terminal failure audit",
     )
     _validate_predecessor_failure(predecessor_failure)
+    _reverify_predecessor_failure_evidence(predecessor_failure)
 
     execution = _plain_dict(authority["execution"], label="authority.execution")
     _exact_keys(execution, ("worker_path", "checker_path"), label="authority.execution")
@@ -775,17 +1529,28 @@ def load_and_validate_authority(
     if Path(verify_binding(external["source_binding"], label="external supervisor")["path"]) != Path(__file__).resolve():
         _fail("authority external supervisor source does not identify this file")
 
+    _validate_plan_registered_fields(plan)
     if (
         plan.get("schema") != PLAN_SCHEMA
         or plan.get("purpose") != PLAN_PURPOSE
         or plan.get("citable_as_scientific_evidence") is not False
         or plan.get("authorizes_retry_or_resume") is not False
+        or plan.get("development_only") is not True
+        or plan.get("claim_scope")
+        != "requested_action_factual_learnability_only"
         or plan.get("arm_order") != ARM_ORDER
         or plan.get("output_root") != output_root
         or plan.get("attempt") != attempt
         or plan.get("caps") != caps
         or plan.get("runtime") != runtime
         or plan.get("input_bindings") != inputs
+        or plan.get("input_binding_interpretation")
+        != {
+            "h6_indices_bind_rgb_leaf_paths_transitively": True,
+            "individual_rgb_leaves_prehashed_in_authority": False,
+            "opened_rgb_leaf_bytes_identity_bound_during_fresh_packing": True,
+            "permitted_temporal_positions": [0, 1, 2, 3],
+        }
         or plan.get("predecessor_terminal_failure_binding")
         != predecessor_failure_binding
         or plan.get("replacement_of")
@@ -796,23 +1561,45 @@ def load_and_validate_authority(
             "retry_or_resume_authorized": False,
             "runtime_payload_reuse_authorized": False,
         }
-        or plan.get("integrity_correction")
+        or plan.get("integrity_corrections")
         != {
-            "scope": "checkpoint_loader_validation_only",
-            "ema_update_count": {
-                "dtype": "torch.int64",
-                "layout": "torch.strided",
-                "shape": [],
-                "exact_value": 1000,
-                "migrated": False,
+            "checkpoint_loader": {
+                "scope": "checkpoint_loader_validation_only",
+                "ema_update_count": {
+                    "dtype": "torch.int64",
+                    "layout": "torch.strided",
+                    "shape": [],
+                    "exact_value": 1000,
+                    "migrated": False,
+                },
+                "all_other_state_tensors": "finite_strided_torch.float32",
+                "scientific_contract_changed": False,
             },
-            "all_other_state_tensors": "finite_strided_torch.float32",
-            "scientific_contract_changed": False,
+            "arm_clone_trainability": {
+                "scope": "post_clone_requires_grad_restoration_only",
+                "operation": "ArmCore.requires_grad_(true)",
+                "parameter_values_changed": False,
+                "parameter_inventory_changed": False,
+                "expected_parameter_tensor_count": 36,
+                "expected_predictor_tensor_count": 30,
+                "expected_memory_tensor_count": 6,
+                "scientific_contract_changed": False,
+            },
         }
         or plan.get("prior_attempt_runtime_payloads_authorized_as_inputs")
         is not False
         or plan.get("pack_rebuilt_fresh") is not True
         or plan.get("execution") != execution
+        or plan.get("network_access") is not False
+        or plan.get("minimum_free_output_bytes_before_reservation")
+        != MINIMUM_FREE_OUTPUT_BYTES
+        or plan.get("result_chain")
+        != [
+            "integrity_replacement_v2_external_supervisor_reservation",
+            "integrity_replacement_v2_worker_result",
+            "integrity_replacement_v2_receipt_only_checker",
+            "integrity_replacement_v2_external_supervisor_terminal",
+        ]
     ):
         _fail("bound plan differs from the exact authorized experiment")
     _validate_review(
@@ -820,6 +1607,7 @@ def load_and_validate_authority(
         source_commit=source_commit,
         source_bindings=source_bindings,
         plan_binding=plan_binding,
+        preregistration_binding=preregistration_binding,
         predecessor_failure_binding=predecessor_failure_binding,
     )
     # Normalize values whose paths may have been repository-relative.
@@ -832,6 +1620,8 @@ def load_and_validate_authority(
         predecessor_failure_binding
     )
     authority["source_bindings"] = source_bindings
+    authority["review_commit"] = review_commit
+    authority["preregistration_binding"] = preregistration_binding
     authority["review_binding"] = binding_shape(
         authority["review_binding"], label="authority.review_binding"
     )
@@ -866,6 +1656,39 @@ def _require_fresh_attempt_root(path_text: str) -> Path:
             "development output volume lacks the 16 GiB preregistered free-space floor"
         )
     return candidate
+
+
+def _require_idle_authorized_device() -> None:
+    verify_binding(AMD_SMI_BINDING, label="authorized-device process inspector")
+    try:
+        completed = subprocess.run(
+            [AMD_SMI_BINDING["path"], "process", "-g", "0", "--json"],
+            cwd=REPO_ROOT,
+            env=AMD_SMI_ENVIRONMENT,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10.0,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ThreeArmSupervisionError(
+            "authorized-device idle preflight could not complete"
+        ) from exc
+    if completed.returncode != 0:
+        _fail("authorized-device idle preflight failed")
+    observed = strict_json_bytes(
+        completed.stdout,
+        label="authorized-device process inventory",
+    )
+    if observed != [
+        {
+            "gpu": 0,
+            "process_list": [
+                {"process_info": "No running processes detected"}
+            ],
+        }
+    ]:
+        _fail("authorized device 0 is not idle")
 
 
 def _write_json_exclusive(path: Path, value: Mapping[str, Any]) -> dict[str, Any]:
@@ -916,6 +1739,8 @@ def _reserve_attempt(
         "plan_binding": dict(plan_binding),
         "review_binding": dict(authority["review_binding"]),
         "source_commit": authority["source_commit"],
+        "review_commit": authority["review_commit"],
+        "preregistration_binding": dict(authority["preregistration_binding"]),
         "source_bindings": authority["source_bindings"],
         "runtime": authority["runtime"],
         "input_bindings": authority["input_bindings"],
@@ -930,6 +1755,7 @@ def _reserve_attempt(
         "execution": authority["execution"],
         "worker_command": list(worker_command),
         "checker_command_template": list(checker_command_template),
+        "authorized_device_idle_preflight_passed": True,
         "maximum_attempts": 1,
         "retry_authorized": False,
         "resume_authorized": False,
@@ -1126,15 +1952,18 @@ def _reservation_unchanged(
 
 
 def _reverify_contract(authority: Mapping[str, Any]) -> None:
+    verify_binding(authority["preregistration_binding"], label="preregistration")
     verify_binding(authority["plan_binding"], label="plan")
     verify_binding(authority["review_binding"], label="independent source review")
     for row in authority["source_bindings"]:
         verify_binding(row["binding"], label=f"source {row['name']}")
     _validate_runtime(authority["runtime"], verify_files=True)
-    verify_binding(
+    predecessor_failure, _binding = _read_bound_json(
         authority["predecessor_terminal_failure_binding"],
         label="predecessor terminal failure audit",
     )
+    _validate_predecessor_failure(predecessor_failure)
+    _reverify_predecessor_failure_evidence(predecessor_failure)
     _validate_binding_map(
         authority["input_bindings"],
         label="authority.input_bindings",
@@ -1192,6 +2021,7 @@ def supervise(
         "--output",
         str((attempt_root / "receipt_check.json").resolve()),
     ]
+    _require_idle_authorized_device()
     reservation, reservation_binding = _reserve_attempt(
         attempt_root,
         authority=authority,

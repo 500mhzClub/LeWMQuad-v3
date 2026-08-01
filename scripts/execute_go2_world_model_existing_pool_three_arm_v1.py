@@ -82,7 +82,7 @@ SNAPSHOT_SCHEMA = f"{SCHEMA_PREFIX}_snapshot_v1"
 OVERLAP_AUDIT_SCHEMA = f"{SCHEMA_PREFIX}_overlap_audit_v1"
 SHUFFLE_AUDIT_SCHEMA = f"{SCHEMA_PREFIX}_candidate_action_derangement_v1"
 FAILURE_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "worker_failure_v1"
 )
 
@@ -482,6 +482,10 @@ class ArmCore(nn.Module):
         self.action_embedding = copy.deepcopy(template.action_embedding)
         self.time_embedding = copy.deepcopy(template.time_embedding)
         self.temporal_gru = copy.deepcopy(template.temporal_gru)
+        # The shared template is deliberately frozen before arm allocation.
+        # Deepcopy preserves that flag, so the independently allocated arm
+        # inventory must explicitly re-enter the trainable state.
+        self.requires_grad_(True)
 
 
 @dataclass(frozen=True)
@@ -1074,6 +1078,8 @@ def _load_and_validate_reservation(
         "plan_binding": dict(plan_binding),
         "review_binding": authority["review_binding"],
         "source_commit": authority["source_commit"],
+        "review_commit": authority["review_commit"],
+        "preregistration_binding": authority["preregistration_binding"],
         "source_bindings": authority["source_bindings"],
         "runtime": authority["runtime"],
         "input_bindings": authority["input_bindings"],
@@ -1088,6 +1094,7 @@ def _load_and_validate_reservation(
         "execution": authority["execution"],
         "worker_command": expected_worker_command,
         "checker_command_template": expected_checker_template,
+        "authorized_device_idle_preflight_passed": True,
         "maximum_attempts": 1,
         "retry_authorized": False,
         "resume_authorized": False,

@@ -18,20 +18,37 @@ SCRIPT = (
     / "scripts/run_go2_world_model_existing_pool_three_arm_authorized_v1.py"
 )
 REPLACEMENT_SCHEMA_PREFIX = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
 )
 REPLACEMENT_ATTEMPT_ID = (
-    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
 )
 REPLACEMENT_ATTEMPT_ROOT = (
     ROOT
     / ".generated/dev"
-    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v1"
+    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v2"
     / "attempt_v1"
 )
-CONSUMED_ATTEMPT_ID = "world_model_existing_pool_three_arm_v1/attempt_v1"
+CONSUMED_ATTEMPT_ID = (
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+)
 CONSUMED_ATTEMPT_ROOT = (
+    ROOT
+    / ".generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+)
+ORIGINAL_CONSUMED_ATTEMPT_ID = "world_model_existing_pool_three_arm_v1/attempt_v1"
+ORIGINAL_CONSUMED_ATTEMPT_ROOT = (
     ROOT / ".generated/dev/world_model_existing_pool_three_arm_v1/attempt_v1"
+)
+PREDECESSOR_FAILURE_AUDIT = (
+    ROOT
+    / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+    "replacement_v1_terminal_pretraining_source_failure_result_2026-08-01.json"
+)
+REPLACEMENT_PLAN = (
+    ROOT
+    / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+    "replacement_v2_plan_2026-08-01.json"
 )
 
 
@@ -131,44 +148,234 @@ def test_attempt_contract_is_exact_max_one_and_non_retriable(
         supervisor._validate_attempt(
             attempt, output_root=str(CONSUMED_ATTEMPT_ROOT.resolve())
         )
+    for consumed_id, consumed_root in (
+        (CONSUMED_ATTEMPT_ID, CONSUMED_ATTEMPT_ROOT),
+        (ORIGINAL_CONSUMED_ATTEMPT_ID, ORIGINAL_CONSUMED_ATTEMPT_ROOT),
+    ):
+        changed = dict(attempt)
+        changed["id"] = consumed_id
+        with pytest.raises(supervisor.ThreeArmSupervisionError, match="one-shot"):
+            supervisor._validate_attempt(
+                changed, output_root=str(attempt_root.resolve())
+            )
+        changed = dict(attempt)
+        changed["root"] = str(consumed_root.resolve())
+        with pytest.raises(supervisor.ThreeArmSupervisionError, match="one-shot"):
+            supervisor._validate_attempt(
+                changed, output_root=str(attempt_root.resolve())
+            )
+        with pytest.raises(supervisor.ThreeArmSupervisionError, match="one-shot"):
+            supervisor._validate_attempt(
+                attempt, output_root=str(consumed_root.resolve())
+            )
 
 
 def test_predecessor_failure_audit_must_close_consumed_attempt() -> None:
     supervisor = _load_supervisor()
-    audit = {
-        "schema": supervisor.PREDECESSOR_FAILURE_SCHEMA,
-        "status": supervisor.PREDECESSOR_FAILURE_STATUS,
-        "attempt": {
-            "id": supervisor.PREDECESSOR_ATTEMPT_ID,
-            "root": str(supervisor.PREDECESSOR_ATTEMPT_ROOT.resolve()),
-            "consumed": True,
-            "retry_authorized": False,
-            "resume_authorized": False,
-            "overwrite_authorized": False,
-            "refill_authorized": False,
-        },
-        "execution_accounting": {
-            "training_updates_completed": 0,
-            "optimizer_steps_completed": 0,
-            "scientific_verdict_emitted": False,
-            "worker_result_published": False,
-            "receipt_checker_run": False,
-        },
-        "successor_boundary": {
-            "retry_or_resume_attempt_v1": False,
-            "reuse_attempt_v1_pack_or_runtime_payloads": False,
-            "fresh_one_shot_authority_required": True,
-            "fresh_absent_output_root_required": True,
-        },
-    }
+    audit = json.loads(PREDECESSOR_FAILURE_AUDIT.read_text(encoding="utf-8"))
+    assert supervisor.file_binding(PREDECESSOR_FAILURE_AUDIT) == (
+        supervisor.PREDECESSOR_FAILURE_BINDING
+    )
     supervisor._validate_predecessor_failure(audit)
+    supervisor._reverify_predecessor_failure_evidence(audit)
+    mutations = (
+        ("attempt", "retry_authorized", True),
+        ("execution_accounting", "training_updates_completed", 1),
+        ("execution_accounting", "supervisor_wall_elapsed_seconds_at_terminal", 0.0),
+        ("terminal_evidence", "phase_receipts_empty", False),
+        ("failure", "classification", "wrong"),
+        ("failure", "location", "after scientific evaluation"),
+        ("root_cause", "registered_arm_parameter_tensor_count", 35),
+        ("root_cause", "causal_chain", ["contradictory alternative cause"]),
+        ("narrow_integrity_correction", "parameter_values_changed", True),
+        ("scientific_conclusion", "data_learnability_tested", True),
+        ("successor_boundary", "this_document_authorizes_v2", True),
+        ("custody", "network_access_used", True),
+    )
+    for section, key, value in mutations:
+        changed = json.loads(json.dumps(audit))
+        changed[section][key] = value
+        with pytest.raises(
+            supervisor.ThreeArmSupervisionError,
+            match="replacement-safe",
+        ):
+            supervisor._validate_predecessor_failure(changed)
     changed = json.loads(json.dumps(audit))
-    changed["attempt"]["retry_authorized"] = True
+    changed["terminal_artifacts"]["failure"]["file_sha256"] = "0" * 64
     with pytest.raises(
         supervisor.ThreeArmSupervisionError,
         match="replacement-safe",
     ):
         supervisor._validate_predecessor_failure(changed)
+    for section, key in (
+        ("successor_boundary", "authorizes_v2"),
+        ("scientific_conclusion", "scientific_verdict_available"),
+        ("custody", "protected_payload_opened"),
+    ):
+        changed = json.loads(json.dumps(audit))
+        changed[section][key] = True
+        with pytest.raises(
+            supervisor.ThreeArmSupervisionError,
+            match="keys changed",
+        ):
+            supervisor._validate_predecessor_failure(changed)
+    changed = json.loads(json.dumps(audit))
+    changed["authorizes_v2"] = True
+    with pytest.raises(
+        supervisor.ThreeArmSupervisionError,
+        match="keys changed",
+    ):
+        supervisor._validate_predecessor_failure(changed)
+
+
+def test_plan_registered_fields_are_exact_and_fail_closed() -> None:
+    supervisor = _load_supervisor()
+    plan = json.loads(REPLACEMENT_PLAN.read_text(encoding="utf-8"))
+    supervisor._validate_plan_registered_fields(plan)
+    assert supervisor._validate_exact_runtime(
+        plan["runtime"], verify_files=True
+    ) == supervisor.EXPECTED_RUNTIME
+    assert supervisor._validate_exact_inputs(
+        plan["input_bindings"], verify_files=False
+    ) == supervisor.EXPECTED_INPUT_BINDINGS
+    mutations = (
+        ("development_only", False),
+        ("claim_scope", "architecture_learnability"),
+        ("network_access", True),
+        ("minimum_free_output_bytes_before_reservation", 1),
+        ("result_chain", []),
+        ("prior_attempt_runtime_payloads_authorized_as_inputs", True),
+        ("pack_rebuilt_fresh", False),
+    )
+    for key, value in mutations:
+        changed = json.loads(json.dumps(plan))
+        changed[key] = value
+        with pytest.raises(
+            supervisor.ThreeArmSupervisionError,
+            match="exact authorized experiment",
+        ):
+            supervisor._validate_plan_registered_fields(changed)
+    changed = json.loads(json.dumps(plan))
+    changed["input_binding_interpretation"]["permitted_temporal_positions"] = [0, 1]
+    with pytest.raises(
+        supervisor.ThreeArmSupervisionError,
+        match="exact authorized experiment",
+    ):
+        supervisor._validate_plan_registered_fields(changed)
+    changed = json.loads(json.dumps(plan))
+    changed["unreviewed_extension"] = True
+    with pytest.raises(
+        supervisor.ThreeArmSupervisionError,
+        match="keys changed",
+    ):
+        supervisor._validate_plan_registered_fields(changed)
+    changed_runtime = json.loads(json.dumps(plan["runtime"]))
+    changed_runtime["bindings"]["python_environment_config"][
+        "file_sha256"
+    ] = "0" * 64
+    with pytest.raises(
+        supervisor.ThreeArmSupervisionError,
+        match="exact preregistered runtime",
+    ):
+        supervisor._validate_exact_runtime(changed_runtime, verify_files=False)
+    changed_inputs = json.loads(json.dumps(plan["input_bindings"]))
+    changed_inputs["train_index"]["file_sha256"] = "0" * 64
+    with pytest.raises(
+        supervisor.ThreeArmSupervisionError,
+        match="exact preregistered inputs",
+    ):
+        supervisor._validate_exact_inputs(changed_inputs, verify_files=False)
+
+
+def test_review_binds_preregistration_and_commit_order_is_strict() -> None:
+    supervisor = _load_supervisor()
+    assert supervisor._validate_authorizer(
+        {"identity": "workspace owner"}, issued_at="2026-08-01T00:00:00+01:00"
+    ) == {"identity": "workspace owner"}
+    with pytest.raises(
+        supervisor.ThreeArmSupervisionError,
+        match="keys changed",
+    ):
+        supervisor._validate_authorizer(
+            {"identity": "workspace owner", "authority_granted": False},
+            issued_at="2026-08-01T00:00:00+01:00",
+        )
+    source_commit = "a" * 40
+    source_bindings = [{"name": "worker", "binding": _inert("/worker.py")}]
+    plan_binding = _inert("/plan.json")
+    preregistration_binding = _inert("/preregistration.md")
+    predecessor_failure_binding = _inert("/predecessor_failure.json")
+    review = {
+        "schema": supervisor.REVIEW_SCHEMA,
+        "status": supervisor.REVIEW_STATUS,
+        "authority_granted_by_this_document": False,
+        "reviewer": {"identity": "/root/reviewer", "materialization": "fixture"},
+        "reviewed_source_commit": source_commit,
+        "reviewed_source_bindings": source_bindings,
+        "reviewed_plan_binding": plan_binding,
+        "reviewed_predecessor_terminal_failure_binding": (
+            predecessor_failure_binding
+        ),
+        "reviewed_preregistration_binding": preregistration_binding,
+        "review_scope": dict(supervisor.EXPECTED_REVIEW_SCOPE),
+        "verification": dict(supervisor.EXPECTED_REVIEW_VERIFICATION),
+        "custody": dict(supervisor.EXPECTED_REVIEW_CUSTODY),
+        "resolved_findings": [],
+        "remaining_findings": [],
+    }
+    supervisor._validate_review(
+        review,
+        source_commit=source_commit,
+        source_bindings=source_bindings,
+        plan_binding=plan_binding,
+        preregistration_binding=preregistration_binding,
+        predecessor_failure_binding=predecessor_failure_binding,
+    )
+    changed = json.loads(json.dumps(review))
+    changed["reviewed_preregistration_binding"] = _inert("/wrong.md")
+    with pytest.raises(
+        supervisor.ThreeArmSupervisionError,
+        match="non-authorizing PASS",
+    ):
+        supervisor._validate_review(
+            changed,
+            source_commit=source_commit,
+            source_bindings=source_bindings,
+            plan_binding=plan_binding,
+            preregistration_binding=preregistration_binding,
+            predecessor_failure_binding=predecessor_failure_binding,
+        )
+    for section, key, value in (
+        ("review_scope", "normalized_scientific_difference_count", 1),
+        ("verification", "focused_tests_passed", 0),
+        ("custody", "heldout_or_sealed_opened", True),
+    ):
+        changed = json.loads(json.dumps(review))
+        changed[section][key] = value
+        with pytest.raises(
+            supervisor.ThreeArmSupervisionError,
+            match="non-authorizing PASS",
+        ):
+            supervisor._validate_review(
+                changed,
+                source_commit=source_commit,
+                source_bindings=source_bindings,
+                plan_binding=plan_binding,
+                preregistration_binding=preregistration_binding,
+                predecessor_failure_binding=predecessor_failure_binding,
+            )
+    parent = supervisor._git_output("rev-parse", "HEAD^")
+    head = supervisor._git_head()
+    supervisor._require_strict_commit_ancestor(
+        parent, head, label="fixture-order"
+    )
+    with pytest.raises(
+        supervisor.ThreeArmSupervisionError,
+        match="distinct",
+    ):
+        supervisor._require_strict_commit_ancestor(
+            head, head, label="fixture-order"
+        )
 
 
 def test_caps_cannot_exceed_preregistered_wall_or_gpu_ceiling() -> None:
@@ -180,7 +387,9 @@ def test_caps_cannot_exceed_preregistered_wall_or_gpu_ceiling() -> None:
     }
     assert supervisor._validate_caps(valid) == valid
     for key, value in (
+        ("maximum_wall_seconds", 1.0),
         ("maximum_wall_seconds", 43_200.1),
+        ("maximum_gpu_seconds", 1.0),
         ("maximum_gpu_seconds", 36_000.1),
         ("maximum_training_updates", 701),
     ):
@@ -238,6 +447,8 @@ def test_reservation_precedes_worker_and_is_exclusive(tmp_path: Path) -> None:
         "execution": {"worker_path": "/worker.py", "checker_path": "/checker.py"},
         "review_binding": _inert("/review.json"),
         "source_commit": "a" * 40,
+        "review_commit": "b" * 40,
+        "preregistration_binding": _inert("/preregistration.md"),
         "source_bindings": [],
         "runtime": {},
         "input_bindings": {},
@@ -268,6 +479,7 @@ def test_reservation_precedes_worker_and_is_exclusive(tmp_path: Path) -> None:
     assert reservation["status"] == "RESERVED_ATTEMPT_CONSUMED"
     assert reservation["schema"] == REPLACEMENT_SCHEMA_PREFIX + "reservation_v1"
     assert reservation["maximum_attempts"] == 1
+    assert reservation["authorized_device_idle_preflight_passed"] is True
     assert reservation["retry_authorized"] is False
     assert reservation["predecessor_terminal_failure_binding"] == authority[
         "predecessor_terminal_failure_binding"
@@ -347,6 +559,44 @@ def test_child_environment_removes_ambient_python_and_device_selectors(
     assert child["PYTHONNOUSERSITE"] == "1"
     assert "PYTHONPATH" not in child
     assert "UNBOUND_ARBITRARY_VALUE" not in child
+
+    monkeypatch.setattr(
+        supervisor,
+        "verify_binding",
+        lambda binding, *, label: dict(binding),
+    )
+    monkeypatch.setattr(
+        supervisor.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [
+                    {
+                        "gpu": 0,
+                        "process_list": [
+                            {"process_info": "No running processes detected"}
+                        ],
+                    }
+                ]
+            ).encode("utf-8"),
+            stderr=b"",
+        ),
+    )
+    supervisor._require_idle_authorized_device()
+    monkeypatch.setattr(
+        supervisor.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [{"gpu": 0, "process_list": [{"pid": 1234}]}]
+            ).encode("utf-8"),
+            stderr=b"",
+        ),
+    )
+    with pytest.raises(supervisor.ThreeArmSupervisionError, match="not idle"):
+        supervisor._require_idle_authorized_device()
 
 
 def test_git_identity_checks_ignore_ambient_git_control_environment(
@@ -472,6 +722,8 @@ def test_supervise_launches_exact_worker_then_checker_after_reservation(
         "plan_binding": plan_binding,
         "review_binding": review_binding,
         "source_commit": "a" * 40,
+        "review_commit": "b" * 40,
+        "preregistration_binding": _inert("/preregistration.md"),
         "source_bindings": [{"name": "worker", "binding": worker_binding}],
         "runtime": {
             "python_invocation_path": sys.executable,
@@ -508,6 +760,7 @@ def test_supervise_launches_exact_worker_then_checker_after_reservation(
     monkeypatch.setattr(
         supervisor, "_require_fresh_attempt_root", lambda _path: attempt_root
     )
+    monkeypatch.setattr(supervisor, "_require_idle_authorized_device", lambda: None)
     monkeypatch.setattr(supervisor, "_reverify_contract", lambda _authority: None)
     monkeypatch.setattr(supervisor, "_git_head", lambda: "b" * 40)
     launched: list[list[str]] = []

@@ -22,7 +22,7 @@ from typing import Any, Iterable, Mapping, Sequence
 
 
 RESULT_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "result_v1"
 )
 METRICS_SCHEMA = "lewm_go2_world_model_existing_pool_three_arm_metrics_v1"
@@ -33,10 +33,13 @@ SHUFFLE_AUDIT_SCHEMA = (
     "lewm_go2_world_model_existing_pool_three_arm_candidate_action_derangement_v1"
 )
 REPORT_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "receipt_check_v1"
 )
 RESULT_STATUS = "COMPLETE_PENDING_TERMINAL_REVIEW"
+ATTEMPT_ID = (
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
+)
 ARM_NAMES = ("conditioned", "blind", "shuffled")
 MEASUREMENT_UPDATES = tuple(range(0, 701, 100))
 REGISTERED_FAMILIES = (
@@ -437,17 +440,72 @@ def _require_sha256(value: Any, *, label: str) -> str:
     return str(value)
 
 
-def _validate_attempt(value: Any) -> dict[str, Any]:
+def _validate_attempt(value: Any, *, receipt_root: Path) -> dict[str, Any]:
     attempt = _plain_dict(value, label="result.attempt")
+    _exact_keys(
+        attempt,
+        (
+            "id",
+            "root",
+            "maximum_attempts",
+            "must_be_absent",
+            "reservation_consumes_attempt",
+            "retry",
+            "resume",
+            "overwrite",
+            "refill",
+            "reservation",
+        ),
+        label="result.attempt",
+    )
+    reservation = _plain_dict(
+        attempt["reservation"], label="result.attempt.reservation"
+    )
+    _exact_keys(
+        reservation,
+        (
+            "binding",
+            "supervisor_nonce",
+            "status",
+            "maximum_attempts",
+            "retry",
+            "resume",
+            "overwrite",
+            "refill",
+        ),
+        label="result.attempt.reservation",
+    )
+    reservation_binding = binding_shape(
+        reservation["binding"], label="result.attempt.reservation.binding"
+    )
+    _require_inert_relative_path(
+        reservation_binding,
+        receipt_root=receipt_root,
+        expected_relative="reservation.json",
+        label="result.attempt.reservation.binding",
+    )
     if (
-        attempt.get("maximum_attempts") != 1
+        attempt.get("id") != ATTEMPT_ID
+        or attempt.get("root") != str(receipt_root.resolve(strict=True))
+        or attempt.get("maximum_attempts") != 1
+        or attempt.get("must_be_absent") is not True
         or attempt.get("reservation_consumes_attempt") is not True
         or attempt.get("retry") is not False
         or attempt.get("resume") is not False
         or attempt.get("overwrite") is not False
         or attempt.get("refill") is not False
+        or reservation.get("status") != "RESERVED_ATTEMPT_CONSUMED"
+        or reservation.get("maximum_attempts") != 1
+        or reservation.get("retry") is not False
+        or reservation.get("resume") is not False
+        or reservation.get("overwrite") is not False
+        or reservation.get("refill") is not False
+        or not _is_sha256(reservation.get("supervisor_nonce"))
     ):
-        _fail("result attempt is not one fresh, consumed, non-retriable attempt")
+        _fail(
+            "result attempt is not the exact fresh V2 consumed, non-retriable "
+            "attempt"
+        )
     return attempt
 
 
@@ -470,8 +528,8 @@ def _validate_caps_and_runtime(
         label="result.caps.maximum_gpu_seconds",
         minimum=0.0,
     )
-    if wall_cap <= 0.0 or wall_cap > 43_200.0 or gpu_cap <= 0.0 or gpu_cap > 36_000.0:
-        _fail("result caps exceed the preregistered wall/GPU ceiling")
+    if wall_cap != 43_200.0 or gpu_cap != 36_000.0:
+        _fail("result caps differ from the exact preregistered wall/GPU values")
     _require_int(
         caps["maximum_training_updates"],
         label="result.caps.maximum_training_updates",
@@ -1633,7 +1691,7 @@ def validate_result(
     )
     plan_binding = binding_shape(result["plan_binding"], label="result.plan_binding")
     binding_shape(result["review_binding"], label="result.review_binding")
-    _validate_attempt(result["attempt"])
+    _validate_attempt(result["attempt"], receipt_root=receipt_root)
     _validate_caps_and_runtime(result["caps"], result["runtime"])
     _validate_inert_binding_map(result["input_bindings"], label="result.input_bindings")
     predecessor_failure_binding = binding_shape(
@@ -1792,10 +1850,10 @@ def validate_result(
     return {
         "schema": REPORT_SCHEMA,
         "status": "PASS",
-        "phase": "existing_pool_three_arm_v1_integrity_replacement_v1",
+        "phase": "existing_pool_three_arm_v1_integrity_replacement_v2",
         "purpose": (
             "existing_pool_three_arm_v1_factual_learning_"
-            "integrity_replacement_v1"
+            "integrity_replacement_v2"
         ),
         "predecessor_terminal_failure_binding": predecessor_failure_binding,
         "manifest_binding": dict(result_binding),

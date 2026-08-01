@@ -73,24 +73,28 @@ def _small_arm() -> tuple[_SmallTemporalTemplate, worker.ArmCore]:
     return template, worker.ArmCore(template)
 
 
-def test_complete_spatial_predecessor_loader_and_temporal_migration_boundary(
-    tmp_path: Path,
-) -> None:
+def _complete_spatial_predecessor_state() -> dict[str, torch.Tensor]:
     with torch.random.fork_rng(devices=[]):
         encoder = spatial_model._construct_n320_encoder_without_rng_draw()
         predecessor = spatial_model.SingleFrameMultiblockMaskedSpatialJepaV1(
             encoder.state_dict()
         )
-    valid_state = {
+    state = {
         name: value.detach().clone()
         for name, value in predecessor.state_dict().items()
     }
-    for name in tuple(valid_state):
+    for name in tuple(state):
         if name.startswith("target_encoder."):
             online_name = f"encoder.{name.removeprefix('target_encoder.')}"
-            valid_state[name] = valid_state[online_name] + 1.0
-    valid_state["ema_update_count"] = torch.tensor(1_000, dtype=torch.long)
-    del predecessor, encoder
+            state[name] = state[online_name] + 1.0
+    state["ema_update_count"] = torch.tensor(1_000, dtype=torch.long)
+    return state
+
+
+def test_complete_spatial_predecessor_loader_and_temporal_migration_boundary(
+    tmp_path: Path,
+) -> None:
+    valid_state = _complete_spatial_predecessor_state()
 
     accepted = {
         name
@@ -167,6 +171,242 @@ def test_complete_spatial_predecessor_loader_and_temporal_migration_boundary(
         worker.load_predecessor_state(worker.file_binding(sparse_path))
 
 
+def test_frozen_real_temporal_substrate_allocates_complete_trainable_arms(
+    tmp_path: Path,
+) -> None:
+    predecessor_state = _complete_spatial_predecessor_state()
+    checkpoint_path = tmp_path / "complete_spatial_to_arm_chain.pt"
+    torch.save({"model_state_dict": predecessor_state}, checkpoint_path)
+    predecessor_state = worker.load_predecessor_state(
+        worker.file_binding(checkpoint_path)
+    )
+    assert len(predecessor_state) == 187
+    assert sum(
+        worker.temporal_model.temporal_v1_accepts_predecessor_key(name)
+        for name in predecessor_state
+    ) == 108
+    assert sum(
+        not worker.temporal_model.temporal_v1_accepts_predecessor_key(name)
+        for name in predecessor_state
+    ) == 79
+    substrate = worker.temporal_model.RGBRecurrentPatchMemoryTemporalJepaV1(
+        predecessor_state
+    ).eval()
+    del predecessor_state
+    substrate.requires_grad_(False)
+    for parameter in substrate.parameters():
+        parameter.grad = None
+    assert all(
+        not parameter.requires_grad and parameter.dtype == torch.float32
+        for parameter in substrate.parameters()
+    )
+    substrate_state_before = {
+        name: value.detach().clone()
+        for name, value in substrate.state_dict().items()
+    }
+    substrate_named_parameters = dict(substrate.named_parameters())
+
+    arms = {name: worker.ArmCore(substrate) for name in worker.ARM_NAMES}
+    assert len({worker.module_state_sha256(arm) for arm in arms.values()}) == 1
+    assert tuple(substrate.state_dict()) == tuple(substrate_state_before)
+    for state_name, state_value in substrate.state_dict().items():
+        torch.testing.assert_close(
+            state_value,
+            substrate_state_before[state_name],
+            rtol=0.0,
+            atol=0.0,
+        )
+    assert all(not parameter.requires_grad for parameter in substrate.parameters())
+
+    for arm in arms.values():
+        arm_named_parameters = dict(arm.named_parameters())
+        assert set(arm_named_parameters).issubset(substrate_named_parameters)
+        for parameter_name, parameter in arm_named_parameters.items():
+            template_parameter = substrate_named_parameters[parameter_name]
+            torch.testing.assert_close(
+                parameter,
+                template_parameter,
+                rtol=0.0,
+                atol=0.0,
+            )
+            assert parameter.dtype == template_parameter.dtype
+            assert parameter.shape == template_parameter.shape
+
+    substrate_parameter_ids = {id(parameter) for parameter in substrate.parameters()}
+    arm_parameter_ids = {
+        name: {id(parameter) for parameter in arm.parameters()}
+        for name, arm in arms.items()
+    }
+    assert all(
+        substrate_parameter_ids.isdisjoint(parameter_ids)
+        for parameter_ids in arm_parameter_ids.values()
+    )
+    for offset, left in enumerate(worker.ARM_NAMES):
+        for right in worker.ARM_NAMES[offset + 1 :]:
+            assert arm_parameter_ids[left].isdisjoint(arm_parameter_ids[right])
+
+    optimizers: list[torch.optim.Optimizer] = []
+    for name, arm in arms.items():
+        optimizer, partition = worker.build_arm_optimizer(arm)
+        named_parameters = dict(arm.named_parameters())
+        partition_names = partition.predictor_names + partition.memory_names
+        partition_ids = [id(parameter) for parameter in partition.all]
+
+        assert partition.predictor
+        assert partition.memory
+        assert len(named_parameters) == 36
+        assert len(partition.predictor) == 30
+        assert len(partition.memory) == 6
+        assert set(partition.predictor_names).isdisjoint(partition.memory_names)
+        assert set(partition_names) == set(named_parameters)
+        assert len(partition_names) == len(named_parameters)
+        assert len(partition_ids) == len(set(partition_ids))
+        assert set(partition_ids) == arm_parameter_ids[name]
+        assert all(
+            parameter.requires_grad and parameter.dtype == torch.float32
+            for parameter in partition.all
+        )
+
+        assert [group["group_name"] for group in optimizer.param_groups] == [
+            "predictor",
+            "memory",
+        ]
+        assert [len(group["params"]) for group in optimizer.param_groups] == [30, 6]
+        optimizer_parameter_ids = [
+            id(parameter)
+            for group in optimizer.param_groups
+            for parameter in group["params"]
+        ]
+        assert len(optimizer_parameter_ids) == len(set(optimizer_parameter_ids))
+        assert set(optimizer_parameter_ids) == set(partition_ids)
+        optimizers.append(optimizer)
+    assert len({id(optimizer) for optimizer in optimizers}) == len(worker.ARM_NAMES)
+
+    copied_parameter = next(
+        parameter
+        for parameter_name, parameter in arms[worker.ARM_NAMES[0]].named_parameters()
+        if parameter_name not in {"predictor_position", "predictor_mask_token"}
+    )
+    copied_parameter.requires_grad_(False)
+    with pytest.raises(
+        worker.ThreeArmWorkerError,
+        match="arm parameter partition is invalid",
+    ):
+        worker.partition_arm_parameters(arms[worker.ARM_NAMES[0]])
+
+
+def test_worker_reservation_accepts_bound_review_order_and_preregistration(
+    tmp_path: Path,
+) -> None:
+    def inert(path: str) -> dict[str, object]:
+        return {
+            "path": path,
+            "file_sha256": hashlib.sha256(path.encode("utf-8")).hexdigest(),
+            "byte_count": 1,
+        }
+
+    attempt_root = tmp_path / "attempt_v1"
+    attempt_root.mkdir()
+    authority_path = tmp_path / "authority.json"
+    authority_path.write_text("{}\n", encoding="utf-8")
+    authority_binding = worker.supervisor_contract.file_binding(authority_path)
+    plan_binding = inert("/synthetic/plan.json")
+    sources = {
+        "worker": inert("/synthetic/worker.py"),
+        "checker": inert("/synthetic/checker.py"),
+    }
+    authority = {
+        "output_root": str(attempt_root.resolve()),
+        "runtime": {"python_invocation_path": sys.executable},
+        "review_binding": inert("/synthetic/review.json"),
+        "source_commit": "a" * 40,
+        "review_commit": "b" * 40,
+        "preregistration_binding": inert("/synthetic/preregistration.md"),
+        "source_bindings": [],
+        "input_bindings": {},
+        "predecessor_terminal_failure_binding": inert(
+            "/synthetic/predecessor_failure.json"
+        ),
+        "attempt": {"id": "synthetic/attempt_v1"},
+        "caps": {"maximum_training_updates": 700},
+        "execution": {
+            "worker_path": str(
+                (worker.REPO_ROOT / worker.REQUIRED_SOURCE_PATHS["worker"]).resolve()
+            ),
+            "checker_path": str(
+                (worker.REPO_ROOT / worker.REQUIRED_SOURCE_PATHS["checker"]).resolve()
+            ),
+        },
+    }
+    nonce = "c" * 64
+    reservation = {
+        "schema": worker.supervisor_contract.RESERVATION_SCHEMA,
+        "status": "RESERVED_ATTEMPT_CONSUMED",
+        "supervisor_nonce": nonce,
+        "authority_binding": authority_binding,
+        "plan_binding": plan_binding,
+        "review_binding": authority["review_binding"],
+        "source_commit": authority["source_commit"],
+        "review_commit": authority["review_commit"],
+        "preregistration_binding": authority["preregistration_binding"],
+        "source_bindings": authority["source_bindings"],
+        "runtime": authority["runtime"],
+        "input_bindings": authority["input_bindings"],
+        "predecessor_terminal_failure_binding": authority[
+            "predecessor_terminal_failure_binding"
+        ],
+        "attempt": authority["attempt"],
+        "caps": authority["caps"],
+        "worker_binding": sources["worker"],
+        "checker_binding": sources["checker"],
+        "output_root": authority["output_root"],
+        "execution": authority["execution"],
+        "worker_command": [
+            sys.executable,
+            authority["execution"]["worker_path"],
+            "--authority",
+            str(authority_path.resolve()),
+            "--expected-authority-byte-count",
+            str(authority_binding["byte_count"]),
+            "--expected-authority-sha256",
+            str(authority_binding["file_sha256"]),
+        ],
+        "checker_command_template": [
+            sys.executable,
+            authority["execution"]["checker_path"],
+            "--manifest",
+            str((attempt_root / "result.json").resolve()),
+            "--expected-file-sha256",
+            "<WORKER_RESULT_SHA256>",
+            "--expected-byte-count",
+            "<WORKER_RESULT_BYTE_COUNT>",
+            "--output",
+            str((attempt_root / "receipt_check.json").resolve()),
+        ],
+        "authorized_device_idle_preflight_passed": True,
+        "maximum_attempts": 1,
+        "retry_authorized": False,
+        "resume_authorized": False,
+        "overwrite_authorized": False,
+        "refill_authorized": False,
+    }
+    (attempt_root / "reservation.json").write_text(
+        json.dumps(reservation, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    observed, observed_binding = worker._load_and_validate_reservation(
+        authority_path=authority_path,
+        authority=authority,
+        authority_binding=authority_binding,
+        plan_binding=plan_binding,
+        sources=sources,
+    )
+    assert observed == reservation
+    assert observed_binding == worker.supervisor_contract.file_binding(
+        attempt_root / "reservation.json"
+    )
+
+
 def test_worker_failure_receipt_uses_only_replacement_attempt_root(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -211,10 +451,11 @@ def test_worker_failure_receipt_uses_only_replacement_attempt_root(
     failure = json.loads(failure_path.read_text(encoding="utf-8"))
     assert failure["schema"] == (
         "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
-        "replacement_v1_worker_failure_v1"
+        "replacement_v2_worker_failure_v1"
     )
     assert failure["schema"] != (
-        "lewm_go2_world_model_existing_pool_three_arm_worker_failure_v1"
+        "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+        "replacement_v1_worker_failure_v1"
     )
     assert failure["status"] == "ATTEMPT_CONSUMED_WORKER_FAILURE"
     assert failure["authorizes_retry_or_resume"] is False

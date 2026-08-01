@@ -15,10 +15,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/check_go2_world_model_existing_pool_three_arm_v1.py"
 REPLACEMENT_SCHEMA_PREFIX = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
 )
 REPLACEMENT_ATTEMPT_ID = (
-    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
 )
 
 
@@ -63,6 +63,10 @@ def _fixture(
     action_receipts: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     checker = _load_checker()
+    root.mkdir(parents=True, exist_ok=True)
+    reservation_path = root / "reservation.json"
+    reservation_path.write_bytes(b"x")
+    reservation_path.chmod(0)
     pack_path = root / "pack/manifest.json"
     pack_path.parent.mkdir(parents=True, exist_ok=True)
     pack_path.write_bytes(b"x")
@@ -380,15 +384,26 @@ def _fixture(
             "id": REPLACEMENT_ATTEMPT_ID,
             "root": str(root.resolve()),
             "maximum_attempts": 1,
+            "must_be_absent": True,
             "reservation_consumes_attempt": True,
             "retry": False,
             "resume": False,
             "overwrite": False,
             "refill": False,
+            "reservation": {
+                "binding": _inert("reservation.json"),
+                "supervisor_nonce": "b" * 64,
+                "status": "RESERVED_ATTEMPT_CONSUMED",
+                "maximum_attempts": 1,
+                "retry": False,
+                "resume": False,
+                "overwrite": False,
+                "refill": False,
+            },
         },
         "caps": {
-            "maximum_wall_seconds": 1_200.0,
-            "maximum_gpu_seconds": 1_000.0,
+            "maximum_wall_seconds": 43_200,
+            "maximum_gpu_seconds": 36_000,
             "maximum_training_updates": 700,
         },
         "runtime": {
@@ -623,6 +638,52 @@ def test_replacement_result_and_report_schemas_are_exact() -> None:
     checker = _load_checker()
     assert checker.RESULT_SCHEMA == REPLACEMENT_SCHEMA_PREFIX + "result_v1"
     assert checker.REPORT_SCHEMA == REPLACEMENT_SCHEMA_PREFIX + "receipt_check_v1"
+    assert checker.ATTEMPT_ID == REPLACEMENT_ATTEMPT_ID
+
+
+def test_checker_rejects_stale_attempt_identity_root_and_reservation(
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    cases = (
+        (
+            "replacement_v1_id",
+            lambda result: result["attempt"].__setitem__(
+                "id",
+                "world_model_existing_pool_three_arm_v1_integrity_replacement_"
+                "v1/attempt_v1",
+            ),
+        ),
+        (
+            "original_id",
+            lambda result: result["attempt"].__setitem__(
+                "id", "world_model_existing_pool_three_arm_v1/attempt_v1"
+            ),
+        ),
+        (
+            "replacement_v1_root",
+            lambda result: result["attempt"].__setitem__(
+                "root", "/synthetic/integrity_replacement_v1/attempt_v1"
+            ),
+        ),
+        (
+            "reservation_retry",
+            lambda result: result["attempt"]["reservation"].__setitem__(
+                "retry", True
+            ),
+        ),
+    )
+    for case_name, mutate in cases:
+        case_root = tmp_path / case_name
+        manifest, _ = _fixture(case_root, mutate_result=mutate)
+        binding = checker.file_binding(manifest)
+        with pytest.raises(checker.ThreeArmReceiptError, match="exact fresh V2"):
+            checker.check_manifest(
+                manifest,
+                expected_file_sha256=binding["file_sha256"],
+                expected_byte_count=binding["byte_count"],
+                output_path=case_root / "receipt_check.json",
+            )
 
 
 def test_file_binding_rejects_protected_paths_before_open(tmp_path: Path) -> None:
@@ -656,7 +717,7 @@ def test_checker_stats_but_does_not_open_inert_snapshots(
     assert report["status"] == "PASS"
     assert report["schema"] == REPLACEMENT_SCHEMA_PREFIX + "receipt_check_v1"
     assert report["phase"] == (
-        "existing_pool_three_arm_v1_integrity_replacement_v1"
+        "existing_pool_three_arm_v1_integrity_replacement_v2"
     )
     assert report["predecessor_terminal_failure_binding"] == _inert(
         "/synthetic/predecessor_terminal_failure.json"
