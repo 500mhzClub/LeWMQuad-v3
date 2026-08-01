@@ -634,7 +634,6 @@ def load_and_validate_authority(
         "citable_as_scientific_evidence",
         "source_commit",
         "review_commit",
-        "execution_head",
         "preregistration_binding",
         "plan_binding",
         "review_binding",
@@ -663,9 +662,9 @@ def load_and_validate_authority(
         raise LocalizationWorkerError("authority status or schema changed")
     source_commit = _validate_commit(authority["source_commit"], label="source commit")
     review_commit = _validate_commit(authority["review_commit"], label="review commit")
-    execution_head = _validate_commit(authority["execution_head"], label="execution head")
-    if _git("rev-parse", "HEAD") != execution_head:
-        raise LocalizationWorkerError("execution HEAD differs from authority")
+    execution_head = _validate_commit(
+        _git("rev-parse", "HEAD"), label="observed execution head"
+    )
     _require_strict_commit_ancestor(
         source_commit, review_commit, label="source-before-review"
     )
@@ -675,6 +674,12 @@ def load_and_validate_authority(
     _require_binding_at_commit(
         binding, commit=execution_head, label="execution authority"
     )
+    # The authority cannot embed the hash of the commit that contains itself.
+    # Bind the observed authority-containing HEAD at launch and carry that
+    # derived identity through reservation, result, checker and terminal
+    # receipts instead of accepting an impossible self-referential field.
+    authority = dict(authority)
+    authority["execution_head"] = execution_head
     preregistration_binding = _validate_frozen_document_binding(
         authority["preregistration_binding"],
         exact_path=PREREGISTRATION_PATH,
