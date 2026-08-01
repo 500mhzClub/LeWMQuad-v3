@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Receipt-only checker for the matched action-alignment successor."""
+"""Receipt-only checker for action-alignment integrity replacement V1."""
 from __future__ import annotations
 
 import argparse
@@ -27,7 +27,7 @@ from scripts import (  # noqa: E402
 )
 
 
-CHECK_SCHEMA = "lewm_go2_world_model_action_alignment_successor_v1_receipt_check_v1"
+CHECK_SCHEMA = f"{worker.SCHEMA_PREFIX}_receipt_check_v1"
 
 
 class AlignmentCheckError(RuntimeError):

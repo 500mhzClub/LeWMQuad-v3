@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Externally supervise one exact matched action-alignment comparison."""
+"""Supervise the final action-alignment integrity replacement V1."""
 from __future__ import annotations
 
 import argparse
@@ -55,9 +55,13 @@ from scripts import (  # noqa: E402
 )
 
 
-TERMINAL_SCHEMA = "lewm_go2_world_model_action_alignment_successor_v1_supervision_terminal_v1"
-SUCCESS_STATUS = "PASS_COMPLETE_ACTION_ALIGNMENT_COMPARISON"
-FAILURE_STATUS = "TERMINAL_ACTION_ALIGNMENT_COMPARISON_FAILURE"
+TERMINAL_SCHEMA = f"{worker.SCHEMA_PREFIX}_supervision_terminal_v1"
+SUCCESS_STATUS = (
+    "PASS_COMPLETE_ACTION_ALIGNMENT_COMPARISON_INTEGRITY_REPLACEMENT_V1"
+)
+FAILURE_STATUS = (
+    "TERMINAL_ACTION_ALIGNMENT_COMPARISON_INTEGRITY_REPLACEMENT_V1_FAILURE"
+)
 
 
 class AlignmentSupervisionError(RuntimeError):

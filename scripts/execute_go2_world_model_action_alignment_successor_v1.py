@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Execute the one-shot matched action-alignment successor.
+"""Execute the final science-identical action-alignment integrity replacement.
 
 The worker consumes the immutable V3 frame pack and one frozen spatial
 predecessor.  It never opens RGB, sealed, held-out, or protected material and
-never creates data.  Both fresh arms execute the same action-candidate route;
-their only scientific difference is the frozen alignment-loss coefficient.
+never creates data. Both fresh arms execute the same row-stable action-candidate
+route; their only scientific difference is the frozen alignment-loss
+coefficient.
 """
 from __future__ import annotations
 
@@ -56,9 +57,14 @@ from scripts import (  # noqa: E402
 )
 
 
-SCHEMA_PREFIX = "lewm_go2_world_model_action_alignment_successor_v1"
+SCHEMA_PREFIX = (
+    "lewm_go2_world_model_action_alignment_successor_v1_"
+    "integrity_replacement_v1"
+)
 AUTHORITY_SCHEMA = f"{SCHEMA_PREFIX}_execution_authority_v1"
-AUTHORITY_STATUS = "AUTHORIZED_ONE_EXACT_MATCHED_ACTION_ALIGNMENT_ATTEMPT"
+AUTHORITY_STATUS = (
+    "AUTHORIZED_ONE_EXACT_ACTION_ALIGNMENT_INTEGRITY_REPLACEMENT_V1_ATTEMPT"
+)
 RESERVATION_SCHEMA = f"{SCHEMA_PREFIX}_reservation_v1"
 RESULT_SCHEMA = f"{SCHEMA_PREFIX}_result_v1"
 SNAPSHOT_SCHEMA = f"{SCHEMA_PREFIX}_snapshot_v1"
@@ -67,25 +73,37 @@ FAILURE_SCHEMA = f"{SCHEMA_PREFIX}_failure_v1"
 REVIEW_SCHEMA = f"{SCHEMA_PREFIX}_independent_source_review_v1"
 REVIEW_STATUS = "PASS_SOURCE_ONLY_NOT_AUTHORITY"
 
-ATTEMPT_ID = "world_model_action_alignment_successor_v1/attempt_v1"
+ATTEMPT_ID = (
+    "world_model_action_alignment_successor_v1_integrity_replacement_v1/"
+    "attempt_v1"
+)
 ATTEMPT_ROOT = (
+    REPO_ROOT
+    / ".generated/dev/world_model_action_alignment_successor_v1_"
+    "integrity_replacement_v1/attempt_v1"
+)
+ORIGINAL_ATTEMPT_ROOT = (
     REPO_ROOT / ".generated/dev/world_model_action_alignment_successor_v1/attempt_v1"
 )
 AUTHORITY_PATH = (
     REPO_ROOT
-    / "docs/lewm_go2_world_model_action_alignment_successor_v1_execution_authority_2026-08-01.json"
+    / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
+    "integrity_replacement_v1_execution_authority_2026-08-01.json"
 )
 PREREGISTRATION_PATH = (
     REPO_ROOT
-    / "docs/lewm_go2_world_model_action_alignment_successor_v1_preregistration_2026-08-01.md"
+    / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
+    "integrity_replacement_v1_preregistration_2026-08-01.md"
 )
 PLAN_PATH = (
     REPO_ROOT
-    / "docs/lewm_go2_world_model_action_alignment_successor_v1_plan_2026-08-01.json"
+    / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
+    "integrity_replacement_v1_plan_2026-08-01.json"
 )
 REVIEW_PATH = (
     REPO_ROOT
-    / "docs/lewm_go2_world_model_action_alignment_successor_v1_independent_source_review_2026-08-01.json"
+    / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
+    "integrity_replacement_v1_independent_source_review_2026-08-01.json"
 )
 WORKER_PATH = Path(__file__).resolve()
 CHECKER_PATH = (
@@ -103,7 +121,7 @@ MICROBATCH_SIZE = 32
 TAIL_UPDATES = successor_metrics.TAIL_UPDATES
 EVALUATION_BATCH_SIZE = 64
 ALIGNMENT_MARGIN = 0.01
-CANDIDATE_SCAN_CHUNK_ROWS = 128
+CANDIDATE_SCAN_BATCH_ROWS = 32
 MAXIMUM_WALL_SECONDS = 9_000
 MAXIMUM_GPU_SECONDS = 7_200
 EXPECTED_TRAIN_ROWS = 16_000
@@ -202,6 +220,49 @@ EXPECTED_EVIDENCE_BINDINGS = {
         / ".generated/dev/world_model_existing_pool_three_arm_v1_action_localization_v1/attempt_v1/terminal_supervision.json",
         "c97cabc54bacb902a48b3880646fdecdfc83ba772e335e91f08c0cce902c058c",
         4_765,
+    ),
+    "original_successor_preregistration": _absolute_binding(
+        REPO_ROOT
+        / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
+        "preregistration_2026-08-01.md",
+        "9ef74b866314d84c72e3f125ccccd6a3d7827964176c46b7c5ac16775a17dfa1",
+        7_122,
+    ),
+    "original_successor_plan": _absolute_binding(
+        REPO_ROOT
+        / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
+        "plan_2026-08-01.json",
+        "ec3bd3987d3cdb3a5611053e3ba057fc7bb637b6d71efebe41687ac4a34f73db",
+        2_110,
+    ),
+    "original_successor_authority": _absolute_binding(
+        REPO_ROOT
+        / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
+        "execution_authority_2026-08-01.json",
+        "366cad5821ce68ea7ee8106b15f428d2859134a7e57b1567d7a1d7306b37ff58",
+        20_092,
+    ),
+    "original_successor_reservation": _absolute_binding(
+        ORIGINAL_ATTEMPT_ROOT / "reservation.json",
+        "f3786cffa9dd840b6b14fbd47ceb931bd9041f91f62408e1c612036c75768540",
+        19_792,
+    ),
+    "original_successor_failure": _absolute_binding(
+        ORIGINAL_ATTEMPT_ROOT / "failure.json",
+        "d9849b84b3707e650973d048ca8d7ce2e83ee9409ddea9e62fed1ead1f9563d6",
+        1_329,
+    ),
+    "original_successor_terminal": _absolute_binding(
+        ORIGINAL_ATTEMPT_ROOT / "terminal_supervision.json",
+        "99f7d217739087327108363ff4fe9e3dc7b1cdac9373d48678b51275a198b6ab",
+        7_305,
+    ),
+    "original_successor_failure_audit": _absolute_binding(
+        REPO_ROOT
+        / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
+        "terminal_preupdate_source_integrity_failure_result_2026-08-01.json",
+        "3f8350528c4985b792d22b5d4002b3cc34d926c7a2d8a84431009d6668bd63ed",
+        7_173,
     ),
 }
 
@@ -445,6 +506,154 @@ def _validate_binding_map(
     return result
 
 
+def _validate_replacement_plan(plan: Any) -> None:
+    expected_keys = {
+        "schema", "purpose", "development_only",
+        "citable_as_original_factual_learnability_claim",
+        "authorizes_execution", "route", "direct_predecessor_failure_audit",
+        "original_plan_binding", "integrity_replacement", "arms", "objective",
+        "action_margin", "head_row_presentations_per_arm_per_training_row",
+        "training", "paired_decision", "reuse", "attempt", "caps",
+        "science_identity", "forbidden",
+    }
+    expected_integrity = {
+        "version": 1,
+        "maximum_integrity_replacements_after_this": 0,
+        "sole_functional_change": (
+            "row_stable_b32_gradient_enabled_detached_wrong_action_scan"
+        ),
+        "original_scan": {
+            "autograd_enabled": False,
+            "batch_rows": 128,
+            "flattened_row_action_pairs": True,
+        },
+        "replacement_scan": {
+            "slots": 8,
+            "batch_rows": CANDIDATE_SCAN_BATCH_ROWS,
+            "row_order": "original_microbatch_order",
+            "wrong_id_order_per_row": (
+                "ascending_absolute_action_id_excluding_factual"
+            ),
+            "autograd_enabled": True,
+            "energy_detached_before_scan_assignment": True,
+            "temporary_graph_discarded_after_each_slot": True,
+            "selected_recomputation_batch_rows": MICROBATCH_SIZE,
+            "maximum_consistency_error": 1.0e-6,
+        },
+        "source_probe": {
+            "objective_atol": 1.0e-6,
+            "gradient_rtol": 1.0e-5,
+            "gradient_atol": 1.0e-6,
+            "state_hash_exact": True,
+            "rng_state_exact": True,
+        },
+        "scientific_fields_changed": False,
+        "tolerance_relaxed": False,
+        "failed_attempt_state_reused": False,
+    }
+    expected_science_identity = {
+        "model": True, "predecessor": True, "data": True, "pack": True,
+        "initialization": True, "seed": True, "schedule": True,
+        "optimizer": True, "updates": True, "coefficients": True,
+        "objective": True, "evaluations": True, "metrics": True,
+        "thresholds": True, "decision_precedence": True, "caps": True,
+        "claim_boundary": True,
+    }
+    expected_forbidden = [
+        "sealed_or_heldout_access", "protected_runtime_access", "rgb_access",
+        "alternate_pack_or_checkpoint", "failed_attempt_runtime_state_reuse",
+        "architecture_change", "objective_change", "schedule_change",
+        "coefficient_search", "tolerance_relaxation", "validation_gradient",
+        "automatic_follow_on", "further_integrity_replacement",
+    ]
+    if (
+        type(plan) is not dict
+        or set(plan) != expected_keys
+        or plan.get("schema") != f"{SCHEMA_PREFIX}_plan_v1"
+        or plan.get("purpose")
+        != (
+            "science_identical_integrity_replacement_of_matched_existing_pool_"
+            "global_action_alignment_comparison"
+        )
+        or plan.get("development_only") is not True
+        or plan.get("citable_as_original_factual_learnability_claim") is not False
+        or plan.get("authorizes_execution") is not False
+        or plan.get("route") != "TEST_GLOBAL_ALIGNMENT_HYPOTHESIS"
+        or plan.get("direct_predecessor_failure_audit")
+        != EXPECTED_EVIDENCE_BINDINGS["original_successor_failure_audit"]
+        or plan.get("original_plan_binding")
+        != EXPECTED_EVIDENCE_BINDINGS["original_successor_plan"]
+        or plan.get("integrity_replacement") != expected_integrity
+        or plan.get("arms")
+        != [
+            {"name": "baseline", "alignment_coefficient": 0.0},
+            {"name": "alignment", "alignment_coefficient": 1.0},
+        ]
+        or plan.get("objective")
+        != (
+            "mean(E_factual) + coefficient * mean(relu(0.01 + E_factual - "
+            "min_wrong_E))"
+        )
+        or plan.get("action_margin") != ALIGNMENT_MARGIN
+        or plan.get("head_row_presentations_per_arm_per_training_row") != 10
+        or plan.get("training")
+        != {
+            "rows": EXPECTED_TRAIN_ROWS,
+            "validation_rows": EXPECTED_VALIDATION_ROWS,
+            "updates": TRAINING_UPDATES,
+            "batch_size": BATCH_SIZE,
+            "microbatch_size": MICROBATCH_SIZE,
+            "presentations_per_arm": TRAINING_UPDATES * BATCH_SIZE,
+            "seed": 20260731,
+            "warmup_updates": 150,
+            "schedule_horizon_updates": 3000,
+            "observation_updates": list(TAIL_UPDATES),
+            "checkpoint_selection": False,
+            "early_stopping": False,
+        }
+        or plan.get("paired_decision")
+        != {
+            "seed": successor_metrics.PAIRED_BOOTSTRAP_SEED,
+            "replicates": 10_000,
+            "quantile_indices": [500, 5000, 9499],
+            "meaningful_point_threshold": (
+                successor_metrics.MEANINGFUL_POINT_THRESHOLD
+            ),
+            "stall_upper_threshold": successor_metrics.STALL_UPPER_THRESHOLD,
+            "absolute_repair_precedence": True,
+            "retention_failure_overrides_meaningful": True,
+        }
+        or plan.get("reuse")
+        != {
+            "v3_pack_read_only": True,
+            "fresh_pack": False,
+            "rgb_open_count": 0,
+            "data_generation": False,
+            "network_access": False,
+        }
+        or plan.get("attempt")
+        != {
+            "id": ATTEMPT_ID,
+            "maximum_attempts": 1,
+            "reservation_consumes_attempt": True,
+            "retry": False,
+            "resume": False,
+            "refill": False,
+            "overwrite": False,
+            "original_attempt_runtime_reuse": False,
+        }
+        or plan.get("caps")
+        != {
+            "maximum_wall_seconds": MAXIMUM_WALL_SECONDS,
+            "maximum_gpu_seconds": MAXIMUM_GPU_SECONDS,
+            "maximum_training_updates": TRAINING_UPDATES,
+        }
+        or plan.get("science_identity") != expected_science_identity
+        or plan.get("forbidden") != expected_forbidden
+    ):
+        raise AlignmentWorkerError("bound replacement plan changed")
+
+
 def load_and_validate_authority(
     authority_path: Path,
     *,
@@ -509,15 +718,7 @@ def load_and_validate_authority(
             label=key,
         )
     plan = _read_bound_json(authority["plan_binding"], label="plan")
-    if (
-        plan.get("schema") != f"{SCHEMA_PREFIX}_plan_v1"
-        or plan.get("route") != "TEST_GLOBAL_ALIGNMENT_HYPOTHESIS"
-        or plan.get("authorizes_execution") is not False
-        or plan.get("training", {}).get("updates") != TRAINING_UPDATES
-        or plan.get("paired_decision", {}).get("seed")
-        != successor_metrics.PAIRED_BOOTSTRAP_SEED
-    ):
-        raise AlignmentWorkerError("bound plan changed")
+    _validate_replacement_plan(plan)
     sources = _validate_binding_map(
         authority["source_bindings"], REQUIRED_SOURCE_PATHS,
         frozen_commit=source_commit, label="source bindings"
@@ -543,12 +744,68 @@ def load_and_validate_authority(
     ):
         raise AlignmentWorkerError("independent source review is not a bound PASS")
     reviewer = review.get("reviewer")
+    verification = review.get("verification")
+    synthetic_probe = (
+        verification.get("exact_rocm_synthetic_probe")
+        if type(verification) is dict
+        else None
+    )
+    focused_tests = (
+        verification.get("focused_tests")
+        if type(verification) is dict
+        else None
+    )
+    expected_synthetic_probe = {
+        "passed": True,
+        "uses_real_checkpoint_snapshot_pack_index_or_rgb_payload": False,
+        "synthetic_predecessor_state_entries": 187,
+        "maximum_live_scan_graphs": 1,
+        "scan_dispatch": {
+            "batch_rows": CANDIDATE_SCAN_BATCH_ROWS,
+            "wrong_scan_calls": 8,
+            "head_row_presentations": 10,
+            "maximum_scan_recompute_error": 0.0,
+            "tolerance": 1.0e-6,
+            "scan_requires_grad": False,
+            "scan_has_grad_fn": False,
+            "pre_backward_parameter_grad_count": 0,
+            "post_backward_parameter_grad_count": 36,
+            "peak_memory_bytes": 1_481_360_896,
+        },
+        "real_all_parameter_reference": {
+            "batch_rows": CANDIDATE_SCAN_BATCH_ROWS,
+            "wrong_scan_calls": 8,
+            "head_row_presentations": 10,
+            "objective_absolute_error": 0.0,
+            "objective_atol": 1.0e-6,
+            "gradient_parameter_count": 36,
+            "gradient_allclose": True,
+            "gradient_rtol": 1.0e-5,
+            "gradient_atol": 1.0e-6,
+            "maximum_gradient_absolute_error": 6.752088665962219e-09,
+            "global_gradient_relative_l2_error": 9.253475062389835e-07,
+            "minimum_unique_wrong_energy_gap": 7.748603820800781e-06,
+            "corrected_state_hash_exact": True,
+            "reference_state_hash_exact": True,
+            "corrected_cpu_rng_exact": True,
+            "corrected_cuda_rng_exact": True,
+            "reference_cpu_rng_exact": True,
+            "reference_cuda_rng_exact": True,
+            "corrected_forward_peak_memory_bytes": 1_013_770_752,
+            "reference_forward_peak_memory_bytes": 4_025_879_040,
+        },
+    }
     if (
         type(reviewer) is not dict
         or type(reviewer.get("identity")) is not str
         or not reviewer["identity"].strip()
-        or type(review.get("verification")) is not dict
-        or review["verification"].get("all_focused_tests_passed") is not True
+        or type(verification) is not dict
+        or verification.get("all_focused_tests_passed") is not True
+        or type(focused_tests) is not dict
+        or focused_tests.get("passed") != 24
+        or focused_tests.get("failed") != 0
+        or verification.get("normalized_scientific_plan_differences") != []
+        or synthetic_probe != expected_synthetic_probe
         or type(review.get("custody")) is not dict
         or review["custody"].get("runtime_payloads_opened") is not False
         or review["custody"].get("sealed_or_heldout_opened") is not False
@@ -559,6 +816,21 @@ def load_and_validate_authority(
         raise AlignmentWorkerError("runtime input bindings changed")
     if authority["evidence_bindings"] != EXPECTED_EVIDENCE_BINDINGS:
         raise AlignmentWorkerError("predecessor evidence bindings changed")
+    if ORIGINAL_ATTEMPT_ROOT.is_symlink() or not ORIGINAL_ATTEMPT_ROOT.is_dir():
+        raise AlignmentWorkerError("closed original attempt root changed")
+    with os.scandir(ORIGINAL_ATTEMPT_ROOT) as entries:
+        original_inventory = []
+        for entry in entries:
+            if entry.is_symlink() or not entry.is_file(follow_symlinks=False):
+                raise AlignmentWorkerError("closed original attempt contains a non-file")
+            original_inventory.append(entry.name)
+    if set(original_inventory) != {
+        "reservation.json", "failure.json", "terminal_supervision.json"
+    } or len(original_inventory) != 3:
+        raise AlignmentWorkerError("closed original attempt inventory changed")
+    for name, binding in EXPECTED_EVIDENCE_BINDINGS.items():
+        if not _binding_is_exact(Path(binding["path"]), binding):
+            raise AlignmentWorkerError(f"pre-reservation evidence changed: {name}")
     if authority["runtime"] != EXPECTED_RUNTIME:
         raise AlignmentWorkerError("runtime contract changed")
     for name, binding in EXPECTED_RUNTIME["bindings"].items():
@@ -696,20 +968,25 @@ def _action_objective_two_pass(
 ) -> ObjectiveTerms:
     """Compute the exact minimum-wrong hinge with bounded activation memory.
 
-    Every row is scanned under each of its eight wrong actions without a graph.
-    The selected wrong action and factual action are then recomputed with a
-    graph.  Exact ties select the lowest action ID through ``torch.argmin``.
+    Every row is scanned under each of its eight wrong actions using the same
+    B32 autograd dispatch as recomputation, but each temporary scan graph is
+    detached and discarded immediately. The selected wrong action and factual
+    action are then recomputed with a graph. Exact ties select the lowest
+    action ID through ``torch.argmin``.
     """
 
     if coefficient not in (0.0, 1.0):
         raise AlignmentWorkerError("alignment coefficient changed")
     batch = encoded_history.shape[0]
     if (
-        factual_actions.shape != (batch, 3)
+        batch != CANDIDATE_SCAN_BATCH_ROWS
+        or factual_actions.shape != (batch, 3)
         or target_indices.shape != (batch, 64)
         or target.shape != (batch, 64, 192)
     ):
         raise AlignmentWorkerError("objective input shape changed")
+    if not torch.is_grad_enabled():
+        raise AlignmentWorkerError("wrong-action scan requires autograd dispatch")
     factual_ids = factual_actions[:, 2]
     scan = torch.full(
         (batch, ACTION_COUNT),
@@ -717,34 +994,44 @@ def _action_objective_two_pass(
         dtype=torch.float32,
         device=encoded_history.device,
     )
-    row_grid = torch.arange(batch, device=encoded_history.device)[:, None].expand(
-        -1, ACTION_COUNT
-    )
+    row_indices = torch.arange(batch, device=encoded_history.device)
     candidate_grid = torch.arange(
         ACTION_COUNT, device=encoded_history.device
     )[None, :].expand(batch, -1)
     wrong_mask = candidate_grid != factual_ids[:, None]
-    scan_rows = row_grid[wrong_mask]
-    scan_ids = candidate_grid[wrong_mask]
-    if scan_rows.numel() != batch * (ACTION_COUNT - 1):
+    wrong_ids = candidate_grid[wrong_mask].reshape(batch, ACTION_COUNT - 1)
+    if (
+        wrong_ids.shape != (batch, ACTION_COUNT - 1)
+        or bool((wrong_ids == factual_ids[:, None]).any())
+        or not bool((wrong_ids[:, 1:] > wrong_ids[:, :-1]).all())
+    ):
         raise AlignmentWorkerError("wrong-action scan row construction changed")
-    with torch.no_grad():
-        for start in range(0, scan_rows.numel(), CANDIDATE_SCAN_CHUNK_ROWS):
-            selected = scan_rows[start : start + CANDIDATE_SCAN_CHUNK_ROWS]
-            candidate_ids = scan_ids[start : start + CANDIDATE_SCAN_CHUNK_ROWS]
-            candidate_actions = factual_actions.index_select(0, selected).clone()
-            candidate_actions[:, 2] = candidate_ids
-            prediction = base.predict_from_shared_encoding(
-                arm,
-                encoded_history.index_select(0, selected),
-                candidate_actions,
-                target_indices.index_select(0, selected),
-                candidate_blind=False,
-            )
-            energy = normalized_half_squared_token_energy_v1(
-                prediction.raw, target.index_select(0, selected)
-            )
-            scan[selected, candidate_ids] = energy
+    for slot in range(ACTION_COUNT - 1):
+        candidate_ids = wrong_ids[:, slot]
+        candidate_actions = factual_actions.clone()
+        candidate_actions[:, 2] = candidate_ids
+        prediction = base.predict_from_shared_encoding(
+            arm,
+            encoded_history,
+            candidate_actions,
+            target_indices,
+            candidate_blind=False,
+        )
+        energy = normalized_half_squared_token_energy_v1(
+            prediction.raw, target
+        )
+        detached_energy = energy.detach()
+        if (
+            detached_energy.shape != (batch,)
+            or detached_energy.requires_grad
+            or detached_energy.grad_fn is not None
+            or not bool(torch.isfinite(detached_energy).all())
+        ):
+            raise AlignmentWorkerError("detached scan energy changed")
+        scan[row_indices, candidate_ids] = detached_energy
+        del prediction, energy, detached_energy, candidate_actions
+    if scan.requires_grad or scan.grad_fn is not None:
+        raise AlignmentWorkerError("wrong-action scan retained a gradient graph")
     finite_count = torch.isfinite(scan).sum(dim=1)
     if not bool((finite_count == ACTION_COUNT - 1).all()):
         raise AlignmentWorkerError("wrong-action scan did not evaluate exactly eight actions")

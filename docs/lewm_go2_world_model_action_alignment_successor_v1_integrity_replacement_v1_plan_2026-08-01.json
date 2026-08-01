@@ -1,0 +1,149 @@
+{
+  "action_margin": 0.01,
+  "arms": [
+    {
+      "alignment_coefficient": 0.0,
+      "name": "baseline"
+    },
+    {
+      "alignment_coefficient": 1.0,
+      "name": "alignment"
+    }
+  ],
+  "attempt": {
+    "id": "world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1",
+    "maximum_attempts": 1,
+    "original_attempt_runtime_reuse": false,
+    "overwrite": false,
+    "refill": false,
+    "reservation_consumes_attempt": true,
+    "resume": false,
+    "retry": false
+  },
+  "authorizes_execution": false,
+  "caps": {
+    "maximum_gpu_seconds": 7200,
+    "maximum_training_updates": 700,
+    "maximum_wall_seconds": 9000
+  },
+  "citable_as_original_factual_learnability_claim": false,
+  "development_only": true,
+  "direct_predecessor_failure_audit": {
+    "byte_count": 7173,
+    "file_sha256": "3f8350528c4985b792d22b5d4002b3cc34d926c7a2d8a84431009d6668bd63ed",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_terminal_preupdate_source_integrity_failure_result_2026-08-01.json"
+  },
+  "forbidden": [
+    "sealed_or_heldout_access",
+    "protected_runtime_access",
+    "rgb_access",
+    "alternate_pack_or_checkpoint",
+    "failed_attempt_runtime_state_reuse",
+    "architecture_change",
+    "objective_change",
+    "schedule_change",
+    "coefficient_search",
+    "tolerance_relaxation",
+    "validation_gradient",
+    "automatic_follow_on",
+    "further_integrity_replacement"
+  ],
+  "head_row_presentations_per_arm_per_training_row": 10,
+  "integrity_replacement": {
+    "failed_attempt_state_reused": false,
+    "maximum_integrity_replacements_after_this": 0,
+    "original_scan": {
+      "autograd_enabled": false,
+      "batch_rows": 128,
+      "flattened_row_action_pairs": true
+    },
+    "replacement_scan": {
+      "autograd_enabled": true,
+      "batch_rows": 32,
+      "energy_detached_before_scan_assignment": true,
+      "maximum_consistency_error": 1e-06,
+      "row_order": "original_microbatch_order",
+      "selected_recomputation_batch_rows": 32,
+      "slots": 8,
+      "temporary_graph_discarded_after_each_slot": true,
+      "wrong_id_order_per_row": "ascending_absolute_action_id_excluding_factual"
+    },
+    "scientific_fields_changed": false,
+    "source_probe": {
+      "gradient_atol": 1e-06,
+      "gradient_rtol": 1e-05,
+      "objective_atol": 1e-06,
+      "rng_state_exact": true,
+      "state_hash_exact": true
+    },
+    "sole_functional_change": "row_stable_b32_gradient_enabled_detached_wrong_action_scan",
+    "tolerance_relaxed": false,
+    "version": 1
+  },
+  "objective": "mean(E_factual) + coefficient * mean(relu(0.01 + E_factual - min_wrong_E))",
+  "original_plan_binding": {
+    "byte_count": 2110,
+    "file_sha256": "ec3bd3987d3cdb3a5611053e3ba057fc7bb637b6d71efebe41687ac4a34f73db",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_plan_2026-08-01.json"
+  },
+  "paired_decision": {
+    "absolute_repair_precedence": true,
+    "meaningful_point_threshold": 0.0023633878725896856,
+    "quantile_indices": [
+      500,
+      5000,
+      9499
+    ],
+    "replicates": 10000,
+    "retention_failure_overrides_meaningful": true,
+    "seed": 20260811,
+    "stall_upper_threshold": 0.0009453551490358743
+  },
+  "purpose": "science_identical_integrity_replacement_of_matched_existing_pool_global_action_alignment_comparison",
+  "reuse": {
+    "data_generation": false,
+    "fresh_pack": false,
+    "network_access": false,
+    "rgb_open_count": 0,
+    "v3_pack_read_only": true
+  },
+  "route": "TEST_GLOBAL_ALIGNMENT_HYPOTHESIS",
+  "schema": "lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_plan_v1",
+  "science_identity": {
+    "caps": true,
+    "claim_boundary": true,
+    "coefficients": true,
+    "data": true,
+    "decision_precedence": true,
+    "evaluations": true,
+    "initialization": true,
+    "metrics": true,
+    "model": true,
+    "objective": true,
+    "optimizer": true,
+    "pack": true,
+    "predecessor": true,
+    "schedule": true,
+    "seed": true,
+    "thresholds": true,
+    "updates": true
+  },
+  "training": {
+    "batch_size": 256,
+    "checkpoint_selection": false,
+    "early_stopping": false,
+    "microbatch_size": 32,
+    "observation_updates": [
+      500,
+      600,
+      700
+    ],
+    "presentations_per_arm": 179200,
+    "rows": 16000,
+    "schedule_horizon_updates": 3000,
+    "seed": 20260731,
+    "updates": 700,
+    "validation_rows": 2048,
+    "warmup_updates": 150
+  }
+}

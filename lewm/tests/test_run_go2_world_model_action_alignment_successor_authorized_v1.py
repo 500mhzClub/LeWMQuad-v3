@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -42,9 +43,32 @@ def test_reservation_templates_bind_one_worker_and_checker():
     assert reservation["resume"] is False
     assert reservation["worker_command_template"].count("<SUPERVISOR_BOUND_RESERVATION_SHA256>") == 1
     assert reservation["checker_command_template"].count("<WORKER_RESULT_SHA256>") == 1
+    assert "integrity_replacement_v1" in reservation["attempt_id"]
+    assert worker.ATTEMPT_ROOT.parent.name.endswith("integrity_replacement_v1")
 
 
 def test_command_instantiation_replaces_only_exact_placeholders():
     assert supervisor._instantiate(
         ["a", "<X>", "b"], {"<X>": "value"}
     ) == ["a", "value", "b"]
+
+
+def test_replacement_is_final_and_binds_closed_attempt_receipts():
+    required = {
+        "original_successor_authority",
+        "original_successor_reservation",
+        "original_successor_failure",
+        "original_successor_terminal",
+        "original_successor_failure_audit",
+    }
+    assert required <= set(worker.EXPECTED_EVIDENCE_BINDINGS)
+    assert all(
+        worker._binding_is_exact(
+            Path(worker.EXPECTED_EVIDENCE_BINDINGS[name]["path"]),
+            worker.EXPECTED_EVIDENCE_BINDINGS[name],
+        )
+        for name in required
+    )
+    assert {path.name for path in worker.ORIGINAL_ATTEMPT_ROOT.iterdir()} == {
+        "reservation.json", "failure.json", "terminal_supervision.json",
+    }
