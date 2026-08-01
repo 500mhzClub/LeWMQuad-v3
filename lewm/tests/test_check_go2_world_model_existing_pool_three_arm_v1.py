@@ -15,10 +15,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/check_go2_world_model_existing_pool_three_arm_v1.py"
 REPLACEMENT_SCHEMA_PREFIX = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
 )
 REPLACEMENT_ATTEMPT_ID = (
-    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1"
 )
 
 
@@ -647,6 +647,14 @@ def test_checker_rejects_stale_attempt_identity_root_and_reservation(
     checker = _load_checker()
     cases = (
         (
+            "replacement_v2_id",
+            lambda result: result["attempt"].__setitem__(
+                "id",
+                "world_model_existing_pool_three_arm_v1_integrity_replacement_"
+                "v2/attempt_v1",
+            ),
+        ),
+        (
             "replacement_v1_id",
             lambda result: result["attempt"].__setitem__(
                 "id",
@@ -658,6 +666,12 @@ def test_checker_rejects_stale_attempt_identity_root_and_reservation(
             "original_id",
             lambda result: result["attempt"].__setitem__(
                 "id", "world_model_existing_pool_three_arm_v1/attempt_v1"
+            ),
+        ),
+        (
+            "replacement_v2_root",
+            lambda result: result["attempt"].__setitem__(
+                "root", "/synthetic/integrity_replacement_v2/attempt_v1"
             ),
         ),
         (
@@ -677,7 +691,7 @@ def test_checker_rejects_stale_attempt_identity_root_and_reservation(
         case_root = tmp_path / case_name
         manifest, _ = _fixture(case_root, mutate_result=mutate)
         binding = checker.file_binding(manifest)
-        with pytest.raises(checker.ThreeArmReceiptError, match="exact fresh V2"):
+        with pytest.raises(checker.ThreeArmReceiptError, match="exact fresh V3"):
             checker.check_manifest(
                 manifest,
                 expected_file_sha256=binding["file_sha256"],
@@ -717,7 +731,7 @@ def test_checker_stats_but_does_not_open_inert_snapshots(
     assert report["status"] == "PASS"
     assert report["schema"] == REPLACEMENT_SCHEMA_PREFIX + "receipt_check_v1"
     assert report["phase"] == (
-        "existing_pool_three_arm_v1_integrity_replacement_v2"
+        "existing_pool_three_arm_v1_integrity_replacement_v3"
     )
     assert report["predecessor_terminal_failure_binding"] == _inert(
         "/synthetic/predecessor_terminal_failure.json"

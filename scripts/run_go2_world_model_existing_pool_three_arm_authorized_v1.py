@@ -31,19 +31,19 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEVELOPMENT_ROOT = REPO_ROOT / ".generated" / "dev"
 ATTEMPT_ROOT = (
     DEVELOPMENT_ROOT
-    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v2"
+    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v3"
     / "attempt_v1"
 )
 ATTEMPT_ID = (
-    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1"
 )
 PREDECESSOR_ATTEMPT_ROOT = (
     DEVELOPMENT_ROOT
-    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v1"
+    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v2"
     / "attempt_v1"
 )
 PREDECESSOR_ATTEMPT_ID = (
-    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
 )
 WORKER_RELATIVE = Path(
     "scripts/execute_go2_world_model_existing_pool_three_arm_v1.py"
@@ -56,46 +56,46 @@ SUPERVISOR_RELATIVE = Path(
 )
 PREREGISTRATION_RELATIVE = Path(
     "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
-    "replacement_v2_preregistration_2026-08-01.md"
+    "replacement_v3_preregistration_2026-08-01.md"
 )
 PLAN_RELATIVE = Path(
     "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
-    "replacement_v2_plan_2026-08-01.json"
+    "replacement_v3_plan_2026-08-01.json"
 )
 REVIEW_RELATIVE = Path(
     "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
-    "replacement_v2_independent_source_review_2026-08-01.json"
+    "replacement_v3_independent_source_review_2026-08-01.json"
 )
 AUTHORITY_RELATIVE = Path(
     "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
-    "replacement_v2_execution_authority_2026-08-01.json"
+    "replacement_v3_execution_authority_2026-08-01.json"
 )
 
 AUTHORITY_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
     "execution_authority_v1"
 )
 AUTHORITY_STATUS = (
-    "AUTHORIZED_ONE_EXACT_EXISTING_POOL_THREE_ARM_V1_INTEGRITY_REPLACEMENT_V2_"
+    "AUTHORIZED_ONE_EXACT_EXISTING_POOL_THREE_ARM_V1_INTEGRITY_REPLACEMENT_V3_"
     "ATTEMPT"
 )
 PLAN_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
     "plan_v1"
 )
 PLAN_PURPOSE = (
-    "existing_pool_three_arm_v1_factual_learning_integrity_replacement_v2"
+    "existing_pool_three_arm_v1_factual_learning_integrity_replacement_v3"
 )
 REVIEW_SCHEMA = (
-    "lewm_go2_world_model_follow_on_v2_integrity_replacement_independent_"
+    "lewm_go2_world_model_follow_on_v3_integrity_replacement_independent_"
     "source_review_v1"
 )
 REVIEW_STATUS = "PASS_SOURCE_ONLY_NOT_AUTHORITY"
 EXPECTED_REVIEW_SCOPE = {
     "source_only": True,
-    "scientific_plan_normalized_against_integrity_replacement_v1": True,
+    "scientific_plan_normalized_against_integrity_replacement_v2": True,
     "normalized_scientific_difference_count": 0,
-    "production_source_paths_changed_from_integrity_replacement_v1": [
+    "production_source_paths_changed_from_integrity_replacement_v2": [
         "worker",
         "checker",
         "external_supervisor",
@@ -108,8 +108,13 @@ EXPECTED_REVIEW_SCOPE = {
         "restore requires_grad=true after all independent ArmCore copies without "
         "changing parameter values or inventory"
     ),
+    "parity_probe_mode_alignment": (
+        "run the unchanged payload-free exact-zero probe with substrate and copied "
+        "arms recursively in evaluation mode, then restore every arm recursively "
+        "to training mode before return"
+    ),
     "lifecycle_change": (
-        "fresh V2 namespace, exact direct-predecessor evidence, exact plan and "
+        "fresh V3 namespace, exact direct-predecessor evidence, exact plan and "
         "checker validation, and source-review-authority commit ordering"
     ),
 }
@@ -128,7 +133,9 @@ EXPECTED_REVIEW_VERIFICATION = {
     "memory_parameter_tensor_count": 6,
     "normalized_plan_diff_empty": True,
     "predecessor_identity_evidence_live_verified": True,
-    "checker_v2_attempt_envelope_exact": True,
+    "checker_v3_attempt_envelope_exact": True,
+    "exact_runtime_synthetic_parity_probe_passed": True,
+    "parity_probe_state_optimizer_and_rng_invariance_passed": True,
     "source_review_authority_commit_order_enforced": True,
     "real_idle_device_preflight_passed": True,
     "replacement_root_absent_at_review": True,
@@ -146,13 +153,30 @@ EXPECTED_REVIEW_CUSTODY = {
     "attempt_reserved": False,
 }
 PREDECESSOR_FAILURE_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
     "terminal_pretraining_source_failure_result_v1"
 )
 PREDECESSOR_FAILURE_STATUS = (
     "PASS_COMPLETE_TERMINAL_PRETRAINING_SOURCE_FAILURE_AUDIT"
 )
 PREDECESSOR_FAILURE_BINDING = {
+    "path": str(
+        (
+            REPO_ROOT
+            / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+            "replacement_v2_terminal_pretraining_source_failure_result_"
+            "2026-08-01.json"
+        ).resolve()
+    ),
+    "file_sha256": (
+        "8cb652fb8e88d725b187f45d3b2988de440b9feabe253d372de90fb6134a1902"
+    ),
+    "byte_count": 8487,
+}
+PREDECESSOR_SOURCE_COMMIT = "0468ac755851b6ed86206ab3825a04a03bd22567"
+PREDECESSOR_REVIEW_COMMIT = "23b2112a70a72cc7f301f288e519d4e47b9b8d92"
+PREDECESSOR_AUTHORITY_COMMIT = "0a4522430ddccde7d55dd1fb46dcc3483c501833"
+PREDECESSOR_ORIGINAL_FAILURE_BINDING = {
     "path": str(
         (
             REPO_ROOT
@@ -166,118 +190,104 @@ PREDECESSOR_FAILURE_BINDING = {
     ),
     "byte_count": 7008,
 }
-PREDECESSOR_SOURCE_COMMIT = "7acbd3279866a8294fb1798bf09f0d96bb17046f"
-PREDECESSOR_AUTHORITY_COMMIT = "e8eb99ed1c8642fc347779f2f4c160e4d12ef863"
-PREDECESSOR_ORIGINAL_FAILURE_BINDING = {
-    "path": str(
-        (
-            REPO_ROOT
-            / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
-            "terminal_pretraining_source_failure_result_2026-08-01.json"
-        ).resolve()
-    ),
-    "file_sha256": (
-        "e2c219352e9ad770a232641fe0c5a7bdd8d154c61f85b5afa76b0d132856b70f"
-    ),
-    "byte_count": 5796,
-}
 PREDECESSOR_TERMINAL_ARTIFACTS = {
     "reservation": {
         "path": str((PREDECESSOR_ATTEMPT_ROOT / "reservation.json").resolve()),
         "file_sha256": (
-            "1c30664dd235b8d51441f4cbf344c583e27bb06a9686cd1c855acf5257bd88a6"
+            "0f36a2e96dd7943a218c61a918e21eca58072ee29e6eb3e15b880b26031e7adc"
         ),
-        "byte_count": 16598,
+        "byte_count": 17048,
     },
     "failure": {
         "path": str((PREDECESSOR_ATTEMPT_ROOT / "failure.json").resolve()),
         "file_sha256": (
-            "baa822feae3a7cfa17ece50d29d0648fc62cfb302d71e9f10fa52f8151bf55be"
+            "6d9009febd7c307d0c0c9f453b8ffdd5d272ef9efee7eb5ae1b502a41ad0a603"
         ),
-        "byte_count": 1588,
+        "byte_count": 1094,
     },
     "terminal_supervision": {
         "path": str(
             (PREDECESSOR_ATTEMPT_ROOT / "terminal_supervision.json").resolve()
         ),
         "file_sha256": (
-            "cb7d3cd99e0faf8638fdf6c5e82382d1c9346944098e820ee59d1781fa3a227a"
+            "598d1451289f41d924cd8e9242bdc3ba8550cc092ebec6c96565af4a86144a60"
         ),
-        "byte_count": 2778,
+        "byte_count": 2797,
     },
 }
 PREDECESSOR_AUTHORIZED_IDENTITY = {
     "authority_commit": PREDECESSOR_AUTHORITY_COMMIT,
     "source_commit": PREDECESSOR_SOURCE_COMMIT,
+    "review_commit": PREDECESSOR_REVIEW_COMMIT,
     "authority_binding": {
         "path": str(
             (
                 REPO_ROOT
                 / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
-                "integrity_replacement_v1_execution_authority_2026-08-01.json"
+                "integrity_replacement_v2_execution_authority_2026-08-01.json"
             ).resolve()
         ),
         "file_sha256": (
-            "9d0da7231cd9a0c2c35bef07fbd59d154f336fd6239be9ac1bab38f62be9213c"
+            "40c0a95885ec9f7ee67abbf2ebe2672f98d7874c03dd68e3a916fe8eaf101204"
         ),
-        "byte_count": 15682,
+        "byte_count": 16075,
     },
     "plan_binding": {
         "path": str(
             (
                 REPO_ROOT
                 / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
-                "integrity_replacement_v1_plan_2026-08-01.json"
+                "integrity_replacement_v2_plan_2026-08-01.json"
             ).resolve()
         ),
         "file_sha256": (
-            "da8345d4665a99e254e2b0cf4599535a1e71f3208a299c0cefcd730f49c23fd2"
+            "4c645887cb2cb96f8acff3ccc5b0c123ae9e8549b4866a40d3036c403fec9c31"
         ),
-        "byte_count": 5709,
+        "byte_count": 6259,
     },
     "independent_review_binding": {
         "path": str(
             (
                 REPO_ROOT
                 / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
-                "integrity_replacement_v1_independent_source_review_"
+                "integrity_replacement_v2_independent_source_review_"
                 "2026-08-01.json"
             ).resolve()
         ),
         "file_sha256": (
-            "b5a4392f4e855dde44a0bc2f62921b2979bf7ec20ec4bf800017e15c4676e907"
+            "cdd740ab0cd04a293b263a8ecd4d0bc1a71b2c3137b7390ffefac127f661fd75"
         ),
-        "byte_count": 12719,
+        "byte_count": 13999,
     },
     "preregistration_binding": {
         "path": str(
             (
                 REPO_ROOT
                 / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_"
-                "integrity_replacement_v1_preregistration_2026-08-01.md"
+                "integrity_replacement_v2_preregistration_2026-08-01.md"
             ).resolve()
         ),
         "file_sha256": (
-            "56ee693a8aeb193b878c0ce414c4c9d0a802d42070f4062bf1282a35696783d1"
+            "ac8e734302bd0f025e7ee91fcd425549390e7c9064e0a87446d4ade493368216"
         ),
-        "byte_count": 8116,
+        "byte_count": 6852,
     },
 }
 RESERVATION_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
     "reservation_v1"
 )
 RESULT_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
     "result_v1"
 )
 RESULT_STATUS = "COMPLETE_PENDING_TERMINAL_REVIEW"
 CHECK_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
     "receipt_check_v1"
 )
 TERMINAL_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
     "supervision_terminal_v1"
 )
 ARM_ORDER = ["conditioned", "blind", "shuffled"]
@@ -994,10 +1004,10 @@ def _validate_plan_registered_fields(plan: Mapping[str, Any]) -> None:
         != MINIMUM_FREE_OUTPUT_BYTES
         or plan.get("result_chain")
         != [
-            "integrity_replacement_v2_external_supervisor_reservation",
-            "integrity_replacement_v2_worker_result",
-            "integrity_replacement_v2_receipt_only_checker",
-            "integrity_replacement_v2_external_supervisor_terminal",
+            "integrity_replacement_v3_external_supervisor_reservation",
+            "integrity_replacement_v3_worker_result",
+            "integrity_replacement_v3_receipt_only_checker",
+            "integrity_replacement_v3_external_supervisor_terminal",
         ]
         or plan.get("prior_attempt_runtime_payloads_authorized_as_inputs")
         is not False
@@ -1022,6 +1032,21 @@ def _validate_authorizer(value: Any, *, issued_at: Any) -> dict[str, Any]:
 def _validate_predecessor_failure(
     document: Mapping[str, Any],
 ) -> None:
+    # The direct predecessor audit is a source document with an exact byte/hash
+    # binding.  Compare the supplied mapping with those exact reviewed bytes
+    # first, then assert the scientific boundary explicitly so no semantically
+    # different pretraining failure can be substituted.
+    expected_binding = verify_binding(
+        PREDECESSOR_FAILURE_BINDING,
+        label="predecessor terminal failure audit",
+    )
+    expected_document = strict_json_bytes(
+        Path(expected_binding["path"]).read_bytes(),
+        label="predecessor terminal failure audit",
+    )
+    if type(expected_document) is not dict or document != expected_document:
+        _fail("predecessor terminal failure audit is not replacement-safe")
+
     attempt = document.get("attempt")
     terminal_artifacts = document.get("terminal_artifacts")
     authorized_identity = document.get("authorized_identity")
@@ -1029,6 +1054,7 @@ def _validate_predecessor_failure(
     terminal_evidence = document.get("terminal_evidence")
     failure = document.get("failure")
     root_cause = document.get("root_cause")
+    diagnostic = document.get("source_only_synthetic_diagnostic")
     correction = document.get("narrow_integrity_correction")
     scientific_conclusion = document.get("scientific_conclusion")
     successor = document.get("successor_boundary")
@@ -1043,6 +1069,7 @@ def _validate_predecessor_failure(
             terminal_evidence,
             failure,
             root_cause,
+            diagnostic,
             correction,
             scientific_conclusion,
             successor,
@@ -1064,115 +1091,13 @@ def _validate_predecessor_failure(
             "terminal_evidence",
             "failure",
             "root_cause",
+            "source_only_synthetic_diagnostic",
             "narrow_integrity_correction",
             "scientific_conclusion",
             "successor_boundary",
             "custody",
         ),
         label="predecessor terminal failure audit",
-    )
-    _exact_keys(
-        attempt,
-        (
-            "id",
-            "root",
-            "consumed",
-            "retry_authorized",
-            "resume_authorized",
-            "overwrite_authorized",
-            "refill_authorized",
-        ),
-        label="predecessor terminal failure attempt",
-    )
-    _exact_keys(
-        accounting,
-        (
-            "supervisor_wall_elapsed_seconds_at_terminal",
-            "training_updates_completed",
-            "optimizer_steps_completed",
-            "scientific_verdict_emitted",
-            "worker_result_published",
-            "receipt_checker_run",
-        ),
-        label="predecessor terminal failure accounting",
-    )
-    _exact_keys(
-        failure,
-        (
-            "type",
-            "message",
-            "location",
-            "classification",
-            "checkpoint_loader_integrity_correction_passed",
-            "packing_completed_before_failure",
-        ),
-        label="predecessor terminal failure classification",
-    )
-    _exact_keys(
-        root_cause,
-        (
-            "shared_temporal_substrate_intentionally_frozen_before_arm_allocation",
-            "arm_deepcopy_preserved_template_requires_grad_false",
-            "direct_parameter_clones_defaulted_trainable",
-            "deepcopied_module_parameter_tensors_left_frozen",
-            "registered_arm_parameter_tensor_count",
-            "predictor_parameter_tensor_count",
-            "memory_parameter_tensor_count",
-            "partition_name_coverage_passed",
-            "failed_predicate",
-            "causal_chain",
-        ),
-        label="predecessor terminal failure root cause",
-    )
-    _exact_keys(
-        correction,
-        (
-            "science_identical",
-            "operation",
-            "parameter_values_changed",
-            "parameter_names_shapes_dtypes_or_count_changed",
-            "optimizer_groups_or_hyperparameters_changed",
-            "expected_trainable_parameter_tensor_count",
-            "expected_predictor_parameter_tensor_count",
-            "expected_memory_parameter_tensor_count",
-            "three_arm_identical_initialization_unchanged",
-            "three_arm_independent_allocation_unchanged",
-            "frozen_shared_encoder_and_target_unchanged",
-        ),
-        label="predecessor terminal failure integrity correction",
-    )
-    _exact_keys(
-        scientific_conclusion,
-        (
-            "data_learnability_tested",
-            "objective_learnability_tested",
-            "architecture_learnability_tested",
-            "checkpoint_loader_correction_validated",
-            "only_valid_conclusion",
-        ),
-        label="predecessor terminal failure scientific conclusion",
-    )
-    _exact_keys(
-        successor,
-        (
-            "retry_or_resume_attempt_v1",
-            "reuse_attempt_v1_pack_or_runtime_payloads",
-            "fresh_one_shot_authority_required",
-            "fresh_absent_output_root_required",
-            "fresh_integrity_replacement_v2_preregistration_required",
-            "this_document_authorizes_v2",
-        ),
-        label="predecessor terminal failure successor boundary",
-    )
-    _exact_keys(
-        custody,
-        (
-            "sealed_or_heldout_material_opened",
-            "protected_evaluation_authorized",
-            "network_access_used",
-            "replacement_v1_runtime_tensor_or_pack_payload_reopened_after_terminal",
-        ),
-        label="predecessor terminal failure custody",
     )
     if (
         document.get("schema") != PREDECESSOR_FAILURE_SCHEMA
@@ -1182,28 +1107,25 @@ def _validate_predecessor_failure(
         or authorized_identity != PREDECESSOR_AUTHORIZED_IDENTITY
         or document.get("predecessor_failure_audit")
         != PREDECESSOR_ORIGINAL_FAILURE_BINDING
-        or type(attempt) is not dict
-        or attempt.get("id") != PREDECESSOR_ATTEMPT_ID
-        or attempt.get("root") != str(PREDECESSOR_ATTEMPT_ROOT.resolve())
-        or attempt.get("consumed") is not True
-        or any(
-            attempt.get(key) is not False
-            for key in (
-                "retry_authorized",
-                "resume_authorized",
-                "overwrite_authorized",
-                "refill_authorized",
-            )
-        )
-        or type(accounting) is not dict
-        or accounting.get("supervisor_wall_elapsed_seconds_at_terminal")
-        != 12.543765088077635
-        or accounting.get("training_updates_completed") != 0
-        or accounting.get("optimizer_steps_completed") != 0
-        or accounting.get("scientific_verdict_emitted") is not False
-        or accounting.get("worker_result_published") is not False
-        or accounting.get("receipt_checker_run") is not False
-        or type(terminal_evidence) is not dict
+        or attempt
+        != {
+            "id": PREDECESSOR_ATTEMPT_ID,
+            "root": str(PREDECESSOR_ATTEMPT_ROOT.resolve()),
+            "consumed": True,
+            "retry_authorized": False,
+            "resume_authorized": False,
+            "overwrite_authorized": False,
+            "refill_authorized": False,
+        }
+        or accounting
+        != {
+            "supervisor_wall_elapsed_seconds_at_terminal": 15.994941210956313,
+            "training_updates_completed": 0,
+            "optimizer_steps_completed": 0,
+            "scientific_verdict_emitted": False,
+            "worker_result_published": False,
+            "receipt_checker_run": False,
+        }
         or terminal_evidence
         != {
             "terminal_status": "CONSUMED_TERMINAL_FAILURE",
@@ -1214,92 +1136,64 @@ def _validate_predecessor_failure(
             "automatic_checkpoint_selection_performed": False,
             "citable_as_scientific_evidence": False,
         }
-        or type(failure) is not dict
         or failure.get("type") != "ThreeArmWorkerError"
-        or failure.get("message") != "arm parameter partition is invalid"
-        or failure.get("location")
-        != (
-            "build_frozen_substrate_and_arms while constructing the first arm "
-            "optimizer, before update-zero evaluation"
-        )
+        or failure.get("message")
+        != "head, blind-treatment, or online/target parity probe failed"
         or failure.get("classification")
-        != "SOURCE_ARM_CLONE_PRESERVED_FROZEN_REQUIRES_GRAD_FLAGS"
-        or failure.get("checkpoint_loader_integrity_correction_passed")
+        != "SOURCE_PARITY_PROBE_COMPARED_DIFFERENT_ATTENTION_MODES"
+        or failure.get("checkpoint_loader_integrity_correction_passed") is not True
+        or failure.get("arm_clone_trainability_integrity_correction_passed")
         is not True
         or failure.get("packing_completed_before_failure") is not True
-        or type(root_cause) is not dict
-        or root_cause.get(
-            "shared_temporal_substrate_intentionally_frozen_before_arm_allocation"
-        )
-        is not True
-        or root_cause.get("arm_deepcopy_preserved_template_requires_grad_false")
-        is not True
-        or root_cause.get("direct_parameter_clones_defaulted_trainable") != 2
-        or root_cause.get("deepcopied_module_parameter_tensors_left_frozen") != 34
-        or root_cause.get("registered_arm_parameter_tensor_count") != 36
-        or root_cause.get("predictor_parameter_tensor_count") != 30
-        or root_cause.get("memory_parameter_tensor_count") != 6
-        or root_cause.get("partition_name_coverage_passed") is not True
-        or root_cause.get("failed_predicate")
+        or failure.get("all_arm_optimizers_constructed_before_failure") is not True
+        or failure.get("runtime_failure_receipt_identifies_individual_subprobe")
+        is not False
+        or root_cause.get("frozen_reference_mode") != "evaluation"
+        or root_cause.get("copied_arm_mode_at_runtime_probe") != "training"
+        or root_cause.get("exact_zero_conditioned_helper_predicate") is not True
+        or root_cause.get("runtime_receipt_scope") != "aggregate guard failure only"
+        or diagnostic.get("uses_real_training_or_validation_payload") is not False
+        or diagnostic.get("uses_real_checkpoint_or_snapshot_payload") is not False
+        or diagnostic.get("interpretation_boundary")
         != (
-            "every partitioned arm parameter must require gradients and have "
-            "dtype torch.float32"
+            "this independently reproduces and isolates the source defect; the "
+            "consumed V2 terminal receipt itself records only the aggregate guard "
+            "failure"
         )
-        or root_cause.get("causal_chain")
-        != [
-            "the shared temporal template was frozen as required",
-            "ArmCore deep-copied predictor modules, embeddings, and GRU from that frozen template",
-            "deepcopy retained requires_grad=false on 34 parameter tensors",
-            "only the two newly wrapped direct predictor Parameters defaulted to trainable",
-            "the fail-closed arm partition rejected the mixed trainability inventory before optimizer construction",
-        ]
-        or type(correction) is not dict
         or correction.get("science_identical") is not True
-        or correction.get("operation")
-        != (
-            "call requires_grad_(true) on each independently allocated ArmCore "
-            "after all parameter copies"
-        )
+        or correction.get("scope")
+        != "payload-free pretraining parity probe mode alignment only"
         or correction.get("parameter_values_changed") is not False
         or correction.get("parameter_names_shapes_dtypes_or_count_changed")
         is not False
-        or correction.get("optimizer_groups_or_hyperparameters_changed")
+        or correction.get("optimizer_groups_hyperparameters_or_state_changed")
         is not False
-        or correction.get("expected_trainable_parameter_tensor_count") != 36
-        or correction.get("expected_predictor_parameter_tensor_count") != 30
-        or correction.get("expected_memory_parameter_tensor_count") != 6
-        or correction.get("three_arm_identical_initialization_unchanged")
-        is not True
-        or correction.get("three_arm_independent_allocation_unchanged")
-        is not True
-        or correction.get("frozen_shared_encoder_and_target_unchanged")
-        is not True
-        or type(scientific_conclusion) is not dict
+        or correction.get("random_number_generation_changed") is not False
+        or correction.get("loss_schedule_data_metrics_or_thresholds_changed")
+        is not False
+        or correction.get("actual_update_zero_or_training_mode_changed")
+        is not False
         or scientific_conclusion.get("data_learnability_tested") is not False
         or scientific_conclusion.get("objective_learnability_tested") is not False
         or scientific_conclusion.get("architecture_learnability_tested")
         is not False
-        or scientific_conclusion.get("checkpoint_loader_correction_validated")
-        is not True
         or scientific_conclusion.get("only_valid_conclusion")
         != (
-            "integrity replacement V1 is a consumed pre-training "
-            "arm-trainability source failure"
+            "integrity replacement V2 is a consumed pre-training source "
+            "parity-guard failure"
         )
-        or type(successor) is not dict
         or successor.get("retry_or_resume_attempt_v1") is not False
         or successor.get("reuse_attempt_v1_pack_or_runtime_payloads") is not False
         or successor.get("fresh_one_shot_authority_required") is not True
         or successor.get("fresh_absent_output_root_required") is not True
-        or successor.get("fresh_integrity_replacement_v2_preregistration_required")
+        or successor.get("fresh_integrity_replacement_v3_preregistration_required")
         is not True
-        or successor.get("this_document_authorizes_v2") is not False
-        or type(custody) is not dict
+        or successor.get("this_document_authorizes_v3") is not False
         or custody.get("sealed_or_heldout_material_opened") is not False
         or custody.get("protected_evaluation_authorized") is not False
         or custody.get("network_access_used") is not False
         or custody.get(
-            "replacement_v1_runtime_tensor_or_pack_payload_reopened_after_terminal"
+            "replacement_v2_runtime_tensor_or_pack_payload_reopened_after_terminal"
         )
         is not False
     ):
@@ -1344,7 +1238,7 @@ def load_and_validate_authority(
     if authority_path.resolve(strict=True) != (
         REPO_ROOT / AUTHORITY_RELATIVE
     ).resolve(strict=True):
-        _fail("caller selected a different V2 authority path")
+        _fail("caller selected a different V3 authority path")
     authority_binding = file_binding(authority_path)
     if authority_binding["byte_count"] != expected_byte_count:
         _fail("authority byte count disagrees with caller")
@@ -1400,7 +1294,7 @@ def load_and_validate_authority(
     if preregistration_path != (REPO_ROOT / PREREGISTRATION_RELATIVE).resolve(
         strict=True
     ):
-        _fail("authority binds a different V2 preregistration")
+        _fail("authority binds a different V3 preregistration")
     declared_plan_binding = binding_shape(authority["plan_binding"], label="plan")
     declared_review_binding = binding_shape(
         authority["review_binding"], label="independent source review"
@@ -1408,11 +1302,11 @@ def load_and_validate_authority(
     if _resolve_bound_path(declared_plan_binding["path"]).resolve(strict=True) != (
         REPO_ROOT / PLAN_RELATIVE
     ).resolve(strict=True):
-        _fail("authority binds a different V2 plan")
+        _fail("authority binds a different V3 plan")
     if _resolve_bound_path(declared_review_binding["path"]).resolve(strict=True) != (
         REPO_ROOT / REVIEW_RELATIVE
     ).resolve(strict=True):
-        _fail("authority binds a different V2 independent review")
+        _fail("authority binds a different V3 independent review")
     plan, plan_binding = _read_bound_json(declared_plan_binding, label="plan")
     review, review_binding = _read_bound_json(
         declared_review_binding, label="independent source review"
@@ -1585,6 +1479,23 @@ def load_and_validate_authority(
                 "expected_memory_tensor_count": 6,
                 "scientific_contract_changed": False,
             },
+            "payload_free_parity_probe_mode_alignment": {
+                "scope": "pretraining_payload_free_contract_probe_mode_only",
+                "operation": (
+                    "all copied ArmCore module trees eval for the unchanged "
+                    "no_grad zero-tensor probe, then all recursively train before "
+                    "return"
+                ),
+                "probe_inputs_changed": False,
+                "probe_assertions_or_thresholds_changed": False,
+                "parameter_values_inventory_identities_or_requires_grad_changed": False,
+                "optimizer_groups_hyperparameters_or_state_changed": False,
+                "rng_state_changed": False,
+                "actual_training_forward_mode_changed": False,
+                "actual_evaluation_forward_mode_changed": False,
+                "data_loss_metrics_thresholds_or_schedule_changed": False,
+                "scientific_contract_changed": False,
+            },
         }
         or plan.get("prior_attempt_runtime_payloads_authorized_as_inputs")
         is not False
@@ -1595,10 +1506,10 @@ def load_and_validate_authority(
         != MINIMUM_FREE_OUTPUT_BYTES
         or plan.get("result_chain")
         != [
-            "integrity_replacement_v2_external_supervisor_reservation",
-            "integrity_replacement_v2_worker_result",
-            "integrity_replacement_v2_receipt_only_checker",
-            "integrity_replacement_v2_external_supervisor_terminal",
+            "integrity_replacement_v3_external_supervisor_reservation",
+            "integrity_replacement_v3_worker_result",
+            "integrity_replacement_v3_receipt_only_checker",
+            "integrity_replacement_v3_external_supervisor_terminal",
         ]
     ):
         _fail("bound plan differs from the exact authorized experiment")

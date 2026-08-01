@@ -192,7 +192,6 @@ def test_frozen_real_temporal_substrate_allocates_complete_trainable_arms(
     substrate = worker.temporal_model.RGBRecurrentPatchMemoryTemporalJepaV1(
         predecessor_state
     ).eval()
-    del predecessor_state
     substrate.requires_grad_(False)
     for parameter in substrate.parameters():
         parameter.grad = None
@@ -281,6 +280,37 @@ def test_frozen_real_temporal_substrate_allocates_complete_trainable_arms(
         assert set(optimizer_parameter_ids) == set(partition_ids)
         optimizers.append(optimizer)
     assert len({id(optimizer) for optimizer in optimizers}) == len(worker.ARM_NAMES)
+
+    (
+        probed_substrate,
+        probed_arms,
+        probed_optimizers,
+        probed_partitions,
+        probe_receipt,
+    ) = worker.build_frozen_substrate_and_arms(
+        predecessor_state,
+        device=torch.device("cpu"),
+    )
+    assert not probed_substrate.training
+    assert all(not module.training for module in probed_substrate.modules())
+    assert all(
+        arm.training and all(module.training for module in arm.modules())
+        for arm in probed_arms.values()
+    )
+    assert all(
+        group["lr"] == 0.0
+        for optimizer in probed_optimizers.values()
+        for group in optimizer.param_groups
+    )
+    assert all(
+        len(probed_partitions[name].predictor) == 30
+        and len(probed_partitions[name].memory) == 6
+        for name in worker.ARM_NAMES
+    )
+    assert probe_receipt["conditioned_helper_max_abs_error"] == 0.0
+    assert probe_receipt["blind_candidate_max_abs_spread"] == 0.0
+    assert probe_receipt["persistence_online_target_max_abs_error"] == 0.0
+    del predecessor_state
 
     copied_parameter = next(
         parameter
@@ -450,6 +480,10 @@ def test_worker_failure_receipt_uses_only_replacement_attempt_root(
     failure_path = replacement_root / "failure.json"
     failure = json.loads(failure_path.read_text(encoding="utf-8"))
     assert failure["schema"] == (
+        "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+        "replacement_v3_worker_failure_v1"
+    )
+    assert failure["schema"] != (
         "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
         "replacement_v2_worker_failure_v1"
     )

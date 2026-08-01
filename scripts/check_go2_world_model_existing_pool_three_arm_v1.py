@@ -22,7 +22,7 @@ from typing import Any, Iterable, Mapping, Sequence
 
 
 RESULT_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
     "result_v1"
 )
 METRICS_SCHEMA = "lewm_go2_world_model_existing_pool_three_arm_metrics_v1"
@@ -33,12 +33,12 @@ SHUFFLE_AUDIT_SCHEMA = (
     "lewm_go2_world_model_existing_pool_three_arm_candidate_action_derangement_v1"
 )
 REPORT_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
     "receipt_check_v1"
 )
 RESULT_STATUS = "COMPLETE_PENDING_TERMINAL_REVIEW"
 ATTEMPT_ID = (
-    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1"
 )
 ARM_NAMES = ("conditioned", "blind", "shuffled")
 MEASUREMENT_UPDATES = tuple(range(0, 701, 100))
@@ -503,7 +503,7 @@ def _validate_attempt(value: Any, *, receipt_root: Path) -> dict[str, Any]:
         or not _is_sha256(reservation.get("supervisor_nonce"))
     ):
         _fail(
-            "result attempt is not the exact fresh V2 consumed, non-retriable "
+            "result attempt is not the exact fresh V3 consumed, non-retriable "
             "attempt"
         )
     return attempt
@@ -1850,10 +1850,10 @@ def validate_result(
     return {
         "schema": REPORT_SCHEMA,
         "status": "PASS",
-        "phase": "existing_pool_three_arm_v1_integrity_replacement_v2",
+        "phase": "existing_pool_three_arm_v1_integrity_replacement_v3",
         "purpose": (
             "existing_pool_three_arm_v1_factual_learning_"
-            "integrity_replacement_v2"
+            "integrity_replacement_v3"
         ),
         "predecessor_terminal_failure_binding": predecessor_failure_binding,
         "manifest_binding": dict(result_binding),

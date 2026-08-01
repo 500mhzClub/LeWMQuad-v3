@@ -82,7 +82,7 @@ SNAPSHOT_SCHEMA = f"{SCHEMA_PREFIX}_snapshot_v1"
 OVERLAP_AUDIT_SCHEMA = f"{SCHEMA_PREFIX}_overlap_audit_v1"
 SHUFFLE_AUDIT_SCHEMA = f"{SCHEMA_PREFIX}_candidate_action_derangement_v1"
 FAILURE_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
     "worker_failure_v1"
 )
 
@@ -1287,11 +1287,15 @@ def build_frozen_substrate_and_arms(
             group["lr"] = 0.0
         optimizers[name] = optimizer
         partitions[name] = partition
-        arm.train()
 
     # A payload-free contract probe proves that the narrow conditioned helper
     # exactly reproduces the reviewed model route and that blind candidate IDs
-    # are mathematically inert before any training input is used.
+    # are mathematically inert before any training input is used.  The frozen
+    # reference is in evaluation mode, so every copied arm must use that same
+    # mode during the parity comparison.  Training mode is restored only after
+    # the probe passes and before any update-zero or training computation.
+    for arm in arms.values():
+        arm.eval()
     probe_history = torch.zeros((2, 3, 256, 192), dtype=torch.float32, device=device)
     probe_actions = torch.tensor(((0, 1, 2), (8, 7, 6)), dtype=torch.long, device=device)
     probe_targets, _ = temporal_metrics.batched_mask_indices(
@@ -1344,6 +1348,8 @@ def build_frozen_substrate_and_arms(
         raise ThreeArmWorkerError(
             "head, blind-treatment, or online/target parity probe failed"
         )
+    for arm in arms.values():
+        arm.train()
     return substrate, arms, optimizers, partitions, {
         "encoder_sha256": encoder_sha256,
         "target_sha256": target_sha256,

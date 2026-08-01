@@ -18,21 +18,28 @@ SCRIPT = (
     / "scripts/run_go2_world_model_existing_pool_three_arm_authorized_v1.py"
 )
 REPLACEMENT_SCHEMA_PREFIX = (
-    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_"
 )
 REPLACEMENT_ATTEMPT_ID = (
-    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1"
 )
 REPLACEMENT_ATTEMPT_ROOT = (
     ROOT
     / ".generated/dev"
-    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v2"
+    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v3"
     / "attempt_v1"
 )
 CONSUMED_ATTEMPT_ID = (
-    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
 )
 CONSUMED_ATTEMPT_ROOT = (
+    ROOT
+    / ".generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1"
+)
+OLDER_CONSUMED_ATTEMPT_ID = (
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+)
+OLDER_CONSUMED_ATTEMPT_ROOT = (
     ROOT
     / ".generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
 )
@@ -43,12 +50,12 @@ ORIGINAL_CONSUMED_ATTEMPT_ROOT = (
 PREDECESSOR_FAILURE_AUDIT = (
     ROOT
     / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
-    "replacement_v1_terminal_pretraining_source_failure_result_2026-08-01.json"
+    "replacement_v2_terminal_pretraining_source_failure_result_2026-08-01.json"
 )
 REPLACEMENT_PLAN = (
     ROOT
     / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
-    "replacement_v2_plan_2026-08-01.json"
+    "replacement_v3_plan_2026-08-01.json"
 )
 
 
@@ -150,6 +157,7 @@ def test_attempt_contract_is_exact_max_one_and_non_retriable(
         )
     for consumed_id, consumed_root in (
         (CONSUMED_ATTEMPT_ID, CONSUMED_ATTEMPT_ROOT),
+        (OLDER_CONSUMED_ATTEMPT_ID, OLDER_CONSUMED_ATTEMPT_ROOT),
         (ORIGINAL_CONSUMED_ATTEMPT_ID, ORIGINAL_CONSUMED_ATTEMPT_ROOT),
     ):
         changed = dict(attempt)
@@ -185,11 +193,12 @@ def test_predecessor_failure_audit_must_close_consumed_attempt() -> None:
         ("terminal_evidence", "phase_receipts_empty", False),
         ("failure", "classification", "wrong"),
         ("failure", "location", "after scientific evaluation"),
-        ("root_cause", "registered_arm_parameter_tensor_count", 35),
+        ("root_cause", "copied_arm_mode_at_runtime_probe", "evaluation"),
         ("root_cause", "causal_chain", ["contradictory alternative cause"]),
         ("narrow_integrity_correction", "parameter_values_changed", True),
+        ("source_only_synthetic_diagnostic", "uses_real_checkpoint_or_snapshot_payload", True),
         ("scientific_conclusion", "data_learnability_tested", True),
-        ("successor_boundary", "this_document_authorizes_v2", True),
+        ("successor_boundary", "this_document_authorizes_v3", True),
         ("custody", "network_access_used", True),
     )
     for section, key, value in mutations:
@@ -208,7 +217,7 @@ def test_predecessor_failure_audit_must_close_consumed_attempt() -> None:
     ):
         supervisor._validate_predecessor_failure(changed)
     for section, key in (
-        ("successor_boundary", "authorizes_v2"),
+        ("successor_boundary", "authorizes_v3"),
         ("scientific_conclusion", "scientific_verdict_available"),
         ("custody", "protected_payload_opened"),
     ):
@@ -216,14 +225,14 @@ def test_predecessor_failure_audit_must_close_consumed_attempt() -> None:
         changed[section][key] = True
         with pytest.raises(
             supervisor.ThreeArmSupervisionError,
-            match="keys changed",
+            match="replacement-safe",
         ):
             supervisor._validate_predecessor_failure(changed)
     changed = json.loads(json.dumps(audit))
-    changed["authorizes_v2"] = True
+    changed["authorizes_v3"] = True
     with pytest.raises(
         supervisor.ThreeArmSupervisionError,
-        match="keys changed",
+        match="replacement-safe",
     ):
         supervisor._validate_predecessor_failure(changed)
 

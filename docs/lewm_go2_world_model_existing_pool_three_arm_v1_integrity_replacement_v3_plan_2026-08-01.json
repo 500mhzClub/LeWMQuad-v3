@@ -1,0 +1,162 @@
+{
+  "schema": "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_plan_v1",
+  "purpose": "existing_pool_three_arm_v1_factual_learning_integrity_replacement_v3",
+  "citable_as_scientific_evidence": false,
+  "authorizes_retry_or_resume": false,
+  "development_only": true,
+  "claim_scope": "requested_action_factual_learnability_only",
+  "arm_order": [
+    "conditioned",
+    "blind",
+    "shuffled"
+  ],
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1",
+  "attempt": {
+    "id": "world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v3/attempt_v1",
+    "maximum_attempts": 1,
+    "must_be_absent": true,
+    "reservation_consumes_attempt": true,
+    "retry": false,
+    "resume": false,
+    "overwrite": false,
+    "refill": false
+  },
+  "caps": {
+    "maximum_wall_seconds": 43200,
+    "maximum_gpu_seconds": 36000,
+    "maximum_training_updates": 700
+  },
+  "runtime": {
+    "python_invocation_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/bin/python",
+    "environment": {
+      "PATH": "/usr/bin:/bin",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "HIP_VISIBLE_DEVICES": "0",
+      "ROCR_VISIBLE_DEVICES": "0",
+      "PYTHONNOUSERSITE": "1",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONHASHSEED": "0",
+      "PYTHONSAFEPATH": "1",
+      "OMP_NUM_THREADS": "1",
+      "GIT_CONFIG_NOSYSTEM": "1",
+      "GIT_CONFIG_GLOBAL": "/dev/null",
+      "GIT_TERMINAL_PROMPT": "0",
+      "GIT_OPTIONAL_LOCKS": "0"
+    },
+    "bindings": {
+      "python_executable_target": {
+        "path": "/usr/bin/python3.12",
+        "file_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+        "byte_count": 8020928
+      },
+      "python_environment_config": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/pyvenv.cfg",
+        "file_sha256": "49222cc65a628e83d00d99da60f1dea8d59bc01a3ea9616227f330e2ecd50577",
+        "byte_count": 223
+      },
+      "git_executable": {
+        "path": "/usr/bin/git",
+        "file_sha256": "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668",
+        "byte_count": 4066232
+      }
+    }
+  },
+  "input_bindings": {
+    "predecessor_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1/attempt_v1/snapshots/update_1000.pt",
+      "file_sha256": "f5aac23cf275d73b92ce5609a583dea89f6686a624d4889d9762740535aab873",
+      "byte_count": 52282877
+    },
+    "train_index": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/train.jsonl",
+      "file_sha256": "aee2a54cddd849162648f9b8cfd54a0a28a25bd0705b6482e6af7435c85f4d77",
+      "byte_count": 10328000
+    },
+    "validation_index": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/val.jsonl",
+      "file_sha256": "83592e2fea5927802881f076a58a9710100bea017d658c1b978ba651369beac6",
+      "byte_count": 1317888
+    },
+    "index_manifest": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/manifest.json",
+      "file_sha256": "d19fd672d9878e064b20e40a12ce84849f0a13af05a73d2281505ea8d331a36e",
+      "byte_count": 26926
+    }
+  },
+  "input_binding_interpretation": {
+    "h6_indices_bind_rgb_leaf_paths_transitively": true,
+    "individual_rgb_leaves_prehashed_in_authority": false,
+    "opened_rgb_leaf_bytes_identity_bound_during_fresh_packing": true,
+    "permitted_temporal_positions": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "execution": {
+    "worker_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/execute_go2_world_model_existing_pool_three_arm_v1.py",
+    "checker_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_existing_pool_three_arm_v1.py"
+  },
+  "network_access": false,
+  "minimum_free_output_bytes_before_reservation": 17179869184,
+  "result_chain": [
+    "integrity_replacement_v3_external_supervisor_reservation",
+    "integrity_replacement_v3_worker_result",
+    "integrity_replacement_v3_receipt_only_checker",
+    "integrity_replacement_v3_external_supervisor_terminal"
+  ],
+  "replacement_of": {
+    "attempt_id": "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1",
+    "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1",
+    "terminal_status": "CONSUMED_TERMINAL_FAILURE",
+    "retry_or_resume_authorized": false,
+    "runtime_payload_reuse_authorized": false
+  },
+  "predecessor_terminal_failure_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_terminal_pretraining_source_failure_result_2026-08-01.json",
+    "file_sha256": "8cb652fb8e88d725b187f45d3b2988de440b9feabe253d372de90fb6134a1902",
+    "byte_count": 8487
+  },
+  "prior_attempt_runtime_payloads_authorized_as_inputs": false,
+  "pack_rebuilt_fresh": true,
+  "integrity_corrections": {
+    "checkpoint_loader": {
+      "scope": "checkpoint_loader_validation_only",
+      "ema_update_count": {
+        "dtype": "torch.int64",
+        "layout": "torch.strided",
+        "shape": [],
+        "exact_value": 1000,
+        "migrated": false
+      },
+      "all_other_state_tensors": "finite_strided_torch.float32",
+      "scientific_contract_changed": false
+    },
+    "arm_clone_trainability": {
+      "scope": "post_clone_requires_grad_restoration_only",
+      "operation": "ArmCore.requires_grad_(true)",
+      "parameter_values_changed": false,
+      "parameter_inventory_changed": false,
+      "expected_parameter_tensor_count": 36,
+      "expected_predictor_tensor_count": 30,
+      "expected_memory_tensor_count": 6,
+      "scientific_contract_changed": false
+    },
+    "payload_free_parity_probe_mode_alignment": {
+      "scope": "pretraining_payload_free_contract_probe_mode_only",
+      "operation": "all copied ArmCore module trees eval for the unchanged no_grad zero-tensor probe, then all recursively train before return",
+      "probe_inputs_changed": false,
+      "probe_assertions_or_thresholds_changed": false,
+      "parameter_values_inventory_identities_or_requires_grad_changed": false,
+      "optimizer_groups_hyperparameters_or_state_changed": false,
+      "rng_state_changed": false,
+      "actual_training_forward_mode_changed": false,
+      "actual_evaluation_forward_mode_changed": false,
+      "data_loss_metrics_thresholds_or_schedule_changed": false,
+      "scientific_contract_changed": false
+    }
+  }
+}
