@@ -1,0 +1,243 @@
+{
+  "schema": "lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_terminal_review_v1",
+  "status": "PASS_COMPLETE_TERMINAL_DEVELOPMENT_REVIEW",
+  "review_verdict": "PASS_COMPLETE_BOUND_RUN_FROZEN_DECISION_CORRECT_MEANINGFUL_BASELINE_RELATIVE_GAIN_WITH_ABSOLUTE_ALIGNMENT_AND_PERSISTENCE_CAVEATS_ONE_SEPARATELY_PREREGISTERED_FINAL_CONTINUATION_PERMITTED_NOT_AUTHORIZED",
+  "date": "2026-08-01",
+  "development_only": true,
+  "citable_as_original_factual_learnability_claim": false,
+  "citable_as_planning_usefulness_evidence": false,
+  "citable_as_changed_objective_development_comparison": true,
+  "independent_terminal_review_completed": true,
+  "reviewers": {
+    "primary": "/root",
+    "independent": [
+      "/root/localization_result_audit"
+    ]
+  },
+  "attempt": {
+    "id": "world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1",
+    "consumed": true,
+    "completed": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "refill_authorized": false,
+    "overwrite_authorized": false
+  },
+  "execution_identity": {
+    "source_commit": "51e6fb3353172f2be079d965e639e41ecd5bc6ad",
+    "review_commit": "a0c6b111f790f3db99ebc18ef7a6fb03b2635b32",
+    "authority_and_execution_commit": "ac62f5586ae07e2df9a65bcdab6fc768106c7118",
+    "preregistration_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_preregistration_2026-08-01.md",
+      "file_sha256": "461369c03cf0d8386282428d11f668d35981dddc71ec83bb0fbbda5684d67c18",
+      "byte_count": 7630
+    },
+    "plan_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_plan_2026-08-01.json",
+      "file_sha256": "6fb8eaf69198fbbe00b23f9a3f404eee6f9fa0079d87b0e856e3240e12758977",
+      "byte_count": 4535
+    },
+    "independent_source_review_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_independent_source_review_2026-08-01.json",
+      "file_sha256": "4579a1f5e6132a7d9b440c42e30d33032222c1d35220ed16ac91120815383d6c",
+      "byte_count": 14254
+    },
+    "execution_authority_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_execution_authority_2026-08-01.json",
+      "file_sha256": "88b2c43264a9ee0fb46cf032d4323281d57f84148ff47a1dce98cde403b55cac",
+      "byte_count": 22455
+    }
+  },
+  "terminal_artifacts": {
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/reservation.json",
+      "file_sha256": "34d54c60ef4916eb942574de90f620a0bf15be337497e29fe73277c5abf26787",
+      "byte_count": 22188
+    },
+    "result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/result.json",
+      "file_sha256": "57d9cfc2bcfa946805255bfdd1144faaf40290f7a921f6d201e770e114d7dd9b",
+      "byte_count": 164670
+    },
+    "receipt_check": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/receipt_check.json",
+      "file_sha256": "46b157fb685b41ce05a347f34d4e1a67ad38485350fdfe69412b21fbe4048ec4",
+      "byte_count": 1849
+    },
+    "terminal_supervision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/terminal_supervision.json",
+      "file_sha256": "098d42503da1255ddc7b5a0c49cbbb746e6c41e8aca64627cc9d25a3cc0824b7",
+      "byte_count": 6764
+    },
+    "metric_bundle_identity_only": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/metrics.pt",
+      "file_sha256": "bb990d1a3e7fa269ec541a653e7921012ddc94093a1cb2d6259e4714ef920fd7",
+      "byte_count": 654530,
+      "opened_by_primary_terminal_review": false
+    },
+    "terminal_snapshots_identity_only": {
+      "baseline": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/baseline_update_000700.pt",
+        "file_sha256": "613693d06309f90b87a7ac3e836d6817eed8c1e473ed0063006eb88960bce770",
+        "byte_count": 10909343
+      },
+      "alignment": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/alignment_update_000700.pt",
+        "file_sha256": "41435888521041aaa262db9a26eaa656d33a339998372ffd0b068d7c75679731",
+        "byte_count": 10909343
+      },
+      "opened_by_primary_terminal_review": false,
+      "eligible_only_as_exact_paired_initialization_for_one_separately_preregistered_fixed_same_mechanism_continuation": true,
+      "generic_checkpoint_or_planning_authority": false
+    }
+  },
+  "execution": {
+    "worker_exit_code": 0,
+    "checker_exit_code": 0,
+    "worker_supervised_elapsed_seconds": 2181.3910689620534,
+    "checker_supervised_elapsed_seconds": 24.25276851002127,
+    "supervisor_wall_elapsed_seconds": 2205.783758907113,
+    "worker_wall_elapsed_seconds": 2179.9746355459793,
+    "gpu_phase_elapsed_seconds": 2179.1814885489875,
+    "maximum_memory_allocated_bytes": 6052868608,
+    "runtime": {
+      "python_version": "3.12.3",
+      "torch_version": "2.9.1+rocm7.2.1.gitff65f5bc",
+      "torch_hip": "7.2.53211-e1a6bc5663",
+      "numpy_version": "1.26.4",
+      "device_name": "AMD Radeon AI PRO R9700",
+      "device_arch": "gfx1201"
+    }
+  },
+  "contract_integrity": {
+    "status": "PASS",
+    "worker_result_status": "COMPLETE_PENDING_TERMINAL_REVIEW",
+    "receipt_checker_status": "PASS",
+    "terminal_supervision_status": "PASS_COMPLETE_ACTION_ALIGNMENT_COMPARISON_INTEGRITY_REPLACEMENT_V1",
+    "decision_exactly_recomputed": true,
+    "paired_bootstrap_exactly_recomputed": true,
+    "baseline_anchor_audit_exactly_recomputed": true,
+    "snapshot_bindings_verified_without_loading": true,
+    "checkpoint_payload_open_count_by_checker": 0,
+    "metric_bundle_open_count_by_checker": 1,
+    "pack_open_count_by_checker": 0,
+    "validation_index_open_count_by_checker": 1,
+    "training_updates_per_arm": 700,
+    "optimizer_steps_per_arm": 700,
+    "total_optimizer_steps": 1400,
+    "schedule_presentations_per_arm": 179200,
+    "pack_reused_read_only": true,
+    "rgb_open_count": 0,
+    "data_generation_count": 0,
+    "network_access_count": 0,
+    "sealed_open_count": 0,
+    "heldout_open_count": 0,
+    "validation_used_for_gradient_updates": false
+  },
+  "registered_decision": {
+    "status": "MEANINGFUL_ALIGNMENT_IMPROVEMENT_INCOMPLETE",
+    "branch_class": "MEANINGFUL",
+    "passed_exploratory_alignment_repair": false,
+    "retention_passed": true,
+    "retention_scope": "The registered retention bundle is provisional and excludes persistence; the separate latent-proxy persistence gate failed.",
+    "selected_next_step": "ONE_FIXED_SAME_MECHANISM_CONTINUATION_MAY_BE_PREREGISTERED",
+    "authorizes_next_execution": false,
+    "paired_minimum_action_margin_delta": {
+      "point": 0.0028507902419068927,
+      "one_sided_95_lower_quantile": 0.0013970169908673067,
+      "median_quantile": 0.003062303631657816,
+      "one_sided_95_upper_quantile": 0.004941227499907773,
+      "meaningful_point_threshold": 0.0023633878725896856,
+      "stall_upper_threshold": 0.0009453551490358743,
+      "baseline_minimum_margin": -0.009453551490358742,
+      "alignment_minimum_margin": -0.00660276124845185
+    },
+    "latent_proxy_thresholds": {
+      "passed": false,
+      "all_action_margin_points_positive": false,
+      "all_action_margin_lower_quantiles_positive": false,
+      "shared_minimum_margin_lower_positive": false,
+      "balanced_accuracy_lower_above_chance": true,
+      "persistence_lower_positive": false,
+      "wrong_history_lower_positive": true,
+      "rank_tail_pass": true
+    }
+  },
+  "alignment_measurements": {
+    "scene_family_action_margin_points_action_ids_0_through_8": [
+      0.0012027149883560013,
+      -0.0035527010051377506,
+      -0.0015738389923428305,
+      -0.005862178591625633,
+      0.0011691098445800988,
+      -0.00660276124845185,
+      -0.004179590968378184,
+      0.0014289161780315412,
+      -0.0007765471389516971
+    ],
+    "scene_family_action_margin_q05_action_ids_0_through_8": [
+      0.00027890959805907734,
+      -0.004443377358722731,
+      -0.0026513533635927015,
+      -0.00682322353805956,
+      0.00027973971696981705,
+      -0.007808230967274414,
+      -0.004987031431587844,
+      0.00013842324334251095,
+      -0.001866197634443366
+    ],
+    "positive_action_margin_point_count": 3,
+    "positive_action_margin_q05_count": 3,
+    "shared_minimum_margin_q05": -0.0078111838906331724,
+    "scene_family_balanced_accuracy": 0.362969689539191,
+    "balanced_accuracy_q05": 0.34701964075333114,
+    "persistence_log_advantage": -0.18996949389329135,
+    "persistence_q05": -0.22601831547011703,
+    "wrong_history_log_advantage": 0.14562768917086077,
+    "wrong_history_q05": 0.1406183675693852,
+    "prediction_to_target_rank_ratio": {
+      "500": 0.4368213586973739,
+      "600": 0.46654328254956295,
+      "700": 0.47287848726118314
+    }
+  },
+  "trend_audit": {
+    "baseline_relative_signal_is_meaningful": true,
+    "baseline_relative_signal_is_absolute_repair": false,
+    "treatment_hardest_margin_by_update": {
+      "500": -0.0061708136683418634,
+      "600": -0.006452736979912198,
+      "700": -0.00660276124845185
+    },
+    "baseline_hardest_margin_by_update": {
+      "500": -0.00826160208481948,
+      "600": -0.009096867393675474,
+      "700": -0.009453551490358742
+    },
+    "paired_delta_by_update": {
+      "500": 0.002090788416477616,
+      "600": 0.002644130413763276,
+      "700": 0.0028507902419068927
+    },
+    "interpretation": "The treatment beat its concurrently deteriorating baseline by a preregistered meaningful amount, while the treatment's own worst action margin moved farther below zero from update 500 through update 700. The relative gain therefore must not be represented as monotone absolute repair.",
+    "narrow_positive_evidence": "Compared with the reproduced baseline, treatment balanced-accuracy q05 increased from 0.23014452836846072 to 0.34701964075333114 and wrong-history q05 increased from 0.11766703087321294 to 0.1406183675693852; all three treatment tail rank-ratio checks passed. These measure action identification/history use, not untaken-action transition accuracy.",
+    "retention_caveat": "The registered no-newly-nonpositive check is vacuous in this comparison because the reproduced baseline had zero positive action-margin points, and the registered retention bundle does not include persistence.",
+    "persistence_interpretation": "The alignment treatment remained worse than persistence in every registered family and its persistence q05 was more negative than the reproduced baseline q05 (-0.22601831547011703 versus -0.1829122861354923). This is measured failure of the registered predictor-usefulness proxy, not planning evidence.",
+    "causal_boundary": "The on-policy validation rows still contain one observed action per state. Candidate-action discrimination under a changed objective does not identify untaken-action outcomes."
+  },
+  "continuation_boundary": {
+    "eligible": true,
+    "execution_authorized_by_this_review": false,
+    "maximum_separately_preregistered_continuations": 1,
+    "must_continue_both_arms_from_exact_u700_model_and_optimizer_states": true,
+    "must_use_absolute_treatment_progress_as_the_primary_continuation_gate": true,
+    "concurrent_baseline_relative_delta_may_remain_a_secondary_diagnostic": true,
+    "same_model_objective_coefficients_data_schedule_and_runtime_required": true,
+    "no_optimizer_or_warmup_reset": true,
+    "no_new_data_or_rgb_required": true,
+    "no_more_alignment_training_after_the_fixed_continuation": true,
+    "no_automatic_planning_navigation_promotion_or_deployment_authority": true
+  },
+  "terminal_conclusion": "The first controlled successor experiment ran successfully and demonstrated a real, statistically positive changed-objective advantage over a matched concurrent baseline. It did not repair factual action alignment, did not beat persistence, and did not establish counterfactual or planning usefulness. Because the preregistered relative improvement criterion passed, exactly one fixed same-mechanism continuation may be separately preregistered. Its go/no-go interpretation must be based on absolute treatment progress so baseline deterioration cannot masquerade as repair."
+}
