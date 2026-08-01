@@ -1,0 +1,384 @@
+{
+  "schema": "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_execution_authority_v1",
+  "status": "AUTHORIZED_ONE_EXACT_EXISTING_POOL_THREE_ARM_V1_INTEGRITY_REPLACEMENT_V1_ATTEMPT",
+  "authority_granted_by_this_document": true,
+  "authorizer": {
+    "identity": "workspace owner via explicit 2026-08-01 user instruction to iterate until the actual experiment has terminal results"
+  },
+  "issued_at": "2026-08-01T14:38:37+01:00",
+  "scientific_claim_authorized": false,
+  "network_access": false,
+  "source_commit": "7acbd3279866a8294fb1798bf09f0d96bb17046f",
+  "plan_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_plan_2026-08-01.json",
+    "file_sha256": "da8345d4665a99e254e2b0cf4599535a1e71f3208a299c0cefcd730f49c23fd2",
+    "byte_count": 5709
+  },
+  "review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_independent_source_review_2026-08-01.json",
+    "file_sha256": "b5a4392f4e855dde44a0bc2f62921b2979bf7ec20ec4bf800017e15c4676e907",
+    "byte_count": 12719
+  },
+  "source_bindings": [
+    {
+      "name": "lewm_package",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/__init__.py",
+        "file_sha256": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c",
+        "byte_count": 313
+      }
+    },
+    {
+      "name": "benchmarks_package",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/__init__.py",
+        "file_sha256": "edc7a30d5bf35c1bc9e099621e8f5bbe6d757180d0a6e4771c36ae5d06b81fed",
+        "byte_count": 362
+      }
+    },
+    {
+      "name": "counterfactual_metrics",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/counterfactual.py",
+        "file_sha256": "3d20b87560aa14e3ce672baec1077c7b2919a8679e89dfb88352b59a762d70df",
+        "byte_count": 10300
+      }
+    },
+    {
+      "name": "datasets_package",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/__init__.py",
+        "file_sha256": "d920ca2534ea4698f30ac2608b4754cb3cf2b4baae53e4cd59148bedfe9495e3",
+        "byte_count": 73
+      }
+    },
+    {
+      "name": "models_package",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/__init__.py",
+        "file_sha256": "9ee35fa5531413081219069ba2ef67d3cedb3643cda8d20544a189e329331b36",
+        "byte_count": 2210
+      }
+    },
+    {
+      "name": "base_world_model",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/lewm.py",
+        "file_sha256": "0378bb5334fa7b40e801405d6d20c5a05ecb543ee9820efbd20acf83946e8b2a",
+        "byte_count": 13068
+      }
+    },
+    {
+      "name": "phase2d_spatial_model",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/phase2d_spatial_lewm.py",
+        "file_sha256": "5c64535cc8933bae4a4f5008354afc19e85d3ed3705dbd98e37231d2641f0987",
+        "byte_count": 37610
+      }
+    },
+    {
+      "name": "base_predictor",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/predictor.py",
+        "file_sha256": "cc7fd43fc7554a94d603d13fc630a02b2b3990ddc298948257f671b69723a305",
+        "byte_count": 14275
+      }
+    },
+    {
+      "name": "primitive_affordance",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/primitive_affordance.py",
+        "file_sha256": "540fa027307e69c3ff5b93f321dbc2e2d30dbf46090fbc557ab0044b35d83c8e",
+        "byte_count": 17334
+      }
+    },
+    {
+      "name": "sigreg",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/sigreg.py",
+        "file_sha256": "7ea956e8a62ee36aeddb8a26cca77a98d266778be2d999846dead7755eb677ae",
+        "byte_count": 3045
+      }
+    },
+    {
+      "name": "source_action_utility",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/source_action_utility.py",
+        "file_sha256": "40485d9d3d9670ae0529a606d34021308abd34d0716b694f41a6742e440b3ee1",
+        "byte_count": 12899
+      }
+    },
+    {
+      "name": "spatial_lewm",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/spatial_lewm.py",
+        "file_sha256": "36890539ec79e170174bdcc86815e79e2e383a5c8874029d4a4e11935bf69983",
+        "byte_count": 11337
+      }
+    },
+    {
+      "name": "spatial_predictor",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/spatial_predictor.py",
+        "file_sha256": "f7a2d179697c49d0476ff32079ffded6bc40fbe07372d6894e1b9b423a28d04c",
+        "byte_count": 5543
+      }
+    },
+    {
+      "name": "worker",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/execute_go2_world_model_existing_pool_three_arm_v1.py",
+        "file_sha256": "21601fc7e536a7e1f80dac92ac91a3255483e57648fe870109cc6881e03d5268",
+        "byte_count": 102244
+      }
+    },
+    {
+      "name": "checker",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_existing_pool_three_arm_v1.py",
+        "file_sha256": "0ac15f98d8f61af5c336f8ca1650f405b78bd50f721441ceb23c8a37bb61f554",
+        "byte_count": 69287
+      }
+    },
+    {
+      "name": "external_supervisor",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_existing_pool_three_arm_authorized_v1.py",
+        "file_sha256": "7717d97c178247fcc07e22f197434573e0f971849d5c1cbb3743c0df20dc8b34",
+        "byte_count": 51306
+      }
+    },
+    {
+      "name": "experiment_metrics",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_existing_pool_three_arm_v1.py",
+        "file_sha256": "f9689a4e6f5f8755fcc4e70e84ff1c234ce7c41f667f9cfaa3b3bd38a3a86dc0",
+        "byte_count": 60526
+      }
+    },
+    {
+      "name": "temporal_metrics",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+        "file_sha256": "cec018dade02e4c8217d74792f8fdc6afba84f414d094f4879e353d78fee4f84",
+        "byte_count": 44605
+      }
+    },
+    {
+      "name": "h6_dataset",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py",
+        "file_sha256": "c773d739a67159fe82ed3bc539f139f6b8feea019f9a9d2e2e00b418dd8fe056",
+        "byte_count": 33483
+      }
+    },
+    {
+      "name": "h6_main_pool_census",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_recurrent_jepa_main_pool_census.py",
+        "file_sha256": "b594ca7ccc9f398df5d71298340662e2b62492fd837295b8a1e8630603f03f7e",
+        "byte_count": 38981
+      }
+    },
+    {
+      "name": "h6_sequence_contract_v2",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_recurrent_h4_rgb_sequences_v2.py",
+        "file_sha256": "3d49e710304ad685f9d161a84586229a6036b652f84df877772afe5b827c51ea",
+        "byte_count": 21001
+      }
+    },
+    {
+      "name": "h6_sequence_contract_v1",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_recurrent_h4_rgb_sequences.py",
+        "file_sha256": "3f8c2a89af2934e8225dd98447b952d9e5ce8bedac99a7f834118263957652e6",
+        "byte_count": 27386
+      }
+    },
+    {
+      "name": "temporal_model",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+        "file_sha256": "324bd76eb0f8285dac01ccba0741e38546fe93506f5afd51facfaa71826346c3",
+        "byte_count": 17480
+      }
+    },
+    {
+      "name": "spatial_model",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+        "file_sha256": "c4dafa5fcf5fbecb6077a435e57e5ee61bfefd327ba0955720d329f8217cb5d2",
+        "byte_count": 18942
+      }
+    },
+    {
+      "name": "encoders",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/encoders.py",
+        "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+        "byte_count": 7028
+      }
+    },
+    {
+      "name": "temporal_training_core",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+        "file_sha256": "761da9e4e9b72e8e96780fc874d887c906b6c2aa8ffaef58c98c92c45f46b53d",
+        "byte_count": 22015
+      }
+    },
+    {
+      "name": "temporal_evaluator",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+        "file_sha256": "249158c654da3502de57dc9dcd9b0dd7574ced1f1ed5afdc4ec6e0ef64c2b6c3",
+        "byte_count": 78825
+      }
+    },
+    {
+      "name": "spatial_evaluator",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+        "file_sha256": "54b925ff65a79b59f034dcc265776eeaea94be28b02bb2bb514f756fc7b17313",
+        "byte_count": 24653
+      }
+    },
+    {
+      "name": "spatial_metrics",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+        "file_sha256": "ae2480106d535264e8520d26be8e5cdfe92299fdd605a695ae1cefd5f6d87dc7",
+        "byte_count": 30969
+      }
+    },
+    {
+      "name": "place_data",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_memory_role_place_triplets_v1.py",
+        "file_sha256": "47a6e8b52148548846a8c391c4b8eb9570743f90cf62c60d7644f5e30d7229aa",
+        "byte_count": 18890
+      }
+    },
+    {
+      "name": "packer",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_pack_h6_temporal_frames.py",
+        "file_sha256": "5804de935d03f09d728242092e7218e9c4182ac9d0362ef208e1a5ddd3bd43b4",
+        "byte_count": 15951
+      }
+    },
+    {
+      "name": "scaled_runtime",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_train_temporal_jepa_scaled.py",
+        "file_sha256": "97154b693d3ca2b96e7e0d88c378c07b349c1d77e0db05548e48823834a35037",
+        "byte_count": 35478
+      }
+    }
+  ],
+  "runtime": {
+    "python_invocation_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/bin/python",
+    "environment": {
+      "PATH": "/usr/bin:/bin",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "HIP_VISIBLE_DEVICES": "0",
+      "ROCR_VISIBLE_DEVICES": "0",
+      "PYTHONNOUSERSITE": "1",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONHASHSEED": "0",
+      "PYTHONSAFEPATH": "1",
+      "OMP_NUM_THREADS": "1",
+      "GIT_CONFIG_NOSYSTEM": "1",
+      "GIT_CONFIG_GLOBAL": "/dev/null",
+      "GIT_TERMINAL_PROMPT": "0",
+      "GIT_OPTIONAL_LOCKS": "0"
+    },
+    "bindings": {
+      "python_executable_target": {
+        "path": "/usr/bin/python3.12",
+        "file_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+        "byte_count": 8020928
+      },
+      "python_environment_config": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/pyvenv.cfg",
+        "file_sha256": "49222cc65a628e83d00d99da60f1dea8d59bc01a3ea9616227f330e2ecd50577",
+        "byte_count": 223
+      },
+      "git_executable": {
+        "path": "/usr/bin/git",
+        "file_sha256": "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668",
+        "byte_count": 4066232
+      }
+    }
+  },
+  "input_bindings": {
+    "predecessor_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1/attempt_v1/snapshots/update_1000.pt",
+      "file_sha256": "f5aac23cf275d73b92ce5609a583dea89f6686a624d4889d9762740535aab873",
+      "byte_count": 52282877
+    },
+    "train_index": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/train.jsonl",
+      "file_sha256": "aee2a54cddd849162648f9b8cfd54a0a28a25bd0705b6482e6af7435c85f4d77",
+      "byte_count": 10328000
+    },
+    "validation_index": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/val.jsonl",
+      "file_sha256": "83592e2fea5927802881f076a58a9710100bea017d658c1b978ba651369beac6",
+      "byte_count": 1317888
+    },
+    "index_manifest": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/manifest.json",
+      "file_sha256": "d19fd672d9878e064b20e40a12ce84849f0a13af05a73d2281505ea8d331a36e",
+      "byte_count": 26926
+    }
+  },
+  "predecessor_terminal_failure_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_terminal_pretraining_source_failure_result_2026-08-01.json",
+    "file_sha256": "e2c219352e9ad770a232641fe0c5a7bdd8d154c61f85b5afa76b0d132856b70f",
+    "byte_count": 5796
+  },
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1",
+  "attempt": {
+    "id": "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1",
+    "maximum_attempts": 1,
+    "must_be_absent": true,
+    "reservation_consumes_attempt": true,
+    "retry": false,
+    "resume": false,
+    "overwrite": false,
+    "refill": false
+  },
+  "caps": {
+    "maximum_wall_seconds": 43200,
+    "maximum_gpu_seconds": 36000,
+    "maximum_training_updates": 700
+  },
+  "authorized_command": {
+    "argv_template": [
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/bin/python",
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_existing_pool_three_arm_authorized_v1.py",
+      "--authority",
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_execution_authority_2026-08-01.json",
+      "--expected-authority-byte-count",
+      "<CALLER_BOUND_AUTHORITY_BYTE_COUNT>",
+      "--expected-authority-sha256",
+      "<CALLER_BOUND_AUTHORITY_SHA256>"
+    ]
+  },
+  "execution": {
+    "worker_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/execute_go2_world_model_existing_pool_three_arm_v1.py",
+    "checker_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_existing_pool_three_arm_v1.py"
+  },
+  "external_supervisor": {
+    "source_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_existing_pool_three_arm_authorized_v1.py",
+      "file_sha256": "7717d97c178247fcc07e22f197434573e0f971849d5c1cbb3743c0df20dc8b34",
+      "byte_count": 51306
+    },
+    "terminal_reviewer": "Codex primary agent with independent replacement source review and receipt-only checker evidence"
+  }
+}
