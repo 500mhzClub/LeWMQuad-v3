@@ -1,0 +1,107 @@
+{
+  "action_catalog": [
+    {"action_id": 0, "name": "arc_left", "requested_block": [[0.2, 0.0, 0.45], [0.2, 0.0, 0.45], [0.2, 0.0, 0.45], [0.2, 0.0, 0.45], [0.2, 0.0, 0.45]]},
+    {"action_id": 1, "name": "arc_right", "requested_block": [[0.2, 0.0, -0.45], [0.2, 0.0, -0.45], [0.2, 0.0, -0.45], [0.2, 0.0, -0.45], [0.2, 0.0, -0.45]]},
+    {"action_id": 2, "name": "backward", "requested_block": [[-0.2, 0.0, 0.0], [-0.2, 0.0, 0.0], [-0.2, 0.0, 0.0], [-0.2, 0.0, 0.0], [-0.2, 0.0, 0.0]]},
+    {"action_id": 3, "name": "forward_fast", "requested_block": [[0.3, 0.0, 0.0], [0.3, 0.0, 0.0], [0.3, 0.0, 0.0], [0.3, 0.0, 0.0], [0.3, 0.0, 0.0]]},
+    {"action_id": 4, "name": "forward_medium", "requested_block": [[0.25, 0.0, 0.0], [0.25, 0.0, 0.0], [0.25, 0.0, 0.0], [0.25, 0.0, 0.0], [0.25, 0.0, 0.0]]},
+    {"action_id": 5, "name": "forward_slow", "requested_block": [[0.2, 0.0, 0.0], [0.2, 0.0, 0.0], [0.2, 0.0, 0.0], [0.2, 0.0, 0.0], [0.2, 0.0, 0.0]]},
+    {"action_id": 6, "name": "hold", "requested_block": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]},
+    {"action_id": 7, "name": "yaw_left", "requested_block": [[0.0, 0.0, 0.45], [0.0, 0.0, 0.45], [0.0, 0.0, 0.45], [0.0, 0.0, 0.45], [0.0, 0.0, 0.45]]},
+    {"action_id": 8, "name": "yaw_right", "requested_block": [[0.0, 0.0, -0.45], [0.0, 0.0, -0.45], [0.0, 0.0, -0.45], [0.0, 0.0, -0.45], [0.0, 0.0, -0.45]]}
+  ],
+  "allows_overwrite": false,
+  "allows_refill": false,
+  "attempt_id": "world-model-counterfactual-smoke-v3-attempt-v1",
+  "authorizes_retry_or_resume": false,
+  "branch_mechanism": "parallel_lockstep_envs_no_restore",
+  "citable_as_scientific_evidence": false,
+  "execution_contract": {
+    "backend": "vulkan",
+    "environment": {
+      "EGL_DEVICE_ID": "1",
+      "GS_BACKEND": "vulkan",
+      "GS_PARA_LEVEL": "0",
+      "MESA_VK_DEVICE_SELECT": "1002:7551!",
+      "PYOPENGL_PLATFORM": "egl",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONHASHSEED": "0",
+      "PYTHONNOUSERSITE": "1",
+      "PYTHONSAFEPATH": "1"
+    },
+    "fall_z_threshold_m": 0.15,
+    "graphics_preflight": {
+      "egl_device_index": 1,
+      "eglinfo_expected_exit_code": 2,
+      "egl_renderer_name_contains": "AMD Radeon AI PRO R9700",
+      "vulkan_device_id": "0x7551",
+      "vulkan_device_index": 0,
+      "vulkan_device_name": "AMD Radeon AI PRO R9700",
+      "vulkan_vendor_id": "0x1002"
+    },
+    "policy_device": "cpu",
+    "policy_steps_per_command_tick": 5,
+    "python_invocation_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python",
+    "seed": 20260731,
+    "tip_threshold_rad": 1.0471975511965976
+  },
+  "expected_counts": {
+    "actions": 9,
+    "candidate_branches": 9,
+    "context_frames": 3,
+    "roles": {"calibration": 1},
+    "scenes": 1,
+    "sentinel_branches": 1,
+    "states": 1,
+    "target_frames": 10,
+    "total_branches": 10
+  },
+  "history_blocks": 2,
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v3/attempt_v1",
+  "purpose": "source_integration_smoke",
+  "render_contract": {
+    "depth_validation": "transient_not_persisted",
+    "native_resolution": [640, 480],
+    "physical_scene_rendering": false,
+    "replay_env_mode": "single_non_batched_sequential",
+    "replay_pose_source": "captured_physical_base_pose",
+    "rgb_format": "png",
+    "stored_resolution": [224, 224]
+  },
+  "runtime_bindings": {
+    "eglinfo_executable": {"byte_count": 235912, "file_sha256": "5c8559c668261af76c5642c99926f74a73fc73077c463a371995379a2482d470", "path": "/usr/bin/eglinfo.x86_64-linux-gnu"},
+    "go2_urdf": {"byte_count": 24170, "file_sha256": "4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/assets/urdf/go2/urdf/go2.urdf"},
+    "platform_manifest": {"byte_count": 4613, "file_sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_platform_manifest.yaml"},
+    "policy_checkpoint": {"byte_count": 4547691, "file_sha256": "e0a20545cdccac6b60a4587c96d2de9a169dfacf520b178f51709596a6f789ff", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/upstream_genesis/locomotion/logs/lewm-go2-contract-20260516T163413Z/model_500.pt"},
+    "policy_config": {"byte_count": 2409, "file_sha256": "bc3e68c18252475199e57b30c8ac49d813e3c784a3983e0e8b1a762490dde24f", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/upstream_genesis/locomotion/logs/lewm-go2-contract-20260516T163413Z/cfgs.pkl"},
+    "primitive_registry": {"byte_count": 2454, "file_sha256": "cb83acf61d0e958b90d5dcd98e2ad11c630426bf480bd948aeb77242d84293f8", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_primitive_registry.yaml"},
+    "python_environment_config": {"byte_count": 219, "file_sha256": "41c6a8f52f3404bd3b7fcd805519c1976e2f4194ef9aa8eccf2f0919383386a9", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/pyvenv.cfg"},
+    "python_executable_target": {"byte_count": 8020928, "file_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118", "path": "/usr/bin/python3.12"},
+    "vulkaninfo_executable": {"byte_count": 649712, "file_sha256": "f850851cd176c646851f42287902d5ee737849f275c1a64cb319b4985bdfbb4c", "path": "/usr/bin/vulkaninfo"}
+  },
+  "schema": "lewm_go2_world_model_counterfactual_pilot_plan_v1",
+  "states": [
+    {
+      "candidate_action_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      "family": "open_obstacle_field",
+      "group_index": 0,
+      "history_action_ids": [6, 5],
+      "role": "calibration",
+      "scene_generation": {
+        "family": "open_obstacle_field",
+        "plan_seed": 20260731,
+        "scene_generator_binding": {"byte_count": 76107, "file_sha256": "179d5965ce00e54ead5c6c637f5ced733321720d92672b406f05aca61c79c9ed", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py"},
+        "scene_index": 0,
+        "split": "calibration_smoke"
+      },
+      "scene_genesis_binding": null,
+      "scene_id": "open_obstacle_field_26fd0d67c8e0",
+      "scene_manifest_binding": null,
+      "sentinel_duplicate_action_id": 6,
+      "state_id": "world-model-counterfactual-smoke-state-0",
+      "state_index_in_scene": 0,
+      "target_xy_m": [4.4, -4.4]
+    }
+  ],
+  "states_per_scene": 1
+}
