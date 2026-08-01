@@ -34,6 +34,7 @@ ATTEMPT_ROOT = (
     / "world_model_existing_pool_three_arm_v1"
     / "attempt_v1"
 )
+ATTEMPT_ID = "world_model_existing_pool_three_arm_v1/attempt_v1"
 WORKER_RELATIVE = Path(
     "scripts/execute_go2_world_model_existing_pool_three_arm_v1.py"
 )
@@ -443,8 +444,7 @@ def _validate_attempt(value: Any, *, output_root: str) -> dict[str, Any]:
     _exact_keys(attempt, _ATTEMPT_KEYS, label="authority.attempt")
     expected_root = str(ATTEMPT_ROOT.resolve(strict=False))
     if (
-        type(attempt.get("id")) is not str
-        or not attempt["id"]
+        attempt.get("id") != ATTEMPT_ID
         or attempt.get("root") != expected_root
         or output_root != expected_root
         or attempt.get("maximum_attempts") != 1

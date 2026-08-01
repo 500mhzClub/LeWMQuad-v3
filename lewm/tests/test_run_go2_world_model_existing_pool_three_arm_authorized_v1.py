@@ -64,7 +64,7 @@ def test_attempt_contract_is_exact_max_one_and_non_retriable(
     attempt_root = tmp_path / "campaign" / "attempt_v1"
     monkeypatch.setattr(supervisor, "ATTEMPT_ROOT", attempt_root)
     attempt = {
-        "id": "attempt-v1",
+        "id": supervisor.ATTEMPT_ID,
         "root": str(attempt_root.resolve()),
         "maximum_attempts": 1,
         "must_be_absent": True,
@@ -79,6 +79,12 @@ def test_attempt_contract_is_exact_max_one_and_non_retriable(
     ) == attempt
     changed = dict(attempt)
     changed["resume"] = True
+    with pytest.raises(supervisor.ThreeArmSupervisionError, match="one-shot"):
+        supervisor._validate_attempt(
+            changed, output_root=str(attempt_root.resolve())
+        )
+    changed = dict(attempt)
+    changed["id"] = "attempt_v1"
     with pytest.raises(supervisor.ThreeArmSupervisionError, match="one-shot"):
         supervisor._validate_attempt(
             changed, output_root=str(attempt_root.resolve())

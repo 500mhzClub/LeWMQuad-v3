@@ -12,7 +12,7 @@
   ],
   "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1/attempt_v1",
   "attempt": {
-    "id": "attempt_v1",
+    "id": "world_model_existing_pool_three_arm_v1/attempt_v1",
     "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1/attempt_v1",
     "maximum_attempts": 1,
     "must_be_absent": true,
