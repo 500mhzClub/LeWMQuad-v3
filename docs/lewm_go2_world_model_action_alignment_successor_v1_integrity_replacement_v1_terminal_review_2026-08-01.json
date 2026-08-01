@@ -74,7 +74,8 @@
       "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/metrics.pt",
       "file_sha256": "bb990d1a3e7fa269ec541a653e7921012ddc94093a1cb2d6259e4714ef920fd7",
       "byte_count": 654530,
-      "opened_by_primary_terminal_review": false
+      "hash_read_by_primary_terminal_review": true,
+      "deserialized_by_primary_terminal_review": false
     },
     "terminal_snapshots_identity_only": {
       "baseline": {
@@ -87,7 +88,8 @@
         "file_sha256": "41435888521041aaa262db9a26eaa656d33a339998372ffd0b068d7c75679731",
         "byte_count": 10909343
       },
-      "opened_by_primary_terminal_review": false,
+      "hash_read_by_primary_terminal_review": true,
+      "deserialized_by_primary_terminal_review": false,
       "eligible_only_as_exact_paired_initialization_for_one_separately_preregistered_fixed_same_mechanism_continuation": true,
       "generic_checkpoint_or_planning_authority": false
     }
@@ -134,6 +136,20 @@
     "sealed_open_count": 0,
     "heldout_open_count": 0,
     "validation_used_for_gradient_updates": false
+  },
+  "terminal_review_access_disclosure": {
+    "primary_sha256_and_stat_read_metric_bundle_and_two_terminal_snapshot_files": true,
+    "independent_reviewer_sha256_and_stat_read_metric_bundle_and_two_terminal_snapshot_files": true,
+    "tensor_payload_deserialization_count": 0,
+    "semantic_tensor_fields_exposed": [],
+    "observed_fields": [
+      "path",
+      "file_sha256",
+      "byte_count"
+    ],
+    "files_modified": false,
+    "scientific_selection_informed_by_tensor_payload": false,
+    "correction_reason": "The original opened=false wording incorrectly treated identity-only SHA-256 reads as no file open. This amendment distinguishes byte-level identity verification from tensor deserialization."
   },
   "registered_decision": {
     "status": "MEANINGFUL_ALIGNMENT_IMPROVEMENT_INCOMPLETE",
