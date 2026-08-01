@@ -306,9 +306,10 @@
   },
   "custody": {
     "pack_payloads_opened": false,
-    "checkpoint_or_snapshot_payloads_opened": false,
+    "real_predecessor_or_runtime_checkpoint_or_snapshot_payloads_opened": false,
     "rgb_payloads_opened": false,
     "heldout_or_sealed_opened": false,
+    "network_access_used": false,
     "protected_runtime_payloads_opened": false,
     "execution_authority_granted": false,
     "attempt_reserved": false
