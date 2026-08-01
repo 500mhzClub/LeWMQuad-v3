@@ -1,0 +1,159 @@
+{
+  "schema": "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_terminal_pretraining_source_failure_result_v1",
+  "status": "PASS_COMPLETE_TERMINAL_PRETRAINING_SOURCE_FAILURE_AUDIT",
+  "date": "2026-08-01",
+  "attempt": {
+    "id": "world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1",
+    "consumed": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "overwrite_authorized": false,
+    "refill_authorized": false
+  },
+  "terminal_artifacts": {
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1/reservation.json",
+      "file_sha256": "0f36a2e96dd7943a218c61a918e21eca58072ee29e6eb3e15b880b26031e7adc",
+      "byte_count": 17048
+    },
+    "failure": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1/failure.json",
+      "file_sha256": "6d9009febd7c307d0c0c9f453b8ffdd5d272ef9efee7eb5ae1b502a41ad0a603",
+      "byte_count": 1094
+    },
+    "terminal_supervision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v2/attempt_v1/terminal_supervision.json",
+      "file_sha256": "598d1451289f41d924cd8e9242bdc3ba8550cc092ebec6c96565af4a86144a60",
+      "byte_count": 2797
+    }
+  },
+  "authorized_identity": {
+    "authority_commit": "0a4522430ddccde7d55dd1fb46dcc3483c501833",
+    "source_commit": "0468ac755851b6ed86206ab3825a04a03bd22567",
+    "review_commit": "23b2112a70a72cc7f301f288e519d4e47b9b8d92",
+    "authority_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_execution_authority_2026-08-01.json",
+      "file_sha256": "40c0a95885ec9f7ee67abbf2ebe2672f98d7874c03dd68e3a916fe8eaf101204",
+      "byte_count": 16075
+    },
+    "plan_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_plan_2026-08-01.json",
+      "file_sha256": "4c645887cb2cb96f8acff3ccc5b0c123ae9e8549b4866a40d3036c403fec9c31",
+      "byte_count": 6259
+    },
+    "independent_review_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_independent_source_review_2026-08-01.json",
+      "file_sha256": "cdd740ab0cd04a293b263a8ecd4d0bc1a71b2c3137b7390ffefac127f661fd75",
+      "byte_count": 13999
+    },
+    "preregistration_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v2_preregistration_2026-08-01.md",
+      "file_sha256": "ac8e734302bd0f025e7ee91fcd425549390e7c9064e0a87446d4ade493368216",
+      "byte_count": 6852
+    }
+  },
+  "predecessor_failure_audit": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_terminal_pretraining_source_failure_result_2026-08-01.json",
+    "file_sha256": "a96f63aeb119163cd24e17272bfbf5228206c498d706578162c310841423ac1b",
+    "byte_count": 7008
+  },
+  "execution_accounting": {
+    "supervisor_wall_elapsed_seconds_at_terminal": 15.994941210956313,
+    "training_updates_completed": 0,
+    "optimizer_steps_completed": 0,
+    "scientific_verdict_emitted": false,
+    "worker_result_published": false,
+    "receipt_checker_run": false
+  },
+  "terminal_evidence": {
+    "terminal_status": "CONSUMED_TERMINAL_FAILURE",
+    "worker_failure_status": "ATTEMPT_CONSUMED_WORKER_FAILURE",
+    "phase_receipts_empty": true,
+    "result_binding_absent": true,
+    "receipt_check_binding_absent": true,
+    "automatic_checkpoint_selection_performed": false,
+    "citable_as_scientific_evidence": false
+  },
+  "failure": {
+    "type": "ThreeArmWorkerError",
+    "message": "head, blind-treatment, or online/target parity probe failed",
+    "location": "build_frozen_substrate_and_arms after all three optimizers were constructed and before update-zero evaluation",
+    "classification": "SOURCE_PARITY_PROBE_COMPARED_DIFFERENT_ATTENTION_MODES",
+    "checkpoint_loader_integrity_correction_passed": true,
+    "arm_clone_trainability_integrity_correction_passed": true,
+    "packing_completed_before_failure": true,
+    "all_arm_optimizers_constructed_before_failure": true,
+    "runtime_failure_receipt_identifies_individual_subprobe": false
+  },
+  "root_cause": {
+    "frozen_reference_mode": "evaluation",
+    "copied_arm_mode_at_runtime_probe": "training",
+    "dropout_probability": 0.0,
+    "exact_zero_conditioned_helper_predicate": true,
+    "mode_sensitive_component": "torch.nn.MultiheadAttention execution path",
+    "runtime_receipt_scope": "aggregate guard failure only",
+    "causal_chain": [
+      "the frozen temporal substrate was intentionally placed in evaluation mode",
+      "each copied arm was placed in training mode immediately after optimizer construction",
+      "the payload-free conditioned parity probe compared the evaluation-mode substrate route with the training-mode copied-arm route",
+      "the two attention modes selected numerically different execution paths despite zero dropout",
+      "the exact-zero aggregate parity guard rejected the resulting floating-point difference before update zero"
+    ]
+  },
+  "source_only_synthetic_diagnostic": {
+    "uses_real_training_or_validation_payload": false,
+    "uses_real_checkpoint_or_snapshot_payload": false,
+    "device": "cuda:0 on the bound ROCm runtime",
+    "synthetic_input_contract": "all-zero complete spatial state plus fixed synthetic action and mask tensors",
+    "v2_source_reproduction": {
+      "conditioned_helper_max_abs_error": 0.0000016689300537109375,
+      "conditioned_nonzero_element_count": 23063,
+      "blind_candidate_max_abs_spread": 0.0,
+      "persistence_online_target_max_abs_error": 0.0
+    },
+    "mode_isolation": {
+      "copied_arm_evaluation_mode_conditioned_helper_max_abs_error": 0.0,
+      "copied_arm_training_mode_conditioned_helper_max_abs_error": 0.0000016093254089355469,
+      "copied_arm_training_mode_nonzero_element_count_greater_than": 23000
+    },
+    "interpretation_boundary": "this independently reproduces and isolates the source defect; the consumed V2 terminal receipt itself records only the aggregate guard failure"
+  },
+  "narrow_integrity_correction": {
+    "science_identical": true,
+    "scope": "payload-free pretraining parity probe mode alignment only",
+    "operation": "place every copied arm in evaluation mode for the exact reference parity probe, then restore every arm to training mode before return and before update-zero or training computation",
+    "parameter_values_changed": false,
+    "parameter_names_shapes_dtypes_or_count_changed": false,
+    "optimizer_groups_hyperparameters_or_state_changed": false,
+    "random_number_generation_changed": false,
+    "loss_schedule_data_metrics_or_thresholds_changed": false,
+    "actual_update_zero_or_training_mode_changed": false,
+    "checkpoint_loader_correction_retained": true,
+    "arm_clone_trainability_correction_retained": true,
+    "frozen_shared_encoder_and_target_unchanged": true
+  },
+  "scientific_conclusion": {
+    "data_learnability_tested": false,
+    "objective_learnability_tested": false,
+    "architecture_learnability_tested": false,
+    "packing_and_model_construction_validated": true,
+    "only_valid_conclusion": "integrity replacement V2 is a consumed pre-training source parity-guard failure"
+  },
+  "successor_boundary": {
+    "retry_or_resume_attempt_v1": false,
+    "reuse_attempt_v1_pack_or_runtime_payloads": false,
+    "fresh_one_shot_authority_required": true,
+    "fresh_absent_output_root_required": true,
+    "fresh_integrity_replacement_v3_preregistration_required": true,
+    "this_document_authorizes_v3": false
+  },
+  "custody": {
+    "sealed_or_heldout_material_opened": false,
+    "protected_evaluation_authorized": false,
+    "network_access_used": false,
+    "replacement_v2_runtime_tensor_or_pack_payload_reopened_after_terminal": false,
+    "terminal_json_identity_evidence_opened": true,
+    "synthetic_source_diagnostic_only": true
+  }
+}
