@@ -1,0 +1,137 @@
+{
+  "attempt": {
+    "consumed": true,
+    "id": "world_model_action_alignment_successor_v1/attempt_v1",
+    "overwrite_authorized": false,
+    "refill_authorized": false,
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1/attempt_v1"
+  },
+  "authorized_identity": {
+    "authority_binding": {
+      "byte_count": 20092,
+      "file_sha256": "366cad5821ce68ea7ee8106b15f428d2859134a7e57b1567d7a1d7306b37ff58",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_execution_authority_2026-08-01.json"
+    },
+    "authority_commit": "d153b0c5f2b0d656c6782232a9d0b9aadcd363cc",
+    "independent_review_binding": {
+      "byte_count": 12542,
+      "file_sha256": "8ebc319d5ba2d37afe21fb161c383ae94573d05116d044109bd06299c18cb714",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_independent_source_review_2026-08-01.json"
+    },
+    "plan_binding": {
+      "byte_count": 2110,
+      "file_sha256": "ec3bd3987d3cdb3a5611053e3ba057fc7bb637b6d71efebe41687ac4a34f73db",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_plan_2026-08-01.json"
+    },
+    "preregistration_binding": {
+      "byte_count": 7122,
+      "file_sha256": "9ef74b866314d84c72e3f125ccccd6a3d7827964176c46b7c5ac16775a17dfa1",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_preregistration_2026-08-01.md"
+    },
+    "review_commit": "fa379d4737f8206f1acd800d56e8806281d52c60",
+    "source_commit": "55b5c224a63e469999269d3d89f316ec6d4e36da"
+  },
+  "custody": {
+    "failed_attempt_training_payload_reopened_after_terminal": false,
+    "network_access_used": false,
+    "protected_or_rgb_material_opened": false,
+    "sealed_or_heldout_material_opened": false,
+    "terminal_json_identity_evidence_opened": true
+  },
+  "date": "2026-08-01",
+  "execution_accounting": {
+    "backward_calls_completed": 0,
+    "optimizer_steps_completed": 0,
+    "receipt_checker_run": false,
+    "stage": "first_microbatch_selected_wrong_scan_recompute_check_pre_backward",
+    "supervisor_wall_elapsed_seconds_at_terminal": 6.7185620699310675,
+    "training_updates_completed": 0,
+    "u500_u600_u700_panels_completed": 0,
+    "worker_result_published": false
+  },
+  "failure": {
+    "classification": "SCAN_RECOMPUTE_NUMERICAL_DISPATCH_MISMATCH",
+    "finite_mismatch": true,
+    "hypothesis_tested": false,
+    "location": "first arm of the first training microbatch, before objective return and before backward",
+    "message": "selected-wrong recomputation changed energy by 0.010936617851257324",
+    "observed_maximum_energy_difference": 0.010936617851257324,
+    "type": "AlignmentWorkerError",
+    "unchanged_fail_closed_tolerance": 1e-06
+  },
+  "narrow_integrity_correction": {
+    "failed_attempt_state_reused": false,
+    "head_row_presentations_per_arm_per_training_row": 10,
+    "model_data_initialization_schedule_optimizer_updates_metrics_thresholds_caps_or_claim_boundary_changed": false,
+    "objective_or_gradient_changed": false,
+    "operation": "replace flattened no-grad B128 scans with eight row-stable B32 gradient-enabled forwards, immediately detach each energy vector, discard each scan graph, preserve absolute-action columns and recompute selected wrong at B32",
+    "science_identical": true,
+    "tolerance_relaxed": false,
+    "wrong_actions_per_row": 8
+  },
+  "root_cause": {
+    "causal_chain": [
+      "the wrong-action selector flattened 32 rows by eight wrong actions and scanned them in no-gradient chunks of 128",
+      "the selected wrong action was recomputed with gradients in the original 32-row microbatch",
+      "GRU and multihead-attention/SDPA numerical dispatch can differ across autograd mode, batch shape, and row placement on ROCm",
+      "the unchanged 1e-6 integrity guard correctly rejected the noncommensurate energy comparison before backward"
+    ],
+    "classification": "SOURCE_IMPLEMENTATION_COMPARED_NONCOMMENSURATE_ROCM_FORWARD_ROUTES",
+    "inference_boundary": "the immutable receipt supplies the finite mismatch and stack location; dispatch causation is isolated by source inspection plus the payload-free synthetic probe below"
+  },
+  "schema": "lewm_go2_world_model_action_alignment_successor_v1_terminal_preupdate_source_integrity_failure_result_v1",
+  "scientific_conclusion": {
+    "alignment_hypothesis_tested": false,
+    "learnability_tested": false,
+    "only_valid_conclusion": "the sole original attempt is a consumed pre-update implementation-integrity failure",
+    "planning_utility_tested": false,
+    "statistical_stall_observed": false
+  },
+  "source_only_synthetic_diagnostic": {
+    "device": "cuda:0 on the bound ROCm runtime",
+    "input": "fresh synthetic 187-entry spatial predecessor state and synthetic B32 tensors",
+    "interpretation_boundary": "payload-free source reproduction only; it is not experiment evidence",
+    "original_source_reproduced_error_type": "AlignmentWorkerError",
+    "original_source_reproduced_maximum_energy_difference": 0.0020215511322021484,
+    "uses_real_checkpoint_snapshot_pack_index_or_rgb_payload": false
+  },
+  "status": "PASS_COMPLETE_TERMINAL_IMPLEMENTATION_INTEGRITY_FAILURE_ZERO_COMPLETED_UPDATES_AUDIT",
+  "successor_boundary": {
+    "fresh_absent_output_root_required": true,
+    "fresh_integrity_replacement_v1_preregistration_required": true,
+    "fresh_one_shot_authority_required": true,
+    "maximum_integrity_replacements_after_v1": 0,
+    "retry_or_resume_original_attempt": false,
+    "reuse_original_attempt_runtime_state_or_artifacts": false,
+    "this_document_authorizes_replacement": false
+  },
+  "terminal_artifacts": {
+    "failure.json": {
+      "byte_count": 1329,
+      "file_sha256": "d9849b84b3707e650973d048ca8d7ce2e83ee9409ddea9e62fed1ead1f9563d6",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1/attempt_v1/failure.json"
+    },
+    "reservation.json": {
+      "byte_count": 19792,
+      "file_sha256": "f3786cffa9dd840b6b14fbd47ceb931bd9041f91f62408e1c612036c75768540",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1/attempt_v1/reservation.json"
+    },
+    "terminal_supervision.json": {
+      "byte_count": 7305,
+      "file_sha256": "99f7d217739087327108363ff4fe9e3dc7b1cdac9373d48678b51275a198b6ab",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1/attempt_v1/terminal_supervision.json"
+    }
+  },
+  "terminal_evidence": {
+    "citable_as_scientific_evidence": false,
+    "development_verdict_emitted": false,
+    "metric_bundle_absent": true,
+    "receipt_check_binding_absent": true,
+    "result_binding_absent": true,
+    "snapshots_absent": true,
+    "supervisor_status": "TERMINAL_ACTION_ALIGNMENT_COMPARISON_FAILURE",
+    "worker_failure_status": "ATTEMPT_CONSUMED_WORKER_FAILURE"
+  }
+}
