@@ -21,7 +21,10 @@ import stat
 from typing import Any, Iterable, Mapping, Sequence
 
 
-RESULT_SCHEMA = "lewm_go2_world_model_existing_pool_three_arm_result_v1"
+RESULT_SCHEMA = (
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "result_v1"
+)
 METRICS_SCHEMA = "lewm_go2_world_model_existing_pool_three_arm_metrics_v1"
 OVERLAP_AUDIT_SCHEMA = (
     "lewm_go2_world_model_existing_pool_three_arm_overlap_audit_v1"
@@ -30,7 +33,8 @@ SHUFFLE_AUDIT_SCHEMA = (
     "lewm_go2_world_model_existing_pool_three_arm_candidate_action_derangement_v1"
 )
 REPORT_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_receipt_check_v1"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "receipt_check_v1"
 )
 RESULT_STATUS = "COMPLETE_PENDING_TERMINAL_REVIEW"
 ARM_NAMES = ("conditioned", "blind", "shuffled")
@@ -161,6 +165,7 @@ _RESULT_KEYS = frozenset(
         "caps",
         "runtime",
         "input_bindings",
+        "predecessor_terminal_failure_binding",
         "pack_binding",
         "pack_artifact_bindings",
         "overlap_audit_binding",
@@ -1631,6 +1636,10 @@ def validate_result(
     _validate_attempt(result["attempt"])
     _validate_caps_and_runtime(result["caps"], result["runtime"])
     _validate_inert_binding_map(result["input_bindings"], label="result.input_bindings")
+    predecessor_failure_binding = binding_shape(
+        result["predecessor_terminal_failure_binding"],
+        label="result.predecessor_terminal_failure_binding",
+    )
     pack_binding = binding_shape(result["pack_binding"], label="result.pack_binding")
     _require_inert_relative_path(
         pack_binding,
@@ -1783,8 +1792,12 @@ def validate_result(
     return {
         "schema": REPORT_SCHEMA,
         "status": "PASS",
-        "phase": "existing_pool_three_arm_factual_learning_experiment",
-        "purpose": "existing_pool_three_arm_factual_learning_experiment",
+        "phase": "existing_pool_three_arm_v1_integrity_replacement_v1",
+        "purpose": (
+            "existing_pool_three_arm_v1_factual_learning_"
+            "integrity_replacement_v1"
+        ),
+        "predecessor_terminal_failure_binding": predecessor_failure_binding,
         "manifest_binding": dict(result_binding),
         "opened_json_receipt_count": len(opened),
         "opened_json_receipt_bindings": opened,

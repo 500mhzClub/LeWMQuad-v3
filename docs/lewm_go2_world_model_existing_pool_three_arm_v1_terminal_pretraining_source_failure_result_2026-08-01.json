@@ -1,0 +1,121 @@
+{
+  "schema": "lewm_go2_world_model_existing_pool_three_arm_terminal_pretraining_source_failure_result_v1",
+  "status": "PASS_COMPLETE_TERMINAL_PRETRAINING_SOURCE_FAILURE_AUDIT",
+  "date": "2026-08-01",
+  "attempt": {
+    "id": "world_model_existing_pool_three_arm_v1/attempt_v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1/attempt_v1",
+    "consumed": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "overwrite_authorized": false,
+    "refill_authorized": false
+  },
+  "terminal_artifacts": {
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1/attempt_v1/reservation.json",
+      "file_sha256": "f74e177fc4cf2fa9cadd55caba7c452e6028acdfb0606843d9246d41279363fe",
+      "byte_count": 16017
+    },
+    "failure": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1/attempt_v1/failure.json",
+      "file_sha256": "63303b1f6a1f7595dfe8fef9c63b043074104494efc5388a3e773256d13b6c4c",
+      "byte_count": 1073
+    },
+    "terminal_supervision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1/attempt_v1/terminal_supervision.json",
+      "file_sha256": "9166188ec1b54654af5b794d1b693dff0355fcb9581aa23c456deaef98caff86",
+      "byte_count": 2267
+    }
+  },
+  "authorized_identity": {
+    "authority_commit": "e4827b884c280ecf528af5d1b1575b1eb32cc3e2",
+    "source_commit": "4cb4cec1ab687f725bfb299f28ee83610a5a31d2",
+    "authority_file_sha256": "0d0a33da408121517499b7bf7620fc8c6fd808d3482f32c59fe41d34dd6d865f",
+    "plan_file_sha256": "f64b8029c9f49e3d66ce5f94e901d4000fd72f7cb40dd748fbf33e3c45254504",
+    "independent_review_file_sha256": "5fb348b0a0d2e6f126a02040edf33d8f539a9e5891cb354ac848192cfe8827b7"
+  },
+  "execution_accounting": {
+    "supervisor_wall_elapsed_seconds_at_terminal": 12.438278291025199,
+    "training_updates_completed": 0,
+    "optimizer_steps_completed": 0,
+    "scientific_verdict_emitted": false,
+    "worker_result_published": false,
+    "receipt_checker_run": false
+  },
+  "failure": {
+    "type": "ThreeArmWorkerError",
+    "message": "predecessor model state is invalid",
+    "location": "load_predecessor_state before model construction and before update-zero evaluation",
+    "classification": "SOURCE_VALIDATOR_REJECTED_REQUIRED_SPATIAL_V1_ACCOUNTING_BUFFER",
+    "packing_completed_before_failure": true
+  },
+  "root_cause": {
+    "spatial_v1_checkpoint_payload_uses_complete_model_state_dict": true,
+    "spatial_v1_registers_persistent_ema_update_count": {
+      "dtype": "torch.int64",
+      "shape": [],
+      "semantic_role": "predecessor accounting only"
+    },
+    "temporal_migration_preregistration_excludes_ema_update_count_from_migration": true,
+    "failed_validator_behavior": "required every model_state_dict tensor, including ema_update_count, to have dtype torch.float32",
+    "downstream_exact_inventory_check_reached": false,
+    "causal_chain": [
+      "the bound spatial-V1 checkpoint contains the complete persistent state inventory",
+      "that inventory necessarily contains scalar-long ema_update_count",
+      "the three-arm loader required all state tensors to be float32",
+      "the loader rejected the valid accounting buffer before the temporal model could enforce its exact migration inventory"
+    ]
+  },
+  "independent_predecessor_migration_witness": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_rgb_recurrent_patch_memory_temporal_jepa_v1/attempt_v1/receipts/terminal_access.json",
+    "file_sha256": "72e36e3d40a4e46bd3d03a42958257cbc6d1650d40f32a7ea4566c4af1d55113",
+    "byte_count": 10802,
+    "same_checkpoint_sha256": "f5aac23cf275d73b92ce5609a583dea89f6686a624d4889d9762740535aab873",
+    "checkpoint_update": 1000,
+    "state_tensor_count": 187,
+    "accepted_state_tensor_count": 108,
+    "rejected_state_tensor_count": 79,
+    "rejected_inventory": "78 target_encoder tensors plus ema_update_count",
+    "migration_passed": true,
+    "target_and_ema_state_rejected": true,
+    "checkpoint_reopen_count": 0
+  },
+  "narrow_integrity_correction": {
+    "science_identical": true,
+    "accept_only_one_non_float_state_entry": "ema_update_count",
+    "ema_update_count_contract": {
+      "dtype": "torch.int64",
+      "layout": "torch.strided",
+      "shape": [],
+      "exact_value": 1000,
+      "migrated_into_temporal_model": false
+    },
+    "all_other_state_entries": "exact string keys, strided torch.Tensor values, finite torch.float32",
+    "downstream_complete_inventory_and_migration_contract_unchanged": true,
+    "model_data_seed_schedule_losses_thresholds_optimizers_and_caps_unchanged": true
+  },
+  "scientific_conclusion": {
+    "data_learnability_tested": false,
+    "objective_learnability_tested": false,
+    "architecture_learnability_tested": false,
+    "packing_or_metadata_failure_established": false,
+    "predecessor_quality_conclusion_available": false,
+    "only_valid_conclusion": "attempt_v1 is a consumed pre-training source-contract failure"
+  },
+  "successor_boundary": {
+    "retry_or_resume_attempt_v1": false,
+    "reuse_attempt_v1_pack_or_runtime_payloads": false,
+    "fresh_integrity_replacement_preregistration_required": true,
+    "fresh_source_and_plan_commit_required": true,
+    "fresh_independent_source_review_required": true,
+    "fresh_one_shot_authority_required": true,
+    "fresh_absent_output_root_required": true
+  },
+  "custody": {
+    "sealed_or_heldout_material_opened": false,
+    "protected_evaluation_authorized": false,
+    "network_access_used": false,
+    "attempt_v1_runtime_tensor_or_pack_payload_reopened_after_terminal": false
+  }
+}

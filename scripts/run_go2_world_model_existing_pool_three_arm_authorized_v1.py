@@ -31,10 +31,18 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEVELOPMENT_ROOT = REPO_ROOT / ".generated" / "dev"
 ATTEMPT_ROOT = (
     DEVELOPMENT_ROOT
+    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v1"
+    / "attempt_v1"
+)
+ATTEMPT_ID = (
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+)
+PREDECESSOR_ATTEMPT_ROOT = (
+    DEVELOPMENT_ROOT
     / "world_model_existing_pool_three_arm_v1"
     / "attempt_v1"
 )
-ATTEMPT_ID = "world_model_existing_pool_three_arm_v1/attempt_v1"
+PREDECESSOR_ATTEMPT_ID = "world_model_existing_pool_three_arm_v1/attempt_v1"
 WORKER_RELATIVE = Path(
     "scripts/execute_go2_world_model_existing_pool_three_arm_v1.py"
 )
@@ -46,22 +54,48 @@ SUPERVISOR_RELATIVE = Path(
 )
 
 AUTHORITY_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_execution_authority_v1"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "execution_authority_v1"
 )
-AUTHORITY_STATUS = "AUTHORIZED_ONE_EXACT_EXISTING_POOL_THREE_ARM_ATTEMPT"
-PLAN_SCHEMA = "lewm_go2_world_model_existing_pool_three_arm_plan_v1"
-REVIEW_SCHEMA = "lewm_go2_world_model_follow_on_independent_source_review_v1"
+AUTHORITY_STATUS = (
+    "AUTHORIZED_ONE_EXACT_EXISTING_POOL_THREE_ARM_V1_INTEGRITY_REPLACEMENT_V1_"
+    "ATTEMPT"
+)
+PLAN_SCHEMA = (
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "plan_v1"
+)
+PLAN_PURPOSE = (
+    "existing_pool_three_arm_v1_factual_learning_integrity_replacement_v1"
+)
+REVIEW_SCHEMA = (
+    "lewm_go2_world_model_follow_on_v1_integrity_replacement_independent_"
+    "source_review_v1"
+)
 REVIEW_STATUS = "PASS_SOURCE_ONLY_NOT_AUTHORITY"
-RESERVATION_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_reservation_v1"
+PREDECESSOR_FAILURE_SCHEMA = (
+    "lewm_go2_world_model_existing_pool_three_arm_terminal_pretraining_"
+    "source_failure_result_v1"
 )
-RESULT_SCHEMA = "lewm_go2_world_model_existing_pool_three_arm_result_v1"
+PREDECESSOR_FAILURE_STATUS = (
+    "PASS_COMPLETE_TERMINAL_PRETRAINING_SOURCE_FAILURE_AUDIT"
+)
+RESERVATION_SCHEMA = (
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "reservation_v1"
+)
+RESULT_SCHEMA = (
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "result_v1"
+)
 RESULT_STATUS = "COMPLETE_PENDING_TERMINAL_REVIEW"
 CHECK_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_receipt_check_v1"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "receipt_check_v1"
 )
 TERMINAL_SCHEMA = (
-    "lewm_go2_world_model_existing_pool_three_arm_supervision_terminal_v1"
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "supervision_terminal_v1"
 )
 ARM_ORDER = ["conditioned", "blind", "shuffled"]
 WORKER_OUTPUT_PATHS = frozenset(
@@ -194,6 +228,7 @@ _AUTHORITY_KEYS = frozenset(
         "source_bindings",
         "runtime",
         "input_bindings",
+        "predecessor_terminal_failure_binding",
         "output_root",
         "attempt",
         "caps",
@@ -533,6 +568,7 @@ def _validate_review(
     source_commit: str,
     source_bindings: list[dict[str, Any]],
     plan_binding: Mapping[str, Any],
+    predecessor_failure_binding: Mapping[str, Any],
 ) -> None:
     if (
         review.get("schema") != REVIEW_SCHEMA
@@ -541,9 +577,48 @@ def _validate_review(
         or review.get("reviewed_source_commit") != source_commit
         or review.get("reviewed_source_bindings") != source_bindings
         or review.get("reviewed_plan_binding") != plan_binding
+        or review.get("reviewed_predecessor_terminal_failure_binding")
+        != predecessor_failure_binding
         or review.get("remaining_findings") != []
     ):
         _fail("independent source review is not an exact non-authorizing PASS")
+
+
+def _validate_predecessor_failure(
+    document: Mapping[str, Any],
+) -> None:
+    attempt = document.get("attempt")
+    accounting = document.get("execution_accounting")
+    successor = document.get("successor_boundary")
+    if (
+        document.get("schema") != PREDECESSOR_FAILURE_SCHEMA
+        or document.get("status") != PREDECESSOR_FAILURE_STATUS
+        or type(attempt) is not dict
+        or attempt.get("id") != PREDECESSOR_ATTEMPT_ID
+        or attempt.get("root") != str(PREDECESSOR_ATTEMPT_ROOT.resolve())
+        or attempt.get("consumed") is not True
+        or any(
+            attempt.get(key) is not False
+            for key in (
+                "retry_authorized",
+                "resume_authorized",
+                "overwrite_authorized",
+                "refill_authorized",
+            )
+        )
+        or type(accounting) is not dict
+        or accounting.get("training_updates_completed") != 0
+        or accounting.get("optimizer_steps_completed") != 0
+        or accounting.get("scientific_verdict_emitted") is not False
+        or accounting.get("worker_result_published") is not False
+        or accounting.get("receipt_checker_run") is not False
+        or type(successor) is not dict
+        or successor.get("retry_or_resume_attempt_v1") is not False
+        or successor.get("reuse_attempt_v1_pack_or_runtime_payloads") is not False
+        or successor.get("fresh_one_shot_authority_required") is not True
+        or successor.get("fresh_absent_output_root_required") is not True
+    ):
+        _fail("predecessor terminal failure audit is not replacement-safe")
 
 
 def load_and_validate_authority(
@@ -646,6 +721,16 @@ def load_and_validate_authority(
         label="authority.input_bindings",
         verify_files=True,
     )
+    predecessor_failure, predecessor_failure_binding = _read_bound_json(
+        authority["predecessor_terminal_failure_binding"],
+        label="predecessor terminal failure audit",
+    )
+    _require_binding_at_commit(
+        predecessor_failure_binding,
+        commit=source_commit,
+        label="predecessor terminal failure audit",
+    )
+    _validate_predecessor_failure(predecessor_failure)
 
     execution = _plain_dict(authority["execution"], label="authority.execution")
     _exact_keys(execution, ("worker_path", "checker_path"), label="authority.execution")
@@ -692,8 +777,7 @@ def load_and_validate_authority(
 
     if (
         plan.get("schema") != PLAN_SCHEMA
-        or plan.get("purpose")
-        != "existing_pool_three_arm_factual_learning_experiment"
+        or plan.get("purpose") != PLAN_PURPOSE
         or plan.get("citable_as_scientific_evidence") is not False
         or plan.get("authorizes_retry_or_resume") is not False
         or plan.get("arm_order") != ARM_ORDER
@@ -702,6 +786,32 @@ def load_and_validate_authority(
         or plan.get("caps") != caps
         or plan.get("runtime") != runtime
         or plan.get("input_bindings") != inputs
+        or plan.get("predecessor_terminal_failure_binding")
+        != predecessor_failure_binding
+        or plan.get("replacement_of")
+        != {
+            "attempt_id": PREDECESSOR_ATTEMPT_ID,
+            "output_root": str(PREDECESSOR_ATTEMPT_ROOT.resolve()),
+            "terminal_status": "CONSUMED_TERMINAL_FAILURE",
+            "retry_or_resume_authorized": False,
+            "runtime_payload_reuse_authorized": False,
+        }
+        or plan.get("integrity_correction")
+        != {
+            "scope": "checkpoint_loader_validation_only",
+            "ema_update_count": {
+                "dtype": "torch.int64",
+                "layout": "torch.strided",
+                "shape": [],
+                "exact_value": 1000,
+                "migrated": False,
+            },
+            "all_other_state_tensors": "finite_strided_torch.float32",
+            "scientific_contract_changed": False,
+        }
+        or plan.get("prior_attempt_runtime_payloads_authorized_as_inputs")
+        is not False
+        or plan.get("pack_rebuilt_fresh") is not True
         or plan.get("execution") != execution
     ):
         _fail("bound plan differs from the exact authorized experiment")
@@ -710,6 +820,7 @@ def load_and_validate_authority(
         source_commit=source_commit,
         source_bindings=source_bindings,
         plan_binding=plan_binding,
+        predecessor_failure_binding=predecessor_failure_binding,
     )
     # Normalize values whose paths may have been repository-relative.
     authority = dict(authority)
@@ -717,6 +828,9 @@ def load_and_validate_authority(
     authority["caps"] = caps
     authority["runtime"] = runtime
     authority["input_bindings"] = inputs
+    authority["predecessor_terminal_failure_binding"] = (
+        predecessor_failure_binding
+    )
     authority["source_bindings"] = source_bindings
     authority["review_binding"] = binding_shape(
         authority["review_binding"], label="authority.review_binding"
@@ -805,6 +919,9 @@ def _reserve_attempt(
         "source_bindings": authority["source_bindings"],
         "runtime": authority["runtime"],
         "input_bindings": authority["input_bindings"],
+        "predecessor_terminal_failure_binding": authority[
+            "predecessor_terminal_failure_binding"
+        ],
         "attempt": authority["attempt"],
         "caps": authority["caps"],
         "worker_binding": dict(worker_binding),
@@ -987,6 +1104,8 @@ def _validate_worker_result(
         )
         or result.get("caps") != authority["caps"]
         or result.get("input_bindings") != authority["input_bindings"]
+        or result.get("predecessor_terminal_failure_binding")
+        != authority["predecessor_terminal_failure_binding"]
     ):
         _fail("worker result is not an exact linked success")
 
@@ -1012,6 +1131,10 @@ def _reverify_contract(authority: Mapping[str, Any]) -> None:
     for row in authority["source_bindings"]:
         verify_binding(row["binding"], label=f"source {row['name']}")
     _validate_runtime(authority["runtime"], verify_files=True)
+    verify_binding(
+        authority["predecessor_terminal_failure_binding"],
+        label="predecessor terminal failure audit",
+    )
     _validate_binding_map(
         authority["input_bindings"],
         label="authority.input_bindings",
@@ -1135,6 +1258,8 @@ def supervise(
             or check.get("schema") != CHECK_SCHEMA
             or check.get("status") != "PASS"
             or check.get("manifest_binding") != result_binding
+            or check.get("predecessor_terminal_failure_binding")
+            != authority["predecessor_terminal_failure_binding"]
             or check.get("pack_payloads_opened") is not False
             or check.get("input_data_opened") is not False
             or check.get("runtime_payloads_opened") is not False
@@ -1183,6 +1308,9 @@ def supervise(
             "plan_binding": plan_binding,
             "review_binding": authority["review_binding"],
             "source_commit": authority["source_commit"],
+            "predecessor_terminal_failure_binding": authority[
+                "predecessor_terminal_failure_binding"
+            ],
             "execution_head": _git_head(),
             "attempt_root": str(attempt_root.resolve()),
             "reservation_binding": reservation_binding,

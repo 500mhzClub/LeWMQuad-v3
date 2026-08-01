@@ -14,6 +14,12 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/check_go2_world_model_existing_pool_three_arm_v1.py"
+REPLACEMENT_SCHEMA_PREFIX = (
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+)
+REPLACEMENT_ATTEMPT_ID = (
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+)
 
 
 def _load_checker():
@@ -71,6 +77,9 @@ def _fixture(
             pack_artifact_bindings[role][name] = _inert(relative)
     authority_binding = _inert("/synthetic/authority.json")
     plan_binding = _inert("/synthetic/plan.json")
+    predecessor_terminal_failure_binding = _inert(
+        "/synthetic/predecessor_terminal_failure.json"
+    )
     audit_base = {
         "status": "PASS",
         "passed": True,
@@ -368,7 +377,7 @@ def _fixture(
         "review_binding": _inert("/synthetic/review.json"),
         "source_commit": "a" * 40,
         "attempt": {
-            "id": "existing-pool-three-arm-v1",
+            "id": REPLACEMENT_ATTEMPT_ID,
             "root": str(root.resolve()),
             "maximum_attempts": 1,
             "reservation_consumes_attempt": True,
@@ -397,6 +406,9 @@ def _fixture(
             },
         },
         "input_bindings": {"development_manifest": _inert("/synthetic/dev.json")},
+        "predecessor_terminal_failure_binding": (
+            predecessor_terminal_failure_binding
+        ),
         "pack_binding": _inert("pack/manifest.json"),
         "pack_artifact_bindings": pack_artifact_bindings,
         "overlap_audit_binding": overlap_binding,
@@ -607,6 +619,12 @@ def test_strict_json_rejects_duplicate_keys_and_nonfinite_values() -> None:
         checker.strict_json_bytes(b'{"x": NaN}', label="fixture")
 
 
+def test_replacement_result_and_report_schemas_are_exact() -> None:
+    checker = _load_checker()
+    assert checker.RESULT_SCHEMA == REPLACEMENT_SCHEMA_PREFIX + "result_v1"
+    assert checker.REPORT_SCHEMA == REPLACEMENT_SCHEMA_PREFIX + "receipt_check_v1"
+
+
 def test_file_binding_rejects_protected_paths_before_open(tmp_path: Path) -> None:
     checker = _load_checker()
     protected = tmp_path / "sealed_test.json"
@@ -636,6 +654,13 @@ def test_checker_stats_but_does_not_open_inert_snapshots(
         output_path=tmp_path / "receipt_check.json",
     )
     assert report["status"] == "PASS"
+    assert report["schema"] == REPLACEMENT_SCHEMA_PREFIX + "receipt_check_v1"
+    assert report["phase"] == (
+        "existing_pool_three_arm_v1_integrity_replacement_v1"
+    )
+    assert report["predecessor_terminal_failure_binding"] == _inert(
+        "/synthetic/predecessor_terminal_failure.json"
+    )
     assert report["opened_json_receipt_count"] == 26
     assert report["pack_payloads_opened"] is False
     assert report["checkpoints_opened"] is False

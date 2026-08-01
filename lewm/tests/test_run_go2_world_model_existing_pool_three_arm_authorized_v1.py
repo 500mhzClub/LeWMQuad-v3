@@ -17,6 +17,22 @@ SCRIPT = (
     ROOT
     / "scripts/run_go2_world_model_existing_pool_three_arm_authorized_v1.py"
 )
+REPLACEMENT_SCHEMA_PREFIX = (
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+)
+REPLACEMENT_ATTEMPT_ID = (
+    "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1"
+)
+REPLACEMENT_ATTEMPT_ROOT = (
+    ROOT
+    / ".generated/dev"
+    / "world_model_existing_pool_three_arm_v1_integrity_replacement_v1"
+    / "attempt_v1"
+)
+CONSUMED_ATTEMPT_ID = "world_model_existing_pool_three_arm_v1/attempt_v1"
+CONSUMED_ATTEMPT_ROOT = (
+    ROOT / ".generated/dev/world_model_existing_pool_three_arm_v1/attempt_v1"
+)
 
 
 def _load_supervisor():
@@ -61,6 +77,22 @@ def test_attempt_contract_is_exact_max_one_and_non_retriable(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     supervisor = _load_supervisor()
+    assert supervisor.ATTEMPT_ID == REPLACEMENT_ATTEMPT_ID
+    assert supervisor.ATTEMPT_ROOT == REPLACEMENT_ATTEMPT_ROOT
+    assert supervisor.AUTHORITY_SCHEMA == (
+        REPLACEMENT_SCHEMA_PREFIX + "execution_authority_v1"
+    )
+    assert supervisor.PLAN_SCHEMA == REPLACEMENT_SCHEMA_PREFIX + "plan_v1"
+    assert supervisor.RESERVATION_SCHEMA == (
+        REPLACEMENT_SCHEMA_PREFIX + "reservation_v1"
+    )
+    assert supervisor.RESULT_SCHEMA == REPLACEMENT_SCHEMA_PREFIX + "result_v1"
+    assert supervisor.CHECK_SCHEMA == (
+        REPLACEMENT_SCHEMA_PREFIX + "receipt_check_v1"
+    )
+    assert supervisor.TERMINAL_SCHEMA == (
+        REPLACEMENT_SCHEMA_PREFIX + "supervision_terminal_v1"
+    )
     attempt_root = tmp_path / "campaign" / "attempt_v1"
     monkeypatch.setattr(supervisor, "ATTEMPT_ROOT", attempt_root)
     attempt = {
@@ -84,11 +116,59 @@ def test_attempt_contract_is_exact_max_one_and_non_retriable(
             changed, output_root=str(attempt_root.resolve())
         )
     changed = dict(attempt)
-    changed["id"] = "attempt_v1"
+    changed["id"] = CONSUMED_ATTEMPT_ID
     with pytest.raises(supervisor.ThreeArmSupervisionError, match="one-shot"):
         supervisor._validate_attempt(
             changed, output_root=str(attempt_root.resolve())
         )
+    changed = dict(attempt)
+    changed["root"] = str(CONSUMED_ATTEMPT_ROOT.resolve())
+    with pytest.raises(supervisor.ThreeArmSupervisionError, match="one-shot"):
+        supervisor._validate_attempt(
+            changed, output_root=str(attempt_root.resolve())
+        )
+    with pytest.raises(supervisor.ThreeArmSupervisionError, match="one-shot"):
+        supervisor._validate_attempt(
+            attempt, output_root=str(CONSUMED_ATTEMPT_ROOT.resolve())
+        )
+
+
+def test_predecessor_failure_audit_must_close_consumed_attempt() -> None:
+    supervisor = _load_supervisor()
+    audit = {
+        "schema": supervisor.PREDECESSOR_FAILURE_SCHEMA,
+        "status": supervisor.PREDECESSOR_FAILURE_STATUS,
+        "attempt": {
+            "id": supervisor.PREDECESSOR_ATTEMPT_ID,
+            "root": str(supervisor.PREDECESSOR_ATTEMPT_ROOT.resolve()),
+            "consumed": True,
+            "retry_authorized": False,
+            "resume_authorized": False,
+            "overwrite_authorized": False,
+            "refill_authorized": False,
+        },
+        "execution_accounting": {
+            "training_updates_completed": 0,
+            "optimizer_steps_completed": 0,
+            "scientific_verdict_emitted": False,
+            "worker_result_published": False,
+            "receipt_checker_run": False,
+        },
+        "successor_boundary": {
+            "retry_or_resume_attempt_v1": False,
+            "reuse_attempt_v1_pack_or_runtime_payloads": False,
+            "fresh_one_shot_authority_required": True,
+            "fresh_absent_output_root_required": True,
+        },
+    }
+    supervisor._validate_predecessor_failure(audit)
+    changed = json.loads(json.dumps(audit))
+    changed["attempt"]["retry_authorized"] = True
+    with pytest.raises(
+        supervisor.ThreeArmSupervisionError,
+        match="replacement-safe",
+    ):
+        supervisor._validate_predecessor_failure(changed)
 
 
 def test_caps_cannot_exceed_preregistered_wall_or_gpu_ceiling() -> None:
@@ -143,7 +223,7 @@ def test_reservation_precedes_worker_and_is_exclusive(tmp_path: Path) -> None:
     supervisor = _load_supervisor()
     attempt_root = tmp_path / "campaign" / "attempt_v1"
     attempt = {
-        "id": "attempt-v1",
+        "id": REPLACEMENT_ATTEMPT_ID,
         "root": str(attempt_root),
         "maximum_attempts": 1,
         "must_be_absent": True,
@@ -161,6 +241,9 @@ def test_reservation_precedes_worker_and_is_exclusive(tmp_path: Path) -> None:
         "source_bindings": [],
         "runtime": {},
         "input_bindings": {},
+        "predecessor_terminal_failure_binding": _inert(
+            "/predecessor_terminal_failure.json"
+        ),
         "attempt": attempt,
         "caps": {
             "maximum_wall_seconds": 10.0,
@@ -183,8 +266,12 @@ def test_reservation_precedes_worker_and_is_exclusive(tmp_path: Path) -> None:
         supervisor_nonce="b" * 64,
     )
     assert reservation["status"] == "RESERVED_ATTEMPT_CONSUMED"
+    assert reservation["schema"] == REPLACEMENT_SCHEMA_PREFIX + "reservation_v1"
     assert reservation["maximum_attempts"] == 1
     assert reservation["retry_authorized"] is False
+    assert reservation["predecessor_terminal_failure_binding"] == authority[
+        "predecessor_terminal_failure_binding"
+    ]
     assert binding == supervisor.file_binding(attempt_root / "reservation.json")
     with pytest.raises(FileExistsError):
         supervisor._reserve_attempt(
@@ -280,7 +367,7 @@ def test_worker_result_requires_exact_consumed_reservation_link() -> None:
     review_binding = _inert("/review.json")
     reservation_binding = _inert("/reservation.json")
     attempt = {
-        "id": "attempt-v1",
+        "id": REPLACEMENT_ATTEMPT_ID,
         "root": "/attempt",
         "maximum_attempts": 1,
         "must_be_absent": True,
@@ -301,6 +388,9 @@ def test_worker_result_requires_exact_consumed_reservation_link() -> None:
         },
         "runtime": {"identity": "runtime"},
         "input_bindings": {"input": _inert("/input.json")},
+        "predecessor_terminal_failure_binding": _inert(
+            "/predecessor_terminal_failure.json"
+        ),
     }
     nonce = "f" * 64
     result = {
@@ -331,6 +421,9 @@ def test_worker_result_requires_exact_consumed_reservation_link() -> None:
             },
         },
         "input_bindings": authority["input_bindings"],
+        "predecessor_terminal_failure_binding": authority[
+            "predecessor_terminal_failure_binding"
+        ],
     }
     supervisor._validate_worker_result(
         result,
@@ -364,7 +457,7 @@ def test_supervise_launches_exact_worker_then_checker_after_reservation(
     review_binding = _inert("/review.json")
     worker_binding = _inert("/worker.py")
     attempt = {
-        "id": "attempt-v1",
+        "id": REPLACEMENT_ATTEMPT_ID,
         "root": str(attempt_root.resolve()),
         "maximum_attempts": 1,
         "must_be_absent": True,
@@ -386,6 +479,9 @@ def test_supervise_launches_exact_worker_then_checker_after_reservation(
             "bindings": {},
         },
         "input_bindings": {"input": _inert("/input.json")},
+        "predecessor_terminal_failure_binding": _inert(
+            "/predecessor_terminal_failure.json"
+        ),
         "attempt": attempt,
         "caps": {
             "maximum_wall_seconds": 30.0,
@@ -454,6 +550,9 @@ def test_supervise_launches_exact_worker_then_checker_after_reservation(
                     },
                 },
                 "input_bindings": authority["input_bindings"],
+                "predecessor_terminal_failure_binding": authority[
+                    "predecessor_terminal_failure_binding"
+                ],
             }
             (attempt_root / "result.json").write_text(
                 json.dumps(result) + "\n", encoding="utf-8"
@@ -462,9 +561,12 @@ def test_supervise_launches_exact_worker_then_checker_after_reservation(
             result_binding = supervisor.file_binding(attempt_root / "result.json")
             check = {
                 "schema": supervisor.CHECK_SCHEMA,
-                "status": "PASS",
-                "manifest_binding": result_binding,
-                "pack_payloads_opened": False,
+                    "status": "PASS",
+                    "manifest_binding": result_binding,
+                    "predecessor_terminal_failure_binding": authority[
+                        "predecessor_terminal_failure_binding"
+                    ],
+                    "pack_payloads_opened": False,
                 "input_data_opened": False,
                 "runtime_payloads_opened": False,
                 "rgb_bytes_opened": False,
@@ -484,6 +586,12 @@ def test_supervise_launches_exact_worker_then_checker_after_reservation(
     )
     assert terminal_binding is not None
     assert terminal["status"] == supervisor.RESULT_STATUS
+    assert terminal["schema"] == (
+        REPLACEMENT_SCHEMA_PREFIX + "supervision_terminal_v1"
+    )
+    assert terminal["predecessor_terminal_failure_binding"] == authority[
+        "predecessor_terminal_failure_binding"
+    ]
     assert len(launched) == 2
     assert Path(launched[0][1]).name == (
         "execute_go2_world_model_existing_pool_three_arm_v1.py"
@@ -493,6 +601,15 @@ def test_supervise_launches_exact_worker_then_checker_after_reservation(
         "check_go2_world_model_existing_pool_three_arm_v1.py"
     )
     assert (attempt_root / "reservation.json").is_file()
+    reservation = json.loads(
+        (attempt_root / "reservation.json").read_text(encoding="utf-8")
+    )
+    assert reservation["schema"] == (
+        REPLACEMENT_SCHEMA_PREFIX + "reservation_v1"
+    )
+    assert reservation["predecessor_terminal_failure_binding"] == authority[
+        "predecessor_terminal_failure_binding"
+    ]
     assert (attempt_root / "terminal_supervision.json").is_file()
 
 

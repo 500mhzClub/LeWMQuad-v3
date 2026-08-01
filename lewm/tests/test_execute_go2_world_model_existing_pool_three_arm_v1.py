@@ -15,6 +15,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from lewm.benchmarks import go2_world_model_existing_pool_three_arm_v1 as metrics
+from lewm.models import (
+    rgb_single_frame_multiblock_masked_spatial_jepa_v1 as spatial_model,
+)
 from scripts import execute_go2_world_model_existing_pool_three_arm_v1 as worker
 
 
@@ -68,6 +71,156 @@ def _small_arm() -> tuple[_SmallTemporalTemplate, worker.ArmCore]:
         torch.manual_seed(20260731)
         template = _SmallTemporalTemplate()
     return template, worker.ArmCore(template)
+
+
+def test_complete_spatial_predecessor_loader_and_temporal_migration_boundary(
+    tmp_path: Path,
+) -> None:
+    with torch.random.fork_rng(devices=[]):
+        encoder = spatial_model._construct_n320_encoder_without_rng_draw()
+        predecessor = spatial_model.SingleFrameMultiblockMaskedSpatialJepaV1(
+            encoder.state_dict()
+        )
+    valid_state = {
+        name: value.detach().clone()
+        for name, value in predecessor.state_dict().items()
+    }
+    for name in tuple(valid_state):
+        if name.startswith("target_encoder."):
+            online_name = f"encoder.{name.removeprefix('target_encoder.')}"
+            valid_state[name] = valid_state[online_name] + 1.0
+    valid_state["ema_update_count"] = torch.tensor(1_000, dtype=torch.long)
+    del predecessor, encoder
+
+    accepted = {
+        name
+        for name in valid_state
+        if worker.temporal_model.temporal_v1_accepts_predecessor_key(name)
+    }
+    rejected = set(valid_state) - accepted
+    assert len(valid_state) == 187
+    assert (
+        sum(value.dtype == torch.float32 for value in valid_state.values()) == 186
+    )
+    assert sum(value.dtype == torch.long for value in valid_state.values()) == 1
+    assert len(accepted) == 108
+    assert len(rejected) == 79
+    assert sum(name.startswith("target_encoder.") for name in rejected) == 78
+    assert {
+        name for name in rejected if not name.startswith("target_encoder.")
+    } == {"ema_update_count"}
+
+    checkpoint_path = tmp_path / "spatial_v1.pt"
+    torch.save({"model_state_dict": valid_state}, checkpoint_path)
+    loaded = worker.load_predecessor_state(worker.file_binding(checkpoint_path))
+    assert tuple(loaded) == tuple(valid_state)
+    for name in valid_state:
+        torch.testing.assert_close(
+            loaded[name], valid_state[name], rtol=0.0, atol=0.0
+        )
+    assert loaded["ema_update_count"].dtype == torch.long
+    assert loaded["ema_update_count"].shape == torch.Size([])
+    assert loaded["ema_update_count"].item() == 1_000
+
+    temporal = worker.temporal_model.RGBRecurrentPatchMemoryTemporalJepaV1(
+        loaded
+    )
+    migrated = temporal.state_dict()
+    for name in accepted:
+        torch.testing.assert_close(
+            migrated[name], loaded[name], rtol=0.0, atol=0.0
+        )
+    for target_name in sorted(
+        name for name in rejected if name.startswith("target_encoder.")
+    ):
+        online_name = f"encoder.{target_name.removeprefix('target_encoder.')}"
+        torch.testing.assert_close(
+            migrated[target_name], migrated[online_name], rtol=0.0, atol=0.0
+        )
+        assert not torch.equal(migrated[target_name], loaded[target_name])
+    assert int(temporal.ema_update_count.detach().cpu().item()) == 0
+
+    invalid_state = dict(valid_state)
+    invalid_state["ema_update_count"] = torch.tensor(999, dtype=torch.long)
+    invalid_path = tmp_path / "spatial_v1_wrong_ema_count.pt"
+    torch.save({"model_state_dict": invalid_state}, invalid_path)
+    with pytest.raises(
+        worker.ThreeArmWorkerError,
+        match="predecessor model state is invalid",
+    ):
+        worker.load_predecessor_state(worker.file_binding(invalid_path))
+
+    sparse_path = tmp_path / "spatial_v1_sparse.pt"
+    torch.save(
+        {
+            "model_state_dict": {
+                "encoder.weight": torch.eye(2, dtype=torch.float32).to_sparse(),
+                "ema_update_count": torch.tensor(1_000, dtype=torch.long),
+            }
+        },
+        sparse_path,
+    )
+    with pytest.raises(
+        worker.ThreeArmWorkerError,
+        match="predecessor model state is invalid",
+    ):
+        worker.load_predecessor_state(worker.file_binding(sparse_path))
+
+
+def test_worker_failure_receipt_uses_only_replacement_attempt_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    replacement_root = tmp_path / "replacement" / "attempt_v1"
+    replacement_root.mkdir(parents=True)
+    consumed_root = tmp_path / "consumed" / "attempt_v1"
+    consumed_root.mkdir(parents=True)
+    consumed_marker = consumed_root / "unchanged.json"
+    consumed_marker.write_text("{}\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        worker.supervisor_contract,
+        "ATTEMPT_ROOT",
+        replacement_root,
+    )
+
+    def fail_before_result(**_kwargs: object) -> int:
+        raise worker.ThreeArmWorkerError("synthetic replacement failure")
+
+    monkeypatch.setattr(worker, "execute_authorized_experiment", fail_before_result)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "worker",
+            "--authority",
+            str(tmp_path / "authority.json"),
+            "--expected-authority-byte-count",
+            "1",
+            "--expected-authority-sha256",
+            "a" * 64,
+        ],
+    )
+    with pytest.raises(
+        worker.ThreeArmWorkerError,
+        match="synthetic replacement failure",
+    ):
+        worker.main()
+
+    failure_path = replacement_root / "failure.json"
+    failure = json.loads(failure_path.read_text(encoding="utf-8"))
+    assert failure["schema"] == (
+        "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_"
+        "replacement_v1_worker_failure_v1"
+    )
+    assert failure["schema"] != (
+        "lewm_go2_world_model_existing_pool_three_arm_worker_failure_v1"
+    )
+    assert failure["status"] == "ATTEMPT_CONSUMED_WORKER_FAILURE"
+    assert failure["authorizes_retry_or_resume"] is False
+    assert failure["error"] == "synthetic replacement failure"
+    assert consumed_marker.read_text(encoding="utf-8") == "{}\n"
+    assert not (consumed_root / "failure.json").exists()
 
 
 def _reference_conditioned_prediction(

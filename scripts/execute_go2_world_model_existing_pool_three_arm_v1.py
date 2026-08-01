@@ -75,13 +75,16 @@ from scripts import (  # noqa: E402
 
 
 SCHEMA_PREFIX = "lewm_go2_world_model_existing_pool_three_arm"
-AUTHORITY_SCHEMA = f"{SCHEMA_PREFIX}_execution_authority_v1"
-RESULT_SCHEMA = f"{SCHEMA_PREFIX}_result_v1"
+AUTHORITY_SCHEMA = supervisor_contract.AUTHORITY_SCHEMA
+RESULT_SCHEMA = supervisor_contract.RESULT_SCHEMA
 MEASUREMENT_SCHEMA = f"{SCHEMA_PREFIX}_metrics_v1"
 SNAPSHOT_SCHEMA = f"{SCHEMA_PREFIX}_snapshot_v1"
 OVERLAP_AUDIT_SCHEMA = f"{SCHEMA_PREFIX}_overlap_audit_v1"
 SHUFFLE_AUDIT_SCHEMA = f"{SCHEMA_PREFIX}_candidate_action_derangement_v1"
-FAILURE_SCHEMA = f"{SCHEMA_PREFIX}_worker_failure_v1"
+FAILURE_SCHEMA = (
+    "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_"
+    "worker_failure_v1"
+)
 
 ARM_NAMES = ("conditioned", "blind", "shuffled")
 PACK_ARTIFACT_RELATIVE_PATHS = {
@@ -123,6 +126,7 @@ PREDECESSOR_BYTE_COUNT = 52_282_877
 PREDECESSOR_SHA256 = (
     "f5aac23cf275d73b92ce5609a583dea89f6686a624d4889d9762740535aab873"
 )
+PREDECESSOR_UPDATE = 1000
 EXPECTED_TRAIN_ROWS = 16_000
 EXPECTED_VALIDATION_ROWS = 2_048
 ACTION_COUNT = 9
@@ -1073,6 +1077,9 @@ def _load_and_validate_reservation(
         "source_bindings": authority["source_bindings"],
         "runtime": authority["runtime"],
         "input_bindings": authority["input_bindings"],
+        "predecessor_terminal_failure_binding": authority[
+            "predecessor_terminal_failure_binding"
+        ],
         "attempt": authority["attempt"],
         "caps": authority["caps"],
         "worker_binding": sources["worker"],
@@ -1168,6 +1175,40 @@ def _clone_cpu(value: Any) -> Any:
     return value
 
 
+def _predecessor_model_state_is_valid(
+    state: Any,
+) -> bool:
+    """Validate the exact spatial-V1 state dtypes before migration.
+
+    Spatial V1 contains float32 parameter/encoder tensors plus one persistent
+    scalar-long ema_update_count buffer. That accounting buffer is validated
+    here but is intentionally rejected from temporal migration by the model's
+    stricter inventory/migration contract.
+    """
+
+    if type(state) is not dict or not state:
+        return False
+    for name, value in state.items():
+        if type(name) is not str or not isinstance(value, torch.Tensor):
+            return False
+        if value.layout != torch.strided:
+            return False
+        if name == "ema_update_count":
+            if (
+                value.dtype != torch.long
+                or tuple(value.shape) != ()
+                or int(value.detach().cpu().item()) != PREDECESSOR_UPDATE
+            ):
+                return False
+            continue
+        if (
+            value.dtype != torch.float32
+            or not bool(torch.isfinite(value).all())
+        ):
+            return False
+    return True
+
+
 def load_predecessor_state(binding: Mapping[str, Any]) -> dict[str, torch.Tensor]:
     path = _resolve_binding_path(binding)
     if path.is_symlink() or not path.is_file():
@@ -1185,13 +1226,7 @@ def load_predecessor_state(binding: Mapping[str, Any]) -> dict[str, torch.Tensor
     if type(checkpoint) is not dict or type(checkpoint.get("model_state_dict")) is not dict:
         raise ThreeArmWorkerError("predecessor checkpoint schema changed")
     state = checkpoint["model_state_dict"]
-    if not state or any(
-        type(name) is not str
-        or not isinstance(value, torch.Tensor)
-        or value.dtype != torch.float32
-        or not bool(torch.isfinite(value).all())
-        for name, value in state.items()
-    ):
+    if not _predecessor_model_state_is_valid(state):
         raise ThreeArmWorkerError("predecessor model state is invalid")
     return {name: value.detach().clone() for name, value in state.items()}
 
@@ -2463,6 +2498,9 @@ def execute_authorized_experiment(
             ),
         },
         "input_bindings": authority["input_bindings"],
+        "predecessor_terminal_failure_binding": authority[
+            "predecessor_terminal_failure_binding"
+        ],
         "pack_binding": pack_binding,
         "pack_artifact_bindings": pack_artifact_bindings,
         "overlap_audit_binding": overlap_binding,
@@ -2520,10 +2558,7 @@ def main() -> int:
         # A reservation consumes the attempt.  If it exists, publish one
         # immutable source-diagnostic receipt without pretending to produce a
         # scientific result or authorizing a retry/resume.
-        attempt_root = (
-            REPO_ROOT
-            / ".generated/dev/world_model_existing_pool_three_arm_v1/attempt_v1"
-        )
+        attempt_root = supervisor_contract.ATTEMPT_ROOT
         failure_path = attempt_root / "failure.json"
         if (
             attempt_root.is_dir()
