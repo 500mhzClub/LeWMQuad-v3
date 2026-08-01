@@ -1,0 +1,291 @@
+{
+  "schema": "lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_terminal_review_v1",
+  "status": "PASS_COMPLETE_TERMINAL_DEVELOPMENT_REVIEW",
+  "review_verdict": "PASS_TERMINAL_RECEIPTS_AND_DECISION_CORRECT_CLOSE_ALIGNMENT_BRANCH_NO_PLANNING_USEFULNESS_EVIDENCE",
+  "date": "2026-08-01",
+  "development_only": true,
+  "world_model_goal_met": false,
+  "user_stop_on_stall_rule_satisfied": true,
+  "citable_as_planning_usefulness_evidence": false,
+  "citable_as_factual_action_alignment_success": false,
+  "citable_as_negative_development_evidence_against_further_same_mechanism_training": true,
+  "independent_terminal_review_completed": true,
+  "reviewers": {
+    "primary": "/root",
+    "independent_source": "/root/continuation_code_audit",
+    "independent_terminal": "/root/continuation_terminal_audit"
+  },
+  "attempt": {
+    "id": "world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1",
+    "consumed": true,
+    "completed": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "refill_authorized": false,
+    "overwrite_authorized": false,
+    "further_same_mechanism_training_authorized": false,
+    "planning_gate_authorized": false
+  },
+  "execution_identity": {
+    "source_commit": "c82338e7e91dff2e19d2f267b3ff64612745a4d6",
+    "independent_source_review_commit": "6c624fcb5bb0010fb123e6bcf51dbebe4c828bdd",
+    "authority_and_execution_commit": "fb30bdf0b11934ee8d6d4780e0973b050d98c17d",
+    "preregistration_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_preregistration_2026-08-01.md",
+      "file_sha256": "028858d4bae0c700ce0957d7623c1208d31bcab2cab86c78362ed306fdcfaa63",
+      "byte_count": 14150
+    },
+    "plan_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_plan_2026-08-01.json",
+      "file_sha256": "cf821963442fa8b5f054407472ad021ed4e5ef4541a9663c849e2f5f26413c9f",
+      "byte_count": 10592
+    },
+    "preauthority_identity_read_disclosure_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_preauthority_identity_read_disclosure_2026-08-01.json",
+      "file_sha256": "a602a28b0cf4d9af34318dad98507a911e576cfdbd41e655c3e851bf1dbccc7c",
+      "byte_count": 5303
+    },
+    "governance_correction_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_governance_correction_2026-08-01.json",
+      "file_sha256": "1a13d90b567c0e25bb459848bdc5b818568226160f5b1b80467d9df5e15cb341",
+      "byte_count": 3431
+    },
+    "independent_source_review_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_independent_source_review_2026-08-01.json",
+      "file_sha256": "3486c8e3c12fa523e2ff6831b2ec13f11b7c0c43b976863258b5cef9891eb8ef",
+      "byte_count": 15029,
+      "verdict": "PASS_SOURCE_ONLY_NOT_AUTHORITY"
+    },
+    "execution_authority_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_execution_authority_2026-08-01.json",
+      "file_sha256": "59e0c546856563a5934dfe4b38b784aa06054d89d8ca8ce656b41ed05f9d3003",
+      "byte_count": 21769
+    }
+  },
+  "terminal_artifacts": {
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1/reservation.json",
+      "file_sha256": "f53ce69f189c0781f87cdf337ed8bc0b20e27ec287843c353f166b6301b2d8e7",
+      "byte_count": 22564
+    },
+    "result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1/result.json",
+      "file_sha256": "4c016d7431000f07b8a7080fb88cbf5386fe5427430a76220a6b0186d9064042",
+      "byte_count": 180049
+    },
+    "receipt_check": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1/receipt_check.json",
+      "file_sha256": "7373c1f315f8d3fecebe04b75dd78f313ebc5c9c8886c4d3016541d53d21c5c7",
+      "byte_count": 2692
+    },
+    "terminal_supervision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1/terminal_supervision.json",
+      "file_sha256": "c8aa853c8a12f45d3ab9780777e48dc0cff523a0703340d0c177769d07a60dee",
+      "byte_count": 7312
+    },
+    "metric_bundle_identity_only": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1/metrics.pt",
+      "file_sha256": "45dfe57b0062c8d01dc13d6227c8599802340a3b0c06bbe3cbe0d1aad4c48b9d",
+      "byte_count": 3690383,
+      "hash_read_by_primary_terminal_reviewer": true,
+      "deserialized_by_primary_terminal_reviewer": false,
+      "deserialized_by_receipt_checker": true
+    },
+    "terminal_snapshots_identity_only": {
+      "baseline_update_000900": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1/baseline_update_000900.pt",
+        "file_sha256": "85988e584d2e92947dd4784aa3f5e2d7490dda15095d14afcb29a5ffa258e949",
+        "byte_count": 10909599
+      },
+      "alignment_update_000900": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1/alignment_update_000900.pt",
+        "file_sha256": "00623d7d498e534d35d5b4840d52da1ab9c771a0db55a2fde93b3b100aea26ae",
+        "byte_count": 10909599
+      },
+      "hash_read_by_primary_terminal_reviewer": true,
+      "deserialized_by_primary_terminal_reviewer": false,
+      "deserialized_by_receipt_checker": false,
+      "generic_checkpoint_or_planning_authority": false
+    }
+  },
+  "execution": {
+    "worker_exit_code": 0,
+    "checker_exit_code": 0,
+    "terminal_supervision_status": "PASS_COMPLETE_ACTION_ALIGNMENT_FIXED_SAME_MECHANISM_CONTINUATION_V1",
+    "receipt_checker_status": "PASS",
+    "supervisor_wall_elapsed_seconds": 827.461949,
+    "gpu_phase_elapsed_seconds": 766.643896,
+    "maximum_memory_allocated_bytes": 6052868608,
+    "device_name": "AMD Radeon AI PRO R9700",
+    "training_updates_per_arm_in_this_block": 200,
+    "starting_absolute_update": 700,
+    "ending_absolute_update": 900,
+    "total_optimizer_steps_in_this_block": 400,
+    "exact_u700_model_and_arm_specific_adamw_states_restored": true,
+    "optimizer_or_warmup_reset": false,
+    "same_16000_training_rows": true,
+    "same_2048_scene_disjoint_validation_rows": true,
+    "same_objective_coefficients_schedule_and_runtime": true,
+    "data_generation_count": 0,
+    "rgb_open_count": 0,
+    "network_access_count": 0,
+    "sealed_open_count": 0,
+    "heldout_open_count": 0,
+    "protected_open_count": 0,
+    "validation_used_for_gradient_updates": false
+  },
+  "registered_decision": {
+    "status": "FAIL_RETENTION_CLOSE_ALIGNMENT_BRANCH",
+    "branch_class": "CLOSE",
+    "selected_next_step": "NO_FURTHER_ALIGNMENT_TRAINING_OR_PLANNING_GATE",
+    "authorizes_next_execution": false,
+    "authorizes_further_alignment_training": false,
+    "permits_separate_same_mechanism_preregistration": false,
+    "retention_failure_has_higher_registered_precedence_than_stall_label": true,
+    "absolute_progress_independently_satisfies_stalled_or_harmful_predicate": true
+  },
+  "primary_absolute_progress_gate": {
+    "metric": "within_treatment_hardest_action_margin_change_u900_minus_u700",
+    "treatment_hardest_margin_u700": -0.00660276124845185,
+    "treatment_hardest_margin_u800": -0.007504883608745524,
+    "treatment_hardest_margin_u900": -0.007271987672836062,
+    "point_change_u900_minus_u700": -0.000669226424384212,
+    "paired_scene_family_bootstrap_q05": -0.001364426047745373,
+    "paired_scene_family_bootstrap_median": -0.0006993520064671934,
+    "paired_scene_family_bootstrap_q95": -0.0000018061543393555618,
+    "preregistered_meaningful_progress_threshold": 0.001298360001376009,
+    "bootstrap_interpretation": "Conditional deterministic positive-weight scene/family reweighting quantiles after the adaptively selected u700 continuation; not frequentist coverage, fresh confirmation, or training-seed uncertainty.",
+    "fresh_confirmation_role": false,
+    "point_passed": false,
+    "q05_passed": false,
+    "q95_is_negative": true,
+    "interpretation": "The treatment's absolute worst-action margin deteriorated over the fixed continuation. Even the bootstrap upper tail is negative, so this is evidence of stall or harm rather than a noisy near miss."
+  },
+  "retention": {
+    "passed": false,
+    "sole_failed_retention_family": "preserve_u700_positive_action_margin_ids_0_4_7",
+    "action_id_0": {
+      "u700_point": 0.0012027149883560013,
+      "u700_q05": 0.00027890959805907734,
+      "u900_point": -0.0007583700599099253,
+      "u900_q05": -0.0016519140941614317,
+      "passed": false
+    },
+    "action_id_4": {
+      "u700_point": 0.0011691098445800988,
+      "u700_q05": 0.00027973971696981705,
+      "u900_point": 0.00044608453348148183,
+      "u900_q05": -0.0004987419307824141,
+      "passed": false
+    },
+    "action_id_7": {
+      "u700_point": 0.0014289161780315412,
+      "u700_q05": 0.00013842324334251095,
+      "u900_point": 0.0025524138267957585,
+      "u900_q05": 0.0012179023114383656,
+      "passed": true
+    },
+    "contract_retention_passed": true,
+    "train_fit_retention_passed": true,
+    "balanced_accuracy_retention_passed": true,
+    "wrong_history_retention_passed": true,
+    "rank_retention_passed": true
+  },
+  "u900_predictor_proxy": {
+    "passed": false,
+    "positive_action_margin_point_count": 2,
+    "positive_action_margin_q05_count": 1,
+    "total_actions": 9,
+    "nonpositive_action_margin_point_count": 7,
+    "nonpositive_action_margin_q05_count": 8,
+    "shared_minimum_action_margin_q05": -0.008501265301467685,
+    "aggregate_persistence_q05": -0.2122597247457343,
+    "per_action_persistence_q05_pass_count": 0,
+    "per_action_persistence_q05_total": 9,
+    "balanced_accuracy_q05": 0.3504850114241607,
+    "wrong_history_q05": 0.1465647407192861,
+    "prediction_to_target_rank_ratio": {
+      "700": 0.47287848726118314,
+      "800": 0.47606802826418493,
+      "900": 0.456830747062086
+    },
+    "interpretation": "The model retains nontrivial representation and action/history signal, but its successor scores do not satisfy the preregistered directional action-alignment or persistence-relative usefulness requirements."
+  },
+  "secondary_concurrent_baseline_diagnostic": {
+    "diagnostic_only": true,
+    "alignment_minus_baseline_hardest_margin_delta_u700": 0.0028507902419068927,
+    "alignment_minus_baseline_hardest_margin_delta_u900": 0.0031776339473066073,
+    "u900_delta_q05": 0.00214245010380517,
+    "delta_change_u900_minus_u700": 0.0003268437053997146,
+    "baseline_hardest_margin_u900": -0.010449621620142669,
+    "treatment_hardest_margin_u900": -0.007271987672836062,
+    "interpretation": "The relative advantage increased because the baseline's absolute margin degraded more than the treatment's. It is not absolute repair and cannot override the primary gate."
+  },
+  "planning_and_repository_goal_assessment": {
+    "planning_usefulness_demonstrated": false,
+    "direct_action_ranking_or_regret_evaluation_completed": false,
+    "factual_action_alignment_thresholds_passed": false,
+    "persistence_relative_predictor_thresholds_passed": false,
+    "compositional_reentry_or_multistep_planning_evidence": false,
+    "navigation_or_robot_integration_completed": false,
+    "wm_a_action_utility": "FAIL_NEGATIVE_PROXY_EVIDENCE",
+    "wm_c_composability": "NOT_PURSUED_BECAUSE_ONE_STEP_GATE_FAILED",
+    "wm_s_substrate_retention": "MIXED_REPRESENTATION_RETENTION_PASSED_BUT_PERSISTENCE_PROXY_FAILED_AND_PHYSICAL_RETENTION_UNMEASURED",
+    "wm_d_integration": "ABSENT",
+    "conclusion": "The model is not supported as a useful planning world model. The bounded experimental task nevertheless reached its registered terminal condition because progress stalled or harmed the primary metric, which requires stopping rather than tuning further."
+  },
+  "independent_terminal_audit": {
+    "reviewer": "/root/continuation_terminal_audit",
+    "verdict": "PASS_COMPLETED_RECEIPTS_AND_REGISTERED_ROUTING_INTERNALLY_CONSISTENT",
+    "decision_independently_checked": true,
+    "absolute_stalled_or_harmful_predicate_independently_checked": true,
+    "retention_failure_independently_checked": true,
+    "predictor_proxy_failure_independently_checked": true,
+    "relative_vs_absolute_interpretation_independently_checked": true,
+    "receipt_hashes_and_byte_counts_independently_matched": true,
+    "runtime_tensor_stat_or_hash_read": false,
+    "runtime_tensor_deserialization": false,
+    "access_scope": "Known attempt JSON receipts, exact committed plan/preregistration/routing source, and JSON authority only.",
+    "sealed_heldout_protected_or_rgb_access": false
+  },
+  "terminal_review_access_disclosure": {
+    "primary_result_json_content_reads": 5,
+    "primary_receipt_check_json_content_reads": 1,
+    "primary_terminal_supervision_json_content_reads": 1,
+    "primary_reservation_json_content_reads": 0,
+    "primary_json_sha256_full_byte_reads": {
+      "reservation": 1,
+      "result": 1,
+      "receipt_check": 1,
+      "terminal_supervision": 1
+    },
+    "primary_tensor_identity_reads": {
+      "metrics_pt_stat_reads": 1,
+      "metrics_pt_sha256_full_byte_reads": 1,
+      "baseline_update_000900_pt_stat_reads": 1,
+      "baseline_update_000900_pt_sha256_full_byte_reads": 1,
+      "alignment_update_000900_pt_stat_reads": 1,
+      "alignment_update_000900_pt_sha256_full_byte_reads": 1
+    },
+    "primary_tensor_deserialization_count": 0,
+    "primary_tensor_semantic_fields_exposed": [],
+    "independent_terminal_reviewer_tensor_stat_reads": 0,
+    "independent_terminal_reviewer_tensor_sha256_reads": 0,
+    "independent_terminal_reviewer_tensor_deserialization_count": 0,
+    "files_modified_by_review_reads": false,
+    "scientific_selection_informed_by_unreviewed_tensor_payload": false
+  },
+  "claim_boundary": {
+    "architecture_incapacity_proven": false,
+    "counterfactual_generalization_proven": false,
+    "more_raw_bytes_required_proven": false,
+    "full_3tb_pool_should_be_rerendered": false,
+    "diagnostic_b_2_43x_is_generalization_evidence": false,
+    "diagnostic_b_2_43x_scope": "Training-set capacity observation only.",
+    "supported_claim": "On the surveyed existing observational rows and frozen scene-disjoint validation protocol, additional same-mechanism training failed to produce meaningful absolute action alignment and worsened the primary metric. The changed objective must not be used for a planning gate.",
+    "possible_scientifically_distinct_future_work": "Only if the research direction is reopened under new authority: size a small matched-state counterfactual pilot with executed successor targets and a direct action-ranking/regret evaluator before considering any larger generation job.",
+    "future_work_authorized_here": false
+  },
+  "terminal_conclusion": "The fixed continuation ran successfully and was independently checked. Absolute hardest-action separation deteriorated from u700 to u900, with a negative bootstrap q95, retention failed, and the strict persistence-relative predictor proxy remained decisively negative. The growing baseline-relative advantage was caused by the baseline degrading faster and is not evidence of absolute repair. No planning usefulness threshold passed. In accordance with the preregistration and the user's stop-on-stall instruction, this alignment branch is closed with no further same-mechanism training, tuning, retry, or planning gate."
+}

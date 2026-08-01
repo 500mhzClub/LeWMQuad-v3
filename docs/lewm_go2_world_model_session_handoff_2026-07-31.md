@@ -1,7 +1,8 @@
 # Session handoff: JEPA world-model review, correction, and counterfactual diagnosis
 
-Date: 2026-07-31
-Repository HEAD at session start and end: `0279294e5679fa81f845f13c9e47326bab291238`
+Date: 2026-07-31, terminally updated 2026-08-01
+Repository HEAD during the original session: `0279294e5679fa81f845f13c9e47326bab291238`
+Continuation execution HEAD: `fb30bdf0b11934ee8d6d4780e0973b050d98c17d`
 Branch: `jepa-spatial-world-model-nav`
 
 > **Superseded interpretation (2026-08-01):** this document remains a
@@ -30,10 +31,24 @@ Branch: `jepa-spatial-world-model-nav`
 > and
 > `docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_terminal_handoff_2026-08-01.md`.
 
-**Nothing in this session is committed.** All artifacts are untracked (§8).
-All experimental outputs are development-tier under `.generated/dev/**` and are
-explicitly **not citable as scientific evidence**. No sealed, held-out, or G8
-material was opened. No sealed attempt was consumed.
+> **Final continuation resolution (2026-08-01):** a controlled alignment
+> objective comparison first produced a meaningful concurrent-baseline-relative
+> gain, but absolute treatment action alignment worsened. The separately
+> preregistered u700→u900 same-mechanism block then made the absolute result
+> decisively worse: hardest action margin `-0.006603 → -0.007272`, paired
+> absolute change `-0.000669`, q05 `-0.001364`, q95 `-0.00000181`. Retention
+> failed because formerly positive action IDs 0 and 4 were not preserved. The
+> independent checker passed and selected
+> `FAIL_RETENTION_CLOSE_ALIGNMENT_BRANCH`. Section 9 is the current terminal
+> interpretation and supersedes §6's proposed next experiment order.
+
+**Original July 31 state:** nothing from that session was committed and the
+artifacts in §8 were untracked. The bounded August 1 localization/alignment
+source, reviews, authority, and terminal conclusion were subsequently committed.
+All experimental outputs are development-tier under `.generated/dev/**`. They
+may support bounded development decisions, including the terminal stop here,
+but are **not citable as blind/held-out qualification or promotion evidence**.
+No sealed, held-out, or G8 material was opened. No sealed attempt was consumed.
 
 This handoff is a record and proposal, not an authority or preregistration. The
 development label does not itself authorize data generation, artifact mutation,
@@ -558,3 +573,142 @@ is selected.
 
 No sealed material opened. No sealed attempt consumed. V4 held-out role
 untouched and remains permanently ineligible.
+
+---
+
+## 9. Terminal resolution after the existing-pool experiments (2026-08-01)
+
+This section is the current handoff. It supersedes §6's proposed experiment
+ordering and the original data-generation-first bottom line, while preserving
+the earlier claim-withdrawal audit as history.
+
+### What was actually run
+
+The work progressed through three bounded stages on the existing non-protected
+pool; no new RGB or counterfactual data was generated:
+
+1. The independently checked three-arm factual-action experiment established
+   generalized aggregate action signal but failed hardest-action alignment and
+   persistence-relative predictor usefulness.
+2. A controlled `c=0` baseline versus `c=1` within-row wrong-action hinge ran
+   through global update 700. The treatment achieved a meaningful
+   concurrent-baseline-relative minimum-margin delta (`0.00285079`, q05
+   `0.00139702`) but only because the baseline degraded faster; the treatment's
+   absolute hardest margin itself worsened to `-0.00660276`.
+3. The exact u700 model and each arm's own AdamW state were restored for a
+   separately reviewed 200-update block. Both arms used the unchanged 16,000
+   train rows, 2,048 scene-disjoint validation rows, objective, coefficients,
+   optimizer, schedule, and runtime through absolute update 900. The one-shot
+   supervisor and independent receipt checker passed.
+
+The source, review, and authority commits for stage 3 are respectively:
+
+- `c82338e7e91dff2e19d2f267b3ff64612745a4d6`;
+- `6c624fcb5bb0010fb123e6bcf51dbebe4c828bdd`;
+- `fb30bdf0b11934ee8d6d4780e0973b050d98c17d`.
+
+### Registered u900 outcome
+
+The terminal decision is `FAIL_RETENTION_CLOSE_ALIGNMENT_BRANCH`, with selected
+next step `NO_FURTHER_ALIGNMENT_TRAINING_OR_PLANNING_GATE`.
+
+The decisive within-treatment statistic was:
+
+- hardest action margin: `-0.00660276124845185` at u700 to
+  `-0.007271987672836062` at u900;
+- point change: `-0.000669226424384212`;
+- paired bootstrap q05 / median / q95: `-0.001364426047745373` /
+  `-0.0006993520064671934` / `-0.0000018061543393555618`;
+- preregistered meaningful-progress threshold: `+0.001298360001376009`.
+
+This is stronger than an inconclusive or below-rate result: even q95 is
+negative. These are conditional descriptive scene/family-reweighting quantiles
+after the adaptively selected continuation, not fresh confirmation,
+frequentist coverage, or training-seed uncertainty; they are used only for the
+preregistered development stop. The u800 treatment margin was still worse
+(`-0.007504883608745524`), and its partial recovery by u900 did not recover the
+u700 value. Per-action retention also failed. IDs 0, 4, and 7 had positive
+point and q05 at u700; at u900 only ID 7 retained both. Seven of nine
+action-margin points and eight of nine action-margin q05 values were
+nonpositive.
+
+The favorable diagnostics do not rescue the result:
+
+- balanced-accuracy q05 rose slightly, `0.347020 → 0.350485`;
+- wrong-history q05 remained positive, `0.140618 → 0.146565`;
+- rank stayed well above its 0.25 floor at all three observations
+  (`0.472878`, `0.476068`, `0.456831`);
+- concurrent-baseline-relative delta grew to `0.00317763`, q05 `0.00214245`.
+
+That last number is diagnostic only: the baseline's absolute hardest margin
+worsened to `-0.01044962`. Using it as the headline would repeat the exact
+relative-versus-absolute interpretive error this continuation was designed to
+eliminate.
+
+Persistence also remains incompatible with a useful planning proxy. Aggregate
+persistence q05 improved only from `-0.226018` to `-0.212260`, stayed negative,
+and all nine per-action persistence q05 checks failed. Factual/train energy,
+balanced accuracy, wrong-history separation, and representation rank therefore
+show that the network is learning and retaining signal, but not that its
+action-conditioned successor scores are directionally reliable for choosing
+actions.
+
+### First-principles conclusion
+
+The current model has not met factual action-alignment or predictor-usefulness
+thresholds, and these experiments provide negative—not positive—evidence for
+using it as a planner world model. More updates under the same hinge objective
+are not justified: absolute action alignment deteriorated over the controlled
+block with a negative q95, while the apparent baseline-relative advantage kept
+growing. This is the registered stall/harm condition requested by the user, so
+no coefficient tweak, optimizer reset, architecture tweak, continuation,
+replication, retry, or planning gate follows.
+
+Against the repository's four world-model properties, the terminal state is:
+
+| property | terminal assessment |
+|---|---|
+| WM-A: action utility | **failed as a proxy and still unmeasured directly** — factual candidate-action alignment is negative, and no untaken executed successor/regret test exists |
+| WM-C: composability | **not pursued** — the one-step gate failed, so a multi-step rollout would not be interpretable as useful planning evidence |
+| WM-S: substrate retention | **mixed/insufficient** — balanced accuracy, wrong-history use, and rank retain signal, but persistence fails and physical retention remains unmeasured |
+| WM-D: deployed causal presence | **absent** — nothing is integrated into a planner or robot execution path |
+
+The experimental-process objective is complete because its explicit stop rule
+fired; the repository's scientific objective of a useful planning world model
+is not complete.
+
+The result does not prove that the architecture cannot represent useful
+action-conditional dynamics. The earlier diagnostic-B `2.43×` remains only a
+training-set capacity observation and says nothing about scene-disjoint
+generalization. It also does not prove that more raw bytes are needed. The
+large existing pool and the smaller pack inherit the same observational
+limitation: one executed action per exact state. The failed hinge shows that
+forcing relative separation against unexecuted action labels, without their
+actual successor outcomes, is insufficient.
+
+If this research direction is reopened later, the next scientifically distinct
+step is not more same-objective scaling. It is a separately authorized small
+matched-state counterfactual pilot with executed successor targets and a direct
+action-ranking/regret evaluator. That proposal remains unexecuted and must be
+sized from measured repeatability/yield/runtime first. It is a possible new
+information source, not a conclusion that the full 3 TB corpus should be
+rerendered.
+
+### Durable terminal artifacts and custody
+
+The completed attempt is
+`.generated/dev/world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1`.
+Its terminal supervision hash is
+`c8aa853c8a12f45d3ab9780777e48dc0cff523a0703340d0c177769d07a60dee`;
+the independently checked result hash is
+`4c016d7431000f07b8a7080fb88cbf5386fe5427430a76220a6b0186d9064042`.
+The durable terminal review is
+`docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_terminal_review_2026-08-01.json`.
+
+No sealed, held-out, protected, or RGB material was opened. The authorized
+worker deserialized the two bound u700 snapshots once each. The checker
+deserialized the new metric bundle once and independently recomputed the
+decision, including effective rank from covariance sufficient statistics; it
+did not deserialize either u900 snapshot. The primary terminal reviewer read
+only JSON receipts and performed disclosed SHA-256/stat identity reads of the
+new metric bundle and snapshots, without tensor deserialization.
