@@ -1,0 +1,57 @@
+{
+  "schema": "lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_governance_correction_v1",
+  "status": "CORRECTED_PROSPECTIVE_ROUTING_ONLY_NOT_EXECUTION_AUTHORITY",
+  "date": "2026-08-01",
+  "corrected_document_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_terminal_review_2026-08-01.json",
+    "file_sha256": "51e760bc868f4cc2307dcc98c2778f97502e7643c866067eb0d47f8b35de3f45",
+    "byte_count": 13967
+  },
+  "corrected_recommendation_fields": {
+    "maximum_separately_preregistered_continuations": {
+      "previous": 1,
+      "replacement": "one bounded block at a time while the immediately preceding block has a retention-passing absolute hardest-margin gain at or above its preregistered scheduled-horizon pace threshold with paired q05 strictly positive"
+    },
+    "no_more_alignment_training_after_the_fixed_continuation": {
+      "previous": true,
+      "replacement": "true unless the fixed block meets the preregistered meaningful absolute-progress condition; that condition permits only a separately named, separately preregistered, independently reviewed unchanged-mechanism successor block"
+    }
+  },
+  "reason": {
+    "user_directive": "stop when progress stalls and pursue an unchanged mechanism when a run shows meaningful improvement",
+    "first_principles_resolution": "A rule that forced closure after a statistically supported pace-level absolute gain would contradict the stated iteration policy and discard evidence that the same training trajectory remains productive.",
+    "timing": "This correction is frozen before continuation V1 source review, authority, reservation, snapshot deserialization, GPU work, or result observation."
+  },
+  "replacement_policy": {
+    "meaningful_progress_requires_all": [
+      "continuation retention passes",
+      "action alignment remains unrepaired",
+      "absolute within-treatment hardest-margin gain is at least 0.001298360001376009",
+      "paired shared-family/scene bootstrap q05 is strictly positive"
+    ],
+    "meaningful_progress_selected_next_step": "PREREGISTER_NEXT_FIXED_SAME_MECHANISM_BLOCK",
+    "all_other_alignment_unrepaired_outcomes_selected_next_step": "NO_FURTHER_ALIGNMENT_TRAINING_OR_PLANNING_GATE",
+    "action_alignment_repair_uses_frozen_persistence_and_planning_routing": true,
+    "automatic_follow_on": false,
+    "coefficient_or_threshold_search": false,
+    "architecture_or_objective_change": false,
+    "retry_resume_refill_overwrite_recovery_or_replication": false
+  },
+  "preserved_factual_content": {
+    "all_predecessor_measurements_unchanged": true,
+    "all_predecessor_artifact_bindings_unchanged": true,
+    "predecessor_terminal_decision_unchanged": true,
+    "preauthority_identity_read_disclosure_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_preauthority_identity_read_disclosure_2026-08-01.json",
+      "file_sha256": "a602a28b0cf4d9af34318dad98507a911e576cfdbd41e655c3e851bf1dbccc7c",
+      "byte_count": 5303
+    }
+  },
+  "claim_boundary": {
+    "prospective_governance_correction_only": true,
+    "scientific_result": false,
+    "execution_authority": false,
+    "planning_usefulness_evidence": false,
+    "promotion_or_deployment_authority": false
+  }
+}

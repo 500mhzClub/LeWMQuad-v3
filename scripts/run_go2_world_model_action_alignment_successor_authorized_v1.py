@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Supervise the final action-alignment integrity replacement V1."""
+"""Supervise the bounded fixed same-mechanism alignment continuation V1."""
 from __future__ import annotations
 
 import argparse
@@ -57,10 +57,10 @@ from scripts import (  # noqa: E402
 
 TERMINAL_SCHEMA = f"{worker.SCHEMA_PREFIX}_supervision_terminal_v1"
 SUCCESS_STATUS = (
-    "PASS_COMPLETE_ACTION_ALIGNMENT_COMPARISON_INTEGRITY_REPLACEMENT_V1"
+    "PASS_COMPLETE_ACTION_ALIGNMENT_FIXED_SAME_MECHANISM_CONTINUATION_V1"
 )
 FAILURE_STATUS = (
-    "TERMINAL_ACTION_ALIGNMENT_COMPARISON_INTEGRITY_REPLACEMENT_V1_FAILURE"
+    "TERMINAL_ACTION_ALIGNMENT_FIXED_SAME_MECHANISM_CONTINUATION_V1_FAILURE"
 )
 
 
@@ -201,6 +201,7 @@ def _terminal(
         "attempt_consumed": True,
         "development_verdict_emitted": status == SUCCESS_STATUS,
         "citable_as_original_factual_learnability_claim": False,
+        "citable_as_planning_usefulness_evidence": False,
         "authority_binding": dict(authority_binding),
         "source_commit": authority["source_commit"],
         "review_commit": authority["review_commit"],
@@ -213,10 +214,16 @@ def _terminal(
         "wall_elapsed_seconds": wall_elapsed_seconds,
         "caps": authority["caps"],
         "root_inventory_before_terminal": list(inventory),
-        "input_payload_opened_by_supervisor": False,
+        "bound_non_u700_input_identity_hash_reads_performed_by_supervisor": True,
+        "bound_predecessor_evidence_identity_hash_reads_performed_by_supervisor": True,
+        "source_test_and_runtime_identity_hash_reads_performed_by_supervisor": True,
+        "u700_continuation_snapshot_content_read_by_supervisor": False,
+        "runtime_tensor_or_array_deserialized_by_supervisor": False,
         "gpu_work_performed_by_supervisor": False,
         "network_access_used_by_supervisor": False,
         "retry": False, "resume": False, "refill": False, "overwrite": False,
+        "recovery": False, "integrity_replacement": False,
+        "further_continuation": False,
         "error_type": type(error).__name__ if error else None,
         "error_message": str(error) if error else None,
         "traceback": error_traceback,

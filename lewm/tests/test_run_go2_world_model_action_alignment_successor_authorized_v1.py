@@ -33,7 +33,8 @@ def test_reservation_templates_bind_one_worker_and_checker():
         "caps": {
             "maximum_wall_seconds": worker.MAXIMUM_WALL_SECONDS,
             "maximum_gpu_seconds": worker.MAXIMUM_GPU_SECONDS,
-            "maximum_training_updates": worker.TRAINING_UPDATES,
+            "maximum_additional_training_updates": worker.ADDITIONAL_TRAINING_UPDATES,
+            "maximum_global_training_update": worker.TRAINING_UPDATES,
         },
     }
     binding = {"path": str(worker.AUTHORITY_PATH), "file_sha256": "a" * 64, "byte_count": 1}
@@ -43,8 +44,8 @@ def test_reservation_templates_bind_one_worker_and_checker():
     assert reservation["resume"] is False
     assert reservation["worker_command_template"].count("<SUPERVISOR_BOUND_RESERVATION_SHA256>") == 1
     assert reservation["checker_command_template"].count("<WORKER_RESULT_SHA256>") == 1
-    assert "integrity_replacement_v1" in reservation["attempt_id"]
-    assert worker.ATTEMPT_ROOT.parent.name.endswith("integrity_replacement_v1")
+    assert "fixed_same_mechanism_continuation_v1" in reservation["attempt_id"]
+    assert worker.ATTEMPT_ROOT.parent.name.endswith("fixed_same_mechanism_continuation_v1")
 
 
 def test_command_instantiation_replaces_only_exact_placeholders():
@@ -53,13 +54,16 @@ def test_command_instantiation_replaces_only_exact_placeholders():
     ) == ["a", "value", "b"]
 
 
-def test_replacement_is_final_and_binds_closed_attempt_receipts():
+def test_continuation_is_bounded_and_binds_completed_predecessor_receipts():
     required = {
-        "original_successor_authority",
-        "original_successor_reservation",
-        "original_successor_failure",
-        "original_successor_terminal",
-        "original_successor_failure_audit",
+        "completed_successor_authority",
+        "completed_successor_reservation",
+        "completed_successor_result",
+        "completed_successor_receipt_check",
+        "completed_successor_terminal",
+        "completed_successor_terminal_review",
+        "preauthority_identity_read_disclosure",
+        "continuation_governance_correction",
     }
     assert required <= set(worker.EXPECTED_EVIDENCE_BINDINGS)
     assert all(
@@ -69,6 +73,7 @@ def test_replacement_is_final_and_binds_closed_attempt_receipts():
         )
         for name in required
     )
-    assert {path.name for path in worker.ORIGINAL_ATTEMPT_ROOT.iterdir()} == {
-        "reservation.json", "failure.json", "terminal_supervision.json",
-    }
+    assert "completed_successor_metric_bundle" not in worker.EXPECTED_EVIDENCE_BINDINGS
+    assert {
+        "baseline_u700_snapshot", "alignment_u700_snapshot"
+    } <= set(worker.EXPECTED_INPUT_BINDINGS)

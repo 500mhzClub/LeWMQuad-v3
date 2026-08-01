@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Execute the final science-identical action-alignment integrity replacement.
+"""Execute one bounded fixed same-mechanism action-alignment continuation.
 
-The worker consumes the immutable V3 frame pack and one frozen spatial
-predecessor.  It never opens RGB, sealed, held-out, or protected material and
-never creates data. Both fresh arms execute the same row-stable action-candidate
-route; their only scientific difference is the frozen alignment-loss
-coefficient.
+The worker consumes the immutable V3 frame pack, one frozen spatial
+predecessor, and both exact completed u700 arm/AdamW snapshots. It never opens
+RGB, sealed, held-out, or protected material and never creates data. Both arms
+continue through absolute updates 701--900 on the unchanged row-stable
+action-candidate route. Further training is possible only after a pace-level
+absolute gain and a new, separately reviewed preregistration.
 """
 from __future__ import annotations
 
@@ -41,6 +42,12 @@ from lewm.benchmarks import (  # noqa: E402
     go2_world_model_action_alignment_successor_v1 as successor_metrics,
 )
 from lewm.benchmarks import (  # noqa: E402
+    go2_world_model_action_alignment_continuation_v1 as continuation_metrics,
+)
+from lewm.benchmarks import (  # noqa: E402
+    go2_world_model_v3_action_localization_v1 as localization_metrics,
+)
+from lewm.benchmarks import (  # noqa: E402
     go2_world_model_existing_pool_three_arm_v1 as three_arm_metrics,
 )
 from lewm.datasets import (  # noqa: E402
@@ -59,11 +66,11 @@ from scripts import (  # noqa: E402
 
 SCHEMA_PREFIX = (
     "lewm_go2_world_model_action_alignment_successor_v1_"
-    "integrity_replacement_v1"
+    "fixed_same_mechanism_continuation_v1"
 )
 AUTHORITY_SCHEMA = f"{SCHEMA_PREFIX}_execution_authority_v1"
 AUTHORITY_STATUS = (
-    "AUTHORIZED_ONE_EXACT_ACTION_ALIGNMENT_INTEGRITY_REPLACEMENT_V1_ATTEMPT"
+    "AUTHORIZED_ONE_EXACT_FIXED_SAME_MECHANISM_CONTINUATION_V1_ATTEMPT"
 )
 RESERVATION_SCHEMA = f"{SCHEMA_PREFIX}_reservation_v1"
 RESULT_SCHEMA = f"{SCHEMA_PREFIX}_result_v1"
@@ -74,36 +81,38 @@ REVIEW_SCHEMA = f"{SCHEMA_PREFIX}_independent_source_review_v1"
 REVIEW_STATUS = "PASS_SOURCE_ONLY_NOT_AUTHORITY"
 
 ATTEMPT_ID = (
-    "world_model_action_alignment_successor_v1_integrity_replacement_v1/"
-    "attempt_v1"
+    "world_model_action_alignment_successor_v1_"
+    "fixed_same_mechanism_continuation_v1/attempt_v1"
 )
 ATTEMPT_ROOT = (
     REPO_ROOT
     / ".generated/dev/world_model_action_alignment_successor_v1_"
-    "integrity_replacement_v1/attempt_v1"
+    "fixed_same_mechanism_continuation_v1/attempt_v1"
 )
-ORIGINAL_ATTEMPT_ROOT = (
-    REPO_ROOT / ".generated/dev/world_model_action_alignment_successor_v1/attempt_v1"
+PREDECESSOR_ATTEMPT_ROOT = (
+    REPO_ROOT
+    / ".generated/dev/world_model_action_alignment_successor_v1_"
+    "integrity_replacement_v1/attempt_v1"
 )
 AUTHORITY_PATH = (
     REPO_ROOT
     / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
-    "integrity_replacement_v1_execution_authority_2026-08-01.json"
+    "fixed_same_mechanism_continuation_v1_execution_authority_2026-08-01.json"
 )
 PREREGISTRATION_PATH = (
     REPO_ROOT
     / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
-    "integrity_replacement_v1_preregistration_2026-08-01.md"
+    "fixed_same_mechanism_continuation_v1_preregistration_2026-08-01.md"
 )
 PLAN_PATH = (
     REPO_ROOT
     / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
-    "integrity_replacement_v1_plan_2026-08-01.json"
+    "fixed_same_mechanism_continuation_v1_plan_2026-08-01.json"
 )
 REVIEW_PATH = (
     REPO_ROOT
     / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
-    "integrity_replacement_v1_independent_source_review_2026-08-01.json"
+    "fixed_same_mechanism_continuation_v1_independent_source_review_2026-08-01.json"
 )
 WORKER_PATH = Path(__file__).resolve()
 CHECKER_PATH = (
@@ -115,10 +124,12 @@ SUPERVISOR_PATH = (
 
 ARM_NAMES = successor_metrics.ARM_NAMES
 ARM_COEFFICIENTS = {"baseline": 0.0, "alignment": 1.0}
-TRAINING_UPDATES = 700
+START_UPDATE = 700
+TRAINING_UPDATES = 900
+ADDITIONAL_TRAINING_UPDATES = TRAINING_UPDATES - START_UPDATE
 BATCH_SIZE = 256
 MICROBATCH_SIZE = 32
-TAIL_UPDATES = successor_metrics.TAIL_UPDATES
+OBSERVATION_UPDATES = (700, 800, 900)
 EVALUATION_BATCH_SIZE = 64
 ALIGNMENT_MARGIN = 0.01
 CANDIDATE_SCAN_BATCH_ROWS = 32
@@ -127,6 +138,21 @@ MAXIMUM_GPU_SECONDS = 7_200
 EXPECTED_TRAIN_ROWS = 16_000
 EXPECTED_VALIDATION_ROWS = 2_048
 ACTION_COUNT = 9
+RANK_TOKEN_COUNT = 64
+RANK_FEATURE_DIMENSION = 192
+ABSOLUTE_PROGRESS_BOOTSTRAP_SEED = continuation_metrics.PAIRED_BOOTSTRAP_SEED
+ABSOLUTE_PROGRESS_THRESHOLD = continuation_metrics.ABSOLUTE_GAIN_THRESHOLD
+RECOVERY_DIAGNOSTIC_THRESHOLD = (
+    continuation_metrics.RECOVERY_GAIN_THRESHOLD_DIAGNOSTIC_ONLY
+)
+U700_GUARDS = {
+    "balanced_accuracy_lower": 0.34701964075333114,
+    "rank_ratio": 0.47287848726118314,
+    "persistence_lower": -0.22601831547011703,
+    "wrong_history_lower": 0.1406183675693852,
+    "hardest_margin": -0.00660276124845185,
+    "hardest_margin_lower": -0.0078111838906331724,
+}
 
 V3_ATTEMPT_ROOT = (
     REPO_ROOT
@@ -135,7 +161,10 @@ V3_ATTEMPT_ROOT = (
 PACK_ROOT = V3_ATTEMPT_ROOT / "pack"
 PREDECESSOR_PATH = base.PREDECESSOR
 
-
+PREDECESSOR_SNAPSHOT_SCHEMA = (
+    "lewm_go2_world_model_action_alignment_successor_v1_"
+    "integrity_replacement_v1_snapshot_v1"
+)
 def _absolute_binding(path: Path, digest: str, count: int) -> dict[str, Any]:
     return {"path": str(path), "file_sha256": digest, "byte_count": count}
 
@@ -189,92 +218,146 @@ EXPECTED_INPUT_BINDINGS = {
         "6ef0d194c45a60d9cc28806dd8158360ae4ea6da55caf8685bdcdda9cfeff2a4",
         118_813,
     ),
+    "baseline_u700_snapshot": _absolute_binding(
+        PREDECESSOR_ATTEMPT_ROOT / "baseline_update_000700.pt",
+        "613693d06309f90b87a7ac3e836d6817eed8c1e473ed0063006eb88960bce770",
+        10_909_343,
+    ),
+    "alignment_u700_snapshot": _absolute_binding(
+        PREDECESSOR_ATTEMPT_ROOT / "alignment_update_000700.pt",
+        "41435888521041aaa262db9a26eaa656d33a339998372ffd0b068d7c75679731",
+        10_909_343,
+    ),
 }
 
 EXPECTED_EVIDENCE_BINDINGS = {
-    "v3_result": _absolute_binding(
-        V3_ATTEMPT_ROOT / "result.json",
-        "764ee61b7bb8b7e1221f01fc34ba0554d0ca681fde21e99b1a9f5585b3360bd4",
-        26_054,
-    ),
-    "v3_terminal_review": _absolute_binding(
-        REPO_ROOT
-        / "docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_terminal_review_2026-08-01.json",
-        "457ca867f406fb6cf4db48bbe9d70340be792b4ee79c38902de112c857b091d2",
-        24_635,
-    ),
-    "localization_result": _absolute_binding(
-        REPO_ROOT
-        / ".generated/dev/world_model_existing_pool_three_arm_v1_action_localization_v1/attempt_v1/localization.json",
-        "eed91ff582fa2ecfc83a740b481986129396029cc5b66bce1f141f6e7e8cfea9",
-        66_005,
-    ),
-    "localization_receipt_check": _absolute_binding(
-        REPO_ROOT
-        / ".generated/dev/world_model_existing_pool_three_arm_v1_action_localization_v1/attempt_v1/receipt_check.json",
-        "71b00064e34e11044418221fc204a0f7ad1d48bd60c85e36dd6f1d0901bf5299",
-        1_582,
-    ),
-    "localization_terminal": _absolute_binding(
-        REPO_ROOT
-        / ".generated/dev/world_model_existing_pool_three_arm_v1_action_localization_v1/attempt_v1/terminal_supervision.json",
-        "c97cabc54bacb902a48b3880646fdecdfc83ba772e335e91f08c0cce902c058c",
-        4_765,
-    ),
-    "original_successor_preregistration": _absolute_binding(
+    "completed_successor_authority": _absolute_binding(
         REPO_ROOT
         / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
-        "preregistration_2026-08-01.md",
-        "9ef74b866314d84c72e3f125ccccd6a3d7827964176c46b7c5ac16775a17dfa1",
-        7_122,
+        "integrity_replacement_v1_execution_authority_2026-08-01.json",
+        "88b2c43264a9ee0fb46cf032d4323281d57f84148ff47a1dce98cde403b55cac",
+        22_455,
     ),
-    "original_successor_plan": _absolute_binding(
+    "completed_successor_reservation": _absolute_binding(
+        PREDECESSOR_ATTEMPT_ROOT / "reservation.json",
+        "34d54c60ef4916eb942574de90f620a0bf15be337497e29fe73277c5abf26787",
+        22_188,
+    ),
+    "completed_successor_result": _absolute_binding(
+        PREDECESSOR_ATTEMPT_ROOT / "result.json",
+        "57d9cfc2bcfa946805255bfdd1144faaf40290f7a921f6d201e770e114d7dd9b",
+        164_670,
+    ),
+    "completed_successor_receipt_check": _absolute_binding(
+        PREDECESSOR_ATTEMPT_ROOT / "receipt_check.json",
+        "46b157fb685b41ce05a347f34d4e1a67ad38485350fdfe69412b21fbe4048ec4",
+        1_849,
+    ),
+    "completed_successor_terminal": _absolute_binding(
+        PREDECESSOR_ATTEMPT_ROOT / "terminal_supervision.json",
+        "098d42503da1255ddc7b5a0c49cbbb746e6c41e8aca64627cc9d25a3cc0824b7",
+        6_764,
+    ),
+    "completed_successor_terminal_review": _absolute_binding(
         REPO_ROOT
         / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
-        "plan_2026-08-01.json",
-        "ec3bd3987d3cdb3a5611053e3ba057fc7bb637b6d71efebe41687ac4a34f73db",
-        2_110,
+        "integrity_replacement_v1_terminal_review_2026-08-01.json",
+        "51e760bc868f4cc2307dcc98c2778f97502e7643c866067eb0d47f8b35de3f45",
+        13_967,
     ),
-    "original_successor_authority": _absolute_binding(
+    "preauthority_identity_read_disclosure": _absolute_binding(
         REPO_ROOT
         / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
-        "execution_authority_2026-08-01.json",
-        "366cad5821ce68ea7ee8106b15f428d2859134a7e57b1567d7a1d7306b37ff58",
-        20_092,
+        "fixed_same_mechanism_continuation_v1_preauthority_identity_read_"
+        "disclosure_2026-08-01.json",
+        "a602a28b0cf4d9af34318dad98507a911e576cfdbd41e655c3e851bf1dbccc7c",
+        5_303,
     ),
-    "original_successor_reservation": _absolute_binding(
-        ORIGINAL_ATTEMPT_ROOT / "reservation.json",
-        "f3786cffa9dd840b6b14fbd47ceb931bd9041f91f62408e1c612036c75768540",
-        19_792,
-    ),
-    "original_successor_failure": _absolute_binding(
-        ORIGINAL_ATTEMPT_ROOT / "failure.json",
-        "d9849b84b3707e650973d048ca8d7ce2e83ee9409ddea9e62fed1ead1f9563d6",
-        1_329,
-    ),
-    "original_successor_terminal": _absolute_binding(
-        ORIGINAL_ATTEMPT_ROOT / "terminal_supervision.json",
-        "99f7d217739087327108363ff4fe9e3dc7b1cdac9373d48678b51275a198b6ab",
-        7_305,
-    ),
-    "original_successor_failure_audit": _absolute_binding(
+    "continuation_governance_correction": _absolute_binding(
         REPO_ROOT
         / "docs/lewm_go2_world_model_action_alignment_successor_v1_"
-        "terminal_preupdate_source_integrity_failure_result_2026-08-01.json",
-        "3f8350528c4985b792d22b5d4002b3cc34d926c7a2d8a84431009d6668bd63ed",
-        7_173,
+        "fixed_same_mechanism_continuation_v1_governance_correction_"
+        "2026-08-01.json",
+        "1a13d90b567c0e25bb459848bdc5b818568226160f5b1b80467d9df5e15cb341",
+        3_431,
     ),
 }
 
-PUBLIC_V3_BASELINE_ANCHORS = {
-    "balanced_accuracy": 0.2469343816883539,
-    "balanced_accuracy_lower": 0.23014452836846072,
-    "hardest_margin": -0.009453551490358742,
-    "hardest_margin_lower": -0.01138311990101325,
-    "persistence_point": -0.14645548512800682,
-    "persistence_lower": -0.1829122861354923,
-    "wrong_history_point": 0.12255093276460897,
-    "wrong_history_lower": 0.11766703087321294,
+# Public JSON-only witnesses from the independently checked completed u700
+# result. They are deliberately scalar/vector anchors. The predecessor metric
+# bundle is explicitly excluded from inputs/evidence and is never opened by
+# the continuation worker or the independent continuation source reviewer.
+PUBLIC_U700_REPLAY_ANCHORS = {
+    "baseline": {
+        "factual_mean_energy": 0.12548826619149622,
+        "balanced_accuracy": 0.2469343816883539,
+        "balanced_accuracy_lower": 0.23014452836846072,
+        "hardest_margin": -0.009453551490358742,
+        "hardest_margin_lower": -0.01138311990101325,
+        "rank_ratio": 0.46826675978556964,
+        "per_action_points": [
+            -0.006170692834744324,
+            -0.005279141936414382,
+            -0.005601519050314481,
+            -0.00799588780500926,
+            -0.007148324499695852,
+            -0.007509375523243631,
+            -0.009453551490358742,
+            -0.003459775001156837,
+            -0.007492055966883283,
+        ],
+        "per_action_q05": [
+            -0.007607474729023559,
+            -0.007305245818655399,
+            -0.008961245139171573,
+            -0.010201082615119542,
+            -0.008537367256800316,
+            -0.009700872771402906,
+            -0.011105889591432121,
+            -0.005668186473008009,
+            -0.009848080127799131,
+        ],
+        "persistence_lower": -0.1829122861354923,
+        "wrong_history_lower": 0.11766703087321294,
+    },
+    "alignment": {
+        "factual_mean_energy": 0.13033405333044357,
+        "balanced_accuracy": 0.362969689539191,
+        "balanced_accuracy_lower": 0.34701964075333114,
+        "hardest_margin": -0.00660276124845185,
+        "hardest_margin_lower": -0.0078111838906331724,
+        "rank_ratio": 0.47287848726118314,
+        "per_action_points": [
+            0.0012027149883560013,
+            -0.0035527010051377506,
+            -0.0015738389923428305,
+            -0.005862178591625633,
+            0.0011691098445800988,
+            -0.00660276124845185,
+            -0.004179590968378184,
+            0.0014289161780315412,
+            -0.0007765471389516971,
+        ],
+        "per_action_q05": [
+            0.00027890959805907734,
+            -0.004443377358722731,
+            -0.0026513533635927015,
+            -0.00682322353805956,
+            0.00027973971696981705,
+            -0.007808230967274414,
+            -0.004987031431587844,
+            0.00013842324334251095,
+            -0.001866197634443366,
+        ],
+        "persistence_lower": -0.22601831547011703,
+        "wrong_history_lower": 0.1406183675693852,
+    },
+    "concurrent_delta": {
+        "point": 0.0028507902419068927,
+        "lower": 0.0013970169908673067,
+        "median": 0.003062303631657816,
+        "upper": 0.004941227499907773,
+    },
 }
 
 EXACT_CHILD_ENVIRONMENT = {
@@ -334,12 +417,14 @@ REQUIRED_SOURCE_PATHS = {
     ),
     "localization_metrics": "lewm/benchmarks/go2_world_model_v3_action_localization_v1.py",
     "alignment_metrics": "lewm/benchmarks/go2_world_model_action_alignment_successor_v1.py",
+    "continuation_metrics": "lewm/benchmarks/go2_world_model_action_alignment_continuation_v1.py",
     "worker": "scripts/execute_go2_world_model_action_alignment_successor_v1.py",
     "checker": "scripts/check_go2_world_model_action_alignment_successor_v1.py",
     "external_supervisor": "scripts/run_go2_world_model_action_alignment_successor_authorized_v1.py",
 }
 REQUIRED_TEST_PATHS = {
     "alignment_metric_tests": "lewm/tests/test_go2_world_model_action_alignment_successor_v1.py",
+    "continuation_metric_tests": "lewm/tests/test_go2_world_model_action_alignment_continuation_v1.py",
     "alignment_worker_checker_tests": "lewm/tests/test_execute_go2_world_model_action_alignment_successor_v1.py",
     "alignment_supervisor_tests": "lewm/tests/test_run_go2_world_model_action_alignment_successor_authorized_v1.py",
 }
@@ -352,8 +437,8 @@ CLAIM_BOUNDARY = [
 ]
 EXPECTED_SUCCESS_FILES_BEFORE_CHECKER = {
     "reservation.json",
-    "baseline_update_000700.pt",
-    "alignment_update_000700.pt",
+    "baseline_update_000900.pt",
+    "alignment_update_000900.pt",
     "metrics.pt",
     "result.json",
 }
@@ -506,133 +591,174 @@ def _validate_binding_map(
     return result
 
 
-def _validate_replacement_plan(plan: Any) -> None:
-    expected_keys = {
-        "schema", "purpose", "development_only",
-        "citable_as_original_factual_learnability_claim",
-        "authorizes_execution", "route", "direct_predecessor_failure_audit",
-        "original_plan_binding", "integrity_replacement", "arms", "objective",
-        "action_margin", "head_row_presentations_per_arm_per_training_row",
-        "training", "paired_decision", "reuse", "attempt", "caps",
-        "science_identity", "forbidden",
+def _validate_continuation_plan(plan: Any) -> None:
+    """Validate the machine plan's scientifically operative fields.
+
+    The exact field inventory and every operative restoration, decision,
+    finality, and custody value are frozen.
+    """
+
+    required_keys = {
+        "schema", "purpose", "route", "development_only",
+        "authorizes_execution", "citable_as_original_factual_learnability_claim",
+        "citable_as_planning_usefulness_evidence", "predecessor_evidence",
+        "arms", "objective", "action_margin",
+        "head_row_presentations_per_arm_per_training_row", "continuation",
+        "training", "absolute_progress_decision", "u700_descriptive_anchors",
+        "continuation_retention", "terminal_precedence",
+        "action_alignment_repair", "post_alignment_persistence_routing",
+        "meaningful_progress_incomplete", "reuse", "attempt", "caps",
+        "forbidden", "finality", "bootstrap_claim_boundary",
     }
-    expected_integrity = {
-        "version": 1,
-        "maximum_integrity_replacements_after_this": 0,
-        "sole_functional_change": (
-            "row_stable_b32_gradient_enabled_detached_wrong_action_scan"
-        ),
-        "original_scan": {
-            "autograd_enabled": False,
-            "batch_rows": 128,
-            "flattened_row_action_pairs": True,
-        },
-        "replacement_scan": {
-            "slots": 8,
-            "batch_rows": CANDIDATE_SCAN_BATCH_ROWS,
-            "row_order": "original_microbatch_order",
-            "wrong_id_order_per_row": (
-                "ascending_absolute_action_id_excluding_factual"
-            ),
-            "autograd_enabled": True,
-            "energy_detached_before_scan_assignment": True,
-            "temporary_graph_discarded_after_each_slot": True,
-            "selected_recomputation_batch_rows": MICROBATCH_SIZE,
-            "maximum_consistency_error": 1.0e-6,
-        },
-        "source_probe": {
-            "objective_atol": 1.0e-6,
-            "gradient_rtol": 1.0e-5,
-            "gradient_atol": 1.0e-6,
-            "state_hash_exact": True,
-            "rng_state_exact": True,
-        },
-        "scientific_fields_changed": False,
-        "tolerance_relaxed": False,
-        "failed_attempt_state_reused": False,
-    }
-    expected_science_identity = {
-        "model": True, "predecessor": True, "data": True, "pack": True,
-        "initialization": True, "seed": True, "schedule": True,
-        "optimizer": True, "updates": True, "coefficients": True,
-        "objective": True, "evaluations": True, "metrics": True,
-        "thresholds": True, "decision_precedence": True, "caps": True,
-        "claim_boundary": True,
-    }
-    expected_forbidden = [
-        "sealed_or_heldout_access", "protected_runtime_access", "rgb_access",
-        "alternate_pack_or_checkpoint", "failed_attempt_runtime_state_reuse",
-        "architecture_change", "objective_change", "schedule_change",
-        "coefficient_search", "tolerance_relaxation", "validation_gradient",
-        "automatic_follow_on", "further_integrity_replacement",
+    expected_arms = [
+        {
+            "name": name,
+            "alignment_coefficient": ARM_COEFFICIENTS[name],
+            "u700_snapshot": EXPECTED_INPUT_BINDINGS[f"{name}_u700_snapshot"],
+        }
+        for name in ARM_NAMES
     ]
     if (
         type(plan) is not dict
-        or set(plan) != expected_keys
+        or set(plan) != required_keys
         or plan.get("schema") != f"{SCHEMA_PREFIX}_plan_v1"
-        or plan.get("purpose")
-        != (
-            "science_identical_integrity_replacement_of_matched_existing_pool_"
-            "global_action_alignment_comparison"
-        )
+        or plan.get("purpose") != "bounded_u700_to_u900_absolute_treatment_progress_gate"
+        or plan.get("route") != "FIXED_SAME_MECHANISM_CONTINUATION_V1"
         or plan.get("development_only") is not True
-        or plan.get("citable_as_original_factual_learnability_claim") is not False
         or plan.get("authorizes_execution") is not False
-        or plan.get("route") != "TEST_GLOBAL_ALIGNMENT_HYPOTHESIS"
-        or plan.get("direct_predecessor_failure_audit")
-        != EXPECTED_EVIDENCE_BINDINGS["original_successor_failure_audit"]
-        or plan.get("original_plan_binding")
-        != EXPECTED_EVIDENCE_BINDINGS["original_successor_plan"]
-        or plan.get("integrity_replacement") != expected_integrity
-        or plan.get("arms")
-        != [
-            {"name": "baseline", "alignment_coefficient": 0.0},
-            {"name": "alignment", "alignment_coefficient": 1.0},
-        ]
-        or plan.get("objective")
-        != (
+        or plan.get("citable_as_original_factual_learnability_claim") is not False
+        or plan.get("citable_as_planning_usefulness_evidence") is not False
+        or plan.get("predecessor_evidence") != {
+            "execution_authority": EXPECTED_EVIDENCE_BINDINGS["completed_successor_authority"],
+            "reservation": EXPECTED_EVIDENCE_BINDINGS["completed_successor_reservation"],
+            "result": EXPECTED_EVIDENCE_BINDINGS["completed_successor_result"],
+            "receipt_check": EXPECTED_EVIDENCE_BINDINGS["completed_successor_receipt_check"],
+            "terminal_supervision": EXPECTED_EVIDENCE_BINDINGS["completed_successor_terminal"],
+            "terminal_review": EXPECTED_EVIDENCE_BINDINGS["completed_successor_terminal_review"],
+            "preauthority_identity_read_disclosure": EXPECTED_EVIDENCE_BINDINGS["preauthority_identity_read_disclosure"],
+            "continuation_governance_correction": EXPECTED_EVIDENCE_BINDINGS["continuation_governance_correction"],
+        }
+        or plan.get("arms") != expected_arms
+        or plan.get("objective") != (
             "mean(E_factual) + coefficient * mean(relu(0.01 + E_factual - "
             "min_wrong_E))"
         )
         or plan.get("action_margin") != ALIGNMENT_MARGIN
         or plan.get("head_row_presentations_per_arm_per_training_row") != 10
-        or plan.get("training")
-        != {
+        or plan.get("continuation") != {
+            "source_global_update": START_UPDATE,
+            "terminal_global_update": TRAINING_UPDATES,
+            "additional_updates": ADDITIONAL_TRAINING_UPDATES,
+            "load_both_arm_state_dicts": True,
+            "load_each_arms_own_adamw_state": True,
+            "optimizer_step_at_source": START_UPDATE,
+            "optimizer_step_at_terminal": TRAINING_UPDATES,
+            "warmup_reset": False,
+            "optimizer_reset": False,
+            "schedule_replay": False,
+            "schedule_prefix_exact": True,
+            "pretraining_u700_validation_replay": True,
+            "u700_public_anchor_absolute_tolerance": 1.0e-12,
+            "u700_public_anchor_relative_tolerance": 0.0,
+        }
+        or plan.get("training") != {
             "rows": EXPECTED_TRAIN_ROWS,
             "validation_rows": EXPECTED_VALIDATION_ROWS,
-            "updates": TRAINING_UPDATES,
+            "global_schedule_updates": TRAINING_UPDATES,
+            "trained_global_updates_inclusive": [START_UPDATE + 1, TRAINING_UPDATES],
+            "additional_updates": ADDITIONAL_TRAINING_UPDATES,
             "batch_size": BATCH_SIZE,
             "microbatch_size": MICROBATCH_SIZE,
-            "presentations_per_arm": TRAINING_UPDATES * BATCH_SIZE,
+            "additional_presentations_per_arm": ADDITIONAL_TRAINING_UPDATES * BATCH_SIZE,
             "seed": 20260731,
             "warmup_updates": 150,
             "schedule_horizon_updates": 3000,
-            "observation_updates": list(TAIL_UPDATES),
+            "observation_updates": list(OBSERVATION_UPDATES),
             "checkpoint_selection": False,
             "early_stopping": False,
+            "validation_gradient": False,
         }
-        or plan.get("paired_decision")
-        != {
-            "seed": successor_metrics.PAIRED_BOOTSTRAP_SEED,
+        or plan.get("absolute_progress_decision") != {
+            "definition": "hardest_action_margin_u900_minus_u700_within_alignment_arm",
+            "bootstrap_algorithm": continuation_metrics.BOOTSTRAP_ALGORITHM,
+            "seed": ABSOLUTE_PROGRESS_BOOTSTRAP_SEED,
             "replicates": 10_000,
             "quantile_indices": [500, 5000, 9499],
-            "meaningful_point_threshold": (
-                successor_metrics.MEANINGFUL_POINT_THRESHOLD
-            ),
-            "stall_upper_threshold": successor_metrics.STALL_UPPER_THRESHOLD,
-            "absolute_repair_precedence": True,
-            "retention_failure_overrides_meaningful": True,
+            "u700_residual": 0.00660276124845185,
+            "u701_u900_learning_rate_fraction_sum": 175.22190359794223,
+            "u701_u3000_remaining_learning_rate_fraction_sum": 891.0844401632202,
+            "u701_u900_remaining_learning_rate_mass_share": 0.19663894430234558,
+            "on_trajectory_gain_threshold": ABSOLUTE_PROGRESS_THRESHOLD,
+            "u500_u700_loss_recovery_diagnostic": RECOVERY_DIAGNOSTIC_THRESHOLD,
+            "requires_q05_positive": True,
+            "concurrent_baseline_relative_delta_is_diagnostic_only": True,
         }
-        or plan.get("reuse")
-        != {
+        or plan.get("u700_descriptive_anchors") != {
+            "balanced_accuracy_q05": U700_GUARDS["balanced_accuracy_lower"],
+            "rank_ratio": U700_GUARDS["rank_ratio"],
+            "persistence_q05": U700_GUARDS["persistence_lower"],
+            "wrong_history_q05": U700_GUARDS["wrong_history_lower"],
+            "worst_action_margin_point": U700_GUARDS["hardest_margin"],
+            "shared_minimum_margin_q05": U700_GUARDS["hardest_margin_lower"],
+        }
+        or plan.get("continuation_retention") != {
+            "balanced_accuracy_q05_strictly_above": 1.0 / ACTION_COUNT,
+            "wrong_history_q05_strictly_above": 0.0,
+            "rank_ratio_at_least": continuation_metrics.RANK_RATIO_RETENTION_MINIMUM,
+            "rank_minimum_passing_observation_count": continuation_metrics.RANK_RETENTION_PASS_COUNT,
+            "rank_observation_updates": list(OBSERVATION_UPDATES),
+            "preserve_positive_action_margin_point_ids": list(continuation_metrics.PRESERVED_POSITIVE_ACTION_IDS),
+            "preserve_positive_action_margin_q05_ids": list(continuation_metrics.PRESERVED_POSITIVE_ACTION_IDS),
+            "all_contract_checks": True,
+            "all_train_fit_checks": True,
+            "persistence_is_post_alignment_routing_not_retention": True,
+        }
+        or plan.get("terminal_precedence") != [
+            "FAIL_CONTRACT_CLOSE_ALIGNMENT_BRANCH",
+            "FAIL_RETENTION_CLOSE_ALIGNMENT_BRANCH",
+            "PASS_ACTION_ALIGNMENT_PROXY_REPAIR_PERSISTENCE_SYSTEMIC",
+            "PASS_ACTION_ALIGNMENT_PROXY_REPAIR_PLANNING_WITH_PROXY_CAVEAT",
+            "PASS_EXPLORATORY_ACTION_ALIGNMENT_AND_PREDICTOR_USEFULNESS_PROXY",
+            "MEANINGFUL_ABSOLUTE_PROGRESS_INCOMPLETE_CONTINUE_SAME_MECHANISM",
+            "POSITIVE_BUT_INSUFFICIENT_RATE_CLOSE_ALIGNMENT_BRANCH",
+            "INCONCLUSIVE_ABSOLUTE_CHANGE_CLOSE_ALIGNMENT_BRANCH",
+            "STALLED_OR_HARMFUL_CLOSE_ALIGNMENT_BRANCH",
+        ]
+        or plan.get("action_alignment_repair") != {
+            "all_nine_action_margin_points_positive": True,
+            "all_nine_action_margin_q05_positive": True,
+            "shared_minimum_margin_q05_positive": True,
+            "balanced_accuracy_q05_strictly_above_chance": True,
+            "wrong_history_q05_positive": True,
+            "rank_gate_passed": True,
+            "all_retention_contract_and_train_fit_checks_passed": True,
+        }
+        or plan.get("post_alignment_persistence_routing") != {
+            "systemic_failure_minimum_nonpositive_per_action_q05_count": 5,
+            "systemic_next_step": "PERSISTENCE_RESIDUAL_VS_MATCHED_BASELINE",
+            "localized_or_aggregate_unrepaired_next_step": "PLANNING_USEFULNESS_GATE_WITH_PROXY_CAVEAT",
+            "passed_requires_zero_nonpositive_per_action_q05_and_positive_aggregate_q05": True,
+            "passed_next_step": "PROCEED_TO_PLANNING_USEFULNESS_GATE",
+            "automatic_execution_authority": False,
+        }
+        or plan.get("meaningful_progress_incomplete") != {
+            "absolute_gain_at_least": ABSOLUTE_PROGRESS_THRESHOLD,
+            "absolute_gain_q05_positive": True,
+            "continuation_retention_passed": True,
+            "permits_separate_same_mechanism_preregistration": True,
+            "automatic_execution_authority": False,
+            "selected_next_step": "PREREGISTER_NEXT_FIXED_SAME_MECHANISM_BLOCK",
+        }
+        or plan.get("reuse") != {
             "v3_pack_read_only": True,
             "fresh_pack": False,
             "rgb_open_count": 0,
             "data_generation": False,
             "network_access": False,
+            "predecessor_metric_bundle_input": False,
+            "prior_attempt_root_write_count": 0,
         }
-        or plan.get("attempt")
-        != {
+        or plan.get("attempt") != {
             "id": ATTEMPT_ID,
             "maximum_attempts": 1,
             "reservation_consumes_attempt": True,
@@ -640,18 +766,82 @@ def _validate_replacement_plan(plan: Any) -> None:
             "resume": False,
             "refill": False,
             "overwrite": False,
-            "original_attempt_runtime_reuse": False,
+            "recovery": False,
+            "integrity_replacement": False,
+            "further_continuation": False,
+            "identical_replication": False,
         }
-        or plan.get("caps")
-        != {
+        or plan.get("caps") != {
             "maximum_wall_seconds": MAXIMUM_WALL_SECONDS,
             "maximum_gpu_seconds": MAXIMUM_GPU_SECONDS,
-            "maximum_training_updates": TRAINING_UPDATES,
+            "maximum_additional_training_updates": ADDITIONAL_TRAINING_UPDATES,
+            "maximum_global_training_update": TRAINING_UPDATES,
         }
-        or plan.get("science_identity") != expected_science_identity
-        or plan.get("forbidden") != expected_forbidden
+        or plan.get("forbidden") != [
+            "sealed_or_heldout_access", "protected_runtime_access", "rgb_access",
+            "new_data_generation", "alternate_pack_or_checkpoint",
+            "cross_arm_snapshot_load", "optimizer_reset", "warmup_reset",
+            "schedule_replay_or_change", "architecture_or_objective_change",
+            "coefficient_or_threshold_search", "validation_gradient",
+            "automatic_follow_on", "retry_resume_refill_overwrite_or_recovery",
+            "integrity_replacement",
+            "unregistered_further_alignment_continuation_or_replication",
+        ]
+        or plan.get("finality") != {
+            "meaningful_progress_requires_separate_preregistration": True,
+            "all_other_alignment_unrepaired_outcomes_close_training": True,
+            "proxy_pass_does_not_authorize_planning_execution": True,
+            "automatic_follow_on": False,
+        }
+        or plan.get("bootstrap_claim_boundary") != {
+            "conditional_on_adaptively_selected_continuation": True,
+            "validation_scene_reweighting_only": True,
+            "training_seed_uncertainty_measured": False,
+            "fresh_scene_generalization_measured": False,
+        }
     ):
-        raise AlignmentWorkerError("bound replacement plan changed")
+        raise AlignmentWorkerError("bound continuation plan changed")
+
+
+INDEPENDENT_SOURCE_REVIEWER_IDENTITY = "/root/continuation_code_audit"
+PREAUTHORITY_REVIEW_EXCLUDED_IDENTITIES = {
+    "/root",
+    "/root/continuation_runtime",
+    "/root/localization_result_audit",
+}
+
+
+def _validate_independent_source_reviewer_evidence(review: Mapping[str, Any]) -> None:
+    reviewer = review.get("reviewer")
+    verification = review.get("verification")
+    focused_tests = (
+        verification.get("focused_tests")
+        if type(verification) is dict
+        else None
+    )
+    if (
+        type(reviewer) is not dict
+        or reviewer.get("identity") != INDEPENDENT_SOURCE_REVIEWER_IDENTITY
+        or reviewer.get("identity") in PREAUTHORITY_REVIEW_EXCLUDED_IDENTITIES
+        or type(verification) is not dict
+        or verification.get("all_focused_tests_passed") is not True
+        or type(focused_tests) is not dict
+        or type(focused_tests.get("passed")) is not int
+        or focused_tests.get("passed") < 24
+        or focused_tests.get("failed") != 0
+        or verification.get("restoration_contract_reviewed") is not True
+        or verification.get("absolute_progress_decision_reviewed") is not True
+        or verification.get("schedule_prefix_and_absolute_update_reviewed") is not True
+        or verification.get(
+            "preauthority_identity_read_disclosure_and_exclusions_reviewed"
+        ) is not True
+        or verification.get("governance_correction_reviewed") is not True
+        or verification.get("no_real_runtime_payload_opened") is not True
+        or type(review.get("custody")) is not dict
+        or review["custody"].get("runtime_payloads_opened") is not False
+        or review["custody"].get("sealed_or_heldout_opened") is not False
+    ):
+        raise AlignmentWorkerError("independent review evidence is incomplete")
 
 
 def load_and_validate_authority(
@@ -718,7 +908,7 @@ def load_and_validate_authority(
             label=key,
         )
     plan = _read_bound_json(authority["plan_binding"], label="plan")
-    _validate_replacement_plan(plan)
+    _validate_continuation_plan(plan)
     sources = _validate_binding_map(
         authority["source_bindings"], REQUIRED_SOURCE_PATHS,
         frozen_commit=source_commit, label="source bindings"
@@ -738,96 +928,52 @@ def load_and_validate_authority(
         or review.get("reviewed_preregistration_binding")
         != authority["preregistration_binding"]
         or review.get("reviewed_plan_binding") != authority["plan_binding"]
-        or review.get("route") != "TEST_GLOBAL_ALIGNMENT_HYPOTHESIS"
+        or review.get("route") != "FIXED_SAME_MECHANISM_CONTINUATION_V1"
         or review.get("remaining_findings") != []
         or review.get("authority_granted_by_this_document") is not False
     ):
         raise AlignmentWorkerError("independent source review is not a bound PASS")
-    reviewer = review.get("reviewer")
-    verification = review.get("verification")
-    synthetic_probe = (
-        verification.get("exact_rocm_synthetic_probe")
-        if type(verification) is dict
-        else None
-    )
-    focused_tests = (
-        verification.get("focused_tests")
-        if type(verification) is dict
-        else None
-    )
-    expected_synthetic_probe = {
-        "passed": True,
-        "uses_real_checkpoint_snapshot_pack_index_or_rgb_payload": False,
-        "synthetic_predecessor_state_entries": 187,
-        "maximum_live_scan_graphs": 1,
-        "scan_dispatch": {
-            "batch_rows": CANDIDATE_SCAN_BATCH_ROWS,
-            "wrong_scan_calls": 8,
-            "head_row_presentations": 10,
-            "maximum_scan_recompute_error": 0.0,
-            "tolerance": 1.0e-6,
-            "scan_requires_grad": False,
-            "scan_has_grad_fn": False,
-            "pre_backward_parameter_grad_count": 0,
-            "post_backward_parameter_grad_count": 36,
-            "peak_memory_bytes": 1_481_360_896,
-        },
-        "real_all_parameter_reference": {
-            "batch_rows": CANDIDATE_SCAN_BATCH_ROWS,
-            "wrong_scan_calls": 8,
-            "head_row_presentations": 10,
-            "objective_absolute_error": 0.0,
-            "objective_atol": 1.0e-6,
-            "gradient_parameter_count": 36,
-            "gradient_allclose": True,
-            "gradient_rtol": 1.0e-5,
-            "gradient_atol": 1.0e-6,
-            "maximum_gradient_absolute_error": 6.752088665962219e-09,
-            "global_gradient_relative_l2_error": 9.253475062389835e-07,
-            "minimum_unique_wrong_energy_gap": 7.748603820800781e-06,
-            "corrected_state_hash_exact": True,
-            "reference_state_hash_exact": True,
-            "corrected_cpu_rng_exact": True,
-            "corrected_cuda_rng_exact": True,
-            "reference_cpu_rng_exact": True,
-            "reference_cuda_rng_exact": True,
-            "corrected_forward_peak_memory_bytes": 1_013_770_752,
-            "reference_forward_peak_memory_bytes": 4_025_879_040,
-        },
-    }
-    if (
-        type(reviewer) is not dict
-        or type(reviewer.get("identity")) is not str
-        or not reviewer["identity"].strip()
-        or type(verification) is not dict
-        or verification.get("all_focused_tests_passed") is not True
-        or type(focused_tests) is not dict
-        or focused_tests.get("passed") != 24
-        or focused_tests.get("failed") != 0
-        or verification.get("normalized_scientific_plan_differences") != []
-        or synthetic_probe != expected_synthetic_probe
-        or type(review.get("custody")) is not dict
-        or review["custody"].get("runtime_payloads_opened") is not False
-        or review["custody"].get("sealed_or_heldout_opened") is not False
-    ):
-        raise AlignmentWorkerError("independent review evidence is incomplete")
+    _validate_independent_source_reviewer_evidence(review)
 
     if authority["input_bindings"] != EXPECTED_INPUT_BINDINGS:
         raise AlignmentWorkerError("runtime input bindings changed")
     if authority["evidence_bindings"] != EXPECTED_EVIDENCE_BINDINGS:
         raise AlignmentWorkerError("predecessor evidence bindings changed")
-    if ORIGINAL_ATTEMPT_ROOT.is_symlink() or not ORIGINAL_ATTEMPT_ROOT.is_dir():
-        raise AlignmentWorkerError("closed original attempt root changed")
-    with os.scandir(ORIGINAL_ATTEMPT_ROOT) as entries:
-        original_inventory = []
+    if PREDECESSOR_ATTEMPT_ROOT.is_symlink() or not PREDECESSOR_ATTEMPT_ROOT.is_dir():
+        raise AlignmentWorkerError("completed predecessor attempt root changed")
+    with os.scandir(PREDECESSOR_ATTEMPT_ROOT) as entries:
+        predecessor_inventory = []
         for entry in entries:
             if entry.is_symlink() or not entry.is_file(follow_symlinks=False):
-                raise AlignmentWorkerError("closed original attempt contains a non-file")
-            original_inventory.append(entry.name)
-    if set(original_inventory) != {
-        "reservation.json", "failure.json", "terminal_supervision.json"
-    } or len(original_inventory) != 3:
-        raise AlignmentWorkerError("closed original attempt inventory changed")
+                raise AlignmentWorkerError("completed predecessor contains a non-file")
+            predecessor_inventory.append(entry.name)
+    if set(predecessor_inventory) != {
+        "reservation.json", "baseline_update_000700.pt",
+        "alignment_update_000700.pt", "metrics.pt", "result.json",
+        "receipt_check.json", "terminal_supervision.json",
+    } or len(predecessor_inventory) != 7:
+        raise AlignmentWorkerError("completed predecessor attempt inventory changed")
+    for name, binding in EXPECTED_INPUT_BINDINGS.items():
+        path = Path(binding["path"])
+        if name in {"baseline_u700_snapshot", "alignment_u700_snapshot"}:
+            try:
+                metadata = path.lstat()
+            except OSError as error:
+                raise AlignmentWorkerError(
+                    f"pre-reservation snapshot input changed: {name}"
+                ) from error
+            if (
+                path.is_symlink()
+                or not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_size != binding["byte_count"]
+            ):
+                raise AlignmentWorkerError(
+                    f"pre-reservation snapshot input changed: {name}"
+                )
+            # The exact digest is checked during the one and only bound read
+            # immediately before weights-only deserialization by the worker.
+        elif not _binding_is_exact(path, binding):
+            raise AlignmentWorkerError(f"pre-reservation input changed: {name}")
     for name, binding in EXPECTED_EVIDENCE_BINDINGS.items():
         if not _binding_is_exact(Path(binding["path"]), binding):
             raise AlignmentWorkerError(f"pre-reservation evidence changed: {name}")
@@ -839,7 +985,8 @@ def load_and_validate_authority(
     if authority["caps"] != {
         "maximum_wall_seconds": MAXIMUM_WALL_SECONDS,
         "maximum_gpu_seconds": MAXIMUM_GPU_SECONDS,
-        "maximum_training_updates": TRAINING_UPDATES,
+        "maximum_additional_training_updates": ADDITIONAL_TRAINING_UPDATES,
+        "maximum_global_training_update": TRAINING_UPDATES,
     }:
         raise AlignmentWorkerError("resource caps changed")
     if authority["attempt"] != {
@@ -852,6 +999,9 @@ def load_and_validate_authority(
         "resume": False,
         "refill": False,
         "overwrite": False,
+        "recovery": False,
+        "integrity_replacement": False,
+        "further_continuation": False,
     }:
         raise AlignmentWorkerError("attempt contract changed")
     if authority["execution"] != {
@@ -1130,6 +1280,240 @@ def _build_two_arms(
     }
 
 
+def _load_and_restore_u700_snapshot(
+    *,
+    arm_name: str,
+    arm: base.ArmCore,
+    optimizer: torch.optim.AdamW,
+    substrate_receipt: Mapping[str, Any],
+    schedule_u700_audit: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Load one exact bound u700 arm/AdamW snapshot and validate it strictly."""
+
+    if arm_name not in ARM_NAMES:
+        raise AlignmentWorkerError("snapshot selected an unknown arm")
+    binding = EXPECTED_INPUT_BINDINGS[f"{arm_name}_u700_snapshot"]
+    try:
+        raw = custody._read_absolute_regular_once(
+            binding, label=f"{arm_name} u700 continuation snapshot"
+        )
+        snapshot = torch.load(
+            io.BytesIO(raw), map_location="cpu", weights_only=True
+        )
+    except Exception as error:
+        raise AlignmentWorkerError(
+            f"could not load bound {arm_name} u700 snapshot"
+        ) from error
+    finally:
+        if "raw" in locals():
+            del raw
+    required = {
+        "schema", "status", "arm", "alignment_coefficient", "update",
+        "authority_binding", "reservation_binding", "substrate", "schedule",
+        "arm_state_dict", "optimizer_state_dict",
+    }
+    if (
+        type(snapshot) is not dict
+        or set(snapshot) != required
+        or snapshot.get("schema") != PREDECESSOR_SNAPSHOT_SCHEMA
+        or snapshot.get("status") != "COMPLETE"
+        or snapshot.get("arm") != arm_name
+        or snapshot.get("alignment_coefficient") != ARM_COEFFICIENTS[arm_name]
+        or snapshot.get("update") != START_UPDATE
+        or snapshot.get("authority_binding")
+        != EXPECTED_EVIDENCE_BINDINGS["completed_successor_authority"]
+        or snapshot.get("reservation_binding")
+        != EXPECTED_EVIDENCE_BINDINGS["completed_successor_reservation"]
+        or snapshot.get("substrate") != dict(substrate_receipt)
+        or snapshot.get("schedule") != dict(schedule_u700_audit)
+    ):
+        raise AlignmentWorkerError(f"{arm_name} u700 snapshot envelope changed")
+
+    observed_model = snapshot["arm_state_dict"]
+    expected_model = arm.state_dict()
+    if type(observed_model) is not dict or set(observed_model) != set(expected_model):
+        raise AlignmentWorkerError(f"{arm_name} model-state inventory changed")
+    for name, expected in expected_model.items():
+        value = observed_model[name]
+        if (
+            not isinstance(value, torch.Tensor)
+            or value.device.type != "cpu"
+            or value.layout != torch.strided
+            or value.dtype != expected.dtype
+            or tuple(value.shape) != tuple(expected.shape)
+            or not bool(torch.isfinite(value).all())
+        ):
+            raise AlignmentWorkerError(
+                f"{arm_name} model-state tensor changed: {name}"
+            )
+    model_sha256 = base.tensor_inventory_sha256(observed_model)
+
+    observed_optimizer = snapshot["optimizer_state_dict"]
+    fresh_optimizer = optimizer.state_dict()
+    if (
+        type(observed_optimizer) is not dict
+        or set(observed_optimizer) != {"state", "param_groups"}
+        or type(observed_optimizer["state"]) is not dict
+        or type(observed_optimizer["param_groups"]) is not list
+        or len(observed_optimizer["param_groups"])
+        != len(fresh_optimizer["param_groups"])
+    ):
+        raise AlignmentWorkerError(f"{arm_name} optimizer envelope changed")
+    expected_lr = {
+        "predictor": base.PREDICTOR_BASE_LR
+        * base.LR_SCALE
+        * base.learning_rate_fraction(START_UPDATE),
+        "memory": base.MEMORY_BASE_LR
+        * base.LR_SCALE
+        * base.learning_rate_fraction(START_UPDATE),
+    }
+    flat_parameters: list[torch.nn.Parameter] = []
+    expected_parameter_ids: list[int] = []
+    for group_index, (observed_group, fresh_group) in enumerate(
+        zip(
+            observed_optimizer["param_groups"],
+            fresh_optimizer["param_groups"],
+            strict=True,
+        )
+    ):
+        if (
+            type(observed_group) is not dict
+            or set(observed_group) != set(fresh_group)
+            or observed_group.get("group_name") not in expected_lr
+            or observed_group.get("params") != fresh_group.get("params")
+        ):
+            raise AlignmentWorkerError(
+                f"{arm_name} optimizer group {group_index} identity changed"
+            )
+        for key, value in fresh_group.items():
+            if key == "lr":
+                if observed_group[key] != expected_lr[observed_group["group_name"]]:
+                    raise AlignmentWorkerError(
+                        f"{arm_name} optimizer group learning rate changed"
+                    )
+            elif key != "params" and observed_group[key] != value:
+                raise AlignmentWorkerError(
+                    f"{arm_name} optimizer group hyperparameter changed: {key}"
+                )
+        expected_parameter_ids.extend(fresh_group["params"])
+        flat_parameters.extend(optimizer.param_groups[group_index]["params"])
+    if (
+        len(expected_parameter_ids) != len(set(expected_parameter_ids))
+        or set(observed_optimizer["state"]) != set(expected_parameter_ids)
+        or len(flat_parameters) != len(expected_parameter_ids)
+    ):
+        raise AlignmentWorkerError(f"{arm_name} optimizer state coverage changed")
+    parameter_by_id = dict(zip(expected_parameter_ids, flat_parameters, strict=True))
+    moment_inventory: dict[str, torch.Tensor] = {}
+    for parameter_id in expected_parameter_ids:
+        state = observed_optimizer["state"][parameter_id]
+        parameter = parameter_by_id[parameter_id]
+        if type(state) is not dict or set(state) != {"step", "exp_avg", "exp_avg_sq"}:
+            raise AlignmentWorkerError(
+                f"{arm_name} optimizer state fields changed for {parameter_id}"
+            )
+        step = state["step"]
+        if (
+            not isinstance(step, torch.Tensor)
+            or step.device.type != "cpu"
+            or step.dtype != torch.float32
+            or tuple(step.shape) != ()
+            or not bool(torch.isfinite(step))
+            or float(step) != float(START_UPDATE)
+        ):
+            raise AlignmentWorkerError(
+                f"{arm_name} optimizer step is not exactly {START_UPDATE}"
+            )
+        for moment_name in ("exp_avg", "exp_avg_sq"):
+            moment = state[moment_name]
+            if (
+                not isinstance(moment, torch.Tensor)
+                or moment.device.type != "cpu"
+                or moment.layout != torch.strided
+                or moment.dtype != parameter.dtype
+                or tuple(moment.shape) != tuple(parameter.shape)
+                or not bool(torch.isfinite(moment).all())
+            ):
+                raise AlignmentWorkerError(
+                    f"{arm_name} optimizer moment changed: {parameter_id}.{moment_name}"
+                )
+            moment_inventory[f"{parameter_id}.{moment_name}"] = moment
+    optimizer_moment_sha256 = base.tensor_inventory_sha256(moment_inventory)
+
+    try:
+        arm.load_state_dict(observed_model, strict=True)
+        optimizer.load_state_dict(observed_optimizer)
+    except Exception as error:
+        raise AlignmentWorkerError(
+            f"{arm_name} u700 state restoration failed"
+        ) from error
+    if base.module_state_sha256(arm) != model_sha256:
+        raise AlignmentWorkerError(f"{arm_name} restored model state changed")
+    post_load_moments: dict[str, torch.Tensor] = {}
+    parameter_offset = 0
+    for group_index, (loaded_group, snapshot_group) in enumerate(
+        zip(optimizer.param_groups, observed_optimizer["param_groups"], strict=True)
+    ):
+        if set(loaded_group) != set(snapshot_group):
+            raise AlignmentWorkerError(
+                f"{arm_name} loaded optimizer group fields changed"
+            )
+        for key, value in snapshot_group.items():
+            if key != "params" and loaded_group[key] != value:
+                raise AlignmentWorkerError(
+                    f"{arm_name} loaded optimizer hyperparameter changed: {key}"
+                )
+        group_count = len(snapshot_group["params"])
+        expected_loaded_parameters = flat_parameters[
+            parameter_offset : parameter_offset + group_count
+        ]
+        parameter_offset += group_count
+        if [id(value) for value in loaded_group["params"]] != [
+            id(value) for value in expected_loaded_parameters
+        ]:
+            raise AlignmentWorkerError(
+                f"{arm_name} loaded optimizer parameter order changed"
+            )
+    if parameter_offset != len(flat_parameters):
+        raise AlignmentWorkerError(f"{arm_name} loaded optimizer coverage changed")
+    for parameter_id, parameter in parameter_by_id.items():
+        state = optimizer.state.get(parameter)
+        if (
+            type(state) is not dict
+            or set(state) != {"step", "exp_avg", "exp_avg_sq"}
+            or float(state["step"].detach().cpu()) != float(START_UPDATE)
+        ):
+            raise AlignmentWorkerError(f"{arm_name} restored optimizer step changed")
+        for moment_name in ("exp_avg", "exp_avg_sq"):
+            moment = state[moment_name]
+            if (
+                moment.dtype != parameter.dtype
+                or tuple(moment.shape) != tuple(parameter.shape)
+                or not bool(torch.isfinite(moment).all())
+            ):
+                raise AlignmentWorkerError(
+                    f"{arm_name} loaded optimizer moment changed"
+                )
+            post_load_moments[f"{parameter_id}.{moment_name}"] = moment
+    if base.tensor_inventory_sha256(post_load_moments) != optimizer_moment_sha256:
+        raise AlignmentWorkerError(
+            f"{arm_name} loaded optimizer moment hash changed"
+        )
+    del snapshot, observed_model, observed_optimizer
+    return {
+        "input_binding": dict(binding),
+        "schema": PREDECESSOR_SNAPSHOT_SCHEMA,
+        "arm": arm_name,
+        "update": START_UPDATE,
+        "model_state_sha256": model_sha256,
+        "optimizer_moment_sha256": optimizer_moment_sha256,
+        "optimizer_parameter_count": len(expected_parameter_ids),
+        "optimizer_step": START_UPDATE,
+        "loaded_once": True,
+        "model_and_own_adamw_restored": True,
+    }
+
+
 def _train_one_update(
     *,
     update: int,
@@ -1210,6 +1594,54 @@ class EvaluationVectors:
     target_tokens: torch.Tensor
     persistence: torch.Tensor | None
     wrong_history: dict[str, torch.Tensor]
+
+
+def _rank_covariance(tokens: torch.Tensor) -> torch.Tensor:
+    """Return the exact float64 covariance sufficient statistic for rank."""
+
+    if (
+        not isinstance(tokens, torch.Tensor)
+        or tuple(tokens.shape)
+        != (EXPECTED_VALIDATION_ROWS, RANK_TOKEN_COUNT, RANK_FEATURE_DIMENSION)
+        or not bool(torch.isfinite(tokens).all())
+    ):
+        raise AlignmentWorkerError("rank token tensor changed")
+    values = tokens.detach().to("cpu", torch.float64)
+    centered = values - values.mean(dim=0, keepdim=True)
+    flat = centered.reshape(-1, RANK_FEATURE_DIMENSION)
+    covariance = flat.T.mm(flat) / (flat.shape[0] - 1)
+    covariance = 0.5 * (covariance + covariance.T)
+    if (
+        covariance.dtype != torch.float64
+        or tuple(covariance.shape)
+        != (RANK_FEATURE_DIMENSION, RANK_FEATURE_DIMENSION)
+        or not bool(torch.isfinite(covariance).all())
+    ):
+        raise AlignmentWorkerError("rank covariance changed")
+    return covariance
+
+
+def _effective_rank_from_covariance(covariance: torch.Tensor) -> float:
+    """Compute entropy effective rank from a validated covariance matrix."""
+
+    if (
+        not isinstance(covariance, torch.Tensor)
+        or covariance.dtype != torch.float64
+        or tuple(covariance.shape)
+        != (RANK_FEATURE_DIMENSION, RANK_FEATURE_DIMENSION)
+        or not bool(torch.isfinite(covariance).all())
+    ):
+        raise AlignmentWorkerError("effective-rank covariance changed")
+    eigenvalues = torch.linalg.eigvalsh(
+        0.5 * (covariance + covariance.T)
+    ).clamp_min(0.0)
+    total = float(eigenvalues.sum())
+    if total <= 0.0:
+        return 0.0
+    probabilities = eigenvalues / eigenvalues.sum()
+    return float(
+        (-(probabilities * probabilities.clamp_min(1.0e-12).log()).sum()).exp()
+    )
 
 
 @torch.no_grad()
@@ -1333,18 +1765,27 @@ def _evaluate_train_factual(
 def _tail_receipt(
     vectors: EvaluationVectors,
     *, rows: Sequence[h6.H6V2Row],
-) -> tuple[dict[str, Any], dict[str, float]]:
+) -> tuple[dict[str, Any], dict[str, float], dict[str, torch.Tensor]]:
     actions = [int(row.actions[2]) for row in rows]
     scenes = [row.scene_id for row in rows]
     families = [row.family for row in rows]
-    target_rank, _ = scaled.effective_rank(vectors.target_tokens)
+    rank_covariances = {
+        "target": _rank_covariance(vectors.target_tokens),
+        **{
+            arm_name: _rank_covariance(vectors.prediction_tokens[arm_name])
+            for arm_name in ARM_NAMES
+        },
+    }
+    target_rank = _effective_rank_from_covariance(rank_covariances["target"])
     rank_ratios: dict[str, float] = {}
     by_arm: dict[str, Any] = {}
     for arm_name in ARM_NAMES:
         summary = three_arm_metrics.summarize_nine_way_action_identification(
             vectors.candidates[arm_name], actions, scenes, families
         )
-        prediction_rank, _ = scaled.effective_rank(vectors.prediction_tokens[arm_name])
+        prediction_rank = _effective_rank_from_covariance(
+            rank_covariances[arm_name]
+        )
         rank_ratio = prediction_rank / target_rank if target_rank > 0.0 else 0.0
         rank_ratios[arm_name] = rank_ratio
         by_arm[arm_name] = {
@@ -1362,7 +1803,11 @@ def _tail_receipt(
         treatment_candidate_energy=vectors.candidates["alignment"],
         validation_rows=rows,
     )
-    return {"arms": by_arm, "paired_alignment_delta": paired}, rank_ratios
+    return (
+        {"arms": by_arm, "paired_alignment_delta": paired},
+        rank_ratios,
+        rank_covariances,
+    )
 
 
 def _absolute_snapshot_binding(binding: Mapping[str, Any], path: Path) -> dict[str, Any]:
@@ -1395,31 +1840,87 @@ def _validate_reused_pack_binding(role: str, observed: Mapping[str, Any]) -> Non
             raise AlignmentWorkerError(f"reused pack {role} {field} changed")
 
 
-def _baseline_anchor_audit(decision: Mapping[str, Any]) -> dict[str, Any]:
-    baseline = decision["localizations"]["baseline"]
-    action = baseline["action_identification"]
-    controls = baseline["registered_control_reproduction"]
-    observed = {
-        "balanced_accuracy": action["scene_family_balanced_accuracy"],
-        "balanced_accuracy_lower": action["balanced_accuracy_bootstrap_lower_95"],
-        "hardest_margin": action["hardest_action_margin"],
-        "hardest_margin_lower": action["hardest_margin_bootstrap_lower_95"],
-        "persistence_point": controls["persistence"]["macro_log_advantage"],
-        "persistence_lower": controls["persistence"]["bootstrap_lower_95"],
-        "wrong_history_point": controls["wrong_history"]["macro_log_advantage"],
-        "wrong_history_lower": controls["wrong_history"]["bootstrap_lower_95"],
-    }
-    checks = {
-        name: math.isclose(
-            float(observed[name]), expected, rel_tol=0.0, abs_tol=1.0e-15
-        )
-        for name, expected in PUBLIC_V3_BASELINE_ANCHORS.items()
-    }
+def _panel_localizations(
+    vectors: EvaluationVectors, *, rows: Sequence[h6.H6V2Row]
+) -> dict[str, Any]:
+    if vectors.persistence is None or set(vectors.wrong_history) != set(ARM_NAMES):
+        raise AlignmentWorkerError("full continuation control panel is absent")
     return {
-        "expected": dict(PUBLIC_V3_BASELINE_ANCHORS),
+        name: localization_metrics.localize_action_and_controls(
+            candidate_energies=vectors.candidates[name],
+            factual_energy=vectors.factual[name],
+            persistence_energy=vectors.persistence,
+            wrong_history_energy=vectors.wrong_history[name],
+            validation_rows=rows,
+        )
+        for name in ARM_NAMES
+    }
+
+
+def _u700_replay_anchor_audit(
+    *,
+    vectors: EvaluationVectors,
+    rows: Sequence[h6.H6V2Row],
+    receipt: Mapping[str, Any],
+) -> dict[str, Any]:
+    localizations = _panel_localizations(vectors, rows=rows)
+    relative = successor_metrics.paired_minimum_action_margin_delta(
+        baseline_candidate_energy=vectors.candidates["baseline"],
+        treatment_candidate_energy=vectors.candidates["alignment"],
+        validation_rows=rows,
+    )
+    observed: dict[str, Any] = {}
+    for name in ARM_NAMES:
+        action = localizations[name]["action_identification"]
+        margin = localizations[name]["action_margin_localization"]
+        controls = localizations[name]["registered_control_reproduction"]
+        observed[name] = {
+            "factual_mean_energy": receipt["arms"][name]["factual_mean_energy"],
+            "balanced_accuracy": action["scene_family_balanced_accuracy"],
+            "balanced_accuracy_lower": action["balanced_accuracy_bootstrap_lower_95"],
+            "hardest_margin": action["hardest_action_margin"],
+            "hardest_margin_lower": action["hardest_margin_bootstrap_lower_95"],
+            "rank_ratio": receipt["arms"][name]["rank_ratio"],
+            "per_action_points": [
+                row["family_equal_scene_macro_point"] for row in margin["per_action"]
+            ],
+            "per_action_q05": [
+                row["one_sided_95_lower_quantile"] for row in margin["per_action"]
+            ],
+            "persistence_lower": controls["persistence"]["bootstrap_lower_95"],
+            "wrong_history_lower": controls["wrong_history"]["bootstrap_lower_95"],
+        }
+    observed["concurrent_delta"] = {
+        "point": relative["point"],
+        "lower": relative["one_sided_95_lower_quantile"],
+        "median": relative["median_quantile"],
+        "upper": relative["one_sided_95_upper_quantile"],
+    }
+    checks: dict[str, bool] = {}
+    for section, expected_section in PUBLIC_U700_REPLAY_ANCHORS.items():
+        for name, expected in expected_section.items():
+            value = observed[section][name]
+            if isinstance(expected, list):
+                checks[f"{section}.{name}"] = (
+                    len(value) == len(expected)
+                    and all(
+                        math.isclose(
+                            float(item), float(anchor), rel_tol=0.0, abs_tol=1.0e-12
+                        )
+                        for item, anchor in zip(value, expected, strict=True)
+                    )
+                )
+            else:
+                checks[f"{section}.{name}"] = math.isclose(
+                    float(value), float(expected), rel_tol=0.0, abs_tol=1.0e-12
+                )
+    return {
+        "expected": copy.deepcopy(PUBLIC_U700_REPLAY_ANCHORS),
         "observed": observed,
         "checks": checks,
-        "exact_within_1e_15": all(checks.values()),
+        "absolute_tolerance": 1.0e-12,
+        "relative_tolerance": 0.0,
+        "passed": all(checks.values()),
     }
 
 
@@ -1463,13 +1964,30 @@ def execute(
         != EXPECTED_INPUT_BINDINGS["validation_index"]["file_sha256"]
     ):
         raise AlignmentWorkerError("bound H6 index identity changed")
-    schedule, schedule_audit = base.build_bound_training_schedule()
+    schedule, schedule_audit = base.build_bound_training_schedule(
+        updates=TRAINING_UPDATES
+    )
+    schedule_u700, schedule_u700_audit = base.build_bound_training_schedule(
+        updates=START_UPDATE
+    )
     if (
         tuple(schedule.shape) != (TRAINING_UPDATES, BATCH_SIZE)
         or schedule_audit["presentations"] != TRAINING_UPDATES * BATCH_SIZE
         or schedule_audit["seed"] != base.TRAINING_SEED
+        or tuple(schedule_u700.shape) != (START_UPDATE, BATCH_SIZE)
+        or schedule_u700_audit["presentations"] != START_UPDATE * BATCH_SIZE
+        or not torch.equal(schedule[:START_UPDATE], schedule_u700)
     ):
         raise AlignmentWorkerError("bound schedule changed")
+    schedule_prefix_receipt = {
+        "source_updates": START_UPDATE,
+        "terminal_updates": TRAINING_UPDATES,
+        "source_schedule": schedule_u700_audit,
+        "terminal_schedule": schedule_audit,
+        "prefix_tensor_exact": True,
+        "trained_slice_start_zero_based": START_UPDATE,
+        "trained_slice_stop_exclusive": TRAINING_UPDATES,
+    }
 
     torch.cuda.set_device(0)
     device = torch.device("cuda:0")
@@ -1484,6 +2002,16 @@ def execute(
         predecessor_state, device=device
     )
     del predecessor_state
+    restoration_receipts = {
+        name: _load_and_restore_u700_snapshot(
+            arm_name=name,
+            arm=arms[name],
+            optimizer=optimizers[name],
+            substrate_receipt=substrate_receipt,
+            schedule_u700_audit=schedule_u700_audit,
+        )
+        for name in ARM_NAMES
+    }
     train_frames, train_actions, train_pack_binding = scaled.load_pack(
         PACK_ROOT, "train", device
     )
@@ -1502,11 +2030,59 @@ def execute(
         for name in ARM_NAMES
     }
     learning_rate = {"fraction": 0.0, "predictor": 0.0, "memory": 0.0}
-    tail_receipts: dict[int, dict[str, Any]] = {}
+    observation_receipts: dict[int, dict[str, Any]] = {}
     rank_ratio_by_update: dict[int, dict[str, float]] = {}
+    rank_covariance_by_update: dict[int, dict[str, torch.Tensor]] = {}
+    replay_vectors: EvaluationVectors | None = None
     final_vectors: EvaluationVectors | None = None
 
-    for update in range(1, TRAINING_UPDATES + 1):
+    restored_panel = _evaluate_validation(
+        substrate=substrate,
+        arms=arms,
+        frames=val_frames,
+        actions=val_actions,
+        wrong_history_donors=val_donors,
+        include_controls=True,
+    )
+    restored_receipt, restored_ranks, restored_rank_covariances = _tail_receipt(
+        restored_panel, rows=val_rows
+    )
+    restored_receipt["update"] = START_UPDATE
+    restored_receipt["restored_pretraining_replay"] = True
+    replay_anchor_audit = _u700_replay_anchor_audit(
+        vectors=restored_panel, rows=val_rows, receipt=restored_receipt
+    )
+    if not replay_anchor_audit["passed"]:
+        raise AlignmentWorkerError("restored u700 public anchors did not reproduce")
+    observation_receipts[START_UPDATE] = restored_receipt
+    rank_ratio_by_update[START_UPDATE] = restored_ranks
+    rank_covariance_by_update[START_UPDATE] = restored_rank_covariances
+    replay_vectors = EvaluationVectors(
+        factual=restored_panel.factual,
+        candidates=restored_panel.candidates,
+        prediction_tokens={},
+        target_tokens=torch.empty(0),
+        persistence=restored_panel.persistence,
+        wrong_history=restored_panel.wrong_history,
+    )
+    del restored_panel
+    torch.cuda.empty_cache()
+    print(
+        json.dumps(
+            {
+                "update": START_UPDATE,
+                "restored_replay": True,
+                "anchor_audit": "PASS",
+                "baseline_margin": restored_receipt["arms"]["baseline"]["hardest_margin"],
+                "alignment_margin": restored_receipt["arms"]["alignment"]["hardest_margin"],
+                "alignment_rank_ratio": restored_ranks["alignment"],
+            },
+            sort_keys=True,
+        ),
+        flush=True,
+    )
+
+    for update in range(START_UPDATE + 1, TRAINING_UPDATES + 1):
         losses, learning_rate = _train_one_update(
             update=update,
             batch_rows_cpu=schedule[update - 1],
@@ -1524,7 +2100,7 @@ def execute(
         )
         if time.monotonic() - gpu_started > MAXIMUM_GPU_SECONDS:
             raise TimeoutError("authorized GPU cap exceeded")
-        if update in TAIL_UPDATES:
+        if update in OBSERVATION_UPDATES[1:]:
             vectors = _evaluate_validation(
                 substrate=substrate,
                 arms=arms,
@@ -1533,12 +2109,15 @@ def execute(
                 wrong_history_donors=val_donors,
                 include_controls=update == TRAINING_UPDATES,
             )
-            receipt, ranks = _tail_receipt(vectors, rows=val_rows)
+            receipt, ranks, rank_covariances = _tail_receipt(
+                vectors, rows=val_rows
+            )
             receipt["update"] = update
             receipt["training_loss"] = copy.deepcopy(losses)
             receipt["learning_rate"] = dict(learning_rate)
-            tail_receipts[update] = receipt
+            observation_receipts[update] = receipt
             rank_ratio_by_update[update] = ranks
+            rank_covariance_by_update[update] = rank_covariances
             if time.monotonic() - gpu_started > MAXIMUM_GPU_SECONDS:
                 raise TimeoutError("authorized GPU cap exceeded after validation panel")
             print(
@@ -1562,8 +2141,24 @@ def execute(
                 del vectors
                 torch.cuda.empty_cache()
 
-    if final_vectors is None or final_vectors.persistence is None or set(final_vectors.wrong_history) != set(ARM_NAMES):
+    if (
+        replay_vectors is None
+        or final_vectors is None
+        or final_vectors.persistence is None
+        or set(final_vectors.wrong_history) != set(ARM_NAMES)
+    ):
         raise AlignmentWorkerError("terminal validation controls are absent")
+    for arm_name, optimizer in optimizers.items():
+        if (
+            len(optimizer.state) != restoration_receipts[arm_name]["optimizer_parameter_count"]
+            or any(
+                float(state["step"].detach().cpu()) != float(TRAINING_UPDATES)
+                for state in optimizer.state.values()
+            )
+        ):
+            raise AlignmentWorkerError(
+                f"{arm_name} optimizer did not reach exact global step {TRAINING_UPDATES}"
+            )
     training_factual = _evaluate_train_factual(
         substrate=substrate,
         arms=arms,
@@ -1594,48 +2189,43 @@ def execute(
         "runtime_exact": True,
         "input_bindings_exact": True,
         "reused_pack_exact": True,
-        "schedule_exact": True,
-        "identical_disjoint_initialization": True,
+        "schedule_900_and_u700_prefix_exact": True,
+        "both_exact_u700_snapshots_loaded_once": all(
+            receipt["loaded_once"] for receipt in restoration_receipts.values()
+        ),
+        "both_arm_and_own_adamw_states_restored": all(
+            receipt["model_and_own_adamw_restored"]
+            for receipt in restoration_receipts.values()
+        ),
+        "u700_public_anchor_replay_exact_within_1e_12": replay_anchor_audit["passed"],
+        "absolute_updates_701_through_900_only": True,
+        "both_optimizers_reached_exact_step_900": True,
         "shared_candidate_route_exact": True,
         "alignment_coefficients_exact": True,
         "frozen_substrate_exact": True,
         "validation_no_gradient": True,
         "finiteness_exact": True,
         "no_rgb_or_data_generation": True,
-        # This optimistic value permits one computation of the full metric
-        # object from which the independently checkable anchor audit is
-        # derived.  A mismatch is immediately replaced with False and the
-        # decision is recomputed before any artifact is published.
-        "baseline_v3_reproduction_exact": True,
     }
-    decision_arguments = dict(
-        baseline_candidate_energy=final_vectors.candidates["baseline"],
-        baseline_factual_energy=final_vectors.factual["baseline"],
-        baseline_persistence_energy=final_vectors.persistence,
-        baseline_wrong_history_energy=final_vectors.wrong_history["baseline"],
-        treatment_candidate_energy=final_vectors.candidates["alignment"],
-        treatment_factual_energy=final_vectors.factual["alignment"],
-        treatment_persistence_energy=final_vectors.persistence,
-        treatment_wrong_history_energy=final_vectors.wrong_history["alignment"],
+    decision = continuation_metrics.decide_alignment_continuation(
+        baseline_candidate_energy_u700=replay_vectors.candidates["baseline"],
+        baseline_candidate_energy_u900=final_vectors.candidates["baseline"],
+        treatment_candidate_energy_u700=replay_vectors.candidates["alignment"],
+        treatment_factual_energy_u700=replay_vectors.factual["alignment"],
+        treatment_persistence_energy_u700=replay_vectors.persistence,
+        treatment_wrong_history_energy_u700=replay_vectors.wrong_history["alignment"],
+        treatment_candidate_energy_u900=final_vectors.candidates["alignment"],
+        treatment_factual_energy_u900=final_vectors.factual["alignment"],
+        treatment_persistence_energy_u900=final_vectors.persistence,
+        treatment_wrong_history_energy_u900=final_vectors.wrong_history["alignment"],
         validation_rows=val_rows,
         treatment_rank_ratio_by_update={
             update: rank_ratio_by_update[update]["alignment"]
-            for update in TAIL_UPDATES
+            for update in OBSERVATION_UPDATES
         },
         contract_checks=contract_checks,
         train_fit_checks=train_fit_checks,
     )
-    decision = successor_metrics.decide_alignment_successor(**decision_arguments)
-    baseline_anchor_audit = _baseline_anchor_audit(decision)
-    contract_checks["baseline_v3_reproduction_exact"] = bool(
-        baseline_anchor_audit["exact_within_1e_15"]
-    )
-    if not contract_checks["baseline_v3_reproduction_exact"]:
-        decision_arguments["contract_checks"] = contract_checks
-        decision = successor_metrics.decide_alignment_successor(**decision_arguments)
-        repeated_audit = _baseline_anchor_audit(decision)
-        if repeated_audit != baseline_anchor_audit:
-            raise AlignmentWorkerError("baseline anchor audit changed on recomputation")
 
     metric_bundle_payload = {
         "schema": METRIC_BUNDLE_SCHEMA,
@@ -1643,18 +2233,43 @@ def execute(
         "authority_binding": dict(authority_binding),
         "reservation_binding": dict(reservation_binding),
         "validation_row_indices": torch.arange(EXPECTED_VALIDATION_ROWS, dtype=torch.long),
-        "baseline_candidate_energy": final_vectors.candidates["baseline"],
-        "baseline_factual_energy": final_vectors.factual["baseline"],
-        "baseline_persistence_energy": final_vectors.persistence,
-        "baseline_wrong_history_energy": final_vectors.wrong_history["baseline"],
-        "alignment_candidate_energy": final_vectors.candidates["alignment"],
-        "alignment_factual_energy": final_vectors.factual["alignment"],
-        "alignment_persistence_energy": final_vectors.persistence,
-        "alignment_wrong_history_energy": final_vectors.wrong_history["alignment"],
-        "alignment_rank_ratio_tail": torch.tensor(
-            [rank_ratio_by_update[update]["alignment"] for update in TAIL_UPDATES],
+        "u700_baseline_candidate_energy": replay_vectors.candidates["baseline"],
+        "u700_baseline_factual_energy": replay_vectors.factual["baseline"],
+        "u700_baseline_persistence_energy": replay_vectors.persistence,
+        "u700_baseline_wrong_history_energy": replay_vectors.wrong_history["baseline"],
+        "u700_alignment_candidate_energy": replay_vectors.candidates["alignment"],
+        "u700_alignment_factual_energy": replay_vectors.factual["alignment"],
+        "u700_alignment_persistence_energy": replay_vectors.persistence,
+        "u700_alignment_wrong_history_energy": replay_vectors.wrong_history["alignment"],
+        "u900_baseline_candidate_energy": final_vectors.candidates["baseline"],
+        "u900_baseline_factual_energy": final_vectors.factual["baseline"],
+        "u900_baseline_persistence_energy": final_vectors.persistence,
+        "u900_baseline_wrong_history_energy": final_vectors.wrong_history["baseline"],
+        "u900_alignment_candidate_energy": final_vectors.candidates["alignment"],
+        "u900_alignment_factual_energy": final_vectors.factual["alignment"],
+        "u900_alignment_persistence_energy": final_vectors.persistence,
+        "u900_alignment_wrong_history_energy": final_vectors.wrong_history["alignment"],
+        "alignment_rank_ratio_observations": torch.tensor(
+            [
+                rank_ratio_by_update[update]["alignment"]
+                for update in OBSERVATION_UPDATES
+            ],
             dtype=torch.float64,
         ),
+        "baseline_rank_ratio_observations": torch.tensor(
+            [
+                rank_ratio_by_update[update]["baseline"]
+                for update in OBSERVATION_UPDATES
+            ],
+            dtype=torch.float64,
+        ),
+        "rank_covariance_by_update": {
+            update: {
+                name: rank_covariance_by_update[update][name]
+                for name in ("target", *ARM_NAMES)
+            }
+            for update in OBSERVATION_UPDATES
+        },
         "training_factual_energy": {
             name: training_factual[name] for name in ARM_NAMES
         },
@@ -1665,7 +2280,7 @@ def execute(
     metric_bundle_binding = _save_snapshot(metric_bundle_path, metric_bundle_payload)
     snapshot_bindings: dict[str, dict[str, Any]] = {}
     for arm_name in ARM_NAMES:
-        snapshot_path = ATTEMPT_ROOT / f"{arm_name}_update_000700.pt"
+        snapshot_path = ATTEMPT_ROOT / f"{arm_name}_update_000900.pt"
         snapshot_bindings[arm_name] = _save_snapshot(
             snapshot_path,
             {
@@ -1705,6 +2320,7 @@ def execute(
         "status": "COMPLETE_PENDING_TERMINAL_REVIEW",
         "development_evidence_complete": True,
         "citable_as_original_factual_learnability_claim": False,
+        "citable_as_planning_usefulness_evidence": False,
         "authority_binding": dict(authority_binding),
         "reservation_binding": dict(reservation_binding),
         "source_commit": authority["source_commit"],
@@ -1722,15 +2338,18 @@ def execute(
         "evidence_bindings": authority["evidence_bindings"],
         "metric_bundle_binding": metric_bundle_binding,
         "snapshot_bindings": snapshot_bindings,
-        "schedule": schedule_audit,
+        "schedule": schedule_prefix_receipt,
         "substrate": substrate_receipt,
-        "tail_measurements": [tail_receipts[update] for update in TAIL_UPDATES],
+        "restoration": restoration_receipts,
+        "u700_replay_anchor_audit": replay_anchor_audit,
+        "observation_measurements": [
+            observation_receipts[update] for update in OBSERVATION_UPDATES
+        ],
         "train_fit": {
             "full_train_factual_mean_energy": train_means,
             "terminal_training_loss": losses,
             "checks": train_fit_checks,
         },
-        "baseline_v3_reproduction": baseline_anchor_audit,
         "decision": decision,
         "runtime": {
             "authorized": authority["runtime"],
@@ -1749,15 +2368,24 @@ def execute(
             },
         },
         "accounting": {
-            "training_updates": TRAINING_UPDATES,
-            "optimizer_steps_per_arm": TRAINING_UPDATES,
-            "total_optimizer_steps": TRAINING_UPDATES * len(ARM_NAMES),
-            "schedule_presentations_per_arm": TRAINING_UPDATES * BATCH_SIZE,
-            "training_head_row_presentations_per_arm": TRAINING_UPDATES * BATCH_SIZE * 10,
-            "training_head_row_presentations_total": TRAINING_UPDATES * BATCH_SIZE * 10 * len(ARM_NAMES),
-            "training_shared_frame_encodings": TRAINING_UPDATES * BATCH_SIZE * 4,
-            "validation_updates": list(TAIL_UPDATES),
+            "source_global_update": START_UPDATE,
+            "terminal_global_update": TRAINING_UPDATES,
+            "additional_training_updates": ADDITIONAL_TRAINING_UPDATES,
+            "additional_optimizer_steps_per_arm": ADDITIONAL_TRAINING_UPDATES,
+            "additional_total_optimizer_steps": ADDITIONAL_TRAINING_UPDATES * len(ARM_NAMES),
+            "additional_schedule_presentations_per_arm": ADDITIONAL_TRAINING_UPDATES * BATCH_SIZE,
+            "additional_training_head_row_presentations_per_arm": ADDITIONAL_TRAINING_UPDATES * BATCH_SIZE * 10,
+            "additional_training_head_row_presentations_total": ADDITIONAL_TRAINING_UPDATES * BATCH_SIZE * 10 * len(ARM_NAMES),
+            "additional_training_shared_frame_encodings": ADDITIONAL_TRAINING_UPDATES * BATCH_SIZE * 4,
+            "validation_updates": list(OBSERVATION_UPDATES),
             "full_train_fit_rows_per_arm": EXPECTED_TRAIN_ROWS,
+            "u700_snapshot_byte_read_count": 2,
+            "u700_snapshot_deserialization_count": 2,
+            "predecessor_metric_bundle_byte_read_count": 0,
+            "predecessor_metric_bundle_deserialization_count": 0,
+            "bound_non_snapshot_input_identity_hash_reads_performed": True,
+            "pack_payloads_opened_for_training_and_evaluation": True,
+            "prior_attempt_write_count": 0,
             "pack_reused_read_only": True,
             "rgb_open_count": 0,
             "data_generation_count": 0,
@@ -1783,9 +2411,9 @@ def execute(
             {
                 "status": result["status"],
                 "decision": decision["status"],
-                "paired_delta": decision["paired_alignment_delta"]["point"],
-                "paired_q05": decision["paired_alignment_delta"]["one_sided_95_lower_quantile"],
-                "paired_q95": decision["paired_alignment_delta"]["one_sided_95_upper_quantile"],
+                "absolute_progress": decision["absolute_treatment_hardest_margin_gain"]["point"],
+                "absolute_q05": decision["absolute_treatment_hardest_margin_gain"]["one_sided_95_lower_quantile"],
+                "absolute_q95": decision["absolute_treatment_hardest_margin_gain"]["one_sided_95_upper_quantile"],
                 "gpu_minutes": gpu_elapsed / 60.0,
                 "wall_minutes": wall_elapsed / 60.0,
             },
@@ -1832,6 +2460,11 @@ def main() -> int:
                         "traceback": traceback.format_exc(),
                         "retry": False,
                         "resume": False,
+                        "refill": False,
+                        "overwrite": False,
+                        "recovery": False,
+                        "integrity_replacement": False,
+                        "further_continuation": False,
                     },
                 )
             except BaseException:

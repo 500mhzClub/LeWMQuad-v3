@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import gc
+import io
 import json
 from pathlib import Path
 from unittest import mock
@@ -20,6 +21,13 @@ class FakeArm(torch.nn.Module):
         self.energy = torch.nn.Parameter(
             torch.tensor([0.20, 0.10, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90])
         )
+
+
+class TinyRestoreArm(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.predictor_position = torch.nn.Parameter(torch.tensor([1.0, 2.0]))
+        self.temporal_gru = torch.nn.Linear(2, 2, bias=False)
 
 
 def fake_predict(arm, encoded, actions, target_indices, *, candidate_blind):
@@ -223,65 +231,92 @@ def test_exact_model_route_has_no_dropout_or_cross_row_state():
     assert config.temporal_hidden_dim == config.feature_dim
 
 
-def test_replacement_plan_has_zero_normalized_scientific_differences():
-    original = json.loads(
-        Path(
-            "docs/lewm_go2_world_model_action_alignment_successor_v1_"
-            "plan_2026-08-01.json"
-        ).read_text()
-    )
-    replacement = json.loads(worker.PLAN_PATH.read_text())
-    for key in (
-        "development_only", "citable_as_original_factual_learnability_claim",
-        "authorizes_execution", "route", "arms", "objective", "action_margin",
-        "training", "paired_decision", "reuse", "caps",
-    ):
-        assert replacement[key] == original[key]
-    original_attempt = {
-        key: value for key, value in original["attempt"].items() if key != "id"
-    }
-    replacement_attempt = {
-        key: value
-        for key, value in replacement["attempt"].items()
-        if key not in {"id", "original_attempt_runtime_reuse"}
-    }
-    assert replacement_attempt == original_attempt
-    assert set(original["forbidden"]) <= set(replacement["forbidden"])
-    assert replacement["integrity_replacement"]["scientific_fields_changed"] is False
-    assert replacement["integrity_replacement"]["tolerance_relaxed"] is False
-    assert all(replacement["science_identity"].values())
-
-
-def test_replacement_plan_validator_rejects_every_finality_escape():
+def test_continuation_plan_validator_accepts_exact_plan_and_rejects_escapes():
     plan = json.loads(worker.PLAN_PATH.read_text())
-    worker._validate_replacement_plan(plan)
-    mutations = (
-        ("maximum_integrity_replacements_after_this", 1),
-        ("failed_attempt_state_reused", True),
-        ("scientific_fields_changed", True),
-        ("tolerance_relaxed", True),
-    )
-    for field, value in mutations:
+    worker._validate_continuation_plan(plan)
+    for section, field, value in (
+        ("continuation", "optimizer_reset", True),
+        ("training", "global_schedule_updates", 901),
+        ("attempt", "further_continuation", True),
+        ("finality", "meaningful_progress_requires_separate_preregistration", False),
+    ):
         changed = copy.deepcopy(plan)
-        changed["integrity_replacement"][field] = value
-        with pytest.raises(worker.AlignmentWorkerError, match="replacement plan"):
-            worker._validate_replacement_plan(changed)
+        changed[section][field] = value
+        with pytest.raises(worker.AlignmentWorkerError, match="continuation plan"):
+            worker._validate_continuation_plan(changed)
     changed = copy.deepcopy(plan)
-    changed["forbidden"].remove("further_integrity_replacement")
-    with pytest.raises(worker.AlignmentWorkerError, match="replacement plan"):
-        worker._validate_replacement_plan(changed)
-    changed = copy.deepcopy(plan)
-    changed["attempt"]["original_attempt_runtime_reuse"] = True
-    with pytest.raises(worker.AlignmentWorkerError, match="replacement plan"):
-        worker._validate_replacement_plan(changed)
+    changed["arms"][0]["u700_snapshot"] = changed["arms"][1]["u700_snapshot"]
+    with pytest.raises(worker.AlignmentWorkerError, match="continuation plan"):
+        worker._validate_continuation_plan(changed)
 
 
-def test_schedule_is_exact_v3_schedule():
-    observed, audit = worker.base.build_bound_training_schedule()
-    expected, expected_audit = worker.base.build_bound_training_schedule()
-    assert torch.equal(observed, expected)
-    assert audit == expected_audit
-    assert audit["presentations"] == 179_200
+def test_schedule_is_exact_900_with_completed_700_prefix():
+    observed, audit = worker.base.build_bound_training_schedule(updates=900)
+    prefix, prefix_audit = worker.base.build_bound_training_schedule(updates=700)
+    assert torch.equal(observed[:700], prefix)
+    assert audit["presentations"] == 230_400
+    assert prefix_audit["presentations"] == 179_200
+
+
+def test_snapshot_restore_validates_and_reloads_model_and_own_adamw_moments():
+    arm = TinyRestoreArm()
+    optimizer, _partition = worker.base.build_arm_optimizer(arm)
+    worker.base._set_optimizer_learning_rates(
+        optimizer, fraction=worker.base.learning_rate_fraction(worker.START_UPDATE)
+    )
+    for parameter in arm.parameters():
+        optimizer.state[parameter] = {
+            "step": torch.tensor(float(worker.START_UPDATE), dtype=torch.float32),
+            "exp_avg": torch.full_like(parameter, 0.25),
+            "exp_avg_sq": torch.full_like(parameter, 0.5),
+        }
+    _schedule, schedule_audit = worker.base.build_bound_training_schedule(
+        updates=worker.START_UPDATE
+    )
+    substrate_receipt = {"synthetic": True}
+    snapshot = {
+        "schema": worker.PREDECESSOR_SNAPSHOT_SCHEMA,
+        "status": "COMPLETE",
+        "arm": "baseline",
+        "alignment_coefficient": 0.0,
+        "update": worker.START_UPDATE,
+        "authority_binding": worker.EXPECTED_EVIDENCE_BINDINGS[
+            "completed_successor_authority"
+        ],
+        "reservation_binding": worker.EXPECTED_EVIDENCE_BINDINGS[
+            "completed_successor_reservation"
+        ],
+        "substrate": substrate_receipt,
+        "schedule": schedule_audit,
+        "arm_state_dict": worker.base._clone_cpu(arm.state_dict()),
+        "optimizer_state_dict": worker.base._clone_cpu(optimizer.state_dict()),
+    }
+    expected_model_hash = worker.base.module_state_sha256(arm)
+    stream = io.BytesIO()
+    torch.save(snapshot, stream)
+    optimizer.state.clear()
+    for group in optimizer.param_groups:
+        group["lr"] = 0.0
+    with torch.no_grad():
+        for parameter in arm.parameters():
+            parameter.zero_()
+    with mock.patch.object(
+        worker.custody, "_read_absolute_regular_once", return_value=stream.getvalue()
+    ):
+        receipt = worker._load_and_restore_u700_snapshot(
+            arm_name="baseline",
+            arm=arm,
+            optimizer=optimizer,
+            substrate_receipt=substrate_receipt,
+            schedule_u700_audit=schedule_audit,
+        )
+    assert worker.base.module_state_sha256(arm) == expected_model_hash
+    assert receipt["optimizer_parameter_count"] == len(tuple(arm.parameters()))
+    assert receipt["optimizer_step"] == worker.START_UPDATE
+    assert all(
+        float(state["step"]) == worker.START_UPDATE
+        for state in optimizer.state.values()
+    )
 
 
 def test_reused_pack_binding_rejects_digest_mutation():
@@ -308,16 +343,88 @@ def test_claim_and_access_contract_forbid_expansion():
     assert worker.CLAIM_BOUNDARY[-1].startswith("no planning")
     assert all("sealed" not in path and "heldout" not in path for path in worker.REQUIRED_SOURCE_PATHS.values())
     assert worker.EXPECTED_SUCCESS_FILES_BEFORE_CHECKER == {
-        "reservation.json", "baseline_update_000700.pt",
-        "alignment_update_000700.pt", "metrics.pt", "result.json",
+        "reservation.json", "baseline_update_000900.pt",
+        "alignment_update_000900.pt", "metrics.pt", "result.json",
     }
 
 
-def test_checker_rejects_nonreproducing_concurrent_baseline():
-    with pytest.raises(checker.AlignmentCheckError, match="did not reproduce"):
-        checker._require_passing_baseline_anchor_audit(
-            {"exact_within_1e_15": False, "checks": {"anchor": False}}
+def test_rank_covariance_round_trip_supports_independent_effective_rank():
+    generator = torch.Generator().manual_seed(17)
+    with mock.patch.object(worker, "EXPECTED_VALIDATION_ROWS", 4), mock.patch.object(
+        worker, "RANK_TOKEN_COUNT", 3
+    ), mock.patch.object(worker, "RANK_FEATURE_DIMENSION", 5):
+        target = torch.randn((4, 3, 5), generator=generator)
+        prediction = torch.randn((4, 3, 5), generator=generator)
+        target_covariance = worker._rank_covariance(target)
+        prediction_covariance = worker._rank_covariance(prediction)
+        target_rank = worker._effective_rank_from_covariance(target_covariance)
+        prediction_rank = worker._effective_rank_from_covariance(
+            prediction_covariance
         )
-    checker._require_passing_baseline_anchor_audit(
-        {"exact_within_1e_15": True, "checks": {"anchor": True}}
-    )
+        expected_target, _variance = worker.scaled.effective_rank(target)
+        expected_prediction, _variance = worker.scaled.effective_rank(prediction)
+        assert torch.equal(target_covariance, target_covariance.T)
+        assert torch.equal(prediction_covariance, prediction_covariance.T)
+        assert target_rank == pytest.approx(expected_target, rel=0.0, abs=1.0e-12)
+        assert prediction_rank == pytest.approx(
+            expected_prediction, rel=0.0, abs=1.0e-12
+        )
+        assert prediction_rank / target_rank == pytest.approx(
+            expected_prediction / expected_target, rel=0.0, abs=1.0e-12
+        )
+        assert checker._effective_rank_from_covariance(
+            prediction_covariance, label="synthetic"
+        ) == pytest.approx(expected_prediction, rel=0.0, abs=1.0e-12)
+
+
+def test_checker_rank_covariance_rejects_shape_and_symmetry_changes():
+    with mock.patch.object(worker, "RANK_FEATURE_DIMENSION", 3):
+        with pytest.raises(checker.AlignmentCheckError, match="covariance changed"):
+            checker._effective_rank_from_covariance(
+                torch.eye(2, dtype=torch.float64), label="bad shape"
+            )
+        nonsymmetric = torch.eye(3, dtype=torch.float64)
+        nonsymmetric[0, 1] = 0.5
+        with pytest.raises(checker.AlignmentCheckError, match="covariance changed"):
+            checker._effective_rank_from_covariance(
+                nonsymmetric, label="nonsymmetric"
+            )
+
+
+def test_independent_reviewer_identity_and_disclosure_review_are_enforced():
+    review = {
+        "reviewer": {"identity": worker.INDEPENDENT_SOURCE_REVIEWER_IDENTITY},
+        "verification": {
+            "all_focused_tests_passed": True,
+            "focused_tests": {"passed": 24, "failed": 0},
+            "restoration_contract_reviewed": True,
+            "absolute_progress_decision_reviewed": True,
+            "schedule_prefix_and_absolute_update_reviewed": True,
+            "preauthority_identity_read_disclosure_and_exclusions_reviewed": True,
+            "governance_correction_reviewed": True,
+            "no_real_runtime_payload_opened": True,
+        },
+        "custody": {
+            "runtime_payloads_opened": False,
+            "sealed_or_heldout_opened": False,
+        },
+    }
+    worker._validate_independent_source_reviewer_evidence(review)
+    for identity in worker.PREAUTHORITY_REVIEW_EXCLUDED_IDENTITIES:
+        changed = copy.deepcopy(review)
+        changed["reviewer"]["identity"] = identity
+        with pytest.raises(worker.AlignmentWorkerError, match="review evidence"):
+            worker._validate_independent_source_reviewer_evidence(changed)
+    changed = copy.deepcopy(review)
+    changed["verification"][
+        "preauthority_identity_read_disclosure_and_exclusions_reviewed"
+    ] = False
+    with pytest.raises(worker.AlignmentWorkerError, match="review evidence"):
+        worker._validate_independent_source_reviewer_evidence(changed)
+
+
+def test_u700_replay_anchors_bind_points_and_lower_quantiles():
+    for name in worker.ARM_NAMES:
+        anchor = worker.PUBLIC_U700_REPLAY_ANCHORS[name]
+        assert len(anchor["per_action_points"]) == worker.ACTION_COUNT
+        assert len(anchor["per_action_q05"]) == worker.ACTION_COUNT
