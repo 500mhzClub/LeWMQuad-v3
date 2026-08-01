@@ -382,6 +382,7 @@ def test_child_environment_removes_ambient_device_selectors(
     supervisor = _load_module()
     monkeypatch.setenv("HIP_VISIBLE_DEVICES", "wrong")
     monkeypatch.setenv("VK_ICD_FILENAMES", "/wrong/icd.json")
+    monkeypatch.setenv("GS_PARA_LEVEL", "2")
     plan = {
         "execution_contract": {
             "environment": dict(supervisor.pilot.EXECUTION_ENVIRONMENT)
@@ -390,6 +391,7 @@ def test_child_environment_removes_ambient_device_selectors(
     child = supervisor._child_environment(plan)
     assert child["EGL_DEVICE_ID"] == "1"
     assert child["MESA_VK_DEVICE_SELECT"] == "1002:7551!"
+    assert child["GS_PARA_LEVEL"] == "0"
     assert "HIP_VISIBLE_DEVICES" not in child
     assert "VK_ICD_FILENAMES" not in child
 

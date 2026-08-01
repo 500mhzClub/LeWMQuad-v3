@@ -52,6 +52,7 @@ _SANITIZED_SELECTOR_KEYS = {
     "DRI_PRIME",
     "EGL_DEVICE_ID",
     "GS_BACKEND",
+    "GS_PARA_LEVEL",
     "HIP_VISIBLE_DEVICES",
     "HSA_OVERRIDE_GFX_VERSION",
     "MESA_VK_DEVICE_SELECT",
@@ -1389,6 +1390,7 @@ def _build_rollout_runner(
         checkpoint_path=plan["runtime_bindings"]["policy_checkpoint"]["path"],
         cfg_path=plan["runtime_bindings"]["policy_config"]["path"],
         device=str(execution["policy_device"]),
+        deduplicate_exact_observation_rows=True,
     )
     config = runtime["RolloutConfig"](
         n_blocks=0,
@@ -1416,6 +1418,20 @@ def _build_rollout_runner(
         raise pilot.PilotContractError("runtime physics decimation disagrees with smoke cap")
     runner.policy_steps_per_command_tick = 5
     return runner
+
+
+def _require_scene_parallelization(
+    *, build: Any, execution: Mapping[str, Any]
+) -> None:
+    """Require Genesis to honor the plan-bound solver parallelization mode."""
+
+    observed = int(getattr(build.scene, "_para_level", -1))  # noqa: SLF001
+    expected = int(execution["environment"]["GS_PARA_LEVEL"])
+    if observed != expected:
+        raise pilot.PilotContractError(
+            "Genesis scene parallelization level disagrees with plan: "
+            f"observed {observed}, expected {expected}"
+        )
 
 
 def _collect_scene(
@@ -1461,6 +1477,7 @@ def _collect_scene(
         batched_camera=False,
     )
     build_wall_seconds = time.perf_counter() - build_started
+    _require_scene_parallelization(build=build, execution=execution)
     if bool(getattr(build.camera, "_is_batched", False)):
         raise pilot.PilotContractError("physical lockstep camera must be non-batched")
     runner = _build_rollout_runner(

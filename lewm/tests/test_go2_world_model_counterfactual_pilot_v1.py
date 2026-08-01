@@ -731,6 +731,7 @@ def test_collector_uses_the_real_safety_limits_factory() -> None:
     assert safety_limits.max_vx_mps == 0.4
     assert safety_limits.max_yaw_rate_radps == 0.5
     assert calls["policy"]["device"] == "cpu"
+    assert calls["policy"]["deduplicate_exact_observation_rows"] is True
 
     runtime["SafetyLimits"] = type(
         "WrongSafetyLimits", (), {"from_platform_manifest": classmethod(lambda cls, value: value)}
@@ -743,6 +744,152 @@ def test_collector_uses_the_real_safety_limits_factory() -> None:
             build="build",
             registry="registry",
         )
+
+
+def _test_ppo_policy(
+    model: Any, *, deduplicate: bool, simulate_action_latency: bool
+) -> Any:
+    GenesisGo2PPOPolicy = _load_collector()._runtime_imports()[
+        "GenesisGo2PPOPolicy"
+    ]
+
+    policy = GenesisGo2PPOPolicy.__new__(GenesisGo2PPOPolicy)
+    policy._device = "cpu"
+    policy._policy = model
+    policy._last_actions = None
+    policy.simulate_action_latency = simulate_action_latency
+    policy.deduplicate_exact_observation_rows = deduplicate
+    policy.policy_joint_names = tuple(f"joint-{index}" for index in range(12))
+    policy.obs_scales = {"ang_vel": 1.0, "dof_pos": 1.0, "dof_vel": 1.0}
+    policy.command_scale = np.ones(3, dtype=np.float32)
+    policy.default_dof_pos_policy = np.zeros(12, dtype=np.float32)
+    policy._policy_from_rollout = np.arange(12, dtype=np.int64)
+    policy._rollout_from_policy = np.arange(12, dtype=np.int64)
+    policy.action_scale = 1.0
+    return policy
+
+
+def _test_policy_observation(commands: np.ndarray) -> dict[str, np.ndarray]:
+    n_envs = int(commands.shape[0])
+    return {
+        "command": np.asarray(commands, dtype=np.float32),
+        "base_quat_xyzw": np.tile(
+            np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32), (n_envs, 1)
+        ),
+        "base_ang_vel_world": np.zeros((n_envs, 3), dtype=np.float32),
+        "joint_pos": np.zeros((n_envs, 12), dtype=np.float32),
+        "joint_vel": np.zeros((n_envs, 12), dtype=np.float32),
+    }
+
+
+def test_counterfactual_policy_broadcasts_mixed_exact_duplicate_rows() -> None:
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("tensordict")
+    calls: list[tuple[int, bool]] = []
+
+    class RowSensitivePolicy:
+        def __call__(self, observation: Any, *, stochastic_output: bool) -> Any:
+            policy_input = observation["policy"]
+            calls.append((int(policy_input.shape[0]), stochastic_output))
+            row_offset = torch.arange(
+                policy_input.shape[0],
+                dtype=policy_input.dtype,
+                device=policy_input.device,
+            )[:, None]
+            return policy_input[:, :12] + row_offset * 1.0e-6
+
+    policy = _test_ppo_policy(
+        RowSensitivePolicy(), deduplicate=True, simulate_action_latency=False
+    )
+    commands = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0],
+            [0.1, 0.0, 0.0],
+            [0.0, 0.2, 0.0],
+            [0.0, 0.2, 0.0],
+        ],
+        dtype=np.float32,
+    )
+    actions = policy.act(_test_policy_observation(commands))
+
+    assert calls == [(1, False), (1, False), (1, False)]
+    assert np.array_equal(actions[0], actions[1])
+    assert np.array_equal(actions[3], actions[4])
+    assert not np.array_equal(actions[0], actions[2])
+    assert not np.array_equal(actions[2], actions[3])
+
+
+def test_ppo_policy_default_path_retains_single_batched_call() -> None:
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("tensordict")
+    calls: list[tuple[int, bool]] = []
+
+    class RowSensitivePolicy:
+        def __call__(self, observation: Any, *, stochastic_output: bool) -> Any:
+            policy_input = observation["policy"]
+            calls.append((int(policy_input.shape[0]), stochastic_output))
+            row_offset = torch.arange(
+                policy_input.shape[0],
+                dtype=policy_input.dtype,
+                device=policy_input.device,
+            )[:, None]
+            return policy_input[:, :12] + row_offset * 1.0e-6
+
+    policy = _test_ppo_policy(
+        RowSensitivePolicy(), deduplicate=False, simulate_action_latency=False
+    )
+    actions = policy.act(
+        _test_policy_observation(np.zeros((4, 3), dtype=np.float32))
+    )
+
+    assert calls == [(4, False)]
+    assert not np.array_equal(actions[0], actions[1])
+
+
+def test_counterfactual_policy_preserves_latency_state_across_exact_rows() -> None:
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("tensordict")
+    calls: list[tuple[int, bool]] = []
+
+    class AdvancingPolicy:
+        def __call__(self, observation: Any, *, stochastic_output: bool) -> Any:
+            policy_input = observation["policy"]
+            calls.append((int(policy_input.shape[0]), stochastic_output))
+            return torch.full(
+                (policy_input.shape[0], 12),
+                float(len(calls)),
+                dtype=policy_input.dtype,
+                device=policy_input.device,
+            )
+
+    policy = _test_ppo_policy(
+        AdvancingPolicy(), deduplicate=True, simulate_action_latency=True
+    )
+    observation = _test_policy_observation(np.zeros((10, 3), dtype=np.float32))
+    first_actions = policy.act(observation)
+    second_actions = policy.act(observation)
+
+    assert calls == [(1, False), (1, False)]
+    assert np.array_equal(first_actions, np.zeros((10, 12), dtype=np.float32))
+    assert np.array_equal(second_actions, np.ones((10, 12), dtype=np.float32))
+    assert np.array_equal(policy._last_actions, np.full((10, 12), 2.0, dtype=np.float32))
+
+
+def test_collector_rejects_unbound_genesis_parallelization_level() -> None:
+    collector = _load_collector()
+    build = type("Build", (), {"scene": type("Scene", (), {"_para_level": 2})()})()
+    execution = {"environment": {"GS_PARA_LEVEL": "0"}}
+
+    with pytest.raises(
+        pilot.PilotContractError, match="observed 2, expected 0"
+    ):
+        collector._require_scene_parallelization(
+            build=build, execution=execution
+        )
+
+    build.scene._para_level = 0
+    collector._require_scene_parallelization(build=build, execution=execution)
 
 
 def test_lockstep_trial_calibration_sentinel_and_live_render() -> None:
