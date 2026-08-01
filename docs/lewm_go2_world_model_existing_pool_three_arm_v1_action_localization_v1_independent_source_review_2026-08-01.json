@@ -1,0 +1,157 @@
+{
+  "schema": "lewm_go2_world_model_existing_pool_three_arm_v1_action_localization_v1_independent_source_review_v1",
+  "status": "PASS_SOURCE_ONLY_NOT_AUTHORITY",
+  "citable_as_scientific_evidence": false,
+  "execution_authority_granted": false,
+  "source_commit": "9cae17bf72e0d2b722cdbeebf4745ea162fa90eb",
+  "reviewers": [
+    {
+      "kind": "independent_subagent",
+      "task_name": "/root/localization_custody_final",
+      "scope": "custody_execution_and_terminal_chain",
+      "separate_from_source_author": true,
+      "separate_from_execution_authorizer": true
+    },
+    {
+      "kind": "independent_subagent",
+      "task_name": "/root/localization_science_final",
+      "scope": "scientific_metrics_routing_and_preregistration",
+      "separate_from_source_author": true,
+      "separate_from_execution_authorizer": true
+    }
+  ],
+  "review_materialization": {
+    "date": "2026-08-01",
+    "method": "independent_live_source_only_audits_then_frozen_binding_review",
+    "reviewed_after_focused_tests": true,
+    "reviewed_before_execution_authority": true
+  },
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_action_localization_v1_preregistration_2026-08-01.md",
+    "file_sha256": "b73a2e500a062b1ba146dc3a77a68cda987ef3e871ef88608eda0624a0107cb9",
+    "byte_count": 17875
+  },
+  "plan_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_action_localization_v1_plan_2026-08-01.json",
+    "file_sha256": "62dc826d93333e64371ee04841c8a1a9c7d9be263d25af1a39b995dadd8fbf83",
+    "byte_count": 8634
+  },
+  "source_bindings": {
+    "lewm_package": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/__init__.py",
+      "file_sha256": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c",
+      "byte_count": 313
+    },
+    "benchmarks_package": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/__init__.py",
+      "file_sha256": "edc7a30d5bf35c1bc9e099621e8f5bbe6d757180d0a6e4771c36ae5d06b81fed",
+      "byte_count": 362
+    },
+    "counterfactual_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/counterfactual.py",
+      "file_sha256": "3d20b87560aa14e3ce672baec1077c7b2919a8679e89dfb88352b59a762d70df",
+      "byte_count": 10300
+    },
+    "h6_main_pool_census": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_recurrent_jepa_main_pool_census.py",
+      "file_sha256": "b594ca7ccc9f398df5d71298340662e2b62492fd837295b8a1e8630603f03f7e",
+      "byte_count": 38981
+    },
+    "localization_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_v3_action_localization_v1.py",
+      "file_sha256": "e874939d3641f70b3f4b53d89d68b0bdc4061f31559e6890e98aaf4625b49bbb",
+      "byte_count": 27312
+    },
+    "three_arm_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_existing_pool_three_arm_v1.py",
+      "file_sha256": "f9689a4e6f5f8755fcc4e70e84ff1c234ce7c41f667f9cfaa3b3bd38a3a86dc0",
+      "byte_count": 60526
+    },
+    "datasets_package": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/__init__.py",
+      "file_sha256": "d920ca2534ea4698f30ac2608b4754cb3cf2b4baae53e4cd59148bedfe9495e3",
+      "byte_count": 73
+    },
+    "h6_dataset": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py",
+      "file_sha256": "c773d739a67159fe82ed3bc539f139f6b8feea019f9a9d2e2e00b418dd8fe056",
+      "byte_count": 33483
+    },
+    "h6_sequence_contract_v1": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_recurrent_h4_rgb_sequences.py",
+      "file_sha256": "3f8c2a89af2934e8225dd98447b952d9e5ce8bedac99a7f834118263957652e6",
+      "byte_count": 27386
+    },
+    "h6_sequence_contract_v2": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_recurrent_h4_rgb_sequences_v2.py",
+      "file_sha256": "3d49e710304ad685f9d161a84586229a6036b652f84df877772afe5b827c51ea",
+      "byte_count": 21001
+    },
+    "worker": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/extract_go2_world_model_existing_pool_three_arm_v1_action_localization_v1.py",
+      "file_sha256": "202ff7878b909e6523b9ff57f57a600ff2be55d92a815f74ed5f0a4536efc6b7",
+      "byte_count": 43715
+    },
+    "checker": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_existing_pool_three_arm_v1_action_localization_v1.py",
+      "file_sha256": "4bcf3638f34568b8b840abaca4d06ea20e4ec956f613669af99f53928a7fb39d",
+      "byte_count": 38270
+    },
+    "external_supervisor": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_existing_pool_three_arm_v1_action_localization_authorized_v1.py",
+      "file_sha256": "456761094e608b85bc9626778a194f865fa1a8b44f8c6da9a63ff305acb0d6ad",
+      "byte_count": 16271
+    }
+  },
+  "test_bindings": {
+    "localization_metric_tests": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_v3_action_localization_v1.py",
+      "file_sha256": "7ab5d206aaf08e7c605d738161be2798a22d2705aa7b85c03ac9653a3f794325",
+      "byte_count": 11297
+    },
+    "worker_checker_tests": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_extract_go2_world_model_existing_pool_three_arm_v1_action_localization_v1.py",
+      "file_sha256": "d2d97d8c24b2b8e1d58f89db0239d12661c7c64b15926ebd9f0f11b48884161d",
+      "byte_count": 9929
+    },
+    "supervisor_tests": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_world_model_existing_pool_three_arm_v1_action_localization_authorized_v1.py",
+      "file_sha256": "5b8cb6661d5d971137c84deabe5978218333603d772723501cd94a3ed90e9349",
+      "byte_count": 5907
+    }
+  },
+  "verification": {
+    "focused_test_count": 14,
+    "focused_tests_passed": 14,
+    "strict_json_plan_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "required_source_path_count": 13,
+    "required_test_path_count": 3,
+    "recursive_source_closure_complete": true,
+    "source_plan_preregistration_consistent": true,
+    "strict_commit_order_and_blob_binding_enforced": true,
+    "supervised_worker_checker_terminal_chain_enforced": true,
+    "attempt_root_absent_at_review": true
+  },
+  "custody": {
+    "real_snapshot_payload_opened": false,
+    "real_validation_index_opened": false,
+    "pack_payloads_opened": false,
+    "rgb_payloads_opened": false,
+    "other_checkpoint_or_snapshot_payloads_opened": false,
+    "train_index_opened": false,
+    "heldout_or_sealed_opened": false,
+    "network_access_used": false,
+    "synthetic_fixtures_only": true,
+    "attempt_reserved": false,
+    "execution_authority_granted": false
+  },
+  "findings": [],
+  "claim_boundary": [
+    "post-hoc development localization only; not citable scientific or promotion evidence",
+    "no training, optimizer, checkpoint restoration, data generation, retry, resume, refill, or V3 extension authority",
+    "requested-action association only; no requested-versus-executed equivalence or untaken-action causal claim",
+    "no architecture-sufficiency, planner-utility, navigation, WM-A, WM-D, G2-G8, deployment, or production claim"
+  ]
+}
