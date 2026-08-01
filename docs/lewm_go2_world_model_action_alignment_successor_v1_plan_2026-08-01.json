@@ -1,0 +1,76 @@
+{
+  "schema": "lewm_go2_world_model_action_alignment_successor_v1_plan_v1",
+  "purpose": "matched_existing_pool_global_action_alignment_comparison",
+  "development_only": true,
+  "citable_as_original_factual_learnability_claim": false,
+  "authorizes_execution": false,
+  "route": "TEST_GLOBAL_ALIGNMENT_HYPOTHESIS",
+  "arms": [
+    {
+      "name": "baseline",
+      "alignment_coefficient": 0.0
+    },
+    {
+      "name": "alignment",
+      "alignment_coefficient": 1.0
+    }
+  ],
+  "objective": "mean(E_factual) + coefficient * mean(relu(0.01 + E_factual - min_wrong_E))",
+  "action_margin": 0.01,
+  "candidate_scan_chunk_rows": 128,
+  "training": {
+    "rows": 16000,
+    "validation_rows": 2048,
+    "updates": 700,
+    "batch_size": 256,
+    "microbatch_size": 32,
+    "presentations_per_arm": 179200,
+    "seed": 20260731,
+    "warmup_updates": 150,
+    "schedule_horizon_updates": 3000,
+    "observation_updates": [500, 600, 700],
+    "checkpoint_selection": false,
+    "early_stopping": false
+  },
+  "paired_decision": {
+    "seed": 20260811,
+    "replicates": 10000,
+    "quantile_indices": [500, 5000, 9499],
+    "meaningful_point_threshold": 0.0023633878725896856,
+    "stall_upper_threshold": 0.0009453551490358743,
+    "absolute_repair_precedence": true,
+    "retention_failure_overrides_meaningful": true
+  },
+  "reuse": {
+    "v3_pack_read_only": true,
+    "fresh_pack": false,
+    "rgb_open_count": 0,
+    "data_generation": false,
+    "network_access": false
+  },
+  "attempt": {
+    "id": "world_model_action_alignment_successor_v1/attempt_v1",
+    "maximum_attempts": 1,
+    "reservation_consumes_attempt": true,
+    "retry": false,
+    "resume": false,
+    "refill": false,
+    "overwrite": false
+  },
+  "caps": {
+    "maximum_wall_seconds": 9000,
+    "maximum_gpu_seconds": 7200,
+    "maximum_training_updates": 700
+  },
+  "forbidden": [
+    "sealed_or_heldout_access",
+    "protected_runtime_access",
+    "rgb_access",
+    "alternate_pack_or_checkpoint",
+    "architecture_change",
+    "schedule_change",
+    "coefficient_search",
+    "validation_gradient",
+    "automatic_follow_on"
+  ]
+}
