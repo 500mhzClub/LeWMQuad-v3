@@ -74,6 +74,14 @@ def pack_source_bindings() -> dict[str, dict]:
     """Bind the packer and the complete local H6 validation closure."""
 
     return {
+        "lewm_package": source_binding(REPO_ROOT / "lewm/__init__.py"),
+        "benchmarks_package": source_binding(
+            REPO_ROOT / "lewm/benchmarks/__init__.py"
+        ),
+        "counterfactual_metrics": source_binding(
+            REPO_ROOT / "lewm/benchmarks/counterfactual.py"
+        ),
+        "datasets_package": source_binding(REPO_ROOT / "lewm/datasets/__init__.py"),
         "packer": source_binding(Path(__file__)),
         "h6_dataset": source_binding(Path(h6.__file__)),
         "h6_main_pool_census": source_binding(Path(h6_census.__file__)),
@@ -116,6 +124,15 @@ def _atomic_json(path: Path, payload: dict) -> None:
     with temporary.open("x") as handle:
         handle.write(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     os.link(temporary, path)
+    temporary.unlink()
+
+
+def _publish_exclusive(temporary: Path, destination: Path) -> None:
+    """Publish one completed payload without any overwrite race."""
+
+    if temporary.is_symlink() or not temporary.is_file():
+        raise FileNotFoundError(f"pack partial is absent or unsafe: {temporary}")
+    os.link(temporary, destination)
     temporary.unlink()
 
 
@@ -240,8 +257,21 @@ def main() -> int:
             frames_path, frames_partial, actions_path, actions_partial,
             meta_path, meta_partial,
         ])
-        frames = np.memmap(frames_partial, dtype=np.uint8, mode="w+",
-                           shape=(count, len(POSITIONS), 112, 112, 3))
+        frame_shape = (count, len(POSITIONS), 112, 112, 3)
+        expected_frame_bytes = count * len(POSITIONS) * FRAME_BYTES
+        descriptor = os.open(
+            frames_partial,
+            os.O_RDWR | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
+            0o600,
+        )
+        try:
+            os.ftruncate(descriptor, expected_frame_bytes)
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+        frames = np.memmap(
+            frames_partial, dtype=np.uint8, mode="r+", shape=frame_shape
+        )
         actions = np.zeros((count, 3), dtype=np.int64)
         scene_ids, families = [], []
         jobs = []
@@ -296,7 +326,6 @@ def main() -> int:
                 {"scene_ids": scene_ids, "families": families},
                 sort_keys=True, separators=(",", ":")) + "\n")
         frames_bytes = frames_partial.stat().st_size
-        expected_frame_bytes = count * len(POSITIONS) * FRAME_BYTES
         if frames_bytes != expected_frame_bytes:
             raise RuntimeError(
                 f"{role} frame pack byte count changed: {frames_bytes} != "
@@ -342,9 +371,9 @@ def main() -> int:
                 "max_abs_deviation": worst,
             },
         }
-        os.replace(frames_partial, frames_path)
-        os.replace(actions_partial, actions_path)
-        os.replace(meta_partial, meta_path)
+        _publish_exclusive(frames_partial, frames_path)
+        _publish_exclusive(actions_partial, actions_path)
+        _publish_exclusive(meta_partial, meta_path)
         manifest[role] = role_manifest
 
     current_sources = pack_source_bindings()

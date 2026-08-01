@@ -4,6 +4,16 @@ Date: 2026-07-31
 Repository HEAD at session start and end: `0279294e5679fa81f845f13c9e47326bab291238`
 Branch: `jepa-spatial-world-model-nav`
 
+> **Superseded interpretation (2026-08-01):** this document remains a
+> historical audit trail, but its bottom-line claim that counterfactual data
+> generation is the immediate critical path has been withdrawn. Exact-state
+> uniqueness does not imply absence of factual supervised action signal. The
+> durable correction and replacement experiment contract are
+> `docs/lewm_go2_world_model_existing_pool_interpretation_correction_2026-08-01.md`
+> and
+> `docs/lewm_go2_world_model_existing_pool_three_arm_v1_preregistration_2026-08-01.md`.
+> No claim below should be used to bypass those narrower documents.
+
 **Nothing in this session is committed.** All artifacts are untracked (§8).
 All experimental outputs are development-tier under `.generated/dev/**` and are
 explicitly **not citable as scientific evidence**. No sealed, held-out, or G8

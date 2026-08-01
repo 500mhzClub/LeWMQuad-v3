@@ -1,0 +1,126 @@
+{
+  "authority_granted_by_this_document": false,
+  "bootstrap_preflight": {
+    "algorithm": "python_random_mt19937_getrandbits52_open01_neg_log1p_shared_family_scene_weights_v1",
+    "dummy_perfect_panel_balanced_accuracy_lower_quantile": 1.0,
+    "family_action_supporting_scene_counts": {
+      "large_enclosed_maze": [19, 10, 13, 11, 20, 7, 8, 20, 17],
+      "local_composite_motifs": [19, 15, 15, 5, 23, 5, 16, 18, 17],
+      "loop_alias_stress": [14, 13, 8, 9, 15, 7, 8, 15, 15],
+      "medium_enclosed_maze": [26, 15, 16, 6, 33, 6, 9, 28, 25],
+      "open_obstacle_field": [15, 12, 9, 5, 15, 5, 6, 12, 8],
+      "rough_local_dynamics": [7, 7, 5, 5, 7, 2, 3, 7, 6],
+      "small_enclosed_maze": [19, 16, 13, 8, 21, 9, 7, 21, 21],
+      "visual_sensor_stress": [7, 7, 7, 6, 7, 5, 2, 7, 6]
+    },
+    "interpretation": "bayesian_positive_weight_cluster_5th_percentile_not_frequentist_coverage",
+    "lower_index": 500,
+    "minimum_family_action_supporting_scene_count": 2,
+    "replicates": 10000,
+    "seed": 20260803
+  },
+  "custody": {
+    "checkpoint_open_count": 0,
+    "heldout_open_count": 0,
+    "network_access_used": false,
+    "rgb_open_count": 0,
+    "sealed_open_count": 0
+  },
+  "derangement_preflight": {
+    "algorithm": "role_family_local_cyclic_then_exact_bipartite_derangement_v1",
+    "group_methods": {
+      "train:large_enclosed_maze": "exact_hopcroft_karp_dense_complement",
+      "train:local_composite_motifs": "exact_hopcroft_karp_dense_complement",
+      "train:loop_alias_stress": "exact_hopcroft_karp_dense_complement",
+      "train:medium_enclosed_maze": "dual_hash_ranked_cyclic_search",
+      "train:open_obstacle_field": "exact_hopcroft_karp_dense_complement",
+      "train:rough_local_dynamics": "exact_hopcroft_karp_dense_complement",
+      "train:small_enclosed_maze": "exact_hopcroft_karp_dense_complement",
+      "train:visual_sensor_stress": "exact_hopcroft_karp_dense_complement"
+    },
+    "mapping_sha256": "c2d3b37d16814714ae14fc848bbec8fb19f97117bee65c02b76f1dd7c1db38c4",
+    "row_count": 16000,
+    "same_action_donor_count": 0,
+    "same_scene_donor_count": 0
+  },
+  "input_bindings": {
+    "index_manifest": {
+      "byte_count": 26926,
+      "file_sha256": "d19fd672d9878e064b20e40a12ce84849f0a13af05a73d2281505ea8d331a36e",
+      "path": ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/manifest.json"
+    },
+    "train_index": {
+      "byte_count": 10328000,
+      "file_sha256": "aee2a54cddd849162648f9b8cfd54a0a28a25bd0705b6482e6af7435c85f4d77",
+      "path": ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/train.jsonl"
+    },
+    "validation_index": {
+      "byte_count": 1317888,
+      "file_sha256": "83592e2fea5927802881f076a58a9710100bea017d658c1b978ba651369beac6",
+      "path": ".generated/go2_recurrent_h4_rgb_sequence_index_v2_schedule_integrity/val.jsonl"
+    }
+  },
+  "overlap_preflight": {
+    "diagnostic_checks": {
+      "train_all_ordered_triples_supported": false
+    },
+    "failed_diagnostic_checks": [
+      "train_all_ordered_triples_supported"
+    ],
+    "gate_checks": {
+      "role_scene_disjointness": true,
+      "train_all_actions_supported": true,
+      "train_all_ordered_pairs_supported": true
+    },
+    "missing_visible_train_triples": [
+      [0, 4, 3],
+      [5, 2, 3],
+      [5, 7, 8],
+      [6, 2, 1],
+      [7, 3, 5],
+      [7, 6, 0],
+      [8, 7, 0]
+    ],
+    "status": "PASS",
+    "train_action_count_by_position": {
+      "a0": 9,
+      "a1": 9,
+      "a2": 9
+    },
+    "train_adjacent_pair_count_by_position": {
+      "a0_a1": 81,
+      "a1_a2": 81
+    },
+    "train_row_count": 16000,
+    "train_scene_count": 1000,
+    "train_visible_triple_count": 722,
+    "validation_row_count": 2048,
+    "validation_scene_count": 150
+  },
+  "schedule_preflight": {
+    "algorithm": "per_epoch_sha256_sort_then_contiguous_tail_carry_v1",
+    "batch_size": 256,
+    "epoch_order_sha256": [
+      "6064704494f2ab940e73bcf600cd7b5b9ec8e3e67f65825dca04080ca739e161",
+      "be81326a0341928fbb7daad9f15b789ade8aa77d57bbc378cea0342b32345c79",
+      "0d4518c4f0250b0f472116fcaa6ff67316225bc6c5a8887148b438a7b55e38a2",
+      "1b33911bdf28356ca594effa1b78fc304582ba56a0bb53bde98a430aac34c0c3",
+      "a6ad1b6a89fa8a0b120659f162364059112bcfe7911bc628b4920cc5549a16b2",
+      "cb3918e840e2a44a51aa40776e84fefb74a4b96afd9ef5c81b7d53125f84b8fd",
+      "bfaa87c1d2baf2bfb9e8fc3d1b3d5c7e5c0842e02bdff1f9e5a82f271f18fe72",
+      "09fc9126072d2c46dc4f47dbaca7a6c15a5de7c53f32c952b37e0a225f13c4ec",
+      "e44342fa2a9af0f7e8969aafa1e0594add4da17a587f9c65597616421b243a36",
+      "5eca38f7112ce133b74498b0044b4d6316800537ef185734a1111c547060ae1d",
+      "1ea4b22bb091565fb10bce4949e67fcefb4705c560aa9a4e219abfbeed117d83",
+      "d1f6c3c30fc6261da1b7c995b33e3c4876f806f9992f4630d77acfa22e3a2b6a"
+    ],
+    "epochs_touched": 12,
+    "namespace": "lewm_go2_world_model_existing_pool_three_arm_v1/train-order/seed-20260731",
+    "ordered_uint32be_sha256": "e93c8e0253b05db0745fccf4db33cfe23dc6c9da9f9b441e7aa7763ca1142d13",
+    "presentations": 179200,
+    "seed": 20260731,
+    "updates": 700
+  },
+  "schema": "lewm_go2_world_model_existing_pool_three_arm_metadata_preflight_v1",
+  "status": "PASS_METADATA_ONLY_NOT_EXECUTION_AUTHORITY"
+}
