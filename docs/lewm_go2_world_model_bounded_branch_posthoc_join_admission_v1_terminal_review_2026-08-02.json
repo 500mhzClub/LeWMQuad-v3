@@ -1,0 +1,54 @@
+{
+  "schema": "lewm_go2_world_model_bounded_branch_posthoc_join_admission_terminal_review_v1",
+  "status": "PASS_POSTHOC_JOIN_ADMISSION_ONLY",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "citable_as_scientific_evidence": false,
+  "reviewer": {
+    "identity": "/root/task_relevance_integration_audit",
+    "independence_basis": "independent read-only terminal review of the exact bound posthoc outputs and immutable inputs; the reviewer did not author or execute the materialization"
+  },
+  "reviewed_at": "2026-08-02T20:44:03+01:00",
+  "terminal_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/terminal.json",
+    "file_sha256": "a1590fffc673f7676016bb70d4b4f5530f24b9a49bf05e84dcec6bc1756fbe56",
+    "byte_count": 1250
+  },
+  "manifest_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/manifest.json",
+    "file_sha256": "87448995c905107453814a5e7e4cd9968d31cbc0e308513d17bc038c6585f15e",
+    "byte_count": 11964
+  },
+  "authority_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_execution_authority_2026-08-02.json",
+    "file_sha256": "ba06326782c4eca0fa81394b267c8bf37e09257182a499ca3249c917c4477c56",
+    "byte_count": 7463
+  },
+  "source_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_source_review_2026-08-02.json",
+    "file_sha256": "3a1f5ad17f830c13d4e8b1b0810dcc8be25410f4ab7b52102049a217876ef82d",
+    "byte_count": 4404
+  },
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_preregistration_2026-08-02.json",
+    "file_sha256": "ee2cbd54459760c23107e961f9ae4c860a5cfccfeb3cdb332a5449394031fdbf",
+    "byte_count": 6320
+  },
+  "failure_admissibility_audit_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_terminal_failure_and_posthoc_admissibility_audit_2026-08-02.json",
+    "file_sha256": "c29a728e75ccf98191d04d9d834232db95091f2ca8655a4dc9c60144233e4a9b",
+    "byte_count": 14685
+  },
+  "checks": {
+    "terminal_complete_pending_review": true,
+    "manifest_complete_and_bound": true,
+    "derived_leaf_hashes_and_counts_exact": true,
+    "all_source_and_calibration_pixels_reverified": true,
+    "source_inventory_unchanged": true,
+    "metadata_only_fresh_root": true,
+    "original_failed_terminal_preserved": true,
+    "no_retry_resume_render_or_generation": true
+  },
+  "findings": [],
+  "protected_material_opened": false
+}
