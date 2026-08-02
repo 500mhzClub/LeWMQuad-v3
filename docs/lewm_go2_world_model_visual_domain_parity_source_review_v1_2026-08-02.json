@@ -1,0 +1,518 @@
+{
+  "accepted_limitations": [
+    "This is a source-only review. It grants no execution, retry, resume, refill, overwrite, training, scientific-claim, navigation, promotion, deployment, calibration, bounded-experiment, or successor authority.",
+    "The reviewed experiment is an exact deterministic implementation-equivalence check over one ordinary TRAIN scene per family and the first four bound historical poses per scene: 8 scenes, 32 historical frames, 32 candidate renders, and 32 duplicate renders. It is not a statistical estimate and establishes no out-of-panel, held-out, real-robot, or navigation generalization.",
+    "The candidate path deliberately reuses the frozen historical render_replay_v03 scene builder, texture machinery, and camera-pose helper. A pass therefore establishes exact wiring and implementation equivalence at the 32 bound inputs, not agreement between independent rendering engines or realism of the textured-v03 domain.",
+    "The parity attempt performs zero physics steps, zero auxiliary depth renders, no model loading for inference, no model training, and no planning evaluation. Its output cannot by itself establish world-model usefulness.",
+    "The official source panel and exact plan are immutable caller-bound documents generated after the source freeze, not members of commit 7d5b6c53891dd079da6452aa7e5b18a656cfd3af. This review verifies their exact current SHA-256 and byte-count bindings; a later explicit authority must bind the plan and this review separately before execution.",
+    "The runtime contract binds the selected Python executable target, environment config, graphics tools, robot URDF, policy artifacts, registries, and platform manifest, but does not recursively hash-close all installed third-party package contents. Exact source/candidate and candidate/duplicate decoded-pixel equality remains the terminal scientific gate for this bounded parity check.",
+    "Graphics-device availability and live GPU state are external preflight conditions, not findings minted by this source-only review. They must still pass under the exact scrubbed execution environment before the one-shot attempt root is created.",
+    "The attempt root was absent at review time. If later authority is issued, atomic creation of that root consumes the single attempt even if failure occurs before the reservation document is written; no retry, resume, refill, or overwrite is permitted.",
+    "A successful supervisor terminal remains COMPLETE_PENDING_TERMINAL_REVIEW. The parity result, consumed successful terminal, and independent terminal review must all be deeply revalidated as one exact triple before V3 calibration may consume the parity prerequisite."
+  ],
+  "authority_granted_by_this_document": false,
+  "remaining_findings": [],
+  "review_method": [
+    "Regenerated the canonical parity source closure with committed_source_bindings_v1 and required exact equality with the template at frozen source commit 7d5b6c53891dd079da6452aa7e5b18a656cfd3af. Verified 59 name-sorted unique roles and 56 unique paths; the only path aliases are the intentional collector/scene_generator_materializer/smoke_rgb_writer and external_supervisor/parity_supervisor roles.",
+    "Recomputed every reviewed source SHA-256 and byte count from the live no-symlink regular file and required exact equality with the corresponding Git blob at the frozen commit. Ran git diff --check over the exact 56-path closure.",
+    "Verified the official source panel at byte_count=72547 and SHA-256=ec7e076ff5387537b4b765a56f3eba467a21d8ec1325d8f5f823fe4e76d5e4d8 and the exact plan at byte_count=98945 and SHA-256=1e5553cb006eae127fecaecf60502b34392e93ffbc98818be3622c93cb29b5ab.",
+    "Re-derived the historical source panel from the ordinary corpus inventory, TRAIN render summaries and plans, complete bound frames JSONL files, scene manifests, Genesis scenes, selected texture assets, derived meshes, and the first four fixed frame rows per scene; required exact canonical equality with the official 32-row panel.",
+    "Rebuilt the complete parity plan from the re-derived source evidence and bound runtime contract and required exact canonical equality with the official plan. Independently invoked validate_plan_v1 with fresh-output enforcement, reopening and validating every bound historical RGB, lineage document, asset, corpus manifest, runtime input, scene, and pose.",
+    "Verified all 32 historical image leaves are PNG files with native mode RGB and exact 224x224 dimensions, and that decoded C-order raw-pixel hashes agree with the bound panel and plan.",
+    "Inspected the parity plan builder, source-review/authority builder, external supervisor, evaluator, shared textured-v03 render helper, and focused tests. Confirmed exact 8-family/32-pose selection, two RGB-only render calls per pose, zero physics/depth calls, exact decoded-pixel pass gates, complete inventory checks, terminal recomputation, deep source lineage, and fail-closed source/review/plan bindings.",
+    "Verified root creation is the attempt-consumption boundary, reservation records the already-consumed attempt, all output writes are exclusive, missing or extra output leaves fail, failures remain non-citable, and no authority, retry, resume, refill, overwrite, training, promotion, or scientific claim is minted by the plan, evaluator, terminal, or this review.",
+    "Scanned every path-bearing binding in the source panel, exact plan, and 59-role review closure using the repository custody predicate and found no sealed, sealed_*, heldout, held_out, held-out, protected, or protected_* path. Confirmed all selected scenes and historical rollout inputs are ordinary TRAIN material.",
+    "Ran the focused parity plan/authority/supervisor/evaluator/lineage suite and the expanded 17-file integration suite under the bound Genesis-render Python with pytest plugin autoload disabled and bytecode writes disabled. Confirmed the authority file and attempt root remained absent and no parity supervisor process was running."
+  ],
+  "reviewed_at": "2026-08-02T16:02:51+01:00",
+  "reviewed_source_bindings": [
+    {
+      "binding": {
+        "byte_count": 362,
+        "file_sha256": "edc7a30d5bf35c1bc9e099621e8f5bbe6d757180d0a6e4771c36ae5d06b81fed",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/__init__.py"
+      },
+      "name": "benchmarks_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 25925,
+        "file_sha256": "a87e3026378fd2351c003254c229495c60f1c0bda3cf3f4344c798b369694f85",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_experiment_v1_runbook_2026-08-02.md"
+      },
+      "name": "bounded_branch_runbook"
+    },
+    {
+      "binding": {
+        "byte_count": 114253,
+        "file_sha256": "46a558ecf4eb68ebf1af68f3aab2b366d6bd818ca9bcff772be36e4648cbe8fb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/analyze_go2_world_model_counterfactual_calibration_v1.py"
+      },
+      "name": "calibration_analyzer"
+    },
+    {
+      "binding": {
+        "byte_count": 13992,
+        "file_sha256": "2526bf940dc27bcf8270b310320f7ed6228bb95d02b0851b4e88250c85d19998",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/camera_safety.py"
+      },
+      "name": "camera_safety"
+    },
+    {
+      "binding": {
+        "byte_count": 143612,
+        "file_sha256": "18771d7b5c90e0a30f8c8331dd419da80aa4c7addba6acb265df2e5b96df81e7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "checker"
+    },
+    {
+      "binding": {
+        "byte_count": 138420,
+        "file_sha256": "7f6df6118c54b2f6ab3339e30b2e33fd169c6150dbe39b0ccd607bf53b4e1138",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "collector"
+    },
+    {
+      "binding": {
+        "byte_count": 7122,
+        "file_sha256": "4e088a9682ff3c589555a7f9b92d5c61c88ee6f7196b64540b0e1bddb0f0f5ba",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/base.py"
+      },
+      "name": "collector_base"
+    },
+    {
+      "binding": {
+        "byte_count": 4728,
+        "file_sha256": "98fc61a6e4d7fc9c7d13109a7c9d7072992b883c56911931250f799ea0e0aeb3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/frontier.py"
+      },
+      "name": "collector_frontier"
+    },
+    {
+      "binding": {
+        "byte_count": 3211,
+        "file_sha256": "01f2db82c4f47f58d9d17fe41677924c3947cdad5e23ce0098f5745d4c4c9d3b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/ou_noise.py"
+      },
+      "name": "collector_ou_noise"
+    },
+    {
+      "binding": {
+        "byte_count": 1530,
+        "file_sha256": "595ea3799731076a7d8381fbf377c556175b07480f89052416685161eb6d8966",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/primitive_curriculum.py"
+      },
+      "name": "collector_primitive_curriculum"
+    },
+    {
+      "binding": {
+        "byte_count": 7256,
+        "file_sha256": "cf7b50f7394e39986cf9339b253d1255bbb15109fb212e33c3e6d61fe3fa2bd5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/recovery.py"
+      },
+      "name": "collector_recovery"
+    },
+    {
+      "binding": {
+        "byte_count": 51313,
+        "file_sha256": "2ccd4fba3ef45bd3f75358dc617f4d575b96d7c6e4d3a2538b76e31bc3d79968",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/route_teacher.py"
+      },
+      "name": "collector_route_teacher"
+    },
+    {
+      "binding": {
+        "byte_count": 1932,
+        "file_sha256": "3449122454b946f81b0cc936877c33993d173dedb729b169c6198dfb02064d81",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/__init__.py"
+      },
+      "name": "collectors_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 95214,
+        "file_sha256": "1d860bb0a5ec610276d5b7d693936c0d08b28db1bb0f082e3a5ab8f4c8ffddcf",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "contract"
+    },
+    {
+      "binding": {
+        "byte_count": 10300,
+        "file_sha256": "3d20b87560aa14e3ce672baec1077c7b2919a8679e89dfb88352b59a762d70df",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/counterfactual.py"
+      },
+      "name": "counterfactual_benchmark_support"
+    },
+    {
+      "binding": {
+        "byte_count": 73,
+        "file_sha256": "d920ca2534ea4698f30ac2608b4754cb3cf2b4baae53e4cd59148bedfe9495e3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/__init__.py"
+      },
+      "name": "datasets_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 73104,
+        "file_sha256": "088ad57a52968af881cf6f5479d2918122d1c89fead63108bdf839c93e46166a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py"
+      },
+      "name": "external_supervisor"
+    },
+    {
+      "binding": {
+        "byte_count": 1834,
+        "file_sha256": "04010c9e5be2d20383eab86398c47b12f94d1a2f96fa105a4ae1e631e21255f2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/batch_renderer.py"
+      },
+      "name": "genesis_batch_renderer"
+    },
+    {
+      "binding": {
+        "byte_count": 24807,
+        "file_sha256": "d7e8b021c4411e0e5f83b9ed61dbee1d70493d23d8c3e87123bd84f24a26db6d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/lewm_contract.py"
+      },
+      "name": "genesis_contract"
+    },
+    {
+      "binding": {
+        "byte_count": 3262,
+        "file_sha256": "07a2cdb8c1087ca0517c3a581941de6b772ba75b6d3e3f22bd8aec8a5320b874",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/__init__.py"
+      },
+      "name": "genesis_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 1564,
+        "file_sha256": "22c6653ed1751fcb82653a71a32d37faea2b0c61b9bbc215c70c0593f2a85f26",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/parity_checks.py"
+      },
+      "name": "genesis_parity_checks"
+    },
+    {
+      "binding": {
+        "byte_count": 13960,
+        "file_sha256": "dc3414132f5d226bbde036cf62fddcdd7d392c0374a4586327fba7a530ce5f54",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/render_replay.py"
+      },
+      "name": "genesis_render_replay"
+    },
+    {
+      "binding": {
+        "byte_count": 2167,
+        "file_sha256": "66df7b2d6836f354ce40e7cf775a53b0d8747a90fbe305df9da7a84fb18fa9ce",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/go2_adapter.py"
+      },
+      "name": "go2_adapter"
+    },
+    {
+      "binding": {
+        "byte_count": 9590,
+        "file_sha256": "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/render_replay_v03.py"
+      },
+      "name": "historical_textured_v03_renderer"
+    },
+    {
+      "binding": {
+        "byte_count": 313,
+        "file_sha256": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/__init__.py"
+      },
+      "name": "lewm_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 23820,
+        "file_sha256": "ff3cde2aadb465860752f785e9fa7468b5aadd8e0be868f08b8c367763070baa",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_visual_domain_parity_authority_v1.py"
+      },
+      "name": "parity_authority_builder"
+    },
+    {
+      "binding": {
+        "byte_count": 63538,
+        "file_sha256": "8e4d214bcbc0501fd9a68d3b4e30bdcd9962e83f8342929e7907dc7afa5aa962",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_v1.py"
+      },
+      "name": "parity_evaluator"
+    },
+    {
+      "binding": {
+        "byte_count": 40781,
+        "file_sha256": "a590c110dc3bf69729973a2c258cd2ed673765cd4477376b46eda02993a37733",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_lineage_v1.py"
+      },
+      "name": "parity_evaluator_lineage_test"
+    },
+    {
+      "binding": {
+        "byte_count": 35532,
+        "file_sha256": "99de52eba024ee115a137697a48f14ff7931e2f424e5cdaf3301c7e22aad533b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_counterfactual_calibration_authorized_v1.py"
+      },
+      "name": "parity_graphics_supervisor_helpers"
+    },
+    {
+      "binding": {
+        "byte_count": 53203,
+        "file_sha256": "3fc3993aceb8cd332073b4032bc07dda88d1f537f709bedbee50f627a21d80cd",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_visual_domain_parity_plan_v1.py"
+      },
+      "name": "parity_plan_builder"
+    },
+    {
+      "binding": {
+        "byte_count": 16294,
+        "file_sha256": "fe4dda1f0b23cdb8618ad68d8a0dee70ed2c2c47d8828b93e1c7726fa2ab967e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_visual_domain_parity_plan_v1.py"
+      },
+      "name": "parity_plan_test"
+    },
+    {
+      "binding": {
+        "byte_count": 48388,
+        "file_sha256": "bc2e794895ae28b9220bc52e3ea640720e9b74e57e8ab045b2b2e818c7b884cb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_visual_domain_parity_authorized_v1.py"
+      },
+      "name": "parity_runtime_boundary_test"
+    },
+    {
+      "binding": {
+        "byte_count": 18990,
+        "file_sha256": "f4deffe647c2270a153d715f8438943ba69d8f8df6b8765f658b569675c66e0e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_counterfactual_calibration_plan_v1.py"
+      },
+      "name": "parity_runtime_contract_builder"
+    },
+    {
+      "binding": {
+        "byte_count": 15854,
+        "file_sha256": "fee36bb6edcb71c3f88b19fc4af5f7b785706e54464e85d8db4c1e8dd4f4400c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_bounded_branch_scene_panel_v1.py"
+      },
+      "name": "parity_scene_inventory"
+    },
+    {
+      "binding": {
+        "byte_count": 73104,
+        "file_sha256": "088ad57a52968af881cf6f5479d2918122d1c89fead63108bdf839c93e46166a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py"
+      },
+      "name": "parity_supervisor"
+    },
+    {
+      "binding": {
+        "byte_count": 153820,
+        "file_sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "pilot_consumer"
+    },
+    {
+      "binding": {
+        "byte_count": 86066,
+        "file_sha256": "06501bbbdd1e071a3a91e765d77bd19da5f2c311c35d75df4631c452beea034a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/rollout.py"
+      },
+      "name": "rollout"
+    },
+    {
+      "binding": {
+        "byte_count": 15877,
+        "file_sha256": "1eec27ee97de1e853890e34f6c008ff748ce6034f9467d20fea8d212c78f3158",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/scene_builder.py"
+      },
+      "name": "scene_builder"
+    },
+    {
+      "binding": {
+        "byte_count": 138420,
+        "file_sha256": "7f6df6118c54b2f6ab3339e30b2e33fd169c6150dbe39b0ccd607bf53b4e1138",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "scene_generator_materializer"
+    },
+    {
+      "binding": {
+        "byte_count": 17787,
+        "file_sha256": "fcfc065716172320561803f274754b1ba3046c922f83b37abf16d796fe9417ea",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/scene_loader.py"
+      },
+      "name": "scene_loader"
+    },
+    {
+      "binding": {
+        "byte_count": 9765,
+        "file_sha256": "92f8004d79be9b6cadc77f51e0d586443aa09e4ce376d7c14e5d355a1d4ec846",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_counterfactual_textured_v03.py"
+      },
+      "name": "shared_textured_v03_helper_test"
+    },
+    {
+      "binding": {
+        "byte_count": 138420,
+        "file_sha256": "7f6df6118c54b2f6ab3339e30b2e33fd169c6150dbe39b0ccd607bf53b4e1138",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "smoke_rgb_writer"
+    },
+    {
+      "binding": {
+        "byte_count": 6996,
+        "file_sha256": "a8a9b958ffbf927f330ef9f8f950adabe884f9137668780cd9f8015184bda1fc",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/textures.py"
+      },
+      "name": "textures"
+    },
+    {
+      "binding": {
+        "byte_count": 6031,
+        "file_sha256": "aa3b63399a7638f69cadce772721cf420d28d7965f28ce1a16886728afeb42a5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/vision_quality.py"
+      },
+      "name": "vision_quality"
+    },
+    {
+      "binding": {
+        "byte_count": 5337,
+        "file_sha256": "776a8638da81939101f7ce0c7d856fada9c08b7ce2b5ecc104f708425e6067d3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/corpus.py"
+      },
+      "name": "world_corpus"
+    },
+    {
+      "binding": {
+        "byte_count": 60,
+        "file_sha256": "a658289b9d01aefb220d23f89c2d23d78d86562382779690f832da41d1f4e70c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/exporters/__init__.py"
+      },
+      "name": "world_exporters_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 62884,
+        "file_sha256": "87515b932773aa518d18f9777af7c1567ae76368ce31e5519da7019f72d30189",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/families.py"
+      },
+      "name": "world_families"
+    },
+    {
+      "binding": {
+        "byte_count": 8011,
+        "file_sha256": "daf8a41ba06bd250c618775184462b641263ec485ecb4674fc96a31f4348fc57",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/exporters/to_gazebo_sdf.py"
+      },
+      "name": "world_gazebo_exporter"
+    },
+    {
+      "binding": {
+        "byte_count": 2202,
+        "file_sha256": "9ad0e97d584b50a1c28a26da8b0a59344081b5b8bf0e79d6ad227b66c982b313",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/exporters/to_genesis.py"
+      },
+      "name": "world_genesis_exporter"
+    },
+    {
+      "binding": {
+        "byte_count": 26364,
+        "file_sha256": "5e72678b204dc50d7e2ebb5f0146833623e55625db69decda08bd6c480f5c07d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/labels/derived.py"
+      },
+      "name": "world_labels_derived"
+    },
+    {
+      "binding": {
+        "byte_count": 926,
+        "file_sha256": "23e578d23044873cd7cd5bee8cbef994ba37ce085f3e6b0e6543db2db760f4c8",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/labels/__init__.py"
+      },
+      "name": "world_labels_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 5998,
+        "file_sha256": "1cb83d219f43e862f77aac44f3f98f66578594be662055e070d41cc397ad0185",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/labels/topology.py"
+      },
+      "name": "world_labels_topology"
+    },
+    {
+      "binding": {
+        "byte_count": 12154,
+        "file_sha256": "5679768016226e89e385ec7a7238616416248a9a1194b898ecb9078662f6a888",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/manifest.py"
+      },
+      "name": "world_manifest"
+    },
+    {
+      "binding": {
+        "byte_count": 20806,
+        "file_sha256": "e6f7e26d584dfd7923493803fc95a75135122b37a1f95cb51f9267b284649510",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/planning_grid.py"
+      },
+      "name": "world_planning_grid"
+    },
+    {
+      "binding": {
+        "byte_count": 12139,
+        "file_sha256": "df600c33020713af2bf623468270a40f9d4dcf5459f3f1526faf1a53875ab190",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/randomization.py"
+      },
+      "name": "world_randomization"
+    },
+    {
+      "binding": {
+        "byte_count": 23227,
+        "file_sha256": "5b7ae6f7e5ac5c3aa83e0f3cc392c00ef3756d41b6a7fbe2acffa38ff7a1ed46",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/scene_graph.py"
+      },
+      "name": "world_scene_graph"
+    },
+    {
+      "binding": {
+        "byte_count": 10113,
+        "file_sha256": "9ecf9c7c6d87f2ba2be083883bbd621dcd9372f1ea74bf4545434f0135ad9ad3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/scene_validation.py"
+      },
+      "name": "world_scene_validation"
+    },
+    {
+      "binding": {
+        "byte_count": 12032,
+        "file_sha256": "0536c7694f28a8cdde6391743a160ec4b9f5c08795a67c641a241891d7c0dfcd",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/splits.py"
+      },
+      "name": "world_splits"
+    },
+    {
+      "binding": {
+        "byte_count": 1540,
+        "file_sha256": "9e0b6599316b0d361e99c405cbc27be4e9948206c55aeaa0f5316a90d320002d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/__init__.py"
+      },
+      "name": "worlds_package_init"
+    }
+  ],
+  "reviewed_source_commit": "7d5b6c53891dd079da6452aa7e5b18a656cfd3af",
+  "reviewer": {
+    "identity": "/root/calibration_v3_independent_audit (independent Codex subagent)",
+    "independence_basis": "Separate delegated reviewer that did not author frozen parity source commit 7d5b6c53891dd079da6452aa7e5b18a656cfd3af; made no source or test changes and independently evaluated the exact frozen 59-role closure, official source panel, and exact plan."
+  },
+  "schema": "lewm_go2_world_model_follow_on_independent_source_review_v1",
+  "status": "PASS_SOURCE_ONLY_NOT_AUTHORITY",
+  "test_evidence": [
+    "65 focused parity tests passed in 3.28 seconds under .generated/venvs/genesis_render_vulkan with PYTHONDONTWRITEBYTECODE=1 and PYTEST_DISABLE_PLUGIN_AUTOLOAD=1, covering the exact plan builder, source review and authority boundary, one-shot supervisor, evaluator lineage, terminal revalidation, shared textured-v03 helper, and bounded lineage integration.",
+    "313 expanded integration tests passed in 7.72 seconds under the same environment, covering the parity, V3 calibration, checker, joiner, strict consumer, bounded branch, lineage, evaluator-panel, root-consumption, and progression contracts.",
+    "All 59 reviewed source roles exactly equal both current no-symlink regular files and Git blobs at 7d5b6c53891dd079da6452aa7e5b18a656cfd3af. The closure has 59 unique names and 56 unique paths, with only the two intentional alias groups documented in review_method.",
+    "The official source panel independently re-derived exactly with 8 families, 8 scenes, 32 poses, 152 binding occurrences, and 113 unique paths. All 32 bound RGB leaves are PNG/RGB/224x224. Exact binding: byte_count=72547, SHA-256=ec7e076ff5387537b4b765a56f3eba467a21d8ec1325d8f5f823fe4e76d5e4d8.",
+    "The official plan independently rebuilt and validate_plan_v1 passed with fresh-output enforcement, exact expected counts of 8 scenes, 32 source frames, 32 candidate frames, 32 duplicates, 64 RGB calls, zero auxiliary depth calls, and zero physics steps. Exact binding: byte_count=98945, SHA-256=1e5553cb006eae127fecaecf60502b34392e93ffbc98818be3622c93cb29b5ab.",
+    "Protected-path scan passed over 59 review bindings, 152 source-panel binding occurrences, and 185 plan binding occurrences. No sealed, held-out, or protected path was opened or admitted; every selected scene and rollout path is TRAIN-scoped.",
+    "Frozen closure git diff --check passed. The exact one-shot output root .generated/dev/lewm-go2-wm-visual-domain-parity-v1 and any parity execution-authority document remained absent throughout this review; no simulator, renderer, worker, training job, authority builder, or attempt-root creation was invoked."
+  ]
+}
