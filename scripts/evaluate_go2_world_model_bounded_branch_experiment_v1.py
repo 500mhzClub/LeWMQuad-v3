@@ -16,6 +16,7 @@ import math
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 from typing import Any, Mapping, Sequence
 
@@ -36,6 +37,7 @@ from lewm.benchmarks.go2_world_model_counterfactual_pilot_v1 import (  # noqa: E
 )
 from scripts import evaluate_go2_world_model_counterfactual_action_regret_v1 as base  # noqa: E402
 from scripts import analyze_go2_world_model_progression_v1 as progression_analyzer  # noqa: E402
+from scripts import materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1 as posthoc_admission  # noqa: E402
 
 
 REPORT_SCHEMA = "lewm_go2_world_model_bounded_branch_experiment_result_v1"
@@ -103,6 +105,34 @@ PILOT_TERMINAL_SCHEMA = (
 PILOT_TERMINAL_REVIEW_SCHEMA = (
     "lewm_go2_world_model_bounded_branch_experiment_terminal_review_v1"
 )
+POSTHOC_EVALUATION_AUTHORITY_SCHEMA = (
+    "lewm_go2_world_model_bounded_branch_posthoc_evaluation_authority_v1"
+)
+POSTHOC_EVALUATION_AUTHORITY_STATUS = (
+    "AUTHORIZED_ONE_EXACT_FIXED_12_MEMBER_POSTHOC_EVALUATION_ONLY"
+)
+POSTHOC_EVALUATION_SOURCE_REVIEW_SCHEMA = (
+    "lewm_go2_world_model_bounded_branch_posthoc_evaluation_source_review_v1"
+)
+POSTHOC_EVALUATION_SOURCE_REVIEW_STATUS = (
+    "PASS_SOURCE_REVIEWED_POSTHOC_EVALUATION_ADMISSION_ONLY"
+)
+POSTHOC_EVALUATION_SOURCE_REVIEW = (
+    REPO_ROOT
+    / "docs/lewm_go2_world_model_bounded_branch_posthoc_evaluation_v1_"
+    "source_review_2026-08-02.json"
+)
+POSTHOC_EVALUATION_OUTPUT_ROOT = (
+    REPO_ROOT / ".generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1"
+)
+POSTHOC_EVALUATION_REVIEW_CHECKS = {
+    "posthoc_admission_only_three_call_sites_changed",
+    "legacy_success_terminal_not_reused_or_relabelled",
+    "historical_model_scene_and_visual_freezes_preserved",
+    "models_features_metrics_thresholds_gates_and_panel_unchanged",
+    "fresh_authority_required_before_panel_reservation",
+    "focused_and_inherited_tests_pass",
+}
 USEFUL_EFFECT_THRESHOLDS = {
     "ceiling_rank_regret_reduction_vs_current": 0.05,
     "direct_error_reduction_vs_shuffled": 0.02,
@@ -1134,6 +1164,465 @@ def _validate_checker_report_values_v1(
             f"bounded pilot {phase} check measurements changed"
         )
     return dict(report)
+
+
+def _posthoc_evaluation_source_paths_v1() -> dict[str, Path]:
+    from scripts import dev_probe_counterfactual_action_fidelity as probe
+
+    paths = {
+        "bounded_evaluator": Path(__file__).resolve(),
+        "bounded_panel_runner": (
+            REPO_ROOT / "scripts/run_go2_world_model_bounded_branch_evaluation_panel_v1.py"
+        ).resolve(),
+        "bounded_evaluator_test": (
+            REPO_ROOT / "lewm/tests/test_go2_world_model_bounded_branch_experiment_v1.py"
+        ).resolve(),
+        "bounded_panel_runner_test": (
+            REPO_ROOT
+            / "lewm/tests/test_go2_world_model_bounded_branch_evaluation_panel_runner_v1.py"
+        ).resolve(),
+        "posthoc_admission": Path(posthoc_admission.__file__).resolve(),
+        "posthoc_admission_test": (
+            REPO_ROOT
+            / "lewm/tests/test_go2_world_model_bounded_branch_posthoc_join_admission_v1.py"
+        ).resolve(),
+        "action_regret_evaluator": Path(base.__file__).resolve(),
+        "progression_analyzer": Path(progression_analyzer.__file__).resolve(),
+        "counterfactual_probe": Path(probe.__file__).resolve(),
+        "counterfactual_probe_model": Path(probe.model_module.__file__).resolve(),
+        "counterfactual_probe_evaluation": Path(probe.evaluation.__file__).resolve(),
+        "counterfactual_probe_metrics": Path(probe.metrics.__file__).resolve(),
+        "counterfactual_probe_h6_dataset": Path(probe.h6.__file__).resolve(),
+        "counterfactual_probe_trainer": Path(probe.trainer.__file__).resolve(),
+    }
+    bound_paths = set(paths.values())
+    for name, path in posthoc_admission._expected_source_paths().items():  # noqa: SLF001
+        selected = Path(path).resolve()
+        if selected not in bound_paths:
+            paths[f"posthoc_{name}"] = selected
+            bound_paths.add(selected)
+    return paths
+
+
+def posthoc_evaluation_source_bindings_v1() -> list[dict[str, Any]]:
+    return [
+        {"name": name, "binding": posthoc_admission._file_binding(path)}  # noqa: SLF001
+        for name, path in _posthoc_evaluation_source_paths_v1().items()
+    ]
+
+
+def _validate_posthoc_evaluation_source_review_v1(
+    *,
+    binding: Mapping[str, Any],
+    source_commit: str,
+    source_bindings: Sequence[Mapping[str, Any]],
+) -> None:
+    if binding.get("path") != str(POSTHOC_EVALUATION_SOURCE_REVIEW.resolve()):
+        raise BoundedBranchEvaluationError("posthoc evaluation source review path changed")
+    review, _ = posthoc_admission._read_bound_json(  # noqa: SLF001
+        binding, label="posthoc evaluation source review"
+    )
+    required = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_granted_by_this_document",
+        "citable_as_scientific_evidence",
+        "reviewer",
+        "reviewed_at",
+        "source_commit",
+        "source_bindings",
+        "checks",
+        "findings",
+        "protected_material_opened",
+    }
+    reviewer = review.get("reviewer")
+    checks = review.get("checks")
+    if (
+        set(review) != required
+        or review.get("schema") != POSTHOC_EVALUATION_SOURCE_REVIEW_SCHEMA
+        or review.get("status") != POSTHOC_EVALUATION_SOURCE_REVIEW_STATUS
+        or review.get("authority_granted_by_this_document") is not False
+        or review.get("scientific_claim_granted_by_this_document") is not False
+        or review.get("citable_as_scientific_evidence") is not False
+        or review.get("source_commit") != source_commit
+        or review.get("source_bindings") != list(source_bindings)
+        or not isinstance(reviewer, Mapping)
+        or set(reviewer) != {"identity", "independence_basis"}
+        or any(
+            not isinstance(reviewer[key], str) or not reviewer[key].strip()
+            for key in reviewer
+        )
+        or not isinstance(review.get("reviewed_at"), str)
+        or not review["reviewed_at"].strip()
+        or not isinstance(checks, Mapping)
+        or set(checks) != POSTHOC_EVALUATION_REVIEW_CHECKS
+        or any(value is not True for value in checks.values())
+        or review.get("findings") != []
+        or review.get("protected_material_opened") is not False
+    ):
+        raise BoundedBranchEvaluationError(
+            "posthoc evaluation source review did not pass exactly"
+        )
+
+
+def _validate_posthoc_evaluation_sources_at_commit_v1(
+    *, source_commit: str, source_bindings: Sequence[Mapping[str, Any]]
+) -> None:
+    expected = posthoc_evaluation_source_bindings_v1()
+    if list(source_bindings) != expected:
+        raise BoundedBranchEvaluationError("posthoc evaluation source closure changed")
+    commit_type = subprocess.run(
+        ["git", "cat-file", "-t", source_commit],
+        cwd=REPO_ROOT,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if commit_type.returncode != 0 or commit_type.stdout.strip() != b"commit":
+        raise BoundedBranchEvaluationError("posthoc evaluation source commit changed")
+    for row in source_bindings:
+        path = Path(str(row["binding"]["path"]))
+        try:
+            relative = path.relative_to(REPO_ROOT).as_posix()
+        except ValueError as exc:
+            raise BoundedBranchEvaluationError(
+                "posthoc evaluation source is outside the repository"
+            ) from exc
+        result = subprocess.run(
+            ["git", "show", f"{source_commit}:{relative}"],
+            cwd=REPO_ROOT,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        binding = row["binding"]
+        if (
+            result.returncode != 0
+            or len(result.stdout) != int(binding["byte_count"])
+            or hashlib.sha256(result.stdout).hexdigest() != binding["file_sha256"]
+        ):
+            raise BoundedBranchEvaluationError(
+                f"posthoc evaluation source {row['name']} changed at commit"
+            )
+
+
+def validate_posthoc_evaluation_authority_v1(
+    document: object,
+    *,
+    posthoc_manifest_binding: Mapping[str, Any],
+    posthoc_terminal_binding: Mapping[str, Any],
+    posthoc_terminal_review_binding: Mapping[str, Any],
+    progression_analysis_binding: Mapping[str, Any],
+    checkpoint_panel_bindings: Mapping[str, Any],
+) -> dict[str, Any]:
+    required = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_authorized",
+        "issued_at",
+        "authorizer",
+        "source_commit",
+        "source_review_binding",
+        "source_bindings",
+        "posthoc_manifest_binding",
+        "posthoc_terminal_binding",
+        "posthoc_terminal_review_binding",
+        "progression_analysis_binding",
+        "checkpoint_panel_bindings",
+        "evaluation_contract",
+        "attempt",
+        "permissions",
+    }
+    if not isinstance(document, Mapping) or set(document) != required:
+        raise BoundedBranchEvaluationError("posthoc evaluation authority fields changed")
+    source_commit = document.get("source_commit")
+    source_bindings = document.get("source_bindings")
+    source_review_binding = document.get("source_review_binding")
+    if (
+        document.get("schema") != POSTHOC_EVALUATION_AUTHORITY_SCHEMA
+        or document.get("status") != POSTHOC_EVALUATION_AUTHORITY_STATUS
+        or document.get("authority_granted_by_this_document") is not True
+        or document.get("scientific_claim_authorized") is not False
+        or not isinstance(document.get("issued_at"), str)
+        or not document["issued_at"].strip()
+        or not isinstance(document.get("authorizer"), str)
+        or not document["authorizer"].strip()
+        or not isinstance(source_commit, str)
+        or re.fullmatch(r"[0-9a-f]{40}", source_commit) is None
+        or not isinstance(source_bindings, list)
+        or not isinstance(source_review_binding, Mapping)
+        or document.get("posthoc_manifest_binding")
+        != dict(posthoc_manifest_binding)
+        or document.get("posthoc_terminal_binding")
+        != dict(posthoc_terminal_binding)
+        or document.get("posthoc_terminal_review_binding")
+        != dict(posthoc_terminal_review_binding)
+        or document.get("progression_analysis_binding")
+        != dict(progression_analysis_binding)
+        or document.get("checkpoint_panel_bindings")
+        != dict(checkpoint_panel_bindings)
+        or document.get("evaluation_contract") != evaluation_contract_v1()
+        or document.get("attempt")
+        != {
+            "id": "go2_world_model_bounded_branch_evaluation_panel_v1",
+            "root": str(POSTHOC_EVALUATION_OUTPUT_ROOT.resolve()),
+            "maximum_attempts": 1,
+            "root_creation_consumes_attempt": True,
+            "must_be_absent": True,
+            "retry": False,
+            "resume": False,
+            "overwrite": False,
+        }
+        or document.get("permissions")
+        != {
+            "read_reviewed_posthoc_pilot": True,
+            "read_progression_and_exact_checkpoints": True,
+            "run_exact_fixed_12_member_panel": True,
+            "write_only_fresh_panel_root": True,
+            "change_models_features_metrics_thresholds_or_gates": False,
+            "retry_resume_overwrite_or_member_selection": False,
+            "protected_material": False,
+            "deployment_or_promotion": False,
+        }
+    ):
+        raise BoundedBranchEvaluationError("posthoc evaluation authority changed")
+    _validate_posthoc_evaluation_sources_at_commit_v1(
+        source_commit=source_commit, source_bindings=source_bindings
+    )
+    _validate_posthoc_evaluation_source_review_v1(
+        binding=source_review_binding,
+        source_commit=source_commit,
+        source_bindings=source_bindings,
+    )
+    return dict(document)
+
+
+def _load_historical_posthoc_freezes_v1(
+    bundle: Any,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    from lewm.benchmarks import go2_world_model_counterfactual_pilot_v1 as contract
+    from scripts import build_go2_world_model_bounded_branch_experiment_authority_v1 as authority_contract
+
+    inputs = bundle.manifest.get("input_bindings")
+    if not isinstance(inputs, Mapping):
+        raise BoundedBranchEvaluationError("posthoc historical inputs are absent")
+    plan, actual_plan = posthoc_admission._read_bound_json(  # noqa: SLF001
+        inputs["collection_plan"], label="historical bounded plan"
+    )
+    gate, actual_gate = posthoc_admission._read_bound_json(  # noqa: SLF001
+        inputs["calibration_gate"], label="historical bounded calibration gate"
+    )
+    authority, actual_authority = posthoc_admission._read_bound_json(  # noqa: SLF001
+        inputs["collection_execution_authority"],
+        label="historical bounded authority",
+    )
+    source_review, actual_source_review = posthoc_admission._read_bound_json(  # noqa: SLF001
+        inputs["collection_source_review"], label="historical bounded source review"
+    )
+    original_terminal, actual_original_terminal = posthoc_admission._read_bound_json(  # noqa: SLF001
+        inputs["consumed_terminal"], label="original consumed terminal"
+    )
+    required_authority = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_authorized",
+        "authorizer",
+        "issued_at",
+        "source_commit",
+        "review_binding",
+        "plan_binding",
+        "calibration_gate_binding",
+        "model_panel_freeze",
+        "scene_panel_freeze",
+        "visual_domain_parity_freeze",
+        "source_bindings",
+        "attempt",
+        "caps",
+        "runtime_bindings",
+        "execution",
+        "evaluation_contract",
+        "network_access",
+        "external_supervisor",
+        "platform_gate_disposition",
+    }
+    try:
+        normalized_plan = contract.validate_plan(plan)
+        normalized_gate, _ = authority_contract._validate_gate(  # noqa: SLF001
+            gate, binding=actual_gate
+        )
+        if not isinstance(authority, Mapping) or set(authority) != required_authority:
+            raise BoundedBranchEvaluationError(
+                "historical bounded authority fields changed"
+            )
+        canonical_sources = authority_contract.canonical_source_paths_v1()
+        source_bindings = authority.get("source_bindings")
+        if (
+            not isinstance(source_bindings, list)
+            or [row.get("name") if isinstance(row, Mapping) else None for row in source_bindings]
+            != list(canonical_sources)
+        ):
+            raise BoundedBranchEvaluationError(
+                "historical bounded source closure changed"
+            )
+        normalized_sources = []
+        for row in source_bindings:
+            if not isinstance(row, Mapping) or set(row) != {"name", "binding"}:
+                raise BoundedBranchEvaluationError(
+                    "historical bounded source row changed"
+                )
+            name = str(row["name"])
+            binding = posthoc_admission._require_binding(  # noqa: SLF001
+                row["binding"], label=f"historical bounded source {name}"
+            )
+            expected_path = (REPO_ROOT / canonical_sources[name]).resolve()
+            if Path(str(binding["path"])).resolve() != expected_path:
+                raise BoundedBranchEvaluationError(
+                    f"historical bounded source path changed for {name}"
+                )
+            normalized_sources.append({"name": name, "binding": binding})
+        posthoc_admission._validate_committed_sources_v1(  # noqa: SLF001
+            source_commit=str(authority["source_commit"]),
+            source_bindings=normalized_sources,
+        )
+        contract.validate_source_review(source_review, authority=authority)
+    except (
+        contract.PilotContractError,
+        authority_contract.BoundedBranchAuthorityError,
+        posthoc_admission.PosthocJoinAdmissionError,
+    ) as exc:
+        raise BoundedBranchEvaluationError(
+            f"posthoc historical bounded lineage failed: {exc}"
+        ) from exc
+    expected_model_panel = {
+        key: normalized_gate[key]
+        for key in authority_contract.plan_builder.MODEL_PANEL_FREEZE_FIELDS
+    }
+    expected_scene_panel = {
+        key: normalized_gate[key]
+        for key in authority_contract.plan_builder.SCENE_PANEL_FREEZE_FIELDS
+    }
+    if (
+        actual_plan != inputs["collection_plan"]
+        or actual_gate != inputs["calibration_gate"]
+        or actual_authority != inputs["collection_execution_authority"]
+        or actual_source_review != inputs["collection_source_review"]
+        or actual_original_terminal != inputs["consumed_terminal"]
+        or authority.get("schema") != authority_contract.AUTHORITY_SCHEMA
+        or authority.get("status") != authority_contract.AUTHORITY_STATUS
+        or authority.get("authority_granted_by_this_document") is not True
+        or authority.get("scientific_claim_authorized") is not False
+        or authority.get("plan_binding") != inputs["collection_plan"]
+        or authority.get("calibration_gate_binding") != inputs["calibration_gate"]
+        or authority.get("review_binding") != inputs["collection_source_review"]
+        or authority.get("model_panel_freeze") != expected_model_panel
+        or authority.get("scene_panel_freeze") != expected_scene_panel
+        or authority.get("visual_domain_parity_freeze")
+        != normalized_gate["visual_domain_parity_freeze"]
+        or authority.get("evaluation_contract") != evaluation_contract_v1()
+        or authority.get("attempt", {}).get("root") != str(bundle.root)
+        or normalized_plan.get("output_root") != str(bundle.root)
+        or normalized_plan.get("purpose") != "bounded_wm_a_pilot"
+        or original_terminal.get("status") != "CONSUMED_TERMINAL_FAILURE"
+        or original_terminal.get("citable_as_scientific_evidence") is not False
+        or original_terminal.get("joined_manifest_binding") is not None
+        or original_terminal.get("joined_receipt_check_binding") is not None
+    ):
+        raise BoundedBranchEvaluationError("posthoc historical bounded lineage changed")
+    return dict(authority), dict(actual_original_terminal)
+
+
+def load_and_validate_posthoc_pilot_for_evaluation_v1(
+    *,
+    pilot_root: Path,
+    manifest_byte_count: int,
+    manifest_sha256: str,
+    pilot_terminal: Path,
+    pilot_terminal_sha256: str,
+    pilot_terminal_byte_count: int,
+    pilot_terminal_review: Path,
+    pilot_terminal_review_sha256: str,
+    pilot_terminal_review_byte_count: int,
+    progression_analysis: Path,
+    progression_analysis_sha256: str,
+    progression_analysis_byte_count: int,
+    evaluation_authority: Path,
+    evaluation_authority_sha256: str,
+    evaluation_authority_byte_count: int,
+) -> tuple[Any, dict[str, Any]]:
+    bundle = posthoc_admission.load_posthoc_bundle_v1(
+        pilot_root,
+        expected_manifest_byte_count=manifest_byte_count,
+        expected_manifest_sha256=manifest_sha256,
+        expected_terminal_byte_count=pilot_terminal_byte_count,
+        expected_terminal_sha256=pilot_terminal_sha256,
+        terminal_review_path=pilot_terminal_review,
+        expected_terminal_review_byte_count=pilot_terminal_review_byte_count,
+        expected_terminal_review_sha256=pilot_terminal_review_sha256,
+    )
+    historical_authority, original_terminal_binding = (
+        _load_historical_posthoc_freezes_v1(bundle)
+    )
+    manifest_binding = dict(bundle.manifest_binding)
+    terminal_binding = posthoc_admission._file_binding(pilot_terminal)  # noqa: SLF001
+    terminal_review_binding = posthoc_admission._file_binding(  # noqa: SLF001
+        pilot_terminal_review
+    )
+    progression_binding = posthoc_admission._file_binding(  # noqa: SLF001
+        progression_analysis
+    )
+    if (
+        terminal_binding["file_sha256"] != pilot_terminal_sha256
+        or terminal_binding["byte_count"] != pilot_terminal_byte_count
+        or terminal_review_binding["file_sha256"] != pilot_terminal_review_sha256
+        or terminal_review_binding["byte_count"] != pilot_terminal_review_byte_count
+        or progression_binding["file_sha256"] != progression_analysis_sha256
+        or progression_binding["byte_count"] != progression_analysis_byte_count
+    ):
+        raise BoundedBranchEvaluationError("posthoc caller binding changed")
+    authority_document, authority_binding = posthoc_admission.pilot.read_bound_json(
+        evaluation_authority,
+        expected_sha256=evaluation_authority_sha256,
+        expected_byte_count=evaluation_authority_byte_count,
+        label="posthoc evaluation authority",
+    )
+    model_panel_freeze = historical_authority.get("model_panel_freeze")
+    if not isinstance(model_panel_freeze, Mapping):
+        raise BoundedBranchEvaluationError("historical model panel freeze is absent")
+    normalized_evaluation_authority = validate_posthoc_evaluation_authority_v1(
+        authority_document,
+        posthoc_manifest_binding=manifest_binding,
+        posthoc_terminal_binding=terminal_binding,
+        posthoc_terminal_review_binding=terminal_review_binding,
+        progression_analysis_binding=progression_binding,
+        checkpoint_panel_bindings=model_panel_freeze["checkpoint_panel_bindings"],
+    )
+    return bundle, {
+        "status": "PASS_REVIEWED_POSTHOC_ADMISSION_FOR_FIXED_EVALUATION",
+        "original_generation_status": "CONSUMED_TERMINAL_FAILURE",
+        "original_generation_succeeded": False,
+        "original_terminal_binding": original_terminal_binding,
+        "posthoc_manifest_binding": manifest_binding,
+        "posthoc_terminal_binding": terminal_binding,
+        "posthoc_terminal_review_binding": terminal_review_binding,
+        "posthoc_materialization_authority_binding": bundle.manifest[
+            "authority_binding"
+        ],
+        "posthoc_evaluation_authority_binding": dict(authority_binding),
+        "historical_collection_authority_binding": bundle.manifest[
+            "input_bindings"
+        ]["collection_execution_authority"],
+        "model_panel_freeze": dict(model_panel_freeze),
+        "scene_panel_freeze": dict(historical_authority["scene_panel_freeze"]),
+        "visual_domain_parity_freeze": dict(
+            historical_authority["visual_domain_parity_freeze"]
+        ),
+        "evaluation_contract": normalized_evaluation_authority[
+            "evaluation_contract"
+        ],
+    }
 
 
 def load_and_validate_pilot_terminal_gate_v1(
@@ -3163,25 +3652,61 @@ def evaluate_bound_model_v1(
     expected_arm: str,
     expected_training_seed: int,
     device_name: str,
+    evaluation_authority: Path | None = None,
+    evaluation_authority_sha256: str | None = None,
+    evaluation_authority_byte_count: int | None = None,
 ) -> dict[str, Any]:
     _reject_protected_path(pilot_root, label="pilot root")
     _reject_protected_path(checkpoint, label="checkpoint")
-    bundle = load_bound_pilot_v1(
-        pilot_root,
-        expected_manifest_byte_count=manifest_byte_count,
-        expected_manifest_sha256=manifest_sha256,
+    authority_args = (
+        evaluation_authority,
+        evaluation_authority_sha256,
+        evaluation_authority_byte_count,
     )
+    posthoc_mode = all(value is not None for value in authority_args)
+    if any(value is not None for value in authority_args) and not posthoc_mode:
+        raise BoundedBranchEvaluationError(
+            "posthoc evaluation authority binding is incomplete"
+        )
+    if posthoc_mode:
+        bundle, pilot_terminal_gate = (
+            load_and_validate_posthoc_pilot_for_evaluation_v1(
+                pilot_root=pilot_root,
+                manifest_byte_count=manifest_byte_count,
+                manifest_sha256=manifest_sha256,
+                pilot_terminal=pilot_terminal,
+                pilot_terminal_sha256=pilot_terminal_sha256,
+                pilot_terminal_byte_count=pilot_terminal_byte_count,
+                pilot_terminal_review=pilot_terminal_review,
+                pilot_terminal_review_sha256=pilot_terminal_review_sha256,
+                pilot_terminal_review_byte_count=pilot_terminal_review_byte_count,
+                progression_analysis=progression_analysis,
+                progression_analysis_sha256=progression_analysis_sha256,
+                progression_analysis_byte_count=progression_analysis_byte_count,
+                evaluation_authority=Path(evaluation_authority),
+                evaluation_authority_sha256=str(evaluation_authority_sha256),
+                evaluation_authority_byte_count=int(
+                    evaluation_authority_byte_count
+                ),
+            )
+        )
+    else:
+        bundle = load_bound_pilot_v1(
+            pilot_root,
+            expected_manifest_byte_count=manifest_byte_count,
+            expected_manifest_sha256=manifest_sha256,
+        )
+        pilot_terminal_gate = load_and_validate_pilot_terminal_gate_v1(
+            pilot_terminal,
+            expected_terminal_sha256=pilot_terminal_sha256,
+            expected_terminal_byte_count=pilot_terminal_byte_count,
+            review_path=pilot_terminal_review,
+            expected_review_sha256=pilot_terminal_review_sha256,
+            expected_review_byte_count=pilot_terminal_review_byte_count,
+            pilot_manifest_binding=bundle.manifest_binding,
+        )
     if len(bundle.groups_by_role["train"]) != 128 or len(bundle.groups_by_role["eval"]) != 128:
         raise BoundedBranchEvaluationError("claim experiment requires exact 128/128 role split")
-    pilot_terminal_gate = load_and_validate_pilot_terminal_gate_v1(
-        pilot_terminal,
-        expected_terminal_sha256=pilot_terminal_sha256,
-        expected_terminal_byte_count=pilot_terminal_byte_count,
-        review_path=pilot_terminal_review,
-        expected_review_sha256=pilot_terminal_review_sha256,
-        expected_review_byte_count=pilot_terminal_review_byte_count,
-        pilot_manifest_binding=bundle.manifest_binding,
-    )
     pilot_scene_ids = {
         group.scene_id
         for role in ("train", "eval")
@@ -3225,20 +3750,22 @@ def evaluate_bound_model_v1(
     if probe.file_binding(selected_checkpoint) != checkpoint_binding:
         raise BoundedBranchEvaluationError("checkpoint changed while metadata was loaded")
     device = torch.device(device_name)
+    runtime_source_paths = [
+        __file__,
+        base.__file__,
+        progression_analyzer.__file__,
+        pilot_consumer.__file__,
+        probe.__file__,
+        probe.model_module.__file__,
+        probe.evaluation.__file__,
+        probe.metrics.__file__,
+        probe.h6.__file__,
+        probe.trainer.__file__,
+    ]
+    if posthoc_mode:
+        runtime_source_paths.append(posthoc_admission.__file__)
     source_bindings = [
-        probe.file_binding(Path(path))
-        for path in (
-            __file__,
-            base.__file__,
-            progression_analyzer.__file__,
-            pilot_consumer.__file__,
-            probe.__file__,
-            probe.model_module.__file__,
-            probe.evaluation.__file__,
-            probe.metrics.__file__,
-            probe.h6.__file__,
-            probe.trainer.__file__,
-        )
+        probe.file_binding(Path(path)) for path in runtime_source_paths
     ]
     reference_key = (
         f"{LATENT_STANDARDIZER_REFERENCE_ARM}/"
@@ -3421,11 +3948,38 @@ def evaluate_bound_model_v1(
         "preregistered_gates": gates,
         "checkpoint_gate_status": checkpoint_gate_status,
     }
-    reloaded = load_bound_pilot_v1(
-        pilot_root,
-        expected_manifest_byte_count=manifest_byte_count,
-        expected_manifest_sha256=manifest_sha256,
-    )
+    if posthoc_mode:
+        reloaded, reloaded_gate = (
+            load_and_validate_posthoc_pilot_for_evaluation_v1(
+                pilot_root=pilot_root,
+                manifest_byte_count=manifest_byte_count,
+                manifest_sha256=manifest_sha256,
+                pilot_terminal=pilot_terminal,
+                pilot_terminal_sha256=pilot_terminal_sha256,
+                pilot_terminal_byte_count=pilot_terminal_byte_count,
+                pilot_terminal_review=pilot_terminal_review,
+                pilot_terminal_review_sha256=pilot_terminal_review_sha256,
+                pilot_terminal_review_byte_count=pilot_terminal_review_byte_count,
+                progression_analysis=progression_analysis,
+                progression_analysis_sha256=progression_analysis_sha256,
+                progression_analysis_byte_count=progression_analysis_byte_count,
+                evaluation_authority=Path(evaluation_authority),
+                evaluation_authority_sha256=str(evaluation_authority_sha256),
+                evaluation_authority_byte_count=int(
+                    evaluation_authority_byte_count
+                ),
+            )
+        )
+        if reloaded_gate != pilot_terminal_gate:
+            raise BoundedBranchEvaluationError(
+                "posthoc pilot admission changed during evaluation"
+            )
+    else:
+        reloaded = load_bound_pilot_v1(
+            pilot_root,
+            expected_manifest_byte_count=manifest_byte_count,
+            expected_manifest_sha256=manifest_sha256,
+        )
     if (
         dict(reloaded.manifest_binding) != dict(bundle.manifest_binding)
         or dict(reloaded.rgb_manifest_binding) != dict(bundle.rgb_manifest_binding)
@@ -3467,6 +4021,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--pilot-terminal-review", required=True, type=Path)
     parser.add_argument("--expected-pilot-terminal-review-sha256", required=True)
     parser.add_argument("--expected-pilot-terminal-review-byte-count", required=True, type=int)
+    parser.add_argument("--evaluation-authority", type=Path)
+    parser.add_argument("--expected-evaluation-authority-sha256")
+    parser.add_argument("--expected-evaluation-authority-byte-count", type=int)
     parser.add_argument("--expected-arm", required=True, choices=MODEL_ARMS)
     parser.add_argument("--expected-training-seed", required=True, type=int)
     parser.add_argument("--out", required=True, type=Path)
@@ -3521,6 +4078,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         expected_arm=args.expected_arm,
         expected_training_seed=args.expected_training_seed,
         device_name="cuda",
+        evaluation_authority=args.evaluation_authority,
+        evaluation_authority_sha256=args.expected_evaluation_authority_sha256,
+        evaluation_authority_byte_count=(
+            args.expected_evaluation_authority_byte_count
+        ),
     )
     from scripts import dev_probe_counterfactual_action_fidelity as probe
 

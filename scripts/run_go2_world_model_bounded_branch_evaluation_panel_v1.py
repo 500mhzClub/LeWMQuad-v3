@@ -321,6 +321,9 @@ def _preflight_v1(
     pilot_terminal_review: Path,
     pilot_terminal_review_sha256: str,
     pilot_terminal_review_byte_count: int,
+    evaluation_authority: Path,
+    evaluation_authority_sha256: str,
+    evaluation_authority_byte_count: int,
 ) -> dict[str, Any]:
     """Validate the complete experiment identity without opening an RGB leaf."""
 
@@ -351,6 +354,11 @@ def _preflight_v1(
         label="pilot terminal review",
         must_exist=True,
     )
+    selected_evaluation_authority = _absolute_without_symlink(
+        evaluation_authority,
+        label="posthoc evaluation authority",
+        must_exist=True,
+    )
     input_bindings = {
         "pilot_manifest": _caller_binding(
             pilot_root / "manifest.json",
@@ -377,6 +385,12 @@ def _preflight_v1(
             label="pilot terminal review",
         ),
     }
+    input_bindings["evaluation_authority"] = _caller_binding(
+        selected_evaluation_authority,
+        expected_sha256=evaluation_authority_sha256,
+        expected_byte_count=evaluation_authority_byte_count,
+        label="posthoc evaluation authority",
+    )
     analysis_receipt, analyzer_checkpoint_bindings = (
         _load_analyzer_checkpoint_panel_v1(
             progression_analysis,
@@ -387,25 +401,30 @@ def _preflight_v1(
     training_result_binding = analysis_receipt["training_result_binding"]
     input_bindings["training_result"] = dict(training_result_binding)
     training_result = Path(str(training_result_binding["path"]))
-    bundle = consumer.load_bound_pilot_v1(
-        pilot_root,
-        expected_manifest_byte_count=manifest_byte_count,
-        expected_manifest_sha256=manifest_sha256,
+    bundle, terminal_gate = (
+        evaluator.load_and_validate_posthoc_pilot_for_evaluation_v1(
+            pilot_root=pilot_root,
+            manifest_byte_count=manifest_byte_count,
+            manifest_sha256=manifest_sha256,
+            pilot_terminal=pilot_terminal,
+            pilot_terminal_sha256=pilot_terminal_sha256,
+            pilot_terminal_byte_count=pilot_terminal_byte_count,
+            pilot_terminal_review=pilot_terminal_review,
+            pilot_terminal_review_sha256=pilot_terminal_review_sha256,
+            pilot_terminal_review_byte_count=pilot_terminal_review_byte_count,
+            progression_analysis=progression_analysis,
+            progression_analysis_sha256=progression_analysis_sha256,
+            progression_analysis_byte_count=progression_analysis_byte_count,
+            evaluation_authority=selected_evaluation_authority,
+            evaluation_authority_sha256=evaluation_authority_sha256,
+            evaluation_authority_byte_count=evaluation_authority_byte_count,
+        )
     )
     if (
         len(bundle.groups_by_role.get("train", ())) != 128
         or len(bundle.groups_by_role.get("eval", ())) != 128
     ):
         raise EvaluationPanelRunnerError("pilot is not the exact 128/128 experiment")
-    terminal_gate = evaluator.load_and_validate_pilot_terminal_gate_v1(
-        pilot_terminal,
-        expected_terminal_sha256=pilot_terminal_sha256,
-        expected_terminal_byte_count=pilot_terminal_byte_count,
-        review_path=pilot_terminal_review,
-        expected_review_sha256=pilot_terminal_review_sha256,
-        expected_review_byte_count=pilot_terminal_review_byte_count,
-        pilot_manifest_binding=bundle.manifest_binding,
-    )
     pilot_scene_ids = {
         group.scene_id
         for role in ("train", "eval")
@@ -446,6 +465,9 @@ def _preflight_v1(
         raise EvaluationPanelRunnerError(
             "analyzer snapshot bindings disagree with the validated training result"
         )
+    evaluator._require_model_panel_lineage_match_v1(  # noqa: SLF001
+        terminal_gate.get("model_panel_freeze"), training_separation
+    )
     source_bindings = [
         _probe_binding(Path(path), label="panel runtime source")
         for path in (
@@ -454,6 +476,7 @@ def _preflight_v1(
             analyzer.__file__,
             consumer.__file__,
             pilot.__file__,
+            evaluator.posthoc_admission.__file__,
         )
     ]
     return {
@@ -462,6 +485,9 @@ def _preflight_v1(
         "progression_analysis": progression_analysis,
         "pilot_terminal": pilot_terminal,
         "pilot_terminal_review": pilot_terminal_review,
+        "evaluation_authority": selected_evaluation_authority,
+        "evaluation_authority_sha256": evaluation_authority_sha256,
+        "evaluation_authority_byte_count": evaluation_authority_byte_count,
         "bundle_manifest_binding": dict(bundle.manifest_binding),
         "terminal_gate": dict(terminal_gate),
         "progression_analysis_receipt": analysis_receipt,
@@ -733,6 +759,13 @@ def _evaluate_member_v1(
         expected_arm=arm,
         expected_training_seed=seed,
         device_name="cuda",
+        evaluation_authority=preflight.get("evaluation_authority"),
+        evaluation_authority_sha256=preflight.get(
+            "evaluation_authority_sha256"
+        ),
+        evaluation_authority_byte_count=preflight.get(
+            "evaluation_authority_byte_count"
+        ),
     )
 
 
@@ -886,6 +919,9 @@ def run_panel_v1(
     pilot_terminal_review: Path,
     pilot_terminal_review_sha256: str,
     pilot_terminal_review_byte_count: int,
+    evaluation_authority: Path,
+    evaluation_authority_sha256: str,
+    evaluation_authority_byte_count: int,
     output_root: Path | None = None,
 ) -> dict[str, Any]:
     selected_output = DEFAULT_OUTPUT_ROOT if output_root is None else Path(output_root)
@@ -907,6 +943,9 @@ def run_panel_v1(
         pilot_terminal_review=pilot_terminal_review,
         pilot_terminal_review_sha256=pilot_terminal_review_sha256,
         pilot_terminal_review_byte_count=pilot_terminal_review_byte_count,
+        evaluation_authority=evaluation_authority,
+        evaluation_authority_sha256=evaluation_authority_sha256,
+        evaluation_authority_byte_count=evaluation_authority_byte_count,
     )
     output, reservation_binding, expected_reservation = _reserve_panel_v1(
         output_root=selected_output, preflight=preflight
@@ -1060,6 +1099,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--expected-pilot-terminal-review-byte-count", required=True, type=int
     )
+    parser.add_argument("--evaluation-authority", required=True, type=Path)
+    parser.add_argument(
+        "--expected-evaluation-authority-sha256", required=True
+    )
+    parser.add_argument(
+        "--expected-evaluation-authority-byte-count", required=True, type=int
+    )
     args = parser.parse_args(argv)
     result = run_panel_v1(
         pilot_root=args.pilot_root,
@@ -1081,6 +1127,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         ),
         pilot_terminal_review_byte_count=(
             args.expected_pilot_terminal_review_byte_count
+        ),
+        evaluation_authority=args.evaluation_authority,
+        evaluation_authority_sha256=(
+            args.expected_evaluation_authority_sha256
+        ),
+        evaluation_authority_byte_count=(
+            args.expected_evaluation_authority_byte_count
         ),
     )
     print(

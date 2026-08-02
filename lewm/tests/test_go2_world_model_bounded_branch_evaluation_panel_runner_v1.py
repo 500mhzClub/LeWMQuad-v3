@@ -81,6 +81,9 @@ def fixed_inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     training_result = _write(training_root / "result.json", b'{"result":true}\n')
     terminal = _write(tmp_path / "pilot_terminal.json", b'{"terminal":true}\n')
     review = _write(tmp_path / "pilot_review.json", b'{"review":true}\n')
+    evaluation_authority = _write(
+        tmp_path / "evaluation_authority.json", b'{"authority":true}\n'
+    )
 
     checkpoint_bindings: dict[str, dict[str, object]] = {}
     for arm in runner.evaluator.MODEL_ARMS:
@@ -126,26 +129,53 @@ def fixed_inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         groups_by_role=groups,
     )
     terminal_gate = {
-        "status": "PASS_FROZEN_BOUNDED_PILOT",
-        "pilot_terminal_binding": terminal,
-        "pilot_terminal_review_binding": review,
-        "joined_manifest_binding": manifest_receipt,
+        "status": "PASS_REVIEWED_POSTHOC_ADMISSION_FOR_FIXED_EVALUATION",
+        "original_generation_status": "CONSUMED_TERMINAL_FAILURE",
+        "original_generation_succeeded": False,
+        "posthoc_manifest_binding": manifest_receipt,
     }
     training_separation = {
         "progression_analysis_binding": analysis,
         "training_result_binding": training_result,
         "checkpoint_panel_bindings": checkpoint_bindings,
+        "progression_proxy_routing": {"decision": "synthetic"},
+        "predecessor_place_manifest_binding": manifest,
         "scene_overlap": [],
     }
+    terminal_gate["model_panel_freeze"] = {
+        key: training_separation[key]
+        for key in (
+            "progression_analysis_binding",
+            "training_result_binding",
+            "checkpoint_panel_bindings",
+            "progression_proxy_routing",
+            "predecessor_place_manifest_binding",
+        )
+    }
+    posthoc_calls: list[dict[str, object]] = []
+
+    def fake_posthoc_admission(**kwargs):
+        posthoc_calls.append(kwargs)
+        return bundle, terminal_gate
+
+    monkeypatch.setattr(
+        runner.evaluator,
+        "load_and_validate_posthoc_pilot_for_evaluation_v1",
+        fake_posthoc_admission,
+    )
     monkeypatch.setattr(
         runner.consumer,
         "load_bound_pilot_v1",
-        lambda *args, **kwargs: bundle,
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("legacy pilot loader must not be called")
+        ),
     )
     monkeypatch.setattr(
         runner.evaluator,
         "load_and_validate_pilot_terminal_gate_v1",
-        lambda *args, **kwargs: terminal_gate,
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("legacy success gate must not be called")
+        ),
     )
 
     training_calls: list[dict[str, object]] = []
@@ -181,6 +211,9 @@ def fixed_inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "pilot_terminal_review": Path(review["path"]),
         "pilot_terminal_review_sha256": review["file_sha256"],
         "pilot_terminal_review_byte_count": review["byte_count"],
+        "evaluation_authority": Path(evaluation_authority["path"]),
+        "evaluation_authority_sha256": evaluation_authority["file_sha256"],
+        "evaluation_authority_byte_count": evaluation_authority["byte_count"],
     }
     return SimpleNamespace(
         kwargs=kwargs,
@@ -190,6 +223,7 @@ def fixed_inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         terminal_gate=terminal_gate,
         training_separation=training_separation,
         training_calls=training_calls,
+        posthoc_calls=posthoc_calls,
         analysis_path=analysis_path,
     )
 
@@ -236,6 +270,15 @@ def test_exact_panel_is_reserved_before_models_and_aggregated_once(
     def fake_evaluate(**kwargs):
         assert (fixed_inputs.output_root / runner.RESERVATION_NAME).is_file()
         assert not (fixed_inputs.output_root / runner.PANEL_RESULT_NAME).exists()
+        assert kwargs["evaluation_authority"] == fixed_inputs.kwargs[
+            "evaluation_authority"
+        ]
+        assert kwargs["evaluation_authority_sha256"] == fixed_inputs.kwargs[
+            "evaluation_authority_sha256"
+        ]
+        assert kwargs["evaluation_authority_byte_count"] == fixed_inputs.kwargs[
+            "evaluation_authority_byte_count"
+        ]
         calls.append((kwargs["expected_arm"], kwargs["expected_training_seed"]))
         return _member_report(
             fixed_inputs,
@@ -264,6 +307,10 @@ def test_exact_panel_is_reserved_before_models_and_aggregated_once(
     assert len(aggregate_calls) == 1
     assert len(result["member_report_bindings"]) == 12
     assert len(fixed_inputs.training_calls) == 1
+    assert len(fixed_inputs.posthoc_calls) == 1
+    assert fixed_inputs.posthoc_calls[0]["evaluation_authority"] == Path(
+        fixed_inputs.kwargs["evaluation_authority"]
+    ).resolve()
     reservation = json.loads(
         (fixed_inputs.output_root / runner.RESERVATION_NAME).read_text()
     )
@@ -285,6 +332,32 @@ def test_exact_panel_is_reserved_before_models_and_aggregated_once(
     assert reservation_check["status"] == "RESERVED_PANEL_ATTEMPT_CONSUMED"
     assert reservation_check["supervisor_nonce"] == reservation["supervisor_nonce"]
     assert reservation_check["supervisor_pid"] == reservation["supervisor_pid"]
+
+
+def test_model_panel_lineage_mismatch_fails_before_reservation(
+    fixed_inputs, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    frozen = json.loads(
+        json.dumps(fixed_inputs.terminal_gate["model_panel_freeze"])
+    )
+    first_key = next(iter(frozen["checkpoint_panel_bindings"]))
+    frozen["checkpoint_panel_bindings"][first_key]["sha256"] = "0" * 64
+    fixed_inputs.terminal_gate["model_panel_freeze"] = frozen
+    model_calls = 0
+
+    def fake_evaluate(**kwargs):
+        nonlocal model_calls
+        model_calls += 1
+        raise AssertionError("model evaluation must not start")
+
+    monkeypatch.setattr(runner.evaluator, "evaluate_bound_model_v1", fake_evaluate)
+    with pytest.raises(
+        runner.evaluator.BoundedBranchEvaluationError,
+        match="generation and evaluation model-panel lineage differ",
+    ):
+        runner.run_panel_v1(**fixed_inputs.kwargs)
+    assert model_calls == 0
+    assert not fixed_inputs.output_root.exists()
 
 
 def test_failed_member_is_terminal_and_fixed_root_cannot_retry(

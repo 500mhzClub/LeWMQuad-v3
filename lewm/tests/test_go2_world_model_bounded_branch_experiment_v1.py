@@ -406,6 +406,30 @@ def test_both_fixed_family_scenes_need_joint_support_even_above_quarter():
 
 
 def test_evaluation_contract_forbids_future_tape_input_and_adaptation():
+    assert evaluator.MODEL_ARMS == (
+        "masked_plain",
+        "masked_delta",
+        "full_plain",
+        "full_delta",
+    )
+    assert evaluator.TRAINING_SEEDS == (2026080201, 2026080202, 2026080203)
+    assert evaluator.EXPECTED_TERMINAL_UPDATE == 700
+    assert evaluator.USEFUL_EFFECT_THRESHOLDS == {
+        "ceiling_rank_regret_reduction_vs_current": 0.05,
+        "direct_error_reduction_vs_shuffled": 0.02,
+        "direct_margin_gain_vs_shuffled": 0.02,
+        "retrieval_advantage_over_chance": 0.05,
+        "rank_regret_reduction_vs_current": 0.05,
+        "maximum_unsafe_rate_increase_vs_current": 0.02,
+        "target_progress_gain_vs_current_m": 0.01,
+        "maximum_absolute_unsafe_rate": 0.05,
+        "minimum_absolute_target_progress_m": 0.01,
+    }
+    assert evaluator.MECHANISM_EFFECT_THRESHOLDS == {
+        "minimum_direct_error_treatment_reduction": 0.02,
+        "full_grid_direct_error_noninferiority_margin": 0.02,
+        "minimum_supportive_physical_regret_treatment_reduction": 0.02,
+    }
     contract = evaluator.evaluation_contract_v1()
     assert contract["candidate_model_input"] == "requested_action_id"
     assert contract["future_executed_command_tape_usage"] == "target_and_audit_only"
@@ -431,6 +455,186 @@ def test_evaluation_contract_forbids_future_tape_input_and_adaptation():
         "both_fixed_evaluation_scenes_in_each_family_have_at_least_one_"
         "eligible_query"
     )
+
+
+def test_posthoc_evaluation_authority_yields_failure_origin_gate_and_binds_panel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def bind_json(name: str, value: object) -> dict[str, object]:
+        path = tmp_path / name
+        path.write_text(json.dumps(value, sort_keys=True) + "\n")
+        return pilot.file_binding(path)
+
+    manifest_binding = bind_json("manifest.json", {"manifest": True})
+    terminal_binding = bind_json("terminal.json", {"terminal": True})
+    review_binding = bind_json("terminal_review.json", {"review": True})
+    progression_binding = bind_json("analysis.json", {"analysis": True})
+    source_review_binding = bind_json("source_review.json", {"source": True})
+    materialization_authority = bind_json(
+        "materialization_authority.json", {"materialization": True}
+    )
+    collection_authority = bind_json(
+        "collection_authority.json", {"collection": True}
+    )
+    original_terminal_binding = bind_json(
+        "original_terminal.json", {"status": "CONSUMED_TERMINAL_FAILURE"}
+    )
+    checkpoint_panel = {
+        f"{arm}/seed_{seed}": {
+            "path": str(tmp_path / f"{arm}_{seed}.pt"),
+            "byte_count": 1,
+            "sha256": hashlib.sha256(f"{arm}/{seed}".encode()).hexdigest(),
+        }
+        for arm in evaluator.MODEL_ARMS
+        for seed in evaluator.TRAINING_SEEDS
+    }
+    model_panel = {"checkpoint_panel_bindings": checkpoint_panel}
+    historical = {
+        "model_panel_freeze": model_panel,
+        "scene_panel_freeze": {"scene": "frozen"},
+        "visual_domain_parity_freeze": {"visual": "frozen"},
+    }
+    bundle = SimpleNamespace(
+        manifest_binding=manifest_binding,
+        manifest={
+            "authority_binding": materialization_authority,
+            "input_bindings": {
+                "collection_execution_authority": collection_authority
+            },
+        },
+    )
+    monkeypatch.setattr(
+        evaluator.posthoc_admission,
+        "load_posthoc_bundle_v1",
+        lambda *args, **kwargs: bundle,
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_load_historical_posthoc_freezes_v1",
+        lambda loaded: (historical, original_terminal_binding),
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_validate_posthoc_evaluation_sources_at_commit_v1",
+        lambda **kwargs: None,
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_validate_posthoc_evaluation_source_review_v1",
+        lambda **kwargs: None,
+    )
+    output_root = tmp_path / "panel"
+    monkeypatch.setattr(evaluator, "POSTHOC_EVALUATION_OUTPUT_ROOT", output_root)
+    authority_document = {
+        "schema": evaluator.POSTHOC_EVALUATION_AUTHORITY_SCHEMA,
+        "status": evaluator.POSTHOC_EVALUATION_AUTHORITY_STATUS,
+        "authority_granted_by_this_document": True,
+        "scientific_claim_authorized": False,
+        "issued_at": "2026-08-02T12:00:00+00:00",
+        "authorizer": "synthetic test authority",
+        "source_commit": "a" * 40,
+        "source_review_binding": source_review_binding,
+        "source_bindings": [],
+        "posthoc_manifest_binding": manifest_binding,
+        "posthoc_terminal_binding": terminal_binding,
+        "posthoc_terminal_review_binding": review_binding,
+        "progression_analysis_binding": progression_binding,
+        "checkpoint_panel_bindings": checkpoint_panel,
+        "evaluation_contract": evaluator.evaluation_contract_v1(),
+        "attempt": {
+            "id": "go2_world_model_bounded_branch_evaluation_panel_v1",
+            "root": str(output_root.resolve()),
+            "maximum_attempts": 1,
+            "root_creation_consumes_attempt": True,
+            "must_be_absent": True,
+            "retry": False,
+            "resume": False,
+            "overwrite": False,
+        },
+        "permissions": {
+            "read_reviewed_posthoc_pilot": True,
+            "read_progression_and_exact_checkpoints": True,
+            "run_exact_fixed_12_member_panel": True,
+            "write_only_fresh_panel_root": True,
+            "change_models_features_metrics_thresholds_or_gates": False,
+            "retry_resume_overwrite_or_member_selection": False,
+            "protected_material": False,
+            "deployment_or_promotion": False,
+        },
+    }
+    authority_binding = bind_json("evaluation_authority.json", authority_document)
+    common = {
+        "pilot_root": tmp_path,
+        "manifest_byte_count": manifest_binding["byte_count"],
+        "manifest_sha256": manifest_binding["file_sha256"],
+        "pilot_terminal": Path(terminal_binding["path"]),
+        "pilot_terminal_sha256": terminal_binding["file_sha256"],
+        "pilot_terminal_byte_count": terminal_binding["byte_count"],
+        "pilot_terminal_review": Path(review_binding["path"]),
+        "pilot_terminal_review_sha256": review_binding["file_sha256"],
+        "pilot_terminal_review_byte_count": review_binding["byte_count"],
+        "progression_analysis": Path(progression_binding["path"]),
+        "progression_analysis_sha256": progression_binding["file_sha256"],
+        "progression_analysis_byte_count": progression_binding["byte_count"],
+    }
+    loaded, gate = evaluator.load_and_validate_posthoc_pilot_for_evaluation_v1(
+        **common,
+        evaluation_authority=Path(authority_binding["path"]),
+        evaluation_authority_sha256=authority_binding["file_sha256"],
+        evaluation_authority_byte_count=authority_binding["byte_count"],
+    )
+    assert loaded is bundle
+    assert gate["status"] == "PASS_REVIEWED_POSTHOC_ADMISSION_FOR_FIXED_EVALUATION"
+    assert gate["original_generation_status"] == "CONSUMED_TERMINAL_FAILURE"
+    assert gate["original_generation_succeeded"] is False
+    assert gate["model_panel_freeze"] == model_panel
+
+    changed = copy.deepcopy(authority_document)
+    first_key = next(iter(changed["checkpoint_panel_bindings"]))
+    changed["checkpoint_panel_bindings"][first_key]["sha256"] = "0" * 64
+    changed_binding = bind_json("changed_authority.json", changed)
+    with pytest.raises(evaluator.BoundedBranchEvaluationError, match="authority changed"):
+        evaluator.load_and_validate_posthoc_pilot_for_evaluation_v1(
+            **common,
+            evaluation_authority=Path(changed_binding["path"]),
+            evaluation_authority_sha256=changed_binding["file_sha256"],
+            evaluation_authority_byte_count=changed_binding["byte_count"],
+        )
+
+
+def test_posthoc_evaluation_source_binding_must_match_its_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    row = {
+        "name": "posthoc_admission",
+        "binding": evaluator.posthoc_admission._file_binding(  # noqa: SLF001
+            Path(evaluator.posthoc_admission.__file__)
+        ),
+    }
+    monkeypatch.setattr(
+        evaluator, "posthoc_evaluation_source_bindings_v1", lambda: [row]
+    )
+    evaluator._validate_posthoc_evaluation_sources_at_commit_v1(  # noqa: SLF001
+        source_commit=source_commit, source_bindings=[row]
+    )
+    changed = copy.deepcopy(row)
+    changed["binding"]["file_sha256"] = "0" * 64
+    monkeypatch.setattr(
+        evaluator, "posthoc_evaluation_source_bindings_v1", lambda: [changed]
+    )
+    with pytest.raises(
+        evaluator.BoundedBranchEvaluationError, match="changed at commit"
+    ):
+        evaluator._validate_posthoc_evaluation_sources_at_commit_v1(  # noqa: SLF001
+            source_commit=source_commit, source_bindings=[changed]
+        )
 
 
 def test_direct_summary_rejects_unrecomputed_joint_signature_tamper():
@@ -1778,6 +1982,10 @@ print(json.dumps(sorted(loaded)))
     )
     loaded = set(json.loads(completed.stdout))
     closure = set(authority.canonical_source_paths_v1().values())
+    closure.update(
+        path.relative_to(REPO_ROOT).as_posix()
+        for path in evaluator._posthoc_evaluation_source_paths_v1().values()  # noqa: SLF001
+    )
     assert loaded <= closure, sorted(loaded - closure)
     assert set(authority.BOUNDED_DYNAMIC_IMPORT_SOURCE_PATHS.values()) <= loaded
 
