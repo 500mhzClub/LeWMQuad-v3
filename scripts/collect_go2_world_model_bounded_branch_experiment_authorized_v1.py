@@ -414,7 +414,7 @@ def collect_v1(
         kernel._validate_execution_environment(plan)  # noqa: SLF001
         _validate_bound_scenes(plan)
         runtime_versions = kernel._capture_runtime_versions()  # noqa: SLF001
-        runtime = kernel._runtime_imports()  # noqa: SLF001
+        runtime = kernel._runtime_imports(textured_v03=True)  # noqa: SLF001
         platform = runtime["load_platform_manifest"](
             plan["runtime_bindings"]["platform_manifest"]["path"]
         )

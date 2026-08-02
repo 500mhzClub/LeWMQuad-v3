@@ -281,7 +281,13 @@ def test_authorized_collector_runs_two_fixed_batches_and_one_scene_receipt(
         "PrimitiveRegistry": Registry,
         "expand_primitive_to_block": lambda *_args: [],
     }
-    monkeypatch.setattr(collector.kernel, "_runtime_imports", lambda: runtime)
+    runtime_modes: list[bool] = []
+
+    def runtime_imports(*, textured_v03: bool = False):
+        runtime_modes.append(textured_v03)
+        return runtime
+
+    monkeypatch.setattr(collector.kernel, "_runtime_imports", runtime_imports)
     monkeypatch.setattr(
         collector.kernel,
         "_load_action_blocks",
@@ -354,6 +360,7 @@ def test_authorized_collector_runs_two_fixed_batches_and_one_scene_receipt(
     )
     assert result["status"] == "PHYSICS_COMPLETE", result["failure"]
     assert result_path == output_root / "physics_result.json"
+    assert runtime_modes == [True]
     assert observed_batches == [
         [f"train-state-{index}" for index in range(4)],
         [f"train-state-{index}" for index in range(4, 8)],
