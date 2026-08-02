@@ -68,6 +68,40 @@ def _render_plan() -> dict[str, object]:
     }
 
 
+def test_bounded_plan_accepts_complete_parity_prerequisite_freeze(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plan = _render_plan()
+    expected = {
+        "result_binding": plan["visual_domain_parity_result_binding"],
+        "terminal_binding": plan["visual_domain_parity_terminal_binding"],
+        "review_binding": plan["visual_domain_parity_review_binding"],
+    }
+    monkeypatch.setattr(
+        collector.kernel,
+        "_validate_visual_domain_parity_result",
+        lambda _plan: expected,
+    )
+    assert collector._validate_plan_parity_prerequisites_v1(plan) == expected
+
+
+def test_bounded_plan_rejects_parity_prerequisite_binding_drift(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plan = _render_plan()
+    monkeypatch.setattr(
+        collector.kernel,
+        "_validate_visual_domain_parity_result",
+        lambda _plan: {
+            "result_binding": plan["visual_domain_parity_result_binding"],
+            "terminal_binding": plan["visual_domain_parity_terminal_binding"],
+            "review_binding": _binding("/tmp/wrong-review.json", "a"),
+        },
+    )
+    with pytest.raises(pilot.PilotContractError, match="prerequisite bindings"):
+        collector._validate_plan_parity_prerequisites_v1(plan)
+
+
 def test_bounded_render_receipt_identity_is_exact_textured_v03() -> None:
     plan = _render_plan()
     identity = collector._validated_render_receipt_identity_v1(

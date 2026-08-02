@@ -47,6 +47,22 @@ def _git(*args: str) -> str:
         ) from exc
 
 
+def _validate_plan_parity_prerequisites_v1(
+    plan: Mapping[str, Any],
+) -> dict[str, Any]:
+    observed = kernel._validate_visual_domain_parity_result(plan)  # noqa: SLF001
+    expected = {
+        "result_binding": plan["visual_domain_parity_result_binding"],
+        "terminal_binding": plan["visual_domain_parity_terminal_binding"],
+        "review_binding": plan["visual_domain_parity_review_binding"],
+    }
+    if observed != expected:
+        raise pilot.PilotContractError(
+            "bounded plan visual-domain parity prerequisite bindings changed"
+        )
+    return observed
+
+
 def load_and_validate_v1(
     *,
     plan_path: Path,
@@ -70,13 +86,7 @@ def load_and_validate_v1(
         label="bounded branch plan",
     )
     plan = copy.deepcopy(pilot.validate_plan(raw_plan))
-    parity_result_binding = kernel._validate_visual_domain_parity_result(  # noqa: SLF001
-        plan
-    )
-    if parity_result_binding != plan["visual_domain_parity_result_binding"]:
-        raise pilot.PilotContractError(
-            "bounded plan visual-domain parity binding changed"
-        )
+    _validate_plan_parity_prerequisites_v1(plan)
     raw_authority, authority_binding = pilot.read_bound_json(
         authority_path,
         expected_sha256=expected_authority_sha256,
