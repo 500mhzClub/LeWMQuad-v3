@@ -1,0 +1,39 @@
+{
+  "schema": "lewm_go2_world_model_visual_domain_parity_task_relevant_input_adequacy_independent_review_v1",
+  "status": "PASS_INDEPENDENTLY_REVIEWED_TASK_RELEVANT_INPUT_ADEQUACY_DEVELOPMENT_ONLY",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "adequacy_result_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_visual_domain_parity_task_relevant_input_adequacy_result_v1_2026-08-02.json",
+    "file_sha256": "5094104ac29b4652cd577015c5fbf23b42f0768c78a205cbf07a77d992339ca7",
+    "byte_count": 94165
+  },
+  "parity_result_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/parity_result.json",
+    "file_sha256": "ac1b27a87466ae2b399056c3823c7fb5edeff3a83e17f391dbb7867155f3ffc4",
+    "byte_count": 48448
+  },
+  "terminal_failure_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/terminal_failure.json",
+    "file_sha256": "8863ff6e8b504cd23df18ec82b31adafe698544fbf54d113ad805594b7486b08",
+    "byte_count": 1544
+  },
+  "reviewer": {
+    "identity": "/root/task_relevance_independent_review",
+    "independence_basis": "I did not author the task-relevance evaluator, parity runtime, or adequacy result. I independently inspected frozen source commit 846f2ab87b91ffd818ff7b0fd05665bc1cf94b35, reproduced the result, rehashed its bound custody closure, and ran the focused and integrated tests."
+  },
+  "reviewed_at": "2026-08-02T17:13:10+01:00",
+  "checks": {
+    "exact_failure_preserved": true,
+    "consumed_no_retry_verified": true,
+    "adequacy_recomputed": true,
+    "all_32_candidate_duplicate_pairs_pixel_exact": true,
+    "all_eight_families_and_32_pairs_present": true,
+    "posthoc_threshold_origin_acknowledged": true,
+    "thresholds_fixed_before_calibration_and_bounded_use": true,
+    "model_input_adequacy_only": true,
+    "no_exact_equivalence_claim": true,
+    "no_protected_material": true
+  },
+  "remaining_findings": []
+}
