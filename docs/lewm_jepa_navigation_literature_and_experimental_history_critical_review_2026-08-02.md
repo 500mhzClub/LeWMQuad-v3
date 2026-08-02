@@ -222,10 +222,65 @@ Align planner scoring with the prefix actually executed, rather than scoring a t
 
 ## Bottom line
 
-The repository has not failed at JEPA navigation; it has not yet run a valid JEPA navigation experiment. It has run increasingly rigorous component diagnostics and found that the current pooled, one-step objective is not planning-ready.
+The repository has not failed at JEPA navigation. It has now run a valid
+scene-disjoint matched-branch **development evaluation**, though still not a
+closed-loop JEPA navigation experiment. That panel found the current pooled,
+one-step checkpoints are not planning-ready.
 
 The most defensible current claim is:
 
-> We have factual action association, but no demonstrated counterfactual action fidelity, rollout utility, planning geometry, or causal navigation benefit.
+> We have reproducible action-conditioned latent signal, but no demonstrated
+> physical action-ranking advantage, relative-progress advantage, rollout
+> utility, planning geometry, or causal navigation benefit.
 
-Do not launch a bulk rendering job yet. Finish the small branch-truth evaluator, audit action support in the existing pool, and compare one action-grounding objective and one dense spatial baseline. That is the shortest path to determining whether the limitation is data coverage, objective, representation, or planning, and it avoids another round of optimizing a proxy that never reaches the robot.
+The fixed branch evaluator is complete. Do not launch a bulk rerender or continue
+tuning the same observational proxy. The next information-changing experiment
+should train on a deliberately scoped matched-state/multiple-action branch set
+and compare a dense-token JEPA candidate against conventional state-space and
+Dreamer-style baselines before any closed-loop claim.
+
+## Post-panel result update (2026-08-02)
+
+After this review was written, the preregistered four-arm by three-seed
+update-700 panel completed on the fixed matched-branch evaluator. All 12 reports
+were produced. The aggregate verdict is
+`USEFUL_SCENE_DISJOINT_PLANNING_EVIDENCE_NOT_ESTABLISHED`.
+
+This resolves the review's largest open causal question:
+
+- `masked_plain` and `full_plain` show some direct latent improvement over
+  shuffled controls, so the learned representation is not simply action-blind;
+- neither plain arm passes physical rank-regret, relative target-progress,
+  retrieval, or falsification in any seed;
+- the true-future ceiling fails evaluator sensitivity, so this is evidence that
+  usefulness was not established, not proof that no useful model is possible;
+- mean physical rank-regret effects are adverse (`+0.0358166` masked and
+  `+0.0490916` full, where negative favors the forecast);
+- delta supervision and full-grid targets both significantly worsen direct
+  matched-branch error in all three seeds, so neither is a practical mechanism;
+- no checkpoint is eligible for blind rollout or planning integration.
+
+The result supports this review's warning that improved proxy prediction need
+not yield plannable geometry. It also changes the data recommendation. Matched
+branches are no longer merely the route to decisive evaluation; under the
+frozen stop rule they are now the next information-changing **training**
+intervention for this program. That is a progression decision, not proof that
+observational learning is impossible or that exact duplicate states are a
+general identifiability requirement.
+
+The registered route is
+`STOP_OBSERVATIONAL_MECHANISM_TUNING_AND_COLLECT_MATCHED_BRANCH_TRAINING_DATA_THEN_COMPARE_CONVENTIONAL_AND_DREAMER_BASELINES`.
+A dense spatial-token, action-conditioned JEPA initialized from V-JEPA 2.1 and
+controlled against frozen V-JEPA 2.1 and DINOv2 remains a defensible candidate
+inside that comparison. It should not replace the conventional and Dreamer
+controls or inherit a usefulness claim from pretraining.
+
+The bound aggregate is
+`.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/panel_result.json`
+(SHA-256
+`5439afee451cc66ca21c991a55266aed1c430444cc0b8112a7e14155e7e57fe8`).
+The independent terminal record is
+`docs/lewm_go2_world_model_bounded_branch_posthoc_evaluation_v1_terminal_review_2026-08-02.json`
+(16,458 bytes, SHA-256
+`58cbaec33e27a65d25d0106a43f6995bc75393706c4ac99637ae3e9e0f08373e`;
+status `PASS_COMPLETE_TERMINAL_DEVELOPMENT_REVIEW`).

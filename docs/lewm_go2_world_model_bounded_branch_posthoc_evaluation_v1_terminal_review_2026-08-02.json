@@ -1,0 +1,281 @@
+{
+  "schema": "lewm_go2_world_model_bounded_branch_posthoc_evaluation_terminal_review_v1",
+  "status": "PASS_COMPLETE_TERMINAL_DEVELOPMENT_REVIEW",
+  "review_verdict": "PASS_EXACT_FIXED_12_MEMBER_PANEL_VALID_GLOBAL_USEFULNESS_NOT_ESTABLISHED_NEITHER_TESTED_MECHANISM_PRACTICAL_STOP_OBSERVATIONAL_MECHANISM_TUNING",
+  "reviewed_at": "2026-08-02T22:58:17+01:00",
+  "development_only": true,
+  "independent_terminal_review_completed": true,
+  "authority_granted_by_this_document": false,
+  "citable_as_fixed_panel_development_evidence": true,
+  "citable_as_negative_result_that_planning_usefulness_was_not_established": true,
+  "citable_as_evidence_that_neither_tested_mechanism_was_practical": true,
+  "citable_as_positive_planning_usefulness_evidence": false,
+  "citable_as_closed_loop_navigation_or_rollout_evidence": false,
+  "reviewer": {
+    "identity": "/root/terminal_panel_reviewer",
+    "independence_basis": "Independent read-only review of the completed exact output. The reviewer did not author the frozen evaluator or runner, issue execution authority, launch or influence the live process, inspect partial member measurements, or modify any runtime artifact. Review began only after all 12 immutable member reports, panel_result.json, and terminal.json existed."
+  },
+  "attempt": {
+    "id": "go2_world_model_bounded_branch_evaluation_panel_v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1",
+    "consumed": true,
+    "completed": true,
+    "member_count": 12,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "overwrite_authorized": false,
+    "member_selection_authorized": false
+  },
+  "execution_identity": {
+    "source_commit": "7a39c85bf5404103c93d00822e52c4bc50b8f5cd",
+    "source_review_commit": "cd6392b43f8e0a54180c6e4fb76e66ff3a438ef0",
+    "authority_and_execution_commit": "b077fcb54a37ff26c5bc34cc53d8635e5a9fc6ac",
+    "runbook_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_experiment_v1_runbook_2026-08-02.md",
+      "file_sha256": "558ed86f1645eb7083890a475a82c560523eab02b468fc7e1d4775d2b02afc74",
+      "byte_count": 30218
+    },
+    "progression_preregistration_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_progression_v1_preregistration_2026-08-02.md",
+      "file_sha256": "099336ae3d835170aa95e8038c8cde4b2f7875d2817b8250bd3e95a85090767c",
+      "byte_count": 19923
+    },
+    "posthoc_join_preregistration_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_preregistration_2026-08-02.json",
+      "file_sha256": "ee2cbd54459760c23107e961f9ae4c860a5cfccfeb3cdb332a5449394031fdbf",
+      "byte_count": 6320
+    },
+    "independent_source_review_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_evaluation_v1_source_review_2026-08-02.json",
+      "file_sha256": "c45daae6e75908ab99278d2c8874f2b3e88d442c8157833a9c51035642d081d2",
+      "byte_count": 7633
+    },
+    "execution_authority_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_evaluation_v1_execution_authority_2026-08-02.json",
+      "file_sha256": "4d5f1b8ff732db75f52b302a8ef2f9a188c19d243de2a61cb4142761125590d6",
+      "byte_count": 18657
+    },
+    "posthoc_join_terminal_review_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_terminal_review_2026-08-02.json",
+      "file_sha256": "bfd0250357d0f681c674db6c54ea4a8c4d5e617230332383beda3db3e0f38669",
+      "byte_count": 2844
+    }
+  },
+  "terminal_artifacts": {
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/reservation.json",
+      "file_sha256": "d05ba9f2977a8e36d639ffe485273c98c7586fbc93d6d6cc1bafaf2be4c71758",
+      "byte_count": 322535
+    },
+    "panel_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/panel_result.json",
+      "file_sha256": "5439afee451cc66ca21c991a55266aed1c430444cc0b8112a7e14155e7e57fe8",
+      "byte_count": 327131
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/terminal.json",
+      "file_sha256": "b588dada21db2687197481a6bf71e47baeb24bd2aa4236a2ea6e894ec0e37ae4",
+      "byte_count": 21534
+    },
+    "member_reports": {
+      "masked_plain/seed_2026080201": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/masked_plain_seed_2026080201_update_000700.json",
+        "file_sha256": "ec48908908abb344f523392699f6dc505bbfc817b4ac68922b4d53f5c6011298",
+        "byte_count": 4025698
+      },
+      "masked_plain/seed_2026080202": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/masked_plain_seed_2026080202_update_000700.json",
+        "file_sha256": "a4dafd809706f33f96d5eefd9b9eb03821c265fed51258733e745b1f1473e9cc",
+        "byte_count": 4025473
+      },
+      "masked_plain/seed_2026080203": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/masked_plain_seed_2026080203_update_000700.json",
+        "file_sha256": "a99970692349ef995fae48ad503dbbcf3a66a8c1fa1998d1a85ea0547e268713",
+        "byte_count": 4025340
+      },
+      "masked_delta/seed_2026080201": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/masked_delta_seed_2026080201_update_000700.json",
+        "file_sha256": "14ab8a8b4e6ba0cf2a30f545161503d37f49b7cd7db553eebb51318bde005e5c",
+        "byte_count": 4025448
+      },
+      "masked_delta/seed_2026080202": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/masked_delta_seed_2026080202_update_000700.json",
+        "file_sha256": "225f20cb133fce9e516bee60aac5bbefd16d63aec6d47f84f0fbc970d779e40b",
+        "byte_count": 4025435
+      },
+      "masked_delta/seed_2026080203": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/masked_delta_seed_2026080203_update_000700.json",
+        "file_sha256": "2fd5c7c4813baf9765100b92758684532eecc033282de83bc8ee180ccfa755db",
+        "byte_count": 4025474
+      },
+      "full_plain/seed_2026080201": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/full_plain_seed_2026080201_update_000700.json",
+        "file_sha256": "1e6fd88730cdf1b81f85f1ef6d61f36adc35df646916e5f7cac3c94893ad205e",
+        "byte_count": 4025821
+      },
+      "full_plain/seed_2026080202": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/full_plain_seed_2026080202_update_000700.json",
+        "file_sha256": "f1deb53a2694b27efa313889364e682bd21afc87f90ffd361faca9610250d9c6",
+        "byte_count": 4025789
+      },
+      "full_plain/seed_2026080203": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/full_plain_seed_2026080203_update_000700.json",
+        "file_sha256": "fd72387519d4b72dca1d782828083eaf8eecc93c6c09010fe4d22da5b6b49f26",
+        "byte_count": 4025823
+      },
+      "full_delta/seed_2026080201": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/full_delta_seed_2026080201_update_000700.json",
+        "file_sha256": "5f4edf99f3c084f3d989f7ae3dfd7e15d241ef2f86bf48bb1fafc6d0a189d605",
+        "byte_count": 4025548
+      },
+      "full_delta/seed_2026080202": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/full_delta_seed_2026080202_update_000700.json",
+        "file_sha256": "3c062d461a5b03c370a919b683f37fe6eb740dcbb30667ef53d3d4c4a8e55c52",
+        "byte_count": 4025610
+      },
+      "full_delta/seed_2026080203": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/members/full_delta_seed_2026080203_update_000700.json",
+        "file_sha256": "e99a0711c8cbafe60104935229ad2701ef8016f1138cbb5f1843ee2806aab7c6",
+        "byte_count": 4025301
+      }
+    }
+  },
+  "independent_checks": {
+    "exact_15_file_output_inventory": true,
+    "terminal_complete_without_failure": true,
+    "terminal_rehash_passed_with_zero_findings": true,
+    "exact_12_checkpoint_authority_bindings_rehashed": true,
+    "all_19_reviewed_source_bindings_rehashed": true,
+    "all_13_live_runtime_source_bindings_rehashed": true,
+    "posthoc_manifest_terminal_and_review_bindings_rehashed": true,
+    "progression_analysis_and_result_bindings_rehashed": true,
+    "exact_four_arm_three_seed_update_700_membership": true,
+    "all_12_member_report_bindings_rehashed": true,
+    "all_members_share_one_manifest_contract_standardizer_and_physical_separability_identity": true,
+    "all_members_contain_128_evaluation_states_across_16_scenes_and_8_equal_family_strata": true,
+    "all_members_preserve_zero_training_scene_overlap": true,
+    "original_generation_terminal_failure_preserved": true,
+    "aggregate_recomputed_exactly_from_all_raw_member_rows": true,
+    "stored_gate_statuses_and_routes_equal_recomputation": true,
+    "rgb_leaves_opened_by_reviewer": false,
+    "checkpoint_payloads_deserialized_by_reviewer": false,
+    "protected_material_opened": false
+  },
+  "registered_result": {
+    "global_verdict": "USEFUL_SCENE_DISJOINT_PLANNING_EVIDENCE_NOT_ESTABLISHED",
+    "primary_plain_arm_family": {
+      "multiplicity_policy": "bonferroni_two_arm_family_one_sided_family_alpha_0.025",
+      "masked_plain": "USEFULNESS_NOT_ESTABLISHED_ALL_THREE_SEEDS",
+      "full_plain": "USEFULNESS_NOT_ESTABLISHED_ALL_THREE_SEEDS",
+      "passing_plain_arms": []
+    },
+    "all_arm_seed_status": "ALL_12_CHECKPOINTS_FAIL_PREREGISTERED_GATES",
+    "gate_pass_counts_out_of_12": {
+      "evaluator_sensitivity": 0,
+      "direct_matched_error": 6,
+      "direct_branch_margin": 5,
+      "direct_action_retrieval": 0,
+      "direct_discrimination_coverage": 12,
+      "physical_rank_regret": 0,
+      "safety_noninferiority": 12,
+      "absolute_safety": 12,
+      "target_progress": 0,
+      "absolute_target_progress": 12,
+      "falsification_controls": 0
+    },
+    "gate_pattern": {
+      "passed_by_all_12": [
+        "direct_discrimination_coverage",
+        "safety_noninferiority",
+        "absolute_safety",
+        "absolute_target_progress"
+      ],
+      "failed_by_all_12": [
+        "evaluator_sensitivity",
+        "direct_action_retrieval",
+        "physical_rank_regret",
+        "target_progress",
+        "falsification_controls"
+      ],
+      "plain_direct_matched_error": "PASS_6_OF_6",
+      "delta_direct_matched_error": "PASS_0_OF_6",
+      "plain_direct_branch_margin": "PASS_5_OF_6",
+      "delta_direct_branch_margin": "PASS_0_OF_6"
+    },
+    "evaluator_sensitivity": {
+      "comparison": "true_future_ceiling_minus_current_normalized_rank_regret",
+      "mean": -0.03837425595238095,
+      "required_upper_endpoint": -0.05,
+      "plain_arm_upper_endpoint_at_two_sided_alpha_0_025": 0.059393601190476195,
+      "delta_control_upper_endpoint_at_two_sided_alpha_0_05": 0.04773344494047615,
+      "passed": false
+    },
+    "primary_plain_seed_summaries": {
+      "masked_plain": {
+        "matched_branch_error_by_seed": {
+          "2026080201": 0.9512612175168675,
+          "2026080202": 0.9416066278444042,
+          "2026080203": 0.9444683533277864
+        },
+        "forecast_minus_current_physical_rank_regret_by_seed": {
+          "2026080201": 0.0409970238095238,
+          "2026080202": 0.02976190476190476,
+          "2026080203": 0.03669084821428571
+        }
+      },
+      "full_plain": {
+        "matched_branch_error_by_seed": {
+          "2026080201": 1.0298556390643459,
+          "2026080202": 1.0205938779167543,
+          "2026080203": 1.023726759779454
+        },
+        "forecast_minus_current_physical_rank_regret_by_seed": {
+          "2026080201": 0.07073102678571427,
+          "2026080202": 0.02915736607142857,
+          "2026080203": 0.04738653273809524
+        }
+      },
+      "physical_rank_regret_direction": "negative_favors_forecast; every listed plain-arm point estimate is positive"
+    },
+    "mechanism_adjudication": {
+      "all_three_seed_decision": "NEITHER_MECHANISM_PRACTICAL_ALL_THREE_SEEDS",
+      "direct_error_direction": "negative_favors_named_mechanism",
+      "delta_main_effect_by_seed": {
+        "2026080201": {"mean": 0.11135803540076222, "lower_95": 0.10810491965637656, "upper_95": 0.11453431893392622},
+        "2026080202": {"mean": 0.13221709147366645, "lower_95": 0.12757057268796246, "upper_95": 0.13676102973011708},
+        "2026080203": {"mean": 0.1225946723255334, "lower_95": 0.11799358293451273, "upper_95": 0.127158684013657}
+      },
+      "full_grid_spatial_main_effect_by_seed": {
+        "2026080201": {"mean": 0.07508032705083009, "lower_95": 0.07200332828713421, "upper_95": 0.07818500515303779},
+        "2026080202": {"mean": 0.07617844782786118, "lower_95": 0.07262913761148683, "upper_95": 0.07974468609100908},
+        "2026080203": {"mean": 0.06824258669948885, "lower_95": 0.06573917415382105, "upper_95": 0.07082299614840126}
+      },
+      "interpretation": "Both additions increased direct matched-branch error in every seed on the common standardized latent surface; neither is a candidate for further observational tuning under the frozen rule.",
+      "delta_observational_scale_route": "STOP_DELTA_OBSERVATIONAL_SCALING_PROXY_NOT_MEANINGFUL",
+      "plain_full_grid_rollout_route": "STOP_NOT_ELIGIBLE_FOR_BLIND_ROLLOUT",
+      "delta_full_grid_rollout_route": "STOP_NOT_ELIGIBLE_FOR_BLIND_ROLLOUT",
+      "next_data_and_baseline_route": "STOP_OBSERVATIONAL_MECHANISM_TUNING_AND_COLLECT_MATCHED_BRANCH_TRAINING_DATA_THEN_COMPARE_CONVENTIONAL_AND_DREAMER_BASELINES"
+    }
+  },
+  "interpretation": {
+    "supported": "On the exact 32-scene, 256-state, 2,304-branch development corpus, the frozen plain models learned some one-step latent action signal relative to shuffled forecasts, but neither plain arm established the preregistered physical planning utility, relative progress, retrieval, falsification, or evaluator-sensitivity requirements across three seeds. The displacement auxiliary and full-grid target mechanisms made direct branch error materially worse in all three seeds.",
+    "not_supported": "This result does not show that the models are useful world models for planning, and it does not establish that all JEPA world models or all action-conditioned representations are incapable of planning utility.",
+    "assay_caveat": "The true-future ceiling failed the preregistered evaluator-sensitivity gate. The correct global wording is therefore usefulness not established, not proof of absence. That caveat does not reverse the independently clear all-seed direct-error harm from the two tested mechanisms or the preregistered stop route."
+  },
+  "claim_and_custody_limits": {
+    "scope": "bounded scene-disjoint development evidence only",
+    "held_out_or_sealed_evidence": false,
+    "closed_loop_navigation_evidence": false,
+    "blind_multistep_rollout_evidence": false,
+    "checkpoint_promotion_or_planning_eligibility": false,
+    "g2_or_deployment_authority": false,
+    "safety_certificate": false,
+    "automatic_successor_execution_authority": false,
+    "matched_branch_collection_or_training_authority": false,
+    "retry_resume_or_overwrite_authority": false,
+    "original_failed_generation_relabelled_as_success": false,
+    "dense_token_or_external_pretraining_successor_adjudicated": false,
+    "protected_material_opened": false
+  },
+  "findings": []
+}

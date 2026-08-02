@@ -1,6 +1,6 @@
 # Session handoff: JEPA world-model review, correction, and counterfactual diagnosis
 
-Date: 2026-07-31, terminally updated 2026-08-01
+Date: 2026-07-31, terminally updated 2026-08-02
 Repository HEAD during the original session: `0279294e5679fa81f845f13c9e47326bab291238`
 Continuation execution HEAD: `fb30bdf0b11934ee8d6d4780e0973b050d98c17d`
 Branch: `jepa-spatial-world-model-nav`
@@ -41,6 +41,16 @@ Branch: `jepa-spatial-world-model-nav`
 > independent checker passed and selected
 > `FAIL_RETENTION_CLOSE_ALIGNMENT_BRANCH`. Section 9 is the current terminal
 > interpretation and supersedes §6's proposed next experiment order.
+
+> **Causal branch terminal update (2026-08-02):** the exact four-arm by
+> three-seed update-700 panel has now been scored on the fixed scene-disjoint
+> matched-branch evaluator. All 12 reports completed and the runner's terminal
+> rehash passed. Neither plain candidate established planning usefulness;
+> neither delta supervision nor full-grid targets produced a practical direct
+> branch improvement. The registered route is to stop observational mechanism
+> tuning, collect matched-branch training data, and compare conventional and
+> Dreamer-style baselines. Section 10 is the current scientific handoff and
+> supersedes §9's statement that direct WM-A remained unmeasured.
 
 **Original July 31 state:** nothing from that session was committed and the
 artifacts in §8 were untracked. The bounded August 1 localization/alignment
@@ -712,3 +722,141 @@ decision, including effective rank from covariance sufficient statistics; it
 did not deserialize either u900 snapshot. The primary terminal reviewer read
 only JSON receipts and performed disclosed SHA-256/stat identity reads of the
 new metric bundle and snapshots, without tensor deserialization.
+
+---
+
+## 10. Scene-disjoint matched-branch terminal resolution (2026-08-02)
+
+This section is the current handoff. It preserves the earlier corrections and
+negative existing-pool history, but supersedes §9's statement that direct WM-A
+was still unmeasured and its proposal-only description of matched branches.
+
+### Experiment that actually ran
+
+The fixed experiment evaluated exactly 12 update-700 checkpoints: four arms
+(`masked_plain`, `masked_delta`, `full_plain`, and `full_delta`) crossed with
+three training seeds (`2026080201`--`2026080203`). The bounded branch collection
+contains 32 scenes, 256 states, 2,304 executed branches, and 3,072 RGB artifacts.
+The train role was used only for the common latent standardizer and nine
+action-specific ridge readouts. All generalization measurements used the
+scene-disjoint evaluation role: 16 scenes, two per family, and 128 state groups.
+
+Each checkpoint was compared on identical branch truth using direct latent
+error, physical-equivalence-aware action retrieval, dense physical action-rank
+regret, target progress, safety, and falsification controls. The confirmatory
+family was the two plain arms; the delta arms were frozen mechanism controls and
+could not establish usefulness. The complete panel, not an individual report,
+was the only result allowed to route progression.
+
+The one-shot runner exited zero after writing all 12 reports. Its emitted
+terminal has `failure: null`, `terminal_rehash.status: PASS`, no rehash failures,
+and no retry, resume, or overwrite authority.
+
+### Registered result
+
+The aggregate verdict is:
+
+`USEFUL_SCENE_DISJOINT_PLANNING_EVIDENCE_NOT_ESTABLISHED`
+
+All 12 checkpoint reports failed their complete preregistered gate sets. Neither
+plain arm passed in any seed, and no arm is eligible for blind rollout. The
+negative verdict is not caused by absent coverage or by safety alone:
+
+- the masked plain arm improved direct matched error and branch margin against
+  shuffled controls in all three seeds;
+- the full plain arm improved direct matched error in all three seeds and branch
+  margin in two of three seeds;
+- all arms had complete eligible action/scene/state/family coverage, zero unsafe
+  selections, and positive absolute target progress;
+- nevertheless, retrieval, physical rank regret versus the current-state
+  baseline, relative target progress, and falsification failed in every plain
+  seed;
+- the true-future ceiling also failed the preregistered evaluator-sensitivity
+  gate, so the defensible global wording is "usefulness not established," not
+  proof that useful planning is absent;
+- mean physical rank-regret effects were adverse, not beneficial:
+  `+0.0358166` for `masked_plain` and `+0.0490916` for `full_plain`, where
+  negative would favor the forecast;
+- the forecast was consistently worse than the task/action-only falsification
+  control.
+
+The fixed mechanism comparison is also negative. For direct matched-branch
+error, where negative favors the named mechanism, the delta main effect was
+strongly adverse in every seed: `+0.111358`, `+0.132217`, and `+0.122595`.
+The full-grid/spatial main effect was likewise adverse: `+0.0750803`,
+`+0.0761784`, and `+0.0682426`. Delta supervision showed a secondary trend
+toward lower physical regret, but only one seed excluded zero and the supportive
+movement cannot override substantial harm on the preregistered primary direct
+surface. The aggregate therefore records
+`NEITHER_MECHANISM_PRACTICAL_ALL_THREE_SEEDS`.
+
+### First-principles interpretation and stop route
+
+The experiment establishes a narrower, useful fact: these checkpoints contain
+reproducible action-conditioned latent signal. It does **not** establish that
+their forecasts rank actions better than the current observation, improve
+relative physical progress, survive falsification controls, or form a useful
+planning world model. Positive absolute progress and perfect safety are not
+causal model gains when the current-state and simpler task/action controls do
+better.
+
+This is a model-and-mechanism result, not an impossibility theorem. It does not
+show that JEPA architectures cannot support planning, that exact same-state
+branches are universally necessary, or that the complete 3 TB observational
+pool is worthless. It does show that scaling or retuning these observational
+delta/full-grid mechanisms is unjustified: both make the primary direct branch
+surface materially worse across all three seeds.
+
+The exact frozen route is:
+
+`STOP_OBSERVATIONAL_MECHANISM_TUNING_AND_COLLECT_MATCHED_BRANCH_TRAINING_DATA_THEN_COMPARE_CONVENTIONAL_AND_DREAMER_BASELINES`
+
+Accordingly:
+
+1. Do not extend, retune, resample, or bulk-scale the current observational
+   objective.
+2. Do not run blind rollout or integrate any of these checkpoints into the
+   planner.
+3. Scope matched-state, multiple-executed-action **training** data; the existing
+   bounded collection is sufficient for this evaluation, not for a meaningful
+   new training campaign.
+4. Compare the next information-changing model against a conventional
+   state-space dynamics model and a task-coupled Dreamer-style baseline. A
+   dense spatial-token action-conditioned JEPA, including the proposed V-JEPA
+   2.1/DINOv2 feature controls, is an eligible mechanism candidate inside that
+   comparison, not an automatically selected successor.
+
+The four-property state is now:
+
+| property | terminal assessment |
+|---|---|
+| WM-A: untaken-action utility | **directly measured for the fixed panel; not established** — every plain seed fails physical rank regret, relative progress, retrieval, and falsification |
+| WM-C: composability | **not tested and not eligible** — both full-grid arms fail the frozen noninferiority/usefulness route |
+| WM-S: substrate retention | **mixed/insufficient** — latent action signal and coverage survive, but no qualified physical planning advantage follows |
+| WM-D: deployed causal presence | **absent** — no checkpoint is rollout-, planner-, promotion-, or deployment-eligible |
+
+### Durable result identities and custody
+
+The completed output root is
+`.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1`.
+
+- reservation: 322,535 bytes, SHA-256
+  `d05ba9f2977a8e36d639ffe485273c98c7586fbc93d6d6cc1bafaf2be4c71758`;
+- aggregate: 327,131 bytes, SHA-256
+  `5439afee451cc66ca21c991a55266aed1c430444cc0b8112a7e14155e7e57fe8`;
+- terminal: 21,534 bytes, SHA-256
+  `b588dada21db2687197481a6bf71e47baeb24bd2aa4236a2ea6e894ec0e37ae4`;
+- independent terminal review:
+  `docs/lewm_go2_world_model_bounded_branch_posthoc_evaluation_v1_terminal_review_2026-08-02.json`,
+  16,458 bytes, SHA-256
+  `58cbaec33e27a65d25d0106a43f6995bc75393706c4ac99637ae3e9e0f08373e`.
+
+The independent review status is
+`PASS_COMPLETE_TERMINAL_DEVELOPMENT_REVIEW` with no integrity findings. This is
+now citable as fixed-panel **development** evidence that planning usefulness was
+not established and that neither tested mechanism was practical. It is not
+positive usefulness evidence and is not closed-loop
+navigation evidence, held-out or sealed evidence, a safety certificate,
+checkpoint promotion, G2--G8 authority, or deployment evidence. No protected or
+sealed material was opened, no sealed attempt was consumed, and V4 remains
+development-only and permanently ineligible for final evaluation.
