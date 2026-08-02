@@ -1736,6 +1736,7 @@ print(json.dumps(sorted(loaded)))
         "scripts/dev_probe_counterfactual_action_fidelity.py",
         "scripts/dev_train_temporal_jepa_scaled.py",
         "scripts/evaluate_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+        "scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py",
         "scripts/run_go2_world_model_bounded_branch_experiment_authorized_v1.py",
         "scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py",
     }
@@ -1743,6 +1744,12 @@ print(json.dumps(sorted(loaded)))
 
 
 def test_calibrated_resource_projection_is_bounded():
+    assert authority.CALIBRATION_CONCURRENT_LANES == 20
+    assert authority.BOUNDED_CONCURRENT_LANES == 36
+    assert (
+        authority.VRAM_SAFETY_MARGIN_NUMERATOR,
+        authority.VRAM_SAFETY_MARGIN_DENOMINATOR,
+    ) == (5, 4)
     projected = authority.projected_caps_v1({
         "calibration_wall_seconds": 80.0,
         "calibration_stored_rgb_bytes": 1_000_000,
@@ -1753,7 +1760,16 @@ def test_calibrated_resource_projection_is_bounded():
     })
     assert projected["minimum_wall_seconds"] == 3600.0
     assert projected["stored_rgb_byte_ceiling"] == 512 * 1024**2
-    assert projected["selected_device_vram_byte_ceiling"] == 550
+    assert projected["selected_device_vram_byte_ceiling"] == 325
+    calibrated = authority.projected_caps_v1({
+        "calibration_wall_seconds": 207.5713345760014,
+        "calibration_stored_rgb_bytes": 8_043_114,
+        "calibration_gpu_baseline_used_bytes": 727_662_592,
+        "calibration_gpu_peak_used_bytes": 7_949_770_752,
+        "calibration_gpu_peak_delta_bytes": 7_222_108_160,
+        "selected_device_total_vram_bytes": 34_208_743_424,
+    })
+    assert calibrated["selected_device_vram_byte_ceiling"] == 16_977_405_952
     with pytest.raises(authority.BoundedBranchAuthorityError, match="wall hard cap"):
         authority.projected_caps_v1({
             "calibration_wall_seconds": 2000.0,

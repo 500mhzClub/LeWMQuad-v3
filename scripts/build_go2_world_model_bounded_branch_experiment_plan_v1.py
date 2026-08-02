@@ -219,6 +219,13 @@ def _binding(value: object, *, label: str) -> dict[str, Any]:
         raise BoundedBranchPlanError(str(exc)) from exc
 
 
+def _historical_binding(value: object, *, label: str) -> dict[str, Any]:
+    try:
+        return pilot._validate_binding_shape(value, label=label)  # noqa: SLF001
+    except pilot.PilotContractError as exc:
+        raise BoundedBranchPlanError(str(exc)) from exc
+
+
 def _validate_analysis_recovery_review(
     review: Mapping[str, Any],
     *,
@@ -904,7 +911,7 @@ def _validate_visual_domain_parity_gate_v1(
     review: object,
     review_binding: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Recompute exact 8-scene/32-pose parity before accepting review."""
+    """Validate the exact-parity gate or its reviewed task-relevance alternate."""
 
     result_bound = _binding(result_binding, label="visual-domain parity result")
     review_bound = _binding(
@@ -934,6 +941,11 @@ def _validate_visual_domain_parity_gate_v1(
         raise BoundedBranchPlanError(
             "visual-domain parity result/review document binding changed"
         )
+    task_relevance_route = (
+        isinstance(review, Mapping)
+        and review.get("schema")
+        == pilot.TEXTURED_V03_TASK_RELEVANCE_REVIEW_SCHEMA
+    )
     required_result = {
         "schema",
         "status",
@@ -958,9 +970,14 @@ def _validate_visual_domain_parity_gate_v1(
     }
     if not isinstance(result, Mapping) or set(result) != required_result:
         raise BoundedBranchPlanError("visual-domain parity result fields changed")
+    expected_result_status = (
+        pilot.TEXTURED_V03_PARITY_FAIL_STATUS
+        if task_relevance_route
+        else VISUAL_DOMAIN_PARITY_RESULT_STATUS
+    )
     if (
         result.get("schema") != VISUAL_DOMAIN_PARITY_RESULT_SCHEMA
-        or result.get("status") != VISUAL_DOMAIN_PARITY_RESULT_STATUS
+        or result.get("status") != expected_result_status
         or result.get("authority_granted_by_this_document") is not False
         or result.get("scientific_claim_granted_by_this_document") is not False
         or result.get("development_only") is not True
@@ -969,10 +986,15 @@ def _validate_visual_domain_parity_gate_v1(
         != VISUAL_DOMAIN_PARITY_COMPARISON_CONTRACT
         or result.get("thresholds") != VISUAL_DOMAIN_PARITY_THRESHOLDS
         or not isinstance(result.get("measurements"), Mapping)
-        or not parity_evaluator._passes(result["measurements"])  # noqa: SLF001
+        or (
+            not task_relevance_route
+            and not parity_evaluator._passes(  # noqa: SLF001
+                result["measurements"]
+            )
+        )
     ):
         raise BoundedBranchPlanError(
-            "visual-domain parity result did not pass the fixed exact contract"
+            "visual-domain parity result did not satisfy the fixed exact contract"
         )
     evidence_scene_ids = result.get("evidence_scene_ids")
     if (
@@ -995,148 +1017,165 @@ def _validate_visual_domain_parity_gate_v1(
         result["candidate_rgb_panel_binding"],
         label="visual-domain candidate panel",
     )
-    candidate_collector = _binding(
+    source_binding = _historical_binding if task_relevance_route else _binding
+    candidate_collector = source_binding(
         result["candidate_collector_source_binding"],
         label="visual-domain candidate collector source",
     )
-    candidate_renderer = _binding(
+    candidate_renderer = source_binding(
         result["candidate_renderer_source_binding"],
         label="visual-domain candidate renderer source",
     )
-    reference_renderer = _binding(
+    reference_renderer = source_binding(
         result["reference_renderer_source_binding"],
         label="visual-domain reference renderer source",
     )
-    reference_textures = _binding(
+    reference_textures = source_binding(
         result["reference_texture_source_binding"],
         label="visual-domain reference texture source",
     )
-    evaluator_source = _binding(
+    evaluator_source = source_binding(
         result["evaluator_source_binding"],
         label="visual-domain parity evaluator source",
     )
-    exact_sources = {
-        "candidate collector": (
-            candidate_collector,
-            REPO_ROOT / "scripts/collect_go2_world_model_counterfactual_pilot_v1.py",
-        ),
-        "candidate renderer": (
-            candidate_renderer,
-            REPO_ROOT / "scripts/render_replay_v03.py",
-        ),
-        "reference renderer": (
-            reference_renderer,
-            REPO_ROOT / "scripts/render_replay_v03.py",
-        ),
-        "reference textures": (
-            reference_textures,
-            REPO_ROOT / "lewm_genesis/lewm_genesis/textures.py",
-        ),
-        "parity evaluator": (
-            evaluator_source,
-            REPO_ROOT / VISUAL_DOMAIN_PARITY_EVALUATOR_RELATIVE,
-        ),
-    }
-    for label, (binding, path) in exact_sources.items():
-        if binding != pilot.file_binding(path.resolve()):
-            raise BoundedBranchPlanError(
-                f"visual-domain {label} source identity changed"
+    if not task_relevance_route:
+        exact_sources = {
+            "candidate collector": (
+                candidate_collector,
+                REPO_ROOT
+                / "scripts/collect_go2_world_model_counterfactual_pilot_v1.py",
+            ),
+            "candidate renderer": (
+                candidate_renderer,
+                REPO_ROOT / "scripts/render_replay_v03.py",
+            ),
+            "reference renderer": (
+                reference_renderer,
+                REPO_ROOT / "scripts/render_replay_v03.py",
+            ),
+            "reference textures": (
+                reference_textures,
+                REPO_ROOT / "lewm_genesis/lewm_genesis/textures.py",
+            ),
+            "parity evaluator": (
+                evaluator_source,
+                REPO_ROOT / VISUAL_DOMAIN_PARITY_EVALUATOR_RELATIVE,
+            ),
+        }
+        for label, (binding, path) in exact_sources.items():
+            if binding != pilot.file_binding(path.resolve()):
+                raise BoundedBranchPlanError(
+                    f"visual-domain {label} source identity changed"
+                )
+        try:
+            source_panel, actual_source_panel = pilot.read_bound_json(
+                Path(str(source_panel_bound["path"])),
+                expected_sha256=str(source_panel_bound["file_sha256"]),
+                expected_byte_count=int(source_panel_bound["byte_count"]),
+                label="visual-domain historical source panel",
             )
-    try:
-        source_panel, actual_source_panel = pilot.read_bound_json(
-            Path(str(source_panel_bound["path"])),
-            expected_sha256=str(source_panel_bound["file_sha256"]),
-            expected_byte_count=int(source_panel_bound["byte_count"]),
-            label="visual-domain historical source panel",
-        )
-        candidate_panel, actual_candidate_panel = pilot.read_bound_json(
-            Path(str(candidate_panel_bound["path"])),
-            expected_sha256=str(candidate_panel_bound["file_sha256"]),
-            expected_byte_count=int(candidate_panel_bound["byte_count"]),
-            label="visual-domain candidate panel",
-        )
-        recomputed = parity_evaluator.evaluate_v1(
-            source_panel=source_panel,
-            source_panel_binding=actual_source_panel,
-            candidate_panel=candidate_panel,
-            candidate_panel_binding=actual_candidate_panel,
-        )
-    except (
-        OSError,
-        pilot.PilotContractError,
-        parity_evaluator.VisualDomainParityError,
-    ) as exc:
-        raise BoundedBranchPlanError(
-            f"visual-domain parity recomputation failed: {exc}"
-        ) from exc
-    if recomputed != dict(result):
-        raise BoundedBranchPlanError(
-            "visual-domain parity result is not the exact evaluator recomputation"
-        )
+            candidate_panel, actual_candidate_panel = pilot.read_bound_json(
+                Path(str(candidate_panel_bound["path"])),
+                expected_sha256=str(candidate_panel_bound["file_sha256"]),
+                expected_byte_count=int(candidate_panel_bound["byte_count"]),
+                label="visual-domain candidate panel",
+            )
+            recomputed = parity_evaluator.evaluate_v1(
+                source_panel=source_panel,
+                source_panel_binding=actual_source_panel,
+                candidate_panel=candidate_panel,
+                candidate_panel_binding=actual_candidate_panel,
+            )
+        except (
+            OSError,
+            pilot.PilotContractError,
+            parity_evaluator.VisualDomainParityError,
+        ) as exc:
+            raise BoundedBranchPlanError(
+                f"visual-domain parity recomputation failed: {exc}"
+            ) from exc
+        if recomputed != dict(result):
+            raise BoundedBranchPlanError(
+                "visual-domain parity result is not the exact evaluator recomputation"
+            )
 
-    required_review = {
-        "schema",
-        "status",
-        "authority_granted_by_this_document",
-        "scientific_claim_granted_by_this_document",
-        "result_binding",
-        "terminal_binding",
-        "reviewer",
-        "reviewed_at",
-        "checks",
-        "remaining_findings",
-    }
-    required_checks = set(pilot.TEXTURED_V03_PARITY_REVIEW_CHECKS)
-    checks = review.get("checks") if isinstance(review, Mapping) else None
-    reviewer = review.get("reviewer") if isinstance(review, Mapping) else None
-    if (
-        not isinstance(review, Mapping)
-        or set(review) != required_review
-        or review.get("schema") != VISUAL_DOMAIN_PARITY_REVIEW_SCHEMA
-        or review.get("status") != VISUAL_DOMAIN_PARITY_REVIEW_STATUS
-        or review.get("authority_granted_by_this_document") is not False
-        or review.get("scientific_claim_granted_by_this_document") is not False
-        or review.get("result_binding") != result_bound
-        or not isinstance(review.get("terminal_binding"), Mapping)
-        or not isinstance(reviewer, Mapping)
-        or set(reviewer) != {"identity", "independence_basis"}
-        or any(
-            not isinstance(reviewer[key], str) or not reviewer[key].strip()
-            for key in reviewer
+    if task_relevance_route:
+        terminal_bound = _binding(
+            review.get("terminal_failure_binding"),
+            label="visual-domain parity terminal failure",
         )
-        or not isinstance(checks, Mapping)
-        or set(checks) != required_checks
-        or any(value is not True for value in checks.values())
-        or review.get("remaining_findings") != []
-        or not isinstance(review.get("reviewed_at"), str)
-        or not review["reviewed_at"].strip()
-    ):
-        raise BoundedBranchPlanError(
-            "visual-domain parity independent review did not pass exactly"
+    else:
+        required_review = {
+            "schema",
+            "status",
+            "authority_granted_by_this_document",
+            "scientific_claim_granted_by_this_document",
+            "result_binding",
+            "terminal_binding",
+            "reviewer",
+            "reviewed_at",
+            "checks",
+            "remaining_findings",
+        }
+        required_checks = set(pilot.TEXTURED_V03_PARITY_REVIEW_CHECKS)
+        checks = review.get("checks") if isinstance(review, Mapping) else None
+        reviewer = review.get("reviewer") if isinstance(review, Mapping) else None
+        if (
+            not isinstance(review, Mapping)
+            or set(review) != required_review
+            or review.get("schema") != VISUAL_DOMAIN_PARITY_REVIEW_SCHEMA
+            or review.get("status") != VISUAL_DOMAIN_PARITY_REVIEW_STATUS
+            or review.get("authority_granted_by_this_document") is not False
+            or review.get("scientific_claim_granted_by_this_document") is not False
+            or review.get("result_binding") != result_bound
+            or not isinstance(review.get("terminal_binding"), Mapping)
+            or not isinstance(reviewer, Mapping)
+            or set(reviewer) != {"identity", "independence_basis"}
+            or any(
+                not isinstance(reviewer[key], str) or not reviewer[key].strip()
+                for key in reviewer
+            )
+            or not isinstance(checks, Mapping)
+            or set(checks) != required_checks
+            or any(value is not True for value in checks.values())
+            or review.get("remaining_findings") != []
+            or not isinstance(review.get("reviewed_at"), str)
+            or not review["reviewed_at"].strip()
+        ):
+            raise BoundedBranchPlanError(
+                "visual-domain parity independent review did not pass exactly"
+            )
+        try:
+            reviewed_at = datetime.fromisoformat(
+                str(review["reviewed_at"]).replace("Z", "+00:00")
+            )
+        except ValueError as exc:
+            raise BoundedBranchPlanError(
+                "visual-domain parity reviewed_at is not ISO-8601"
+            ) from exc
+        if reviewed_at.tzinfo is None:
+            raise BoundedBranchPlanError(
+                "visual-domain parity reviewed_at must include a timezone"
+            )
+        terminal_bound = _binding(
+            review["terminal_binding"], label="visual-domain parity terminal"
         )
     try:
-        reviewed_at = datetime.fromisoformat(
-            str(review["reviewed_at"]).replace("Z", "+00:00")
-        )
-    except ValueError as exc:
-        raise BoundedBranchPlanError(
-            "visual-domain parity reviewed_at is not ISO-8601"
-        ) from exc
-    if reviewed_at.tzinfo is None:
-        raise BoundedBranchPlanError(
-            "visual-domain parity reviewed_at must include a timezone"
-        )
-    terminal_bound = _binding(
-        review["terminal_binding"], label="visual-domain parity terminal"
-    )
-    try:
-        pilot.validate_textured_v03_parity_prerequisites(
+        validated = pilot.validate_textured_v03_parity_prerequisites(
             result_binding=result_bound,
             terminal_binding=terminal_bound,
             review_binding=review_bound,
         )
     except pilot.PilotContractError as exc:
         raise BoundedBranchPlanError(str(exc)) from exc
+    if validated != {
+        "result_binding": result_bound,
+        "terminal_binding": terminal_bound,
+        "review_binding": review_bound,
+    }:
+        raise BoundedBranchPlanError(
+            "visual-domain parity prerequisite bindings changed"
+        )
     return {
         "result_binding": result_bound,
         "terminal_binding": terminal_bound,

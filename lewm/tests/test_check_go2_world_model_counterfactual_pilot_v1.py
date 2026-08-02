@@ -935,6 +935,49 @@ def test_scene_stage_timing_must_be_internally_consistent(tmp_path: Path) -> Non
         )
 
 
+def test_scene_metric_accepts_one_row_for_two_fixed_bounded_batches() -> None:
+    plan_states = [
+        {
+            "state_id": f"train-state-{group_index}",
+            "role": "train",
+            "scene_id": "open-obstacle-train",
+            "family": "open_obstacle_field",
+        }
+        for group_index in range(8)
+    ]
+    metric = {
+        "scene_id": "open-obstacle-train",
+        "family": "open_obstacle_field",
+        "role": "train",
+        "states": 8,
+        "envs": 72,
+        "physics_build_wall_seconds": 0.5,
+        "physics_simulation_wall_seconds": 1.0,
+        "common_prefix_step_wall_seconds": 0.2,
+        "branch_step_wall_seconds": 0.3,
+        "render_scene_build_wall_seconds": 0.2,
+        "native_render_wall_seconds": 0.5,
+        "camera_quality_resize_wall_seconds": 0.2,
+        "png_encode_write_hash_wall_seconds": 0.1,
+        "lockstep_execution_wall_seconds": 1.0,
+        "post_lockstep_receipt_wall_seconds": 0.3,
+        "scene_pipeline_wall_seconds": 3.0,
+        "scene_total_wall_seconds": 4.0,
+        "native_render_calls": 96,
+        "stored_rgb_frames": 96,
+        "depth_rendered": True,
+        "depth_persisted": False,
+        "visual_mode": "solid_materials_box_physics_preserved",
+    }
+    checked = checker._validate_scene_metrics(
+        [metric],
+        plan_states=plan_states,
+        render_contract=producer.RENDER_CONTRACT,
+        collection_wall_seconds=4.0,
+    )
+    assert checked == (metric,)
+
+
 def test_render_scene_identity_must_equal_state_scene(tmp_path: Path) -> None:
     def mutate(render: dict[str, Any]) -> None:
         render["scene"]["scene_id"] = "open_obstacle_field-other"

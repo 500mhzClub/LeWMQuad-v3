@@ -169,6 +169,23 @@ def _bounded_two_scene_plan(tmp_path: Path) -> dict[str, Any]:
     return plan
 
 
+def _bounded_eight_state_plan(tmp_path: Path) -> dict[str, Any]:
+    plan = _bounded_two_scene_plan(tmp_path)
+    template = plan["states"][0]
+    plan["states_per_scene"] = 8
+    plan["states"] = [
+        {
+            **copy.deepcopy(template),
+            "state_id": f"train-state-{group_index}",
+            "group_index": group_index,
+            "state_index_in_scene": group_index,
+        }
+        for group_index in range(8)
+    ]
+    plan["expected_counts"] = pilot.expected_counts_from_states(plan["states"])
+    return plan
+
+
 def test_smoke_plan_is_exact_role_aware_and_authority_free(tmp_path: Path) -> None:
     plan = pilot.validate_plan(_smoke_plan(tmp_path))
     assert plan["expected_counts"] == {
@@ -1181,6 +1198,99 @@ def test_group_receipt_writes_13_immutable_rgb_frames(tmp_path: Path) -> None:
         )
     )
     assert stage_wall_times["png_encode_write_hash_wall_seconds"] > 0.0
+
+
+def test_bounded_scene_uses_two_fixed_four_state_batches_and_aggregate_metrics(
+    tmp_path: Path,
+) -> None:
+    collector = _load_collector()
+    plan = pilot.validate_plan(_bounded_eight_state_plan(tmp_path))
+    batches = collector._scene_state_batches(plan=plan, states=plan["states"])
+    assert collector.BOUNDED_STATES_PER_SCENE_BATCH == 4
+    assert [len(batch) for batch in batches] == [4, 4]
+    assert [state["state_id"] for batch in batches for state in batch] == [
+        state["state_id"] for state in plan["states"]
+    ]
+
+    def batch_metric(batch_index: int) -> dict[str, Any]:
+        return {
+            "scene_id": plan["states"][0]["scene_id"],
+            "family": plan["states"][0]["family"],
+            "role": "train",
+            "states": 4,
+            "envs": 36,
+            "physics_build_wall_seconds": 1.0 + batch_index,
+            "physics_simulation_wall_seconds": 2.0 + batch_index,
+            "common_prefix_step_wall_seconds": 0.5,
+            "branch_step_wall_seconds": 0.75,
+            "render_scene_build_wall_seconds": 0.25,
+            "native_render_wall_seconds": 1.0,
+            "camera_quality_resize_wall_seconds": 0.5,
+            "png_encode_write_hash_wall_seconds": 0.25,
+            "lockstep_execution_wall_seconds": 2.0 + batch_index,
+            "post_lockstep_receipt_wall_seconds": 0.5,
+            "scene_pipeline_wall_seconds": 5.0 + batch_index,
+            "scene_total_wall_seconds": 7.0 + batch_index,
+            "native_render_calls": 48,
+            "rgb_render_calls": 48,
+            "auxiliary_depth_render_calls": 48,
+            "stored_rgb_frames": 48,
+            "depth_rendered": True,
+            "depth_persisted": False,
+            "visual_mode": pilot.TEXTURED_V03_VISUAL_MODE,
+            "derived_mesh_bindings": [],
+        }
+
+    metrics = collector._aggregate_scene_batch_metrics(
+        [batch_metric(0), batch_metric(1)]
+    )
+    assert metrics["states"] == 8
+    assert metrics["envs"] == 72
+    assert metrics["native_render_calls"] == 96
+    assert metrics["rgb_render_calls"] == 96
+    assert metrics["auxiliary_depth_render_calls"] == 96
+    assert metrics["stored_rgb_frames"] == 96
+    assert metrics["scene_total_wall_seconds"] == 15.0
+
+
+def test_second_bounded_batch_keeps_global_state_and_lane_identities(
+    tmp_path: Path,
+) -> None:
+    collector = _load_collector()
+    plan = pilot.validate_plan(_bounded_eight_state_plan(tmp_path))
+    Path(plan["output_root"]).mkdir(parents=True)
+    second_batch = collector._scene_state_batches(
+        plan=plan, states=plan["states"]
+    )[1]
+    runner = _FakeRunner(36)
+    trial = pilot.execute_lockstep_trial(
+        runner=runner,
+        states=second_batch,
+        action_blocks=[_block(index) for index in range(9)],
+        capture_components=runner.capture,
+        capture_sim_time_ns=lambda: runner.time_ns,
+    )
+    trial["render_replay"] = _render_replay(trial, list(second_batch))
+    receipts, frames, quality, render_sentinel = collector._group_trial_receipts(
+        plan=plan,
+        states=second_batch,
+        trial=trial,
+        rgb_root=Path(plan["output_root"]) / "rgb",
+        stage_wall_times=collector._new_stage_wall_times(),
+    )
+    assert [receipt["state"]["state_id"] for receipt in receipts] == [
+        f"train-state-{index}" for index in range(4, 8)
+    ]
+    assert [receipt["state"]["group_index"] for receipt in receipts] == [4, 5, 6, 7]
+    assert [receipt["state"]["lane_start"] for receipt in receipts] == [36, 45, 54, 63]
+    assert [receipt["branches"][0]["lane_index"] for receipt in receipts] == [
+        36,
+        45,
+        54,
+        63,
+    ]
+    assert len(frames) == len(quality) == 48
+    assert render_sentinel == []
 
 
 def test_counterfactual_quality_retains_low_information_but_rejects_hard_failure() -> None:

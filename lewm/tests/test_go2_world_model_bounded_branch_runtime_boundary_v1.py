@@ -146,6 +146,203 @@ def test_bounded_render_receipt_identity_rejects_contract_or_metric_drift(
         )
 
 
+def test_authorized_collector_runs_two_fixed_batches_and_one_scene_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_root = tmp_path / "attempt"
+    output_root.mkdir()
+    urdf_path = tmp_path / "go2.urdf"
+    urdf_path.write_text("<robot/>", encoding="utf-8")
+    scene_manifest = _binding(str(tmp_path / "scene-manifest.json"), "a")
+    scene_genesis = _binding(str(tmp_path / "scene-genesis.json"), "b")
+    states = [
+        {
+            "state_id": f"train-state-{index}",
+            "role": "train",
+            "family": "open_obstacle_field",
+            "scene_id": "open-obstacle-train",
+            "group_index": index,
+            "state_index_in_scene": index,
+            "scene_generation": None,
+            "scene_manifest_binding": scene_manifest,
+            "scene_genesis_binding": scene_genesis,
+        }
+        for index in range(8)
+    ]
+    plan = {
+        **_render_plan(),
+        "attempt_id": "bounded-attempt",
+        "purpose": "bounded_wm_a_pilot",
+        "output_root": str(output_root),
+        "states": states,
+        "runtime_bindings": {
+            "platform_manifest": {"path": str(tmp_path / "platform.json")},
+            "primitive_registry": {"path": str(tmp_path / "registry.yaml")},
+            "go2_urdf": pilot.file_binding(urdf_path),
+        },
+        "execution_contract": {},
+        "action_catalog": [{"action_id": index} for index in range(9)],
+        "expected_counts": {
+            "scenes": 1,
+            "states": 8,
+            "roles": {"train": 8},
+            "actions": 9,
+            "candidate_branches": 72,
+            "sentinel_branches": 0,
+            "total_branches": 72,
+            "context_frames": 24,
+            "target_frames": 72,
+        },
+    }
+    authority = {
+        "attempt": {"id": "bounded-attempt"},
+        "review_binding": _binding("/tmp/review.json", "3"),
+        "source_bindings": [],
+        "caps": {
+            "wall_seconds": 100.0,
+            "stored_rgb_byte_ceiling": 1_000,
+            "native_render_calls": 96,
+            "rgb_render_calls": 96,
+            "auxiliary_depth_render_calls": 96,
+            "stored_rgb_frames": 96,
+        },
+    }
+    plan_binding = _binding("/tmp/plan.json", "2")
+    authority_binding = _binding("/tmp/authority.json", "1")
+    monkeypatch.setattr(
+        collector,
+        "load_and_validate_v1",
+        lambda **_kwargs: (authority, authority_binding, plan, plan_binding),
+    )
+    monkeypatch.setattr(
+        collector,
+        "_load_supervisor_owned_reservation_v1",
+        lambda **_kwargs: (output_root, _binding("reservation.json", "4")),
+    )
+    monkeypatch.setattr(
+        collector.kernel,
+        "_copy_exact_plan_receipt",
+        lambda *_args, **_kwargs: _binding("authorized_plan.json", "5"),
+    )
+    monkeypatch.setattr(collector.pilot, "require_plan_bindings", lambda _plan: None)
+    monkeypatch.setattr(collector.kernel, "_validate_python_runtime", lambda _plan: None)
+    monkeypatch.setattr(
+        collector.kernel, "_validate_execution_environment", lambda _plan: None
+    )
+    monkeypatch.setattr(
+        collector.kernel,
+        "_capture_runtime_versions",
+        lambda: {"python": "test"},
+    )
+
+    class Registry:
+        @classmethod
+        def from_yaml(cls, _path: str) -> object:
+            return object()
+
+    runtime = {
+        "load_platform_manifest": lambda _path: {},
+        "resolve_go2_urdf": lambda _platform, _root: urdf_path,
+        "PrimitiveRegistry": Registry,
+        "expand_primitive_to_block": lambda *_args: [],
+    }
+    monkeypatch.setattr(collector.kernel, "_runtime_imports", lambda: runtime)
+    monkeypatch.setattr(
+        collector.kernel,
+        "_load_action_blocks",
+        lambda **_kwargs: [],
+    )
+    observed_batches: list[list[str]] = []
+
+    def collect_batch(*, states, **_kwargs):
+        state_ids = [str(state["state_id"]) for state in states]
+        observed_batches.append(state_ids)
+        receipts = [
+            {
+                "state": {
+                    "state_id": state["state_id"],
+                    "role": state["role"],
+                    "scene_id": state["scene_id"],
+                },
+                "branches": [{"kind": "candidate"} for _ in range(9)],
+                "context": {"frame_identities": ["h0", "h1", "h2"]},
+            }
+            for state in states
+        ]
+        frames = [
+            {
+                "frame_identity": f"{state['state_id']}-{frame_index}",
+                "byte_count": 1,
+            }
+            for state in states
+            for frame_index in range(12)
+        ]
+        metrics = {
+            "scene_id": "open-obstacle-train",
+            "family": "open_obstacle_field",
+            "role": "train",
+            "states": 4,
+            "envs": 36,
+            "physics_build_wall_seconds": 0.0,
+            "physics_simulation_wall_seconds": 0.0,
+            "common_prefix_step_wall_seconds": 0.0,
+            "branch_step_wall_seconds": 0.0,
+            "render_scene_build_wall_seconds": 0.0,
+            "native_render_wall_seconds": 0.0,
+            "camera_quality_resize_wall_seconds": 0.0,
+            "png_encode_write_hash_wall_seconds": 0.0,
+            "lockstep_execution_wall_seconds": 0.0,
+            "post_lockstep_receipt_wall_seconds": 0.0,
+            "scene_pipeline_wall_seconds": 0.0,
+            "scene_total_wall_seconds": 0.0,
+            "native_render_calls": 48,
+            "rgb_render_calls": 48,
+            "auxiliary_depth_render_calls": 48,
+            "stored_rgb_frames": 48,
+            "depth_rendered": True,
+            "depth_persisted": False,
+            "visual_mode": pilot.TEXTURED_V03_VISUAL_MODE,
+            "derived_mesh_bindings": [_binding("/tmp/mesh.obj", "6")],
+        }
+        return receipts, frames, [], [], metrics
+
+    monkeypatch.setattr(collector.kernel, "_collect_scene", collect_batch)
+    result, result_path = collector.collect_v1(
+        plan_path=Path("/tmp/plan.json"),
+        expected_plan_byte_count=1,
+        expected_plan_sha256="2" * 64,
+        authority_path=Path("/tmp/authority.json"),
+        expected_authority_byte_count=1,
+        expected_authority_sha256="1" * 64,
+        supervisor_nonce="4" * 64,
+        supervisor_pid=123,
+    )
+    assert result["status"] == "PHYSICS_COMPLETE", result["failure"]
+    assert result_path == output_root / "physics_result.json"
+    assert observed_batches == [
+        [f"train-state-{index}" for index in range(4)],
+        [f"train-state-{index}" for index in range(4, 8)],
+    ]
+    assert len(result["render_receipt_bindings"]) == 1
+    assert len(result["scene_metrics"]) == 1
+    assert result["scene_metrics"][0]["states"] == 8
+    assert result["scene_metrics"][0]["envs"] == 72
+    assert result["scene_metrics"][0]["stored_rgb_frames"] == 96
+    render_receipt = json.loads(
+        (output_root / "scenes/train/open-obstacle-train/live_render_receipt.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert len(render_receipt["frame_receipts"]) == 96
+    assert render_receipt["frame_receipts"][0]["frame_identity"].startswith(
+        "train-state-0-"
+    )
+    assert render_receipt["frame_receipts"][48]["frame_identity"].startswith(
+        "train-state-4-"
+    )
+
+
 def test_supervisor_exclusively_reserves_then_direct_child_can_enter(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

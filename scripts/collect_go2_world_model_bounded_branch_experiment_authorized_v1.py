@@ -424,13 +424,41 @@ def collect_v1(
             states_by_scene[(str(state["role"]), str(state["scene_id"]))].append(state)
         for (role, scene_id), states in states_by_scene.items():
             scene_dir = output_root / "scenes" / role / scene_id
-            receipts, frames, quality, sentinels, metrics = kernel._collect_scene(  # noqa: SLF001
-                plan=plan,
-                states=states,
-                runtime=runtime,
-                platform=platform,
-                registry=registry,
-                action_blocks=action_blocks,
+            receipts: list[dict[str, Any]] = []
+            frames: list[dict[str, Any]] = []
+            quality: list[dict[str, Any]] = []
+            sentinels: list[dict[str, Any]] = []
+            batch_metrics: list[dict[str, Any]] = []
+            for state_batch in kernel._scene_state_batches(  # noqa: SLF001
+                plan=plan, states=states
+            ):
+                (
+                    batch_receipts,
+                    batch_frames,
+                    batch_quality,
+                    batch_sentinels,
+                    batch_metric,
+                ) = kernel._collect_scene(  # noqa: SLF001
+                    plan=plan,
+                    states=state_batch,
+                    runtime=runtime,
+                    platform=platform,
+                    registry=registry,
+                    action_blocks=action_blocks,
+                )
+                receipts.extend(batch_receipts)
+                frames.extend(batch_frames)
+                quality.extend(batch_quality)
+                sentinels.extend(batch_sentinels)
+                batch_metrics.append(batch_metric)
+            if [str(receipt["state"]["state_id"]) for receipt in receipts] != [
+                str(state["state_id"]) for state in states
+            ]:
+                raise pilot.PilotContractError(
+                    "bounded scene batches changed planned state identity or order"
+                )
+            metrics = kernel._aggregate_scene_batch_metrics(  # noqa: SLF001
+                batch_metrics
             )
             stored_rgb_bytes += sum(int(frame["byte_count"]) for frame in frames)
             if stored_rgb_bytes > int(

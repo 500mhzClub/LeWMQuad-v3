@@ -507,6 +507,58 @@ def _visual_parity_documents(
     return result, result_binding, review, review_binding
 
 
+def _task_relevance_visual_parity_documents(tmp_path: Path):
+    result, _result_binding, _review, _review_binding = (
+        _visual_parity_documents(tmp_path)
+    )
+    result["status"] = pilot.TEXTURED_V03_PARITY_FAIL_STATUS
+    result["measurements"]["reference_candidate_exact_match_count"] = 31
+    result["measurements"][
+        "maximum_reference_candidate_normalized_l1"
+    ] = 1.0 / 255.0
+    result["measurements"]["minimum_reference_candidate_rgb_ssim"] = 0.99
+    result["candidate_producer_lineage"] = {
+        "schema": "historical-failed-candidate-lineage"
+    }
+    result["candidate_collector_source_binding"] = _binding(
+        "/tmp/historical-candidate-collector.py", "d"
+    )
+    result_binding = _write_json(
+        tmp_path / "visual-parity-failed-result.json", result
+    )
+    terminal_binding = _write_json(
+        tmp_path / "visual-parity-failed-terminal.json",
+        {"status": "TERMINAL_FAILURE_NO_RETRY_OR_RESUME"},
+    )
+    adequacy_binding = _write_json(
+        tmp_path / "visual-parity-task-relevance-result.json",
+        {"status": pilot.TEXTURED_V03_TASK_RELEVANCE_PASS_STATUS},
+    )
+    review = {
+        "schema": pilot.TEXTURED_V03_TASK_RELEVANCE_REVIEW_SCHEMA,
+        "status": pilot.TEXTURED_V03_TASK_RELEVANCE_REVIEW_PASS_STATUS,
+        "authority_granted_by_this_document": False,
+        "scientific_claim_granted_by_this_document": False,
+        "adequacy_result_binding": adequacy_binding,
+        "parity_result_binding": result_binding,
+        "terminal_failure_binding": terminal_binding,
+        "reviewer": {
+            "identity": "independent-task-relevance-reviewer",
+            "independence_basis": "separate recomputation and source review",
+        },
+        "reviewed_at": "2026-08-02T18:00:00Z",
+        "checks": {
+            name: True
+            for name in pilot.TEXTURED_V03_TASK_RELEVANCE_REVIEW_CHECKS
+        },
+        "remaining_findings": [],
+    }
+    review_binding = _write_json(
+        tmp_path / "visual-parity-task-relevance-review.json", review
+    )
+    return result, result_binding, review, review_binding, terminal_binding
+
+
 def test_visual_parity_gate_requires_exact_textured_v03_camera_and_pixels(
     tmp_path, monkeypatch
 ):
@@ -555,6 +607,82 @@ def test_visual_parity_gate_requires_exact_textured_v03_camera_and_pixels(
     assert freeze["reference_texture_source_binding"] == pilot.file_binding(
         plan_builder.REPO_ROOT / "lewm_genesis/lewm_genesis/textures.py"
     )
+
+
+def test_visual_parity_gate_accepts_centrally_validated_task_relevance_route(
+    tmp_path, monkeypatch
+):
+    result, result_binding, review, review_binding, terminal_binding = (
+        _task_relevance_visual_parity_documents(tmp_path)
+    )
+    calls = []
+
+    def validate_prerequisites(**kwargs):
+        calls.append(kwargs)
+        return {
+            "result_binding": result_binding,
+            "terminal_binding": terminal_binding,
+            "review_binding": review_binding,
+        }
+
+    monkeypatch.setattr(
+        pilot,
+        "validate_textured_v03_parity_prerequisites",
+        validate_prerequisites,
+    )
+    monkeypatch.setattr(
+        parity_evaluator,
+        "evaluate_v1",
+        lambda **_kwargs: pytest.fail("exact-PASS evaluator route was used"),
+    )
+
+    freeze = plan_builder._validate_visual_domain_parity_gate_v1(
+        result,
+        result_binding=result_binding,
+        review=review,
+        review_binding=review_binding,
+    )
+
+    assert calls == [
+        {
+            "result_binding": result_binding,
+            "terminal_binding": terminal_binding,
+            "review_binding": review_binding,
+        }
+    ]
+    assert freeze["measurements"] == result["measurements"]
+    assert freeze["candidate_producer_lineage"] == result[
+        "candidate_producer_lineage"
+    ]
+    assert freeze["candidate_collector_source_binding"] == result[
+        "candidate_collector_source_binding"
+    ]
+
+
+def test_visual_parity_task_relevance_route_propagates_central_rejection(
+    tmp_path, monkeypatch
+):
+    result, result_binding, review, review_binding, _terminal_binding = (
+        _task_relevance_visual_parity_documents(tmp_path)
+    )
+
+    def reject_prerequisites(**_kwargs):
+        raise pilot.PilotContractError("task relevance rejected")
+
+    monkeypatch.setattr(
+        pilot,
+        "validate_textured_v03_parity_prerequisites",
+        reject_prerequisites,
+    )
+    with pytest.raises(
+        plan_builder.BoundedBranchPlanError, match="task relevance rejected"
+    ):
+        plan_builder._validate_visual_domain_parity_gate_v1(
+            result,
+            result_binding=result_binding,
+            review=review,
+            review_binding=review_binding,
+        )
 
 
 def test_v3_prerequisite_rejects_shallow_valid_pass_terminal_with_forged_chain(

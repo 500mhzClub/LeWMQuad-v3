@@ -37,6 +37,7 @@ from lewm.benchmarks import go2_world_model_counterfactual_pilot_v1 as pilot  # 
 
 
 POLICY_STEP_COUNT = pilot.BLOCK_SIZE * 5
+BOUNDED_STATES_PER_SCENE_BATCH = 4
 LIVE_RENDER_RECEIPT_SCHEMA = (
     "lewm_go2_world_model_counterfactual_live_render_receipt_v1"
 )
@@ -3048,6 +3049,78 @@ def _collect_scene(
     }
 
 
+def _scene_state_batches(
+    *,
+    plan: Mapping[str, Any],
+    states: Sequence[Mapping[str, Any]],
+) -> tuple[tuple[Mapping[str, Any], ...], ...]:
+    ordered_states = tuple(states)
+    if plan["purpose"] != "bounded_wm_a_pilot":
+        return (ordered_states,)
+    expected_states = 2 * BOUNDED_STATES_PER_SCENE_BATCH
+    if len(ordered_states) != expected_states:
+        raise pilot.PilotContractError(
+            "bounded collection requires exactly eight states per scene"
+        )
+    return (
+        ordered_states[:BOUNDED_STATES_PER_SCENE_BATCH],
+        ordered_states[BOUNDED_STATES_PER_SCENE_BATCH:],
+    )
+
+
+def _aggregate_scene_batch_metrics(
+    batch_metrics: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    if not batch_metrics:
+        raise pilot.PilotContractError("scene collection produced no batch metrics")
+    static_keys = (
+        "scene_id",
+        "family",
+        "role",
+        "depth_rendered",
+        "depth_persisted",
+        "visual_mode",
+        "derived_mesh_bindings",
+    )
+    additive_keys = (
+        "states",
+        "envs",
+        "physics_build_wall_seconds",
+        "physics_simulation_wall_seconds",
+        "common_prefix_step_wall_seconds",
+        "branch_step_wall_seconds",
+        "render_scene_build_wall_seconds",
+        "native_render_wall_seconds",
+        "camera_quality_resize_wall_seconds",
+        "png_encode_write_hash_wall_seconds",
+        "lockstep_execution_wall_seconds",
+        "post_lockstep_receipt_wall_seconds",
+        "scene_pipeline_wall_seconds",
+        "scene_total_wall_seconds",
+        "native_render_calls",
+        "rgb_render_calls",
+        "auxiliary_depth_render_calls",
+        "stored_rgb_frames",
+    )
+    first = batch_metrics[0]
+    expected_keys = set(static_keys) | set(additive_keys)
+    if set(first) != expected_keys:
+        raise pilot.PilotContractError("scene batch metric field set changed")
+    for metrics in batch_metrics[1:]:
+        if set(metrics) != expected_keys or any(
+            pilot.canonical_json_bytes(metrics[key])
+            != pilot.canonical_json_bytes(first[key])
+            for key in static_keys
+        ):
+            raise pilot.PilotContractError(
+                "scene batches disagree on metric identity or render contract"
+            )
+    aggregated = dict(first)
+    for key in additive_keys:
+        aggregated[key] = sum(metrics[key] for metrics in batch_metrics)
+    return aggregated
+
+
 def collect(
     *,
     plan_path: Path,
@@ -3190,20 +3263,38 @@ def collect(
             )
         for (role, scene_id), states in states_by_scene.items():
             scene_dir = output_root / "scenes" / role / scene_id
-            (
-                receipts,
-                frame_receipts,
-                quality_audits,
-                render_sentinel_audits,
-                metrics,
-            ) = _collect_scene(
-                plan=plan,
-                states=states,
-                runtime=runtime,
-                platform=platform,
-                registry=registry,
-                action_blocks=action_blocks,
-            )
+            receipts: list[dict[str, Any]] = []
+            frame_receipts: list[dict[str, Any]] = []
+            quality_audits: list[dict[str, Any]] = []
+            render_sentinel_audits: list[dict[str, Any]] = []
+            batch_metrics: list[dict[str, Any]] = []
+            for state_batch in _scene_state_batches(plan=plan, states=states):
+                (
+                    batch_receipts,
+                    batch_frame_receipts,
+                    batch_quality_audits,
+                    batch_render_sentinel_audits,
+                    batch_metric,
+                ) = _collect_scene(
+                    plan=plan,
+                    states=state_batch,
+                    runtime=runtime,
+                    platform=platform,
+                    registry=registry,
+                    action_blocks=action_blocks,
+                )
+                receipts.extend(batch_receipts)
+                frame_receipts.extend(batch_frame_receipts)
+                quality_audits.extend(batch_quality_audits)
+                render_sentinel_audits.extend(batch_render_sentinel_audits)
+                batch_metrics.append(batch_metric)
+            if [str(receipt["state"]["state_id"]) for receipt in receipts] != [
+                str(state["state_id"]) for state in states
+            ]:
+                raise pilot.PilotContractError(
+                    "scene batches changed planned state identity or order"
+                )
+            metrics = _aggregate_scene_batch_metrics(batch_metrics)
             render_receipt = {
                 "schema": (
                     pilot.TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA

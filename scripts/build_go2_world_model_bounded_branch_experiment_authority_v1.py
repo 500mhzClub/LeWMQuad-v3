@@ -38,7 +38,12 @@ MAX_WALL_SECONDS = 28_800.0
 MAX_STORED_RGB_BYTES = 2 * 1024**3
 WALL_PROJECTION_MULTIPLIER = 20.0
 RGB_PROJECTION_MULTIPLIER = 20.0
-VRAM_DELTA_PROJECTION_MULTIPLIER = 4.5
+CALIBRATION_CONCURRENT_LANES = 2 * pilot.CALIBRATION_LANES_PER_STATE
+BOUNDED_CONCURRENT_LANES = (
+    runtime_kernel.BOUNDED_STATES_PER_SCENE_BATCH * pilot.ACTION_COUNT
+)
+VRAM_SAFETY_MARGIN_NUMERATOR = 5
+VRAM_SAFETY_MARGIN_DENOMINATOR = 4
 MINIMUM_WALL_SECONDS = 3_600.0
 MINIMUM_STORED_RGB_BYTES = 512 * 1024**2
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
@@ -92,6 +97,9 @@ NEW_SOURCE_PATHS = {
     "bounded_visual_domain_reference_renderer": "scripts/render_replay_v03.py",
     "bounded_visual_domain_parity_evaluator": (
         plan_builder.VISUAL_DOMAIN_PARITY_EVALUATOR_RELATIVE
+    ),
+    "bounded_visual_domain_task_relevance_evaluator": (
+        "scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py"
     ),
     "bounded_visual_domain_parity_supervisor": (
         "scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py"
@@ -409,9 +417,18 @@ def projected_caps_v1(gate: Mapping[str, Any]) -> dict[str, float | int]:
         or peak > total
     ):
         raise BoundedBranchAuthorityError("calibration VRAM measurements are inconsistent")
-    projected_vram = math.ceil(
-        baseline + delta * VRAM_DELTA_PROJECTION_MULTIPLIER
+    projected_delta_numerator = (
+        delta * BOUNDED_CONCURRENT_LANES * VRAM_SAFETY_MARGIN_NUMERATOR
     )
+    projected_delta_denominator = (
+        CALIBRATION_CONCURRENT_LANES * VRAM_SAFETY_MARGIN_DENOMINATOR
+    )
+    projected_delta = (
+        projected_delta_numerator
+        + projected_delta_denominator
+        - 1
+    ) // projected_delta_denominator
+    projected_vram = baseline + projected_delta
     vram_hard_cap = math.floor(total * 0.95)
     if wall > MAX_WALL_SECONDS:
         raise BoundedBranchAuthorityError(
