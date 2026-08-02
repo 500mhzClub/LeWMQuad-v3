@@ -228,6 +228,47 @@ def test_textured_v03_capture_rejects_malformed_render_arrays(
         )
 
 
+def test_reviewed_task_relevance_route_does_not_repeat_exact_parity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import evaluate_go2_world_model_visual_domain_parity_v1 as parity
+
+    result_binding = contract.write_json_exclusive(
+        tmp_path / "parity-result.json",
+        {
+            "schema": contract.TEXTURED_V03_PARITY_RESULT_SCHEMA,
+            "status": contract.TEXTURED_V03_PARITY_FAIL_STATUS,
+            "authority_granted_by_this_document": False,
+            "scientific_claim_granted_by_this_document": False,
+            "development_only": True,
+            "protected_material_opened": False,
+        },
+    )
+    prerequisites = {
+        "result_binding": result_binding,
+        "terminal_binding": {"synthetic": "terminal"},
+        "review_binding": {"synthetic": "review"},
+    }
+    monkeypatch.setattr(
+        contract,
+        "validate_textured_v03_parity_prerequisites",
+        lambda **_kwargs: prerequisites,
+    )
+    monkeypatch.setattr(
+        parity,
+        "evaluate_v1",
+        lambda **_kwargs: pytest.fail("legacy exact evaluator was repeated"),
+    )
+
+    assert collector._validate_visual_domain_parity_result({  # noqa: SLF001
+        "purpose": "sizing_calibration_textured_v03_v3",
+        "visual_domain_parity_result_binding": result_binding,
+        "visual_domain_parity_terminal_binding": prerequisites["terminal_binding"],
+        "visual_domain_parity_review_binding": prerequisites["review_binding"],
+    }) == prerequisites
+
+
 def test_textured_v03_mesh_cache_binds_expected_obj_bytes(tmp_path: Path) -> None:
     mesh_path = tmp_path / "mesh.obj"
     expected = "v 0 0 0\n"

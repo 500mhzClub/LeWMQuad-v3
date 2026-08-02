@@ -410,6 +410,8 @@ def _validate_visual_domain_parity_result(
         raise pilot.PilotContractError(
             "visual-domain parity did not pass an accepted implementation gate"
         )
+    if result["status"] == pilot.TEXTURED_V03_PARITY_FAIL_STATUS:
+        return prerequisites
     source_binding = pilot._validate_binding_shape(  # noqa: SLF001
         result.get("source_rgb_reference_binding"),
         label="visual-domain parity source panel",
