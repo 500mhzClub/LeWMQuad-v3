@@ -282,7 +282,7 @@
   ],
   "allows_overwrite": false,
   "allows_refill": false,
-  "attempt_id": "lewm-go2-wm-counterfactual-calibration-v3",
+  "attempt_id": "lewm-go2-wm-counterfactual-calibration-v3-textured-v03",
   "authorizes_retry_or_resume": false,
   "branch_mechanism": "parallel_lockstep_envs_no_restore",
   "citable_as_scientific_evidence": false,
@@ -329,7 +329,7 @@
     "total_branches": 160
   },
   "history_blocks": 2,
-  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v3",
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v3-textured-v03",
   "purpose": "sizing_calibration_textured_v03_v3",
   "render_contract": {
     "camera_mount_policy": "nominal_no_scene_jitter_no_safety_retraction",
