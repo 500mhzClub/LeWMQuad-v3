@@ -1890,7 +1890,7 @@ def _derive_textured_v03_calibration_receipt(
         render_sentinel_audit = receipt_document.get("render_sentinel_audit")
         if (
             not isinstance(sentinel_audit, Mapping)
-            or sentinel_audit.get("passed") is not True
+            or sentinel_audit.get("physics_equal") is not True
             or not isinstance(render_sentinel_audit, Mapping)
             or render_sentinel_audit.get("passed") is not True
             or render_sentinel_audit.get("stored_rgb_equal") is not True

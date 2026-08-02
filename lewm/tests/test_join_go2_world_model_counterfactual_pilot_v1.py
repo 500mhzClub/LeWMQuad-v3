@@ -466,6 +466,14 @@ def test_point7_exact_parity_triple_survives_every_consuming_stage(
     )
 
     smoke = _smoke_plan(tmp_path / "runtime")
+    test_v3_root = (
+        ROOT / ".generated/dev" / f"pytest-{tmp_path.name}-calibration-v3"
+    ).resolve()
+    monkeypatch.setattr(
+        calibration_authority_builder.collector,
+        "CALIBRATION_V3_ROOT",
+        str(test_v3_root),
+    )
     scenes = []
     for family_index, family in enumerate(producer_contract.FAMILIES):
         scene_root = tmp_path / "scenes" / family
@@ -501,9 +509,7 @@ def test_point7_exact_parity_triple_survives_every_consuming_stage(
         })
     v3_plan = calibration_plan_builder.build_calibration_plan_v1(
         attempt_id=calibration_authority_builder.collector.CALIBRATION_V3_ATTEMPT_ID,
-        output_root=Path(
-            calibration_authority_builder.collector.CALIBRATION_V3_ROOT
-        ),
+        output_root=test_v3_root,
         scene_panel={
             "schema": calibration_plan_builder.SCENE_PANEL_SCHEMA,
             "scenes": scenes,

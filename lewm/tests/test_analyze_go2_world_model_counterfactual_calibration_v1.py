@@ -206,7 +206,7 @@ def _textured_v03_collection(
                     )
                 },
             },
-            "sentinel_audit": {"passed": True},
+            "sentinel_audit": {"physics_equal": True},
             "render_sentinel_audit": {
                 "passed": True,
                 "stored_rgb_equal": True,
@@ -397,6 +397,24 @@ def test_textured_v03_stops_when_no_state_is_identifiable() -> None:
     analyzer.validate_calibration_receipt_v1(
         receipt, verify_external_bindings=False
     )
+
+
+def test_textured_v03_uses_producer_sentinel_physics_equal_field() -> None:
+    analyzer = _load_analyzer()
+    collection = _textured_v03_collection(identifiable=True)
+    collection["states"][0]["document"]["sentinel_audit"]["physics_equal"] = False
+
+    with pytest.raises(
+        analyzer.CalibrationAnalysisError,
+        match="sentinel technical integrity changed",
+    ):
+        analyzer.derive_calibration_receipt_v1(
+            collection,
+            collection_binding=_binding("textured-collection"),
+            analyzer_binding=_binding("textured-analyzer"),
+            checker_binding=_binding("textured-checker"),
+            joiner_binding=_binding("textured-joiner"),
+        )
 
 
 def test_textured_v03_freezes_at_one_nontrivial_state_per_family() -> None:
