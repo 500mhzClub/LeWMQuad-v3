@@ -284,12 +284,14 @@ def validate_calibration_receipt_v1(
     if not isinstance(resources, Mapping) or set(resources) != {
         "schema",
         "stored_rgb_png",
+        "low_information_strata",
         "stage_wall_seconds",
         "outcome_counts",
         "gpu_peak_memory_measurement_scope",
     }:
         raise CalibrationAnalysisError("calibration resource measurements changed")
     stored_rgb = resources["stored_rgb_png"]
+    low_information = resources["low_information_strata"]
     stages = resources["stage_wall_seconds"]
     outcomes = resources["outcome_counts"]
     if (
@@ -318,6 +320,52 @@ def validate_calibration_receipt_v1(
         or stored_rgb["total_bytes"]
         != stored_rgb["context_bytes"] + stored_rgb["target_bytes"]
         or stored_rgb["raw_uncompressed_rgb_ceiling_bytes"] != 208 * 224 * 224 * 3
+        or not isinstance(low_information, Mapping)
+        or set(low_information) != {
+            "total_frames",
+            "context_frames",
+            "target_frames",
+            "reason_counts",
+            "context_reason_counts",
+            "target_reason_counts",
+            "frame_receipt_tags_present",
+            "hard_invalid_frames",
+        }
+        or any(
+            type(low_information[name]) is not int or low_information[name] < 0
+            for name in ("total_frames", "context_frames", "target_frames")
+        )
+        or low_information["total_frames"]
+        != low_information["context_frames"] + low_information["target_frames"]
+        or low_information["context_frames"] > 48
+        or low_information["target_frames"] > 160
+        or low_information["frame_receipt_tags_present"] is not True
+        or low_information["hard_invalid_frames"] != 0
+        or any(
+            not isinstance(low_information[name], Mapping)
+            or set(low_information[name])
+            != {"low_rgb_texture", "near_wall_depth", "near_forward_geometry"}
+            or any(type(count) is not int or count < 0 for count in low_information[name].values())
+            for name in (
+                "reason_counts",
+                "context_reason_counts",
+                "target_reason_counts",
+            )
+        )
+        or any(
+            low_information["reason_counts"][reason]
+            != low_information["context_reason_counts"][reason]
+            + low_information["target_reason_counts"][reason]
+            or low_information["context_reason_counts"][reason]
+            > low_information["context_frames"]
+            or low_information["target_reason_counts"][reason]
+            > low_information["target_frames"]
+            for reason in (
+                "low_rgb_texture",
+                "near_wall_depth",
+                "near_forward_geometry",
+            )
+        )
         or not isinstance(stages, Mapping)
         or set(stages) != {
             "collection_external_wall_seconds",
@@ -589,23 +637,47 @@ def derive_calibration_receipt_v1(
     target_bytes = 0
     context_frames = 0
     target_frames = 0
+    low_info_context_frames = 0
+    low_info_target_frames = 0
+    low_info_reason_counts = {
+        "low_rgb_texture": 0,
+        "near_wall_depth": 0,
+        "near_forward_geometry": 0,
+    }
+    low_info_context_reason_counts = dict.fromkeys(low_info_reason_counts, 0)
+    low_info_target_reason_counts = dict.fromkeys(low_info_reason_counts, 0)
     for frame in frame_receipts.values():
         if not isinstance(frame, Mapping):
             raise CalibrationAnalysisError("calibration frame receipt is malformed")
         identity = frame.get("frame_identity")
         byte_count = frame.get("byte_count")
+        low_info_reasons = frame.get("low_info_reasons")
         if (
             not isinstance(identity, str)
             or type(byte_count) is not int
             or byte_count <= 0
+            or type(frame.get("low_information")) is not bool
+            or not isinstance(low_info_reasons, list)
+            or any(reason not in low_info_reason_counts for reason in low_info_reasons)
+            or len(low_info_reasons) != len(set(low_info_reasons))
+            or frame["low_information"] != bool(low_info_reasons)
         ):
             raise CalibrationAnalysisError("calibration frame byte receipt changed")
         if ":context:" in identity:
             context_frames += 1
             context_bytes += byte_count
+            if low_info_reasons:
+                low_info_context_frames += 1
+            selected_reason_counts = low_info_context_reason_counts
         else:
             target_frames += 1
             target_bytes += byte_count
+            if low_info_reasons:
+                low_info_target_frames += 1
+            selected_reason_counts = low_info_target_reason_counts
+        for reason in low_info_reasons:
+            low_info_reason_counts[reason] += 1
+            selected_reason_counts[reason] += 1
     if context_frames != 48 or target_frames != 160:
         raise CalibrationAnalysisError("calibration context/target frame split changed")
 
@@ -650,6 +722,16 @@ def derive_calibration_receipt_v1(
             "total_frames": context_frames + target_frames,
             "total_bytes": context_bytes + target_bytes,
             "raw_uncompressed_rgb_ceiling_bytes": 208 * 224 * 224 * 3,
+        },
+        "low_information_strata": {
+            "total_frames": low_info_context_frames + low_info_target_frames,
+            "context_frames": low_info_context_frames,
+            "target_frames": low_info_target_frames,
+            "reason_counts": low_info_reason_counts,
+            "context_reason_counts": low_info_context_reason_counts,
+            "target_reason_counts": low_info_target_reason_counts,
+            "frame_receipt_tags_present": True,
+            "hard_invalid_frames": 0,
         },
         "stage_wall_seconds": {
             "collection_external_wall_seconds": collection_wall_seconds,

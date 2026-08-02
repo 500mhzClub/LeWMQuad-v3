@@ -441,7 +441,13 @@ def _render_batch(runner: _FakeRunner) -> dict[str, Any]:
     return {
         "stored_rgb": rgb,
         "quality": [
-            {"valid": True, "invalid_reasons": []} for _ in range(runner.n_envs)
+            {
+                "valid": True,
+                "invalid_reasons": [],
+                "rgb_stats": {},
+                "depth_stats": {},
+            }
+            for _ in range(runner.n_envs)
         ],
         "native_resolution": [640, 480],
         "stored_resolution": [224, 224],
@@ -464,7 +470,12 @@ def _render_replay(
         )
         return {
             "stored_rgb": rgb,
-            "quality": {"valid": True, "invalid_reasons": []},
+            "quality": {
+                "valid": True,
+                "invalid_reasons": [],
+                "rgb_stats": {},
+                "depth_stats": {},
+            },
             "native_resolution": [640, 480],
             "stored_resolution": [224, 224],
             "depth_rendered": True,
@@ -1124,6 +1135,19 @@ def test_group_receipt_writes_13_immutable_rgb_frames(tmp_path: Path) -> None:
         capture_sim_time_ns=lambda: runner.time_ns,
     )
     trial["render_replay"] = _render_replay(trial, plan["states"])
+    first_context = trial["render_replay"]["context_frames"][
+        plan["states"][0]["state_id"]
+    ][0]
+    first_context["quality"] = {
+        "valid": False,
+        "invalid_reasons": [
+            "near_forward_geometry",
+            "low_rgb_texture",
+            "near_wall_depth",
+        ],
+        "rgb_stats": {"low_texture": True},
+        "depth_stats": {"near_wall": True},
+    }
     stage_wall_times = collector._new_stage_wall_times()
     receipts, frames, quality, render_sentinel = collector._group_trial_receipts(
         plan=plan,
@@ -1135,6 +1159,13 @@ def test_group_receipt_writes_13_immutable_rgb_frames(tmp_path: Path) -> None:
     assert len(receipts) == 1
     assert len(frames) == 13
     assert len(quality) == 13
+    assert frames[0]["low_information"] is True
+    assert frames[0]["low_info_reasons"] == [
+        "near_forward_geometry",
+        "low_rgb_texture",
+        "near_wall_depth",
+    ]
+    assert quality[0]["quality"]["retained"] is True
     assert render_sentinel[0]["passed"] is True
     assert receipts[0]["state"]["lane_start"] == 0
     assert receipts[0]["state"]["lane_count"] == 10
@@ -1150,6 +1181,50 @@ def test_group_receipt_writes_13_immutable_rgb_frames(tmp_path: Path) -> None:
         )
     )
     assert stage_wall_times["png_encode_write_hash_wall_seconds"] > 0.0
+
+
+def test_counterfactual_quality_retains_low_information_but_rejects_hard_failure() -> None:
+    collector = _load_collector()
+    low_reasons = [
+        "near_forward_geometry",
+        "low_rgb_texture",
+        "near_wall_depth",
+    ]
+    low = collector._counterfactual_quality_disposition({
+        "valid": False,
+        "invalid_reasons": low_reasons,
+        "rgb_stats": {"low_texture": True},
+        "depth_stats": {"near_wall": True},
+    })
+    assert low["retained"] is True
+    assert low["low_information"] is True
+    assert low["low_info_reasons"] == low_reasons
+    assert low["hard_failure_reasons"] == []
+    hard = collector._counterfactual_quality_disposition({
+        "valid": False,
+        "invalid_reasons": ["camera_safety_unresolved"],
+        "rgb_stats": {},
+        "depth_stats": {},
+    })
+    assert hard["retained"] is False
+    assert hard["low_information"] is False
+    assert hard["hard_failure_reasons"] == ["camera_safety_unresolved"]
+    mixed = collector._counterfactual_quality_disposition({
+        "valid": False,
+        "invalid_reasons": ["near_wall_depth", "camera_safety_unresolved"],
+        "rgb_stats": {},
+        "depth_stats": {},
+    })
+    assert mixed["retained"] is False
+    assert mixed["low_info_reasons"] == ["near_wall_depth"]
+    assert mixed["hard_failure_reasons"] == ["camera_safety_unresolved"]
+    with pytest.raises(pilot.PilotContractError, match="malformed"):
+        collector._counterfactual_quality_disposition({
+            "valid": 1,
+            "invalid_reasons": [],
+            "rgb_stats": {},
+            "depth_stats": {},
+        })
 
 
 def test_world_target_to_body_xy_uses_inverse_nonzero_yaw() -> None:

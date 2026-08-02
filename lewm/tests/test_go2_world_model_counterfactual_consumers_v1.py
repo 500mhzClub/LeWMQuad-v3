@@ -156,6 +156,8 @@ def _build_pilot(
             "mode": "RGB",
             "format": "PNG",
             "camera_valid": True,
+            "low_information": False,
+            "low_info_reasons": [],
         }
         artifacts.append(dict(receipt))
         return artifact_id, receipt
@@ -520,6 +522,28 @@ def _build_pilot(
                 "total_frames": 208,
                 "total_bytes": 36_800,
                 "raw_uncompressed_rgb_ceiling_bytes": 208 * 224 * 224 * 3,
+            },
+            "low_information_strata": {
+                "total_frames": 0,
+                "context_frames": 0,
+                "target_frames": 0,
+                "reason_counts": {
+                    "low_rgb_texture": 0,
+                    "near_wall_depth": 0,
+                    "near_forward_geometry": 0,
+                },
+                "context_reason_counts": {
+                    "low_rgb_texture": 0,
+                    "near_wall_depth": 0,
+                    "near_forward_geometry": 0,
+                },
+                "target_reason_counts": {
+                    "low_rgb_texture": 0,
+                    "near_wall_depth": 0,
+                    "near_forward_geometry": 0,
+                },
+                "frame_receipt_tags_present": True,
+                "hard_invalid_frames": 0,
             },
             "stage_wall_seconds": {
                 "collection_external_wall_seconds": 8.0,

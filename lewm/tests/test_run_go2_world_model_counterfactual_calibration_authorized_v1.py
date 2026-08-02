@@ -298,6 +298,80 @@ def test_owned_reservation_is_exact_and_nonce_bound(tmp_path: Path) -> None:
     )
 
 
+def test_failed_physics_result_is_bound_for_terminal_supervision(
+    tmp_path: Path,
+) -> None:
+    supervisor = _load_module()
+    attempt_root = tmp_path / "attempt"
+    attempt_root.mkdir()
+    plan_binding = {
+        "path": "/fixture/plan.json",
+        "file_sha256": "a" * 64,
+        "byte_count": 1,
+    }
+    authority_binding = {
+        "path": "/fixture/authority.json",
+        "file_sha256": "b" * 64,
+        "byte_count": 1,
+    }
+    review_binding = {
+        "path": "/fixture/review.json",
+        "file_sha256": "c" * 64,
+        "byte_count": 1,
+    }
+    source_bindings = [{"name": "fixture", "binding": plan_binding}]
+    caps = {"wall_seconds": 10.0}
+    plan = {
+        "attempt_id": "calibration-v2-fixture",
+        "purpose": supervisor.PURPOSE,
+    }
+    authority = {
+        "review_binding": review_binding,
+        "source_bindings": source_bindings,
+        "caps": caps,
+    }
+    result = {
+        "schema": supervisor.pilot.PHYSICS_RESULT_SCHEMA,
+        "status": "FAILED",
+        "attempt_id": plan["attempt_id"],
+        "purpose": supervisor.PURPOSE,
+        "plan_binding": plan_binding,
+        "authority_binding": authority_binding,
+        "review_binding": review_binding,
+        "source_bindings": source_bindings,
+        "caps": caps,
+        "citable_as_scientific_evidence": False,
+        "authorizes_retry_or_resume": False,
+        "failure": {
+            "type": "PilotContractError",
+            "message": "fixture terminal failure",
+        },
+    }
+    result_path = attempt_root / "physics_result.json"
+    result_path.write_text(json.dumps(result), encoding="utf-8")
+    loaded, binding = supervisor._load_physics_result_if_present(
+        attempt_root,
+        plan=plan,
+        plan_binding=plan_binding,
+        authority=authority,
+        authority_binding=authority_binding,
+    )
+    assert loaded is not None and loaded["status"] == "FAILED"
+    assert binding == supervisor.pilot.file_binding(result_path)
+    result["citable_as_scientific_evidence"] = True
+    result_path.write_text(json.dumps(result), encoding="utf-8")
+    with pytest.raises(
+        supervisor.CalibrationSupervisionError, match="terminal receipt"
+    ):
+        supervisor._load_physics_result_if_present(
+            attempt_root,
+            plan=plan,
+            plan_binding=plan_binding,
+            authority=authority,
+            authority_binding=authority_binding,
+        )
+
+
 def test_help_does_not_start_a_calibration() -> None:
     completed = subprocess.run(
         [sys.executable, str(SCRIPT), "--help"],

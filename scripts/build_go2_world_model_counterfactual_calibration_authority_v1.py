@@ -31,9 +31,9 @@ from scripts import collect_go2_world_model_counterfactual_pilot_v1 as collector
 
 PURPOSE = "sizing_calibration_only"
 AUTHORITY_SCHEMA = (
-    "lewm_go2_world_model_counterfactual_calibration_execution_authority_v1"
+    "lewm_go2_world_model_counterfactual_calibration_execution_authority_v2"
 )
-AUTHORITY_STATUS = "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION"
+AUTHORITY_STATUS = "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION_V2_SUCCESSOR"
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 REVIEW_ONLY_SOURCE_PATHS = {
@@ -57,6 +57,9 @@ REVIEW_ONLY_SOURCE_PATHS = {
     ),
     "counterfactual_contract_test": (
         "lewm/tests/test_go2_world_model_counterfactual_pilot_v1.py"
+    ),
+    "predecessor_terminal_failure_result": str(
+        collector.CALIBRATION_PREDECESSOR_FAILURE_RELATIVE
     ),
     "pilot_consumer_test": (
         "lewm/tests/test_go2_world_model_counterfactual_consumers_v1.py"
@@ -152,6 +155,7 @@ def build_authority_v1(
     plan_binding: Mapping[str, Any],
     review: Mapping[str, Any],
     review_binding: Mapping[str, Any],
+    predecessor_failure_binding: Mapping[str, Any],
     authorizer_identity: str,
     authorizer_basis: str,
     issued_at: str,
@@ -222,6 +226,7 @@ def build_authority_v1(
         "source_commit": source_commit,
         "review_binding": dict(review_binding),
         "plan_binding": dict(plan_binding),
+        "predecessor_failure_binding": dict(predecessor_failure_binding),
         "source_bindings": list(source_bindings),
         "attempt": {
             "id": normalized_plan["attempt_id"],
@@ -290,6 +295,11 @@ def build_parser() -> argparse.ArgumentParser:
     authority.add_argument("--review", required=True, type=Path)
     authority.add_argument("--expected-review-sha256", required=True)
     authority.add_argument("--expected-review-byte-count", required=True, type=int)
+    authority.add_argument("--predecessor-failure", required=True, type=Path)
+    authority.add_argument("--expected-predecessor-failure-sha256", required=True)
+    authority.add_argument(
+        "--expected-predecessor-failure-byte-count", required=True, type=int
+    )
     authority.add_argument("--authorizer-identity", required=True)
     authority.add_argument("--authorizer-basis", required=True)
     authority.add_argument("--issued-at", required=True)
@@ -319,11 +329,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.expected_review_byte_count,
             label="counterfactual calibration source review",
         )
+        _predecessor_failure, predecessor_failure_binding = _read_bound(
+            args.predecessor_failure,
+            args.expected_predecessor_failure_sha256,
+            args.expected_predecessor_failure_byte_count,
+            label="counterfactual calibration predecessor terminal-failure result",
+        )
         document = build_authority_v1(
             plan=plan,
             plan_binding=plan_binding,
             review=review,
             review_binding=review_binding,
+            predecessor_failure_binding=predecessor_failure_binding,
             authorizer_identity=args.authorizer_identity,
             authorizer_basis=args.authorizer_basis,
             issued_at=args.issued_at,

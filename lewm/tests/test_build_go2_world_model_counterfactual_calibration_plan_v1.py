@@ -15,6 +15,10 @@ ROOT = Path(__file__).resolve().parents[2]
 BUILDER_PATH = (
     ROOT / "scripts/build_go2_world_model_counterfactual_calibration_plan_v1.py"
 )
+V2_PLAN_PATH = (
+    ROOT
+    / "docs/lewm_go2_world_model_counterfactual_calibration_exact_plan_v2_2026-08-02.json"
+)
 
 
 def _load_builder():
@@ -89,6 +93,23 @@ def test_builder_emits_exact_160_branch_rotating_repeat_plan(tmp_path: Path) -> 
     repeated = [state["sentinel_duplicate_action_id"] for state in plan["states"]]
     assert repeated == [index % 9 for index in range(16)]
     assert set(repeated) == set(range(9))
+
+
+def test_written_v2_plan_has_fresh_identity_and_frozen_branch_design() -> None:
+    plan = pilot.validate_plan(json.loads(V2_PLAN_PATH.read_bytes()))
+    assert plan["attempt_id"] == "lewm-go2-wm-counterfactual-calibration-v2"
+    assert plan["output_root"] == str(
+        (
+            ROOT
+            / ".generated/dev/lewm-go2-wm-counterfactual-calibration-v2"
+        ).resolve()
+    )
+    assert plan["attempt_id"] != "lewm-go2-wm-counterfactual-calibration-v1"
+    assert plan["expected_counts"]["candidate_branches"] == 144
+    assert plan["expected_counts"]["sentinel_branches"] == 16
+    assert [
+        state["sentinel_duplicate_action_id"] for state in plan["states"]
+    ] == [index % 9 for index in range(16)]
 
 
 def test_builder_rejects_target_not_bound_to_manifest(tmp_path: Path) -> None:

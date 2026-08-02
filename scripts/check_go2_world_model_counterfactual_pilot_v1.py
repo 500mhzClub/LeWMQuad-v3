@@ -39,6 +39,14 @@ STATE_RECEIPT_SCHEMA = "lewm_go2_world_model_counterfactual_pilot_state_receipt_
 RGB_MANIFEST_SCHEMA = "lewm_go2_world_model_counterfactual_rgb_manifest_v1"
 GROUP_SCHEMA = "lewm_go2_world_model_counterfactual_group_v1"
 REPORT_SCHEMA = "lewm_go2_world_model_counterfactual_pilot_receipt_check_v1"
+COUNTERFACTUAL_QUALITY_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_frame_quality_v2"
+)
+LOW_INFO_REASON_NAMES = frozenset({
+    "low_rgb_texture",
+    "near_wall_depth",
+    "near_forward_geometry",
+})
 
 PRIMITIVE_NAMES = (
     "arc_left",
@@ -1426,6 +1434,8 @@ def _validate_frame_receipt(
             "mode",
             "format",
             "camera_valid",
+            "low_information",
+            "low_info_reasons",
         ),
         name="frame receipt",
     )
@@ -1445,6 +1455,18 @@ def _validate_frame_receipt(
         or receipt["camera_valid"] is not True
     ):
         _fail("frame receipt shape/format/camera validity changed")
+    low_info_reasons = receipt["low_info_reasons"]
+    if (
+        type(receipt["low_information"]) is not bool
+        or not isinstance(low_info_reasons, list)
+        or any(
+            not isinstance(reason, str) or reason not in LOW_INFO_REASON_NAMES
+            for reason in low_info_reasons
+        )
+        or len(low_info_reasons) != len(set(low_info_reasons))
+        or receipt["low_information"] != bool(low_info_reasons)
+    ):
+        _fail("frame receipt low-information tags changed")
     return receipt
 
 
@@ -1893,9 +1915,62 @@ def _validate_live_render_receipt(
             audit.get("native_resolution") != [640, 480]
             or audit.get("camera_valid") is not True
             or type(audit.get("frame_identity")) is not str
-            or _plain_dict(audit.get("quality"), name=f"quality audit {index}.quality").get("valid") is not True
         ):
             _fail("native RGB/depth quality audit failed")
+        quality_document = _plain_dict(
+            audit.get("quality"), name=f"quality audit {index}.quality"
+        )
+        _exact_keys(
+            quality_document,
+            (
+                "schema",
+                "retained",
+                "hard_valid",
+                "raw_assessment_valid",
+                "observed_reasons",
+                "low_information",
+                "low_info_reasons",
+                "hard_failure_reasons",
+                "rgb_stats",
+                "depth_stats",
+            ),
+            name=f"quality audit {index}.quality",
+        )
+        observed_reasons = _plain_list(
+            quality_document["observed_reasons"],
+            name=f"quality audit {index}.observed_reasons",
+        )
+        low_info_reasons = _plain_list(
+            quality_document["low_info_reasons"],
+            name=f"quality audit {index}.low_info_reasons",
+        )
+        hard_failure_reasons = _plain_list(
+            quality_document["hard_failure_reasons"],
+            name=f"quality audit {index}.hard_failure_reasons",
+        )
+        frame = checked_frames[index]
+        if (
+            quality_document["schema"] != COUNTERFACTUAL_QUALITY_SCHEMA
+            or quality_document["retained"] is not True
+            or quality_document["hard_valid"] is not True
+            or type(quality_document["raw_assessment_valid"]) is not bool
+            or type(quality_document["low_information"]) is not bool
+            or hard_failure_reasons != []
+            or any(
+                not isinstance(reason, str) or reason not in LOW_INFO_REASON_NAMES
+                for reason in low_info_reasons
+            )
+            or len(low_info_reasons) != len(set(low_info_reasons))
+            or len(observed_reasons) != len(set(observed_reasons))
+            or observed_reasons != low_info_reasons
+            or quality_document["raw_assessment_valid"] != (not observed_reasons)
+            or quality_document["low_information"] != bool(low_info_reasons)
+            or frame["low_information"] != quality_document["low_information"]
+            or frame["low_info_reasons"] != low_info_reasons
+            or not isinstance(quality_document["rgb_stats"], Mapping)
+            or not isinstance(quality_document["depth_stats"], Mapping)
+        ):
+            _fail("native RGB/depth quality disposition failed")
         replay_pose = _plain_dict(
             audit["replay_pose"], name=f"quality audit {index}.replay_pose"
         )

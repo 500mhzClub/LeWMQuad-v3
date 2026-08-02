@@ -154,6 +154,8 @@ def _frame(identity: str) -> dict[str, Any]:
         "mode": "RGB",
         "format": "PNG",
         "camera_valid": True,
+        "low_information": False,
+        "low_info_reasons": [],
     }
 
 
@@ -301,7 +303,18 @@ def _fixture(
             "frame_identity": frame["frame_identity"],
             "native_resolution": [640, 480],
             "camera_valid": True,
-            "quality": {"valid": True, "invalid_reasons": []},
+            "quality": {
+                "schema": checker.COUNTERFACTUAL_QUALITY_SCHEMA,
+                "retained": True,
+                "hard_valid": True,
+                "raw_assessment_valid": True,
+                "observed_reasons": [],
+                "low_information": False,
+                "low_info_reasons": [],
+                "hard_failure_reasons": [],
+                "rgb_stats": {},
+                "depth_stats": {},
+            },
             "replay_pose": {
                 "source_base_pose_world": pose,
                 "camera_pose_world": {
@@ -732,6 +745,63 @@ def test_render_scene_identity_must_equal_state_scene(tmp_path: Path) -> None:
 
     manifest, digest, byte_count = _fixture(tmp_path, mutate_render=mutate)
     with pytest.raises(checker.PilotReceiptError, match="scene identities differ"):
+        checker.check_manifest(
+            manifest,
+            expected_file_sha256=digest,
+            expected_byte_count=byte_count,
+        )
+
+
+def test_low_information_frame_is_retained_and_stratifiable(tmp_path: Path) -> None:
+    reasons = [
+        "near_forward_geometry",
+        "low_rgb_texture",
+        "near_wall_depth",
+    ]
+
+    def mutate(render: dict[str, Any]) -> None:
+        render["frame_receipts"][0]["low_information"] = True
+        render["frame_receipts"][0]["low_info_reasons"] = list(reasons)
+        quality = render["quality_audits"][0]["quality"]
+        quality["raw_assessment_valid"] = False
+        quality["observed_reasons"] = list(reasons)
+        quality["low_information"] = True
+        quality["low_info_reasons"] = list(reasons)
+
+    manifest, digest, byte_count = _fixture(tmp_path, mutate_render=mutate)
+    report = checker.check_manifest(
+        manifest,
+        expected_file_sha256=digest,
+        expected_byte_count=byte_count,
+    )
+    assert report["status"] == "PASS"
+
+
+def test_low_information_tag_mismatch_is_rejected(tmp_path: Path) -> None:
+    def mutate(render: dict[str, Any]) -> None:
+        render["frame_receipts"][0]["low_information"] = True
+        render["frame_receipts"][0]["low_info_reasons"] = ["near_wall_depth"]
+
+    manifest, digest, byte_count = _fixture(tmp_path, mutate_render=mutate)
+    with pytest.raises(checker.PilotReceiptError, match="disposition failed"):
+        checker.check_manifest(
+            manifest,
+            expected_file_sha256=digest,
+            expected_byte_count=byte_count,
+        )
+
+
+def test_hard_quality_failure_cannot_be_relabelled_low_information(
+    tmp_path: Path,
+) -> None:
+    def mutate(render: dict[str, Any]) -> None:
+        quality = render["quality_audits"][0]["quality"]
+        quality["raw_assessment_valid"] = False
+        quality["observed_reasons"] = ["camera_safety_unresolved"]
+        quality["hard_failure_reasons"] = ["camera_safety_unresolved"]
+
+    manifest, digest, byte_count = _fixture(tmp_path, mutate_render=mutate)
+    with pytest.raises(checker.PilotReceiptError, match="disposition failed"):
         checker.check_manifest(
             manifest,
             expected_file_sha256=digest,

@@ -32,6 +32,8 @@ def _frame(identity: str) -> dict[str, object]:
         "mode": "RGB",
         "format": "PNG",
         "camera_valid": True,
+        "low_information": False,
+        "low_info_reasons": [],
     }
 
 

@@ -39,11 +39,11 @@ from scripts import collect_go2_world_model_counterfactual_pilot_v1 as collector
 
 PURPOSE = "sizing_calibration_only"
 AUTHORITY_SCHEMA = (
-    "lewm_go2_world_model_counterfactual_calibration_execution_authority_v1"
+    "lewm_go2_world_model_counterfactual_calibration_execution_authority_v2"
 )
-AUTHORITY_STATUS = "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION"
+AUTHORITY_STATUS = "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION_V2_SUCCESSOR"
 TERMINAL_SCHEMA = (
-    "lewm_go2_world_model_counterfactual_calibration_supervision_terminal_v1"
+    "lewm_go2_world_model_counterfactual_calibration_supervision_terminal_v2"
 )
 COLLECTOR_RELATIVE = Path(
     "scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
@@ -524,6 +524,61 @@ def _owned_reservation(
     )
 
 
+def _load_physics_result_if_present(
+    attempt_root: Path,
+    *,
+    plan: Mapping[str, Any],
+    plan_binding: Mapping[str, Any],
+    authority: Mapping[str, Any],
+    authority_binding: Mapping[str, Any],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Bind a complete or failed collector result without opening RGB leaves."""
+
+    path = attempt_root / "physics_result.json"
+    if not path.exists():
+        return None, None
+    if path.is_symlink() or not path.is_file():
+        raise CalibrationSupervisionError(
+            "physics result is not a regular non-symlink file"
+        )
+    binding = pilot.file_binding(path)
+    try:
+        value, actual_binding = pilot.read_bound_json(
+            path,
+            expected_sha256=str(binding["file_sha256"]),
+            expected_byte_count=int(binding["byte_count"]),
+            label="counterfactual calibration physics result",
+        )
+    except pilot.PilotContractError as exc:
+        raise CalibrationSupervisionError(str(exc)) from exc
+    if actual_binding != binding or not isinstance(value, Mapping):
+        raise CalibrationSupervisionError("physics result binding changed")
+    status = value.get("status")
+    failure = value.get("failure")
+    if (
+        value.get("schema") != pilot.PHYSICS_RESULT_SCHEMA
+        or status not in {"PHYSICS_COMPLETE", "FAILED"}
+        or value.get("attempt_id") != plan["attempt_id"]
+        or value.get("purpose") != PURPOSE
+        or value.get("plan_binding") != plan_binding
+        or value.get("authority_binding") != authority_binding
+        or value.get("review_binding") != authority["review_binding"]
+        or value.get("source_bindings") != authority["source_bindings"]
+        or value.get("caps") != authority["caps"]
+        or value.get("citable_as_scientific_evidence") is not False
+        or value.get("authorizes_retry_or_resume") is not False
+        or (status == "PHYSICS_COMPLETE" and failure is not None)
+        or (
+            status == "FAILED"
+            and (not isinstance(failure, Mapping) or not failure)
+        )
+    ):
+        raise CalibrationSupervisionError(
+            "collector physics result is not an exact terminal receipt"
+        )
+    return dict(value), binding
+
+
 def supervise(
     authority_path: Path,
     *,
@@ -589,8 +644,18 @@ def supervise(
                 env=child_env,
             )
         )
+        physics_result, physics_binding = _load_physics_result_if_present(
+            attempt_root,
+            plan=plan,
+            plan_binding=plan_binding,
+            authority=authority,
+            authority_binding=authority_binding,
+        )
+        if physics_result is None or physics_binding is None:
+            raise CalibrationSupervisionError(
+                "collector completed without a physics result"
+            )
         physics_path = attempt_root / "physics_result.json"
-        physics_binding = pilot.file_binding(physics_path)
         check_path = attempt_root / "receipt_check.json"
         checker_argv = [
             invocation,
@@ -670,6 +735,20 @@ def supervise(
             )
     except BaseException as exc:
         failure = f"{type(exc).__name__}: {exc}"
+        if physics_binding is None:
+            try:
+                _physics_result, physics_binding = _load_physics_result_if_present(
+                    attempt_root,
+                    plan=plan,
+                    plan_binding=plan_binding,
+                    authority=authority,
+                    authority_binding=authority_binding,
+                )
+            except BaseException as receipt_exc:
+                failure = (
+                    f"{failure}; physics result binding failed: "
+                    f"{type(receipt_exc).__name__}: {receipt_exc}"
+                )
     finally:
         try:
             gpu_memory_measurement = gpu_sampler.stop()
@@ -718,6 +797,7 @@ def supervise(
         "scientific_verdict_emitted": False,
         "authority_binding": authority_binding,
         "plan_binding": plan_binding,
+        "predecessor_failure_binding": authority["predecessor_failure_binding"],
         "source_commit": authority["source_commit"],
         "attempt_root": str(attempt_root),
         "wall_elapsed_seconds": wall_elapsed,

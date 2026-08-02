@@ -39,6 +39,14 @@ POLICY_STEP_COUNT = pilot.BLOCK_SIZE * 5
 LIVE_RENDER_RECEIPT_SCHEMA = (
     "lewm_go2_world_model_counterfactual_live_render_receipt_v1"
 )
+COUNTERFACTUAL_QUALITY_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_frame_quality_v2"
+)
+COUNTERFACTUAL_LOW_INFO_REASON_NAMES = frozenset({
+    "low_rgb_texture",
+    "near_wall_depth",
+    "near_forward_geometry",
+})
 
 STAGE_WALL_TIME_KEYS = (
     "native_render_wall_seconds",
@@ -135,8 +143,8 @@ if EXPECTED_SOURCE_PATHS != dict(pilot.AUTHORITY_SOURCE_PATHS):
 
 NON_SMOKE_AUTHORITY_CONTRACTS = {
     "sizing_calibration_only": (
-        "lewm_go2_world_model_counterfactual_calibration_execution_authority_v1",
-        "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION",
+        "lewm_go2_world_model_counterfactual_calibration_execution_authority_v2",
+        "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION_V2_SUCCESSOR",
     ),
 }
 NON_SMOKE_REQUIRED_SOURCES = frozenset({
@@ -157,6 +165,39 @@ NON_SMOKE_SOURCE_PATHS = {
     ),
     "pilot_joiner": "scripts/join_go2_world_model_counterfactual_pilot_v1.py",
 }
+CALIBRATION_PREDECESSOR_FAILURE_RELATIVE = Path(
+    "docs/lewm_go2_world_model_counterfactual_calibration_v1_terminal_failure_result_2026-08-02.json"
+)
+CALIBRATION_PREDECESSOR_ATTEMPT_ID = "lewm-go2-wm-counterfactual-calibration-v1"
+CALIBRATION_PREDECESSOR_ROOT = str(
+    (
+        ROOT
+        / ".generated/dev/lewm-go2-wm-counterfactual-calibration-v1"
+    ).resolve()
+)
+CALIBRATION_PREDECESSOR_TERMINAL_SHA256 = (
+    "c5509f97c1d1cca27b7f283187ce7bf644579c4caa03eb1ccfcfda9c18e58315"
+)
+CALIBRATION_PREDECESSOR_PHYSICS_SHA256 = (
+    "34ba69825322e34ebec0ccbab5f1a21fdd4ac60f99cc4fe5f70b158a7aaaaaa3"
+)
+CALIBRATION_SUCCESSOR_ATTEMPT_ID = "lewm-go2-wm-counterfactual-calibration-v2"
+CALIBRATION_SUCCESSOR_ROOT = str(
+    (
+        ROOT
+        / ".generated/dev/lewm-go2-wm-counterfactual-calibration-v2"
+    ).resolve()
+)
+
+
+def _is_within_calibration_predecessor_root(path: str | Path) -> bool:
+    candidate = Path(path).resolve(strict=False)
+    predecessor_root = Path(CALIBRATION_PREDECESSOR_ROOT).resolve(strict=False)
+    try:
+        candidate.relative_to(predecessor_root)
+    except ValueError:
+        return False
+    return True
 
 
 def _as_numpy(value: Any) -> np.ndarray:
@@ -170,6 +211,60 @@ def _as_numpy(value: Any) -> np.ndarray:
     if callable(numpy_method):
         value = numpy_method()
     return np.asarray(value)
+
+
+def _counterfactual_quality_disposition(
+    raw_quality: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Separate retained low-information observations from hard corruption.
+
+    Low-information reasons describe useful, stratifiable navigation states and
+    are not technical corruption.  Every other assessor reason, including an
+    unresolved camera-safety condition or malformed/missing/non-finite arrays,
+    remains a hard failure.
+    """
+
+    if not isinstance(raw_quality, Mapping) or set(raw_quality) != {
+        "valid",
+        "invalid_reasons",
+        "rgb_stats",
+        "depth_stats",
+    }:
+        raise pilot.PilotContractError("raw rendered-frame quality shape changed")
+    if (
+        type(raw_quality["valid"]) is not bool
+        or not isinstance(raw_quality["rgb_stats"], Mapping)
+        or not isinstance(raw_quality["depth_stats"], Mapping)
+    ):
+        raise pilot.PilotContractError("raw rendered-frame quality is malformed")
+    reasons = raw_quality["invalid_reasons"]
+    if (
+        not isinstance(reasons, list)
+        or any(not isinstance(reason, str) or not reason for reason in reasons)
+        or len(reasons) != len(set(reasons))
+    ):
+        raise pilot.PilotContractError("raw rendered-frame reasons are invalid")
+    low_info = [
+        reason for reason in reasons if reason in COUNTERFACTUAL_LOW_INFO_REASON_NAMES
+    ]
+    hard_failures = [
+        reason for reason in reasons if reason not in COUNTERFACTUAL_LOW_INFO_REASON_NAMES
+    ]
+    if bool(raw_quality["valid"]) != (not reasons):
+        raise pilot.PilotContractError("raw rendered-frame validity disagrees with reasons")
+    retained = not hard_failures
+    return {
+        "schema": COUNTERFACTUAL_QUALITY_SCHEMA,
+        "retained": retained,
+        "hard_valid": retained,
+        "raw_assessment_valid": bool(raw_quality["valid"]),
+        "observed_reasons": list(reasons),
+        "low_information": bool(low_info),
+        "low_info_reasons": low_info,
+        "hard_failure_reasons": hard_failures,
+        "rgb_stats": copy.deepcopy(raw_quality["rgb_stats"]),
+        "depth_stats": copy.deepcopy(raw_quality["depth_stats"]),
+    }
 
 
 def _expected_authority_caps(plan: Mapping[str, Any]) -> dict[str, Any]:
@@ -189,6 +284,163 @@ def _expected_authority_caps(plan: Mapping[str, Any]) -> dict[str, Any]:
         "native_render_calls": int(counts["context_frames"] + counts["target_frames"]),
         "stored_rgb_frames": int(counts["context_frames"] + counts["target_frames"]),
     }
+
+
+def _validate_calibration_predecessor_failure(
+    binding: Mapping[str, Any],
+    *,
+    plan: Mapping[str, Any],
+    reviewed_binding: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate the consumed V1 failure before accepting a fresh V2 successor."""
+
+    normalized_binding = pilot._validate_binding_shape(  # noqa: SLF001
+        binding, label="calibration predecessor terminal-failure result"
+    )
+    expected_path = (ROOT / CALIBRATION_PREDECESSOR_FAILURE_RELATIVE).resolve()
+    if Path(str(normalized_binding["path"])).resolve() != expected_path:
+        raise pilot.PilotContractError(
+            "calibration predecessor terminal-failure result path changed"
+        )
+    normalized_reviewed_binding = pilot._validate_binding_shape(  # noqa: SLF001
+        reviewed_binding, label="reviewed calibration predecessor failure"
+    )
+    if normalized_binding != normalized_reviewed_binding:
+        raise pilot.PilotContractError(
+            "calibration predecessor failure is not in the reviewed closure"
+        )
+    raw, actual_binding = pilot.read_bound_json(
+        expected_path,
+        expected_sha256=str(normalized_binding["file_sha256"]),
+        expected_byte_count=int(normalized_binding["byte_count"]),
+        label="calibration predecessor terminal-failure result",
+    )
+    if actual_binding != normalized_binding or not isinstance(raw, Mapping):
+        raise pilot.PilotContractError(
+            "calibration predecessor terminal-failure result binding changed"
+        )
+    if set(raw) != {
+        "schema",
+        "status",
+        "date",
+        "authority_granted_by_this_document",
+        "scientific_claim_granted_by_this_document",
+        "attempt",
+        "bindings",
+        "terminal_evidence",
+        "root_cause",
+        "successor_boundary",
+    }:
+        raise pilot.PilotContractError(
+            "calibration predecessor terminal-failure result fields changed"
+        )
+    attempt = raw["attempt"]
+    if (
+        raw["schema"]
+        != "lewm_go2_world_model_counterfactual_calibration_terminal_failure_result_v1"
+        or raw["status"]
+        != "PASS_CONSUMED_TERMINAL_FAILURE_AUDIT_NO_RETRY_NO_RESUME"
+        or raw["authority_granted_by_this_document"] is not False
+        or raw["scientific_claim_granted_by_this_document"] is not False
+        or not isinstance(attempt, Mapping)
+        or set(attempt)
+        != {
+            "attempt_id",
+            "output_root",
+            "attempt_consumed",
+            "retry_authorized",
+            "resume_authorized",
+            "refill_authorized",
+            "overwrite_authorized",
+            "artifact_reuse_for_successor_authorized",
+        }
+        or attempt["attempt_id"] != CALIBRATION_PREDECESSOR_ATTEMPT_ID
+        or attempt["output_root"] != CALIBRATION_PREDECESSOR_ROOT
+        or attempt["attempt_consumed"] is not True
+        or any(
+            attempt[name] is not False
+            for name in (
+                "retry_authorized",
+                "resume_authorized",
+                "refill_authorized",
+                "overwrite_authorized",
+                "artifact_reuse_for_successor_authorized",
+            )
+        )
+    ):
+        raise pilot.PilotContractError(
+            "calibration predecessor attempt was not an exact consumed failure"
+        )
+    bindings = raw["bindings"]
+    terminal_evidence = raw["terminal_evidence"]
+    successor = raw["successor_boundary"]
+    if (
+        not isinstance(bindings, Mapping)
+        or not isinstance(bindings.get("terminal_supervision"), Mapping)
+        or not isinstance(bindings.get("physics_result"), Mapping)
+        or bindings["terminal_supervision"].get("file_sha256")
+        != CALIBRATION_PREDECESSOR_TERMINAL_SHA256
+        or bindings["terminal_supervision"].get("byte_count") != 3217
+        or bindings["physics_result"].get("file_sha256")
+        != CALIBRATION_PREDECESSOR_PHYSICS_SHA256
+        or bindings["physics_result"].get("byte_count") != 25773
+        or not isinstance(terminal_evidence, Mapping)
+        or terminal_evidence.get("terminal_status") != "CONSUMED_TERMINAL_FAILURE"
+        or terminal_evidence.get("terminal_physics_result_binding_was_null") is not True
+        or terminal_evidence.get("physics_result_status") != "FAILED"
+        or not isinstance(successor, Mapping)
+        or successor.get("v1_retry_authorized") is not False
+        or successor.get("v1_resume_authorized") is not False
+        or successor.get("v1_refill_authorized") is not False
+        or successor.get("v1_root_or_artifact_reuse_authorized") is not False
+        or successor.get("fresh_v2_successor_authorized_by_this_result") is not False
+    ):
+        raise pilot.PilotContractError(
+            "calibration predecessor failure evidence or successor boundary changed"
+        )
+    if (
+        plan["attempt_id"] != CALIBRATION_SUCCESSOR_ATTEMPT_ID
+        or Path(str(plan["output_root"])).resolve(strict=False)
+        != Path(CALIBRATION_SUCCESSOR_ROOT).resolve(strict=False)
+    ):
+        raise pilot.PilotContractError(
+            "calibration authority does not bind the exact V2 successor identity"
+        )
+    if (
+        plan["attempt_id"] == CALIBRATION_PREDECESSOR_ATTEMPT_ID
+        or _is_within_calibration_predecessor_root(plan["output_root"])
+    ):
+        raise pilot.PilotContractError(
+            "calibration V2 successor cannot retry, resume, refill, or reuse V1"
+        )
+    successor_input_bindings: list[tuple[str, Mapping[str, Any]]] = [
+        (f"runtime {name}", runtime_binding)
+        for name, runtime_binding in plan["runtime_bindings"].items()
+    ]
+    for state in plan["states"]:
+        if state["scene_generation"] is not None:
+            raise pilot.PilotContractError(
+                "calibration V2 successor cannot reuse generated V1 scene artifacts"
+            )
+        successor_input_bindings.extend((
+            (
+                f"state {state['state_id']} scene manifest",
+                state["scene_manifest_binding"],
+            ),
+            (
+                f"state {state['state_id']} Genesis scene",
+                state["scene_genesis_binding"],
+            ),
+        ))
+    for label, input_binding in successor_input_bindings:
+        normalized_input = pilot._validate_binding_shape(  # noqa: SLF001
+            input_binding, label=label
+        )
+        if _is_within_calibration_predecessor_root(normalized_input["path"]):
+            raise pilot.PilotContractError(
+                "calibration V2 successor cannot reuse V1 root artifacts"
+            )
+    return normalized_binding
 
 
 def _validate_non_smoke_authority(
@@ -216,6 +468,7 @@ def _validate_non_smoke_authority(
         "source_commit",
         "review_binding",
         "plan_binding",
+        "predecessor_failure_binding",
         "source_bindings",
         "attempt",
         "caps",
@@ -254,6 +507,10 @@ def _validate_non_smoke_authority(
     normalized_plan_binding = pilot._validate_binding_shape(  # noqa: SLF001
         authority["plan_binding"], label="authority plan binding"
     )
+    if _is_within_calibration_predecessor_root(normalized_plan_binding["path"]):
+        raise pilot.PilotContractError(
+            "calibration V2 successor plan cannot reuse the V1 root"
+        )
     if normalized_plan_binding != dict(plan_binding):
         raise pilot.PilotContractError("authority does not bind the selected plan")
     review_binding = pilot._validate_binding_shape(  # noqa: SLF001
@@ -285,6 +542,20 @@ def _validate_non_smoke_authority(
         sources.append({"name": name, "binding": binding})
     if not NON_SMOKE_REQUIRED_SOURCES.issubset(source_names):
         raise pilot.PilotContractError("non-smoke authority source closure is incomplete")
+    predecessor_rows = [
+        source["binding"]
+        for source in sources
+        if source["name"] == "predecessor_terminal_failure_result"
+    ]
+    if len(predecessor_rows) != 1:
+        raise pilot.PilotContractError(
+            "reviewed calibration predecessor failure binding is absent"
+        )
+    predecessor_failure_binding = _validate_calibration_predecessor_failure(
+        authority["predecessor_failure_binding"],
+        plan=plan,
+        reviewed_binding=predecessor_rows[0],
+    )
     attempt = authority["attempt"]
     expected_attempt = {
         "id": plan["attempt_id"],
@@ -361,6 +632,7 @@ def _validate_non_smoke_authority(
     normalized = dict(authority)
     normalized["plan_binding"] = normalized_plan_binding
     normalized["review_binding"] = review_binding
+    normalized["predecessor_failure_binding"] = predecessor_failure_binding
     normalized["source_bindings"] = sources
     normalized["external_supervisor"] = {
         "source_binding": supervisor_binding,
@@ -1135,11 +1407,13 @@ def _group_trial_receipts(
             artifact_id = identity
             context_artifact_ids.append(artifact_id)
             rgb = np.asarray(replay_frame["stored_rgb"])
-            quality = replay_frame["quality"]
-            if quality["valid"] is not True:
+            quality = _counterfactual_quality_disposition(
+                replay_frame["quality"]
+            )
+            if quality["retained"] is not True:
                 raise pilot.PilotContractError(
                     f"camera-invalid context frame {identity}: "
-                    f"{quality['invalid_reasons']}"
+                    f"{quality['hard_failure_reasons']}"
                 )
             binding = _write_png_exclusive(
                 rgb_root / f"{state_id}.context.{context_index}.png",
@@ -1159,6 +1433,8 @@ def _group_trial_receipts(
                     "mode": "RGB",
                     "format": "PNG",
                     "camera_valid": True,
+                    "low_information": quality["low_information"],
+                    "low_info_reasons": list(quality["low_info_reasons"]),
                 }
             )
             quality_audits.append(
@@ -1248,11 +1524,13 @@ def _group_trial_receipts(
             executed = np.asarray(trial["branch_executed"])[env_index].tolist()
             replay_frame = branch_replays[env_index]
             rgb = np.asarray(replay_frame["stored_rgb"])
-            quality = replay_frame["quality"]
-            if quality["valid"] is not True:
+            quality = _counterfactual_quality_disposition(
+                replay_frame["quality"]
+            )
+            if quality["retained"] is not True:
                 raise pilot.PilotContractError(
                     f"camera-invalid branch frame {identity}: "
-                    f"{quality['invalid_reasons']}"
+                    f"{quality['hard_failure_reasons']}"
                 )
             binding = _write_png_exclusive(
                 rgb_root / f"{state_id}.{kind}.{lane_offset}.png",
@@ -1271,6 +1549,8 @@ def _group_trial_receipts(
                 "mode": "RGB",
                 "format": "PNG",
                 "camera_valid": True,
+                "low_information": quality["low_information"],
+                "low_info_reasons": list(quality["low_info_reasons"]),
             }
             frame_receipts.append(frame_receipt)
             quality_audits.append(
@@ -1454,7 +1734,15 @@ def _runtime_imports() -> dict[str, Any]:
         load_platform_manifest,
         load_scene_pack,
     )
-    from lewm_genesis.vision_quality import assess_rendered_frame
+    from lewm_genesis.vision_quality import (
+        LOW_INFO_REASON_NAMES,
+        assess_rendered_frame,
+    )
+
+    if LOW_INFO_REASON_NAMES != COUNTERFACTUAL_LOW_INFO_REASON_NAMES:
+        raise pilot.PilotContractError(
+            "counterfactual low-information reason registry changed"
+        )
 
     return {
         "camera_safety_config_from_pack": camera_safety_config_from_pack,

@@ -75,8 +75,8 @@ def _plan(tmp_path: Path):
             ],
         })
     return builder.build_calibration_plan_v1(
-        attempt_id="calibration-attempt-v1",
-        output_root=(tmp_path / ".generated/dev/calibration-attempt").resolve(),
+        attempt_id="calibration-attempt-v2",
+        output_root=(tmp_path / ".generated/dev/calibration-attempt-v2").resolve(),
         scene_panel={"schema": builder.SCENE_PANEL_SCHEMA, "scenes": scenes},
         runtime_contract={
             "schema": builder.RUNTIME_CONTRACT_SCHEMA,
@@ -89,11 +89,21 @@ def _plan(tmp_path: Path):
 def test_authority_builder_emits_exact_160_branch_one_shot(tmp_path: Path) -> None:
     builder = _load(AUTHORITY_BUILDER, "calibration_authority_builder_test")
     plan = _plan(tmp_path)
+    builder.collector.CALIBRATION_SUCCESSOR_ATTEMPT_ID = plan["attempt_id"]
+    builder.collector.CALIBRATION_SUCCESSOR_ROOT = plan["output_root"]
     plan_binding = _binding(str((tmp_path / "plan.json").resolve()), "a")
+    predecessor_path = (
+        ROOT / builder.collector.CALIBRATION_PREDECESSOR_FAILURE_RELATIVE
+    )
+    predecessor_binding = pilot.file_binding(predecessor_path)
     source_bindings = [
         {
             "name": name,
-            "binding": _binding(str((ROOT / relative).resolve()), "b"),
+            "binding": (
+                predecessor_binding
+                if name == "predecessor_terminal_failure_result"
+                else _binding(str((ROOT / relative).resolve()), "b")
+            ),
         }
         for name, relative in builder.canonical_runtime_source_paths_v1().items()
     ]
@@ -118,6 +128,7 @@ def test_authority_builder_emits_exact_160_branch_one_shot(tmp_path: Path) -> No
         plan_binding=plan_binding,
         review=review,
         review_binding=_binding(str((tmp_path / "review.json").resolve()), "d"),
+        predecessor_failure_binding=predecessor_binding,
         authorizer_identity="explicit-test-authorizer",
         authorizer_basis="unit fixture only",
         issued_at="2026-08-02T12:01:00+00:00",
@@ -131,6 +142,7 @@ def test_authority_builder_emits_exact_160_branch_one_shot(tmp_path: Path) -> No
     assert authority["caps"]["sentinel_branches"] == 16
     assert authority["attempt"]["maximum_attempts"] == 1
     assert authority["attempt"]["retry"] is False
+    assert authority["predecessor_failure_binding"] == predecessor_binding
     assert authority["platform_gate_disposition"][
         "outputs_eligible_for_training_after_receipt_join"
     ] is False
@@ -155,6 +167,9 @@ def test_authority_builder_emits_exact_160_branch_one_shot(tmp_path: Path) -> No
         "file_sha256"
     ] = "f" * 64
     mutations.append((changed_supervisor, "reviewed closure"))
+    changed_predecessor = copy.deepcopy(authority)
+    changed_predecessor["predecessor_failure_binding"]["file_sha256"] = "f" * 64
+    mutations.append((changed_predecessor, "predecessor failure"))
     for mutated, message in mutations:
         with pytest.raises(pilot.PilotContractError, match=message):
             builder.collector._validate_non_smoke_authority(
@@ -162,6 +177,48 @@ def test_authority_builder_emits_exact_160_branch_one_shot(tmp_path: Path) -> No
                 plan=plan,
                 plan_binding=plan_binding,
             )
+
+    predecessor_retry_plan = copy.deepcopy(plan)
+    predecessor_retry_plan["attempt_id"] = (
+        builder.collector.CALIBRATION_PREDECESSOR_ATTEMPT_ID
+    )
+    predecessor_retry_authority = copy.deepcopy(authority)
+    predecessor_retry_authority["attempt"]["id"] = (
+        builder.collector.CALIBRATION_PREDECESSOR_ATTEMPT_ID
+    )
+    with pytest.raises(pilot.PilotContractError, match="exact V2 successor identity"):
+        builder.collector._validate_non_smoke_authority(
+            predecessor_retry_authority,
+            plan=pilot.validate_plan(predecessor_retry_plan),
+            plan_binding=plan_binding,
+        )
+
+    predecessor_root_plan = copy.deepcopy(plan)
+    predecessor_root_plan["output_root"] = (
+        builder.collector.CALIBRATION_PREDECESSOR_ROOT
+    )
+    predecessor_root_authority = copy.deepcopy(authority)
+    predecessor_root_authority["attempt"]["root"] = (
+        builder.collector.CALIBRATION_PREDECESSOR_ROOT
+    )
+    with pytest.raises(pilot.PilotContractError, match="exact V2 successor identity"):
+        builder.collector._validate_non_smoke_authority(
+            predecessor_root_authority,
+            plan=pilot.validate_plan(predecessor_root_plan),
+            plan_binding=plan_binding,
+        )
+
+    predecessor_artifact_plan = copy.deepcopy(plan)
+    runtime_name = next(iter(predecessor_artifact_plan["runtime_bindings"]))
+    predecessor_artifact_plan["runtime_bindings"][runtime_name]["path"] = str(
+        Path(builder.collector.CALIBRATION_PREDECESSOR_ROOT) / "artifact.bin"
+    )
+    with pytest.raises(pilot.PilotContractError, match="reuse V1 root artifacts"):
+        builder.collector._validate_non_smoke_authority(
+            authority,
+            plan=predecessor_artifact_plan,
+            plan_binding=plan_binding,
+        )
 
 
 def test_source_closure_uses_calibration_not_smoke_supervisor() -> None:
@@ -171,6 +228,9 @@ def test_source_closure_uses_calibration_not_smoke_supervisor() -> None:
         "counterfactual_calibration_authorized_v1.py"
     )
     assert "counterfactual_smoke_authorized_v1.py" not in paths.values()
+    assert paths["predecessor_terminal_failure_result"].endswith(
+        "counterfactual_calibration_v1_terminal_failure_result_2026-08-02.json"
+    )
 
 
 def test_review_template_cannot_self_assert_pass(
@@ -206,3 +266,11 @@ def test_help_exposes_review_and_authority_subcommands() -> None:
     )
     assert "review" in completed.stdout
     assert "authority" in completed.stdout
+    authority_help = subprocess.run(
+        [sys.executable, str(AUTHORITY_BUILDER), "authority", "--help"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "--predecessor-failure" in authority_help.stdout

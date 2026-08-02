@@ -117,6 +117,8 @@ class RGBArtifactV1:
     relative_path: str
     byte_count: int
     file_sha256: str
+    low_information: bool
+    low_info_reasons: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -882,6 +884,8 @@ def _parse_group(
             "mode",
             "format",
             "camera_valid",
+            "low_information",
+            "low_info_reasons",
         }
         if not isinstance(receipt, Mapping) or set(receipt) != receipt_fields:
             raise CounterfactualPilotContractError("branch frame receipt changed")
@@ -899,6 +903,10 @@ def _parse_group(
             or receipt["mode"] != "RGB"
             or receipt["format"] != "PNG"
             or receipt["camera_valid"] is not True
+            or type(receipt["low_information"]) is not bool
+            or not isinstance(receipt["low_info_reasons"], list)
+            or receipt["low_information"] != artifact.low_information
+            or tuple(receipt["low_info_reasons"]) != artifact.low_info_reasons
         ):
             raise CounterfactualPilotContractError("branch target RGB is unbound")
         label_fields = {
@@ -1251,6 +1259,7 @@ def _load_calibration_receipt(
         or set(resources) != {
             "schema",
             "stored_rgb_png",
+            "low_information_strata",
             "stage_wall_seconds",
             "outcome_counts",
             "gpu_peak_memory_measurement_scope",
@@ -1264,6 +1273,7 @@ def _load_calibration_receipt(
             "calibration resource measurements changed"
         )
     stored_rgb = resources["stored_rgb_png"]
+    low_information = resources["low_information_strata"]
     stages = resources["stage_wall_seconds"]
     outcomes = resources["outcome_counts"]
     if (
@@ -1280,6 +1290,46 @@ def _load_calibration_receipt(
         or stored_rgb["target_bytes"] < 0
         or stored_rgb["total_bytes"]
         != stored_rgb["context_bytes"] + stored_rgb["target_bytes"]
+        or not isinstance(low_information, Mapping)
+        or any(
+            type(low_information.get(name)) is not int
+            or low_information[name] < 0
+            for name in ("total_frames", "context_frames", "target_frames")
+        )
+        or low_information.get("total_frames")
+        != low_information["context_frames"] + low_information["target_frames"]
+        or low_information["context_frames"] > 48
+        or low_information["target_frames"] > 160
+        or low_information.get("frame_receipt_tags_present") is not True
+        or low_information.get("hard_invalid_frames") != 0
+        or any(
+            not isinstance(low_information.get(name), Mapping)
+            or set(low_information[name])
+            != {"low_rgb_texture", "near_wall_depth", "near_forward_geometry"}
+            or any(
+                type(count) is not int or count < 0
+                for count in low_information[name].values()
+            )
+            for name in (
+                "reason_counts",
+                "context_reason_counts",
+                "target_reason_counts",
+            )
+        )
+        or any(
+            low_information["reason_counts"][reason]
+            != low_information["context_reason_counts"][reason]
+            + low_information["target_reason_counts"][reason]
+            or low_information["context_reason_counts"][reason]
+            > low_information["context_frames"]
+            or low_information["target_reason_counts"][reason]
+            > low_information["target_frames"]
+            for reason in (
+                "low_rgb_texture",
+                "near_wall_depth",
+                "near_forward_geometry",
+            )
+        )
         or not isinstance(stages, Mapping)
         or any(_finite(value, name=f"calibration stage {name}") < 0.0 for name, value in stages.items())
         or not isinstance(outcomes, Mapping)
@@ -1874,6 +1924,8 @@ def load_bound_pilot_v1(
             "mode",
             "format",
             "camera_valid",
+            "low_information",
+            "low_info_reasons",
         }:
             raise CounterfactualPilotContractError("RGB artifact receipt changed")
         artifact_id = item["artifact_id"]
@@ -1891,6 +1943,19 @@ def load_bound_pilot_v1(
             or item["mode"] != "RGB"
             or item["format"] != "PNG"
             or item["camera_valid"] is not True
+            or type(item["low_information"]) is not bool
+            or not isinstance(item["low_info_reasons"], list)
+            or any(
+                reason not in {
+                    "low_rgb_texture",
+                    "near_wall_depth",
+                    "near_forward_geometry",
+                }
+                for reason in item["low_info_reasons"]
+            )
+            or len(item["low_info_reasons"])
+            != len(set(item["low_info_reasons"]))
+            or item["low_information"] != bool(item["low_info_reasons"])
             or not isinstance(item["frame_identity"], str)
             or not item["frame_identity"]
             or not _is_sha256(item["file_sha256"])
@@ -1910,6 +1975,8 @@ def load_bound_pilot_v1(
             relative_path=relative.as_posix(),
             byte_count=artifact_byte_count,
             file_sha256=item["file_sha256"],
+            low_information=item["low_information"],
+            low_info_reasons=tuple(item["low_info_reasons"]),
         )
         artifact_paths.add(relative.as_posix())
         frame_identities.add(item["frame_identity"])

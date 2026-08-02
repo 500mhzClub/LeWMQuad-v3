@@ -125,6 +125,8 @@ def _artifact_from_frame_receipt(receipt: Mapping[str, Any]) -> dict[str, object
         "mode",
         "format",
         "camera_valid",
+        "low_information",
+        "low_info_reasons",
     }
     if set(receipt) != expected:
         raise PilotJoinError("frame receipt field set changed")

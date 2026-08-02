@@ -62,15 +62,28 @@ def _collection(*, collapse_last_repeat_action: bool = False) -> dict[str, objec
         })
         for context_index in range(3):
             identity = f"{state_id}:context:{context_index}"
+            low_info_reasons = (
+                [
+                    "near_forward_geometry",
+                    "low_rgb_texture",
+                    "near_wall_depth",
+                ]
+                if group_index == 0 and context_index == 0
+                else []
+            )
             frame_receipts[identity] = {
                 "frame_identity": identity,
                 "byte_count": 100 + context_index,
+                "low_information": bool(low_info_reasons),
+                "low_info_reasons": low_info_reasons,
             }
         for target_index in range(10):
             identity = f"{state_id}:candidate:{target_index}"
             frame_receipts[identity] = {
                 "frame_identity": identity,
                 "byte_count": 200 + target_index,
+                "low_information": False,
+                "low_info_reasons": [],
             }
     scene_metrics = [
         {
@@ -133,9 +146,42 @@ def test_analyzer_derives_tolerances_and_all_action_repeat_coverage() -> None:
     assert receipt["resource_measurements"]["outcome_counts"][
         "camera_invalid_frames"
     ] == 0
+    assert receipt["resource_measurements"]["low_information_strata"] == {
+        "total_frames": 1,
+        "context_frames": 1,
+        "target_frames": 0,
+        "reason_counts": {
+            "low_rgb_texture": 1,
+            "near_wall_depth": 1,
+            "near_forward_geometry": 1,
+        },
+        "context_reason_counts": {
+            "low_rgb_texture": 1,
+            "near_wall_depth": 1,
+            "near_forward_geometry": 1,
+        },
+        "target_reason_counts": {
+            "low_rgb_texture": 0,
+            "near_wall_depth": 0,
+            "near_forward_geometry": 0,
+        },
+        "frame_receipt_tags_present": True,
+        "hard_invalid_frames": 0,
+    }
     analyzer.validate_calibration_receipt_v1(
         receipt, verify_external_bindings=False
     )
+
+    inconsistent = copy.deepcopy(receipt)
+    inconsistent["resource_measurements"]["low_information_strata"][
+        "reason_counts"
+    ]["near_wall_depth"] = 0
+    with pytest.raises(
+        analyzer.CalibrationAnalysisError, match="resource"
+    ):
+        analyzer.validate_calibration_receipt_v1(
+            inconsistent, verify_external_bindings=False
+        )
 
 
 def test_analyzer_rejects_repeat_panel_that_misses_a_primitive() -> None:
