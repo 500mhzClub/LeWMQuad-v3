@@ -186,6 +186,36 @@ class BoundedBranchAuthorityError(RuntimeError):
     """Raised before malformed metadata can mint pilot authority."""
 
 
+def _parity_sources_match_reviewed_closure_v1(
+    *,
+    parity_freeze: Mapping[str, Any],
+    source_by_name: Mapping[str, Mapping[str, Any]],
+    task_relevance_route: bool,
+) -> bool:
+    """Separate frozen historical evidence from current executable source."""
+
+    comparisons = (
+        ("reference_renderer_source_binding", "bounded_visual_domain_reference_renderer"),
+        ("reference_renderer_source_binding", "historical_textured_v03_renderer"),
+        ("reference_texture_source_binding", "textures"),
+        ("candidate_collector_source_binding", "collector"),
+        ("candidate_renderer_source_binding", "historical_textured_v03_renderer"),
+        ("evaluator_source_binding", "bounded_visual_domain_parity_evaluator"),
+        ("evaluator_source_binding", "visual_domain_parity_evaluator"),
+    )
+    for freeze_field, source_name in comparisons:
+        frozen = parity_freeze[freeze_field]
+        reviewed = source_by_name[source_name]
+        if task_relevance_route and freeze_field != "reference_texture_source_binding":
+            if Path(str(frozen["path"])).resolve() != Path(
+                str(reviewed["path"])
+            ).resolve():
+                return False
+        elif frozen != reviewed:
+            return False
+    return True
+
+
 def canonical_source_paths_v1() -> dict[str, str]:
     paths = {
         **runtime_kernel.EXPECTED_SOURCE_PATHS,
@@ -589,21 +619,32 @@ def validate_authority_v1(
             raise BoundedBranchAuthorityError(f"source path changed for {row['name']}")
     source_by_name = {str(row["name"]): row["binding"] for row in sources}
     parity_freeze = authority["visual_domain_parity_freeze"]
-    if (
-        parity_freeze["reference_renderer_source_binding"]
-        != source_by_name["bounded_visual_domain_reference_renderer"]
-        or parity_freeze["reference_renderer_source_binding"]
-        != source_by_name["historical_textured_v03_renderer"]
-        or parity_freeze["reference_texture_source_binding"]
-        != source_by_name["textures"]
-        or parity_freeze["candidate_collector_source_binding"]
-        != source_by_name["collector"]
-        or parity_freeze["candidate_renderer_source_binding"]
-        != source_by_name["historical_textured_v03_renderer"]
-        or parity_freeze["evaluator_source_binding"]
-        != source_by_name["bounded_visual_domain_parity_evaluator"]
-        or parity_freeze["evaluator_source_binding"]
-        != source_by_name["visual_domain_parity_evaluator"]
+    try:
+        parity_review_binding = pilot.require_binding(
+            parity_freeze["review_binding"],
+            label="visual-domain parity independent review",
+        )
+        parity_review, actual_parity_review_binding = pilot.read_bound_json(
+            Path(str(parity_review_binding["path"])),
+            expected_sha256=str(parity_review_binding["file_sha256"]),
+            expected_byte_count=int(parity_review_binding["byte_count"]),
+            label="visual-domain parity independent review",
+        )
+    except (OSError, pilot.PilotContractError) as exc:
+        raise BoundedBranchAuthorityError(str(exc)) from exc
+    if actual_parity_review_binding != parity_review_binding:
+        raise BoundedBranchAuthorityError(
+            "visual-domain parity independent review binding changed"
+        )
+    task_relevance_route = (
+        isinstance(parity_review, Mapping)
+        and parity_review.get("schema")
+        == pilot.TEXTURED_V03_TASK_RELEVANCE_REVIEW_SCHEMA
+    )
+    if not _parity_sources_match_reviewed_closure_v1(
+        parity_freeze=parity_freeze,
+        source_by_name=source_by_name,
+        task_relevance_route=task_relevance_route,
     ):
         raise BoundedBranchAuthorityError(
             "visual-domain reference renderer sources are outside the reviewed closure"

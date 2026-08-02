@@ -1675,6 +1675,62 @@ def test_pilot_uses_separate_authority_without_weakening_calibration_collector()
     assert paths["collector"] == "scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
 
 
+def _parity_source_closure_fixture():
+    renderer = _fake_binding(str(REPO_ROOT / "scripts/render_replay_v03.py"))
+    textures = _fake_binding(
+        str(REPO_ROOT / "lewm_genesis/lewm_genesis/textures.py")
+    )
+    collector = _fake_binding(
+        str(REPO_ROOT / "scripts/collect_go2_world_model_counterfactual_pilot_v1.py")
+    )
+    evaluator_binding = _fake_binding(
+        str(REPO_ROOT / "scripts/evaluate_go2_world_model_visual_domain_parity_v1.py")
+    )
+    sources = {
+        "bounded_visual_domain_reference_renderer": renderer,
+        "historical_textured_v03_renderer": renderer,
+        "textures": textures,
+        "collector": collector,
+        "bounded_visual_domain_parity_evaluator": evaluator_binding,
+        "visual_domain_parity_evaluator": evaluator_binding,
+    }
+    freeze = {
+        "reference_renderer_source_binding": dict(renderer),
+        "reference_texture_source_binding": dict(textures),
+        "candidate_collector_source_binding": dict(collector),
+        "candidate_renderer_source_binding": dict(renderer),
+        "evaluator_source_binding": dict(evaluator_binding),
+    }
+    return freeze, sources
+
+
+def test_task_relevance_authority_preserves_historical_source_hashes_by_path():
+    freeze, sources = _parity_source_closure_fixture()
+    freeze["candidate_collector_source_binding"]["file_sha256"] = "b" * 64
+    assert not authority._parity_sources_match_reviewed_closure_v1(  # noqa: SLF001
+        parity_freeze=freeze,
+        source_by_name=sources,
+        task_relevance_route=False,
+    )
+    assert authority._parity_sources_match_reviewed_closure_v1(  # noqa: SLF001
+        parity_freeze=freeze,
+        source_by_name=sources,
+        task_relevance_route=True,
+    )
+
+
+def test_task_relevance_authority_rejects_historical_source_path_drift():
+    freeze, sources = _parity_source_closure_fixture()
+    freeze["candidate_collector_source_binding"]["path"] = str(
+        REPO_ROOT / "scripts/not_the_reviewed_collector.py"
+    )
+    assert not authority._parity_sources_match_reviewed_closure_v1(  # noqa: SLF001
+        parity_freeze=freeze,
+        source_by_name=sources,
+        task_relevance_route=True,
+    )
+
+
 def test_fresh_bounded_runtime_imports_are_inside_canonical_source_closure():
     probe = r'''
 import json
