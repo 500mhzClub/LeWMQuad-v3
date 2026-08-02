@@ -1,0 +1,43 @@
+{
+  "schema": "lewm_go2_world_model_counterfactual_runtime_contract_v1",
+  "runtime_bindings": {
+    "eglinfo_executable": {"path": "/usr/bin/eglinfo.x86_64-linux-gnu", "file_sha256": "5c8559c668261af76c5642c99926f74a73fc73077c463a371995379a2482d470", "byte_count": 235912},
+    "go2_urdf": {"path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/assets/urdf/go2/urdf/go2.urdf", "file_sha256": "4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4", "byte_count": 24170},
+    "platform_manifest": {"path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_platform_manifest.yaml", "file_sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189", "byte_count": 4613},
+    "policy_checkpoint": {"path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/upstream_genesis/locomotion/logs/lewm-go2-contract-20260516T163413Z/model_500.pt", "file_sha256": "e0a20545cdccac6b60a4587c96d2de9a169dfacf520b178f51709596a6f789ff", "byte_count": 4547691},
+    "policy_config": {"path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/upstream_genesis/locomotion/logs/lewm-go2-contract-20260516T163413Z/cfgs.pkl", "file_sha256": "bc3e68c18252475199e57b30c8ac49d813e3c784a3983e0e8b1a762490dde24f", "byte_count": 2409},
+    "primitive_registry": {"path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_primitive_registry.yaml", "file_sha256": "cb83acf61d0e958b90d5dcd98e2ad11c630426bf480bd948aeb77242d84293f8", "byte_count": 2454},
+    "python_environment_config": {"path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/pyvenv.cfg", "file_sha256": "41c6a8f52f3404bd3b7fcd805519c1976e2f4194ef9aa8eccf2f0919383386a9", "byte_count": 219},
+    "python_executable_target": {"path": "/usr/bin/python3.12", "file_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118", "byte_count": 8020928},
+    "vulkaninfo_executable": {"path": "/usr/bin/vulkaninfo", "file_sha256": "f850851cd176c646851f42287902d5ee737849f275c1a64cb319b4985bdfbb4c", "byte_count": 649712}
+  },
+  "execution_contract": {
+    "backend": "vulkan",
+    "policy_device": "cpu",
+    "seed": 20260802,
+    "fall_z_threshold_m": 0.15,
+    "tip_threshold_rad": 1.0471975511965976,
+    "policy_steps_per_command_tick": 5,
+    "python_invocation_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python",
+    "environment": {
+      "EGL_DEVICE_ID": "1",
+      "GS_BACKEND": "vulkan",
+      "GS_PARA_LEVEL": "0",
+      "MESA_VK_DEVICE_SELECT": "1002:7551!",
+      "PYOPENGL_PLATFORM": "egl",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONHASHSEED": "0",
+      "PYTHONNOUSERSITE": "1",
+      "PYTHONSAFEPATH": "1"
+    },
+    "graphics_preflight": {
+      "egl_device_index": 1,
+      "eglinfo_expected_exit_code": 2,
+      "egl_renderer_name_contains": "AMD Radeon AI PRO R9700",
+      "vulkan_device_id": "0x7551",
+      "vulkan_device_index": 0,
+      "vulkan_device_name": "AMD Radeon AI PRO R9700",
+      "vulkan_vendor_id": "0x1002"
+    }
+  }
+}

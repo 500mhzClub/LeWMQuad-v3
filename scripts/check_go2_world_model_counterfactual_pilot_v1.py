@@ -597,6 +597,7 @@ def _validate_plan_state(
     *,
     position: int,
     action_catalog: Sequence[Mapping[str, Any]],
+    purpose: str,
 ) -> dict[str, Any]:
     state = _plain_dict(value, name=f"plan.states[{position}]")
     required = (
@@ -670,9 +671,13 @@ def _validate_plan_state(
     if role == "calibration":
         if type(sentinel_action) is not int or sentinel_action not in candidates:
             _fail("calibration state must select one sentinel duplicate action")
-        expected_sentinel = 6 if state["state_index_in_scene"] == 0 else 4
+        expected_sentinel = (
+            int(state["group_index"]) % CANDIDATE_BRANCHES_PER_STATE
+            if purpose == "sizing_calibration_only"
+            else (6 if state["state_index_in_scene"] == 0 else 4)
+        )
         if sentinel_action != expected_sentinel:
-            _fail("calibration sentinel allocation must be HOLD first, forward_medium second")
+            _fail("calibration sentinel allocation changed from its purpose contract")
     elif sentinel_action is not None:
         _fail("train/eval states cannot add an unregistered repeat branch")
     return state
@@ -767,7 +772,12 @@ def _validate_plan(value: object, *, attempt_id: str, output_root: str) -> dict[
     action_catalog = _validate_action_catalog(plan["action_catalog"])
     raw_states = _plain_list(plan["states"], name="pilot plan states")
     states = [
-        _validate_plan_state(item, position=index, action_catalog=action_catalog)
+        _validate_plan_state(
+            item,
+            position=index,
+            action_catalog=action_catalog,
+            purpose=str(plan["purpose"]),
+        )
         for index, item in enumerate(raw_states)
     ]
     if not states:
@@ -1978,6 +1988,8 @@ def _validate_scene_metrics(
         "envs",
         "physics_build_wall_seconds",
         "physics_simulation_wall_seconds",
+        "common_prefix_step_wall_seconds",
+        "branch_step_wall_seconds",
         "render_scene_build_wall_seconds",
         "native_render_wall_seconds",
         "camera_quality_resize_wall_seconds",
@@ -1995,6 +2007,8 @@ def _validate_scene_metrics(
     timing_fields = (
         "physics_build_wall_seconds",
         "physics_simulation_wall_seconds",
+        "common_prefix_step_wall_seconds",
+        "branch_step_wall_seconds",
         "render_scene_build_wall_seconds",
         "native_render_wall_seconds",
         "camera_quality_resize_wall_seconds",
@@ -2042,7 +2056,10 @@ def _validate_scene_metrics(
         ]:
             _fail("physics simulation and lockstep wall timings differ")
         if (
-            times["native_render_wall_seconds"]
+            times["common_prefix_step_wall_seconds"]
+            + times["branch_step_wall_seconds"]
+            > times["lockstep_execution_wall_seconds"]
+            or times["native_render_wall_seconds"]
             + times["camera_quality_resize_wall_seconds"]
             + times["lockstep_execution_wall_seconds"]
             + times["render_scene_build_wall_seconds"]
@@ -2636,13 +2653,21 @@ def _validate_action_contract(value: object) -> None:
     contract = _plain_dict(value, name="action_contract")
     _exact_keys(
         contract,
-        ("primitive_names", "command_ticks_per_block", "executed_tape_shape"),
+        (
+            "primitive_names",
+            "command_ticks_per_block",
+            "executed_tape_shape",
+            "candidate_model_input",
+            "future_executed_tape_usage",
+        ),
         name="action_contract",
     )
     if (
         contract["primitive_names"] != list(PRIMITIVE_NAMES)
         or contract["command_ticks_per_block"] != COMMAND_TICKS_PER_BLOCK
         or contract["executed_tape_shape"] != [COMMAND_TICKS_PER_BLOCK, COMMAND_WIDTH]
+        or contract["candidate_model_input"] != "requested_action_id"
+        or contract["future_executed_tape_usage"] != "target_and_audit_only"
     ):
         _fail("joined action contract changed")
 

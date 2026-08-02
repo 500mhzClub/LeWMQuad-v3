@@ -203,6 +203,19 @@ def test_sentinel_allocation_is_frozen_not_state_hash() -> None:
     ) == 9
 
 
+def test_sizing_calibration_repeat_rotation_covers_all_nine_primitives() -> None:
+    repeated = [
+        pilot.deterministic_sentinel_action_id(
+            state_index_in_scene=group_index % 2,
+            group_index=group_index,
+            purpose="sizing_calibration_only",
+        )
+        for group_index in range(16)
+    ]
+    assert repeated == [index % 9 for index in range(16)]
+    assert set(repeated) == set(range(9))
+
+
 @pytest.mark.parametrize(
     "mutate",
     (
@@ -1246,6 +1259,25 @@ def test_source_only_smoke_scene_derivation_is_deterministic() -> None:
     }
 
 
+def test_collector_prepares_prebound_calibration_scene_without_smoke_materialization(
+    tmp_path: Path,
+) -> None:
+    collector = _load_collector()
+    plan = _smoke_plan(tmp_path)
+    plan["purpose"] = "sizing_calibration_only"
+    state = plan["states"][0]
+    state["scene_generation"] = None
+    state["scene_manifest_binding"] = _bound_file(
+        tmp_path / "scene/manifest.json", b"{}"
+    )
+    state["scene_genesis_binding"] = _bound_file(
+        tmp_path / "scene/genesis_scene.json", b"{}"
+    )
+    before = dict(state)
+    assert collector._prepare_plan_scenes(plan) is None
+    assert state == before
+
+
 def test_authority_source_paths_exactly_cover_source_only_smoke_imports() -> None:
     collector = _load_collector()
     assert tuple(collector.EXPECTED_SOURCE_PATHS) == pilot.AUTHORITY_SOURCE_NAMES
@@ -1488,6 +1520,8 @@ def write_synthetic_complete_smoke_tree(base: Path) -> Path:
                 "envs": 10,
                 "physics_build_wall_seconds": 0.1,
                 "physics_simulation_wall_seconds": 0.1,
+                "common_prefix_step_wall_seconds": 0.05,
+                "branch_step_wall_seconds": 0.05,
                 "render_scene_build_wall_seconds": 0.02,
                 "native_render_wall_seconds": 0.02,
                 "camera_quality_resize_wall_seconds": 0.01,

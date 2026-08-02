@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 from collections import defaultdict
 import copy
+from datetime import datetime
 import hashlib
 import json
 import math
@@ -132,6 +133,31 @@ EXPECTED_SOURCE_PATHS = {
 if EXPECTED_SOURCE_PATHS != dict(pilot.AUTHORITY_SOURCE_PATHS):
     raise RuntimeError("collector and source-only authority path closures disagree")
 
+NON_SMOKE_AUTHORITY_CONTRACTS = {
+    "sizing_calibration_only": (
+        "lewm_go2_world_model_counterfactual_calibration_execution_authority_v1",
+        "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION",
+    ),
+}
+NON_SMOKE_REQUIRED_SOURCES = frozenset({
+    "collector",
+    "contract",
+    "pilot_consumer",
+    "checker",
+    "calibration_analyzer",
+    "pilot_joiner",
+    "external_supervisor",
+})
+NON_SMOKE_SOURCE_PATHS = {
+    "calibration_analyzer": (
+        "scripts/analyze_go2_world_model_counterfactual_calibration_v1.py"
+    ),
+    "external_supervisor": (
+        "scripts/run_go2_world_model_counterfactual_calibration_authorized_v1.py"
+    ),
+    "pilot_joiner": "scripts/join_go2_world_model_counterfactual_pilot_v1.py",
+}
+
 
 def _as_numpy(value: Any) -> np.ndarray:
     detach = getattr(value, "detach", None)
@@ -144,6 +170,218 @@ def _as_numpy(value: Any) -> np.ndarray:
     if callable(numpy_method):
         value = numpy_method()
     return np.asarray(value)
+
+
+def _expected_authority_caps(plan: Mapping[str, Any]) -> dict[str, Any]:
+    counts = plan["expected_counts"]
+    total_lanes = int(counts["total_branches"])
+    return {
+        "scenes": int(counts["scenes"]),
+        "states": int(counts["states"]),
+        "candidate_branches": int(counts["candidate_branches"]),
+        "sentinel_branches": int(counts["sentinel_branches"]),
+        "total_branches": total_lanes,
+        "candidate_branch_simulated_seconds": total_lanes * 0.5,
+        "total_lane_simulated_seconds_including_common_prefix": total_lanes * 1.5,
+        "policy_steps_per_lane": 75,
+        "total_lane_policy_steps": total_lanes * 75,
+        "total_lane_physics_steps": total_lanes * 750,
+        "native_render_calls": int(counts["context_frames"] + counts["target_frames"]),
+        "stored_rgb_frames": int(counts["context_frames"] + counts["target_frames"]),
+    }
+
+
+def _validate_non_smoke_authority(
+    authority: Mapping[str, Any],
+    *,
+    plan: Mapping[str, Any],
+    plan_binding: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate exact calibration authority without weakening smoke V1."""
+
+    purpose = str(plan["purpose"])
+    if purpose not in NON_SMOKE_AUTHORITY_CONTRACTS:
+        raise pilot.PilotContractError(
+            "this source authorizes calibration only; bounded pilot needs a "
+            "separate reviewed supervisor and authority contract"
+        )
+    expected_schema, expected_status = NON_SMOKE_AUTHORITY_CONTRACTS[purpose]
+    required = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_authorized",
+        "authorizer",
+        "issued_at",
+        "source_commit",
+        "review_binding",
+        "plan_binding",
+        "source_bindings",
+        "attempt",
+        "caps",
+        "runtime_bindings",
+        "execution",
+        "network_access",
+        "external_supervisor",
+        "platform_gate_disposition",
+    }
+    if not isinstance(authority, Mapping) or set(authority) != required:
+        raise pilot.PilotContractError("non-smoke execution authority fields changed")
+    if (
+        authority["schema"] != expected_schema
+        or authority["status"] != expected_status
+        or authority["authority_granted_by_this_document"] is not True
+        or authority["scientific_claim_authorized"] is not False
+    ):
+        raise pilot.PilotContractError("authority does not grant this exact plan purpose")
+    authorizer = authority["authorizer"]
+    if (
+        not isinstance(authorizer, Mapping)
+        or set(authorizer) != {"identity", "basis"}
+        or not isinstance(authorizer["identity"], str)
+        or not authorizer["identity"].strip()
+        or not isinstance(authorizer["basis"], str)
+        or not authorizer["basis"].strip()
+    ):
+        raise pilot.PilotContractError("authority authorizer is invalid")
+    try:
+        datetime.fromisoformat(str(authority["issued_at"]).replace("Z", "+00:00"))
+    except ValueError as error:
+        raise pilot.PilotContractError("authority issued_at is not ISO-8601") from error
+    source_commit = authority["source_commit"]
+    if not isinstance(source_commit, str) or re.fullmatch(r"[0-9a-f]{40}", source_commit) is None:
+        raise pilot.PilotContractError("authority source_commit is invalid")
+    normalized_plan_binding = pilot._validate_binding_shape(  # noqa: SLF001
+        authority["plan_binding"], label="authority plan binding"
+    )
+    if normalized_plan_binding != dict(plan_binding):
+        raise pilot.PilotContractError("authority does not bind the selected plan")
+    review_binding = pilot._validate_binding_shape(  # noqa: SLF001
+        authority["review_binding"], label="authority review binding"
+    )
+    raw_sources = authority["source_bindings"]
+    if not isinstance(raw_sources, list) or not raw_sources:
+        raise pilot.PilotContractError("authority source bindings are absent")
+    sources: list[dict[str, Any]] = []
+    source_names: set[str] = set()
+    for source in raw_sources:
+        if not isinstance(source, Mapping) or set(source) != {"name", "binding"}:
+            raise pilot.PilotContractError("authority source binding changed")
+        name = source["name"]
+        if not isinstance(name, str) or not name or name in source_names:
+            raise pilot.PilotContractError("authority source name repeats")
+        source_names.add(name)
+        binding = pilot._validate_binding_shape(  # noqa: SLF001
+            source["binding"], label=f"authority source {name}"
+        )
+        expected_relative = {
+            **EXPECTED_SOURCE_PATHS,
+            **NON_SMOKE_SOURCE_PATHS,
+        }.get(name)
+        if expected_relative is not None and Path(binding["path"]).resolve() != (
+            ROOT / expected_relative
+        ).resolve():
+            raise pilot.PilotContractError(f"authority source {name} path changed")
+        sources.append({"name": name, "binding": binding})
+    if not NON_SMOKE_REQUIRED_SOURCES.issubset(source_names):
+        raise pilot.PilotContractError("non-smoke authority source closure is incomplete")
+    attempt = authority["attempt"]
+    expected_attempt = {
+        "id": plan["attempt_id"],
+        "root": plan["output_root"],
+        "maximum_attempts": 1,
+        "must_be_absent": True,
+        "reservation_consumes_attempt": True,
+        "retry": False,
+        "resume": False,
+        "overwrite": False,
+        "refill": False,
+    }
+    if pilot.canonical_json_bytes(attempt) != pilot.canonical_json_bytes(expected_attempt):
+        raise pilot.PilotContractError("authority attempt boundary changed")
+    caps = authority["caps"]
+    expected_caps = _expected_authority_caps(plan)
+    if (
+        not isinstance(caps, Mapping)
+        or set(caps) != {*expected_caps, "wall_seconds"}
+        or any(caps.get(name) != expected for name, expected in expected_caps.items())
+        or isinstance(caps.get("wall_seconds"), bool)
+        or not isinstance(caps.get("wall_seconds"), (int, float))
+        or not math.isfinite(float(caps["wall_seconds"]))
+        or float(caps["wall_seconds"]) <= 0.0
+    ):
+        raise pilot.PilotContractError("authority work caps changed from the exact plan")
+    if pilot.canonical_json_bytes(authority["runtime_bindings"]) != pilot.canonical_json_bytes(
+        plan["runtime_bindings"]
+    ) or pilot.canonical_json_bytes(authority["execution"]) != pilot.canonical_json_bytes(
+        plan["execution_contract"]
+    ):
+        raise pilot.PilotContractError("authority runtime or execution binding changed")
+    if authority["network_access"] is not False:
+        raise pilot.PilotContractError("counterfactual collection must forbid network access")
+    disposition = authority["platform_gate_disposition"]
+    if (
+        not isinstance(disposition, Mapping)
+        or set(disposition) != {
+            "platform_hard_gates_resolved",
+            "scope",
+            "outputs_eligible_for_training_after_receipt_join",
+            "outputs_eligible_for_scientific_claim",
+            "authorizes_this_exact_generation",
+            "authorizes_promotion",
+            "basis",
+        }
+        or disposition["platform_hard_gates_resolved"] is not True
+        or disposition["scope"] != purpose
+        or disposition["outputs_eligible_for_training_after_receipt_join"]
+        is not (purpose == "bounded_wm_a_pilot")
+        or disposition["outputs_eligible_for_scientific_claim"] is not False
+        or disposition["authorizes_this_exact_generation"] is not True
+        or disposition["authorizes_promotion"] is not False
+        or not isinstance(disposition["basis"], str)
+        or not disposition["basis"].strip()
+    ):
+        raise pilot.PilotContractError("non-smoke platform-gate disposition changed")
+    supervisor = authority["external_supervisor"]
+    if (
+        not isinstance(supervisor, Mapping)
+        or set(supervisor) != {"source_binding", "terminal_reviewer"}
+        or not isinstance(supervisor["terminal_reviewer"], str)
+        or not supervisor["terminal_reviewer"].strip()
+    ):
+        raise pilot.PilotContractError("authority external supervisor changed")
+    supervisor_binding = pilot._validate_binding_shape(  # noqa: SLF001
+        supervisor["source_binding"], label="external supervisor"
+    )
+    reviewed_supervisor = next(
+        source["binding"] for source in sources if source["name"] == "external_supervisor"
+    )
+    if supervisor_binding != reviewed_supervisor:
+        raise pilot.PilotContractError("external supervisor is not in the reviewed closure")
+    normalized = dict(authority)
+    normalized["plan_binding"] = normalized_plan_binding
+    normalized["review_binding"] = review_binding
+    normalized["source_bindings"] = sources
+    normalized["external_supervisor"] = {
+        "source_binding": supervisor_binding,
+        "terminal_reviewer": supervisor["terminal_reviewer"],
+    }
+    return normalized
+
+
+def _validate_authority_for_plan(
+    authority: Mapping[str, Any],
+    *,
+    plan: Mapping[str, Any],
+    plan_binding: Mapping[str, Any],
+) -> dict[str, Any]:
+    if plan["purpose"] == "source_integration_smoke":
+        return pilot.validate_authority(
+            authority, plan=plan, plan_binding=plan_binding
+        )
+    return _validate_non_smoke_authority(
+        authority, plan=plan, plan_binding=plan_binding
+    )
 
 
 def _git_output(*args: str, binary: bool = False) -> bytes | str:
@@ -204,17 +442,19 @@ def _validate_git_authority_boundary(
     _binding_at_commit(
         authority["review_binding"], commit=head, label="source review"
     )
-    for expected_name, source in zip(
-        pilot.AUTHORITY_SOURCE_NAMES,
-        authority["source_bindings"],
-        strict=True,
-    ):
+    sources = authority["source_bindings"]
+    if authority["schema"] == pilot.SMOKE_AUTHORITY_SCHEMA:
+        expected_names: Sequence[str] = pilot.AUTHORITY_SOURCE_NAMES
+    else:
+        expected_names = tuple(str(source["name"]) for source in sources)
+    for expected_name, source in zip(expected_names, sources, strict=True):
         if source["name"] != expected_name:
             raise pilot.PilotContractError("authority source order changed")
         relative = _repo_relative(
             source["binding"]["path"], label=f"source {expected_name}"
         )
-        if relative != EXPECTED_SOURCE_PATHS[expected_name]:
+        exact_source_paths = {**EXPECTED_SOURCE_PATHS, **NON_SMOKE_SOURCE_PATHS}
+        if expected_name in exact_source_paths and relative != exact_source_paths[expected_name]:
             raise pilot.PilotContractError(
                 f"source {expected_name} path changed: {relative}"
             )
@@ -984,6 +1224,9 @@ def _group_trial_receipts(
             state_id,
             role=str(state["role"]),
             state_index_in_scene=int(state["state_index_in_scene"]),
+            sentinel_duplicate_action_id=state.get(
+                "sentinel_duplicate_action_id"
+            ),
         ):
             lane_offset = int(lane["lane_offset"])
             env_index = local_lane_start + lane_offset
@@ -1329,6 +1572,27 @@ def _materialize_smoke_scene(plan: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _prepare_plan_scenes(plan: dict[str, Any]) -> dict[str, Any] | None:
+    """Materialize the smoke or retain exact pre-bound calibration/pilot scenes."""
+
+    if plan["purpose"] == "source_integration_smoke":
+        return _materialize_smoke_scene(plan)
+    if plan["purpose"] not in NON_SMOKE_AUTHORITY_CONTRACTS:
+        raise pilot.PilotContractError("unsupported collection purpose")
+    for state in plan["states"]:
+        if state["scene_generation"] is not None:
+            raise pilot.PilotContractError(
+                "calibration/pilot state unexpectedly requests scene materialization"
+            )
+        for name in ("scene_manifest_binding", "scene_genesis_binding"):
+            binding = state[name]
+            if not isinstance(binding, Mapping) or not Path(binding["path"]).is_absolute():
+                raise pilot.PilotContractError(
+                    f"calibration/pilot {name} is not an absolute bound input"
+                )
+    return None
+
+
 def derive_source_integration_smoke_scene(
     *, family: str, plan_seed: int
 ) -> dict[str, Any]:
@@ -1591,6 +1855,10 @@ def _collect_scene(
         ),
         "physics_build_wall_seconds": build_wall_seconds,
         "physics_simulation_wall_seconds": lockstep_wall_seconds,
+        "common_prefix_step_wall_seconds": float(
+            trial["common_prefix_step_wall_seconds"]
+        ),
+        "branch_step_wall_seconds": float(trial["branch_step_wall_seconds"]),
         **wall_values,
         "native_render_calls": int(trial["render_replay"]["native_render_calls"]),
         "stored_rgb_frames": len(frame_receipts),
@@ -1623,9 +1891,9 @@ def collect(
         authority_path,
         expected_sha256=expected_authority_sha256,
         expected_byte_count=expected_authority_byte_count,
-        label="counterfactual smoke execution authority",
+        label="counterfactual execution authority",
     )
-    authority = pilot.validate_authority(
+    authority = _validate_authority_for_plan(
         raw_authority,
         plan=plan,
         plan_binding=plan_binding,
@@ -1648,19 +1916,24 @@ def collect(
     source_by_name = {
         str(row["name"]): row["binding"] for row in authority["source_bindings"]
     }
-    declaration_binding = plan["states"][0]["scene_generation"][
-        "scene_generator_binding"
-    ]
-    if declaration_binding != source_by_name["scene_generator_materializer"]:
-        raise pilot.PilotContractError(
-            "plan scene generator binding disagrees with reviewed authority source"
-        )
+    if plan["purpose"] == "source_integration_smoke":
+        declaration_binding = plan["states"][0]["scene_generation"][
+            "scene_generator_binding"
+        ]
+        if declaration_binding != source_by_name["scene_generator_materializer"]:
+            raise pilot.PilotContractError(
+                "plan scene generator binding disagrees with reviewed authority source"
+            )
     output_root = pilot.fresh_development_output_root(
         Path(plan["output_root"]),
         development_root=ROOT / ".generated" / "dev",
     )
     reservation = {
-        "schema": "lewm_go2_world_model_counterfactual_smoke_reservation_v1",
+        "schema": (
+            "lewm_go2_world_model_counterfactual_smoke_reservation_v1"
+            if plan["purpose"] == "source_integration_smoke"
+            else "lewm_go2_world_model_counterfactual_attempt_reservation_v1"
+        ),
         "status": "RESERVED_ATTEMPT_CONSUMED",
         "attempt": dict(authority["attempt"]),
         "plan_binding": plan_binding,
@@ -1693,7 +1966,7 @@ def collect(
         _validate_python_runtime(plan)
         _validate_execution_environment(plan)
         runtime_versions = _capture_runtime_versions()
-        scene_materialization = _materialize_smoke_scene(plan)
+        scene_materialization = _prepare_plan_scenes(plan)
         runtime = _runtime_imports()
         platform = runtime["load_platform_manifest"](
             plan["runtime_bindings"]["platform_manifest"]["path"]
@@ -1851,7 +2124,7 @@ def collect(
         "scene_metrics": scene_metrics,
         "visual_domain_limitation": (
             "solid materials and box primitives preserve the physics geometry; "
-            "this smoke does not establish final visual-domain fidelity"
+            "this collection does not establish final visual-domain fidelity"
         ),
         "collection_wall_seconds": time.perf_counter() - collection_started,
         "failure": failure,

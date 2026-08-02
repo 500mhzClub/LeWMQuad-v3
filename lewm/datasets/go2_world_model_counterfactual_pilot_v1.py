@@ -33,6 +33,9 @@ CALIBRATION_RECEIPT_SCHEMA = (
 PHYSICAL_RANK_CONTRACT_SCHEMA = (
     "lewm_go2_world_model_counterfactual_physical_rank_contract_v1"
 )
+TOLERANCE_DERIVATION_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_tolerance_derivation_v1"
+)
 EVIDENCE_SCOPE = "physics_executed"
 ROLE_NAMES = ("train", "eval")
 FAMILIES = (
@@ -127,6 +130,20 @@ class PhysicalLabelsV1:
 
 
 @dataclass(frozen=True)
+class CandidateActionInputV1:
+    """Information available when a planner proposes a candidate action.
+
+    The future executed tape is intentionally absent: it is an outcome/audit
+    field and is not known before the safety/controller stack executes the
+    requested primitive.
+    """
+
+    requested_action_id: int
+    requested_primitive: str
+    requested_block: tuple[tuple[float, float, float], ...]
+
+
+@dataclass(frozen=True)
 class CounterfactualBranchV1:
     lane_index: int
     lane_offset: int
@@ -142,6 +159,10 @@ class CounterfactualBranchV1:
     @property
     def requested_primitive(self) -> str:
         return self.action_name
+
+    @property
+    def model_input_action_id(self) -> int:
+        return self.action_id
 
 
 @dataclass(frozen=True)
@@ -431,6 +452,30 @@ def physical_dense_ranks_v1(
     keys = [physical_oracle_key_v1(item, tolerances) for item in labels]
     unique = {key: rank for rank, key in enumerate(sorted(set(keys)))}
     return tuple(unique[key] for key in keys)
+
+
+def candidate_model_inputs_v1(
+    group: CounterfactualGroupV1,
+) -> tuple[CandidateActionInputV1, ...]:
+    """Return the nine pre-execution candidate inputs with no future leakage."""
+
+    if len(group.branches) != ACTION_COUNT:
+        raise CounterfactualPilotContractError(
+            "candidate model input requires exactly nine branches"
+        )
+    result = tuple(
+        CandidateActionInputV1(
+            requested_action_id=branch.action_id,
+            requested_primitive=branch.requested_primitive,
+            requested_block=branch.requested_block,
+        )
+        for branch in group.branches
+    )
+    if tuple(item.requested_action_id for item in result) != tuple(range(ACTION_COUNT)):
+        raise CounterfactualPilotContractError(
+            "candidate model-input action order changed"
+        )
+    return result
 
 
 def _physical_labels(value: object, *, name: str) -> PhysicalLabelsV1:
@@ -1029,6 +1074,7 @@ def _validate_calibration_contract(value: object) -> tuple[tuple[str, ...], Mapp
         "quantization_rule",
         "lexicographic_key",
         "proxy_fields_excluded",
+        "tolerance_derivation",
     }
     if not isinstance(value, Mapping) or set(value) != expected:
         raise CounterfactualPilotContractError("calibration contract fields changed")
@@ -1054,6 +1100,40 @@ def _validate_calibration_contract(value: object) -> tuple[tuple[str, ...], Mapp
     ):
         raise CounterfactualPilotContractError(
             "calibration scene exclusion contract is invalid"
+        )
+    derivation = value["tolerance_derivation"]
+    if not isinstance(derivation, Mapping) or set(derivation) != {
+        "schema",
+        "method",
+        "minimum_numerical_resolution_m",
+        "repeat_controls",
+        "repeated_action_ids",
+        "all_requested_primitives_covered",
+        "deterministic_repeat_gate_passed",
+        "empirical_noise_scale_estimated",
+    }:
+        raise CounterfactualPilotContractError(
+            "calibration tolerance derivation is absent"
+        )
+    numerical_floor = _positive_finite(
+        derivation["minimum_numerical_resolution_m"],
+        name="minimum_numerical_resolution_m",
+    )
+    if (
+        derivation["schema"] != TOLERANCE_DERIVATION_SCHEMA
+        or derivation["method"]
+        != "fixed_numerical_floor_after_exact_deterministic_repeat_gate"
+        or numerical_floor != 1.0e-6
+        or derivation["repeat_controls"] != 16
+        or derivation["repeated_action_ids"] != [index % ACTION_COUNT for index in range(16)]
+        or derivation["all_requested_primitives_covered"] is not True
+        or derivation["deterministic_repeat_gate_passed"] is not True
+        or derivation["empirical_noise_scale_estimated"] is not False
+        or value["progress_tolerance_m"] != numerical_floor
+        or value["path_length_tolerance_m"] != numerical_floor
+    ):
+        raise CounterfactualPilotContractError(
+            "physical-rank numerical floor or deterministic repeat gate changed"
         )
     tolerances = MappingProxyType({
         "progress_tolerance_m": _positive_finite(
@@ -1084,11 +1164,17 @@ def _load_calibration_receipt(
         "citable_as_scientific_evidence",
         "authorizes_retry_or_resume",
         "calibration_id",
-        "pilot_attempt_id",
         "role",
         "train_eval_scenes_accessed",
+        "decision",
         "calibration_collection_receipt",
         "calibration_contract",
+        "repeatability_analysis",
+        "physics_validation",
+        "visual_validation",
+        "resource_measurements",
+        "analyzer_binding",
+        "checker_binding",
         "source_bindings",
     }
     if not isinstance(receipt, Mapping) or set(receipt) != expected:
@@ -1101,9 +1187,9 @@ def _load_calibration_receipt(
         or receipt["authorizes_retry_or_resume"] is not False
         or not isinstance(receipt["calibration_id"], str)
         or not receipt["calibration_id"]
-        or receipt["pilot_attempt_id"] != attempt_id
         or receipt["role"] != "calibration"
         or receipt["train_eval_scenes_accessed"] is not False
+        or receipt["decision"] != "FREEZE_PILOT_CONTRACT"
         or receipt["calibration_contract"] != top_contract
     ):
         raise CounterfactualPilotContractError(
@@ -1115,13 +1201,137 @@ def _load_calibration_receipt(
         synthetic_test_mode=synthetic_test_mode,
         require_absolute=True,
     )
-    _validate_source_bindings(
-        receipt["source_bindings"], synthetic_test_mode=synthetic_test_mode
-    )
-    if not synthetic_test_mode:
+    for field, required_values in (
+        (
+            "repeatability_analysis",
+            {
+                "repeat_controls": 16,
+                "repeated_action_ids": [index % ACTION_COUNT for index in range(16)],
+                "all_requested_primitives_covered": True,
+                "interpretation": (
+                    "deterministic_replay_gate_not_empirical_noise_estimate"
+                ),
+                "empirical_noise_scale_estimated": False,
+                "executed_command_tapes_exact": True,
+                "physical_trajectories_exact": True,
+                "stored_rgb_exact": True,
+            },
+        ),
+        (
+            "physics_validation",
+            {
+                "receipt_checker_passed": True,
+                "common_prefix_exact": True,
+                "nine_unique_executed_tapes_per_state": True,
+                "physics_validated_for_branch_outcomes": True,
+            },
+        ),
+        (
+            "visual_validation",
+            {
+                "camera_quality_receipts_passed": True,
+                "endpoint_pose_replay_bound": True,
+                "visual_domain_fidelity_claimed": False,
+                "eligible_for_physical_branch_evaluation": True,
+                "eligible_for_visual_domain_parity_claim": False,
+            },
+        ),
+    ):
+        value = receipt[field]
+        if not isinstance(value, Mapping) or any(
+            value.get(key) != expected_value
+            for key, expected_value in required_values.items()
+        ):
+            raise CounterfactualPilotContractError(
+                f"calibration {field} evidence changed"
+            )
+    resources = receipt["resource_measurements"]
+    if (
+        not isinstance(resources, Mapping)
+        or set(resources) != {
+            "schema",
+            "stored_rgb_png",
+            "stage_wall_seconds",
+            "outcome_counts",
+            "gpu_peak_memory_measurement_scope",
+        }
+        or resources["schema"]
+        != "lewm_go2_world_model_counterfactual_calibration_resource_measurements_v1"
+        or resources["gpu_peak_memory_measurement_scope"]
+        != "external_terminal_required_not_observed_by_analyzer"
+    ):
         raise CounterfactualPilotContractError(
-            "deterministic calibration analyzer provenance is not implemented; "
-            "claim-bearing pilot consumption remains fail-closed"
+            "calibration resource measurements changed"
+        )
+    stored_rgb = resources["stored_rgb_png"]
+    stages = resources["stage_wall_seconds"]
+    outcomes = resources["outcome_counts"]
+    if (
+        not isinstance(stored_rgb, Mapping)
+        or stored_rgb.get("context_frames") != 48
+        or stored_rgb.get("target_frames") != 160
+        or stored_rgb.get("total_frames") != 208
+        or stored_rgb.get("raw_uncompressed_rgb_ceiling_bytes")
+        != 208 * 224 * 224 * 3
+        or type(stored_rgb.get("context_bytes")) is not int
+        or type(stored_rgb.get("target_bytes")) is not int
+        or type(stored_rgb.get("total_bytes")) is not int
+        or stored_rgb["context_bytes"] < 0
+        or stored_rgb["target_bytes"] < 0
+        or stored_rgb["total_bytes"]
+        != stored_rgb["context_bytes"] + stored_rgb["target_bytes"]
+        or not isinstance(stages, Mapping)
+        or any(_finite(value, name=f"calibration stage {name}") < 0.0 for name, value in stages.items())
+        or not isinstance(outcomes, Mapping)
+        or outcomes.get("complete_all_nine_action_groups") != 16
+        or outcomes.get("executed_tape_distinct_groups") != 16
+        or outcomes.get("prebranch_exact_groups") != 16
+        or outcomes.get("camera_invalid_frames") != 0
+        or outcomes.get("incomplete_states") != 0
+    ):
+        raise CounterfactualPilotContractError(
+            "calibration resource measurement evidence is invalid"
+        )
+    analyzer_binding = _validate_inert_binding(
+        receipt["analyzer_binding"],
+        name="calibration analyzer",
+        synthetic_test_mode=synthetic_test_mode,
+        require_absolute=True,
+    )
+    checker_binding = _validate_inert_binding(
+        receipt["checker_binding"],
+        name="calibration checker",
+        synthetic_test_mode=synthetic_test_mode,
+        require_absolute=True,
+    )
+    sources = receipt["source_bindings"]
+    expected_names = ["checker", "calibration_analyzer", "pilot_joiner"]
+    if (
+        not isinstance(sources, list)
+        or [
+            entry.get("name") if isinstance(entry, Mapping) else None
+            for entry in sources
+        ]
+        != expected_names
+    ):
+        raise CounterfactualPilotContractError(
+            "deterministic calibration analyzer source closure changed"
+        )
+    normalized_sources = []
+    for entry in sources:
+        if not isinstance(entry, Mapping) or set(entry) != {"name", "binding"}:
+            raise CounterfactualPilotContractError(
+                "calibration analyzer source binding is malformed"
+            )
+        normalized_sources.append(_validate_inert_binding(
+            entry["binding"],
+            name=f"calibration source {entry['name']}",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        ))
+    if normalized_sources[0] != checker_binding or normalized_sources[1] != analyzer_binding:
+        raise CounterfactualPilotContractError(
+            "calibration analyzer/checker aliases changed"
         )
     return MappingProxyType({
         "binding": MappingProxyType(normalized_binding),
@@ -1585,9 +1795,19 @@ def load_bound_pilot_v1(
     action_contract = manifest["action_contract"]
     if (
         not isinstance(action_contract, Mapping)
+        or set(action_contract) != {
+            "primitive_names",
+            "command_ticks_per_block",
+            "executed_tape_shape",
+            "candidate_model_input",
+            "future_executed_tape_usage",
+        }
         or action_contract.get("primitive_names") != list(PRIMITIVE_NAMES)
         or action_contract.get("command_ticks_per_block") != COMMAND_TICKS_PER_BLOCK
         or action_contract.get("executed_tape_shape") != list(EXECUTED_TAPE_SHAPE)
+        or action_contract.get("candidate_model_input") != "requested_action_id"
+        or action_contract.get("future_executed_tape_usage")
+        != "target_and_audit_only"
     ):
         raise CounterfactualPilotContractError("pilot action contract changed")
     source_bindings = _validate_source_bindings(
@@ -1901,6 +2121,7 @@ def read_bound_rgb_bytes_v1(
 
 __all__ = [
     "ACTION_COUNT",
+    "CandidateActionInputV1",
     "CounterfactualBranchV1",
     "CounterfactualGroupV1",
     "CounterfactualPilotBundleV1",
@@ -1913,6 +2134,7 @@ __all__ = [
     "RGB_MANIFEST_SCHEMA",
     "TOTAL_BRANCH_COUNT",
     "canonical_json_sha256",
+    "candidate_model_inputs_v1",
     "load_bound_pilot_v1",
     "physical_dense_ranks_v1",
     "physical_oracle_key_v1",

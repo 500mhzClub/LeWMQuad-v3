@@ -456,6 +456,8 @@ def _fixture(
             "envs": 10,
             "physics_build_wall_seconds": 0.1,
             "physics_simulation_wall_seconds": 0.2,
+            "common_prefix_step_wall_seconds": 0.1,
+            "branch_step_wall_seconds": 0.1,
             "render_scene_build_wall_seconds": 0.02,
             "native_render_wall_seconds": 0.05,
             "camera_quality_resize_wall_seconds": 0.05,

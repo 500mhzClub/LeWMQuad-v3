@@ -21,6 +21,7 @@ from lewm.datasets.go2_world_model_counterfactual_pilot_v1 import (
     STATE_RECEIPT_SCHEMA,
     CounterfactualPilotContractError,
     PhysicalLabelsV1,
+    candidate_model_inputs_v1,
     canonical_json_sha256,
     load_bound_pilot_v1,
     physical_dense_ranks_v1,
@@ -433,8 +434,8 @@ def _build_pilot(
     calibration_contract = {
         "schema": PHYSICAL_RANK_CONTRACT_SCHEMA,
         "excluded_scene_ids": ["calibration_scene"],
-        "progress_tolerance_m": 0.01,
-        "path_length_tolerance_m": 0.01,
+        "progress_tolerance_m": 1e-6,
+        "path_length_tolerance_m": 1e-6,
         "quantization_rule": "sign(x)*floor(abs(x)/t+0.5)",
         "lexicographic_key": [
             "physical_fell_ascending",
@@ -443,21 +444,112 @@ def _build_pilot(
             "physical_path_length_quantized_ascending",
         ],
         "proxy_fields_excluded": True,
+        "tolerance_derivation": {
+            "schema": "lewm_go2_world_model_counterfactual_tolerance_derivation_v1",
+            "method": "fixed_numerical_floor_after_exact_deterministic_repeat_gate",
+            "minimum_numerical_resolution_m": 1e-6,
+            "repeat_controls": 16,
+            "repeated_action_ids": [index % 9 for index in range(16)],
+            "all_requested_primitives_covered": True,
+            "deterministic_repeat_gate_passed": True,
+            "empirical_noise_scale_estimated": False,
+        },
     }
+    calibration_sources = [
+        {
+            "name": name,
+            "binding": inert(f"/synthetic/{name}.py", f"calibration-source:{name}"),
+        }
+        for name in ("checker", "calibration_analyzer", "pilot_joiner")
+    ]
     calibration_receipt = {
         "schema": CALIBRATION_RECEIPT_SCHEMA,
         "status": "SYNTHETIC_TEST_ONLY",
         "citable_as_scientific_evidence": False,
         "authorizes_retry_or_resume": False,
         "calibration_id": "synthetic-calibration",
-        "pilot_attempt_id": attempt_id,
         "role": "calibration",
         "train_eval_scenes_accessed": False,
+        "decision": "FREEZE_PILOT_CONTRACT",
         "calibration_collection_receipt": inert(
             "/synthetic/calibration/physics_result.json", "calibration"
         ),
         "calibration_contract": calibration_contract,
-        "source_bindings": source_bindings,
+        "repeatability_analysis": {
+            "repeat_controls": 16,
+            "repeated_action_ids": [index % 9 for index in range(16)],
+            "all_requested_primitives_covered": True,
+            "interpretation": (
+                "deterministic_replay_gate_not_empirical_noise_estimate"
+            ),
+            "empirical_noise_scale_estimated": False,
+            "progress_max_abs_delta_m": 0.0,
+            "path_length_max_abs_delta_m": 0.0,
+            "endpoint_position_max_abs_delta_m": 0.0,
+            "endpoint_quaternion_max_abs_delta": 0.0,
+            "executed_command_tapes_exact": True,
+            "physical_trajectories_exact": True,
+            "stored_rgb_exact": True,
+        },
+        "physics_validation": {
+            "receipt_checker_passed": True,
+            "common_prefix_exact": True,
+            "nine_unique_executed_tapes_per_state": True,
+            "minimum_physical_rank_classes_per_state": 9,
+            "maximum_physical_rank_classes_per_state": 9,
+            "clipped_candidate_branches": 0,
+            "physics_validated_for_branch_outcomes": True,
+        },
+        "visual_validation": {
+            "camera_quality_receipts_passed": True,
+            "endpoint_pose_replay_bound": True,
+            "visual_domain_fidelity_claimed": False,
+            "eligible_for_physical_branch_evaluation": True,
+            "eligible_for_visual_domain_parity_claim": False,
+        },
+        "resource_measurements": {
+            "schema": (
+                "lewm_go2_world_model_counterfactual_calibration_"
+                "resource_measurements_v1"
+            ),
+            "stored_rgb_png": {
+                "context_frames": 48,
+                "context_bytes": 4_800,
+                "target_frames": 160,
+                "target_bytes": 32_000,
+                "total_frames": 208,
+                "total_bytes": 36_800,
+                "raw_uncompressed_rgb_ceiling_bytes": 208 * 224 * 224 * 3,
+            },
+            "stage_wall_seconds": {
+                "collection_external_wall_seconds": 8.0,
+                "physics_scene_build_wall_seconds": 0.8,
+                "render_scene_build_wall_seconds": 0.8,
+                "common_prefix_step_wall_seconds": 1.6,
+                "branch_step_wall_seconds": 0.8,
+                "native_render_wall_seconds": 1.6,
+                "camera_quality_resize_wall_seconds": 0.8,
+                "png_encode_write_hash_wall_seconds": 0.8,
+                "post_lockstep_receipt_wall_seconds": 1.6,
+                "summed_scene_total_wall_seconds": 8.0,
+            },
+            "outcome_counts": {
+                "complete_all_nine_action_groups": 16,
+                "executed_tape_distinct_groups": 16,
+                "prebranch_exact_groups": 16,
+                "clipped_candidate_branches": 0,
+                "fallen_candidate_branches": 0,
+                "tipped_candidate_branches": 0,
+                "camera_invalid_frames": 0,
+                "incomplete_states": 0,
+            },
+            "gpu_peak_memory_measurement_scope": (
+                "external_terminal_required_not_observed_by_analyzer"
+            ),
+        },
+        "analyzer_binding": calibration_sources[1]["binding"],
+        "checker_binding": calibration_sources[0]["binding"],
+        "source_bindings": calibration_sources,
     }
     (root / "receipts/calibration.json").write_bytes(
         _json_bytes(calibration_receipt)
@@ -494,6 +586,8 @@ def _build_pilot(
             "primitive_names": list(PRIMITIVE_NAMES),
             "command_ticks_per_block": 5,
             "executed_tape_shape": [5, 3],
+            "candidate_model_input": "requested_action_id",
+            "future_executed_tape_usage": "target_and_audit_only",
         },
         "calibration_contract": calibration_contract,
         "calibration_receipt": _binding(root, "receipts/calibration.json"),
@@ -524,6 +618,22 @@ def test_strict_bound_pilot_loads_without_rgb_leaf_reads(tmp_path: Path) -> None
     assert bundle.groups_by_role["eval"][0].group_index == len(FAMILIES)
     assert bundle.calibration_receipt["document"]["status"] == "SYNTHETIC_TEST_ONLY"
     assert bundle.access_audit["rgb_leaf_open_count"] == 0
+
+
+def test_candidate_model_inputs_exclude_future_executed_tapes(tmp_path: Path) -> None:
+    root, byte_count, sha256 = _build_pilot(tmp_path)
+    bundle = load_bound_pilot_v1(
+        root,
+        expected_manifest_byte_count=byte_count,
+        expected_manifest_sha256=sha256,
+        allowed_parent=tmp_path,
+        synthetic_test_mode=True,
+    )
+    group = bundle.groups_by_role["train"][0]
+    inputs = candidate_model_inputs_v1(group)
+    assert [item.requested_action_id for item in inputs] == list(range(9))
+    assert inputs[0].requested_block == group.branches[0].requested_block
+    assert not hasattr(inputs[0], "executed_command_tape")
 
 
 def test_allowed_parent_does_not_enable_synthetic_provenance(tmp_path: Path) -> None:

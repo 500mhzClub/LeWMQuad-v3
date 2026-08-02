@@ -24,6 +24,7 @@ import os
 from pathlib import Path
 import re
 import stat
+import time
 from typing import Any, Mapping, Sequence
 
 import numpy as np
@@ -479,7 +480,18 @@ def read_bound_json(
     return payload, binding
 
 
-def deterministic_sentinel_action_id(*, state_index_in_scene: int) -> int:
+def deterministic_sentinel_action_id(
+    *,
+    state_index_in_scene: int,
+    group_index: int | None = None,
+    purpose: str = "source_integration_smoke",
+) -> int:
+    if purpose == "sizing_calibration_only":
+        if type(group_index) is not int or group_index < 0:
+            raise PilotContractError(
+                "rotating calibration sentinel requires a non-negative group_index"
+            )
+        return group_index % ACTION_COUNT
     if state_index_in_scene == 0:
         return CANONICAL_ACTIONS.index("hold")
     if state_index_in_scene == 1:
@@ -502,6 +514,7 @@ def lane_layout(
     *,
     role: str,
     state_index_in_scene: int,
+    sentinel_duplicate_action_id: int | None = None,
 ) -> tuple[dict[str, Any], ...]:
     if not isinstance(state_id, str) or _STATE_ID_RE.fullmatch(state_id) is None:
         raise PilotContractError("state_id is invalid")
@@ -517,9 +530,13 @@ def lane_layout(
     if role != "calibration":
         lane_count_for_role(role)
         return candidates
-    duplicate = deterministic_sentinel_action_id(
-        state_index_in_scene=state_index_in_scene
-    )
+    duplicate = sentinel_duplicate_action_id
+    if duplicate is None:
+        duplicate = deterministic_sentinel_action_id(
+            state_index_in_scene=state_index_in_scene
+        )
+    if type(duplicate) is not int or not 0 <= duplicate < ACTION_COUNT:
+        raise PilotContractError("calibration sentinel action ID is invalid")
     sentinel = {
         "lane_offset": ACTION_COUNT,
         "kind": "sentinel",
@@ -913,7 +930,11 @@ def validate_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
         ):
             raise PilotContractError(f"state {state_id} candidate action grid changed")
         sentinel = (
-            deterministic_sentinel_action_id(state_index_in_scene=state_index)
+            deterministic_sentinel_action_id(
+                state_index_in_scene=state_index,
+                group_index=group_index,
+                purpose=str(plan["purpose"]),
+            )
             if role == "calibration"
             else None
         )
@@ -1431,6 +1452,7 @@ def audit_sentinel_trajectories(
     state_ids: Sequence[str],
     roles: Sequence[str],
     state_indices_in_scene: Sequence[int],
+    sentinel_action_ids: Sequence[int | None] | None = None,
 ) -> list[dict[str, Any]]:
     """Compare each lane-9 repeat with its deterministic candidate lane."""
 
@@ -1438,6 +1460,15 @@ def audit_sentinel_trajectories(
         raise PilotContractError("sentinel trajectory components are absent")
     if len(roles) != len(state_ids) or len(state_indices_in_scene) != len(state_ids):
         raise PilotContractError("state ids, roles, and indices disagree in length")
+    if sentinel_action_ids is None:
+        sentinel_action_ids = tuple(
+            deterministic_sentinel_action_id(state_index_in_scene=int(index))
+            if role == "calibration"
+            else None
+            for role, index in zip(roles, state_indices_in_scene, strict=True)
+        )
+    if len(sentinel_action_ids) != len(state_ids):
+        raise PilotContractError("sentinel action IDs disagree in length")
     lane_counts = [lane_count_for_role(role) for role in roles]
     expected_lanes = sum(lane_counts)
     canonical: dict[str, np.ndarray] = {}
@@ -1462,9 +1493,9 @@ def audit_sentinel_trajectories(
         if role != "calibration":
             lane_start += lane_count
             continue
-        duplicate = deterministic_sentinel_action_id(
-            state_index_in_scene=int(state_index)
-        )
+        duplicate = sentinel_action_ids[group_index]
+        if type(duplicate) is not int or not 0 <= duplicate < ACTION_COUNT:
+            raise PilotContractError("calibration sentinel action ID is invalid")
         candidate_lane = lane_start + duplicate
         sentinel_lane = lane_start + ACTION_COUNT
         component_audits: dict[str, Any] = {}
@@ -1599,6 +1630,7 @@ def execute_lockstep_trial(
     if capture_render_batch is not None:
         render_batches.append(capture_render_without_physics_mutation())
     history_blocks: list[dict[str, Any]] = []
+    common_prefix_step_wall_seconds = 0.0
     for history_index in range(HISTORY_BLOCK_COUNT):
         requested = np.empty(
             (expected_envs, BLOCK_SIZE, COMMAND_DIM), dtype=np.float32
@@ -1637,9 +1669,11 @@ def execute_lockstep_trial(
                     },
                 )
 
+        history_step_started = time.perf_counter()
         trajectory = runner.execute_requested_block(
             requested, after_policy_step=audit_history_policy_step
         )
+        common_prefix_step_wall_seconds += time.perf_counter() - history_step_started
         executed = np.asarray(trajectory.executed, dtype=np.float32)
         clipped = np.asarray(trajectory.clipped, dtype=np.bool_)
         if executed.shape != requested.shape or clipped.shape != (expected_envs,):
@@ -1716,6 +1750,9 @@ def execute_lockstep_trial(
             str(state["state_id"]),
             role=roles[group_index],
             state_index_in_scene=state_indices[group_index],
+            sentinel_duplicate_action_id=state.get(
+                "sentinel_duplicate_action_id"
+            ),
         ):
             branch_requested[start + int(lane["lane_offset"])] = normalized_blocks[
                 int(lane["action_id"])
@@ -1728,10 +1765,12 @@ def execute_lockstep_trial(
         trajectory_samples.append(_copy_state_components(capture_components()))
         trajectory_times_ns.append(int(capture_sim_time_ns()))
 
+    branch_step_started = time.perf_counter()
     branch_trajectory = runner.execute_requested_block(
         branch_requested,
         after_policy_step=after_policy_step,
     )
+    branch_step_wall_seconds = time.perf_counter() - branch_step_started
     branch_executed = np.asarray(branch_trajectory.executed, dtype=np.float32)
     branch_clipped = np.asarray(branch_trajectory.clipped, dtype=np.bool_)
     if branch_executed.shape != branch_requested.shape or branch_clipped.shape != (
@@ -1755,6 +1794,18 @@ def execute_lockstep_trial(
         state_ids=state_ids,
         roles=roles,
         state_indices_in_scene=state_indices,
+        sentinel_action_ids=[
+            (
+                state.get("sentinel_duplicate_action_id")
+                if state.get("sentinel_duplicate_action_id") is not None
+                else deterministic_sentinel_action_id(
+                    state_index_in_scene=int(state["state_index_in_scene"])
+                )
+            )
+            if state["role"] == "calibration"
+            else None
+            for state in states
+        ],
     )
     failed_sentinels = [
         audit["state_id"] for audit in sentinel_audits if not audit["physics_equal"]
@@ -1780,6 +1831,8 @@ def execute_lockstep_trial(
         "history_blocks": history_blocks,
         "history_synchronization_audits": history_synchronization_audits,
         "synchronization_audits": synchronization_audits,
+        "common_prefix_step_wall_seconds": common_prefix_step_wall_seconds,
+        "branch_step_wall_seconds": branch_step_wall_seconds,
         "branch_requested": branch_requested,
         "branch_executed": branch_executed,
         "branch_clipped": branch_clipped,

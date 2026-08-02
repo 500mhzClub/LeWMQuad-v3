@@ -1,0 +1,149 @@
+{
+  "schema": "lewm_go2_world_model_counterfactual_calibration_scene_panel_v1",
+  "scenes": [
+    {
+      "family": "large_enclosed_maze",
+      "scene_id": "large_enclosed_maze_0294e4b379e1",
+      "scene_manifest_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_0294e4b379e1/manifest.json",
+        "file_sha256": "55d4994dda6796f420d2b10903fa7453e634b64949525b87c7ae6c35a70dbb1e",
+        "byte_count": 99404
+      },
+      "scene_genesis_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_0294e4b379e1/genesis_scene.json",
+        "file_sha256": "a9dc271aaa4cda98393ae0c0261a91b5df0a285383e22b25cd40c46e4c26a57f",
+        "byte_count": 106079
+      },
+      "states": [
+        {"state_id": "calibration-large-0", "history_action_ids": [6, 6], "target_xy_m": [-4.002, -4.002]},
+        {"state_id": "calibration-large-1", "history_action_ids": [5, 7], "target_xy_m": [-4.002, -4.002]}
+      ]
+    },
+    {
+      "family": "local_composite_motifs",
+      "scene_id": "local_composite_motifs_0302989c334d",
+      "scene_manifest_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_0302989c334d/manifest.json",
+        "file_sha256": "7c5228a13ad101eb8e939f88a84ef4404968bc1db2984c0b3070989a5c122765",
+        "byte_count": 12503
+      },
+      "scene_genesis_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_0302989c334d/genesis_scene.json",
+        "file_sha256": "e3674ab7e5a0e222fb453c9f58b25256721507e78288f2176704055552583858",
+        "byte_count": 12650
+      },
+      "states": [
+        {"state_id": "calibration-local-0", "history_action_ids": [6, 6], "target_xy_m": [5.128, 3.077]},
+        {"state_id": "calibration-local-1", "history_action_ids": [5, 7], "target_xy_m": [5.128, 3.077]}
+      ]
+    },
+    {
+      "family": "loop_alias_stress",
+      "scene_id": "loop_alias_stress_02bc8ab4058a",
+      "scene_manifest_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_02bc8ab4058a/manifest.json",
+        "file_sha256": "91aa96125ddd0f76d36446bc1176fc7a1e2b5de1d4386e5cd3459b619d0104e6",
+        "byte_count": 20324
+      },
+      "scene_genesis_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_02bc8ab4058a/genesis_scene.json",
+        "file_sha256": "2c0fd34e0a0d45cd7c96e7ffc87d0828ac37a9b238207c16e24fdefb6cdc253d",
+        "byte_count": 21580
+      },
+      "states": [
+        {"state_id": "calibration-loop-0", "history_action_ids": [6, 6], "target_xy_m": [-2.443, -1.466]},
+        {"state_id": "calibration-loop-1", "history_action_ids": [5, 7], "target_xy_m": [-2.443, -1.466]}
+      ]
+    },
+    {
+      "family": "medium_enclosed_maze",
+      "scene_id": "medium_enclosed_maze_0011a1affc54",
+      "scene_manifest_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_0011a1affc54/manifest.json",
+        "file_sha256": "f34f219f58baeaf4d8575b9865066af2937e854cd3c35fb1bff66b4a3d0fab0d",
+        "byte_count": 46754
+      },
+      "scene_genesis_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_0011a1affc54/genesis_scene.json",
+        "file_sha256": "966b8f6960192a56536544d38396ce2d7b1247204ba3258c7751a2fc2f1680fe",
+        "byte_count": 49827
+      },
+      "states": [
+        {"state_id": "calibration-medium-0", "history_action_ids": [6, 6], "target_xy_m": [2.035, 2.035]},
+        {"state_id": "calibration-medium-1", "history_action_ids": [5, 7], "target_xy_m": [2.035, 2.035]}
+      ]
+    },
+    {
+      "family": "open_obstacle_field",
+      "scene_id": "open_obstacle_field_03fdc12540a1",
+      "scene_manifest_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/manifest.json",
+        "file_sha256": "fa3eca4ab263b54d2daf2cd33de5fc920bda3fa5984a2fec032f0c2d380ccf20",
+        "byte_count": 7859
+      },
+      "scene_genesis_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/genesis_scene.json",
+        "file_sha256": "0781016339a526c9f9ff0a54bd077acfd4b46c2c392b31604cff0897e776f7b0",
+        "byte_count": 8055
+      },
+      "states": [
+        {"state_id": "calibration-open-0", "history_action_ids": [6, 6], "target_xy_m": [4.4, -4.4]},
+        {"state_id": "calibration-open-1", "history_action_ids": [5, 7], "target_xy_m": [4.4, -4.4]}
+      ]
+    },
+    {
+      "family": "rough_local_dynamics",
+      "scene_id": "rough_local_dynamics_088e9f856dda",
+      "scene_manifest_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_088e9f856dda/manifest.json",
+        "file_sha256": "991b1f85c51855746016c7aa607798cf9567748284e8809eae647c725234ecbb",
+        "byte_count": 7151
+      },
+      "scene_genesis_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_088e9f856dda/genesis_scene.json",
+        "file_sha256": "8b2e5b17bd7c3a18cf6af57af11124cca4c54bf09abb80f36dd3c4fb45d0d29a",
+        "byte_count": 7342
+      },
+      "states": [
+        {"state_id": "calibration-rough-0", "history_action_ids": [6, 6], "target_xy_m": [4.4, -4.4]},
+        {"state_id": "calibration-rough-1", "history_action_ids": [5, 7], "target_xy_m": [4.4, -4.4]}
+      ]
+    },
+    {
+      "family": "small_enclosed_maze",
+      "scene_id": "small_enclosed_maze_02deac455458",
+      "scene_manifest_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_02deac455458/manifest.json",
+        "file_sha256": "bee55b9e62fc663c96466c57bffe48698aa6fcf26b0c82b0db261a3cf1de87cf",
+        "byte_count": 48006
+      },
+      "scene_genesis_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_02deac455458/genesis_scene.json",
+        "file_sha256": "49ce6fa041ac15bb989057280dbe853b7b14caa708b8138184c008aabd84ba8b",
+        "byte_count": 51080
+      },
+      "states": [
+        {"state_id": "calibration-small-0", "history_action_ids": [6, 6], "target_xy_m": [-1.6, -1.6]},
+        {"state_id": "calibration-small-1", "history_action_ids": [5, 7], "target_xy_m": [-1.6, -1.6]}
+      ]
+    },
+    {
+      "family": "visual_sensor_stress",
+      "scene_id": "visual_sensor_stress_02a4094c2467",
+      "scene_manifest_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_02a4094c2467/manifest.json",
+        "file_sha256": "db612965dd1aa0b60bbf404c38618bbc4b961e3513fb244c517d5934cb4bbaa6",
+        "byte_count": 33668
+      },
+      "scene_genesis_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_02a4094c2467/genesis_scene.json",
+        "file_sha256": "510d980bd3fe408f7e25f96783b700c10e48a3bed8e4af4d4eb65b319b637012",
+        "byte_count": 38647
+      },
+      "states": [
+        {"state_id": "calibration-visual-0", "history_action_ids": [6, 6], "target_xy_m": [-1.6, 1.6]},
+        {"state_id": "calibration-visual-1", "history_action_ids": [5, 7], "target_xy_m": [-1.6, 1.6]}
+      ]
+    }
+  ]
+}
