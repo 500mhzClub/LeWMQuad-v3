@@ -16,6 +16,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 from types import MappingProxyType
 from typing import Any, Mapping, Sequence
@@ -40,6 +41,15 @@ PREREGISTRATION_SHA256 = (
     "ee2cbd54459760c23107e961f9ae4c860a5cfccfeb3cdb332a5449394031fdbf"
 )
 PREREGISTRATION_BYTE_COUNT = 6_320
+FAILURE_AUDIT = (
+    REPO_ROOT
+    / "docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_"
+    "terminal_failure_and_posthoc_admissibility_audit_2026-08-02.json"
+)
+FAILURE_AUDIT_SHA256 = (
+    "c29a728e75ccf98191d04d9d834232db95091f2ca8655a4dc9c60144233e4a9b"
+)
+FAILURE_AUDIT_BYTE_COUNT = 14_685
 DEFAULT_OUTPUT_ROOT = (
     REPO_ROOT
     / ".generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1"
@@ -49,6 +59,15 @@ AUTHORITY_SCHEMA = (
     "lewm_go2_world_model_bounded_branch_posthoc_join_admission_authority_v1"
 )
 AUTHORITY_STATUS = "AUTHORIZED_ONE_EXACT_POSTHOC_JOIN_ADMISSION_ONLY"
+SOURCE_REVIEW_SCHEMA = (
+    "lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_source_review_v1"
+)
+SOURCE_REVIEW_STATUS = "PASS_SOURCE_REVIEWED_POSTHOC_JOIN_ADMISSION_ONLY"
+SOURCE_REVIEW = (
+    REPO_ROOT
+    / "docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_"
+    "source_review_2026-08-02.json"
+)
 MANIFEST_SCHEMA = (
     "lewm_go2_world_model_bounded_branch_posthoc_join_admission_manifest_v1"
 )
@@ -58,6 +77,10 @@ TERMINAL_SCHEMA = (
 )
 TERMINAL_SUCCESS = "COMPLETE_PENDING_INDEPENDENT_REVIEW"
 TERMINAL_FAILURE = "CONSUMED_TERMINAL_FAILURE"
+TERMINAL_REVIEW_SCHEMA = (
+    "lewm_go2_world_model_bounded_branch_posthoc_join_admission_terminal_review_v1"
+)
+TERMINAL_REVIEW_STATUS = "PASS_POSTHOC_JOIN_ADMISSION_ONLY"
 
 EXPECTED_COUNTS = {
     "actions": 9,
@@ -92,6 +115,60 @@ CONSUMER_COMPATIBILITY_PROJECTION = (
     "for_frozen_three_field_group_parser_only"
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _expected_source_paths() -> dict[str, Path]:
+    return {
+        "materializer": Path(__file__).resolve(),
+        "focused_test": (
+            REPO_ROOT
+            / "lewm/tests/test_go2_world_model_bounded_branch_posthoc_join_"
+            "admission_v1.py"
+        ).resolve(),
+        "pilot_contract": (
+            REPO_ROOT
+            / "lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py"
+        ).resolve(),
+        "calibration_analyzer": (
+            REPO_ROOT
+            / "scripts/analyze_go2_world_model_counterfactual_calibration_v1.py"
+        ).resolve(),
+        "joiner": (
+            REPO_ROOT / "scripts/join_go2_world_model_counterfactual_pilot_v1.py"
+        ).resolve(),
+        "checker": (
+            REPO_ROOT / "scripts/check_go2_world_model_counterfactual_pilot_v1.py"
+        ).resolve(),
+        "consumer": (
+            REPO_ROOT
+            / "lewm/datasets/go2_world_model_counterfactual_pilot_v1.py"
+        ).resolve(),
+    }
+
+
+SOURCE_REVIEW_CHECKS = {
+    "commit_scope_exactly_two_new_posthoc_files",
+    "frozen_joiner_checker_consumer_match_failure_audit",
+    "no_collector_renderer_simulator_or_join_pilot_execution_path",
+    "source_root_read_only_and_fresh_derived_root_exclusive",
+    "authority_prereg_audit_commit_and_source_closure_exact",
+    "original_failed_terminal_preserved",
+    "derived_leaf_hashes_and_counts_match_preregistration",
+    "split_root_loader_requires_bound_success_terminal_and_independent_review",
+    "split_root_source_root_equals_physics_result_parent_and_plan_output_root",
+    "sync_projection_only_removes_validated_redundant_zero_diagnostics",
+    "no_future_executed_tape_leakage",
+}
+TERMINAL_REVIEW_CHECKS = {
+    "terminal_complete_pending_review",
+    "manifest_complete_and_bound",
+    "derived_leaf_hashes_and_counts_exact",
+    "all_source_and_calibration_pixels_reverified",
+    "source_inventory_unchanged",
+    "metadata_only_fresh_root",
+    "original_failed_terminal_preserved",
+    "no_retry_resume_render_or_generation",
+}
 
 
 class PosthocJoinAdmissionError(RuntimeError):
@@ -409,6 +486,135 @@ def derive_documents_v1(
     )
 
 
+def _normalize_source_bindings(value: object) -> list[dict[str, Any]]:
+    expected = _expected_source_paths()
+    if not isinstance(value, list) or len(value) != len(expected):
+        raise PosthocJoinAdmissionError("posthoc authority source closure changed")
+    normalized: list[dict[str, Any]] = []
+    for row, (expected_name, expected_path) in zip(value, expected.items(), strict=True):
+        if not isinstance(row, Mapping) or set(row) != {"name", "binding"}:
+            raise PosthocJoinAdmissionError("posthoc authority source row changed")
+        binding = _require_binding(
+            row["binding"], label=f"posthoc authority source {expected_name}"
+        )
+        if row.get("name") != expected_name or binding["path"] != str(expected_path):
+            raise PosthocJoinAdmissionError("posthoc authority source identity changed")
+        normalized.append({"name": expected_name, "binding": binding})
+    return normalized
+
+
+def _validate_committed_sources_v1(
+    *, source_commit: str, source_bindings: Sequence[Mapping[str, Any]]
+) -> None:
+    commit_type = subprocess.run(
+        ["git", "cat-file", "-t", source_commit],
+        cwd=REPO_ROOT,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if commit_type.returncode != 0 or commit_type.stdout.strip() != b"commit":
+        raise PosthocJoinAdmissionError("posthoc source commit is not an exact commit")
+    for row in source_bindings:
+        binding = row["binding"]
+        path = Path(str(binding["path"]))
+        try:
+            relative = path.relative_to(REPO_ROOT).as_posix()
+        except ValueError as exc:
+            raise PosthocJoinAdmissionError(
+                "posthoc source is outside the repository"
+            ) from exc
+        result = subprocess.run(
+            ["git", "show", f"{source_commit}:{relative}"],
+            cwd=REPO_ROOT,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if (
+            result.returncode != 0
+            or len(result.stdout) != int(binding["byte_count"])
+            or hashlib.sha256(result.stdout).hexdigest() != binding["file_sha256"]
+        ):
+            raise PosthocJoinAdmissionError(
+                f"posthoc source {row['name']} is not bound at source commit"
+            )
+
+
+def _validate_source_review_v1(
+    *,
+    review_binding: Mapping[str, Any],
+    source_commit: str,
+    source_bindings: Sequence[Mapping[str, Any]],
+) -> None:
+    if review_binding["path"] != str(SOURCE_REVIEW.resolve()):
+        raise PosthocJoinAdmissionError("posthoc source review path changed")
+    review, _ = _read_bound_json(review_binding, label="posthoc source review")
+    required = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_granted_by_this_document",
+        "citable_as_scientific_evidence",
+        "reviewer",
+        "reviewed_at",
+        "source_commit",
+        "preregistration_binding",
+        "failure_admissibility_audit_binding",
+        "source_bindings",
+        "checks",
+        "findings",
+        "protected_material_opened",
+    }
+    reviewer = review.get("reviewer")
+    checks = review.get("checks")
+    expected_preregistration = {
+        "path": str(PREREGISTRATION.resolve()),
+        "file_sha256": PREREGISTRATION_SHA256,
+        "byte_count": PREREGISTRATION_BYTE_COUNT,
+    }
+    expected_audit = {
+        "path": str(FAILURE_AUDIT.resolve()),
+        "file_sha256": FAILURE_AUDIT_SHA256,
+        "byte_count": FAILURE_AUDIT_BYTE_COUNT,
+    }
+    audit, _ = _read_bound_json(expected_audit, label="failure admissibility audit")
+    named_sources = {
+        str(row["name"]): dict(row["binding"]) for row in source_bindings
+    }
+    if (
+        set(review) != required
+        or review.get("schema") != SOURCE_REVIEW_SCHEMA
+        or review.get("status") != SOURCE_REVIEW_STATUS
+        or review.get("authority_granted_by_this_document") is not False
+        or review.get("scientific_claim_granted_by_this_document") is not False
+        or review.get("citable_as_scientific_evidence") is not False
+        or review.get("source_commit") != source_commit
+        or review.get("preregistration_binding") != expected_preregistration
+        or review.get("failure_admissibility_audit_binding") != expected_audit
+        or review.get("source_bindings") != list(source_bindings)
+        or not isinstance(reviewer, Mapping)
+        or set(reviewer) != {"identity", "independence_basis"}
+        or any(
+            not isinstance(reviewer[key], str) or not reviewer[key].strip()
+            for key in reviewer
+        )
+        or not isinstance(review.get("reviewed_at"), str)
+        or not review["reviewed_at"].strip()
+        or not isinstance(checks, Mapping)
+        or set(checks) != SOURCE_REVIEW_CHECKS
+        or any(value is not True for value in checks.values())
+        or review.get("findings") != []
+        or review.get("protected_material_opened") is not False
+        or audit.get("source_seam_bindings")
+        != {
+            name: named_sources[name]
+            for name in ("joiner", "checker", "consumer")
+        }
+    ):
+        raise PosthocJoinAdmissionError("posthoc source review did not pass exactly")
+
+
 def validate_authority_v1(document: object) -> dict[str, Any]:
     required = {
         "schema",
@@ -437,6 +643,14 @@ def validate_authority_v1(document: object) -> dict[str, Any]:
         "file_sha256": PREREGISTRATION_SHA256,
         "byte_count": PREREGISTRATION_BYTE_COUNT,
     }
+    expected_audit = {
+        "path": str(FAILURE_AUDIT.resolve()),
+        "file_sha256": FAILURE_AUDIT_SHA256,
+        "byte_count": FAILURE_AUDIT_BYTE_COUNT,
+    }
+    failure_audit = _require_binding(
+        document["failure_audit_binding"], label="failure admissibility audit"
+    )
     inputs = document.get("input_bindings")
     attempt = document.get("attempt")
     permissions = document.get("permissions")
@@ -446,6 +660,7 @@ def validate_authority_v1(document: object) -> dict[str, Any]:
         or document.get("authority_granted_by_this_document") is not True
         or document.get("scientific_claim_authorized") is not False
         or preregistration != expected_preregistration
+        or failure_audit != expected_audit
         or not isinstance(document.get("issued_at"), str)
         or not document["issued_at"]
         or not isinstance(document.get("authorizer"), str)
@@ -501,27 +716,25 @@ def validate_authority_v1(document: object) -> dict[str, Any]:
         name: _require_binding(value, label=f"authority input {name}")
         for name, value in inputs.items()
     }
-    source_bindings = document.get("source_bindings")
-    if not isinstance(source_bindings, list) or not source_bindings:
-        raise PosthocJoinAdmissionError("posthoc authority source closure is absent")
-    normalized_sources = [
-        _require_binding(value, label="posthoc authority source")
-        for value in source_bindings
-    ]
-    if len({str(value["path"]) for value in normalized_sources}) != len(
-        normalized_sources
-    ):
-        raise PosthocJoinAdmissionError("posthoc authority source paths repeat")
+    normalized_sources = _normalize_source_bindings(document.get("source_bindings"))
+    source_review = _require_binding(
+        document["source_review_binding"], label="posthoc source review"
+    )
+    _validate_committed_sources_v1(
+        source_commit=str(document["source_commit"]),
+        source_bindings=normalized_sources,
+    )
+    _validate_source_review_v1(
+        review_binding=source_review,
+        source_commit=str(document["source_commit"]),
+        source_bindings=normalized_sources,
+    )
     normalized = dict(document)
     normalized["input_bindings"] = normalized_inputs
     normalized["source_bindings"] = normalized_sources
     normalized["preregistration_binding"] = preregistration
-    normalized["failure_audit_binding"] = _require_binding(
-        document["failure_audit_binding"], label="failure admissibility audit"
-    )
-    normalized["source_review_binding"] = _require_binding(
-        document["source_review_binding"], label="posthoc source review"
-    )
+    normalized["failure_audit_binding"] = failure_audit
+    normalized["source_review_binding"] = source_review
     return normalized
 
 
@@ -531,7 +744,7 @@ def _rehash_authority_inputs(authority: Mapping[str, Any]) -> None:
         authority["failure_audit_binding"],
         authority["source_review_binding"],
         *authority["input_bindings"].values(),
-        *authority["source_bindings"],
+        *(row["binding"] for row in authority["source_bindings"]),
     ):
         if _file_binding(Path(str(binding["path"]))) != dict(binding):
             raise PosthocJoinAdmissionError("posthoc authority input changed")
@@ -669,6 +882,7 @@ def materialize_v1(
             "manifest_binding": manifest_binding,
             "source_inventory_before": before,
             "source_inventory_after": after,
+            "terminalization_inventory_failure": None,
             "generation_or_rendering_performed": False,
             "independent_review_required": True,
             "failure": None,
@@ -681,9 +895,17 @@ def materialize_v1(
             "manifest_binding": manifest_binding,
             "terminal_binding": terminal_binding,
         }
-    except Exception as exc:
+    except BaseException as exc:
         terminal_path = output_root / "terminal.json"
         if not terminal_path.exists() and not terminal_path.is_symlink():
+            inventory_failure: str | None = None
+            try:
+                failure_inventory = _source_inventory(source_root)
+            except BaseException as inventory_exc:
+                failure_inventory = None
+                inventory_failure = (
+                    f"{type(inventory_exc).__name__}: {inventory_exc}"
+                )
             failure = {
                 "schema": TERMINAL_SCHEMA,
                 "status": TERMINAL_FAILURE,
@@ -694,7 +916,8 @@ def materialize_v1(
                 "authority_binding": authority_binding,
                 "manifest_binding": manifest_binding,
                 "source_inventory_before": before,
-                "source_inventory_after": _source_inventory(source_root),
+                "source_inventory_after": failure_inventory,
+                "terminalization_inventory_failure": inventory_failure,
                 "generation_or_rendering_performed": False,
                 "independent_review_required": True,
                 "failure": f"{type(exc).__name__}: {exc}",
@@ -753,11 +976,101 @@ def _consumer_compatible_sync_document(value: Mapping[str, Any]) -> dict[str, An
     return result
 
 
+def _validate_terminal_review_v1(
+    *,
+    review: object,
+    terminal_binding: Mapping[str, Any],
+    manifest_binding: Mapping[str, Any],
+    manifest: Mapping[str, Any],
+) -> None:
+    required = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_granted_by_this_document",
+        "citable_as_scientific_evidence",
+        "reviewer",
+        "reviewed_at",
+        "terminal_binding",
+        "manifest_binding",
+        "authority_binding",
+        "source_review_binding",
+        "preregistration_binding",
+        "failure_admissibility_audit_binding",
+        "checks",
+        "findings",
+        "protected_material_opened",
+    }
+    reviewer = review.get("reviewer") if isinstance(review, Mapping) else None
+    checks = review.get("checks") if isinstance(review, Mapping) else None
+    if (
+        not isinstance(review, Mapping)
+        or set(review) != required
+        or review.get("schema") != TERMINAL_REVIEW_SCHEMA
+        or review.get("status") != TERMINAL_REVIEW_STATUS
+        or review.get("authority_granted_by_this_document") is not False
+        or review.get("scientific_claim_granted_by_this_document") is not False
+        or review.get("citable_as_scientific_evidence") is not False
+        or review.get("terminal_binding") != dict(terminal_binding)
+        or review.get("manifest_binding") != dict(manifest_binding)
+        or review.get("authority_binding") != manifest["authority_binding"]
+        or review.get("source_review_binding") != manifest["source_review_binding"]
+        or review.get("preregistration_binding")
+        != manifest["preregistration_binding"]
+        or review.get("failure_admissibility_audit_binding")
+        != manifest["failure_audit_binding"]
+        or not isinstance(reviewer, Mapping)
+        or set(reviewer) != {"identity", "independence_basis"}
+        or any(
+            not isinstance(reviewer[key], str) or not reviewer[key].strip()
+            for key in reviewer
+        )
+        or not isinstance(review.get("reviewed_at"), str)
+        or not review["reviewed_at"].strip()
+        or not isinstance(checks, Mapping)
+        or set(checks) != TERMINAL_REVIEW_CHECKS
+        or any(value is not True for value in checks.values())
+        or review.get("findings") != []
+        or review.get("protected_material_opened") is not False
+    ):
+        raise PosthocJoinAdmissionError(
+            "posthoc independent terminal review did not pass exactly"
+        )
+
+
+def _validate_split_source_root_v1(
+    *, manifest: Mapping[str, Any], inputs: Mapping[str, Any]
+) -> Path:
+    source_root = _absolute_nofollow(
+        Path(str(manifest["source_receipt_root"])),
+        label="source receipt root",
+        must_exist=True,
+    )
+    expected_source_root = _absolute_nofollow(
+        Path(str(inputs["physics_result"]["path"])).parent,
+        label="physics source receipt root",
+        must_exist=True,
+    )
+    plan, _ = _read_bound_json(inputs["collection_plan"], label="frozen collection plan")
+    if source_root != expected_source_root or plan.get("output_root") != str(
+        expected_source_root
+    ):
+        raise PosthocJoinAdmissionError(
+            "posthoc source root is not the bound physics and plan root"
+        )
+    return source_root
+
+
 def load_posthoc_bundle_v1(
     pilot_root: Path,
     *,
     expected_manifest_byte_count: int,
     expected_manifest_sha256: str,
+    expected_terminal_byte_count: int,
+    expected_terminal_sha256: str,
+    terminal_review_path: Path,
+    expected_terminal_review_byte_count: int,
+    expected_terminal_review_sha256: str,
 ) -> consumer.CounterfactualPilotBundleV1:
     """Load the reviewed split-root metadata without opening an RGB leaf."""
 
@@ -773,8 +1086,40 @@ def load_posthoc_bundle_v1(
         expected_byte_count=expected_manifest_byte_count,
         label="posthoc manifest",
     )
+    required_manifest = {
+        "schema",
+        "status",
+        "citable_as_scientific_evidence",
+        "original_attempt_completed_successfully",
+        "authorizes_retry_or_resume",
+        "source_receipt_root",
+        "derived_output_root",
+        "authority_binding",
+        "preregistration_binding",
+        "failure_audit_binding",
+        "source_review_binding",
+        "input_bindings",
+        "source_bindings",
+        "source_inventory_before",
+        "source_inventory_after",
+        "counts",
+        "rgb_artifacts",
+        "role_scene_counts",
+        "render_profile",
+        "visual_domain_parity_result_binding",
+        "visual_domain_parity_terminal_binding",
+        "visual_domain_parity_review_binding",
+        "calibration_contract",
+        "scene_ids",
+        "action_catalog",
+        "derived_leaf_bindings",
+        "derivation",
+        "rgb_storage",
+        "consumer_compatibility_projection",
+    }
     if (
         not isinstance(manifest, Mapping)
+        or set(manifest) != required_manifest
         or manifest.get("schema") != MANIFEST_SCHEMA
         or manifest.get("status") != MANIFEST_STATUS
         or manifest.get("citable_as_scientific_evidence") is not False
@@ -788,12 +1133,108 @@ def load_posthoc_bundle_v1(
         != manifest.get("source_inventory_after")
         or manifest.get("consumer_compatibility_projection")
         != CONSUMER_COMPATIBILITY_PROJECTION
+        or manifest.get("derivation")
+        != "frozen_pixel_verifier_plus_pure_build_joined_documents_v1"
+        or manifest.get("rgb_storage") != "immutable_source_receipt_root_only"
     ):
         raise PosthocJoinAdmissionError("posthoc manifest changed")
     inputs = manifest.get("input_bindings")
     leaves = manifest.get("derived_leaf_bindings")
-    if not isinstance(inputs, Mapping) or not isinstance(leaves, Mapping):
+    if (
+        not isinstance(inputs, Mapping)
+        or set(inputs)
+        != {
+            "consumed_terminal",
+            "physics_result",
+            "physics_receipt_check",
+            "collection_plan",
+            "calibration_gate",
+            "collection_source_review",
+            "collection_execution_authority",
+            "calibration_receipt",
+        }
+        or not isinstance(leaves, Mapping)
+        or set(leaves) != set(EXPECTED_LEAVES)
+    ):
         raise PosthocJoinAdmissionError("posthoc manifest bindings are absent")
+    source_root = _validate_split_source_root_v1(manifest=manifest, inputs=inputs)
+
+    authority, _ = _read_bound_json(
+        manifest["authority_binding"], label="posthoc materialization authority"
+    )
+    normalized_authority = validate_authority_v1(authority)
+    if (
+        normalized_authority["preregistration_binding"]
+        != manifest["preregistration_binding"]
+        or normalized_authority["failure_audit_binding"]
+        != manifest["failure_audit_binding"]
+        or normalized_authority["source_review_binding"]
+        != manifest["source_review_binding"]
+        or normalized_authority["source_bindings"] != manifest["source_bindings"]
+        or normalized_authority["input_bindings"] != inputs
+    ):
+        raise PosthocJoinAdmissionError("posthoc manifest authority lineage changed")
+
+    terminal, terminal_binding = pilot.read_bound_json(
+        derived_root / "terminal.json",
+        expected_sha256=expected_terminal_sha256,
+        expected_byte_count=expected_terminal_byte_count,
+        label="posthoc terminal",
+    )
+    required_terminal = {
+        "schema",
+        "status",
+        "citable_as_scientific_evidence",
+        "scientific_claim_emitted",
+        "authorizes_retry_or_resume",
+        "original_terminal_remains_failure",
+        "authority_binding",
+        "manifest_binding",
+        "source_inventory_before",
+        "source_inventory_after",
+        "terminalization_inventory_failure",
+        "generation_or_rendering_performed",
+        "independent_review_required",
+        "failure",
+    }
+    if (
+        not isinstance(terminal, Mapping)
+        or set(terminal) != required_terminal
+        or terminal.get("schema") != TERMINAL_SCHEMA
+        or terminal.get("status") != TERMINAL_SUCCESS
+        or terminal.get("citable_as_scientific_evidence") is not False
+        or terminal.get("scientific_claim_emitted") is not False
+        or terminal.get("authorizes_retry_or_resume") is not False
+        or terminal.get("original_terminal_remains_failure") is not True
+        or terminal.get("authority_binding") != manifest["authority_binding"]
+        or terminal.get("manifest_binding") != dict(manifest_binding)
+        or terminal.get("source_inventory_before")
+        != manifest["source_inventory_before"]
+        or terminal.get("source_inventory_after")
+        != manifest["source_inventory_after"]
+        or terminal.get("terminalization_inventory_failure") is not None
+        or terminal.get("generation_or_rendering_performed") is not False
+        or terminal.get("independent_review_required") is not True
+        or terminal.get("failure") is not None
+    ):
+        raise PosthocJoinAdmissionError("posthoc success terminal changed")
+    review_path = _absolute_nofollow(
+        terminal_review_path,
+        label="posthoc independent terminal review",
+        must_exist=True,
+    )
+    review, _review_binding = pilot.read_bound_json(
+        review_path,
+        expected_sha256=expected_terminal_review_sha256,
+        expected_byte_count=expected_terminal_review_byte_count,
+        label="posthoc independent terminal review",
+    )
+    _validate_terminal_review_v1(
+        review=review,
+        terminal_binding=terminal_binding,
+        manifest_binding=manifest_binding,
+        manifest=manifest,
+    )
     derived = derive_documents_v1(
         terminal_binding=inputs["consumed_terminal"],
         physics_binding=inputs["physics_result"],
@@ -810,11 +1251,6 @@ def load_posthoc_bundle_v1(
         raw = _load_leaf(expected_path, binding, label=f"derived {name}")
         if raw != derived.raw_by_leaf[name]:
             raise PosthocJoinAdmissionError(f"derived {name} is not reproducible")
-    source_root = _absolute_nofollow(
-        Path(str(manifest["source_receipt_root"])),
-        label="source receipt root",
-        must_exist=True,
-    )
     if _source_inventory(source_root) != manifest["source_inventory_before"]:
         raise PosthocJoinAdmissionError("source receipt inventory changed")
 
@@ -916,7 +1352,11 @@ __all__ = [
     "MANIFEST_SCHEMA",
     "MANIFEST_STATUS",
     "PosthocJoinAdmissionError",
+    "SOURCE_REVIEW_SCHEMA",
+    "SOURCE_REVIEW_STATUS",
     "TERMINAL_SCHEMA",
+    "TERMINAL_REVIEW_SCHEMA",
+    "TERMINAL_REVIEW_STATUS",
     "TERMINAL_SUCCESS",
     "derive_documents_v1",
     "load_posthoc_bundle_v1",
