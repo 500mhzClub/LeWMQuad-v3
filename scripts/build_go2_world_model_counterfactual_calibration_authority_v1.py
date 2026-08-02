@@ -83,6 +83,70 @@ REVIEW_ONLY_SOURCE_PATHS = {
 }
 
 TEXTURED_V03_PARITY_SOURCE_PATHS = {
+    "task_relevance_action_regret_evaluator": (
+        "scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py"
+    ),
+    "task_relevance_descriptor_encoder_contract": (
+        "lewm/benchmarks/go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py"
+    ),
+    "task_relevance_descriptor_model": (
+        "lewm/models/rgb_recurrent_patch_memory_temporal_jepa_v1.py"
+    ),
+    "task_relevance_development_pack_helper": (
+        "scripts/dev_pack_h6_temporal_frames.py"
+    ),
+    "task_relevance_development_probe": (
+        "scripts/dev_probe_counterfactual_action_fidelity.py"
+    ),
+    "task_relevance_development_training_helper": (
+        "scripts/dev_train_temporal_jepa_scaled.py"
+    ),
+    "task_relevance_encoder": "lewm/models/encoders.py",
+    "task_relevance_h6_dataset": (
+        "lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py"
+    ),
+    "task_relevance_main_pool_census": (
+        "lewm/benchmarks/go2_recurrent_jepa_main_pool_census.py"
+    ),
+    "task_relevance_memory_role_triplets": (
+        "lewm/datasets/go2_memory_role_place_triplets_v1.py"
+    ),
+    "task_relevance_models_package_init": "lewm/models/__init__.py",
+    "task_relevance_phase2d_spatial_model": (
+        "lewm/models/phase2d_spatial_lewm.py"
+    ),
+    "task_relevance_predictor": "lewm/models/predictor.py",
+    "task_relevance_primitive_affordance": (
+        "lewm/models/primitive_affordance.py"
+    ),
+    "task_relevance_recurrent_evaluator": (
+        "scripts/evaluate_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py"
+    ),
+    "task_relevance_recurrent_h4_dataset": (
+        "lewm/datasets/go2_recurrent_h4_rgb_sequences.py"
+    ),
+    "task_relevance_recurrent_h4_dataset_v2": (
+        "lewm/datasets/go2_recurrent_h4_rgb_sequences_v2.py"
+    ),
+    "task_relevance_recurrent_runner": (
+        "scripts/run_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py"
+    ),
+    "task_relevance_sigreg": "lewm/models/sigreg.py",
+    "task_relevance_single_frame_encoder_contract": (
+        "lewm/benchmarks/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py"
+    ),
+    "task_relevance_single_frame_evaluator": (
+        "scripts/evaluate_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py"
+    ),
+    "task_relevance_single_frame_model": (
+        "lewm/models/rgb_single_frame_multiblock_masked_spatial_jepa_v1.py"
+    ),
+    "task_relevance_source_action_utility": (
+        "lewm/models/source_action_utility.py"
+    ),
+    "task_relevance_spatial_lewm": "lewm/models/spatial_lewm.py",
+    "task_relevance_spatial_predictor": "lewm/models/spatial_predictor.py",
+    "task_relevance_world_model": "lewm/models/lewm.py",
     "visual_domain_parity_task_relevance_evaluator": (
         "scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py"
     ),

@@ -40,7 +40,7 @@ def _binding(path: str, token: str) -> dict[str, object]:
     }
 
 
-def test_fresh_v3_calibration_supervisor_imports_are_in_source_closure() -> None:
+def test_fresh_v3_calibration_runtime_imports_are_in_source_closure() -> None:
     probe = r'''
 import json
 from pathlib import Path
@@ -49,6 +49,12 @@ import sys
 repo_root = Path(sys.argv[1]).resolve(strict=True)
 sys.path.insert(0, str(repo_root))
 import scripts.run_go2_world_model_counterfactual_calibration_authorized_v1  # noqa: F401,E402
+from scripts import evaluate_go2_world_model_visual_domain_parity_task_relevance_v1 as task_relevance  # noqa: E402
+
+try:
+    task_relevance._descriptors({}, {})  # noqa: SLF001
+except task_relevance.TaskRelevanceEvaluationError:
+    pass
 
 loaded = set()
 for module in tuple(sys.modules.values()):
