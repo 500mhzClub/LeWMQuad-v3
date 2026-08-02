@@ -1,0 +1,96 @@
+{
+  "schema": "lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_source_review_v1",
+  "status": "PASS_SOURCE_REVIEWED_POSTHOC_JOIN_ADMISSION_ONLY",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "citable_as_scientific_evidence": false,
+  "reviewer": {
+    "identity": "/root/task_relevance_integration_audit",
+    "independence_basis": "independent source review of the exact committed posthoc admission tranche against the committed preregistration and failure-admissibility audit; the reviewer did not author the reviewed source"
+  },
+  "reviewed_at": "2026-08-02T20:38:16+01:00",
+  "source_commit": "03b8cab916e7340ecb6ca1b6783de263237b9b41",
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_preregistration_2026-08-02.json",
+    "file_sha256": "ee2cbd54459760c23107e961f9ae4c860a5cfccfeb3cdb332a5449394031fdbf",
+    "byte_count": 6320
+  },
+  "failure_admissibility_audit_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_terminal_failure_and_posthoc_admissibility_audit_2026-08-02.json",
+    "file_sha256": "c29a728e75ccf98191d04d9d834232db95091f2ca8655a4dc9c60144233e4a9b",
+    "byte_count": 14685
+  },
+  "source_bindings": [
+    {
+      "name": "materializer",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+        "file_sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+        "byte_count": 55667
+      }
+    },
+    {
+      "name": "focused_test",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+        "file_sha256": "0ffbc3cb6093fc07d6de419da91b321b0731a7dba5f94fb4d5eb007627e9759a",
+        "byte_count": 24108
+      }
+    },
+    {
+      "name": "pilot_contract",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+        "file_sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+        "byte_count": 102894
+      }
+    },
+    {
+      "name": "calibration_analyzer",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/analyze_go2_world_model_counterfactual_calibration_v1.py",
+        "file_sha256": "809f9b0cf3812c1c478741b1cebf170c13fd637b07ed6d340900d6991d2452fc",
+        "byte_count": 114260
+      }
+    },
+    {
+      "name": "joiner",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/join_go2_world_model_counterfactual_pilot_v1.py",
+        "file_sha256": "8b5b2bf9e456a858a82ed33852809a6b5fd5220911f2afbd925d7cbcc7b7f15e",
+        "byte_count": 28344
+      }
+    },
+    {
+      "name": "checker",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_counterfactual_pilot_v1.py",
+        "file_sha256": "18771d7b5c90e0a30f8c8331dd419da80aa4c7addba6acb265df2e5b96df81e7",
+        "byte_count": 143612
+      }
+    },
+    {
+      "name": "consumer",
+      "binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+        "file_sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+        "byte_count": 153820
+      }
+    }
+  ],
+  "checks": {
+    "commit_scope_exactly_two_new_posthoc_files": true,
+    "frozen_joiner_checker_consumer_match_failure_audit": true,
+    "no_collector_renderer_simulator_or_join_pilot_execution_path": true,
+    "source_root_read_only_and_fresh_derived_root_exclusive": true,
+    "authority_prereg_audit_commit_and_source_closure_exact": true,
+    "original_failed_terminal_preserved": true,
+    "derived_leaf_hashes_and_counts_match_preregistration": true,
+    "split_root_loader_requires_bound_success_terminal_and_independent_review": true,
+    "split_root_source_root_equals_physics_result_parent_and_plan_output_root": true,
+    "sync_projection_only_removes_validated_redundant_zero_diagnostics": true,
+    "no_future_executed_tape_leakage": true
+  },
+  "findings": [],
+  "protected_material_opened": false
+}
