@@ -83,6 +83,12 @@ REVIEW_ONLY_SOURCE_PATHS = {
 }
 
 TEXTURED_V03_PARITY_SOURCE_PATHS = {
+    "visual_domain_parity_task_relevance_evaluator": (
+        "scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py"
+    ),
+    "visual_domain_parity_task_relevance_evaluator_test": (
+        "lewm/tests/test_evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py"
+    ),
     "visual_domain_parity_plan_builder": (
         "scripts/build_go2_world_model_visual_domain_parity_plan_v1.py"
     ),

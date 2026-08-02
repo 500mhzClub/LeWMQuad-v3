@@ -1,16 +1,15 @@
 # Go2 bounded WM-A branch experiment V1
 
 Date: 2026-08-02
-Status: **parity source correction under re-review; first invocation did not consume the attempt; no bounded execution authority**
+Status: **exact parity terminally failed; frozen-output task-relevance evaluator passed; independent review pending; no bounded execution authority**
 
 This document is not execution authority, a scientific result, a retry or
-resume grant, a held-out-access grant, or a deployment grant. The first parity
-supervisor invocation stopped before root creation because its pre-reservation
-chain rehash incorrectly required the deliberately absent fresh root to be an
-existing reserved directory. The one-shot attempt therefore remains
-unconsumed. The minimal correction is not executable until it is committed,
-independently re-reviewed, and bound by a new immutable authority. No bounded
-branch experiment or model-panel evaluation has been launched.
+resume grant, a held-out-access grant, or a deployment grant. After the
+non-consuming launch defect was corrected and independently reviewed, the
+replacement authority ran the one exact parity attempt. That attempt is now
+consumed and cannot be retried or resumed. It terminally failed the
+preregistered bit-exact claim. No calibration, bounded branch experiment, or
+model-panel evaluation has yet been launched.
 
 ## Current disposition
 
@@ -27,6 +26,45 @@ plan may be rebound by a successor authority after the corrected source closure
 passes independent review. The immutable incident record is
 `docs/lewm_go2_world_model_visual_domain_parity_v1_preconsumption_launch_failure_and_authority_supersession_2026-08-02.json`
 (3,930 bytes, SHA-256 `3e82a468222b51212d6f427982abd553295899e9ac63728caa248a0220994656`).
+
+The corrected source froze at `2f45a09012bb0a179c37ad45f5080e5fc3404723`.
+An independent replacement review passed 67 focused and 315 integrated tests,
+and replacement authority V2 then consumed the exact planned root. The
+supervisor generated all 64 RGB leaves, zero depth frames, and zero physics
+steps. Its immutable result is
+`FAIL_EXACT_TEXTURED_V03_IMPLEMENTATION_EQUIVALENCE`: 32/32 independently
+rendered candidate/duplicate pairs are pixel-exact, while 24/32 historical/
+candidate pairs are pixel-exact. Worst historical/candidate normalized L1 is
+`0.000835672810790983`; minimum SSIM is `0.999873849744854`. The terminal
+failure records 119.24 seconds, consumed attempt, and no retry or resume.
+
+That exact failure remains binding and must never be relabelled as a pass. Two
+independent read-only audits found complete lineage and inventory and no render
+corruption. The frozen online/EMA encoder shared by all 12 model snapshots was
+then probed on the same 32 bound pairs: paired historical identity was the
+nearest historical descriptor for 32/32 candidates, worst paired/non-paired
+distance ratio was `0.0095057`, and worst paired descriptor RMS was
+`0.0014817737` versus minimum ordinary source/source RMS `0.0442784516`.
+Accordingly, exact pixels remain the failed implementation-reproducibility
+claim, but are no longer presumed to be the right sole gate for model-input
+adequacy.
+
+One frozen-output, no-rerender successor check may qualify only development
+data generation. Its engineering thresholds are explicitly post-hoc because
+the pixel measurements above were already observed; they are fixed before any
+V3 calibration or bounded branch data exists. It requires complete consumed
+lineage, 32/32 current-render duplicates exact, maximum paired normalized L1
+at most one 8-bit level (`1/255`), minimum paired SSIM at least `0.99`, exact
+32/32 paired retrieval under the shared downstream four-mask encoder
+descriptor, and worst paired/non-paired descriptor-distance ratio at most
+`0.1`. It grants no scientific claim and cannot establish planning usefulness.
+Failure stops generation; pass permits V3 calibration to test whether enough
+physically and visually distinct counterfactual branches actually exist.
+The first complete read-only evaluation passed: 32/32 duplicate pairs were
+exact, all 32 candidate descriptors retrieved their paired historical input,
+and the worst paired/non-paired distance ratio was `0.0095234`. The result must
+still be rebound to the final source and independently reviewed before it can
+serve as the V3 prerequisite.
 
 The original 160-branch calibration consumed its one attempt and failed on a
 valid low-information near-wall observation. That failure did not show render
@@ -57,11 +95,11 @@ two independently rendered candidate RGB leaves for identical
 scene/base-pose/camera identities. This is a deterministic qualification gate,
 not a statistical sample: exactly one ordinary TRAIN scene per family and four
 pre-bound poses per scene produce 32 reference/candidate/duplicate triples.
-All 32 reference/candidate pairs and all 32 candidate/duplicate pairs must be
-pixel-exact, with no missing or extra row. SSIM and normalized L1 are retained
-only as diagnostics; no confidence interval or relaxed image threshold can
-pass the gate. Missing or failed evidence is `STOP_NO_GENERATION_AUTHORITY`; a
-same-sensor flag or distribution-only test is insufficient.
+The original claim required every reference/candidate and candidate/duplicate
+pair to be pixel-exact and remains terminally failed. It cannot be relabelled
+or rerun. The only eligible successor is the frozen-output, development-only
+task-input check above; missing or failed lineage, repeatability, pixel, or
+latent evidence remains `STOP_NO_GENERATION_AUTHORITY`.
 
 The progression comparison and offline analysis completed. The result is
 122,056 bytes,
@@ -137,8 +175,8 @@ Near-wall or low-texture content is not an exclusion criterion.
 ### Hard visual-domain prerequisite
 
 The gate and authority carry one exact `visual_domain_parity_freeze`. It binds
-the parity result, the consumed successful supervisor terminal, the independent
-review, historical source-RGB reference, candidate pixel
+the immutable exact-failure result, its consumed no-retry terminal, an
+independently reviewed task-input-adequacy result, historical source-RGB reference, candidate pixel
 panel, `render_replay_v03.py`, `textures.py`, the candidate collector, the
 fixed parity evaluator, all evidence scene IDs and poses, raw-pixel hashes,
 historical summary/plan/frames/Genesis lineage, complete corpus-selection
@@ -365,41 +403,41 @@ promotion, G2 authority, or deployment evidence.
 1. Bind the completed fixed progression result/analysis identities above; do
    not launch a fresh run solely to embed snapshot receipts. Preserve
    `DELTA_PROXY_NOT_MEANINGFUL` as a binding negative route.
-2. Build the dedicated exact 8-scene × 4-pose parity plan, independently
-   review its complete source/runtime/texture/mesh/corpus closure, and issue a
-   one-shot RGB-only authority. The supervisor must atomically create one fresh
-   attempt root, thereby consume the attempt, then record its nonce/PID-bound
-   reservation, render every pose twice, and emit leaf, generation, and
-   candidate-panel receipts. Reopen every bound leaf and run the fixed
-   evaluator; all 64 pixel comparisons must be exact. Independently
-   review the consumed successful terminal and result before their exact
-   result/terminal/review triple can enter `visual_domain_parity_freeze`.
-3. Treat calibration V2 as consumed terminal failure. Only after the exact
-   parity result, consumed successful terminal, and independent review are
-   frozen, implement and independently review a new one-shot calibration under
-   that bound historical textured-v03 render contract. Require exact replay as
-   a separate technical gate, fixed `0.01 m` planning-outcome bins, at least
-   72/144 jointly eligible queries overall and 9/18 in every family,
-   `FREEZE_PILOT_CONTRACT`, successful supervision, and independent terminal
-   review. Otherwise stop with
+2. Preserve the consumed parity result as an exact-gate failure with no retry
+   or resume. Reopen its complete 141-file lineage and independently verify the
+   terminal, fixed evaluator recomputation, and 32/32 current-render
+   repeatability.
+3. Run exactly one read-only task-relevance evaluator on that frozen output.
+   It must use the fixed post-hoc engineering thresholds recorded above and the
+   exact downstream encoder shared by all 12 model snapshots. Independently
+   review its result. Failure stops generation; pass may satisfy only the V3
+   calibration input-adequacy prerequisite and must retain the original exact
+   FAIL result and consumed terminal in the three-binding freeze.
+4. Treat calibration V2 as consumed terminal failure. Only after the frozen
+   task-relevance result and independent review pass may a new one-shot
+   calibration use the bound historical textured-v03 render contract. Require
+   exact replay as a separate technical gate, fixed `0.01 m` planning-outcome
+   bins, at least 72/144 jointly eligible queries overall and 9/18 in every
+   family, `FREEZE_PILOT_CONTRACT`, successful supervision, and independent
+   terminal review. Otherwise stop with
    `STOP_INSUFFICIENT_JOINT_COUNTERFACTUAL_DISCRIMINATION_SUPPORT`.
-4. Reopen and rehash progression pack, predecessor, terminal provenance,
+5. Reopen and rehash progression pack, predecessor, terminal provenance,
    source closure, result, analysis, and all 12 snapshots. Freeze their union
    of observational scene exclusions before branch data exists.
-5. Derive the deterministic complete-corpus 32-scene panel and build the exact
+6. Derive the deterministic complete-corpus 32-scene panel and build the exact
    2,304-branch plan plus gate witness.
-6. Freeze the source-and-review commit. Generate a non-passing review template;
+7. Freeze the source-and-review commit. Generate a non-passing review template;
    an independent reviewer must replace it with a passing review and no open
    findings.
-7. An explicit authorizer may bind the exact plan, gate, review, model panel,
+8. An explicit authorizer may bind the exact plan, gate, review, model panel,
    calibrated resource caps, calibration collection, and exact parity
    result/terminal/review triple in one execution authority. Issuing this
    document does not consume the bounded attempt; only the supervisor's later
    atomic creation of the fresh attempt root does.
-8. Invoke only the bounded external supervisor with exact caller-supplied
+9. Invoke only the bounded external supervisor with exact caller-supplied
    authority SHA-256 and byte count. Independently review its terminal and
    frozen joined manifest before any evaluator reads RGB leaves.
-9. Invoke the exact one-shot 12-member evaluation-panel runner. Independently
+10. Invoke the exact one-shot 12-member evaluation-panel runner. Independently
    review its terminal, member reports, and aggregate before citing the bounded
    development conclusion.
 
@@ -421,6 +459,7 @@ New or modified bounded-pilot files in this source-only tranche:
 - `scripts/build_go2_world_model_visual_domain_parity_authority_v1.py`
 - `scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py`
 - `scripts/evaluate_go2_world_model_visual_domain_parity_v1.py`
+- `scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py`
 - `scripts/check_go2_world_model_counterfactual_pilot_v1.py`
 - `scripts/analyze_go2_world_model_counterfactual_calibration_v1.py`
 - `scripts/join_go2_world_model_counterfactual_pilot_v1.py`
@@ -431,6 +470,7 @@ New or modified bounded-pilot files in this source-only tranche:
 - `lewm/tests/test_go2_world_model_bounded_branch_evaluation_panel_runner_v1.py`
 - `lewm/tests/test_go2_world_model_visual_domain_parity_plan_v1.py`
 - `lewm/tests/test_go2_world_model_visual_domain_parity_authorized_v1.py`
+- `lewm/tests/test_evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py`
 - `lewm/tests/test_go2_world_model_counterfactual_textured_v03.py`
 - `lewm/tests/test_check_go2_world_model_counterfactual_pilot_v1.py`
 - `lewm/tests/test_analyze_go2_world_model_counterfactual_calibration_v1.py`
@@ -461,6 +501,7 @@ PYTHONDONTWRITEBYTECODE=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
   lewm/tests/test_go2_world_model_counterfactual_textured_v03.py \
   lewm/tests/test_go2_world_model_visual_domain_parity_plan_v1.py \
   lewm/tests/test_go2_world_model_visual_domain_parity_authorized_v1.py \
+  lewm/tests/test_evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py \
   lewm/tests/test_go2_world_model_bounded_branch_experiment_v1.py \
   lewm/tests/test_go2_world_model_bounded_branch_lineage_v1.py \
   lewm/tests/test_go2_world_model_bounded_branch_runtime_boundary_v1.py \

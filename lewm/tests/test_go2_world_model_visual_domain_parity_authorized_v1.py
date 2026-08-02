@@ -1275,3 +1275,86 @@ def test_public_textured_parity_prerequisites_reopen_complete_runtime_triple(
         triple[f"{missing}_binding"] = None
         with pytest.raises(pilot.PilotContractError):
             pilot.validate_textured_v03_parity_prerequisites(**triple)
+
+
+def test_task_relevant_successor_accepts_reviewed_exact_failure_only(
+    complete_parity_tree,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import (
+        evaluate_go2_world_model_visual_domain_parity_task_relevance_v1
+        as task_relevance,
+    )
+
+    paths = complete_parity_tree["paths"]
+    failed_result = json.loads(paths["result"].read_bytes())
+    failed_result["status"] = pilot.TEXTURED_V03_PARITY_FAIL_STATUS
+    failed_result_binding = _write_json_document(
+        tmp_path / "failed-result.json", failed_result
+    )
+    failed_terminal = json.loads(paths["terminal"].read_bytes())
+    failed_terminal["status"] = "TERMINAL_FAILURE_NO_RETRY_OR_RESUME"
+    failed_terminal["parity_result_binding"] = failed_result_binding
+    failed_terminal_binding = _write_json_document(
+        tmp_path / "failed-terminal.json", failed_terminal
+    )
+
+    with pytest.raises(pilot.PilotContractError):
+        pilot.validate_textured_v03_parity_prerequisites(
+            result_binding=failed_result_binding,
+            terminal_binding=failed_terminal_binding,
+            review_binding=complete_parity_tree["parity_review_binding"],
+        )
+
+    progression_binding = _write_json_document(
+        tmp_path / "progression.json", {"synthetic": True}
+    )
+    adequacy = {
+        "schema": pilot.TEXTURED_V03_TASK_RELEVANCE_RESULT_SCHEMA,
+        "status": pilot.TEXTURED_V03_TASK_RELEVANCE_PASS_STATUS,
+        "authority_granted_by_this_document": False,
+        "scientific_claim_granted_by_this_document": False,
+        "development_only": True,
+        "protected_material_opened": False,
+        "bindings": {"progression_analysis": progression_binding},
+    }
+    adequacy_binding = _write_json_document(
+        tmp_path / "adequacy.json", adequacy
+    )
+    review = {
+        "schema": pilot.TEXTURED_V03_TASK_RELEVANCE_REVIEW_SCHEMA,
+        "status": pilot.TEXTURED_V03_TASK_RELEVANCE_REVIEW_PASS_STATUS,
+        "authority_granted_by_this_document": False,
+        "scientific_claim_granted_by_this_document": False,
+        "adequacy_result_binding": adequacy_binding,
+        "parity_result_binding": failed_result_binding,
+        "terminal_failure_binding": failed_terminal_binding,
+        "reviewer": {
+            "identity": "synthetic-independent-task-relevance-reviewer",
+            "independence_basis": "not the runtime producer",
+        },
+        "reviewed_at": "2026-08-02T18:00:00Z",
+        "checks": {
+            name: True for name in pilot.TEXTURED_V03_TASK_RELEVANCE_REVIEW_CHECKS
+        },
+        "remaining_findings": [],
+    }
+    review_binding = _write_json_document(
+        tmp_path / "task-relevance-review.json", review
+    )
+    monkeypatch.setattr(
+        task_relevance,
+        "evaluate_task_relevance_v1",
+        lambda **_: copy.deepcopy(adequacy),
+    )
+
+    assert pilot.validate_textured_v03_parity_prerequisites(
+        result_binding=failed_result_binding,
+        terminal_binding=failed_terminal_binding,
+        review_binding=review_binding,
+    ) == {
+        "result_binding": failed_result_binding,
+        "terminal_binding": failed_terminal_binding,
+        "review_binding": review_binding,
+    }

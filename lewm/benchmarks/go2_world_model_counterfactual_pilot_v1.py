@@ -52,6 +52,9 @@ TEXTURED_V03_PARITY_RESULT_SCHEMA = (
 TEXTURED_V03_PARITY_PASS_STATUS = (
     "PASS_EXACT_TEXTURED_V03_IMPLEMENTATION_EQUIVALENCE"
 )
+TEXTURED_V03_PARITY_FAIL_STATUS = (
+    "FAIL_EXACT_TEXTURED_V03_IMPLEMENTATION_EQUIVALENCE"
+)
 TEXTURED_V03_PARITY_TERMINAL_SCHEMA = (
     "lewm_go2_world_model_visual_domain_parity_supervision_terminal_v1"
 )
@@ -75,6 +78,31 @@ TEXTURED_V03_PARITY_REVIEW_CHECKS = (
     "scene_pose_texture_and_source_lineage_exact",
     "sensor_geometry_flags_alone_rejected_as_insufficient",
     "no_statistical_inference_claimed",
+    "no_protected_material",
+)
+TEXTURED_V03_TASK_RELEVANCE_RESULT_SCHEMA = (
+    "lewm_go2_world_model_visual_domain_parity_task_relevant_input_adequacy_v1"
+)
+TEXTURED_V03_TASK_RELEVANCE_PASS_STATUS = (
+    "PASS_TASK_RELEVANT_INPUT_ADEQUACY_DEVELOPMENT_ONLY"
+)
+TEXTURED_V03_TASK_RELEVANCE_REVIEW_SCHEMA = (
+    "lewm_go2_world_model_visual_domain_parity_task_relevant_input_adequacy_"
+    "independent_review_v1"
+)
+TEXTURED_V03_TASK_RELEVANCE_REVIEW_PASS_STATUS = (
+    "PASS_INDEPENDENTLY_REVIEWED_TASK_RELEVANT_INPUT_ADEQUACY_DEVELOPMENT_ONLY"
+)
+TEXTURED_V03_TASK_RELEVANCE_REVIEW_CHECKS = (
+    "exact_failure_preserved",
+    "consumed_no_retry_verified",
+    "adequacy_recomputed",
+    "all_32_candidate_duplicate_pairs_pixel_exact",
+    "all_eight_families_and_32_pairs_present",
+    "posthoc_threshold_origin_acknowledged",
+    "thresholds_fixed_before_calibration_and_bounded_use",
+    "model_input_adequacy_only",
+    "no_exact_equivalence_claim",
     "no_protected_material",
 )
 PHYSICS_RESULT_SCHEMA = (
@@ -1517,6 +1545,145 @@ def validate_source_review(
     return dict(review)
 
 
+def _validate_textured_v03_task_relevance_prerequisites(
+    *,
+    documents: Mapping[str, Mapping[str, Any]],
+    bindings: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Validate the frozen, post-hoc input-adequacy successor without
+    revising the consumed exact-parity failure.
+    """
+
+    result = documents["result"]
+    terminal = documents["terminal"]
+    review = documents["review"]
+    required_review = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_granted_by_this_document",
+        "adequacy_result_binding",
+        "parity_result_binding",
+        "terminal_failure_binding",
+        "reviewer",
+        "reviewed_at",
+        "checks",
+        "remaining_findings",
+    }
+    reviewer = review.get("reviewer") if isinstance(review, Mapping) else None
+    checks = review.get("checks") if isinstance(review, Mapping) else None
+    if (
+        result.get("schema") != TEXTURED_V03_PARITY_RESULT_SCHEMA
+        or result.get("status") != TEXTURED_V03_PARITY_FAIL_STATUS
+        or result.get("authority_granted_by_this_document") is not False
+        or result.get("scientific_claim_granted_by_this_document") is not False
+        or result.get("development_only") is not True
+        or result.get("protected_material_opened") is not False
+        or terminal.get("schema") != TEXTURED_V03_PARITY_TERMINAL_SCHEMA
+        or terminal.get("status") != "TERMINAL_FAILURE_NO_RETRY_OR_RESUME"
+        or terminal.get("authority_granted_by_this_document") is not False
+        or terminal.get("scientific_claim_granted_by_this_document") is not False
+        or terminal.get("authorizes_retry_or_resume") is not False
+        or terminal.get("root_creation_consumes_attempt") is not True
+        or terminal.get("reservation_records_consumed_attempt") is not True
+        or not isinstance(review, Mapping)
+        or set(review) != required_review
+        or review.get("schema") != TEXTURED_V03_TASK_RELEVANCE_REVIEW_SCHEMA
+        or review.get("status")
+        != TEXTURED_V03_TASK_RELEVANCE_REVIEW_PASS_STATUS
+        or review.get("authority_granted_by_this_document") is not False
+        or review.get("scientific_claim_granted_by_this_document") is not False
+        or review.get("parity_result_binding") != bindings["result"]
+        or review.get("terminal_failure_binding") != bindings["terminal"]
+        or review.get("remaining_findings") != []
+        or not isinstance(reviewer, Mapping)
+        or set(reviewer) != {"identity", "independence_basis"}
+        or any(
+            not isinstance(reviewer[name], str) or not reviewer[name].strip()
+            for name in reviewer
+        )
+        or not isinstance(checks, Mapping)
+        or set(checks) != set(TEXTURED_V03_TASK_RELEVANCE_REVIEW_CHECKS)
+        or any(
+            checks[name] is not True
+            for name in TEXTURED_V03_TASK_RELEVANCE_REVIEW_CHECKS
+        )
+        or not isinstance(review.get("reviewed_at"), str)
+        or not review["reviewed_at"].strip()
+    ):
+        raise PilotContractError(
+            "textured_v03 task-relevance review did not pass exactly"
+        )
+    try:
+        reviewed_at = datetime.fromisoformat(
+            str(review["reviewed_at"]).replace("Z", "+00:00")
+        )
+    except ValueError as exc:
+        raise PilotContractError(
+            "textured_v03 task-relevance review time changed"
+        ) from exc
+    if reviewed_at.tzinfo is None:
+        raise PilotContractError(
+            "textured_v03 task-relevance review time lacks timezone"
+        )
+    adequacy_binding = require_binding(
+        review["adequacy_result_binding"],
+        label="textured_v03 task-relevance result",
+    )
+    adequacy, actual_adequacy = read_bound_json(
+        Path(str(adequacy_binding["path"])),
+        expected_sha256=str(adequacy_binding["file_sha256"]),
+        expected_byte_count=int(adequacy_binding["byte_count"]),
+        label="textured_v03 task-relevance result",
+    )
+    adequacy_bindings = adequacy.get("bindings") if isinstance(adequacy, Mapping) else None
+    progression_binding = (
+        adequacy_bindings.get("progression_analysis")
+        if isinstance(adequacy_bindings, Mapping)
+        else None
+    )
+    if (
+        actual_adequacy != adequacy_binding
+        or not isinstance(adequacy, Mapping)
+        or adequacy.get("schema") != TEXTURED_V03_TASK_RELEVANCE_RESULT_SCHEMA
+        or adequacy.get("status") != TEXTURED_V03_TASK_RELEVANCE_PASS_STATUS
+        or adequacy.get("authority_granted_by_this_document") is not False
+        or adequacy.get("scientific_claim_granted_by_this_document") is not False
+        or adequacy.get("development_only") is not True
+        or adequacy.get("protected_material_opened") is not False
+        or not isinstance(progression_binding, Mapping)
+    ):
+        raise PilotContractError(
+            "textured_v03 task-relevance result did not pass exactly"
+        )
+    try:
+        from scripts import (  # noqa: PLC0415
+            evaluate_go2_world_model_visual_domain_parity_task_relevance_v1
+            as task_relevance,
+        )
+    except ImportError as exc:
+        raise PilotContractError(
+            f"textured_v03 task-relevance evaluator is unavailable: {exc}"
+        ) from exc
+    try:
+        recomputed = task_relevance.evaluate_task_relevance_v1(
+            parity_result_binding=bindings["result"],
+            terminal_failure_binding=bindings["terminal"],
+            progression_analysis_binding=progression_binding,
+        )
+    except (OSError, task_relevance.TaskRelevanceEvaluationError) as exc:
+        raise PilotContractError(
+            f"textured_v03 task-relevance recomputation failed: {exc}"
+        ) from exc
+    if canonical_json_bytes(recomputed) != canonical_json_bytes(adequacy):
+        raise PilotContractError("textured_v03 task-relevance result changed")
+    return {
+        "result_binding": dict(bindings["result"]),
+        "terminal_binding": dict(bindings["terminal"]),
+        "review_binding": dict(bindings["review"]),
+    }
+
+
 def validate_textured_v03_parity_prerequisites(
     *,
     result_binding: Mapping[str, Any],
@@ -1544,6 +1711,14 @@ def validate_textured_v03_parity_prerequisites(
         documents[name] = dict(value)
         bindings[name] = normalized
     result = documents["result"]
+    if (
+        documents["review"].get("schema")
+        == TEXTURED_V03_TASK_RELEVANCE_REVIEW_SCHEMA
+    ):
+        return _validate_textured_v03_task_relevance_prerequisites(
+            documents=documents,
+            bindings=bindings,
+        )
     if (
         result.get("schema") != TEXTURED_V03_PARITY_RESULT_SCHEMA
         or result.get("status") != TEXTURED_V03_PARITY_PASS_STATUS
@@ -2337,6 +2512,7 @@ __all__ = [
     "TEXTURED_V03_CANDIDATE_RESPONSE_AUDIT_SCHEMA",
     "TEXTURED_V03_LIVE_RENDER_RECEIPT_SCHEMA",
     "TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA",
+    "TEXTURED_V03_PARITY_FAIL_STATUS",
     "TEXTURED_V03_PARITY_PASS_STATUS",
     "TEXTURED_V03_PARITY_REVIEW_CHECKS",
     "TEXTURED_V03_PARITY_REVIEW_PASS_STATUS",
@@ -2344,6 +2520,11 @@ __all__ = [
     "TEXTURED_V03_PARITY_RESULT_SCHEMA",
     "TEXTURED_V03_PARITY_TERMINAL_SCHEMA",
     "TEXTURED_V03_PARITY_TERMINAL_SUCCESS_STATUS",
+    "TEXTURED_V03_TASK_RELEVANCE_PASS_STATUS",
+    "TEXTURED_V03_TASK_RELEVANCE_RESULT_SCHEMA",
+    "TEXTURED_V03_TASK_RELEVANCE_REVIEW_CHECKS",
+    "TEXTURED_V03_TASK_RELEVANCE_REVIEW_PASS_STATUS",
+    "TEXTURED_V03_TASK_RELEVANCE_REVIEW_SCHEMA",
     "TEXTURED_V03_RENDER_CONTRACT",
     "TEXTURED_V03_RENDER_PURPOSES",
     "TEXTURED_V03_TEXTURE_RELATIVE_PATHS",

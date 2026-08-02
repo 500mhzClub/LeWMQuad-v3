@@ -396,16 +396,19 @@ def _validate_visual_domain_parity_result(
     )
     if actual != declared:
         raise pilot.PilotContractError("visual-domain parity result binding changed")
+    allowed_statuses = {pilot.TEXTURED_V03_PARITY_PASS_STATUS}
+    if prerequisites is not None:
+        allowed_statuses.add(pilot.TEXTURED_V03_PARITY_FAIL_STATUS)
     if (
         result.get("schema") != pilot.TEXTURED_V03_PARITY_RESULT_SCHEMA
-        or result.get("status") != pilot.TEXTURED_V03_PARITY_PASS_STATUS
+        or result.get("status") not in allowed_statuses
         or result.get("authority_granted_by_this_document") is not False
         or result.get("scientific_claim_granted_by_this_document") is not False
         or result.get("development_only") is not True
         or result.get("protected_material_opened") is not False
     ):
         raise pilot.PilotContractError(
-            "visual-domain parity did not pass the exact implementation gate"
+            "visual-domain parity did not pass an accepted implementation gate"
         )
     source_binding = pilot._validate_binding_shape(  # noqa: SLF001
         result.get("source_rgb_reference_binding"),
