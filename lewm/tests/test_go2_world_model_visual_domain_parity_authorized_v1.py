@@ -165,6 +165,80 @@ def test_atomic_root_creation_is_the_one_shot_consumption_boundary(
     assert "reservation_consumes_attempt" not in runner_source
 
 
+def test_chain_rehash_distinguishes_fresh_and_reserved_output_roots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    development = tmp_path / ".generated" / "dev"
+    development.mkdir(parents=True)
+    output_root = development / "parity-attempt"
+    authority_path = tmp_path / "authority.json"
+    authority_path.write_text("{}\n", encoding="utf-8")
+    authority_binding = pilot.file_binding(authority_path)
+    observed: list[bool] = []
+
+    monkeypatch.setattr(plan_builder, "DEVELOPMENT_ROOT", development)
+
+    def validate_authority(
+        value,
+        *,
+        plan,
+        plan_binding,
+        review,
+        review_binding,
+        require_fresh_output,
+    ):
+        del plan_binding, review, review_binding
+        observed.append(require_fresh_output)
+        plan_builder._validate_output_root(  # noqa: SLF001
+            Path(plan["output_root"]), require_fresh=require_fresh_output
+        )
+        return value
+
+    monkeypatch.setattr(authority, "validate_authority_v1", validate_authority)
+    chain = {
+        "plan": {"output_root": str(output_root)},
+        "plan_binding": {},
+        "authority": {},
+        "authority_binding": authority_binding,
+        "review": {},
+        "review_binding": {},
+    }
+
+    runner._rehash_chain(**chain, require_fresh_output=True)  # noqa: SLF001
+    assert not output_root.exists()
+    output_root.mkdir()
+    runner._rehash_chain(**chain, require_fresh_output=False)  # noqa: SLF001
+    assert observed == [True, False]
+
+
+def test_every_chain_rehash_declares_its_output_root_lifecycle_state() -> None:
+    expected = {
+        "_render_scene_worker": [False, False],
+        "_terminal_revalidate": [False],
+        "supervise_v1": [True, False],
+    }
+    for function_name, expected_flags in expected.items():
+        function = _function_ast(Path(runner.__file__), function_name)
+        calls = sorted(
+            (
+                node
+                for node in ast.walk(function)
+                if isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "_rehash_chain"
+            ),
+            key=lambda node: node.lineno,
+        )
+        observed_flags = []
+        for call in calls:
+            keywords = {keyword.arg: keyword.value for keyword in call.keywords}
+            flag = keywords.get("require_fresh_output")
+            assert isinstance(flag, ast.Constant)
+            assert type(flag.value) is bool
+            observed_flags.append(flag.value)
+        assert observed_flags == expected_flags
+
+
 def test_scene_worker_calls_shared_rgb_helper_exactly_twice_per_pose():
     function = _function_ast(Path(runner.__file__), "_render_scene_worker")
     calls = [

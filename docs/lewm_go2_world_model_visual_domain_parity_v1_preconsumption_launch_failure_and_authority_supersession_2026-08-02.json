@@ -1,0 +1,87 @@
+{
+  "schema": "lewm_go2_world_model_visual_domain_parity_v1_preconsumption_launch_failure_and_authority_supersession_v1",
+  "status": "PASS_AUDITED_PRECONSUMPTION_SOURCE_FAILURE_AUTHORITY_V1_SUPERSEDED_ATTEMPT_UNCONSUMED",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "authorizes_retry_or_resume": false,
+  "recorded_at": "2026-08-02T16:15:16+01:00",
+  "working_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3",
+  "attempt": {
+    "attempt_id": "lewm-go2-wm-visual-domain-parity-v1",
+    "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1",
+    "root_creation_is_consumption_boundary": true,
+    "root_created": false,
+    "root_absent_after_failure": true,
+    "reservation_written": false,
+    "attempt_consumed": false,
+    "retry_or_resume_performed": false
+  },
+  "invocation": {
+    "argv": [
+      ".generated/venvs/genesis_render_vulkan/bin/python",
+      "scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py",
+      "supervise",
+      "--plan",
+      "docs/lewm_go2_world_model_visual_domain_parity_exact_plan_v1_2026-08-02.json",
+      "--expected-plan-sha256",
+      "1e5553cb006eae127fecaecf60502b34392e93ffbc98818be3622c93cb29b5ab",
+      "--expected-plan-byte-count",
+      "98945",
+      "--authority",
+      "docs/lewm_go2_world_model_visual_domain_parity_execution_authority_v1_2026-08-02.json",
+      "--expected-authority-sha256",
+      "05c9f682d030120b9c1480b6cccf2552841da4964e10341bdeb813d5c59f2636",
+      "--expected-authority-byte-count",
+      "24404"
+    ],
+    "plan_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_visual_domain_parity_exact_plan_v1_2026-08-02.json",
+      "file_sha256": "1e5553cb006eae127fecaecf60502b34392e93ffbc98818be3622c93cb29b5ab",
+      "byte_count": 98945
+    },
+    "authority_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_visual_domain_parity_execution_authority_v1_2026-08-02.json",
+      "file_sha256": "05c9f682d030120b9c1480b6cccf2552841da4964e10341bdeb813d5c59f2636",
+      "byte_count": 24404
+    }
+  },
+  "failure": {
+    "exception_class": "VisualDomainParitySupervisionError",
+    "message": "parity output root is not the canonical reserved directory",
+    "phase": "pre_reservation_chain_rehash_after_graphics_preflight_call",
+    "wall_seconds_approximate": 2.2,
+    "graphics_preflight_completed": true,
+    "graphics_preflight_result_persisted": false,
+    "root_cause": "_rehash_chain forced require_fresh_output=False at its pre-root supervisor call, so the plan validator required the deliberately absent one-shot root to be an already existing canonical reserved directory",
+    "rgb_render_calls": 0,
+    "auxiliary_depth_render_calls": 0,
+    "physics_steps": 0,
+    "model_evaluations": 0
+  },
+  "post_failure_observation": {
+    "observed_at": "2026-08-02T16:15:16+01:00",
+    "output_root_absent": true,
+    "output_root_not_symlink": true,
+    "relevant_supervisor_or_worker_process_running": false,
+    "plan_binding_reverified": true,
+    "authority_binding_reverified": true
+  },
+  "disposition": {
+    "old_authority_reusable": false,
+    "reason": "the source correction changes the authority-bound supervisor and test closure",
+    "existing_plan_science_changed": false,
+    "replacement_is_retry_or_resume": false,
+    "required_before_launch": [
+      "commit the minimal supervisor correction and regression tests",
+      "independently review the corrected frozen source closure",
+      "issue and commit a new immutable authority binding the corrected source review",
+      "revalidate the still-absent exact output root"
+    ]
+  },
+  "custody": {
+    "protected_material_opened": false,
+    "sealed_material_opened": false,
+    "generated_dataset_mutated": false,
+    "checkpoint_mutated": false
+  }
+}

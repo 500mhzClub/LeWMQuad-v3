@@ -1,14 +1,32 @@
 # Go2 bounded WM-A branch experiment V1
 
 Date: 2026-08-02
-Status: **source-only; no bounded execution authority; parity one-shot not launched**
+Status: **parity source correction under re-review; first invocation did not consume the attempt; no bounded execution authority**
 
 This document is not execution authority, a scientific result, a retry or
-resume grant, a held-out-access grant, or a deployment grant. The source is
-uncommitted and has not received its required independent review. No bounded
+resume grant, a held-out-access grant, or a deployment grant. The first parity
+supervisor invocation stopped before root creation because its pre-reservation
+chain rehash incorrectly required the deliberately absent fresh root to be an
+existing reserved directory. The one-shot attempt therefore remains
+unconsumed. The minimal correction is not executable until it is committed,
+independently re-reviewed, and bound by a new immutable authority. No bounded
 branch experiment or model-panel evaluation has been launched.
 
 ## Current disposition
+
+The original parity source, source review, plan, and execution authority were
+frozen in commits `7d5b6c5`, `406658e`, and `f0a9405`. The authorised command
+failed in about 2.2 seconds with `VisualDomainParitySupervisionError: parity
+output root is not the canonical reserved directory`. Control never reached
+the fresh-root check or atomic root creation: no reservation, RGB, depth,
+physics, model evaluation, or output tree was produced, and the root remained
+absent. This is a pre-consumption source defect, not a consumed parity result
+and not a retry opportunity. The old authority is no longer reusable because
+the supervisor and its bound runtime test must change. The unchanged exact
+plan may be rebound by a successor authority after the corrected source closure
+passes independent review. The immutable incident record is
+`docs/lewm_go2_world_model_visual_domain_parity_v1_preconsumption_launch_failure_and_authority_supersession_2026-08-02.json`
+(3,930 bytes, SHA-256 `3e82a468222b51212d6f427982abd553295899e9ac63728caa248a0220994656`).
 
 The original 160-branch calibration consumed its one attempt and failed on a
 valid low-information near-wall observation. That failure did not show render
@@ -448,8 +466,10 @@ PYTHONDONTWRITEBYTECODE=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
   lewm/tests/test_go2_world_model_bounded_branch_runtime_boundary_v1.py \
   lewm/tests/test_go2_world_model_bounded_branch_evaluation_panel_runner_v1.py
 
-Final integrated verification after these corrections: `313 passed` in
-`7.76 s`. The earlier `141 passed` result predates the visual-domain, lineage,
+Final integrated verification after the pre-reservation lifecycle correction:
+`315 passed` in `7.66 s`. The prior `313 passed` result did not exercise the
+fresh-root versus reserved-root chain rehash and is no longer current source
+evidence. The earlier `141 passed` result predates the visual-domain, lineage,
 place-provenance, joint-gate, decoded-pixel, and arm-hierarchy corrections and
-is not current completion evidence.
+is also not current completion evidence.
 ```

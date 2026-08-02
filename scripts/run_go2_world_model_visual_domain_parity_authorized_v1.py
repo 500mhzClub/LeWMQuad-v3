@@ -231,6 +231,7 @@ def _rehash_chain(
     authority_binding: Mapping[str, Any],
     review: Mapping[str, Any],
     review_binding: Mapping[str, Any],
+    require_fresh_output: bool,
 ) -> None:
     try:
         if pilot.require_binding(authority_binding, label="parity authority") != authority_binding:
@@ -241,7 +242,7 @@ def _rehash_chain(
             plan_binding=plan_binding,
             review=review,
             review_binding=review_binding,
-            require_fresh_output=False,
+            require_fresh_output=require_fresh_output,
         )
     except (pilot.PilotContractError, authority_builder.VisualDomainParityAuthorityError) as exc:
         raise VisualDomainParitySupervisionError(str(exc)) from exc
@@ -498,6 +499,7 @@ def _render_scene_worker(
         authority_binding=authority_binding,
         review=review,
         review_binding=review_binding,
+        require_fresh_output=False,
     )
     manifest, actual_manifest = _read_binding_document(
         scene_plan["scene_manifest_binding"],
@@ -724,6 +726,7 @@ def _render_scene_worker(
         authority_binding=authority_binding,
         review=review,
         review_binding=review_binding,
+        require_fresh_output=False,
     )
     scene_result = {
         "schema": SCENE_RESULT_SCHEMA,
@@ -922,6 +925,7 @@ def _terminal_revalidate(
         authority_binding=authority_binding,
         review=review,
         review_binding=review_binding,
+        require_fresh_output=False,
     )
     candidate, actual_candidate = _read_binding_document(
         candidate_binding, label="terminal candidate panel"
@@ -1491,6 +1495,7 @@ def supervise_v1(
         authority_binding=authority_binding,
         review=review,
         review_binding=review_binding,
+        require_fresh_output=True,
     )
     root = _fresh_attempt_root(Path(str(plan["output_root"])))
     disk_preflight = _disk_preflight(output_parent=root.parent, authority=authority)
@@ -1597,6 +1602,7 @@ def supervise_v1(
             authority_binding=authority_binding,
             review=review,
             review_binding=review_binding,
+            require_fresh_output=False,
         )
         candidate_panel, generation_binding = _generation_documents(
             plan=plan,
