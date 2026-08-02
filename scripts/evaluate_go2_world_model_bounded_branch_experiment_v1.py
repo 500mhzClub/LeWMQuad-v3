@@ -792,11 +792,27 @@ def load_and_validate_progression_analysis_v1(
     if pack_root.resolve() != PROGRESSION_PACK_ROOT.resolve():
         raise BoundedBranchEvaluationError("progression pack root changed")
 
+    def canonical_pack_manifest_path(value: object, *, role: str) -> str:
+        if not isinstance(value, (str, os.PathLike)):
+            raise BoundedBranchEvaluationError(
+                f"progression {role} pack manifest path is malformed"
+            )
+        selected = Path(value)
+        if not selected.is_absolute():
+            selected = REPO_ROOT / selected
+        return str(
+            _require_nofollow_path(
+                selected, label=f"progression {role} pack manifest"
+            ).resolve(strict=True)
+        )
+
     def current_pack_role(role: str) -> tuple[dict[str, Any], Mapping[str, Any]]:
         validated = scaled.validate_pack_role(pack_root, role)
         current_role = validated["role"]
         return {
-            "manifest_path": str(validated["manifest_path"]),
+            "manifest_path": canonical_pack_manifest_path(
+                validated["manifest_path"], role=role
+            ),
             "manifest_sha256": validated["manifest_sha256"],
             "role": role,
             "row_identity_sha256": current_role["row_identity_sha256"],
@@ -812,7 +828,18 @@ def load_and_validate_progression_analysis_v1(
     pack_role_bindings: dict[str, Any] = {}
     for role in ("train", "val"):
         current_binding, validated = current_pack_role(role)
-        if inputs[role] != current_binding:
+        declared_binding = inputs[role]
+        if not isinstance(declared_binding, Mapping):
+            raise BoundedBranchEvaluationError(
+                f"progression {role} pack binding changed"
+            )
+        normalized_declared_binding = dict(declared_binding)
+        normalized_declared_binding["manifest_path"] = (
+            canonical_pack_manifest_path(
+                normalized_declared_binding.get("manifest_path"), role=role
+            )
+        )
+        if normalized_declared_binding != current_binding:
             raise BoundedBranchEvaluationError(
                 f"progression {role} pack binding changed"
             )

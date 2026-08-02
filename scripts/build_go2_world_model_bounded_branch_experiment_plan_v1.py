@@ -2,10 +2,11 @@
 """Build the post-calibration, scene-disjoint bounded WM-A pilot plan.
 
 This is a metadata-only builder.  It will not emit a plan unless an exact
-calibration receipt says ``FREEZE_PILOT_CONTRACT`` and an independent terminal
-review binds both that receipt and the successful calibration supervision
-record.  It opens ordinary scene metadata named by the caller-bound panel; it
-never opens RGB, checkpoints, or protected evaluation material.
+calibration receipt says ``FREEZE_PILOT_CONTRACT`` and an independent review
+binds that receipt to either successful supervision or the one narrowly
+admissible analyzer-integration recovery from an immutable, checker-passed
+collection.  It opens ordinary scene metadata named by the caller-bound panel;
+it never opens RGB, checkpoints, or protected evaluation material.
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ import json
 import math
 from pathlib import Path
 import re
+import subprocess
 import sys
 from typing import Any, Mapping, Sequence
 
@@ -41,6 +43,32 @@ from scripts.build_go2_world_model_counterfactual_calibration_plan_v1 import (  
 PANEL_SCHEMA = panel_selector.PANEL_SCHEMA
 TERMINAL_REVIEW_SCHEMA = (
     "lewm_go2_world_model_counterfactual_calibration_terminal_review_v1"
+)
+ANALYSIS_RECOVERY_REVIEW_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_calibration_posthoc_recovery_review_v1"
+)
+ANALYSIS_RECOVERY_REVIEW_STATUS = (
+    "PASS_ANALYZER_ONLY_RECOVERY_FREEZE_PILOT_CONTRACT"
+)
+ANALYSIS_RECOVERY_TERMINAL_FAILURE = (
+    "CalibrationSupervisionError: supervised command exited with status 1"
+)
+ANALYSIS_RECOVERY_FAILED_TERMINAL_SHA256 = (
+    "b601809a8ec318b5848ac9d552619a7577a837e7edc6a707f995d4ba8bff35e1"
+)
+ANALYSIS_RECOVERY_FAILED_TERMINAL_BYTE_COUNT = 6925
+ANALYSIS_RECOVERY_SEMANTIC_CHANGE = (
+    "runtime analyzer predicate only: sentinel_audit.passed -> "
+    "sentinel_audit.physics_equal"
+)
+ANALYSIS_RECOVERY_LIMITATIONS = (
+    "original_terminal_remains_failed_and_non_citable",
+    "posthoc_receipt_does_not_replace_original_terminal",
+    "admission_is_calibration_freeze_only",
+    "calibration_scenes_and_branches_remain_excluded_from_train_and_eval",
+    "no_visual_domain_fidelity_claim",
+    "no_retry_resume_refill_overwrite_or_new_execution_authority",
+    "fresh_2304_branch_bounded_experiment_and_reviews_still_required",
 )
 CALIBRATION_TERMINAL_SCHEMA = calibration_supervisor.TERMINAL_SCHEMA
 VISUAL_DOMAIN_PARITY_RESULT_SCHEMA = parity_evaluator.RESULT_SCHEMA
@@ -191,6 +219,215 @@ def _binding(value: object, *, label: str) -> dict[str, Any]:
         raise BoundedBranchPlanError(str(exc)) from exc
 
 
+def _validate_analysis_recovery_review(
+    review: Mapping[str, Any],
+    *,
+    receipt: Mapping[str, Any],
+    receipt_binding: Mapping[str, Any],
+    terminal_binding: Mapping[str, Any],
+    authority: Mapping[str, Any],
+) -> None:
+    required = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_granted",
+        "failed_terminal_binding",
+        "posthoc_calibration_receipt_binding",
+        "source_correction",
+        "reviewer",
+        "reviewed_at",
+        "checks",
+        "limitations",
+        "remaining_findings",
+    }
+    checks = review.get("checks")
+    required_checks = {
+        "failed_terminal_preserved",
+        "physics_collection_complete",
+        "receipt_checker_passed",
+        "frozen_analyzer_failure_reproduced",
+        "producer_checker_contract_uses_physics_equal",
+        "corrected_source_delta_is_analyzer_field_only",
+        "posthoc_output_outside_attempt_root",
+        "posthoc_receipt_exactly_recomputed",
+        "posthoc_receipt_freezes_contract",
+        "attempt_root_unchanged",
+        "no_retry_resume_refill_or_overwrite",
+    }
+    reviewer = review.get("reviewer")
+    correction = review.get("source_correction")
+    required_correction = {
+        "failed_source_commit",
+        "failed_analyzer_binding",
+        "corrected_source_commit",
+        "corrected_analyzer_binding",
+        "corrected_analyzer_test_binding",
+        "semantic_change",
+    }
+    if (
+        set(review) != required
+        or review.get("schema") != ANALYSIS_RECOVERY_REVIEW_SCHEMA
+        or review.get("status") != ANALYSIS_RECOVERY_REVIEW_STATUS
+        or review.get("authority_granted_by_this_document") is not False
+        or review.get("scientific_claim_granted") is not False
+        or review.get("failed_terminal_binding") != dict(terminal_binding)
+        or review.get("posthoc_calibration_receipt_binding")
+        != dict(receipt_binding)
+        or not isinstance(correction, Mapping)
+        or set(correction) != required_correction
+        or correction.get("semantic_change") != ANALYSIS_RECOVERY_SEMANTIC_CHANGE
+        or not isinstance(correction.get("corrected_source_commit"), str)
+        or re.fullmatch(
+            r"[0-9a-f]{40}", str(correction.get("corrected_source_commit"))
+        ) is None
+        or review.get("limitations") != list(ANALYSIS_RECOVERY_LIMITATIONS)
+        or review.get("remaining_findings") != []
+        or not isinstance(reviewer, Mapping)
+        or set(reviewer) != {"identity", "independence_basis"}
+        or any(
+            not isinstance(reviewer[key], str) or not reviewer[key].strip()
+            for key in reviewer
+        )
+        or not isinstance(checks, Mapping)
+        or set(checks) != required_checks
+        or any(value is not True for value in checks.values())
+    ):
+        raise BoundedBranchPlanError(
+            "calibration analyzer-recovery review did not pass exactly"
+        )
+    try:
+        datetime.fromisoformat(str(review.get("reviewed_at")).replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise BoundedBranchPlanError(
+            "calibration analyzer-recovery review time is invalid"
+        ) from exc
+
+    source_rows = authority.get("source_bindings")
+    original_analyzers = [
+        row.get("binding")
+        for row in source_rows
+        if isinstance(source_rows, list)
+        and isinstance(row, Mapping)
+        and row.get("name") == "calibration_analyzer"
+    ] if isinstance(source_rows, list) else []
+    corrected_analyzer = _binding(
+        correction.get("corrected_analyzer_binding"),
+        label="corrected calibration analyzer",
+    )
+    corrected_test = _binding(
+        correction.get("corrected_analyzer_test_binding"),
+        label="corrected calibration analyzer test",
+    )
+    corrected_commit = str(correction.get("corrected_source_commit"))
+    collector = calibration_supervisor.collector
+    try:
+        head = str(collector._git_output("rev-parse", "HEAD"))  # noqa: SLF001
+        collector._git_output(  # noqa: SLF001
+            "merge-base", "--is-ancestor", corrected_commit, head
+        )
+        collector._binding_at_commit(  # noqa: SLF001
+            corrected_analyzer,
+            commit=corrected_commit,
+            label="corrected calibration analyzer",
+        )
+        collector._binding_at_commit(  # noqa: SLF001
+            corrected_test,
+            commit=corrected_commit,
+            label="corrected calibration analyzer test",
+        )
+    except (pilot.PilotContractError, subprocess.CalledProcessError) as exc:
+        raise BoundedBranchPlanError(
+            "calibration analyzer-recovery corrected commit changed"
+        ) from exc
+    if (
+        len(original_analyzers) != 1
+        or correction.get("failed_source_commit") != authority.get("source_commit")
+        or correction.get("failed_analyzer_binding") != original_analyzers[0]
+        or corrected_analyzer != receipt.get("analyzer_binding")
+        or corrected_analyzer == original_analyzers[0]
+        or corrected_test.get("path") != str(
+            REPO_ROOT
+            / "lewm/tests/test_analyze_go2_world_model_counterfactual_calibration_v1.py"
+        )
+    ):
+        raise BoundedBranchPlanError(
+            "calibration analyzer-recovery source identity changed"
+        )
+
+
+def _load_recovery_authority_at_frozen_source(
+    authority_binding: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Validate the consumed authority at its frozen source commit.
+
+    The normal execution loader intentionally requires every source to remain
+    byte-identical in the working tree.  The recovery route instead verifies
+    every original source at the authority commit, then lets the independent
+    recovery review bind the one corrected analyzer separately.
+    """
+
+    collector = calibration_supervisor.collector
+    try:
+        raw_authority, actual_authority = pilot.read_bound_json(
+            Path(str(authority_binding["path"])),
+            expected_sha256=str(authority_binding["file_sha256"]),
+            expected_byte_count=int(authority_binding["byte_count"]),
+            label="frozen calibration authority",
+        )
+        if not isinstance(raw_authority, Mapping):
+            raise pilot.PilotContractError("calibration authority must be an object")
+        raw_plan_binding = pilot._validate_binding_shape(  # noqa: SLF001
+            raw_authority.get("plan_binding"), label="authority plan binding"
+        )
+        raw_plan, actual_plan = pilot.read_bound_json(
+            Path(str(raw_plan_binding["path"])),
+            expected_sha256=str(raw_plan_binding["file_sha256"]),
+            expected_byte_count=int(raw_plan_binding["byte_count"]),
+            label="frozen calibration plan",
+        )
+        plan = pilot.validate_plan(raw_plan)
+        authority = collector._validate_authority_for_plan(  # noqa: SLF001
+            raw_authority,
+            plan=plan,
+            plan_binding=actual_plan,
+        )
+        review_binding = authority["review_binding"]
+        raw_review, actual_review = pilot.read_bound_json(
+            Path(str(review_binding["path"])),
+            expected_sha256=str(review_binding["file_sha256"]),
+            expected_byte_count=int(review_binding["byte_count"]),
+            label="frozen calibration source review",
+        )
+        if actual_review != review_binding:
+            raise pilot.PilotContractError("source review binding changed")
+        pilot.validate_source_review(raw_review, authority=authority)
+
+        head = str(collector._git_output("rev-parse", "HEAD"))  # noqa: SLF001
+        source_commit = str(authority["source_commit"])
+        collector._git_output(  # noqa: SLF001
+            "merge-base", "--is-ancestor", source_commit, head
+        )
+        for binding, label in (
+            (actual_plan, "frozen calibration plan"),
+            (actual_authority, "frozen calibration authority"),
+            (actual_review, "frozen calibration source review"),
+        ):
+            collector._binding_at_commit(  # noqa: SLF001
+                binding, commit=head, label=label
+            )
+        for source in authority["source_bindings"]:
+            collector._binding_at_commit(  # noqa: SLF001
+                source["binding"],
+                commit=source_commit,
+                label=f"frozen authority source {source['name']}",
+            )
+        pilot.require_plan_bindings(plan)
+    except (OSError, pilot.PilotContractError, subprocess.CalledProcessError) as exc:
+        raise BoundedBranchPlanError(str(exc)) from exc
+    return authority, actual_authority, plan, actual_plan
+
+
 def _validate_calibration_gate(
     receipt: Mapping[str, Any],
     *,
@@ -262,23 +499,48 @@ def _validate_calibration_gate(
         "peak_delta_above_baseline_bytes",
         "device_total_bytes",
     }
-    if (
+    standard_terminal = terminal.get("status") == "COMPLETE_PENDING_TERMINAL_REVIEW"
+    recovery_terminal = (
+        terminal.get("status") == "CONSUMED_TERMINAL_FAILURE"
+        and isinstance(terminal_review, Mapping)
+        and terminal_review.get("schema") == ANALYSIS_RECOVERY_REVIEW_SCHEMA
+        and terminal_review.get("status") == ANALYSIS_RECOVERY_REVIEW_STATUS
+    )
+    common_terminal_failed = (
         terminal.get("schema") != profile["terminal_schema"]
-        or terminal.get("status") != "COMPLETE_PENDING_TERMINAL_REVIEW"
         or terminal.get("citable_as_scientific_evidence") is not False
         or terminal.get("authorizes_retry_or_resume") is not False
         or terminal.get("scientific_verdict_emitted") is not False
         or terminal.get("root_creation_consumes_attempt") is not True
         or terminal.get("reservation_records_consumed_attempt") is not True
-        or terminal.get("calibration_receipt_binding") != receipt_bound
         or terminal.get("physics_result_binding")
         != normalized_receipt.get("calibration_collection_receipt")
-        or terminal.get("calibration_decision") != "FREEZE_PILOT_CONTRACT"
-        or terminal.get("failure") is not None
         or not isinstance(gpu, Mapping)
         or set(gpu) != required_gpu
         or gpu.get("scope") != "selected_device_global_vram_not_process_attributed"
         or gpu.get("read_errors") != 0
+    )
+    standard_terminal_failed = (
+        not standard_terminal
+        or terminal.get("calibration_receipt_binding") != receipt_bound
+        or terminal.get("calibration_decision") != "FREEZE_PILOT_CONTRACT"
+        or terminal.get("failure") is not None
+    )
+    recovery_terminal_failed = (
+        not recovery_terminal
+        or terminal_bound.get("file_sha256")
+        != ANALYSIS_RECOVERY_FAILED_TERMINAL_SHA256
+        or terminal_bound.get("byte_count")
+        != ANALYSIS_RECOVERY_FAILED_TERMINAL_BYTE_COUNT
+        or terminal.get("calibration_receipt_binding") is not None
+        or terminal.get("calibration_decision") is not None
+        or terminal.get("failure") != ANALYSIS_RECOVERY_TERMINAL_FAILURE
+        or Path(str(receipt_bound["path"])).is_relative_to(
+            Path(str(terminal.get("attempt_root")))
+        )
+    )
+    if common_terminal_failed or (
+        standard_terminal_failed and recovery_terminal_failed
     ):
         raise BoundedBranchPlanError("calibration terminal did not pass exactly")
     authority_bound = _binding(
@@ -295,22 +557,30 @@ def _validate_calibration_gate(
     check_bound = _binding(
         terminal["receipt_check_binding"], label="calibration receipt check"
     )
-    try:
+    if recovery_terminal:
         (
             authority_document,
             actual_authority,
             plan_document,
             actual_plan,
-        ) = calibration_supervisor.load_and_validate_authority(
-            Path(str(authority_bound["path"])),
-            expected_authority_sha256=str(authority_bound["file_sha256"]),
-            expected_authority_byte_count=int(authority_bound["byte_count"]),
-        )
-    except calibration_supervisor.CalibrationSupervisionError as exc:
-        raise BoundedBranchPlanError(
-            f"calibration {profile['name']} authority/successor boundary did not validate: "
-            f"{exc}"
-        ) from exc
+        ) = _load_recovery_authority_at_frozen_source(authority_bound)
+    else:
+        try:
+            (
+                authority_document,
+                actual_authority,
+                plan_document,
+                actual_plan,
+            ) = calibration_supervisor.load_and_validate_authority(
+                Path(str(authority_bound["path"])),
+                expected_authority_sha256=str(authority_bound["file_sha256"]),
+                expected_authority_byte_count=int(authority_bound["byte_count"]),
+            )
+        except calibration_supervisor.CalibrationSupervisionError as exc:
+            raise BoundedBranchPlanError(
+                f"calibration {profile['name']} authority/successor boundary did not validate: "
+                f"{exc}"
+            ) from exc
     physics_document, actual_physics = pilot.read_bound_json(
         Path(str(physics_bound["path"])),
         expected_sha256=str(physics_bound["file_sha256"]),
@@ -378,6 +648,7 @@ def _validate_calibration_gate(
             else None
         ),
     )
+    expected_phase_count = 3 if recovery_terminal else 4
     if (
         actual_authority != authority_bound
         or not isinstance(authority_document, Mapping)
@@ -411,7 +682,7 @@ def _validate_calibration_gate(
         or check_document.get("rgb_bytes_opened") is not False
         or check_document.get("checkpoints_opened") is not False
         or not isinstance(phases, list)
-        or len(phases) != 4
+        or len(phases) != expected_phase_count
         or not isinstance(phases[0], Mapping)
         or phases[0].get("phase") != "graphics_preflight"
         or phases[0].get("status") != "PASS"
@@ -459,49 +730,115 @@ def _validate_calibration_gate(
         != float(authority_document.get("caps", {}).get("wall_seconds", -1))
     ):
         raise BoundedBranchPlanError("calibration exceeded its wall ceiling")
-    required_review = {
-        "schema",
-        "status",
-        "authority_granted_by_this_document",
-        "scientific_claim_granted",
-        "terminal_binding",
-        "calibration_receipt_binding",
-        "decision",
-        "reviewer",
-        "reviewed_at",
-        "checks",
-        "remaining_findings",
-    }
-    if not isinstance(terminal_review, Mapping) or set(terminal_review) != required_review:
-        raise BoundedBranchPlanError("calibration terminal review fields changed")
-    reviewer = terminal_review.get("reviewer")
-    checks = terminal_review.get("checks")
-    if (
-        terminal_review.get("schema") != TERMINAL_REVIEW_SCHEMA
-        or terminal_review.get("status") != "PASS_FREEZE_PILOT_CONTRACT"
-        or terminal_review.get("authority_granted_by_this_document") is not False
-        or terminal_review.get("scientific_claim_granted") is not False
-        or terminal_review.get("terminal_binding") != terminal_bound
-        or terminal_review.get("calibration_receipt_binding") != receipt_bound
-        or terminal_review.get("decision") != "FREEZE_PILOT_CONTRACT"
-        or terminal_review.get("remaining_findings") != []
-        or not isinstance(reviewer, Mapping)
-        or set(reviewer) != {"identity", "independence_basis"}
-        or any(not isinstance(reviewer[key], str) or not reviewer[key].strip() for key in reviewer)
-        or not isinstance(terminal_review.get("reviewed_at"), str)
-        or not terminal_review["reviewed_at"].strip()
-        or not isinstance(checks, Mapping)
-        or set(checks) != {
-            "terminal_complete",
-            "receipt_checker_passed",
-            "calibration_decision_passed",
-            "gpu_sampler_passed",
-            "wall_ceiling_passed",
-            "no_retry_or_resume",
+
+    if recovery_terminal:
+        support = normalized_receipt.get("candidate_branch_support_analysis")
+        coverage = (
+            support.get("calibrated_discrimination_query_coverage")
+            if isinstance(support, Mapping)
+            else None
+        )
+        overall = coverage.get("overall") if isinstance(coverage, Mapping) else None
+        per_family = (
+            coverage.get("per_family") if isinstance(coverage, Mapping) else None
+        )
+        technical = normalized_receipt.get("technical_integrity")
+        repeatability = normalized_receipt.get("repeatability_analysis")
+        visual = normalized_receipt.get("visual_validation")
+        if (
+            normalized_receipt.get("status") != "COMPLETE"
+            or normalized_receipt.get("citable_as_scientific_evidence") is not False
+            or normalized_receipt.get("train_eval_scenes_accessed") is not False
+            or not isinstance(overall, Mapping)
+            or overall.get("eligible_query_count") != 144
+            or overall.get("total_query_count") != 144
+            or overall.get("passed") is not True
+            or not isinstance(per_family, Mapping)
+            or set(per_family) != set(pilot.FAMILIES)
+            or any(
+                not isinstance(row, Mapping)
+                or row.get("eligible_query_count") != 18
+                or row.get("total_query_count") != 18
+                or row.get("passed") is not True
+                for row in per_family.values()
+            )
+            or not isinstance(technical, Mapping)
+            or technical.get("receipt_checker_passed") is not True
+            or technical.get("sentinel_command_endpoint_and_rgb_exact") is not True
+            or technical.get("hard_invalid_frames") != 0
+            or not isinstance(repeatability, Mapping)
+            or repeatability.get("repeat_controls") != 16
+            or repeatability.get("executed_command_tapes_exact") is not True
+            or repeatability.get("physical_trajectories_exact") is not True
+            or repeatability.get("stored_rgb_exact") is not True
+            or not isinstance(visual, Mapping)
+            or visual.get("visual_domain_fidelity_claimed") is not False
+            or len(normalized_receipt["calibration_contract"]["excluded_scene_ids"])
+            != 8
+        ):
+            raise BoundedBranchPlanError(
+                "posthoc calibration receipt did not preserve the exact support gate"
+            )
+    if recovery_terminal:
+        _validate_analysis_recovery_review(
+            terminal_review,
+            receipt=normalized_receipt,
+            receipt_binding=receipt_bound,
+            terminal_binding=terminal_bound,
+            authority=authority_document,
+        )
+    else:
+        required_review = {
+            "schema",
+            "status",
+            "authority_granted_by_this_document",
+            "scientific_claim_granted",
+            "terminal_binding",
+            "calibration_receipt_binding",
+            "decision",
+            "reviewer",
+            "reviewed_at",
+            "checks",
+            "remaining_findings",
         }
-        or any(value is not True for value in checks.values())
-    ):
-        raise BoundedBranchPlanError("calibration terminal review did not pass exactly")
+        if (
+            not isinstance(terminal_review, Mapping)
+            or set(terminal_review) != required_review
+        ):
+            raise BoundedBranchPlanError("calibration terminal review fields changed")
+        reviewer = terminal_review.get("reviewer")
+        checks = terminal_review.get("checks")
+        if (
+            terminal_review.get("schema") != TERMINAL_REVIEW_SCHEMA
+            or terminal_review.get("status") != "PASS_FREEZE_PILOT_CONTRACT"
+            or terminal_review.get("authority_granted_by_this_document") is not False
+            or terminal_review.get("scientific_claim_granted") is not False
+            or terminal_review.get("terminal_binding") != terminal_bound
+            or terminal_review.get("calibration_receipt_binding") != receipt_bound
+            or terminal_review.get("decision") != "FREEZE_PILOT_CONTRACT"
+            or terminal_review.get("remaining_findings") != []
+            or not isinstance(reviewer, Mapping)
+            or set(reviewer) != {"identity", "independence_basis"}
+            or any(
+                not isinstance(reviewer[key], str) or not reviewer[key].strip()
+                for key in reviewer
+            )
+            or not isinstance(terminal_review.get("reviewed_at"), str)
+            or not terminal_review["reviewed_at"].strip()
+            or not isinstance(checks, Mapping)
+            or set(checks) != {
+                "terminal_complete",
+                "receipt_checker_passed",
+                "calibration_decision_passed",
+                "gpu_sampler_passed",
+                "wall_ceiling_passed",
+                "no_retry_or_resume",
+            }
+            or any(value is not True for value in checks.values())
+        ):
+            raise BoundedBranchPlanError(
+                "calibration terminal review did not pass exactly"
+            )
     return {
         "calibration_receipt_binding": receipt_bound,
         "calibration_terminal_binding": terminal_bound,

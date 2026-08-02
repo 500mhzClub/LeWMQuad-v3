@@ -514,6 +514,7 @@ def test_progression_analysis_binds_snapshots_and_proves_scene_separation(
     output.mkdir(parents=True)
     pack = root / ".generated/dev/pack"
     pack.mkdir(parents=True)
+    (pack / "manifest.json").write_text("{}\n")
     monkeypatch.setattr(evaluator, "REPO_ROOT", root)
     monkeypatch.setattr(evaluator, "PROGRESSION_OUTPUT_PARENT", output_parent)
     monkeypatch.setattr(evaluator, "PROGRESSION_PACK_ROOT", pack)
@@ -597,7 +598,7 @@ def test_progression_analysis_binds_snapshots_and_proves_scene_separation(
         }
         validated_roles[role] = validated
         input_roles[role] = {
-            "manifest_path": str(validated["manifest_path"]),
+            "manifest_path": str(validated["manifest_path"].relative_to(root)),
             "manifest_sha256": validated["manifest_sha256"],
             "role": role,
             **role_value,
@@ -699,6 +700,9 @@ def test_progression_analysis_binds_snapshots_and_proves_scene_separation(
         pilot_scene_ids={"branch-eval"},
     )
     assert receipt["scene_overlap"] == []
+    assert receipt["training_pack_role_bindings"]["train"][
+        "manifest_path"
+    ] == str((pack / "manifest.json").resolve())
     assert set(receipt["checkpoint_panel_bindings"]) == {
         f"{arm}/seed_{panel_seed}"
         for arm in evaluator.MODEL_ARMS
@@ -834,6 +838,99 @@ def test_calibration_gate_rejects_consumed_terminal_failure(monkeypatch):
             terminal_binding=values[3],
             terminal_review=values[4],
             terminal_review_binding=values[5],
+        )
+
+
+def test_calibration_gate_accepts_only_exact_analyzer_recovery_review():
+    terminal_binding = _fake_binding("/tmp/failed-terminal.json")
+    receipt_binding = _fake_binding("/tmp/posthoc-receipt.json")
+    failed_analyzer_binding = _fake_binding("/tmp/frozen-analyzer.py")
+    corrected_analyzer_binding = plan_builder.pilot.file_binding(
+        Path(plan_builder.calibration.__file__)
+    )
+    corrected_test_binding = plan_builder.pilot.file_binding(
+        Path(__file__).resolve().parents[2]
+        / "lewm/tests/test_analyze_go2_world_model_counterfactual_calibration_v1.py"
+    )
+    authority = {
+        "source_commit": "a" * 40,
+        "source_bindings": [
+            {
+                "name": "calibration_analyzer",
+                "binding": failed_analyzer_binding,
+            }
+        ],
+    }
+    review = {
+        "schema": plan_builder.ANALYSIS_RECOVERY_REVIEW_SCHEMA,
+        "status": plan_builder.ANALYSIS_RECOVERY_REVIEW_STATUS,
+        "authority_granted_by_this_document": False,
+        "scientific_claim_granted": False,
+        "failed_terminal_binding": terminal_binding,
+        "posthoc_calibration_receipt_binding": receipt_binding,
+        "source_correction": {
+            "failed_source_commit": "a" * 40,
+            "failed_analyzer_binding": failed_analyzer_binding,
+            "corrected_source_commit": "fe9d594080e3bedafd0f7a5c5bd556b732189a4e",
+            "corrected_analyzer_binding": corrected_analyzer_binding,
+            "corrected_analyzer_test_binding": corrected_test_binding,
+            "semantic_change": plan_builder.ANALYSIS_RECOVERY_SEMANTIC_CHANGE,
+        },
+        "reviewer": {
+            "identity": "independent-recovery-reviewer",
+            "independence_basis": "separate frozen-root recomputation",
+        },
+        "reviewed_at": "2026-08-02T17:30:00+01:00",
+        "checks": {
+            "failed_terminal_preserved": True,
+            "physics_collection_complete": True,
+            "receipt_checker_passed": True,
+            "frozen_analyzer_failure_reproduced": True,
+            "producer_checker_contract_uses_physics_equal": True,
+            "corrected_source_delta_is_analyzer_field_only": True,
+            "posthoc_output_outside_attempt_root": True,
+            "posthoc_receipt_exactly_recomputed": True,
+            "posthoc_receipt_freezes_contract": True,
+            "attempt_root_unchanged": True,
+            "no_retry_resume_refill_or_overwrite": True,
+        },
+        "limitations": list(plan_builder.ANALYSIS_RECOVERY_LIMITATIONS),
+        "remaining_findings": [],
+    }
+    plan_builder._validate_analysis_recovery_review(  # noqa: SLF001
+        review,
+        receipt={"analyzer_binding": corrected_analyzer_binding},
+        receipt_binding=receipt_binding,
+        terminal_binding=terminal_binding,
+        authority=authority,
+    )
+
+    altered = copy.deepcopy(review)
+    altered["source_correction"]["semantic_change"] = "broader gate change"
+    with pytest.raises(
+        plan_builder.BoundedBranchPlanError,
+        match="review did not pass exactly",
+    ):
+        plan_builder._validate_analysis_recovery_review(  # noqa: SLF001
+            altered,
+            receipt={"analyzer_binding": corrected_analyzer_binding},
+            receipt_binding=receipt_binding,
+            terminal_binding=terminal_binding,
+            authority=authority,
+        )
+
+    nonexistent_commit = copy.deepcopy(review)
+    nonexistent_commit["source_correction"]["corrected_source_commit"] = "b" * 40
+    with pytest.raises(
+        plan_builder.BoundedBranchPlanError,
+        match="corrected commit changed",
+    ):
+        plan_builder._validate_analysis_recovery_review(  # noqa: SLF001
+            nonexistent_commit,
+            receipt={"analyzer_binding": corrected_analyzer_binding},
+            receipt_binding=receipt_binding,
+            terminal_binding=terminal_binding,
+            authority=authority,
         )
 
 

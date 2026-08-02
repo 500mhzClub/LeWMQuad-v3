@@ -1,0 +1,64 @@
+{
+  "schema": "lewm_go2_world_model_counterfactual_calibration_posthoc_recovery_review_v1",
+  "status": "PASS_ANALYZER_ONLY_RECOVERY_FREEZE_PILOT_CONTRACT",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted": false,
+  "failed_terminal_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v3-textured-v03/terminal_supervision.json",
+    "file_sha256": "b601809a8ec318b5848ac9d552619a7577a837e7edc6a707f995d4ba8bff35e1",
+    "byte_count": 6925
+  },
+  "posthoc_calibration_receipt_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v3-textured-v03-posthoc-analysis-v1/calibration_receipt.json",
+    "file_sha256": "58d1291ede7ee03a93d68eb7cec80c9322c47cd0b1d5fd1c41bf8f4b49ad484e",
+    "byte_count": 72475
+  },
+  "source_correction": {
+    "failed_source_commit": "3b157f14591977e19c68e19f32afe6dc1ff4162a",
+    "failed_analyzer_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/analyze_go2_world_model_counterfactual_calibration_v1.py",
+      "file_sha256": "46a558ecf4eb68ebf1af68f3aab2b366d6bd818ca9bcff772be36e4648cbe8fb",
+      "byte_count": 114253
+    },
+    "corrected_source_commit": "fe9d594080e3bedafd0f7a5c5bd556b732189a4e",
+    "corrected_analyzer_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/analyze_go2_world_model_counterfactual_calibration_v1.py",
+      "file_sha256": "809f9b0cf3812c1c478741b1cebf170c13fd637b07ed6d340900d6991d2452fc",
+      "byte_count": 114260
+    },
+    "corrected_analyzer_test_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_analyze_go2_world_model_counterfactual_calibration_v1.py",
+      "file_sha256": "2fd0989fc6d80823d35c0dd2c22cfaf011b188c4b7d9a6d8a800ccc74783f1b5",
+      "byte_count": 28994
+    },
+    "semantic_change": "runtime analyzer predicate only: sentinel_audit.passed -> sentinel_audit.physics_equal"
+  },
+  "reviewer": {
+    "identity": "/root/task_relevance_integration_audit",
+    "independence_basis": "independent read-only replay of the frozen analyzer failure, all 16 sentinel controls, corrected receipt derivation, source delta, and downstream admission requirements"
+  },
+  "reviewed_at": "2026-08-02T17:43:26+01:00",
+  "checks": {
+    "failed_terminal_preserved": true,
+    "physics_collection_complete": true,
+    "receipt_checker_passed": true,
+    "frozen_analyzer_failure_reproduced": true,
+    "producer_checker_contract_uses_physics_equal": true,
+    "corrected_source_delta_is_analyzer_field_only": true,
+    "posthoc_output_outside_attempt_root": true,
+    "posthoc_receipt_exactly_recomputed": true,
+    "posthoc_receipt_freezes_contract": true,
+    "attempt_root_unchanged": true,
+    "no_retry_resume_refill_or_overwrite": true
+  },
+  "limitations": [
+    "original_terminal_remains_failed_and_non_citable",
+    "posthoc_receipt_does_not_replace_original_terminal",
+    "admission_is_calibration_freeze_only",
+    "calibration_scenes_and_branches_remain_excluded_from_train_and_eval",
+    "no_visual_domain_fidelity_claim",
+    "no_retry_resume_refill_overwrite_or_new_execution_authority",
+    "fresh_2304_branch_bounded_experiment_and_reviews_still_required"
+  ],
+  "remaining_findings": []
+}
