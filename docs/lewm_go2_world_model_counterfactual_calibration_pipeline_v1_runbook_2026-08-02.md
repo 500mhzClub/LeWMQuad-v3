@@ -8,7 +8,10 @@ authority.
 
 ## Scope
 
-The next runtime tranche remains exactly eight calibration-only scenes, two
+The active successor is the exact textured-v03 V3 calibration. It may be built
+only after an exact visual-domain parity result, consumed success terminal, and
+independent terminal review have all been deeply revalidated and bound. The
+runtime tranche remains exactly eight calibration-only scenes, two
 states per scene, nine candidate actions plus one repeated-action sentinel per
 state: 16 states and 160 total branches. Sentinel `group_index i` duplicates
 requested primitive `i mod 9`; the 16 repeats therefore cover every primitive
@@ -50,14 +53,24 @@ Fill the six pinned identity values, then run:
 ```bash
 .generated/venvs/genesis_render_vulkan/bin/python \
   scripts/build_go2_world_model_counterfactual_calibration_plan_v1.py \
-  --attempt-id lewm-go2-wm-counterfactual-calibration-v1 \
-  --output-root /home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v1 \
+  --attempt-id lewm-go2-wm-counterfactual-calibration-v3 \
+  --output-root /home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v3 \
   --scene-panel <scene-panel.json> \
   --expected-scene-panel-sha256 <64-lowercase-hex> \
   --expected-scene-panel-byte-count <positive-integer> \
   --runtime-contract <runtime-contract.json> \
   --expected-runtime-contract-sha256 <64-lowercase-hex> \
   --expected-runtime-contract-byte-count <positive-integer> \
+  --textured-v03 \
+  --visual-domain-parity-result <parity-result.json> \
+  --expected-visual-domain-parity-sha256 <64-lowercase-hex> \
+  --expected-visual-domain-parity-byte-count <positive-integer> \
+  --visual-domain-parity-terminal <parity-terminal.json> \
+  --expected-visual-domain-parity-terminal-sha256 <64-lowercase-hex> \
+  --expected-visual-domain-parity-terminal-byte-count <positive-integer> \
+  --visual-domain-parity-review <parity-review.json> \
+  --expected-visual-domain-parity-review-sha256 <64-lowercase-hex> \
+  --expected-visual-domain-parity-review-byte-count <positive-integer> \
   --plan-output <calibration-plan.json>
 ```
 
@@ -73,16 +86,18 @@ paths:
   consumer, plan builder, focused tests, plan, and supervisor source;
 - an independent source review binding that passes that commit and exact source
   closure;
-- a `lewm_go2_world_model_counterfactual_calibration_execution_authority_v1`
-  document with status `AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION`;
+- a V3 calibration execution authority with status
+  `AUTHORIZED_ONE_EXACT_160_BRANCH_TEXTURED_V03_CALIBRATION_V3`;
 - resolved platform gates and an exact positive wall-time cap; and
 - a fresh output root.
 
-The authority must bind the plan, runtime, source commit, review, one-shot
-attempt, 160-branch caps, and external supervisor. Reservation consumes the
-single attempt; retry, resume, overwrite, and refill remain false.
+The authority must bind the plan, runtime, parity result/terminal/review,
+source commit, review, predecessor V2 terminal failure, one-shot attempt,
+160-branch caps, and external supervisor. Atomic creation of the fresh attempt
+root consumes the single attempt. The reservation records that already
+consumed attempt; retry, resume, overwrite, and refill remain false.
 
-The metadata-only authority helper fixes a 57-name source-role order covering
+The metadata-only authority helper fixes the canonical source-role order covering
 the runtime closure, plan/authority builders, supervisor, analyzer, joiner,
 checker, contract, consumer, and focused tests. It verifies every current
 source byte against the reviewed source commit. First emit a deliberately
@@ -91,6 +106,7 @@ non-passing review template:
 ```bash
 python3 scripts/build_go2_world_model_counterfactual_calibration_authority_v1.py review-template \
   --source-commit <40-lowercase-hex-source-commit> \
+  --textured-v03 \
   --output <calibration-source-review.json>
 ```
 
@@ -109,6 +125,9 @@ python3 scripts/build_go2_world_model_counterfactual_calibration_authority_v1.py
   --review <calibration-source-review.json> \
   --expected-review-sha256 <64-lowercase-hex> \
   --expected-review-byte-count <positive-integer> \
+  --predecessor-failure docs/lewm_go2_world_model_counterfactual_calibration_v2_terminal_failure_result_2026-08-02.json \
+  --expected-predecessor-failure-sha256 <64-lowercase-hex> \
+  --expected-predecessor-failure-byte-count <positive-integer> \
   --authorizer-identity <explicit-authorizer> \
   --authorizer-basis <basis> \
   --issued-at <ISO-8601> \
@@ -137,9 +156,11 @@ then runs the collector, receipt checker, and analyzer once. Invoke it exactly:
   --expected-authority-sha256 <64-lowercase-hex>
 ```
 
-The nonce is generated privately by the supervisor. A pre-reservation
-preflight failure consumes no attempt. Once `reservation.json` is written, any
-failure consumes the sole attempt and no retry or resume path exists.
+The nonce is generated privately by the supervisor. Validation and graphics
+preflight failures before root creation consume no attempt. Atomic creation of
+the fresh attempt root is the consumption event. A crash or failure after that
+point—including before `reservation.json` can be written—consumes the sole
+attempt and no retry or resume path exists.
 
 The supervisor samples `mem_info_vram_used` for the uniquely matched
 0x1002:0x7551 DRM device from immediately before collection through terminal
@@ -164,8 +185,12 @@ python3 scripts/check_go2_world_model_counterfactual_pilot_v1.py \
   --output <receipt-check.json>
 ```
 
-If and only if that passes, derive tolerances and the terminal decision without
-opening RGB leaves:
+If and only if that passes, derive tolerances and the terminal decision.  The
+analyzer re-invokes the caller-bound checker.  For textured-v03 V3 that checker
+safely opens every explicitly bound PNG leaf, verifies its file bytes, decodes
+an exact single-frame 224x224 RGB raster, and recomputes the C-order raw-pixel
+SHA-256 before any declared pixel partition can affect eligibility.  It still
+opens no checkpoint or simulator/runtime payload:
 
 ```bash
 python3 scripts/analyze_go2_world_model_counterfactual_calibration_v1.py \
@@ -175,12 +200,32 @@ python3 scripts/analyze_go2_world_model_counterfactual_calibration_v1.py \
   --output <calibration-receipt.json>
 ```
 
-The analyzer emits either `FREEZE_PILOT_CONTRACT` or
-`STOP_SOURCE_REDESIGN`. Because the checker already requires duplicate
-branches to be exact, progress/path tolerances are the fixed 1e-6 m numerical
-resolution floor. The repeat panel verifies exact deterministic replay across
-all nine requested primitives; it does not estimate stochastic variability.
-The decision also requires at least two physical rank classes in every state.
+The V3 analyzer emits either `FREEZE_PILOT_CONTRACT` or
+`STOP_INSUFFICIENT_JOINT_COUNTERFACTUAL_DISCRIMINATION_SUPPORT`. The repeat panel
+verifies exact deterministic replay across all nine requested primitives; it
+does not estimate stochastic variability. Repeatability and planning outcome
+equivalence are separate. Target progress and path length use fixed
+preregistered `0.01 m` rounding bins for physical rank and branch equivalence,
+while exact sentinel equality remains the technical gate. The bins have
+boundary artifacts and do not assert literal pairwise-distance equivalence
+within `0.01 m`.
+
+A V3 freeze is defined at the requested-action-query level.  For query `a`,
+let its alternatives be every requested action whose fixed `0.01 m` physical
+outcome class differs from `a`.  Query `a` is jointly eligible only when that
+set is nonempty and **every** such alternative differs from `a` in both
+executed-tape class and independently decoded stored-RGB raw-pixel class.  The
+calibration must contain at least 72 eligible queries out of 144 overall and
+at least nine out of 18 in every family, giving minimum coverage `0.5` both
+overall and per family.  This universal rule prevents a visually aliased
+physical alternative from entering the later nearest-nonequivalent margin or
+retrieval gate and falsely failing a perfect visual predictor.
+
+Per-state executed-tape, physical-class, and RGB unique-count histograms,
+states with any eligible query, and 9/9 fully eligible states remain useful
+diagnostics; the superseded aggregate state-count rule is not a gate.
+Normalized physical outcome-class diversity is also diagnostic, not an
+adaptive gate.
 The calibration receipt additionally aggregates actual context/target/total
 PNG byte counts, external collection and per-stage wall times, complete
 all-nine-action group yield, clipping/fall/tip counts, and checker-guaranteed
@@ -194,9 +239,12 @@ supervisor and authority contract after the calibration decision is frozen.
 
 ## Visual-evidence boundary
 
-The current pipeline validates camera quality and binds sequential endpoint-pose
-replay to the physical endpoint. It does not establish parity with the textured
-training RGB domain. Every calibration receipt therefore keeps
+The calibration validates camera quality, independently rehashes decoded
+stored pixels, and binds sequential endpoint-pose replay to the physical
+endpoint.  V3 also refuses to start unless it consumes a prior exact textured
+training-domain parity result, successful consumed terminal, and independent
+review as one deeply revalidated triple.  The calibration receipt does not
+independently mint that parity claim, so it keeps
 `visual_domain_fidelity_claimed=false` and
 `eligible_for_visual_domain_parity_claim=false`. This limitation must remain
 visible in any downstream evaluation.

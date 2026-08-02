@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""Receipt-only checker for the development counterfactual world-model pilot.
+"""Receipt checker for the development counterfactual world-model pilot.
 
-This checker is intentionally incapable of loading an image, checkpoint, or
-simulator payload.  Its read boundary is the caller-bound top-level manifest
-and the JSON/JSONL receipt files explicitly bound by that manifest.  RGB leaf
-paths and hashes are treated as inert receipt values.
+The ordinary report path remains receipt-only.  Claim-bearing textured-v03
+calibration consumers can additionally request independent verification of
+each explicitly bound PNG leaf.  That verifier hashes both the bound PNG bytes
+and the decoded exact 224x224 RGB C-order pixels; it never opens checkpoints or
+simulator payloads.
 """
 from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
 import hashlib
+import io
 import json
 import math
 import os
@@ -43,6 +45,7 @@ COUNTERFACTUAL_QUALITY_SCHEMA = (
     "lewm_go2_world_model_counterfactual_frame_quality_v2"
 )
 LOW_INFO_REASON_NAMES = frozenset({
+    "camera_safety_unresolved",
     "low_rgb_texture",
     "near_wall_depth",
     "near_forward_geometry",
@@ -113,6 +116,7 @@ MAX_CANDIDATE_BRANCHES = 3_456
 MAX_SENTINEL_BRANCHES = 384
 MAX_TOTAL_BRANCHES = 3_456
 MAX_RECEIPT_BYTES = 64 * 1024 * 1024
+MAX_FRAME_PNG_BYTES = 8 * 1024 * 1024
 
 _SHA256_CHARS = frozenset("0123456789abcdef")
 _FORBIDDEN_RECEIPT_COMPONENTS = frozenset(
@@ -126,6 +130,27 @@ _FORBIDDEN_RECEIPT_COMPONENTS = frozenset(
         "depth",
     }
 )
+
+
+def _forbidden_payload_component(component: str) -> bool:
+    lowered = component.lower()
+    return (
+        lowered == "sealed"
+        or lowered.startswith("sealed_")
+        or lowered == "sealed_test.json"
+        or lowered in {
+            "heldout",
+            "held_out",
+            "held-out",
+            "protected",
+            "checkpoint",
+            "checkpoints",
+            "depth",
+        }
+        or lowered.startswith(
+            ("heldout_", "held_out_", "held-out-", "protected_")
+        )
+    )
 
 
 class PilotReceiptError(RuntimeError):
@@ -1419,24 +1444,28 @@ def _validate_frame_receipt(
     value: object,
     *,
     expected_identity: str | None = None,
+    textured_v03: bool = False,
 ) -> dict[str, Any]:
     receipt = _plain_dict(value, name="frame receipt")
+    fields = [
+        "artifact_id",
+        "frame_identity",
+        "path",
+        "file_sha256",
+        "byte_count",
+        "width",
+        "height",
+        "mode",
+        "format",
+        "camera_valid",
+        "low_information",
+        "low_info_reasons",
+    ]
+    if textured_v03:
+        fields.append("pixel_sha256")
     _exact_keys(
         receipt,
-        (
-            "artifact_id",
-            "frame_identity",
-            "path",
-            "file_sha256",
-            "byte_count",
-            "width",
-            "height",
-            "mode",
-            "format",
-            "camera_valid",
-            "low_information",
-            "low_info_reasons",
-        ),
+        tuple(fields),
         name="frame receipt",
     )
     identity = _require_string(receipt["frame_identity"], name="frame receipt identity")
@@ -1446,6 +1475,10 @@ def _validate_frame_receipt(
         _fail("frame receipt artifact/frame identity changed")
     _artifact_path(receipt["path"], name="frame receipt path")
     _require_sha256(receipt["file_sha256"], name="frame receipt SHA-256")
+    if textured_v03:
+        _require_sha256(
+            receipt["pixel_sha256"], name="frame receipt pixel SHA-256"
+        )
     _require_int(receipt["byte_count"], name="frame receipt byte_count", minimum=1)
     if (
         receipt["width"] != 224
@@ -1477,7 +1510,8 @@ def _validate_state_branches(
     action_catalog: Sequence[Mapping[str, Any]],
     context: Mapping[str, Any],
     execution_contract: Mapping[str, Any],
-) -> tuple[dict[str, Any], ...]:
+    measure_equivalence: bool,
+) -> tuple[tuple[dict[str, Any], ...], dict[str, Any]]:
     raw_branches = _plain_list(value, name=f"state {state['state_id']} branches")
     lane_count = _branch_count_for_role(str(state["role"]))
     if len(raw_branches) != lane_count:
@@ -1486,7 +1520,9 @@ def _validate_state_branches(
     candidate_tape_digests: list[str] = []
     candidate_trajectory_digests: list[str] = []
     candidate_endpoint_pose_digests: list[str] = []
+    candidate_outcome_digests: list[str] = []
     candidate_png_digests: list[str] = []
+    candidate_pixel_digests: list[str] = []
     frame_identities: set[str] = set()
     for lane_offset, raw_branch in enumerate(raw_branches):
         branch = _plain_dict(raw_branch, name=f"state {state['state_id']} branch {lane_offset}")
@@ -1563,7 +1599,11 @@ def _validate_state_branches(
             branch["frame_receipt"],
             name=f"state {state['state_id']} branch {lane_offset}.frame_receipt",
         )
-        _validate_frame_receipt(frame_receipt, expected_identity=identity)
+        _validate_frame_receipt(
+            frame_receipt,
+            expected_identity=identity,
+            textured_v03=measure_equivalence,
+        )
         if lane_offset < CANDIDATE_BRANCHES_PER_STATE:
             candidate_tape_digests.append(str(branch["executed_block_sha256"]))
             candidate_trajectory_digests.append(
@@ -1589,17 +1629,63 @@ def _validate_state_branches(
                     )
                 )
             )
+            candidate_outcome_digests.append(
+                _sha256_bytes(
+                    _canonical_json_bytes({
+                        "physical_fell": branch["physical_fell"],
+                        "physical_tipped": branch["physical_tipped"],
+                        "physical_path_length_m": branch[
+                            "physical_path_length_m"
+                        ],
+                        "physical_target_progress_m": branch[
+                            "physical_target_progress_m"
+                        ],
+                    })
+                )
+            )
             candidate_png_digests.append(str(frame_receipt["file_sha256"]))
+            if measure_equivalence:
+                candidate_pixel_digests.append(
+                    str(frame_receipt["pixel_sha256"])
+                )
         branches.append(branch)
-    if len(set(candidate_tape_digests)) != CANDIDATE_BRANCHES_PER_STATE:
-        _fail("the nine candidate actions collapse to duplicate executed command tapes")
-    if (
-        len(set(candidate_trajectory_digests)) < 2
-        or len(set(candidate_endpoint_pose_digests)) < 2
-    ):
-        _fail("the nine candidate actions collapse to one physical response")
-    if len(set(candidate_png_digests)) < 2:
-        _fail("the nine candidate actions collapse to one sequential RGB response")
+    def partition(identities: Sequence[str]) -> dict[str, Any]:
+        grouped: dict[str, list[int]] = {}
+        for action_id, identity in enumerate(identities):
+            grouped.setdefault(identity, []).append(action_id)
+        groups = [
+            {"identity_sha256": identity, "action_ids": action_ids}
+            for identity, action_ids in grouped.items()
+        ]
+        return {
+            "unique_count": len(groups),
+            "collapsed": len(groups) < CANDIDATE_BRANCHES_PER_STATE,
+            "groups": groups,
+        }
+    response_audit = (
+        {
+            "schema": producer_contract.TEXTURED_V03_CANDIDATE_RESPONSE_AUDIT_SCHEMA,
+            "candidate_action_ids": list(range(CANDIDATE_BRANCHES_PER_STATE)),
+            "executed_tape": partition(candidate_tape_digests),
+            "physical_trajectory": partition(candidate_trajectory_digests),
+            "endpoint_pose": partition(candidate_endpoint_pose_digests),
+            "physical_outcome": partition(candidate_outcome_digests),
+            "stored_rgb_file": partition(candidate_png_digests),
+            "stored_rgb_pixels": partition(candidate_pixel_digests),
+        }
+        if measure_equivalence
+        else {}
+    )
+    if not measure_equivalence:
+        if len(set(candidate_tape_digests)) != CANDIDATE_BRANCHES_PER_STATE:
+            _fail("the nine candidate actions collapse to duplicate executed command tapes")
+        if (
+            len(set(candidate_trajectory_digests)) < 2
+            or len(set(candidate_endpoint_pose_digests)) < 2
+        ):
+            _fail("the nine candidate actions collapse to one physical response")
+        if len(set(candidate_png_digests)) < 2:
+            _fail("the nine candidate actions collapse to one sequential RGB response")
     if _has_sentinel(state):
         sentinel_action = int(state["sentinel_duplicate_action_id"])
         sentinel = branches[-1]
@@ -1611,11 +1697,16 @@ def _validate_state_branches(
             or sentinel["endpoint_state"] != candidate["endpoint_state"]
             or sentinel["frame_receipt"]["file_sha256"]
             != candidate["frame_receipt"]["file_sha256"]
+            or (
+                measure_equivalence
+                and sentinel["frame_receipt"]["pixel_sha256"]
+                != candidate["frame_receipt"]["pixel_sha256"]
+            )
         ):
             _fail(
                 "sentinel command/RGB receipts or endpoint state do not exactly duplicate the selected candidate"
             )
-    return tuple(branches)
+    return tuple(branches), response_audit
 
 
 def _validate_state_receipt(
@@ -1625,28 +1716,37 @@ def _validate_state_receipt(
     action_catalog: Sequence[Mapping[str, Any]],
     execution_contract: Mapping[str, Any],
     attempt_id: str,
+    measure_equivalence: bool,
 ) -> dict[str, Any]:
     receipt = _plain_dict(value, name=f"state receipt {plan_state['state_id']}")
+    receipt_fields = [
+        "schema",
+        "attempt_id",
+        "status",
+        "physics_validated",
+        "citable_as_scientific_evidence",
+        "authorizes_retry_or_resume",
+        "state",
+        "synchronization_audit",
+        "context",
+        "branches",
+        "sentinel_audit",
+        "render_sentinel_audit",
+        "render_receipt_binding",
+    ]
+    if measure_equivalence:
+        receipt_fields.append("candidate_response_audit")
     _exact_keys(
         receipt,
-        (
-            "schema",
-            "attempt_id",
-            "status",
-            "physics_validated",
-            "citable_as_scientific_evidence",
-            "authorizes_retry_or_resume",
-            "state",
-            "synchronization_audit",
-            "context",
-            "branches",
-            "sentinel_audit",
-            "render_sentinel_audit",
-            "render_receipt_binding",
-        ),
+        tuple(receipt_fields),
         name=f"state receipt {plan_state['state_id']}",
     )
-    if receipt["schema"] != STATE_RECEIPT_SCHEMA or receipt["status"] != "PHYSICS_COMPLETE":
+    expected_schema = (
+        producer_contract.TEXTURED_V03_STATE_RECEIPT_SCHEMA
+        if measure_equivalence
+        else STATE_RECEIPT_SCHEMA
+    )
+    if receipt["schema"] != expected_schema or receipt["status"] != "PHYSICS_COMPLETE":
         _fail("state receipt schema/status changed")
     if receipt["attempt_id"] != attempt_id:
         _fail("state receipt attempt identity changed")
@@ -1695,13 +1795,16 @@ def _validate_state_receipt(
     context = checked_context["document"]
     if context["prebranch_state_sha256"] != receipt["synchronization_audit"]["prebranch_state_sha256"]:
         _fail("context and synchronization prebranch hashes differ")
-    branches = _validate_state_branches(
+    branches, recomputed_response_audit = _validate_state_branches(
         receipt["branches"],
         state=plan_state,
         action_catalog=action_catalog,
         context=context,
         execution_contract=execution_contract,
+        measure_equivalence=measure_equivalence,
     )
+    if measure_equivalence and receipt["candidate_response_audit"] != recomputed_response_audit:
+        _fail("candidate response equivalence audit changed")
     if _has_sentinel(plan_state):
         _validate_sentinel_audit(receipt["sentinel_audit"], state=plan_state, branches=branches)
         _validate_render_sentinel_audit(
@@ -1768,7 +1871,10 @@ def _validate_purpose_counts(purpose: object, counts: Mapping[str, Any]) -> str:
         }
         if compact != expected or counts["roles"] != {"calibration": 1}:
             _fail("source-integration smoke must be exactly 1 calibration scene/state and 10 branches")
-    elif purpose_text == "sizing_calibration_only":
+    elif purpose_text in (
+        "sizing_calibration_only",
+        "sizing_calibration_textured_v03_v3",
+    ):
         expected = {
             "scenes": 8,
             "states": 16,
@@ -1790,7 +1896,8 @@ def _validate_purpose_counts(purpose: object, counts: Mapping[str, Any]) -> str:
     else:
         _fail(
             "plan purpose is not source_integration_smoke, "
-            "sizing_calibration_only, or bounded_wm_a_pilot"
+            "sizing_calibration_only, sizing_calibration_textured_v03_v3, "
+            "or bounded_wm_a_pilot"
         )
     return purpose_text
 
@@ -1819,36 +1926,96 @@ def _validate_render_plan_rows(
         _fail("render plan frame identities do not exactly cover physical branch targets")
 
 
+def _validate_derived_mesh_bindings(value: object) -> tuple[dict[str, Any], ...]:
+    rows = _plain_list(value, name="derived_mesh_bindings")
+    checked: list[dict[str, Any]] = []
+    paths: list[str] = []
+    for index, row in enumerate(rows):
+        binding = _validate_inert_binding(
+            row, name=f"derived_mesh_bindings[{index}]"
+        )
+        path = Path(str(binding["path"]))
+        if not path.is_absolute() or path.suffix != ".obj":
+            _fail("derived textured mesh binding path changed")
+        paths.append(str(path))
+        checked.append(binding)
+    if paths != sorted(paths) or len(paths) != len(set(paths)):
+        _fail("derived textured mesh bindings are not unique sorted paths")
+    return tuple(checked)
+
+
 def _validate_live_render_receipt(
     value: object,
     *,
     attempt_id: str,
+    expected_render_contract: Mapping[str, Any],
+    expected_purpose: str | None = None,
+    expected_parity_result_binding: Mapping[str, Any] | None = None,
+    expected_parity_terminal_binding: Mapping[str, Any] | None = None,
+    expected_parity_review_binding: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     receipt = _plain_dict(value, name="live render receipt")
+    textured_v03 = dict(expected_render_contract) == (
+        producer_contract.TEXTURED_V03_RENDER_CONTRACT
+    )
+    triple_parity_profile = textured_v03 and expected_purpose in {
+        "sizing_calibration_textured_v03_v3",
+        "bounded_wm_a_pilot",
+    }
+    receipt_fields = [
+        "schema",
+        "attempt_id",
+        "status",
+        "physics_validated",
+        "citable_as_scientific_evidence",
+        "scene",
+        "render_contract",
+        "native_render_calls",
+        "stored_rgb_frames",
+        "depth_rendered",
+        "depth_persisted",
+        "visual_mode",
+        "visual_domain_fidelity_claimed",
+        "frame_receipts",
+        "quality_audits",
+        "render_sentinel_audits",
+    ]
+    if textured_v03:
+        receipt_fields.extend((
+            "rgb_render_calls",
+            "auxiliary_depth_render_calls",
+            "derived_mesh_bindings",
+            "visual_domain_parity_result_binding",
+        ))
+        if triple_parity_profile:
+            if (
+                expected_parity_terminal_binding is None
+                or expected_parity_review_binding is None
+            ):
+                _fail("live render parity terminal/review expectation is partial")
+            receipt_fields.extend((
+                "visual_domain_parity_terminal_binding",
+                "visual_domain_parity_review_binding",
+            ))
+        elif (
+            expected_parity_terminal_binding is not None
+            or expected_parity_review_binding is not None
+        ):
+            _fail("legacy live render profile cannot carry parity terminal/review")
     _exact_keys(
         receipt,
-        (
-            "schema",
-            "attempt_id",
-            "status",
-            "physics_validated",
-            "citable_as_scientific_evidence",
-            "scene",
-            "render_contract",
-            "native_render_calls",
-            "stored_rgb_frames",
-            "depth_rendered",
-            "depth_persisted",
-            "visual_mode",
-            "visual_domain_fidelity_claimed",
-            "frame_receipts",
-            "quality_audits",
-            "render_sentinel_audits",
-        ),
+        tuple(receipt_fields),
         name="live render receipt",
     )
+    expected_schema = (
+        producer_contract.TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA
+        if triple_parity_profile
+        else producer_contract.TEXTURED_V03_LIVE_RENDER_RECEIPT_SCHEMA
+        if textured_v03
+        else "lewm_go2_world_model_counterfactual_live_render_receipt_v1"
+    )
     if (
-        receipt["schema"] != "lewm_go2_world_model_counterfactual_live_render_receipt_v1"
+        receipt["schema"] != expected_schema
         or receipt["attempt_id"] != attempt_id
         or receipt["status"] != "RENDER_COMPLETE"
         or receipt["physics_validated"] is not False
@@ -1870,26 +2037,79 @@ def _validate_live_render_receipt(
         _fail("live render scene identity changed")
     _validate_inert_binding(scene["scene_manifest_binding"], name="render scene manifest")
     _validate_inert_binding(scene["scene_genesis_binding"], name="render Genesis scene")
-    if receipt["render_contract"] != producer_contract.RENDER_CONTRACT:
+    if receipt["render_contract"] != dict(expected_render_contract):
         _fail("live render contract changed")
+    if not textured_v03 and dict(expected_render_contract) != producer_contract.RENDER_CONTRACT:
+        _fail("unsupported live render contract")
+    expected_visual_mode = (
+        producer_contract.TEXTURED_V03_VISUAL_MODE
+        if textured_v03
+        else "solid_materials_box_physics_preserved"
+    )
     native_render_calls = _require_int(
         receipt["native_render_calls"], name="native_render_calls", minimum=1
     )
+    if textured_v03:
+        rgb_render_calls = _require_int(
+            receipt["rgb_render_calls"], name="rgb_render_calls", minimum=1
+        )
+        auxiliary_depth_render_calls = _require_int(
+            receipt["auxiliary_depth_render_calls"],
+            name="auxiliary_depth_render_calls",
+            minimum=1,
+        )
+        _validate_derived_mesh_bindings(receipt["derived_mesh_bindings"])
+        if (
+            expected_parity_result_binding is None
+            or receipt["visual_domain_parity_result_binding"]
+            != dict(expected_parity_result_binding)
+        ):
+            _fail("live render visual-domain parity binding changed")
+        _validate_inert_binding(
+            receipt["visual_domain_parity_result_binding"],
+            name="live render visual-domain parity result",
+        )
+        if triple_parity_profile:
+            if (
+                receipt["visual_domain_parity_terminal_binding"]
+                != dict(expected_parity_terminal_binding)
+                or receipt["visual_domain_parity_review_binding"]
+                != dict(expected_parity_review_binding)
+            ):
+                _fail("live render visual-domain parity terminal/review changed")
+            _validate_inert_binding(
+                receipt["visual_domain_parity_terminal_binding"],
+                name="live render visual-domain parity terminal",
+            )
+            _validate_inert_binding(
+                receipt["visual_domain_parity_review_binding"],
+                name="live render visual-domain parity review",
+            )
     if (
         receipt["depth_rendered"] is not True
         or receipt["depth_persisted"] is not False
-        or receipt["visual_mode"] != "solid_materials_box_physics_preserved"
-        or receipt["visual_domain_fidelity_claimed"] is not False
+        or receipt["visual_mode"] != expected_visual_mode
+        or receipt["visual_domain_fidelity_claimed"] is not textured_v03
     ):
         _fail("live RGB/depth/visual-domain receipt changed")
     frames = _plain_list(receipt["frame_receipts"], name="live frame receipts")
     if (
         receipt["stored_rgb_frames"] != len(frames)
         or native_render_calls != len(frames)
+        or (
+            textured_v03
+            and (
+                rgb_render_calls != len(frames)
+                or auxiliary_depth_render_calls != len(frames)
+            )
+        )
         or not frames
     ):
         _fail("stored RGB frame count changed")
-    checked_frames = [_validate_frame_receipt(frame) for frame in frames]
+    checked_frames = [
+        _validate_frame_receipt(frame, textured_v03=textured_v03)
+        for frame in frames
+    ]
     identities = [str(frame["frame_identity"]) for frame in checked_frames]
     if len(identities) != len(set(identities)):
         _fail("live render receipt repeats frame identities")
@@ -1912,7 +2132,8 @@ def _validate_live_render_receipt(
             name=f"quality audit {index}",
         )
         if (
-            audit.get("native_resolution") != [640, 480]
+            audit.get("native_resolution")
+            != list(expected_render_contract["native_resolution"])
             or audit.get("camera_valid") is not True
             or type(audit.get("frame_identity")) is not str
         ):
@@ -2047,6 +2268,7 @@ def _validate_scene_metrics(
     value: object,
     *,
     plan_states: Sequence[Mapping[str, Any]],
+    render_contract: Mapping[str, Any],
     collection_wall_seconds: float,
 ) -> tuple[dict[str, Any], ...]:
     rows = _plain_list(value, name="scene_metrics")
@@ -2055,7 +2277,8 @@ def _validate_scene_metrics(
         planned[(str(state["role"]), str(state["scene_id"]))].append(state)
     if len(rows) != len(planned):
         _fail("scene metric count changed")
-    expected_fields = (
+    textured_v03 = dict(render_contract) == producer_contract.TEXTURED_V03_RENDER_CONTRACT
+    expected_fields = [
         "scene_id",
         "family",
         "role",
@@ -2078,7 +2301,13 @@ def _validate_scene_metrics(
         "depth_rendered",
         "depth_persisted",
         "visual_mode",
-    )
+    ]
+    if textured_v03:
+        expected_fields.extend((
+            "rgb_render_calls",
+            "auxiliary_depth_render_calls",
+            "derived_mesh_bindings",
+        ))
     timing_fields = (
         "physics_build_wall_seconds",
         "physics_simulation_wall_seconds",
@@ -2095,10 +2324,17 @@ def _validate_scene_metrics(
     )
     seen: set[tuple[str, str]] = set()
     checked: list[dict[str, Any]] = []
+    expected_visual_mode = (
+        producer_contract.TEXTURED_V03_VISUAL_MODE
+        if textured_v03
+        else "solid_materials_box_physics_preserved"
+    )
     total_scene_wall = 0.0
     for index, raw_row in enumerate(rows):
         row = _plain_dict(raw_row, name=f"scene_metrics[{index}]")
         _exact_keys(row, expected_fields, name=f"scene_metrics[{index}]")
+        if textured_v03:
+            _validate_derived_mesh_bindings(row["derived_mesh_bindings"])
         key = (str(row["role"]), str(row["scene_id"]))
         scene_states = planned.get(key)
         if scene_states is None or key in seen:
@@ -2115,9 +2351,17 @@ def _validate_scene_metrics(
             * (CONTEXT_FRAMES_PER_STATE + _branch_count_for_role(role))
             or row["stored_rgb_frames"]
             != len(scene_states) * (CONTEXT_FRAMES_PER_STATE + _branch_count_for_role(role))
+            or (
+                textured_v03
+                and (
+                    row["rgb_render_calls"] != row["native_render_calls"]
+                    or row["auxiliary_depth_render_calls"]
+                    != row["native_render_calls"]
+                )
+            )
             or row["depth_rendered"] is not True
             or row["depth_persisted"] is not False
-            or row["visual_mode"] != "solid_materials_box_physics_preserved"
+            or row["visual_mode"] != expected_visual_mode
         ):
             _fail("scene metric counts or render contract changed")
         times = {
@@ -2162,6 +2406,7 @@ def _validate_collection(
     receipt_root: Path,
     attempt_id: str,
     output_root: str,
+    verify_textured_pixels: bool = False,
 ) -> dict[str, Any]:
     collection = _plain_dict(value, name="collection receipt")
     _exact_keys(
@@ -2283,10 +2528,24 @@ def _validate_collection(
         _fail("collection runtime bindings changed from plan")
     counts = _count_contract(plan["states"], len(source_bindings))
     purpose = _validate_purpose_counts(plan["document"]["purpose"], counts)
+    measure_equivalence = (
+        plan["document"]["render_contract"]
+        == producer_contract.TEXTURED_V03_RENDER_CONTRACT
+    )
     _validate_expected_counts(plan["expected_counts"], counts, name="plan expected_counts")
     _validate_expected_counts(collection["expected_counts"], counts, name="collection expected_counts")
     _validate_expected_counts(collection["observed_counts"], counts, name="collection observed_counts")
-    _validate_caps(collection["caps"], counts)
+    checked_caps = _validate_caps(collection["caps"], counts)
+    if measure_equivalence:
+        expected_render_frames = counts["context_frames"] + counts["target_frames"]
+        for field in (
+            "native_render_calls",
+            "rgb_render_calls",
+            "auxiliary_depth_render_calls",
+            "stored_rgb_frames",
+        ):
+            if checked_caps.get(field) != expected_render_frames:
+                _fail(f"caps.{field} changed from exact textured_v03 render work")
     if collection["failure"] not in (None, {}):
         _fail("PHYSICS_COMPLETE collection cannot carry a failure")
     collection_wall_seconds = _require_number(
@@ -2294,11 +2553,16 @@ def _validate_collection(
     )
     if collection_wall_seconds < 0.0:
         _fail("collection wall time cannot be negative")
-    _validate_scene_metrics(
+    checked_scene_metrics = _validate_scene_metrics(
         collection["scene_metrics"],
         plan_states=plan["states"],
+        render_contract=plan["document"]["render_contract"],
         collection_wall_seconds=collection_wall_seconds,
     )
+    scene_metrics_by_key = {
+        (str(row["role"]), str(row["scene_id"])): row
+        for row in checked_scene_metrics
+    }
     receipt_bindings = _plain_list(collection["state_receipt_bindings"], name="state_receipt_bindings")
     if len(receipt_bindings) != len(plan["states"]):
         _fail("state receipt binding count changed from the plan")
@@ -2321,6 +2585,7 @@ def _validate_collection(
                 action_catalog=plan["action_catalog"],
                 execution_contract=plan["document"]["execution_contract"],
                 attempt_id=attempt_id,
+                measure_equivalence=measure_equivalence,
             )
         )
     render_bindings = _plain_list(
@@ -2341,13 +2606,29 @@ def _validate_collection(
         if type(render_value) is not dict:
             _fail("live render receipt binding must name JSON")
         checked_render = _validate_live_render_receipt(
-            render_value, attempt_id=attempt_id
+            render_value,
+            attempt_id=attempt_id,
+            expected_render_contract=plan["document"]["render_contract"],
+            expected_purpose=str(plan["document"]["purpose"]),
+            expected_parity_result_binding=plan["document"].get(
+                "visual_domain_parity_result_binding"
+            ),
+            expected_parity_terminal_binding=plan["document"].get(
+                "visual_domain_parity_terminal_binding"
+            ),
+            expected_parity_review_binding=plan["document"].get(
+                "visual_domain_parity_review_binding"
+            ),
         )
         scene = checked_render["scene"]
         scene_key = (str(scene["role"]), str(scene["scene_id"]))
         if scene_key in render_scene_keys:
             _fail("duplicate live render receipt role/scene identity")
         render_scene_keys.add(scene_key)
+        if measure_equivalence and checked_render["document"][
+            "derived_mesh_bindings"
+        ] != scene_metrics_by_key[scene_key]["derived_mesh_bindings"]:
+            _fail("live render and scene metric derived mesh bindings differ")
         render_by_path[binding["path"]] = {
             "binding": binding,
             "scene": scene,
@@ -2357,7 +2638,13 @@ def _validate_collection(
                 for audit in checked_render["quality_audits"]
             },
         }
-        for frame in checked_render["frames"]:
+        for frame_index, frame in enumerate(checked_render["frames"]):
+            if measure_equivalence and verify_textured_pixels:
+                _validate_textured_frame_pixels(
+                    receipt_root,
+                    frame,
+                    name=f"live render receipt {index} frame {frame_index}",
+                )
             identity = str(frame["frame_identity"])
             if identity in all_frame_receipts:
                 _fail("frame identity repeats across render receipts")
@@ -2502,9 +2789,132 @@ def _artifact_path(value: object, *, name: str) -> str:
     pure = PurePosixPath(path)
     if pure.is_absolute() or any(part in ("", ".", "..") for part in pure.parts):
         _fail(f"{name} must be a normalized relative artifact path")
+    if any(_forbidden_payload_component(part) for part in pure.parts):
+        _fail(f"{name} names a forbidden artifact path component")
     if pure.suffix.lower() != ".png":
         _fail(f"{name} must identify a PNG receipt leaf")
     return path
+
+
+def _read_bound_artifact(
+    receipt_root: Path,
+    relative_path: str,
+    *,
+    expected_bytes: int,
+    name: str,
+) -> bytes:
+    """Read one relative leaf without following any path-component symlink."""
+
+    normalized = _artifact_path(relative_path, name=f"{name}.path")
+    if expected_bytes < 1 or expected_bytes > MAX_FRAME_PNG_BYTES:
+        _fail(f"{name} byte count is outside the bounded PNG limit")
+    parts = PurePosixPath(normalized).parts
+    directory_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    leaf_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    descriptors: list[int] = []
+    try:
+        current = os.open(receipt_root, directory_flags)
+        descriptors.append(current)
+        for component in parts[:-1]:
+            current = os.open(component, directory_flags, dir_fd=current)
+            descriptors.append(current)
+        leaf = os.open(parts[-1], leaf_flags, dir_fd=current)
+        descriptors.append(leaf)
+        before = os.fstat(leaf)
+        if not stat.S_ISREG(before.st_mode):
+            _fail(f"{name} is not a regular PNG file")
+        if before.st_size != expected_bytes:
+            _fail(f"{name} byte count changed")
+        chunks: list[bytes] = []
+        remaining = expected_bytes
+        while remaining:
+            chunk = os.read(leaf, min(1024 * 1024, remaining))
+            if not chunk:
+                _fail(f"{name} ended before its declared byte count")
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        if os.read(leaf, 1):
+            _fail(f"{name} exceeds its declared byte count")
+        after = os.fstat(leaf)
+        fingerprint = lambda item: (  # noqa: E731
+            item.st_dev,
+            item.st_ino,
+            item.st_mode,
+            item.st_size,
+            item.st_mtime_ns,
+            item.st_ctime_ns,
+        )
+        if fingerprint(before) != fingerprint(after):
+            _fail(f"{name} changed while read")
+        return b"".join(chunks)
+    except OSError as error:
+        raise PilotReceiptError(f"cannot open bound {name}") from error
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def _validate_textured_frame_pixels(
+    receipt_root: Path,
+    frame_receipt: Mapping[str, Any],
+    *,
+    name: str,
+) -> str:
+    """Recompute one textured frame's file and decoded raw-pixel identities."""
+
+    path = _artifact_path(frame_receipt.get("path"), name=f"{name}.path")
+    expected_file_sha256 = _require_sha256(
+        frame_receipt.get("file_sha256"), name=f"{name}.file_sha256"
+    )
+    expected_pixel_sha256 = _require_sha256(
+        frame_receipt.get("pixel_sha256"), name=f"{name}.pixel_sha256"
+    )
+    expected_bytes = _require_int(
+        frame_receipt.get("byte_count"), name=f"{name}.byte_count", minimum=1
+    )
+    raw = _read_bound_artifact(
+        receipt_root,
+        path,
+        expected_bytes=expected_bytes,
+        name=name,
+    )
+    if _sha256_bytes(raw) != expected_file_sha256:
+        _fail(f"{name} PNG file SHA-256 changed")
+
+    try:
+        import numpy as np
+        from PIL import Image, UnidentifiedImageError
+
+        with Image.open(io.BytesIO(raw)) as image:
+            if (
+                image.format != "PNG"
+                or image.mode != "RGB"
+                or image.size != (224, 224)
+                or getattr(image, "n_frames", 1) != 1
+            ):
+                _fail(f"{name} is not an exact single-frame 224x224 RGB PNG")
+            image.load()
+            pixels = np.asarray(image)
+    except PilotReceiptError:
+        raise
+    except (OSError, ValueError, UnidentifiedImageError) as error:
+        raise PilotReceiptError(f"{name} cannot be decoded as PNG") from error
+    if pixels.shape != (224, 224, 3) or pixels.dtype != np.uint8:
+        _fail(f"{name} decoded pixel array shape or dtype changed")
+    raw_pixels = np.ascontiguousarray(pixels).tobytes(order="C")
+    recomputed = _sha256_bytes(raw_pixels)
+    if recomputed != expected_pixel_sha256:
+        _fail(f"{name} decoded RGB pixel SHA-256 changed")
+    return recomputed
 
 
 def _validate_rgb_manifest(value: object) -> dict[str, Any]:
@@ -2712,8 +3122,6 @@ def _validate_group(
         if artifact_id in referenced:
             _fail("joined group reuses an RGB artifact")
         referenced.add(artifact_id)
-    if len(candidate_tapes) != CANDIDATE_BRANCHES_PER_STATE:
-        _fail("joined candidates collapse to duplicate executed tapes")
     ranks = _dense_oracle_ranks(
         branches,
         progress_tolerance_m=progress_tolerance_m,
@@ -2999,13 +3407,15 @@ def load_bound_collection_receipts(
     *,
     expected_file_sha256: str,
     expected_byte_count: int,
+    verify_textured_pixels: bool = False,
 ) -> dict[str, Any]:
-    """Load one caller-bound producer collection through the receipt-only boundary.
+    """Load one caller-bound producer collection through a narrow read boundary.
 
-    The returned mapping contains validated JSON receipt values and inert RGB
-    frame receipts.  This function never opens an RGB leaf, runtime input, or
-    checkpoint and is the only supported input seam for the final receipt
-    joiner.
+    By default the returned mapping contains validated JSON receipt values and
+    inert RGB frame receipts.  Claim-bearing textured-v03 calibration callers
+    must pass ``verify_textured_pixels=True`` to independently open every bound
+    PNG and recompute its decoded raw-pixel identity.  Runtime inputs and
+    checkpoints are never opened.
     """
 
     _require_sha256(expected_file_sha256, name="caller manifest SHA-256")
@@ -3030,6 +3440,7 @@ def load_bound_collection_receipts(
         receipt_root=receipt_root,
         attempt_id=attempt_id,
         output_root=str(receipt_root),
+        verify_textured_pixels=verify_textured_pixels,
     )
 
 

@@ -3,12 +3,15 @@ from __future__ import annotations
 import copy
 import hashlib
 import importlib.util
+import io
 import json
 import math
 from pathlib import Path
 from typing import Any, Callable
 
+import numpy as np
 import pytest
+from PIL import Image
 
 from lewm.benchmarks import go2_world_model_counterfactual_pilot_v1 as producer
 
@@ -47,6 +50,104 @@ def _write_json(root: Path, relative: str, value: object) -> dict[str, Any]:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(raw)
     return {"path": relative, "file_sha256": hashlib.sha256(raw).hexdigest(), "byte_count": len(raw)}
+
+
+def _png_bytes(pixels: np.ndarray, *, mode: str = "RGB") -> bytes:
+    stream = io.BytesIO()
+    image = Image.fromarray(pixels)
+    assert image.mode == mode
+    image.save(stream, format="PNG")
+    return stream.getvalue()
+
+
+def _textured_frame_fixture(
+    root: Path,
+    pixels: np.ndarray,
+    *,
+    mode: str = "RGB",
+) -> tuple[Path, dict[str, Any]]:
+    relative = "frames/frame.png"
+    path = root / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    raw = _png_bytes(pixels, mode=mode)
+    path.write_bytes(raw)
+    return path, {
+        "path": relative,
+        "file_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "pixel_sha256": hashlib.sha256(
+            np.ascontiguousarray(pixels).tobytes(order="C")
+        ).hexdigest(),
+    }
+
+
+def test_textured_pixel_verifier_accepts_lossless_rgb_c_order_roundtrip(
+    tmp_path: Path,
+) -> None:
+    y, x = np.indices((224, 224), dtype=np.uint16)
+    pixels = np.stack(
+        ((x % 256), (y % 256), ((x * 17 + y * 31) % 256)), axis=-1
+    ).astype(np.uint8)
+    _path, frame = _textured_frame_fixture(tmp_path, pixels)
+
+    recomputed = checker._validate_textured_frame_pixels(  # noqa: SLF001
+        tmp_path, frame, name="lossless test frame"
+    )
+
+    assert recomputed == hashlib.sha256(
+        np.ascontiguousarray(pixels).tobytes(order="C")
+    ).hexdigest()
+
+
+def test_textured_pixel_verifier_rejects_declared_pixel_sha_tamper(
+    tmp_path: Path,
+) -> None:
+    pixels = np.full((224, 224, 3), 37, dtype=np.uint8)
+    _path, frame = _textured_frame_fixture(tmp_path, pixels)
+    frame["pixel_sha256"] = "f" * 64
+
+    with pytest.raises(checker.PilotReceiptError, match="decoded RGB pixel SHA-256"):
+        checker._validate_textured_frame_pixels(  # noqa: SLF001
+            tmp_path, frame, name="declaration-tampered frame"
+        )
+
+
+def test_textured_pixel_verifier_rejects_changed_png_even_after_file_rebind(
+    tmp_path: Path,
+) -> None:
+    original = np.full((224, 224, 3), 19, dtype=np.uint8)
+    path, frame = _textured_frame_fixture(tmp_path, original)
+    changed = original.copy()
+    changed[17, 29] = [1, 2, 3]
+    changed_raw = _png_bytes(changed)
+    path.write_bytes(changed_raw)
+    frame["file_sha256"] = hashlib.sha256(changed_raw).hexdigest()
+    frame["byte_count"] = len(changed_raw)
+
+    with pytest.raises(checker.PilotReceiptError, match="decoded RGB pixel SHA-256"):
+        checker._validate_textured_frame_pixels(  # noqa: SLF001
+            tmp_path, frame, name="rebound changed frame"
+        )
+
+
+@pytest.mark.parametrize(
+    ("pixels", "mode"),
+    [
+        (np.zeros((224, 224), dtype=np.uint8), "L"),
+        (np.zeros((224, 224, 4), dtype=np.uint8), "RGBA"),
+        (np.zeros((223, 224, 3), dtype=np.uint8), "RGB"),
+    ],
+)
+def test_textured_pixel_verifier_requires_exact_rgb_shape_and_mode(
+    tmp_path: Path,
+    pixels: np.ndarray,
+    mode: str,
+) -> None:
+    _path, frame = _textured_frame_fixture(tmp_path, pixels, mode=mode)
+    with pytest.raises(checker.PilotReceiptError, match="exact single-frame"):
+        checker._validate_textured_frame_pixels(  # noqa: SLF001
+            tmp_path, frame, name="wrong-shape-or-mode frame"
+        )
 
 
 def _block(action_id: int) -> list[list[float]]:
@@ -506,6 +607,101 @@ def test_canonical_producer_smoke_is_accepted_receipt_only(tmp_path: Path) -> No
     assert report["can_freeze_pilot_contract"] is False
     assert report["rgb_bytes_opened"] is False
     assert report["checkpoints_opened"] is False
+
+
+def test_textured_live_render_receipt_binds_full_parity_triple_and_frames(
+    tmp_path: Path,
+) -> None:
+    manifest_path, _digest, _byte_count = _fixture(tmp_path)
+    collection = json.loads(manifest_path.read_bytes())
+    render_binding = collection["render_receipt_bindings"][0]
+    render_path = tmp_path / render_binding["path"]
+    render = json.loads(render_path.read_bytes())
+    result_binding = _inert("/synthetic/parity/result.json")
+    terminal_binding = _inert("/synthetic/parity/terminal.json")
+    review_binding = _inert("/synthetic/parity/review.json")
+    render.update({
+        "schema": producer.TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA,
+        "render_contract": dict(producer.TEXTURED_V03_RENDER_CONTRACT),
+        "rgb_render_calls": render["native_render_calls"],
+        "auxiliary_depth_render_calls": render["native_render_calls"],
+        "visual_mode": producer.TEXTURED_V03_VISUAL_MODE,
+        "visual_domain_fidelity_claimed": True,
+        "derived_mesh_bindings": [_inert("/synthetic/derived/box.obj")],
+        "visual_domain_parity_result_binding": result_binding,
+        "visual_domain_parity_terminal_binding": terminal_binding,
+        "visual_domain_parity_review_binding": review_binding,
+    })
+    for index, frame in enumerate(render["frame_receipts"]):
+        frame["pixel_sha256"] = f"{index + 1:064x}"
+    for audit in render["quality_audits"]:
+        audit["native_resolution"] = list(
+            producer.TEXTURED_V03_RENDER_CONTRACT["native_resolution"]
+        )
+    expected = {
+        "expected_parity_result_binding": result_binding,
+        "expected_parity_terminal_binding": terminal_binding,
+        "expected_parity_review_binding": review_binding,
+    }
+
+    checked = checker._validate_live_render_receipt(  # noqa: SLF001
+        render,
+        attempt_id=collection["attempt_id"],
+        expected_render_contract=producer.TEXTURED_V03_RENDER_CONTRACT,
+        expected_purpose="bounded_wm_a_pilot",
+        **expected,
+    )
+    assert len(checked["frames"]) == render["stored_rgb_frames"]
+
+    for field in (
+        "visual_domain_parity_result_binding",
+        "visual_domain_parity_terminal_binding",
+        "visual_domain_parity_review_binding",
+    ):
+        forged = copy.deepcopy(render)
+        forged[field] = _inert(f"/synthetic/parity/swapped-{field}.json")
+        with pytest.raises(checker.PilotReceiptError, match="parity"):
+            checker._validate_live_render_receipt(  # noqa: SLF001
+                forged,
+                attempt_id=collection["attempt_id"],
+                expected_render_contract=producer.TEXTURED_V03_RENDER_CONTRACT,
+                expected_purpose="bounded_wm_a_pilot",
+                **expected,
+            )
+
+    wrong_schema = copy.deepcopy(render)
+    wrong_schema["schema"] = producer.TEXTURED_V03_LIVE_RENDER_RECEIPT_SCHEMA
+    with pytest.raises(checker.PilotReceiptError, match="identity/status"):
+        checker._validate_live_render_receipt(  # noqa: SLF001
+            wrong_schema,
+            attempt_id=collection["attempt_id"],
+            expected_render_contract=producer.TEXTURED_V03_RENDER_CONTRACT,
+            expected_purpose="bounded_wm_a_pilot",
+            **expected,
+        )
+
+    with pytest.raises(checker.PilotReceiptError, match="partial"):
+        checker._validate_live_render_receipt(  # noqa: SLF001
+            render,
+            attempt_id=collection["attempt_id"],
+            expected_render_contract=producer.TEXTURED_V03_RENDER_CONTRACT,
+            expected_purpose="bounded_wm_a_pilot",
+            expected_parity_result_binding=result_binding,
+            expected_parity_terminal_binding=terminal_binding,
+            expected_parity_review_binding=None,
+        )
+
+    legacy_result_only = copy.deepcopy(render)
+    legacy_result_only["schema"] = producer.TEXTURED_V03_LIVE_RENDER_RECEIPT_SCHEMA
+    legacy_result_only.pop("visual_domain_parity_terminal_binding")
+    legacy_result_only.pop("visual_domain_parity_review_binding")
+    checker._validate_live_render_receipt(  # noqa: SLF001
+        legacy_result_only,
+        attempt_id=collection["attempt_id"],
+        expected_render_contract=producer.TEXTURED_V03_RENDER_CONTRACT,
+        expected_purpose="source_integration_smoke",
+        expected_parity_result_binding=result_binding,
+    )
 
 
 def test_actual_producer_fixture_is_accepted_without_rgb_leaf_opens(

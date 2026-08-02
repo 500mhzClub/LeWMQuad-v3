@@ -28,6 +28,7 @@ if str(REPO_ROOT) not in sys.path:
 from lewm.datasets.go2_world_model_counterfactual_pilot_v1 import (  # noqa: E402
     ACTION_COUNT,
     CounterfactualGroupV1,
+    candidate_model_inputs_v1,
     load_bound_pilot_v1,
     read_bound_rgb_bytes_v1,
 )
@@ -412,6 +413,7 @@ def _extract_features(bundle, model, device):
                 arm: {} for arm in ARM_NAMES
             }
             for group in bundle.groups_by_role[role]:
+                candidate_inputs = candidate_model_inputs_v1(group)
                 context_images = torch.stack([
                     probe.decode(
                         artifact_id, device, pilot_bundle=bundle
@@ -453,7 +455,10 @@ def _extract_features(bundle, model, device):
                         ).prediction[0].detach().cpu().numpy()
                     )
 
-                factual = [forecast_descriptor(action) for action in range(ACTION_COUNT)]
+                factual = [
+                    forecast_descriptor(candidate.requested_action_id)
+                    for candidate in candidate_inputs
+                ]
                 hold = forecast_descriptor(HOLD_ACTION_ID)
                 shuffled = [
                     forecast_descriptor((action + 1) % ACTION_COUNT)
@@ -645,6 +650,10 @@ def main() -> int:
             "action_specific_ridge_heads": ACTION_COUNT,
             "shared_action_one_hot": False,
             "train_only_readout": True,
+            "candidate_conditioning_source": "requested_action_id",
+            "future_executed_command_tape_usage": "target_and_audit_only",
+            "historical_executed_tapes_available_in_receipt": True,
+            "historical_executed_tapes_consumed_by_current_model": False,
         },
         "arms": arm_reports,
         "paired_scene_cluster_comparisons": comparisons,

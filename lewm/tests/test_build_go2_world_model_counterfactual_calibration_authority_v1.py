@@ -40,6 +40,58 @@ def _binding(path: str, token: str) -> dict[str, object]:
     }
 
 
+def test_fresh_v3_calibration_supervisor_imports_are_in_source_closure() -> None:
+    probe = r'''
+import json
+from pathlib import Path
+import sys
+
+repo_root = Path(sys.argv[1]).resolve(strict=True)
+sys.path.insert(0, str(repo_root))
+import scripts.run_go2_world_model_counterfactual_calibration_authorized_v1  # noqa: F401,E402
+
+loaded = set()
+for module in tuple(sys.modules.values()):
+    module_file = getattr(module, "__file__", None)
+    if not module_file:
+        continue
+    candidate = Path(module_file)
+    if not candidate.is_absolute():
+        candidate = repo_root / candidate
+    try:
+        candidate = candidate.resolve(strict=True)
+        relative = candidate.relative_to(repo_root).as_posix()
+    except (OSError, ValueError):
+        continue
+    parts = tuple(part.lower() for part in Path(relative).parts)
+    if relative.startswith(".generated/") or any(
+        part == "sealed_test.json"
+        or part == "sealed"
+        or part.startswith("sealed_")
+        or part in {"heldout", "held_out", "held-out", "protected"}
+        or part.startswith(("heldout_", "held_out_", "held-out-", "protected_"))
+        for part in parts
+    ):
+        continue
+    if relative.endswith(".py"):
+        loaded.add(relative)
+print(json.dumps(sorted(loaded)))
+'''
+    completed = subprocess.run(
+        [sys.executable, "-I", "-B", "-c", probe, str(ROOT)],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    builder = _load(AUTHORITY_BUILDER, "calibration_v3_closure_builder_test")
+    loaded = set(json.loads(completed.stdout))
+    closure = set(
+        builder.canonical_runtime_source_paths_v1(textured_v03=True).values()
+    )
+    assert loaded <= closure, sorted(loaded - closure)
+
+
 def _plan(tmp_path: Path):
     builder = _load(PLAN_BUILDER, "calibration_plan_for_authority_test")
     builder.REPO_ROOT = tmp_path
@@ -230,6 +282,13 @@ def test_source_closure_uses_calibration_not_smoke_supervisor() -> None:
     assert "counterfactual_smoke_authorized_v1.py" not in paths.values()
     assert paths["predecessor_terminal_failure_result"].endswith(
         "counterfactual_calibration_v1_terminal_failure_result_2026-08-02.json"
+    )
+    assert paths["counterfactual_textured_v03_test"].endswith(
+        "test_go2_world_model_counterfactual_textured_v03.py"
+    )
+    textured_paths = builder.canonical_runtime_source_paths_v1(textured_v03=True)
+    assert textured_paths["predecessor_terminal_failure_result"].endswith(
+        "counterfactual_calibration_v2_terminal_failure_result_2026-08-02.json"
     )
 
 

@@ -45,6 +45,24 @@ AUTHORITY_STATUS = "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION_V2_SUCCESSOR"
 TERMINAL_SCHEMA = (
     "lewm_go2_world_model_counterfactual_calibration_supervision_terminal_v2"
 )
+TEXTURED_V03_PURPOSE = "sizing_calibration_textured_v03_v3"
+TEXTURED_V03_AUTHORITY_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_calibration_execution_authority_v3"
+)
+TEXTURED_V03_AUTHORITY_STATUS = (
+    "AUTHORIZED_ONE_EXACT_160_BRANCH_TEXTURED_V03_CALIBRATION_V3"
+)
+TEXTURED_V03_TERMINAL_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_calibration_supervision_terminal_v3"
+)
+AUTHORITY_CONTRACTS = {
+    PURPOSE: (AUTHORITY_SCHEMA, AUTHORITY_STATUS, TERMINAL_SCHEMA),
+    TEXTURED_V03_PURPOSE: (
+        TEXTURED_V03_AUTHORITY_SCHEMA,
+        TEXTURED_V03_AUTHORITY_STATUS,
+        TEXTURED_V03_TERMINAL_SCHEMA,
+    ),
+}
 COLLECTOR_RELATIVE = Path(
     "scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
 )
@@ -393,18 +411,21 @@ def load_and_validate_authority(
         if plan_binding != raw_plan_binding:
             raise pilot.PilotContractError("authority plan binding changed")
         plan = pilot.validate_plan(raw_plan)
-        if plan["purpose"] != PURPOSE:
+        if plan["purpose"] not in AUTHORITY_CONTRACTS:
             raise pilot.PilotContractError(
-                "calibration supervisor requires sizing_calibration_only"
+                "calibration supervisor requires a supported calibration purpose"
             )
+        expected_schema, expected_status, _terminal_schema = AUTHORITY_CONTRACTS[
+            plan["purpose"]
+        ]
         authority = collector._validate_authority_for_plan(  # noqa: SLF001
             raw_authority,
             plan=plan,
             plan_binding=plan_binding,
         )
         if (
-            authority["schema"] != AUTHORITY_SCHEMA
-            or authority["status"] != AUTHORITY_STATUS
+            authority["schema"] != expected_schema
+            or authority["status"] != expected_status
         ):
             raise pilot.PilotContractError("calibration authority identity changed")
         review_binding = authority["review_binding"]
@@ -517,6 +538,8 @@ def _owned_reservation(
         and value.get("plan_binding") == plan_binding
         and value.get("authority_binding") == authority_binding
         and value.get("supervisor_nonce") == supervisor_nonce
+        and value.get("root_creation_consumes_attempt") is True
+        and value.get("reservation_records_consumed_attempt") is True
         and value.get("retry_authorized") is False
         and value.get("resume_authorized") is False
         and value.get("overwrite_authorized") is False
@@ -559,7 +582,7 @@ def _load_physics_result_if_present(
         value.get("schema") != pilot.PHYSICS_RESULT_SCHEMA
         or status not in {"PHYSICS_COMPLETE", "FAILED"}
         or value.get("attempt_id") != plan["attempt_id"]
-        or value.get("purpose") != PURPOSE
+        or value.get("purpose") != plan["purpose"]
         or value.get("plan_binding") != plan_binding
         or value.get("authority_binding") != authority_binding
         or value.get("review_binding") != authority["review_binding"]
@@ -615,6 +638,15 @@ def supervise(
     check_binding: dict[str, Any] | None = None
     calibration_binding: dict[str, Any] | None = None
     decision: str | None = None
+    parity_prerequisites = (
+        {
+            "result_binding": plan["visual_domain_parity_result_binding"],
+            "terminal_binding": plan["visual_domain_parity_terminal_binding"],
+            "review_binding": plan["visual_domain_parity_review_binding"],
+        }
+        if plan["purpose"] == "sizing_calibration_textured_v03_v3"
+        else None
+    )
     failure: str | None = None
     gpu_memory_measurement: dict[str, Any] | None = None
 
@@ -689,7 +721,7 @@ def supervise(
             or check_report.get("schema") != checker.REPORT_SCHEMA
             or check_report.get("status") != "PASS"
             or check_report.get("phase") != "physics_collection"
-            or check_report.get("purpose") != PURPOSE
+            or check_report.get("purpose") != plan["purpose"]
             or check_report.get("manifest_binding") != physics_binding
         ):
             raise CalibrationSupervisionError(
@@ -727,6 +759,14 @@ def supervise(
         )
         if actual_calibration_binding != calibration_binding:
             raise CalibrationSupervisionError("calibration receipt binding changed")
+        if (
+            parity_prerequisites is not None
+            and calibration_receipt.get("visual_domain_parity_prerequisites")
+            != parity_prerequisites
+        ):
+            raise CalibrationSupervisionError(
+                "calibration receipt parity prerequisites changed from the plan"
+            )
         decision = str(calibration_receipt["decision"])
         expected_analyzer_returncode = 0 if decision == "FREEZE_PILOT_CONTRACT" else 2
         if phases[-1]["exit_code"] != expected_analyzer_returncode:
@@ -786,7 +826,7 @@ def supervise(
         ownership_failure = "CalibrationSupervisionError: reservation ownership changed"
         failure = ownership_failure if failure is None else f"{failure}; {ownership_failure}"
     terminal = {
-        "schema": TERMINAL_SCHEMA,
+        "schema": AUTHORITY_CONTRACTS[plan["purpose"]][2],
         "status": (
             "COMPLETE_PENDING_TERMINAL_REVIEW"
             if failure is None
@@ -795,6 +835,8 @@ def supervise(
         "citable_as_scientific_evidence": False,
         "authorizes_retry_or_resume": False,
         "scientific_verdict_emitted": False,
+        "root_creation_consumes_attempt": attempt_root.exists(),
+        "reservation_records_consumed_attempt": reservation_owned,
         "authority_binding": authority_binding,
         "plan_binding": plan_binding,
         "predecessor_failure_binding": authority["predecessor_failure_binding"],
@@ -812,8 +854,10 @@ def supervise(
         "terminal_reviewer": authority["external_supervisor"]["terminal_reviewer"],
         "supervisor_nonce": supervisor_nonce,
     }
+    if parity_prerequisites is not None:
+        terminal["visual_domain_parity_prerequisites"] = parity_prerequisites
     terminal_binding = None
-    if reservation_owned:
+    if attempt_root.exists():
         terminal_binding = pilot.write_json_exclusive(
             attempt_root / "terminal_supervision.json", terminal
         )
@@ -849,7 +893,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     if terminal_binding is None:
         print(
-            "pre-reservation supervision failure; no attempt was consumed",
+            "pre-root-creation supervision failure; no attempt was consumed",
             file=sys.stderr,
         )
         return 2

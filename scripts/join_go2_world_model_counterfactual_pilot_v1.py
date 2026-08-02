@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Receipt-only join for one bounded Go2 counterfactual pilot collection.
+"""Strict join for one bounded Go2 counterfactual pilot collection.
 
 The joiner consumes one caller-bound train/eval physics collection plus one
-caller-bound successful calibration receipt.  It never opens RGB leaves,
-runtime inputs, or checkpoints.  All emitted rows preserve requested action
-identity separately from the future executed command tape.
+caller-bound successful calibration receipt.  For textured-v03 evidence it
+opens every bound RGB leaf through the checker's no-follow reader and
+independently recomputes the decoded raw-pixel identity before emitting a
+manifest.  It never opens runtime inputs or checkpoints.  All emitted rows
+preserve requested action identity separately from the future executed command
+tape.
 """
 from __future__ import annotations
 
@@ -14,6 +17,7 @@ import json
 import math
 import os
 from pathlib import Path
+import stat
 import sys
 from typing import Any, Mapping, Sequence
 
@@ -22,6 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from lewm.benchmarks import go2_world_model_counterfactual_pilot_v1 as producer_contract  # noqa: E402
 from scripts import analyze_go2_world_model_counterfactual_calibration_v1 as calibration  # noqa: E402
 from scripts import check_go2_world_model_counterfactual_pilot_v1 as checker  # noqa: E402
 
@@ -31,6 +36,8 @@ RGB_MANIFEST_SCHEMA = "lewm_go2_world_model_counterfactual_rgb_manifest_v1"
 GROUP_SCHEMA = "lewm_go2_world_model_counterfactual_group_v1"
 ACTION_COUNT = 9
 ROLE_NAMES = ("train", "eval")
+LEGACY_RENDER_PROFILE = "legacy_v1"
+TEXTURED_V03_RENDER_PROFILE = "textured_v03_v3"
 
 
 class PilotJoinError(RuntimeError):
@@ -47,15 +54,72 @@ def _canonical_json_bytes(value: object) -> bytes:
 
 
 def _relative_binding(path: Path, *, root: Path) -> dict[str, object]:
-    selected = Path(path).resolve(strict=True)
-    root_resolved = root.resolve(strict=True)
-    if selected.is_symlink() or not selected.is_file() or not selected.is_relative_to(
-        root_resolved
+    root_input = Path(root)
+    if root_input.is_symlink():
+        raise PilotJoinError(f"joined root is a symlink: {root_input}")
+    root_resolved = root_input.resolve(strict=True)
+    selected = Path(os.path.abspath(os.fspath(path)))
+    try:
+        relative = selected.relative_to(root_resolved)
+    except ValueError as exc:
+        raise PilotJoinError(f"joined file escapes pilot root: {selected}") from exc
+    if not relative.parts:
+        raise PilotJoinError(f"joined file is not a leaf: {selected}")
+    directory_flags = (
+        os.O_RDONLY
+        | os.O_DIRECTORY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    file_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    descriptor = os.open(root_resolved, directory_flags)
+    file_descriptor = None
+    try:
+        for component in relative.parts[:-1]:
+            child = os.open(component, directory_flags, dir_fd=descriptor)
+            os.close(descriptor)
+            descriptor = child
+        file_descriptor = os.open(
+            relative.parts[-1], file_flags, dir_fd=descriptor
+        )
+        before = os.fstat(file_descriptor)
+        if not stat.S_ISREG(before.st_mode):
+            raise PilotJoinError(f"joined file is not regular: {selected}")
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(file_descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        after = os.fstat(file_descriptor)
+    except OSError as exc:
+        raise PilotJoinError(
+            f"cannot safely bind joined file: {selected}"
+        ) from exc
+    finally:
+        if file_descriptor is not None:
+            os.close(file_descriptor)
+        os.close(descriptor)
+    identity_fields = (
+        "st_dev",
+        "st_ino",
+        "st_size",
+        "st_mtime_ns",
+        "st_ctime_ns",
+    )
+    if tuple(getattr(before, field) for field in identity_fields) != tuple(
+        getattr(after, field) for field in identity_fields
     ):
-        raise PilotJoinError(f"joined file escapes pilot root: {selected}")
-    raw = selected.read_bytes()
+        raise PilotJoinError(f"joined file changed while binding: {selected}")
+    raw = b"".join(chunks)
+    if len(raw) != before.st_size:
+        raise PilotJoinError(f"joined file length changed while binding: {selected}")
     return {
-        "path": selected.relative_to(root_resolved).as_posix(),
+        "path": relative.as_posix(),
         "file_sha256": hashlib.sha256(raw).hexdigest(),
         "byte_count": len(raw),
     }
@@ -128,14 +192,130 @@ def _artifact_from_frame_receipt(receipt: Mapping[str, Any]) -> dict[str, object
         "low_information",
         "low_info_reasons",
     }
-    if set(receipt) != expected:
+    observed = set(receipt)
+    if observed not in (expected, expected | {"pixel_sha256"}):
         raise PilotJoinError("frame receipt field set changed")
     return dict(receipt)
+
+
+def _inert_binding(value: object, *, label: str) -> dict[str, object]:
+    if (
+        not isinstance(value, Mapping)
+        or set(value) != {"path", "file_sha256", "byte_count"}
+        or not isinstance(value.get("path"), str)
+        or not value["path"]
+        or not isinstance(value.get("file_sha256"), str)
+        or len(value["file_sha256"]) != 64
+        or any(character not in "0123456789abcdef" for character in value["file_sha256"])
+        or type(value.get("byte_count")) is not int
+        or int(value["byte_count"]) <= 0
+    ):
+        raise PilotJoinError(f"{label} binding changed")
+    return dict(value)
+
+
+def _collection_render_lineage(
+    collection: Mapping[str, Any], *, label: str
+) -> tuple[
+    str,
+    dict[str, object] | None,
+    dict[str, object] | None,
+    dict[str, object] | None,
+]:
+    """Derive render generation from checker-validated plan and state receipts."""
+
+    plan = collection.get("plan")
+    document = plan.get("document") if isinstance(plan, Mapping) else None
+    states = collection.get("states")
+    if (
+        not isinstance(document, Mapping)
+        or not isinstance(states, Sequence)
+        or isinstance(states, (str, bytes))
+        or not states
+        or any(not isinstance(state, Mapping) for state in states)
+    ):
+        raise PilotJoinError(f"{label} render lineage is absent")
+    state_schemas = [
+        state.get("document", {}).get("schema")
+        if isinstance(state.get("document"), Mapping)
+        else None
+        for state in states
+    ]
+    render_contract = document.get("render_contract")
+    parity_fields = (
+        "visual_domain_parity_result_binding",
+        "visual_domain_parity_terminal_binding",
+        "visual_domain_parity_review_binding",
+    )
+    present_parity_fields = {
+        field for field in parity_fields if field in document
+    }
+    if render_contract == producer_contract.TEXTURED_V03_RENDER_CONTRACT:
+        if any(
+            schema != producer_contract.TEXTURED_V03_STATE_RECEIPT_SCHEMA
+            for schema in state_schemas
+        ) or present_parity_fields != set(parity_fields):
+            raise PilotJoinError(f"{label} textured-v03 identity is only partial")
+        return (
+            TEXTURED_V03_RENDER_PROFILE,
+            _inert_binding(
+                document["visual_domain_parity_result_binding"],
+                label=f"{label} visual-domain parity result",
+            ),
+            _inert_binding(
+                document["visual_domain_parity_terminal_binding"],
+                label=f"{label} visual-domain parity terminal",
+            ),
+            _inert_binding(
+                document["visual_domain_parity_review_binding"],
+                label=f"{label} visual-domain parity review",
+            ),
+        )
+    if render_contract == producer_contract.RENDER_CONTRACT:
+        if any(
+            schema != producer_contract.STATE_RECEIPT_SCHEMA
+            for schema in state_schemas
+        ) or present_parity_fields:
+            raise PilotJoinError(f"{label} legacy identity is only partial")
+        return LEGACY_RENDER_PROFILE, None, None, None
+    raise PilotJoinError(f"{label} render contract is unsupported")
+
+
+def _calibration_render_profile(receipt: Mapping[str, Any]) -> str:
+    schema = receipt.get("schema")
+    if schema == calibration.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA:
+        return TEXTURED_V03_RENDER_PROFILE
+    if schema == calibration.CALIBRATION_RECEIPT_SCHEMA:
+        return LEGACY_RENDER_PROFILE
+    raise PilotJoinError("calibration receipt schema is unsupported")
+
+
+def _load_pixel_verified_collection(
+    path: Path,
+    *,
+    expected_file_sha256: str,
+    expected_byte_count: int,
+) -> dict[str, Any]:
+    """Cross the RGB boundary only through the exact decoded-pixel verifier."""
+
+    try:
+        return checker.load_bound_collection_receipts(
+            path,
+            expected_file_sha256=expected_file_sha256,
+            expected_byte_count=expected_byte_count,
+            verify_textured_pixels=True,
+        )
+    except checker.PilotReceiptError as exc:
+        raise PilotJoinError(str(exc)) from exc
 
 
 def build_joined_documents_v1(
     collection: Mapping[str, Any],
     calibration_receipt: Mapping[str, Any],
+    *,
+    calibration_visual_domain_parity_result_binding: Mapping[str, Any] | None = None,
+    calibration_visual_domain_parity_terminal_binding: Mapping[str, Any] | None = None,
+    calibration_visual_domain_parity_review_binding: Mapping[str, Any] | None = None,
 ) -> tuple[
     dict[str, object],
     dict[str, list[dict[str, object]]],
@@ -147,6 +327,79 @@ def build_joined_documents_v1(
         raise PilotJoinError("pilot join requires a bounded_wm_a_pilot collection")
     if calibration_receipt.get("decision") != "FREEZE_PILOT_CONTRACT":
         raise PilotJoinError("calibration did not freeze the pilot contract")
+    (
+        collection_profile,
+        collection_parity_result,
+        collection_parity_terminal,
+        collection_parity_review,
+    ) = _collection_render_lineage(
+        collection, label="bounded collection"
+    )
+    calibration_profile = _calibration_render_profile(calibration_receipt)
+    calibration_collection_binding = _inert_binding(
+        calibration_receipt.get("calibration_collection_receipt"),
+        label="calibration collection receipt",
+    )
+    if collection_profile != calibration_profile:
+        raise PilotJoinError(
+            "bounded collection and calibration receipt render profiles differ"
+        )
+    if collection_profile == TEXTURED_V03_RENDER_PROFILE:
+        calibration_parity_result = _inert_binding(
+            calibration_visual_domain_parity_result_binding,
+            label="calibration visual-domain parity result",
+        )
+        calibration_parity_terminal = _inert_binding(
+            calibration_visual_domain_parity_terminal_binding,
+            label="calibration visual-domain parity terminal",
+        )
+        calibration_parity_review = _inert_binding(
+            calibration_visual_domain_parity_review_binding,
+            label="calibration visual-domain parity review",
+        )
+        receipt_prerequisites = calibration_receipt.get(
+            "visual_domain_parity_prerequisites"
+        )
+        if (
+            not isinstance(receipt_prerequisites, Mapping)
+            or set(receipt_prerequisites)
+            != {"result_binding", "terminal_binding", "review_binding"}
+        ):
+            raise PilotJoinError(
+                "textured-v03 calibration parity prerequisites changed"
+            )
+        receipt_parity_result = _inert_binding(
+            receipt_prerequisites["result_binding"],
+            label="calibration receipt visual-domain parity result",
+        )
+        receipt_parity_terminal = _inert_binding(
+            receipt_prerequisites["terminal_binding"],
+            label="calibration receipt visual-domain parity terminal",
+        )
+        receipt_parity_review = _inert_binding(
+            receipt_prerequisites["review_binding"],
+            label="calibration receipt visual-domain parity review",
+        )
+        if (
+            calibration_parity_result != collection_parity_result
+            or calibration_parity_terminal != collection_parity_terminal
+            or calibration_parity_review != collection_parity_review
+            or receipt_parity_result != collection_parity_result
+            or receipt_parity_terminal != collection_parity_terminal
+            or receipt_parity_review != collection_parity_review
+        ):
+            raise PilotJoinError(
+                "bounded and calibration visual-domain parity lineage differs"
+            )
+    elif any(
+        binding is not None
+        for binding in (
+            calibration_visual_domain_parity_result_binding,
+            calibration_visual_domain_parity_terminal_binding,
+            calibration_visual_domain_parity_review_binding,
+        )
+    ):
+        raise PilotJoinError("legacy calibration cannot carry textured-v03 parity")
     contract = calibration_receipt.get("calibration_contract")
     if not isinstance(contract, Mapping):
         raise PilotJoinError("calibration contract is absent")
@@ -274,6 +527,13 @@ def build_joined_documents_v1(
         {
             "action_catalog": action_catalog,
             "calibration_contract": dict(contract),
+            "calibration_collection_receipt_binding": (
+                calibration_collection_binding
+            ),
+            "render_profile": collection_profile,
+            "visual_domain_parity_result_binding": collection_parity_result,
+            "visual_domain_parity_terminal_binding": collection_parity_terminal,
+            "visual_domain_parity_review_binding": collection_parity_review,
             "scene_ids": {
                 role: sorted(scene_ids[role]) for role in ROLE_NAMES
             },
@@ -290,7 +550,7 @@ def join_pilot(
     expected_calibration_sha256: str,
     expected_calibration_byte_count: int,
 ) -> tuple[dict[str, object], dict[str, object]]:
-    collection = checker.load_bound_collection_receipts(
+    collection = _load_pixel_verified_collection(
         collection_path,
         expected_file_sha256=expected_collection_sha256,
         expected_byte_count=expected_collection_byte_count,
@@ -302,8 +562,44 @@ def join_pilot(
             expected_byte_count=expected_calibration_byte_count,
         )
     )
+    calibration_collection_binding = _inert_binding(
+        calibration_receipt["calibration_collection_receipt"],
+        label="calibration collection receipt",
+    )
+    calibration_collection_path = Path(
+        str(calibration_collection_binding["path"])
+    )
+    if not calibration_collection_path.is_absolute():
+        raise PilotJoinError("calibration collection receipt path must be absolute")
+    calibration_collection = _load_pixel_verified_collection(
+        calibration_collection_path,
+        expected_file_sha256=str(
+            calibration_collection_binding["file_sha256"]
+        ),
+        expected_byte_count=int(calibration_collection_binding["byte_count"]),
+    )
+    (
+        calibration_collection_profile,
+        calibration_parity_result,
+        calibration_parity_terminal,
+        calibration_parity_review,
+    ) = (
+        _collection_render_lineage(
+            calibration_collection, label="calibration collection"
+        )
+    )
+    if calibration_collection_profile != _calibration_render_profile(
+        calibration_receipt
+    ):
+        raise PilotJoinError(
+            "calibration receipt and calibration collection render profiles differ"
+        )
     rgb_manifest, rows, metadata = build_joined_documents_v1(
-        collection, calibration_receipt
+        collection,
+        calibration_receipt,
+        calibration_visual_domain_parity_result_binding=calibration_parity_result,
+        calibration_visual_domain_parity_terminal_binding=calibration_parity_terminal,
+        calibration_visual_domain_parity_review_binding=calibration_parity_review,
     )
     root = Path(collection_path).resolve(strict=True).parent
     if Path(collection["document"]["output_root"]).resolve(strict=True) != root:
@@ -353,6 +649,19 @@ def join_pilot(
             "future_executed_tape_usage": "target_and_audit_only",
         },
         "calibration_contract": metadata["calibration_contract"],
+        "calibration_collection_receipt_binding": metadata[
+            "calibration_collection_receipt_binding"
+        ],
+        "render_profile": metadata["render_profile"],
+        "visual_domain_parity_result_binding": metadata[
+            "visual_domain_parity_result_binding"
+        ],
+        "visual_domain_parity_terminal_binding": metadata[
+            "visual_domain_parity_terminal_binding"
+        ],
+        "visual_domain_parity_review_binding": metadata[
+            "visual_domain_parity_review_binding"
+        ],
         "calibration_receipt": _relative_binding(calibration_copy, root=root),
         "roles": role_contracts,
         "rgb_artifact_manifest": _relative_binding(rgb_path, root=root),

@@ -274,6 +274,8 @@ def test_owned_reservation_is_exact_and_nonce_bound(tmp_path: Path) -> None:
         "plan_binding": plan_binding,
         "authority_binding": authority_binding,
         "supervisor_nonce": nonce,
+        "root_creation_consumes_attempt": True,
+        "reservation_records_consumed_attempt": True,
         "retry_authorized": False,
         "resume_authorized": False,
         "overwrite_authorized": False,
@@ -296,6 +298,92 @@ def test_owned_reservation_is_exact_and_nonce_bound(tmp_path: Path) -> None:
         authority_binding=authority_binding,
         plan_binding=plan_binding,
     )
+
+
+def test_root_created_without_reservation_is_terminal_consumed_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    supervisor = _load_module()
+    attempt_root = tmp_path / "attempt"
+    plan = {
+        "purpose": supervisor.PURPOSE,
+        "output_root": str(attempt_root),
+    }
+    plan_binding = {
+        "path": "/fixture/plan.json",
+        "file_sha256": "a" * 64,
+        "byte_count": 1,
+    }
+    authority_binding = {
+        "path": "/fixture/authority.json",
+        "file_sha256": "b" * 64,
+        "byte_count": 1,
+    }
+    authority = {
+        "caps": {"wall_seconds": 60.0},
+        "predecessor_failure_binding": None,
+        "source_commit": "c" * 40,
+        "external_supervisor": {"terminal_reviewer": "fixture-reviewer"},
+    }
+    monkeypatch.setattr(
+        supervisor,
+        "load_and_validate_authority",
+        lambda *_args, **_kwargs: (
+            authority,
+            authority_binding,
+            plan,
+            plan_binding,
+        ),
+    )
+    monkeypatch.setattr(
+        supervisor, "_validate_python_invocation", lambda _plan: sys.executable
+    )
+    monkeypatch.setattr(supervisor, "_child_environment", lambda _plan: {})
+    monkeypatch.setattr(
+        supervisor, "_require_fresh_attempt_root", lambda _path: attempt_root
+    )
+    monkeypatch.setattr(
+        supervisor,
+        "_run_graphics_preflight",
+        lambda *_args, **_kwargs: {"phase": "graphics_preflight", "status": "PASS"},
+    )
+    monkeypatch.setattr(
+        supervisor,
+        "_selected_gpu_memory_files",
+        lambda _plan: (Path("/used"), Path("/total"), "0x1002", "0x7551"),
+    )
+
+    class _Sampler:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def start(self) -> None:
+            pass
+
+        def stop(self) -> dict[str, object]:
+            return {"read_errors": 0}
+
+    monkeypatch.setattr(supervisor, "_GlobalVramSampler", _Sampler)
+
+    def crash_after_root_creation(*_args, **_kwargs) -> None:
+        attempt_root.mkdir()
+        raise RuntimeError("crash before reservation")
+
+    monkeypatch.setattr(supervisor, "_run_once", crash_after_root_creation)
+    terminal, terminal_binding = supervisor.supervise(
+        Path(authority_binding["path"]),
+        expected_authority_byte_count=1,
+        expected_authority_sha256="b" * 64,
+    )
+
+    assert terminal_binding is not None
+    assert terminal["status"] == "CONSUMED_TERMINAL_FAILURE"
+    assert terminal["root_creation_consumes_attempt"] is True
+    assert terminal["reservation_records_consumed_attempt"] is False
+    assert terminal["authorizes_retry_or_resume"] is False
+    assert "reservation ownership changed" in terminal["failure"]
+    assert (attempt_root / "terminal_supervision.json").is_file()
 
 
 def test_failed_physics_result_is_bound_for_terminal_supervision(

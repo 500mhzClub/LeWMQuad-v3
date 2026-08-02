@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
+from types import MappingProxyType
 
 import numpy as np
 import pytest
 
+from lewm.datasets import go2_world_model_counterfactual_pilot_v1 as pilot_dataset
 from lewm.datasets.go2_world_model_counterfactual_pilot_v1 import (
     CANONICAL_ACTION_BLOCKS,
     CALIBRATION_RECEIPT_SCHEMA,
@@ -26,6 +29,7 @@ from lewm.datasets.go2_world_model_counterfactual_pilot_v1 import (
     load_bound_pilot_v1,
     physical_dense_ranks_v1,
 )
+from scripts import analyze_go2_world_model_counterfactual_calibration_v1 as calibration_analyzer
 from scripts.evaluate_go2_world_model_counterfactual_action_regret_v1 import (
     evaluator_verdict_v1,
     fit_action_specific_ridge_readouts_v1,
@@ -61,6 +65,646 @@ def _rewrite_manifest(
     raw = _json_bytes(manifest)
     manifest_path.write_bytes(raw)
     return len(raw), hashlib.sha256(raw).hexdigest()
+
+
+def _rewrite_textured_v03_calibration(root: Path) -> tuple[dict, dict]:
+    path = root / "receipts/calibration.json"
+    receipt = json.loads(path.read_text())
+    receipt["calibration_contract"] = {
+        **receipt["calibration_contract"],
+        "excluded_scene_ids": [
+            f"calibration-{family}" for family in sorted(FAMILIES)
+        ],
+        "progress_tolerance_m": 0.01,
+        "path_length_tolerance_m": 0.01,
+        "tolerance_derivation": {
+            "schema": pilot_dataset.TOLERANCE_DERIVATION_V2_SCHEMA,
+            "method": (
+                "fixed_preregistered_outcome_equivalence_after_exact_repeat_gate"
+            ),
+            "repeatability_numerical_floor_m": 1.0e-6,
+            "outcome_equivalence_tolerance_m": 0.01,
+            "outcome_equivalence_applies_to": [
+                "physical_target_progress_m",
+                "physical_path_length_m",
+            ],
+            "outcome_equivalence_quantization_caveat": (
+                "1cm_rounding_bins_have_boundary_artifacts_and_are_not_"
+                "pairwise_distance_le_1cm_equivalence"
+            ),
+            "exact_repeat_gate_separate_from_outcome_equivalence": True,
+            "repeat_controls": 16,
+            "repeated_action_ids": [index % 9 for index in range(16)],
+            "all_requested_primitives_covered": True,
+            "deterministic_repeat_gate_passed": True,
+            "empirical_noise_scale_estimated": False,
+        },
+    }
+    rows = []
+    for state_index in range(16):
+        counts = {
+            "executed_tape": 9,
+            "physical_trajectory": 1,
+            "endpoint_pose": 2,
+            "physical_outcome": 3,
+            "stored_rgb_file": 1,
+            "stored_rgb_pixels": 9,
+        }
+        signatures = [
+            {
+                "action_id": action_id,
+                "executed_tape_class_sha256": hashlib.sha256(
+                    f"tape-{state_index}-{action_id}".encode()
+                ).hexdigest(),
+                "physical_outcome_class_key": [0, 0, -action_id, action_id],
+                "stored_rgb_pixel_class_sha256": hashlib.sha256(
+                    f"pixel-{state_index}-{action_id}".encode()
+                ).hexdigest(),
+            }
+            for action_id in range(9)
+        ]
+        rows.append({
+            "state_id": f"calibration-state-{state_index}",
+            "family": FAMILIES[state_index // 2],
+            "history_action_ids": [state_index % 3, (state_index + 1) % 3],
+            "equivalence_unique_counts": counts,
+            "dense_physical_rank_class_count": 9,
+            "identifiable": True,
+            "joint_contrast_signatures_by_action": signatures,
+            "eligible_action_ids": list(range(9)),
+            "eligible_action_count": 9,
+        })
+    support = calibration_analyzer._support_analysis_from_rows(rows)  # noqa: SLF001
+    receipt.update({
+        "schema": pilot_dataset.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA,
+        "status": "COMPLETE",
+        "visual_domain_parity_prerequisites": {
+            "result_binding": _absolute_lineage_binding("parity", "d"),
+            "terminal_binding": _absolute_lineage_binding(
+                "parity-terminal", "e"
+            ),
+            "review_binding": _absolute_lineage_binding("parity-review", "f"),
+        },
+        "technical_integrity": {
+            "receipt_checker_passed": True,
+            "candidate_response_audit_v2_validated": True,
+            "sentinel_command_endpoint_and_rgb_exact": True,
+            "hard_invalid_frames": 0,
+        },
+        "physics_validation": {
+            "receipt_checker_passed": True,
+            "common_prefix_exact": True,
+            "candidate_equivalence_measured_not_rejected": True,
+            "minimum_physical_rank_classes_per_state": 9,
+            "maximum_physical_rank_classes_per_state": 9,
+            "identifiable_state_count": 16,
+            "clipped_candidate_branches": 0,
+            "physics_validated_for_branch_outcomes": True,
+        },
+        "visual_validation": {
+            "camera_quality_receipts_passed": True,
+            "endpoint_pose_replay_bound": True,
+            "textured_v03_render_contract_validated": True,
+            "visual_domain_fidelity_claimed": False,
+            "eligible_for_physical_branch_evaluation": True,
+            "eligible_for_visual_domain_parity_claim": False,
+        },
+        "candidate_branch_support_analysis": {
+            "schema": pilot_dataset.CANDIDATE_BRANCH_SUPPORT_ANALYSIS_SCHEMA,
+            "criterion": {
+                "aggregate_partition_nontrivial_diagnostic": {
+                    "executed_tape_min_unique_count": 2,
+                    "dense_physical_rank_min_class_count": 2,
+                    "stored_rgb_pixels_min_unique_count": 2,
+                    "all_three_required": True,
+                    "gating": False,
+                },
+                "joint_query_eligibility": {
+                    "physical_nonequivalent_alternative_required": True,
+                    "all_physical_nonequivalent_alternatives_must_have_"
+                    "different_executed_tape_class": True,
+                    "all_physical_nonequivalent_alternatives_must_have_"
+                    "different_stored_rgb_pixel_class": True,
+                    "physical_outcome_equivalence_tolerance_m": 0.01,
+                    "gating": True,
+                },
+            },
+            "partition_names": list(
+                pilot_dataset.TEXTURED_V03_EQUIVALENCE_PARTITION_NAMES
+            ),
+            "state_measurements": rows,
+            "calibrated_discrimination_query_coverage": (
+                calibration_analyzer
+                ._calibrated_discrimination_query_coverage_from_rows(rows)  # noqa: SLF001
+            ),
+            **support,
+        },
+    })
+    resources = receipt["resource_measurements"]
+    resources["schema"] = pilot_dataset.TEXTURED_V03_RESOURCE_MEASUREMENTS_SCHEMA
+    low_information = resources["low_information_strata"]
+    for field in (
+        "reason_counts",
+        "context_reason_counts",
+        "target_reason_counts",
+    ):
+        low_information[field]["camera_safety_unresolved"] = 0
+    resources["outcome_counts"] = {
+        "complete_all_nine_action_groups": 16,
+        "candidate_response_audited_groups": 16,
+        "prebranch_exact_groups": 16,
+        "identifiable_groups": 16,
+        "clipped_candidate_branches": 0,
+        "fallen_candidate_branches": 0,
+        "tipped_candidate_branches": 0,
+        "camera_invalid_frames": 0,
+        "incomplete_states": 0,
+    }
+    path.write_bytes(_json_bytes(receipt))
+    return receipt, _binding(root, "receipts/calibration.json")
+
+
+def _absolute_lineage_binding(name: str, digit: str) -> dict[str, object]:
+    return {
+        "path": f"/synthetic/{name}.json",
+        "file_sha256": digit * 64,
+        "byte_count": 1,
+    }
+
+
+def _calibration_lineage_wrapper(
+    schema: str,
+    *,
+    collection_binding: dict[str, object] | None = None,
+    parity_binding: dict[str, object] | None = None,
+    parity_terminal_binding: dict[str, object] | None = None,
+    parity_review_binding: dict[str, object] | None = None,
+) -> dict[str, object]:
+    document = {
+        "schema": schema,
+        "calibration_collection_receipt": (
+            collection_binding
+            or _absolute_lineage_binding("calibration-collection", "c")
+        ),
+    }
+    if schema == pilot_dataset.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA:
+        document["visual_domain_parity_prerequisites"] = {
+            "result_binding": parity_binding
+            or _absolute_lineage_binding("parity", "d"),
+            "terminal_binding": parity_terminal_binding
+            or _absolute_lineage_binding("parity-terminal", "e"),
+            "review_binding": parity_review_binding
+            or _absolute_lineage_binding("parity-review", "f"),
+        }
+    return {"document": document}
+
+
+def _collection_lineage(
+    profile: str,
+    *,
+    parity_binding: dict[str, object] | None = None,
+    parity_terminal_binding: dict[str, object] | None = None,
+    parity_review_binding: dict[str, object] | None = None,
+) -> dict[str, object]:
+    return {
+        "render_profile": profile,
+        "visual_domain_parity_result_binding": parity_binding,
+        "visual_domain_parity_terminal_binding": parity_terminal_binding,
+        "visual_domain_parity_review_binding": parity_review_binding,
+    }
+
+
+def _reopened_calibration_collection_lineage(
+    calibration_collection_binding: dict[str, object],
+    *,
+    profile: str,
+    parity_binding: dict[str, object] | None,
+    parity_terminal_binding: dict[str, object] | None,
+    parity_review_binding: dict[str, object] | None,
+) -> dict[str, object]:
+    return {
+        "calibration_collection_receipt_binding": (
+            calibration_collection_binding
+        ),
+        "render_profile": profile,
+        "visual_domain_parity_result_binding": parity_binding,
+        "visual_domain_parity_terminal_binding": parity_terminal_binding,
+        "visual_domain_parity_review_binding": parity_review_binding,
+    }
+
+
+def test_dataset_lineage_rejects_legacy_collection_with_textured_receipt() -> None:
+    calibration_collection = _absolute_lineage_binding(
+        "calibration-collection", "c"
+    )
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="collection and calibration render profiles differ",
+    ):
+        pilot_dataset._validate_joined_render_lineage_v1(  # noqa: SLF001
+            collection_lineage=_collection_lineage(
+                pilot_dataset.LEGACY_RENDER_PROFILE
+            ),
+            calibration_receipt=_calibration_lineage_wrapper(
+                pilot_dataset.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA,
+                collection_binding=calibration_collection,
+            ),
+            manifest_render_profile=pilot_dataset.LEGACY_RENDER_PROFILE,
+            manifest_visual_domain_parity_result_binding=None,
+            manifest_visual_domain_parity_terminal_binding=None,
+            manifest_visual_domain_parity_review_binding=None,
+            manifest_calibration_collection_receipt_binding=(
+                calibration_collection
+            ),
+            synthetic_test_mode=True,
+        )
+
+
+def test_dataset_lineage_rejects_textured_collection_with_legacy_receipt() -> None:
+    calibration_collection = _absolute_lineage_binding(
+        "calibration-collection", "c"
+    )
+    parity = _absolute_lineage_binding("parity", "d")
+    terminal = _absolute_lineage_binding("parity-terminal", "e")
+    review = _absolute_lineage_binding("parity-review", "f")
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="collection and calibration render profiles differ",
+    ):
+        pilot_dataset._validate_joined_render_lineage_v1(  # noqa: SLF001
+            collection_lineage=_collection_lineage(
+                pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+                parity_binding=parity,
+                parity_terminal_binding=terminal,
+                parity_review_binding=review,
+            ),
+            calibration_receipt=_calibration_lineage_wrapper(
+                pilot_dataset.CALIBRATION_RECEIPT_SCHEMA,
+                collection_binding=calibration_collection,
+            ),
+            manifest_render_profile=pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+            manifest_visual_domain_parity_result_binding=parity,
+            manifest_visual_domain_parity_terminal_binding=terminal,
+            manifest_visual_domain_parity_review_binding=review,
+            manifest_calibration_collection_receipt_binding=(
+                calibration_collection
+            ),
+            synthetic_test_mode=True,
+        )
+
+
+def test_dataset_lineage_rejects_distinct_valid_textured_parity_a_b() -> None:
+    calibration_collection = _absolute_lineage_binding(
+        "calibration-collection", "c"
+    )
+    parity_a = _absolute_lineage_binding("parity-a", "a")
+    parity_b = _absolute_lineage_binding("parity-b", "b")
+    terminal = _absolute_lineage_binding("parity-terminal", "e")
+    review = _absolute_lineage_binding("parity-review", "f")
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="visual-domain parity lineage differs",
+    ):
+        pilot_dataset._validate_joined_render_lineage_v1(  # noqa: SLF001
+            collection_lineage=_collection_lineage(
+                pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+                parity_binding=parity_a,
+                parity_terminal_binding=terminal,
+                parity_review_binding=review,
+            ),
+            calibration_receipt=_calibration_lineage_wrapper(
+                pilot_dataset.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA,
+                collection_binding=calibration_collection,
+            ),
+            manifest_render_profile=pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+            manifest_visual_domain_parity_result_binding=parity_b,
+            manifest_visual_domain_parity_terminal_binding=terminal,
+            manifest_visual_domain_parity_review_binding=review,
+            manifest_calibration_collection_receipt_binding=(
+                calibration_collection
+            ),
+            synthetic_test_mode=True,
+        )
+
+
+@pytest.mark.parametrize(
+    ("swapped_component", "wrong_binding"),
+    (
+        (
+            "terminal",
+            _absolute_lineage_binding("parity-terminal-wrong", "a"),
+        ),
+        (
+            "review",
+            _absolute_lineage_binding("parity-review-wrong", "b"),
+        ),
+    ),
+)
+def test_dataset_lineage_rejects_textured_terminal_or_review_swap(
+    swapped_component: str,
+    wrong_binding: dict[str, object],
+) -> None:
+    calibration_collection = _absolute_lineage_binding(
+        "calibration-collection", "c"
+    )
+    result = _absolute_lineage_binding("parity", "d")
+    terminal = _absolute_lineage_binding("parity-terminal", "e")
+    review = _absolute_lineage_binding("parity-review", "f")
+    manifest_terminal = (
+        wrong_binding if swapped_component == "terminal" else terminal
+    )
+    manifest_review = wrong_binding if swapped_component == "review" else review
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="visual-domain parity lineage differs",
+    ):
+        pilot_dataset._validate_joined_render_lineage_v1(  # noqa: SLF001
+            collection_lineage=_collection_lineage(
+                pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+                parity_binding=result,
+                parity_terminal_binding=terminal,
+                parity_review_binding=review,
+            ),
+            calibration_receipt=_calibration_lineage_wrapper(
+                pilot_dataset.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA,
+                collection_binding=calibration_collection,
+            ),
+            manifest_render_profile=pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+            manifest_visual_domain_parity_result_binding=result,
+            manifest_visual_domain_parity_terminal_binding=manifest_terminal,
+            manifest_visual_domain_parity_review_binding=manifest_review,
+            manifest_calibration_collection_receipt_binding=(
+                calibration_collection
+            ),
+            synthetic_test_mode=True,
+        )
+
+
+@pytest.mark.parametrize("swapped_component", ("result", "terminal", "review"))
+def test_dataset_lineage_rejects_bounded_vs_reopened_calibration_swap(
+    swapped_component: str,
+) -> None:
+    calibration_collection = _absolute_lineage_binding(
+        "calibration-collection", "c"
+    )
+    bounded = {
+        "result": _absolute_lineage_binding("parity", "d"),
+        "terminal": _absolute_lineage_binding("parity-terminal", "e"),
+        "review": _absolute_lineage_binding("parity-review", "f"),
+    }
+    reopened = dict(bounded)
+    reopened[swapped_component] = _absolute_lineage_binding(
+        f"parity-{swapped_component}-other-attempt", "a"
+    )
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="bounded and calibration collection parity lineage differs",
+    ):
+        pilot_dataset._validate_joined_render_lineage_v1(  # noqa: SLF001
+            collection_lineage=_collection_lineage(
+                pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+                parity_binding=bounded["result"],
+                parity_terminal_binding=bounded["terminal"],
+                parity_review_binding=bounded["review"],
+            ),
+            calibration_collection_lineage=(
+                _reopened_calibration_collection_lineage(
+                    calibration_collection,
+                    profile=pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+                    parity_binding=reopened["result"],
+                    parity_terminal_binding=reopened["terminal"],
+                    parity_review_binding=reopened["review"],
+                )
+            ),
+            calibration_receipt=_calibration_lineage_wrapper(
+                pilot_dataset.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA,
+                collection_binding=calibration_collection,
+            ),
+            manifest_render_profile=pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+            manifest_visual_domain_parity_result_binding=bounded["result"],
+            manifest_visual_domain_parity_terminal_binding=bounded["terminal"],
+            manifest_visual_domain_parity_review_binding=bounded["review"],
+            manifest_calibration_collection_receipt_binding=(
+                calibration_collection
+            ),
+            synthetic_test_mode=True,
+        )
+
+
+@pytest.mark.parametrize("swapped_component", ("result", "terminal", "review"))
+def test_dataset_lineage_rejects_calibration_receipt_prerequisite_swap(
+    swapped_component: str,
+) -> None:
+    calibration_collection = _absolute_lineage_binding(
+        "calibration-collection", "c"
+    )
+    parity = {
+        "result": _absolute_lineage_binding("parity", "d"),
+        "terminal": _absolute_lineage_binding("parity-terminal", "e"),
+        "review": _absolute_lineage_binding("parity-review", "f"),
+    }
+    receipt_parity = dict(parity)
+    receipt_parity[swapped_component] = _absolute_lineage_binding(
+        f"receipt-{swapped_component}-other-attempt", "a"
+    )
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="visual-domain parity lineage differs",
+    ):
+        pilot_dataset._validate_joined_render_lineage_v1(  # noqa: SLF001
+            collection_lineage=_collection_lineage(
+                pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+                parity_binding=parity["result"],
+                parity_terminal_binding=parity["terminal"],
+                parity_review_binding=parity["review"],
+            ),
+            calibration_collection_lineage=(
+                _reopened_calibration_collection_lineage(
+                    calibration_collection,
+                    profile=pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+                    parity_binding=parity["result"],
+                    parity_terminal_binding=parity["terminal"],
+                    parity_review_binding=parity["review"],
+                )
+            ),
+            calibration_receipt=_calibration_lineage_wrapper(
+                pilot_dataset.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA,
+                collection_binding=calibration_collection,
+                parity_binding=receipt_parity["result"],
+                parity_terminal_binding=receipt_parity["terminal"],
+                parity_review_binding=receipt_parity["review"],
+            ),
+            manifest_render_profile=pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+            manifest_visual_domain_parity_result_binding=parity["result"],
+            manifest_visual_domain_parity_terminal_binding=parity["terminal"],
+            manifest_visual_domain_parity_review_binding=parity["review"],
+            manifest_calibration_collection_receipt_binding=(
+                calibration_collection
+            ),
+            synthetic_test_mode=True,
+        )
+
+
+def test_dataset_lineage_rejects_distinct_calibration_collection_source() -> None:
+    calibration_collection_a = _absolute_lineage_binding(
+        "calibration-collection-a", "a"
+    )
+    calibration_collection_b = _absolute_lineage_binding(
+        "calibration-collection-b", "b"
+    )
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="calibration collection lineage differs",
+    ):
+        pilot_dataset._validate_joined_render_lineage_v1(  # noqa: SLF001
+            collection_lineage=_collection_lineage(
+                pilot_dataset.LEGACY_RENDER_PROFILE
+            ),
+            calibration_receipt=_calibration_lineage_wrapper(
+                pilot_dataset.CALIBRATION_RECEIPT_SCHEMA,
+                collection_binding=calibration_collection_a,
+            ),
+            manifest_render_profile=pilot_dataset.LEGACY_RENDER_PROFILE,
+            manifest_visual_domain_parity_result_binding=None,
+            manifest_visual_domain_parity_terminal_binding=None,
+            manifest_visual_domain_parity_review_binding=None,
+            manifest_calibration_collection_receipt_binding=(
+                calibration_collection_b
+            ),
+            synthetic_test_mode=True,
+        )
+
+
+def test_dataset_lineage_accepts_exact_textured_profile_and_parity() -> None:
+    calibration_collection = _absolute_lineage_binding(
+        "calibration-collection", "c"
+    )
+    parity = _absolute_lineage_binding("parity", "d")
+    terminal = _absolute_lineage_binding("parity-terminal", "e")
+    review = _absolute_lineage_binding("parity-review", "f")
+    lineage = pilot_dataset._validate_joined_render_lineage_v1(  # noqa: SLF001
+        collection_lineage=_collection_lineage(
+            pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+            parity_binding=parity,
+            parity_terminal_binding=terminal,
+            parity_review_binding=review,
+        ),
+        calibration_collection_lineage=(
+            _reopened_calibration_collection_lineage(
+                calibration_collection,
+                profile=pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+                parity_binding=parity,
+                parity_terminal_binding=terminal,
+                parity_review_binding=review,
+            )
+        ),
+        calibration_receipt=_calibration_lineage_wrapper(
+            pilot_dataset.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA,
+            collection_binding=calibration_collection,
+        ),
+        manifest_render_profile=pilot_dataset.TEXTURED_V03_RENDER_PROFILE,
+        manifest_visual_domain_parity_result_binding=parity,
+        manifest_visual_domain_parity_terminal_binding=terminal,
+        manifest_visual_domain_parity_review_binding=review,
+        manifest_calibration_collection_receipt_binding=calibration_collection,
+        synthetic_test_mode=True,
+    )
+    assert lineage["render_profile"] == pilot_dataset.TEXTURED_V03_RENDER_PROFILE
+    assert lineage["visual_domain_parity_result_binding"] == parity
+    assert lineage["visual_domain_parity_terminal_binding"] == terminal
+    assert lineage["visual_domain_parity_review_binding"] == review
+    assert lineage["calibration_collection_receipt_binding"] == (
+        calibration_collection
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "v2_schema",
+        "missing_terminal",
+        "missing_review",
+        "wrong_result",
+        "wrong_terminal",
+        "wrong_review",
+    ),
+)
+def test_dataset_mirrors_live_render_v3_exact_triple_boundary(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    root = tmp_path / "live-render-root"
+    root.mkdir()
+    parity = {
+        "result": _absolute_lineage_binding("parity-result", "d"),
+        "terminal": _absolute_lineage_binding("parity-terminal", "e"),
+        "review": _absolute_lineage_binding("parity-review", "f"),
+    }
+    receipt = {
+        "schema": (
+            pilot_dataset.producer_contract
+            .TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA
+        ),
+        "visual_domain_parity_result_binding": parity["result"],
+        "visual_domain_parity_terminal_binding": parity["terminal"],
+        "visual_domain_parity_review_binding": parity["review"],
+    }
+    if mutation == "v2_schema":
+        receipt["schema"] = (
+            pilot_dataset.producer_contract.TEXTURED_V03_LIVE_RENDER_RECEIPT_SCHEMA
+        )
+    elif mutation.startswith("missing_"):
+        receipt.pop(f"visual_domain_parity_{mutation.removeprefix('missing_')}_binding")
+    elif mutation.startswith("wrong_"):
+        component = mutation.removeprefix("wrong_")
+        receipt[f"visual_domain_parity_{component}_binding"] = (
+            _absolute_lineage_binding(f"wrong-{component}", "a")
+        )
+    receipt_path = root / "live_render_receipt.json"
+    receipt_path.write_bytes(_json_bytes(receipt))
+    binding = _binding(root, "live_render_receipt.json")
+
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="live-render V3 parity lineage changed",
+    ):
+        pilot_dataset._validate_textured_v03_live_render_lineage_v1(  # noqa: SLF001
+            root,
+            [binding],
+            result_binding=parity["result"],
+            terminal_binding=parity["terminal"],
+            review_binding=parity["review"],
+        )
+
+
+def test_dataset_accepts_live_render_v3_exact_triple(tmp_path: Path) -> None:
+    root = tmp_path / "live-render-root"
+    root.mkdir()
+    parity = {
+        "result": _absolute_lineage_binding("parity-result", "d"),
+        "terminal": _absolute_lineage_binding("parity-terminal", "e"),
+        "review": _absolute_lineage_binding("parity-review", "f"),
+    }
+    receipt = {
+        "schema": (
+            pilot_dataset.producer_contract
+            .TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA
+        ),
+        "visual_domain_parity_result_binding": parity["result"],
+        "visual_domain_parity_terminal_binding": parity["terminal"],
+        "visual_domain_parity_review_binding": parity["review"],
+    }
+    receipt_path = root / "live_render_receipt.json"
+    receipt_path.write_bytes(_json_bytes(receipt))
+    binding = _binding(root, "live_render_receipt.json")
+
+    assert pilot_dataset._validate_textured_v03_live_render_lineage_v1(  # noqa: SLF001
+        root,
+        [binding],
+        result_binding=parity["result"],
+        terminal_binding=parity["terminal"],
+        review_binding=parity["review"],
+    ) == 1
 
 
 def _build_pilot(
@@ -614,11 +1258,18 @@ def _build_pilot(
             "future_executed_tape_usage": "target_and_audit_only",
         },
         "calibration_contract": calibration_contract,
+        "calibration_collection_receipt_binding": calibration_receipt[
+            "calibration_collection_receipt"
+        ],
         "calibration_receipt": _binding(root, "receipts/calibration.json"),
+        "render_profile": pilot_dataset.LEGACY_RENDER_PROFILE,
         "roles": role_contracts,
         "rgb_artifact_manifest": _binding(root, "rgb_manifest.json"),
         "source_bindings": source_bindings,
         "collection_receipt": _binding(root, "receipts/collection.json"),
+        "visual_domain_parity_result_binding": None,
+        "visual_domain_parity_terminal_binding": None,
+        "visual_domain_parity_review_binding": None,
     }
     raw = _json_bytes(manifest)
     (root / "manifest.json").write_bytes(raw)
@@ -644,6 +1295,119 @@ def test_strict_bound_pilot_loads_without_rgb_leaf_reads(tmp_path: Path) -> None
     assert bundle.access_audit["rgb_leaf_open_count"] == 0
 
 
+def test_textured_v03_calibration_receipt_is_accepted_without_legacy_uniqueness(
+    tmp_path: Path,
+) -> None:
+    root, _, _ = _build_pilot(tmp_path)
+    receipt, binding = _rewrite_textured_v03_calibration(root)
+
+    loaded = pilot_dataset._load_calibration_receipt(  # noqa: SLF001
+        root,
+        binding,
+        attempt_id="bounded-attempt-does-not-alias-calibration",
+        top_contract=receipt["calibration_contract"],
+        synthetic_test_mode=True,
+    )
+
+    assert loaded["document"]["schema"] == (
+        pilot_dataset.TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA
+    )
+    assert "nine_unique_executed_tapes_per_state" not in str(loaded["document"])
+    assert loaded["document"]["physics_validation"][
+        "candidate_equivalence_measured_not_rejected"
+    ] is True
+
+
+def test_textured_v03_calibration_receipt_recomputes_support_distributions(
+    tmp_path: Path,
+) -> None:
+    root, _, _ = _build_pilot(tmp_path)
+    receipt, _ = _rewrite_textured_v03_calibration(root)
+    receipt["candidate_branch_support_analysis"]["state_measurements"][0][
+        "dense_physical_rank_class_count"
+    ] = 8
+    receipt["candidate_branch_support_analysis"]["state_measurements"][0][
+        "joint_contrast_signatures_by_action"
+    ][8]["physical_outcome_class_key"] = [0, 0, -7, 7]
+    path = root / "receipts/calibration.json"
+    path.write_bytes(_json_bytes(receipt))
+    binding = _binding(root, "receipts/calibration.json")
+
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="support distributions disagree",
+    ):
+        pilot_dataset._load_calibration_receipt(  # noqa: SLF001
+            root,
+            binding,
+            attempt_id="bounded-attempt",
+            top_contract=receipt["calibration_contract"],
+            synthetic_test_mode=True,
+        )
+
+
+def test_textured_v03_calibration_receipt_rejects_coherent_family_support_gap(
+    tmp_path: Path,
+) -> None:
+    root, _, _ = _build_pilot(tmp_path)
+    receipt, _ = _rewrite_textured_v03_calibration(root)
+    analysis = receipt["candidate_branch_support_analysis"]
+    rows = analysis["state_measurements"]
+    for row in rows[:2]:
+        row["equivalence_unique_counts"]["executed_tape"] = 1
+        row["equivalence_unique_counts"]["stored_rgb_pixels"] = 1
+        row["identifiable"] = False
+        for signature in row["joint_contrast_signatures_by_action"]:
+            signature["executed_tape_class_sha256"] = "a" * 64
+            signature["stored_rgb_pixel_class_sha256"] = "b" * 64
+        row["eligible_action_ids"] = []
+        row["eligible_action_count"] = 0
+    analysis.update(calibration_analyzer._support_analysis_from_rows(rows))  # noqa: SLF001
+    analysis["calibrated_discrimination_query_coverage"] = (
+        calibration_analyzer
+        ._calibrated_discrimination_query_coverage_from_rows(rows)  # noqa: SLF001
+    )
+    receipt["physics_validation"]["identifiable_state_count"] = 14
+    path = root / "receipts/calibration.json"
+    path.write_bytes(_json_bytes(receipt))
+    binding = _binding(root, "receipts/calibration.json")
+
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="without calibrated discrimination support",
+    ):
+        pilot_dataset._load_calibration_receipt(  # noqa: SLF001
+            root,
+            binding,
+            attempt_id="bounded-attempt",
+            top_contract=receipt["calibration_contract"],
+            synthetic_test_mode=True,
+        )
+
+
+def test_textured_v03_calibration_receipt_separates_repeat_floor_from_1cm_bins(
+    tmp_path: Path,
+) -> None:
+    root, _, _ = _build_pilot(tmp_path)
+    receipt, _ = _rewrite_textured_v03_calibration(root)
+    receipt["calibration_contract"]["progress_tolerance_m"] = 1.0e-6
+    path = root / "receipts/calibration.json"
+    path.write_bytes(_json_bytes(receipt))
+    binding = _binding(root, "receipts/calibration.json")
+
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="1cm outcome-equivalence contract changed",
+    ):
+        pilot_dataset._load_calibration_receipt(  # noqa: SLF001
+            root,
+            binding,
+            attempt_id="bounded-attempt",
+            top_contract=receipt["calibration_contract"],
+            synthetic_test_mode=True,
+        )
+
+
 def test_candidate_model_inputs_exclude_future_executed_tapes(tmp_path: Path) -> None:
     root, byte_count, sha256 = _build_pilot(tmp_path)
     bundle = load_bound_pilot_v1(
@@ -658,6 +1422,126 @@ def test_candidate_model_inputs_exclude_future_executed_tapes(tmp_path: Path) ->
     assert [item.requested_action_id for item in inputs] == list(range(9))
     assert inputs[0].requested_block == group.branches[0].requested_block
     assert not hasattr(inputs[0], "executed_command_tape")
+
+
+def _textured_rgb_bundle(
+    tmp_path: Path,
+    *,
+    rgb: np.ndarray,
+    declared_pixel_sha256: str | None = None,
+) -> tuple[pilot_dataset.CounterfactualPilotBundleV1, bytes, str]:
+    from PIL import Image
+
+    root = tmp_path / "pixel-bound-pilot"
+    frames = root / "frames"
+    frames.mkdir(parents=True, exist_ok=True)
+    path = frames / "target.png"
+    Image.fromarray(rgb).save(path, format="PNG")
+    raw = path.read_bytes()
+    pixel_sha256 = hashlib.sha256(rgb.tobytes(order="C")).hexdigest()
+    artifact = pilot_dataset.RGBArtifactV1(
+        artifact_id="target",
+        frame_identity="target-frame",
+        relative_path="frames/target.png",
+        byte_count=len(raw),
+        file_sha256=hashlib.sha256(raw).hexdigest(),
+        pixel_sha256=(
+            pixel_sha256
+            if declared_pixel_sha256 is None
+            else declared_pixel_sha256
+        ),
+        low_information=False,
+        low_info_reasons=(),
+    )
+    empty = MappingProxyType({})
+    bundle = pilot_dataset.CounterfactualPilotBundleV1(
+        root=root,
+        manifest_binding=empty,
+        manifest=empty,
+        rgb_manifest_binding=empty,
+        artifacts=MappingProxyType({"target": artifact}),
+        groups_by_role=empty,
+        role_bindings=empty,
+        calibration_receipt=empty,
+        calibration_tolerances=empty,
+        access_audit=empty,
+    )
+    return bundle, raw, pixel_sha256
+
+
+def test_bound_textured_rgb_recomputes_lossless_decoded_pixel_identity(
+    tmp_path: Path,
+) -> None:
+    rgb = np.arange(224 * 224 * 3, dtype=np.uint8).reshape(224, 224, 3)
+    bundle, raw, _ = _textured_rgb_bundle(tmp_path, rgb=rgb)
+    assert pilot_dataset.read_bound_rgb_bytes_v1(bundle, "target") == raw
+
+
+def test_bound_textured_rgb_rejects_forged_declared_pixel_identity(
+    tmp_path: Path,
+) -> None:
+    rgb = np.zeros((224, 224, 3), dtype=np.uint8)
+    bundle, _, _ = _textured_rgb_bundle(
+        tmp_path,
+        rgb=rgb,
+        declared_pixel_sha256="f" * 64,
+    )
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="decoded raw-pixel identity changed",
+    ):
+        pilot_dataset.read_bound_rgb_bytes_v1(bundle, "target")
+
+
+def test_bound_textured_rgb_rejects_png_rebind_with_stale_pixel_identity(
+    tmp_path: Path,
+) -> None:
+    original = np.zeros((224, 224, 3), dtype=np.uint8)
+    _bundle, _, original_pixel_sha256 = _textured_rgb_bundle(
+        tmp_path, rgb=original
+    )
+    replacement = np.full((224, 224, 3), 127, dtype=np.uint8)
+    rebound, _, _ = _textured_rgb_bundle(
+        tmp_path,
+        rgb=replacement,
+        declared_pixel_sha256=original_pixel_sha256,
+    )
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="decoded raw-pixel identity changed",
+    ):
+        pilot_dataset.read_bound_rgb_bytes_v1(rebound, "target")
+
+
+def test_bound_textured_rgb_rejects_multiframe_png_rebind(
+    tmp_path: Path,
+) -> None:
+    from PIL import Image
+
+    rgb = np.zeros((224, 224, 3), dtype=np.uint8)
+    bundle, _, _ = _textured_rgb_bundle(tmp_path, rgb=rgb)
+    path = bundle.root / "frames/target.png"
+    Image.fromarray(rgb).save(
+        path,
+        format="PNG",
+        save_all=True,
+        append_images=[Image.fromarray(np.full_like(rgb, 255))],
+    )
+    raw = path.read_bytes()
+    rebound_artifact = replace(
+        bundle.artifacts["target"],
+        byte_count=len(raw),
+        file_sha256=hashlib.sha256(raw).hexdigest(),
+    )
+    rebound = replace(
+        bundle,
+        artifacts=MappingProxyType({"target": rebound_artifact}),
+    )
+    with pytest.raises(
+        CounterfactualPilotContractError,
+        match="decoded media changed",
+    ):
+        pilot_dataset.read_bound_rgb_bytes_v1(rebound, "target")
 
 
 def test_allowed_parent_does_not_enable_synthetic_provenance(tmp_path: Path) -> None:

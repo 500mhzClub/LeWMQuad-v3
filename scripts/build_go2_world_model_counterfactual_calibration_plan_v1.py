@@ -206,6 +206,10 @@ def build_calibration_plan_v1(
     output_root: Path,
     scene_panel: Mapping[str, Any],
     runtime_contract: Mapping[str, Any],
+    textured_v03: bool = False,
+    visual_domain_parity_result_binding: Mapping[str, Any] | None = None,
+    visual_domain_parity_terminal_binding: Mapping[str, Any] | None = None,
+    visual_domain_parity_review_binding: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,191}", attempt_id) is None:
         raise CalibrationPlanBuildError("attempt_id is invalid")
@@ -251,10 +255,49 @@ def build_calibration_plan_v1(
         }
         for action_id, name in enumerate(pilot.CANONICAL_ACTIONS)
     ]
+    if textured_v03:
+        if any(
+            binding is None
+            for binding in (
+                visual_domain_parity_result_binding,
+                visual_domain_parity_terminal_binding,
+                visual_domain_parity_review_binding,
+            )
+        ):
+            raise CalibrationPlanBuildError(
+                "textured_v03 calibration requires bound parity result, terminal, and review"
+            )
+        try:
+            parity_prerequisites = pilot.validate_textured_v03_parity_prerequisites(
+                result_binding=visual_domain_parity_result_binding,
+                terminal_binding=visual_domain_parity_terminal_binding,
+                review_binding=visual_domain_parity_review_binding,
+            )
+        except pilot.PilotContractError as exc:
+            raise CalibrationPlanBuildError(str(exc)) from exc
+        texture_bindings = [
+            pilot.file_binding(REPO_ROOT / relative)
+            for relative in pilot.TEXTURED_V03_TEXTURE_RELATIVE_PATHS
+        ]
+    elif any(
+        binding is not None
+        for binding in (
+            visual_domain_parity_result_binding,
+            visual_domain_parity_terminal_binding,
+            visual_domain_parity_review_binding,
+        )
+    ):
+        raise CalibrationPlanBuildError(
+            "legacy calibration cannot bind textured_v03 parity prerequisites"
+        )
     plan = {
         "schema": pilot.PLAN_SCHEMA,
         "attempt_id": attempt_id,
-        "purpose": "sizing_calibration_only",
+        "purpose": (
+            "sizing_calibration_textured_v03_v3"
+            if textured_v03
+            else "sizing_calibration_only"
+        ),
         "citable_as_scientific_evidence": False,
         "authorizes_retry_or_resume": False,
         "allows_refill": False,
@@ -265,11 +308,26 @@ def build_calibration_plan_v1(
         "output_root": str(selected_output_root),
         "runtime_bindings": runtime_bindings,
         "execution_contract": execution_contract,
-        "render_contract": dict(pilot.RENDER_CONTRACT),
+        "render_contract": dict(
+            pilot.TEXTURED_V03_RENDER_CONTRACT
+            if textured_v03
+            else pilot.RENDER_CONTRACT
+        ),
         "action_catalog": action_catalog,
         "states": states,
         "expected_counts": pilot.expected_counts_from_states(states),
     }
+    if textured_v03:
+        plan["texture_asset_bindings"] = texture_bindings
+        plan["visual_domain_parity_result_binding"] = parity_prerequisites[
+            "result_binding"
+        ]
+        plan["visual_domain_parity_terminal_binding"] = parity_prerequisites[
+            "terminal_binding"
+        ]
+        plan["visual_domain_parity_review_binding"] = parity_prerequisites[
+            "review_binding"
+        ]
     return pilot.validate_plan(plan)
 
 
@@ -284,6 +342,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--expected-runtime-contract-sha256", required=True)
     parser.add_argument("--expected-runtime-contract-byte-count", required=True, type=int)
     parser.add_argument("--plan-output", required=True, type=Path)
+    parser.add_argument("--textured-v03", action="store_true")
+    parser.add_argument("--visual-domain-parity-result", type=Path)
+    parser.add_argument("--expected-visual-domain-parity-sha256")
+    parser.add_argument("--expected-visual-domain-parity-byte-count", type=int)
+    parser.add_argument("--visual-domain-parity-terminal", type=Path)
+    parser.add_argument("--expected-visual-domain-parity-terminal-sha256")
+    parser.add_argument(
+        "--expected-visual-domain-parity-terminal-byte-count", type=int
+    )
+    parser.add_argument("--visual-domain-parity-review", type=Path)
+    parser.add_argument("--expected-visual-domain-parity-review-sha256")
+    parser.add_argument(
+        "--expected-visual-domain-parity-review-byte-count", type=int
+    )
     return parser
 
 
@@ -301,11 +373,56 @@ def main(argv: Sequence[str] | None = None) -> int:
         expected_byte_count=args.expected_runtime_contract_byte_count,
         label="counterfactual runtime contract",
     )
+    parity_binding = None
+    parity_terminal_binding = None
+    parity_review_binding = None
+    parity_arguments = (
+        args.visual_domain_parity_result,
+        args.expected_visual_domain_parity_sha256,
+        args.expected_visual_domain_parity_byte_count,
+        args.visual_domain_parity_terminal,
+        args.expected_visual_domain_parity_terminal_sha256,
+        args.expected_visual_domain_parity_terminal_byte_count,
+        args.visual_domain_parity_review,
+        args.expected_visual_domain_parity_review_sha256,
+        args.expected_visual_domain_parity_review_byte_count,
+    )
+    if args.textured_v03:
+        if any(value is None for value in parity_arguments):
+            raise CalibrationPlanBuildError(
+                "textured_v03 requires all parity-result binding arguments"
+            )
+        _parity_result, parity_binding = pilot.read_bound_json(
+            args.visual_domain_parity_result,
+            expected_sha256=args.expected_visual_domain_parity_sha256,
+            expected_byte_count=args.expected_visual_domain_parity_byte_count,
+            label="textured_v03 visual-domain parity result",
+        )
+        _parity_terminal, parity_terminal_binding = pilot.read_bound_json(
+            args.visual_domain_parity_terminal,
+            expected_sha256=args.expected_visual_domain_parity_terminal_sha256,
+            expected_byte_count=args.expected_visual_domain_parity_terminal_byte_count,
+            label="textured_v03 visual-domain parity terminal",
+        )
+        _parity_review, parity_review_binding = pilot.read_bound_json(
+            args.visual_domain_parity_review,
+            expected_sha256=args.expected_visual_domain_parity_review_sha256,
+            expected_byte_count=args.expected_visual_domain_parity_review_byte_count,
+            label="textured_v03 visual-domain parity review",
+        )
+    elif any(value is not None for value in parity_arguments):
+        raise CalibrationPlanBuildError(
+            "parity-result arguments require --textured-v03"
+        )
     plan = build_calibration_plan_v1(
         attempt_id=args.attempt_id,
         output_root=args.output_root,
         scene_panel=scene_panel,
         runtime_contract=runtime_contract,
+        textured_v03=args.textured_v03,
+        visual_domain_parity_result_binding=parity_binding,
+        visual_domain_parity_terminal_binding=parity_terminal_binding,
+        visual_domain_parity_review_binding=parity_review_binding,
     )
     binding = pilot.write_json_exclusive(args.plan_output, plan)
     print(json.dumps({"plan": binding, "expected_counts": plan["expected_counts"]}, sort_keys=True))

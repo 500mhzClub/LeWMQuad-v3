@@ -30,10 +30,17 @@ from scripts import collect_go2_world_model_counterfactual_pilot_v1 as collector
 
 
 PURPOSE = "sizing_calibration_only"
+TEXTURED_V03_PURPOSE = "sizing_calibration_textured_v03_v3"
 AUTHORITY_SCHEMA = (
     "lewm_go2_world_model_counterfactual_calibration_execution_authority_v2"
 )
 AUTHORITY_STATUS = "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION_V2_SUCCESSOR"
+TEXTURED_V03_AUTHORITY_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_calibration_execution_authority_v3"
+)
+TEXTURED_V03_AUTHORITY_STATUS = (
+    "AUTHORIZED_ONE_EXACT_160_BRANCH_TEXTURED_V03_CALIBRATION_V3"
+)
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 REVIEW_ONLY_SOURCE_PATHS = {
@@ -58,6 +65,9 @@ REVIEW_ONLY_SOURCE_PATHS = {
     "counterfactual_contract_test": (
         "lewm/tests/test_go2_world_model_counterfactual_pilot_v1.py"
     ),
+    "counterfactual_textured_v03_test": (
+        "lewm/tests/test_go2_world_model_counterfactual_textured_v03.py"
+    ),
     "predecessor_terminal_failure_result": str(
         collector.CALIBRATION_PREDECESSOR_FAILURE_RELATIVE
     ),
@@ -72,12 +82,32 @@ REVIEW_ONLY_SOURCE_PATHS = {
     ),
 }
 
+TEXTURED_V03_PARITY_SOURCE_PATHS = {
+    "visual_domain_parity_plan_builder": (
+        "scripts/build_go2_world_model_visual_domain_parity_plan_v1.py"
+    ),
+    "visual_domain_parity_authority_builder": (
+        "scripts/build_go2_world_model_visual_domain_parity_authority_v1.py"
+    ),
+    "visual_domain_parity_scene_panel_builder": (
+        "scripts/build_go2_world_model_bounded_branch_scene_panel_v1.py"
+    ),
+    "visual_domain_parity_supervisor": (
+        "scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py"
+    ),
+    "visual_domain_parity_calibration_analyzer": (
+        "scripts/analyze_go2_world_model_counterfactual_calibration_v1.py"
+    ),
+}
+
 
 class CalibrationAuthorityBuildError(RuntimeError):
     """Raised before malformed metadata can mint a review or authority file."""
 
 
-def canonical_runtime_source_paths_v1() -> dict[str, str]:
+def canonical_runtime_source_paths_v1(
+    *, textured_v03: bool = False
+) -> dict[str, str]:
     """Return the exact, name-sorted calibration runtime source closure."""
 
     paths = {
@@ -85,6 +115,11 @@ def canonical_runtime_source_paths_v1() -> dict[str, str]:
         **collector.NON_SMOKE_SOURCE_PATHS,
         **REVIEW_ONLY_SOURCE_PATHS,
     }
+    if textured_v03:
+        paths.update(TEXTURED_V03_PARITY_SOURCE_PATHS)
+        paths["predecessor_terminal_failure_result"] = str(
+            collector.CALIBRATION_V2_FAILURE_RELATIVE
+        )
     return dict(sorted(paths.items()))
 
 
@@ -95,7 +130,9 @@ def _require_iso8601(value: str, *, label: str) -> None:
         raise CalibrationAuthorityBuildError(f"{label} is not ISO-8601") from exc
 
 
-def committed_source_bindings_v1(source_commit: str) -> list[dict[str, Any]]:
+def committed_source_bindings_v1(
+    source_commit: str, *, textured_v03: bool = False
+) -> list[dict[str, Any]]:
     """Bind each runtime source and require exact equality at source_commit."""
 
     if _COMMIT.fullmatch(source_commit) is None:
@@ -113,7 +150,9 @@ def committed_source_bindings_v1(source_commit: str) -> list[dict[str, Any]]:
             "source commit is not an ancestor of HEAD"
         ) from exc
     result: list[dict[str, Any]] = []
-    for name, relative in canonical_runtime_source_paths_v1().items():
+    for name, relative in canonical_runtime_source_paths_v1(
+        textured_v03=textured_v03
+    ).items():
         binding = pilot.file_binding(REPO_ROOT / relative)
         try:
             collector._binding_at_commit(  # noqa: SLF001
@@ -127,7 +166,9 @@ def committed_source_bindings_v1(source_commit: str) -> list[dict[str, Any]]:
     return result
 
 
-def build_source_review_template_v1(*, source_commit: str) -> dict[str, Any]:
+def build_source_review_template_v1(
+    *, source_commit: str, textured_v03: bool = False
+) -> dict[str, Any]:
     """Emit a non-passing template; only an independent reviewer may finish it."""
 
     review = {
@@ -135,7 +176,11 @@ def build_source_review_template_v1(*, source_commit: str) -> dict[str, Any]:
         "status": "PENDING_INDEPENDENT_REVIEW",
         "authority_granted_by_this_document": False,
         "reviewed_source_commit": source_commit,
-        "reviewed_source_bindings": committed_source_bindings_v1(source_commit),
+        "reviewed_source_bindings": (
+            committed_source_bindings_v1(source_commit, textured_v03=True)
+            if textured_v03
+            else committed_source_bindings_v1(source_commit)
+        ),
         "remaining_findings": ["INDEPENDENT_REVIEW_REQUIRED"],
         "reviewer": {
             "identity": "REVIEWER_MUST_REPLACE",
@@ -166,9 +211,10 @@ def build_authority_v1(
     """Bind one reviewed plan into the collector's exact authority schema."""
 
     normalized_plan = pilot.validate_plan(plan)
-    if normalized_plan["purpose"] != PURPOSE:
+    textured_v03 = normalized_plan["purpose"] == TEXTURED_V03_PURPOSE
+    if normalized_plan["purpose"] not in (PURPOSE, TEXTURED_V03_PURPOSE):
         raise CalibrationAuthorityBuildError(
-            "authority builder requires a sizing_calibration_only plan"
+            "authority builder requires a supported calibration plan"
         )
     for value, label in (
         (authorizer_identity, "authorizer identity"),
@@ -189,10 +235,14 @@ def build_authority_v1(
         or not isinstance(source_bindings, list)
     ):
         raise CalibrationAuthorityBuildError("source review identity is invalid")
-    expected_names = list(canonical_runtime_source_paths_v1())
+    expected_names = list(canonical_runtime_source_paths_v1(
+        textured_v03=textured_v03
+    ))
     if [row.get("name") if isinstance(row, Mapping) else None for row in source_bindings] != expected_names:
         raise CalibrationAuthorityBuildError("source review closure/order changed")
-    expected_paths = canonical_runtime_source_paths_v1()
+    expected_paths = canonical_runtime_source_paths_v1(
+        textured_v03=textured_v03
+    )
     for row in source_bindings:
         expected_path = (REPO_ROOT / expected_paths[row["name"]]).resolve()
         if Path(str(row["binding"]["path"])).resolve() != expected_path:
@@ -214,8 +264,12 @@ def build_authority_v1(
         "wall_seconds": float(wall_seconds),
     }
     authority = {
-        "schema": AUTHORITY_SCHEMA,
-        "status": AUTHORITY_STATUS,
+        "schema": (
+            TEXTURED_V03_AUTHORITY_SCHEMA if textured_v03 else AUTHORITY_SCHEMA
+        ),
+        "status": (
+            TEXTURED_V03_AUTHORITY_STATUS if textured_v03 else AUTHORITY_STATUS
+        ),
         "authority_granted_by_this_document": True,
         "scientific_claim_authorized": False,
         "authorizer": {
@@ -233,7 +287,8 @@ def build_authority_v1(
             "root": normalized_plan["output_root"],
             "maximum_attempts": 1,
             "must_be_absent": True,
-            "reservation_consumes_attempt": True,
+            "root_creation_consumes_attempt": True,
+            "reservation_records_consumed_attempt": True,
             "retry": False,
             "resume": False,
             "overwrite": False,
@@ -249,7 +304,7 @@ def build_authority_v1(
         },
         "platform_gate_disposition": {
             "platform_hard_gates_resolved": True,
-            "scope": PURPOSE,
+            "scope": normalized_plan["purpose"],
             "outputs_eligible_for_training_after_receipt_join": False,
             "outputs_eligible_for_scientific_claim": False,
             "authorizes_this_exact_generation": True,
@@ -286,6 +341,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     review = subparsers.add_parser("review-template")
     review.add_argument("--source-commit", required=True)
+    review.add_argument("--textured-v03", action="store_true")
     review.add_argument("--output", required=True, type=Path)
 
     authority = subparsers.add_parser("authority")
@@ -315,6 +371,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "review-template":
         document = build_source_review_template_v1(
             source_commit=args.source_commit,
+            textured_v03=args.textured_v03,
         )
     else:
         plan, plan_binding = _read_bound(

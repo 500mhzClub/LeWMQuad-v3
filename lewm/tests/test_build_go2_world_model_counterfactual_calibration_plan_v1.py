@@ -95,6 +95,140 @@ def test_builder_emits_exact_160_branch_rotating_repeat_plan(tmp_path: Path) -> 
     assert set(repeated) == set(range(9))
 
 
+def test_builder_emits_textured_v03_plan_with_exact_assets_and_parity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    builder = _load_builder()
+    builder.REPO_ROOT = tmp_path
+    monkeypatch.setattr(pilot, "_REPO_ROOT", tmp_path)
+    smoke = _smoke_plan(tmp_path / "runtime")
+    runtime_contract = {
+        "schema": builder.RUNTIME_CONTRACT_SCHEMA,
+        "runtime_bindings": smoke["runtime_bindings"],
+        "execution_contract": smoke["execution_contract"],
+    }
+    scenes = []
+    for family_index, family in enumerate(pilot.FAMILIES):
+        scene_root = tmp_path / "scenes" / family
+        scene_root.mkdir(parents=True)
+        manifest = scene_root / "manifest.json"
+        genesis = scene_root / "genesis_scene.json"
+        target = [1.0, float(family_index)]
+        manifest.write_text(json.dumps({
+            "scene_id": f"calibration-{family_index}",
+            "family": family,
+            "landmarks": [
+                {
+                    "object_id": "target-000",
+                    "center_xyz_m": [*target, 0.5],
+                }
+            ],
+        }))
+        genesis.write_text("{}")
+        scenes.append({
+            "family": family,
+            "scene_id": f"calibration-{family_index}",
+            "scene_manifest_binding": pilot.file_binding(manifest),
+            "scene_genesis_binding": pilot.file_binding(genesis),
+            "states": [
+                {
+                    "state_id": f"calibration-{family_index}:{state_index}",
+                    "history_action_ids": [state_index, state_index + 1],
+                    "target_xy_m": target,
+                }
+                for state_index in range(2)
+            ],
+        })
+    for index, relative in enumerate(pilot.TEXTURED_V03_TEXTURE_RELATIVE_PATHS):
+        texture = tmp_path / relative
+        texture.parent.mkdir(parents=True, exist_ok=True)
+        texture.write_bytes(f"texture-{index}".encode())
+    parity_path = tmp_path / "parity-result.json"
+    parity_path.write_text("{}")
+    parity_binding = pilot.file_binding(parity_path)
+    parity_terminal_path = tmp_path / "parity-terminal.json"
+    parity_terminal_path.write_text("{}")
+    parity_terminal_binding = pilot.file_binding(parity_terminal_path)
+    parity_review_path = tmp_path / "parity-review.json"
+    parity_review_path.write_text("{}")
+    parity_review_binding = pilot.file_binding(parity_review_path)
+    monkeypatch.setattr(
+        pilot,
+        "validate_textured_v03_parity_prerequisites",
+        lambda **_kwargs: {
+            "result_binding": parity_binding,
+            "terminal_binding": parity_terminal_binding,
+            "review_binding": parity_review_binding,
+        },
+    )
+
+    plan = builder.build_calibration_plan_v1(
+        attempt_id="calibration-textured-v03-v3",
+        output_root=(tmp_path / ".generated/dev/textured-v03").resolve(),
+        scene_panel={"schema": builder.SCENE_PANEL_SCHEMA, "scenes": scenes},
+        runtime_contract=runtime_contract,
+        textured_v03=True,
+        visual_domain_parity_result_binding=parity_binding,
+        visual_domain_parity_terminal_binding=parity_terminal_binding,
+        visual_domain_parity_review_binding=parity_review_binding,
+    )
+
+    assert plan["purpose"] == "sizing_calibration_textured_v03_v3"
+    assert plan["render_contract"] == pilot.TEXTURED_V03_RENDER_CONTRACT
+    assert plan["visual_domain_parity_result_binding"] == parity_binding
+    assert plan["visual_domain_parity_terminal_binding"] == parity_terminal_binding
+    assert plan["visual_domain_parity_review_binding"] == parity_review_binding
+    assert [binding["path"] for binding in plan["texture_asset_bindings"]] == [
+        str((tmp_path / relative).resolve())
+        for relative in pilot.TEXTURED_V03_TEXTURE_RELATIVE_PATHS
+    ]
+    assert [
+        state["sentinel_duplicate_action_id"] for state in plan["states"]
+    ] == [index % 9 for index in range(16)]
+
+    with pytest.raises(
+        builder.CalibrationPlanBuildError,
+        match="requires bound parity result, terminal, and review",
+    ):
+        builder.build_calibration_plan_v1(
+            attempt_id="calibration-textured-v03-missing-review",
+            output_root=(tmp_path / ".generated/dev/missing-review").resolve(),
+            scene_panel={"schema": builder.SCENE_PANEL_SCHEMA, "scenes": scenes},
+            runtime_contract=runtime_contract,
+            textured_v03=True,
+            visual_domain_parity_result_binding=parity_binding,
+        )
+
+    wrong_role = copy.deepcopy(plan)
+    for state in wrong_role["states"][:2]:
+        state["role"] = "train"
+        state["sentinel_duplicate_action_id"] = None
+    wrong_role["expected_counts"] = pilot.expected_counts_from_states(
+        wrong_role["states"]
+    )
+    with pytest.raises(pilot.PilotContractError, match="calibration role"):
+        pilot.validate_plan(wrong_role)
+
+    missing_scene = copy.deepcopy(plan)
+    missing_scene["states"] = missing_scene["states"][:-2]
+    missing_scene["expected_counts"] = pilot.expected_counts_from_states(
+        missing_scene["states"]
+    )
+    with pytest.raises(pilot.PilotContractError, match="eight families/scenes"):
+        pilot.validate_plan(missing_scene)
+
+
+def test_builder_rejects_parity_binding_on_legacy_calibration(tmp_path: Path) -> None:
+    legacy = _smoke_plan(tmp_path / "runtime")
+    parity_path = tmp_path / "parity-result.json"
+    parity_path.write_text("{}")
+    legacy["visual_domain_parity_result_binding"] = pilot.file_binding(parity_path)
+
+    with pytest.raises(pilot.PilotContractError, match="field set changed"):
+        pilot.validate_plan(legacy)
+
+
 def test_written_v2_plan_has_fresh_identity_and_frozen_branch_design() -> None:
     plan = pilot.validate_plan(json.loads(V2_PLAN_PATH.read_bytes()))
     assert plan["attempt_id"] == "lewm-go2-wm-counterfactual-calibration-v2"

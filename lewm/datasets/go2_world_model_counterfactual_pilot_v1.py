@@ -18,6 +18,8 @@ import stat
 from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
+from lewm.benchmarks import go2_world_model_counterfactual_pilot_v1 as producer_contract
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEV_ROOT = (REPO_ROOT / ".generated/dev").resolve()
@@ -27,8 +29,36 @@ GROUP_SCHEMA = "lewm_go2_world_model_counterfactual_group_v1"
 COLLECTION_SCHEMA = "lewm_go2_world_model_counterfactual_pilot_physics_result_v1"
 PLAN_SCHEMA = "lewm_go2_world_model_counterfactual_pilot_plan_v1"
 STATE_RECEIPT_SCHEMA = "lewm_go2_world_model_counterfactual_pilot_state_receipt_v1"
+TEXTURED_V03_STATE_RECEIPT_SCHEMA = (
+    producer_contract.TEXTURED_V03_STATE_RECEIPT_SCHEMA
+)
 CALIBRATION_RECEIPT_SCHEMA = (
     "lewm_go2_world_model_counterfactual_calibration_receipt_v1"
+)
+TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_calibration_receipt_v3"
+)
+TEXTURED_V03_RESOURCE_MEASUREMENTS_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_calibration_resource_measurements_v2"
+)
+LEGACY_RENDER_PROFILE = "legacy_v1"
+TEXTURED_V03_RENDER_PROFILE = "textured_v03_v3"
+CANDIDATE_BRANCH_SUPPORT_ANALYSIS_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_candidate_branch_support_analysis_v3"
+)
+TEXTURED_V03_EQUIVALENCE_PARTITION_NAMES = (
+    "executed_tape",
+    "physical_trajectory",
+    "endpoint_pose",
+    "physical_outcome",
+    "stored_rgb_file",
+    "stored_rgb_pixels",
+)
+TEXTURED_V03_LOW_INFO_REASON_NAMES = (
+    "camera_safety_unresolved",
+    "low_rgb_texture",
+    "near_wall_depth",
+    "near_forward_geometry",
 )
 PHYSICAL_RANK_CONTRACT_SCHEMA = (
     "lewm_go2_world_model_counterfactual_physical_rank_contract_v1"
@@ -36,6 +66,15 @@ PHYSICAL_RANK_CONTRACT_SCHEMA = (
 TOLERANCE_DERIVATION_SCHEMA = (
     "lewm_go2_world_model_counterfactual_tolerance_derivation_v1"
 )
+TOLERANCE_DERIVATION_V2_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_tolerance_derivation_v2"
+)
+TEXTURED_V03_OUTCOME_EQUIVALENCE_TOLERANCE_M = 0.01
+TEXTURED_V03_CALIBRATION_STATES_PER_FAMILY = 2
+TEXTURED_V03_MIN_ELIGIBLE_QUERIES_PER_FAMILY = 9
+TEXTURED_V03_MIN_ELIGIBLE_QUERIES_OVERALL = 72
+TEXTURED_V03_MIN_DISCRIMINATION_QUERY_COVERAGE = 0.5
+BOUNDED_MIN_DISCRIMINATION_QUERY_COVERAGE = 0.25
 EVIDENCE_SCOPE = "physics_executed"
 ROLE_NAMES = ("train", "eval")
 FAMILIES = (
@@ -106,6 +145,77 @@ _READ_FLAGS = (
 _SHA_CHARS = frozenset("0123456789abcdef")
 
 
+def _identity_partition(identities: Sequence[str]) -> dict[str, Any]:
+    grouped: dict[str, list[int]] = {}
+    for action_id, identity in enumerate(identities):
+        grouped.setdefault(identity, []).append(action_id)
+    groups = [
+        {"identity_sha256": identity, "action_ids": action_ids}
+        for identity, action_ids in grouped.items()
+    ]
+    return {
+        "unique_count": len(groups),
+        "collapsed": len(groups) < ACTION_COUNT,
+        "groups": groups,
+    }
+
+
+def _candidate_response_audit_from_branches(
+    branches: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    if len(branches) != ACTION_COUNT:
+        raise CounterfactualPilotContractError(
+            "candidate response audit branch grid changed"
+        )
+    executed = [str(branch.get("executed_block_sha256")) for branch in branches]
+    trajectories = [
+        canonical_json_sha256(
+            [
+                {
+                    "base_pos_world": row["base_pos_world"],
+                    "base_quat_wxyz": row["base_quat_wxyz"],
+                }
+                for row in branch["trajectory_policy_step_samples"]
+            ]
+        )
+        for branch in branches
+    ]
+    endpoints = [
+        canonical_json_sha256(
+            {
+                "base_pos_world": branch["endpoint_state"]["base_pos_world"],
+                "base_quat_wxyz": branch["endpoint_state"]["base_quat_wxyz"],
+            }
+        )
+        for branch in branches
+    ]
+    outcomes = [
+        canonical_json_sha256({
+            "physical_fell": branch["physical_fell"],
+            "physical_tipped": branch["physical_tipped"],
+            "physical_path_length_m": branch["physical_path_length_m"],
+            "physical_target_progress_m": branch["physical_target_progress_m"],
+        })
+        for branch in branches
+    ]
+    stored_rgb_files = [
+        str(branch["frame_receipt"]["file_sha256"]) for branch in branches
+    ]
+    stored_rgb_pixels = [
+        str(branch["frame_receipt"]["pixel_sha256"]) for branch in branches
+    ]
+    return {
+        "schema": producer_contract.TEXTURED_V03_CANDIDATE_RESPONSE_AUDIT_SCHEMA,
+        "candidate_action_ids": list(range(ACTION_COUNT)),
+        "executed_tape": _identity_partition(executed),
+        "physical_trajectory": _identity_partition(trajectories),
+        "endpoint_pose": _identity_partition(endpoints),
+        "physical_outcome": _identity_partition(outcomes),
+        "stored_rgb_file": _identity_partition(stored_rgb_files),
+        "stored_rgb_pixels": _identity_partition(stored_rgb_pixels),
+    }
+
+
 class CounterfactualPilotContractError(RuntimeError):
     """Raised before a malformed pilot can become model input."""
 
@@ -117,6 +227,7 @@ class RGBArtifactV1:
     relative_path: str
     byte_count: int
     file_sha256: str
+    pixel_sha256: str | None
     low_information: bool
     low_info_reasons: tuple[str, ...]
 
@@ -155,6 +266,7 @@ class CounterfactualBranchV1:
     executed_command_tape: tuple[tuple[float, float, float], ...]
     executed_command_tape_sha256: str
     target_rgb_artifact_id: str
+    target_rgb_pixel_sha256: str | None
     labels: PhysicalLabelsV1
     oracle_dense_rank: int
 
@@ -552,6 +664,9 @@ def _parse_group(
     requested_blocks: Sequence[tuple[tuple[float, float, float], ...]],
     collection_state: Mapping[str, object],
 ) -> CounterfactualGroupV1:
+    textured_v03 = (
+        collection_state.get("schema") == TEXTURED_V03_STATE_RECEIPT_SCHEMA
+    )
     expected = {
         "schema",
         "role",
@@ -887,6 +1002,8 @@ def _parse_group(
             "low_information",
             "low_info_reasons",
         }
+        if textured_v03:
+            receipt_fields.add("pixel_sha256")
         if not isinstance(receipt, Mapping) or set(receipt) != receipt_fields:
             raise CounterfactualPilotContractError("branch frame receipt changed")
         target_id = receipt["artifact_id"]
@@ -897,6 +1014,10 @@ def _parse_group(
             or receipt["frame_identity"] != artifact.frame_identity
             or receipt["path"] != artifact.relative_path
             or receipt["file_sha256"] != artifact.file_sha256
+            or (
+                textured_v03
+                and receipt["pixel_sha256"] != artifact.pixel_sha256
+            )
             or receipt["byte_count"] != artifact.byte_count
             or receipt["width"] != 224
             or receipt["height"] != 224
@@ -933,12 +1054,13 @@ def _parse_group(
             executed_command_tape=tape,
             executed_command_tape_sha256=tape_digest,
             target_rgb_artifact_id=target_id,
+            target_rgb_pixel_sha256=artifact.pixel_sha256,
             labels=parsed_labels,
             oracle_dense_rank=_nonnegative_int(
                 branch["declared_oracle_dense_rank"], name="oracle dense rank"
             ),
         ))
-    if len(tape_hashes) != ACTION_COUNT:
+    if not textured_v03 and len(tape_hashes) != ACTION_COUNT:
         raise CounterfactualPilotContractError(
             "requested actions collapse to duplicate executed command tapes"
         )
@@ -1073,7 +1195,9 @@ def _validate_source_bindings(
     return tuple(result)
 
 
-def _validate_calibration_contract(value: object) -> tuple[tuple[str, ...], Mapping[str, float]]:
+def _validate_calibration_contract(
+    value: object, *, textured_v03: bool = False
+) -> tuple[tuple[str, ...], Mapping[str, float]]:
     expected = {
         "schema",
         "excluded_scene_ids",
@@ -1102,6 +1226,7 @@ def _validate_calibration_contract(value: object) -> tuple[tuple[str, ...], Mapp
     if (
         not isinstance(excluded, list)
         or not excluded
+        or (textured_v03 and len(excluded) != len(FAMILIES))
         or excluded != sorted(excluded)
         or len(set(excluded)) != len(excluded)
         or any(not isinstance(scene, str) or not scene for scene in excluded)
@@ -1110,6 +1235,72 @@ def _validate_calibration_contract(value: object) -> tuple[tuple[str, ...], Mapp
             "calibration scene exclusion contract is invalid"
         )
     derivation = value["tolerance_derivation"]
+    if textured_v03:
+        expected_derivation_fields = {
+            "schema",
+            "method",
+            "repeatability_numerical_floor_m",
+            "outcome_equivalence_tolerance_m",
+            "outcome_equivalence_applies_to",
+            "outcome_equivalence_quantization_caveat",
+            "exact_repeat_gate_separate_from_outcome_equivalence",
+            "repeat_controls",
+            "repeated_action_ids",
+            "all_requested_primitives_covered",
+            "deterministic_repeat_gate_passed",
+            "empirical_noise_scale_estimated",
+        }
+        if (
+            not isinstance(derivation, Mapping)
+            or set(derivation) != expected_derivation_fields
+        ):
+            raise CounterfactualPilotContractError(
+                "textured-v03 outcome-equivalence derivation changed"
+            )
+        repeated_action_ids = derivation["repeated_action_ids"]
+        if (
+            derivation["schema"] != TOLERANCE_DERIVATION_V2_SCHEMA
+            or derivation["method"]
+            != "fixed_preregistered_outcome_equivalence_after_exact_repeat_gate"
+            or derivation["repeatability_numerical_floor_m"] != 1.0e-6
+            or derivation["outcome_equivalence_tolerance_m"]
+            != TEXTURED_V03_OUTCOME_EQUIVALENCE_TOLERANCE_M
+            or derivation["outcome_equivalence_applies_to"]
+            != ["physical_target_progress_m", "physical_path_length_m"]
+            or derivation["outcome_equivalence_quantization_caveat"]
+            != (
+                "1cm_rounding_bins_have_boundary_artifacts_and_are_not_"
+                "pairwise_distance_le_1cm_equivalence"
+            )
+            or derivation[
+                "exact_repeat_gate_separate_from_outcome_equivalence"
+            ]
+            is not True
+            or derivation["repeat_controls"] != 16
+            or not isinstance(repeated_action_ids, list)
+            or len(repeated_action_ids) != 16
+            or any(
+                type(action_id) is not int
+                or not 0 <= action_id < ACTION_COUNT
+                for action_id in repeated_action_ids
+            )
+            or set(repeated_action_ids) != set(range(ACTION_COUNT))
+            or derivation["all_requested_primitives_covered"] is not True
+            or derivation["deterministic_repeat_gate_passed"] is not True
+            or derivation["empirical_noise_scale_estimated"] is not False
+            or value["progress_tolerance_m"]
+            != TEXTURED_V03_OUTCOME_EQUIVALENCE_TOLERANCE_M
+            or value["path_length_tolerance_m"]
+            != TEXTURED_V03_OUTCOME_EQUIVALENCE_TOLERANCE_M
+        ):
+            raise CounterfactualPilotContractError(
+                "textured-v03 1cm outcome-equivalence contract changed"
+            )
+        tolerances = MappingProxyType({
+            "progress_tolerance_m": TEXTURED_V03_OUTCOME_EQUIVALENCE_TOLERANCE_M,
+            "path_length_tolerance_m": TEXTURED_V03_OUTCOME_EQUIVALENCE_TOLERANCE_M,
+        })
+        return tuple(excluded), tolerances
     if not isinstance(derivation, Mapping) or set(derivation) != {
         "schema",
         "method",
@@ -1154,6 +1345,775 @@ def _validate_calibration_contract(value: object) -> tuple[tuple[str, ...], Mapp
     return tuple(excluded), tolerances
 
 
+def _textured_v03_count_histogram(values: Sequence[int]) -> dict[str, int]:
+    return {
+        str(unique_count): sum(value == unique_count for value in values)
+        for unique_count in range(1, ACTION_COUNT + 1)
+    }
+
+
+def _textured_v03_support_summary(
+    rows: Sequence[Mapping[str, object]],
+) -> dict[str, object]:
+    if not rows:
+        raise CounterfactualPilotContractError(
+            "candidate support stratum cannot be empty"
+        )
+    equivalence: dict[str, object] = {}
+    for partition in TEXTURED_V03_EQUIVALENCE_PARTITION_NAMES:
+        values = [
+            int(row["equivalence_unique_counts"][partition])  # type: ignore[index]
+            for row in rows
+        ]
+        equivalence[partition] = {
+            "unique_count_histogram": _textured_v03_count_histogram(values),
+            "minimum_unique_count": min(values),
+            "maximum_unique_count": max(values),
+            "collapsed_state_count": sum(value < ACTION_COUNT for value in values),
+        }
+    rank_values = [int(row["dense_physical_rank_class_count"]) for row in rows]
+    identifiable_ids = [
+        str(row["state_id"]) for row in rows if row["identifiable"] is True
+    ]
+    unidentifiable_ids = [
+        str(row["state_id"]) for row in rows if row["identifiable"] is False
+    ]
+    return {
+        "state_count": len(rows),
+        "equivalence_unique_count_distributions": equivalence,
+        "dense_physical_rank_class_count_distribution": {
+            "class_count_histogram": _textured_v03_count_histogram(rank_values),
+            "minimum_class_count": min(rank_values),
+            "maximum_class_count": max(rank_values),
+        },
+        "identifiability": {
+            "identifiable_state_count": len(identifiable_ids),
+            "unidentifiable_state_count": len(unidentifiable_ids),
+            "identifiable_fraction": len(identifiable_ids) / len(rows),
+            "identifiable_state_ids": identifiable_ids,
+            "unidentifiable_state_ids": unidentifiable_ids,
+        },
+    }
+
+
+def _textured_v03_discrimination_query_coverage(
+    rows: Sequence[Mapping[str, object]],
+) -> dict[str, object]:
+    if len(rows) != 16 or {str(row["family"]) for row in rows} != set(FAMILIES):
+        raise CounterfactualPilotContractError(
+            "textured-v03 calibrated family/state panel changed"
+        )
+
+    def summary(
+        selected: Sequence[Mapping[str, object]], *, required_count: int
+    ) -> dict[str, object]:
+        state_count = len(selected)
+        eligible_query_count = sum(
+            int(row["eligible_action_count"]) for row in selected
+        )
+        total_query_count = state_count * ACTION_COUNT
+        discrimination_query_coverage = eligible_query_count / total_query_count
+        physical_outcome_class_count = sum(
+            int(row["dense_physical_rank_class_count"]) for row in selected
+        )
+        return {
+            "state_count": state_count,
+            "eligible_query_count": eligible_query_count,
+            "total_query_count": total_query_count,
+            "discrimination_query_coverage": discrimination_query_coverage,
+            "physical_outcome_class_count": physical_outcome_class_count,
+            "maximum_physical_outcome_class_count": total_query_count,
+            "physical_outcome_class_coverage": (
+                physical_outcome_class_count / total_query_count
+            ),
+            "required_minimum_eligible_query_count": required_count,
+            "required_minimum_discrimination_query_coverage": (
+                required_count / total_query_count
+            ),
+            "passed": (
+                eligible_query_count >= required_count
+                and discrimination_query_coverage
+                >= TEXTURED_V03_MIN_DISCRIMINATION_QUERY_COVERAGE
+            ),
+        }
+
+    per_family: dict[str, dict[str, object]] = {}
+    for family in FAMILIES:
+        selected = [row for row in rows if row["family"] == family]
+        if len(selected) != TEXTURED_V03_CALIBRATION_STATES_PER_FAMILY:
+            raise CounterfactualPilotContractError(
+                f"textured-v03 calibrated {family} state count changed"
+            )
+        per_family[family] = summary(
+            selected,
+            required_count=TEXTURED_V03_MIN_ELIGIBLE_QUERIES_PER_FAMILY,
+        )
+    overall = summary(
+        rows, required_count=TEXTURED_V03_MIN_ELIGIBLE_QUERIES_OVERALL
+    )
+    all_families_passed = all(
+        row["passed"] is True for row in per_family.values()
+    )
+    return {
+        "definition": {
+            "query_eligibility_requires": {
+                "at_least_one_physically_nonequivalent_alternative": True,
+                "every_physically_nonequivalent_alternative_has_different_"
+                "executed_tape_class": True,
+                "every_physically_nonequivalent_alternative_has_different_"
+                "stored_rgb_pixel_class": True,
+                "both_observable_differences_required_for_every_physical_"
+                "alternative": True,
+            },
+            "physical_oracle_class_count_source": (
+                "dense_physical_rank_class_count"
+            ),
+            "physical_outcome_equivalence_tolerance_m": (
+                TEXTURED_V03_OUTCOME_EQUIVALENCE_TOLERANCE_M
+            ),
+            "aggregate_partition_nontriviality_is_diagnostic_only": True,
+            "physical_outcome_class_coverage_rule": (
+                "sum(dense_physical_rank_class_count)/(9*state_count)"
+            ),
+            "physical_outcome_class_coverage_is_diagnostic_only": True,
+        },
+        "requirements": {
+            "states_per_family": TEXTURED_V03_CALIBRATION_STATES_PER_FAMILY,
+            "queries_per_state": ACTION_COUNT,
+            "minimum_eligible_queries_per_family": (
+                TEXTURED_V03_MIN_ELIGIBLE_QUERIES_PER_FAMILY
+            ),
+            "minimum_eligible_queries_overall": (
+                TEXTURED_V03_MIN_ELIGIBLE_QUERIES_OVERALL
+            ),
+            "calibrated_minimum_discrimination_query_coverage": (
+                TEXTURED_V03_MIN_DISCRIMINATION_QUERY_COVERAGE
+            ),
+            "bounded_applicability_minimum_discrimination_query_coverage": (
+                BOUNDED_MIN_DISCRIMINATION_QUERY_COVERAGE
+            ),
+            "calibrated_discrimination_query_coverage_strictly_exceeds_"
+            "bounded_discrimination_query_coverage": True,
+        },
+        "overall": overall,
+        "per_family": per_family,
+        "all_families_passed": all_families_passed,
+        "passed": all_families_passed and overall["passed"] is True,
+    }
+
+
+def _validate_textured_v03_support_analysis(
+    value: object,
+) -> tuple[int, list[int], Mapping[str, object]]:
+    if not isinstance(value, Mapping) or set(value) != {
+        "schema",
+        "criterion",
+        "partition_names",
+        "state_measurements",
+        "calibrated_discrimination_query_coverage",
+        "overall",
+        "per_family",
+        "per_history",
+    }:
+        raise CounterfactualPilotContractError(
+            "textured-v03 candidate support analysis fields changed"
+        )
+    criterion = {
+        "aggregate_partition_nontrivial_diagnostic": {
+            "executed_tape_min_unique_count": 2,
+            "dense_physical_rank_min_class_count": 2,
+            "stored_rgb_pixels_min_unique_count": 2,
+            "all_three_required": True,
+            "gating": False,
+        },
+        "joint_query_eligibility": {
+            "physical_nonequivalent_alternative_required": True,
+            "all_physical_nonequivalent_alternatives_must_have_different_"
+            "executed_tape_class": True,
+            "all_physical_nonequivalent_alternatives_must_have_different_"
+            "stored_rgb_pixel_class": True,
+            "physical_outcome_equivalence_tolerance_m": (
+                TEXTURED_V03_OUTCOME_EQUIVALENCE_TOLERANCE_M
+            ),
+            "gating": True,
+        },
+    }
+    if (
+        value["schema"] != CANDIDATE_BRANCH_SUPPORT_ANALYSIS_SCHEMA
+        or value["criterion"] != criterion
+        or value["partition_names"]
+        != list(TEXTURED_V03_EQUIVALENCE_PARTITION_NAMES)
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 candidate support criterion changed"
+        )
+    raw_rows = value["state_measurements"]
+    if not isinstance(raw_rows, list) or len(raw_rows) != 16:
+        raise CounterfactualPilotContractError(
+            "textured-v03 candidate support state grid changed"
+        )
+    rows: list[dict[str, object]] = []
+    state_ids: set[str] = set()
+    for index, row in enumerate(raw_rows):
+        if not isinstance(row, Mapping) or set(row) != {
+            "state_id",
+            "family",
+            "history_action_ids",
+            "equivalence_unique_counts",
+            "dense_physical_rank_class_count",
+            "identifiable",
+            "joint_contrast_signatures_by_action",
+            "eligible_action_ids",
+            "eligible_action_count",
+        }:
+            raise CounterfactualPilotContractError(
+                f"textured-v03 support state row {index} changed"
+            )
+        state_id = row["state_id"]
+        family = row["family"]
+        history = row["history_action_ids"]
+        counts = row["equivalence_unique_counts"]
+        rank_count = row["dense_physical_rank_class_count"]
+        signatures = row["joint_contrast_signatures_by_action"]
+        eligible_action_ids = row["eligible_action_ids"]
+        eligible_action_count = row["eligible_action_count"]
+        if (
+            not isinstance(state_id, str)
+            or not state_id
+            or state_id in state_ids
+            or family not in FAMILIES
+            or not isinstance(history, list)
+            or not history
+            or any(
+                type(action_id) is not int or not 0 <= action_id < ACTION_COUNT
+                for action_id in history
+            )
+            or not isinstance(counts, Mapping)
+            or set(counts) != set(TEXTURED_V03_EQUIVALENCE_PARTITION_NAMES)
+            or any(
+                type(counts[name]) is not int
+                or not 1 <= counts[name] <= ACTION_COUNT
+                for name in TEXTURED_V03_EQUIVALENCE_PARTITION_NAMES
+            )
+            or type(rank_count) is not int
+            or not 1 <= rank_count <= ACTION_COUNT
+            or type(row["identifiable"]) is not bool
+            or not isinstance(signatures, list)
+            or len(signatures) != ACTION_COUNT
+            or not isinstance(eligible_action_ids, list)
+            or eligible_action_ids != sorted(eligible_action_ids)
+            or len(eligible_action_ids) != len(set(eligible_action_ids))
+            or any(
+                type(action_id) is not int
+                or not 0 <= action_id < ACTION_COUNT
+                for action_id in eligible_action_ids
+            )
+            or type(eligible_action_count) is not int
+            or eligible_action_count != len(eligible_action_ids)
+        ):
+            raise CounterfactualPilotContractError(
+                f"textured-v03 support state row {index} is invalid"
+            )
+        identifiable = (
+            counts["executed_tape"] >= 2
+            and rank_count >= 2
+            and counts["stored_rgb_pixels"] >= 2
+        )
+        if row["identifiable"] is not identifiable:
+            raise CounterfactualPilotContractError(
+                f"textured-v03 support state row {index} misclassifies identifiability"
+            )
+        normalized_signatures: list[dict[str, object]] = []
+        for action_id, signature in enumerate(signatures):
+            if (
+                not isinstance(signature, Mapping)
+                or set(signature)
+                != {
+                    "action_id",
+                    "executed_tape_class_sha256",
+                    "physical_outcome_class_key",
+                    "stored_rgb_pixel_class_sha256",
+                }
+                or signature.get("action_id") != action_id
+                or not _is_sha256(signature.get("executed_tape_class_sha256"))
+                or not _is_sha256(signature.get("stored_rgb_pixel_class_sha256"))
+                or not isinstance(signature.get("physical_outcome_class_key"), list)
+                or len(signature["physical_outcome_class_key"]) != 4
+                or any(
+                    type(component) is not int
+                    for component in signature["physical_outcome_class_key"]
+                )
+            ):
+                raise CounterfactualPilotContractError(
+                    f"textured-v03 support state row {index} joint signature changed"
+                )
+            normalized_signatures.append(dict(signature))
+        recomputed_eligible_action_ids: list[int] = []
+        for action_id, query in enumerate(normalized_signatures):
+            alternatives = [
+                candidate
+                for candidate in normalized_signatures
+                if candidate["physical_outcome_class_key"]
+                != query["physical_outcome_class_key"]
+            ]
+            if alternatives and all(
+                candidate["executed_tape_class_sha256"]
+                != query["executed_tape_class_sha256"]
+                and candidate["stored_rgb_pixel_class_sha256"]
+                != query["stored_rgb_pixel_class_sha256"]
+                for candidate in alternatives
+            ):
+                recomputed_eligible_action_ids.append(action_id)
+        if (
+            eligible_action_ids != recomputed_eligible_action_ids
+            or eligible_action_count != len(recomputed_eligible_action_ids)
+            or len({
+                signature["executed_tape_class_sha256"]
+                for signature in normalized_signatures
+            })
+            != counts["executed_tape"]
+            or len({
+                signature["stored_rgb_pixel_class_sha256"]
+                for signature in normalized_signatures
+            })
+            != counts["stored_rgb_pixels"]
+            or len({
+                tuple(signature["physical_outcome_class_key"])
+                for signature in normalized_signatures
+            })
+            != rank_count
+        ):
+            raise CounterfactualPilotContractError(
+                f"textured-v03 support state row {index} joint eligibility changed"
+            )
+        state_ids.add(state_id)
+        rows.append(dict(row))
+
+    overall = _textured_v03_support_summary(rows)
+    per_family = {
+        family: _textured_v03_support_summary(
+            [row for row in rows if row["family"] == family]
+        )
+        for family in sorted({str(row["family"]) for row in rows})
+    }
+    histories = sorted({tuple(row["history_action_ids"]) for row in rows})
+    per_history = [
+        {
+            "history_action_ids": list(history),
+            "summary": _textured_v03_support_summary(
+                [
+                    row
+                    for row in rows
+                    if tuple(row["history_action_ids"]) == history
+                ]
+            ),
+        }
+        for history in histories
+    ]
+    if (
+        value["overall"] != overall
+        or value["per_family"] != per_family
+        or value["per_history"] != per_history
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 support distributions disagree with state measurements"
+        )
+    calibrated_coverage = _textured_v03_discrimination_query_coverage(rows)
+    if value["calibrated_discrimination_query_coverage"] != calibrated_coverage:
+        raise CounterfactualPilotContractError(
+            "textured-v03 discrimination-query coverage disagrees with states"
+        )
+    identifiable_count = int(
+        overall["identifiability"]["identifiable_state_count"]  # type: ignore[index]
+    )
+    rank_counts = [int(row["dense_physical_rank_class_count"]) for row in rows]
+    return identifiable_count, rank_counts, MappingProxyType(calibrated_coverage)
+
+
+def _validate_textured_v03_calibration_receipt(
+    receipt: Mapping[str, object],
+    *,
+    normalized_binding: Mapping[str, object],
+    top_contract: object,
+    synthetic_test_mode: bool,
+) -> Mapping[str, object]:
+    expected = {
+        "schema",
+        "status",
+        "citable_as_scientific_evidence",
+        "authorizes_retry_or_resume",
+        "calibration_id",
+        "role",
+        "train_eval_scenes_accessed",
+        "decision",
+        "calibration_collection_receipt",
+        "visual_domain_parity_prerequisites",
+        "calibration_contract",
+        "repeatability_analysis",
+        "technical_integrity",
+        "physics_validation",
+        "visual_validation",
+        "candidate_branch_support_analysis",
+        "resource_measurements",
+        "analyzer_binding",
+        "checker_binding",
+        "source_bindings",
+    }
+    if set(receipt) != expected:
+        raise CounterfactualPilotContractError(
+            "textured-v03 calibration receipt fields changed"
+        )
+    if (
+        receipt["schema"] != TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA
+        or receipt["status"] != "COMPLETE"
+        or receipt["citable_as_scientific_evidence"] is not False
+        or receipt["authorizes_retry_or_resume"] is not False
+        or not isinstance(receipt["calibration_id"], str)
+        or not receipt["calibration_id"]
+        or receipt["role"] != "calibration"
+        or receipt["train_eval_scenes_accessed"] is not False
+        or receipt["decision"] != "FREEZE_PILOT_CONTRACT"
+        or receipt["calibration_contract"] != top_contract
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 calibration status, identity, or contract changed"
+        )
+    _validate_calibration_contract(
+        receipt["calibration_contract"], textured_v03=True
+    )
+    _validate_inert_binding(
+        receipt["calibration_collection_receipt"],
+        name="textured-v03 calibration collection receipt",
+        synthetic_test_mode=synthetic_test_mode,
+        require_absolute=True,
+    )
+    prerequisites = receipt["visual_domain_parity_prerequisites"]
+    if not isinstance(prerequisites, Mapping) or set(prerequisites) != {
+        "result_binding",
+        "terminal_binding",
+        "review_binding",
+    }:
+        raise CounterfactualPilotContractError(
+            "textured-v03 calibration parity prerequisite fields changed"
+        )
+    normalized_prerequisites = {
+        name: _validate_inert_binding(
+            prerequisites[name],
+            name=f"textured-v03 calibration parity {name}",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        for name in ("result_binding", "terminal_binding", "review_binding")
+    }
+    try:
+        deep_prerequisites = producer_contract.validate_textured_v03_parity_prerequisites(
+            result_binding=normalized_prerequisites["result_binding"],
+            terminal_binding=normalized_prerequisites["terminal_binding"],
+            review_binding=normalized_prerequisites["review_binding"],
+        )
+    except producer_contract.PilotContractError as exc:
+        if not synthetic_test_mode:
+            raise CounterfactualPilotContractError(str(exc)) from exc
+    else:
+        if deep_prerequisites != normalized_prerequisites:
+            raise CounterfactualPilotContractError(
+                "textured-v03 calibration deep parity prerequisites changed"
+            )
+
+    contract = receipt["calibration_contract"]
+    assert isinstance(contract, Mapping)
+    derivation = contract["tolerance_derivation"]
+    assert isinstance(derivation, Mapping)
+    repeated_action_ids = derivation["repeated_action_ids"]
+    repeatability = receipt["repeatability_analysis"]
+    if not isinstance(repeatability, Mapping) or set(repeatability) != {
+        "repeat_controls",
+        "repeated_action_ids",
+        "all_requested_primitives_covered",
+        "interpretation",
+        "empirical_noise_scale_estimated",
+        "progress_max_abs_delta_m",
+        "path_length_max_abs_delta_m",
+        "endpoint_position_max_abs_delta_m",
+        "endpoint_quaternion_max_abs_delta",
+        "executed_command_tapes_exact",
+        "physical_trajectories_exact",
+        "stored_rgb_exact",
+    }:
+        raise CounterfactualPilotContractError(
+            "textured-v03 repeatability analysis fields changed"
+        )
+    if (
+        repeatability["repeat_controls"] != 16
+        or repeatability["repeated_action_ids"] != repeated_action_ids
+        or repeatability["all_requested_primitives_covered"] is not True
+        or repeatability["interpretation"]
+        != "deterministic_replay_gate_not_empirical_noise_estimate"
+        or repeatability["empirical_noise_scale_estimated"] is not False
+        or any(
+            repeatability[name] != 0.0
+            for name in (
+                "progress_max_abs_delta_m",
+                "path_length_max_abs_delta_m",
+                "endpoint_position_max_abs_delta_m",
+                "endpoint_quaternion_max_abs_delta",
+            )
+        )
+        or repeatability["executed_command_tapes_exact"] is not True
+        or repeatability["physical_trajectories_exact"] is not True
+        or repeatability["stored_rgb_exact"] is not True
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 repeatability evidence changed"
+        )
+
+    (
+        identifiable_count,
+        rank_counts,
+        calibrated_coverage,
+    ) = _validate_textured_v03_support_analysis(
+        receipt["candidate_branch_support_analysis"]
+    )
+    if calibrated_coverage["passed"] is not True:
+        raise CounterfactualPilotContractError(
+            "textured-v03 calibration froze without calibrated discrimination "
+            "support"
+        )
+    integrity = receipt["technical_integrity"]
+    if not isinstance(integrity, Mapping) or integrity != {
+        "receipt_checker_passed": True,
+        "candidate_response_audit_v2_validated": True,
+        "sentinel_command_endpoint_and_rgb_exact": True,
+        "hard_invalid_frames": 0,
+    }:
+        raise CounterfactualPilotContractError(
+            "textured-v03 technical integrity evidence changed"
+        )
+    physics = receipt["physics_validation"]
+    if not isinstance(physics, Mapping) or set(physics) != {
+        "receipt_checker_passed",
+        "common_prefix_exact",
+        "candidate_equivalence_measured_not_rejected",
+        "minimum_physical_rank_classes_per_state",
+        "maximum_physical_rank_classes_per_state",
+        "identifiable_state_count",
+        "clipped_candidate_branches",
+        "physics_validated_for_branch_outcomes",
+    }:
+        raise CounterfactualPilotContractError(
+            "textured-v03 physics validation fields changed"
+        )
+    if (
+        physics["receipt_checker_passed"] is not True
+        or physics["common_prefix_exact"] is not True
+        or physics["candidate_equivalence_measured_not_rejected"] is not True
+        or physics["minimum_physical_rank_classes_per_state"] != min(rank_counts)
+        or physics["maximum_physical_rank_classes_per_state"] != max(rank_counts)
+        or physics["identifiable_state_count"] != identifiable_count
+        or type(physics["clipped_candidate_branches"]) is not int
+        or physics["clipped_candidate_branches"] < 0
+        or physics["physics_validated_for_branch_outcomes"] is not True
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 physics validation evidence changed"
+        )
+    if receipt["visual_validation"] != {
+        "camera_quality_receipts_passed": True,
+        "endpoint_pose_replay_bound": True,
+        "textured_v03_render_contract_validated": True,
+        "visual_domain_fidelity_claimed": False,
+        "eligible_for_physical_branch_evaluation": True,
+        "eligible_for_visual_domain_parity_claim": False,
+    }:
+        raise CounterfactualPilotContractError(
+            "textured-v03 visual validation evidence changed"
+        )
+
+    resources = receipt["resource_measurements"]
+    if not isinstance(resources, Mapping) or set(resources) != {
+        "schema",
+        "stored_rgb_png",
+        "low_information_strata",
+        "stage_wall_seconds",
+        "outcome_counts",
+        "gpu_peak_memory_measurement_scope",
+    }:
+        raise CounterfactualPilotContractError(
+            "textured-v03 resource measurement fields changed"
+        )
+    stored_rgb = resources["stored_rgb_png"]
+    low_information = resources["low_information_strata"]
+    stages = resources["stage_wall_seconds"]
+    outcomes = resources["outcome_counts"]
+    if (
+        resources["schema"] != TEXTURED_V03_RESOURCE_MEASUREMENTS_SCHEMA
+        or resources["gpu_peak_memory_measurement_scope"]
+        != "external_terminal_required_not_observed_by_analyzer"
+        or not isinstance(stored_rgb, Mapping)
+        or set(stored_rgb) != {
+            "context_frames",
+            "context_bytes",
+            "target_frames",
+            "target_bytes",
+            "total_frames",
+            "total_bytes",
+            "raw_uncompressed_rgb_ceiling_bytes",
+        }
+        or stored_rgb["context_frames"] != 48
+        or stored_rgb["target_frames"] != 160
+        or stored_rgb["total_frames"] != 208
+        or any(
+            type(stored_rgb[name]) is not int or stored_rgb[name] < 0
+            for name in ("context_bytes", "target_bytes", "total_bytes")
+        )
+        or stored_rgb["total_bytes"]
+        != stored_rgb["context_bytes"] + stored_rgb["target_bytes"]
+        or stored_rgb["raw_uncompressed_rgb_ceiling_bytes"]
+        != 208 * 224 * 224 * 3
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 stored RGB resource evidence changed"
+        )
+    if (
+        not isinstance(low_information, Mapping)
+        or set(low_information) != {
+            "total_frames",
+            "context_frames",
+            "target_frames",
+            "reason_counts",
+            "context_reason_counts",
+            "target_reason_counts",
+            "frame_receipt_tags_present",
+            "hard_invalid_frames",
+        }
+        or any(
+            type(low_information[name]) is not int or low_information[name] < 0
+            for name in ("total_frames", "context_frames", "target_frames")
+        )
+        or low_information["total_frames"]
+        != low_information["context_frames"] + low_information["target_frames"]
+        or low_information["context_frames"] > 48
+        or low_information["target_frames"] > 160
+        or low_information["frame_receipt_tags_present"] is not True
+        or low_information["hard_invalid_frames"] != 0
+        or any(
+            not isinstance(low_information[name], Mapping)
+            or set(low_information[name]) != set(TEXTURED_V03_LOW_INFO_REASON_NAMES)
+            or any(type(count) is not int or count < 0 for count in low_information[name].values())
+            for name in ("reason_counts", "context_reason_counts", "target_reason_counts")
+        )
+        or any(
+            low_information["reason_counts"][reason]
+            != low_information["context_reason_counts"][reason]
+            + low_information["target_reason_counts"][reason]
+            or low_information["context_reason_counts"][reason]
+            > low_information["context_frames"]
+            or low_information["target_reason_counts"][reason]
+            > low_information["target_frames"]
+            for reason in TEXTURED_V03_LOW_INFO_REASON_NAMES
+        )
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 low-information resource evidence changed"
+        )
+    expected_stage_fields = {
+        "collection_external_wall_seconds",
+        "physics_scene_build_wall_seconds",
+        "render_scene_build_wall_seconds",
+        "common_prefix_step_wall_seconds",
+        "branch_step_wall_seconds",
+        "native_render_wall_seconds",
+        "camera_quality_resize_wall_seconds",
+        "png_encode_write_hash_wall_seconds",
+        "post_lockstep_receipt_wall_seconds",
+        "summed_scene_total_wall_seconds",
+    }
+    expected_outcome_fields = {
+        "complete_all_nine_action_groups",
+        "candidate_response_audited_groups",
+        "prebranch_exact_groups",
+        "identifiable_groups",
+        "clipped_candidate_branches",
+        "fallen_candidate_branches",
+        "tipped_candidate_branches",
+        "camera_invalid_frames",
+        "incomplete_states",
+    }
+    if (
+        not isinstance(stages, Mapping)
+        or set(stages) != expected_stage_fields
+        or any(
+            _finite(number, name=f"calibration stage {name}") < 0.0
+            for name, number in stages.items()
+        )
+        or not isinstance(outcomes, Mapping)
+        or set(outcomes) != expected_outcome_fields
+        or any(type(number) is not int or number < 0 for number in outcomes.values())
+        or outcomes["complete_all_nine_action_groups"] != 16
+        or outcomes["candidate_response_audited_groups"] != 16
+        or outcomes["prebranch_exact_groups"] != 16
+        or outcomes["identifiable_groups"] != identifiable_count
+        or outcomes["clipped_candidate_branches"]
+        != physics["clipped_candidate_branches"]
+        or outcomes["camera_invalid_frames"] != 0
+        or outcomes["incomplete_states"] != 0
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 stage/outcome resource evidence changed"
+        )
+
+    analyzer_binding = _validate_inert_binding(
+        receipt["analyzer_binding"],
+        name="calibration analyzer",
+        synthetic_test_mode=synthetic_test_mode,
+        require_absolute=True,
+    )
+    checker_binding = _validate_inert_binding(
+        receipt["checker_binding"],
+        name="calibration checker",
+        synthetic_test_mode=synthetic_test_mode,
+        require_absolute=True,
+    )
+    sources = receipt["source_bindings"]
+    expected_names = ["checker", "calibration_analyzer", "pilot_joiner"]
+    if (
+        not isinstance(sources, list)
+        or [
+            entry.get("name") if isinstance(entry, Mapping) else None
+            for entry in sources
+        ]
+        != expected_names
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 calibration source closure changed"
+        )
+    normalized_sources = []
+    for entry in sources:
+        if not isinstance(entry, Mapping) or set(entry) != {"name", "binding"}:
+            raise CounterfactualPilotContractError(
+                "textured-v03 calibration source binding is malformed"
+            )
+        normalized_sources.append(
+            _validate_inert_binding(
+                entry["binding"],
+                name=f"calibration source {entry['name']}",
+                synthetic_test_mode=synthetic_test_mode,
+                require_absolute=True,
+            )
+        )
+    if (
+        normalized_sources[0] != checker_binding
+        or normalized_sources[1] != analyzer_binding
+    ):
+        raise CounterfactualPilotContractError(
+            "textured-v03 calibration analyzer/checker aliases changed"
+        )
+    return MappingProxyType({
+        "binding": MappingProxyType(dict(normalized_binding)),
+        "document": MappingProxyType(dict(receipt)),
+    })
+
+
 def _load_calibration_receipt(
     root: Path,
     binding: object,
@@ -1166,6 +2126,16 @@ def _load_calibration_receipt(
         root, binding, name="calibration receipt"
     )
     receipt = strict_json_loads(raw, name="calibration receipt")
+    if (
+        isinstance(receipt, Mapping)
+        and receipt.get("schema") == TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA
+    ):
+        return _validate_textured_v03_calibration_receipt(
+            receipt,
+            normalized_binding=normalized_binding,
+            top_contract=top_contract,
+            synthetic_test_mode=synthetic_test_mode,
+        )
     expected = {
         "schema",
         "status",
@@ -1389,6 +2359,193 @@ def _load_calibration_receipt(
     })
 
 
+def _load_calibration_collection_render_lineage_v1(
+    binding: object,
+    *,
+    synthetic_test_mode: bool,
+) -> tuple[Mapping[str, object] | None, int]:
+    """Reopen calibration metadata and derive its plan/state render lineage."""
+
+    normalized_binding = _validate_inert_binding(
+        binding,
+        name="calibration collection receipt",
+        synthetic_test_mode=synthetic_test_mode,
+        require_absolute=True,
+    )
+    selected = Path(str(normalized_binding["path"]))
+    if (
+        synthetic_test_mode
+        and selected.parts[:2] == ("/", "synthetic")
+        and not selected.exists()
+    ):
+        # Existing synthetic legacy bundles intentionally use inert provenance.
+        # Production mode and filesystem-backed integration fixtures never take
+        # this branch.
+        return None, 0
+    try:
+        from scripts import check_go2_world_model_counterfactual_pilot_v1 as checker
+
+        collection = checker.load_bound_collection_receipts(
+            selected,
+            expected_file_sha256=str(normalized_binding["file_sha256"]),
+            expected_byte_count=int(normalized_binding["byte_count"]),
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise CounterfactualPilotContractError(
+            "calibration collection metadata did not validate"
+        ) from exc
+    plan_wrapper = collection.get("plan")
+    plan = (
+        plan_wrapper.get("document")
+        if isinstance(plan_wrapper, Mapping)
+        else None
+    )
+    states = collection.get("states")
+    if (
+        not isinstance(plan, Mapping)
+        or not isinstance(states, Sequence)
+        or isinstance(states, (str, bytes))
+        or not states
+        or any(not isinstance(state, Mapping) for state in states)
+    ):
+        raise CounterfactualPilotContractError(
+            "calibration collection plan/state lineage is absent"
+        )
+    state_schemas = [
+        state.get("document", {}).get("schema")
+        if isinstance(state.get("document"), Mapping)
+        else None
+        for state in states
+    ]
+    parity_fields = (
+        "visual_domain_parity_result_binding",
+        "visual_domain_parity_terminal_binding",
+        "visual_domain_parity_review_binding",
+    )
+    present_parity_fields = {field for field in parity_fields if field in plan}
+    if plan.get("render_contract") == producer_contract.TEXTURED_V03_RENDER_CONTRACT:
+        if (
+            plan.get("purpose") != "sizing_calibration_textured_v03_v3"
+            or present_parity_fields != set(parity_fields)
+            or any(
+                schema != TEXTURED_V03_STATE_RECEIPT_SCHEMA
+                for schema in state_schemas
+            )
+        ):
+            raise CounterfactualPilotContractError(
+                "textured-v03 calibration plan/state lineage is partial"
+            )
+        result_binding = _validate_inert_binding(
+            plan["visual_domain_parity_result_binding"],
+            name="calibration collection visual-domain parity result",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        terminal_binding = _validate_inert_binding(
+            plan["visual_domain_parity_terminal_binding"],
+            name="calibration collection visual-domain parity terminal",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        review_binding = _validate_inert_binding(
+            plan["visual_domain_parity_review_binding"],
+            name="calibration collection visual-domain parity review",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        try:
+            deep_lineage = producer_contract.validate_textured_v03_parity_prerequisites(
+                result_binding=result_binding,
+                terminal_binding=terminal_binding,
+                review_binding=review_binding,
+            )
+        except producer_contract.PilotContractError as exc:
+            raise CounterfactualPilotContractError(str(exc)) from exc
+        if deep_lineage != {
+            "result_binding": result_binding,
+            "terminal_binding": terminal_binding,
+            "review_binding": review_binding,
+        }:
+            raise CounterfactualPilotContractError(
+                "calibration collection deep parity lineage changed"
+            )
+        profile = TEXTURED_V03_RENDER_PROFILE
+    elif plan.get("render_contract") == producer_contract.RENDER_CONTRACT:
+        if (
+            plan.get("purpose") != "sizing_calibration_only"
+            or present_parity_fields
+            or any(schema != STATE_RECEIPT_SCHEMA for schema in state_schemas)
+        ):
+            raise CounterfactualPilotContractError(
+                "legacy calibration plan/state lineage is partial"
+            )
+        profile = LEGACY_RENDER_PROFILE
+        result_binding = terminal_binding = review_binding = None
+    else:
+        raise CounterfactualPilotContractError(
+            "calibration collection render contract is unsupported"
+        )
+    return MappingProxyType({
+        "calibration_collection_receipt_binding": MappingProxyType(
+            normalized_binding
+        ),
+        "render_profile": profile,
+        "visual_domain_parity_result_binding": (
+            MappingProxyType(result_binding)
+            if result_binding is not None
+            else None
+        ),
+        "visual_domain_parity_terminal_binding": (
+            MappingProxyType(terminal_binding)
+            if terminal_binding is not None
+            else None
+        ),
+        "visual_domain_parity_review_binding": (
+            MappingProxyType(review_binding)
+            if review_binding is not None
+            else None
+        ),
+    }), len(states)
+
+
+def _validate_textured_v03_live_render_lineage_v1(
+    root: Path,
+    bindings: object,
+    *,
+    result_binding: Mapping[str, object],
+    terminal_binding: Mapping[str, object],
+    review_binding: Mapping[str, object],
+) -> int:
+    """Mirror the checker's V3 schema/triple boundary on exact bound bytes."""
+
+    if not isinstance(bindings, list) or not bindings:
+        raise CounterfactualPilotContractError(
+            "textured-v03 live-render receipt inventory is absent"
+        )
+    expected_lineage = {
+        "visual_domain_parity_result_binding": dict(result_binding),
+        "visual_domain_parity_terminal_binding": dict(terminal_binding),
+        "visual_domain_parity_review_binding": dict(review_binding),
+    }
+    for index, binding in enumerate(bindings):
+        raw, _ = _read_bound_file(
+            root, binding, name=f"textured-v03 live-render receipt {index}"
+        )
+        receipt = strict_json_loads(
+            raw, name=f"textured-v03 live-render receipt {index}"
+        )
+        if (
+            not isinstance(receipt, Mapping)
+            or receipt.get("schema")
+            != producer_contract.TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA
+            or any(receipt.get(name) != value for name, value in expected_lineage.items())
+        ):
+            raise CounterfactualPilotContractError(
+                "textured-v03 live-render V3 parity lineage changed"
+            )
+    return len(bindings)
+
+
 def _load_collection_receipt(
     root: Path,
     binding: object,
@@ -1397,8 +2554,15 @@ def _load_collection_receipt(
     top_action_catalog: object,
     top_source_bindings: Sequence[Mapping[str, object]],
     synthetic_test_mode: bool,
-) -> tuple[Mapping[str, Mapping[str, object]], int]:
-    raw, _ = _read_bound_file(root, binding, name="collection receipt")
+) -> tuple[
+    Mapping[str, Mapping[str, object]],
+    int,
+    Mapping[str, object],
+    int,
+]:
+    raw, normalized_collection_binding = _read_bound_file(
+        root, binding, name="collection receipt"
+    )
     collection = strict_json_loads(raw, name="collection receipt")
     expected = {
         "schema",
@@ -1538,6 +2702,11 @@ def _load_collection_receipt(
             "local plan receipt differs from the external authorized plan binding"
         )
     plan = strict_json_loads(plan_raw, name="pilot plan")
+    textured_v03 = (
+        isinstance(plan, Mapping)
+        and plan.get("render_contract")
+        == producer_contract.TEXTURED_V03_RENDER_CONTRACT
+    )
     plan_fields = {
         "schema",
         "attempt_id",
@@ -1557,6 +2726,13 @@ def _load_collection_receipt(
         "states",
         "expected_counts",
     }
+    if textured_v03:
+        plan_fields.update({
+            "texture_asset_bindings",
+            "visual_domain_parity_result_binding",
+            "visual_domain_parity_terminal_binding",
+            "visual_domain_parity_review_binding",
+        })
     if (
         not isinstance(plan, Mapping)
         or set(plan) != plan_fields
@@ -1581,6 +2757,56 @@ def _load_collection_receipt(
         raise CounterfactualPilotContractError(
             "bound pilot plan disagrees with the final pilot"
         )
+    if not textured_v03 and plan["render_contract"] != producer_contract.RENDER_CONTRACT:
+        raise CounterfactualPilotContractError("bound pilot render contract changed")
+    visual_domain_parity_result_binding: dict[str, object] | None = None
+    visual_domain_parity_terminal_binding: dict[str, object] | None = None
+    visual_domain_parity_review_binding: dict[str, object] | None = None
+    if textured_v03:
+        visual_domain_parity_result_binding = _validate_inert_binding(
+            plan["visual_domain_parity_result_binding"],
+            name="textured_v03 visual-domain parity result",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        visual_domain_parity_terminal_binding = _validate_inert_binding(
+            plan["visual_domain_parity_terminal_binding"],
+            name="textured_v03 visual-domain parity terminal",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        visual_domain_parity_review_binding = _validate_inert_binding(
+            plan["visual_domain_parity_review_binding"],
+            name="textured_v03 visual-domain parity review",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        texture_bindings = plan["texture_asset_bindings"]
+        if (
+            not isinstance(texture_bindings, list)
+            or len(texture_bindings)
+            != len(producer_contract.TEXTURED_V03_TEXTURE_RELATIVE_PATHS)
+        ):
+            raise CounterfactualPilotContractError(
+                "bound textured_v03 texture closure changed"
+            )
+        for relative, texture_binding in zip(
+            producer_contract.TEXTURED_V03_TEXTURE_RELATIVE_PATHS,
+            texture_bindings,
+            strict=True,
+        ):
+            normalized_texture = _validate_inert_binding(
+                texture_binding,
+                name=f"textured_v03 texture {relative}",
+                synthetic_test_mode=synthetic_test_mode,
+                require_absolute=True,
+            )
+            if Path(str(normalized_texture["path"])).resolve(strict=False) != (
+                REPO_ROOT / relative
+            ).resolve(strict=False):
+                raise CounterfactualPilotContractError(
+                    f"textured_v03 texture path changed: {relative}"
+                )
     plan_states = plan["states"]
     if [state.get("group_index") for state in plan_states] != list(
         range(len(plan_states))
@@ -1681,10 +2907,17 @@ def _load_collection_receipt(
             "render_sentinel_audit",
             "render_receipt_binding",
         }
+        if textured_v03:
+            required.add("candidate_response_audit")
+        expected_state_schema = (
+            TEXTURED_V03_STATE_RECEIPT_SCHEMA
+            if textured_v03
+            else STATE_RECEIPT_SCHEMA
+        )
         if (
             not isinstance(receipt, Mapping)
             or set(receipt) != required
-            or receipt["schema"] != STATE_RECEIPT_SCHEMA
+            or receipt["schema"] != expected_state_schema
             or receipt["attempt_id"] != attempt_id
             or receipt["status"] != "PHYSICS_COMPLETE"
             or receipt["physics_validated"] is not False
@@ -1729,13 +2962,355 @@ def _load_collection_receipt(
             raise CounterfactualPilotContractError(
                 "state receipt context or candidate grid changed"
             )
+        if textured_v03 and receipt["candidate_response_audit"] != (
+            _candidate_response_audit_from_branches(receipt["branches"])
+        ):
+            raise CounterfactualPilotContractError(
+                "state candidate response equivalence audit changed"
+            )
         state_id = str(state["state_id"])
         state_receipts[state_id] = receipt
     if set(state_receipts) != set(plan_by_id):
         raise CounterfactualPilotContractError(
             "collection state receipts do not exactly cover the plan"
         )
-    return MappingProxyType(state_receipts), len(state_receipts)
+    render_receipt_open_count = 0
+    if textured_v03:
+        try:
+            from scripts import check_go2_world_model_counterfactual_pilot_v1 as checker
+
+            checked_collection = checker.load_bound_collection_receipts(
+                root / str(normalized_collection_binding["path"]),
+                expected_file_sha256=str(
+                    normalized_collection_binding["file_sha256"]
+                ),
+                expected_byte_count=int(
+                    normalized_collection_binding["byte_count"]
+                ),
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise CounterfactualPilotContractError(
+                "textured-v03 collection render receipt inventory did not validate"
+            ) from exc
+        checked_states = checked_collection.get("states")
+        if (
+            checked_collection.get("document") != collection
+            or checked_collection.get("plan", {}).get("document") != plan
+            or not isinstance(checked_states, Sequence)
+            or [state.get("document") for state in checked_states]
+            != [
+                state_receipts[str(plan_state["state_id"])]
+                for plan_state in plan_states
+            ]
+        ):
+            raise CounterfactualPilotContractError(
+                "textured-v03 checker and dataset collection views differ"
+            )
+        render_receipt_open_count = (
+            _validate_textured_v03_live_render_lineage_v1(
+                root,
+                collection["render_receipt_bindings"],
+                result_binding=visual_domain_parity_result_binding,
+                terminal_binding=visual_domain_parity_terminal_binding,
+                review_binding=visual_domain_parity_review_binding,
+            )
+        )
+    return (
+        MappingProxyType(state_receipts),
+        len(state_receipts),
+        MappingProxyType({
+            "render_profile": (
+                TEXTURED_V03_RENDER_PROFILE
+                if textured_v03
+                else LEGACY_RENDER_PROFILE
+            ),
+            "visual_domain_parity_result_binding": (
+                MappingProxyType(visual_domain_parity_result_binding)
+                if visual_domain_parity_result_binding is not None
+                else None
+            ),
+            "visual_domain_parity_terminal_binding": (
+                MappingProxyType(visual_domain_parity_terminal_binding)
+                if visual_domain_parity_terminal_binding is not None
+                else None
+            ),
+            "visual_domain_parity_review_binding": (
+                MappingProxyType(visual_domain_parity_review_binding)
+                if visual_domain_parity_review_binding is not None
+                else None
+            ),
+        }),
+        render_receipt_open_count,
+    )
+
+
+def _validate_joined_render_lineage_v1(
+    *,
+    collection_lineage: object,
+    calibration_collection_lineage: object | None = None,
+    calibration_receipt: object,
+    manifest_render_profile: object,
+    manifest_visual_domain_parity_result_binding: object,
+    manifest_visual_domain_parity_terminal_binding: object,
+    manifest_visual_domain_parity_review_binding: object,
+    manifest_calibration_collection_receipt_binding: object,
+    synthetic_test_mode: bool,
+) -> Mapping[str, object]:
+    """Bind joined metadata to both independently opened producer receipts."""
+
+    expected_lineage_fields = {
+        "render_profile",
+        "visual_domain_parity_result_binding",
+        "visual_domain_parity_terminal_binding",
+        "visual_domain_parity_review_binding",
+    }
+    if (
+        not isinstance(collection_lineage, Mapping)
+        or set(collection_lineage) != expected_lineage_fields
+    ):
+        raise CounterfactualPilotContractError(
+            "collection render lineage fields changed"
+        )
+    collection_profile = collection_lineage["render_profile"]
+    if collection_profile not in {
+        LEGACY_RENDER_PROFILE,
+        TEXTURED_V03_RENDER_PROFILE,
+    }:
+        raise CounterfactualPilotContractError(
+            "collection render profile is unsupported"
+        )
+    if not isinstance(calibration_receipt, Mapping):
+        raise CounterfactualPilotContractError(
+            "calibration receipt wrapper is malformed"
+        )
+    receipt_document = calibration_receipt.get("document")
+    if not isinstance(receipt_document, Mapping):
+        raise CounterfactualPilotContractError(
+            "calibration receipt document is absent"
+        )
+    calibration_schema = receipt_document.get("schema")
+    if calibration_schema == TEXTURED_V03_CALIBRATION_RECEIPT_SCHEMA:
+        calibration_profile = TEXTURED_V03_RENDER_PROFILE
+    elif calibration_schema == CALIBRATION_RECEIPT_SCHEMA:
+        calibration_profile = LEGACY_RENDER_PROFILE
+    else:
+        raise CounterfactualPilotContractError(
+            "calibration receipt render profile is unsupported"
+        )
+    if collection_profile != calibration_profile:
+        raise CounterfactualPilotContractError(
+            "collection and calibration render profiles differ"
+        )
+    if calibration_profile == TEXTURED_V03_RENDER_PROFILE:
+        receipt_prerequisites = receipt_document.get(
+            "visual_domain_parity_prerequisites"
+        )
+        if (
+            not isinstance(receipt_prerequisites, Mapping)
+            or set(receipt_prerequisites)
+            != {"result_binding", "terminal_binding", "review_binding"}
+        ):
+            raise CounterfactualPilotContractError(
+                "calibration receipt parity prerequisites changed"
+            )
+        receipt_parity_result = _validate_inert_binding(
+            receipt_prerequisites["result_binding"],
+            name="calibration receipt visual-domain parity result",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        receipt_parity_terminal = _validate_inert_binding(
+            receipt_prerequisites["terminal_binding"],
+            name="calibration receipt visual-domain parity terminal",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        receipt_parity_review = _validate_inert_binding(
+            receipt_prerequisites["review_binding"],
+            name="calibration receipt visual-domain parity review",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+    else:
+        receipt_parity_result = receipt_parity_terminal = receipt_parity_review = None
+    if manifest_render_profile != collection_profile:
+        raise CounterfactualPilotContractError(
+            "joined manifest render profile differs from its collection"
+        )
+
+    receipt_calibration_collection_binding = _validate_inert_binding(
+        receipt_document.get("calibration_collection_receipt"),
+        name="calibration receipt collection source",
+        synthetic_test_mode=synthetic_test_mode,
+        require_absolute=True,
+    )
+    manifest_calibration_collection_binding = _validate_inert_binding(
+        manifest_calibration_collection_receipt_binding,
+        name="joined manifest calibration collection source",
+        synthetic_test_mode=synthetic_test_mode,
+        require_absolute=True,
+    )
+    if (
+        manifest_calibration_collection_binding
+        != receipt_calibration_collection_binding
+    ):
+        raise CounterfactualPilotContractError(
+            "joined manifest calibration collection lineage differs"
+        )
+
+    if calibration_collection_lineage is None:
+        if not synthetic_test_mode:
+            raise CounterfactualPilotContractError(
+                "reopened calibration collection lineage is absent"
+            )
+    else:
+        expected_calibration_lineage_fields = {
+            "calibration_collection_receipt_binding",
+            "render_profile",
+            "visual_domain_parity_result_binding",
+            "visual_domain_parity_terminal_binding",
+            "visual_domain_parity_review_binding",
+        }
+        if (
+            not isinstance(calibration_collection_lineage, Mapping)
+            or set(calibration_collection_lineage)
+            != expected_calibration_lineage_fields
+            or calibration_collection_lineage[
+                "calibration_collection_receipt_binding"
+            ]
+            != receipt_calibration_collection_binding
+            or calibration_collection_lineage["render_profile"]
+            != collection_profile
+        ):
+            raise CounterfactualPilotContractError(
+                "reopened calibration collection lineage differs"
+            )
+
+    collection_parity_result = collection_lineage[
+        "visual_domain_parity_result_binding"
+    ]
+    collection_parity_terminal = collection_lineage[
+        "visual_domain_parity_terminal_binding"
+    ]
+    collection_parity_review = collection_lineage[
+        "visual_domain_parity_review_binding"
+    ]
+    if collection_profile == TEXTURED_V03_RENDER_PROFILE:
+        normalized_collection_parity_result = _validate_inert_binding(
+            collection_parity_result,
+            name="collection visual-domain parity result",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        normalized_manifest_parity_result = _validate_inert_binding(
+            manifest_visual_domain_parity_result_binding,
+            name="joined manifest visual-domain parity result",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        normalized_collection_parity_terminal = _validate_inert_binding(
+            collection_parity_terminal,
+            name="collection visual-domain parity terminal",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        normalized_manifest_parity_terminal = _validate_inert_binding(
+            manifest_visual_domain_parity_terminal_binding,
+            name="joined manifest visual-domain parity terminal",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        normalized_collection_parity_review = _validate_inert_binding(
+            collection_parity_review,
+            name="collection visual-domain parity review",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        normalized_manifest_parity_review = _validate_inert_binding(
+            manifest_visual_domain_parity_review_binding,
+            name="joined manifest visual-domain parity review",
+            synthetic_test_mode=synthetic_test_mode,
+            require_absolute=True,
+        )
+        if (
+            normalized_manifest_parity_result
+            != normalized_collection_parity_result
+            or normalized_manifest_parity_terminal
+            != normalized_collection_parity_terminal
+            or normalized_manifest_parity_review
+            != normalized_collection_parity_review
+            or receipt_parity_result != normalized_collection_parity_result
+            or receipt_parity_terminal != normalized_collection_parity_terminal
+            or receipt_parity_review != normalized_collection_parity_review
+        ):
+            raise CounterfactualPilotContractError(
+                "joined manifest visual-domain parity lineage differs"
+            )
+        if calibration_collection_lineage is not None and (
+            calibration_collection_lineage[
+                "visual_domain_parity_result_binding"
+            ]
+            != normalized_collection_parity_result
+            or calibration_collection_lineage[
+                "visual_domain_parity_terminal_binding"
+            ]
+            != normalized_collection_parity_terminal
+            or calibration_collection_lineage[
+                "visual_domain_parity_review_binding"
+            ]
+            != normalized_collection_parity_review
+        ):
+            raise CounterfactualPilotContractError(
+                "bounded and calibration collection parity lineage differs"
+            )
+    else:
+        if (
+            collection_parity_result is not None
+            or collection_parity_terminal is not None
+            or collection_parity_review is not None
+            or manifest_visual_domain_parity_result_binding is not None
+            or manifest_visual_domain_parity_terminal_binding is not None
+            or manifest_visual_domain_parity_review_binding is not None
+        ):
+            raise CounterfactualPilotContractError(
+                "legacy render lineage cannot carry textured-v03 parity"
+            )
+        normalized_manifest_parity_result = None
+        normalized_manifest_parity_terminal = None
+        normalized_manifest_parity_review = None
+        if calibration_collection_lineage is not None and any(
+            calibration_collection_lineage[field] is not None
+            for field in (
+                "visual_domain_parity_result_binding",
+                "visual_domain_parity_terminal_binding",
+                "visual_domain_parity_review_binding",
+            )
+        ):
+            raise CounterfactualPilotContractError(
+                "legacy calibration collection cannot carry textured-v03 parity"
+            )
+
+    return MappingProxyType({
+        "render_profile": collection_profile,
+        "visual_domain_parity_result_binding": (
+            MappingProxyType(normalized_manifest_parity_result)
+            if normalized_manifest_parity_result is not None
+            else None
+        ),
+        "visual_domain_parity_terminal_binding": (
+            MappingProxyType(normalized_manifest_parity_terminal)
+            if normalized_manifest_parity_terminal is not None
+            else None
+        ),
+        "visual_domain_parity_review_binding": (
+            MappingProxyType(normalized_manifest_parity_review)
+            if normalized_manifest_parity_review is not None
+            else None
+        ),
+        "calibration_collection_receipt_binding": MappingProxyType(
+            manifest_calibration_collection_binding
+        ),
+    })
 
 
 def load_bound_pilot_v1(
@@ -1786,11 +3361,16 @@ def load_bound_pilot_v1(
         "action_catalog",
         "action_contract",
         "calibration_contract",
+        "calibration_collection_receipt_binding",
         "calibration_receipt",
+        "render_profile",
         "roles",
         "rgb_artifact_manifest",
         "source_bindings",
         "collection_receipt",
+        "visual_domain_parity_result_binding",
+        "visual_domain_parity_terminal_binding",
+        "visual_domain_parity_review_binding",
     }
     if not isinstance(manifest, Mapping) or set(manifest) != expected_manifest_fields:
         raise CounterfactualPilotContractError("pilot manifest fields are incomplete")
@@ -1877,7 +3457,12 @@ def load_bound_pilot_v1(
     collection_path = _safe_path(root, collection_relative, final_file=True)
     if not collection_path.is_relative_to(receipt_root):
         raise CounterfactualPilotContractError("collection receipt escapes receipt_root")
-    collection_states, state_receipt_open_count = _load_collection_receipt(
+    (
+        collection_states,
+        state_receipt_open_count,
+        collection_render_lineage,
+        render_receipt_open_count,
+    ) = _load_collection_receipt(
         root,
         collection_binding,
         attempt_id=manifest["attempt_id"],
@@ -1885,15 +3470,61 @@ def load_bound_pilot_v1(
         top_source_bindings=source_bindings,
         synthetic_test_mode=synthetic_test_mode,
     )
+    textured_v03 = (
+        collection_render_lineage["render_profile"]
+        == TEXTURED_V03_RENDER_PROFILE
+    )
+    all_states_textured_v03 = bool(collection_states) and all(
+        state.get("schema") == TEXTURED_V03_STATE_RECEIPT_SCHEMA
+        for state in collection_states.values()
+    )
+    if all_states_textured_v03 is not textured_v03:
+        raise CounterfactualPilotContractError(
+            "collection plan and state render profiles differ"
+        )
+    if any(
+        (state.get("schema") == TEXTURED_V03_STATE_RECEIPT_SCHEMA)
+        != textured_v03
+        for state in collection_states.values()
+    ):
+        raise CounterfactualPilotContractError(
+            "collection mixes legacy and textured_v03 state schemas"
+        )
 
     excluded, tolerances = _validate_calibration_contract(
-        manifest["calibration_contract"]
+        manifest["calibration_contract"], textured_v03=textured_v03
     )
     calibration_receipt = _load_calibration_receipt(
         root,
         manifest["calibration_receipt"],
         attempt_id=manifest["attempt_id"],
         top_contract=manifest["calibration_contract"],
+        synthetic_test_mode=synthetic_test_mode,
+    )
+    (
+        calibration_collection_lineage,
+        calibration_collection_state_receipt_open_count,
+    ) = _load_calibration_collection_render_lineage_v1(
+        calibration_receipt["document"]["calibration_collection_receipt"],
+        synthetic_test_mode=synthetic_test_mode,
+    )
+    _validate_joined_render_lineage_v1(
+        collection_lineage=collection_render_lineage,
+        calibration_collection_lineage=calibration_collection_lineage,
+        calibration_receipt=calibration_receipt,
+        manifest_render_profile=manifest["render_profile"],
+        manifest_visual_domain_parity_result_binding=manifest[
+            "visual_domain_parity_result_binding"
+        ],
+        manifest_visual_domain_parity_terminal_binding=manifest[
+            "visual_domain_parity_terminal_binding"
+        ],
+        manifest_visual_domain_parity_review_binding=manifest[
+            "visual_domain_parity_review_binding"
+        ],
+        manifest_calibration_collection_receipt_binding=manifest[
+            "calibration_collection_receipt_binding"
+        ],
         synthetic_test_mode=synthetic_test_mode,
     )
 
@@ -1913,7 +3544,7 @@ def load_bound_pilot_v1(
     artifact_paths = set()
     frame_identities = set()
     for item in rgb_manifest["artifacts"]:
-        if not isinstance(item, Mapping) or set(item) != {
+        artifact_fields = {
             "artifact_id",
             "frame_identity",
             "path",
@@ -1926,7 +3557,10 @@ def load_bound_pilot_v1(
             "camera_valid",
             "low_information",
             "low_info_reasons",
-        }:
+        }
+        if textured_v03:
+            artifact_fields.add("pixel_sha256")
+        if not isinstance(item, Mapping) or set(item) != artifact_fields:
             raise CounterfactualPilotContractError("RGB artifact receipt changed")
         artifact_id = item["artifact_id"]
         if not isinstance(artifact_id, str) or not artifact_id or artifact_id in artifacts:
@@ -1947,6 +3581,7 @@ def load_bound_pilot_v1(
             or not isinstance(item["low_info_reasons"], list)
             or any(
                 reason not in {
+                    "camera_safety_unresolved",
                     "low_rgb_texture",
                     "near_wall_depth",
                     "near_forward_geometry",
@@ -1959,6 +3594,7 @@ def load_bound_pilot_v1(
             or not isinstance(item["frame_identity"], str)
             or not item["frame_identity"]
             or not _is_sha256(item["file_sha256"])
+            or (textured_v03 and not _is_sha256(item["pixel_sha256"]))
         ):
             raise CounterfactualPilotContractError("RGB artifact media contract changed")
         artifact_path = _safe_path(root, relative, final_file=True)
@@ -1975,6 +3611,7 @@ def load_bound_pilot_v1(
             relative_path=relative.as_posix(),
             byte_count=artifact_byte_count,
             file_sha256=item["file_sha256"],
+            pixel_sha256=(item["pixel_sha256"] if textured_v03 else None),
             low_information=item["low_information"],
             low_info_reasons=tuple(item["low_info_reasons"]),
         )
@@ -2129,7 +3766,14 @@ def load_bound_pilot_v1(
             "collection_receipt_open_count": 1,
             "plan_receipt_open_count": 1,
             "state_receipt_open_count": state_receipt_open_count,
+            "render_receipt_open_count": render_receipt_open_count,
             "calibration_receipt_open_count": 1,
+            "calibration_collection_receipt_open_count": (
+                1 if calibration_collection_lineage is not None else 0
+            ),
+            "calibration_collection_state_receipt_open_count": (
+                calibration_collection_state_receipt_open_count
+            ),
             "rgb_leaf_open_count": 0,
             "checkpoint_open_count": 0,
         }),
@@ -2140,7 +3784,13 @@ def read_bound_rgb_bytes_v1(
     bundle: CounterfactualPilotBundleV1,
     artifact_id: str,
 ) -> bytes:
-    """Read and hash one manifest-bound RGB leaf without following links."""
+    """Read and verify one manifest-bound RGB leaf without following links.
+
+    Textured-v03 leaves additionally have their PNG decoded and their exact
+    224x224 RGB raster hashed.  The receipt's raw-pixel identity is therefore
+    not trusted as a declaration when it is later used for joint query
+    eligibility.
+    """
     artifact = bundle.artifacts.get(artifact_id)
     if artifact is None:
         raise CounterfactualPilotContractError(f"unknown RGB artifact: {artifact_id}")
@@ -2183,6 +3833,47 @@ def read_bound_rgb_bytes_v1(
         raise CounterfactualPilotContractError(
             f"RGB artifact bytes changed: {artifact_id}"
         )
+    if artifact.pixel_sha256 is not None:
+        try:
+            from io import BytesIO
+            import numpy as np
+            from PIL import Image
+
+            with Image.open(BytesIO(raw)) as decoded:
+                if (
+                    decoded.format != "PNG"
+                    or decoded.mode != "RGB"
+                    or decoded.size != (224, 224)
+                    or getattr(decoded, "n_frames", 1) != 1
+                ):
+                    raise CounterfactualPilotContractError(
+                        f"RGB artifact decoded media changed: {artifact_id}"
+                    )
+                decoded.load()
+                decoded_pixels = np.asarray(decoded)
+                if (
+                    decoded_pixels.shape != (224, 224, 3)
+                    or decoded_pixels.dtype != np.uint8
+                ):
+                    raise CounterfactualPilotContractError(
+                        f"RGB artifact decoded pixel array changed: {artifact_id}"
+                    )
+                decoded_raw_pixels = np.ascontiguousarray(
+                    decoded_pixels
+                ).tobytes(order="C")
+        except CounterfactualPilotContractError:
+            raise
+        except Exception as exc:
+            raise CounterfactualPilotContractError(
+                f"RGB artifact cannot be decoded exactly: {artifact_id}"
+            ) from exc
+        if (
+            hashlib.sha256(decoded_raw_pixels).hexdigest()
+            != artifact.pixel_sha256
+        ):
+            raise CounterfactualPilotContractError(
+                f"RGB artifact decoded raw-pixel identity changed: {artifact_id}"
+            )
     return raw
 
 

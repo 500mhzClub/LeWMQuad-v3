@@ -34,6 +34,49 @@ PLAN_SCHEMA = "lewm_go2_world_model_counterfactual_pilot_plan_v1"
 STATE_RECEIPT_SCHEMA = (
     "lewm_go2_world_model_counterfactual_pilot_state_receipt_v1"
 )
+TEXTURED_V03_STATE_RECEIPT_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_pilot_state_receipt_v2"
+)
+TEXTURED_V03_LIVE_RENDER_RECEIPT_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_live_render_receipt_v2"
+)
+TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_live_render_receipt_v3"
+)
+TEXTURED_V03_CANDIDATE_RESPONSE_AUDIT_SCHEMA = (
+    "lewm_go2_world_model_counterfactual_candidate_response_audit_v2"
+)
+TEXTURED_V03_PARITY_RESULT_SCHEMA = (
+    "lewm_go2_world_model_bounded_branch_visual_domain_parity_result_v2"
+)
+TEXTURED_V03_PARITY_PASS_STATUS = (
+    "PASS_EXACT_TEXTURED_V03_IMPLEMENTATION_EQUIVALENCE"
+)
+TEXTURED_V03_PARITY_TERMINAL_SCHEMA = (
+    "lewm_go2_world_model_visual_domain_parity_supervision_terminal_v1"
+)
+TEXTURED_V03_PARITY_TERMINAL_SUCCESS_STATUS = (
+    "COMPLETE_PENDING_INDEPENDENT_PARITY_REVIEW"
+)
+TEXTURED_V03_PARITY_REVIEW_SCHEMA = (
+    "lewm_go2_world_model_bounded_branch_visual_domain_parity_independent_review_v3"
+)
+TEXTURED_V03_PARITY_REVIEW_PASS_STATUS = (
+    "PASS_INDEPENDENTLY_REVIEWED_EXACT_TEXTURED_V03_IMPLEMENTATION_EQUIVALENCE"
+)
+TEXTURED_V03_PARITY_REVIEW_CHECKS = (
+    "result_recomputed_from_bound_panels",
+    "historical_source_lineage_verified",
+    "candidate_authority_and_source_closure_verified",
+    "all_eight_families_exactly_once",
+    "all_32_reference_candidate_pairs_pixel_exact",
+    "all_32_candidate_duplicate_pairs_pixel_exact",
+    "candidate_frames_independently_rendered_not_copied",
+    "scene_pose_texture_and_source_lineage_exact",
+    "sensor_geometry_flags_alone_rejected_as_insufficient",
+    "no_statistical_inference_claimed",
+    "no_protected_material",
+)
 PHYSICS_RESULT_SCHEMA = (
     "lewm_go2_world_model_counterfactual_pilot_physics_result_v1"
 )
@@ -198,6 +241,11 @@ FAMILIES = (
 ROLES = ("calibration", "train", "eval")
 
 BRANCH_MECHANISM = "parallel_lockstep_envs_no_restore"
+TEXTURED_V03_RENDERER_SHA256 = (
+    "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d"
+)
+TEXTURED_V03_RENDERER_BYTE_COUNT = 9_590
+TEXTURED_V03_VISUAL_MODE = "textured_v03_exact_historical_sensor"
 RENDER_CONTRACT = {
     "native_resolution": [640, 480],
     "stored_resolution": [224, 224],
@@ -207,6 +255,50 @@ RENDER_CONTRACT = {
     "replay_pose_source": "captured_physical_base_pose",
     "physical_scene_rendering": False,
 }
+TEXTURED_V03_RENDER_CONTRACT = {
+    "native_resolution": [224, 224],
+    "stored_resolution": [224, 224],
+    "rgb_format": "png",
+    "depth_validation": "separate_transient_render_not_persisted",
+    "replay_env_mode": "single_non_batched_sequential",
+    "replay_pose_source": "captured_physical_base_pose_nominal_platform_mount",
+    "scene_geometry": "manifest_walls_obstacles_landmarks_no_robot_no_distractors",
+    "textures_enabled": True,
+    "genesis_yfov_deg": 78.323,
+    "camera_mount_policy": "nominal_no_scene_jitter_no_safety_retraction",
+    "visual_mode": TEXTURED_V03_VISUAL_MODE,
+    "historical_renderer_sha256": TEXTURED_V03_RENDERER_SHA256,
+    "historical_renderer_byte_count": TEXTURED_V03_RENDERER_BYTE_COUNT,
+    "physical_scene_rendering": False,
+}
+TEXTURED_V03_RENDER_PURPOSES = frozenset({
+    "bounded_wm_a_pilot",
+    "sizing_calibration_textured_v03_v3",
+})
+TEXTURED_V03_TEXTURE_RELATIVE_PATHS = (
+    "assets/textures/floor/Concrete034.jpg",
+    "assets/textures/floor/PavingStones131.jpg",
+    "assets/textures/floor/Tiles093.jpg",
+    "assets/textures/floor/WoodFloor043.jpg",
+    "assets/textures/obstacle/Cardboard004.jpg",
+    "assets/textures/obstacle/Concrete036.jpg",
+    "assets/textures/obstacle/Metal055A.jpg",
+    "assets/textures/obstacle/Wood067.jpg",
+    "assets/textures/wall/Bricks097.jpg",
+    "assets/textures/wall/Concrete045.jpg",
+    "assets/textures/wall/PaintedPlaster017.jpg",
+    "assets/textures/wall/Plaster001.jpg",
+)
+
+
+def render_contract_for_purpose(purpose: object) -> dict[str, Any]:
+    """Select a versioned render contract without rewriting legacy attempts."""
+
+    return dict(
+        TEXTURED_V03_RENDER_CONTRACT
+        if purpose in TEXTURED_V03_RENDER_PURPOSES
+        else RENDER_CONTRACT
+    )
 
 # The smoke supervisor removes every known accelerator/render selector from its
 # inherited environment and installs exactly this mapping in both the hardware
@@ -258,6 +350,17 @@ SYNC_COMPONENTS = (
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _STATE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,191}$")
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+_DIR_FLAGS = (
+    os.O_RDONLY
+    | getattr(os, "O_DIRECTORY", 0)
+    | getattr(os, "O_NOFOLLOW", 0)
+    | getattr(os, "O_CLOEXEC", 0)
+)
+_READ_FLAGS = (
+    os.O_RDONLY
+    | getattr(os, "O_NOFOLLOW", 0)
+    | getattr(os, "O_CLOEXEC", 0)
+)
 
 
 class PilotContractError(RuntimeError):
@@ -435,6 +538,78 @@ def require_binding(value: object, *, label: str) -> dict[str, Any]:
     return actual
 
 
+def read_bound_bytes(
+    path: Path,
+    *,
+    expected_sha256: str,
+    expected_byte_count: int,
+    label: str,
+) -> tuple[bytes, dict[str, Any]]:
+    """Read one absolute identity through one no-follow file descriptor."""
+
+    _validate_sha256(expected_sha256, label=f"expected {label} SHA-256")
+    if (
+        isinstance(expected_byte_count, bool)
+        or not isinstance(expected_byte_count, int)
+        or expected_byte_count < 0
+    ):
+        raise PilotContractError(f"expected {label} byte-count is invalid")
+    selected = Path(os.path.abspath(os.fspath(path)))
+    _validate_binding_shape(
+        {
+            "path": str(selected),
+            "file_sha256": expected_sha256,
+            "byte_count": expected_byte_count,
+        },
+        label=label,
+    )
+    parts = selected.parts
+    if not selected.is_absolute() or len(parts) < 2:
+        raise PilotContractError(f"{label} path must name one absolute file")
+    directory_fd: int | None = None
+    file_fd: int | None = None
+    try:
+        directory_fd = os.open(parts[0], _DIR_FLAGS)
+        for component in parts[1:-1]:
+            child_fd = os.open(component, _DIR_FLAGS, dir_fd=directory_fd)
+            os.close(directory_fd)
+            directory_fd = child_fd
+        file_fd = os.open(parts[-1], _READ_FLAGS, dir_fd=directory_fd)
+        before = os.fstat(file_fd)
+        if not stat.S_ISREG(before.st_mode):
+            raise PilotContractError(f"{label} is not a regular file")
+        chunks: list[bytes] = []
+        digest = hashlib.sha256()
+        while True:
+            chunk = os.read(file_fd, 4 * 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            digest.update(chunk)
+        after = os.fstat(file_fd)
+    except OSError as exc:
+        raise PilotContractError(f"cannot safely open {label}: {selected}") from exc
+    finally:
+        if file_fd is not None:
+            os.close(file_fd)
+        if directory_fd is not None:
+            os.close(directory_fd)
+    raw = b"".join(chunks)
+    if (
+        (before.st_dev, before.st_ino, before.st_size)
+        != (after.st_dev, after.st_ino, after.st_size)
+        or before.st_size != len(raw)
+        or len(raw) != expected_byte_count
+        or digest.hexdigest() != expected_sha256
+    ):
+        raise PilotContractError(f"{label} bytes or identity changed")
+    return raw, {
+        "path": str(selected),
+        "file_sha256": expected_sha256,
+        "byte_count": expected_byte_count,
+    }
+
+
 def read_bound_json(
     path: Path,
     *,
@@ -442,18 +617,12 @@ def read_bound_json(
     expected_byte_count: int,
     label: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    _validate_sha256(expected_sha256, label=f"expected {label} SHA-256")
-    binding = file_binding(path)
-    if (
-        isinstance(expected_byte_count, bool)
-        or not isinstance(expected_byte_count, int)
-        or expected_byte_count < 0
-        or binding["file_sha256"] != expected_sha256
-        or binding["byte_count"] != expected_byte_count
-    ):
-        raise PilotContractError(
-            f"{label} SHA-256/byte-count disagrees with expectation"
-        )
+    raw, binding = read_bound_bytes(
+        path,
+        expected_sha256=expected_sha256,
+        expected_byte_count=expected_byte_count,
+        label=label,
+    )
     def reject_constant(token: str) -> None:
         raise PilotContractError(f"{label} contains nonfinite JSON token {token}")
 
@@ -467,7 +636,7 @@ def read_bound_json(
 
     try:
         payload = json.loads(
-            Path(binding["path"]).read_text(encoding="utf-8"),
+            raw.decode("utf-8"),
             object_pairs_hook=unique_object,
             parse_constant=reject_constant,
         )
@@ -475,8 +644,6 @@ def read_bound_json(
         raise PilotContractError(f"{label} is not readable JSON") from exc
     if not isinstance(payload, dict):
         raise PilotContractError(f"{label} must be a JSON object")
-    if file_binding(Path(binding["path"])) != binding:
-        raise PilotContractError(f"{label} changed after JSON decoding")
     return payload, binding
 
 
@@ -486,7 +653,10 @@ def deterministic_sentinel_action_id(
     group_index: int | None = None,
     purpose: str = "source_integration_smoke",
 ) -> int:
-    if purpose == "sizing_calibration_only":
+    if purpose in (
+        "sizing_calibration_only",
+        "sizing_calibration_textured_v03_v3",
+    ):
         if type(group_index) is not int or group_index < 0:
             raise PilotContractError(
                 "rotating calibration sentinel requires a non-negative group_index"
@@ -596,6 +766,13 @@ def validate_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
 
     if not isinstance(plan, Mapping):
         raise PilotContractError("pilot plan must be an object")
+    purpose = plan.get("purpose")
+    textured_v03 = (
+        purpose in TEXTURED_V03_RENDER_PURPOSES
+        and isinstance(plan.get("render_contract"), Mapping)
+        and canonical_json_bytes(plan["render_contract"])
+        == canonical_json_bytes(TEXTURED_V03_RENDER_CONTRACT)
+    )
     required = {
         "schema",
         "attempt_id",
@@ -615,6 +792,19 @@ def validate_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
         "states",
         "expected_counts",
     }
+    if textured_v03:
+        required.update({
+            "texture_asset_bindings",
+            "visual_domain_parity_result_binding",
+        })
+    if textured_v03 and purpose in {
+        "sizing_calibration_textured_v03_v3",
+        "bounded_wm_a_pilot",
+    }:
+        required.update({
+            "visual_domain_parity_terminal_binding",
+            "visual_domain_parity_review_binding",
+        })
     if set(plan) != required:
         raise PilotContractError(
             "pilot plan field set changed; "
@@ -630,6 +820,7 @@ def validate_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
     if plan["purpose"] not in {
         "source_integration_smoke",
         "sizing_calibration_only",
+        "sizing_calibration_textured_v03_v3",
         "bounded_wm_a_pilot",
     }:
         raise PilotContractError("pilot purpose is unsupported")
@@ -680,6 +871,42 @@ def validate_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
         raise PilotContractError("runtime bindings are incomplete")
     for name, binding in runtime_bindings.items():
         _validate_binding_shape(binding, label=f"runtime binding {name}")
+    if textured_v03:
+        texture_bindings = plan["texture_asset_bindings"]
+        if not isinstance(texture_bindings, list) or len(texture_bindings) != len(
+            TEXTURED_V03_TEXTURE_RELATIVE_PATHS
+        ):
+            raise PilotContractError("textured_v03 texture asset closure changed")
+        for expected_relative, binding in zip(
+            TEXTURED_V03_TEXTURE_RELATIVE_PATHS,
+            texture_bindings,
+            strict=True,
+        ):
+            normalized = _validate_binding_shape(
+                binding, label=f"texture asset {expected_relative}"
+            )
+            if Path(normalized["path"]).resolve(strict=False) != (
+                _REPO_ROOT / expected_relative
+            ).resolve(strict=False):
+                raise PilotContractError(
+                    f"textured_v03 texture asset path changed: {expected_relative}"
+                )
+        _validate_binding_shape(
+            plan["visual_domain_parity_result_binding"],
+            label="textured_v03 visual-domain parity result",
+        )
+        if purpose in {
+            "sizing_calibration_textured_v03_v3",
+            "bounded_wm_a_pilot",
+        }:
+            _validate_binding_shape(
+                plan["visual_domain_parity_terminal_binding"],
+                label="textured_v03 visual-domain parity terminal",
+            )
+            _validate_binding_shape(
+                plan["visual_domain_parity_review_binding"],
+                label="textured_v03 visual-domain parity review",
+            )
     execution_contract = plan["execution_contract"]
     if not isinstance(execution_contract, Mapping) or set(execution_contract) != {
         "backend",
@@ -730,8 +957,13 @@ def validate_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
         execution_contract["graphics_preflight"]
     ) != canonical_json_bytes(GRAPHICS_PREFLIGHT_EXPECTATION):
         raise PilotContractError("graphics preflight expectation changed")
-    if canonical_json_bytes(plan["render_contract"]) != canonical_json_bytes(
+    expected_render_contract = (
         RENDER_CONTRACT
+        if purpose == "bounded_wm_a_pilot" and not textured_v03
+        else render_contract_for_purpose(purpose)
+    )
+    if canonical_json_bytes(plan["render_contract"]) != canonical_json_bytes(
+        expected_render_contract
     ):
         raise PilotContractError("render contract changed")
 
@@ -974,9 +1206,10 @@ def validate_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
         computed_counts
     ):
         raise PilotContractError("expected_counts disagree with the ordered state plan")
-    if plan["purpose"] == "sizing_calibration_only" and set(
-        computed_counts["roles"]
-    ) != {"calibration"}:
+    if plan["purpose"] in {
+        "sizing_calibration_only",
+        "sizing_calibration_textured_v03_v3",
+    } and set(computed_counts["roles"]) != {"calibration"}:
         raise PilotContractError("sizing calibration states must all use calibration role")
     if plan["purpose"] == "source_integration_smoke":
         required_smoke_counts = {
@@ -995,7 +1228,10 @@ def validate_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
                 "source integration smoke must be exactly one calibration scene, "
                 "one state, and ten branches"
             )
-    if plan["purpose"] == "sizing_calibration_only":
+    if plan["purpose"] in {
+        "sizing_calibration_only",
+        "sizing_calibration_textured_v03_v3",
+    }:
         if (
             states_per_scene != 2
             or computed_counts["scenes"] != 8
@@ -1281,9 +1517,221 @@ def validate_source_review(
     return dict(review)
 
 
+def validate_textured_v03_parity_prerequisites(
+    *,
+    result_binding: Mapping[str, Any],
+    terminal_binding: Mapping[str, Any],
+    review_binding: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Reopen the exact parity result, consumed attempt, and independent review."""
+
+    documents: dict[str, dict[str, Any]] = {}
+    bindings: dict[str, dict[str, Any]] = {}
+    for name, declared in (
+        ("result", result_binding),
+        ("terminal", terminal_binding),
+        ("review", review_binding),
+    ):
+        normalized = require_binding(declared, label=f"textured_v03 parity {name}")
+        value, actual = read_bound_json(
+            Path(str(normalized["path"])),
+            expected_sha256=str(normalized["file_sha256"]),
+            expected_byte_count=int(normalized["byte_count"]),
+            label=f"textured_v03 parity {name}",
+        )
+        if actual != normalized or not isinstance(value, Mapping):
+            raise PilotContractError(f"textured_v03 parity {name} changed")
+        documents[name] = dict(value)
+        bindings[name] = normalized
+    result = documents["result"]
+    if (
+        result.get("schema") != TEXTURED_V03_PARITY_RESULT_SCHEMA
+        or result.get("status") != TEXTURED_V03_PARITY_PASS_STATUS
+        or result.get("authority_granted_by_this_document") is not False
+        or result.get("scientific_claim_granted_by_this_document") is not False
+        or result.get("development_only") is not True
+        or result.get("protected_material_opened") is not False
+    ):
+        raise PilotContractError("textured_v03 parity result did not pass exactly")
+    terminal = documents["terminal"]
+    required_terminal = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_granted_by_this_document",
+        "authorizes_retry_or_resume",
+        "root_creation_consumes_attempt",
+        "reservation_records_consumed_attempt",
+        "attempt_id",
+        "plan_binding",
+        "authority_binding",
+        "reservation_binding",
+        "source_review_binding",
+        "source_commit",
+        "scene_result_bindings",
+        "generation_receipt_binding",
+        "candidate_panel_binding",
+        "parity_result_binding",
+        "graphics_preflight",
+        "disk_preflight",
+        "wall_seconds",
+        "wall_ceiling_seconds",
+        "total_output_bytes_before_terminal",
+        "completed_at",
+        "terminal_reviewer",
+    }
+    if (
+        set(terminal) != required_terminal
+        or terminal.get("schema") != TEXTURED_V03_PARITY_TERMINAL_SCHEMA
+        or terminal.get("status") != TEXTURED_V03_PARITY_TERMINAL_SUCCESS_STATUS
+        or terminal.get("authority_granted_by_this_document") is not False
+        or terminal.get("scientific_claim_granted_by_this_document") is not False
+        or terminal.get("authorizes_retry_or_resume") is not False
+        or terminal.get("root_creation_consumes_attempt") is not True
+        or terminal.get("reservation_records_consumed_attempt") is not True
+        or terminal.get("parity_result_binding") != bindings["result"]
+        or not isinstance(terminal.get("attempt_id"), str)
+        or not terminal["attempt_id"]
+        or not isinstance(terminal.get("scene_result_bindings"), list)
+        or len(terminal["scene_result_bindings"]) != len(FAMILIES)
+        or not isinstance(terminal.get("terminal_reviewer"), str)
+        or not terminal["terminal_reviewer"].strip()
+        or not isinstance(terminal.get("source_commit"), str)
+        or re.fullmatch(r"[0-9a-f]{40}", terminal["source_commit"]) is None
+    ):
+        raise PilotContractError("textured_v03 parity terminal did not pass exactly")
+    for field in ("wall_seconds", "wall_ceiling_seconds"):
+        value = terminal.get(field)
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            or float(value) <= 0.0
+        ):
+            raise PilotContractError("textured_v03 parity terminal wall changed")
+    if float(terminal["wall_seconds"]) > float(terminal["wall_ceiling_seconds"]):
+        raise PilotContractError("textured_v03 parity terminal exceeded its wall")
+    if (
+        type(terminal.get("total_output_bytes_before_terminal")) is not int
+        or terminal["total_output_bytes_before_terminal"] < 0
+    ):
+        raise PilotContractError("textured_v03 parity terminal byte count changed")
+    try:
+        completed_at = datetime.fromisoformat(
+            str(terminal["completed_at"]).replace("Z", "+00:00")
+        )
+    except ValueError as exc:
+        raise PilotContractError("textured_v03 parity terminal time changed") from exc
+    if completed_at.tzinfo is None:
+        raise PilotContractError("textured_v03 parity terminal time lacks timezone")
+    review = documents["review"]
+    required_review = {
+        "schema",
+        "status",
+        "authority_granted_by_this_document",
+        "scientific_claim_granted_by_this_document",
+        "result_binding",
+        "terminal_binding",
+        "reviewer",
+        "reviewed_at",
+        "checks",
+        "remaining_findings",
+    }
+    reviewer = review.get("reviewer") if isinstance(review, Mapping) else None
+    checks = review.get("checks") if isinstance(review, Mapping) else None
+    if (
+        set(review) != required_review
+        or review.get("schema") != TEXTURED_V03_PARITY_REVIEW_SCHEMA
+        or review.get("status") != TEXTURED_V03_PARITY_REVIEW_PASS_STATUS
+        or review.get("authority_granted_by_this_document") is not False
+        or review.get("scientific_claim_granted_by_this_document") is not False
+        or review.get("result_binding") != bindings["result"]
+        or review.get("terminal_binding") != bindings["terminal"]
+        or review.get("remaining_findings") != []
+        or not isinstance(reviewer, Mapping)
+        or set(reviewer) != {"identity", "independence_basis"}
+        or any(
+            not isinstance(reviewer[name], str) or not reviewer[name].strip()
+            for name in reviewer
+        )
+        or not isinstance(checks, Mapping)
+        or set(checks) != set(TEXTURED_V03_PARITY_REVIEW_CHECKS)
+        or any(checks[name] is not True for name in TEXTURED_V03_PARITY_REVIEW_CHECKS)
+        or not isinstance(review.get("reviewed_at"), str)
+        or not review["reviewed_at"].strip()
+    ):
+        raise PilotContractError(
+            "textured_v03 parity independent review did not pass exactly"
+        )
+    try:
+        reviewed_at = datetime.fromisoformat(
+            str(review["reviewed_at"]).replace("Z", "+00:00")
+        )
+    except ValueError as exc:
+        raise PilotContractError("textured_v03 parity review time changed") from exc
+    if reviewed_at.tzinfo is None:
+        raise PilotContractError("textured_v03 parity review time lacks timezone")
+    # Top-level terminal fields are not sufficient evidence that the one-shot
+    # attempt actually completed.  Import lazily to avoid the supervisor's
+    # normal module-level dependency on this contract, then re-open and
+    # recompute its full plan/authority/reservation/generation/scene lineage.
+    try:
+        from scripts import (  # noqa: PLC0415
+            run_go2_world_model_visual_domain_parity_authorized_v1
+            as parity_supervisor,
+        )
+    except ImportError as exc:
+        raise PilotContractError(
+            "textured_v03 parity deep validator is unavailable"
+        ) from exc
+    try:
+        deep = parity_supervisor.validate_success_terminal_v1(
+            terminal_binding=bindings["terminal"],
+            expected_result_binding=bindings["result"],
+        )
+    except parity_supervisor.VisualDomainParitySupervisionError as exc:
+        raise PilotContractError(
+            f"textured_v03 parity terminal lineage did not validate: {exc}"
+        ) from exc
+    if (
+        deep.get("terminal_binding") != bindings["terminal"]
+        or deep.get("result_binding") != bindings["result"]
+    ):
+        raise PilotContractError(
+            "textured_v03 parity terminal deep bindings changed"
+        )
+    return {
+        "result_binding": bindings["result"],
+        "terminal_binding": bindings["terminal"],
+        "review_binding": bindings["review"],
+    }
+
+
 def require_plan_bindings(plan: Mapping[str, Any]) -> None:
     for name, binding in plan["runtime_bindings"].items():
         require_binding(binding, label=f"runtime binding {name}")
+    if canonical_json_bytes(plan.get("render_contract")) == canonical_json_bytes(
+        TEXTURED_V03_RENDER_CONTRACT
+    ):
+        require_binding(
+            plan["visual_domain_parity_result_binding"],
+            label="textured_v03 visual-domain parity result",
+        )
+        for relative, binding in zip(
+            TEXTURED_V03_TEXTURE_RELATIVE_PATHS,
+            plan["texture_asset_bindings"],
+            strict=True,
+        ):
+            require_binding(binding, label=f"texture asset {relative}")
+        if plan.get("purpose") in {
+            "sizing_calibration_textured_v03_v3",
+            "bounded_wm_a_pilot",
+        }:
+            validate_textured_v03_parity_prerequisites(
+                result_binding=plan["visual_domain_parity_result_binding"],
+                terminal_binding=plan["visual_domain_parity_terminal_binding"],
+                review_binding=plan["visual_domain_parity_review_binding"],
+            )
     seen: set[tuple[str, str, int]] = set()
     for state in plan["states"]:
         if state["scene_generation"] is not None:
@@ -1884,6 +2332,23 @@ __all__ = [
     "RENDER_PLAN_INDEX_SCHEMA",
     "ROLES",
     "STATE_RECEIPT_SCHEMA",
+    "TEXTURED_V03_RENDERER_BYTE_COUNT",
+    "TEXTURED_V03_RENDERER_SHA256",
+    "TEXTURED_V03_CANDIDATE_RESPONSE_AUDIT_SCHEMA",
+    "TEXTURED_V03_LIVE_RENDER_RECEIPT_SCHEMA",
+    "TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA",
+    "TEXTURED_V03_PARITY_PASS_STATUS",
+    "TEXTURED_V03_PARITY_REVIEW_CHECKS",
+    "TEXTURED_V03_PARITY_REVIEW_PASS_STATUS",
+    "TEXTURED_V03_PARITY_REVIEW_SCHEMA",
+    "TEXTURED_V03_PARITY_RESULT_SCHEMA",
+    "TEXTURED_V03_PARITY_TERMINAL_SCHEMA",
+    "TEXTURED_V03_PARITY_TERMINAL_SUCCESS_STATUS",
+    "TEXTURED_V03_RENDER_CONTRACT",
+    "TEXTURED_V03_RENDER_PURPOSES",
+    "TEXTURED_V03_TEXTURE_RELATIVE_PATHS",
+    "TEXTURED_V03_VISUAL_MODE",
+    "TEXTURED_V03_STATE_RECEIPT_SCHEMA",
     "SMOKE_AUTHORITY_SCHEMA",
     "SOURCE_REVIEW_SCHEMA",
     "SYNC_COMPONENTS",
@@ -1900,6 +2365,8 @@ __all__ = [
     "lane_layout",
     "lane_count_for_role",
     "read_bound_json",
+    "read_bound_bytes",
+    "render_contract_for_purpose",
     "render_frame_identity",
     "require_binding",
     "require_plan_bindings",
@@ -1907,6 +2374,7 @@ __all__ = [
     "validate_plan",
     "validate_authority",
     "validate_source_review",
+    "validate_textured_v03_parity_prerequisites",
     "write_json_exclusive",
     "write_jsonl_exclusive",
 ]

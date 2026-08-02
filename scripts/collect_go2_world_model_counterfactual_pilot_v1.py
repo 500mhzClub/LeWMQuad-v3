@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 from collections import defaultdict
 import copy
+from dataclasses import replace
 from datetime import datetime
 import hashlib
 import json
@@ -43,6 +44,12 @@ COUNTERFACTUAL_QUALITY_SCHEMA = (
     "lewm_go2_world_model_counterfactual_frame_quality_v2"
 )
 COUNTERFACTUAL_LOW_INFO_REASON_NAMES = frozenset({
+    "camera_safety_unresolved",
+    "low_rgb_texture",
+    "near_wall_depth",
+    "near_forward_geometry",
+})
+LEGACY_COUNTERFACTUAL_LOW_INFO_REASON_NAMES = frozenset({
     "low_rgb_texture",
     "near_wall_depth",
     "near_forward_geometry",
@@ -67,6 +74,7 @@ _SANITIZED_SELECTOR_KEYS = {
     "MESA_VK_DEVICE_SELECT",
     "LD_LIBRARY_PATH",
     "LD_PRELOAD",
+    "LEWM_TEXTURE_ROOT",
     "PYTHONHOME",
     "PYTHONINSPECT",
     "PYTHONOPTIMIZE",
@@ -141,10 +149,37 @@ EXPECTED_SOURCE_PATHS = {
 if EXPECTED_SOURCE_PATHS != dict(pilot.AUTHORITY_SOURCE_PATHS):
     raise RuntimeError("collector and source-only authority path closures disagree")
 
+
+class _HistoricalTexturedV03RenderBuild:
+    """Isolated replay scene matching the RGB corpus' historical renderer."""
+
+    def __init__(
+        self,
+        *,
+        scene: Any,
+        camera: Any,
+        pack: Any,
+        visible_objects: tuple[Any, ...],
+        to_hwc_uint8: Any,
+    ) -> None:
+        self.scene = scene
+        self.camera = camera
+        self.pack = pack
+        self.visible_objects = visible_objects
+        self.to_hwc_uint8 = to_hwc_uint8
+        self.n_envs = 1
+        self.native_resolution = (224, 224)
+        self.stored_resolution = (224, 224)
+        self.visual_mode = pilot.TEXTURED_V03_VISUAL_MODE
+
 NON_SMOKE_AUTHORITY_CONTRACTS = {
     "sizing_calibration_only": (
         "lewm_go2_world_model_counterfactual_calibration_execution_authority_v2",
         "AUTHORIZED_ONE_EXACT_160_BRANCH_CALIBRATION_V2_SUCCESSOR",
+    ),
+    "sizing_calibration_textured_v03_v3": (
+        "lewm_go2_world_model_counterfactual_calibration_execution_authority_v3",
+        "AUTHORIZED_ONE_EXACT_160_BRANCH_TEXTURED_V03_CALIBRATION_V3",
     ),
 }
 NON_SMOKE_REQUIRED_SOURCES = frozenset({
@@ -164,6 +199,10 @@ NON_SMOKE_SOURCE_PATHS = {
         "scripts/run_go2_world_model_counterfactual_calibration_authorized_v1.py"
     ),
     "pilot_joiner": "scripts/join_go2_world_model_counterfactual_pilot_v1.py",
+    "historical_textured_v03_renderer": "scripts/render_replay_v03.py",
+    "visual_domain_parity_evaluator": (
+        "scripts/evaluate_go2_world_model_visual_domain_parity_v1.py"
+    ),
 }
 CALIBRATION_PREDECESSOR_FAILURE_RELATIVE = Path(
     "docs/lewm_go2_world_model_counterfactual_calibration_v1_terminal_failure_result_2026-08-02.json"
@@ -186,6 +225,26 @@ CALIBRATION_SUCCESSOR_ROOT = str(
     (
         ROOT
         / ".generated/dev/lewm-go2-wm-counterfactual-calibration-v2"
+    ).resolve()
+)
+CALIBRATION_V2_FAILURE_RELATIVE = Path(
+    "docs/lewm_go2_world_model_counterfactual_calibration_v2_terminal_failure_result_2026-08-02.json"
+)
+CALIBRATION_V2_ATTEMPT_ID = CALIBRATION_SUCCESSOR_ATTEMPT_ID
+CALIBRATION_V2_ROOT = CALIBRATION_SUCCESSOR_ROOT
+CALIBRATION_V2_TERMINAL_SHA256 = (
+    "292f6eafb2085110442c8a742315c3dd48f7add85c2ca5d40b497baded9c5cc1"
+)
+CALIBRATION_V2_TERMINAL_BYTE_COUNT = 3_766
+CALIBRATION_V2_PHYSICS_SHA256 = (
+    "f00e8f7977eff5aa9e8394fbe9a276ba15cd36f857bf50e61b886f02b2a9fe6d"
+)
+CALIBRATION_V2_PHYSICS_BYTE_COUNT = 26_094
+CALIBRATION_V3_ATTEMPT_ID = "lewm-go2-wm-counterfactual-calibration-v3-textured-v03"
+CALIBRATION_V3_ROOT = str(
+    (
+        ROOT
+        / ".generated/dev/lewm-go2-wm-counterfactual-calibration-v3-textured-v03"
     ).resolve()
 )
 
@@ -215,6 +274,8 @@ def _as_numpy(value: Any) -> np.ndarray:
 
 def _counterfactual_quality_disposition(
     raw_quality: Mapping[str, Any],
+    *,
+    textured_v03: bool = False,
 ) -> dict[str, Any]:
     """Separate retained low-information observations from hard corruption.
 
@@ -244,12 +305,13 @@ def _counterfactual_quality_disposition(
         or len(reasons) != len(set(reasons))
     ):
         raise pilot.PilotContractError("raw rendered-frame reasons are invalid")
-    low_info = [
-        reason for reason in reasons if reason in COUNTERFACTUAL_LOW_INFO_REASON_NAMES
-    ]
-    hard_failures = [
-        reason for reason in reasons if reason not in COUNTERFACTUAL_LOW_INFO_REASON_NAMES
-    ]
+    allowed_low_info = (
+        COUNTERFACTUAL_LOW_INFO_REASON_NAMES
+        if textured_v03
+        else LEGACY_COUNTERFACTUAL_LOW_INFO_REASON_NAMES
+    )
+    low_info = [reason for reason in reasons if reason in allowed_low_info]
+    hard_failures = [reason for reason in reasons if reason not in allowed_low_info]
     if bool(raw_quality["valid"]) != (not reasons):
         raise pilot.PilotContractError("raw rendered-frame validity disagrees with reasons")
     retained = not hard_failures
@@ -270,7 +332,7 @@ def _counterfactual_quality_disposition(
 def _expected_authority_caps(plan: Mapping[str, Any]) -> dict[str, Any]:
     counts = plan["expected_counts"]
     total_lanes = int(counts["total_branches"])
-    return {
+    caps = {
         "scenes": int(counts["scenes"]),
         "states": int(counts["states"]),
         "candidate_branches": int(counts["candidate_branches"]),
@@ -284,6 +346,116 @@ def _expected_authority_caps(plan: Mapping[str, Any]) -> dict[str, Any]:
         "native_render_calls": int(counts["context_frames"] + counts["target_frames"]),
         "stored_rgb_frames": int(counts["context_frames"] + counts["target_frames"]),
     }
+    if pilot.canonical_json_bytes(plan["render_contract"]) == pilot.canonical_json_bytes(
+        pilot.TEXTURED_V03_RENDER_CONTRACT
+    ):
+        caps.update({
+            "rgb_render_calls": int(
+                counts["context_frames"] + counts["target_frames"]
+            ),
+            "auxiliary_depth_render_calls": int(
+                counts["context_frames"] + counts["target_frames"]
+            ),
+        })
+    return caps
+
+
+def _validate_visual_domain_parity_result(
+    plan: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Recompute the caller-bound exact-v03 implementation qualification."""
+
+    from scripts import evaluate_go2_world_model_visual_domain_parity_v1 as parity
+
+    declared = pilot._validate_binding_shape(  # noqa: SLF001
+        plan["visual_domain_parity_result_binding"],
+        label="textured_v03 visual-domain parity result",
+    )
+    prerequisites = None
+    if plan.get("purpose") in {
+        "sizing_calibration_textured_v03_v3",
+        "bounded_wm_a_pilot",
+    }:
+        try:
+            prerequisites = pilot.validate_textured_v03_parity_prerequisites(
+                result_binding=declared,
+                terminal_binding=plan["visual_domain_parity_terminal_binding"],
+                review_binding=plan["visual_domain_parity_review_binding"],
+            )
+        except pilot.PilotContractError as exc:
+            raise pilot.PilotContractError(str(exc)) from exc
+        if prerequisites["result_binding"] != declared:
+            raise pilot.PilotContractError(
+                "textured_v03 parity prerequisite result changed"
+            )
+    result, actual = pilot.read_bound_json(
+        Path(str(declared["path"])),
+        expected_sha256=str(declared["file_sha256"]),
+        expected_byte_count=int(declared["byte_count"]),
+        label="textured_v03 visual-domain parity result",
+    )
+    if actual != declared:
+        raise pilot.PilotContractError("visual-domain parity result binding changed")
+    if (
+        result.get("schema") != pilot.TEXTURED_V03_PARITY_RESULT_SCHEMA
+        or result.get("status") != pilot.TEXTURED_V03_PARITY_PASS_STATUS
+        or result.get("authority_granted_by_this_document") is not False
+        or result.get("scientific_claim_granted_by_this_document") is not False
+        or result.get("development_only") is not True
+        or result.get("protected_material_opened") is not False
+    ):
+        raise pilot.PilotContractError(
+            "visual-domain parity did not pass the exact implementation gate"
+        )
+    source_binding = pilot._validate_binding_shape(  # noqa: SLF001
+        result.get("source_rgb_reference_binding"),
+        label="visual-domain parity source panel",
+    )
+    candidate_binding = pilot._validate_binding_shape(  # noqa: SLF001
+        result.get("candidate_rgb_panel_binding"),
+        label="visual-domain parity candidate panel",
+    )
+    source_panel, source_actual = pilot.read_bound_json(
+        Path(str(source_binding["path"])),
+        expected_sha256=str(source_binding["file_sha256"]),
+        expected_byte_count=int(source_binding["byte_count"]),
+        label="visual-domain parity source panel",
+    )
+    candidate_panel, candidate_actual = pilot.read_bound_json(
+        Path(str(candidate_binding["path"])),
+        expected_sha256=str(candidate_binding["file_sha256"]),
+        expected_byte_count=int(candidate_binding["byte_count"]),
+        label="visual-domain parity candidate panel",
+    )
+    if source_actual != source_binding or candidate_actual != candidate_binding:
+        raise pilot.PilotContractError("visual-domain parity panel binding changed")
+    try:
+        recomputed = parity.evaluate_v1(
+            source_panel=source_panel,
+            source_panel_binding=source_binding,
+            candidate_panel=candidate_panel,
+            candidate_panel_binding=candidate_binding,
+        )
+    except parity.VisualDomainParityError as exc:
+        raise pilot.PilotContractError(str(exc)) from exc
+    if pilot.canonical_json_bytes(recomputed) != pilot.canonical_json_bytes(result):
+        raise pilot.PilotContractError(
+            "visual-domain parity result differs from fixed recomputation"
+        )
+    evaluator_binding = pilot.file_binding(Path(parity.__file__))
+    if result.get("evaluator_source_binding") != evaluator_binding:
+        raise pilot.PilotContractError(
+            "visual-domain parity evaluator source binding changed"
+        )
+    return (
+        prerequisites
+        if prerequisites is not None
+        else {
+            "result_binding": declared,
+            "terminal_binding": None,
+            "review_binding": None,
+        }
+    )
 
 
 def _validate_calibration_predecessor_failure(
@@ -443,6 +615,136 @@ def _validate_calibration_predecessor_failure(
     return normalized_binding
 
 
+def _validate_calibration_v2_predecessor_failure(
+    binding: Mapping[str, Any],
+    *,
+    plan: Mapping[str, Any],
+    reviewed_binding: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate consumed V2 evidence before accepting the sole textured V3."""
+
+    normalized = pilot._validate_binding_shape(  # noqa: SLF001
+        binding, label="calibration V2 terminal-failure result"
+    )
+    reviewed = pilot._validate_binding_shape(  # noqa: SLF001
+        reviewed_binding, label="reviewed calibration V2 terminal-failure result"
+    )
+    expected_path = (ROOT / CALIBRATION_V2_FAILURE_RELATIVE).resolve()
+    if (
+        Path(str(normalized["path"])).resolve() != expected_path
+        or normalized != reviewed
+    ):
+        raise pilot.PilotContractError(
+            "calibration V2 terminal failure is not the exact reviewed document"
+        )
+    document, actual = pilot.read_bound_json(
+        expected_path,
+        expected_sha256=str(normalized["file_sha256"]),
+        expected_byte_count=int(normalized["byte_count"]),
+        label="calibration V2 terminal-failure result",
+    )
+    if actual != normalized or set(document) != {
+        "schema",
+        "status",
+        "date",
+        "authority_granted_by_this_document",
+        "scientific_claim_granted_by_this_document",
+        "attempt",
+        "bindings",
+        "terminal_evidence",
+        "root_cause",
+        "successor_boundary",
+    }:
+        raise pilot.PilotContractError(
+            "calibration V2 terminal-failure result fields changed"
+        )
+    attempt = document["attempt"]
+    evidence = document["terminal_evidence"]
+    successor = document["successor_boundary"]
+    if (
+        document["schema"]
+        != "lewm_go2_world_model_counterfactual_calibration_terminal_failure_result_v2"
+        or document["status"]
+        != "PASS_CONSUMED_TERMINAL_FAILURE_AUDIT_NO_RETRY_NO_RESUME"
+        or document["authority_granted_by_this_document"] is not False
+        or document["scientific_claim_granted_by_this_document"] is not False
+        or not isinstance(attempt, Mapping)
+        or attempt.get("attempt_id") != CALIBRATION_V2_ATTEMPT_ID
+        or attempt.get("output_root") != CALIBRATION_V2_ROOT
+        or attempt.get("attempt_consumed") is not True
+        or any(
+            attempt.get(name) is not False
+            for name in (
+                "retry_authorized",
+                "resume_authorized",
+                "refill_authorized",
+                "overwrite_authorized",
+                "artifact_reuse_for_successor_authorized",
+            )
+        )
+        or not isinstance(evidence, Mapping)
+        or evidence.get("terminal_status") != "CONSUMED_TERMINAL_FAILURE"
+        or evidence.get("physics_result_status") != "FAILED"
+        or evidence.get("failure_type") != "PilotContractError"
+        or evidence.get("completed_scenes") != 1
+        or evidence.get("completed_states") != 2
+        or evidence.get("expected_scenes") != 8
+        or evidence.get("expected_states") != 16
+        or evidence.get("retry_or_resume_authorized_by_terminal") is not False
+        or not isinstance(successor, Mapping)
+        or any(
+            successor.get(name) is not False
+            for name in (
+                "v2_retry_authorized",
+                "v2_resume_authorized",
+                "v2_refill_authorized",
+                "v2_root_or_artifact_reuse_authorized",
+                "fresh_textured_v03_successor_authorized_by_this_result",
+            )
+        )
+        or successor.get("maximum_fresh_textured_v03_successors_recommended") != 1
+    ):
+        raise pilot.PilotContractError(
+            "calibration V2 failure or no-retry boundary changed"
+        )
+    bindings = document["bindings"]
+    if not isinstance(bindings, Mapping) or set(bindings) != {
+        "terminal_supervision",
+        "physics_result",
+        "execution_authority",
+        "exact_plan",
+    }:
+        raise pilot.PilotContractError("calibration V2 evidence bindings changed")
+    terminal = bindings["terminal_supervision"]
+    physics = bindings["physics_result"]
+    if (
+        terminal.get("file_sha256") != CALIBRATION_V2_TERMINAL_SHA256
+        or terminal.get("byte_count") != CALIBRATION_V2_TERMINAL_BYTE_COUNT
+        or physics.get("file_sha256") != CALIBRATION_V2_PHYSICS_SHA256
+        or physics.get("byte_count") != CALIBRATION_V2_PHYSICS_BYTE_COUNT
+    ):
+        raise pilot.PilotContractError("calibration V2 terminal evidence identity changed")
+    for name, evidence_binding in bindings.items():
+        pilot.require_binding(
+            evidence_binding, label=f"calibration V2 {name} evidence"
+        )
+    if (
+        plan["attempt_id"] != CALIBRATION_V3_ATTEMPT_ID
+        or Path(str(plan["output_root"])).resolve(strict=False)
+        != Path(CALIBRATION_V3_ROOT).resolve(strict=False)
+        or Path(str(plan["output_root"])).resolve(strict=False).is_relative_to(
+            Path(CALIBRATION_V2_ROOT).resolve(strict=False)
+        )
+        or Path(str(plan["output_root"])).resolve(strict=False).is_relative_to(
+            Path(CALIBRATION_PREDECESSOR_ROOT).resolve(strict=False)
+        )
+    ):
+        raise pilot.PilotContractError(
+            "calibration authority does not bind the exact fresh textured V3 identity"
+        )
+    return normalized
+
+
 def _validate_non_smoke_authority(
     authority: Mapping[str, Any],
     *,
@@ -540,7 +842,15 @@ def _validate_non_smoke_authority(
         ).resolve():
             raise pilot.PilotContractError(f"authority source {name} path changed")
         sources.append({"name": name, "binding": binding})
-    if not NON_SMOKE_REQUIRED_SOURCES.issubset(source_names):
+    required_sources = set(NON_SMOKE_REQUIRED_SOURCES)
+    if pilot.canonical_json_bytes(plan["render_contract"]) == pilot.canonical_json_bytes(
+        pilot.TEXTURED_V03_RENDER_CONTRACT
+    ):
+        required_sources.update({
+            "historical_textured_v03_renderer",
+            "visual_domain_parity_evaluator",
+        })
+    if not required_sources.issubset(source_names):
         raise pilot.PilotContractError("non-smoke authority source closure is incomplete")
     predecessor_rows = [
         source["binding"]
@@ -551,10 +861,18 @@ def _validate_non_smoke_authority(
         raise pilot.PilotContractError(
             "reviewed calibration predecessor failure binding is absent"
         )
-    predecessor_failure_binding = _validate_calibration_predecessor_failure(
-        authority["predecessor_failure_binding"],
-        plan=plan,
-        reviewed_binding=predecessor_rows[0],
+    predecessor_failure_binding = (
+        _validate_calibration_v2_predecessor_failure(
+            authority["predecessor_failure_binding"],
+            plan=plan,
+            reviewed_binding=predecessor_rows[0],
+        )
+        if purpose == "sizing_calibration_textured_v03_v3"
+        else _validate_calibration_predecessor_failure(
+            authority["predecessor_failure_binding"],
+            plan=plan,
+            reviewed_binding=predecessor_rows[0],
+        )
     )
     attempt = authority["attempt"]
     expected_attempt = {
@@ -562,7 +880,8 @@ def _validate_non_smoke_authority(
         "root": plan["output_root"],
         "maximum_attempts": 1,
         "must_be_absent": True,
-        "reservation_consumes_attempt": True,
+        "root_creation_consumes_attempt": True,
+        "reservation_records_consumed_attempt": True,
         "retry": False,
         "resume": False,
         "overwrite": False,
@@ -733,6 +1052,15 @@ def _validate_git_authority_boundary(
         pilot.require_binding(
             source["binding"], label=f"authority source {expected_name}"
         )
+        if expected_name == "historical_textured_v03_renderer" and (
+            source["binding"]["file_sha256"]
+            != pilot.TEXTURED_V03_RENDERER_SHA256
+            or source["binding"]["byte_count"]
+            != pilot.TEXTURED_V03_RENDERER_BYTE_COUNT
+        ):
+            raise pilot.PilotContractError(
+                "historical textured_v03 renderer identity changed"
+            )
         _binding_at_commit(
             source["binding"],
             commit=source_commit,
@@ -868,7 +1196,227 @@ def _extract_render_arrays(rendered: Any) -> tuple[np.ndarray, np.ndarray]:
     return rgb, depth
 
 
-def _capture_replayed_frame(
+def _render_textured_v03_rgb_from_base_pose(
+    render_build: Any,
+    *,
+    base_position_xyz_m: Sequence[float],
+    base_quaternion_wxyz: Sequence[float],
+    historical_camera_pose_from_payload: Any,
+) -> dict[str, Any]:
+    """Pure exact-v03 RGB path shared by parity and counterfactual collection."""
+
+    position = np.asarray(base_position_xyz_m, dtype=np.float32)
+    quat_wxyz = np.asarray(base_quaternion_wxyz, dtype=np.float32)
+    if (
+        position.shape != (3,)
+        or quat_wxyz.shape != (4,)
+        or not np.all(np.isfinite(position))
+        or not np.all(np.isfinite(quat_wxyz))
+    ):
+        raise pilot.PilotContractError("historical RGB base pose is invalid")
+    quat_xyzw = quat_wxyz[[1, 2, 3, 0]]
+    mount_xyz = render_build.pack.camera.xyz_body_m
+    mount_rpy = render_build.pack.camera.rpy_body_rad
+    pose_payload = historical_camera_pose_from_payload(
+        {
+            "pose_world": {
+                "position": {
+                    "x": float(position[0]),
+                    "y": float(position[1]),
+                    "z": float(position[2]),
+                }
+            },
+            "quat_world_xyzw": [float(value) for value in quat_xyzw],
+        },
+        {
+            "xyz_body_m": [float(value) for value in mount_xyz],
+            "rpy_body_rad": [float(value) for value in mount_rpy],
+        },
+    )
+    if not isinstance(pose_payload, Mapping) or set(pose_payload) != {
+        "position",
+        "lookat",
+        "up",
+    }:
+        raise pilot.PilotContractError("historical camera pose calculation failed")
+    pose_arrays = {
+        name: np.asarray(pose_payload[name], dtype=np.float32)
+        for name in ("position", "lookat", "up")
+    }
+    if any(
+        value.shape != (3,) or not np.all(np.isfinite(value))
+        for value in pose_arrays.values()
+    ):
+        raise pilot.PilotContractError("historical camera pose is invalid")
+    render_build.camera.set_pose(
+        pos=pose_arrays["position"],
+        lookat=pose_arrays["lookat"],
+        up=pose_arrays["up"],
+    )
+    render_started = time.perf_counter()
+    rendered_rgb = render_build.camera.render(rgb=True, depth=False)
+    render_wall_seconds = time.perf_counter() - render_started
+    if not isinstance(rendered_rgb, tuple) or not rendered_rgb:
+        raise pilot.PilotContractError("historical RGB render return shape changed")
+    rgb = np.asarray(render_build.to_hwc_uint8(rendered_rgb[0]), dtype=np.uint8)
+    native_width, native_height = render_build.native_resolution
+    if rgb.shape != (native_height, native_width, 3):
+        raise pilot.PilotContractError(
+            f"historical RGB shape changed: {rgb.shape}"
+        )
+    return {
+        "rgb": rgb,
+        "camera_pose": {
+            "position": pose_arrays["position"].copy(),
+            "lookat": pose_arrays["lookat"].copy(),
+            "up": pose_arrays["up"].copy(),
+        },
+        "rgb_render_wall_seconds": render_wall_seconds,
+    }
+
+
+def _capture_replayed_frame_textured_v03(
+    render_build: Any,
+    *,
+    components: Mapping[str, np.ndarray],
+    env_index: int,
+    historical_camera_pose_from_payload: Any,
+    camera_pose_from_dict: Any,
+    camera_safety_metrics: Any,
+    camera_safety_config_from_pack: Any,
+    assess_rendered_frame: Any,
+    stage_wall_times: dict[str, float],
+) -> dict[str, Any]:
+    """Render one captured physical pose in the isolated one-env render scene."""
+
+    from PIL import Image
+
+    processing_started = time.perf_counter()
+    positions = np.asarray(components["base_pos_world"], dtype=np.float32)
+    quats_wxyz = np.asarray(components["base_quat_wxyz"], dtype=np.float32)
+    if (
+        positions.ndim != 2
+        or positions.shape[1:] != (3,)
+        or quats_wxyz.ndim != 2
+        or quats_wxyz.shape != (positions.shape[0], 4)
+        or isinstance(env_index, bool)
+        or not isinstance(env_index, int)
+        or env_index < 0
+        or env_index >= positions.shape[0]
+    ):
+        raise pilot.PilotContractError("captured physical replay pose shape changed")
+    if int(getattr(render_build, "n_envs", -1)) != 1:
+        raise pilot.PilotContractError("render replay scene must contain exactly one env")
+    if bool(getattr(render_build.camera, "_is_batched", False)):
+        raise pilot.PilotContractError("render replay camera must be non-batched")
+    if not np.all(np.isfinite(positions[env_index])) or not np.all(
+        np.isfinite(quats_wxyz[env_index])
+    ):
+        raise pilot.PilotContractError("captured physical replay pose is nonfinite")
+    quat_wxyz = quats_wxyz[env_index]
+    # Historical textured_v03 training frames used the nominal platform mount,
+    # not per-scene extrinsic jitter and not camera-safety retraction.  Preserve
+    # that sensor exactly; safety is measured only as an observation stratum.
+    camera_config = replace(
+        camera_safety_config_from_pack(render_build.pack),
+        aspect_ratio=1.0,
+        fov_axis="horizontal",
+        fov_deg=float(pilot.TEXTURED_V03_RENDER_CONTRACT["genesis_yfov_deg"]),
+        max_retract_m=0.0,
+    )
+    rgb_result = _render_textured_v03_rgb_from_base_pose(
+        render_build,
+        base_position_xyz_m=positions[env_index],
+        base_quaternion_wxyz=quat_wxyz,
+        historical_camera_pose_from_payload=historical_camera_pose_from_payload,
+    )
+    pose_payload = rgb_result["camera_pose"]
+    pose = camera_pose_from_dict(dict(pose_payload))
+    safety = {
+        **camera_safety_metrics(
+            pose,
+            render_build.visible_objects,
+            camera_config,
+        ),
+        "retracted_m": 0.0,
+    }
+    processing_before_render = (
+        time.perf_counter()
+        - processing_started
+        - float(rgb_result["rgb_render_wall_seconds"])
+    )
+    render_started = time.perf_counter()
+    rendered_depth = render_build.camera.render(
+        rgb=False,
+        depth=True,
+        force_render=True,
+    )
+    native_render_elapsed = (
+        float(rgb_result["rgb_render_wall_seconds"])
+        + time.perf_counter()
+        - render_started
+    )
+    processing_started = time.perf_counter()
+    if not isinstance(rendered_depth, tuple) or len(rendered_depth) < 2:
+        raise pilot.PilotContractError("transient depth render return shape changed")
+    rgb = np.asarray(rgb_result["rgb"], dtype=np.uint8)
+    depth = np.asarray(rendered_depth[1])
+    rgb_native = rgb[None, ...]
+    depth_native = depth[None, ...] if depth.ndim == 2 else depth
+    native_width, native_height = render_build.native_resolution
+    stored_width, stored_height = render_build.stored_resolution
+    expected_rgb = (1, native_height, native_width, 3)
+    expected_depth = (1, native_height, native_width)
+    if rgb_native.shape != expected_rgb or depth_native.shape != expected_depth:
+        raise pilot.PilotContractError(
+            "native RGB/depth shape changed: "
+            f"rgb={rgb_native.shape} depth={depth_native.shape}"
+        )
+    rgb = np.asarray(rgb_native[0], dtype=np.uint8)
+    depth = np.asarray(depth_native[0])
+    quality = assess_rendered_frame(
+        rgb,
+        depth,
+        require_depth=True,
+        camera_safety=dict(safety),
+    )
+    if (native_width, native_height) == (stored_width, stored_height):
+        stored_rgb = rgb.copy()
+    else:
+        stored_rgb = np.asarray(
+            Image.fromarray(rgb).resize(
+                (stored_width, stored_height), Image.Resampling.LANCZOS
+            ),
+            dtype=np.uint8,
+        )
+    processing_after_render = time.perf_counter() - processing_started
+    stage_wall_times["native_render_wall_seconds"] += native_render_elapsed
+    stage_wall_times["camera_quality_resize_wall_seconds"] += (
+        processing_before_render + processing_after_render
+    )
+    return {
+        "stored_rgb": stored_rgb,
+        "quality": quality,
+        "native_resolution": [native_width, native_height],
+        "stored_resolution": [stored_width, stored_height],
+        "depth_rendered": True,
+        "depth_persisted": False,
+        "visual_mode": str(render_build.visual_mode),
+        "source_base_position_xyz_m": positions[env_index].copy(),
+        "source_base_quaternion_wxyz": quat_wxyz.copy(),
+        "camera_pose_world": {
+            "position_xyz_m": np.asarray(
+                pose_payload["position"], dtype=np.float32
+            ).copy(),
+            "lookat_xyz_m": np.asarray(
+                pose_payload["lookat"], dtype=np.float32
+            ).copy(),
+            "up_xyz": np.asarray(pose_payload["up"], dtype=np.float32).copy(),
+        },
+    }
+
+
+def _capture_replayed_frame_legacy(
     render_build: Any,
     *,
     components: Mapping[str, np.ndarray],
@@ -879,7 +1427,7 @@ def _capture_replayed_frame(
     assess_rendered_frame: Any,
     stage_wall_times: dict[str, float],
 ) -> dict[str, Any]:
-    """Render one captured physical pose in the isolated one-env render scene."""
+    """Preserve the already-consumed V1/V2 replay semantics for validation tests."""
 
     from PIL import Image
 
@@ -924,11 +1472,7 @@ def _capture_replayed_frame(
     )
     processing_before_render = time.perf_counter() - processing_started
     render_started = time.perf_counter()
-    rendered = render_build.camera.render(
-        rgb=True,
-        depth=True,
-        force_render=True,
-    )
+    rendered = render_build.camera.render(rgb=True, depth=True, force_render=True)
     native_render_elapsed = time.perf_counter() - render_started
     processing_started = time.perf_counter()
     rgb_native, depth_native = _extract_render_arrays(rendered)
@@ -978,19 +1522,85 @@ def _capture_replayed_frame(
     }
 
 
-def _capture_sequential_render_replay(
+def _capture_replayed_frame(
     render_build: Any,
     *,
-    states: Sequence[Mapping[str, Any]],
-    trial: Mapping[str, Any],
+    components: Mapping[str, np.ndarray],
+    env_index: int,
     safe_camera_pose_from_base: Any,
     camera_safety_config_from_pack: Any,
     effective_camera_mount_xyz_rpy: Any,
     assess_rendered_frame: Any,
     stage_wall_times: dict[str, float],
 ) -> dict[str, Any]:
+    """Backward-compatible name for the immutable legacy replay helper."""
+
+    return _capture_replayed_frame_legacy(
+        render_build,
+        components=components,
+        env_index=env_index,
+        safe_camera_pose_from_base=safe_camera_pose_from_base,
+        camera_safety_config_from_pack=camera_safety_config_from_pack,
+        effective_camera_mount_xyz_rpy=effective_camera_mount_xyz_rpy,
+        assess_rendered_frame=assess_rendered_frame,
+        stage_wall_times=stage_wall_times,
+    )
+
+
+def _capture_sequential_render_replay(
+    render_build: Any,
+    *,
+    states: Sequence[Mapping[str, Any]],
+    trial: Mapping[str, Any],
+    historical_camera_pose_from_payload: Any | None = None,
+    camera_pose_from_dict: Any | None = None,
+    camera_safety_metrics: Any | None = None,
+    safe_camera_pose_from_base: Any | None = None,
+    camera_safety_config_from_pack: Any | None = None,
+    effective_camera_mount_xyz_rpy: Any | None = None,
+    assess_rendered_frame: Any | None = None,
+    stage_wall_times: dict[str, float] | None = None,
+) -> dict[str, Any]:
     """Replay three representative contexts and every physical endpoint."""
 
+    textured_v03 = historical_camera_pose_from_payload is not None
+    if stage_wall_times is None or assess_rendered_frame is None:
+        raise pilot.PilotContractError("render replay dependencies are incomplete")
+    if textured_v03:
+        if (
+            camera_pose_from_dict is None
+            or camera_safety_metrics is None
+            or camera_safety_config_from_pack is None
+            or safe_camera_pose_from_base is not None
+            or effective_camera_mount_xyz_rpy is not None
+        ):
+            raise pilot.PilotContractError(
+                "textured_v03 replay dependency boundary changed"
+            )
+        frame_capture = _capture_replayed_frame_textured_v03
+        frame_capture_kwargs = {
+            "historical_camera_pose_from_payload": (
+                historical_camera_pose_from_payload
+            ),
+            "camera_pose_from_dict": camera_pose_from_dict,
+            "camera_safety_metrics": camera_safety_metrics,
+            "camera_safety_config_from_pack": camera_safety_config_from_pack,
+        }
+    else:
+        if (
+            safe_camera_pose_from_base is None
+            or camera_safety_config_from_pack is None
+            or effective_camera_mount_xyz_rpy is None
+            or camera_pose_from_dict is not None
+            or camera_safety_metrics is not None
+        ):
+            raise pilot.PilotContractError("legacy replay dependencies are incomplete")
+        frame_capture = _capture_replayed_frame_legacy
+        frame_capture_kwargs = {
+            "safe_camera_pose_from_base": safe_camera_pose_from_base,
+            "camera_safety_config_from_pack": camera_safety_config_from_pack,
+            "effective_camera_mount_xyz_rpy": effective_camera_mount_xyz_rpy,
+        }
     if len(trial["history_snapshots"]) != pilot.CONTEXT_FRAME_COUNT:
         raise pilot.PilotContractError("captured context snapshot count changed")
     lane_counts = [
@@ -1007,26 +1617,22 @@ def _capture_sequential_render_replay(
         state_id = str(state["state_id"])
         representative_lane = int(lane_starts[group_index])
         context_frames[state_id] = [
-            _capture_replayed_frame(
+            frame_capture(
                 render_build,
                 components=snapshot,
                 env_index=representative_lane,
-                safe_camera_pose_from_base=safe_camera_pose_from_base,
-                camera_safety_config_from_pack=camera_safety_config_from_pack,
-                effective_camera_mount_xyz_rpy=effective_camera_mount_xyz_rpy,
+                **frame_capture_kwargs,
                 assess_rendered_frame=assess_rendered_frame,
                 stage_wall_times=stage_wall_times,
             )
             for snapshot in trial["history_snapshots"]
         ]
     branch_frames = [
-        _capture_replayed_frame(
+        frame_capture(
             render_build,
             components=endpoint,
             env_index=env_index,
-            safe_camera_pose_from_base=safe_camera_pose_from_base,
-            camera_safety_config_from_pack=camera_safety_config_from_pack,
-            effective_camera_mount_xyz_rpy=effective_camera_mount_xyz_rpy,
+            **frame_capture_kwargs,
             assess_rendered_frame=assess_rendered_frame,
             stage_wall_times=stage_wall_times,
         )
@@ -1039,6 +1645,10 @@ def _capture_sequential_render_replay(
         "context_frames": context_frames,
         "branch_frames": branch_frames,
         "native_render_calls": native_render_calls,
+        "rgb_render_calls": native_render_calls if textured_v03 else None,
+        "auxiliary_depth_render_calls": (
+            native_render_calls if textured_v03 else None
+        ),
     }
 
 
@@ -1159,6 +1769,38 @@ def _quat_tip_rad(quat_wxyz: Sequence[float]) -> float:
 
 def _json_lane(array: np.ndarray, lane_index: int) -> list[Any]:
     return np.asarray(array[lane_index]).tolist()
+
+
+def _candidate_equivalence_partition(
+    identities: Sequence[str],
+) -> dict[str, Any]:
+    """Return a deterministic exact-identity partition over actions 0..8."""
+
+    if len(identities) != pilot.ACTION_COUNT or any(
+        not isinstance(identity, str)
+        or re.fullmatch(r"[0-9a-f]{64}", identity) is None
+        for identity in identities
+    ):
+        raise pilot.PilotContractError("candidate equivalence identities changed")
+    grouped: dict[str, list[int]] = {}
+    for action_id, identity in enumerate(identities):
+        grouped.setdefault(identity, []).append(action_id)
+    groups = [
+        {"identity_sha256": identity, "action_ids": action_ids}
+        for identity, action_ids in grouped.items()
+    ]
+    return {
+        "unique_count": len(groups),
+        "collapsed": len(groups) < pilot.ACTION_COUNT,
+        "groups": groups,
+    }
+
+
+def _rgb_pixel_sha256(rgb: np.ndarray) -> str:
+    pixels = np.asarray(rgb)
+    if pixels.shape != (224, 224, 3) or pixels.dtype != np.uint8:
+        raise pilot.PilotContractError("stored RGB pixel identity shape changed")
+    return hashlib.sha256(pixels.tobytes(order="C")).hexdigest()
 
 
 def _endpoint_state(
@@ -1338,6 +1980,10 @@ def _group_trial_receipts(
     list[dict[str, Any]],
     list[dict[str, Any]],
 ]:
+    measure_equivalence = (
+        pilot.canonical_json_bytes(plan["render_contract"])
+        == pilot.canonical_json_bytes(pilot.TEXTURED_V03_RENDER_CONTRACT)
+    )
     action_catalog = plan["action_catalog"]
     execution = plan["execution_contract"]
     history_by_state: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -1408,7 +2054,7 @@ def _group_trial_receipts(
             context_artifact_ids.append(artifact_id)
             rgb = np.asarray(replay_frame["stored_rgb"])
             quality = _counterfactual_quality_disposition(
-                replay_frame["quality"]
+                replay_frame["quality"], textured_v03=measure_equivalence
             )
             if quality["retained"] is not True:
                 raise pilot.PilotContractError(
@@ -1423,20 +2069,21 @@ def _group_trial_receipts(
             binding = _relative_output_binding(
                 binding, output_root=Path(plan["output_root"])
             )
-            frame_receipts.append(
-                {
-                    "artifact_id": artifact_id,
-                    "frame_identity": identity,
-                    **binding,
-                    "width": 224,
-                    "height": 224,
-                    "mode": "RGB",
-                    "format": "PNG",
-                    "camera_valid": True,
-                    "low_information": quality["low_information"],
-                    "low_info_reasons": list(quality["low_info_reasons"]),
-                }
-            )
+            frame_receipt = {
+                "artifact_id": artifact_id,
+                "frame_identity": identity,
+                **binding,
+                "width": 224,
+                "height": 224,
+                "mode": "RGB",
+                "format": "PNG",
+                "camera_valid": True,
+                "low_information": quality["low_information"],
+                "low_info_reasons": list(quality["low_info_reasons"]),
+            }
+            if measure_equivalence:
+                frame_receipt["pixel_sha256"] = _rgb_pixel_sha256(rgb)
+            frame_receipts.append(frame_receipt)
             quality_audits.append(
                 {
                     "frame_identity": identity,
@@ -1525,7 +2172,7 @@ def _group_trial_receipts(
             replay_frame = branch_replays[env_index]
             rgb = np.asarray(replay_frame["stored_rgb"])
             quality = _counterfactual_quality_disposition(
-                replay_frame["quality"]
+                replay_frame["quality"], textured_v03=measure_equivalence
             )
             if quality["retained"] is not True:
                 raise pilot.PilotContractError(
@@ -1552,6 +2199,8 @@ def _group_trial_receipts(
                 "low_information": quality["low_information"],
                 "low_info_reasons": list(quality["low_info_reasons"]),
             }
+            if measure_equivalence:
+                frame_receipt["pixel_sha256"] = _rgb_pixel_sha256(rgb)
             frame_receipts.append(frame_receipt)
             quality_audits.append(
                 {
@@ -1606,7 +2255,11 @@ def _group_trial_receipts(
             }
             branches.append(branch)
         candidate_branches = branches[: pilot.ACTION_COUNT]
-        base_trajectory_identities = {
+        executed_tape_identities = [
+            str(branch["executed_block_sha256"])
+            for branch in candidate_branches
+        ]
+        base_trajectory_identities = [
             pilot.canonical_json_sha256(
                 [
                     {
@@ -1617,8 +2270,8 @@ def _group_trial_receipts(
                 ]
             )
             for branch in candidate_branches
-        }
-        endpoint_pose_identities = {
+        ]
+        endpoint_pose_identities = [
             pilot.canonical_json_sha256(
                 {
                     "base_pos_world": branch["endpoint_state"]["base_pos_world"],
@@ -1626,19 +2279,50 @@ def _group_trial_receipts(
                 }
             )
             for branch in candidate_branches
-        }
-        candidate_png_hashes = {
-            str(branch["frame_receipt"]["file_sha256"])
-            for branch in candidate_branches
-        }
-        if len(base_trajectory_identities) < 2 or len(endpoint_pose_identities) < 2:
-            raise pilot.PilotContractError(
-                f"candidate physical responses collapsed for {state_id}"
-            )
-        if len(candidate_png_hashes) < 2:
-            raise pilot.PilotContractError(
-                f"candidate sequential render responses collapsed for {state_id}"
-            )
+        ]
+        candidate_response_audit: dict[str, Any] | None = None
+        if measure_equivalence:
+            candidate_outcome_identities = [
+                pilot.canonical_json_sha256({
+                    "physical_fell": branch["physical_fell"],
+                    "physical_tipped": branch["physical_tipped"],
+                    "physical_path_length_m": branch["physical_path_length_m"],
+                    "physical_target_progress_m": branch[
+                        "physical_target_progress_m"
+                    ],
+                })
+                for branch in candidate_branches
+            ]
+            candidate_png_hashes = [
+                str(branch["frame_receipt"]["file_sha256"])
+                for branch in candidate_branches
+            ]
+            candidate_pixel_hashes = [
+                str(branch["frame_receipt"]["pixel_sha256"])
+                for branch in candidate_branches
+            ]
+            candidate_response_audit = {
+                "schema": pilot.TEXTURED_V03_CANDIDATE_RESPONSE_AUDIT_SCHEMA,
+                "candidate_action_ids": list(range(pilot.ACTION_COUNT)),
+                "executed_tape": _candidate_equivalence_partition(
+                    executed_tape_identities
+                ),
+                "physical_trajectory": _candidate_equivalence_partition(
+                    base_trajectory_identities
+                ),
+                "endpoint_pose": _candidate_equivalence_partition(
+                    endpoint_pose_identities
+                ),
+                "physical_outcome": _candidate_equivalence_partition(
+                    candidate_outcome_identities
+                ),
+                "stored_rgb_file": _candidate_equivalence_partition(
+                    candidate_png_hashes
+                ),
+                "stored_rgb_pixels": _candidate_equivalence_partition(
+                    candidate_pixel_hashes
+                ),
+            }
         if sentinel_audit is not None:
             action_id = int(sentinel_audit["action_id"])
             candidate = branch_rgb_by_offset[action_id]
@@ -1669,9 +2353,12 @@ def _group_trial_receipts(
                     f"render duplicate-sentinel audit failed for {state_id}"
                 )
             render_sentinel_audits.append(render_audit)
-        receipts.append(
-            {
-                "schema": pilot.STATE_RECEIPT_SCHEMA,
+        state_receipt = {
+                "schema": (
+                    pilot.TEXTURED_V03_STATE_RECEIPT_SCHEMA
+                    if measure_equivalence
+                    else pilot.STATE_RECEIPT_SCHEMA
+                ),
                 "attempt_id": str(plan["attempt_id"]),
                 "status": "PHYSICS_COMPLETE",
                 "physics_validated": False,
@@ -1708,13 +2395,18 @@ def _group_trial_receipts(
                     else None
                 ),
             }
-        )
+        if measure_equivalence:
+            assert candidate_response_audit is not None
+            state_receipt["candidate_response_audit"] = candidate_response_audit
+        receipts.append(state_receipt)
     return receipts, frame_receipts, quality_audits, render_sentinel_audits
 
 
-def _runtime_imports() -> dict[str, Any]:
+def _runtime_imports(*, textured_v03: bool = False) -> dict[str, Any]:
     from lewm_genesis.camera_safety import (
         camera_safety_config_from_pack,
+        camera_pose_from_dict,
+        camera_safety_metrics,
         safe_camera_pose_from_base,
     )
     from lewm_genesis.go2_adapter import resolve_go2_urdf
@@ -1738,14 +2430,15 @@ def _runtime_imports() -> dict[str, Any]:
         LOW_INFO_REASON_NAMES,
         assess_rendered_frame,
     )
-
     if LOW_INFO_REASON_NAMES != COUNTERFACTUAL_LOW_INFO_REASON_NAMES:
         raise pilot.PilotContractError(
             "counterfactual low-information reason registry changed"
         )
 
-    return {
+    runtime = {
         "camera_safety_config_from_pack": camera_safety_config_from_pack,
+        "camera_pose_from_dict": camera_pose_from_dict,
+        "camera_safety_metrics": camera_safety_metrics,
         "safe_camera_pose_from_base": safe_camera_pose_from_base,
         "resolve_go2_urdf": resolve_go2_urdf,
         "PrimitiveRegistry": PrimitiveRegistry,
@@ -1755,11 +2448,38 @@ def _runtime_imports() -> dict[str, Any]:
         "RolloutConfig": RolloutConfig,
         "RolloutRunner": RolloutRunner,
         "build_scene_from_pack": build_scene_from_pack,
-        "effective_camera_mount_xyz_rpy": effective_camera_mount_xyz_rpy,
         "load_platform_manifest": load_platform_manifest,
         "load_scene_pack": load_scene_pack,
+        "effective_camera_mount_xyz_rpy": effective_camera_mount_xyz_rpy,
         "assess_rendered_frame": assess_rendered_frame,
     }
+    if textured_v03:
+        from lewm_genesis.scene_builder import _import_genesis
+        from lewm_genesis.textures import (
+            available_textures,
+            box_obj_text,
+            cached_box_obj,
+            category_for_kind,
+            select_scene_textures,
+        )
+        from scripts.render_replay_v03 import (
+            _to_hwc_uint8 as textured_v03_to_hwc_uint8,
+            build_scene as build_textured_v03_scene,
+        )
+        from lewm_genesis.render_replay import _camera_pose_from_payload
+
+        runtime.update({
+            "import_genesis": _import_genesis,
+            "build_textured_v03_scene": build_textured_v03_scene,
+            "textured_v03_to_hwc_uint8": textured_v03_to_hwc_uint8,
+            "available_textures": available_textures,
+            "box_obj_text": box_obj_text,
+            "cached_box_obj": cached_box_obj,
+            "category_for_kind": category_for_kind,
+            "select_scene_textures": select_scene_textures,
+            "historical_camera_pose_from_payload": _camera_pose_from_payload,
+        })
+    return runtime
 
 
 def _load_action_blocks(
@@ -1986,6 +2706,60 @@ def _require_scene_parallelization(
         )
 
 
+def _prepare_textured_v03_mesh_cache(
+    manifest: Mapping[str, Any],
+    *,
+    runtime: Mapping[str, Any],
+    selected_textures: Mapping[str, str | None],
+) -> list[dict[str, Any]]:
+    """Create missing historical meshes, then bind exact no-follow OBJ bytes."""
+
+    tiles_per_m = 0.7
+    bindings_by_path: dict[str, dict[str, Any]] = {}
+    for field in ("walls", "obstacles", "landmarks"):
+        objects = manifest.get(field, []) or []
+        if not isinstance(objects, list):
+            raise pilot.PilotContractError(f"scene manifest {field} changed")
+        for obj in objects:
+            if not isinstance(obj, Mapping):
+                raise pilot.PilotContractError("scene object is malformed")
+            category = runtime["category_for_kind"](str(obj.get("kind") or ""))
+            if category is None or selected_textures.get(category) is None:
+                continue
+            size = obj.get("size_xyz_m")
+            if (
+                not isinstance(size, list)
+                or len(size) != 3
+                or any(
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(float(value))
+                    for value in size
+                )
+            ):
+                raise pilot.PilotContractError("textured box size is invalid")
+            rounded_size = tuple(round(float(value), 3) for value in size)
+            path = Path(runtime["cached_box_obj"](
+                rounded_size, tiles_per_m=tiles_per_m
+            ))
+            expected = runtime["box_obj_text"](
+                rounded_size, tiles_per_m=tiles_per_m
+            ).encode("utf-8")
+            expected_sha = hashlib.sha256(expected).hexdigest()
+            raw, binding = pilot.read_bound_bytes(
+                path,
+                expected_sha256=expected_sha,
+                expected_byte_count=len(expected),
+                label="textured_v03 derived OBJ mesh",
+            )
+            if raw != expected:
+                raise pilot.PilotContractError(
+                    "textured_v03 derived OBJ content changed"
+                )
+            bindings_by_path[str(binding["path"])] = binding
+    return [bindings_by_path[path] for path in sorted(bindings_by_path)]
+
+
 def _collect_scene(
     *,
     plan: Mapping[str, Any],
@@ -2003,8 +2777,29 @@ def _collect_scene(
 ]:
     scene_started = time.perf_counter()
     execution = plan["execution_contract"]
+    if pilot.canonical_json_bytes(plan["render_contract"]) != pilot.canonical_json_bytes(
+        pilot.TEXTURED_V03_RENDER_CONTRACT
+    ):
+        raise pilot.PilotContractError(
+            "this collection path requires the versioned textured_v03 sensor contract"
+        )
+    if not states:
+        raise pilot.PilotContractError("scene collection requires planned states")
     state0 = states[0]
-    scene_dir = Path(state0["scene_manifest_binding"]["path"]).parent
+    manifest_binding = dict(state0["scene_manifest_binding"])
+    if any(state.get("scene_manifest_binding") != manifest_binding for state in states):
+        raise pilot.PilotContractError(
+            "states in one scene disagree on the exact manifest binding"
+        )
+    manifest, actual_manifest_binding = pilot.read_bound_json(
+        Path(manifest_binding["path"]),
+        expected_sha256=str(manifest_binding["file_sha256"]),
+        expected_byte_count=int(manifest_binding["byte_count"]),
+        label=f"scene manifest {state0['scene_id']}",
+    )
+    if actual_manifest_binding != manifest_binding:
+        raise pilot.PilotContractError("scene manifest binding changed")
+    scene_dir = Path(manifest_binding["path"]).parent
     pack = runtime["load_scene_pack"](
         scene_dir,
         platform_manifest=platform,
@@ -2061,14 +2856,80 @@ def _collect_scene(
         )
     lockstep_wall_seconds = time.perf_counter() - lockstep_started
     render_build_started = time.perf_counter()
-    render_build = runtime["build_scene_from_pack"](
-        pack,
-        n_envs=1,
-        backend=str(execution["backend"]),
-        show_viewer=False,
-        render_robot=False,
-        apply_textures=False,
-        batched_camera=False,
+    camera = pack.camera
+    if (
+        tuple(camera.training_resolution) != (224, 224)
+        or str(camera.fov_axis) != "horizontal"
+        or not math.isclose(float(camera.fov_deg), 78.323, rel_tol=0.0, abs_tol=1e-12)
+        or not math.isclose(float(camera.near_m), 0.05, rel_tol=0.0, abs_tol=1e-12)
+        or not math.isclose(float(camera.far_m), 200.0, rel_tol=0.0, abs_tol=1e-12)
+    ):
+        raise pilot.PilotContractError(
+            "scene camera disagrees with the historical textured_v03 sensor"
+        )
+    if (
+        manifest.get("scene_id") != pack.scene_id
+        or manifest.get("family") != pack.family
+        or int(manifest.get("visual_seed", -1)) != int(pack.visual_seed)
+    ):
+        raise pilot.PilotContractError(
+            "historical render manifest identity disagrees with the loaded scene"
+        )
+    expected_texture_paths = tuple(
+        str((ROOT / relative).resolve(strict=True))
+        for relative in pilot.TEXTURED_V03_TEXTURE_RELATIVE_PATHS
+    )
+    observed_texture_paths = tuple(
+        path
+        for category in ("floor", "obstacle", "wall")
+        for path in runtime["available_textures"](category)
+    )
+    if observed_texture_paths != expected_texture_paths:
+        raise pilot.PilotContractError(
+            "historical textured_v03 texture inventory changed"
+        )
+    selected_textures = runtime["select_scene_textures"](
+        visual_seed=int(pack.visual_seed),
+        scene_id=str(pack.scene_id),
+    )
+    if set(selected_textures) != {"floor", "obstacle", "wall"} or any(
+        path not in expected_texture_paths for path in selected_textures.values()
+    ):
+        raise pilot.PilotContractError(
+            "historical textured_v03 scene texture selection changed"
+        )
+    derived_mesh_bindings = _prepare_textured_v03_mesh_cache(
+        manifest,
+        runtime=runtime,
+        selected_textures=selected_textures,
+    )
+    for mesh_binding in derived_mesh_bindings:
+        if pilot.require_binding(
+            mesh_binding, label="pre-render textured_v03 derived OBJ mesh"
+        ) != mesh_binding:
+            raise pilot.PilotContractError("derived OBJ mesh changed before rendering")
+    render_scene, render_camera = runtime["build_textured_v03_scene"](
+        runtime["import_genesis"](),
+        manifest,
+        fov=float(pilot.TEXTURED_V03_RENDER_CONTRACT["genesis_yfov_deg"]),
+        near=float(camera.near_m),
+        far=float(camera.far_m),
+        res=tuple(pilot.TEXTURED_V03_RENDER_CONTRACT["native_resolution"]),
+        textures=True,
+    )
+    visible_object_ids = {
+        str(obj["object_id"])
+        for field in ("walls", "obstacles", "landmarks")
+        for obj in manifest.get(field, [])
+    }
+    render_build = _HistoricalTexturedV03RenderBuild(
+        scene=render_scene,
+        camera=render_camera,
+        pack=pack,
+        visible_objects=tuple(
+            obj for obj in pack.static_objects if obj.object_id in visible_object_ids
+        ),
+        to_hwc_uint8=runtime["textured_v03_to_hwc_uint8"],
     )
     render_scene_build_wall_seconds = time.perf_counter() - render_build_started
     if render_build is build or getattr(render_build, "scene", None) is getattr(
@@ -2081,16 +2942,37 @@ def _collect_scene(
         render_build,
         states=states,
         trial=trial,
-        safe_camera_pose_from_base=runtime["safe_camera_pose_from_base"],
+        historical_camera_pose_from_payload=runtime[
+            "historical_camera_pose_from_payload"
+        ],
+        camera_pose_from_dict=runtime["camera_pose_from_dict"],
+        camera_safety_metrics=runtime["camera_safety_metrics"],
         camera_safety_config_from_pack=runtime[
             "camera_safety_config_from_pack"
-        ],
-        effective_camera_mount_xyz_rpy=runtime[
-            "effective_camera_mount_xyz_rpy"
         ],
         assess_rendered_frame=runtime["assess_rendered_frame"],
         stage_wall_times=stage_wall_times,
     )
+    if pilot.require_binding(
+        manifest_binding, label=f"post-render scene manifest {state0['scene_id']}"
+    ) != manifest_binding:
+        raise pilot.PilotContractError("scene manifest changed during rendering")
+    for relative, texture_binding in zip(
+        pilot.TEXTURED_V03_TEXTURE_RELATIVE_PATHS,
+        plan["texture_asset_bindings"],
+        strict=True,
+    ):
+        if pilot.require_binding(
+            texture_binding, label=f"post-render texture asset {relative}"
+        ) != texture_binding:
+            raise pilot.PilotContractError(
+                f"texture asset changed during rendering: {relative}"
+            )
+    for mesh_binding in derived_mesh_bindings:
+        if pilot.require_binding(
+            mesh_binding, label="post-render textured_v03 derived OBJ mesh"
+        ) != mesh_binding:
+            raise pilot.PilotContractError("derived OBJ mesh changed during rendering")
     receipt_started = time.perf_counter()
     receipts, frame_receipts, quality_audits, render_sentinel_audits = (
         _group_trial_receipts(
@@ -2149,10 +3031,15 @@ def _collect_scene(
         "branch_step_wall_seconds": float(trial["branch_step_wall_seconds"]),
         **wall_values,
         "native_render_calls": int(trial["render_replay"]["native_render_calls"]),
+        "rgb_render_calls": int(trial["render_replay"]["rgb_render_calls"]),
+        "auxiliary_depth_render_calls": int(
+            trial["render_replay"]["auxiliary_depth_render_calls"]
+        ),
         "stored_rgb_frames": len(frame_receipts),
         "depth_rendered": True,
         "depth_persisted": False,
-        "visual_mode": "solid_materials_box_physics_preserved",
+        "visual_mode": pilot.TEXTURED_V03_VISUAL_MODE,
+        "derived_mesh_bindings": derived_mesh_bindings,
     }
 
 
@@ -2201,6 +3088,18 @@ def collect(
         authority_binding=authority_binding,
         authority=authority,
     )
+    textured_v03 = (
+        pilot.canonical_json_bytes(plan["render_contract"])
+        == pilot.canonical_json_bytes(pilot.TEXTURED_V03_RENDER_CONTRACT)
+    )
+    parity_prerequisites = (
+        _validate_visual_domain_parity_result(plan) if textured_v03 else None
+    )
+    parity_result_binding = (
+        parity_prerequisites["result_binding"]
+        if parity_prerequisites is not None
+        else None
+    )
     source_by_name = {
         str(row["name"]): row["binding"] for row in authority["source_bindings"]
     }
@@ -2227,6 +3126,8 @@ def collect(
         "plan_binding": plan_binding,
         "authority_binding": authority_binding,
         "supervisor_nonce": supervisor_nonce,
+        "root_creation_consumes_attempt": True,
+        "reservation_records_consumed_attempt": True,
         "retry_authorized": False,
         "resume_authorized": False,
         "overwrite_authorized": False,
@@ -2255,7 +3156,12 @@ def collect(
         _validate_execution_environment(plan)
         runtime_versions = _capture_runtime_versions()
         scene_materialization = _prepare_plan_scenes(plan)
-        runtime = _runtime_imports()
+        runtime = _runtime_imports(
+            textured_v03=(
+                pilot.canonical_json_bytes(plan["render_contract"])
+                == pilot.canonical_json_bytes(pilot.TEXTURED_V03_RENDER_CONTRACT)
+            )
+        )
         platform = runtime["load_platform_manifest"](
             plan["runtime_bindings"]["platform_manifest"]["path"]
         )
@@ -2294,7 +3200,14 @@ def collect(
                 action_blocks=action_blocks,
             )
             render_receipt = {
-                "schema": LIVE_RENDER_RECEIPT_SCHEMA,
+                "schema": (
+                    pilot.TEXTURED_V03_LIVE_RENDER_RECEIPT_V3_SCHEMA
+                    if plan["purpose"] in {
+                        "sizing_calibration_textured_v03_v3",
+                        "bounded_wm_a_pilot",
+                    }
+                    else pilot.TEXTURED_V03_LIVE_RENDER_RECEIPT_SCHEMA
+                ),
                 "attempt_id": str(plan["attempt_id"]),
                 "status": "RENDER_COMPLETE",
                 "physics_validated": False,
@@ -2314,17 +3227,30 @@ def collect(
                         output_root=output_root,
                     ),
                 },
-                "render_contract": dict(pilot.RENDER_CONTRACT),
+                "render_contract": dict(plan["render_contract"]),
                 "native_render_calls": int(metrics["native_render_calls"]),
+                "rgb_render_calls": int(metrics["rgb_render_calls"]),
+                "auxiliary_depth_render_calls": int(
+                    metrics["auxiliary_depth_render_calls"]
+                ),
                 "stored_rgb_frames": int(metrics["stored_rgb_frames"]),
                 "depth_rendered": True,
                 "depth_persisted": False,
-                "visual_mode": "solid_materials_box_physics_preserved",
-                "visual_domain_fidelity_claimed": False,
+                "visual_mode": pilot.TEXTURED_V03_VISUAL_MODE,
+                "visual_domain_fidelity_claimed": True,
+                "visual_domain_parity_result_binding": parity_result_binding,
+                "derived_mesh_bindings": metrics["derived_mesh_bindings"],
                 "frame_receipts": frame_receipts,
                 "quality_audits": quality_audits,
                 "render_sentinel_audits": render_sentinel_audits,
             }
+            if parity_prerequisites["terminal_binding"] is not None:
+                render_receipt["visual_domain_parity_terminal_binding"] = (
+                    parity_prerequisites["terminal_binding"]
+                )
+                render_receipt["visual_domain_parity_review_binding"] = (
+                    parity_prerequisites["review_binding"]
+                )
             render_receipt_binding = pilot.write_json_exclusive(
                 scene_dir / "live_render_receipt.json", render_receipt
             )
@@ -2350,6 +3276,13 @@ def collect(
         if (
             sum(int(row["native_render_calls"]) for row in scene_metrics)
             != int(authority["caps"]["native_render_calls"])
+            or sum(int(row["rgb_render_calls"]) for row in scene_metrics)
+            != int(authority["caps"]["rgb_render_calls"])
+            or sum(
+                int(row["auxiliary_depth_render_calls"])
+                for row in scene_metrics
+            )
+            != int(authority["caps"]["auxiliary_depth_render_calls"])
             or sum(int(row["stored_rgb_frames"]) for row in scene_metrics)
             != int(authority["caps"]["stored_rgb_frames"])
         ):
@@ -2411,8 +3344,8 @@ def collect(
         "render_receipt_bindings": render_receipt_bindings,
         "scene_metrics": scene_metrics,
         "visual_domain_limitation": (
-            "solid materials and box primitives preserve the physics geometry; "
-            "this collection does not establish final visual-domain fidelity"
+            "claim-bearing use requires an independently bound pixel-exact "
+            "historical textured_v03 parity receipt"
         ),
         "collection_wall_seconds": time.perf_counter() - collection_started,
         "failure": failure,
