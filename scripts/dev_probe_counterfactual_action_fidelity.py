@@ -630,6 +630,84 @@ def assert_counterfactual_sources_unchanged(audit: Mapping[str, object]) -> None
             )
 
 
+ARM_SNAPSHOT_SCHEMAS = frozenset({
+    "lewm_go2_world_model_existing_pool_three_arm_snapshot_v1",
+    "lewm_go2_world_model_action_alignment_successor_v1_snapshot_v1",
+    "lewm_go2_world_model_progression_v1_snapshot_v1",
+})
+_ARM_EXACT_STATE_KEYS = frozenset({
+    "predictor_position",
+    "predictor_mask_token",
+})
+_ARM_STATE_PREFIXES = (
+    "predictor_blocks.",
+    "predictor_norm.",
+    "predictor_output.",
+    "action_embedding.",
+    "time_embedding.",
+    "temporal_gru.",
+)
+
+
+def load_predictor_arm_state_v1(model, payload, *, expected_update: int) -> dict:
+    """Load a current predictor-only arm snapshot into its frozen substrate.
+
+    The snapshot does not carry the encoder/target-encoder tensors.  Those stay
+    at the exact frozen predecessor initialization; every and only trainable
+    predictor/memory key must be supplied by ``arm_state_dict``.
+    """
+
+    if (
+        not isinstance(payload, dict)
+        or payload.get("schema") not in ARM_SNAPSHOT_SCHEMAS
+        or payload.get("status") not in {"COMPLETE", "INERT_AUDIT_SNAPSHOT"}
+        or type(payload.get("update")) is not int
+        or payload.get("update") != expected_update
+        or not isinstance(payload.get("arm"), str)
+        or not payload["arm"]
+        or not isinstance(payload.get("arm_state_dict"), dict)
+    ):
+        raise ValueError("predictor-arm snapshot schema or update changed")
+    if payload.get("citable_as_scientific_evidence", False) is not False:
+        raise ValueError("predictor-arm snapshot unexpectedly claims scientific evidence")
+    if payload.get("authorizes_retry_or_resume", False) is not False:
+        raise ValueError("predictor-arm snapshot unexpectedly authorizes retry/resume")
+    full_state = model.state_dict()
+    expected_arm_keys = {
+        name
+        for name in full_state
+        if name in _ARM_EXACT_STATE_KEYS
+        or name.startswith(_ARM_STATE_PREFIXES)
+    }
+    arm_state = payload["arm_state_dict"]
+    if set(arm_state) != expected_arm_keys:
+        raise ValueError("predictor-arm state inventory changed")
+    merged = dict(full_state)
+    for name in sorted(expected_arm_keys):
+        value = arm_state[name]
+        expected = full_state[name]
+        if (
+            not isinstance(value, torch.Tensor)
+            or value.device.type != "cpu"
+            or value.layout != torch.strided
+            or value.dtype != expected.dtype
+            or tuple(value.shape) != tuple(expected.shape)
+            or not bool(torch.isfinite(value).all())
+        ):
+            raise ValueError(f"predictor-arm tensor changed: {name}")
+        merged[name] = value.detach()
+    model.load_state_dict(merged, strict=True)
+    return {
+        "kind": "predictor_arm_snapshot",
+        "snapshot_schema": payload["schema"],
+        "selected_arm": payload["arm"],
+        "selected_model_update": payload["update"],
+        "state_key": "arm_state_dict",
+        "frozen_substrate_source": "migrated_predecessor_initialization",
+        "arm_tensor_count": len(expected_arm_keys),
+    }
+
+
 def build_model(
     checkpoint,
     device,
@@ -662,29 +740,40 @@ def build_model(
         payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
         if file_binding(Path(checkpoint)) != checkpoint_binding:
             raise RuntimeError("scaled snapshot changed while it was loaded")
-        if (
-            not isinstance(payload, dict)
-            or payload.get("schema") != trainer.SNAPSHOT_SCHEMA
-            or payload.get("citable_as_scientific_evidence") is not False
-            or payload.get("authorizes_retry_or_resume") is not False
-            or not isinstance(payload.get("model_state_dict"), dict)
-            or type(payload.get("update")) is not int
-            or payload.get("update") != expected_update
-            or not isinstance(payload.get("pack_bindings"), dict)
-            or not isinstance(payload.get("source_bindings"), list)
-            or payload.get("predecessor_binding") != predecessor_binding
-        ):
-            raise ValueError("scaled snapshot schema or provenance changed")
-        model.load_state_dict(payload["model_state_dict"])
-        label = f"temporal_update_{payload.get('update')}"
-        identity = {
-            "kind": "scaled_temporal_snapshot",
-            "predecessor": predecessor_binding,
-            "scaled_snapshot": checkpoint_binding,
-            "selected_model_update": payload["update"],
-            "snapshot_pack_bindings": payload.get("pack_bindings"),
-            "snapshot_source_bindings": payload.get("source_bindings"),
-        }
+        if payload.get("schema") == trainer.SNAPSHOT_SCHEMA:
+            if (
+                payload.get("citable_as_scientific_evidence") is not False
+                or payload.get("authorizes_retry_or_resume") is not False
+                or not isinstance(payload.get("model_state_dict"), dict)
+                or type(payload.get("update")) is not int
+                or payload.get("update") != expected_update
+                or not isinstance(payload.get("pack_bindings"), dict)
+                or not isinstance(payload.get("source_bindings"), list)
+                or payload.get("predecessor_binding") != predecessor_binding
+            ):
+                raise ValueError("scaled snapshot schema or provenance changed")
+            model.load_state_dict(payload["model_state_dict"])
+            label = f"temporal_update_{payload.get('update')}"
+            identity = {
+                "kind": "scaled_temporal_snapshot",
+                "predecessor": predecessor_binding,
+                "scaled_snapshot": checkpoint_binding,
+                "selected_model_update": payload["update"],
+                "snapshot_pack_bindings": payload.get("pack_bindings"),
+                "snapshot_source_bindings": payload.get("source_bindings"),
+            }
+        else:
+            arm_identity = load_predictor_arm_state_v1(
+                model, payload, expected_update=expected_update
+            )
+            label = f"{payload['arm']}_update_{payload['update']}"
+            identity = {
+                **arm_identity,
+                "predecessor": predecessor_binding,
+                "scaled_snapshot": checkpoint_binding,
+                "snapshot_substrate_receipt": payload.get("substrate"),
+                "snapshot_authority_binding": payload.get("authority_binding"),
+            }
     return model.to(device).eval(), label, identity
 
 
