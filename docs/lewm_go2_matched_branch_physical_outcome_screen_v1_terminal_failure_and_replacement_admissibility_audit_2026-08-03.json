@@ -1,0 +1,229 @@
+{
+  "schema": "lewm_go2_matched_branch_physical_outcome_screen_v1_terminal_failure_and_replacement_admissibility_audit_v1",
+  "status": "PASS_CONSUMED_INFRASTRUCTURE_FAILURE_SCIENCE_IDENTICAL_REPLACEMENT_ADMISSIBLE",
+  "reviewed_at": "2026-08-03T18:24:48+01:00",
+  "reviewer": {
+    "identity": "/root/physical_screen_failure_audit",
+    "independence_basis": "I did not author the preregistration, frozen implementation, source review, execution authority, or consumed attempt. I inspected only the exact attempt_v1 reservation, checkpoint container and terminal plus the exact committed runner, physical-outcome evaluator, imported selection contract, preregistration, source review, and authority bindings. I did not deserialize checkpoint tensors, compute or inspect candidate evaluation scores, run either evaluator, or access protected, held-out, sealed, RGB, or encoder material."
+  },
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "citable_as_scientific_evidence": false,
+  "scope": {
+    "attempt_id": "go2_matched_branch_physical_outcome_screen_v1/attempt_v1",
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_physical_outcome_screen_v1/attempt_v1",
+    "review_mode": "READ_ONLY_TERMINAL_FAILURE_AND_REPLACEMENT_ADMISSIBILITY_AUDIT",
+    "protected_material_opened": false,
+    "held_out_material_opened": false,
+    "sealed_material_opened": false,
+    "rgb_leaves_opened": false,
+    "encoder_executed": false,
+    "checkpoint_file_rehashed": true,
+    "checkpoint_container_inventory_inspected": true,
+    "checkpoint_payload_deserialized": false,
+    "checkpoint_scientific_scores_computed_or_inspected": false
+  },
+  "frozen_document_bindings": {
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_physical_outcome_screen_v1_preregistration_2026-08-03.md",
+      "sha256": "6b758b33948ebd621698d47ec01a892c52f473fb6bec930fcdf1cb459fd8da3f",
+      "byte_count": 10369
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_physical_outcome_screen_v1_source_review_2026-08-03.json",
+      "sha256": "4b324b9d2d443d7d87beb043ca15eba9dfa8214b8a62219678eccb51366e61e0",
+      "byte_count": 6100
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_physical_outcome_screen_v1_execution_authority_2026-08-03.json",
+      "sha256": "b4ea0a0fd688543c5bfbfdc7c8d9f4db28bb7aa4025c08188d4cc084a250a696",
+      "byte_count": 13631
+    }
+  },
+  "attempt_artifact_bindings": {
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_physical_outcome_screen_v1/attempt_v1/reservation.json",
+      "sha256": "fba63ae369d73109c0d0e8287230c738dbeb75d6b4dc4e92954b83628d8a0c7a",
+      "byte_count": 514
+    },
+    "physical_outcome_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_physical_outcome_screen_v1/attempt_v1/physical_outcome_checkpoint.pt",
+      "sha256": "90fa756cae37d7dda04d10a69fa9093b4f6447b55cb56c1f548909218510f3c7",
+      "byte_count": 2544111,
+      "interpretation": "durable train-only checkpoint written after fitting and checkpoint-contract validation and before evaluation publication"
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_physical_outcome_screen_v1/attempt_v1/terminal.json",
+      "sha256": "c6c0a615639e55a4d7d2a513c769cd16a8085eaf0c0de7a1fbed15ad96c1ff10",
+      "byte_count": 489
+    }
+  },
+  "source_seam_bindings": {
+    "physical_outcome_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "1931db12adf860def7254a5a41e2a61d29a5daf90873c801e0f308bf0c0aa2cd",
+      "byte_count": 50079,
+      "frozen_source_commit": "7c0603440d27206f3c07789ff53274fa3a758f23"
+    },
+    "physical_outcome_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "425fc327c48070bd967d6a6924b10002364f09c0ba6bf16dbfcfa18bf6298953",
+      "byte_count": 70590,
+      "frozen_source_commit": "7c0603440d27206f3c07789ff53274fa3a758f23"
+    },
+    "imported_selection_contract": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+      "byte_count": 28399,
+      "last_change_commit": "7d5b6c53891dd079da6452aa7e5b18a656cfd3af"
+    }
+  },
+  "commit_chain": {
+    "preregistration_commit": "4bda4ac1ef089eb0c47f35001460ef6da632638f",
+    "implementation_commit": "09426ec4bcb9b7a4ccd08614c0969a3ec25d72f4",
+    "reviewed_source_commit": "7c0603440d27206f3c07789ff53274fa3a758f23",
+    "source_review_commit": "ec64c8f963a96a8a24e8af752420aa9aec2a34bd",
+    "execution_authority_commit": "6f8b47ebc228d01e7a8113acc02c83e495edd515",
+    "authority_embedded_pre_execution_git_commit": "ec64c8f963a96a8a24e8af752420aa9aec2a34bd"
+  },
+  "reservation_and_terminal_contract": {
+    "reservation_consumes_attempt": true,
+    "reservation_authority_binding_matches": true,
+    "terminal_status": "FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION",
+    "terminal_failure_type": "AttributeError",
+    "terminal_failure_message": "'_PhysicalLabelsV1' object has no attribute 'planar_clearance_proxy_min_m'",
+    "terminal_result_binding": null,
+    "terminal_deterministic_replay_passed": false,
+    "terminal_authorizes_retry_or_resume": false,
+    "terminal_authorizes_navigation_claim": false,
+    "terminal_authorizes_new_dense_comparison_preregistration": false,
+    "original_terminal_remains_authoritative_and_must_not_be_rewritten": true
+  },
+  "attempt_inventory": {
+    "exact_files": [
+      "reservation.json",
+      "physical_outcome_checkpoint.pt",
+      "terminal.json"
+    ],
+    "evaluation_json_present": false,
+    "replay_json_present": false,
+    "result_json_present": false,
+    "scientific_verdict_published": false,
+    "deterministic_replay_launched": false,
+    "terminal_result_binding_is_null": true
+  },
+  "execution_phase_classification": {
+    "last_completed_phase": "TRAIN_ONLY_FIT_CHECKPOINT_VALIDATION_AND_DURABLE_CHECKPOINT_WRITE",
+    "failure_phase": "PRIMARY_EVALUATION_FIRST_LEARNED_MEMBER_REPORT_ADAPTER",
+    "train_only_model_fitting_completed": true,
+    "checkpoint_contract_validation_completed_before_write": true,
+    "evaluation_cache_loaded_before_failure": true,
+    "evaluation_dataset_built_before_failure": true,
+    "first_learned_member_predictions_and_rank_scores_may_have_existed_transiently_in_process": true,
+    "candidate_evaluation_report_completed": false,
+    "paired_bootstrap_comparisons_computed": false,
+    "scientific_gates_computed": false,
+    "evaluation_artifact_written": false,
+    "fresh_process_replay_started": false,
+    "result_artifact_written": false,
+    "phase_basis": "The frozen runner validates and writes the train-only checkpoint at lines 1110-1122, then loads/builds evaluation inputs and enters evaluate_primary_checkpoint_v1 at lines 1124-1137. The frozen evaluator predicts and ranks the first learned member before calling report_arm_v1 at lines 1442-1450; evaluation.json is not written until the whole evaluator returns at runner lines 1138-1144, and replay begins only afterward."
+  },
+  "root_cause": {
+    "classification": "DETERMINISTIC_EVALUATION_LABEL_ADAPTER_INTERFACE_MISMATCH",
+    "mechanical": true,
+    "science_independent": true,
+    "evidence": {
+      "screen_label_adapter_fields_at_frozen_source_lines_123_127": [
+        "target_progress_m",
+        "path_length_m",
+        "fell",
+        "tipped"
+      ],
+      "screen_report_delegation": "report_arm_v1 passes the screen's plan.groups directly to imported selection_metrics_v1",
+      "imported_contract_unconditional_accesses_at_lines_286_287": [
+        "labels.planar_clearance_proxy_min_m",
+        "labels.grid_recoverability_proxy"
+      ],
+      "first_missing_attribute_matches_terminal_exactly": true
+    },
+    "determinism_argument": "Every branch in every screen group carries the same frozen _PhysicalLabelsV1 type, and that type lacks both proxy attributes. Therefore every possible selected action reaches the same missing first attribute; the exception does not depend on a model prediction, selected action, regret, interval, threshold, or gate outcome.",
+    "scientific_scope": "The mismatch concerns optional legacy nonphysical proxy reporting fields only. Those fields are neither model inputs, regression targets, physical ranking keys, primary metrics, bootstrap variables, nor decision gates in the preregistered screen."
+  },
+  "science_independence_and_nonpublication": {
+    "replacement_decision_uses_candidate_scores": false,
+    "this_audit_computed_candidate_scores": false,
+    "this_audit_inspected_candidate_scores": false,
+    "persistent_candidate_scores_exist_in_attempt_inventory": false,
+    "checkpoint_contains_train_only_state_not_evaluation_results": true,
+    "failure_is_identical_for_all_possible_candidate_score_matrices": true,
+    "no_scientific_conclusion_available_from_attempt_v1": true,
+    "attempt_v1_may_not_be_cited_as_evidence_for_or_against_physical_dynamics_headroom": true
+  },
+  "replacement_admissibility": {
+    "eligible": true,
+    "kind": "SEPARATELY_PREREGISTERED_SCIENCE_IDENTICAL_INTEGRITY_REPLACEMENT_ONLY",
+    "justification": "The one-shot was consumed by a deterministic optional-reporting interface error that is independent of all model outcomes, and it published no evaluation, replay, result, gate, or scientific verdict.",
+    "this_document_authorizes_replacement_execution": false,
+    "required_new_output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_physical_outcome_screen_v1/attempt_v2_integrity_replacement_v1",
+    "required_new_output_root_must_be_absent_before_separate_authority": true,
+    "original_attempt_v1_must_remain_byte_identical": true,
+    "original_checkpoint_may_be_reused_or_resumed": false,
+    "replacement_must_retrain_all_six_members_from_the_frozen_seeds": true,
+    "replacement_must_rebuild_the_train_only_projection_and_statistics": true,
+    "permitted_source_change_only": "make the screen-local physical-label adapter satisfy the already frozen selection report interface by supplying the two absent optional nonphysical proxy fields as null, with focused regression coverage",
+    "may_change_model_architecture": false,
+    "may_change_data_or_state_selection": false,
+    "may_change_features_or_labels": false,
+    "may_change_training_schedule_seeds_or_optimizer": false,
+    "may_change_action_scoring_ranking_or_tie_breaks": false,
+    "may_change_primary_metric_bootstrap_gates_or_thresholds": false,
+    "may_change_replay_or_terminal_decision_contract": false,
+    "requires_new_preregistration": true,
+    "requires_new_exact_source_review": true,
+    "requires_new_one_shot_execution_authority": true,
+    "requires_independent_terminal_review": true
+  },
+  "no_retry_no_resume": {
+    "attempt_v1_is_consumed": true,
+    "attempt_v1_retry_authorized": false,
+    "attempt_v1_resume_authorized": false,
+    "attempt_v1_checkpoint_reuse_authorized": false,
+    "attempt_v1_output_completion_authorized": false,
+    "attempt_v1_overwrite_or_terminal_amendment_authorized": false,
+    "required_interpretation": "Do not retry, resume, complete, amend, or overwrite attempt_v1. Any admissible continuation is a new full science-identical integrity-replacement attempt in a separately preregistered, reviewed, authorized, and initially absent root."
+  },
+  "audit_checks": {
+    "authority_binding_rehashed_and_matches_reservation": true,
+    "reservation_checkpoint_and_terminal_rehashed": true,
+    "attempt_inventory_exactly_three_files": true,
+    "no_evaluation_replay_or_result_published": true,
+    "frozen_source_seams_match_committed_reviewed_bindings": true,
+    "failure_attribute_matches_first_unsatisfied_selector_access": true,
+    "failure_occurs_after_checkpoint_and_before_evaluation_publication": true,
+    "failure_is_independent_of_selected_action_and_score_values": true,
+    "original_attempt_no_retry_no_resume_preserved": true,
+    "replacement_scope_is_science_identical_and_non_authorizing": true
+  },
+  "findings": [
+    {
+      "id": "attempt_v1_consumed_without_scientific_result",
+      "severity": "terminal_infrastructure_failure",
+      "finding": "attempt_v1 completed train-only fitting and checkpoint publication but emitted no evaluation, replay, result, gate, or scientific verdict; its only valid terminal interpretation is FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION."
+    },
+    {
+      "id": "screen_label_adapter_omits_selector_optional_proxy_fields",
+      "severity": "mechanical_interface_defect",
+      "finding": "The frozen screen label adapter omitted two optional nonphysical proxy attributes that the already bound generic selection reporter dereferences unconditionally. The first dereference exactly explains the terminal AttributeError for every possible selected action."
+    },
+    {
+      "id": "science_identical_integrity_replacement_admissible_not_authorized",
+      "severity": "admissibility_conclusion",
+      "finding": "A separately preregistered full rerun in a fresh root is admissible only after the null optional-proxy adapter repair and focused regression test. No model, data, seed, training, score, gate, threshold, or replay change is admissible, and this audit itself grants no execution authority."
+    }
+  ],
+  "limitations": [
+    "This audit does not deserialize or validate the checkpoint's numerical tensors beyond its exact file binding and container readability.",
+    "This audit does not compute, recover, infer, or report any candidate scientific score from the consumed checkpoint.",
+    "This audit does not convert attempt_v1 into a scientific result and does not authorize an integrity-replacement run."
+  ]
+}
