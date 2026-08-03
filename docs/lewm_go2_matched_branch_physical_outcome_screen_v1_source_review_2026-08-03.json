@@ -1,0 +1,104 @@
+{
+  "schema": "lewm_go2_matched_branch_physical_outcome_screen_v1_source_review_v1",
+  "status": "PASS_INDEPENDENT_PHYSICAL_OUTCOME_SCREEN_SOURCE_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewer": {
+    "identity": "/root/physical_screen_source_review",
+    "independence_basis": "I did not author the preregistration, model, evaluator, primary runner, replay runner, or focused tests. I independently reviewed the complete frozen implementation at source commit 7c0603440d27206f3c07789ff53274fa3a758f23 against the preregistration, audited the full 14-file transitive repository source closure and all 15 direct-input bindings, verified the deliberate direct 256-receipt route without invoking legacy live validation, reproduced 40/40 focused tests in the bound ROCm runtime, and independently verified compilation, committed-source identity, whitespace, leakage, custody, checkpoint ordering, one-shot failure handling, and fresh-process replay constraints."
+  },
+  "protected_material_opened": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_physical_outcome_screen_v1_preregistration_2026-08-03.md",
+    "sha256": "6b758b33948ebd621698d47ec01a892c52f473fb6bec930fcdf1cb459fd8da3f",
+    "byte_count": 10369
+  },
+  "source_bindings": {
+    "counterfactual_contract": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+      "byte_count": 102894
+    },
+    "counterfactual_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "prior_calibration_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "89afbc4b4611806ba5fd230747ee9de31edbb9ddf39701150246439b637c0d98",
+      "byte_count": 34541
+    },
+    "dense_predecessor_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "6c8ed2398b1889c49b0699a236495530c63cfb0d363b0351b419c07efaf778e4",
+      "byte_count": 60963
+    },
+    "dense_predecessor_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "de7d7defd5047f84fa8d71ba62c05c441a965018ec6f41c5771384ea11d4295a",
+      "byte_count": 12637
+    },
+    "counterfactual_action_regret_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+      "byte_count": 28399
+    },
+    "physical_outcome_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "81947b04c23a789ce8d4a8a45005db4f08181784322504b1b140d969b2f5ff32",
+      "byte_count": 7951
+    },
+    "physical_outcome_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "425fc327c48070bd967d6a6924b10002364f09c0ba6bf16dbfcfa18bf6298953",
+      "byte_count": 70590
+    },
+    "physical_outcome_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "1931db12adf860def7254a5a41e2a61d29a5daf90873c801e0f308bf0c0aa2cd",
+      "byte_count": 50079
+    },
+    "physical_outcome_replay": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/replay_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "39cb1f0ada0a1decb6adced782a45a098f64cbc50afd2bf89cedae3ffcf1fb67",
+      "byte_count": 16839
+    },
+    "physical_outcome_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_physical_outcome_screen_model_v1.py",
+      "sha256": "5e08b013b23616002059154f1c932cc80afc9ce413f5b8a763de47c4072113b8",
+      "byte_count": 6543
+    },
+    "physical_outcome_evaluator_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "67ad5f755d52c468b4a8fdd2303d57948f112333da96c421d065c54091106000",
+      "byte_count": 15727
+    },
+    "physical_outcome_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "a8bdc5f4e0a23cedc88cf58573753bc7221ab858ea88fd5ff7843c3b279a145a",
+      "byte_count": 14934
+    },
+    "physical_outcome_replay_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_replay_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "66c2879a68356f5eec7a198cb2470484a746a29d49e1ae91b952202e0f5ffe02",
+      "byte_count": 6789
+    }
+  },
+  "checks": {
+    "frozen_preregistration_binding_exact": true,
+    "source_bindings_complete_exact_and_committed": true,
+    "all_15_direct_input_bindings_complete_and_exact": true,
+    "all_256_state_receipts_rehashed_without_legacy_live_validation": true,
+    "pre_action_projection_excludes_forbidden_future_fields": true,
+    "train_only_visual_pca_and_normalization": true,
+    "task_action_control_identity_and_regret_frozen": true,
+    "six_member_training_protocol_matches_preregistration": true,
+    "checkpoint_written_before_eval_cache_load_and_evaluation_publication": true,
+    "fresh_process_replay_retrains_and_recomputes": true,
+    "exact_six_file_output_and_failure_terminal_fail_closed": true,
+    "no_rgb_encoder_collection_protected_retry_or_resume_path": true,
+    "focused_tests_passed": true,
+    "compile_and_whitespace_checks_passed": true
+  },
+  "findings": []
+}
