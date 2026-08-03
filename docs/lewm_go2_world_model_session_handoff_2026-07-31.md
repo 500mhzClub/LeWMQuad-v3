@@ -860,3 +860,42 @@ navigation evidence, held-out or sealed evidence, a safety certificate,
 checkpoint promotion, G2--G8 authority, or deployment evidence. No protected or
 sealed material was opened, no sealed attempt was consumed, and V4 remains
 development-only and permanently ineligible for final evaluation.
+
+## Addendum: dual residual token-adapter screen (2026-08-03)
+
+The next representation mechanism was preregistered before implementation and
+both treatment arms have now been attempted.  Each arm jointly trained a
+bounded residual spatial-token adapter and the action-conditioned predictor
+over an exact frozen cache.  The pretrained RGB backbones were not executed or
+fine-tuned, no RGB or evaluation target was opened, and this remained a
+train-only capacity screen.
+
+The exact terminal is
+`COMPLETE_BOTH_ATTEMPTED_NO_CAPACITY_ESTABLISHED`:
+
+- V-JEPA 2.1 stopped at update 800 with ratio `0.928816`, retrieval
+  `331/1152` (`0.287326`), and margin `0.029863`; it failed both midpoint
+  gates and was essentially neutral relative to its frozen control.
+- DINOv2 passed the update-800 continuation gate and reached update 1,600.
+  It finished with ratio `0.714902`, retrieval `563/1152` (`0.488715`), and
+  margin `0.118138`.  Fidelity, intervention, retention, finiteness, and
+  deterministic replay passed, but retrieval missed the fixed `0.50` gate by
+  13 rows.
+- DINO therefore supplies material action-conditional **training-panel**
+  mechanism evidence, but neither arm is capacity-eligible.  No fresh-scene,
+  physical-planning, rollout, or navigation inference is licensed.
+
+The result, terminal, and three checkpoints were independently rebound and
+replayed bit-for-bit.  The durable review is
+`docs/lewm_go2_dual_residual_token_adapter_jepa_v1_terminal_review_2026-08-03.json`
+(9,116 bytes, SHA-256
+`365ab4057bfc51fe9d1b0bd3e7dd415bbddcde9adf89a3ac7674f34b2bc5f1fd`).
+
+The registered route is
+`STOP_CACHED_TOKEN_ADAPTER_FAMILY_NO_FRESH_DATA_GENERATION`.  Do not extend
+either arm, retry a seed, tune the gate, or treat the 13-row DINO miss as a
+pass.  A full dense-token backbone-level or end-to-end JEPA would be a
+materially new representation mechanism, not a continuation of this attempt,
+and would require a new preregistration and authority.  The thesis and direct
+navigation evidence chain remain open; no learned world model in this program
+has yet earned planner integration or closed-loop navigation evaluation.

@@ -365,3 +365,56 @@ physical action ranking, rollout composability, useful planning geometry, or
 causal navigation benefit.  The project has run a real representation-and-
 dynamics capacity experiment; it has still not run an experiment in which a
 learned world model successfully chooses and executes navigation actions.
+
+## Joint residual token-adapter result update (2026-08-03)
+
+The registered representation-mechanism successor has now also run.  This was
+not RGB backbone fine-tuning: it jointly trained the existing action predictor
+and a bounded two-block residual spatial adapter over each frozen pretrained
+token cache, with a detached EMA target adapter and a mandatory frozen-target
+loss.  Both arms were attempted independently on the same 128-state,
+1,152-branch train panel.
+
+| Arm and decision | Error / persistence | Branch retrieval | Correct / 1,152 | Intervention margin |
+|---|---:|---:|---:|---:|
+| V-JEPA adapter, update 800 | 0.9288 | 0.2873 | 331 | 0.0299 |
+| DINOv2 adapter, update 800 | 0.8018 | 0.3628 | 418 | 0.0906 |
+| DINOv2 adapter, update 1,600 | 0.7149 | 0.4887 | 563 | 0.1181 |
+
+The V-JEPA arm missed both update-800 midpoint gates and stopped.  Relative to
+the frozen V-JEPA update-800 control, its fidelity ratio was slightly worse
+(`+0.01238`), retrieval gained only eight rows, and margin gained `0.00120`.
+There is no material V-JEPA adapter benefit in this screen.
+
+The DINOv2 result is materially different.  It passed the registered
+update-800 continuation gate and continued because both ratio and retrieval
+improved strictly.  At update 1,600 it passed fidelity, positive-intervention,
+representation-retention, finiteness, and deterministic-repeat gates.  Its
+retrieval was 563 of 1,152, exactly 13 rows short of the required 576.  Against
+the frozen DINOv2 control, the terminal ratio improved by `0.25179`, retrieval
+by 327 rows (`+28.385` percentage points), and margin by `0.07211`.  Token
+retention remained high (`0.99142` mean cosine) and effective rank increased
+rather than collapsing (`1.08473` adapted/frozen ratio).
+
+This is strong evidence that the bounded joint-adaptation mechanism extracts
+action-conditional structure from DINOv2 tokens on the fixed training panel.
+It is also a clean negative capacity decision: the preregistered conjunction
+did not pass.  The correct joint terminal is
+`COMPLETE_BOTH_ATTEMPTED_NO_CAPACITY_ESTABLISHED`, with no eligible arm and no
+fresh-data authorization.  Extending DINO to update 3,200, changing a
+coefficient, or rerunning a seed because it missed by only 13 rows would be a
+result-dependent retry, not disciplined progression.
+
+The result narrows the next scientific choice.  It rules out this bounded
+cached-token adapter family, not full dense-token backbone adaptation or an
+end-to-end self-supervised JEPA.  DINO, rather than V-JEPA 2.1, supplied the
+stronger adaptable token geometry here.  Any later backbone-level successor
+must therefore be treated as a materially new mechanism with a new
+preregistration and must still earn fresh-scene, physical-ranking, planning,
+and closed-loop evidence.  Nothing in the 563 training-panel matches proves
+that DINOv2 can navigate.
+
+All three checkpoint evaluations and retention calculations were independently
+replayed twice from the bound train caches and matched bit-for-bit.  The
+independent terminal record is
+[the dual residual token-adapter terminal review](lewm_go2_dual_residual_token_adapter_jepa_v1_terminal_review_2026-08-03.json).
