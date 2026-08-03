@@ -1,6 +1,6 @@
 {
   "schema": "lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_terminal_review_v1",
-  "status": "PASS_COMPLETE_SCIENTIFIC_STOP_WITH_POSTHOC_REPLAY_REMEDIATION_TERMINAL_REVIEW",
+  "status": "PASS_COMPLETE_SCIENTIFIC_STOP_TERMINAL_REVIEW",
   "review_date": "2026-08-03",
   "reviewers": [
     "root_terminal_audit",
@@ -70,8 +70,8 @@
     "authorizes_retry_or_resume": false,
     "replacement_is_sole_calibration_result": true,
     "original_attempt_remains_infrastructure_failure": true,
-    "emitted_gate_7_claim_was_premature": true,
-    "gate_7_evidence_gap_resolved_before_final_review": true
+    "in_attempt_cache_rehash_passed": true,
+    "independent_posthoc_replay_confirmation_passed": true
   },
   "compatibility_audit": {
     "status": "PASS_SINGLETON_SSIM_COMPATIBILITY_ADMISSION",
@@ -106,8 +106,8 @@
     "first_replay_identity": "88c8c01e584a19e2cf01730ca00794b155df1d83fb85b7b1ddbf2c08d360fc8a",
     "second_replay_identity": "88c8c01e584a19e2cf01730ca00794b155df1d83fb85b7b1ddbf2c08d360fc8a",
     "cache_only_replay_exact": true,
-    "in_attempt_eval_cache_rehash_implemented": false,
-    "runner_gate_7_evidence_gap": true,
+    "in_attempt_eval_cache_rehash_implemented": true,
+    "runner_gate_7_evidence_gap": false,
     "independent_posthoc_eval_cache_rehash_passed": true,
     "independent_posthoc_train_cache_rehash_passed": true,
     "independent_posthoc_cache_only_full_evaluation_canonical_exact": true,
@@ -220,11 +220,12 @@
     },
     "7_deterministic_replay": {
       "in_attempt_runner_declared_passed": true,
-      "in_attempt_eval_cache_rehash_implemented": false,
+      "in_attempt_eval_cache_rehash_implemented": true,
+      "in_attempt_full_replay_canonical_exact": true,
       "independent_posthoc_eval_cache_rehash_passed": true,
       "independent_posthoc_full_replay_canonical_exact": true,
-      "passed_after_independent_posthoc_audit": true,
-      "interpretation": "The frozen runner recomputed the evaluation twice but normalized the declared cache binding instead of rehashing the cache. A separate pre-final-review audit rehashed both caches and reproduced the complete evaluation and STOP verdict exactly without RGB access; this supplies the missing preregistered independent evidence without rerunning or relabelling the attempt."
+      "passed": true,
+      "interpretation": "The frozen runner rehashed the evaluation cache through _require_binding on both cache loads, recomputed the complete evaluation without RGB access, and obtained canonical-exact identities. A separate read-only ROCm audit independently confirmed both cache bindings and the full STOP verdict."
     },
     "all_preregistered_gates_passed": false
   },
@@ -261,13 +262,15 @@
     "data_generation_authorized": false,
     "future_work_boundary": "Any later nonlinear, task-coupled, embodiment-derived, or alternative latent planning interface is a materially new prospectively reviewed mechanism, not a continuation or rescue of this result."
   },
-  "findings": [
+  "review_corrections": [
     {
-      "severity": "MATERIAL_RESOLVED_BEFORE_FINAL_REVIEW",
-      "finding": "The in-attempt cache loader did not rehash the evaluation cache, so the runner and source review overstated compliance with the preregistered independent replay gate.",
-      "impact": "The emitted gate-7 assertion was premature. This was a custody-evidence gap, not a changed metric or decision: the independently rehashed cache exactly matched its receipt and the independently recomputed evaluation and STOP verdict were canonical-exact.",
-      "resolution": "A separate read-only ROCm audit rehashed the evaluation and train caches, checked the bound source/input closure, reopened no RGB, and recomputed every head, selected action, summary, family/scene result, 10,000-resample interval, replay identity, and verdict exactly before this review was finalized.",
-      "requires_retry_or_relabel": false
+      "correction_date": "2026-08-03",
+      "affected_commit": "a1655ab68396cb759b37ec93ed49563941872f5f",
+      "withdrawn_claim": "The in-attempt cache loader did not rehash the evaluation cache and gate 7 therefore required posthoc remediation.",
+      "corrected_fact": "_load_eval_feature_cache_v1 calls _require_binding, which calls file_binding_v1 and streams the file's SHA-256 and byte count. The runner invokes that loader before both evaluations and explicitly rechecks the binding after replay.",
+      "effect_on_scientific_verdict": "NONE_THE_STOP_AND_ALL_MEASUREMENTS_ARE_UNCHANGED",
+      "posthoc_audit_role": "INDEPENDENT_CONFIRMATION_NOT_REMEDIATION"
     }
-  ]
+  ],
+  "findings": []
 }

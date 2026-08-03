@@ -944,21 +944,22 @@ single strongly favorable visual-sensor-stress family was excluded.  Changing
 the zero-effect superiority gates after seeing these data would validate scene
 and action priors, not a useful world model.
 
-Independent review found one important custody-evidence defect before the
-terminal review was frozen.  The attempt recomputed the evaluation twice but
-its cache loader normalized the declared cache binding instead of rehashing
-the `.pt` file, so the in-run gate-7 claim was premature and the source review
-overstated that check.  A separate read-only ROCm audit then rehashed both
-caches and all bound inputs/sources, opened zero RGB, and reproduced every
-readout, selected action, summary, family/scene row, bootstrap interval,
-identity, and STOP verdict canonically exactly.  No rerun, relabelling, gate
-change, or second replacement was used.  The final review records the original
-gap and its pre-final-review remediation rather than hiding it.
+An initial terminal-review pass incorrectly reported that the attempt's cache
+loader normalized the declared cache binding without rehashing the `.pt` file.
+That claim is withdrawn.  The loader calls `_require_binding`, which calls
+`file_binding_v1` and streams the file's SHA-256 and byte count; it does this on
+both evaluation-cache loads, and the runner explicitly checks the binding
+again after replay.  A separate read-only ROCm audit also rehashed both caches
+and all bound inputs/sources, opened zero RGB, and reproduced every readout,
+selected action, summary, family/scene row, bootstrap interval, identity, and
+STOP verdict canonically exactly.  It is independent confirmation, not
+remediation of a missing in-run rehash.  The corrected terminal review retains
+this correction record and leaves all measurements and the STOP unchanged.
 
 The durable review is
 `docs/lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_terminal_review_2026-08-03.json`
-(14,663 bytes, SHA-256
-`0a7f03de5717848c5a0a8a8348f84e2b60e294a988d03ceefec941b0f8b92e96`).
+(14,382 bytes, SHA-256
+`7074779bdc506548d903c0319b74243f2b2934a1888325f813ee52f5a115c679`).
 
 The exact progression decision is
 `STOP_PLANNED_DINO_JEPA_BEFORE_TRAINING_DEFENSIBLE_NEGATIVE`.  Do not train,
