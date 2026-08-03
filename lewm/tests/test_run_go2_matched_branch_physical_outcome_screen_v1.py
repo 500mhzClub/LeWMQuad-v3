@@ -94,9 +94,11 @@ def test_fixed_closures_and_six_file_inventory_match_preregistration() -> None:
         "00a2e197d98effcd192392f50170648622a7210f954075002dc8b43110c636f8"
     )
     assert runner.PREREGISTRATION_SHA256 == (
-        "6b758b33948ebd621698d47ec01a892c52f473fb6bec930fcdf1cb459fd8da3f"
+        "12506a6c44d28ffff2ffa700715e7d22fbc462a3ea32bbc36eebaf8b6c2d1326"
     )
-    assert runner.PREREGISTRATION_BYTE_COUNT == 10_369
+    assert runner.PREREGISTRATION_BYTE_COUNT == 18_343
+    assert runner.DEFAULT_OUTPUT_ROOT.name == "attempt_v2_integrity_replacement_v1"
+    assert runner.DEFAULT_OUTPUT_ROOT != runner.ORIGINAL_OUTPUT_ROOT
     assert set(runner.OUTPUT_NAMES) == {
         "reservation.json",
         "physical_outcome_checkpoint.pt",
@@ -108,6 +110,31 @@ def test_fixed_closures_and_six_file_inventory_match_preregistration() -> None:
     assert runner.config_v1()["direct_input_file_count"] == 15
     assert runner.config_v1()["output_inventory"] == list(runner.OUTPUT_NAMES)
     assert runner.config_v1()["legacy_task_relevance_validation_permitted"] is False
+
+
+def test_predecessor_lineage_binds_exact_consumed_attempt_and_contract() -> None:
+    lineage = runner._fixed_predecessor_lineage_bindings_v1()  # noqa: SLF001
+    assert set(lineage) == {
+        "original_preregistration",
+        "original_source_review",
+        "original_execution_authority",
+        "original_reservation",
+        "original_quarantined_checkpoint",
+        "original_terminal",
+        "terminal_failure_and_replacement_admissibility_audit",
+    }
+    assert lineage["original_quarantined_checkpoint"] == {
+        "path": str(runner.ORIGINAL_CHECKPOINT.resolve()),
+        "sha256": (
+            "90fa756cae37d7dda04d10a69fa9093b4f6447b55cb56c1f548909218510f3c7"
+        ),
+        "byte_count": 2_544_111,
+    }
+    assert lineage[
+        "terminal_failure_and_replacement_admissibility_audit"
+    ]["sha256"] == (
+        "a3f889aa6494b67800ed5224f9ebe97bf266a6f40d444c8a36c90182332cf511"
+    )
 
 
 def test_source_closure_contains_all_new_primary_and_replay_paths() -> None:
@@ -126,6 +153,190 @@ def test_source_closure_contains_all_new_primary_and_replay_paths() -> None:
     ).resolve()
     assert runner.SOURCE_PATHS["physical_outcome_replay"] == runner.REPLAY_CLI
     assert runner.config_v1()["source_file_count"] == len(runner.SOURCE_PATHS)
+
+
+def test_replacement_source_review_requires_lineage_and_original_commit() -> None:
+    preregistration = _binding("/development/replacement-prereg", "0")
+    lineage = {"original_terminal": _binding("/development/terminal", "1")}
+    sources = {"runner": _binding("/development/runner.py", "2")}
+    review = {
+        "schema": runner.SOURCE_REVIEW_SCHEMA,
+        "status": runner.SOURCE_REVIEW_STATUS,
+        "review_date": "2026-08-03",
+        "reviewer": {
+            "identity": "independent reviewer",
+            "independence_basis": "did not author the lifecycle correction",
+        },
+        "protected_material_opened": False,
+        "preregistration_binding": preregistration,
+        "predecessor_lineage_bindings": lineage,
+        "original_reviewed_source_commit": runner.ORIGINAL_REVIEWED_SOURCE_COMMIT,
+        "source_bindings": sources,
+        "checks": {name: True for name in runner.SOURCE_REVIEW_CHECKS},
+        "findings": [],
+    }
+    runner._validate_source_review_v1(  # noqa: SLF001
+        review,
+        preregistration_binding=preregistration,
+        predecessor_lineage_bindings=lineage,
+        source_bindings=sources,
+    )
+    changed = dict(review)
+    changed["original_reviewed_source_commit"] = "f" * 40
+    with pytest.raises(
+        runner.PhysicalOutcomeScreenRunnerError, match="did not pass exactly"
+    ):
+        runner._validate_source_review_v1(  # noqa: SLF001
+            changed,
+            preregistration_binding=preregistration,
+            predecessor_lineage_bindings=lineage,
+            source_bindings=sources,
+        )
+
+
+def test_output_root_accepts_only_fresh_integrity_replacement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    replacement = tmp_path / "attempt_v2_integrity_replacement_v1"
+    original = tmp_path / "attempt_v1"
+    monkeypatch.setattr(runner, "DEFAULT_OUTPUT_ROOT", replacement)
+    monkeypatch.setattr(runner, "ORIGINAL_OUTPUT_ROOT", original)
+    assert runner._validate_output_root_v1(  # noqa: SLF001
+        str(replacement.resolve())
+    ) == replacement.resolve()
+    for wrong in (original, tmp_path / "alternate"):
+        with pytest.raises(
+            runner.PhysicalOutcomeScreenRunnerError, match="output root changed"
+        ):
+            runner._validate_output_root_v1(str(wrong.resolve()))  # noqa: SLF001
+
+
+def test_preexisting_replacement_root_is_not_reused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    replacement = tmp_path / "attempt_v2_integrity_replacement_v1"
+    replacement.mkdir()
+    monkeypatch.setattr(runner, "DEFAULT_OUTPUT_ROOT", replacement)
+    monkeypatch.setattr(runner, "ORIGINAL_OUTPUT_ROOT", tmp_path / "attempt_v1")
+    with pytest.raises(FileExistsError):
+        runner.execute_v1(
+            _authority(replacement.resolve()),
+            authority_binding=_binding(tmp_path / "authority.json", "a"),
+        )
+    assert list(replacement.iterdir()) == []
+
+
+def test_original_checkpoint_is_hash_checked_without_torch_deserialization(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = tmp_path / "attempt_v1"
+    replacement = tmp_path / "attempt_v2_integrity_replacement_v1"
+    original.mkdir()
+    original_preregistration = tmp_path / "original_preregistration.md"
+    original_source_review = tmp_path / "original_source_review.json"
+    original_authority = tmp_path / "original_authority.json"
+    failure_audit = tmp_path / "failure_audit.json"
+    original_preregistration.write_text("original preregistration\n")
+    original_source_review.write_text("{}\n")
+    original_authority.write_text("{}\n")
+    authority_binding = runner.file_binding_v1(original_authority)
+    reservation = {
+        "schema": runner.RESERVATION_SCHEMA,
+        "authority_binding": authority_binding,
+        "attempt_root": str(original.resolve()),
+        "owner_pid": 1,
+        "consumes_attempt": True,
+    }
+    (original / "reservation.json").write_text(
+        json.dumps(reservation, sort_keys=True) + "\n"
+    )
+    (original / "physical_outcome_checkpoint.pt").write_bytes(
+        b"quarantined checkpoint bytes only"
+    )
+    terminal = {
+        "schema": runner.TERMINAL_SCHEMA,
+        "status": runner.FAIL_STATUS,
+        "authorizes_retry_or_resume": False,
+        "result_binding": None,
+        "deterministic_replay_passed": False,
+    }
+    (original / "terminal.json").write_text(
+        json.dumps(terminal, sort_keys=True) + "\n"
+    )
+    failure_audit.write_text(
+        json.dumps(
+            {
+                "status": (
+                    "PASS_CONSUMED_INFRASTRUCTURE_FAILURE_"
+                    "SCIENCE_IDENTICAL_REPLACEMENT_ADMISSIBLE"
+                ),
+                "authority_granted_by_this_document": False,
+                "replacement_admissibility": {
+                    "eligible": True,
+                    "original_attempt_v1_must_remain_byte_identical": True,
+                    "original_checkpoint_may_be_reused_or_resumed": False,
+                    "required_new_output_root": str(replacement.resolve()),
+                    "this_document_authorizes_replacement_execution": False,
+                },
+                "no_retry_no_resume": {
+                    "attempt_v1_is_consumed": True,
+                    "attempt_v1_checkpoint_reuse_authorized": False,
+                    "attempt_v1_resume_authorized": False,
+                    "attempt_v1_retry_authorized": False,
+                },
+                "attempt_inventory": {
+                    "exact_files": [
+                        "reservation.json",
+                        "physical_outcome_checkpoint.pt",
+                        "terminal.json",
+                    ],
+                    "evaluation_json_present": False,
+                    "replay_json_present": False,
+                    "result_json_present": False,
+                    "terminal_result_binding_is_null": True,
+                },
+            },
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    lineage = {
+        "original_preregistration": runner.file_binding_v1(
+            original_preregistration
+        ),
+        "original_source_review": runner.file_binding_v1(original_source_review),
+        "original_execution_authority": authority_binding,
+        "original_reservation": runner.file_binding_v1(
+            original / "reservation.json"
+        ),
+        "original_quarantined_checkpoint": runner.file_binding_v1(
+            original / "physical_outcome_checkpoint.pt"
+        ),
+        "original_terminal": runner.file_binding_v1(original / "terminal.json"),
+        "terminal_failure_and_replacement_admissibility_audit": (
+            runner.file_binding_v1(failure_audit)
+        ),
+    }
+    monkeypatch.setattr(runner, "ORIGINAL_OUTPUT_ROOT", original)
+    monkeypatch.setattr(runner, "DEFAULT_OUTPUT_ROOT", replacement)
+    monkeypatch.setattr(
+        runner, "_fixed_predecessor_lineage_bindings_v1", lambda: lineage
+    )
+    deserializations: list[object] = []
+
+    def forbidden_torch_load(*args: object, **kwargs: object) -> object:
+        deserializations.append((args, kwargs))
+        raise AssertionError("old checkpoint was deserialized")
+
+    monkeypatch.setattr(runner.torch, "load", forbidden_torch_load)
+    runner._validate_predecessor_lineage_v1(lineage)  # noqa: SLF001
+    assert deserializations == []
+
+    (original / "evaluation.json").write_text("{}\n")
+    with pytest.raises(
+        runner.PhysicalOutcomeScreenRunnerError, match="inventory changed"
+    ):
+        runner._validate_predecessor_lineage_v1(lineage)  # noqa: SLF001
 
 
 def test_protected_and_parent_traversal_paths_fail_closed(tmp_path: Path) -> None:
@@ -332,7 +543,7 @@ def test_replay_cli_receives_only_bound_paths_hashes_and_byte_counts(
 def test_execute_writes_checkpoint_before_eval_cache_and_exact_inventory(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    output_root = tmp_path / "attempt_v1"
+    output_root = tmp_path / "attempt_v2_integrity_replacement_v1"
     monkeypatch.setattr(runner, "DEFAULT_OUTPUT_ROOT", output_root)
     authority = _authority(output_root)
     authority_binding = _binding(tmp_path / "authority.json", "a")

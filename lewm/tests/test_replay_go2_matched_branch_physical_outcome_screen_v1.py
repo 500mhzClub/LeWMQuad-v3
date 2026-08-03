@@ -170,6 +170,46 @@ def test_cli_contract_binds_authority_checkpoint_and_evaluation() -> None:
     assert parsed.expected_evaluation_byte_count == 3
 
 
+def test_replay_rejects_wrong_root_and_quarantined_original_checkpoint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    replacement = (tmp_path / "attempt_v2_integrity_replacement_v1").resolve()
+    original = (tmp_path / "attempt_v1").resolve()
+    original_checkpoint = original / "physical_outcome_checkpoint.pt"
+    monkeypatch.setattr(subject.runner, "DEFAULT_OUTPUT_ROOT", replacement)
+    monkeypatch.setattr(subject.runner, "ORIGINAL_OUTPUT_ROOT", original)
+    monkeypatch.setattr(subject.runner, "ORIGINAL_CHECKPOINT", original_checkpoint)
+    common = {
+        "authority_binding": {
+            "path": "/development/authority.json",
+            "sha256": "a" * 64,
+            "byte_count": 1,
+        },
+        "expected_checkpoint_sha256": "b" * 64,
+        "expected_checkpoint_byte_count": 1,
+        "evaluation_path": replacement / "evaluation.json",
+        "expected_evaluation_sha256": "c" * 64,
+        "expected_evaluation_byte_count": 1,
+    }
+    with pytest.raises(
+        subject.runner.PhysicalOutcomeScreenRunnerError,
+        match="output root changed",
+    ):
+        subject.execute_replay_v1(
+            authority={"output_root": str(tmp_path / "alternate")},
+            checkpoint_path=replacement / "physical_outcome_checkpoint.pt",
+            **common,
+        )
+    with pytest.raises(
+        subject.PhysicalOutcomeReplayError, match="quarantined original checkpoint"
+    ):
+        subject.execute_replay_v1(
+            authority={"output_root": str(replacement)},
+            checkpoint_path=original_checkpoint,
+            **common,
+        )
+
+
 def test_replay_source_has_no_rgb_encoder_or_legacy_loader_execution_path() -> None:
     source = Path(subject.__file__).read_text()
     for forbidden in (

@@ -31,13 +31,21 @@ RESERVATION_SCHEMA = (
     "lewm_go2_matched_branch_physical_outcome_screen_v1_reservation_v1"
 )
 AUTHORITY_SCHEMA = (
-    "lewm_go2_matched_branch_physical_outcome_screen_v1_execution_authority_v1"
+    "lewm_go2_matched_branch_physical_outcome_screen_"
+    "integrity_replacement_v1_execution_authority_v1"
 )
-AUTHORITY_STATUS = "AUTHORIZED_ONE_MATCHED_BRANCH_PHYSICAL_OUTCOME_SCREEN_ATTEMPT"
+AUTHORITY_STATUS = (
+    "AUTHORIZED_ONE_SCIENCE_IDENTICAL_MATCHED_BRANCH_PHYSICAL_OUTCOME_"
+    "SCREEN_INTEGRITY_REPLACEMENT"
+)
 SOURCE_REVIEW_SCHEMA = (
-    "lewm_go2_matched_branch_physical_outcome_screen_v1_source_review_v1"
+    "lewm_go2_matched_branch_physical_outcome_screen_"
+    "integrity_replacement_v1_source_review_v1"
 )
-SOURCE_REVIEW_STATUS = "PASS_INDEPENDENT_PHYSICAL_OUTCOME_SCREEN_SOURCE_REVIEW"
+SOURCE_REVIEW_STATUS = (
+    "PASS_INDEPENDENT_PHYSICAL_OUTCOME_SCREEN_INTEGRITY_REPLACEMENT_"
+    "SOURCE_REVIEW"
+)
 REPLAY_SCHEMA = "lewm_go2_matched_branch_physical_outcome_screen_v1_replay_v1"
 REPLAY_STATUS = "PASS_EXACT_FRESH_PROCESS_PHYSICAL_OUTCOME_REPLAY"
 
@@ -50,19 +58,48 @@ TERMINAL_STATUSES = frozenset(
 )
 
 PREREGISTRATION = REPO_ROOT / (
+    "docs/lewm_go2_matched_branch_physical_outcome_screen_"
+    "integrity_replacement_v1_preregistration_2026-08-03.md"
+)
+PREREGISTRATION_SHA256 = (
+    "12506a6c44d28ffff2ffa700715e7d22fbc462a3ea32bbc36eebaf8b6c2d1326"
+)
+PREREGISTRATION_BYTE_COUNT = 18_343
+SOURCE_REVIEW = REPO_ROOT / (
+    "docs/lewm_go2_matched_branch_physical_outcome_screen_"
+    "integrity_replacement_v1_source_review_2026-08-03.json"
+)
+EXECUTION_AUTHORITY = REPO_ROOT / (
+    "docs/lewm_go2_matched_branch_physical_outcome_screen_"
+    "integrity_replacement_v1_execution_authority_2026-08-03.json"
+)
+DEFAULT_OUTPUT_ROOT = REPO_ROOT / (
+    ".generated/dev/go2_matched_branch_physical_outcome_screen_v1/"
+    "attempt_v2_integrity_replacement_v1"
+)
+ORIGINAL_OUTPUT_ROOT = REPO_ROOT / (
+    ".generated/dev/go2_matched_branch_physical_outcome_screen_v1/attempt_v1"
+)
+ORIGINAL_REVIEWED_SOURCE_COMMIT = "7c0603440d27206f3c07789ff53274fa3a758f23"
+
+ORIGINAL_PREREGISTRATION = REPO_ROOT / (
     "docs/lewm_go2_matched_branch_physical_outcome_screen_v1_"
     "preregistration_2026-08-03.md"
 )
-PREREGISTRATION_SHA256 = (
-    "6b758b33948ebd621698d47ec01a892c52f473fb6bec930fcdf1cb459fd8da3f"
-)
-PREREGISTRATION_BYTE_COUNT = 10_369
-SOURCE_REVIEW = REPO_ROOT / (
+ORIGINAL_SOURCE_REVIEW = REPO_ROOT / (
     "docs/lewm_go2_matched_branch_physical_outcome_screen_v1_"
     "source_review_2026-08-03.json"
 )
-DEFAULT_OUTPUT_ROOT = REPO_ROOT / (
-    ".generated/dev/go2_matched_branch_physical_outcome_screen_v1/attempt_v1"
+ORIGINAL_EXECUTION_AUTHORITY = REPO_ROOT / (
+    "docs/lewm_go2_matched_branch_physical_outcome_screen_v1_"
+    "execution_authority_2026-08-03.json"
+)
+ORIGINAL_RESERVATION = ORIGINAL_OUTPUT_ROOT / "reservation.json"
+ORIGINAL_CHECKPOINT = ORIGINAL_OUTPUT_ROOT / "physical_outcome_checkpoint.pt"
+ORIGINAL_TERMINAL = ORIGINAL_OUTPUT_ROOT / "terminal.json"
+ORIGINAL_FAILURE_AUDIT = REPO_ROOT / (
+    "docs/lewm_go2_matched_branch_physical_outcome_screen_v1_"
+    "terminal_failure_and_replacement_admissibility_audit_2026-08-03.json"
 )
 REPLAY_CLI = REPO_ROOT / (
     "scripts/replay_go2_matched_branch_physical_outcome_screen_v1.py"
@@ -164,6 +201,8 @@ SOURCE_REVIEW_FIELDS = frozenset(
         "reviewer",
         "protected_material_opened",
         "preregistration_binding",
+        "predecessor_lineage_bindings",
+        "original_reviewed_source_commit",
         "source_bindings",
         "checks",
         "findings",
@@ -171,7 +210,10 @@ SOURCE_REVIEW_FIELDS = frozenset(
 )
 SOURCE_REVIEW_CHECKS = frozenset(
     {
-        "frozen_preregistration_binding_exact",
+        "replacement_preregistration_binding_exact",
+        "predecessor_contract_lineage_and_three_file_inventory_exact",
+        "adapter_null_proxy_fields_are_only_scientific_source_change",
+        "model_data_projection_target_training_scoring_gates_and_replay_unchanged",
         "source_bindings_complete_exact_and_committed",
         "all_15_direct_input_bindings_complete_and_exact",
         "all_256_state_receipts_rehashed_without_legacy_live_validation",
@@ -181,8 +223,10 @@ SOURCE_REVIEW_CHECKS = frozenset(
         "six_member_training_protocol_matches_preregistration",
         "checkpoint_written_before_eval_cache_load_and_evaluation_publication",
         "fresh_process_replay_retrains_and_recomputes",
+        "old_checkpoint_hash_checked_only_and_never_deserialized_or_reused",
+        "fresh_integrity_replacement_root_and_one_shot_boundary_fail_closed",
         "exact_six_file_output_and_failure_terminal_fail_closed",
-        "no_rgb_encoder_collection_protected_retry_or_resume_path",
+        "no_rgb_encoder_collection_protected_retry_resume_or_second_replacement_path",
         "focused_tests_passed",
         "compile_and_whitespace_checks_passed",
     }
@@ -457,6 +501,166 @@ def _fixed_input_bindings_v1() -> dict[str, dict[str, Any]]:
     }
 
 
+def _fixed_predecessor_lineage_bindings_v1() -> dict[str, dict[str, Any]]:
+    """Return immutable predecessor evidence, never replacement inputs."""
+
+    return {
+        "original_preregistration": _binding(
+            ORIGINAL_PREREGISTRATION,
+            "6b758b33948ebd621698d47ec01a892c52f473fb6bec930fcdf1cb459fd8da3f",
+            10_369,
+        ),
+        "original_source_review": _binding(
+            ORIGINAL_SOURCE_REVIEW,
+            "4b324b9d2d443d7d87beb043ca15eba9dfa8214b8a62219678eccb51366e61e0",
+            6_100,
+        ),
+        "original_execution_authority": _binding(
+            ORIGINAL_EXECUTION_AUTHORITY,
+            "b4ea0a0fd688543c5bfbfdc7c8d9f4db28bb7aa4025c08188d4cc084a250a696",
+            13_631,
+        ),
+        "original_reservation": _binding(
+            ORIGINAL_RESERVATION,
+            "fba63ae369d73109c0d0e8287230c738dbeb75d6b4dc4e92954b83628d8a0c7a",
+            514,
+        ),
+        "original_quarantined_checkpoint": _binding(
+            ORIGINAL_CHECKPOINT,
+            "90fa756cae37d7dda04d10a69fa9093b4f6447b55cb56c1f548909218510f3c7",
+            2_544_111,
+        ),
+        "original_terminal": _binding(
+            ORIGINAL_TERMINAL,
+            "c6c0a615639e55a4d7d2a513c769cd16a8085eaf0c0de7a1fbed15ad96c1ff10",
+            489,
+        ),
+        "terminal_failure_and_replacement_admissibility_audit": _binding(
+            ORIGINAL_FAILURE_AUDIT,
+            "a3f889aa6494b67800ed5224f9ebe97bf266a6f40d444c8a36c90182332cf511",
+            14_262,
+        ),
+    }
+
+
+def _validate_output_root_v1(value: object) -> Path:
+    if not isinstance(value, str) or value != str(DEFAULT_OUTPUT_ROOT.resolve()):
+        raise PhysicalOutcomeScreenRunnerError(
+            "integrity-replacement output root changed"
+        )
+    selected = Path(value)
+    if selected == ORIGINAL_OUTPUT_ROOT.resolve():
+        raise PhysicalOutcomeScreenRunnerError("original attempt root is immutable")
+    return selected
+
+
+def _validate_predecessor_lineage_v1(
+    lineage: Mapping[str, Any],
+) -> None:
+    """Rehash consumed predecessor evidence without loading its checkpoint."""
+
+    expected = _fixed_predecessor_lineage_bindings_v1()
+    if dict(lineage) != expected:
+        raise PhysicalOutcomeScreenRunnerError("predecessor lineage closure changed")
+    for label, binding in lineage.items():
+        _require_binding(binding, label=f"predecessor lineage {label}")
+
+    original_root = _safe_path(
+        ORIGINAL_OUTPUT_ROOT, label="consumed original attempt root"
+    )
+    if not original_root.is_dir():
+        raise PhysicalOutcomeScreenRunnerError(
+            "consumed original attempt root is not a directory"
+        )
+    observed: list[str] = []
+    with os.scandir(original_root) as entries:
+        for entry in entries:
+            if entry.is_symlink() or not entry.is_file(follow_symlinks=False):
+                raise PhysicalOutcomeScreenRunnerError(
+                    "consumed original attempt contains a non-file"
+                )
+            observed.append(entry.name)
+    expected_inventory = {
+        "reservation.json",
+        "physical_outcome_checkpoint.pt",
+        "terminal.json",
+    }
+    if set(observed) != expected_inventory or len(observed) != len(
+        expected_inventory
+    ):
+        raise PhysicalOutcomeScreenRunnerError(
+            f"consumed original attempt inventory changed: {sorted(observed)}"
+        )
+
+    reservation_binding = lineage["original_reservation"]
+    reservation, _ = _read_bound_json(
+        Path(str(reservation_binding["path"])),
+        expected_sha256=str(reservation_binding["sha256"]),
+        expected_byte_count=int(reservation_binding["byte_count"]),
+        label="original reservation",
+    )
+    terminal_binding = lineage["original_terminal"]
+    terminal, _ = _read_bound_json(
+        Path(str(terminal_binding["path"])),
+        expected_sha256=str(terminal_binding["sha256"]),
+        expected_byte_count=int(terminal_binding["byte_count"]),
+        label="original terminal",
+    )
+    audit_binding = lineage[
+        "terminal_failure_and_replacement_admissibility_audit"
+    ]
+    audit, _ = _read_bound_json(
+        Path(str(audit_binding["path"])),
+        expected_sha256=str(audit_binding["sha256"]),
+        expected_byte_count=int(audit_binding["byte_count"]),
+        label="terminal failure and replacement admissibility audit",
+    )
+    replacement = audit.get("replacement_admissibility")
+    no_retry = audit.get("no_retry_no_resume")
+    inventory = audit.get("attempt_inventory")
+    if (
+        reservation.get("schema") != RESERVATION_SCHEMA
+        or reservation.get("authority_binding")
+        != lineage["original_execution_authority"]
+        or reservation.get("attempt_root") != str(ORIGINAL_OUTPUT_ROOT.resolve())
+        or reservation.get("consumes_attempt") is not True
+        or terminal.get("schema") != TERMINAL_SCHEMA
+        or terminal.get("status") != FAIL_STATUS
+        or terminal.get("authorizes_retry_or_resume") is not False
+        or terminal.get("result_binding") is not None
+        or terminal.get("deterministic_replay_passed") is not False
+        or audit.get("status")
+        != "PASS_CONSUMED_INFRASTRUCTURE_FAILURE_SCIENCE_IDENTICAL_REPLACEMENT_ADMISSIBLE"
+        or audit.get("authority_granted_by_this_document") is not False
+        or not isinstance(replacement, Mapping)
+        or replacement.get("eligible") is not True
+        or replacement.get("original_attempt_v1_must_remain_byte_identical")
+        is not True
+        or replacement.get("original_checkpoint_may_be_reused_or_resumed")
+        is not False
+        or replacement.get("required_new_output_root")
+        != str(DEFAULT_OUTPUT_ROOT.resolve())
+        or replacement.get("this_document_authorizes_replacement_execution")
+        is not False
+        or not isinstance(no_retry, Mapping)
+        or no_retry.get("attempt_v1_is_consumed") is not True
+        or no_retry.get("attempt_v1_checkpoint_reuse_authorized") is not False
+        or no_retry.get("attempt_v1_resume_authorized") is not False
+        or no_retry.get("attempt_v1_retry_authorized") is not False
+        or not isinstance(inventory, Mapping)
+        or not isinstance(inventory.get("exact_files"), list)
+        or set(inventory["exact_files"]) != expected_inventory
+        or len(inventory["exact_files"]) != len(expected_inventory)
+        or inventory.get("evaluation_json_present") is not False
+        or inventory.get("replay_json_present") is not False
+        or inventory.get("result_json_present") is not False
+        or inventory.get("terminal_result_binding_is_null") is not True
+    ):
+        raise PhysicalOutcomeScreenRunnerError(
+            "consumed predecessor failure contract changed"
+        )
+
+
 def _bound_document_v1(
     authority: Mapping[str, Any], label: str
 ) -> dict[str, Any]:
@@ -474,6 +678,7 @@ def _validate_source_review_v1(
     review: Mapping[str, Any],
     *,
     preregistration_binding: Mapping[str, Any],
+    predecessor_lineage_bindings: Mapping[str, Any],
     source_bindings: Mapping[str, Any],
 ) -> None:
     reviewer = review.get("reviewer")
@@ -484,6 +689,10 @@ def _validate_source_review_v1(
         or review.get("review_date") != "2026-08-03"
         or review.get("protected_material_opened") is not False
         or review.get("preregistration_binding") != preregistration_binding
+        or review.get("predecessor_lineage_bindings")
+        != predecessor_lineage_bindings
+        or review.get("original_reviewed_source_commit")
+        != ORIGINAL_REVIEWED_SOURCE_COMMIT
         or review.get("source_bindings") != source_bindings
         or review.get("findings") != []
         or not isinstance(reviewer, Mapping)
@@ -512,6 +721,11 @@ def _read_authority(
         "status",
         "citable_as_scientific_evidence",
         "development_screen_only",
+        "science_identical_to_original",
+        "original_attempt_remains_consumed",
+        "authorizes_one_fresh_full_fit_and_replay",
+        "authorizes_old_checkpoint_deserialization_or_reuse",
+        "authorizes_second_integrity_replacement",
         "authorizes_physical_outcome_fitting",
         "authorizes_collection",
         "authorizes_rgb_access",
@@ -522,6 +736,8 @@ def _read_authority(
         "source_review_binding",
         "source_bindings",
         "input_bindings",
+        "predecessor_lineage_bindings",
+        "original_reviewed_source_commit",
         "output_root",
         "environment",
         "config",
@@ -529,20 +745,29 @@ def _read_authority(
     }
     if (
         set(authority) != required
+        or authority_binding.get("path") != str(EXECUTION_AUTHORITY.resolve())
         or authority.get("schema") != AUTHORITY_SCHEMA
         or authority.get("status") != AUTHORITY_STATUS
         or authority.get("citable_as_scientific_evidence") is not False
         or authority.get("development_screen_only") is not True
+        or authority.get("science_identical_to_original") is not True
+        or authority.get("original_attempt_remains_consumed") is not True
+        or authority.get("authorizes_one_fresh_full_fit_and_replay") is not True
+        or authority.get("authorizes_old_checkpoint_deserialization_or_reuse")
+        is not False
+        or authority.get("authorizes_second_integrity_replacement") is not False
         or authority.get("authorizes_physical_outcome_fitting") is not True
         or authority.get("authorizes_collection") is not False
         or authority.get("authorizes_rgb_access") is not False
         or authority.get("authorizes_encoder_execution") is not False
         or authority.get("authorizes_protected_access") is not False
         or authority.get("authorizes_retry_or_resume") is not False
-        or authority.get("output_root") != str(DEFAULT_OUTPUT_ROOT.resolve())
+        or authority.get("original_reviewed_source_commit")
+        != ORIGINAL_REVIEWED_SOURCE_COMMIT
         or authority.get("config") != config_v1()
     ):
         raise PhysicalOutcomeScreenRunnerError("execution authority contract changed")
+    _validate_output_root_v1(authority.get("output_root"))
     preregistration = _require_binding(
         authority["preregistration_binding"], label="preregistration"
     )
@@ -557,6 +782,12 @@ def _read_authority(
         raise PhysicalOutcomeScreenRunnerError("authority input closure changed")
     for label, item in inputs.items():
         _require_binding(item, label=f"input {label}")
+    lineage = authority.get("predecessor_lineage_bindings")
+    if not isinstance(lineage, Mapping):
+        raise PhysicalOutcomeScreenRunnerError(
+            "predecessor lineage closure is malformed"
+        )
+    _validate_predecessor_lineage_v1(lineage)
     sources = authority.get("source_bindings")
     if not isinstance(sources, Mapping) or set(sources) != set(SOURCE_PATHS):
         raise PhysicalOutcomeScreenRunnerError("authority source closure changed")
@@ -578,6 +809,7 @@ def _read_authority(
     _validate_source_review_v1(
         review,
         preregistration_binding=preregistration,
+        predecessor_lineage_bindings=lineage,
         source_bindings=sources,
     )
     environment = authority.get("environment")
@@ -926,6 +1158,7 @@ def _execution_bindings_unchanged(
     for label, expected in closure:
         if file_binding_v1(Path(str(expected["path"]))) != dict(expected):
             raise PhysicalOutcomeScreenRunnerError(f"{label} changed during execution")
+    _validate_predecessor_lineage_v1(authority["predecessor_lineage_bindings"])
 
 
 def _configure_deterministic_cpu_training_v1() -> None:
@@ -1066,16 +1299,42 @@ def _assert_inventory_v1(output_root: Path, expected: set[str]) -> None:
         )
 
 
+def _validate_replacement_reservation_v1(
+    output_root: Path, *, authority_binding: Mapping[str, Any]
+) -> dict[str, Any]:
+    reservation, _ = _read_new_json(
+        output_root / "reservation.json", label="replacement reservation"
+    )
+    if (
+        set(reservation)
+        != {
+            "schema",
+            "authority_binding",
+            "attempt_root",
+            "owner_pid",
+            "consumes_attempt",
+        }
+        or reservation.get("schema") != RESERVATION_SCHEMA
+        or reservation.get("authority_binding") != authority_binding
+        or reservation.get("attempt_root") != str(output_root)
+        or type(reservation.get("owner_pid")) is not int
+        or int(reservation["owner_pid"]) <= 0
+        or reservation.get("consumes_attempt") is not True
+    ):
+        raise PhysicalOutcomeScreenRunnerError(
+            "integrity-replacement reservation changed"
+        )
+    return reservation
+
+
 def execute_v1(
     authority: Mapping[str, Any], *, authority_binding: Mapping[str, Any]
 ) -> dict[str, Any]:
     output_root = _safe_path(
-        Path(str(authority["output_root"])),
+        _validate_output_root_v1(authority.get("output_root")),
         label="physical outcome output",
         must_exist=False,
     )
-    if output_root != DEFAULT_OUTPUT_ROOT.resolve():
-        raise PhysicalOutcomeScreenRunnerError("physical outcome output root changed")
     _safe_path(output_root.parent, label="output parent", must_exist=False)
     output_root.mkdir(parents=True, exist_ok=False)
     _write_json_exclusive(
@@ -1087,6 +1346,9 @@ def execute_v1(
             "owner_pid": os.getpid(),
             "consumes_attempt": True,
         },
+    )
+    _validate_replacement_reservation_v1(
+        output_root, authority_binding=authority_binding
     )
     # Authority validation rehashed the entire closure before reservation;
     # rehash it again immediately after attempt consumption and before science.
@@ -1277,7 +1539,12 @@ __all__ = [
     "AUTHORITY_SCHEMA",
     "AUTHORITY_STATUS",
     "DEFAULT_OUTPUT_ROOT",
+    "EXECUTION_AUTHORITY",
     "FAIL_STATUS",
+    "ORIGINAL_CHECKPOINT",
+    "ORIGINAL_FAILURE_AUDIT",
+    "ORIGINAL_OUTPUT_ROOT",
+    "ORIGINAL_REVIEWED_SOURCE_COMMIT",
     "OUTPUT_NAMES",
     "PASS_ODOMETRY_STATUS",
     "PASS_VISUAL_STATUS",

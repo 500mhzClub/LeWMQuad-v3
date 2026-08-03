@@ -301,14 +301,23 @@ def execute_replay_v1(
     expected_evaluation_sha256: str,
     expected_evaluation_byte_count: int,
 ) -> dict[str, Any]:
-    output_root = Path(str(authority["output_root"]))
+    output_root = runner._validate_output_root_v1(  # noqa: SLF001
+        authority.get("output_root")
+    )
     replay_path = output_root / "replay.json"
     if replay_path.exists() or replay_path.is_symlink():
         raise PhysicalOutcomeReplayError("replay output already exists")
+    if checkpoint_path == runner.ORIGINAL_CHECKPOINT.resolve():
+        raise PhysicalOutcomeReplayError(
+            "quarantined original checkpoint cannot be replayed"
+        )
     if checkpoint_path != output_root / "physical_outcome_checkpoint.pt":
         raise PhysicalOutcomeReplayError("checkpoint path changed")
     if evaluation_path != output_root / "evaluation.json":
         raise PhysicalOutcomeReplayError("evaluation path changed")
+    runner._validate_replacement_reservation_v1(  # noqa: SLF001
+        output_root, authority_binding=authority_binding
+    )
 
     # Fit from bound train inputs before opening either primary scientific output.
     runner._validate_upstream_route_v1(authority)  # noqa: SLF001
