@@ -1,0 +1,120 @@
+{
+  "schema": "lewm_go2_dinov2_physical_readout_calibration_source_review_v1",
+  "status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewer": "dinov2_physical_readout_calibration_independent_source_review",
+  "protected_material_opened": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_v1_preregistration_2026-08-03.md",
+    "sha256": "ff6e42042792ffc66c51ac9e6fd31d9da194cb22c5526edfd1ce3cfe22db55ee",
+    "byte_count": 10285
+  },
+  "source_bindings": {
+    "action_regret_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+      "byte_count": 28399
+    },
+    "counterfactual_benchmark_contract": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+      "byte_count": 102894
+    },
+    "calibration_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "89afbc4b4611806ba5fd230747ee9de31edbb9ddf39701150246439b637c0d98",
+      "byte_count": 34541
+    },
+    "calibration_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "6bed825d428c1b0faa44eb159bb86af70e309f14efc87d1c9d7b165fa723ccb5",
+      "byte_count": 17058
+    },
+    "predecessor_model_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "db060611391eb8e1576827f528cd7ad5392320e391d2b9b996c7baf4dcf13e65",
+      "byte_count": 19344
+    },
+    "pilot_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "posthoc_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+      "sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+      "byte_count": 55667
+    },
+    "predecessor_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "4e9f9358d597216f13eb9c6b6143e5823144de1c3a8cf9490d19d785df4c622e",
+      "byte_count": 42491
+    },
+    "runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "90ff45cf5afecc442e075fa96b8957d7646cf181ccb644365711be8c23a397f7",
+      "byte_count": 36333
+    },
+    "runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "00e24b9d6b5782622be1f83d0e4ee233a859d9048d67e4ad7b49eb1d32fa5d23",
+      "byte_count": 13313
+    },
+    "screen_data": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "c3482fe8d72366d3102e78a62b8bfcbdd9cb423d45cbb3ec44531eea443922e7",
+      "byte_count": 19902
+    }
+  },
+  "checks": {
+    "frozen_preregistration_binding_exact": true,
+    "source_closure_complete_and_exact": true,
+    "strict_loader_recomputes_physical_ranks_from_bound_labels_and_tolerance": true,
+    "train_eval_roles_scenes_and_artifacts_disjoint_and_exact": true,
+    "train_cache_reused_metadata_only_and_exact": true,
+    "eval_rgb_exactly_once_through_bound_decoded_pixel_reader": true,
+    "dinov2_source_checkpoint_preprocessing_and_output_exact": true,
+    "descriptor_readouts_and_controls_match_preregistration": true,
+    "oracle_random_hold_and_safety_semantics_match_preregistration": true,
+    "scene_cluster_bootstrap_and_gate_directions_match_preregistration": true,
+    "cache_only_replay_and_full_execution_rehash_match_preregistration": true,
+    "authority_output_and_failure_handling_fail_closed": true,
+    "no_training_collection_or_protected_access_authorized": true,
+    "focused_tests_92_of_92_passed": true,
+    "rocm_focused_tests_22_of_22_passed": true,
+    "compile_and_whitespace_checks_passed": true
+  },
+  "audit_history": [
+    {
+      "finding": "The first source draft omitted physical path length from deterministic family and scene summaries and did not exercise the arm/gate wiring or heterogeneous bootstrap in tests.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "The final summaries include physical path length; focused tests execute every registered arm, every gate, and a heterogeneous equal-family scene bootstrap."
+    },
+    {
+      "finding": "Physical dense-rank provenance is transitive rather than local to the pure evaluator.",
+      "resolution": "VERIFIED_BEFORE_FREEZE",
+      "evidence": "The only runner path uses the exact bound posthoc loader, whose frozen strict consumer recomputes ranks and equivalence from bound physical labels under the one-centimetre tolerance before returning groups."
+    },
+    {
+      "finding": "The first runner source closure omitted direct evaluator contracts and the transitively imported predecessor model module.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "All three paths are now exact source bindings; posthoc analyzer, joiner, and checker dependencies remain transitively rehashed by the frozen posthoc authority during admission."
+    },
+    {
+      "finding": "The first end-of-run check rehashed only source files.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "The final runner rehashes the authority, preregistration, source review, every source and fixed input, and the DINO checkpoint, then rechecks the DINO repository commit and cleanliness."
+    },
+    {
+      "finding": "The first review and verdict validators could accept placeholder review checks or renamed and missing scientific gates.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "The final validators require exact review fields, the exact registered review checks, five exact scientific gates, their consistent aggregate, and the exact seven-gate PASS/STOP/FAIL verdict."
+    },
+    {
+      "finding": "The first environment closure omitted NumPy and Pillow and lacked an execute-level terminal propagation test.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "The authority now binds NumPy and Pillow versions; execute-level tests cover PASS, scientific STOP, replay FAIL, one extraction, two cache loads/evaluations, and no replay RGB route."
+    }
+  ],
+  "findings": []
+}
