@@ -402,4 +402,3 @@ def test_execute_writes_checkpoint_before_eval_cache_and_exact_inventory(
     terminal = json.loads((output_root / "terminal.json").read_text())
     assert terminal["status"] == runner.STOP_STATUS
     assert terminal["authorizes_retry_or_resume"] is False
-
