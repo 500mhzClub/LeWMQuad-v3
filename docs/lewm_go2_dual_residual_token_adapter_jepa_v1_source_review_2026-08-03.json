@@ -1,0 +1,128 @@
+{
+  "schema": "lewm_go2_dual_residual_token_adapter_jepa_source_review_v1",
+  "status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewer": "dual_source_review",
+  "protected_material_opened": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dual_residual_token_adapter_jepa_v1_preregistration_2026-08-03.md",
+    "sha256": "c3c9e76c450f842a64f56577b038117e579b0d3c0d0e2e8892bd4590886f6c09",
+    "byte_count": 16756
+  },
+  "source_bindings": {
+    "adapter_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_dual_residual_token_adapter_jepa_v1.py",
+      "sha256": "f3780c5c9414c5c40b4f30d6e371a1eedf472e2722b6ce96e46f17a72c15bd63",
+      "byte_count": 10911
+    },
+    "adapter_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_dual_residual_token_adapter_jepa_v1.py",
+      "sha256": "ca3217e10b33e0ad11b91ac6502eab0ba842e477019d6d2bc4ee81fc52a0c0d9",
+      "byte_count": 8386
+    },
+    "dual_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dual_residual_token_adapter_jepa_v1.py",
+      "sha256": "f94c6e1d361edd2bc9c126916d88bbeff948df7798b0c92e31cf97c774dbe705",
+      "byte_count": 56563
+    },
+    "dual_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dual_residual_token_adapter_jepa_v1.py",
+      "sha256": "bac26b06a99c15b27d91dd0fc9e076ae07b217525e8f14541d16fc27785e6f28",
+      "byte_count": 31602
+    },
+    "horizon_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_vjepa2_1_horizon_diagnostic_v1.py",
+      "sha256": "83a92faf0a547a973783d20e8fe7475e887e3029a155380f3bf6330b405410b9",
+      "byte_count": 27714
+    },
+    "horizon_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dense_vjepa2_1_horizon_diagnostic_v1.py",
+      "sha256": "0cfd330f134352a04ad28e5e6c01da90124e6844c08fcdba81c457a9bdabcdd7",
+      "byte_count": 10677
+    },
+    "predecessor_data_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "c3482fe8d72366d3102e78a62b8bfcbdd9cb423d45cbb3ec44531eea443922e7",
+      "byte_count": 19902
+    },
+    "predecessor_data_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_data_v1.py",
+      "sha256": "a6c3803d17a0832885810a9377f28434374dea8e8158db89bed70d48c2b16882",
+      "byte_count": 10075
+    },
+    "predecessor_model_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "db060611391eb8e1576827f528cd7ad5392320e391d2b9b996c7baf4dcf13e65",
+      "byte_count": 19344
+    },
+    "predecessor_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "746a182077dad17cde75e746b9f1f1cfca77922e418f6e5927408501460420db",
+      "byte_count": 7552
+    },
+    "predecessor_pilot_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "predecessor_posthoc_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+      "sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+      "byte_count": 55667
+    },
+    "predecessor_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "4e9f9358d597216f13eb9c6b6143e5823144de1c3a8cf9490d19d785df4c622e",
+      "byte_count": 42491
+    },
+    "predecessor_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "b299969d2c3c3af0bc7bd50e6fec70104a719aa80fc235e1966b873fa83f0980",
+      "byte_count": 10014
+    }
+  },
+  "checks": {
+    "frozen_preregistration_binding_exact": true,
+    "source_closure_complete_and_exact": true,
+    "predecessor_evidence_bindings_exact": true,
+    "feature_cache_and_receipt_bindings_exact": true,
+    "custody_no_rgb_no_evaluation_no_protected_access": true,
+    "model_architecture_and_rng_order_match_preregistration": true,
+    "online_and_ema_adapter_semantics_match_preregistration": true,
+    "objective_and_frozen_space_evaluation_match_preregistration": true,
+    "optimizer_precision_and_schedule_match_preregistration": true,
+    "retention_and_effective_rank_qualification_match_preregistration": true,
+    "capacity_and_continuation_gates_match_preregistration": true,
+    "minimum_update_800_attempt_is_enforced": true,
+    "scientific_failures_remain_arm_local": true,
+    "both_arms_execute_independently": true,
+    "checkpoint_payload_is_complete_and_exactly_roundtrip_validated": true,
+    "authority_and_output_handling_fail_closed": true,
+    "terminal_claims_remain_train_only_and_non_navigation": true,
+    "focused_tests_83_of_83_passed": true,
+    "diff_check_clean": true
+  },
+  "audit_history": [
+    {
+      "finding": "The first source draft stopped a zero-movement arm at update 400 even though only a registered nonfinite event may terminate before update 800.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "The final runner records the update-400 witness, continues to update 800, writes its checkpoint, and then applies the arm-local qualification terminal."
+    },
+    {
+      "finding": "The first checkpoint validator compared metadata, tensor inventories, and finiteness but not every serialized value.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "The final runner CPU-clones and recursively compares the complete loaded payload, including model, EMA, optimizer, config, and initial adapter state; a finite-corruption test fails closed."
+    },
+    {
+      "finding": "The first result representation reported unattempted deterministic, retention, and execution-witness checks as passed after a pre-decision numerical failure.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "The three qualifications are nullable until their preregistered update is actually reached."
+    },
+    {
+      "finding": "The first rank path treated an exactly collapsed adapted representation as joint infrastructure failure.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "Finite adapted collapse now yields rank zero and arm-local retention failure; nonfinite spectra are arm-local numerical failures, while an invalid frozen rank remains infrastructure."
+    }
+  ],
+  "findings": []
+}
