@@ -49,27 +49,49 @@ from lewm.datasets.go2_world_model_counterfactual_pilot_v1 import (  # noqa: E40
 )
 
 
-SCHEMA = "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_result_v1"
-TERMINAL_SCHEMA = "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_terminal_v1"
+SCHEMA = (
+    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+    "integrity_replacement_v1_result_v1"
+)
+TERMINAL_SCHEMA = (
+    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+    "integrity_replacement_v1_terminal_v1"
+)
 RESERVATION_SCHEMA = (
-    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_reservation_v1"
+    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+    "integrity_replacement_v1_reservation_v1"
 )
 EVAL_CACHE_SCHEMA = (
-    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_eval_cache_v1"
+    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+    "integrity_replacement_v1_eval_cache_v1"
 )
 EVAL_CACHE_RECEIPT_SCHEMA = (
-    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_eval_cache_receipt_v1"
+    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+    "integrity_replacement_v1_eval_cache_receipt_v1"
 )
-REPLAY_SCHEMA = "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_replay_v1"
-REPLAY_STATUS = "PASS_EXACT_FRESH_PROCESS_CACHE_ONLY_REPLAY"
+REPLAY_SCHEMA = (
+    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+    "integrity_replacement_v1_replay_v1"
+)
+REPLAY_STATUS = (
+    "PASS_EXACT_FRESH_PROCESS_CACHE_ONLY_REPLAY_INTEGRITY_REPLACEMENT_V1"
+)
 AUTHORITY_SCHEMA = (
-    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_execution_authority_v1"
+    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+    "integrity_replacement_v1_execution_authority_v1"
 )
-AUTHORITY_STATUS = "AUTHORIZED_ONE_DENSE_VJEPA2_1_PHYSICAL_INTERFACE_CEILING_ATTEMPT"
+AUTHORITY_STATUS = (
+    "AUTHORIZED_ONE_DENSE_VJEPA2_1_PHYSICAL_INTERFACE_CEILING_"
+    "INTEGRITY_REPLACEMENT_V1_ATTEMPT"
+)
 SOURCE_REVIEW_SCHEMA = (
-    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_source_review_v1"
+    "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+    "integrity_replacement_v1_source_review_v1"
 )
-SOURCE_REVIEW_STATUS = "PASS_INDEPENDENT_DENSE_VJEPA2_1_CEILING_SOURCE_REVIEW"
+SOURCE_REVIEW_STATUS = (
+    "PASS_INDEPENDENT_DENSE_VJEPA2_1_CEILING_"
+    "INTEGRITY_REPLACEMENT_V1_SOURCE_REVIEW"
+)
 
 PASS_STATUS = evaluator.PASS_STATUS
 STOP_STATUS = evaluator.STOP_STATUS
@@ -78,18 +100,19 @@ TERMINAL_STATUSES = frozenset((PASS_STATUS, STOP_STATUS, FAIL_STATUS))
 
 PREREGISTRATION = REPO_ROOT / (
     "docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
-    "preregistration_2026-08-03.md"
+    "integrity_replacement_v1_preregistration_2026-08-03.md"
 )
 PREREGISTRATION_SHA256 = (
-    "ef5c687d509929169280a456618e92e92f2a072a646bc292be3d16850f801ad0"
+    "724c52e59696e22efcfdb9e3427cd5a622a536400359389476bff1c8d1fe3ce6"
 )
-PREREGISTRATION_BYTE_COUNT = 20_816
+PREREGISTRATION_BYTE_COUNT = 11_704
 SOURCE_REVIEW = REPO_ROOT / (
     "docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
-    "source_review_2026-08-03.json"
+    "integrity_replacement_v1_source_review_2026-08-03.json"
 )
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / (
-    ".generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v1"
+    ".generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/"
+    "attempt_v2_integrity_replacement_v1"
 )
 
 POSTHOC_ROOT = REPO_ROOT / (
@@ -1938,15 +1961,31 @@ def _exact_tree_equal_v1(left: object, right: object) -> bool:
     return type(left) is type(right) and left == right
 
 
-def _selected_actions_v1(evaluation: Mapping[str, Any]) -> dict[str, list[int]]:
+def _selected_actions_v1(
+    evaluation: Mapping[str, Any],
+) -> dict[str, list[int | str]]:
     arms = evaluation.get("arms")
     if not isinstance(arms, Mapping):
         raise DenseVJEPACeilingRunnerError("evaluation arm inventory changed")
-    result: dict[str, list[int]] = {}
+    result: dict[str, list[int | str]] = {}
     for name, report in arms.items():
         rows = report.get("group_results") if isinstance(report, Mapping) else None
-        if isinstance(rows, list):
-            result[str(name)] = [int(row["selected_action_id"]) for row in rows]
+        if not isinstance(rows, list):
+            raise DenseVJEPACeilingRunnerError("evaluation arm rows changed")
+        selected: list[int | str] = []
+        for row in rows:
+            if not isinstance(row, Mapping) or "selected_action_id" not in row:
+                raise DenseVJEPACeilingRunnerError("selected action row changed")
+            value = row["selected_action_id"]
+            if type(value) is int:
+                if not 0 <= value < evaluator.ACTION_COUNT:
+                    raise DenseVJEPACeilingRunnerError("selected action is invalid")
+                selected.append(value)
+            elif type(value) is str and value == "NOT_APPLICABLE":
+                selected.append(value)
+            else:
+                raise DenseVJEPACeilingRunnerError("selected action type changed")
+        result[str(name)] = selected
     return result
 
 

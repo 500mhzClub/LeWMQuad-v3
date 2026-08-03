@@ -30,6 +30,42 @@ def _binding(path: Path) -> dict[str, Any]:
     }
 
 
+def test_integrity_replacement_namespace_root_and_preregistration_binding() -> None:
+    namespace = "integrity_replacement_v1"
+    assert all(
+        namespace in value.lower()
+        for value in (
+            runner.SCHEMA,
+            runner.TERMINAL_SCHEMA,
+            runner.RESERVATION_SCHEMA,
+            runner.EVAL_CACHE_SCHEMA,
+            runner.EVAL_CACHE_RECEIPT_SCHEMA,
+            runner.REPLAY_SCHEMA,
+            runner.REPLAY_STATUS,
+            runner.AUTHORITY_SCHEMA,
+            runner.AUTHORITY_STATUS,
+            runner.SOURCE_REVIEW_SCHEMA,
+            runner.SOURCE_REVIEW_STATUS,
+        )
+    )
+    assert runner.PREREGISTRATION == runner.REPO_ROOT / (
+        "docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+        "integrity_replacement_v1_preregistration_2026-08-03.md"
+    )
+    assert runner.PREREGISTRATION_SHA256 == (
+        "724c52e59696e22efcfdb9e3427cd5a622a536400359389476bff1c8d1fe3ce6"
+    )
+    assert runner.PREREGISTRATION_BYTE_COUNT == 11_704
+    assert runner.SOURCE_REVIEW == runner.REPO_ROOT / (
+        "docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_"
+        "integrity_replacement_v1_source_review_2026-08-03.json"
+    )
+    assert runner.DEFAULT_OUTPUT_ROOT == runner.REPO_ROOT / (
+        ".generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/"
+        "attempt_v2_integrity_replacement_v1"
+    )
+
+
 def test_frozen_inventories_classification_permissions_and_dependencies() -> None:
     inputs = runner._fixed_input_bindings_v1()  # noqa: SLF001
     assert len(inputs) == 30
@@ -502,7 +538,11 @@ def test_reproduction_flags_reject_tensor_score_and_gate_drift(
             "candidate": {
                 "group_results": [{"selected_action_id": 1}],
                 "summary": {"regret": 0.1},
-            }
+            },
+            "random_expected": {
+                "group_results": [{"selected_action_id": "NOT_APPLICABLE"}],
+                "summary": {"regret": 0.5},
+            },
         },
         "paired_family_scene_cluster_comparisons": {"x": {"upper_95": -0.1}},
         "gates": {"x": {"passed": True}},
@@ -516,6 +556,21 @@ def test_reproduction_flags_reject_tensor_score_and_gate_drift(
         checkpoint, deepcopy(checkpoint), evaluation, deepcopy(evaluation)
     )
     assert all(exact.values())
+    assert runner._selected_actions_v1(evaluation) == {  # noqa: SLF001
+        "candidate": [1],
+        "random_expected": ["NOT_APPLICABLE"],
+    }
+
+    selection_drift = deepcopy(evaluation)
+    selection_drift["arms"]["candidate"]["group_results"][0][
+        "selected_action_id"
+    ] = 2
+    observed, _ = runner._reproduction_v1(  # noqa: SLF001
+        checkpoint, deepcopy(checkpoint), evaluation, selection_drift
+    )
+    assert observed["selected_actions"] is False
+    assert observed["complete_evaluation"] is False
+    assert observed["exactly_reproduced"] is False
 
     tensor_drift = deepcopy(checkpoint)
     tensor_drift["members"][0]["state"][0] = 9.0
@@ -543,6 +598,28 @@ def test_reproduction_flags_reject_tensor_score_and_gate_drift(
     assert observed["gates"] is False
     assert observed["verdict"] is False
     assert observed["exactly_reproduced"] is False
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        {"selected_action_id": True},
+        {"selected_action_id": 1.0},
+        {"selected_action_id": "1"},
+        {"selected_action_id": None},
+        {"selected_action_id": "OTHER"},
+        {"selected_action_id": []},
+        {"selected_action_id": {}},
+        {"selected_action_id": -1},
+        {"selected_action_id": 9},
+        {},
+        [],
+    ],
+)
+def test_selected_actions_rejects_invalid_values_and_rows(row: object) -> None:
+    evaluation = {"arms": {"candidate": {"group_results": [row]}}}
+    with pytest.raises(runner.DenseVJEPACeilingRunnerError, match="selected action"):
+        runner._selected_actions_v1(evaluation)  # noqa: SLF001
 
 
 def test_execute_fits_before_extraction_and_writes_exact_inventory(
