@@ -1,0 +1,122 @@
+{
+  "schema": "lewm_go2_dinov2_physical_readout_calibration_terminal_failure_review_v1",
+  "status": "PASS_INFRASTRUCTURE_FAILURE_REVIEW_NO_SCIENTIFIC_DECISION",
+  "review_date": "2026-08-03",
+  "protected_material_opened": false,
+  "authority_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_v1_execution_authority_2026-08-03.json",
+    "sha256": "3a403377b071a9f916882cc5315b6b5be4d097a6c215562a565245962e6e2cc2",
+    "byte_count": 6407
+  },
+  "reservation_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v1/reservation.json",
+    "sha256": "963b915597c69e55e459db0018e9e9acb773a75f6d1da3ee3b3fd706a641f6fd",
+    "byte_count": 501
+  },
+  "terminal_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v1/terminal.json",
+    "sha256": "066ad891811f7f5a7d7969b8d584ae12ca896a51b7702716cfc50ce096addb48",
+    "byte_count": 403
+  },
+  "terminal_contract": {
+    "status": "FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION",
+    "failure_type": "CalibrationAnalysisError",
+    "failure_message": "textured_v03 task-relevance result changed",
+    "result_binding": null,
+    "deterministic_replay_passed": false,
+    "authorizes_retry_or_resume": false,
+    "authorizes_model_training": false
+  },
+  "attempt_inventory": {
+    "exact_files": [
+      "reservation.json",
+      "terminal.json"
+    ],
+    "evaluation_feature_cache_present": false,
+    "evaluation_feature_cache_receipt_present": false,
+    "scientific_result_present": false
+  },
+  "execution_boundary": {
+    "failure_stage": "strict_posthoc_bundle_admission_before_calibration_feature_plan_or_encoder_extraction",
+    "calibration_train_rgb_artifacts_opened": 0,
+    "calibration_eval_rgb_artifacts_opened": 0,
+    "dinov2_encoder_loaded": false,
+    "dinov2_eval_tokens_computed": false,
+    "physical_readouts_fitted": false,
+    "scientific_gates_evaluated": false,
+    "upstream_task_relevance_recomputation_executed": true
+  },
+  "root_cause_evidence": {
+    "stored_task_relevance_result_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_visual_domain_parity_task_relevant_input_adequacy_result_v1_2026-08-02.json",
+      "sha256": "5094104ac29b4652cd577015c5fbf23b42f0768c78a205cbf07a77d992339ca7",
+      "byte_count": 94165
+    },
+    "stored_independent_review_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_visual_domain_parity_task_relevant_input_adequacy_independent_review_v1_2026-08-02.json",
+      "sha256": "29eb00a486604824effb56502194855553f87c81a9691d4075a5810273c92ca9",
+      "byte_count": 2080
+    },
+    "live_evaluator_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py",
+      "sha256": "22d370945ad3dcd09bfa9405841450a834f71029c9f16de86e17daa37ee4453c",
+      "byte_count": 30488
+    },
+    "recomputation_environment": {
+      "python": "/usr/bin/python3.12",
+      "torch": "2.14.0.dev20260726+rocm7.1",
+      "hip": "7.1.52802",
+      "numpy": "1.26.4",
+      "pillow": "10.2.0"
+    },
+    "canonical_difference_count": 4,
+    "differences": [
+      {
+        "path": "measurements.frozen_predecessor_descriptor_retrieval.maximum_paired_descriptor_distance",
+        "stored": 0.0014817728354341111,
+        "recomputed": 0.0014817737103522426
+      },
+      {
+        "path": "measurements.frozen_predecessor_descriptor_retrieval.minimum_nearest_nonself_descriptor_distance",
+        "stored": 0.044272437148743495,
+        "recomputed": 0.04427243781903417
+      },
+      {
+        "path": "measurements.frozen_predecessor_descriptor_retrieval.worst_paired_to_nearest_nonself_descriptor_distance_ratio",
+        "stored": 0.00952340163959825,
+        "recomputed": 0.009523406989597248
+      },
+      {
+        "path": "measurements.pixels.minimum_reference_candidate_rgb_ssim",
+        "stored": 0.999873849744854,
+        "recomputed": 0.9998738497448542
+      }
+    ],
+    "all_other_fields_canonical_exact": true,
+    "stored_and_recomputed_status": "PASS_TASK_RELEVANT_INPUT_ADEQUACY_DEVELOPMENT_ONLY",
+    "decision_thresholds_unchanged": true,
+    "minimum_ssim_threshold": 0.99,
+    "recomputed_minimum_ssim": 0.9998738497448542,
+    "maximum_descriptor_ratio_threshold": 0.1,
+    "recomputed_maximum_descriptor_ratio": 0.009523406989597248
+  },
+  "review_checks": {
+    "authority_and_reservation_match": true,
+    "terminal_is_exact_and_consumed": true,
+    "failure_precedes_calibration_eval_rgb_access": true,
+    "failure_precedes_model_or_readout_execution": true,
+    "no_scientific_result_exists": true,
+    "four_differences_are_finite_numeric_diagnostics_only": true,
+    "all_structural_bindings_counts_and_decisions_remain_exact": true,
+    "original_attempt_is_not_retryable_or_resumable": true
+  },
+  "scientific_conclusion": "NONE_INFRASTRUCTURE_FAILURE_BEFORE_EXPERIMENT",
+  "replacement_scope": {
+    "eligible": true,
+    "kind": "SEPARATELY_PREREGISTERED_SCIENCE_IDENTICAL_INTEGRITY_REPLACEMENT_ONLY",
+    "may_change_model_data_descriptor_readout_gates_or_seed": false,
+    "may_reuse_attempt_v1_output_root": false,
+    "may_claim_attempt_v1_as_scientific_evidence": false
+  },
+  "findings": []
+}
