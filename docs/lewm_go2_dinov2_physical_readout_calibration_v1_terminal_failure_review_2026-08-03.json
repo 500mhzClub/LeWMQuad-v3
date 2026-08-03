@@ -122,8 +122,8 @@
     "failure_precedes_calibration_eval_rgb_access": true,
     "failure_precedes_model_or_readout_execution": true,
     "no_scientific_result_exists": true,
-    "failure_difference_is_one_finite_ssim_diagnostic_only": true,
-    "secondary_cpu_differences_are_four_finite_diagnostics_only": true,
+    "failure_difference_is_one_finite_ssim_gate_measurement_with_unchanged_pass_decision_and_large_margin": true,
+    "secondary_cpu_differences_are_finite_measurements_with_unchanged_pass_decisions_and_large_margins": true,
     "all_structural_bindings_counts_and_decisions_remain_exact": true,
     "original_attempt_is_not_retryable_or_resumable": true
   },
