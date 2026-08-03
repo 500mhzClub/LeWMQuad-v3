@@ -1,0 +1,273 @@
+{
+  "schema": "lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_terminal_review_v1",
+  "status": "PASS_COMPLETE_SCIENTIFIC_STOP_WITH_POSTHOC_REPLAY_REMEDIATION_TERMINAL_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewers": [
+    "root_terminal_audit",
+    "calibration_failure_compatibility_audit",
+    "historical_runtime_reproduction_audit"
+  ],
+  "protected_material_opened": false,
+  "citable_as_scientific_evidence": false,
+  "bindings": {
+    "original_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_v1_preregistration_2026-08-03.md",
+      "sha256": "ff6e42042792ffc66c51ac9e6fd31d9da194cb22c5526edfd1ce3cfe22db55ee",
+      "byte_count": 10285
+    },
+    "replacement_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_preregistration_2026-08-03.md",
+      "sha256": "034e7b29803394d7da229273945deafa771a8104568e6b9a40ce492458f00c52",
+      "byte_count": 8511
+    },
+    "replacement_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_source_review_2026-08-03.json",
+      "sha256": "f398b47196b4e7619a6d9770b0ae6edc9074bb9b0c5fd867debc23bbc3c6ad62",
+      "byte_count": 12423
+    },
+    "replacement_execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_execution_authority_2026-08-03.json",
+      "sha256": "7167ab3b65f263aa4ef1b97f5202c63da3a7fc42d3a185a955d77ed3740b8d7e",
+      "byte_count": 14399
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v2_integrity_replacement_v1/reservation.json",
+      "sha256": "28a26091615e54199092d99997a2034ffca19639b681e7b52ace5dff65cb1eba",
+      "byte_count": 549
+    },
+    "compatibility_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v2_integrity_replacement_v1/compatibility_receipt.json",
+      "sha256": "3bd0f06e2970966a9471f352a76cd6859580336d86a69dec945a989c971e0710",
+      "byte_count": 3017
+    },
+    "evaluation_cache_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v2_integrity_replacement_v1/dinov2_eval.json",
+      "sha256": "d3e928cc563beb4dd850f34ca41915b8e5974c6d0b1b182602f3e3f20828421c",
+      "byte_count": 1770
+    },
+    "evaluation_cache": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v2_integrity_replacement_v1/dinov2_eval.pt",
+      "sha256": "00a2e197d98effcd192392f50170648622a7210f954075002dc8b43110c636f8",
+      "byte_count": 302106281
+    },
+    "result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v2_integrity_replacement_v1/result.json",
+      "sha256": "d87eed0cb8a4912be8fcf0bb2dd582a8394c363ad39cfd9cced8a4f0507a53ee",
+      "byte_count": 581557
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v2_integrity_replacement_v1/terminal.json",
+      "sha256": "5bb8409a085917caee78b404534f5f3bf5537a928f8165793c34ce54a180f0a0",
+      "byte_count": 575
+    }
+  },
+  "attempt_contract": {
+    "terminal_status": "STOP_DINO_TRUE_FUTURE_PHYSICAL_READOUT_HEADROOM_NOT_ESTABLISHED",
+    "deterministic_replay_passed": true,
+    "failure": null,
+    "development_calibration_only": true,
+    "authorizes_model_training": false,
+    "authorizes_retry_or_resume": false,
+    "replacement_is_sole_calibration_result": true,
+    "original_attempt_remains_infrastructure_failure": true,
+    "emitted_gate_7_claim_was_premature": true,
+    "gate_7_evidence_gap_resolved_before_final_review": true
+  },
+  "compatibility_audit": {
+    "status": "PASS_SINGLETON_SSIM_COMPATIBILITY_ADMISSION",
+    "receipt_published_before_calibration_eval_access": true,
+    "allowed_differing_paths": [
+      "measurements.pixels.minimum_reference_candidate_rgb_ssim"
+    ],
+    "actual_differing_paths": [
+      "measurements.pixels.minimum_reference_candidate_rgb_ssim"
+    ],
+    "stored_value": 0.999873849744854,
+    "recomputed_value": 0.9998738497448542,
+    "absolute_difference": 1.1102230246251565e-16,
+    "absolute_tolerance": 1e-12,
+    "minimum_gate": 0.99,
+    "both_values_pass_gate": true,
+    "all_other_fields_canonical_exact": true,
+    "scientific_data_model_readouts_gates_and_seed_unchanged": true
+  },
+  "custody_and_replay_audit": {
+    "evaluation_artifacts_expected": 1536,
+    "evaluation_artifacts_opened": 1536,
+    "decoded_pixel_verifications": 1536,
+    "train_rgb_artifacts_opened": 0,
+    "replay_rgb_artifacts_opened": 0,
+    "evaluation_cache_shape": [
+      1536,
+      256,
+      384
+    ],
+    "evaluation_cache_storage_dtype": "float16",
+    "first_replay_identity": "88c8c01e584a19e2cf01730ca00794b155df1d83fb85b7b1ddbf2c08d360fc8a",
+    "second_replay_identity": "88c8c01e584a19e2cf01730ca00794b155df1d83fb85b7b1ddbf2c08d360fc8a",
+    "cache_only_replay_exact": true,
+    "in_attempt_eval_cache_rehash_implemented": false,
+    "runner_gate_7_evidence_gap": true,
+    "independent_posthoc_eval_cache_rehash_passed": true,
+    "independent_posthoc_train_cache_rehash_passed": true,
+    "independent_posthoc_cache_only_full_evaluation_canonical_exact": true,
+    "independent_posthoc_bundle_rgb_leaf_open_count": 0,
+    "independent_posthoc_compatibility_evaluator_calls": 1,
+    "independent_posthoc_recomputed_identity": "88c8c01e584a19e2cf01730ca00794b155df1d83fb85b7b1ddbf2c08d360fc8a",
+    "independent_posthoc_readouts_identity": "f2fa4ccfe87367ff4b5c5d72aa0498180fa40f8c76fcfb0409aa7199233fbd8b",
+    "independent_posthoc_feature_plan_identity": "99e60638634eff6ac244cff023cd2ae8f7aa0c53326263ba7a36fa6847386375",
+    "independent_posthoc_arms_sha256": "9901b14b44ea49f9beaa30d50ca1394e8793c1e33acbc4355a7ecb7d19067f94",
+    "independent_posthoc_comparisons_sha256": "623acf9b1dda5988c5b41875993dccf01eb8971f56e3ca15490bc1af508ddac7",
+    "independent_posthoc_bound_file_failures": 0,
+    "independent_posthoc_bound_files_checked": 46,
+    "independent_posthoc_source_blob_failures": 0,
+    "independent_posthoc_source_blobs_checked": 29,
+    "independent_posthoc_source_commit": "47b0593d04fb6cdf9f556ff0779cc2549b6fcf86",
+    "independent_posthoc_dino_commit": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "protected_or_sealed_material_opened": false
+  },
+  "evaluation_inventory": {
+    "train_states": 128,
+    "evaluation_states": 128,
+    "train_scenes": 16,
+    "evaluation_scenes": 16,
+    "families": 8,
+    "executed_successors_per_state": 9,
+    "paired_bootstrap_scene_clusters": 16,
+    "paired_bootstrap_resamples": 10000,
+    "paired_bootstrap_seed": 2026080302,
+    "safety_support": "NOT_TESTABLE_ZERO_EVENT_SUPPORT"
+  },
+  "arm_summary": {
+    "privileged_physical_oracle": {
+      "normalized_rank_regret": 0.0,
+      "oracle_equivalent_selection_rate": 1.0
+    },
+    "dinov2_true_future": {
+      "normalized_rank_regret": 0.20810081845238093,
+      "oracle_equivalent_selection_rate": 0.4375,
+      "physical_target_progress_m": 0.05654741758494342
+    },
+    "task_action_only": {
+      "normalized_rank_regret": 0.17441406250000002,
+      "oracle_equivalent_selection_rate": 0.46875,
+      "physical_target_progress_m": 0.06002022586594066
+    },
+    "dinov2_current_state": {
+      "normalized_rank_regret": 0.24555431547619047,
+      "oracle_equivalent_selection_rate": 0.4453125,
+      "physical_target_progress_m": 0.05153549135641752
+    },
+    "relational_persistence": {
+      "normalized_rank_regret": 0.22733444940476188,
+      "oracle_equivalent_selection_rate": 0.390625,
+      "physical_target_progress_m": 0.053599945540904845
+    },
+    "random_expected": {
+      "normalized_rank_regret": 0.49541377314814816,
+      "oracle_equivalent_selection_rate": 0.12239583333333337
+    }
+  },
+  "gate_audit": {
+    "1_infrastructure_and_custody": {
+      "passed": true
+    },
+    "2_privileged_physical_oracle": {
+      "passed": true,
+      "normalized_rank_regret": 0.0,
+      "oracle_equivalent_selection_rate": 1.0
+    },
+    "3_true_future_beats_task_action_only": {
+      "passed": false,
+      "mean_candidate_minus_baseline": 0.03368675595238095,
+      "lower_95": -0.017447916666666667,
+      "upper_95": 0.08654320126488095,
+      "family_median_delta": 0.01860119047619048,
+      "families_worse_better_equal": [
+        4,
+        3,
+        1
+      ],
+      "mean_delta_excluding_local_composite_motifs": 0.007142857142857141,
+      "interpretation": "The failure is substantive rather than a confidence-threshold near miss: the task/action-only control has lower point regret and a higher oracle-equivalent selection rate."
+    },
+    "4_true_future_beats_current_state": {
+      "passed": true,
+      "mean_candidate_minus_baseline": -0.03745349702380952,
+      "lower_95": -0.06612723214285714,
+      "upper_95": -0.009291294642857145,
+      "interpretation": "True future DINO features add reproducible information relative to current-state DINO features under this readout."
+    },
+    "5_true_future_beats_relational_persistence": {
+      "passed": false,
+      "mean_candidate_minus_baseline": -0.01923363095238095,
+      "lower_95": -0.053134765625,
+      "upper_95": 0.015615699404761905,
+      "family_median_delta": 0.0048363095238095205,
+      "families_worse_better_equal": [
+        4,
+        4,
+        0
+      ],
+      "mean_delta_excluding_visual_sensor_stress": 0.01482780612244898,
+      "interpretation": "The point estimate is favorable but the scene-cluster interval crosses zero, so a reliable advantage over copying the current descriptor is not established."
+    },
+    "6_true_future_beats_random_expected": {
+      "passed": true,
+      "true_future": 0.20810081845238093,
+      "random_expected": 0.49541377314814816,
+      "all_eight_family_point_comparisons_favor_true_future": true
+    },
+    "7_deterministic_replay": {
+      "in_attempt_runner_declared_passed": true,
+      "in_attempt_eval_cache_rehash_implemented": false,
+      "independent_posthoc_eval_cache_rehash_passed": true,
+      "independent_posthoc_full_replay_canonical_exact": true,
+      "passed_after_independent_posthoc_audit": true,
+      "interpretation": "The frozen runner recomputed the evaluation twice but normalized the declared cache binding instead of rehashing the cache. A separate pre-final-review audit rehashed both caches and reproduced the complete evaluation and STOP verdict exactly without RGB access; this supplies the missing preregistered independent evidence without rerunning or relabelling the attempt."
+    },
+    "all_preregistered_gates_passed": false
+  },
+  "threshold_assessment": {
+    "zero_effect_scene_cluster_bounds_are_fit_for_this_screen": true,
+    "posthoc_relaxation_would_not_rescue_gate_3_point_direction": true,
+    "absolute_regret_threshold_was_not_used": true,
+    "gate_4_positive_signal_is_retained": true,
+    "gate_5_power_caveat": "Sixteen evaluation scenes limit precision, but the effect splits four families in each direction and reverses when visual_sensor_stress is excluded.",
+    "verdict": "NO_RETROSPECTIVE_THRESHOLD_CHANGE_JUSTIFIED"
+  },
+  "scientific_interpretation": {
+    "positive_result": "Frozen DINOv2 true-future spatial tokens improve normalized physical rank regret over frozen DINOv2 current-state tokens and beat random expectation in every scene family.",
+    "negative_result": "The fixed train-only relational readout does not extract planning headroom beyond the task/action-only control and does not establish a reliable advantage beyond relational persistence.",
+    "planning_consequence": "Predictions in this DINO feature space cannot be qualified through the preregistered planning interface, so the proposed backbone-trainable DINOv2 JEPA does not earn model training.",
+    "scope_limit": "This is not evidence that every nonlinear, differently conditioned, task-coupled, or embodiment-supervised DINO interface must fail, and it is not an impossibility result for JEPA navigation."
+  },
+  "claim_boundary": {
+    "world_model_trained": false,
+    "fresh_scene_physical_readout_calibrated": true,
+    "planning_interface_headroom_established": false,
+    "navigation_usefulness_established": false,
+    "closed_loop_planning_run": false,
+    "planner_integration_authorized": false,
+    "g2_to_g8_qualification_authorized": false,
+    "strongest_positive_statement": "Under a fixed scene-disjoint linear relational readout, true-future frozen DINOv2 tokens contain more physical action-ranking information than current-state frozen DINOv2 tokens.",
+    "strongest_terminal_statement": "The specifically preregistered DINOv2 prediction-and-readout route lacks demonstrated planning headroom over its strong simple controls and stops before model training."
+  },
+  "next_route": {
+    "decision": "STOP_PLANNED_DINO_JEPA_BEFORE_TRAINING_DEFENSIBLE_NEGATIVE",
+    "train_backbone_dino_jepa": false,
+    "retry_or_tune_this_calibration": false,
+    "advance_to_causal_planner_comparison": false,
+    "data_generation_authorized": false,
+    "future_work_boundary": "Any later nonlinear, task-coupled, embodiment-derived, or alternative latent planning interface is a materially new prospectively reviewed mechanism, not a continuation or rescue of this result."
+  },
+  "findings": [
+    {
+      "severity": "MATERIAL_RESOLVED_BEFORE_FINAL_REVIEW",
+      "finding": "The in-attempt cache loader did not rehash the evaluation cache, so the runner and source review overstated compliance with the preregistered independent replay gate.",
+      "impact": "The emitted gate-7 assertion was premature. This was a custody-evidence gap, not a changed metric or decision: the independently rehashed cache exactly matched its receipt and the independently recomputed evaluation and STOP verdict were canonical-exact.",
+      "resolution": "A separate read-only ROCm audit rehashed the evaluation and train caches, checked the bound source/input closure, reopened no RGB, and recomputed every head, selected action, summary, family/scene result, 10,000-resample interval, replay identity, and verdict exactly before this review was finalized.",
+      "requires_retry_or_relabel": false
+    }
+  ]
+}

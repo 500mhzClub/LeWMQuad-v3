@@ -899,3 +899,72 @@ materially new representation mechanism, not a continuation of this attempt,
 and would require a new preregistration and authority.  The thesis and direct
 navigation evidence chain remain open; no learned world model in this program
 has yet earned planner integration or closed-loop navigation evaluation.
+
+## Addendum: DINOv2 physical-readout calibration (2026-08-03)
+
+The proposed backbone-trainable DINOv2 JEPA was deliberately preceded by a
+cheaper model-independent question: if the readout is given the *actual*
+frozen-DINO successor tokens, can it rank the nine executed actions better on
+scene-disjoint development scenes than task/action priors, current-state DINO,
+relational persistence, and random choice?  If not, training a predictor toward
+those targets would not have a qualified planning surface.
+
+The one-shot science-identical integrity replacement completed.  Its exact
+terminal is
+`STOP_DINO_TRUE_FUTURE_PHYSICAL_READOUT_HEADROOM_NOT_ESTABLISHED`.
+The 128 training and 128 evaluation states each contained all nine executed
+successors, split across 16 scenes and eight families per role.  The evaluation
+opened and pixel-verified each of its 1,536 RGB artifacts exactly once; training
+and replay opened no RGB.
+
+| arm | normalized physical rank regret | oracle-equivalent selection |
+|---|---:|---:|
+| privileged physical oracle | `0.00000` | `1.0000` |
+| task/action only | `0.17441` | `0.4688` |
+| DINO true future | `0.20810` | `0.4375` |
+| relational persistence | `0.22733` | `0.3906` |
+| DINO current state | `0.24555` | `0.4453` |
+| random expected | `0.49541` | `0.1224` |
+
+The useful positive result is real but insufficient: true-future DINO
+significantly beat current-state DINO, with paired mean regret delta
+`-0.03745` and 95% scene-cluster interval `[-0.06613, -0.00929]`.  It also
+beat random in every family.  Frozen DINO successor tokens therefore contain
+scene-disjoint transition information under this readout.
+
+The decisive failure is not an unrealistic absolute threshold or a 13-row
+near miss.  Task/action only was *better* than true-future DINO: mean delta
+`+0.03369`, interval `[-0.01745, +0.08654]`, lower regret, higher
+oracle-equivalent selection, and higher target progress.  Four family effects
+were adverse, three favorable, and one equal; excluding the large adverse
+local-composite effect still leaves the mean direction adverse.  True future's
+`-0.01923` point advantage over persistence was also unreliable
+(`[-0.05313, +0.01562]`), split four families each way, and reversed when the
+single strongly favorable visual-sensor-stress family was excluded.  Changing
+the zero-effect superiority gates after seeing these data would validate scene
+and action priors, not a useful world model.
+
+Independent review found one important custody-evidence defect before the
+terminal review was frozen.  The attempt recomputed the evaluation twice but
+its cache loader normalized the declared cache binding instead of rehashing
+the `.pt` file, so the in-run gate-7 claim was premature and the source review
+overstated that check.  A separate read-only ROCm audit then rehashed both
+caches and all bound inputs/sources, opened zero RGB, and reproduced every
+readout, selected action, summary, family/scene row, bootstrap interval,
+identity, and STOP verdict canonically exactly.  No rerun, relabelling, gate
+change, or second replacement was used.  The final review records the original
+gap and its pre-final-review remediation rather than hiding it.
+
+The durable review is
+`docs/lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_terminal_review_2026-08-03.json`
+(14,663 bytes, SHA-256
+`0a7f03de5717848c5a0a8a8348f84e2b60e294a988d03ceefec941b0f8b92e96`).
+
+The exact progression decision is
+`STOP_PLANNED_DINO_JEPA_BEFORE_TRAINING_DEFENSIBLE_NEGATIVE`.  Do not train,
+retry, tune, or send this fixed DINO target plus linear relational-readout
+route into the planner.  This does not reject DINO, dense JEPA, or navigation
+generally.  A nonlinear shared spatial readout, task-coupled objective,
+embodiment-derived supervision, or matched-branch JEPA-versus-state-space/
+Dreamer comparison would be a materially different future mechanism requiring
+new prospective review; none is an automatic continuation of this result.
