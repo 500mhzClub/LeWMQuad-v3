@@ -1,0 +1,123 @@
+{
+  "schema": "lewm_go2_matched_branch_successor_screen_execution_authority_v1",
+  "status": "AUTHORIZED_ONE_EXACT_TRAIN_ONLY_ENGINEERING_SCREEN",
+  "citable_as_scientific_evidence": false,
+  "authorizes_collection": false,
+  "authorizes_eval_rgb_access": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_successor_screen_v1_preregistration_2026-08-03.md",
+    "sha256": "7a31e3ceb7b4ffafccb4b3a763b09553d658125dba75e72a4b405da602b79e8a",
+    "byte_count": 9274
+  },
+  "source_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_successor_screen_v1_source_review_2026-08-03.json",
+    "sha256": "b8b15abfb1b4012c51cd986005d5e9ce1c91c4648948e7342b3c1037d8a85640",
+    "byte_count": 3463
+  },
+  "source_bindings": {
+    "data_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "c3482fe8d72366d3102e78a62b8bfcbdd9cb423d45cbb3ec44531eea443922e7",
+      "byte_count": 19902
+    },
+    "data_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_data_v1.py",
+      "sha256": "a6c3803d17a0832885810a9377f28434374dea8e8158db89bed70d48c2b16882",
+      "byte_count": 10075
+    },
+    "model_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "db060611391eb8e1576827f528cd7ad5392320e391d2b9b996c7baf4dcf13e65",
+      "byte_count": 19344
+    },
+    "model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "746a182077dad17cde75e746b9f1f1cfca77922e418f6e5927408501460420db",
+      "byte_count": 7552
+    },
+    "pilot_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "posthoc_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+      "sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+      "byte_count": 55667
+    },
+    "runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "4e9f9358d597216f13eb9c6b6143e5823144de1c3a8cf9490d19d785df4c622e",
+      "byte_count": 42491
+    },
+    "runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "b299969d2c3c3af0bc7bd50e6fec70104a719aa80fc235e1966b873fa83f0980",
+      "byte_count": 10014
+    }
+  },
+  "encoder_sources": {
+    "dinov2": {
+      "repo_path": "/home/andrewknowles/.cache/dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+      "repo_commit": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+      "checkpoint_binding": {
+        "path": "/home/andrewknowles/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth",
+        "sha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9",
+        "byte_count": 88283115
+      }
+    },
+    "vjepa2_1": {
+      "repo_path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812",
+      "repo_commit": "204698b45b3712590f06245fbfba32d3be539812",
+      "checkpoint_binding": {
+        "path": "/home/andrewknowles/.cache/vjepa2_1_vitb_dist_vitG_384.pt",
+        "sha256": "848a77c33cc9e6649ed2119c9bea1e2c569bcdab9539ff3e7c02ccc2959ddf4d",
+        "byte_count": 1664223428
+      }
+    }
+  },
+  "pilot_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1",
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1",
+  "environment": {
+    "python": "/usr/bin/python3.12",
+    "torch": "2.12.0+rocm7.2",
+    "hip": "7.2.53211"
+  },
+  "config": {
+    "action_count": 9,
+    "arms": [
+      "dense_vjepa2_1",
+      "dense_dinov2",
+      "state_space_vjepa2_1",
+      "rssm_vjepa2_1"
+    ],
+    "batch_states": 8,
+    "cross_entropy_coefficient": 0.25,
+    "cross_entropy_temperature": 0.1,
+    "feature_batches": {
+      "dinov2": 32,
+      "vjepa2_1": 4
+    },
+    "gradient_clip_norm": 1.0,
+    "hidden_dim": 128,
+    "learning_rate": 0.0003,
+    "maximum_error_to_persistence_ratio": 0.8,
+    "maximum_projected_gpu_hours": 24.0,
+    "retrieval_threshold": 0.5,
+    "rssm_kl_coefficient": 0.01,
+    "rssm_kl_reduction": "batchmean_after_latent_sum",
+    "rssm_posterior_coefficient": 0.5,
+    "rssm_stochastic_dim": 32,
+    "seed": 2026080301,
+    "trace_updates": [
+      0,
+      100,
+      200,
+      400,
+      800
+    ],
+    "updates": 800,
+    "weight_decay": 0.0001
+  },
+  "git_commit": "ed067902e326485409c1a3a6a823903f4dc89f50"
+}
