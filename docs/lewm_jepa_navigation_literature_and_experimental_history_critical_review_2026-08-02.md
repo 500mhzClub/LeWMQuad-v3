@@ -284,3 +284,84 @@ The independent terminal record is
 (16,458 bytes, SHA-256
 `58cbaec33e27a65d25d0106a43f6995bc75393706c4ac99637ae3e9e0f08373e`;
 status `PASS_COMPLETE_TERMINAL_DEVELOPMENT_REVIEW`).
+
+## Matched-training mechanism update (2026-08-03)
+
+The next controlled training experiment has now run.  It was deliberately a
+train-only engineering screen, not a navigation evaluation.  The existing
+matched pool supplied 128 states from 16 scenes, with all nine requested
+successors per state.  Frozen V-JEPA 2.1 and DINOv2 tokens were representation
+controls: they tested whether a compact action-conditioned transition could use
+their spatial features.  They were not treated as policies and their feature
+quality was not counted as evidence that either encoder can navigate.
+
+The four fixed arms were a dense predictor over V-JEPA tokens, the same dense
+mechanism over DINOv2 tokens, a deterministic pooled state-space model over
+V-JEPA, and a compact RSSM-style model over V-JEPA.  At 800 updates every arm
+had a positive intervention margin and every arm had learned substantially
+from initialization, but all four failed both fixed capacity gates:
+
+| Arm | Error / persistence (must be <= 0.80) | Branch retrieval (must be >= 0.50) | Intervention margin |
+|---|---:|---:|---:|
+| Dense V-JEPA 2.1 | 0.9164 | 0.2804 | 0.0287 |
+| Dense DINOv2 | 0.9667 | 0.2049 | 0.0460 |
+| Deterministic state-space | 0.8784 | 0.1484 | 0.0148 |
+| Compact RSSM | 0.8263 | 0.1354 | 0.0106 |
+
+The full projected 12-member comparison would have required only 0.822 GPU
+hours, so compute was not the blocker.  The independently reproduced terminal
+decision was `STOP_BEFORE_FRESH_MATCHED_BRANCH_COLLECTION`; see
+[the four-arm terminal review](lewm_go2_matched_branch_successor_screen_v1_terminal_review_2026-08-03.json).
+
+Dense V-JEPA was the only arm whose late curve plausibly left an optimization-
+horizon ambiguity.  A separately preregistered, no-RGB diagnostic therefore
+retrained that exact mechanism from the same seed, replayed the exact
+update-800 witness, and imposed a conjunctive update-1,600 futility gate.  It
+stopped at 1,600:
+
+- retrieval improved from `0.28038` to `0.43056`, or from 323 to 496 correct
+  action-successor matches of 1,152;
+- intervention margin improved from `0.02867` to `0.04542`;
+- error-to-persistence ratio improved from `0.91644` to `0.87234`; but
+- the fixed fidelity midpoint was `0.85822`, so the ratio gate failed by
+  `0.01412` even though retrieval and intervention passed their midpoint gates.
+
+The correct interpretation is asymmetric progress.  The frozen-feature dense
+predictor increasingly identifies which successor belongs to which requested
+action on its training scenes, but its successor fidelity is not improving over
+persistence quickly enough to establish the registered capacity claim.  This
+is another concrete instance of the literature's warning that action
+discrimination or reduced prediction loss need not produce a plannable world
+model.  The independently reproduced terminal is
+`COMPLETE_FUTILITY_STOP`; see
+[the horizon terminal review](lewm_go2_dense_vjepa2_1_horizon_diagnostic_v1_terminal_review_2026-08-03.json).
+
+### What this changes
+
+1. **Do not generate the 1,024-state fresh campaign yet.**  The current
+   frozen-feature mechanism did not qualify, and the 3 TB passive H6 pool does
+   not supply same-state/multiple-action supervision merely by being large.
+2. **Do not extend this predictor to 3,200 updates or tune its width, seed,
+   optimizer, or loss weights.**  That would override a result-dependent stop.
+3. **Keep the thesis and benchmark.**  The direct branch-truth evaluator,
+   physical gates, scene separation, planner comparison, and memory question
+   remain the right scientific chain.
+4. **Change the next representation mechanism.**  The clean successor is a
+   joint or self-supervised action-conditioned dense-token learner initialized
+   from V-JEPA 2.1, with DINOv2 and frozen V-JEPA retained as representation
+   controls.  The encoder/latent must be allowed to reshape around
+   action-relevant innovation rather than asking a compact head to recover it
+   from a frozen geometry.  Semantic occupancy remains an evaluation or
+   qualification instrument, not the default training target.
+5. **Separate candidate qualification from baseline inclusion next time.**
+   Requiring both conventional controls to pass the candidate's capacity gate
+   conflates “the baseline is weak” with “the comparison is not worth running.”
+   Controls should remain in the matched comparison even when they are poor.
+   This did not change the present terminal because the dense candidate itself
+   also failed, but it should be corrected in a future preregistration.
+
+Nothing in these screens establishes fresh-scene generalization, correct
+physical action ranking, rollout composability, useful planning geometry, or
+causal navigation benefit.  The project has run a real representation-and-
+dynamics capacity experiment; it has still not run an experiment in which a
+learned world model successfully chooses and executes navigation actions.
