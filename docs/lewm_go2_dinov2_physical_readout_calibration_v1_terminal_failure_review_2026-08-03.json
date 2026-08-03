@@ -62,15 +62,30 @@
       "sha256": "22d370945ad3dcd09bfa9405841450a834f71029c9f16de86e17daa37ee4453c",
       "byte_count": 30488
     },
-    "recomputation_environment": {
+    "failure_execution_environment": {
       "python": "/usr/bin/python3.12",
       "torch": "2.14.0.dev20260726+rocm7.1",
       "hip": "7.1.52802",
       "numpy": "1.26.4",
       "pillow": "10.2.0"
     },
-    "canonical_difference_count": 4,
-    "differences": [
+    "diagnostic_recomputation_environment": {
+      "python": "/usr/bin/python3.12",
+      "torch": "2.9.1+cpu",
+      "hip": null,
+      "numpy": "1.26.4",
+      "pillow": "10.2.0"
+    },
+    "failure_environment_canonical_difference_count": 1,
+    "failure_environment_differences": [
+      {
+        "path": "measurements.pixels.minimum_reference_candidate_rgb_ssim",
+        "stored": 0.999873849744854,
+        "recomputed": 0.9998738497448542
+      }
+    ],
+    "secondary_cpu_diagnostic_canonical_difference_count": 4,
+    "secondary_cpu_diagnostic_differences": [
       {
         "path": "measurements.frozen_predecessor_descriptor_retrieval.maximum_paired_descriptor_distance",
         "stored": 0.0014817728354341111,
@@ -92,7 +107,8 @@
         "recomputed": 0.9998738497448542
       }
     ],
-    "all_other_fields_canonical_exact": true,
+    "all_other_failure_environment_fields_canonical_exact": true,
+    "all_other_secondary_cpu_diagnostic_fields_canonical_exact": true,
     "stored_and_recomputed_status": "PASS_TASK_RELEVANT_INPUT_ADEQUACY_DEVELOPMENT_ONLY",
     "decision_thresholds_unchanged": true,
     "minimum_ssim_threshold": 0.99,
@@ -106,7 +122,8 @@
     "failure_precedes_calibration_eval_rgb_access": true,
     "failure_precedes_model_or_readout_execution": true,
     "no_scientific_result_exists": true,
-    "four_differences_are_finite_numeric_diagnostics_only": true,
+    "failure_difference_is_one_finite_ssim_diagnostic_only": true,
+    "secondary_cpu_differences_are_four_finite_diagnostics_only": true,
     "all_structural_bindings_counts_and_decisions_remain_exact": true,
     "original_attempt_is_not_retryable_or_resumable": true
   },
