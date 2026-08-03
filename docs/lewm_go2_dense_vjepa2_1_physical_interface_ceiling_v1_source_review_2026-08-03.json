@@ -4,7 +4,7 @@
   "review_date": "2026-08-03",
   "reviewer": {
     "identity": "vjepa_ceiling_source_review",
-    "independence_basis": "Independent review performed after the preregistration and implementation were frozen. During the source audit, the reviewer inspected only the public development train-cache receipt JSON, the public predecessor result JSON, and its public terminal review; no tensor cache, checkpoint, RGB leaf, state receipt, protected, held-out, or sealed material was opened or deserialized, and no value from those reads was used to alter the frozen protocol."
+    "independence_basis": "Independent review performed after the preregistration and corrected implementation were frozen. The earlier review artifact with SHA-256 cddfa441b358708a6d6f54663deb13a3df5bbaa9022018153c934ae685a74806 was superseded before authority or execution after authority construction exposed an incorrect consumer.PHYSICS_RESULT_SCHEMA reference. This re-review independently verified the minimal contract.PHYSICS_RESULT_SCHEMA correction and its regression test at frozen commit 4d04f9b711ade2cf6ab3544ceba75ccf43466240. During the source audit, the reviewer inspected only the public development train-cache receipt JSON, the public predecessor result JSON, and its public terminal review; no tensor cache, checkpoint, RGB leaf, state receipt, protected, held-out, or sealed material was opened or deserialized, and no value from those reads was used to alter the frozen protocol."
   },
   "protected_material_opened": false,
   "preregistration_binding": {
@@ -60,8 +60,8 @@
     },
     "ceiling_runner": {
       "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_vjepa2_1_physical_interface_ceiling_v1.py",
-      "sha256": "f8587f1ad0583bb99dd65ab5d1ed545ce310e31b8049f805d5d4544693ce2f74",
-      "byte_count": 111554
+      "sha256": "d73641012a0b56d2853bc8562cc328405d24da838a82019e3afa239c8d9ca188",
+      "byte_count": 111657
     },
     "ceiling_evaluator_test": {
       "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_dense_vjepa2_1_physical_interface_ceiling_v1.py",
@@ -70,8 +70,8 @@
     },
     "ceiling_runner_test": {
       "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dense_vjepa2_1_physical_interface_ceiling_v1.py",
-      "sha256": "78dcdd09d4bc7a6eb689055e22148da6a66d928aa600eb02df00d6964a140302",
-      "byte_count": 24886
+      "sha256": "481c89c20cf86706488c85b3618aeabef8082467af2af964bd0a5604d137ca72",
+      "byte_count": 26057
     }
   },
   "encoder_source": {
@@ -133,8 +133,8 @@
     },
     "drop_path_shim_source_binding": {
       "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_vjepa2_1_physical_interface_ceiling_v1.py",
-      "sha256": "f8587f1ad0583bb99dd65ab5d1ed545ce310e31b8049f805d5d4544693ce2f74",
-      "byte_count": 111554
+      "sha256": "d73641012a0b56d2853bc8562cc328405d24da838a82019e3afa239c8d9ca188",
+      "byte_count": 111657
     },
     "einops_dependency": {
       "version": "0.8.1",
