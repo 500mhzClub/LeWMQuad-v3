@@ -125,6 +125,8 @@ class _PhysicalLabelsV1:
     path_length_m: float
     fell: bool
     tipped: bool
+    planar_clearance_proxy_min_m: float | None
+    grid_recoverability_proxy: float | bool | None
 
 
 @dataclass(frozen=True)
@@ -382,6 +384,10 @@ def _groups_from_receipts(
                         path_length_m=float(branch["physical_path_length_m"]),
                         fell=bool(branch["physical_fell"]),
                         tipped=bool(branch["physical_tipped"]),
+                        # Bounded-branch state receipts retain direct physical
+                        # outcomes but not these legacy nonphysical proxies.
+                        planar_clearance_proxy_min_m=None,
+                        grid_recoverability_proxy=None,
                     ),
                 )
             )

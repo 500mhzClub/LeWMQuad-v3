@@ -314,6 +314,44 @@ def test_physical_scoring_uses_progress_then_clamped_path_then_action_id(
     assert scores[0, 0] == 0.0  # exact tie broken by action ID
 
 
+def test_receipt_label_adapter_exercises_complete_selection_report_interface(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(subject, "STATE_COUNT", 1)
+    monkeypatch.setattr(subject.prior, "FAMILIES", ("large_enclosed_maze",))
+    groups, _receipts_by_id = subject._groups_from_receipts(  # noqa: SLF001
+        [_receipt()], role="train"
+    )
+    plan = _plan(1)
+    plan.groups = groups
+    scores = np.ones((1, 9), dtype=np.float64)
+    scores[0, 2] = 0.0
+
+    report = subject.report_arm_v1(plan, scores)
+
+    row = report["group_results"][0]
+    assert {
+        "physical_fell": row["physical_fell"],
+        "physical_tipped": row["physical_tipped"],
+        "physical_target_progress_m": row["physical_target_progress_m"],
+        "physical_path_length_m": row["physical_path_length_m"],
+        "physical_progress_delta_to_canonical_oracle_m": row[
+            "physical_progress_delta_to_canonical_oracle_m"
+        ],
+        "planar_clearance_proxy_min_m": row["planar_clearance_proxy_min_m"],
+        "grid_recoverability_proxy": row["grid_recoverability_proxy"],
+    } == {
+        "physical_fell": False,
+        "physical_tipped": False,
+        "physical_target_progress_m": pytest.approx(0.08),
+        "physical_path_length_m": pytest.approx(0.22),
+        "physical_progress_delta_to_canonical_oracle_m": pytest.approx(0.02),
+        "planar_clearance_proxy_min_m": None,
+        "grid_recoverability_proxy": None,
+    }
+    assert "nonphysical_proxy_metrics" not in report["summary"]
+
+
 def _summary(regret: float, oracle_rate: float = 0.0) -> dict[str, object]:
     return {
         "summary": {
