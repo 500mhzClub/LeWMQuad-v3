@@ -1,0 +1,93 @@
+{
+  "schema": "lewm_go2_dense_vjepa2_1_horizon_diagnostic_source_review_v1",
+  "status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewer": "horizon_prereg_review",
+  "protected_material_opened": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_horizon_diagnostic_v1_preregistration_2026-08-03.md",
+    "sha256": "f29d00876c50d813b60fdeea3543a41155066b4049ef2f414a92e162d21ae09b",
+    "byte_count": 7352
+  },
+  "source_bindings": {
+    "horizon_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_vjepa2_1_horizon_diagnostic_v1.py",
+      "sha256": "83a92faf0a547a973783d20e8fe7475e887e3029a155380f3bf6330b405410b9",
+      "byte_count": 27714
+    },
+    "horizon_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dense_vjepa2_1_horizon_diagnostic_v1.py",
+      "sha256": "0cfd330f134352a04ad28e5e6c01da90124e6844c08fcdba81c457a9bdabcdd7",
+      "byte_count": 10677
+    },
+    "predecessor_data_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "c3482fe8d72366d3102e78a62b8bfcbdd9cb423d45cbb3ec44531eea443922e7",
+      "byte_count": 19902
+    },
+    "predecessor_data_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_data_v1.py",
+      "sha256": "a6c3803d17a0832885810a9377f28434374dea8e8158db89bed70d48c2b16882",
+      "byte_count": 10075
+    },
+    "predecessor_model_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "db060611391eb8e1576827f528cd7ad5392320e391d2b9b996c7baf4dcf13e65",
+      "byte_count": 19344
+    },
+    "predecessor_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "746a182077dad17cde75e746b9f1f1cfca77922e418f6e5927408501460420db",
+      "byte_count": 7552
+    },
+    "predecessor_pilot_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "predecessor_posthoc_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+      "sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+      "byte_count": 55667
+    },
+    "predecessor_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "4e9f9358d597216f13eb9c6b6143e5823144de1c3a8cf9490d19d785df4c622e",
+      "byte_count": 42491
+    },
+    "predecessor_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "b299969d2c3c3af0bc7bd50e6fec70104a719aa80fc235e1966b873fa83f0980",
+      "byte_count": 10014
+    }
+  },
+  "checks": {
+    "preregistration_numbers_and_bindings_exact": true,
+    "no_rgb_reader_called": true,
+    "metadata_only_index_and_role_boundary_exact": true,
+    "feature_cache_order_preprocessing_shape_dtype_finiteness_and_norms_checked": true,
+    "exact_predecessor_source_closure_required": true,
+    "seed_initialization_batches_model_loss_optimizer_and_clip_exact": true,
+    "predecessor_update_100_200_400_eval_schedule_replayed": true,
+    "update_800_six_metric_witness_exact_and_required": true,
+    "update_1600_futility_conjunction_exact": true,
+    "update_3200_capacity_conjunction_exact": true,
+    "deterministic_repeat_and_checkpoint_roundtrip_checked": true,
+    "fresh_output_and_failure_terminal_fail_closed": true,
+    "claim_and_authority_boundaries_exact": true,
+    "combined_focused_tests_48_pass": true
+  },
+  "audit_history": [
+    {
+      "finding": "The first draft allowed a successor authority to bind current predecessor paths without requiring their bindings to equal the source closure embedded in the exact predecessor result.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "load_bound_inputs_v1 now compares every predecessor_<label> source binding with the corresponding bound predecessor-result authority source binding."
+    },
+    {
+      "finding": "The first replay draft converted objectives to Python floats only at recorded traces, unlike the predecessor's per-update synchronization schedule.",
+      "resolution": "FIXED_BEFORE_FREEZE",
+      "evidence": "The final runner materializes objective scalars every update and independently replays predecessor evaluations at updates 100, 200, and 400 before the exact update-800 witness."
+    }
+  ],
+  "findings": []
+}
