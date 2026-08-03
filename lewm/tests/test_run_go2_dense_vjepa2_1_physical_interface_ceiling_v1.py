@@ -125,6 +125,40 @@ def test_bound_json_and_jsonl_are_each_single_open(
     assert opened == [rows_path]
 
 
+def test_physics_state_receipt_helper_uses_contract_schema(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    physics_root = tmp_path / "physics"
+    physics_root.mkdir()
+    receipt_binding = {
+        "path": "receipts/state-000.json",
+        "sha256": "a" * 64,
+        "byte_count": 1,
+    }
+    physics_result = tmp_path / "physics-result.json"
+    physics_result.write_text(
+        json.dumps(
+            {
+                "schema": runner.contract.PHYSICS_RESULT_SCHEMA,
+                "status": "PHYSICS_COMPLETE",
+                "failure": None,
+                "state_receipt_bindings": [receipt_binding],
+            }
+        )
+    )
+    monkeypatch.setattr(runner, "STATE_RECEIPT_COUNT", 1)
+    monkeypatch.setattr(runner, "PHYSICS_ROOT", physics_root)
+    authority = {"input_bindings": {"physics_result": _binding(physics_result)}}
+
+    assert runner._state_receipt_bindings_from_physics_v1(authority) == [  # noqa: SLF001
+        {
+            "path": str((physics_root / receipt_binding["path"]).resolve()),
+            "sha256": receipt_binding["sha256"],
+            "byte_count": receipt_binding["byte_count"],
+        }
+    ]
+
+
 def test_rgb_manifest_loader_is_metadata_only_without_leaf_stat(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -40,6 +40,9 @@ from lewm.benchmarks import (  # noqa: E402
 from lewm.benchmarks import (  # noqa: E402
     go2_dinov2_physical_readout_calibration_v1 as feature_plans,
 )
+from lewm.benchmarks import (  # noqa: E402
+    go2_world_model_counterfactual_pilot_v1 as contract,
+)
 from lewm.datasets import go2_world_model_counterfactual_pilot_v1 as consumer  # noqa: E402
 from lewm.datasets.go2_world_model_counterfactual_pilot_v1 import (  # noqa: E402
     read_bound_rgb_bytes_v1,
@@ -714,7 +717,7 @@ def _state_receipt_bindings_from_physics_v1(
     document = _bound_document_v1(authority, "physics_result")
     values = document.get("state_receipt_bindings")
     if (
-        document.get("schema") != consumer.PHYSICS_RESULT_SCHEMA
+        document.get("schema") != contract.PHYSICS_RESULT_SCHEMA
         or document.get("status") != "PHYSICS_COMPLETE"
         or document.get("failure") is not None
         or not isinstance(values, list)
