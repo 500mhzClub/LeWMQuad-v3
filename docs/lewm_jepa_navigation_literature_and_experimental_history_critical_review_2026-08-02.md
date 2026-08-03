@@ -1,17 +1,30 @@
 # JEPA Navigation Literature and Experimental-History Critical Review
 
-**Review date:** 2026-08-02
+**Review date:** 2026-08-02; **last updated:** 2026-08-03
 **Scope:** Current JEPA and JEPA-world-model literature, navigation-specific evidence, and a first-principles evaluation of this repository's approach and experimental history.
 
 ## Verdict
 
-As of 2 August 2026, the repository has produced a credible negative result for its current globally pooled, one-step LeWM/SIGReg training branch. It has **not** established that counterfactual-data generation is the critical path, that architecture is exonerated, or that observational data cannot train a useful action-conditioned JEPA.
+As of 3 August 2026, the repository has completed a scene-disjoint matched-
+branch development evaluation, bounded matched-branch training screens, and a
+direct physical-outcome screen.  The current globally pooled one-step
+checkpoints are not planning-ready; the bounded frozen/adapted-token mechanisms
+did not establish their registered capacity claim; and the compact retained-
+input dynamics packages did not establish physical action-ranking headroom.
 
-The session handoff is unusually honest and scientifically valuable, especially its withdrawn-claims section. Its bottom line nevertheless needs one more correction:
+The session handoff remains unusually honest and scientifically valuable,
+especially its withdrawn-claims section.  The accumulated result now supports
+a narrower current verdict:
 
-> Counterfactual branches are currently the critical path to a decisive causal **evaluation**, not yet the proven critical path to **training**.
+> Matched branches have enabled direct causal development tests.  The tested
+> mechanisms failed their fixed physical-ranking gates, but this neither proves
+> that matched counterfactual training is universally necessary nor clears
+> architecture, objective, representation, or planner design as alternative
+> causes.
 
-The project is one calibrated branch set plus one controlled training comparison away from a much cleaner causal diagnosis. It remains substantially further away from evidence that the model is useful for navigation planning.
+The project is no longer waiting for its first calibrated branch set or
+controlled training comparison.  It remains substantially further away from
+evidence that a learned world model is useful for navigation planning.
 
 ## What the current literature actually says
 
@@ -34,12 +47,13 @@ The governing plan asks for untaken-action utility (WM-A), optional rollout comp
 
 | Property | Current status | Correct interpretation |
 |---|---:|---|
-| WM-A | Unmeasured | Existing metrics compare alternative action predictions to the one factual successor. They do not measure whether an untaken action predicts its true successor or reduces physical regret. |
+| WM-A | Measured; not established | The matched-branch panels now expose true untaken-action outcomes and physical rank regret. Current latent checkpoints and the compact retained-input dynamics packages failed their fixed development gates; no JEPA action-utility claim follows. |
 | WM-C | Failed only in the unchanged interface | The predictor consumes 256 lattice tokens but emits 64 masked tokens, so direct re-entry is impossible. Adapters and different rollout architectures remain untested. |
 | WM-S | Unmeasured functionally | Freezing the encoder prevented encoder drift; it did not prove that the trained dynamics retain usable spatial/physical structure. |
 | WM-D | Absent | No learned world model has yet supplied planner scores that causally determined navigation actions. |
 
-The strongest experiment is the three-arm V3 comparison:
+The strongest early observational-training experiment was the three-arm V3
+comparison:
 
 - 16,000 training rows and 2,048 validation rows from 150 scene-disjoint scenes.
 - The conditioned model beat the blind and cross-scene shuffled models.
@@ -47,6 +61,11 @@ The strongest experiment is the three-arm V3 comparison:
 - Yet hardest-action energy ordering was negative, and the model was substantially worse than persistence.
 
 Those results establish **scene-disjoint factual action association**, not causal action-conditioned dynamics. See [the three-arm terminal review](lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_terminal_review_2026-08-01.json).
+
+The strongest direct WM-A test is now the scene-disjoint matched-branch
+physical-outcome screen described in the final update below.  It evaluates
+true physical outcomes for all nine candidate actions, but neither learned arm
+passed its registered headroom gate.
 
 The successor-alignment hinge then produced a genuine relative improvement over its concurrent baseline, but its absolute margin remained negative and persistence still failed. See [the alignment terminal review](lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_terminal_review_2026-08-01.json). Continuing from u700 to u900 worsened the primary margin; stopping that mechanism was exactly right. See [the fixed-continuation terminal review](lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_terminal_review_2026-08-01.json).
 
@@ -222,22 +241,25 @@ Align planner scoring with the prefix actually executed, rather than scoring a t
 
 ## Bottom line
 
-The repository has not failed at JEPA navigation. It has now run a valid
-scene-disjoint matched-branch **development evaluation**, though still not a
-closed-loop JEPA navigation experiment. That panel found the current pooled,
-one-step checkpoints are not planning-ready.
+The repository has not established JEPA navigation.  It has now run valid
+scene-disjoint matched-branch development evaluation, training-capacity, and
+physical-outcome screens, but still no closed-loop JEPA navigation experiment.
+The current pooled one-step checkpoints are not planning-ready, and neither
+compact retained-input arm established physical-ranking headroom.
 
 The most defensible current claim is:
 
-> We have reproducible action-conditioned latent signal, but no demonstrated
-> physical action-ranking advantage, relative-progress advantage, rollout
-> utility, planning geometry, or causal navigation benefit.
+> We have reproducible action-conditioned latent signal and favorable point
+> physical-regret estimates for compact retained-input models, but no
+> statistically supported physical action-ranking headroom, relative-progress
+> advantage, rollout utility, planning geometry, or causal navigation benefit.
 
-The fixed branch evaluator is complete. Do not launch a bulk rerender or continue
-tuning the same observational proxy. The next information-changing experiment
-should train on a deliberately scoped matched-state/multiple-action branch set
-and compare a dense-token JEPA candidate against conventional state-space and
-Dreamer-style baselines before any closed-loop claim.
+The fixed branch evaluator and this retained-input route are complete.  Do not
+launch a bulk rerender, scale the 3 TB pool, tune these models or thresholds, or
+treat the negative conjunction as authorization for a dense successor.  Any
+materially different mechanism or conventional/Dreamer comparison requires a
+new rationale and preregistration outside this stopped route before any
+closed-loop claim.
 
 ## Post-panel result update (2026-08-02)
 
@@ -418,3 +440,62 @@ All three checkpoint evaluations and retention calculations were independently
 replayed twice from the bound train caches and matched bit-for-bit.  The
 independent terminal record is
 [the dual residual token-adapter terminal review](lewm_go2_dual_residual_token_adapter_jepa_v1_terminal_review_2026-08-03.json).
+
+## Matched-branch physical-outcome result update (2026-08-03)
+
+The final science-identical integrity replacement completed the registered
+physical-outcome screen.  It trained on 128 states from 16 scenes and evaluated
+128 states from 16 disjoint scenes, with all nine executed branches per state.
+The evaluation panel was already development-exposed, so scene separation does
+not make this fresh confirmation evidence and the 16 evaluation scenes remain
+the relevant uncertainty units.
+
+Arm A was the fixed task/action-only ridge.  Arm B combined retained odometry
+and command history with the requested candidate action.  Arm C used the same
+physical inputs and learned mechanism as B, adding only the frozen 16-dimensional
+PCA projection of current cached DINOv2 context grids.
+
+| Arm | Normalized physical rank regret | Three member point regrets | Difference from A, paired scene-bootstrap 95% interval |
+|---|---:|---|---|
+| A: task/action-only | `0.1744140625` | — | — |
+| B: odometry-and-command-history | `0.1489676339` | `0.1621093750`, `0.1685174851`, `0.1652157738` | `-0.0254464286` [`-0.0543712798`, `+0.0030691964`] |
+| C: B plus cached visual context | `0.1575706845` | `0.1714564732`, `0.1873511905`, `0.1808035714` | `-0.0168433780` [`-0.0391648065`, `+0.0054780506`] |
+
+Both learned ensembles beat the random expectation of `0.4954137731`, and the
+privileged oracle passed with zero regret and `1.0` oracle-equivalent selection.
+Neither learned arm passed its headroom gate because both upper confidence
+endpoints crossed zero.  C was also worse than B by `+0.0086030506`, with a
+paired interval of [`-0.0039062500`, `+0.0211135138`], so the clean incremental
+visual-value gate failed.  Two of C's three member regrets were also worse than
+A.  Infrastructure/custody, oracle sensitivity, random sanity, and exact fresh-
+process cache-only replay passed; the B-versus-A, C-versus-A, and C-versus-B
+scientific gates failed.  The terminal decision is therefore
+`STOP_RETAINED_INPUT_PHYSICAL_DYNAMICS_HEADROOM_NOT_ESTABLISHED`.
+
+The comparison needs two qualifications.  B versus A is a package comparison:
+A is a different ridge control, whereas B is a three-member nonlinear dynamics
+ensemble, so the effect cannot be attributed purely to odometry.  C versus B is
+the clean visual ablation because the physical inputs, architecture, seeds, and
+training schedule are matched.  That ablation provides no evidence of
+incremental value from this pooled 16-dimensional visual projection.
+
+The diagnostic standardized MSE was slightly lower for C (`0.7722862`) than B
+(`0.7816950`) even though C had worse physical rank regret.  This reinforces the
+loss-to-action-ranking mismatch identified throughout this review; because the
+screen did not run a planner, it is not itself direct planning evidence.
+
+Replay reproduced every registered identity, prediction, selection, summary,
+interval, gate, and verdict.  The run opened zero RGB leaves, executed zero
+encoders, and accessed no protected material.  It trained no JEPA: C consumed
+cached DINOv2 features, so the result says nothing about whether DINOv2 or
+V-JEPA can navigate.  Zero fall/tip support leaves safety untestable.  Nothing
+here establishes rollout composability, planning geometry, persistent memory,
+causal planner use, closed-loop navigation, or any G2-G8 claim, and the STOP
+authorizes neither a dense successor nor further tuning, scaling, or data
+generation on this route.
+
+The independent terminal record is
+[the matched-branch physical-outcome terminal review](lewm_go2_matched_branch_physical_outcome_screen_integrity_replacement_v1_terminal_review_2026-08-03.json)
+(22,378 bytes, SHA-256
+`d3f2d99c1a7f7d4e6d02215f04209732f326651e10bd06d040418cc7aafc5cbe`;
+status `PASS_COMPLETE_SCIENTIFIC_STOP_TERMINAL_REVIEW`).
