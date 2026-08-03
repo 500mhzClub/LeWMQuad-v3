@@ -1,0 +1,75 @@
+{
+  "schema": "lewm_go2_matched_branch_successor_screen_source_review_v1",
+  "status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+  "reviewer": "screen_source_review",
+  "review_date": "2026-08-03",
+  "protected_material_opened": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_successor_screen_v1_preregistration_2026-08-03.md",
+    "sha256": "7a31e3ceb7b4ffafccb4b3a763b09553d658125dba75e72a4b405da602b79e8a",
+    "byte_count": 9274
+  },
+  "source_bindings": {
+    "data_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "c3482fe8d72366d3102e78a62b8bfcbdd9cb423d45cbb3ec44531eea443922e7",
+      "byte_count": 19902
+    },
+    "data_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_data_v1.py",
+      "sha256": "a6c3803d17a0832885810a9377f28434374dea8e8158db89bed70d48c2b16882",
+      "byte_count": 10075
+    },
+    "model_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "db060611391eb8e1576827f528cd7ad5392320e391d2b9b996c7baf4dcf13e65",
+      "byte_count": 19344
+    },
+    "model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "746a182077dad17cde75e746b9f1f1cfca77922e418f6e5927408501460420db",
+      "byte_count": 7552
+    },
+    "pilot_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "posthoc_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+      "sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+      "byte_count": 55667
+    },
+    "runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "4e9f9358d597216f13eb9c6b6143e5823144de1c3a8cf9490d19d785df4c622e",
+      "byte_count": 42491
+    },
+    "runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "b299969d2c3c3af0bc7bd50e6fec70104a719aa80fc235e1966b873fa83f0980",
+      "byte_count": 10014
+    }
+  },
+  "checks": {
+    "train_only_custody_boundary": true,
+    "no_future_executed_tape_predictor_access": true,
+    "four_arm_contract_exact": true,
+    "optimization_and_gates_exact": true,
+    "rssm_stochastic_posterior_prior_only_metrics": true,
+    "rssm_batchmean_kl": true,
+    "encoder_and_checkpoint_contracts_exact": true,
+    "preprocessing_and_cache_receipts_bound": true,
+    "exclusive_output_and_failure_terminal": true,
+    "focused_tests_41_pass": true,
+    "official_model_synthetic_forward_smoke_pass": true
+  },
+  "audit_history": [
+    {
+      "concern": "V-JEPA 2.1 Hub return type inferred from README",
+      "resolution": "WITHDRAWN_AFTER_EXACT_SOURCE_CHECK",
+      "evidence": "At pinned commit 204698b45b3712590f06245fbfba32d3be539812, _make_vjepa2_1_model returns the encoder and predictor pair used by the runner."
+    }
+  ],
+  "findings": []
+}
