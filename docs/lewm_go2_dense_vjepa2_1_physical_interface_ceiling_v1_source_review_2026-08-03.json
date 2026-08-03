@@ -1,0 +1,217 @@
+{
+  "schema": "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_source_review_v1",
+  "status": "PASS_INDEPENDENT_DENSE_VJEPA2_1_CEILING_SOURCE_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewer": {
+    "identity": "vjepa_ceiling_source_review",
+    "independence_basis": "Independent review performed after the preregistration and implementation were frozen. During the source audit, the reviewer inspected only the public development train-cache receipt JSON, the public predecessor result JSON, and its public terminal review; no tensor cache, checkpoint, RGB leaf, state receipt, protected, held-out, or sealed material was opened or deserialized, and no value from those reads was used to alter the frozen protocol."
+  },
+  "protected_material_opened": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_preregistration_2026-08-03.md",
+    "sha256": "ef5c687d509929169280a456618e92e92f2a072a646bc292be3d16850f801ad0",
+    "byte_count": 20816
+  },
+  "source_bindings": {
+    "action_regret_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+      "byte_count": 28399
+    },
+    "counterfactual_benchmark_contract": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+      "byte_count": 102894
+    },
+    "pilot_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "feature_plan_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "89afbc4b4611806ba5fd230747ee9de31edbb9ddf39701150246439b637c0d98",
+      "byte_count": 34541
+    },
+    "dense_shared_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "6c8ed2398b1889c49b0699a236495530c63cfb0d363b0351b419c07efaf778e4",
+      "byte_count": 60963
+    },
+    "dense_shared_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "de7d7defd5047f84fa8d71ba62c05c441a965018ec6f41c5771384ea11d4295a",
+      "byte_count": 12637
+    },
+    "physical_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "00e23fcdc9252895bfa9489e7d7b6223c6421afae5ba325b18d78ad77933b16f",
+      "byte_count": 70959
+    },
+    "physical_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "81947b04c23a789ce8d4a8a45005db4f08181784322504b1b140d969b2f5ff32",
+      "byte_count": 7951
+    },
+    "ceiling_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dense_vjepa2_1_physical_interface_ceiling_v1.py",
+      "sha256": "261e5b30f94dde7c9126688675f0647937103f6402ef5a7834e998547982edde",
+      "byte_count": 56720
+    },
+    "ceiling_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_vjepa2_1_physical_interface_ceiling_v1.py",
+      "sha256": "f8587f1ad0583bb99dd65ab5d1ed545ce310e31b8049f805d5d4544693ce2f74",
+      "byte_count": 111554
+    },
+    "ceiling_evaluator_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_dense_vjepa2_1_physical_interface_ceiling_v1.py",
+      "sha256": "cbff9c1275e3bd8559948ab5b2980cd9c3a5ff7e6c2ad11accce6332efc94c00",
+      "byte_count": 22103
+    },
+    "ceiling_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dense_vjepa2_1_physical_interface_ceiling_v1.py",
+      "sha256": "78dcdd09d4bc7a6eb689055e22148da6a66d928aa600eb02df00d6964a140302",
+      "byte_count": 24886
+    }
+  },
+  "encoder_source": {
+    "repo_path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812",
+    "repo_commit": "204698b45b3712590f06245fbfba32d3be539812",
+    "repo_tree": "dd6cfc1e792158510b983d827cb2e84f47fd5706",
+    "hub_entrypoint": "vjepa2_1_vit_base_384",
+    "checkpoint_binding": {
+      "path": "/home/andrewknowles/.cache/vjepa2_1_vitb_dist_vitG_384.pt",
+      "sha256": "848a77c33cc9e6649ed2119c9bea1e2c569bcdab9539ff3e7c02ccc2959ddf4d",
+      "byte_count": 1664223428
+    },
+    "transitive_source_bindings": {
+      "hubconf.py": {
+        "path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812/hubconf.py",
+        "sha256": "6a61c46a80c82ed10331a19822d58e9a19f062e52845e1787fc810979ff03c7b",
+        "byte_count": 543
+      },
+      "evals/hub/preprocessor.py": {
+        "path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812/evals/hub/preprocessor.py",
+        "sha256": "1f0776605ef69689a99ac79527b391712680e96c0d95735035355ae0e0aea58b",
+        "byte_count": 510
+      },
+      "src/hub/backbones.py": {
+        "path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812/src/hub/backbones.py",
+        "sha256": "391cdde1e9a1da47cb8094bbea5fbbe8acac0135b27e82f1a6ab19c0b39cc692",
+        "byte_count": 10164
+      },
+      "app/vjepa_2_1/models/vision_transformer.py": {
+        "path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812/app/vjepa_2_1/models/vision_transformer.py",
+        "sha256": "d2932eabeba684d8f558302a13cfd4be70a0170ee5112f5a794652d0a29089b9",
+        "byte_count": 18195
+      },
+      "app/vjepa_2_1/models/predictor.py": {
+        "path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812/app/vjepa_2_1/models/predictor.py",
+        "sha256": "30111720eb90c6dcdde44521cea53cc736020f984e5573150fd3dc7b4acc05d8",
+        "byte_count": 10679
+      },
+      "app/vjepa_2_1/models/utils/modules.py": {
+        "path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812/app/vjepa_2_1/models/utils/modules.py",
+        "sha256": "64be6a87bd9f18d385f4e44186db3347d1665e18a1f0511d51d3b305531562e2",
+        "byte_count": 16963
+      },
+      "app/vjepa_2_1/models/utils/patch_embed.py": {
+        "path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812/app/vjepa_2_1/models/utils/patch_embed.py",
+        "sha256": "29e11ab97ab3ccdef107d6a7d0d7b374b58e712076cc3561f07b7e603c9b5165",
+        "byte_count": 1883
+      },
+      "src/masks/utils.py": {
+        "path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812/src/masks/utils.py",
+        "sha256": "833f111a0fa5ffdbd3a6412e2dace2517c3c178f49c14f8bb631d9f6a070dfd0",
+        "byte_count": 660
+      },
+      "src/utils/tensors.py": {
+        "path": "/home/andrewknowles/.cache/vjepa2-204698b45b3712590f06245fbfba32d3be539812/src/utils/tensors.py",
+        "sha256": "782b58bd2af456e184750e5318ab773105108383f61b280fe4c7a90f46add2c8",
+        "byte_count": 1832
+      }
+    },
+    "drop_path_shim_source_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_vjepa2_1_physical_interface_ceiling_v1.py",
+      "sha256": "f8587f1ad0583bb99dd65ab5d1ed545ce310e31b8049f805d5d4544693ce2f74",
+      "byte_count": 111554
+    },
+    "einops_dependency": {
+      "version": "0.8.1",
+      "module_origin": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops/__init__.py",
+      "distribution_root": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops-0.8.1.dist-info",
+      "runtime_source_bindings": {
+        "einops/__init__.py": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops/__init__.py",
+          "sha256": "acacaf13ae1b60c38c5c01b811f30c4951b1805674c79d5db7cda946cc389471",
+          "byte_count": 422
+        },
+        "einops/einops.py": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops/einops.py",
+          "sha256": "b17bc3f12585aae7f38b24092913e67c018754dd5c303bd838f36e67c2f55d05",
+          "byte_count": 37569
+        },
+        "einops/_backends.py": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops/_backends.py",
+          "sha256": "ec10222967412cbbc08abc9f8700dbc318251835bd0e1e4534c4f51114aecf19",
+          "byte_count": 21281
+        },
+        "einops/parsing.py": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops/parsing.py",
+          "sha256": "c5ba9cbf045e2e244e12e7287a0676d1642210794b834bb1a3fbd8a1ecca07fe",
+          "byte_count": 6746
+        },
+        "einops/packing.py": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops/packing.py",
+          "sha256": "d7037dbcc6be728ab5462391fcdbb6697aa0224ac37f78fe37543e60dd3ec56a",
+          "byte_count": 7650
+        },
+        "einops/_torch_specific.py": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops/_torch_specific.py",
+          "sha256": "c8c6907aa0198412d647543e26feae4483497f344e84b6feaf328a7afa5e7d45",
+          "byte_count": 4138
+        }
+      },
+      "distribution_metadata_bindings": {
+        "einops-0.8.1.dist-info/METADATA": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops-0.8.1.dist-info/METADATA",
+          "sha256": "79529559045603ccd27713c844f2b57247c48e93135077bdb904bc53ed189403",
+          "byte_count": 13451
+        },
+        "einops-0.8.1.dist-info/RECORD": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops-0.8.1.dist-info/RECORD",
+          "sha256": "b4b231ccd46f7891c44ea965d03d5118d2c43042422a948f64ab0913e0c27583",
+          "byte_count": 4051
+        },
+        "einops-0.8.1.dist-info/WHEEL": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops-0.8.1.dist-info/WHEEL",
+          "sha256": "aad0b0a12256807936d52d4a6f88a1773236ae527564a688bab4e3fe780e8724",
+          "byte_count": 87
+        },
+        "einops-0.8.1.dist-info/INSTALLER": {
+          "path": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/lib/python3.12/site-packages/einops-0.8.1.dist-info/INSTALLER",
+          "sha256": "ceebae7b8927a3227e5303cf5e0f1f7b34bb542ad7250ac03fbcde36ec2f1508",
+          "byte_count": 4
+        }
+      }
+    }
+  },
+  "checks": {
+    "frozen_preregistration_binding_exact": true,
+    "source_closure_complete_exact_and_committed": true,
+    "all_20_scientific_inputs_and_10_lineage_witnesses_complete_and_exact": true,
+    "narrow_loader_opens_only_256_state_receipts_and_no_render_receipts": true,
+    "train_eval_roles_scenes_artifacts_and_plan_identities_exact": true,
+    "eval_rgb_closed_set_nofollow_hash_pixel_and_once_only": true,
+    "vjepa_source_checkpoint_shim_preprocessing_and_output_exact": true,
+    "fit_checkpoint_precedes_eval_rgb_access": true,
+    "pca_readout_training_arms_controls_metrics_and_gates_exact": true,
+    "retained_physical_uses_published_evaluation_without_checkpoint": true,
+    "fresh_process_replay_retrains_from_both_caches_without_rgb_or_encoder": true,
+    "exact_eight_file_output_and_failure_terminal_fail_closed": true,
+    "no_collection_protected_retry_resume_or_successor_path": true,
+    "focused_tests_passed": true,
+    "compile_and_whitespace_checks_passed": true
+  },
+  "findings": []
+}
