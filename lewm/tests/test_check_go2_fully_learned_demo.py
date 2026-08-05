@@ -1,23 +1,117 @@
 from __future__ import annotations
 
 import json
+import math
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+from lewm.benchmarks.go2_physical_claim_evaluator import (
+    evaluate_physical_claim_trace,
+)
+from lewm.benchmarks.go2_physical_claim_trace import (
+    build_claim_attempt,
+    build_claim_trace,
+    object_id_reference,
+)
+from lewm_worlds.manifest import (
+    BoxObject,
+    CameraValidityConstraints,
+    SceneManifest,
+    SpawnSpec,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CHECKER = REPO_ROOT / "scripts" / "check_go2_fully_learned_demo.py"
 
 
-def _base_result() -> dict[str, Any]:
+def _manifest() -> SceneManifest:
+    landmarks = tuple(
+        BoxObject(
+            object_id=f"beacon_{color}",
+            kind="landmark",
+            center_xyz_m=(x, y, 0.5),
+            size_xyz_m=(0.2, 0.2, 1.0),
+            yaw_rad=0.0,
+            material_id=f"landmark_{color}",
+        )
+        for color, x, y in (
+            ("red", 0.8, 0.0),
+            ("green", 0.0, 0.8),
+            ("blue", -0.8, 0.0),
+            ("yellow", 0.0, -0.8),
+        )
+    )
+    return SceneManifest(
+        scene_id="medium_enclosed_maze_01732aabc542",
+        family="test",
+        difficulty_tier="test",
+        topology_seed=1,
+        visual_seed=2,
+        physics_seed=3,
+        world_bounds_xy_m=((-2.0, -2.0), (2.0, 2.0)),
+        spawn=SpawnSpec((0.0, 0.0, 0.375), (1.0, 0.0, 0.0, 0.0)),
+        graph_nodes=(),
+        graph_edges=(),
+        obstacles=(),
+        landmarks=landmarks,
+        camera_constraints=CameraValidityConstraints(0.08, 0.05, 20.0, 0.1),
+    )
+
+
+def _canonical_claim_result(manifest: SceneManifest) -> dict[str, Any]:
+    attempts = []
+    for index, landmark in enumerate(manifest.landmarks):
+        reference = object_id_reference(landmark.object_id)
+        attempts.append(
+            build_claim_attempt(
+                manifest=manifest,
+                trace_id="trace",
+                episode_id="episode",
+                event_id=f"event-{index}",
+                tick=index,
+                event_index=index,
+                requested_target=reference,
+                claimed_target=reference,
+                robot_pose_world_xy_yaw=(
+                    0.0,
+                    0.0,
+                    math.atan2(
+                        landmark.center_xyz_m[1], landmark.center_xyz_m[0]
+                    ),
+                ),
+                pose_provenance="runtime_full_precision",
+            )
+        )
+    raw, task_ids, task_hash = build_claim_trace(
+        manifest=manifest,
+        trace_id="trace",
+        episode_id="episode",
+        controller_claim_attempts=attempts,
+    )
     return {
-        "result": {
-            "scene": "medium_enclosed_maze_01732aabc542",
-            "success": True,
+        "scene": manifest.scene_id,
+        "claimed": True,
+        "success": True,
+        "claimed_colors": ["blue", "green", "red", "yellow"],
+        "canonical_physical_claim_trace": evaluate_physical_claim_trace(
+            raw, manifest, task_ids, task_hash
+        ),
+        "runtime_evaluator_access_ledger": {
+            "evaluator_output_reads_by_controller": 0,
+            "evaluator_callbacks_into_controller": 0,
+            "evaluator_derived_termination_signals": 0,
+        },
+    }
+
+
+def _base_result() -> dict[str, Any]:
+    result = _canonical_claim_result(_manifest())
+    result.update(
+        {
             "ticks_used": 12,
-            "claimed_colors": ["red", "green", "blue", "yellow"],
             "wall_metrics": {
                 "fully_learned_runtime_contract": True,
                 "fully_learned_runtime_contract_report": {
@@ -39,7 +133,10 @@ def _base_result() -> dict[str, Any]:
                 "tip_events": 0,
                 "unstable_base_events": 0,
             },
-        },
+        }
+    )
+    return {
+        "result": result,
         "log": [],
         "provenance": {"argv": ["benchmark_go2_memory_closed_loop.py", "--mode", "physical"]},
     }
@@ -48,8 +145,20 @@ def _base_result() -> dict[str, Any]:
 def _run_checker(tmp_path: Path, payload: dict[str, Any], *args: str) -> tuple[int, dict[str, Any]]:
     result_path = tmp_path / "result.json"
     result_path.write_text(json.dumps(payload), encoding="utf-8")
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(json.dumps(_manifest().to_dict()), encoding="utf-8")
     proc = subprocess.run(
-        [sys.executable, str(CHECKER), "--result", str(result_path), "--max-ticks", "50", *args],
+        [
+            sys.executable,
+            str(CHECKER),
+            "--result",
+            str(result_path),
+            "--scene-manifest",
+            str(manifest_path),
+            "--max-ticks",
+            "50",
+            *args,
+        ],
         check=False,
         cwd=REPO_ROOT,
         text=True,

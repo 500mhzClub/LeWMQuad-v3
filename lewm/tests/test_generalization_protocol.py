@@ -14,13 +14,13 @@ from lewm.benchmarks.generalization_protocol import (
     AuditedSceneRecord,
     SceneDisjointManifests,
     SceneSplitCounts,
-    StrictClaimObservation,
+    LegacyDistanceLosClaimObservation,
     audited_scene_record,
     build_scene_disjoint_manifests,
     fixed_spawn_audit_config_from_geometry_contract,
     reachable_area_normalized_coverage,
-    strict_ground_truth_claim,
-    summarize_strict_ground_truth_claims,
+    legacy_distance_los_claim_diagnostic,
+    summarize_legacy_distance_los_claims,
     verify_scene_disjoint_manifests,
     write_scene_disjoint_manifests,
 )
@@ -104,24 +104,24 @@ def _open_manifest() -> SceneManifest:
     )
 
 
-def test_strict_claim_uses_inclusive_true_radius_and_line_of_sight() -> None:
-    on_boundary = StrictClaimObservation("a", (0.0, 0.0), (1.2, 0.0), True)
-    outside = StrictClaimObservation("b", (0.0, 0.0), (1.200001, 0.0), True)
-    occluded = StrictClaimObservation("c", (0.0, 0.0), (1.0, 0.0), False)
+def test_legacy_claim_diagnostic_keeps_historical_radius_and_los() -> None:
+    on_boundary = LegacyDistanceLosClaimObservation("a", (0.0, 0.0), (1.2, 0.0), True)
+    outside = LegacyDistanceLosClaimObservation("b", (0.0, 0.0), (1.200001, 0.0), True)
+    occluded = LegacyDistanceLosClaimObservation("c", (0.0, 0.0), (1.0, 0.0), False)
 
-    assert strict_ground_truth_claim(on_boundary, claim_radius_m=1.2).accepted
-    assert not strict_ground_truth_claim(outside, claim_radius_m=1.2).accepted
-    assert not strict_ground_truth_claim(occluded, claim_radius_m=1.2).accepted
+    assert legacy_distance_los_claim_diagnostic(on_boundary, claim_radius_m=1.2).accepted
+    assert not legacy_distance_los_claim_diagnostic(outside, claim_radius_m=1.2).accepted
+    assert not legacy_distance_los_claim_diagnostic(occluded, claim_radius_m=1.2).accepted
 
 
-def test_strict_claim_summary_counts_each_target_once() -> None:
+def test_legacy_claim_summary_is_explicitly_diagnostic() -> None:
     observations = (
-        StrictClaimObservation("a", (0.0, 0.0), (1.0, 0.0), True),
-        StrictClaimObservation("a", (0.1, 0.0), (1.0, 0.0), True),
-        StrictClaimObservation("b", (0.0, 0.0), (0.5, 0.0), False),
+        LegacyDistanceLosClaimObservation("a", (0.0, 0.0), (1.0, 0.0), True),
+        LegacyDistanceLosClaimObservation("a", (0.1, 0.0), (1.0, 0.0), True),
+        LegacyDistanceLosClaimObservation("b", (0.0, 0.0), (0.5, 0.0), False),
     )
 
-    summary = summarize_strict_ground_truth_claims(
+    summary = summarize_legacy_distance_los_claims(
         observations,
         claim_radius_m=1.2,
     )
@@ -129,6 +129,13 @@ def test_strict_claim_summary_counts_each_target_once() -> None:
     assert summary.observation_count == 3
     assert summary.accepted_observation_count == 2
     assert summary.claimed_target_ids == ("a",)
+
+
+def test_old_claim_api_names_are_not_exported_as_canonical_truth() -> None:
+    from lewm.benchmarks import generalization_protocol
+
+    assert not hasattr(generalization_protocol, "strict_ground_truth_claim")
+    assert not hasattr(generalization_protocol, "StrictClaimObservation")
 
 
 def test_audited_record_binds_manifest_and_audit_content(geometry_contract) -> None:

@@ -6,10 +6,17 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 from typing import Any
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from lewm.benchmarks.go2_physical_claim_result import (  # noqa: E402
+    canonical_physical_claim_status,
+)
+from lewm_worlds.manifest import parse_scene_manifest_dict  # noqa: E402
 
-REQUIRED_COLORS = {"red", "yellow", "blue", "green"}
 FORBIDDEN_FLAGS = {
     "--explore-standoff-route",
     "--learned-local-oracle-standoff-labels",
@@ -21,6 +28,7 @@ FORBIDDEN_FLAGS = {
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--result", type=Path, required=True)
+    parser.add_argument("--scene-manifest", type=Path, required=True)
     parser.add_argument("--quality", type=Path, default=None)
     parser.add_argument("--render-report", type=Path, default=None)
     parser.add_argument(
@@ -71,13 +79,23 @@ def main() -> int:
 
     payload = _load_json(args.result)
     result = payload.get("result", payload)
+    scene_manifest = parse_scene_manifest_dict(_load_json(args.scene_manifest))
     wall = result.get("wall_metrics", {}) if isinstance(result, dict) else {}
     argv = [str(item) for item in payload.get("provenance", {}).get("argv", [])]
     benchmark_mode = _argv_value(argv, "--mode")
     quality = _load_json(args.quality) if args.quality is not None else {}
     render_report = _load_json(args.render_report) if args.render_report is not None else {}
 
-    claimed = {str(item) for item in result.get("claimed_colors", [])}
+    physical_claims = canonical_physical_claim_status(
+        result,
+        scene_manifest=scene_manifest,
+        required_task_count=4,
+    )
+    scene_manifest_match = bool(
+        type(result.get("scene")) is str
+        and result["scene"] == scene_manifest.scene_id
+    )
+    claimed = set(physical_claims.credited_object_ids)
     contract = wall.get("fully_learned_runtime_contract_report", {})
     forbidden_argv = _forbidden_argv(argv)
     contact_like = _metric_int(wall, "contact_like_stalls", "contact_like_stall_events")
@@ -205,6 +223,7 @@ def main() -> int:
     scene_id = str(result.get("scene", ""))
 
     gates = {
+        "scene_manifest_match": scene_manifest_match,
         "runtime_contract_flag": bool(wall.get("fully_learned_runtime_contract")),
         "runtime_contract_passed": bool(contract.get("passed")),
         "no_forbidden_argv": not forbidden_argv,
@@ -234,8 +253,9 @@ def main() -> int:
         and int(wall.get("learned_local_oracle_standoff_label_ticks") or 0) == 0,
         "learned_wall_source": str(wall.get("source")) == "learned_action_outcome",
         "not_slice_benchmark": (not slice_benchmark) or bool(args.allow_slice_result),
-        "success": bool(result.get("success")),
-        "all_beacons_claimed": REQUIRED_COLORS.issubset(claimed),
+        "canonical_physical_claims": physical_claims.valid,
+        "success": physical_claims.all_targets_claimed,
+        "all_beacons_claimed": physical_claims.all_targets_claimed,
         "ticks": int(result.get("ticks_used") or 0) <= int(args.max_ticks),
         "contact_like_stalls": contact_like <= int(args.max_contact_like_stalls),
         "hard_stalls": hard_stalls <= int(args.max_hard_stalls),
@@ -359,9 +379,10 @@ def main() -> int:
             "path": str(args.result),
             "scene": scene_id,
             "benchmark_mode": benchmark_mode,
-            "success": bool(result.get("success")),
+            "success": physical_claims.all_targets_claimed,
             "ticks_used": int(result.get("ticks_used") or 0),
-            "claimed_colors": sorted(claimed),
+            "physically_credited_object_ids": sorted(claimed),
+            "physical_claim_errors": list(physical_claims.errors),
             "contact_like_stalls": contact_like,
             "hard_stalls": hard_stalls,
             "body_clearance_contact_events": body_contacts,

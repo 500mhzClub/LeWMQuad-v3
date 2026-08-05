@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import replace
+import math
 from pathlib import Path
 
 import pytest
@@ -10,6 +12,12 @@ import pytest
 from lewm.benchmarks.strict_result_scorer import (
     SealedEvaluationAuthorizationError,
     score_result_payload,
+)
+from lewm.benchmarks.go2_physical_claim_evaluator import evaluate_physical_claim_trace
+from lewm.benchmarks.go2_physical_claim_trace import (
+    build_claim_attempt,
+    build_claim_trace,
+    object_id_reference,
 )
 from lewm.planning.geometry_contract import load_geometry_contract
 from lewm_worlds.manifest import (
@@ -126,6 +134,53 @@ def _claim_row(tick: int, color: str, xy: tuple[float, float]) -> dict:
     }
 
 
+def _canonical_trace(manifest: SceneManifest) -> dict:
+    trace_id = "strict-trace"
+    episode_id = "strict-episode"
+    attempts = []
+    for index, landmark in enumerate(
+        sorted(manifest.landmarks, key=lambda item: item.object_id)
+    ):
+        target_x = float(landmark.center_xyz_m[0])
+        target_y = float(landmark.center_xyz_m[1])
+        reference = object_id_reference(landmark.object_id)
+        attempts.append(
+            build_claim_attempt(
+                manifest=manifest,
+                trace_id=trace_id,
+                episode_id=episode_id,
+                event_id=f"event-{index}",
+                tick=index + 2,
+                event_index=index,
+                requested_target=reference,
+                claimed_target=reference,
+                robot_pose_world_xy_yaw=(
+                    0.0,
+                    0.0,
+                    math.atan2(target_y, target_x),
+                ),
+                pose_provenance="runtime_full_precision",
+            )
+        )
+    trace, ids, commitment = build_claim_trace(
+        manifest=manifest,
+        trace_id=trace_id,
+        episode_id=episode_id,
+        controller_claim_attempts=attempts,
+    )
+    return evaluate_physical_claim_trace(trace, manifest, ids, commitment)
+
+
+def _with_canonical_trace(result: dict, manifest: SceneManifest) -> dict:
+    result["canonical_physical_claim_trace"] = _canonical_trace(manifest)
+    result["runtime_evaluator_access_ledger"] = {
+        "evaluator_output_reads_by_controller": 0,
+        "evaluator_callbacks_into_controller": 0,
+        "evaluator_derived_termination_signals": 0,
+    }
+    return result
+
+
 def test_strict_score_reconstructs_completion_and_swept_coverage(
     geometry_contract,
 ) -> None:
@@ -160,7 +215,7 @@ def test_strict_score_reconstructs_completion_and_swept_coverage(
     claims = [row for row in log if row["state"] == "CLAIM"]
     payload = {
         "schema": "test_result_v1",
-        "result": {
+        "result": _with_canonical_trace({
             "scene": manifest.scene_id,
             "ticks_used": len(log),
             "target_color": "all",
@@ -175,7 +230,7 @@ def test_strict_score_reconstructs_completion_and_swept_coverage(
                 "contact_like_stalls": 0,
                 "hard_contact_like_stalls": 0,
             },
-        },
+        }, manifest),
         "log": log,
     }
 
@@ -232,11 +287,11 @@ def test_proxy_claim_outside_radius_is_rejected(geometry_contract) -> None:
     verification = score.claim_verifications[0]
     assert verification.true_distance_m == pytest.approx(1.7)
     assert verification.within_claim_radius is False
-    assert verification.strict_accepted is False
+    assert verification.strict_accepted is None
     assert "outside_claim_radius" in verification.rejection_reasons
     codes = {item.code for item in score.discrepancies}
     assert "proxy_claim_distance_mismatch" in codes
-    assert "proxy_claim_rejected_by_strict_geometry" in codes
+    assert "proxy_claim_unverifiable_at_strict_boundary" in codes
     assert "proxy_claimed_true_without_strict_completion" in codes
     assert "proxy_success_true_without_strict_completion" in codes
 
@@ -287,7 +342,7 @@ def test_manifest_distractor_blocks_strict_claim_los(geometry_contract) -> None:
     verification = score.claim_verifications[0]
     assert verification.within_claim_radius is True
     assert verification.line_of_sight is False
-    assert verification.strict_accepted is False
+    assert verification.strict_accepted is None
 
 
 def test_current_legacy_claim_pose_comes_from_prior_post(geometry_contract) -> None:
@@ -323,7 +378,8 @@ def test_current_legacy_claim_pose_comes_from_prior_post(geometry_contract) -> N
     assert verification.target_object_id == "landmark_red"
     assert verification.pose_xy_m == (0.2, 0.0)
     assert verification.true_distance_m == pytest.approx(0.6)
-    assert verification.strict_accepted is True
+    assert verification.strict_accepted is None
+    assert "legacy_provenance_noncanonical" in verification.rejection_reasons
     assert any(
         "legacy_post_xy_precision" in limitation
         for limitation in score.limitations
@@ -472,7 +528,7 @@ def test_raw_log_only_payload_is_supported(geometry_contract) -> None:
     )
 
     assert score.source_schema == "legacy_log_only"
-    assert score.claim_verifications[0].strict_accepted is True
+    assert score.claim_verifications[0].strict_accepted is None
     assert "result_summary_missing_log_only_payload" in score.limitations
 
 
@@ -542,3 +598,101 @@ def test_result_scene_must_match_exact_manifest(geometry_contract) -> None:
             scene_manifest=_manifest(),
             geometry_contract=geometry_contract,
         )
+
+
+def test_canonical_trace_recomputation_rejects_every_stored_join_mutation(
+    geometry_contract,
+) -> None:
+    manifest = _manifest()
+    base_result = _with_canonical_trace(
+        {
+            "scene": manifest.scene_id,
+            "ticks_used": 1,
+            "target_color": "all",
+            "target_colors": ["red", "green", "blue", "yellow"],
+            "claimed": True,
+            "claimed_colors": ["red", "green", "blue", "yellow"],
+            "success": True,
+        },
+        manifest,
+    )
+    mutations = []
+
+    value = deepcopy(base_result)
+    value["canonical_physical_claim_trace"]["physical_claim_evaluations"].pop()
+    mutations.append(value)
+
+    value = deepcopy(base_result)
+    value["canonical_physical_claim_trace"]["physical_claim_evaluations"].append(
+        deepcopy(value["canonical_physical_claim_trace"]["physical_claim_evaluations"][0])
+    )
+    mutations.append(value)
+
+    value = deepcopy(base_result)
+    value["canonical_physical_claim_trace"]["physical_claim_evaluations"].reverse()
+    mutations.append(value)
+
+    for path in (
+        ("physical_claim_evaluations", 0, "decision"),
+        ("physical_claim_evaluations", 0, "content_sha256"),
+        ("physical_claim_summary", "content_sha256"),
+        ("trace_content_sha256",),
+    ):
+        value = deepcopy(base_result)
+        cursor = value["canonical_physical_claim_trace"]
+        for key in path[:-1]:
+            cursor = cursor[key]
+        cursor[path[-1]] = "0" * 64
+        mutations.append(value)
+
+    value = deepcopy(base_result)
+    value["canonical_physical_claim_trace"]["controller_claim_attempts"].reverse()
+    mutations.append(value)
+
+    value = deepcopy(base_result)
+    value["canonical_physical_claim_trace"]["evaluator_feedback_to_controller"] = [
+        "forbidden"
+    ]
+    mutations.append(value)
+
+    value = deepcopy(base_result)
+    value["runtime_evaluator_access_ledger"][
+        "evaluator_output_reads_by_controller"
+    ] = 1
+    mutations.append(value)
+
+    value = deepcopy(base_result)
+    value["runtime_evaluator_access_ledger"][
+        "evaluator_output_reads_by_controller"
+    ] = False
+    mutations.append(value)
+
+    value = deepcopy(base_result)
+    value["canonical_physical_claim_trace"]["physical_claim_evaluations"][0][
+        "factors"
+    ]["identity_passes"] = 1
+    mutations.append(value)
+
+    value = deepcopy(base_result)
+    value["canonical_physical_claim_trace"]["physical_claim_summary"][
+        "credited_count"
+    ] = 4.0
+    mutations.append(value)
+
+    value = deepcopy(base_result)
+    value["canonical_physical_claim_trace"]["controller_claim_attempts"][0][
+        "tick"
+    ] = 1.0
+    mutations.append(value)
+
+    for result in mutations:
+        score = score_result_payload(
+            {"result": result, "log": []},
+            scene_manifest=manifest,
+            geometry_contract=geometry_contract,
+        )
+        assert score.canonical_physical_claim_trace_present
+        assert not score.canonical_physical_claim_trace_verified
+        assert score.strict_accepted_claim_event_count == 0
+        assert score.strict_all_targets_complete is False
+        assert not score.score_complete

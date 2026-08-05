@@ -4,9 +4,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
+import sys
 from pathlib import Path
 
+import lewm.datasets.go2_paired_navigation as paired_navigation_module
+from lewm.benchmarks.experiment_manifest import build_experiment_manifest
 from lewm.datasets.go2_paired_navigation import (
+    LABEL_CONTRACT_CENTER_VISIBLE_V2,
+    LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
     build_paired_navigation_dataset,
     load_scene_id_exclusions,
     load_source_index,
@@ -92,9 +98,53 @@ def main() -> None:
     )
     parser.add_argument("--max-transitions-per-scene", type=int, default=512)
     parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help=(
+            "Number of scene processes. Results are committed in sorted scene "
+            "order; 1 preserves serial execution."
+        ),
+    )
+    parser.add_argument(
         "--selection-seed", default="go2_paired_navigation_selection_v1"
     )
+    parser.add_argument(
+        "--label-contract",
+        choices=(
+            LABEL_CONTRACT_CENTER_VISIBLE_V2,
+            LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
+        ),
+        default=LABEL_CONTRACT_CENTER_VISIBLE_V2,
+        help=(
+            "Label semantics and artifact schema. The observable-physical "
+            "contract emits dataset/row v3 from corrected v04 RGB and defers "
+            "the fixed 0.47 m morphology until after online-memory fusion; "
+            "v2 remains the compatibility default."
+        ),
+    )
+    parser.add_argument(
+        "--render-audit-contract",
+        type=Path,
+        default=None,
+        help=(
+            "Required for observable physical v3: immutable "
+            "lewm_go2_selected_render_audit_v1 artifact binding the corrected "
+            "v04 RGB campaign to --source-index."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.workers < 1:
+        parser.error("--workers must be at least 1")
+    if (
+        args.label_contract == LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3
+        and args.render_audit_contract is None
+    ):
+        parser.error(
+            "--render-audit-contract is required with "
+            "--label-contract observable_physical_occupancy_v3"
+        )
 
     contract = load_geometry_contract(args.geometry_contract)
     legacy_paths = (
@@ -116,6 +166,55 @@ def main() -> None:
     if not commitment_files:
         parser.error("at least one held-out scene-ID commitment is required")
     exclusions = load_scene_id_exclusions(commitment_files)
+    repository_root = Path(__file__).resolve().parents[1]
+    resolved_arguments = {
+        "source_index": str(args.source_index.resolve()),
+        "output_dir": str(args.output_dir.resolve()),
+        "geometry_contract": str(args.geometry_contract.resolve()),
+        "exclude_scene_id_commitments": [
+            {"label": label, "path": str(path.resolve())}
+            for label, path in commitment_files
+        ],
+        "validation_fraction": float(args.validation_fraction),
+        "split_seed": str(args.split_seed),
+        "role_scenes_per_family": args.role_scenes_per_family,
+        "allow_role_transition_shortfall": bool(
+            args.allow_role_transition_shortfall
+        ),
+        "max_transitions_per_scene": int(args.max_transitions_per_scene),
+        "workers": int(args.workers),
+        "selection_seed": str(args.selection_seed),
+        "label_contract": str(args.label_contract),
+        "render_audit_contract": (
+            str(args.render_audit_contract.resolve())
+            if args.render_audit_contract is not None
+            else None
+        ),
+    }
+    provenance_inputs = {
+        "builder_source": Path(__file__).resolve(),
+        "dataset_source": Path(paired_navigation_module.__file__).resolve(),
+        "source_index": args.source_index.resolve(),
+    }
+    if args.render_audit_contract is not None:
+        provenance_inputs["render_audit_contract"] = (
+            args.render_audit_contract.resolve()
+        )
+    for index, (label, path) in enumerate(commitment_files):
+        provenance_inputs[f"exclusion_{index:02d}_{label}"] = path.resolve()
+    build_provenance = build_experiment_manifest(
+        experiment_id=f"go2_paired_navigation_{args.label_contract}",
+        repository_root=repository_root,
+        inputs=provenance_inputs,
+        config=resolved_arguments,
+        run_command=shlex.join([sys.executable, *sys.argv]),
+        geometry_contract=args.geometry_contract.resolve(),
+        runtime_contract={
+            "label_contract": str(args.label_contract),
+            "privileged_geometry_is_offline_label_only": True,
+            "runtime_model_input": "rgb_only",
+        },
+    )
     result = build_paired_navigation_dataset(
         sources=load_source_index(args.source_index),
         output_dir=args.output_dir,
@@ -127,6 +226,11 @@ def main() -> None:
         allow_role_transition_shortfall=args.allow_role_transition_shortfall,
         max_transitions_per_scene=args.max_transitions_per_scene,
         selection_seed=args.selection_seed,
+        label_contract=args.label_contract,
+        source_index_path=args.source_index,
+        render_audit_contract_path=args.render_audit_contract,
+        build_provenance=build_provenance,
+        workers=args.workers,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
 

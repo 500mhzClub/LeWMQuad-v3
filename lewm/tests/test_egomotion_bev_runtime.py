@@ -285,6 +285,29 @@ def test_checkpoint_geometry_mismatch_fails_before_model_exposure(tmp_path: Path
         )
 
 
+def test_runtime_rejects_physical_checkpoint_v4_until_g3_integration(
+    tmp_path: Path,
+) -> None:
+    checkpoint_path = tmp_path / "physical-v4.pt"
+    torch.save(
+        {
+            "schema": "lewm_go2_egomotion_bev_jepa_checkpoint_v4",
+            "head_g2_passes": True,
+            "runtime_ready": False,
+        },
+        checkpoint_path,
+    )
+    with pytest.raises(ValueError, match="unsupported checkpoint schema"):
+        EgomotionBevJepaRuntime.load(
+            checkpoint_path,
+            GEOMETRY_PATH,
+            camera=_camera(),
+            belief_map=_belief_map(),
+            expected_checkpoint_sha256=_sha256_file(checkpoint_path),
+            repository_root=REPOSITORY_ROOT,
+        )
+
+
 def test_only_connected_confirmed_free_cells_can_route(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

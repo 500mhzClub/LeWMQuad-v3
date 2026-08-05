@@ -117,11 +117,11 @@ def main() -> int:
         ]
         aggregates[arm] = {
             "scene_count": len(scores),
-            "strict_claim_events": sum(
+            "physically_accepted_claim_events": sum(
                 int(score["strict_accepted_claim_event_count"]) for score in scores
             ),
             "target_count": sum(int(score["target_count"]) for score in scores),
-            "strict_four_of_four_scenes": sum(
+            "physical_four_of_four_scenes": sum(
                 score["strict_four_of_four_complete"] is True for score in scores
             ),
             "complete_scores": sum(bool(score["score_complete"]) for score in scores),
@@ -143,7 +143,7 @@ def main() -> int:
             ),
         }
     output = {
-        "schema": "lewm_go2_strict_result_batch_v0",
+        "schema": "lewm_go2_strict_result_batch_v1",
         "development_only": True,
         "geometry_contract_sha256": contract.sha256,
         "result_dir": str(result_dir),

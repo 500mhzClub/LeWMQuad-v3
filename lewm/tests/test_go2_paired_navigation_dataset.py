@@ -8,14 +8,17 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import lewm.datasets.go2_paired_navigation as paired_navigation
 from lewm.benchmarks.generalization_protocol import (
     SceneDisjointManifests,
     build_hashed_scene_role_commitment,
 )
+from lewm.benchmarks.experiment_manifest import build_experiment_manifest
 from lewm.datasets.go2_paired_navigation import (
     DatasetContractError,
     FREE_CLASS,
     ForbiddenSceneError,
+    LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
     PrimitiveTransition,
     ProvenanceError,
     SceneRenderSource,
@@ -44,6 +47,38 @@ from lewm_worlds.planning_grid import InflatedOccupancyGrid
 
 def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+
+def _v3_build_provenance(
+    *,
+    output_dir: Path,
+    source_index_path: Path,
+    audit_path: Path,
+    geometry_contract_path: Path,
+    workers: int = 1,
+) -> dict:
+    return build_experiment_manifest(
+        experiment_id="observable_physical_test_build",
+        repository_root=Path.cwd(),
+        inputs={
+            "builder_source": Path(
+                "scripts/build_go2_paired_navigation_dataset.py"
+            ).resolve(),
+            "dataset_source": Path(paired_navigation.__file__).resolve(),
+            "source_index": source_index_path.resolve(),
+            "render_audit_contract": audit_path.resolve(),
+        },
+        config={
+            "source_index": str(source_index_path.resolve()),
+            "output_dir": str(output_dir.resolve()),
+            "geometry_contract": str(geometry_contract_path.resolve()),
+            "workers": int(workers),
+            "label_contract": LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
+            "render_audit_contract": str(audit_path.resolve()),
+        },
+        run_command="pytest observable physical dataset build",
+        geometry_contract=geometry_contract_path.resolve(),
+    )
 
 
 def _empty_manifest(scene_id: str) -> SceneManifest:
@@ -170,6 +205,128 @@ def _make_source(
                 "fov_axis": "horizontal",
                 "fov_deg": 78.323,
                 "near_m": 0.05,
+                "native_resolution": [640, 480],
+            },
+        },
+    )
+    frame_keys = sorted(
+        [[int(row["frame_index"]), int(row["env_index"])] for row in rendered]
+    )
+    frame_selection_path = root / "v04_frame_selection.json"
+    _write_json(
+        frame_selection_path,
+        {
+            "schema": "lewm_go2_selected_render_frames_v1",
+            "scene_id": scene_id,
+            "frame_keys": frame_keys,
+            "frame_key_set_sha256": canonical_json_sha256(frame_keys),
+        },
+    )
+
+    object_groups = (
+        ("wall", manifest.walls),
+        ("obstacle", manifest.obstacles),
+        ("landmark", manifest.landmarks),
+        (
+            "distractor",
+            ()
+            if manifest.visual_randomization is None
+            else manifest.visual_randomization.distractor_objects,
+        ),
+    )
+    object_records = sorted(
+        [
+            {
+                "group": group,
+                "object_id": box.object_id,
+                "kind": box.kind,
+                "center_xyz_m": [float(value) for value in box.center_xyz_m],
+                "size_xyz_m": [float(value) for value in box.size_xyz_m],
+                "rpy_rad": [
+                    float(box.roll_rad),
+                    float(box.pitch_rad),
+                    float(box.yaw_rad),
+                ],
+                "material_id": box.material_id,
+            }
+            for group, boxes in object_groups
+            for box in boxes
+        ],
+        key=lambda item: (item["group"], item["object_id"]),
+    )
+    object_ids = sorted(record["object_id"] for record in object_records)
+    v04_rendered = sorted(
+        [
+            {
+                "frame_index": int(row["frame_index"]),
+                "env_index": int(row["env_index"]),
+                "timestamp_ns": int(row["timestamp_ns"]),
+                "image_sha256": sha256_file(Path(row["rgb_path"])),
+            }
+            for row in rendered
+        ],
+        key=lambda item: (item["frame_index"], item["env_index"]),
+    )
+    vertical_fov = math.degrees(
+        2.0 * math.atan(math.tan(math.radians(78.323) * 0.5) * 168.0 / 224.0)
+    )
+    render_summary_path = root / "v04_summary.json"
+    _write_json(
+        render_summary_path,
+        {
+            "schema": "lewm_rendered_vision_v04",
+            "render_status": "complete",
+            "scene_id": scene_id,
+            "split": "train",
+            "family": manifest.family,
+            "frame_count": len(v04_rendered),
+            "frame_selection": {
+                "path": str(frame_selection_path.resolve()),
+                "sha256": sha256_file(frame_selection_path),
+                "frame_key_set_sha256": canonical_json_sha256(frame_keys),
+            },
+            "rendered_frames": v04_rendered,
+            "rendered_image_set_sha256": canonical_json_sha256(v04_rendered),
+            "resolution_wh": [224, 168],
+            "camera_projection": {
+                "model": "pinhole",
+                "renderer_fov_axis": "vertical",
+                "horizontal_fov_deg": 78.323,
+                "vertical_fov_deg": vertical_fov,
+                "near_m": 0.05,
+                "far_m": 200.0,
+                "runtime_rectification_required": False,
+            },
+            "object_parity": {
+                "schema": "lewm_render_object_parity_v1",
+                "rendered_groups": [
+                    "wall",
+                    "obstacle",
+                    "landmark",
+                    "distractor",
+                ],
+                "collision_distractors_rendered": True,
+                "full_box_roll_pitch_yaw_rendered": True,
+                "rendered_object_count": len(object_records),
+                "rendered_object_ids": object_ids,
+                "rendered_object_ids_sha256": canonical_json_sha256(object_ids),
+                "rendered_object_records_sha256": canonical_json_sha256(
+                    object_records
+                ),
+            },
+            "source": {
+                "plan": {
+                    "path": str(plan_path.resolve()),
+                    "sha256": sha256_file(plan_path),
+                },
+                "frames_jsonl": {
+                    "path": str(frames_path.resolve()),
+                    "sha256": sha256_file(frames_path),
+                },
+                "scene_manifest": {
+                    "path": str(manifest_path.resolve()),
+                    "sha256": sha256_file(manifest_path),
+                },
             },
         },
     )
@@ -180,6 +337,7 @@ def _make_source(
         family=manifest.family,
         frames_jsonl_path=frames_path,
         rendered_frames_jsonl_path=rendered_path,
+        render_summary_path=render_summary_path,
     )
 
 
@@ -188,6 +346,88 @@ def _exclusions() -> V3SceneExclusions:
         development_scene_id_sha256=frozenset({scene_id_sha256("v3_development")}),
         sealed_scene_id_sha256=frozenset({scene_id_sha256("v3_sealed")}),
     )
+
+
+def _write_v04_source_index_and_audit(
+    root: Path,
+    source: SceneRenderSource,
+) -> tuple[Path, Path]:
+    source_index_path = root / f"{source.scene_id}_v04_sources.jsonl"
+    source_index_row = {
+        "schema": "lewm_go2_navigation_source_v1",
+        "scene_id": source.scene_id,
+        "family": source.family,
+        "scene_manifest_path": str(source.scene_manifest_path.resolve()),
+        "render_plan_path": str(source.render_plan_path.resolve()),
+        "frames_jsonl_path": str(source.frames_jsonl_path.resolve()),
+        "rendered_frames_jsonl_path": str(
+            source.rendered_frames_jsonl_path.resolve()
+        ),
+        "render_summary_path": str(source.render_summary_path.resolve()),
+    }
+    if source.rgb_dir is not None:
+        source_index_row["rgb_dir"] = str(source.rgb_dir.resolve())
+    source_index_path.write_text(json.dumps(source_index_row) + "\n")
+    summary = json.loads(source.render_summary_path.read_text())
+    audit_core = {
+        "schema": "lewm_go2_selected_render_audit_v1",
+        "output_source_index": {
+            "path": str(source_index_path.resolve()),
+            "sha256": sha256_file(source_index_path),
+        },
+        "scene_count": 1,
+        "frame_count": int(summary["frame_count"]),
+        "rendered_object_instance_count": int(
+            summary["object_parity"]["rendered_object_count"]
+        ),
+        "role_scene_counts": {"train": 1},
+        "scene_audits": [
+            {
+                "dataset_role": "train",
+                "frame_count": int(summary["frame_count"]),
+                "frame_key_set_sha256": summary["frame_selection"][
+                    "frame_key_set_sha256"
+                ],
+                "object_ids_sha256": summary["object_parity"][
+                    "rendered_object_ids_sha256"
+                ],
+                "scene_id_sha256": scene_id_sha256(source.scene_id),
+                "summary_sha256": sha256_file(source.render_summary_path),
+            }
+        ],
+        "camera_projection": {
+            "resolution_wh": [224, 168],
+            "horizontal_fov_deg": 78.323,
+            "vertical_fov_deg": math.degrees(
+                2.0
+                * math.atan(math.tan(math.radians(78.323) * 0.5) * 168.0 / 224.0)
+            ),
+            "near_m": 0.05,
+            "runtime_rectification_required": False,
+        },
+        "object_contract": {
+            "rendered_groups": [
+                "wall",
+                "obstacle",
+                "landmark",
+                "distractor",
+            ],
+            "collision_distractors_rendered": True,
+            "full_box_roll_pitch_yaw_rendered": True,
+        },
+        "g2_row_metadata_read": True,
+        "g2_image_bytes_hashed_for_integrity": True,
+        "g2_images_decoded_or_inspected": False,
+        "g2_image_content_metrics_computed": False,
+        "g2_label_shards_opened": False,
+        "g2_model_outputs_opened": False,
+    }
+    audit_path = root / f"{source.scene_id}_v04_audit.json"
+    _write_json(
+        audit_path,
+        {**audit_core, "content_sha256": canonical_json_sha256(audit_core)},
+    )
+    return source_index_path, audit_path
 
 
 def _write_scene_commitments(path: Path, scene_ids: tuple[str, ...]) -> Path:
@@ -286,6 +526,7 @@ def test_declared_source_family_is_verified_against_manifest(tmp_path: Path) -> 
 
 def test_direct_family_roles_persist_counts_commitments_and_strict_quota(
     tmp_path: Path,
+    monkeypatch,
 ) -> None:
     sources = [_make_source(tmp_path, f"role_scene_{index}") for index in range(4)]
     contract = load_geometry_contract(verify_sources=False)
@@ -315,8 +556,95 @@ def test_direct_family_roles_persist_counts_commitments_and_strict_quota(
     assert role_contract["assignments_sha256"] == canonical_json_sha256(
         role_contract["assignments"]
     )
-    rows = [json.loads(line) for line in (tmp_path / "dataset/rows.jsonl").read_text().splitlines()]
-    assert all(row["dataset_role"] == role_contract["assignments"][row["scene_id"]] for row in rows)
+    rows = [
+        json.loads(line)
+        for line in (tmp_path / "dataset/rows.jsonl").read_text().splitlines()
+    ]
+    assert all(
+        row["dataset_role"] == role_contract["assignments"][row["scene_id"]]
+        for row in rows
+    )
+
+    opened_paths: list[Path] = []
+    original_sha256_file = paired_navigation.sha256_file
+
+    def recording_sha256_file(path: Path) -> str:
+        opened_paths.append(Path(path).resolve())
+        return original_sha256_file(path)
+
+    monkeypatch.setattr(paired_navigation, "sha256_file", recording_sha256_file)
+    development_roles = (
+        "train",
+        "checkpoint_selection",
+        "probability_calibration",
+    )
+    checked = verify_dataset_provenance(
+        tmp_path / "dataset/dataset_manifest.json",
+        roles=development_roles,
+        verify_images=True,
+    )
+    assignments = role_contract["assignments"]
+    development_scenes = {
+        scene_id
+        for scene_id, role in assignments.items()
+        if role in development_roles
+    }
+    g2_scenes = {
+        scene_id for scene_id, role in assignments.items() if role == "g2_evaluation"
+    }
+    selected_rows = [row for row in rows if row["scene_id"] in development_scenes]
+    g2_rows = [row for row in rows if row["scene_id"] in g2_scenes]
+    expected_development_artifacts = {
+        Path(record["path"]).resolve()
+        for record in result["shards"]
+        if record["scene_id"] in development_scenes
+    }
+    expected_development_artifacts.update(
+        Path(path).resolve()
+        for record in result["sources"]
+        if record["scene_id"] in development_scenes
+        for path in record["paths"].values()
+    )
+    expected_development_artifacts.update(
+        Path(row[f"{prefix}_image_path"]).resolve()
+        for row in selected_rows
+        for prefix in ("current", "next")
+    )
+    forbidden_g2_artifacts = {
+        Path(record["path"]).resolve()
+        for record in result["shards"]
+        if record["scene_id"] in g2_scenes
+    }
+    forbidden_g2_artifacts.update(
+        Path(row[f"{prefix}_image_path"]).resolve()
+        for row in g2_rows
+        for prefix in ("current", "next")
+    )
+    assert expected_development_artifacts <= set(opened_paths)
+    assert forbidden_g2_artifacts.isdisjoint(opened_paths)
+    assert checked["selected_scene"] == 3
+    assert checked["selected_role"] == 3
+    assert checked["shard"] == 3
+    assert checked["scene_manifest"] == 3
+    assert checked["image"] == len(
+        {
+            row[f"{prefix}_image_path"]
+            for row in selected_rows
+            for prefix in ("current", "next")
+        }
+    )
+
+    with pytest.raises(ProvenanceError, match="unknown provenance roles"):
+        verify_dataset_provenance(
+            tmp_path / "dataset/dataset_manifest.json",
+            roles=("g2_typo",),
+        )
+    with pytest.raises(ProvenanceError, match="roles or scene_ids, not both"):
+        verify_dataset_provenance(
+            tmp_path / "dataset/dataset_manifest.json",
+            roles=("train",),
+            scene_ids=development_scenes,
+        )
 
     short_sources = [
         _make_source(tmp_path, f"short_role_scene_{index}") for index in range(4)
@@ -643,6 +971,329 @@ def test_interleaved_env_pairs_labels_odometry_and_provenance(tmp_path: Path) ->
         verify_dataset_provenance(output / "dataset_manifest.json")
 
 
+def test_scene_workers_match_serial_logical_artifact_and_row_order(
+    tmp_path: Path,
+) -> None:
+    sources = [
+        _make_source(tmp_path, scene_id="worker_scene_b"),
+        _make_source(tmp_path, scene_id="worker_scene_a"),
+    ]
+    contract = load_geometry_contract(verify_sources=False)
+    serial_output = tmp_path / "serial_dataset"
+    parallel_output = tmp_path / "parallel_dataset"
+    common = {
+        "sources": list(reversed(sources)),
+        "geometry_contract": contract,
+        "v3_exclusions": _exclusions(),
+        "validation_fraction": 0.0,
+        "max_transitions_per_scene": 2,
+    }
+    serial = build_paired_navigation_dataset(
+        **common,
+        output_dir=serial_output,
+        workers=1,
+    )
+    parallel = build_paired_navigation_dataset(
+        **common,
+        output_dir=parallel_output,
+        workers=2,
+    )
+
+    def rows_at(output: Path) -> list[dict]:
+        return [
+            json.loads(line)
+            for line in (output / "rows.jsonl").read_text().splitlines()
+        ]
+
+    serial_rows = rows_at(serial_output)
+    parallel_rows = rows_at(parallel_output)
+    assert [row["global_row"] for row in parallel_rows] == [0, 1, 2, 3]
+    assert [row["scene_id"] for row in parallel_rows] == [
+        "worker_scene_a",
+        "worker_scene_a",
+        "worker_scene_b",
+        "worker_scene_b",
+    ]
+    for rows in (serial_rows, parallel_rows):
+        for row in rows:
+            row["label_shard_path"] = Path(row["label_shard_path"]).name
+    assert parallel_rows == serial_rows
+
+    serial_shards = {
+        record["scene_id"]: record for record in serial["shards"]
+    }
+    parallel_shards = {
+        record["scene_id"]: record for record in parallel["shards"]
+    }
+    assert set(serial_shards) == set(parallel_shards)
+    for scene_id in serial_shards:
+        serial_record = serial_shards[scene_id]
+        parallel_record = parallel_shards[scene_id]
+        assert serial_record["sha256"] == parallel_record["sha256"]
+        assert serial_record["rows"] == parallel_record["rows"]
+        with (
+            np.load(serial_record["path"], allow_pickle=False) as serial_shard,
+            np.load(parallel_record["path"], allow_pickle=False) as parallel_shard,
+        ):
+            assert serial_shard.files == parallel_shard.files
+            for name in serial_shard.files:
+                np.testing.assert_array_equal(serial_shard[name], parallel_shard[name])
+
+    def normalized_manifest(payload: dict) -> dict:
+        normalized = json.loads(json.dumps(payload))
+        normalized["index"] = {"path": "rows.jsonl", "sha256": "normalized"}
+        for record in normalized["shards"]:
+            record["path"] = Path(record["path"]).name
+        return normalized
+
+    assert normalized_manifest(parallel) == normalized_manifest(serial)
+
+
+def test_scene_worker_failure_removes_new_output_directory(tmp_path: Path) -> None:
+    good = _make_source(tmp_path, scene_id="aaa_worker_good")
+    bad = _make_source(tmp_path, scene_id="zzz_worker_bad")
+    bad_plan = json.loads(bad.render_plan_path.read_text())
+    bad_plan["schema"] = "unsupported_worker_failure_schema"
+    _write_json(bad.render_plan_path, bad_plan)
+    output = tmp_path / "failed_parallel_dataset"
+
+    with pytest.raises(DatasetContractError, match="unsupported render plan schema"):
+        build_paired_navigation_dataset(
+            sources=[good, bad],
+            output_dir=output,
+            geometry_contract=load_geometry_contract(verify_sources=False),
+            v3_exclusions=_exclusions(),
+            validation_fraction=0.0,
+            max_transitions_per_scene=2,
+            workers=2,
+        )
+    assert not output.exists()
+
+
+def test_observable_physical_build_emits_v3_schema_and_defers_morphology(
+    tmp_path: Path,
+) -> None:
+    source = _make_source(tmp_path, scene_id="observable_v3_scene")
+    contract = load_geometry_contract(
+        Path("config/go2_generalization_geometry_v2.json"),
+        verify_sources=False,
+    )
+    output = tmp_path / "observable_v3_dataset"
+    source_index_path, audit_path = _write_v04_source_index_and_audit(
+        tmp_path, source
+    )
+    with pytest.raises(DatasetContractError, match="requires explicit build_provenance"):
+        build_paired_navigation_dataset(
+            sources=[source],
+            output_dir=output,
+            geometry_contract=contract,
+            v3_exclusions=_exclusions(),
+            validation_fraction=0.0,
+            max_transitions_per_scene=2,
+            label_contract=LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
+            source_index_path=source_index_path,
+            render_audit_contract_path=audit_path,
+        )
+    build_provenance = _v3_build_provenance(
+        output_dir=output,
+        source_index_path=source_index_path,
+        audit_path=audit_path,
+        geometry_contract_path=contract.source_path,
+        workers=2,
+    )
+    result = build_paired_navigation_dataset(
+        sources=[source],
+        output_dir=output,
+        geometry_contract=contract,
+        v3_exclusions=_exclusions(),
+        validation_fraction=0.0,
+        max_transitions_per_scene=2,
+        label_contract=LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
+        source_index_path=source_index_path,
+        render_audit_contract_path=audit_path,
+        build_provenance=build_provenance,
+        workers=2,
+    )
+
+    assert result["schema"] == "lewm_go2_paired_navigation_dataset_v3"
+    semantics = result["label_semantics"]
+    assert semantics["label_contract"] == LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3
+    assert semantics["target_occupancy_space"] == "observable_physical_occupancy"
+    assert semantics["per_frame_configuration_classes_supervised"] is False
+    assert semantics["renderer_contract"]["summary_schema"] == (
+        "lewm_rendered_vision_v04"
+    )
+    aggregation = semantics["physical_aggregation"]
+    assert aggregation["source_cell_size_m"] == pytest.approx(0.05)
+    assert aggregation["output_cell_size_m"] == pytest.approx(0.10)
+    assert aggregation["contract_sha256"] == (
+        "db288979e7c389df2c4ca846f3309e395bcb6ec7bcf40cb8db6a3107f7e9f717"
+    )
+    morphology = semantics["post_memory_configuration_derivation"]
+    assert morphology["radius_m"] == pytest.approx(0.47)
+    assert morphology["memory_cell_size_m"] == pytest.approx(0.10)
+    assert morphology["schema"] == (
+        "lewm_post_memory_configuration_morphology_v1"
+    )
+    assert morphology["support_contract_sha256"] == (
+        "79ac1cb5e0c83d088b4df41eaa3789fd43c1b94e4470afc19342de0d6b519c1a"
+    )
+    assert morphology["radius_source"].endswith("body_inflation_radius_m")
+    assert morphology["memory_cell_size_source"].endswith(
+        "online_cell_size_m"
+    )
+    assert semantics["post_memory_configuration_derivation_is_evaluation_only"]
+    camera_projection = semantics["visibility"]
+    assert camera_projection["model"].endswith("first_3d_hit")
+    assert camera_projection["vertical_fov_deg"] == pytest.approx(
+        62.8370386364
+    )
+    assert camera_projection["native_resolutions"] == [[224, 168]]
+
+    rows = [
+        json.loads(line)
+        for line in Path(result["index"]["path"]).read_text().splitlines()
+    ]
+    assert {row["schema"] for row in rows} == {
+        "lewm_go2_paired_navigation_row_v3"
+    }
+    assert {row["label_contract"] for row in rows} == {
+        LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3
+    }
+    assert all("render_summary_sha256" not in row for row in rows)
+    assert result["sources"][0]["hashes"][
+        "render_summary_file_sha256"
+    ] == sha256_file(source.render_summary_path)
+    render_audit = result["render_audit_contract"]
+    assert render_audit["path"] == str(audit_path.resolve())
+    assert render_audit["file_sha256"] == sha256_file(audit_path)
+    assert render_audit["output_source_index"] == {
+        "path": str(source_index_path.resolve()),
+        "sha256": sha256_file(source_index_path),
+    }
+    assert render_audit["g2_contact"] == {
+        "row_metadata_read": True,
+        "image_bytes_hashed_for_integrity": True,
+        "images_decoded_or_inspected": False,
+        "image_content_metrics_computed": False,
+        "label_shards_opened": False,
+        "model_outputs_opened": False,
+    }
+    checked = verify_dataset_provenance(output / "dataset_manifest.json")
+    assert checked["shard"] == 1
+    assert checked["render_summary"] == 1
+    assert checked["render_audit_contract"] == 1
+    assert checked["render_audit_source_index"] == 1
+    assert checked["build_input"] == 4
+
+    manifest_path = output / "dataset_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["build_provenance"]["config"]["label_contract"] = "tampered"
+    _write_json(manifest_path, manifest)
+    with pytest.raises(ProvenanceError, match="config hash mismatch"):
+        verify_dataset_provenance(manifest_path)
+
+
+@pytest.mark.parametrize(
+    ("tamper", "message"),
+    (
+        ("legacy_schema", "requires lewm_rendered_vision_v04"),
+        ("missing_distractor_parity", "object parity mismatch"),
+    ),
+)
+def test_observable_physical_build_rejects_unproven_rgb_geometry_parity(
+    tmp_path: Path,
+    tamper: str,
+    message: str,
+) -> None:
+    source = _make_source(tmp_path, scene_id=f"v04_rejection_{tamper}")
+    summary = json.loads(source.render_summary_path.read_text())
+    if tamper == "legacy_schema":
+        summary["schema"] = "lewm_rendered_vision_v03"
+    else:
+        summary["object_parity"]["collision_distractors_rendered"] = False
+    _write_json(source.render_summary_path, summary)
+    source_index_path, audit_path = _write_v04_source_index_and_audit(
+        tmp_path, source
+    )
+    contract = load_geometry_contract(
+        Path("config/go2_generalization_geometry_v2.json"),
+        verify_sources=False,
+    )
+    output = tmp_path / f"rejected_{tamper}"
+    build_provenance = _v3_build_provenance(
+        output_dir=output,
+        source_index_path=source_index_path,
+        audit_path=audit_path,
+        geometry_contract_path=contract.source_path,
+    )
+
+    with pytest.raises(DatasetContractError, match=message):
+        build_paired_navigation_dataset(
+            sources=[source],
+            output_dir=output,
+            geometry_contract=contract,
+            v3_exclusions=_exclusions(),
+            validation_fraction=0.0,
+            max_transitions_per_scene=1,
+            label_contract=LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
+            source_index_path=source_index_path,
+            render_audit_contract_path=audit_path,
+            build_provenance=build_provenance,
+        )
+
+
+@pytest.mark.parametrize(
+    ("tamper", "message"),
+    (
+        ("source_index_sha", "source-index path/SHA"),
+        ("g2_image_contact", "G2-contact contract"),
+    ),
+)
+def test_observable_physical_build_rejects_invalid_global_render_audit(
+    tmp_path: Path,
+    tamper: str,
+    message: str,
+) -> None:
+    source = _make_source(tmp_path, scene_id=f"audit_rejection_{tamper}")
+    source_index_path, audit_path = _write_v04_source_index_and_audit(
+        tmp_path, source
+    )
+    audit = json.loads(audit_path.read_text())
+    audit.pop("content_sha256")
+    if tamper == "source_index_sha":
+        audit["output_source_index"]["sha256"] = "0" * 64
+    else:
+        audit["g2_images_decoded_or_inspected"] = True
+    audit["content_sha256"] = canonical_json_sha256(audit)
+    _write_json(audit_path, audit)
+    contract = load_geometry_contract(
+        Path("config/go2_generalization_geometry_v2.json"),
+        verify_sources=False,
+    )
+    output = tmp_path / f"rejected_audit_{tamper}"
+    build_provenance = _v3_build_provenance(
+        output_dir=output,
+        source_index_path=source_index_path,
+        audit_path=audit_path,
+        geometry_contract_path=contract.source_path,
+    )
+
+    with pytest.raises(DatasetContractError, match=message):
+        build_paired_navigation_dataset(
+            sources=[source],
+            output_dir=output,
+            geometry_contract=contract,
+            v3_exclusions=_exclusions(),
+            validation_fraction=0.0,
+            max_transitions_per_scene=1,
+            label_contract=LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
+            source_index_path=source_index_path,
+            render_audit_contract_path=audit_path,
+            build_provenance=build_provenance,
+        )
+
+
 def test_known_metrics_exclude_unknown_truth_and_report_unknown_admission() -> None:
     target = np.asarray([[0, 1, 2], [0, 1, 2]], dtype=np.uint8)
     prediction = np.asarray([[1, 1, 2], [0, 0, 1]], dtype=np.uint8)
@@ -767,7 +1418,7 @@ def test_row_cap_is_applied_before_label_raycast(
     source = _make_source(tmp_path, scene_id="capped_scene")
     contract = load_geometry_contract(verify_sources=False)
     calls = 0
-    original = dataset_module.label_camera_visible_configuration_grid
+    original = dataset_module.label_camera_visible_navigation_grid
 
     def counted_label(*args, **kwargs):
         nonlocal calls
@@ -780,7 +1431,7 @@ def test_row_cap_is_applied_before_label_raycast(
         return original(*args, **kwargs)
 
     monkeypatch.setattr(
-        dataset_module, "label_camera_visible_configuration_grid", counted_label
+        dataset_module, "label_camera_visible_navigation_grid", counted_label
     )
     result = build_paired_navigation_dataset(
         sources=[source],

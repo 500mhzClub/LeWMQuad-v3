@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from lewm.datasets.go2_paired_navigation import sha256_file
+from scripts import audit_go2_paired_navigation_adequacy as adequacy_script
 from scripts.audit_go2_paired_navigation_adequacy import (
     AdequacyError,
     audit_paired_navigation_adequacy,
@@ -35,6 +36,8 @@ def _dataset(
     *,
     calibration_labels: np.ndarray | None = None,
     observed_fraction: float = 1.0,
+    schema: str = "lewm_go2_paired_navigation_dataset_v2",
+    include_untouched_shard_record: bool = False,
 ) -> Path:
     grid = (3, 4, 4)
     full = np.ones(grid, dtype=bool)
@@ -63,7 +66,7 @@ def _dataset(
             )
         )
     manifest = {
-        "schema": "lewm_go2_paired_navigation_dataset_v2",
+        "schema": schema,
         "scene_roles": {
             "assignments": {
                 "scene_train": "train",
@@ -75,6 +78,22 @@ def _dataset(
         # scene_untouched deliberately has no shard on disk: opening it fails.
         "shards": shards,
     }
+    if schema == "lewm_go2_paired_navigation_dataset_v3":
+        manifest["label_semantics"] = {
+            "label_contract": "observable_physical_occupancy_v3",
+            "target_occupancy_space": "observable_physical_occupancy",
+            "per_frame_configuration_classes_supervised": False,
+            "post_memory_configuration_derivation_is_evaluation_only": True,
+        }
+    if include_untouched_shard_record:
+        manifest["shards"].append(
+            {
+                "scene_id": "scene_untouched",
+                "path": str(tmp_path / "scene_untouched.npz"),
+                "sha256": "0" * 64,
+                "rows": 1,
+            }
+        )
     manifest_path = tmp_path / "dataset_manifest.json"
     manifest_path.write_text(json.dumps(manifest))
     return manifest_path
@@ -91,10 +110,74 @@ def test_adequate_dataset_passes_without_opening_g2(tmp_path: Path) -> None:
     assert report["untouched_g2_shards_opened"] == 0
     assert report["untouched_g2_scene_count"] == 1
     assert report["loaded_shards_opened"] == 3
+    assert report["dataset_schema"] == "lewm_go2_paired_navigation_dataset_v2"
+    assert report["label_contract"] == "center_visible_configuration_v2"
+    assert report["target_occupancy_space"] == (
+        "body_inflated_configuration_space"
+    )
     counts = report["per_role"]["probability_calibration"][
         "supervised_next_cell_counts"
     ]
     assert counts == {"unknown": 33, "free": 12, "occupied": 3}
+
+
+def test_observable_physical_v3_passes_and_records_semantics(tmp_path: Path) -> None:
+    manifest_path = _dataset(
+        tmp_path,
+        schema="lewm_go2_paired_navigation_dataset_v3",
+        include_untouched_shard_record=True,
+    )
+    report = audit_paired_navigation_adequacy(
+        manifest_path,
+        minimum_calibration_free_cells=4,
+        minimum_calibration_occupied_cells=1,
+    )
+    assert report["passed"] is True
+    assert report["dataset_schema"] == "lewm_go2_paired_navigation_dataset_v3"
+    assert report["label_contract"] == "observable_physical_occupancy_v3"
+    assert report["target_occupancy_space"] == "observable_physical_occupancy"
+    assert report["untouched_g2_shards_opened"] == 0
+
+
+def test_untouched_g2_shard_is_never_loaded(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest_path = _dataset(tmp_path, include_untouched_shard_record=True)
+    real_load = adequacy_script.np.load
+    opened: list[Path] = []
+
+    def recording_load(path: str | Path, *args: object, **kwargs: object):
+        opened.append(Path(path))
+        return real_load(path, *args, **kwargs)
+
+    monkeypatch.setattr(adequacy_script.np, "load", recording_load)
+    report = audit_paired_navigation_adequacy(
+        manifest_path,
+        minimum_calibration_free_cells=4,
+        minimum_calibration_occupied_cells=1,
+    )
+    assert report["untouched_g2_shards_opened"] == 0
+    assert tmp_path / "scene_untouched.npz" not in opened
+
+
+def test_v3_semantic_mismatch_is_rejected_before_shards_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest_path = _dataset(
+        tmp_path, schema="lewm_go2_paired_navigation_dataset_v3"
+    )
+    manifest = json.loads(manifest_path.read_text())
+    manifest["label_semantics"]["target_occupancy_space"] = (
+        "body_inflated_configuration_space"
+    )
+    manifest_path.write_text(json.dumps(manifest))
+    monkeypatch.setattr(
+        adequacy_script.np,
+        "load",
+        lambda *args, **kwargs: pytest.fail("semantic rejection opened a shard"),
+    )
+    with pytest.raises(AdequacyError, match="label semantics disagree"):
+        audit_paired_navigation_adequacy(manifest_path)
 
 
 def test_missing_calibration_class_fails(tmp_path: Path) -> None:

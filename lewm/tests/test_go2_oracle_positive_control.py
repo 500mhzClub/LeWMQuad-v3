@@ -1,16 +1,33 @@
 from __future__ import annotations
 
+import inspect
+import hashlib
+import json
+from dataclasses import replace
 from pathlib import Path
 
+import pytest
+
 from lewm.benchmarks.go2_oracle_positive_control import (
+    CANONICAL_PHYSICAL_CLAIM_REGRESSION_OUTPUT,
     OracleConfig,
     Pose2D,
     _development_path_guard,
+    _generic_output_path_guard,
+    _oracle_claim_attempt_id,
+    bind_oracle_claim_task,
+    merge_indexed_scene_reports,
     reachable_component,
+    run_development_suite,
     run_scene,
     simulate_primitive,
 )
+from lewm.benchmarks.go2_physical_eligibility import (
+    directional_footprint_semantic_sha256,
+    policy_from_geometry_contract,
+)
 from lewm.planning.geometry_contract import load_geometry_contract
+from lewm.planning.oriented_footprint import DirectionalSupportFootprint
 from lewm_genesis.lewm_contract import PrimitiveRegistry
 from lewm_worlds.manifest import (
     BoxObject,
@@ -167,6 +184,14 @@ def test_open_scene_positive_control_claims_all_four() -> None:
     )
     assert report["all_beacons_claimed"]
     assert report["claimed_count"] == 4
+    claim_trace = report["canonical_physical_claim_trace"]
+    assert len(claim_trace["controller_claim_attempts"]) == 4
+    assert len(claim_trace["physical_claim_evaluations"]) == 4
+    assert claim_trace["physical_claim_summary"]["credited_count"] == 4
+    assert claim_trace["physical_claim_summary"]["all_targets_claimed"] is True
+    assert len(
+        {item["event_id"] for item in claim_trace["controller_claim_attempts"]}
+    ) == 4
     assert report["failure_class"] in {"success", "budget"}
     assert 0.0 <= report["normalized_coverage_auc"] <= 1.0
     assert report["collisions"] == 0
@@ -286,3 +311,320 @@ def test_cli_guard_rejects_sealed_paths() -> None:
         pass
     else:
         raise AssertionError("sealed output path was accepted")
+
+
+def test_generic_cli_cannot_publish_authoritative_claim_report() -> None:
+    with pytest.raises(ValueError, match="reserved"):
+        _generic_output_path_guard(CANONICAL_PHYSICAL_CLAIM_REGRESSION_OUTPUT)
+
+
+def test_oracle_task_binding_and_attempt_identity_are_exact() -> None:
+    manifest = _manifest(walls=_boundary_walls())
+    binding = bind_oracle_claim_task(manifest)
+    assert binding.task_object_ids == tuple(
+        sorted(item.object_id for item in manifest.landmarks)
+    )
+    task_object_id = binding.task_object_ids[0]
+    expected = hashlib.sha256(
+        json.dumps(
+            {
+                "domain": "lewm-go2-oracle-claim-attempt-v1",
+                "episode_id": binding.episode_id,
+                "scene_id": manifest.scene_id,
+                "task_object_id": task_object_id,
+                "trace_id": binding.trace_id,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    assert _oracle_claim_attempt_id(
+        trace_id=binding.trace_id,
+        episode_id=binding.episode_id,
+        scene_id=manifest.scene_id,
+        task_object_id=task_object_id,
+    ) == expected
+
+
+def test_failed_terminals_produce_no_attempts_or_retries(monkeypatch) -> None:
+    from lewm.benchmarks import go2_oracle_positive_control as oracle
+
+    calls = []
+
+    def fail_terminal(*args, **kwargs):
+        calls.append((args, kwargs))
+        return False, "synthetic_terminal_failure"
+
+    monkeypatch.setattr(oracle, "drive_to_goal", fail_terminal)
+    report = run_scene(
+        _manifest(walls=_boundary_walls()),
+        _registry(),
+        OracleConfig.from_geometry_contract(_geometry(), max_ticks=1000),
+        _geometry(),
+    )
+    trace = report["canonical_physical_claim_trace"]
+    assert len(calls) == 4
+    assert trace["controller_claim_attempts"] == []
+    assert trace["physical_claim_evaluations"] == []
+    assert len(report["follower_failures"]) == 4
+
+
+def test_parallel_scene_reports_merge_in_manifest_order() -> None:
+    scene_ids = ["scene_z", "scene_a", "scene_m"]
+    completed = [
+        (1, {"scene_id": "scene_a"}),
+        (2, {"scene_id": "scene_m"}),
+        (0, {"scene_id": "scene_z"}),
+    ]
+    assert merge_indexed_scene_reports(
+        completed, expected_scene_ids=scene_ids
+    ) == [
+        {"scene_id": "scene_z"},
+        {"scene_id": "scene_a"},
+        {"scene_id": "scene_m"},
+    ]
+    with pytest.raises(ValueError, match="duplicated"):
+        merge_indexed_scene_reports(
+            [completed[0], completed[0], completed[2]],
+            expected_scene_ids=scene_ids,
+        )
+    with pytest.raises(ValueError, match="scene identity"):
+        merge_indexed_scene_reports(
+            [(0, {"scene_id": "scene_a"}), completed[0], completed[1]],
+            expected_scene_ids=scene_ids,
+        )
+    with pytest.raises(ValueError, match="outside"):
+        merge_indexed_scene_reports(
+            [completed[0], completed[1], (3, {"scene_id": "other"})],
+            expected_scene_ids=scene_ids,
+        )
+    with pytest.raises(ValueError, match="incomplete"):
+        merge_indexed_scene_reports(completed[:2], expected_scene_ids=scene_ids)
+
+
+def test_two_worker_scene_execution_is_byte_identical_to_serial(
+    tmp_path: Path,
+) -> None:
+    scene_ids = ["synthetic_z", "synthetic_a"]
+    for scene_id in scene_ids:
+        manifest = replace(
+            _manifest(walls=_boundary_walls()),
+            scene_id=scene_id,
+        )
+        scene_dir = tmp_path / "test_id" / "test" / scene_id
+        scene_dir.mkdir(parents=True)
+        (scene_dir / "manifest.json").write_text(
+            json.dumps(manifest.to_dict(), sort_keys=True),
+            encoding="utf-8",
+        )
+    geometry = _geometry()
+    config = OracleConfig.from_geometry_contract(
+        geometry,
+        max_ticks=20,
+        max_goal_ticks=5,
+    )
+    kwargs = {
+        "scene_corpus": tmp_path,
+        "split": "test_id",
+        "family": "test",
+        "scene_ids": scene_ids,
+        "registry": _registry(),
+        "config": config,
+        "geometry_contract": geometry,
+    }
+    serial = run_development_suite(**kwargs, workers=1)
+    parallel = run_development_suite(**kwargs, workers=2)
+    serial_scientific = dict(serial)
+    parallel_scientific = dict(parallel)
+    assert serial_scientific.pop("scene_execution") == {
+        "kind": "serial",
+        "worker_count": 1,
+        "threads_per_worker": 1,
+        "merge_order": "development_manifest_index",
+        "worker_runtime_input_file_access": False,
+    }
+    assert parallel_scientific.pop("scene_execution") == {
+        "kind": "spawn_process",
+        "worker_count": 2,
+        "threads_per_worker": 1,
+        "merge_order": "development_manifest_index",
+        "worker_runtime_input_file_access": False,
+    }
+    assert json.dumps(
+        serial_scientific,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8") == json.dumps(
+        parallel_scientific,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+
+
+def test_preloaded_directional_policy_is_reused_without_loading(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from lewm.benchmarks import go2_oracle_positive_control as oracle
+
+    geometry = _geometry_v2()
+    policy = policy_from_geometry_contract(geometry, repository_root=REPO_ROOT)
+    manifest = _manifest(walls=_boundary_walls())
+    captured: list[object] = []
+
+    def fail_loader(*_args, **_kwargs):
+        raise AssertionError("preloaded policy must suppress the suite loader")
+
+    def fake_scene(job):
+        index, scene, _registry_value, _config, _geometry_value, job_policy = job
+        captured.append(job_policy)
+        return index, {
+            "scene_id": scene.scene_id,
+            "failure_class": "budget",
+            "all_beacons_claimed": False,
+            "beacon_count": 4,
+            "success": False,
+            "claimed_count": 0,
+            "normalized_coverage_auc": 0.0,
+            "final_coverage_fraction": 0.0,
+            "collisions": 0,
+            "stalls": 0,
+            "directional_polygon_collision_segments": 0,
+            "strict_directional_safe": True,
+            "route_planner": {"source": "OnlineBeliefMap.shortest_path"},
+            "ticks": 0,
+        }
+
+    monkeypatch.setattr(oracle, "policy_from_geometry_contract", fail_loader)
+    monkeypatch.setattr(oracle, "_run_indexed_development_scene", fake_scene)
+    run_development_suite(
+        scene_corpus=Path("unused"),
+        split="development",
+        family="test",
+        scene_ids=[manifest.scene_id],
+        registry=_registry(),
+        config=OracleConfig.from_geometry_contract(geometry, max_ticks=1),
+        geometry_contract=geometry,
+        workers=1,
+        preloaded_scene_manifests={manifest.scene_id: manifest},
+        preloaded_directional_policy=policy,
+    )
+    assert captured == [policy]
+    assert captured[0] is policy
+
+
+def test_directional_policy_loader_reads_artifact_bytes_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    geometry = _geometry_v2()
+    source = geometry.source_artifacts["directional_footprint_policy"]
+    expected_path = (REPO_ROOT / str(source["path"])).resolve()
+    original_read_bytes = Path.read_bytes
+    reads: list[Path] = []
+
+    def counted_read_bytes(path: Path) -> bytes:
+        if path.resolve() == expected_path:
+            reads.append(path.resolve())
+        return original_read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", counted_read_bytes)
+    policy_from_geometry_contract(geometry, repository_root=REPO_ROOT)
+    assert reads == [expected_path]
+
+
+def test_preloaded_directional_policy_must_match_geometry_contract() -> None:
+    from lewm.benchmarks import go2_oracle_positive_control as oracle
+
+    geometry = _geometry_v2()
+    policy = policy_from_geometry_contract(geometry, repository_root=REPO_ROOT)
+    with pytest.raises(ValueError, match="wrong exact type"):
+        oracle._directional_policy_for_suite(geometry, object())
+    with pytest.raises(ValueError, match="invalid field types"):
+        oracle._directional_policy_for_suite(
+            geometry,
+            replace(policy, source_path="not-a-path"),
+        )
+    with pytest.raises(ValueError, match="content bytes do not match"):
+        oracle._directional_policy_for_suite(
+            geometry,
+            replace(policy, content_sha256="0" * 64),
+        )
+    with pytest.raises(ValueError, match="only valid for geometry contract v2"):
+        oracle._directional_policy_for_suite(_geometry(), policy)
+
+
+def test_preloaded_policy_footprint_is_bound_to_verified_content() -> None:
+    from lewm.benchmarks import go2_oracle_positive_control as oracle
+
+    geometry = _geometry_v2()
+    policy = policy_from_geometry_contract(geometry, repository_root=REPO_ROOT)
+    original = policy.footprint
+    radius = original.maximum_vertex_radius_m
+
+    diamond = DirectionalSupportFootprint(
+        vertices_xy_m=(
+            (radius, 0.0),
+            (0.0, radius),
+            (-radius, 0.0),
+            (0.0, -radius),
+        ),
+        support_angles_deg=original.support_angles_deg,
+        support_values_m=original.support_values_m,
+        margin_m=original.margin_m,
+    )
+    rotated = DirectionalSupportFootprint(
+        vertices_xy_m=original.vertices_xy_m[1:] + original.vertices_xy_m[:1],
+        support_angles_deg=original.support_angles_deg,
+        support_values_m=original.support_values_m,
+        margin_m=original.margin_m,
+    )
+    scaled = DirectionalSupportFootprint(
+        vertices_xy_m=tuple(
+            (x_m * 0.999, y_m * 0.999)
+            for x_m, y_m in original.vertices_xy_m
+        ),
+        support_angles_deg=original.support_angles_deg,
+        support_values_m=original.support_values_m,
+        margin_m=original.margin_m,
+    )
+    for mutated in (diamond, rotated, scaled):
+        forged = replace(
+            policy,
+            footprint=mutated,
+            footprint_semantic_sha256=directional_footprint_semantic_sha256(
+                mutated
+            ),
+        )
+        with pytest.raises(ValueError, match="bound policy content"):
+            oracle._directional_policy_for_suite(geometry, forged)
+
+    malformed = object.__new__(DirectionalSupportFootprint)
+    object.__setattr__(
+        malformed,
+        "vertices_xy_m",
+        [list(vertex) for vertex in original.vertices_xy_m],
+    )
+    object.__setattr__(malformed, "support_angles_deg", original.support_angles_deg)
+    object.__setattr__(malformed, "support_values_m", original.support_values_m)
+    object.__setattr__(malformed, "margin_m", original.margin_m)
+    with pytest.raises(ValueError, match="exact finite tuples"):
+        oracle._directional_policy_for_suite(
+            geometry,
+            replace(policy, footprint=malformed),
+        )
+
+
+def test_oracle_source_has_no_private_claim_acceptance_or_per_tick_update() -> None:
+    from lewm.benchmarks import go2_oracle_positive_control as oracle
+
+    source = inspect.getsource(oracle)
+    assert "def _true_claim" not in source
+    assert "def update_claims" not in source
+    assert ".update_claims(" not in source
+    run_scene_source = inspect.getsource(oracle.run_scene)
+    assert run_scene_source.index("claim_task_binding = bind_oracle_claim_task") < (
+        run_scene_source.index("drive_to_goal(")
+    )

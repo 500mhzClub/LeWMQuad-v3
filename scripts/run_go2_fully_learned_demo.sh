@@ -3,6 +3,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON="${PYTHON:-$ROOT/.generated/venvs/genesis_render_vulkan/bin/python}"
+SCENE_CORPUS="${SCENE_CORPUS:-$ROOT/.generated/scene_corpus/minimum_20260520T080420Z}"
+SPLIT="${SPLIT:-train}"
+FAMILY="${FAMILY:-medium_enclosed_maze}"
 OUT_PREFIX="${OUT_PREFIX:-$ROOT/.generated/go2_memory_closed_loop/learned_physical_01732/attempt397_full_from_spawn_localpolicy_strict}"
 MODE="${MODE:-physical}"
 MAX_TICKS="${MAX_TICKS:-1000}"
@@ -292,8 +295,6 @@ fi
   --mode "$MODE" \
   --policy-device "$POLICY_DEVICE" \
   --device "$DEVICE" \
-  --split "${SPLIT:-train}" \
-  --scene-id "$SCENE_ID" \
   --seed 1 \
   --policy memory \
   --demo-mode explore \
@@ -401,7 +402,6 @@ fi
   --weak-memory-seek-yaw-loop-max-displacement-m 0.012 \
   --primitive-outcome-frozen-jepa-checkpoint "$GEOMETRIC_JEPA_CHECKPOINT" \
   --primitive-clearance-frozen-jepa-checkpoint "$GEOMETRIC_JEPA_CHECKPOINT" \
-  --family medium_enclosed_maze \
   --target-pursuit-stale-ticks 80 \
   --target-pursuit-stale-window-ticks 240 \
   --target-pursuit-stale-suppress-color-ticks 260 \
@@ -471,11 +471,16 @@ fi
   --body-clearance-target-area-hard-veto-min-area-logit "$BODY_CLEARANCE_TARGET_AREA_HARD_VETO_MIN_AREA_LOGIT" \
   --current-body-risk-clearance-rerank \
   "${BENCHMARK_EXTRA_ARGS[@]}" \
+  --scene-corpus "$SCENE_CORPUS" \
+  --split "$SPLIT" \
+  --family "$FAMILY" \
+  --scene-id "$SCENE_ID" \
   --max-ticks "$MAX_TICKS" \
   --output "${OUT_PREFIX}_result.json"
 
 CHECK_ARGS=(
   --result "${OUT_PREFIX}_result.json"
+  --scene-manifest "$SCENE_CORPUS/$SPLIT/$FAMILY/$SCENE_ID/manifest.json"
   --max-ticks "$MAX_TICKS"
   --require-scene-id "$SCENE_ID"
   --require-physical-mode

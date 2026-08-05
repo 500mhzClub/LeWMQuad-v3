@@ -744,8 +744,13 @@ def _validate_calibration(
         "nll_after",
         "id",
     }
-    if set(calibration) != required:
+    allowed = (required, required | {"provenance"})
+    if set(calibration) not in allowed:
         raise ValueError("probability calibration fields do not match schema v2")
+    if "provenance" in calibration and not isinstance(
+        calibration["provenance"], Mapping
+    ):
+        raise ValueError("probability calibration provenance must be an object")
     if calibration.get("method") != _CALIBRATION_METHOD:
         raise ValueError("unsupported probability calibration method")
     log_scales = _numeric_sequence(calibration.get("log_scales"), 3, "log_scales")

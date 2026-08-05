@@ -7,7 +7,16 @@ import argparse
 import json
 import math
 from pathlib import Path
+import sys
 from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from lewm.benchmarks.go2_physical_claim_result import (  # noqa: E402
+    canonical_physical_claim_status,
+)
+from lewm_worlds.manifest import parse_scene_manifest_dict  # noqa: E402
 
 
 def _load_json(path: Path | None) -> dict[str, Any]:
@@ -81,6 +90,7 @@ def _get(result: dict[str, Any], *keys: str, default: Any = None) -> Any:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--result", type=Path, required=True)
+    parser.add_argument("--scene-manifest", type=Path, required=True)
     parser.add_argument("--replay-report", type=Path, default=None)
     parser.add_argument("--max-ticks", type=int, default=520)
     parser.add_argument("--max-yaw-share", type=float, default=0.58)
@@ -93,14 +103,23 @@ def main() -> int:
 
     payload = _load_json(args.result)
     result = payload.get("result", payload)
+    scene_manifest = parse_scene_manifest_dict(_load_json(args.scene_manifest))
     log = payload.get("log", [])
     summary = _primitive_summary(log if isinstance(log, list) else [])
     wall = result.get("wall_metrics", {}) if isinstance(result, dict) else {}
-    claimed = result.get("claimed_colors", []) if isinstance(result, dict) else []
-    claimed_set = set(str(c) for c in claimed)
-    all_claimed = {"red", "yellow", "blue", "green"}.issubset(claimed_set)
+    physical_claims = canonical_physical_claim_status(
+        result,
+        scene_manifest=scene_manifest,
+        required_task_count=4,
+    )
+    scene_manifest_match = bool(
+        type(result.get("scene")) is str
+        and result["scene"] == scene_manifest.scene_id
+    )
+    claimed = list(physical_claims.credited_object_ids)
+    all_claimed = physical_claims.all_targets_claimed
     ticks = int(result.get("ticks_used", summary["commands_total"]))
-    success = bool(result.get("success"))
+    success = physical_claims.all_targets_claimed
     body_violations = int(wall.get("body_clearance_violation_events") or 0)
     fall_events = int(wall.get("fall_events") or 0)
     tip_events = int(wall.get("tip_events") or 0)
@@ -121,6 +140,8 @@ def main() -> int:
         )
 
     gates = {
+        "scene_manifest_match": scene_manifest_match,
+        "canonical_physical_claims": physical_claims.valid,
         "success": success,
         "all_beacons_claimed": all_claimed,
         "ticks": ticks <= int(args.max_ticks),
@@ -143,7 +164,8 @@ def main() -> int:
             "path": str(args.result),
             "success": success,
             "ticks_used": ticks,
-            "claimed_colors": claimed,
+            "physically_credited_object_ids": claimed,
+            "physical_claim_errors": list(physical_claims.errors),
             "final_xy": result.get("final_xy") if isinstance(result, dict) else None,
             "body_clearance_violation_events": body_violations,
             "fall_events": fall_events,

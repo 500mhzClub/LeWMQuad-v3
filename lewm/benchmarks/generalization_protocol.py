@@ -9,6 +9,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from lewm.benchmarks.go2_physical_claim_evaluator import (
+    evaluate_physical_claim_trace,
+)
 from lewm.planning.geometry_contract import GeometryContract
 from lewm_worlds.fixed_spawn_audit import (
     FixedSpawnAuditConfig,
@@ -24,8 +27,8 @@ _SCENE_ROLE_COMMITMENT_DOMAIN = "lewm-navigation-scene-role-v1"
 
 
 @dataclass(frozen=True)
-class StrictClaimObservation:
-    """Ground-truth state at one proposed beacon-claim event."""
+class LegacyDistanceLosClaimObservation:
+    """Noncanonical distance-plus-LOS diagnostic for historical rows."""
 
     target_id: str
     robot_xy_m: tuple[float, float]
@@ -34,8 +37,8 @@ class StrictClaimObservation:
 
 
 @dataclass(frozen=True)
-class StrictClaimResult:
-    """Result of applying the physical claim contract to one observation."""
+class LegacyDistanceLosClaimResult:
+    """Noncanonical diagnostic result; never a physical claim decision."""
 
     target_id: str
     distance_m: float
@@ -45,8 +48,8 @@ class StrictClaimResult:
 
 
 @dataclass(frozen=True)
-class StrictClaimSummary:
-    """Unique-target aggregate for a sequence of proposed claims."""
+class LegacyDistanceLosClaimSummary:
+    """Historical proxy aggregate excluded from canonical success gates."""
 
     observation_count: int
     accepted_observation_count: int
@@ -228,12 +231,12 @@ def scene_id_sha256(scene_id: str) -> str:
     return hashlib.sha256(scene_id.encode("utf-8")).hexdigest()
 
 
-def strict_ground_truth_claim(
-    observation: StrictClaimObservation,
+def legacy_distance_los_claim_diagnostic(
+    observation: LegacyDistanceLosClaimObservation,
     *,
     claim_radius_m: float,
-) -> StrictClaimResult:
-    """Apply an inclusive, zero-tolerance physical claim-radius check."""
+) -> LegacyDistanceLosClaimResult:
+    """Reproduce the historical distance-plus-caller-LOS diagnostic."""
 
     radius = float(claim_radius_m)
     if not math.isfinite(radius) or radius < 0.0:
@@ -245,7 +248,7 @@ def strict_ground_truth_claim(
         raise ValueError("claim coordinates must be finite")
     distance = math.dist(observation.robot_xy_m, observation.target_xy_m)
     within_radius = distance <= radius
-    return StrictClaimResult(
+    return LegacyDistanceLosClaimResult(
         target_id=str(observation.target_id),
         distance_m=float(distance),
         within_claim_radius=bool(within_radius),
@@ -254,22 +257,38 @@ def strict_ground_truth_claim(
     )
 
 
-def summarize_strict_ground_truth_claims(
-    observations: Iterable[StrictClaimObservation],
+def summarize_legacy_distance_los_claims(
+    observations: Iterable[LegacyDistanceLosClaimObservation],
     *,
     claim_radius_m: float,
-) -> StrictClaimSummary:
-    """Count each physically verified target at most once."""
+) -> LegacyDistanceLosClaimSummary:
+    """Aggregate historical diagnostics without producing canonical truth."""
 
     results = [
-        strict_ground_truth_claim(item, claim_radius_m=claim_radius_m)
+        legacy_distance_los_claim_diagnostic(item, claim_radius_m=claim_radius_m)
         for item in observations
     ]
     claimed = tuple(sorted({item.target_id for item in results if item.accepted}))
-    return StrictClaimSummary(
+    return LegacyDistanceLosClaimSummary(
         observation_count=len(results),
         accepted_observation_count=sum(item.accepted for item in results),
         claimed_target_ids=claimed,
+    )
+
+
+def evaluate_physical_claim_trace_protocol_adapter(
+    trace: Mapping[str, Any],
+    physical_manifest: SceneManifest,
+    expected_task_object_ids: Sequence[str],
+    expected_task_object_set_sha256: str,
+) -> dict[str, Any]:
+    """Evaluate protocol claims only through the shared canonical evaluator."""
+
+    return evaluate_physical_claim_trace(
+        trace,
+        physical_manifest,
+        expected_task_object_ids,
+        expected_task_object_set_sha256,
     )
 
 
@@ -805,9 +824,9 @@ __all__ = [
     "ReachableCoverageMetric",
     "SceneDisjointManifests",
     "SceneSplitCounts",
-    "StrictClaimObservation",
-    "StrictClaimResult",
-    "StrictClaimSummary",
+    "LegacyDistanceLosClaimObservation",
+    "LegacyDistanceLosClaimResult",
+    "LegacyDistanceLosClaimSummary",
     "audited_scene_record",
     "build_hashed_scene_role_commitment",
     "build_scene_disjoint_manifests",
@@ -815,8 +834,9 @@ __all__ = [
     "reachable_area_normalized_coverage",
     "scene_role_token",
     "scene_id_sha256",
-    "strict_ground_truth_claim",
-    "summarize_strict_ground_truth_claims",
+    "evaluate_physical_claim_trace_protocol_adapter",
+    "legacy_distance_los_claim_diagnostic",
+    "summarize_legacy_distance_los_claims",
     "supercover_segment_cells",
     "verify_scene_disjoint_manifests",
     "write_scene_disjoint_manifests",

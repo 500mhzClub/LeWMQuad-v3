@@ -163,6 +163,10 @@ def test_all_four_claim_anchors_have_staged_se2_witnesses(
     assert len(report.claim_anchors) == 4
     assert all(anchor.reachable for anchor in report.claim_anchors)
     assert all(anchor.anchor_has_line_of_sight for anchor in report.claim_anchors)
+    assert all(anchor.physical_claim_credited for anchor in report.claim_anchors)
+    assert report.canonical_physical_claim_trace["physical_claim_summary"][
+        "all_targets_claimed"
+    ] is True
     assert all(anchor.shortest_staged_action_count is not None for anchor in report.claim_anchors)
     assert all(
         sum(anchor.shortest_staged_action_counts.values())

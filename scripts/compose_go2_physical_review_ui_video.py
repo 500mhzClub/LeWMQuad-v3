@@ -170,7 +170,10 @@ def main() -> int:
         "success": result.get("success"),
         "claimed": result.get("claimed"),
         "claimed_colors": result.get("claimed_colors"),
-        "beacon_claims": result.get("beacon_claims"),
+        "controller_beacon_claims": result.get(
+            "controller_beacon_claims",
+            result.get("beacon_claims"),
+        ),
         "wall_metrics": {
             key: result.get("wall_metrics", {}).get(key)
             for key in (

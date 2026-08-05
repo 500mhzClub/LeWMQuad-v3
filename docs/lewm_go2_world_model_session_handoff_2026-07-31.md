@@ -1,8 +1,9 @@
 # Session handoff: JEPA world-model review, correction, and counterfactual diagnosis
 
-Date: 2026-07-31, terminally updated 2026-08-02
+Date: 2026-07-31, terminally updated 2026-08-04
 Repository HEAD during the original session: `0279294e5679fa81f845f13c9e47326bab291238`
 Continuation execution HEAD: `fb30bdf0b11934ee8d6d4780e0973b050d98c17d`
+Grounded joint-JEPA execution ancestor: `4adcbdad16baa81c93112e9f0f4a6aa643008fad`
 Branch: `jepa-spatial-world-model-nav`
 
 > **Superseded interpretation (2026-08-01):** this document remains a
@@ -51,6 +52,17 @@ Branch: `jepa-spatial-world-model-nav`
 > tuning, collect matched-branch training data, and compare conventional and
 > Dreamer-style baselines. Section 10 is the current scientific handoff and
 > supersedes §9's statement that direct WM-A remained unmeasured.
+
+> **Grounded joint-JEPA terminal update (2026-08-04):** the preregistered
+> physical-only matched arm and dense-DINO joint-JEPA arm both reached update
+> 800. The joint arm passed every train-only futility check, but its
+> scene-disjoint evaluation regret was `0.17585`, versus `0.17441` for the
+> refitted task/action control and `0.16448` for the identically initialized
+> physical-only arm. Both relative gates failed with intervals spanning zero,
+> as did the absolute `0.13` gate. Integrity, oracle, deterministic-repeat,
+> access, and random-comparison gates passed. The terminal decision is
+> `FAIL_STOP_GROUNDED_DENSE_DINO_MECHANISM`; neither checkpoint is eligible for
+> closed-loop use. Section 11 is the current world-model mechanism handoff.
 
 **Original July 31 state:** nothing from that session was committed and the
 artifacts in §8 were untracked. The bounded August 1 localization/alignment
@@ -969,3 +981,661 @@ generally.  A nonlinear shared spatial readout, task-coupled objective,
 embodiment-derived supervision, or matched-branch JEPA-versus-state-space/
 Dreamer comparison would be a materially different future mechanism requiring
 new prospective review; none is an automatic continuation of this result.
+
+## Addendum: planner-causal seam and exact-task DINO ceiling (2026-08-04)
+
+The next implementation deliberately separated two questions that earlier
+experiments had conflated: whether the closed-loop planner can exploit a good
+candidate ranking, and whether the proposed frozen-DINO same-patch goal cost is
+itself a good ranking surface before any predictor is trained.
+
+The 24-scene geometric positive-control assay passed every registered gate.
+`oracle_mpc` made 0.81512 m mean progress and succeeded on 14/24 scenes, versus
+0.38312 m and 0/24 for the same geometric scores deterministically shuffled
+across unchanged candidate rows.  The paired progress advantage was 0.43200 m
+with 95% whole-scene interval [0.37730, 0.48326] m.  Oracle regret was exactly
+zero across all 224 decisions; shuffled regret was positive on 247/288.  This
+establishes usable H1 ranking headroom and validates the intervention seam.  It
+does not establish safety because execution was kinematic.  The durable result
+is `docs/lewm_go2_planner_oracle_assay_v1_result_2026-08-04.md`.
+
+The follow-on experiment then gave the same planner the *actual* rendered H1
+successor for each candidate and ranked its frozen DINOv2 patch grid by mean
+same-position cosine distance to one goal-image grid.  It completed 24
+development scenes x seven paired arms with no skips and exact source,
+checkpoint, cost, reset, device, and score-vector provenance.
+
+| arm | mean progress (m) | scene-mean oracle regret (m) | success |
+|---|---:|---:|---:|
+| geometric oracle | `0.81512` | `0.00000` | `14/24` |
+| DINO true successor | `0.64936` | `0.05956` | `14/24` |
+| shuffled DINO scores | `0.35368` | `0.07530` | `0/24` |
+| DINO persistence | `0.00000` | `0.13534` | `0/24` |
+| bearing ceiling | `0.89995` | `0.02486` | `24/24` |
+| random | `0.49683` | `0.07346` | `0/24` |
+
+The causal task effect is substantial.  True successor beat shuffled scores by
+0.29568 m progress, 95% interval [0.10139, 0.47261] m, while preserving the
+same score multiset.  It beat persistence by 0.64936 m progress and 0.07578 m
+regret, with both intervals wholly favorable.  Thus candidate/score
+correspondence and actual visual change both matter under this exact downstream
+cost; frozen DINO successor tokens are not merely scene or action priors.
+
+The preregistered training-eligibility gate nevertheless failed.  Against
+shuffled scores, geometric-regret reduction was only 0.01574 m versus the
+required 0.020 m, and the interval for `true - shuffled` was
+[-0.04360, +0.01188] m instead of wholly below zero.  Independent
+recomputation matched exactly: 12/24 scene effects were favorable, 12/24
+unfavorable, and the median was slightly adverse.  This is not an analyzer sign
+bug.  The contrast is policy-level because trajectories diverge, rather than a
+pure same-state ranking assay; that caveat should inform a successor protocol
+but does not waive this frozen gate.
+
+The machine verdict is
+`FAIL_STOP_FROZEN_DINO_SAME_PATCH_COST_ROUTE`.  The already implemented dense
+DINO temporal predictor remains deliberately untrained.  Predictor accuracy
+cannot repair an inadequately qualified target/cost surface, and training now
+would conflate prediction error with terminal-cost error.  Do not tune this
+cost, retry a seed, enlarge the observed development panel to rescue the claim,
+or report the privileged true-successor result as a learned world model.
+
+This refines rather than reverses the 2026-08-03 physical-readout result:
+exact-task DINO similarity has real closed-loop navigation signal, but neither
+the earlier linear physical readout nor the present same-patch cost has earned
+predictor training.  A new attempt must change the representation/readout
+mechanism materially and be preregistered prospectively.  The existing planner
+seam, controls, and development benchmark can be retained.
+
+The durable terminal record is
+`docs/lewm_go2_dino_true_successor_goal_cost_v1_result_2026-08-04.md`.  Raw and
+analysis bindings are, respectively,
+`1976c73a37a6f2df5db9958f722ffbee7e7d6aaaaecc6d621cd65b0fc989d5fa`
+and
+`69ebc897ab721a2bd9ad9db19e075e34f6899494bbfe04c384eed04d0703844b`.
+
+## 11. Grounded dense-DINO joint-JEPA terminal resolution (2026-08-04)
+
+### The experiment that actually ran
+
+The successor mechanism changed the failed frozen-DINO goal-cost route rather
+than relaxing its gates. It used the existing 128-state/16-scene training role
+and a disjoint 128-state/16-scene development evaluation role, with nine
+executed branches per state. No new scene, action, trajectory, or RGB frame was
+generated.
+
+The two learned arms had identical initialization, DINO blocks 10--11 and
+final-norm trainability, dense action-conditioned predictor, physical head,
+optimizer, candidate schedule, and physical losses. The sole intervention was
+that `joint_jepa_grounded` opened training successor RGB and received detached
+EMA dense-cosine and within-state nine-way InfoNCE losses;
+`physical_only_matched` did not. A separately refitted task/action ridge was
+the analytic control. Evaluation inference received only the three context
+frames, action/history inputs, and goal-relative scoring geometry. Evaluation
+successor RGB was structurally inaccessible.
+
+The original one-shot runner completed both checkpoints but then hit an
+infrastructure assertion before writing a scientific result. The feature plan
+was unchanged; the old task-ridge coefficient fingerprint had been produced by
+a different NumPy/BLAS environment. A separately preregistered, independently
+reviewed evaluation-only integrity replacement bound the immutable checkpoint
+bytes, refit the same ridge twice under the live environment, retained the
+pre-existing task-regret behavioral witness, and performed no training,
+optimizer restore, checkpoint mutation, or successor access. The failed V1
+process had already opened the development evaluation contexts before its
+assertion, so the replacement is explicitly repeated development exposure, not
+fresh or held-out confirmation.
+
+### Training evidence
+
+| arm / update | normalized train regret | branch retrieval | successor cosine | persistence cosine |
+|---|---:|---:|---:|---:|
+| joint u0 | `0.23530` | `0.11111` | `0.25995` | `0.25995` |
+| joint u400 | `0.08337` | `0.36632` | `0.18422` | `0.24654` |
+| joint u800 | `0.02325` | `0.54427` | `0.12468` | `0.22704` |
+| physical-only u800 | `0.05762` | not applicable | not applicable | not applicable |
+
+All update-400 continuation conditions passed. The joint model learned
+action-discriminative successor structure without collapse and fit the training
+ranking substantially better than the matched arm. Those are real train-panel
+capacity measurements, not evidence of scene-disjoint planning usefulness.
+
+### Scene-disjoint evaluation
+
+| arm | normalized rank regret | oracle-equivalent selection | target progress (m) |
+|---|---:|---:|---:|
+| joint JEPA grounded | `0.17585` | `0.52344` | `0.06163` |
+| physical-only matched | `0.16448` | `0.53125` | `0.06316` |
+| task/action only | `0.17441` | `0.46875` | `0.06002` |
+| privileged physical oracle | `0.00000` | `1.00000` | `0.07330` |
+| random expectation | `0.49541` | `0.12240` | not applicable |
+
+The fixed gate breakdown is:
+
+| gate | measurement | result |
+|---|---|---|
+| integrity and oracle | exact provenance/access, repeat, oracle regret `0` | pass |
+| absolute regret | joint `0.17585`, required `<=0.13` | fail |
+| joint versus task | delta `+0.00143`, 95% interval `[-0.02898,+0.03194]`, required `<=-0.02` and upper `<0` | fail |
+| joint versus matched | delta `+0.01137`, 95% interval `[-0.01891,+0.04152]`, required `<=-0.01` and upper `<0` | fail |
+| joint versus random | `0.17585 < 0.49541` | pass |
+
+Both paired intervals use the preregistered 10,000-draw family-equal,
+whole-scene bootstrap over 16 scene clusters. Independent recomputation matched
+both comparisons and the complete gate object exactly.
+
+### First-principles conclusion
+
+This is a decisive stop for the exact partially trainable DINO-tail, dense
+predictor, EMA successor-loss, and physical-head mechanism. It is not primarily
+an unrealistic-threshold failure. Even if the `0.13` absolute threshold were
+discarded after seeing the result, the joint arm has a worse point estimate
+than both controls and neither relative interval excludes zero.
+
+The key result is a train-to-evaluation reversal. JEPA supervision improved
+u800 training regret over the matched arm by about `0.0344`, but was worse on
+evaluation by `0.0114`. Joint train regret was `0.02325` and evaluation regret
+was `0.17585`, a `7.56x` increase; the matched arm rose from `0.05762` to
+`0.16448`. Retrieval and cosine progress therefore measured train capacity,
+not qualified planning utility. Mixed 4/4 family directions in each relative
+comparison provide no stable family-general rescue.
+
+The surviving claim is narrow: the joint model learned non-random
+action-conditioned structure and retained some H1 signal on this
+development-exposed role. That signal cannot be attributed to a useful
+predictive world model because the task/action and matched physical-only
+controls match or beat it. The result does not falsify DINO, dense JEPA,
+action conditioning, or navigation generally, and the intervals do not prove
+that the mechanism has exactly zero effect. It does falsify progression of this
+checkpoint pair into closed-loop evaluation.
+
+Current property status is therefore:
+
+| property | terminal status |
+|---|---|
+| WM-A: scene-disjoint untaken-action utility | training capacity positive; incremental evaluation utility failed |
+| WM-C: output re-entry / multi-step rollout | untested and ineligible after H1 failure |
+| WM-S: shared spatial/physical substrate | action signal retained; no demonstrated benefit from JEPA successor supervision |
+| WM-D: deployed causal presence | absent |
+
+Do not retry a seed, extend updates, tune widths/losses/readouts, relax the
+gates, inspect evaluation successors, or planner-integrate either checkpoint.
+The smallest information-changing successor is one preregistered conventional
+task-coupled recurrent state-space/direct-dynamics comparator with a no-vision
+odometry/action ablation on the same H1 evaluator. Blind 1/2/4-step rollout is
+worth opening only if H1 passes. A later V-JEPA 2.1 dense-spatial successor must
+address the observed generalization failure with lower trainable capacity and
+substantially more scene-diverse matched counterfactual states; merely swapping
+encoders under the same 128-state recipe is not justified. The large on-policy
+corpus can support self-supervised temporal/appearance pretraining, but cannot
+substitute for within-state action contrast.
+
+### Durable artifacts
+
+- Frozen V1 preregistration:
+  `docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_preregistration_2026-08-04.md`.
+- Consumed V1 terminal:
+  `.generated/dev/go2_grounded_dense_dino_joint_jepa_v1/attempt_v1/terminal.json`.
+- Replacement preregistration, source review, and authority:
+  `docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_preregistration_2026-08-04.md`,
+  `docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_source_review_2026-08-04.json`, and
+  `docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_execution_authority_2026-08-04.json`.
+- Scientific result: 410,076 bytes, SHA-256
+  `edeeb3ca1003f92fbe4e29bffd913f1a97994a4aee3f9d193a3b2a90522e8031`.
+- Terminal: 487 bytes, SHA-256
+  `7c60676f7b66ae714633cf2d1f792278eb37f73e6c2663f107df283d0c16f5ba`.
+- Independent terminal review:
+  `docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_terminal_review_2026-08-04.json`,
+  7,563 bytes, SHA-256
+  `def924d93c3701f3838342566c515973e01c8efe11d08d1f8d70e48e48a7cc84`.
+
+All of these artifacts are development-only. No sealed or held-out role was
+opened, and no promotion, safety, or deployment claim follows.
+
+## 12. Task-coupled recurrent direct-dynamics terminal result (2026-08-04)
+
+### Why this experiment was the next valid intervention
+
+The conventional comparator recommended in section 11 has now been
+implemented, preregistered, independently source-reviewed, run exactly once,
+and independently terminal-audited. Repository inventory first ruled out a
+duplicate: recurrent predecessors predicted pooled or dense successor tokens,
+whereas direct physical predecessors were feed-forward. No earlier experiment
+combined ordered spatial recurrence, direct physical/rank training, and an
+exact zero-vision ablation.
+
+The new mechanism retained frozen full-DINO context patches but deliberately
+reduced trainable capacity to 3,604 parameters/member. Each 16 x 16 x 384 DINO
+grid was pooled to 4 x 4, projected by one train-only channel PCA `384 -> 16`,
+and kept as 16 ordered spatial cells over three context frames. A shared
+16-wide GRU consumed each cell together with the exact preceding 15-value
+command tape and measured body-frame odometry. Candidate-command attention and
+a small head predicted four physical outcomes directly. The goal was scorer-
+only. There was no JEPA loss, successor decoder, encoder tuning, semantic
+target, EMA, or evaluation-successor route.
+
+The two learned arms were byte-matched per seed and differed only in the visual
+tensor:
+
+- `no_vision_recurrent_direct`: all projected visual cells set to exact zero;
+- `visual_recurrent_direct`: frozen projected DINO cells.
+
+Both used seeds `2026080411/12/13`, the same state schedule, all nine branches
+per state, 800 updates, and the fixed standardized physical MSE plus `0.25`
+strict-pair rank loss. The unchanged task/action ridge was the analytic
+control. All 33 focused model/benchmark/runner tests passed before the one-shot
+authority was issued. The runner opened 384 train context images, wrote all six
+checkpoints, then opened the disjoint evaluation role and 384 evaluation
+context images. Train and evaluation successor opens were both exactly zero.
+
+### Training diagnostics
+
+The zero-initialized final layer made all six u0 predictions equal to the
+train-only action means: regret `0.23530`, standardized MSE `1.00000`, and rank
+loss `0.55575`.
+
+| arm / seed | u800 train regret | u800 standardized MSE | u800 rank loss |
+|---|---:|---:|---:|
+| no vision / 411 | `0.23869` | `0.69968` | `0.55197` |
+| no vision / 412 | `0.22181` | `0.68516` | `0.54992` |
+| no vision / 413 | `0.22962` | `0.69956` | `0.55120` |
+| visual / 411 | `0.22539` | `0.59241` | `0.54589` |
+| visual / 412 | `0.25162` | `0.58161` | `0.54462` |
+| visual / 413 | `0.22534` | `0.60616` | `0.54442` |
+
+Visual input improved mean train regression MSE by about 14.6% relative to the
+no-vision arm, but rank regret was weak and non-monotonic: one visual seed
+worsened materially and neither arm established strong train ranking capacity.
+The falling regression objective therefore cannot be treated as H1 capacity by
+itself.
+
+### Scene-disjoint evaluation
+
+| arm | normalized rank regret | oracle-equivalent selection | target progress (m) | standardized physical MSE |
+|---|---:|---:|---:|---:|
+| visual recurrent direct | `0.15366` | `0.53906` | `0.06299` | `0.80012` |
+| no-vision recurrent direct | `0.14618` | `0.58594` | `0.06416` | `0.77606` |
+| task/action only | `0.17441` | `0.46875` | `0.06002` | not applicable |
+| privileged physical oracle | `0.00000` | `1.00000` | `0.07330` | not applicable |
+| random expectation | `0.49541` | `0.12240` | not applicable | not applicable |
+
+The preregistered paired comparisons were:
+
+| comparison (candidate minus baseline) | point delta | 95% interval | conclusion |
+|---|---:|---:|---|
+| visual minus task/action | `-0.02075` | `[-0.04106,-0.00048]` | fixed relative gate passes, narrowly |
+| visual minus no vision | `+0.00749` | `[-0.00293,+0.01790]` | wrong point direction; visual gate fails |
+| no vision minus task/action | `-0.02824` | `[-0.04846,-0.00834]` | no-vision package significantly better |
+
+Every visual member was worse than its seed-matched no-vision member on
+evaluation (`0.15562 > 0.15232`, `0.15878 > 0.15258`, and
+`0.15966 > 0.14804`). Visual regression RMSE was also worse on all four outputs
+at evaluation despite its lower train MSE. This is a visual-specific train-to-
+evaluation reversal, not an objective/scorer disagreement that rescues the
+mechanism.
+
+Family directions provide no stable visual exception. Relative to no vision,
+visual input helped only `rough_local_dynamics`, tied the large/medium/small
+maze families, and hurt local composites, loop aliasing, open fields, and the
+visual-sensor-stress family. In particular, the large-maze improvement over
+task/action was identical with and without vision, so it was entirely
+nonvisual.
+
+### Fixed gates and terminal conclusion
+
+| gate | result |
+|---|---|
+| integrity, role disjointness, context-only custody, repeat, oracle | pass |
+| visual regret `<= 0.13` | fail: `0.15366` |
+| visual beats task by `>= 0.02`, upper interval `< 0` | pass: `-0.02075`, upper `-0.00048` |
+| visual beats no vision by `>= 0.01`, upper interval `< 0` | fail: `+0.00749`, upper `+0.01790` |
+| visual beats random | pass |
+
+The correct terminal status is therefore
+`STOP_TASK_COUPLED_RECURRENT_DYNAMICS_H1`. It is not an unrealistic-threshold
+failure: the decisive matched intervention has the wrong point direction, and
+the no-vision arm is both better in regret and significantly better than the
+task/action control. The task-relative gain belongs to the recurrent direct
+odometry/action package, not to DINO context. That no-vision package is a useful
+conventional baseline, but its comparison with the analytic ridge is not a
+pure recurrence ablation and does not establish a visual world model, memory,
+or closed-loop planner.
+
+The supported visual claim is narrow but now consistent across the static
+physical screen, grounded joint-JEPA experiment, and conventional recurrent
+comparator: under this 128-state/16-scene training recipe, frozen DINO visual
+context has not demonstrated incremental scene-generalizing H1 value beyond
+physical/action controls. This does not falsify DINO, V-JEPA, JEPA, visual
+navigation, or the thesis in general. It stops architecture, seed, loss,
+pooling, PCA-width, and update tuning on this exposed role.
+
+Current property status is:
+
+| property | terminal status |
+|---|---|
+| WM-A: scene-disjoint untaken-action utility | physical/action package has H1 signal; incremental visual value failed |
+| WM-C: output re-entry / multi-step rollout | untested and explicitly ineligible |
+| WM-S: shared spatial/physical substrate | visual train structure learned but reversed on evaluation |
+| WM-D: deployed causal presence | absent |
+
+### Critical path after this stop
+
+Do not retry this role, add seeds or updates, reweight the rank loss, change PCA
+or pooling width, add a head, swap encoders, relax gates, inspect successors,
+or begin blind rollout/planner integration. More evaluation samples alone
+would mainly estimate the current wrong-direction visual intervention more
+precisely.
+
+If work continues, the smallest information-changing successor is a
+preregistered scene-diversity data intervention: generate additional
+independent matched-counterfactual training scenes with all nine branches per
+identical state, reserve a fresh scene-disjoint development evaluation role,
+and rerun this exact frozen three-arm protocol once. Increase independent scene
+diversity rather than states from the same 16 scenes. The existing 3 TB
+on-policy pool can support label-free appearance/temporal pretraining, but it
+cannot create the within-state untaken-action contrast needed for this causal
+H1 test.
+
+### Durable artifacts
+
+- Preregistration:
+  `docs/lewm_go2_task_coupled_recurrent_dynamics_v1_preregistration_2026-08-04.md`,
+  10,773 bytes, SHA-256
+  `de570b14223cd67c14c704152488e3dba96465c318a8911d5a9ccc06a4f6f178`.
+- Independent source review:
+  `docs/lewm_go2_task_coupled_recurrent_dynamics_v1_source_review_2026-08-04.json`,
+  7,450 bytes, SHA-256
+  `55250fd7b41150d4112431ac360900d2a3348b8b04c91617bfc62c4dcd397e16`.
+- Execution authority:
+  `docs/lewm_go2_task_coupled_recurrent_dynamics_v1_execution_authority_2026-08-04.json`,
+  12,942 bytes, SHA-256
+  `71608c57411b786b140f0d9293c1079abe46db91aba35c6493c2d5fa9514f439`.
+- Checkpoint: 167,423 bytes, SHA-256
+  `894757c861770e76a3bbe77ddc8ddab415ad5c518a9d9c20f298fe32cf76cf57`;
+  semantic identity
+  `d492c1a0b72da6d6d4f952417fdca89a96f37b096e7f79b2c4e9da94eeca46a2`.
+- Result: 1,867,806 bytes, SHA-256
+  `2bbccef41a10bb76db44c51f3072ce87bd11b5c4bcf4b5632bc8a3ec11d4c262`;
+  internal identity
+  `c5a61e0e3571c5224b41197614472b55595eb5a4af1211a4cd30f951d70ac56b`.
+- Terminal: 549 bytes, SHA-256
+  `9653fc45dbb8f802724ba848664ef18ebdbca0ec5336b921ec08dd8f62cb821c`.
+- Independent terminal review:
+  `docs/lewm_go2_task_coupled_recurrent_dynamics_v1_terminal_review_2026-08-04.json`,
+  11,192 bytes, SHA-256
+  `0e4a1c1fcccc712c396509c4193a31064238b9d0066e3d46bcd7ffd15468c48c`.
+
+All artifacts are development-only and uncommitted. No sealed or held-out role
+was opened, no successor observation was opened, and no navigation, safety,
+promotion, deployment, retry, resume, or blind-rollout authority follows.
+
+## 13. CPU-flat 64-scene scene-diversity result and complete-tie diagnostic (2026-08-05)
+
+### What actually ran
+
+The next registered intervention was the data change identified in section 12:
+increase independent matched-counterfactual scene diversity while leaving the
+recurrent-DINO mechanism, two learned arms, live task/action control, model
+seeds, 800-update schedule, bootstrap, scorer, and five gates unchanged.
+
+After the ROCm route failed its backend qualifications, the separately reviewed
+CPU-flat V3 qualification passed on the exact Genesis `0.3.14` CPU-physics and
+R9700 Vulkan/EGL render path. The scientific attempt then completed:
+
+- 64 fresh scenes, 32 train and 32 evaluation;
+- 256 states and 2,304 matched nine-action successor branches;
+- 768 context frames and 2,304 target frames;
+- exact common-history lane equality and one fresh process per scene;
+- 120,372,020 stored RGB bytes;
+- 771.974 seconds for collection and 786.152 seconds to terminal failure;
+- selected-device peak 3,592,015,872 bytes, 1,036,017,664 bytes above the
+  pre-run baseline; and
+- a complete durable checkpoint containing all six members at 800 updates.
+
+The checkpoint is 167,423 bytes, SHA-256
+`6c16f97ae5748e1d230244b4588f3efc11330a2673bd15e2ff83aa2f2392844e`,
+with semantic identity
+`99bc60685ce26291cd25387e5914c202d7797b8e0e32ef7bd5eeace4cdf2d0a9`.
+
+### Why the registered attempt emitted no scientific decision
+
+The registered attempt stopped while constructing the evaluation role, after
+the checkpoint boundary but before opening evaluation render receipts or RGB.
+Exactly four of 256 states had no strict physical rank pair. They were all four
+states of evaluation scene `medium_enclosed_maze_2216888a451f`, groups
+176--179. Every action in each state was valid and safe, but the robot moved by
+only millimetres; all progress/path outcomes therefore fell into one frozen
+one-centimetre rank bucket and produced ranks `[0,0,0,0,0,0,0,0,0]`.
+
+This was not collection corruption, action-grid corruption, or a renderer
+failure. All 256 state receipts and the checkpoint rehashed correctly. It was a
+missed scorer-domain precondition: the frozen role-plan builder intentionally
+requires `max(rank) > 0`, while the expanded corpus contained one physically
+pinned evaluation scene. The attempt correctly failed closed as
+`FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION`. It has no result and cannot be
+retrofitted into a registered pass or stop decision.
+
+The rank-domain miss is narrow but not evidence-free. Of 256 states, 252 have
+at least two dense classes and 221 have at least seven. The full class-count
+histogram is `{1:4, 2:6, 3:4, 4:3, 5:6, 6:12, 7:38, 8:94, 9:89}`. Complete
+ties are isolated to one scene, although weak action differentiation is
+concentrated in a small subset of medium-maze scenes.
+
+### Separately registered post-hoc diagnostic
+
+A new, explicitly non-confirmatory evaluation-only diagnostic was frozen
+before any model score was observed. It reused the exact immutable collection
+and checkpoint, retained all 128 evaluation states, and made one general domain
+completion:
+
+- normalized regret uses denominator `max(1,max_dense_rank)`;
+- every action in a complete tie is oracle-equivalent;
+- selected and random expected regret are both zero for a complete tie; and
+- the one-centimetre tolerance, state/scene panel, model, thresholds, seeds,
+  controls, and bootstrap remain unchanged.
+
+It performed no Genesis work, rendering, recollection, training, checkpoint
+change, scene filtering, or successor-observation access. It reopened train
+metadata only to reconstruct the unchanged live task/action control, opened
+exactly 384 evaluation context PNGs for CPU DINO, opened zero train context or
+successor PNGs, and evaluated the checkpoint twice with byte-exact equality.
+The run completed in 7.261 seconds. The output remains post-hoc,
+development-only, and ineligible to replace the missing registered V3 result.
+
+### Diagnostic scene-disjoint result
+
+| arm | normalized rank regret | oracle-equivalent selection | target progress (m) | standardized physical MSE |
+|---|---:|---:|---:|---:|
+| visual recurrent direct | `0.27193` | `0.34375` | `0.04188` | `0.79917` |
+| no-vision recurrent direct | `0.30258` | `0.31250` | `0.04069` | `0.77452` |
+| task/action only | `0.30848` | `0.30469` | `0.03818` | not applicable |
+| privileged physical oracle | `0.00000` | `1.00000` | `0.05500` | not applicable |
+| random expectation | `0.47652` | `0.16667` | not applicable | not applicable |
+
+The fixed paired comparisons were:
+
+| comparison (candidate minus baseline) | point delta | 95% interval | diagnostic gate |
+|---|---:|---:|---|
+| visual minus task/action | `-0.03655` | `[-0.08920,+0.01334]` | fail: uncertainty crosses zero |
+| visual minus no vision | `-0.03065` | `[-0.05831,-0.00470]` | pass |
+| no vision minus task/action | `-0.00591` | `[-0.06404,+0.04684]` | not significant |
+
+Visual beat no vision in two of three seed-matched members; the third was
+slightly worse. At ensemble level the advantage was scene-bootstrap
+significant. By family, visual minus no vision was favorable in large maze,
+local composites, loop aliasing, medium maze, and small maze; unfavorable in
+open fields and rough dynamics; and exactly tied in visual-sensor stress.
+
+The complete-tie convention does not explain the conclusion. Removing the four
+zero-regret rows as a sensitivity calculation multiplies state means by only
+`128/124 = 1.03226`: visual regret becomes `0.28070`, visual minus no vision
+becomes `-0.03163`, and visual minus task/action becomes `-0.03773`. Thus the
+absolute failure strengthens while both relative point advantages strengthen
+slightly.
+
+### Fixed diagnostic gates and first-principles conclusion
+
+| gate | result |
+|---|---|
+| integrity, role disjointness, context-only custody, exact repeat, oracle | pass |
+| visual regret `<= 0.13` | fail: `0.27193` |
+| visual beats task by `>= 0.02`, upper interval `< 0` | fail: point passes, upper `+0.01334` |
+| visual beats no vision by `>= 0.01`, upper interval `< 0` | pass: `-0.03065`, upper `-0.00470` |
+| visual beats random | pass |
+
+The diagnostic terminal is therefore
+`STOP_SCENE_DIVERSITY_RECURRENT_REPLICATION_H1`: three gates pass and two fail.
+No threshold adjustment can turn this into planning evidence. Visual regret is
+more than twice the absolute ceiling, visual has worse physical-prediction MSE
+than no vision, and its advantage over the live task/action control is not
+statistically secure.
+
+There is nevertheless one meaningful, bounded update. Increasing independent
+scene diversity reversed the prior matched visual intervention: section 12 had
+visual minus no vision `+0.00749` with a confidence interval crossing zero;
+this expanded role has `-0.03065` with its entire interval below zero. The
+visual context now contributes scene-generalizing action-ranking information
+beyond the recurrent odometry/action package. That supports the data-diversity
+hypothesis, but not the stronger claim that the representation is an accurate,
+rollout-capable, or planning-useful world model.
+
+Do not tune this exposed role with more seeds, updates, PCA widths, pooling,
+loss weights, thresholds, scene deletion, or another complete-tie convention.
+Further work should treat the recurrent DINO package as a frozen baseline. The
+next mechanism-changing experiment should be preregistered on a fresh role and
+use the already recommended dense spatial-token, action-conditioned JEPA
+successor, with frozen V-JEPA 2.1 and DINOv2 comparators and the complete-tie
+rule declared before collection. Planner integration and multi-step rollout
+remain premature until that successor demonstrates both matched visual value
+and materially lower absolute physical regret.
+
+### Durable artifacts
+
+- Registered V3 scientific plan: 359,692 bytes, SHA-256
+  `0ad79cc46cead469d6532cd0be04c5d7623fffe18ddafc737c32855d6c9a8f29`.
+- Registered collection result: 369,067 bytes, SHA-256
+  `711b8722c11dbae663ad1b004268b77c64ff3d2e818f2c895851c547240e3ed0`.
+- Registered checkpoint: 167,423 bytes, SHA-256
+  `6c16f97ae5748e1d230244b4588f3efc11330a2673bd15e2ff83aa2f2392844e`.
+- Registered failure terminal: 1,273 bytes, SHA-256
+  `a4da81177d77372923b72775f69cfe58b596a651017ef6ebc5988df05d390327`.
+- Independent registered-attempt terminal review: 17,379 bytes, SHA-256
+  `7218c78387871e82280f96fe746acb047f46d1a2836b7638b12ce9c1514a81dd`.
+- Diagnostic preregistration: 6,460 bytes, SHA-256
+  `7ebb4c7867a9e27d77419aeabdf3fab2826897fb7f7772ffcb7247bedb778c45`.
+- Diagnostic exact plan: 9,429 bytes, SHA-256
+  `6563deddc4532368a0ea158437c01bb0e49ac3874eae77643cfefa088cc3f918`.
+- Independent diagnostic source review: 10,085 bytes, SHA-256
+  `f37aed07d20fc2e8c7a5ee544a404d00a8775e9bba43920ba1836b614f006f98`.
+- Diagnostic result: 2,011,667 bytes, SHA-256
+  `dbc07475cd89c788ec3257739945aa11793a80cf40d830779dba6463233815b7`.
+- Diagnostic terminal: 747 bytes, SHA-256
+  `ea3b84fea6a4ad3524475cb3b4d60729f08c47669656e32a0398ce0393778803`.
+- Independent diagnostic terminal review: 17,401 bytes, SHA-256
+  `d99cf241a911ae22d6c4525420601b8b6e46837fea0073b8dc3ce37a49050e8a`.
+
+All artifacts remain development-only and uncommitted. No sealed, held-out,
+production, or successor observation was opened. Neither the registered
+failure nor the post-hoc diagnostic authorizes retry, resume, promotion,
+deployment, planner integration, or a navigation/world-model claim.
+
+## 14. Observability ceiling and metric validity (2026-08-05)
+
+Two development-tier studies ran against the immutable CPU-flat V3 collection.
+Neither promotes anything, and both are development-only.
+
+### 14.1 Metric validity: `VALID_PROXY`
+
+The endpoint used by the §11 and §13 gates was checked for the first time and
+**passed**. Normalized rank regret is a valid proxy for closed-loop planning
+utility on this stack, established through a two-link chain:
+
+| link | Spearman | 95% interval | requirement |
+|---|---:|---|---|
+| geometric first-action regret vs closed-loop progress | `-0.96364` | `[-1.00000, -0.69811]` | `<= -0.7`, upper `< -0.3` |
+| normalized rank regret vs geometric regret, same-state | `+0.98333` | `[+0.81651, +1.00000]` | `>= 0.7`, lower `> 0.3` |
+
+The two one-step metrics rank all nine arms identically on the matched panel and
+disagree about the optimum on only `14/128` states. The DINO anomaly that
+motivated the check — regret-gate-failing while matching the geometric oracle's
+14/24 closed-loop successes — is **not** evidence of metric invalidity; it was a
+near-threshold miss on a policy-level comparison over diverged states, exactly as
+that result's own caveat anticipated.
+
+**Consequence: the endpoint choice in §11 and §13 was correct and needs no
+change.** Record: `docs/lewm_go2_rank_regret_metric_validity_v1_result_2026-08-05.md`.
+
+### 14.2 Observability ceiling: `FAIL_ASSAY_CAPACITY_CONTROL`, no Outcome
+
+The assay failed closed on its own validity control and **claims no Outcome**;
+the `0.13` gate is neither vindicated nor overturned, and the dense
+action-conditioned JEPA successor is neither justified nor blocked by it. Of the
+two amendment-1 controls, expressivity passed (`0.0`) and identifiability failed
+(`0.14054` against `<= 0.05`). The 2a failure is ambiguous between an
+unidentifiable target and an under-powered learned control; the repair is a
+closed-form identifiability check, which is a materially different control and
+requires its own preregistration.
+
+Four observations stand independent of the failed control:
+
+1. **The readout family can fit the ranking perfectly in-sample** — train regret
+   `0.17540 → 0.02058 → 0.00000` across 245, 6,561 and 99,969 parameters.
+   Expressivity is not the bottleneck, and the frozen 245-parameter interface of
+   the earlier V-JEPA ceiling was genuinely capacity-limited.
+2. **It does not transfer across scenes at any capacity tested.** Evaluation
+   regret for `dinov2_true_successor` moves within noise
+   (`0.28748 / 0.30884 / 0.29740`) across a 400-fold parameter range while train
+   regret reaches exactly zero. With actual successors supplied, this is a pure
+   cross-scene generalization gap — neither expressivity nor prediction error.
+3. **Privileged actual-successor vision loses to a non-visual control** on this
+   panel: `dinov2_true_successor` `0.30884` and `vjepa2_1_true_successor`
+   `0.35243` against `task_action_only` `0.30036`.
+4. **Relative gates of `0.02` need an order of magnitude more scenes than any
+   panel used so far.** Measured CI half-widths of `0.04968`–`0.08954` imply
+   `197`–`641` scene clusters to resolve a `0.02` effect. Panels used to date
+   have had 16 or 32.
+
+A fifth observation is a concrete design input for any successor collection.
+Regret conditioned on within-state branch displacement spread runs `0.36350`,
+`0.38936`, `0.26153`, `0.22098` across quartiles for `dinov2_true_successor`. The
+action grid is therefore a real limiter — the best-separated quartile is far
+better than the worst — but it is **not sufficient**: even there regret is
+`0.22098`, still well above `0.13`, and the visual arm no longer beats
+`context_only` in that quartile. Widening branch separation would move the number
+without reaching the threshold.
+
+Observations 4 and 5 are actionable immediately and do not depend on the failed
+control. It confirms by direct variance estimate that the `>= 0.02` relative
+gates in §11 and §13 were **unreachable at the sample sizes used, independent of
+the true effect**: with a CI half-width `h`, a gate of the form *point `<= -d`
+and upper `< 0`* can only fire when the point estimate is at most `-h`, so the
+binding constraint was `h` (`0.0305` in §11, `0.0513` in §13), not the registered
+`d = 0.02`. Failing an unreachable gate is not evidence of no effect. This does
+**not** reinstate either mechanism — both also failed the absolute gate by a wide
+margin — but the visual-versus-task comparison has never been tested at adequate
+power, and no future preregistration on this family should fix a relative gate
+without first citing a required scene count.
+
+Record: `docs/lewm_go2_observability_ceiling_assay_v1_result_2026-08-05.md`.
+
+### 14.3 Custody spent
+
+The assay opened the V3 **evaluation successor RGB** for the first time — 1,152
+frames, plus all 1,536 train frames. The declared one-way cost has been paid and
+the V3 panel is **spent for privileged-successor purposes**. Access ledger exact:
+`train_context` 384, `train_successor` 1,152, `eval_context` 384,
+`eval_successor` 1,152. No untouched, sealed, held-out, or V4 material was
+opened.
+
+### 14.4 Process record
+
+`attempt_v1` failed closed as `FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION` on a
+missing `einops` dependency for the V-JEPA hub entrypoint, and was replaced by a
+science-identical `attempt_v2` under a registered integrity replacement.
+Amendment 1 replaced the original capacity control after it was found to test a
+degenerate code path: broadcasting an identical feature across all 256 patch
+slots makes `pooled_value = W_v r` exactly, so attention cancels and the readout
+collapses to a bilinear function with the tanh inert. The empirical signature was
+a 27-fold parameter increase moving the control by `0.00075`. No threshold,
+Outcome condition, or ordering was changed by the amendment, and an
+`EPOCHS = 2` infrastructure smoke observation of the primary arm was disclosed in
+it.

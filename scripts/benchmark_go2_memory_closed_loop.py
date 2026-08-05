@@ -25,6 +25,7 @@ Run in the vulkan venv:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -58,6 +59,12 @@ from lewm.models.go2_jepa import (  # noqa: E402
     Go2FrontBlockedHead,
     Go2PrimitiveOutcomeHead,
     load_go2_jepa_encoder,
+)
+from lewm.benchmarks.go2_physical_claim_trace import (  # noqa: E402
+    build_claim_attempt,
+    build_claim_trace,
+    canonical_task_object_ids,
+    object_id_reference,
 )
 from lewm_genesis.lewm_contract import (  # noqa: E402
     PrimitiveRegistry,
@@ -216,7 +223,7 @@ def _load_slice_start(
         raise SystemExit(f"{path} has no pose row at or after slice start tick {start_tick}")
     start_row = rows[0]
     preclaims: list[dict[str, Any]] = []
-    for claim in result.get("beacon_claims", []):
+    for claim in result.get("controller_beacon_claims", result.get("beacon_claims", [])):
         if not isinstance(claim, dict):
             continue
         color = str(claim.get("target_color", "")).lower()
@@ -234,7 +241,10 @@ def _load_slice_start(
         "preclaims": preclaims,
         "preload_log": log,
         "source_target_xy": result.get("target_xy"),
-        "source_claimed_colors": result.get("claimed_colors", []),
+        "source_controller_claimed_colors": result.get(
+            "controller_claimed_colors",
+            result.get("claimed_colors", []),
+        ),
     }
 
 
@@ -453,6 +463,9 @@ def _write_slice_snapshot(
     target_index: int,
     target_active_since_tick: int,
     beacon_claims: list[dict[str, Any]],
+    controller_claim_attempts: list[dict[str, Any]],
+    runtime_trace_id: str,
+    runtime_episode_id: str,
     first_seen_ticks: dict[str, int],
     last_seen_ticks: dict[str, int],
     last_primitive: str,
@@ -477,6 +490,11 @@ def _write_slice_snapshot(
             "target_index": int(target_index),
             "target_active_since_tick": int(target_active_since_tick),
             "beacon_claims": [dict(item) for item in beacon_claims],
+            "controller_claim_attempts": [
+                dict(item) for item in controller_claim_attempts
+            ],
+            "runtime_trace_id": str(runtime_trace_id),
+            "runtime_episode_id": str(runtime_episode_id),
             "first_seen_ticks": {str(k): int(v) for k, v in first_seen_ticks.items()},
             "last_seen_ticks": {str(k): int(v) for k, v in last_seen_ticks.items()},
             "last_primitive": str(last_primitive),
@@ -9709,6 +9727,7 @@ def main() -> int:
     print(f"scene={scene_dir.name} target={args.target_color}", flush=True)
 
     pack = load_scene_pack(scene_dir, platform_manifest=platform, workspace_root=REPO_ROOT)
+    scene_manifest = pack.scene_graph.manifest
     build = build_scene_from_pack(pack, n_envs=1, backend=str(args.backend),
                                   show_viewer=False, render_robot=bool(args.render_robot),
                                   apply_textures=bool(args.apply_textures))
@@ -9917,6 +9936,36 @@ def main() -> int:
         target_sequence = [c for c in ("red", "green", "blue", "yellow") if c in landmarks]
     if not target_sequence:
         raise SystemExit("no target colors requested")
+    task_object_id_by_color: dict[str, str] = {}
+    for color in target_sequence:
+        matches = [
+            landmark.object_id
+            for landmark in scene_manifest.landmarks
+            if landmark.material_id.casefold() == f"landmark_{color}".casefold()
+        ]
+        if len(matches) != 1:
+            raise SystemExit(
+                f"target color {color!r} must resolve to exactly one manifest landmark"
+            )
+        task_object_id_by_color[color] = matches[0]
+    runtime_task_object_ids = canonical_task_object_ids(
+        scene_manifest,
+        tuple(task_object_id_by_color[color] for color in target_sequence),
+    )
+    runtime_trace_seed = json.dumps(
+        {
+            "domain": "lewm-go2-runtime-claim-trace-v1",
+            "argv": list(sys.argv),
+            "scene_id": scene_manifest.scene_id,
+            "seed": int(args.seed),
+            "task_object_ids": list(runtime_task_object_ids),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    runtime_trace_id = "runtime:" + hashlib.sha256(runtime_trace_seed).hexdigest()
+    runtime_episode_id = runtime_trace_id + ":episode"
+    controller_claim_attempts: list[dict[str, Any]] = []
     slice_start: dict[str, Any] | None = None
     slice_preclaimed_colors = {
         item.strip().lower()
@@ -10839,6 +10888,21 @@ def main() -> int:
                 last_seen_ticks[color] = max(int(last_seen_ticks.get(color, claim_tick)), claim_tick)
     if slice_snapshot is not None:
         beacon_claims = [dict(item) for item in slice_snapshot.get("beacon_claims", [])]
+        saved_claim_attempts = slice_snapshot.get("controller_claim_attempts", [])
+        if saved_claim_attempts:
+            if not isinstance(saved_claim_attempts, list) or any(
+                not isinstance(item, dict) for item in saved_claim_attempts
+            ):
+                raise SystemExit("slice snapshot canonical claim attempts are malformed")
+            saved_trace_id = str(slice_snapshot.get("runtime_trace_id", ""))
+            saved_episode_id = str(slice_snapshot.get("runtime_episode_id", ""))
+            if not saved_trace_id or not saved_episode_id:
+                raise SystemExit("slice snapshot claim attempts lack trace identity")
+            runtime_trace_id = saved_trace_id
+            runtime_episode_id = saved_episode_id
+            controller_claim_attempts = [
+                dict(item) for item in saved_claim_attempts
+            ]
         first_seen_ticks = {
             str(k): int(v) for k, v in slice_snapshot.get("first_seen_ticks", {}).items()
         }
@@ -13513,6 +13577,32 @@ def main() -> int:
                         "target_index": int(claim_target_index),
                         "claim_gate": claim_gate_log,
                     }
+                    claim_target_object_id = task_object_id_by_color[claim_target_color]
+                    claim_event_id = (
+                        runtime_trace_id
+                        + ":event:"
+                        + str(len(controller_claim_attempts))
+                    )
+                    claim_reference = object_id_reference(claim_target_object_id)
+                    controller_claim_attempts.append(
+                        build_claim_attempt(
+                            manifest=scene_manifest,
+                            trace_id=runtime_trace_id,
+                            episode_id=runtime_episode_id,
+                            event_id=claim_event_id,
+                            tick=int(tick),
+                            event_index=len(controller_claim_attempts),
+                            requested_target=claim_reference,
+                            claimed_target=claim_reference,
+                            robot_pose_world_xy_yaw=(
+                                float(pos[0]),
+                                float(pos[1]),
+                                float(yaw),
+                            ),
+                            pose_provenance="runtime_full_precision",
+                        )
+                    )
+                    claim_entry["event_id"] = claim_event_id
                     if opportunistic_claim_info is not None:
                         claim_entry["opportunistic_claim"] = dict(opportunistic_claim_info)
                     if claim_read_score is not None:
@@ -13625,6 +13715,9 @@ def main() -> int:
                             target_index=int(target_index),
                             target_active_since_tick=int(target_active_since_tick),
                             beacon_claims=beacon_claims,
+                            controller_claim_attempts=controller_claim_attempts,
+                            runtime_trace_id=runtime_trace_id,
+                            runtime_episode_id=runtime_episode_id,
                             first_seen_ticks=first_seen_ticks,
                             last_seen_ticks=last_seen_ticks,
                             last_primitive=last_primitive,
@@ -18324,6 +18417,9 @@ def main() -> int:
                 target_index=int(target_index),
                 target_active_since_tick=int(target_active_since_tick),
                 beacon_claims=beacon_claims,
+                controller_claim_attempts=controller_claim_attempts,
+                runtime_trace_id=runtime_trace_id,
+                runtime_episode_id=runtime_episode_id,
                 first_seen_ticks=first_seen_ticks,
                 last_seen_ticks=last_seen_ticks,
                 last_primitive=last_primitive,
@@ -18347,8 +18443,10 @@ def main() -> int:
         if final_target_color in landmarks
         else None
     )
-    claimed_colors = [str(item.get("target_color")) for item in beacon_claims]
-    all_target_colors_claimed = all(color in claimed_colors for color in target_sequence)
+    controller_claimed_colors = [str(item.get("target_color")) for item in beacon_claims]
+    controller_all_target_colors_claimed = all(
+        color in controller_claimed_colors for color in target_sequence
+    )
     claim_distances = {
         str(item.get("target_color")): item.get("dist_to_target_m")
         for item in beacon_claims
@@ -18373,25 +18471,39 @@ def main() -> int:
         args.allow_body_clearance_violation_success
         or int(wall_metrics["body_clearance_violation_events"]) == 0
     )
-    if len(target_sequence) > 1:
-        success = bool(
-            claimed
-            and all_target_colors_claimed
-            and stable_base_success
-            and body_clearance_success
-            and (
-                not bool(args.multi_target_success_requires_claim_distance)
-                or multi_target_claim_distance_success
-            )
-        )
-    else:
-        success = bool(
-            claimed
-            and stable_base_success
-            and body_clearance_success
-            and dist is not None
-            and dist <= float(args.success_dist_m)
-        )
+    raw_physical_claim_trace, bound_task_ids, bound_task_hash = build_claim_trace(
+        manifest=scene_manifest,
+        trace_id=runtime_trace_id,
+        episode_id=runtime_episode_id,
+        controller_claim_attempts=controller_claim_attempts,
+        task_object_ids=runtime_task_object_ids,
+    )
+    # Observer-only import after controller execution. No evaluator output can
+    # alter controller state, scheduling, or termination above this point.
+    from lewm.benchmarks.go2_physical_claim_observer import (  # noqa: E402
+        empty_evaluator_access_ledger,
+        evaluate_runtime_claim_trace,
+    )
+
+    canonical_physical_claim_trace = evaluate_runtime_claim_trace(
+        raw_physical_claim_trace,
+        scene_manifest,
+        bound_task_ids,
+        bound_task_hash,
+    )
+    physical_summary = canonical_physical_claim_trace["physical_claim_summary"]
+    physically_verified_ids = set(physical_summary["credited_object_ids"])
+    claimed_colors = sorted(
+        color
+        for color, object_id in task_object_id_by_color.items()
+        if object_id in physically_verified_ids
+    )
+    all_target_colors_claimed = bool(physical_summary["all_targets_claimed"])
+    success = bool(
+        all_target_colors_claimed
+        and stable_base_success
+        and body_clearance_success
+    )
     if wall_metrics["forward_executions"]:
         wall_metrics["mean_forward_execution_displacement_m"] = (
             wall_metrics["forward_execution_displacement_sum_m"] / wall_metrics["forward_executions"]
@@ -18508,11 +18620,17 @@ def main() -> int:
         "demo_capture_rate": str(args.demo_capture_rate),
         "target_color": target_sequence[0] if len(target_sequence) == 1 else "all",
         "target_colors": target_sequence,
-        "ticks_used": len(log), "claimed": claimed,
+        "ticks_used": len(log), "claimed": all_target_colors_claimed,
         "claimed_colors": claimed_colors,
+        "controller_claimed": bool(claimed),
+        "controller_claimed_colors": controller_claimed_colors,
+        "controller_all_target_colors_claimed": controller_all_target_colors_claimed,
         "first_seen_tick": first_seen_ticks.get(target_sequence[0]),
         "first_seen_ticks": first_seen_ticks,
-        "beacon_claims": beacon_claims,
+        "controller_beacon_claims": beacon_claims,
+        "canonical_physical_claim_trace": canonical_physical_claim_trace,
+        "runtime_evaluator_access_ledger": empty_evaluator_access_ledger(),
+        "termination_basis": "controller_declared_or_fixed_budget",
         "final_xy": final_xy.tolist(),
         "target_xy": (
             landmarks.get(target_sequence[0], np.zeros(2)).tolist()
@@ -18521,7 +18639,14 @@ def main() -> int:
         ),
         "final_dist_to_target_m": dist,
         "claim_distances_m": claim_distances,
-        "success": success, "wall_metrics": wall_metrics,
+        "success": success,
+        "controller_success": bool(
+            claimed
+            and controller_all_target_colors_claimed
+            and stable_base_success
+            and body_clearance_success
+        ),
+        "wall_metrics": wall_metrics,
     }
     if args.learned_local_dataset_output is not None:
         args.learned_local_dataset_output.parent.mkdir(parents=True, exist_ok=True)

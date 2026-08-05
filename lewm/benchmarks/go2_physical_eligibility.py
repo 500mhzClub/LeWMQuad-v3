@@ -17,12 +17,21 @@ import hashlib
 import json
 import math
 from collections import Counter, deque
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 import numpy as np
 
+from lewm.benchmarks.go2_physical_claim_evaluator import (
+    CLAIM_ABSOLUTE_BEARING_RAD,
+    evaluate_physical_claim_trace,
+)
+from lewm.benchmarks.go2_physical_claim_trace import (
+    build_claim_attempt,
+    build_claim_trace,
+    object_id_reference,
+)
 from lewm.planning.geometry_contract import GeometryContract
 from lewm.planning.oriented_footprint import (
     DirectionalSupportFootprint,
@@ -38,6 +47,7 @@ ELIGIBILITY_SCHEMA = "lewm_go2_physical_scene_eligibility_v1"
 REQUIRED_GEOMETRY_SCHEMA = "lewm_go2_generalization_geometry_v2"
 REQUIRED_PROFILE = "observed_max_plus_margin"
 REQUIRED_COLLISION_REPRESENTATION = "directional_polygon_at_actual_yaw"
+FOOTPRINT_SEMANTIC_SCHEMA = "lewm_go2_directional_footprint_semantics_v1"
 
 
 def _canonical_bytes(payload: Mapping[str, Any]) -> bytes:
@@ -46,19 +56,12 @@ def _canonical_bytes(payload: Mapping[str, Any]) -> bytes:
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=True,
+        allow_nan=False,
     ).encode("utf-8")
 
 
 def _payload_sha256(payload: Mapping[str, Any]) -> str:
     return hashlib.sha256(_canonical_bytes(payload)).hexdigest()
-
-
-def _file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _is_sha256(value: str) -> bool:
@@ -134,6 +137,8 @@ class LoadedDirectionalPolicy:
     policy_id: str
     profile_name: str
     footprint: DirectionalSupportFootprint
+    policy_content_canonical_bytes: bytes
+    footprint_semantic_sha256: str
 
     def provenance_dict(self, *, repository_root: Path | None = None) -> dict[str, Any]:
         path = self.source_path
@@ -150,9 +155,110 @@ class LoadedDirectionalPolicy:
             "content_sha256": self.content_sha256,
             "policy_id": self.policy_id,
             "profile": self.profile_name,
+            "footprint_semantic_sha256": self.footprint_semantic_sha256,
             "vertex_count": len(self.footprint.vertices_xy_m),
             "maximum_vertex_radius_m": self.footprint.maximum_vertex_radius_m,
         }
+
+
+def directional_footprint_semantic_sha256(
+    footprint: DirectionalSupportFootprint,
+) -> str:
+    """Commit exact ordered binary64 geometry and its reconstruction inputs."""
+
+    if type(footprint) is not DirectionalSupportFootprint:
+        raise ValueError("directional footprint has the wrong exact type")
+    if (
+        type(footprint.vertices_xy_m) is not tuple
+        or any(
+            type(vertex) is not tuple
+            or len(vertex) != 2
+            or any(type(value) is not float or not math.isfinite(value) for value in vertex)
+            for vertex in footprint.vertices_xy_m
+        )
+        or type(footprint.support_angles_deg) is not tuple
+        or any(
+            type(value) is not float or not math.isfinite(value)
+            for value in footprint.support_angles_deg
+        )
+        or type(footprint.support_values_m) is not tuple
+        or any(
+            type(value) is not float or not math.isfinite(value)
+            for value in footprint.support_values_m
+        )
+        or type(footprint.margin_m) is not float
+        or not math.isfinite(footprint.margin_m)
+    ):
+        raise ValueError("directional footprint fields are not exact finite tuples")
+    payload = {
+        "schema": FOOTPRINT_SEMANTIC_SCHEMA,
+        "vertices_xy_m_binary64_hex": [
+            [x_m.hex(), y_m.hex()] for x_m, y_m in footprint.vertices_xy_m
+        ],
+        "support_angles_deg_binary64_hex": [
+            value.hex() for value in footprint.support_angles_deg
+        ],
+        "support_values_m_binary64_hex": [
+            value.hex() for value in footprint.support_values_m
+        ],
+        "margin_m_binary64_hex": footprint.margin_m.hex(),
+    }
+    return _payload_sha256(payload)
+
+
+def validate_loaded_directional_policy_content(
+    policy: LoadedDirectionalPolicy,
+) -> str:
+    """Bind an in-memory footprint to the exact content verified in its one file read."""
+
+    if type(policy) is not LoadedDirectionalPolicy:
+        raise ValueError("loaded directional policy has the wrong exact type")
+    if (
+        not isinstance(policy.source_path, Path)
+        or type(policy.file_sha256) is not str
+        or type(policy.content_sha256) is not str
+        or type(policy.policy_id) is not str
+        or type(policy.profile_name) is not str
+        or type(policy.policy_content_canonical_bytes) is not bytes
+        or type(policy.footprint_semantic_sha256) is not str
+    ):
+        raise ValueError("loaded directional policy has invalid field types")
+    content_bytes = policy.policy_content_canonical_bytes
+    if hashlib.sha256(content_bytes).hexdigest() != policy.content_sha256:
+        raise ValueError("loaded directional policy content bytes do not match its hash")
+    try:
+        content = json.loads(content_bytes.decode("utf-8"))
+        canonical_content = _canonical_bytes(content)
+    except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise ValueError("loaded directional policy content bytes are not canonical JSON") from exc
+    if canonical_content != content_bytes or type(content) is not dict:
+        raise ValueError("loaded directional policy content bytes are not canonical JSON")
+    if (
+        content.get("schema") != POLICY_SCHEMA
+        or content.get("policy_id") != policy.policy_id
+        or content.get("recommended_profile") != policy.profile_name
+    ):
+        raise ValueError("loaded directional policy identity differs from bound content")
+    selection = content.get("selection_policy")
+    profiles = content.get("profiles")
+    if (
+        not isinstance(selection, Mapping)
+        or selection.get("planning_and_collision") != policy.profile_name
+        or not isinstance(profiles, Mapping)
+        or not isinstance(profiles.get(policy.profile_name), Mapping)
+    ):
+        raise ValueError("loaded directional policy profile differs from bound content")
+    expected_footprint = _footprint_from_profile(profiles[policy.profile_name])
+    expected_semantic_sha256 = directional_footprint_semantic_sha256(
+        expected_footprint
+    )
+    actual_semantic_sha256 = directional_footprint_semantic_sha256(policy.footprint)
+    if (
+        policy.footprint_semantic_sha256 != expected_semantic_sha256
+        or actual_semantic_sha256 != expected_semantic_sha256
+    ):
+        raise ValueError("loaded directional footprint differs from bound policy content")
+    return expected_semantic_sha256
 
 
 def _footprint_from_profile(profile: Mapping[str, Any]) -> DirectionalSupportFootprint:
@@ -205,7 +311,8 @@ def load_observed_max_directional_policy(
     """Load and cryptographically bind the observed-max collision polygon."""
 
     source_path = path.resolve()
-    payload = json.loads(source_path.read_text(encoding="utf-8"))
+    source_bytes = source_path.read_bytes()
+    payload = json.loads(source_bytes.decode("utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("directional footprint policy root must be an object")
     if payload.get("schema") != POLICY_SCHEMA:
@@ -213,7 +320,8 @@ def load_observed_max_directional_policy(
     declared_content = str(payload.get("content_sha256", ""))
     content = dict(payload)
     content.pop("content_sha256", None)
-    actual_content = _payload_sha256(content)
+    policy_content_canonical_bytes = _canonical_bytes(content)
+    actual_content = hashlib.sha256(policy_content_canonical_bytes).hexdigest()
     if not _is_sha256(declared_content) or declared_content != actual_content:
         raise ValueError("directional footprint content hash mismatch")
     if declared_content not in source_path.name:
@@ -239,14 +347,18 @@ def load_observed_max_directional_policy(
     ):
         raise ValueError(f"policy is missing profile {expected_profile!r}")
     footprint = _footprint_from_profile(profiles[expected_profile])
-    return LoadedDirectionalPolicy(
+    policy = LoadedDirectionalPolicy(
         source_path=source_path,
-        file_sha256=_file_sha256(source_path),
+        file_sha256=hashlib.sha256(source_bytes).hexdigest(),
         content_sha256=declared_content,
         policy_id=expected_policy_id,
         profile_name=expected_profile,
         footprint=footprint,
+        policy_content_canonical_bytes=policy_content_canonical_bytes,
+        footprint_semantic_sha256=directional_footprint_semantic_sha256(footprint),
     )
+    validate_loaded_directional_policy_content(policy)
+    return policy
 
 
 def policy_from_geometry_contract(
@@ -683,6 +795,10 @@ class ClaimAnchorWitness:
     anchor_has_line_of_sight: bool
     shortest_staged_action_count: int | None
     shortest_staged_action_counts: Mapping[str, int] | None
+    physical_claim_decision: str | None = None
+    physical_claim_credited: bool = False
+    physical_claim_unverifiable_reasons: tuple[str, ...] = ()
+    physical_claim_rejection_reasons: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -701,6 +817,7 @@ class PhysicalEligibilityReport:
     reachable_pose_state_count: int
     reachable_center_cell_count: int
     claim_anchors: tuple[ClaimAnchorWitness, ...]
+    canonical_physical_claim_trace: Mapping[str, Any]
     eligible: bool
     failure_reason: str
 
@@ -718,6 +835,9 @@ class PhysicalEligibilityReport:
             "reachable_pose_state_count": self.reachable_pose_state_count,
             "reachable_center_cell_count": self.reachable_center_cell_count,
             "claim_anchors": [anchor.to_dict() for anchor in self.claim_anchors],
+            "canonical_physical_claim_trace": dict(
+                self.canonical_physical_claim_trace
+            ),
             "eligible": self.eligible,
             "failure_reason": self.failure_reason,
         }
@@ -744,7 +864,11 @@ def _claim_anchor_witnesses(
             float(landmark.center_xyz_m[1]),
         )
         candidates: list[
-            tuple[tuple[float, float, int, int, int], tuple[int, int, int], float]
+            tuple[
+                tuple[float, float, float, int, int, int],
+                tuple[int, int, int],
+                float,
+            ]
         ] = []
         center_indices = np.argwhere(np.any(reachable, axis=0))
         for raw_x, raw_y in center_indices:
@@ -762,10 +886,24 @@ def _claim_anchor_witnesses(
             for raw_heading in np.flatnonzero(reachable[:, x, y]):
                 heading = int(raw_heading)
                 state = (heading, x, y)
+                pose = lattice.pose_for_state(state)
+                target_bearing = math.atan2(
+                    target_xy[1] - pose.y_m,
+                    target_xy[0] - pose.x_m,
+                )
+                bearing_error = abs(
+                    math.atan2(
+                        math.sin(target_bearing - pose.yaw_rad),
+                        math.cos(target_bearing - pose.yaw_rad),
+                    )
+                )
+                if bearing_error > CLAIM_ABSOLUTE_BEARING_RAD:
+                    continue
                 candidates.append(
                     (
                         (
                             abs(target_distance - config.preferred_standoff_m),
+                            bearing_error,
                             target_distance,
                             x,
                             y,
@@ -811,6 +949,87 @@ def _claim_anchor_witnesses(
     return tuple(reports)
 
 
+def evaluate_physical_claim_trace_eligibility_adapter(
+    trace: Mapping[str, Any],
+    physical_manifest: SceneManifest,
+    expected_task_object_ids: tuple[str, ...],
+    expected_task_object_set_sha256: str,
+) -> dict[str, Any]:
+    """Canonical evaluator boundary used by privileged eligibility auditing."""
+
+    return evaluate_physical_claim_trace(
+        trace,
+        physical_manifest,
+        expected_task_object_ids,
+        expected_task_object_set_sha256,
+    )
+
+
+def _evaluate_anchor_witnesses(
+    manifest: SceneManifest,
+    anchors: tuple[ClaimAnchorWitness, ...],
+) -> tuple[tuple[ClaimAnchorWitness, ...], dict[str, Any]]:
+    trace_id = f"eligibility:{manifest.scene_id}"
+    episode_id = f"eligibility:{manifest.scene_id}:episode"
+    attempts = []
+    for anchor in anchors:
+        if anchor.anchor_pose is None:
+            continue
+        reference = object_id_reference(anchor.object_id)
+        attempts.append(
+            build_claim_attempt(
+                manifest=manifest,
+                trace_id=trace_id,
+                episode_id=episode_id,
+                event_id=f"eligibility:{manifest.scene_id}:{anchor.object_id}",
+                tick=len(attempts),
+                event_index=len(attempts),
+                requested_target=reference,
+                claimed_target=reference,
+                robot_pose_world_xy_yaw=anchor.anchor_pose,
+                pose_provenance="eligibility_candidate_full_precision",
+            )
+        )
+    raw_trace, task_ids, task_hash = build_claim_trace(
+        manifest=manifest,
+        trace_id=trace_id,
+        episode_id=episode_id,
+        controller_claim_attempts=attempts,
+    )
+    evaluated = evaluate_physical_claim_trace_eligibility_adapter(
+        raw_trace,
+        manifest,
+        task_ids,
+        task_hash,
+    )
+    by_object = {
+        item.get("claimed_target_object_id"): item
+        for item in evaluated["physical_claim_evaluations"]
+        if item.get("claimed_target_object_id") is not None
+    }
+    bound = tuple(
+        replace(
+            anchor,
+            physical_claim_decision=(
+                None
+                if anchor.object_id not in by_object
+                else str(by_object[anchor.object_id]["decision"])
+            ),
+            physical_claim_credited=bool(
+                by_object.get(anchor.object_id, {}).get("credited", False)
+            ),
+            physical_claim_unverifiable_reasons=tuple(
+                by_object.get(anchor.object_id, {}).get("unverifiable_reasons", ())
+            ),
+            physical_claim_rejection_reasons=tuple(
+                by_object.get(anchor.object_id, {}).get("rejection_reasons", ())
+            ),
+        )
+        for anchor in anchors
+    )
+    return bound, evaluated
+
+
 def audit_physical_scene_eligibility(
     manifest: SceneManifest,
     *,
@@ -847,6 +1066,7 @@ def audit_physical_scene_eligibility(
         spawn,
         config=config,
     )
+    anchors, evaluated_claim_trace = _evaluate_anchor_witnesses(manifest, anchors)
     failures: list[str] = []
     if len(manifest.landmarks) != config.required_beacon_count:
         failures.append(
@@ -859,6 +1079,14 @@ def audit_physical_scene_eligibility(
     unreachable = [anchor.object_id for anchor in anchors if not anchor.reachable]
     if unreachable:
         failures.append("claim_anchors_unreachable:" + ",".join(unreachable))
+    physical_summary = evaluated_claim_trace["physical_claim_summary"]
+    if not bool(physical_summary["all_targets_claimed"]):
+        failed_claims = [
+            anchor.object_id
+            for anchor in anchors
+            if not anchor.physical_claim_credited
+        ]
+        failures.append("canonical_physical_claims_failed:" + ",".join(failed_claims))
     eligible = not failures
     return PhysicalEligibilityReport(
         scene_id=str(manifest.scene_id),
@@ -872,6 +1100,7 @@ def audit_physical_scene_eligibility(
         reachable_pose_state_count=int(np.count_nonzero(distances >= 0)),
         reachable_center_cell_count=int(np.count_nonzero(np.any(distances >= 0, axis=0))),
         claim_anchors=anchors,
+        canonical_physical_claim_trace=evaluated_claim_trace,
         eligible=eligible,
         failure_reason=";".join(failures),
     )
@@ -912,8 +1141,11 @@ __all__ = [
     "PhysicalEligibilityConfig",
     "PhysicalEligibilityReport",
     "audit_physical_scene_eligibility",
+    "directional_footprint_semantic_sha256",
+    "evaluate_physical_claim_trace_eligibility_adapter",
     "load_observed_max_directional_policy",
     "physical_config_from_geometry_contract",
     "policy_from_geometry_contract",
+    "validate_loaded_directional_policy_content",
     "yaw_from_wxyz",
 ]

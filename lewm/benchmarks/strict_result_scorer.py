@@ -23,11 +23,22 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from lewm.benchmarks.generalization_protocol import (
-    StrictClaimObservation,
+    LegacyDistanceLosClaimObservation,
     fixed_spawn_audit_config_from_geometry_contract,
+    legacy_distance_los_claim_diagnostic,
     reachable_area_normalized_coverage,
-    strict_ground_truth_claim,
     supercover_segment_cells,
+)
+from lewm.benchmarks.go2_physical_claim_evaluator import (
+    evaluate_physical_claim_trace,
+)
+from lewm.benchmarks.go2_physical_claim_canonical import (
+    canonical_content_sha256_valid,
+    canonical_json_equal,
+)
+from lewm.benchmarks.go2_physical_claim_trace import (
+    canonical_task_object_ids,
+    task_object_set_sha256,
 )
 from lewm.planning.geometry_contract import GeometryContract, load_geometry_contract
 from lewm_worlds.fixed_spawn_audit import FixedSpawnAuditReport, audit_fixed_spawn
@@ -41,7 +52,7 @@ from lewm_worlds.planning_grid import InflatedOccupancyGrid
 from lewm_worlds.scene_graph import SceneGraph
 
 
-_SCORE_SCHEMA = "lewm_navigation_strict_result_score_v0"
+_SCORE_SCHEMA = "lewm_navigation_strict_result_score_v1"
 _SEALED_SCHEMA = "lewm_navigation_sealed_test_manifest_v0"
 _COLLISION_LOG_KEYS = (
     "collision",
@@ -113,6 +124,9 @@ class StrictResultScore:
     trajectory_complete: bool
     trajectory: tuple[TickTrajectoryPoint, ...]
     proxy_claim_event_count: int
+    canonical_physical_claim_trace_present: bool
+    canonical_physical_claim_trace_verified: bool
+    physical_claim_summary: Mapping[str, Any] | None
     strict_claim_evaluation_complete: bool
     claim_verifications: tuple[ClaimEventVerification, ...]
     strict_accepted_claim_event_count: int
@@ -153,6 +167,85 @@ class _NormalizedPayload:
     limitations: tuple[str, ...]
 
 
+def recompute_canonical_physical_claim_trace(
+    stored_trace: Mapping[str, Any],
+    *,
+    scene_manifest: SceneManifest,
+    expected_task_object_ids: Sequence[str],
+    expected_task_object_set_sha256: str,
+) -> dict[str, Any]:
+    """Independently rebuild raw input and rerun the whole trace evaluator."""
+
+    if not isinstance(stored_trace, Mapping):
+        raise TypeError("canonical physical claim trace must be an object")
+    if stored_trace.get("schema") != "lewm_go2_evaluated_claim_trace_v1":
+        raise ValueError("canonical physical claim trace schema is invalid")
+    raw_trace = {
+        "schema": "lewm_go2_claim_trace_v1",
+        "trace_id": stored_trace.get("trace_id"),
+        "episode_id": stored_trace.get("episode_id"),
+        "scene_id": stored_trace.get("scene_id"),
+        "physical_manifest_sha256": stored_trace.get("physical_manifest_sha256"),
+        "task_object_ids": stored_trace.get("task_object_ids"),
+        "task_object_set_sha256": stored_trace.get("task_object_set_sha256"),
+        "controller_claim_attempts": stored_trace.get("controller_claim_attempts"),
+        "evaluator_feedback_to_controller": stored_trace.get(
+            "evaluator_feedback_to_controller"
+        ),
+    }
+    return evaluate_physical_claim_trace(
+        raw_trace,
+        scene_manifest,
+        expected_task_object_ids,
+        expected_task_object_set_sha256,
+    )
+
+
+def _canonical_claim_verification(
+    evaluation: Mapping[str, Any],
+    *,
+    event_index: int,
+) -> ClaimEventVerification:
+    pose = evaluation.get("robot_pose_world_xy_yaw")
+    pose_xy = (
+        (float(pose[0]), float(pose[1]))
+        if isinstance(pose, list) and len(pose) == 3
+        else None
+    )
+    decision = evaluation.get("decision")
+    strict_accepted = (
+        True if decision == "accepted" else False if decision == "rejected" else None
+    )
+    requested = evaluation.get("requested_target")
+    return ClaimEventVerification(
+        event_index=event_index,
+        tick=(
+            int(evaluation["tick"])
+            if isinstance(evaluation.get("tick"), int)
+            else None
+        ),
+        source="canonical_physical_claim_trace",
+        target_reference=(
+            json.dumps(requested, sort_keys=True, separators=(",", ":"))
+            if isinstance(requested, Mapping)
+            else None
+        ),
+        target_object_id=evaluation.get("claimed_target_object_id"),
+        pose_xy_m=pose_xy,
+        pose_source=evaluation.get("pose_provenance"),
+        proxy_distance_m=None,
+        true_distance_m=evaluation.get("distance_m"),
+        within_claim_radius=evaluation.get("factors", {}).get("distance_passes"),
+        line_of_sight=evaluation.get("factors", {}).get("line_of_sight_passes"),
+        strict_accepted=strict_accepted,
+        rejection_reasons=tuple(
+            evaluation.get("unverifiable_reasons", ())
+            if decision == "unverifiable"
+            else evaluation.get("rejection_reasons", ())
+        ),
+    )
+
+
 def score_result_payload(
     payload: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     *,
@@ -160,6 +253,8 @@ def score_result_payload(
     geometry_contract: GeometryContract,
     benchmark_manifest: Mapping[str, Any] | None = None,
     authorize_sealed_final_evaluation: bool = False,
+    expected_task_object_ids: Sequence[str] | None = None,
+    expected_task_object_set_sha256: str | None = None,
 ) -> StrictResultScore:
     """Score one result payload against exact scene and geometry inputs.
 
@@ -211,50 +306,135 @@ def score_result_payload(
             )
         )
 
-    claim_rows, claim_source, claim_discrepancies = _accepted_claim_events(
-        result,
-        normalized.log,
+    bound_task_ids = canonical_task_object_ids(
+        scene_manifest,
+        expected_task_object_ids,
     )
-    discrepancies.extend(claim_discrepancies)
-    scene_graph = SceneGraph(scene_manifest)
+    bound_task_hash = (
+        task_object_set_sha256(scene_manifest, bound_task_ids)
+        if expected_task_object_set_sha256 is None
+        else expected_task_object_set_sha256
+    )
     alias_map = _landmark_alias_map(scene_manifest)
+    stored_claim_trace = result.get("canonical_physical_claim_trace")
+    canonical_trace_present = isinstance(stored_claim_trace, Mapping)
+    access_ledger = result.get("runtime_evaluator_access_ledger")
+    access_ledger_valid = canonical_json_equal(
+        access_ledger,
+        {
+            "evaluator_output_reads_by_controller": 0,
+            "evaluator_callbacks_into_controller": 0,
+            "evaluator_derived_termination_signals": 0,
+        },
+    )
+    canonical_trace_verified = False
+    physical_claim_summary: Mapping[str, Any] | None = None
     verifications: list[ClaimEventVerification] = []
     strict_first_tick: dict[str, int | None] = {}
-    for index, event in enumerate(claim_rows):
-        verification, event_discrepancies, event_limitations = _verify_claim_event(
-            event,
-            event_index=index,
-            source=claim_source,
-            result=result,
-            trajectory_by_tick=by_tick,
-            scene_manifest=scene_manifest,
-            scene_graph=scene_graph,
-            alias_map=alias_map,
-            claim_radius_m=geometry_contract.visibility_and_claim.claim_radius_m,
-            distractors_occlude=bool(
-                geometry_contract.configuration_space.distractors_are_obstacles
-            ),
+    claim_rows: Sequence[Mapping[str, Any]]
+    if canonical_trace_present:
+        stored_events = stored_claim_trace.get("physical_claim_evaluations")
+        stored_hashes_valid = bool(
+            canonical_content_sha256_valid(
+                stored_claim_trace, hash_field="trace_content_sha256"
+            )
+            and isinstance(stored_events, list)
+            and all(
+                canonical_content_sha256_valid(event, hash_field="content_sha256")
+                for event in stored_events
+            )
+            and canonical_content_sha256_valid(
+                stored_claim_trace.get("physical_claim_summary"),
+                hash_field="content_sha256",
+            )
         )
-        verifications.append(verification)
-        discrepancies.extend(event_discrepancies)
-        limitations.extend(event_limitations)
-        if verification.strict_accepted and verification.target_object_id is not None:
-            if verification.target_object_id in strict_first_tick:
+        try:
+            recomputed = recompute_canonical_physical_claim_trace(
+                stored_claim_trace,
+                scene_manifest=scene_manifest,
+                expected_task_object_ids=bound_task_ids,
+                expected_task_object_set_sha256=bound_task_hash,
+            )
+        except (TypeError, ValueError) as exc:
+            recomputed = None
+            discrepancies.append(
+                ProxyStrictDiscrepancy(
+                    code="canonical_physical_claim_trace_invalid",
+                    detail=str(exc),
+                )
+            )
+        if (
+            recomputed is not None
+            and canonical_json_equal(recomputed, stored_claim_trace)
+            and stored_hashes_valid
+            and access_ledger_valid
+        ):
+            canonical_trace_verified = True
+            physical_claim_summary = recomputed["physical_claim_summary"]
+            claim_rows = tuple(recomputed["controller_claim_attempts"])
+            verifications = [
+                _canonical_claim_verification(item, event_index=index)
+                for index, item in enumerate(recomputed["physical_claim_evaluations"])
+            ]
+            strict_first_tick = {
+                str(item["object_id"]): int(item["tick"])
+                for item in physical_claim_summary["first_credited_by_object"]
+            }
+        else:
+            claim_rows = tuple(
+                item
+                for item in stored_claim_trace.get("controller_claim_attempts", ())
+                if isinstance(item, Mapping)
+            )
+            discrepancies.append(
+                ProxyStrictDiscrepancy(
+                    code="canonical_physical_claim_trace_recomputation_mismatch",
+                    detail="stored trace is not bit-identical to canonical recomputation",
+                )
+            )
+            if not stored_hashes_valid:
                 discrepancies.append(
                     ProxyStrictDiscrepancy(
-                        code="duplicate_proxy_claim",
-                        detail="target was proxy-claimed more than once",
-                        tick=verification.tick,
-                        target_object_id=verification.target_object_id,
+                        code="canonical_physical_claim_content_hash_invalid",
+                        detail="stored event/summary/trace content hash failed recomputation",
                     )
                 )
-            else:
-                strict_first_tick[verification.target_object_id] = verification.tick
+            if not access_ledger_valid:
+                discrepancies.append(
+                    ProxyStrictDiscrepancy(
+                        code="runtime_evaluator_access_ledger_invalid",
+                        detail="all evaluator-to-controller access counters must be zero",
+                    )
+                )
+    else:
+        claim_rows, claim_source, claim_discrepancies = _accepted_claim_events(
+            result,
+            normalized.log,
+        )
+        discrepancies.extend(claim_discrepancies)
+        scene_graph = SceneGraph(scene_manifest)
+        for index, event in enumerate(claim_rows):
+            verification, event_discrepancies, event_limitations = _verify_claim_event(
+                event,
+                event_index=index,
+                source=claim_source,
+                result=result,
+                trajectory_by_tick=by_tick,
+                scene_manifest=scene_manifest,
+                scene_graph=scene_graph,
+                alias_map=alias_map,
+                claim_radius_m=geometry_contract.visibility_and_claim.claim_radius_m,
+                distractors_occlude=bool(
+                    geometry_contract.configuration_space.distractors_are_obstacles
+                ),
+            )
+            verifications.append(verification)
+            discrepancies.extend(event_discrepancies)
+            limitations.extend(event_limitations)
+        limitations.append("legacy_claim_rows_are_not_canonical_physical_evidence")
 
     strict_ids = tuple(sorted(strict_first_tick))
-    target_ids = tuple(
-        sorted(landmark.object_id for landmark in scene_manifest.landmarks)
-    )
+    target_ids = tuple(bound_task_ids)
     strict_all_complete = bool(target_ids) and set(target_ids).issubset(
         strict_first_tick
     )
@@ -280,8 +460,12 @@ def score_result_payload(
             else None
         )
 
-    proxy_claimed = _optional_bool(result.get("claimed"))
-    proxy_success = _optional_bool(result.get("success"))
+    proxy_claimed = _optional_bool(
+        result.get("controller_claimed", result.get("claimed"))
+    )
+    proxy_success = _optional_bool(
+        result.get("controller_success", result.get("success"))
+    )
     proxy_claim_ids, proxy_id_limitations = _proxy_claimed_object_ids(
         result,
         alias_map=alias_map,
@@ -420,9 +604,7 @@ def score_result_payload(
             )
         )
 
-    claim_evaluation_complete = all(
-        verification.strict_accepted is not None for verification in verifications
-    )
+    claim_evaluation_complete = canonical_trace_verified
     limitations = _unique_strings(limitations)
     score_complete = bool(
         trajectory_complete
@@ -447,6 +629,9 @@ def score_result_payload(
         trajectory_complete=trajectory_complete,
         trajectory=trajectory,
         proxy_claim_event_count=len(claim_rows),
+        canonical_physical_claim_trace_present=canonical_trace_present,
+        canonical_physical_claim_trace_verified=canonical_trace_verified,
+        physical_claim_summary=physical_claim_summary,
         strict_claim_evaluation_complete=claim_evaluation_complete,
         claim_verifications=tuple(verifications),
         strict_accepted_claim_event_count=sum(
@@ -786,8 +971,8 @@ def _verify_claim_event(
             exclude_landmark_xy=target_xy,
             distractors_occlude=distractors_occlude,
         )
-        result_claim = strict_ground_truth_claim(
-            StrictClaimObservation(
+        result_claim = legacy_distance_los_claim_diagnostic(
+            LegacyDistanceLosClaimObservation(
                 target_id=landmark.object_id,
                 robot_xy_m=pose,
                 target_xy_m=target_xy,
@@ -797,7 +982,8 @@ def _verify_claim_event(
         )
         true_distance = result_claim.distance_m
         within_radius = result_claim.within_claim_radius
-        strict_accepted = result_claim.accepted
+        strict_accepted = None
+        rejection_reasons.append("legacy_provenance_noncanonical")
         legacy_radius_uncertainty = (
             1e-3
             if pose_source is not None and "post_xy" in pose_source
@@ -829,24 +1015,14 @@ def _verify_claim_event(
                     target_object_id=landmark.object_id,
                 )
             )
-        if strict_accepted is False:
-            discrepancies.append(
-                ProxyStrictDiscrepancy(
-                    code="proxy_claim_rejected_by_strict_geometry",
-                    detail=",".join(rejection_reasons),
-                    tick=tick,
-                    target_object_id=landmark.object_id,
-                )
+        discrepancies.append(
+            ProxyStrictDiscrepancy(
+                code="proxy_claim_unverifiable_at_strict_boundary",
+                detail=",".join(rejection_reasons),
+                tick=tick,
+                target_object_id=landmark.object_id,
             )
-        elif strict_accepted is None:
-            discrepancies.append(
-                ProxyStrictDiscrepancy(
-                    code="proxy_claim_unverifiable_at_strict_boundary",
-                    detail=",".join(rejection_reasons),
-                    tick=tick,
-                    target_object_id=landmark.object_id,
-                )
-            )
+        )
     else:
         discrepancies.append(
             ProxyStrictDiscrepancy(
@@ -1050,7 +1226,10 @@ def _proxy_claimed_object_ids(
     *,
     alias_map: Mapping[str, BoxObject],
 ) -> tuple[tuple[str, ...] | None, tuple[str, ...]]:
-    raw = result.get("claimed_colors", result.get("claimed_target_ids"))
+    raw = result.get(
+        "controller_claimed_colors",
+        result.get("claimed_colors", result.get("claimed_target_ids")),
+    )
     if raw is None:
         return None, ("proxy_claimed_target_list_missing",)
     if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
@@ -1368,5 +1547,6 @@ __all__ = [
     "StrictResultScore",
     "TickTrajectoryPoint",
     "main",
+    "recompute_canonical_physical_claim_trace",
     "score_result_payload",
 ]

@@ -10,9 +10,9 @@ The legacy geometry-v1 path uses the versioned inflated configuration-space
 grid directly. Geometry v2 instead loads exact 0.47 m disc occupancy into the
 shared ``OnlineBeliefMap``, routes only through its confirmed-free API, and
 strictly scores every executed actual-yaw microstep with the geometry-bound
-observed-maximum directional polygon. A claim is "true" only when the base is
-within the configured metric radius, the beacon has point-geometry line of
-sight, and the final heading is within the claim bearing. Coverage is the
+observed-maximum directional polygon. The planner emits one unconditional
+attempt at each reached terminal pose; the shared physical evaluator scores the
+completed scene trace once after execution. Coverage is the
 fraction of the spawn-connected inflated free grid swept by a configurable
 visit radius; its AUC is normalized by the full tick budget so early coverage
 scores better than late coverage.
@@ -25,10 +25,13 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict, deque
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 import hashlib
 import json
 import math
+import multiprocessing
+import os
 from pathlib import Path
 import shlex
 import sys
@@ -78,13 +81,39 @@ from lewm.planning.oriented_footprint import (  # noqa: E402
 from lewm.benchmarks.go2_physical_eligibility import (  # noqa: E402
     LoadedDirectionalPolicy,
     policy_from_geometry_contract,
+    validate_loaded_directional_policy_content,
 )
 from lewm.benchmarks.experiment_manifest import (  # noqa: E402
     build_experiment_manifest,
 )
+from lewm.benchmarks.go2_physical_claim_evaluator import (  # noqa: E402
+    evaluate_physical_claim_trace,
+)
+from lewm.benchmarks.go2_physical_claim_trace import (  # noqa: E402
+    build_claim_attempt,
+    build_claim_trace,
+    canonical_task_object_ids,
+    object_id_reference,
+    task_object_set_sha256,
+)
 
 
 GridCell = tuple[int, int]
+
+_CPU_THREAD_CAP_ENV = (
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+    "BLIS_NUM_THREADS",
+)
+
+CANONICAL_PHYSICAL_CLAIM_REGRESSION_OUTPUT = (
+    REPO_ROOT
+    / ".generated/oracle_positive_control/go2_generalization_v4_development"
+    / "canonical_physical_claim_v1_report.json"
+)
 
 
 @dataclass(frozen=True)
@@ -191,6 +220,16 @@ class ClaimAnchor:
     xy: tuple[float, float]
     yaw: float
     path_cost_cells: float
+
+
+@dataclass(frozen=True)
+class OracleClaimTaskBinding:
+    """Task identity committed before the oracle executes its first motion."""
+
+    trace_id: str
+    episode_id: str
+    task_object_ids: tuple[str, ...]
+    task_object_set_sha256: str
 
 
 @dataclass(frozen=True)
@@ -520,6 +559,61 @@ def beacons_from_manifest(manifest: SceneManifest) -> tuple[Beacon, ...]:
     return tuple(sorted(beacons, key=lambda item: (item.color, item.object_id)))
 
 
+def bind_oracle_claim_task(manifest: SceneManifest) -> OracleClaimTaskBinding:
+    """Freeze the complete manifest-landmark task before controller motion."""
+
+    trace_id = f"oracle:{manifest.scene_id}"
+    episode_id = f"oracle:{manifest.scene_id}:episode"
+    task_ids = canonical_task_object_ids(manifest)
+    return OracleClaimTaskBinding(
+        trace_id=trace_id,
+        episode_id=episode_id,
+        task_object_ids=task_ids,
+        task_object_set_sha256=task_object_set_sha256(manifest, task_ids),
+    )
+
+
+def _oracle_claim_attempt_id(
+    *,
+    trace_id: str,
+    episode_id: str,
+    scene_id: str,
+    task_object_id: str,
+) -> str:
+    payload = {
+        "domain": "lewm-go2-oracle-claim-attempt-v1",
+        "episode_id": episode_id,
+        "scene_id": scene_id,
+        "task_object_id": task_object_id,
+        "trace_id": trace_id,
+    }
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def evaluate_physical_claim_trace_oracle_adapter(
+    trace: Mapping[str, Any],
+    physical_manifest: SceneManifest,
+    expected_task_object_ids: Sequence[str],
+    expected_task_object_set_sha256: str,
+) -> dict[str, Any]:
+    """Evaluate the completed oracle trace exactly once after execution."""
+
+    return evaluate_physical_claim_trace(
+        trace,
+        physical_manifest,
+        expected_task_object_ids,
+        expected_task_object_set_sha256,
+    )
+
+
 def _has_claim_line(
     visibility_grid: InflatedOccupancyGrid,
     pose_xy: tuple[float, float],
@@ -528,30 +622,16 @@ def _has_claim_line(
     return bool(visibility_grid.has_free_line(pose_xy, beacon_xy))
 
 
-def _true_claim(
-    pose: Pose2D,
-    beacon: Beacon,
-    visibility_grid: InflatedOccupancyGrid,
-    config: OracleConfig,
-) -> bool:
-    return bool(
-        _distance_xy(pose.xy, beacon.xy) <= float(config.claim_distance_m)
-        and abs(_bearing_to(pose, beacon.xy)) <= float(config.claim_bearing_rad)
-        and _has_claim_line(visibility_grid, pose.xy, beacon.xy)
-    )
-
-
-def _claim_position_valid(
-    pose: Pose2D,
-    beacon: Beacon,
-    visibility_grid: InflatedOccupancyGrid,
-    config: OracleConfig,
-) -> bool:
-    """Return whether only the claim-heading gate remains unsatisfied."""
-
-    return bool(
-        _distance_xy(pose.xy, beacon.xy) <= float(config.claim_distance_m)
-        and _has_claim_line(visibility_grid, pose.xy, beacon.xy)
+def _planned_claim_standoff(config: OracleConfig) -> float:
+    # Leave deterministic execution margin between the planned terminal pose
+    # and the immutable physical threshold. This is planning geometry only;
+    # claim acceptance still comes exclusively from the shared evaluator.
+    return max(
+        0.0,
+        min(
+            float(config.preferred_standoff_m),
+            float(config.claim_distance_m) - 0.25,
+        ),
     )
 
 
@@ -588,7 +668,7 @@ def claim_anchor_cells(
     candidates = sorted(
         candidates,
         key=lambda item: (
-            abs(float(item[1]) - float(config.preferred_standoff_m)),
+            abs(float(item[1]) - _planned_claim_standoff(config)),
             item[0][0],
             item[0][1],
         ),
@@ -610,7 +690,7 @@ def _best_claim_anchor(
     ordered = sorted(
         (item for item in candidates if item[0] not in excluded),
         key=lambda item: (
-            abs(float(item[1]) - float(config.preferred_standoff_m)),
+            abs(float(item[1]) - _planned_claim_standoff(config)),
             _distance_xy(pose.xy, grid.to_world(item[0])),
             item[0],
         ),
@@ -766,8 +846,6 @@ class OracleSimulator:
         self.blocked_candidate_evaluations = 0
         self.swept_probe_risk_blocks = 0
         self.minimum_swept_probe_clearance_m = math.inf
-        self.claim_ticks: dict[str, int] = {}
-        self.claim_poses: dict[str, list[float]] = {}
         self.covered: set[GridCell] = set()
         self.coverage_fractions: list[float] = []
         self.primitive_counts: dict[str, int] = defaultdict(int)
@@ -798,7 +876,6 @@ class OracleSimulator:
         self._coverage_offsets = self._make_coverage_offsets()
         self._mark_coverage(self.pose)
         self.coverage_fractions.append(self.coverage_fraction)
-        self.update_claims()
 
     @property
     def coverage_fraction(self) -> float:
@@ -826,18 +903,6 @@ class OracleSimulator:
             cell = (center[0] + dx, center[1] + dy)
             if cell in self.coverage_component:
                 self.covered.add(cell)
-
-    def update_claims(self) -> None:
-        for beacon in self.beacons:
-            if beacon.claim_id in self.claim_ticks:
-                continue
-            if _true_claim(self.pose, beacon, self.visibility_grid, self.config):
-                self.claim_ticks[beacon.claim_id] = int(self.tick)
-                self.claim_poses[beacon.claim_id] = [
-                    round(float(self.pose.x), 4),
-                    round(float(self.pose.y), 4),
-                    round(float(self.pose.yaw), 4),
-                ]
 
     def execute(self, simulation: PrimitiveSimulation) -> None:
         if self.tick >= int(self.config.max_ticks):
@@ -890,7 +955,6 @@ class OracleSimulator:
             self.stalls += 1
         self.tick += 1
         self.primitive_counts[simulation.primitive] += 1
-        self.update_claims()
         self.coverage_fractions.append(self.coverage_fraction)
 
     def hold(self) -> None:
@@ -1134,8 +1198,8 @@ def drive_to_goal(
     *,
     final_yaw: float | None = None,
     tick_limit: int | None = None,
-    stop_when: Callable[[], bool] | None = None,
-    claim_beacon: Beacon | None = None,
+    goal_tolerance_m: float | None = None,
+    final_yaw_tolerance_rad: float | None = None,
 ) -> tuple[bool, str | None]:
     """Follow a ground-truth A* route with deterministic primitive lookahead."""
 
@@ -1148,19 +1212,31 @@ def drive_to_goal(
         simulator.tick < int(simulator.config.max_ticks)
         and simulator.tick - start_tick < max_ticks
     ):
-        if stop_when is not None and stop_when():
-            return True, None
-        if claim_beacon is not None and _claim_position_valid(
-            simulator.pose,
-            claim_beacon,
-            simulator.visibility_grid,
-            simulator.config,
+        distance = _distance_xy(simulator.pose.xy, goal_xy)
+        heading_error = (
+            0.0
+            if final_yaw is None
+            else abs(wrap_angle_pi(float(final_yaw) - simulator.pose.yaw))
+        )
+        effective_goal_tolerance = (
+            float(simulator.config.route_goal_tolerance_m)
+            if goal_tolerance_m is None
+            else float(goal_tolerance_m)
+        )
+        effective_yaw_tolerance = (
+            float(simulator.config.claim_bearing_rad)
+            if final_yaw_tolerance_rad is None
+            else float(final_yaw_tolerance_rad)
+        )
+        if (
+            final_yaw is not None
+            and distance <= effective_goal_tolerance
+            and heading_error > effective_yaw_tolerance
         ):
-            bearing_error = _bearing_to(simulator.pose, claim_beacon.xy)
-            if abs(bearing_error) <= float(simulator.config.claim_bearing_rad):
-                simulator.update_claims()
-                return bool(claim_beacon.claim_id in simulator.claim_ticks), None
-            primitive = "yaw_left" if bearing_error > 0.0 else "yaw_right"
+            signed_heading_error = wrap_angle_pi(
+                float(final_yaw) - simulator.pose.yaw
+            )
+            primitive = "yaw_left" if signed_heading_error > 0.0 else "yaw_right"
             outcome = simulate_primitive(
                 simulator.pose,
                 primitive,
@@ -1169,23 +1245,15 @@ def drive_to_goal(
                 simulator.config,
             )
             if not outcome.completed:
-                return False, "claim_orientation_blocked"
+                return False, "terminal_orientation_blocked"
             simulator.execute(outcome)
             route_age += 1
-            no_translation += 1
+            no_translation = 0
             continue
-        distance = _distance_xy(simulator.pose.xy, goal_xy)
-        heading_error = (
-            0.0
-            if final_yaw is None
-            else abs(wrap_angle_pi(float(final_yaw) - simulator.pose.yaw))
-        )
-        if distance <= float(simulator.config.route_goal_tolerance_m) and (
-            final_yaw is None or heading_error <= float(simulator.config.claim_bearing_rad)
+        if distance <= effective_goal_tolerance and (
+            final_yaw is None or heading_error <= effective_yaw_tolerance
         ):
-            if stop_when is None:
-                return True, None
-            return False, "terminal_condition_not_met"
+            return True, None
 
         if not route or route_age >= int(simulator.config.route_replan_ticks):
             planned = simulator.route_planner.plan(
@@ -1224,9 +1292,6 @@ def drive_to_goal(
             )
         route_age += 1
 
-        if stop_when is not None and stop_when():
-            return True, None
-
         if no_translation >= int(simulator.config.no_progress_limit):
             return False, "follower_no_translation"
     if simulator.tick >= int(simulator.config.max_ticks):
@@ -1264,6 +1329,7 @@ def run_scene(
     spawn_xy = (float(manifest.spawn.xyz_m[0]), float(manifest.spawn.xyz_m[1]))
     spawn_yaw = _yaw_from_quat_wxyz(manifest.spawn.quat_wxyz)
     beacons = beacons_from_manifest(manifest)
+    claim_task_binding = bind_oracle_claim_task(manifest)
     geometry_failures: list[str] = []
     planner_failures: list[str] = []
     follower_failures: list[str] = []
@@ -1416,18 +1482,15 @@ def run_scene(
         route_planner=route_planner,
         directional_checker=directional_checker,
     )
-    attempted_claim_cells: dict[str, set[GridCell]] = defaultdict(set)
     claim_attempt_diagnostics: dict[str, list[str]] = defaultdict(list)
-    terminal_claim_failures: set[str] = set()
+    controller_claim_attempts: list[dict[str, Any]] = []
+    remaining_claim_ids = {beacon.claim_id for beacon in beacons}
 
     if not geometry_failures:
-        while len(simulator.claim_ticks) < len(beacons) and simulator.tick < int(config.max_ticks):
+        while remaining_claim_ids and simulator.tick < int(config.max_ticks):
             choices: list[ClaimAnchor] = []
             for beacon in beacons:
-                if (
-                    beacon.claim_id in simulator.claim_ticks
-                    or beacon.claim_id in terminal_claim_failures
-                ):
+                if beacon.claim_id not in remaining_claim_ids:
                     continue
                 anchor = _best_claim_anchor(
                     simulator.pose,
@@ -1436,18 +1499,12 @@ def run_scene(
                     planning_grid,
                     config,
                     route_planner,
-                    excluded=attempted_claim_cells[beacon.claim_id],
                 )
                 if anchor is None:
-                    if claim_attempt_diagnostics[beacon.claim_id]:
-                        follower_failures.append(
-                            f"{beacon.claim_id}: exhausted distinct claim approaches"
-                        )
-                        terminal_claim_failures.add(beacon.claim_id)
-                    else:
-                        planner_failures.append(
-                            f"{beacon.claim_id}: no A* path to claim anchor"
-                        )
+                    planner_failures.append(
+                        f"{beacon.claim_id}: no A* path to claim anchor"
+                    )
+                    remaining_claim_ids.remove(beacon.claim_id)
                 else:
                     choices.append(anchor)
             if not choices:
@@ -1465,32 +1522,59 @@ def run_scene(
                 anchor.xy,
                 final_yaw=anchor.yaw,
                 tick_limit=int(config.max_goal_ticks),
-                stop_when=lambda claim_id=anchor.beacon.claim_id: claim_id
-                in simulator.claim_ticks,
-                claim_beacon=anchor.beacon,
+                goal_tolerance_m=min(
+                    0.12,
+                    float(config.route_goal_tolerance_m),
+                ),
+                final_yaw_tolerance_rad=0.20,
             )
-            simulator.update_claims()
-            if not reached or anchor.beacon.claim_id not in simulator.claim_ticks:
-                claim_attempt_diagnostics[anchor.beacon.claim_id].append(
-                    str(reason or "claim gate not reached")
-                )
-                exclusion_radius_m = 0.20
-                for cell, _distance, _yaw in anchors_by_id[anchor.beacon.claim_id]:
-                    if _distance_xy(planning_grid.to_world(cell), anchor.xy) <= float(
-                        exclusion_radius_m
-                    ):
-                        attempted_claim_cells[anchor.beacon.claim_id].add(cell)
-                if len(claim_attempt_diagnostics[anchor.beacon.claim_id]) >= 8:
-                    follower_failures.append(
-                        f"{anchor.beacon.claim_id}: failed 8 distinct claim approaches"
+            remaining_claim_ids.remove(anchor.beacon.claim_id)
+            if reached:
+                reference = object_id_reference(anchor.beacon.claim_id)
+                controller_claim_attempts.append(
+                    build_claim_attempt(
+                        manifest=manifest,
+                        trace_id=claim_task_binding.trace_id,
+                        episode_id=claim_task_binding.episode_id,
+                        event_id=_oracle_claim_attempt_id(
+                            trace_id=claim_task_binding.trace_id,
+                            episode_id=claim_task_binding.episode_id,
+                            scene_id=manifest.scene_id,
+                            task_object_id=anchor.beacon.claim_id,
+                        ),
+                        tick=int(simulator.tick),
+                        event_index=len(controller_claim_attempts),
+                        requested_target=reference,
+                        claimed_target=reference,
+                        robot_pose_world_xy_yaw=(
+                            float(simulator.pose.x),
+                            float(simulator.pose.y),
+                            float(simulator.pose.yaw),
+                        ),
+                        pose_provenance="oracle_full_precision",
                     )
-                    terminal_claim_failures.add(anchor.beacon.claim_id)
+                )
+            else:
+                terminal_distance = _distance_xy(simulator.pose.xy, anchor.xy)
+                terminal_yaw_error = abs(
+                    wrap_angle_pi(anchor.yaw - simulator.pose.yaw)
+                )
+                failure_detail = (
+                    f"{reason or 'planned terminal pose not reached'}:"
+                    f"distance={terminal_distance:.6f}:"
+                    f"yaw_error={terminal_yaw_error:.6f}"
+                )
+                claim_attempt_diagnostics[anchor.beacon.claim_id].append(
+                    failure_detail
+                )
+                follower_failures.append(
+                    f"{anchor.beacon.claim_id}: {failure_detail}"
+                )
 
-    claim_completion_tick = (
-        max(simulator.claim_ticks.values())
-        if len(simulator.claim_ticks) == len(beacons) and beacons
-        else None
-    )
+    for claim_id in sorted(remaining_claim_ids):
+        follower_failures.append(f"{claim_id}: claim route exceeded scene tick budget")
+
+    claim_completion_tick: int | None = None
 
     coverage_plan = build_coverage_plan(
         coverage_grid,
@@ -1590,7 +1674,41 @@ def run_scene(
         if simulator.coverage_fraction >= float(config.coverage_completion_fraction):
             coverage_completion_tick = int(simulator.tick)
 
-    all_claimed = bool(beacons and len(simulator.claim_ticks) == len(beacons))
+    raw_claim_trace, oracle_task_ids, oracle_task_hash = build_claim_trace(
+        manifest=manifest,
+        trace_id=claim_task_binding.trace_id,
+        episode_id=claim_task_binding.episode_id,
+        controller_claim_attempts=controller_claim_attempts,
+        task_object_ids=claim_task_binding.task_object_ids,
+    )
+    if (
+        oracle_task_ids != claim_task_binding.task_object_ids
+        or oracle_task_hash != claim_task_binding.task_object_set_sha256
+    ):
+        raise AssertionError("completed oracle trace changed the pre-motion task binding")
+    canonical_physical_claim_trace = evaluate_physical_claim_trace_oracle_adapter(
+        raw_claim_trace,
+        manifest,
+        oracle_task_ids,
+        oracle_task_hash,
+    )
+    physical_claim_summary = canonical_physical_claim_trace[
+        "physical_claim_summary"
+    ]
+    claimed_beacon_ids = tuple(physical_claim_summary["credited_object_ids"])
+    claim_ticks = {
+        str(item["object_id"]): int(item["tick"])
+        for item in physical_claim_summary["first_credited_by_object"]
+    }
+    claim_poses = {
+        str(item["claimed_target_object_id"]): list(
+            item["robot_pose_world_xy_yaw"]
+        )
+        for item in canonical_physical_claim_trace["physical_claim_evaluations"]
+        if item.get("credited") is True
+    }
+    all_claimed = bool(physical_claim_summary["all_targets_claimed"])
+    claim_completion_tick = max(claim_ticks.values()) if all_claimed else None
     coverage_complete = bool(
         simulator.coverage_fraction >= float(config.coverage_completion_fraction)
     )
@@ -1631,16 +1749,17 @@ def run_scene(
         "geometry_contract_sha256": geometry_contract.sha256,
         "success": success,
         "all_beacons_claimed": all_claimed,
-        "claimed_count": len(simulator.claim_ticks),
+        "claimed_count": len(claimed_beacon_ids),
         "beacon_count": len(beacons),
-        "claimed_beacon_ids": sorted(simulator.claim_ticks),
+        "claimed_beacon_ids": list(claimed_beacon_ids),
         "claimed_colors": sorted(
             beacon.color
             for beacon in beacons
-            if beacon.claim_id in simulator.claim_ticks
+            if beacon.claim_id in claimed_beacon_ids
         ),
-        "claim_ticks": dict(sorted(simulator.claim_ticks.items())),
-        "claim_poses": dict(sorted(simulator.claim_poses.items())),
+        "claim_ticks": dict(sorted(claim_ticks.items())),
+        "claim_poses": dict(sorted(claim_poses.items())),
+        "canonical_physical_claim_trace": canonical_physical_claim_trace,
         "failure_class": failure_class,
         "geometry_failures": geometry_failures,
         "planner_failures": planner_failures,
@@ -1719,11 +1838,121 @@ def _load_manifest(scene_dir: Path) -> SceneManifest:
     return parse_scene_manifest_dict(payload)
 
 
+def _run_indexed_development_scene(
+    job: tuple[
+        int,
+        SceneManifest,
+        PrimitiveRegistry,
+        OracleConfig,
+        GeometryContract,
+        LoadedDirectionalPolicy | None,
+    ],
+) -> tuple[int, dict[str, Any]]:
+    """Process-worker boundary; all inputs are already verified in memory."""
+
+    index, manifest, registry, config, geometry_contract, directional_policy = job
+    return index, run_scene(
+        manifest,
+        registry,
+        config,
+        geometry_contract,
+        directional_policy,
+    )
+
+
+def _initialize_single_thread_scene_worker() -> None:
+    """Prevent nested BLAS/OpenMP pools inside the bounded scene pool."""
+
+    for name in _CPU_THREAD_CAP_ENV:
+        os.environ[name] = "1"
+
+
+def merge_indexed_scene_reports(
+    indexed_reports: Iterable[tuple[int, Mapping[str, Any]]],
+    *,
+    expected_scene_ids: Sequence[str],
+) -> list[dict[str, Any]]:
+    """Merge schedule-independent worker results into exact manifest order."""
+
+    merged: dict[int, dict[str, Any]] = {}
+    for index, report in indexed_reports:
+        if type(index) is not int or not 0 <= index < len(expected_scene_ids):
+            raise ValueError("parallel oracle result index is outside the scene panel")
+        if index in merged:
+            raise ValueError("parallel oracle result index is duplicated")
+        if not isinstance(report, Mapping):
+            raise ValueError("parallel oracle result is not a mapping")
+        if report.get("scene_id") != expected_scene_ids[index]:
+            raise ValueError("parallel oracle result scene identity changed")
+        merged[index] = dict(report)
+    if set(merged) != set(range(len(expected_scene_ids))):
+        raise ValueError("parallel oracle result panel is incomplete")
+    return [merged[index] for index in range(len(expected_scene_ids))]
+
+
 def _development_path_guard(path: Path, *, label: str) -> None:
     lowered = "/".join(part.lower() for part in path.parts)
     forbidden = ("sealed", "final_eval", "final-test", "final_test")
     if any(token in lowered for token in forbidden):
         raise ValueError(f"{label} must be development-only, got {path}")
+
+
+def _generic_output_path_guard(path: Path) -> None:
+    """Keep the flexible diagnostic CLI away from the authoritative path."""
+
+    resolved = path.resolve(strict=False)
+    _development_path_guard(resolved, label="output")
+    if resolved == CANONICAL_PHYSICAL_CLAIM_REGRESSION_OUTPUT.resolve(strict=False):
+        raise ValueError(
+            "canonical physical-claim regression output is reserved for its "
+            "fixed authoritative runner"
+        )
+
+
+def _directional_policy_for_suite(
+    geometry_contract: GeometryContract,
+    preloaded_policy: LoadedDirectionalPolicy | None,
+) -> LoadedDirectionalPolicy | None:
+    """Use one verified in-memory policy when supplied by an authoritative caller."""
+
+    if geometry_contract.schema != "lewm_go2_generalization_geometry_v2":
+        if preloaded_policy is not None:
+            raise ValueError(
+                "preloaded directional policy is only valid for geometry contract v2"
+            )
+        return None
+    if preloaded_policy is None:
+        return policy_from_geometry_contract(
+            geometry_contract,
+            repository_root=REPO_ROOT,
+        )
+    if type(preloaded_policy) is not LoadedDirectionalPolicy:
+        raise ValueError("preloaded directional policy has the wrong exact type")
+    validate_loaded_directional_policy_content(preloaded_policy)
+
+    swept = geometry_contract.swept_footprint
+    source = geometry_contract.source_artifacts.get("directional_footprint_policy")
+    if not isinstance(source, Mapping):
+        raise ValueError("geometry contract is missing directional policy source")
+    expected_path = (REPO_ROOT / str(source.get("path", ""))).resolve()
+    expected_radius = swept.maximum_vertex_radius_m
+    if (
+        preloaded_policy.source_path.resolve() != expected_path
+        or preloaded_policy.file_sha256 != source.get("sha256")
+        or preloaded_policy.content_sha256
+        != swept.directional_policy_content_sha256
+        or preloaded_policy.policy_id != swept.directional_policy_id
+        or preloaded_policy.profile_name != swept.directional_profile
+        or expected_radius is None
+        or not math.isclose(
+            preloaded_policy.footprint.maximum_vertex_radius_m,
+            expected_radius,
+            rel_tol=0.0,
+            abs_tol=1e-10,
+        )
+    ):
+        raise ValueError("preloaded directional policy differs from geometry contract")
+    return preloaded_policy
 
 
 def run_development_suite(
@@ -1740,26 +1969,39 @@ def run_development_suite(
     config: OracleConfig,
     geometry_contract: GeometryContract,
     progress: Callable[[dict[str, Any]], None] | None = None,
+    workers: int = 1,
+    preloaded_scene_manifests: Mapping[str, SceneManifest] | None = None,
+    preloaded_directional_policy: LoadedDirectionalPolicy | None = None,
 ) -> dict[str, Any]:
-    reports = []
-    directional_policy = (
-        policy_from_geometry_contract(
-            geometry_contract,
-            repository_root=REPO_ROOT,
-        )
-        if geometry_contract.schema == "lewm_go2_generalization_geometry_v2"
-        else None
+    if type(workers) is not int or not 1 <= workers <= 8:
+        raise ValueError("workers must be an exact integer in [1, 8]")
+    reports: list[dict[str, Any]] = []
+    directional_policy = _directional_policy_for_suite(
+        geometry_contract,
+        preloaded_directional_policy,
     )
-    for scene_id in scene_ids:
+    jobs = []
+    if preloaded_scene_manifests is not None:
+        if set(preloaded_scene_manifests) != set(scene_ids):
+            raise ValueError("preloaded scene-manifest set differs from the requested panel")
+        if any(
+            type(manifest) is not SceneManifest or manifest.scene_id != scene_id
+            for scene_id, manifest in preloaded_scene_manifests.items()
+        ):
+            raise ValueError("preloaded scene manifests are not exact bound SceneManifest values")
+    for index, scene_id in enumerate(scene_ids):
         scene_family = (
             str(scene_families[scene_id])
             if scene_families is not None
             else str(family)
         )
-        scene_dir = scene_corpus / split / scene_family / scene_id
-        if not scene_dir.is_dir():
-            raise FileNotFoundError(f"development scene missing: {scene_dir}")
-        manifest = _load_manifest(scene_dir)
+        if preloaded_scene_manifests is None:
+            scene_dir = scene_corpus / split / scene_family / scene_id
+            if not scene_dir.is_dir():
+                raise FileNotFoundError(f"development scene missing: {scene_dir}")
+            manifest = _load_manifest(scene_dir)
+        else:
+            manifest = preloaded_scene_manifests[scene_id]
         if expected_manifest_sha256 is not None:
             actual_sha256 = manifest_sha256(manifest)
             expected_sha256 = str(expected_manifest_sha256[scene_id])
@@ -1776,15 +2018,33 @@ def run_development_suite(
                 f"development beacon count mismatch for {scene_id}: expected "
                 f"{expected_beacon_counts[scene_id]}, got {len(manifest.landmarks)}"
             )
-        report = run_scene(
-            manifest,
-            registry,
-            config,
-            geometry_contract,
-            directional_policy,
+        jobs.append(
+            (
+                index,
+                manifest,
+                registry,
+                config,
+                geometry_contract,
+                directional_policy,
+            )
         )
-        reports.append(report)
-        if progress is not None:
+    if workers == 1:
+        indexed_reports = [_run_indexed_development_scene(job) for job in jobs]
+    else:
+        context = multiprocessing.get_context("spawn")
+        with ProcessPoolExecutor(
+            max_workers=workers,
+            mp_context=context,
+            initializer=_initialize_single_thread_scene_worker,
+        ) as executor:
+            futures = [executor.submit(_run_indexed_development_scene, job) for job in jobs]
+            indexed_reports = [future.result() for future in as_completed(futures)]
+    reports = merge_indexed_scene_reports(
+        indexed_reports,
+        expected_scene_ids=scene_ids,
+    )
+    if progress is not None:
+        for report in reports:
             progress(report)
     failure_counts: dict[str, int] = defaultdict(int)
     for report in reports:
@@ -1804,6 +2064,13 @@ def run_development_suite(
             None if development_manifest is None else str(development_manifest)
         ),
         "scene_ids": list(scene_ids),
+        "scene_execution": {
+            "kind": "serial" if workers == 1 else "spawn_process",
+            "worker_count": workers,
+            "threads_per_worker": 1,
+            "merge_order": "development_manifest_index",
+            "worker_runtime_input_file_access": False,
+        },
         "geometry_contract": {
             "schema": geometry_contract.schema,
             "status": geometry_contract.status,
@@ -1997,7 +2264,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
     if args.output is not None:
-        _development_path_guard(args.output.resolve(), label="output")
+        _generic_output_path_guard(args.output)
     geometry_contract = load_geometry_contract(
         args.geometry_contract,
         repository_root=REPO_ROOT,

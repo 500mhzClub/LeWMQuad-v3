@@ -6,17 +6,23 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 from typing import Any
 
 import numpy as np
 
-
-REQUIRED_COLORS = {"red", "yellow", "blue", "green"}
-
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from lewm.benchmarks.go2_physical_claim_result import (  # noqa: E402
+    canonical_physical_claim_status,
+)
+from lewm_worlds.manifest import parse_scene_manifest_dict  # noqa: E402
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--result", type=Path, required=True)
+    parser.add_argument("--scene-manifest", type=Path, required=True)
     parser.add_argument("--dataset", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--min-claims", type=int, default=4)
@@ -32,25 +38,38 @@ def main() -> int:
 
     payload = _load_json(args.result)
     result = payload.get("result", payload)
+    scene_manifest = parse_scene_manifest_dict(_load_json(args.scene_manifest))
     wall = result.get("wall_metrics", {}) if isinstance(result, dict) else {}
-    claimed = {str(item) for item in result.get("claimed_colors", [])}
-    beacon_claims = result.get("beacon_claims", [])
+    physical_claims = canonical_physical_claim_status(
+        result,
+        scene_manifest=scene_manifest,
+        required_task_count=4,
+    )
+    scene_manifest_match = bool(
+        type(result.get("scene")) is str
+        and result["scene"] == scene_manifest.scene_id
+    )
+    claimed = set(physical_claims.credited_object_ids)
+    claim_trace = result.get("canonical_physical_claim_trace", {})
+    beacon_claims = claim_trace.get("physical_claim_evaluations", [])
     claim_distances = {
-        str(item.get("target_color")): item.get("dist_to_target_m")
+        str(item.get("claimed_target_object_id")): item.get("distance_m")
         for item in beacon_claims
-        if isinstance(item, dict)
+        if isinstance(item, dict) and item.get("credited") is True
     }
     dataset_report = _dataset_report(args.dataset)
     feature_variant = str(wall.get("learned_local_policy_feature_variant", ""))
 
     gates = {
+        "scene_manifest_match": scene_manifest_match,
         "result_exists": args.result.is_file(),
         "dataset_exists": args.dataset is None or args.dataset.is_file(),
         "dataset_schema": args.dataset is None
         or dataset_report.get("schema") == "lewm_go2_closed_loop_learned_local_policy_dataset_v0",
         "dataset_min_examples": args.dataset is None
         or int(dataset_report.get("example_count") or 0) >= int(args.min_examples),
-        "min_claims": len(claimed) >= int(args.min_claims),
+        "canonical_physical_claims": physical_claims.valid,
+        "min_claims": physical_claims.credited_count >= int(args.min_claims),
         "contact_like_stalls": _metric_int(wall, "contact_like_stalls", "contact_like_stall_events")
         <= int(args.max_contact_like_stalls),
         "hard_stalls": _metric_int(wall, "hard_contact_like_stalls", "hard_stalls", "hard_stall_events")
@@ -62,13 +81,13 @@ def main() -> int:
         and _metric_int(wall, "unstable_base_events") == 0,
     }
     if bool(args.require_success):
-        gates["success"] = bool(result.get("success"))
-        gates["all_beacons_claimed"] = REQUIRED_COLORS.issubset(claimed)
+        gates["success"] = physical_claims.all_targets_claimed
+        gates["all_beacons_claimed"] = physical_claims.all_targets_claimed
     if bool(args.require_all_beacons):
-        gates["all_beacons_claimed"] = REQUIRED_COLORS.issubset(claimed)
+        gates["all_beacons_claimed"] = physical_claims.all_targets_claimed
     if args.max_claim_distance_m is not None:
         max_dist = float(args.max_claim_distance_m)
-        required = REQUIRED_COLORS if bool(args.require_all_beacons) else claimed
+        required = set(physical_claims.task_object_ids) if bool(args.require_all_beacons) else claimed
         gates["claim_distances"] = all(
             claim_distances.get(color) is not None
             and float(claim_distances[color]) <= max_dist
@@ -83,9 +102,10 @@ def main() -> int:
         "result": {
             "path": str(args.result),
             "scene": str(result.get("scene", "")),
-            "success": bool(result.get("success")),
+            "success": physical_claims.all_targets_claimed,
             "ticks_used": int(result.get("ticks_used") or 0),
-            "claimed_colors": sorted(claimed),
+            "physically_credited_object_ids": sorted(claimed),
+            "physical_claim_errors": list(physical_claims.errors),
             "claim_distances_m": claim_distances,
             "contact_like_stalls": _metric_int(wall, "contact_like_stalls", "contact_like_stall_events"),
             "hard_stalls": _metric_int(wall, "hard_contact_like_stalls", "hard_stalls", "hard_stall_events"),

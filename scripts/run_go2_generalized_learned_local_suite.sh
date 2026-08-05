@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON="${PYTHON:-$ROOT/.generated/venvs/genesis_render_vulkan/bin/python}"
+SCENE_CORPUS="${SCENE_CORPUS:-$ROOT/.generated/scene_corpus/minimum_20260520T080420Z}"
+FAMILY="${FAMILY:-medium_enclosed_maze}"
 OUT_DIR="${OUT_DIR:-$ROOT/.generated/go2_memory_closed_loop/generalized_learned_local_suite_20260629}"
 POLICY="${POLICY:-$OUT_DIR/generalized_learned_local_gru.pt}"
 POLICY_REPORT="${POLICY_REPORT:-$OUT_DIR/generalized_learned_local_gru_report.json}"
@@ -215,6 +217,8 @@ for SCENE_ID in "${TRAIN_SCENE_ARRAY[@]}"; do
   QUALITY="$OUT_DIR/teacher_${SCENE_ID}_quality.json"
   if [[ "$FORCE" == "1" || ! -s "$DATASET" || ! -s "$RESULT" ]]; then
     "$PYTHON" "$ROOT/scripts/benchmark_go2_memory_closed_loop.py" \
+      --scene-corpus "$SCENE_CORPUS" \
+      --family "$FAMILY" \
       --mode "$TEACHER_MODE" \
       --policy-device "$POLICY_DEVICE" \
       --device "$DEVICE" \
@@ -228,6 +232,7 @@ for SCENE_ID in "${TRAIN_SCENE_ARRAY[@]}"; do
   fi
   TEACHER_CHECK_ARGS=(
     --result "$RESULT"
+    --scene-manifest "$SCENE_CORPUS/$TRAIN_SPLIT/$FAMILY/$SCENE_ID/manifest.json"
     --dataset "$DATASET"
     --output "$QUALITY"
     --min-claims "$MIN_TEACHER_CLAIMS"
@@ -289,6 +294,7 @@ if [[ "$FORCE" == "1" || ! -s "$POLICY" || ! -s "$POLICY_REPORT" ]]; then
 fi
 
 RESULTS=()
+HELDOUT_SCENE_MANIFESTS=()
 PER_RESULT_CHECK_FAILED=0
 LEARNED_LOCAL_RERANK_ARGS=()
 if [[ "$LEARNED_LOCAL_POLICY_OUTCOME_RERANK" == "1" ]]; then
@@ -307,8 +313,12 @@ fi
 for SCENE_ID in "${HELDOUT_SCENE_ARRAY[@]}"; do
   RESULT="$OUT_DIR/${RESULT_PREFIX}_${SCENE_ID}_result.json"
   RESULTS+=("$RESULT")
+  SCENE_MANIFEST="$SCENE_CORPUS/$HELDOUT_SPLIT/$FAMILY/$SCENE_ID/manifest.json"
+  HELDOUT_SCENE_MANIFESTS+=("$SCENE_MANIFEST")
   if [[ "$FORCE" == "1" || ! -s "$RESULT" ]]; then
     "$PYTHON" "$ROOT/scripts/benchmark_go2_memory_closed_loop.py" \
+      --scene-corpus "$SCENE_CORPUS" \
+      --family "$FAMILY" \
       --generalized-runtime-contract \
       --mode "$EVAL_MODE" \
       --policy-device "$POLICY_DEVICE" \
@@ -338,6 +348,7 @@ for SCENE_ID in "${HELDOUT_SCENE_ARRAY[@]}"; do
   fi
   if ! "$PYTHON" "$ROOT/scripts/check_go2_fully_learned_demo.py" \
       --result "$RESULT" \
+      --scene-manifest "$SCENE_MANIFEST" \
       --max-ticks "$EVAL_MAX_TICKS" \
       --max-body-contact-events 0 \
       --require-generalized-runtime-contract \
@@ -351,6 +362,7 @@ done
 SUITE_CHECK_FAILED=0
 if ! "$PYTHON" "$ROOT/scripts/check_go2_generalized_suite.py" \
     --results "${RESULTS[@]}" \
+    --scene-manifests "${HELDOUT_SCENE_MANIFESTS[@]}" \
     --policy-report "$POLICY_REPORT" \
     --train-scenes "$SELECTED_TRAIN_SCENES" \
     --heldout-scenes "$HELDOUT_SCENES" \

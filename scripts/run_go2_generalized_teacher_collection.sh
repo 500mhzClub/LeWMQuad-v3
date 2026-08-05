@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON="${PYTHON:-$ROOT/.generated/venvs/genesis_render_vulkan/bin/python}"
+SCENE_CORPUS="${SCENE_CORPUS:-$ROOT/.generated/scene_corpus/minimum_20260520T080420Z}"
+FAMILY="${FAMILY:-medium_enclosed_maze}"
 OUT_DIR="${OUT_DIR:-$ROOT/.generated/go2_memory_closed_loop/generalized_learned_local_teacher_current_features}"
 ROUND_NAME="${ROUND_NAME:-teacher_current_features}"
 MODE="${MODE:-kinematic}"
@@ -158,6 +160,8 @@ for SCENE_ID in "${TRAIN_SCENE_ARRAY[@]}"; do
 
   if [[ "$FORCE" == "1" || ! -s "$DATASET" || ! -s "$RESULT" ]]; then
     "$PYTHON" "$ROOT/scripts/benchmark_go2_memory_closed_loop.py" \
+      --scene-corpus "$SCENE_CORPUS" \
+      --family "$FAMILY" \
       --mode "$MODE" \
       --policy-device "$POLICY_DEVICE" \
       --device "$DEVICE" \
@@ -171,6 +175,7 @@ for SCENE_ID in "${TRAIN_SCENE_ARRAY[@]}"; do
 
   TEACHER_CHECK_ARGS=(
     --result "$RESULT"
+    --scene-manifest "$SCENE_CORPUS/$SPLIT/$FAMILY/$SCENE_ID/manifest.json"
     --dataset "$DATASET"
     --output "$QUALITY"
     --min-claims "$MIN_TEACHER_CLAIMS"

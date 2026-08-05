@@ -140,7 +140,10 @@ class ReplayReviewUi:
         self.target_xy = self._target_xy_from_result_or_manifest()
         self.claims = {
             str(item.get("target_color", "")).lower(): item
-            for item in result.get("beacon_claims", [])
+            for item in result.get(
+                "controller_beacon_claims",
+                result.get("beacon_claims", []),
+            )
             if isinstance(item, dict)
         }
         self.path_points = [

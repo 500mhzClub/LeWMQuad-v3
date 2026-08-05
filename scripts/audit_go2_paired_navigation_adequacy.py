@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit G2 dataset-v2 selection/calibration adequacy without touching G2.
+"""Audit paired-navigation development-role adequacy without touching G2.
 
 Enforces the preregistered floors from the execution contract
 (docs/lewm_go2_generalization_execution_contract_2026-07-09.md, "G2 dataset-v2
@@ -21,7 +21,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
-from typing import Any
+from typing import Any, Mapping
 
 import numpy as np
 
@@ -30,6 +30,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lewm.datasets.go2_paired_navigation import (  # noqa: E402
     DATASET_ROLES,
     FREE_CLASS,
+    LABEL_CONTRACT_CENTER_VISIBLE_V2,
+    LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
     OCCUPIED_CLASS,
     UNKNOWN_CLASS,
     sha256_file,
@@ -38,10 +40,61 @@ from lewm.datasets.go2_paired_navigation import (  # noqa: E402
 LOADED_ROLES = ("train", "checkpoint_selection", "probability_calibration")
 UNTOUCHED_ROLE = "g2_evaluation"
 CLASS_NAMES = {UNKNOWN_CLASS: "unknown", FREE_CLASS: "free", OCCUPIED_CLASS: "occupied"}
+DATASET_LABEL_CONTRACTS = {
+    "lewm_go2_paired_navigation_dataset_v2": {
+        "label_contract": LABEL_CONTRACT_CENTER_VISIBLE_V2,
+        "target_occupancy_space": "body_inflated_configuration_space",
+    },
+    "lewm_go2_paired_navigation_dataset_v3": {
+        "label_contract": LABEL_CONTRACT_OBSERVABLE_PHYSICAL_V3,
+        "target_occupancy_space": "observable_physical_occupancy",
+    },
+}
 
 
 class AdequacyError(RuntimeError):
     """The dataset cannot support the preregistered training protocol."""
+
+
+def _resolve_label_contract(manifest: Mapping[str, Any]) -> dict[str, str]:
+    """Resolve and validate the occupancy semantics without opening any shard."""
+
+    dataset_schema = str(manifest.get("schema", ""))
+    expected = DATASET_LABEL_CONTRACTS.get(dataset_schema)
+    if expected is None:
+        raise AdequacyError("unsupported paired-navigation dataset schema")
+    semantics = manifest.get("label_semantics")
+    if dataset_schema == "lewm_go2_paired_navigation_dataset_v3":
+        if not isinstance(semantics, Mapping):
+            raise AdequacyError("dataset v3 lacks observable-physical label semantics")
+        if (
+            semantics.get("per_frame_configuration_classes_supervised") is not False
+            or semantics.get(
+                "post_memory_configuration_derivation_is_evaluation_only"
+            )
+            is not True
+        ):
+            raise AdequacyError("dataset v3 is not observable physical occupancy")
+    elif semantics is not None and not isinstance(semantics, Mapping):
+        raise AdequacyError("dataset label_semantics must be an object")
+
+    semantics = semantics if isinstance(semantics, Mapping) else {}
+    actual = {
+        "label_contract": str(
+            semantics.get("label_contract", expected["label_contract"])
+        ),
+        "target_occupancy_space": str(
+            semantics.get(
+                "target_occupancy_space", expected["target_occupancy_space"]
+            )
+        ),
+    }
+    if actual != expected:
+        raise AdequacyError(
+            "dataset label semantics disagree with its schema: "
+            f"expected {expected}, got {actual}"
+        )
+    return {"dataset_schema": dataset_schema, **actual}
 
 
 def audit_paired_navigation_adequacy(
@@ -55,8 +108,7 @@ def audit_paired_navigation_adequacy(
 
     manifest_path = Path(dataset_manifest_path).resolve()
     manifest = json.loads(manifest_path.read_text())
-    if manifest.get("schema") != "lewm_go2_paired_navigation_dataset_v2":
-        raise AdequacyError("unsupported paired-navigation dataset schema")
+    label_contract = _resolve_label_contract(manifest)
     scene_roles = manifest.get("scene_roles")
     if not isinstance(scene_roles, dict) or "assignments" not in scene_roles:
         raise AdequacyError(
@@ -170,6 +222,7 @@ def audit_paired_navigation_adequacy(
         "schema": "lewm_go2_paired_navigation_adequacy_v1",
         "dataset_manifest": str(manifest_path),
         "dataset_manifest_sha256": sha256_file(manifest_path),
+        **label_contract,
         "floors": {
             "minimum_calibration_free_cells": int(minimum_calibration_free_cells),
             "minimum_calibration_occupied_cells": int(
