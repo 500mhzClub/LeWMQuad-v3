@@ -34,9 +34,13 @@ import numpy as np
 
 SCHEMA = "lewm_go2_representation_qualification_probe_v1"
 
+# Native contract of direct_egocentric_bev_state_jepa_v1: rows are forward and
+# columns are left, both increasing with index
+# (lewm/datasets/go2_paired_navigation.py: base_forward_increasing /
+# base_left_increasing).
 GRID_SIZE = 64
-X_MIN_M, X_MAX_M = 0.0, 4.0
-Y_MIN_M, Y_MAX_M = -2.0, 2.0
+X_MIN_M, X_MAX_M = -0.95, 5.35          # forward range, includes behind-robot
+Y_MIN_M, Y_MAX_M = -3.15, 3.15          # left range
 CELL_X_M = (X_MAX_M - X_MIN_M) / GRID_SIZE
 CELL_Y_M = (Y_MAX_M - Y_MIN_M) / GRID_SIZE
 CELL_DIAGONAL_M = math.hypot(CELL_X_M, CELL_Y_M)
@@ -45,9 +49,10 @@ CAMERA_YFOV_DEG = 78.323
 HORIZONTAL_HALF_ANGLE_RAD = math.radians(CAMERA_YFOV_DEG / 2.0)
 VISIBILITY_BEARING_BINS = 256
 
-# Three predicted spatial classes.
-CLASS_FREE, CLASS_OCCUPIED, CLASS_UNKNOWN = 0, 1, 2
-CLASS_NAMES = ("free", "occupied", "unknown")
+# Three predicted spatial classes, in the model's own index order
+# (lewm/models/direct_egocentric_bev_state_jepa_v1.py).
+CLASS_UNKNOWN, CLASS_FREE, CLASS_OCCUPIED = 0, 1, 2
+CLASS_NAMES = ("unknown", "free", "occupied")
 
 # Semantic label vocabulary actually present in the corpus manifests.
 LANDMARK_MATERIALS = ("landmark_red", "landmark_blue")
@@ -141,9 +146,10 @@ def landmarks_v1(manifest: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 
 def body_cell_centres_v1() -> tuple[np.ndarray, np.ndarray]:
-    xs = X_MIN_M + (np.arange(GRID_SIZE, dtype=np.float64) + 0.5) * CELL_X_M
-    ys = Y_MIN_M + (np.arange(GRID_SIZE, dtype=np.float64) + 0.5) * CELL_Y_M
-    return np.meshgrid(xs, ys, indexing="ij")
+    forward = X_MIN_M + (np.arange(GRID_SIZE, dtype=np.float64) + 0.5) * CELL_X_M
+    left = Y_MIN_M + (np.arange(GRID_SIZE, dtype=np.float64) + 0.5) * CELL_Y_M
+    # rows index forward, columns index left
+    return np.meshgrid(forward, left, indexing="ij")
 
 
 def yaw_from_quaternion_wxyz_v1(quaternion: Sequence[float]) -> float:
@@ -183,17 +189,44 @@ def spatial_target_v1(
 
     bearing = np.arctan2(grid_y, grid_x)
     distance = np.hypot(grid_x, grid_y)
-    in_fov = np.abs(bearing) <= HORIZONTAL_HALF_ANGLE_RAD
+    # grid_x < 0 is behind the robot: outside the frustum by construction.
+    in_fov = (grid_x > 0.0) & (np.abs(bearing) <= HORIZONTAL_HALF_ANGLE_RAD)
 
-    edges = np.linspace(
-        -HORIZONTAL_HALF_ANGLE_RAD, HORIZONTAL_HALF_ANGLE_RAD, VISIBILITY_BEARING_BINS + 1
-    )
-    bins = np.clip(np.digitize(bearing, edges) - 1, 0, VISIBILITY_BEARING_BINS - 1)
-    blocking = np.full(VISIBILITY_BEARING_BINS, np.inf, dtype=np.float64)
-    occluding = occupied & in_fov
-    if occluding.any():
-        np.minimum.at(blocking, bins[occluding], distance[occluding])
-    observable = in_fov & (distance <= blocking[bins] + CELL_DIAGONAL_M)
+    # Occlusion by exact segment-rectangle intersection from the body origin to
+    # each cell centre.  An angular-bin sweep is not usable here: at 2 m a
+    # 256-bin sweep subtends about 1 cm per bin while cells are 9.8 cm, so wall
+    # cells populate only a fraction of bins and most rays would find no
+    # occluder.  The slab test below is exact and independent of cell size.
+    observable = in_fov.copy()
+    if walls.shape[0]:
+        px = grid_x.reshape(-1)
+        py = grid_y.reshape(-1)
+        blocked = np.zeros(px.shape, dtype=bool)
+        # A blocker must lie strictly before the cell itself; allow half a cell
+        # of slack so a wall cell is not treated as occluding itself.
+        slack = 1.0 - (CELL_DIAGONAL_M / 2.0) / np.maximum(distance.reshape(-1), 1.0e-9)
+        for cx, cy, sx, sy, wyaw in walls:
+            cos_w, sin_w = math.cos(-wyaw), math.sin(-wyaw)
+            ox = cos_w * (0.0 - cx) - sin_w * (0.0 - cy)
+            oy = sin_w * (0.0 - cx) + cos_w * (0.0 - cy)
+            lx = cos_w * (px - cx) - sin_w * (py - cy)
+            ly = sin_w * (px - cx) + cos_w * (py - cy)
+            dx, dy = lx - ox, ly - oy
+            t_enter = np.zeros_like(dx)
+            t_exit = np.ones_like(dx)
+            for origin, delta, half in ((ox, dx, sx / 2.0), (oy, dy, sy / 2.0)):
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    t0 = (-half - origin) / delta
+                    t1 = (half - origin) / delta
+                lo, hi = np.minimum(t0, t1), np.maximum(t0, t1)
+                parallel = np.abs(delta) < 1.0e-12
+                inside = np.abs(origin) <= half
+                lo = np.where(parallel, np.where(inside, 0.0, 1.0), lo)
+                hi = np.where(parallel, np.where(inside, 1.0, 0.0), hi)
+                t_enter = np.maximum(t_enter, lo)
+                t_exit = np.minimum(t_exit, hi)
+            blocked |= (t_enter <= t_exit) & (t_enter < slack)
+        observable &= ~blocked.reshape(GRID_SIZE, GRID_SIZE)
 
     label = np.full((GRID_SIZE, GRID_SIZE), CLASS_UNKNOWN, dtype=np.int64)
     label[observable & occupied] = CLASS_OCCUPIED
