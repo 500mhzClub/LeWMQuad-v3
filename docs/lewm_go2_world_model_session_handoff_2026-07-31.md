@@ -1639,3 +1639,54 @@ a 27-fold parameter increase moving the control by `0.00075`. No threshold,
 Outcome condition, or ordering was changed by the amendment, and an
 `EPOCHS = 2` infrastructure smoke observation of the primary arm was disclosed in
 it.
+
+### 14.5 Corrected identifiability control: assay now valid, `OUTCOME_IV` (2026-08-05)
+
+The §14.2 validity failure was repaired under a separate preregistration and the
+assay is now **valid**. Attempt `attempt_v3`, registered terminal
+**`OUTCOME_IV_PANEL_DEGENERATE`**.
+
+Control 2a was replaced by a **closed-form** reconstruction of the dense rank
+from privileged physical successor state — no parameters, no training set, and
+therefore no cross-scene generalization confound. It reconstructs the
+collection's dense rank matrix **exactly** on all 128 evaluation states and
+scores regret `0.0`; target progress recovers from body-frame displacement and
+the goal to `6.5e-09` m against the `0.01` m rank tolerance. Control 2b
+(expressivity) remains `0.0`. Both pass.
+
+**The `attempt_v2` failure at `0.14054` is therefore explained, and the
+explanation is itself a finding.** The target was perfectly identifiable all
+along; the learned control failed because it shared the exact failure mode the
+assay was measuring. Even privileged physical state that is *analytically
+sufficient* to reconstruct the rank exactly cannot be *learned* to reproduce it
+across disjoint scenes at this data scale.
+
+All seven arms reproduced bit-for-bit between `attempt_v2` and `attempt_v3`,
+confirming determinism and that only the control changed.
+
+**Both Outcome IV and Outcome III conditions hold** — `context_only − ceiling` is
+`+0.03685` with CI `[-0.01363, +0.08572]` including zero, and the ceiling
+`0.30884` also fails to beat `task_action_only` `0.30036`. The pre-declared
+I→IV→III→II ordering selects IV. They are consistent rather than competing: a
+panel whose branches are not visually distinguishable is exactly one on which
+vision cannot beat a non-visual baseline.
+
+**Bounded standing, required whenever this Outcome is cited.** It is a
+registered application of a rule frozen before any data was seen, but it is
+**not blind or confirmatory**: the arm values were already published by
+`attempt_v2` and the pipeline is deterministic, so they were known before the
+corrected control was preregistered. It is admissible only because every
+threshold and the Outcome ordering were inherited unchanged, leaving no free
+parameter to tune. It promotes nothing and authorizes no successor experiment.
+
+**Consequence for the `0.13` gate.** The terminal is Outcome IV, not I or II, so
+the assay reports **no achievable ceiling** and the gate remains neither
+vindicated nor overturned. What it reports instead is that *this panel cannot
+answer the question*: its branches are not visually distinguishable enough for
+actual successors to add measurable information over context alone. The
+indicated next step is a panel with wider branch separation and materially more
+scene clusters — §14.2 observations 4 and 5 quantify both — and **not** another
+readout, encoder, capacity, or threshold change on this panel.
+
+Record:
+`docs/lewm_go2_observability_ceiling_assay_v2_corrected_control_result_2026-08-05.md`.

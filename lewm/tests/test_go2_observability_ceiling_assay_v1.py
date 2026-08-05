@@ -150,6 +150,107 @@ def test_argmin_selects_and_scores_the_chosen_branch():
     assert rows[0]["oracle_equivalent_selection"] == 0.0
 
 
+# ------------------------------------------------- closed-form control (V2) ---
+
+
+def _privileged(dx, dy, dyaw=0.0, path=0.1, fell=False, tipped=False):
+    return [dx, dy, dyaw, path, 1.0 if fell else 0.0, 1.0 if tipped else 0.0]
+
+
+def test_closed_form_control_reconstructs_the_frozen_dense_rank():
+    """The V2 corrected control must reproduce the rank rule exactly.
+
+    Progress is reconstructed as |g| - |g - d|; the remaining key components are
+    read straight from the privileged feature.
+    """
+
+    goal = (3.0, 4.0)  # |g| = 5
+    # Nine branches with distinct displacements toward or away from the goal.
+    displacements = [
+        (0.30, 0.40), (0.15, 0.20), (0.00, 0.00), (-0.15, -0.20), (0.60, 0.80),
+        (0.03, 0.04), (-0.30, -0.40), (0.45, 0.60), (0.09, 0.12),
+    ]
+    group = _group(list(range(assay.ACTION_COUNT)))
+    group.relative_target_xy_body_m = goal
+    # Rebuild branches so the collection's own rank matches the geometry.
+    progress = []
+    for dx, dy in displacements:
+        progress.append(math.hypot(*goal) - math.hypot(goal[0] - dx, goal[1] - dy))
+    ranks = assay.physical._dense_observed_ranks(  # noqa: SLF001
+        [
+            {
+                "action_id": action,
+                "physical_target_progress_m": progress[action],
+                "physical_path_length_m": 0.1,
+                "physical_fell": False,
+                "physical_tipped": False,
+            }
+            for action in range(assay.ACTION_COUNT)
+        ]
+    )
+    group.branches = tuple(
+        _Branch(action, ranks[action], _Labels(progress[action], 0.1, False, False))
+        for action in range(assay.ACTION_COUNT)
+    )
+    features = torch.tensor(
+        [[_privileged(dx, dy) for dx, dy in displacements]], dtype=torch.float32
+    )
+    scores = assay.closed_form_identifiability_scores_v1([group], features)
+    assert (scores == assay.dense_rank_matrix_v1([group])).all()
+    report = assay.arm_report_v1([group], scores, policy="argmin")
+    assert report["summary"]["normalized_rank_regret"] == 0.0
+
+
+def test_closed_form_control_honours_fall_and_tip_precedence():
+    """A fallen branch must never outrank an upright one, whatever its progress."""
+
+    goal = (2.0, 0.0)
+    displacements = [(0.5, 0.0)] + [(0.05 * i, 0.0) for i in range(1, 9)]
+    flags = [True] + [False] * 8  # the best-progress branch fell
+    progress = [
+        math.hypot(*goal) - math.hypot(goal[0] - dx, goal[1] - dy)
+        for dx, dy in displacements
+    ]
+    ranks = assay.physical._dense_observed_ranks(  # noqa: SLF001
+        [
+            {
+                "action_id": action,
+                "physical_target_progress_m": progress[action],
+                "physical_path_length_m": 0.1,
+                "physical_fell": flags[action],
+                "physical_tipped": False,
+            }
+            for action in range(assay.ACTION_COUNT)
+        ]
+    )
+    group = _group(list(range(assay.ACTION_COUNT)))
+    group.relative_target_xy_body_m = goal
+    group.branches = tuple(
+        _Branch(a, ranks[a], _Labels(progress[a], 0.1, flags[a], False))
+        for a in range(assay.ACTION_COUNT)
+    )
+    features = torch.tensor(
+        [
+            [
+                _privileged(dx, dy, fell=flags[a])
+                for a, (dx, dy) in enumerate(displacements)
+            ]
+        ],
+        dtype=torch.float32,
+    )
+    scores = assay.closed_form_identifiability_scores_v1([group], features)
+    assert (scores == assay.dense_rank_matrix_v1([group])).all()
+    assert int(np.argmin(scores[0])) != 0  # the fallen branch is not selected
+
+
+def test_closed_form_control_rejects_a_malformed_feature_shape():
+    group = _group(list(range(assay.ACTION_COUNT)))
+    with pytest.raises(assay.ObservabilityCeilingAssayError):
+        assay.closed_form_identifiability_scores_v1(
+            [group], torch.zeros(1, assay.ACTION_COUNT, 3)
+        )
+
+
 # -------------------------------------------------------------- inner split ---
 
 

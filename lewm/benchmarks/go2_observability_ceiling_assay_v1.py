@@ -550,6 +550,62 @@ def train_readout_v1(
     return state, diagnostics
 
 
+def closed_form_identifiability_scores_v1(
+    groups: Sequence[Any], features: torch.Tensor
+) -> np.ndarray:
+    """Reconstruct the dense rank analytically from privileged physical state.
+
+    This is the corrected identifiability control.  Unlike a learned control it
+    has no parameters, no training set, and therefore no cross-scene
+    generalization confound: it asks only whether the dense rank *is* a function
+    of the privileged successor state, not whether that function can be learned
+    from 128 states.
+
+    Target progress is reconstructed as ``|g| - |g - d|`` from the body-frame
+    displacement in ``features`` and the goal carried by the group.  The
+    remaining rank-key components -- path length, fall and tip flags -- are read
+    directly from ``features``.  The exact frozen rank rule of
+    :mod:`lewm.benchmarks.go2_matched_branch_physical_outcome_screen_v1` is then
+    applied unchanged.
+
+    Returns lower-is-better scores, so ``argmin`` selects the reconstructed
+    best branch.
+    """
+
+    if tuple(features.shape) != (
+        len(groups),
+        ACTION_COUNT,
+        PRIVILEGED_FEATURE_WIDTH,
+    ):
+        raise ObservabilityCeilingAssayError("privileged feature shape changed")
+    rows = []
+    for state_index, group in enumerate(groups):
+        goal_x, goal_y = group.relative_target_xy_body_m
+        goal_distance = math.hypot(float(goal_x), float(goal_y))
+        keys = []
+        for action in range(ACTION_COUNT):
+            dx = float(features[state_index, action, 0])
+            dy = float(features[state_index, action, 1])
+            path = float(features[state_index, action, 3])
+            fell = bool(features[state_index, action, 4] >= 0.5)
+            tipped = bool(features[state_index, action, 5] >= 0.5)
+            progress = goal_distance - math.hypot(goal_x - dx, goal_y - dy)
+            keys.append(
+                (
+                    int(fell),
+                    int(tipped),
+                    -physical._quantize(progress),  # noqa: SLF001
+                    physical._quantize(path),  # noqa: SLF001
+                )
+            )
+        mapping = {key: rank for rank, key in enumerate(sorted(set(keys)))}
+        rows.append([mapping[key] for key in keys])
+    result = np.asarray(rows, dtype=np.float64)
+    if result.shape != (len(groups), ACTION_COUNT):
+        raise ObservabilityCeilingAssayError("closed-form rank shape changed")
+    return result
+
+
 def train_privileged_mlp_v1(
     features: torch.Tensor,
     conditions: torch.Tensor,
@@ -978,6 +1034,7 @@ __all__ = [
     "arm_report_v1",
     "broadcast_feature_panel_v1",
     "canonical_bytes_v1",
+    "closed_form_identifiability_scores_v1",
     "conditions_v1",
     "config_v1",
     "decide_v1",

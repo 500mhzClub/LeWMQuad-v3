@@ -72,6 +72,11 @@ PREREGISTRATION_PATH = (
     REPO_ROOT / "docs" / f"lewm_{STEM}_preregistration_2026-08-05.md"
 )
 AMENDMENT_1_PATH = REPO_ROOT / "docs" / f"lewm_{STEM}_amendment_1_2026-08-05.md"
+V2_PREREGISTRATION_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "lewm_go2_observability_ceiling_assay_v2_corrected_control_preregistration_2026-08-05.md"
+)
 
 COLLECTION_ROOT = REPO_ROOT / (
     ".generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_"
@@ -504,7 +509,12 @@ def _fit_and_score_arm(
     }
 
 
-def execute_assay_v1(device: torch.device, *, encode_vjepa: bool) -> dict[str, Any]:
+def execute_assay_v1(
+    device: torch.device,
+    *,
+    encode_vjepa: bool,
+    identifiability_mode: str = "closed_form",
+) -> dict[str, Any]:
     started = time.time()
     ledger = AccessLedgerV1()
 
@@ -860,24 +870,47 @@ def execute_assay_v1(device: torch.device, *, encode_vjepa: bool) -> dict[str, A
         for name, value in comparisons.items()
     }
 
-    # ---- Amendment 1 validity controls ----
-    identifiability_states = [
-        assay.train_privileged_mlp_v1(
-            train_privileged,
-            train_conditions,
-            full_residual,
-            all_train_indices,
-            seed=seed,
-            device=device,
+    # ---- Validity controls ----
+    # Control 2a has two registered forms.  ``learned`` is amendment 1's MLP.
+    # ``closed_form`` is the V2 corrected control, which reconstructs the rank
+    # analytically and therefore carries no cross-scene generalization confound.
+    reconstruction_exact: bool | None = None
+    if identifiability_mode == "closed_form":
+        identifiability_scores = assay.closed_form_identifiability_scores_v1(
+            eval_groups, eval_privileged
         )
-        for seed in assay.MODEL_SEEDS
-    ]
-    identifiability_scores = assay.predict_privileged_mlp_v1(
-        identifiability_states, eval_privileged, eval_conditions, device=device
-    )
-    identifiability_report = assay.arm_report_v1(
-        eval_groups, eval_task_scores + identifiability_scores, policy="argmin"
-    )
+        reconstruction_exact = bool(
+            (identifiability_scores == assay.dense_rank_matrix_v1(eval_groups)).all()
+        )
+        if not reconstruction_exact:
+            raise CeilingAssayRunnerError(
+                "closed-form reconstruction does not equal the frozen dense rank"
+            )
+        identifiability_report = assay.arm_report_v1(
+            eval_groups, identifiability_scores, policy="argmin"
+        )
+    elif identifiability_mode == "learned":
+        identifiability_states = [
+            assay.train_privileged_mlp_v1(
+                train_privileged,
+                train_conditions,
+                full_residual,
+                all_train_indices,
+                seed=seed,
+                device=device,
+            )
+            for seed in assay.MODEL_SEEDS
+        ]
+        identifiability_scores = assay.predict_privileged_mlp_v1(
+            identifiability_states, eval_privileged, eval_conditions, device=device
+        )
+        identifiability_report = assay.arm_report_v1(
+            eval_groups, eval_task_scores + identifiability_scores, policy="argmin"
+        )
+    else:
+        raise CeilingAssayRunnerError(
+            f"unknown identifiability mode {identifiability_mode}"
+        )
     identifiability_regret = identifiability_report["summary"][
         "normalized_rank_regret"
     ]
@@ -915,7 +948,14 @@ def execute_assay_v1(device: torch.device, *, encode_vjepa: bool) -> dict[str, A
         "citable_as_scientific_evidence": False,
         "authorizes_retry_or_resume": False,
         "preregistration_binding": file_binding_v1(PREREGISTRATION_PATH),
-        "amendment_bindings": [file_binding_v1(AMENDMENT_1_PATH)],
+        "amendment_bindings": [
+            file_binding_v1(AMENDMENT_1_PATH),
+            *(
+                [file_binding_v1(V2_PREREGISTRATION_PATH)]
+                if identifiability_mode == "closed_form"
+                else []
+            ),
+        ],
         "config": assay.config_v1(),
         "integrity": integrity,
         "inner_split": {
@@ -963,8 +1003,10 @@ def execute_assay_v1(device: torch.device, *, encode_vjepa: bool) -> dict[str, A
         "validity_controls": {
             "amendment": "lewm_go2_observability_ceiling_assay_v1_amendment_1_2026-08-05",
             "identifiability_2a": {
+                "mode": identifiability_mode,
                 "summary": identifiability_report["summary"],
                 "threshold": assay.CAPACITY_CONTROL_MAX_REGRET,
+                "reconstruction_equals_frozen_dense_rank": reconstruction_exact,
             },
             "expressivity_2b": {
                 "dino_train_regret_by_rung": dino_train_regret,
@@ -997,6 +1039,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="omit the V-JEPA comparator arm (arm 4) and its comparisons",
     )
     parser.add_argument(
+        "--identifiability",
+        choices=("closed_form", "learned"),
+        default="closed_form",
+        help=(
+            "form of validity control 2a; closed_form is the V2 corrected "
+            "control, learned is amendment 1's MLP"
+        ),
+    )
+    parser.add_argument(
         "--attempt",
         default="attempt_v1",
         help=(
@@ -1016,7 +1067,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             "an immutable result already exists; this attempt is not resumable"
         )
     try:
-        result = execute_assay_v1(device, encode_vjepa=not arguments.skip_vjepa)
+        result = execute_assay_v1(
+            device,
+            encode_vjepa=not arguments.skip_vjepa,
+            identifiability_mode=arguments.identifiability,
+        )
     except Exception as error:  # noqa: BLE001
         ATTEMPT_ROOT.mkdir(parents=True, exist_ok=True)
         if not TERMINAL_PATH.exists():
