@@ -48,6 +48,10 @@ V3_AUTHORIZATION = (
     "state_v3_update100_trend_gate_timing_execution_authorization_2026-07-27.json"
 )
 LEAF_RUNNER = "scripts/run_go2_direct_egocentric_bev_state_jepa_v1.py"
+V3_RUNNER = (
+    "scripts/run_go2_direct_egocentric_bev_signed_boundary_semantic_anchor_"
+    "state_v3_update100_trend_gate_timing.py"
+)
 V4_MODEL = "lewm/models/direct_egocentric_bev_signed_boundary_occupied_weight_v4.py"
 
 
@@ -115,13 +119,25 @@ def main() -> int:
     import lewm.models.direct_egocentric_bev_state_jepa_v1 as _preload_v1  # noqa: F401
 
     contract = _module("_v4screen_contract", ROOT / V3_CONTRACT)
-    leaf = _module("_v4screen_leaf", ROOT / LEAF_RUNNER)
-    leaf.contract = contract
-    if hasattr(leaf, "_rebind_inherited_runner"):
-        try:
-            leaf._rebind_inherited_runner()
-        except Exception:  # noqa: BLE001
-            pass
+    # Use the COMPOSED v3 runner stack, not the bare leaf: the phase-schedule
+    # arming lives in the v8 layer's _initialize_model override, and the bare
+    # leaf raises "objective used before phase policy was armed".
+    v3_runner = _module("_v4screen_v3_runner", ROOT / V3_RUNNER)
+    v3_runner._rebind_inherited_runner()
+    # The chain composes by monkey-patching a shared _LEAF rather than by
+    # defining overrides, so the composed seam is reached through the anchor
+    # runner.  Its _initialize_model is the v8 version, which arms the phase
+    # schedule; the bare leaf's does not and raises "objective used before
+    # phase policy was armed".
+    leaf = v3_runner._V2._V1._LEAF
+    if not hasattr(leaf, "_train_probe") or not hasattr(leaf, "_initialize_model"):
+        raise RuntimeError("composed runner stack does not expose the training seam")
+    import inspect as _inspect
+    if "arm_phase_schedule_v6" not in _inspect.getsource(leaf._initialize_model):
+        raise RuntimeError("composed _initialize_model does not arm the phase schedule")
+    record["composed_initialize_model_defined_in"] = Path(
+        _inspect.getfile(leaf._initialize_model)).name
+    record["composed_runner_module"] = getattr(leaf, "__file__", "unknown")
 
     # DEVELOPMENT-ONLY: bind the CURRENT committed runtime rather than the
     # historical frozen manifest.  contract.current_source_bindings(ROOT) is the
@@ -235,17 +251,35 @@ def main() -> int:
 
     # ---- Training: frozen implementation, v4 model_api only ---------------
     del base_model, v4_model
+    # The training path writes snapshots through a custody-tracked output
+    # registry that the reservation path normally initialises.  This is the same
+    # single call the official runner makes (leaf line 1989), scoped to this
+    # arm's development-only output root.
+    leaf._reset_output_binding_registry(arm_out)
+    record["output_registry_root"] = str(arm_out)
+
     loader = leaf.DirectBevNarrowLoader(runtime, inputs, progress=progress)
     progress["_loader"] = loader
     gpu_started = time.monotonic()
     (model, probe), determinism = leaf._run_with_strict_determinism(
         runtime,
         lambda: leaf._train_probe(
-            runtime, v4_model_api, fit, loader, train_pairs, selection_pairs,
+            runtime, arm_model_api, fit, loader, train_pairs, selection_pairs,
             train_mapping, selection_mapping, schedule, device, arm_out,
             gpu_started=gpu_started, progress=progress,
         ),
     )
+    trained_class_module = type(model).__module__
+    expected = "_v4screen_model" if args.arm == "B" else None
+    record["trained_model_class"] = {
+        "module": trained_class_module,
+        "qualname": type(model).__qualname__,
+        "arm": args.arm,
+    }
+    if args.arm == "B" and "_v4screen_model" not in trained_class_module:
+        raise RuntimeError("arm B did not train the v4 model class")
+    if args.arm == "A" and "_v4screen_model" in trained_class_module:
+        raise RuntimeError("arm A trained the v4 model class")
     record["probe_status"] = str(probe.get("status"))
     record["determinism"] = determinism
     record["final_state_sha256"] = _state_sha(model.state_dict())
