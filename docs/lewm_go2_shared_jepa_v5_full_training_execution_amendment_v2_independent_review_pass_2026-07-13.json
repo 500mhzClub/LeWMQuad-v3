@@ -1,0 +1,44 @@
+{
+  "schema": "lewm_go2_shared_jepa_v5_full_training_execution_amendment_v2_independent_review_v1",
+  "date": "2026-07-13",
+  "verdict": "PASS",
+  "reviewer": "/root",
+  "candidate": {
+    "amendment_sha256": "b521d2885b5dca1a72838282fbb8e193a21ec0f2db0e0a5950074506fba1f66d",
+    "author_handoff_sha256": "13102b0a21a71b5c6554ecce380d1ef12f3f3bb582b7175dee6decd17e5cdbfa"
+  },
+  "independent_evidence": {
+    "test_path": "lewm/tests/test_go2_shared_jepa_v5_full_training_execution_amendment_v2_independent_review.py",
+    "test_sha256": "734a140f2b073e02970cb81897fd5edbb7beb28e56a60ba08f774df43f920e0b",
+    "result": "8 passed in 0.02s"
+  },
+  "closures": {
+    "separate_payload_free_preflight": true,
+    "exact_reservation_before_exact_neural_or_payload_access": true,
+    "preflight_live_state_crosses_exact_boundary": false,
+    "live_status_hash_is_authority": false,
+    "selection_ablation_is_diagnostic_only": true,
+    "future_untouched_claim_requires_separate_preregistration": true,
+    "v1_science_retained": true
+  },
+  "authority": {
+    "additive_implementation_authorized": true,
+    "preflight_execution_authorized": false,
+    "dataset_construction_or_use_authorized": false,
+    "v4_execution_authorized": false,
+    "training_or_calibration_authorized": false,
+    "checkpoint_use_authorized": false,
+    "untouched_or_causal_claim_authorized": false,
+    "g2_or_g3_authorized": false,
+    "heldout_authorized": false,
+    "runtime_hardware_navigation_authorized": false,
+    "production_or_promotion_authorized": false
+  },
+  "access": {
+    "generated_payload_opened": false,
+    "model_or_checkpoint_opened": false,
+    "torch_runtime_opened": false,
+    "accelerator_opened": false,
+    "g2_or_heldout_opened": false
+  }
+}

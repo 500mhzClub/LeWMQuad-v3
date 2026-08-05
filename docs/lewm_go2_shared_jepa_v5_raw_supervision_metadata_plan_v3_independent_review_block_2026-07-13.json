@@ -1,0 +1,90 @@
+{
+  "schema": "lewm_go2_shared_jepa_v5_raw_supervision_metadata_plan_v3_independent_review_v1",
+  "date": "2026-07-13",
+  "verdict": "BLOCK",
+  "candidate": {
+    "source": {
+      "path": "lewm/datasets/go2_shared_jepa_v5_raw_supervision_plan_v3.py",
+      "sha256": "0adc6bfa0ea76484f9491a2bbde68f072fd4b908ca8cda7b112c4a32fe481247"
+    },
+    "author_tests": {
+      "path": "lewm/tests/test_go2_shared_jepa_v5_raw_supervision_plan_v3.py",
+      "sha256": "f1f0bff99f997e94677b542eb35c76332c8f79cf0ff88d5474011ed007f6aa78"
+    },
+    "author_handoff": {
+      "path": "docs/lewm_go2_shared_jepa_v5_raw_supervision_metadata_plan_v3_author_handoff_2026-07-13.md",
+      "sha256": "66f55b3489c35cbbd5413f4f223942463fad08607564f08994d3f1887bac8160"
+    }
+  },
+  "independent_evidence": {
+    "test_path": "lewm/tests/test_go2_shared_jepa_v5_raw_supervision_plan_v3_independent_qa.py",
+    "test_sha256": "af32942fc4862b8734cc482b06abe19cd8217b274a32c742aaf46cab231663b0",
+    "result": "14 passed, 2 failed in 2.61s"
+  },
+  "contract_mismatches": [
+    {
+      "id": "repo_root_ancestor_open_continuity",
+      "source_lines": [194, 200],
+      "replacement_exercised": true,
+      "rejected": false,
+      "read_calls": 2,
+      "required_rejected": true,
+      "required_read_calls": 0
+    },
+    {
+      "id": "leaf_preopen_fingerprint_continuity",
+      "source_lines": [247, 274],
+      "same_device_inode": true,
+      "opened_nlink": 1,
+      "preopen_fingerprint_changed": true,
+      "rejected": false,
+      "read_calls": 2,
+      "required_rejected": true,
+      "required_read_calls": 0
+    }
+  ],
+  "retained_results": {
+    "published_v2_replacements_closed": 2,
+    "component_identity_replacements_closed": 1,
+    "opened_leaf_nlink_checks_closed": 1,
+    "nonregular_and_linked_leaf_cases_closed": 4,
+    "pair_count": 5172,
+    "endpoint_use_count": 10344,
+    "unique_endpoint_count": 9460,
+    "scene_count": 88,
+    "plan_content_sha256": "8004ab0d3aa6a2f5d576ba0ff4d6a75f50899152e542dc62b8d6e35f614921a3",
+    "ordered_pair_sha256": "76810dba883f3aaffb92fccb593d382daf7edca74a9bb5559a977e7e88b7b5ea",
+    "ordered_endpoint_sha256": "8130e961b7b5c04944b178fa4f73c1fa157776f7702ab5cdc213cf16c922f698",
+    "inventory_hashes": {
+      "scene_role": "f967364a2869f9f87a4c2c1c0053616e263464be53691283909a8f910b94ed5b",
+      "frames": "7512a041d2f163cc8978eee1a261951162b2ccd2020414325504e41eac9c623d",
+      "manifests": "2bc5f468eeba3f44b1f428b0145c9e63ec84d08d1c21e8a2870227e12e0c44c5",
+      "plans": "0359078471ac3f85aa704f44012a44ec9f3c1c2fd6f61ce1628533fc1c2a36e4",
+      "summaries": "bd2b181973e3023df0825200657d0d2895f71804134100f60234363503be548a"
+    },
+    "regular_metadata_file_opens": 10,
+    "distinct_allowed_metadata_files": 7,
+    "selected_reference_metadata_validations": 704,
+    "excluded_g2_reference_inspections": 0,
+    "excluded_g2_sidecar_opens": 0,
+    "referenced_source_payload_opens": 0,
+    "license_flags_true": 0
+  },
+  "verification": {
+    "v3_author_suite": "24 passed in 2.58s",
+    "v1_v2_author_suites": "26 passed in 4.64s",
+    "v2_independent_block_reproduction": "24 passed, 2 failed in 2.60s",
+    "py_compile": "passed",
+    "accelerators_visible": false,
+    "native_threads_per_process": 1
+  },
+  "authority": {
+    "raw_builder_source_work_authorized": false,
+    "source_payload_access_authorized": false,
+    "dataset_construction_authorized": false,
+    "training_authorized": false,
+    "g2_opened": false,
+    "heldout_opened": false,
+    "runtime_hardware_production_opened": false
+  }
+}

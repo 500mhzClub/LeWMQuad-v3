@@ -1,0 +1,83 @@
+{
+  "schema": "lewm_go2_shared_jepa_v5_raw_supervision_metadata_plan_v4_independent_review_v1",
+  "date": "2026-07-13",
+  "verdict": "BLOCK",
+  "candidate": {
+    "source": {
+      "path": "lewm/datasets/go2_shared_jepa_v5_raw_supervision_plan_v4.py",
+      "sha256": "d6282a6ee561d34fbe20542f31acd8c7bee82badfa74d1d640930148a9951de2"
+    },
+    "author_tests": {
+      "path": "lewm/tests/test_go2_shared_jepa_v5_raw_supervision_plan_v4.py",
+      "sha256": "724f1c93023256015fe0d468c56591fab35512de79c1e0b0822e78bccdb4a0e0"
+    },
+    "author_handoff": {
+      "path": "docs/lewm_go2_shared_jepa_v5_raw_supervision_metadata_plan_v4_author_handoff_2026-07-13.md",
+      "sha256": "4753d83517a41d2e70e8f25d7cb03ad3709f2d798d1f9f39eea358a527c91415"
+    }
+  },
+  "independent_evidence": {
+    "test_path": "lewm/tests/test_go2_shared_jepa_v5_raw_supervision_plan_v4_independent_qa.py",
+    "test_sha256": "5e079be910f5633c01df6d9afc2967715515b27293cc09f279eb71f373c40f78",
+    "result": "9 passed, 2 failed in 1.59s"
+  },
+  "contract_mismatches": [
+    {
+      "id": "source_index_parent_post_read_fingerprint_continuity",
+      "source_lines": [140, 144, 160, 179, 311, 382],
+      "directory_identity_changed": false,
+      "directory_type_changed": false,
+      "directory_full_fingerprint_changed": true,
+      "leaf_bytes_changed": false,
+      "rejected": false,
+      "required_rejected": true
+    },
+    {
+      "id": "repo_root_ancestor_post_read_fingerprint_continuity",
+      "source_lines": [140, 144, 160, 179, 267, 382],
+      "directory_identity_changed": false,
+      "directory_type_changed": false,
+      "directory_full_fingerprint_changed": true,
+      "leaf_bytes_changed": false,
+      "rejected": false,
+      "required_rejected": true
+    }
+  ],
+  "retained_results": {
+    "component_wise_root_walk": true,
+    "published_v3_continuity_cases_closed": 2,
+    "nonregular_and_linked_leaf_cases_closed": 4,
+    "pair_count": 5172,
+    "endpoint_use_count": 10344,
+    "unique_endpoint_count": 9460,
+    "scene_count": 88,
+    "plan_content_sha256": "8004ab0d3aa6a2f5d576ba0ff4d6a75f50899152e542dc62b8d6e35f614921a3",
+    "ordered_pair_sha256": "76810dba883f3aaffb92fccb593d382daf7edca74a9bb5559a977e7e88b7b5ea",
+    "ordered_endpoint_sha256": "8130e961b7b5c04944b178fa4f73c1fa157776f7702ab5cdc213cf16c922f698",
+    "regular_metadata_file_opens": 10,
+    "distinct_allowed_metadata_files": 7,
+    "selected_reference_metadata_validations": 704,
+    "excluded_g2_reference_inspections": 0,
+    "excluded_g2_sidecar_opens": 0,
+    "referenced_source_payload_opens": 0,
+    "protected_payload_opens": 0,
+    "license_flags_true": 0
+  },
+  "verification": {
+    "v4_author_suite": "26 passed in 2.52s",
+    "v1_v2_v3_author_suites": "50 passed in 6.89s",
+    "v3_independent_block_reproduction": "14 passed, 2 failed in 2.49s",
+    "py_compile": "passed",
+    "accelerators_visible": false,
+    "native_threads_per_process": 1
+  },
+  "authority": {
+    "raw_builder_source_work_authorized": false,
+    "source_payload_access_authorized": false,
+    "dataset_construction_authorized": false,
+    "training_authorized": false,
+    "g2_opened": false,
+    "heldout_opened": false,
+    "runtime_hardware_production_opened": false
+  }
+}

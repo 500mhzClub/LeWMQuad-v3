@@ -1,0 +1,251 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_terminal_review_v1",
+  "review_date": "2026-08-05",
+  "status": "PASS_FAIL_CLOSED_PRE_PHYSICS_PATH_ENVIRONMENT_STOP_ITERATION_TERMINAL_REVIEW",
+  "protected_material_opened": false,
+  "review_scope": {
+    "description": "Independent terminal review of the consumed flat Genesis/CPU V2 qualification using its known nonprotected terminal, reservation, worker-failure receipt, frozen independent source review, exact installed Genesis CPU-device utility, and payload-free environment diagnostics.",
+    "sealed_held_out_or_production_material_opened": false,
+    "qualification_output_used_as_scientific_or_training_data": false,
+    "genesis_or_gpu_execution_performed_by_review": false,
+    "payload_scene_or_model_execution_performed_by_review": false
+  },
+  "bindings": {
+    "qualification_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification/attempt_v1/terminal.json",
+      "sha256": "89adad668a3e895732476a6a54d212d942afab5b036b8177206d6bdd65c9b6b9",
+      "byte_count": 3637
+    },
+    "qualification_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification/attempt_v1/collection/reservation.json",
+      "sha256": "83d6cd29597ef5b1048553d3af357d42ffd77324a8e3503a42ed0c6be5500bd2",
+      "byte_count": 2884
+    },
+    "worker_failure_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification/attempt_v1/collection/scene_results/012.failure.json",
+      "sha256": "9b52c4a2459e5508c10a6a20cf39b78ccff33c841507567eafa1d72444baf1da",
+      "byte_count": 1321
+    },
+    "independent_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_source_review_2026-08-05.json",
+      "sha256": "4d69718a82f9a4a87087e76c6353eda8fabaedb91303c0b498d85ac76e136aef",
+      "byte_count": 14170
+    },
+    "reservation_bound_exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_exact_plan_2026-08-05.json",
+      "sha256": "df4516631a646b46ee89ca9be7aa55b47bf5927a9440a26c4c4fee19e0147ce0",
+      "byte_count": 353031
+    },
+    "reservation_bound_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_preregistration_2026-08-05.md",
+      "sha256": "ff50441e8eca4e1b05391dfd22137532e42a8c0c6d41626a7332323325350f51",
+      "byte_count": 9087
+    },
+    "installed_genesis_cpu_device_utility": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/utils/misc.py",
+      "sha256": "3dc51f7b7fd1b935d3e3451ca95e54595f69fe1cd5eed09eee189782d0a5c9ad",
+      "byte_count": 34687,
+      "reviewed_lines": [
+        184,
+        185,
+        186,
+        187
+      ]
+    }
+  },
+  "attempt_identity": {
+    "attempt_id": "go2-scene-diversity-recurrent-replication-genesis-cpu-flat-development-v2-qualification",
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification/attempt_v1",
+    "reservation_status": "RESERVED_FLAT_CPU_TWO_PROBE_QUALIFICATION_CONSUMED",
+    "root_creation_consumed_attempt": true,
+    "probe_order": [
+      12,
+      0
+    ],
+    "first_probe_scene_index": 12,
+    "second_probe_scene_attempted": false
+  },
+  "terminal_observation": {
+    "terminal_status": "FAIL_GENESIS_CPU_FLAT_DEVELOPMENT_V2_QUALIFICATION",
+    "failure_type": "CpuFlatQualificationError",
+    "failure_message": "scene 12 worker failed",
+    "failure_phase": "scene_worker_process",
+    "worker_scene_id": "medium_enclosed_maze_00d3d19d1f00",
+    "worker_role": "train",
+    "worker_exit_code": 1,
+    "worker_elapsed_seconds": 1.8165525619406253,
+    "watchdog_timeout": false,
+    "forced_kill": false,
+    "fresh_process_group": true,
+    "process_group_gone_after_exit": true,
+    "worker_failure_type": "StopIteration",
+    "worker_failure_message": "",
+    "worker_failure_receipt_citable_as_scientific_evidence": false,
+    "worker_failure_receipt_physics_validated": false,
+    "worker_failure_receipt_diagnostics_persisted_if_present": false,
+    "result_binding": null,
+    "decision_binding": null,
+    "authorizes_scientific_plan_release": false,
+    "authorizes_retry_or_resume": false
+  },
+  "root_cause": {
+    "classification": "EXACT_CHILD_ENVIRONMENT_MISSING_EXECUTABLE_SEARCH_PATH_AT_GENESIS_CPU_DEVICE_IDENTIFICATION",
+    "exact_child_environment_key_count": 10,
+    "exact_child_environment": {
+      "EGL_DEVICE_ID": "1",
+      "GS_BACKEND": "cpu",
+      "GS_PARA_LEVEL": "0",
+      "HOME": "/home/andrewknowles",
+      "MESA_VK_DEVICE_SELECT": "1002:7551!",
+      "PYOPENGL_PLATFORM": "egl",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONHASHSEED": "0",
+      "PYTHONNOUSERSITE": "1",
+      "PYTHONSAFEPATH": "1"
+    },
+    "home_present": true,
+    "path_present": false,
+    "genesis_initialization_banner_observed": true,
+    "genesis_initialization_banner_persisted_in_terminal_or_worker_receipt": false,
+    "genesis_initialization_banner_provenance": "The qualification launch console emitted the Genesis initialization banner. The bound Python StopIteration receipt and installed get_device source independently localize the subsequent failure inside CPU device identification, after V1's missing-HOME native abort point and before scene construction or physics.",
+    "installed_cpu_device_code": {
+      "backend_branch_line": "if backend == gs_backend.cpu:",
+      "cpu_info_line": "cpu_info = cpuinfo.get_cpu_info()",
+      "device_name_line": "device_name = next(filter(None, map(cpu_info.get, (\"brand_raw\", \"hardware_raw\", \"vendor_id_raw\"))))",
+      "empty_candidate_behavior": "When all three mapped values are falsey, next() raises StopIteration."
+    },
+    "payload_free_environment_diagnostic": {
+      "method": "The bound V2 interpreter imported cpuinfo directly and printed only brand_raw, hardware_raw, and vendor_id_raw. It did not initialize Genesis, construct a scene, step physics, render, read qualification payloads, or run a model.",
+      "v2_exact_environment_result": {
+        "brand_raw": null,
+        "hardware_raw": null,
+        "vendor_id_raw": null
+      },
+      "fixed_path_only_environment_delta": {
+        "PATH": "/usr/bin:/bin"
+      },
+      "fixed_path_result": {
+        "brand_raw": "AMD Ryzen 9 9950X3D 16-Core Processor",
+        "hardware_raw": null,
+        "vendor_id_raw": "AuthenticAMD"
+      },
+      "diagnostic_reproduced_by_independent_terminal_reviewer": true
+    },
+    "causal_interpretation": "The deliberately exact V2 child map retained HOME but omitted PATH. Under that exact map cpuinfo returned no usable CPU identity candidate, so Genesis get_device raised the recorded StopIteration before scene construction. Adding only fixed PATH=/usr/bin:/bin makes the same payload-free cpuinfo call return a valid AMD identity. This closes the observed V2 failure but does not by itself prove that the later qualification stages will pass.",
+    "cpu_physics_failure_supported": false,
+    "flat_36_lane_mechanism_failure_supported": false,
+    "render_route_failure_supported": false,
+    "scientific_model_failure_supported": false
+  },
+  "resource_closure": {
+    "selected_device_vram_ceiling_bytes": 16977405952,
+    "prelaunch_baseline_used_bytes": 2555998208,
+    "peak_selected_device_vram_bytes": 2555998208,
+    "selected_device_vram_headroom_bytes": 14421407744,
+    "vram_sample_count": 91,
+    "vram_read_errors": 0,
+    "selected_device_vram_cap_breached": false,
+    "release_barrier_status": "PASSED",
+    "release_barrier_baseline_used_bytes": 2555998208,
+    "release_barrier_final_used_bytes": 2555998208,
+    "release_barrier_maximum_used_bytes": 2555998208,
+    "release_barrier_minimum_used_bytes": 2555998208,
+    "release_barrier_required_consecutive_samples": 3,
+    "release_barrier_final_consecutive_samples": 3,
+    "release_barrier_elapsed_seconds": 0.10130208195187151,
+    "worker_process_group_leaked": false,
+    "vram_gate_passed": true,
+    "release_gate_passed": true,
+    "process_group_release_gate_passed": true,
+    "post_attempt_kernel_observation": {
+      "window_local_time": "2026-08-05 02:34:30 through 2026-08-05 02:36:00",
+      "journal_output": "-- No entries --",
+      "matching_new_amdgpu_reset_wedge_fault_hang_ring_timeout_or_hsa_exception_count": 0,
+      "no_matching_kernel_gpu_or_hsa_fault_observed": true,
+      "formal_final_kernel_gate_reached_by_qualification": false
+    }
+  },
+  "absent_outputs": {
+    "scene_12_worker_failure_receipt_present": true,
+    "scene_12_scene_result_absent": true,
+    "scene_12_render_receipt_absent": true,
+    "scene_0_scene_result_absent": true,
+    "qualification_result_absent": true,
+    "qualification_pass_decision_absent": true
+  },
+  "evidence_boundary": {
+    "reached_native_genesis_initialization_entry": true,
+    "reached_genesis_cpu_device_identification": true,
+    "reached_genesis_scene_construction": false,
+    "reached_genesis_physics_step": false,
+    "reached_initial_36_lane_clone_audit": false,
+    "reached_common_history": false,
+    "reached_counterfactual_branch": false,
+    "reached_rendering_or_rgb_storage": false,
+    "reached_dinov2_feature_extraction": false,
+    "reached_model_training_or_evaluation": false,
+    "reached_timing_projection_gate": false,
+    "reached_formal_final_kernel_journal_gate": false,
+    "lane_equality_evidence_produced": false,
+    "render_evidence_produced": false,
+    "world_model_or_planning_evidence_produced": false
+  },
+  "source_review_disposition": {
+    "source_review_was_valid_against_the_bound_ten_key_home_augmented_preregistration": true,
+    "runtime_discovered_path_dependency_was_missing_from_preregistration": true,
+    "source_review_pass_does_not_convert_this_runtime_failure_to_a_retry": true,
+    "v2_source_or_runtime_may_be_repaired_in_place": false
+  },
+  "scientific_disposition": {
+    "qualification_passed": false,
+    "cpu_physics_qualified": false,
+    "exact_36_lane_cpu_mechanism_qualified": false,
+    "v2_consumed": true,
+    "v2_retired": true,
+    "v2_retry_authorized": false,
+    "v2_resume_authorized": false,
+    "v2_refill_authorized": false,
+    "v2_overwrite_or_repair_authorized": false,
+    "v2_output_reuse_authorized": false,
+    "scientific_plan_release_authorized": false,
+    "scientific_execution_authorized": false,
+    "representation_navigation_planning_or_world_model_claim_authorized": false
+  },
+  "next_experiment": {
+    "successor_label": "flat Genesis/CPU V3 qualification",
+    "recommendation": "Create one fresh flat Genesis/CPU V3 qualification whose sole material runtime change is adding fixed PATH=/usr/bin:/bin while retaining HOME=/home/andrewknowles.",
+    "sole_material_environment_delta": {
+      "PATH": "/usr/bin:/bin"
+    },
+    "required_retained_environment_entry": {
+      "HOME": "/home/andrewknowles"
+    },
+    "expected_child_environment_key_count": 11,
+    "ambient_or_inherited_path_authorized": false,
+    "path_value_other_than_fixed_usr_bin_bin_authorized": false,
+    "preserve_cpu_backend": true,
+    "preserve_vulkan_egl_r9700_render_route": true,
+    "preserve_probe_order": [
+      12,
+      0
+    ],
+    "preserve_four_states_and_36_lanes_per_worker": true,
+    "preserve_histories_actions_horizons_render_contract_model_seeds_gates_and_thresholds": true,
+    "fresh_attempt_identity_and_root_required": true,
+    "separate_preregistration_plan_builder_harness_tests_and_independent_source_review_required": true,
+    "v2_runtime_output_or_cache_reuse_authorized": false,
+    "authorizes_v3_execution_by_itself": false,
+    "alternate_environment_architecture_tolerance_or_batching_change_recommended": false
+  },
+  "decision": {
+    "terminal_review_passed": true,
+    "failure_closed_as_pre_physics_fixed_path_environment_stop_iteration": true,
+    "home_fix_reached_genesis_initialization": true,
+    "resource_release_closed": true,
+    "no_matching_post_attempt_kernel_gpu_or_hsa_fault_observed": true,
+    "v2_consumed_and_terminal": true,
+    "v2_retry_resume_refill_overwrite_repair_or_reuse_authorized": false,
+    "only_fresh_home_retaining_fixed_path_v3_recommended": true,
+    "scientific_plan_release_or_execution_authorized": false
+  }
+}

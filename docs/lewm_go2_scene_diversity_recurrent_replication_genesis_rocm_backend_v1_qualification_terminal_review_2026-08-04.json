@@ -1,0 +1,287 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification_terminal_review_v1",
+  "status": "PASS_FAIL_CLOSED_PRE_BACKEND_INFRASTRUCTURE_TERMINAL_REVIEW",
+  "audit_passed": true,
+  "observed_at": "2026-08-04T21:33:57+01:00",
+  "review_scope": {
+    "purpose": "Classify the consumed Genesis ROCm backend V1 qualification terminal without opening scene, RGB, protected, or predecessor-partial payloads.",
+    "evidence_allowed": [
+      "V1 qualification terminal and reservation metadata",
+      "exact V1 qualification authority, plan, source review, and bound source code",
+      "qualification filesystem names and counts",
+      "exact lld and ld.lld --version process observations",
+      "process absence metadata",
+      "kernel journal metadata"
+    ],
+    "evidence_forbidden": [
+      "RGB payload content",
+      "scene payload content",
+      "protected material",
+      "predecessor partial runtime outputs"
+    ]
+  },
+  "bindings": {
+    "qualification_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification/attempt_v1/terminal.json",
+      "sha256": "62f30dcf44fa9908ffbe86c184c84e13515886b25b2382da07e277f1f8a8ea84",
+      "byte_count": 426
+    },
+    "attempt_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification/attempt_v1/reservation.json",
+      "sha256": "7dc5293e868d83ed868b4ad23c695316ba62cb285611469df121b55a770f1169",
+      "byte_count": 1054
+    },
+    "collection_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification/attempt_v1/collection/reservation.json",
+      "sha256": "570bc8cb378e3f8f0ca483e0fb38aa349c6ea6abfb71adb91908e8ea51865580",
+      "byte_count": 2679
+    },
+    "qualification_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification_authority_2026-08-04.json",
+      "sha256": "614b3184a4c40242ab2a29212f50a5e53668c9c470cc88c2bd34c5a86b72c766",
+      "byte_count": 66416
+    },
+    "qualification_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification_exact_plan_2026-08-04.json",
+      "sha256": "798815d7f96a2f03d51a100d32c3623acf5b4b4b08c01caaba089d76c042563f",
+      "byte_count": 364626
+    },
+    "scientific_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_exact_plan_2026-08-04.json",
+      "sha256": "1f80516d4113e51703bc143f54fda112b50fc7b88b4f292458a719a1e0180b2a",
+      "byte_count": 364372
+    },
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_preregistration_2026-08-04.md",
+      "sha256": "ec53ffaa4ef236cb430bb134aa2627a99215b81ede69d6a867c34a28da12453f",
+      "byte_count": 11786
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_source_review_2026-08-04.json",
+      "sha256": "d67da363161179f68c46869d00af95b65ed3846984908f61cd6b45b7a380a431",
+      "byte_count": 67340
+    },
+    "plan_builder_source": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_plan.py",
+      "sha256": "a01ebc51cf735356c71890490e4b98f863c42b2083036a83925d6627838cdcc7",
+      "byte_count": 31645
+    },
+    "qualifier_source": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "5126fd1522ca3652afd9a8343a1d26c9af8ba8b20953ef2c922a983841261ff0",
+      "byte_count": 37259
+    }
+  },
+  "terminal_contract_audit": {
+    "terminal_payload": {
+      "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification_terminal_v1",
+      "status": "FAIL_GENESIS_ROCM_BACKEND_V1_QUALIFICATION_HARD_STOP",
+      "failure": {
+        "type": "GenesisRocmBackendQualificationError",
+        "message": "bound AMD LLD preflight failed"
+      },
+      "qualification_result_binding": null,
+      "authorizes_scientific_authority": false,
+      "authorizes_retry_or_resume": false
+    },
+    "attempt_reservation_status": "CONSUMED_ONE_SHOT_QUALIFICATION_ATTEMPT",
+    "collection_reservation_status": "RESERVED_TWO_PROBE_QUALIFICATION_CONSUMED",
+    "authority_and_plan_bindings_agree_across_reservations": true,
+    "retry_resume_overwrite_authorized": false,
+    "terminal_matches_the_unique_bound_source_failure_site": true,
+    "unique_failure_string_source_occurrence_count": 1,
+    "terminal_created_fail_closed": true
+  },
+  "linker_driver_audit": {
+    "plan_bound_regular_target": {
+      "path": "/opt/rocm-7.1.1/lib/llvm/bin/lld",
+      "file_sha256": "9d5cd31362c253d2c0a977905749ab3f3296d67fbb99a56026f306e57ab8251d",
+      "byte_count": 106653904
+    },
+    "unix_driver_entrypoint": {
+      "path": "/opt/rocm-7.1.1/lib/llvm/bin/ld.lld",
+      "file_type": "symbolic link",
+      "link_text": "lld",
+      "resolves_to_bound_regular_target": true
+    },
+    "plan_builder_resolution_check": {
+      "path_lookup_name": "ld.lld",
+      "path_lookup_resolves_to_bound_regular_target": true,
+      "rocm_path_driver_resolves_to_bound_regular_target": true,
+      "regular_target_was_correctly_bound": true
+    },
+    "qualifier_invocation_bug": {
+      "source_location": "scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py:455",
+      "resolved_the_driver_entrypoint_before_process_invocation": true,
+      "actual_argv0": "/opt/rocm-7.1.1/lib/llvm/bin/lld",
+      "required_argv0": "/opt/rocm-7.1.1/lib/llvm/bin/ld.lld",
+      "driver_dispatch_depends_on_argv0_basename": true,
+      "description": "The qualifier proved that both ld.lld lookup paths resolve to the bound regular binary, then invoked the resolved target name. LLD selected its generic driver instead of the Unix linker driver."
+    },
+    "observed_generic_target_version_command": {
+      "argv": [
+        "/opt/rocm-7.1.1/lib/llvm/bin/lld",
+        "--version"
+      ],
+      "return_code": 1,
+      "stdout": "",
+      "stderr": "lld is a generic driver.\nInvoke ld.lld (Unix), ld64.lld (macOS), lld-link (Windows), wasm-ld (WebAssembly) instead\n",
+      "stdout_byte_count": 0,
+      "stderr_byte_count": 115,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "3a7bfaa6151172391bb12910f6a07fe3d01ddd8e7a284525dcd17a466a985012"
+    },
+    "observed_unix_driver_version_command": {
+      "argv": [
+        "/opt/rocm-7.1.1/lib/llvm/bin/ld.lld",
+        "--version"
+      ],
+      "return_code": 0,
+      "stdout": "AMD LLD 20.0.0 (/longer_pathname_so_that_rpms_can_support_packaging_the_debug_info_for_all_os_profiles/src/llvm-project/llvm 27682a16360e33e37c4f3cc6adf9a620733f8fe1) (compatible with GNU linkers)\n",
+      "stderr": "",
+      "stdout_byte_count": 197,
+      "stderr_byte_count": 0,
+      "stdout_sha256": "6c0ba9c5cc7f0814c6a476165f2163c20d9fa97b8f91e01567399d853a3f07be",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "root_cause_established": true,
+    "root_cause": "Generic-driver invocation caused the exact bound AMD LLD preflight failure; the bound regular binary itself and the intended ld.lld entrypoint are present and consistent.",
+    "driver_entrypoint_fix_proves_only_preflight_reachability": true,
+    "driver_entrypoint_fix_does_not_prove_backend_or_qualification_success": true
+  },
+  "source_control_flow_audit": {
+    "qualifier_preflight_order": [
+      "validate exact bound paths",
+      "invoke LLD version command",
+      "invoke rocminfo",
+      "invoke HIP/Torch/Genesis identity query",
+      "invoke EGL query",
+      "select VRAM counters",
+      "construct and launch scene workers"
+    ],
+    "exact_failure_raised_at_lld_version_gate": true,
+    "rocminfo_reached": false,
+    "hip_identity_query_reached": false,
+    "torch_gpu_query_reached": false,
+    "genesis_import_identity_query_reached": false,
+    "genesis_initialization_reached": false,
+    "egl_query_reached": false,
+    "vram_counter_selection_reached": false,
+    "worker_argv_construction_reached": false,
+    "worker_process_launched": false,
+    "scene_execution_reached": false,
+    "qualification_result_created": false,
+    "evidence_basis": "The bound source has one matching failure site immediately after the LLD subprocess and before every later preflight and worker operation; the terminal records that exact error, and the filesystem contains no worker or scene result files."
+  },
+  "filesystem_metadata_audit": {
+    "qualification_attempt_root_present": true,
+    "scientific_attempt_root_absent": true,
+    "qualification_result_absent": true,
+    "role_local_quadrants_cache_absent": true,
+    "regular_file_count": 3,
+    "symlink_count": 0,
+    "directories_relative": [
+      ".",
+      "collection",
+      "collection/scene_results",
+      "collection/scenes"
+    ],
+    "regular_files_relative": [
+      "reservation.json",
+      "collection/reservation.json",
+      "terminal.json"
+    ],
+    "scene_directory_entry_count": 0,
+    "scene_result_directory_entry_count": 0,
+    "rgb_file_count": 0,
+    "scene_payload_file_count": 0,
+    "attempt_reservation_mtime_ns": 1785875399386426400,
+    "collection_reservation_mtime_ns": 1785875399386606800,
+    "terminal_mtime_ns": 1785875399437489200
+  },
+  "process_metadata_audit": {
+    "recorded_orchestrator_pid": 3991303,
+    "recorded_orchestrator_pid_present": false,
+    "live_exact_v1_qualifier_process_count": 0,
+    "live_v1_worker_process_count": 0,
+    "process_absence_passed": true
+  },
+  "kernel_journal_metadata_audit": {
+    "query_window_start_epoch": 1785875398.386607,
+    "query_window_end_epoch": 1785875400.4374893,
+    "journalctl_return_code": 0,
+    "journalctl_output_line_count": 1,
+    "matching_amdgpu_ring_timeout_reset_or_hsa_fault_line_count": 0,
+    "matching_lines_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "journal_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "absence_of_fault_metadata_is_not_backend_qualification_evidence": true
+  },
+  "source_review_accountability": {
+    "reviewed_source_review_status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+    "reviewed_source_review_findings": [],
+    "missed_issue": "The source review verified target binding and resolution equality but did not distinguish the generic lld target invocation from the ld.lld driver entrypoint required for argv0-based driver dispatch.",
+    "generic_driver_invocation_was_missed": true,
+    "original_rocm_lld_binding_claim_was_too_weak_for_execution_confidence": true,
+    "source_review_superseded_for_v1_execution_confidence": true,
+    "source_review_remains_immutable_historical_identity_evidence": true,
+    "source_review_does_not_authorize_v1_retry_or_v2_execution": true
+  },
+  "decision": {
+    "qualification_status": "FAIL_GENESIS_ROCM_BACKEND_V1_QUALIFICATION_HARD_STOP",
+    "qualification_pass": false,
+    "attempt_consumed": true,
+    "failure_phase": "pre_rocminfo_lld_driver_entrypoint_preflight",
+    "failure_is_source_control_flow_infrastructure": true,
+    "failure_is_backend_evidence": false,
+    "failure_is_scientific": false,
+    "backend_decision": null,
+    "backend_metrics": null,
+    "scientific_decision": null,
+    "scientific_metrics": null,
+    "navigation_or_world_model_claim": null,
+    "scientific_authority_eligible_from_v1": false
+  },
+  "successor_eligibility": {
+    "v1_retry_resume_refill_overwrite_eligible": false,
+    "v1_same_root_or_science_identical_replacement_eligible": false,
+    "separately_preregistered_fresh_v2_ld_lld_driver_entrypoint_hypothesis_eligible": true,
+    "eligibility_basis": "V1 failed before backend contact because of a deterministic driver-entrypoint source bug. A fresh V2 may test the materially corrected infrastructure hypothesis without changing the frozen data, model, evaluation, or gates.",
+    "v2_hypothesis": "Invoking the exact unresolved /opt/rocm-7.1.1/lib/llvm/bin/ld.lld entrypoint, while separately binding and rehashing its resolved regular lld target, removes the generic-driver preflight failure.",
+    "v2_requirements": [
+      "new preregistration, attempt identity, qualification root, role-local cache, source review, and one-shot authority",
+      "exact ld.lld entrypoint invocation retained without resolving argv0 before subprocess launch",
+      "resolved regular lld target remains separately SHA-256 and byte-count bound",
+      "focused regression proves generic lld exits as a generic driver while ld.lld reports AMD LLD 20",
+      "same frozen scene panel, data, model, seeds, evaluation, caps, gates, and two-scene qualification contract",
+      "no V1 runtime, cache, reservation, terminal, worker, scene, RGB, or result payload reuse",
+      "V1 terminal review may be bound only as source-level identity and failure evidence"
+    ],
+    "v1_payload_reuse_authorized": false,
+    "v1_runtime_metadata_as_identity_evidence_authorized": false,
+    "v1_terminal_review_document_as_source_evidence_authorized": true,
+    "v2_qualification_execution_authorized_by_this_review": false,
+    "v2_scientific_execution_authorized_by_this_review": false
+  },
+  "custody_audit": {
+    "protected_material_opened": false,
+    "predecessor_partial_output_opened": false,
+    "rgb_payload_opened": false,
+    "scene_payload_opened": false,
+    "qualification_runtime_payload_opened": false,
+    "terminal_and_reservation_metadata_opened": true,
+    "exact_authority_plan_source_review_and_source_code_opened": true,
+    "filesystem_names_and_counts_opened": true,
+    "process_and_journal_metadata_opened": true,
+    "linker_version_commands_executed": true,
+    "custody_passed": true
+  },
+  "permission_audit": {
+    "authorizes_v1_retry_or_resume": false,
+    "authorizes_v1_scientific_authority": false,
+    "authorizes_v2_source_development_and_independent_review": true,
+    "authorizes_v2_qualification_execution": false,
+    "authorizes_v2_scientific_execution": false,
+    "authorizes_payload_reuse": false,
+    "creates_execution_authority": false
+  }
+}

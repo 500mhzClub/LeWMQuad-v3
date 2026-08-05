@@ -1,0 +1,37 @@
+{
+  "schema": "lewm_go2_shared_jepa_v5_full_training_execution_amendment_v1_independent_review_v1",
+  "date": "2026-07-13",
+  "verdict": "BLOCK",
+  "reviewer": "/root",
+  "candidate": {
+    "amendment_sha256": "b21d01d062543cc7b7f3f5281f66ac40df76726c678a9364f7a4e451b035a4a7",
+    "author_handoff_sha256": "fa0a497fad2f17a5d0919e1160b6040cbe13740315cfc180418d99dbf494d6bc"
+  },
+  "independent_evidence": {
+    "test_path": "lewm/tests/test_go2_shared_jepa_v5_full_training_execution_amendment_v1_independent_review.py",
+    "test_sha256": "b2959ea11cff80091a9f94c61dde14750726332001326c0fa30bd186418c6b38",
+    "result": "4 passed in 0.01s"
+  },
+  "findings": [
+    "gpu_smoke_and_exact_attempt_reservation_order_conflict",
+    "mutable_readiness_status_document_is_an_invalid_authority_parent",
+    "causal_generalization_claim_uses_promoted_selection_population_and_lacks_exact_precision_comparator"
+  ],
+  "authority": {
+    "trainer_implementation_authorized": false,
+    "dataset_construction_or_use_authorized": false,
+    "v4_execution_authorized": false,
+    "training_or_calibration_authorized": false,
+    "checkpoint_use_authorized": false,
+    "g2_or_g3_authorized": false,
+    "heldout_authorized": false,
+    "runtime_hardware_navigation_authorized": false,
+    "production_or_promotion_authorized": false
+  },
+  "access": {
+    "generated_payload_opened": false,
+    "model_or_checkpoint_opened": false,
+    "accelerator_opened": false,
+    "g2_or_heldout_opened": false
+  }
+}

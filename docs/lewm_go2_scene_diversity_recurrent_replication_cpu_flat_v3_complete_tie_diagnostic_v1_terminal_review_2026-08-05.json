@@ -1,0 +1,365 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1_terminal_review_v1",
+  "review_date": "2026-08-05",
+  "status": "PASS_INDEPENDENT_TERMINAL_REVIEW_STOP_RECURRENT_RECIPE_NO_SCIENTIFIC_CLAIM",
+  "protected_material_opened": false,
+  "review_scope": {
+    "description": "Independent read-only output-chain, input/source-closure, metric, gate, custody, and requested complete-tie sensitivity review of the one-shot post-hoc diagnostic.",
+    "sealed_held_out_or_production_material_opened": false,
+    "diagnostic_or_model_evaluation_rerun_by_review": false,
+    "runtime_artifact_modified_by_review": false,
+    "train_context_or_successor_rgb_opened_by_review": false,
+    "non_tie_sensitivity_used_to_change_fixed_gate": false
+  },
+  "bindings": {
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1/attempt_v1/reservation.json",
+      "sha256": "7f42bed7086dd4ebf350ec90a09ea681c2d01ab2da3c97adb4ef07373174a5fe",
+      "byte_count": 959
+    },
+    "diagnostic_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1/attempt_v1/diagnostic_result.json",
+      "sha256": "dbc07475cd89c788ec3257739945aa11793a80cf40d830779dba6463233815b7",
+      "byte_count": 2011667
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1/attempt_v1/terminal.json",
+      "sha256": "ea3b84fea6a4ad3524475cb3b4d60729f08c47669656e32a0398ce0393778803",
+      "byte_count": 747
+    },
+    "exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1_exact_plan_2026-08-05.json",
+      "sha256": "6563deddc4532368a0ea158437c01bb0e49ac3874eae77643cfefa088cc3f918",
+      "byte_count": 9429
+    },
+    "independent_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1_source_review_2026-08-05.json",
+      "sha256": "f37aed07d20fc2e8c7a5ee544a404d00a8775e9bba43920ba1836b614f006f98",
+      "byte_count": 10085
+    },
+    "predecessor_scientific_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_exact_plan_2026-08-05.json",
+      "sha256": "0ad79cc46cead469d6532cd0be04c5d7623fffe18ddafc737c32855d6c9a8f29",
+      "byte_count": 359692
+    },
+    "predecessor_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/terminal.json",
+      "sha256": "a4da81177d77372923b72775f69cfe58b596a651017ef6ebc5988df05d390327",
+      "byte_count": 1273
+    },
+    "predecessor_physics_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/physics_result.json",
+      "sha256": "711b8722c11dbae663ad1b004268b77c64ff3d2e818f2c895851c547240e3ed0",
+      "byte_count": 369067
+    },
+    "predecessor_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/checkpoint.pt",
+      "sha256": "6c16f97ae5748e1d230244b4588f3efc11330a2673bd15e2ff83aa2f2392844e",
+      "byte_count": 167423
+    },
+    "predecessor_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_terminal_review_2026-08-05.json",
+      "sha256": "7218c78387871e82280f96fe746acb047f46d1a2836b7638b12ce9c1514a81dd",
+      "byte_count": 17379
+    }
+  },
+  "output_chain": {
+    "reservation_status": "fresh_root_reserved",
+    "result_status": "COMPLETE_POST_HOC_NONCONFIRMATORY_DIAGNOSTIC",
+    "terminal_status": "COMPLETE_POST_HOC_NONCONFIRMATORY_DIAGNOSTIC",
+    "terminal_fixed_gate_status": "STOP_SCENE_DIVERSITY_RECURRENT_REPLICATION_H1",
+    "terminal_failure": null,
+    "terminal_binds_exact_result": true,
+    "result_binds_exact_reservation_plan_source_review_predecessor_physics_and_checkpoint": true,
+    "emission_timestamps_local": {
+      "reservation": "2026-08-05 04:25:26.270376670 +0100",
+      "result": "2026-08-05 04:25:33.558664626 +0100",
+      "terminal": "2026-08-05 04:25:33.565553881 +0100"
+    },
+    "emission_order_valid": true,
+    "wall_seconds": 7.260934369172901,
+    "post_hoc_nonconfirmatory": true,
+    "citable_as_scientific_evidence": false,
+    "authorizes_navigation_claim": false,
+    "authorizes_blind_rollout_preregistration": false,
+    "authorizes_retry_or_resume": false
+  },
+  "independent_closure": {
+    "binding_records_rehashed": 736,
+    "unique_files_rehashed": 734,
+    "binding_mismatch_count": 0,
+    "audit_binding_inventory_sha256": "1e91249b0b3699e693927a7efb6dec49c04915ff47337181a4585943c43fd454",
+    "diagnostic_output_files_rehashed": 3,
+    "diagnostic_plan_preregistration_review_and_source_files_rehashed": 9,
+    "predecessor_primary_inputs_rehashed": 5,
+    "predecessor_source_review_rehashed": true,
+    "predecessor_source_files_rehashed": 12,
+    "state_receipts_rehashed": 256,
+    "render_receipts_rehashed": 64,
+    "evaluation_context_rgb_files_rehashed": 384,
+    "train_context_rgb_files_opened": 0,
+    "successor_rgb_files_opened": 0,
+    "dino_checkpoint_rehashed": true,
+    "dino_repository_commit": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "dino_source_commit_validated": true,
+    "all_rehashed_source_input_and_output_bindings_exact": true
+  },
+  "predecessor_immutability": {
+    "scientific_plan_unchanged": true,
+    "terminal_unchanged": true,
+    "physics_result_unchanged": true,
+    "checkpoint_file_unchanged": true,
+    "terminal_review_unchanged": true,
+    "predecessor_result_remains_absent": true,
+    "predecessor_source_closure_unchanged": true,
+    "diagnostic_write_scope_limited_to_fresh_diagnostic_attempt_root": true,
+    "predecessor_mutation_detected": false
+  },
+  "checkpoint_and_prediction_identity": {
+    "checkpoint_file_sha256": "6c16f97ae5748e1d230244b4588f3efc11330a2673bd15e2ff83aa2f2392844e",
+    "checkpoint_recorded_identity_sha256": "99bc60685ce26291cd25387e5914c202d7797b8e0e32ef7bd5eeace4cdf2d0a9",
+    "checkpoint_recomputed_identity_sha256": "99bc60685ce26291cd25387e5914c202d7797b8e0e32ef7bd5eeace4cdf2d0a9",
+    "checkpoint_identity_valid": true,
+    "train_role_identity_sha256": "b86936b3b601bbef37cfadb35f07b93ee0ea1bc24f7b40de21ea29c9d3d7ac8c",
+    "eval_role_identity_sha256": "eba0016b83443e5e5a4be5a4c4a3c60df9c4fae64d15857c3543442bd69d664e",
+    "learned_arms": {
+      "no_vision_recurrent_direct": {
+        "members": 3,
+        "ensemble_outcome_identity_sha256": "614eb930f7900005eddfc718f2c41d0fbcda0fdec8b4ac10cc1603ef1288d9de",
+        "ensemble_score_identity_sha256": "1615402e89f33431bdf01c37253477d197d66732fcbae31af557d977baebcd5e",
+        "persisted_ensemble_identities_recomputed": true
+      },
+      "visual_recurrent_direct": {
+        "members": 3,
+        "ensemble_outcome_identity_sha256": "2d16b5e27b9f21d45cb9d5edb78e28074c6d891dd3da7acee013c9803d7e1d17",
+        "ensemble_score_identity_sha256": "017f933fb4a099e02d74cb334017383a19e41a7f9087e8d136e96562ec814a32",
+        "persisted_ensemble_identities_recomputed": true
+      }
+    }
+  },
+  "access_custody": {
+    "checkpoint_rehashed_before_eval_role_access": true,
+    "train_state_receipt_opens": 128,
+    "eval_state_receipt_opens": 128,
+    "train_render_receipt_opens": 32,
+    "eval_render_receipt_opens": 32,
+    "train_context_rgb_opens": 0,
+    "eval_context_rgb_opens": 384,
+    "train_successor_rgb_opens": 0,
+    "eval_successor_rgb_opens": 0,
+    "unique_eval_context_artifacts": 384,
+    "successor_observations_opened": 0,
+    "train_dino_extraction_or_retraining_performed": false,
+    "model_training_update_checkpoint_write_or_calibration_performed": false,
+    "compute_device": "cpu",
+    "access_ledger_finalized_and_passed": true
+  },
+  "role_and_complete_tie_domain": {
+    "train_states": 128,
+    "eval_states": 128,
+    "train_scenes": 32,
+    "eval_scenes": 32,
+    "train_eval_state_scene_and_artifact_ids_disjoint": true,
+    "eval_states_retained": 128,
+    "eval_states_excluded": 0,
+    "complete_tie_state_count": 4,
+    "complete_tie_group_indices": [
+      176,
+      177,
+      178,
+      179
+    ],
+    "complete_tie_scene_id": "medium_enclosed_maze_2216888a451f",
+    "all_four_complete_tie_dense_rank_vectors": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "all_actions_oracle_equivalent_for_complete_ties": true,
+    "normalized_regret_denominator": "max(1,max_dense_rank)",
+    "complete_tie_rows_zero_regret_for_all_five_reports": true,
+    "complete_tie_random_oracle_equivalent_selection_rate": 1.0,
+    "rank_tolerance_m": 0.01,
+    "rank_tolerance_changed": false,
+    "scene_or_state_filtering_performed": false
+  },
+  "repeatability_and_metric_recomputation": {
+    "persisted_repeat_evaluation_exact": true,
+    "bound_runner_requires_canonical_equality_before_result_write": true,
+    "independent_model_reevaluation_performed": false,
+    "evaluation_canonical_sha256": "92e3489711d9e0c95fd2afc25ca9c795277f7a49c72c96ea5a12534ae47035e7",
+    "all_five_128_row_report_means_recomputed_exactly": true,
+    "all_three_10000_resample_family_scene_comparisons_recomputed_exactly": true,
+    "fixed_gate_recomputed_exactly": true,
+    "prediction_ensemble_tensor_and_score_identities_recomputed_exactly": true,
+    "bootstrap_resamples": 10000,
+    "bootstrap_seed": 2026080407,
+    "fixed_thresholds_unchanged": true
+  },
+  "diagnostic_metrics": {
+    "normalized_rank_regret": {
+      "visual_recurrent_direct": 0.27193080357142857,
+      "no_vision_recurrent_direct": 0.30257626488095235,
+      "task_action_only": 0.30848214285714287,
+      "uniform_random_expected": 0.4765170304232804,
+      "privileged_physical_oracle": 0.0
+    },
+    "oracle_equivalent_selection_rate": {
+      "visual_recurrent_direct": 0.34375,
+      "no_vision_recurrent_direct": 0.3125,
+      "task_action_only": 0.3046875,
+      "uniform_random_expected": 0.16666666666666669,
+      "privileged_physical_oracle": 1.0
+    },
+    "paired_comparisons": {
+      "visual_minus_task_action_only": {
+        "mean_delta": -0.03655133928571429,
+        "lower_95": -0.0892045665922619,
+        "upper_95": 0.013337053571428573
+      },
+      "visual_minus_no_vision": {
+        "mean_delta": -0.030645461309523808,
+        "lower_95": -0.05831473214285714,
+        "upper_95": -0.004696800595238096
+      },
+      "no_vision_minus_task_action_only": {
+        "mean_delta": -0.0059058779761904726,
+        "lower_95": -0.06404413132440474,
+        "upper_95": 0.04683872767857142
+      }
+    },
+    "visual_minus_uniform_random_expected_regret": -0.20458622685185185,
+    "prediction_diagnostics": {
+      "visual_recurrent_direct_joint_standardized_mse": 0.7991671746707696,
+      "no_vision_recurrent_direct_joint_standardized_mse": 0.7745223896317872
+    }
+  },
+  "fixed_gate_decision": {
+    "schema": "lewm_go2_scene_diversity_recurrent_replication_fixed_gate_v1",
+    "status": "STOP_SCENE_DIVERSITY_RECURRENT_REPLICATION_H1",
+    "passed": false,
+    "gates": {
+      "1_integrity_and_oracle": {
+        "passed": true,
+        "oracle_regret": 0.0,
+        "oracle_equivalent_selection_rate": 1.0
+      },
+      "2_absolute_regret": {
+        "passed": false,
+        "visual_regret": 0.27193080357142857,
+        "maximum": 0.13
+      },
+      "3_visual_beats_task_action_only": {
+        "passed": false,
+        "mean_delta": -0.0365513392857143,
+        "required_maximum": -0.02,
+        "upper_95": 0.013337053571428573
+      },
+      "4_visual_beats_no_vision": {
+        "passed": true,
+        "mean_delta": -0.03064546130952378,
+        "required_maximum": -0.01,
+        "upper_95": -0.004696800595238096
+      },
+      "5_visual_beats_random": {
+        "passed": true,
+        "visual_regret": 0.27193080357142857,
+        "random_expected_regret": 0.4765170304232804
+      }
+    }
+  },
+  "non_tie_only_sensitivity": {
+    "status": "POST_HOC_POINT_SENSITIVITY_NOT_A_GATE_RECOMPUTATION",
+    "complete_tie_rows_removed": 4,
+    "remaining_states": 124,
+    "all_removed_rows_had_zero_regret_for_every_report": true,
+    "state_mean_scale_factor_128_over_124": 1.032258064516129,
+    "non_tie_state_mean_regret": {
+      "visual_recurrent_direct": 0.2807027649769585,
+      "no_vision_recurrent_direct": 0.3123367895545315,
+      "task_action_only": 0.3184331797235023,
+      "uniform_random_expected": 0.4918885475337088,
+      "privileged_physical_oracle": 0.0
+    },
+    "non_tie_state_mean_deltas": {
+      "visual_minus_task_action_only": -0.03773041474654378,
+      "visual_minus_no_vision": -0.031634024577572965,
+      "visual_minus_uniform_random_expected": -0.2111857825567503,
+      "no_vision_minus_task_action_only": -0.006096390168970815
+    },
+    "family_equal_scene_point_sensitivity_without_resampling": {
+      "visual_minus_task_action_only": {
+        "canonical_full": -0.03655133928571428,
+        "non_tie_only": -0.03635912698412698,
+        "change": 0.0001922123015873009
+      },
+      "visual_minus_no_vision": {
+        "canonical_full": -0.030645461309523808,
+        "non_tie_only": -0.03324962797619047,
+        "change": -0.0026041666666666644
+      },
+      "visual_minus_uniform_random_expected": {
+        "canonical_full": -0.20458622685185185,
+        "non_tie_only": -0.2016059027777778,
+        "change": 0.002980324074074059
+      }
+    },
+    "bootstrap_confidence_intervals_recomputed": false,
+    "fixed_gate_recomputed_on_non_tie_subset": false,
+    "interpretation": "The four valid complete ties lower every absolute state-mean regret by 3.125 percent and attenuate state-mean pairwise deltas by the same factor. Removing them raises visual regret from 0.27193 to 0.28070, still more than twice the fixed 0.13 ceiling. Family/scene point effects move by at most 0.00298. Complete-tie dilution therefore does not explain the stop decision."
+  },
+  "scientific_interpretation": {
+    "predecessor_v3_scientific_decision_created": false,
+    "diagnostic_is_post_hoc_nonconfirmatory": true,
+    "planning_or_navigation_utility_established": false,
+    "world_model_usefulness_for_planning_established": false,
+    "absolute_action_selection_quality_sufficient": false,
+    "visual_information_increment_over_no_vision_detected": true,
+    "visual_information_increment_over_no_vision_mean_delta": -0.030645461309523808,
+    "visual_information_increment_over_no_vision_upper_95": -0.004696800595238096,
+    "visual_beats_task_action_only_with_required_confidence": false,
+    "family_robustness_established": false,
+    "interpretation": "The checkpoint uses visual context in a measurable way and beats its no-vision ablation and uniform random expectation, but its 0.272 regret is far outside the preregistered 0.13 operating target and its advantage over the live task/action control is not confidence-separated from zero. This is evidence for a visual signal, not evidence for a useful planning world model."
+  },
+  "stop_or_pursue": {
+    "stop_current_recurrent_dino_recipe": true,
+    "do_not_relax_thresholds_or_add_more_complete_tie_tweaks": true,
+    "do_not_retry_resume_or_reuse_this_one_shot_diagnostic": true,
+    "pursue_overall_thesis": true,
+    "pursue_only_materially_different_spatial_action_conditioned_successor_if_separately_preregistered_reviewed_and_authorized": true,
+    "rationale": "The statistically supported visual-over-no-vision improvement is meaningful enough to justify a spatial visual successor, while the large absolute-regret failure and non-significant visual-over-task comparison argue against further local tuning of this frozen recurrent recipe."
+  },
+  "authority": {
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "refill_authorized": false,
+    "overwrite_authorized": false,
+    "repair_authorized": false,
+    "checkpoint_or_collection_reuse_authorized": false,
+    "successor_execution_authorized": false,
+    "scientific_claim_authorized": false,
+    "navigation_planning_world_model_generalization_promotion_or_deployment_claim_authorized": false,
+    "authority_created_by_this_review": false
+  },
+  "findings": [],
+  "decision": {
+    "independent_terminal_review_passed": true,
+    "output_chain_exact": true,
+    "source_input_output_closure_exact": true,
+    "predecessor_unchanged": true,
+    "access_custody_passed": true,
+    "all_128_eval_states_and_four_complete_ties_exact": true,
+    "repeatability_and_metric_recomputation_passed": true,
+    "fixed_gate_status": "STOP_SCENE_DIVERSITY_RECURRENT_REPLICATION_H1",
+    "complete_tie_dilution_explains_stop": false,
+    "current_recurrent_recipe_should_stop": true,
+    "scientific_or_planning_claim_authorized": false,
+    "retry_resume_reuse_or_successor_authority_created": false
+  }
+}

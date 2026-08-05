@@ -1,0 +1,66 @@
+{
+  "schema": "lewm_two_resolution_navigation_development_integration_v2_independent_qa_v1",
+  "date": "2026-07-13",
+  "status": "BLOCK",
+  "candidate": {
+    "source": {
+      "path": "lewm/planning/two_resolution_navigation_development_integration_v2.py",
+      "sha256": "5a1379ee47b81a5f400b967abf092ca32431d0a19097d880916820d0cc8bd3de"
+    },
+    "author_tests": {
+      "path": "lewm/tests/test_two_resolution_navigation_development_integration_v2.py",
+      "sha256": "a18434608a23ceaa58f975c208171258f9932af1afa058b63498448383497cca"
+    },
+    "author_handoff": {
+      "path": "docs/lewm_go2_two_resolution_navigation_development_integration_v2_handoff_2026-07-13.md",
+      "sha256": "9e188f5de337a6a821b2b27d879866769a629dffc16068a5a528228340f51008"
+    }
+  },
+  "independent_evidence": {
+    "test_path": "lewm/tests/test_two_resolution_navigation_development_integration_v2_independent_qa.py",
+    "test_sha256": "d746078e1190b51a14d1738214bb4bcf1e5e4e9dc6695adf8b5f5468a629d1f8",
+    "result": "3 passed, 1 failed in 43.93s"
+  },
+  "blockers": [
+    {
+      "id": "controller_registration_outside_transaction",
+      "severity": "blocking",
+      "source_lines": [
+        1792,
+        1797
+      ],
+      "injected_failure": "_ControllerRecordV2 construction raises after downstream commit",
+      "observed": {
+        "transaction_owner_digest_changed": true,
+        "exact_outcome_consumed": true,
+        "controller_registry_count": 0,
+        "stored_owner_seal_stale": true
+      },
+      "required": {
+        "transaction_owner_digest_changed": false,
+        "exact_outcome_consumed": false,
+        "controller_registry_count": 0,
+        "stored_owner_seal_stale": false
+      }
+    }
+  ],
+  "verification": {
+    "v2_author_suite": "25 passed in 514.17s",
+    "adjacent_suite": "71 passed in 287.39s",
+    "v1_focused_suite": "4 passed in 97.70s",
+    "v1_adversarial_reproduction": "5 failed, 1 passed in 87.96s",
+    "py_compile": "passed",
+    "candidate_hashes_reproduced": true,
+    "downstream_source_hashes_reproduced": true
+  },
+  "review_scope": {
+    "cpu_only": true,
+    "native_threads_per_process": 1,
+    "accelerators_hidden": true,
+    "g2_opened": false,
+    "heldout_opened": false,
+    "runtime_or_hardware_opened": false,
+    "production_authority_granted": false,
+    "navigation_work_authority_granted": false
+  }
+}

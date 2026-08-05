@@ -1,0 +1,371 @@
+{
+  "binding_sha256": "2de4ff20cff2901ab07b681f042c231f1a1e06f95a77d8c4ae2c20c9e2bb8112",
+  "command_identity": {
+    "argument": "--implementation-manifest-sha256",
+    "cwd": "/home/andrewknowles/Workspace/LeWMQuad-v3",
+    "executable": "/usr/bin/python3",
+    "pythonpath": [
+      "/home/andrewknowles/Workspace/LeWMQuad-v3",
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds",
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis"
+    ],
+    "script": "scripts/run_go2_canonical_physical_claim_oracle_regression.py",
+    "worker_pool": {
+      "kind": "spawn_process",
+      "merge_order": "development_manifest_index",
+      "threads_per_worker": 1,
+      "worker_count": 6,
+      "worker_runtime_input_file_access": false
+    }
+  },
+  "content_sha256": "9d9beb6b0f00999c7519e0c56bc1ee4ed7fbe20411a5efa313b4e7bcb0923d7b",
+  "eligibility_config": {
+    "cell_size_m": 0.05,
+    "claim_radius_m": 1.2,
+    "mask_validation_samples": 32,
+    "maximum_translation_substep_m": 0.025,
+    "preferred_standoff_m": 1.05,
+    "require_line_of_sight": true,
+    "required_beacon_count": 4,
+    "rotation_subsamples": 5,
+    "yaw_bins": 16
+  },
+  "exclusive_output": {
+    "atomic_no_replace": true,
+    "path": ".generated/oracle_positive_control/go2_generalization_v4_development/canonical_physical_claim_v1_report.json",
+    "schema": "lewm_go2_canonical_physical_claim_oracle_regression_v1"
+  },
+  "input_bindings": {
+    "development_manifest": {
+      "access_mode": "hash_then_parse",
+      "path": "config/go2_generalization_v4/development.json",
+      "sha256": "563f240a023309af42a05a9a8f29008f02a0629dee9f77f03568f779d1166d41"
+    },
+    "directional_policy": {
+      "access_mode": "hash_then_parse",
+      "content_sha256": "c57650326e8b7d302498bbfe93b9e3d15c36d56d55ae9e1f339507ece0a9f1fc",
+      "path": "config/go2_geometry_v2_artifacts/go2_directional_footprint_policy_v1_c57650326e8b7d302498bbfe93b9e3d15c36d56d55ae9e1f339507ece0a9f1fc.json",
+      "sha256": "750d8afe47ee3edd5988cdea443f19703efad7a3266218932671b9fdfbe43828"
+    },
+    "geometry": {
+      "access_mode": "hash_then_parse",
+      "path": "config/go2_generalization_geometry_v2.json",
+      "sha256": "e7d0627d1de259c6e01dabe142aa55e69fed3e75c9c745974d437d7682d40a52"
+    },
+    "materialization": {
+      "access_mode": "hash_only",
+      "path": ".generated/scene_corpus/go2_generalization_v4/materialization_both.json",
+      "sha256": "a52bd82cb501481707d518d1fffd86e5475b440332f7d226586ebda47e6b1415"
+    },
+    "primitive_registry": {
+      "access_mode": "hash_then_parse",
+      "path": "config/go2_primitive_registry.yaml",
+      "sha256": "cb83acf61d0e958b90d5dcd98e2ad11c630426bf480bd948aeb77242d84293f8"
+    },
+    "prior_comparator": {
+      "access_mode": "identity_only_do_not_open",
+      "path": ".generated/oracle_positive_control/go2_generalization_v4_development/report.json",
+      "sha256": "7c0a63bb0548fee81918df22b227adec43d4bdc824875ef447793ef4f99d97a5"
+    }
+  },
+  "oracle_config": {
+    "allow_diagonal_corner_cutting": false,
+    "body_forward_m": 0.3700000000000001,
+    "body_half_width_m": 0.2668059073252429,
+    "body_probe_margin_m": 0.03,
+    "body_rear_m": 0.43210313102250314,
+    "claim_anchor_limit": 64,
+    "claim_bearing_rad": 0.25,
+    "claim_distance_m": 1.2,
+    "coverage_cell_m": 0.1,
+    "coverage_completion_fraction": 0.9,
+    "coverage_resolution_m": 0.4,
+    "coverage_visit_radius_m": 0.28,
+    "grid_cell_m": 0.05,
+    "max_goal_ticks": 500,
+    "max_ticks": 2400,
+    "maximum_translation_substep_m": 0.025,
+    "minimum_progress_m": 0.001,
+    "no_progress_limit": 40,
+    "planning_connectivity": 4,
+    "planning_inflation_m": 0.47,
+    "preferred_standoff_m": 1.05,
+    "route_clearance_target_m": 0.1,
+    "route_clearance_weight": 0.35,
+    "route_goal_tolerance_m": 0.11,
+    "route_lookahead_m": 0.45,
+    "route_replan_ticks": 16,
+    "standoff_candidates": 32
+  },
+  "schema": "lewm_go2_canonical_physical_claim_oracle_implementation_manifest_v1",
+  "source_map": {
+    "entries": [
+      {
+        "path": "scripts/score_go2_result_batch.py",
+        "role": "batch_scorer",
+        "sha256": "2d26ac190cccd934500ffa82f303543ec387bfdabaf714cf47cd21ba841f8108"
+      },
+      {
+        "path": "docs/lewm_go2_canonical_physical_claim_evaluator_binding_2026-07-11.md",
+        "role": "binding",
+        "sha256": "2de4ff20cff2901ab07b681f042c231f1a1e06f95a77d8c4ae2c20c9e2bb8112"
+      },
+      {
+        "path": "scripts/check_go2_clean_demo_candidate.py",
+        "role": "clean_demo_checker",
+        "sha256": "21f0f28fa8f8757c9289fb39b588c8995f22199847857a9e02933d0934c4acf1"
+      },
+      {
+        "path": "lewm/planning/exact_occupancy_belief_adapter.py",
+        "role": "exact_occupancy_adapter",
+        "sha256": "a255364fdf4de5e5509fd528497b424df4eb6146cfae30b010c64ad38ce8dd1c"
+      },
+      {
+        "path": "scripts/check_go2_fully_learned_demo.py",
+        "role": "fully_learned_checker",
+        "sha256": "5950a194d0403199530e5a683ca00a3256951b306a5677a89dbf6ac79c4c284a"
+      },
+      {
+        "path": "scripts/run_go2_fully_learned_demo.sh",
+        "role": "fully_learned_demo_wrapper",
+        "sha256": "1b9c1e18324215e2b471aca7f442494b79b452873cf63940674393186463b580"
+      },
+      {
+        "path": "lewm/benchmarks/generalization_protocol.py",
+        "role": "generalization_protocol",
+        "sha256": "66422b8a833ba502f8e4a08c40a7463fc44e2ed7d29e903b74332676c50b4973"
+      },
+      {
+        "path": "scripts/check_go2_generalized_suite.py",
+        "role": "generalized_suite_checker",
+        "sha256": "cb8606918a866b7e551c9236ebff863deb5d6365711fb019b32539caebc1a725"
+      },
+      {
+        "path": "scripts/run_go2_generalized_learned_local_suite.sh",
+        "role": "generalized_suite_wrapper",
+        "sha256": "62f2755715df0d53eaa3afaac5d268f2ae0ed1fb7f16e3953dcc433e1b117117"
+      },
+      {
+        "path": "scripts/run_go2_generalized_teacher_collection.sh",
+        "role": "generalized_teacher_collection_wrapper",
+        "sha256": "8515d6ce12dd06460c979d34d420ee9297b2ace86cbcb1d115569f3aee3846e2"
+      },
+      {
+        "path": "lewm_genesis/lewm_genesis/lewm_contract.py",
+        "role": "genesis_contract",
+        "sha256": "d7e8b021c4411e0e5f83b9ed61dbee1d70493d23d8c3e87123bd84f24a26db6d"
+      },
+      {
+        "path": "lewm/planning/geometry_contract.py",
+        "role": "geometry_contract",
+        "sha256": "6873a9550399a5decc90e4a31b2945e54074bdb56855a035924f49b4511c813b"
+      },
+      {
+        "path": "docs/lewm_go2_canonical_physical_claim_integration_2026-07-11.md",
+        "role": "integration_record",
+        "sha256": "7cdaed4aebbf95f63b7a606ce69cd0f18a7f78fcd42575a0d900dca26ecb819e"
+      },
+      {
+        "path": "lewm/planning/online_belief_map.py",
+        "role": "online_belief_map",
+        "sha256": "647aa46d1c784546e6f268d7670cde3cbedfcbfe50bb4ac728dccb44cf536682"
+      },
+      {
+        "path": "lewm/benchmarks/go2_oracle_positive_control.py",
+        "role": "oracle",
+        "sha256": "589af532bf18e3222559868a9715f7ea2c57973cc4aa108b31d2e5cacc1061d4"
+      },
+      {
+        "path": "scripts/run_go2_canonical_physical_claim_oracle_regression.py",
+        "role": "oracle_regression_runner",
+        "sha256": "3c35550c96fadd4a87c2240d9d0233917adb17d9587cf4e69e55be8c0573b373"
+      },
+      {
+        "path": "lewm/benchmarks/go2_canonical_physical_claim_oracle_finalizer.py",
+        "role": "oracle_suite_finalizer",
+        "sha256": "f6d665ad20e49af7778b439699fa7f1d6a77918d56ff3ad8e86f744be5ecb306"
+      },
+      {
+        "path": "lewm/planning/oriented_footprint.py",
+        "role": "oriented_footprint",
+        "sha256": "5831379e52eb0eaa1c2cf8d195b6d46b29ad8b66dbadc98f51629f22bc656b37"
+      },
+      {
+        "path": "lewm/benchmarks/go2_physical_claim_canonical.py",
+        "role": "physical_claim_canonical",
+        "sha256": "e63a4ebe5bf615e674f2ebd06c5ba930306a330bc4d89faa0c460c6d2fddf43a"
+      },
+      {
+        "path": "lewm/benchmarks/go2_physical_claim_evaluator.py",
+        "role": "physical_claim_evaluator",
+        "sha256": "7ea003160ea03da6e989cb76124501b1e7de8571bf8586870b9c8dd7b42f04df"
+      },
+      {
+        "path": "lewm/benchmarks/go2_physical_claim_observer.py",
+        "role": "physical_claim_observer",
+        "sha256": "1db940a49f01313b23c5d37699796b52da776a3a5c88bf3af1381d7d58103e30"
+      },
+      {
+        "path": "lewm/benchmarks/go2_physical_claim_result.py",
+        "role": "physical_claim_result",
+        "sha256": "8f17791710200b5215e497ca8aa34d08acd30b0dbbd9ad8ded647a9c3ad441b3"
+      },
+      {
+        "path": "lewm/benchmarks/go2_physical_claim_finalizer.py",
+        "role": "physical_claim_runtime_finalizer",
+        "sha256": "a14061641f031ee65a8dbb8235271d15a1564bd521d00948604f7e7bcd580b85"
+      },
+      {
+        "path": "lewm/benchmarks/go2_physical_claim_trace.py",
+        "role": "physical_claim_trace",
+        "sha256": "a41f1fa22f5a90503c82db459ccc9520af334173d416bac0b090308d69cc8fb3"
+      },
+      {
+        "path": "lewm/benchmarks/go2_physical_eligibility.py",
+        "role": "physical_eligibility",
+        "sha256": "1c8f9c347e547890d5edb3cd83e9994886b5dc57d9c78563e606a2f878f1d3e3"
+      },
+      {
+        "path": "scripts/render_go2_closed_loop_result_replay.py",
+        "role": "replay_diagnostic",
+        "sha256": "e3b2c303f967111ed7714474e59908883e1fd68f90974cb96138acf5ebb56df3"
+      },
+      {
+        "path": "scripts/compose_go2_physical_review_ui_video.py",
+        "role": "review_video_diagnostic",
+        "sha256": "16f7ecad9ed108bb3cf1da62a683932749bb895a413272599393526f558cbe8e"
+      },
+      {
+        "path": "scripts/benchmark_go2_memory_closed_loop.py",
+        "role": "runtime",
+        "sha256": "e29e2b92ffbfcef7f8c25a80629ece32cb1cc534a96f96bffce416d3db728943"
+      },
+      {
+        "path": "lewm/benchmarks/strict_result_scorer.py",
+        "role": "strict_result_scorer",
+        "sha256": "d4d4fb6ddff297faaf86e0e1ec9590a35deca2f0f2b0e92fe46dfc31fdd187c2"
+      },
+      {
+        "path": "scripts/check_go2_teacher_dataset.py",
+        "role": "teacher_checker",
+        "sha256": "f325dbfec1d5335fc47c8b0e7357a9bf17d8d3f7a0d48348c26cd1bf79f4922f"
+      },
+      {
+        "path": "lewm/tests/test_go2_claim_checker_wrapper_manifest_plumbing.py",
+        "role": "test_checker_wrapper_manifest_plumbing",
+        "sha256": "bb82bcec7c666a527a932a5f1205b6c2db2a6adbbfe67a6e48b7dfcb18a2ffcc"
+      },
+      {
+        "path": "lewm/tests/test_go2_claim_checker_manifest_binding.py",
+        "role": "test_claim_checker_manifest_binding",
+        "sha256": "e3c60ea3273e04346d8eac815f674fec8b751e601e6e779d7cc9aa05fe05bdb9"
+      },
+      {
+        "path": "lewm/tests/test_check_go2_clean_demo_candidate.py",
+        "role": "test_clean_demo_checker",
+        "sha256": "3dc27b8afeeef9b23b7ad11e1a939b950c2a8924880042f730a95d36f58c6f18"
+      },
+      {
+        "path": "lewm/tests/test_check_go2_fully_learned_demo.py",
+        "role": "test_fully_learned_checker",
+        "sha256": "4ef9ea98763f0e9b585cd42de1c422eb7a6f4d24bcf8d3cd084266114d9fc3ec"
+      },
+      {
+        "path": "lewm/tests/test_generalization_protocol.py",
+        "role": "test_generalization_protocol",
+        "sha256": "6a0dafc5947708ce1f0e9c9da0d4d44224adf66cfecc74be0cbbb14d44da4e16"
+      },
+      {
+        "path": "lewm/tests/test_check_go2_generalized_suite_claims.py",
+        "role": "test_generalized_suite_checker",
+        "sha256": "391a19e1e5aef812004db49cef094315ac2124c333ea89ef2444111c03645d4f"
+      },
+      {
+        "path": "lewm/tests/test_go2_oracle_positive_control.py",
+        "role": "test_oracle",
+        "sha256": "45ed52eaef9b1ed71a5899f4b0be99a2fd40c4b8cc15968d85913b053113e416"
+      },
+      {
+        "path": "lewm/tests/test_run_go2_canonical_physical_claim_oracle_regression.py",
+        "role": "test_oracle_regression_runner",
+        "sha256": "c24d7a422aff4325a39868c60544be51611aade21bbe02219104d1f1b44eda39"
+      },
+      {
+        "path": "lewm/tests/test_go2_canonical_physical_claim_oracle_finalizer.py",
+        "role": "test_oracle_suite_finalizer",
+        "sha256": "9f3c5aec2e53eeade88e3dba1e4746f507d8a44e0a3797daabd8bef24f941171"
+      },
+      {
+        "path": "lewm/tests/test_go2_physical_claim_canonical.py",
+        "role": "test_physical_claim_canonical",
+        "sha256": "4f26df57c4dcceab356a61d4cc38b919081a9a74be5ff5f54c98c3a2c0342cba"
+      },
+      {
+        "path": "lewm/tests/test_go2_physical_claim_evaluator.py",
+        "role": "test_physical_claim_evaluator",
+        "sha256": "5fd495172da6c74ad59425212c6231cd1814346a750268a746d70aa7645ab321"
+      },
+      {
+        "path": "lewm/tests/test_go2_physical_claim_observer.py",
+        "role": "test_physical_claim_observer",
+        "sha256": "e78b873868e7c7de099fef89b70f6b1a83cd77f36822928b84a11aa00e88494f"
+      },
+      {
+        "path": "lewm/tests/test_go2_physical_claim_result.py",
+        "role": "test_physical_claim_result",
+        "sha256": "e876e6252a373a43759ac4eefd9d775d49ecd5b85d780e942896178d37743d06"
+      },
+      {
+        "path": "lewm/tests/test_go2_physical_claim_finalizer.py",
+        "role": "test_physical_claim_runtime_finalizer",
+        "sha256": "3928e4b8e09c28f7de58d83da70b6eadc51a9d7a09f83ced9d32d1970333fad6"
+      },
+      {
+        "path": "lewm/tests/test_go2_physical_claim_trace.py",
+        "role": "test_physical_claim_trace",
+        "sha256": "935df5d0ec2df119aeeed392a0d6941a131c9bd74d9aff836f58b389e70a6dd9"
+      },
+      {
+        "path": "lewm/tests/test_go2_physical_eligibility.py",
+        "role": "test_physical_eligibility",
+        "sha256": "97975eaae03b8f3ad6490d4c83ac7727fe69523a91b6924584ce6beab9205152"
+      },
+      {
+        "path": "lewm/tests/test_strict_result_scorer.py",
+        "role": "test_strict_result_scorer",
+        "sha256": "aebfb8cb8e9837f2bdd977622297ea85165868f6fa298ba3eba9f45da8231f51"
+      },
+      {
+        "path": "lewm/tests/test_check_go2_teacher_dataset.py",
+        "role": "test_teacher_checker",
+        "sha256": "3f15444728d8579bf928b0ef69c695be262300152c28d9af325d36195dc7754c"
+      },
+      {
+        "path": "lewm/tests/test_check_go2_wallaware_closed_loop_gate.py",
+        "role": "test_wall_aware_checker",
+        "sha256": "760ec5253a0283f2af0dd1ccc13251b573091f6ed965943fad198becfa13b71b"
+      },
+      {
+        "path": "scripts/check_go2_wallaware_closed_loop_gate.py",
+        "role": "wall_aware_checker",
+        "sha256": "7d9cbd030faa6b6913066bbb07b969106c45fb28cabe4ec2d6c7d24e1bdffb7e"
+      },
+      {
+        "path": "lewm_worlds/lewm_worlds/manifest.py",
+        "role": "world_manifest",
+        "sha256": "5679768016226e89e385ec7a7238616416248a9a1194b898ecb9078662f6a888"
+      },
+      {
+        "path": "lewm_worlds/lewm_worlds/planning_grid.py",
+        "role": "world_planning_grid",
+        "sha256": "e6f7e26d584dfd7923493803fc95a75135122b37a1f95cb51f9267b284649510"
+      },
+      {
+        "path": "lewm_worlds/lewm_worlds/scene_graph.py",
+        "role": "world_scene_graph",
+        "sha256": "5b7ae6f7e5ac5c3aa83e0f3cc392c00ef3756d41b6a7fbe2acffa38ff7a1ed46"
+      }
+    ],
+    "source_map_sha256": "f114cb50fe80fd2f026f9a27b727629885168c694b16de681786ef13a4fb9a0b"
+  }
+}

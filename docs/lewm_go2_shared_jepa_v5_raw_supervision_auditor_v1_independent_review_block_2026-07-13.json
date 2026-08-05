@@ -1,0 +1,77 @@
+{
+  "authority": {
+    "auditor_source_approved": false,
+    "dataset_use_authorized": false,
+    "exact_audit_authorized": false,
+    "exact_build_authorized": false,
+    "g2_authorized": false,
+    "hardware_authorized": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "retry_authorized": false,
+    "runtime_authorized": false,
+    "training_authorized": false
+  },
+  "candidate": {
+    "auditor_cli_sha256": "246a8de16a9645a0af8f0cf69e6241b16d68588d54ee9f8eb8b087519a9b908d",
+    "auditor_source_sha256": "854d433084af4bda7dca1e39bed69bc76e9904546111e9289cbb4066660c798c",
+    "auditor_test_sha256": "6dfe991e3f5abc7a5a7405ad1a9ad74382d05ba27e1beb5e6d087aed41351557",
+    "author_handoff_sha256": "7d693902bf4517bb19a87b6769af0c272403ba553daccb6e03d9cef88eec279d"
+  },
+  "canonical_artifacts": {
+    "build_authorization_present": false,
+    "dataset_present": false,
+    "exact_audit_failure_present": false,
+    "exact_audit_report_present": false
+  },
+  "content_sha256": "4a8235ed6368f665cc17420dd93a810c7bc7b13963ac7ce79c278cf3bb8a6915",
+  "findings": [
+    {
+      "code": "exported_generic_exact_path_accepts_caller_replay_and_unreconciled_population",
+      "consequence": "a 24-pair synthetic artifact returns PASS under the exact audit schema after declaring the frozen 5172/9460/88 population",
+      "test": "test_block_public_exact_mode_accepts_caller_recompute_and_false_population"
+    },
+    {
+      "code": "invalid_authority_opens_caller_selected_source_before_complete_role_validation",
+      "consequence": "a missing-eight-role source map opens an arbitrary repository file before it is rejected",
+      "test": "test_block_invalid_authority_opens_source_before_complete_role_validation"
+    },
+    {
+      "code": "dataset_hard_link_alias_is_accepted",
+      "consequence": "an externally mutable second name for a committed array survives the complete audit and returns PASS",
+      "test": "test_block_dataset_hard_link_alias_is_rejected"
+    },
+    {
+      "code": "manifest_cardinalities_accept_noninteger_json_numbers",
+      "consequence": "float and boolean row/shard counts pass strict-schema validation",
+      "test": "test_block_noninteger_manifest_cardinality_is_rejected"
+    }
+  ],
+  "implementation_author": "/root/raw_auditor_author",
+  "independent_evidence": {
+    "failed": 6,
+    "passed": 26,
+    "result": "26_passed_6_failed",
+    "test_file_sha256": "9684b14c3a87825a1b0d9f4f5bfd17c98c67f92c198818fc441aec0d8b6776fc",
+    "test_path": "lewm/tests/test_go2_shared_jepa_v5_raw_supervision_auditor_v1_independent_review.py"
+  },
+  "passing_evidence": {
+    "all_eight_array_classes_mutated": true,
+    "author_focused": "12_passed",
+    "authorization_precedes_metadata_on_sealed_entry": true,
+    "compilation": "passed",
+    "descriptor_safe_report_lifecycle": true,
+    "exact_audit_run": false,
+    "exact_replay_chain_inspected": true,
+    "one_and_six_worker_results_equal": true,
+    "source_inventory_88_scenes_352_files": true,
+    "three_join_boundaries_rebound_and_rejected": true
+  },
+  "review_completed": true,
+  "reviewer": "/root/raw_auditor_v1_independent",
+  "schema": "lewm_go2_shared_jepa_v5_raw_supervision_auditor_v1_independent_review_block_v1",
+  "status": "blocked_exact_bypass_pre_authority_open_alias_and_strict_schema_contracts",
+  "verdict": "BLOCK"
+}

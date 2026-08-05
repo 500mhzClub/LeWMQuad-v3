@@ -1,0 +1,292 @@
+{
+  "audit_passed": true,
+  "authority_and_reservation_audit": {
+    "authority_binding_matches_collection_reservation": true,
+    "authority_binding_matches_root_reservation": true,
+    "one_shot_qualification_attempt_consumed": true,
+    "plan_binding_matches_authority_and_both_reservations": true,
+    "probe_scene_indices_in_order": [
+      12,
+      0
+    ],
+    "qualification_authority_field_count": 19,
+    "qualification_authority_schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_qualification_authority_v1",
+    "qualification_authority_status": "AUTHORIZED_GENESIS_ROCM_BACKEND_V3_INTEGRITY_REPLACEMENT_V2_QUALIFICATION_ONLY",
+    "retry_resume_overwrite_authorized": false,
+    "source_review_binding_matches_authority": true,
+    "two_probe_collection_reserved": true
+  },
+  "bindings": {
+    "base_worker_collector_source": {
+      "byte_count": 81912,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_integrity_replacement_v2.py",
+      "sha256": "ff062cf1198abb6c5677fd946e6e956399c303b59c2a137565433131edd1c2cf"
+    },
+    "collection_reservation": {
+      "byte_count": 3311,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_qualification/attempt_v1/collection/reservation.json",
+      "sha256": "b0527c7c029614f34bf33fa9fccb5ae980075acd55a480657cc0f3c1ac810290"
+    },
+    "historical_pilot_source": {
+      "byte_count": 102894,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa"
+    },
+    "parity_plan_builder_source": {
+      "byte_count": 53203,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_visual_domain_parity_plan_v1.py",
+      "sha256": "3fc3993aceb8cd332073b4032bc07dda88d1f537f709bedbee50f627a21d80cd"
+    },
+    "parity_supervisor_source": {
+      "byte_count": 73334,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py",
+      "sha256": "4b1adcd9950e575923a8f61f9b3ec7090e94eaa445f808f44015abdb891184a3"
+    },
+    "qualification_authority": {
+      "byte_count": 85035,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_qualification_authority_2026-08-04.json",
+      "sha256": "c771d5d6b0ad11598c0cceb0a9646f4e745d0714943c1b7f965536c2612f9896"
+    },
+    "qualification_plan": {
+      "byte_count": 367074,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_qualification_exact_plan_2026-08-04.json",
+      "sha256": "29e9c6936eb5ebafe1e438da42f0ed5f24e439f3317494a08aaf359f1a1891da"
+    },
+    "qualification_root_reservation": {
+      "byte_count": 1154,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_qualification/attempt_v1/reservation.json",
+      "sha256": "48b667498f74facf4f0442ee35e88e405601793fe41c71f1da741aeef3dfc670"
+    },
+    "replacement_v2_collector_source": {
+      "byte_count": 21309,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2.py",
+      "sha256": "c7ab9fb800d2370ddc3d4b566be796915c39314a83afb2db390a39e0c1e7c5d3"
+    },
+    "replacement_v2_qualifier_source": {
+      "byte_count": 28963,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2.py",
+      "sha256": "f811eeeef02fb902f42d44530e02076018b5fd8e071a59aa912941892dce3df0"
+    },
+    "rocm_v1_collector_source": {
+      "byte_count": 16661,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "c352a7a4c809dd2ab15ff3288bcf1d6c8dd3bbc57cb5115be43864d9cf500010"
+    },
+    "runtime_terminal": {
+      "byte_count": 505,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_qualification/attempt_v1/terminal.json",
+      "sha256": "32a9cce58289ade90f9eae8ef12289101cfccaf7668011a15899fc6c1088b75d"
+    },
+    "source_review": {
+      "byte_count": 91898,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_source_review_2026-08-04.json",
+      "sha256": "35a96cbf6c4fa26180e336615ad11b2a75f696d93053ec4a6b98aa7cda17efe6"
+    },
+    "task_relevance_evaluator_source": {
+      "byte_count": 30488,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py",
+      "sha256": "22d370945ad3dcd09bfa9405841450a834f71029c9f16de86e17daa37ee4453c"
+    }
+  },
+  "coordinator_command_evidence": {
+    "captured_output_messages_in_order": [
+      "textured_v03 task-relevance recomputation failed: parity plan/authority chain changed",
+      "ROCm qualification worker 12 failed"
+    ],
+    "evidence_kind": "coordinator_captured_invocation_summary_without_persisted_command_receipt",
+    "persisted_command_receipt_exists": false,
+    "return_code": 1,
+    "runtime_terminal_corroborates_worker_12_failure": true
+  },
+  "decision": {
+    "adapter_successor_authorized": false,
+    "backend_scene_decision": null,
+    "navigation_or_world_model_claim": null,
+    "qualification_authority_consumed": true,
+    "qualification_invocation_consumed": true,
+    "qualification_pass": false,
+    "retry_or_resume_authorized": false,
+    "same_authority_command_or_runtime_reuse_authorized": false,
+    "scientific_decision": null
+  },
+  "explicit_stop_rule": {
+    "additional_alias_context_overlay_or_integrity_replacement_authorized": false,
+    "layered_adapter_chain_retired_for_this_experiment_line": true,
+    "required_action": "Any future work must begin as a separately scoped source-only study of a flat, explicitly owned, non-monkeypatched harness; this review grants no authority to run it."
+  },
+  "failure_ordering_audit": {
+    "collection_reserved": true,
+    "preflight_completed_in_memory": true,
+    "qualification_attempt_reserved_and_consumed": true,
+    "qualification_result_written": false,
+    "rgb_or_scene_result_written": false,
+    "runtime_terminal_written": true,
+    "scene_execution_reached": false,
+    "scene_root_creation_reached": false,
+    "scientific_attempt_reached": false,
+    "source_review_and_authority_validation_completed": true,
+    "worker_collection_reservation_read_reached": false,
+    "worker_genesis_initialization_reached": false,
+    "worker_plan_validation_reached": true,
+    "worker_runtime_imports_reached": false,
+    "worker_scene_12_launched": true
+  },
+  "filesystem_inventory_audit": {
+    "collection_entries": [
+      "reservation.json",
+      "scene_results",
+      "scenes"
+    ],
+    "qualification_result_exists": false,
+    "qualification_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_qualification/attempt_v1",
+    "scene_results_entries": [],
+    "scenes_entries": [],
+    "scientific_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2/attempt_v1",
+    "scientific_attempt_root_absent": true,
+    "top_level_entries": [
+      "collection",
+      "reservation.json",
+      "terminal.json"
+    ]
+  },
+  "findings": [
+    {
+      "id": "REPLACEMENT-V2-SHARED-PILOT-ENVIRONMENT-LAZY-PARITY-REVALIDATION",
+      "severity": "terminal_for_consumed_v2_qualification_and_layered_adapter_chain",
+      "summary": "After the one-shot reservation and successful in-memory platform preflight, worker 12 failed before reading its collection reservation or creating a scene because the layered ROCm adapter changed the shared pilot environment underneath lazy validation of an immutable Vulkan parity plan."
+    }
+  ],
+  "permission_audit": {
+    "authorizes_backend_scene_scientific_navigation_or_world_model_claim": false,
+    "authorizes_retry_resume_refill_or_runtime_payload_reuse": false,
+    "authorizes_source_only_flat_harness_study": true,
+    "authorizes_terminal_review_creation": true,
+    "creates_qualification_execution_authority": false,
+    "creates_scientific_execution_authority": false
+  },
+  "preflight_and_worker_ordering_audit": {
+    "basis": "The only source path to the exact worker-12 failure guard first stores the complete preflight return value and then returns from the subprocess watchdog; a preflight exception or Popen failure produces a different terminal message.",
+    "child_environment_validation_preceded_preflight": true,
+    "classification": "source_ordering_and_terminal_imply_in_memory_preflight_pass_without_persisted_receipt",
+    "egl_r9700_preflight_returned": true,
+    "exact_plan_rehash_preceded_preflight": true,
+    "genesis_0_4_6_import_and_amdgpu_symbol_check_returned": true,
+    "hip_r9700_identity_query_returned": true,
+    "ld_lld_driver_and_version_preflight_returned": true,
+    "preflight_receipt_absence_reason": "Preflight evidence is embedded only in a successful qualification_result.json; no result was written.",
+    "preflight_receipt_persisted": false,
+    "qualification_reservation_preceded_preflight": true,
+    "review_reperformed_gpu_or_genesis_preflight": false,
+    "rocminfo_gfx1201_preflight_returned": true,
+    "worker_scene_12_process_launched": true
+  },
+  "protected_material_opened": false,
+  "read_only_causal_reproduction": {
+    "inside_full_replacement_v2_collector_context": {
+      "cause_chain": [
+        {
+          "message": "textured_v03 task-relevance recomputation failed: parity plan/authority chain changed",
+          "type": "PilotContractError"
+        },
+        {
+          "message": "parity plan/authority chain changed",
+          "type": "TaskRelevanceEvaluationError"
+        },
+        {
+          "message": "parity execution contract changed",
+          "type": "VisualDomainParitySupervisionError"
+        },
+        {
+          "message": "parity execution contract changed",
+          "type": "VisualDomainParityAuthorityError"
+        },
+        {
+          "message": "parity execution contract changed",
+          "type": "VisualDomainParityPlanError"
+        }
+      ],
+      "historical_parity_prerequisite_status": "FAIL_EXPECTED_REPRODUCTION",
+      "mutated_environment_keys": [
+        "GS_BACKEND",
+        "GS_CACHE_FILE_PATH",
+        "GS_ENABLE_FASTCACHE",
+        "GS_ENABLE_NDARRAY",
+        "GS_ENABLE_ZEROCOPY",
+        "HIP_VISIBLE_DEVICES",
+        "HOME",
+        "MESA_VK_DEVICE_SELECT",
+        "PATH",
+        "ROCM_PATH",
+        "ROCR_VISIBLE_DEVICES"
+      ],
+      "outer_exception": {
+        "message": "textured_v03 task-relevance recomputation failed: parity plan/authority chain changed",
+        "type": "PilotContractError"
+      },
+      "shared_pilot_execution_backend": "amdgpu"
+    },
+    "interpreter": "/usr/bin/python3.12",
+    "outside_full_collector_context": {
+      "historical_parity_prerequisite_status": "PASS",
+      "shared_pilot_execution_backend": "vulkan"
+    },
+    "python_flags": [
+      "-I",
+      "-B"
+    ],
+    "runtime_root_changed_by_reproduction": false,
+    "shared_execution_environment_restored_equal_after_context": true,
+    "shared_execution_environment_restored_same_object_after_context": true
+  },
+  "review_scope": {
+    "collection_reservation_opened": true,
+    "description": "Independent closure of the consumed replacement-V2 qualification using exact authority/source/plan documents, the three expressly permitted runtime JSON artifacts, empty-directory inventory, source ordering, coordinator-captured exit evidence, and a read-only isolated causal reproduction.",
+    "gpu_or_genesis_probe_executed_by_review": false,
+    "qualification_or_scientific_cli_invoked_by_review": false,
+    "qualification_root_reservation_opened": true,
+    "runtime_root_written_by_review": false,
+    "runtime_terminal_exists": true,
+    "runtime_terminal_invented": false,
+    "runtime_terminal_opened": true,
+    "scene_and_scene_result_directories_enumerated_empty": true,
+    "scene_result_or_rgb_payload_opened": false,
+    "sealed_material_opened": false
+  },
+  "root_cause_audit": {
+    "classification": "post_reservation_pre_scene_layered_adapter_shared_mutable_environment_failure",
+    "failure_is_rocm_driver_hip_egl_genesis_scene_physics_or_world_model_evidence": false,
+    "historical_parity_inputs_or_result_changed": false,
+    "one_more_alias_or_layered_context_patch_is_an_eligible_remedy": false,
+    "qualification_science_data_model_or_threshold_changed": false,
+    "root_cause": "The inherited ROCm collector context replaces the process-global pilot.EXECUTION_ENVIRONMENT with the qualification amdgpu environment. Worker plan validation then lazily recomputes the immutable historical textured-v03 task-relevance/parity prerequisite, whose parity plan requires the original Vulkan execution contract, so the chain fails closed."
+  },
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_qualification_terminal_review_v1",
+  "status": "PASS_FAIL_CLOSED_POST_RESERVATION_SHARED_ENVIRONMENT_TERMINAL_REVIEW",
+  "successor_eligibility": {
+    "automatic_successor_authority": false,
+    "flat_harness_execution_authorized_by_this_review": false,
+    "fresh_preregistration_source_review_identity_and_roots_required_before_any_future_authority_consideration": true,
+    "only_separately_scoped_flat_non_monkeypatched_harness_source_study_eligible": true,
+    "replacement_v2_retry_resume_or_adapter_successor_authorized": false,
+    "study_must_not_inherit_this_attempt_or_authority": true,
+    "study_must_pass_runtime_contracts_explicitly_without_shared_module_mutation": true,
+    "study_must_validate_historical_parity_before_any_reservation_gpu_or_genesis_call": true
+  },
+  "terminal_audit": {
+    "authorizes_retry_or_resume": false,
+    "authorizes_scientific_authority": false,
+    "qualification_pass": false,
+    "qualification_result_binding": null,
+    "terminal_exact": {
+      "authorizes_retry_or_resume": false,
+      "authorizes_scientific_authority": false,
+      "failure": {
+        "message": "ROCm qualification worker 12 failed",
+        "type": "GenesisRocmBackendV3IntegrityReplacementV2QualificationError"
+      },
+      "qualification_result_binding": null,
+      "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v2_qualification_terminal_v1",
+      "status": "FAIL_GENESIS_ROCM_BACKEND_V3_INTEGRITY_REPLACEMENT_V2_QUALIFICATION_HARD_STOP"
+    }
+  }
+}

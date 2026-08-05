@@ -1,0 +1,1202 @@
+{
+  "attempt_id": "go2-scene-diversity-recurrent-replication-genesis-rocm-backend-v1-qualification",
+  "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification/attempt_v1",
+  "caps": {
+    "auxiliary_depth_render_calls": 3072,
+    "candidate_branch_simulated_seconds": 1152.0,
+    "candidate_branches": 2304,
+    "native_render_calls": 3072,
+    "policy_steps_per_lane": 75,
+    "rgb_render_calls": 3072,
+    "scenes": 64,
+    "selected_device_vram_byte_ceiling": 16977405952,
+    "sentinel_branches": 0,
+    "states": 256,
+    "stored_rgb_byte_ceiling": 536870912,
+    "stored_rgb_frames": 3072,
+    "total_branches": 2304,
+    "total_lane_physics_steps": 1728000,
+    "total_lane_policy_steps": 172800,
+    "total_lane_simulated_seconds_including_common_prefix": 3456.0,
+    "wall_seconds": 7200.0
+  },
+  "collection_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification/attempt_v1/collection",
+  "config": {
+    "data_intervention": {
+      "scenes_per_family_per_role": 4,
+      "scenes_per_role": 32,
+      "states_per_role": 128,
+      "states_per_scene": 4,
+      "total_scenes": 64,
+      "total_states": 256
+    },
+    "frozen_recurrent_protocol": {
+      "actions": 9,
+      "arms": [
+        "no_vision_recurrent_direct",
+        "visual_recurrent_direct"
+      ],
+      "batch_states": 8,
+      "candidate_command_width": 15,
+      "context_steps": 3,
+      "frozen_dino_context_grid": [
+        256,
+        384
+      ],
+      "frozen_h1_thresholds": {
+        "maximum_regret": 0.13,
+        "must_beat_random": true,
+        "paired_upper_95_must_be_below_zero": true,
+        "visual_minus_no_vision_maximum": -0.01,
+        "visual_minus_task_maximum": -0.02
+      },
+      "goal_available_to_model": false,
+      "gradient_clip_norm": 1.0,
+      "loss": {
+        "all_strict_pair_rank_softplus_weight": 0.25,
+        "rank_scale_m": 0.05,
+        "standardized_physical_residual_mse_weight": 1.0
+      },
+      "model_seeds": [
+        2026080411,
+        2026080412,
+        2026080413
+      ],
+      "model_visual_grid": [
+        16,
+        16
+      ],
+      "motion_step_width": 18,
+      "optimizer": {
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "epsilon": 1e-08,
+        "learning_rate": 0.0003,
+        "name": "AdamW",
+        "weight_decay": 0.0001
+      },
+      "output_width": 4,
+      "schema": "lewm_go2_task_coupled_recurrent_dynamics_v1",
+      "shared_sampler_seed": 2026080414,
+      "states_per_role": 128,
+      "successor_observation_access": false,
+      "trace_updates": [
+        0,
+        400,
+        800
+      ],
+      "trainable_parameters_per_member": 3604,
+      "updates": 800,
+      "visual_projection": {
+        "channel_pca": [
+          384,
+          16
+        ],
+        "fit_role": "train_context_only",
+        "pool": "nonoverlapping_4x4_mean_16x16_to_4x4",
+        "standardize_projected_channels": true
+      }
+    },
+    "schema": "lewm_go2_scene_diversity_recurrent_replication_v1"
+  },
+  "dino": {
+    "checkpoint_binding": {
+      "byte_count": 88283115,
+      "path": "/home/andrewknowles/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth",
+      "sha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9"
+    },
+    "repository_commit": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "repository_path": "/home/andrewknowles/.cache/dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8"
+  },
+  "permissions": {
+    "data_generation": true,
+    "eval_context_rgb_access_after_checkpoint": true,
+    "eval_receipt_access_after_checkpoint": true,
+    "retry_resume_overwrite": false,
+    "sealed_or_protected_access": false,
+    "successor_rgb_access": false,
+    "train_context_rgb_access": true,
+    "train_receipt_access": true
+  },
+  "plan_binding": {
+    "byte_count": 364626,
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification_exact_plan_2026-08-04.json",
+    "sha256": "798815d7f96a2f03d51a100d32c3623acf5b4b4b08c01caaba089d76c042563f"
+  },
+  "predecessor_cpu_terminal_review_binding": {
+    "byte_count": 20536,
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_terminal_review_2026-08-04.json",
+    "sha256": "9b0c31c05b4fb6064c67116a456d34a6f7e49cfe85ec55ed081599acb18502f0"
+  },
+  "preregistration_binding": {
+    "byte_count": 11786,
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_preregistration_2026-08-04.md",
+    "sha256": "ec53ffaa4ef236cb430bb134aa2627a99215b81ede69d6a867c34a28da12453f"
+  },
+  "qualification_contract": {
+    "auxiliary_depth_validation_renders_per_worker": 48,
+    "backend": "amdgpu",
+    "backend_api": "gs.amdgpu",
+    "branches_per_worker": 36,
+    "candidate_actions_per_state": 9,
+    "contact_force_reads_forbidden": true,
+    "context_frames_per_worker": 12,
+    "existing_integrity_render_count_and_nonfinite_gates_required": true,
+    "fresh_worker_processes": 2,
+    "full_history_and_successor_horizon": true,
+    "genesis_version": "0.4.6",
+    "hip_arch_name": "gfx1201",
+    "hip_device_name": "AMD Radeon AI PRO R9700",
+    "hsa_override_gfx_version_forbidden": true,
+    "new_amdgpu_ring_timeout_or_reset_forbidden": true,
+    "probe_output_scientific_reuse_authorized": false,
+    "probe_scene_indices_in_order": [
+      12,
+      0
+    ],
+    "qualification_failure_authorizes_retry": false,
+    "role_local_cache_required": true,
+    "selected_device_vram_cap_unchanged": true,
+    "states_per_worker": 4,
+    "stored_rgb_frames_per_worker": 48,
+    "target_frames_per_worker": 36,
+    "timing_gate_formula": "64 * max(worker_elapsed_seconds) + 900 <= 7200",
+    "worker_process_group_watchdog_seconds": 300.0
+  },
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification_authority_v1",
+  "source_bindings": {
+    "calibration_supervisor": {
+      "byte_count": 35532,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_counterfactual_calibration_authorized_v1.py",
+      "sha256": "99de52eba024ee115a137697a48f14ff7931e2f424e5cdaf3301c7e22aad533b"
+    },
+    "collection_runtime_benchmarks_package_init": {
+      "byte_count": 362,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/__init__.py",
+      "sha256": "edc7a30d5bf35c1bc9e099621e8f5bbe6d757180d0a6e4771c36ae5d06b81fed"
+    },
+    "collection_runtime_bounded_authority_builder": {
+      "byte_count": 38881,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_bounded_branch_experiment_authority_v1.py",
+      "sha256": "1c494619f98bbfdd550260fce12e4358fe6a806f2a2caedbd8ab169202d717bd"
+    },
+    "collection_runtime_bounded_calibration_authority_contract": {
+      "byte_count": 19327,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_counterfactual_calibration_authority_v1.py",
+      "sha256": "3d41fb2a5704708546d45e2b758b389a32145a37ac6d6f37a1f18e125edefd4b"
+    },
+    "collection_runtime_bounded_calibration_supervisor_helpers": {
+      "byte_count": 35532,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_counterfactual_calibration_authorized_v1.py",
+      "sha256": "99de52eba024ee115a137697a48f14ff7931e2f424e5cdaf3301c7e22aad533b"
+    },
+    "collection_runtime_bounded_contract_test": {
+      "byte_count": 83380,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_experiment_v1.py",
+      "sha256": "0181f09437edf2a7ff6ddc072e76c4c15237527303ff80deadc82f1312d23cee"
+    },
+    "collection_runtime_bounded_evaluation_panel_runner": {
+      "byte_count": 47994,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_bounded_branch_evaluation_panel_v1.py",
+      "sha256": "931502fabc07636a936cb36debabf94bd832ab7a477c1d554dbfef1cbd2d7248"
+    },
+    "collection_runtime_bounded_evaluation_panel_runner_test": {
+      "byte_count": 21098,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_evaluation_panel_runner_v1.py",
+      "sha256": "84e1ae984daa030077e9ee067ae65f21cd63b3c97cf366cdb43995e2f2b8c73e"
+    },
+    "collection_runtime_bounded_evaluator": {
+      "byte_count": 173816,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_bounded_branch_experiment_v1.py",
+      "sha256": "47e60be268289940059b4b672159eeb2dcb886c563266d097ee41ec8d9c3cb54"
+    },
+    "collection_runtime_bounded_evaluator_base": {
+      "byte_count": 28399,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520"
+    },
+    "collection_runtime_bounded_evaluator_h6_contract": {
+      "byte_count": 33483,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py",
+      "sha256": "c773d739a67159fe82ed3bc539f139f6b8feea019f9a9d2e2e00b418dd8fe056"
+    },
+    "collection_runtime_bounded_evaluator_mask_contract": {
+      "byte_count": 44605,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "sha256": "cec018dade02e4c8217d74792f8fdc6afba84f414d094f4879e353d78fee4f84"
+    },
+    "collection_runtime_bounded_evaluator_model": {
+      "byte_count": 17480,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "sha256": "324bd76eb0f8285dac01ccba0741e38546fe93506f5afd51facfaa71826346c3"
+    },
+    "collection_runtime_bounded_evaluator_probe": {
+      "byte_count": 51539,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_probe_counterfactual_action_fidelity.py",
+      "sha256": "0441837123792976489acc917ee87a0972a09eeb70e6950554b2c294f762003f"
+    },
+    "collection_runtime_bounded_evaluator_snapshot_contract": {
+      "byte_count": 35478,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_train_temporal_jepa_scaled.py",
+      "sha256": "97154b693d3ca2b96e7e0d88c378c07b349c1d77e0db05548e48823834a35037"
+    },
+    "collection_runtime_bounded_evaluator_temporal_api": {
+      "byte_count": 78825,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "sha256": "249158c654da3502de57dc9dcd9b0dd7574ced1f1ed5afdc4ec6e0ef64c2b6c3"
+    },
+    "collection_runtime_bounded_external_supervisor": {
+      "byte_count": 28488,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_bounded_branch_experiment_authorized_v1.py",
+      "sha256": "acf833c75f20e0245e1b05e149a1a02a2de5cf94ae459497ed97548b3dce43e1"
+    },
+    "collection_runtime_bounded_h6_temporal_frame_packer": {
+      "byte_count": 15951,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_pack_h6_temporal_frames.py",
+      "sha256": "5804de935d03f09d728242092e7218e9c4182ac9d0362ef208e1a5ddd3bd43b4"
+    },
+    "collection_runtime_bounded_lineage_contract_test": {
+      "byte_count": 45163,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_lineage_v1.py",
+      "sha256": "af6ff2aa283f0bf0a3efac13a1df7751d2bc7493cef71b25e4deb69ed6bb4498"
+    },
+    "collection_runtime_bounded_main_pool_census": {
+      "byte_count": 38981,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_recurrent_jepa_main_pool_census.py",
+      "sha256": "b594ca7ccc9f398df5d71298340662e2b62492fd837295b8a1e8630603f03f7e"
+    },
+    "collection_runtime_bounded_model_encoders": {
+      "byte_count": 7028,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/encoders.py",
+      "sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d"
+    },
+    "collection_runtime_bounded_model_lewm": {
+      "byte_count": 13068,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/lewm.py",
+      "sha256": "0378bb5334fa7b40e801405d6d20c5a05ecb543ee9820efbd20acf83946e8b2a"
+    },
+    "collection_runtime_bounded_model_phase2d_spatial": {
+      "byte_count": 37610,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/phase2d_spatial_lewm.py",
+      "sha256": "5c64535cc8933bae4a4f5008354afc19e85d3ed3705dbd98e37231d2641f0987"
+    },
+    "collection_runtime_bounded_model_predictor": {
+      "byte_count": 14275,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/predictor.py",
+      "sha256": "cc7fd43fc7554a94d603d13fc630a02b2b3990ddc298948257f671b69723a305"
+    },
+    "collection_runtime_bounded_model_primitive_affordance": {
+      "byte_count": 17334,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/primitive_affordance.py",
+      "sha256": "540fa027307e69c3ff5b93f321dbc2e2d30dbf46090fbc557ab0044b35d83c8e"
+    },
+    "collection_runtime_bounded_model_sigreg": {
+      "byte_count": 3045,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/sigreg.py",
+      "sha256": "7ea956e8a62ee36aeddb8a26cca77a98d266778be2d999846dead7755eb677ae"
+    },
+    "collection_runtime_bounded_model_single_frame_masked": {
+      "byte_count": 18942,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+      "sha256": "c4dafa5fcf5fbecb6077a435e57e5ee61bfefd327ba0955720d329f8217cb5d2"
+    },
+    "collection_runtime_bounded_model_source_action_utility": {
+      "byte_count": 12899,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/source_action_utility.py",
+      "sha256": "40485d9d3d9670ae0529a606d34021308abd34d0716b694f41a6742e440b3ee1"
+    },
+    "collection_runtime_bounded_model_spatial": {
+      "byte_count": 11337,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/spatial_lewm.py",
+      "sha256": "36890539ec79e170174bdcc86815e79e2e383a5c8874029d4a4e11935bf69983"
+    },
+    "collection_runtime_bounded_model_spatial_predictor": {
+      "byte_count": 5543,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/spatial_predictor.py",
+      "sha256": "f7a2d179697c49d0476ff32079ffded6bc40fbe07372d6894e1b9b423a28d04c"
+    },
+    "collection_runtime_bounded_models_package": {
+      "byte_count": 2210,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/__init__.py",
+      "sha256": "9ee35fa5531413081219069ba2ef67d3cedb3643cda8d20544a189e329331b36"
+    },
+    "collection_runtime_bounded_place_triplet_dataset": {
+      "byte_count": 18890,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_memory_role_place_triplets_v1.py",
+      "sha256": "47a6e8b52148548846a8c391c4b8eb9570743f90cf62c60d7644f5e30d7229aa"
+    },
+    "collection_runtime_bounded_plan_builder": {
+      "byte_count": 79822,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_bounded_branch_experiment_plan_v1.py",
+      "sha256": "4de1e0b6efc2487263999177c7bfd120ea2e7ecad7de6f75922d8cdb4fda88a3"
+    },
+    "collection_runtime_bounded_plan_canonical_target_helper": {
+      "byte_count": 18990,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_counterfactual_calibration_plan_v1.py",
+      "sha256": "f4deffe647c2270a153d715f8438943ba69d8f8df6b8765f658b569675c66e0e"
+    },
+    "collection_runtime_bounded_progression_analyzer": {
+      "byte_count": 18632,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/analyze_go2_world_model_progression_v1.py",
+      "sha256": "37fb6a306bc2e1370581e968094cdf9453a0e9df2d8814079dc2a92368ca6f31"
+    },
+    "collection_runtime_bounded_progression_historical_executor": {
+      "byte_count": 103001,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/execute_go2_world_model_existing_pool_three_arm_v1.py",
+      "sha256": "b0ca02d706b0108885e51b32353b8af6e440259a0108fa934ad8bd9e70366d7d"
+    },
+    "collection_runtime_bounded_progression_model": {
+      "byte_count": 12224,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_world_model_progression_v1.py",
+      "sha256": "b7582059034a1af475595b33f1a369a61aafa933564ec9e8d25317022680c0fb"
+    },
+    "collection_runtime_bounded_progression_runner": {
+      "byte_count": 44968,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_train_go2_world_model_progression_v1.py",
+      "sha256": "0cb15c6414d7deeda6c206981457c72a45558905ea695cdae924a844702d49e0"
+    },
+    "collection_runtime_bounded_recurrent_h4_dataset": {
+      "byte_count": 27386,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_recurrent_h4_rgb_sequences.py",
+      "sha256": "3f8c2a89af2934e8225dd98447b952d9e5ce8bedac99a7f834118263957652e6"
+    },
+    "collection_runtime_bounded_recurrent_h4_v2_dataset": {
+      "byte_count": 21001,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_recurrent_h4_rgb_sequences_v2.py",
+      "sha256": "3d49e710304ad685f9d161a84586229a6036b652f84df877772afe5b827c51ea"
+    },
+    "collection_runtime_bounded_recurrent_temporal_runner": {
+      "byte_count": 22015,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "sha256": "761da9e4e9b72e8e96780fc874d887c906b6c2aa8ffaef58c98c92c45f46b53d"
+    },
+    "collection_runtime_bounded_runbook": {
+      "byte_count": 30218,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_experiment_v1_runbook_2026-08-02.md",
+      "sha256": "558ed86f1645eb7083890a475a82c560523eab02b468fc7e1d4775d2b02afc74"
+    },
+    "collection_runtime_bounded_runtime_boundary_test": {
+      "byte_count": 22244,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_runtime_boundary_v1.py",
+      "sha256": "7a45370979d4f6c981332d49dd9ce4470e143d3e9ab9868d9040252d4e0f9e40"
+    },
+    "collection_runtime_bounded_runtime_collector": {
+      "byte_count": 28603,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_bounded_branch_experiment_authorized_v1.py",
+      "sha256": "4aa20723053507f55d640e3c5f9639449ede69490558dc9d0e7caf1df5057405"
+    },
+    "collection_runtime_bounded_scene_panel_builder": {
+      "byte_count": 15854,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_bounded_branch_scene_panel_v1.py",
+      "sha256": "fee36bb6edcb71c3f88b19fc4af5f7b785706e54464e85d8db4c1e8dd4f4400c"
+    },
+    "collection_runtime_bounded_single_frame_evaluation_api": {
+      "byte_count": 24653,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+      "sha256": "54b925ff65a79b59f034dcc265776eeaea94be28b02bb2bb514f756fc7b17313"
+    },
+    "collection_runtime_bounded_single_frame_mask_contract": {
+      "byte_count": 30969,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+      "sha256": "ae2480106d535264e8520d26be8e5cdfe92299fdd605a695ae1cefd5f6d87dc7"
+    },
+    "collection_runtime_bounded_visual_domain_parity_evaluator": {
+      "byte_count": 63538,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_v1.py",
+      "sha256": "8e4d214bcbc0501fd9a68d3b4e30bdcd9962e83f8342929e7907dc7afa5aa962"
+    },
+    "collection_runtime_bounded_visual_domain_parity_supervisor": {
+      "byte_count": 73334,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py",
+      "sha256": "4b1adcd9950e575923a8f61f9b3ec7090e94eaa445f808f44015abdb891184a3"
+    },
+    "collection_runtime_bounded_visual_domain_reference_renderer": {
+      "byte_count": 9590,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/render_replay_v03.py",
+      "sha256": "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d"
+    },
+    "collection_runtime_bounded_visual_domain_task_relevance_evaluator": {
+      "byte_count": 30488,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py",
+      "sha256": "22d370945ad3dcd09bfa9405841450a834f71029c9f16de86e17daa37ee4453c"
+    },
+    "collection_runtime_bounded_visual_parity_authority_contract": {
+      "byte_count": 23820,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_visual_domain_parity_authority_v1.py",
+      "sha256": "ff3cde2aadb465860752f785e9fa7468b5aadd8e0be868f08b8c367763070baa"
+    },
+    "collection_runtime_bounded_visual_parity_plan_contract": {
+      "byte_count": 53203,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_visual_domain_parity_plan_v1.py",
+      "sha256": "3fc3993aceb8cd332073b4032bc07dda88d1f537f709bedbee50f627a21d80cd"
+    },
+    "collection_runtime_calibration_analyzer": {
+      "byte_count": 114260,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/analyze_go2_world_model_counterfactual_calibration_v1.py",
+      "sha256": "809f9b0cf3812c1c478741b1cebf170c13fd637b07ed6d340900d6991d2452fc"
+    },
+    "collection_runtime_camera_safety": {
+      "byte_count": 13992,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/camera_safety.py",
+      "sha256": "2526bf940dc27bcf8270b310320f7ed6228bb95d02b0851b4e88250c85d19998"
+    },
+    "collection_runtime_checker": {
+      "byte_count": 143612,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "18771d7b5c90e0a30f8c8331dd419da80aa4c7addba6acb265df2e5b96df81e7"
+    },
+    "collection_runtime_collector": {
+      "byte_count": 142255,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "b5602e980baa616a9360115deec6f8bf23dbc99a24181f42800e0af4fecf1896"
+    },
+    "collection_runtime_collector_base": {
+      "byte_count": 7122,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/base.py",
+      "sha256": "4e088a9682ff3c589555a7f9b92d5c61c88ee6f7196b64540b0e1bddb0f0f5ba"
+    },
+    "collection_runtime_collector_frontier": {
+      "byte_count": 4728,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/frontier.py",
+      "sha256": "98fc61a6e4d7fc9c7d13109a7c9d7072992b883c56911931250f799ea0e0aeb3"
+    },
+    "collection_runtime_collector_ou_noise": {
+      "byte_count": 3211,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/ou_noise.py",
+      "sha256": "01f2db82c4f47f58d9d17fe41677924c3947cdad5e23ce0098f5745d4c4c9d3b"
+    },
+    "collection_runtime_collector_primitive_curriculum": {
+      "byte_count": 1530,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/primitive_curriculum.py",
+      "sha256": "595ea3799731076a7d8381fbf377c556175b07480f89052416685161eb6d8966"
+    },
+    "collection_runtime_collector_recovery": {
+      "byte_count": 7256,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/recovery.py",
+      "sha256": "cf7b50f7394e39986cf9339b253d1255bbb15109fb212e33c3e6d61fe3fa2bd5"
+    },
+    "collection_runtime_collector_route_teacher": {
+      "byte_count": 51313,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/route_teacher.py",
+      "sha256": "2ccd4fba3ef45bd3f75358dc617f4d575b96d7c6e4d3a2538b76e31bc3d79968"
+    },
+    "collection_runtime_collectors_package_init": {
+      "byte_count": 1932,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/__init__.py",
+      "sha256": "3449122454b946f81b0cc936877c33993d173dedb729b169c6198dfb02064d81"
+    },
+    "collection_runtime_contract": {
+      "byte_count": 102894,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa"
+    },
+    "collection_runtime_counterfactual_benchmark_support": {
+      "byte_count": 10300,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/counterfactual.py",
+      "sha256": "3d20b87560aa14e3ce672baec1077c7b2919a8679e89dfb88352b59a762d70df"
+    },
+    "collection_runtime_datasets_package_init": {
+      "byte_count": 73,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/__init__.py",
+      "sha256": "d920ca2534ea4698f30ac2608b4754cb3cf2b4baae53e4cd59148bedfe9495e3"
+    },
+    "collection_runtime_external_supervisor": {
+      "byte_count": 28488,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_bounded_branch_experiment_authorized_v1.py",
+      "sha256": "acf833c75f20e0245e1b05e149a1a02a2de5cf94ae459497ed97548b3dce43e1"
+    },
+    "collection_runtime_genesis_batch_renderer": {
+      "byte_count": 1834,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/batch_renderer.py",
+      "sha256": "04010c9e5be2d20383eab86398c47b12f94d1a2f96fa105a4ae1e631e21255f2"
+    },
+    "collection_runtime_genesis_contract": {
+      "byte_count": 24807,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/lewm_contract.py",
+      "sha256": "d7e8b021c4411e0e5f83b9ed61dbee1d70493d23d8c3e87123bd84f24a26db6d"
+    },
+    "collection_runtime_genesis_package_init": {
+      "byte_count": 3262,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/__init__.py",
+      "sha256": "07a2cdb8c1087ca0517c3a581941de6b772ba75b6d3e3f22bd8aec8a5320b874"
+    },
+    "collection_runtime_genesis_parity_checks": {
+      "byte_count": 1564,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/parity_checks.py",
+      "sha256": "22c6653ed1751fcb82653a71a32d37faea2b0c61b9bbc215c70c0593f2a85f26"
+    },
+    "collection_runtime_genesis_render_replay": {
+      "byte_count": 13960,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/render_replay.py",
+      "sha256": "dc3414132f5d226bbde036cf62fddcdd7d392c0374a4586327fba7a530ce5f54"
+    },
+    "collection_runtime_go2_adapter": {
+      "byte_count": 2167,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/go2_adapter.py",
+      "sha256": "66df7b2d6836f354ce40e7cf775a53b0d8747a90fbe305df9da7a84fb18fa9ce"
+    },
+    "collection_runtime_historical_textured_v03_renderer": {
+      "byte_count": 9590,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/render_replay_v03.py",
+      "sha256": "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d"
+    },
+    "collection_runtime_lewm_package_init": {
+      "byte_count": 313,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/__init__.py",
+      "sha256": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c"
+    },
+    "collection_runtime_pilot_consumer": {
+      "byte_count": 153820,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2"
+    },
+    "collection_runtime_pilot_joiner": {
+      "byte_count": 28344,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/join_go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "8b5b2bf9e456a858a82ed33852809a6b5fd5220911f2afbd925d7cbcc7b7f15e"
+    },
+    "collection_runtime_rollout": {
+      "byte_count": 86066,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/rollout.py",
+      "sha256": "06501bbbdd1e071a3a91e765d77bd19da5f2c311c35d75df4631c452beea034a"
+    },
+    "collection_runtime_scene_builder": {
+      "byte_count": 15877,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/scene_builder.py",
+      "sha256": "1eec27ee97de1e853890e34f6c008ff748ce6034f9467d20fea8d212c78f3158"
+    },
+    "collection_runtime_scene_generator_materializer": {
+      "byte_count": 142255,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "b5602e980baa616a9360115deec6f8bf23dbc99a24181f42800e0af4fecf1896"
+    },
+    "collection_runtime_scene_loader": {
+      "byte_count": 17787,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/scene_loader.py",
+      "sha256": "fcfc065716172320561803f274754b1ba3046c922f83b37abf16d796fe9417ea"
+    },
+    "collection_runtime_smoke_rgb_writer": {
+      "byte_count": 142255,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "b5602e980baa616a9360115deec6f8bf23dbc99a24181f42800e0af4fecf1896"
+    },
+    "collection_runtime_textures": {
+      "byte_count": 6996,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/textures.py",
+      "sha256": "a8a9b958ffbf927f330ef9f8f950adabe884f9137668780cd9f8015184bda1fc"
+    },
+    "collection_runtime_vision_quality": {
+      "byte_count": 6031,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/vision_quality.py",
+      "sha256": "aa3b63399a7638f69cadce772721cf420d28d7965f28ce1a16886728afeb42a5"
+    },
+    "collection_runtime_visual_domain_parity_evaluator": {
+      "byte_count": 63538,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_v1.py",
+      "sha256": "8e4d214bcbc0501fd9a68d3b4e30bdcd9962e83f8342929e7907dc7afa5aa962"
+    },
+    "collection_runtime_world_corpus": {
+      "byte_count": 5337,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/corpus.py",
+      "sha256": "776a8638da81939101f7ce0c7d856fada9c08b7ce2b5ecc104f708425e6067d3"
+    },
+    "collection_runtime_world_exporters_package_init": {
+      "byte_count": 60,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/exporters/__init__.py",
+      "sha256": "a658289b9d01aefb220d23f89c2d23d78d86562382779690f832da41d1f4e70c"
+    },
+    "collection_runtime_world_families": {
+      "byte_count": 62884,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/families.py",
+      "sha256": "87515b932773aa518d18f9777af7c1567ae76368ce31e5519da7019f72d30189"
+    },
+    "collection_runtime_world_gazebo_exporter": {
+      "byte_count": 8011,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/exporters/to_gazebo_sdf.py",
+      "sha256": "daf8a41ba06bd250c618775184462b641263ec485ecb4674fc96a31f4348fc57"
+    },
+    "collection_runtime_world_genesis_exporter": {
+      "byte_count": 2202,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/exporters/to_genesis.py",
+      "sha256": "9ad0e97d584b50a1c28a26da8b0a59344081b5b8bf0e79d6ad227b66c982b313"
+    },
+    "collection_runtime_world_labels_derived": {
+      "byte_count": 26364,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/labels/derived.py",
+      "sha256": "5e72678b204dc50d7e2ebb5f0146833623e55625db69decda08bd6c480f5c07d"
+    },
+    "collection_runtime_world_labels_package_init": {
+      "byte_count": 926,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/labels/__init__.py",
+      "sha256": "23e578d23044873cd7cd5bee8cbef994ba37ce085f3e6b0e6543db2db760f4c8"
+    },
+    "collection_runtime_world_labels_topology": {
+      "byte_count": 5998,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/labels/topology.py",
+      "sha256": "1cb83d219f43e862f77aac44f3f98f66578594be662055e070d41cc397ad0185"
+    },
+    "collection_runtime_world_manifest": {
+      "byte_count": 12154,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/manifest.py",
+      "sha256": "5679768016226e89e385ec7a7238616416248a9a1194b898ecb9078662f6a888"
+    },
+    "collection_runtime_world_planning_grid": {
+      "byte_count": 20806,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/planning_grid.py",
+      "sha256": "e6f7e26d584dfd7923493803fc95a75135122b37a1f95cb51f9267b284649510"
+    },
+    "collection_runtime_world_randomization": {
+      "byte_count": 12139,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/randomization.py",
+      "sha256": "df600c33020713af2bf623468270a40f9d4dcf5459f3f1526faf1a53875ab190"
+    },
+    "collection_runtime_world_scene_graph": {
+      "byte_count": 23227,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/scene_graph.py",
+      "sha256": "5b7ae6f7e5ac5c3aa83e0f3cc392c00ef3756d41b6a7fbe2acffa38ff7a1ed46"
+    },
+    "collection_runtime_world_scene_validation": {
+      "byte_count": 10113,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/scene_validation.py",
+      "sha256": "9ecf9c7c6d87f2ba2be083883bbd621dcd9372f1ea74bf4545434f0135ad9ad3"
+    },
+    "collection_runtime_world_splits": {
+      "byte_count": 12032,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/splits.py",
+      "sha256": "0536c7694f28a8cdde6391743a160ec4b9f5c08795a67c641a241891d7c0dfcd"
+    },
+    "collection_runtime_worlds_package_init": {
+      "byte_count": 1540,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/__init__.py",
+      "sha256": "9e0b6599316b0d361e99c405cbc27be4e9948206c55aeaa0f5316a90d320002d"
+    },
+    "collection_supervisor": {
+      "byte_count": 28488,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_bounded_branch_experiment_authorized_v1.py",
+      "sha256": "acf833c75f20e0245e1b05e149a1a02a2de5cf94ae459497ed97548b3dce43e1"
+    },
+    "grounded_upstream_action_regret_evaluator": {
+      "byte_count": 28399,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520"
+    },
+    "grounded_upstream_benchmark": {
+      "byte_count": 24233,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "a2e920bc02e6e4a8eaabc50649851503b210ab6539c9d9a68581d42e34fd2240"
+    },
+    "grounded_upstream_benchmark_test": {
+      "byte_count": 12873,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_grounded_dense_dino_joint_jepa_v1_benchmark.py",
+      "sha256": "6eeb921abb89ddce16fbf5a14502137b884f9fb213f788e90ec242f2c3055bae"
+    },
+    "grounded_upstream_counterfactual_consumer": {
+      "byte_count": 153820,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2"
+    },
+    "grounded_upstream_counterfactual_contract": {
+      "byte_count": 102894,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa"
+    },
+    "grounded_upstream_dense_predictor": {
+      "byte_count": 10313,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/dense_dinov2_temporal_predictor.py",
+      "sha256": "cc04f167cc5043a1b8ccaed3746c794011d7fc037ef522c04b467b282677d4ea"
+    },
+    "grounded_upstream_dense_readout_model": {
+      "byte_count": 12637,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "de7d7defd5047f84fa8d71ba62c05c441a965018ec6f41c5771384ea11d4295a"
+    },
+    "grounded_upstream_feature_plan_and_bootstrap": {
+      "byte_count": 34541,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "89afbc4b4611806ba5fd230747ee9de31edbb9ddf39701150246439b637c0d98"
+    },
+    "grounded_upstream_model": {
+      "byte_count": 19526,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "5f8951f9a2a859c15c2d2c00c394257e2b97fae6073089f44f53e0bfa57acbcf"
+    },
+    "grounded_upstream_model_test": {
+      "byte_count": 12654,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "3e6dfd76c394a93dbe559f0a6e1782d473ca3f5e74944a22cd473ba052846259"
+    },
+    "grounded_upstream_physical_loader": {
+      "byte_count": 70959,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "00e23fcdc9252895bfa9489e7d7b6223c6421afae5ba325b18d78ad77933b16f"
+    },
+    "grounded_upstream_physical_outcome_model": {
+      "byte_count": 7951,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "81947b04c23a789ce8d4a8a45005db4f08181784322504b1b140d969b2f5ff32"
+    },
+    "grounded_upstream_predictor_core": {
+      "byte_count": 14275,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/predictor.py",
+      "sha256": "cc7fd43fc7554a94d603d13fc630a02b2b3990ddc298948257f671b69723a305"
+    },
+    "grounded_upstream_runner": {
+      "byte_count": 96316,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "44e72614f44e41d68199a00276494471a5b6ee588a5b4123400fd051de740be3"
+    },
+    "grounded_upstream_runner_test": {
+      "byte_count": 18213,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "9e79e4720b68cb03255fe9b738232c7be4e6667a44797a1635a3388da270c508"
+    },
+    "grounded_upstream_task_action_baseline": {
+      "byte_count": 60963,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "6c8ed2398b1889c49b0699a236495530c63cfb0d363b0351b419c07efaf778e4"
+    },
+    "predecessor_cpu_qualification_terminal_review": {
+      "byte_count": 20536,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_terminal_review_2026-08-04.json",
+      "sha256": "9b0c31c05b4fb6064c67116a456d34a6f7e49cfe85ec55ed081599acb18502f0"
+    },
+    "predecessor_exact_plan": {
+      "byte_count": 346027,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_v1_exact_plan_2026-08-04.json",
+      "sha256": "c34aa23303951d32dd9686a607de7b78df06db026918d868017a6a93c506a040"
+    },
+    "predecessor_failure_terminal": {
+      "byte_count": 451,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_v1/attempt_v1/terminal.json",
+      "sha256": "df4cecb5edc45f25a98f4753e82e95334a6b8c4e9e0d719bb13150b9be690bfa"
+    },
+    "predecessor_replacement_v1_failure_terminal": {
+      "byte_count": 473,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v1/attempt_v1/terminal.json",
+      "sha256": "c2650529ff6b1aa1322738e7d4f748fbab03ea9ef33a623ff3e182a98e1cb77d"
+    },
+    "predecessor_replacement_v1_terminal_review": {
+      "byte_count": 21621,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_terminal_review_2026-08-04.json",
+      "sha256": "e25f9281449147b6937edfafa022b5fbeb18ca3e844438c70a5babb84c2eb0cb"
+    },
+    "predecessor_replacement_v2_failure_terminal": {
+      "byte_count": 442,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/terminal.json",
+      "sha256": "ebb520c596ae69c19e3be255c0f661fe55286883e03994a43a0e506936120465"
+    },
+    "predecessor_replacement_v2_terminal_review": {
+      "byte_count": 20561,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_terminal_review_2026-08-04.json",
+      "sha256": "7878dbedf21ed3bdb13927e0404925edc376e512c00a5ba4bf56e0091e3204c6"
+    },
+    "predecessor_terminal_review": {
+      "byte_count": 15809,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_v1_terminal_review_2026-08-04.json",
+      "sha256": "7f2ac7eb3f9fa16fd91a5311009cdbcd7d4777e8d9c3f7746666ce1afbc6da59"
+    },
+    "recurrent_benchmark": {
+      "byte_count": 34214,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_task_coupled_recurrent_dynamics_v1.py",
+      "sha256": "1ddac19f555c0cf6c685d21c6ff7aedb677734534118c2e33db0423ce37b890b"
+    },
+    "recurrent_model": {
+      "byte_count": 7889,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_task_coupled_recurrent_dynamics_v1.py",
+      "sha256": "210807050ccf5226dfc4cd8cba75ff4737786883be1d7eaef0e1fc66ecdc6695"
+    },
+    "replacement_authority_builder": {
+      "byte_count": 14219,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_authority.py",
+      "sha256": "2bc6bb4ed692345567ba1c5d2aeb681ef3cd3a2e13b807629c53633370323a16"
+    },
+    "replacement_authority_test": {
+      "byte_count": 7366,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_authority.py",
+      "sha256": "a81791d34f2deebe4f4fcbafc332ea0fe6613adfc56dfe0ab1b8458fd62904ae"
+    },
+    "replacement_collector": {
+      "byte_count": 63061,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_integrity_replacement_v1.py",
+      "sha256": "d6386b642b0bd4f7fa2f10ecfd2ea4862198aa9f2536a0c972488828e4f7bf62"
+    },
+    "replacement_collector_test": {
+      "byte_count": 18006,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_collect_go2_scene_diversity_recurrent_replication_integrity_replacement_v1.py",
+      "sha256": "3817f26dc2767bda7128a23cf3cc74f138fa524036aac97370e72b4fff98d184"
+    },
+    "replacement_plan_builder": {
+      "byte_count": 9228,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_plan.py",
+      "sha256": "ac58c19d8020d68cdc40688ae9c254ba8fd624170a51be7a37052d6ceb58f69c"
+    },
+    "replacement_plan_test": {
+      "byte_count": 3467,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_plan.py",
+      "sha256": "896592f4581a81e8dad28bcb63c83bcc9c520f95028e90b81d0686aee6090f54"
+    },
+    "replacement_runner": {
+      "byte_count": 17669,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_integrity_replacement_v1.py",
+      "sha256": "821a4258f65f27085a7638412eea105a260b9d1f2b1e78d3cca9b886bf57e076"
+    },
+    "replacement_runner_test": {
+      "byte_count": 10969,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_integrity_replacement_v1.py",
+      "sha256": "049a00cc2623a608058254d010694cda5df6b45fac8d83429e1cef108ca99e63"
+    },
+    "replacement_v2_authority_builder": {
+      "byte_count": 7300,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_authority.py",
+      "sha256": "93890e21cfd15f41796a293b1f64b7b1b4af34997ce73fda7f82f874d97e5d43"
+    },
+    "replacement_v2_authority_test": {
+      "byte_count": 7929,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_authority.py",
+      "sha256": "c9852a7ea243a2e86ef6fd77e41b11e9990580af6d403046eb4dc9925c9e34a3"
+    },
+    "replacement_v2_collector": {
+      "byte_count": 81912,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_integrity_replacement_v2.py",
+      "sha256": "ff062cf1198abb6c5677fd946e6e956399c303b59c2a137565433131edd1c2cf"
+    },
+    "replacement_v2_collector_test": {
+      "byte_count": 30990,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_collect_go2_scene_diversity_recurrent_replication_integrity_replacement_v2.py",
+      "sha256": "99048c4ff863678e5ff996f0a1db064f7a254da39d5c066948e53c7aad0012c6"
+    },
+    "replacement_v2_dependency_genesis_engine_mesh": {
+      "byte_count": 17998,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/engine/mesh.py",
+      "sha256": "17c23af2e2c2ac46aeee3de53df6641151bfbb88e253931a9fa2fc2b804d6e0f"
+    },
+    "replacement_v2_dependency_genesis_init": {
+      "byte_count": 17972,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/__init__.py",
+      "sha256": "bb47cd957ba9cfae37489adc46631f8b97cffb8d14ee4cc90c51336a44292abb"
+    },
+    "replacement_v2_dependency_genesis_mesh": {
+      "byte_count": 40599,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/utils/mesh.py",
+      "sha256": "6d0abcdca6011811dcf72395dffa954aeb1ac2d94ccc578586cacc88442f7675"
+    },
+    "replacement_v2_dependency_genesis_misc": {
+      "byte_count": 34687,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/utils/misc.py",
+      "sha256": "3dc51f7b7fd1b935d3e3451ca95e54595f69fe1cd5eed09eee189782d0a5c9ad"
+    },
+    "replacement_v2_dependency_genesis_options_misc": {
+      "byte_count": 1352,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/options/misc.py",
+      "sha256": "ab143316dd88b1da2245d79312bd5ba2a2b5ae7afc483d763d17a7583b973909"
+    },
+    "replacement_v2_dependency_genesis_rasterizer_context": {
+      "byte_count": 48826,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/vis/rasterizer_context.py",
+      "sha256": "f4f4b216db6d5efcc1f86b8529bb4d0adc3db014841a9fac5848e7d01afe0934"
+    },
+    "replacement_v2_dependency_genesis_rigid_entity": {
+      "byte_count": 158294,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/engine/entities/rigid_entity/rigid_entity.py",
+      "sha256": "e90f5451357a346f1e33baa3899ddedd514201c5f033fa487c2d105a86055b6a"
+    },
+    "replacement_v2_dependency_genesis_rigid_solver": {
+      "byte_count": 143561,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/engine/solvers/rigid/rigid_solver.py",
+      "sha256": "b4fa8a4ce8d80b6f6d999639b5e66857260a38b6f02a9979295e288cd3cc1240"
+    },
+    "replacement_v2_dependency_genesis_scene": {
+      "byte_count": 61659,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/engine/scene.py",
+      "sha256": "077fd4131589f7170575504a1eed023804e5437331e50e32774573078a4b487c"
+    },
+    "replacement_v2_dependency_rsl_mlp_model": {
+      "byte_count": 10306,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/rsl_rl/models/mlp_model.py",
+      "sha256": "9570f6ae7902c84380e0f3b39f0f83f75ba736b004faad5e34ae2d71f38169ec"
+    },
+    "replacement_v2_dependency_rsl_on_policy_runner": {
+      "byte_count": 10316,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/rsl_rl/runners/on_policy_runner.py",
+      "sha256": "39358a0a60219fdb360df7acddf80f6a382837aa58e2ec0ccf875df4afee4825"
+    },
+    "replacement_v2_dependency_rsl_ppo": {
+      "byte_count": 21576,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/rsl_rl/algorithms/ppo.py",
+      "sha256": "022a37a1f75102ae7529edc52288ca9dde76fd2c78939e56d54cc1529c500352"
+    },
+    "replacement_v2_plan_builder": {
+      "byte_count": 7186,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_plan.py",
+      "sha256": "6645add66ba23e6a499a2fb5fc7264d99df5def296126cf435aea0c8efa049b2"
+    },
+    "replacement_v2_plan_test": {
+      "byte_count": 3421,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_plan.py",
+      "sha256": "53b14595e502fb3cfbaabb4ce3b83f80eb126150f952e5d4afb62f8e8857da0b"
+    },
+    "replacement_v2_runner": {
+      "byte_count": 19032,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_integrity_replacement_v2.py",
+      "sha256": "a345768e8e54bdf57955d41701cbf909a49ba636f5da33dc732de1a58b6fbdb6"
+    },
+    "replacement_v2_runner_test": {
+      "byte_count": 14229,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_integrity_replacement_v2.py",
+      "sha256": "ced0fbed872db94bca8b1b33e4598964312f9ba975b7c3bf73f889d91efabc76"
+    },
+    "replacement_v3_authority_builder": {
+      "byte_count": 6032,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_integrity_replacement_v3_authority.py",
+      "sha256": "1e21676e6b803c26f1f29ae3aed2e28b1ca97da88dc3602986744113b76da11f"
+    },
+    "replacement_v3_authority_test": {
+      "byte_count": 7156,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_integrity_replacement_v3_authority.py",
+      "sha256": "101c97c7112ef6cec3e9371c08bd7bcf703a9da57d16a0c60485617bf5e3c971"
+    },
+    "replacement_v3_collector": {
+      "byte_count": 6676,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_integrity_replacement_v3.py",
+      "sha256": "33ae4bdc2f8066d09e8b8610a35988d5f1ef563474294c285eca9d422ae2aa6b"
+    },
+    "replacement_v3_collector_test": {
+      "byte_count": 4338,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_collect_go2_scene_diversity_recurrent_replication_integrity_replacement_v3.py",
+      "sha256": "32d42e7ac0712e4dd81d94959ddfc9ff7b53e8ca7b4a1ce822c7ab94047854f6"
+    },
+    "replacement_v3_plan_builder": {
+      "byte_count": 7128,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_integrity_replacement_v3_plan.py",
+      "sha256": "9cf46ae44ac6319c558055b04f76f14bd081f05affe3acdb1a3a7d746f79fba7"
+    },
+    "replacement_v3_plan_test": {
+      "byte_count": 2915,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_integrity_replacement_v3_plan.py",
+      "sha256": "8b9a1f9a60a4ade824b27d9c263e856b452377c5937d32d7d733b104005f09be"
+    },
+    "replacement_v3_runner": {
+      "byte_count": 14824,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_integrity_replacement_v3.py",
+      "sha256": "c467160b159eb9b5b9812b105c0648fc80a46f7f3d306b13e1d715741b6c45bb"
+    },
+    "replacement_v3_runner_test": {
+      "byte_count": 6781,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_integrity_replacement_v3.py",
+      "sha256": "565855f6e3a984adcefc1d24cf55688c3bc87da086b3ca7d254c16f6656fd1fd"
+    },
+    "replication_authority_builder": {
+      "byte_count": 11476,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_authority_v1.py",
+      "sha256": "9b787f30dabd9492a2339802ddad18101019cd93064c14697ef5bfe4ddc27c19"
+    },
+    "replication_authority_test": {
+      "byte_count": 6011,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_authority_v1.py",
+      "sha256": "f132a9535aedd8add42f158a16ef9328641c5a3a225c6a286855e60d6bda9c81"
+    },
+    "replication_benchmark": {
+      "byte_count": 22501,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "746598716f7f4dd8b655d58cca947c65ad547507ece3e1a0184810376f6e350a"
+    },
+    "replication_benchmark_test": {
+      "byte_count": 7092,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_scene_diversity_recurrent_replication_v1_benchmark.py",
+      "sha256": "02fdf13cb9a503b67427a8b94d89aff2f9c9c82cc061a695930e0d5758689727"
+    },
+    "replication_collector": {
+      "byte_count": 24971,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "8dd25e98eda89b7fe9bb73eb31fa3a5c2b16ed497945c5a2268607f17f7b5fd4"
+    },
+    "replication_collector_test": {
+      "byte_count": 10159,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_collect_go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "4a8c17dc97a6c00d7172bc2c3dde98011e536961d5b494d52264cd6396e5fdff"
+    },
+    "replication_plan_builder": {
+      "byte_count": 29308,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_plan_v1.py",
+      "sha256": "399869c879b061e56bcb37d37a1d09d96ed3b9665d1adff5217f7958d0f22625"
+    },
+    "replication_plan_test": {
+      "byte_count": 7931,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_plan_v1.py",
+      "sha256": "0956a584af0c8a5114fa54934557e9e0d0cde01a823aa84499962ec2647f5c02"
+    },
+    "replication_runner": {
+      "byte_count": 46338,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "4f3ab622e93570ac1567ccf6dad73c7aaa46089e533c3493de01c3cfa7cd8be5"
+    },
+    "replication_runner_test": {
+      "byte_count": 11821,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "282aacc7ceb218e1b4dcf82e7e5d20401517a290bd53bd1c4b8fa6dfc377281a"
+    },
+    "rocm_backend_collector": {
+      "byte_count": 16661,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "c352a7a4c809dd2ab15ff3288bcf1d6c8dd3bbc57cb5115be43864d9cf500010"
+    },
+    "rocm_backend_collector_test": {
+      "byte_count": 9842,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_collect_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "1520af759d3f8faa1e79b0cd68534d90a1288609ba5b1ce0a11e6ff4f2951e36"
+    },
+    "rocm_backend_dependency_engine_mesh": {
+      "byte_count": 17987,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/mesh.py",
+      "sha256": "a768a0188b894f8e26af664aa014aacc262fdad9ccb98180f46c967a0464c94a"
+    },
+    "rocm_backend_dependency_genesis_constants": {
+      "byte_count": 3642,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/constants.py",
+      "sha256": "70b6aeb3967f1c2382816945a82e967d4aa81f46b3b59635986e6938a93db157"
+    },
+    "rocm_backend_dependency_mesh": {
+      "byte_count": 42422,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/utils/mesh.py",
+      "sha256": "084105dc71a9ae390c6dd794e3ca2ccc1abd5acfffc78eec78a3e26a9fabc0eb"
+    },
+    "rocm_backend_dependency_pyrender_offscreen": {
+      "byte_count": 10465,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/ext/pyrender/offscreen.py",
+      "sha256": "54d6ad33b0ca7d9fe0219f57e5990a276524dd0c1ff072cd323b86ecbac07a56"
+    },
+    "rocm_backend_dependency_pyrender_renderer": {
+      "byte_count": 44480,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/ext/pyrender/renderer.py",
+      "sha256": "1dc7c47b17a82c8aad7c2801bbfad7632dcaeeab8ecc8a382ebe06dee21a0b84"
+    },
+    "rocm_backend_dependency_rasterizer_context": {
+      "byte_count": 52657,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/vis/rasterizer_context.py",
+      "sha256": "28c453f97266fc9595202c58049ada16038c180eb7bfc60b8424c3a2bedf03e8"
+    },
+    "rocm_backend_dependency_rigid_collider": {
+      "byte_count": 43562,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/solvers/rigid/collider/collider.py",
+      "sha256": "3d5863403a98cd738134116cc4768a68eb122c39f11d4d90c25329e60f37a0b9"
+    },
+    "rocm_backend_dependency_rigid_constraint_solver": {
+      "byte_count": 144710,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/solvers/rigid/constraint/solver.py",
+      "sha256": "a9bd5e13bc333918d14a7e9d0d2cdf88e1fea5e09a126221c31f868b3b9f8c14"
+    },
+    "rocm_backend_dependency_rigid_entity": {
+      "byte_count": 189282,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/entities/rigid_entity/rigid_entity.py",
+      "sha256": "05c16043c05acb129f2e54723bc2d619686a1e00cfe2f6419b0e68521c940649"
+    },
+    "rocm_backend_dependency_rigid_narrowphase": {
+      "byte_count": 114263,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/solvers/rigid/collider/narrowphase.py",
+      "sha256": "b2dea8e5d1706cd82085d0d41a003472de48fe881f08356947c729356e59130f"
+    },
+    "rocm_backend_dependency_rigid_solver": {
+      "byte_count": 135067,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/solvers/rigid/rigid_solver.py",
+      "sha256": "4f16b91c2cb417916e2cebb9e2ba32cffbb6f1f096b6eac32ce08d4df3dea76e"
+    },
+    "rocm_backend_dependency_rsl_mlp": {
+      "byte_count": 3613,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/rsl_rl/modules/mlp.py",
+      "sha256": "bad934b364b26cd47b6d1612e00ace107a425ae4d272c0cd0c82cbfc57bbcdbc"
+    },
+    "rocm_backend_dependency_rsl_mlp_model": {
+      "byte_count": 10306,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/rsl_rl/models/mlp_model.py",
+      "sha256": "9570f6ae7902c84380e0f3b39f0f83f75ba736b004faad5e34ae2d71f38169ec"
+    },
+    "rocm_backend_dependency_rsl_ppo": {
+      "byte_count": 21576,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/rsl_rl/algorithms/ppo.py",
+      "sha256": "022a37a1f75102ae7529edc52288ca9dde76fd2c78939e56d54cc1529c500352"
+    },
+    "rocm_backend_dependency_rsl_utils": {
+      "byte_count": 17209,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/rsl_rl/utils/utils.py",
+      "sha256": "cb3d09d2331477da3fa413ddc2266eb521e260f24da007c894174125e54cab9b"
+    },
+    "rocm_backend_dependency_simulator": {
+      "byte_count": 18892,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/simulator.py",
+      "sha256": "9f474f0082feb1601bce629808032800d6689f65042ba4b45452846eefdc5ccc"
+    },
+    "rocm_backend_plan_builder": {
+      "byte_count": 31645,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_plan.py",
+      "sha256": "a01ebc51cf735356c71890490e4b98f863c42b2083036a83925d6627838cdcc7"
+    },
+    "rocm_backend_plan_test": {
+      "byte_count": 12881,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_plan.py",
+      "sha256": "dcff8b3f7b656cc27e48e585145d962910fd73a2fb205ed00e55b28618564dc8"
+    },
+    "rocm_backend_preregistration": {
+      "byte_count": 11786,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_preregistration_2026-08-04.md",
+      "sha256": "ec53ffaa4ef236cb430bb134aa2627a99215b81ede69d6a867c34a28da12453f"
+    },
+    "rocm_backend_qualification_authority_builder": {
+      "byte_count": 11791,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification_authority.py",
+      "sha256": "6b8e1db747fbb797344411c3b24ed7757b9ffc6a9bca8342f811d9f1668f6ca5"
+    },
+    "rocm_backend_qualification_authority_test": {
+      "byte_count": 4574,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification_authority.py",
+      "sha256": "e833cdccd0456aa568e90ca44689d10c3aaeac244e005b23d08f1a31a12d9971"
+    },
+    "rocm_backend_qualification_exact_plan": {
+      "byte_count": 364626,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_qualification_exact_plan_2026-08-04.json",
+      "sha256": "798815d7f96a2f03d51a100d32c3623acf5b4b4b08c01caaba089d76c042563f"
+    },
+    "rocm_backend_qualifier": {
+      "byte_count": 37259,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "5126fd1522ca3652afd9a8343a1d26c9af8ba8b20953ef2c922a983841261ff0"
+    },
+    "rocm_backend_qualifier_test": {
+      "byte_count": 13370,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "633d2bc82d5d881401171ba671460ee34c19ce1454c538012012f2c89aa7f0eb"
+    },
+    "rocm_backend_runner": {
+      "byte_count": 43245,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "e31e395d275c217a54542f1446cf06e19e71aadaec2a1fd529ae78a5fcb11194"
+    },
+    "rocm_backend_runner_test": {
+      "byte_count": 16604,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "ba10ff8b7491bbb4c40d2502a00346f390cc042472effbfef7cc6a4cfd4bf1f1"
+    },
+    "rocm_backend_scientific_authority_builder": {
+      "byte_count": 7000,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_authority.py",
+      "sha256": "e633ecd581ba0e6b8afc74fe5d7513399d11eff5f3d667714a10b1292cc8ddc3"
+    },
+    "rocm_backend_scientific_authority_test": {
+      "byte_count": 4964,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_authority.py",
+      "sha256": "45f7c631ebdcb75d5812ca5893bb4068ef4924976c22c8fa5381d08ef029dd6d"
+    },
+    "rocm_backend_scientific_exact_plan": {
+      "byte_count": 364372,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_exact_plan_2026-08-04.json",
+      "sha256": "1f80516d4113e51703bc143f54fda112b50fc7b88b4f292458a719a1e0180b2a"
+    }
+  },
+  "source_review_binding": {
+    "byte_count": 67340,
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1_source_review_2026-08-04.json",
+    "sha256": "d67da363161179f68c46869d00af95b65ed3846984908f61cd6b45b7a380a431"
+  },
+  "status": "AUTHORIZED_GENESIS_ROCM_BACKEND_V1_QUALIFICATION_ONLY"
+}

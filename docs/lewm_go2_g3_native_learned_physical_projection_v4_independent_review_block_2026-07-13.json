@@ -1,0 +1,50 @@
+{
+  "authority": {
+    "downstream_integration_authorized": false,
+    "g2_authorized": false,
+    "hardware_authorized": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "runtime_authorized": false
+  },
+  "author_handoff": {
+    "file_sha256": "79407230f17714634ec0cb492fbf822131bf4aa958b140ffa49e0b95d027cbce",
+    "path": "docs/lewm_go2_g3_native_learned_physical_projection_v4_author_handoff_2026-07-13.md"
+  },
+  "author_tests": {
+    "file_sha256": "df9b89778adea21da70b89004da41a01354b7086dd25eab5961f3a5bb1e0abb2",
+    "path": "lewm/tests/test_native_learned_physical_projection_v4.py",
+    "result": "15_passed"
+  },
+  "candidate": {
+    "file_sha256": "66486f70f0998502f36e16e496f1c76d11cd117176046e6de433db911473f16a",
+    "path": "lewm/planning/native_learned_physical_projection_v4.py"
+  },
+  "canonical_pass_created": false,
+  "content_sha256": "38f22ba9e230d2ba8c2370a8830025a394733c0b353645b177fb402876edd9f7",
+  "finding": {
+    "active_set_is_not_append_only_history": true,
+    "description": "A duplicate retraction observation identity that was previously committed and later retracted remains indelible in memory history but is absent from learned_observation_ids. V4 therefore misclassifies the permanent duplicate-identity rejection as transient, leaves the reservation LIVE, repeats the impossible commit, and blocks a fresh same-snapshot retraction.",
+    "memory_revision_changed_by_rejected_commit": false,
+    "old_package_terminal_after_rejection": false,
+    "replacement_same_snapshot_available": false,
+    "target_remained_active": true
+  },
+  "independent_test": {
+    "file_sha256": "e598ee440ca92810c6776f6fdc8492a01406d6b4803d6e929368bcd31170b312",
+    "path": "lewm/tests/test_native_learned_physical_projection_v4_independent_review.py",
+    "result": "6_passed_1_failed",
+    "tests_collected": 7
+  },
+  "required_successor": {
+    "append_only_observation_identity_history_query": true,
+    "exact_history_duplicate_terminalizes_and_releases": true,
+    "unrelated_transaction_rejection_remains_retryable": true
+  },
+  "review_completed": true,
+  "reviewer": "/root/v4_full_panel_v3_author",
+  "schema": "lewm_go2_g3_native_learned_physical_projection_v4_independent_review_block_v1",
+  "status": "blocked_tombstoned_duplicate_identity_reservation_leak"
+}

@@ -1,0 +1,174 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1_qualification_terminal_review_v1",
+  "status": "PASS_FAIL_CLOSED_PRE_RESERVATION_LAYERED_INTERFACE_TERMINAL_REVIEW",
+  "audit_passed": true,
+  "review_scope": {
+    "description": "Independent closure of the consumed replacement V1 qualification invocation using source, authority/review documents, coordinator command evidence, and read-only isolated authority validation.",
+    "runtime_terminal_exists": false,
+    "runtime_terminal_invented": false,
+    "replacement_runtime_payload_opened": false,
+    "replacement_reservation_payload_opened": false,
+    "scene_or_rgb_payload_opened": false,
+    "gpu_or_genesis_probe_executed_by_review": false,
+    "runtime_root_written_by_review": false
+  },
+  "bindings": {
+    "qualification_command_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1_qualification_command_receipt_2026-08-04.json",
+      "sha256": "e8b6b209d0f111d0987b3edef6a7e881d94e8dd5c9601707eaf732f255ed801a",
+      "byte_count": 3003
+    },
+    "qualification_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1_qualification_authority_2026-08-04.json",
+      "sha256": "c5d4c534ca7e29b76f2fd1171c76a7092b64a40c9c379d89701e657588908523",
+      "byte_count": 78714
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1_source_review_2026-08-04.json",
+      "sha256": "321193a25a7aa284b9286c10e368517b5053dba08dc210ab8429519024c6396d",
+      "byte_count": 86767
+    },
+    "replacement_qualifier_source": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1.py",
+      "sha256": "bc58d20ba543d95a3737fef649f53c1526530a6915b07e01d97d7544f3b4787e",
+      "byte_count": 21834
+    },
+    "v3_qualifier_source": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3.py",
+      "sha256": "7a36bd10316fcde14a49dafbd9b32085d32de29f4d372e5bf6f993ab8a9b40fa",
+      "byte_count": 20809
+    },
+    "v2_qualifier_source": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2.py",
+      "sha256": "fa61f2137431e687e3a4e54172d3c747527c702da7a87d3be0876410c7b31731",
+      "byte_count": 19892
+    },
+    "replacement_collector_source": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1.py",
+      "sha256": "ec8e98f3d5e57a671606de04659153c590b808b7e1c88a20a89b6662a3cdbdc5",
+      "byte_count": 13280
+    }
+  },
+  "coordinator_command_evidence": {
+    "evidence_kind": "coordinator_captured_post_command_receipt",
+    "receipt_binding_exact": true,
+    "environment_mode": "env_-i_exact_plan_environment",
+    "return_code": 1,
+    "captured_output_normalized": "error: module 'scripts.collect_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1' has no attribute '_require_v1_review_binding'",
+    "status": "FAIL_PRE_RESERVATION_INHERITED_COLLECTOR_INTERFACE_VALIDATION",
+    "receipt_reports_qualification_attempt_root_exists": false,
+    "receipt_reports_scientific_attempt_root_exists": false,
+    "receipt_reports_reservation_created": false,
+    "receipt_reports_gpu_query_reached": false,
+    "receipt_reports_genesis_initialization_reached": false,
+    "receipt_reports_scene_execution_reached": false
+  },
+  "independent_fresh_process_reproduction": {
+    "interpreter": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+    "isolated_flags": [
+      "-I",
+      "-B"
+    ],
+    "operation": "read-only direct validate_qualification_authority call; qualification CLI was not invoked",
+    "exception_type": "AttributeError",
+    "exception_message": "module 'scripts.collect_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1' has no attribute '_require_v1_review_binding'",
+    "traceback_call_chain": [
+      {
+        "source": "qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1.py",
+        "line": 472,
+        "function": "validate_qualification_authority",
+        "call": "predecessor.validate_qualification_authority"
+      },
+      {
+        "source": "qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3.py",
+        "line": 465,
+        "function": "validate_qualification_authority",
+        "call": "predecessor.validate_qualification_authority"
+      },
+      {
+        "source": "qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2.py",
+        "line": 445,
+        "function": "validate_qualification_authority",
+        "call": "collector._require_v1_review_binding(validated[0])"
+      }
+    ],
+    "qualification_root_absent_after_reproduction": true,
+    "scientific_root_absent_after_reproduction": true,
+    "coordinator_receipt_was_not_used_as_the_only_causal_evidence": true
+  },
+  "layered_interface_audit": {
+    "classification": "repeated_pre_reservation_layered_adapter_interface_failure",
+    "immediate_missing_attribute": "_require_v1_review_binding",
+    "replacement_collector_exports_current_review_helper": "_require_v3_review_binding",
+    "replacement_collector_exports_required_v1_helper": false,
+    "v3_qualifier_has_later_reachable_call": "collector._require_v2_review_binding(validated[0])",
+    "replacement_collector_exports_required_v2_helper": false,
+    "v3_later_call_was_reached_in_consumed_invocation": false,
+    "v3_later_call_is_source_proven_next_interface_requirement": true,
+    "one_alias_patch_is_sufficiently_comprehensive": false,
+    "root_cause": "The replacement collector was substituted through multiple inherited qualifier layers without implementing or explicitly adapting the complete collector compatibility surface those layers call.",
+    "failure_is_home_rocm_gpu_genesis_scene_or_science_evidence": false
+  },
+  "failure_ordering_audit": {
+    "exact_outer_environment_and_lexical_interpreter_guards_precede_authority_validation": true,
+    "authority_validation_reached": true,
+    "replacement_qualifier_layer_reached": true,
+    "v3_qualifier_layer_reached": true,
+    "v2_qualifier_layer_reached": true,
+    "execute_qualification_reached": false,
+    "reservation_reached": false,
+    "gpu_query_reached": false,
+    "genesis_import_or_initialization_reached": false,
+    "egl_worker_or_scene_execution_reached": false,
+    "qualification_result_or_runtime_terminal_created": false
+  },
+  "filesystem_absence_audit": {
+    "qualification_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1_qualification/attempt_v1",
+    "qualification_attempt_root_absent": true,
+    "scientific_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1/attempt_v1",
+    "scientific_attempt_root_absent": true,
+    "independently_rechecked_after_reproduction": true
+  },
+  "decision": {
+    "qualification_invocation_consumed": true,
+    "qualification_authority_consumed": true,
+    "qualification_pass": false,
+    "retry_or_resume_authorized": false,
+    "same_authority_or_invocation_reuse_authorized": false,
+    "backend_scene_decision": null,
+    "scientific_decision": null,
+    "navigation_or_world_model_claim": null
+  },
+  "successor_eligibility": {
+    "at_most_one_fresh_comprehensive_integrity_replacement_v2_source_hypothesis_eligible": true,
+    "required_scope": "Establish, document, and directly test the complete inherited collector/qualifier compatibility surface across every layered call path, rather than adding only the currently missing alias.",
+    "fresh_interpreter_direct_runtime_authority_validation_required": true,
+    "direct_validation_must_complete_before_any_qualification_cli": true,
+    "fresh_preregistration_source_review_authority_identity_and_roots_required": true,
+    "science_data_model_panel_seed_environment_backend_cap_evaluation_and_gate_changes_authorized": false,
+    "replacement_v1_authority_command_runtime_or_payload_reuse_authorized": false,
+    "replacement_v2_qualification_execution_authorized_by_this_review": false,
+    "replacement_v2_scientific_execution_authorized_by_this_review": false
+  },
+  "explicit_stop_rule": {
+    "trigger": "Integrity replacement V2 has any further pre-reservation source-binding or inherited-interface failure.",
+    "integrity_replacement_v3_authorized_after_trigger": false,
+    "additional_alias_patch_authorized_after_trigger": false,
+    "required_action": "Retire the layered adapter chain and redesign a flat qualification/runtime harness with an explicit non-monkeypatched interface.",
+    "automatic_successor_authority": false
+  },
+  "permission_audit": {
+    "authorizes_source_development_and_independent_review_of_at_most_one_comprehensive_integrity_replacement_v2": true,
+    "creates_qualification_execution_authority": false,
+    "creates_scientific_execution_authority": false,
+    "authorizes_retry_resume_refill_or_payload_reuse": false,
+    "authorizes_backend_or_scientific_claim": false
+  },
+  "findings": [
+    {
+      "id": "REPLACEMENT-V1-INHERITED-COLLECTOR-COMPATIBILITY-SURFACE",
+      "severity": "terminal_for_consumed_replacement_v1_invocation",
+      "summary": "The immutable source-closure repair passed, but the layered qualifier chain called collector compatibility methods the replacement collector did not expose; the first missing method is _require_v1_review_binding, with _require_v2_review_binding source-reachable next."
+    }
+  ]
+}

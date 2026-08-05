@@ -1,0 +1,285 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_v1_terminal_review_v1",
+  "status": "PASS_FAIL_CLOSED_INFRASTRUCTURE_TERMINAL_REVIEW",
+  "audit_passed": true,
+  "review_date": "2026-08-04",
+  "reviewer": {
+    "identity": "/root/failure_terminal_review",
+    "independence_basis": "I authored neither the preregistration, plan, scene panel, collector, recurrent runner, source review, execution authority, reservations, nor consumed attempt. I independently rehashed the frozen documents, all 130 authority source-binding entries, the two reservations, the collection plan copy, and the failure terminal. I inspected only ordinary preregistration, authority, source-review, reservation, and terminal JSON content plus metadata-only partial file counts. I did not open any state receipt, RGB payload, generated scene identity, protected or sealed material, scientific model checkpoint, physics result, or scientific result."
+  },
+  "scope": {
+    "review_mode": "READ_ONLY_EXCLUSIVE_TERMINAL_INFRASTRUCTURE_AUDIT",
+    "authority_granted_by_this_document": false,
+    "scientific_claim_granted_by_this_document": false,
+    "citable_as_scientific_evidence": false,
+    "protected_material_opened": false,
+    "held_out_material_opened": false,
+    "sealed_material_opened": false,
+    "generated_scene_identities_opened": false,
+    "state_receipt_payloads_opened": false,
+    "rgb_payloads_opened": false,
+    "successor_rgb_payloads_opened": false,
+    "scientific_checkpoint_deserialized": false,
+    "scientific_metrics_computed_or_inspected": false,
+    "source_or_handoff_edited": false
+  },
+  "bindings": {
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_v1_preregistration_2026-08-04.md",
+      "sha256": "f92873f8e35706c739c211dbc9e4008ec36847ac1ed25fd118f87e2f6be87092",
+      "byte_count": 8198
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_v1_source_review_2026-08-04.json",
+      "sha256": "a0468af93dcf2eb9de39237b550d3641dcbaae879121b83d5fa96556f8b6abd9",
+      "byte_count": 41021
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_v1_execution_authority_2026-08-04.json",
+      "sha256": "c4b1e9a69bb6864add87f7ff1cb8227125eb3b902465043193f814299342c12d",
+      "byte_count": 41083
+    },
+    "exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_v1_exact_plan_2026-08-04.json",
+      "sha256": "c34aa23303951d32dd9686a607de7b78df06db026918d868017a6a93c506a040",
+      "byte_count": 346027,
+      "audit_access": "OPAQUE_SHA256_AND_BYTE_COUNT_ONLY"
+    },
+    "scene_panel": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_v1_scene_panel_2026-08-04.json",
+      "sha256": "df145c2d70d82243b373ef6f6d8750dc231f9de2a4d07d9f698a1831b9b84fa7",
+      "byte_count": 207218,
+      "audit_access": "OPAQUE_SHA256_AND_BYTE_COUNT_ONLY"
+    },
+    "attempt_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_v1/attempt_v1/reservation.json",
+      "sha256": "2af855bf589a567e47a8d0e05f8c446c52187336cd52144efc59fa29836e87d6",
+      "byte_count": 733
+    },
+    "collection_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_v1/attempt_v1/collection/reservation.json",
+      "sha256": "af31b58573f34a8125c600967bbe237a478b492b8f91cb53a36d5d70f2c1b67b",
+      "byte_count": 1212
+    },
+    "collection_authorized_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_v1/attempt_v1/collection/authorized_plan.json",
+      "sha256": "c34aa23303951d32dd9686a607de7b78df06db026918d868017a6a93c506a040",
+      "byte_count": 346027,
+      "audit_access": "OPAQUE_SHA256_AND_BYTE_COUNT_ONLY"
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_v1/attempt_v1/terminal.json",
+      "sha256": "df4cecb5edc45f25a98f4753e82e95334a6b8c4e9e0d719bb13150b9be690bfa",
+      "byte_count": 451
+    }
+  },
+  "binding_audit": {
+    "all_listed_bindings_rehashed_exact": true,
+    "authority_preregistration_binding_matches": true,
+    "authority_source_review_binding_matches": true,
+    "authority_plan_binding_matches": true,
+    "source_review_preregistration_binding_matches_authority": true,
+    "source_review_plan_binding_matches_authority": true,
+    "source_review_scene_panel_binding_matches": true,
+    "authority_source_bindings_canonical_equal_to_passed_source_review": true,
+    "authority_source_binding_entries_rehashed": 130,
+    "authority_source_binding_failures": 0,
+    "authority_source_binding_unique_paths_reported_by_source_review": 119,
+    "authority_source_binding_protected_paths_reported_by_source_review": 0,
+    "forbidden_sealed_source_binding_paths": 0,
+    "collection_authorized_plan_is_byte_identical_to_bound_exact_plan": true,
+    "attempt_reservation_consumes_exact_authority_and_plan_bindings": true,
+    "collection_reservation_consumes_exact_authority_and_plan_bindings": true,
+    "attempt_tree_symlink_count": 0
+  },
+  "authority_audit": {
+    "status": "AUTHORIZED_ONE_SCENE_DIVERSITY_RECURRENT_REPLICATION_V1",
+    "source_review_status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+    "attempt_id": "go2-scene-diversity-recurrent-replication-v1",
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_v1/attempt_v1",
+    "collection_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_v1/attempt_v1/collection",
+    "one_shot_data_generation_authorized": true,
+    "retry_resume_overwrite_authorized": false,
+    "sealed_or_protected_access_authorized": false,
+    "successor_rgb_access_authorized": false,
+    "eval_receipt_and_context_access_requires_durable_checkpoint": true,
+    "selected_device_vram_byte_ceiling": 16977405952,
+    "stored_rgb_byte_ceiling": 536870912,
+    "stored_rgb_frame_cap": 3072,
+    "scene_cap": 64,
+    "state_cap": 256,
+    "candidate_branch_cap": 2304,
+    "wall_seconds_ceiling": 7200.0
+  },
+  "reservation_audit": {
+    "attempt_reservation_status": "CONSUMED_ONE_SHOT_ATTEMPT",
+    "attempt_reservation_retry_resume_overwrite_authorized": false,
+    "collection_reservation_status": "RESERVED_ONE_SHOT_COLLECTION_CONSUMED",
+    "collection_root_creation_consumes_attempt": true,
+    "collection_retry_authorized": false,
+    "collection_resume_authorized": false,
+    "collection_overwrite_authorized": false,
+    "collection_refill_authorized": false,
+    "attempt_consumed": true
+  },
+  "attempt_inventory": {
+    "exact_attempt_root_direct_inventory": [
+      "collection/",
+      "reservation.json",
+      "terminal.json"
+    ],
+    "exact_collection_root_direct_inventory": [
+      "authorized_plan.json",
+      "reservation.json",
+      "scenes/"
+    ],
+    "root_physics_result_json_present": false,
+    "collection_physics_result_json_present": false,
+    "checkpoint_pt_present": false,
+    "result_json_present": false,
+    "terminal_result_binding": null,
+    "scientific_verdict_published": false
+  },
+  "partial_collection_inventory": {
+    "method": "Metadata-only regular-file and byte counts under the exact attempt_v1 scene root; no file payload, scene identifier, state receipt, or RGB image was opened.",
+    "complete_persisted_scene_unit_contract": {
+      "state_receipts_per_scene": 4,
+      "rgb_frames_per_scene": 48,
+      "scene_receipts_per_scene": 1,
+      "persisted_scene_units_checked": 33,
+      "scene_unit_shape_failures": 0
+    },
+    "train": {
+      "persisted_scene_units": 32,
+      "persisted_states": 128,
+      "persisted_candidate_branches": 1152,
+      "persisted_context_frames": 384,
+      "persisted_successor_frames": 1152,
+      "persisted_rgb_frames": 1536,
+      "persisted_scene_receipts": 32,
+      "persisted_state_receipts": 128,
+      "persisted_json_files": 160,
+      "persisted_rgb_payload_bytes": 61072716
+    },
+    "evaluation": {
+      "persisted_scene_units": 1,
+      "persisted_states": 4,
+      "persisted_candidate_branches": 36,
+      "persisted_context_frames": 12,
+      "persisted_successor_frames": 36,
+      "persisted_rgb_frames": 48,
+      "persisted_scene_receipts": 1,
+      "persisted_state_receipts": 4,
+      "persisted_json_files": 5,
+      "persisted_rgb_payload_bytes": 1993240
+    },
+    "total": {
+      "persisted_scene_units": 33,
+      "persisted_states": 132,
+      "persisted_candidate_branches": 1188,
+      "persisted_context_frames": 396,
+      "persisted_successor_frames": 1188,
+      "persisted_rgb_frames": 1584,
+      "persisted_scene_receipts": 33,
+      "persisted_state_receipts": 132,
+      "persisted_json_files": 165,
+      "persisted_rgb_payload_bytes": 63065956,
+      "stored_rgb_frame_cap": 3072,
+      "stored_rgb_byte_ceiling": 536870912
+    },
+    "count_interpretation": "These are persisted infrastructure-accounting counts only. They are not a complete collection receipt, scientific sample admission, scientific metric, or evidence about the recurrent mechanism. The collection may not be completed, refilled, resumed, or reused under the consumed attempt authority."
+  },
+  "failure_audit": {
+    "classification": "SELECTED_DEVICE_VRAM_CEILING_INFRASTRUCTURE_FAILURE",
+    "terminal_status": "FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION",
+    "failure_type": "BoundedBranchSupervisionError",
+    "failure_message": "active selected-device VRAM ceiling exceeded (17808412672 > 16977405952)",
+    "active_selected_device_peak_bytes": 17808412672,
+    "authorized_selected_device_vram_ceiling_bytes": 16977405952,
+    "ceiling_excess_bytes": 831006720,
+    "peak_to_ceiling_ratio": 1.048947802883,
+    "ceiling_binding_matches_execution_authority": true,
+    "peak_exceeded_ceiling": true,
+    "failure_was_fail_closed": true,
+    "failure_phase": "PARTIAL_COLLECTION_BEFORE_PHYSICS_RESULT_PUBLICATION",
+    "failure_preceded_scientific_model_fit_and_evaluation": true
+  },
+  "execution_boundary": {
+    "collection_completed": false,
+    "collection_physics_result_published": false,
+    "collection_admitted_to_recurrent_runner": false,
+    "recurrent_model_training_started": false,
+    "scientific_checkpoint_written": false,
+    "evaluation_receipts_or_context_opened_by_recurrent_runner": 0,
+    "successor_observations_opened_by_recurrent_runner": 0,
+    "scientific_model_or_dino_execution_started": false,
+    "scientific_metrics_computed": false,
+    "bootstrap_or_fixed_gates_computed": false,
+    "result_artifact_written": false,
+    "partial_successor_frames_persisted_by_collection": 1188,
+    "partial_successor_frames_opened_by_terminal_reviewer": 0,
+    "authoritative_terminalized_access_counts_present": false,
+    "zero_scientific_access_basis": "The passed source review verifies that model fitting and all evaluation access occur only after a complete admitted collection result. No physics_result.json, checkpoint.pt, or result.json exists, so the scientific recurrent route was never entered. Persisted collection frames were counted only as filesystem metadata and were not opened or scientifically used."
+  },
+  "scientific_decision": {
+    "decision": "NO_SCIENTIFIC_DECISION",
+    "primary_result_citable": false,
+    "partial_collection_citable": false,
+    "provisional_metrics_reported_by_this_review": false,
+    "scientific_status_inferred_from_partial_counts": false,
+    "reason": "The selected-device memory ceiling terminated collection before an authoritative physics result, model checkpoint, evaluation, gate report, or result artifact existed. The partial persisted counts cannot establish, qualify, pass, or stop the preregistered H1 mechanism."
+  },
+  "permission_audit": {
+    "any_original_attempt_permission_remaining": false,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "overwrite_authorized": false,
+    "refill_authorized": false,
+    "partial_attempt_artifact_reuse_authorized": false,
+    "scientific_model_execution_authorized_from_partial_attempt": false,
+    "successor_observation_access_authorized_from_partial_attempt": false,
+    "replacement_attempt_authorized_by_this_review": false,
+    "source_change_authorized_by_this_review": false,
+    "handoff_change_authorized_by_this_review": false,
+    "basis": "The preregistration makes a failed collection or experiment attempt-consuming with no retry or resume. The execution authority, attempt reservation, collection reservation, and terminal all preserve that fail-closed boundary. This review records the consumed failure and grants no continuation authority."
+  },
+  "checks": {
+    "preregistration_source_review_authority_plan_panel_reservations_and_terminal_rehashed_exact": true,
+    "all_130_authority_source_binding_entries_rehashed_exact": true,
+    "passed_source_review_and_authority_source_closures_are_canonical_equal": true,
+    "authority_status_and_one_shot_root_exact": true,
+    "reservation_authority_and_plan_bindings_exact": true,
+    "attempt_and_collection_reservations_consumed": true,
+    "terminal_failure_type_message_status_and_null_result_binding_exact": true,
+    "terminal_peak_and_authority_vram_cap_exact": true,
+    "partial_persisted_counts_metadata_only_and_exact": true,
+    "physics_result_checkpoint_and_result_absent": true,
+    "no_scientific_metric_or_verdict_admitted": true,
+    "no_successor_observation_or_scientific_model_access_occurred": true,
+    "original_attempt_no_retry_no_resume_no_refill_no_overwrite_preserved": true,
+    "review_grants_no_replacement_source_or_handoff_authority": true,
+    "no_generated_payload_or_protected_material_opened": true
+  },
+  "findings": [
+    {
+      "id": "selected_device_vram_ceiling_exceeded",
+      "severity": "terminal_infrastructure_failure",
+      "finding": "The active selected-device peak reached 17,808,412,672 bytes against the exact authorized 16,977,405,952-byte ceiling. The supervisor failed closed with BoundedBranchSupervisionError."
+    },
+    {
+      "id": "attempt_consumed_before_scientific_route",
+      "severity": "no_scientific_decision",
+      "finding": "The consumed attempt persisted 32 complete train scene units and one complete evaluation scene unit but emitted no physics_result.json, checkpoint.pt, or result.json. No scientific metrics, recurrent-model fit, evaluation access, gate, or verdict exists."
+    },
+    {
+      "id": "no_continuation_authority",
+      "severity": "terminal_permission_boundary",
+      "finding": "The exact authority, reservations, preregistration, and terminal prohibit retry, resume, overwrite, or refill. This review does not authorize partial reuse, a replacement attempt, model execution, successor access, source edits, or handoff edits."
+    }
+  ],
+  "limitations": [
+    "This review did not open or validate the scientific content of any partial state receipt or RGB artifact; it counted only regular files and bytes.",
+    "The failure terminal contains no terminalized access-count object. The zero scientific-model and successor-observation access conclusion follows from the passed source-reviewed phase ordering together with the absence of physics_result.json, checkpoint.pt, and result.json.",
+    "This review does not convert partial infrastructure artifacts into scientific evidence and does not authorize any retry, resume, replacement, or partial-artifact reuse."
+  ]
+}

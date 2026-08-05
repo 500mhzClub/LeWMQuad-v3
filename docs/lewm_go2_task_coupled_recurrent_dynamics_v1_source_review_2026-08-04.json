@@ -1,0 +1,137 @@
+{
+  "schema": "lewm_go2_task_coupled_recurrent_dynamics_v1_source_review_v1",
+  "status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+  "reviewer": "codex_independent_source_and_science_reviewer_2026-08-04",
+  "protected_material_opened": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_task_coupled_recurrent_dynamics_v1_preregistration_2026-08-04.md",
+    "sha256": "de570b14223cd67c14c704152488e3dba96465c318a8911d5a9ccc06a4f6f178",
+    "byte_count": 10773
+  },
+  "source_bindings": {
+    "grounded_upstream_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "5f8951f9a2a859c15c2d2c00c394257e2b97fae6073089f44f53e0bfa57acbcf",
+      "byte_count": 19526
+    },
+    "grounded_upstream_benchmark": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "a2e920bc02e6e4a8eaabc50649851503b210ab6539c9d9a68581d42e34fd2240",
+      "byte_count": 24233
+    },
+    "grounded_upstream_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "44e72614f44e41d68199a00276494471a5b6ee588a5b4123400fd051de740be3",
+      "byte_count": 96316
+    },
+    "grounded_upstream_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "3e6dfd76c394a93dbe559f0a6e1782d473ca3f5e74944a22cd473ba052846259",
+      "byte_count": 12654
+    },
+    "grounded_upstream_benchmark_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_grounded_dense_dino_joint_jepa_v1_benchmark.py",
+      "sha256": "6eeb921abb89ddce16fbf5a14502137b884f9fb213f788e90ec242f2c3055bae",
+      "byte_count": 12873
+    },
+    "grounded_upstream_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "9e79e4720b68cb03255fe9b738232c7be4e6667a44797a1635a3388da270c508",
+      "byte_count": 18213
+    },
+    "grounded_upstream_dense_predictor": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/dense_dinov2_temporal_predictor.py",
+      "sha256": "cc04f167cc5043a1b8ccaed3746c794011d7fc037ef522c04b467b282677d4ea",
+      "byte_count": 10313
+    },
+    "grounded_upstream_counterfactual_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "grounded_upstream_physical_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "00e23fcdc9252895bfa9489e7d7b6223c6421afae5ba325b18d78ad77933b16f",
+      "byte_count": 70959
+    },
+    "grounded_upstream_feature_plan_and_bootstrap": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "89afbc4b4611806ba5fd230747ee9de31edbb9ddf39701150246439b637c0d98",
+      "byte_count": 34541
+    },
+    "grounded_upstream_task_action_baseline": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "6c8ed2398b1889c49b0699a236495530c63cfb0d363b0351b419c07efaf778e4",
+      "byte_count": 60963
+    },
+    "grounded_upstream_counterfactual_contract": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+      "byte_count": 102894
+    },
+    "grounded_upstream_action_regret_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+      "byte_count": 28399
+    },
+    "grounded_upstream_predictor_core": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/predictor.py",
+      "sha256": "cc7fd43fc7554a94d603d13fc630a02b2b3990ddc298948257f671b69723a305",
+      "byte_count": 14275
+    },
+    "grounded_upstream_physical_outcome_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "81947b04c23a789ce8d4a8a45005db4f08181784322504b1b140d969b2f5ff32",
+      "byte_count": 7951
+    },
+    "grounded_upstream_dense_readout_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "de7d7defd5047f84fa8d71ba62c05c441a965018ec6f41c5771384ea11d4295a",
+      "byte_count": 12637
+    },
+    "recurrent_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_task_coupled_recurrent_dynamics_v1.py",
+      "sha256": "210807050ccf5226dfc4cd8cba75ff4737786883be1d7eaef0e1fc66ecdc6695",
+      "byte_count": 7889
+    },
+    "recurrent_benchmark": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_task_coupled_recurrent_dynamics_v1.py",
+      "sha256": "1ddac19f555c0cf6c685d21c6ff7aedb677734534118c2e33db0423ce37b890b",
+      "byte_count": 34214
+    },
+    "recurrent_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_task_coupled_recurrent_dynamics_v1.py",
+      "sha256": "bb8dbd337c3c76f8a831013919fc8f36eb2ecb2321983d74f8346eea9f76cbff",
+      "byte_count": 22752
+    },
+    "recurrent_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_task_coupled_recurrent_dynamics_v1.py",
+      "sha256": "4ad727688a2f227d7e56003e3c4fd91c4bbd6b00265db1024f83d9286c8f05f6",
+      "byte_count": 6990
+    },
+    "recurrent_benchmark_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_task_coupled_recurrent_dynamics_v1_benchmark.py",
+      "sha256": "86f9ad3152647958a63ba2651f68178ebafe1678dbe2a8aae8b6eeae4b99c0d7",
+      "byte_count": 11364
+    },
+    "recurrent_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_task_coupled_recurrent_dynamics_v1.py",
+      "sha256": "6d42960358006d14302935e33ce4c32d7e2c1b28fad7fb83c535121534297aad",
+      "byte_count": 11646
+    }
+  },
+  "checks": {
+    "scientific_nonredundancy_verified": true,
+    "matched_arm_parameter_initialization_schedule_and_optimizer_contract_verified": true,
+    "real_context_versus_exact_zero_visual_tensor_is_the_sole_paired_intervention": true,
+    "context_only_custody_and_zero_successor_access_verified": true,
+    "checkpoint_before_evaluation_receipt_and_context_access_verified": true,
+    "train_only_pca_input_and_outcome_statistics_verified": true,
+    "ordered_spatial_recurrence_and_direct_physical_rank_objective_match_preregistration": true,
+    "fixed_h1_bootstrap_thresholds_and_verdict_logic_verified": true,
+    "strict_determinism_repeat_and_one_shot_failure_contracts_verified": true,
+    "runner_source_inventory_matches_all_bound_entries": true,
+    "three_focused_test_sources_cover_model_benchmark_and_runner_contracts": true
+  },
+  "findings": []
+}

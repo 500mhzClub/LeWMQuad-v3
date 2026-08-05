@@ -1,0 +1,54 @@
+{
+  "binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_n32_v1_binding_2026-07-11.md",
+    "sha256": "42687e80a16fb424be47d49782699bbc3ed549d7826a0ce6e78e92aa37188e1e"
+  },
+  "content_sha256": "d09719886598bb584e0822cd19b1cd75c2b9ebefa9e1dd90367594396bd1269c",
+  "resource_policy": {
+    "cpu_workers_max": 6,
+    "igpu": "forbidden",
+    "neural_device": "none_metadata_only",
+    "thread_environment": {
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "schema": "lewm_go2_attitude_sidecar_implementation_manifest_v1",
+  "sources": {
+    "entries": [
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_n32_v1_binding_2026-07-11.md",
+        "role": "binding",
+        "sha256": "42687e80a16fb424be47d49782699bbc3ed549d7826a0ce6e78e92aa37188e1e"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_attitude_sidecar.py",
+        "role": "builder",
+        "sha256": "f45096c334d4e1646caee342245b46289ed8a1140e79d0bdc5bf2c61a3223962"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dynamic_cell_square_projection.py",
+        "role": "dynamic_geometry",
+        "sha256": "ce2bb0d38ed1436635cdd1468ba1dfe1a935fdafdd6dda5adcf37b97a32a74bf"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_attitude_sidecar.py",
+        "role": "sidecar_library",
+        "sha256": "74b7febce112d85aefe986cfbaf99dd116100e2256d0c13bf275310c76b06313"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_attitude_sidecar.py",
+        "role": "sidecar_test",
+        "sha256": "17c5bc0fb98e381e50516edb9b17e8044fbf5067c2aaa25ed00e8bf982bca8d5"
+      }
+    ],
+    "entry_count": 5,
+    "source_map_sha256": "7930e4760990add21241ea54b6508831203b5cf9d5bcf14d7aa2b2a4dd6ba161"
+  },
+  "tests": {
+    "command": "env PYTHONPATH=/home/andrewknowles/Workspace/LeWMQuad-v3:/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds:/home/andrewknowles/TinyQuadJEPA/lib/python3.12/site-packages OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 /usr/bin/pytest -q lewm/tests/test_go2_attitude_sidecar.py",
+    "passed": 39
+  }
+}

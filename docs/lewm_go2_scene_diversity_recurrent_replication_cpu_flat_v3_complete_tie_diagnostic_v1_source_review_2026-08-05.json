@@ -1,0 +1,189 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1_source_review_v1",
+  "review_date": "2026-08-05",
+  "status": "PASS_INDEPENDENT_COMPLETE_TIE_DIAGNOSTIC_SOURCE_REVIEW",
+  "protected_material_opened": false,
+  "review_scope": {
+    "description": "Independent source-only review of the frozen post-hoc complete-tie diagnostic preregistration, exact plan, builder, runner, two focused tests, and exact predecessor bindings.",
+    "sealed_held_out_or_production_material_opened": false,
+    "diagnostic_executed_by_review": false,
+    "dino_model_loaded_by_review": false,
+    "checkpoint_evaluated_by_review": false,
+    "attempt_root_created_by_review": false
+  },
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1_preregistration_2026-08-05.md",
+    "sha256": "7ebb4c7867a9e27d77419aeabdf3fab2826897fb7f7772ffcb7247bedb778c45",
+    "byte_count": 6460
+  },
+  "plan_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1_exact_plan_2026-08-05.json",
+    "sha256": "6563deddc4532368a0ea158437c01bb0e49ac3874eae77643cfefa088cc3f918",
+    "byte_count": 9429
+  },
+  "source_bindings": {
+    "diagnostic_plan_builder": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1_plan.py",
+      "sha256": "9d1edeb78c4928a7e03adef233cbeb37c0331ac3de464ca4c1cb40a7043b859c",
+      "byte_count": 19427
+    },
+    "diagnostic_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1.py",
+      "sha256": "41b176b789d93951742b705cfb91a1c82038b50d367d66bef8a7b7770d308eb8",
+      "byte_count": 61553
+    },
+    "focused_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1.py",
+      "sha256": "0af2ac7dfe64899396d29636d21c5d088978587b1936ba90656b687732c5838f",
+      "byte_count": 9612
+    },
+    "frozen_recurrent_benchmark": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_task_coupled_recurrent_dynamics_v1.py",
+      "sha256": "1ddac19f555c0cf6c685d21c6ff7aedb677734534118c2e33db0423ce37b890b",
+      "byte_count": 34214
+    },
+    "frozen_replication_benchmark": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "746598716f7f4dd8b655d58cca947c65ad547507ece3e1a0184810376f6e350a",
+      "byte_count": 22501
+    },
+    "frozen_replication_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "4f3ab622e93570ac1567ccf6dad73c7aaa46089e533c3493de01c3cfa7cd8be5",
+      "byte_count": 46338
+    }
+  },
+  "plan_builder_focused_test_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1_plan.py",
+    "sha256": "80aed3037e5e6c1094e2b2a0648b00852409e40f78c7b538491f3f161a4de150",
+    "byte_count": 6770
+  },
+  "predecessor_terminal_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_terminal_review_2026-08-05.json",
+    "sha256": "7218c78387871e82280f96fe746acb047f46d1a2836b7638b12ce9c1514a81dd",
+    "byte_count": 17379
+  },
+  "predecessor_bindings": {
+    "scientific_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_exact_plan_2026-08-05.json",
+      "sha256": "0ad79cc46cead469d6532cd0be04c5d7623fffe18ddafc737c32855d6c9a8f29",
+      "byte_count": 359692
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/terminal.json",
+      "sha256": "a4da81177d77372923b72775f69cfe58b596a651017ef6ebc5988df05d390327",
+      "byte_count": 1273
+    },
+    "physics_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/physics_result.json",
+      "sha256": "711b8722c11dbae663ad1b004268b77c64ff3d2e818f2c895851c547240e3ed0",
+      "byte_count": 369067
+    },
+    "checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/checkpoint.pt",
+      "sha256": "6c16f97ae5748e1d230244b4588f3efc11330a2673bd15e2ff83aa2f2392844e",
+      "byte_count": 167423
+    },
+    "terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_terminal_review_2026-08-05.json",
+      "sha256": "7218c78387871e82280f96fe746acb047f46d1a2836b7638b12ce9c1514a81dd",
+      "byte_count": 17379
+    },
+    "scientific_result_absent": true
+  },
+  "domain_delta_review": {
+    "sole_domain_delta_verified": true,
+    "adapter_is_behaviorally_identical_to_frozen_eval_builder_when_max_dense_rank_is_positive": true,
+    "complete_tie_definition": "max_dense_rank_equals_zero_under_unchanged_nonnegative_integer_rank_invariant",
+    "complete_tie_actions_all_oracle_equivalent": true,
+    "normalized_rank_denominator": "max(1,max_dense_rank)",
+    "uniform_random_complete_tie_regret": 0.0,
+    "uniform_random_complete_tie_oracle_equivalent_selection_rate": 1.0,
+    "rank_tolerance_m": 0.01,
+    "rank_tolerance_changed": false,
+    "near_tie_or_scene_specific_rule_added": false,
+    "eval_states_retained": 128,
+    "eval_states_excluded": 0,
+    "exact_complete_tie_state_count": 4,
+    "scene_filter_refill_or_replacement_added": false
+  },
+  "frozen_evaluation_review": {
+    "exact_checkpoint_rehashed_read_only": true,
+    "checkpoint_content_identity_recomputed_before_evaluation": true,
+    "checkpoint_training_role_identities_reverified": true,
+    "learned_model_training_or_update_route_present": false,
+    "train_dino_context_extraction_route_present": false,
+    "train_context_rgb_open_count": 0,
+    "eval_context_rgb_open_count": 384,
+    "successor_rgb_open_count": 0,
+    "model_seeds": [
+      2026080411,
+      2026080412,
+      2026080413
+    ],
+    "checkpoint_updates_per_member": 800,
+    "learned_arms": [
+      "no_vision_recurrent_direct",
+      "visual_recurrent_direct"
+    ],
+    "live_control_arm": "task_action_only",
+    "bootstrap_resamples": 10000,
+    "bootstrap_seed": 2026080407,
+    "evaluation_repetitions": 2,
+    "exact_repeat_required": true,
+    "fixed_gate_thresholds_unchanged": {
+      "maximum_regret": 0.13,
+      "visual_minus_task_maximum": -0.02,
+      "visual_minus_no_vision_maximum": -0.01,
+      "paired_upper_95_must_be_below_zero": true,
+      "must_beat_random": true
+    },
+    "compute_device": "cpu",
+    "genesis_render_or_collection_route_present": false,
+    "module_monkeypatch_or_frozen_source_mutation_route_present": false
+  },
+  "fresh_root_and_terminalization": {
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1/attempt_v1",
+    "attempt_root_absent_and_not_symlink_at_review": true,
+    "source_review_validated_before_root_reservation": true,
+    "exact_namespace_and_attempt_hierarchy_created_only_by_reservation": true,
+    "second_reservation_refused": true,
+    "result_and_terminal_writes_are_exclusive": true,
+    "downstream_failure_after_reservation_emits_non_authorizing_terminal": true,
+    "retry_resume_overwrite_repair_or_second_invocation_route_present": false
+  },
+  "independent_verification": {
+    "focused_test_command": "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .generated/venvs/genesis_render_vulkan/bin/python -B -m pytest -q lewm/tests/test_build_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1_plan.py lewm/tests/test_run_go2_scene_diversity_recurrent_replication_cpu_flat_v3_complete_tie_diagnostic_v1.py",
+    "focused_tests_collected": 15,
+    "focused_tests_passed": 15,
+    "focused_tests_failed": 0,
+    "metadata_only_plan_validation_passed": true,
+    "frozen_plan_matches_builder_exactly": true,
+    "real_attempt_root_remained_absent_after_tests": true,
+    "diagnostic_execution_performed": false
+  },
+  "claim_and_authority_scope": {
+    "post_hoc_nonconfirmatory": true,
+    "creates_missing_predecessor_scientific_decision": false,
+    "salvages_or_reclassifies_predecessor": false,
+    "citable_as_confirmatory_scientific_evidence": false,
+    "navigation_planning_representation_world_model_or_generalization_claim_authorized": false,
+    "promotion_or_deployment_authorized": false,
+    "retry_resume_refill_overwrite_repair_or_second_invocation_authorized": false
+  },
+  "findings": [],
+  "decision": {
+    "source_review_passed": true,
+    "post_hoc_nonconfirmatory_scope_verified": true,
+    "exact_predecessor_checkpoint_and_collection_rehash_verified": true,
+    "evaluation_only_no_training_rendering_or_collection_verified": true,
+    "all_128_eval_states_retained_verified": true,
+    "sole_complete_tie_domain_change_verified": true,
+    "exact_frozen_model_seeds_bootstrap_thresholds_verified": true,
+    "context_only_cpu_dino_and_zero_successor_access_verified": true,
+    "fresh_diagnostic_root_verified": true,
+    "exactly_one_diagnostic_invocation_eligible_under_user_authorization": true,
+    "scientific_execution_authority_created_by_review": false,
+    "retry_resume_overwrite_repair_or_second_invocation_authorized": false
+  }
+}

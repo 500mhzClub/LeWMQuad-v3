@@ -1,0 +1,470 @@
+{
+  "attempt_control_amendment": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_n32_v1_attempt_control_amendment_2026-07-11.md",
+    "sha256": "1ecdfe8474e8be086db579515794d5411f00b2561a955939a41188e73156c875"
+  },
+  "binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_n32_v1_binding_2026-07-11.md",
+    "sha256": "42687e80a16fb424be47d49782699bbc3ed549d7826a0ce6e78e92aa37188e1e"
+  },
+  "commands": {
+    "attempt_marker_consumes_seed_after_crash": true,
+    "attempt_marker_created_before_payload_access": true,
+    "attempt_marker_immutable_no_replace": true,
+    "authoritative_argument_order": [
+      "--output",
+      "--implementation-manifest",
+      "--expected-implementation-manifest-sha256",
+      "--device",
+      "--seed",
+      "seed-20260711-primary-arguments-if-required"
+    ],
+    "both_seeds_always_run_once": true,
+    "canonical_attempt_markers": {
+      "20260710": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_dynamic_cartesian_n32/v1/seed_20260710_attempt.json",
+      "20260711": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_dynamic_cartesian_n32/v1/seed_20260711_attempt.json"
+    },
+    "canonical_outputs": {
+      "20260710": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_dynamic_cartesian_n32/v1/seed_20260710_result.json",
+      "20260711": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_dynamic_cartesian_n32/v1/seed_20260711_result.json"
+    },
+    "environment_prefix": [
+      "env",
+      "-u",
+      "HSA_OVERRIDE_GFX_VERSION",
+      "HIP_VISIBLE_DEVICES=0",
+      "OMP_NUM_THREADS=1",
+      "OPENBLAS_NUM_THREADS=1",
+      "MKL_NUM_THREADS=1",
+      "NUMEXPR_NUM_THREADS=1",
+      "/home/andrewknowles/TinyQuadJEPA/bin/python"
+    ],
+    "immutable_no_replace_publication": true,
+    "implementation_manifest_preparation": {
+      "derives_state_hashes_without_forward_or_model_output": true,
+      "device": "cuda:0",
+      "immutable_no_replace_publication": true,
+      "output": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_n32_v1_implementation_manifest_2026-07-11.json",
+      "registered_seed_order": [
+        20260710,
+        20260711
+      ],
+      "runs_frozen_tests_before_model_construction": true,
+      "script": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/prepare_go2_dynamic_cartesian_n32_implementation.py"
+    },
+    "non_authoritative_smoke_creates_attempt_marker": false,
+    "registered_seed_order": [
+      20260710,
+      20260711
+    ],
+    "runner": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dynamic_cartesian_n32.py",
+    "seed_20260710_rejects_primary_arguments": true,
+    "seed_20260711_requires_primary_attempt_marker_and_external_file_sha256": true,
+    "seed_20260711_requires_primary_path_and_external_file_sha256": true
+  },
+  "content_sha256": "83a6016cf6b11738d847831207cade5ba7a5633893136da8f87e13c0bd667b90",
+  "controls": {
+    "combined_model_batch_size": 12,
+    "conditions": [
+      "correct_rgb",
+      "role_global_shuffled_rgb",
+      "same_scene_wrong_view_rgb"
+    ],
+    "family_slice_uses_target_family": true,
+    "one_role_global_permutation_per_complete_panel": true,
+    "one_same_scene_permutation_per_complete_panel": true,
+    "target_batch_size": 4,
+    "wrong_rgb_uses_target_attitude": true
+  },
+  "inputs": {
+    "fit_projection_parity": {
+      "content_sha256": "3729a3fcd61b523d744c476da89fb2f638593145055b52bc96035bb30c3f3cea",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_dynamic_cartesian_fit_panel_parity/v1/result.json",
+      "sha256": "72d21aaf5e923126dd3a5022b0ea9775340877a00f40aa22845b244886fde70b"
+    },
+    "panel": {
+      "content_sha256": "f3e5198b81ac48c06f6c8e4b21e8bf24d62200e3830b1d6685d949a668349d5f",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_physical_micro_overfit/patch7_v1/panel.json",
+      "rows_sha256": {
+        "cross_scene_holdout": "3565f7f7844f3aeee28b0433aa6dc77d553a9ebb831cf9af20b6d392c5416817",
+        "fit": "5a75e202c8f7a803aafaad093c7f474137dd2e69f50ecdb7fb4e97765afb659d",
+        "same_scene_holdout": "d32713086c042d20f94825aa362c27a07bef6fd0e0cce0aa5846bb67bf8dc465"
+      },
+      "sha256": "c3f44c6b1147efbb6a5fbc2294c6431c72e25da877cab6884972d25c1ffdb16c"
+    },
+    "physical_dataset_manifest": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_paired_navigation/geometry_v3_physical_v1/dataset/dataset_manifest.json",
+      "sha256": "ed927cceaedb56ff68334af5109381466740850554048127bb72f04da59f7180"
+    },
+    "sidecar_manifest": {
+      "content_sha256": "6f1ef7d9ac0c55a42182c3e2c75909f00ab37fffa460aadb549d5cd60d278c1a",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_attitude_sidecar/dynamic_cartesian_v1/manifest.json",
+      "sha256": "6fafa417b4f724a0fdf32cfde5740025c3117e4c0b43231fe9ebe94bd9eff529"
+    },
+    "sidecar_train": {
+      "content_sha256": "137f1286e85fbd3e4b45d1c9fb0337255ac735508d6ead57cd816e5134725fa2",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_attitude_sidecar/dynamic_cartesian_v1/train.jsonl",
+      "row_count": 4262,
+      "sha256": "6cd47d0d679ace897f5b5d8e5c2f11eabab01930904666161eec3792fd9ab6d6"
+    },
+    "static_patch7_comparator": {
+      "content_sha256": "32d848d3df68e670ddb4cc24436981f62a1aa5562b89e6d6719ecb113f66b749",
+      "extracted_reference_sha256": "705f8c26ba4fa4f2d6838bb4ba04265c3137621384877de9653f369401b64d97",
+      "final_state_sha256": "fba4e91b333d57a813fb94edb13b215064d03da2830aae9d0ae4b34685cd38c1",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_physical_micro_overfit/patch7_v1/seed_20260710_result.json",
+      "sha256": "6e2aacd18fe1d692fb6ad682b41132563dcbcdb95c7b7ce719f407baf6c91a8c"
+    }
+  },
+  "model_config": {
+    "action_contrast_weight": 0.0,
+    "action_dim": 9,
+    "action_margin_fraction": 0.1,
+    "bev_attention_heads": 4,
+    "bev_dim": 64,
+    "bev_lift_type": "dynamic_projective_cell_square_attention_v1",
+    "bev_size": [
+      64,
+      64
+    ],
+    "encoder_depth": 6,
+    "encoder_dim": 192,
+    "encoder_heads": 6,
+    "encoder_mlp_ratio": 4,
+    "equivariance_weight": 0.0,
+    "forward_range_m": [
+      -0.95,
+      5.35
+    ],
+    "image_size": 112,
+    "jepa_weight": 0.0,
+    "left_range_m": [
+      -3.15,
+      3.15
+    ],
+    "occupancy_weight": 2.0,
+    "patch_size": 7,
+    "predictor_hidden_dim": 128,
+    "projective_attention_bias_floor": -6.0,
+    "projective_attention_sigma_tokens": 2.0,
+    "projective_camera_rpy_body_rad": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "projective_camera_xyz_body_m": [
+      0.326,
+      0.0,
+      0.043
+    ],
+    "projective_horizontal_fov_deg": 78.323,
+    "projective_near_m": 0.05,
+    "projective_output_cell_size_m": 0.1,
+    "projective_vertical_anchor_z_body_m": [
+      -0.333,
+      -0.133,
+      0.067,
+      0.267,
+      0.467
+    ],
+    "projective_vertical_fov_deg": 62.8370386364,
+    "target_ema_momentum": 0.996,
+    "variance_target_std": 0.5,
+    "variance_weight": 0.0
+  },
+  "model_initial_state_sha256": {
+    "20260710": "a6d71b5dc98a83082721a12df0cb2fceb85ad9ed471585c137adbee79af90821",
+    "20260711": "fceda047b114dbd24c8c0d72310665e315b111ae7570afe52750385403ad5ac9"
+  },
+  "model_state_contract_sha256": {
+    "20260710": "145d8e4892fdd15047dada7a2f00f6829b2fe7a86e0bb9631d819329459cc4fa",
+    "20260711": "145d8e4892fdd15047dada7a2f00f6829b2fe7a86e0bb9631d819329459cc4fa"
+  },
+  "objective": {
+    "action_contrast_weight": 0.0,
+    "entrypoint": "occupancy_logits",
+    "equivariance_weight": 0.0,
+    "jepa_weight": 0.0,
+    "loss": "direct_equal_capacity_hierarchical",
+    "occupancy_weight_stored_but_not_multiplied": 2.0,
+    "variance_weight": 0.0
+  },
+  "preoutput_amendment": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_n32_v1_preoutput_amendment_2026-07-11.md",
+    "sha256": "b1c226c71c60258382401146e4c7591e5491b94297cdf59395e10556857bed98"
+  },
+  "preprocessing": {
+    "autocast_amp_compile_quantization": false,
+    "input_rgb_size": [
+      112,
+      112
+    ],
+    "metric_accumulator_dtype": "float64",
+    "model_dtype": "float32",
+    "normalization_mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "normalization_std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "resize": "PIL.Image.Resampling.BILINEAR",
+    "rgb_scale": "uint8_div_255_float32"
+  },
+  "projective_query_support": {
+    "attention_bias_aggregation": "minimum_normalized_image_token_distance_over_output_cell_support_and_vertical_anchors_v1",
+    "contract_sha256": "316e2e48071ec0aea5541482c3f758ef0b3c27a167b7377103c43ecabbb04899",
+    "horizontal_offsets_body_m": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        -0.05,
+        -0.05
+      ],
+      [
+        -0.05,
+        0.05
+      ],
+      [
+        0.05,
+        -0.05
+      ],
+      [
+        0.05,
+        0.05
+      ]
+    ],
+    "lift_type": "dynamic_projective_cell_square_attention_v1",
+    "output_cell_half_extent_m": 0.05,
+    "output_cell_size_m": 0.1,
+    "physical_aggregation_contract": {
+      "contract_sha256": "db288979e7c389df2c4ca846f3309e395bcb6ec7bcf40cb8db6a3107f7e9f717",
+      "output_cell_size_m": 0.1,
+      "schema": "lewm_observable_physical_aggregation_v1"
+    },
+    "query_visibility_aggregation": "any_output_cell_support_and_vertical_anchor_visible_v1",
+    "schema": "lewm_projective_query_support_v1",
+    "support_frame": "base_forward_left_offsets_from_output_cell_center",
+    "support_geometry": "output_cell_center_plus_four_corners_v1",
+    "support_point_count": 5,
+    "uses_body_footprint": false
+  },
+  "resource_policy": {
+    "batch_size_frames": 4,
+    "device": "cuda:0",
+    "device_name_contains": "R9700",
+    "hip_visible_devices": "0",
+    "hsa_override_gfx_version_unset": true,
+    "igpu": "forbidden",
+    "minimum_device_memory_bytes": 17179869184,
+    "native_threads_per_worker": 1,
+    "query_chunking": false,
+    "source_workers": 6,
+    "thread_environment": {
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "schedules": {
+    "algorithm": "sha256_ranked_epoch_permutation_v1",
+    "authoritative_sha256": {
+      "20260710:ceiling_optimizer": "6b33a64408adb8fda787a161170f17c0140c6ee918a286f1f80212cb59203760",
+      "20260710:production_faithful": "6272b202a664f4698c93822eb02c047fbd50c772cfdb688d1a3a0be1f135d238",
+      "20260711:ceiling_optimizer": "9b891304f647bec95481948218343b23579f649410a2e2ad9a64de049ca5c4bc",
+      "20260711:production_faithful": "aa133472a4e8860ac685c72cf220c1a2a7ecf0eab0a4e3161ce8ff281f0647b1"
+    },
+    "batch_size": 4,
+    "frame_count": 320,
+    "namespace": "dynamic-cartesian-n32-v1",
+    "smoke_sha256": {
+      "20260710:ceiling_optimizer": "c6924ed28fcb4b7154f765710f69295367905c3f23a6f2b950491984c14765f6",
+      "20260710:production_faithful": "c6924ed28fcb4b7154f765710f69295367905c3f23a6f2b950491984c14765f6",
+      "20260711:ceiling_optimizer": "33a9b4261c91d3931560c3ac8e6ed6d586999a823a0d1efbe65c472aaa8895f5",
+      "20260711:production_faithful": "33a9b4261c91d3931560c3ac8e6ed6d586999a823a0d1efbe65c472aaa8895f5"
+    },
+    "smoke_updates": 3
+  },
+  "schema": "lewm_go2_dynamic_cartesian_n32_implementation_manifest_v1",
+  "sources": {
+    "entries": [
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_n32_v1_attempt_control_amendment_2026-07-11.md",
+        "role": "attempt_control_amendment",
+        "sha256": "1ecdfe8474e8be086db579515794d5411f00b2561a955939a41188e73156c875"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/__init__.py",
+        "role": "benchmarks_package",
+        "sha256": "edc7a30d5bf35c1bc9e099621e8f5bbe6d757180d0a6e4771c36ae5d06b81fed"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_n32_v1_binding_2026-07-11.md",
+        "role": "binding",
+        "sha256": "42687e80a16fb424be47d49782699bbc3ed549d7826a0ce6e78e92aa37188e1e"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_categorical_radial_n32.py",
+        "role": "categorical_n32_metrics",
+        "sha256": "35e559c356a8b486eae7ac307e61b4d6732c9371d6c7632df632417add0c071e"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/counterfactual.py",
+        "role": "counterfactual",
+        "sha256": "3d20b87560aa14e3ce672baec1077c7b2919a8679e89dfb88352b59a762d70df"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/__init__.py",
+        "role": "datasets_package",
+        "sha256": "d920ca2534ea4698f30ac2608b4754cb3cf2b4baae53e4cd59148bedfe9495e3"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dynamic_cell_square_projection.py",
+        "role": "dynamic_geometry",
+        "sha256": "ce2bb0d38ed1436635cdd1468ba1dfe1a935fdafdd6dda5adcf37b97a32a74bf"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/encoders.py",
+        "role": "encoder",
+        "sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/finalize_go2_dynamic_cartesian_n32.py",
+        "role": "finalizer",
+        "sha256": "02aceb5729d19a7318d6b03db6454976036cb62e2a8eda0f8f6c7d099e5ce68f"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_finalize_go2_dynamic_cartesian_n32.py",
+        "role": "finalizer_test",
+        "sha256": "943aa1b016d02f100573ae919eff622124973636f1d27d43b03cf1ffa60450b8"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/__init__.py",
+        "role": "lewm_package",
+        "sha256": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/prepare_go2_dynamic_cartesian_n32_implementation.py",
+        "role": "manifest_preparer",
+        "sha256": "427e4e95415d9f2a83fe9876cb5697c117da5f3831975258a8173d0952fa6c6d"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_prepare_go2_dynamic_cartesian_n32_implementation.py",
+        "role": "manifest_preparer_test",
+        "sha256": "78b98e462dcb5f5b5a95e54fbc43f0665a03b47e5f5158e60fc27a21f83d23b3"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/egomotion_bev_jepa.py",
+        "role": "model",
+        "sha256": "c4006e9804182b077399229d43bc8c9be64b5af12c81fff4076d5a78e6ef359b"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/lewm.py",
+        "role": "models_lewm",
+        "sha256": "0378bb5334fa7b40e801405d6d20c5a05ecb543ee9820efbd20acf83946e8b2a"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/__init__.py",
+        "role": "models_package",
+        "sha256": "9ee35fa5531413081219069ba2ef67d3cedb3643cda8d20544a189e329331b36"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_fit_panel_parity_result_2026-07-11.md",
+        "role": "parity_report",
+        "sha256": "db8001789e9325c3a6df9cd2c4fa3e637f47a1610f17612916998922a9ac991c"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/audit_go2_dynamic_cartesian_fit_panel_parity.py",
+        "role": "parity_runner",
+        "sha256": "bf036a58c91335b022783744eb4984f4c4c4b63a6e8f7334fb05541815a69d94"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/phase2d_spatial_lewm.py",
+        "role": "phase2d_spatial_lewm",
+        "sha256": "5c64535cc8933bae4a4f5008354afc19e85d3ed3705dbd98e37231d2641f0987"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_physical_micro_overfit.py",
+        "role": "physical_metrics",
+        "sha256": "db77f239e9a87ac8855a2f6ecab513d7587ccc3fffc953faa36ac71d4a5e6193"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_physical_spatial_grounding.py",
+        "role": "physical_spatial_metrics",
+        "sha256": "c64e12242959b4eee22a29fa52538090997385396f3413974c31102a46ae418d"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/predictor.py",
+        "role": "predictor",
+        "sha256": "cc7fd43fc7554a94d603d13fc630a02b2b3990ddc298948257f671b69723a305"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dynamic_cartesian_n32_v1_preoutput_amendment_2026-07-11.md",
+        "role": "preoutput_amendment",
+        "sha256": "b1c226c71c60258382401146e4c7591e5491b94297cdf59395e10556857bed98"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/primitive_affordance.py",
+        "role": "primitive_affordance",
+        "sha256": "540fa027307e69c3ff5b93f321dbc2e2d30dbf46090fbc557ab0044b35d83c8e"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dynamic_cartesian_n32.py",
+        "role": "pure_contract",
+        "sha256": "5c580d70915fe6acd3c3c3a33a6c6c5a220ad911d4372b84ba4996b8ba21c4da"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_dynamic_cartesian_n32.py",
+        "role": "pure_contract_test",
+        "sha256": "0fa724e6d62f03fa6cae9eeacd686beed8245aabe603ef943f0150fe23ae6c23"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dynamic_cartesian_n32.py",
+        "role": "runner",
+        "sha256": "76a4c815e9da231e2cf7eadaec29c976f6773915cf96588d560dbb4427294c8e"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dynamic_cartesian_n32.py",
+        "role": "runner_test",
+        "sha256": "cb1bccd7b7781b33e51bc51acce3b7b464eaf0eda9c5dcb154ceca75344fcfeb"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_attitude_sidecar.py",
+        "role": "sidecar_library",
+        "sha256": "74b7febce112d85aefe986cfbaf99dd116100e2256d0c13bf275310c76b06313"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/sigreg.py",
+        "role": "sigreg",
+        "sha256": "7ea956e8a62ee36aeddb8a26cca77a98d266778be2d999846dead7755eb677ae"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/source_action_utility.py",
+        "role": "source_action_utility",
+        "sha256": "40485d9d3d9670ae0529a606d34021308abd34d0716b694f41a6742e440b3ee1"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/spatial_lewm.py",
+        "role": "spatial_lewm",
+        "sha256": "36890539ec79e170174bdcc86815e79e2e383a5c8874029d4a4e11935bf69983"
+      },
+      {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/spatial_predictor.py",
+        "role": "spatial_predictor",
+        "sha256": "f7a2d179697c49d0476ff32079ffded6bc40fbe07372d6894e1b9b423a28d04c"
+      }
+    ],
+    "entry_count": 33,
+    "source_map_sha256": "b12b78760429d479159d2cbcb75875a8fd87b03400fbd8621b648dc1ee3ab18a"
+  },
+  "tests": {
+    "all_passed": true,
+    "command": "env PYTHONPATH=/home/andrewknowles/Workspace/LeWMQuad-v3:/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds:/home/andrewknowles/TinyQuadJEPA/lib/python3.12/site-packages OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 /usr/bin/pytest -q lewm/tests/test_go2_dynamic_cartesian_n32.py lewm/tests/test_run_go2_dynamic_cartesian_n32.py lewm/tests/test_finalize_go2_dynamic_cartesian_n32.py lewm/tests/test_prepare_go2_dynamic_cartesian_n32_implementation.py",
+    "passed": 79
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1_qualification_command_receipt_v1",
+  "date": "2026-08-04",
+  "status": "FAIL_PRE_RESERVATION_INHERITED_COLLECTOR_INTERFACE_VALIDATION",
+  "evidence_kind": "coordinator_captured_post_command_receipt",
+  "attempt_id": "go2-scene-diversity-recurrent-replication-genesis-rocm-backend-v3-integrity-replacement-v1-qualification",
+  "authority_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1_qualification_authority_2026-08-04.json",
+    "sha256": "c5d4c534ca7e29b76f2fd1171c76a7092b64a40c9c379d89701e657588908523",
+    "byte_count": 78714
+  },
+  "qualification_plan_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1_qualification_exact_plan_2026-08-04.json",
+    "sha256": "6d3160438b72adef6a53689e3252cc7d582f83c52b9cd59d3190256721a64142",
+    "byte_count": 366455
+  },
+  "launcher": "/usr/bin/env",
+  "environment_mode": "env_-i_exact_plan_environment",
+  "environment": {
+    "EGL_DEVICE_ID": "1",
+    "GS_BACKEND": "amdgpu",
+    "GS_CACHE_FILE_PATH": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1_qualification/attempt_v1/quadrants_cache",
+    "GS_ENABLE_FASTCACHE": "1",
+    "GS_ENABLE_NDARRAY": "1",
+    "GS_ENABLE_ZEROCOPY": "1",
+    "GS_PARA_LEVEL": "0",
+    "HIP_VISIBLE_DEVICES": "0",
+    "HOME": "/home/andrewknowles",
+    "PATH": "/opt/rocm-7.1.1/lib/llvm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PYOPENGL_PLATFORM": "egl",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONHASHSEED": "0",
+    "PYTHONNOUSERSITE": "1",
+    "PYTHONSAFEPATH": "1",
+    "ROCM_PATH": "/opt/rocm-7.1.1",
+    "ROCR_VISIBLE_DEVICES": "0"
+  },
+  "python_invocation_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+  "entrypoint": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1.py",
+  "return_code": 1,
+  "captured_output_normalized": "error: module 'scripts.collect_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_integrity_replacement_v1' has no attribute '_require_v1_review_binding'",
+  "post_command_observation": {
+    "qualification_attempt_root_exists": false,
+    "scientific_attempt_root_exists": false,
+    "reservation_created": false,
+    "gpu_query_reached": false,
+    "genesis_initialization_reached": false,
+    "scene_execution_reached": false
+  },
+  "independent_reproduction_required_for_causal_review": true,
+  "authorizes_retry_or_resume": false,
+  "authorizes_scientific_execution": false,
+  "authorizes_navigation_or_world_model_claim": false
+}
