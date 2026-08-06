@@ -248,6 +248,32 @@ class VJepa21Arm:
         }
 
 
+def preprocess_vjepa_v03_crop(path: str) -> torch.Tensor:
+    """v03 native 224x224 -> centre-crop rows to 224x168 -> the v04 field of view.
+
+    The two renders share a focal length, so removing 28 rows top and bottom
+    leaves the horizontal FOV at 78.323 deg and brings the vertical FOV to
+    62.837 deg -- the v04 contract exactly.  Verified empirically in
+    ``verify_dev_v03_centre_crop_contract_v1.py``: the crop-offset sweep peaks at
+    row 28 and the scale sweep at 1.0000.  After the crop this is the identical
+    official V-JEPA 2.1 path used by the frozen screen.
+    """
+    with Image.open(path) as decoded:
+        image = decoded.convert("RGB")
+        if image.size != (224, 224):
+            raise RuntimeError(f"expected a 224x224 v03 frame, got {image.size} for {path}")
+        cropped = image.crop((0, 28, 224, 196)).resize((512, 384), Image.Resampling.BICUBIC)
+    return _normalise(_to_chw(cropped))
+
+
+class VJepa21CroppedV03Arm(VJepa21Arm):
+    """The frozen-screen V-JEPA 2.1 arm, fed centre-cropped v03 frames."""
+
+    name = "vjepa2_1_vitl_384_v03crop"
+    family = "vjepa_video_ssl"
+    preprocess = staticmethod(preprocess_vjepa_v03_crop)
+
+
 def preprocessing_identity(arm) -> dict:
     return {
         "source_frame_hw": list(SOURCE_FRAME_HW),
@@ -257,6 +283,10 @@ def preprocessing_identity(arm) -> dict:
             "dinov2_vitl14": "none: native render pixels",
             "vjepa2_1_vitl_384": "PIL bicubic isotropic 16/7 to 512x384, no crop",
             "vjepa2_1_vitb_384": "PIL bicubic isotropic 16/7 to 512x384, no crop",
+            "vjepa2_1_vitl_384_v03crop": (
+                "v03 224x224 -> centre-crop rows 28:196 to 224x168 (recovers the v04 "
+                "78.323x62.837 deg FOV) -> PIL bicubic isotropic 16/7 to 512x384"
+            ),
         }[arm.name],
         "scale_to_255": True,
         "normalisation": {"mean": list(IMAGENET_MEAN), "std": list(IMAGENET_STD)},
