@@ -62,14 +62,27 @@ def load_targets(rows):
 
 
 @torch.no_grad()
-def encode_frames(module, paths, arm, device, batch_size=16):
+def encode_frames(module, paths, arm, device, batch_size=16, cache: Path | None = None):
+    """Dense image tokens, kept in float16 -- 491x768x1024 in float32 will not fit."""
+    shape = (len(paths), arm.token_grid[0] * arm.token_grid[1], arm.token_dim)
+    if cache is not None and cache.is_file() and cache.stat().st_size == int(
+        np.prod(shape) * 2
+    ):
+        return torch.from_numpy(
+            np.ascontiguousarray(np.memmap(cache, dtype=np.float16, mode="r", shape=shape))
+        )
     out = []
     for start in range(0, len(paths), batch_size):
         batch = torch.stack(
             [arm.preprocess(p) for p in paths[start : start + batch_size]]
         ).to(device=device, dtype=torch.float32)
-        out.append(module(batch.unsqueeze(2)).float().cpu())
-    return torch.cat(out, 0)
+        out.append(module(batch.unsqueeze(2)).half().cpu())
+    tokens = torch.cat(out, 0)
+    if cache is not None:
+        memory = np.memmap(cache, dtype=np.float16, mode="w+", shape=shape)
+        memory[:] = tokens.numpy()
+        memory.flush()
+    return tokens
 
 
 def build_arm_encoder(arm, checkpoint, device):
@@ -101,13 +114,30 @@ def token_stats(tokens_now, tokens_future):
     }
 
 
+@torch.no_grad()
+def run_predictor(predictor, context, actions, mask_tokens, device, batch_size=8):
+    """Batched: the whole selection split at once exhausts 32 GiB."""
+    out = []
+    for start in range(0, len(context), batch_size):
+        stop = start + batch_size
+        out.append(
+            predictor(
+                context[start:stop].to(device=device, dtype=torch.float32),
+                actions[start:stop].to(device),
+                mask_tokens[start:stop].to(device),
+            ).half().cpu()
+        )
+    return torch.cat(out, 0)
+
+
 def prediction_metrics(predictor, context, current, future, actions, mask_tokens, device):
     """Correct vs shuffled action vs persistence, on the changed-token set."""
     results = {}
     with torch.no_grad():
-        predicted = predictor(context.to(device), actions.to(device), mask_tokens.to(device)).cpu()
+        predicted = run_predictor(predictor, context, actions, mask_tokens, device)
 
         def score(pred):
+            pred = pred.float()
             cos = F.cosine_similarity(pred, future, dim=-1)[mask_tokens]
             err = (pred - future).pow(2).mean(-1)[mask_tokens]
             base = (current - future).pow(2).mean(-1)[mask_tokens]
@@ -126,8 +156,7 @@ def prediction_metrics(predictor, context, current, future, actions, mask_tokens
             while bool((order == torch.arange(len(actions))).any()):
                 order = torch.randperm(len(actions), generator=generator)
             shuffled.append(
-                score(predictor(context.to(device), actions[order].to(device),
-                                mask_tokens.to(device)).cpu())
+                score(run_predictor(predictor, context, actions[order], mask_tokens, device))
             )
         results["shuffled_action"] = {
             k: float(np.mean([s[k] for s in shuffled])) for k in shuffled[0]
@@ -205,10 +234,10 @@ def main() -> int:
         checkpoint = torch.load(arm_dir / f"checkpoint_epoch{args.epoch}.pt", map_location="cpu")
         module, moved = build_arm_encoder(arm_spec, checkpoint, device)
 
-        current = encode_frames(module, [r["frames"][2]["path"] for r in ordered], arm_spec, device)
         blob = OUT / f"{name}_current.f16"
-        np.memmap(blob, dtype=np.float16, mode="w+",
-                  shape=tuple(current.shape))[:] = current.numpy().astype(np.float16)
+        current = encode_frames(
+            module, [r["frames"][2]["path"] for r in ordered], arm_spec, device, cache=blob
+        )
 
         # fixed probe, applied unchanged
         features = current.to(device)
@@ -227,34 +256,46 @@ def main() -> int:
         predictor.eval()
         sel_context = torch.stack(
             [
-                encode_frames(module, [r["context_paths"][k] for r in sel_rows], arm_spec, device)
+                encode_frames(module, [r["context_paths"][k] for r in sel_rows], arm_spec,
+                              device, cache=OUT / f"{name}_ctx{k}.f16")
                 for k in range(3)
             ],
             dim=1,
         )
         sel_future_raw = encode_frames(
-            module, [r["target_path"] for r in sel_rows], arm_spec, device
+            module, [r["target_path"] for r in sel_rows], arm_spec, device,
+            cache=OUT / f"{name}_sel_future.f16",
         )
         train_context_now = current[train_idx]
         train_future = encode_frames(
-            module, [r["target_path"] for r in train_rows], arm_spec, device
+            module, [r["target_path"] for r in train_rows], arm_spec, device,
+            cache=OUT / f"{name}_train_future.f16",
         )
-        change = (T.normalise(train_future) - T.normalise(train_context_now)).pow(2).mean(-1)
+        chunks = []
+        for start in range(0, len(train_future), 256):
+            stop = start + 256
+            chunks.append(
+                (T.normalise(train_future[start:stop].float())
+                 - T.normalise(train_context_now[start:stop].float())).pow(2).mean(-1)
+            )
+        change = torch.cat(chunks, 0)
         threshold = float(torch.quantile(change.flatten().float(), CHANGED_QUANTILE))
-        now = T.normalise(current[sel_idx])
-        future = T.normalise(sel_future_raw)
+        now = T.normalise(current[sel_idx].float())
+        future = T.normalise(sel_future_raw.float())
         changed = (future - now).pow(2).mean(-1) >= threshold
         actions = T.action_tensor([r["primitive"] for r in sel_rows], torch.device("cpu"))
 
+        context_normalised = T.normalise(sel_context.float()).half()
+        del sel_context
         prediction = prediction_metrics(
-            predictor, T.normalise(sel_context), now, future, actions, changed, device
+            predictor, context_normalised, now, future, actions, changed, device
         )
         per_family_pred = {}
         families = [r["family"] for r in sel_rows]
         for family in sorted(set(families)):
             pick = torch.tensor([i for i, f in enumerate(families) if f == family])
             per_family_pred[family] = prediction_metrics(
-                predictor, T.normalise(sel_context[pick]), now[pick], future[pick],
+                predictor, context_normalised[pick], now[pick], future[pick],
                 actions[pick], changed[pick], device,
             )
 
@@ -280,7 +321,7 @@ def main() -> int:
             },
             "token_health": token_stats(now, future),
         }
-        del module, predictor, sel_context, sel_future_raw, train_future
+        del module, predictor, context_normalised, sel_future_raw, train_future
         torch.cuda.empty_cache()
         (OUT / "result.json").write_text(json.dumps(record, indent=2))
 
