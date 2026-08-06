@@ -194,11 +194,19 @@ def main() -> int:
     ap.add_argument("--ema", type=float, default=0.999)
     ap.add_argument("--max-train", type=int, default=0)
     ap.add_argument("--amp", default="bf16", choices=("bf16", "fp32"))
+    # Supervision contract.  "smooth_l1_masked" is the original run.  "l1_dense"
+    # reproduces the official DROID robot post-training `loss:` block minus
+    # auto_steps: loss_exp 1.0 (L1), dense over every future token (the official
+    # path masks nothing), and normalize_reps applied to the predictor output as
+    # well as the target.
+    ap.add_argument("--loss-mode", default="smooth_l1_masked",
+                    choices=("smooth_l1_masked", "l1_dense"))
+    ap.add_argument("--tag", default=None, help="output subdirectory suffix")
     args = ap.parse_args()
 
     device = torch.device(args.device)
     dtype = torch.float32
-    out = OUT / f"arm_{args.arm}"
+    out = OUT / (f"arm_{args.arm}" + (f"_{args.tag}" if args.tag else ""))
     out.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(SEED)
     np.random.seed(SEED)
@@ -257,7 +265,9 @@ def main() -> int:
         "schedule": {"epochs": args.epochs, "batch": args.batch, "seed": SEED,
                      "predictor_lr": args.predictor_lr,
                      "encoder_lr": args.predictor_lr * args.encoder_lr_ratio if trainable else None,
-                     "ema": args.ema, "mask_ratio": MASK_RATIO,
+                     "ema": args.ema,
+                     "loss_mode": args.loss_mode,
+                     "mask_ratio": 0.0 if args.loss_mode == "l1_dense" else MASK_RATIO,
                      "trainable_blocks": args.trainable_blocks if trainable else 0},
         "feature_cache_used": False,
         "epochs": [],
@@ -271,15 +281,23 @@ def main() -> int:
             batch = order[start : start + args.batch]
             context_px, target_px = load_batch(train_rows, batch, arm, device, dtype)
             action = action_tensor([train_rows[i]["primitive"] for i in batch], device)
-            mask = (torch.rand(len(batch), TOKENS, generator=generator).to(device) < MASK_RATIO)
-            mask[:, 0] = True                                  # never an empty target
+            if args.loss_mode == "l1_dense":
+                # the official robot path supervises every future token
+                mask = torch.ones(len(batch), TOKENS, dtype=torch.bool, device=device)
+            else:
+                mask = (torch.rand(len(batch), TOKENS, generator=generator).to(device) < MASK_RATIO)
+                mask[:, 0] = True                              # never an empty target
             optimiser.zero_grad(set_to_none=True)
             with autocast:
                 context = encode(online, context_px, grad=bool(trainable))
                 with torch.no_grad():
                     future = normalise(encode(target_encoder, target_px.unsqueeze(1), grad=False))[:, 0]
                 predicted = predictor(normalise(context), action, mask)
-                loss = F.smooth_l1_loss(predicted[mask], future[mask])
+                if args.loss_mode == "l1_dense":
+                    predicted = normalise(predicted)           # normalize_reps on the output
+                    loss = (predicted - future).abs().mean()   # loss_exp = 1.0
+                else:
+                    loss = F.smooth_l1_loss(predicted[mask], future[mask])
             loss.backward()
             nn.utils.clip_grad_norm_(
                 list(predictor.parameters()) + trainable, 1.0
