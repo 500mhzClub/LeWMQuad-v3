@@ -182,6 +182,100 @@ moving arm — and it still fails the margin criterion.
 
 ---
 
+## Accepted narrow conclusion
+
+Accepted for the **fixed six-epoch run**:
+
+1. **V-JEPA 2.1's inherited spatial geometry survived encoder movement** and
+   remained recoverable under a fresh probe — fresh-probe occupied IoU
+   `0.5010 → 0.5082`, precision `0.6551 → 0.6864`, `open_obstacle_field`
+   `0.2198 → 0.2491`. Nothing was lost from the representation.
+2. **Encoder movement nevertheless reduced correct-versus-shuffled action
+   sensitivity in all eight selection scenes** — margin `+0.0586 → +0.0488`,
+   0 of 8 scenes favouring the moving arm.
+3. **Most importantly: predicted future tokens were spatially worse than
+   persistence in both arms** — frozen `0.2654` vs persistence `0.3133`; moving
+   `0.2304` vs persistence `0.3071`, against a true-future reference of `0.4970`.
+   This is the finding that matters most, and it is not about encoder movement:
+   it indicts the predictor in both arms.
+
+### Implementation scope, stated explicitly
+
+**The completed model used fully visible three-frame context with a masked
+target/loss.** `Predictor.forward` emits all 768 target tokens and **ignores its
+mask argument**; the mask selects only which target positions enter the training
+loss and the evaluation score. **This was therefore not a full masked-context
+V-JEPA implementation.** Context tokens were never hidden from the predictor, so
+the V-JEPA 2.1 context—target asymmetry that motivates the recipe was not
+reproduced. Any claim about "masked context—target objectives" from this run must
+be read with that limitation attached.
+
+### Gate on reintroducing encoder adaptation
+
+**The next frozen-encoder predictor must beat persistence on future occupied
+geometry before encoder adaptation is reintroduced.** No further encoder-moving
+run is authorised until that holds.
+
+## Localisation diagnostic: where does the predicted-token geometry go?
+
+Read-only, on the completed checkpoints and cached features. **Confirmed first:**
+the acceptance metrics in §4 use a probe trained on **true future encoder tokens**
+(normalised, frozen arm, train role, t+240 raster labels) and applied
+**unchanged** to true-future, persistence and predicted tokens; its checkpoint was
+selected on true-future selection tokens.
+
+Four identical-capacity probes, each trained on the train split of one token kind
+and evaluated only on the matching `checkpoint_selection` tokens, all against
+future labels:
+
+| probe (fresh, diagnostic only) | occupied IoU | precision | recall | `open_obstacle_field` IoU / P |
+|---|---:|---:|---:|---|
+| *true future, fixed acceptance probe* | *0.4970* | *0.6398* | *0.6900* | — |
+| frozen — **predicted** | **0.3774** | 0.4981 | 0.6091 | 0.1387 / 0.2030 |
+| moving — **predicted** | **0.3818** | 0.4890 | 0.6353 | 0.1313 / 0.1720 |
+| frozen — persistence | 0.3285 | 0.4009 | 0.6453 | 0.1085 / 0.1308 |
+| moving — persistence | 0.3179 | 0.4578 | 0.5099 | 0.1169 / 0.1669 |
+
+| | frozen | moving |
+|---|---:|---:|
+| predicted gap to true-future reference | +0.1195 | +0.1151 |
+| predicted − persistence (fresh probes) | **+0.0489** | **+0.0639** |
+
+### Reading: option 2, and option 3 is refuted
+
+**Geometry is present but prediction leaves the encoder's canonical feature
+basis.** Under the fixed true-future probe, predicted tokens scored 0.2654
+(frozen) and 0.2304 (moving) and *lost* to persistence. Given a probe fitted to
+their own output distribution they reach 0.3774 and 0.3818 and *beat* persistence
+in both arms, including on `open_obstacle_field` for the frozen arm. Roughly
+0.11–0.15 IoU of the apparent deficit was basis mismatch, not missing
+information.
+
+It is **not** wholly basis mismatch: both arms remain ~0.12 IoU below the
+true-future reference, and their precision (0.4981 / 0.4890) is well below the
+reference 0.6398. Prediction does genuinely degrade geometry — it just degrades
+it far less than the fixed probe implied.
+
+**Option 3 is refuted.** The two arms are indistinguishable on this axis:
+predicted IoU 0.3774 vs 0.3818, gaps to reference +0.1195 vs +0.1151. **Encoder
+movement does not destabilise predictor/target compatibility.** Whatever the
+moving arm cost, it was not this.
+
+Note the calibration caveat: all four fresh probes over-predict occupancy 3–4.7×
+the target fraction (frozen persistence worst at 0.03315 against 0.00701), well
+above the acceptance probe's ~2×. Part of their higher IoU is a looser operating
+point, which is one more reason these probes are diagnostic only.
+
+### Consequence for the next objective
+
+An objective built solely on "the predictor discards geometry" would attack the
+smaller half of the problem. The larger half is that the predictor's output does
+not live in the encoder's canonical basis, so a fixed decoder trained on true
+encoder tokens cannot read it. That points at output-space alignment — predicting
+in the encoder's own basis, or constraining the predictor's output distribution
+toward the target encoder's — **in addition to**, not instead of, an
+action-difference term.
+
 ## What this establishes
 
 **This closes the "maybe it was the objective" hypothesis.** WP-E's
