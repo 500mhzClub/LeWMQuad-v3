@@ -33,10 +33,21 @@ intact**: pretraining raises `open_obstacle_field` from `0.117` to `0.219` but
 does not rescue it. Isolated-obstacle geometry remains the weakest family for
 every representation tested, at roughly two-fifths of each arm's own aggregate.
 
-The failure in our current line is therefore **substantially a
-representation-pretraining problem, not evidence that RGB cannot support the
-required geometry** — a frozen public encoder plus a 25M-parameter probe recovers
-`0.51` occupied IoU at `0.65` precision on scenes it has never seen.
+The correct statement of the finding is:
+
+> **Strong pretrained dense representations contain substantially more
+> transferable geometry than the current task-trained encoder.**
+
+This is *not* a claim that pretraining caused the gain. Capacity (2.7M vs 304M),
+input resolution, token density and the pretraining corpus and objective all
+differ between arm A and arms B/C and are fully confounded; this screen was
+designed to find the strongest achievable frozen baseline, not to attribute the
+difference to any one of them.
+
+What does follow is that the geometry is recoverable from RGB at all: a frozen
+public encoder plus a 25M-parameter probe reaches `0.51` occupied IoU at `0.65`
+precision on scenes it has never seen. So the limitation in our current line is
+not that a single RGB frame cannot carry the required geometry.
 
 ---
 
@@ -163,14 +174,21 @@ token shape, dtype and cache hash.
 | control | occupied IoU (selection) | reading |
 |---|---:|---|
 | class-prior mean map, **no image input** | `0.0000` | fixed per-cell priors predict no occupied cell at all |
-| shuffled tokens, arm A | `0.1212` | fixed positional/frustum/decoder priors |
-| shuffled tokens, arm B | `0.1234` | same floor |
-| shuffled tokens, arm C | `0.1251` | same floor |
+| shuffled tokens, arm A | `0.1262` | fixed positional/frustum/decoder priors |
+| shuffled tokens, arm B | `0.1249` | same floor |
+| shuffled tokens, arm C | `0.1218` | same floor |
 
-The shuffled control derange complete feature tensors between observations while
-preserving token positions, in **both** roles, and is trained and selected under
-the identical schedule. All three arms land on essentially the same `≈0.12`
-prior floor, so the shuffled margin is a clean read of image-conditioned content.
+The shuffled control deranges complete feature tensors between observations while
+preserving token positions, using **separate fixed-point-free derangements within
+`train` and within `checkpoint_selection`**, so no row ever receives another
+role's features. It is trained and selected under the identical schedule
+(`scripts/recompute_dev_frozen_dense_screen_shuffled_controls_v2.py`, seed
+`2026080631`; encoder extraction and the main probes were not rerun).
+
+All three arms land on essentially the same `≈0.12` prior floor, so the shuffled
+margin is a clean read of image-conditioned content. The superseded cross-role
+derangement gave `0.1212 / 0.1234 / 0.1251` — within `0.005` of the within-role
+values, so no conclusion in this document depended on it.
 
 **Free IoU must not be read without the all-free baseline.** Predicting FREE at
 every cell gives observable free IoU `0.9444` on the selection role. Arm A scores
@@ -195,7 +213,7 @@ used to rank anything.
 | observable free IoU | 0.9251 | 0.9451 | **0.9571** |
 | *(all-free baseline)* | *0.9444* | *0.9444* | *0.9444* |
 | observable balanced accuracy | 0.7941 | 0.8087 | **0.8364** |
-| **shuffled-token margin (occ IoU)** | +0.2512 | +0.3475 | **+0.3852** |
+| **shuffled-token margin (occ IoU)** | +0.2462 | +0.3459 | **+0.3885** |
 | train occupied IoU | 0.7456 | 0.9108 | 0.9241 |
 | **fit-to-selection gap** | **0.3732** | 0.4399 | 0.4138 |
 | selected epoch | 6 | 9 | 6 |
@@ -316,8 +334,10 @@ model, it predicts nothing, and it must not be described as one.
    action-discriminative rather than merely more predictable. This screen changes
    the starting representation; it says nothing about that question, and the
    correct-versus-shuffled action margin must still be measured on any successor.
-   The measured baseline to protect during adaptation is now `0.5103` occupied
-   IoU — an encoder-moving recipe that regresses it has lost inherited geometry.
+   `0.5103` is the **frozen single-frame V-JEPA 2.1 development reference** — the
+   matched comparator a successor's spatial readout is reported against. It is
+   **not a floor, not a qualification threshold and not a gate**; it is one
+   development measurement under this probe, split and preprocessing.
 5. **`open_obstacle_field` needs a targeted intervention, not more pretraining.**
    `0.219` at `0.27` precision is the weakest result for the best available
    frozen representation. The next lever there is higher effective resolution on
