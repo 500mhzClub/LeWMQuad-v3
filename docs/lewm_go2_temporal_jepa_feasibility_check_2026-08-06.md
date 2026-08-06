@@ -6,9 +6,17 @@ check only. No training run was launched. No new corpus, preregistration or
 authorization chain was created. Roles `probability_calibration`, `evaluation`,
 `untouched` and sealed data were never opened.
 
-**Verdict: BLOCKED on temporal data coverage, not on memory.** Top-block training
-is comfortable on the R9700. The WP-E corpus cannot supply genuine same-episode
-multi-frame history at usable scale or family coverage.
+**Verdict: FEASIBLE, with one contract decision to make.** Top-block training is
+comfortable on the R9700. Genuine same-episode multi-frame history exists for
+96.6% of `train` and 99.2% of `checkpoint_selection` rows — but in the dense
+`render_textured_v03` render (`224×224`, `textured_v03`), not in the
+`go2_render_selected_v04` render (`224×168`, `textured_v04`) that the corpus and
+the frozen screen used. Within v04 alone the coverage is 17.5% / 13.3% with zero
+`open_obstacle_field` in selection.
+
+An earlier reading of this check reported a hard data blocker. That was wrong: it
+looked only at the v04 render and missed the dense v03 render on the 3.7 TB
+workspace pool.
 
 ---
 
@@ -46,9 +54,11 @@ with no exceptions. The paired-navigation `transition_contract` states
 prediction target is therefore **documented in the corpus contract**, not
 inferred from an assumed control rate.
 
-## 3. Temporal-data coverage — the blocker
+## 3. Temporal-data coverage
 
-Same-episode history was counted by chaining strictly within the corpus
+### 3a. Within the v04 render used by the corpus — insufficient
+
+Same-episode history counted by chaining strictly within the corpus
 (`scene_id`, `env_index`, `episode_id`, `reset_count`), using only `train` and
 `checkpoint_selection` rows. **No duplicated frames, no cross-episode
 histories.**
@@ -58,40 +68,57 @@ histories.**
 | `train` | 4,262 | 747 (17.5%) | 306 (7.2%) | 140 (3.3%) |
 | `checkpoint_selection` | 495 | 66 (13.3%) | 28 (5.7%) | 17 (3.4%) |
 
-For the **two-clip minimum** (3 distinct frames: `t−240, t, t+240`):
+The selection subset collapses to 7 scenes, 7 families and **zero
+`open_obstacle_field`**, with 31 of 66 rows from `small_enclosed_maze`. Only
+1,030 of 4,757 rows (21.7%) even have a `t−240` frame rendered under the v04
+contract; supplying `t−240` and `t−480` for all of them would need **7,301
+additional v04 renders**.
 
-| role | usable | scenes | families | worst skew |
-|---|---:|---:|---:|---|
-| `train` | 747 / 4,262 | 64 / 72 | 8 / 8 | `open_obstacle_field` **5 rows** |
-| `checkpoint_selection` | 66 / 495 | 7 / 8 | 7 / 8 | `small_enclosed_maze` 31 / 66 |
-
-`checkpoint_selection` per-family: `small_enclosed_maze` 31, `loop_alias_stress`
-7, `visual_sensor_stress` 7, `large_enclosed_maze` 6, `medium_enclosed_maze` 6,
-`rough_local_dynamics` 5, `local_composite_motifs` 4, **`open_obstacle_field` 0**.
-
-For the **single masked 4-frame clip** the selection set falls to 28 rows across
-4 scenes and 4 families, 23 of them from `small_enclosed_maze`, again with zero
-`open_obstacle_field`.
-
-**Why the corpus is like this.** It is not damage; it is the sampling design. The
-upstream paired-navigation dataset selected rows by
+The cause is the upstream sampling design, not damage: rows were selected by
 `hash_rank_within_primitive_env_episode_strata_then_round_robin`, capped at
-`max_transitions_per_scene: 64`. That deliberately spreads transitions across
-episodes to maximise diversity, which makes temporally adjacent transitions rare
-by construction.
+`max_transitions_per_scene: 64`, which spreads transitions across episodes by
+construction.
 
-**Frames on disk cannot rescue it.** The render is a selection, not an episode
-dump: 10,311 frames across 96 scenes. Only **1,030 of 4,757** allowed rows
-(21.7%) have a `t−240` frame rendered at all. Supplying `t−240` and `t−480` for
-every allowed row would need **7,301 additional rendered frames** (8,701 total,
-1,400 already present).
+### 3b. In the dense v03 render — sufficient, under a different camera contract
 
-**Upstream has the trajectories but not the pixels.** The source
-`frames.jsonl` records 915,141 primitive transitions, 202,490 of them
-configuration-valid — but 196,596 of those were rejected as
-`transitions_missing_rendered_metadata`, leaving 5,894 candidates from which
-5,641 rows were written. Dense temporal chains exist in simulation; the
-constraint is that their RGB was never rendered.
+**Correction to the first reading of this check.** The 3.7 TB workspace pool
+holds `.generated/datagen_full/render_textured_v03`: 1,450 scenes at **48,000
+frames each** (1,000 steps × 48 envs). It covers **80 / 80 (100%) of the corpus
+`train`+`checkpoint_selection` scenes**, and all 4,757 corpus current frames
+exist there under **identical filenames** (`frame_NNNNNN_env_NN.png`).
+
+Same-episode history availability in v03:
+
+| role | 2-frame | 3-frame |
+|---|---:|---:|
+| `train` | 4,204 / 4,262 (98.6%) | **4,116 / 4,262 (96.6%)** |
+| `checkpoint_selection` | 495 / 495 (100%) | **491 / 495 (99.2%)** |
+
+Selection per-family, 3-frame history available: `large_enclosed_maze` 64/64,
+`local_composite_motifs` 64/64, `loop_alias_stress` 62/64,
+`medium_enclosed_maze` 62/64, **`open_obstacle_field` 64/64**,
+`rough_local_dynamics` 64/64, `small_enclosed_maze` 47/47,
+`visual_sensor_stress` 64/64. **All eight families survive, including the one
+that was absent under v04.**
+
+**The two renders are not interchangeable within a clip:**
+
+| | corpus/frozen-screen contract | dense temporal source |
+|---|---|---|
+| directory | `go2_render_selected_v04` | `datagen_full/render_textured_v03` |
+| resolution | `224×168` | `224×224` |
+| horizontal FOV | 78.323° | 78.323° (same geometry config) |
+| vertical FOV | 62.837° | larger (square aspect) |
+| visuals | `textured_v04` | `textured_v03` |
+| frames per scene | ~120 (selection) | 48,000 (dense) |
+
+Same rollout, same poses, same frame indices, same horizontal FOV — but a
+different vertical field of view and a different texture set. A clip must not mix
+them. The label geometry contract (`config/go2_generalization_geometry_v2.json`)
+pins only `horizontal_fov_deg: 78.323`; the `raster_labels` observability mask
+was nevertheless derived under the v04 frustum, so a v03 frame shows *more*
+ground than the labels mark observable — a superset, not a deficit, but a
+deviation that must be stated wherever a v03-based spatial number is reported.
 
 ## 4. Memory feasibility — not a blocker
 
@@ -110,38 +137,49 @@ ViT-L/16-384, `384×512`, T=4, last 2 of 24 blocks plus `norms_block` trainable
 Both arms fit with an order of magnitude of headroom. Larger batches, a longer
 clip, an EMA target encoder and a dense-token predictor can all be afforded.
 
-## 5. Why the experiment was not launched
+## 5. The contract decision
 
-The matched comparison was specified to report per-family results with
-`open_obstacle_field` explicit, and to test whether encoder movement preserves
-inherited spatial information. With 66 selection rows, 7 scenes and **zero
-`open_obstacle_field`**, neither the spatial comparison nor the per-family
-requirement can be met, and the frozen-versus-moving contrast would rest on 747
-training transitions — 17.5% of the WP-E training set, with 5 rows in the family
-that already fails hardest.
+Both arms of the specified comparison — frozen control and encoder-moving — are
+trained and evaluated on the *same* data, so a v03-native experiment is
+internally valid: the frozen control provides the matched spatial reference in
+whatever contract both arms share. The v04 figure `0.5103` would then be a
+cross-reference from a different visual contract, **not** the comparator.
 
-Running it anyway would produce a number that could not distinguish encoder
-movement from sampling noise. That is the failure mode the WP-E closure was
-written to stop.
+That makes the choice:
+
+| | v03-native | v04-extended |
+|---|---|---|
+| rendering required | **none** | 7,301 frames |
+| train / selection rows | 4,116 / 491 | 4,262 / 495 |
+| families in selection | **8 / 8** | 8 / 8 |
+| visual contract | `224×224`, `textured_v03` | `224×168`, `textured_v04` |
+| label observability match | image is a superset of the labelled frustum | exact |
+| frozen reference | must be re-measured in-contract (cheap) | `0.5103` carries over |
+| creates new data | no | yes |
 
 ## 6. Options, in order of cost
 
-1. **Render the missing history frames (recommended).** ~7,301 additional frames
-   into the existing `go2_render_selected_v04` layout, using the recorded
-   `render_replay` plans and the documented Vulkan venv. For scale, the existing
-   10,311-frame render ran at ~61 fps. This restores the full 4,262 / 495 split
-   with all 8 families and changes no scene assignment, no split and no label
-   definition. It is nevertheless **new supervision data**, so it needs an
-   explicit decision rather than being done silently.
-2. **Reselect temporally contiguous transitions upstream** from the 202,490
-   configuration-valid transitions, then render them. Larger, and it would
-   replace the corpus rather than extend it.
-3. **Two-frame context on the 747/66 subset**, reported honestly as a small,
-   family-incomplete pilot with no `open_obstacle_field`. Cheap, but it cannot
-   answer the acceptance question as posed.
-4. **Defer temporal context**; adapt the encoder on single frames with a masked
-   context-target objective over spatial tokens only. This drops the "genuine
-   multi-frame visual context" and "distinct future temporal position"
-   requirements, so it answers a different question.
+1. **Run the successor v03-native (recommended).** No rendering, no new corpus,
+   no new data — it uses a render that already exists and already covers 100% of
+   the corpus scenes. Both arms use v03 frames for history, current and target,
+   so no clip mixes camera contracts. Cost: re-measure the frozen V-JEPA 2.1
+   spatial reference on v03 frames so the comparison is in-contract (one
+   extraction plus one probe, roughly 25 minutes), and state everywhere that the
+   v03 image shows more ground than the v04-derived observability mask marks.
+2. **Render 7,301 v04 history frames.** Keeps the label frustum and the `0.5103`
+   reference exact, at the cost of a render job and of creating new supervision
+   data — which needs an explicit decision rather than being done silently.
+3. **Two-frame context on the v04-only 747 / 66 subset.** Cheap, but 7 families,
+   no `open_obstacle_field`, and 17.5% of the training set: it cannot answer the
+   acceptance question as posed.
+4. **Defer temporal context** and adapt on single frames. Answers a different
+   question — it drops "genuine multi-frame visual context" and "distinct future
+   temporal position".
 
-Option 1 is the only one that lets the specified experiment run as written.
+## 7. Operational constraint discovered
+
+`/home/andrewknowles/Workspace` (the 3.7 TB pool) is **100% full, 658 MB free**.
+The frozen screen's feature caches alone are 9.2 GB, and a three-frame temporal
+cache at ViT-L would be roughly 22 GB. Any new cache must be written to `/`
+(546 GB free) or the pool must be cleared first. This is a real blocker for the
+run and is unrelated to the data question.
