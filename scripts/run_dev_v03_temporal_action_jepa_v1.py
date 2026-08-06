@@ -289,7 +289,7 @@ def main() -> int:
                 with torch.no_grad():
                     for tp, op in zip(target_encoder.parameters(), online.parameters()):
                         tp.mul_(args.ema).add_(op.detach(), alpha=1 - args.ema)
-            running += float(loss) * len(batch)
+            running += float(loss.detach()) * len(batch)
             seen += len(batch)
             if (start // args.batch) % 25 == 0:
                 print(f"  [{args.arm}] epoch {epoch} step {start//args.batch} "
