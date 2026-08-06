@@ -276,6 +276,102 @@ in the encoder's own basis, or constraining the predictor's output distribution
 toward the target encoder's — **in addition to**, not instead of, an
 action-difference term.
 
+## Target-space alignment audit — interpretation 3
+
+Read-only. Two **label-free** channel-space maps per arm, fit on train tokens
+only against true-future encoder tokens, applied unchanged to selection and
+consumed by the **existing fixed true-future probe, not refitted**.
+
+Occupied IoU under the fixed probe:
+
+| | frozen | moving |
+|---|---:|---:|
+| raw predicted | 0.2653 | 0.2304 |
+| + Procrustes (shared orthogonal) | 0.2803 | 0.2470 |
+| + affine ridge (shared 1024→1024 + bias) | **0.3132** | **0.2833** |
+| **persistence** | **0.3133** | **0.3071** |
+| true-future reference | 0.4970 | 0.4781 |
+| *fresh 25M probe (diagnostic)* | *0.3774* | *0.3818* |
+
+**Neither map beats persistence.** The best case — affine on the frozen arm —
+lands at 0.3132 against persistence 0.3133, a dead heat, and the moving arm stays
+0.024 below. Neither map comes near the fresh-probe result (0.3774 / 0.3818) or
+the reference.
+
+### The fit diagnostics explain why
+
+| | frozen | moving |
+|---|---:|---:|
+| identity-baseline train residual | 0.25652 | 0.22875 |
+| Procrustes train residual | 0.25200 (**−1.8%**) | 0.22405 (**−2.1%**) |
+| affine train residual | 0.24838 (**−3.2%**) | 0.22078 (**−3.5%**) |
+| Procrustes train→selection gap | +0.01515 | +0.01425 |
+| affine train→selection gap | +0.01560 | +0.01472 |
+| Procrustes orthogonality deviation | 8.7e−13 | 9.1e−13 |
+| affine condition number | 7.17e+08 | 4.08e+08 |
+| affine singular values, deciles | 3.14, 1.19, 0.97, 0.65, 0.0004, … 0 | 3.00, 1.21, 0.99, 0.69, 0.0003, … 0 |
+
+**There is no large basis rotation to undo.** A shared orthogonal map removes
+under 2% of the residual and the best regularised affine map removes 3.5%. The
+predicted tokens are already close to the true-future tokens in the raw metric —
+they are simply *wrong* in a way no shared channel map repairs. Train-to-selection
+gaps are small (+0.015), so this is not an overfitting artefact.
+
+Note the affine map is near-degenerate: singular values collapse below 1e−3 past
+the 40th percentile, so it is effectively a rank-~400 shrinking projection. Even
+allowing that much freedom, it only reaches parity with persistence.
+
+### The action margin is invariant to alignment
+
+Same map applied to correct and shuffled predictions:
+
+| map | frozen margin | moving margin |
+|---|---:|---:|
+| raw | +0.0586 | +0.0488 |
+| Procrustes | +0.0597 | +0.0500 |
+| affine | +0.0609 | +0.0514 |
+
+The margin barely moves, and the moving arm stays below the frozen arm under
+every map. **The rejection of the encoder-moving recipe is robust to alignment.**
+
+### What the predictor actually does
+
+Occupied fraction over all 2,011,136 selection cells (491 frames, 263,239
+observable, 14,098 occupied, target fraction 0.00701):
+
+| | predicted occ. fraction |
+|---|---:|
+| frozen raw predicted | 0.01111 |
+| frozen affine-aligned | 0.01275 |
+| frozen persistence | 0.01643 |
+| true future | 0.01602 |
+
+The predictor's output decodes to **fewer** occupied cells than either
+persistence or the true future, and its recall is correspondingly low (0.3628 vs
+persistence 0.4501). It is smoothing occupied structure away, not relocating it
+into a rotated basis.
+
+`open_obstacle_field` behaves the same way and alignment does not rescue it:
+frozen 0.1385 → 0.1480 against a 0.2452 reference; moving 0.1310 → 0.1347 against
+0.2209.
+
+### Reading: option 3
+
+**Neither map approaches the fresh-probe result or beats persistence, so the
+fresh 25M probe was recovering weak and/or nonlinear cues rather than a simple
+interface mismatch.** The correct next step is the **genuine masked-context
+predictor architecture**, not an output adapter.
+
+**This retracts the "leaves the encoder's canonical basis" reading** offered after
+the previous diagnostic. That framing was too strong, exactly as flagged: it rested
+on a 25M nonlinear probe at a looser operating point, and a constrained shared
+linear map does not reproduce it. The honest statement is that predicted tokens
+retain *some* future geometry recoverable by a high-capacity nonlinear readout,
+but they are not a rotated or affinely deformed view of the true-future interface,
+and they do not carry enough usable occupied structure to beat persistence.
+
+An output adapter trained on encoder-token targets is therefore **not** indicated.
+
 ## What this establishes
 
 **This closes the "maybe it was the objective" hypothesis.** WP-E's
