@@ -12,50 +12,132 @@ the workspace pool is full at 658 MB free)
 
 ## Verdict
 
-> **REJECTED.** Encoder movement made the future *more predictable* and
-> *less action-discriminative*, in all eight families, while spatial information
-> was preserved.
+> **REJECT ENCODER-MOVING RECIPE.** Encoder movement made the future *more
+> predictable* and *less action-discriminative*, in 8 of 8 selection scenes,
+> while spatial information on true tokens was preserved.
 
-The moving arm's JEPA loss was **11.5% lower** (0.10231 vs 0.11562) and its
-correct-action cosine was **higher** (0.7861 vs 0.7534). Both are irrelevant
-under the registered rule, because its shuffled-action and persistence baselines
-rose further:
+Bounded to the fixed six-epoch recipe (see §Checkpoints).
 
-| changed-token cosine | frozen | moving |
+---
+
+## Verification performed before interpreting any difference
+
+### Float32 vs float16-cache-and-batched parity, 24 fixed selection rows
+
+| | frozen | moving |
 |---|---:|---:|
-| correct action | 0.7534 | **0.7861** |
-| shuffled action (mean of 3 derangements) | 0.6949 | **0.7383** |
-| persistence | 0.4800 | **0.5451** |
-| **correct − shuffled** | **+0.0586** | **+0.0479** |
-| correct − persistence | +0.2735 | +0.2411 |
+| feature max abs diff | 0.015617 | 0.015621 |
+| feature mean abs diff | 0.000204 | 0.000159 |
+| feature relative mean | 1.76e-04 | 1.75e-04 |
+| prediction max abs diff | 0.007917 | 0.008228 |
+| prediction mean abs diff | 0.000091 | 0.000079 |
+| changed cosine, fp32 → fp16 | 0.850782 → 0.850782 (**+0.0e+00**) | 0.868995 → 0.868994 (**−1.2e−07**) |
+| normalised error, fp32 → fp16 | 0.547480 → 0.547479 (−6.6e−07) | 0.547385 → 0.547386 (+6.0e−07) |
 
-**Action margin fell by 0.0107 (−18%), and fell in 8 of 8 families.** This is the
-WP-E finding reproduced at 304M parameters, with genuine three-frame temporal
-context, a masked context—target objective, an EMA target and a distinct future
-temporal position. Every one of those was a candidate explanation for the WP-E
-result. None of them was the cause.
+The derived cosine and error metrics agree to **1e−6 or better** — six orders of
+magnitude below the 0.0098 margin difference being interpreted. The repaired
+cache and batched-prediction path are not a source of any reported effect.
 
-## What is new: the failure is now isolated to action discrimination
+### Mask and input invariants
 
-WP-E could not separate "loses geometry" from "loses action sensitivity". This
-run separates them, because the spatial representation **did not degrade**:
+- **One** changed-token threshold, derived from the **frozen** arm's train
+  representation only: quantile 0.75, value `0.76190`, selecting **94,540 of
+  377,088** selection tokens. The identical boolean mask is applied to both arms
+  and to the correct, shuffled and persistence comparisons.
+  *This corrects a defect in the first pass*, which derived threshold and mask
+  per arm and so scored the two arms on different token subsets. Correcting it
+  moved the moving arm's margin from +0.0479 to +0.0488 and left the conclusion
+  unchanged.
+- **Context is identical** across correct, shuffled and persistence for each
+  sequence. `Predictor.forward` emits all 768 target tokens and *ignores* its
+  mask argument, so the mask cannot differ between action arms by construction.
+  Note the consequence honestly: **context frames are fully visible** — the
+  masking selects which target positions enter the loss and the score, it does
+  not hide context. This is a masked *target*, not a masked *context*, objective.
+- **The action tensor is the only input that differs** in the sensitivity
+  comparison; context, mask, encoder and predictor weights are held fixed.
 
-| | frozen | moving | delta |
-|---|---:|---:|---:|
-| fresh-probe occupied IoU | 0.5004 | **0.5054** | +0.0051 |
-| fresh-probe occupied precision | 0.6530 | **0.6754** | +0.0224 |
-| fresh-probe occupied recall | 0.6816 | 0.6676 | −0.0140 |
-| fresh-probe `open_obstacle_field` IoU | 0.2133 | **0.2308** | +0.0175 |
-| fixed-probe occupied IoU | 0.4986 | 0.4817 | −0.0170 |
+### Checkpoints
 
-Under a probe retrained on its own features the moving encoder is **as good or
-slightly better** spatially, including on `open_obstacle_field`. Under the fixed
-probe it drops 0.0170 — the representation *moved* relative to the frozen probe's
-input space without becoming less informative. That is drift, not loss.
+All **six** epoch checkpoints exist for both arms (`epoch0`–`epoch5`). No epoch
+selection was performed: both arms are evaluated at epoch 5. **The conclusion is
+therefore bounded to the fixed six-epoch training recipe**, and says nothing
+about whether a different schedule would behave differently.
 
-So the acceptance test failed on exactly one clause: the action margin.
+---
 
-## Raw token health
+## 1. Prediction on changed tokens (shared mask, 94,540 tokens)
+
+| | frozen | moving |
+|---|---:|---:|
+| correct action, cosine | 0.7534 | **0.7865** |
+| correct action, normalised error | 0.4202 | 0.4229 |
+| shuffled action, cosine (mean of 3) | 0.6949 | **0.7377** |
+| shuffled action, normalised error | 0.5172 | 0.5173 |
+| persistence, cosine | 0.4800 | **0.5446** |
+| persistence, normalised error | 1.0000 | 1.0000 |
+| **correct − shuffled** | **+0.0586** | **+0.0488** |
+| correct − persistence | +0.2735 | +0.2419 |
+
+The moving arm's correct-action cosine is higher and its JEPA loss was 11.5%
+lower (0.10231 vs 0.11562). Neither is an acceptance criterion, and here they are
+actively misleading: its shuffled and persistence baselines rose further, so both
+margins fell.
+
+## 2. Margin per selection scene — 0 of 8 favour the moving arm
+
+| scene | family | frozen | moving |
+|---|---|---:|---:|
+| `large_enclosed_maze_d78318b1e87b` | large_enclosed_maze | +0.0686 | +0.0588 |
+| `local_composite_motifs_811b818f1914` | local_composite_motifs | +0.0679 | +0.0564 |
+| `medium_enclosed_maze_f30352cb052e` | medium_enclosed_maze | +0.0640 | +0.0523 |
+| `visual_sensor_stress_dc440a3fb679` | visual_sensor_stress | +0.0595 | +0.0493 |
+| `loop_alias_stress_aeb36ab10bc1` | loop_alias_stress | +0.0577 | +0.0464 |
+| `small_enclosed_maze_16b0fc2c449b` | small_enclosed_maze | +0.0474 | +0.0412 |
+| **`open_obstacle_field_25cc6fe2de4f`** | open_obstacle_field | **+0.0469** | **+0.0397** |
+| `rough_local_dynamics_0e631dbfbd46` | rough_local_dynamics | +0.0409 | +0.0356 |
+
+**8 of 8 down.** The independent units here are the scenes, and none of them
+dissents.
+
+## 3. Spatial on true encoder tokens (current frame, current labels)
+
+| | frozen | moving |
+|---|---:|---:|
+| fixed-probe precision | 0.6489 | 0.6543 |
+| fixed-probe recall | 0.6829 | 0.6461 |
+| **fixed-probe occupied IoU** | **0.4986** | **0.4817** |
+| fresh-probe precision | 0.6551 | **0.6864** |
+| fresh-probe recall | 0.6805 | 0.6620 |
+| **fresh-probe occupied IoU** | **0.5010** | **0.5082** |
+
+Under a probe retrained on its own features the moving encoder is **slightly
+better** spatially. Under the fixed probe it is 0.0170 worse. The representation
+moved relative to the fixed probe's input space without becoming less
+informative — drift, not loss. Arm A's fixed probe reproduces the frozen
+reference (0.4986 vs 0.4986), as it must.
+
+## 4. Frozen probe on **predicted future** tokens vs persistence (future labels)
+
+Probe trained once on normalised frozen true-future tokens, applied unchanged.
+
+| | occupied IoU | precision | recall | predicted occ. fraction |
+|---|---:|---:|---:|---:|
+| true future (upper reference) | 0.4970 | 0.6398 | 0.6900 | — |
+| frozen — **persistence** | **0.3133** | 0.5076 | 0.4501 | 0.01643 |
+| frozen — predicted | 0.2654 | 0.4969 | 0.3629 | 0.01111 |
+| moving — **persistence** | **0.3071** | 0.4998 | 0.4435 | 0.01642 |
+| moving — predicted | 0.2304 | 0.4886 | 0.3036 | 0.00989 |
+| *(target occupied fraction)* | | | | *0.00701* |
+
+**This is the sharpest negative result in the run, and it indicts both arms.**
+Decoded to occupancy, *neither* predictor's forecast beats simply reusing the
+current tokens: 0.2654 vs 0.3133 for frozen, 0.2304 vs 0.3071 for moving. The
+latent-space win over persistence (+0.27 cosine) does **not** survive decoding to
+the geometry we actually need. And the moving arm is worse than the frozen arm
+here too.
+
+## 5. Raw token health
 
 | | frozen | moving | delta |
 |---|---:|---:|---:|
@@ -63,128 +145,98 @@ So the acceptance test failed on exactly one clause: the action margin.
 | raw effective rank | 85.81 | 97.71 | **+13.9%** |
 | raw temporal delta | 0.4965 | 0.4430 | **−10.8%** |
 
-No collapse: effective rank *rose*. But variance and temporal delta both fell
-about 11%, and the persistence cosine rose from 0.4800 to 0.5451 — consecutive
-frames became more similar in latent space. The encoder made the sequence
-smoother. A smoother sequence is easier to predict under any action, which is
-precisely why the margin shrank.
+No collapse — effective rank *rose*. But variance and temporal delta both fell
+~11%, and persistence cosine rose 0.0646: consecutive frames became more similar
+in latent space. The encoder made the sequence smoother, which helps every arm of
+the prediction equally and therefore shrinks the margin.
 
-## Per-family — the effect is uniform
+## 6. `open_obstacle_field`
 
-Action margin (correct − shuffled), and fresh-probe occupied IoU:
-
-| family | margin frozen | margin moving | occ IoU frozen | occ IoU moving |
-|---|---:|---:|---:|---:|
-| `large_enclosed_maze` | +0.0701 | +0.0581 | 0.5671 | 0.5458 |
-| `local_composite_motifs` | +0.0682 | +0.0553 | 0.5878 | 0.5772 |
-| `visual_sensor_stress` | +0.0650 | +0.0529 | 0.5040 | 0.5123 |
-| `medium_enclosed_maze` | +0.0607 | +0.0498 | 0.5264 | 0.5235 |
-| `loop_alias_stress` | +0.0516 | +0.0411 | 0.3721 | 0.3674 |
-| `rough_local_dynamics` | +0.0484 | +0.0402 | 0.5356 | 0.5580 |
-| `small_enclosed_maze` | +0.0484 | +0.0399 | 0.7852 | 0.8142 |
-| **`open_obstacle_field`** | **+0.0428** | **+0.0357** | **0.2133** | **0.2308** |
-
-**8 of 8 families lose margin.** Four of eight *gain* occupied IoU. The
-directions are independent, which is the point: geometry and action sensitivity
-are separable, and only the latter regressed.
-
-`open_obstacle_field` has both the weakest action margin and by far the weakest
-occupancy — it remains the hardest family on every axis.
-
-## Setup
-
-**Data.** `development_raw_supervision_v1` designated roles over the dense
-`render_textured_v03` render, centre-cropped 224×224 → 224×168 to the v04 field
-of view (crop gate verified separately: zero analytic FOV error, empirical
-crop-offset peak at row 28 and scale peak at 1.0000).
-
-| role | sequences | scenes |
+| | frozen | moving |
 |---|---:|---:|
-| `train` | 4,075 / 4,262 | 72 |
-| `checkpoint_selection` | 491 / 495 | 8 |
-| scene overlap | — | **0** |
+| action margin | **+0.0469** | +0.0397 |
+| fresh-probe IoU / precision | 0.2198 / 0.3005 | **0.2491 / 0.4136** |
+| fixed-probe IoU | 0.2127 | 0.2072 |
+| predicted-future IoU / precision | **0.1385 / 0.2759** | 0.1310 / 0.2611 |
+| persistence-future IoU / precision | 0.1329 / 0.1930 | 0.1276 / 0.1922 |
 
-Frozen causal contract: context `t−480, t−240, t`; target `t+240`; action = the
-command block executed `t → t+240` (`block_size 5 × command_dt_s 0.1 = 0.5 s`).
-Every frame verified against the rollout `frames.jsonl` for identical scene,
-`env_index`, `episode_id` and `reset_count`. No duplicated frames, no inferred
-filenames, no crossed resets.
+The moving arm is clearly better on this family's *static* geometry (+0.0293 IoU,
++0.1131 precision) and clearly worse on its *action margin* and its predicted
+future. It remains the weakest family on every axis.
 
-**Arms.** Identical rows, ordering, seed (`2026080651`), optimiser, predictor,
-action representation and 6-epoch schedule. Dense 24×32×1024 grids with explicit
-learned temporal positions throughout; AdaLN action conditioning on the
-9-primitive one-hot plus body-velocity command; masked context—target objective
-at 50% mask; target normalisation. **No CLS, no global pooling, no BEV in the
-predictive path.** Neither arm cached encoder features — both recomputed all four
-frames every step.
+## 7. Predicted occupied fractions — over-prediction ruled out
 
-* **A (frozen):** encoder frozen, predictor trainable.
-* **B (moving):** identical initialisation; final encoder block + final norms
-  trainable (**20 tensors, 12.6M of 304.7M**) at 1/20th the predictor LR, with a
-  0.999 EMA target encoder.
+Target occupied fraction is `0.00726` of all cells.
 
-The whole encoder is put in eval mode before the trainable blocks are opted back
-in, with an assertion that no frozen module is left training and that the target
-encoder takes no gradient — the WP-E retrospective defect, made non-repeatable.
+| probe | arm | predicted occ. fraction | precision |
+|---|---|---:|---:|
+| fixed | frozen | 0.01674 (2.31×) | 0.6489 |
+| fixed | moving | 0.01526 (2.10×) | 0.6543 |
+| fresh | frozen | 0.01646 (2.27×) | 0.6551 |
+| fresh | moving | **0.01469 (2.02×)** | **0.6864** |
 
-**Comparator.** The matched frozen v03 spatial reference is **0.4994** observable
-occupied IoU (precision 0.6526, macro 0.5105, shuffled margin +0.3703). The v04
-figure `0.5103` is a cross-contract development reference only. Arm A's fixed
-probe reproduces the reference exactly (0.4986 vs 0.4986), as it must — arm A's
-encoder never moved.
+Both arms over-predict occupancy roughly 2×, but the moving arm over-predicts
+*less* while scoring *higher* precision. Its small fresh-probe IoU gain is
+therefore genuine sharpening, not diffuse over-prediction. That check clears the
+moving arm — and it still fails the margin criterion.
 
-## Reading
+---
+
+## What this establishes
 
 **This closes the "maybe it was the objective" hypothesis.** WP-E's
-encoder-moving recipes were single-frame, unmasked, on a 2.7M task-trained
-encoder, and both weakened action discrimination. The obvious rebuttals were:
-too small an encoder, no temporal context, an objective that rewarded
-contraction. This run removes all three — 304M pretrained initialisation, genuine
-three-frame history, masked context—target with an EMA target and a distinct
-future position — **and the same thing happens.**
+encoder-moving failures were single-frame, unmasked, on a 2.7M task-trained
+encoder. The available rebuttals were capacity, missing temporal context, and an
+objective that rewarded contraction. This run removes all three — 304M pretrained
+initialisation, genuine three-frame same-episode history, masked context—target
+with an EMA target and a distinct future temporal position — **and the margin
+still falls, in every scene.**
 
-The mechanism is now visible. The objective rewards the *future being
-predictable*. It does not reward *different actions producing different futures*.
-Given a lever on the encoder, gradient descent spends it making the sequence
-smoother: persistence cosine +0.065, temporal delta −11%. That helps every arm of
-the prediction equally, so the margin shrinks even as absolute accuracy improves.
+**The failure is isolated to action discrimination.** Not collapse (rank +14%),
+not lost geometry (fresh-probe IoU and `open_obstacle_field` both rose), not
+over-prediction (ruled out in §7), not capacity, not temporal context, not
+masking.
 
-**What is not the problem:** collapse (effective rank rose 14%), lost geometry
-(fresh-probe IoU and `open_obstacle_field` both rose), encoder capacity,
-temporal context, or masking.
+**A second, independent problem surfaced.** §4 shows that neither arm's predicted
+future decodes to better occupancy than persistence. The predictor is winning in
+latent cosine while losing in the geometry that matters. Any future acceptance
+test for this line should include the §4 comparison, because the latent metrics
+alone would have passed a predictor that is spatially useless.
 
 ## Next
 
-The narrowest untested intervention is unchanged from WP-E §6, and this run
-raises its priority rather than settling it: **an objective term that makes
-action-conditioned futures differ**, not merely be predictable. Two candidates
-from the literature already reviewed:
+Unchanged from WP-E §6 and now better motivated: **an objective term that makes
+action-conditioned futures differ**, not merely be predictable — latent-difference
+action decoding (Delta-JEPA), or an action-contrastive term at the same current
+state. Neither is authorised by this document.
 
-1. **Latent-difference action decoding (Delta-JEPA):** require the executed
-   action to be recoverable from `z_{t+1} − z_t`. Directly penalises the
-   smoothing this run measured, uses every ordinary transition, needs no matched
-   branches.
-2. **Action-contrastive term at the same current state:** penalise predicted-state
-   similarity between the correct action and the other eight primitives.
+Before attributing more to the objective, measure the corpus-side ceiling: the
+nine primitives are coarse, `hold` is among them, and the 0.5 s horizon moves the
+robot a median 0.08 m, so part of the residual margin may not be recoverable at
+all.
 
-Neither is authorised by this document. Also note the practical constraint: the
-9 primitives are coarse and `hold` is in the action set, so some of the residual
-margin ceiling may be corpus-side rather than model-side — worth measuring before
-attributing further loss to the objective.
-
-**Do not** add a geometry teacher on this evidence: geometry did not regress.
+**Do not add a geometry teacher on this evidence** — geometry did not regress.
 
 ## Corrections made during this work
 
-- The first evaluation run died with HIP OOM (8.63 GiB request against 23.27 GiB
-  held). Cause was in the battery, not the experiment: the predictor was called
-  on all 491 sequences at once, features were held in float32, and the
-  changed-token threshold materialised the full train tensor. All three fixed;
-  no measured quantity changed.
-- An earlier reading of the temporal feasibility check reported a hard data
-  blocker. That was wrong — it looked only at the v04 render and missed the dense
-  v03 render on the 3.7 TB pool, which covers 100% of the corpus scenes.
-- The v03 crop was first derived *analytically* as a 1.333× focal mismatch from
-  the platform manifest's `native_resolution: [640,480]`. The pixels disproved
-  it: the crop-offset and scale sweeps both peak sharply where a shared focal
-  length predicts. The empirical result governs.
+- **Per-arm changed-token mask (this pass).** The first evaluation derived the
+  threshold and mask separately per arm, scoring the arms on different token
+  subsets. Corrected to a single frozen-derived mask; the moving margin moved
+  +0.0479 → +0.0488 and the conclusion did not change.
+- **HIP OOM in the battery** (8.63 GiB against 23.27 GiB held): the predictor was
+  called on all 491 sequences at once, features were float32, and the threshold
+  materialised the full train tensor. All three fixed; parity above confirms no
+  measured quantity moved.
+- **Wrong temporal blocker.** An earlier reading looked only at the v04 render
+  and missed the dense v03 render on the 3.7 TB pool, which covers 100% of the
+  corpus scenes.
+- **Wrong analytic crop derivation.** The v03 crop was first derived as a 1.333×
+  focal mismatch from the platform manifest's `native_resolution: [640,480]`. The
+  pixels disproved it — crop-offset and scale sweeps both peak sharply where a
+  shared focal length predicts. The empirical result governs.
+
+---
+
+# DECISION
+
+> ## REJECT ENCODER-MOVING RECIPE
