@@ -40,6 +40,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts import dev_frozen_dense_representation_encoders_v1 as E  # noqa: E402
+from scripts import dev_checkpoint_v1 as CK  # noqa: E402
 
 CACHE = Path("/home/andrewknowles/.cache/lewm_go2_temporal_v03")
 ROWS = CACHE / "temporal_rows.jsonl"
@@ -314,11 +315,18 @@ def main() -> int:
                       f"loss {running/max(seen,1):.5f}", flush=True)
         record["epochs"].append({"epoch": epoch, "train_loss": running / max(seen, 1)})
         print(f"[{args.arm}] epoch {epoch} mean loss {running/max(seen,1):.5f}", flush=True)
-        torch.save(
-            {
-                "predictor": predictor.state_dict(),
-                # only the tensors that actually moved; the rest is the official
-                # checkpoint and is recoverable from its recorded sha256
+        receipt = CK.save(
+            out / f"checkpoint_epoch{epoch}.pt",
+            model=predictor, optimizer=optimiser,
+            epoch=epoch, global_step=(epoch + 1) * ((len(train_rows) + args.batch - 1) // args.batch),
+            seed=SEED,
+            model_config={"width": 384, "depth": 6, "heads": 6,
+                          "token_dim": TOKEN_DIM, "tokens": TOKENS,
+                          "class": "run_dev_v03_temporal_action_jepa_v1.Predictor"},
+            scheduler=None,
+            scheduler_absent_reason="fixed learning rate; no scheduler is constructed in this run",
+            data_order_generator=generator,
+            extra={
                 "encoder_trainable": (
                     {n: q.detach().cpu() for n, q in online.named_parameters()
                      if q.requires_grad} if trainable else None
@@ -328,9 +336,10 @@ def main() -> int:
                      if n in {m for m, r in online.named_parameters() if r.requires_grad}}
                     if trainable else None
                 ),
+                "epochs": record["epochs"],
             },
-            out / f"checkpoint_epoch{epoch}.pt",
         )
+        record.setdefault("checkpoint_receipts", []).append(receipt)
         record["wall_seconds"] = round(time.time() - started, 1)
         (out / "result.json").write_text(json.dumps(record, indent=2))
 

@@ -55,6 +55,9 @@ def main() -> int:
     ap.add_argument("--arm-dir", default="arm_frozen_l1dense")
     ap.add_argument("--epoch", type=int, default=5)
     ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--pred-width", type=int, default=384)
+    ap.add_argument("--pred-depth", type=int, default=6)
+    ap.add_argument("--pred-heads", type=int, default=6)
     ap.add_argument("--normalise-output", action="store_true", default=True,
                     help="the successor normalises its predictor output, as the official loss block does")
     args = ap.parse_args()
@@ -92,7 +95,7 @@ def main() -> int:
         CACHE / "temporal_action_jepa_v1" / args.arm_dir / f"checkpoint_epoch{args.epoch}.pt",
         map_location="cpu",
     )
-    predictor = T.Predictor().to(device)
+    predictor = T.Predictor(width=args.pred_width, depth=args.pred_depth, heads=args.pred_heads).to(device)
     predictor.load_state_dict(checkpoint["predictor"])
     predictor.eval()
     if checkpoint.get("encoder_trainable"):
