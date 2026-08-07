@@ -206,6 +206,20 @@ frozen-encoder caches, the same fixed true-future probe, the same frozen
 changed-token mask (threshold 0.76190, 94,540 of 377,088 tokens) and the same
 derangement seeds (11, 23, 37). The encoder is never executed in evaluation.
 
+**Determinism, verified.** Both checkpoints evaluated twice under identical
+inputs produced **bit-identical** predictions: `prediction_max_abs_diff = 0.0`,
+changed-cosine delta `0.0`, occupied-IoU delta `0.0` for each arm. The 0.0200 IoU
+and 0.0006 margin differences between arms are therefore signal, not evaluation
+noise. Checkpoint hashes: control `0858a4a5…`, capacity `c05e56da…`; fixed probe
+`f053b4e2…`.
+
+**Derangement identity, verified.** The three shuffled-action permutations over
+491 rows are seed-reproducible from (11, 23, 37), fixed-point-free, genuine
+permutations, pairwise distinct and identical across both arms — hashes
+`545b2701…`, `da7a93d0…`, `974379c8…`. The changed-token mask (threshold
+0.7618998289108276, 94,540 of 377,088 tokens) and the fixed probe are the same
+objects for both arms.
+
 **Consistency anchor.** The control's epoch-5 row reproduces the earlier
 standalone successor evaluation exactly — margin +0.04986, occ IoU 0.26942,
 occ fraction 0.011205 — confirming the identical-path requirement holds.
