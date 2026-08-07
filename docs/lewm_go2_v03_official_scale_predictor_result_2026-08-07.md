@@ -31,9 +31,21 @@ Which gates failed, stated precisely:
   0.0499 → 0.0493, still below the +0.0586 gate. 6 of 8 scenes marginally lower.
 - **Open-obstacle-field remained unresolved.** 0.1193 → 0.1201, still below
   persistence 0.1329 and far below the true-future reference 0.2452.
-- **Canonical-interface compatibility was fine and remained fine** — the large
-  model is closer to the true-future tokens than persistence is, and got slightly
-  closer still. That clause was never the problem.
+- **Canonical-interface compatibility passed but is not reassuring.** The
+  capacity model is slightly closer to the true future in aggregate token error,
+  but it still loses local occupied structure under the canonical true-future
+  spatial readout.
+
+## Conclusion, recorded narrowly
+
+> A 24×1024×16, 457,309,184-parameter AdaLN predictor — 26.6× the 17.2M control —
+> optimised successfully but did not improve canonical future geometry or action
+> sensitivity. **Predictor capacity alone is insufficient within the current
+> one-step AdaLN architecture.**
+
+The official 305M action/proprioception-token architecture is **not** rejected.
+It was not tested. The predictor-capacity line is closed; no further capacity
+run, longer schedule or encoder movement is authorised.
 
 ## Optimisation was successful — this is not an undertraining result
 
