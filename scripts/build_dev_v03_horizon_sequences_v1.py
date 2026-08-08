@@ -99,7 +99,11 @@ def main() -> int:
                 actions.append({"h": k + 1, "primitive": b["primitive"],
                                 "sequence_id": b["sequence_id"]})
                 horizon = k + 1
-        if not ok and horizon < 1:
+        # `horizon` is advanced when the NEXT action exists, but the frame at that
+        # horizon may still be absent (the loop breaks before appending it).  The
+        # usable horizon is therefore bounded by the frames actually collected.
+        horizon = min(horizon, len(frames) - 1)
+        if horizon < 1:
             dropped["no_valid_horizon"] += 1
             continue
         if len({f["frame_index"] for f in frames}) != len(frames):

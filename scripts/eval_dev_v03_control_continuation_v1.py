@@ -62,6 +62,9 @@ def main() -> int:
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--arm-dir", default="arm_one_step")
     ap.add_argument("--arm-name", default="one_step")
+    ap.add_argument("--baseline-file", default=None,
+                    help="previous block json for THIS arm; its curve and finals are "
+                         "prepended instead of re-evaluating epochs already measured")
     ap.add_argument("--baseline-curve", default="one_step",
                     help="curve in the matched result to prepend; use 'none' for a fresh arm")
     ap.add_argument("--block", type=int, nargs=2, required=True,
@@ -110,10 +113,16 @@ def main() -> int:
     a1 = T.action_tensor([r["action_step2"] for r in sel_rows], torch.device("cpu"))
     training = json.loads((arm_dir / "result.json").read_text())
 
-    curve = ([] if args.baseline_curve == "none"
-             else [e for e in matched["curves"][args.baseline_curve] if e["epoch"] < lo])
-    final = {}
-    scan = range(0, hi + 1) if args.baseline_curve == "none" else range(lo, hi + 1)
+    if args.baseline_file:
+        prior = json.loads(Path(args.baseline_file).read_text())
+        curve = [e for e in prior["curves"][args.arm_name] if e["epoch"] < lo]
+        final = dict(prior.get("final", {}).get(args.arm_name, {}))
+        scan = range(lo, hi + 1)
+    elif args.baseline_curve == "none":
+        curve, final, scan = [], {}, range(0, hi + 1)
+    else:
+        curve = [e for e in matched["curves"][args.baseline_curve] if e["epoch"] < lo]
+        final, scan = {}, range(lo, hi + 1)
     for epoch in scan:
         path = arm_dir / f"checkpoint_epoch{epoch}.pt"
         if not path.is_file():
