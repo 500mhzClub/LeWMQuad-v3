@@ -93,7 +93,8 @@ def extract_step2(rows, device, blob: Path, batch=16):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cuda")
-    ap.add_argument("--arm", required=True, choices=("one_step", "rollout"))
+    ap.add_argument("--arm", required=True,
+                    choices=("one_step", "rollout", "attribution"))
     ap.add_argument("--assert-rollout-gradient", action="store_true")
     ap.add_argument("--extract-only", action="store_true")
     ap.add_argument("--warmup-steps", type=int, default=50)
@@ -152,7 +153,10 @@ def main() -> int:
         mask = torch.ones(len(sel), TOKENS, dtype=torch.bool, device=device)
         context1 = T.normalise(torch.stack([c0, c1, c2], dim=1))
         p1 = T.normalise(predictor(context1, a0, mask))
-        if args.arm == "one_step":
+        if args.arm in ("one_step", "attribution"):
+            # the attribution arm removes the second-step term entirely: no p2 is
+            # computed, so the ONLY difference from the rollout arm is the absence
+            # of autoregressive supervision at the same first-step weighting
             return p1, t1, None, None
         # sliding-three-frame adaptation: [t-240, t, p1]; p1 is NOT detached
         a1 = T.action_tensor([train_rows[i]["action_step2"] for i in sel], device)
@@ -297,6 +301,12 @@ def main() -> int:
                     # sloss is ONE elementwise mean over both rollout predictions
                     sloss = torch.cat([p1, p2], 1).sub(torch.cat([t1, t2], 1)).abs().mean()
                     loss = jloss + sloss
+                elif args.arm == "attribution":
+                    # L = 1.5 * e1 -- the rollout arm's first-step weighting with no
+                    # second-step term.  Isolates extra e1 weight from autoregression.
+                    e2 = torch.zeros((), device=device)
+                    jloss, sloss = e1, 0.5 * e1
+                    loss = 1.5 * e1
                 else:
                     e2 = torch.zeros((), device=device)
                     jloss, sloss, loss = e1, torch.zeros((), device=device), e1

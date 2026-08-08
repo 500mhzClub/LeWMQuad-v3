@@ -50,8 +50,8 @@ EVAL = CACHE / "temporal_action_jepa_v1" / "evaluation"
 COMPLETION = CACHE / "temporal_action_jepa_v1" / "completion"
 TWO = CACHE / "two_step"
 MATCHED = TWO / "evaluation" / "MATCHED_24_EPOCH_result_epochs_0_23.json"
-ARM = TWO / "arms" / "arm_one_step"
-OUT = TWO / "control_continuation"
+ARM = None  # set from --arm-dir
+OUT = TWO / "continuation"
 DERANGEMENT_SEEDS = (11, 23, 37)
 GATE_MARGIN = 0.0585573514302572
 
@@ -60,6 +60,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--arm-dir", default="arm_one_step")
+    ap.add_argument("--arm-name", default="one_step")
+    ap.add_argument("--baseline-curve", default="one_step",
+                    help="curve in the matched result to prepend; use 'none' for a fresh arm")
     ap.add_argument("--block", type=int, nargs=2, required=True,
                     help="inclusive epoch range of the continuation block, e.g. 24 29")
     args = ap.parse_args()
@@ -67,6 +71,7 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     started = time.time()
     lo, hi = args.block
+    arm_dir = TWO / "arms" / args.arm_dir
     early_window = tuple(range(lo, lo + 3))
     late_window = tuple(range(hi - 2, hi + 1))
 
@@ -103,12 +108,14 @@ def main() -> int:
     orders = [C.derangement(len(sel_rows), s) for s in DERANGEMENT_SEEDS]
     a0 = T.action_tensor([r["action_step1"] for r in sel_rows], torch.device("cpu"))
     a1 = T.action_tensor([r["action_step2"] for r in sel_rows], torch.device("cpu"))
-    training = json.loads((ARM / "result.json").read_text())
+    training = json.loads((arm_dir / "result.json").read_text())
 
-    curve = [e for e in matched["curves"]["one_step"] if e["epoch"] < lo]
+    curve = ([] if args.baseline_curve == "none"
+             else [e for e in matched["curves"][args.baseline_curve] if e["epoch"] < lo])
     final = {}
-    for epoch in range(lo, hi + 1):
-        path = ARM / f"checkpoint_epoch{epoch}.pt"
+    scan = range(0, hi + 1) if args.baseline_curve == "none" else range(lo, hi + 1)
+    for epoch in scan:
+        path = arm_dir / f"checkpoint_epoch{epoch}.pt"
         if not path.is_file():
             continue
         predictor = T.Predictor(**R.PRED).to(device)
@@ -179,7 +186,7 @@ def main() -> int:
             }
         del predictor, p1, p2, shuffled
         torch.cuda.empty_cache()
-        print(f"  [control] epoch {epoch}: s1cos {entry['step1']['changed_cosine']:.4f} "
+        print(f"  [{args.arm_name}] epoch {epoch}: s1cos {entry['step1']['changed_cosine']:.4f} "
               f"margin {entry['step1_margin']:+.4f} occIoU {entry['step1_occupied_iou']:.4f} | "
               f"s2cos {entry['step2']['changed_cosine']:.4f}", flush=True)
 
@@ -239,11 +246,11 @@ def main() -> int:
 
     record = {
         "status": "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING", "claim_bearing": False,
-        "arm": "one-step control only; the rollout arm is frozen at epoch 22 and was not run",
+        "arm": args.arm_name,
         "rollout_arm_frozen": True, "rollout_arm_re_evaluated": False,
         "matched_duration_result_preserved": str(MATCHED),
-        "curves": {"one_step": curve},
-        "final": {"one_step": final},
+        "curves": {args.arm_name: curve},
+        "final": {args.arm_name: final},
         "convergence": convergence,
         "checkpoint_selection": selection,
         "next": ("compare against the frozen rollout checkpoint as CONVERGED-MODEL SELECTION "
@@ -252,7 +259,7 @@ def main() -> int:
                  f"not converged: run one final block {hi+1}-{hi+6} under the identical rule"),
         "wall_seconds": round(time.time() - started, 1),
     }
-    (OUT / f"block_{lo}_{hi}.json").write_text(json.dumps(record, indent=2))
+    (OUT / f"{args.arm_name}_block_{lo}_{hi}.json").write_text(json.dumps(record, indent=2))
     print(json.dumps({"convergence": convergence,
                       "selection": (selection or {}).get("selected_epoch"),
                       "next": record["next"]}, indent=2))
