@@ -36,6 +36,26 @@ Which gates failed, stated precisely:
   but it still loses local occupied structure under the canonical true-future
   spatial readout.
 
+## SCOPE CORRECTION (2026-08-08)
+
+A later continuation of the one-step line to epoch 11 showed that **six epochs was
+undertrained**: step-one occupied IoU kept climbing to `0.3354` (control, epoch 10)
+and crossed the persistence gate of `0.3128`, which no six-epoch run had done.
+
+Two consequences for this document:
+
+1. **What survives unchanged.** At a matched six-epoch budget, a 26.6x larger
+   predictor produced **no early or sample-efficiency gain** — the arms tracked
+   within ~0.003 on every selection metric from epoch 2 onward. That comparison
+   is sound and is unaffected.
+
+2. **What must be narrowed.** The stronger reading — that capacity does not help
+   *at convergence* — is **not supported**, because neither arm was converged. The
+   convergence guard did not fire at epoch 5 (delta −0.0102) but that reflected a
+   local dip, not a plateau: the same curve later rose by more than 0.04. Every
+   conclusion below is therefore **scoped to the fixed six-epoch schedule**, and
+   the possibility that capacity helps under a longer schedule is untested.
+
 ## Conclusion, recorded narrowly
 
 > A 24×1024×16, 457,309,184-parameter AdaLN predictor — 26.6× the 17.2M control —

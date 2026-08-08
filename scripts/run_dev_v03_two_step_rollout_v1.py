@@ -97,6 +97,10 @@ def main() -> int:
     ap.add_argument("--assert-rollout-gradient", action="store_true")
     ap.add_argument("--extract-only", action="store_true")
     ap.add_argument("--warmup-steps", type=int, default=50)
+    ap.add_argument("--resume", action="store_true",
+                    help="resume faithfully from the newest complete checkpoint")
+    ap.add_argument("--epochs", type=int, default=EPOCHS,
+                    help="total epochs including those already completed")
     args = ap.parse_args()
     device = torch.device(args.device)
     out = OUT / f"arm_{args.arm}"
@@ -258,7 +262,25 @@ def main() -> int:
         record["rollout_gradient_assertion"]["warmup_discarded"] = True
 
     generator = torch.Generator().manual_seed(SEED)
-    for epoch in range(EPOCHS):
+    first_epoch = 0
+    if args.resume:
+        newest = CK.newest_resumable(out)
+        if newest is None:
+            raise RuntimeError(f"no complete resumable checkpoint in {out}")
+        state = CK.load_for_resume(newest, model=predictor, optimizer=optimiser,
+                                   data_order_generator=generator)
+        first_epoch = int(state["epoch"]) + 1
+        record["epochs"] = state.get("epochs", [])
+        record["resumed_from"] = {
+            "path": str(newest), "restored_epoch": int(state["epoch"]),
+            "next_epoch": first_epoch, "global_step": int(state["global_step"]),
+            "optimizer_state_entries": len(state["optimizer_state_dict"].get("state", {})),
+            "reset_optimiser": False, "restarted_from_initialisation": False,
+        }
+        print(f"resumed {newest.name}: epoch {state['epoch']} -> continuing at {first_epoch}, "
+              f"{record['resumed_from']['optimizer_state_entries']} optimiser entries", flush=True)
+    total_epochs = args.epochs
+    for epoch in range(first_epoch, total_epochs):
         order = torch.randperm(len(train_rows), generator=generator).tolist()
         predictor.train()
         totals = {"loss": 0.0, "jloss": 0.0, "sloss": 0.0, "e1": 0.0, "e2": 0.0}

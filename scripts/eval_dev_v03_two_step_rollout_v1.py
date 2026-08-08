@@ -84,6 +84,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--epochs", type=int, default=EPOCHS)
     args = ap.parse_args()
     device = torch.device(args.device)
     OUT.mkdir(parents=True, exist_ok=True)
@@ -101,6 +102,7 @@ def main() -> int:
     tr_idx = np.array([pos_train[r["pair_sha256"]] for r in train_rows])
     n_bt, n_bs = len(base_train), len(base_sel)
     families = [r["family"] for r in sel_rows]
+    scene_ids = [r["scene"] for r in sel_rows]
 
     # selection-side frozen caches, indexed onto the two-step subset
     ctx = torch.stack([R.load_cache(EVAL / f"frozen_ctx{k}.f16", n_bs)[sel_idx] for k in range(3)], 1)
@@ -199,7 +201,7 @@ def main() -> int:
         arm_dir = TWO / "arms" / f"arm_{name}"
         training = json.loads((arm_dir / "result.json").read_text())
         curve = []
-        for epoch in range(EPOCHS):
+        for epoch in range(args.epochs):
             path = arm_dir / f"checkpoint_epoch{epoch}.pt"
             if not path.is_file():
                 continue
@@ -249,10 +251,35 @@ def main() -> int:
                 entry["step1"]["changed_cosine"] - entry["step2"]["changed_cosine"])
             curve.append(entry)
 
-            if epoch == EPOCHS - 1:
-                final = {"step1_spatial": spatial1,
+            if epoch >= args.epochs - 3:
+                # the four action-sequence conditions, each run exactly once
+                combos = {
+                    "correct_a0_correct_a1": (a0, a1),
+                    "shuffled_a0_correct_a1": (a0[orders[0]], a1),
+                    "correct_a0_shuffled_a1": (a0, a1[orders[0]]),
+                    "shuffled_a0_shuffled_a1": (a0[orders[0]], a1[orders[0]]),
+                }
+                sequence = {}
+                per_scene_step2 = {}
+                for tag, (x0, x1) in combos.items():
+                    q1, q2 = rollout(x0, x1)
+                    sequence[tag] = {"step1": latent(q1, now, t1, mask1),
+                                     "step2": latent(q2, now, t2, mask2)}
+                    if tag == "correct_a0_correct_a1":
+                        for sc in sorted(set(scene_ids)):
+                            pick = torch.tensor([i for i, v in enumerate(scene_ids) if v == sc])
+                            per_scene_step2[sc] = latent(q2[pick], now[pick], t2[pick],
+                                                         mask2[pick])["changed_cosine"]
+                    del q1, q2
+                final = {"epoch": epoch,
+                         "step1_spatial": spatial1,
                          "step1_spatial_per_family": spatial1["per_family"],
-                         "open_obstacle_field": spatial1["open_obstacle_field"]}
+                         "open_obstacle_field": spatial1["open_obstacle_field"],
+                         "action_sequence_conditions": sequence,
+                         "per_scene_step2_cosine": per_scene_step2,
+                         "step1_to_step2_degradation": entry["step1_to_step2_degradation"],
+                         "step1_margin": entry["step1_margin"],
+                         "step2": entry["step2"]}
                 if labels2 is not None:
                     pick = torch.tensor(native)
                     final["step2_spatial_descriptive"] = {
@@ -263,7 +290,7 @@ def main() -> int:
                                                        [families[i] for i in native], (24, 32), device),
                         "caveat": "82 rows, one open_obstacle_field row: descriptive only",
                     }
-                record["final"][name] = final
+                record["final"].setdefault(name, {})[str(epoch)] = final
             del predictor, p1, p2, shuffled
             torch.cuda.empty_cache()
             print(f"  [{name}] epoch {epoch}: e1(train) {entry['train_e1']:.5f} "
@@ -295,11 +322,74 @@ def main() -> int:
             and r["step2"]["normalised_error_vs_persistence"] < 1.0),
     }
     record["gates"] = gates
-    last_delta = (r["step1_occupied_iou"] - record["curves"]["rollout"][-2]["step1_occupied_iou"]
-                  if len(record["curves"]["rollout"]) > 1 else 0.0)
-    record["convergence"] = {"final_epoch_step1_iou_delta": last_delta,
-                             "material_improvement_threshold": 0.005,
-                             "still_materially_improving": bool(last_delta > 0.005)}
+    # Predeclared, fixed BEFORE resuming: middle window 18-20 vs late window 21-23.
+    MIDDLE, LATE = (18, 19, 20), (21, 22, 23)
+
+    def converged(curve):
+        iou = {e["epoch"]: e["step1_occupied_iou"] for e in curve}
+        mar = {e["epoch"]: e["step1_margin"] for e in curve}
+        mid_i = [iou[k] for k in MIDDLE if k in iou]
+        late_i = [iou[k] for k in LATE if k in iou]
+        mid_m = [mar[k] for k in MIDDLE if k in mar]
+        late_m = [mar[k] for k in LATE if k in mar]
+        if not (mid_i and late_i and mid_m and late_m):
+            return None
+        d_iou = max(late_i) - max(mid_i)
+        d_mar = abs(float(np.mean(late_m)) - float(np.mean(mid_m)))
+        return {"middle_best_iou_18_20": max(mid_i), "late_best_iou_21_23": max(late_i),
+                "late_minus_middle_iou": d_iou,
+                "middle_mean_margin_18_20": float(np.mean(mid_m)),
+                "late_mean_margin_21_23": float(np.mean(late_m)),
+                "abs_margin_change": d_mar,
+                "converged": (d_iou <= 0.005) and (d_mar <= 0.003)}
+
+    per_arm = {a: converged(record["curves"][a]) for a in ARMS}
+    record["convergence"] = {
+        "rule": ("late_best_IoU(21,22,23) - middle_best_IoU(18,19,20) <= 0.005 AND "
+                 "|mean margin(21-23) - mean margin(18-20)| <= 0.003, for BOTH arms"),
+        "iou_threshold": 0.005, "margin_threshold": 0.003,
+        "per_arm": per_arm,
+        "both_converged": bool(all(c is not None and c["converged"] for c in per_arm.values())),
+        "primary_endpoint": "epoch 23", "retrospective_early_stopping": False,
+        "final_bounded_extension": True,
+    }
+
+    # Checkpoint selection, fixed before resuming: within 21-23, highest step-one
+    # occupied IoU that ALSO clears all four one-step conditions.
+    persist_iou = persistence1["observable_occupied_iou"]
+    persist_of = persistence1["open_obstacle_field"]["observable_occupied_iou"]
+    persist_frac = persistence1["predicted_occupied_fraction_all_cells"]
+    persist_prec = persistence1["observable_occupied_precision"]
+    selection = {}
+    for name in ARMS:
+        eligible = []
+        for e in record["curves"][name]:
+            if e["epoch"] not in LATE:
+                continue
+            fin = record["final"].get(name, {}).get(str(e["epoch"]))
+            if fin is None:
+                continue
+            of = fin["open_obstacle_field"]["observable_occupied_iou"]
+            sp = fin["step1_spatial"]
+            calibrated = (sp["predicted_occupied_fraction_all_cells"] <= persist_frac
+                          or sp["observable_occupied_precision"] >= persist_prec)
+            conds = {
+                "beats_persistence": e["step1_occupied_iou"] > persist_iou,
+                "margin_at_least_gate": e["step1_margin"] >= GATE_MARGIN,
+                "beats_ofield_persistence": of > persist_of,
+                "occupied_volume_calibrated": calibrated,
+            }
+            eligible.append({"epoch": e["epoch"], "step1_occupied_iou": e["step1_occupied_iou"],
+                             "conditions": conds, "all_conditions_met": all(conds.values())})
+        passing = [x for x in eligible if x["all_conditions_met"]]
+        selection[name] = {
+            "window": list(LATE), "candidates": eligible,
+            "selected_epoch": (max(passing, key=lambda x: x["step1_occupied_iou"])["epoch"]
+                               if passing else None),
+            "one_step_gate": "PASS" if passing else "FAIL",
+        }
+    record["checkpoint_selection"] = selection
+
     record["control_vs_rollout"] = {
         "train_e1": {"control": c["train_e1"], "rollout": r["train_e1"]},
         "step1_margin": {"control": c["step1_margin"], "rollout": r["step1_margin"]},
@@ -311,25 +401,67 @@ def main() -> int:
         "step2_margin": {"control": c["step2_margin"], "rollout": r["step2_margin"]},
         "note": "total losses are not comparable across arms and are not compared",
     }
-    if record["convergence"]["still_materially_improving"]:
+    if not record["convergence"]["both_converged"]:
         record["DECISION"] = "ROLLOUT TEST INCONCLUSIVE"
-    elif all(gates.values()):
-        record["DECISION"] = "ACCEPT TWO-STEP AUTOREGRESSIVE PREDICTOR"
-        record["attribution_caveat"] = (
-            "acceptance is of the BUNDLE (1.5*e1 + 0.5*e2). A later 1.5*e1 attribution "
-            "control is required before claiming the benefit comes specifically from "
-            "autoregressive feedback."
+        record["decision_reason"] = (
+            "the predeclared prospective convergence rule was not met; no further automatic "
+            "schedule extension is taken"
         )
-    else:
+    elif selection["rollout"]["selected_epoch"] is None:
         record["DECISION"] = "REJECT ROLLOUT OBJECTIVE AS SUFFICIENT"
         record["rejection_scope"] = (
-            "rejects only this sliding-three-frame rollout formulation at 17.2M with the "
-            "1.5*e1 + 0.5*e2 bundle; it does not generalise beyond it"
+            "the rollout arm cleared no checkpoint in 21-23 satisfying all four one-step "
+            "conditions; scoped to this official-inspired rollout-supervision bundle with "
+            "fixed sliding context at 17.2M"
         )
+    else:
+        re_ = selection["rollout"]["selected_epoch"]
+        ce_ = selection["one_step"]["selected_epoch"]
+        rf = record["final"]["rollout"][str(re_)]
+        cf = (record["final"]["one_step"].get(str(ce_)) if ce_ is not None
+              else record["final"]["one_step"][str(max(LATE))])
+        seq = rf["action_sequence_conditions"]
+        full = seq["correct_a0_correct_a1"]["step2"]["changed_cosine"]
+        partials = [seq["shuffled_a0_correct_a1"]["step2"]["changed_cosine"],
+                    seq["correct_a0_shuffled_a1"]["step2"]["changed_cosine"],
+                    seq["shuffled_a0_shuffled_a1"]["step2"]["changed_cosine"]]
+        scenes_better = sum(
+            1 for sc, v in rf["per_scene_step2_cosine"].items()
+            if v > cf["per_scene_step2_cosine"].get(sc, float("inf")))
+        step2 = {
+            "cosine_advantage_at_least_0.005":
+                rf["step2"]["changed_cosine"] - cf["step2"]["changed_cosine"] >= 0.005,
+            "lower_normalised_error":
+                rf["step2"]["normalised_error_vs_persistence"]
+                < cf["step2"]["normalised_error_vs_persistence"],
+            "lower_degradation":
+                rf["step1_to_step2_degradation"] < cf["step1_to_step2_degradation"],
+            "full_sequence_beats_all_shuffles": all(full > x for x in partials),
+            "improvement_not_confined_to_one_or_two_scenes": scenes_better >= 3,
+            "scenes_where_rollout_step2_better": scenes_better,
+        }
+        record["step2_superiority"] = step2
+        if all(v for k, v in step2.items() if isinstance(v, bool)):
+            record["DECISION"] = "ACCEPT TWO-STEP AUTOREGRESSIVE PREDICTOR"
+            record["attribution_caveat"] = (
+                "acceptance is of the BUNDLE (1.5*e1 + 0.5*e2) with fixed sliding context. "
+                "The benefit is NOT yet attributed to autoregressive feedback: a 1.5*e1 "
+                "attribution control remains required."
+            )
+        else:
+            record["DECISION"] = "REJECT ROLLOUT OBJECTIVE AS SUFFICIENT"
+            record["rejection_scope"] = (
+                "the rollout arm cleared the one-step gates but did not materially outperform "
+                "the matched control at step two; scoped to this official-inspired "
+                "rollout-supervision bundle with fixed sliding context at 17.2M"
+            )
     record["wall_seconds"] = round(time.time() - started, 1)
     (OUT / "result.json").write_text(json.dumps(record, indent=2))
-    print(json.dumps({"gates": gates, "convergence": record["convergence"],
-                      "control_vs_rollout": record["control_vs_rollout"],
+    print(json.dumps({"convergence": record["convergence"],
+                      "checkpoint_selection": {k: {"selected_epoch": v["selected_epoch"],
+                                                   "one_step_gate": v["one_step_gate"]}
+                                               for k, v in selection.items()},
+                      "step2_superiority": record.get("step2_superiority"),
                       "DECISION": record["DECISION"]}, indent=2))
     return 0
 

@@ -31,6 +31,25 @@ and carry no weight here.
 
 ---
 
+## CORRECTION (2026-08-08): the six-epoch one-step result was undertrained
+
+Continuing both arms to epoch 11 changed the standing of the earlier one-step
+supervision result:
+
+- **The matched one-step control crossed the occupied-geometry persistence gate.**
+  Step-one occupied IoU reached `0.3354` at epoch 10 and `0.3219` at epoch 11,
+  against matched persistence `0.3128`. No six-epoch run had ever cleared it.
+- **The earlier six-epoch one-step supervision result is therefore undertrained,
+  not a settled rejection.** Its failure to beat persistence was a property of the
+  schedule, not of the objective.
+- The step-one margin also kept rising, reaching `+0.0606` (control, epoch 10)
+  against the `+0.0586` gate.
+
+Epoch 11 remained INCONCLUSIVE under the predeclared rule — both arms were still
+improving materially (late-minus-early `+0.0474` control, `+0.0382` rollout,
+against a `0.005` threshold) — so nothing here is accepted. The correction is
+about what the *earlier* result did and did not establish.
+
 ## What was actually compared
 
 **The rollout arm optimises `1.5·e1 + 0.5·e2`; the control optimises `e1`.** The
