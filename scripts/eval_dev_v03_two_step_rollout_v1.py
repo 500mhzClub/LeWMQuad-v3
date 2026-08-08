@@ -336,17 +336,27 @@ def main() -> int:
             return None
         d_iou = max(late_i) - max(mid_i)
         d_mar = abs(float(np.mean(late_m)) - float(np.mean(mid_m)))
+        # A large late-window DECLINE must not be scored as convergence, so the IoU
+        # criterion is two-sided.  A decline beyond the threshold is classified
+        # separately as late-window deterioration.
+        deterioration = d_iou < -0.005
+        still_improving = d_iou > 0.005
         return {"middle_best_iou_18_20": max(mid_i), "late_best_iou_21_23": max(late_i),
                 "late_minus_middle_iou": d_iou,
+                "abs_late_minus_middle_iou": abs(d_iou),
                 "middle_mean_margin_18_20": float(np.mean(mid_m)),
                 "late_mean_margin_21_23": float(np.mean(late_m)),
                 "abs_margin_change": d_mar,
-                "converged": (d_iou <= 0.005) and (d_mar <= 0.003)}
+                "still_improving": bool(still_improving),
+                "late_window_deterioration": bool(deterioration),
+                "converged": (abs(d_iou) <= 0.005) and (d_mar <= 0.003)}
 
     per_arm = {a: converged(record["curves"][a]) for a in ARMS}
     record["convergence"] = {
-        "rule": ("late_best_IoU(21,22,23) - middle_best_IoU(18,19,20) <= 0.005 AND "
-                 "|mean margin(21-23) - mean margin(18-20)| <= 0.003, for BOTH arms"),
+        "rule": ("|late_best_IoU(21,22,23) - middle_best_IoU(18,19,20)| <= 0.005 AND "
+                 "|mean margin(21-23) - mean margin(18-20)| <= 0.003, for BOTH arms; "
+                 "a decline beyond 0.005 is classified as late-window deterioration, "
+                 "never as convergence"),
         "iou_threshold": 0.005, "margin_threshold": 0.003,
         "per_arm": per_arm,
         "both_converged": bool(all(c is not None and c["converged"] for c in per_arm.values())),
@@ -390,6 +400,45 @@ def main() -> int:
         }
     record["checkpoint_selection"] = selection
 
+    # Report BOTH arms at every selected epoch, so a rollout advantage cannot be
+    # confounded by the two arms being read at different training durations.
+    selected_epochs = sorted({v["selected_epoch"] for v in selection.values()
+                              if v["selected_epoch"] is not None})
+    matched = {}
+    for ep in selected_epochs:
+        row = {}
+        for name in ARMS:
+            fin = record["final"].get(name, {}).get(str(ep))
+            cur = next((e for e in record["curves"][name] if e["epoch"] == ep), None)
+            if fin is None or cur is None:
+                continue
+            row[name] = {
+                "step1_occupied_iou": cur["step1_occupied_iou"],
+                "step1_occupied_precision": fin["step1_spatial"]["observable_occupied_precision"],
+                "step1_occupied_recall": fin["step1_spatial"]["observable_occupied_recall"],
+                "step1_occupied_fraction": fin["step1_spatial"]["predicted_occupied_fraction_all_cells"],
+                "step1_margin": cur["step1_margin"],
+                "open_obstacle_field_iou": fin["open_obstacle_field"]["observable_occupied_iou"],
+                "step2_changed_cosine": cur["step2"]["changed_cosine"],
+                "step2_normalised_error": cur["step2"]["normalised_error_vs_persistence"],
+                "step1_to_step2_degradation": cur["step1_to_step2_degradation"],
+                "action_sequence_conditions": fin["action_sequence_conditions"],
+                "selected_by_its_own_arm": selection[name]["selected_epoch"] == ep,
+            }
+        if "one_step" in row and "rollout" in row:
+            row["rollout_minus_control"] = {
+                "step1_occupied_iou": row["rollout"]["step1_occupied_iou"] - row["one_step"]["step1_occupied_iou"],
+                "step1_margin": row["rollout"]["step1_margin"] - row["one_step"]["step1_margin"],
+                "step2_changed_cosine": row["rollout"]["step2_changed_cosine"] - row["one_step"]["step2_changed_cosine"],
+                "step2_normalised_error": row["rollout"]["step2_normalised_error"] - row["one_step"]["step2_normalised_error"],
+                "step1_to_step2_degradation": row["rollout"]["step1_to_step2_degradation"] - row["one_step"]["step1_to_step2_degradation"],
+            }
+        matched[str(ep)] = row
+    record["both_arms_at_each_selected_epoch"] = {
+        "purpose": "prevent rollout attribution being confounded by different training durations",
+        "epochs": matched,
+    }
+
     record["control_vs_rollout"] = {
         "train_e1": {"control": c["train_e1"], "rollout": r["train_e1"]},
         "step1_margin": {"control": c["step1_margin"], "rollout": r["step1_margin"]},
@@ -403,9 +452,14 @@ def main() -> int:
     }
     if not record["convergence"]["both_converged"]:
         record["DECISION"] = "ROLLOUT TEST INCONCLUSIVE"
+        deteriorating = [a for a in ARMS
+                         if (per_arm[a] or {}).get("late_window_deterioration")]
+        improving = [a for a in ARMS if (per_arm[a] or {}).get("still_improving")]
         record["decision_reason"] = (
             "the predeclared prospective convergence rule was not met; no further automatic "
             "schedule extension is taken"
+            + (f"; LATE-WINDOW DETERIORATION in: {deteriorating}" if deteriorating else "")
+            + (f"; still improving: {improving}" if improving else "")
         )
     elif selection["rollout"]["selected_epoch"] is None:
         record["DECISION"] = "REJECT ROLLOUT OBJECTIVE AS SUFFICIENT"
