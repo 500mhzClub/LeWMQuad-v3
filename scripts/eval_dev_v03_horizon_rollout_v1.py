@@ -95,13 +95,27 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--cache-predictions", action="store_true",
+                    help="also write per-row predictions for the cluster bootstrap")
+    # Optional overrides for the exploratory matched-epoch sensitivity run.
+    # Defaults reproduce the frozen FINAL configuration byte-for-byte.
+    ap.add_argument("--models-json", default=None,
+                    help="checkpoint spec (default: the selected frozen models)")
+    ap.add_argument("--rows-file", default=None,
+                    help="horizon manifest (default: the corrected 479-row manifest)")
+    ap.add_argument("--out-dir", default=None)
+    ap.add_argument("--pred-dir", default=None)
     args = ap.parse_args()
     device = torch.device(args.device)
-    OUT.mkdir(parents=True, exist_ok=True)
+    out_dir = Path(args.out_dir) if args.out_dir else OUT
+    pred_dir_root = Path(args.pred_dir) if args.pred_dir else HOR / "predictions"
+    out_dir.mkdir(parents=True, exist_ok=True)
     started = time.time()
 
-    frozen = json.loads((TWO / "selected_frozen_models.json").read_text())
-    rows = [json.loads(l) for l in (HOR / "horizon_rows.jsonl").read_text().splitlines() if l.strip()]
+    frozen = json.loads(Path(args.models_json).read_text()) if args.models_json else \
+        json.loads((TWO / "selected_frozen_models.json").read_text())
+    rows_file = Path(args.rows_file) if args.rows_file else HOR / "horizon_rows.jsonl"
+    rows = [json.loads(l) for l in rows_file.read_text().splitlines() if l.strip()]
     rows = [r for r in rows if r["max_horizon"] >= MAX_H]
     families = [r["family"] for r in rows]
     scenes = [r["scene"] for r in rows]
@@ -150,7 +164,8 @@ def main() -> int:
     record = {
         "status": "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING", "claim_bearing": False,
         "read_only": "no model trained, no checkpoint written, no frozen model modified",
-        "rows": n, "max_horizon": MAX_H,
+        "rows": n, "max_horizon": MAX_H, "rows_file": str(rows_file),
+        "rows_file_sha256": sha256(rows_file),
         "rows_by_family": {f: families.count(f) for f in sorted(set(families))},
         "mask_policy": ("h=1 and h=2 use the existing frozen thresholds; h=3 and h=4 reuse the "
                         "h=2 threshold. No threshold is fitted on the selection rows."),
@@ -191,6 +206,16 @@ def main() -> int:
         correct = unroll(actions)
         shuffled = unroll([a[order] for a in actions])
         predictions[name] = correct
+        if args.cache_predictions:
+            pred_dir = pred_dir_root
+            pred_dir.mkdir(parents=True, exist_ok=True)
+            for h in range(1, MAX_H + 1):
+                for kind, block in (("correct", correct[h - 1]), ("shuffled", shuffled[h - 1])):
+                    blob = pred_dir / f"{name}_h{h}_{kind}.f16"
+                    mem = np.memmap(blob, dtype=np.float16, mode="w+",
+                                    shape=tuple(block.shape))
+                    mem[:] = block.numpy()
+                    mem.flush()
 
         per_h = {}
         for h in range(1, MAX_H + 1):
@@ -228,7 +253,7 @@ def main() -> int:
         }
         del predictor, shuffled
         torch.cuda.empty_cache()
-        (OUT / "result.json").write_text(json.dumps(record, indent=2))
+        (out_dir / "result.json").write_text(json.dumps(record, indent=2))
 
     names = list(frozen["models"].keys())
     if len(names) == 2:
@@ -250,7 +275,7 @@ def main() -> int:
             }
         record["comparison"] = {"models": names, "per_horizon": cmp}
     record["wall_seconds"] = round(time.time() - started, 1)
-    (OUT / "result.json").write_text(json.dumps(record, indent=2))
+    (out_dir / "result.json").write_text(json.dumps(record, indent=2))
     print(json.dumps({"rows": n, "masks": record["masks"],
                       "comparison": record.get("comparison", {}).get("per_horizon")}, indent=2))
     return 0
