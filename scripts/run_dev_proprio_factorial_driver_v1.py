@@ -447,6 +447,22 @@ def normalise_batch(proprio, control, stats, device):
     return (proprio - mean) / std, (control - c_mean) / c_std
 
 
+def terminal_window(history, key="loss", start=19, end=23) -> dict:
+    """Diagnostics only.  Never used to select a checkpoint or exclude a run."""
+    window = [e[key] for e in history if start <= e["epoch"] <= end]
+    late = [(e["epoch"], e[key]) for e in history if 14 <= e["epoch"] <= 23]
+    record = {"epochs": [start, end], "used_for_selection": False,
+              "used_for_exclusion": False}
+    if window:
+        record["mean"] = float(np.mean(window))
+        record["sd"] = float(np.std(window, ddof=0))
+    if len(late) >= 2:
+        x = np.array([e for e, _ in late], dtype=float)
+        y = np.array([v for _, v in late], dtype=float)
+        record["slope"] = float(np.polyfit(x, y, 1)[0])
+    return record
+
+
 def train_cell(cell, seed, rows, tensors, stats, model, device, epochs, out,
                position, fixture=False):
     spec = CELL_SPEC[cell]
@@ -524,6 +540,7 @@ def train_cell(cell, seed, rows, tensors, stats, model, device, epochs, out,
         "checkpoint": str(checkpoint_path) if checkpoint_path else None,
         "checkpoint_sha256": sha256_file(checkpoint_path) if checkpoint_path else None,
         "history": history, "dropout": dropout_record,
+        "terminal_window": terminal_window(history),
         "wall_seconds": round(time.time() - started, 1),
         "validity": "valid",
     }
@@ -543,6 +560,8 @@ def main() -> int:
                     help="register seeds, build base weights, verify pairing; train nothing")
     ap.add_argument("--smoke-rows", type=int, default=0,
                     help="train on this many rows for a wiring smoke test only")
+    ap.add_argument("--authorisation", default=None,
+                    help="path to a scoped launch-authorisation receipt")
     args = ap.parse_args()
 
     out = Path(args.out)
@@ -550,7 +569,7 @@ def main() -> int:
     if args.seed_index is None and not args.dry_run:
         raise SystemExit("--seed-index is required unless --dry-run")
 
-    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    device = resolve_device()
     rows, manifest, stats = load_rows()
     train_rows = [r for r in rows if r["role"] == "train"]
 
@@ -601,9 +620,74 @@ def main() -> int:
         print(json.dumps(record["dry_run"], indent=2))
         return 0
 
-    raise SystemExit(
-        "training is not authorised: the four-cell experiment must not be launched. "
-        "Use --dry-run, or the smoke fixture in the test suite.")
+    # ---- scientific launch requires a verified scoped authorisation ---------
+    if not args.authorisation:
+        raise SystemExit(
+            "training is not authorised: the four-cell experiment must not be launched "
+            "without a scoped launch-authorisation receipt (--authorisation).")
+    from scripts import authorise_dev_proprio_launch_v1 as AUTH
+    receipt = AUTH.verify(args.seed_index, Path(args.authorisation))
+
+    seed = SEED_REGISTRY[args.seed_index]
+    order = cell_order(args.seed_index)
+    seed_out = out / f"seed_{seed}"
+    seed_out.mkdir(parents=True, exist_ok=True)
+
+    factorial = FM.load()
+    map_record = MAP.load()
+    loader = CanonicalLoader(map_record, rows, stats, split="train",
+                             expected_digest=map_record["digest"], factorial=factorial,
+                             expected_factorial_digest=factorial["digest"])
+
+    base = build_base_weights(seed, seed_out, args.width, args.depth, args.heads)
+    models = {cell: make_cell_model(cell, seed, base, args.width, args.depth, args.heads)
+              for cell in CELLS}
+    reference = models["rgb_one_step"].state_dict()
+    identical = all(torch.equal(reference[name], models[cell].state_dict()[name])
+                    for cell in CELLS for name in reference)
+    if not identical:
+        raise RuntimeError("shared parameters are not bit-identical across cells")
+    plans = {cell: batch_plan(seed, 0, len(loader), BATCH)[:3] for cell in CELLS}
+    if any(plans[cell] != plans["rgb_one_step"] for cell in CELLS):
+        raise RuntimeError("batch plans differ across cells")
+
+    record.update({
+        "stage": "initial five-seed scientific stage",
+        "authorisation_receipt_digest": receipt["receipt_digest"],
+        "factorial_manifest_digest": factorial["digest"],
+        "canonical_map_digest": map_record["digest"],
+        "seed": seed, "seed_index": args.seed_index,
+        "execution_order": list(order),
+        "base_weights": str(base), "base_weights_sha256": sha256_file(base),
+        "shared_parameters_bit_identical": identical,
+        "batch_plan_identical_across_cells": True,
+        "rng_plan": "named stateless streams keyed by (seed, purpose, epoch)",
+        "augmentation": "none in this experiment",
+        "train_rows": len(loader),
+        "cells_run": [],
+    })
+
+    def tensors(indices, dev, st):
+        return loader.batch(indices, dev, st)
+
+    for position, cell in enumerate(order):
+        print(f"[seed {seed}] cell {position + 1}/4: {cell}", flush=True)
+        result = train_cell(cell, seed, loader.rows, tensors, stats, models[cell],
+                            device, args.epochs, seed_out, position)
+        record["cells_run"].append(result)
+        (seed_out / "run_record.json").write_text(json.dumps(record, indent=2))
+        del models[cell]
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+
+    record["completed"] = True
+    record["wall_seconds_total"] = sum(c["wall_seconds"] for c in record["cells_run"])
+    (seed_out / "run_record.json").write_text(json.dumps(record, indent=2))
+    print(json.dumps({"seed": seed, "cells": [c["cell"] for c in record["cells_run"]],
+                      "epochs": [c["epochs_trained"] for c in record["cells_run"]],
+                      "validity": [c["validity"] for c in record["cells_run"]],
+                      "wall_seconds": record["wall_seconds_total"]}, indent=2))
+    return 0
 
 
 if __name__ == "__main__":
