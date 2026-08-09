@@ -55,12 +55,32 @@ from scripts import run_dev_v03_two_step_rollout_v1 as R  # noqa: E402
 from scripts import dev_proprio_predictor_v1 as P  # noqa: E402
 from scripts import dev_checkpoint_v1 as CK  # noqa: E402
 from scripts import dev_proprio_experiment_config_v1 as C  # noqa: E402
+from scripts import build_dev_canonical_cache_map_v1 as MAP  # noqa: E402
+from scripts import build_dev_factorial_manifest_v1 as FM  # noqa: E402
 
 STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
 
 CACHE = Path("/home/andrewknowles/.cache/lewm_go2_temporal_v03")
 PROPRIO = CACHE / "proprio_v1"
 OUT = CACHE / "factorial_v1"
+EVAL_CACHE = CACHE / "temporal_action_jepa_v1" / "evaluation"
+DIAG_CACHE = CACHE / "temporal_action_jepa_v1" / "predicted_token_diagnostic"
+TWO_CACHE = CACHE / "two_step"
+
+# ---- FROZEN DEVICE POLICY ------------------------------------------------
+# Policy (a): ONE fixed physical GPU for every four-cell quadruplet and for all
+# initial five quadruplets.  Device 1 on this host is the integrated Raphael APU
+# (1 compute unit) -- not hardware-identical to the R9700 -- so there is no second
+# eligible device and seed-to-device rotation is INAPPLICABLE, not merely untested.
+DEVICE_POLICY = {
+    "policy": "single fixed physical GPU for all quadruplets",
+    "device_index": 0,
+    "expected_device_name": "AMD Radeon AI PRO R9700",
+    "rotation": "inapplicable -- no second hardware-identical device exists on this host",
+    "ineligible_devices": {"1": "AMD Radeon Graphics (Raphael integrated APU, 1 CU)"},
+    "cells_of_one_quadruplet_share_one_device": True,
+    "cell_bound_permanently_to_a_device": False,
+}
 
 EPOCHS = 24
 CHECKPOINT_EPOCH = 21          # fixed, never selected
@@ -86,16 +106,47 @@ SEED_REGISTRY = (
     2_026_080_906, 2_026_080_907, 2_026_080_908, 2_026_080_909, 2_026_080_910,
 )
 
-# ---- PREDECLARED BALANCED CELL-ORDER ROTATION ----------------------------
-# Each cell occupies each of the four serial positions with equal frequency over
-# any ten seeds (positions cycle 4-periodically), so a serial-order effect cannot
-# align with a cell.
+# ---- PREDECLARED CYCLIC LATIN-SQUARE CELL ORDER --------------------------
+# CORRECTION.  An earlier note claimed each cell occupies each of the four serial
+# positions "equally often" across ten seeds.  That is mathematically impossible:
+# ten appearances cannot divide evenly into four positions.  The guarantee this
+# schedule actually provides -- and the one that matters -- is that for EVERY
+# stopping prefix n = 1..10 each cell's counts across the four positions differ by
+# at most one.  ``prefix_balance`` verifies that for all ten prefixes.
+#
+# The order is a cyclic Latin square of order 4: seed index i runs the cells
+# starting at offset i (mod 4).  Each row is a permutation of all four cells, and
+# each cell occupies each position exactly once per four consecutive seeds.
 def cell_order(seed_index: int):
     return tuple(CELLS[(seed_index + offset) % len(CELLS)] for offset in range(len(CELLS)))
 
 
+def position_counts(prefix: int):
+    """Per-cell counts across the four serial positions for the first ``prefix`` seeds."""
+    import collections
+    counts = {cell: [0] * len(CELLS) for cell in CELLS}
+    for index in range(prefix):
+        for position, cell in enumerate(cell_order(index)):
+            counts[cell][position] += 1
+    return counts
+
+
+def prefix_balance(maximum: int = 10) -> dict:
+    """The balance guarantee, checked for every possible stopping point."""
+    table = {}
+    for prefix in range(1, maximum + 1):
+        counts = position_counts(prefix)
+        spreads = {cell: max(values) - min(values) for cell, values in counts.items()}
+        table[str(prefix)] = {
+            "counts": counts,
+            "max_minus_min_per_cell": spreads,
+            "balanced_within_one": all(spread <= 1 for spread in spreads.values()),
+        }
+    return table
+
+
 TECHNICAL_INVALIDITY = (
-    "hash_or_manifest_mismatch", "nan_or_infinite_values",
+    "hash_or_manifest_mismatch", "canonical_map_digest_mismatch", "nan_or_infinite_values",
     "incomplete_training_infrastructure_failure", "corrupted_checkpoint",
     "implementation_failure",
 )
@@ -169,7 +220,14 @@ def register_seeds(out: Path) -> dict:
         "status": STATUS, "claim_bearing": False,
         "seed_identifiers": list(SEED_REGISTRY),
         "count": len(SEED_REGISTRY),
-        "cell_order_rotation": {str(i): list(cell_order(i)) for i in range(len(SEED_REGISTRY))},
+        "cell_order_schedule": {str(i): list(cell_order(i)) for i in range(len(SEED_REGISTRY))},
+        "cell_order_type": "cyclic Latin square of order 4",
+        "prefix_balance": prefix_balance(len(SEED_REGISTRY)),
+        "balance_guarantee": ("for every stopping prefix n = 1..10, each cell's counts across "
+                              "the four serial positions differ by at most one; exact equality "
+                              "is impossible for n not a multiple of 4 and is NOT claimed"),
+        "prefix_rule": ("the interim sample size selects a PREFIX of this frozen order; later "
+                        "seeds are never reordered after n is calculated"),
         "registered_before_first_run": True,
         "note": ("all ten identifiers are fixed before seed 1; the capped pilot decides how "
                  "many are USED, never which ones or what they are"),
@@ -180,6 +238,18 @@ def register_seeds(out: Path) -> dict:
         existing = json.loads(path.read_text())
         if existing.get("seed_identifiers") != record["seed_identifiers"]:
             raise RuntimeError("seed registry on disk disagrees with the source registry")
+        if existing.get("sha256") != record["sha256"]:
+            # The identifiers match but the frozen schedule content differs.  Before
+            # any seed has run this is a legitimate pre-launch correction; after one
+            # has, it is tampering.  Refuse if any run artefact exists.
+            ran = sorted(out.glob("seed_*_*_epoch*.pt"))
+            if ran:
+                raise RuntimeError(
+                    "seed registry content changed after runs exist: " f"{[p.name for p in ran[:3]]}")
+            record["superseded_registry_sha256"] = existing.get("sha256")
+            record["regenerated_before_first_run"] = True
+            path.write_text(json.dumps(record, indent=2))
+            return record
         return existing
     path.write_text(json.dumps(record, indent=2))
     return record
@@ -232,16 +302,132 @@ def make_cell_model(cell: str, seed: int, base_path: Path, width, depth, heads):
 
 
 # --------------------------------------------------------------------------
+def resolve_device() -> torch.device:
+    """Pin the policy device and refuse anything else."""
+    if not torch.cuda.is_available():
+        return torch.device("cpu")
+    index = DEVICE_POLICY["device_index"]
+    name = torch.cuda.get_device_name(index)
+    if name != DEVICE_POLICY["expected_device_name"]:
+        raise RuntimeError(
+            f"device policy violation: device {index} is {name!r}, expected "
+            f"{DEVICE_POLICY['expected_device_name']!r}")
+    return torch.device(f"cuda:{index}")
+
+
 def environment_record() -> dict:
-    return {
+    record = {
         "torch": torch.__version__,
         "python": platform.python_version(),
         "platform": platform.platform(),
         "cuda_available": torch.cuda.is_available(),
-        "device_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
         "device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
         "precision": "bf16 autocast",
+        "device_policy": DEVICE_POLICY,
+        "determinism": {
+            "cudnn_deterministic": bool(torch.backends.cudnn.deterministic),
+            "cudnn_benchmark": bool(torch.backends.cudnn.benchmark),
+            "tf32_matmul": bool(getattr(torch.backends.cuda.matmul, "allow_tf32", False)),
+            "global_rng_used_after_construction": False,
+        },
     }
+    if torch.cuda.is_available():
+        index = DEVICE_POLICY["device_index"]
+        properties = torch.cuda.get_device_properties(index)
+        record.update({
+            "device_index": index,
+            "device_name": torch.cuda.get_device_name(index),
+            "device_capability": f"{properties.major}.{properties.minor}",
+            "device_memory_gib": round(properties.total_memory / 2**30, 1),
+            "hip_version": getattr(torch.version, "hip", None),
+            "cuda_version": torch.version.cuda,
+        })
+    return record
+
+
+class CanonicalLoader:
+    """The ONE cache path.  Every tensor is fetched through the canonical map.
+
+    A filtered manifest position is never used as a cache position: the map's
+    ``cache_index`` (base rows) and ``step2_cache_index`` (two-step rows) are the
+    only indices this class will accept.
+    """
+
+    def __init__(self, map_record, rows, stats, split="train", expected_digest=None,
+                 factorial=None, expected_factorial_digest=None):
+        if expected_digest and map_record["digest"] != expected_digest:
+            raise RuntimeError("canonical_map_digest_mismatch")
+        # Both cells iterate the ONE ordered factorial artefact directly; neither
+        # re-derives a row set from a filter.
+        factorial = factorial if factorial is not None else FM.load()
+        if expected_factorial_digest and factorial["digest"] != expected_factorial_digest:
+            raise RuntimeError("factorial_manifest_digest_mismatch")
+        if factorial["canonical_cache_map_digest"] != map_record["digest"]:
+            raise RuntimeError("factorial manifest was built against a different cache map")
+        self.digest = map_record["digest"]
+        self.factorial_digest = factorial["digest"]
+        self.stats = stats
+        self.split = split
+        self.entries = [row for row in factorial["rows"] if row["split"] == split]
+        by_index = {r_index: row for r_index, row in enumerate(rows)}
+        self.rows = [by_index[e["manifest_row_index"]] for e in self.entries]
+        n_train = map_record["source_train"]
+        n_sel = map_record["source_selection"]
+        if split == "train":
+            self.ctx0 = R.load_cache(DIAG_CACHE / "frozen_train_ctx0.f16", n_train)
+            self.ctx1 = R.load_cache(DIAG_CACHE / "frozen_train_ctx1.f16", n_train)
+            self.ctx2 = R.load_cache(EVAL_CACHE / "frozen_current.f16", n_train + n_sel)[:n_train]
+            self.y1 = R.load_cache(EVAL_CACHE / "frozen_train_future.f16", n_train)
+            self.y2 = R.load_cache(TWO_CACHE / "frozen_train_step2.f16",
+                                   self._blob_rows(TWO_CACHE / "frozen_train_step2.f16"))
+        else:
+            self.ctx0 = R.load_cache(EVAL_CACHE / "frozen_ctx0.f16", n_sel)
+            self.ctx1 = R.load_cache(EVAL_CACHE / "frozen_ctx1.f16", n_sel)
+            self.ctx2 = R.load_cache(EVAL_CACHE / "frozen_current.f16", n_train + n_sel)[n_train:]
+            self.y1 = R.load_cache(EVAL_CACHE / "frozen_sel_future.f16", n_sel)
+            self.y2 = R.load_cache(TWO_CACHE / "frozen_sel_step2.f16",
+                                   self._blob_rows(TWO_CACHE / "frozen_sel_step2.f16"))
+
+    @staticmethod
+    def _blob_rows(path: Path) -> int:
+        return path.stat().st_size // (P.TOKENS * P.TOKEN_DIM * 2)
+
+    def __len__(self):
+        return len(self.entries)
+
+    def batch(self, positions, device, stats=None):
+        stats = stats or self.stats
+        cache = [self.entries[i]["cache_index"] for i in positions]
+        step2 = [self.entries[i]["step2_cache_index"] for i in positions]
+        rows = [self.rows[i] for i in positions]
+
+        context = torch.stack([
+            T.normalise(self.ctx0[cache].float()),
+            T.normalise(self.ctx1[cache].float()),
+            T.normalise(self.ctx2[cache].float()),
+        ], dim=1).to(device)
+        y1 = T.normalise(self.y1[cache].float()).to(device)
+        y2 = T.normalise(self.y2[step2].float()).to(device)
+
+        a1 = torch.tensor([r["action_blocks"][0] for r in rows], dtype=torch.float32,
+                          device=device)
+        a2 = torch.tensor([r["action_blocks"][min(1, len(r["action_blocks"]) - 1)]
+                           for r in rows], dtype=torch.float32, device=device)
+        proprio = torch.tensor([r["proprio"] for r in rows], dtype=torch.float32,
+                               device=device).reshape(len(rows), 3, P.SAMPLES_PER_SLOT,
+                                                      P.PROPRIO_DIM)
+        control = torch.tensor([r["control"] for r in rows], dtype=torch.float32,
+                               device=device).reshape(len(rows), 3, P.SAMPLES_PER_SLOT,
+                                                      P.CONTROL_DIM)
+        proprio, control = normalise_batch(proprio, control, stats, device)
+        return {
+            "context": context, "y1": y1, "y2": y2, "a1": a1, "a2": a2,
+            "proprio": proprio, "control": control,
+            "valid": torch.ones(len(rows), 3, dtype=torch.bool, device=device),
+            "mask": torch.ones(len(rows), P.TOKENS, dtype=torch.bool, device=device),
+            "cache_index": cache, "step2_cache_index": step2,
+            "stable_row_id": [self.entries[i]["stable_row_id"] for i in positions],
+        }
 
 
 def load_rows():
