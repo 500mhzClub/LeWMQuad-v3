@@ -24,6 +24,23 @@ from scripts import build_dev_v03_proprio_action_manifest_v1 as M  # noqa: E402
 
 STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
 
+# The first candidate configuration, computed before the modality contract was
+# finalised.  It carried previous applied commands inside the proprioceptive
+# tensor (confounding the proprioception factor with control history) and
+# z-scored projected gravity.  It is SUPERSEDED and must never be used for
+# scientific training.
+SUPERSEDED_CANDIDATE_CONFIGURATIONS = (
+    {"sha256": "f410df7989fd639761b7177c00cc6d12fb9db15a1a6c46d9898a4c7bd6f7e0c8",
+     "status": "SUPERSEDED_PRE_RUN_CANDIDATE",
+     "never_use_for_scientific_training": True,
+     "superseded_because": [
+         "previous applied commands sat inside the 32-D proprioceptive tensor, "
+         "available only to the proprio cells",
+         "projected gravity was independently z-scored, destroying its shared "
+         "physical scale and geometry",
+     ]},
+)
+
 CONFIG = {
     "status": STATUS,
     "claim_bearing": False,
@@ -75,17 +92,40 @@ CONFIG = {
         "future_measured_body_motion_used": False,
     },
 
+    "control_history": {
+        "name": "efference copy (previous applied command)",
+        "dim_per_sample": M.CONTROL_DIM, "dim_per_slot": M.CONTROL_SLOT_DIM,
+        "present_in_all_four_cells": True,
+        "rationale": ("it is the robot's own past command, not sensed state; an audit "
+                      "showed it is neither duplicated by the action stream nor available "
+                      "to the RGB cells, so leaving it in the proprioceptive tensor would "
+                      "have confounded the proprioception factor with control history"),
+        "rollout_availability": ("deterministic from the action plan at every horizon; "
+                                 "no validity mask required"),
+        "normalisation": "z-score from the TRAIN split only",
+    },
+
     "proprioception": {
         "dim": M.PROPRIO_DIM, "samples_per_slot": M.SAMPLES_PER_SLOT,
         "channels": [list(c) for c in M.CHANNELS],
+        "content": "sensed physical state only",
         "window": "trailing, ending at the slot's own observation",
         "entry": "one token per context slot, predictor only",
         "absence": "learned absent token + validity mask for predicted slots",
         "observed_slots_by_horizon": {"1": 3, "2": 2, "3": 1, "4": 0},
         "target": "none -- the prediction target stays visual",
-        "excluded": ["body linear velocity", "absolute yaw", "world pose",
-                     "camera extrinsics", "foot contacts", "joint effort",
+        "excluded": ["previous applied command (moved to control_history)",
+                     "lateral command vy", "body linear velocity", "absolute yaw",
+                     "world pose", "camera extrinsics", "foot contacts", "joint effort",
                      "IMU linear acceleration"],
+        "gravity_normalisation": {
+            "feature": "g_body - (0, 0, -1)",
+            "scaling": "none -- no corpus-derived statistic touches these three components",
+            "reason": "preserve their shared physical scale and mutual geometry",
+        },
+        "other_channel_normalisation": "z-score from the TRAIN split only, frozen and hashed",
+        "statistics_reuse": ("the frozen training statistics are reused byte-identically at "
+                             "selection evaluation and at planning time"),
     },
 
     "pairing": {
@@ -96,6 +136,23 @@ CONFIG = {
         "optimisation_randomness": "no dropout, no stochastic depth; AdamW is deterministic",
         "verified_by": "lewm/tests/test_proprio_action_contract.py::"
                        "test_shared_weights_are_identical_across_cells_for_one_seed",
+    },
+
+    "hard_failures": [
+        "a manifest containing a non-zero requested or applied lateral command",
+        "a planning candidate containing lateral motion",
+        "a scene referenced by a manifest that action-reconstruction validation did not cover",
+        "a sequence crossing a reset",
+        "action reconstruction differing from the logged post-limiter trace",
+    ],
+
+    "driver": {
+        "module": "scripts/run_dev_proprio_factorial_driver_v1.py",
+        "single_matrix_driver": True,
+        "seed_registry": "ten identifiers pre-registered and hashed before seed 1",
+        "cell_order": "predeclared balanced rotation across seeds",
+        "rng": "named stateless streams keyed by (seed, purpose, epoch); dropout asserted off",
+        "shared_base_weight_artefact": "one per quadruplet, bit-identity verified per cell",
     },
 
     "budget": {
@@ -123,6 +180,11 @@ CONFIG = {
             "occupied spatial information (occupied IoU / precision / recall)",
             "correct-versus-shuffled action-sequence margin",
         ],
+        "non_inferiority_margins": None,
+        "non_inferiority_note": (
+            "NO explicit numerical non-inferiority margins are declared, so these are "
+            "reported as mandatory co-outcomes and NO formal non-regression claim may "
+            "be made from them"),
         "non_regression_note": (
             "a cosine gain accompanied by a material loss of spatial retention or "
             "action-sequence discrimination is not an unqualified success"

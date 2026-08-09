@@ -58,6 +58,7 @@ def _warm(model, steps=40, seed=0):
     target = torch.randn(2, P.TOKENS, P.TOKEN_DIM, generator=generator)
     action = torch.randn(2, P.ACTION_DIM, generator=generator)
     proprio = torch.randn(2, 3, P.SAMPLES_PER_SLOT, P.PROPRIO_DIM, generator=generator)
+    control = torch.randn(2, 3, P.SAMPLES_PER_SLOT, P.CONTROL_DIM, generator=generator)
     valid = torch.ones(2, 3, dtype=torch.bool)
     mask = torch.ones(2, P.TOKENS, dtype=torch.bool)
     optimiser = torch.optim.AdamW(model.parameters(), lr=1e-3)
@@ -65,7 +66,7 @@ def _warm(model, steps=40, seed=0):
         loss = torch.nn.functional.l1_loss(
             model(context, action, mask,
                   proprio if model.use_proprio else None,
-                  valid if model.use_proprio else None), target)
+                  valid if model.use_proprio else None, control), target)
         optimiser.zero_grad()
         loss.backward()
         optimiser.step()
@@ -79,42 +80,43 @@ def _fixture(batch=2, use_proprio=True, seed=0):
     context = torch.randn(batch, 3, P.TOKENS, P.TOKEN_DIM)
     actions = [torch.randn(batch, P.ACTION_DIM) for _ in range(4)]
     proprio = torch.randn(batch, 3, P.SAMPLES_PER_SLOT, P.PROPRIO_DIM)
-    return model, context, actions, proprio
+    control = torch.randn(batch, 3, P.SAMPLES_PER_SLOT, P.CONTROL_DIM)
+    return model, context, actions, proprio, control
 
 
 # ---------------------------------------------------------------- shapes ----
 def test_shapes_rgb_and_proprio():
     for use_proprio in (False, True):
-        model, context, actions, proprio = _fixture(use_proprio=use_proprio)
+        model, context, actions, proprio, control = _fixture(use_proprio=use_proprio)
         mask = torch.ones(context.shape[0], P.TOKENS, dtype=torch.bool)
         valid = torch.ones(context.shape[0], 3, dtype=torch.bool)
         out = model(context, actions[0], mask,
                     proprio if use_proprio else None,
-                    valid if use_proprio else None)
+                    valid if use_proprio else None, control)
         assert out.shape == (context.shape[0], P.TOKENS, P.TOKEN_DIM)
 
 
 def test_action_dimension_is_the_post_slew_trajectory():
     assert P.ACTION_DIM == SLEW.TICKS * len(SLEW.ACTIVE_CHANNELS) == 10
-    model, _, _, _ = _fixture(use_proprio=False)
+    model, _, _, _, _ = _fixture(use_proprio=False)
     assert model.action[0].in_features == 10
 
 
 def test_proprio_dimension_and_channels():
-    assert P.PROPRIO_DIM == 32
+    assert P.PROPRIO_DIM == 30
     assert [name for name, _ in M.CHANNELS] == [
         "projected_gravity", "body_angular_velocity", "joint_positions",
-        "joint_velocities", "previous_applied_command"]
-    assert sum(width for _, width in M.CHANNELS) == 32
+        "joint_velocities"], "proprioception must be sensed physical state only"
+    assert sum(width for _, width in M.CHANNELS) == 30
 
 
 def test_wrong_proprio_shape_is_rejected():
-    model, context, actions, _ = _fixture(use_proprio=True)
+    model, context, actions, _, control = _fixture(use_proprio=True)
     mask = torch.ones(context.shape[0], P.TOKENS, dtype=torch.bool)
     valid = torch.ones(context.shape[0], 3, dtype=torch.bool)
     bad = torch.randn(context.shape[0], 3, 4, P.PROPRIO_DIM)   # 4 samples, not 5
     with pytest.raises(ValueError):
-        model(context, actions[0], mask, bad, valid)
+        model(context, actions[0], mask, bad, valid, control)
 
 
 # ------------------------------------------------------- seed pairing -------
@@ -143,14 +145,14 @@ def test_proprio_parameters_are_deterministic_in_the_seed():
 # ------------------------------------------------- perturbation invariants --
 def test_observed_proprioception_can_affect_predictions():
     """Required positive control: the channel must be live, or the rest is vacuous."""
-    model, context, actions, proprio = _fixture(use_proprio=True)
+    model, context, actions, proprio, control = _fixture(use_proprio=True)
     _warm(model)
     model.eval()
     with torch.no_grad():
-        base = P.unroll(model, context, actions, proprio, max_h=1)[0]
+        base = P.unroll(model, context, actions, proprio, control, max_h=1)[0]
         moved = proprio.clone()
         moved[:, 0] += 5.0                      # slot 0 is observed at H=1
-        other = P.unroll(model, context, actions, moved, max_h=1)[0]
+        other = P.unroll(model, context, actions, moved, control, max_h=1)[0]
     assert not torch.allclose(base, other, atol=1e-6), \
         "observed proprioception had no effect; the conditioning path is dead"
 
@@ -163,7 +165,7 @@ def test_invalid_slot_content_cannot_affect_predictions():
     is written there -- including NaN and inf, which a multiply-by-zero mask
     would happily propagate -- must not move a single output bit.
     """
-    model, context, actions, proprio = _fixture(use_proprio=True)
+    model, context, actions, proprio, control = _fixture(use_proprio=True)
     _warm(model)
     model.eval()
     mask = torch.ones(context.shape[0], P.TOKENS, dtype=torch.bool)
@@ -171,11 +173,11 @@ def test_invalid_slot_content_cannot_affect_predictions():
                   torch.tensor([[True, False, False], [True, False, False]]),
                   torch.zeros(context.shape[0], 3, dtype=torch.bool)):
         with torch.no_grad():
-            base = model(context, actions[0], mask, proprio, valid)
+            base = model(context, actions[0], mask, proprio, valid, control)
             for fill in (float("nan"), float("inf"), -1e9, 1e9):
                 poisoned = proprio.clone()
                 poisoned[~valid] = fill
-                other = model(context, actions[0], mask, poisoned, valid)
+                other = model(context, actions[0], mask, poisoned, valid, control)
                 assert torch.equal(base, other), (
                     f"invalid-slot fill {fill} changed the output for valid={valid.tolist()}")
 
@@ -193,12 +195,12 @@ def test_injected_future_proprioception_is_inert():
     for entirely sound reasons.  Leakage is decided by access and by the
     inertness of invalid slots, never by an outcome pattern at horizon.
     """
-    model, context, actions, proprio = _fixture(use_proprio=True)
+    model, context, actions, proprio, control = _fixture(use_proprio=True)
     _warm(model)
     model.eval()
-    base = P.unroll(model, context, actions, proprio, max_h=4)
+    base = P.unroll(model, context, actions, proprio, control, max_h=4)
     for fill in (float("nan"), float("inf"), -1e9, 1e9, 3.5):
-        other = P.unroll(model, context, actions, proprio, max_h=4, _future_fill=fill)
+        other = P.unroll(model, context, actions, proprio, control, max_h=4, _future_fill=fill)
         for horizon in (1, 2, 3, 4):
             assert torch.equal(base[horizon - 1], other[horizon - 1]), (
                 f"injected future proprioception (fill={fill}) moved H={horizon}")
@@ -210,13 +212,13 @@ def test_observed_proprioception_may_propagate_to_later_horizons():
     Recorded so that a later reader does not mistake an H=4 proprioceptive
     effect for evidence of leakage.
     """
-    model, context, actions, proprio = _fixture(use_proprio=True)
+    model, context, actions, proprio, control = _fixture(use_proprio=True)
     _warm(model)
     model.eval()
-    base = P.unroll(model, context, actions, proprio, max_h=4)
+    base = P.unroll(model, context, actions, proprio, control, max_h=4)
     moved = proprio.clone()
     moved[:, 0] += 5.0                       # an OBSERVED slot at H=1
-    other = P.unroll(model, context, actions, moved, max_h=4)
+    other = P.unroll(model, context, actions, moved, control, max_h=4)
     assert not torch.equal(base[0], other[0]), "H=1 should respond to observed proprio"
     assert not torch.equal(base[3], other[3]), (
         "H=4 is expected to move through recursively predicted latents; if it does "
@@ -232,17 +234,17 @@ def test_rollout_validity_schedule():
 
 def test_unroll_never_indexes_a_future_proprio_slot():
     """The proprio window may only shrink: its slot count never grows."""
-    model, context, actions, proprio = _fixture(use_proprio=True)
+    model, context, actions, proprio, control = _fixture(use_proprio=True)
     seen = []
     original = model.forward
 
-    def spy(ctx, action, mask, p=None, valid=None):
+    def spy(ctx, action, mask, p=None, valid=None, ctrl=None):
         seen.append(None if valid is None else int(valid.sum(dim=1)[0]))
-        return original(ctx, action, mask, p, valid)
+        return original(ctx, action, mask, p, valid, ctrl)
 
     model.forward = spy
     with torch.no_grad():
-        P.unroll(model, context, actions, proprio, max_h=4)
+        P.unroll(model, context, actions, proprio, control, max_h=4)
     assert seen == [3, 2, 1, 0], f"observed-slot counts {seen}"
 
 
@@ -354,12 +356,12 @@ def test_manifest_records_verification_against_logged_values():
 def test_constant_channels_are_excluded():
     """vy is identically zero corpus-wide, so it must not appear in either tensor."""
     assert 1 not in SLEW.ACTIVE_CHANNELS, "vy must be excluded from the action"
-    assert P.ACTION_DIM == 10 and P.PROPRIO_DIM == 32
+    assert P.ACTION_DIM == 10 and P.PROPRIO_DIM == 30
 
 
 def test_no_privileged_channel_is_present():
     forbidden = ("world", "pose", "yaw", "odom", "camera", "contact", "effort",
-                 "linear_velocity", "linear velocity")
+                 "linear_velocity", "linear velocity", "command")
     names = " ".join(name for name, _ in M.CHANNELS).lower()
     for token in forbidden:
         assert token not in names, f"channel list mentions '{token}'"
@@ -390,12 +392,13 @@ def test_overfit_smoke_rgb_and_proprio():
         action = torch.randn(2, P.ACTION_DIM)
         proprio = torch.randn(2, 3, P.SAMPLES_PER_SLOT, P.PROPRIO_DIM) if use_proprio else None
         valid = torch.ones(2, 3, dtype=torch.bool) if use_proprio else None
+        control = torch.randn(2, 3, P.SAMPLES_PER_SLOT, P.CONTROL_DIM)
         mask = torch.ones(2, P.TOKENS, dtype=torch.bool)
         optimiser = torch.optim.AdamW(model.parameters(), lr=3e-3)
         first = last = None
         for step in range(300):
             loss = torch.nn.functional.l1_loss(
-                model(context, action, mask, proprio, valid), target)
+                model(context, action, mask, proprio, valid, control), target)
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
@@ -411,9 +414,10 @@ def test_proprio_gradient_reaches_the_proprio_parameters():
     model = _warm(P.build_paired(0, use_proprio=True, **SMALL))
     context = torch.randn(2, 3, P.TOKENS, P.TOKEN_DIM)
     proprio = torch.randn(2, 3, P.SAMPLES_PER_SLOT, P.PROPRIO_DIM)
+    control = torch.randn(2, 3, P.SAMPLES_PER_SLOT, P.CONTROL_DIM)
     valid = torch.ones(2, 3, dtype=torch.bool)
     mask = torch.ones(2, P.TOKENS, dtype=torch.bool)
-    out = model(context, torch.randn(2, P.ACTION_DIM), mask, proprio, valid)
+    out = model(context, torch.randn(2, P.ACTION_DIM), mask, proprio, valid, control)
     out.pow(2).mean().backward()
     assert model.proprio_in.weight.grad is not None
     assert float(model.proprio_in.weight.grad.abs().sum()) > 0
@@ -424,8 +428,148 @@ def test_absence_token_receives_gradient_when_a_slot_is_invalid():
     model = _warm(P.build_paired(0, use_proprio=True, **SMALL))
     context = torch.randn(2, 3, P.TOKENS, P.TOKEN_DIM)
     proprio = torch.randn(2, 3, P.SAMPLES_PER_SLOT, P.PROPRIO_DIM)
+    control = torch.randn(2, 3, P.SAMPLES_PER_SLOT, P.CONTROL_DIM)
     valid = torch.tensor([[True, True, False], [True, False, False]])
     mask = torch.ones(2, P.TOKENS, dtype=torch.bool)
-    out = model(context, torch.randn(2, P.ACTION_DIM), mask, proprio, valid)
+    out = model(context, torch.randn(2, P.ACTION_DIM), mask, proprio, valid, control)
     out.pow(2).mean().backward()
     assert float(model.proprio_absent.grad.abs().sum()) > 0
+
+
+# ------------------------------------------- gravity & normalisation audit --
+def test_projected_gravity_feature_is_offset_only():
+    """The stored feature is g_body - (0,0,-1); adding the offset back is unit-norm."""
+    import math
+    rows = _rows(limit=1500)
+    worst = 0.0
+    lo, hi = M.GRAVITY_SLICE
+    for row in rows:
+        for sample in row["proprio"]:
+            g = [sample[i] + M.GRAVITY_OFFSET[i - lo] for i in range(lo, hi)]
+            worst = max(worst, abs(math.sqrt(sum(v * v for v in g)) - 1.0))
+    assert worst < 1e-9, f"projected-gravity norm error {worst}"
+
+
+def test_projected_gravity_component_ranges_and_finiteness():
+    import math
+    lo, hi = M.GRAVITY_SLICE
+    extremes = [[float("inf"), float("-inf")] for _ in range(hi - lo)]
+    for row in _rows(limit=1500):
+        for sample in row["proprio"]:
+            assert all(math.isfinite(v) for v in sample), "non-finite proprioceptive value"
+            for k, i in enumerate(range(lo, hi)):
+                extremes[k][0] = min(extremes[k][0], sample[i])
+                extremes[k][1] = max(extremes[k][1], sample[i])
+    # feature = g - (0,0,-1): components 0,1 in [-1,1]; component 2 in [0,2]
+    assert -1.0 <= extremes[0][0] and extremes[0][1] <= 1.0, extremes[0]
+    assert -1.0 <= extremes[1][0] and extremes[1][1] <= 1.0, extremes[1]
+    assert 0.0 <= extremes[2][0] and extremes[2][1] <= 2.0, extremes[2]
+
+
+def test_gravity_normalisation_uses_no_corpus_statistic():
+    stats = json.loads((PROPRIO_DIR / "proprio_norm_stats.json").read_text())
+    lo, hi = M.GRAVITY_SLICE
+    assert stats["mean"][lo:hi] == [0.0] * (hi - lo)
+    assert stats["std"][lo:hi] == [1.0] * (hi - lo)
+    assert "FIXED CONSTANTS" in stats["gravity_normalisation"]
+
+
+def test_every_other_channel_uses_training_only_statistics():
+    stats = json.loads((PROPRIO_DIR / "proprio_norm_stats.json").read_text())
+    assert stats["source"] == "train split only"
+    assert stats["non_gravity_normalisation"] == "z-score from the TRAIN split only"
+    lo, hi = M.GRAVITY_SLICE
+    for c in range(len(stats["mean"])):
+        if lo <= c < hi:
+            continue
+        assert stats["std"][c] > 0.0
+    manifest = json.loads(MANIFEST.read_text())
+    assert manifest["normalisation_sha256"] == stats["sha256"]
+
+
+def test_selection_evaluation_reuses_the_frozen_training_statistics():
+    """The selection split must never contribute to, or re-derive, the statistics."""
+    import hashlib as _h
+    stats = json.loads((PROPRIO_DIR / "proprio_norm_stats.json").read_text())
+    recorded = stats.pop("sha256")
+    assert _h.sha256(json.dumps(stats, sort_keys=True).encode()).hexdigest() == recorded, \
+        "the frozen statistics hash does not match their content"
+
+
+# -------------------------------------------------- control history (all cells)
+def test_control_history_is_present_in_every_cell():
+    for use_proprio in (False, True):
+        model = P.build_paired(3, use_proprio=use_proprio, **SMALL)
+        names = [n for n, _ in model.named_parameters()]
+        assert any(n.startswith("control_") for n in names), \
+            "control history must exist in RGB cells too, or it confounds the factor"
+
+
+def test_control_history_is_required():
+    model, context, actions, proprio, control = _fixture(use_proprio=True)
+    mask = torch.ones(context.shape[0], P.TOKENS, dtype=torch.bool)
+    valid = torch.ones(context.shape[0], 3, dtype=torch.bool)
+    with pytest.raises(ValueError):
+        model(context, actions[0], mask, proprio, valid, None)
+
+
+def test_rollout_control_slot_comes_from_the_action_plan():
+    """The appended efference copy is exactly the previous action block."""
+    action = torch.randn(2, P.ACTION_DIM)
+    slot = P.control_slot_from_action(action)
+    assert slot.shape == (2, 1, P.SAMPLES_PER_SLOT, P.CONTROL_DIM)
+    assert torch.equal(slot.reshape(2, P.ACTION_DIM), action)
+
+
+def test_proprio_tensor_contains_no_command_channel():
+    rows = _rows(limit=200)
+    for row in rows:
+        assert len(row["proprio"][0]) == 30
+        assert len(row["control"][0]) == 2
+
+
+# ----------------------------------------------------------- hard failures ---
+def test_planning_candidate_with_lateral_motion_is_rejected():
+    with pytest.raises(SLEW.LateralMotionRejected):
+        SLEW.reconstruct_block("strafe_left", (0.0, 0.0, 0.0))
+    with pytest.raises(SLEW.LateralMotionRejected):
+        SLEW.reconstruct_block("forward_fast", (0.0, 0.3, 0.0))
+
+
+def test_no_manifest_row_carries_lateral_motion():
+    for row in _rows(limit=4000):
+        for value in row["action_blocks"][0]:
+            assert abs(value) <= 0.5
+    manifest = json.loads(MANIFEST.read_text())
+    assert "non-zero requested or applied lateral command vy" in manifest["hard_failures_enforced"]
+
+
+def test_manifest_scene_coverage_is_recorded():
+    manifest = json.loads(MANIFEST.read_text())
+    coverage = manifest["action_reconstruction_validation"]
+    assert coverage["block_exact_rate"] == 1.0
+    assert coverage["tick_exact_rate"] == 1.0
+    assert coverage["scenes_validated"] >= 80
+
+
+def test_drop_counts_are_reported_by_split_and_family():
+    manifest = json.loads(MANIFEST.read_text())
+    detail = manifest["rows_dropped_by_split_and_family"]
+    assert detail, "drop counts must be broken down"
+    for reason, counts in detail.items():
+        assert reason in manifest["drop_reason_codes"], f"{reason} has no reason code"
+        for key in counts:
+            split, family = key.split("/", 1)
+            assert split in ("train", "checkpoint_selection")
+            assert family
+    total = sum(sum(c.values()) for c in detail.values())
+    assert total == sum(manifest["rows_dropped"].values())
+
+
+def test_superseded_configuration_is_marked():
+    from scripts import dev_proprio_experiment_config_v1 as CFG
+    superseded = {entry["sha256"] for entry in CFG.SUPERSEDED_CANDIDATE_CONFIGURATIONS}
+    assert "f410df7989fd639761b7177c00cc6d12fb9db15a1a6c46d9898a4c7bd6f7e0c8" in superseded
+    assert CFG.config_sha256() not in superseded
+    for entry in CFG.SUPERSEDED_CANDIDATE_CONFIGURATIONS:
+        assert entry["never_use_for_scientific_training"] is True

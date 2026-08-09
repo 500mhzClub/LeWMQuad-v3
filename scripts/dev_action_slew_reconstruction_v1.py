@@ -72,6 +72,10 @@ ACTIVE_CHANNEL_NAMES = ("vx_body_mps", "yaw_rate_radps")
 ACTION_DIM = TICKS * len(ACTIVE_CHANNELS)   # 10
 
 
+class LateralMotionRejected(ValueError):
+    """A planning candidate or state carrying lateral motion: a hard failure."""
+
+
 def _clip(value: float, limit: float) -> float:
     return max(-limit, min(limit, value))
 
@@ -101,7 +105,16 @@ def reconstruct_block(primitive: str, previous_applied):
     Identical arithmetic to ``apply_slew``; a hypothetical action is a set-point
     held for five ticks.  No measured body motion is consulted.
     """
+    if primitive not in COMMANDS:
+        raise LateralMotionRejected(f"unknown primitive {primitive!r}")
     setpoint = COMMANDS[primitive]
+    if abs(setpoint[1]) > 0.0:
+        raise LateralMotionRejected(
+            f"planning candidate {primitive!r} commands lateral motion vy={setpoint[1]}; "
+            "the contract forbids it and no training data supports it")
+    if abs(previous_applied[1]) > 0.0:
+        raise LateralMotionRejected(
+            f"previous applied command carries lateral motion vy={previous_applied[1]}")
     return apply_slew([list(setpoint)] * TICKS, previous_applied)
 
 
@@ -215,16 +228,27 @@ def _merge(total: dict, part: dict) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser(description="validate the slew reconstruction")
     ap.add_argument("--scenes-per-family", type=int, default=3)
+    ap.add_argument("--scenes-file", default=None,
+                    help="newline-separated scene ids; validates exactly these")
     ap.add_argument("--workers", type=int, default=12)
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
 
     rollout = ROOT / ".generated/datagen_full/rollout"
     paths = []
-    for split in sorted(p.name for p in rollout.iterdir() if p.is_dir()):
-        for family in sorted(p.name for p in (rollout / split).iterdir() if p.is_dir()):
-            found = sorted((rollout / split / family).glob("chunk_*/raw/*/messages.jsonl"))
-            paths.extend(found[: args.scenes_per_family])
+    if args.scenes_file:
+        wanted = [line.strip() for line in Path(args.scenes_file).read_text().splitlines()
+                  if line.strip()]
+        for scene in wanted:
+            found = sorted(rollout.glob(f"*/*/chunk_*/raw/{scene}/messages.jsonl"))
+            if not found:
+                raise SystemExit(f"no messages.jsonl for scene {scene}")
+            paths.append(found[0])
+    else:
+        for split in sorted(p.name for p in rollout.iterdir() if p.is_dir()):
+            for family in sorted(p.name for p in (rollout / split).iterdir() if p.is_dir()):
+                found = sorted((rollout / split / family).glob("chunk_*/raw/*/messages.jsonl"))
+                paths.extend(found[: args.scenes_per_family])
     print(f"validating {len(paths)} scenes with {args.workers} workers", flush=True)
 
     from multiprocessing import Pool
@@ -244,6 +268,7 @@ def main() -> int:
         "inputs_used": ["requested command", "previous applied command"],
         "inputs_not_used": ["measured body motion", "future proprioception", "world pose"],
         "scenes": len(paths), "totals": total,
+        "scene_ids": sorted(path.parent.name for path in paths),
     }
     for label, num, den in (("block_exact", "block_exact", "blocks"),
                             ("tick_exact", "tick_exact", "ticks"),

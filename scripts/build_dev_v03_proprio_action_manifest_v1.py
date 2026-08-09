@@ -21,21 +21,35 @@ action blocks, for the rollout horizons) fails to verify is dropped.  The same
 pure function serves hypothetical planning actions -- no measured body motion is
 consulted at any point.
 
-Proprioceptive contract (deployment-valid subset only)
------------------------------------------------------
+Two SEPARATE modality tensors
+-----------------------------
 Per slot, the **trailing** five 10 Hz samples ending at the slot's own step, so
-every proprioceptive timestamp is <= that slot's image timestamp.  Three slots
-tile ``[s-14 .. s]`` contiguously.  32 channels per sample:
+every timestamp is <= that slot's image timestamp.  Three slots tile
+``[s-14 .. s]`` contiguously.
+
+**proprio** -- the experimental factor, SENSED PHYSICAL STATE ONLY, 30 channels:
 
     [ 0: 3)  projected gravity      -- from roll/pitch only, yaw-free by construction
     [ 3: 6)  body angular velocity  -- gyro, body frame
     [ 6:18)  joint positions        -- 12 joints
     [18:30)  joint velocities       -- 12 joints
-    [30:32)  previous applied command -- applied[k-1] on (vx, yaw), strictly historical
 
-Excluded by decision: body linear velocity (simulator ground truth), absolute
-yaw, world pose, camera extrinsics, foot contacts, joint effort, IMU linear
-acceleration -- every empty, constant, privileged or deployment-invalid field.
+**control** -- efference copy, 2 channels per sample, ``applied[k-1]`` on
+(vx, yaw).  This is NOT sensed state: it is the robot's own past command.  It was
+previously carried inside the proprioceptive tensor, which would have confounded
+the proprioception factor with control history, because an audit showed it is
+neither duplicated by the action stream (the action covers steps ``s..s+4``, this
+covers ``s-15..s-1``; they coincide only when the command happens to be steady,
+676/2000 rows) nor available to the RGB cells at all.  It is therefore a separate
+input consumed **identically by all four cells**.
+
+Projected gravity is NOT z-scored.  Its feature is ``g_body - (0, 0, -1)``, an
+offset only, so the three components keep their shared physical scale and
+geometry; no corpus-derived statistic touches them.
+
+Excluded by decision: lateral command vy (identically zero), body linear velocity
+(simulator ground truth), absolute yaw, world pose, camera extrinsics, foot
+contacts, joint effort, IMU linear acceleration.
 """
 from __future__ import annotations
 
@@ -81,9 +95,17 @@ TO_UNITREE = tuple(JOINT_ORDER.index(name) for name in UNITREE_ORDER)
 CHANNELS = (
     ("projected_gravity", 3), ("body_angular_velocity", 3),
     ("joint_positions", 12), ("joint_velocities", 12),
-    ("previous_applied_command", len(SLEW.ACTIVE_CHANNELS)),
 )
-PROPRIO_DIM = sum(width for _, width in CHANNELS)   # 32: vy is constant, excluded
+PROPRIO_DIM = sum(width for _, width in CHANNELS)   # 30: sensed physical state only
+
+CONTROL_CHANNELS = (("previous_applied_command", len(SLEW.ACTIVE_CHANNELS)),)
+CONTROL_DIM = sum(width for _, width in CONTROL_CHANNELS)      # 2
+CONTROL_SLOT_DIM = CONTROL_DIM * SAMPLES_PER_SLOT              # 10 per slot
+
+# Projected gravity is offset, never scaled.  These are FIXED CONSTANTS, not
+# corpus statistics, and the test suite asserts they never come from the corpus.
+GRAVITY_SLICE = (0, 3)
+GRAVITY_OFFSET = (0.0, 0.0, -1.0)
 
 
 def projected_gravity(roll: float, pitch: float):
@@ -187,11 +209,24 @@ def _reconstruct_applied(table, envs, max_step):
                 previous = SLEW.RESET_APPLIED     # respawn: limiter starts from stand
             episode = here
             requested = [table[(env_index, s)]["requested"] for s in steps]
+            for tick in requested:
+                if abs(tick[1]) > 0.0:
+                    raise ContractViolation(
+                        f"non-zero requested lateral command vy={tick[1]!r}; the manifest "
+                        "contract forbids lateral motion")
             trajectory, previous = SLEW.apply_slew(requested, previous)
+            for tick in trajectory:
+                if abs(tick[1]) > 0.0:
+                    raise ContractViolation(
+                        f"non-zero applied lateral command vy={tick[1]!r}")
             blocks[(env_index, block_index)] = trajectory
             for s, value in zip(steps, trajectory):
                 applied[(env_index, s)] = value
     return applied, blocks
+
+
+class ContractViolation(RuntimeError):
+    """A hard failure: the manifest must not be written at all."""
 
 
 def _verify(blocks, logged):
@@ -220,6 +255,7 @@ def build_scene(task):
     verified, mismatched = _verify(blocks, logged)
 
     dropped = collections.Counter()
+    drops = []
     built = []
     for row in rows:
         frame_index = [f for f in row["frames"] if f["offset"] == 0][0]["frame_index"]
@@ -230,12 +266,15 @@ def build_scene(task):
         history = [step - PROPRIO_HISTORY + 1 + i for i in range(PROPRIO_HISTORY)]
         if any((env_index, s) not in table for s in history):
             dropped["proprio_history_absent"] += 1
+            drops.append((scene, row["family"], row["role"], "proprio_history_absent"))
             continue
         if any(table[(env_index, s)]["episode"] != episode for s in history):
             dropped["proprio_history_crosses_reset"] += 1
+            drops.append((scene, row["family"], row["role"], "proprio_history_crosses_reset"))
             continue
         if any((env_index, s - 1) not in applied and s > 1 for s in history):
             dropped["previous_applied_absent"] += 1
+            drops.append((scene, row["family"], row["role"], "previous_applied_absent"))
             continue
 
         first_block = (step - 1) // SLEW.TICKS
@@ -244,24 +283,31 @@ def build_scene(task):
             key = (env_index, first_block + offset)
             if key not in blocks:
                 break
+            span = [(first_block + offset) * SLEW.TICKS + 1 + t for t in range(SLEW.TICKS)]
+            if any(table[(env_index, x)]["episode"] != episode
+                   for x in span if (env_index, x) in table):
+                break                      # the action span leaves the episode
             if key not in verified:
                 ok = False
                 break
             action_blocks.append(SLEW.flatten(blocks[key]))
         if not ok:
             dropped["action_block_failed_verification"] += 1
+            drops.append((scene, row["family"], row["role"], "action_block_failed_verification"))
             continue
         if not action_blocks:
             dropped["action_block_absent"] += 1
+            drops.append((scene, row["family"], row["role"], "action_block_absent"))
             continue
 
-        proprio = []
+        proprio, control = [], []
         for s in history:
             record = table[(env_index, s)]
             previous_applied = applied.get((env_index, s - 1), list(SLEW.RESET_APPLIED))
-            proprio.append(projected_gravity(record["roll"], record["pitch"])
-                           + record["gyro"] + record["q"] + record["dq"]
-                           + [previous_applied[c] for c in SLEW.ACTIVE_CHANNELS])
+            gravity = projected_gravity(record["roll"], record["pitch"])
+            feature = [g - o for g, o in zip(gravity, GRAVITY_OFFSET)]
+            proprio.append(feature + record["gyro"] + record["q"] + record["dq"])
+            control.append([previous_applied[c] for c in SLEW.ACTIVE_CHANNELS])
 
         built.append({
             "pair_sha256": row["pair_sha256"], "role": row["role"],
@@ -273,12 +319,17 @@ def build_scene(task):
             "proprio_timestamps_ns": [table[(env_index, s)]["timestamp_ns"] for s in history],
             "image_timestamp_ns": table[(env_index, step)]["timestamp_ns"],
             "proprio": proprio,
+            "control": control,
             "action_blocks": action_blocks,
             "action_block_indices": [first_block + o for o in range(len(action_blocks))],
             "primitive": row["primitive"],
         })
-    return scene, built, dropped, {"blocks": len(blocks), "verified": len(verified),
-                                   "mismatched": mismatched}
+    if mismatched:
+        raise ContractViolation(
+            f"{scene}: {mismatched} block(s) where the reconstruction differs from the "
+            "logged post-limiter trace; the manifest must not be written")
+    return scene, built, dropped, drops, {"blocks": len(blocks), "verified": len(verified),
+                                          "mismatched": mismatched}
 
 
 def main() -> int:
@@ -289,21 +340,41 @@ def main() -> int:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
+    validation = OUT / "action_reconstruction_validation.json"
+    if not validation.is_file():
+        raise ContractViolation(
+            "action_reconstruction_validation.json is absent; every scene referenced by a "
+            "scientific manifest must be covered by action-reconstruction validation")
+    validated = json.loads(validation.read_text())
+    if validated.get("block_exact_rate") != 1.0:
+        raise ContractViolation(
+            f"action-reconstruction validation is not exact "
+            f"(block_exact_rate={validated.get('block_exact_rate')})")
+
     rows = [json.loads(line) for line in ROWS.read_text().splitlines() if line.strip()]
     by_scene = collections.defaultdict(list)
     for row in rows:
         by_scene[row["scene"]].append(row)
     tasks = sorted(by_scene.items())
+
+    covered = set(validated.get("scene_ids", []))
+    uncovered = sorted(set(by_scene) - covered)
+    if uncovered:
+        raise ContractViolation(
+            f"{len(uncovered)} scene(s) referenced by the manifest were not covered by "
+            f"action-reconstruction validation, e.g. {uncovered[:3]}")
     print(f"building {len(rows)} rows over {len(tasks)} scenes, {args.workers} workers",
           flush=True)
 
     from multiprocessing import Pool
     built, dropped, verify_stats = [], collections.Counter(), collections.Counter()
+    drop_rows = []
     with Pool(args.workers) as pool:
-        for index, (scene, rows_out, drops, stats) in enumerate(
+        for index, (scene, rows_out, counts, rows_dropped, stats) in enumerate(
                 pool.imap_unordered(build_scene, tasks), 1):
             built.extend(rows_out)
-            dropped.update(drops)
+            dropped.update(counts)
+            drop_rows.extend(rows_dropped)
             verify_stats.update(stats)
             if index % 10 == 0:
                 print(f"  {index}/{len(tasks)} scenes, {len(built)} rows", flush=True)
@@ -318,28 +389,63 @@ def main() -> int:
     train = [r for r in built if r["role"] == "train"]
     total = [0.0] * PROPRIO_DIM
     total_sq = [0.0] * PROPRIO_DIM
+    control_total = [0.0] * CONTROL_DIM
+    control_sq = [0.0] * CONTROL_DIM
     count = 0
     for row in train:
-        for sample in row["proprio"]:
+        for sample, ctrl in zip(row["proprio"], row["control"]):
             count += 1
             for c, value in enumerate(sample):
                 total[c] += value
                 total_sq[c] += value * value
+            for c, value in enumerate(ctrl):
+                control_total[c] += value
+                control_sq[c] += value * value
     mean = [t / count for t in total]
     std = [max(math.sqrt(max(total_sq[c] / count - mean[c] ** 2, 0.0)), 1e-3)
            for c in range(PROPRIO_DIM)]
+    # Projected gravity: identity normalisation.  The offset is applied at build
+    # time (g_body - (0,0,-1)); no corpus-derived scaling is permitted, so the
+    # three components keep one shared physical scale and their mutual geometry.
+    low, high = GRAVITY_SLICE
+    for c in range(low, high):
+        mean[c] = 0.0
+        std[c] = 1.0
+    control_mean = [t / count for t in control_total]
+    control_std = [max(math.sqrt(max(control_sq[c] / count - control_mean[c] ** 2, 0.0)), 1e-3)
+                   for c in range(CONTROL_DIM)]
     stats = {"mean": mean, "std": std, "samples": count,
-             "source": "train split only", "channels": [list(c) for c in CHANNELS]}
+             "source": "train split only", "channels": [list(c) for c in CHANNELS],
+             "control_mean": control_mean, "control_std": control_std,
+             "control_channels": [list(c) for c in CONTROL_CHANNELS],
+             "gravity_slice": list(GRAVITY_SLICE),
+             "gravity_offset": list(GRAVITY_OFFSET),
+             "gravity_normalisation": (
+                 "identity: feature = g_body - (0,0,-1) applied at build time; "
+                 "mean 0 / std 1 are FIXED CONSTANTS, not corpus statistics"),
+             "non_gravity_normalisation": "z-score from the TRAIN split only"}
     stats_text = json.dumps(stats, sort_keys=True)
     stats["sha256"] = hashlib.sha256(stats_text.encode()).hexdigest()
     (out / "proprio_norm_stats.json").write_text(json.dumps(stats, indent=2))
 
     kept = collections.Counter(r["role"] for r in built)
+    dropped_detail = collections.defaultdict(lambda: collections.Counter())
+    for _scene, family, role, reason in drop_rows:
+        dropped_detail[reason][f"{role}/{family}"] += 1
     manifest = {
         "status": STATUS, "claim_bearing": False,
         "source_rows": str(ROWS), "source_rows_count": len(rows),
         "rows_kept": len(built), "rows_kept_by_role": dict(kept),
         "rows_dropped": dict(dropped),
+        "rows_dropped_by_split_and_family": {
+            reason: dict(counts) for reason, counts in sorted(dropped_detail.items())},
+        "drop_reason_codes": {
+            "proprio_history_absent": "the 15-step trailing window starts before the episode",
+            "proprio_history_crosses_reset": "the trailing window spans a respawn",
+            "previous_applied_absent": "no reconstructed applied command for a history step",
+            "action_block_failed_verification": "reconstruction != logged post-limiter trace",
+            "action_block_absent": "no complete command block covers the transition",
+        },
         "proprio": {
             "dim": PROPRIO_DIM, "samples_per_slot": SAMPLES_PER_SLOT,
             "slots": SLOTS, "history_samples": PROPRIO_HISTORY,
@@ -363,6 +469,18 @@ def main() -> int:
             "inputs_not_used": ["measured body motion", "future proprioception"],
         },
         "verification": dict(verify_stats),
+        "action_reconstruction_validation": {
+            "scenes_validated": validated["scenes"],
+            "blocks": validated["totals"]["blocks"],
+            "block_exact_rate": validated["block_exact_rate"],
+            "tick_exact_rate": validated["tick_exact_rate"],
+        },
+        "hard_failures_enforced": [
+            "non-zero requested or applied lateral command vy",
+            "reconstruction differing from the logged post-limiter trace",
+            "an action span or proprioceptive window crossing a reset",
+            "absent action-reconstruction validation record",
+        ],
         "normalisation_sha256": stats["sha256"],
         "rows_sha256": hashlib.sha256(rows_path.read_bytes()).hexdigest(),
     }
