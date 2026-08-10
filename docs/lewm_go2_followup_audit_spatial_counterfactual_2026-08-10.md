@@ -214,3 +214,130 @@ Pilot cost ≈ 2.5 h.
 
 Nothing is running. No branch generation, navigation evaluation, additional
 predictor training or architecture change has been started.
+
+---
+
+# ADDENDUM — 2026-08-10, executed follow-ups
+
+Confirmatory experiment `443e591` / `60b0bb2d…` remains unchanged. Audit baseline
+`cdecdae` remains unchanged.
+
+## A. H=1 spatial-retention assay — EXECUTED
+
+**Post-confirmatory H=1 spatial-retention assay.** Not a measurement of spatial
+retention at H=2–4, and not a retrospective repair of the registered occupied
+co-outcome, which stays invalid.
+
+Specification `646073a9…` used exactly as frozen. Probe package
+**`b8f05e57baffcf55…`**, result **`04454ffe9f92aec8b9a4fa5c5ee9cda90346d97bd544a7d16ffe90166f393e8b`**.
+
+### Probe qualification, decided before any checkpoint was loaded
+
+| | |
+|---|---:|
+| fit rows (train split, true target latents only) | 3,137 |
+| calibration rows (disjoint train split) | 785 |
+| selection rows inspected during fit / calibration / qualification | **0** |
+| epoch policy | fixed 12-epoch budget, final-epoch weights, no best-epoch selection |
+| **occupied IoU on true target latents (calibration)** | **0.4991** |
+| criterion | ≥ 0.35 — **PASSED** |
+| occupied IoU on true target latents (selection split) | 0.4840 |
+
+The probe recovers ~0.48–0.50 IoU from *true* latents, close to the 0.510 of the
+frozen dense-representation screen. That ceiling is the probe's own error floor and
+must be read alongside every predicted score below.
+
+### Primary — equal-family occupied IoU, H=1, 8 seeds
+
+| cell | mean | sd | 95 % *t*-interval |
+|---|---:|---:|---|
+| rgb_one_step | 0.4318 | 0.0048 | [0.4279, 0.4358] |
+| rgb_rollout | 0.4290 | 0.0067 | [0.4234, 0.4345] |
+| proprio_one_step | 0.4278 | 0.0063 | [0.4225, 0.4330] |
+| proprio_rollout | 0.4296 | 0.0091 | [0.4220, 0.4372] |
+
+| contrast | mean | sd | 95 % *t*-interval |
+|---|---:|---:|---|
+| Δ_RGB (rollout − one-step) | **−0.00285** | 0.00685 | [−0.00858, +0.00288] |
+| Δ_prop (rollout − one-step) | **+0.00186** | 0.00974 | [−0.00628, +0.01000] |
+| interaction | **+0.00471** | 0.00980 | [−0.00348, +0.01290] |
+
+Seed-level values (8 each) are recorded in the result file.
+
+### Secondary — corpus-weighted (token-pooled)
+
+rgb_one 0.4603 · rgb_roll 0.4589 · prop_one 0.4559 · prop_roll 0.4580. Same
+ordering, same non-separation.
+
+### Per-family, H=1
+
+| family | rgb_one | rgb_roll | prop_one | prop_roll | interaction |
+|---|---:|---:|---:|---:|---:|
+| small_enclosed_maze | 0.6734 | 0.6597 | 0.6756 | 0.6620 | +0.00012 |
+| large_enclosed_maze | 0.5101 | 0.5117 | 0.5083 | 0.5206 | +0.01072 |
+| local_composite_motifs | 0.4865 | 0.4749 | 0.4753 | 0.4768 | +0.01311 |
+| visual_sensor_stress | 0.4788 | 0.4718 | 0.4698 | 0.4679 | +0.00509 |
+| medium_enclosed_maze | 0.4551 | 0.4505 | 0.4557 | 0.4612 | +0.01007 |
+| loop_alias_stress | 0.3510 | 0.3530 | 0.3508 | 0.3512 | −0.00166 |
+| rough_local_dynamics | 0.3400 | 0.3539 | 0.3314 | 0.3432 | −0.00207 |
+| open_obstacle_field | 0.1598 | 0.1564 | 0.1552 | 0.1541 | +0.00232 |
+
+`local_composite_motifs` carries the largest interaction (+0.0131) but no interval
+supports it; it remains a diagnostic, not a result.
+
+### Reading
+
+**No contrast separates from zero.** Every interval spans zero, and all four cells
+lie within ~0.004 IoU of each other against a probe error floor of ~0.48–0.50.
+Notably Δ_RGB is *negative* here while the confirmatory cosine Δ_RGB was clearly
+positive: at H=1 the rollout objective's cosine advantage was itself small
+(+0.0013), so this is not a contradiction, but it does mean **the rollout
+objective's fidelity gain does not show up as better H=1 spatial retention.** This
+assay qualifies interpretation of the rollout result; it does not overturn it, and
+it says nothing about H=2–4 where the fidelity gain was largest.
+
+## B. Counterfactual design v1.1 — hardened, `e3176d93fe3028d659359bc76606e7f1480d1742bbcd57cd8635251ea282f2a3`
+
+Candidate bank, horizon and oracle utility preserved. Added: pilot/evaluation
+disjointness on scene, cluster, state, observation and outcome; snapshot
+qualification over four non-zero sequence types × 3 repetitions with a pre-frozen
+tolerance and an enumerated restore checklist; and the numerical identifiability
+gate (tie tolerance 0.02; ≥ 70 % of states with a uniquely separated best action;
+≥ 5 distinct utility levels median; ≥ 0.10 median best-worst spread; ≤ 20 % invalid
+branches; all eight families with ≥ 2 valid states) — all frozen before any state
+is simulated. Evaluation-only spatial labels at H=1–4 are specified as metadata
+that can never be a predictor input, affect pass/fail, or alter utility.
+
+### Predictor-side candidate scoring — **BLOCKER**
+
+No leakage-free candidate score exists for these 32 models. They are latent-space
+dynamics models with a visual target: they emit predicted token grids, not
+utilities. The confirmatory metric — cosine to the **true** future latent — is
+unusable as a planning score because it requires the realised future. No planning
+head or utility decoder was trained or frozen in this experiment; the earlier
+`GoalEnergyHead` was rejected and `plan_cost` belongs to the topological-nav stack
+under a different representation and contract.
+
+**Rank regret therefore cannot be attributed to the predictors** until such a
+contract is defined and frozen. The oracle branch corpus remains independently
+useful, and the pilot is specified oracle-only.
+
+### Pilot execution — NOT RUN
+
+The 20-state pilot was **not executed**. Running it requires a Genesis
+snapshot/restore implementation that captures and restores solver state, physics
+and environment RNG, controller state and the previous applied command — none of
+which exists today. The design specifies the qualification protocol for that
+implementation; the implementation itself is the remaining work, and the design
+mandates stopping before branch generation if deterministic replay fails.
+
+No predictor checkpoint was opened during any counterfactual work.
+
+## C. Blockers
+
+1. Spatial assay is **H=1 only** — H=2 labels cover 81/475 selection rows, H=3–4
+   none. Multi-horizon spatial analysis needs regenerated occupancy rasters, which
+   is exactly what the pilot's evaluation-only labels are designed to establish.
+2. **No leakage-free predictor-side candidate score** — rank regret is not
+   attributable to these predictors without one.
+3. **Snapshot/restore is unimplemented**, so the pilot could not run.
