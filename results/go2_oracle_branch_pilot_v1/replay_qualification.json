@@ -1,0 +1,178 @@
+{
+  "schema": "go2_oracle_branch_replay_qualification_v1",
+  "status": "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING",
+  "candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9",
+  "oracle_contract_digest": "03dbe01100870cb4cc082f936bc3d0b62aa1e5d23e8eedb44188e88992acbb53",
+  "qualification_digest": "bb2100e785ffd190be23271a13ec9742b04dbea22d309056796cca3d243ad289",
+  "identity_manifest_digest": "015eb0bb4ccb9da28ce4b055771975fc68ac0c986e462d9c3af0a61ef45a9ea2",
+  "genesis_backend": "cpu",
+  "snapshot_scope": "all reachable gstaichi fields minus the static SDF/support-field tables",
+  "cases": [
+    {
+      "case": "sign_reversal",
+      "state_id": "replay-sign_reversal",
+      "scene_id": "large_enclosed_maze_047e61730db3",
+      "family": "large_enclosed_maze",
+      "snapshot_digest": "6a3c08e74ef7baac908a73008e8475ec20cfb6b6acf2fa08a057a7c2b0ee2af5",
+      "boundary": {
+        "command_block_tick": 0,
+        "decimation_phase": 0,
+        "observation_emission_phase_ns": 0,
+        "reset": false,
+        "terminated": false,
+        "truncated": false,
+        "source_step": 201,
+        "episode_step": 200,
+        "sim_time_ns": 20000000000,
+        "boundary_digest": "1faae05f843e6f02f0f354c63ab3bcad9404111140146b1355d025da3d0c7a92"
+      },
+      "body_clearance_m": -0.03,
+      "slew_clipped": true,
+      "trace_digests": [
+        "a63639f01129b45deecc27e4e46614ec184982de6695e21743025a6e2da86f8a",
+        "a63639f01129b45deecc27e4e46614ec184982de6695e21743025a6e2da86f8a",
+        "a63639f01129b45deecc27e4e46614ec184982de6695e21743025a6e2da86f8a"
+      ],
+      "identical": true,
+      "first_divergence": null,
+      "wall_time_s": 11.12
+    },
+    {
+      "case": "sustained_turn",
+      "state_id": "replay-sustained_turn",
+      "scene_id": "loop_alias_stress_0e553f6e7a20",
+      "family": "loop_alias_stress",
+      "snapshot_digest": "da693fb99a3d9461a812693b990813af47c8ad5ba5a87695893f73b91c407e6c",
+      "boundary": {
+        "command_block_tick": 0,
+        "decimation_phase": 0,
+        "observation_emission_phase_ns": 0,
+        "reset": false,
+        "terminated": false,
+        "truncated": false,
+        "source_step": 201,
+        "episode_step": 200,
+        "sim_time_ns": 20000000000,
+        "boundary_digest": "1faae05f843e6f02f0f354c63ab3bcad9404111140146b1355d025da3d0c7a92"
+      },
+      "body_clearance_m": 0.03481093913316727,
+      "slew_clipped": false,
+      "trace_digests": [
+        "82a3dd7057b76496676ccc753bc5b71c6d331b26c061e0dd1715a307f62f0a24",
+        "82a3dd7057b76496676ccc753bc5b71c6d331b26c061e0dd1715a307f62f0a24",
+        "82a3dd7057b76496676ccc753bc5b71c6d331b26c061e0dd1715a307f62f0a24"
+      ],
+      "identical": true,
+      "first_divergence": null,
+      "wall_time_s": 4.56
+    },
+    {
+      "case": "obstacle_adjacent",
+      "state_id": "replay-obstacle_adjacent",
+      "scene_id": "medium_enclosed_maze_0801e8b2f421",
+      "family": "medium_enclosed_maze",
+      "snapshot_digest": "bc1b0549c2ddd170a6fb44a4b6acd1ad3f2b8513f15c20656eea9cbf00cdee88",
+      "boundary": {
+        "command_block_tick": 0,
+        "decimation_phase": 0,
+        "observation_emission_phase_ns": 0,
+        "reset": false,
+        "terminated": false,
+        "truncated": false,
+        "source_step": 101,
+        "episode_step": 100,
+        "sim_time_ns": 10000000000,
+        "boundary_digest": "1faae05f843e6f02f0f354c63ab3bcad9404111140146b1355d025da3d0c7a92"
+      },
+      "body_clearance_m": -0.03,
+      "slew_clipped": false,
+      "trace_digests": [
+        "3b7ff5e1f1f5d9b534e2a019cdc90765b45c5f385255d293be18006c361ff12c",
+        "3b7ff5e1f1f5d9b534e2a019cdc90765b45c5f385255d293be18006c361ff12c",
+        "3b7ff5e1f1f5d9b534e2a019cdc90765b45c5f385255d293be18006c361ff12c"
+      ],
+      "identical": true,
+      "first_divergence": null,
+      "wall_time_s": 7.32
+    },
+    {
+      "case": "slew_limited",
+      "state_id": "replay-slew_limited",
+      "scene_id": "visual_sensor_stress_0565897ce0e6",
+      "family": "visual_sensor_stress",
+      "snapshot_digest": "0b307c32a1852f183e3912d6b189398e944bc50a61b3e6727f064ce421993478",
+      "boundary": {
+        "command_block_tick": 0,
+        "decimation_phase": 0,
+        "observation_emission_phase_ns": 0,
+        "reset": false,
+        "terminated": false,
+        "truncated": false,
+        "source_step": 201,
+        "episode_step": 200,
+        "sim_time_ns": 20000000000,
+        "boundary_digest": "1faae05f843e6f02f0f354c63ab3bcad9404111140146b1355d025da3d0c7a92"
+      },
+      "body_clearance_m": -0.03,
+      "slew_clipped": true,
+      "trace_digests": [
+        "a759bebaf011b0fc9f28ea1c9f16b2d436975548b26588d8dd3420a178323aca",
+        "a759bebaf011b0fc9f28ea1c9f16b2d436975548b26588d8dd3420a178323aca",
+        "a759bebaf011b0fc9f28ea1c9f16b2d436975548b26588d8dd3420a178323aca"
+      ],
+      "identical": true,
+      "first_divergence": null,
+      "wall_time_s": 5.99
+    }
+  ],
+  "controls": {
+    "last_actions_diverges": true,
+    "last_actions_observation_differs": true,
+    "last_actions_applied_differs": true,
+    "last_executed_diverges": true,
+    "baseline_post_slew_first_tick": [
+      0.30000001192092896,
+      0.0,
+      0.0
+    ],
+    "perturbed_post_slew_first_tick": [
+      0.30000001192092896,
+      0.20000000298023224,
+      0.0
+    ]
+  },
+  "branch_order": {
+    "identical": true,
+    "mismatches": [],
+    "forward_digests": {
+      "straight_fast": "3d4b0acad47e1f2332c122a6df7ad1cb4a8c9fe71fdf28a1318f83d6e94be3ee",
+      "straight_medium": "22c0d898c13e695a3b281f28386f995953731265a8c25a09304a79ed1e2ebb91",
+      "straight_slow": "f3168de79cbfdc5ac083e88b4c85ad5910b7b4aea298f7321f50543d6b2f27ec",
+      "arc_left_sustained": "d13c4a59bc8d5bc3475671fe4828d73cdf72774569b345f93dceb55112852646",
+      "arc_right_sustained": "dcbc7d9313871f5b009d58fd79bdd09cefb8477a1a038b9be2bfee81f3e626e2",
+      "turn_left_sustained": "dd9e0d40242e77117a9a5ef81ead0007613c170653dc86136d70dcd94e31ab16",
+      "turn_right_sustained": "5954369e0b46757e8d005538400c623dc95440641654fd3067b6ad94d792fb80",
+      "turn_left_then_go": "69a3fe589cf5d3241ce2c169a0cc10c88aa9500cdda1da55f0fe7e9c77404a4f",
+      "turn_right_then_go": "0594ac665b883b239bcb977e5af9a791c6df93de41f0d441189c45377738aea3",
+      "go_then_turn_left": "c39e49d0059cf5330464941dca5d5da333280aea3848b4ef9d281f5565b00841",
+      "reverse_then_turn": "937f5c013d7471602cd385c779bfe29ba21a78e576401317ababdd2c7850c5db",
+      "hold_all": "792f4799ec08bdd104cb62bcb8bf5949ca2e129c5a977f0889ce14a25d9dd2bf"
+    },
+    "reverse_digests": {
+      "hold_all": "792f4799ec08bdd104cb62bcb8bf5949ca2e129c5a977f0889ce14a25d9dd2bf",
+      "reverse_then_turn": "937f5c013d7471602cd385c779bfe29ba21a78e576401317ababdd2c7850c5db",
+      "go_then_turn_left": "c39e49d0059cf5330464941dca5d5da333280aea3848b4ef9d281f5565b00841",
+      "turn_right_then_go": "0594ac665b883b239bcb977e5af9a791c6df93de41f0d441189c45377738aea3",
+      "turn_left_then_go": "69a3fe589cf5d3241ce2c169a0cc10c88aa9500cdda1da55f0fe7e9c77404a4f",
+      "turn_right_sustained": "5954369e0b46757e8d005538400c623dc95440641654fd3067b6ad94d792fb80",
+      "turn_left_sustained": "dd9e0d40242e77117a9a5ef81ead0007613c170653dc86136d70dcd94e31ab16",
+      "arc_right_sustained": "dcbc7d9313871f5b009d58fd79bdd09cefb8477a1a038b9be2bfee81f3e626e2",
+      "arc_left_sustained": "d13c4a59bc8d5bc3475671fe4828d73cdf72774569b345f93dceb55112852646",
+      "straight_slow": "f3168de79cbfdc5ac083e88b4c85ad5910b7b4aea298f7321f50543d6b2f27ec",
+      "straight_medium": "22c0d898c13e695a3b281f28386f995953731265a8c25a09304a79ed1e2ebb91",
+      "straight_fast": "3d4b0acad47e1f2332c122a6df7ad1cb4a8c9fe71fdf28a1318f83d6e94be3ee"
+    }
+  },
+  "wall_time_s": 35.69,
+  "pass": true
+}

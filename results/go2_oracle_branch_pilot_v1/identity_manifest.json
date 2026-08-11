@@ -1,0 +1,289 @@
+{
+  "schema": "go2_oracle_branch_pilot_identity_manifest_v1",
+  "status": "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING",
+  "selection_digest": "722fba73fdc3b9d6fce474997e2723b4dd82e5ad8fc8480e91348ca7290ae845",
+  "candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9",
+  "oracle_contract_digest": "03dbe01100870cb4cc082f936bc3d0b62aa1e5d23e8eedb44188e88992acbb53",
+  "qualification_digest": "bb2100e785ffd190be23271a13ec9742b04dbea22d309056796cca3d243ad289",
+  "boundary": "1faae05f843e6f02f0f354c63ab3bcad9404111140146b1355d025da3d0c7a92",
+  "inventory_v2": "9b08939adabff5650b570c7f7b806524c0a0a38332946cd6d715313823e3595a",
+  "design_v1_1": "e3176d93fe3028d659359bc76606e7f1480d1742bbcd57cd8635251ea282f2a3",
+  "selection": {
+    "pilot_pool_split": "val",
+    "qualification_pool_split": "test_hard",
+    "excluded_scene_panel": "docs/lewm_go2_world_model_counterfactual_calibration_scene_panel_v1_2026-08-02.json",
+    "states_per_family_base": 2,
+    "extra_states_to_first_n_families": 4,
+    "pilot_states": 20,
+    "one_state_per_scene": true,
+    "warmup_blocks_min": 40,
+    "warmup_blocks_max": 120,
+    "drive": "production RolloutRunner._collect_block collector mix, manifest spawn",
+    "drive_seed_rule": "20260811 ^ crc32(scene_id)",
+    "eligibility": [
+      "block index >= warmup_blocks_min",
+      "no reset fired in this block and reset_count unchanged since episode start",
+      "production termination predicates all false",
+      "SceneGraph.locate distance <= 2.0 m",
+      "a landmark binds with bfs distance >= 1",
+      "canonical boundary assertions pass"
+    ],
+    "landmark_binding": "min positive bfs_distance from the snapshot cell using transit_blocked=nav_blocked_cells; ties by object_id",
+    "capture_rule": "first eligible boundary at or after warmup_blocks_min",
+    "qualification_capture_rule_contact_case": "eligible boundary in [20, 60) minimising body-probe clearance"
+  },
+  "pilot_states": [
+    {
+      "state_id": "pilot-large_enclosed_maze-0",
+      "family": "large_enclosed_maze",
+      "split": "val",
+      "scene_id": "large_enclosed_maze_0ae86da2020f",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/large_enclosed_maze/large_enclosed_maze_0ae86da2020f",
+      "drive_seed": 717000058,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-large_enclosed_maze-1",
+      "family": "large_enclosed_maze",
+      "split": "val",
+      "scene_id": "large_enclosed_maze_0fc9874b58b9",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/large_enclosed_maze/large_enclosed_maze_0fc9874b58b9",
+      "drive_seed": 857034045,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-large_enclosed_maze-2",
+      "family": "large_enclosed_maze",
+      "split": "val",
+      "scene_id": "large_enclosed_maze_1ddaaadea9f3",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/large_enclosed_maze/large_enclosed_maze_1ddaaadea9f3",
+      "drive_seed": 777813723,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-local_composite_motifs-0",
+      "family": "local_composite_motifs",
+      "split": "val",
+      "scene_id": "local_composite_motifs_114ac5cd6d8a",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/local_composite_motifs/local_composite_motifs_114ac5cd6d8a",
+      "drive_seed": 1430604884,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-local_composite_motifs-1",
+      "family": "local_composite_motifs",
+      "split": "val",
+      "scene_id": "local_composite_motifs_1477d0ca00f6",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/local_composite_motifs/local_composite_motifs_1477d0ca00f6",
+      "drive_seed": 1100588826,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-local_composite_motifs-2",
+      "family": "local_composite_motifs",
+      "split": "val",
+      "scene_id": "local_composite_motifs_22623a450c02",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/local_composite_motifs/local_composite_motifs_22623a450c02",
+      "drive_seed": 2026403426,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-loop_alias_stress-0",
+      "family": "loop_alias_stress",
+      "split": "val",
+      "scene_id": "loop_alias_stress_07038b2bc8f4",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/loop_alias_stress/loop_alias_stress_07038b2bc8f4",
+      "drive_seed": 477682399,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-loop_alias_stress-1",
+      "family": "loop_alias_stress",
+      "split": "val",
+      "scene_id": "loop_alias_stress_131747556bc9",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/loop_alias_stress/loop_alias_stress_131747556bc9",
+      "drive_seed": 710996786,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-loop_alias_stress-2",
+      "family": "loop_alias_stress",
+      "split": "val",
+      "scene_id": "loop_alias_stress_17d46e88d46a",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/loop_alias_stress/loop_alias_stress_17d46e88d46a",
+      "drive_seed": 1696676873,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-medium_enclosed_maze-0",
+      "family": "medium_enclosed_maze",
+      "split": "val",
+      "scene_id": "medium_enclosed_maze_0107b51f22e7",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/medium_enclosed_maze/medium_enclosed_maze_0107b51f22e7",
+      "drive_seed": 194721988,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-medium_enclosed_maze-1",
+      "family": "medium_enclosed_maze",
+      "split": "val",
+      "scene_id": "medium_enclosed_maze_0f57d51890de",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/medium_enclosed_maze/medium_enclosed_maze_0f57d51890de",
+      "drive_seed": 897585660,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-medium_enclosed_maze-2",
+      "family": "medium_enclosed_maze",
+      "split": "val",
+      "scene_id": "medium_enclosed_maze_12328e23a398",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/medium_enclosed_maze/medium_enclosed_maze_12328e23a398",
+      "drive_seed": 1742937592,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-open_obstacle_field-0",
+      "family": "open_obstacle_field",
+      "split": "val",
+      "scene_id": "open_obstacle_field_0b403813a262",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/open_obstacle_field/open_obstacle_field_0b403813a262",
+      "drive_seed": 1737145681,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-open_obstacle_field-1",
+      "family": "open_obstacle_field",
+      "split": "val",
+      "scene_id": "open_obstacle_field_12edb365d4a7",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/open_obstacle_field/open_obstacle_field_12edb365d4a7",
+      "drive_seed": 1123287088,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-rough_local_dynamics-0",
+      "family": "rough_local_dynamics",
+      "split": "val",
+      "scene_id": "rough_local_dynamics_0de3f260151f",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/rough_local_dynamics/rough_local_dynamics_0de3f260151f",
+      "drive_seed": 1903773821,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-rough_local_dynamics-1",
+      "family": "rough_local_dynamics",
+      "split": "val",
+      "scene_id": "rough_local_dynamics_1eb5215a3431",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/rough_local_dynamics/rough_local_dynamics_1eb5215a3431",
+      "drive_seed": 889572924,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-small_enclosed_maze-0",
+      "family": "small_enclosed_maze",
+      "split": "val",
+      "scene_id": "small_enclosed_maze_05f43765986a",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/small_enclosed_maze/small_enclosed_maze_05f43765986a",
+      "drive_seed": 401900902,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-small_enclosed_maze-1",
+      "family": "small_enclosed_maze",
+      "split": "val",
+      "scene_id": "small_enclosed_maze_06a24652c193",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/small_enclosed_maze/small_enclosed_maze_06a24652c193",
+      "drive_seed": 776656345,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-visual_sensor_stress-0",
+      "family": "visual_sensor_stress",
+      "split": "val",
+      "scene_id": "visual_sensor_stress_22f534f3ff14",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/visual_sensor_stress/visual_sensor_stress_22f534f3ff14",
+      "drive_seed": 1720968017,
+      "capture_rule": "first_eligible"
+    },
+    {
+      "state_id": "pilot-visual_sensor_stress-1",
+      "family": "visual_sensor_stress",
+      "split": "val",
+      "scene_id": "visual_sensor_stress_23a21b71ec81",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/val/visual_sensor_stress/visual_sensor_stress_23a21b71ec81",
+      "drive_seed": 725891872,
+      "capture_rule": "first_eligible"
+    }
+  ],
+  "replay_states": [
+    {
+      "state_id": "replay-sign_reversal",
+      "case": "sign_reversal",
+      "family": "large_enclosed_maze",
+      "split": "test_hard",
+      "scene_id": "large_enclosed_maze_047e61730db3",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/test_hard/large_enclosed_maze/large_enclosed_maze_047e61730db3",
+      "drive_seed": 1884209325,
+      "capture_rule": "first_eligible",
+      "sequence": [
+        "forward_fast",
+        "backward",
+        "forward_fast",
+        "backward"
+      ]
+    },
+    {
+      "state_id": "replay-sustained_turn",
+      "case": "sustained_turn",
+      "family": "loop_alias_stress",
+      "split": "test_hard",
+      "scene_id": "loop_alias_stress_0e553f6e7a20",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/test_hard/loop_alias_stress/loop_alias_stress_0e553f6e7a20",
+      "drive_seed": 1471511348,
+      "capture_rule": "first_eligible",
+      "sequence": [
+        "yaw_left",
+        "yaw_left",
+        "yaw_left",
+        "yaw_left"
+      ]
+    },
+    {
+      "state_id": "replay-obstacle_adjacent",
+      "case": "obstacle_adjacent",
+      "family": "medium_enclosed_maze",
+      "split": "test_hard",
+      "scene_id": "medium_enclosed_maze_0801e8b2f421",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/test_hard/medium_enclosed_maze/medium_enclosed_maze_0801e8b2f421",
+      "drive_seed": 1932299937,
+      "capture_rule": "min_body_clearance",
+      "sequence": [
+        "forward_fast",
+        "forward_fast",
+        "forward_fast",
+        "forward_fast"
+      ]
+    },
+    {
+      "state_id": "replay-slew_limited",
+      "case": "slew_limited",
+      "family": "visual_sensor_stress",
+      "split": "test_hard",
+      "scene_id": "visual_sensor_stress_0565897ce0e6",
+      "scene_dir": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/test_hard/visual_sensor_stress/visual_sensor_stress_0565897ce0e6",
+      "drive_seed": 329679770,
+      "capture_rule": "first_eligible",
+      "sequence": [
+        "forward_fast",
+        "backward",
+        "yaw_left",
+        "arc_right"
+      ]
+    }
+  ],
+  "disjointness": {
+    "replay_disjoint_from_pilot": true,
+    "pilot_scenes_excluded_from_factorial_panel": true,
+    "pilot_identities_unavailable_for_scorer_fit_and_evaluation": true
+  },
+  "identity_manifest_digest": "015eb0bb4ccb9da28ce4b055771975fc68ac0c986e462d9c3af0a61ef45a9ea2"
+}
