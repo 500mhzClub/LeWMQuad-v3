@@ -30,6 +30,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import subprocess
 from typing import Any
 
 from lewm.oracle.go2_branch_oracle_v1_2 import (
@@ -38,6 +39,8 @@ from lewm.oracle.go2_branch_oracle_v1_2 import (
     progress_digest,
     safety_digest,
 )
+from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
+from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
 
 STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
 BASELINE_CONTRACT_DIGEST = (
@@ -50,6 +53,21 @@ SCORER_FIT_ALLOCATION_DESIGN_DIGEST = (
     "a587b1de264dfb54176aa231e5183ae4b7b4229bbf65c02d62438f86af5e7116"
 )
 ROOT = Path(__file__).resolve().parents[2]
+
+SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT = {
+    "scorer_contract_v1_2_digest": (
+        "0fc7a3db0ca86ae206050ee6da2894208fa11707e840b112a8a6810e18ac3e21"
+    ),
+    "contract_artifact_digest": (
+        "375d372b2196c89c5e9856128bcf15386ed2c6b79bca01ad070f4a146d6c9d24"
+    ),
+    "raw_sha256": (
+        "c20967ade214b4815f288e811a5e53108171f8e3ed470b60cd4c71d75e12f43f"
+    ),
+    "byte_count": 13_839,
+    "outcomes_generated": False,
+    "disposition": "superseded_pre_run_preserve_do_not_reuse",
+}
 
 
 def _digest(payload: Any) -> str:
@@ -146,6 +164,7 @@ CORPUS_SELECTION_CONTRACT = {
     "candidate_allocator_contract_digest": (
         "bb2d9956947be64985f15970dc30f9f0e37cda8012f7c7f5da8808c5d601de5e"
     ),
+    "candidate_allocator_amendment_digest": ALLOC.allocation_amendment_digest(),
     "scene_order": "all eligible corpus scenes sorted by (family, scene_id)",
     "scorer_fit": "first snapshot-time eligible 15 distinct scenes per family "
                   "after all frozen exclusions; five per frozen stratum",
@@ -165,11 +184,14 @@ CORPUS_SELECTION_CONTRACT = {
     },
     "goal_type": "snapshot-bound landmark material_id; allocator-only balance key",
     "candidate_allocation": "canonical exact allocation manifest under the bound "
-                            "allocator for scorer_fit; all 12 for final_eval",
+                            "allocator for scorer_fit; all 12 for final_eval; the "
+                            "sole reversing candidate occurs in exactly 60 distinct "
+                            "scorer-fit state subsets under the prospective amendment",
     "exclusions": [
         "all 80 scenes represented in the frozen factorial manifest",
         "all v1.1 replay-qualification and failed-pilot scenes",
         "all successful v1.2 pilot scenes",
+        "all 45 scenes in the exactly bound abandoned pre-outcome scorer-fit attempt",
         "for final_eval, every scorer-fit selected scene",
     ],
     "candidate_outcomes_used_for_selection": False,
@@ -286,10 +308,18 @@ def source_bindings() -> dict[str, Any]:
     """Implementations that must be frozen before any branch outcome exists."""
 
     return {
+        "scorer_contract_implementation": _file_binding(
+            "lewm/oracle/go2_scorer_contract_v1_2.py"),
         "branch_corpus_and_goal_binding": _file_binding(
             "scripts/build_go2_branch_corpus_v1_2.py"),
         "candidate_allocator": _file_binding(
             "lewm/oracle/go2_candidate_allocation_v1_2.py"),
+        "candidate_allocation_amendment_authority": _file_binding(
+            ALLOC.AMENDMENT_ARTIFACT_PATH),
+        "candidate_allocation_preoutcome_failure_receipt": _file_binding(
+            ALLOC.FAILURE_RECEIPT_PATH),
+        "invalid_scorer_identity_exclusion": _file_binding(
+            "lewm/oracle/go2_invalid_scorer_identity_exclusion_v1_2.py"),
         "latent_encoder_driver": _file_binding(
             "scripts/encode_go2_branch_corpus_v1_2.py"),
         "target_encoder_and_preprocessing": _file_binding(
@@ -310,6 +340,16 @@ def contract() -> dict[str, Any]:
         "name": "go2_utility_scorer_contract_v1_2",
         "baseline_contract_digest": BASELINE_CONTRACT_DIGEST,
         "scorer_fit_allocation_design_digest": SCORER_FIT_ALLOCATION_DESIGN_DIGEST,
+        "candidate_allocator_contract_digest": ALLOC.allocation_contract_digest(),
+        "candidate_allocation_amendment": ALLOC.allocation_amendment_contract(),
+        "candidate_allocation_amendment_digest":
+            ALLOC.allocation_amendment_digest(),
+        "invalid_scorer_identity_exclusion":
+            INVALID_IDS.INVALID_SCORER_IDENTITY_EXCLUSION,
+        "invalid_scorer_identity_exclusion_digest":
+            INVALID_IDS.invalid_identity_exclusion_digest(),
+        "superseded_pre_run_contract_artifact":
+            SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT,
         "candidate_bank_digest": CANDIDATE_BANK_DIGEST,
         "oracle_v1_2_digest": oracle_v1_2_digest(),
         "progress_target_digest": progress_digest(),
@@ -349,8 +389,151 @@ def _stream_file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _compact_digest(payload: Any) -> str:
+    return hashlib.sha256(json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+        allow_nan=False,
+    ).encode("utf-8")).hexdigest()
+
+
+def _validated_repository_state(*, head: str, status: str,
+                                top_level: str,
+                                bindings: dict[str, Any]) -> dict[str, Any]:
+    """Validate injected git facts and construct the clean-source binding."""
+
+    try:
+        resolved_top = Path(top_level).resolve()
+    except (OSError, RuntimeError) as exc:
+        raise RuntimeError("cannot resolve scorer source repository root") from exc
+    if resolved_top != ROOT.resolve():
+        raise RuntimeError("scorer source is not issued from the custody repository root")
+    if len(head) != 40 or any(character not in "0123456789abcdef" for character in head):
+        raise RuntimeError("source repository HEAD is not a full SHA-1 commit")
+    if status:
+        raise RuntimeError(
+            "source repository is not clean; commit every source/untracked change "
+            "before scorer launch"
+        )
+    return {
+        "schema": "go2_utility_scorer_v1_2_clean_source_binding",
+        "source_repository_root": str(ROOT.resolve()),
+        "source_repository_commit": head,
+        "source_repository_clean": True,
+        "git_status_porcelain_v1": "",
+        "git_status_untracked_files": "all",
+        "git_ignored_generated_artifacts_permitted": True,
+        "nonignored_tracked_or_untracked_changes_permitted": False,
+        "bound_implementations": bindings,
+        "bound_implementations_digest": _digest(bindings),
+    }
+
+
+def clean_source_binding() -> dict[str, Any]:
+    """Require a clean exact HEAD while leaving ignored generated data alone."""
+
+    def git(*arguments: str) -> str:
+        completed = subprocess.run(
+            ["git", *arguments], cwd=ROOT, check=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        return completed.stdout.strip("\n")
+
+    try:
+        head = git("rev-parse", "HEAD")
+        top_level = git("rev-parse", "--show-toplevel")
+        status = git("status", "--porcelain=v1", "--untracked-files=all")
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("cannot verify clean scorer source repository") from exc
+    return _validated_repository_state(
+        head=head, status=status, top_level=top_level, bindings=source_bindings())
+
+
+def _prepare_contract_output(path: Path, payload: dict[str, Any]) -> str:
+    """Preserve the known pre-run predecessor and refuse unknown overwrites.
+
+    Returns ``new``, ``current`` or ``superseded_archived``.  This helper is
+    intentionally separate from external checkpoint validation so its recovery
+    semantics can be tested without opening the 5.1 GB encoder checkpoint.
+    """
+
+    if not path.exists():
+        return "new"
+    if not path.is_file():
+        raise RuntimeError(f"scorer-contract output is not a file: {path}")
+    raw = path.read_bytes()
+    try:
+        existing = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("refusing to overwrite malformed scorer-contract artifact") \
+            from exc
+    existing_self = existing.get("contract_artifact_digest")
+    if existing_self != _digest({key: value for key, value in existing.items()
+                                 if key != "contract_artifact_digest"}):
+        raise RuntimeError("refusing to overwrite scorer-contract artifact with bad self digest")
+    if existing == payload:
+        return "current"
+
+    predecessor = SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT
+    if (len(raw) != predecessor["byte_count"]
+            or hashlib.sha256(raw).hexdigest() != predecessor["raw_sha256"]
+            or existing.get("scorer_contract_v1_2_digest")
+            != predecessor["scorer_contract_v1_2_digest"]
+            or existing_self != predecessor["contract_artifact_digest"]):
+        raise RuntimeError("refusing to overwrite an unknown scorer-contract artifact")
+    archive = path.parent / "superseded_pre_run" / (
+        "scorer_contract_v1_2."
+        f"{predecessor['scorer_contract_v1_2_digest']}.json"
+    )
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    if archive.exists():
+        if (not archive.is_file() or archive.read_bytes() != raw):
+            raise RuntimeError("superseded scorer-contract archive collision")
+        raise RuntimeError("predecessor exists at both active and archive paths")
+    os.replace(path, archive)
+    return "superseded_archived"
+
+
+def _contract_artifact_payload(
+        source_launch_binding: dict[str, Any]) -> dict[str, Any]:
+    """Build the post-verification artifact; pure for focused contract tests."""
+
+    if (source_launch_binding.get("source_repository_clean") is not True
+            or not source_launch_binding.get("source_repository_commit")):
+        raise RuntimeError("contract artifact requires a clean-source launch binding")
+    payload = {
+        "schema": "go2_utility_scorer_contract_v1_2_artifact",
+        "status": STATUS,
+        "complete": True,
+        "scorer_contract_v1_2_digest": contract_digest(),
+        "target_encoder_checkpoint_verified": True,
+        "target_encoder_preprocessing_verified": True,
+        "historical_renderer_verified": True,
+        "historical_renderer_wrapper_verified": True,
+        "candidate_allocator_verified": True,
+        "candidate_allocation_amendment_verified": True,
+        "preoutcome_allocation_failure_receipt_verified": True,
+        "invalid_scorer_identity_exclusion_verified": True,
+        "source_repository_commit":
+            source_launch_binding["source_repository_commit"],
+        "source_repository_clean": True,
+        "clean_source_binding": source_launch_binding,
+        "clean_source_binding_digest": _digest(source_launch_binding),
+        "superseded_pre_run_contract_preservation":
+            SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT,
+        "contract": contract(),
+    }
+    payload["contract_artifact_digest"] = _digest(payload)
+    return payload
+
+
 def issue_contract(path: Path) -> dict[str, Any]:
     """Validate external bindings and atomically issue the pre-outcome contract."""
+
+    source_launch_binding = clean_source_binding()
+    invalid_index = INVALID_IDS.load_invalid_identity_index()
+    if (invalid_index.binding()["invalid_scorer_identity_exclusion_digest"]
+            != INVALID_IDS.invalid_identity_exclusion_digest()):
+        raise RuntimeError("invalid scorer-identity exclusion binding failed")
 
     checkpoint = Path(TARGET_ENCODER["checkpoint"])
     if (not checkpoint.is_file()
@@ -368,6 +551,18 @@ def issue_contract(path: Path) -> dict[str, Any]:
     from lewm.oracle.go2_textured_v03_renderer import renderer_contract_digest
     from scripts import dev_frozen_dense_representation_encoders_v1 as encoders
 
+    amendment_path = ROOT / ALLOC.AMENDMENT_ARTIFACT_PATH
+    amendment_artifact = json.loads(amendment_path.read_text())
+    ALLOC.validate_allocation_amendment_artifact(amendment_artifact)
+    failure_path = ROOT / ALLOC.FAILURE_RECEIPT_PATH
+    if _stream_file_sha256(failure_path) != ALLOC.FAILURE_RECEIPT_RAW_SHA256:
+        raise RuntimeError("pre-outcome allocation-failure receipt raw binding failed")
+    failure_receipt = json.loads(failure_path.read_text())
+    failure_digest = failure_receipt.pop("failure_receipt_digest", None)
+    if (failure_digest != ALLOC.FAILURE_RECEIPT_DIGEST
+            or _compact_digest(failure_receipt) != ALLOC.FAILURE_RECEIPT_DIGEST):
+        raise RuntimeError("pre-outcome allocation-failure receipt self binding failed")
+
     arm = encoders.VJepa21CroppedV03Arm(
         checkpoint=checkpoint, constructor=TARGET_ENCODER["constructor"])
     if (arm.preprocess is not encoders.preprocess_vjepa_v03_crop
@@ -382,19 +577,13 @@ def issue_contract(path: Path) -> dict[str, Any]:
     if allocation_contract_digest() != CORPUS_SELECTION_CONTRACT[
             "candidate_allocator_contract_digest"]:
         raise RuntimeError("candidate-allocation contract binding failed")
-    payload = {
-        "schema": "go2_utility_scorer_contract_v1_2_artifact",
-        "status": STATUS,
-        "complete": True,
-        "scorer_contract_v1_2_digest": contract_digest(),
-        "target_encoder_checkpoint_verified": True,
-        "target_encoder_preprocessing_verified": True,
-        "historical_renderer_verified": True,
-        "historical_renderer_wrapper_verified": True,
-        "candidate_allocator_verified": True,
-        "contract": contract(),
-    }
-    payload["contract_artifact_digest"] = _digest(payload)
+    if ALLOC.allocation_amendment_digest() != CORPUS_SELECTION_CONTRACT[
+            "candidate_allocator_amendment_digest"]:
+        raise RuntimeError("candidate-allocation amendment binding failed")
+    payload = _contract_artifact_payload(source_launch_binding)
+    disposition = _prepare_contract_output(path, payload)
+    if disposition == "current":
+        return payload
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
     temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")

@@ -28,6 +28,14 @@ import numpy as np
 SCHEMA = "go2_candidate_allocation_v1_2_manifest"
 STATUS = "FROZEN_PRE_OUTCOME_IDENTITY_ALLOCATION"
 ALGORITHM_VERSION = "go2_candidate_allocation_v1_2_lexicographic_milp_v1"
+AMENDMENT_SCHEMA = "go2_shared_utility_scorer_v1_2_allocation_amendment_v1"
+AMENDMENT_VERSION = "allocation_reverse_coverage_resolution_v1"
+PRE_IDENTITY_VALIDATION_SCHEMA = (
+    "go2_candidate_allocation_v1_2_pre_identity_structural_validation"
+)
+POST_IDENTITY_VALIDATION_SCHEMA = (
+    "go2_candidate_allocation_v1_2_post_identity_pre_outcome_validation"
+)
 GOAL_TYPE_VERSION = "snapshot_bound_landmark_material_id_v1"
 GOAL_TYPE_DEFINITION = (
     "the material_id of the landmark bound at snapshot time, before any "
@@ -35,6 +43,29 @@ GOAL_TYPE_DEFINITION = (
 )
 CANDIDATE_BANK_DIGEST = (
     "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9"
+)
+SCORER_FIT_ALLOCATION_DESIGN_DIGEST = (
+    "a587b1de264dfb54176aa231e5183ae4b7b4229bbf65c02d62438f86af5e7116"
+)
+PREDECESSOR_ALLOCATOR_CONTRACT_DIGEST = (
+    "bb2d9956947be64985f15970dc30f9f0e37cda8012f7c7f5da8808c5d601de5e"
+)
+AUTHORIZING_FAILURE_COMMIT = (
+    "6a4d6a66c93d9461bdfb8bf4c2ccb5b882dcdb78"
+)
+FAILURE_RECEIPT_PATH = (
+    "docs/lewm_go2_shared_utility_scorer_v1_2_"
+    "preoutcome_allocation_failure_2026-08-11.json"
+)
+FAILURE_RECEIPT_DIGEST = (
+    "550c52f9a3ff04f8a564f6f28e75e9d36fc8bc0f73da4795b95dedc3ad2e3cab"
+)
+FAILURE_RECEIPT_RAW_SHA256 = (
+    "3e224158d43a4e75fc7a60436feaeb00cd538a5fabfae5a92983f7ede612df99"
+)
+AMENDMENT_ARTIFACT_PATH = (
+    "docs/lewm_go2_shared_utility_scorer_v1_2_"
+    "allocation_amendment_v1_2026-08-11.json"
 )
 
 CANDIDATE_COUNT = 12
@@ -45,6 +76,17 @@ SPLIT_ROLES = ("fit", "calibration")
 FORWARD_CANDIDATES = frozenset((0, 1, 2))
 TURNING_CANDIDATES = frozenset((3, 4, 5, 6, 7, 8, 9))
 REVERSING_CANDIDATE = 10
+HOLD_CANDIDATE = 11
+FAMILIES = (
+    "large_enclosed_maze",
+    "local_composite_motifs",
+    "loop_alias_stress",
+    "medium_enclosed_maze",
+    "open_obstacle_field",
+    "rough_local_dynamics",
+    "small_enclosed_maze",
+    "visual_sensor_stress",
+)
 
 _INPUT_KEYS = frozenset(
     ("state_id", "state_identity_digest", "family", "stratum", "split_role",
@@ -81,6 +123,101 @@ def _is_digest(value: Any) -> bool:
     )
 
 
+def allocation_amendment_contract() -> dict[str, Any]:
+    """Return the one prospective interpretation amendment.
+
+    The amendment resolves the contradiction recorded before any scorer-fit
+    state identity or branch outcome existed.  It does not change the bank,
+    the twelve allowed subsets, the allocator, or any balance margin.
+    """
+
+    return {
+        "schema": AMENDMENT_SCHEMA,
+        "status": "AUTHORIZED_PROSPECTIVE_PRE_IDENTITY_AMENDMENT",
+        "version": AMENDMENT_VERSION,
+        "lineage": {
+            "authorizing_failure_commit": AUTHORIZING_FAILURE_COMMIT,
+            "failure_receipt_path": FAILURE_RECEIPT_PATH,
+            "failure_receipt_digest": FAILURE_RECEIPT_DIGEST,
+            "failure_receipt_raw_sha256": FAILURE_RECEIPT_RAW_SHA256,
+            "original_scorer_fit_allocation_design_digest":
+                SCORER_FIT_ALLOCATION_DESIGN_DIGEST,
+            "predecessor_allocator_contract_digest":
+                PREDECESSOR_ALLOCATOR_CONTRACT_DIGEST,
+        },
+        "preserved": {
+            "candidate_bank_digest": CANDIDATE_BANK_DIGEST,
+            "candidate_count": CANDIDATE_COUNT,
+            "candidates_per_state": CANDIDATES_PER_STATE,
+            "state_count": 120,
+            "attempted_branch_count": 720,
+            "rotation_offsets": list(ROTATION_OFFSETS),
+            "allowed_subset_count": CANDIDATE_COUNT,
+            "appearances_per_candidate": 60,
+            "fit_states": 96,
+            "calibration_states": 24,
+            "strata": list(STRATA),
+            "families": list(FAMILIES),
+            "allocator_algorithm_version": ALGORITHM_VERSION,
+        },
+        "single_interpretation_change": {
+            "superseded_infeasible_clause": (
+                "every six-candidate subset contains reversing behaviour"
+            ),
+            "replacement_clause": (
+                "the sole reversing candidate occurs in exactly 60 distinct "
+                "state subsets, as required by exact-60 candidate balance"
+            ),
+            "reversing_candidate_index": REVERSING_CANDIDATE,
+            "required_distinct_reverse_subset_count": 60,
+            "per_subset_forward_requirement_preserved": True,
+            "per_subset_turning_requirement_preserved": True,
+            "per_subset_reverse_requirement": False,
+        },
+        "goal_type_boundary": {
+            "unavailable_before_state_identity_selection": True,
+            "pre_identity_status": "NOT_EVALUABLE_BEFORE_IDENTITIES",
+            "mandatory_post_identity_pre_outcome_rule": (
+                "for every snapshot-bound goal_type containing n states, each "
+                "candidate count is floor(n/2) or ceil(n/2); for odd n exactly "
+                "six candidates receive each count"
+            ),
+            "candidate_outcomes_consumed": False,
+        },
+        "scientific_changes": {
+            "candidate_bank": False,
+            "allowed_subsets": False,
+            "candidate_margins": False,
+            "fit_calibration_split": False,
+            "state_strata": False,
+            "goal_type_balance": False,
+            "allocator_algorithm": False,
+            "reverse_coverage_interpretation_only": True,
+        },
+    }
+
+
+def allocation_amendment_digest() -> str:
+    """Canonical digest of the prospective amendment overlay."""
+
+    return _sha256(allocation_amendment_contract())
+
+
+def validate_allocation_amendment_artifact(artifact: Mapping[str, Any]) -> None:
+    """Validate the tracked amendment artifact against the code contract."""
+
+    if not isinstance(artifact, Mapping):
+        raise CandidateAllocationError("allocation amendment artifact must be a mapping")
+    payload = dict(artifact)
+    observed_digest = payload.pop("allocation_amendment_digest", None)
+    if payload != allocation_amendment_contract():
+        raise CandidateAllocationError(
+            "tracked allocation amendment differs from the code contract"
+        )
+    if observed_digest != allocation_amendment_digest():
+        raise CandidateAllocationError("tracked allocation amendment digest mismatch")
+
+
 def candidate_block(rotation_index: int) -> tuple[int, ...]:
     """Return one of the twelve frozen rotated six-candidate blocks."""
 
@@ -95,6 +232,309 @@ def candidate_block(rotation_index: int) -> tuple[int, ...]:
 
 
 ROTATION_BLOCKS = tuple(candidate_block(index) for index in range(CANDIDATE_COUNT))
+
+
+def _pairwise_cooccurrence(
+    blocks: Sequence[Sequence[int]],
+) -> list[list[int]]:
+    """Return a symmetric candidate co-occurrence matrix.
+
+    Diagonal entries are candidate incidence counts.  Off-diagonal entries are
+    counts of subsets containing both candidates.
+    """
+
+    matrix = [[0] * CANDIDATE_COUNT for _ in range(CANDIDATE_COUNT)]
+    for raw_block in blocks:
+        block = {int(candidate) for candidate in raw_block}
+        if len(block) != CANDIDATES_PER_STATE or any(
+                not 0 <= candidate < CANDIDATE_COUNT for candidate in block):
+            raise CandidateAllocationError("invalid block in pairwise co-occurrence")
+        for left in block:
+            for right in block:
+                matrix[left][right] += 1
+    return matrix
+
+
+def _subset_catalogue() -> list[dict[str, Any]]:
+    return [
+        {
+            "rotation_index": rotation,
+            "candidate_indices": list(block),
+            "contains_forward": bool(FORWARD_CANDIDATES.intersection(block)),
+            "contains_turning": bool(TURNING_CANDIDATES.intersection(block)),
+            "contains_reverse": REVERSING_CANDIDATE in block,
+            "contains_hold": HOLD_CANDIDATE in block,
+        }
+        for rotation, block in enumerate(ROTATION_BLOCKS)
+    ]
+
+
+def _pre_identity_slots() -> list[dict[str, Any]]:
+    """Return the deterministic structural slots, without state identities."""
+
+    slots: list[dict[str, Any]] = []
+    slot_index = 0
+    for family in FAMILIES:
+        for stratum in STRATA:
+            for ordinal in range(5):
+                split_role = "calibration" if ordinal == 0 else "fit"
+                slots.append({
+                    "slot_index": slot_index,
+                    "slot_id": f"{family}|{stratum}|{split_role}|{ordinal}",
+                    "family": family,
+                    "stratum": stratum,
+                    "stratum_ordinal": ordinal,
+                    "split_role": split_role,
+                    "candidate_assignment_status": (
+                        "DEFERRED_UNTIL_POST_IDENTITY_CANONICAL_ALLOCATION"
+                    ),
+                    "allowed_rotation_indices": list(range(CANDIDATE_COUNT)),
+                })
+                slot_index += 1
+    return slots
+
+
+def build_pre_identity_structural_validation() -> dict[str, Any]:
+    """Build the outcome-free 120-slot allocation preflight artifact.
+
+    Candidate rotations are deliberately *not* assigned here: the frozen
+    canonical allocator needs the state-identity digest and snapshot-bound goal
+    type.  This artifact validates everything knowable before those identities,
+    including the allowed subset catalogue and its pairwise incidence table.
+    Actual assignment co-occurrence and goal-type balance are mandatory in the
+    later post-identity/pre-outcome validation embedded in the allocation
+    manifest.
+    """
+
+    slots = _pre_identity_slots()
+    subset_catalogue = _subset_catalogue()
+    fixture_goal_type = "preidentity_placeholder_goal_type_all_120_slots"
+    fixture_identities = [{
+        "state_id": f"preidentity-structural-slot-{slot['slot_index']:03d}",
+        "state_identity_digest": _sha256({
+            "schema": "go2_candidate_allocation_v1_2_preidentity_fixture_state",
+            "allocation_amendment_digest": allocation_amendment_digest(),
+            "slot": slot,
+        }),
+        "family": slot["family"],
+        "stratum": slot["stratum"],
+        "split_role": slot["split_role"],
+        "goal_type": fixture_goal_type,
+    } for slot in slots]
+    fixture_source_digest = _sha256({
+        "schema": "go2_candidate_allocation_v1_2_preidentity_fixture_source",
+        "actual_state_identities": False,
+        "candidate_outcomes_consumed": False,
+        "states": fixture_identities,
+    })
+    # This is an actual run of the unchanged canonical allocator over the 120
+    # deterministic structural slots.  It is a feasibility witness only; the
+    # actual state identities and snapshot-bound goal types are allocated and
+    # revalidated separately before any branch outcome.
+    fixture_allocation = build_allocation_manifest(
+        fixture_identities,
+        source_identity_manifest_digest=fixture_source_digest,
+    )
+    fixture_validation = fixture_allocation[
+        "post_identity_pre_outcome_validation"
+    ]
+    fit_slots = [slot for slot in slots if slot["split_role"] == "fit"]
+    calibration_slots = [
+        slot for slot in slots if slot["split_role"] == "calibration"
+    ]
+    strata = [
+        {
+            "stratum": stratum,
+            "state_slot_count": sum(slot["stratum"] == stratum for slot in slots),
+            "candidate_slot_count":
+                sum(slot["stratum"] == stratum for slot in slots)
+                * CANDIDATES_PER_STATE,
+            "fit_state_slot_count": sum(
+                slot["stratum"] == stratum and slot["split_role"] == "fit"
+                for slot in slots
+            ),
+            "calibration_state_slot_count": sum(
+                slot["stratum"] == stratum
+                and slot["split_role"] == "calibration"
+                for slot in slots
+            ),
+        }
+        for stratum in STRATA
+    ]
+    families = [
+        {
+            "family": family,
+            "state_slot_count": sum(slot["family"] == family for slot in slots),
+            "candidate_slot_count":
+                sum(slot["family"] == family for slot in slots)
+                * CANDIDATES_PER_STATE,
+            "fit_state_slot_count": sum(
+                slot["family"] == family and slot["split_role"] == "fit"
+                for slot in slots
+            ),
+            "calibration_state_slot_count": sum(
+                slot["family"] == family
+                and slot["split_role"] == "calibration"
+                for slot in slots
+            ),
+        }
+        for family in FAMILIES
+    ]
+    reverse_catalogue_count = sum(
+        bool(row["contains_reverse"]) for row in subset_catalogue
+    )
+    artifact: dict[str, Any] = {
+        "schema": PRE_IDENTITY_VALIDATION_SCHEMA,
+        "status": "PASS_PRE_IDENTITY_STRUCTURAL_VALIDATION",
+        "allocation_contract_digest": allocation_contract_digest(),
+        "allocation_amendment_digest": allocation_amendment_digest(),
+        "candidate_bank_digest": CANDIDATE_BANK_DIGEST,
+        "original_scorer_fit_allocation_design_digest":
+            SCORER_FIT_ALLOCATION_DESIGN_DIGEST,
+        "global": {
+            "state_slot_count": len(slots),
+            "candidates_per_state": CANDIDATES_PER_STATE,
+            "candidate_slot_count": len(slots) * CANDIDATES_PER_STATE,
+            "candidate_count": CANDIDATE_COUNT,
+            "required_appearances_per_candidate": 60,
+            "required_distinct_reverse_subset_count": 60,
+        },
+        "split_role": [
+            {
+                "split_role": "fit",
+                "state_slot_count": len(fit_slots),
+                "candidate_slot_count": len(fit_slots) * CANDIDATES_PER_STATE,
+                "required_appearances_per_candidate": 48,
+            },
+            {
+                "split_role": "calibration",
+                "state_slot_count": len(calibration_slots),
+                "candidate_slot_count":
+                    len(calibration_slots) * CANDIDATES_PER_STATE,
+                "required_appearances_per_candidate": 12,
+            },
+        ],
+        "strata": strata,
+        "families": families,
+        "slots": slots,
+        "allowed_subset_catalogue": {
+            "assignment_status": (
+                "CATALOGUE_VALIDATED_ASSIGNMENTS_DEFERRED_UNTIL_IDENTITIES"
+            ),
+            "subsets": subset_catalogue,
+            "subset_type_count": len(subset_catalogue),
+            "subset_types_with_reverse": reverse_catalogue_count,
+            "subset_types_without_reverse":
+                len(subset_catalogue) - reverse_catalogue_count,
+            "pairwise_cooccurrence_across_allowed_subset_types": {
+                "definition": (
+                    "diagonal=candidate incidence across the 12 allowed subset "
+                    "types; off-diagonal=number of allowed subset types containing "
+                    "both candidates"
+                ),
+                "candidate_order": list(range(CANDIDATE_COUNT)),
+                "matrix": _pairwise_cooccurrence(ROTATION_BLOCKS),
+            },
+        },
+        "structural_allocator_fixture": {
+            "status": "PASS_UNCHANGED_ALLOCATOR_120_SLOT_FIXTURE",
+            "is_actual_state_identity_assignment": False,
+            "candidate_outcomes_consumed": False,
+            "purpose": (
+                "pre-identity feasibility and balance validation only; it does "
+                "not assign candidates to the later selected state identities"
+            ),
+            "placeholder_goal_type": fixture_goal_type,
+            "placeholder_goal_type_rationale": (
+                "one goal type across all 120 structural slots makes its exact-60 "
+                "balance redundant with the global exact-60 margin; actual "
+                "snapshot-bound goal types remain mandatory post-identity"
+            ),
+            "fixture_source_identity_manifest_digest": fixture_source_digest,
+            "fixture_allocation_manifest_digest":
+                fixture_allocation["allocation_manifest_digest"],
+            "assignments": fixture_allocation["assignments"],
+            "contingency_tables": fixture_allocation["contingency_tables"],
+            "validation": fixture_validation,
+        },
+        "actual_assignment_validation": {
+            "status": "DEFERRED_UNTIL_POST_IDENTITY_PRE_OUTCOME",
+            "required": True,
+            "will_validate": [
+                "global candidate totals",
+                "fit and calibration candidate totals",
+                "stratum candidate totals",
+                "family and family-stratum integer balance",
+                "actual subset flags and rotation usage",
+                "actual 120-assignment pairwise candidate co-occurrence",
+                "exactly 60 distinct state subsets containing candidate 10",
+            ],
+        },
+        "goal_type_validation": {
+            "status": "NOT_EVALUABLE_BEFORE_STATE_IDENTITIES",
+            "actual_goal_types_observed": False,
+            "required_post_identity_pre_outcome": True,
+            "rule": allocation_amendment_contract()["goal_type_boundary"][
+                "mandatory_post_identity_pre_outcome_rule"
+            ],
+            "candidate_outcomes_consumed": False,
+        },
+        "checks": {
+            "state_slot_count_is_120": len(slots) == 120,
+            "candidate_slot_count_is_720":
+                len(slots) * CANDIDATES_PER_STATE == 720,
+            "fit_state_slot_count_is_96": len(fit_slots) == 96,
+            "calibration_state_slot_count_is_24":
+                len(calibration_slots) == 24,
+            "eight_families_with_15_slots_each": all(
+                row["state_slot_count"] == 15 for row in families
+            ),
+            "three_strata_with_40_slots_each": all(
+                row["state_slot_count"] == 40 for row in strata
+            ),
+            "twelve_unique_allowed_subsets":
+                len({tuple(block) for block in ROTATION_BLOCKS}) == 12,
+            "every_allowed_subset_has_forward": all(
+                row["contains_forward"] for row in subset_catalogue
+            ),
+            "every_allowed_subset_has_turning": all(
+                row["contains_turning"] for row in subset_catalogue
+            ),
+            "six_allowed_subset_types_have_reverse":
+                reverse_catalogue_count == 6,
+            "per_subset_reverse_not_required_by_amendment": True,
+            "unchanged_allocator_fixture_has_120_assignments":
+                len(fixture_allocation["assignments"]) == 120,
+            "unchanged_allocator_fixture_global_counts_are_exactly_60":
+                fixture_validation["global"]["candidate_counts"]
+                == [60] * CANDIDATE_COUNT,
+            "unchanged_allocator_fixture_reverse_occurs_in_60_subsets":
+                fixture_validation["reverse_coverage"][
+                    "observed_distinct_state_subset_count"] == 60,
+            "unchanged_allocator_fixture_goal_placeholder_passes":
+                fixture_validation["goal_type_validation"]["status"]
+                == "PASS_ACTUAL_POST_IDENTITY_PRE_OUTCOME_GOAL_TYPE_BALANCE",
+            "goal_type_correctly_deferred": True,
+        },
+    }
+    if not all(artifact["checks"].values()):
+        raise CandidateAllocationError("pre-identity structural allocation check failed")
+    artifact["pre_identity_validation_digest"] = _sha256(artifact)
+    return artifact
+
+
+def validate_pre_identity_structural_validation(
+    artifact: Mapping[str, Any],
+) -> None:
+    """Validate the exact deterministic pre-identity artifact."""
+
+    if not isinstance(artifact, Mapping):
+        raise CandidateAllocationError("pre-identity validation must be a mapping")
+    expected = build_pre_identity_structural_validation()
+    if dict(artifact) != expected:
+        raise CandidateAllocationError(
+            "pre-identity structural validation differs from the frozen artifact"
+        )
 
 
 def algorithm_contract() -> dict[str, Any]:
@@ -442,6 +882,148 @@ def _contingency_tables(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _post_identity_pre_outcome_validation(
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Materialise every allocation check once actual identities are known."""
+
+    tables = _contingency_tables(rows)
+    subset_catalogue = _subset_catalogue()
+    subset_usage = []
+    for catalogue_row in subset_catalogue:
+        rotation = int(catalogue_row["rotation_index"])
+        subset_usage.append({
+            **catalogue_row,
+            "assigned_state_subset_count": sum(
+                int(row["rotation_index"]) == rotation for row in rows
+            ),
+        })
+    reverse_state_ids = sorted(
+        str(row["state_id"])
+        for row in rows
+        if REVERSING_CANDIDATE in row["candidate_indices"]
+    )
+    goal_rows: list[dict[str, Any]] = []
+    for row in tables["goal_type"]:
+        state_count = int(row["state_count"])
+        low, high = state_count // 2, (state_count + 1) // 2
+        counts = [int(value) for value in row["counts"]]
+        allowed = all(value in (low, high) for value in counts)
+        odd_exact = (
+            state_count % 2 == 0
+            or sorted(counts) == [low] * 6 + [high] * 6
+        )
+        goal_rows.append({
+            "goal_type": row["goal_type"],
+            "state_count": state_count,
+            "candidate_counts": counts,
+            "required_floor": low,
+            "required_ceiling": high,
+            "six_floor_six_ceiling_required": bool(state_count % 2),
+            "status": "PASS" if allowed and odd_exact else "FAIL",
+        })
+
+    split = {row["split_role"]: row["counts"] for row in tables["split_role"]}
+    validation: dict[str, Any] = {
+        "schema": POST_IDENTITY_VALIDATION_SCHEMA,
+        "status": "PASS_POST_IDENTITY_PRE_OUTCOME_ALLOCATION_VALIDATION",
+        "allocation_contract_digest": allocation_contract_digest(),
+        "allocation_amendment_digest": allocation_amendment_digest(),
+        "candidate_bank_digest": CANDIDATE_BANK_DIGEST,
+        "candidate_outcomes_consumed": False,
+        "global": {
+            "state_subset_count": len(rows),
+            "candidate_slot_count": sum(
+                len(row["candidate_indices"]) for row in rows
+            ),
+            "candidate_counts": tables["global"],
+        },
+        "split_role": tables["split_role"],
+        "strata": tables["stratum"],
+        "families": tables["family"],
+        "family_strata": tables["family_stratum"],
+        "fit_family_strata": tables["fit_family_stratum"],
+        "calibration_strata": tables["calibration_stratum"],
+        "calibration_families": tables["calibration_family"],
+        "actual_subset_usage": subset_usage,
+        "actual_pairwise_cooccurrence": {
+            "definition": (
+                "diagonal=candidate incidence across 120 assigned state subsets; "
+                "off-diagonal=number of assigned state subsets containing both "
+                "candidates"
+            ),
+            "candidate_order": list(range(CANDIDATE_COUNT)),
+            "matrix": _pairwise_cooccurrence([
+                row["candidate_indices"] for row in rows
+            ]),
+        },
+        "reverse_coverage": {
+            "reversing_candidate_index": REVERSING_CANDIDATE,
+            "required_distinct_state_subset_count": 60,
+            "observed_distinct_state_subset_count": len(set(reverse_state_ids)),
+            "reverse_state_ids": reverse_state_ids,
+            "reverse_state_ids_digest": _sha256(reverse_state_ids),
+            "per_subset_reverse_required": False,
+            "status": "PASS" if len(set(reverse_state_ids)) == 60 else "FAIL",
+        },
+        "goal_type_validation": {
+            "status": (
+                "PASS_ACTUAL_POST_IDENTITY_PRE_OUTCOME_GOAL_TYPE_BALANCE"
+                if all(row["status"] == "PASS" for row in goal_rows)
+                else "FAIL_ACTUAL_POST_IDENTITY_PRE_OUTCOME_GOAL_TYPE_BALANCE"
+            ),
+            "actual_goal_types_observed": True,
+            "rule": allocation_amendment_contract()["goal_type_boundary"][
+                "mandatory_post_identity_pre_outcome_rule"
+            ],
+            "rows": goal_rows,
+            "candidate_outcomes_consumed": False,
+        },
+        "checks": {
+            "state_subset_count_is_120": len(rows) == 120,
+            "candidate_slot_count_is_720": sum(
+                len(row["candidate_indices"]) for row in rows
+            ) == 720,
+            "global_candidate_counts_are_exactly_60":
+                tables["global"] == [60] * CANDIDATE_COUNT,
+            "fit_candidate_counts_are_exactly_48":
+                split.get("fit") == [48] * CANDIDATE_COUNT,
+            "calibration_candidate_counts_are_exactly_12":
+                split.get("calibration") == [12] * CANDIDATE_COUNT,
+            "stratum_candidate_counts_are_exactly_20": all(
+                row["counts"] == [20] * CANDIDATE_COUNT
+                for row in tables["stratum"]
+            ),
+            "family_candidate_counts_are_integer_balanced_7_8": all(
+                sorted(row["counts"]) == [7] * 6 + [8] * 6
+                for row in tables["family"]
+            ),
+            "every_assigned_subset_has_forward": all(
+                FORWARD_CANDIDATES.intersection(row["candidate_indices"])
+                for row in rows
+            ),
+            "every_assigned_subset_has_turning": all(
+                TURNING_CANDIDATES.intersection(row["candidate_indices"])
+                for row in rows
+            ),
+            "reverse_occurs_in_exactly_60_distinct_state_subsets":
+                len(set(reverse_state_ids)) == 60,
+            "goal_type_balance_passes_on_actual_identities": all(
+                row["status"] == "PASS" for row in goal_rows
+            ),
+        },
+    }
+    if not all(validation["checks"].values()):
+        failed = sorted(
+            key for key, passed in validation["checks"].items() if not passed
+        )
+        raise CandidateAllocationError(
+            f"post-identity/pre-outcome allocation validation failed: {failed}"
+        )
+    validation["post_identity_validation_digest"] = _sha256(validation)
+    return validation
+
+
 def allocation_manifest_digest(manifest: Mapping[str, Any]) -> str:
     """Compute the canonical digest, excluding the digest field itself."""
 
@@ -476,8 +1058,12 @@ def build_allocation_manifest(
         "pre_outcome_identity_digest": pre_outcome_identity_digest(normalised),
         "allocation_contract": algorithm_contract(),
         "allocation_contract_digest": allocation_contract_digest(),
+        "allocation_amendment": allocation_amendment_contract(),
+        "allocation_amendment_digest": allocation_amendment_digest(),
         "assignments": assignments,
         "contingency_tables": _contingency_tables(assignments),
+        "post_identity_pre_outcome_validation":
+            _post_identity_pre_outcome_validation(assignments),
     }
     manifest["allocation_manifest_digest"] = allocation_manifest_digest(manifest)
     validate_allocation_manifest(
@@ -547,8 +1133,9 @@ def validate_allocation_manifest(
     expected_keys = {
         "schema", "status", "source_identity_manifest_digest",
         "pre_outcome_identity_digest", "allocation_contract",
-        "allocation_contract_digest", "assignments", "contingency_tables",
-        "allocation_manifest_digest",
+        "allocation_contract_digest", "allocation_amendment",
+        "allocation_amendment_digest", "assignments", "contingency_tables",
+        "post_identity_pre_outcome_validation", "allocation_manifest_digest",
     }
     if set(manifest) != expected_keys:
         raise CandidateAllocationError("allocation manifest has unexpected or missing keys")
@@ -564,6 +1151,10 @@ def validate_allocation_manifest(
         raise CandidateAllocationError("allocation contract differs from frozen v1.2")
     if manifest["allocation_contract_digest"] != allocation_contract_digest():
         raise CandidateAllocationError("allocation contract digest mismatch")
+    if manifest["allocation_amendment"] != allocation_amendment_contract():
+        raise CandidateAllocationError("allocation amendment differs from frozen v1")
+    if manifest["allocation_amendment_digest"] != allocation_amendment_digest():
+        raise CandidateAllocationError("allocation amendment digest mismatch")
 
     raw_assignments = manifest["assignments"]
     if not isinstance(raw_assignments, list) or len(raw_assignments) != 120:
@@ -595,6 +1186,11 @@ def validate_allocation_manifest(
     if manifest["pre_outcome_identity_digest"] != expected_identity_digest:
         raise CandidateAllocationError("pre-outcome identity projection digest mismatch")
     _validate_counts(manifest)
+    expected_validation = _post_identity_pre_outcome_validation(raw_assignments)
+    if manifest["post_identity_pre_outcome_validation"] != expected_validation:
+        raise CandidateAllocationError(
+            "post-identity/pre-outcome validation does not match assignments"
+        )
 
     # Balance alone is insufficient: many complementary allocations have the
     # same contingency tables.  Re-solving from the identity projection makes
@@ -607,11 +1203,15 @@ def validate_allocation_manifest(
             "rotation vector is feasible but is not the canonical lexicographic allocation"
         )
 
-    reverse_count = sum(
-        REVERSING_CANDIDATE in row["candidate_indices"] for row in raw_assignments
-    )
-    if reverse_count != 60:
-        raise CandidateAllocationError("the sole reversing candidate must occur 60 times")
+    reverse_state_ids = {
+        str(row["state_id"]) for row in raw_assignments
+        if REVERSING_CANDIDATE in row["candidate_indices"]
+    }
+    if len(reverse_state_ids) != 60:
+        raise CandidateAllocationError(
+            "the sole reversing candidate must occur in exactly 60 distinct "
+            "state subsets"
+        )
     expected_digest = allocation_manifest_digest(manifest)
     if manifest["allocation_manifest_digest"] != expected_digest:
         raise CandidateAllocationError("allocation manifest digest mismatch")

@@ -1,0 +1,74 @@
+{
+  "allocation_amendment_digest": "4dde3562cdd9e503d6e264a5d4982a189a9f43d338c3d6b87ee20de352bc3cbc",
+  "goal_type_boundary": {
+    "candidate_outcomes_consumed": false,
+    "mandatory_post_identity_pre_outcome_rule": "for every snapshot-bound goal_type containing n states, each candidate count is floor(n/2) or ceil(n/2); for odd n exactly six candidates receive each count",
+    "pre_identity_status": "NOT_EVALUABLE_BEFORE_IDENTITIES",
+    "unavailable_before_state_identity_selection": true
+  },
+  "lineage": {
+    "authorizing_failure_commit": "6a4d6a66c93d9461bdfb8bf4c2ccb5b882dcdb78",
+    "failure_receipt_digest": "550c52f9a3ff04f8a564f6f28e75e9d36fc8bc0f73da4795b95dedc3ad2e3cab",
+    "failure_receipt_path": "docs/lewm_go2_shared_utility_scorer_v1_2_preoutcome_allocation_failure_2026-08-11.json",
+    "failure_receipt_raw_sha256": "3e224158d43a4e75fc7a60436feaeb00cd538a5fabfae5a92983f7ede612df99",
+    "original_scorer_fit_allocation_design_digest": "a587b1de264dfb54176aa231e5183ae4b7b4229bbf65c02d62438f86af5e7116",
+    "predecessor_allocator_contract_digest": "bb2d9956947be64985f15970dc30f9f0e37cda8012f7c7f5da8808c5d601de5e"
+  },
+  "preserved": {
+    "allocator_algorithm_version": "go2_candidate_allocation_v1_2_lexicographic_milp_v1",
+    "allowed_subset_count": 12,
+    "appearances_per_candidate": 60,
+    "attempted_branch_count": 720,
+    "calibration_states": 24,
+    "candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9",
+    "candidate_count": 12,
+    "candidates_per_state": 6,
+    "families": [
+      "large_enclosed_maze",
+      "local_composite_motifs",
+      "loop_alias_stress",
+      "medium_enclosed_maze",
+      "open_obstacle_field",
+      "rough_local_dynamics",
+      "small_enclosed_maze",
+      "visual_sensor_stress"
+    ],
+    "fit_states": 96,
+    "rotation_offsets": [
+      0,
+      1,
+      3,
+      5,
+      8,
+      10
+    ],
+    "state_count": 120,
+    "strata": [
+      "general",
+      "safety_enriched",
+      "completion_enriched"
+    ]
+  },
+  "schema": "go2_shared_utility_scorer_v1_2_allocation_amendment_v1",
+  "scientific_changes": {
+    "allocator_algorithm": false,
+    "allowed_subsets": false,
+    "candidate_bank": false,
+    "candidate_margins": false,
+    "fit_calibration_split": false,
+    "goal_type_balance": false,
+    "reverse_coverage_interpretation_only": true,
+    "state_strata": false
+  },
+  "single_interpretation_change": {
+    "per_subset_forward_requirement_preserved": true,
+    "per_subset_reverse_requirement": false,
+    "per_subset_turning_requirement_preserved": true,
+    "replacement_clause": "the sole reversing candidate occurs in exactly 60 distinct state subsets, as required by exact-60 candidate balance",
+    "required_distinct_reverse_subset_count": 60,
+    "reversing_candidate_index": 10,
+    "superseded_infeasible_clause": "every six-candidate subset contains reversing behaviour"
+  },
+  "status": "AUTHORIZED_PROSPECTIVE_PRE_IDENTITY_AMENDMENT",
+  "version": "allocation_reverse_coverage_resolution_v1"
+}
