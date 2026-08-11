@@ -1,0 +1,210 @@
+{
+  "lineage": {
+    "authorizing_failure_commit": "19e83aaf2d99463954d2c5889528a5016ec72095",
+    "failure_receipt_byte_count": 8586,
+    "failure_receipt_digest": "47c2bcc7cfaf79b328cd5a1cf2823554f2553fc419e020559fde1351df2ca75f",
+    "failure_receipt_path": "docs/lewm_go2_shared_utility_scorer_v1_2_preoutcome_state_selection_failure_2026-08-11.json",
+    "failure_receipt_raw_sha256": "26e372229af4bcde8242062b0b9f9d9c5ba85bdb073537812e9395a608c2455d",
+    "predecessor_contract_artifact": {
+      "byte_count": 26691,
+      "clean_source_launch_receipt_digest": "7ab90a7fc6cdde04a0982701b008bc9d00b47ea8c0baecf47f775dcef6d64520",
+      "contract_artifact_digest": "116a7e77a7888788048a9fddcb3b7a1eaf62ea655890503ea09e08ebc91b898d",
+      "disposition": "SUPERSEDED_PRE_OUTCOME_GRAPH_DISCRETIZATION_INFEASIBLE",
+      "outcomes_generated": false,
+      "path": ".generated/go2_utility_scorer_v1_2/scorer_contract_v1_2.json",
+      "raw_sha256": "3ea9d04c4bf19e21713bac9d724581beac5b0ba41c1c4eb2ee5c017c785d0de2",
+      "scorer_contract_v1_2_digest": "06263907d8f8df0fe735f95da26c10fab9dff4af6827562622aa66463b456c0b"
+    },
+    "predecessor_scorer_contract_digest": "06263907d8f8df0fe735f95da26c10fab9dff4af6827562622aa66463b456c0b",
+    "predecessor_selection_digest": "341de51facbb34b7361175bb713bbcef0fedb9cfc837a5adb6e2c888829a1df1",
+    "unchanged_candidate_allocation_amendment_digest": "4dde3562cdd9e503d6e264a5d4982a189a9f43d338c3d6b87ee20de352bc3cbc",
+    "unchanged_candidate_allocation_amendment_raw_sha256": "1790429d6c02deebc794aa255be3b8c93ac5278de9c8c94920ee13b877fb5f38"
+  },
+  "preserved": {
+    "all_scene_and_identity_exclusions": true,
+    "candidate_allocation_amendment": true,
+    "candidate_bank": true,
+    "candidate_bank_max_translation_over_horizon_m": 0.6,
+    "candidate_bank_max_translation_speed_mps": 0.3,
+    "candidate_outcomes_used_for_selection": false,
+    "completion_absolute_bearing_threshold_deg": 75.0,
+    "completion_geodesic_threshold_m": 0.75,
+    "drive_seed_and_cpu_backend": true,
+    "fit_calibration_rule": true,
+    "general_and_safety_stratum_semantics": true,
+    "horizon_s": 2.0,
+    "oracle_v1_2": true,
+    "scene_order_and_one_state_per_scene": true,
+    "state_and_family_quotas": true,
+    "unchanged_completion_semantics": {
+      "not_interchangeable": true,
+      "oracle_v1_2_completion_target": {
+        "complete_oracle_v1_2_digest": "3ffbe1a87f7975c97e7ff42e50a6a00ca0f47d8840a434d0ff215c303bf6f0e4",
+        "definition": "the snapshot-bound landmark goal cell is reached at any candidate branch tick at or before the four-block horizon",
+        "source_binding": {
+          "byte_count": 13637,
+          "path": "lewm/oracle/go2_branch_oracle_v1_2.py",
+          "sha256": "6d7a6b20bcfb5da112ff10e95a7d3573ebf07884e7b4e58315a733254d6f4fc2",
+          "symbols": [
+            "COMPLETION_CONTRACT",
+            "branch_components"
+          ]
+        }
+      },
+      "production_task_completion_and_reset": {
+        "definition": "after the minimum-block guard, an active route-like non-revisit collector has claimed every scene landmark cell, causing RolloutRunner to reset that environment",
+        "source_binding": {
+          "byte_count": 86066,
+          "path": "lewm_genesis/lewm_genesis/rollout.py",
+          "sha256": "06501bbbdd1e071a3a91e765d77bd19da5f2c311c35d75df4631c452beea034a",
+          "symbols": [
+            "RolloutRunner._check_and_reset_completed_envs"
+          ]
+        }
+      },
+      "snapshot_production_designated_goal_claim": {
+        "definition": "at snapshot time the designated goal cell is present in the active production collector's actual visited-landmark set, populated by range-envelope, camera-FOV and line-of-sight arrival gates",
+        "source_binding": {
+          "byte_count": 51313,
+          "path": "lewm_genesis/lewm_genesis/collectors/route_teacher.py",
+          "sha256": "2ccd4fba3ef45bd3f75358dc617f4d575b96d7c6e4d3a2538b76e31bc3d79968",
+          "symbols": [
+            "RouteTeacherPolicy._evaluate_arrival_gates",
+            "RouteTeacherPolicy._landmark_visible",
+            "RouteTeacherPolicy.visited_landmark_cells"
+          ]
+        }
+      }
+    },
+    "warmup_blocks_40_through_120_inclusive": true
+  },
+  "preserved_state_revalidation": {
+    "active_manifest_mixed_preoutcome_provenance": {
+      "legacy_state_shard_digests_mapping_retained": true,
+      "manifest_field": "state_shard_provenance",
+      "predecessor_shards_retained_byte_exact": 3,
+      "predecessor_state_identity_digests_recomputed": false,
+      "required_per_entry_fields": [
+        "family",
+        "path",
+        "state_shard_digest",
+        "raw_sha256",
+        "byte_count",
+        "selection_provenance"
+      ],
+      "required_state_shard_provenance_entries": 8,
+      "selection_provenance_values": {
+        "predecessor": "PREDECESSOR_BYTE_EXACT_REVALIDATED",
+        "successor": "SUCCESSOR_SELECTOR_AMENDMENT_V1"
+      },
+      "successor_shards_selected_under_amendment": 5
+    },
+    "candidate_outcomes_may_be_loaded": false,
+    "expected_family_count": 3,
+    "expected_state_count": 45,
+    "failed_or_changed_state_disposition": "preserve the predecessor shard; do not mix it into the successor identity manifest",
+    "phase_1_precontract": {
+      "receipt_path": ".generated/go2_branch_corpus_v1_2/scorer_fit/preserved_state_precontract_revalidation_receipt.json",
+      "receipt_schema": "go2_scorer_fit_preserved_state_precontract_revalidation_receipt_v1",
+      "required_before_successor_contract_issue": true,
+      "requirements": "exact redrive, amended classification, exclusion and unchanged identity checks only; no candidate allocation"
+    },
+    "phase_2_post_allocation": {
+      "receipt_path": ".generated/go2_branch_corpus_v1_2/scorer_fit/preserved_state_revalidation_receipt.json",
+      "receipt_schema": "go2_scorer_fit_preserved_state_revalidation_receipt_v1",
+      "required_before_active_identity_manifest": true,
+      "requirements": "all 45 unchanged identities carried into the complete 120-state allocation with exact six-candidate masks and post-identity pre-outcome validation"
+    },
+    "source_shards": [
+      {
+        "byte_count": 41994,
+        "family": "large_enclosed_maze",
+        "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_shard_large_enclosed_maze.json",
+        "raw_sha256": "289f63e5a607fb49c62a996043019ca8b6ef2def31ae39afc0a87ddbca71e866",
+        "state_count": 15,
+        "state_shard_digest": "3b1cabb8cf104f0edc19e27d9f11922655a5424b32a4ad41ec3d5466b4193914"
+      },
+      {
+        "byte_count": 36323,
+        "family": "local_composite_motifs",
+        "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_shard_local_composite_motifs.json",
+        "raw_sha256": "eca93582615e946b0a3c4692dc9353cb826f6e3d4b5e6ccd2c706ee9f53ee0dd",
+        "state_count": 15,
+        "state_shard_digest": "e066820d0a85e53a8b7e30a4b4fe1386df3e315674ebd094b0beb64c74242321"
+      },
+      {
+        "byte_count": 37216,
+        "family": "loop_alias_stress",
+        "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_shard_loop_alias_stress.json",
+        "raw_sha256": "9b7d7ee1f0029b3cd64eb3127687ba03e67eab4c75e4c4600a375afbf721acf6",
+        "state_count": 15,
+        "state_shard_digest": "9aee1729903e555273a792c03a5290f7547645995164042f9f021fec48de3985"
+      }
+    ]
+  },
+  "replacement": {
+    "completion": "enumerate finite snapshot-bound landmark fields including graph_hops == 0; graph_hops is diagnostic only for completion",
+    "completion_goal_order": "argmin over (continuous_metric_geodesic_m, landmark_id, landmark_cell, graph_hops_diagnostic)",
+    "completion_requirements": {
+      "absolute_body_bearing_deg_max": 75.0,
+      "continuous_metric_geodesic_m_max": 0.75,
+      "reachable": true,
+      "snapshot_goal_claimed": false,
+      "snapshot_task_completed": false,
+      "snapshot_terminated": false,
+      "snapshot_truncated": false
+    },
+    "general_and_safety": "unchanged nearest finite reachable landmark enumeration; general requires graph_hops >= 2 and safety remains a subset",
+    "separate_goal_enumeration_by_stratum": true,
+    "snapshot_task_status_sources": {
+      "goal_claimed": "designated goal cell is in the active production collector visited_landmark_cells(env_idx); that set is populated only by the collector's actual range-envelope, camera-FOV and line-of-sight arrival gates; false when the accessor is unavailable",
+      "task_completed": "exact RolloutRunner._check_and_reset_completed_envs reset predicate: minimum-block guard, active route-like collector, non-revisit policy, and all scene landmark cells present in the collector's production claimed set",
+      "terminated": "any run_go2_oracle_branch_pilot_v1._termination_flags value is true, including nan",
+      "truncated": "literal false asserted at the pre-branch canonical state boundary; no candidate branch or invocation truncation is in progress"
+    },
+    "state_selection_priority": [
+      "general",
+      "safety_enriched",
+      "completion_enriched"
+    ]
+  },
+  "schema": "go2_scorer_fit_state_selector_amendment_v1",
+  "state_selector_amendment_digest": "69e11a3efe665c4591fa29748b2f13ad08938b92acde763bda10608f93768628",
+  "state_selector_feasibility": {
+    "all_eligible_scenes_scanned": true,
+    "candidate_outcomes_may_be_loaded": false,
+    "family_or_stratum_scoped_diagnostics_are_not_binding": true,
+    "receipt_path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_selector_feasibility_receipt.json",
+    "receipt_schema": "go2_scorer_fit_state_selector_feasibility_receipt_v1",
+    "required_before_successor_contract_issue": true,
+    "required_distinct_eligible_scenes_per_family_stratum": 5,
+    "required_families": [
+      "large_enclosed_maze",
+      "local_composite_motifs",
+      "loop_alias_stress",
+      "medium_enclosed_maze",
+      "open_obstacle_field",
+      "rough_local_dynamics",
+      "small_enclosed_maze",
+      "visual_sensor_stress"
+    ],
+    "required_strata": [
+      "general",
+      "safety_enriched",
+      "completion_enriched"
+    ],
+    "selected_state_identities_created": false
+  },
+  "status": "AUTHORIZED_PROSPECTIVE_PRE_OUTCOME_SELECTOR_AMENDMENT",
+  "superseded_conjunction": {
+    "affected_families": [
+      "open_obstacle_field",
+      "rough_local_dynamics"
+    ],
+    "candidate_outcomes_observed": false,
+    "failure": "in 2.4m graph lattices a pose outside the goal cell is at least 1.2m from its centre, while a pose inside has hops=0",
+    "rule": "one shared bound-landmark enumeration rejects graph_hops < 1 before applying completion geodesic <= 0.75m",
+    "status": "SUPERSEDED_PRE_OUTCOME_GRAPH_DISCRETIZATION_INFEASIBLE"
+  },
+  "version": "v1"
+}

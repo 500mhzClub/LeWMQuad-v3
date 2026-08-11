@@ -5,7 +5,10 @@ DEVELOPMENT_ONLY_NOT_CLAIM_BEARING.
 Baseline: the frozen prospective scorer contract
 ``d32118552b6fd373aefab143917bb04e63ffbe196129266a1546affc08f763ff``.
 
-**Only the target definitions and the bound digests change.** Everything the
+The oracle-v1.2 target retargeting remains unchanged.  A prospective,
+pre-outcome state-selector amendment is additionally bound after the original
+shared hop-eligibility/completion conjunction was proven infeasible on two
+required graph families.  Everything else the
 frozen contract fixes — separate progress/safety/completion heads, the full
 H=1..4 latent-trajectory input, the explicit goal binding, the 10-D five-tick
 post-slew candidate action input, the trunk architecture, the fixed optimiser
@@ -23,6 +26,9 @@ What changes, and nothing else:
 * ``completion`` is unchanged — the bound landmark reached at or before the
   branch horizon;
 * the composite is unchanged: ``U_hat = 1.0*P_hat - 2.0*S_hat + 0.5*C_hat``.
+* completion-enriched state selection now enumerates its goal separately and
+  may retain graph-hop-zero as diagnostic, while preserving the 0.75 m and
+  75-degree thresholds and the production at-or-before-horizon predicate.
 """
 from __future__ import annotations
 
@@ -41,6 +47,7 @@ from lewm.oracle.go2_branch_oracle_v1_2 import (
 )
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
+from lewm.oracle import go2_scorer_state_selector_amendment_v1 as STATE_SELECTOR
 
 STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
 BASELINE_CONTRACT_DIGEST = (
@@ -68,6 +75,13 @@ SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT = {
     "outcomes_generated": False,
     "disposition": "superseded_pre_run_preserve_do_not_reuse",
 }
+
+# Immediate predecessor issued cleanly at 38e7fc84 before state selection.  It
+# generated no branch identity or outcome, but its shared hops>=1/completion
+# conjunction is proven infeasible and it must be archived rather than reused.
+SUPERSEDED_GRAPH_INFEASIBLE_CONTRACT_ARTIFACT = (
+    STATE_SELECTOR.PREDECESSOR_CONTRACT_ARTIFACT
+)
 
 
 def _digest(payload: Any) -> str:
@@ -159,7 +173,12 @@ PREPROCESS_CONTRACT = {
 }
 
 CORPUS_SELECTION_CONTRACT = {
-    "name": "go2_planning_corpus_selection_v1_2",
+    "name": "go2_planning_corpus_selection_v1_2_selector_amendment_v1",
+    "predecessor_selection_digest": STATE_SELECTOR.PREDECESSOR_SELECTION_DIGEST,
+    "state_selector_amendment":
+        STATE_SELECTOR.state_selector_amendment_contract(),
+    "state_selector_amendment_digest":
+        STATE_SELECTOR.state_selector_amendment_digest(),
     "allocation_design_digest": SCORER_FIT_ALLOCATION_DESIGN_DIGEST,
     "candidate_allocator_contract_digest": (
         "bb2d9956947be64985f15970dc30f9f0e37cda8012f7c7f5da8808c5d601de5e"
@@ -167,7 +186,8 @@ CORPUS_SELECTION_CONTRACT = {
     "candidate_allocator_amendment_digest": ALLOC.allocation_amendment_digest(),
     "scene_order": "all eligible corpus scenes sorted by (family, scene_id)",
     "scorer_fit": "first snapshot-time eligible 15 distinct scenes per family "
-                  "after all frozen exclusions; five per frozen stratum",
+                  "after all frozen exclusions; five per frozen stratum under "
+                  "state-selector amendment v1",
     "final_eval": "first snapshot-time eligible 25 remaining distinct scenes per "
                   "family after all frozen exclusions and scorer-fit scenes",
     "one_state_per_scene": True,
@@ -179,8 +199,45 @@ CORPUS_SELECTION_CONTRACT = {
     "strata": {
         "general": "reachable bound landmark with graph_edges >= 2",
         "safety_enriched": "general plus snapshot-time body-probe clearance <= 0.10m",
-        "completion_enriched": "snapshot-time metric geodesic <= 0.75m and "
-                               "absolute body bearing <= 75 degrees",
+        "completion_enriched": "separately enumerated finite snapshot-bound "
+                               "landmark, including graph_hops == 0, with metric "
+                               "geodesic <= 0.75m, absolute body bearing <= 75 "
+                               "degrees, and false snapshot task-completed, "
+                               "goal-claimed, terminated and truncated flags; "
+                               "graph hops are diagnostic only",
+    },
+    "state_selection_priority":
+        list(STATE_SELECTOR.SCORER_FIT_SELECTION_PRIORITY),
+    "completion_semantic_separation":
+        STATE_SELECTOR.state_selector_amendment_contract()["preserved"][
+            "unchanged_completion_semantics"
+        ],
+    "state_selector_feasibility_receipt": {
+        "required_before_successor_contract_issue": True,
+        "schema": STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_SCHEMA,
+        "path": STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH,
+        "all_eight_families_all_three_strata": True,
+        "minimum_distinct_eligible_scenes_per_family_stratum": 5,
+        "identity_and_outcome_free": True,
+    },
+    "preserved_state_precontract_revalidation_receipt": {
+        "required_before_successor_contract_issue": True,
+        "schema":
+            STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_SCHEMA,
+        "path":
+            STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH,
+        "expected_state_count": 45,
+        "identity_unchanged_and_outcome_free": True,
+        "candidate_allocation_verified": False,
+    },
+    "preserved_state_revalidation_receipt": {
+        "required_after_all_120_identities_and_candidate_allocation": True,
+        "required_before_active_identity_manifest_or_branch_execution": True,
+        "schema": STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA,
+        "path": STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH,
+        "expected_state_count": 45,
+        "exact_allocated_candidate_masks_verified": True,
+        "identity_unchanged_and_outcome_free": True,
     },
     "goal_type": "snapshot-bound landmark material_id; allocator-only balance key",
     "candidate_allocation": "canonical exact allocation manifest under the bound "
@@ -250,7 +307,10 @@ SCORER = {
                    "target": "oracle v1.2 graded path-level safety cost",
                    "target_digest": safety_digest()},
         "completion": {"kind": "binary",
-                       "target": "bound landmark reached at or before the horizon"},
+                       "target": "oracle v1.2 bound landmark cell reached at any "
+                                 "candidate branch tick at or before the horizon; "
+                                 "not the production collector claim or task-reset "
+                                 "predicate"},
         "rationale": "separate heads are separately qualifiable, so one failing "
                      "component cannot silently corrupt the composite",
     },
@@ -318,6 +378,24 @@ def source_bindings() -> dict[str, Any]:
             ALLOC.AMENDMENT_ARTIFACT_PATH),
         "candidate_allocation_preoutcome_failure_receipt": _file_binding(
             ALLOC.FAILURE_RECEIPT_PATH),
+        "state_selector_amendment_implementation": _file_binding(
+            "lewm/oracle/go2_scorer_state_selector_amendment_v1.py"),
+        "state_selector_amendment_authority": _file_binding(
+            STATE_SELECTOR.AMENDMENT_ARTIFACT_PATH),
+        "state_selector_preoutcome_failure_receipt": _file_binding(
+            STATE_SELECTOR.FAILURE_RECEIPT_PATH),
+        "oracle_v1_2_completion_target_implementation": _file_binding(
+            STATE_SELECTOR.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
+                "oracle_v1_2_completion_target"
+            ]["path"]),
+        "production_designated_goal_claim_implementation": _file_binding(
+            STATE_SELECTOR.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
+                "snapshot_production_designated_goal_claim"
+            ]["path"]),
+        "production_task_completion_reset_implementation": _file_binding(
+            STATE_SELECTOR.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
+                "production_task_completion_and_reset"
+            ]["path"]),
         "invalid_scorer_identity_exclusion": _file_binding(
             "lewm/oracle/go2_invalid_scorer_identity_exclusion_v1_2.py"),
         "latent_encoder_driver": _file_binding(
@@ -344,6 +422,12 @@ def contract() -> dict[str, Any]:
         "candidate_allocation_amendment": ALLOC.allocation_amendment_contract(),
         "candidate_allocation_amendment_digest":
             ALLOC.allocation_amendment_digest(),
+        "state_selector_amendment":
+            STATE_SELECTOR.state_selector_amendment_contract(),
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "superseded_graph_infeasible_contract_artifact":
+            SUPERSEDED_GRAPH_INFEASIBLE_CONTRACT_ARTIFACT,
         "invalid_scorer_identity_exclusion":
             INVALID_IDS.INVALID_SCORER_IDENTITY_EXCLUSION,
         "invalid_scorer_identity_exclusion_digest":
@@ -449,7 +533,7 @@ def clean_source_binding() -> dict[str, Any]:
 
 
 def _prepare_contract_output(path: Path, payload: dict[str, Any]) -> str:
-    """Preserve the known pre-run predecessor and refuse unknown overwrites.
+    """Preserve a known pre-run predecessor and refuse unknown overwrites.
 
     Returns ``new``, ``current`` or ``superseded_archived``.  This helper is
     intentionally separate from external checkpoint validation so its recovery
@@ -473,12 +557,15 @@ def _prepare_contract_output(path: Path, payload: dict[str, Any]) -> str:
     if existing == payload:
         return "current"
 
-    predecessor = SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT
-    if (len(raw) != predecessor["byte_count"]
-            or hashlib.sha256(raw).hexdigest() != predecessor["raw_sha256"]
-            or existing.get("scorer_contract_v1_2_digest")
-            != predecessor["scorer_contract_v1_2_digest"]
-            or existing_self != predecessor["contract_artifact_digest"]):
+    predecessor = next((candidate for candidate in (
+        SUPERSEDED_GRAPH_INFEASIBLE_CONTRACT_ARTIFACT,
+        SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT,
+    ) if (len(raw) == candidate["byte_count"]
+          and hashlib.sha256(raw).hexdigest() == candidate["raw_sha256"]
+          and existing.get("scorer_contract_v1_2_digest")
+          == candidate["scorer_contract_v1_2_digest"]
+          and existing_self == candidate["contract_artifact_digest"])), None)
+    if predecessor is None:
         raise RuntimeError("refusing to overwrite an unknown scorer-contract artifact")
     archive = path.parent / "superseded_pre_run" / (
         "scorer_contract_v1_2."
@@ -494,12 +581,30 @@ def _prepare_contract_output(path: Path, payload: dict[str, Any]) -> str:
 
 
 def _contract_artifact_payload(
-        source_launch_binding: dict[str, Any]) -> dict[str, Any]:
+        source_launch_binding: dict[str, Any],
+        state_selector_feasibility_receipt: dict[str, Any],
+        preserved_state_precontract_revalidation_receipt: dict[str, Any],
+) -> dict[str, Any]:
     """Build the post-verification artifact; pure for focused contract tests."""
 
     if (source_launch_binding.get("source_repository_clean") is not True
             or not source_launch_binding.get("source_repository_commit")):
         raise RuntimeError("contract artifact requires a clean-source launch binding")
+    selection_digest = _digest(CORPUS_SELECTION_CONTRACT)
+    STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+        state_selector_feasibility_receipt,
+        expected_source_commit=source_launch_binding["source_repository_commit"],
+        expected_successor_selection_digest=selection_digest,
+    )
+    feasibility_digest = state_selector_feasibility_receipt[
+        "state_selector_feasibility_receipt_digest"
+    ]
+    STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
+        preserved_state_precontract_revalidation_receipt,
+        expected_source_commit=source_launch_binding["source_repository_commit"],
+        expected_successor_selection_digest=selection_digest,
+        expected_feasibility_receipt_digest=feasibility_digest,
+    )
     payload = {
         "schema": "go2_utility_scorer_contract_v1_2_artifact",
         "status": STATUS,
@@ -511,7 +616,23 @@ def _contract_artifact_payload(
         "historical_renderer_wrapper_verified": True,
         "candidate_allocator_verified": True,
         "candidate_allocation_amendment_verified": True,
+        "state_selector_amendment_verified": True,
+        "state_selector_feasibility_verified": True,
+        "state_selector_feasibility_receipt_digest": feasibility_digest,
+        "preserved_state_precontract_revalidation_verified": True,
+        "preserved_state_precontract_revalidation_receipt_digest":
+            preserved_state_precontract_revalidation_receipt[
+                "preserved_state_precontract_revalidation_receipt_digest"
+            ],
+        "preserved_state_post_allocation_revalidation": {
+            "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
+            "required_before_active_identity_manifest": True,
+            "schema": STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA,
+            "path": STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH,
+            "realized_receipt_digest_bound_at_contract_issue": False,
+        },
         "preoutcome_allocation_failure_receipt_verified": True,
+        "preoutcome_state_selection_failure_receipt_verified": True,
         "invalid_scorer_identity_exclusion_verified": True,
         "source_repository_commit":
             source_launch_binding["source_repository_commit"],
@@ -520,6 +641,8 @@ def _contract_artifact_payload(
         "clean_source_binding_digest": _digest(source_launch_binding),
         "superseded_pre_run_contract_preservation":
             SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT,
+        "superseded_graph_infeasible_contract_preservation":
+            SUPERSEDED_GRAPH_INFEASIBLE_CONTRACT_ARTIFACT,
         "contract": contract(),
     }
     payload["contract_artifact_digest"] = _digest(payload)
@@ -530,6 +653,32 @@ def issue_contract(path: Path) -> dict[str, Any]:
     """Validate external bindings and atomically issue the pre-outcome contract."""
 
     source_launch_binding = clean_source_binding()
+    STATE_SELECTOR.validate_authority_artifacts()
+    feasibility_path = ROOT / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH
+    revalidation_path = (
+        ROOT
+        / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH
+    )
+    if not feasibility_path.is_file():
+        raise RuntimeError("state-selector all-family feasibility receipt is missing")
+    if not revalidation_path.is_file():
+        raise RuntimeError("preserved-state precontract revalidation receipt is missing")
+    feasibility_receipt = json.loads(feasibility_path.read_text())
+    revalidation_receipt = json.loads(revalidation_path.read_text())
+    selection_digest = _digest(CORPUS_SELECTION_CONTRACT)
+    STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+        feasibility_receipt,
+        expected_source_commit=source_launch_binding["source_repository_commit"],
+        expected_successor_selection_digest=selection_digest,
+    )
+    STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
+        revalidation_receipt,
+        expected_source_commit=source_launch_binding["source_repository_commit"],
+        expected_successor_selection_digest=selection_digest,
+        expected_feasibility_receipt_digest=feasibility_receipt[
+            "state_selector_feasibility_receipt_digest"
+        ],
+    )
     invalid_index = INVALID_IDS.load_invalid_identity_index()
     if (invalid_index.binding()["invalid_scorer_identity_exclusion_digest"]
             != INVALID_IDS.invalid_identity_exclusion_digest()):
@@ -580,7 +729,9 @@ def issue_contract(path: Path) -> dict[str, Any]:
     if ALLOC.allocation_amendment_digest() != CORPUS_SELECTION_CONTRACT[
             "candidate_allocator_amendment_digest"]:
         raise RuntimeError("candidate-allocation amendment binding failed")
-    payload = _contract_artifact_payload(source_launch_binding)
+    payload = _contract_artifact_payload(
+        source_launch_binding, feasibility_receipt, revalidation_receipt,
+    )
     disposition = _prepare_contract_output(path, payload)
     if disposition == "current":
         return payload

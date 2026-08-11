@@ -29,6 +29,20 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                 "schema": "go2_utility_scorer_contract_v1_2_artifact",
                 "complete": True,
                 "source_repository_clean": True,
+                "state_selector_amendment_verified": True,
+                "state_selector_feasibility_verified": True,
+                "preserved_state_precontract_revalidation_verified": True,
+                "state_selector_feasibility_receipt_digest": "f" * 64,
+                "preserved_state_precontract_revalidation_receipt_digest":
+                    "d" * 64,
+                "preserved_state_post_allocation_revalidation": {
+                    "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
+                    "required_before_active_identity_manifest": True,
+                    "schema": scorer.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA,
+                    "path":
+                        scorer.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH,
+                    "realized_receipt_digest_bound_at_contract_issue": False,
+                },
                 "scorer_contract_v1_2_digest": scorer.contract_digest(),
                 "contract": scorer.contract(),
                 "clean_source_binding": source,
@@ -53,6 +67,9 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                     scorer.allocation_amendment_digest(),
                 "invalid_scorer_identity_exclusion_digest":
                     scorer.invalid_identity_exclusion_digest(),
+                "state_selector_amendment_digest":
+                    scorer.STATE_SELECTOR.state_selector_amendment_digest(),
+                "state_selector_feasibility_receipt_digest": "f" * 64,
                 "pre_identity_allocation_validation_digest":
                     pre_identity["pre_identity_validation_digest"],
             }
@@ -81,6 +98,9 @@ class UtilityScorerTrainerTests(unittest.TestCase):
             "clean_source_binding_digest": "s" * 64,
             "bound_implementations_digest": "b" * 64,
             "scorer_contract_artifact_digest": "a" * 64,
+            "state_selector_amendment_digest": "a" * 64,
+            "state_selector_feasibility_receipt_digest": "f" * 64,
+            "preserved_state_revalidation_receipt_digest": "e" * 64,
         }
         frozen = scorer.contract()
         common = {
@@ -95,6 +115,7 @@ class UtilityScorerTrainerTests(unittest.TestCase):
             "pre_identity_allocation_validation_digest": "i" * 64,
             "invalid_scorer_identity_exclusion_digest":
                 scorer.invalid_identity_exclusion_digest(),
+            **{key: manifest[key] for key in scorer.SELECTOR_BINDING_KEYS},
             **{key: manifest[key] for key in scorer.LAUNCH_BINDING_KEYS},
             "render_contract_digest": scorer.canonical_digest(
                 frozen["render_contract"]),
@@ -130,6 +151,66 @@ class UtilityScorerTrainerTests(unittest.TestCase):
             with self.assertRaisesRegex(scorer.CorpusValidationError,
                                         "missing required end-to-end smoke receipt"):
                 scorer._validate_smoke_receipts(root, manifest)
+
+    def test_selector_successor_requires_both_outcome_free_receipts(self):
+        feasibility = {
+            "state_selector_feasibility_receipt_digest": "f" * 64,
+        }
+        revalidation = {
+            "preserved_state_revalidation_receipt_digest": "e" * 64,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / scorer.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME
+             ).write_text(json.dumps(feasibility))
+            revalidation_path = (
+                root
+                / scorer.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME)
+            revalidation_path.write_text(json.dumps(revalidation))
+            with mock.patch.object(
+                    scorer.STATE_SELECTOR, "validate_authority_artifacts"), \
+                    mock.patch.object(
+                        scorer.STATE_SELECTOR,
+                        "validate_state_selector_feasibility_receipt"), \
+                    mock.patch.object(
+                        scorer.STATE_SELECTOR,
+                        "validate_preserved_state_revalidation_receipt"
+                    ) as validate_final_revalidation, \
+                    mock.patch.object(
+                        scorer.STATE_SELECTOR, "state_selector_amendment_digest",
+                        return_value="a" * 64):
+                bindings = scorer._validate_selector_successor(
+                    root, {
+                        "source_repository_commit": "c" * 40,
+                        "launch_state_selector_feasibility_receipt_digest":
+                            "f" * 64,
+                        "preserved_state_precontract_revalidation_receipt_digest":
+                            "d" * 64,
+                    }, {})
+                self.assertEqual(bindings, {
+                    "state_selector_amendment_digest": "a" * 64,
+                    "state_selector_feasibility_receipt_digest": "f" * 64,
+                    "preserved_state_revalidation_receipt_digest": "e" * 64,
+                })
+                validate_final_revalidation.assert_called_once()
+                final_kwargs = validate_final_revalidation.call_args.kwargs
+                self.assertEqual(final_kwargs["allocation_manifest"], {})
+                self.assertEqual(
+                    final_kwargs[
+                        "expected_precontract_revalidation_receipt_digest"],
+                    "d" * 64)
+                revalidation_path.unlink()
+                with self.assertRaisesRegex(
+                        scorer.CorpusValidationError,
+                        "missing preserved-state revalidation receipt"):
+                    scorer._validate_selector_successor(
+                        root, {
+                            "source_repository_commit": "c" * 40,
+                            "launch_state_selector_feasibility_receipt_digest":
+                                "f" * 64,
+                            "preserved_state_precontract_revalidation_receipt_digest":
+                                "d" * 64,
+                        }, {})
 
     def test_registered_initialisation_is_reproducible_and_immutable(self):
         with tempfile.TemporaryDirectory() as directory:

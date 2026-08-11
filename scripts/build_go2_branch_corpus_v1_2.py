@@ -29,6 +29,7 @@ import math
 import os
 import sys
 import time
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
@@ -42,11 +43,12 @@ for extra in (ROOT, ROOT / "lewm_genesis", ROOT / "lewm_worlds", ROOT / "scripts
 import run_go2_oracle_branch_pilot_v1 as V1
 import run_go2_oracle_branch_pilot_v1_2 as V12
 from lewm.oracle.go2_branch_oracle_v1_2 import (
-    GeodesicField,
+    GeodesicField, HORIZON_S, V_MAX_MPS,
     progress_digest, safety_digest, oracle_digest as v12_oracle_digest,
 )
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
+from lewm.oracle import go2_scorer_state_selector_amendment_v1 as STATE_SELECTOR
 from lewm.oracle.go2_textured_v03_renderer import (
     BasePose,
     TexturedV03Renderer,
@@ -101,8 +103,15 @@ V12_IDENTITY_MANIFEST_DIGEST = (
 # ---- frozen strata (scorer-fit only), snapshot-time geometry only -------------
 STRATA = ("general", "safety_enriched", "completion_enriched")
 SAFETY_ENRICHED_MAX_BODY_CLEARANCE_M = 0.10
-COMPLETION_ENRICHED_MAX_GEODESIC_M = 0.75
-COMPLETION_ENRICHED_MAX_BEARING_RAD = math.radians(75.0)
+COMPLETION_ENRICHED_MAX_GEODESIC_M = STATE_SELECTOR.COMPLETION_MAX_GEODESIC_M
+COMPLETION_ENRICHED_MAX_BEARING_RAD = math.radians(
+    STATE_SELECTOR.COMPLETION_MAX_ABS_BEARING_DEG)
+COMPLETION_HORIZON_S = STATE_SELECTOR.HORIZON_S
+COMPLETION_MAX_TRANSLATION_M = STATE_SELECTOR.MAX_TRANSLATION_M
+if (COMPLETION_HORIZON_S != HORIZON_S
+        or STATE_SELECTOR.V_MAX_MPS != V_MAX_MPS
+        or tuple(STATE_SELECTOR.SCORER_FIT_SELECTION_PRIORITY) != STRATA):
+    raise RuntimeError("state-selector amendment changed a preserved oracle binding")
 
 POOLS = {
     "scorer_fit": {
@@ -121,6 +130,11 @@ SELECTION = dict(CORPUS_SELECTION_CONTRACT)
 WARMUP_BLOCKS_MIN, WARMUP_BLOCKS_MAX = SELECTION["warmup_blocks"]
 PRE_IDENTITY_VALIDATION_NAME = "pre_identity_allocation_validation.json"
 LAUNCH_RECEIPT_NAME = "clean_source_launch_receipt.json"
+SELECTOR_FEASIBILITY_SCHEMA = (
+    "go2_scorer_fit_state_selector_feasibility_receipt_v1"
+)
+SELECTOR_FEASIBILITY_RECEIPT_NAME = "state_selector_feasibility_receipt.json"
+SELECTOR_FEASIBILITY_PASS_STATUS = "PASS_OUTCOME_FREE_ALL_SCENE_FEASIBILITY"
 SCORER_CONTRACT_ARTIFACT_PATH = (
     ROOT / ".generated/go2_utility_scorer_v1_2/scorer_contract_v1_2.json"
 )
@@ -130,6 +144,11 @@ LAUNCH_BINDING_KEYS = (
     "clean_source_binding_digest",
     "bound_implementations_digest",
     "scorer_contract_artifact_digest",
+)
+ACTIVE_SELECTOR_BINDING_KEYS = (
+    "state_selector_amendment_digest",
+    "state_selector_feasibility_receipt_digest",
+    "preserved_state_revalidation_receipt_digest",
 )
 
 
@@ -201,6 +220,19 @@ def _build_clean_source_launch_receipt(
         pre_identity: dict[str, Any]) -> dict[str, Any]:
     scorer_artifact = _load_issued_scorer_contract()
     source = scorer_artifact["clean_source_binding"]
+    selector_receipts = _load_state_selector_preconditions(
+        source_commit=str(source["source_repository_commit"]),
+        successor_selection_digest=selection_digest(),
+    )
+    if (scorer_artifact.get("state_selector_feasibility_receipt_digest")
+            != selector_receipts["state_selector_feasibility_receipt_digest"]
+            or scorer_artifact.get(
+                "preserved_state_precontract_revalidation_receipt_digest")
+            != selector_receipts[
+                "preserved_state_precontract_revalidation_receipt_digest"]):
+        raise RuntimeError(
+            "issued scorer contract differs from active selector receipts"
+        )
     receipt = {
         "schema": "go2_utility_scorer_v1_2_clean_source_launch_receipt",
         "status": STATUS,
@@ -219,6 +251,9 @@ def _build_clean_source_launch_receipt(
             ALLOC.allocation_amendment_digest(),
         "invalid_scorer_identity_exclusion_digest":
             INVALID_IDS.invalid_identity_exclusion_digest(),
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        **selector_receipts,
         "pre_identity_allocation_validation_digest":
             pre_identity["pre_identity_validation_digest"],
     }
@@ -304,6 +339,69 @@ def _verify_self_digest(payload: dict[str, Any], key: str, label: str) -> None:
                                  if name != key})
     if payload.get(key) != expected:
         raise RuntimeError(f"{label} self digest mismatch")
+
+
+def _load_state_selector_preconditions(
+        *, source_commit: str, successor_selection_digest: str
+        ) -> dict[str, str]:
+    """Load and validate the outcome-free pre-identity feasibility gate."""
+
+    feasibility_path = ROOT / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH
+    precontract_path = (
+        ROOT
+        / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH
+    )
+    if not feasibility_path.is_file():
+        raise RuntimeError("state-selector all-family feasibility receipt is missing")
+    if not precontract_path.is_file():
+        raise RuntimeError(
+            "preserved-state precontract revalidation receipt is missing"
+        )
+    feasibility = json.loads(feasibility_path.read_text())
+    precontract = json.loads(precontract_path.read_text())
+    STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+        feasibility,
+        expected_source_commit=source_commit,
+        expected_successor_selection_digest=successor_selection_digest,
+    )
+    feasibility_digest = str(
+        feasibility["state_selector_feasibility_receipt_digest"]
+    )
+    STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
+        precontract,
+        expected_source_commit=source_commit,
+        expected_successor_selection_digest=successor_selection_digest,
+        expected_feasibility_receipt_digest=feasibility_digest,
+        root=ROOT,
+    )
+    return {
+        "state_selector_feasibility_receipt_digest": feasibility_digest,
+        "preserved_state_precontract_revalidation_receipt_digest": str(
+            precontract[
+                "preserved_state_precontract_revalidation_receipt_digest"
+            ]
+        ),
+    }
+
+
+@lru_cache(maxsize=1)
+def _preserved_states_by_digest() -> dict[str, dict[str, Any]]:
+    shards = STATE_SELECTOR.load_preserved_state_shards(ROOT)
+    states = {
+        str(state["state_identity_digest"]): dict(state)
+        for shard in shards.values() for state in shard["states"]
+    }
+    if len(states) != 45:
+        raise RuntimeError("preserved predecessor state identity count changed")
+    return states
+
+
+def _state_identity_matches_active_or_preserved(state: dict[str, Any]) -> bool:
+    digest = str(state.get("state_identity_digest", ""))
+    preserved = _preserved_states_by_digest().get(digest)
+    if preserved is not None:
+        return _state_identity_payload(state) == _state_identity_payload(preserved)
+    return _state_identity_digest(state) == digest
 
 
 def _preserve_invalid(path: Path, out: Path, reason: str) -> Path:
@@ -529,26 +627,263 @@ def geodesic_field(ctx: V1.BranchContext, landmark_cell: int,
     return field
 
 
-def classify_state(ctx: V1.BranchContext, topology: dict[str, Any]
+def _snapshot_task_status(ctx: V1.BranchContext, goal_cell: int) -> dict[str, Any]:
+    """Return the production task flags at one pre-branch canonical boundary.
+
+    The active collector is the sole owner of route claims.  Truncation is
+    false by construction: this selector runs between complete production
+    command blocks, before a candidate branch or invocation-level limit exists.
+    """
+
+    runner = ctx.runner
+    active = runner._scheduler.policy_for(0)
+    visited = getattr(active, "visited_landmark_cells", None)
+    claimed = (frozenset(int(cell) for cell in visited(0))
+               if callable(visited) else frozenset())
+    # Match RolloutRunner._check_and_reset_completed_envs exactly: its route
+    # completion universe is the runner's landmark-cell lookup, not a newly
+    # inferred or filtered goal list.
+    all_goal_cells = frozenset(
+        int(cell) for cell in runner._landmark_cell_to_id
+    )
+    from lewm_genesis.rollout import _MIN_BLOCKS_BEFORE_COMPLETE_RESET
+    reset_evidence = {
+        "minimum_block_guard_pass": (
+            int(runner._blocks_in_episode[0])
+            >= _MIN_BLOCKS_BEFORE_COMPLETE_RESET),
+        "scene_graph_available": runner._scene_graph is not None,
+        "active_collector_route_like": callable(visited),
+        "active_collector_non_revisit": not bool(
+            getattr(active, "revisit_after_arrival", False)),
+        "scene_landmark_cells_nonempty": bool(all_goal_cells),
+        "all_scene_landmark_cells_claimed": bool(
+            all_goal_cells and all_goal_cells.issubset(claimed)),
+    }
+    task_completed = all(reset_evidence.values())
+    termination_flags = {
+        str(key): bool(value) for key, value in V1._termination_flags(ctx).items()
+    }
+    return {
+        "task_completed": task_completed,
+        "goal_claimed": int(goal_cell) in claimed,
+        "production_claim_evidence": {
+            "active_collector_visited_accessor_callable": callable(visited),
+            "active_collector_claimed_cells": sorted(claimed),
+            "designated_goal_cell": int(goal_cell),
+        },
+        "production_task_completion_reset_evidence": reset_evidence,
+        "terminated": any(termination_flags.values()),
+        "truncated": False,
+        "termination_flags": termination_flags,
+    }
+
+
+def completion_enriched_eligibility(
+        *, graph_hops: int, reachable: bool, continuous_geodesic_m: float,
+        bearing_body_rad: float, task_status: dict[str, Any]) -> dict[str, Any]:
+    """Pure successor predicate; it has no branch or outcome input.
+
+    ``graph_hops`` is retained as diagnostic evidence only.  In particular,
+    zero hops is not itself completion: the production task claim/completion
+    flags remain authoritative and must both be false.
+    """
+
+    reasons: list[str] = []
+    if not bool(reachable) or not math.isfinite(float(continuous_geodesic_m)):
+        reasons.append("completion_unreachable")
+    elif float(continuous_geodesic_m) > COMPLETION_ENRICHED_MAX_GEODESIC_M:
+        reasons.append("completion_geodesic_gt_0_75m")
+    if (not math.isfinite(float(bearing_body_rad))
+            or abs(float(bearing_body_rad)) > COMPLETION_ENRICHED_MAX_BEARING_RAD):
+        reasons.append("completion_bearing_gt_75deg")
+    for key in ("task_completed", "goal_claimed", "terminated", "truncated"):
+        if key not in task_status or not isinstance(task_status[key], bool):
+            reasons.append(f"completion_snapshot_{key}_unavailable")
+        elif task_status[key]:
+            reasons.append(f"completion_snapshot_{key}")
+    return {
+        "eligible": not reasons,
+        "rejection_reasons": reasons,
+        "reachable": bool(reachable),
+        "continuous_geodesic_m": float(continuous_geodesic_m),
+        "max_geodesic_m": COMPLETION_ENRICHED_MAX_GEODESIC_M,
+        "bearing_body_rad": float(bearing_body_rad),
+        "abs_bearing_rad": abs(float(bearing_body_rad)),
+        "max_abs_bearing_rad": COMPLETION_ENRICHED_MAX_BEARING_RAD,
+        "horizon_s": COMPLETION_HORIZON_S,
+        "max_translation_m": COMPLETION_MAX_TRANSLATION_M,
+        "graph_hops_diagnostic": int(graph_hops),
+        "task_status": dict(task_status),
+    }
+
+
+def _oracle_completion_target_unchanged() -> bool:
+    """Verify the frozen future completion label, not a snapshot task flag."""
+
+    return bool(
+        v12_oracle_digest() == STATE_SELECTOR.ORACLE_V1_2_DIGEST
+        and HORIZONS == 4
+        and COMPLETION_HORIZON_S == HORIZON_S == 2.0
+    )
+
+
+def _snapshot_claim_semantics_unchanged(task_status: dict[str, Any]) -> bool:
+    evidence = task_status.get("production_claim_evidence", {})
+    cells = evidence.get("active_collector_claimed_cells")
+    goal_cell = evidence.get("designated_goal_cell")
+    return bool(
+        isinstance(evidence.get(
+            "active_collector_visited_accessor_callable"), bool)
+        and isinstance(cells, list)
+        and isinstance(goal_cell, int)
+        and isinstance(task_status.get("goal_claimed"), bool)
+        and task_status["goal_claimed"] is (goal_cell in cells)
+    )
+
+
+def _production_task_reset_semantics_unchanged(
+        task_status: dict[str, Any]) -> bool:
+    evidence = task_status.get("production_task_completion_reset_evidence", {})
+    required = (
+        "minimum_block_guard_pass", "scene_graph_available",
+        "active_collector_route_like", "active_collector_non_revisit",
+        "scene_landmark_cells_nonempty", "all_scene_landmark_cells_claimed",
+    )
+    return bool(
+        all(isinstance(evidence.get(key), bool) for key in required)
+        and task_status.get("task_completed") is all(evidence[key] for key in required)
+    )
+
+
+def _goal_material(ctx: V1.BranchContext, name: str) -> str | None:
+    materials = sorted({str(obj.material_id) for obj in ctx.pack.static_objects
+                        if str(obj.object_id) == str(name)})
+    if len(materials) != 1 or not materials[0].startswith("landmark_"):
+        return None
+    return materials[0]
+
+
+def _state_record(*, boundary: dict[str, Any], cell: int, name: str,
+                  landmark_cell: int, goal_type: str, hops: int, distance: float,
+                  bearing: float, range_m: float, centre: Sequence[float],
+                  body_clearance: float, clearance: float,
+                  completion_eligibility: dict[str, Any] | None = None
+                  ) -> dict[str, Any]:
+    record = {
+        "boundary": boundary, "cell_id": int(cell),
+        "goal": {"landmark_id": str(name), "landmark_cell": int(landmark_cell),
+                 "material_id": str(goal_type),
+                 "graph_edges": int(hops), "start_geodesic_m": float(distance),
+                 "bearing_body_rad": float(bearing), "range_m": float(range_m),
+                 "landmark_xy_m": [float(centre[0]), float(centre[1])]},
+        "body_clearance_m": float(body_clearance),
+        "clearance_m": float(clearance),
+    }
+    if completion_eligibility is not None:
+        record["completion_eligibility"] = completion_eligibility
+        record["snapshot_task_status"] = completion_eligibility["task_status"]
+    return record
+
+
+def classify_state(ctx: V1.BranchContext, topology: dict[str, Any], *,
+                   requested_stratum: str | None = None,
+                   diagnostics: dict[str, int] | None = None
                    ) -> tuple[dict[str, Any], GeodesicField, set[str]] | str:
-    """Common eligibility plus the strata this state qualifies for."""
+    """Classify one snapshot, optionally binding the goal for one stratum.
+
+    General and safety retain the original nearest-landmark ``hops >= 2``
+    semantics.  The successor changes only completion goal enumeration: its
+    hop count is diagnostic, while unchanged continuous geometry and exact
+    production task-status guards determine eligibility.
+    """
+
+    if requested_stratum not in (None, *STRATA):
+        raise ValueError(f"unknown requested stratum {requested_stratum!r}")
+
+    def reject(reason: str) -> str:
+        if diagnostics is not None:
+            diagnostics[reason] = diagnostics.get(reason, 0) + 1
+        return reason
 
     try:
         boundary = V1.assert_canonical_boundary(ctx)
     except V1.BoundaryRefused as exc:
-        return f"boundary_refused: {str(exc)[:50]}"
+        return reject(f"boundary_refused: {str(exc)[:50]}")
     if ctx.episode_ticks < PROPRIO_HISTORY - 1:
-        return "insufficient_proprioceptive_history"
-    (x, y), _yaw, _z = ctx.pose()
+        return reject("insufficient_proprioceptive_history")
+    (x, y), yaw, _z = ctx.pose()
     hit = ctx.scene_graph.locate((x, y))
     if float(hit.distance_m) > V1.LOCATE_MAX_DISTANCE_M:
-        return "locate_distance_gt_2m"
+        return reject("locate_distance_gt_2m")
     if V12._contact_count(ctx, topology) > 0:
-        return "already_in_disallowed_contact"
+        return reject("already_in_disallowed_contact")
 
     graph = ctx.scene_graph
     blocked = getattr(graph, "nav_blocked_cells", frozenset())
     cell = int(hit.cell_id)
+    from analyze_go2_closed_loop_quality import _body_probe_configuration_clearance_m
+    body_clearance = float(_body_probe_configuration_clearance_m(
+        ctx.grid, [x, y], yaw,
+        body_forward_m=V1.CONTACT_BODY_FORWARD_M,
+        body_half_width_m=V1.CONTACT_BODY_HALF_WIDTH_M,
+        body_probe_margin_m=V1.CONTACT_BODY_PROBE_MARGIN_M))
+    clearance = float(graph.clearance_to_walls((x, y)))
+
+    # Completion uses a dedicated designation pass.  Unlike the general/safety
+    # pass below, no hop floor is applied before the unchanged reachability,
+    # continuous-distance, bearing, horizon and task-state checks.
+    if requested_stratum == "completion_enriched":
+        eligible: list[tuple[tuple[float, str, int, int], dict[str, Any],
+                                  GeodesicField]] = []
+        saw_reachable = False
+        for name, landmark_cell in sorted(graph.landmark_cells,
+                                          key=lambda kv: str(kv[0])):
+            hops = graph.bfs_distance(cell, int(landmark_cell),
+                                      transit_blocked=blocked)
+            if hops is None:
+                if diagnostics is not None:
+                    diagnostics["completion_unreachable"] = diagnostics.get(
+                        "completion_unreachable", 0) + 1
+                continue
+            saw_reachable = True
+            field = geodesic_field(ctx, int(landmark_cell), blocked)
+            distance = field.remaining_distance((x, y), cell)
+            centre = graph.cell_center(int(landmark_cell))
+            bearing, range_m = landmark_bearing_range(ctx, centre)
+            task_status = _snapshot_task_status(ctx, int(landmark_cell))
+            evidence = completion_enriched_eligibility(
+                graph_hops=int(hops), reachable=math.isfinite(distance),
+                continuous_geodesic_m=float(distance),
+                bearing_body_rad=float(bearing), task_status=task_status)
+            if diagnostics is not None:
+                for reason in evidence["rejection_reasons"]:
+                    diagnostics[reason] = diagnostics.get(reason, 0) + 1
+            goal_type = _goal_material(ctx, str(name))
+            if goal_type is None:
+                if diagnostics is not None:
+                    diagnostics["bound_landmark_material_missing_or_ambiguous"] = \
+                        diagnostics.get(
+                            "bound_landmark_material_missing_or_ambiguous", 0) + 1
+                continue
+            if not evidence["eligible"]:
+                continue
+            record = _state_record(
+                boundary=boundary, cell=cell, name=str(name),
+                landmark_cell=int(landmark_cell), goal_type=goal_type,
+                hops=int(hops), distance=float(distance), bearing=float(bearing),
+                range_m=float(range_m), centre=centre,
+                body_clearance=body_clearance, clearance=clearance,
+                completion_eligibility=evidence)
+            key = (float(distance), str(name), int(landmark_cell), int(hops))
+            eligible.append((key, record, field))
+        if not eligible:
+            return reject("no_completion_enriched_goal" if saw_reachable
+                          else "no_reachable_landmark")
+        _key, record, field = min(eligible, key=lambda row: row[0])
+        return record, field, {"completion_enriched"}
+
+    # Original general/safety designation and ordering, byte-for-byte in
+    # substance: the closest reachable landmark at one or more graph edges.
     best: tuple[float, str, int, int, GeodesicField] | None = None
     for name, landmark_cell in sorted(graph.landmark_cells, key=lambda kv: str(kv[0])):
         hops = graph.bfs_distance(cell, int(landmark_cell), transit_blocked=blocked)
@@ -562,45 +897,33 @@ def classify_state(ctx: V1.BranchContext, topology: dict[str, Any]
         if best is None or key < best[:4]:
             best = (*key, field)
     if best is None:
-        return "no_reachable_landmark"
+        return reject("no_reachable_landmark")
     distance, name, landmark_cell, hops, field = best
-
-    from analyze_go2_closed_loop_quality import _body_probe_configuration_clearance_m
-    (_x, _y), yaw, _z2 = ctx.pose()
-    body_clearance = float(_body_probe_configuration_clearance_m(
-        ctx.grid, [x, y], yaw,
-        body_forward_m=V1.CONTACT_BODY_FORWARD_M,
-        body_half_width_m=V1.CONTACT_BODY_HALF_WIDTH_M,
-        body_probe_margin_m=V1.CONTACT_BODY_PROBE_MARGIN_M))
     centre = graph.cell_center(int(landmark_cell))
     bearing, range_m = landmark_bearing_range(ctx, centre)
-    materials = sorted({str(obj.material_id) for obj in ctx.pack.static_objects
-                        if str(obj.object_id) == str(name)})
-    if len(materials) != 1 or not materials[0].startswith("landmark_"):
-        return "bound_landmark_material_missing_or_ambiguous"
-    goal_type = materials[0]
+    goal_type = _goal_material(ctx, str(name))
+    if goal_type is None:
+        return reject("bound_landmark_material_missing_or_ambiguous")
 
     strata: set[str] = set()
     if hops >= 2:
         strata.add("general")
         if body_clearance <= SAFETY_ENRICHED_MAX_BODY_CLEARANCE_M:
             strata.add("safety_enriched")
-    if (distance <= COMPLETION_ENRICHED_MAX_GEODESIC_M
+    # Preserve the pre-successor default path for final-evaluation callers.
+    if (requested_stratum is None
+            and distance <= COMPLETION_ENRICHED_MAX_GEODESIC_M
             and abs(bearing) <= COMPLETION_ENRICHED_MAX_BEARING_RAD):
         strata.add("completion_enriched")
+    if requested_stratum is not None and requested_stratum not in strata:
+        return reject("no_stratum")
     if not strata:
-        return "no_stratum"
-
-    record = {
-        "boundary": boundary, "cell_id": cell,
-        "goal": {"landmark_id": name, "landmark_cell": int(landmark_cell),
-                 "material_id": goal_type,
-                 "graph_edges": int(hops), "start_geodesic_m": float(distance),
-                 "bearing_body_rad": float(bearing), "range_m": float(range_m),
-                 "landmark_xy_m": [float(centre[0]), float(centre[1])]},
-        "body_clearance_m": body_clearance,
-        "clearance_m": float(graph.clearance_to_walls((x, y))),
-    }
+        return reject("no_stratum")
+    record = _state_record(
+        boundary=boundary, cell=cell, name=str(name),
+        landmark_cell=int(landmark_cell), goal_type=goal_type, hops=int(hops),
+        distance=float(distance), bearing=float(bearing), range_m=float(range_m),
+        centre=centre, body_clearance=body_clearance, clearance=clearance)
     return record, field, strata
 
 
@@ -665,6 +988,596 @@ def scene_pool(pool_name: str) -> tuple[dict[str, list[Path]], dict[str, Any]]:
     return families, exclusion_binding
 
 
+def _metric_distribution(values: Sequence[float]) -> dict[str, Any]:
+    finite = np.asarray([float(value) for value in values
+                         if math.isfinite(float(value))], dtype=np.float64)
+    if finite.size == 0:
+        return {"count": 0, "min": None, "q1": None, "median": None,
+                "mean": None, "q3": None, "max": None}
+    return {
+        "count": int(finite.size),
+        "min": float(np.min(finite)),
+        "q1": float(np.quantile(finite, 0.25)),
+        "median": float(np.quantile(finite, 0.5)),
+        "mean": float(np.mean(finite)),
+        "q3": float(np.quantile(finite, 0.75)),
+        "max": float(np.max(finite)),
+    }
+
+
+def build_selector_feasibility_summary(
+        *, family: str, allowed_scene_count: int,
+        requested_strata: Sequence[str], scene_evidence: Sequence[dict[str, Any]],
+        rejection_counts: dict[str, int]) -> dict[str, Any]:
+    """Pure reducer for an identity-free, outcome-free family dry-run."""
+
+    strata = tuple(str(value) for value in requested_strata)
+    if not strata or any(value not in STRATA for value in strata):
+        raise ValueError("dry-run requested unknown or empty strata")
+    evidence_by_stratum: dict[str, list[dict[str, Any]]] = {
+        stratum: [] for stratum in strata
+    }
+    seen_pairs: set[tuple[str, str]] = set()
+    for row in scene_evidence:
+        # Intentionally enumerate the permitted keys: a branch outcome, oracle
+        # label or candidate result has no read path through this reducer.
+        row_family = str(row["family"])
+        scene_id = str(row["scene_id"])
+        stratum = str(row["stratum"])
+        if row_family != family or stratum not in evidence_by_stratum:
+            raise ValueError("dry-run evidence family/stratum mismatch")
+        pair = (scene_id, stratum)
+        if pair in seen_pairs:
+            raise ValueError("dry-run evidence must be first-eligible per scene/stratum")
+        seen_pairs.add(pair)
+        evidence_by_stratum[stratum].append({
+            "scene_id": scene_id,
+            "first_eligible_block": int(row["first_eligible_block"]),
+            "continuous_geodesic_m": float(row["continuous_geodesic_m"]),
+            "abs_bearing_rad": float(row["abs_bearing_rad"]),
+            "graph_hops_diagnostic": int(row["graph_hops_diagnostic"]),
+            "body_clearance_m": float(row["body_clearance_m"]),
+        })
+
+    per_stratum: dict[str, Any] = {}
+    for stratum in strata:
+        rows = sorted(evidence_by_stratum[stratum],
+                      key=lambda row: (row["scene_id"], row["first_eligible_block"]))
+        count = len(rows)
+        required = int(POOLS["scorer_fit"]["strata"][stratum])
+        per_stratum[stratum] = {
+            "required_distinct_scenes": required,
+            "eligible_distinct_scenes": count,
+            "quota_pass": count >= required,
+            "distributions": {
+                "continuous_geodesic_m": _metric_distribution(
+                    [row["continuous_geodesic_m"] for row in rows]),
+                "abs_bearing_rad": _metric_distribution(
+                    [row["abs_bearing_rad"] for row in rows]),
+                "graph_hops_diagnostic": _metric_distribution(
+                    [row["graph_hops_diagnostic"] for row in rows]),
+                "first_eligible_block": _metric_distribution(
+                    [row["first_eligible_block"] for row in rows]),
+                "body_clearance_m": _metric_distribution(
+                    [row["body_clearance_m"] for row in rows]),
+            },
+            "scene_evidence": rows,
+        }
+    return {
+        "family": str(family),
+        "allowed_scene_count": int(allowed_scene_count),
+        "scanned_scene_count": int(allowed_scene_count),
+        "requested_strata": list(strata),
+        "per_stratum": per_stratum,
+        "rejection_counts": {
+            str(key): int(value) for key, value in sorted(rejection_counts.items())
+        },
+        "all_requested_quotas_pass": all(
+            row["quota_pass"] for row in per_stratum.values()),
+    }
+
+
+def _selector_scene_evidence(family: str, scene_id: str, stratum: str,
+                             block_index: int,
+                             record: dict[str, Any]) -> dict[str, Any]:
+    goal = record["goal"]
+    return {
+        "family": str(family),
+        "scene_id": str(scene_id),
+        "stratum": str(stratum),
+        "first_eligible_block": int(block_index),
+        "continuous_geodesic_m": float(goal["start_geodesic_m"]),
+        "abs_bearing_rad": abs(float(goal["bearing_body_rad"])),
+        "graph_hops_diagnostic": int(goal["graph_edges"]),
+        "body_clearance_m": float(record["body_clearance_m"]),
+    }
+
+
+def _scan_selector_family(*, family: str, scenes: Sequence[Path],
+                          requested_strata: Sequence[str], backend: str,
+                          shared: dict[str, Any]) -> dict[str, Any]:
+    """Scan every allowed scene without selecting an identity or a branch."""
+
+    evidence: list[dict[str, Any]] = []
+    rejections: dict[str, int] = {}
+    for scene_dir in scenes:
+        seed = V1._drive_seed(scene_dir.name)
+        ctx = V1.build_context(scene_dir, seed=seed, backend=backend, shared=shared)
+        topology = V12.link_topology(ctx)
+        ctx.begin_episode()
+        found_in_scene: set[str] = set()
+        for block_idx in range(WARMUP_BLOCKS_MAX):
+            ctx.drive_one_block()
+            if block_idx + 1 < WARMUP_BLOCKS_MIN:
+                continue
+            for stratum in requested_strata:
+                if stratum in found_in_scene:
+                    continue
+                local_diagnostics: dict[str, int] = {}
+                verdict = classify_state(
+                    ctx, topology, requested_stratum=stratum,
+                    diagnostics=local_diagnostics)
+                for reason, count in local_diagnostics.items():
+                    key = reason.split(":")[0]
+                    rejections[key] = rejections.get(key, 0) + int(count)
+                if isinstance(verdict, str):
+                    continue
+                record, _field, _eligible = verdict
+                evidence.append(_selector_scene_evidence(
+                    family, scene_dir.name, stratum, block_idx + 1, record))
+                found_in_scene.add(stratum)
+            if len(found_in_scene) == len(requested_strata):
+                break
+        _FIELD_CACHE.clear()
+        del ctx
+        gc.collect()
+    return build_selector_feasibility_summary(
+        family=family, allowed_scene_count=len(scenes),
+        requested_strata=requested_strata, scene_evidence=evidence,
+        rejection_counts=rejections)
+
+
+def _load_completed_selector_feasibility(path: Path, *, source_commit: str,
+                                         successor_selection_digest: str
+                                         ) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        existing = json.loads(path.read_text())
+        _verify_self_digest(
+            existing, "state_selector_feasibility_receipt_digest",
+            "state-selector feasibility receipt")
+        if (existing.get("complete") is not True
+                or existing.get("binding_receipt") is not True
+                or existing.get("source_repository_commit") != source_commit
+                or existing.get("successor_selection_digest")
+                != successor_selection_digest
+                or existing.get("state_selector_amendment_digest")
+                != STATE_SELECTOR.state_selector_amendment_digest()
+                or existing.get("family_count") != EXPECTED_FAMILIES
+                or existing.get("strata") != list(STRATA)
+                or existing.get("required_distinct_scenes_per_stratum") != 5):
+            return None
+        forbidden = (
+            "selected_state_identities_created", "candidate_outcomes_loaded",
+            "branch_identities_created", "branches_attempted", "frames_rendered",
+            "target_latents_encoded", "scorer_training_started",
+        )
+        if any(existing.get(key) not in (False, 0) for key in forbidden):
+            return None
+        rows = existing.get("families")
+        if (not isinstance(rows, list) or len(rows) != EXPECTED_FAMILIES
+                or {str(row.get("family")) for row in rows}
+                != set(STATE_SELECTOR.REQUIRED_FAMILIES)):
+            return None
+        verdicts: list[str] = []
+        for row in rows:
+            if (row.get("all_allowed_scenes_scanned") is not True
+                    or set(row.get("strata", {})) != set(STRATA)):
+                return None
+            expected_family_pass = True
+            for stratum in STRATA:
+                evidence = row["strata"][stratum]
+                if evidence.get("required_distinct_scenes") != 5:
+                    return None
+                expected = ("PASS" if int(
+                    evidence.get("eligible_distinct_scenes", -1)) >= 5 else "FAIL")
+                if evidence.get("verdict") != expected:
+                    return None
+                expected_family_pass &= expected == "PASS"
+            expected_verdict = "PASS" if expected_family_pass else "FAIL"
+            if row.get("verdict") != expected_verdict:
+                return None
+            verdicts.append(expected_verdict)
+        expected_status = (SELECTOR_FEASIBILITY_PASS_STATUS
+                           if all(value == "PASS" for value in verdicts)
+                           else "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY")
+        if existing.get("status") != expected_status:
+            return None
+        if expected_status == SELECTOR_FEASIBILITY_PASS_STATUS:
+            STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+                existing,
+                expected_source_commit=source_commit,
+                expected_successor_selection_digest=successor_selection_digest,
+            )
+        return existing
+    except (OSError, TypeError, ValueError, RuntimeError, json.JSONDecodeError):
+        return None
+
+
+def stage_selector_feasibility(args: argparse.Namespace) -> int:
+    """Run the outcome-free all-scene feasibility gate or a scoped diagnostic."""
+
+    if args.pool != "scorer_fit":
+        raise RuntimeError("selector feasibility is defined only for scorer_fit")
+    if args.backend != "cpu":
+        raise RuntimeError("the frozen selector feasibility backend is cpu")
+    STATE_SELECTOR.validate_authority_artifacts()
+    source = clean_source_binding()
+    if source.get("source_repository_clean") is not True:
+        raise RuntimeError("selector feasibility requires a clean source repository")
+    successor_digest = selection_digest()
+    requested_families = ([str(args.family)] if args.family is not None
+                          else list(STATE_SELECTOR.REQUIRED_FAMILIES))
+    requested_strata = ([str(args.stratum)] if args.stratum is not None
+                        else list(STATE_SELECTOR.REQUIRED_STRATA))
+    binding_run = (args.family is None and args.stratum is None)
+    out = OUT_ROOT / "scorer_fit"
+    out.mkdir(parents=True, exist_ok=True)
+    path = (out / SELECTOR_FEASIBILITY_RECEIPT_NAME if binding_run else
+            out / ("state_selector_feasibility_diagnostic_"
+                   + "-".join(requested_families) + "_"
+                   + "-".join(requested_strata) + ".json"))
+    if binding_run:
+        existing = _load_completed_selector_feasibility(
+            path, source_commit=str(source["source_repository_commit"]),
+            successor_selection_digest=successor_digest)
+        if existing is not None:
+            print(json.dumps(existing, indent=2, sort_keys=True))
+            return 0 if existing.get("status") == SELECTOR_FEASIBILITY_PASS_STATUS else 1
+
+    pool, exclusion = scene_pool("scorer_fit")
+    unknown = sorted(set(requested_families) - set(pool))
+    if unknown:
+        raise RuntimeError(f"unknown selector-feasibility families: {unknown}")
+    started = time.time()
+    shared = V1._load_shared(args.backend)
+    families = [
+        _scan_selector_family(
+            family=family, scenes=pool[family],
+            requested_strata=requested_strata, backend=args.backend,
+            shared=shared)
+        for family in requested_families
+    ]
+    family_rows: list[dict[str, Any]] = []
+    for summary in families:
+        strata = {}
+        for stratum in requested_strata:
+            evidence = summary["per_stratum"][stratum]
+            strata[stratum] = {
+                "required_distinct_scenes": evidence["required_distinct_scenes"],
+                "eligible_distinct_scenes": evidence["eligible_distinct_scenes"],
+                "verdict": "PASS" if evidence["quota_pass"] else "FAIL",
+                "distributions": evidence["distributions"],
+                "scene_evidence": evidence["scene_evidence"],
+            }
+        family_rows.append({
+            "family": summary["family"],
+            "allowed_scene_count": summary["allowed_scene_count"],
+            "scanned_scene_count": summary["scanned_scene_count"],
+            "all_allowed_scenes_scanned": (
+                summary["scanned_scene_count"] == summary["allowed_scene_count"]),
+            "verdict": "PASS" if summary["all_requested_quotas_pass"] else "FAIL",
+            "strata": strata,
+            "rejection_counts": summary["rejection_counts"],
+        })
+    passed = all(row["verdict"] == "PASS" for row in family_rows)
+    payload = {
+        "schema": (SELECTOR_FEASIBILITY_SCHEMA if binding_run
+                   else "go2_scorer_fit_state_selector_feasibility_diagnostic_v1"),
+        "status": (SELECTOR_FEASIBILITY_PASS_STATUS if passed and binding_run
+                   else ("PASS_OUTCOME_FREE_SCOPED_FEASIBILITY" if passed
+                         else "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY")),
+        "complete": True,
+        "binding_receipt": binding_run,
+        "source_repository_commit": source["source_repository_commit"],
+        "clean_source_binding_digest": canonical_digest(source),
+        "bound_implementations_digest": source["bound_implementations_digest"],
+        "successor_selection_digest": successor_digest,
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "family_count": len(family_rows),
+        "strata": list(requested_strata),
+        "required_distinct_scenes_per_stratum": 5,
+        "families": family_rows,
+        "exclusion_binding_digest": canonical_digest(exclusion),
+        "runtime_s": round(time.time() - started, 6),
+        "selected_state_identities_created": False,
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+    }
+    digest_key = ("state_selector_feasibility_receipt_digest" if binding_run
+                  else "state_selector_feasibility_diagnostic_digest")
+    payload[digest_key] = canonical_digest(payload)
+    if path.exists():
+        _preserve_invalid(path, out, "selector-feasibility-superseded")
+    atomic_json(path, payload)
+    if binding_run:
+        STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+            payload, expected_source_commit=str(source["source_repository_commit"]),
+            expected_successor_selection_digest=successor_digest)
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0 if passed else 1
+
+
+def stage_preserved_state_precontract_revalidation(
+        args: argparse.Namespace) -> int:
+    """Exactly redrive the valid paused 45 identities without branch outcomes."""
+
+    if args.pool != "scorer_fit" or args.family is not None or args.stratum is not None:
+        raise RuntimeError(
+            "preserved-state precontract revalidation is one all-family scorer-fit gate"
+        )
+    if args.backend != "cpu":
+        raise RuntimeError("preserved-state revalidation requires the CPU backend")
+    STATE_SELECTOR.validate_authority_artifacts()
+    oracle_completion_target_unchanged = _oracle_completion_target_unchanged()
+    source = clean_source_binding()
+    if source.get("source_repository_clean") is not True:
+        raise RuntimeError("preserved-state revalidation requires clean source")
+    successor_digest = selection_digest()
+    feasibility_path = ROOT / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH
+    if not feasibility_path.is_file():
+        raise RuntimeError("selector feasibility must complete before revalidation")
+    feasibility = json.loads(feasibility_path.read_text())
+    STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+        feasibility,
+        expected_source_commit=str(source["source_repository_commit"]),
+        expected_successor_selection_digest=successor_digest,
+    )
+    out = OUT_ROOT / "scorer_fit"
+    path = (
+        ROOT
+        / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH
+    )
+    if path.parent != out:
+        raise RuntimeError("precontract revalidation receipt escaped scorer-fit pool")
+    if path.is_file():
+        existing = json.loads(path.read_text())
+        try:
+            STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
+                existing,
+                expected_source_commit=str(source["source_repository_commit"]),
+                expected_successor_selection_digest=successor_digest,
+                expected_feasibility_receipt_digest=feasibility[
+                    "state_selector_feasibility_receipt_digest"],
+                root=ROOT,
+            )
+        except Exception:
+            # A complete, self-bound scientific failure is terminal and must
+            # never be converted into a retry merely because it did not pass.
+            try:
+                _verify_self_digest(
+                    existing,
+                    "preserved_state_precontract_revalidation_receipt_digest",
+                    "failed precontract revalidation receipt")
+            except Exception:
+                if _outcome_generation_started(out):
+                    raise RuntimeError(
+                        "invalid precontract receipt exists after outcomes"
+                    )
+                _preserve_invalid(path, out, "precontract-revalidation-invalid")
+            else:
+                if (existing.get("status")
+                        == "FAIL_PRECONTRACT_IDENTITY_REVALIDATION"
+                        and existing.get("complete") is True
+                        and existing.get("source_repository_commit")
+                        == source["source_repository_commit"]
+                        and existing.get("successor_selection_digest")
+                        == successor_digest):
+                    print(json.dumps(existing, indent=2, sort_keys=True))
+                    return 1
+                if _outcome_generation_started(out):
+                    raise RuntimeError(
+                        "mismatched precontract receipt exists after outcomes"
+                    )
+                _preserve_invalid(path, out, "precontract-revalidation-mismatch")
+        else:
+            print(json.dumps(existing, indent=2, sort_keys=True))
+            return 0
+
+    predecessor_shards = STATE_SELECTOR.load_preserved_state_shards(ROOT)
+    pool, _exclusion = scene_pool("scorer_fit")
+    allowed = {
+        family: {scene.name: scene for scene in scenes}
+        for family, scenes in pool.items()
+    }
+    shared = V1._load_shared(args.backend)
+    shard_rows: list[dict[str, Any]] = []
+    all_state_digests: list[str] = []
+    global_failures: list[dict[str, Any]] = []
+    for expected in STATE_SELECTOR.PRESERVED_STATE_SHARDS:
+        family = str(expected["family"])
+        shard = predecessor_shards[family]
+        state_checks: list[dict[str, Any]] = []
+        for entry in shard["states"]:
+            check = {
+                "state_id": str(entry["state_id"]),
+                "state_identity_digest": str(entry["state_identity_digest"]),
+                "exclusion_checks_pass": False,
+                "exact_redrive_pass": False,
+                "amended_classification_pass": False,
+                "goal_binding_unchanged": False,
+                "oracle_completion_target_unchanged": False,
+                "snapshot_production_designated_goal_claim_unchanged": False,
+                "production_task_completion_reset_unchanged": False,
+                "completion_state_task_status_all_false": False,
+                "failure_reason": None,
+            }
+            ctx = None
+            try:
+                scene_dir = allowed.get(family, {}).get(str(entry["scene_id"]))
+                if scene_dir is None:
+                    raise RuntimeError("scene is absent from strict successor allow-list")
+                if (scene_dir.resolve() != Path(str(entry["scene_dir"])).resolve()
+                        or scene_dir.parent.parent.name != str(entry["split"])
+                        or int(V1._drive_seed(scene_dir.name))
+                        != int(entry["drive_seed"])):
+                    raise RuntimeError("scene path, split, or drive seed changed")
+                INVALID_IDS.assert_disjoint(
+                    [entry], label=f"preserved revalidation {entry['state_id']}")
+                if (file_sha256(scene_dir / "manifest.json")
+                        != entry["scene_manifest_sha256"]
+                        or (scene_dir / "manifest.json").stat().st_size
+                        != int(entry["scene_manifest_byte_count"])):
+                    raise RuntimeError("scene manifest changed")
+                check["exclusion_checks_pass"] = True
+                ctx = V1.build_context(
+                    scene_dir, seed=int(entry["drive_seed"]), backend=args.backend,
+                    shared=shared)
+                topology = V12.link_topology(ctx)
+                ctx.begin_episode()
+                for _block_index in range(int(entry["warmup_blocks"])):
+                    ctx.drive_one_block()
+                verdict = classify_state(
+                    ctx, topology, requested_stratum=str(entry["stratum"]))
+                if isinstance(verdict, str):
+                    raise RuntimeError(f"amended classification failed: {verdict}")
+                record, _field, eligible = verdict
+                check["amended_classification_pass"] = (
+                    str(entry["stratum"]) in eligible)
+                check["goal_binding_unchanged"] = record["goal"] == entry["goal"]
+                mismatch = _redrive_mismatch(entry, record, ctx)
+                check["exact_redrive_pass"] = mismatch is None
+                semantic_status = _snapshot_task_status(
+                    ctx, int(entry["goal"]["landmark_cell"]))
+                record_status_matches = (
+                    str(entry["stratum"]) != "completion_enriched"
+                    or record.get("snapshot_task_status") == semantic_status)
+                check["oracle_completion_target_unchanged"] = \
+                    oracle_completion_target_unchanged
+                check[
+                    "snapshot_production_designated_goal_claim_unchanged"
+                ] = bool(
+                    record_status_matches
+                    and _snapshot_claim_semantics_unchanged(semantic_status))
+                check["production_task_completion_reset_unchanged"] = bool(
+                    record_status_matches
+                    and _production_task_reset_semantics_unchanged(
+                        semantic_status))
+                if str(entry["stratum"]) == "completion_enriched":
+                    task_clear = all(
+                        semantic_status.get(key) is False for key in (
+                            "task_completed", "goal_claimed", "terminated", "truncated"
+                        )
+                    )
+                    check["completion_state_task_status_all_false"] = task_clear
+                else:
+                    check["completion_state_task_status_all_false"] = True
+                if not all(check[key] is True for key in (
+                        "exclusion_checks_pass", "exact_redrive_pass",
+                        "amended_classification_pass", "goal_binding_unchanged",
+                        "oracle_completion_target_unchanged",
+                        "snapshot_production_designated_goal_claim_unchanged",
+                        "production_task_completion_reset_unchanged",
+                        "completion_state_task_status_all_false")):
+                    raise RuntimeError(mismatch or "one or more revalidation checks failed")
+            except Exception as exc:
+                check["failure_reason"] = f"{type(exc).__name__}:{str(exc)[:200]}"
+                global_failures.append(dict(check))
+            finally:
+                _FIELD_CACHE.clear()
+                if ctx is not None:
+                    del ctx
+                gc.collect()
+            state_checks.append(check)
+
+        state_digests = sorted(
+            str(state["state_identity_digest"]) for state in shard["states"])
+        all_state_digests.extend(state_digests)
+        failed = [row for row in state_checks if row["failure_reason"] is not None]
+        shard_rows.append({
+            **dict(expected),
+            "revalidated_state_count": len(state_checks),
+            "unchanged_state_identity_count": len(state_checks),
+            "failed_state_count": len(failed),
+            "exact_redrive_pass": not failed and all(
+                row["exact_redrive_pass"] for row in state_checks),
+            "amended_classification_pass": not failed and all(
+                row["amended_classification_pass"] for row in state_checks),
+            "completion_state_task_status_all_false": not failed and all(
+                row["completion_state_task_status_all_false"]
+                for row in state_checks),
+            "exclusion_checks_pass": not failed and all(
+                row["exclusion_checks_pass"] for row in state_checks),
+            "goal_binding_unchanged": not failed and all(
+                row["goal_binding_unchanged"] for row in state_checks),
+            "oracle_completion_target_unchanged": not failed and all(
+                row["oracle_completion_target_unchanged"]
+                for row in state_checks),
+            "snapshot_production_designated_goal_claim_unchanged":
+                not failed and all(
+                    row[
+                        "snapshot_production_designated_goal_claim_unchanged"
+                    ] for row in state_checks),
+            "production_task_completion_reset_unchanged": not failed and all(
+                row["production_task_completion_reset_unchanged"]
+                for row in state_checks),
+            "candidate_outcomes_loaded": False,
+            "state_identity_digests": state_digests,
+            "state_identity_set_digest": canonical_digest(state_digests),
+            "state_checks": state_checks,
+        })
+
+    passed = not global_failures
+    payload = {
+        "schema": STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_SCHEMA,
+        "status": ("PASS_PRECONTRACT_IDENTITY_REVALIDATION" if passed
+                   else "FAIL_PRECONTRACT_IDENTITY_REVALIDATION"),
+        "complete": True,
+        "source_repository_commit": source["source_repository_commit"],
+        "successor_selection_digest": successor_digest,
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "state_selector_feasibility_receipt_digest":
+            feasibility["state_selector_feasibility_receipt_digest"],
+        "predecessor_selection_digest":
+            STATE_SELECTOR.PREDECESSOR_SELECTION_DIGEST,
+        "predecessor_scorer_contract_digest":
+            STATE_SELECTOR.PREDECESSOR_SCORER_CONTRACT_DIGEST,
+        "candidate_outcomes_loaded": False,
+        "candidate_allocation_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+        "preserved_state_count": len(all_state_digests),
+        "state_identity_set_digest": canonical_digest(sorted(all_state_digests)),
+        "shards": shard_rows,
+        "failure_count": len(global_failures),
+        "failures": global_failures,
+    }
+    payload["preserved_state_precontract_revalidation_receipt_digest"] = \
+        canonical_digest(payload)
+    atomic_json(path, payload)
+    if passed:
+        STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
+            payload,
+            expected_source_commit=str(source["source_repository_commit"]),
+            expected_successor_selection_digest=successor_digest,
+            expected_feasibility_receipt_digest=feasibility[
+                "state_selector_feasibility_receipt_digest"],
+            root=ROOT,
+        )
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0 if passed else 1
+
+
 def _state_shard_bindings(args: argparse.Namespace, exclusion: dict[str, Any],
                           family_allow_list: list[str]) -> dict[str, Any]:
     scorer = scorer_contract()
@@ -681,6 +1594,10 @@ def _state_shard_bindings(args: argparse.Namespace, exclusion: dict[str, Any],
             pre_identity["pre_identity_validation_digest"],
         "invalid_scorer_identity_exclusion_digest":
             INVALID_IDS.invalid_identity_exclusion_digest(),
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "state_selector_feasibility_receipt_digest":
+            launch["state_selector_feasibility_receipt_digest"],
         "clean_source_launch_receipt_digest":
             launch["clean_source_launch_receipt_digest"],
         "source_repository_commit": launch["source_repository_commit"],
@@ -741,23 +1658,41 @@ def resolve_states(args: argparse.Namespace) -> dict[str, Any]:
             ctx.drive_one_block()
             if block_idx + 1 < WARMUP_BLOCKS_MIN:
                 continue
-            verdict = classify_state(ctx, topology)
-            if isinstance(verdict, str):
-                key = verdict.split(":")[0]
-                reasons[key] = reasons.get(key, 0) + 1
-                continue
-            record, _field, strata = verdict
             if spec["strata"] is None:
+                verdict = classify_state(ctx, topology)
+                if isinstance(verdict, str):
+                    key = verdict.split(":")[0]
+                    reasons[key] = reasons.get(key, 0) + 1
+                    continue
+                record, _field, strata = verdict
                 wanted = (["evaluation"] if found["evaluation"] < need["evaluation"]
                           else [])
             else:
-                wanted = [name for name in STRATA
-                          if name in strata and found[name] < need[name]]
+                wanted = []
+                attempted: list[str] = []
+                record = None
+                for name in STRATA:
+                    if found[name] >= need[name]:
+                        continue
+                    verdict = classify_state(
+                        ctx, topology, requested_stratum=name)
+                    if isinstance(verdict, str):
+                        attempted.append(f"{name}:{verdict.split(':')[0]}")
+                        continue
+                    record, _field, _eligible = verdict
+                    wanted = [name]
+                    break
+                if not wanted:
+                    key = ("no_requested_stratum" if not attempted
+                           else "|".join(attempted))
+                    reasons[key] = reasons.get(key, 0) + 1
+                    continue
             if not wanted:
                 reasons["stratum_already_full"] = reasons.get(
                     "stratum_already_full", 0) + 1
                 continue
             stratum = wanted[0]
+            assert record is not None
             ordinal = found[stratum]
             split_role = ("evaluation" if args.pool == "final_eval"
                           else ("calibration" if ordinal == 0 else "fit"))
@@ -788,6 +1723,15 @@ def resolve_states(args: argparse.Namespace) -> dict[str, Any]:
                 "body_clearance_m": float(record["body_clearance_m"]),
                 "clearance_m": float(record["clearance_m"]),
             }
+            if stratum == "completion_enriched":
+                # These snapshot-time facts are part of the frozen identity,
+                # not a later branch/outcome annotation.
+                chosen["completion_eligibility"] = record[
+                    "completion_eligibility"
+                ]
+                chosen["snapshot_task_status"] = record[
+                    "snapshot_task_status"
+                ]
             chosen["state_identity_digest"] = _state_identity_digest(chosen)
             found[stratum] += 1
             break
@@ -849,6 +1793,11 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
             != ALLOC.allocation_amendment_digest()
             or manifest.get("invalid_scorer_identity_exclusion_digest")
             != INVALID_IDS.invalid_identity_exclusion_digest()
+            or manifest.get("state_selector_amendment_digest")
+            != STATE_SELECTOR.state_selector_amendment_digest()
+            or manifest.get("state_selector_feasibility_receipt_digest")
+            != _load_clean_source_launch_receipt()[
+                "state_selector_feasibility_receipt_digest"]
             or manifest.get("pre_identity_allocation_validation_digest")
             != _load_pre_identity_allocation_validation()[
                 "pre_identity_validation_digest"]
@@ -875,6 +1824,7 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
     for key in LAUNCH_BINDING_KEYS:
         if manifest.get(key) != launch[key]:
             raise RuntimeError(f"state manifest clean-source binding mismatch: {key}")
+    _validate_state_shard_provenance(manifest, pool=pool)
     invalid_identity_index = INVALID_IDS.load_invalid_identity_index()
     if manifest.get("exclusion_binding", {}).get(
             "invalid_scorer_identity_attempt") != invalid_identity_index.binding():
@@ -890,7 +1840,7 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
         raise RuntimeError("state manifest branch identity set is inconsistent")
     if len({state["scene_id"] for state in manifest["states"]}) != expected_states:
         raise RuntimeError("state manifest is not scene-disjoint")
-    if any(_state_identity_digest(state) != state["state_identity_digest"]
+    if any(not _state_identity_matches_active_or_preserved(state)
            for state in manifest["states"]):
         raise RuntimeError("state manifest contains a changed state identity")
     identity_bindings = {
@@ -903,6 +1853,7 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
             "candidate_allocation_post_identity_validation_digest",
             "pre_identity_allocation_validation_digest",
             "invalid_scorer_identity_exclusion_digest",
+            *ACTIVE_SELECTOR_BINDING_KEYS,
             *LAUNCH_BINDING_KEYS,
         )},
     }
@@ -928,6 +1879,30 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
             raise RuntimeError(
                 "post-identity allocation validation digest mismatch"
             )
+        revalidation_path = (
+            ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
+        )
+        if not revalidation_path.is_file():
+            raise RuntimeError("post-allocation state revalidation receipt is missing")
+        revalidation = json.loads(revalidation_path.read_text())
+        launch = _load_clean_source_launch_receipt()
+        STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
+            revalidation,
+            allocation_manifest=allocation,
+            expected_source_commit=str(launch["source_repository_commit"]),
+            expected_successor_selection_digest=selection_digest(),
+            expected_feasibility_receipt_digest=str(
+                launch["state_selector_feasibility_receipt_digest"]),
+            expected_precontract_revalidation_receipt_digest=str(
+                launch[
+                    "preserved_state_precontract_revalidation_receipt_digest"
+                ]),
+            root=ROOT,
+        )
+        if (manifest.get("preserved_state_revalidation_receipt_digest")
+                != revalidation[
+                    "preserved_state_revalidation_receipt_digest"]):
+            raise RuntimeError("state manifest phase-2 revalidation digest mismatch")
     elif allocation["allocation_manifest_digest"] != canonical_digest({
             key: value for key, value in allocation.items()
             if key != "allocation_manifest_digest"}):
@@ -993,6 +1968,7 @@ def _validate_branch_row(row: dict[str, Any], state: dict[str, Any],
             manifest["pre_identity_allocation_validation_digest"],
         "invalid_scorer_identity_exclusion_digest":
             manifest["invalid_scorer_identity_exclusion_digest"],
+        **{key: manifest[key] for key in ACTIVE_SELECTOR_BINDING_KEYS},
         **{key: manifest[key] for key in LAUNCH_BINDING_KEYS},
         "candidate_bank_digest": manifest["candidate_bank_digest"],
         "progress_contract_digest": manifest["progress_contract_digest"],
@@ -1131,6 +2107,7 @@ def _row_bindings(manifest: dict[str, Any]) -> dict[str, Any]:
         "candidate_allocation_post_identity_validation_digest",
         "pre_identity_allocation_validation_digest",
         "invalid_scorer_identity_exclusion_digest", "candidate_bank_digest",
+        *ACTIVE_SELECTOR_BINDING_KEYS,
         *LAUNCH_BINDING_KEYS,
         "progress_contract_digest", "safety_contract_digest",
         "oracle_v1_2_digest", "scorer_contract_v1_2_digest", "selection_digest",
@@ -1151,7 +2128,38 @@ def _redrive_mismatch(entry: dict[str, Any], record: dict[str, Any],
                       == int(entry["episode_id"]),
         "cell_id": int(record["cell_id"]) == int(entry["cell_id"]),
         "goal": record["goal"] == entry["goal"],
+        "body_clearance": float(record["body_clearance_m"])
+                          == float(entry["body_clearance_m"]),
+        "clearance": float(record["clearance_m"])
+                     == float(entry["clearance_m"]),
     }
+    if entry.get("stratum") == "completion_enriched":
+        if "completion_eligibility" in entry:
+            comparisons.update({
+                "completion_eligibility": record.get("completion_eligibility")
+                                          == entry.get("completion_eligibility"),
+                "snapshot_task_status": record.get("snapshot_task_status")
+                                        == entry.get("snapshot_task_status"),
+            })
+        else:
+            # The 45 phase-1 predecessor identities predate evidence fields;
+            # their exact payloads cannot be changed.  They are admissible only
+            # through the byte-bound predecessor set, and current redrive must
+            # independently pass the successor predicate with all task flags
+            # false before any branch is attempted.
+            status = record.get("snapshot_task_status", {})
+            comparisons.update({
+                "preserved_completion_identity":
+                    str(entry.get("state_identity_digest"))
+                    in _preserved_states_by_digest(),
+                "completion_successor_eligible": bool(
+                    record.get("completion_eligibility", {}).get("eligible")),
+                "completion_task_status": all(
+                    status.get(key) is False for key in (
+                        "task_completed", "goal_claimed", "terminated", "truncated"
+                    )
+                ),
+            })
     failed = [name for name, passed in comparisons.items() if not passed]
     return None if not failed else "redrive_" + "_".join(failed) + "_mismatch"
 
@@ -1613,7 +2621,10 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
                     np.asarray(driven.executed, dtype=np.float64)[0]))
                 context_poses.append(capture_base_pose(ctx))
 
-        verdict = classify_state(ctx, topology)
+        verdict = classify_state(
+            ctx, topology,
+            requested_stratum=(entry["stratum"]
+                               if manifest["pool"] == "scorer_fit" else None))
         redrive_reason: str | None = None
         if isinstance(verdict, str):
             redrive_reason = f"redrive_failed:{verdict}"
@@ -1949,6 +2960,7 @@ def _branch_identity(state: dict[str, Any], candidate_index: int,
             manifest_bindings["pre_identity_allocation_validation_digest"],
         "invalid_scorer_identity_exclusion_digest":
             manifest_bindings["invalid_scorer_identity_exclusion_digest"],
+        **{key: manifest_bindings[key] for key in ACTIVE_SELECTOR_BINDING_KEYS},
         **{key: manifest_bindings[key] for key in LAUNCH_BINDING_KEYS},
         "candidate_bank_digest": manifest_bindings["candidate_bank_digest"],
         "oracle_v1_2_digest": manifest_bindings["oracle_v1_2_digest"],
@@ -1983,6 +2995,11 @@ def _validate_state_shard(payload: dict[str, Any], path: Path,
                 "pre_identity_validation_digest"]
             or payload.get("invalid_scorer_identity_exclusion_digest")
             != INVALID_IDS.invalid_identity_exclusion_digest()
+            or payload.get("state_selector_amendment_digest")
+            != STATE_SELECTOR.state_selector_amendment_digest()
+            or payload.get("state_selector_feasibility_receipt_digest")
+            != _load_clean_source_launch_receipt()[
+                "state_selector_feasibility_receipt_digest"]
             or payload.get("scorer_contract_v1_2_digest")
             != scorer_contract_digest()
             or payload.get("candidate_bank_digest") != V1.bank_digest()
@@ -2036,6 +3053,137 @@ def _outcome_generation_started(out: Path) -> bool:
     )
 
 
+def _issue_preserved_state_revalidation(
+        out: Path, allocation: dict[str, Any]) -> dict[str, Any]:
+    """Issue phase 2 only after all 120 identities receive frozen masks."""
+
+    launch = _load_clean_source_launch_receipt()
+    expected = STATE_SELECTOR.build_preserved_state_revalidation_receipt(
+        allocation_manifest=allocation,
+        source_repository_commit=str(launch["source_repository_commit"]),
+        successor_selection_digest=selection_digest(),
+        state_selector_feasibility_receipt_digest=str(
+            launch["state_selector_feasibility_receipt_digest"]),
+        preserved_state_precontract_revalidation_receipt_digest=str(
+            launch["preserved_state_precontract_revalidation_receipt_digest"]),
+        root=ROOT,
+    )
+    path = ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
+    if path.parent != out:
+        raise RuntimeError("final preserved-state receipt path escaped scorer-fit pool")
+    if path.is_file():
+        existing = json.loads(path.read_text())
+        try:
+            STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
+                existing,
+                allocation_manifest=allocation,
+                expected_source_commit=str(launch["source_repository_commit"]),
+                expected_successor_selection_digest=selection_digest(),
+                expected_feasibility_receipt_digest=str(
+                    launch["state_selector_feasibility_receipt_digest"]),
+                expected_precontract_revalidation_receipt_digest=str(
+                    launch[
+                        "preserved_state_precontract_revalidation_receipt_digest"
+                    ]),
+                root=ROOT,
+            )
+        except Exception as exc:
+            if _outcome_generation_started(out):
+                raise RuntimeError(
+                    "final preserved-state revalidation changed after outcomes"
+                ) from exc
+            _preserve_invalid(path, out, "post-allocation-revalidation-invalid")
+        else:
+            if existing == expected:
+                return existing
+            if _outcome_generation_started(out):
+                raise RuntimeError(
+                    "final preserved-state revalidation changed after outcomes"
+                )
+            _preserve_invalid(path, out, "post-allocation-revalidation-mismatch")
+    atomic_json(path, expected)
+    return expected
+
+
+def _build_state_shard_provenance(
+        paths: Sequence[Path], shards: Sequence[dict[str, Any]],
+        *, pool_name: str) -> list[dict[str, Any]]:
+    """Bind mixed pre-outcome shard bytes without promoting old bindings."""
+
+    by_family = {str(shard["family"]): (path, shard)
+                 for path, shard in zip(paths, shards, strict=True)}
+    preserved = {str(row["family"]): row
+                 for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}
+    rows: list[dict[str, Any]] = []
+    for family in sorted(by_family):
+        path, shard = by_family[family]
+        row = {
+            "family": family,
+            "path": str(path.relative_to(ROOT)),
+            "state_shard_digest": str(shard["state_shard_digest"]),
+            "raw_sha256": file_sha256(path),
+            "byte_count": path.stat().st_size,
+            "selection_provenance": (
+                "PREDECESSOR_BYTE_EXACT_REVALIDATED"
+                if pool_name == "scorer_fit" and family in preserved
+                else "SUCCESSOR_SELECTOR_AMENDMENT_V1"
+            ),
+        }
+        if family in preserved and pool_name == "scorer_fit":
+            expected = preserved[family]
+            for key in ("path", "state_shard_digest", "raw_sha256", "byte_count"):
+                if row[key] != expected[key]:
+                    raise RuntimeError(
+                        f"preserved shard provenance {family}/{key} changed"
+                    )
+        rows.append(row)
+    if len(rows) != EXPECTED_FAMILIES:
+        raise RuntimeError("mixed state-shard provenance must cover eight families")
+    return rows
+
+
+def _validate_state_shard_provenance(
+        manifest: dict[str, Any], *, pool: str) -> None:
+    rows = manifest.get("state_shard_provenance")
+    if not isinstance(rows, list) or len(rows) != EXPECTED_FAMILIES:
+        raise RuntimeError("state manifest lacks eight-row shard provenance")
+    preserved = {str(row["family"]): row
+                 for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}
+    seen: set[str] = set()
+    observed_digests: dict[str, str] = {}
+    for row in rows:
+        family = str(row.get("family", ""))
+        if family in seen:
+            raise RuntimeError("state-shard provenance repeats a family")
+        seen.add(family)
+        path = (ROOT / str(row.get("path", ""))).resolve()
+        if ROOT.resolve() not in path.parents or not path.is_file():
+            raise RuntimeError("state-shard provenance path is missing or escapes root")
+        payload = json.loads(path.read_text())
+        expected_provenance = (
+            "PREDECESSOR_BYTE_EXACT_REVALIDATED"
+            if pool == "scorer_fit" and family in preserved
+            else "SUCCESSOR_SELECTOR_AMENDMENT_V1"
+        )
+        if (row.get("selection_provenance") != expected_provenance
+                or row.get("raw_sha256") != file_sha256(path)
+                or row.get("byte_count") != path.stat().st_size
+                or row.get("state_shard_digest")
+                != payload.get("state_shard_digest")):
+            raise RuntimeError(f"state-shard provenance failed for {family}")
+        if expected_provenance == "PREDECESSOR_BYTE_EXACT_REVALIDATED":
+            expected = preserved[family]
+            if any(row.get(key) != expected[key] for key in (
+                    "path", "state_shard_digest", "raw_sha256", "byte_count")):
+                raise RuntimeError(f"predecessor provenance changed for {family}")
+        else:
+            _validate_state_shard(payload, path, pool)
+        observed_digests[family] = str(row["state_shard_digest"])
+    if (seen != set(manifest.get("state_shard_digests", {}))
+            or observed_digests != manifest.get("state_shard_digests")):
+        raise RuntimeError("state-shard digest map and provenance disagree")
+
+
 def merge_states(out: Path) -> int:
     """Merge exactly eight completed shards and freeze all branch identities."""
 
@@ -2045,11 +3193,27 @@ def merge_states(out: Path) -> int:
     paths = sorted(out.glob("state_shard_*.json"))
     if len(paths) != EXPECTED_FAMILIES:
         raise RuntimeError(f"expected eight state shards, found {len(paths)}")
+    preserved_by_family = STATE_SELECTOR.load_preserved_state_shards(ROOT)
+    preserved_families = set(preserved_by_family)
     shards: list[dict[str, Any]] = []
+    successor_shards: list[dict[str, Any]] = []
     for path in paths:
         payload = json.loads(path.read_text())
-        _validate_state_shard(payload, path, pool_name)
+        family = str(payload.get("family", ""))
+        if pool_name == "scorer_fit" and family in preserved_families:
+            if payload != preserved_by_family[family]:
+                raise RuntimeError(
+                    f"preserved predecessor shard {family} changed before merge"
+                )
+        else:
+            _validate_state_shard(payload, path, pool_name)
+            successor_shards.append(payload)
         shards.append(payload)
+    if pool_name == "scorer_fit" and len(successor_shards) != 5:
+        raise RuntimeError(
+            "scorer-fit merge requires exactly three byte-bound predecessor "
+            "shards and five successor shards"
+        )
     families = [str(shard["family"]) for shard in shards]
     if len(set(families)) != EXPECTED_FAMILIES:
         raise RuntimeError("state shards do not represent eight unique families")
@@ -2070,6 +3234,9 @@ def merge_states(out: Path) -> int:
         raise RuntimeError("merged state identities are not episode-cluster-disjoint")
     if len({state["state_identity_digest"] for state in states}) != len(states):
         raise RuntimeError("merged state identity digests are not unique")
+    if any(not _state_identity_matches_active_or_preserved(state)
+           for state in states):
+        raise RuntimeError("merged state identities changed across selector phases")
     for index, state in enumerate(states):
         state["state_index"] = index
 
@@ -2078,7 +3245,9 @@ def merge_states(out: Path) -> int:
         "candidate_allocator_contract_digest",
         "candidate_allocation_amendment_digest",
         "pre_identity_allocation_validation_digest",
-        "invalid_scorer_identity_exclusion_digest", "candidate_bank_digest",
+        "invalid_scorer_identity_exclusion_digest",
+        "state_selector_amendment_digest",
+        "state_selector_feasibility_receipt_digest", "candidate_bank_digest",
         *LAUNCH_BINDING_KEYS,
         "progress_contract_digest", "safety_contract_digest",
         "oracle_v1_2_digest", "scorer_contract_v1_2_digest", "boundary_digest",
@@ -2087,8 +3256,9 @@ def merge_states(out: Path) -> int:
         "preprocessing_digest", "target_encoder_digest",
         "target_encoder_checkpoint_sha256", "genesis_backend",
     )
-    common = {key: shards[0][key] for key in common_keys}
-    for shard in shards[1:]:
+    active_shards = successor_shards if pool_name == "scorer_fit" else shards
+    common = {key: active_shards[0][key] for key in common_keys}
+    for shard in active_shards[1:]:
         if any(shard[key] != common[key] for key in common_keys):
             raise RuntimeError("state shards contain mixed contract bindings")
 
@@ -2171,11 +3341,27 @@ def merge_states(out: Path) -> int:
         raise RuntimeError(
             "scorer-fit allocation lacks post-identity/pre-outcome validation"
         )
+    if pool_name == "scorer_fit":
+        preserved_revalidation = _issue_preserved_state_revalidation(
+            out, allocation)
+    else:
+        preserved_path = (
+            ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
+        )
+        if not preserved_path.is_file():
+            raise RuntimeError(
+                "final-evaluation identities require scorer-fit phase-2 revalidation"
+            )
+        preserved_revalidation = json.loads(preserved_path.read_text())
     manifest_bindings = {
         "pool": pool_name,
         **common,
         "candidate_allocation_post_identity_validation_digest":
             post_identity_validation_digest,
+        "preserved_state_revalidation_receipt_digest":
+            preserved_revalidation[
+                "preserved_state_revalidation_receipt_digest"
+            ],
     }
     branch_identities: list[dict[str, Any]] = []
     candidate_counts = {name: 0 for name, _sequence in V1.CANDIDATE_BANK}
@@ -2198,11 +3384,15 @@ def merge_states(out: Path) -> int:
         index=INVALID_IDS.load_invalid_identity_index(),
     )
 
-    exclusion_bindings = [shard["exclusion_binding"] for shard in shards]
+    # Predecessor exclusion bindings are provenance only.  The active corpus
+    # exclusion is the one shared by all five successor shards.
+    exclusion_bindings = [shard["exclusion_binding"] for shard in active_shards]
     if any(value != exclusion_bindings[0] for value in exclusion_bindings[1:]):
         raise RuntimeError("state shards disagree on exclusions")
     rejections = {shard["family"]: shard["scene_rejection_reasons"]
                   for shard in shards}
+    shard_provenance = _build_state_shard_provenance(
+        paths, shards, pool_name=pool_name)
     manifest = {
         "schema": "go2_branch_corpus_v1_2_state_manifest",
         "status": STATUS,
@@ -2215,10 +3405,15 @@ def merge_states(out: Path) -> int:
         "candidate_allocation_manifest_digest": allocation_digest,
         "candidate_allocation_post_identity_validation_digest":
             post_identity_validation_digest,
+        "preserved_state_revalidation_receipt_digest":
+            preserved_revalidation[
+                "preserved_state_revalidation_receipt_digest"
+            ],
         "branch_identity_set_digest": canonical_digest(sorted(branch_digests)),
         "exclusion_binding": exclusion_bindings[0],
         "state_shard_digests": {shard["family"]: shard["state_shard_digest"]
                                 for shard in shards},
+        "state_shard_provenance": shard_provenance,
         "states": states,
         "candidate_appearances": candidate_counts,
         "attempted_branch_count_registered": expected_branches,
@@ -2235,6 +3430,19 @@ def merge_states(out: Path) -> int:
         },
         "scene_rejection_reasons": rejections,
         "recovery_provenance": {
+            "phase1_preserved_valid_state_identity_count": 45,
+            "phase1_preserved_valid_family_count": 3,
+            "preserved_state_precontract_revalidation_receipt_digest":
+                _load_clean_source_launch_receipt()[
+                    "preserved_state_precontract_revalidation_receipt_digest"
+                ],
+            "preserved_state_revalidation_receipt_digest":
+                preserved_revalidation[
+                    "preserved_state_revalidation_receipt_digest"
+                ],
+            "valid_predecessor_state_shards": [
+                dict(row) for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS
+            ],
             "interrupted_attempt_witnesses": [
                 witness["path"] for witness in
                 INVALID_IDS.INVALID_SCORER_IDENTITY_EXCLUSION["witnesses"]
@@ -2247,12 +3455,19 @@ def merge_states(out: Path) -> int:
             ),
             "superseded_pre_run_contract_artifact":
                 SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT,
-            "decision": (
+            "invalid_attempt_decision": (
                 "preserved the incomplete three-of-eight-family 45-state "
                 "pre-outcome identity attempt under its superseded contract and "
                 "selection; no branch, render, latent or outcome existed; the "
                 "exact 45 scenes and all descendant identity namespaces are "
                 "excluded from this corpus; no invalid artifact is mixed"
+            ),
+            "valid_paused_identity_decision": (
+                "retained the separate byte-bound 45-state pre-outcome paused "
+                "identity set after exact phase-1 redrive and selector checks; "
+                "the active 120-state allocation and exact six-candidate masks "
+                "were verified by phase 2 before branch identities were issued; "
+                "predecessor shard and contract bindings remain provenance only"
             ),
         },
     }
@@ -2285,11 +3500,14 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--pool", choices=sorted(POOLS), required=True)
     parser.add_argument("--stage",
-                        choices=["allocation-preflight", "states", "merge-states",
-                                 "smoke", "branches"],
+                        choices=["allocation-preflight", "selector-feasibility",
+                                 "revalidate-preserved",
+                                 "states", "merge-states", "smoke", "branches"],
                         required=True)
     parser.add_argument("--family", default=None,
                         help="resolve one family only; shards merge via merge-states")
+    parser.add_argument("--stratum", choices=STRATA, default=None,
+                        help="scope selector-feasibility diagnostics to one stratum")
     parser.add_argument("--backend", default="cpu")
     parser.add_argument("--state-offset", type=int, default=0)
     parser.add_argument("--state-limit", type=int, default=10**6)
@@ -2301,12 +3519,43 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     if args.stage == "allocation-preflight":
         return issue_pre_identity_allocation_validation(out)
+    if args.stage == "selector-feasibility":
+        return stage_selector_feasibility(args)
+    if args.stage == "revalidate-preserved":
+        return stage_preserved_state_precontract_revalidation(args)
     if args.stage == "merge-states":
         return merge_states(out)
     if args.stage == "states":
         if args.family is None:
             raise SystemExit("--stage states requires exactly one --family shard")
         shard_path = out / f"state_shard_{args.family}.json"
+        if (args.pool == "scorer_fit"
+                and args.family in {
+                    row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS
+                }):
+            # These exact source shards passed the phase-1 identity-only gate.
+            # Never rewrite or regenerate them under the successor wrapper.
+            _load_clean_source_launch_receipt()
+            preserved = STATE_SELECTOR.load_preserved_state_shards(ROOT)
+            if (not shard_path.is_file()
+                    or json.loads(shard_path.read_text())
+                    != preserved[args.family]):
+                raise RuntimeError(
+                    f"byte-bound preserved state shard {args.family} is missing "
+                    "or changed; refusing replacement selection"
+                )
+            print(json.dumps({
+                "recovery": "retained_phase1_revalidated_predecessor_identity_shard",
+                "path": str(shard_path),
+                "state_shard_digest":
+                    preserved[args.family]["state_shard_digest"],
+                "states": len(preserved[args.family]["states"]),
+                "preserved_state_precontract_revalidation_receipt_digest":
+                    _load_clean_source_launch_receipt()[
+                        "preserved_state_precontract_revalidation_receipt_digest"
+                    ],
+            }, indent=2, sort_keys=True))
+            return 0
         if shard_path.is_file():
             try:
                 existing = json.loads(shard_path.read_text())

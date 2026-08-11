@@ -211,6 +211,13 @@ def validate_qualified_scorer() -> ScorerBundle:
              "scorer was not frozen by the one-shot final-epoch qualification")
     _require(qualification.get("scorer_contract_v1_2_digest") == contract_digest(),
              "qualified scorer binds a different current frozen contract")
+    for key in S.SELECTOR_BINDING_KEYS:
+        _require(isinstance(qualification.get(key), str)
+                 and S.HEX64.fullmatch(qualification[key]) is not None,
+                 f"qualified scorer has no {key}")
+    _require(qualification["state_selector_amendment_digest"]
+             == S.STATE_SELECTOR.state_selector_amendment_digest(),
+             "qualified scorer binds a different state-selector amendment")
     try:
         current_source = S.clean_source_binding()
     except RuntimeError as exc:
@@ -245,7 +252,7 @@ def validate_qualified_scorer() -> ScorerBundle:
              and receipt.get("scorer_package_sha256") == package_sha
              and receipt.get("scorer_contract_v1_2_digest") == contract_digest()
              and all(receipt.get(key) == qualification.get(key)
-                     for key in S.LAUNCH_BINDING_KEYS),
+                     for key in S.SCORER_PROVENANCE_BINDING_KEYS),
              "scorer package receipt is incomplete or differently bound")
     baseline_receipt = qualification.get("no_latent_baseline_package")
     _require(isinstance(baseline_receipt, Mapping)
@@ -255,7 +262,7 @@ def validate_qualified_scorer() -> ScorerBundle:
              and baseline_receipt.get("training_run_digest")
              == qualification.get("training_run_digest")
              and all(baseline_receipt.get(key) == qualification.get(key)
-                     for key in S.LAUNCH_BINDING_KEYS),
+                     for key in S.SCORER_PROVENANCE_BINDING_KEYS),
              "no-latent baseline package receipt is absent or invalid")
     baseline_path = _safe_relative(
         S.PACKAGE_DIR, baseline_receipt.get("path"), "no-latent baseline package")
@@ -271,7 +278,7 @@ def validate_qualified_scorer() -> ScorerBundle:
              and package.get("training_run_digest")
              == qualification.get("training_run_digest")
              and all(package.get(key) == qualification.get(key)
-                     for key in S.LAUNCH_BINDING_KEYS)
+                     for key in S.SCORER_PROVENANCE_BINDING_KEYS)
              and package.get("final_epoch") == 60
              and package.get("epoch_selection") == "final_epoch_only_no_selection",
              "scorer package metadata differs from the frozen qualified run")
@@ -290,7 +297,7 @@ def validate_qualified_scorer() -> ScorerBundle:
              and baseline_package.get("scorer_contract_v1_2_digest")
              == contract_digest()
              and all(baseline_package.get(key) == qualification.get(key)
-                     for key in S.LAUNCH_BINDING_KEYS)
+                     for key in S.SCORER_PROVENANCE_BINDING_KEYS)
              and isinstance(baseline_package.get("model_state_dict"), Mapping)
              and S.state_dict_digest(baseline_package["model_state_dict"])
              == final_digests.get("no_latent")
@@ -321,6 +328,9 @@ def prospective_spec(scorer: ScorerBundle) -> dict[str, Any]:
         "scorer_package_sha256": scorer.package_sha256,
         "scorer_source_bindings": {
             key: scorer.qualification[key] for key in S.LAUNCH_BINDING_KEYS
+        },
+        "scorer_selector_successor_bindings": {
+            key: scorer.qualification[key] for key in S.SELECTOR_BINDING_KEYS
         },
         "frozen_inputs": {
             "stage_a_identity_manifest_digest": FROZEN_STAGE_A_IDENTITY_DIGEST,
@@ -1049,6 +1059,8 @@ def main() -> int:
         "scorer_contract_v1_2_digest": contract_digest(),
         "qualification_report_digest": scorer.qualification["qualification_report_digest"],
         "scorer_package_sha256": scorer.package_sha256,
+        "scorer_selector_successor_bindings":
+            spec["scorer_selector_successor_bindings"],
         "frozen_inputs": spec["frozen_inputs"],
         "scope": {"states": EXPECTED_STATES, "branches": EXPECTED_BRANCHES,
                   "candidates_per_state": EXPECTED_CANDIDATES,

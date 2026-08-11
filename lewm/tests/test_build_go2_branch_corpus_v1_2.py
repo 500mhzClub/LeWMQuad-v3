@@ -45,6 +45,10 @@ def _manifest(candidate_indices=(0, 1)):
         "scorer_contract_artifact_digest": "contract-artifact-digest",
         "invalid_scorer_identity_exclusion_digest":
             B.INVALID_IDS.invalid_identity_exclusion_digest(),
+        "state_selector_amendment_digest":
+            B.STATE_SELECTOR.state_selector_amendment_digest(),
+        "state_selector_feasibility_receipt_digest": "f" * 64,
+        "preserved_state_revalidation_receipt_digest": "e" * 64,
         "candidate_bank_digest": B.V1.bank_digest(),
         "progress_contract_digest": B.progress_digest(),
         "safety_contract_digest": B.safety_digest(),
@@ -188,8 +192,17 @@ def _patch_encoder_launch(monkeypatch, encoder, manifest):
     """Inject the exact synthetic manifest launch binding for unit tests only."""
 
     expected = {key: manifest[key] for key in encoder.LAUNCH_BINDING_KEYS}
+    expected.update({
+        "launch_state_selector_feasibility_receipt_digest":
+            manifest["state_selector_feasibility_receipt_digest"],
+        "preserved_state_precontract_revalidation_receipt_digest": "d" * 64,
+    })
     monkeypatch.setattr(
         encoder, "_load_clean_source_launch_receipt", lambda: dict(expected))
+    selector = {key: manifest[key] for key in encoder.SELECTOR_BINDING_KEYS}
+    monkeypatch.setattr(
+        encoder, "_load_selector_successor_receipts",
+        lambda *_args, **_kwargs: dict(selector))
 
 
 def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
@@ -202,6 +215,13 @@ def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
         "bound_implementations_digest": "b" * 64,
     }
     monkeypatch.setattr(B, "clean_source_binding", lambda: clean_source)
+    selector_preconditions = {
+        "state_selector_feasibility_receipt_digest": "c" * 64,
+        "preserved_state_precontract_revalidation_receipt_digest": "d" * 64,
+    }
+    monkeypatch.setattr(
+        B, "_load_state_selector_preconditions",
+        lambda **_kwargs: dict(selector_preconditions))
     contract_artifact = {
         "schema": "synthetic_current_clean_source_contract",
         "complete": True,
@@ -209,6 +229,7 @@ def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
         "source_repository_clean": True,
         "clean_source_binding": clean_source,
         "clean_source_binding_digest": B.canonical_digest(clean_source),
+        **selector_preconditions,
     }
     contract_artifact["contract_artifact_digest"] = B.canonical_digest(
         contract_artifact

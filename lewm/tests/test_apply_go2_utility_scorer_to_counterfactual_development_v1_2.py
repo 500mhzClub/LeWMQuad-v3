@@ -43,6 +43,27 @@ class DevelopmentTransferTests(unittest.TestCase):
                     T.validate_qualified_scorer()
                 load.assert_not_called()
 
+    def test_missing_selector_successor_refuses_before_torch_load(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report = {
+                "schema": "go2_utility_scorer_v1_2_qualification",
+                "criteria": {"all_frozen_criteria": True},
+                "qualified": True,
+                "qualification_evaluations": 1,
+                "epoch_selection_permitted": False,
+                "scorer_contract_v1_2_digest": T.contract_digest(),
+            }
+            report["qualification_report_digest"] = T.legacy_digest(report)
+            (root / "qualification.json").write_text(json.dumps(report))
+            with mock.patch.object(T.S, "PACKAGE_DIR", root), \
+                    mock.patch.object(T.torch, "load") as load:
+                with self.assertRaisesRegex(
+                        T.DevelopmentTransferRefused,
+                        "qualified scorer has no state_selector_amendment_digest"):
+                    T.validate_qualified_scorer()
+                load.assert_not_called()
+
     def test_perfect_state_rankings_and_equal_family_aggregation(self):
         rows = synthetic_rows()
         scores = np.asarray([row["utility"] for row in rows], dtype=np.float32)
@@ -85,7 +106,7 @@ class DevelopmentTransferTests(unittest.TestCase):
         scorer.qualification = {
             "qualification_report_digest": "q" * 64,
             **{key: key[0] * (40 if key == "source_repository_commit" else 64)
-               for key in T.S.LAUNCH_BINDING_KEYS},
+               for key in T.S.SCORER_PROVENANCE_BINDING_KEYS},
         }
         scorer.package_sha256 = "p" * 64
         with mock.patch.object(T, "contract_digest", return_value="c" * 64), \
@@ -93,6 +114,9 @@ class DevelopmentTransferTests(unittest.TestCase):
             spec = T.prospective_spec(scorer)
         self.assertIn("F.layer_norm", spec["true_target_handling"])
         self.assertIn("no second", spec["predicted_handling"])
+        self.assertEqual(
+            set(spec["scorer_selector_successor_bindings"]),
+            set(T.S.SELECTOR_BINDING_KEYS))
 
 
 if __name__ == "__main__":

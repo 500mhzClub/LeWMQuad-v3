@@ -10,6 +10,112 @@ from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as X
 from lewm.oracle import go2_scorer_contract_v1_2 as C
 
 
+def _selector_receipts(commit: str, selection: str):
+    selector = C.STATE_SELECTOR
+    families = [{
+        "family": family,
+        "all_allowed_scenes_scanned": True,
+        "verdict": "PASS",
+        "strata": {
+            stratum: {
+                "required_distinct_scenes": 5,
+                "eligible_distinct_scenes": 5,
+                "verdict": "PASS",
+            }
+            for stratum in selector.REQUIRED_STRATA
+        },
+    } for family in selector.REQUIRED_FAMILIES]
+    feasibility = {
+        "schema": selector.STATE_SELECTOR_FEASIBILITY_SCHEMA,
+        "status": "PASS_OUTCOME_FREE_ALL_SCENE_FEASIBILITY",
+        "complete": True,
+        "source_repository_commit": commit,
+        "successor_selection_digest": selection,
+        "state_selector_amendment_digest":
+            selector.state_selector_amendment_digest(),
+        "family_count": 8,
+        "strata": list(selector.REQUIRED_STRATA),
+        "required_distinct_scenes_per_stratum": 5,
+        "selected_state_identities_created": False,
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+        "families": families,
+    }
+    feasibility["state_selector_feasibility_receipt_digest"] = \
+        selector._sha256(feasibility)
+
+    shard_rows = []
+    all_digests = []
+    preserved = selector.load_preserved_state_shards()
+    for expected in selector.PRESERVED_STATE_SHARDS:
+        source_states = preserved[expected["family"]]["states"]
+        digests = sorted(state["state_identity_digest"] for state in source_states)
+        all_digests.extend(digests)
+        shard_rows.append({
+            **expected,
+            "revalidated_state_count": 15,
+            "unchanged_state_identity_count": 15,
+            "failed_state_count": 0,
+            "exact_redrive_pass": True,
+            "amended_classification_pass": True,
+            "exclusion_checks_pass": True,
+            "goal_binding_unchanged": True,
+            "oracle_completion_target_unchanged": True,
+            "snapshot_production_designated_goal_claim_unchanged": True,
+            "production_task_completion_reset_unchanged": True,
+            "completion_state_task_status_all_false": True,
+            "candidate_outcomes_loaded": False,
+            "state_identity_digests": digests,
+            "state_identity_set_digest": selector._sha256(sorted(digests)),
+            "state_checks": [{
+                "state_id": state["state_id"],
+                "state_identity_digest": state["state_identity_digest"],
+                "exclusion_checks_pass": True,
+                "exact_redrive_pass": True,
+                "amended_classification_pass": True,
+                "goal_binding_unchanged": True,
+                "oracle_completion_target_unchanged": True,
+                "snapshot_production_designated_goal_claim_unchanged": True,
+                "production_task_completion_reset_unchanged": True,
+                "completion_state_task_status_all_false": True,
+                "failure_reason": None,
+            } for state in source_states],
+        })
+    revalidation = {
+        "schema": selector.PRESERVED_STATE_PRECONTRACT_REVALIDATION_SCHEMA,
+        "status": "PASS_PRECONTRACT_IDENTITY_REVALIDATION",
+        "complete": True,
+        "source_repository_commit": commit,
+        "successor_selection_digest": selection,
+        "state_selector_amendment_digest":
+            selector.state_selector_amendment_digest(),
+        "state_selector_feasibility_receipt_digest":
+            feasibility["state_selector_feasibility_receipt_digest"],
+        "predecessor_selection_digest": selector.PREDECESSOR_SELECTION_DIGEST,
+        "predecessor_scorer_contract_digest":
+            selector.PREDECESSOR_SCORER_CONTRACT_DIGEST,
+        "candidate_outcomes_loaded": False,
+        "candidate_allocation_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+        "preserved_state_count": 45,
+        "state_identity_set_digest": selector._sha256(sorted(all_digests)),
+        "shards": shard_rows,
+        "failure_count": 0,
+        "failures": [],
+    }
+    revalidation["preserved_state_precontract_revalidation_receipt_digest"] = \
+        selector._sha256(revalidation)
+    return feasibility, revalidation
+
+
 def test_exact_three_witnesses_recover_the_bound_identity_namespaces():
     index = X.load_invalid_identity_index()
     binding = index.binding()
@@ -88,7 +194,8 @@ def test_witness_byte_tamper_is_rejected_before_identity_use(tmp_path: Path):
         X.load_invalid_identity_index(tmp_path)
 
 
-def test_known_0fc7_contract_is_archived_before_new_contract_write(tmp_path: Path):
+def test_known_graph_infeasible_contract_is_archived_before_successor_write(
+        tmp_path: Path):
     predecessor = C.ROOT / \
         ".generated/go2_utility_scorer_v1_2/scorer_contract_v1_2.json"
     active = tmp_path / "scorer_contract_v1_2.json"
@@ -103,9 +210,26 @@ def test_known_0fc7_contract_is_archived_before_new_contract_write(tmp_path: Pat
     disposition = C._prepare_contract_output(active, replacement)
     archive = tmp_path / "superseded_pre_run" / (
         "scorer_contract_v1_2."
-        f"{C.SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT['scorer_contract_v1_2_digest']}.json"
+        f"{C.SUPERSEDED_GRAPH_INFEASIBLE_CONTRACT_ARTIFACT['scorer_contract_v1_2_digest']}.json"
     )
     assert disposition == "superseded_archived"
+    assert not active.exists()
+    assert archive.read_bytes() == raw
+
+
+def test_known_0fc7_contract_preservation_remains_supported(tmp_path: Path):
+    predecessor = C.ROOT / \
+        ".generated/go2_utility_scorer_v1_2/superseded_pre_run/" \
+        "scorer_contract_v1_2." \
+        "0fc7a3db0ca86ae206050ee6da2894208fa11707e840b112a8a6810e18ac3e21.json"
+    active = tmp_path / "scorer_contract_v1_2.json"
+    raw = predecessor.read_bytes()
+    active.write_bytes(raw)
+    replacement = {"schema": "synthetic-successor"}
+    replacement["contract_artifact_digest"] = C._digest(replacement)
+
+    assert C._prepare_contract_output(active, replacement) == "superseded_archived"
+    archive = tmp_path / "superseded_pre_run" / predecessor.name
     assert not active.exists()
     assert archive.read_bytes() == raw
 
@@ -156,16 +280,34 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
         top_level=str(C.ROOT),
         bindings={"synthetic": {"path": "source.py", "sha256": "d" * 64}},
     )
-    payload = C._contract_artifact_payload(source)
+    selection = C._digest(C.CORPUS_SELECTION_CONTRACT)
+    feasibility, revalidation = _selector_receipts("c" * 40, selection)
+    payload = C._contract_artifact_payload(source, feasibility, revalidation)
     frozen = payload["contract"]
     assert payload["schema"] == "go2_utility_scorer_contract_v1_2_artifact"
     assert payload["source_repository_commit"] == "c" * 40
     assert payload["source_repository_clean"] is True
     assert payload["clean_source_binding"] == source
     assert payload["candidate_allocation_amendment_verified"] is True
+    assert payload["state_selector_amendment_verified"] is True
+    assert payload["state_selector_feasibility_verified"] is True
+    assert payload["preserved_state_precontract_revalidation_verified"] is True
+    assert payload["state_selector_feasibility_receipt_digest"] == \
+        feasibility["state_selector_feasibility_receipt_digest"]
+    assert payload["preserved_state_precontract_revalidation_receipt_digest"] == \
+        revalidation["preserved_state_precontract_revalidation_receipt_digest"]
+    assert payload["preserved_state_post_allocation_revalidation"] == {
+        "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
+        "required_before_active_identity_manifest": True,
+        "schema": C.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA,
+        "path": C.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH,
+        "realized_receipt_digest_bound_at_contract_issue": False,
+    }
     assert payload["invalid_scorer_identity_exclusion_verified"] is True
     assert frozen["candidate_allocation_amendment_digest"] == \
         C.ALLOC.allocation_amendment_digest()
+    assert frozen["state_selector_amendment_digest"] == \
+        C.STATE_SELECTOR.state_selector_amendment_digest()
     assert frozen["invalid_scorer_identity_exclusion_digest"] == \
         X.invalid_identity_exclusion_digest()
     assert C.render_contract_digest() == (

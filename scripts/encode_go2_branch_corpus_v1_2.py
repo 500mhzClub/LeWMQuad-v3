@@ -36,6 +36,7 @@ if str(ROOT) not in sys.path:
 
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC  # noqa: E402
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS  # noqa: E402
+from lewm.oracle import go2_scorer_state_selector_amendment_v1 as STATE_SELECTOR  # noqa: E402
 from lewm.oracle.go2_scorer_contract_v1_2 import (  # noqa: E402
     clean_source_binding,
     contract,
@@ -67,6 +68,9 @@ CORPUS_BINDING_KEYS = (
     "candidate_allocation_post_identity_validation_digest",
     "pre_identity_allocation_validation_digest",
     "invalid_scorer_identity_exclusion_digest",
+    "state_selector_amendment_digest",
+    "state_selector_feasibility_receipt_digest",
+    "preserved_state_revalidation_receipt_digest",
     "clean_source_launch_receipt_digest",
     "source_repository_commit",
     "clean_source_binding_digest",
@@ -85,6 +89,11 @@ CORPUS_BINDING_KEYS = (
     "preprocessing_digest",
     "target_encoder_digest",
     "target_encoder_checkpoint_sha256",
+)
+SELECTOR_BINDING_KEYS = (
+    "state_selector_amendment_digest",
+    "state_selector_feasibility_receipt_digest",
+    "preserved_state_revalidation_receipt_digest",
 )
 LAUNCH_BINDING_KEYS = (
     "clean_source_launch_receipt_digest",
@@ -222,6 +231,8 @@ def _load_clean_source_launch_receipt() -> dict[str, Any]:
     _verify_self_digest(
         scorer_artifact, "contract_artifact_digest", "scorer contract artifact")
     current = clean_source_binding()
+    pending_phase_2 = scorer_artifact.get(
+        "preserved_state_post_allocation_revalidation")
     expected = {
         "clean_source_launch_receipt_digest":
             receipt["clean_source_launch_receipt_digest"],
@@ -240,12 +251,99 @@ def _load_clean_source_launch_receipt() -> dict[str, Any]:
             or receipt.get("scorer_contract_artifact_digest")
             != scorer_artifact["contract_artifact_digest"]
             or receipt.get("scorer_contract_artifact_sha256")
-            != file_sha256(SCORER_CONTRACT_ARTIFACT_PATH)):
+            != file_sha256(SCORER_CONTRACT_ARTIFACT_PATH)
+            or scorer_artifact.get("state_selector_amendment_verified") is not True
+            or scorer_artifact.get("state_selector_feasibility_verified") is not True
+            or scorer_artifact.get(
+                "preserved_state_precontract_revalidation_verified") is not True
+            or not isinstance(pending_phase_2, dict)
+            or pending_phase_2.get("status")
+            != "PENDING_POST_IDENTITY_PRE_OUTCOME"
+            or pending_phase_2.get("required_before_active_identity_manifest")
+            is not True
+            or pending_phase_2.get("schema")
+            != STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA
+            or pending_phase_2.get("path")
+            != STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
+            or pending_phase_2.get(
+                "realized_receipt_digest_bound_at_contract_issue") is not False
+            or receipt.get("state_selector_amendment_digest")
+            != STATE_SELECTOR.state_selector_amendment_digest()
+            or receipt.get("state_selector_feasibility_receipt_digest")
+            != scorer_artifact.get(
+                "state_selector_feasibility_receipt_digest")):
         raise RuntimeError("clean-source launch artifacts differ from current clean HEAD")
     for key, value in expected.items():
         if key != "clean_source_launch_receipt_digest" and receipt.get(key) != value:
             raise RuntimeError(f"clean-source launch receipt {key} mismatch")
-    return expected
+    feasibility_digest = receipt.get(
+        "state_selector_feasibility_receipt_digest")
+    precontract_digest = scorer_artifact.get(
+        "preserved_state_precontract_revalidation_receipt_digest")
+    for value, label in (
+        (feasibility_digest, "state-selector feasibility receipt"),
+        (precontract_digest, "preserved-state precontract revalidation receipt"),
+    ):
+        if (not isinstance(value, str) or len(value) != 64
+                or any(character not in "0123456789abcdef" for character in value)):
+            raise RuntimeError(f"clean-source {label} digest is invalid")
+    return {
+        **expected,
+        "launch_state_selector_feasibility_receipt_digest":
+            feasibility_digest,
+        "preserved_state_precontract_revalidation_receipt_digest":
+            precontract_digest,
+    }
+
+
+def _load_selector_successor_receipts(
+        *, source_commit: str, selection_digest: str,
+        expected_feasibility_receipt_digest: str,
+        expected_precontract_revalidation_receipt_digest: str,
+        ) -> dict[str, str]:
+    """Verify the outcome-free selector successor before opening branch rows."""
+
+    try:
+        STATE_SELECTOR.validate_authority_artifacts()
+        feasibility_path = (
+            ROOT / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH)
+        revalidation_path = (
+            ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH)
+        allocation_path = (
+            OUT_ROOT / "scorer_fit/candidate_allocation_manifest.json")
+        if (not feasibility_path.is_file() or not revalidation_path.is_file()
+                or not allocation_path.is_file()):
+            raise RuntimeError(
+                "scorer-fit selector successor artifacts are missing")
+        feasibility = json.loads(feasibility_path.read_text())
+        STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+            feasibility, expected_source_commit=source_commit,
+            expected_successor_selection_digest=selection_digest)
+        feasibility_digest = str(
+            feasibility["state_selector_feasibility_receipt_digest"])
+        if feasibility_digest != expected_feasibility_receipt_digest:
+            raise RuntimeError(
+                "selector feasibility differs from clean-source launch")
+        revalidation = json.loads(revalidation_path.read_text())
+        allocation = json.loads(allocation_path.read_text())
+        STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
+            revalidation, allocation_manifest=allocation,
+            expected_source_commit=source_commit,
+            expected_successor_selection_digest=selection_digest,
+            expected_feasibility_receipt_digest=feasibility_digest,
+            expected_precontract_revalidation_receipt_digest=
+                expected_precontract_revalidation_receipt_digest)
+    except (OSError, json.JSONDecodeError,
+            STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+        raise RuntimeError(
+            f"scorer-fit selector successor does not verify: {exc}") from exc
+    return {
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "state_selector_feasibility_receipt_digest": feasibility_digest,
+        "preserved_state_revalidation_receipt_digest": str(
+            revalidation["preserved_state_revalidation_receipt_digest"]),
+    }
 
 
 def _load_inputs(out: Path, *, allow_partial: bool) -> tuple[
@@ -255,6 +353,13 @@ def _load_inputs(out: Path, *, allow_partial: bool) -> tuple[
     expected_contract = contract_digest()
     frozen = contract()
     launch = _load_clean_source_launch_receipt()
+    selector = _load_selector_successor_receipts(
+        source_commit=launch["source_repository_commit"],
+        selection_digest=frozen["corpus_selection_digest"],
+        expected_feasibility_receipt_digest=launch[
+            "launch_state_selector_feasibility_receipt_digest"],
+        expected_precontract_revalidation_receipt_digest=launch[
+            "preserved_state_precontract_revalidation_receipt_digest"])
     if manifest.get("scorer_contract_v1_2_digest") != expected_contract:
         raise RuntimeError("state manifest is bound to a different scorer contract")
     target_encoder = frozen["target_encoder"]
@@ -269,6 +374,7 @@ def _load_inputs(out: Path, *, allow_partial: bool) -> tuple[
             ALLOC.allocation_amendment_digest(),
         "invalid_scorer_identity_exclusion_digest":
             INVALID_IDS.invalid_identity_exclusion_digest(),
+        **selector,
         "candidate_bank_digest": frozen["candidate_bank_digest"],
         "progress_contract_digest": frozen["progress_target_digest"],
         "safety_contract_digest": frozen["safety_target_digest"],

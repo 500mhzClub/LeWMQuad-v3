@@ -56,6 +56,7 @@ from lewm.oracle.go2_candidate_allocation_v1_2 import (  # noqa: E402
 from lewm.oracle.go2_invalid_scorer_identity_exclusion_v1_2 import (  # noqa: E402
     invalid_identity_exclusion_digest,
 )
+from lewm.oracle import go2_scorer_state_selector_amendment_v1 as STATE_SELECTOR  # noqa: E402
 from lewm.oracle.go2_textured_v03_renderer import (  # noqa: E402
     renderer_contract_digest as textured_v03_renderer_contract_digest,
 )
@@ -113,6 +114,12 @@ LAUNCH_BINDING_KEYS = (
     "bound_implementations_digest",
     "scorer_contract_artifact_digest",
 )
+SELECTOR_BINDING_KEYS = (
+    "state_selector_amendment_digest",
+    "state_selector_feasibility_receipt_digest",
+    "preserved_state_revalidation_receipt_digest",
+)
+SCORER_PROVENANCE_BINDING_KEYS = SELECTOR_BINDING_KEYS + LAUNCH_BINDING_KEYS
 
 # There are no learned or outcome-derived scaler values.  Recording every
 # identity transform explicitly prevents a downstream consumer from silently
@@ -351,9 +358,27 @@ def _validate_clean_source_launch(
              == "go2_utility_scorer_contract_v1_2_artifact"
              and artifact.get("complete") is True
              and artifact.get("source_repository_clean") is True
+             and artifact.get("state_selector_amendment_verified") is True
+             and artifact.get("state_selector_feasibility_verified") is True
+             and artifact.get(
+                 "preserved_state_precontract_revalidation_verified") is True
              and artifact.get("scorer_contract_v1_2_digest") == contract_digest()
              and artifact.get("contract") == contract(),
              "issued scorer-contract artifact is incomplete or differently bound")
+    pending_phase_2 = artifact.get(
+        "preserved_state_post_allocation_revalidation")
+    _require(isinstance(pending_phase_2, Mapping)
+             and pending_phase_2.get("status")
+             == "PENDING_POST_IDENTITY_PRE_OUTCOME"
+             and pending_phase_2.get("required_before_active_identity_manifest")
+             is True
+             and pending_phase_2.get("schema")
+             == STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA
+             and pending_phase_2.get("path")
+             == STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
+             and pending_phase_2.get(
+                 "realized_receipt_digest_bound_at_contract_issue") is False,
+             "scorer contract artifact does not keep phase-2 revalidation pending")
     try:
         current = clean_source_binding()
     except RuntimeError as exc:
@@ -385,6 +410,19 @@ def _validate_clean_source_launch(
     _require(launch.get("invalid_scorer_identity_exclusion_digest")
              == invalid_identity_exclusion_digest(),
              "clean-source launch receipt invalid-identity exclusion differs")
+    _require(launch.get("state_selector_amendment_digest")
+             == STATE_SELECTOR.state_selector_amendment_digest(),
+             "clean-source launch receipt selector amendment differs")
+    feasibility_digest = _require_digest(
+        launch.get("state_selector_feasibility_receipt_digest"),
+        "clean-source launch state_selector_feasibility_receipt_digest")
+    _require(artifact.get("state_selector_feasibility_receipt_digest")
+             == feasibility_digest,
+             "clean-source launch selector feasibility differs from contract artifact")
+    precontract_digest = _require_digest(
+        artifact.get(
+            "preserved_state_precontract_revalidation_receipt_digest"),
+        "preserved_state_precontract_revalidation_receipt_digest")
     _require(launch.get("pre_identity_allocation_validation_digest")
              == pre_identity_validation.get("pre_identity_validation_digest"),
              "clean-source launch receipt pre-identity validation differs")
@@ -392,6 +430,61 @@ def _validate_clean_source_launch(
         **expected,
         "clean_source_launch_receipt_sha256": sha256_file(launch_path),
         "scorer_contract_artifact_sha256": sha256_file(artifact_path),
+        "launch_state_selector_feasibility_receipt_digest": feasibility_digest,
+        "preserved_state_precontract_revalidation_receipt_digest":
+            precontract_digest,
+    }
+
+
+def _validate_selector_successor(
+        pool_dir: Path, launch_bindings: Mapping[str, Any],
+        allocation_manifest: Mapping[str, Any]
+        ) -> dict[str, str]:
+    """Validate the pre-outcome selector amendment and both pass receipts."""
+
+    selection_digest = contract()["corpus_selection_digest"]
+    feasibility_path = (
+        pool_dir / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME)
+    revalidation_path = (
+        pool_dir / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME)
+    _require(feasibility_path.is_file(),
+             "missing all-family selector-feasibility receipt")
+    _require(revalidation_path.is_file(),
+             "missing preserved-state revalidation receipt")
+    try:
+        STATE_SELECTOR.validate_authority_artifacts()
+        feasibility = _read_json(feasibility_path)
+        STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+            feasibility,
+            expected_source_commit=launch_bindings["source_repository_commit"],
+            expected_successor_selection_digest=selection_digest)
+        feasibility_digest = _require_digest(
+            feasibility.get("state_selector_feasibility_receipt_digest"),
+            "state_selector_feasibility_receipt_digest")
+        _require(feasibility_digest == launch_bindings[
+                    "launch_state_selector_feasibility_receipt_digest"],
+                 "selector feasibility receipt differs from clean-source launch")
+        revalidation = _read_json(revalidation_path)
+        STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
+            revalidation,
+            allocation_manifest=allocation_manifest,
+            expected_source_commit=launch_bindings["source_repository_commit"],
+            expected_successor_selection_digest=selection_digest,
+            expected_feasibility_receipt_digest=feasibility_digest,
+            expected_precontract_revalidation_receipt_digest=launch_bindings[
+                "preserved_state_precontract_revalidation_receipt_digest"])
+        revalidation_digest = _require_digest(
+            revalidation.get("preserved_state_revalidation_receipt_digest"),
+            "preserved_state_revalidation_receipt_digest")
+    except (OSError, ValueError, KeyError,
+            STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+        raise CorpusValidationError(
+            f"scorer-fit selector successor does not verify: {exc}") from exc
+    return {
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "state_selector_feasibility_receipt_digest": feasibility_digest,
+        "preserved_state_revalidation_receipt_digest": revalidation_digest,
     }
 
 
@@ -887,7 +980,8 @@ def _parse_rows(path: Path) -> list[dict[str, Any]]:
 def _validate_manifest(manifest: dict[str, Any],
                        allocation: Mapping[str, Any],
                        pre_identity_validation: Mapping[str, Any],
-                       launch_bindings: Mapping[str, Any]
+                       launch_bindings: Mapping[str, Any],
+                       selector_bindings: Mapping[str, Any]
                        ) -> dict[str, dict[str, Any]]:
     expected = contract()
     _require(expected.get("scorer_fit_allocation_design_digest")
@@ -902,6 +996,9 @@ def _validate_manifest(manifest: dict[str, Any],
     _require(expected.get("invalid_scorer_identity_exclusion_digest")
              == invalid_identity_exclusion_digest(),
              "scorer contract invalid-identity exclusion binding changed")
+    _require(expected.get("state_selector_amendment_digest")
+             == STATE_SELECTOR.state_selector_amendment_digest(),
+             "scorer contract state-selector amendment binding changed")
     target_encoder_digest = canonical_digest(expected["target_encoder"])
     try:
         validate_pre_identity_structural_validation(pre_identity_validation)
@@ -938,6 +1035,7 @@ def _validate_manifest(manifest: dict[str, Any],
         "pre_identity_allocation_validation_digest": pre_identity_digest,
         "invalid_scorer_identity_exclusion_digest":
             invalid_identity_exclusion_digest(),
+        **{key: selector_bindings[key] for key in SELECTOR_BINDING_KEYS},
         **{key: launch_bindings[key] for key in LAUNCH_BINDING_KEYS},
         "candidate_bank_digest": expected["candidate_bank_digest"],
         "progress_contract_digest": expected["progress_target_digest"],
@@ -1108,6 +1206,7 @@ def _validate_manifest(manifest: dict[str, Any],
                 ("pre_identity_allocation_validation_digest", pre_identity_digest),
                 ("invalid_scorer_identity_exclusion_digest",
                  invalid_identity_exclusion_digest()),
+                *((key, selector_bindings[key]) for key in SELECTOR_BINDING_KEYS),
                 *((key, launch_bindings[key]) for key in LAUNCH_BINDING_KEYS),
             ):
                 _require(branch_identity.get(identity_key) == expected_value,
@@ -1287,6 +1386,7 @@ def _validate_rows(rows: list[dict[str, Any]], states: dict[str, dict[str, Any]]
              manifest["pre_identity_allocation_validation_digest"]),
             (("invalid_scorer_identity_exclusion_digest",),
              invalid_identity_exclusion_digest()),
+            *(((key,), manifest[key]) for key in SELECTOR_BINDING_KEYS),
             *(((key,), manifest[key]) for key in LAUNCH_BINDING_KEYS),
             (("candidate_bank_digest",), expected_contract["candidate_bank_digest"]),
             (("progress_contract_digest", "progress_target_digest"),
@@ -1476,6 +1576,7 @@ def _validate_receipt(receipt: dict[str, Any], manifest: dict[str, Any],
          manifest["pre_identity_allocation_validation_digest"]),
         (("invalid_scorer_identity_exclusion_digest",),
          invalid_identity_exclusion_digest()),
+        *(((key,), manifest[key]) for key in SELECTOR_BINDING_KEYS),
         *(((key,), manifest[key]) for key in LAUNCH_BINDING_KEYS),
         (("boundary_digest", "boundary"), FROZEN_BRANCH_BOUNDARY_DIGEST),
         (("render_contract_digest",), canonical_digest(expected["render_contract"])),
@@ -1549,6 +1650,7 @@ def _validate_smoke_receipts(pool_dir: Path,
          manifest["pre_identity_allocation_validation_digest"]),
         (("invalid_scorer_identity_exclusion_digest",),
          invalid_identity_exclusion_digest()),
+        *(((key,), manifest[key]) for key in SELECTOR_BINDING_KEYS),
         *(((key,), manifest[key]) for key in LAUNCH_BINDING_KEYS),
         (("render_contract_digest",), canonical_digest(expected["render_contract"])),
         (("textured_v03_renderer_contract_digest",),
@@ -1640,6 +1742,7 @@ def _validate_latent_index(index: dict[str, Any], pool_dir: Path,
          manifest["pre_identity_allocation_validation_digest"]),
         ("invalid_scorer_identity_exclusion_digest",
          invalid_identity_exclusion_digest()),
+        *((key, manifest[key]) for key in SELECTOR_BINDING_KEYS),
         *((key, manifest[key]) for key in LAUNCH_BINDING_KEYS),
         ("target_encoder_digest", canonical_digest(contract()["target_encoder"])),
         ("target_encoder_checkpoint_sha256",
@@ -1805,8 +1908,11 @@ def validate_scorer_fit_corpus(pool: str = EXPECTED_POOL, *,
     allocation = _read_json(allocation_path)
     launch_bindings = _validate_clean_source_launch(
         pool_dir, pre_identity_validation)
+    selector_bindings = _validate_selector_successor(
+        pool_dir, launch_bindings, allocation)
     states = _validate_manifest(
-        manifest, allocation, pre_identity_validation, launch_bindings)
+        manifest, allocation, pre_identity_validation, launch_bindings,
+        selector_bindings)
     raw_rows = _parse_rows(rows_path)
     rows = _validate_rows(raw_rows, states, manifest, pool_dir,
                           verify_frame_paths=verify_frame_paths)
@@ -1859,6 +1965,7 @@ def validate_scorer_fit_corpus(pool: str = EXPECTED_POOL, *,
                 sha256_file(pre_identity_path),
             "invalid_scorer_identity_exclusion_digest":
                 invalid_identity_exclusion_digest(),
+            **{key: selector_bindings[key] for key in SELECTOR_BINDING_KEYS},
             **{key: launch_bindings[key] for key in LAUNCH_BINDING_KEYS},
             "clean_source_launch_receipt_sha256":
                 launch_bindings["clean_source_launch_receipt_sha256"],
@@ -2604,7 +2711,8 @@ def main() -> int:
             corpus["bindings"]["pre_identity_allocation_validation_digest"],
         "invalid_scorer_identity_exclusion_digest":
             invalid_identity_exclusion_digest(),
-        **{key: corpus["bindings"][key] for key in LAUNCH_BINDING_KEYS},
+        **{key: corpus["bindings"][key]
+           for key in SCORER_PROVENANCE_BINDING_KEYS},
         "latent": packages["latent"], "no_latent": packages["no_latent"],
         "initial_state_digests": {
             name: value["initial_state_digest"] for name, value in initialisations.items()
@@ -2649,7 +2757,8 @@ def main() -> int:
         "training_run_digest": training_run_digest,
         "binding_digest": binding_digest,
         "scorer_contract_v1_2_digest": contract_digest(),
-        **{key: corpus["bindings"][key] for key in LAUNCH_BINDING_KEYS},
+        **{key: corpus["bindings"][key]
+           for key in SCORER_PROVENANCE_BINDING_KEYS},
         "model_state_dict": packages["no_latent"],
         "initial_state_digest": initialisations["no_latent"]["initial_state_digest"],
         "final_state_digest": final_state_digests["no_latent"],
@@ -2674,7 +2783,8 @@ def main() -> int:
         "status": STATUS, "complete": True,
         "training_run_digest": training_run_digest,
         "scorer_contract_v1_2_digest": contract_digest(),
-        **{key: corpus["bindings"][key] for key in LAUNCH_BINDING_KEYS},
+        **{key: corpus["bindings"][key]
+           for key in SCORER_PROVENANCE_BINDING_KEYS},
         "path": str(baseline_path),
         "sha256": baseline_package_digest,
         "byte_count": baseline_path.stat().st_size,
@@ -2707,7 +2817,8 @@ def main() -> int:
                 corpus["bindings"]["pre_identity_allocation_validation_digest"],
             "invalid_scorer_identity_exclusion_digest":
                 invalid_identity_exclusion_digest(),
-            **{key: corpus["bindings"][key] for key in LAUNCH_BINDING_KEYS},
+            **{key: corpus["bindings"][key]
+               for key in SCORER_PROVENANCE_BINDING_KEYS},
             "target_encoder_digest": corpus["index"]["target_encoder_digest"],
             "target_encoder_checkpoint_sha256":
                 corpus["bindings"]["encoder_checkpoint_sha256"],
@@ -2742,7 +2853,8 @@ def main() -> int:
             corpus["bindings"]["pre_identity_allocation_validation_digest"],
         "invalid_scorer_identity_exclusion_digest":
             invalid_identity_exclusion_digest(),
-        **{key: corpus["bindings"][key] for key in LAUNCH_BINDING_KEYS},
+        **{key: corpus["bindings"][key]
+           for key in SCORER_PROVENANCE_BINDING_KEYS},
         "target_encoder_digest": corpus["index"]["target_encoder_digest"],
         "target_encoder_checkpoint_sha256":
             corpus["bindings"]["encoder_checkpoint_sha256"],
