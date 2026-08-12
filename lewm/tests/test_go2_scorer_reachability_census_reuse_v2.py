@@ -1148,6 +1148,49 @@ def test_reachability_scene_shard_validation_rejects_changed_provenance():
             changed, expected_task=task, predecessor_shard_digest="c" * 64,
             source=_source())
 
+
+def test_reachability_scene_shard_from_pre_fix_source_is_not_resumed(tmp_path):
+    task = _task(0)
+    original_source = _source()
+    payload = B._build_reachability_scene_shard(
+        task=task, predecessor_shard_digest="c" * 64,
+        scene_result={
+            "family": B.REACHABILITY_REDRIVE_FAMILY,
+            "scene_id": task["scene_id"],
+            "completion_scene_evidence": [_evidence(0)],
+            "rejection_counts": {},
+        },
+        source=original_source, runtime_s=1.0)
+    path = tmp_path / "pre-fix-reachability-shard.json"
+    B.atomic_json(path, payload)
+    successor_source = {
+        **original_source,
+        "source_repository_commit": "d" * 40,
+        "bound_implementations_digest": "e" * 64,
+    }
+    assert B._load_reachability_scene_shard(
+        path, expected_task=task, predecessor_shard_digest="c" * 64,
+        source=successor_source) is None
+    # The parent stage treats this exact state as invalid, preserves the old
+    # file under invalid_attempts, and regenerates only that missing source-
+    # bound shard; it never accepts it as a zero-new resume.
+    stage_source = inspect.getsource(B.stage_selector_reachability_feasibility)
+    assert stage_source.index("if path.exists():") < stage_source.index(
+        "_run_reachability_scene_subprocess(args, task)")
+    assert "_preserve_invalid(path, out, \"reachability-scene-invalid\")" \
+        in stage_source
+
+    changed = copy.deepcopy(payload)
+    changed["state_selector_amendment_digest"] = "f" * 64
+    changed["state_selector_reachability_scene_shard_digest"] = \
+        B.canonical_digest({
+            key: value for key, value in changed.items()
+            if key != "state_selector_reachability_scene_shard_digest"})
+    with pytest.raises(RuntimeError, match="binding failed"):
+        B._validate_reachability_scene_shard(
+            changed, expected_task=task, predecessor_shard_digest="c" * 64,
+            source=_source())
+
     changed = copy.deepcopy(payload)
     changed["successor_selection_digest"] = "e" * 64
     changed["state_selector_reachability_scene_shard_digest"] = \

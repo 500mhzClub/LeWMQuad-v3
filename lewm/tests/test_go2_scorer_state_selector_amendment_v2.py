@@ -4,6 +4,7 @@ from __future__ import annotations
 import inspect
 import json
 import math
+import struct
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -265,6 +266,90 @@ def test_previous_applied_command_must_fit_frozen_platform_envelope(previous):
     ):
         S.max_deterministic_translational_path_length_m(
             list(S.ALLOCATION.ROTATION_BLOCKS[0]), previous)
+
+
+@pytest.mark.parametrize("observed", [
+    S.PLATFORM_EXECUTED_VX_MIN_BINARY32_MPS,
+    S.PLATFORM_EXECUTED_VX_MAX_BINARY32_MPS,
+])
+def test_exact_binary32_vx_endpoint_is_accepted_and_preserved(observed):
+    assert abs(abs(observed) - 0.3) < 1e-6
+    assert abs(observed) > 0.3
+    budget = S.max_deterministic_translational_path_length_m(
+        list(S.ALLOCATION.ROTATION_BLOCKS[0]), [observed, 0.0, 0.0])
+    assert budget["previous_applied_command"] == [observed, 0.0, 0.0]
+    evidence = S.completion_enriched_eligibility(
+        graph_hops=1, reachable=True, continuous_geodesic_m=0.8,
+        bearing_body_rad=0.0,
+        task_status={
+            "task_completed": False, "goal_claimed": False,
+            "terminated": False, "truncated": False,
+        },
+        candidate_indices=list(S.ALLOCATION.ROTATION_BLOCKS[0]),
+        previous_applied_command=[observed, 0.0, 0.0])
+    assert evidence["previous_applied_command"] == [observed, 0.0, 0.0]
+    assert evidence["l_max_m"] == budget["l_max_m"]
+    candidate_index, delta = ((10, -0.25) if observed > 0.0 else (0, 0.25))
+    first_post_slew = S.candidate_post_slew_plan(
+        candidate_index, [observed, 0.0, 0.0])[0][0]
+    assert first_post_slew == observed + delta
+
+
+def _outward_binary32(value):
+    bits = struct.unpack("!I", struct.pack("!f", value))[0]
+    return float(struct.unpack("!f", struct.pack("!I", bits + 1))[0])
+
+
+@pytest.mark.parametrize("endpoint", [
+    S.PLATFORM_EXECUTED_VX_MIN_BINARY32_MPS,
+    S.PLATFORM_EXECUTED_VX_MAX_BINARY32_MPS,
+])
+def test_next_outward_binary32_vx_value_is_rejected(endpoint):
+    outward = _outward_binary32(endpoint)
+    assert abs(outward) > abs(endpoint)
+    with pytest.raises(
+        S.StateSelectorAmendmentError, match="frozen platform envelope"
+    ):
+        S.max_deterministic_translational_path_length_m(
+            list(S.ALLOCATION.ROTATION_BLOCKS[0]), [outward, 0.0, 0.0])
+
+
+@pytest.mark.parametrize("endpoint,direction", [
+    (S.PLATFORM_EXECUTED_VX_MAX_BINARY32_MPS, math.inf),
+    (S.PLATFORM_EXECUTED_VX_MIN_BINARY32_MPS, -math.inf),
+])
+def test_value_one_float64_step_outside_binary32_vx_endpoint_is_rejected(
+        endpoint, direction):
+    outward = math.nextafter(endpoint, direction)
+    with pytest.raises(
+        S.StateSelectorAmendmentError, match="frozen platform envelope"
+    ):
+        S.max_deterministic_translational_path_length_m(
+            list(S.ALLOCATION.ROTATION_BLOCKS[0]), [outward, 0.0, 0.0])
+
+
+@pytest.mark.parametrize("yaw,direction", [(0.5, math.inf), (-0.5, -math.inf)])
+def test_value_one_float64_step_outside_yaw_endpoint_is_rejected(
+        yaw, direction):
+    with pytest.raises(
+        S.StateSelectorAmendmentError, match="frozen platform envelope"
+    ):
+        S.max_deterministic_translational_path_length_m(
+            list(S.ALLOCATION.ROTATION_BLOCKS[0]),
+            [0.0, 0.0, math.nextafter(yaw, direction)])
+
+
+def test_binary32_input_representation_fix_does_not_amend_frozen_contract():
+    assert S.PLATFORM_EXECUTED_VX_MIN_BINARY32_MPS == \
+        -0.30000001192092896
+    assert S.PLATFORM_EXECUTED_VX_MAX_BINARY32_MPS == \
+        0.30000001192092896
+    assert S.state_selector_amendment_digest() == (
+        "8c1d9f5ff1430fda6d9d80512afdba3070c78301befa57604aafcad9cb5c880b"
+    )
+    assert "previous_command_execution_representation" not in (
+        S.state_selector_amendment_contract()["single_replacement"][
+            "l_max_calculation"])
 
 
 def test_new_receipt_paths_cannot_overwrite_accepted_v1_failures():

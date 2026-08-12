@@ -25,6 +25,7 @@ import json
 import math
 import operator
 import copy
+import struct
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -295,6 +296,29 @@ _TASK_STATUS_KEYS = (
 _HEX = frozenset("0123456789abcdef")
 
 
+def _binary32(value: float) -> float:
+    """Round-trip one frozen literal through the runtime command dtype."""
+
+    return float(struct.unpack("!f", struct.pack("!f", float(value)))[0])
+
+
+# The rollout safety limiter constructs its absolute command bounds as
+# ``np.float32`` and stores ``runner._last_executed`` as float32.  Decimal 0.3
+# therefore has these exact observed endpoint encodings.  They are not a wider
+# physical envelope: only the exact runtime representations are admitted.
+PLATFORM_NOMINAL_VX_MIN_MPS = -0.3
+PLATFORM_NOMINAL_VX_MAX_MPS = 0.3
+PLATFORM_NOMINAL_MAX_YAW_RATE_RADPS = 0.5
+PLATFORM_EXECUTED_VX_MIN_BINARY32_MPS = _binary32(
+    PLATFORM_NOMINAL_VX_MIN_MPS)
+PLATFORM_EXECUTED_VX_MAX_BINARY32_MPS = _binary32(
+    PLATFORM_NOMINAL_VX_MAX_MPS)
+PLATFORM_EXECUTED_YAW_MIN_BINARY32_RADPS = _binary32(
+    -PLATFORM_NOMINAL_MAX_YAW_RATE_RADPS)
+PLATFORM_EXECUTED_YAW_MAX_BINARY32_RADPS = _binary32(
+    PLATFORM_NOMINAL_MAX_YAW_RATE_RADPS)
+
+
 class StateSelectorAmendmentError(RuntimeError):
     """The final selector amendment or exact reachability evidence changed."""
 
@@ -342,10 +366,27 @@ def _normalise_previous_applied(
         raise StateSelectorAmendmentError(
             "the frozen bank and corpus forbid lateral command history"
         )
-    if not (-0.3 <= previous[0] <= 0.3 and -0.5 <= previous[2] <= 0.5):
+    vx_in_nominal_envelope = (
+        PLATFORM_NOMINAL_VX_MIN_MPS
+        <= previous[0]
+        <= PLATFORM_NOMINAL_VX_MAX_MPS
+    )
+    vx_is_exact_runtime_endpoint = previous[0] in (
+        PLATFORM_EXECUTED_VX_MIN_BINARY32_MPS,
+        PLATFORM_EXECUTED_VX_MAX_BINARY32_MPS,
+    )
+    yaw_in_runtime_envelope = (
+        PLATFORM_EXECUTED_YAW_MIN_BINARY32_RADPS
+        <= previous[2]
+        <= PLATFORM_EXECUTED_YAW_MAX_BINARY32_RADPS
+    )
+    if not ((vx_in_nominal_envelope or vx_is_exact_runtime_endpoint)
+            and yaw_in_runtime_envelope):
         raise StateSelectorAmendmentError(
             "previous_applied_command exceeds the frozen platform envelope"
         )
+    # Do not clamp or round: L_max starts from the actual applied command that
+    # passed the canonical snapshot boundary.
     return previous
 
 
