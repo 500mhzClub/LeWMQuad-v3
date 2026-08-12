@@ -109,8 +109,9 @@ class DevelopmentTransferTests(unittest.TestCase):
             paths = (
                 pool / "pre_identity_allocation_validation.json",
                 pool / "candidate_allocation_manifest.json",
+                pool / "state_manifest.json",
                 pool / T.S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME,
-                pool / T.S.STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_NAME,
+                pool / T.S.STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME,
                 pool / T.S.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME,
             )
             pre_identity = {"pre_identity_validation_digest": "i" * 64}
@@ -120,15 +121,20 @@ class DevelopmentTransferTests(unittest.TestCase):
                     "post_identity_validation_digest": "o" * 64,
                 },
             }
-            precontract = {
-                "preserved_state_precontract_revalidation_receipt_digest":
+            state_manifest = {"states": []}
+            state_manifest["state_manifest_digest"] = T.hashlib.sha256(
+                json.dumps(state_manifest, sort_keys=True).encode()
+            ).hexdigest()
+            disposition = {
+                "mixed_precontract_disposition_receipt_digest":
                     "p" * 64,
             }
             paths[0].write_text(json.dumps(pre_identity))
             paths[1].write_text(json.dumps(allocation))
-            paths[2].write_text(json.dumps({"record": 2}))
-            paths[3].write_text(json.dumps(precontract))
-            paths[4].write_text(json.dumps({"record": 4}))
+            paths[2].write_text(json.dumps(state_manifest))
+            paths[3].write_text(json.dumps({"record": 3}))
+            paths[4].write_text(json.dumps(disposition))
+            paths[5].write_text(json.dumps({"record": 5}))
             selector = {
                 "state_selector_amendment_digest": "a" * 64,
                 "state_selector_feasibility_receipt_digest": "f" * 64,
@@ -141,16 +147,26 @@ class DevelopmentTransferTests(unittest.TestCase):
                     "candidate_allocation_post_identity_validation_digest":
                         "o" * 64,
                     "pre_identity_allocation_validation_digest": "i" * 64,
+                    "state_manifest_digest":
+                        state_manifest["state_manifest_digest"],
+                    "state_manifest_file_sha256": T.sha256_file(paths[2]),
                 },
             }
             launch = {
                 "source_repository_commit": "c" * 40,
-                "preserved_state_precontract_revalidation_receipt_digest":
+                "clean_source_binding_digest": "b" * 64,
+                "bound_implementations_digest": "a" * 64,
+                "mixed_precontract_disposition_receipt_digest":
                     "p" * 64,
             }
             with mock.patch.object(
                     T.S, "_validate_clean_source_launch",
                     return_value=launch) as validate_launch, \
+                    mock.patch.object(
+                        T.S.CORPUS_BUILDER,
+                        "load_active_state_manifest_for_consumption",
+                        return_value=state_manifest,
+                    ) as validate_live_manifest, \
                     mock.patch.object(
                         T.S, "validate_pre_identity_structural_validation"), \
                     mock.patch.object(
@@ -158,17 +174,19 @@ class DevelopmentTransferTests(unittest.TestCase):
                         return_value="m" * 64), \
                     mock.patch.object(
                         T.S.STATE_SELECTOR,
-                        "validate_preserved_state_precontract_revalidation_receipt"), \
+                        "validate_preserved_state_mixed_precontract_disposition_receipt"), \
                     mock.patch.object(
                         T.S, "_validate_selector_successor",
                         return_value=selector) as validate_selector:
                 result = T._validate_live_selector_provenance(
                     qualification, pool_dir=pool)
             validate_launch.assert_called_once()
+            validate_live_manifest.assert_called_once_with(
+                paths[2], pool=T.S.EXPECTED_POOL)
             validate_selector.assert_called_once()
             self.assertEqual(result["selector_bindings"], selector)
             self.assertEqual(
-                result["preserved_state_precontract_revalidation_receipt_digest"],
+                result["mixed_precontract_disposition_receipt_digest"],
                 "p" * 64)
             self.assertFalse(result["scorer_weights_opened_during_validation"])
             self.assertFalse(result["predictor_artifacts_opened_during_validation"])
@@ -179,13 +197,17 @@ class DevelopmentTransferTests(unittest.TestCase):
             with mock.patch.object(
                     T.S, "_validate_clean_source_launch", return_value=launch), \
                     mock.patch.object(
+                        T.S.CORPUS_BUILDER,
+                        "load_active_state_manifest_for_consumption",
+                        return_value=state_manifest), \
+                    mock.patch.object(
                         T.S, "validate_pre_identity_structural_validation"), \
                     mock.patch.object(
                         T.S, "allocation_manifest_digest",
                         return_value="m" * 64), \
                     mock.patch.object(
                         T.S.STATE_SELECTOR,
-                        "validate_preserved_state_precontract_revalidation_receipt"), \
+                        "validate_preserved_state_mixed_precontract_disposition_receipt"), \
                     mock.patch.object(
                         T.S, "_validate_selector_successor",
                         return_value=selector):
@@ -196,6 +218,34 @@ class DevelopmentTransferTests(unittest.TestCase):
                         {**qualification,
                          "state_selector_feasibility_receipt_digest": "x" * 64},
                         pool_dir=pool)
+
+    def test_live_selection_replay_failure_precedes_selector_and_weight_access(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pool = Path(directory)
+            names = (
+                "pre_identity_allocation_validation.json",
+                "candidate_allocation_manifest.json",
+                "state_manifest.json",
+            )
+            for name in names:
+                (pool / name).write_text("{}")
+            with mock.patch.object(
+                    T.S.CORPUS_BUILDER,
+                    "load_active_state_manifest_for_consumption",
+                    side_effect=RuntimeError(
+                        "later replacement capture prefix is not canonical"
+                    )) as replay, \
+                    mock.patch.object(
+                        T.S, "_validate_selector_successor") as selector, \
+                    mock.patch.object(T.torch, "load") as load:
+                with self.assertRaisesRegex(
+                        T.DevelopmentTransferRefused,
+                        "later replacement capture prefix"):
+                    T._validate_live_selector_provenance(
+                        {}, pool_dir=pool)
+            replay.assert_called_once()
+            selector.assert_not_called()
+            load.assert_not_called()
 
     def test_live_phase2_failure_refuses_before_torch_load(self):
         with tempfile.TemporaryDirectory() as directory:

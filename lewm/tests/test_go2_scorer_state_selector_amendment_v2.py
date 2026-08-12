@@ -4,6 +4,7 @@ from __future__ import annotations
 import inspect
 import json
 import math
+import copy
 import struct
 from collections.abc import Mapping
 from pathlib import Path
@@ -365,6 +366,343 @@ def test_new_receipt_paths_cannot_overwrite_accepted_v1_failures():
     )
 
 
+def _managed_generated_fixture(tmp_path: Path):
+    repository = tmp_path / "repository"
+    generated_parent = repository / ".generated"
+    generated_parent.mkdir(parents=True)
+    storage_root = (
+        tmp_path / "storage" / S.MANAGED_GENERATED_ROOT_RELATIVE.name
+    )
+    (storage_root / "scorer_fit").mkdir(parents=True)
+    alias = generated_parent / S.MANAGED_GENERATED_ROOT_RELATIVE.name
+    alias.symlink_to(storage_root, target_is_directory=True)
+    return repository, alias, storage_root
+
+
+def test_managed_generated_guard_allows_only_root_alias_and_pins_target(
+        tmp_path):
+    repository, alias, storage_root = _managed_generated_fixture(tmp_path)
+    artifact = storage_root / "scorer_fit" / "receipt.json"
+    artifact.write_text("original")
+    guarded = S._managed_generated_artifact_path(
+        repository / S.MANAGED_GENERATED_ROOT_RELATIVE / "scorer_fit/receipt.json",
+        root=repository,
+    )
+    assert guarded == artifact
+
+    alternate = tmp_path / "alternate" / S.MANAGED_GENERATED_ROOT_RELATIVE.name
+    (alternate / "scorer_fit").mkdir(parents=True)
+    (alternate / "scorer_fit/receipt.json").write_text("redirected")
+    alias.unlink()
+    alias.symlink_to(alternate, target_is_directory=True)
+    # The caller reads the canonical object selected before the alias swap.
+    assert guarded.read_text() == "original"
+
+
+@pytest.mark.parametrize("kind", ("nested", "leaf"))
+def test_managed_generated_guard_rejects_descendant_symlinks(tmp_path, kind):
+    repository, _alias, storage_root = _managed_generated_fixture(tmp_path)
+    external = tmp_path / "external"
+    external.mkdir()
+    if kind == "nested":
+        (external / "receipt.json").write_text("{}")
+        (storage_root / "scorer_fit").rmdir()
+        (storage_root / "scorer_fit").symlink_to(
+            external, target_is_directory=True)
+    else:
+        (external / "receipt.json").write_text("{}")
+        (storage_root / "scorer_fit/receipt.json").symlink_to(
+            external / "receipt.json"
+        )
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="symlinked generated artifact"):
+        S._managed_generated_artifact_path(
+            repository / S.MANAGED_GENERATED_ROOT_RELATIVE
+            / "scorer_fit/receipt.json",
+            root=repository,
+        )
+
+
+def test_managed_generated_guard_rejects_custody_names_lexically_and_resolved(
+        tmp_path):
+    repository, alias, _storage_root = _managed_generated_fixture(tmp_path)
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="custody component"):
+        S._managed_generated_artifact_path(
+            repository / S.MANAGED_GENERATED_ROOT_RELATIVE
+            / "sealed_payload/receipt.json",
+            root=repository,
+        )
+
+    alias.unlink()
+    sealed_target = (
+        tmp_path / "sealed_storage" / S.MANAGED_GENERATED_ROOT_RELATIVE.name
+    )
+    sealed_target.mkdir(parents=True)
+    alias.symlink_to(sealed_target, target_is_directory=True)
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="inaccessible"):
+        S._managed_generated_artifact_path(
+            repository / S.MANAGED_GENERATED_ROOT_RELATIVE
+            / "scorer_fit/receipt.json",
+            root=repository,
+        )
+
+
+def test_exact_frozen_json_loader_uses_managed_guard_for_leaf_symlink(tmp_path):
+    repository, _alias, storage_root = _managed_generated_fixture(tmp_path)
+    external = tmp_path / "outside.json"
+    external.write_text("{}")
+    leaf = storage_root / "scorer_fit/receipt.json"
+    leaf.symlink_to(external)
+    binding = {
+        "path": (
+            ".generated/go2_branch_corpus_v1_2/scorer_fit/receipt.json"
+        ),
+        "byte_count": external.stat().st_size,
+        "raw_sha256": S._file_sha256(external),
+    }
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="symlinked generated artifact"):
+        S._load_exact_frozen_json(binding, root=repository, label="synthetic")
+
+
+def test_mixed_disposition_loader_rejects_leaf_symlink_before_json_validation(
+        monkeypatch, tmp_path):
+    repository, _alias, storage_root = _managed_generated_fixture(tmp_path)
+    external = tmp_path / "outside.json"
+    external.write_text("{}")
+    relative = Path(
+        S.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH
+    ).relative_to(S.MANAGED_GENERATED_ROOT_RELATIVE)
+    leaf = storage_root / relative
+    leaf.parent.mkdir(parents=True, exist_ok=True)
+    leaf.symlink_to(external)
+    validate = monkeypatch.setattr(
+        S,
+        "validate_preserved_state_mixed_precontract_disposition_receipt",
+        lambda *_args, **_kwargs: pytest.fail(
+            "JSON validator ran before custody rejection"
+        ),
+    )
+    assert validate is None
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="symlinked generated artifact"):
+        S.load_and_validate_preserved_state_mixed_precontract_disposition_receipt(
+            root=repository
+        )
+
+
+def test_contract_issuer_uses_central_guarded_receipt_loaders(
+        monkeypatch, tmp_path):
+    source = {
+        "source_repository_commit": "c" * 40,
+        "bound_implementations_digest": "b" * 64,
+    }
+    feasibility = {
+        "state_selector_feasibility_receipt_digest": "f" * 64,
+    }
+    monkeypatch.setattr(CONTRACT, "clean_source_binding", lambda: source)
+    monkeypatch.setattr(
+        CONTRACT, "_managed_scorer_contract_output_path",
+        lambda _path: tmp_path / CONTRACT.SCORER_CONTRACT_ARTIFACT_NAME,
+    )
+    monkeypatch.setattr(S, "validate_authority_artifacts", lambda: None)
+    monkeypatch.setattr(
+        S, "validate_frozen_reachability_feasibility_pass",
+        lambda **_kwargs: feasibility,
+    )
+    guarded = monkeypatch.setattr(
+        S,
+        "load_and_validate_preserved_state_mixed_precontract_disposition_receipt",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            S.StateSelectorAmendmentError("guarded leaf symlink")
+        ),
+    )
+    assert guarded is None
+    monkeypatch.setattr(
+        CONTRACT,
+        "_stream_file_sha256",
+        lambda *_args, **_kwargs: pytest.fail(
+            "checkpoint/source bytes opened before selector custody gate"
+        ),
+    )
+    with pytest.raises(S.StateSelectorAmendmentError, match="guarded leaf symlink"):
+        CONTRACT.issue_contract(tmp_path / "contract.json")
+
+
+def _managed_scorer_package_fixture(tmp_path: Path):
+    repository = tmp_path / "repository"
+    generated = repository / ".generated"
+    generated.mkdir(parents=True)
+    storage = (
+        tmp_path / "storage" / CONTRACT.SCORER_PACKAGE_ROOT_RELATIVE.name
+    )
+    storage.mkdir(parents=True)
+    alias = generated / CONTRACT.SCORER_PACKAGE_ROOT_RELATIVE.name
+    alias.symlink_to(storage, target_is_directory=True)
+    return repository, alias, storage
+
+
+def test_scorer_contract_output_guard_accepts_only_exact_root_alias_and_pins(
+        tmp_path):
+    repository, alias, storage = _managed_scorer_package_fixture(tmp_path)
+    logical = (
+        repository / CONTRACT.SCORER_PACKAGE_ROOT_RELATIVE
+        / CONTRACT.SCORER_CONTRACT_ARTIFACT_NAME
+    )
+    pinned = CONTRACT._managed_scorer_contract_output_path(
+        logical, root=repository
+    )
+    assert pinned == storage / CONTRACT.SCORER_CONTRACT_ARTIFACT_NAME
+
+    alternate = (
+        tmp_path / "alternate" / CONTRACT.SCORER_PACKAGE_ROOT_RELATIVE.name
+    )
+    alternate.mkdir(parents=True)
+    alias.unlink()
+    alias.symlink_to(alternate, target_is_directory=True)
+    pinned.write_text("pinned")
+    assert (storage / CONTRACT.SCORER_CONTRACT_ARTIFACT_NAME).read_text() == (
+        "pinned"
+    )
+    assert not (alternate / CONTRACT.SCORER_CONTRACT_ARTIFACT_NAME).exists()
+
+
+def test_scorer_contract_output_guard_rejects_wrong_root_and_escape(tmp_path):
+    repository, _alias, _storage = _managed_scorer_package_fixture(tmp_path)
+    for path in (
+        repository / ".generated/other/scorer_contract_v1_2.json",
+        repository / CONTRACT.SCORER_PACKAGE_ROOT_RELATIVE / "other.json",
+    ):
+        with pytest.raises(RuntimeError, match="exact managed package artifact"):
+            CONTRACT._managed_scorer_contract_output_path(
+                path, root=repository
+            )
+
+
+@pytest.mark.parametrize("kind", ("nested", "leaf"))
+def test_scorer_contract_output_guard_rejects_descendant_symlink(
+        tmp_path, kind):
+    repository, _alias, storage = _managed_scorer_package_fixture(tmp_path)
+    external = tmp_path / "external"
+    external.mkdir()
+    if kind == "nested":
+        # A nested component cannot occur on the exact active filename, so
+        # exercise the archive path that production supersession would use.
+        (storage / "superseded_pre_run").symlink_to(
+            external, target_is_directory=True
+        )
+        active = storage / CONTRACT.SCORER_CONTRACT_ARTIFACT_NAME
+        active.write_text("{}")
+        with pytest.raises(RuntimeError, match="symlinked scorer-package"):
+            CONTRACT._prepare_contract_output(
+                active,
+                {"contract_artifact_digest": "bad"},
+                managed_root=storage,
+            )
+    else:
+        target = external / "contract.json"
+        target.write_text("{}")
+        (storage / CONTRACT.SCORER_CONTRACT_ARTIFACT_NAME).symlink_to(target)
+        logical = (
+            repository / CONTRACT.SCORER_PACKAGE_ROOT_RELATIVE
+            / CONTRACT.SCORER_CONTRACT_ARTIFACT_NAME
+        )
+        with pytest.raises(RuntimeError, match="symlinked scorer-package"):
+            CONTRACT._managed_scorer_contract_output_path(
+                logical, root=repository
+            )
+
+
+def test_atomic_contract_write_rejects_predictable_temp_leaf_symlink(tmp_path):
+    repository, _alias, storage = _managed_scorer_package_fixture(tmp_path)
+    logical = (
+        repository / CONTRACT.SCORER_PACKAGE_ROOT_RELATIVE
+        / CONTRACT.SCORER_CONTRACT_ARTIFACT_NAME
+    )
+    output = CONTRACT._managed_scorer_contract_output_path(
+        logical, root=repository
+    )
+    external = tmp_path / "external-contract.json"
+    external.write_text("unchanged")
+    temporary = output.with_name(f".{output.name}.tmp-{CONTRACT.os.getpid()}")
+    temporary.symlink_to(external)
+    payload = {"schema": "synthetic"}
+    payload["contract_artifact_digest"] = CONTRACT._digest(payload)
+    with pytest.raises(RuntimeError, match="symlinked scorer-package"):
+        CONTRACT._atomic_write_contract_output(
+            output, payload, managed_root=storage
+        )
+    assert external.read_text() == "unchanged"
+    assert not output.exists()
+
+
+def test_frozen_phase1_failure_derives_exact_mixed_disposition():
+    failure = S.validate_frozen_preserved_precontract_failure()
+    sets = S.mixed_precontract_disposition_sets()
+    assert failure["status"] == "FAIL_PRECONTRACT_IDENTITY_REVALIDATION"
+    assert failure["failure_count"] == 8
+    assert len(sets["retained_predecessor_identities"]) == 37
+    assert len(sets["rejected_predecessor_identities"]) == 8
+    assert len(sets["replacement_slots"]) == 8
+    assert all(row["stratum"] == "completion_enriched"
+               for row in sets["rejected_predecessor_identities"])
+    assert {
+        row["state_identity_digest"]
+        for row in sets["retained_predecessor_identities"]
+    }.isdisjoint({
+        row["state_identity_digest"]
+        for row in sets["rejected_predecessor_identities"]
+    })
+    vectors = S._phase1_completion_vectors(root=S.ROOT)
+    assert len(vectors) == 7
+    assert set(vectors) == {
+        row["state_identity_digest"]
+        for row in sets["retained_predecessor_identities"]
+        if row["stratum"] == "completion_enriched"
+    }
+
+
+def test_mixed_disposition_is_nonoverwriting_self_bound_and_outcome_free():
+    failure = S.validate_frozen_preserved_precontract_failure()
+    absence = failure["outcome_surface_absence_attestation"]
+    receipt = S.build_preserved_state_mixed_precontract_disposition_receipt(
+        source_repository_commit="c" * 40,
+        clean_source_binding_digest="d" * 64,
+        bound_implementations_digest="e" * 64,
+        successor_selection_digest="f" * 64,
+        outcome_surface_absence_attestation=absence,
+    )
+    S.validate_preserved_state_mixed_precontract_disposition_receipt(
+        receipt,
+        expected_source_commit="c" * 40,
+        expected_clean_source_binding_digest="d" * 64,
+        expected_bound_implementations_digest="e" * 64,
+        expected_successor_selection_digest="f" * 64,
+    )
+    assert S.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH != (
+        S.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH
+    )
+    assert receipt["retained_predecessor_state_count"] == 37
+    assert receipt["rejected_predecessor_state_count"] == 8
+    assert receipt["replacement_slot_count"] == 8
+    assert receipt["candidate_outcomes_loaded"] is False
+    assert receipt["branches_attempted"] == 0
+
+    changed = copy.deepcopy(receipt)
+    changed["retained_predecessor_identities"][0]["scene_id"] = "substituted"
+    changed["retained_predecessor_identity_set_digest"] = S._sha256(
+        changed["retained_predecessor_identities"]
+    )
+    changed["mixed_precontract_disposition_receipt_digest"] = S._sha256({
+        key: value for key, value in changed.items()
+        if key != "mixed_precontract_disposition_receipt_digest"
+    })
+    with pytest.raises(S.StateSelectorAmendmentError, match="identities changed"):
+        S.validate_preserved_state_mixed_precontract_disposition_receipt(changed)
+
+
 def test_tracked_amendment_artifact_and_authority_chain_are_exact():
     artifact = json.loads(Path(S.AMENDMENT_ARTIFACT_PATH).read_text())
     S.validate_state_selector_amendment_artifact(artifact)
@@ -383,6 +721,12 @@ def test_successor_scorer_contract_binds_v2_and_immediate_predecessor():
         S.state_selector_amendment_digest()
     )
     assert "first lexicographically feasible" in selection["scorer_fit"]
+    assert "retains 37 exact predecessor identities" in selection["scorer_fit"]
+    assert "fills eight completion vacancies" in selection["scorer_fit"]
+    assert "other four non-small successor families remain unchanged" in (
+        selection["scorer_fit"]
+    )
+    assert "seven families retain" not in selection["scorer_fit"]
     assert selection["preserved_state_revalidation_receipt"][
         "expected_completion_enriched_state_count"
     ] == 40
@@ -393,3 +737,310 @@ def test_successor_scorer_contract_binds_v2_and_immediate_predecessor():
     assert bindings["qualified_development_transfer_consumer"]["path"] == (
         "scripts/apply_go2_utility_scorer_to_counterfactual_development_v1_2.py"
     )
+
+
+def _synthetic_mixed_phase2(monkeypatch, tmp_path):
+    """Build a source-only 120-state phase-2 fixture with eight replacements."""
+
+    def state(index, *, state_id, scene_id, stratum, family, split_role,
+              source_step=None):
+        step = 1 + 5 * index if source_step is None else source_step
+        row = {
+            "state_identity_digest": f"{index + 1:064x}",
+            "state_id": state_id,
+            "scene_id": scene_id,
+            "scene_dir": f"/synthetic/{scene_id}",
+            "scene_manifest_sha256": f"{index + 1000:064x}",
+            "scene_manifest_byte_count": 100 + index,
+            "family": family,
+            "stratum": stratum,
+            "split_role": split_role,
+            "split": "synthetic",
+            "drive_seed": index,
+            "warmup_blocks": index + 1,
+            "source_step": step,
+            "episode_id": index + 1,
+            "episode_cluster_id": f"cluster-{index:03d}",
+            "cell_id": index + 10,
+            "boundary": {
+                "source_step": step,
+                "boundary_digest": "b" * 64,
+            },
+            "goal": {
+                "landmark_id": f"goal-{index}",
+                "landmark_cell": index + 20,
+                "material_id": "landmark_red",
+                "graph_edges": 0,
+                "start_geodesic_m": 0.5,
+                "bearing_body_rad": 0.0,
+                "range_m": 0.5,
+                "landmark_xy_m": [0.0, 0.0],
+            },
+            "goal_type": "landmark_red",
+            "body_clearance_m": 0.2,
+            "clearance_m": 0.2,
+        }
+        if stratum == "completion_enriched":
+            vector = S.completion_rotation_eligibility_vector(
+                graph_hops=0,
+                reachable=True,
+                continuous_geodesic_m=0.5,
+                bearing_body_rad=0.0,
+                task_status=_status(),
+                previous_applied_command=[0.0, 0.0, 0.0],
+            )
+            row.update({
+                "completion_rotation_eligibility_vector": vector,
+                "snapshot_task_status": _status(),
+                "previous_applied_command": [0.0, 0.0, 0.0],
+            })
+        return row
+
+    retained = []
+    retained_sources = []
+    active = []
+    next_index = 0
+    for ordinal in range(37):
+        stratum = "completion_enriched" if ordinal < 7 else "general"
+        row = state(
+            next_index,
+            state_id=f"retained-{ordinal:02d}",
+            scene_id=f"retained-scene-{ordinal:02d}",
+            stratum=stratum,
+            family=f"family-{ordinal % 8}",
+            split_role="calibration" if ordinal % 5 == 0 else "fit",
+        )
+        next_index += 1
+        retained_sources.append(copy.deepcopy(row))
+        active.append(row)
+        retained.append(S._mixed_identity_row(row))
+
+    rejected_sources = []
+    rejected = []
+    slots = []
+    replacements = []
+    for ordinal in range(8):
+        state_id = f"replacement-{ordinal:02d}"
+        scene_id = f"rejected-scene-{ordinal:02d}"
+        predecessor = state(
+            500 + ordinal,
+            state_id=state_id,
+            scene_id=scene_id,
+            stratum="completion_enriched",
+            family=f"family-{ordinal}",
+            split_role="calibration" if ordinal == 0 else "fit",
+            source_step=101 + 5 * ordinal,
+        )
+        rejected_sources.append(predecessor)
+        rejected.append(S._mixed_identity_row(
+            predecessor,
+            failure_reason=(
+                "RuntimeError:amended classification failed: "
+                "no_completion_enriched_goal"
+            ),
+        ))
+        slots.append({
+            "state_id": state_id,
+            "family": predecessor["family"],
+            "stratum": "completion_enriched",
+            "split_role": predecessor["split_role"],
+            "predecessor_state_identity_digest":
+                predecessor["state_identity_digest"],
+            "predecessor_scene_id": scene_id,
+        })
+        replacement = state(
+            next_index,
+            state_id=state_id,
+            # The authorised policy permits the failed scene when the snapshot
+            # itself differs.  The new source step/boundary prove that here.
+            scene_id=scene_id,
+            stratum="completion_enriched",
+            family=predecessor["family"],
+            split_role=predecessor["split_role"],
+            source_step=102 + 5 * ordinal,
+        )
+        next_index += 1
+        replacements.append(replacement)
+        active.append(replacement)
+
+    for ordinal in range(75):
+        stratum = "completion_enriched" if ordinal < 25 else (
+            "general" if ordinal < 50 else "safety_enriched"
+        )
+        row = state(
+            next_index,
+            state_id=f"new-{ordinal:02d}",
+            scene_id=f"new-scene-{ordinal:02d}",
+            stratum=stratum,
+            family=f"family-{ordinal % 8}",
+            split_role="calibration" if ordinal % 5 == 0 else "fit",
+        )
+        next_index += 1
+        active.append(row)
+    assert len(active) == 120
+    assert sum(row["stratum"] == "completion_enriched" for row in active) == 40
+
+    mixed = {
+        "retained_predecessor_identities": retained,
+        "rejected_predecessor_identities": rejected,
+        "replacement_slots": slots,
+        "rejected_predecessor_identity_set_digest": S._sha256(rejected),
+        "mixed_precontract_disposition_receipt_digest": "d" * 64,
+    }
+    path = tmp_path / S.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(mixed))
+
+    assignments = []
+    for ordinal, row in enumerate(active):
+        rotation = ordinal % ALLOCATION.CANDIDATE_COUNT
+        assignments.append({
+            "state_identity_digest": row["state_identity_digest"],
+            "state_id": row["state_id"],
+            "family": row["family"],
+            "stratum": row["stratum"],
+            "candidate_indices": list(ALLOCATION.ROTATION_BLOCKS[rotation]),
+            "rotation_index": rotation,
+        })
+    allocation = {
+        "assignments": assignments,
+        "allocation_manifest_digest": "a" * 64,
+        "source_identity_manifest_digest": "b" * 64,
+        "post_identity_pre_outcome_validation": {
+            "post_identity_validation_digest": "c" * 64,
+        },
+    }
+    by_identity = {
+        row["state_identity_digest"]: row for row in assignments
+    }
+    completion_rows = [
+        S._completion_source_row_from_active_state(
+            row,
+            assignment=by_identity[row["state_identity_digest"]],
+            preserved_vectors={},
+        )
+        for row in active if row["stratum"] == "completion_enriched"
+    ]
+    monkeypatch.setattr(S.ALLOCATION, "validate_allocation_manifest", lambda *_: None)
+    monkeypatch.setattr(
+        S, "validate_preserved_state_mixed_precontract_disposition_receipt",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(S, "_phase1_completion_vectors", lambda **_kwargs: {})
+    monkeypatch.setattr(
+        S,
+        "load_preserved_state_shards",
+        lambda *_args, **_kwargs: {
+            "synthetic": {"states": retained_sources + rejected_sources},
+        },
+    )
+    return active, replacements, rejected_sources, allocation, completion_rows
+
+
+def test_phase2_allows_same_failed_scene_only_for_a_distinct_snapshot(
+        monkeypatch, tmp_path):
+    active, replacements, rejected_sources, allocation, rows = \
+        _synthetic_mixed_phase2(monkeypatch, tmp_path)
+    receipt = S.build_preserved_state_revalidation_receipt(
+        allocation_manifest=allocation,
+        active_states=active,
+        completion_states=rows,
+        source_repository_commit="c" * 40,
+        successor_selection_digest="e" * 64,
+        state_selector_feasibility_receipt_digest=
+            S.FROZEN_REACHABILITY_FEASIBILITY_PASS["receipt_digest"],
+        mixed_precontract_disposition_receipt_digest="d" * 64,
+        root=tmp_path,
+    )
+    assert receipt["replacement_state_count"] == 8
+    assert replacements[0]["scene_id"] == rejected_sources[0]["scene_id"]
+
+    duplicate_snapshot = copy.deepcopy(active)
+    replacement_index = duplicate_snapshot.index(next(
+        row for row in duplicate_snapshot
+        if row["state_id"] == replacements[0]["state_id"]
+    ))
+    replacement_identity = duplicate_snapshot[replacement_index][
+        "state_identity_digest"
+    ]
+    duplicate_snapshot[replacement_index] = {
+        **copy.deepcopy(rejected_sources[0]),
+        "state_identity_digest": replacement_identity,
+        "selector_successor_marker": "new-contract-only",
+        "goal": {
+            **copy.deepcopy(rejected_sources[0]["goal"]),
+            "landmark_id": "alternate-goal-does-not-change-the-snapshot",
+        },
+    }
+    with pytest.raises(
+            S.StateSelectorAmendmentError,
+            match="exact rejected predecessor snapshot"):
+        S.build_preserved_state_revalidation_receipt(
+            allocation_manifest=allocation,
+            active_states=duplicate_snapshot,
+            completion_states=rows,
+            source_repository_commit="c" * 40,
+            successor_selection_digest="e" * 64,
+            state_selector_feasibility_receipt_digest=
+                S.FROZEN_REACHABILITY_FEASIBILITY_PASS["receipt_digest"],
+            mixed_precontract_disposition_receipt_digest="d" * 64,
+            root=tmp_path,
+        )
+
+
+def test_phase2_rejects_caller_completion_evidence_not_owned_by_active_state(
+        monkeypatch, tmp_path):
+    active, _replacements, _rejected, allocation, rows = \
+        _synthetic_mixed_phase2(monkeypatch, tmp_path)
+    changed = copy.deepcopy(rows)
+    changed[0]["previous_applied_command"] = [0.1, 0.0, 0.0]
+    with pytest.raises(
+            S.StateSelectorAmendmentError,
+            match="identity-owned evidence"):
+        S.build_preserved_state_revalidation_receipt(
+            allocation_manifest=allocation,
+            active_states=active,
+            completion_states=changed,
+            source_repository_commit="c" * 40,
+            successor_selection_digest="e" * 64,
+            state_selector_feasibility_receipt_digest=
+                S.FROZEN_REACHABILITY_FEASIBILITY_PASS["receipt_digest"],
+            mixed_precontract_disposition_receipt_digest="d" * 64,
+            root=tmp_path,
+        )
+
+
+def test_phase2_rejects_resigned_retained_payload_with_changed_boundary_or_goal(
+        monkeypatch, tmp_path):
+    active, _replacements, _rejected, allocation, rows = \
+        _synthetic_mixed_phase2(monkeypatch, tmp_path)
+    changed = copy.deepcopy(active)
+    retained_index = next(
+        index for index, row in enumerate(changed)
+        if row["state_id"].startswith("retained-")
+        and row["stratum"] != "completion_enriched"
+    )
+    changed[retained_index]["boundary"] = {
+        **changed[retained_index]["boundary"],
+        "sim_time_ns": 123,
+    }
+    changed[retained_index]["goal"] = {
+        **changed[retained_index]["goal"],
+        "landmark_id": "resigned-alternate-goal",
+    }
+    # Keep the frozen predecessor digest deliberately: the central phase-2
+    # validator must compare the full payload, not trust the declaration.
+    with pytest.raises(
+            S.StateSelectorAmendmentError,
+            match="retained predecessor identity is absent or changed"):
+        S.build_preserved_state_revalidation_receipt(
+            allocation_manifest=allocation,
+            active_states=changed,
+            completion_states=rows,
+            source_repository_commit="c" * 40,
+            successor_selection_digest="e" * 64,
+            state_selector_feasibility_receipt_digest=
+                S.FROZEN_REACHABILITY_FEASIBILITY_PASS["receipt_digest"],
+            mixed_precontract_disposition_receipt_digest="d" * 64,
+            root=tmp_path,
+        )

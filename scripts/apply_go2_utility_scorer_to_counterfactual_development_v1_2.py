@@ -199,39 +199,92 @@ def _validate_live_selector_provenance(
     Training already validates this chain before constructing either scorer.
     The development-transfer boundary independently repeats the validation so
     that a self-consistent package cannot outlive, substitute, or lose the
-    final reachability-feasibility receipt, the exact post-allocation
-    preserved-identity receipt, or their frozen allocation manifest.
+    frozen reachability-feasibility pass, the exact 37/8 mixed disposition,
+    the post-allocation receipt, or their frozen state/allocation manifests.
     """
 
+    enforce_managed_paths = pool_dir is None
     selected_pool = (S.OUT_ROOT / S.EXPECTED_POOL
-                     if pool_dir is None else Path(pool_dir))
+                     if enforce_managed_paths else Path(pool_dir))
     pre_identity_path = selected_pool / "pre_identity_allocation_validation.json"
     allocation_path = selected_pool / "candidate_allocation_manifest.json"
+    state_manifest_path = selected_pool / "state_manifest.json"
     feasibility_path = (
         selected_pool / S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME)
-    precontract_path = (
+    disposition_path = (
         selected_pool
-        / S.STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_NAME)
+        / S.STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME)
     revalidation_path = (
         selected_pool / S.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME)
     try:
+        state_manifest = (
+            S.CORPUS_BUILDER.load_active_state_manifest_for_consumption(
+                state_manifest_path, pool=S.EXPECTED_POOL
+            )
+        )
+        if enforce_managed_paths:
+            state_manifest_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    state_manifest_path, "state_manifest.json"))
+            pre_identity_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    pre_identity_path,
+                    "pre_identity_allocation_validation.json"))
+            allocation_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    allocation_path, "candidate_allocation_manifest.json"))
+            feasibility_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    feasibility_path,
+                    S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME))
+            disposition_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    disposition_path,
+                    S.STATE_SELECTOR
+                    .PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME))
+            revalidation_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    revalidation_path,
+                    S.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME))
         pre_identity = S._read_json(pre_identity_path)
         allocation = S._read_json(allocation_path)
-        precontract = S._read_json(precontract_path)
-        S.validate_pre_identity_structural_validation(pre_identity)
-        launch = S._validate_clean_source_launch(selected_pool, pre_identity)
-        selector = S._validate_selector_successor(
-            selected_pool, launch, allocation)
-        S.STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
-            precontract,
-            expected_source_commit=launch["source_repository_commit"],
-            expected_successor_selection_digest=
-                S.contract()["corpus_selection_digest"],
-            expected_feasibility_receipt_digest=selector[
-                "state_selector_feasibility_receipt_digest"],
-            root=ROOT,
+        disposition = (
+            S.STATE_SELECTOR
+            .load_and_validate_preserved_state_mixed_precontract_disposition_receipt(
+                root=ROOT)
+            if enforce_managed_paths else S._read_json(disposition_path)
         )
-    except (OSError, ValueError, KeyError, S.CandidateAllocationError,
+        recorded_manifest_digest = state_manifest.get("state_manifest_digest")
+        computed_manifest_digest = hashlib.sha256(json.dumps(
+            {key: value for key, value in state_manifest.items()
+             if key != "state_manifest_digest"},
+            sort_keys=True,
+        ).encode()).hexdigest()
+        _require(
+            recorded_manifest_digest == computed_manifest_digest,
+            "live scorer state manifest self digest does not verify",
+        )
+        S.validate_pre_identity_structural_validation(pre_identity)
+        launch = S._validate_clean_source_launch(
+            selected_pool, pre_identity,
+            enforce_managed_paths=enforce_managed_paths)
+        selector = S._validate_selector_successor(
+            selected_pool, launch, allocation,
+            state_manifest.get("states", []),
+            enforce_managed_paths=enforce_managed_paths)
+        if not enforce_managed_paths:
+            S.STATE_SELECTOR.validate_preserved_state_mixed_precontract_disposition_receipt(
+                disposition,
+                expected_source_commit=launch["source_repository_commit"],
+                expected_successor_selection_digest=
+                    S.contract()["corpus_selection_digest"],
+                expected_clean_source_binding_digest=launch[
+                    "clean_source_binding_digest"],
+                expected_bound_implementations_digest=launch[
+                    "bound_implementations_digest"],
+                root=ROOT,
+            )
+    except (OSError, ValueError, KeyError, RuntimeError, S.CandidateAllocationError,
             S.CorpusValidationError,
             S.STATE_SELECTOR.StateSelectorAmendmentError) as exc:
         raise DevelopmentTransferRefused(
@@ -251,21 +304,23 @@ def _validate_live_selector_provenance(
              "post_identity_validation_digest"]),
         ("pre_identity_allocation_validation_digest",
          pre_identity["pre_identity_validation_digest"]),
+        ("state_manifest_digest", state_manifest["state_manifest_digest"]),
+        ("state_manifest_file_sha256", sha256_file(state_manifest_path)),
     ):
         _require(corpus_bindings.get(key) == expected,
                  f"live scorer allocation provenance differs at {key}")
     _require(
-        precontract.get(
-            "preserved_state_precontract_revalidation_receipt_digest")
-        == launch["preserved_state_precontract_revalidation_receipt_digest"],
-        "live phase-1 preserved-state receipt differs from scorer launch",
+        disposition.get("mixed_precontract_disposition_receipt_digest")
+        == launch["mixed_precontract_disposition_receipt_digest"],
+        "live mixed precontract disposition differs from scorer launch",
     )
 
     for path, label in (
         (pre_identity_path, "pre-identity allocation validation"),
         (allocation_path, "candidate allocation manifest"),
+        (state_manifest_path, "state manifest"),
         (feasibility_path, "selector feasibility receipt"),
-        (precontract_path, "preserved-state phase-1 receipt"),
+        (disposition_path, "mixed precontract disposition"),
         (revalidation_path, "preserved-state phase-2 receipt"),
     ):
         _require(path.is_file(), f"missing live {label}: {path}")
@@ -284,14 +339,15 @@ def _validate_live_selector_provenance(
     result = {
         "status": "PASS_LIVE_PRE_WEIGHT_SELECTOR_PROVENANCE_REVALIDATION",
         "selector_bindings": dict(selector),
-        "preserved_state_precontract_revalidation_receipt_digest":
-            launch["preserved_state_precontract_revalidation_receipt_digest"],
+        "mixed_precontract_disposition_receipt_digest":
+            launch["mixed_precontract_disposition_receipt_digest"],
         "pre_identity_allocation_validation": binding(pre_identity_path),
         "candidate_allocation_manifest": binding(allocation_path),
+        "state_manifest": binding(state_manifest_path),
         "selector_feasibility_receipt": binding(feasibility_path),
-        "preserved_state_precontract_revalidation_receipt":
-            binding(precontract_path),
-        "preserved_state_post_allocation_revalidation_receipt":
+        "preserved_state_mixed_precontract_disposition_receipt":
+            binding(disposition_path),
+        "mixed_state_post_allocation_revalidation_receipt":
             binding(revalidation_path),
         "scorer_weights_opened_during_validation": False,
         "predictor_artifacts_opened_during_validation": False,

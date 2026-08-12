@@ -47,6 +47,7 @@ if str(ROOT) not in sys.path:
 
 from lewm.oracle.go2_scorer_contract_v1_2 import (  # noqa: E402
     SCORER, TARGET_ENCODER, clean_source_binding, contract, contract_digest,
+    _managed_scorer_contract_output_path,
 )
 from lewm.oracle.go2_candidate_allocation_v1_2 import (  # noqa: E402
     CandidateAllocationError, allocation_contract_digest,
@@ -61,6 +62,7 @@ from lewm.oracle.go2_textured_v03_renderer import (  # noqa: E402
     renderer_contract_digest as textured_v03_renderer_contract_digest,
 )
 from lewm.oracle.go2_branch_oracle_v1_2 import PROGRESS_NORMALISER_M  # noqa: E402
+from scripts import build_go2_branch_corpus_v1_2 as CORPUS_BUILDER  # noqa: E402
 
 STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
 OUT_ROOT = ROOT / ".generated/go2_branch_corpus_v1_2"
@@ -113,6 +115,7 @@ LAUNCH_BINDING_KEYS = (
     "clean_source_binding_digest",
     "bound_implementations_digest",
     "scorer_contract_artifact_digest",
+    "mixed_precontract_disposition_receipt_digest",
 )
 SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
 SCORER_PROVENANCE_BINDING_KEYS = SELECTOR_BINDING_KEYS + LAUNCH_BINDING_KEYS
@@ -313,7 +316,8 @@ def _bound_value(value: Mapping[str, Any], aliases: Sequence[str]) -> Any:
 
 
 def _validate_clean_source_launch(
-        pool_dir: Path, pre_identity_validation: Mapping[str, Any]
+        pool_dir: Path, pre_identity_validation: Mapping[str, Any], *,
+        enforce_managed_paths: bool = False,
         ) -> dict[str, Any]:
     """Bind training to the same clean committed source that generated rows.
 
@@ -325,6 +329,11 @@ def _validate_clean_source_launch(
 
     launch_path = pool_dir / "clean_source_launch_receipt.json"
     artifact_path = SCORER_CONTRACT_ARTIFACT_PATH
+    if enforce_managed_paths:
+        launch_path = (
+            CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                launch_path, "clean_source_launch_receipt.json"))
+        artifact_path = _managed_scorer_contract_output_path(artifact_path)
     _require(launch_path.is_file(),
              "missing required clean-source launch receipt")
     _require(artifact_path.is_file(),
@@ -357,12 +366,12 @@ def _validate_clean_source_launch(
              and artifact.get("state_selector_amendment_verified") is True
              and artifact.get("state_selector_feasibility_verified") is True
              and artifact.get(
-                 "preserved_state_precontract_revalidation_verified") is True
+                 "preserved_state_mixed_precontract_disposition_verified") is True
              and artifact.get("scorer_contract_v1_2_digest") == contract_digest()
              and artifact.get("contract") == contract(),
              "issued scorer-contract artifact is incomplete or differently bound")
     pending_phase_2 = artifact.get(
-        "preserved_state_post_allocation_revalidation")
+        "mixed_state_post_allocation_revalidation")
     _require(isinstance(pending_phase_2, Mapping)
              and pending_phase_2.get("status")
              == "PENDING_POST_IDENTITY_PRE_OUTCOME"
@@ -415,10 +424,14 @@ def _validate_clean_source_launch(
     _require(artifact.get("state_selector_feasibility_receipt_digest")
              == feasibility_digest,
              "clean-source launch selector feasibility differs from contract artifact")
-    precontract_digest = _require_digest(
-        artifact.get(
-            "preserved_state_precontract_revalidation_receipt_digest"),
-        "preserved_state_precontract_revalidation_receipt_digest")
+    disposition_digest = _require_digest(
+        artifact.get("mixed_precontract_disposition_receipt_digest"),
+        "mixed_precontract_disposition_receipt_digest")
+    _require(
+        launch.get("mixed_precontract_disposition_receipt_digest")
+        == disposition_digest,
+        "clean-source launch mixed disposition differs from contract artifact",
+    )
     _require(launch.get("pre_identity_allocation_validation_digest")
              == pre_identity_validation.get("pre_identity_validation_digest"),
              "clean-source launch receipt pre-identity validation differs")
@@ -427,73 +440,98 @@ def _validate_clean_source_launch(
         "clean_source_launch_receipt_sha256": sha256_file(launch_path),
         "scorer_contract_artifact_sha256": sha256_file(artifact_path),
         "launch_state_selector_feasibility_receipt_digest": feasibility_digest,
-        "preserved_state_precontract_revalidation_receipt_digest":
-            precontract_digest,
+        "mixed_precontract_disposition_receipt_digest": disposition_digest,
     }
 
 
 def _validate_selector_successor(
         pool_dir: Path, launch_bindings: Mapping[str, Any],
-        allocation_manifest: Mapping[str, Any]
+        allocation_manifest: Mapping[str, Any],
+        active_states: Sequence[Mapping[str, Any]],
+        *, enforce_managed_paths: bool = False,
         ) -> dict[str, str]:
-    """Validate the pre-outcome selector amendment and both pass receipts."""
+    """Validate frozen feasibility, mixed disposition, and final phase 2."""
 
     selection_digest = contract()["corpus_selection_digest"]
     feasibility_path = (
         pool_dir / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME)
-    precontract_path = (
+    disposition_path = (
         pool_dir
-        / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_NAME)
+        / STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME)
     revalidation_path = (
         pool_dir / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME)
-    _require(feasibility_path.is_file(),
-             "missing all-family selector-feasibility receipt")
-    _require(precontract_path.is_file(),
-             "missing preserved-state phase-1 revalidation receipt")
+    if enforce_managed_paths:
+        revalidation_path = (
+            CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                revalidation_path,
+                STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME))
     _require(revalidation_path.is_file(),
              "missing preserved-state revalidation receipt")
     try:
         STATE_SELECTOR.validate_authority_artifacts()
-        feasibility = _read_json(feasibility_path)
-        STATE_SELECTOR.validate_state_selector_feasibility_receipt(
-            feasibility,
-            expected_source_commit=launch_bindings["source_repository_commit"],
-            expected_successor_selection_digest=selection_digest,
-            expected_clean_source_binding_digest=str(
-                launch_bindings["clean_source_binding_digest"]),
-            expected_bound_implementations_digest=str(
-                launch_bindings["bound_implementations_digest"]),
-            root=ROOT)
+        if enforce_managed_paths:
+            feasibility = (
+                STATE_SELECTOR.validate_frozen_reachability_feasibility_pass(
+                    root=ROOT))
+        else:
+            _require(feasibility_path.is_file(),
+                     "missing all-family selector-feasibility receipt")
+            feasibility = _read_json(feasibility_path)
+            _require(
+                feasibility ==
+                STATE_SELECTOR.validate_frozen_reachability_feasibility_pass(
+                    root=ROOT),
+                "selector feasibility differs from frozen pass",
+            )
         feasibility_digest = _require_digest(
             feasibility.get("state_selector_feasibility_receipt_digest"),
             "state_selector_feasibility_receipt_digest")
         _require(feasibility_digest == launch_bindings[
                     "launch_state_selector_feasibility_receipt_digest"],
                  "selector feasibility receipt differs from clean-source launch")
-        precontract = _read_json(precontract_path)
-        STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
-            precontract,
-            expected_source_commit=launch_bindings["source_repository_commit"],
-            expected_successor_selection_digest=selection_digest,
-            expected_feasibility_receipt_digest=feasibility_digest,
-            root=ROOT,
-        )
+        if enforce_managed_paths:
+            disposition = (
+                STATE_SELECTOR
+                .load_and_validate_preserved_state_mixed_precontract_disposition_receipt(
+                    expected_source_commit=
+                        launch_bindings["source_repository_commit"],
+                    expected_successor_selection_digest=selection_digest,
+                    expected_clean_source_binding_digest=str(
+                        launch_bindings["clean_source_binding_digest"]),
+                    expected_bound_implementations_digest=str(
+                        launch_bindings["bound_implementations_digest"]),
+                    root=ROOT,
+                ))
+        else:
+            _require(disposition_path.is_file(),
+                     "missing preserved-state mixed precontract disposition")
+            disposition = _read_json(disposition_path)
+            STATE_SELECTOR.validate_preserved_state_mixed_precontract_disposition_receipt(
+                disposition,
+                expected_source_commit=launch_bindings["source_repository_commit"],
+                expected_successor_selection_digest=selection_digest,
+                expected_clean_source_binding_digest=str(
+                    launch_bindings["clean_source_binding_digest"]),
+                expected_bound_implementations_digest=str(
+                    launch_bindings["bound_implementations_digest"]),
+                root=ROOT,
+            )
         _require(
-            precontract.get(
-                "preserved_state_precontract_revalidation_receipt_digest")
+            disposition.get("mixed_precontract_disposition_receipt_digest")
             == launch_bindings[
-                "preserved_state_precontract_revalidation_receipt_digest"],
-            "preserved-state phase-1 receipt differs from clean-source launch",
+                "mixed_precontract_disposition_receipt_digest"],
+            "mixed precontract disposition differs from clean-source launch",
         )
         revalidation = _read_json(revalidation_path)
         STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
             revalidation,
             allocation_manifest=allocation_manifest,
+            active_states=active_states,
             expected_source_commit=launch_bindings["source_repository_commit"],
             expected_successor_selection_digest=selection_digest,
             expected_feasibility_receipt_digest=feasibility_digest,
-            expected_precontract_revalidation_receipt_digest=launch_bindings[
-                "preserved_state_precontract_revalidation_receipt_digest"])
+            expected_mixed_precontract_disposition_receipt_digest=launch_bindings[
+                "mixed_precontract_disposition_receipt_digest"])
         revalidation_digest = _require_digest(
             revalidation.get("preserved_state_revalidation_receipt_digest"),
             "preserved_state_revalidation_receipt_digest")
@@ -1921,16 +1959,37 @@ def validate_scorer_fit_corpus(pool: str = EXPECTED_POOL, *,
     rows_path = pool_dir / "branch_rows.jsonl"
     receipt_path = pool_dir / "corpus_receipt.json"
     index_path = pool_dir / "latents_index.json"
-    for path in (manifest_path, pre_identity_path, allocation_path, rows_path,
+    # This pure identity-chain replay is deliberately before branch rows,
+    # latents, encoder weights, or scorer construction.  It validates the
+    # durable per-scene capture prefix and the first passing small-family joint
+    # search, which cannot be established by a self-signed manifest alone.
+    try:
+        manifest = CORPUS_BUILDER.load_active_state_manifest_for_consumption(
+            manifest_path, pool=EXPECTED_POOL
+        )
+    except RuntimeError as exc:
+        raise CorpusValidationError(
+            f"active scorer-fit state selection provenance is invalid: {exc}"
+        ) from exc
+    manifest_path = (
+        CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+            manifest_path, "state_manifest.json"))
+    pre_identity_path = (
+        CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+            pre_identity_path, "pre_identity_allocation_validation.json"))
+    allocation_path = (
+        CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+            allocation_path, "candidate_allocation_manifest.json"))
+    for path in (pre_identity_path, allocation_path, rows_path,
                  receipt_path, index_path):
         _require(path.is_file(), f"missing required scorer-fit artefact {path}")
-    manifest = _read_json(manifest_path)
     pre_identity_validation = _read_json(pre_identity_path)
     allocation = _read_json(allocation_path)
     launch_bindings = _validate_clean_source_launch(
-        pool_dir, pre_identity_validation)
+        pool_dir, pre_identity_validation, enforce_managed_paths=True)
     selector_bindings = _validate_selector_successor(
-        pool_dir, launch_bindings, allocation)
+        pool_dir, launch_bindings, allocation, manifest.get("states", []),
+        enforce_managed_paths=True)
     states = _validate_manifest(
         manifest, allocation, pre_identity_validation, launch_bindings,
         selector_bindings)

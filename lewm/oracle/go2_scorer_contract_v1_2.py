@@ -65,6 +65,10 @@ SCORER_FIT_ALLOCATION_DESIGN_DIGEST = (
     "a587b1de264dfb54176aa231e5183ae4b7b4229bbf65c02d62438f86af5e7116"
 )
 ROOT = Path(__file__).resolve().parents[2]
+SCORER_PACKAGE_ROOT_RELATIVE = Path(
+    ".generated/go2_utility_scorer_v1_2"
+)
+SCORER_CONTRACT_ARTIFACT_NAME = "scorer_contract_v1_2.json"
 
 SUPERSEDED_PRE_RUN_CONTRACT_ARTIFACT = {
     "scorer_contract_v1_2_digest": (
@@ -192,11 +196,14 @@ CORPUS_SELECTION_CONTRACT = {
     "candidate_allocator_amendment_digest": ALLOC.allocation_amendment_digest(),
     "scene_order": "all eligible corpus scenes sorted by (family, scene_id)",
     "scorer_fit": (
-        "seven families retain the unchanged predecessor ordering and the "
-        "small-enclosed general/safety states retain that same ordering; the "
-        "small-enclosed completion cell is the first lexicographically "
-        "feasible five-distinct-scene combination under the bound all-120 "
-        "identity projection, unchanged canonical allocator, and exact-mask "
+        "the unchanged one-pass family ordering retains 37 exact predecessor "
+        "identities and fills eight completion vacancies with the first "
+        "eligible snapshots in their retained-anchor lexical intervals; the "
+        "other four non-small successor families remain unchanged; "
+        "small-enclosed general/safety retain their frozen ordering and its "
+        "completion cell is the first lexicographically feasible "
+        "five-distinct-scene combination under the bound all-120 identity "
+        "projection, unchanged canonical allocator, and exact-mask "
         "horizon-reachability search; exactly 15 distinct scenes per family "
         "and five per frozen stratum"
     ),
@@ -243,26 +250,50 @@ CORPUS_SELECTION_CONTRACT = {
         "minimum_distinct_eligible_scenes_per_family_stratum": 5,
         "identity_and_outcome_free": True,
     },
-    "preserved_state_precontract_revalidation_receipt": {
+    "preserved_state_mixed_precontract_disposition_receipt": {
         "required_before_successor_contract_issue": True,
         "schema":
-            STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_SCHEMA,
+            STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_SCHEMA,
         "path":
-            STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH,
-        "expected_state_count": 45,
-        "identity_unchanged_and_outcome_free": True,
+            STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH,
+        "frozen_failed_predecessor_state_count": 45,
+        "retained_predecessor_state_count": 37,
+        "rejected_predecessor_state_count": 8,
+        "prospective_replacement_slot_count": 8,
+        "retained_identity_unchanged_and_outcome_free": True,
+        "replacements_selected_pre_outcome_only": True,
+        "replacement_scene_policy": (
+            "a rejected predecessor scene may be reused only for a structurally "
+            "different physical snapshot; re-signing the rejected snapshot or "
+            "reusing any retained scene is forbidden"
+        ),
+        "frozen_failure_receipt_preserved": True,
         "candidate_allocation_verified": False,
+        "scientific_reason": (
+            "the frozen outcome-free phase-1 revalidation established 37 exact "
+            "passes and eight completion-only amended-classification failures; "
+            "only those eight slots are prospectively replaced before allocation"
+        ),
+        "not_a_response_to_branch_or_scorer_outcomes": True,
     },
     "preserved_state_revalidation_receipt": {
         "required_after_all_120_identities_and_candidate_allocation": True,
         "required_before_active_identity_manifest_or_branch_execution": True,
         "schema": STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA,
         "path": STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH,
-        "expected_state_count": 45,
-        "exact_allocated_candidate_masks_verified": True,
+        "retained_predecessor_state_count": 37,
+        "replacement_state_count": 8,
+        "retained_exact_allocated_candidate_masks_verified": True,
+        "rejected_predecessor_identities_absent": True,
+        "replacement_slots_filled_exactly": True,
+        "active_disjointness": (
+            "120 unique scenes, episode clusters, state identities and snapshot "
+            "observation-boundary identities"
+        ),
         "expected_completion_enriched_state_count": 40,
         "all_completion_exact_allocated_mask_reachability_verified": True,
-        "identity_unchanged_and_outcome_free": True,
+        "retained_identity_unchanged_and_outcome_free": True,
+        "replacement_identity_selected_outcome_free": True,
     },
     "goal_type": "snapshot-bound landmark material_id; allocator-only balance key",
     "candidate_allocation": "canonical exact allocation manifest under the bound "
@@ -565,13 +596,112 @@ def clean_source_binding() -> dict[str, Any]:
         head=head, status=status, top_level=top_level, bindings=source_bindings())
 
 
-def _prepare_contract_output(path: Path, payload: dict[str, Any]) -> str:
+def _has_inaccessible_custody_component(path: Path) -> bool:
+    return any(
+        part == ".."
+        or part == "sealed_test.json"
+        or part == "sealed"
+        or part.startswith("sealed_")
+        for part in path.parts
+    )
+
+
+def _assert_no_scorer_package_symlink(path: Path) -> None:
+    if _has_inaccessible_custody_component(path):
+        raise RuntimeError(
+            "scorer-package path crosses an inaccessible custody component"
+        )
+    absolute = path if path.is_absolute() else Path.cwd() / path
+    cursor = Path(absolute.anchor)
+    for part in absolute.parts[1:]:
+        cursor /= part
+        if cursor.is_symlink():
+            raise RuntimeError("symlinked scorer-package path is inaccessible")
+
+
+def _managed_scorer_contract_output_path(
+    path: Path, *, root: Path = ROOT,
+) -> Path:
+    """Pin the exact production contract output under its sole managed alias."""
+
+    repository_root = Path(root)
+    if not repository_root.is_absolute():
+        repository_root = Path.cwd() / repository_root
+    managed_root = repository_root / SCORER_PACKAGE_ROOT_RELATIVE
+    requested = Path(path)
+    if not requested.is_absolute():
+        requested = Path.cwd() / requested
+    expected = managed_root / SCORER_CONTRACT_ARTIFACT_NAME
+    if requested != expected:
+        raise RuntimeError(
+            "scorer contract must target the exact managed package artifact"
+        )
+    if (
+        _has_inaccessible_custody_component(managed_root)
+        or _has_inaccessible_custody_component(requested)
+    ):
+        raise RuntimeError(
+            "scorer-contract output crosses an inaccessible custody component"
+        )
+
+    _assert_no_scorer_package_symlink(managed_root.parent)
+    if managed_root.is_symlink():
+        raw_target = managed_root.readlink()
+        target = (
+            raw_target
+            if raw_target.is_absolute()
+            else managed_root.parent / raw_target
+        )
+        if (
+            target.name != managed_root.name
+            or _has_inaccessible_custody_component(target)
+        ):
+            raise RuntimeError(
+                "managed scorer-package alias target identity is inaccessible"
+            )
+        _assert_no_scorer_package_symlink(target)
+        try:
+            canonical_root = target.resolve(strict=True)
+        except OSError as exc:
+            raise RuntimeError(
+                "managed scorer-package alias target is missing"
+            ) from exc
+    else:
+        if not managed_root.is_dir():
+            raise RuntimeError("managed scorer-package root is missing")
+        canonical_root = managed_root.resolve(strict=True)
+    if (
+        not canonical_root.is_dir()
+        or canonical_root.name != managed_root.name
+        or _has_inaccessible_custody_component(canonical_root)
+    ):
+        raise RuntimeError("managed scorer-package root identity changed")
+    _assert_no_scorer_package_symlink(canonical_root)
+    canonical_output = canonical_root / SCORER_CONTRACT_ARTIFACT_NAME
+    _assert_no_scorer_package_symlink(canonical_output)
+    return canonical_output
+
+
+def _prepare_contract_output(
+    path: Path, payload: dict[str, Any], *, managed_root: Path | None = None,
+) -> str:
     """Preserve a known pre-run predecessor and refuse unknown overwrites.
 
     Returns ``new``, ``current`` or ``superseded_archived``.  This helper is
     intentionally separate from external checkpoint validation so its recovery
     semantics can be tested without opening the 5.1 GB encoder checkpoint.
     """
+
+    if managed_root is not None:
+        if path.parent != managed_root:
+            raise RuntimeError("scorer-contract output escaped its managed root")
+        _assert_no_scorer_package_symlink(path)
+        # Check the only possible archive directory before even reading an
+        # active predecessor; a pre-existing descendant alias cannot become a
+        # write target after the predecessor bytes are inspected.
+        _assert_no_scorer_package_symlink(
+            managed_root / "superseded_pre_run" / ".custody-probe"
+        )
 
     if not path.exists():
         return "new"
@@ -604,6 +734,10 @@ def _prepare_contract_output(path: Path, payload: dict[str, Any]) -> str:
         "scorer_contract_v1_2."
         f"{predecessor['scorer_contract_v1_2_digest']}.json"
     )
+    if managed_root is not None:
+        if archive.parent.parent != managed_root:
+            raise RuntimeError("scorer-contract archive escaped its managed root")
+        _assert_no_scorer_package_symlink(archive)
     archive.parent.mkdir(parents=True, exist_ok=True)
     if archive.exists():
         if (not archive.is_file() or archive.read_bytes() != raw):
@@ -613,10 +747,53 @@ def _prepare_contract_output(path: Path, payload: dict[str, Any]) -> str:
     return "superseded_archived"
 
 
+def _atomic_write_contract_output(
+    path: Path, payload: dict[str, Any], *, managed_root: Path,
+) -> None:
+    """Create one no-follow exclusive temporary and atomically install it."""
+
+    if path.parent != managed_root:
+        raise RuntimeError("scorer-contract output escaped its managed root")
+    _assert_no_scorer_package_symlink(path)
+    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+    _assert_no_scorer_package_symlink(temporary)
+    if temporary.exists() or temporary.is_symlink():
+        raise RuntimeError("scorer-contract temporary output already exists")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor: int | None = None
+    created = False
+    try:
+        descriptor = os.open(temporary, flags, 0o644)
+        created = True
+        encoded = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode()
+        with os.fdopen(descriptor, "wb") as sink:
+            descriptor = None
+            sink.write(encoded)
+            sink.flush()
+            os.fsync(sink.fileno())
+        os.replace(temporary, path)
+        created = False
+        directory = os.open(path.parent, os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if created:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
+
+
 def _contract_artifact_payload(
         source_launch_binding: dict[str, Any],
         state_selector_feasibility_receipt: dict[str, Any],
-        preserved_state_precontract_revalidation_receipt: dict[str, Any],
+        mixed_precontract_disposition_receipt: dict[str, Any],
 ) -> dict[str, Any]:
     """Build the post-verification artifact; pure for focused contract tests."""
 
@@ -624,23 +801,22 @@ def _contract_artifact_payload(
             or not source_launch_binding.get("source_repository_commit")):
         raise RuntimeError("contract artifact requires a clean-source launch binding")
     selection_digest = _digest(CORPUS_SELECTION_CONTRACT)
-    STATE_SELECTOR.validate_state_selector_feasibility_receipt(
-        state_selector_feasibility_receipt,
+    frozen_feasibility = STATE_SELECTOR.validate_frozen_reachability_feasibility_pass(
+        root=ROOT
+    )
+    if state_selector_feasibility_receipt != frozen_feasibility:
+        raise RuntimeError("contract feasibility input differs from frozen pass")
+    feasibility_digest = state_selector_feasibility_receipt[
+        "state_selector_feasibility_receipt_digest"
+    ]
+    STATE_SELECTOR.validate_preserved_state_mixed_precontract_disposition_receipt(
+        mixed_precontract_disposition_receipt,
         expected_source_commit=source_launch_binding["source_repository_commit"],
         expected_successor_selection_digest=selection_digest,
         expected_clean_source_binding_digest=_digest(source_launch_binding),
         expected_bound_implementations_digest=
             source_launch_binding["bound_implementations_digest"],
         root=ROOT,
-    )
-    feasibility_digest = state_selector_feasibility_receipt[
-        "state_selector_feasibility_receipt_digest"
-    ]
-    STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
-        preserved_state_precontract_revalidation_receipt,
-        expected_source_commit=source_launch_binding["source_repository_commit"],
-        expected_successor_selection_digest=selection_digest,
-        expected_feasibility_receipt_digest=feasibility_digest,
     )
     payload = {
         "schema": "go2_utility_scorer_contract_v1_2_artifact",
@@ -656,12 +832,15 @@ def _contract_artifact_payload(
         "state_selector_amendment_verified": True,
         "state_selector_feasibility_verified": True,
         "state_selector_feasibility_receipt_digest": feasibility_digest,
-        "preserved_state_precontract_revalidation_verified": True,
-        "preserved_state_precontract_revalidation_receipt_digest":
-            preserved_state_precontract_revalidation_receipt[
-                "preserved_state_precontract_revalidation_receipt_digest"
+        "preserved_state_mixed_precontract_disposition_verified": True,
+        "mixed_precontract_disposition_receipt_digest":
+            mixed_precontract_disposition_receipt[
+                "mixed_precontract_disposition_receipt_digest"
             ],
-        "preserved_state_post_allocation_revalidation": {
+        "retained_predecessor_state_count": 37,
+        "rejected_predecessor_state_count": 8,
+        "prospective_replacement_slot_count": 8,
+        "mixed_state_post_allocation_revalidation": {
             "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
             "required_before_active_identity_manifest": True,
             "schema": STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA,
@@ -689,36 +868,30 @@ def _contract_artifact_payload(
 def issue_contract(path: Path) -> dict[str, Any]:
     """Validate external bindings and atomically issue the pre-outcome contract."""
 
+    # Pin the sole permitted production destination before any active-output
+    # probe.  Every later read/archive/write uses this canonical path, so an
+    # alias swap cannot redirect issuance.
+    path = _managed_scorer_contract_output_path(path)
     source_launch_binding = clean_source_binding()
     STATE_SELECTOR.validate_authority_artifacts()
-    feasibility_path = ROOT / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH
-    revalidation_path = (
-        ROOT
-        / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH
-    )
-    if not feasibility_path.is_file():
-        raise RuntimeError("state-selector all-family feasibility receipt is missing")
-    if not revalidation_path.is_file():
-        raise RuntimeError("preserved-state precontract revalidation receipt is missing")
-    feasibility_receipt = json.loads(feasibility_path.read_text())
-    revalidation_receipt = json.loads(revalidation_path.read_text())
     selection_digest = _digest(CORPUS_SELECTION_CONTRACT)
-    STATE_SELECTOR.validate_state_selector_feasibility_receipt(
-        feasibility_receipt,
+    # Both generated receipts are opened only by central custody guards.  In
+    # particular, do not probe or parse the managed output alias before those
+    # helpers have rejected any descendant or leaf symlink and pinned its
+    # canonical target.
+    feasibility_receipt = (
+        STATE_SELECTOR.validate_frozen_reachability_feasibility_pass(root=ROOT)
+    )
+    disposition_receipt = (
+        STATE_SELECTOR
+        .load_and_validate_preserved_state_mixed_precontract_disposition_receipt(
         expected_source_commit=source_launch_binding["source_repository_commit"],
         expected_successor_selection_digest=selection_digest,
         expected_clean_source_binding_digest=_digest(source_launch_binding),
         expected_bound_implementations_digest=
             source_launch_binding["bound_implementations_digest"],
         root=ROOT,
-    )
-    STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
-        revalidation_receipt,
-        expected_source_commit=source_launch_binding["source_repository_commit"],
-        expected_successor_selection_digest=selection_digest,
-        expected_feasibility_receipt_digest=feasibility_receipt[
-            "state_selector_feasibility_receipt_digest"
-        ],
+        )
     )
     invalid_index = INVALID_IDS.load_invalid_identity_index()
     if (invalid_index.binding()["invalid_scorer_identity_exclusion_digest"]
@@ -771,15 +944,14 @@ def issue_contract(path: Path) -> dict[str, Any]:
             "candidate_allocator_amendment_digest"]:
         raise RuntimeError("candidate-allocation amendment binding failed")
     payload = _contract_artifact_payload(
-        source_launch_binding, feasibility_receipt, revalidation_receipt,
+        source_launch_binding, feasibility_receipt, disposition_receipt,
     )
-    disposition = _prepare_contract_output(path, payload)
+    disposition = _prepare_contract_output(
+        path, payload, managed_root=path.parent
+    )
     if disposition == "current":
         return payload
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-    os.replace(temporary, path)
+    _atomic_write_contract_output(path, payload, managed_root=path.parent)
     return payload
 
 

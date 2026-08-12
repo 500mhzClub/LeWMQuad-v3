@@ -14,6 +14,43 @@ from scripts import train_go2_utility_scorer_v1_2 as scorer
 
 
 class UtilityScorerTrainerTests(unittest.TestCase):
+    def test_live_selection_replay_failure_precedes_rows_latents_and_models(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pool = root / scorer.EXPECTED_POOL
+            pool.mkdir()
+            for name in (
+                "state_manifest.json",
+                "pre_identity_allocation_validation.json",
+                "candidate_allocation_manifest.json",
+                "branch_rows.jsonl",
+                "corpus_receipt.json",
+                "latents_index.json",
+            ):
+                (pool / name).write_text("{}")
+            with mock.patch.object(scorer, "OUT_ROOT", root), \
+                    mock.patch.object(
+                        scorer.CORPUS_BUILDER,
+                        "load_active_state_manifest_for_consumption",
+                        side_effect=RuntimeError(
+                            "later small-family passing combination"
+                        )) as replay, \
+                    mock.patch.object(scorer, "_parse_rows") as parse_rows, \
+                    mock.patch.object(scorer, "_validate_latent_index") as latents, \
+                    mock.patch.object(scorer, "UtilityScorer") as model:
+                with self.assertRaisesRegex(
+                        scorer.CorpusValidationError,
+                        "later small-family passing combination"):
+                    scorer.validate_scorer_fit_corpus(
+                        verify_encoder_checkpoint=False,
+                        verify_frame_paths=False,
+                    )
+            replay.assert_called_once_with(
+                pool / "state_manifest.json", pool=scorer.EXPECTED_POOL)
+            parse_rows.assert_not_called()
+            latents.assert_not_called()
+            model.assert_not_called()
+
     def test_clean_source_launch_revalidated_at_training_boundary(self):
         source = {
             "source_repository_commit": "c" * 40,
@@ -31,11 +68,10 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                 "source_repository_clean": True,
                 "state_selector_amendment_verified": True,
                 "state_selector_feasibility_verified": True,
-                "preserved_state_precontract_revalidation_verified": True,
+                "preserved_state_mixed_precontract_disposition_verified": True,
                 "state_selector_feasibility_receipt_digest": "f" * 64,
-                "preserved_state_precontract_revalidation_receipt_digest":
-                    "d" * 64,
-                "preserved_state_post_allocation_revalidation": {
+                "mixed_precontract_disposition_receipt_digest": "d" * 64,
+                "mixed_state_post_allocation_revalidation": {
                     "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
                     "required_before_active_identity_manifest": True,
                     "schema": scorer.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA,
@@ -70,6 +106,7 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                 "state_selector_amendment_digest":
                     scorer.STATE_SELECTOR.state_selector_amendment_digest(),
                 "state_selector_feasibility_receipt_digest": "f" * 64,
+                "mixed_precontract_disposition_receipt_digest": "d" * 64,
                 "pre_identity_allocation_validation_digest":
                     pre_identity["pre_identity_validation_digest"],
             }
@@ -98,6 +135,7 @@ class UtilityScorerTrainerTests(unittest.TestCase):
             "clean_source_binding_digest": "s" * 64,
             "bound_implementations_digest": "b" * 64,
             "scorer_contract_artifact_digest": "a" * 64,
+            "mixed_precontract_disposition_receipt_digest": "m" * 64,
             "state_selector_amendment_digest": "a" * 64,
             "state_selector_feasibility_receipt_digest": "f" * 64,
             "preserved_state_revalidation_receipt_digest": "e" * 64,
@@ -156,8 +194,8 @@ class UtilityScorerTrainerTests(unittest.TestCase):
         feasibility = {
             "state_selector_feasibility_receipt_digest": "f" * 64,
         }
-        precontract = {
-            "preserved_state_precontract_revalidation_receipt_digest": "d" * 64,
+        disposition = {
+            "mixed_precontract_disposition_receipt_digest": "d" * 64,
         }
         revalidation = {
             "preserved_state_revalidation_receipt_digest": "e" * 64,
@@ -166,10 +204,10 @@ class UtilityScorerTrainerTests(unittest.TestCase):
             root = Path(directory)
             (root / scorer.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME
              ).write_text(json.dumps(feasibility))
-            precontract_path = (
+            disposition_path = (
                 root
-                / scorer.STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_NAME)
-            precontract_path.write_text(json.dumps(precontract))
+                / scorer.STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME)
+            disposition_path.write_text(json.dumps(disposition))
             revalidation_path = (
                 root
                 / scorer.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME)
@@ -178,11 +216,12 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                     scorer.STATE_SELECTOR, "validate_authority_artifacts"), \
                     mock.patch.object(
                         scorer.STATE_SELECTOR,
-                        "validate_state_selector_feasibility_receipt"), \
+                        "validate_frozen_reachability_feasibility_pass",
+                        return_value=feasibility), \
                     mock.patch.object(
                         scorer.STATE_SELECTOR,
-                        "validate_preserved_state_precontract_revalidation_receipt"
-                    ) as validate_precontract_revalidation, \
+                        "validate_preserved_state_mixed_precontract_disposition_receipt"
+                    ) as validate_mixed_disposition, \
                     mock.patch.object(
                         scorer.STATE_SELECTOR,
                         "validate_preserved_state_revalidation_receipt"
@@ -197,22 +236,23 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                         "bound_implementations_digest": "a" * 64,
                         "launch_state_selector_feasibility_receipt_digest":
                             "f" * 64,
-                        "preserved_state_precontract_revalidation_receipt_digest":
+                        "mixed_precontract_disposition_receipt_digest":
                             "d" * 64,
-                    }, {})
+                    }, {}, [])
                 self.assertEqual(bindings, {
                     "state_selector_amendment_digest": "a" * 64,
                     "state_selector_feasibility_receipt_digest": "f" * 64,
                     "preserved_state_revalidation_receipt_digest": "e" * 64,
                 })
-                validate_precontract_revalidation.assert_called_once()
+                validate_mixed_disposition.assert_called_once()
                 validate_final_revalidation.assert_called_once()
                 final_kwargs = validate_final_revalidation.call_args.kwargs
                 self.assertEqual(final_kwargs["allocation_manifest"], {})
                 self.assertEqual(
                     final_kwargs[
-                        "expected_precontract_revalidation_receipt_digest"],
+                        "expected_mixed_precontract_disposition_receipt_digest"],
                     "d" * 64)
+                self.assertEqual(final_kwargs["active_states"], [])
                 revalidation_path.unlink()
                 with self.assertRaisesRegex(
                         scorer.CorpusValidationError,
@@ -222,23 +262,23 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                             "source_repository_commit": "c" * 40,
                             "launch_state_selector_feasibility_receipt_digest":
                                 "f" * 64,
-                            "preserved_state_precontract_revalidation_receipt_digest":
-                            "d" * 64,
-                        }, {})
-                precontract_path.write_text(json.dumps(precontract))
+                            "mixed_precontract_disposition_receipt_digest":
+                                "d" * 64,
+                        }, {}, [])
+                disposition_path.write_text(json.dumps(disposition))
                 revalidation_path.write_text(json.dumps(revalidation))
-                precontract_path.unlink()
+                disposition_path.unlink()
                 with self.assertRaisesRegex(
                         scorer.CorpusValidationError,
-                        "missing preserved-state phase-1 revalidation receipt"):
+                        "missing preserved-state mixed precontract disposition"):
                     scorer._validate_selector_successor(
                         root, {
                             "source_repository_commit": "c" * 40,
                             "launch_state_selector_feasibility_receipt_digest":
                                 "f" * 64,
-                            "preserved_state_precontract_revalidation_receipt_digest":
+                            "mixed_precontract_disposition_receipt_digest":
                                 "d" * 64,
-                        }, {})
+                        }, {}, [])
 
     def test_registered_initialisation_is_reproducible_and_immutable(self):
         with tempfile.TemporaryDirectory() as directory:

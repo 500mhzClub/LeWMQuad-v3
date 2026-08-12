@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import inspect
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -129,6 +130,25 @@ def test_frozen_generated_artifact_guard_rejects_escape_and_wrong_target_name(
         B._frozen_generated_artifact_path(
             lexical_root / "scorer_fit/frozen.json",
             generated_root=lexical_root)
+
+
+def test_pin_generated_path_requires_exact_logical_artifact_under_alias(
+        tmp_path, monkeypatch):
+    lexical_root = tmp_path / "repository/.generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "external/go2_branch_corpus_v1_2"
+    expected = target_root / "scorer_fit/active.json"
+    expected.parent.mkdir(parents=True)
+    expected.write_text("active")
+    (target_root / "scorer_fit/other.json").write_text("other")
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    monkeypatch.setattr(B, "OUT_ROOT", lexical_root)
+
+    raw_expected = lexical_root / "scorer_fit/active.json"
+    assert B._pin_generated_path(raw_expected, raw_expected) == expected
+    with pytest.raises(RuntimeError, match="path identity changed"):
+        B._pin_generated_path(
+            lexical_root / "scorer_fit/other.json", raw_expected)
 
 
 def test_frozen_lineage_and_scene_shard_load_through_exact_output_alias(
@@ -399,9 +419,9 @@ def test_phase1_parent_contains_no_genesis_context_or_shared_load():
         B.stage_preserved_state_precontract_revalidation)
     assert "V1._load_shared" not in source
     assert "V1.build_context" not in source
-    assert "_run_phase1_state_subprocess" in source
-    assert "_load_valid_phase1_state_check_shard" in source
-    assert source.index("payload is None") < source.index("return_code != 0")
+    assert "validate_frozen_preserved_precontract_failure" in source
+    assert "build_preserved_state_mixed_precontract_disposition_receipt" in source
+    assert "_phase1_outcome_surface_absence_attestation" in source
 
 
 def _synthetic_terminal_phase1_failure(tmp_path, monkeypatch):
@@ -500,6 +520,632 @@ def test_phase1_failed_terminal_rejects_resigned_aggregate_tamper(
             root=tmp_path)
 
 
+def test_mixed_replacement_plan_preserves_vacant_ordinal_anchor_intervals(
+        monkeypatch):
+    family = "large_enclosed_maze"
+    states = []
+    retained_rows = {}
+    rejected_rows = {}
+    slots = {}
+    for stratum in ("general", "safety_enriched"):
+        for ordinal in range(5):
+            identity = f"{len(states) + 1:064x}"
+            state = {
+                "state_id": f"scorer_fit-{family}-{stratum}-{ordinal:02d}",
+                "state_identity_digest": identity,
+                "scene_id": f"{family}-{stratum}-{ordinal:02d}",
+                "family": family, "stratum": stratum,
+                "split_role": "calibration" if ordinal == 0 else "fit",
+            }
+            states.append(state)
+            retained_rows[identity] = dict(state)
+    anchor_identity = "f" * 64
+    anchor = {
+        "state_id": f"scorer_fit-{family}-completion_enriched-01",
+        "state_identity_digest": anchor_identity,
+        "scene_id": f"{family}-5757b144c54b", "family": family,
+        "stratum": "completion_enriched", "split_role": "fit",
+    }
+    states.append(anchor)
+    retained_rows[anchor_identity] = dict(anchor)
+    for ordinal in (0, 2, 3, 4):
+        identity = f"{100 + ordinal:064x}"
+        state_id = f"scorer_fit-{family}-completion_enriched-{ordinal:02d}"
+        rejected = {
+            "state_id": state_id, "state_identity_digest": identity,
+            "scene_id": f"{family}-rejected-{ordinal:02d}",
+            "family": family, "stratum": "completion_enriched",
+            "split_role": "calibration" if ordinal == 0 else "fit",
+        }
+        states.append(rejected)
+        rejected_rows[identity] = dict(rejected)
+        slots[state_id] = {
+            "state_id": state_id, "family": family,
+            "stratum": "completion_enriched",
+            "split_role": rejected["split_role"],
+            "predecessor_state_identity_digest": identity,
+            "predecessor_scene_id": rejected["scene_id"],
+        }
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "load_preserved_state_shards",
+        lambda _root: {family: {"states": states}})
+    monkeypatch.setattr(
+        B, "_mixed_disposition_sets",
+        lambda: (retained_rows, rejected_rows, slots))
+
+    plan = B._mixed_family_replacement_plan(family)
+    assert [(row["vacant_ordinals"], row["lower_scene_id_exclusive"],
+             row["upper_scene_id_exclusive"])
+            for row in plan["interval_groups"]] == [
+        ([0], None, f"{family}-5757b144c54b"),
+        ([2, 3, 4], f"{family}-5757b144c54b", None),
+    ]
+
+
+def test_replacement_rejects_same_physical_snapshot_even_if_goal_changes(
+        monkeypatch):
+    identity = "a" * 64
+    predecessor = {
+        "scene_id": "scene-a", "episode_cluster_id": "scene-a/env0/ep1",
+        "episode_id": 1, "source_step": 400, "warmup_blocks": 40,
+        "cell_id": 7, "boundary": {"source_step": 400},
+        "goal": {"landmark_id": "red"},
+    }
+    monkeypatch.setattr(
+        B, "_preserved_states_by_digest", lambda: {identity: predecessor})
+    slot = {"predecessor_state_identity_digest": identity}
+    changed_goal = copy.deepcopy(predecessor)
+    changed_goal["goal"] = {"landmark_id": "blue"}
+    changed_goal["completion_rotation_eligibility_vector"] = {"changed": True}
+    assert B._replacement_reuses_rejected_snapshot(changed_goal, slot) is True
+    later = copy.deepcopy(changed_goal)
+    later["source_step"] = 401
+    later["boundary"] = {"source_step": 401}
+    assert B._replacement_reuses_rejected_snapshot(later, slot) is False
+
+
+def test_replacement_rejects_snapshot_of_any_superseded_identity(monkeypatch):
+    first = "a" * 64
+    second = "b" * 64
+    base = {
+        "scene_id": "scene-a", "episode_cluster_id": "scene-a/env0/ep1",
+        "episode_id": 1, "source_step": 400, "warmup_blocks": 40,
+        "cell_id": 7, "boundary": {"source_step": 400},
+    }
+    other = {**base, "scene_id": "scene-b",
+             "episode_cluster_id": "scene-b/env0/ep2", "episode_id": 2}
+    monkeypatch.setattr(
+        B, "_preserved_states_by_digest", lambda: {first: base, second: other})
+    candidate = {**other, "goal": {"landmark_id": "changed"}}
+    assert B._replacement_reuses_any_rejected_snapshot(
+        candidate, [first, second]) is True
+    candidate["source_step"] = 401
+    candidate["boundary"] = {"source_step": 401}
+    assert B._replacement_reuses_any_rejected_snapshot(
+        candidate, [first, second]) is False
+
+
+def test_mixed_worker_classification_error_is_atomically_durable(
+        tmp_path, monkeypatch):
+    request = {
+        "family": "large_enclosed_maze",
+        "scene_ordinal": 0,
+        "scene": {"scene_id": "scene-a", "drive_seed": 1},
+        "replacement_slot": {"state_id": "slot-a", "family":
+                             "large_enclosed_maze",
+                             "stratum": "completion_enriched",
+                             "split_role": "fit",
+                             "predecessor_state_identity_digest": "a" * 64,
+                             "predecessor_scene_id": "old-scene"},
+        "rejected_identity_digests": ["a" * 64],
+        "mixed_replacement_scene_request_digest": "b" * 64,
+    }
+    capture_path = tmp_path / "capture.json"
+    args = SimpleNamespace(
+        pool="scorer_fit", family="large_enclosed_maze", backend="cpu")
+
+    class Context:
+        def begin_episode(self):
+            return None
+
+        def drive_one_block(self):
+            return None
+
+    monkeypatch.setattr(
+        B, "_validate_mixed_replacement_scene_request",
+        lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        B, "_mixed_replacement_capture_path",
+        lambda *_args, **_kwargs: capture_path)
+    monkeypatch.setattr(B, "_pin_generated_path", lambda path, _expected: path)
+    monkeypatch.setattr(B, "_load_valid_mixed_replacement_scene_capture",
+                        lambda **_kwargs: None)
+    monkeypatch.setattr(B.V1, "_load_shared", lambda _backend: object())
+    monkeypatch.setattr(B.V1, "build_context", lambda *_args, **_kwargs: Context())
+    monkeypatch.setattr(B.V12, "link_topology", lambda _ctx: {})
+    monkeypatch.setattr(
+        B, "classify_state",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            RuntimeError("synthetic classifier failure")))
+
+    capture = B._execute_mixed_replacement_scene_worker(
+        args=args, request=request, out=tmp_path,
+        pool={"large_enclosed_maze": [tmp_path / "scene-a"]}, exclusion={})
+    assert capture_path.is_file()
+    assert capture["worker_failure"] == "RuntimeError:synthetic classifier failure"
+    assert capture["attempt_trace"][-1] == {
+        "block_index": B.WARMUP_BLOCKS_MIN,
+        "verdict": "ERROR",
+        "reason_key": "RuntimeError:synthetic classifier failure",
+    }
+    B._validate_mixed_replacement_scene_capture(
+        json.loads(capture_path.read_text()), expected_request=request)
+
+
+def _synthetic_mixed_active_shard(tmp_path, monkeypatch):
+    """Build one tiny but fully replayable mixed-family transport fixture."""
+
+    family = "large_enclosed_maze"
+    root = tmp_path / "repo"
+    out_root = root / ".generated/go2_branch_corpus_v1_2"
+    out = out_root / "scorer_fit"
+    out.mkdir(parents=True)
+    scenes = []
+    for scene_id in ("scene-000", "scene-001"):
+        scene = tmp_path / "development" / family / scene_id
+        scene.mkdir(parents=True)
+        (scene / "manifest.json").write_text("{}\n")
+        scenes.append(scene)
+    monkeypatch.setattr(B, "ROOT", root)
+    monkeypatch.setattr(B, "OUT_ROOT", out_root)
+    monkeypatch.setattr(B.V1, "_drive_seed", lambda name: len(name))
+
+    retained = []
+    for stratum in ("general", "safety_enriched"):
+        for ordinal in range(5):
+            retained.append({
+                "state_id": f"scorer_fit-{family}-{stratum}-{ordinal:02d}",
+                "state_identity_digest": f"{100 + len(retained):064x}",
+                "scene_id": f"retained-{stratum}-{ordinal:02d}",
+                "family": family,
+                "stratum": stratum,
+                "split_role": "calibration" if ordinal == 0 else "fit",
+            })
+    for ordinal in range(1, 5):
+        retained.append({
+            "state_id": (
+                f"scorer_fit-{family}-completion_enriched-{ordinal:02d}"),
+            "state_identity_digest": f"{200 + ordinal:064x}",
+            "scene_id": f"scene-10{ordinal}",
+            "family": family,
+            "stratum": "completion_enriched",
+            "split_role": "fit",
+        })
+    rejected_identity = "f" * 64
+    slot = {
+        "state_id": f"scorer_fit-{family}-completion_enriched-00",
+        "family": family,
+        "stratum": "completion_enriched",
+        "split_role": "calibration",
+        "predecessor_state_identity_digest": rejected_identity,
+        "predecessor_scene_id": "rejected-scene",
+    }
+    interval = {
+        "lower_scene_id_exclusive": None,
+        "upper_scene_id_exclusive": "scene-101",
+        "vacant_ordinals": [0],
+        "replacement_slots": [slot],
+    }
+    plan = {
+        "family": family,
+        "retained_states": retained,
+        "retained_state_count": len(retained),
+        "retained_scene_ids": sorted(row["scene_id"] for row in retained),
+        "retained_anchor_rows": [],
+        "rejected_identity_digests": [rejected_identity],
+        "rejected_identity_rows": [{
+            **slot, "state_identity_digest": rejected_identity,
+            "scene_id": "rejected-scene",
+        }],
+        "replacement_slots": [slot],
+        "interval_groups": [interval],
+    }
+    rejected_predecessor = {
+        "scene_id": "rejected-scene",
+        "episode_cluster_id": "rejected-scene/env0/ep1",
+        "episode_id": 1,
+        "source_step": 400,
+        "warmup_blocks": 40,
+        "cell_id": 9,
+        "boundary": {"source_step": 400},
+    }
+    retained_map = {
+        row["state_identity_digest"]: dict(row) for row in retained
+    }
+    rejected_map = {rejected_identity: {
+        **slot,
+        "state_identity_digest": rejected_identity,
+        "scene_id": "rejected-scene",
+    }}
+    monkeypatch.setattr(B, "_mixed_family_replacement_plan", lambda _family: plan)
+    monkeypatch.setattr(
+        B, "_mixed_disposition_sets",
+        lambda: (retained_map, rejected_map, {slot["state_id"]: slot}))
+    monkeypatch.setattr(
+        B, "_preserved_states_by_digest",
+        lambda: {rejected_identity: rejected_predecessor})
+    monkeypatch.setattr(
+        B, "scene_pool", lambda _pool: ({family: scenes}, {"synthetic": True}))
+    monkeypatch.setattr(B.INVALID_IDS, "assert_disjoint", lambda *_a, **_k: {})
+
+    launch = {
+        "source_repository_commit": "a" * 40,
+        "clean_source_launch_receipt_digest": "b" * 64,
+        "clean_source_binding_digest": "c" * 64,
+        "bound_implementations_digest": "d" * 64,
+        "scorer_contract_artifact_digest": "e" * 64,
+        "state_selector_feasibility_receipt_digest": "6" * 64,
+        "mixed_precontract_disposition_receipt_digest": "7" * 64,
+    }
+    monkeypatch.setattr(
+        B, "_load_clean_source_launch_receipt", lambda: dict(launch))
+    bindings = {
+        "selection_digest": B.selection_digest(),
+        "scorer_fit_allocation_design_digest": "8" * 64,
+        "candidate_allocator_contract_digest":
+            B.ALLOC.allocation_contract_digest(),
+        "candidate_allocation_amendment_digest":
+            B.ALLOC.allocation_amendment_digest(),
+        "pre_identity_allocation_validation_digest": "9" * 64,
+        "invalid_scorer_identity_exclusion_digest":
+            B.INVALID_IDS.invalid_identity_exclusion_digest(),
+        "state_selector_amendment_digest":
+            B.STATE_SELECTOR.state_selector_amendment_digest(),
+        "state_selector_feasibility_receipt_digest":
+            launch["state_selector_feasibility_receipt_digest"],
+        **{key: launch[key] for key in B.LAUNCH_BINDING_KEYS},
+        "candidate_bank_digest": B.V1.bank_digest(),
+        "progress_contract_digest": B.progress_digest(),
+        "safety_contract_digest": B.safety_digest(),
+        "oracle_v1_2_digest": B.v12_oracle_digest(),
+        "scorer_contract_v1_2_digest": B.scorer_contract_digest(),
+        "boundary_digest": B.V1.BOUNDARY_DIGEST,
+        "render_contract_digest": B.render_contract_digest(),
+        "textured_v03_renderer_contract_digest":
+            B.textured_v03_renderer_contract_digest(),
+        "preprocess_contract_digest": B.preprocess_contract_digest(),
+        "preprocessing_digest":
+            B.TARGET_ENCODER["preprocessing_identity_sha256"],
+        "target_encoder_digest": B.target_encoder_digest(),
+        "target_encoder_checkpoint_sha256":
+            B.TARGET_ENCODER["checkpoint_sha256"],
+        "genesis_backend": "cpu",
+        "exclusion_binding": {"synthetic": True},
+        "family_allow_list_digest": B.canonical_digest(
+            [scene.name for scene in scenes]),
+    }
+    monkeypatch.setattr(
+        B, "_state_shard_bindings", lambda *_a, **_k: dict(bindings))
+
+    predecessor_path = out / "predecessor-large.json"
+    predecessor_path.write_text("{}\n")
+    predecessor_binding = {
+        "family": family,
+        "path": str(predecessor_path.relative_to(root)),
+        "raw_sha256": B.file_sha256(predecessor_path),
+        "byte_count": predecessor_path.stat().st_size,
+    }
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "PRESERVED_STATE_SHARDS", [predecessor_binding])
+
+    args = SimpleNamespace(pool="scorer_fit", family=family, backend="cpu")
+    request_reject = B._build_mixed_replacement_scene_request(
+        args=args, out=out, scene_dir=scenes[0], scene_ordinal=0,
+        interval=interval, slot=slot, accepted_scene_ids_before=[],
+        exclusion={"synthetic": True},
+        family_allow_list=[scene.name for scene in scenes])
+    reject_trace = [{
+        "block_index": block,
+        "verdict": "REJECT",
+        "reason_key": "no_completion_enriched_goal",
+    } for block in range(B.WARMUP_BLOCKS_MIN, B.WARMUP_BLOCKS_MAX + 1)]
+    capture_reject = B._build_mixed_replacement_scene_capture(
+        request=request_reject, chosen_state=None,
+        rejection_reasons={"no_completion_enriched_goal": len(reject_trace)},
+        worker_failure=None, blocks_driven=B.WARMUP_BLOCKS_MAX,
+        attempt_trace=reject_trace)
+    reject_capture_path = B._mixed_replacement_capture_path(
+        out, family,
+        request_reject["mixed_replacement_scene_request_digest"])
+    B.atomic_json(reject_capture_path, capture_reject)
+
+    request_select = B._build_mixed_replacement_scene_request(
+        args=args, out=out, scene_dir=scenes[1], scene_ordinal=1,
+        interval=interval, slot=slot, accepted_scene_ids_before=[],
+        exclusion={"synthetic": True},
+        family_allow_list=[scene.name for scene in scenes])
+    status = {
+        "task_completed": False,
+        "goal_claimed": False,
+        "terminated": False,
+        "truncated": False,
+    }
+    vector = B.STATE_SELECTOR.completion_rotation_eligibility_vector(
+        graph_hops=0, reachable=True, continuous_geodesic_m=0.8,
+        bearing_body_rad=0.0, task_status=status,
+        previous_applied_command=[0.0, 0.0, 0.0])
+    first = vector["rotations"][0]
+    chosen = {
+        "state_id": slot["state_id"],
+        "family": family,
+        "scene_id": scenes[1].name,
+        "scene_dir": str(scenes[1].resolve()),
+        "scene_manifest_sha256": request_select["scene"][
+            "scene_manifest_sha256"],
+        "scene_manifest_byte_count": request_select["scene"][
+            "scene_manifest_byte_count"],
+        "split": request_select["scene"]["split"],
+        "drive_seed": request_select["scene"]["drive_seed"],
+        "stratum": "completion_enriched",
+        "split_role": "calibration",
+        "warmup_blocks": B.WARMUP_BLOCKS_MIN,
+        "source_step": 500,
+        "episode_id": 2,
+        "episode_cluster_id": f"{scenes[1].name}/env0/ep2",
+        "cell_id": 3,
+        "boundary": {"source_step": 500},
+        "goal": {
+            "graph_edges": first["graph_hops_diagnostic"],
+            "start_geodesic_m": first["continuous_geodesic_m"],
+            "bearing_body_rad": first["bearing_body_rad"],
+        },
+        "goal_type": "landmark_red",
+        "body_clearance_m": 0.2,
+        "clearance_m": 0.3,
+        "completion_rotation_eligibility_vector": vector,
+        "snapshot_task_status": first["task_status"],
+        "previous_applied_command": first["previous_applied_command"],
+    }
+    chosen["state_identity_digest"] = B._state_identity_digest(chosen)
+    capture_select = B._build_mixed_replacement_scene_capture(
+        request=request_select, chosen_state=chosen, rejection_reasons={},
+        worker_failure=None, blocks_driven=B.WARMUP_BLOCKS_MIN,
+        attempt_trace=[{
+            "block_index": B.WARMUP_BLOCKS_MIN,
+            "verdict": "SELECT",
+            "reason_key": None,
+        }])
+    select_capture_path = B._mixed_replacement_capture_path(
+        out, family,
+        request_select["mixed_replacement_scene_request_digest"])
+    B.atomic_json(select_capture_path, capture_select)
+    provenance = [
+        B._mixed_capture_provenance(
+            out=out, request=request_reject, capture=capture_reject,
+            interval_index=0),
+        B._mixed_capture_provenance(
+            out=out, request=request_select, capture=capture_select,
+            interval_index=0),
+    ]
+    states = sorted(
+        [dict(row) for row in retained] + [chosen],
+        key=lambda row: (
+            B.STRATA.index(str(row["stratum"])), str(row["state_id"])))
+    interval_row = {
+        "interval_index": 0,
+        "lower_scene_id_exclusive": None,
+        "upper_scene_id_exclusive": "scene-101",
+        "vacant_ordinals": [0],
+        "replacement_slot_state_ids": [slot["state_id"]],
+        "candidate_scene_ids": [scene.name for scene in scenes],
+        "scanned_scene_ids": [scene.name for scene in scenes],
+        "selected_scene_ids": [scenes[1].name],
+        "stopped_at_first_complete_prefix": True,
+    }
+    shard = {
+        "schema": B.MIXED_ACTIVE_STATE_SHARD_SCHEMA,
+        "status": B.STATUS,
+        "complete": True,
+        "pool": "scorer_fit",
+        "family": family,
+        "spec": B.POOLS["scorer_fit"],
+        "selection": B.SELECTION,
+        **bindings,
+        "predecessor_state_shard_binding": predecessor_binding,
+        "retained_predecessor_identity_digests": sorted(retained_map),
+        "rejected_predecessor_identity_digests": [rejected_identity],
+        "replacement_slot_fills": [{
+            "state_id": chosen["state_id"],
+            "state_identity_digest": chosen["state_identity_digest"],
+            "scene_id": chosen["scene_id"],
+            "split_role": chosen["split_role"],
+        }],
+        "states": states,
+        "scene_rejection_reasons": {
+            scenes[0].name: capture_reject["scene_rejection_reasons"],
+            scenes[1].name: {},
+        },
+        "mixed_replacement_subprocess_transport": {
+            "schema": B.MIXED_REPLACEMENT_TRANSPORT_SCHEMA,
+            "one_scene_per_subprocess": True,
+            "atomic_capture_write_before_native_cleanup": True,
+            "return_code_ignored_only_after_valid_capture": True,
+            "resume_scope": "MISSING_OR_INVALID_REPLACEMENT_SCENE_CAPTURES_ONLY",
+            "interval_rows": [interval_row],
+            "scene_capture_count": len(provenance),
+            "scene_capture_provenance_digest": B.canonical_digest(provenance),
+            "candidate_outcomes_loaded": False,
+        },
+        "mixed_replacement_scene_capture_provenance": provenance,
+    }
+    shard["state_shard_digest"] = B.canonical_digest(shard)
+    shard_path = B._mixed_active_state_shard_path(out, family)
+    B.atomic_json(shard_path, shard)
+    return {
+        "args": args,
+        "out": out,
+        "pool": {family: scenes},
+        "exclusion": {"synthetic": True},
+        "family": family,
+        "plan": plan,
+        "shard": shard,
+        "shard_path": shard_path,
+        "requests": [request_reject, request_select],
+        "captures": [capture_reject, capture_select],
+        "capture_paths": [reject_capture_path, select_capture_path],
+    }
+
+
+def test_mixed_active_shard_replays_full_prefix_and_rejects_post_quota_tamper(
+        tmp_path, monkeypatch):
+    fixture = _synthetic_mixed_active_shard(tmp_path, monkeypatch)
+    B._validate_mixed_active_state_shard(
+        fixture["shard"], fixture["shard_path"])
+
+    tampered = copy.deepcopy(fixture["shard"])
+    tampered["mixed_replacement_scene_capture_provenance"].append(
+        copy.deepcopy(tampered["mixed_replacement_scene_capture_provenance"][-1]))
+    transport = tampered["mixed_replacement_subprocess_transport"]
+    transport["scene_capture_count"] += 1
+    transport["scene_capture_provenance_digest"] = B.canonical_digest(
+        tampered["mixed_replacement_scene_capture_provenance"])
+    tampered["state_shard_digest"] = B.canonical_digest({
+        key: value for key, value in tampered.items()
+        if key != "state_shard_digest"
+    })
+    B.atomic_json(fixture["shard_path"], tampered)
+    with pytest.raises(RuntimeError, match="post-quota"):
+        B._validate_mixed_active_state_shard(tampered, fixture["shard_path"])
+
+
+def test_mixed_active_shard_requires_full_retained_payload_equality(
+        tmp_path, monkeypatch):
+    fixture = _synthetic_mixed_active_shard(tmp_path, monkeypatch)
+    tampered = copy.deepcopy(fixture["shard"])
+    retained = next(
+        row for row in tampered["states"] if row["stratum"] == "general")
+    retained["goal"] = {"fabricated": True}
+    tampered["state_shard_digest"] = B.canonical_digest({
+        key: value for key, value in tampered.items()
+        if key != "state_shard_digest"
+    })
+    B.atomic_json(fixture["shard_path"], tampered)
+    with pytest.raises(RuntimeError, match="live replay"):
+        B._validate_mixed_active_state_shard(tampered, fixture["shard_path"])
+
+
+def test_mixed_terminal_failure_is_idempotent_and_live_replayed(
+        tmp_path, monkeypatch):
+    fixture = _synthetic_mixed_active_shard(tmp_path, monkeypatch)
+    request = fixture["requests"][1]
+    trace = [{
+        "block_index": block,
+        "verdict": "REJECT",
+        "reason_key": "no_completion_enriched_goal",
+    } for block in range(B.WARMUP_BLOCKS_MIN, B.WARMUP_BLOCKS_MAX + 1)]
+    rejected = B._build_mixed_replacement_scene_capture(
+        request=request, chosen_state=None,
+        rejection_reasons={"no_completion_enriched_goal": len(trace)},
+        worker_failure=None, blocks_driven=B.WARMUP_BLOCKS_MAX,
+        attempt_trace=trace)
+    B.atomic_json(fixture["capture_paths"][1], rejected)
+    provenance = [
+        B._mixed_capture_provenance(
+            out=fixture["out"], request=fixture["requests"][0],
+            capture=fixture["captures"][0], interval_index=0),
+        B._mixed_capture_provenance(
+            out=fixture["out"], request=request, capture=rejected,
+            interval_index=0),
+    ]
+    candidates = [scene.name for scene in fixture["pool"][fixture["family"]]]
+    first = B._issue_mixed_replacement_failure(
+        args=fixture["args"], out=fixture["out"], plan=fixture["plan"],
+        interval_index=0, candidate_scene_ids=candidates,
+        accepted_states=[], provenance=provenance)
+    second = B._issue_mixed_replacement_failure(
+        args=fixture["args"], out=fixture["out"], plan=fixture["plan"],
+        interval_index=0, candidate_scene_ids=candidates,
+        accepted_states=[], provenance=provenance)
+    assert first == second
+    assert B._load_mixed_replacement_failure(
+        args=fixture["args"], out=fixture["out"], pool=fixture["pool"],
+        exclusion=fixture["exclusion"]) == first
+
+    changed = copy.deepcopy(first)
+    changed["scanned_scene_count"] = 1
+    changed["mixed_replacement_failure_receipt_digest"] = B.canonical_digest({
+        key: value for key, value in changed.items()
+        if key != "mixed_replacement_failure_receipt_digest"
+    })
+    B.atomic_json(
+        fixture["out"] / B.MIXED_REPLACEMENT_FAILURE_NAME, changed)
+    with pytest.raises(RuntimeError, match="live replay"):
+        B._load_mixed_replacement_failure(
+            args=fixture["args"], out=fixture["out"], pool=fixture["pool"],
+            exclusion=fixture["exclusion"])
+
+
+def test_state_shard_provenance_mixes_three_active_and_five_successors_under_alias(
+        tmp_path, monkeypatch):
+    root = tmp_path / "repo"
+    lexical_root = root / ".generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "managed/go2_branch_corpus_v1_2"
+    (target_root / "scorer_fit").mkdir(parents=True)
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    monkeypatch.setattr(B, "ROOT", root)
+    monkeypatch.setattr(B, "OUT_ROOT", lexical_root)
+    families = [f"family-{index}" for index in range(8)]
+    monkeypatch.setattr(B.STATE_SELECTOR, "REQUIRED_FAMILIES", families)
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "PRESERVED_STATE_SHARDS",
+        [{"family": family} for family in families[:3]])
+    paths = []
+    shards = []
+    for index, family in enumerate(families):
+        raw = B._active_state_shard_path(
+            lexical_root / "scorer_fit", family, pool="scorer_fit")
+        canonical = B._pin_generated_path(raw, raw)
+        payload = {
+            "family": family,
+            "state_shard_digest": f"{index + 1:064x}",
+        }
+        B.atomic_json(canonical, payload)
+        paths.append(canonical)
+        shards.append(payload)
+    rows = B._build_state_shard_provenance(
+        paths, shards, pool_name="scorer_fit")
+    assert [row["selection_provenance"] for row in rows].count(
+        "MIXED_37_RETAINED_8_REPLACED_SELECTOR_AMENDMENT_V2") == 3
+    assert [row["selection_provenance"] for row in rows].count(
+        "SUCCESSOR_SELECTOR_AMENDMENT_V2") == 5
+    assert all(not Path(row["path"]).is_absolute() for row in rows)
+
+
+def test_active_family_loader_returns_canonical_path_under_managed_alias(
+        tmp_path, monkeypatch):
+    family = "large_enclosed_maze"
+    lexical_root = tmp_path / "repo/.generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "managed/go2_branch_corpus_v1_2"
+    raw = lexical_root / "scorer_fit" / B.MIXED_ACTIVE_STATE_SHARD_NAME.format(
+        family=family)
+    canonical = target_root / "scorer_fit" / raw.name
+    canonical.parent.mkdir(parents=True)
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    payload = {"family": family, "state_shard_digest": "a" * 64}
+    B.atomic_json(canonical, payload)
+    monkeypatch.setattr(B, "OUT_ROOT", lexical_root)
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "PRESERVED_STATE_SHARDS", [{"family": family}])
+    monkeypatch.setattr(
+        B, "_validate_mixed_active_state_shard", lambda *_a, **_k: None)
+    returned, loaded = B._load_active_family_state_shard(
+        lexical_root / "scorer_fit", family, pool="scorer_fit")
+    assert returned == canonical
+    assert loaded == payload
+
+
 def _synthetic_state_request(*, requested=("general", "safety_enriched")):
     return {
         "pool": "scorer_fit",
@@ -559,6 +1205,7 @@ def test_state_resolution_parent_contains_no_genesis_context_or_shared_load():
 
 def test_state_resolution_nonzero_teardown_is_accepted_only_with_valid_capture(
         monkeypatch, tmp_path):
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     args = SimpleNamespace(
         pool="scorer_fit", family="medium_enclosed_maze", backend="cpu")
     request = {
@@ -581,6 +1228,7 @@ def test_state_resolution_nonzero_teardown_is_accepted_only_with_valid_capture(
 
 def test_state_resolution_nonzero_without_capture_fails_missing_only(
         monkeypatch, tmp_path):
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     args = SimpleNamespace(
         pool="scorer_fit", family="medium_enclosed_maze", backend="cpu")
     request = {
@@ -598,6 +1246,7 @@ def test_state_resolution_nonzero_without_capture_fails_missing_only(
 
 def test_state_resolution_request_rejects_resigned_live_scene_task_tamper(
         monkeypatch, tmp_path):
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     family = "medium_enclosed_maze"
     scene_dir = tmp_path / "split" / "family" / "scene-000"
     scene_dir.mkdir(parents=True)
@@ -648,6 +1297,7 @@ def test_transport_rejects_self_bound_post_quota_failure_and_advanced_cursor(
     family = "medium_enclosed_maze"
     out_root = tmp_path / "generated"
     out = out_root / "scorer_fit"
+    out.mkdir(parents=True)
     scenes = []
     for name in ("scene-a", "scene-b"):
         scene = tmp_path / "development" / family / name
@@ -1310,6 +1960,7 @@ def test_joint_search_fails_closed_when_cursor_pool_has_fewer_than_five():
 
 def test_terminal_joint_search_failure_is_nonoverwriting_and_pre_genesis(
         tmp_path, monkeypatch):
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     out = tmp_path / "scorer_fit"
     out.mkdir(parents=True)
     launch = {
@@ -1334,7 +1985,6 @@ def test_terminal_joint_search_failure_is_nonoverwriting_and_pre_genesis(
         B, "_live_small_completion_search_inputs",
         lambda **_kwargs: (
             "small-scene-003", fixed, live_candidates, {}))
-    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     monkeypatch.setattr(
         B.V1, "_load_shared",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
@@ -1356,6 +2006,7 @@ def test_terminal_joint_search_failure_is_nonoverwriting_and_pre_genesis(
 )
 def test_terminal_failure_rejects_resigned_malformed_arithmetic(
         tmp_path, monkeypatch, field, value, message):
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     out = tmp_path / "scorer_fit"
     out.mkdir(parents=True)
     launch = {
@@ -1388,6 +2039,7 @@ def test_terminal_failure_rejects_resigned_malformed_arithmetic(
 
 def test_terminal_exhaustion_is_replayed_over_exact_live_pool(
         tmp_path, monkeypatch):
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     out = tmp_path / "scorer_fit"
     out.mkdir(parents=True)
     launch = {

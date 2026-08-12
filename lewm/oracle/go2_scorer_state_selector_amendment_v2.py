@@ -36,6 +36,9 @@ from scripts import dev_action_slew_reconstruction_v1 as SLEW
 
 
 ROOT = Path(__file__).resolve().parents[2]
+MANAGED_GENERATED_ROOT_RELATIVE = Path(
+    ".generated/go2_branch_corpus_v1_2"
+)
 
 AMENDMENT_SCHEMA = "go2_scorer_fit_state_selector_amendment_v2"
 AMENDMENT_VERSION = "completion_horizon_reachability_v2"
@@ -187,6 +190,70 @@ PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH = (
     ".generated/go2_branch_corpus_v1_2/scorer_fit/"
     + PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_NAME
 )
+# The complete 45-state V2 phase-1 receipt above is a frozen failed terminal.
+# It is never overwritten or reinterpreted as a pass.  The prospectively
+# authorised 37-retained/8-replacement disposition uses a distinct active
+# schema and path while retaining the generic post-allocation binding below.
+PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_SCHEMA = (
+    "go2_scorer_fit_preserved_state_mixed_precontract_"
+    "disposition_reachability_v2"
+)
+PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME = (
+    "preserved_state_mixed_precontract_disposition_reachability_v2.json"
+)
+PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH = (
+    ".generated/go2_branch_corpus_v1_2/scorer_fit/"
+    + PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME
+)
+MIXED_PRECONTRACT_DISPOSITION_STATUS = (
+    "PASS_PREOUTCOME_37_RETAINED_8_REPLACEMENT_DISPOSITION"
+)
+FROZEN_REACHABILITY_FEASIBILITY_PASS = {
+    "path": STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH,
+    "raw_sha256": (
+        "ece1dfc380797b7f651cd5bf9102dfab16f7505e389e7464aec01ba7b38f2758"
+    ),
+    "byte_count": 2_459_308,
+    "receipt_digest": (
+        "0e2013f40f506da6485bb5e2fe5a3108595243aeb9141a6437f8cac023642482"
+    ),
+    "source_repository_commit": "7047c601bf4fa3eb693bb94db41195d8f3f09451",
+    "clean_source_binding_digest": (
+        "ce075902a329ad1faf5145787748fd39a0c7eed43622a87a5d2298b06882c1f4"
+    ),
+    "bound_implementations_digest": (
+        "ba78956878597fa71e08eeea0350a2e8d9f3c668466d32ac535bfb0ffcdf7fa8"
+    ),
+    "successor_selection_digest": (
+        "0099c2d4d749f8d5a05cb20e209e8b8f977ae22dad2973da52597deff18dfa6b"
+    ),
+}
+FROZEN_PRESERVED_PRECONTRACT_FAILURE = {
+    "path": PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH,
+    "raw_sha256": (
+        "2e49ed6e47caa98ed30ce45bddccd07cd3fad4c1950e5c6ff3fe051d0307de25"
+    ),
+    "byte_count": 334_260,
+    "receipt_digest": (
+        "0316e7f9b8462670eabe76da5fefc003274b4d08355373d14e1100cd6165e8e3"
+    ),
+    "source_repository_commit": "7047c601bf4fa3eb693bb94db41195d8f3f09451",
+    "clean_source_binding_digest": (
+        "ce075902a329ad1faf5145787748fd39a0c7eed43622a87a5d2298b06882c1f4"
+    ),
+    "bound_implementations_digest": (
+        "ba78956878597fa71e08eeea0350a2e8d9f3c668466d32ac535bfb0ffcdf7fa8"
+    ),
+    "successor_selection_digest": (
+        "0099c2d4d749f8d5a05cb20e209e8b8f977ae22dad2973da52597deff18dfa6b"
+    ),
+    "state_identity_set_digest": (
+        "3924fd62c885342f97d93242a6ab46b6cedb0d1c35a57db5e9c52c71c16b2c38"
+    ),
+    "outcome_surface_absence_attestation_digest": (
+        "c807e288204185c3f7670c3efdeae5719b9a92af7f2757656b159632ca705bb7"
+    ),
+}
 PRESERVED_STATE_REVALIDATION_SCHEMA = (
     "go2_scorer_fit_preserved_state_revalidation_reachability_v2"
 )
@@ -335,6 +402,122 @@ def _file_sha256(path: Path) -> str:
         for block in iter(lambda: source.read(1 << 20), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _has_inaccessible_custody_component(path: Path) -> bool:
+    return any(
+        part == ".."
+        or part == "sealed_test.json"
+        or part == "sealed"
+        or part.startswith("sealed_")
+        for part in path.parts
+    )
+
+
+def _assert_no_generated_path_symlink(path: Path) -> None:
+    """Reject custody names and every symlink in one absolute path."""
+
+    if _has_inaccessible_custody_component(path):
+        raise StateSelectorAmendmentError(
+            "generated artifact crosses an inaccessible custody component"
+        )
+    absolute = path if path.is_absolute() else Path.cwd() / path
+    cursor = Path(absolute.anchor)
+    for part in absolute.parts[1:]:
+        cursor /= part
+        if cursor.is_symlink():
+            raise StateSelectorAmendmentError(
+                "symlinked generated artifact component is inaccessible"
+            )
+
+
+def _managed_generated_artifact_path(
+    path: Path, *, root: Path = ROOT,
+) -> Path:
+    """Pin one guarded artifact below the sole managed generated-root alias.
+
+    The repository may relocate exactly
+    ``.generated/go2_branch_corpus_v1_2`` behind one symlink.  No symlink is
+    permitted before or below that exact alias.  Returning the canonical
+    target path (rather than the alias path) ensures a subsequent alias swap
+    cannot redirect the caller's read.
+    """
+
+    repository_root = Path(root)
+    if not repository_root.is_absolute():
+        repository_root = Path.cwd() / repository_root
+    managed_root = repository_root / MANAGED_GENERATED_ROOT_RELATIVE
+    artifact = Path(path)
+    if not artifact.is_absolute():
+        artifact = Path.cwd() / artifact
+    for label, value in (
+        ("managed generated root", managed_root),
+        ("managed generated artifact", artifact),
+    ):
+        if _has_inaccessible_custody_component(value):
+            raise StateSelectorAmendmentError(
+                f"{label} crosses an inaccessible custody component"
+            )
+    try:
+        relative = artifact.relative_to(managed_root)
+    except ValueError as exc:
+        raise StateSelectorAmendmentError(
+            "generated artifact escaped the managed output root"
+        ) from exc
+    if not relative.parts:
+        raise StateSelectorAmendmentError(
+            "generated artifact path names only its managed root"
+        )
+
+    # Exactly the managed root may be an alias; its complete prefix may not.
+    _assert_no_generated_path_symlink(managed_root.parent)
+    if managed_root.is_symlink():
+        raw_target = managed_root.readlink()
+        target = (
+            raw_target
+            if raw_target.is_absolute()
+            else managed_root.parent / raw_target
+        )
+        if (
+            target.name != managed_root.name
+            or _has_inaccessible_custody_component(target)
+        ):
+            raise StateSelectorAmendmentError(
+                "managed generated-root alias target identity is inaccessible"
+            )
+        _assert_no_generated_path_symlink(target)
+        try:
+            canonical_root = target.resolve(strict=True)
+        except OSError as exc:
+            raise StateSelectorAmendmentError(
+                "managed generated-root alias target is missing"
+            ) from exc
+    else:
+        if not managed_root.is_dir():
+            raise StateSelectorAmendmentError(
+                "managed generated-output root is missing"
+            )
+        try:
+            canonical_root = managed_root.resolve(strict=True)
+        except OSError as exc:
+            raise StateSelectorAmendmentError(
+                "managed generated-output root is missing"
+            ) from exc
+    if (
+        not canonical_root.is_dir()
+        or canonical_root.name != managed_root.name
+        or _has_inaccessible_custody_component(canonical_root)
+    ):
+        raise StateSelectorAmendmentError(
+            "managed generated-output root identity changed"
+        )
+    _assert_no_generated_path_symlink(canonical_root)
+
+    canonical_artifact = canonical_root.joinpath(*relative.parts)
+    # This tests every existing descendant without following it.  Missing
+    # leaves remain the loader's ordinary, explicit missing-artifact failure.
+    _assert_no_generated_path_symlink(canonical_artifact)
+    return canonical_artifact
 
 
 def _is_digest(value: object) -> bool:
@@ -967,7 +1150,9 @@ def validate_no_outcome_surface() -> None:
 
 
 def _load_frozen_failed_census_receipt(root: Path) -> dict[str, Any]:
-    path = root / str(FROZEN_FAILED_CENSUS_RECEIPT["path"])
+    path = _managed_generated_artifact_path(
+        root / str(FROZEN_FAILED_CENSUS_RECEIPT["path"]), root=root
+    )
     if (
         not path.is_file()
         or path.stat().st_size != int(FROZEN_FAILED_CENSUS_RECEIPT["byte_count"])
@@ -998,7 +1183,9 @@ def _load_frozen_failed_census_tasks(
     root: Path, predecessor_receipt: Mapping[str, Any],
 ) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
     binding = FROZEN_FAILED_CENSUS_TASK_CENSUS
-    path = root / str(binding["path"])
+    path = _managed_generated_artifact_path(
+        root / str(binding["path"]), root=root
+    )
     if (
         not path.is_file() or path.stat().st_size != int(binding["byte_count"])
         or _file_sha256(path) != binding["raw_sha256"]
@@ -1208,7 +1395,9 @@ def _load_live_small_reachability_shards(
         seen_scenes.add(scene_id)
         seen_tasks.add(task_digest)
         seen_shards.add(shard_digest)
-        path = shard_root / f"{task_digest}.json"
+        path = _managed_generated_artifact_path(
+            shard_root / f"{task_digest}.json", root=root
+        )
         if not path.is_file():
             raise StateSelectorAmendmentError(
                 f"small reachability shard is missing: {scene_id}"
@@ -2006,7 +2195,6 @@ def _validate_phase1_state_check_transport(
         "family", "state_id", "state_identity_digest", "path",
         "raw_sha256", "byte_count", "state_check_shard_digest",
     }
-    shard_root = (root / PHASE1_STATE_CHECK_SHARD_ROOT).resolve()
     for row, (expected_shard, expected_state) in zip(
         provenance, expected_rows, strict=True
     ):
@@ -2028,17 +2216,16 @@ def _validate_phase1_state_check_transport(
             raise StateSelectorAmendmentError(
                 "phase-1 state-check provenance changed"
             )
-        path = root / expected_relative
         try:
-            resolved = path.resolve(strict=True)
-        except OSError as exc:
+            resolved = _managed_generated_artifact_path(
+                root / expected_relative, root=root
+            )
+        except (OSError, StateSelectorAmendmentError) as exc:
             raise StateSelectorAmendmentError(
                 "phase-1 state-check shard is missing"
             ) from exc
         if (
-            path.is_symlink()
-            or resolved != shard_root / f"{identity}.json"
-            or not resolved.is_file()
+            not resolved.is_file()
             or resolved.stat().st_size != row["byte_count"]
             or _file_sha256(resolved) != row["raw_sha256"]
         ):
@@ -2078,6 +2265,500 @@ def _validate_phase1_state_check_transport(
             raise StateSelectorAmendmentError(
                 "phase-1 aggregate differs from its durable state-check shard"
             )
+
+
+def _load_exact_frozen_json(
+    binding: Mapping[str, Any], *, root: Path, label: str,
+) -> dict[str, Any]:
+    """Open one pre-outcome terminal only through its exact byte binding."""
+
+    path = _managed_generated_artifact_path(
+        root / str(binding["path"]), root=root
+    )
+    if (
+        not path.is_file()
+        or path.stat().st_size != int(binding["byte_count"])
+        or _file_sha256(path) != binding["raw_sha256"]
+    ):
+        raise StateSelectorAmendmentError(f"{label} raw binding changed")
+    try:
+        payload = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise StateSelectorAmendmentError(f"{label} JSON is invalid") from exc
+    return payload
+
+
+def validate_frozen_reachability_feasibility_pass(
+    *, root: Path = ROOT,
+) -> dict[str, Any]:
+    """Reopen the exact 7047 feasibility pass under its historical bindings."""
+
+    binding = FROZEN_REACHABILITY_FEASIBILITY_PASS
+    receipt = _load_exact_frozen_json(
+        binding, root=root, label="frozen reachability feasibility pass"
+    )
+    if receipt.get("state_selector_feasibility_receipt_digest") != binding[
+        "receipt_digest"
+    ]:
+        raise StateSelectorAmendmentError(
+            "frozen reachability feasibility self binding changed"
+        )
+    validate_state_selector_feasibility_receipt(
+        receipt,
+        expected_source_commit=str(binding["source_repository_commit"]),
+        expected_successor_selection_digest=str(
+            binding["successor_selection_digest"]
+        ),
+        expected_clean_source_binding_digest=str(
+            binding["clean_source_binding_digest"]
+        ),
+        expected_bound_implementations_digest=str(
+            binding["bound_implementations_digest"]
+        ),
+        root=root,
+    )
+    return receipt
+
+
+def validate_frozen_preserved_precontract_failure(
+    *, root: Path = ROOT,
+) -> dict[str, Any]:
+    """Validate the exact 45-check terminal failure without promoting it."""
+
+    binding = FROZEN_PRESERVED_PRECONTRACT_FAILURE
+    receipt = _load_exact_frozen_json(
+        binding, root=root, label="frozen preserved precontract failure"
+    )
+    payload = dict(receipt)
+    observed = payload.pop(
+        "preserved_state_precontract_revalidation_receipt_digest", None
+    )
+    if observed != binding["receipt_digest"] or _sha256(payload) != observed:
+        raise StateSelectorAmendmentError(
+            "frozen preserved precontract failure self binding changed"
+        )
+    if (
+        payload.get("schema") != PRESERVED_STATE_PRECONTRACT_REVALIDATION_SCHEMA
+        or payload.get("status") != "FAIL_PRECONTRACT_IDENTITY_REVALIDATION"
+        or payload.get("complete") is not True
+        or payload.get("source_repository_commit")
+        != binding["source_repository_commit"]
+        or payload.get("clean_source_binding_digest")
+        != binding["clean_source_binding_digest"]
+        or payload.get("bound_implementations_digest")
+        != binding["bound_implementations_digest"]
+        or payload.get("successor_selection_digest")
+        != binding["successor_selection_digest"]
+        or payload.get("state_selector_feasibility_receipt_digest")
+        != FROZEN_REACHABILITY_FEASIBILITY_PASS["receipt_digest"]
+        or payload.get("state_identity_set_digest")
+        != binding["state_identity_set_digest"]
+        or payload.get("outcome_surface_absence_attestation_digest")
+        != binding["outcome_surface_absence_attestation_digest"]
+        or payload.get("preserved_state_count") != 45
+        or payload.get("failure_count") != 8
+    ):
+        raise StateSelectorAmendmentError(
+            "frozen preserved precontract failure lineage changed"
+        )
+    validate_phase1_outcome_surface_absence_attestation(
+        payload.get("outcome_surface_absence_attestation")
+    )
+    if any(
+        payload.get(key) not in (False, 0)
+        for key in (
+            "candidate_allocation_loaded",
+            "candidate_outcomes_loaded",
+            "branch_identities_created",
+            "branches_attempted",
+            "frames_rendered",
+            "target_latents_encoded",
+            "scorer_training_started",
+        )
+    ):
+        raise StateSelectorAmendmentError(
+            "frozen preserved precontract failure contains scientific output"
+        )
+    _validate_phase1_state_check_transport(receipt, root=root)
+    checks = [
+        dict(check)
+        for shard in payload.get("shards", [])
+        for check in shard.get("state_checks", [])
+    ]
+    check_booleans = (
+        "exact_redrive_pass", "exclusion_checks_pass",
+        "amended_classification_pass", "goal_binding_unchanged",
+        "oracle_completion_target_unchanged",
+        "production_task_completion_reset_unchanged",
+        "snapshot_production_designated_goal_claim_unchanged",
+        "completion_state_task_status_all_false",
+    )
+    passing = [
+        check for check in checks
+        if all(check.get(key) is True for key in check_booleans)
+        and check.get("failure_reason") is None
+    ]
+    accepted_failure_reason = (
+        "RuntimeError:amended classification failed: no_completion_enriched_goal"
+    )
+    failed = [
+        check for check in checks
+        if check.get("exclusion_checks_pass") is True
+        and all(check.get(key) is False for key in check_booleans
+                if key != "exclusion_checks_pass")
+        and check.get("failure_reason") == accepted_failure_reason
+    ]
+    if (
+        len(checks) != 45
+        or len({check.get("state_identity_digest") for check in checks}) != 45
+        or len(passing) != 37
+        or len(failed) != 8
+        or payload.get("failures") != failed
+        or len(passing) + len(failed) != len(checks)
+    ):
+        raise StateSelectorAmendmentError(
+            "frozen preserved precontract failure set changed"
+        )
+    source_states = {
+        str(state["state_identity_digest"]): state
+        for shard in load_preserved_state_shards(root).values()
+        for state in shard["states"]
+    }
+    if set(source_states) != {
+        str(check["state_identity_digest"]) for check in checks
+    }:
+        raise StateSelectorAmendmentError(
+            "frozen preserved precontract failure identity coverage changed"
+        )
+    if any(
+        source_states[str(check["state_identity_digest"])]["stratum"]
+        != "completion_enriched"
+        for check in failed
+    ):
+        raise StateSelectorAmendmentError(
+            "frozen precontract rejection is not completion-only"
+        )
+    return receipt
+
+
+def _mixed_identity_row(
+    state: Mapping[str, Any], *, failure_reason: str | None = None,
+) -> dict[str, Any]:
+    row = {
+        "state_identity_digest": str(state["state_identity_digest"]),
+        "state_id": str(state["state_id"]),
+        "scene_id": str(state["scene_id"]),
+        "family": str(state["family"]),
+        "stratum": str(state["stratum"]),
+        "split_role": str(state["split_role"]),
+    }
+    if failure_reason is not None:
+        row["failure_reason"] = str(failure_reason)
+    return row
+
+
+def mixed_precontract_disposition_sets(
+    *, root: Path = ROOT,
+) -> dict[str, list[dict[str, Any]]]:
+    """Derive the exact 37/8 disposition solely from the frozen failed checks."""
+
+    failed_receipt = validate_frozen_preserved_precontract_failure(root=root)
+    checks = {
+        str(check["state_identity_digest"]): check
+        for shard in failed_receipt["shards"]
+        for check in shard["state_checks"]
+    }
+    source_states = {
+        str(state["state_identity_digest"]): state
+        for shard in load_preserved_state_shards(root).values()
+        for state in shard["states"]
+    }
+    retained: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    slots: list[dict[str, Any]] = []
+    for identity in sorted(source_states):
+        state = source_states[identity]
+        check = checks[identity]
+        pass_fields = (
+            "exact_redrive_pass", "exclusion_checks_pass",
+            "amended_classification_pass", "goal_binding_unchanged",
+            "oracle_completion_target_unchanged",
+            "production_task_completion_reset_unchanged",
+            "snapshot_production_designated_goal_claim_unchanged",
+            "completion_state_task_status_all_false",
+        )
+        full_pass = (
+            all(check.get(key) is True for key in pass_fields)
+            and check.get("failure_reason") is None
+        )
+        accepted_failure = (
+            check.get("exclusion_checks_pass") is True
+            and all(check.get(key) is False for key in pass_fields
+                    if key != "exclusion_checks_pass")
+            and check.get("failure_reason") == (
+                "RuntimeError:amended classification failed: "
+                "no_completion_enriched_goal"
+            )
+        )
+        if full_pass:
+            retained.append(_mixed_identity_row(state))
+            continue
+        if not accepted_failure:
+            raise StateSelectorAmendmentError(
+                "mixed disposition encountered an unregistered phase-1 failure shape"
+            )
+        reason = str(check.get("failure_reason"))
+        rejected.append(_mixed_identity_row(state, failure_reason=reason))
+        slots.append({
+            "state_id": str(state["state_id"]),
+            "family": str(state["family"]),
+            "stratum": str(state["stratum"]),
+            "split_role": str(state["split_role"]),
+            "predecessor_state_identity_digest": identity,
+            "predecessor_scene_id": str(state["scene_id"]),
+        })
+    if len(retained) != 37 or len(rejected) != 8 or len(slots) != 8:
+        raise StateSelectorAmendmentError(
+            "mixed precontract disposition is not exactly 37 retained and 8 rejected"
+        )
+    retained.sort(key=lambda row: row["state_id"])
+    rejected.sort(key=lambda row: row["state_id"])
+    slots.sort(key=lambda row: row["state_id"])
+    return {
+        "retained_predecessor_identities": retained,
+        "rejected_predecessor_identities": rejected,
+        "replacement_slots": slots,
+    }
+
+
+def build_preserved_state_mixed_precontract_disposition_receipt(
+    *,
+    source_repository_commit: str,
+    clean_source_binding_digest: str,
+    bound_implementations_digest: str,
+    successor_selection_digest: str,
+    outcome_surface_absence_attestation: Mapping[str, Any],
+    root: Path = ROOT,
+) -> dict[str, Any]:
+    """Build the active pre-outcome 37-retained/8-replacement authority."""
+
+    for label, value in (
+        ("clean-source", clean_source_binding_digest),
+        ("implementation", bound_implementations_digest),
+        ("selection", successor_selection_digest),
+    ):
+        if not _is_digest(value):
+            raise StateSelectorAmendmentError(f"mixed disposition {label} digest invalid")
+    if (
+        not isinstance(source_repository_commit, str)
+        or len(source_repository_commit) != 40
+        or any(character not in _HEX for character in source_repository_commit)
+    ):
+        raise StateSelectorAmendmentError("mixed disposition source commit invalid")
+    validate_frozen_reachability_feasibility_pass(root=root)
+    validate_frozen_preserved_precontract_failure(root=root)
+    validate_phase1_outcome_surface_absence_attestation(
+        outcome_surface_absence_attestation
+    )
+    sets = mixed_precontract_disposition_sets(root=root)
+    retained = sets["retained_predecessor_identities"]
+    rejected = sets["rejected_predecessor_identities"]
+    slots = sets["replacement_slots"]
+    payload: dict[str, Any] = {
+        "schema": PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_SCHEMA,
+        "status": MIXED_PRECONTRACT_DISPOSITION_STATUS,
+        "complete": True,
+        "binding_receipt": True,
+        "source_repository_commit": source_repository_commit,
+        "clean_source_binding_digest": clean_source_binding_digest,
+        "bound_implementations_digest": bound_implementations_digest,
+        "successor_selection_digest": successor_selection_digest,
+        "state_selector_amendment_digest": state_selector_amendment_digest(),
+        "frozen_reachability_feasibility_pass": dict(
+            FROZEN_REACHABILITY_FEASIBILITY_PASS
+        ),
+        "frozen_preserved_precontract_failure": dict(
+            FROZEN_PRESERVED_PRECONTRACT_FAILURE
+        ),
+        "outcome_surface_absence_attestation": dict(
+            outcome_surface_absence_attestation
+        ),
+        "outcome_surface_absence_attestation_digest":
+            outcome_surface_absence_attestation["attestation_digest"],
+        "original_predecessor_state_count": 45,
+        "retained_predecessor_state_count": 37,
+        "rejected_predecessor_state_count": 8,
+        "replacement_slot_count": 8,
+        "retained_predecessor_identities": retained,
+        "retained_predecessor_identity_set_digest": _sha256(retained),
+        "rejected_predecessor_identities": rejected,
+        "rejected_predecessor_identity_set_digest": _sha256(rejected),
+        "replacement_slots": slots,
+        "replacement_slot_set_digest": _sha256(slots),
+        "candidate_allocation_loaded": False,
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+        "predictor_checkpoints_opened": 0,
+    }
+    payload["mixed_precontract_disposition_receipt_digest"] = _sha256(payload)
+    return payload
+
+
+def validate_preserved_state_mixed_precontract_disposition_receipt(
+    receipt: Mapping[str, Any],
+    *,
+    expected_source_commit: str | None = None,
+    expected_successor_selection_digest: str | None = None,
+    expected_clean_source_binding_digest: str | None = None,
+    expected_bound_implementations_digest: str | None = None,
+    root: Path = ROOT,
+) -> None:
+    """Fail closed on the active mixed disposition and both frozen terminals."""
+
+    if not isinstance(receipt, Mapping):
+        raise StateSelectorAmendmentError("mixed precontract disposition must be a mapping")
+    payload = dict(receipt)
+    observed = payload.pop("mixed_precontract_disposition_receipt_digest", None)
+    if not _is_digest(observed) or _sha256(payload) != observed:
+        raise StateSelectorAmendmentError("mixed precontract disposition self digest failed")
+    expected_keys = {
+        "schema", "status", "complete", "binding_receipt",
+        "source_repository_commit", "clean_source_binding_digest",
+        "bound_implementations_digest", "successor_selection_digest",
+        "state_selector_amendment_digest",
+        "frozen_reachability_feasibility_pass",
+        "frozen_preserved_precontract_failure",
+        "outcome_surface_absence_attestation",
+        "outcome_surface_absence_attestation_digest",
+        "original_predecessor_state_count",
+        "retained_predecessor_state_count",
+        "rejected_predecessor_state_count", "replacement_slot_count",
+        "retained_predecessor_identities",
+        "retained_predecessor_identity_set_digest",
+        "rejected_predecessor_identities",
+        "rejected_predecessor_identity_set_digest", "replacement_slots",
+        "replacement_slot_set_digest", "candidate_allocation_loaded",
+        "candidate_outcomes_loaded", "branch_identities_created",
+        "branches_attempted", "frames_rendered", "target_latents_encoded",
+        "scorer_training_started", "predictor_checkpoints_opened",
+    }
+    if set(payload) != expected_keys:
+        raise StateSelectorAmendmentError(
+            "mixed precontract disposition has an unexpected key surface"
+        )
+    if (
+        payload.get("schema") != PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_SCHEMA
+        or payload.get("status") != MIXED_PRECONTRACT_DISPOSITION_STATUS
+        or payload.get("complete") is not True
+        or payload.get("binding_receipt") is not True
+        or payload.get("state_selector_amendment_digest")
+        != state_selector_amendment_digest()
+        or payload.get("frozen_reachability_feasibility_pass")
+        != FROZEN_REACHABILITY_FEASIBILITY_PASS
+        or payload.get("frozen_preserved_precontract_failure")
+        != FROZEN_PRESERVED_PRECONTRACT_FAILURE
+    ):
+        raise StateSelectorAmendmentError("mixed precontract disposition is not complete/pass")
+    for value, expected, label in (
+        (payload.get("source_repository_commit"), expected_source_commit, "source"),
+        (payload.get("successor_selection_digest"),
+         expected_successor_selection_digest, "selection"),
+        (payload.get("clean_source_binding_digest"),
+         expected_clean_source_binding_digest, "clean-source"),
+        (payload.get("bound_implementations_digest"),
+         expected_bound_implementations_digest, "implementation"),
+    ):
+        if expected is not None and value != expected:
+            raise StateSelectorAmendmentError(
+                f"mixed precontract disposition {label} binding mismatch"
+            )
+    validate_frozen_reachability_feasibility_pass(root=root)
+    validate_frozen_preserved_precontract_failure(root=root)
+    absence = payload.get("outcome_surface_absence_attestation")
+    validate_phase1_outcome_surface_absence_attestation(absence)
+    if payload.get("outcome_surface_absence_attestation_digest") != absence.get(
+        "attestation_digest"
+    ):
+        raise StateSelectorAmendmentError("mixed disposition absence binding changed")
+    expected_sets = mixed_precontract_disposition_sets(root=root)
+    for key, count, digest_key in (
+        ("retained_predecessor_identities", 37,
+         "retained_predecessor_identity_set_digest"),
+        ("rejected_predecessor_identities", 8,
+         "rejected_predecessor_identity_set_digest"),
+        ("replacement_slots", 8, "replacement_slot_set_digest"),
+    ):
+        rows = payload.get(key)
+        if (
+            rows != expected_sets[key]
+            or not isinstance(rows, list)
+            or len(rows) != count
+            or payload.get(digest_key) != _sha256(rows)
+        ):
+            raise StateSelectorAmendmentError(
+                f"mixed precontract disposition {key} changed"
+            )
+    if (
+        payload.get("original_predecessor_state_count") != 45
+        or payload.get("retained_predecessor_state_count") != 37
+        or payload.get("rejected_predecessor_state_count") != 8
+        or payload.get("replacement_slot_count") != 8
+        or any(
+            payload.get(key) not in (False, 0)
+            for key in (
+                "candidate_allocation_loaded", "candidate_outcomes_loaded",
+                "branch_identities_created", "branches_attempted",
+                "frames_rendered", "target_latents_encoded",
+                "scorer_training_started", "predictor_checkpoints_opened",
+            )
+        )
+    ):
+        raise StateSelectorAmendmentError(
+            "mixed precontract disposition counts or no-outcome gate changed"
+        )
+
+
+def load_and_validate_preserved_state_mixed_precontract_disposition_receipt(
+    *,
+    expected_source_commit: str | None = None,
+    expected_successor_selection_digest: str | None = None,
+    expected_clean_source_binding_digest: str | None = None,
+    expected_bound_implementations_digest: str | None = None,
+    root: Path = ROOT,
+) -> dict[str, Any]:
+    """Guard, open, and validate the one active mixed disposition receipt."""
+
+    path = _managed_generated_artifact_path(
+        root / PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH,
+        root=root,
+    )
+    if not path.is_file():
+        raise StateSelectorAmendmentError(
+            "active mixed precontract disposition receipt is missing"
+        )
+    try:
+        receipt = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise StateSelectorAmendmentError(
+            "active mixed precontract disposition receipt JSON is invalid"
+        ) from exc
+    validate_preserved_state_mixed_precontract_disposition_receipt(
+        receipt,
+        expected_source_commit=expected_source_commit,
+        expected_successor_selection_digest=
+            expected_successor_selection_digest,
+        expected_clean_source_binding_digest=
+            expected_clean_source_binding_digest,
+        expected_bound_implementations_digest=
+            expected_bound_implementations_digest,
+        root=root,
+    )
+    return receipt
+
 
 
 def _as_predecessor_phase_1_receipt(
@@ -2265,36 +2946,413 @@ def _normalise_completion_check(
     }
 
 
+def _identity_payload_projection(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Match the builder's state-identity projection without importing it."""
+
+    return {
+        key: value for key, value in state.items()
+        if key not in {
+            "state_identity_digest", "state_index", "candidate_indices",
+            "candidate_rotation_index", "branch_identities",
+        }
+    }
+
+
+def _snapshot_core_projection(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Project contract-independent fields that identify one resolved snapshot."""
+
+    return {
+        key: state.get(key)
+        for key in (
+            "scene_id", "episode_cluster_id", "episode_id", "source_step",
+            "cell_id", "boundary", "warmup_blocks",
+        )
+    }
+
+
+def _phase1_completion_vectors(
+    *, root: Path,
+) -> dict[str, dict[str, Any]]:
+    """Recover the seven byte-bound vectors for retained completion states."""
+
+    failed = validate_frozen_preserved_precontract_failure(root=root)
+    vectors: dict[str, dict[str, Any]] = {}
+    for shard in failed["shards"]:
+        for check in shard["state_checks"]:
+            vector = check.get("completion_rotation_eligibility")
+            if vector is None:
+                continue
+            identity = str(check["state_identity_digest"])
+            if identity in vectors or not isinstance(vector, Mapping):
+                raise StateSelectorAmendmentError(
+                    "frozen phase-1 completion-vector coverage changed"
+                )
+            vectors[identity] = dict(vector)
+    retained_completion = {
+        str(row["state_identity_digest"])
+        for row in mixed_precontract_disposition_sets(root=root)[
+            "retained_predecessor_identities"
+        ]
+        if row["stratum"] == "completion_enriched"
+    }
+    if len(retained_completion) != 7 or set(vectors) != retained_completion:
+        raise StateSelectorAmendmentError(
+            "frozen phase-1 does not bind exactly the seven retained completion vectors"
+        )
+    return vectors
+
+
+def _completion_source_row_from_active_state(
+    state: Mapping[str, Any],
+    *,
+    assignment: Mapping[str, Any],
+    preserved_vectors: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Derive one assigned-mask row from its identity-owned 12-rotation vector."""
+
+    identity = str(state["state_identity_digest"])
+    vector = state.get("completion_rotation_eligibility_vector")
+    if vector is None:
+        vector = preserved_vectors.get(identity)
+    if not isinstance(vector, Mapping):
+        raise StateSelectorAmendmentError(
+            "completion identity lacks identity-owned rotation evidence"
+        )
+    rotations = vector.get("rotations")
+    if not isinstance(rotations, list) or len(rotations) != ALLOCATION.CANDIDATE_COUNT:
+        raise StateSelectorAmendmentError(
+            "completion identity rotation evidence is malformed"
+        )
+    first = rotations[0]
+    if not isinstance(first, Mapping):
+        raise StateSelectorAmendmentError(
+            "completion identity rotation evidence is malformed"
+        )
+    try:
+        recomputed_vector = completion_rotation_eligibility_vector(
+            graph_hops=int(first["graph_hops_diagnostic"]),
+            reachable=bool(first["reachable"]),
+            continuous_geodesic_m=float(first["continuous_geodesic_m"]),
+            bearing_body_rad=float(first["bearing_body_rad"]),
+            task_status=first["task_status"],
+            previous_applied_command=first["previous_applied_command"],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise StateSelectorAmendmentError(
+            "completion identity rotation evidence cannot be reconstructed"
+        ) from exc
+    if dict(vector) != recomputed_vector:
+        raise StateSelectorAmendmentError(
+            "completion identity rotation evidence changed"
+        )
+
+    goal = state.get("goal")
+    if not isinstance(goal, Mapping):
+        raise StateSelectorAmendmentError(
+            "completion identity lacks its snapshot goal binding"
+        )
+    try:
+        goal_matches = (
+            int(goal.get("graph_edges")) == int(first["graph_hops_diagnostic"])
+            and float(goal.get("start_geodesic_m"))
+            == float(first["continuous_geodesic_m"])
+            and float(goal.get("bearing_body_rad"))
+            == float(first["bearing_body_rad"])
+        )
+    except (TypeError, ValueError) as exc:
+        raise StateSelectorAmendmentError(
+            "completion identity goal binding is malformed"
+        ) from exc
+    if not goal_matches:
+        raise StateSelectorAmendmentError(
+            "completion rotation evidence differs from its active goal binding"
+        )
+    if (
+        "snapshot_task_status" in state
+        and state["snapshot_task_status"] != first["task_status"]
+    ):
+        raise StateSelectorAmendmentError(
+            "completion rotation evidence differs from active task status"
+        )
+    if "previous_applied_command" in state and (
+        _normalise_previous_applied(state["previous_applied_command"])
+        != _normalise_previous_applied(first["previous_applied_command"])
+    ):
+        raise StateSelectorAmendmentError(
+            "completion rotation evidence differs from active previous command"
+        )
+
+    candidate_indices = [int(value) for value in assignment["candidate_indices"]]
+    rotation = candidate_rotation_index(candidate_indices)
+    if (
+        ("rotation_index" in assignment
+         and int(assignment["rotation_index"]) != rotation)
+        or ("candidate_rotation_index" in assignment
+            and int(assignment["candidate_rotation_index"]) != rotation)
+    ):
+        raise StateSelectorAmendmentError(
+            "completion allocation rotation index differs from its exact mask"
+        )
+    selected = rotations[rotation]
+    if (
+        not isinstance(selected, Mapping)
+        or list(selected.get("candidate_indices", [])) != candidate_indices
+    ):
+        raise StateSelectorAmendmentError(
+            "completion identity vector does not own its assigned mask"
+        )
+    return {
+        "state_identity_digest": identity,
+        "state_id": str(state["state_id"]),
+        "family": str(state["family"]),
+        "stratum": "completion_enriched",
+        "candidate_indices": candidate_indices,
+        "previous_applied_command": list(selected["previous_applied_command"]),
+        "completion_eligibility": dict(selected),
+    }
+
+
 def build_preserved_state_revalidation_receipt(
     *,
     allocation_manifest: Mapping[str, Any],
+    active_states: Sequence[Mapping[str, Any]],
     completion_states: Sequence[Mapping[str, Any]],
     source_repository_commit: str,
     successor_selection_digest: str,
     state_selector_feasibility_receipt_digest: str,
-    preserved_state_precontract_revalidation_receipt_digest: str,
+    mixed_precontract_disposition_receipt_digest: str,
     root: Path = ROOT,
 ) -> dict[str, Any]:
-    """Build the one phase-2 gate for 45 preserved and all 40 completion states."""
+    """Bind 37 retained masks, eight replacements, and all 40 completion rows."""
 
     ALLOCATION.validate_allocation_manifest(allocation_manifest)
-    base = PREDECESSOR.build_preserved_state_revalidation_receipt(
-        allocation_manifest=allocation_manifest,
-        source_repository_commit=source_repository_commit,
-        successor_selection_digest=successor_selection_digest,
-        state_selector_feasibility_receipt_digest=
-            state_selector_feasibility_receipt_digest,
-        preserved_state_precontract_revalidation_receipt_digest=
-            preserved_state_precontract_revalidation_receipt_digest,
+    for label, value in (
+        ("selection", successor_selection_digest),
+        ("feasibility", state_selector_feasibility_receipt_digest),
+        ("mixed disposition", mixed_precontract_disposition_receipt_digest),
+    ):
+        if not _is_digest(value):
+            raise StateSelectorAmendmentError(f"phase-2 {label} digest invalid")
+    mixed_path = _managed_generated_artifact_path(
+        root / PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH,
         root=root,
     )
+    if not mixed_path.is_file():
+        raise StateSelectorAmendmentError("active mixed disposition receipt is missing")
+    try:
+        mixed = json.loads(mixed_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise StateSelectorAmendmentError(
+            "active mixed disposition receipt is invalid JSON"
+        ) from exc
+    validate_preserved_state_mixed_precontract_disposition_receipt(
+        mixed,
+        expected_source_commit=source_repository_commit,
+        expected_successor_selection_digest=successor_selection_digest,
+        root=root,
+    )
+    if mixed.get("mixed_precontract_disposition_receipt_digest") != (
+        mixed_precontract_disposition_receipt_digest
+    ):
+        raise StateSelectorAmendmentError("phase-2 mixed disposition digest changed")
+    if state_selector_feasibility_receipt_digest != (
+        FROZEN_REACHABILITY_FEASIBILITY_PASS["receipt_digest"]
+    ):
+        raise StateSelectorAmendmentError("phase-2 feasibility lineage changed")
+
     assignments = {
         str(row["state_identity_digest"]): row
         for row in allocation_manifest["assignments"]
     }
+    states_by_identity: dict[str, Mapping[str, Any]] = {}
+    states_by_id: dict[str, Mapping[str, Any]] = {}
+    active_scenes: set[str] = set()
+    active_episode_clusters: set[str] = set()
+    active_observation_boundaries: set[str] = set()
+    for state in active_states:
+        identity = str(state.get("state_identity_digest", ""))
+        state_id = str(state.get("state_id", ""))
+        scene_id = str(state.get("scene_id", ""))
+        episode_cluster_id = str(state.get("episode_cluster_id", ""))
+        boundary = state.get("boundary")
+        observation_boundary = _sha256({
+            "scene_id": scene_id,
+            "episode_cluster_id": episode_cluster_id,
+            "episode_id": state.get("episode_id"),
+            "source_step": state.get("source_step"),
+            "boundary": boundary,
+        })
+        if (
+            not identity or not state_id or not scene_id or not episode_cluster_id
+            or not isinstance(boundary, Mapping)
+            or identity in states_by_identity or state_id in states_by_id
+            or scene_id in active_scenes
+            or episode_cluster_id in active_episode_clusters
+            or observation_boundary in active_observation_boundaries
+        ):
+            raise StateSelectorAmendmentError(
+                "phase-2 active scene/episode/state/observation identities repeat"
+            )
+        states_by_identity[identity] = state
+        states_by_id[state_id] = state
+        active_scenes.add(scene_id)
+        active_episode_clusters.add(episode_cluster_id)
+        active_observation_boundaries.add(observation_boundary)
+    if (
+        len(states_by_identity) != 120
+        or set(states_by_identity) != set(assignments)
+    ):
+        raise StateSelectorAmendmentError(
+            "phase-2 active identities differ from the 120-state allocation"
+        )
+
+    retained_masks: list[dict[str, Any]] = []
+    retained_by_family: dict[str, list[dict[str, Any]]] = {}
+    predecessor_states = {
+        str(state["state_identity_digest"]): state
+        for shard in load_preserved_state_shards(root).values()
+        for state in shard["states"]
+    }
+    for retained in mixed["retained_predecessor_identities"]:
+        identity = str(retained["state_identity_digest"])
+        state = states_by_identity.get(identity)
+        assignment = assignments.get(identity)
+        predecessor_state = predecessor_states.get(identity)
+        if (
+            state is None
+            or assignment is None
+            or predecessor_state is None
+            or _mixed_identity_row(state) != retained
+            or _identity_payload_projection(state)
+            != _identity_payload_projection(predecessor_state)
+            or assignment.get("state_id") != retained["state_id"]
+            or assignment.get("family") != retained["family"]
+        ):
+            raise StateSelectorAmendmentError(
+                "phase-2 retained predecessor identity is absent or changed"
+            )
+        candidate_indices = [int(value) for value in assignment["candidate_indices"]]
+        row = {
+            "state_identity_digest": identity,
+            "state_id": str(retained["state_id"]),
+            "family": str(retained["family"]),
+            "candidate_indices": candidate_indices,
+            "candidate_mask_digest": candidate_mask_digest(
+                identity, candidate_indices
+            ),
+        }
+        retained_masks.append(row)
+        retained_by_family.setdefault(str(retained["family"]), []).append(row)
+    retained_masks.sort(key=lambda row: row["state_identity_digest"])
+    if len(retained_masks) != 37:
+        raise StateSelectorAmendmentError("phase-2 must retain exactly 37 predecessors")
+
+    rejected = {
+        str(row["state_identity_digest"])
+        for row in mixed["rejected_predecessor_identities"]
+    }
+    if rejected.intersection(states_by_identity):
+        raise StateSelectorAmendmentError(
+            "phase-2 active identities retain a rejected predecessor"
+        )
+    rejected_payloads = [
+        _identity_payload_projection(predecessor_states[identity])
+        for identity in sorted(rejected)
+    ]
+    rejected_snapshot_cores = [
+        _snapshot_core_projection(predecessor_states[identity])
+        for identity in sorted(rejected)
+    ]
+    if any(
+        _identity_payload_projection(state) in rejected_payloads
+        for state in active_states
+    ):
+        raise StateSelectorAmendmentError(
+            "phase-2 re-signed an exact rejected predecessor payload"
+        )
+    retained_scene_ids = {
+        str(row["scene_id"])
+        for row in mixed["retained_predecessor_identities"]
+    }
+    if len(retained_scene_ids) != 37:
+        raise StateSelectorAmendmentError(
+            "phase-2 retained predecessor scene set changed"
+        )
+    rejected_scene_ids = {
+        str(row["scene_id"])
+        for row in mixed["rejected_predecessor_identities"]
+    }
+    replacement_state_ids = {
+        str(row["state_id"]) for row in mixed["replacement_slots"]
+    }
+    if any(
+        str(state["scene_id"]) in rejected_scene_ids
+        and str(state["state_id"]) not in replacement_state_ids
+        for state in active_states
+    ):
+        raise StateSelectorAmendmentError(
+            "phase-2 reused a rejected scene outside its replacement slots"
+        )
+    replacements: list[dict[str, Any]] = []
+    for slot in mixed["replacement_slots"]:
+        state = states_by_id.get(str(slot["state_id"]))
+        if (
+            state is None
+            or state.get("family") != slot["family"]
+            or state.get("stratum") != slot["stratum"]
+            or state.get("split_role") != slot["split_role"]
+            or state.get("state_identity_digest")
+            == slot["predecessor_state_identity_digest"]
+        ):
+            raise StateSelectorAmendmentError(
+                "phase-2 replacement does not fill its exact rejected slot"
+            )
+        if _snapshot_core_projection(state) in rejected_snapshot_cores:
+            raise StateSelectorAmendmentError(
+                "phase-2 replacement reuses an exact rejected predecessor snapshot"
+            )
+        identity = str(state["state_identity_digest"])
+        assignment = assignments.get(identity)
+        if assignment is None or assignment.get("state_id") != slot["state_id"]:
+            raise StateSelectorAmendmentError(
+                "phase-2 replacement is absent from candidate allocation"
+            )
+        replacements.append({
+            "state_identity_digest": identity,
+            "state_id": str(state["state_id"]),
+            "scene_id": str(state["scene_id"]),
+            "family": str(state["family"]),
+            "stratum": str(state["stratum"]),
+            "split_role": str(state["split_role"]),
+            "replaces_predecessor_state_identity_digest": str(
+                slot["predecessor_state_identity_digest"]
+            ),
+            "replaces_predecessor_scene_id": str(slot["predecessor_scene_id"]),
+        })
+    replacements.sort(key=lambda row: row["state_id"])
+    if len(replacements) != 8 or len({row["scene_id"] for row in replacements}) != 8:
+        raise StateSelectorAmendmentError("phase-2 must bind eight distinct replacements")
+
+    preserved_vectors = _phase1_completion_vectors(root=root)
+    expected_source_rows = [
+        _completion_source_row_from_active_state(
+            state,
+            assignment=assignments[str(state["state_identity_digest"])],
+            preserved_vectors=preserved_vectors,
+        )
+        for state in active_states
+        if state.get("stratum") == "completion_enriched"
+    ]
+    expected_source_rows.sort(key=lambda row: row["state_identity_digest"])
+    supplied_source_rows = [dict(row) for row in completion_states]
+    supplied_source_rows.sort(key=lambda row: str(row.get("state_identity_digest", "")))
+    if supplied_source_rows != expected_source_rows:
+        raise StateSelectorAmendmentError(
+            "phase-2 completion rows differ from active identity-owned evidence"
+        )
     checks: list[dict[str, Any]] = []
     seen: set[str] = set()
-    for raw in completion_states:
+    for raw in expected_source_rows:
         state_digest = str(raw.get("state_identity_digest", ""))
         assignment = assignments.get(state_digest)
         if assignment is None or state_digest in seen:
@@ -2313,19 +3371,63 @@ def build_preserved_state_revalidation_receipt(
             "phase-2 requires all 40 allocated completion identities exactly once"
         )
     checks.sort(key=lambda row: row["state_identity_digest"])
-    payload = {
-        key: value for key, value in base.items()
-        if key != "preserved_state_revalidation_receipt_digest"
-    }
-    payload["schema"] = PRESERVED_STATE_REVALIDATION_SCHEMA
-    payload["state_selector_amendment_digest"] = state_selector_amendment_digest()
-    payload.update({
+    family_rows = [
+        {
+            "family": family,
+            "retained_predecessor_state_count": len(rows),
+            "exact_candidate_masks_verified": True,
+            "candidate_outcomes_loaded": False,
+            "states": sorted(rows, key=lambda row: row["state_identity_digest"]),
+        }
+        for family, rows in sorted(retained_by_family.items())
+    ]
+    payload: dict[str, Any] = {
+        "schema": PRESERVED_STATE_REVALIDATION_SCHEMA,
+        "status": "PASS_POST_ALLOCATION_PRE_OUTCOME_STATE_REVALIDATION",
+        "complete": True,
+        "source_repository_commit": source_repository_commit,
+        "successor_selection_digest": successor_selection_digest,
+        "state_selector_amendment_digest": state_selector_amendment_digest(),
+        "state_selector_feasibility_receipt_digest":
+            state_selector_feasibility_receipt_digest,
+        "mixed_precontract_disposition_receipt_digest":
+            mixed_precontract_disposition_receipt_digest,
+        "candidate_allocation_manifest_digest":
+            allocation_manifest["allocation_manifest_digest"],
+        "source_identity_manifest_digest":
+            allocation_manifest["source_identity_manifest_digest"],
+        "candidate_allocator_contract_digest":
+            ALLOCATION.allocation_contract_digest(),
+        "candidate_allocation_amendment_digest":
+            ALLOCATION.allocation_amendment_digest(),
+        "candidate_allocation_post_identity_validation_digest":
+            allocation_manifest["post_identity_pre_outcome_validation"][
+                "post_identity_validation_digest"
+            ],
+        "original_predecessor_state_count": 45,
+        "retained_predecessor_state_count": 37,
+        "rejected_predecessor_state_count": 8,
+        "replacement_state_count": 8,
+        "retained_predecessor_candidate_assignment_count": 37 * 6,
+        "retained_predecessor_candidate_masks": retained_masks,
+        "retained_predecessor_candidate_mask_set_digest": _sha256(retained_masks),
+        "retained_predecessor_family_rows": family_rows,
+        "rejected_predecessor_identity_set_digest": mixed[
+            "rejected_predecessor_identity_set_digest"
+        ],
+        "replacement_identities": replacements,
+        "replacement_identity_set_digest": _sha256(replacements),
         "completion_enriched_state_count": len(checks),
         "completion_exact_allocated_reachability_pass_count": len(checks),
         "completion_exact_allocated_reachability_checks": checks,
         "completion_exact_allocated_reachability_set_digest": _sha256(checks),
         "all_completion_identities_pass_exact_allocated_mask": True,
-    })
+        "candidate_outcomes_loaded": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+    }
     payload["preserved_state_revalidation_receipt_digest"] = _sha256(payload)
     return payload
 
@@ -2334,10 +3436,11 @@ def validate_preserved_state_revalidation_receipt(
     receipt: Mapping[str, Any],
     *,
     allocation_manifest: Mapping[str, Any],
+    active_states: Sequence[Mapping[str, Any]],
     expected_source_commit: str | None = None,
     expected_successor_selection_digest: str | None = None,
     expected_feasibility_receipt_digest: str | None = None,
-    expected_precontract_revalidation_receipt_digest: str | None = None,
+    expected_mixed_precontract_disposition_receipt_digest: str | None = None,
     root: Path = ROOT,
 ) -> None:
     """Validate one generic phase-2 digest over masks and 40 reachability rows."""
@@ -2348,6 +3451,34 @@ def validate_preserved_state_revalidation_receipt(
     observed = payload.pop("preserved_state_revalidation_receipt_digest", None)
     if not _is_digest(observed) or _sha256(payload) != observed:
         raise StateSelectorAmendmentError("phase-2 state receipt self digest failed")
+    expected_keys = {
+        "schema", "status", "complete", "source_repository_commit",
+        "successor_selection_digest", "state_selector_amendment_digest",
+        "state_selector_feasibility_receipt_digest",
+        "mixed_precontract_disposition_receipt_digest",
+        "candidate_allocation_manifest_digest", "source_identity_manifest_digest",
+        "candidate_allocator_contract_digest",
+        "candidate_allocation_amendment_digest",
+        "candidate_allocation_post_identity_validation_digest",
+        "original_predecessor_state_count", "retained_predecessor_state_count",
+        "rejected_predecessor_state_count", "replacement_state_count",
+        "retained_predecessor_candidate_assignment_count",
+        "retained_predecessor_candidate_masks",
+        "retained_predecessor_candidate_mask_set_digest",
+        "retained_predecessor_family_rows",
+        "rejected_predecessor_identity_set_digest", "replacement_identities",
+        "replacement_identity_set_digest", "completion_enriched_state_count",
+        "completion_exact_allocated_reachability_pass_count",
+        "completion_exact_allocated_reachability_checks",
+        "completion_exact_allocated_reachability_set_digest",
+        "all_completion_identities_pass_exact_allocated_mask",
+        "candidate_outcomes_loaded", "branches_attempted", "frames_rendered",
+        "target_latents_encoded", "scorer_training_started",
+    }
+    if set(payload) != expected_keys:
+        raise StateSelectorAmendmentError(
+            "phase-2 state receipt has an unexpected key surface"
+        )
     if (
         payload.get("schema") != PRESERVED_STATE_REVALIDATION_SCHEMA
         or payload.get("status")
@@ -2363,8 +3494,9 @@ def validate_preserved_state_revalidation_receipt(
          expected_successor_selection_digest, "selection"),
         (payload.get("state_selector_feasibility_receipt_digest"),
          expected_feasibility_receipt_digest, "feasibility"),
-        (payload.get("preserved_state_precontract_revalidation_receipt_digest"),
-         expected_precontract_revalidation_receipt_digest, "phase-1"),
+        (payload.get("mixed_precontract_disposition_receipt_digest"),
+         expected_mixed_precontract_disposition_receipt_digest,
+         "mixed disposition"),
     ):
         if expected is not None and value != expected:
             raise StateSelectorAmendmentError(f"phase-2 {label} binding mismatch")
@@ -2373,8 +3505,8 @@ def validate_preserved_state_revalidation_receipt(
     )
     if not isinstance(completion_rows, list):
         raise StateSelectorAmendmentError("phase-2 completion evidence is missing")
-    # Rebuilding is intentionally the validator: it reuses the predecessor's
-    # 45 exact mask checks and recomputes every one of the forty V2 predicates.
+    # Rebuilding reopens the mixed disposition, the live 120 identities, all
+    # 37 retained masks, all eight replacements and all forty V2 predicates.
     source_rows = [
         {
             "state_identity_digest": row["state_identity_digest"],
@@ -2389,14 +3521,15 @@ def validate_preserved_state_revalidation_receipt(
     ]
     expected = build_preserved_state_revalidation_receipt(
         allocation_manifest=allocation_manifest,
+        active_states=active_states,
         completion_states=source_rows,
         source_repository_commit=str(payload["source_repository_commit"]),
         successor_selection_digest=str(payload["successor_selection_digest"]),
         state_selector_feasibility_receipt_digest=str(
             payload["state_selector_feasibility_receipt_digest"]
         ),
-        preserved_state_precontract_revalidation_receipt_digest=str(
-            payload["preserved_state_precontract_revalidation_receipt_digest"]
+        mixed_precontract_disposition_receipt_digest=str(
+            payload["mixed_precontract_disposition_receipt_digest"]
         ),
         root=root,
     )
@@ -2408,8 +3541,49 @@ def validate_preserved_state_revalidation_receipt(
 
 # Outcome-free predecessor helpers whose semantics are unchanged in V2.
 preserved_state_identity_set_digest = PREDECESSOR.preserved_state_identity_set_digest
-load_preserved_state_shards = PREDECESSOR.load_preserved_state_shards
 candidate_mask_digest = PREDECESSOR.candidate_mask_digest
+
+
+def load_preserved_state_shards(
+    root: Path = ROOT,
+) -> dict[str, dict[str, Any]]:
+    """Load the exact three predecessor shards through the V2 custody guard."""
+
+    loaded: dict[str, dict[str, Any]] = {}
+    for expected in PRESERVED_STATE_SHARDS:
+        path = _managed_generated_artifact_path(
+            root / str(expected["path"]), root=root
+        )
+        if (
+            not path.is_file()
+            or path.stat().st_size != int(expected["byte_count"])
+            or _file_sha256(path) != expected["raw_sha256"]
+        ):
+            raise StateSelectorAmendmentError(
+                f"preserved state shard {expected['family']} raw binding failed"
+            )
+        try:
+            shard = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            raise StateSelectorAmendmentError(
+                f"preserved state shard {expected['family']} JSON is invalid"
+            ) from exc
+        observed = shard.get("state_shard_digest")
+        if (
+            observed != expected["state_shard_digest"]
+            or _sha256({
+                key: value for key, value in shard.items()
+                if key != "state_shard_digest"
+            }) != observed
+            or shard.get("complete") is not True
+            or shard.get("family") != expected["family"]
+            or len(shard.get("states", ())) != expected["state_count"]
+        ):
+            raise StateSelectorAmendmentError(
+                f"preserved state shard {expected['family']} content binding failed"
+            )
+        loaded[str(expected["family"])] = shard
+    return loaded
 
 
 _validate_frozen_sources()

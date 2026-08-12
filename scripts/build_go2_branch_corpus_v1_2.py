@@ -245,8 +245,40 @@ LAUNCH_BINDING_KEYS = (
     "clean_source_binding_digest",
     "bound_implementations_digest",
     "scorer_contract_artifact_digest",
+    "mixed_precontract_disposition_receipt_digest",
 )
 ACTIVE_SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
+
+MIXED_ACTIVE_STATE_SHARD_SCHEMA = (
+    "go2_branch_corpus_v1_2_mixed_active_state_shard_v2"
+)
+MIXED_ACTIVE_STATE_SHARD_NAME = (
+    "active_mixed_state_shard_{family}_reachability_v2.json"
+)
+MIXED_REPLACEMENT_TRANSPORT_SCHEMA = (
+    "go2_scorer_fit_mixed_preoutcome_replacement_transport_v2"
+)
+MIXED_REPLACEMENT_SCENE_REQUEST_SCHEMA = (
+    "go2_scorer_fit_mixed_preoutcome_replacement_scene_request_v2"
+)
+MIXED_REPLACEMENT_SCENE_CAPTURE_SCHEMA = (
+    "go2_scorer_fit_mixed_preoutcome_replacement_scene_capture_v2"
+)
+MIXED_REPLACEMENT_SCENE_REQUEST_ROOT = (
+    "mixed_preoutcome_replacement_scene_requests_v2"
+)
+MIXED_REPLACEMENT_SCENE_CAPTURE_ROOT = (
+    "mixed_preoutcome_replacement_scene_captures_v2"
+)
+MIXED_REPLACEMENT_FAILURE_SCHEMA = (
+    "go2_scorer_fit_mixed_preoutcome_replacement_failure_v2"
+)
+MIXED_REPLACEMENT_FAILURE_STATUS = (
+    "FAIL_PREOUTCOME_MIXED_REPLACEMENT_INTERVAL_EXHAUSTED"
+)
+MIXED_REPLACEMENT_FAILURE_NAME = (
+    "mixed_preoutcome_replacement_failure_v2.json"
+)
 
 
 class SmallCompletionJointSearchInfeasible(RuntimeError):
@@ -382,7 +414,8 @@ def _frozen_generated_artifact_path(
 
 
 def _load_pre_identity_allocation_validation() -> dict[str, Any]:
-    path = OUT_ROOT / "scorer_fit" / PRE_IDENTITY_VALIDATION_NAME
+    raw_path = OUT_ROOT / "scorer_fit" / PRE_IDENTITY_VALIDATION_NAME
+    path = _pin_generated_path(raw_path, raw_path)
     if not path.is_file():
         raise RuntimeError(
             "state identity selection is gated on the frozen pre-identity "
@@ -393,10 +426,24 @@ def _load_pre_identity_allocation_validation() -> dict[str, Any]:
     return artifact
 
 
-def _load_issued_scorer_contract() -> dict[str, Any]:
-    if not SCORER_CONTRACT_ARTIFACT_PATH.is_file():
+def _issued_scorer_contract_path() -> Path:
+    """Pin the exact registered utility-scorer artifact root.
+
+    The corpus and utility-scorer generated roots are two distinct managed
+    aliases.  Callers must name this exact artifact and retain the returned
+    canonical path for every subsequent byte operation so an alias swap cannot
+    redirect a later read or digest.
+    """
+
+    return _pin_generated_path(
+        SCORER_CONTRACT_ARTIFACT_PATH, SCORER_CONTRACT_ARTIFACT_PATH,
+        generated_root=SCORER_CONTRACT_ARTIFACT_PATH.parent)
+
+
+def _load_issued_scorer_contract_at_path(path: Path) -> dict[str, Any]:
+    if not path.is_file() or path.is_symlink():
         raise RuntimeError("clean-source scorer contract must be issued before preflight")
-    artifact = json.loads(SCORER_CONTRACT_ARTIFACT_PATH.read_text())
+    artifact = json.loads(path.read_text())
     _verify_self_digest(artifact, "contract_artifact_digest", "scorer contract artifact")
     if (artifact.get("complete") is not True
             or artifact.get("scorer_contract_v1_2_digest")
@@ -411,9 +458,16 @@ def _load_issued_scorer_contract() -> dict[str, Any]:
     return artifact
 
 
+def _load_issued_scorer_contract() -> dict[str, Any]:
+    return _load_issued_scorer_contract_at_path(
+        _issued_scorer_contract_path())
+
+
 def _build_clean_source_launch_receipt(
         pre_identity: dict[str, Any]) -> dict[str, Any]:
-    scorer_artifact = _load_issued_scorer_contract()
+    scorer_artifact_path = _issued_scorer_contract_path()
+    scorer_artifact = _load_issued_scorer_contract_at_path(
+        scorer_artifact_path)
     source = scorer_artifact["clean_source_binding"]
     selector_receipts = _load_state_selector_preconditions(
         source_commit=str(source["source_repository_commit"]),
@@ -424,9 +478,9 @@ def _build_clean_source_launch_receipt(
     if (scorer_artifact.get("state_selector_feasibility_receipt_digest")
             != selector_receipts["state_selector_feasibility_receipt_digest"]
             or scorer_artifact.get(
-                "preserved_state_precontract_revalidation_receipt_digest")
+                "mixed_precontract_disposition_receipt_digest")
             != selector_receipts[
-                "preserved_state_precontract_revalidation_receipt_digest"]):
+                "mixed_precontract_disposition_receipt_digest"]):
         raise RuntimeError(
             "issued scorer contract differs from active selector receipts"
         )
@@ -443,7 +497,7 @@ def _build_clean_source_launch_receipt(
         "scorer_contract_artifact_digest":
             scorer_artifact["contract_artifact_digest"],
         "scorer_contract_artifact_sha256":
-            file_sha256(SCORER_CONTRACT_ARTIFACT_PATH),
+            file_sha256(scorer_artifact_path),
         "candidate_allocation_amendment_digest":
             ALLOC.allocation_amendment_digest(),
         "invalid_scorer_identity_exclusion_digest":
@@ -459,7 +513,8 @@ def _build_clean_source_launch_receipt(
 
 
 def _load_clean_source_launch_receipt() -> dict[str, Any]:
-    path = OUT_ROOT / "scorer_fit" / LAUNCH_RECEIPT_NAME
+    raw_path = OUT_ROOT / "scorer_fit" / LAUNCH_RECEIPT_NAME
+    path = _pin_generated_path(raw_path, raw_path)
     if not path.is_file():
         raise RuntimeError("state identity selection requires a clean-source launch receipt")
     receipt = json.loads(path.read_text())
@@ -545,21 +600,29 @@ def _load_state_selector_preconditions(
         ) -> dict[str, str]:
     """Load and validate the outcome-free pre-identity feasibility gate."""
 
-    feasibility_path = ROOT / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH
-    precontract_path = (
+    raw_feasibility_path = (
+        ROOT / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH)
+    raw_disposition_path = (
         ROOT
-        / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH
+        / STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH
     )
+    feasibility_path = _pin_generated_path(
+        raw_feasibility_path, raw_feasibility_path)
+    disposition_path = _pin_generated_path(
+        raw_disposition_path, raw_disposition_path)
     if not feasibility_path.is_file():
         raise RuntimeError("state-selector all-family feasibility receipt is missing")
-    if not precontract_path.is_file():
+    if not disposition_path.is_file():
         raise RuntimeError(
-            "preserved-state precontract revalidation receipt is missing"
+            "preserved-state mixed precontract disposition is missing"
         )
-    feasibility = json.loads(feasibility_path.read_text())
-    precontract = json.loads(precontract_path.read_text())
-    STATE_SELECTOR.validate_state_selector_feasibility_receipt(
-        feasibility,
+    feasibility = STATE_SELECTOR.validate_frozen_reachability_feasibility_pass(
+        root=ROOT)
+    if json.loads(feasibility_path.read_text()) != feasibility:
+        raise RuntimeError("active feasibility bytes differ from frozen PASS")
+    disposition = json.loads(disposition_path.read_text())
+    STATE_SELECTOR.validate_preserved_state_mixed_precontract_disposition_receipt(
+        disposition,
         expected_source_commit=source_commit,
         expected_successor_selection_digest=successor_selection_digest,
         expected_clean_source_binding_digest=clean_source_binding_digest,
@@ -569,19 +632,10 @@ def _load_state_selector_preconditions(
     feasibility_digest = str(
         feasibility["state_selector_feasibility_receipt_digest"]
     )
-    STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
-        precontract,
-        expected_source_commit=source_commit,
-        expected_successor_selection_digest=successor_selection_digest,
-        expected_feasibility_receipt_digest=feasibility_digest,
-        root=ROOT,
-    )
     return {
         "state_selector_feasibility_receipt_digest": feasibility_digest,
-        "preserved_state_precontract_revalidation_receipt_digest": str(
-            precontract[
-                "preserved_state_precontract_revalidation_receipt_digest"
-            ]
+        "mixed_precontract_disposition_receipt_digest": str(
+            disposition["mixed_precontract_disposition_receipt_digest"]
         ),
     }
 
@@ -604,6 +658,173 @@ def _state_identity_matches_active_or_preserved(state: dict[str, Any]) -> bool:
     if preserved is not None:
         return _state_identity_payload(state) == _state_identity_payload(preserved)
     return _state_identity_digest(state) == digest
+
+
+def _load_active_mixed_disposition() -> dict[str, Any]:
+    """Reopen the active 37/8 authority under the current clean source."""
+
+    raw_path = (
+        ROOT
+        / STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH
+    )
+    path = _pin_generated_path(raw_path, raw_path)
+    if not path.is_file() or path.is_symlink():
+        raise RuntimeError("active mixed precontract disposition is missing")
+    payload = json.loads(path.read_text())
+    source = clean_source_binding()
+    STATE_SELECTOR.validate_preserved_state_mixed_precontract_disposition_receipt(
+        payload,
+        expected_source_commit=str(source["source_repository_commit"]),
+        expected_successor_selection_digest=selection_digest(),
+        expected_clean_source_binding_digest=canonical_digest(source),
+        expected_bound_implementations_digest=str(
+            source["bound_implementations_digest"]),
+        root=ROOT,
+    )
+    return payload
+
+
+def _mixed_disposition_sets() -> tuple[
+        dict[str, dict[str, Any]], dict[str, dict[str, Any]],
+        dict[str, dict[str, Any]]]:
+    receipt = _load_active_mixed_disposition()
+    retained = {
+        str(row["state_identity_digest"]): dict(row)
+        for row in receipt["retained_predecessor_identities"]
+    }
+    rejected = {
+        str(row["state_identity_digest"]): dict(row)
+        for row in receipt["rejected_predecessor_identities"]
+    }
+    slots = {str(row["state_id"]): dict(row)
+             for row in receipt["replacement_slots"]}
+    if len(retained) != 37 or len(rejected) != 8 or len(slots) != 8:
+        raise RuntimeError("active mixed disposition count changed")
+    return retained, rejected, slots
+
+
+def _completion_state_ordinal(state_id: str) -> int:
+    prefix, separator, ordinal = str(state_id).rpartition("-")
+    if (not separator or not prefix.endswith("-completion_enriched")
+            or len(ordinal) != 2 or not ordinal.isdigit()):
+        raise RuntimeError(f"invalid completion state slot {state_id!r}")
+    value = int(ordinal)
+    if not 0 <= value < 5:
+        raise RuntimeError(f"completion state slot is out of range: {state_id!r}")
+    return value
+
+
+def _mixed_family_replacement_plan(family: str) -> dict[str, Any]:
+    """Derive exact vacant ordinal intervals from retained lexical anchors."""
+
+    preserved = STATE_SELECTOR.load_preserved_state_shards(ROOT)
+    if family not in preserved:
+        raise RuntimeError(f"family {family!r} has no predecessor state shard")
+    retained_rows, rejected_rows, slot_rows = _mixed_disposition_sets()
+    source_states = {
+        str(state["state_identity_digest"]): dict(state)
+        for state in preserved[family]["states"]
+    }
+    retained_states = [
+        source_states[identity] for identity in retained_rows
+        if identity in source_states
+    ]
+    family_slots = sorted(
+        (dict(row) for row in slot_rows.values() if row["family"] == family),
+        key=lambda row: _completion_state_ordinal(str(row["state_id"])),
+    )
+    family_rejected = {
+        identity: row for identity, row in rejected_rows.items()
+        if row["family"] == family
+    }
+    if not family_slots:
+        raise RuntimeError(f"family {family!r} has no authorized replacement slots")
+    completion_by_ordinal = {
+        _completion_state_ordinal(str(state["state_id"])): state
+        for state in retained_states
+        if state["stratum"] == "completion_enriched"
+    }
+    if len(completion_by_ordinal) + len(family_slots) != 5:
+        raise RuntimeError(
+            f"family {family!r} replacement and retained completion slots do not total five"
+        )
+    retained_anchor_rows = [{
+        "ordinal": ordinal,
+        "state_id": str(state["state_id"]),
+        "scene_id": str(state["scene_id"]),
+        "state_identity_digest": str(state["state_identity_digest"]),
+    } for ordinal, state in sorted(completion_by_ordinal.items())]
+    anchor_scene_ids = [row["scene_id"] for row in retained_anchor_rows]
+    if anchor_scene_ids != sorted(anchor_scene_ids):
+        raise RuntimeError(
+            f"family {family!r} retained completion anchors are not lexical"
+        )
+
+    groups: list[dict[str, Any]] = []
+    vacant_ordinals = sorted(
+        _completion_state_ordinal(str(row["state_id"])) for row in family_slots
+    )
+    for _unused, ordinal_group in itertools.groupby(
+            enumerate(vacant_ordinals), key=lambda pair: pair[1] - pair[0]):
+        ordinals = [pair[1] for pair in ordinal_group]
+        lower_ordinals = [value for value in completion_by_ordinal
+                          if value < ordinals[0]]
+        upper_ordinals = [value for value in completion_by_ordinal
+                          if value > ordinals[-1]]
+        lower_scene = (None if not lower_ordinals else str(
+            completion_by_ordinal[max(lower_ordinals)]["scene_id"]))
+        upper_scene = (None if not upper_ordinals else str(
+            completion_by_ordinal[min(upper_ordinals)]["scene_id"]))
+        slots_by_ordinal = {
+            _completion_state_ordinal(str(row["state_id"])): row
+            for row in family_slots
+        }
+        groups.append({
+            "lower_scene_id_exclusive": lower_scene,
+            "upper_scene_id_exclusive": upper_scene,
+            "vacant_ordinals": ordinals,
+            "replacement_slots": [slots_by_ordinal[value] for value in ordinals],
+        })
+    if sum(len(row["replacement_slots"]) for row in groups) != len(family_slots):
+        raise RuntimeError("mixed replacement interval grouping lost a slot")
+    return {
+        "family": family,
+        "retained_states": sorted(retained_states, key=lambda row: row["state_id"]),
+        "retained_state_count": len(retained_states),
+        "retained_scene_ids": sorted(str(row["scene_id"])
+                                     for row in retained_states),
+        "retained_anchor_rows": retained_anchor_rows,
+        "rejected_identity_digests": sorted(family_rejected),
+        "rejected_identity_rows": sorted(
+            family_rejected.values(), key=lambda row: row["state_id"]),
+        "replacement_slots": family_slots,
+        "interval_groups": groups,
+    }
+
+
+def _replacement_reuses_rejected_snapshot(
+        state: dict[str, Any], slot: dict[str, Any]) -> bool:
+    predecessor = _preserved_states_by_digest().get(str(
+        slot["predecessor_state_identity_digest"]))
+    if predecessor is None:
+        raise RuntimeError("replacement slot predecessor identity is unknown")
+    snapshot_keys = (
+        "scene_id", "episode_cluster_id", "episode_id", "source_step",
+        "warmup_blocks", "cell_id", "boundary",
+    )
+    return all(state.get(key) == predecessor.get(key) for key in snapshot_keys)
+
+
+def _replacement_reuses_any_rejected_snapshot(
+        state: dict[str, Any], rejected_identity_digests: Sequence[str]) -> bool:
+    preserved = _preserved_states_by_digest()
+    missing = [identity for identity in rejected_identity_digests
+               if identity not in preserved]
+    if missing:
+        raise RuntimeError("replacement request contains an unknown rejected identity")
+    return any(_replacement_reuses_rejected_snapshot(
+        state, {"predecessor_state_identity_digest": identity})
+        for identity in rejected_identity_digests)
 
 
 def _preserve_invalid(path: Path, out: Path, reason: str) -> Path:
@@ -1168,9 +1389,8 @@ def scene_pool(pool_name: str) -> tuple[dict[str, list[Path]], dict[str, Any]]:
     scorer_binding: dict[str, Any] | None = None
     if pool_name == "final_eval":
         scorer_path = OUT_ROOT / "scorer_fit/state_manifest.json"
-        scorer_manifest = json.loads(scorer_path.read_text())
-        _verify_self_digest(scorer_manifest, "state_manifest_digest",
-                            "scorer-fit state manifest")
+        scorer_manifest = load_active_state_manifest_for_consumption(
+            scorer_path)
         if (scorer_manifest.get("pool") != "scorer_fit"
                 or len(scorer_manifest.get("states", [])) != 120
                 or scorer_manifest.get("scorer_contract_v1_2_digest")
@@ -3599,7 +3819,15 @@ def _reconstruct_terminal_phase1_failure(
 
 def stage_preserved_state_precontract_revalidation(
         args: argparse.Namespace) -> int:
-    """Exactly redrive the valid paused 45 identities without branch outcomes."""
+    """Carry the frozen 45-check FAIL into the active 37/8 disposition.
+
+    The exact failed aggregate and all 45 atomic redrive shards were produced
+    under their frozen clean source and are immutable evidence.  This successor
+    stage performs no simulator work: it reopens that terminal byte-for-byte,
+    attests that scientific outcome surfaces are still absent, and issues the
+    distinct active authority for 37 retained identities and eight vacant
+    replacement slots.
+    """
 
     if args.pool != "scorer_fit" or args.family is not None or args.stratum is not None:
         raise RuntimeError(
@@ -3607,161 +3835,84 @@ def stage_preserved_state_precontract_revalidation(
         )
     if args.backend != "cpu":
         raise RuntimeError("preserved-state revalidation requires the CPU backend")
+    if (getattr(args, "preserved_state_identity_digest", None) is not None
+            or getattr(args, "phase1_outcome_surface_attestation_digest", None)
+            is not None):
+        raise RuntimeError(
+            "the frozen 45-state terminal may not be redriven under successor source"
+        )
     STATE_SELECTOR.validate_authority_artifacts()
     source = clean_source_binding()
     if source.get("source_repository_clean") is not True:
-        raise RuntimeError("preserved-state revalidation requires clean source")
+        raise RuntimeError("mixed precontract disposition requires clean source")
     successor_digest = selection_digest()
-    feasibility_path = ROOT / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH
-    if not feasibility_path.is_file():
-        raise RuntimeError("selector feasibility must complete before revalidation")
-    feasibility = json.loads(feasibility_path.read_text())
-    STATE_SELECTOR.validate_state_selector_feasibility_receipt(
-        feasibility,
-        expected_source_commit=str(source["source_repository_commit"]),
-        expected_successor_selection_digest=successor_digest,
-        expected_clean_source_binding_digest=canonical_digest(source),
-        expected_bound_implementations_digest=
-            str(source["bound_implementations_digest"]),
-        root=ROOT,
-    )
-    expected_states = _phase1_expected_states()
-    worker_identity = getattr(args, "preserved_state_identity_digest", None)
-    worker_attestation_digest = getattr(
-        args, "phase1_outcome_surface_attestation_digest", None)
-    if worker_identity is not None:
-        if not _is_sha256(worker_attestation_digest):
-            raise RuntimeError(
-                "phase-1 worker requires its parent absence-attestation digest"
-            )
-        matches = [
-            (expected_shard, entry)
-            for expected_shard, entry in expected_states
-            if entry["state_identity_digest"] == worker_identity
-        ]
-        if len(matches) != 1:
-            raise RuntimeError("phase-1 worker identity is unknown or ambiguous")
-        expected_shard, entry = matches[0]
-        payload = _execute_phase1_state_check_worker(
-            entry=entry, expected_shard=expected_shard, source=source,
-            successor_digest=successor_digest,
-            feasibility_digest=feasibility[
-                "state_selector_feasibility_receipt_digest"],
-            outcome_surface_attestation_digest=worker_attestation_digest,
-            backend=args.backend)
-        print(json.dumps({
-            "state_id": payload["state_id"],
-            "state_identity_digest": payload["state_identity_digest"],
-            "state_check_shard_digest": payload["state_check_shard_digest"],
-            "pass": payload["state_check"]["failure_reason"] is None,
-        }, indent=2, sort_keys=True))
-        return 0 if payload["state_check"]["failure_reason"] is None else 1
-    if worker_attestation_digest is not None:
-        raise RuntimeError(
-            "phase-1 attestation digest is an internal worker argument only"
-        )
     out = OUT_ROOT / "scorer_fit"
-    path = (
-        ROOT
-        / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH
+    raw_frozen_failure_path = (
+        ROOT / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH
     )
-    if path.parent != out:
-        raise RuntimeError("precontract revalidation receipt escaped scorer-fit pool")
+    raw_path = (
+        ROOT
+        / STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH
+    )
+    if raw_path.parent != out:
+        raise RuntimeError("mixed disposition receipt escaped scorer-fit pool")
+    frozen_failure_path = _pin_generated_path(
+        raw_frozen_failure_path, raw_frozen_failure_path)
+    path = _pin_generated_path(raw_path, raw_path)
+    # These validators reopen the historical feasibility PASS, failed aggregate,
+    # all 45 atomic check shards, and their exact predecessor identity shards.
+    STATE_SELECTOR.validate_frozen_reachability_feasibility_pass(root=ROOT)
+    STATE_SELECTOR.validate_frozen_preserved_precontract_failure(root=ROOT)
+    frozen_binding = STATE_SELECTOR.FROZEN_PRESERVED_PRECONTRACT_FAILURE
+    if (not frozen_failure_path.is_file()
+            or file_sha256(frozen_failure_path) != frozen_binding["raw_sha256"]
+            or frozen_failure_path.stat().st_size != frozen_binding["byte_count"]):
+        raise RuntimeError("frozen failed precontract receipt bytes changed")
     if path.is_file():
         existing = json.loads(path.read_text())
-        if existing.get("status") == "FAIL_PRECONTRACT_IDENTITY_REVALIDATION":
-            reconstructed = _reconstruct_terminal_phase1_failure(
-                receipt=existing,
-                expected_states=expected_states,
-                source=source,
-                successor_digest=successor_digest,
-                feasibility_digest=feasibility[
-                    "state_selector_feasibility_receipt_digest"],
-            )
-            print(json.dumps(reconstructed, indent=2, sort_keys=True))
-            return 1
-        try:
-            STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
-                existing,
-                expected_source_commit=str(source["source_repository_commit"]),
-                expected_successor_selection_digest=successor_digest,
-                expected_feasibility_receipt_digest=feasibility[
-                    "state_selector_feasibility_receipt_digest"],
-                root=ROOT,
-            )
-        except Exception:
-            if _outcome_generation_started(out):
-                raise RuntimeError(
-                    "invalid precontract receipt exists after outcomes")
-            _preserve_invalid(path, out, "precontract-revalidation-invalid")
-        else:
-            print(json.dumps(existing, indent=2, sort_keys=True))
-            return 0
+        STATE_SELECTOR.validate_preserved_state_mixed_precontract_disposition_receipt(
+            existing,
+            expected_source_commit=str(source["source_repository_commit"]),
+            expected_successor_selection_digest=successor_digest,
+            expected_clean_source_binding_digest=canonical_digest(source),
+            expected_bound_implementations_digest=str(
+                source["bound_implementations_digest"]),
+            root=ROOT,
+        )
+        print(json.dumps(existing, indent=2, sort_keys=True))
+        return 0
 
     outcome_surface_absence = _phase1_outcome_surface_absence_attestation()
     if outcome_surface_absence["all_forbidden_artifacts_absent"] is not True:
         present = _phase1_present_outcome_paths(outcome_surface_absence)
         raise RuntimeError(
-            "phase-1 revalidation found a pre-existing scientific outcome "
-            f"surface before redrive: {present[:20]}"
+            "mixed precontract disposition found a pre-existing scientific "
+            f"outcome surface: {present[:20]}"
         )
     STATE_SELECTOR.validate_phase1_outcome_surface_absence_attestation(
         outcome_surface_absence)
-
-    feasibility_digest = str(
-        feasibility["state_selector_feasibility_receipt_digest"])
-    attestation_digest = str(outcome_surface_absence["attestation_digest"])
-    shard_payloads: list[dict[str, Any]] = []
-    for expected_shard, entry in expected_states:
-        state_digest = str(entry["state_identity_digest"])
-        shard_path = _phase1_state_check_shard_path(state_digest)
-        payload = _load_valid_phase1_state_check_shard(
-            path=shard_path, entry=entry, expected_shard=expected_shard,
-            source=source, successor_digest=successor_digest,
-            feasibility_digest=feasibility_digest,
-            outcome_surface_attestation_digest=attestation_digest)
-        if payload is None:
-            return_code = _run_phase1_state_subprocess(
-                args, state_identity_digest=state_digest,
-                outcome_surface_attestation_digest=attestation_digest)
-            payload = _load_valid_phase1_state_check_shard(
-                path=shard_path, entry=entry, expected_shard=expected_shard,
-                source=source, successor_digest=successor_digest,
-                feasibility_digest=feasibility_digest,
-                outcome_surface_attestation_digest=attestation_digest)
-            if payload is None:
-                raise RuntimeError(
-                    f"phase-1 worker {state_digest} exited {return_code} "
-                    "without a valid durable state-check shard"
-                )
-            if return_code != 0:
-                print(
-                    f"[recovery] phase-1 worker {state_digest[:12]} exited "
-                    f"{return_code} after its valid atomic shard; retaining shard",
-                    flush=True)
-        shard_payloads.append(payload)
-
-    payload = _build_phase1_aggregate_receipt(
-        shard_payloads=shard_payloads,
-        expected_states=expected_states,
-        source=source,
-        successor_digest=successor_digest,
-        feasibility_digest=feasibility_digest,
-        outcome_surface_absence=outcome_surface_absence,
-    )
-    passed = payload["status"] == "PASS_PRECONTRACT_IDENTITY_REVALIDATION"
-    atomic_json(path, payload)
-    if passed:
-        STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
-            payload,
-            expected_source_commit=str(source["source_repository_commit"]),
-            expected_successor_selection_digest=successor_digest,
-            expected_feasibility_receipt_digest=feasibility[
-                "state_selector_feasibility_receipt_digest"],
+    payload = \
+        STATE_SELECTOR.build_preserved_state_mixed_precontract_disposition_receipt(
+            source_repository_commit=str(source["source_repository_commit"]),
+            clean_source_binding_digest=canonical_digest(source),
+            bound_implementations_digest=str(
+                source["bound_implementations_digest"]),
+            successor_selection_digest=successor_digest,
+            outcome_surface_absence_attestation=outcome_surface_absence,
             root=ROOT,
         )
+    atomic_json(path, payload)
+    STATE_SELECTOR.validate_preserved_state_mixed_precontract_disposition_receipt(
+        payload,
+        expected_source_commit=str(source["source_repository_commit"]),
+        expected_successor_selection_digest=successor_digest,
+        expected_clean_source_binding_digest=canonical_digest(source),
+        expected_bound_implementations_digest=str(
+            source["bound_implementations_digest"]),
+        root=ROOT,
+    )
     print(json.dumps(payload, indent=2, sort_keys=True))
-    return 0 if passed else 1
+    return 0
 
 
 def _state_shard_bindings(args: argparse.Namespace, exclusion: dict[str, Any],
@@ -3791,6 +3942,8 @@ def _state_shard_bindings(args: argparse.Namespace, exclusion: dict[str, Any],
         "bound_implementations_digest": launch["bound_implementations_digest"],
         "scorer_contract_artifact_digest":
             launch["scorer_contract_artifact_digest"],
+        "mixed_precontract_disposition_receipt_digest":
+            launch["mixed_precontract_disposition_receipt_digest"],
         "candidate_bank_digest": V1.bank_digest(),
         "progress_contract_digest": progress_digest(),
         "safety_contract_digest": safety_digest(),
@@ -3811,28 +3964,11 @@ def _state_shard_bindings(args: argparse.Namespace, exclusion: dict[str, Any],
 
 
 def _phase1_completion_rotation_vectors() -> dict[str, dict[str, Any]]:
-    """Return the 15 preserved completion vectors from the active phase-1 gate."""
+    """Return seven retained completion vectors from the frozen 45-check FAIL."""
 
-    path = ROOT / (
-        STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH)
-    if not path.is_file():
-        raise RuntimeError("small-last joint search requires the phase-1 receipt")
-    receipt = json.loads(path.read_text())
-    launch = _load_clean_source_launch_receipt()
-    preconditions = _load_state_selector_preconditions(
-        source_commit=str(launch["source_repository_commit"]),
-        successor_selection_digest=selection_digest(),
-        clean_source_binding_digest=str(launch["clean_source_binding_digest"]),
-        bound_implementations_digest=str(launch["bound_implementations_digest"]))
-    if (receipt.get(
-            "preserved_state_precontract_revalidation_receipt_digest")
-            != launch["preserved_state_precontract_revalidation_receipt_digest"]
-            or preconditions[
-                "preserved_state_precontract_revalidation_receipt_digest"]
-            != launch["preserved_state_precontract_revalidation_receipt_digest"]
-            or preconditions["state_selector_feasibility_receipt_digest"]
-            != launch["state_selector_feasibility_receipt_digest"]):
-        raise RuntimeError("phase-1/feasibility launch binding changed")
+    receipt = STATE_SELECTOR.validate_frozen_preserved_precontract_failure(
+        root=ROOT)
+    _load_active_mixed_disposition()
     vectors: dict[str, dict[str, Any]] = {}
     for shard in receipt.get("shards", []):
         for check in shard.get("state_checks", []):
@@ -3843,8 +3979,13 @@ def _phase1_completion_rotation_vectors() -> dict[str, dict[str, Any]]:
             if digest in vectors:
                 raise RuntimeError("phase-1 repeats a completion identity")
             vectors[digest] = dict(vector)
-    if len(vectors) != 15:
-        raise RuntimeError("phase-1 does not contain 15 completion vectors")
+    retained, _rejected, _slots = _mixed_disposition_sets()
+    expected = {
+        identity for identity, row in retained.items()
+        if row["stratum"] == "completion_enriched"
+    }
+    if len(vectors) != 7 or set(vectors) != expected:
+        raise RuntimeError("frozen phase-1 does not contain seven retained vectors")
     return vectors
 
 
@@ -4050,20 +4191,16 @@ def _cursor_restricted_completion_rows(
 def _small_completion_candidates_from_feasibility(
         *, out: Path, excluded_scene_ids: set[str],
         resolver_cursor_scene_id: str) -> list[dict[str, Any]]:
-    path = out / REACHABILITY_FEASIBILITY_RECEIPT_NAME
+    raw_path = out / REACHABILITY_FEASIBILITY_RECEIPT_NAME
+    path = _pin_generated_path(raw_path, raw_path)
     if not path.is_file():
         raise RuntimeError("small identity resolution requires reachability receipt")
     receipt = json.loads(path.read_text())
     launch = _load_clean_source_launch_receipt()
-    STATE_SELECTOR.validate_state_selector_feasibility_receipt(
-        receipt,
-        expected_source_commit=str(launch["source_repository_commit"]),
-        expected_successor_selection_digest=selection_digest(),
-        expected_clean_source_binding_digest=str(
-            launch["clean_source_binding_digest"]),
-        expected_bound_implementations_digest=str(
-            launch["bound_implementations_digest"]),
+    frozen = STATE_SELECTOR.validate_frozen_reachability_feasibility_pass(
         root=ROOT)
+    if receipt != frozen:
+        raise RuntimeError("active reachability feasibility differs from frozen PASS")
     if receipt.get("state_selector_feasibility_receipt_digest") != launch[
             "state_selector_feasibility_receipt_digest"]:
         raise RuntimeError("reachability feasibility differs from launch binding")
@@ -4160,7 +4297,8 @@ def _issue_small_completion_search_failure(
     payload["small_completion_joint_search_failure_digest"] = \
         canonical_digest(payload)
     _validate_small_completion_search_failure_static(payload, launch=launch)
-    path = out / SMALL_COMPLETION_SEARCH_FAILURE_NAME
+    raw_path = out / SMALL_COMPLETION_SEARCH_FAILURE_NAME
+    path = _pin_generated_path(raw_path, raw_path)
     if path.exists():
         if not path.is_file():
             raise RuntimeError("small completion failure path is not a file")
@@ -4190,6 +4328,424 @@ def _state_resolution_capture_path(
         raise RuntimeError("state-resolution capture identity is invalid")
     return out / STATE_RESOLUTION_SCENE_CAPTURE_ROOT / family / \
         f"{request_digest}.json"
+
+
+def _mixed_replacement_request_path(
+        out: Path, family: str, request_digest: str) -> Path:
+    if not _is_sha256(request_digest) or family not in {
+            row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}:
+        raise RuntimeError("mixed replacement request identity is invalid")
+    return out / MIXED_REPLACEMENT_SCENE_REQUEST_ROOT / family / \
+        f"{request_digest}.json"
+
+
+def _mixed_replacement_capture_path(
+        out: Path, family: str, request_digest: str) -> Path:
+    if not _is_sha256(request_digest) or family not in {
+            row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}:
+        raise RuntimeError("mixed replacement capture identity is invalid")
+    return out / MIXED_REPLACEMENT_SCENE_CAPTURE_ROOT / family / \
+        f"{request_digest}.json"
+
+
+def _pin_generated_path(
+        raw_path: Path, expected_raw_path: Path, *,
+        generated_root: Path | None = None) -> Path:
+    """Pin one managed generated path and prove its exact logical identity."""
+
+    pinned = _frozen_generated_artifact_path(
+        raw_path, generated_root=generated_root)
+    expected = _frozen_generated_artifact_path(
+        expected_raw_path, generated_root=generated_root)
+    if pinned != expected:
+        raise RuntimeError("managed generated artifact path identity changed")
+    return pinned
+
+
+def _scene_in_open_interval(
+        scene_id: str, *, lower: str | None, upper: str | None) -> bool:
+    return bool((lower is None or scene_id > lower)
+                and (upper is None or scene_id < upper))
+
+
+def _mixed_replacement_candidate_scenes(
+        *, scenes: Sequence[Path], interval: dict[str, Any],
+        retained_scene_ids: set[str]) -> list[tuple[int, Path]]:
+    lower = interval["lower_scene_id_exclusive"]
+    upper = interval["upper_scene_id_exclusive"]
+    return [
+        (ordinal, scene_dir)
+        for ordinal, scene_dir in enumerate(scenes)
+        if (scene_dir.name not in retained_scene_ids
+            and _scene_in_open_interval(
+                scene_dir.name, lower=lower, upper=upper))
+    ]
+
+
+def _build_mixed_replacement_scene_request(
+        *, args: argparse.Namespace, out: Path, scene_dir: Path,
+        scene_ordinal: int, interval: dict[str, Any], slot: dict[str, Any],
+        accepted_scene_ids_before: Sequence[str], exclusion: dict[str, Any],
+        family_allow_list: Sequence[str], persist: bool = True) -> dict[str, Any]:
+    family = str(args.family)
+    plan = _mixed_family_replacement_plan(family)
+    manifest_path = scene_dir / "manifest.json"
+    payload = {
+        "schema": MIXED_REPLACEMENT_SCENE_REQUEST_SCHEMA,
+        "status": STATUS,
+        "complete": True,
+        "binding_receipt": False,
+        "pool": "scorer_fit",
+        "family": family,
+        "backend": str(args.backend),
+        "scene_ordinal": int(scene_ordinal),
+        "scene": {
+            "scene_id": str(scene_dir.name),
+            "scene_dir": str(scene_dir.resolve()),
+            "scene_manifest_sha256": file_sha256(manifest_path),
+            "scene_manifest_byte_count": manifest_path.stat().st_size,
+            "split": str(scene_dir.parent.parent.name),
+            "drive_seed": int(V1._drive_seed(scene_dir.name)),
+        },
+        "replacement_slot": dict(slot),
+        "anchor_interval": {
+            "lower_scene_id_exclusive": interval[
+                "lower_scene_id_exclusive"],
+            "upper_scene_id_exclusive": interval[
+                "upper_scene_id_exclusive"],
+            "vacant_ordinals": list(interval["vacant_ordinals"]),
+        },
+        "accepted_scene_ids_before": list(accepted_scene_ids_before),
+        "retained_scene_ids_digest": canonical_digest(
+            plan["retained_scene_ids"]),
+        "rejected_identity_digests": list(plan["rejected_identity_digests"]),
+        "rejected_identity_set_digest": canonical_digest(
+            plan["rejected_identity_digests"]),
+        "family_replacement_plan_digest": canonical_digest(plan),
+        "warmup_blocks_min": int(WARMUP_BLOCKS_MIN),
+        "warmup_blocks_max": int(WARMUP_BLOCKS_MAX),
+        "state_shard_bindings": _state_shard_bindings(
+            args, exclusion, list(family_allow_list)),
+        "selection_semantics": (
+            "completion-only; lexical scene order within the retained-anchor "
+            "interval; ascending blocks; first V2-eligible identity distinct "
+            "from every rejected predecessor digest"
+        ),
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+        "predictor_checkpoints_opened": 0,
+    }
+    payload["mixed_replacement_scene_request_digest"] = canonical_digest(payload)
+    raw_path = _mixed_replacement_request_path(
+        out, family, payload["mixed_replacement_scene_request_digest"])
+    path = _pin_generated_path(raw_path, raw_path)
+    if not persist:
+        return payload
+    if path.is_file():
+        if json.loads(path.read_text()) != payload:
+            raise RuntimeError("mixed replacement request digest collision")
+    elif path.exists():
+        raise RuntimeError("mixed replacement request path is not a file")
+    else:
+        atomic_json(path, payload)
+    return payload
+
+
+def _validate_mixed_replacement_scene_request(
+        request: dict[str, Any], *, args: argparse.Namespace, out: Path,
+        pool: dict[str, list[Path]], exclusion: dict[str, Any]) -> None:
+    _verify_self_digest(
+        request, "mixed_replacement_scene_request_digest",
+        "mixed replacement scene request")
+    expected_keys = {
+        "schema", "status", "complete", "binding_receipt", "pool", "family",
+        "backend", "scene_ordinal", "scene", "replacement_slot",
+        "anchor_interval", "accepted_scene_ids_before",
+        "retained_scene_ids_digest", "rejected_identity_digests",
+        "rejected_identity_set_digest", "family_replacement_plan_digest",
+        "warmup_blocks_min", "warmup_blocks_max", "state_shard_bindings",
+        "selection_semantics", "candidate_outcomes_loaded",
+        "branch_identities_created", "branches_attempted", "frames_rendered",
+        "target_latents_encoded", "scorer_training_started",
+        "predictor_checkpoints_opened", "mixed_replacement_scene_request_digest",
+    }
+    family = str(args.family)
+    plan = _mixed_family_replacement_plan(family)
+    scenes = pool.get(family, [])
+    ordinal = request.get("scene_ordinal")
+    if (not isinstance(ordinal, int) or isinstance(ordinal, bool)
+            or not 0 <= ordinal < len(scenes)):
+        raise RuntimeError("mixed replacement scene ordinal is invalid")
+    scene_dir = scenes[ordinal]
+    manifest_path = scene_dir / "manifest.json"
+    expected_scene = {
+        "scene_id": scene_dir.name,
+        "scene_dir": str(scene_dir.resolve()),
+        "scene_manifest_sha256": file_sha256(manifest_path),
+        "scene_manifest_byte_count": manifest_path.stat().st_size,
+        "split": scene_dir.parent.parent.name,
+        "drive_seed": int(V1._drive_seed(scene_dir.name)),
+    }
+    interval = request.get("anchor_interval")
+    slot = request.get("replacement_slot")
+    matching_intervals = [row for row in plan["interval_groups"] if (
+        isinstance(interval, dict)
+        and interval == {
+            "lower_scene_id_exclusive": row["lower_scene_id_exclusive"],
+            "upper_scene_id_exclusive": row["upper_scene_id_exclusive"],
+            "vacant_ordinals": row["vacant_ordinals"],
+        })]
+    accepted = request.get("accepted_scene_ids_before")
+    expected_slot = None
+    if (len(matching_intervals) == 1 and isinstance(accepted, list)
+            and len(accepted) < len(matching_intervals[0]["replacement_slots"])):
+        expected_slot = matching_intervals[0]["replacement_slots"][len(accepted)]
+    if (
+        set(request) != expected_keys
+        or request.get("schema") != MIXED_REPLACEMENT_SCENE_REQUEST_SCHEMA
+        or request.get("status") != STATUS
+        or request.get("complete") is not True
+        or request.get("binding_receipt") is not False
+        or request.get("pool") != "scorer_fit"
+        or request.get("family") != family
+        or request.get("backend") != "cpu"
+        or request.get("scene") != expected_scene
+        or len(matching_intervals) != 1
+        or slot != expected_slot
+        or not isinstance(accepted, list)
+        or accepted != sorted(accepted)
+        or len(set(accepted)) != len(accepted)
+        or (accepted and scene_dir.name <= accepted[-1])
+        or scene_dir.name in set(plan["retained_scene_ids"])
+        or not _scene_in_open_interval(
+            scene_dir.name,
+            lower=interval["lower_scene_id_exclusive"],
+            upper=interval["upper_scene_id_exclusive"])
+        or any(not _scene_in_open_interval(
+            value, lower=interval["lower_scene_id_exclusive"],
+            upper=interval["upper_scene_id_exclusive"])
+               for value in accepted)
+        or request.get("retained_scene_ids_digest")
+        != canonical_digest(plan["retained_scene_ids"])
+        or request.get("rejected_identity_digests")
+        != plan["rejected_identity_digests"]
+        or request.get("rejected_identity_set_digest")
+        != canonical_digest(plan["rejected_identity_digests"])
+        or request.get("family_replacement_plan_digest") != canonical_digest(plan)
+        or request.get("warmup_blocks_min") != WARMUP_BLOCKS_MIN
+        or request.get("warmup_blocks_max") != WARMUP_BLOCKS_MAX
+        or request.get("state_shard_bindings") != _state_shard_bindings(
+            args, exclusion, [path.name for path in scenes])
+        or any(request.get(key) not in (False, 0) for key in (
+            "candidate_outcomes_loaded", "branch_identities_created",
+            "branches_attempted", "frames_rendered", "target_latents_encoded",
+            "scorer_training_started", "predictor_checkpoints_opened"))
+    ):
+        raise RuntimeError("mixed replacement scene request changed")
+
+
+def _build_mixed_replacement_scene_capture(
+        *, request: dict[str, Any], chosen_state: dict[str, Any] | None,
+        rejection_reasons: dict[str, int], worker_failure: str | None,
+        blocks_driven: int, attempt_trace: Sequence[dict[str, Any]],
+        ) -> dict[str, Any]:
+    payload = {
+        "schema": MIXED_REPLACEMENT_SCENE_CAPTURE_SCHEMA,
+        "status": ("COMPLETE_OUTCOME_FREE_MIXED_REPLACEMENT_SCENE_RESOLUTION"
+                   if worker_failure is None
+                   else "FAIL_OUTCOME_FREE_MIXED_REPLACEMENT_SCENE_RESOLUTION"),
+        "complete": True,
+        "binding_receipt": False,
+        "mixed_replacement_scene_request_digest": request[
+            "mixed_replacement_scene_request_digest"],
+        "request": request,
+        "family": request["family"],
+        "scene_id": request["scene"]["scene_id"],
+        "blocks_driven": int(blocks_driven),
+        "attempt_trace": list(attempt_trace),
+        "chosen_state": chosen_state,
+        "scene_rejection_reasons": dict(sorted(rejection_reasons.items())),
+        "worker_failure": worker_failure,
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+        "predictor_checkpoints_opened": 0,
+        "atomic_write_precedes_native_context_cleanup": True,
+    }
+    payload["mixed_replacement_scene_capture_digest"] = canonical_digest(payload)
+    return payload
+
+
+def _validate_mixed_replacement_scene_capture(
+        capture: dict[str, Any], *, expected_request: dict[str, Any]) -> None:
+    _verify_self_digest(
+        capture, "mixed_replacement_scene_capture_digest",
+        "mixed replacement scene capture")
+    expected_keys = {
+        "schema", "status", "complete", "binding_receipt",
+        "mixed_replacement_scene_request_digest", "request", "family",
+        "scene_id", "blocks_driven", "attempt_trace", "chosen_state",
+        "scene_rejection_reasons", "worker_failure",
+        "candidate_outcomes_loaded", "branch_identities_created",
+        "branches_attempted", "frames_rendered", "target_latents_encoded",
+        "scorer_training_started", "predictor_checkpoints_opened",
+        "atomic_write_precedes_native_context_cleanup",
+        "mixed_replacement_scene_capture_digest",
+    }
+    failure = capture.get("worker_failure")
+    blocks = capture.get("blocks_driven")
+    trace = capture.get("attempt_trace")
+    if (
+        set(capture) != expected_keys
+        or capture.get("schema") != MIXED_REPLACEMENT_SCENE_CAPTURE_SCHEMA
+        or capture.get("status") != (
+            "COMPLETE_OUTCOME_FREE_MIXED_REPLACEMENT_SCENE_RESOLUTION"
+            if failure is None
+            else "FAIL_OUTCOME_FREE_MIXED_REPLACEMENT_SCENE_RESOLUTION")
+        or capture.get("complete") is not True
+        or capture.get("binding_receipt") is not False
+        or capture.get("request") != expected_request
+        or capture.get("mixed_replacement_scene_request_digest")
+        != expected_request["mixed_replacement_scene_request_digest"]
+        or capture.get("family") != expected_request["family"]
+        or capture.get("scene_id") != expected_request["scene"]["scene_id"]
+        or not isinstance(blocks, int) or isinstance(blocks, bool)
+        or not 0 <= blocks <= WARMUP_BLOCKS_MAX
+        or not isinstance(trace, list)
+        or (failure is not None and (not isinstance(failure, str) or not failure))
+        or any(capture.get(key) not in (False, 0) for key in (
+            "candidate_outcomes_loaded", "branch_identities_created",
+            "branches_attempted", "frames_rendered", "target_latents_encoded",
+            "scorer_training_started", "predictor_checkpoints_opened"))
+        or capture.get("atomic_write_precedes_native_context_cleanup") is not True
+    ):
+        raise RuntimeError("mixed replacement scene capture is malformed")
+    selected_count = 0
+    replayed_reasons: dict[str, int] = {}
+    for trace_index, row in enumerate(trace):
+        expected_block = WARMUP_BLOCKS_MIN + trace_index
+        if (
+            not isinstance(row, dict)
+            or set(row) != {"block_index", "verdict", "reason_key"}
+            or row.get("block_index") != expected_block
+            or row.get("verdict") not in {"REJECT", "SELECT", "ERROR"}
+        ):
+            raise RuntimeError("mixed replacement attempt trace is malformed")
+        if row["verdict"] == "REJECT":
+            reason = row.get("reason_key")
+            if not isinstance(reason, str) or not reason:
+                raise RuntimeError("mixed replacement rejection reason is missing")
+            replayed_reasons[reason] = replayed_reasons.get(reason, 0) + 1
+        elif row["verdict"] == "SELECT":
+            if row.get("reason_key") is not None or trace_index != len(trace) - 1:
+                raise RuntimeError("mixed replacement selection is not terminal")
+            selected_count += 1
+        else:
+            reason = row.get("reason_key")
+            if (failure is None or not isinstance(reason, str) or not reason
+                    or trace_index != len(trace) - 1
+                    or reason != failure):
+                raise RuntimeError("mixed replacement error trace is malformed")
+    expected_trace_count = max(blocks - WARMUP_BLOCKS_MIN + 1, 0)
+    chosen = capture.get("chosen_state")
+    if (
+        len(trace) != expected_trace_count
+        or selected_count != (1 if chosen is not None else 0)
+        or (failure is None and chosen is None and blocks != WARMUP_BLOCKS_MAX)
+        or (failure is not None and chosen is not None)
+        or replayed_reasons != capture.get("scene_rejection_reasons")
+    ):
+        raise RuntimeError("mixed replacement trace/capture reducer changed")
+    if chosen is None:
+        return
+    if not isinstance(chosen, dict):
+        raise RuntimeError("mixed replacement chosen state is malformed")
+    slot = expected_request["replacement_slot"]
+    expected_chosen_keys = {
+        "state_id", "family", "scene_id", "scene_dir",
+        "scene_manifest_sha256", "scene_manifest_byte_count", "split",
+        "drive_seed", "stratum", "split_role", "warmup_blocks",
+        "source_step", "episode_id", "episode_cluster_id", "cell_id",
+        "boundary", "goal", "goal_type", "body_clearance_m", "clearance_m",
+        "completion_rotation_eligibility_vector", "snapshot_task_status",
+        "previous_applied_command", "state_identity_digest",
+    }
+    if (
+        set(chosen) != expected_chosen_keys
+        or chosen.get("state_id") != slot["state_id"]
+        or chosen.get("family") != slot["family"]
+        or chosen.get("stratum") != slot["stratum"]
+        or chosen.get("split_role") != slot["split_role"]
+        or chosen.get("scene_id") != expected_request["scene"]["scene_id"]
+        or chosen.get("scene_dir") != expected_request["scene"]["scene_dir"]
+        or chosen.get("scene_manifest_sha256")
+        != expected_request["scene"]["scene_manifest_sha256"]
+        or chosen.get("scene_manifest_byte_count")
+        != expected_request["scene"]["scene_manifest_byte_count"]
+        or chosen.get("split") != expected_request["scene"]["split"]
+        or chosen.get("drive_seed") != expected_request["scene"]["drive_seed"]
+        or chosen.get("warmup_blocks") != blocks
+        or chosen.get("state_identity_digest") != _state_identity_digest(chosen)
+        or chosen.get("state_identity_digest")
+        in set(expected_request["rejected_identity_digests"])
+        or _replacement_reuses_any_rejected_snapshot(
+            chosen, expected_request["rejected_identity_digests"])
+    ):
+        raise RuntimeError("mixed replacement chosen identity changed")
+    vector = chosen["completion_rotation_eligibility_vector"]
+    rotations = vector.get("rotations") if isinstance(vector, dict) else None
+    if not isinstance(rotations, list) or len(rotations) != 12:
+        raise RuntimeError("mixed replacement rotation vector is malformed")
+    first = rotations[0]
+    try:
+        expected_vector = STATE_SELECTOR.completion_rotation_eligibility_vector(
+            graph_hops=int(first["graph_hops_diagnostic"]),
+            reachable=bool(first["reachable"]),
+            continuous_geodesic_m=float(first["continuous_geodesic_m"]),
+            bearing_body_rad=float(first["bearing_body_rad"]),
+            task_status=first["task_status"],
+            previous_applied_command=first["previous_applied_command"],
+        )
+    except (KeyError, TypeError, ValueError,
+            STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+        raise RuntimeError("mixed replacement vector cannot be reconstructed") from exc
+    if (
+        vector != expected_vector
+        or vector.get("eligible_under_at_least_one_rotation") is not True
+        or chosen["snapshot_task_status"] != first["task_status"]
+        or chosen["previous_applied_command"] != first["previous_applied_command"]
+        or int(chosen["goal"]["graph_edges"])
+        != int(first["graph_hops_diagnostic"])
+        or float(chosen["goal"]["start_geodesic_m"])
+        != float(first["continuous_geodesic_m"])
+        or float(chosen["goal"]["bearing_body_rad"])
+        != float(first["bearing_body_rad"])
+    ):
+        raise RuntimeError("mixed replacement completion evidence changed")
+
+
+def _load_valid_mixed_replacement_scene_capture(
+        *, path: Path, request: dict[str, Any]) -> dict[str, Any] | None:
+    expected_raw = _mixed_replacement_capture_path(
+        OUT_ROOT / "scorer_fit", str(request["family"]),
+        str(request["mixed_replacement_scene_request_digest"]))
+    pinned = _pin_generated_path(path, expected_raw)
+    if not pinned.is_file() or pinned.is_symlink():
+        return None
+    try:
+        payload = json.loads(pinned.read_text())
+        _validate_mixed_replacement_scene_capture(
+            payload, expected_request=request)
+    except (OSError, json.JSONDecodeError, RuntimeError):
+        return None
+    return payload
 
 
 def _build_state_resolution_scene_request(
@@ -4246,8 +4802,9 @@ def _build_state_resolution_scene_request(
         "selection_semantics": STATE_RESOLUTION_SELECTION_SEMANTICS,
     }
     payload["state_resolution_scene_request_digest"] = canonical_digest(payload)
-    path = _state_resolution_request_path(
+    raw_path = _state_resolution_request_path(
         out, family, payload["state_resolution_scene_request_digest"])
+    path = _pin_generated_path(raw_path, raw_path)
     if path.is_file():
         existing = json.loads(path.read_text())
         if existing != payload:
@@ -4620,10 +5177,14 @@ def _validate_state_resolution_scene_capture(
 
 def _load_valid_state_resolution_scene_capture(
         *, path: Path, request: dict[str, Any]) -> dict[str, Any] | None:
-    if not path.is_file() or path.is_symlink():
+    expected_raw = _state_resolution_capture_path(
+        OUT_ROOT / str(request["pool"]), str(request["family"]),
+        str(request["state_resolution_scene_request_digest"]))
+    pinned = _pin_generated_path(path, expected_raw)
+    if not pinned.is_file() or pinned.is_symlink():
         return None
     try:
-        payload = json.loads(path.read_text())
+        payload = json.loads(pinned.read_text())
         _validate_state_resolution_scene_capture(
             payload, expected_request=request)
     except (OSError, json.JSONDecodeError, RuntimeError):
@@ -4767,6 +5328,222 @@ def _execute_state_resolution_scene_worker(
         gc.collect()
 
 
+def _execute_mixed_replacement_scene_worker(
+        *, args: argparse.Namespace, request: dict[str, Any], out: Path,
+        pool: dict[str, list[Path]], exclusion: dict[str, Any]
+        ) -> dict[str, Any]:
+    """Resolve one replacement scene and durably write before teardown."""
+
+    _validate_mixed_replacement_scene_request(
+        request, args=args, out=out, pool=pool, exclusion=exclusion)
+    raw_capture_path = _mixed_replacement_capture_path(
+        out, str(args.family), request["mixed_replacement_scene_request_digest"])
+    capture_path = _pin_generated_path(raw_capture_path, raw_capture_path)
+    existing = _load_valid_mixed_replacement_scene_capture(
+        path=raw_capture_path, request=request)
+    if existing is not None:
+        return existing
+    if capture_path.exists():
+        _preserve_invalid(
+            capture_path, out, "mixed-replacement-scene-capture-invalid")
+
+    ctx = None
+    chosen: dict[str, Any] | None = None
+    reasons: dict[str, int] = {}
+    attempt_trace: list[dict[str, Any]] = []
+    blocks_driven = 0
+    worker_failure: str | None = None
+    try:
+        try:
+            scene_dir = pool[str(args.family)][int(request["scene_ordinal"])]
+            shared = V1._load_shared(args.backend)
+            ctx = V1.build_context(
+                scene_dir, seed=int(request["scene"]["drive_seed"]),
+                backend=args.backend, shared=shared)
+            topology = V12.link_topology(ctx)
+            ctx.begin_episode()
+            for block_index in range(WARMUP_BLOCKS_MAX):
+                ctx.drive_one_block()
+                blocks_driven = block_index + 1
+                if blocks_driven < WARMUP_BLOCKS_MIN:
+                    continue
+                verdict = classify_state(
+                    ctx, topology, requested_stratum="completion_enriched")
+                if isinstance(verdict, str):
+                    reason = verdict.split(":")[0]
+                    reasons[reason] = reasons.get(reason, 0) + 1
+                    attempt_trace.append({
+                        "block_index": blocks_driven,
+                        "verdict": "REJECT",
+                        "reason_key": reason,
+                    })
+                    continue
+                record, _field, _eligible = verdict
+                slot = request["replacement_slot"]
+                candidate = {
+                    "state_id": str(slot["state_id"]),
+                    "family": str(slot["family"]),
+                    "scene_id": scene_dir.name,
+                    "scene_dir": str(scene_dir.resolve()),
+                    "scene_manifest_sha256":
+                        request["scene"]["scene_manifest_sha256"],
+                    "scene_manifest_byte_count":
+                        request["scene"]["scene_manifest_byte_count"],
+                    "split": request["scene"]["split"],
+                    "drive_seed": int(request["scene"]["drive_seed"]),
+                    "stratum": "completion_enriched",
+                    "split_role": str(slot["split_role"]),
+                    "warmup_blocks": blocks_driven,
+                    "source_step": int(record["boundary"]["source_step"]),
+                    "episode_id": int(ctx.runner.episode_states[0].episode_id),
+                    "episode_cluster_id": (
+                        f"{scene_dir.name}/env0/ep"
+                        f"{int(ctx.runner.episode_states[0].episode_id)}"
+                    ),
+                    "cell_id": int(record["cell_id"]),
+                    "boundary": record["boundary"],
+                    "goal": record["goal"],
+                    "goal_type": record["goal"]["material_id"],
+                    "body_clearance_m": float(record["body_clearance_m"]),
+                    "clearance_m": float(record["clearance_m"]),
+                    "completion_rotation_eligibility_vector": record[
+                        "completion_rotation_eligibility_vector"],
+                    "snapshot_task_status": record["snapshot_task_status"],
+                    "previous_applied_command": record[
+                        "previous_applied_command"],
+                }
+                candidate["state_identity_digest"] = _state_identity_digest(candidate)
+                if _replacement_reuses_any_rejected_snapshot(
+                        candidate, request["rejected_identity_digests"]):
+                    reason = "rejected_predecessor_physical_snapshot_collision"
+                    reasons[reason] = reasons.get(reason, 0) + 1
+                    attempt_trace.append({
+                        "block_index": blocks_driven,
+                        "verdict": "REJECT",
+                        "reason_key": reason,
+                    })
+                    continue
+                if candidate["state_identity_digest"] in set(
+                        request["rejected_identity_digests"]):
+                    reason = "rejected_predecessor_identity_digest_collision"
+                    reasons[reason] = reasons.get(reason, 0) + 1
+                    attempt_trace.append({
+                        "block_index": blocks_driven,
+                        "verdict": "REJECT",
+                        "reason_key": reason,
+                    })
+                    continue
+                chosen = candidate
+                attempt_trace.append({
+                    "block_index": blocks_driven,
+                    "verdict": "SELECT",
+                    "reason_key": None,
+                })
+                break
+        except Exception as exc:
+            worker_failure = f"{type(exc).__name__}:{str(exc)[:500]}"
+            chosen = None
+            if blocks_driven >= WARMUP_BLOCKS_MIN:
+                expected_trace_count = blocks_driven - WARMUP_BLOCKS_MIN + 1
+                if len(attempt_trace) == expected_trace_count - 1:
+                    attempt_trace.append({
+                        "block_index": blocks_driven,
+                        "verdict": "ERROR",
+                        "reason_key": worker_failure,
+                    })
+
+        capture = _build_mixed_replacement_scene_capture(
+            request=request, chosen_state=chosen, rejection_reasons=reasons,
+            worker_failure=worker_failure, blocks_driven=blocks_driven,
+            attempt_trace=attempt_trace)
+        _validate_mixed_replacement_scene_capture(
+            capture, expected_request=request)
+        atomic_json(capture_path, capture)
+        return capture
+    finally:
+        _FIELD_CACHE.clear()
+        if ctx is not None:
+            del ctx
+        gc.collect()
+
+
+def _run_mixed_replacement_scene_subprocess(
+        args: argparse.Namespace, *, request_digest: str) -> int:
+    command = [
+        sys.executable, str(Path(__file__).resolve()),
+        "--pool", "scorer_fit", "--stage", "states",
+        "--family", str(args.family), "--backend", str(args.backend),
+        "--mixed-replacement-scene-request-digest", request_digest,
+    ]
+    completed = subprocess.run(
+        command, cwd=ROOT, env={**os.environ, "PYTHONUNBUFFERED": "1"},
+        check=False)
+    return int(completed.returncode)
+
+
+def _get_or_run_mixed_replacement_scene_capture(
+        *, args: argparse.Namespace, request: dict[str, Any], out: Path,
+        runner: Any = None) -> dict[str, Any]:
+    digest = str(request["mixed_replacement_scene_request_digest"])
+    path = _mixed_replacement_capture_path(out, str(args.family), digest)
+    capture = _load_valid_mixed_replacement_scene_capture(
+        path=path, request=request)
+    if capture is None:
+        if path.exists():
+            _preserve_invalid(
+                path, out, "mixed-replacement-scene-capture-invalid")
+        run = (_run_mixed_replacement_scene_subprocess
+               if runner is None else runner)
+        return_code = int(run(args, request_digest=digest))
+        capture = _load_valid_mixed_replacement_scene_capture(
+            path=path, request=request)
+        if capture is None:
+            raise RuntimeError(
+                f"mixed replacement worker {request['scene']['scene_id']} "
+                f"exited {return_code} without a valid durable capture"
+            )
+        if capture.get("worker_failure") is None and return_code != 0:
+            print(
+                f"[recovery] mixed replacement worker "
+                f"{request['scene']['scene_id']} exited {return_code} after "
+                "its valid atomic capture; retaining capture",
+                flush=True)
+    if capture.get("worker_failure") is not None:
+        raise RuntimeError(
+            f"mixed replacement worker failed for "
+            f"{request['scene']['scene_id']}: {capture['worker_failure']}"
+        )
+    return capture
+
+
+def stage_mixed_replacement_scene_worker(args: argparse.Namespace) -> int:
+    if (args.pool != "scorer_fit" or args.family is None
+            or args.backend != "cpu"):
+        raise RuntimeError("mixed replacement worker requires scorer-fit/family/cpu")
+    digest = str(args.mixed_replacement_scene_request_digest)
+    out = OUT_ROOT / "scorer_fit"
+    raw_path = _mixed_replacement_request_path(out, str(args.family), digest)
+    path = _pin_generated_path(raw_path, raw_path)
+    if not path.is_file() or path.is_symlink():
+        raise RuntimeError("mixed replacement scene request is missing")
+    request = json.loads(path.read_text())
+    if request.get("mixed_replacement_scene_request_digest") != digest:
+        raise RuntimeError("mixed replacement worker request digest changed")
+    _load_clean_source_launch_receipt()
+    pool, exclusion = scene_pool("scorer_fit")
+    capture = _execute_mixed_replacement_scene_worker(
+        args=args, request=request, out=out, pool=pool, exclusion=exclusion)
+    print(json.dumps({
+        "scene_id": capture["scene_id"],
+        "mixed_replacement_scene_capture_digest": capture[
+            "mixed_replacement_scene_capture_digest"],
+        "chosen_state_id": (None if capture["chosen_state"] is None
+                            else capture["chosen_state"]["state_id"]),
+        "pass": capture["worker_failure"] is None,
+    }, indent=2, sort_keys=True))
+    return 0 if capture["worker_failure"] is None else 1
+
+
 def _run_state_resolution_scene_subprocess(
         args: argparse.Namespace, *, request_digest: str) -> int:
     command = [
@@ -4785,16 +5562,18 @@ def _get_or_run_state_resolution_scene_capture(
         *, args: argparse.Namespace, request: dict[str, Any], out: Path,
         runner: Any = None) -> dict[str, Any]:
     request_digest = str(request["state_resolution_scene_request_digest"])
-    path = _state_resolution_capture_path(out, str(args.family), request_digest)
+    raw_path = _state_resolution_capture_path(
+        out, str(args.family), request_digest)
+    path = _pin_generated_path(raw_path, raw_path)
     capture = _load_valid_state_resolution_scene_capture(
-        path=path, request=request)
+        path=raw_path, request=request)
     if capture is None:
         if path.exists():
             _preserve_invalid(path, out, "state-resolution-scene-capture-invalid")
         run = _run_state_resolution_scene_subprocess if runner is None else runner
         return_code = int(run(args, request_digest=request_digest))
         capture = _load_valid_state_resolution_scene_capture(
-            path=path, request=request)
+            path=raw_path, request=request)
         if capture is None:
             raise RuntimeError(
                 f"state-resolution worker {request['scene']['scene_id']} exited "
@@ -4821,8 +5600,9 @@ def stage_state_resolution_scene_worker(args: argparse.Namespace) -> int:
         raise RuntimeError("state-resolution scene worker requires family/cpu")
     request_digest = str(args.state_resolution_scene_request_digest)
     out = OUT_ROOT / args.pool
-    request_path = _state_resolution_request_path(
+    raw_request_path = _state_resolution_request_path(
         out, str(args.family), request_digest)
+    request_path = _pin_generated_path(raw_request_path, raw_request_path)
     if not request_path.is_file() or request_path.is_symlink():
         raise RuntimeError("state-resolution scene request is missing")
     request = json.loads(request_path.read_text())
@@ -4871,12 +5651,18 @@ def _live_small_completion_search_inputs(
     found = {key: 0 for key in need}
     small_fixed: list[dict[str, Any]] = []
     cursor: str | None = None
-    request_root = out / STATE_RESOLUTION_SCENE_REQUEST_ROOT / \
+    raw_request_root = out / STATE_RESOLUTION_SCENE_REQUEST_ROOT / \
         REACHABILITY_REDRIVE_FAMILY
+    request_root = _pin_generated_path(
+        raw_request_root, raw_request_root)
+    raw_capture_root = out / STATE_RESOLUTION_SCENE_CAPTURE_ROOT / \
+        REACHABILITY_REDRIVE_FAMILY
+    capture_root = _pin_generated_path(
+        raw_capture_root, raw_capture_root)
     if not request_root.is_dir() or request_root.is_symlink():
         raise RuntimeError(
             "terminal small completion replay lacks resolver requests")
-    requests: list[dict[str, Any]] = []
+    requests: list[tuple[Path, dict[str, Any]]] = []
     for path in sorted(request_root.iterdir(), key=lambda value: value.name):
         if path.suffix != ".json":
             continue
@@ -4889,7 +5675,7 @@ def _live_small_completion_search_inputs(
             raise RuntimeError(
                 "terminal small completion resolver request is invalid JSON"
             ) from exc
-        requests.append(request)
+        requests.append((path, request))
 
     family_allow_list = [path.name for path in scenes]
     for scene_ordinal, scene_dir in enumerate(scenes):
@@ -4900,7 +5686,7 @@ def _live_small_completion_search_inputs(
             if found.get(name, 0) < need.get(name, 0)
         ]
         matches = [
-            request for request in requests
+            (request_path, request) for request_path, request in requests
             if (request.get("scene_ordinal") == scene_ordinal
                 and request.get("found_before_scene") == found
                 and request.get("required_counts") == need
@@ -4911,21 +5697,31 @@ def _live_small_completion_search_inputs(
             raise RuntimeError(
                 "terminal small completion replay lacks one exact resolver "
                 f"request for scene {scene_dir.name}")
-        request = matches[0]
+        request_path, request = matches[0]
         _validate_state_resolution_scene_request(
             request, args=args, out=out, pool=pool, exclusion=exclusion)
         request_digest = str(request["state_resolution_scene_request_digest"])
-        request_path = _state_resolution_request_path(
-            out, REACHABILITY_REDRIVE_FAMILY, request_digest)
-        if (not request_path.is_file() or request_path.is_symlink()
+        expected_request_path = request_root / f"{request_digest}.json"
+        if (request_path != expected_request_path
+                or not request_path.is_file() or request_path.is_symlink()
                 or json.loads(request_path.read_text()) != request):
             raise RuntimeError(
                 "terminal small completion resolver request bytes changed")
-        capture_path = _state_resolution_capture_path(
-            out, REACHABILITY_REDRIVE_FAMILY, request_digest)
-        capture = _load_valid_state_resolution_scene_capture(
-            path=capture_path, request=request)
-        if capture is None or capture.get("worker_failure") is not None:
+        capture_path = capture_root / f"{request_digest}.json"
+        if not capture_path.is_file() or capture_path.is_symlink():
+            raise RuntimeError(
+                "terminal small completion replay lacks a passing capture for "
+                f"scene {scene_dir.name}")
+        try:
+            capture = json.loads(capture_path.read_text())
+            _validate_state_resolution_scene_capture(
+                capture, expected_request=request)
+        except (OSError, ValueError, TypeError, RuntimeError,
+                json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                "terminal small completion replay lacks a passing capture for "
+                f"scene {scene_dir.name}") from exc
+        if capture.get("worker_failure") is not None:
             raise RuntimeError(
                 "terminal small completion replay lacks a passing capture for "
                 f"scene {scene_dir.name}")
@@ -4943,21 +5739,11 @@ def _live_small_completion_search_inputs(
             "terminal small completion replay did not recover exact G/S quotas")
 
     fixed_states: list[dict[str, Any]] = []
-    preserved = STATE_SELECTOR.load_preserved_state_shards(ROOT)
     for family in STATE_SELECTOR.REQUIRED_FAMILIES:
         if family == REACHABILITY_REDRIVE_FAMILY:
             continue
-        shard_path = out / f"state_shard_{family}.json"
-        if not shard_path.is_file() or shard_path.is_symlink():
-            raise RuntimeError(
-                f"terminal small completion replay lacks state shard {family}")
-        shard = json.loads(shard_path.read_text())
-        if family in preserved:
-            if shard != preserved[family]:
-                raise RuntimeError(
-                    f"terminal preserved fixed shard {family} changed")
-        else:
-            _validate_state_shard(shard, shard_path, "scorer_fit")
+        _shard_path, shard = _load_active_family_state_shard(
+            out, family, pool="scorer_fit")
         fixed_states.extend(dict(state) for state in shard["states"])
     fixed_states.extend(small_fixed)
     if len(fixed_states) != 115:
@@ -5058,7 +5844,8 @@ def _validate_small_completion_search_failure_static(
 def _load_small_completion_search_failure(
         out: Path, *, args: argparse.Namespace | None = None,
         ) -> dict[str, Any] | None:
-    path = out / SMALL_COMPLETION_SEARCH_FAILURE_NAME
+    raw_path = out / SMALL_COMPLETION_SEARCH_FAILURE_NAME
+    path = _pin_generated_path(raw_path, raw_path)
     if not path.exists():
         return None
     if not path.is_file():
@@ -5103,6 +5890,384 @@ def _load_small_completion_search_failure(
         raise RuntimeError(
             "small completion terminal failure no longer reproduces")
     return payload
+
+
+def _mixed_active_state_shard_path(out: Path, family: str) -> Path:
+    if family not in {row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}:
+        raise RuntimeError("mixed active shard family is not a predecessor family")
+    return out / MIXED_ACTIVE_STATE_SHARD_NAME.format(family=family)
+
+
+def _active_state_shard_path(out: Path, family: str, *, pool: str) -> Path:
+    if (pool == "scorer_fit"
+            and family in {
+                row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}):
+        return _mixed_active_state_shard_path(out, family)
+    return out / f"state_shard_{family}.json"
+
+
+def _load_active_family_state_shard(
+        out: Path, family: str, *, pool: str) -> tuple[Path, dict[str, Any]]:
+    raw_path = _active_state_shard_path(out, family, pool=pool)
+    path = _pin_generated_path(raw_path, raw_path)
+    if not path.is_file() or path.is_symlink():
+        raise RuntimeError(f"active state shard {family} is missing")
+    payload = json.loads(path.read_text())
+    if (pool == "scorer_fit"
+            and family in {
+                row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}):
+        _validate_mixed_active_state_shard(payload, raw_path)
+    else:
+        _validate_state_shard(payload, raw_path, pool)
+    if payload.get("family") != family:
+        raise RuntimeError("active state shard family changed")
+    return path, payload
+
+
+def _mixed_capture_provenance(
+        *, out: Path, request: dict[str, Any], capture: dict[str, Any],
+        interval_index: int) -> dict[str, Any]:
+    family = str(request["family"])
+    digest = str(request["mixed_replacement_scene_request_digest"])
+    request_raw_path = _mixed_replacement_request_path(out, family, digest)
+    capture_raw_path = _mixed_replacement_capture_path(out, family, digest)
+    request_path = _pin_generated_path(request_raw_path, request_raw_path)
+    capture_path = _pin_generated_path(capture_raw_path, capture_raw_path)
+    return {
+        "interval_index": int(interval_index),
+        "scene_id": str(request["scene"]["scene_id"]),
+        "replacement_slot_state_id": str(request["replacement_slot"]["state_id"]),
+        "mixed_replacement_scene_request_digest": digest,
+        "mixed_replacement_scene_capture_digest": str(
+            capture["mixed_replacement_scene_capture_digest"]),
+        "request_path": str(request_raw_path.relative_to(ROOT)),
+        "request_raw_sha256": file_sha256(request_path),
+        "request_byte_count": request_path.stat().st_size,
+        "capture_path": str(capture_raw_path.relative_to(ROOT)),
+        "capture_raw_sha256": file_sha256(capture_path),
+        "capture_byte_count": capture_path.stat().st_size,
+        "selected": capture["chosen_state"] is not None,
+    }
+
+
+def _build_mixed_replacement_failure(
+        *, args: argparse.Namespace, out: Path, plan: dict[str, Any],
+        interval_index: int, candidate_scene_ids: Sequence[str],
+        accepted_states: Sequence[dict[str, Any]],
+        provenance: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    launch = _load_clean_source_launch_receipt()
+    interval = plan["interval_groups"][interval_index]
+    payload = {
+        "schema": MIXED_REPLACEMENT_FAILURE_SCHEMA,
+        "status": MIXED_REPLACEMENT_FAILURE_STATUS,
+        "complete": True,
+        "binding_receipt": True,
+        "source_repository_commit": launch["source_repository_commit"],
+        "clean_source_launch_receipt_digest": launch[
+            "clean_source_launch_receipt_digest"],
+        "mixed_precontract_disposition_receipt_digest": launch[
+            "mixed_precontract_disposition_receipt_digest"],
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "candidate_allocation_amendment_digest":
+            ALLOC.allocation_amendment_digest(),
+        "family": str(args.family),
+        "family_replacement_plan_digest": canonical_digest(plan),
+        "failed_interval_index": int(interval_index),
+        "failed_anchor_interval": {
+            "lower_scene_id_exclusive": interval[
+                "lower_scene_id_exclusive"],
+            "upper_scene_id_exclusive": interval[
+                "upper_scene_id_exclusive"],
+            "vacant_ordinals": list(interval["vacant_ordinals"]),
+            "replacement_slots": list(interval["replacement_slots"]),
+        },
+        "candidate_scene_ids": list(candidate_scene_ids),
+        "candidate_scene_ids_digest": canonical_digest(list(candidate_scene_ids)),
+        "required_replacement_count": len(interval["replacement_slots"]),
+        "accepted_replacement_count": len(accepted_states),
+        "accepted_replacement_identities": [{
+            "state_id": str(state["state_id"]),
+            "state_identity_digest": str(state["state_identity_digest"]),
+            "scene_id": str(state["scene_id"]),
+        } for state in accepted_states],
+        "scanned_scene_count": len(provenance),
+        "scene_capture_provenance": list(provenance),
+        "scene_capture_provenance_digest": canonical_digest(list(provenance)),
+        "failure_reason": "ANCHOR_INTERVAL_EXHAUSTED_BEFORE_VACANT_SLOTS_FILLED",
+        "complete_identity_manifest_created": False,
+        "candidate_allocation_loaded": False,
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+        "predictor_checkpoints_opened": 0,
+    }
+    payload["mixed_replacement_failure_receipt_digest"] = canonical_digest(payload)
+    return payload
+
+
+def _issue_mixed_replacement_failure(
+        *, args: argparse.Namespace, out: Path, plan: dict[str, Any],
+        interval_index: int, candidate_scene_ids: Sequence[str],
+        accepted_states: Sequence[dict[str, Any]],
+        provenance: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    payload = _build_mixed_replacement_failure(
+        args=args, out=out, plan=plan, interval_index=interval_index,
+        candidate_scene_ids=candidate_scene_ids,
+        accepted_states=accepted_states, provenance=provenance)
+    raw_path = out / MIXED_REPLACEMENT_FAILURE_NAME
+    path = _pin_generated_path(raw_path, raw_path)
+    if path.exists():
+        if not path.is_file() or path.is_symlink():
+            raise RuntimeError("mixed replacement failure path is not a regular file")
+        existing = json.loads(path.read_text())
+        _verify_self_digest(
+            existing, "mixed_replacement_failure_receipt_digest",
+            "mixed replacement terminal failure")
+        if existing != payload:
+            raise RuntimeError("refusing to overwrite a different replacement failure")
+        return existing
+    atomic_json(path, payload)
+    return payload
+
+
+def _load_mixed_replacement_failure(
+        *, args: argparse.Namespace, out: Path,
+        pool: dict[str, list[Path]], exclusion: dict[str, Any]
+        ) -> dict[str, Any] | None:
+    """Accept a terminal only after replaying its exact captured prefix."""
+
+    raw_path = out / MIXED_REPLACEMENT_FAILURE_NAME
+    path = _pin_generated_path(raw_path, raw_path)
+    if not path.exists():
+        return None
+    if not path.is_file() or path.is_symlink():
+        raise RuntimeError("mixed replacement terminal path is not regular")
+    receipt = json.loads(path.read_text())
+    _verify_self_digest(
+        receipt, "mixed_replacement_failure_receipt_digest",
+        "mixed replacement terminal failure")
+    failure_family = str(receipt.get("family", ""))
+    if failure_family not in pool:
+        raise RuntimeError("mixed replacement terminal family is invalid")
+    replay_args = argparse.Namespace(
+        pool="scorer_fit", family=failure_family, backend="cpu")
+    plan = _mixed_family_replacement_plan(failure_family)
+    launch = _load_clean_source_launch_receipt()
+    interval_index = receipt.get("failed_interval_index")
+    if (not isinstance(interval_index, int) or isinstance(interval_index, bool)
+            or not 0 <= interval_index < len(plan["interval_groups"])):
+        raise RuntimeError("mixed replacement terminal interval is invalid")
+    interval = plan["interval_groups"][interval_index]
+    scenes = pool[str(receipt["family"])]
+    global_retained, _rejected, _slots = _mixed_disposition_sets()
+    retained_scene_ids = {
+        str(row["scene_id"]) for row in global_retained.values()
+    }
+    candidates = _mixed_replacement_candidate_scenes(
+        scenes=scenes, interval=interval,
+        retained_scene_ids=retained_scene_ids)
+    candidate_scene_ids = [scene.name for _ordinal, scene in candidates]
+    provenance = receipt.get("scene_capture_provenance")
+    if not isinstance(provenance, list):
+        raise RuntimeError("mixed replacement terminal lacks capture provenance")
+    accepted: list[dict[str, Any]] = []
+    replayed: list[dict[str, Any]] = []
+    if len(provenance) != len(candidates):
+        raise RuntimeError("mixed replacement terminal did not exhaust its interval")
+    for row, (scene_ordinal, scene_dir) in zip(provenance, candidates, strict=True):
+        slot = interval["replacement_slots"][len(accepted)]
+        request = _build_mixed_replacement_scene_request(
+            args=replay_args, out=out, scene_dir=scene_dir,
+            scene_ordinal=scene_ordinal, interval=interval, slot=slot,
+            accepted_scene_ids_before=[state["scene_id"] for state in accepted],
+            exclusion=exclusion,
+            family_allow_list=[path.name for path in scenes], persist=False)
+        request_path = _mixed_replacement_request_path(
+            out, failure_family, request["mixed_replacement_scene_request_digest"])
+        capture_path = _mixed_replacement_capture_path(
+            out, failure_family, request["mixed_replacement_scene_request_digest"])
+        pinned_request_path = _pin_generated_path(request_path, request_path)
+        if (not pinned_request_path.is_file() or pinned_request_path.is_symlink()
+                or json.loads(pinned_request_path.read_text()) != request):
+            raise RuntimeError(
+                "mixed replacement terminal lacks its exact durable request")
+        capture = _load_valid_mixed_replacement_scene_capture(
+            path=capture_path, request=request)
+        if capture is None or capture.get("worker_failure") is not None:
+            raise RuntimeError("mixed replacement terminal lacks a valid capture")
+        replay_row = _mixed_capture_provenance(
+            out=out, request=request, capture=capture,
+            interval_index=interval_index)
+        if row != replay_row:
+            raise RuntimeError("mixed replacement terminal provenance changed")
+        replayed.append(replay_row)
+        if capture["chosen_state"] is not None:
+            accepted.append(dict(capture["chosen_state"]))
+            if len(accepted) == len(interval["replacement_slots"]):
+                raise RuntimeError(
+                    "mixed replacement terminal claims failure after quota passed")
+    expected = _build_mixed_replacement_failure(
+        args=replay_args, out=out, plan=plan, interval_index=interval_index,
+        candidate_scene_ids=candidate_scene_ids, accepted_states=accepted,
+        provenance=replayed)
+    if receipt != expected or any(
+            receipt.get(key) not in (False, 0) for key in (
+                "complete_identity_manifest_created", "candidate_allocation_loaded",
+                "candidate_outcomes_loaded", "branch_identities_created",
+                "branches_attempted", "frames_rendered", "target_latents_encoded",
+                "scorer_training_started", "predictor_checkpoints_opened")):
+        raise RuntimeError("mixed replacement terminal differs from live replay")
+    return receipt
+
+
+def resolve_mixed_active_family(args: argparse.Namespace) -> dict[str, Any]:
+    """Retain exact passing identities and fill only authorized vacant slots."""
+
+    if args.pool != "scorer_fit" or args.backend != "cpu" or args.family is None:
+        raise RuntimeError("mixed active resolution requires scorer-fit/family/cpu")
+    _load_clean_source_launch_receipt()
+    out = OUT_ROOT / "scorer_fit"
+    pool, exclusion = scene_pool("scorer_fit")
+    family = str(args.family)
+    plan = _mixed_family_replacement_plan(family)
+    terminal = _load_mixed_replacement_failure(
+        args=args, out=out, pool=pool, exclusion=exclusion)
+    if terminal is not None:
+        raise RuntimeError(
+            "terminal pre-outcome mixed replacement failure: "
+            f"{terminal['family']} interval {terminal['failed_interval_index']}"
+        )
+    scenes = pool[family]
+    family_allow_list = [path.name for path in scenes]
+    retained_all, rejected_all, _slot_rows = _mixed_disposition_sets()
+    retained_scene_ids = {str(row["scene_id"]) for row in retained_all.values()}
+    rejected_identity_digests = set(rejected_all)
+    replacements: list[dict[str, Any]] = []
+    provenance: list[dict[str, Any]] = []
+    interval_rows: list[dict[str, Any]] = []
+    rejections: dict[str, dict[str, int]] = {}
+    for interval_index, interval in enumerate(plan["interval_groups"]):
+        candidates = _mixed_replacement_candidate_scenes(
+            scenes=scenes, interval=interval,
+            retained_scene_ids=retained_scene_ids)
+        accepted: list[dict[str, Any]] = []
+        interval_provenance: list[dict[str, Any]] = []
+        for scene_ordinal, scene_dir in candidates:
+            if len(accepted) == len(interval["replacement_slots"]):
+                break
+            slot = interval["replacement_slots"][len(accepted)]
+            request = _build_mixed_replacement_scene_request(
+                args=args, out=out, scene_dir=scene_dir,
+                scene_ordinal=scene_ordinal, interval=interval, slot=slot,
+                accepted_scene_ids_before=[state["scene_id"] for state in accepted],
+                exclusion=exclusion, family_allow_list=family_allow_list)
+            capture = _get_or_run_mixed_replacement_scene_capture(
+                args=args, request=request, out=out)
+            row = _mixed_capture_provenance(
+                out=out, request=request, capture=capture,
+                interval_index=interval_index)
+            provenance.append(row)
+            interval_provenance.append(row)
+            rejections[scene_dir.name] = dict(capture["scene_rejection_reasons"])
+            chosen = capture["chosen_state"]
+            if chosen is not None:
+                chosen = dict(chosen)
+                if chosen["state_identity_digest"] in rejected_identity_digests:
+                    raise RuntimeError("rejected predecessor identity re-entered")
+                accepted.append(chosen)
+                replacements.append(chosen)
+                print(
+                    f"[mixed-replacement] {family[:22]:22s} "
+                    f"{chosen['state_id']} {scene_dir.name} "
+                    f"blocks={chosen['warmup_blocks']}", flush=True)
+        if len(accepted) != len(interval["replacement_slots"]):
+            failure = _issue_mixed_replacement_failure(
+                args=args, out=out, plan=plan, interval_index=interval_index,
+                candidate_scene_ids=[scene.name for _ordinal, scene in candidates],
+                accepted_states=accepted, provenance=interval_provenance)
+            print(json.dumps(failure, indent=2, sort_keys=True))
+            raise RuntimeError(
+                "terminal pre-outcome mixed replacement interval exhausted"
+            )
+        interval_rows.append({
+            "interval_index": interval_index,
+            "lower_scene_id_exclusive": interval["lower_scene_id_exclusive"],
+            "upper_scene_id_exclusive": interval["upper_scene_id_exclusive"],
+            "vacant_ordinals": list(interval["vacant_ordinals"]),
+            "replacement_slot_state_ids": [
+                row["state_id"] for row in interval["replacement_slots"]],
+            "candidate_scene_ids": [scene.name for _ordinal, scene in candidates],
+            "scanned_scene_ids": [row["scene_id"] for row in interval_provenance],
+            "selected_scene_ids": [state["scene_id"] for state in accepted],
+            "stopped_at_first_complete_prefix": True,
+        })
+
+    states = [dict(row) for row in plan["retained_states"]] + replacements
+    states.sort(key=lambda row: (
+        STRATA.index(str(row["stratum"])), str(row["state_id"])))
+    if (
+        len(states) != 15
+        or len(replacements) != len(plan["replacement_slots"])
+        or len({row["state_id"] for row in states}) != 15
+        or len({row["scene_id"] for row in states}) != 15
+        or len({row["state_identity_digest"] for row in states}) != 15
+        or any(row["state_identity_digest"] in rejected_identity_digests
+               for row in states)
+    ):
+        raise RuntimeError("mixed active family identity set is invalid")
+    completion = sorted(
+        (row for row in states if row["stratum"] == "completion_enriched"),
+        key=lambda row: _completion_state_ordinal(str(row["state_id"])))
+    if [row["scene_id"] for row in completion] != sorted(
+            row["scene_id"] for row in completion):
+        raise RuntimeError("mixed replacement changed lexical completion ordinals")
+    INVALID_IDS.assert_disjoint(states, label=f"{family} mixed active state shard")
+    source_shard_binding = next(
+        dict(row) for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS
+        if row["family"] == family)
+    bindings = _state_shard_bindings(
+        args, exclusion, family_allow_list)
+    shard = {
+        "schema": MIXED_ACTIVE_STATE_SHARD_SCHEMA,
+        "status": STATUS,
+        "complete": True,
+        "pool": "scorer_fit",
+        "family": family,
+        "spec": POOLS["scorer_fit"],
+        "selection": SELECTION,
+        **bindings,
+        "predecessor_state_shard_binding": source_shard_binding,
+        "retained_predecessor_identity_digests": sorted(
+            row["state_identity_digest"] for row in plan["retained_states"]),
+        "rejected_predecessor_identity_digests":
+            plan["rejected_identity_digests"],
+        "replacement_slot_fills": [{
+            "state_id": row["state_id"],
+            "state_identity_digest": row["state_identity_digest"],
+            "scene_id": row["scene_id"],
+            "split_role": row["split_role"],
+        } for row in sorted(replacements, key=lambda value: value["state_id"])],
+        "states": states,
+        "scene_rejection_reasons": rejections,
+        "mixed_replacement_subprocess_transport": {
+            "schema": MIXED_REPLACEMENT_TRANSPORT_SCHEMA,
+            "one_scene_per_subprocess": True,
+            "atomic_capture_write_before_native_cleanup": True,
+            "return_code_ignored_only_after_valid_capture": True,
+            "resume_scope": "MISSING_OR_INVALID_REPLACEMENT_SCENE_CAPTURES_ONLY",
+            "interval_rows": interval_rows,
+            "scene_capture_count": len(provenance),
+            "scene_capture_provenance_digest": canonical_digest(provenance),
+            "candidate_outcomes_loaded": False,
+        },
+        "mixed_replacement_scene_capture_provenance": provenance,
+    }
+    shard["state_shard_digest"] = canonical_digest(shard)
+    return shard
 
 
 def resolve_states(args: argparse.Namespace) -> dict[str, Any]:
@@ -5152,22 +6317,26 @@ def resolve_states(args: argparse.Namespace) -> dict[str, Any]:
             exclusion=exclusion, family_allow_list=family_allow_list)
         capture = _get_or_run_state_resolution_scene_capture(
             args=args, request=request, out=OUT_ROOT / args.pool)
-        capture_path = _state_resolution_capture_path(
+        raw_capture_path = _state_resolution_capture_path(
             OUT_ROOT / args.pool, family,
             request["state_resolution_scene_request_digest"])
-        request_path = _state_resolution_request_path(
+        raw_request_path = _state_resolution_request_path(
             OUT_ROOT / args.pool, family,
             request["state_resolution_scene_request_digest"])
+        capture_path = _pin_generated_path(
+            raw_capture_path, raw_capture_path)
+        request_path = _pin_generated_path(
+            raw_request_path, raw_request_path)
         capture_provenance.append({
             "scene_id": str(scene_dir.name),
             "state_resolution_scene_request_digest":
                 request["state_resolution_scene_request_digest"],
             "state_resolution_scene_capture_digest":
                 capture["state_resolution_scene_capture_digest"],
-            "request_path": str(request_path.relative_to(ROOT)),
+            "request_path": str(raw_request_path.relative_to(ROOT)),
             "request_raw_sha256": file_sha256(request_path),
             "request_byte_count": request_path.stat().st_size,
-            "capture_path": str(capture_path.relative_to(ROOT)),
+            "capture_path": str(raw_capture_path.relative_to(ROOT)),
             "capture_raw_sha256": file_sha256(capture_path),
             "capture_byte_count": capture_path.stat().st_size,
         })
@@ -5188,22 +6357,11 @@ def resolve_states(args: argparse.Namespace) -> dict[str, Any]:
             raise RuntimeError("small-family resolver has no lexical scene cursor")
         out = OUT_ROOT / "scorer_fit"
         fixed_shards: list[dict[str, Any]] = []
-        preserved = STATE_SELECTOR.load_preserved_state_shards(ROOT)
         for other_family in STATE_SELECTOR.REQUIRED_FAMILIES:
             if other_family == REACHABILITY_REDRIVE_FAMILY:
                 continue
-            shard_path = out / f"state_shard_{other_family}.json"
-            if not shard_path.is_file():
-                raise RuntimeError(
-                    "small-family joint search runs last and requires state "
-                    f"shard {other_family}")
-            shard = json.loads(shard_path.read_text())
-            if other_family in preserved:
-                if shard != preserved[other_family]:
-                    raise RuntimeError(
-                        f"preserved fixed shard {other_family} changed")
-            else:
-                _validate_state_shard(shard, shard_path, "scorer_fit")
+            _shard_path, shard = _load_active_family_state_shard(
+                out, other_family, pool="scorer_fit")
             fixed_shards.append(shard)
         fixed_states = [state for shard in fixed_shards
                         for state in shard["states"]] + list(states)
@@ -5445,7 +6603,9 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
             expected = _branch_identity(state, int(candidate_index), identity_bindings)
             if _identity_for(state, int(candidate_index)) != expected:
                 raise RuntimeError("state manifest contains a changed branch identity")
-    allocation_path = OUT_ROOT / pool / "candidate_allocation_manifest.json"
+    raw_allocation_path = OUT_ROOT / pool / "candidate_allocation_manifest.json"
+    allocation_path = _pin_generated_path(
+        raw_allocation_path, raw_allocation_path)
     allocation = json.loads(allocation_path.read_text())
     if allocation.get("allocation_manifest_digest") \
             != manifest["candidate_allocation_manifest_digest"]:
@@ -5460,9 +6620,9 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
         if (preconditions["state_selector_feasibility_receipt_digest"]
                 != launch["state_selector_feasibility_receipt_digest"]
                 or preconditions[
-                    "preserved_state_precontract_revalidation_receipt_digest"]
+                    "mixed_precontract_disposition_receipt_digest"]
                 != launch[
-                    "preserved_state_precontract_revalidation_receipt_digest"]):
+                    "mixed_precontract_disposition_receipt_digest"]):
             raise RuntimeError("live selector preconditions differ from launch")
         ALLOC.validate_allocation_manifest(
             allocation,
@@ -5477,9 +6637,11 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
             )
         _validate_small_completion_joint_search_receipt(
             manifest=manifest, allocation=allocation)
-        revalidation_path = (
+        raw_revalidation_path = (
             ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
         )
+        revalidation_path = _pin_generated_path(
+            raw_revalidation_path, raw_revalidation_path)
         if not revalidation_path.is_file():
             raise RuntimeError("post-allocation state revalidation receipt is missing")
         revalidation = json.loads(revalidation_path.read_text())
@@ -5487,14 +6649,13 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
         STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
             revalidation,
             allocation_manifest=allocation,
+            active_states=manifest["states"],
             expected_source_commit=str(launch["source_repository_commit"]),
             expected_successor_selection_digest=selection_digest(),
             expected_feasibility_receipt_digest=str(
                 launch["state_selector_feasibility_receipt_digest"]),
-            expected_precontract_revalidation_receipt_digest=str(
-                launch[
-                    "preserved_state_precontract_revalidation_receipt_digest"
-                ]),
+            expected_mixed_precontract_disposition_receipt_digest=str(
+                launch["mixed_precontract_disposition_receipt_digest"]),
             root=ROOT,
         )
         if (manifest.get("preserved_state_revalidation_receipt_digest")
@@ -5510,6 +6671,87 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
     if any(list(state["candidate_indices"]) != list(assignment.get(state["state_id"], []))
            for state in manifest["states"]):
         raise RuntimeError("state manifest candidate assignments changed")
+
+
+def validate_active_state_manifest_for_consumption(
+        manifest: dict[str, Any], pool: str = "scorer_fit") -> None:
+    """Reopen the complete live pre-outcome identity chain for consumers.
+
+    This intentionally delegates to the corpus builder's single canonical
+    validator.  It opens only identity/allocation/selector/provenance JSON and
+    scene-manifest custody evidence: it never opens a frame, latent, scorer
+    weight, predictor checkpoint, or scientific branch outcome.  Encoder,
+    trainer and transfer consumers must call it before their first scientific
+    data or model access.
+    """
+
+    if pool != "scorer_fit":
+        raise RuntimeError(
+            "shared scorer consumers require the active scorer-fit manifest")
+    if not isinstance(manifest, dict):
+        raise RuntimeError("active scorer-fit manifest must be a mapping")
+    _validate_state_manifest(manifest, pool)
+
+
+def load_active_state_manifest_for_consumption(
+        path: Path, pool: str = "scorer_fit") -> dict[str, Any]:
+    """Pin, read, and fully validate the one active scorer-fit manifest.
+
+    Consumers must use this loader instead of parsing the lexical generated
+    path themselves.  The canonical path returned by the managed-root guard is
+    retained for the read, so swapping the root alias after resolution cannot
+    redirect it.  Descendant and leaf symlinks remain forbidden.
+    """
+
+    if pool != "scorer_fit":
+        raise RuntimeError(
+            "shared scorer consumers require the active scorer-fit manifest")
+    raw_path = Path(path)
+    expected_raw_path = OUT_ROOT / pool / "state_manifest.json"
+    pinned = _pin_generated_path(raw_path, expected_raw_path)
+    if not pinned.is_file() or pinned.is_symlink():
+        raise RuntimeError("active scorer-fit state manifest is missing")
+    try:
+        manifest = json.loads(pinned.read_text())
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            "active scorer-fit state manifest is not valid JSON") from exc
+    validate_active_state_manifest_for_consumption(manifest, pool)
+    return manifest
+
+
+# Explicit long-form alias for call sites that prefer the operation order in
+# the name.  Both names share the same pin-before-read implementation.
+load_and_validate_active_state_manifest_for_consumption = \
+    load_active_state_manifest_for_consumption
+
+
+def pin_active_scorer_fit_artifact_for_consumption(
+        path: Path, relative_path: str | Path) -> Path:
+    """Pin one explicitly registered scorer-fit identity/provenance JSON.
+
+    This deliberately does not grant a generic generated-tree read surface.
+    Downstream consumers may reopen only the finite pre-outcome chain that the
+    canonical manifest validator already verifies.
+    """
+
+    relative = Path(relative_path)
+    allowed = {
+        Path(PRE_IDENTITY_VALIDATION_NAME),
+        Path(LAUNCH_RECEIPT_NAME),
+        Path(REACHABILITY_FEASIBILITY_RECEIPT_NAME),
+        Path(STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH).name,
+        Path(STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH).name,
+        Path("candidate_allocation_manifest.json"),
+        Path("state_manifest.json"),
+    }
+    allowed_paths = {Path(value) for value in allowed}
+    if (relative.is_absolute() or relative not in allowed_paths
+            or len(relative.parts) != 1):
+        raise RuntimeError(
+            "artifact is not in the registered scorer-fit consumption set")
+    expected = OUT_ROOT / "scorer_fit" / relative
+    return _pin_generated_path(Path(path), expected)
 
 
 def _identity_for(state: dict[str, Any], candidate_index: int) -> dict[str, Any]:
@@ -6145,23 +7387,34 @@ def _final_identifiability_gate(manifest: dict[str, Any], out: Path,
 
 def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
     out = OUT_ROOT / args.pool
-    manifest = json.loads((out / "state_manifest.json").read_text())
-    _validate_state_manifest(manifest, args.pool)
+    if args.pool == "scorer_fit":
+        manifest = load_active_state_manifest_for_consumption(
+            out / "state_manifest.json")
+    else:
+        raw_manifest_path = out / "state_manifest.json"
+        manifest_path = _pin_generated_path(
+            raw_manifest_path, raw_manifest_path)
+        manifest = json.loads(manifest_path.read_text())
+        _validate_state_manifest(manifest, args.pool)
     if args.backend != "cpu":
         raise RuntimeError("the frozen qualified branch backend is cpu")
     if smoke and args.pool != "scorer_fit":
         raise RuntimeError("end-to-end smoke is defined only for scorer_fit")
     if not smoke:
-        smoke_path = OUT_ROOT / "scorer_fit/smoke_encoding_receipt.json"
+        raw_smoke_path = OUT_ROOT / "scorer_fit/smoke_encoding_receipt.json"
+        smoke_path = _pin_generated_path(raw_smoke_path, raw_smoke_path)
         if not smoke_path.is_file():
             raise RuntimeError("full branch generation is gated on the encoded six-branch smoke")
         smoke_receipt = json.loads(smoke_path.read_text())
         _verify_self_digest(smoke_receipt, "smoke_receipt_digest", "smoke receipt")
+        scorer_fit_manifest = (
+            manifest if args.pool == "scorer_fit"
+            else load_active_state_manifest_for_consumption(
+                OUT_ROOT / "scorer_fit/state_manifest.json")
+        )
         if (not smoke_receipt.get("pass")
                 or smoke_receipt.get("state_manifest_digest")
-                != (manifest["state_manifest_digest"] if args.pool == "scorer_fit"
-                    else json.loads((OUT_ROOT / "scorer_fit/state_manifest.json").read_text())[
-                        "state_manifest_digest"])
+                != scorer_fit_manifest["state_manifest_digest"]
                 or smoke_receipt.get("scorer_contract_v1_2_digest")
                 != scorer_contract_digest()):
             raise RuntimeError("encoded smoke receipt is not valid for this scorer contract")
@@ -6650,23 +7903,29 @@ def _validate_state_resolution_transport(
             out, family, request_digest)
         expected_capture_path = _state_resolution_capture_path(
             out, family, request_digest)
-        for path, relative, sha_key, size_key, label in (
+        for raw_path, relative, sha_key, size_key, label in (
             (expected_request_path, row.get("request_path"),
              "request_raw_sha256", "request_byte_count", "request"),
             (expected_capture_path, row.get("capture_path"),
              "capture_raw_sha256", "capture_byte_count", "capture"),
         ):
+            relative_path = ROOT / str(relative or "")
+            path = _pin_generated_path(relative_path, raw_path)
             if (
                 path.is_symlink() or not path.is_file()
-                or relative != str(path.relative_to(ROOT))
+                or relative != str(raw_path.relative_to(ROOT))
                 or not _is_sha256(row.get(sha_key))
                 or row.get(sha_key) != file_sha256(path)
                 or row.get(size_key) != path.stat().st_size
             ):
                 raise RuntimeError(
                     f"state-resolution {label} provenance bytes changed")
-        request = json.loads(expected_request_path.read_text())
-        capture = json.loads(expected_capture_path.read_text())
+        pinned_request_path = _pin_generated_path(
+            expected_request_path, expected_request_path)
+        pinned_capture_path = _pin_generated_path(
+            expected_capture_path, expected_capture_path)
+        request = json.loads(pinned_request_path.read_text())
+        capture = json.loads(pinned_capture_path.read_text())
         _validate_state_resolution_scene_request(
             request, args=live_args, out=out, pool=live_pool,
             exclusion=live_exclusion)
@@ -6823,6 +8082,216 @@ def _validate_state_shard(payload: dict[str, Any], path: Path,
         raise RuntimeError(f"state shard {path.name} has an identity digest mismatch")
 
 
+def _validate_mixed_active_state_shard(
+        payload: dict[str, Any], path: Path) -> None:
+    """Replay retained anchors and every replacement-scene lexical prefix."""
+
+    family = str(payload.get("family", ""))
+    raw_expected_path = _mixed_active_state_shard_path(
+        OUT_ROOT / "scorer_fit", family)
+    pinned_path = _pin_generated_path(path, raw_expected_path)
+    if not pinned_path.is_file() or pinned_path.is_symlink():
+        raise RuntimeError("mixed active state shard path is not a regular file")
+    if json.loads(pinned_path.read_text()) != payload:
+        raise RuntimeError("mixed active state shard differs from pinned bytes")
+    _verify_self_digest(
+        payload, "state_shard_digest", f"mixed shard {raw_expected_path.name}")
+    expected_keys = {
+        "schema", "status", "complete", "pool", "family", "spec",
+        "selection", "selection_digest", "scorer_fit_allocation_design_digest",
+        "candidate_allocator_contract_digest",
+        "candidate_allocation_amendment_digest",
+        "pre_identity_allocation_validation_digest",
+        "invalid_scorer_identity_exclusion_digest",
+        "state_selector_amendment_digest",
+        "state_selector_feasibility_receipt_digest", *LAUNCH_BINDING_KEYS,
+        "candidate_bank_digest", "progress_contract_digest",
+        "safety_contract_digest", "oracle_v1_2_digest",
+        "scorer_contract_v1_2_digest", "boundary_digest",
+        "render_contract_digest", "textured_v03_renderer_contract_digest",
+        "preprocess_contract_digest", "preprocessing_digest",
+        "target_encoder_digest", "target_encoder_checkpoint_sha256",
+        "genesis_backend", "exclusion_binding", "family_allow_list_digest",
+        "predecessor_state_shard_binding",
+        "retained_predecessor_identity_digests",
+        "rejected_predecessor_identity_digests", "replacement_slot_fills",
+        "states", "scene_rejection_reasons",
+        "mixed_replacement_subprocess_transport",
+        "mixed_replacement_scene_capture_provenance", "state_shard_digest",
+    }
+    if (
+        set(payload) != expected_keys
+        or payload.get("schema") != MIXED_ACTIVE_STATE_SHARD_SCHEMA
+        or payload.get("status") != STATUS
+        or payload.get("complete") is not True
+        or payload.get("pool") != "scorer_fit"
+        or payload.get("spec") != POOLS["scorer_fit"]
+        or payload.get("selection") != SELECTION
+        or payload.get("selection_digest") != selection_digest()
+        or payload.get("state_selector_amendment_digest")
+        != STATE_SELECTOR.state_selector_amendment_digest()
+        or payload.get("scorer_contract_v1_2_digest") != scorer_contract_digest()
+        or payload.get("genesis_backend") != "cpu"
+    ):
+        raise RuntimeError("mixed active state shard contract changed")
+    plan = _mixed_family_replacement_plan(family)
+    predecessor_binding = next(
+        dict(row) for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS
+        if row["family"] == family)
+    predecessor_raw_path = ROOT / predecessor_binding["path"]
+    predecessor_path = _pin_generated_path(
+        predecessor_raw_path, predecessor_raw_path)
+    if (
+        payload.get("predecessor_state_shard_binding") != predecessor_binding
+        or not predecessor_path.is_file() or predecessor_path.is_symlink()
+        or file_sha256(predecessor_path) != predecessor_binding["raw_sha256"]
+        or predecessor_path.stat().st_size != predecessor_binding["byte_count"]
+    ):
+        raise RuntimeError("mixed active predecessor shard binding changed")
+    pool, exclusion = scene_pool("scorer_fit")
+    scenes = pool[family]
+    args = argparse.Namespace(pool="scorer_fit", family=family, backend="cpu")
+    bindings = _state_shard_bindings(
+        args, exclusion, [scene.name for scene in scenes])
+    if any(payload.get(key) != value for key, value in bindings.items()):
+        raise RuntimeError("mixed active state shard binding changed")
+    if (
+        payload.get("retained_predecessor_identity_digests")
+        != sorted(row["state_identity_digest"] for row in plan["retained_states"])
+        or payload.get("rejected_predecessor_identity_digests")
+        != plan["rejected_identity_digests"]
+    ):
+        raise RuntimeError("mixed active disposition changed")
+    transport = payload.get("mixed_replacement_subprocess_transport")
+    provenance = payload.get("mixed_replacement_scene_capture_provenance")
+    if (
+        not isinstance(transport, dict)
+        or transport.get("schema") != MIXED_REPLACEMENT_TRANSPORT_SCHEMA
+        or transport.get("one_scene_per_subprocess") is not True
+        or transport.get("atomic_capture_write_before_native_cleanup") is not True
+        or transport.get("return_code_ignored_only_after_valid_capture") is not True
+        or transport.get("resume_scope")
+        != "MISSING_OR_INVALID_REPLACEMENT_SCENE_CAPTURES_ONLY"
+        or transport.get("candidate_outcomes_loaded") is not False
+        or not isinstance(provenance, list)
+        or transport.get("scene_capture_count") != len(provenance)
+        or transport.get("scene_capture_provenance_digest")
+        != canonical_digest(provenance)
+        or not isinstance(transport.get("interval_rows"), list)
+        or len(transport["interval_rows"]) != len(plan["interval_groups"])
+    ):
+        raise RuntimeError("mixed replacement transport changed")
+
+    retained_all, rejected_all, _slots = _mixed_disposition_sets()
+    retained_scene_ids = {str(row["scene_id"]) for row in retained_all.values()}
+    provenance_cursor = 0
+    replacements: list[dict[str, Any]] = []
+    replayed_rejections: dict[str, dict[str, int]] = {}
+    replayed_interval_rows: list[dict[str, Any]] = []
+    for interval_index, interval in enumerate(plan["interval_groups"]):
+        candidates = _mixed_replacement_candidate_scenes(
+            scenes=scenes, interval=interval,
+            retained_scene_ids=retained_scene_ids)
+        accepted: list[dict[str, Any]] = []
+        scanned_scene_ids: list[str] = []
+        while len(accepted) < len(interval["replacement_slots"]):
+            candidate_index = len(scanned_scene_ids)
+            if candidate_index >= len(candidates):
+                raise RuntimeError("mixed active shard claims an exhausted interval passed")
+            scene_ordinal, scene_dir = candidates[candidate_index]
+            if provenance_cursor >= len(provenance):
+                raise RuntimeError("mixed active shard omits a replacement capture")
+            row = provenance[provenance_cursor]
+            provenance_cursor += 1
+            slot = interval["replacement_slots"][len(accepted)]
+            request_raw_path = ROOT / str(row.get("request_path", ""))
+            capture_raw_path = ROOT / str(row.get("capture_path", ""))
+            expected_request_raw_path = _mixed_replacement_request_path(
+                OUT_ROOT / "scorer_fit", family,
+                str(row.get("mixed_replacement_scene_request_digest", "")))
+            expected_capture_raw_path = _mixed_replacement_capture_path(
+                OUT_ROOT / "scorer_fit", family,
+                str(row.get("mixed_replacement_scene_request_digest", "")))
+            request_path = _pin_generated_path(
+                request_raw_path, expected_request_raw_path)
+            capture_path = _pin_generated_path(
+                capture_raw_path, expected_capture_raw_path)
+            if (
+                not request_path.is_file() or request_path.is_symlink()
+                or not capture_path.is_file() or capture_path.is_symlink()
+                or row.get("request_raw_sha256") != file_sha256(request_path)
+                or row.get("request_byte_count") != request_path.stat().st_size
+                or row.get("capture_raw_sha256") != file_sha256(capture_path)
+                or row.get("capture_byte_count") != capture_path.stat().st_size
+            ):
+                raise RuntimeError("mixed replacement provenance bytes changed")
+            request = json.loads(request_path.read_text())
+            _validate_mixed_replacement_scene_request(
+                request, args=args, out=path.parent, pool=pool,
+                exclusion=exclusion)
+            if (
+                request.get("scene_ordinal") != scene_ordinal
+                or request.get("scene", {}).get("scene_id") != scene_dir.name
+                or request.get("replacement_slot") != slot
+                or request.get("accepted_scene_ids_before")
+                != [state["scene_id"] for state in accepted]
+            ):
+                raise RuntimeError("mixed replacement lexical request prefix changed")
+            capture = json.loads(capture_path.read_text())
+            _validate_mixed_replacement_scene_capture(
+                capture, expected_request=request)
+            expected_row = _mixed_capture_provenance(
+                out=OUT_ROOT / "scorer_fit", request=request, capture=capture,
+                interval_index=interval_index)
+            if row != expected_row or capture.get("worker_failure") is not None:
+                raise RuntimeError("mixed replacement capture provenance changed")
+            scanned_scene_ids.append(scene_dir.name)
+            replayed_rejections[scene_dir.name] = dict(
+                capture["scene_rejection_reasons"])
+            if capture["chosen_state"] is not None:
+                accepted.append(dict(capture["chosen_state"]))
+                replacements.append(dict(capture["chosen_state"]))
+        replayed_interval_rows.append({
+            "interval_index": interval_index,
+            "lower_scene_id_exclusive": interval["lower_scene_id_exclusive"],
+            "upper_scene_id_exclusive": interval["upper_scene_id_exclusive"],
+            "vacant_ordinals": list(interval["vacant_ordinals"]),
+            "replacement_slot_state_ids": [
+                row["state_id"] for row in interval["replacement_slots"]],
+            "candidate_scene_ids": [scene.name for _ordinal, scene in candidates],
+            "scanned_scene_ids": scanned_scene_ids,
+            "selected_scene_ids": [state["scene_id"] for state in accepted],
+            "stopped_at_first_complete_prefix": True,
+        })
+    if provenance_cursor != len(provenance):
+        raise RuntimeError("mixed active shard appends post-quota captures")
+    states = sorted(
+        [dict(row) for row in plan["retained_states"]] + replacements,
+        key=lambda row: (STRATA.index(str(row["stratum"])), str(row["state_id"])))
+    replacement_fills = [{
+        "state_id": row["state_id"],
+        "state_identity_digest": row["state_identity_digest"],
+        "scene_id": row["scene_id"],
+        "split_role": row["split_role"],
+    } for row in sorted(replacements, key=lambda value: value["state_id"])]
+    completion = sorted(
+        (row for row in states if row["stratum"] == "completion_enriched"),
+        key=lambda row: _completion_state_ordinal(str(row["state_id"])))
+    if (
+        payload.get("states") != states
+        or payload.get("replacement_slot_fills") != replacement_fills
+        or payload.get("scene_rejection_reasons") != replayed_rejections
+        or transport.get("interval_rows") != replayed_interval_rows
+        or len(states) != 15
+        or len({row["scene_id"] for row in states}) != 15
+        or any(row["state_identity_digest"] in rejected_all for row in states)
+        or [row["scene_id"] for row in completion]
+        != sorted(row["scene_id"] for row in completion)
+    ):
+        raise RuntimeError("mixed active state shard differs from live replay")
+    INVALID_IDS.assert_disjoint(states, label=f"mixed state shard {family}")
+
+
 def _outcome_generation_started(out: Path) -> bool:
     row_root = out / "row_records"
     frame_root = out / "frames"
@@ -6888,32 +8357,33 @@ def _issue_preserved_state_revalidation(
         preserved_vectors=_phase1_completion_rotation_vectors())
     expected = STATE_SELECTOR.build_preserved_state_revalidation_receipt(
         allocation_manifest=allocation,
+        active_states=states,
         completion_states=completion_states,
         source_repository_commit=str(launch["source_repository_commit"]),
         successor_selection_digest=selection_digest(),
         state_selector_feasibility_receipt_digest=str(
             launch["state_selector_feasibility_receipt_digest"]),
-        preserved_state_precontract_revalidation_receipt_digest=str(
-            launch["preserved_state_precontract_revalidation_receipt_digest"]),
+        mixed_precontract_disposition_receipt_digest=str(
+            launch["mixed_precontract_disposition_receipt_digest"]),
         root=ROOT,
     )
-    path = ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
-    if path.parent != out:
+    raw_path = ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
+    if raw_path.parent != out:
         raise RuntimeError("final preserved-state receipt path escaped scorer-fit pool")
+    path = _pin_generated_path(raw_path, raw_path)
     if path.is_file():
         existing = json.loads(path.read_text())
         try:
             STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
                 existing,
                 allocation_manifest=allocation,
+                active_states=states,
                 expected_source_commit=str(launch["source_repository_commit"]),
                 expected_successor_selection_digest=selection_digest(),
                 expected_feasibility_receipt_digest=str(
                     launch["state_selector_feasibility_receipt_digest"]),
-                expected_precontract_revalidation_receipt_digest=str(
-                    launch[
-                        "preserved_state_precontract_revalidation_receipt_digest"
-                    ]),
+                expected_mixed_precontract_disposition_receipt_digest=str(
+                    launch["mixed_precontract_disposition_receipt_digest"]),
                 root=ROOT,
             )
         except Exception as exc:
@@ -6941,30 +8411,29 @@ def _build_state_shard_provenance(
 
     by_family = {str(shard["family"]): (path, shard)
                  for path, shard in zip(paths, shards, strict=True)}
-    preserved = {str(row["family"]): row
-                 for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}
+    mixed_families = {str(row["family"])
+                      for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}
     rows: list[dict[str, Any]] = []
     for family in sorted(by_family):
         path, shard = by_family[family]
+        raw_path = _active_state_shard_path(
+            OUT_ROOT / pool_name, family, pool=pool_name)
+        expected_path = _pin_generated_path(raw_path, raw_path)
+        if path != expected_path:
+            raise RuntimeError(
+                "active state-shard canonical path changed before provenance")
         row = {
             "family": family,
-            "path": str(path.relative_to(ROOT)),
+            "path": str(raw_path.relative_to(ROOT)),
             "state_shard_digest": str(shard["state_shard_digest"]),
             "raw_sha256": file_sha256(path),
             "byte_count": path.stat().st_size,
             "selection_provenance": (
-                "PREDECESSOR_BYTE_EXACT_REVALIDATED"
-                if pool_name == "scorer_fit" and family in preserved
+                "MIXED_37_RETAINED_8_REPLACED_SELECTOR_AMENDMENT_V2"
+                if pool_name == "scorer_fit" and family in mixed_families
                 else "SUCCESSOR_SELECTOR_AMENDMENT_V2"
             ),
         }
-        if family in preserved and pool_name == "scorer_fit":
-            expected = preserved[family]
-            for key in ("path", "state_shard_digest", "raw_sha256", "byte_count"):
-                if row[key] != expected[key]:
-                    raise RuntimeError(
-                        f"preserved shard provenance {family}/{key} changed"
-                    )
         rows.append(row)
     if len(rows) != EXPECTED_FAMILIES:
         raise RuntimeError("mixed state-shard provenance must cover eight families")
@@ -6976,8 +8445,8 @@ def _validate_state_shard_provenance(
     rows = manifest.get("state_shard_provenance")
     if not isinstance(rows, list) or len(rows) != EXPECTED_FAMILIES:
         raise RuntimeError("state manifest lacks eight-row shard provenance")
-    preserved = {str(row["family"]): row
-                 for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}
+    mixed_families = {str(row["family"])
+                      for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}
     seen: set[str] = set()
     observed_digests: dict[str, str] = {}
     for row in rows:
@@ -6985,13 +8454,17 @@ def _validate_state_shard_provenance(
         if family in seen:
             raise RuntimeError("state-shard provenance repeats a family")
         seen.add(family)
-        path = (ROOT / str(row.get("path", ""))).resolve()
-        if ROOT.resolve() not in path.parents or not path.is_file():
-            raise RuntimeError("state-shard provenance path is missing or escapes root")
+        raw_path = ROOT / str(row.get("path", ""))
+        path = _frozen_generated_artifact_path(raw_path)
+        expected_path = _frozen_generated_artifact_path(
+            _active_state_shard_path(
+                OUT_ROOT / pool, family, pool=pool))
+        if path != expected_path or not path.is_file() or path.is_symlink():
+            raise RuntimeError("state-shard provenance path changed or escapes root")
         payload = json.loads(path.read_text())
         expected_provenance = (
-            "PREDECESSOR_BYTE_EXACT_REVALIDATED"
-            if pool == "scorer_fit" and family in preserved
+            "MIXED_37_RETAINED_8_REPLACED_SELECTOR_AMENDMENT_V2"
+            if pool == "scorer_fit" and family in mixed_families
             else "SUCCESSOR_SELECTOR_AMENDMENT_V2"
         )
         if (row.get("selection_provenance") != expected_provenance
@@ -7000,13 +8473,11 @@ def _validate_state_shard_provenance(
                 or row.get("state_shard_digest")
                 != payload.get("state_shard_digest")):
             raise RuntimeError(f"state-shard provenance failed for {family}")
-        if expected_provenance == "PREDECESSOR_BYTE_EXACT_REVALIDATED":
-            expected = preserved[family]
-            if any(row.get(key) != expected[key] for key in (
-                    "path", "state_shard_digest", "raw_sha256", "byte_count")):
-                raise RuntimeError(f"predecessor provenance changed for {family}")
+        if expected_provenance == (
+                "MIXED_37_RETAINED_8_REPLACED_SELECTOR_AMENDMENT_V2"):
+            _validate_mixed_active_state_shard(payload, raw_path)
         else:
-            _validate_state_shard(payload, path, pool)
+            _validate_state_shard(payload, raw_path, pool)
         observed_digests[family] = str(row["state_shard_digest"])
     if (seen != set(manifest.get("state_shard_digests", {}))
             or observed_digests != manifest.get("state_shard_digests")):
@@ -7019,30 +8490,13 @@ def merge_states(out: Path) -> int:
     pool_name = out.name
     if pool_name not in POOLS:
         raise RuntimeError(f"unknown output pool {pool_name!r}")
-    paths = sorted(out.glob("state_shard_*.json"))
-    if len(paths) != EXPECTED_FAMILIES:
-        raise RuntimeError(f"expected eight state shards, found {len(paths)}")
-    preserved_by_family = STATE_SELECTOR.load_preserved_state_shards(ROOT)
-    preserved_families = set(preserved_by_family)
+    paths: list[Path] = []
     shards: list[dict[str, Any]] = []
-    successor_shards: list[dict[str, Any]] = []
-    for path in paths:
-        payload = json.loads(path.read_text())
-        family = str(payload.get("family", ""))
-        if pool_name == "scorer_fit" and family in preserved_families:
-            if payload != preserved_by_family[family]:
-                raise RuntimeError(
-                    f"preserved predecessor shard {family} changed before merge"
-                )
-        else:
-            _validate_state_shard(payload, path, pool_name)
-            successor_shards.append(payload)
+    for family in STATE_SELECTOR.REQUIRED_FAMILIES:
+        path, payload = _load_active_family_state_shard(
+            out, family, pool=pool_name)
+        paths.append(path)
         shards.append(payload)
-    if pool_name == "scorer_fit" and len(successor_shards) != 5:
-        raise RuntimeError(
-            "scorer-fit merge requires exactly three byte-bound predecessor "
-            "shards and five successor shards"
-        )
     families = [str(shard["family"]) for shard in shards]
     if len(set(families)) != EXPECTED_FAMILIES:
         raise RuntimeError("state shards do not represent eight unique families")
@@ -7085,7 +8539,7 @@ def merge_states(out: Path) -> int:
         "preprocessing_digest", "target_encoder_digest",
         "target_encoder_checkpoint_sha256", "genesis_backend",
     )
-    active_shards = successor_shards if pool_name == "scorer_fit" else shards
+    active_shards = shards
     common = {key: active_shards[0][key] for key in common_keys}
     for shard in active_shards[1:]:
         if any(shard[key] != common[key] for key in common_keys):
@@ -7107,7 +8561,9 @@ def merge_states(out: Path) -> int:
     }
     pre_allocation_digest = canonical_digest(pre_allocation_payload)
 
-    allocation_path = out / "candidate_allocation_manifest.json"
+    raw_allocation_path = out / "candidate_allocation_manifest.json"
+    allocation_path = _pin_generated_path(
+        raw_allocation_path, raw_allocation_path)
     allocation_digest: str
     if pool_name == "scorer_fit":
         projection = [{
@@ -7200,9 +8656,11 @@ def merge_states(out: Path) -> int:
         preserved_revalidation = _issue_preserved_state_revalidation(
             out, allocation, states)
     else:
-        preserved_path = (
+        raw_preserved_path = (
             ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
         )
+        preserved_path = _pin_generated_path(
+            raw_preserved_path, raw_preserved_path)
         if not preserved_path.is_file():
             raise RuntimeError(
                 "final-evaluation identities require scorer-fit phase-2 revalidation"
@@ -7285,12 +8743,14 @@ def merge_states(out: Path) -> int:
         },
         "scene_rejection_reasons": rejections,
         "recovery_provenance": {
-            "phase1_preserved_valid_state_identity_count": 45,
-            "phase1_preserved_valid_family_count": 3,
-            "preserved_state_precontract_revalidation_receipt_digest":
+            "frozen_phase1_checked_state_identity_count": 45,
+            "active_retained_predecessor_state_identity_count": 37,
+            "active_replacement_state_identity_count": 8,
+            "mixed_precontract_disposition_receipt_digest":
                 _load_clean_source_launch_receipt()[
-                    "preserved_state_precontract_revalidation_receipt_digest"
-                ],
+                    "mixed_precontract_disposition_receipt_digest"],
+            "frozen_failed_precontract_receipt_binding": dict(
+                STATE_SELECTOR.FROZEN_PRESERVED_PRECONTRACT_FAILURE),
             "preserved_state_revalidation_receipt_digest":
                 preserved_revalidation[
                     "preserved_state_revalidation_receipt_digest"
@@ -7318,18 +8778,22 @@ def merge_states(out: Path) -> int:
                 "excluded from this corpus; no invalid artifact is mixed"
             ),
             "valid_paused_identity_decision": (
-                "retained the separate byte-bound 45-state pre-outcome paused "
-                "identity set after exact phase-1 redrive and selector checks; "
+                "retained 37 byte-bound passing identities from the separate "
+                "45-state pre-outcome phase-1 terminal and replaced only its "
+                "eight authorized completion slots under exact lexical anchors; "
                 "the active 120-state allocation and exact six-candidate masks "
                 "were verified by phase 2 before branch identities were issued; "
-                "predecessor shard and contract bindings remain provenance only"
+                "the failed receipt and all predecessor shards remain immutable "
+                "provenance only"
             ),
         },
     }
     if pool_name == "scorer_fit":
         manifest["small_completion_joint_allocation_search"] = joint_search
     manifest["state_manifest_digest"] = canonical_digest(manifest)
-    manifest_path = out / "state_manifest.json"
+    raw_manifest_path = out / "state_manifest.json"
+    manifest_path = _pin_generated_path(
+        raw_manifest_path, raw_manifest_path)
     if manifest_path.is_file():
         existing = json.loads(manifest_path.read_text())
         if existing != manifest:
@@ -7378,6 +8842,9 @@ def main() -> int:
     parser.add_argument(
         "--state-resolution-scene-request-digest", default=None,
         help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--mixed-replacement-scene-request-digest", default=None,
+        help=argparse.SUPPRESS)
     parser.add_argument("--backend", default="cpu")
     parser.add_argument("--state-offset", type=int, default=0)
     parser.add_argument("--state-limit", type=int, default=10**6)
@@ -7398,6 +8865,14 @@ def main() -> int:
             and (args.stage != "states" or args.family is None)):
         raise SystemExit(
             "state-resolution scene request is internal to family states")
+    if (args.mixed_replacement_scene_request_digest is not None
+            and (args.stage != "states" or args.pool != "scorer_fit"
+                 or args.family is None)):
+        raise SystemExit(
+            "mixed replacement request is internal to scorer-fit family states")
+    if (args.state_resolution_scene_request_digest is not None
+            and args.mixed_replacement_scene_request_digest is not None):
+        raise SystemExit("only one internal state-scene worker may be requested")
 
     out = OUT_ROOT / args.pool
     out.mkdir(parents=True, exist_ok=True)
@@ -7414,40 +8889,26 @@ def main() -> int:
     if args.stage == "states":
         if args.family is None:
             raise SystemExit("--stage states requires exactly one --family shard")
+        if args.mixed_replacement_scene_request_digest is not None:
+            return stage_mixed_replacement_scene_worker(args)
         if args.state_resolution_scene_request_digest is not None:
             return stage_state_resolution_scene_worker(args)
-        shard_path = out / f"state_shard_{args.family}.json"
-        if (args.pool == "scorer_fit"
-                and args.family in {
-                    row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS
-                }):
-            # These exact source shards passed the phase-1 identity-only gate.
-            # Never rewrite or regenerate them under the successor wrapper.
-            _load_clean_source_launch_receipt()
-            preserved = STATE_SELECTOR.load_preserved_state_shards(ROOT)
-            if (not shard_path.is_file()
-                    or json.loads(shard_path.read_text())
-                    != preserved[args.family]):
-                raise RuntimeError(
-                    f"byte-bound preserved state shard {args.family} is missing "
-                    "or changed; refusing replacement selection"
-                )
-            print(json.dumps({
-                "recovery": "retained_phase1_revalidated_predecessor_identity_shard",
-                "path": str(shard_path),
-                "state_shard_digest":
-                    preserved[args.family]["state_shard_digest"],
-                "states": len(preserved[args.family]["states"]),
-                "preserved_state_precontract_revalidation_receipt_digest":
-                    _load_clean_source_launch_receipt()[
-                        "preserved_state_precontract_revalidation_receipt_digest"
-                    ],
-            }, indent=2, sort_keys=True))
-            return 0
+        mixed_family = (
+            args.pool == "scorer_fit"
+            and args.family in {
+                row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS
+            }
+        )
+        shard_path = (_mixed_active_state_shard_path(out, args.family)
+                      if mixed_family
+                      else out / f"state_shard_{args.family}.json")
         if shard_path.is_file():
             try:
                 existing = json.loads(shard_path.read_text())
-                _validate_state_shard(existing, shard_path, args.pool)
+                if mixed_family:
+                    _validate_mixed_active_state_shard(existing, shard_path)
+                else:
+                    _validate_state_shard(existing, shard_path, args.pool)
                 print(json.dumps({
                     "recovery": "retained_valid_completed_identity_shard",
                     "path": str(shard_path),
@@ -7465,7 +8926,8 @@ def main() -> int:
                                               "identity-shard-validation-failed")
                 print(f"[recovery] preserved invalid shard {preserved}: {exc}",
                       flush=True)
-        manifest = resolve_states(args)
+        manifest = (resolve_mixed_active_family(args)
+                    if mixed_family else resolve_states(args))
         atomic_json(shard_path, manifest)
         from collections import Counter
         print(json.dumps({

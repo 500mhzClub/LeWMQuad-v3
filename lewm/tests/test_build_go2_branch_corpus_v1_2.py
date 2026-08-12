@@ -43,6 +43,7 @@ def _manifest(candidate_indices=(0, 1)):
         "clean_source_binding_digest": "clean-source-binding-digest",
         "bound_implementations_digest": "source-bindings-digest",
         "scorer_contract_artifact_digest": "contract-artifact-digest",
+        "mixed_precontract_disposition_receipt_digest": "d" * 64,
         "invalid_scorer_identity_exclusion_digest":
             B.INVALID_IDS.invalid_identity_exclusion_digest(),
         "state_selector_amendment_digest":
@@ -195,7 +196,8 @@ def _patch_encoder_launch(monkeypatch, encoder, manifest):
     expected.update({
         "launch_state_selector_feasibility_receipt_digest":
             manifest["state_selector_feasibility_receipt_digest"],
-        "preserved_state_precontract_revalidation_receipt_digest": "d" * 64,
+        "mixed_precontract_disposition_receipt_digest":
+            manifest["mixed_precontract_disposition_receipt_digest"],
     })
     monkeypatch.setattr(
         encoder, "_load_clean_source_launch_receipt", lambda: dict(expected))
@@ -213,13 +215,14 @@ def test_encoder_reopens_complete_preserved_identity_two_phase_chain(
     monkeypatch.setattr(encoder, "OUT_ROOT", pool_root)
     feasibility_path = (
         tmp_path / encoder.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH)
-    precontract_path = (
+    disposition_path = (
         tmp_path
-        / encoder.STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH)
+        / encoder.STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH)
     revalidation_path = (
         tmp_path / encoder.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH)
     allocation_path = pool_root / "scorer_fit/candidate_allocation_manifest.json"
-    for path in (feasibility_path, revalidation_path, allocation_path):
+    for path in (feasibility_path, disposition_path, revalidation_path,
+                 allocation_path):
         path.parent.mkdir(parents=True, exist_ok=True)
     feasibility_path.write_text(json.dumps({
         "state_selector_feasibility_receipt_digest": "f" * 64,
@@ -231,11 +234,11 @@ def test_encoder_reopens_complete_preserved_identity_two_phase_chain(
     monkeypatch.setattr(
         encoder.STATE_SELECTOR, "validate_authority_artifacts", lambda: None)
     monkeypatch.setattr(
-        encoder.STATE_SELECTOR, "validate_state_selector_feasibility_receipt",
-        lambda *_args, **_kwargs: None)
+        encoder.STATE_SELECTOR, "validate_frozen_reachability_feasibility_pass",
+        lambda **_kwargs: {"state_selector_feasibility_receipt_digest": "f" * 64})
     monkeypatch.setattr(
         encoder.STATE_SELECTOR,
-        "validate_preserved_state_precontract_revalidation_receipt",
+        "validate_preserved_state_mixed_precontract_disposition_receipt",
         lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         encoder.STATE_SELECTOR, "validate_preserved_state_revalidation_receipt",
@@ -248,18 +251,20 @@ def test_encoder_reopens_complete_preserved_identity_two_phase_chain(
         encoder._load_selector_successor_receipts(
             source_commit="c" * 40,
             selection_digest="s" * 64,
+            active_states=[],
             expected_feasibility_receipt_digest="f" * 64,
-            expected_precontract_revalidation_receipt_digest="p" * 64,
+            expected_mixed_precontract_disposition_receipt_digest="p" * 64,
         )
 
-    precontract_path.write_text(json.dumps({
-        "preserved_state_precontract_revalidation_receipt_digest": "p" * 64,
+    disposition_path.write_text(json.dumps({
+        "mixed_precontract_disposition_receipt_digest": "p" * 64,
     }))
     assert encoder._load_selector_successor_receipts(
         source_commit="c" * 40,
         selection_digest="s" * 64,
+        active_states=[],
         expected_feasibility_receipt_digest="f" * 64,
-        expected_precontract_revalidation_receipt_digest="p" * 64,
+        expected_mixed_precontract_disposition_receipt_digest="p" * 64,
     ) == {
         "state_selector_amendment_digest": "a" * 64,
         "state_selector_feasibility_receipt_digest": "f" * 64,
@@ -279,7 +284,7 @@ def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
     monkeypatch.setattr(B, "clean_source_binding", lambda: clean_source)
     selector_preconditions = {
         "state_selector_feasibility_receipt_digest": "c" * 64,
-        "preserved_state_precontract_revalidation_receipt_digest": "d" * 64,
+        "mixed_precontract_disposition_receipt_digest": "d" * 64,
     }
     monkeypatch.setattr(
         B, "_load_state_selector_preconditions",
@@ -313,6 +318,148 @@ def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
     assert path.read_bytes() == first
 
 
+def test_issued_scorer_contract_uses_exact_managed_utility_root(
+        tmp_path, monkeypatch):
+    utility_root = tmp_path / "repo/.generated/go2_utility_scorer_v1_2"
+    target_root = tmp_path / "managed/go2_utility_scorer_v1_2"
+    contract_path = target_root / "scorer_contract.json"
+    contract_path.parent.mkdir(parents=True)
+    utility_root.parent.mkdir(parents=True)
+    utility_root.symlink_to(target_root, target_is_directory=True)
+    source = {
+        "source_repository_commit": "a" * 40,
+        "source_repository_clean": True,
+        "bound_implementations_digest": "b" * 64,
+    }
+    payload = {
+        "complete": True,
+        "scorer_contract_v1_2_digest": B.scorer_contract_digest(),
+        "source_repository_clean": True,
+        "clean_source_binding": source,
+        "clean_source_binding_digest": B.canonical_digest(source),
+    }
+    payload["contract_artifact_digest"] = B.canonical_digest(payload)
+    B.atomic_json(contract_path, payload)
+    lexical_contract = utility_root / "scorer_contract.json"
+    monkeypatch.setattr(B, "SCORER_CONTRACT_ARTIFACT_PATH", lexical_contract)
+    monkeypatch.setattr(B, "clean_source_binding", lambda: source)
+    assert B._issued_scorer_contract_path() == contract_path
+    assert B._load_issued_scorer_contract() == payload
+
+    contract_path.unlink()
+    other = target_root / "other.json"
+    B.atomic_json(other, payload)
+    contract_path.symlink_to(other)
+    with pytest.raises(RuntimeError, match="symlinked corpus paths"):
+        B._load_issued_scorer_contract()
+
+
+def test_issued_scorer_contract_canonical_path_survives_root_alias_swap(
+        tmp_path, monkeypatch):
+    lexical_root = tmp_path / "repo/.generated/go2_utility_scorer_v1_2"
+    first_root = tmp_path / "first/go2_utility_scorer_v1_2"
+    second_root = tmp_path / "second/go2_utility_scorer_v1_2"
+    first_path = first_root / "scorer_contract.json"
+    second_path = second_root / "scorer_contract.json"
+    first_path.parent.mkdir(parents=True)
+    second_path.parent.mkdir(parents=True)
+    lexical_root.parent.mkdir(parents=True)
+    source = {
+        "source_repository_commit": "a" * 40,
+        "source_repository_clean": True,
+        "bound_implementations_digest": "b" * 64,
+    }
+
+    def artifact(marker):
+        payload = {
+            "marker": marker,
+            "complete": True,
+            "scorer_contract_v1_2_digest": B.scorer_contract_digest(),
+            "source_repository_clean": True,
+            "clean_source_binding": source,
+            "clean_source_binding_digest": B.canonical_digest(source),
+        }
+        payload["contract_artifact_digest"] = B.canonical_digest(payload)
+        return payload
+
+    first = artifact("first")
+    second = artifact("second")
+    B.atomic_json(first_path, first)
+    B.atomic_json(second_path, second)
+    lexical_root.symlink_to(first_root, target_is_directory=True)
+    monkeypatch.setattr(
+        B, "SCORER_CONTRACT_ARTIFACT_PATH",
+        lexical_root / "scorer_contract.json")
+    monkeypatch.setattr(B, "clean_source_binding", lambda: source)
+
+    pinned = B._issued_scorer_contract_path()
+    lexical_root.unlink()
+    lexical_root.symlink_to(second_root, target_is_directory=True)
+    assert pinned == first_path
+    assert B._load_issued_scorer_contract_at_path(pinned) == first
+    assert B._load_issued_scorer_contract() == second
+
+
+def test_launch_hashes_same_pinned_utility_contract_after_alias_swap(
+        tmp_path, monkeypatch):
+    lexical_root = tmp_path / "repo/.generated/go2_utility_scorer_v1_2"
+    first_root = tmp_path / "first/go2_utility_scorer_v1_2"
+    second_root = tmp_path / "second/go2_utility_scorer_v1_2"
+    first_path = first_root / "scorer_contract.json"
+    second_path = second_root / "scorer_contract.json"
+    first_path.parent.mkdir(parents=True)
+    second_path.parent.mkdir(parents=True)
+    lexical_root.parent.mkdir(parents=True)
+    source = {
+        "source_repository_commit": "a" * 40,
+        "source_repository_clean": True,
+        "bound_implementations_digest": "b" * 64,
+    }
+    selector = {
+        "state_selector_feasibility_receipt_digest": "c" * 64,
+        "mixed_precontract_disposition_receipt_digest": "d" * 64,
+    }
+
+    def artifact(marker):
+        payload = {
+            "marker": marker,
+            "complete": True,
+            "scorer_contract_v1_2_digest": B.scorer_contract_digest(),
+            "source_repository_clean": True,
+            "clean_source_binding": source,
+            "clean_source_binding_digest": B.canonical_digest(source),
+            **selector,
+        }
+        payload["contract_artifact_digest"] = B.canonical_digest(payload)
+        return payload
+
+    B.atomic_json(first_path, artifact("first"))
+    B.atomic_json(second_path, artifact("second"))
+    lexical_root.symlink_to(first_root, target_is_directory=True)
+    monkeypatch.setattr(
+        B, "SCORER_CONTRACT_ARTIFACT_PATH",
+        lexical_root / "scorer_contract.json")
+    monkeypatch.setattr(B, "clean_source_binding", lambda: source)
+    monkeypatch.setattr(
+        B, "_load_state_selector_preconditions",
+        lambda **_kwargs: dict(selector))
+    original_load = B._load_issued_scorer_contract_at_path
+
+    def load_then_swap(path):
+        payload = original_load(path)
+        lexical_root.unlink()
+        lexical_root.symlink_to(second_root, target_is_directory=True)
+        return payload
+
+    monkeypatch.setattr(
+        B, "_load_issued_scorer_contract_at_path", load_then_swap)
+    receipt = B._build_clean_source_launch_receipt({
+        "pre_identity_validation_digest": "e" * 64,
+    })
+    assert receipt["scorer_contract_artifact_sha256"] == B.file_sha256(first_path)
+    assert receipt["scorer_contract_artifact_sha256"] != B.file_sha256(second_path)
+
+
 def test_state_and_branch_identities_are_canonical_and_pre_outcome():
     original = {
         "state_id": "state-x",
@@ -343,6 +490,95 @@ def test_state_and_branch_identities_are_canonical_and_pre_outcome():
     assert identity_a == identity_b
     assert B._branch_identity(state, 1, binding)["branch_identity_digest"] \
         != identity_a["branch_identity_digest"]
+
+
+def test_public_active_manifest_validator_delegates_exactly_once(monkeypatch):
+    calls = []
+    manifest = {"schema": "synthetic-active-manifest"}
+    monkeypatch.setattr(
+        B, "_validate_state_manifest",
+        lambda payload, pool: calls.append((payload, pool)))
+    assert B.validate_active_state_manifest_for_consumption(manifest) is None
+    assert calls == [(manifest, "scorer_fit")]
+    with pytest.raises(RuntimeError, match="active scorer-fit"):
+        B.validate_active_state_manifest_for_consumption(manifest, "final_eval")
+    assert calls == [(manifest, "scorer_fit")]
+
+
+def test_public_active_manifest_loader_pins_before_read_and_rejects_symlinks(
+        tmp_path, monkeypatch):
+    lexical_root = tmp_path / "repo/.generated/go2_branch_corpus_v1_2"
+    first_root = tmp_path / "first/go2_branch_corpus_v1_2"
+    second_root = tmp_path / "second/go2_branch_corpus_v1_2"
+    first_path = first_root / "scorer_fit/state_manifest.json"
+    second_path = second_root / "scorer_fit/state_manifest.json"
+    first_path.parent.mkdir(parents=True)
+    second_path.parent.mkdir(parents=True)
+    lexical_root.parent.mkdir(parents=True)
+    first = {"marker": "first"}
+    second = {"marker": "second"}
+    first_path.write_text(json.dumps(first))
+    second_path.write_text(json.dumps(second))
+    lexical_root.symlink_to(first_root, target_is_directory=True)
+    monkeypatch.setattr(B, "OUT_ROOT", lexical_root)
+    calls = []
+
+    def validate(manifest, pool="scorer_fit"):
+        calls.append((manifest, pool))
+        # A root-alias swap during validation cannot change the bytes already
+        # read from the canonical pinned path.
+        lexical_root.unlink()
+        lexical_root.symlink_to(second_root, target_is_directory=True)
+
+    monkeypatch.setattr(
+        B, "validate_active_state_manifest_for_consumption", validate)
+    loaded = B.load_active_state_manifest_for_consumption(
+        lexical_root / "scorer_fit/state_manifest.json")
+    assert loaded == first
+    assert calls == [(first, "scorer_fit")]
+
+    lexical_root.unlink()
+    lexical_root.symlink_to(first_root, target_is_directory=True)
+    redirected = first_root / "redirected.json"
+    redirected.write_text(json.dumps(first))
+    first_path.unlink()
+    first_path.symlink_to(redirected)
+    with pytest.raises(RuntimeError, match="symlinked corpus paths"):
+        B.load_active_state_manifest_for_consumption(
+            lexical_root / "scorer_fit/state_manifest.json")
+
+    first_path.unlink()
+    nested = first_root / "nested"
+    nested.mkdir()
+    (nested / "state_manifest.json").write_text(json.dumps(first))
+    scorer_fit_dir = first_root / "scorer_fit"
+    scorer_fit_dir.rmdir()
+    scorer_fit_dir.symlink_to(nested, target_is_directory=True)
+    with pytest.raises(RuntimeError, match="symlinked corpus paths"):
+        B.load_and_validate_active_state_manifest_for_consumption(
+            lexical_root / "scorer_fit/state_manifest.json")
+
+
+def test_public_scorer_fit_artifact_pin_is_finite_and_exact(
+        tmp_path, monkeypatch):
+    lexical_root = tmp_path / "repo/.generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "managed/go2_branch_corpus_v1_2"
+    artifact = target_root / "scorer_fit/candidate_allocation_manifest.json"
+    artifact.parent.mkdir(parents=True)
+    artifact.write_text("{}\n")
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    monkeypatch.setattr(B, "OUT_ROOT", lexical_root)
+    raw = lexical_root / "scorer_fit/candidate_allocation_manifest.json"
+    assert B.pin_active_scorer_fit_artifact_for_consumption(
+        raw, "candidate_allocation_manifest.json") == artifact
+    with pytest.raises(RuntimeError, match="registered scorer-fit"):
+        B.pin_active_scorer_fit_artifact_for_consumption(
+            raw, "row_records/arbitrary.json")
+    with pytest.raises(RuntimeError, match="path identity changed"):
+        B.pin_active_scorer_fit_artifact_for_consumption(
+            lexical_root / "scorer_fit/state_manifest.json",
+            "candidate_allocation_manifest.json")
 
 
 def test_branch_row_validates_bound_frames_and_rejects_rehashed_binding_tamper(tmp_path):

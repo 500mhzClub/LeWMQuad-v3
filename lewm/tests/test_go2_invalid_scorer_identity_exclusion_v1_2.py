@@ -328,18 +328,21 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
         bindings={"synthetic": {"path": "source.py", "sha256": "d" * 64}},
     )
     selection = C._digest(C.CORPUS_SELECTION_CONTRACT)
-    feasibility, revalidation = _selector_receipts("c" * 40, selection)
+    feasibility, _frozen_phase1_fixture = _selector_receipts("c" * 40, selection)
+    disposition = {
+        "mixed_precontract_disposition_receipt_digest": "e" * 64,
+    }
     # This unit test exercises the contract payload projection.  The live V2
     # feasibility/phase-1 validators have dedicated exact reconstruction tests
     # and intentionally require 182 shard files plus the frozen census root.
     monkeypatch.setattr(
-        C.STATE_SELECTOR, "validate_state_selector_feasibility_receipt",
-        lambda *_args, **_kwargs: None)
+        C.STATE_SELECTOR, "validate_frozen_reachability_feasibility_pass",
+        lambda *_args, **_kwargs: feasibility)
     monkeypatch.setattr(
         C.STATE_SELECTOR,
-        "validate_preserved_state_precontract_revalidation_receipt",
+        "validate_preserved_state_mixed_precontract_disposition_receipt",
         lambda *_args, **_kwargs: None)
-    payload = C._contract_artifact_payload(source, feasibility, revalidation)
+    payload = C._contract_artifact_payload(source, feasibility, disposition)
     frozen = payload["contract"]
     assert payload["schema"] == "go2_utility_scorer_contract_v1_2_artifact"
     assert payload["source_repository_commit"] == "c" * 40
@@ -348,12 +351,12 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
     assert payload["candidate_allocation_amendment_verified"] is True
     assert payload["state_selector_amendment_verified"] is True
     assert payload["state_selector_feasibility_verified"] is True
-    assert payload["preserved_state_precontract_revalidation_verified"] is True
+    assert payload["preserved_state_mixed_precontract_disposition_verified"] is True
     assert payload["state_selector_feasibility_receipt_digest"] == \
         feasibility["state_selector_feasibility_receipt_digest"]
-    assert payload["preserved_state_precontract_revalidation_receipt_digest"] == \
-        revalidation["preserved_state_precontract_revalidation_receipt_digest"]
-    assert payload["preserved_state_post_allocation_revalidation"] == {
+    assert payload["mixed_precontract_disposition_receipt_digest"] == \
+        disposition["mixed_precontract_disposition_receipt_digest"]
+    assert payload["mixed_state_post_allocation_revalidation"] == {
         "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
         "required_before_active_identity_manifest": True,
         "schema": C.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_SCHEMA,
