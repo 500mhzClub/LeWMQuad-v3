@@ -108,6 +108,7 @@ class ScorerBundle:
     qualification: dict[str, Any]
     package: dict[str, Any]
     package_sha256: str
+    selector_provenance: dict[str, Any]
     latent: S.UtilityScorer
     no_latent: S.UtilityScorer
 
@@ -190,6 +191,115 @@ def _safe_relative(root: Path, value: Any, label: str) -> Path:
     return resolved
 
 
+def _validate_live_selector_provenance(
+        qualification: Mapping[str, Any], *, pool_dir: Path | None = None,
+        ) -> dict[str, Any]:
+    """Re-open the exact pre-outcome selector chain before any scorer weights.
+
+    Training already validates this chain before constructing either scorer.
+    The development-transfer boundary independently repeats the validation so
+    that a self-consistent package cannot outlive, substitute, or lose the
+    final reachability-feasibility receipt, the exact post-allocation
+    preserved-identity receipt, or their frozen allocation manifest.
+    """
+
+    selected_pool = (S.OUT_ROOT / S.EXPECTED_POOL
+                     if pool_dir is None else Path(pool_dir))
+    pre_identity_path = selected_pool / "pre_identity_allocation_validation.json"
+    allocation_path = selected_pool / "candidate_allocation_manifest.json"
+    feasibility_path = (
+        selected_pool / S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME)
+    precontract_path = (
+        selected_pool
+        / S.STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_NAME)
+    revalidation_path = (
+        selected_pool / S.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME)
+    try:
+        pre_identity = S._read_json(pre_identity_path)
+        allocation = S._read_json(allocation_path)
+        precontract = S._read_json(precontract_path)
+        S.validate_pre_identity_structural_validation(pre_identity)
+        launch = S._validate_clean_source_launch(selected_pool, pre_identity)
+        selector = S._validate_selector_successor(
+            selected_pool, launch, allocation)
+        S.STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
+            precontract,
+            expected_source_commit=launch["source_repository_commit"],
+            expected_successor_selection_digest=
+                S.contract()["corpus_selection_digest"],
+            expected_feasibility_receipt_digest=selector[
+                "state_selector_feasibility_receipt_digest"],
+            root=ROOT,
+        )
+    except (OSError, ValueError, KeyError, S.CandidateAllocationError,
+            S.CorpusValidationError,
+            S.STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+        raise DevelopmentTransferRefused(
+            f"live scorer selector provenance does not verify: {exc}") from exc
+
+    for key in S.SELECTOR_BINDING_KEYS:
+        _require(selector.get(key) == qualification.get(key),
+                 f"live scorer selector provenance differs at {key}")
+    corpus_bindings = qualification.get("corpus_bindings")
+    _require(isinstance(corpus_bindings, Mapping),
+             "qualified scorer has no corpus provenance bindings")
+    allocation_digest = S.allocation_manifest_digest(allocation)
+    for key, expected in (
+        ("candidate_allocation_manifest_digest", allocation_digest),
+        ("candidate_allocation_post_identity_validation_digest",
+         allocation["post_identity_pre_outcome_validation"][
+             "post_identity_validation_digest"]),
+        ("pre_identity_allocation_validation_digest",
+         pre_identity["pre_identity_validation_digest"]),
+    ):
+        _require(corpus_bindings.get(key) == expected,
+                 f"live scorer allocation provenance differs at {key}")
+    _require(
+        precontract.get(
+            "preserved_state_precontract_revalidation_receipt_digest")
+        == launch["preserved_state_precontract_revalidation_receipt_digest"],
+        "live phase-1 preserved-state receipt differs from scorer launch",
+    )
+
+    for path, label in (
+        (pre_identity_path, "pre-identity allocation validation"),
+        (allocation_path, "candidate allocation manifest"),
+        (feasibility_path, "selector feasibility receipt"),
+        (precontract_path, "preserved-state phase-1 receipt"),
+        (revalidation_path, "preserved-state phase-2 receipt"),
+    ):
+        _require(path.is_file(), f"missing live {label}: {path}")
+
+    def binding(path: Path) -> dict[str, Any]:
+        try:
+            display = str(path.resolve().relative_to(ROOT.resolve()))
+        except ValueError:
+            display = str(path.resolve())
+        return {
+            "path": display,
+            "sha256": sha256_file(path),
+            "byte_count": path.stat().st_size,
+        }
+
+    result = {
+        "status": "PASS_LIVE_PRE_WEIGHT_SELECTOR_PROVENANCE_REVALIDATION",
+        "selector_bindings": dict(selector),
+        "preserved_state_precontract_revalidation_receipt_digest":
+            launch["preserved_state_precontract_revalidation_receipt_digest"],
+        "pre_identity_allocation_validation": binding(pre_identity_path),
+        "candidate_allocation_manifest": binding(allocation_path),
+        "selector_feasibility_receipt": binding(feasibility_path),
+        "preserved_state_precontract_revalidation_receipt":
+            binding(precontract_path),
+        "preserved_state_post_allocation_revalidation_receipt":
+            binding(revalidation_path),
+        "scorer_weights_opened_during_validation": False,
+        "predictor_artifacts_opened_during_validation": False,
+    }
+    result["verification_digest"] = legacy_digest(result)
+    return result
+
+
 # ----------------------------------------------------------- scorer gate -----
 def validate_qualified_scorer() -> ScorerBundle:
     """Refuse before torch.load unless every frozen qualification gate passed."""
@@ -218,6 +328,10 @@ def validate_qualified_scorer() -> ScorerBundle:
     _require(qualification["state_selector_amendment_digest"]
              == S.STATE_SELECTOR.state_selector_amendment_digest(),
              "qualified scorer binds a different state-selector amendment")
+    # This invokes only JSON/source/allocation validators.  Keep it above both
+    # the scorer-package byte read and torch.load so the receipt/mask chain is
+    # a genuine pre-weight gate at the application boundary.
+    selector_provenance = _validate_live_selector_provenance(qualification)
     try:
         current_source = S.clean_source_binding()
     except RuntimeError as exc:
@@ -308,7 +422,9 @@ def validate_qualified_scorer() -> ScorerBundle:
     latent.load_state_dict(package["latent"], strict=True)
     no_latent.load_state_dict(baseline_package["model_state_dict"], strict=True)
     latent.eval(); no_latent.eval()
-    return ScorerBundle(qualification, package, str(package_sha), latent, no_latent)
+    return ScorerBundle(
+        qualification, package, str(package_sha), selector_provenance,
+        latent, no_latent)
 
 
 def prospective_spec(scorer: ScorerBundle) -> dict[str, Any]:
@@ -332,6 +448,7 @@ def prospective_spec(scorer: ScorerBundle) -> dict[str, Any]:
         "scorer_selector_successor_bindings": {
             key: scorer.qualification[key] for key in S.SELECTOR_BINDING_KEYS
         },
+        "live_selector_provenance": scorer.selector_provenance,
         "frozen_inputs": {
             "stage_a_identity_manifest_digest": FROZEN_STAGE_A_IDENTITY_DIGEST,
             "stage_a_corpus_digest": FROZEN_STAGE_A_CORPUS_DIGEST,
@@ -638,6 +755,12 @@ def _score_receipt(unit: str, input_digest: str, scorer: ScorerBundle,
         "input_digest": input_digest,
         "scorer_package_sha256": scorer.package_sha256,
         "scorer_contract_v1_2_digest": contract_digest(),
+        **{
+            key: scorer.qualification[key]
+            for key in S.SELECTOR_BINDING_KEYS
+        },
+        "selector_provenance_verification_digest":
+            scorer.selector_provenance["verification_digest"],
         "rows": EXPECTED_BRANCHES, "shape": [EXPECTED_BRANCHES],
         "dtype": "float32", "path": str(score_path.relative_to(OUT_DIR)),
         "sha256": sha256_file(score_path), "byte_count": score_path.stat().st_size,
@@ -675,6 +798,10 @@ def validate_existing_result(result: Mapping[str, Any], spec_digest: str,
                  and receipt.get("complete") is True
                  and receipt.get("scorer_package_sha256") == scorer.package_sha256
                  and receipt.get("scorer_contract_v1_2_digest") == contract_digest()
+                 and all(receipt.get(key) == scorer.qualification.get(key)
+                         for key in S.SELECTOR_BINDING_KEYS)
+                 and receipt.get("selector_provenance_verification_digest")
+                 == scorer.selector_provenance.get("verification_digest")
                  and receipt.get("shape") == [EXPECTED_BRANCHES]
                  and receipt.get("dtype") == "float32",
                  f"existing {unit} score-shard receipt differs")
@@ -707,6 +834,11 @@ def _existing_scores(unit: str, input_digest: str, scorer: ScorerBundle
                  and receipt.get("unit") == unit
                  and receipt.get("input_digest") == input_digest
                  and receipt.get("scorer_package_sha256") == scorer.package_sha256
+                 and receipt.get("scorer_contract_v1_2_digest") == contract_digest()
+                 and all(receipt.get(key) == scorer.qualification.get(key)
+                         for key in S.SELECTOR_BINDING_KEYS)
+                 and receipt.get("selector_provenance_verification_digest")
+                 == scorer.selector_provenance.get("verification_digest")
                  and receipt.get("shape") == [EXPECTED_BRANCHES]
                  and receipt.get("dtype") == "float32"
                  and score_path.stat().st_size == EXPECTED_BRANCHES * 4
@@ -1061,6 +1193,7 @@ def main() -> int:
         "scorer_package_sha256": scorer.package_sha256,
         "scorer_selector_successor_bindings":
             spec["scorer_selector_successor_bindings"],
+        "live_selector_provenance": spec["live_selector_provenance"],
         "frozen_inputs": spec["frozen_inputs"],
         "scope": {"states": EXPECTED_STATES, "branches": EXPECTED_BRANCHES,
                   "candidates_per_state": EXPECTED_CANDIDATES,

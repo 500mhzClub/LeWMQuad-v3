@@ -56,7 +56,7 @@ from lewm.oracle.go2_candidate_allocation_v1_2 import (  # noqa: E402
 from lewm.oracle.go2_invalid_scorer_identity_exclusion_v1_2 import (  # noqa: E402
     invalid_identity_exclusion_digest,
 )
-from lewm.oracle import go2_scorer_state_selector_amendment_v1 as STATE_SELECTOR  # noqa: E402
+from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR  # noqa: E402
 from lewm.oracle.go2_textured_v03_renderer import (  # noqa: E402
     renderer_contract_digest as textured_v03_renderer_contract_digest,
 )
@@ -114,11 +114,7 @@ LAUNCH_BINDING_KEYS = (
     "bound_implementations_digest",
     "scorer_contract_artifact_digest",
 )
-SELECTOR_BINDING_KEYS = (
-    "state_selector_amendment_digest",
-    "state_selector_feasibility_receipt_digest",
-    "preserved_state_revalidation_receipt_digest",
-)
+SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
 SCORER_PROVENANCE_BINDING_KEYS = SELECTOR_BINDING_KEYS + LAUNCH_BINDING_KEYS
 
 # There are no learned or outcome-derived scaler values.  Recording every
@@ -445,10 +441,15 @@ def _validate_selector_successor(
     selection_digest = contract()["corpus_selection_digest"]
     feasibility_path = (
         pool_dir / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME)
+    precontract_path = (
+        pool_dir
+        / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_NAME)
     revalidation_path = (
         pool_dir / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME)
     _require(feasibility_path.is_file(),
              "missing all-family selector-feasibility receipt")
+    _require(precontract_path.is_file(),
+             "missing preserved-state phase-1 revalidation receipt")
     _require(revalidation_path.is_file(),
              "missing preserved-state revalidation receipt")
     try:
@@ -457,13 +458,33 @@ def _validate_selector_successor(
         STATE_SELECTOR.validate_state_selector_feasibility_receipt(
             feasibility,
             expected_source_commit=launch_bindings["source_repository_commit"],
-            expected_successor_selection_digest=selection_digest)
+            expected_successor_selection_digest=selection_digest,
+            expected_clean_source_binding_digest=str(
+                launch_bindings["clean_source_binding_digest"]),
+            expected_bound_implementations_digest=str(
+                launch_bindings["bound_implementations_digest"]),
+            root=ROOT)
         feasibility_digest = _require_digest(
             feasibility.get("state_selector_feasibility_receipt_digest"),
             "state_selector_feasibility_receipt_digest")
         _require(feasibility_digest == launch_bindings[
                     "launch_state_selector_feasibility_receipt_digest"],
                  "selector feasibility receipt differs from clean-source launch")
+        precontract = _read_json(precontract_path)
+        STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
+            precontract,
+            expected_source_commit=launch_bindings["source_repository_commit"],
+            expected_successor_selection_digest=selection_digest,
+            expected_feasibility_receipt_digest=feasibility_digest,
+            root=ROOT,
+        )
+        _require(
+            precontract.get(
+                "preserved_state_precontract_revalidation_receipt_digest")
+            == launch_bindings[
+                "preserved_state_precontract_revalidation_receipt_digest"],
+            "preserved-state phase-1 receipt differs from clean-source launch",
+        )
         revalidation = _read_json(revalidation_path)
         STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
             revalidation,

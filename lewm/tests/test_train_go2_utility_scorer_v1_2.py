@@ -152,9 +152,12 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                                         "missing required end-to-end smoke receipt"):
                 scorer._validate_smoke_receipts(root, manifest)
 
-    def test_selector_successor_requires_both_outcome_free_receipts(self):
+    def test_selector_successor_requires_complete_two_phase_outcome_free_chain(self):
         feasibility = {
             "state_selector_feasibility_receipt_digest": "f" * 64,
+        }
+        precontract = {
+            "preserved_state_precontract_revalidation_receipt_digest": "d" * 64,
         }
         revalidation = {
             "preserved_state_revalidation_receipt_digest": "e" * 64,
@@ -163,6 +166,10 @@ class UtilityScorerTrainerTests(unittest.TestCase):
             root = Path(directory)
             (root / scorer.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME
              ).write_text(json.dumps(feasibility))
+            precontract_path = (
+                root
+                / scorer.STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_NAME)
+            precontract_path.write_text(json.dumps(precontract))
             revalidation_path = (
                 root
                 / scorer.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME)
@@ -174,6 +181,10 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                         "validate_state_selector_feasibility_receipt"), \
                     mock.patch.object(
                         scorer.STATE_SELECTOR,
+                        "validate_preserved_state_precontract_revalidation_receipt"
+                    ) as validate_precontract_revalidation, \
+                    mock.patch.object(
+                        scorer.STATE_SELECTOR,
                         "validate_preserved_state_revalidation_receipt"
                     ) as validate_final_revalidation, \
                     mock.patch.object(
@@ -182,6 +193,8 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                 bindings = scorer._validate_selector_successor(
                     root, {
                         "source_repository_commit": "c" * 40,
+                        "clean_source_binding_digest": "b" * 64,
+                        "bound_implementations_digest": "a" * 64,
                         "launch_state_selector_feasibility_receipt_digest":
                             "f" * 64,
                         "preserved_state_precontract_revalidation_receipt_digest":
@@ -192,6 +205,7 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                     "state_selector_feasibility_receipt_digest": "f" * 64,
                     "preserved_state_revalidation_receipt_digest": "e" * 64,
                 })
+                validate_precontract_revalidation.assert_called_once()
                 validate_final_revalidation.assert_called_once()
                 final_kwargs = validate_final_revalidation.call_args.kwargs
                 self.assertEqual(final_kwargs["allocation_manifest"], {})
@@ -203,6 +217,20 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                 with self.assertRaisesRegex(
                         scorer.CorpusValidationError,
                         "missing preserved-state revalidation receipt"):
+                    scorer._validate_selector_successor(
+                        root, {
+                            "source_repository_commit": "c" * 40,
+                            "launch_state_selector_feasibility_receipt_digest":
+                                "f" * 64,
+                            "preserved_state_precontract_revalidation_receipt_digest":
+                            "d" * 64,
+                        }, {})
+                precontract_path.write_text(json.dumps(precontract))
+                revalidation_path.write_text(json.dumps(revalidation))
+                precontract_path.unlink()
+                with self.assertRaisesRegex(
+                        scorer.CorpusValidationError,
+                        "missing preserved-state phase-1 revalidation receipt"):
                     scorer._validate_selector_successor(
                         root, {
                             "source_repository_commit": "c" * 40,

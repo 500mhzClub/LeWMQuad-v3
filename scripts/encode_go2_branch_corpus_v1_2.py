@@ -36,7 +36,7 @@ if str(ROOT) not in sys.path:
 
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC  # noqa: E402
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS  # noqa: E402
-from lewm.oracle import go2_scorer_state_selector_amendment_v1 as STATE_SELECTOR  # noqa: E402
+from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR  # noqa: E402
 from lewm.oracle.go2_scorer_contract_v1_2 import (  # noqa: E402
     clean_source_binding,
     contract,
@@ -90,11 +90,7 @@ CORPUS_BINDING_KEYS = (
     "target_encoder_digest",
     "target_encoder_checkpoint_sha256",
 )
-SELECTOR_BINDING_KEYS = (
-    "state_selector_amendment_digest",
-    "state_selector_feasibility_receipt_digest",
-    "preserved_state_revalidation_receipt_digest",
-)
+SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
 LAUNCH_BINDING_KEYS = (
     "clean_source_launch_receipt_digest",
     "source_repository_commit",
@@ -300,6 +296,8 @@ def _load_selector_successor_receipts(
         *, source_commit: str, selection_digest: str,
         expected_feasibility_receipt_digest: str,
         expected_precontract_revalidation_receipt_digest: str,
+        expected_clean_source_binding_digest: str | None = None,
+        expected_bound_implementations_digest: str | None = None,
         ) -> dict[str, str]:
     """Verify the outcome-free selector successor before opening branch rows."""
 
@@ -307,23 +305,44 @@ def _load_selector_successor_receipts(
         STATE_SELECTOR.validate_authority_artifacts()
         feasibility_path = (
             ROOT / STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH)
+        precontract_path = (
+            ROOT
+            / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH)
         revalidation_path = (
             ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH)
         allocation_path = (
             OUT_ROOT / "scorer_fit/candidate_allocation_manifest.json")
-        if (not feasibility_path.is_file() or not revalidation_path.is_file()
-                or not allocation_path.is_file()):
+        if (not feasibility_path.is_file() or not precontract_path.is_file()
+                or not revalidation_path.is_file() or not allocation_path.is_file()):
             raise RuntimeError(
                 "scorer-fit selector successor artifacts are missing")
         feasibility = json.loads(feasibility_path.read_text())
         STATE_SELECTOR.validate_state_selector_feasibility_receipt(
             feasibility, expected_source_commit=source_commit,
-            expected_successor_selection_digest=selection_digest)
+            expected_successor_selection_digest=selection_digest,
+            expected_clean_source_binding_digest=
+                expected_clean_source_binding_digest,
+            expected_bound_implementations_digest=
+                expected_bound_implementations_digest,
+            root=ROOT)
         feasibility_digest = str(
             feasibility["state_selector_feasibility_receipt_digest"])
         if feasibility_digest != expected_feasibility_receipt_digest:
             raise RuntimeError(
                 "selector feasibility differs from clean-source launch")
+        precontract = json.loads(precontract_path.read_text())
+        STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
+            precontract,
+            expected_source_commit=source_commit,
+            expected_successor_selection_digest=selection_digest,
+            expected_feasibility_receipt_digest=feasibility_digest,
+            root=ROOT,
+        )
+        if (precontract.get(
+                "preserved_state_precontract_revalidation_receipt_digest")
+                != expected_precontract_revalidation_receipt_digest):
+            raise RuntimeError(
+                "preserved-state phase-1 receipt differs from clean-source launch")
         revalidation = json.loads(revalidation_path.read_text())
         allocation = json.loads(allocation_path.read_text())
         STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
@@ -359,7 +378,11 @@ def _load_inputs(out: Path, *, allow_partial: bool) -> tuple[
         expected_feasibility_receipt_digest=launch[
             "launch_state_selector_feasibility_receipt_digest"],
         expected_precontract_revalidation_receipt_digest=launch[
-            "preserved_state_precontract_revalidation_receipt_digest"])
+            "preserved_state_precontract_revalidation_receipt_digest"],
+        expected_clean_source_binding_digest=launch[
+            "clean_source_binding_digest"],
+        expected_bound_implementations_digest=launch[
+            "bound_implementations_digest"])
     if manifest.get("scorer_contract_v1_2_digest") != expected_contract:
         raise RuntimeError("state manifest is bound to a different scorer contract")
     target_encoder = frozen["target_encoder"]

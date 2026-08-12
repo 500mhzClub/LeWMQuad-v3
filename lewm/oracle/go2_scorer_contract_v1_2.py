@@ -5,10 +5,13 @@ DEVELOPMENT_ONLY_NOT_CLAIM_BEARING.
 Baseline: the frozen prospective scorer contract
 ``d32118552b6fd373aefab143917bb04e63ffbe196129266a1546affc08f763ff``.
 
-The oracle-v1.2 target retargeting remains unchanged.  A prospective,
-pre-outcome state-selector amendment is additionally bound after the original
-shared hop-eligibility/completion conjunction was proven infeasible on two
-required graph families.  Everything else the
+The oracle-v1.2 target retargeting remains unchanged.  The first prospective
+selector amendment made graph hops diagnostic for completion enrichment after
+the original shared hop conjunction proved infeasible on two graph families.
+The exhaustive 1,284-scene outcome-free census then proved that its start-state
+``d0 <= 0.75m`` ceiling left the required small-maze completion cell empty.
+This successor binds the final prospective horizon-reachability amendment made
+before any identity manifest or scientific outcome.  Everything else the
 frozen contract fixes — separate progress/safety/completion heads, the full
 H=1..4 latent-trajectory input, the explicit goal binding, the 10-D five-tick
 post-slew candidate action input, the trunk architecture, the fixed optimiser
@@ -26,9 +29,11 @@ What changes, and nothing else:
 * ``completion`` is unchanged — the bound landmark reached at or before the
   branch horizon;
 * the composite is unchanged: ``U_hat = 1.0*P_hat - 2.0*S_hat + 0.5*C_hat``.
-* completion-enriched state selection now enumerates its goal separately and
-  may retain graph-hop-zero as diagnostic, while preserving the 0.75 m and
-  75-degree thresholds and the production at-or-before-horizon predicate.
+* completion-enriched state selection retains graph-hop-zero as diagnostic and
+  replaces the superseded start-distance ceiling with the outcome-free
+  horizon-reachability condition ``max(d0 - 0.75m, 0) <= L_max``.  The 75-degree
+  bearing condition, oracle graph-cell completion label, and production
+  collector claim predicate remain unchanged and distinct.
 """
 from __future__ import annotations
 
@@ -47,7 +52,7 @@ from lewm.oracle.go2_branch_oracle_v1_2 import (
 )
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
-from lewm.oracle import go2_scorer_state_selector_amendment_v1 as STATE_SELECTOR
+from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR
 
 STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
 BASELINE_CONTRACT_DIGEST = (
@@ -173,8 +178,9 @@ PREPROCESS_CONTRACT = {
 }
 
 CORPUS_SELECTION_CONTRACT = {
-    "name": "go2_planning_corpus_selection_v1_2_selector_amendment_v1",
-    "predecessor_selection_digest": STATE_SELECTOR.PREDECESSOR_SELECTION_DIGEST,
+    "name": "go2_planning_corpus_selection_v1_2_selector_amendment_v2",
+    "predecessor_selection_digest":
+        STATE_SELECTOR.PREDECESSOR_SUCCESSOR_SELECTION_DIGEST,
     "state_selector_amendment":
         STATE_SELECTOR.state_selector_amendment_contract(),
     "state_selector_amendment_digest":
@@ -185,9 +191,15 @@ CORPUS_SELECTION_CONTRACT = {
     ),
     "candidate_allocator_amendment_digest": ALLOC.allocation_amendment_digest(),
     "scene_order": "all eligible corpus scenes sorted by (family, scene_id)",
-    "scorer_fit": "first snapshot-time eligible 15 distinct scenes per family "
-                  "after all frozen exclusions; five per frozen stratum under "
-                  "state-selector amendment v1",
+    "scorer_fit": (
+        "seven families retain the unchanged predecessor ordering and the "
+        "small-enclosed general/safety states retain that same ordering; the "
+        "small-enclosed completion cell is the first lexicographically "
+        "feasible five-distinct-scene combination under the bound all-120 "
+        "identity projection, unchanged canonical allocator, and exact-mask "
+        "horizon-reachability search; exactly 15 distinct scenes per family "
+        "and five per frozen stratum"
+    ),
     "final_eval": "first snapshot-time eligible 25 remaining distinct scenes per "
                   "family after all frozen exclusions and scorer-fit scenes",
     "one_state_per_scene": True,
@@ -199,18 +211,29 @@ CORPUS_SELECTION_CONTRACT = {
     "strata": {
         "general": "reachable bound landmark with graph_edges >= 2",
         "safety_enriched": "general plus snapshot-time body-probe clearance <= 0.10m",
-        "completion_enriched": "separately enumerated finite snapshot-bound "
-                               "landmark, including graph_hops == 0, with metric "
-                               "geodesic <= 0.75m, absolute body bearing <= 75 "
-                               "degrees, and false snapshot task-completed, "
-                               "goal-claimed, terminated and truncated flags; "
-                               "graph hops are diagnostic only",
+        "completion_enriched": (
+            "separately enumerated finite snapshot-bound landmark, including "
+            "graph_hops == 0, for which max(continuous metric-geodesic d0 - "
+            "the unchanged selector parameter r_complete=0.75m, 0) is no "
+            "greater than L_max from the exact allocated six-candidate subset; "
+            "L_max is computed from the actual previous applied command, exact "
+            "requested plans, frozen slew limiter and exact 20 ticks without "
+            "branch execution; absolute body bearing remains <=75 degrees and "
+            "snapshot task-completed, goal-claimed, terminated and truncated "
+            "flags remain false; graph hops are diagnostic only"
+        ),
     },
     "state_selection_priority":
         list(STATE_SELECTOR.SCORER_FIT_SELECTION_PRIORITY),
     "completion_semantic_separation":
         STATE_SELECTOR.state_selector_amendment_contract()["preserved"][
-            "unchanged_completion_semantics"
+            "completion_semantic_separation"
+        ],
+    "completion_horizon_reachability":
+        STATE_SELECTOR.state_selector_amendment_contract()["single_replacement"],
+    "candidate_allocation_circularity_resolution":
+        STATE_SELECTOR.state_selector_amendment_contract()[
+            "allocation_circularity_resolution"
         ],
     "state_selector_feasibility_receipt": {
         "required_before_successor_contract_issue": True,
@@ -237,6 +260,8 @@ CORPUS_SELECTION_CONTRACT = {
         "path": STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH,
         "expected_state_count": 45,
         "exact_allocated_candidate_masks_verified": True,
+        "expected_completion_enriched_state_count": 40,
+        "all_completion_exact_allocated_mask_reachability_verified": True,
         "identity_unchanged_and_outcome_free": True,
     },
     "goal_type": "snapshot-bound landmark material_id; allocator-only balance key",
@@ -379,11 +404,17 @@ def source_bindings() -> dict[str, Any]:
         "candidate_allocation_preoutcome_failure_receipt": _file_binding(
             ALLOC.FAILURE_RECEIPT_PATH),
         "state_selector_amendment_implementation": _file_binding(
+            "lewm/oracle/go2_scorer_state_selector_amendment_v2.py"),
+        "state_selector_predecessor_amendment_implementation": _file_binding(
             "lewm/oracle/go2_scorer_state_selector_amendment_v1.py"),
         "state_selector_amendment_authority": _file_binding(
             STATE_SELECTOR.AMENDMENT_ARTIFACT_PATH),
         "state_selector_preoutcome_failure_receipt": _file_binding(
-            STATE_SELECTOR.FAILURE_RECEIPT_PATH),
+            STATE_SELECTOR.FAILURE_REPORT_PATH),
+        "state_selector_predecessor_amendment_authority": _file_binding(
+            STATE_SELECTOR.PREDECESSOR_AMENDMENT_ARTIFACT["path"]),
+        "state_selector_initial_graph_failure_receipt": _file_binding(
+            STATE_SELECTOR.PREDECESSOR.FAILURE_RECEIPT_PATH),
         "oracle_v1_2_completion_target_implementation": _file_binding(
             STATE_SELECTOR.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
                 "oracle_v1_2_completion_target"
@@ -406,6 +437,8 @@ def source_bindings() -> dict[str, Any]:
             "scripts/dev_action_slew_reconstruction_v1.py"),
         "fit_calibration_estimators_and_trainer": _file_binding(
             "scripts/train_go2_utility_scorer_v1_2.py"),
+        "qualified_development_transfer_consumer": _file_binding(
+            "scripts/apply_go2_utility_scorer_to_counterfactual_development_v1_2.py"),
         "historical_renderer": _file_binding("scripts/render_replay_v03.py"),
         "historical_renderer_wrapper": _file_binding(
             "lewm/oracle/go2_textured_v03_renderer.py"),
@@ -595,6 +628,10 @@ def _contract_artifact_payload(
         state_selector_feasibility_receipt,
         expected_source_commit=source_launch_binding["source_repository_commit"],
         expected_successor_selection_digest=selection_digest,
+        expected_clean_source_binding_digest=_digest(source_launch_binding),
+        expected_bound_implementations_digest=
+            source_launch_binding["bound_implementations_digest"],
+        root=ROOT,
     )
     feasibility_digest = state_selector_feasibility_receipt[
         "state_selector_feasibility_receipt_digest"
@@ -670,6 +707,10 @@ def issue_contract(path: Path) -> dict[str, Any]:
         feasibility_receipt,
         expected_source_commit=source_launch_binding["source_repository_commit"],
         expected_successor_selection_digest=selection_digest,
+        expected_clean_source_binding_digest=_digest(source_launch_binding),
+        expected_bound_implementations_digest=
+            source_launch_binding["bound_implementations_digest"],
+        root=ROOT,
     )
     STATE_SELECTOR.validate_preserved_state_precontract_revalidation_receipt(
         revalidation_receipt,

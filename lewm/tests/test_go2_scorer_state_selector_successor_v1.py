@@ -10,6 +10,18 @@ import pytest
 from scripts import build_go2_branch_corpus_v1_2 as B
 
 
+@pytest.fixture(autouse=True)
+def _legacy_successor_selection_binding(monkeypatch):
+    """Keep synthetic V1 census shards on their explicit test binding.
+
+    The production builder now rejects any legacy shard that is not also bound
+    to the live V2 selection.  These tests exercise the frozen V1 reducer with
+    the synthetic ``b*64`` binding supplied throughout this file.
+    """
+
+    monkeypatch.setattr(B, "selection_digest", lambda: "b" * 64)
+
+
 def _status(**overrides):
     status = {
         "task_completed": False,
@@ -26,7 +38,7 @@ def _status(**overrides):
 
 
 def _eligibility(*, hops=0, distance=0.5, bearing=0.0, status=None):
-    return B.completion_enriched_eligibility(
+    return B._predecessor_start_radius_eligibility(
         graph_hops=hops,
         reachable=True,
         continuous_geodesic_m=distance,
@@ -339,10 +351,12 @@ def test_dry_run_can_prove_five_completion_scenes_for_rough_and_open():
 
 
 def test_general_and_safety_hop_requirements_remain_frozen():
-    contract = B.STATE_SELECTOR.state_selector_amendment_contract()
-    assert contract["replacement"]["general_and_safety"].endswith(
-        "general requires graph_hops >= 2 and safety remains a subset")
-    assert tuple(contract["replacement"]["state_selection_priority"]) == B.STRATA
+    selection = B.CORPUS_SELECTION_CONTRACT
+    assert selection["strata"]["general"].endswith("graph_edges >= 2")
+    assert selection["strata"]["safety_enriched"].endswith(
+        "body-probe clearance <= 0.10m"
+    )
+    assert tuple(selection["state_selection_priority"]) == B.STRATA
 
 
 def test_completed_failed_feasibility_gate_is_retained_without_rerun(tmp_path):
@@ -435,9 +449,13 @@ def test_family_reduction_is_order_invariant_and_passes_frozen_gate():
     assert forward["scene_shard_lineage"] == expected_lineage
     assert forward["scene_shard_lineage_digest"] == \
         B.canonical_digest(expected_lineage)
-    B.STATE_SELECTOR.validate_state_selector_feasibility_receipt(
-        forward, expected_source_commit="a" * 40,
-        expected_successor_selection_digest="b" * 64)
+    # This exercises the frozen V1 exhaustive reducer only.  Its accepted
+    # failure receipt is predecessor evidence; the active V2 validator rightly
+    # accepts only the new non-overwriting reachability receipt.
+    B._verify_self_digest(
+        forward, "state_selector_feasibility_receipt_digest",
+        "legacy exhaustive selector receipt",
+    )
 
 
 def test_task_census_binds_manifest_and_genesis_scene_bytes(
@@ -793,6 +811,15 @@ def test_binding_parent_reduces_shards_without_loading_genesis_and_is_idempotent
     ]
     monkeypatch.setattr(B, "OUT_ROOT", out_root)
     monkeypatch.setattr(B.STATE_SELECTOR, "validate_authority_artifacts", lambda: None)
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "validate_state_selector_feasibility_receipt",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        B.STATE_SELECTOR.PREDECESSOR,
+        "validate_state_selector_feasibility_receipt",
+        lambda *_args, **_kwargs: None,
+    )
     monkeypatch.setattr(B, "clean_source_binding", _source)
     monkeypatch.setattr(B, "selection_digest", lambda: "b" * 64)
     monkeypatch.setattr(B, "scene_pool", lambda _pool: ({

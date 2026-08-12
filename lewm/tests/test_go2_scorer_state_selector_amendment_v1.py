@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from lewm.oracle import go2_scorer_state_selector_amendment_v1 as S
+from lewm.oracle import go2_scorer_state_selector_amendment_v2 as S2
 from lewm.oracle import go2_scorer_contract_v1_2 as C
 
 
@@ -181,38 +182,41 @@ def test_selector_amendment_is_narrow_and_preserves_priority():
     assert contract["preserved"]["general_and_safety_stratum_semantics"] is True
 
 
-def test_successor_selection_contract_binds_amendment_without_oracle_change():
+def test_v1_successor_is_preserved_as_v2_predecessor_without_oracle_change():
     selection = C.CORPUS_SELECTION_CONTRACT
-    assert selection["predecessor_selection_digest"] == S.PREDECESSOR_SELECTION_DIGEST
-    assert selection["state_selector_amendment_digest"] == \
-        S.state_selector_amendment_digest()
-    assert C._digest(selection) == (
+    assert selection["predecessor_selection_digest"] == \
+        S2.PREDECESSOR_SUCCESSOR_SELECTION_DIGEST
+    assert S2.PREDECESSOR_SUCCESSOR_SELECTION_DIGEST == (
         "8cf65cc016c28ad34f1e50246561e72ee9d0f9c1c253fe8e32a4203a35b73ebe"
     )
+    assert S2.PREDECESSOR_AMENDMENT_DIGEST == S.state_selector_amendment_digest()
+    assert selection["state_selector_amendment_digest"] == \
+        S2.state_selector_amendment_digest()
+    assert C._digest(selection) != S2.PREDECESSOR_SUCCESSOR_SELECTION_DIGEST
     assert C.contract()["oracle_v1_2_digest"] == (
         "3ffbe1a87f7975c97e7ff42e50a6a00ca0f47d8840a434d0ff215c303bf6f0e4"
     )
     assert selection["state_selection_priority"] == list(
-        S.SCORER_FIT_SELECTION_PRIORITY
+        S2.SCORER_FIT_SELECTION_PRIORITY
     )
     assert selection["completion_semantic_separation"] == \
-        S.state_selector_amendment_contract()["preserved"][
-            "unchanged_completion_semantics"
+        S2.state_selector_amendment_contract()["preserved"][
+            "completion_semantic_separation"
         ]
     assert "not the production collector claim" in C.SCORER["heads"][
         "completion"
     ]["target"]
     bound = C.source_bindings()
     assert bound["oracle_v1_2_completion_target_implementation"]["sha256"] == \
-        S.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
+        S2.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
             "oracle_v1_2_completion_target"
         ]["sha256"]
     assert bound["production_designated_goal_claim_implementation"]["sha256"] == \
-        S.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
+        S2.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
             "snapshot_production_designated_goal_claim"
         ]["sha256"]
     assert bound["production_task_completion_reset_implementation"]["sha256"] == \
-        S.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
+        S2.COMPLETION_SEMANTIC_SOURCE_BINDINGS[
             "production_task_completion_and_reset"
         ]["sha256"]
 

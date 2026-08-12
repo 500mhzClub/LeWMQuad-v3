@@ -14,6 +14,8 @@ def _selector_receipts(commit: str, selection: str):
     selector = C.STATE_SELECTOR
     families = [{
         "family": family,
+        "allowed_scene_count": 182 if family == "small_enclosed_maze" else 5,
+        "scanned_scene_count": 182 if family == "small_enclosed_maze" else 5,
         "all_allowed_scenes_scanned": True,
         "verdict": "PASS",
         "strata": {
@@ -27,15 +29,42 @@ def _selector_receipts(commit: str, selection: str):
     } for family in selector.REQUIRED_FAMILIES]
     feasibility = {
         "schema": selector.STATE_SELECTOR_FEASIBILITY_SCHEMA,
-        "status": "PASS_OUTCOME_FREE_ALL_SCENE_FEASIBILITY",
+        "status": selector.STATE_SELECTOR_FEASIBILITY_PASS_STATUS,
         "complete": True,
+        "binding_receipt": True,
         "source_repository_commit": commit,
         "successor_selection_digest": selection,
         "state_selector_amendment_digest":
             selector.state_selector_amendment_digest(),
+        "candidate_allocation_amendment_digest":
+            selector.ALLOCATION_AMENDMENT_DIGEST,
+        "frozen_predecessor": {
+            "failure_report_digest": selector.FAILURE_REPORT_DIGEST,
+            "failure_report_raw_sha256": selector.FAILURE_REPORT_RAW_SHA256,
+            "feasibility_receipt_digest": selector.FROZEN_FAILED_CENSUS_RECEIPT[
+                "state_selector_feasibility_receipt_digest"],
+            "feasibility_receipt_raw_sha256":
+                selector.FROZEN_FAILED_CENSUS_RECEIPT["raw_sha256"],
+            "task_census_digest": (
+                "0ee5fb6d073e6e8db33b0f63ce9b70b8346ba12f29f729f06c06de5982fbe109"
+            ),
+            "scene_shard_count": 1284,
+            "preserved_unchanged": True,
+        },
+        "reuse_policy": {
+            "general_and_safety_criteria_unchanged": True,
+            "unrelated_family_redrives": 0,
+            "small_enclosed_maze_redrive_scene_count": 182,
+            "actual_allocated_mask_check_required_before_manifest": True,
+            "actual_allocated_mask_check_status":
+                "MANDATORY_DEFERRED_TO_JOINT_SEARCH_AND_PHASE2",
+        },
         "family_count": 8,
-        "strata": list(selector.REQUIRED_STRATA),
         "required_distinct_scenes_per_stratum": 5,
+        "candidate_allocation_changed": False,
+        "selector_completion_radius_m": selector.COMPLETION_RADIUS_M,
+        "horizon_s": selector.HORIZON_S,
+        "horizon_ticks": selector.HORIZON_TICKS,
         "selected_state_identities_created": False,
         "candidate_outcomes_loaded": False,
         "branch_identities_created": False,
@@ -72,17 +101,34 @@ def _selector_receipts(commit: str, selection: str):
             "state_identity_digests": digests,
             "state_identity_set_digest": selector._sha256(sorted(digests)),
             "state_checks": [{
-                "state_id": state["state_id"],
-                "state_identity_digest": state["state_identity_digest"],
-                "exclusion_checks_pass": True,
-                "exact_redrive_pass": True,
-                "amended_classification_pass": True,
-                "goal_binding_unchanged": True,
-                "oracle_completion_target_unchanged": True,
-                "snapshot_production_designated_goal_claim_unchanged": True,
-                "production_task_completion_reset_unchanged": True,
-                "completion_state_task_status_all_false": True,
-                "failure_reason": None,
+                **{
+                    "state_id": state["state_id"],
+                    "state_identity_digest": state["state_identity_digest"],
+                    "exclusion_checks_pass": True,
+                    "exact_redrive_pass": True,
+                    "amended_classification_pass": True,
+                    "goal_binding_unchanged": True,
+                    "oracle_completion_target_unchanged": True,
+                    "snapshot_production_designated_goal_claim_unchanged": True,
+                    "production_task_completion_reset_unchanged": True,
+                    "completion_state_task_status_all_false": True,
+                    "failure_reason": None,
+                },
+                **({
+                    "completion_rotation_eligibility":
+                        selector.completion_rotation_eligibility_vector(
+                            graph_hops=int(state["goal"]["graph_edges"]),
+                            reachable=True,
+                            continuous_geodesic_m=0.5,
+                            bearing_body_rad=0.0,
+                            task_status={
+                                "task_completed": False,
+                                "goal_claimed": False,
+                                "terminated": False,
+                                "truncated": False,
+                            },
+                            previous_applied_command=[0.0, 0.0, 0.0])
+                } if state["stratum"] == "completion_enriched" else {}),
             } for state in source_states],
         })
     revalidation = {
@@ -273,7 +319,8 @@ def test_clean_source_binding_accepts_only_exact_clean_injected_git_state():
         )
 
 
-def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_encoder():
+def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_encoder(
+        monkeypatch):
     source = C._validated_repository_state(
         head="c" * 40,
         status="",
@@ -282,6 +329,16 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
     )
     selection = C._digest(C.CORPUS_SELECTION_CONTRACT)
     feasibility, revalidation = _selector_receipts("c" * 40, selection)
+    # This unit test exercises the contract payload projection.  The live V2
+    # feasibility/phase-1 validators have dedicated exact reconstruction tests
+    # and intentionally require 182 shard files plus the frozen census root.
+    monkeypatch.setattr(
+        C.STATE_SELECTOR, "validate_state_selector_feasibility_receipt",
+        lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        C.STATE_SELECTOR,
+        "validate_preserved_state_precontract_revalidation_receipt",
+        lambda *_args, **_kwargs: None)
     payload = C._contract_artifact_payload(source, feasibility, revalidation)
     frozen = payload["contract"]
     assert payload["schema"] == "go2_utility_scorer_contract_v1_2_artifact"

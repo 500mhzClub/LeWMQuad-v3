@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import numpy as np
@@ -26,6 +27,44 @@ def synthetic_rows() -> list[dict[str, object]]:
 
 
 class DevelopmentTransferTests(unittest.TestCase):
+    def test_downstream_uses_final_non_overwriting_selector_amendment(self):
+        self.assertEqual(
+            T.S.STATE_SELECTOR.AMENDMENT_VERSION,
+            "completion_horizon_reachability_v2")
+        self.assertNotEqual(
+            T.S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME,
+            "state_selector_feasibility_receipt.json")
+        self.assertEqual(
+            tuple(T.S.SELECTOR_BINDING_KEYS),
+            tuple(T.S.STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS))
+
+    def test_frozen_stage_a_rows_need_no_successor_selector_keys(self):
+        states = [
+            SimpleNamespace(state_index=index, state_id=f"state-{index}")
+            for index in range(T.EXPECTED_STATES)
+        ]
+        row_by_pair = {}
+        for state in states:
+            for candidate_index in range(T.EXPECTED_CANDIDATES):
+                row_by_pair[(state.state_id, candidate_index)] = {
+                    "state_id": state.state_id,
+                    "candidate_index": candidate_index,
+                    "valid": True,
+                    "oracle_outcome_equal": True,
+                    "action_blocks": [[0.0] * 10 for _ in range(T.HORIZONS)],
+                    "goal_binding_input": [0.0, 1.0, 1.0],
+                    "utility": 0.0,
+                    "progress": 0.0,
+                    "safety": 0.0,
+                    "completion": 0.0,
+                }
+        rows = T.ordered_rows(SimpleNamespace(
+            states=states, row_by_pair=row_by_pair))
+        self.assertEqual(len(rows), T.EXPECTED_BRANCHES)
+        self.assertTrue(all(
+            not set(T.S.SELECTOR_BINDING_KEYS).intersection(row)
+            for row in rows))
+
     def test_failed_qualification_refuses_before_torch_load(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -64,6 +103,129 @@ class DevelopmentTransferTests(unittest.TestCase):
                     T.validate_qualified_scorer()
                 load.assert_not_called()
 
+    def test_live_selector_chain_is_revalidated_and_bound_before_weight_load(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pool = Path(directory)
+            paths = (
+                pool / "pre_identity_allocation_validation.json",
+                pool / "candidate_allocation_manifest.json",
+                pool / T.S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME,
+                pool / T.S.STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_NAME,
+                pool / T.S.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME,
+            )
+            pre_identity = {"pre_identity_validation_digest": "i" * 64}
+            allocation = {
+                "allocation_manifest_digest": "m" * 64,
+                "post_identity_pre_outcome_validation": {
+                    "post_identity_validation_digest": "o" * 64,
+                },
+            }
+            precontract = {
+                "preserved_state_precontract_revalidation_receipt_digest":
+                    "p" * 64,
+            }
+            paths[0].write_text(json.dumps(pre_identity))
+            paths[1].write_text(json.dumps(allocation))
+            paths[2].write_text(json.dumps({"record": 2}))
+            paths[3].write_text(json.dumps(precontract))
+            paths[4].write_text(json.dumps({"record": 4}))
+            selector = {
+                "state_selector_amendment_digest": "a" * 64,
+                "state_selector_feasibility_receipt_digest": "f" * 64,
+                "preserved_state_revalidation_receipt_digest": "e" * 64,
+            }
+            qualification = {
+                **selector,
+                "corpus_bindings": {
+                    "candidate_allocation_manifest_digest": "m" * 64,
+                    "candidate_allocation_post_identity_validation_digest":
+                        "o" * 64,
+                    "pre_identity_allocation_validation_digest": "i" * 64,
+                },
+            }
+            launch = {
+                "source_repository_commit": "c" * 40,
+                "preserved_state_precontract_revalidation_receipt_digest":
+                    "p" * 64,
+            }
+            with mock.patch.object(
+                    T.S, "_validate_clean_source_launch",
+                    return_value=launch) as validate_launch, \
+                    mock.patch.object(
+                        T.S, "validate_pre_identity_structural_validation"), \
+                    mock.patch.object(
+                        T.S, "allocation_manifest_digest",
+                        return_value="m" * 64), \
+                    mock.patch.object(
+                        T.S.STATE_SELECTOR,
+                        "validate_preserved_state_precontract_revalidation_receipt"), \
+                    mock.patch.object(
+                        T.S, "_validate_selector_successor",
+                        return_value=selector) as validate_selector:
+                result = T._validate_live_selector_provenance(
+                    qualification, pool_dir=pool)
+            validate_launch.assert_called_once()
+            validate_selector.assert_called_once()
+            self.assertEqual(result["selector_bindings"], selector)
+            self.assertEqual(
+                result["preserved_state_precontract_revalidation_receipt_digest"],
+                "p" * 64)
+            self.assertFalse(result["scorer_weights_opened_during_validation"])
+            self.assertFalse(result["predictor_artifacts_opened_during_validation"])
+            self.assertEqual(
+                result["verification_digest"],
+                T.legacy_digest(result, ("verification_digest",)))
+
+            with mock.patch.object(
+                    T.S, "_validate_clean_source_launch", return_value=launch), \
+                    mock.patch.object(
+                        T.S, "validate_pre_identity_structural_validation"), \
+                    mock.patch.object(
+                        T.S, "allocation_manifest_digest",
+                        return_value="m" * 64), \
+                    mock.patch.object(
+                        T.S.STATE_SELECTOR,
+                        "validate_preserved_state_precontract_revalidation_receipt"), \
+                    mock.patch.object(
+                        T.S, "_validate_selector_successor",
+                        return_value=selector):
+                with self.assertRaisesRegex(
+                        T.DevelopmentTransferRefused,
+                        "differs at state_selector_feasibility_receipt_digest"):
+                    T._validate_live_selector_provenance(
+                        {**qualification,
+                         "state_selector_feasibility_receipt_digest": "x" * 64},
+                        pool_dir=pool)
+
+    def test_live_phase2_failure_refuses_before_torch_load(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report = {
+                "schema": "go2_utility_scorer_v1_2_qualification",
+                "criteria": {"all_frozen_criteria": True},
+                "qualified": True,
+                "qualification_evaluations": 1,
+                "epoch_selection_permitted": False,
+                "scorer_contract_v1_2_digest": T.contract_digest(),
+                "state_selector_amendment_digest":
+                    T.S.STATE_SELECTOR.state_selector_amendment_digest(),
+                "state_selector_feasibility_receipt_digest": "f" * 64,
+                "preserved_state_revalidation_receipt_digest": "e" * 64,
+            }
+            report["qualification_report_digest"] = T.legacy_digest(report)
+            (root / "qualification.json").write_text(json.dumps(report))
+            with mock.patch.object(T.S, "PACKAGE_DIR", root), \
+                    mock.patch.object(
+                        T, "_validate_live_selector_provenance",
+                        side_effect=T.DevelopmentTransferRefused(
+                            "phase-2 exact-mask reachability failed")), \
+                    mock.patch.object(T.torch, "load") as load:
+                with self.assertRaisesRegex(
+                        T.DevelopmentTransferRefused,
+                        "phase-2 exact-mask reachability failed"):
+                    T.validate_qualified_scorer()
+            load.assert_not_called()
+
     def test_perfect_state_rankings_and_equal_family_aggregation(self):
         rows = synthetic_rows()
         scores = np.asarray([row["utility"] for row in rows], dtype=np.float32)
@@ -76,6 +238,30 @@ class DevelopmentTransferTests(unittest.TestCase):
             self.assertEqual(result[weighting]["top3_recovery"], 1.0)
             self.assertEqual(result[weighting]["pairwise_ordering_accuracy"], 1.0)
             self.assertEqual(result[weighting]["spearman_rank_correlation"], 1.0)
+
+    def test_score_receipt_directly_binds_live_selector_provenance(self):
+        scorer = mock.Mock()
+        scorer.package_sha256 = "p" * 64
+        scorer.qualification = {
+            "state_selector_amendment_digest": "a" * 64,
+            "state_selector_feasibility_receipt_digest": "f" * 64,
+            "preserved_state_revalidation_receipt_digest": "e" * 64,
+        }
+        scorer.selector_provenance = {"verification_digest": "v" * 64}
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            score = out / "score.f32"
+            score.write_bytes(b"\0" * (T.EXPECTED_BRANCHES * 4))
+            with mock.patch.object(T, "OUT_DIR", out), \
+                    mock.patch.object(T, "contract_digest",
+                                      return_value="c" * 64):
+                receipt = T._score_receipt(
+                    "synthetic", "i" * 64, scorer, score)
+        self.assertEqual(
+            {key: receipt[key] for key in T.S.SELECTOR_BINDING_KEYS},
+            scorer.qualification)
+        self.assertEqual(
+            receipt["selector_provenance_verification_digest"], "v" * 64)
 
     def test_rank_regret_effect_uses_one_step_minus_rollout(self):
         cells: dict[int, dict[str, dict[str, object]]] = {}
@@ -109,6 +295,10 @@ class DevelopmentTransferTests(unittest.TestCase):
                for key in T.S.SCORER_PROVENANCE_BINDING_KEYS},
         }
         scorer.package_sha256 = "p" * 64
+        scorer.selector_provenance = {
+            "status": "PASS_LIVE_PRE_WEIGHT_SELECTOR_PROVENANCE_REVALIDATION",
+            "verification_digest": "v" * 64,
+        }
         with mock.patch.object(T, "contract_digest", return_value="c" * 64), \
                 mock.patch.object(T, "sha256_file", return_value="s" * 64):
             spec = T.prospective_spec(scorer)

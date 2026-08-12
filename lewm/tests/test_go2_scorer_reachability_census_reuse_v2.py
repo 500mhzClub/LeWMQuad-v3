@@ -1,0 +1,1454 @@
+"""Pure tests for final selector cached-census reuse and scoped redrive."""
+from __future__ import annotations
+
+import copy
+import inspect
+import json
+from types import SimpleNamespace
+
+import pytest
+
+from scripts import build_go2_branch_corpus_v1_2 as B
+
+
+def _source():
+    return {
+        "source_repository_commit": "a" * 40,
+        "source_repository_clean": True,
+        "bound_implementations_digest": "b" * 64,
+    }
+
+
+def _resign_feasibility(receipt):
+    payload = copy.deepcopy(receipt)
+    payload.pop("state_selector_feasibility_receipt_digest", None)
+    payload["state_selector_feasibility_receipt_digest"] = \
+        B.canonical_digest(payload)
+    return payload
+
+
+def _resign_phase1_attestation(attestation):
+    payload = copy.deepcopy(attestation)
+    payload.pop("attestation_digest", None)
+    payload["attestation_digest"] = B.canonical_digest(payload)
+    return payload
+
+
+def test_phase1_outcome_surface_absence_attestation_covers_known_outputs(
+        tmp_path):
+    attestation = B._phase1_outcome_surface_absence_attestation(root=tmp_path)
+    assert attestation["status"] == "PASS_PRE_OUTCOME_SURFACE_ABSENT"
+    assert attestation["all_forbidden_artifacts_absent"] is True
+    assert attestation["forbidden_artifact_count"] == 0
+    assert B._phase1_present_outcome_paths(attestation) == []
+    B.STATE_SELECTOR.validate_phase1_outcome_surface_absence_attestation(
+        attestation)
+
+    exact_paths = {row["path"] for row in attestation["exact_file_checks"]}
+    directory_paths = {
+        row["path"] for row in attestation["directory_root_checks"]}
+    assert (
+        ".generated/go2_branch_corpus_v1_2/scorer_fit/branch_rows.jsonl"
+        in exact_paths
+    )
+    assert (
+        ".generated/go2_branch_corpus_v1_2/scorer_fit/latents/context"
+        in directory_paths
+    )
+    assert (
+        ".generated/go2_branch_corpus_v1_2/scorer_fit/latents/horizon"
+        in directory_paths
+    )
+    assert (
+        ".generated/go2_utility_scorer_v1_2/"
+        "counterfactual_development_transfer_v1_2"
+        in directory_paths
+    )
+
+
+def test_phase1_outcome_surface_audit_rejects_orphan_latent_shard(tmp_path):
+    relative = (
+        ".generated/go2_branch_corpus_v1_2/scorer_fit/"
+        "latents/horizon/orphan.f16"
+    )
+    orphan = tmp_path / relative
+    orphan.parent.mkdir(parents=True)
+    orphan.write_bytes(b"orphan-latent")
+
+    attestation = B._phase1_outcome_surface_absence_attestation(root=tmp_path)
+    assert attestation["status"] == "FAIL_PRE_OUTCOME_SURFACE_PRESENT"
+    assert attestation["all_forbidden_artifacts_absent"] is False
+    assert relative in B._phase1_present_outcome_paths(attestation)
+    horizon = next(
+        row for row in attestation["directory_root_checks"]
+        if row["path"].endswith("latents/horizon")
+    )
+    assert horizon["descendant_artifact_count"] == 1
+    assert horizon["descendant_artifacts"] == [relative]
+    with pytest.raises(
+        B.STATE_SELECTOR.StateSelectorAmendmentError,
+        match="absence verdict is not complete/pass",
+    ):
+        B.STATE_SELECTOR.validate_phase1_outcome_surface_absence_attestation(
+            attestation)
+
+
+def test_phase1_attestation_validator_rejects_resigned_tamper(tmp_path):
+    attestation = B._phase1_outcome_surface_absence_attestation(root=tmp_path)
+    horizon = next(
+        row for row in attestation["directory_root_checks"]
+        if row["path"].endswith("latents/horizon")
+    )
+    horizon["descendant_artifact_count"] = 1
+    horizon["descendant_artifacts"] = [
+        horizon["path"] + "/fabricated.f16"
+    ]
+    tampered = _resign_phase1_attestation(attestation)
+    with pytest.raises(
+        B.STATE_SELECTOR.StateSelectorAmendmentError,
+        match="forbidden directory contained an artifact",
+    ):
+        B.STATE_SELECTOR.validate_phase1_outcome_surface_absence_attestation(
+            tampered)
+
+
+def test_frozen_phase1_attestation_is_not_live_reopened_after_outputs(tmp_path):
+    attestation = B._phase1_outcome_surface_absence_attestation(root=tmp_path)
+    later = (
+        tmp_path
+        / ".generated/go2_branch_corpus_v1_2/scorer_fit/"
+        "latents/context/later-legitimate.f16"
+    )
+    later.parent.mkdir(parents=True)
+    later.write_bytes(b"later-legitimate-latent")
+
+    # The validator is deliberately structural.  A later encoder output does
+    # not rewrite history by turning the phase-1 issuance fact into a failure.
+    B.STATE_SELECTOR.validate_phase1_outcome_surface_absence_attestation(
+        attestation)
+    live_now = B._phase1_outcome_surface_absence_attestation(root=tmp_path)
+    assert live_now["all_forbidden_artifacts_absent"] is False
+
+
+def _synthetic_phase1_state():
+    return {
+        "family": "large_enclosed_maze",
+        "stratum": "general",
+        "scene_id": "synthetic-scene",
+        "state_id": "synthetic-state",
+        "state_identity_digest": "1" * 64,
+    }
+
+
+def _synthetic_phase1_check(state):
+    return {
+        "state_id": state["state_id"],
+        "state_identity_digest": state["state_identity_digest"],
+        "exclusion_checks_pass": True,
+        "exact_redrive_pass": True,
+        "amended_classification_pass": True,
+        "goal_binding_unchanged": True,
+        "oracle_completion_target_unchanged": True,
+        "snapshot_production_designated_goal_claim_unchanged": True,
+        "production_task_completion_reset_unchanged": True,
+        "completion_state_task_status_all_false": True,
+        "failure_reason": None,
+    }
+
+
+def test_phase1_state_check_shard_is_atomic_self_bound_and_resumable(tmp_path):
+    state = _synthetic_phase1_state()
+    predecessor = {
+        "family": state["family"], "path": "preserved.json",
+        "state_shard_digest": "2" * 64, "raw_sha256": "3" * 64,
+        "byte_count": 10, "state_count": 15,
+    }
+    source = _source()
+    shard = B._build_phase1_state_check_shard(
+        entry=state, expected_shard=predecessor,
+        check=_synthetic_phase1_check(state), source=source,
+        successor_digest="4" * 64, feasibility_digest="5" * 64,
+        outcome_surface_attestation_digest="6" * 64)
+    path = B._phase1_state_check_shard_path(
+        state["state_identity_digest"], root=tmp_path)
+    B.atomic_json(path, shard)
+    loaded = B._load_valid_phase1_state_check_shard(
+        path=path, entry=state, expected_shard=predecessor, source=source,
+        successor_digest="4" * 64, feasibility_digest="5" * 64,
+        outcome_surface_attestation_digest="6" * 64, root=tmp_path)
+    assert loaded == shard
+    B.STATE_SELECTOR.validate_phase1_state_check_shard(
+        loaded, expected_state=state,
+        expected_predecessor_shard=predecessor,
+        expected_source_commit=source["source_repository_commit"],
+        expected_successor_selection_digest="4" * 64,
+        expected_feasibility_receipt_digest="5" * 64,
+        expected_outcome_surface_attestation_digest="6" * 64)
+
+    tampered = copy.deepcopy(shard)
+    tampered["state_check"]["goal_binding_unchanged"] = False
+    tampered["state_check_shard_digest"] = B.canonical_digest({
+        key: value for key, value in tampered.items()
+        if key != "state_check_shard_digest"
+    })
+    B.atomic_json(path, tampered)
+    assert B._load_valid_phase1_state_check_shard(
+        path=path, entry=state, expected_shard=predecessor, source=source,
+        successor_digest="4" * 64, feasibility_digest="5" * 64,
+        outcome_surface_attestation_digest="6" * 64,
+        root=tmp_path) is None
+
+
+def test_phase1_parent_contains_no_genesis_context_or_shared_load():
+    source = inspect.getsource(
+        B.stage_preserved_state_precontract_revalidation)
+    assert "V1._load_shared" not in source
+    assert "V1.build_context" not in source
+    assert "_run_phase1_state_subprocess" in source
+    assert "_load_valid_phase1_state_check_shard" in source
+    assert source.index("payload is None") < source.index("return_code != 0")
+
+
+def _synthetic_terminal_phase1_failure(tmp_path, monkeypatch):
+    source = _source()
+    successor_digest = "4" * 64
+    feasibility_digest = "5" * 64
+    absence = B._phase1_outcome_surface_absence_attestation(root=tmp_path)
+    preserved = {}
+    expected_states = []
+    shard_payloads = []
+    serial = 0
+    for expected in B.STATE_SELECTOR.PRESERVED_STATE_SHARDS:
+        family = expected["family"]
+        states = []
+        for ordinal in range(15):
+            state = {
+                "family": family,
+                "stratum": "general",
+                "scene_id": f"{family}-scene-{ordinal:02d}",
+                "state_id": f"{family}-state-{ordinal:02d}",
+                "state_identity_digest": f"{serial + 10000:064x}",
+            }
+            serial += 1
+            states.append(state)
+            expected_states.append((dict(expected), state))
+        preserved[family] = {"states": states}
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "load_preserved_state_shards",
+        lambda _root: preserved)
+    for index, (expected, state) in enumerate(expected_states):
+        check = _synthetic_phase1_check(state)
+        if index == 7:
+            check["exact_redrive_pass"] = False
+            check["failure_reason"] = "RuntimeError:synthetic frozen failure"
+        shard = B._build_phase1_state_check_shard(
+            entry=state, expected_shard=expected, check=check,
+            source=source, successor_digest=successor_digest,
+            feasibility_digest=feasibility_digest,
+            outcome_surface_attestation_digest=absence["attestation_digest"])
+        B.atomic_json(
+            B._phase1_state_check_shard_path(
+                state["state_identity_digest"], root=tmp_path),
+            shard)
+        shard_payloads.append(shard)
+    receipt = B._build_phase1_aggregate_receipt(
+        shard_payloads=shard_payloads,
+        expected_states=expected_states,
+        source=source,
+        successor_digest=successor_digest,
+        feasibility_digest=feasibility_digest,
+        outcome_surface_absence=absence,
+        root=tmp_path)
+    assert receipt["status"] == "FAIL_PRECONTRACT_IDENTITY_REVALIDATION"
+    return {
+        "source": source,
+        "successor_digest": successor_digest,
+        "feasibility_digest": feasibility_digest,
+        "expected_states": expected_states,
+        "receipt": receipt,
+    }
+
+
+def test_phase1_failed_terminal_reconstructs_exact_45_atomic_checks(
+        tmp_path, monkeypatch):
+    fixture = _synthetic_terminal_phase1_failure(tmp_path, monkeypatch)
+    rebuilt = B._reconstruct_terminal_phase1_failure(
+        receipt=fixture["receipt"],
+        expected_states=fixture["expected_states"],
+        source=fixture["source"],
+        successor_digest=fixture["successor_digest"],
+        feasibility_digest=fixture["feasibility_digest"],
+        root=tmp_path)
+    assert rebuilt == fixture["receipt"]
+    assert rebuilt["failure_count"] == 1
+
+
+def test_phase1_failed_terminal_rejects_resigned_aggregate_tamper(
+        tmp_path, monkeypatch):
+    fixture = _synthetic_terminal_phase1_failure(tmp_path, monkeypatch)
+    changed = copy.deepcopy(fixture["receipt"])
+    changed["failures"][0]["failure_reason"] = \
+        "RuntimeError:fabricated replacement failure"
+    changed["preserved_state_precontract_revalidation_receipt_digest"] = \
+        B.canonical_digest({
+            key: value for key, value in changed.items()
+            if key
+            != "preserved_state_precontract_revalidation_receipt_digest"
+        })
+    with pytest.raises(RuntimeError, match="differs from its atomic checks"):
+        B._reconstruct_terminal_phase1_failure(
+            receipt=changed,
+            expected_states=fixture["expected_states"],
+            source=fixture["source"],
+            successor_digest=fixture["successor_digest"],
+            feasibility_digest=fixture["feasibility_digest"],
+            root=tmp_path)
+
+
+def _synthetic_state_request(*, requested=("general", "safety_enriched")):
+    return {
+        "pool": "scorer_fit",
+        "family": "medium_enclosed_maze",
+        "requested_strata_in_priority_order": list(requested),
+        "found_before_scene": {
+            "general": 0, "safety_enriched": 0, "completion_enriched": 0,
+        },
+    }
+
+
+def test_state_resolution_trace_replays_dynamic_priority_and_rejection_ledger():
+    request = _synthetic_state_request()
+    trace = [
+        {"block_index": B.WARMUP_BLOCKS_MIN, "attempts": [
+            {"stratum": "general", "verdict": "REJECT",
+             "reason_key": "general_miss"},
+            {"stratum": "safety_enriched", "verdict": "REJECT",
+             "reason_key": "safety_miss"},
+        ]},
+        {"block_index": B.WARMUP_BLOCKS_MIN + 1, "attempts": [
+            {"stratum": "general", "verdict": "REJECT",
+             "reason_key": "general_miss"},
+            {"stratum": "safety_enriched", "verdict": "SELECT",
+             "reason_key": None},
+        ]},
+    ]
+    rejections, selected = B._replay_state_resolution_attempt_trace(
+        request=request, attempt_trace=trace,
+        blocks_driven=B.WARMUP_BLOCKS_MIN + 1, worker_failure=None)
+    assert rejections == {
+        "general:general_miss|safety_enriched:safety_miss": 1}
+    assert selected == "safety_enriched"
+
+
+def test_state_resolution_trace_rejects_omitted_earlier_priority_stratum():
+    request = _synthetic_state_request()
+    trace = [{"block_index": B.WARMUP_BLOCKS_MIN, "attempts": [
+        {"stratum": "safety_enriched", "verdict": "SELECT",
+         "reason_key": None},
+    ]}]
+    with pytest.raises(RuntimeError, match="stratum trace is malformed"):
+        B._replay_state_resolution_attempt_trace(
+            request=request, attempt_trace=trace,
+            blocks_driven=B.WARMUP_BLOCKS_MIN, worker_failure=None)
+
+
+def test_state_resolution_parent_contains_no_genesis_context_or_shared_load():
+    source = inspect.getsource(B.resolve_states)
+    assert "V1._load_shared" not in source
+    assert "V1.build_context" not in source
+    assert "_get_or_run_state_resolution_scene_capture" in source
+    worker = inspect.getsource(B._execute_state_resolution_scene_worker)
+    assert worker.index("atomic_json(capture_path, capture)") \
+        < worker.index("del ctx")
+
+
+def test_state_resolution_nonzero_teardown_is_accepted_only_with_valid_capture(
+        monkeypatch, tmp_path):
+    args = SimpleNamespace(
+        pool="scorer_fit", family="medium_enclosed_maze", backend="cpu")
+    request = {
+        "state_resolution_scene_request_digest": "7" * 64,
+        "scene": {"scene_id": "synthetic-scene"},
+    }
+    capture = {"worker_failure": None, "complete": True}
+    calls = []
+
+    def load(*, path, request):
+        calls.append(path)
+        return None if len(calls) == 1 else capture
+
+    monkeypatch.setattr(B, "_load_valid_state_resolution_scene_capture", load)
+    result = B._get_or_run_state_resolution_scene_capture(
+        args=args, request=request, out=tmp_path,
+        runner=lambda _args, *, request_digest: -11)
+    assert result is capture
+
+
+def test_state_resolution_nonzero_without_capture_fails_missing_only(
+        monkeypatch, tmp_path):
+    args = SimpleNamespace(
+        pool="scorer_fit", family="medium_enclosed_maze", backend="cpu")
+    request = {
+        "state_resolution_scene_request_digest": "8" * 64,
+        "scene": {"scene_id": "synthetic-scene"},
+    }
+    monkeypatch.setattr(
+        B, "_load_valid_state_resolution_scene_capture",
+        lambda **_kwargs: None)
+    with pytest.raises(RuntimeError, match="without a valid durable capture"):
+        B._get_or_run_state_resolution_scene_capture(
+            args=args, request=request, out=tmp_path,
+            runner=lambda _args, *, request_digest: -11)
+
+
+def test_state_resolution_request_rejects_resigned_live_scene_task_tamper(
+        monkeypatch, tmp_path):
+    family = "medium_enclosed_maze"
+    scene_dir = tmp_path / "split" / "family" / "scene-000"
+    scene_dir.mkdir(parents=True)
+    (scene_dir / "manifest.json").write_text("{}\n")
+    args = SimpleNamespace(pool="scorer_fit", family=family, backend="cpu")
+    bindings = {"synthetic_binding": "9" * 64}
+    monkeypatch.setattr(B, "_state_shard_bindings", lambda *args, **kwargs: bindings)
+    monkeypatch.setattr(B.V1, "_drive_seed", lambda _scene_id: 17)
+    request = B._build_state_resolution_scene_request(
+        args=args, out=tmp_path, scene_dir=scene_dir, scene_ordinal=0,
+        found={"general": 0, "safety_enriched": 0,
+               "completion_enriched": 0},
+        need={"general": 5, "safety_enriched": 5,
+              "completion_enriched": 5},
+        exclusion={}, family_allow_list=[scene_dir.name])
+    B._validate_state_resolution_scene_request(
+        request, args=args, out=tmp_path, pool={family: [scene_dir]},
+        exclusion={})
+
+    tampered = copy.deepcopy(request)
+    tampered["scene"]["scene_id"] = "fabricated-scene"
+    tampered["state_resolution_scene_request_digest"] = B.canonical_digest({
+        key: value for key, value in tampered.items()
+        if key != "state_resolution_scene_request_digest"
+    })
+    with pytest.raises(RuntimeError, match="live frozen inputs"):
+        B._validate_state_resolution_scene_request(
+            tampered, args=args, out=tmp_path, pool={family: [scene_dir]},
+            exclusion={})
+
+    post_quota = copy.deepcopy(request)
+    post_quota["found_before_scene"] = {
+        "general": 5, "safety_enriched": 5, "completion_enriched": 5,
+    }
+    post_quota["requested_strata_in_priority_order"] = []
+    post_quota["state_resolution_scene_request_digest"] = B.canonical_digest({
+        key: value for key, value in post_quota.items()
+        if key != "state_resolution_scene_request_digest"
+    })
+    with pytest.raises(RuntimeError, match="live frozen inputs"):
+        B._validate_state_resolution_scene_request(
+            post_quota, args=args, out=tmp_path,
+            pool={family: [scene_dir]}, exclusion={})
+
+
+def test_transport_rejects_self_bound_post_quota_failure_and_advanced_cursor(
+        monkeypatch, tmp_path):
+    family = "medium_enclosed_maze"
+    out_root = tmp_path / "generated"
+    out = out_root / "scorer_fit"
+    scenes = []
+    for name in ("scene-a", "scene-b"):
+        scene = tmp_path / "development" / family / name
+        scene.mkdir(parents=True)
+        (scene / "manifest.json").write_text("{}\n")
+        scenes.append(scene)
+    args = SimpleNamespace(pool="scorer_fit", family=family, backend="cpu")
+    bindings = {"synthetic_binding": "9" * 64}
+    synthetic_pools = copy.deepcopy(B.POOLS)
+    synthetic_pools["scorer_fit"] = {
+        **synthetic_pools["scorer_fit"],
+        "states_per_family": 1,
+        "strata": {
+            "general": 1, "safety_enriched": 0,
+            "completion_enriched": 0,
+        },
+    }
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(B, "OUT_ROOT", out_root)
+    monkeypatch.setattr(B, "POOLS", synthetic_pools)
+    monkeypatch.setattr(B, "scene_pool", lambda _pool: ({family: scenes}, {}))
+    monkeypatch.setattr(B, "_state_shard_bindings",
+                        lambda *args, **kwargs: bindings)
+    monkeypatch.setattr(B.V1, "_drive_seed", lambda name: len(name))
+
+    request = B._build_state_resolution_scene_request(
+        args=args, out=out, scene_dir=scenes[0], scene_ordinal=0,
+        found={"general": 0, "safety_enriched": 0,
+               "completion_enriched": 0},
+        need={"general": 1, "safety_enriched": 0,
+              "completion_enriched": 0},
+        exclusion={}, family_allow_list=[scene.name for scene in scenes])
+    chosen = {
+        "state_id": f"scorer_fit-{family}-general-00",
+        "family": family,
+        "scene_id": scenes[0].name,
+        "scene_dir": str(scenes[0].resolve()),
+        "scene_manifest_sha256": request["scene"]["scene_manifest_sha256"],
+        "scene_manifest_byte_count":
+            request["scene"]["scene_manifest_byte_count"],
+        "split": request["scene"]["split"],
+        "drive_seed": request["scene"]["drive_seed"],
+        "stratum": "general",
+        "split_role": "calibration",
+        "warmup_blocks": B.WARMUP_BLOCKS_MIN,
+        "source_step": 200,
+        "episode_id": 1,
+        "episode_cluster_id": f"{scenes[0].name}/env0/ep1",
+        "cell_id": 2,
+        "boundary": {"source_step": 200},
+        "goal": {"material_id": "landmark_red"},
+        "goal_type": "landmark_red",
+        "body_clearance_m": 0.2,
+        "clearance_m": 0.3,
+    }
+    chosen["state_identity_digest"] = B._state_identity_digest(chosen)
+    capture = B._build_state_resolution_scene_capture(
+        request=request, chosen_state=chosen, rejection_reasons={},
+        worker_failure=None, blocks_driven=B.WARMUP_BLOCKS_MIN,
+        attempt_trace=[{
+            "block_index": B.WARMUP_BLOCKS_MIN,
+            "attempts": [{"stratum": "general", "verdict": "SELECT",
+                          "reason_key": None}],
+        }])
+
+    def persist_pair(req, cap):
+        digest = req["state_resolution_scene_request_digest"]
+        request_path = B._state_resolution_request_path(out, family, digest)
+        capture_path = B._state_resolution_capture_path(out, family, digest)
+        B.atomic_json(request_path, req)
+        B.atomic_json(capture_path, cap)
+        return {
+            "scene_id": req["scene"]["scene_id"],
+            "state_resolution_scene_request_digest": digest,
+            "state_resolution_scene_capture_digest":
+                cap["state_resolution_scene_capture_digest"],
+            "request_path": str(request_path.relative_to(tmp_path)),
+            "request_raw_sha256": B.file_sha256(request_path),
+            "request_byte_count": request_path.stat().st_size,
+            "capture_path": str(capture_path.relative_to(tmp_path)),
+            "capture_raw_sha256": B.file_sha256(capture_path),
+            "capture_byte_count": capture_path.stat().st_size,
+        }
+
+    provenance = [persist_pair(request, capture)]
+    shard = {
+        "family": family,
+        **bindings,
+        "states": [chosen],
+        "scene_rejection_reasons": {scenes[0].name: {}},
+        "state_resolution_subprocess_transport": {
+            "schema": "go2_branch_corpus_v1_2_state_resolution_transport_v1",
+            "one_scene_per_subprocess": True,
+            "atomic_capture_write_before_native_cleanup": True,
+            "return_code_ignored_only_after_valid_capture": True,
+            "resume_scope": "MISSING_OR_INVALID_SCENE_CAPTURES_ONLY",
+            "resolver_algorithm_digest":
+                B.canonical_digest(B.STATE_RESOLUTION_REDUCER_CONTRACT),
+            "resolver_cursor_scene_id": scenes[0].name,
+            "scene_capture_count": 1,
+            "scene_capture_provenance_digest": B.canonical_digest(provenance),
+            "candidate_outcomes_loaded": False,
+        },
+        "state_resolution_scene_capture_provenance": provenance,
+    }
+    B._validate_state_resolution_transport(shard, expected_pool="scorer_fit")
+
+    # Individually self-bound request/capture bytes advance the cursor after
+    # the quota was already full.  The final reducer must reject this even
+    # though neither artifact has a broken digest.
+    post_request = B._build_state_resolution_scene_request(
+        args=args, out=out, scene_dir=scenes[1], scene_ordinal=1,
+        found={"general": 0, "safety_enriched": 0,
+               "completion_enriched": 0},
+        need={"general": 1, "safety_enriched": 0,
+              "completion_enriched": 0},
+        exclusion={}, family_allow_list=[scene.name for scene in scenes])
+    post_capture = B._build_state_resolution_scene_capture(
+        request=post_request, chosen_state=None, rejection_reasons={},
+        worker_failure="RuntimeError:synthetic-post-quota-failure",
+        blocks_driven=0, attempt_trace=[])
+    tampered = copy.deepcopy(shard)
+    tampered_provenance = provenance + [persist_pair(
+        post_request, post_capture)]
+    tampered["state_resolution_scene_capture_provenance"] = \
+        tampered_provenance
+    tampered["scene_rejection_reasons"][scenes[1].name] = {}
+    transport = tampered["state_resolution_subprocess_transport"]
+    transport["resolver_cursor_scene_id"] = scenes[1].name
+    transport["scene_capture_count"] = 2
+    transport["scene_capture_provenance_digest"] = \
+        B.canonical_digest(tampered_provenance)
+    with pytest.raises(
+        RuntimeError, match="dynamic quota prefix changed|first full quota"
+    ):
+        B._validate_state_resolution_transport(
+            tampered, expected_pool="scorer_fit")
+
+
+def _old_stratum(count: int, *, completion: bool = False):
+    rows = [{
+        "scene_id": f"scene-{index:03d}",
+        "first_eligible_block": 40 + index,
+        "continuous_geodesic_m": 0.5 if completion else 3.0,
+        "abs_bearing_rad": 0.2,
+        "graph_hops_diagnostic": 0 if completion else 3,
+        "body_clearance_m": 0.2,
+    } for index in range(count)]
+    return {
+        "required_distinct_scenes": 5,
+        "eligible_distinct_scenes": count,
+        "verdict": "PASS" if count >= 5 else "FAIL",
+        "distributions": {},
+        "scene_evidence": rows,
+    }
+
+
+def _old_receipt():
+    families = []
+    for family in B.STATE_SELECTOR.REQUIRED_FAMILIES:
+        completion_count = 0 if family == B.REACHABILITY_REDRIVE_FAMILY else 5
+        families.append({
+            "family": family,
+            "allowed_scene_count": (182 if family == B.REACHABILITY_REDRIVE_FAMILY
+                                    else 10),
+            "scanned_scene_count": (182 if family == B.REACHABILITY_REDRIVE_FAMILY
+                                    else 10),
+            "all_allowed_scenes_scanned": True,
+            "verdict": "FAIL" if completion_count == 0 else "PASS",
+            "strata": {
+                "general": _old_stratum(5),
+                "safety_enriched": _old_stratum(5),
+                "completion_enriched": _old_stratum(
+                    completion_count, completion=True),
+            },
+            "rejection_counts": {},
+        })
+    return {"families": families}
+
+
+def _task(index: int):
+    payload = {
+        "family": B.REACHABILITY_REDRIVE_FAMILY,
+        "scene_id": f"small-{index:03d}",
+        "scene_task_digest": f"{index + 1:064x}",
+    }
+    return payload
+
+
+def _evidence(index: int, *, distance: float = 0.8):
+    status = {
+        "task_completed": False,
+        "goal_claimed": False,
+        "terminated": False,
+        "truncated": False,
+    }
+    vector = B.STATE_SELECTOR.completion_rotation_eligibility_vector(
+        graph_hops=1, reachable=True,
+        continuous_geodesic_m=distance, bearing_body_rad=0.1,
+        task_status=status, previous_applied_command=[0.0, 0.0, 0.0])
+    rotations = vector["rotations"]
+    passing = [row for row in rotations if row["eligible"]]
+    assert passing
+    return {
+        "family": B.REACHABILITY_REDRIVE_FAMILY,
+        "scene_id": f"small-{index:03d}",
+        "stratum": "completion_enriched",
+        "first_eligible_block": 40,
+        "source_step": 200,
+        "boundary": {"source_step": 200, "boundary": "synthetic"},
+        "cell_id": index,
+        "episode_id": 1,
+        "episode_cluster_id": f"small-{index:03d}/env0/ep1",
+        "goal_landmark_id": f"goal-{index:03d}",
+        "goal_landmark_cell": index + 1,
+        "goal_material_id": "landmark_red",
+        "continuous_geodesic_m": distance,
+        "completion_radius_m": B.STATE_SELECTOR.COMPLETION_RADIUS_M,
+        "continuous_geodesic_gap_m": max(
+            distance - B.STATE_SELECTOR.COMPLETION_RADIUS_M, 0.0),
+        "abs_bearing_rad": 0.1,
+        "bearing_body_rad": 0.1,
+        "range_m": distance,
+        "goal_landmark_xy_m": [1.0, 2.0],
+        "graph_hops_diagnostic": 1,
+        "body_clearance_m": 0.2,
+        "clearance_m": 0.3,
+        "previous_applied_command": [0.0, 0.0, 0.0],
+        "allocation_rotation_evidence": rotations,
+        "completion_rotation_eligibility_vector": vector,
+        "eligible_rotation_indices": [
+            row["candidate_rotation_index"] for row in passing],
+        "passes_any_allowed_allocation": True,
+        "passes_every_allowed_allocation": len(passing) == 12,
+        "eligible_designated_goal_count_at_first_eligible_snapshot": 1,
+        "admitted_by_horizon_reachability_amendment": distance > 0.75,
+        "snapshot_task_status": status,
+    }
+
+
+def _shard(index: int, *, include=True):
+    task = _task(index)
+    return B._build_reachability_scene_shard(
+        task=task,
+        predecessor_shard_digest=f"{index + 1000:064x}",
+        scene_result={
+            "family": B.REACHABILITY_REDRIVE_FAMILY,
+            "scene_id": task["scene_id"],
+            "completion_scene_evidence": [_evidence(index)] if include else [],
+            "rejection_counts": {} if include else {
+                "completion_gap_exceeds_every_allowed_subset_l_max": 1},
+        },
+        source=_source(), runtime_s=1.0)
+
+
+def test_cached_seven_family_rows_are_reclassified_without_mutation():
+    predecessor = _old_receipt()
+    frozen = copy.deepcopy(predecessor)
+    receipt = B.build_reachability_feasibility_receipt(
+        predecessor_receipt=predecessor,
+        small_scene_shards=[_shard(index) for index in range(182)],
+        source=_source())
+    assert predecessor == frozen
+    reused = [row for row in receipt["families"]
+              if row["family"] != B.REACHABILITY_REDRIVE_FAMILY]
+    assert len(reused) == 7
+    assert all(row["provenance"] == "REUSED_FROZEN_1284_SCENE_CENSUS"
+               for row in reused)
+    assert receipt["reuse_policy"]["unrelated_family_redrives"] == 0
+
+
+def test_reachability_receipt_is_deterministic_and_binds_lineage():
+    shards = [_shard(index) for index in range(182)]
+    first = B.build_reachability_feasibility_receipt(
+        predecessor_receipt=_old_receipt(), small_scene_shards=shards,
+        source=_source())
+    second = B.build_reachability_feasibility_receipt(
+        predecessor_receipt=_old_receipt(), small_scene_shards=list(shards),
+        source=_source())
+    assert first == second
+    assert first["status"] == B.REACHABILITY_FEASIBILITY_PASS_STATUS
+    assert first["frozen_predecessor"]["scene_shard_count"] == 1284
+    assert first["small_scene_shard_lineage_digest"] == B.canonical_digest(
+        first["small_scene_shard_lineage"])
+    B._validate_reachability_feasibility_receipt(
+        first, predecessor_receipt=_old_receipt(),
+        small_scene_shards=shards, source=_source())
+    B.STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+        first,
+        expected_source_commit=_source()["source_repository_commit"],
+        expected_successor_selection_digest=B.selection_digest(),
+        expected_clean_source_binding_digest=B.canonical_digest(_source()),
+        expected_bound_implementations_digest=
+            _source()["bound_implementations_digest"],
+        predecessor_receipt=_old_receipt(), small_scene_shards=shards)
+    B.STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+        first,
+        expected_source_commit="a" * 40,
+        expected_successor_selection_digest=B.selection_digest(),
+        expected_clean_source_binding_digest=B.canonical_digest(_source()),
+        expected_bound_implementations_digest="b" * 64,
+        predecessor_receipt=_old_receipt(), small_scene_shards=shards,
+    )
+
+
+@pytest.mark.parametrize("deleted_key", [
+    "small_scene_shard_lineage", "clean_source_binding_digest",
+    "bound_implementations_digest",
+])
+def test_central_feasibility_validator_rejects_resigned_missing_fields(
+        deleted_key):
+    shards = [_shard(index) for index in range(182)]
+    receipt = B.build_reachability_feasibility_receipt(
+        predecessor_receipt=_old_receipt(), small_scene_shards=shards,
+        source=_source())
+    del receipt[deleted_key]
+    tampered = _resign_feasibility(receipt)
+    with pytest.raises(
+        B.STATE_SELECTOR.StateSelectorAmendmentError,
+        match="key surface changed",
+    ):
+        B.STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+            tampered, predecessor_receipt=_old_receipt(),
+            small_scene_shards=shards)
+
+
+def test_central_feasibility_validator_rejects_resigned_shard_outcome_surface():
+    shards = [_shard(index) for index in range(182)]
+    receipt = B.build_reachability_feasibility_receipt(
+        predecessor_receipt=_old_receipt(), small_scene_shards=shards,
+        source=_source())
+    changed = copy.deepcopy(shards)
+    changed[0]["branches_attempted"] = 1
+    changed[0]["candidate_outcome"] = {"completion": True}
+    changed[0]["state_selector_reachability_scene_shard_digest"] = \
+        B.canonical_digest({
+            key: value for key, value in changed[0].items()
+            if key != "state_selector_reachability_scene_shard_digest"})
+    with pytest.raises(
+        B.STATE_SELECTOR.StateSelectorAmendmentError,
+        match="shard binding is malformed",
+    ):
+        B.STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+            receipt, predecessor_receipt=_old_receipt(),
+            small_scene_shards=changed)
+
+
+def test_central_feasibility_validator_rejects_resigned_extra_evidence_field():
+    shards = [_shard(index) for index in range(182)]
+    receipt = B.build_reachability_feasibility_receipt(
+        predecessor_receipt=_old_receipt(), small_scene_shards=shards,
+        source=_source())
+    changed = copy.deepcopy(shards)
+    changed[0]["scene_result"]["completion_scene_evidence"][0][
+        "realised_completion"] = True
+    changed[0]["state_selector_reachability_scene_shard_digest"] = \
+        B.canonical_digest({
+            key: value for key, value in changed[0].items()
+            if key != "state_selector_reachability_scene_shard_digest"})
+    with pytest.raises(
+        B.STATE_SELECTOR.StateSelectorAmendmentError,
+        match="evidence key surface changed",
+    ):
+        B.STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+            receipt, predecessor_receipt=_old_receipt(),
+            small_scene_shards=changed)
+
+
+def test_live_small_shards_bind_frozen_task_and_predecessor_lineage(
+        tmp_path, monkeypatch):
+    shards = [_shard(index) for index in range(182)]
+    receipt = B.build_reachability_feasibility_receipt(
+        predecessor_receipt=_old_receipt(), small_scene_shards=shards,
+        source=_source())
+    expected_tasks = {shard["task"]["scene_id"]: shard["task"]
+                      for shard in shards}
+    expected_predecessors = {
+        shard["task"]["scene_id"]:
+            shard["frozen_predecessor_scene_shard_digest"]
+        for shard in shards}
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "_load_frozen_failed_census_tasks",
+        lambda *_args, **_kwargs: (expected_tasks, expected_predecessors))
+    root = tmp_path / (
+        ".generated/go2_branch_corpus_v1_2/scorer_fit/"
+        "state_selector_reachability_feasibility_scene_shards_v2/"
+        "small_enclosed_maze")
+    root.mkdir(parents=True)
+    for shard in shards:
+        (root / f"{shard['task']['scene_task_digest']}.json").write_text(
+            json.dumps(shard))
+    loaded = B.STATE_SELECTOR._load_live_small_reachability_shards(
+        receipt, tmp_path, _old_receipt())
+    assert len(loaded) == 182
+
+    changed = copy.deepcopy(shards[0])
+    changed["task"]["scene_id"] = "fabricated-scene"
+    changed["state_selector_reachability_scene_shard_digest"] = \
+        B.canonical_digest({
+            key: value for key, value in changed.items()
+            if key != "state_selector_reachability_scene_shard_digest"})
+    (root / f"{shards[0]['task']['scene_task_digest']}.json").write_text(
+        json.dumps(changed))
+    with pytest.raises(
+        B.STATE_SELECTOR.StateSelectorAmendmentError,
+        match="self binding failed",
+    ):
+        B.STATE_SELECTOR._load_live_small_reachability_shards(
+            receipt, tmp_path, _old_receipt())
+
+    (root / f"{shards[0]['task']['scene_task_digest']}.json").write_text(
+        json.dumps(shards[0]))
+    changed_receipt = copy.deepcopy(receipt)
+    changed_receipt["small_scene_shard_lineage"][0][
+        "predecessor_scene_shard_digest"] = "f" * 64
+    changed_receipt["small_scene_shard_lineage_digest"] = B.canonical_digest(
+        changed_receipt["small_scene_shard_lineage"])
+    with pytest.raises(
+        B.STATE_SELECTOR.StateSelectorAmendmentError,
+        match="identities are not unique",
+    ):
+        B.STATE_SELECTOR._load_live_small_reachability_shards(
+            changed_receipt, tmp_path, _old_receipt())
+
+
+def test_small_family_fails_closed_below_five_distinct_eligible_scenes():
+    shards = [_shard(index, include=index < 4) for index in range(182)]
+    receipt = B.build_reachability_feasibility_receipt(
+        predecessor_receipt=_old_receipt(), small_scene_shards=shards,
+        source=_source())
+    small = next(row for row in receipt["families"]
+                 if row["family"] == B.REACHABILITY_REDRIVE_FAMILY)
+    assert receipt["status"] == (
+        "FAIL_OUTCOME_FREE_REACHABILITY_SELECTOR_FEASIBILITY")
+    assert small["verdict"] == "FAIL"
+    assert small["strata"]["completion_enriched"][
+        "eligible_distinct_scenes"] == 4
+
+
+def test_rotation_evidence_uses_exact_unchanged_allocation_catalogue():
+    rows = B._completion_rotation_evidence(
+        graph_hops=0, distance=0.8, bearing=0.0,
+        task_status={
+            "task_completed": False, "goal_claimed": False,
+            "terminated": False, "truncated": False},
+        previous_applied_command=[0.2, 0.0, -0.1])
+    assert len(rows) == 12
+    assert [row["candidate_indices"] for row in rows] == [
+        list(block) for block in B.ALLOC.ROTATION_BLOCKS]
+    assert all(row["candidate_path_lengths_m"] for row in rows)
+    assert all(row["rejection_reasons"] == [] for row in rows)
+
+
+def test_raw_v2_rotation_vector_uses_candidate_rotation_index_end_to_end():
+    evidence = _evidence(0)
+    rotations = evidence["allocation_rotation_evidence"]
+    assert [row["candidate_rotation_index"] for row in rotations] == \
+        list(range(12))
+    assert all("rotation_index" not in row for row in rotations)
+
+    task = _task(0)
+    payload = B._build_reachability_scene_shard(
+        task=task, predecessor_shard_digest="c" * 64,
+        scene_result={
+            "family": B.REACHABILITY_REDRIVE_FAMILY,
+            "scene_id": task["scene_id"],
+            "completion_scene_evidence": [evidence],
+            "rejection_counts": {},
+        },
+        source=_source(), runtime_s=1.0)
+    B._validate_reachability_scene_shard(
+        payload, expected_task=task, predecessor_shard_digest="c" * 64,
+        source=_source())
+
+
+def test_reachability_scene_shard_validation_rejects_changed_provenance():
+    task = _task(0)
+    payload = B._build_reachability_scene_shard(
+        task=task, predecessor_shard_digest="c" * 64,
+        scene_result={
+            "family": B.REACHABILITY_REDRIVE_FAMILY,
+            "scene_id": task["scene_id"],
+            "completion_scene_evidence": [_evidence(0)],
+            "rejection_counts": {},
+        },
+        source=_source(), runtime_s=1.0)
+    B._validate_reachability_scene_shard(
+        payload, expected_task=task, predecessor_shard_digest="c" * 64,
+        source=_source())
+    changed = copy.deepcopy(payload)
+    changed["frozen_predecessor_scene_shard_digest"] = "d" * 64
+    changed["state_selector_reachability_scene_shard_digest"] = \
+        B.canonical_digest({
+            key: value for key, value in changed.items()
+            if key != "state_selector_reachability_scene_shard_digest"})
+    with pytest.raises(RuntimeError, match="binding failed"):
+        B._validate_reachability_scene_shard(
+            changed, expected_task=task, predecessor_shard_digest="c" * 64,
+            source=_source())
+
+    changed = copy.deepcopy(payload)
+    changed["successor_selection_digest"] = "e" * 64
+    changed["state_selector_reachability_scene_shard_digest"] = \
+        B.canonical_digest({
+            key: value for key, value in changed.items()
+            if key != "state_selector_reachability_scene_shard_digest"})
+    with pytest.raises(RuntimeError, match="binding failed"):
+        B._validate_reachability_scene_shard(
+            changed, expected_task=task, predecessor_shard_digest="c" * 64,
+            source=_source())
+
+
+def _joint_state(index, *, stratum="general", family="fixed-family"):
+    state = {
+        "state_id": f"fixed-{index:03d}",
+        "state_identity_digest": f"{index + 3000:064x}",
+        "family": family,
+        "stratum": stratum,
+        "split_role": "fit",
+        "goal_type": "landmark_red",
+        "scene_id": f"fixed-scene-{index:03d}",
+    }
+    return state
+
+
+def _joint_candidate(index):
+    return {
+        "state_id": "deferred",
+        "state_identity_digest": f"{index + 5000:064x}",
+        "family": B.REACHABILITY_REDRIVE_FAMILY,
+        "stratum": "completion_enriched",
+        "split_role": "deferred",
+        "goal_type": "landmark_red",
+        "scene_id": f"small-scene-{index:03d}",
+        "warmup_blocks": 40,
+        "goal": {
+            "start_geodesic_m": 0.8 + index * 0.01,
+            "landmark_id": f"goal-{index:03d}",
+            "landmark_cell": index,
+            "graph_edges": 1,
+        },
+    }
+
+
+def _fake_allocation(states, serial):
+    assignments = [{
+        "state_id": row["state_id"],
+        "state_identity_digest": row["state_identity_digest"],
+        "family": row["family"],
+        "stratum": row["stratum"],
+        "split_role": row["split_role"],
+        "goal_type": row["goal_type"],
+        "rotation_index": 0,
+        "candidate_indices": list(B.ALLOC.ROTATION_BLOCKS[0]),
+    } for row in states]
+    return {
+        "assignments": assignments,
+        "allocation_manifest_digest": f"{serial + 7000:064x}",
+    }
+
+
+def test_joint_search_uses_first_passing_combination_and_unchanged_allocator(
+        monkeypatch):
+    fixed = [_joint_state(index) for index in range(115)]
+    candidates = [_joint_candidate(index) for index in range(6)]
+    # A large d0 must not change the predecessor's cross-scene lexical order.
+    candidates[0]["goal"]["start_geodesic_m"] = 9.0
+    allocator_calls = []
+
+    def allocate(projection, *, source_identity_manifest_digest):
+        allocator_calls.append((copy.deepcopy(projection),
+                                source_identity_manifest_digest))
+        return _fake_allocation(projection, len(allocator_calls))
+
+    monkeypatch.setattr(B.ALLOC, "build_allocation_manifest", allocate)
+    monkeypatch.setattr(B, "_all_completion_masks_pass",
+                        lambda **kwargs: len(allocator_calls) == 2)
+    selected, receipt = B.select_small_completion_combination(
+        fixed_states=fixed, raw_candidates=candidates, preserved_vectors={})
+    assert receipt["combination_attempt_count"] == 2
+    assert len(allocator_calls) == 2
+    # C(6,5) lexical scene order: the second set omits scene index 4 while the
+    # lexically smallest scene remains selected despite its largest d0.
+    assert {row["scene_id"] for row in selected} == {
+        "small-scene-000", "small-scene-001", "small-scene-002",
+        "small-scene-003", "small-scene-005"}
+    calibration = [row for row in selected if row["split_role"] == "calibration"]
+    assert [row["scene_id"] for row in calibration] == ["small-scene-000"]
+
+
+def test_cursor_restriction_never_revisits_earlier_completion_only_scene():
+    rows = [
+        {"scene_id": "small-scene-001", "first_eligible_block": 40},
+        {"scene_id": "small-scene-003", "first_eligible_block": 41},
+        {"scene_id": "small-scene-005", "first_eligible_block": 42},
+        {"scene_id": "small-scene-006", "first_eligible_block": 43},
+    ]
+    retained = B._cursor_restricted_completion_rows(
+        rows, resolver_cursor_scene_id="small-scene-003",
+        excluded_scene_ids={"small-scene-006"})
+    assert [row["scene_id"] for row in retained] == ["small-scene-005"]
+
+
+def test_joint_search_fails_closed_when_cursor_pool_has_fewer_than_five():
+    fixed = [_joint_state(index) for index in range(115)]
+    candidates = [_joint_candidate(index) for index in range(4)]
+    with pytest.raises(
+        B.SmallCompletionJointSearchInfeasible,
+        match="cursor-restricted.*fewer than five",
+    ) as error:
+        B.select_small_completion_combination(
+            fixed_states=fixed, raw_candidates=candidates,
+            preserved_vectors={}, resolver_cursor_scene_id="earlier")
+    assert error.value.attempt_count == 0
+    assert len(error.value.candidate_scene_ids) == 4
+
+
+def test_terminal_joint_search_failure_is_nonoverwriting_and_pre_genesis(
+        tmp_path, monkeypatch):
+    out = tmp_path / "scorer_fit"
+    out.mkdir(parents=True)
+    launch = {
+        "source_repository_commit": "a" * 40,
+        "clean_source_launch_receipt_digest": "b" * 64,
+        "state_selector_feasibility_receipt_digest": "c" * 64,
+    }
+    monkeypatch.setattr(B, "_load_clean_source_launch_receipt",
+                        lambda: dict(launch))
+    error = B.SmallCompletionJointSearchInfeasible(
+        "cursor-restricted small completion pool has fewer than five scenes",
+        attempt_count=0, allocator_infeasible_count=0,
+        candidate_scene_ids=["small-scene-004"])
+    first = B._issue_small_completion_search_failure(
+        out=out, error=error, resolver_cursor_scene_id="small-scene-003")
+    second = B._issue_small_completion_search_failure(
+        out=out, error=error, resolver_cursor_scene_id="small-scene-003")
+    assert first == second
+    fixed = [_joint_state(index) for index in range(115)]
+    live_candidates = [_joint_candidate(4)]
+    monkeypatch.setattr(
+        B, "_live_small_completion_search_inputs",
+        lambda **_kwargs: (
+            "small-scene-003", fixed, live_candidates, {}))
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
+    monkeypatch.setattr(
+        B.V1, "_load_shared",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("terminal failure resumed Genesis")))
+    args = SimpleNamespace(
+        pool="scorer_fit", family=B.REACHABILITY_REDRIVE_FAMILY,
+        backend="cpu")
+    with pytest.raises(RuntimeError, match="terminal pre-outcome"):
+        B.resolve_states(args)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("cursor_restricted_candidate_scene_count", True, "malformed"),
+        ("combination_attempt_count", 1, "reason/arithmetic"),
+        ("allocator_infeasible_combination_count", 1, "reason/arithmetic"),
+    ],
+)
+def test_terminal_failure_rejects_resigned_malformed_arithmetic(
+        tmp_path, monkeypatch, field, value, message):
+    out = tmp_path / "scorer_fit"
+    out.mkdir(parents=True)
+    launch = {
+        "source_repository_commit": "a" * 40,
+        "clean_source_launch_receipt_digest": "b" * 64,
+        "state_selector_feasibility_receipt_digest": "c" * 64,
+    }
+    monkeypatch.setattr(B, "_load_clean_source_launch_receipt",
+                        lambda: dict(launch))
+    error = B.SmallCompletionJointSearchInfeasible(
+        "cursor-restricted small completion pool has fewer than five scenes",
+        attempt_count=0, allocator_infeasible_count=0,
+        candidate_scene_ids=["small-scene-004"])
+    payload = B._issue_small_completion_search_failure(
+        out=out, error=error, resolver_cursor_scene_id="small-scene-003")
+    payload[field] = value
+    payload["small_completion_joint_search_failure_digest"] = \
+        B.canonical_digest({
+            key: item for key, item in payload.items()
+            if key != "small_completion_joint_search_failure_digest"
+        })
+    (out / B.SMALL_COMPLETION_SEARCH_FAILURE_NAME).write_text(
+        json.dumps(payload))
+    with pytest.raises(RuntimeError, match=message):
+        B._load_small_completion_search_failure(
+            out, args=SimpleNamespace(
+                pool="scorer_fit", family=B.REACHABILITY_REDRIVE_FAMILY,
+                backend="cpu"))
+
+
+def test_terminal_exhaustion_is_replayed_over_exact_live_pool(
+        tmp_path, monkeypatch):
+    out = tmp_path / "scorer_fit"
+    out.mkdir(parents=True)
+    launch = {
+        "source_repository_commit": "a" * 40,
+        "clean_source_launch_receipt_digest": "b" * 64,
+        "state_selector_feasibility_receipt_digest": "c" * 64,
+    }
+    monkeypatch.setattr(B, "_load_clean_source_launch_receipt",
+                        lambda: dict(launch))
+    fixed = [_joint_state(index) for index in range(115)]
+    candidates = [_joint_candidate(index) for index in range(6)]
+    calls = []
+    monkeypatch.setattr(
+        B.ALLOC, "build_allocation_manifest",
+        lambda projection, **kwargs: (
+            calls.append(1) or _fake_allocation(projection, len(calls))))
+    monkeypatch.setattr(B, "_all_completion_masks_pass", lambda **kwargs: False)
+    with pytest.raises(B.SmallCompletionJointSearchInfeasible) as caught:
+        B.select_small_completion_combination(
+            fixed_states=fixed, raw_candidates=candidates,
+            preserved_vectors={}, resolver_cursor_scene_id="earlier")
+    payload = B._issue_small_completion_search_failure(
+        out=out, error=caught.value, resolver_cursor_scene_id="earlier")
+    assert payload["combination_attempt_count"] == 6
+    monkeypatch.setattr(
+        B, "_live_small_completion_search_inputs",
+        lambda **_kwargs: ("earlier", fixed, candidates, {}))
+    calls.clear()
+    reopened = B._load_small_completion_search_failure(
+        out, args=SimpleNamespace(
+            pool="scorer_fit", family=B.REACHABILITY_REDRIVE_FAMILY,
+            backend="cpu"))
+    assert reopened == payload
+    assert len(calls) == 6
+
+    changed = copy.deepcopy(payload)
+    changed["cursor_restricted_candidate_scene_ids"][0] = "later-tamper"
+    changed["cursor_restricted_candidate_scene_ids"].sort()
+    changed["cursor_restricted_candidate_scene_ids_digest"] = \
+        B.canonical_digest(changed["cursor_restricted_candidate_scene_ids"])
+    changed["small_completion_joint_search_failure_digest"] = \
+        B.canonical_digest({
+            key: item for key, item in changed.items()
+            if key != "small_completion_joint_search_failure_digest"
+        })
+    (out / B.SMALL_COMPLETION_SEARCH_FAILURE_NAME).write_text(
+        json.dumps(changed))
+    with pytest.raises(RuntimeError, match="live cursor/pool"):
+        B._load_small_completion_search_failure(
+            out, args=SimpleNamespace(
+                pool="scorer_fit", family=B.REACHABILITY_REDRIVE_FAMILY,
+                backend="cpu"))
+
+
+def test_joint_search_fails_after_exhausting_all_combinations(monkeypatch):
+    fixed = [_joint_state(index) for index in range(115)]
+    candidates = [_joint_candidate(index) for index in range(6)]
+    calls = []
+    monkeypatch.setattr(
+        B.ALLOC, "build_allocation_manifest",
+        lambda projection, **kwargs: (
+            calls.append(1) or _fake_allocation(projection, len(calls))))
+    monkeypatch.setattr(B, "_all_completion_masks_pass", lambda **kwargs: False)
+    with pytest.raises(RuntimeError, match="no lexicographic small completion"):
+        B.select_small_completion_combination(
+            fixed_states=fixed, raw_candidates=candidates,
+            preserved_vectors={})
+    assert len(calls) == 6
+
+
+def test_joint_search_continues_after_allocator_infeasible_combination(monkeypatch):
+    fixed = [_joint_state(index) for index in range(115)]
+    candidates = [_joint_candidate(index) for index in range(6)]
+    calls = []
+
+    def allocate(projection, **kwargs):
+        calls.append(1)
+        if len(calls) == 1:
+            raise B.ALLOC.CandidateAllocationInfeasible(
+                "synthetic infeasible margins")
+        return _fake_allocation(projection, len(calls))
+
+    monkeypatch.setattr(B.ALLOC, "build_allocation_manifest", allocate)
+    monkeypatch.setattr(B, "_all_completion_masks_pass", lambda **kwargs: True)
+    _selected, receipt = B.select_small_completion_combination(
+        fixed_states=fixed, raw_candidates=candidates, preserved_vectors={})
+    assert receipt["combination_attempt_count"] == 2
+    assert receipt["allocator_infeasible_combination_count"] == 1
+
+
+def test_exact_completion_gate_requires_all_forty(monkeypatch):
+    vector = B.STATE_SELECTOR.completion_rotation_eligibility_vector(
+        graph_hops=1, reachable=True, continuous_geodesic_m=0.8,
+        bearing_body_rad=0.0,
+        task_status={"task_completed": False, "goal_claimed": False,
+                     "terminated": False, "truncated": False},
+        previous_applied_command=[0.0, 0.0, 0.0])
+    states = []
+    for index in range(40):
+        state = _joint_state(index, stratum="completion_enriched")
+        state["completion_rotation_eligibility_vector"] = vector
+        states.append(state)
+    allocation = _fake_allocation(states, 1)
+    assert B._all_completion_masks_pass(
+        states=states, allocation=allocation, preserved_vectors={}) is True
+    with pytest.raises(RuntimeError, match="expected 40"):
+        B._all_completion_masks_pass(
+            states=states[:-1],
+            allocation=_fake_allocation(states[:-1], 2),
+            preserved_vectors={})
+
+
+def test_exact_completion_gate_distinguishes_ineligible_from_malformed():
+    eligible = B.STATE_SELECTOR.completion_rotation_eligibility_vector(
+        graph_hops=1, reachable=True, continuous_geodesic_m=0.8,
+        bearing_body_rad=0.0,
+        task_status={"task_completed": False, "goal_claimed": False,
+                     "terminated": False, "truncated": False},
+        previous_applied_command=[0.0, 0.0, 0.0])
+    ineligible = B.STATE_SELECTOR.completion_rotation_eligibility_vector(
+        graph_hops=1, reachable=True, continuous_geodesic_m=10.0,
+        bearing_body_rad=0.0,
+        task_status={"task_completed": False, "goal_claimed": False,
+                     "terminated": False, "truncated": False},
+        previous_applied_command=[0.0, 0.0, 0.0])
+    states = []
+    for index in range(40):
+        state = _joint_state(index, stratum="completion_enriched")
+        state["completion_rotation_eligibility_vector"] = (
+            ineligible if index == 0 else eligible)
+        states.append(state)
+    allocation = _fake_allocation(states, 1)
+    assert B._all_completion_masks_pass(
+        states=states, allocation=allocation, preserved_vectors={}) is False
+
+    changed = copy.deepcopy(states)
+    changed[0]["completion_rotation_eligibility_vector"] = copy.deepcopy(eligible)
+    changed[0]["completion_rotation_eligibility_vector"]["rotations"][0][
+        "l_max_m"] += 1.0
+    with pytest.raises(RuntimeError, match="failed reconstruction"):
+        B._all_completion_masks_pass(
+            states=changed, allocation=allocation, preserved_vectors={})
+
+
+def test_phase2_projection_has_exact_forty_allocated_rows():
+    vector = B.STATE_SELECTOR.completion_rotation_eligibility_vector(
+        graph_hops=1, reachable=True, continuous_geodesic_m=0.8,
+        bearing_body_rad=0.0,
+        task_status={"task_completed": False, "goal_claimed": False,
+                     "terminated": False, "truncated": False},
+        previous_applied_command=[0.0, 0.0, 0.0])
+    states = []
+    for index in range(40):
+        state = _joint_state(index, stratum="completion_enriched")
+        state["completion_rotation_eligibility_vector"] = vector
+        states.append(state)
+    rows = B._completion_states_for_phase2(
+        allocation=_fake_allocation(states, 1), states=states,
+        preserved_vectors={})
+    assert len(rows) == 40
+    assert all(row["candidate_indices"] == list(B.ALLOC.ROTATION_BLOCKS[0])
+               for row in rows)
+
+
+def test_final_assignment_digest_detects_masks_different_from_search():
+    states = [_joint_state(index) for index in range(120)]
+    first = _fake_allocation(states, 1)
+    changed = copy.deepcopy(first)
+    changed["assignments"][0]["rotation_index"] = 1
+    changed["assignments"][0]["candidate_indices"] = list(
+        B.ALLOC.ROTATION_BLOCKS[1])
+    assert B._allocation_assignment_set_digest(first) != \
+        B._allocation_assignment_set_digest(changed)
+
+
+def _joint_manifest_fixture():
+    states = [_joint_state(index) for index in range(105)]
+    for index in range(10):
+        state = _joint_state(
+            200 + index,
+            stratum="general" if index < 5 else "safety_enriched",
+            family=B.REACHABILITY_REDRIVE_FAMILY)
+        state["scene_id"] = f"small-fixed-{index:03d}"
+        states.append(state)
+    completion = []
+    for index in range(5):
+        state = _joint_candidate(300 + index)
+        state["state_id"] = f"small-completion-{index}"
+        state["state_identity_digest"] = f"{9000 + index:064x}"
+        state["scene_id"] = f"small-pool-{index:03d}"
+        state["split_role"] = "calibration" if index == 0 else "fit"
+        completion.append(state)
+    states.extend(completion)
+    allocation = _fake_allocation(states, 1)
+    assignment_digest = B._allocation_assignment_set_digest(allocation)
+    pool_scenes = [state["scene_id"] for state in completion]
+    receipt = {
+        "status": "PASS_FIRST_LEXICOGRAPHIC_EXACT_MASK_COMBINATION",
+        "combination_attempt_count": 1,
+        "allocator_infeasible_combination_count": 0,
+        "candidate_pool_count": 5,
+        "candidate_pool_scene_ids": pool_scenes,
+        "candidate_pool_scene_ids_digest": B.canonical_digest(pool_scenes),
+        "resolver_cursor_scene_id": "small-fixed-009",
+        "selected_scene_ids": pool_scenes,
+        "provisional_allocation_manifest_digest": "a" * 64,
+        "provisional_candidate_assignment_set_digest": assignment_digest,
+        "candidate_outcomes_consumed": False,
+        "final_candidate_assignment_set_digest": assignment_digest,
+        "final_masks_equal_searched_masks": True,
+    }
+    return {"states": states,
+            "small_completion_joint_allocation_search": receipt}, allocation
+
+
+def test_manifest_joint_receipt_replays_live_first_combination(monkeypatch):
+    manifest, allocation = _joint_manifest_fixture()
+    receipt = manifest["small_completion_joint_allocation_search"]
+    completion = [state for state in manifest["states"]
+                  if state["family"] == B.REACHABILITY_REDRIVE_FAMILY
+                  and state["stratum"] == "completion_enriched"]
+    raw = [_joint_candidate(index) for index in range(5)]
+    for state, expected in zip(raw, completion):
+        state["scene_id"] = expected["scene_id"]
+    monkeypatch.setattr(
+        B, "_small_completion_candidates_from_feasibility",
+        lambda **_kwargs: raw)
+    monkeypatch.setattr(B, "_phase1_completion_rotation_vectors", lambda: {})
+    replay = {key: value for key, value in receipt.items() if key not in (
+        "final_candidate_assignment_set_digest", "final_masks_equal_searched_masks")}
+    monkeypatch.setattr(
+        B, "select_small_completion_combination",
+        lambda **_kwargs: (completion, replay))
+    B._validate_small_completion_joint_search_receipt(
+        manifest=manifest, allocation=allocation, replay_live=True)
+    changed = copy.deepcopy(manifest)
+    changed["small_completion_joint_allocation_search"][
+        "combination_attempt_count"] = 2
+    with pytest.raises(RuntimeError, match="not the first live passing"):
+        B._validate_small_completion_joint_search_receipt(
+            manifest=changed, allocation=allocation, replay_live=True)
+
+
+def _redrive_pair():
+    vector = B.STATE_SELECTOR.completion_rotation_eligibility_vector(
+        graph_hops=1, reachable=True, continuous_geodesic_m=0.8,
+        bearing_body_rad=0.0,
+        task_status={"task_completed": False, "goal_claimed": False,
+                     "terminated": False, "truncated": False},
+        previous_applied_command=[0.1, 0.0, -0.1])
+    status = {
+        "task_completed": False, "goal_claimed": False,
+        "terminated": False, "truncated": False,
+        "production_designated_goal_claim_evidence": {"bound": True},
+    }
+    boundary = {"source_step": 200, "digest": "boundary"}
+    goal = {"landmark_id": "goal", "landmark_cell": 7,
+            "material_id": "landmark_red", "graph_edges": 1,
+            "start_geodesic_m": 0.8, "bearing_body_rad": 0.0,
+            "range_m": 0.8, "landmark_xy_m": [1.0, 2.0]}
+    entry = {
+        "state_identity_digest": "f" * 64,
+        "stratum": "completion_enriched", "source_step": 200,
+        "episode_id": 3, "cell_id": 4, "boundary": boundary,
+        "goal": goal, "body_clearance_m": 0.2, "clearance_m": 0.3,
+    }
+    record = {
+        "boundary": boundary, "cell_id": 4, "goal": goal,
+        "body_clearance_m": 0.2, "clearance_m": 0.3,
+        "completion_rotation_eligibility_vector": vector,
+        "snapshot_task_status": status,
+        "previous_applied_command": [0.1, 0.0, -0.1],
+    }
+    ctx = SimpleNamespace(runner=SimpleNamespace(
+        episode_states=[SimpleNamespace(episode_id=3)]))
+    return entry, record, ctx, vector, status
+
+
+def test_successor_completion_redrive_uses_v2_bound_evidence(monkeypatch):
+    entry, record, ctx, vector, status = _redrive_pair()
+    entry.update({
+        "completion_rotation_eligibility_vector": vector,
+        "snapshot_task_status": status,
+        "previous_applied_command": [0.1, 0.0, -0.1],
+    })
+    monkeypatch.setattr(B, "_preserved_states_by_digest", lambda: {})
+    assert B._redrive_mismatch(entry, record, ctx) is None
+    changed = copy.deepcopy(record)
+    changed["previous_applied_command"][0] = 0.2
+    assert "previous_applied_command" in B._redrive_mismatch(
+        entry, changed, ctx)
+
+
+def test_preserved_completion_redrive_requires_bound_v1_membership(monkeypatch):
+    entry, record, ctx, _vector, _status = _redrive_pair()
+    monkeypatch.setattr(
+        B, "_preserved_states_by_digest",
+        lambda: {entry["state_identity_digest"]: {"bound": True}})
+    assert B._redrive_mismatch(entry, record, ctx) is None
+    monkeypatch.setattr(B, "_preserved_states_by_digest", lambda: {})
+    assert "preserved_completion_identity" in B._redrive_mismatch(
+        entry, record, ctx)

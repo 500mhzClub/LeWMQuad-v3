@@ -205,6 +205,68 @@ def _patch_encoder_launch(monkeypatch, encoder, manifest):
         lambda *_args, **_kwargs: dict(selector))
 
 
+def test_encoder_reopens_complete_preserved_identity_two_phase_chain(
+        tmp_path, monkeypatch):
+    encoder = _encoder_module()
+    monkeypatch.setattr(encoder, "ROOT", tmp_path)
+    pool_root = tmp_path / "pools"
+    monkeypatch.setattr(encoder, "OUT_ROOT", pool_root)
+    feasibility_path = (
+        tmp_path / encoder.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_PATH)
+    precontract_path = (
+        tmp_path
+        / encoder.STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH)
+    revalidation_path = (
+        tmp_path / encoder.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH)
+    allocation_path = pool_root / "scorer_fit/candidate_allocation_manifest.json"
+    for path in (feasibility_path, revalidation_path, allocation_path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+    feasibility_path.write_text(json.dumps({
+        "state_selector_feasibility_receipt_digest": "f" * 64,
+    }))
+    revalidation_path.write_text(json.dumps({
+        "preserved_state_revalidation_receipt_digest": "r" * 64,
+    }))
+    allocation_path.write_text("{}")
+    monkeypatch.setattr(
+        encoder.STATE_SELECTOR, "validate_authority_artifacts", lambda: None)
+    monkeypatch.setattr(
+        encoder.STATE_SELECTOR, "validate_state_selector_feasibility_receipt",
+        lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        encoder.STATE_SELECTOR,
+        "validate_preserved_state_precontract_revalidation_receipt",
+        lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        encoder.STATE_SELECTOR, "validate_preserved_state_revalidation_receipt",
+        lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        encoder.STATE_SELECTOR, "state_selector_amendment_digest",
+        lambda: "a" * 64)
+
+    with pytest.raises(RuntimeError, match="successor artifacts are missing"):
+        encoder._load_selector_successor_receipts(
+            source_commit="c" * 40,
+            selection_digest="s" * 64,
+            expected_feasibility_receipt_digest="f" * 64,
+            expected_precontract_revalidation_receipt_digest="p" * 64,
+        )
+
+    precontract_path.write_text(json.dumps({
+        "preserved_state_precontract_revalidation_receipt_digest": "p" * 64,
+    }))
+    assert encoder._load_selector_successor_receipts(
+        source_commit="c" * 40,
+        selection_digest="s" * 64,
+        expected_feasibility_receipt_digest="f" * 64,
+        expected_precontract_revalidation_receipt_digest="p" * 64,
+    ) == {
+        "state_selector_amendment_digest": "a" * 64,
+        "state_selector_feasibility_receipt_digest": "f" * 64,
+        "preserved_state_revalidation_receipt_digest": "r" * 64,
+    }
+
+
 def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
         tmp_path, monkeypatch):
     contract_path = tmp_path / "issued_scorer_contract.json"
