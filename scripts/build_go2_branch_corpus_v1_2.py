@@ -318,6 +318,69 @@ def _assert_unsealed_path(path: Path) -> None:
             raise RuntimeError("symlinked corpus paths are inaccessible")
 
 
+def _frozen_generated_artifact_path(
+        path: Path, *, generated_root: Path | None = None) -> Path:
+    """Return one custody-checked canonical frozen-artifact path.
+
+    Large generated outputs may be relocated behind the single managed
+    ``OUT_ROOT`` alias.  That storage alias is not a corpus/scene traversal
+    authority: this helper permits exactly that one root symlink, returns the
+    resolved target path so a later alias swap cannot redirect the read, and
+    rejects every symlink below it.  The ordinary corpus guard above remains
+    deliberately stricter and is never relaxed by this helper.
+    """
+
+    root = OUT_ROOT if generated_root is None else Path(generated_root)
+    absolute_root = root if root.is_absolute() else Path.cwd() / root
+    absolute_path = path if path.is_absolute() else Path.cwd() / path
+    for label, value in (("generated root", absolute_root),
+                         ("generated artifact", absolute_path)):
+        if any(part == ".." or part == "sealed_test.json" or part == "sealed"
+               or part.startswith("sealed_") for part in value.parts):
+            raise RuntimeError(
+                f"{label} crosses an inaccessible custody component")
+    try:
+        relative = absolute_path.relative_to(absolute_root)
+    except ValueError as exc:
+        raise RuntimeError(
+            "frozen generated artifact escaped the managed output root") from exc
+    if not relative.parts:
+        raise RuntimeError("frozen generated artifact path names only its root")
+
+    # No alias is allowed before the one exact generated-output root.
+    _assert_unsealed_path(absolute_root.parent)
+    if absolute_root.is_symlink():
+        raw_target = absolute_root.readlink()
+        target = (raw_target if raw_target.is_absolute()
+                  else absolute_root.parent / raw_target)
+        if (target.name != absolute_root.name
+                or any(part == ".." or part == "sealed_test.json"
+                       or part == "sealed" or part.startswith("sealed_")
+                       for part in target.parts)):
+            raise RuntimeError(
+                "managed generated-output alias target identity is inaccessible")
+        _assert_unsealed_path(target)
+        try:
+            canonical_root = target.resolve(strict=True)
+        except OSError as exc:
+            raise RuntimeError(
+                "managed generated-output alias target is missing") from exc
+    else:
+        if not absolute_root.is_dir():
+            raise RuntimeError("managed generated-output root is missing")
+        canonical_root = absolute_root.resolve(strict=True)
+    if (not canonical_root.is_dir()
+            or canonical_root.name != absolute_root.name):
+        raise RuntimeError("managed generated-output root identity changed")
+    _assert_unsealed_path(canonical_root)
+
+    canonical_path = canonical_root.joinpath(*relative.parts)
+    # This checks every descendant component without following an alias and
+    # therefore rejects a symlinked receipt, census, family directory, or shard.
+    _assert_unsealed_path(canonical_path)
+    return canonical_path
+
+
 def _load_pre_identity_allocation_validation() -> dict[str, Any]:
     path = OUT_ROOT / "scorer_fit" / PRE_IDENTITY_VALIDATION_NAME
     if not path.is_file():
@@ -2172,12 +2235,14 @@ def _load_frozen_selector_feasibility_lineage(
     """
 
     failure_path = FROZEN_FEASIBILITY_FAILURE_REPORT_PATH
-    receipt_path = out / SELECTOR_FEASIBILITY_RECEIPT_NAME
-    census_path = out / SELECTOR_FEASIBILITY_TASK_CENSUS_NAME
+    _assert_unsealed_path(failure_path)
+    receipt_path = _frozen_generated_artifact_path(
+        out / SELECTOR_FEASIBILITY_RECEIPT_NAME)
+    census_path = _frozen_generated_artifact_path(
+        out / SELECTOR_FEASIBILITY_TASK_CENSUS_NAME)
     for label, path in (("frozen failure report", failure_path),
                         ("frozen feasibility receipt", receipt_path),
                         ("frozen task census", census_path)):
-        _assert_unsealed_path(path)
         if not path.is_file():
             raise RuntimeError(f"{label} is missing")
     if file_sha256(failure_path) != FROZEN_FEASIBILITY_FAILURE_REPORT_RAW_SHA256:
@@ -2240,8 +2305,8 @@ def _frozen_selector_scene_shards(
                 or binding.get("scene_task_digest")
                 != task.get("scene_task_digest")):
             raise RuntimeError("frozen selector shard/task lineage mismatch")
-        path = _selector_feasibility_scene_shard_path(out, task)
-        _assert_unsealed_path(path)
+        path = _frozen_generated_artifact_path(
+            _selector_feasibility_scene_shard_path(out, task))
         if not path.is_file():
             raise RuntimeError(f"frozen selector shard is missing: {key}")
         shard = json.loads(path.read_text())

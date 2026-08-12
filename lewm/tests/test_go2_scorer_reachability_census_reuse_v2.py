@@ -19,6 +19,201 @@ def _source():
     }
 
 
+def test_frozen_generated_artifact_guard_allows_only_exact_root_alias(
+        tmp_path):
+    lexical_root = tmp_path / "repository/.generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "external/go2_branch_corpus_v1_2"
+    artifact = target_root / "scorer_fit/frozen.json"
+    artifact.parent.mkdir(parents=True)
+    artifact.write_text("frozen")
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+
+    checked = B._frozen_generated_artifact_path(
+        lexical_root / "scorer_fit/frozen.json",
+        generated_root=lexical_root)
+    assert checked == artifact
+    assert checked.read_text() == "frozen"
+
+
+def test_frozen_generated_artifact_guard_rejects_sealed_alias_target_pre_read(
+        tmp_path):
+    lexical_root = tmp_path / "repository/.generated/go2_branch_corpus_v1_2"
+    # Deliberately leave this synthetic custody target nonexistent.  The guard
+    # must reject its name before any target traversal or artifact read.
+    target_root = (
+        tmp_path / "sealed_synthetic_target/go2_branch_corpus_v1_2"
+    )
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    with pytest.raises(RuntimeError, match="alias target identity"):
+        B._frozen_generated_artifact_path(
+            lexical_root / "scorer_fit/frozen.json",
+            generated_root=lexical_root)
+
+
+def test_frozen_generated_artifact_guard_rejects_descendant_symlink(
+        tmp_path):
+    lexical_root = tmp_path / "repository/.generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "external/go2_branch_corpus_v1_2"
+    redirected = tmp_path / "external/redirected"
+    target_root.mkdir(parents=True)
+    redirected.mkdir(parents=True)
+    (redirected / "frozen.json").write_text("redirected")
+    (target_root / "scorer_fit").symlink_to(
+        redirected, target_is_directory=True)
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    with pytest.raises(RuntimeError, match="symlinked corpus paths"):
+        B._frozen_generated_artifact_path(
+            lexical_root / "scorer_fit/frozen.json",
+            generated_root=lexical_root)
+
+
+def test_frozen_generated_artifact_guard_rejects_leaf_symlink(tmp_path):
+    lexical_root = tmp_path / "repository/.generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "external/go2_branch_corpus_v1_2"
+    other = tmp_path / "external/other.json"
+    (target_root / "scorer_fit").mkdir(parents=True)
+    other.write_text("redirected")
+    (target_root / "scorer_fit/frozen.json").symlink_to(other)
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    with pytest.raises(RuntimeError, match="symlinked corpus paths"):
+        B._frozen_generated_artifact_path(
+            lexical_root / "scorer_fit/frozen.json",
+            generated_root=lexical_root)
+
+
+def test_frozen_generated_artifact_guard_canonical_return_survives_alias_swap(
+        tmp_path):
+    lexical_root = tmp_path / "repository/.generated/go2_branch_corpus_v1_2"
+    first_root = tmp_path / "first/go2_branch_corpus_v1_2"
+    second_root = tmp_path / "second/go2_branch_corpus_v1_2"
+    first_artifact = first_root / "scorer_fit/frozen.json"
+    second_artifact = second_root / "scorer_fit/frozen.json"
+    first_artifact.parent.mkdir(parents=True)
+    second_artifact.parent.mkdir(parents=True)
+    first_artifact.write_text("first-byte-identity")
+    second_artifact.write_text("second-byte-identity")
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(first_root, target_is_directory=True)
+
+    checked = B._frozen_generated_artifact_path(
+        lexical_root / "scorer_fit/frozen.json",
+        generated_root=lexical_root)
+    lexical_root.unlink()
+    lexical_root.symlink_to(second_root, target_is_directory=True)
+    assert checked == first_artifact
+    assert checked.read_text() == "first-byte-identity"
+    assert (lexical_root / "scorer_fit/frozen.json").read_text() == \
+        "second-byte-identity"
+
+
+def test_frozen_generated_artifact_guard_rejects_escape_and_wrong_target_name(
+        tmp_path):
+    lexical_root = tmp_path / "repository/.generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "external/go2_branch_corpus_v1_2"
+    target_root.mkdir(parents=True)
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    with pytest.raises(RuntimeError, match="escaped the managed output root"):
+        B._frozen_generated_artifact_path(
+            tmp_path / "outside/frozen.json", generated_root=lexical_root)
+
+    lexical_root.unlink()
+    wrong_name = tmp_path / "external/different_artifact_root"
+    wrong_name.mkdir()
+    lexical_root.symlink_to(wrong_name, target_is_directory=True)
+    with pytest.raises(RuntimeError, match="alias target identity"):
+        B._frozen_generated_artifact_path(
+            lexical_root / "scorer_fit/frozen.json",
+            generated_root=lexical_root)
+
+
+def test_frozen_lineage_and_scene_shard_load_through_exact_output_alias(
+        tmp_path, monkeypatch):
+    lexical_root = tmp_path / "repository/.generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "external/go2_branch_corpus_v1_2"
+    out = target_root / "scorer_fit"
+    out.mkdir(parents=True)
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    lexical_out = lexical_root / "scorer_fit"
+
+    failure = {"status": "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY"}
+    failure["failure_report_digest"] = B.canonical_digest(failure)
+    failure_path = tmp_path / "frozen_failure.json"
+    failure_path.write_text(json.dumps(failure, sort_keys=True))
+    task = {
+        "family": "synthetic_family", "scene_id": "synthetic_scene",
+        "scene_task_digest": "1" * 64,
+    }
+    shard = {
+        "task": task, "complete": True,
+        **{key: False if key not in {
+            "branches_attempted", "frames_rendered", "target_latents_encoded"
+        } else 0 for key in B.SELECTOR_FEASIBILITY_FORBIDDEN_FIELDS},
+    }
+    shard["state_selector_feasibility_scene_shard_digest"] = \
+        B.canonical_digest(shard)
+    shard_path = (
+        out / B.SELECTOR_FEASIBILITY_SCENE_SHARD_ROOT
+        / task["family"] / f"{task['scene_task_digest']}.json"
+    )
+    shard_path.parent.mkdir(parents=True)
+    shard_path.write_text(json.dumps(shard, sort_keys=True))
+    lineage = [{
+        "family": task["family"], "scene_id": task["scene_id"],
+        "scene_task_digest": task["scene_task_digest"],
+        "scene_shard_digest":
+            shard["state_selector_feasibility_scene_shard_digest"],
+    }]
+    receipt = {
+        "status": "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY",
+        "scene_task_count": 1, "scene_shard_count": 1,
+        "scene_shard_lineage": lineage,
+        "scene_shard_lineage_digest": B.canonical_digest(lineage),
+    }
+    receipt["state_selector_feasibility_receipt_digest"] = \
+        B.canonical_digest(receipt)
+    receipt_path = out / B.SELECTOR_FEASIBILITY_RECEIPT_NAME
+    receipt_path.write_text(json.dumps(receipt, sort_keys=True))
+    census = {
+        "scene_task_count": 1,
+        "families": [{"family": task["family"], "tasks": [task]}],
+    }
+    census["state_selector_feasibility_task_census_digest"] = \
+        B.canonical_digest(census)
+    census_path = out / B.SELECTOR_FEASIBILITY_TASK_CENSUS_NAME
+    census_path.write_text(json.dumps(census, sort_keys=True))
+
+    monkeypatch.setattr(B, "OUT_ROOT", lexical_root)
+    monkeypatch.setattr(B, "FROZEN_FEASIBILITY_FAILURE_REPORT_PATH",
+                        failure_path)
+    monkeypatch.setattr(B, "FROZEN_FEASIBILITY_FAILURE_REPORT_RAW_SHA256",
+                        B.file_sha256(failure_path))
+    monkeypatch.setattr(B, "FROZEN_FEASIBILITY_FAILURE_REPORT_DIGEST",
+                        failure["failure_report_digest"])
+    monkeypatch.setattr(B, "FROZEN_FEASIBILITY_RECEIPT_RAW_SHA256",
+                        B.file_sha256(receipt_path))
+    monkeypatch.setattr(B, "FROZEN_FEASIBILITY_RECEIPT_DIGEST",
+                        receipt["state_selector_feasibility_receipt_digest"])
+    monkeypatch.setattr(B, "FROZEN_FEASIBILITY_TASK_CENSUS_DIGEST",
+                        census[
+                            "state_selector_feasibility_task_census_digest"])
+    monkeypatch.setattr(B, "FROZEN_FEASIBILITY_SCENE_SHARD_COUNT", 1)
+
+    loaded_failure, loaded_receipt, loaded_census = \
+        B._load_frozen_selector_feasibility_lineage(lexical_out)
+    assert loaded_failure == failure
+    assert loaded_receipt == receipt
+    assert loaded_census == census
+    loaded_shards = B._frozen_selector_scene_shards(
+        out=lexical_out, receipt=loaded_receipt, census=loaded_census)
+    assert loaded_shards[(task["family"], task["scene_id"])] == shard
+
+
 def _resign_feasibility(receipt):
     payload = copy.deepcopy(receipt)
     payload.pop("state_selector_feasibility_receipt_digest", None)
