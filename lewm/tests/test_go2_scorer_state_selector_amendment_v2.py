@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+import hashlib
 import json
 import math
 import copy
@@ -28,6 +29,31 @@ def _status(**overrides):
     }
     row.update(overrides)
     return row
+
+
+def _full_status(*, goal_cell=7):
+    return {
+        **_status(),
+        "production_claim_evidence": {
+            "active_collector_visited_accessor_callable": True,
+            "active_collector_claimed_cells": [],
+            "designated_goal_cell": goal_cell,
+        },
+        "production_task_completion_reset_evidence": {
+            "minimum_block_guard_pass": True,
+            "scene_graph_available": True,
+            "active_collector_route_like": True,
+            "active_collector_non_revisit": True,
+            "scene_landmark_cells_nonempty": True,
+            "all_scene_landmark_cells_claimed": False,
+        },
+        "termination_flags": {
+            "fall": False,
+            "out_of_bounds": False,
+            "tipped": False,
+            "nan": False,
+        },
+    }
 
 
 def _eligibility(
@@ -156,6 +182,50 @@ def test_no_branch_outcome_is_read_or_exposed_by_eligibility():
         "branch", "outcome", "collision", "progress", "completion_label",
         "future_frame", "prediction", "latent",
     }.intersection(parameters)
+
+
+def test_full_snapshot_status_is_strictly_bound_through_four_flag_projection():
+    full = _full_status(goal_cell=9)
+    projected = _status()
+    assert full != projected
+    assert S.snapshot_task_status_projection(full) == projected
+    assert S.validate_snapshot_task_status_binding(
+        full, projected, designated_goal_cell=9
+    ) == projected
+
+
+@pytest.mark.parametrize(
+    "flag", ("task_completed", "goal_claimed", "terminated", "truncated")
+)
+def test_full_snapshot_status_rejects_any_four_flag_projection_change(flag):
+    changed = copy.deepcopy(_full_status())
+    changed[flag] = True
+    with pytest.raises(
+        S.StateSelectorAmendmentError, match="selector projection"
+    ):
+        S.validate_snapshot_task_status_binding(
+            changed, _status(), designated_goal_cell=7
+        )
+
+
+@pytest.mark.parametrize("surface", ("claim", "reset", "termination", "goal"))
+def test_full_snapshot_status_rejects_production_evidence_tamper(surface):
+    changed = copy.deepcopy(_full_status())
+    expected_goal = 7
+    if surface == "claim":
+        changed["production_claim_evidence"][
+            "active_collector_claimed_cells"] = [7]
+    elif surface == "reset":
+        changed["production_task_completion_reset_evidence"][
+            "all_scene_landmark_cells_claimed"] = True
+    elif surface == "termination":
+        changed["termination_flags"]["fall"] = True
+    else:
+        expected_goal = 8
+    with pytest.raises(S.StateSelectorAmendmentError):
+        S.validate_snapshot_task_status_binding(
+            changed, _status(), designated_goal_cell=expected_goal
+        )
 
 
 def test_candidate_bank_and_allocation_are_unchanged():
@@ -351,6 +421,10 @@ def test_binary32_input_representation_fix_does_not_amend_frozen_contract():
     assert "previous_command_execution_representation" not in (
         S.state_selector_amendment_contract()["single_replacement"][
             "l_max_calculation"])
+    artifact = Path(S.AMENDMENT_ARTIFACT_PATH)
+    assert hashlib.sha256(artifact.read_bytes()).hexdigest() == (
+        "e1ddafcf700009ef07865f7afb88d8ef8967c9b8d4ae3584135f2c9fb80ea9e5"
+    )
 
 
 def test_new_receipt_paths_cannot_overwrite_accepted_v1_failures():
@@ -781,17 +855,18 @@ def _synthetic_mixed_phase2(monkeypatch, tmp_path):
             "clearance_m": 0.2,
         }
         if stratum == "completion_enriched":
+            full_status = _full_status(goal_cell=index + 20)
             vector = S.completion_rotation_eligibility_vector(
                 graph_hops=0,
                 reachable=True,
                 continuous_geodesic_m=0.5,
                 bearing_body_rad=0.0,
-                task_status=_status(),
+                task_status=full_status,
                 previous_applied_command=[0.0, 0.0, 0.0],
             )
             row.update({
                 "completion_rotation_eligibility_vector": vector,
-                "snapshot_task_status": _status(),
+                "snapshot_task_status": full_status,
                 "previous_applied_command": [0.0, 0.0, 0.0],
             })
         return row
@@ -1001,6 +1076,41 @@ def test_phase2_rejects_caller_completion_evidence_not_owned_by_active_state(
             allocation_manifest=allocation,
             active_states=active,
             completion_states=changed,
+            source_repository_commit="c" * 40,
+            successor_selection_digest="e" * 64,
+            state_selector_feasibility_receipt_digest=
+                S.FROZEN_REACHABILITY_FEASIBILITY_PASS["receipt_digest"],
+            mixed_precontract_disposition_receipt_digest="d" * 64,
+            root=tmp_path,
+        )
+
+
+@pytest.mark.parametrize("surface", ("selector_flag", "claim", "reset"))
+def test_phase2_rejects_full_snapshot_status_or_production_evidence_tamper(
+        monkeypatch, tmp_path, surface):
+    active, replacements, _rejected, allocation, rows = \
+        _synthetic_mixed_phase2(monkeypatch, tmp_path)
+    changed = copy.deepcopy(active)
+    replacement = next(
+        row for row in changed
+        if row["state_id"] == replacements[0]["state_id"]
+    )
+    status = replacement["snapshot_task_status"]
+    if surface == "selector_flag":
+        status["goal_claimed"] = True
+    elif surface == "claim":
+        status["production_claim_evidence"][
+            "active_collector_claimed_cells"] = [
+                replacement["goal"]["landmark_cell"]]
+    else:
+        status["production_task_completion_reset_evidence"][
+            "all_scene_landmark_cells_claimed"] = True
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="active task status"):
+        S.build_preserved_state_revalidation_receipt(
+            allocation_manifest=allocation,
+            active_states=changed,
+            completion_states=rows,
             source_repository_commit="c" * 40,
             successor_selection_digest="e" * 64,
             state_selector_feasibility_receipt_digest=

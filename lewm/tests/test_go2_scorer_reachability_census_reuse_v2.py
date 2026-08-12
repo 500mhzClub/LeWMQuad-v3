@@ -20,6 +20,141 @@ def _source():
     }
 
 
+def _full_snapshot_status(goal_cell: int) -> dict:
+    return {
+        "task_completed": False,
+        "goal_claimed": False,
+        "terminated": False,
+        "truncated": False,
+        "production_claim_evidence": {
+            "active_collector_visited_accessor_callable": True,
+            "active_collector_claimed_cells": [],
+            "designated_goal_cell": goal_cell,
+        },
+        "production_task_completion_reset_evidence": {
+            "minimum_block_guard_pass": True,
+            "scene_graph_available": True,
+            "active_collector_route_like": True,
+            "active_collector_non_revisit": True,
+            "scene_landmark_cells_nonempty": True,
+            "all_scene_landmark_cells_claimed": False,
+        },
+        "termination_flags": {
+            "fall": False,
+            "out_of_bounds": False,
+            "tipped": False,
+            "nan": False,
+        },
+    }
+
+
+def _synthetic_completion_state_capture() -> tuple[dict, dict]:
+    family = "medium_enclosed_maze"
+    request = {
+        "state_resolution_scene_request_digest": "9" * 64,
+        "pool": "scorer_fit",
+        "family": family,
+        "scene": {
+            "scene_id": "scene-completion",
+            "scene_dir": "/synthetic/scene-completion",
+            "scene_manifest_sha256": "8" * 64,
+            "scene_manifest_byte_count": 123,
+            "split": "synthetic",
+            "drive_seed": 17,
+        },
+        "requested_strata_in_priority_order": ["completion_enriched"],
+        "found_before_scene": {"completion_enriched": 0},
+    }
+    status = _full_snapshot_status(goal_cell=7)
+    vector = B.STATE_SELECTOR.completion_rotation_eligibility_vector(
+        graph_hops=1, reachable=True, continuous_geodesic_m=0.8,
+        bearing_body_rad=0.0, task_status=status,
+        previous_applied_command=[0.0, 0.0, 0.0])
+    first = vector["rotations"][0]
+    chosen = {
+        "state_id": f"scorer_fit-{family}-completion_enriched-00",
+        "family": family,
+        "scene_id": request["scene"]["scene_id"],
+        "scene_dir": request["scene"]["scene_dir"],
+        "scene_manifest_sha256": request["scene"]["scene_manifest_sha256"],
+        "scene_manifest_byte_count": request["scene"][
+            "scene_manifest_byte_count"],
+        "split": request["scene"]["split"],
+        "drive_seed": request["scene"]["drive_seed"],
+        "stratum": "completion_enriched",
+        "split_role": "calibration",
+        "warmup_blocks": B.WARMUP_BLOCKS_MIN,
+        "source_step": 200,
+        "episode_id": 1,
+        "episode_cluster_id": "scene-completion/env0/ep1",
+        "cell_id": 3,
+        "boundary": {"source_step": 200},
+        "goal": {
+            "landmark_id": "goal-7",
+            "landmark_cell": 7,
+            "material_id": "landmark_red",
+            "graph_edges": first["graph_hops_diagnostic"],
+            "start_geodesic_m": first["continuous_geodesic_m"],
+            "bearing_body_rad": first["bearing_body_rad"],
+            "range_m": first["continuous_geodesic_m"],
+            "landmark_xy_m": [0.0, 0.0],
+        },
+        "goal_type": "landmark_red",
+        "body_clearance_m": 0.2,
+        "clearance_m": 0.3,
+        "completion_rotation_eligibility_vector": vector,
+        "snapshot_task_status": status,
+        "previous_applied_command": first["previous_applied_command"],
+    }
+    chosen["state_identity_digest"] = B._state_identity_digest(chosen)
+    capture = B._build_state_resolution_scene_capture(
+        request=request, chosen_state=chosen, rejection_reasons={},
+        worker_failure=None, blocks_driven=B.WARMUP_BLOCKS_MIN,
+        attempt_trace=[{
+            "block_index": B.WARMUP_BLOCKS_MIN,
+            "attempts": [{
+                "stratum": "completion_enriched",
+                "verdict": "SELECT",
+                "reason_key": None,
+            }],
+        }])
+    return request, capture
+
+
+def test_ordinary_completion_capture_accepts_full_production_snapshot_status():
+    request, capture = _synthetic_completion_state_capture()
+    assert capture["chosen_state"]["snapshot_task_status"] != \
+        capture["chosen_state"][
+            "completion_rotation_eligibility_vector"]["rotations"][0][
+                "task_status"]
+    B._validate_state_resolution_scene_capture(
+        capture, expected_request=request)
+
+
+@pytest.mark.parametrize("surface", ("selector_flag", "claim", "reset"))
+def test_ordinary_completion_capture_rejects_status_evidence_tamper(surface):
+    request, capture = _synthetic_completion_state_capture()
+    changed = copy.deepcopy(capture)
+    status = changed["chosen_state"]["snapshot_task_status"]
+    if surface == "selector_flag":
+        status["truncated"] = True
+    elif surface == "claim":
+        status["production_claim_evidence"][
+            "active_collector_claimed_cells"] = [7]
+    else:
+        status["production_task_completion_reset_evidence"][
+            "all_scene_landmark_cells_claimed"] = True
+    changed["chosen_state"]["state_identity_digest"] = \
+        B._state_identity_digest(changed["chosen_state"])
+    changed["state_resolution_scene_capture_digest"] = B.canonical_digest({
+        key: value for key, value in changed.items()
+        if key != "state_resolution_scene_capture_digest"
+    })
+    with pytest.raises(RuntimeError, match="snapshot task status changed"):
+        B._validate_state_resolution_scene_capture(
+            changed, expected_request=request)
+
+
 def test_frozen_generated_artifact_guard_allows_only_exact_root_alias(
         tmp_path):
     lexical_root = tmp_path / "repository/.generated/go2_branch_corpus_v1_2"
@@ -864,12 +999,7 @@ def _synthetic_mixed_active_shard(tmp_path, monkeypatch):
         interval=interval, slot=slot, accepted_scene_ids_before=[],
         exclusion={"synthetic": True},
         family_allow_list=[scene.name for scene in scenes])
-    status = {
-        "task_completed": False,
-        "goal_claimed": False,
-        "terminated": False,
-        "truncated": False,
-    }
+    status = _full_snapshot_status(goal_cell=7)
     vector = B.STATE_SELECTOR.completion_rotation_eligibility_vector(
         graph_hops=0, reachable=True, continuous_geodesic_m=0.8,
         bearing_body_rad=0.0, task_status=status,
@@ -895,15 +1025,20 @@ def _synthetic_mixed_active_shard(tmp_path, monkeypatch):
         "cell_id": 3,
         "boundary": {"source_step": 500},
         "goal": {
+            "landmark_id": "goal-7",
+            "landmark_cell": 7,
+            "material_id": "landmark_red",
             "graph_edges": first["graph_hops_diagnostic"],
             "start_geodesic_m": first["continuous_geodesic_m"],
             "bearing_body_rad": first["bearing_body_rad"],
+            "range_m": first["continuous_geodesic_m"],
+            "landmark_xy_m": [0.0, 0.0],
         },
         "goal_type": "landmark_red",
         "body_clearance_m": 0.2,
         "clearance_m": 0.3,
         "completion_rotation_eligibility_vector": vector,
-        "snapshot_task_status": first["task_status"],
+        "snapshot_task_status": status,
         "previous_applied_command": first["previous_applied_command"],
     }
     chosen["state_identity_digest"] = B._state_identity_digest(chosen)
@@ -1016,6 +1151,39 @@ def test_mixed_active_shard_replays_full_prefix_and_rejects_post_quota_tamper(
     B.atomic_json(fixture["shard_path"], tampered)
     with pytest.raises(RuntimeError, match="post-quota"):
         B._validate_mixed_active_state_shard(tampered, fixture["shard_path"])
+
+
+@pytest.mark.parametrize(
+    "surface", ("selector_flag", "claim", "reset", "termination")
+)
+def test_mixed_selected_capture_binds_full_snapshot_status_projection(
+        tmp_path, monkeypatch, surface):
+    fixture = _synthetic_mixed_active_shard(tmp_path, monkeypatch)
+    capture = copy.deepcopy(fixture["captures"][1])
+    request = fixture["requests"][1]
+    B._validate_mixed_replacement_scene_capture(
+        capture, expected_request=request)
+
+    status = capture["chosen_state"]["snapshot_task_status"]
+    if surface == "selector_flag":
+        status["task_completed"] = True
+    elif surface == "claim":
+        status["production_claim_evidence"][
+            "active_collector_claimed_cells"] = [7]
+    elif surface == "reset":
+        status["production_task_completion_reset_evidence"][
+            "all_scene_landmark_cells_claimed"] = True
+    else:
+        status["termination_flags"]["fall"] = True
+    capture["chosen_state"]["state_identity_digest"] = \
+        B._state_identity_digest(capture["chosen_state"])
+    capture["mixed_replacement_scene_capture_digest"] = B.canonical_digest({
+        key: value for key, value in capture.items()
+        if key != "mixed_replacement_scene_capture_digest"
+    })
+    with pytest.raises(RuntimeError, match="snapshot task status changed"):
+        B._validate_mixed_replacement_scene_capture(
+            capture, expected_request=request)
 
 
 def test_mixed_active_shard_requires_full_retained_payload_equality(

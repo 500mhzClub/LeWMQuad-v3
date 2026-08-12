@@ -50,6 +50,7 @@ from lewm.oracle.go2_branch_oracle_v1_2 import (
 )
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
+from lewm.oracle import go2_scorer_projection_fix_interruption_v1 as INTERRUPTION
 from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR
 from lewm.oracle.go2_textured_v03_renderer import (
     BasePose,
@@ -455,6 +456,19 @@ def _load_issued_scorer_contract_at_path(path: Path) -> dict[str, Any]:
             or artifact.get("clean_source_binding_digest")
             != canonical_digest(current_source)):
         raise RuntimeError("issued scorer contract source binding differs from current HEAD")
+    interruption = INTERRUPTION.load_and_validate_interruption_receipt(
+        expected_source_repository_commit=str(
+            current_source["source_repository_commit"]),
+        expected_clean_source_binding_digest=canonical_digest(current_source),
+        expected_bound_implementations_digest=str(
+            current_source["bound_implementations_digest"]),
+        root=ROOT,
+    )
+    if artifact.get("preoutcome_projection_fix_interruption") != \
+            INTERRUPTION.receipt_binding(interruption, root=ROOT):
+        raise RuntimeError(
+            "issued scorer contract lost projection-fix interruption lineage"
+        )
     return artifact
 
 
@@ -504,6 +518,8 @@ def _build_clean_source_launch_receipt(
             INVALID_IDS.invalid_identity_exclusion_digest(),
         "state_selector_amendment_digest":
             STATE_SELECTOR.state_selector_amendment_digest(),
+        "preoutcome_projection_fix_interruption": dict(
+            scorer_artifact["preoutcome_projection_fix_interruption"]),
         **selector_receipts,
         "pre_identity_allocation_validation_digest":
             pre_identity["pre_identity_validation_digest"],
@@ -3846,6 +3862,27 @@ def stage_preserved_state_precontract_revalidation(
     if source.get("source_repository_clean") is not True:
         raise RuntimeError("mixed precontract disposition requires clean source")
     successor_digest = selection_digest()
+    # The prior clean implementation was interrupted before one replacement
+    # identity existed.  Preserve its exact mixed authority, contract, launch,
+    # and all 31 outcome-free request/capture records before issuing any
+    # successor-source authority.  The old records remain byte-bound but are
+    # explicitly inactive and cannot be resumed.
+    interruption = INTERRUPTION.issue_and_archive_interruption_receipt(
+        source_repository_commit=str(source["source_repository_commit"]),
+        clean_source_binding_digest=canonical_digest(source),
+        bound_implementations_digest=str(
+            source["bound_implementations_digest"]),
+        root=ROOT,
+    )
+    INTERRUPTION.validate_interruption_receipt(
+        interruption,
+        expected_source_repository_commit=str(source["source_repository_commit"]),
+        expected_clean_source_binding_digest=canonical_digest(source),
+        expected_bound_implementations_digest=str(
+            source["bound_implementations_digest"]),
+        root=ROOT,
+        require_archived=True,
+    )
     out = OUT_ROOT / "scorer_fit"
     raw_frozen_failure_path = (
         ROOT / STATE_SELECTOR.PRESERVED_STATE_PRECONTRACT_REVALIDATION_RECEIPT_PATH
@@ -4716,10 +4753,18 @@ def _validate_mixed_replacement_scene_capture(
     except (KeyError, TypeError, ValueError,
             STATE_SELECTOR.StateSelectorAmendmentError) as exc:
         raise RuntimeError("mixed replacement vector cannot be reconstructed") from exc
+    try:
+        STATE_SELECTOR.validate_snapshot_task_status_binding(
+            chosen["snapshot_task_status"], first["task_status"],
+            designated_goal_cell=int(chosen["goal"]["landmark_cell"]))
+    except (KeyError, TypeError, ValueError,
+            STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+        raise RuntimeError(
+            "mixed replacement snapshot task status changed"
+        ) from exc
     if (
         vector != expected_vector
         or vector.get("eligible_under_at_least_one_rotation") is not True
-        or chosen["snapshot_task_status"] != first["task_status"]
         or chosen["previous_applied_command"] != first["previous_applied_command"]
         or int(chosen["goal"]["graph_edges"])
         != int(first["graph_hops_diagnostic"])
@@ -5158,9 +5203,17 @@ def _validate_state_resolution_scene_capture(
             raise RuntimeError(
                 "state-resolution completion vector cannot be recomputed"
             ) from exc
+        try:
+            STATE_SELECTOR.validate_snapshot_task_status_binding(
+                chosen["snapshot_task_status"], first["task_status"],
+                designated_goal_cell=int(chosen["goal"]["landmark_cell"]))
+        except (KeyError, TypeError, ValueError,
+                STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+            raise RuntimeError(
+                "state-resolution snapshot task status changed"
+            ) from exc
         if (
             vector != expected_vector
-            or chosen["snapshot_task_status"] != first["task_status"]
             or chosen["previous_applied_command"]
             != first["previous_applied_command"]
             or int(chosen["goal"]["graph_edges"])

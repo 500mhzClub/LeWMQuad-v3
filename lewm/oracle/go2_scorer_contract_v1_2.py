@@ -52,6 +52,7 @@ from lewm.oracle.go2_branch_oracle_v1_2 import (
 )
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
+from lewm.oracle import go2_scorer_projection_fix_interruption_v1 as INTERRUPTION
 from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR
 
 STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
@@ -440,6 +441,8 @@ def source_bindings() -> dict[str, Any]:
             "lewm/oracle/go2_scorer_state_selector_amendment_v1.py"),
         "state_selector_amendment_authority": _file_binding(
             STATE_SELECTOR.AMENDMENT_ARTIFACT_PATH),
+        "projection_fix_interruption_lineage": _file_binding(
+            "lewm/oracle/go2_scorer_projection_fix_interruption_v1.py"),
         "state_selector_preoutcome_failure_receipt": _file_binding(
             STATE_SELECTOR.FAILURE_REPORT_PATH),
         "state_selector_predecessor_amendment_authority": _file_binding(
@@ -490,6 +493,8 @@ def contract() -> dict[str, Any]:
             STATE_SELECTOR.state_selector_amendment_contract(),
         "state_selector_amendment_digest":
             STATE_SELECTOR.state_selector_amendment_digest(),
+        "preoutcome_projection_fix_interruption_lineage":
+            INTERRUPTION.lineage_contract(),
         "superseded_graph_infeasible_contract_artifact":
             SUPERSEDED_GRAPH_INFEASIBLE_CONTRACT_ARTIFACT,
         "invalid_scorer_identity_exclusion":
@@ -794,6 +799,7 @@ def _contract_artifact_payload(
         source_launch_binding: dict[str, Any],
         state_selector_feasibility_receipt: dict[str, Any],
         mixed_precontract_disposition_receipt: dict[str, Any],
+        interruption_receipt_binding: dict[str, Any],
 ) -> dict[str, Any]:
     """Build the post-verification artifact; pure for focused contract tests."""
 
@@ -818,6 +824,22 @@ def _contract_artifact_payload(
             source_launch_binding["bound_implementations_digest"],
         root=ROOT,
     )
+    if (
+        set(interruption_receipt_binding) != {
+            "path", "receipt_digest", "raw_sha256", "byte_count", "status"
+        }
+        or interruption_receipt_binding.get("path")
+        != str(INTERRUPTION.RECEIPT_RELATIVE_PATH)
+        or interruption_receipt_binding.get("status") != INTERRUPTION.STATUS
+        or any(
+            not isinstance(interruption_receipt_binding.get(key), str)
+            or len(interruption_receipt_binding[key]) != 64
+            for key in ("receipt_digest", "raw_sha256")
+        )
+        or not isinstance(interruption_receipt_binding.get("byte_count"), int)
+        or interruption_receipt_binding["byte_count"] <= 0
+    ):
+        raise RuntimeError("projection-fix interruption binding is invalid")
     payload = {
         "schema": "go2_utility_scorer_contract_v1_2_artifact",
         "status": STATUS,
@@ -840,6 +862,9 @@ def _contract_artifact_payload(
         "retained_predecessor_state_count": 37,
         "rejected_predecessor_state_count": 8,
         "prospective_replacement_slot_count": 8,
+        "preoutcome_projection_fix_interruption_verified": True,
+        "preoutcome_projection_fix_interruption":
+            dict(interruption_receipt_binding),
         "mixed_state_post_allocation_revalidation": {
             "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
             "required_before_active_identity_manifest": True,
@@ -893,6 +918,16 @@ def issue_contract(path: Path) -> dict[str, Any]:
         root=ROOT,
         )
     )
+    interruption_receipt = INTERRUPTION.load_and_validate_interruption_receipt(
+        expected_source_repository_commit=source_launch_binding[
+            "source_repository_commit"],
+        expected_clean_source_binding_digest=_digest(source_launch_binding),
+        expected_bound_implementations_digest=source_launch_binding[
+            "bound_implementations_digest"],
+        root=ROOT,
+    )
+    interruption_binding = INTERRUPTION.receipt_binding(
+        interruption_receipt, root=ROOT)
     invalid_index = INVALID_IDS.load_invalid_identity_index()
     if (invalid_index.binding()["invalid_scorer_identity_exclusion_digest"]
             != INVALID_IDS.invalid_identity_exclusion_digest()):
@@ -945,6 +980,7 @@ def issue_contract(path: Path) -> dict[str, Any]:
         raise RuntimeError("candidate-allocation amendment binding failed")
     payload = _contract_artifact_payload(
         source_launch_binding, feasibility_receipt, disposition_receipt,
+        interruption_binding,
     )
     disposition = _prepare_contract_output(
         path, payload, managed_root=path.parent

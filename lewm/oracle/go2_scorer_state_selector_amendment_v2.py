@@ -360,6 +360,28 @@ CANDIDATE_PLANS = (
 _TASK_STATUS_KEYS = (
     "task_completed", "goal_claimed", "terminated", "truncated",
 )
+_FULL_SNAPSHOT_TASK_STATUS_KEYS = frozenset({
+    *_TASK_STATUS_KEYS,
+    "production_claim_evidence",
+    "production_task_completion_reset_evidence",
+    "termination_flags",
+})
+_PRODUCTION_CLAIM_EVIDENCE_KEYS = frozenset({
+    "active_collector_visited_accessor_callable",
+    "active_collector_claimed_cells",
+    "designated_goal_cell",
+})
+_PRODUCTION_RESET_EVIDENCE_KEYS = frozenset({
+    "minimum_block_guard_pass",
+    "scene_graph_available",
+    "active_collector_route_like",
+    "active_collector_non_revisit",
+    "scene_landmark_cells_nonempty",
+    "all_scene_landmark_cells_claimed",
+})
+_PRODUCTION_TERMINATION_FLAG_KEYS = frozenset({
+    "fall", "out_of_bounds", "tipped", "nan",
+})
 _HEX = frozenset("0123456789abcdef")
 
 
@@ -732,6 +754,104 @@ def _task_status_projection(task_status: Mapping[str, Any]) -> dict[str, bool | 
         except KeyError:
             value = None
         projected[key] = value if isinstance(value, bool) else None
+    return projected
+
+
+def snapshot_task_status_projection(
+    task_status: Mapping[str, Any],
+) -> dict[str, bool]:
+    """Return the exact four frozen selector flags from a full snapshot status.
+
+    The full production status deliberately carries claim, reset, and
+    termination evidence that does not belong in each allocation-rotation
+    row.  This projection is the only valid equality boundary between those
+    two representations.
+    """
+
+    projected = _task_status_projection(task_status)
+    if any(type(projected[key]) is not bool for key in _TASK_STATUS_KEYS):
+        raise StateSelectorAmendmentError(
+            "snapshot task status lacks four exact boolean selector flags"
+        )
+    return {key: bool(projected[key]) for key in _TASK_STATUS_KEYS}
+
+
+def validate_snapshot_task_status_binding(
+    task_status: Mapping[str, Any],
+    projected_status: Mapping[str, Any],
+    *,
+    designated_goal_cell: int | None = None,
+) -> dict[str, bool]:
+    """Validate full production evidence and its four-flag selector binding."""
+
+    if not isinstance(task_status, Mapping) or set(task_status) != \
+            _FULL_SNAPSHOT_TASK_STATUS_KEYS:
+        raise StateSelectorAmendmentError(
+            "full snapshot task status has an unexpected key surface"
+        )
+    if not isinstance(projected_status, Mapping) or set(projected_status) != \
+            set(_TASK_STATUS_KEYS):
+        raise StateSelectorAmendmentError(
+            "projected snapshot task status has an unexpected key surface"
+        )
+    projected = snapshot_task_status_projection(task_status)
+    if projected != dict(projected_status):
+        raise StateSelectorAmendmentError(
+            "full snapshot task status differs from its selector projection"
+        )
+
+    claim = task_status["production_claim_evidence"]
+    if not isinstance(claim, Mapping) or set(claim) != \
+            _PRODUCTION_CLAIM_EVIDENCE_KEYS:
+        raise StateSelectorAmendmentError(
+            "snapshot production claim evidence has an unexpected key surface"
+        )
+    accessor_callable = claim["active_collector_visited_accessor_callable"]
+    claimed_cells = claim["active_collector_claimed_cells"]
+    designated_goal = claim["designated_goal_cell"]
+    if (
+        type(accessor_callable) is not bool
+        or not isinstance(claimed_cells, list)
+        or any(not isinstance(cell, int) or isinstance(cell, bool)
+               for cell in claimed_cells)
+        or claimed_cells != sorted(set(claimed_cells))
+        or not isinstance(designated_goal, int)
+        or isinstance(designated_goal, bool)
+        or (designated_goal_cell is not None
+            and designated_goal != operator.index(designated_goal_cell))
+        or task_status["goal_claimed"] is not (
+            designated_goal in claimed_cells
+        )
+    ):
+        raise StateSelectorAmendmentError(
+            "snapshot production claim evidence is inconsistent"
+        )
+
+    reset = task_status["production_task_completion_reset_evidence"]
+    if (
+        not isinstance(reset, Mapping)
+        or set(reset) != _PRODUCTION_RESET_EVIDENCE_KEYS
+        or any(type(reset[key]) is not bool
+               for key in _PRODUCTION_RESET_EVIDENCE_KEYS)
+        or task_status["task_completed"] is not all(
+            reset[key] for key in _PRODUCTION_RESET_EVIDENCE_KEYS
+        )
+    ):
+        raise StateSelectorAmendmentError(
+            "snapshot production completion-reset evidence is inconsistent"
+        )
+
+    termination_flags = task_status["termination_flags"]
+    if (
+        not isinstance(termination_flags, Mapping)
+        or set(termination_flags) != _PRODUCTION_TERMINATION_FLAG_KEYS
+        or any(type(termination_flags[key]) is not bool
+               for key in _PRODUCTION_TERMINATION_FLAG_KEYS)
+        or task_status["terminated"] is not any(termination_flags.values())
+    ):
+        raise StateSelectorAmendmentError(
+            "snapshot termination evidence is inconsistent"
+        )
     return projected
 
 
@@ -3067,13 +3187,17 @@ def _completion_source_row_from_active_state(
         raise StateSelectorAmendmentError(
             "completion rotation evidence differs from its active goal binding"
         )
-    if (
-        "snapshot_task_status" in state
-        and state["snapshot_task_status"] != first["task_status"]
-    ):
-        raise StateSelectorAmendmentError(
-            "completion rotation evidence differs from active task status"
-        )
+    if "snapshot_task_status" in state:
+        try:
+            validate_snapshot_task_status_binding(
+                state["snapshot_task_status"], first["task_status"],
+                designated_goal_cell=operator.index(goal["landmark_cell"]),
+            )
+        except (KeyError, TypeError, ValueError,
+                StateSelectorAmendmentError) as exc:
+            raise StateSelectorAmendmentError(
+                "completion rotation evidence differs from active task status"
+            ) from exc
     if "previous_applied_command" in state and (
         _normalise_previous_applied(state["previous_applied_command"])
         != _normalise_previous_applied(first["previous_applied_command"])

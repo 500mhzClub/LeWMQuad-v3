@@ -241,11 +241,27 @@ def test_witness_byte_tamper_is_rejected_before_identity_use(tmp_path: Path):
 
 
 def test_known_graph_infeasible_contract_is_archived_before_successor_write(
-        tmp_path: Path):
-    predecessor = C.ROOT / \
-        ".generated/go2_utility_scorer_v1_2/scorer_contract_v1_2.json"
+        tmp_path: Path, monkeypatch):
+    # Keep this source-only: the active managed contract is intentionally the
+    # later projection-interrupted artifact and is tested by its own lineage.
+    predecessor_payload = {
+        "schema": "synthetic-graph-infeasible-contract",
+        "scorer_contract_v1_2_digest": "1" * 64,
+    }
+    predecessor_payload["contract_artifact_digest"] = C._digest(
+        predecessor_payload)
+    raw = (json.dumps(predecessor_payload, indent=2, sort_keys=True) + "\n").encode()
+    predecessor_binding = {
+        "scorer_contract_v1_2_digest": "1" * 64,
+        "contract_artifact_digest": predecessor_payload[
+            "contract_artifact_digest"],
+        "raw_sha256": C.hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+    }
+    monkeypatch.setattr(
+        C, "SUPERSEDED_GRAPH_INFEASIBLE_CONTRACT_ARTIFACT",
+        predecessor_binding)
     active = tmp_path / "scorer_contract_v1_2.json"
-    raw = predecessor.read_bytes()
     active.write_bytes(raw)
     replacement = {
         "schema": "synthetic-current-contract",
@@ -256,7 +272,7 @@ def test_known_graph_infeasible_contract_is_archived_before_successor_write(
     disposition = C._prepare_contract_output(active, replacement)
     archive = tmp_path / "superseded_pre_run" / (
         "scorer_contract_v1_2."
-        f"{C.SUPERSEDED_GRAPH_INFEASIBLE_CONTRACT_ARTIFACT['scorer_contract_v1_2_digest']}.json"
+        f"{predecessor_binding['scorer_contract_v1_2_digest']}.json"
     )
     assert disposition == "superseded_archived"
     assert not active.exists()
@@ -342,7 +358,15 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
         C.STATE_SELECTOR,
         "validate_preserved_state_mixed_precontract_disposition_receipt",
         lambda *_args, **_kwargs: None)
-    payload = C._contract_artifact_payload(source, feasibility, disposition)
+    interruption = {
+        "path": str(C.INTERRUPTION.RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "1" * 64,
+        "raw_sha256": "2" * 64,
+        "byte_count": 123,
+        "status": C.INTERRUPTION.STATUS,
+    }
+    payload = C._contract_artifact_payload(
+        source, feasibility, disposition, interruption)
     frozen = payload["contract"]
     assert payload["schema"] == "go2_utility_scorer_contract_v1_2_artifact"
     assert payload["source_repository_commit"] == "c" * 40
@@ -356,6 +380,7 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
         feasibility["state_selector_feasibility_receipt_digest"]
     assert payload["mixed_precontract_disposition_receipt_digest"] == \
         disposition["mixed_precontract_disposition_receipt_digest"]
+    assert payload["preoutcome_projection_fix_interruption"] == interruption
     assert payload["mixed_state_post_allocation_revalidation"] == {
         "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
         "required_before_active_identity_manifest": True,

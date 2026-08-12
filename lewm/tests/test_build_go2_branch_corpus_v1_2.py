@@ -9,6 +9,24 @@ import pytest
 from scripts import build_go2_branch_corpus_v1_2 as B
 
 
+def _mock_interruption(monkeypatch):
+    binding = {
+        "path": str(B.INTERRUPTION.RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "1" * 64,
+        "raw_sha256": "2" * 64,
+        "byte_count": 123,
+        "status": B.INTERRUPTION.STATUS,
+    }
+    receipt = {"synthetic": "validated interruption receipt"}
+    monkeypatch.setattr(
+        B.INTERRUPTION, "load_and_validate_interruption_receipt",
+        lambda **_kwargs: receipt)
+    monkeypatch.setattr(
+        B.INTERRUPTION, "receipt_binding",
+        lambda _receipt, **_kwargs: dict(binding))
+    return binding
+
+
 def _manifest(candidate_indices=(0, 1)):
     state = {
         "state_id": "state-000",
@@ -274,6 +292,7 @@ def test_encoder_reopens_complete_preserved_identity_two_phase_chain(
 
 def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
         tmp_path, monkeypatch):
+    interruption = _mock_interruption(monkeypatch)
     contract_path = tmp_path / "issued_scorer_contract.json"
     clean_source = {
         "schema": "synthetic_clean_source_binding",
@@ -296,6 +315,7 @@ def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
         "source_repository_clean": True,
         "clean_source_binding": clean_source,
         "clean_source_binding_digest": B.canonical_digest(clean_source),
+        "preoutcome_projection_fix_interruption": interruption,
         **selector_preconditions,
     }
     contract_artifact["contract_artifact_digest"] = B.canonical_digest(
@@ -320,6 +340,7 @@ def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
 
 def test_issued_scorer_contract_uses_exact_managed_utility_root(
         tmp_path, monkeypatch):
+    interruption = _mock_interruption(monkeypatch)
     utility_root = tmp_path / "repo/.generated/go2_utility_scorer_v1_2"
     target_root = tmp_path / "managed/go2_utility_scorer_v1_2"
     contract_path = target_root / "scorer_contract.json"
@@ -337,6 +358,7 @@ def test_issued_scorer_contract_uses_exact_managed_utility_root(
         "source_repository_clean": True,
         "clean_source_binding": source,
         "clean_source_binding_digest": B.canonical_digest(source),
+        "preoutcome_projection_fix_interruption": interruption,
     }
     payload["contract_artifact_digest"] = B.canonical_digest(payload)
     B.atomic_json(contract_path, payload)
@@ -356,6 +378,7 @@ def test_issued_scorer_contract_uses_exact_managed_utility_root(
 
 def test_issued_scorer_contract_canonical_path_survives_root_alias_swap(
         tmp_path, monkeypatch):
+    interruption = _mock_interruption(monkeypatch)
     lexical_root = tmp_path / "repo/.generated/go2_utility_scorer_v1_2"
     first_root = tmp_path / "first/go2_utility_scorer_v1_2"
     second_root = tmp_path / "second/go2_utility_scorer_v1_2"
@@ -378,6 +401,7 @@ def test_issued_scorer_contract_canonical_path_survives_root_alias_swap(
             "source_repository_clean": True,
             "clean_source_binding": source,
             "clean_source_binding_digest": B.canonical_digest(source),
+            "preoutcome_projection_fix_interruption": interruption,
         }
         payload["contract_artifact_digest"] = B.canonical_digest(payload)
         return payload
@@ -402,6 +426,7 @@ def test_issued_scorer_contract_canonical_path_survives_root_alias_swap(
 
 def test_launch_hashes_same_pinned_utility_contract_after_alias_swap(
         tmp_path, monkeypatch):
+    interruption = _mock_interruption(monkeypatch)
     lexical_root = tmp_path / "repo/.generated/go2_utility_scorer_v1_2"
     first_root = tmp_path / "first/go2_utility_scorer_v1_2"
     second_root = tmp_path / "second/go2_utility_scorer_v1_2"
@@ -428,6 +453,7 @@ def test_launch_hashes_same_pinned_utility_contract_after_alias_swap(
             "source_repository_clean": True,
             "clean_source_binding": source,
             "clean_source_binding_digest": B.canonical_digest(source),
+            "preoutcome_projection_fix_interruption": interruption,
             **selector,
         }
         payload["contract_artifact_digest"] = B.canonical_digest(payload)
