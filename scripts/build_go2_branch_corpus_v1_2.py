@@ -27,6 +27,7 @@ import hashlib
 import json
 import math
 import os
+import subprocess
 import sys
 import time
 from functools import lru_cache
@@ -135,6 +136,29 @@ SELECTOR_FEASIBILITY_SCHEMA = (
 )
 SELECTOR_FEASIBILITY_RECEIPT_NAME = "state_selector_feasibility_receipt.json"
 SELECTOR_FEASIBILITY_PASS_STATUS = "PASS_OUTCOME_FREE_ALL_SCENE_FEASIBILITY"
+SELECTOR_FEASIBILITY_REDUCER_VERSION = (
+    "go2_scorer_fit_state_selector_feasibility_scene_isolated_reducer_v1"
+)
+SELECTOR_FEASIBILITY_TASK_CENSUS_SCHEMA = (
+    "go2_scorer_fit_state_selector_feasibility_task_census_v1"
+)
+SELECTOR_FEASIBILITY_TASK_CENSUS_NAME = (
+    "state_selector_feasibility_task_census.json"
+)
+SELECTOR_FEASIBILITY_SCENE_SHARD_SCHEMA = (
+    "go2_scorer_fit_state_selector_feasibility_scene_shard_v1"
+)
+SELECTOR_FEASIBILITY_SCENE_SHARD_STATUS = (
+    "COMPLETE_OUTCOME_FREE_SCENE_CENSUS_NO_ELIGIBILITY_VERDICT"
+)
+SELECTOR_FEASIBILITY_SCENE_SHARD_ROOT = (
+    "state_selector_feasibility_scene_shards"
+)
+SELECTOR_FEASIBILITY_FORBIDDEN_FIELDS = (
+    "selected_state_identities_created", "candidate_outcomes_loaded",
+    "branch_identities_created", "branches_attempted", "frames_rendered",
+    "target_latents_encoded", "scorer_training_started",
+)
 SCORER_CONTRACT_ARTIFACT_PATH = (
     ROOT / ".generated/go2_utility_scorer_v1_2/scorer_contract_v1_2.json"
 )
@@ -163,6 +187,14 @@ def canonical_digest(payload: Any) -> str:
     ).hexdigest()
 
 
+def _is_sha256(value: Any) -> bool:
+    return bool(
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as source:
@@ -184,6 +216,20 @@ def atomic_text(path: Path, value: str) -> None:
     temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
     temporary.write_text(value)
     os.replace(temporary, path)
+
+
+def _assert_unsealed_path(path: Path) -> None:
+    """Reject sealed custody names and symlinks before path traversal."""
+
+    if any(part == ".." or part == "sealed_test.json" or part == "sealed"
+           or part.startswith("sealed_") for part in path.parts):
+        raise RuntimeError("sealed benchmark paths are inaccessible")
+    absolute = path if path.is_absolute() else Path.cwd() / path
+    cursor = Path(absolute.anchor)
+    for part in absolute.parts[1:]:
+        cursor /= part
+        if cursor.is_symlink():
+            raise RuntimeError("symlinked corpus paths are inaccessible")
 
 
 def _load_pre_identity_allocation_validation() -> dict[str, Any]:
@@ -958,15 +1004,22 @@ def scene_pool(pool_name: str) -> tuple[dict[str, list[Path]], dict[str, Any]]:
     families: dict[str, list[Path]] = {}
     for split in SPLITS:
         root = CORPUS / split
+        _assert_unsealed_path(root)
         if not root.is_dir():
             continue
         for family_dir in sorted(root.iterdir()):
+            _assert_unsealed_path(family_dir)
             if not family_dir.is_dir():
                 continue
             for scene_dir in sorted(family_dir.iterdir()):
+                _assert_unsealed_path(scene_dir)
                 if scene_dir.name in excluded:
                     continue
-                if not (scene_dir / "manifest.json").is_file():
+                manifest = scene_dir / "manifest.json"
+                genesis_scene = scene_dir / "genesis_scene.json"
+                _assert_unsealed_path(manifest)
+                _assert_unsealed_path(genesis_scene)
+                if (not manifest.is_file() or not genesis_scene.is_file()):
                     continue
                 families.setdefault(family_dir.name, []).append(scene_dir)
     for family in families:
@@ -1093,111 +1146,691 @@ def _selector_scene_evidence(family: str, scene_id: str, stratum: str,
     }
 
 
-def _scan_selector_family(*, family: str, scenes: Sequence[Path],
-                          requested_strata: Sequence[str], backend: str,
-                          shared: dict[str, Any]) -> dict[str, Any]:
-    """Scan every allowed scene without selecting an identity or a branch."""
+def _scan_selector_scene(*, family: str, scene_dir: Path,
+                         requested_strata: Sequence[str], ctx: Any
+                         ) -> dict[str, Any]:
+    """Scan one exact scene; a native crash cannot yield a result object."""
 
     evidence: list[dict[str, Any]] = []
     rejections: dict[str, int] = {}
-    for scene_dir in scenes:
-        seed = V1._drive_seed(scene_dir.name)
-        ctx = V1.build_context(scene_dir, seed=seed, backend=backend, shared=shared)
-        topology = V12.link_topology(ctx)
-        ctx.begin_episode()
-        found_in_scene: set[str] = set()
-        for block_idx in range(WARMUP_BLOCKS_MAX):
-            ctx.drive_one_block()
-            if block_idx + 1 < WARMUP_BLOCKS_MIN:
+    topology = V12.link_topology(ctx)
+    ctx.begin_episode()
+    found_in_scene: set[str] = set()
+    for block_idx in range(WARMUP_BLOCKS_MAX):
+        ctx.drive_one_block()
+        if block_idx + 1 < WARMUP_BLOCKS_MIN:
+            continue
+        for stratum in requested_strata:
+            if stratum in found_in_scene:
                 continue
-            for stratum in requested_strata:
-                if stratum in found_in_scene:
-                    continue
-                local_diagnostics: dict[str, int] = {}
-                verdict = classify_state(
-                    ctx, topology, requested_stratum=stratum,
-                    diagnostics=local_diagnostics)
-                for reason, count in local_diagnostics.items():
-                    key = reason.split(":")[0]
-                    rejections[key] = rejections.get(key, 0) + int(count)
-                if isinstance(verdict, str):
-                    continue
-                record, _field, _eligible = verdict
-                evidence.append(_selector_scene_evidence(
-                    family, scene_dir.name, stratum, block_idx + 1, record))
-                found_in_scene.add(stratum)
-            if len(found_in_scene) == len(requested_strata):
-                break
+            local_diagnostics: dict[str, int] = {}
+            verdict = classify_state(
+                ctx, topology, requested_stratum=stratum,
+                diagnostics=local_diagnostics)
+            for reason, count in local_diagnostics.items():
+                key = reason.split(":")[0]
+                rejections[key] = rejections.get(key, 0) + int(count)
+            if isinstance(verdict, str):
+                continue
+            record, _field, _eligible = verdict
+            evidence.append(_selector_scene_evidence(
+                family, scene_dir.name, stratum, block_idx + 1, record))
+            found_in_scene.add(stratum)
+        if len(found_in_scene) == len(requested_strata):
+            break
+    return {
+        "family": family,
+        "scene_id": scene_dir.name,
+        "scene_evidence": evidence,
+        "rejection_counts": {
+            str(key): int(value) for key, value in sorted(rejections.items())
+        },
+    }
+
+
+def _selector_feasibility_scene_task(
+        family: str, scene_dir: Path, task_index: int) -> dict[str, Any]:
+    manifest = scene_dir / "manifest.json"
+    genesis_scene = scene_dir / "genesis_scene.json"
+    _assert_unsealed_path(scene_dir)
+    _assert_unsealed_path(manifest)
+    _assert_unsealed_path(genesis_scene)
+    payload = {
+        "schema": "go2_scorer_fit_selector_feasibility_scene_task_v1",
+        "family": family,
+        "task_index_within_family": int(task_index),
+        "scene_id": scene_dir.name,
+        "scene_dir": str(scene_dir.resolve()),
+        "split": scene_dir.parent.parent.name,
+        "drive_seed": int(V1._drive_seed(scene_dir.name)),
+        "scene_manifest_sha256": file_sha256(manifest),
+        "scene_manifest_byte_count": manifest.stat().st_size,
+        "genesis_scene_sha256": file_sha256(genesis_scene),
+        "genesis_scene_byte_count": genesis_scene.stat().st_size,
+        "requested_strata": list(STRATA),
+    }
+    payload["scene_task_digest"] = canonical_digest(payload)
+    return payload
+
+
+def build_selector_feasibility_task_census(
+        *, pool: dict[str, Sequence[Path]], source: dict[str, Any],
+        successor_selection_digest: str,
+        exclusion_binding_digest: str) -> dict[str, Any]:
+    """Freeze every allowed scene task before any isolated worker starts."""
+
+    if set(pool) != set(STATE_SELECTOR.REQUIRED_FAMILIES):
+        raise RuntimeError("selector-feasibility task census family set changed")
+    families: list[dict[str, Any]] = []
+    all_task_digests: list[str] = []
+    for family in STATE_SELECTOR.REQUIRED_FAMILIES:
+        scenes = sorted(pool[family], key=lambda path: path.name)
+        if len({scene.name for scene in scenes}) != len(scenes):
+            raise RuntimeError(
+                f"selector-feasibility task census repeats a scene in {family}")
+        tasks = [
+            _selector_feasibility_scene_task(family, scene, index)
+            for index, scene in enumerate(scenes)
+        ]
+        all_task_digests.extend(task["scene_task_digest"] for task in tasks)
+        families.append({
+            "family": family,
+            "allowed_scene_count": len(tasks),
+            "tasks": tasks,
+            "family_task_set_digest": canonical_digest(
+                [task["scene_task_digest"] for task in tasks]),
+        })
+    payload = {
+        "schema": SELECTOR_FEASIBILITY_TASK_CENSUS_SCHEMA,
+        "status": "FROZEN_OUTCOME_FREE_EXHAUSTIVE_SCENE_TASK_CENSUS",
+        "complete": True,
+        "source_repository_commit": source["source_repository_commit"],
+        "clean_source_binding_digest": canonical_digest(source),
+        "bound_implementations_digest": source["bound_implementations_digest"],
+        "successor_selection_digest": successor_selection_digest,
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "exclusion_binding_digest": exclusion_binding_digest,
+        "family_count": len(families),
+        "scene_task_count": len(all_task_digests),
+        "families": families,
+        "scene_task_set_digest": canonical_digest(all_task_digests),
+        "selected_state_identities_created": False,
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+    }
+    payload["state_selector_feasibility_task_census_digest"] = \
+        canonical_digest(payload)
+    return payload
+
+
+def _validate_selector_feasibility_task_census(
+        census: dict[str, Any], *, pool: dict[str, Sequence[Path]],
+        source: dict[str, Any], successor_selection_digest: str,
+        exclusion_binding_digest: str) -> None:
+    _verify_self_digest(
+        census, "state_selector_feasibility_task_census_digest",
+        "state-selector feasibility task census")
+    expected = build_selector_feasibility_task_census(
+        pool=pool, source=source,
+        successor_selection_digest=successor_selection_digest,
+        exclusion_binding_digest=exclusion_binding_digest)
+    if census != expected:
+        raise RuntimeError(
+            "selector-feasibility task census differs from the exact allow-list")
+
+
+def _issue_selector_feasibility_task_census(
+        *, out: Path, pool: dict[str, Sequence[Path]], source: dict[str, Any],
+        successor_selection_digest: str,
+        exclusion_binding_digest: str) -> dict[str, Any]:
+    path = out / SELECTOR_FEASIBILITY_TASK_CENSUS_NAME
+    expected = build_selector_feasibility_task_census(
+        pool=pool, source=source,
+        successor_selection_digest=successor_selection_digest,
+        exclusion_binding_digest=exclusion_binding_digest)
+    if path.is_file():
+        try:
+            existing = json.loads(path.read_text())
+            _validate_selector_feasibility_task_census(
+                existing, pool=pool, source=source,
+                successor_selection_digest=successor_selection_digest,
+                exclusion_binding_digest=exclusion_binding_digest)
+        except Exception:
+            if _outcome_generation_started(out):
+                raise RuntimeError(
+                    "selector-feasibility task census changed after outcomes")
+            _preserve_invalid(path, out, "selector-feasibility-task-census-invalid")
+        else:
+            return existing
+    elif path.exists():
+        if _outcome_generation_started(out):
+            raise RuntimeError(
+                "selector-feasibility task census path changed after outcomes")
+        _preserve_invalid(path, out, "selector-feasibility-task-census-invalid")
+    atomic_json(path, expected)
+    return expected
+
+
+def _selector_feasibility_family_tasks(
+        census: dict[str, Any], family: str) -> list[dict[str, Any]]:
+    matches = [row for row in census["families"] if row["family"] == family]
+    if len(matches) != 1:
+        raise RuntimeError(f"task census family lookup is ambiguous for {family}")
+    return list(matches[0]["tasks"])
+
+
+def _selector_feasibility_scene_shard_path(
+        out: Path, task: dict[str, Any]) -> Path:
+    return (out / SELECTOR_FEASIBILITY_SCENE_SHARD_ROOT / task["family"]
+            / f"{task['scene_task_digest']}.json")
+
+
+def _build_selector_feasibility_scene_shard(
+        *, task: dict[str, Any], scene_result: dict[str, Any],
+        task_census_digest: str, source: dict[str, Any],
+        successor_selection_digest: str, exclusion_binding_digest: str,
+        runtime_s: float) -> dict[str, Any]:
+    payload = {
+        "schema": SELECTOR_FEASIBILITY_SCENE_SHARD_SCHEMA,
+        "status": SELECTOR_FEASIBILITY_SCENE_SHARD_STATUS,
+        "complete": True,
+        "binding_receipt": False,
+        "eligibility_verdict_inferred_from_process_exit": False,
+        "source_repository_commit": source["source_repository_commit"],
+        "clean_source_binding_digest": canonical_digest(source),
+        "bound_implementations_digest": source["bound_implementations_digest"],
+        "successor_selection_digest": successor_selection_digest,
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "state_selector_feasibility_task_census_digest": task_census_digest,
+        "exclusion_binding_digest": exclusion_binding_digest,
+        "task": task,
+        "scene_result": scene_result,
+        "runtime_s": round(float(runtime_s), 6),
+        "selected_state_identities_created": False,
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+    }
+    payload["state_selector_feasibility_scene_shard_digest"] = \
+        canonical_digest(payload)
+    return payload
+
+
+def _validate_selector_feasibility_scene_shard(
+        shard: dict[str, Any], *, expected_task: dict[str, Any],
+        expected_task_census_digest: str, source: dict[str, Any],
+        expected_successor_selection_digest: str,
+        expected_exclusion_binding_digest: str) -> None:
+    _verify_self_digest(
+        shard, "state_selector_feasibility_scene_shard_digest",
+        f"selector-feasibility scene shard {expected_task['scene_id']}")
+    if (shard.get("schema") != SELECTOR_FEASIBILITY_SCENE_SHARD_SCHEMA
+            or shard.get("status") != SELECTOR_FEASIBILITY_SCENE_SHARD_STATUS
+            or shard.get("complete") is not True
+            or shard.get("binding_receipt") is not False
+            or shard.get("eligibility_verdict_inferred_from_process_exit") is not False
+            or shard.get("source_repository_commit")
+            != source["source_repository_commit"]
+            or shard.get("clean_source_binding_digest") != canonical_digest(source)
+            or shard.get("bound_implementations_digest")
+            != source["bound_implementations_digest"]
+            or shard.get("successor_selection_digest")
+            != expected_successor_selection_digest
+            or shard.get("state_selector_amendment_digest")
+            != STATE_SELECTOR.state_selector_amendment_digest()
+            or shard.get("state_selector_feasibility_task_census_digest")
+            != expected_task_census_digest
+            or shard.get("exclusion_binding_digest")
+            != expected_exclusion_binding_digest
+            or shard.get("task") != expected_task
+            or any(shard.get(key) not in (False, 0)
+                   for key in SELECTOR_FEASIBILITY_FORBIDDEN_FIELDS)):
+        raise RuntimeError(
+            f"selector-feasibility scene shard {expected_task['scene_id']} binding failed")
+    runtime_s = shard.get("runtime_s")
+    if (isinstance(runtime_s, bool) or not isinstance(runtime_s, (int, float))
+            or not math.isfinite(float(runtime_s)) or float(runtime_s) < 0.0):
+        raise RuntimeError("selector-feasibility scene runtime is invalid")
+    result = shard.get("scene_result")
+    if (not isinstance(result, dict)
+            or set(result) != {
+                "family", "scene_id", "scene_evidence", "rejection_counts"}
+            or result.get("family") != expected_task["family"]
+            or result.get("scene_id") != expected_task["scene_id"]
+            or not isinstance(result.get("scene_evidence"), list)
+            or not isinstance(result.get("rejection_counts"), dict)):
+        raise RuntimeError("selector-feasibility scene result is malformed")
+    seen: set[str] = set()
+    evidence_keys = {
+        "family", "scene_id", "stratum", "first_eligible_block",
+        "continuous_geodesic_m", "abs_bearing_rad", "graph_hops_diagnostic",
+        "body_clearance_m",
+    }
+    for evidence in result["scene_evidence"]:
+        if (not isinstance(evidence, dict)
+                or set(evidence) != evidence_keys
+                or evidence.get("family") != expected_task["family"]
+                or evidence.get("scene_id") != expected_task["scene_id"]
+                or evidence.get("stratum") not in STRATA
+                or evidence["stratum"] in seen):
+            raise RuntimeError("selector-feasibility scene evidence is malformed")
+        seen.add(str(evidence["stratum"]))
+    if any(not isinstance(key, str)
+           or isinstance(value, bool) or not isinstance(value, int) or value < 0
+           for key, value in result["rejection_counts"].items()):
+        raise RuntimeError("selector-feasibility scene rejections are malformed")
+
+
+def _load_completed_selector_feasibility_scene_shard(
+        path: Path, *, expected_task: dict[str, Any],
+        task_census_digest: str, source: dict[str, Any],
+        successor_selection_digest: str,
+        exclusion_binding_digest: str) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        shard = json.loads(path.read_text())
+        _validate_selector_feasibility_scene_shard(
+            shard, expected_task=expected_task,
+            expected_task_census_digest=task_census_digest, source=source,
+            expected_successor_selection_digest=successor_selection_digest,
+            expected_exclusion_binding_digest=exclusion_binding_digest)
+        return shard
+    except (OSError, TypeError, ValueError, RuntimeError, json.JSONDecodeError):
+        return None
+
+
+def _execute_selector_feasibility_scene_worker(
+        *, args: argparse.Namespace, task: dict[str, Any], path: Path,
+        task_census_digest: str, source: dict[str, Any],
+        successor_selection_digest: str,
+        exclusion_binding_digest: str) -> dict[str, Any]:
+    """Scan and atomically receipt one scene before releasing native state."""
+
+    started = time.time()
+    shared = V1._load_shared(args.backend)
+    scene_dir = Path(task["scene_dir"])
+    ctx = V1.build_context(
+        scene_dir, seed=int(task["drive_seed"]), backend=args.backend,
+        shared=shared)
+    try:
+        result = _scan_selector_scene(
+            family=str(task["family"]), scene_dir=scene_dir,
+            requested_strata=STRATA, ctx=ctx)
+        payload = _build_selector_feasibility_scene_shard(
+            task=task, scene_result=result,
+            task_census_digest=task_census_digest, source=source,
+            successor_selection_digest=successor_selection_digest,
+            exclusion_binding_digest=exclusion_binding_digest,
+            runtime_s=time.time() - started)
+        _validate_selector_feasibility_scene_shard(
+            payload, expected_task=task,
+            expected_task_census_digest=task_census_digest, source=source,
+            expected_successor_selection_digest=successor_selection_digest,
+            expected_exclusion_binding_digest=exclusion_binding_digest)
+        atomic_json(path, payload)
+        return payload
+    finally:
+        # Native teardown has historically SIGSEGV'd.  A complete scene census
+        # must be durable before either reference is released or GC is forced.
         _FIELD_CACHE.clear()
         del ctx
         gc.collect()
-    return build_selector_feasibility_summary(
-        family=family, allowed_scene_count=len(scenes),
-        requested_strata=requested_strata, scene_evidence=evidence,
-        rejection_counts=rejections)
 
 
-def _load_completed_selector_feasibility(path: Path, *, source_commit: str,
-                                         successor_selection_digest: str
-                                         ) -> dict[str, Any] | None:
+def _selector_feasibility_family_row(
+        summary: dict[str, Any], requested_strata: Sequence[str]
+        ) -> dict[str, Any]:
+    """Project one exhaustive family scan into the binding receipt schema."""
+
+    strata: dict[str, Any] = {}
+    for stratum in requested_strata:
+        evidence = summary["per_stratum"][stratum]
+        strata[stratum] = {
+            "required_distinct_scenes": evidence["required_distinct_scenes"],
+            "eligible_distinct_scenes": evidence["eligible_distinct_scenes"],
+            "verdict": "PASS" if evidence["quota_pass"] else "FAIL",
+            "distributions": evidence["distributions"],
+            "scene_evidence": evidence["scene_evidence"],
+        }
+    return {
+        "family": summary["family"],
+        "allowed_scene_count": summary["allowed_scene_count"],
+        "scanned_scene_count": summary["scanned_scene_count"],
+        "all_allowed_scenes_scanned": (
+            summary["scanned_scene_count"] == summary["allowed_scene_count"]),
+        "verdict": "PASS" if summary["all_requested_quotas_pass"] else "FAIL",
+        "strata": strata,
+        "rejection_counts": summary["rejection_counts"],
+    }
+
+
+def build_selector_feasibility_receipt_from_family_reductions(
+        *, reductions: Sequence[dict[str, Any]], source: dict[str, Any],
+        successor_selection_digest: str,
+        exclusion_binding_digest: str,
+        task_census: dict[str, Any]) -> dict[str, Any]:
+    """Pure deterministic reducer over eight validated exhaustive censuses."""
+
+    _verify_self_digest(
+        task_census, "state_selector_feasibility_task_census_digest",
+        "state-selector feasibility task census")
+    if (task_census.get("source_repository_commit")
+            != source["source_repository_commit"]
+            or task_census.get("clean_source_binding_digest")
+            != canonical_digest(source)
+            or task_census.get("bound_implementations_digest")
+            != source["bound_implementations_digest"]
+            or task_census.get("successor_selection_digest")
+            != successor_selection_digest
+            or task_census.get("state_selector_amendment_digest")
+            != STATE_SELECTOR.state_selector_amendment_digest()
+            or task_census.get("exclusion_binding_digest")
+            != exclusion_binding_digest):
+        raise RuntimeError("selector-feasibility reducer task census binding failed")
+    by_family: dict[str, dict[str, Any]] = {}
+    task_census_digest = str(
+        task_census["state_selector_feasibility_task_census_digest"])
+    for reduction in reductions:
+        family = str(reduction.get("family", ""))
+        if family in by_family:
+            raise RuntimeError("selector-feasibility reducer received a repeated family")
+        _verify_self_digest(
+            reduction, "family_reduction_digest",
+            f"selector-feasibility family reduction {family}")
+        tasks = _selector_feasibility_family_tasks(task_census, family)
+        scene_bindings = reduction.get("scene_shards")
+        exact_scene_coverage = (
+            isinstance(scene_bindings, list)
+            and len(scene_bindings) == len(tasks)
+            and all(
+                isinstance(row, dict)
+                and set(row) == {
+                    "family", "scene_id", "scene_task_digest",
+                    "scene_shard_digest"}
+                and row["family"] == family
+                and row["scene_id"] == task["scene_id"]
+                and row["scene_task_digest"] == task["scene_task_digest"]
+                and _is_sha256(row["scene_shard_digest"])
+                for row, task in zip(scene_bindings, tasks)))
+        family_result = reduction.get("family_result", {})
+        if (reduction.get("schema")
+                != "go2_scorer_fit_selector_feasibility_family_reduction_v1"
+                or reduction.get("task_census_digest") != task_census_digest
+                or reduction.get("scene_task_count") != len(tasks)
+                or not exact_scene_coverage
+                or family_result.get("family") != family
+                or family_result.get("allowed_scene_count") != len(tasks)
+                or family_result.get("scanned_scene_count") != len(tasks)
+                or family_result.get("all_allowed_scenes_scanned") is not True
+                or isinstance(reduction.get("runtime_s"), bool)
+                or not isinstance(reduction.get("runtime_s"), (int, float))
+                or not math.isfinite(float(reduction["runtime_s"]))
+                or float(reduction["runtime_s"]) < 0.0):
+            raise RuntimeError(
+                f"selector-feasibility family reduction {family} is malformed")
+        by_family[family] = reduction
+    required_families = tuple(STATE_SELECTOR.REQUIRED_FAMILIES)
+    if set(by_family) != set(required_families):
+        raise RuntimeError("selector-feasibility reducer requires all eight families")
+    ordered = [by_family[family] for family in required_families]
+    family_rows = [reduction["family_result"] for reduction in ordered]
+    scene_shard_lineage = [
+        row for reduction in ordered for row in reduction["scene_shards"]
+    ]
+    passed = all(row["verdict"] == "PASS" for row in family_rows)
+    payload = {
+        "schema": SELECTOR_FEASIBILITY_SCHEMA,
+        "status": (SELECTOR_FEASIBILITY_PASS_STATUS if passed
+                   else "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY"),
+        "complete": True,
+        "binding_receipt": True,
+        "source_repository_commit": source["source_repository_commit"],
+        "clean_source_binding_digest": canonical_digest(source),
+        "bound_implementations_digest": source["bound_implementations_digest"],
+        "successor_selection_digest": successor_selection_digest,
+        "state_selector_amendment_digest":
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        "state_selector_feasibility_task_census_digest": task_census_digest,
+        "scene_task_count": task_census["scene_task_count"],
+        "scene_shard_count": len(scene_shard_lineage),
+        "scene_shard_lineage": scene_shard_lineage,
+        "scene_shard_lineage_digest": canonical_digest(scene_shard_lineage),
+        "family_count": len(family_rows),
+        "strata": list(STRATA),
+        "required_distinct_scenes_per_stratum": 5,
+        "families": family_rows,
+        "exclusion_binding_digest": exclusion_binding_digest,
+        "runtime_s": round(math.fsum(
+            float(reduction["runtime_s"]) for reduction in ordered), 6),
+        "reducer_version": SELECTOR_FEASIBILITY_REDUCER_VERSION,
+        "family_reduction_digests": {
+            family: by_family[family][
+                "family_reduction_digest"]
+            for family in required_families
+        },
+        "scene_subprocess_isolation": True,
+        "resume_reuses_only_valid_complete_scene_shards": True,
+        "selected_state_identities_created": False,
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+    }
+    payload["state_selector_feasibility_receipt_digest"] = canonical_digest(payload)
+    return payload
+
+
+def _run_selector_feasibility_scene_subprocess(
+        args: argparse.Namespace, task: dict[str, Any]) -> int:
+    """Run exactly one pre-bound scene task in a fresh native process."""
+
+    command = [
+        sys.executable, str(Path(__file__).resolve()),
+        "--pool", "scorer_fit", "--stage", "selector-feasibility",
+        "--family", str(task["family"]),
+        "--selector-scene-id", str(task["scene_id"]),
+        "--backend", str(args.backend),
+    ]
+    environment = dict(os.environ)
+    environment["PYTHONUNBUFFERED"] = "1"
+    completed = subprocess.run(
+        command, cwd=ROOT, env=environment, check=False)
+    return int(completed.returncode)
+
+
+def _collect_selector_feasibility_scene_shards(
+        *, args: argparse.Namespace, out: Path,
+        tasks: Sequence[dict[str, Any]], task_census_digest: str,
+        source: dict[str, Any], successor_selection_digest: str,
+        exclusion_binding_digest: str) -> list[dict[str, Any]]:
+    """Resume exact complete scenes; a process exit is never eligibility data."""
+
+    shards: list[dict[str, Any]] = []
+    for task in tasks:
+        path = _selector_feasibility_scene_shard_path(out, task)
+        shard = _load_completed_selector_feasibility_scene_shard(
+            path, expected_task=task, task_census_digest=task_census_digest,
+            source=source,
+            successor_selection_digest=successor_selection_digest,
+            exclusion_binding_digest=exclusion_binding_digest)
+        if shard is None:
+            if _outcome_generation_started(out):
+                state = "invalid" if path.exists() else "missing"
+                raise RuntimeError(
+                    f"selector-feasibility scene shard is {state} after outcomes")
+            if path.exists():
+                preserved = _preserve_invalid(
+                    path, out, "selector-feasibility-scene-invalid")
+                print(f"[recovery] preserved invalid scene census {preserved}",
+                      flush=True)
+            print(
+                "[selector-feasibility] isolated exhaustive scene census: "
+                f"{task['family']}/{task['scene_id']}", flush=True)
+            return_code = _run_selector_feasibility_scene_subprocess(args, task)
+            shard = _load_completed_selector_feasibility_scene_shard(
+                path, expected_task=task, task_census_digest=task_census_digest,
+                source=source,
+                successor_selection_digest=successor_selection_digest,
+                exclusion_binding_digest=exclusion_binding_digest)
+            if shard is None:
+                raise RuntimeError(
+                    "isolated selector-feasibility scene "
+                    f"{task['family']}/{task['scene_id']} exited {return_code} "
+                    "without a valid durable census; no eligibility conclusion "
+                    "was recorded")
+            if return_code != 0:
+                print(
+                    "[recovery] retained valid atomic scene census despite "
+                    f"worker return code {return_code}: "
+                    f"{task['family']}/{task['scene_id']}", flush=True)
+        else:
+            print(
+                "[selector-feasibility] retained valid exhaustive scene census: "
+                f"{task['family']}/{task['scene_id']}", flush=True)
+        shards.append(shard)
+    return shards
+
+
+def _reduce_selector_feasibility_family_scene_shards(
+        *, family: str, tasks: Sequence[dict[str, Any]],
+        shards: Sequence[dict[str, Any]], task_census_digest: str,
+        source: dict[str, Any], successor_selection_digest: str,
+        exclusion_binding_digest: str) -> dict[str, Any]:
+    """Deterministically reduce the exact scene census for one family."""
+
+    if len(tasks) != len(shards):
+        raise RuntimeError(f"selector-feasibility family {family} scene count changed")
+    by_task_digest: dict[str, dict[str, Any]] = {}
+    for shard in shards:
+        digest = str(shard.get("task", {}).get("scene_task_digest", ""))
+        if digest in by_task_digest:
+            raise RuntimeError(
+                f"selector-feasibility family {family} repeats a scene shard")
+        by_task_digest[digest] = shard
+    expected_task_digests = [str(task["scene_task_digest"]) for task in tasks]
+    if set(by_task_digest) != set(expected_task_digests):
+        raise RuntimeError(
+            f"selector-feasibility family {family} scene task coverage changed")
+    scene_evidence: list[dict[str, Any]] = []
+    rejection_counts: dict[str, int] = {}
+    scene_bindings: list[dict[str, Any]] = []
+    runtime_values: list[float] = []
+    for task in tasks:
+        shard = by_task_digest[str(task["scene_task_digest"])]
+        _validate_selector_feasibility_scene_shard(
+            shard, expected_task=task,
+            expected_task_census_digest=task_census_digest, source=source,
+            expected_successor_selection_digest=successor_selection_digest,
+            expected_exclusion_binding_digest=exclusion_binding_digest)
+        result = shard["scene_result"]
+        scene_evidence.extend(result["scene_evidence"])
+        for reason, count in result["rejection_counts"].items():
+            rejection_counts[reason] = rejection_counts.get(reason, 0) + int(count)
+        runtime_values.append(float(shard["runtime_s"]))
+        scene_bindings.append({
+            "family": family,
+            "scene_id": task["scene_id"],
+            "scene_task_digest": task["scene_task_digest"],
+            "scene_shard_digest":
+                shard["state_selector_feasibility_scene_shard_digest"],
+        })
+    summary = build_selector_feasibility_summary(
+        family=family, allowed_scene_count=len(tasks),
+        requested_strata=STRATA, scene_evidence=scene_evidence,
+        rejection_counts=rejection_counts)
+    payload = {
+        "schema": "go2_scorer_fit_selector_feasibility_family_reduction_v1",
+        "family": family,
+        "task_census_digest": task_census_digest,
+        "scene_task_count": len(tasks),
+        "scene_shards": scene_bindings,
+        "family_result": _selector_feasibility_family_row(summary, STRATA),
+        "runtime_s": round(math.fsum(runtime_values), 6),
+    }
+    payload["family_reduction_digest"] = canonical_digest(payload)
+    return payload
+
+
+def _reduce_selector_feasibility_families(
+        *, args: argparse.Namespace, out: Path, source: dict[str, Any],
+        successor_selection_digest: str,
+        exclusion_binding_digest: str,
+        task_census: dict[str, Any]) -> list[dict[str, Any]]:
+    """Reduce exact scene shards family-by-family without loading Genesis."""
+
+    reductions: list[dict[str, Any]] = []
+    task_census_digest = str(
+        task_census["state_selector_feasibility_task_census_digest"])
+    for family in STATE_SELECTOR.REQUIRED_FAMILIES:
+        tasks = _selector_feasibility_family_tasks(task_census, family)
+        scene_shards = _collect_selector_feasibility_scene_shards(
+            args=args, out=out, tasks=tasks,
+            task_census_digest=task_census_digest, source=source,
+            successor_selection_digest=successor_selection_digest,
+            exclusion_binding_digest=exclusion_binding_digest)
+        reductions.append(_reduce_selector_feasibility_family_scene_shards(
+            family=family, tasks=tasks, shards=scene_shards,
+            task_census_digest=task_census_digest, source=source,
+            successor_selection_digest=successor_selection_digest,
+            exclusion_binding_digest=exclusion_binding_digest))
+    return reductions
+
+
+def _load_completed_selector_feasibility(
+        path: Path, *, source: dict[str, Any],
+        successor_selection_digest: str,
+        exclusion_binding_digest: str,
+        task_census: dict[str, Any]) -> dict[str, Any] | None:
+    """Rebuild the binding receipt from every current durable scene shard."""
+
     if not path.is_file():
         return None
     try:
         existing = json.loads(path.read_text())
-        _verify_self_digest(
-            existing, "state_selector_feasibility_receipt_digest",
-            "state-selector feasibility receipt")
-        if (existing.get("complete") is not True
-                or existing.get("binding_receipt") is not True
-                or existing.get("source_repository_commit") != source_commit
-                or existing.get("successor_selection_digest")
-                != successor_selection_digest
-                or existing.get("state_selector_amendment_digest")
-                != STATE_SELECTOR.state_selector_amendment_digest()
-                or existing.get("family_count") != EXPECTED_FAMILIES
-                or existing.get("strata") != list(STRATA)
-                or existing.get("required_distinct_scenes_per_stratum") != 5):
-            return None
-        forbidden = (
-            "selected_state_identities_created", "candidate_outcomes_loaded",
-            "branch_identities_created", "branches_attempted", "frames_rendered",
-            "target_latents_encoded", "scorer_training_started",
-        )
-        if any(existing.get(key) not in (False, 0) for key in forbidden):
-            return None
-        rows = existing.get("families")
-        if (not isinstance(rows, list) or len(rows) != EXPECTED_FAMILIES
-                or {str(row.get("family")) for row in rows}
-                != set(STATE_SELECTOR.REQUIRED_FAMILIES)):
-            return None
-        verdicts: list[str] = []
-        for row in rows:
-            if (row.get("all_allowed_scenes_scanned") is not True
-                    or set(row.get("strata", {})) != set(STRATA)):
-                return None
-            expected_family_pass = True
-            for stratum in STRATA:
-                evidence = row["strata"][stratum]
-                if evidence.get("required_distinct_scenes") != 5:
+        task_census_digest = str(
+            task_census["state_selector_feasibility_task_census_digest"])
+        reductions: list[dict[str, Any]] = []
+        for family in STATE_SELECTOR.REQUIRED_FAMILIES:
+            tasks = _selector_feasibility_family_tasks(task_census, family)
+            shards: list[dict[str, Any]] = []
+            for task in tasks:
+                shard = _load_completed_selector_feasibility_scene_shard(
+                    _selector_feasibility_scene_shard_path(path.parent, task),
+                    expected_task=task,
+                    task_census_digest=task_census_digest, source=source,
+                    successor_selection_digest=successor_selection_digest,
+                    exclusion_binding_digest=exclusion_binding_digest)
+                if shard is None:
                     return None
-                expected = ("PASS" if int(
-                    evidence.get("eligible_distinct_scenes", -1)) >= 5 else "FAIL")
-                if evidence.get("verdict") != expected:
-                    return None
-                expected_family_pass &= expected == "PASS"
-            expected_verdict = "PASS" if expected_family_pass else "FAIL"
-            if row.get("verdict") != expected_verdict:
-                return None
-            verdicts.append(expected_verdict)
-        expected_status = (SELECTOR_FEASIBILITY_PASS_STATUS
-                           if all(value == "PASS" for value in verdicts)
-                           else "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY")
-        if existing.get("status") != expected_status:
+                shards.append(shard)
+            reductions.append(_reduce_selector_feasibility_family_scene_shards(
+                family=family, tasks=tasks, shards=shards,
+                task_census_digest=task_census_digest, source=source,
+                successor_selection_digest=successor_selection_digest,
+                exclusion_binding_digest=exclusion_binding_digest))
+        expected = build_selector_feasibility_receipt_from_family_reductions(
+            reductions=reductions, source=source,
+            successor_selection_digest=successor_selection_digest,
+            exclusion_binding_digest=exclusion_binding_digest,
+            task_census=task_census)
+        if existing != expected:
             return None
-        if expected_status == SELECTOR_FEASIBILITY_PASS_STATUS:
+        if existing["status"] == SELECTOR_FEASIBILITY_PASS_STATUS:
             STATE_SELECTOR.validate_state_selector_feasibility_receipt(
                 existing,
-                expected_source_commit=source_commit,
+                expected_source_commit=str(source["source_repository_commit"]),
                 expected_successor_selection_digest=successor_selection_digest,
             )
         return existing
@@ -1217,69 +1850,165 @@ def stage_selector_feasibility(args: argparse.Namespace) -> int:
     if source.get("source_repository_clean") is not True:
         raise RuntimeError("selector feasibility requires a clean source repository")
     successor_digest = selection_digest()
+    selector_scene_id = getattr(args, "selector_scene_id", None)
+    if (selector_scene_id is not None
+            and (args.family is None or args.stratum is not None)):
+        raise RuntimeError(
+            "--selector-scene-id requires one --family and no --stratum")
     requested_families = ([str(args.family)] if args.family is not None
                           else list(STATE_SELECTOR.REQUIRED_FAMILIES))
     requested_strata = ([str(args.stratum)] if args.stratum is not None
                         else list(STATE_SELECTOR.REQUIRED_STRATA))
-    binding_run = (args.family is None and args.stratum is None)
+    binding_run = (
+        args.family is None and args.stratum is None
+        and selector_scene_id is None)
+    scene_worker_run = selector_scene_id is not None
     out = OUT_ROOT / "scorer_fit"
     out.mkdir(parents=True, exist_ok=True)
-    path = (out / SELECTOR_FEASIBILITY_RECEIPT_NAME if binding_run else
-            out / ("state_selector_feasibility_diagnostic_"
-                   + "-".join(requested_families) + "_"
-                   + "-".join(requested_strata) + ".json"))
     if binding_run:
-        existing = _load_completed_selector_feasibility(
-            path, source_commit=str(source["source_repository_commit"]),
-            successor_selection_digest=successor_digest)
-        if existing is not None:
-            print(json.dumps(existing, indent=2, sort_keys=True))
-            return 0 if existing.get("status") == SELECTOR_FEASIBILITY_PASS_STATUS else 1
+        path = out / SELECTOR_FEASIBILITY_RECEIPT_NAME
+    elif scene_worker_run:
+        path = None
+    else:
+        path = out / ("state_selector_feasibility_diagnostic_"
+                      + "-".join(requested_families) + "_"
+                      + "-".join(requested_strata) + ".json")
 
     pool, exclusion = scene_pool("scorer_fit")
     unknown = sorted(set(requested_families) - set(pool))
     if unknown:
         raise RuntimeError(f"unknown selector-feasibility families: {unknown}")
-    started = time.time()
-    shared = V1._load_shared(args.backend)
-    families = [
-        _scan_selector_family(
-            family=family, scenes=pool[family],
-            requested_strata=requested_strata, backend=args.backend,
-            shared=shared)
-        for family in requested_families
+    exclusion_digest = canonical_digest(exclusion)
+    census: dict[str, Any] | None = None
+    if not scene_worker_run:
+        census = _issue_selector_feasibility_task_census(
+            out=out, pool=pool, source=source,
+            successor_selection_digest=successor_digest,
+            exclusion_binding_digest=exclusion_digest)
+    elif scene_worker_run:
+        census_path = out / SELECTOR_FEASIBILITY_TASK_CENSUS_NAME
+        if not census_path.is_file():
+            raise RuntimeError(
+                "isolated scene worker requires the frozen task census")
+        census = json.loads(census_path.read_text())
+        _validate_selector_feasibility_task_census(
+            census, pool=pool, source=source,
+            successor_selection_digest=successor_digest,
+            exclusion_binding_digest=exclusion_digest)
+
+    if binding_run:
+        assert census is not None and path is not None
+        existing = _load_completed_selector_feasibility(
+            path, source=source,
+            successor_selection_digest=successor_digest,
+            exclusion_binding_digest=exclusion_digest,
+            task_census=census)
+        if existing is not None:
+            print(json.dumps(existing, indent=2, sort_keys=True))
+            return (0 if existing.get("status")
+                    == SELECTOR_FEASIBILITY_PASS_STATUS else 1)
+
+    if binding_run:
+        assert census is not None and path is not None
+        reductions = _reduce_selector_feasibility_families(
+            args=args, out=out, source=source,
+            successor_selection_digest=successor_digest,
+            exclusion_binding_digest=exclusion_digest,
+            task_census=census)
+        payload = build_selector_feasibility_receipt_from_family_reductions(
+            reductions=reductions, source=source,
+            successor_selection_digest=successor_digest,
+            exclusion_binding_digest=exclusion_digest,
+            task_census=census)
+        if path.exists():
+            if _outcome_generation_started(out):
+                raise RuntimeError(
+                    "selector-feasibility receipt changed after outcomes started")
+            _preserve_invalid(path, out, "selector-feasibility-superseded")
+        atomic_json(path, payload)
+        passed = payload["status"] == SELECTOR_FEASIBILITY_PASS_STATUS
+        if passed:
+            STATE_SELECTOR.validate_state_selector_feasibility_receipt(
+                payload,
+                expected_source_commit=str(source["source_repository_commit"]),
+                expected_successor_selection_digest=successor_digest)
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0 if passed else 1
+
+    if scene_worker_run:
+        assert census is not None
+        family = requested_families[0]
+        matches = [
+            task for task in _selector_feasibility_family_tasks(census, family)
+            if task["scene_id"] == selector_scene_id
+        ]
+        if len(matches) != 1:
+            raise RuntimeError(
+                f"scene task lookup is ambiguous for {family}/{selector_scene_id}")
+        task = matches[0]
+        path = _selector_feasibility_scene_shard_path(out, task)
+        census_digest = str(
+            census["state_selector_feasibility_task_census_digest"])
+        existing = _load_completed_selector_feasibility_scene_shard(
+            path, expected_task=task, task_census_digest=census_digest,
+            source=source, successor_selection_digest=successor_digest,
+            exclusion_binding_digest=exclusion_digest)
+        if existing is not None:
+            print(json.dumps(existing, indent=2, sort_keys=True))
+            return 0
+        if _outcome_generation_started(out):
+            state = "invalid" if path.exists() else "missing"
+            raise RuntimeError(
+                f"selector-feasibility scene shard is {state} after outcomes")
+        if path.exists():
+            _preserve_invalid(path, out, "selector-feasibility-scene-invalid")
+        payload = _execute_selector_feasibility_scene_worker(
+            args=args, task=task, path=path,
+            task_census_digest=census_digest, source=source,
+            successor_selection_digest=successor_digest,
+            exclusion_binding_digest=exclusion_digest)
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+
+    # Scoped diagnostics reuse the same exact per-scene workers and merely
+    # reduce a requested view; they cannot satisfy the binding all-family gate.
+    assert census is not None
+    census_digest = str(
+        census["state_selector_feasibility_task_census_digest"])
+    families: list[dict[str, Any]] = []
+    runtime_values: list[float] = []
+    for family in requested_families:
+        tasks = _selector_feasibility_family_tasks(census, family)
+        scene_shards = _collect_selector_feasibility_scene_shards(
+            args=args, out=out, tasks=tasks,
+            task_census_digest=census_digest, source=source,
+            successor_selection_digest=successor_digest,
+            exclusion_binding_digest=exclusion_digest)
+        evidence = [
+            row for shard in scene_shards
+            for row in shard["scene_result"]["scene_evidence"]
+            if row["stratum"] in requested_strata
+        ]
+        rejections: dict[str, int] = {}
+        for shard in scene_shards:
+            runtime_values.append(float(shard["runtime_s"]))
+            for reason, count in shard["scene_result"]["rejection_counts"].items():
+                rejections[reason] = rejections.get(reason, 0) + int(count)
+        families.append(build_selector_feasibility_summary(
+            family=family, allowed_scene_count=len(tasks),
+            requested_strata=requested_strata, scene_evidence=evidence,
+            rejection_counts=rejections))
+    family_rows = [
+        _selector_feasibility_family_row(summary, requested_strata)
+        for summary in families
     ]
-    family_rows: list[dict[str, Any]] = []
-    for summary in families:
-        strata = {}
-        for stratum in requested_strata:
-            evidence = summary["per_stratum"][stratum]
-            strata[stratum] = {
-                "required_distinct_scenes": evidence["required_distinct_scenes"],
-                "eligible_distinct_scenes": evidence["eligible_distinct_scenes"],
-                "verdict": "PASS" if evidence["quota_pass"] else "FAIL",
-                "distributions": evidence["distributions"],
-                "scene_evidence": evidence["scene_evidence"],
-            }
-        family_rows.append({
-            "family": summary["family"],
-            "allowed_scene_count": summary["allowed_scene_count"],
-            "scanned_scene_count": summary["scanned_scene_count"],
-            "all_allowed_scenes_scanned": (
-                summary["scanned_scene_count"] == summary["allowed_scene_count"]),
-            "verdict": "PASS" if summary["all_requested_quotas_pass"] else "FAIL",
-            "strata": strata,
-            "rejection_counts": summary["rejection_counts"],
-        })
     passed = all(row["verdict"] == "PASS" for row in family_rows)
     payload = {
-        "schema": (SELECTOR_FEASIBILITY_SCHEMA if binding_run
-                   else "go2_scorer_fit_state_selector_feasibility_diagnostic_v1"),
-        "status": (SELECTOR_FEASIBILITY_PASS_STATUS if passed and binding_run
-                   else ("PASS_OUTCOME_FREE_SCOPED_FEASIBILITY" if passed
-                         else "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY")),
+        "schema": "go2_scorer_fit_state_selector_feasibility_diagnostic_v1",
+        "status": ("PASS_OUTCOME_FREE_SCOPED_FEASIBILITY" if passed
+                   else "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY"),
         "complete": True,
-        "binding_receipt": binding_run,
+        "binding_receipt": False,
         "source_repository_commit": source["source_repository_commit"],
         "clean_source_binding_digest": canonical_digest(source),
         "bound_implementations_digest": source["bound_implementations_digest"],
@@ -1290,8 +2019,8 @@ def stage_selector_feasibility(args: argparse.Namespace) -> int:
         "strata": list(requested_strata),
         "required_distinct_scenes_per_stratum": 5,
         "families": family_rows,
-        "exclusion_binding_digest": canonical_digest(exclusion),
-        "runtime_s": round(time.time() - started, 6),
+        "exclusion_binding_digest": exclusion_digest,
+        "runtime_s": round(math.fsum(runtime_values), 6),
         "selected_state_identities_created": False,
         "candidate_outcomes_loaded": False,
         "branch_identities_created": False,
@@ -1300,16 +2029,12 @@ def stage_selector_feasibility(args: argparse.Namespace) -> int:
         "target_latents_encoded": 0,
         "scorer_training_started": False,
     }
-    digest_key = ("state_selector_feasibility_receipt_digest" if binding_run
-                  else "state_selector_feasibility_diagnostic_digest")
-    payload[digest_key] = canonical_digest(payload)
+    payload["state_selector_feasibility_diagnostic_digest"] = \
+        canonical_digest(payload)
+    assert path is not None
     if path.exists():
         _preserve_invalid(path, out, "selector-feasibility-superseded")
     atomic_json(path, payload)
-    if binding_run:
-        STATE_SELECTOR.validate_state_selector_feasibility_receipt(
-            payload, expected_source_commit=str(source["source_repository_commit"]),
-            expected_successor_selection_digest=successor_digest)
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0 if passed else 1
 
@@ -3508,12 +4233,19 @@ def main() -> int:
                         help="resolve one family only; shards merge via merge-states")
     parser.add_argument("--stratum", choices=STRATA, default=None,
                         help="scope selector-feasibility diagnostics to one stratum")
+    parser.add_argument(
+        "--selector-scene-id", default=None,
+        help=argparse.SUPPRESS)
     parser.add_argument("--backend", default="cpu")
     parser.add_argument("--state-offset", type=int, default=0)
     parser.add_argument("--state-limit", type=int, default=10**6)
     args = parser.parse_args()
     if args.state_offset < 0 or args.state_limit < 1:
         raise SystemExit("state offset must be nonnegative and limit positive")
+    if (args.selector_scene_id is not None
+            and args.stage != "selector-feasibility"):
+        raise SystemExit(
+            "--selector-scene-id is internal to --stage selector-feasibility")
 
     out = OUT_ROOT / args.pool
     out.mkdir(parents=True, exist_ok=True)
