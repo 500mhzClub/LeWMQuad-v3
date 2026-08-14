@@ -1451,6 +1451,7 @@ def run_scientific_parallel_search(
                                    Mapping[str, Any], Mapping[str, Any]], bool],
         telemetry: Callable[[Mapping[str, Any]], None] | None = print,
         executor_factory: Callable[..., Any] | None = None,
+        process_executor: Any | None = None,
         ) -> dict[str, Any]:
     """Run/resume the actual outcome-blind search with ordered rank lanes.
 
@@ -1462,11 +1463,18 @@ def run_scientific_parallel_search(
 
     plan = validate_search_plan(search_plan)
     root = Path(checkpoint_root)
-    factory = (concurrent.futures.ProcessPoolExecutor
-               if executor_factory is None else executor_factory)
-    process_pool = factory(
-        max_workers=plan["worker_count"], initializer=_worker_initialise,
-        mp_context=multiprocessing.get_context("spawn"))
+    if process_executor is not None and executor_factory is not None:
+        raise ValueError(
+            "process_executor and executor_factory are mutually exclusive")
+    owned_process_pool = process_executor is None
+    if owned_process_pool:
+        factory = (concurrent.futures.ProcessPoolExecutor
+                   if executor_factory is None else executor_factory)
+        process_pool = factory(
+            max_workers=plan["worker_count"], initializer=_worker_initialise,
+            mp_context=multiprocessing.get_context("spawn"))
+    else:
+        process_pool = process_executor
     lane_pool = concurrent.futures.ThreadPoolExecutor(
         max_workers=plan["active_rank_window"])
     frontier = OrderedFrontier(total_rank_count=plan["total_rank_count"])
@@ -1665,7 +1673,8 @@ def run_scientific_parallel_search(
         lane_pool.shutdown(wait=True, cancel_futures=True)
         # Rank lanes have drained every wave they began.  Do not cancel any
         # queued process future: native solver work is always allowed to finish.
-        process_pool.shutdown(wait=True, cancel_futures=False)
+        if owned_process_pool:
+            process_pool.shutdown(wait=True, cancel_futures=False)
     raise ParallelSearchError("scientific parallel search ended without terminal state")
 
 

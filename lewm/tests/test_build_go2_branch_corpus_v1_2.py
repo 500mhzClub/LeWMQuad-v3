@@ -1640,6 +1640,307 @@ def test_parallel_small_lineage_requires_ten_prefix_and_five_current():
             historical_current, exact_prefix)
 
 
+def test_v2_predecessor_envelope_api_is_exact_and_mask_free(monkeypatch):
+    envelope = {
+        "schema": B.PARALLEL_V2_PREDECESSOR_BINDINGS_SCHEMA,
+        "provisional_search_plan_digest": "1" * 64,
+        "benchmark_source_binding_digest": "2" * 64,
+        "rank_zero_source_identity_manifest_digest": "3" * 64,
+        "rank_zero_state_projection_digest": "4" * 64,
+        "candidate_pool_scene_ids_digest": "5" * 64,
+        "fixed_state_projection_digest": "6" * 64,
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed": False,
+    }
+    material = {
+        "inputs": {
+            "candidate_outcomes_consumed": False,
+            "scientific_masks_accessed": False,
+        },
+        "benchmark": {"benchmark_receipt_digest": "7" * 64},
+        "provisional_plan": {"search_plan_digest": "1" * 64},
+        "benchmark_source_binding_digest": "2" * 64,
+        "predecessor_scientific_input_bindings": envelope,
+        "v1_failure_disposition":
+            B.PARALLEL_V1_IMMUTABLE_FAILURE_DISPOSITION,
+    }
+    calls = []
+    monkeypatch.setattr(
+        B, "_v2_load_benchmark_material",
+        lambda out: calls.append(out) or copy.deepcopy(material))
+    monkeypatch.setattr(
+        B, "_phase1_completion_rotation_vectors",
+        lambda: pytest.fail("pre-gate preserved masks were opened"))
+
+    assert B.build_v2_predecessor_scientific_input_bindings() == envelope
+    loaded = B.load_v2_parallel_small_benchmark_inputs(
+        predecessor_scientific_input_bindings=envelope)
+    assert "preserved_vectors" not in loaded
+    assert loaded["predecessor_v1_benchmark_source_binding_digest"] == "2" * 64
+    assert loaded["v1_failure_disposition"] == \
+        B.PARALLEL_V1_IMMUTABLE_FAILURE_DISPOSITION
+    assert calls == [B.OUT_ROOT / "scorer_fit", B.OUT_ROOT / "scorer_fit"]
+
+    changed = copy.deepcopy(envelope)
+    changed["fixed_state_projection_digest"] = "9" * 64
+    with pytest.raises(RuntimeError, match="exact d9d reconstruction"):
+        B.load_v2_parallel_small_benchmark_inputs(
+            predecessor_scientific_input_bindings=changed)
+
+
+def test_v2_rank_identity_uses_predecessor_bindings_not_current_source(
+        monkeypatch):
+    bindings = {
+        "selection_digest": "a" * 64,
+        "scorer_contract_v1_2_digest": "b" * 64,
+    }
+    candidates = [{
+        "state_id": "deferred",
+        "scene_id": f"scene-{index:02d}",
+        "family": B.REACHABILITY_REDRIVE_FAMILY,
+        "stratum": "completion_enriched",
+        "split_role": "deferred",
+        "goal_type": "goal",
+    } for index in range(5)]
+    monkeypatch.setattr(
+        B, "_state_identity_digest",
+        lambda _state: pytest.fail("current-source identity digest was used"))
+    selected = B._parallel_selected_completion_states(
+        candidates, range(5), identity_bindings=bindings)
+    assert [state["state_id"] for state in selected] == [
+        f"scorer_fit-{B.REACHABILITY_REDRIVE_FAMILY}-"
+        f"completion_enriched-{index:02d}" for index in range(5)]
+    assert [state["state_identity_digest"] for state in selected] == [
+        B._state_identity_digest_for_bindings(state, bindings)
+        for state in selected]
+
+
+def test_v2_plan_uses_predecessor_launch_and_only_pass_digest_changes(
+        monkeypatch):
+    fixed = [{
+        "state_id": "fixed-0", "state_identity_digest": "a" * 64,
+        "family": "family", "stratum": "general", "split_role": "fit",
+        "goal_type": "goal",
+    }]
+    scenes = [f"scene-{index}" for index in range(5)]
+    fixed_digest = B.canonical_digest(B._allocation_projection(fixed))
+    candidate_digest = B.PARALLEL_SEARCH.canonical_digest(scenes)
+    envelope = {
+        "schema": B.PARALLEL_V2_PREDECESSOR_BINDINGS_SCHEMA,
+        "provisional_search_plan_digest": "1" * 64,
+        "benchmark_source_binding_digest": "2" * 64,
+        "rank_zero_source_identity_manifest_digest": "3" * 64,
+        "rank_zero_state_projection_digest": "4" * 64,
+        "candidate_pool_scene_ids_digest": candidate_digest,
+        "fixed_state_projection_digest": fixed_digest,
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed": False,
+    }
+    launch = {
+        "source_repository_commit":
+            B.PARALLEL_V2_PREDECESSOR_SOURCE_COMMIT,
+        "clean_source_launch_receipt_digest": "5" * 64,
+        "state_selector_feasibility_receipt_digest": "6" * 64,
+        "state_selector_amendment_digest":
+            B.STATE_SELECTOR.state_selector_amendment_digest(),
+        "candidate_allocation_amendment_digest":
+            B.ALLOC.allocation_amendment_digest(),
+    }
+    inputs = {
+        "fixed_states": fixed,
+        "candidate_scene_ids": scenes,
+        "resolver_cursor_scene_id": "cursor",
+        "prefix": {
+            "receipt_binding": {"receipt_digest": "7" * 64},
+            "performance_receipt_binding": {"receipt_digest": "8" * 64},
+        },
+        "fixed_shard_evidence": [{"exact": True}],
+        "predecessor_scientific_input_bindings": envelope,
+        "predecessor_launch": launch,
+        "candidate_outcomes_consumed": False,
+    }
+    monkeypatch.setattr(
+        B, "_v2_load_d9d_authorities",
+        lambda _out: {"clean_launch": dict(launch)})
+    envelope_digest = B.PARALLEL_SEARCH.canonical_digest(envelope)
+    provisional = B.build_v2_parallel_search_plan(
+        inputs, source_repository_commit="c" * 40,
+        benchmark_v2_contract_digest="d" * 64,
+        predecessor_scientific_input_bindings_digest=envelope_digest,
+        measured_benchmark_receipt_digest=None)
+    final = B.build_v2_parallel_search_plan(
+        inputs, source_repository_commit="c" * 40,
+        benchmark_v2_contract_digest="d" * 64,
+        predecessor_scientific_input_bindings_digest=envelope_digest,
+        measured_benchmark_receipt_digest="e" * 64)
+    assert provisional["source_repository_commit"] == "c" * 40
+    assert provisional["clean_source_launch_receipt_digest"] == "5" * 64
+    assert provisional["bindings"]["predecessor_source_repository_commit"] \
+        == B.PARALLEL_V2_PREDECESSOR_SOURCE_COMMIT
+    left = copy.deepcopy(provisional)
+    right = copy.deepcopy(final)
+    left.pop("search_plan_digest")
+    right.pop("search_plan_digest")
+    left["measured_benchmark_receipt_digest"] = "e" * 64
+    assert left == right
+
+
+def test_v2_small_prefix_exact_reducer_needs_no_source_validator(monkeypatch):
+    pairs = []
+    found = {
+        "general": 0, "safety_enriched": 0, "completion_enriched": 0}
+    selected = []
+    trace = []
+    for ordinal in range(12):
+        requested = [name for name in B.STRATA if found[name] < {
+            "general": 5, "safety_enriched": 5,
+            "completion_enriched": 0}[name]]
+        chosen = None
+        if ordinal >= 2:
+            stratum = "general" if ordinal < 7 else "safety_enriched"
+            chosen = {
+                "state_id": f"state-{ordinal:02d}",
+                "state_identity_digest": f"{ordinal + 1:064x}",
+                "scene_id": f"scene-{ordinal:02d}",
+                "stratum": stratum,
+                "split_role": "fit",
+            }
+        request = {
+            "scene_ordinal": ordinal,
+            "scene": {"scene_id": f"scene-{ordinal:02d}"},
+            "required_counts": {
+                "general": 5, "safety_enriched": 5,
+                "completion_enriched": 0},
+            "found_before_scene": dict(found),
+            "requested_strata_in_priority_order": requested,
+            "state_resolution_scene_request_digest": f"{ordinal + 101:064x}",
+            "candidate_outcomes_loaded": False,
+        }
+        capture = {
+            "request": request,
+            "state_resolution_scene_request_digest": request[
+                "state_resolution_scene_request_digest"],
+            "state_resolution_scene_capture_digest": f"{ordinal + 201:064x}",
+            "scene_id": f"scene-{ordinal:02d}",
+            "chosen_state": chosen,
+            "worker_failure": None,
+            "candidate_outcomes_loaded": False,
+        }
+        chosen_stratum = None
+        chosen_digest = None
+        if chosen is not None:
+            chosen_stratum = chosen["stratum"]
+            chosen_digest = chosen["state_identity_digest"]
+            found[chosen_stratum] += 1
+            selected.append(chosen)
+        trace.append({
+            "scene_ordinal": ordinal,
+            "scene_id": f"scene-{ordinal:02d}",
+            "found_before_scene": request["found_before_scene"],
+            "requested_strata_in_priority_order": requested,
+            "chosen_stratum": chosen_stratum,
+            "chosen_state_identity_digest": chosen_digest,
+        })
+        pairs.append({
+            "scene_ordinal": ordinal,
+            "scene_id": f"scene-{ordinal:02d}",
+            "request": request,
+            "capture": capture,
+        })
+    projection = [{key: state[key] for key in (
+        "state_id", "state_identity_digest", "scene_id", "stratum",
+        "split_role")}
+        for state in sorted(selected, key=lambda state: state["state_id"])]
+    receipt = {
+        "selected_state_projection_digest": B.canonical_digest(projection),
+        "reducer_trace_digest": B.canonical_digest(trace),
+        "resolver_cursor_scene_id": "scene-11",
+    }
+    monkeypatch.setattr(
+        B, "_validate_state_resolution_scene_request",
+        lambda *_args, **_kwargs: pytest.fail("current request validator used"))
+    monkeypatch.setattr(
+        B, "_validate_state_resolution_scene_capture",
+        lambda *_args, **_kwargs: pytest.fail("current capture validator used"))
+    replay = B._v2_reduce_small_prefix(receipt=receipt, pairs=pairs)
+    assert len(replay["states"]) == 10
+    assert replay["resolver_cursor_scene_id"] == "scene-11"
+
+
+def test_v2_mask_context_is_unreachable_before_validated_pass(monkeypatch):
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "validate_frozen_preserved_precontract_failure",
+        lambda **_kwargs: pytest.fail("preserved masks opened before PASS"))
+    with pytest.raises(Exception):
+        B.attach_v2_parallel_search_mask_context(
+            {
+                "candidate_outcomes_consumed": False,
+                "scientific_masks_accessed": False,
+            },
+            v2_pass_receipt={"passes": False},
+        )
+
+
+def test_v2_mask_context_attaches_only_after_pass_validator(
+        monkeypatch):
+    from lewm.oracle import go2_parallel_small_completion_search_v2 as SEARCH_V2
+
+    envelope = {
+        "schema": B.PARALLEL_V2_PREDECESSOR_BINDINGS_SCHEMA,
+        "provisional_search_plan_digest": "1" * 64,
+        "benchmark_source_binding_digest": "2" * 64,
+        "rank_zero_source_identity_manifest_digest": "3" * 64,
+        "rank_zero_state_projection_digest": "4" * 64,
+        "candidate_pool_scene_ids_digest": "5" * 64,
+        "fixed_state_projection_digest": "6" * 64,
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed": False,
+    }
+    pass_receipt = {
+        "benchmark_v2_contract_digest": "7" * 64,
+        "source_binding_digest": "8" * 64,
+        "passes": True,
+        "median_gate_passes": True,
+        "maximum_gate_passes": True,
+        "worker_restart_count": 0,
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed": False,
+        "benchmark_receipt_digest": "9" * 64,
+    }
+    identities = [f"{index + 20:064x}" for index in range(7)]
+    preserved = {"shards": [{"state_checks": [{
+        "state_identity_digest": identity,
+        "completion_rotation_eligibility": {"identity": identity},
+    } for identity in identities]}]}
+    disposition = {"retained_predecessor_identities": [{
+        "state_identity_digest": identity,
+        "stratum": "completion_enriched",
+    } for identity in identities]}
+    monkeypatch.setattr(
+        SEARCH_V2, "validate_benchmark_receipt_v2",
+        lambda *_args, **_kwargs: dict(pass_receipt))
+    monkeypatch.setattr(
+        B, "build_v2_predecessor_scientific_input_bindings",
+        lambda: dict(envelope))
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "validate_frozen_preserved_precontract_failure",
+        lambda **_kwargs: copy.deepcopy(preserved))
+    monkeypatch.setattr(
+        B, "_v2_load_d9d_authorities",
+        lambda _out: {"mixed_disposition": copy.deepcopy(disposition)})
+    attached = B.attach_v2_parallel_search_mask_context(
+        {
+            "candidate_outcomes_consumed": False,
+            "scientific_masks_accessed": False,
+            "predecessor_scientific_input_bindings": envelope,
+        },
+        v2_pass_receipt=pass_receipt,
+    )
+    assert set(attached["preserved_vectors"]) == set(identities)
+    assert attached["scientific_masks_accessed"] is True
+    assert attached["mask_context_attached_after_v2_pass"] is True
+
+
 def test_final_eval_allocation_is_reconstructed_exactly_from_states():
     states = [{
         "state_id": f"state-{index}",

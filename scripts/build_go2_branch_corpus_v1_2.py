@@ -202,6 +202,94 @@ PARALLEL_SMALL_SEARCH_PLAN_NAME = (
 PARALLEL_SMALL_BENCHMARK_NAME = (
     "small_completion_parallel_prefix_benchmark_v1.json"
 )
+PARALLEL_V2_PREDECESSOR_SOURCE_COMMIT = (
+    "d9d129e2bbea8519f7ed3186f3cfb3c661baba04"
+)
+PARALLEL_V2_PREDECESSOR_BINDINGS_SCHEMA = (
+    "go2_parallel_small_completion_benchmark_v2_"
+    "predecessor_scientific_input_bindings"
+)
+PARALLEL_V1_IMMUTABLE_FAILURE_DISPOSITION = (
+    "IMMUTABLE_FAIL_COLD_START_INCLUDED_IN_FIRST_TIMED_WAVE"
+)
+PARALLEL_V1_FAILURE_RECEIPT_BINDING = {
+    "self_digest_key": "benchmark_receipt_digest",
+    "self_digest": (
+        "afb4c190cf7d2e93b678a546fc233340102c6f5260110b1471752bc54a0e88d6"
+    ),
+    "raw_sha256": (
+        "cc3b07b3ed470058dc395d0eb34d5d6cd83e8edc0140e4c18f249d4d4747fe5b"
+    ),
+    "byte_count": 2_688,
+}
+PARALLEL_V2_D9D_AUTHORITY_BINDINGS = {
+    "fixed_reissue_transition": {
+        "self_digest_key": (
+            "preoutcome_fixed_reissue_validation_interruption_receipt_digest"
+        ),
+        "self_digest": (
+            "f8f1fae918cfd2e24d5a7970253356c1615742707995abd64f2b5ccb31763c18"
+        ),
+        "raw_sha256": (
+            "b0aa0a2596f6ccc922899df764a412fb81506ab3ca41214e7146ebd31ee62fe0"
+        ),
+        "byte_count": 17_075,
+    },
+    "performance_interruption": {
+        "self_digest_key": (
+            "preoutcome_small_search_performance_interruption_receipt_v2_digest"
+        ),
+        "self_digest": (
+            "fad25e88357a71c39a43898ef02b4a84247c82aecc67d9ebe269af262cbcc50e"
+        ),
+        "raw_sha256": (
+            "70909c704027362dea769bd5f31a5e4eb5b63bea55c380de2007189430ed4dc9"
+        ),
+        "byte_count": 254_965,
+    },
+    "projection_interruption": {
+        "self_digest_key": (
+            "preoutcome_projection_fix_interruption_receipt_digest"
+        ),
+        "self_digest": (
+            "8fccad43596e4e230b5439f1c9f2f247071bd2b89547beadfdbd45e715ee7d69"
+        ),
+        "raw_sha256": (
+            "82912f295f8068c76f8bd604390edf7c50c40c80c9c58820fa711cae44d6e91b"
+        ),
+        "byte_count": 19_061,
+    },
+    "mixed_disposition": {
+        "self_digest_key": "mixed_precontract_disposition_receipt_digest",
+        "self_digest": (
+            "fef1a98980bc41d63434367f518ff2876dbcf93afbea52ff8f555300d3220604"
+        ),
+        "raw_sha256": (
+            "faa71a30cc720b6ed19cf44e4b1c5d5d9f03fc15c7069f1a3ff0ff44ac953958"
+        ),
+        "byte_count": 29_403,
+    },
+    "scorer_contract": {
+        "self_digest_key": "contract_artifact_digest",
+        "self_digest": (
+            "ed038cc3b773705c5ae1f4a1bc21d420ed43f0c6d7a408a5c911e250960ef78f"
+        ),
+        "raw_sha256": (
+            "fde13b13931b4561269034839c39bf0575b05387608544ed3fc6609363393a95"
+        ),
+        "byte_count": 98_959,
+    },
+    "clean_launch": {
+        "self_digest_key": "clean_source_launch_receipt_digest",
+        "self_digest": (
+            "1656fbd691a63a63338bcd2d4707275ac67fbcfdc90c8a2afe5504876a543e3e"
+        ),
+        "raw_sha256": (
+            "a7640465a028f9b61b13acfa5e456f87219f6b6c1de76dafad66249f1e61d248"
+        ),
+        "byte_count": 2_896,
+    },
+}
 PARALLEL_SMALL_CHECKPOINT_ROOT = "small_completion_parallel_search_v1"
 PARALLEL_SMALL_TERMINAL_RESULT_NAME = (
     "small_completion_parallel_terminal_result_v1.json"
@@ -6519,7 +6607,8 @@ def _parallel_small_search_inputs(out: Path) -> dict[str, Any]:
 
 def _parallel_selected_completion_states(
         raw_candidates: Sequence[Mapping[str, Any]],
-        combination_indices: Sequence[int]) -> list[dict[str, Any]]:
+        combination_indices: Sequence[int], *,
+        identity_bindings: Mapping[str, Any]) -> list[dict[str, Any]]:
     selected: list[dict[str, Any]] = []
     combination = [dict(raw_candidates[index]) for index in combination_indices]
     for ordinal, raw in enumerate(sorted(
@@ -6529,20 +6618,24 @@ def _parallel_selected_completion_states(
             f"scorer_fit-{REACHABILITY_REDRIVE_FAMILY}-"
             f"completion_enriched-{ordinal:02d}")
         state["split_role"] = "calibration" if ordinal == 0 else "fit"
-        state["state_identity_digest"] = _state_identity_digest(state)
+        state["state_identity_digest"] = _state_identity_digest_for_bindings(
+            state, identity_bindings)
         selected.append(state)
     return selected
 
 
-def _parallel_rank_material(
+def _parallel_rank_identity_material(
         inputs: Mapping[str, Any], rank: int,
         combination_indices: Sequence[int]) -> dict[str, Any]:
+    """Build rank identity material without opening any mask context."""
+
     expected = PARALLEL_SEARCH.unrank_combination(
         rank, len(inputs["raw_candidates"]), 5)
     if tuple(combination_indices) != expected:
         raise RuntimeError("parallel rank/combination identity changed")
     selected = _parallel_selected_completion_states(
-        inputs["raw_candidates"], combination_indices)
+        inputs["raw_candidates"], combination_indices,
+        identity_bindings=inputs["common"])
     states = _joint_state_order([*inputs["fixed_states"], *selected])
     if len(states) != 120:
         raise RuntimeError("parallel rank does not contain 120 states")
@@ -6551,8 +6644,21 @@ def _parallel_rank_material(
     return {
         "states": states,
         "source_identity_manifest_digest": canonical_digest(source_payload),
+    }
+
+
+def _parallel_rank_material(
+        inputs: Mapping[str, Any], rank: int,
+        combination_indices: Sequence[int]) -> dict[str, Any]:
+    material = _parallel_rank_identity_material(
+        inputs, rank, combination_indices)
+    vectors = inputs.get("preserved_vectors")
+    if not isinstance(vectors, Mapping):
+        raise RuntimeError("parallel search mask context is not attached")
+    return {
+        **material,
         "mask_context": {
-            "preserved_vectors": inputs["preserved_vectors"],
+            "preserved_vectors": dict(vectors),
         },
     }
 
@@ -6590,8 +6696,9 @@ def _parallel_winner_validator_zero_solve(
     return _parallel_mask_classifier(states, manifest, context)
 
 
-def _parallel_plan_bindings(inputs: Mapping[str, Any]) -> dict[str, Any]:
-    launch = _load_clean_source_launch_receipt()
+def _parallel_plan_bindings_from_launch(
+        inputs: Mapping[str, Any], launch: Mapping[str, Any],
+        ) -> dict[str, Any]:
     return {
         "small_prefix_reissue_receipt":
             dict(inputs["prefix"]["receipt_binding"]),
@@ -6609,10 +6716,27 @@ def _parallel_plan_bindings(inputs: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_parallel_search_plan(
-        inputs: Mapping[str, Any], *,
-        measured_benchmark_receipt_digest: str | None) -> dict[str, Any]:
-    launch = _load_clean_source_launch_receipt()
+def _parallel_plan_bindings(inputs: Mapping[str, Any]) -> dict[str, Any]:
+    """Build ordinary current-source plan bindings unchanged."""
+
+    return _parallel_plan_bindings_from_launch(
+        inputs, _load_clean_source_launch_receipt())
+
+
+def _build_parallel_search_plan_from_launch(
+        inputs: Mapping[str, Any], *, launch: Mapping[str, Any],
+        measured_benchmark_receipt_digest: str | None,
+        ) -> dict[str, Any]:
+    """Build the unchanged plan from one explicitly supplied launch.
+
+    V2 uses this narrow variant to reproduce the already-issued d9d plan
+    source binding after the implementation-only successor commit.  It never
+    asks a historical launch to masquerade as a current-source authority.
+    """
+
+    if (launch.get("source_repository_commit") is None
+            or launch.get("clean_source_launch_receipt_digest") is None):
+        raise RuntimeError("parallel search launch binding is incomplete")
     return PARALLEL_SEARCH.build_search_plan(
         candidate_scene_ids=inputs["candidate_scene_ids"],
         combination_size=5,
@@ -6621,10 +6745,10 @@ def _build_parallel_search_plan(
         source_repository_commit=str(launch["source_repository_commit"]),
         clean_source_launch_receipt_digest=str(
             launch["clean_source_launch_receipt_digest"]),
-        state_selector_amendment_digest=
-            STATE_SELECTOR.state_selector_amendment_digest(),
-        candidate_allocation_amendment_digest=
-            ALLOC.allocation_amendment_digest(),
+        state_selector_amendment_digest=str(
+            launch["state_selector_amendment_digest"]),
+        candidate_allocation_amendment_digest=str(
+            launch["candidate_allocation_amendment_digest"]),
         fixed_state_projection_digest=canonical_digest(
             _allocation_projection(inputs["fixed_states"])),
         resolver_cursor_scene_id=str(inputs["resolver_cursor_scene_id"]),
@@ -6641,7 +6765,105 @@ def _build_parallel_search_plan(
             "threads": 1,
             "time_limit": PARALLEL_SEARCH.DEFAULT_MILP_TIME_LIMIT_S,
         },
-        bindings=_parallel_plan_bindings(inputs),
+        bindings=_parallel_plan_bindings_from_launch(inputs, launch),
+        measured_benchmark_receipt_digest=
+            measured_benchmark_receipt_digest,
+    )
+
+
+def _build_parallel_search_plan(
+        inputs: Mapping[str, Any], *,
+        measured_benchmark_receipt_digest: str | None) -> dict[str, Any]:
+    return _build_parallel_search_plan_from_launch(
+        inputs, launch=_load_clean_source_launch_receipt(),
+        measured_benchmark_receipt_digest=measured_benchmark_receipt_digest,
+    )
+
+
+def build_v2_parallel_search_plan(
+        inputs: Mapping[str, Any], *, source_repository_commit: str,
+        benchmark_v2_contract_digest: str,
+        predecessor_scientific_input_bindings_digest: str,
+        measured_benchmark_receipt_digest: str | None,
+        ) -> dict[str, Any]:
+    """Build a V2 plan from d9d science plus current operational lineage.
+
+    The predecessor clean launch remains the scientific authority.  The V2
+    implementation commit and its two operational digests are additional
+    bindings only; they do not project or regenerate any historical input.
+    Calling this once with ``None`` and once with the frozen PASS digest yields
+    plans whose only pre-self difference is the measured-receipt field.
+    """
+
+    envelope = inputs.get("predecessor_scientific_input_bindings")
+    launch = inputs.get("predecessor_launch")
+    if (
+        not isinstance(envelope, Mapping)
+        or not isinstance(launch, Mapping)
+        or not isinstance(source_repository_commit, str)
+        or len(source_repository_commit) != 40
+        or any(character not in "0123456789abcdef"
+               for character in source_repository_commit)
+        or not _is_sha256(benchmark_v2_contract_digest)
+        or not _is_sha256(predecessor_scientific_input_bindings_digest)
+        or predecessor_scientific_input_bindings_digest
+        != PARALLEL_SEARCH.canonical_digest(dict(envelope))
+        or (measured_benchmark_receipt_digest is not None
+            and not _is_sha256(measured_benchmark_receipt_digest))
+        or envelope.get("candidate_outcomes_consumed") is not False
+        or envelope.get("scientific_masks_accessed") is not False
+        or inputs.get("candidate_outcomes_consumed") is not False
+        or canonical_digest(_allocation_projection(inputs["fixed_states"]))
+        != envelope.get("fixed_state_projection_digest")
+        or PARALLEL_SEARCH.canonical_digest(inputs["candidate_scene_ids"])
+        != envelope.get("candidate_pool_scene_ids_digest")
+    ):
+        raise RuntimeError("V2 search plan input binding changed")
+    exact_launch = _v2_load_d9d_authorities(
+        OUT_ROOT / "scorer_fit")["clean_launch"]
+    if dict(launch) != exact_launch:
+        raise RuntimeError("V2 search plan predecessor launch changed")
+    bindings = _parallel_plan_bindings_from_launch(inputs, exact_launch)
+    bindings.update({
+        "benchmark_v2_contract_digest": benchmark_v2_contract_digest,
+        "predecessor_scientific_input_bindings_digest":
+            predecessor_scientific_input_bindings_digest,
+        "predecessor_source_repository_commit": exact_launch[
+            "source_repository_commit"],
+        "v2_source_repository_commit": source_repository_commit,
+        "v2_operational_change": "EAGER_READY_SAME_LIVE_32_WORKER_POOL_ONLY",
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed_during_plan_build": False,
+    })
+    return PARALLEL_SEARCH.build_search_plan(
+        candidate_scene_ids=inputs["candidate_scene_ids"],
+        combination_size=5,
+        worker_count=PARALLEL_SMALL_WORKER_COUNT,
+        active_rank_window=PARALLEL_SMALL_ACTIVE_RANK_WINDOW,
+        source_repository_commit=source_repository_commit,
+        clean_source_launch_receipt_digest=str(
+            exact_launch["clean_source_launch_receipt_digest"]),
+        state_selector_amendment_digest=str(
+            exact_launch["state_selector_amendment_digest"]),
+        candidate_allocation_amendment_digest=str(
+            exact_launch["candidate_allocation_amendment_digest"]),
+        fixed_state_projection_digest=str(
+            envelope["fixed_state_projection_digest"]),
+        resolver_cursor_scene_id=str(inputs["resolver_cursor_scene_id"]),
+        solver_identity={
+            "implementation": "scipy.optimize.milp/HiGHS",
+            "candidate_allocation_algorithm_version": ALLOC.ALGORITHM_VERSION,
+            "parallel_search_algorithm_version":
+                PARALLEL_SEARCH.ALGORITHM_VERSION,
+        },
+        solver_options={
+            "disp": False,
+            "presolve": True,
+            "mip_rel_gap": 0.0,
+            "threads": 1,
+            "time_limit": PARALLEL_SEARCH.DEFAULT_MILP_TIME_LIMIT_S,
+        },
+        bindings=bindings,
         measured_benchmark_receipt_digest=
             measured_benchmark_receipt_digest,
     )
@@ -6649,7 +6871,7 @@ def _build_parallel_search_plan(
 
 def _parallel_benchmark_source_binding(
         inputs: Mapping[str, Any], provisional_plan: Mapping[str, Any]) -> str:
-    rank_zero = _parallel_rank_material(
+    rank_zero = _parallel_rank_identity_material(
         inputs, 0, PARALLEL_SEARCH.unrank_combination(
             0, len(inputs["raw_candidates"]), 5))
     return PARALLEL_SEARCH.canonical_digest({
@@ -6664,6 +6886,828 @@ def _parallel_benchmark_source_binding(
             inputs["prefix"]["receipt_binding"]["receipt_digest"],
         "candidate_outcomes_consumed": False,
     })
+
+
+def _v2_predecessor_pinned_json_path(path: Path) -> Path:
+    """Pin one registered predecessor JSON path without current-source checks."""
+
+    if path == SCORER_CONTRACT_ARTIFACT_PATH:
+        return _pin_generated_path(
+            path, path, generated_root=SCORER_CONTRACT_ARTIFACT_PATH.parent)
+    return _pin_generated_path(path, path)
+
+
+def _v2_load_exact_predecessor_json(
+        path: Path, *, self_key: str, label: str,
+        expected_binding: Mapping[str, Any] | None = None,
+        self_digest: Callable[[Any], str] = canonical_digest,
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Read exact historical bytes and verify their self/raw binding.
+
+    ``expected_binding`` is supplied for the immutable V1 receipt and the six
+    d9d authorities.  Other records are transitively frozen by those receipts
+    and the recomputed V1 benchmark source binding; their observed custody row
+    is returned for that reconstruction.
+    """
+
+    pinned = _v2_predecessor_pinned_json_path(path)
+    if not pinned.is_file() or pinned.is_symlink():
+        raise RuntimeError(f"{label} is missing")
+    raw = pinned.read_bytes()
+    try:
+        payload = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"{label} JSON is invalid") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"{label} is not an object")
+    expected_self = self_digest({
+        key: value for key, value in payload.items() if key != self_key})
+    if payload.get(self_key) != expected_self:
+        raise RuntimeError(f"{label} self digest mismatch")
+    observed = {
+        "self_digest_key": self_key,
+        "self_digest": payload[self_key],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+    }
+    if expected_binding is not None and observed != dict(expected_binding):
+        raise RuntimeError(f"{label} exact predecessor binding changed")
+    return payload, observed
+
+
+def _v2_receipt_style_binding(
+        *, path: Path, raw_binding: Mapping[str, Any], status: str,
+        ) -> dict[str, Any]:
+    try:
+        logical = str(path.relative_to(ROOT))
+    except ValueError:
+        logical = str(path)
+    return {
+        "path": logical,
+        "receipt_digest": raw_binding["self_digest"],
+        "raw_sha256": raw_binding["raw_sha256"],
+        "byte_count": raw_binding["byte_count"],
+        "status": status,
+    }
+
+
+def _v2_d9d_authority_paths(out: Path) -> dict[str, Path]:
+    return {
+        "fixed_reissue_transition":
+            ROOT / REISSUE_VALIDATION_INTERRUPTION.RECEIPT_RELATIVE_PATH,
+        "performance_interruption":
+            ROOT / PERFORMANCE_INTERRUPTION.V2_RECEIPT_RELATIVE_PATH,
+        "projection_interruption": ROOT / INTERRUPTION.RECEIPT_RELATIVE_PATH,
+        "mixed_disposition": (
+            ROOT / STATE_SELECTOR
+            .PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH
+        ),
+        "scorer_contract": SCORER_CONTRACT_ARTIFACT_PATH,
+        "clean_launch": out / LAUNCH_RECEIPT_NAME,
+    }
+
+
+def _v2_load_d9d_authorities(out: Path) -> dict[str, Any]:
+    """Reopen the six exact d9d authorities as historical evidence only."""
+
+    paths = _v2_d9d_authority_paths(out)
+    loaded: dict[str, dict[str, Any]] = {}
+    raw_bindings: dict[str, dict[str, Any]] = {}
+    for name, path in paths.items():
+        expected = PARALLEL_V2_D9D_AUTHORITY_BINDINGS[name]
+        payload, raw = _v2_load_exact_predecessor_json(
+            path, self_key=str(expected["self_digest_key"]),
+            label=f"d9d {name.replace('_', ' ')}",
+            expected_binding=expected)
+        loaded[name] = payload
+        raw_bindings[name] = raw
+
+    launch = loaded["clean_launch"]
+    contract = loaded["scorer_contract"]
+    transition = loaded["fixed_reissue_transition"]
+    performance = loaded["performance_interruption"]
+    projection = loaded["projection_interruption"]
+    disposition = loaded["mixed_disposition"]
+    source_commit = PARALLEL_V2_PREDECESSOR_SOURCE_COMMIT
+    clean_digest = str(launch.get("clean_source_binding_digest", ""))
+    implementation_digest = str(launch.get(
+        "bound_implementations_digest", ""))
+    transition_binding = _v2_receipt_style_binding(
+        path=paths["fixed_reissue_transition"],
+        raw_binding=raw_bindings["fixed_reissue_transition"],
+        status=str(transition.get("status", "")))
+    performance_binding = _v2_receipt_style_binding(
+        path=paths["performance_interruption"],
+        raw_binding=raw_bindings["performance_interruption"],
+        status=str(performance.get("status", "")))
+    projection_binding = _v2_receipt_style_binding(
+        path=paths["projection_interruption"],
+        raw_binding=raw_bindings["projection_interruption"],
+        status=str(projection.get("status", "")))
+    contract_clean = contract.get("clean_source_binding")
+    if (
+        launch.get("source_repository_commit") != source_commit
+        or launch.get("source_repository_clean") is not True
+        or not _is_sha256(clean_digest)
+        or not _is_sha256(implementation_digest)
+        or transition.get("superseding_source_repository_commit")
+        != source_commit
+        or transition.get("superseding_clean_source_binding_digest")
+        != clean_digest
+        or transition.get("superseding_bound_implementations_digest")
+        != implementation_digest
+        or performance.get("superseding_source_repository_commit")
+        != source_commit
+        or performance.get("superseding_clean_source_binding_digest")
+        != clean_digest
+        or performance.get("superseding_bound_implementations_digest")
+        != implementation_digest
+        or performance.get("source_transition_receipt")
+        != transition_binding
+        or performance.get("current_projection_fix_interruption_receipt")
+        != projection_binding
+        or disposition.get("source_repository_commit") != source_commit
+        or disposition.get("clean_source_binding_digest") != clean_digest
+        or disposition.get("bound_implementations_digest")
+        != implementation_digest
+        or contract.get("source_repository_commit") != source_commit
+        or contract.get("clean_source_binding_digest") != clean_digest
+        or not isinstance(contract_clean, Mapping)
+        or contract_clean.get("source_repository_commit") != source_commit
+        or contract_clean.get("bound_implementations_digest")
+        != implementation_digest
+        or launch.get("scorer_contract_artifact_digest")
+        != raw_bindings["scorer_contract"]["self_digest"]
+        or launch.get("mixed_precontract_disposition_receipt_digest")
+        != raw_bindings["mixed_disposition"]["self_digest"]
+        or launch.get("preoutcome_fixed_reissue_validation_interruption")
+        != transition_binding
+        or launch.get("preoutcome_projection_fix_interruption")
+        != projection_binding
+        or launch.get("preoutcome_small_search_performance_interruption")
+        != performance_binding
+        or contract.get("preoutcome_fixed_reissue_validation_interruption")
+        != transition_binding
+        or contract.get("preoutcome_projection_fix_interruption")
+        != projection_binding
+        or contract.get("preoutcome_small_search_performance_interruption")
+        != performance_binding
+        or contract.get("mixed_precontract_disposition_receipt_digest")
+        != raw_bindings["mixed_disposition"]["self_digest"]
+    ):
+        raise RuntimeError("d9d predecessor authority cross-binding changed")
+    return {
+        **loaded,
+        "raw_bindings": raw_bindings,
+        "transition_binding": transition_binding,
+        "performance_binding": performance_binding,
+        "projection_binding": projection_binding,
+    }
+
+
+def _v2_zero_outcome_record(payload: Mapping[str, Any], *, label: str) -> None:
+    if any(key in payload and payload.get(key) not in (False, 0) for key in (
+            "candidate_outcomes_loaded", "branch_identities_created",
+            "branches_attempted", "frames_rendered",
+            "target_latents_encoded", "scorer_training_started",
+            "scorer_qualification_started", "predictor_checkpoints_opened")):
+        raise RuntimeError(f"{label} contains outcome-bearing work")
+
+
+def _v2_load_fixed_shards(
+        out: Path, *, authorities: Mapping[str, Any],
+        ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """Unwrap the exact seven d9d envelopes without current-source replay."""
+
+    launch = authorities["clean_launch"]
+    performance_digest = authorities["raw_bindings"][
+        "performance_interruption"]["self_digest"]
+    successor_lineage = {
+        "source_repository_commit": launch["source_repository_commit"],
+        "clean_source_binding_digest": launch["clean_source_binding_digest"],
+        "bound_implementations_digest": launch[
+            "bound_implementations_digest"],
+        "scorer_contract_artifact_digest": launch[
+            "scorer_contract_artifact_digest"],
+        "scorer_contract_v1_2_digest": launch["scorer_contract_v1_2_digest"],
+        "clean_source_launch_receipt_digest": launch[
+            "clean_source_launch_receipt_digest"],
+        "mixed_precontract_disposition_receipt_digest": launch[
+            "mixed_precontract_disposition_receipt_digest"],
+    }
+    shards: list[dict[str, Any]] = []
+    evidence: list[dict[str, Any]] = []
+    for family in STATE_SELECTOR.REQUIRED_FAMILIES:
+        if family == REACHABILITY_REDRIVE_FAMILY:
+            continue
+        raw_path = _active_state_shard_path(out, family, pool="scorer_fit")
+        envelope, raw = _v2_load_exact_predecessor_json(
+            raw_path, self_key="source_reissued_state_shard_digest",
+            label=f"d9d fixed wrapper {family}")
+        successor = envelope.get("successor_state_shard")
+        if not isinstance(successor, dict):
+            raise RuntimeError(f"d9d fixed wrapper {family} lost its inner shard")
+        _verify_self_digest(
+            successor, "state_shard_digest", f"d9d inner shard {family}")
+        _v2_zero_outcome_record(envelope, label=f"d9d fixed wrapper {family}")
+        if (
+            envelope.get("schema")
+            != PERFORMANCE_INTERRUPTION.REISSUED_SHARD_SCHEMA
+            or envelope.get("status")
+            != PERFORMANCE_INTERRUPTION.REISSUED_SHARD_STATUS
+            or envelope.get("family") != family
+            or envelope.get("performance_interruption_receipt_digest")
+            != performance_digest
+            or envelope.get("successor_lineage_bindings")
+            != successor_lineage
+            or successor.get("family") != family
+            or successor.get("state_shard_digest")
+            != envelope.get("successor_state_shard", {}).get(
+                "state_shard_digest")
+            or not isinstance(successor.get("states"), list)
+            or len(successor["states"]) != 15
+        ):
+            raise RuntimeError(f"d9d fixed wrapper {family} changed")
+        try:
+            logical = str(raw_path.relative_to(ROOT))
+        except ValueError:
+            logical = str(raw_path)
+        shards.append(dict(successor))
+        evidence.append({
+            "envelope_schema": PERFORMANCE_INTERRUPTION.REISSUED_SHARD_SCHEMA,
+            "active_path": logical,
+            "active_raw_sha256": raw["raw_sha256"],
+            "active_byte_count": raw["byte_count"],
+            "source_reissued_state_shard_digest": raw["self_digest"],
+            "predecessor_state_shard_digest": str(
+                envelope["predecessor_state_shard_digest"]),
+            "performance_interruption_receipt_digest": str(
+                envelope["performance_interruption_receipt_digest"]),
+            "successor_state_shard_digest": str(
+                successor["state_shard_digest"]),
+        })
+    common = _common_state_shard_bindings(shards)
+    return shards, evidence, common
+
+
+def _v2_reduce_small_prefix(
+        *, receipt: Mapping[str, Any], pairs: Sequence[Mapping[str, Any]],
+        ) -> dict[str, Any]:
+    """Reduce the exact 12-pair successor prefix without source revalidation."""
+
+    required = {
+        "general": 5, "safety_enriched": 5, "completion_enriched": 0}
+    found = {key: 0 for key in required}
+    selected: list[dict[str, Any]] = []
+    trace: list[dict[str, Any]] = []
+    if len(pairs) != 12:
+        raise RuntimeError("d9d small prefix pair count changed")
+    for ordinal, pair in enumerate(pairs):
+        request = pair["request"]
+        capture = pair["capture"]
+        requested = [name for name in STRATA
+                     if found[name] < required[name]]
+        if (
+            pair.get("scene_ordinal") != ordinal
+            or request.get("scene_ordinal") != ordinal
+            or pair.get("scene_id") != request.get("scene", {}).get("scene_id")
+            or capture.get("request") != request
+            or capture.get("state_resolution_scene_request_digest")
+            != request.get("state_resolution_scene_request_digest")
+            or capture.get("scene_id") != pair.get("scene_id")
+            or capture.get("worker_failure") is not None
+            or request.get("required_counts") != required
+            or request.get("found_before_scene") != found
+            or request.get("requested_strata_in_priority_order") != requested
+        ):
+            raise RuntimeError("d9d small prefix reducer input changed")
+        _v2_zero_outcome_record(request, label="d9d small prefix request")
+        _v2_zero_outcome_record(capture, label="d9d small prefix capture")
+        chosen = capture.get("chosen_state")
+        chosen_stratum = None
+        chosen_digest = None
+        if chosen is not None:
+            if not isinstance(chosen, dict):
+                raise RuntimeError("d9d small prefix chosen state changed")
+            chosen_stratum = str(chosen.get("stratum", ""))
+            if chosen_stratum not in requested:
+                raise RuntimeError("d9d small prefix selected a filled stratum")
+            chosen_digest = str(chosen.get("state_identity_digest", ""))
+            if not _is_sha256(chosen_digest):
+                raise RuntimeError("d9d small prefix state identity is malformed")
+            found[chosen_stratum] += 1
+            selected.append(dict(chosen))
+        if (found == required) != (ordinal == len(pairs) - 1):
+            raise RuntimeError("d9d small prefix no longer stops at first quota")
+        trace.append({
+            "scene_ordinal": ordinal,
+            "scene_id": str(pair["scene_id"]),
+            "found_before_scene": request["found_before_scene"],
+            "requested_strata_in_priority_order": requested,
+            "chosen_stratum": chosen_stratum,
+            "chosen_state_identity_digest": chosen_digest,
+        })
+    projection = [{key: state[key] for key in (
+        "state_id", "state_identity_digest", "scene_id", "stratum",
+        "split_role")}
+        for state in sorted(selected, key=lambda value: value["state_id"])]
+    if (
+        found != required
+        or len(selected) != 10
+        or len({state["scene_id"] for state in selected}) != 10
+        or canonical_digest(projection)
+        != receipt.get("selected_state_projection_digest")
+        or canonical_digest(trace) != receipt.get("reducer_trace_digest")
+        or str(pairs[-1]["scene_id"])
+        != receipt.get("resolver_cursor_scene_id")
+    ):
+        raise RuntimeError("d9d small prefix projection changed")
+    return {
+        "states": selected,
+        "resolver_cursor_scene_id": str(pairs[-1]["scene_id"]),
+        "reducer_trace_digest": canonical_digest(trace),
+    }
+
+
+def _v2_load_small_prefix(
+        out: Path, *, authorities: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    raw_path = ROOT / PERFORMANCE_INTERRUPTION\
+        .SMALL_PREFIX_REISSUE_RECEIPT_RELATIVE_PATH
+    receipt, receipt_raw = _v2_load_exact_predecessor_json(
+        raw_path,
+        self_key=PERFORMANCE_INTERRUPTION.SMALL_PREFIX_REISSUE_SELF_KEY,
+        label="d9d small prefix reissue receipt")
+    launch = authorities["clean_launch"]
+    performance_raw = authorities["raw_bindings"][
+        "performance_interruption"]
+    expected_lineage = {
+        key: (launch["scorer_contract_v1_2_digest"]
+              if key == "scorer_contract_v1_2_digest" else launch[key])
+        for key in PERFORMANCE_INTERRUPTION.SUCCESSOR_LINEAGE_KEYS
+    }
+    if (
+        receipt.get("schema") != PERFORMANCE_INTERRUPTION.SMALL_PREFIX_REISSUE_SCHEMA
+        or receipt.get("status") != PERFORMANCE_INTERRUPTION.SMALL_PREFIX_REISSUE_STATUS
+        or receipt.get("performance_interruption_receipt_digest")
+        != performance_raw["self_digest"]
+        or receipt.get("successor_lineage_bindings") != expected_lineage
+        or receipt.get("successor_request_count") != 12
+        or receipt.get("successor_capture_count") != 12
+        or receipt.get("successor_transport_row_count") != 24
+        or not isinstance(receipt.get("mapping_rows"), list)
+        or len(receipt["mapping_rows"]) != 12
+    ):
+        raise RuntimeError("d9d small prefix receipt changed")
+    _v2_zero_outcome_record(receipt, label="d9d small prefix receipt")
+    pairs: list[dict[str, Any]] = []
+    provenance: list[dict[str, Any]] = []
+    rejections: dict[str, dict[str, int]] = {}
+    transport_rows: list[dict[str, Any]] = []
+    for mapping in receipt["mapping_rows"]:
+        scene_id = str(mapping.get("scene_id", ""))
+        scene_ordinal = int(mapping.get("scene_ordinal", -1))
+        loaded: dict[str, Any] = {
+            "scene_id": scene_id, "scene_ordinal": scene_ordinal}
+        for kind, self_key in (
+                ("request", "state_resolution_scene_request_digest"),
+                ("capture", "state_resolution_scene_capture_digest")):
+            row = mapping.get(f"successor_{kind}")
+            if not isinstance(row, Mapping):
+                raise RuntimeError("d9d small prefix transport row is malformed")
+            path = ROOT / str(row.get("path", ""))
+            expected = {
+                "self_digest_key": self_key,
+                "self_digest": row.get("self_digest"),
+                "raw_sha256": row.get("raw_sha256"),
+                "byte_count": row.get("byte_count"),
+            }
+            payload, observed = _v2_load_exact_predecessor_json(
+                path, self_key=self_key,
+                label=f"d9d small prefix {kind} {scene_ordinal}",
+                expected_binding=expected)
+            digest = str(
+                payload["state_resolution_scene_request_digest"])
+            expected_root = Path(PERFORMANCE_INTERRUPTION.SMALL_PREFIX_ROOTS[
+                kind])
+            if Path(str(row["path"])) != expected_root / f"{digest}.json":
+                raise RuntimeError("d9d small prefix transport path changed")
+            loaded[kind] = payload
+            transport_rows.append({
+                "kind": kind, "scene_id": scene_id,
+                "scene_ordinal": scene_ordinal, **observed})
+        request = loaded["request"]
+        capture = loaded["capture"]
+        provenance.append({
+            "scene_id": scene_id,
+            "state_resolution_scene_request_digest": request[
+                "state_resolution_scene_request_digest"],
+            "state_resolution_scene_capture_digest": capture[
+                "state_resolution_scene_capture_digest"],
+            "request_path": mapping["successor_request"]["path"],
+            "request_raw_sha256": mapping["successor_request"]["raw_sha256"],
+            "request_byte_count": mapping["successor_request"]["byte_count"],
+            "capture_path": mapping["successor_capture"]["path"],
+            "capture_raw_sha256": mapping["successor_capture"]["raw_sha256"],
+            "capture_byte_count": mapping["successor_capture"]["byte_count"],
+        })
+        rejections[scene_id] = dict(capture["scene_rejection_reasons"])
+        pairs.append(loaded)
+    reduced = _v2_reduce_small_prefix(receipt=receipt, pairs=pairs)
+    try:
+        logical = str(raw_path.relative_to(ROOT))
+    except ValueError:
+        logical = str(raw_path)
+    receipt_binding = {
+        "path": logical,
+        "receipt_digest": receipt_raw["self_digest"],
+        "raw_sha256": receipt_raw["raw_sha256"],
+        "byte_count": receipt_raw["byte_count"],
+        "status": PERFORMANCE_INTERRUPTION.SMALL_PREFIX_REISSUE_STATUS,
+    }
+    return {
+        **reduced,
+        "scene_rejection_reasons": rejections,
+        "capture_provenance": provenance,
+        "receipt": receipt,
+        "receipt_binding": receipt_binding,
+        "performance_receipt_binding": dict(
+            authorities["performance_binding"]),
+        "transport_bindings": transport_rows,
+    }
+
+
+def _v2_load_raw_candidates(
+        out: Path, *, launch: Mapping[str, Any], fixed_states: Sequence[
+            Mapping[str, Any]], resolver_cursor_scene_id: str,
+        ) -> list[dict[str, Any]]:
+    """Reconstruct the 17 d9d cursor candidates from frozen exact evidence."""
+
+    reachability_path = out / REACHABILITY_FEASIBILITY_RECEIPT_NAME
+    reachability_binding = STATE_SELECTOR.FROZEN_REACHABILITY_FEASIBILITY_PASS
+    receipt, _raw = _v2_load_exact_predecessor_json(
+        reachability_path,
+        self_key="state_selector_feasibility_receipt_digest",
+        label="frozen reachability feasibility receipt",
+        expected_binding={
+            "self_digest_key": "state_selector_feasibility_receipt_digest",
+            "self_digest": reachability_binding["receipt_digest"],
+            "raw_sha256": reachability_binding["raw_sha256"],
+            "byte_count": reachability_binding["byte_count"],
+        })
+    census_path = out / SELECTOR_FEASIBILITY_TASK_CENSUS_NAME
+    census_binding = STATE_SELECTOR.FROZEN_FAILED_CENSUS_TASK_CENSUS
+    census, _census_raw = _v2_load_exact_predecessor_json(
+        census_path,
+        self_key="state_selector_feasibility_task_census_digest",
+        label="frozen selector task census",
+        expected_binding={
+            "self_digest_key":
+                "state_selector_feasibility_task_census_digest",
+            "self_digest": census_binding["self_digest"],
+            "raw_sha256": census_binding["raw_sha256"],
+            "byte_count": census_binding["byte_count"],
+        })
+    if (
+        receipt.get("status") != REACHABILITY_FEASIBILITY_PASS_STATUS
+        or receipt.get("state_selector_feasibility_receipt_digest")
+        != launch.get("state_selector_feasibility_receipt_digest")
+        or receipt.get("candidate_outcomes_loaded") is not False
+        or census.get("scene_task_count")
+        != STATE_SELECTOR.FROZEN_FAILED_CENSUS_TASK_CENSUS[
+            "scene_task_count"]
+    ):
+        raise RuntimeError("d9d reachability/census lineage changed")
+    small_rows = [row for row in receipt.get("families", [])
+                  if row.get("family") == REACHABILITY_REDRIVE_FAMILY]
+    if len(small_rows) != 1:
+        raise RuntimeError("d9d reachability receipt lost the small family")
+    completion = small_rows[0].get("strata", {}).get(
+        "completion_enriched", {}).get("scene_evidence")
+    if not isinstance(completion, list):
+        raise RuntimeError("d9d small completion evidence changed")
+    evidence = _cursor_restricted_completion_rows(
+        completion, resolver_cursor_scene_id=resolver_cursor_scene_id,
+        excluded_scene_ids={str(state["scene_id"]) for state in fixed_states})
+    family_rows = [row for row in census.get("families", [])
+                   if row.get("family") == REACHABILITY_REDRIVE_FAMILY]
+    if len(family_rows) != 1 or not isinstance(family_rows[0].get("tasks"), list):
+        raise RuntimeError("d9d selector census lost the small family")
+    tasks = {str(task["scene_id"]): task for task in family_rows[0]["tasks"]}
+    candidates: list[dict[str, Any]] = []
+    for row in evidence:
+        task = tasks.get(str(row["scene_id"]))
+        if task is None:
+            raise RuntimeError("d9d cursor candidate lost its census task")
+        candidates.append({
+            "state_id": "DEFERRED_SMALL_COMPLETION_JOINT_SEARCH",
+            "family": REACHABILITY_REDRIVE_FAMILY,
+            "scene_id": str(row["scene_id"]),
+            "scene_dir": str(task["scene_dir"]),
+            "scene_manifest_sha256": str(task["scene_manifest_sha256"]),
+            "scene_manifest_byte_count": int(task["scene_manifest_byte_count"]),
+            "split": str(task["split"]),
+            "drive_seed": int(task["drive_seed"]),
+            "stratum": "completion_enriched",
+            "split_role": "DEFERRED_SMALL_COMPLETION_JOINT_SEARCH",
+            "warmup_blocks": int(row["first_eligible_block"]),
+            "source_step": int(row["source_step"]),
+            "episode_id": int(row["episode_id"]),
+            "episode_cluster_id": str(row["episode_cluster_id"]),
+            "cell_id": int(row["cell_id"]),
+            "boundary": dict(row["boundary"]),
+            "goal": {
+                "landmark_id": str(row["goal_landmark_id"]),
+                "landmark_cell": int(row["goal_landmark_cell"]),
+                "material_id": str(row["goal_material_id"]),
+                "graph_edges": int(row["graph_hops_diagnostic"]),
+                "start_geodesic_m": float(row["continuous_geodesic_m"]),
+                "bearing_body_rad": float(row["bearing_body_rad"]),
+                "range_m": float(row["range_m"]),
+                "landmark_xy_m": list(row["goal_landmark_xy_m"]),
+            },
+            "goal_type": str(row["goal_material_id"]),
+            "body_clearance_m": float(row["body_clearance_m"]),
+            "clearance_m": float(row["clearance_m"]),
+            "completion_rotation_eligibility_vector": dict(
+                row["completion_rotation_eligibility_vector"]),
+            "snapshot_task_status": dict(row["snapshot_task_status"]),
+            "previous_applied_command": list(row["previous_applied_command"]),
+        })
+    candidates.sort(key=lambda state: (
+        str(state["scene_id"]), int(state["warmup_blocks"])))
+    scene_ids = [str(state["scene_id"]) for state in candidates]
+    if (
+        len(candidates) != 17
+        or scene_ids != sorted(scene_ids)
+        or len(set(scene_ids)) != 17
+        or any(value <= resolver_cursor_scene_id for value in scene_ids)
+    ):
+        raise RuntimeError("d9d 17-scene cursor candidate pool changed")
+    return candidates
+
+
+def _v2_predecessor_binding_envelope(
+        *, inputs: Mapping[str, Any], provisional_plan: Mapping[str, Any],
+        benchmark_source_binding_digest: str,
+        ) -> dict[str, Any]:
+    rank_zero = _parallel_rank_identity_material(
+        inputs, 0, PARALLEL_SEARCH.unrank_combination(
+            0, len(inputs["raw_candidates"]), 5))
+    normalised_rank_zero = ALLOC._normalise_identity_states(
+        _allocation_projection(rank_zero["states"]))
+    return {
+        "schema": PARALLEL_V2_PREDECESSOR_BINDINGS_SCHEMA,
+        "provisional_search_plan_digest": provisional_plan[
+            "search_plan_digest"],
+        "benchmark_source_binding_digest":
+            benchmark_source_binding_digest,
+        # This is the exact outcome-free allocator identity digest recorded
+        # by the immutable V1 benchmark receipt.  The fuller builder source
+        # manifest remains transitively bound by benchmark_source_binding.
+        "rank_zero_source_identity_manifest_digest":
+            ALLOC.pre_outcome_identity_digest(normalised_rank_zero),
+        "rank_zero_state_projection_digest": PARALLEL_SEARCH.canonical_digest(
+            normalised_rank_zero),
+        "candidate_pool_scene_ids_digest": PARALLEL_SEARCH.canonical_digest(
+            inputs["candidate_scene_ids"]),
+        "fixed_state_projection_digest": canonical_digest(
+            _allocation_projection(inputs["fixed_states"])),
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed": False,
+    }
+
+
+def _v2_load_benchmark_material(out: Path) -> dict[str, Any]:
+    """Reconstruct every mask-free V1 benchmark input from d9d evidence."""
+
+    if out != OUT_ROOT / "scorer_fit":
+        raise RuntimeError("V2 predecessor inputs are scorer-fit only")
+    benchmark_path = out / PARALLEL_SMALL_BENCHMARK_NAME
+    benchmark, _benchmark_raw = _v2_load_exact_predecessor_json(
+        benchmark_path, self_key="benchmark_receipt_digest",
+        label="immutable V1 failed benchmark",
+        expected_binding=PARALLEL_V1_FAILURE_RECEIPT_BINDING,
+        self_digest=PARALLEL_SEARCH.canonical_digest)
+    details = benchmark.get("details")
+    if (
+        benchmark.get("passes") is not False
+        or benchmark.get("candidate_outcomes_consumed") is not False
+        or benchmark.get("maximum_parallel_fraction")
+        != PARALLEL_SMALL_BENCHMARK_MAXIMUM_FRACTION
+        or not isinstance(details, Mapping)
+        or details.get("sample_prefix_indices") != [0, 1, 2]
+        or details.get("sample_prefix_count") != 3
+        or details.get("median_parallel_fraction", math.inf)
+        > PARALLEL_SMALL_BENCHMARK_MAXIMUM_FRACTION
+        or details.get("maximum_parallel_fraction_observed", -math.inf)
+        <= PARALLEL_SMALL_BENCHMARK_MAXIMUM_FRACTION
+    ):
+        raise RuntimeError(
+            "immutable V1 benchmark is no longer its cold-start failure")
+    authorities = _v2_load_d9d_authorities(out)
+    shards, fixed_evidence, common = _v2_load_fixed_shards(
+        out, authorities=authorities)
+    prefix = _v2_load_small_prefix(out, authorities=authorities)
+    fixed_states = [dict(state) for shard in shards
+                    for state in shard["states"]]
+    fixed_states.extend(dict(state) for state in prefix["states"])
+    if (
+        len(fixed_states) != 115
+        or len({state["scene_id"] for state in fixed_states}) != 115
+        or len({state["state_identity_digest"] for state in fixed_states})
+        != 115
+    ):
+        raise RuntimeError("d9d fixed 115-state identity set changed")
+    cursor = str(prefix["resolver_cursor_scene_id"])
+    candidates = _v2_load_raw_candidates(
+        out, launch=authorities["clean_launch"], fixed_states=fixed_states,
+        resolver_cursor_scene_id=cursor)
+    candidate_scene_ids = [str(state["scene_id"]) for state in candidates]
+    inputs = {
+        "fixed_states": fixed_states,
+        "raw_candidates": candidates,
+        "candidate_scene_ids": candidate_scene_ids,
+        "resolver_cursor_scene_id": cursor,
+        "common": common,
+        "prefix": prefix,
+        "fixed_shard_evidence": fixed_evidence,
+        "predecessor_launch": dict(authorities["clean_launch"]),
+        "predecessor_authority_bindings": {
+            name: dict(binding) for name, binding in
+            authorities["raw_bindings"].items()
+        },
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed": False,
+    }
+    provisional = _build_parallel_search_plan_from_launch(
+        inputs, launch=authorities["clean_launch"],
+        measured_benchmark_receipt_digest=None)
+    source_binding = _parallel_benchmark_source_binding(inputs, provisional)
+    envelope = _v2_predecessor_binding_envelope(
+        inputs=inputs, provisional_plan=provisional,
+        benchmark_source_binding_digest=source_binding)
+    rank_zero = _parallel_rank_identity_material(
+        inputs, 0, PARALLEL_SEARCH.unrank_combination(0, len(candidates), 5))
+    if (
+        source_binding != benchmark.get("source_binding_digest")
+        or envelope["rank_zero_source_identity_manifest_digest"]
+        != details.get("source_identity_manifest_digest")
+        or envelope["rank_zero_state_projection_digest"]
+        != details.get("state_projection_digest")
+        or provisional.get("candidate_pool_count") != 17
+        or provisional.get("candidate_pool_scene_ids_digest")
+        != envelope["candidate_pool_scene_ids_digest"]
+        or provisional.get("fixed_state_projection_digest")
+        != envelope["fixed_state_projection_digest"]
+        or ALLOC.pre_outcome_identity_digest(
+            ALLOC._normalise_identity_states(
+                _allocation_projection(rank_zero["states"])))
+        != envelope["rank_zero_source_identity_manifest_digest"]
+    ):
+        raise RuntimeError(
+            "reconstructed d9d rank0/provisional binding differs from V1")
+    return {
+        "inputs": inputs,
+        "benchmark": benchmark,
+        "provisional_plan": provisional,
+        "benchmark_source_binding_digest": source_binding,
+        "predecessor_scientific_input_bindings": envelope,
+        "v1_failure_disposition":
+            PARALLEL_V1_IMMUTABLE_FAILURE_DISPOSITION,
+    }
+
+
+def build_v2_predecessor_scientific_input_bindings(
+        *, out: Path | None = None) -> dict[str, Any]:
+    """Return the exact nine-key, mask-free V2 predecessor envelope."""
+
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    return dict(_v2_load_benchmark_material(scorer_fit)[
+        "predecessor_scientific_input_bindings"])
+
+
+def load_v2_parallel_small_benchmark_inputs(
+        *, predecessor_scientific_input_bindings: Mapping[str, Any],
+        out: Path | None = None,
+        ) -> dict[str, Any]:
+    """Reopen exact d9d benchmark inputs without any preserved mask vectors."""
+
+    supplied = dict(predecessor_scientific_input_bindings)
+    expected_keys = {
+        "schema", "provisional_search_plan_digest",
+        "benchmark_source_binding_digest",
+        "rank_zero_source_identity_manifest_digest",
+        "rank_zero_state_projection_digest",
+        "candidate_pool_scene_ids_digest", "fixed_state_projection_digest",
+        "candidate_outcomes_consumed", "scientific_masks_accessed",
+    }
+    if (
+        set(supplied) != expected_keys
+        or supplied.get("schema") != PARALLEL_V2_PREDECESSOR_BINDINGS_SCHEMA
+        or supplied.get("candidate_outcomes_consumed") is not False
+        or supplied.get("scientific_masks_accessed") is not False
+        or any(not _is_sha256(supplied.get(key)) for key in expected_keys - {
+            "schema", "candidate_outcomes_consumed",
+            "scientific_masks_accessed"})
+    ):
+        raise RuntimeError("V2 predecessor scientific input envelope changed")
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    material = _v2_load_benchmark_material(scorer_fit)
+    if material["predecessor_scientific_input_bindings"] != supplied:
+        raise RuntimeError(
+            "V2 predecessor envelope differs from exact d9d reconstruction")
+    inputs = dict(material["inputs"])
+    if "preserved_vectors" in inputs:
+        raise RuntimeError("V2 benchmark inputs opened a preserved mask context")
+    inputs.update({
+        "predecessor_v1_failure_receipt": dict(material["benchmark"]),
+        "predecessor_v1_provisional_search_plan": dict(
+            material["provisional_plan"]),
+        "predecessor_v1_benchmark_source_binding_digest": material[
+            "benchmark_source_binding_digest"],
+        "predecessor_scientific_input_bindings": supplied,
+        "v1_failure_disposition": material["v1_failure_disposition"],
+    })
+    return inputs
+
+
+def attach_v2_parallel_search_mask_context(
+        inputs: Mapping[str, Any], *,
+        v2_pass_receipt: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Attach the seven preserved vectors only after an exact V2 PASS.
+
+    The mask-bearing frozen phase-1 receipt is neither opened nor parsed by
+    either predecessor-binding or benchmark-input API.  This is the sole V2
+    bridge that accesses it, after the one-shot receipt has passed its complete
+    structural, timing, equivalence, timeout, and worker-integrity validator.
+    """
+
+    from lewm.oracle import go2_parallel_small_completion_search_v2 as SEARCH_V2
+
+    receipt = dict(v2_pass_receipt)
+    envelope = inputs.get("predecessor_scientific_input_bindings")
+    if not isinstance(envelope, Mapping):
+        raise RuntimeError("V2 predecessor scientific input binding is absent")
+    predecessor_digest = PARALLEL_SEARCH.canonical_digest(dict(envelope))
+    validated = SEARCH_V2.validate_benchmark_receipt_v2(
+        receipt,
+        expected_benchmark_v2_contract_digest=str(
+            receipt.get("benchmark_v2_contract_digest", "")),
+        expected_v1_failure_receipt_digest=str(
+            PARALLEL_V1_FAILURE_RECEIPT_BINDING["self_digest"]),
+        expected_predecessor_scientific_input_bindings_digest=
+            predecessor_digest,
+        expected_source_binding_digest=str(
+            envelope.get("benchmark_source_binding_digest", "")),
+        require_pass=True,
+    )
+    if (
+        dict(envelope) != build_v2_predecessor_scientific_input_bindings()
+        or inputs.get("candidate_outcomes_consumed") is not False
+        or inputs.get("scientific_masks_accessed") is not False
+        or "preserved_vectors" in inputs
+        or validated.get("passes") is not True
+        or validated.get("median_gate_passes") is not True
+        or validated.get("maximum_gate_passes") is not True
+        or validated.get("worker_restart_count") != 0
+        or validated.get("candidate_outcomes_consumed") is not False
+        or validated.get("scientific_masks_accessed") is not False
+    ):
+        raise RuntimeError("V2 search mask context was requested before PASS")
+
+    # This exact historical validator is intentionally deferred until here.
+    # It reopens the raw-bound phase-1 receipt and all of its atomic evidence;
+    # it does not compare them with the current V2 implementation commit.
+    preserved = STATE_SELECTOR.validate_frozen_preserved_precontract_failure(
+        root=ROOT)
+    authorities = _v2_load_d9d_authorities(OUT_ROOT / "scorer_fit")
+    disposition = authorities["mixed_disposition"]
+    retained_completion = {
+        str(row["state_identity_digest"])
+        for row in disposition.get("retained_predecessor_identities", [])
+        if row.get("stratum") == "completion_enriched"
+    }
+    vectors: dict[str, dict[str, Any]] = {}
+    for shard in preserved.get("shards", []):
+        for check in shard.get("state_checks", []):
+            vector = check.get("completion_rotation_eligibility")
+            if vector is None:
+                continue
+            identity = str(check.get("state_identity_digest", ""))
+            if identity in vectors:
+                raise RuntimeError("V2 preserved mask context repeats an identity")
+            vectors[identity] = dict(vector)
+    if len(vectors) != 7 or set(vectors) != retained_completion:
+        raise RuntimeError("V2 preserved mask context changed")
+    attached = dict(inputs)
+    attached["preserved_vectors"] = vectors
+    attached["scientific_masks_accessed"] = True
+    attached["mask_context_attached_after_v2_pass"] = True
+    attached["v2_pass_receipt_digest"] = validated[
+        "benchmark_receipt_digest"]
+    return attached
 
 
 def _load_parallel_plan_and_benchmark(
@@ -6889,7 +7933,7 @@ def _build_parallel_small_terminal_shard(
         joint_receipt: Mapping[str, Any]) -> dict[str, Any]:
     selected = _parallel_selected_completion_states(
         inputs["raw_candidates"], terminal["rank_receipt"][
-            "combination_indices"])
+            "combination_indices"], identity_bindings=inputs["common"])
     states = [*inputs["prefix"]["states"], *selected]
     states.sort(key=lambda state: (
         STRATA.index(str(state["stratum"])), str(state["scene_id"])))
