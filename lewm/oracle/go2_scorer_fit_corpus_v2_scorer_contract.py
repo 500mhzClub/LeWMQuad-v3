@@ -787,15 +787,16 @@ def immutable_contract_artifact_binding(
 
 def load_contract_for_consumption(
         *, root: Path = ROOT,
-        encoder_compute_dtype_correction: Mapping[str, Any] | None = None,
+        encoder_path_projection_correction: Mapping[str, Any] | None = None,
         ) -> dict[str, Any]:
-    """Validate the immutable contract through the active dtype correction.
+    """Validate the immutable contract through the active path correction.
 
     The contract remains byte-for-byte the artifact issued from historical
-    clean commit ``72b0d77``.  The first post-smoke correction is itself now
-    immutable history.  Its successor validates the narrow live FP32 compute
-    policy while binding that import correction and this contract exactly; it
-    does not rebuild either predecessor under the current repository commit.
+    clean commit ``72b0d77``.  Both the import and FP32-compute corrections are
+    now immutable history.  Their successor validates the narrow live logical
+    path-projection policy while binding both predecessors and this contract
+    exactly; it does not rebuild any predecessor under the current repository
+    commit.
     """
 
     path = _exact_output_path(root / ARTIFACT_RELATIVE_PATH, root=root)
@@ -805,18 +806,19 @@ def load_contract_for_consumption(
         json.loads(path.read_text()))
 
     correction = (
-        DESIGN.load_encoder_compute_dtype_correction_for_consumption(root=root)
-        if encoder_compute_dtype_correction is None
-        else DESIGN.validate_encoder_compute_dtype_correction(
-            encoder_compute_dtype_correction, root=root,
+        DESIGN.load_encoder_path_projection_correction_for_consumption(
+            root=root)
+        if encoder_path_projection_correction is None
+        else DESIGN.validate_encoder_path_projection_correction(
+            encoder_path_projection_correction, root=root,
             validate_live_authorities=True)
     )
     _require(isinstance(correction, Mapping),
-             "encoder-compute-dtype correction authority is not an object")
+             "encoder-path-projection correction authority is not an object")
     _require(
         correction.get("immutable_successor_scorer_contract_binding")
         == immutable_contract_artifact_binding(artifact, root=root),
-        "encoder-compute-dtype correction binds a different immutable "
+        "encoder-path-projection correction binds a different immutable "
         "scorer contract",
     )
 

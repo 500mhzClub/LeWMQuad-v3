@@ -12,6 +12,9 @@ candidate-subset allocator, or performance benchmark.  Its public stages are:
   compatibility repair without replacing the issued scorer contract;
 * ``issue-encoder-compute-dtype-correction``: bind the first-forward FP32
   compatibility repair while preserving the import correction and contract;
+* ``issue-encoder-path-projection-correction``: bind the post-base-smoke
+  logical-path metadata repair while preserving both predecessor corrections
+  and the issued scorer contract;
 * ``run``: execute the registered smoke/recovery/corpus/training pipeline; and
 * ``status``: assemble a read-only metadata report.
 
@@ -101,6 +104,18 @@ _V2_RUNTIME_STAGE_ROLES = {
     "development_transfer": "rocm",
 }
 
+_SMOKE_REGENERATION_INCOMPLETE_TRANSACTION_STATES = frozenset({
+    "UNSTARTED",
+    "PREPARED_MOVE_PENDING",
+    "MOVED_REGENERATION_PENDING",
+    "RESTORED_COMPLETE_PENDING",
+    "COMPLETE_SMOKE_PUBLICATION_PENDING",
+})
+_SMOKE_REGENERATION_TRANSACTION_STATES = frozenset({
+    *_SMOKE_REGENERATION_INCOMPLETE_TRANSACTION_STATES,
+    "COMPLETE",
+})
+
 
 class FullBankV2RunnerError(RuntimeError):
     """An exact-path, stage-order, runtime, or terminal gate failed."""
@@ -109,7 +124,6 @@ class FullBankV2RunnerError(RuntimeError):
 CommandRunner = Callable[[Sequence[str], Path], int]
 RuntimeProbeInvoker = Callable[[str, Path, Path, Any], Mapping[str, Any]]
 ValidationInvoker = Callable[[str, Path, Path], Mapping[str, Any]]
-DeleteRegisteredShard = Callable[[Mapping[str, Any], Path], None]
 
 
 class _DesignAuthority(Protocol):
@@ -195,6 +209,26 @@ def _json_bytes(value: Any, *, pretty: bool = False) -> bytes:
 
 def canonical_digest(value: Any) -> str:
     return hashlib.sha256(_json_bytes(value)).hexdigest()
+
+
+def _encoder_default_json_digest(value: Any) -> str:
+    """Match the encoder's historical spaced/default JSON self digests."""
+
+    return hashlib.sha256(json.dumps(
+        value, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def _builder_default_json_digest(value: Any) -> str:
+    """Match branch/corpus producer digests, never runner compact digests."""
+
+    return BUILDER.canonical_digest(value)
+
+
+def _encoder_pretty_json_bytes(value: Any) -> bytes:
+    """Match the encoder's historical and migration metadata serialization."""
+
+    return (json.dumps(value, indent=2, sort_keys=True) + "\n").encode(
+        "utf-8")
 
 
 def file_sha256(path: Path, block_size: int = 8 << 20) -> str:
@@ -664,15 +698,41 @@ def issue_scorer_contract(
 def issue_encoder_import_correction(
         *, root: Path = ROOT, design_authority: Any = DESIGN,
         ) -> dict[str, Any]:
-    """Issue historically, or replay immutably through its dtype successor."""
+    """Issue historically, or replay through the newest immutable lineage."""
 
     replayed_from_dtype_lineage = False
+    replayed_from_path_projection_lineage = False
+    path_relative = getattr(
+        design_authority, "ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH",
+        None)
+    path_correction_path = (
+        None if path_relative is None else _pin_relative(
+            root, Path(path_relative),
+            label="encoder-path-projection correction"))
     dtype_relative = getattr(
         design_authority, "ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH",
         None)
     dtype_path = (None if dtype_relative is None else _pin_relative(
         root, Path(dtype_relative), label="encoder-compute-dtype correction"))
-    if (dtype_path is not None
+    if (path_correction_path is not None
+            and (path_correction_path.exists()
+                 or path_correction_path.is_symlink())):
+        path_correction = (
+            design_authority
+            .load_encoder_path_projection_correction_for_consumption(
+                root=root))
+        dtype_correction, _dtype_digest = (
+            _immutable_dtype_from_path_projection_correction(
+                path_correction, design_authority=design_authority))
+        immutable = design_authority.validate_immutable_encoder_import_correction(
+            dtype_correction.get("immutable_encoder_import_correction", {}))
+        artifact = immutable["payload"]
+        validated = artifact
+        _immutable_import_digest_from_dtype_correction(
+            dtype_correction, design_authority=design_authority)
+        replayed_from_dtype_lineage = True
+        replayed_from_path_projection_lineage = True
+    elif (dtype_path is not None
             and (dtype_path.exists() or dtype_path.is_symlink())):
         dtype_correction = (
             design_authority
@@ -719,6 +779,8 @@ def issue_encoder_import_correction(
         "latent_or_scorer_runtime_started_by_issue_stage": False,
         "replayed_from_immutable_dtype_correction_lineage":
             replayed_from_dtype_lineage,
+        "replayed_from_immutable_path_projection_correction_lineage":
+            replayed_from_path_projection_lineage,
     }
 
 
@@ -739,22 +801,73 @@ def _immutable_import_digest_from_dtype_correction(
     return digest
 
 
+def _immutable_dtype_from_path_projection_correction(
+        correction: Mapping[str, Any], *, design_authority: Any = DESIGN,
+        ) -> tuple[dict[str, Any], str]:
+    """Return the exact immutable dtype payload embedded by the live gate."""
+
+    digest = correction.get(
+        "immutable_encoder_compute_dtype_correction_digest")
+    immutable = correction.get("immutable_encoder_compute_dtype_correction")
+    if not isinstance(immutable, Mapping):
+        raise FullBankV2RunnerError(
+            "path-projection correction lacks the immutable dtype correction")
+    validated = design_authority.validate_immutable_encoder_compute_dtype_correction(
+        immutable)
+    payload = validated.get("payload")
+    expected = getattr(
+        design_authority, "IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST",
+        None)
+    if (not _is_hex(digest) or not isinstance(payload, Mapping)
+            or payload.get(
+                design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY)
+            != digest
+            or not _is_hex(expected)
+            or digest != expected):
+        raise FullBankV2RunnerError(
+            "path-projection correction changed the immutable dtype correction")
+    return dict(payload), str(digest)
+
+
 def issue_encoder_compute_dtype_correction(
         *, root: Path = ROOT, design_authority: Any = DESIGN,
         ) -> dict[str, Any]:
-    """Issue and reopen the distinct first-forward dtype correction."""
+    """Issue historically, or replay immutably through its path successor."""
 
-    artifact = design_authority.issue_encoder_compute_dtype_correction(
-        root=root)
-    validated = (
-        design_authority
-        .load_encoder_compute_dtype_correction_for_consumption(root=root))
+    replayed_from_path_projection_lineage = False
+    path_relative = getattr(
+        design_authority, "ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH",
+        None)
+    path_correction_path = (
+        None if path_relative is None else _pin_relative(
+            root, Path(path_relative),
+            label="encoder-path-projection correction"))
+    if (path_correction_path is not None
+            and (path_correction_path.exists()
+                 or path_correction_path.is_symlink())):
+        path_correction = (
+            design_authority
+            .load_encoder_path_projection_correction_for_consumption(
+                root=root))
+        artifact, _digest = _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority)
+        validated = artifact
+        replayed_from_path_projection_lineage = True
+    else:
+        artifact = design_authority.issue_encoder_compute_dtype_correction(
+            root=root)
+        validated = (
+            design_authority
+            .load_encoder_compute_dtype_correction_for_consumption(root=root))
     if artifact != validated:
         raise FullBankV2RunnerError(
             "issued encoder-compute-dtype correction changed on exact replay")
     digest = artifact.get(
         design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY)
-    if not _is_hex(digest):
+    if (not _is_hex(digest)
+            or digest != getattr(
+                design_authority,
+                "IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST", digest)):
         raise FullBankV2RunnerError(
             "encoder-compute-dtype correction digest is malformed")
     import_digest = _immutable_import_digest_from_dtype_correction(
@@ -779,6 +892,62 @@ def issue_encoder_compute_dtype_correction(
             SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
         "immutable_scorer_contract_artifact_digest":
             SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+        "encoder_import_correction_reissued_or_rewritten": False,
+        "scorer_contract_reissued_or_rewritten": False,
+        "preoutcome_manifests_reissued_or_rewritten": False,
+        "branch_latent_or_scorer_runtime_started_by_issue_stage": False,
+        "replayed_from_immutable_path_projection_correction_lineage":
+            replayed_from_path_projection_lineage,
+    }
+
+
+def issue_encoder_path_projection_correction(
+        *, root: Path = ROOT, design_authority: Any = DESIGN,
+        ) -> dict[str, Any]:
+    """Issue and reopen the sole live encoder-runtime source authority."""
+
+    artifact = design_authority.issue_encoder_path_projection_correction(
+        root=root)
+    validated = (
+        design_authority
+        .load_encoder_path_projection_correction_for_consumption(root=root))
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued encoder-path-projection correction changed on exact replay")
+    digest = artifact.get(
+        design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+    if not _is_hex(digest):
+        raise FullBankV2RunnerError(
+            "encoder-path-projection correction digest is malformed")
+    dtype_correction, dtype_digest = (
+        _immutable_dtype_from_path_projection_correction(
+            artifact, design_authority=design_authority))
+    import_digest = _immutable_import_digest_from_dtype_correction(
+        dtype_correction, design_authority=design_authority)
+    immutable_contract = artifact.get(
+        "immutable_successor_scorer_contract_binding")
+    if (not isinstance(immutable_contract, Mapping)
+            or immutable_contract.get("self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST
+            or immutable_contract.get("embedded_contract_self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST):
+        raise FullBankV2RunnerError(
+            "path-projection correction changed the immutable scorer contract")
+    return {
+        "stage": "issue-encoder-path-projection-correction",
+        "status": design_authority.ENCODER_PATH_PROJECTION_CORRECTION_STATUS,
+        design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY: digest,
+        "encoder_path_projection_correction_digest": digest,
+        design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+            dtype_digest,
+        "encoder_compute_dtype_correction_digest": dtype_digest,
+        design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY: import_digest,
+        "encoder_import_correction_digest": import_digest,
+        "immutable_scorer_contract_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        "immutable_scorer_contract_artifact_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+        "encoder_compute_dtype_correction_reissued_or_rewritten": False,
         "encoder_import_correction_reissued_or_rewritten": False,
         "scorer_contract_reissued_or_rewritten": False,
         "preoutcome_manifests_reissued_or_rewritten": False,
@@ -986,7 +1155,8 @@ def downstream_command_sequence(
                                     "full-bank-v2", "--smoke"],
         "smoke_single_shard_regeneration": [
             str(selected["rocm"]), encode, "--pool", "scorer_fit",
-            "--corpus-design", "full-bank-v2", "--smoke"],
+            "--corpus-design", "full-bank-v2", "--smoke",
+            "--single-shard-regeneration-transaction"],
         "full_branch_corpus": [str(selected["genesis"]), build, "--pool",
                                "scorer_fit", "--stage", "branches",
                                "--backend", "cpu"],
@@ -1078,9 +1248,71 @@ def _validate_single_shard_recovery(
             or after.get("invocation_new_context_shards") != 0
             or after.get("invocation_new_horizon_shards") != 1
             or after.get("single_registered_shard_regenerated") is not True
-            or after.get("only_registered_missing_shard_changed") is not True):
+            or after.get("only_registered_missing_shard_changed") is not True
+            or after.get("single_shard_regeneration_transaction_state")
+            != "COMPLETE"
+            or after.get(
+                "single_shard_regeneration_transaction_complete") is not True
+            or not _is_hex(after.get(
+                "single_shard_regeneration_prepared_digest"))
+            or not _is_hex(after.get(
+                "single_shard_regeneration_complete_digest"))
+            or after.get("single_shard_regeneration_target_exact") is not True
+            or after.get("single_shard_regeneration_backup_exact") is not True):
         raise FullBankV2RunnerError(
             "single-shard smoke regeneration proof failed")
+
+
+def _require_complete_strict_smoke_transaction(
+        projection: Mapping[str, Any]) -> None:
+    """Require the encoder's immutable COMPLETE transaction aliases."""
+
+    if (projection.get("single_shard_regeneration_transaction_state")
+            != "COMPLETE"
+            or projection.get(
+                "single_shard_regeneration_transaction_complete") is not True
+            or not _is_hex(projection.get(
+                "single_shard_regeneration_prepared_digest"))
+            or not _is_hex(projection.get(
+                "single_shard_regeneration_complete_digest"))
+            or projection.get(
+                "single_shard_regeneration_target_exact") is not True
+            or projection.get(
+                "single_shard_regeneration_backup_exact") is not True
+            or projection.get("zero_new_resume_verified") is not True
+            or projection.get(
+                "single_registered_shard_regenerated") is not True
+            or projection.get(
+                "only_registered_missing_shard_changed") is not True):
+        raise FullBankV2RunnerError(
+            "encoder smoke lacks the exact COMPLETE transaction proof")
+
+
+def _optional_smoke_transaction_complete(
+        projection: Mapping[str, Any]) -> bool:
+    """Return true only for COMPLETE plus its exact bound PASS smoke."""
+
+    return bool(
+        projection.get("transaction_state") == "COMPLETE"
+        and projection.get("prepared_present") is True
+        and _is_hex(projection.get("prepared_receipt_digest"))
+        and projection.get("target_state") == "EXACT"
+        and projection.get("backup_state") == "EXACT"
+        and projection.get("complete_present") is True
+        and _is_hex(projection.get("complete_receipt_digest"))
+        and projection.get("pass_smoke_state") in {
+            "EXACT_BOUND_PROTOCOL_PASS",
+            "VALID_REFRESHED_PASS_WITH_EXACT_PROTOCOL_PASS_ARCHIVE"}
+        and projection.get("next_action") == "NO_TRANSACTION_MUTATION")
+
+
+def _require_current_encoding_path_correction(
+        projection: Mapping[str, Any], *, expected_digest: str) -> None:
+    if (not _is_hex(expected_digest)
+            or projection.get("encoder_path_projection_correction_digest")
+            != expected_digest):
+        raise FullBankV2RunnerError(
+            "encoder validation used another path-projection correction")
 
 
 def _training_stop_report(
@@ -1088,6 +1320,7 @@ def _training_stop_report(
         runtime_probe_digests: Mapping[str, str],
         encoder_import_correction_digest: str,
         encoder_compute_dtype_correction_digest: str,
+        encoder_path_projection_correction_digest: str,
         ) -> tuple[int, dict[str, Any]]:
     terminal_kind = terminal.get("terminal_kind")
     if terminal_kind == "COMPLETION_DEGENERACY_FAILURE":
@@ -1113,6 +1346,10 @@ def _training_stop_report(
             encoder_compute_dtype_correction_digest,
         DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
             encoder_compute_dtype_correction_digest,
+        "encoder_path_projection_correction_digest":
+            encoder_path_projection_correction_digest,
+        DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
+            encoder_path_projection_correction_digest,
         "terminal_digest": terminal["terminal_digest"],
         "nothing_running": True,
     }
@@ -1123,6 +1360,7 @@ def _development_complete_report(
         completed: Sequence[str], runtime_probe_digests: Mapping[str, str],
         encoder_import_correction_digest: str,
         encoder_compute_dtype_correction_digest: str,
+        encoder_path_projection_correction_digest: str,
         ) -> tuple[int, dict[str, Any]]:
     if (development.get("qualified_scorer_bound") is not True
             or development.get("development_state_count") != 20
@@ -1146,48 +1384,19 @@ def _development_complete_report(
             encoder_compute_dtype_correction_digest,
         DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
             encoder_compute_dtype_correction_digest,
+        "encoder_path_projection_correction_digest":
+            encoder_path_projection_correction_digest,
+        DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
+            encoder_path_projection_correction_digest,
         "nothing_running": True,
     }
-
-
-def _delete_registered_smoke_shard(
-        target: Mapping[str, Any], root: Path) -> None:
-    expected_keys = {"path", "sha256", "byte_count", "shape"}
-    if (not isinstance(target, Mapping) or set(target) != expected_keys
-            or not _is_hex(target.get("sha256"))
-            or isinstance(target.get("byte_count"), bool)
-            or not isinstance(target.get("byte_count"), int)
-            or target["byte_count"] <= 0
-            or target.get("shape") != [4, 768, 1024]):
-        raise FullBankV2RunnerError(
-            "registered smoke regeneration target is malformed")
-    relative = Path(str(target["path"]))
-    expected_parent = SCORER_FIT_RELATIVE_PATH / "latents_v2/horizon"
-    if relative.parent != expected_parent:
-        raise FullBankV2RunnerError(
-            "registered smoke regeneration target escaped horizon shards")
-    path = _pin_relative(root, relative, label="registered smoke latent shard")
-    if (not path.is_file() or path.is_symlink()
-            or path.stat().st_size != target["byte_count"]
-            or file_sha256(path) != target["sha256"]):
-        raise FullBankV2RunnerError(
-            "registered smoke regeneration target bytes changed")
-    path.unlink()
-    directory = os.open(
-        path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
-    try:
-        os.fsync(directory)
-    finally:
-        os.close(directory)
-    if path.exists() or path.is_symlink():
-        raise FullBankV2RunnerError("registered smoke shard deletion was not durable")
 
 
 def _run_smoke_protocol(
         *, root: Path, commands: Mapping[str, Sequence[str]],
         interpreters: Mapping[str, Path], command_runner: CommandRunner,
         validation_invoker: ValidationInvoker,
-        delete_registered_shard: DeleteRegisteredShard,
+        encoder_path_projection_correction_digest: str,
         ) -> list[str]:
     """Run the one authorised smoke and its two durability checks exactly once."""
 
@@ -1222,6 +1431,9 @@ def _run_smoke_protocol(
     first_encoding = _require_projection(
         validation_invoker("encoding-smoke", root, interpreters["rocm"]),
         kind="encoding-smoke")
+    _require_current_encoding_path_correction(
+        first_encoding, expected_digest=
+        encoder_path_projection_correction_digest)
     if (first_encoding.get("horizon_latent_count") != 12
             or first_encoding.get("horizon_shape") != [4, 768, 1024]):
         raise FullBankV2RunnerError("full-bank smoke latent shape/count changed")
@@ -1233,20 +1445,23 @@ def _run_smoke_protocol(
     replay_encoding = _require_projection(
         validation_invoker("encoding-smoke", root, interpreters["rocm"]),
         kind="encoding-smoke")
+    _require_current_encoding_path_correction(
+        replay_encoding, expected_digest=
+        encoder_path_projection_correction_digest)
     _validate_zero_new_encoding(first_encoding, replay_encoding)
     completed.append("smoke_encoding_zero_new")
 
-    target = replay_encoding.get("single_shard_regeneration_target")
-    if not isinstance(target, Mapping):
-        raise FullBankV2RunnerError("smoke regeneration target is absent")
-    delete_registered_shard(target, root)
     if _run_command("smoke_single_shard_regeneration", commands, root=root,
                     command_runner=command_runner) != 0:
         raise FullBankV2RunnerError("single-shard smoke regeneration failed")
     recovered_encoding = _require_projection(
         validation_invoker("encoding-smoke", root, interpreters["rocm"]),
         kind="encoding-smoke")
+    _require_current_encoding_path_correction(
+        recovered_encoding, expected_digest=
+        encoder_path_projection_correction_digest)
     _validate_single_shard_recovery(replay_encoding, recovered_encoding)
+    _require_complete_strict_smoke_transaction(recovered_encoding)
     completed.append("smoke_single_shard_regeneration")
     return completed
 
@@ -1255,30 +1470,32 @@ def run_pipeline(
         *, root: Path = ROOT, command_runner: CommandRunner,
         runtime_probe_invoker: RuntimeProbeInvoker,
         validation_invoker: ValidationInvoker,
-        delete_registered_shard: DeleteRegisteredShard,
         authority: Any = RUNTIME_AUTHORITY,
         resume: bool = False,
         ) -> tuple[int, dict[str, Any]]:
     """Execute the fail-closed post-contract sequence using injected effects."""
 
-    # The first-forward dtype correction is the sole live source authority.  It
-    # immutably embeds the earlier import correction, and must validate before
-    # runtime probes or any command capable of importing the target encoder.
-    # Passing the same object to the contract loader avoids live-reinterpreting
-    # either historical correction under the FP32 source transition.
-    encoder_compute_dtype_correction = (
-        DESIGN.load_encoder_compute_dtype_correction_for_consumption(
+    # The logical-path correction is the sole live source authority.  It
+    # immutably embeds the earlier FP32 and import corrections, and must
+    # validate before probes or any command capable of importing the target
+    # encoder.  Passing the same object to the contract loader avoids live
+    # reinterpretation of every historical predecessor.
+    encoder_path_projection_correction = (
+        DESIGN.load_encoder_path_projection_correction_for_consumption(
             root=root))
-    dtype_correction_digest = encoder_compute_dtype_correction.get(
-        DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY)
-    if not _is_hex(dtype_correction_digest):
+    path_correction_digest = encoder_path_projection_correction.get(
+        DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+    if not _is_hex(path_correction_digest):
         raise FullBankV2RunnerError(
-            "encoder-compute-dtype correction is missing before runtime")
+            "encoder-path-projection correction is missing before runtime")
+    encoder_compute_dtype_correction, dtype_correction_digest = (
+        _immutable_dtype_from_path_projection_correction(
+            encoder_path_projection_correction))
     import_correction_digest = _immutable_import_digest_from_dtype_correction(
         encoder_compute_dtype_correction)
     SCORER_CONTRACT.load_contract_for_consumption(
-        root=root, encoder_compute_dtype_correction=
-        encoder_compute_dtype_correction)
+        root=root, encoder_path_projection_correction=
+        encoder_path_projection_correction)
     BUILDER.load_and_validate_full_bank_v2_manifests_for_consumption(
         out=root / SCORER_FIT_RELATIVE_PATH)
     if not resume:
@@ -1322,7 +1539,9 @@ def run_pipeline(
                     encoder_import_correction_digest=
                     import_correction_digest,
                     encoder_compute_dtype_correction_digest=
-                    dtype_correction_digest)
+                    dtype_correction_digest,
+                    encoder_path_projection_correction_digest=
+                    path_correction_digest)
             if (retained_terminal.get("terminal_kind") != "QUALIFICATION_PASS"
                     or retained_terminal.get("qualified") is not True):
                 raise FullBankV2RunnerError(
@@ -1342,7 +1561,9 @@ def run_pipeline(
                     encoder_import_correction_digest=
                     import_correction_digest,
                     encoder_compute_dtype_correction_digest=
-                    dtype_correction_digest)
+                    dtype_correction_digest,
+                    encoder_path_projection_correction_digest=
+                    path_correction_digest)
             if retained_development.get("terminal_present") is not False:
                 raise FullBankV2RunnerError(
                     "optional development-terminal presence verdict is missing")
@@ -1360,7 +1581,9 @@ def run_pipeline(
                 completed=completed, runtime_probe_digests=probe_digests,
                 encoder_import_correction_digest=import_correction_digest,
                 encoder_compute_dtype_correction_digest=
-                dtype_correction_digest)
+                dtype_correction_digest,
+                encoder_path_projection_correction_digest=
+                path_correction_digest)
         if retained_terminal.get("terminal_present") is not False:
             raise FullBankV2RunnerError(
                 "optional training-terminal presence verdict is missing")
@@ -1369,88 +1592,120 @@ def run_pipeline(
             validation_invoker(
                 "encoding-smoke-optional", root, interpreters["rocm"]),
             kind="encoding-smoke-optional")
+        transaction = _normalise_optional_smoke_transaction_status({
+            key: retained_smoke.get(key)
+            for key in _SMOKE_TRANSACTION_STATUS_FIELDS
+        })
+        transaction_contract_digest = encoder_path_projection_correction.get(
+            "single_shard_regeneration_transaction_contract_digest")
+        transaction_state = transaction["transaction_state"]
+        if (transaction_state not in _SMOKE_REGENERATION_TRANSACTION_STATES
+                or retained_smoke.get(
+                    "encoder_path_projection_correction_digest")
+                != path_correction_digest
+                or not _is_hex(transaction_contract_digest)
+                or retained_smoke.get(
+                    "single_shard_regeneration_transaction_contract_digest")
+                != transaction_contract_digest):
+            raise FullBankV2RunnerError(
+                "optional smoke transaction state changed")
         if retained_smoke.get("terminal_present") is True:
             smoke_protocol_complete = (
-                retained_smoke.get("smoke_protocol_complete") is True
+                _optional_smoke_transaction_complete(retained_smoke)
+                and retained_smoke.get("smoke_protocol_complete") is True
                 and retained_smoke.get("zero_new_resume_verified") is True
                 and retained_smoke.get(
                     "single_registered_shard_regenerated") is True)
+            if (smoke_protocol_complete
+                    and retained_smoke.get(
+                        "requires_full_encoder_refresh") is not True):
+                # The optional classifier routes crash recovery.  A normal
+                # retained COMPLETE shortcut must additionally pass the
+                # encoder's strict consumer, which replays the live
+                # PREPARED/COMPLETE lineage and exact active index/smoke
+                # relationship before this runner can open the full corpus.
+                retained_encoding = _require_projection(
+                    validation_invoker(
+                        "encoding-smoke", root, interpreters["rocm"]),
+                    kind="encoding-smoke")
+                _require_current_encoding_path_correction(
+                    retained_encoding,
+                    expected_digest=path_correction_digest)
+                _require_complete_strict_smoke_transaction(
+                    retained_encoding)
+                completed.append("retained_strict_completed_smoke_protocol")
             if not smoke_protocol_complete:
-                # The receipt proves that the base smoke ran.  Run the smoke
-                # encoder once before strict shard replay: this repairs the
-                # exact deliberate-deletion window without deleting a second
-                # valid shard.  A repaired ordinary invalid shard is followed
-                # by the still-required zero-new replay and designated
-                # candidate-0 regeneration proof.
+                if transaction_state == "COMPLETE":
+                    raise FullBankV2RunnerError(
+                        "COMPLETE transaction lacks its exact bound PASS smoke")
+                # If the original base pass had not yet been replayed with
+                # zero new shards, establish that proof before entering the
+                # separately flagged exact-once regeneration transaction.
+                if (transaction_state == "UNSTARTED"
+                        and retained_smoke.get(
+                            "zero_new_resume_verified") is not True):
+                    if retained_smoke.get(
+                            "prepared_staged_state") != "ABSENT":
+                        raise FullBankV2RunnerError(
+                            "staged PREPARED recovery lost its zero-new proof")
+                    if _run_command(
+                            "smoke_encoding_zero_new", commands, root=root,
+                            command_runner=command_runner) != 0:
+                        raise FullBankV2RunnerError(
+                            "resumed zero-new smoke encoding failed")
+                    replay_encoding = _require_projection(
+                        validation_invoker(
+                            "encoding-smoke", root, interpreters["rocm"]),
+                        kind="encoding-smoke")
+                    _require_current_encoding_path_correction(
+                        replay_encoding,
+                        expected_digest=path_correction_digest)
+                    if (replay_encoding.get("invocation_new_context_shards")
+                            != 0
+                            or replay_encoding.get(
+                                "invocation_new_horizon_shards") != 0
+                            or replay_encoding.get(
+                                "zero_new_resume_verified") is not True):
+                        raise FullBankV2RunnerError(
+                            "resumed zero-new smoke proof changed")
+                    completed.append("resumed_smoke_encoding_zero_new")
                 if _run_command(
                         "smoke_single_shard_regeneration", commands,
                         root=root, command_runner=command_runner) != 0:
                     raise FullBankV2RunnerError(
-                        "interrupted smoke recovery invocation failed")
-                resumed_encoding = _require_projection(
+                        "resumed exact-once shard transaction failed")
+                recovered_encoding = _require_projection(
                     validation_invoker(
                         "encoding-smoke", root, interpreters["rocm"]),
                     kind="encoding-smoke")
-                if (resumed_encoding.get("horizon_latent_count") != 12
-                        or resumed_encoding.get("horizon_shape")
-                        != [4, 768, 1024]):
+                _require_current_encoding_path_correction(
+                    recovered_encoding,
+                    expected_digest=path_correction_digest)
+                _require_complete_strict_smoke_transaction(
+                    recovered_encoding)
+                # The strict smoke projection deliberately retains the
+                # immutable COMPLETE transaction's original regeneration
+                # evidence.  A metadata-only resume can therefore still
+                # report one new horizon shard even though this invocation
+                # performed no regeneration.  Exact-once execution is
+                # established by the pre-command crash state, the single
+                # flagged command invocation, and the producer's strict
+                # COMPLETE custody/lineage validation above.
+                if (recovered_encoding.get(
+                        "invocation_new_context_shards") != 0
+                        or recovered_encoding.get(
+                            "invocation_new_horizon_shards") not in {0, 1}):
                     raise FullBankV2RunnerError(
-                        "resumed smoke latent shape/count changed")
-                if (resumed_encoding.get(
-                        "single_registered_shard_regenerated") is True
-                        and resumed_encoding.get(
-                            "only_registered_missing_shard_changed") is True
-                        and resumed_encoding.get(
-                            "zero_new_resume_verified") is True):
-                    completed.append(
-                        "resumed_interrupted_smoke_shard_regeneration")
-                    smoke_protocol_complete = True
-                else:
-                    replay_encoding = resumed_encoding
-                    if (resumed_encoding.get(
-                            "invocation_new_context_shards") != 0
-                            or resumed_encoding.get(
-                                "invocation_new_horizon_shards") != 0
-                            or resumed_encoding.get(
-                                "zero_new_resume_verified") is not True):
-                        if _run_command(
-                                "smoke_encoding_zero_new", commands,
-                                root=root,
-                                command_runner=command_runner) != 0:
-                            raise FullBankV2RunnerError(
-                                "resumed zero-new smoke encoding failed")
-                        replay_encoding = _require_projection(
-                            validation_invoker(
-                                "encoding-smoke", root,
-                                interpreters["rocm"]),
-                            kind="encoding-smoke")
-                        _validate_zero_new_encoding(
-                            resumed_encoding, replay_encoding)
-                        completed.append("resumed_smoke_encoding_zero_new")
-                    target = replay_encoding.get(
-                        "single_shard_regeneration_target")
-                    if not isinstance(target, Mapping):
-                        raise FullBankV2RunnerError(
-                            "resumed smoke regeneration target is absent")
-                    delete_registered_shard(target, root)
-                    if _run_command(
-                            "smoke_single_shard_regeneration", commands,
-                            root=root, command_runner=command_runner) != 0:
-                        raise FullBankV2RunnerError(
-                            "resumed single-shard regeneration failed")
-                    recovered_encoding = _require_projection(
-                        validation_invoker(
-                            "encoding-smoke", root,
-                            interpreters["rocm"]),
-                        kind="encoding-smoke")
-                    _validate_single_shard_recovery(
-                        replay_encoding, recovered_encoding)
-                    completed.append(
-                        "resumed_smoke_single_shard_regeneration")
-                    smoke_protocol_complete = True
+                        "resumed transaction evidence changed")
+                completed.append(
+                    "resumed_smoke_single_shard_regeneration")
+                smoke_protocol_complete = True
         elif retained_smoke.get("terminal_present") is not False:
             raise FullBankV2RunnerError(
                 "optional encoding-smoke presence verdict is missing")
+        elif transaction_state != "UNSTARTED":
+            raise FullBankV2RunnerError(
+                "started smoke transaction lacks resumable terminal metadata")
 
     if smoke_protocol_complete:
         completed.append("retained_completed_smoke_protocol")
@@ -1459,7 +1714,12 @@ def run_pipeline(
             root=root, commands=commands, interpreters=interpreters,
             command_runner=command_runner,
             validation_invoker=validation_invoker,
-            delete_registered_shard=delete_registered_shard))
+            encoder_path_projection_correction_digest=
+            path_correction_digest))
+        smoke_protocol_complete = True
+    if not smoke_protocol_complete:
+        raise FullBankV2RunnerError(
+            "full corpus is gated on COMPLETE plus its exact bound PASS smoke")
 
     if _run_command("full_branch_corpus", commands, root=root,
                     command_runner=command_runner) != 0:
@@ -1478,6 +1738,9 @@ def run_pipeline(
     encoded = _require_projection(
         validation_invoker("encoded-corpus", root, interpreters["rocm"]),
         kind="encoded-corpus")
+    _require_current_encoding_path_correction(
+        encoded, expected_digest=path_correction_digest)
+    _require_complete_strict_smoke_transaction(encoded)
     if (encoded.get("state_count") != 120
             or encoded.get("horizon_latent_count") != 1_440):
         raise FullBankV2RunnerError("encoded corpus cardinality changed")
@@ -1503,7 +1766,9 @@ def run_pipeline(
                 runtime_probe_digests=probe_digests,
                 encoder_import_correction_digest=import_correction_digest,
                 encoder_compute_dtype_correction_digest=
-                dtype_correction_digest)
+                dtype_correction_digest,
+                encoder_path_projection_correction_digest=
+                path_correction_digest)
         if (terminal.get("terminal_kind") != "QUALIFICATION_PASS"
                 or terminal.get("qualified") is not True):
             raise FullBankV2RunnerError(
@@ -1528,7 +1793,9 @@ def run_pipeline(
                 runtime_probe_digests=probe_digests,
                 encoder_import_correction_digest=import_correction_digest,
                 encoder_compute_dtype_correction_digest=
-                dtype_correction_digest)
+                dtype_correction_digest,
+                encoder_path_projection_correction_digest=
+                path_correction_digest)
         if (terminal_kind != "QUALIFICATION_PASS" or training_return != 0
                 or terminal.get("qualified") is not True):
             raise FullBankV2RunnerError(
@@ -1549,7 +1816,9 @@ def run_pipeline(
             completed=completed, runtime_probe_digests=probe_digests,
             encoder_import_correction_digest=import_correction_digest,
             encoder_compute_dtype_correction_digest=
-            dtype_correction_digest)
+            dtype_correction_digest,
+            encoder_path_projection_correction_digest=
+            path_correction_digest)
     if prior_development.get("terminal_present") is not False:
         raise FullBankV2RunnerError(
             "optional development-terminal presence verdict is missing")
@@ -1564,7 +1833,8 @@ def run_pipeline(
         terminal=terminal, development=development, completed=completed,
         runtime_probe_digests=probe_digests,
         encoder_import_correction_digest=import_correction_digest,
-        encoder_compute_dtype_correction_digest=dtype_correction_digest)
+        encoder_compute_dtype_correction_digest=dtype_correction_digest,
+        encoder_path_projection_correction_digest=path_correction_digest)
 
 
 def _default_validation_invoker(
@@ -1595,15 +1865,12 @@ def run_authorised(
         runtime_probe_invoker: RuntimeProbeInvoker =
             _default_runtime_probe_invoker,
         validation_invoker: ValidationInvoker = _default_validation_invoker,
-        delete_registered_shard: DeleteRegisteredShard =
-            _delete_registered_smoke_shard,
         authority: Any = RUNTIME_AUTHORITY,
         ) -> tuple[int, dict[str, Any]]:
     return run_pipeline(
         root=root, command_runner=command_runner,
         runtime_probe_invoker=runtime_probe_invoker,
         validation_invoker=validation_invoker,
-        delete_registered_shard=delete_registered_shard,
         authority=authority, resume=resume)
 
 
@@ -1657,6 +1924,9 @@ def assemble_status_report(*, root: Path = ROOT) -> dict[str, Any]:
         "encoder_compute_dtype_correction": _binding_if_present(
             root, DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH,
             self_key=DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY),
+        "encoder_path_projection_correction": _binding_if_present(
+            root, DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY),
         "branch_smoke": _binding_if_present(
             root, SCORER_FIT_RELATIVE_PATH /
             BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME,
@@ -1799,24 +2069,391 @@ def _encoding_validation_projection(
     return _normalise_encoding_projection(value, kind=validation_kind)
 
 
+def _matches_immutable_pre_path_projection_base_smoke(
+        *, root: Path, smoke: Mapping[str, Any], smoke_raw: bytes,
+        correction: Mapping[str, Any]) -> bool:
+    """Recognize the exact base or its invertible index-first transition."""
+
+    bundle = correction.get("immutable_base_smoke_artifact_bundle")
+    correction_digest = correction.get(
+        DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+    if (not isinstance(bundle, Mapping)
+            or not _is_hex(correction_digest)
+            or correction.get("base_smoke_artifact_bundle_digest")
+            != DESIGN.canonical_digest(bundle)):
+        return False
+
+    def bound_raw(
+            key: str, *, expected_relative: Path,
+            expected_self_key: str | None = None,
+            supplied_raw: bytes | None = None,
+            ) -> tuple[Mapping[str, Any], bytes] | None:
+        binding = bundle.get(key)
+        expected_keys = {
+            "path", "schema", "raw_sha256", "byte_count"}
+        if expected_self_key is not None:
+            expected_keys.update({"self_digest_key", "self_digest"})
+        if (not isinstance(binding, Mapping)
+                or set(binding) != expected_keys
+                or not isinstance(binding.get("path"), str)
+                or binding.get("path") != str(expected_relative)
+                or not isinstance(binding.get("schema"), str)
+                or not _is_hex(binding.get("raw_sha256"))
+                or isinstance(binding.get("byte_count"), bool)
+                or not isinstance(binding.get("byte_count"), int)
+                or binding["byte_count"] <= 0
+                or (expected_self_key is not None
+                    and (binding.get("self_digest_key")
+                         != expected_self_key
+                         or not _is_hex(binding.get("self_digest"))))):
+            return None
+        try:
+            path = _pin_relative(
+                root, Path(binding["path"]),
+                label=f"immutable pre-refresh {key}")
+        except FullBankV2RunnerError:
+            return None
+        if not path.is_file() or path.is_symlink():
+            return None
+        raw = path.read_bytes()
+        if supplied_raw is not None and supplied_raw != raw:
+            return None
+        return binding, raw
+
+    # The smoke and invocation summary must remain the exact historical bytes
+    # in both the untouched base and the sole recoverable half-transition.
+    smoke_bound = bound_raw(
+        "base_smoke_receipt_binding",
+        expected_relative=SCORER_FIT_RELATIVE_PATH /
+        BUILDER.SCORER_FIT_V2_ENCODING_SMOKE_RECEIPT_NAME,
+        expected_self_key="smoke_receipt_digest", supplied_raw=smoke_raw)
+    summary_bound = bound_raw(
+        "encoding_invocation_summary_binding",
+        expected_relative=SCORER_FIT_RELATIVE_PATH /
+        "encoding_invocation_summary_v2.json")
+    index_bound = bound_raw(
+        "latent_index_binding",
+        expected_relative=SCORER_FIT_RELATIVE_PATH / "latents_index_v2.json",
+        expected_self_key="latents_index_digest")
+    if smoke_bound is None or summary_bound is None or index_bound is None:
+        return False
+    smoke_binding, observed_smoke_raw = smoke_bound
+    summary_binding, observed_summary_raw = summary_bound
+    index_binding, observed_index_raw = index_bound
+    if (len(observed_smoke_raw) != smoke_binding["byte_count"]
+            or hashlib.sha256(observed_smoke_raw).hexdigest()
+            != smoke_binding["raw_sha256"]
+            or len(observed_summary_raw) != summary_binding["byte_count"]
+            or hashlib.sha256(observed_summary_raw).hexdigest()
+            != summary_binding["raw_sha256"]
+            or "encoder_path_projection_correction_digest" in smoke
+            or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY in smoke):
+        return False
+    smoke_self_key = smoke_binding.get("self_digest_key")
+    if (not isinstance(smoke_self_key, str)
+            or smoke.get(smoke_self_key) != smoke_binding.get("self_digest")
+            or smoke.get(smoke_self_key)
+            != _encoder_default_json_digest(_without(smoke, smoke_self_key))):
+        return False
+
+    try:
+        index = json.loads(observed_index_raw)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    if not isinstance(index, Mapping):
+        return False
+    index = dict(index)
+    index_self_key = index_binding.get("self_digest_key")
+    if not isinstance(index_self_key, str):
+        return False
+
+    historical_index: dict[str, Any]
+    exact_historical_index = bool(
+        len(observed_index_raw) == index_binding["byte_count"]
+        and hashlib.sha256(observed_index_raw).hexdigest()
+        == index_binding["raw_sha256"])
+    if exact_historical_index:
+        historical_index = index
+        if ("encoder_path_projection_correction_digest" in historical_index
+                or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY
+                in historical_index):
+            return False
+    else:
+        # Mirror the encoder's inverse exactly.  No mutation besides the one
+        # active lineage field and its resulting self digest can enter this
+        # crash window.
+        if (index.get("encoder_path_projection_correction_digest")
+                != correction_digest
+                or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY in index
+                or index.get(index_self_key)
+                != _encoder_default_json_digest(
+                    _without(index, index_self_key))):
+            return False
+        historical_index = _without(index, index_self_key)
+        historical_index.pop(
+            "encoder_path_projection_correction_digest", None)
+        historical_index[index_self_key] = _encoder_default_json_digest(
+            historical_index)
+        expected_migrated = {
+            **_without(historical_index, index_self_key),
+            "encoder_path_projection_correction_digest": correction_digest,
+        }
+        expected_migrated[index_self_key] = _encoder_default_json_digest(
+            expected_migrated)
+        if (index != expected_migrated
+                or observed_index_raw
+                != _encoder_pretty_json_bytes(expected_migrated)
+                or len(_encoder_pretty_json_bytes(historical_index))
+                != index_binding["byte_count"]
+                or hashlib.sha256(
+                    _encoder_pretty_json_bytes(historical_index)).hexdigest()
+                != index_binding["raw_sha256"]):
+            return False
+
+    return bool(
+        historical_index.get("schema") == index_binding.get("schema")
+        and historical_index.get(index_self_key)
+        == index_binding.get("self_digest")
+        and historical_index.get(index_self_key)
+        == _encoder_default_json_digest(
+            _without(historical_index, index_self_key))
+        and smoke.get("latent_index_digest")
+        == historical_index.get(index_self_key))
+
+
+def _classify_current_path_projection_metadata(
+        *, root: Path, smoke: Mapping[str, Any], smoke_raw: bytes,
+        correction_digest: str,
+        ) -> tuple[str, dict[str, Any]] | None:
+    """Classify current/current or the complete-index-ahead crash window."""
+
+    if (not _is_hex(correction_digest)
+            or smoke.get("encoder_path_projection_correction_digest")
+            != correction_digest
+            or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY in smoke
+            or smoke_raw != _encoder_pretty_json_bytes(smoke)
+            or smoke.get("smoke_receipt_digest")
+            != _encoder_default_json_digest(
+                _without(smoke, "smoke_receipt_digest"))):
+        return None
+    try:
+        index_path = _pin_relative(
+            root, SCORER_FIT_RELATIVE_PATH / "latents_index_v2.json",
+            label="current path-projection latent index")
+    except FullBankV2RunnerError:
+        return None
+    if not index_path.is_file() or index_path.is_symlink():
+        return None
+    index_raw = index_path.read_bytes()
+    try:
+        index = json.loads(index_raw)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(index, Mapping):
+        return None
+    index = dict(index)
+    if (index_raw != _encoder_pretty_json_bytes(index)
+            or index.get("encoder_path_projection_correction_digest")
+            != correction_digest
+            or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY in index
+            or index.get("latents_index_digest")
+            != _encoder_default_json_digest(
+                _without(index, "latents_index_digest"))):
+        return None
+    if smoke.get("latent_index_digest") == index.get("latents_index_digest"):
+        return "current", index
+
+    contexts = index.get("context_records")
+    horizons = index.get("horizon_records")
+    if (not _is_hex(smoke.get("latent_index_digest"))
+            or index.get("schema")
+            != "go2_scorer_fit_corpus_v2_latents_index_v1"
+            or index.get("status") != STATUS
+            or index.get("pool") != "scorer_fit_v2"
+            or index.get("corpus_design") != "full-bank-v2"
+            or index.get("complete") is not True
+            or index.get("context_shape") != [120, 3, 768, 1024]
+            or index.get("horizon_shape") != [1_440, 4, 768, 1024]
+            or not isinstance(contexts, list) or len(contexts) != 120
+            or not isinstance(horizons, list) or len(horizons) != 1_440):
+        return None
+    return "complete_index_ahead", index
+
+
+_SMOKE_TRANSACTION_STATUS_FIELDS = frozenset({
+    "transaction_state", "prepared_present", "prepared_receipt_digest",
+    "target_state", "backup_state", "complete_present",
+    "complete_receipt_digest", "pass_smoke_state", "next_action",
+    "encoder_path_projection_correction_digest",
+    "single_shard_regeneration_transaction_contract_digest",
+    "prepared_staged_state", "complete_staged_state", "target_exact",
+    "backup_exact", "target_backup_custody_exact",
+    "regenerated_target_custody_exact",
+    "candidate_outcomes_used_for_selection",
+    "final_200_state_corpus_generated",
+})
+
+
+def _normalise_optional_smoke_transaction_status(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Accept only the authority's exact resumable transaction states."""
+
+    if (not isinstance(value, Mapping)
+            or set(value) != _SMOKE_TRANSACTION_STATUS_FIELDS):
+        raise FullBankV2RunnerError(
+            "optional smoke transaction projection changed")
+    status = dict(value)
+    if (status.get("transaction_state")
+            not in _SMOKE_REGENERATION_TRANSACTION_STATES
+            or not _is_hex(status.get(
+                "encoder_path_projection_correction_digest"))
+            or not _is_hex(status.get(
+                "single_shard_regeneration_transaction_contract_digest"))
+            or status.get("prepared_staged_state") not in {
+                "ABSENT", "EXACT", "PARTIAL_REGULAR"}
+            or status.get("complete_staged_state") not in {
+                "ABSENT", "EXACT", "PARTIAL_REGULAR"}
+            or any(type(status.get(key)) is not bool for key in {
+                "prepared_present", "complete_present", "target_exact",
+                "backup_exact", "target_backup_custody_exact",
+                "regenerated_target_custody_exact"})
+            or status.get("candidate_outcomes_used_for_selection") is not False
+            or status.get("final_200_state_corpus_generated") is not False):
+        raise FullBankV2RunnerError(
+            "optional smoke transaction projection changed")
+
+    state = status["transaction_state"]
+    prepared_digest = status["prepared_receipt_digest"]
+    complete_digest = status["complete_receipt_digest"]
+    prepared_stage = status["prepared_staged_state"]
+    complete_stage = status["complete_staged_state"]
+    common_unfinished = bool(
+        status["pass_smoke_state"] == "ABSENT_OR_PRETRANSACTION"
+        and not status["complete_present"]
+        and complete_digest is None)
+    exact = False
+    if state == "UNSTARTED":
+        exact = bool(
+            not status["prepared_present"] and prepared_digest is None
+            and status["target_state"] in {"NOT_APPLICABLE", "EXACT"}
+            and status["target_exact"]
+            is (status["target_state"] == "EXACT")
+            and status["backup_state"] == "ABSENT"
+            and not status["backup_exact"]
+            and not status["target_backup_custody_exact"]
+            and not status["regenerated_target_custody_exact"]
+            and common_unfinished
+            and status["next_action"]
+            == "RUN_OR_RESUME_BASE_AND_ZERO_NEW_BEFORE_PREPARED"
+            and complete_stage == "ABSENT")
+    elif state == "PREPARED_MOVE_PENDING":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "EXACT" and status["target_exact"]
+            and status["backup_state"] == "ABSENT"
+            and not status["backup_exact"]
+            and not status["target_backup_custody_exact"]
+            and not status["regenerated_target_custody_exact"]
+            and common_unfinished
+            and status["next_action"] == "ATOMIC_MOVE_ONCE"
+            and prepared_stage in {"ABSENT", "EXACT"}
+            and complete_stage == "ABSENT")
+    elif state == "MOVED_REGENERATION_PENDING":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "ABSENT"
+            and not status["target_exact"]
+            and status["backup_state"] == "EXACT" and status["backup_exact"]
+            and status["target_backup_custody_exact"]
+            and not status["regenerated_target_custody_exact"]
+            and common_unfinished
+            and status["next_action"] == "RUN_REGENERATION_ENCODER_ONCE"
+            and prepared_stage == complete_stage == "ABSENT")
+    elif state == "RESTORED_COMPLETE_PENDING":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "EXACT" and status["target_exact"]
+            and status["backup_state"] == "EXACT" and status["backup_exact"]
+            and status["target_backup_custody_exact"]
+            and status["regenerated_target_custody_exact"]
+            and common_unfinished
+            and status["next_action"]
+            == "CREATE_COMPLETE_WITHOUT_SECOND_MOVE_OR_REGENERATION"
+            and prepared_stage == "ABSENT")
+    elif state == "COMPLETE_SMOKE_PUBLICATION_PENDING":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "EXACT" and status["target_exact"]
+            and status["backup_state"] == "EXACT" and status["backup_exact"]
+            and status["complete_present"] and _is_hex(complete_digest)
+            and status["target_backup_custody_exact"]
+            and status["regenerated_target_custody_exact"]
+            and status["pass_smoke_state"] == "ABSENT_OR_PRETRANSACTION"
+            and status["next_action"]
+            == "PUBLISH_COMPLETE_BOUND_PASS_SMOKE_ONLY"
+            and prepared_stage == "ABSENT"
+            and complete_stage in {"ABSENT", "EXACT"})
+    elif state == "COMPLETE":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "EXACT" and status["target_exact"]
+            and status["backup_state"] == "EXACT" and status["backup_exact"]
+            and status["complete_present"] and _is_hex(complete_digest)
+            and status["target_backup_custody_exact"]
+            and status["regenerated_target_custody_exact"]
+            and status["pass_smoke_state"] in {
+                "EXACT_BOUND_PROTOCOL_PASS",
+                "VALID_REFRESHED_PASS_WITH_EXACT_PROTOCOL_PASS_ARCHIVE"}
+            and status["next_action"] == "NO_TRANSACTION_MUTATION"
+            and prepared_stage == complete_stage == "ABSENT")
+    if not exact:
+        raise FullBankV2RunnerError(
+            "optional smoke transaction state is not an authorised crash state")
+    return status
+
+
+def _optional_smoke_transaction_status(*, root: Path) -> dict[str, Any]:
+    """Inspect the transaction before testing whether its smoke is present."""
+
+    from scripts import encode_go2_branch_corpus_v1_2 as encoder
+
+    value = (
+        encoder
+        .load_and_validate_full_bank_v2_single_shard_regeneration_transaction_status(
+            out=root / SCORER_FIT_RELATIVE_PATH))
+    return _normalise_optional_smoke_transaction_status(value)
+
+
 def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
+    transaction = _optional_smoke_transaction_status(root=root)
     path = root / SCORER_FIT_RELATIVE_PATH / (
         BUILDER.SCORER_FIT_V2_ENCODING_SMOKE_RECEIPT_NAME)
     if not path.exists() and not path.is_symlink():
+        started = bool(
+            transaction["transaction_state"] != "UNSTARTED"
+            or transaction["prepared_staged_state"] != "ABSENT")
         return {
             "validation_kind": "encoding-smoke-optional", "pass": True,
-            "terminal_present": False,
+            "terminal_present": started,
+            "smoke_protocol_complete": False,
+            "zero_new_resume_verified": started,
+            "single_registered_shard_regenerated": False,
+            "only_registered_missing_shard_changed": False,
+            "requires_full_encoder_refresh": False,
+            **transaction,
             "candidate_outcomes_used_for_selection": False,
             "final_200_state_corpus_generated": False,
         }
     # This is intentionally receipt-only.  A resume may arrive in the narrow
-    # window after the registered candidate-0 shard was durably removed and
-    # before its regeneration, or after an unrelated full-index shard became
-    # invalid.  The strict producer replay would reject both before the
-    # encoder got its authorised chance to repair missing/invalid shards.
+    # window after the registered candidate-0 shard was atomically moved into
+    # its retained backup and before its exact regeneration, or after an
+    # unrelated full-index shard became invalid.  The strict producer replay
+    # would reject both before the encoder got its authorised chance to
+    # complete the registered transaction or repair missing/invalid shards.
     # Exact shard validation remains mandatory immediately after recovery and
     # again for the complete corpus.
-    smoke, _raw = _load_json(path, label="optional V2 encoding smoke receipt")
+    smoke, smoke_raw = _load_json(
+        path, label="optional V2 encoding smoke receipt")
     manifests = BUILDER.load_and_validate_full_bank_v2_manifests_for_consumption(
         out=root / SCORER_FIT_RELATIVE_PATH)
     contract = SCORER_CONTRACT.load_contract_for_consumption(root=root)
@@ -1830,9 +2467,42 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
     dtype_correction_digest = (
         design_authority.get("encoder_compute_dtype_correction_digest")
         if isinstance(design_authority, Mapping) else None)
+    path_correction_digest = (
+        design_authority.get("encoder_path_projection_correction_digest")
+        if isinstance(design_authority, Mapping) else None)
+    path_correction = (
+        design_authority.get("encoder_path_projection_correction")
+        if isinstance(design_authority, Mapping) else None)
+    transaction_contract_digest = (
+        path_correction.get(
+            "single_shard_regeneration_transaction_contract_digest")
+        if isinstance(path_correction, Mapping) else None)
+    legacy_pre_refresh = bool(
+        isinstance(path_correction, Mapping)
+        and _matches_immutable_pre_path_projection_base_smoke(
+            root=root, smoke=smoke, smoke_raw=smoke_raw,
+            correction=path_correction))
+    current_metadata = (
+        _classify_current_path_projection_metadata(
+            root=root, smoke=smoke, smoke_raw=smoke_raw,
+            correction_digest=path_correction_digest)
+        if _is_hex(path_correction_digest) else None)
     if (not isinstance(state_manifest, Mapping)
             or not isinstance(assignment_manifest, Mapping)
             or not _is_hex(dtype_correction_digest)
+            or not _is_hex(path_correction_digest)
+            or not isinstance(path_correction, Mapping)
+            or path_correction.get(
+                DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+            != path_correction_digest
+            or transaction.get(
+                "encoder_path_projection_correction_digest")
+            != path_correction_digest
+            or not _is_hex(transaction_contract_digest)
+            or transaction.get(
+                "single_shard_regeneration_transaction_contract_digest")
+            != transaction_contract_digest
+            or not (legacy_pre_refresh or current_metadata is not None)
             or not isinstance(contract, Mapping)
             or branch_smoke.get("schema")
             != BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_SCHEMA
@@ -1854,6 +2524,7 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
         smoke.get("branch_smoke_receipt_digest")
         == branch_smoke.get("smoke_branch_receipt_digest"))
     branch_receipt_lag_after_complete_corpus = False
+    complete_corpus: Mapping[str, Any] | None = None
     if not branch_receipt_matches:
         corpus_path = root / SCORER_FIT_RELATIVE_PATH / (
             BUILDER.SCORER_FIT_V2_CORPUS_RECEIPT_NAME)
@@ -1862,7 +2533,8 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
         corpus_payload = corpus.get("corpus_digest_payload")
         branch_receipt_lag_after_complete_corpus = bool(
             isinstance(corpus_payload, Mapping)
-            and corpus.get("corpus_digest") == canonical_digest(corpus_payload)
+            and corpus.get("corpus_digest")
+            == _builder_default_json_digest(corpus_payload)
             and corpus.get("status") == STATUS
             and corpus.get("complete") is True
             and corpus.get("states") == 120
@@ -1891,19 +2563,87 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
             and corpus_payload.get("full_bank_assignment_manifest_digest")
             == assignment_manifest.get(
                 "full_bank_assignment_manifest_digest")
+            and _is_hex(corpus.get("branch_rows_sha256"))
             and smoke.get("state_id") == branch_smoke.get("state_id")
             and smoke.get("branch_identity_digests")
             == branch_smoke.get("branch_identity_digests")
             and smoke.get("branch_row_digests")
             == branch_smoke.get("branch_row_digests"))
+        if branch_receipt_lag_after_complete_corpus:
+            complete_corpus = corpus
+
+    metadata_state = current_metadata[0] if current_metadata is not None else None
+    if metadata_state == "complete_index_ahead":
+        index_ahead = current_metadata[1]
+        if (not branch_receipt_lag_after_complete_corpus
+                or complete_corpus is None
+                or smoke.get("pass") is not True
+                or smoke.get("zero_new_resume_verified") is not True
+                or smoke.get("single_shard_deletion_regeneration_verified")
+                is not True
+                or smoke.get("smoke_protocol_complete") is not True
+                or index_ahead.get("encoder_compute_dtype") != "float32"
+                or index_ahead.get(
+                    "encoder_compute_dtype_correction_digest")
+                != dtype_correction_digest
+                or index_ahead.get("state_manifest_digest")
+                != state_manifest.get("state_manifest_digest")
+                or index_ahead.get("full_bank_assignment_manifest_digest")
+                != assignment_manifest.get(
+                    "full_bank_assignment_manifest_digest")
+                or index_ahead.get(
+                    "scorer_fit_corpus_v2_scorer_contract_digest")
+                != contract.get(SCORER_CONTRACT.CONTRACT_SELF_KEY)
+                or index_ahead.get(
+                    "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+                != contract.get(SCORER_CONTRACT.ARTIFACT_SELF_KEY)
+                or index_ahead.get("corpus_digest")
+                != complete_corpus.get("corpus_digest")
+                or index_ahead.get("branch_rows_sha256")
+                != complete_corpus.get("branch_rows_sha256")):
+            raise FullBankV2RunnerError(
+                "complete index-ahead smoke recovery proof changed")
+    transaction_smoke_binding_valid = bool(
+        transaction["transaction_state"] != "COMPLETE"
+        or (smoke.get(
+                "single_shard_regeneration_transaction_contract_digest")
+            == transaction_contract_digest
+            and smoke.get("single_shard_regeneration_prepared_digest")
+            == transaction["prepared_receipt_digest"]
+            and smoke.get(
+                "single_shard_regeneration_transaction_complete") is True
+            and (
+                (transaction["pass_smoke_state"]
+                 == "EXACT_BOUND_PROTOCOL_PASS"
+                 and "single_shard_regeneration_complete_digest"
+                 not in smoke)
+                or (transaction["pass_smoke_state"]
+                    == ("VALID_REFRESHED_PASS_WITH_EXACT_PROTOCOL_PASS_"
+                        "ARCHIVE")
+                    and smoke.get(
+                        "single_shard_regeneration_complete_digest")
+                    == transaction["complete_receipt_digest"]))))
+    incomplete_transaction_smoke_valid = bool(
+        transaction["transaction_state"] == "COMPLETE"
+        or (smoke.get("pass") is False
+            and smoke.get(
+                "single_shard_deletion_regeneration_verified") is False
+            and smoke.get("smoke_protocol_complete") is False
+            and (smoke.get(
+                    "single_shard_regeneration_transaction_complete") is None
+                 or smoke.get(
+                    "single_shard_regeneration_transaction_complete")
+                 is False)
+            and "single_shard_regeneration_complete_digest" not in smoke))
     if (smoke.get("smoke_receipt_digest")
-            != canonical_digest(_without(smoke, "smoke_receipt_digest"))
+            != _encoder_default_json_digest(
+                _without(smoke, "smoke_receipt_digest"))
             or smoke.get("schema")
             != "go2_scorer_fit_corpus_v2_end_to_end_smoke_receipt_v1"
             or smoke.get("status") != STATUS
             or smoke.get("base_end_to_end_pass") is not True
             or branch_smoke.get("smoke_branch_receipt_digest")
-            != canonical_digest(_without(
+            != _builder_default_json_digest(_without(
                 branch_smoke, "smoke_branch_receipt_digest"))
             or branch_smoke.get("pass") is not True
             or not (branch_receipt_matches
@@ -1916,6 +2656,11 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
             or smoke.get("encoder_compute_dtype") != "float32"
             or smoke.get("encoder_compute_dtype_correction_digest")
             != dtype_correction_digest
+            or not transaction_smoke_binding_valid
+            or not incomplete_transaction_smoke_valid
+            or (not legacy_pre_refresh
+                and smoke.get("encoder_path_projection_correction_digest")
+                != path_correction_digest)
             or smoke.get("state_manifest_digest")
             != state_manifest.get("state_manifest_digest")
             or smoke.get("full_bank_assignment_manifest_digest")
@@ -1933,8 +2678,12 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
             or not isinstance(smoke.get("smoke_protocol_complete"), bool)):
         raise FullBankV2RunnerError(
             "optional V2 encoding smoke receipt changed")
+    refresh_required = bool(
+        branch_receipt_lag_after_complete_corpus or legacy_pre_refresh)
     complete = bool(
-        smoke["zero_new_resume_verified"]
+        not legacy_pre_refresh
+        and _optional_smoke_transaction_complete(transaction)
+        and smoke["zero_new_resume_verified"]
         and smoke["single_shard_deletion_regeneration_verified"]
         and smoke["smoke_protocol_complete"])
     return {
@@ -1948,7 +2697,8 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
         "only_registered_missing_shard_changed": smoke[
             "single_shard_deletion_regeneration_verified"],
         "requires_full_encoder_refresh":
-            branch_receipt_lag_after_complete_corpus,
+            refresh_required,
+        **transaction,
         "candidate_outcomes_used_for_selection": False,
         "final_200_state_corpus_generated": False,
     }
@@ -1962,16 +2712,26 @@ def _normalise_encoding_projection(
         raise FullBankV2RunnerError("encoder validation result is not a mapping")
     fields = {
         "state_count", "horizon_latent_count", "horizon_shape",
+        "encoder_path_projection_correction_digest",
         "registered_smoke_shard_inventory_digest",
         "invocation_new_context_shards", "invocation_new_horizon_shards",
         "zero_new_resume_verified", "single_registered_shard_regenerated",
         "only_registered_missing_shard_changed",
         "single_shard_regeneration_target",
+        "single_shard_regeneration_transaction_state",
+        "single_shard_regeneration_transaction_complete",
+        "single_shard_regeneration_prepared_digest",
+        "single_shard_regeneration_complete_digest",
+        "single_shard_regeneration_target_exact",
+        "single_shard_regeneration_backup_exact",
         "registered_smoke_artifact_inventory",
     }
     if not fields.issubset(value):
         raise FullBankV2RunnerError(
             "encoder validation projection lacks runner protocol fields")
+    if not _is_hex(value.get("encoder_path_projection_correction_digest")):
+        raise FullBankV2RunnerError(
+            "encoder validation projection lacks the current path correction")
     target = value.get("single_shard_regeneration_target")
     if (not isinstance(target, Mapping)
             or set(target) != {"path", "sha256", "byte_count", "shape"}
@@ -2113,7 +2873,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--stage", required=True, choices=(
         "issue-design", "issue-source-correction", "freeze-manifests",
         "issue-scorer-contract", "issue-encoder-import-correction",
-        "issue-encoder-compute-dtype-correction", "run",
+        "issue-encoder-compute-dtype-correction",
+        "issue-encoder-path-projection-correction", "run",
         "status", "internal-probe-genesis", "internal-probe-rocm",
         "internal-validate-branch-smoke", "internal-validate-encoding-smoke",
         "internal-validate-encoding-smoke-optional",
@@ -2155,6 +2916,9 @@ def main(argv: list[str] | None = None) -> int:
         code = 0
     elif args.stage == "issue-encoder-compute-dtype-correction":
         report = issue_encoder_compute_dtype_correction()
+        code = 0
+    elif args.stage == "issue-encoder-path-projection-correction":
+        report = issue_encoder_path_projection_correction()
         code = 0
     elif args.stage == "run":
         code, report = run_authorised(resume=args.resume)

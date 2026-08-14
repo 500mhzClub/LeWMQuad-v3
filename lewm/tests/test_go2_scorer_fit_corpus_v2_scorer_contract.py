@@ -224,7 +224,7 @@ def test_self_resigned_mutation_cannot_use_immutable_validation_path(
         C.validate_contract_artifact(changed)
 
 
-def test_consumption_uses_dtype_correction_and_historical_bindings_only(
+def test_consumption_uses_path_correction_and_historical_bindings_only(
         monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     embedded = {
         "design_amendment": {"binding": "design"},
@@ -270,8 +270,13 @@ def test_consumption_uses_dtype_correction_and_historical_bindings_only(
         C, "immutable_contract_artifact_binding",
         lambda _value, **_kwargs: immutable_binding)
     monkeypatch.setattr(
-        C.DESIGN, "validate_encoder_compute_dtype_correction",
+        C.DESIGN, "validate_encoder_path_projection_correction",
         lambda value, **_kwargs: dict(value), raising=False)
+    monkeypatch.setattr(
+        C.DESIGN, "load_encoder_compute_dtype_correction_for_consumption",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
+            "immutable dtype correction must not be live-revalidated")),
+        raising=False)
     monkeypatch.setattr(
         C.DESIGN, "load_encoder_import_correction_for_consumption",
         lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
@@ -286,4 +291,4 @@ def test_consumption_uses_dtype_correction_and_historical_bindings_only(
             "current source must not replace historical issued source")))
     assert C.load_contract_for_consumption(
         root=tmp_path,
-        encoder_compute_dtype_correction=correction) == artifact
+        encoder_path_projection_correction=correction) == artifact

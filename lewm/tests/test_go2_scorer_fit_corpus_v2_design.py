@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import stat
 
@@ -385,6 +386,181 @@ def _encoder_compute_dtype_correction(
         prelatent_outputs_absent_at_issue=
             design._expected_encoder_compute_dtype_correction_absence_rows(),
     )
+
+
+def _encoder_path_projection_correction(
+        monkeypatch: pytest.MonkeyPatch, *,
+        dtype_correction: dict[str, object] | None = None,
+        ) -> dict[str, object]:
+    dtype_correction = (
+        _encoder_compute_dtype_correction(monkeypatch)
+        if dtype_correction is None else copy.deepcopy(dtype_correction))
+    historical_commit = str(dtype_correction["source_repository_commit"])
+    monkeypatch.setattr(
+        design,
+        "ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT",
+        historical_commit)
+    dtype_digest = dtype_correction[
+        design.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY]
+    dtype_raw = (
+        json.dumps(dtype_correction, sort_keys=True, indent=2) + "\n").encode()
+    dtype_binding = design.encoder_compute_dtype_correction_artifact_binding(
+        dtype_correction, dtype_raw)
+    monkeypatch.setattr(
+        design, "IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST",
+        dtype_digest)
+    monkeypatch.setattr(
+        design, "IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_BINDING",
+        copy.deepcopy(dtype_binding))
+    science = copy.deepcopy(
+        design.ENCODER_PATH_PROJECTION_CORRECTION_PRESERVED_SCIENCE)
+    science["encoder_compute_dtype_correction_digest"] = dtype_digest
+    monkeypatch.setattr(
+        design, "ENCODER_PATH_PROJECTION_CORRECTION_PRESERVED_SCIENCE",
+        science)
+    failure = copy.deepcopy(design.ENCODER_PATH_PROJECTION_FAILURE_BOUNDARY)
+    failure["historical_source_repository_commit"] = historical_commit
+    monkeypatch.setattr(
+        design, "ENCODER_PATH_PROJECTION_FAILURE_BOUNDARY", failure)
+
+    historical_sources = dtype_correction["source_bindings"]
+    failed_row = next(
+        row for row in historical_sources
+        if row["path"] == "scripts/encode_go2_branch_corpus_v1_2.py")
+    failed_binding = {
+        "path": failed_row["path"],
+        "role": "failed_physical_to_repository_root_path_projection_route",
+        "exists": True,
+        "byte_count": failed_row["byte_count"],
+        "sha256": failed_row["sha256"],
+    }
+    monkeypatch.setattr(
+        design, "ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING",
+        failed_binding)
+    sources = copy.deepcopy(historical_sources)
+    changed = set(
+        design.ENCODER_PATH_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    for index, row in enumerate(sources):
+        if row["path"] in changed:
+            row["byte_count"] = int(row["byte_count"]) + 70_000
+            row["sha256"] = f"{index + 70_000:064x}"
+    tests = []
+    for index, (path, role) in enumerate(
+            design.ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_SPECS):
+        historical = {
+            "path": path, "role": role, "exists": True,
+            "byte_count": index + 401, "sha256": f"{index + 401:064x}",
+        }
+        current = {
+            "path": path, "role": role, "exists": True,
+            "byte_count": index + 501, "sha256": f"{index + 501:064x}",
+        }
+        tests.append({
+            "path": path, "role": role,
+            "historical": historical, "current": current,
+        })
+    return design.build_encoder_path_projection_correction(
+        source_repository_commit="2" * 40,
+        source_bindings=sources,
+        immutable_encoder_compute_dtype_correction={
+            "payload": dtype_correction, "binding": dtype_binding,
+        },
+        immutable_successor_scorer_contract_binding=
+            design.IMMUTABLE_SUCCESSOR_SCORER_CONTRACT_BINDING,
+        focused_test_source_transitions=tests,
+        failed_encoder_source_binding=failed_binding,
+        base_smoke_artifact_bundle=
+            design.IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_ARTIFACT_BUNDLE,
+        downstream_outputs_absent_at_issue=
+            design._expected_encoder_path_projection_correction_absence_rows(),
+        single_shard_regeneration_transaction_artifacts_absent_at_issue=
+            design._expected_encoder_path_projection_transaction_absence_rows(),
+    )
+
+
+def _synthetic_smoke_regeneration_receipts(
+        correction: dict[str, object],
+        ) -> tuple[dict[str, object], dict[str, object]]:
+    lineage = {
+        "scorer_fit_corpus_v2_scorer_contract_digest":
+            design.IMMUTABLE_SUCCESSOR_SCORER_CONTRACT_BINDING[
+                "embedded_contract_self_digest"],
+        "scorer_fit_corpus_v2_scorer_contract_artifact_digest":
+            design.IMMUTABLE_SUCCESSOR_SCORER_CONTRACT_BINDING["self_digest"],
+        "state_manifest_digest": "1" * 64,
+        "full_bank_assignment_manifest_digest": "2" * 64,
+        "corpus_digest": "3" * 64,
+        "branch_smoke_receipt_digest": "4" * 64,
+        "encoder_compute_dtype_correction_digest":
+            design.IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST,
+        "encoder_path_projection_correction_digest": correction[
+            design.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY],
+    }
+    target = {
+        "path": str(
+            design.SCORER_FIT_RELATIVE_PATH / "latents_v2/horizon" /
+            ("5" * 64 + ".f16")),
+        "candidate_index": 0,
+        "sha256": "6" * 64,
+        "byte_count": 6_291_456,
+        "shape": [4, 768, 1024],
+        "device_id": 101,
+        "inode": 202,
+        "mode_octal": "0644",
+        "link_count": 1,
+    }
+    pre = {
+        "latent_index_digest": "7" * 64,
+        "encoding_smoke_receipt_digest": "8" * 64,
+        "registered_smoke_shard_inventory_digest": "9" * 64,
+        "registered_smoke_non_target_shard_inventory_digest": "f" * 64,
+        "registered_smoke_non_target_shard_custody_inventory_digest":
+            "e" * 64,
+        "registered_smoke_stable_artifact_inventory_digest": "a" * 64,
+        "zero_new_resume_verified": True,
+    }
+    prepared = design.build_full_bank_v2_smoke_regeneration_prepared_receipt(
+        lineage=lineage, designated_target=target,
+        pretransaction_evidence=pre)
+    prepared_binding = (
+        design.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding(
+            prepared, design._pretty_json_bytes(prepared)))
+    backup = {**prepared["expected_backup_binding"]}
+    regenerated = {**target, "inode": 303}
+    post = {
+        "latent_index_digest": "b" * 64,
+        "encoding_smoke_receipt_digest": "d" * 64,
+        "registered_smoke_shard_inventory_digest": "9" * 64,
+        "registered_smoke_non_target_shard_custody_inventory_digest":
+            "e" * 64,
+        "registered_smoke_stable_artifact_inventory_digest": "a" * 64,
+        "encoder_invocation_new_context_shards": 0,
+        "encoder_invocation_new_horizon_shards": 1,
+        "target_restored_exact": True,
+        "non_target_shards_unchanged": True,
+        "complete_before_pass_smoke": True,
+    }
+    final_smoke_binding = {
+        "path": str(
+            design.SCORER_FIT_RELATIVE_PATH /
+            "smoke_encoding_receipt_v2.json"),
+        "schema": "go2_scorer_fit_corpus_v2_end_to_end_smoke_receipt_v1",
+        "self_digest_key": "smoke_receipt_digest",
+        "self_digest": "d" * 64,
+        "raw_sha256": "e" * 64,
+        "byte_count": 8_192,
+    }
+    complete = design.build_full_bank_v2_smoke_regeneration_complete_receipt(
+        prepared_receipt_binding=prepared_binding,
+        lineage=lineage,
+        designated_target=target,
+        retained_backup_binding=backup,
+        regenerated_target_binding=regenerated,
+        non_target_shard_inventory_digest="f" * 64,
+        posttransaction_evidence=post,
+        final_smoke_receipt_binding=final_smoke_binding,
+    )
+    return prepared, complete
 
 
 def _synthetic_installed_artifacts(
@@ -1123,9 +1299,11 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
     )
     dtype_correction = _encoder_compute_dtype_correction(
         monkeypatch, encoder_import=encoder_correction)
+    path_correction = _encoder_path_projection_correction(
+        monkeypatch, dtype_correction=dtype_correction)
     monkeypatch.setattr(
-        design, "load_encoder_compute_dtype_correction_for_consumption",
-        lambda **_kwargs: copy.deepcopy(dtype_correction))
+        design, "load_encoder_path_projection_correction_for_consumption",
+        lambda **_kwargs: copy.deepcopy(path_correction))
     active = design.load_active_design_authority(root=tmp_path)
     assert active["source_correction"] == immutable["payload"]
     assert active["source_correction_binding"] == immutable["binding"]
@@ -1139,9 +1317,11 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
             correction, path.read_bytes()))
     assert active["manifest_replay_source_repository_commit"] == "e" * 40
     assert active["encoder_import_source_repository_commit"] == "f" * 40
-    assert active["active_source_repository_commit"] == "1" * 40
+    assert active["encoder_compute_dtype_source_repository_commit"] == "1" * 40
+    assert active["active_source_repository_commit"] == "2" * 40
     assert active["encoder_import_correction"] == encoder_correction
     assert active["encoder_compute_dtype_correction"] == dtype_correction
+    assert active["encoder_path_projection_correction"] == path_correction
     immutable_v2 = immutable["payload"][
         "immutable_preselection_source_correction_v2"]
     immutable_v1 = immutable_v2["payload"][
@@ -1364,6 +1544,638 @@ def test_encoder_import_correction_issue_reopen_and_receipt_refresh_lifecycle(
     assert calls["install"] == 1
     assert expected.read_bytes() == raw
     assert stat.S_IMODE(expected.stat().st_mode) == 0o444
+
+
+def test_encoder_path_projection_correction_is_chained_and_base_bound(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _encoder_path_projection_correction(monkeypatch)
+    assert design.validate_encoder_path_projection_correction(
+        correction, validate_live_authorities=False) == correction
+    immutable_dtype = correction[
+        "immutable_encoder_compute_dtype_correction"]
+    assert immutable_dtype["payload"][
+        design.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY] == correction[
+            "immutable_encoder_compute_dtype_correction_digest"]
+    assert correction["immutable_successor_scorer_contract_binding"] == (
+        design.IMMUTABLE_SUCCESSOR_SCORER_CONTRACT_BINDING)
+    assert correction["production_source_transition"][
+        "observed_changed_source_paths"] == sorted(
+            design.ENCODER_PATH_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    bundle = correction["immutable_base_smoke_artifact_bundle"]
+    assert bundle["total_latent_shard_count"] == 13
+    assert bundle["context_latent_shard_count"] == 1
+    assert bundle["horizon_latent_shard_count"] == 12
+    assert bundle["total_latent_storage_bytes"] == 80_216_064
+    assert len(bundle["latent_shard_inventory"]) == 13
+    failure = correction["encoder_path_projection_failure_boundary"]
+    assert failure["base_smoke_end_to_end_pass"] is True
+    assert failure["base_smoke_protocol_complete"] is False
+    assert failure["validator_write_attempted"] is False
+    assert failure["zero_new_resume_started"] is False
+    assert failure["single_shard_deletion_started"] is False
+    assert failure[
+        "single_shard_transaction_prepared_receipt_written"] is False
+    assert failure["single_shard_transaction_backup_created"] is False
+    assert failure[
+        "single_shard_transaction_complete_receipt_written"] is False
+    assert failure["full_corpus_latent_encoding_started"] is False
+    assert failure["branch_outcome_or_label_value_used_for_correction"] is False
+    assert "exception_message" not in failure
+    assert failure["exception_message_suffix_claimed"] is False
+    material = correction["encoder_path_projection_correction"]
+    assert material[
+        "path_projection_defect_is_read_only_validator_projection"] is True
+    assert material[
+        "branch_row_frame_or_latent_shard_changed_during_issue_or_path_"
+        "digest_migration"] is False
+    assert material["preprocessing_changed"] is False
+    assert material["target_normalisation_changed"] is False
+    assert material[
+        "target_encoder_architecture_checkpoint_or_output_layer_changed"] is False
+    assert material["latent_shape_token_order_or_storage_dtype_changed"] is False
+    assert material[
+        "path_digest_metadata_transition_requires_all_13_shard_bindings_"
+        "unchanged"] is True
+    assert material[
+        "path_digest_metadata_current_current_recovery_requires_exact_file_"
+        "reopen_fsync_and_parent_directory_fsync"] is True
+    assert material["authorised_path_digest_metadata_transition"] == (
+        "ADD_ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_TO_INDEX_AND_"
+        "SMOKE_WITHOUT_LATENT_SHARD_WRITE")
+    assert material["direct_active_target_unlink_authorised"] is False
+    assert material[
+        "complete_receipt_before_pass_smoke_publication_required"] is True
+    transaction = correction[
+        "single_shard_regeneration_transaction_contract"]
+    assert transaction == (
+        design.ENCODER_PATH_PROJECTION_SINGLE_SHARD_REGENERATION_TRANSACTION_CONTRACT)
+    assert correction[
+        "single_shard_regeneration_transaction_contract_digest"] == (
+            design.canonical_digest(transaction))
+    assert transaction["immutable_receipt_publication"][
+        "direct_write_to_final_path_allowed"] is False
+    assert transaction["backup_contract"]["retained_after_complete"] is True
+    assert transaction["pass_smoke_publication"][
+        "complete_receipt_durable_before_pass_smoke"] is True
+    audit = correction[
+        "preissue_single_shard_regeneration_transaction_audit"]
+    assert audit["observed_as_a_runtime_failure"] is False
+    assert audit[
+        "active_completion_proof_absent_in_historical_crash_window"] is True
+    assert audit[
+        "resume_could_authorise_second_deliberate_target_deletion"] is True
+    assert audit["second_deliberate_target_deletion_observed"] is False
+    assert audit["historical_encoder_publication_operation"] == (
+        "OS_REPLACE_ACTIVE_SMOKE_TO_ARCHIVE_THEN_ATOMIC_JSON_SUCCESSOR")
+    assert audit[
+        "path_projection_correction_artifact_issued_when_discovered"] is False
+    transaction_absence = correction[
+        "single_shard_regeneration_transaction_artifacts_absent_at_issue"]
+    assert {row["path"] for row in transaction_absence} == {
+        str(design.FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_RELATIVE_PATH),
+        str(design.FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STAGED_RELATIVE_PATH),
+        str(design.FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_RELATIVE_PATH),
+        str(design.FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_STAGED_RELATIVE_PATH),
+        str(design.FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_RELATIVE_PATH),
+        str(design.FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH),
+    }
+
+
+def test_smoke_regeneration_receipts_are_closed_exact_and_reloadable(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _encoder_path_projection_correction(monkeypatch)
+    prepared, complete = _synthetic_smoke_regeneration_receipts(correction)
+    assert design.validate_full_bank_v2_smoke_regeneration_prepared_receipt(
+        prepared) == prepared
+    assert design.validate_full_bank_v2_smoke_regeneration_complete_receipt(
+        complete) == complete
+    target = prepared["designated_target"]
+    backup = complete["retained_backup_binding"]
+    regenerated = complete["regenerated_target_binding"]
+    assert backup["device_id"] == target["device_id"]
+    assert backup["inode"] == target["inode"]
+    assert backup["mode_octal"] == target["mode_octal"]
+    assert backup["link_count"] == target["link_count"] == 1
+    assert regenerated["device_id"] == target["device_id"]
+    assert regenerated["inode"] != target["inode"]
+    assert {key: regenerated[key] for key in (
+        "path", "candidate_index", "sha256", "byte_count", "shape",
+    )} == {key: target[key] for key in (
+        "path", "candidate_index", "sha256", "byte_count", "shape",
+    )}
+    contract = correction[
+        "single_shard_regeneration_transaction_contract"]
+    staged_recovery = contract["immutable_receipt_publication"][
+        "partial_or_nonexact_staged_file_recovery"]
+    assert staged_recovery[
+        "active_target_or_backup_mutation_during_staged_rebuild_allowed"] is False
+    assert staged_recovery["final_receipt_unlink_or_overwrite_allowed"] is False
+    publication = contract["immutable_receipt_publication"]
+    assert publication[
+        "parent_directory_fsync_immediately_after_final_link_required"] is True
+    assert publication[
+        "parent_directory_fsync_immediately_after_staged_unlink_required"] is True
+    exact_link_recovery = publication[
+        "exact_final_and_exact_staged_link_recovery"]
+    assert exact_link_recovery[
+        "same_device_and_inode_hard_link_proof_required"] is True
+    assert exact_link_recovery[
+        "parent_fsync_before_staged_unlink_required"] is True
+    assert exact_link_recovery[
+        "staged_file_only_unlink_then_parent_fsync_required"] is True
+    assert exact_link_recovery[
+        "parent_fsync_after_staged_unlink_required"] is True
+    assert exact_link_recovery[
+        "final_receipt_target_or_backup_mutation_allowed"] is False
+    backup_contract = contract["backup_contract"]
+    assert backup_contract["atomic_move_primitive"] == "RENAME_NOREPLACE"
+    assert backup_contract["absence_precheck_alone_is_not_no_overwrite"] is True
+    assert backup_contract[
+        "retained_backup_exact_reopen_before_durability_fsync_required"] is True
+    assert backup_contract[
+        "retained_backup_file_fsync_after_move_required"] is True
+    assert backup_contract[
+        "destination_directory_fsync_before_source_directory_required"] is True
+    assert backup_contract[
+        "source_directory_fsync_after_destination_directory_required"] is True
+    assert backup_contract[
+        "moved_resume_must_reestablish_backup_file_destination_directory_and_"
+        "source_directory_durability_before_regeneration"] is True
+    custody_contract = contract["non_target_custody_contract"]
+    assert custody_contract["required_row_count"] == 12
+    assert custody_contract["sha256_read_mode"] == "O_NOATIME_O_NOFOLLOW"
+    assert custody_contract[
+        "pretransaction_and_precomplete_canonical_digest_must_match"] is True
+    assert contract["pass_smoke_publication"][
+        "complete_receipt_binds_exact_final_smoke_bytes"] is True
+    assert contract["pass_smoke_publication"][
+        "original_protocol_pass_omits_complete_digest_to_avoid_cyclic_"
+        "self_binding"] is True
+    assert contract["pass_smoke_publication"][
+        "original_protocol_pass_must_be_parsed_self_validated_and_cross_bound_"
+        "to_prepared_and_complete_lineage"] is True
+    assert contract["pass_smoke_publication"][
+        "original_protocol_pass_is_stable_historical_witness_after_full_"
+        "corpus_receipts_advance"] is True
+    assert contract["authorised_mutation"][
+        "registered_stable_artifact_inventory_must_be_recomputed_live_before_"
+        "complete"] is True
+    assert contract["authorised_mutation"][
+        "all_non_target_shard_bytes_device_inode_mode_link_size_and_times_"
+        "must_remain_unchanged"] is True
+    assert contract["authorised_mutation"][
+        "prepared_lineage_must_equal_live_zero_new_manifest_assignment_corpus_"
+        "branch_smoke_contract_and_corrections_before_every_precomplete_"
+        "mutation"] is True
+    assert contract["authorised_mutation"][
+        "complete_lineage_must_equal_prepared_and_original_protocol_pass_"
+        "lineage_before_downstream_acceptance"] is True
+    assert contract["authorised_mutation"][
+        "restored_target_exact_reopen_and_file_fsync_before_complete_required"] \
+        is True
+    assert contract["authorised_mutation"][
+        "restored_target_parent_directory_fsync_before_complete_required"] \
+        is True
+    assert contract["pass_smoke_publication"][
+        "refreshed_smoke_must_be_fully_replayed_against_current_index_and_"
+        "current_lineage"] is True
+    assert contract["pass_smoke_publication"][
+        "refreshed_smoke_current_corpus_and_branch_smoke_may_advance_from_"
+        "prepared_partial_smoke_lineage"] is True
+    assert contract["pass_smoke_publication"][
+        "refreshed_smoke_state_assignment_scorer_and_correction_lineage_must_"
+        "equal_prepared"] is True
+    assert contract["pass_smoke_publication"][
+        "exact_successor_active_replay_requires_file_fsync_and_parent_"
+        "directory_fsync_before_acceptance"] is True
+    assert set(contract["optional_validation_projection"]["required_fields"]) == {
+        "transaction_state", "prepared_present", "prepared_receipt_digest",
+        "target_state", "backup_state", "complete_present",
+        "complete_receipt_digest", "pass_smoke_state", "next_action",
+        "prepared_staged_state", "complete_staged_state", "target_exact",
+        "backup_exact", "target_backup_custody_exact",
+        "regenerated_target_custody_exact",
+        "encoder_path_projection_correction_digest",
+        "single_shard_regeneration_transaction_contract_digest",
+        "candidate_outcomes_used_for_selection",
+        "final_200_state_corpus_generated",
+    }
+    assert contract["optional_validation_projection"][
+        "staged_receipt_states"] == ["ABSENT", "EXACT", "PARTIAL_REGULAR"]
+    assert contract["optional_validation_projection"][
+        "partial_or_nonexact_staged_receipt_recovery"] == {
+            "prepared_allowed_only_in_unstarted_state": True,
+            "complete_allowed_only_in_restored_complete_pending_state": True,
+            "all_other_states": "FAIL_CLOSED",
+        }
+
+    for relative, payload in (
+            (design.FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_RELATIVE_PATH,
+             prepared),
+            (design.FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_RELATIVE_PATH,
+             complete)):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(design._pretty_json_bytes(payload))
+        path.chmod(0o444)
+    assert design.load_full_bank_v2_smoke_regeneration_prepared_receipt(
+        root=tmp_path) == prepared
+    assert design.load_full_bank_v2_smoke_regeneration_complete_receipt(
+        root=tmp_path) == complete
+
+
+def test_smoke_regeneration_receipts_reject_stat_and_publication_tamper(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _encoder_path_projection_correction(monkeypatch)
+    prepared, complete = _synthetic_smoke_regeneration_receipts(correction)
+
+    bad_prepared = copy.deepcopy(prepared)
+    bad_prepared["designated_target"]["device_id"] = True
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_full_bank_v2_smoke_regeneration_prepared_receipt(
+            bad_prepared)
+
+    bad_publication = copy.deepcopy(prepared)
+    bad_publication["receipt_publication_contract"][
+        "direct_write_to_final_path_allowed"] = True
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_full_bank_v2_smoke_regeneration_prepared_receipt(
+            bad_publication)
+
+    same_inode = copy.deepcopy(complete)
+    same_inode["regenerated_target_binding"]["inode"] = same_inode[
+        "designated_target"]["inode"]
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_full_bank_v2_smoke_regeneration_complete_receipt(
+            same_inode)
+
+    changed_backup = copy.deepcopy(complete)
+    changed_backup["retained_backup_binding"]["inode"] += 1
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_full_bank_v2_smoke_regeneration_complete_receipt(
+            changed_backup)
+
+    changed_smoke = copy.deepcopy(complete)
+    changed_smoke["final_smoke_receipt_binding"]["raw_sha256"] = "0" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_full_bank_v2_smoke_regeneration_complete_receipt(
+            changed_smoke)
+
+    contradictory_post = copy.deepcopy(complete["posttransaction_evidence"])
+    contradictory_post["encoding_smoke_receipt_digest"] = "c" * 64
+    with pytest.raises(
+            design.ScorerFitCorpusV2DesignError,
+            match="contradictory smoke digests"):
+        design.build_full_bank_v2_smoke_regeneration_complete_receipt(
+            prepared_receipt_binding=complete["prepared_receipt_binding"],
+            lineage=complete["lineage"],
+            designated_target=complete["designated_target"],
+            retained_backup_binding=complete["retained_backup_binding"],
+            regenerated_target_binding=complete["regenerated_target_binding"],
+            non_target_shard_inventory_digest=complete[
+                "non_target_shard_inventory_digest"],
+            posttransaction_evidence=contradictory_post,
+            final_smoke_receipt_binding=complete[
+                "final_smoke_receipt_binding"],
+        )
+
+    changed_custody = copy.deepcopy(complete["posttransaction_evidence"])
+    changed_custody[
+        "registered_smoke_non_target_shard_custody_inventory_digest"] = (
+            "0" * 64)
+    with pytest.raises(
+            design.ScorerFitCorpusV2DesignError,
+            match="registered stable artifact"):
+        design.build_full_bank_v2_smoke_regeneration_complete_receipt(
+            prepared_receipt_binding=complete["prepared_receipt_binding"],
+            lineage=complete["lineage"],
+            designated_target=complete["designated_target"],
+            retained_backup_binding=complete["retained_backup_binding"],
+            regenerated_target_binding=complete[
+                "regenerated_target_binding"],
+            non_target_shard_inventory_digest=complete[
+                "non_target_shard_inventory_digest"],
+            posttransaction_evidence=changed_custody,
+            final_smoke_receipt_binding=complete[
+                "final_smoke_receipt_binding"],
+        )
+
+    changed_lineage = copy.deepcopy(complete["lineage"])
+    changed_lineage["state_manifest_digest"] = "0" * 64
+    with pytest.raises(
+            design.ScorerFitCorpusV2DesignError,
+            match="changed PREPARED lineage"):
+        design.build_full_bank_v2_smoke_regeneration_complete_receipt(
+            prepared_receipt_binding=complete["prepared_receipt_binding"],
+            lineage=changed_lineage,
+            designated_target=complete["designated_target"],
+            retained_backup_binding=complete["retained_backup_binding"],
+            regenerated_target_binding=complete["regenerated_target_binding"],
+            non_target_shard_inventory_digest=complete[
+                "non_target_shard_inventory_digest"],
+            posttransaction_evidence=complete["posttransaction_evidence"],
+            final_smoke_receipt_binding=complete[
+                "final_smoke_receipt_binding"],
+        )
+
+
+def test_smoke_regeneration_transaction_absence_audit_is_exact(
+        tmp_path: Path) -> None:
+    expected = design._expected_encoder_path_projection_transaction_absence_rows()
+    assert design.audit_encoder_path_projection_transaction_artifacts_absent(
+        root=tmp_path) == expected
+    transaction_directory = (
+        tmp_path /
+        design.FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH)
+    transaction_directory.mkdir(parents=True)
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.audit_encoder_path_projection_transaction_artifacts_absent(
+            root=tmp_path)
+
+
+def test_encoder_path_projection_correction_rejects_tamper_and_extra_change(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _encoder_path_projection_correction(monkeypatch)
+    raw = (json.dumps(correction, sort_keys=True, indent=2) + "\n").encode()
+    assert design.encoder_path_projection_correction_artifact_binding(
+        correction, raw)["self_digest"] == correction[
+            design.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY]
+    tampered = copy.deepcopy(correction)
+    tampered["immutable_base_smoke_artifact_bundle"][
+        "latent_shard_inventory"][0]["sha256"] = "f" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_encoder_path_projection_correction(
+            tampered, validate_live_authorities=False)
+    transaction_tamper = copy.deepcopy(correction)
+    transaction_tamper["single_shard_regeneration_transaction_contract"][
+        "backup_contract"]["retained_after_complete"] = False
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_encoder_path_projection_correction(
+            transaction_tamper, validate_live_authorities=False)
+
+    sources = copy.deepcopy(correction["source_bindings"])
+    unchanged = next(
+        row for row in sources
+        if row["path"] not in set(
+            design.ENCODER_PATH_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS))
+    unchanged["byte_count"] = int(unchanged["byte_count"]) + 1
+    unchanged["sha256"] = "f" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.build_encoder_path_projection_correction(
+            source_repository_commit=correction["source_repository_commit"],
+            source_bindings=sources,
+            immutable_encoder_compute_dtype_correction=correction[
+                "immutable_encoder_compute_dtype_correction"],
+            immutable_successor_scorer_contract_binding=correction[
+                "immutable_successor_scorer_contract_binding"],
+            focused_test_source_transitions=correction[
+                "focused_test_source_transitions"],
+            failed_encoder_source_binding=correction[
+                "failed_encoder_source_binding"],
+            base_smoke_artifact_bundle=correction[
+                "immutable_base_smoke_artifact_bundle"],
+            downstream_outputs_absent_at_issue=correction[
+                "downstream_outputs_absent_at_issue"],
+            single_shard_regeneration_transaction_artifacts_absent_at_issue=
+                correction[
+                    "single_shard_regeneration_transaction_artifacts_"
+                    "absent_at_issue"],
+        )
+
+
+def test_encoder_path_projection_issue_reopen_and_refresh_lifecycle(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _encoder_path_projection_correction(monkeypatch)
+    commit = correction["source_repository_commit"]
+    sources = correction["source_bindings"]
+    immutable_dtype = correction[
+        "immutable_encoder_compute_dtype_correction"]
+    successor = correction["immutable_successor_scorer_contract_binding"]
+    tests = correction["focused_test_source_transitions"]
+    failed = correction["failed_encoder_source_binding"]
+    bundle = correction["immutable_base_smoke_artifact_bundle"]
+    absence = correction["downstream_outputs_absent_at_issue"]
+    transaction_absence = correction[
+        "single_shard_regeneration_transaction_artifacts_absent_at_issue"]
+    expected = tmp_path / design.ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH
+    staged = (
+        tmp_path / design.ENCODER_PATH_PROJECTION_CORRECTION_STAGED_RELATIVE_PATH)
+    expected.parent.mkdir(parents=True)
+    calls = {
+        "source": 0, "dtype": 0, "successor": 0, "tests": 0,
+        "failed": 0, "bundle": 0, "absence": 0,
+        "transaction_absence": 0, "install": 0,
+    }
+
+    def clean_source(*, root: Path) -> tuple[str, list[dict[str, object]]]:
+        assert root == tmp_path
+        calls["source"] += 1
+        return str(commit), copy.deepcopy(sources)
+
+    def load_dtype(*, root: Path) -> dict[str, object]:
+        assert root == tmp_path
+        calls["dtype"] += 1
+        return copy.deepcopy(immutable_dtype)
+
+    def load_successor(*, root: Path) -> dict[str, object]:
+        assert root == tmp_path
+        calls["successor"] += 1
+        return copy.deepcopy(successor)
+
+    def load_tests(*, root: Path) -> list[dict[str, object]]:
+        assert root == tmp_path
+        calls["tests"] += 1
+        return copy.deepcopy(tests)
+
+    def load_failed(*, root: Path) -> dict[str, object]:
+        assert root == tmp_path
+        calls["failed"] += 1
+        return copy.deepcopy(failed)
+
+    def load_bundle(*, root: Path) -> dict[str, object]:
+        assert root == tmp_path
+        calls["bundle"] += 1
+        return copy.deepcopy(bundle)
+
+    def load_absence(*, root: Path) -> list[dict[str, object]]:
+        assert root == tmp_path
+        calls["absence"] += 1
+        return copy.deepcopy(absence)
+
+    def load_transaction_absence(
+            *, root: Path) -> list[dict[str, object]]:
+        assert root == tmp_path
+        calls["transaction_absence"] += 1
+        return copy.deepcopy(transaction_absence)
+
+    monkeypatch.setattr(design, "clean_source_authority", clean_source)
+    monkeypatch.setattr(
+        design, "_load_immutable_encoder_compute_dtype_correction", load_dtype)
+    monkeypatch.setattr(
+        design, "_load_immutable_successor_scorer_contract_binding",
+        load_successor)
+    monkeypatch.setattr(
+        design, "_encoder_path_projection_focused_test_source_transitions",
+        load_tests)
+    monkeypatch.setattr(
+        design, "_validate_live_encoder_path_projection_failure_source",
+        load_failed)
+    monkeypatch.setattr(
+        design, "_validate_live_encoder_path_projection_base_bundle",
+        load_bundle)
+    monkeypatch.setattr(
+        design, "audit_encoder_path_projection_correction_downstream_absence",
+        load_absence)
+    monkeypatch.setattr(
+        design, "audit_encoder_path_projection_transaction_artifacts_absent",
+        load_transaction_absence)
+    atomic_publish = design._exclusive_json_atomic_no_overwrite
+
+    def checked_atomic_publish(
+            path: Path, staged_path: Path, payload: dict[str, object], *,
+            label: str, recover_nonexact_staged: bool) -> bytes:
+        assert path == expected
+        assert staged_path == staged
+        assert label == "encoder-path-projection correction"
+        if not path.exists() and not path.is_symlink():
+            assert recover_nonexact_staged is True
+            assert {key: calls[key] for key in (
+                "source", "dtype", "successor", "tests", "failed", "bundle",
+                "absence", "transaction_absence",
+            )} == {
+                "source": 2, "dtype": 2, "successor": 2, "tests": 2,
+                "failed": 2, "bundle": 2, "absence": 2,
+                "transaction_absence": 2,
+            }
+            calls["install"] += 1
+        else:
+            assert recover_nonexact_staged is False
+        return atomic_publish(
+            path, staged_path, payload, label=label,
+            recover_nonexact_staged=recover_nonexact_staged)
+
+    monkeypatch.setattr(
+        design, "_exclusive_json_atomic_no_overwrite", checked_atomic_publish)
+    issued = design.issue_encoder_path_projection_correction(
+        root=tmp_path, source_repository_commit=str(commit))
+    assert issued == correction
+    assert calls == {
+        "source": 3, "dtype": 3, "successor": 3, "tests": 3,
+        "failed": 3, "bundle": 3, "absence": 3,
+        "transaction_absence": 3, "install": 1,
+    }
+    assert stat.S_IMODE(expected.stat().st_mode) == 0o444
+    assert not staged.exists() and not staged.is_symlink()
+    raw = expected.read_bytes()
+
+    refreshed_bundle_checks: list[int] = []
+    refreshed_absence_checks: list[int] = []
+    refreshed_transaction_absence_checks: list[int] = []
+
+    def refreshed_bundle(*, root: Path) -> dict[str, object]:
+        assert root == tmp_path
+        refreshed_bundle_checks.append(1)
+        return {"refreshed": True}
+
+    def refreshed_absence(*, root: Path) -> list[dict[str, object]]:
+        assert root == tmp_path
+        refreshed_absence_checks.append(1)
+        return [{"refreshed": True}]
+
+    def refreshed_transaction_absence(
+            *, root: Path) -> list[dict[str, object]]:
+        assert root == tmp_path
+        refreshed_transaction_absence_checks.append(1)
+        return [{"refreshed": True}]
+
+    monkeypatch.setattr(
+        design, "_validate_live_encoder_path_projection_base_bundle",
+        refreshed_bundle)
+    monkeypatch.setattr(
+        design, "audit_encoder_path_projection_correction_downstream_absence",
+        refreshed_absence)
+    monkeypatch.setattr(
+        design, "audit_encoder_path_projection_transaction_artifacts_absent",
+        refreshed_transaction_absence)
+    assert design.load_encoder_path_projection_correction_for_consumption(
+        root=tmp_path, require_failure_boundary_live=False) == correction
+    assert design.issue_encoder_path_projection_correction(
+        root=tmp_path, source_repository_commit=str(commit)) == correction
+    assert refreshed_bundle_checks == []
+    assert refreshed_absence_checks == []
+    assert refreshed_transaction_absence_checks == []
+    assert calls["install"] == 1
+    assert expected.read_bytes() == raw
+    assert stat.S_IMODE(expected.stat().st_mode) == 0o444
+
+
+def test_encoder_path_projection_atomic_authority_publication_recovers_staging(
+        tmp_path: Path) -> None:
+    payload = {"schema": "synthetic_authority", "value": 7}
+    raw = design._pretty_json_bytes(payload)
+
+    partial_case = tmp_path / "partial"
+    partial_case.mkdir()
+    final_path = partial_case / "authority.json"
+    staged_path = partial_case / "authority.json.staged"
+    staged_path.write_bytes(raw[:11])
+    staged_path.chmod(0o444)
+    assert design._exclusive_json_atomic_no_overwrite(
+        final_path, staged_path, payload, label="synthetic authority",
+        recover_nonexact_staged=True) == raw
+    assert final_path.read_bytes() == raw
+    assert stat.S_IMODE(final_path.stat().st_mode) == 0o444
+    assert not staged_path.exists() and not staged_path.is_symlink()
+
+    linked_case = tmp_path / "linked"
+    linked_case.mkdir()
+    linked_final = linked_case / "authority.json"
+    linked_staged = linked_case / "authority.json.staged"
+    design._exclusive_json_atomic_no_overwrite(
+        linked_final, linked_staged, payload, label="synthetic authority",
+        recover_nonexact_staged=True)
+    os.link(linked_final, linked_staged)
+    final_stat = linked_final.stat()
+    assert linked_staged.stat().st_ino == final_stat.st_ino
+    design._exclusive_json_atomic_no_overwrite(
+        linked_final, linked_staged, payload, label="synthetic authority",
+        recover_nonexact_staged=False)
+    assert linked_final.stat().st_ino == final_stat.st_ino
+    assert not linked_staged.exists() and not linked_staged.is_symlink()
+
+    collision_case = tmp_path / "collision"
+    collision_case.mkdir()
+    collision_final = collision_case / "authority.json"
+    collision_staged = collision_case / "authority.json.staged"
+    collision_final.write_bytes(b"different\n")
+    collision_final.chmod(0o444)
+    with pytest.raises(
+            design.ScorerFitCorpusV2DesignError,
+            match="immutable final collision"):
+        design._exclusive_json_atomic_no_overwrite(
+            collision_final, collision_staged, payload,
+            label="synthetic authority", recover_nonexact_staged=True)
+
+
+def test_path_projection_authority_hashes_shards_without_atime_change(
+        tmp_path: Path) -> None:
+    shard = tmp_path / "latent.f16"
+    raw = b"synthetic-latent-shard" * 257
+    shard.write_bytes(raw)
+    atime_ns = 1_600_000_000_123_456_789
+    mtime_ns = 1_600_000_001_987_654_321
+    os.utime(shard, ns=(atime_ns, mtime_ns))
+    before = shard.stat()
+    digest, byte_count = design._sha256_regular_file(
+        shard, label="synthetic latent shard")
+    second_digest, second_byte_count = design._sha256_regular_file(
+        shard, label="synthetic latent shard second pass")
+    after = shard.stat()
+    assert digest == hashlib.sha256(raw).hexdigest()
+    assert byte_count == len(raw)
+    assert (second_digest, second_byte_count) == (digest, byte_count)
+    assert after.st_atime_ns == before.st_atime_ns == atime_ns
+    assert after.st_mtime_ns == before.st_mtime_ns == mtime_ns
 
 
 def test_encoder_compute_dtype_correction_is_chained_truthful_and_fp32_bound(

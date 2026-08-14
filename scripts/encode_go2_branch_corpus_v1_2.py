@@ -18,9 +18,12 @@ receipt and every required shard validate.
 from __future__ import annotations
 
 import argparse
+import ctypes
+import errno
 import hashlib
 import json
 import os
+import stat
 import sys
 import time
 from pathlib import Path
@@ -138,12 +141,16 @@ FULL_BANK_V2_EXPECTED_STATES = 120
 FULL_BANK_V2_EXPECTED_BRANCHES = 1_440
 FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE = 12
 TARGET_ENCODER_COMPUTE_DTYPE_NAME = "float32"
+ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD = (
+    "encoder_path_projection_correction_digest")
 FULL_BANK_V2_INDEX_NAME = "latents_index_v2.json"
 FULL_BANK_V2_ENCODING_SUMMARY_NAME = "encoding_invocation_summary_v2.json"
 FULL_BANK_V2_SMOKE_NAME = "smoke_encoding_receipt_v2.json"
 FULL_BANK_V2_LATENTS_NAME = "latents_v2"
 FULL_BANK_V2_INVALID_ATTEMPTS_NAME = "invalid_attempts_v2"
 FULL_BANK_V2_SUPERSEDED_RECEIPTS_NAME = "superseded_receipts_v2"
+FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_STATE_NONE = "NONE"
+FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_STATE_COMPLETE = "COMPLETE"
 SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
 LAUNCH_BINDING_KEYS = (
     "clean_source_launch_receipt_digest",
@@ -175,18 +182,27 @@ def _is_full_bank_v2_manifest(value: Mapping[str, Any]) -> bool:
 
 
 def _load_full_bank_v2_source_correction_authority(
-        ) -> tuple[str, str, dict[str, Any], dict[str, Any]]:
+        ) -> tuple[str, str, str, dict[str, Any], str,
+                   dict[str, Any], str, dict[str, Any], dict[str, Any]]:
     """Validate the corrected source boundary before opening branch outputs."""
 
     try:
         authority = V2_DESIGN.load_active_design_authority(root=ROOT)
-        dtype_correction = authority.get("encoder_compute_dtype_correction")
+        path_correction = authority.get("encoder_path_projection_correction")
+        if not isinstance(path_correction, Mapping):
+            raise RuntimeError(
+                "active encoder-path-projection correction is unavailable")
+        immutable_dtype = (
+            V2_DESIGN.validate_immutable_encoder_compute_dtype_correction(
+                path_correction.get(
+                    "immutable_encoder_compute_dtype_correction", {})))
+        dtype_correction = immutable_dtype.get("payload")
         if not isinstance(dtype_correction, Mapping):
             raise RuntimeError(
-                "active encoder-compute-dtype correction is unavailable")
+                "immutable encoder-compute-dtype correction is unavailable")
         artifact = V2_CONTRACT.load_contract_for_consumption(
             root=ROOT,
-            encoder_compute_dtype_correction=dtype_correction)
+            encoder_path_projection_correction=path_correction)
         artifact = V2_CONTRACT.validate_contract_artifact(artifact)
     except (OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
         raise RuntimeError(
@@ -196,25 +212,55 @@ def _load_full_bank_v2_source_correction_authority(
     lineage = (contract.get("preoutcome_lineage")
                if isinstance(contract, Mapping) else None)
     digest = authority.get("source_correction_digest")
-    dtype_correction_digest = authority.get(
-        "encoder_compute_dtype_correction_digest")
+    path_correction_digest = authority.get(
+        "encoder_path_projection_correction_digest")
+    dtype_correction_digest = path_correction.get(
+        "immutable_encoder_compute_dtype_correction_digest")
+    base_smoke_artifact_bundle = path_correction.get(
+        "immutable_base_smoke_artifact_bundle")
+    base_smoke_artifact_bundle_digest = path_correction.get(
+        "base_smoke_artifact_bundle_digest")
+    transaction_contract = path_correction.get(
+        "single_shard_regeneration_transaction_contract")
+    transaction_contract_digest = path_correction.get(
+        "single_shard_regeneration_transaction_contract_digest")
     if (not isinstance(digest, str)
             or len(digest) != 64
             or any(character not in "0123456789abcdef" for character in digest)
+            or not isinstance(path_correction_digest, str)
+            or len(path_correction_digest) != 64
+            or any(character not in "0123456789abcdef"
+                   for character in path_correction_digest)
             or not isinstance(dtype_correction_digest, str)
             or len(dtype_correction_digest) != 64
             or any(character not in "0123456789abcdef"
                    for character in dtype_correction_digest)
+            or path_correction.get(
+                V2_DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+            != path_correction_digest
+            or authority.get("encoder_compute_dtype_correction_digest")
+            != dtype_correction_digest
             or dtype_correction.get(
                 V2_DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY)
             != dtype_correction_digest
+            or not isinstance(base_smoke_artifact_bundle, Mapping)
+            or base_smoke_artifact_bundle_digest
+            != V2_DESIGN.canonical_digest(base_smoke_artifact_bundle)
+            or transaction_contract != (
+                V2_DESIGN.ENCODER_PATH_PROJECTION_SINGLE_SHARD_REGENERATION_TRANSACTION_CONTRACT)
+            or transaction_contract_digest
+            != V2_DESIGN.canonical_digest(transaction_contract)
             or not isinstance(lineage, Mapping)
             or lineage.get("scorer_fit_corpus_v2_source_correction_digest")
             != digest):
         raise RuntimeError(
             "full-bank V2 active authority/successor source-correction "
             "lineage changed")
-    return digest, dtype_correction_digest, dict(artifact), dict(contract)
+    return (
+        digest, path_correction_digest, dtype_correction_digest,
+        dict(base_smoke_artifact_bundle), base_smoke_artifact_bundle_digest,
+        dict(transaction_contract), transaction_contract_digest,
+        dict(artifact), dict(contract))
 
 
 def _corpus_binding_keys(manifest: Mapping[str, Any]) -> tuple[str, ...]:
@@ -257,11 +303,15 @@ def _write_index_if_changed(path: Path, payload: dict[str, Any],
     return True
 
 
-def atomic_f16(path: Path, array: np.ndarray) -> tuple[str, int]:
+def atomic_f16(
+        path: Path, array: np.ndarray, *, mode: int | None = None,
+        ) -> tuple[str, int]:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
     np.asarray(array, dtype=np.float16).tofile(temporary)
     with temporary.open("rb+") as handle:
+        if mode is not None:
+            os.fchmod(handle.fileno(), mode)
         handle.flush()
         os.fsync(handle.fileno())
     digest = file_sha256(temporary)
@@ -316,6 +366,26 @@ def _resolve_frame(out: Path, value: str) -> Path:
     if out.resolve() not in resolved.parents:
         raise RuntimeError(f"frame escapes corpus root: {value}")
     return resolved
+
+
+def _resolve_registered_logical_path(
+        out: Path, value: str) -> tuple[Path, Path]:
+    """Validate through the managed alias while retaining its logical path."""
+
+    relative = Path(value)
+    if (relative.is_absolute() or not relative.parts
+            or any(part in {".", ".."} for part in relative.parts)):
+        raise RuntimeError(f"registered corpus path is not relative: {value}")
+    physical = _resolve_frame(out, value)
+    logical = out / relative
+    try:
+        repository_relative = logical.relative_to(ROOT)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"registered corpus alias escapes repository: {value}") from exc
+    if (ROOT / repository_relative).resolve() != physical:
+        raise RuntimeError(f"registered corpus alias target changed: {value}")
+    return physical, repository_relative
 
 
 def _frame_records(row: dict[str, Any], kind: str) -> list[dict[str, Any]]:
@@ -878,6 +948,7 @@ def _load_inputs(out: Path, *, allow_partial: bool,
 def _load_full_bank_v2_inputs(
         out: Path, *, allow_partial: bool,
         ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]],
+                   dict[str, Any], str, str, dict[str, Any], str,
                    dict[str, Any], str]:
     """Consume the exact V2 producers without opening legacy allocation data."""
 
@@ -885,8 +956,10 @@ def _load_full_bank_v2_inputs(
     if out != expected_out:
         raise RuntimeError(
             "full-bank V2 encoding is registered only for scorer_fit")
-    (correction_digest, encoder_compute_dtype_correction_digest,
-     artifact, successor) = (
+    (correction_digest, encoder_path_projection_correction_digest,
+     encoder_compute_dtype_correction_digest, base_smoke_artifact_bundle,
+     base_smoke_artifact_bundle_digest, transaction_contract,
+     transaction_contract_digest, artifact, successor) = (
         _load_full_bank_v2_source_correction_authority())
     try:
         bundle = (
@@ -958,8 +1031,12 @@ def _load_full_bank_v2_inputs(
             or manifest.get("target_encoder_checkpoint_sha256")
             != target.get("checkpoint_sha256")):
         raise RuntimeError("full-bank V2 target-encoder contract changed")
-    return (manifest, receipt, rows, dict(artifact),
-            encoder_compute_dtype_correction_digest)
+    return (
+        manifest, receipt, rows, dict(artifact),
+        encoder_compute_dtype_correction_digest,
+        encoder_path_projection_correction_digest,
+        base_smoke_artifact_bundle, base_smoke_artifact_bundle_digest,
+        transaction_contract, transaction_contract_digest)
 
 
 def normalise(tokens: torch.Tensor) -> torch.Tensor:
@@ -1017,14 +1094,17 @@ def _preserve_bad(path: Path, invalid_root: Path, reason: str) -> None:
 
 
 def _valid_existing(path: Path, record: dict[str, Any] | None,
-                    shape: tuple[int, ...]) -> bool:
+                    shape: tuple[int, ...], *,
+                    preserve_atime: bool = False) -> bool:
     if not path.is_file() or not isinstance(record, dict):
         return False
     expected_bytes = int(np.prod(shape)) * np.dtype(np.float16).itemsize
     return (record.get("shape") == list(shape)
             and int(record.get("byte_count", -1)) == expected_bytes
             and path.stat().st_size == expected_bytes
-            and file_sha256(path) == record.get("sha256"))
+            and (_file_sha256_without_atime_change(path)
+                 if preserve_atime else file_sha256(path))
+                == record.get("sha256"))
 
 
 def _batches(values: list[Any], size: int) -> Iterable[list[Any]]:
@@ -1044,11 +1124,1789 @@ def _read_regular_json(path: Path, *, label: str) -> dict[str, Any]:
     return value
 
 
+def _validate_encoder_path_projection_correction_digest(
+        value: Any, *, label: str) -> str:
+    return _require_sha256(
+        value, f"{label} encoder-path-projection correction digest")
+
+
+def _read_exact_historical_metadata(
+        path: Path, binding: Mapping[str, Any], *, label: str,
+        ) -> dict[str, Any]:
+    """Open one authority-bound pre-transition JSON artifact exactly."""
+
+    required = {
+        "path", "schema", "self_digest_key", "self_digest", "raw_sha256",
+        "byte_count",
+    }
+    if not isinstance(binding, Mapping) or set(binding) != required:
+        raise RuntimeError(f"{label} historical binding is not closed")
+    try:
+        logical_path = path.relative_to(ROOT)
+    except ValueError as exc:
+        raise RuntimeError(f"{label} is outside the logical repository") from exc
+    if (str(logical_path) != binding.get("path")
+            or not path.is_file() or path.is_symlink()):
+        raise RuntimeError(f"{label} historical path changed")
+    raw = path.read_bytes()
+    if (len(raw) != binding.get("byte_count")
+            or hashlib.sha256(raw).hexdigest() != binding.get("raw_sha256")):
+        raise RuntimeError(f"{label} historical raw binding changed")
+    try:
+        payload = json.loads(raw)
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"{label} historical JSON changed") from exc
+    self_key = binding["self_digest_key"]
+    if (not isinstance(payload, dict)
+            or payload.get("schema") != binding.get("schema")
+            or payload.get(self_key) != binding.get("self_digest")):
+        raise RuntimeError(f"{label} historical identity changed")
+    _verify_self_digest(payload, self_key, label)
+    return payload
+
+
+def _file_sha256_without_atime_change(path: Path) -> str:
+    """Hash a custody-bound shard without changing any filesystem time."""
+
+    noatime = getattr(os, "O_NOATIME", None)
+    if noatime is None:
+        raise RuntimeError(
+            "this platform cannot verify latent shards without changing atime")
+    flags = (os.O_RDONLY | noatime | getattr(os, "O_CLOEXEC", 0)
+             | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise RuntimeError(
+            f"cannot open latent shard without changing atime: {path}") from exc
+    digest = hashlib.sha256()
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise RuntimeError(
+                f"custody-bound shard is not a regular file: {path}")
+        while True:
+            block = os.read(descriptor, 8 << 20)
+            if not block:
+                break
+            digest.update(block)
+    finally:
+        os.close(descriptor)
+    return digest.hexdigest()
+
+
+def _shard_stat_identity(path: Path) -> tuple[int, ...]:
+    metadata = path.stat()
+    return (
+        metadata.st_dev, metadata.st_ino, metadata.st_mode,
+        metadata.st_nlink, metadata.st_uid, metadata.st_gid,
+        metadata.st_size, metadata.st_atime_ns, metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
+
+
+def _snapshot_historical_full_bank_v2_shards(
+        *, out: Path, index: Mapping[str, Any],
+        base_smoke_artifact_bundle: Mapping[str, Any],
+        ) -> dict[str, dict[str, Any]]:
+    """Verify and snapshot the exact 13 shards authorised for migration."""
+
+    inventory_value = base_smoke_artifact_bundle.get("latent_shard_inventory")
+    if (base_smoke_artifact_bundle.get("schema")
+            != "go2_scorer_fit_corpus_v2_path_projection_failure_base_bundle_v1"
+            or not isinstance(inventory_value, list)
+            or len(inventory_value) != 13
+            or base_smoke_artifact_bundle.get("context_latent_shard_count") != 1
+            or base_smoke_artifact_bundle.get("horizon_latent_shard_count") != 12
+            or base_smoke_artifact_bundle.get("total_latent_shard_count") != 13):
+        raise RuntimeError(
+            "encoder-path-projection base-smoke shard inventory changed")
+    records_value = (
+        list(index.get("context_records", []))
+        + list(index.get("horizon_records", [])))
+    if len(records_value) != 13 or not all(
+            isinstance(record, Mapping) for record in records_value):
+        raise RuntimeError("historical latent index does not bind 13 shards")
+    records: dict[str, dict[str, Any]] = {}
+    physical_paths: dict[str, Path] = {}
+    for record_value in records_value:
+        record = dict(record_value)
+        physical, logical = _resolve_registered_logical_path(
+            out, str(record.get("path", "")))
+        logical_name = str(logical)
+        if logical_name in records:
+            raise RuntimeError("historical latent index duplicates a shard")
+        records[logical_name] = record
+        physical_paths[logical_name] = physical
+    expected: dict[str, dict[str, Any]] = {}
+    for item_value in inventory_value:
+        if (not isinstance(item_value, Mapping)
+                or set(item_value) != {"path", "sha256", "byte_count", "shape"}):
+            raise RuntimeError(
+                "encoder-path-projection shard binding is not closed")
+        item = dict(item_value)
+        logical_name = str(item.get("path", ""))
+        _require_sha256(item.get("sha256"), f"historical shard {logical_name}")
+        if logical_name in expected:
+            raise RuntimeError("authority duplicates a historical latent shard")
+        expected[logical_name] = item
+    if set(records) != set(expected):
+        raise RuntimeError(
+            "historical latent index differs from the authority shard inventory")
+    if (sum(int(item["byte_count"]) for item in expected.values())
+            != base_smoke_artifact_bundle.get("total_latent_storage_bytes")):
+        raise RuntimeError("historical latent storage accounting changed")
+
+    snapshot: dict[str, dict[str, Any]] = {}
+    for logical_name in sorted(expected):
+        item = expected[logical_name]
+        record = records[logical_name]
+        path = physical_paths[logical_name]
+        if any(record.get(key) != item[key]
+               for key in ("sha256", "byte_count", "shape")):
+            raise RuntimeError(
+                "historical latent index changed an authority shard binding")
+        before = _shard_stat_identity(path)
+        if (not stat.S_ISREG(before[2])
+                or before[6] != item["byte_count"]
+                or _file_sha256_without_atime_change(path) != item["sha256"]
+                or _shard_stat_identity(path) != before):
+            raise RuntimeError(
+                "historical authority-bound latent shard changed")
+        snapshot[logical_name] = {
+            "physical_path": path,
+            "sha256": item["sha256"],
+            "stat_identity": before,
+        }
+    return snapshot
+
+
+def _assert_historical_full_bank_v2_shards_unchanged(
+        snapshot: Mapping[str, Mapping[str, Any]]) -> None:
+    """Prove the metadata transition did not touch any latent shard."""
+
+    for logical_name, item in snapshot.items():
+        path = Path(item["physical_path"])
+        before = item["stat_identity"]
+        if (_shard_stat_identity(path) != before
+                or _file_sha256_without_atime_change(path) != item["sha256"]
+                or _shard_stat_identity(path) != before):
+            raise RuntimeError(
+                "encoder-path-projection metadata migration changed latent "
+                f"shard custody: {logical_name}")
+
+
+def _atomic_json_pair(
+        first_path: Path, first_payload: Mapping[str, Any],
+        second_path: Path, second_payload: Mapping[str, Any]) -> None:
+    """Stage both migration documents before replacing either one."""
+
+    staged: list[tuple[Path, Path]] = []
+    try:
+        for path, payload in (
+                (first_path, first_payload), (second_path, second_payload)):
+            temporary = path.with_name(
+                f".{path.name}.path-projection-tmp-{os.getpid()}")
+            temporary.write_text(
+                json.dumps(payload, indent=2, sort_keys=True) + "\n")
+            with temporary.open("rb+") as handle:
+                handle.flush()
+                os.fsync(handle.fileno())
+            staged.append((temporary, path))
+        for temporary, path in staged:
+            os.replace(temporary, path)
+            descriptor = os.open(
+                path.parent,
+                os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_CLOEXEC", 0))
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+    finally:
+        for temporary, _path in staged:
+            if temporary.exists():
+                temporary.unlink()
+
+
+def _atomic_json_with_parent_fsync(
+        path: Path, payload: Mapping[str, Any]) -> None:
+    """Replace one recovery document and durably record its directory entry."""
+
+    temporary = path.with_name(
+        f".{path.name}.path-projection-tmp-{os.getpid()}")
+    try:
+        temporary.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n")
+        with temporary.open("rb+") as handle:
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+        descriptor = os.open(
+            path.parent,
+            os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_CLOEXEC", 0))
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def _pretty_json_bytes(payload: Mapping[str, Any]) -> bytes:
+    return (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode()
+
+
+def _fsync_directory(path: Path) -> None:
+    descriptor = os.open(
+        path, os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_CLOEXEC", 0))
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _path_presence(path: Path, *, label: str) -> os.stat_result | None:
+    """Return lstat for a regular file, rejecting every ambiguous object."""
+
+    try:
+        metadata = path.lstat()
+    except FileNotFoundError:
+        return None
+    if not stat.S_ISREG(metadata.st_mode) or path.is_symlink():
+        raise RuntimeError(f"{label} is not a regular non-symlink file")
+    return metadata
+
+
+def _rename_noreplace(source: Path, destination: Path) -> None:
+    """Atomically move one path without ever replacing a destination."""
+
+    libc = ctypes.CDLL(None, use_errno=True)
+    renameat2 = getattr(libc, "renameat2", None)
+    if renameat2 is None:
+        raise RuntimeError("RENAME_NOREPLACE is unavailable")
+    renameat2.argtypes = (
+        ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p,
+        ctypes.c_uint)
+    renameat2.restype = ctypes.c_int
+    at_fdcwd = -100
+    rename_noreplace = 1
+    result = renameat2(
+        at_fdcwd, os.fsencode(source), at_fdcwd, os.fsencode(destination),
+        rename_noreplace)
+    if result == 0:
+        return
+    error_number = ctypes.get_errno()
+    if error_number == errno.EEXIST:
+        raise FileExistsError(
+            error_number, os.strerror(error_number), str(destination))
+    raise OSError(error_number, os.strerror(error_number), str(source))
+
+
+def _fsync_exact_bound_regular_file(
+        path: Path, binding: Mapping[str, Any], *, label: str) -> None:
+    """Reopen and durably validate a custody-bound file without decoding it."""
+
+    flags = (os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+             | getattr(os, "O_NOFOLLOW", 0))
+    descriptor = os.open(path, flags)
+    try:
+        metadata = os.fstat(descriptor)
+        if (not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_dev != binding.get("device_id")
+                or metadata.st_ino != binding.get("inode")
+                or metadata.st_size != binding.get("byte_count")
+                or f"0{stat.S_IMODE(metadata.st_mode):03o}"
+                    != binding.get("mode_octal")
+                or metadata.st_nlink != binding.get("link_count")):
+            raise RuntimeError(f"{label} custody changed")
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    if _file_sha256_without_atime_change(path) != binding.get("sha256"):
+        raise RuntimeError(f"{label} bytes changed")
+
+
+def _atomic_move_target_to_backup_no_replace(
+        *, target_path: Path, backup_path: Path,
+        target_binding: Mapping[str, Any]) -> None:
+    """Perform and durably order the transaction's sole target move."""
+
+    if not _regular_file_binding_matches(
+            target_path, target_binding, require_mode=True):
+        raise RuntimeError("single-shard target changed before atomic move")
+    if _path_presence(backup_path, label="retained target backup") is not None:
+        raise RuntimeError("single-shard backup appeared before atomic move")
+    if (backup_path.parent.is_symlink()
+            or not backup_path.parent.is_dir()
+            or backup_path.parent.stat().st_dev != target_path.stat().st_dev):
+        raise RuntimeError("single-shard backup is not on target filesystem")
+    _rename_noreplace(target_path, backup_path)
+    expected_backup = {
+        key: value for key, value in target_binding.items()
+        if key != "candidate_index"
+    }
+    expected_backup["path"] = str(
+        V2_DESIGN.FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_RELATIVE_PATH)
+    _fsync_exact_bound_regular_file(
+        backup_path, expected_backup, label="retained target backup")
+    # The destination entry is made durable before the source-directory
+    # removal, matching the frozen recovery contract.
+    _fsync_directory(backup_path.parent)
+    _fsync_directory(target_path.parent)
+
+
+def _close_moved_target_backup_durability(
+        *, target_path: Path, backup_path: Path,
+        expected_backup_binding: Mapping[str, Any]) -> None:
+    """Close a post-rename crash boundary before target regeneration."""
+
+    if _path_presence(target_path, label="moved active target") is not None:
+        raise RuntimeError("moved active target unexpectedly reappeared")
+    if not _regular_file_binding_matches(
+            backup_path, expected_backup_binding, require_mode=True):
+        raise RuntimeError("moved retained backup changed")
+    _fsync_exact_bound_regular_file(
+        backup_path, expected_backup_binding,
+        label="moved retained target backup")
+    _fsync_directory(backup_path.parent)
+    _fsync_directory(target_path.parent)
+
+
+def _transaction_physical_path(
+        out: Path, repository_relative: str | Path) -> Path:
+    logical_root = out.relative_to(ROOT)
+    value = Path(repository_relative)
+    try:
+        within_out = value.relative_to(logical_root)
+    except ValueError as exc:
+        raise RuntimeError(
+            "single-shard transaction path escaped scorer_fit") from exc
+    physical, logical = _resolve_registered_logical_path(out, str(within_out))
+    if logical != value:
+        raise RuntimeError("single-shard transaction logical path changed")
+    return physical
+
+
+def _receipt_binding(
+        payload: Mapping[str, Any], *, binding_builder: Any) -> dict[str, Any]:
+    raw = _pretty_json_bytes(payload)
+    return dict(binding_builder(payload, raw))
+
+
+def _smoke_receipt_artifact_binding(payload: Mapping[str, Any]) -> dict[str, Any]:
+    raw = _pretty_json_bytes(payload)
+    return {
+        "path": str(
+            V2_DESIGN.SCORER_FIT_RELATIVE_PATH / FULL_BANK_V2_SMOKE_NAME),
+        "schema": FULL_BANK_V2_SMOKE_SCHEMA,
+        "self_digest_key": "smoke_receipt_digest",
+        "self_digest": payload["smoke_receipt_digest"],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+    }
+
+
+def _load_exact_immutable_receipt(
+        path: Path, *, validator: Any, binding_builder: Any, label: str,
+        ) -> tuple[dict[str, Any], dict[str, Any], bytes]:
+    metadata = _path_presence(path, label=label)
+    if metadata is None or stat.S_IMODE(metadata.st_mode) != 0o444:
+        raise RuntimeError(f"{label} is absent or not mode 0444")
+    raw = path.read_bytes()
+    try:
+        payload = json.loads(raw)
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"{label} JSON changed") from exc
+    if not isinstance(payload, Mapping):
+        raise RuntimeError(f"{label} is not an object")
+    try:
+        closed = dict(validator(payload))
+        binding = dict(binding_builder(closed, raw))
+    except (TypeError, ValueError, KeyError, RuntimeError) as exc:
+        raise RuntimeError(f"{label} validation failed: {exc}") from exc
+    if raw != _pretty_json_bytes(closed):
+        raise RuntimeError(f"{label} raw bytes changed")
+    return closed, binding, raw
+
+
+def _write_all(descriptor: int, raw: bytes) -> None:
+    offset = 0
+    while offset < len(raw):
+        written = os.write(descriptor, raw[offset:])
+        if written <= 0:
+            raise OSError("short immutable receipt write")
+        offset += written
+
+
+def _publish_immutable_json_no_overwrite(
+        *, final_path: Path, staged_path: Path, payload: Mapping[str, Any],
+        validator: Any, binding_builder: Any, label: str,
+        recover_nonexact_staged: bool,
+        ) -> dict[str, Any]:
+    """Publish one immutable receipt through a fsynced, fixed staged file."""
+
+    closed = dict(validator(payload))
+    raw = _pretty_json_bytes(closed)
+    expected_binding = dict(binding_builder(closed, raw))
+    if final_path.parent != staged_path.parent:
+        raise RuntimeError(f"{label} staged path is not in the same directory")
+    parent = final_path.parent
+    if parent.exists() or parent.is_symlink():
+        if not parent.is_dir() or parent.is_symlink():
+            raise RuntimeError(f"{label} parent is not a regular directory")
+    else:
+        parent.mkdir(mode=0o755)
+        _fsync_directory(parent.parent)
+
+    final_metadata = _path_presence(final_path, label=label)
+    staged_metadata = _path_presence(staged_path, label=f"{label} staged file")
+    if final_metadata is not None:
+        observed, binding, observed_raw = _load_exact_immutable_receipt(
+            final_path, validator=validator, binding_builder=binding_builder,
+            label=label)
+        if observed != closed or observed_raw != raw or binding != expected_binding:
+            raise RuntimeError(f"{label} immutable final collision")
+        if staged_metadata is not None:
+            if (stat.S_IMODE(staged_metadata.st_mode) != 0o444
+                    or staged_path.read_bytes() != raw
+                    or staged_metadata.st_dev != final_metadata.st_dev
+                    or staged_metadata.st_ino != final_metadata.st_ino):
+                raise RuntimeError(f"{label} staged cleanup state changed")
+            # The prior invocation may have stopped immediately after link(2)
+            # and before its first directory fsync.  Make the final link
+            # durable before removing the staged hard-link witness.
+            _fsync_directory(parent)
+            staged_path.unlink()
+            _fsync_directory(parent)
+        return binding
+
+    if staged_metadata is not None:
+        staged_exact = (
+            stat.S_IMODE(staged_metadata.st_mode) == 0o444
+            and staged_path.read_bytes() == raw)
+        if not staged_exact:
+            if not recover_nonexact_staged:
+                raise RuntimeError(f"{label} staged bytes are partial or nonexact")
+            staged_path.unlink()
+            _fsync_directory(parent)
+            staged_metadata = None
+    if staged_metadata is None:
+        flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL
+                 | getattr(os, "O_CLOEXEC", 0)
+                 | getattr(os, "O_NOFOLLOW", 0))
+        descriptor = os.open(staged_path, flags, 0o600)
+        try:
+            _write_all(descriptor, raw)
+            os.fchmod(descriptor, 0o444)
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+    staged_metadata = _path_presence(
+        staged_path, label=f"{label} staged file")
+    if (staged_metadata is None
+            or stat.S_IMODE(staged_metadata.st_mode) != 0o444
+            or staged_path.read_bytes() != raw):
+        raise RuntimeError(f"{label} staged publication changed")
+    descriptor = os.open(
+        staged_path, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        reopened = os.fstat(descriptor)
+        if (not stat.S_ISREG(reopened.st_mode)
+                or reopened.st_dev != staged_metadata.st_dev
+                or reopened.st_ino != staged_metadata.st_ino
+                or stat.S_IMODE(reopened.st_mode) != 0o444
+                or reopened.st_size != len(raw)):
+            raise RuntimeError(f"{label} staged reopen changed")
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    try:
+        os.link(staged_path, final_path, follow_symlinks=False)
+    except FileExistsError:
+        pass
+    _fsync_directory(parent)
+    final_metadata = _path_presence(final_path, label=label)
+    if (final_metadata is None
+            or final_metadata.st_dev != staged_metadata.st_dev
+            or final_metadata.st_ino != staged_metadata.st_ino):
+        raise RuntimeError(f"{label} no-overwrite link publication changed")
+    _load_exact_immutable_receipt(
+        final_path, validator=validator, binding_builder=binding_builder,
+        label=label)
+    staged_path.unlink()
+    _fsync_directory(parent)
+    return expected_binding
+
+
+def _publish_json_with_archive_no_gap(
+        *, active_path: Path, payload: Mapping[str, Any], archive_dir: Path,
+        label: str) -> dict[str, Any]:
+    """Replace active JSON atomically while permanently retaining predecessor."""
+
+    raw = _pretty_json_bytes(payload)
+    existing_metadata = _path_presence(active_path, label=label)
+    if existing_metadata is not None and active_path.read_bytes() == raw:
+        descriptor = os.open(
+            active_path, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0))
+        try:
+            reopened = os.fstat(descriptor)
+            if (not stat.S_ISREG(reopened.st_mode)
+                    or reopened.st_dev != existing_metadata.st_dev
+                    or reopened.st_ino != existing_metadata.st_ino
+                    or reopened.st_size != len(raw)):
+                raise RuntimeError(f"{label} exact active reopen changed")
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+        _fsync_directory(active_path.parent)
+        return {
+            "path": str(active_path.relative_to(ROOT)),
+            "raw_sha256": hashlib.sha256(raw).hexdigest(),
+            "byte_count": len(raw),
+        }
+    if existing_metadata is not None:
+        if archive_dir.exists() or archive_dir.is_symlink():
+            if not archive_dir.is_dir() or archive_dir.is_symlink():
+                raise RuntimeError(f"{label} archive directory changed")
+        else:
+            archive_dir.mkdir(mode=0o755)
+            _fsync_directory(archive_dir.parent)
+        predecessor_raw = active_path.read_bytes()
+        predecessor_sha = hashlib.sha256(predecessor_raw).hexdigest()
+        archive = archive_dir / (
+            f"{active_path.stem}.{predecessor_sha[:16]}{active_path.suffix}")
+        archive_metadata = _path_presence(
+            archive, label=f"{label} predecessor archive")
+        if archive_metadata is None:
+            os.link(active_path, archive, follow_symlinks=False)
+            _fsync_directory(archive_dir)
+        elif archive.read_bytes() != predecessor_raw:
+            raise RuntimeError(f"{label} predecessor archive collision")
+
+    staged = active_path.with_name(f".{active_path.name}.successor-staged")
+    staged_metadata = _path_presence(staged, label=f"{label} successor stage")
+    if staged_metadata is not None:
+        if (stat.S_IMODE(staged_metadata.st_mode) != 0o600
+                or staged.read_bytes() != raw):
+            staged.unlink()
+            _fsync_directory(staged.parent)
+            staged_metadata = None
+    if staged_metadata is None:
+        flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL
+                 | getattr(os, "O_CLOEXEC", 0)
+                 | getattr(os, "O_NOFOLLOW", 0))
+        descriptor = os.open(staged, flags, 0o600)
+        try:
+            _write_all(descriptor, raw)
+            os.fchmod(descriptor, 0o600)
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+    # A prior invocation may have durably written the exact staged successor
+    # and stopped before replace.  Reopen it without following links, verify
+    # its intended mode/bytes, and fsync again before consuming that recovery
+    # state in the atomic publication.
+    staged_metadata = _path_presence(staged, label=f"{label} successor stage")
+    if (staged_metadata is None
+            or stat.S_IMODE(staged_metadata.st_mode) != 0o600
+            or staged.read_bytes() != raw):
+        raise RuntimeError(f"{label} successor stage changed")
+    descriptor = os.open(
+        staged, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        reopened = os.fstat(descriptor)
+        if (not stat.S_ISREG(reopened.st_mode)
+                or reopened.st_dev != staged_metadata.st_dev
+                or reopened.st_ino != staged_metadata.st_ino
+                or stat.S_IMODE(reopened.st_mode) != 0o600
+                or reopened.st_size != len(raw)):
+            raise RuntimeError(f"{label} successor stage reopen changed")
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    os.replace(staged, active_path)
+    _fsync_directory(active_path.parent)
+    if active_path.read_bytes() != raw:
+        raise RuntimeError(f"{label} successor publication changed")
+    return {
+        "path": str(active_path.relative_to(ROOT)),
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+    }
+
+
+def _transaction_paths(
+        out: Path, contract: Mapping[str, Any]) -> dict[str, Path]:
+    prepared = contract.get("prepared_receipt_contract")
+    complete = contract.get("complete_receipt_contract")
+    backup = contract.get("backup_contract")
+    if not all(isinstance(value, Mapping)
+               for value in (prepared, complete, backup)):
+        raise RuntimeError("single-shard transaction contract is malformed")
+    return {
+        "prepared": _transaction_physical_path(
+            out, str(prepared["relative_path"])),
+        "prepared_staged": _transaction_physical_path(
+            out, str(prepared["staged_relative_path"])),
+        "complete": _transaction_physical_path(
+            out, str(complete["relative_path"])),
+        "complete_staged": _transaction_physical_path(
+            out, str(complete["staged_relative_path"])),
+        "backup": _transaction_physical_path(
+            out, str(backup["relative_path"])),
+    }
+
+
+def _regular_file_binding_matches(
+        path: Path, binding: Mapping[str, Any], *, require_mode: bool = False,
+        ) -> bool:
+    metadata = _path_presence(path, label=f"transaction artifact {path.name}")
+    if metadata is None:
+        return False
+    if (path.stat().st_size != binding.get("byte_count")
+            or _file_sha256_without_atime_change(path)
+                != binding.get("sha256")):
+        return False
+    if require_mode and (
+            metadata.st_dev != binding.get("device_id")
+            or metadata.st_ino != binding.get("inode")
+            or f"0{stat.S_IMODE(metadata.st_mode):03o}"
+            != binding.get("mode_octal")
+            or metadata.st_nlink != binding.get("link_count")):
+        return False
+    return True
+
+
+def _target_stat_binding(
+        path: Path, *, logical_path: str, candidate_index: int,
+        sha256: str, byte_count: int, shape: list[int],
+        ) -> dict[str, Any]:
+    metadata = _path_presence(path, label="single-shard regeneration target")
+    if metadata is None:
+        raise RuntimeError("single-shard regeneration target is absent")
+    if (metadata.st_size != byte_count
+            or _file_sha256_without_atime_change(path) != sha256
+            or metadata.st_nlink != 1):
+        raise RuntimeError("single-shard regeneration target bytes changed")
+    return {
+        "path": logical_path,
+        "candidate_index": candidate_index,
+        "sha256": sha256,
+        "byte_count": byte_count,
+        "shape": list(shape),
+        "device_id": metadata.st_dev,
+        "inode": metadata.st_ino,
+        "mode_octal": f"0{stat.S_IMODE(metadata.st_mode):03o}",
+        "link_count": metadata.st_nlink,
+    }
+
+
+def _receipt_stage_state(path: Path, *, label: str, validator: Any) -> str:
+    metadata = _path_presence(path, label=label)
+    if metadata is None:
+        return "ABSENT"
+    try:
+        payload = json.loads(path.read_bytes())
+        closed = dict(validator(payload))
+    except (TypeError, ValueError, KeyError, RuntimeError,
+            json.JSONDecodeError):
+        return "PARTIAL_REGULAR"
+    if (stat.S_IMODE(metadata.st_mode) == 0o444
+            and path.read_bytes() == _pretty_json_bytes(closed)):
+        return "EXACT"
+    return "PARTIAL_REGULAR"
+
+
+def _validate_refreshed_complete_smoke_lineage(
+        *, out: Path, smoke: Mapping[str, Any],
+        prepared: Mapping[str, Any], prepared_binding: Mapping[str, Any],
+        complete_binding: Mapping[str, Any]) -> None:
+    """Validate a post-full-index smoke against live index and transaction."""
+
+    lineage = prepared["lineage"]
+    smoke_lineage_keys = {
+        "scorer_fit_corpus_v2_scorer_contract_digest":
+            "scorer_fit_corpus_v2_scorer_contract_digest",
+        "scorer_fit_corpus_v2_scorer_contract_artifact_digest":
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest",
+        "state_manifest_digest": "state_manifest_digest",
+        "full_bank_assignment_manifest_digest":
+            "full_bank_assignment_manifest_digest",
+        "encoder_compute_dtype_correction_digest":
+            "encoder_compute_dtype_correction_digest",
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+            ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD,
+    }
+    if (smoke.get("schema") != FULL_BANK_V2_SMOKE_SCHEMA
+            or smoke.get("status") != STATUS
+            or smoke.get("pass") is not True
+            or smoke.get("index_scope") != "complete_full_corpus"
+            or smoke.get("single_shard_regeneration_prepared_digest")
+            != prepared_binding["self_digest"]
+            or smoke.get("single_shard_regeneration_complete_digest")
+            != complete_binding["self_digest"]
+            or any(smoke.get(smoke_key) != lineage[lineage_key]
+                   for smoke_key, lineage_key in smoke_lineage_keys.items())):
+        raise RuntimeError(
+            "refreshed transaction PASS smoke lineage changed")
+    index = _read_regular_json(
+        out / FULL_BANK_V2_INDEX_NAME,
+        label="refreshed transaction full latent index")
+    _verify_self_digest(
+        index, "latents_index_digest",
+        "refreshed transaction full latent index")
+    index_lineage_keys = {
+        "scorer_fit_corpus_v2_scorer_contract_digest":
+            "scorer_fit_corpus_v2_scorer_contract_digest",
+        "scorer_fit_corpus_v2_scorer_contract_artifact_digest":
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest",
+        "state_manifest_digest": "state_manifest_digest",
+        "full_bank_assignment_manifest_digest":
+            "full_bank_assignment_manifest_digest",
+        "encoder_compute_dtype_correction_digest":
+            "encoder_compute_dtype_correction_digest",
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+            ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD,
+    }
+    current_bundle = (
+        CORPUS_BUILDER
+        .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
+            out=out, allow_partial=False))
+    current_corpus = current_bundle.get("receipt")
+    current_branch_smoke = current_bundle.get("branch_smoke")
+    if (not isinstance(current_corpus, Mapping)
+            or not isinstance(current_branch_smoke, Mapping)):
+        raise RuntimeError(
+            "refreshed transaction current branch lineage is absent")
+    if (index.get("complete") is not True
+            or smoke.get("latent_index_digest")
+            != index["latents_index_digest"]
+            or smoke.get("corpus_digest") != index.get("corpus_digest")
+            or smoke.get("corpus_digest")
+                != current_corpus["corpus_digest"]
+            or smoke.get("branch_smoke_receipt_digest")
+                != current_branch_smoke["smoke_branch_receipt_digest"]
+            or any(index.get(index_key) != lineage[lineage_key]
+                   for index_key, lineage_key in index_lineage_keys.items())):
+        raise RuntimeError(
+            "refreshed transaction PASS smoke/index lineage changed")
+
+
+def _validate_original_transaction_protocol_smoke(
+        *, raw: bytes, prepared: Mapping[str, Any],
+        prepared_binding: Mapping[str, Any], complete: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Parse and cross-bind the exact COMPLETE-bound historical PASS."""
+
+    try:
+        smoke = json.loads(raw)
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError("transaction protocol PASS JSON changed") from exc
+    if not isinstance(smoke, Mapping):
+        raise RuntimeError("transaction protocol PASS is not an object")
+    smoke = dict(smoke)
+    _verify_self_digest(
+        smoke, "smoke_receipt_digest", "transaction protocol PASS")
+    if raw != _pretty_json_bytes(smoke):
+        raise RuntimeError("transaction protocol PASS raw bytes changed")
+    lineage = prepared["lineage"]
+    lineage_keys = {
+        "scorer_fit_corpus_v2_scorer_contract_digest":
+            "scorer_fit_corpus_v2_scorer_contract_digest",
+        "scorer_fit_corpus_v2_scorer_contract_artifact_digest":
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest",
+        "state_manifest_digest": "state_manifest_digest",
+        "full_bank_assignment_manifest_digest":
+            "full_bank_assignment_manifest_digest",
+        "corpus_digest": "corpus_digest",
+        "branch_smoke_receipt_digest": "branch_smoke_receipt_digest",
+        "encoder_compute_dtype_correction_digest":
+            "encoder_compute_dtype_correction_digest",
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+            ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD,
+    }
+    post = complete["posttransaction_evidence"]
+    if (smoke.get("schema") != FULL_BANK_V2_SMOKE_SCHEMA
+            or smoke.get("status") != STATUS
+            or smoke.get("pass") is not True
+            or smoke.get("zero_new_resume_verified") is not True
+            or smoke.get("single_shard_deletion_regeneration_verified")
+                is not True
+            or smoke.get("smoke_protocol_complete") is not True
+            or smoke.get(
+                "single_shard_regeneration_transaction_contract_digest")
+                != prepared[
+                    "single_shard_regeneration_transaction_contract_digest"]
+            or smoke.get("single_shard_regeneration_prepared_digest")
+                != prepared_binding["self_digest"]
+            or smoke.get("single_shard_regeneration_transaction_complete")
+                is not True
+            or smoke.get("single_shard_regeneration_target_atomic_move_count")
+                != 1
+            or smoke.get("single_shard_regeneration_target_regeneration_count")
+                != 1
+            or smoke.get("latent_index_digest")
+                != post["latent_index_digest"]
+            or smoke.get("invocation_new_context_shards")
+                != post["encoder_invocation_new_context_shards"]
+            or smoke.get("invocation_new_horizon_shards")
+                != post["encoder_invocation_new_horizon_shards"]
+            or any(smoke.get(smoke_key) != lineage[lineage_key]
+                   for smoke_key, lineage_key in lineage_keys.items())):
+        raise RuntimeError("transaction protocol PASS lineage changed")
+    return smoke
+
+
+def _classify_full_bank_v2_single_shard_regeneration_transaction(
+        *, out: Path, encoder_path_projection_correction_digest: str,
+        transaction_contract: Mapping[str, Any],
+        transaction_contract_digest: str,
+        ) -> dict[str, Any]:
+    """Read-only, fail-closed classification of the exact-once transaction."""
+
+    if (transaction_contract != (
+            V2_DESIGN.ENCODER_PATH_PROJECTION_SINGLE_SHARD_REGENERATION_TRANSACTION_CONTRACT)
+            or transaction_contract_digest
+            != V2_DESIGN.canonical_digest(transaction_contract)):
+        raise RuntimeError("single-shard transaction authority changed")
+    paths = _transaction_paths(out, transaction_contract)
+    prepared_metadata = _path_presence(
+        paths["prepared"], label="single-shard PREPARED receipt")
+    complete_metadata = _path_presence(
+        paths["complete"], label="single-shard COMPLETE receipt")
+    backup_metadata = _path_presence(
+        paths["backup"], label="single-shard retained backup")
+    prepared_stage_state = _receipt_stage_state(
+        paths["prepared_staged"], label="single-shard PREPARED staged file",
+        validator=(
+            V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt))
+    complete_stage_state = _receipt_stage_state(
+        paths["complete_staged"], label="single-shard COMPLETE staged file",
+        validator=(
+            V2_DESIGN.validate_full_bank_v2_smoke_regeneration_complete_receipt))
+    for final_metadata, staged_path, staged_state, receipt_label in (
+            (prepared_metadata, paths["prepared_staged"],
+             prepared_stage_state, "PREPARED"),
+            (complete_metadata, paths["complete_staged"],
+             complete_stage_state, "COMPLETE")):
+        if final_metadata is None or staged_state == "ABSENT":
+            continue
+        staged_metadata = _path_presence(
+            staged_path, label=f"single-shard {receipt_label} staged file")
+        if (staged_state != "EXACT" or staged_metadata is None
+                or staged_metadata.st_dev != final_metadata.st_dev
+                or staged_metadata.st_ino != final_metadata.st_ino):
+            raise RuntimeError(
+                f"single-shard {receipt_label} final/staged custody changed")
+
+    if prepared_metadata is None:
+        if (complete_metadata is not None or backup_metadata is not None
+                or complete_stage_state != "ABSENT"):
+            raise RuntimeError(
+                "single-shard transaction material exists without PREPARED")
+        return {
+            # A staged-only PREPARED publication has not yet made the
+            # immutable transaction intent live.  It remains the authority's
+            # UNSTARTED state; the staged-state field tells the explicitly
+            # flagged recovery invocation whether it must finish or rebuild
+            # that publication before any target mutation.
+            "transaction_state": "UNSTARTED",
+            "prepared_present": False,
+            "prepared_receipt_digest": None,
+            "target_state": "NOT_APPLICABLE",
+            "backup_state": "ABSENT",
+            "complete_present": False,
+            "complete_receipt_digest": None,
+            "pass_smoke_state": "ABSENT_OR_PRETRANSACTION",
+            "next_action": (
+                "RUN_OR_RESUME_BASE_AND_ZERO_NEW_BEFORE_PREPARED"),
+            "encoder_path_projection_correction_digest":
+                encoder_path_projection_correction_digest,
+            "single_shard_regeneration_transaction_contract_digest":
+                transaction_contract_digest,
+            "prepared_staged_state": prepared_stage_state,
+            "complete_staged_state": complete_stage_state,
+            "target_exact": False,
+            "backup_exact": False,
+            "target_backup_custody_exact": False,
+            "regenerated_target_custody_exact": False,
+            "candidate_outcomes_used_for_selection": False,
+            "final_200_state_corpus_generated": False,
+        }
+
+    prepared, prepared_binding, _prepared_raw = (
+        _load_exact_immutable_receipt(
+            paths["prepared"],
+            validator=(
+                V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+            binding_builder=(
+                V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+            label="single-shard PREPARED receipt"))
+    if (prepared["lineage"][
+            ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD]
+            != encoder_path_projection_correction_digest
+            or prepared[
+                "single_shard_regeneration_transaction_contract_digest"]
+            != transaction_contract_digest):
+        raise RuntimeError("single-shard PREPARED authority changed")
+    target_binding = prepared["designated_target"]
+    target_path = _transaction_physical_path(out, target_binding["path"])
+    target_metadata = _path_presence(
+        target_path, label="single-shard active target")
+    target_state = "ABSENT"
+    target_original_exact = False
+    target_regenerated_exact = False
+    if target_metadata is not None:
+        semantic_exact = _regular_file_binding_matches(
+            target_path, target_binding, require_mode=False)
+        target_original_exact = bool(semantic_exact
+            and target_metadata.st_dev == target_binding["device_id"]
+            and target_metadata.st_ino == target_binding["inode"]
+            and f"0{stat.S_IMODE(target_metadata.st_mode):03o}"
+                == target_binding["mode_octal"]
+            and target_metadata.st_nlink == target_binding["link_count"])
+        target_regenerated_exact = bool(semantic_exact
+            and target_metadata.st_dev == target_binding["device_id"]
+            and target_metadata.st_ino != target_binding["inode"]
+            and f"0{stat.S_IMODE(target_metadata.st_mode):03o}"
+                == target_binding["mode_octal"]
+            and target_metadata.st_nlink == target_binding["link_count"])
+        if not target_original_exact and not target_regenerated_exact:
+            raise RuntimeError(
+                "single-shard active target has impossible custody")
+        target_state = "EXACT"
+
+    backup_exact = False
+    if backup_metadata is not None:
+        expected_backup = prepared["expected_backup_binding"]
+        backup_exact = _regular_file_binding_matches(
+            paths["backup"], expected_backup, require_mode=True)
+        if not backup_exact:
+            raise RuntimeError("single-shard retained backup changed")
+    if complete_metadata is not None and backup_metadata is None:
+        raise RuntimeError("single-shard COMPLETE lacks retained backup")
+    if (complete_metadata is None and complete_stage_state != "ABSENT"
+            and not (backup_exact and target_regenerated_exact)):
+        raise RuntimeError(
+            "single-shard COMPLETE staged file is outside its safe phase")
+
+    complete: dict[str, Any] | None = None
+    complete_binding: dict[str, Any] | None = None
+    pass_smoke_state = "ABSENT_OR_PRETRANSACTION"
+    if complete_metadata is not None:
+        complete, complete_binding, _complete_raw = (
+            _load_exact_immutable_receipt(
+                paths["complete"],
+                validator=(
+                    V2_DESIGN.validate_full_bank_v2_smoke_regeneration_complete_receipt),
+                binding_builder=(
+                    V2_DESIGN.full_bank_v2_smoke_regeneration_complete_receipt_artifact_binding),
+                label="single-shard COMPLETE receipt"))
+        regenerated_target_exact = _regular_file_binding_matches(
+            target_path, complete["regenerated_target_binding"],
+            require_mode=True)
+        if (complete["prepared_receipt_binding"] != prepared_binding
+                or complete["lineage"] != prepared["lineage"]
+                or complete["designated_target"] != target_binding
+                or complete[
+                    "single_shard_regeneration_transaction_contract_digest"]
+                != transaction_contract_digest
+                or not backup_exact or not target_regenerated_exact
+                or not regenerated_target_exact):
+            raise RuntimeError("single-shard COMPLETE custody changed")
+        smoke_binding = complete["final_smoke_receipt_binding"]
+        smoke_path = _transaction_physical_path(out, smoke_binding["path"])
+        active_exact = bool(
+            _path_presence(smoke_path, label="transaction PASS smoke")
+            is not None
+            and smoke_path.stat().st_size == smoke_binding["byte_count"]
+            and file_sha256(smoke_path) == smoke_binding["raw_sha256"])
+        archive = (out / FULL_BANK_V2_SUPERSEDED_RECEIPTS_NAME /
+                   f"{Path(smoke_binding['path']).stem}."
+                   f"{smoke_binding['raw_sha256'][:16]}.json")
+        archive_exact = bool(
+            _path_presence(archive, label="transaction PASS smoke archive")
+            is not None
+            and archive.stat().st_size == smoke_binding["byte_count"]
+            and file_sha256(archive) == smoke_binding["raw_sha256"])
+        protocol_path = (smoke_path if active_exact else
+                         archive if archive_exact else None)
+        if protocol_path is not None:
+            _validate_original_transaction_protocol_smoke(
+                raw=protocol_path.read_bytes(), prepared=prepared,
+                prepared_binding=prepared_binding, complete=complete)
+        refreshed_active_exact = False
+        if archive_exact and not active_exact and smoke_path.is_file():
+            active_smoke = _read_regular_json(
+                smoke_path, label="refreshed full-bank V2 encoding smoke")
+            _verify_self_digest(
+                active_smoke, "smoke_receipt_digest",
+                "refreshed full-bank V2 encoding smoke")
+            refreshed_active_exact = bool(
+                active_smoke.get("pass") is True
+                and active_smoke.get(
+                    "single_shard_regeneration_prepared_digest")
+                    == prepared_binding["self_digest"]
+                and active_smoke.get(
+                    "single_shard_regeneration_complete_digest")
+                    == complete_binding["self_digest"])
+            if not refreshed_active_exact:
+                raise RuntimeError(
+                    "active smoke is neither exact protocol PASS nor valid "
+                    "refreshed PASS")
+            _validate_refreshed_complete_smoke_lineage(
+                out=out, smoke=active_smoke, prepared=prepared,
+                prepared_binding=prepared_binding,
+                complete_binding=complete_binding)
+        if active_exact:
+            pass_smoke_state = "EXACT_BOUND_PROTOCOL_PASS"
+        elif archive_exact and refreshed_active_exact:
+            pass_smoke_state = (
+                "VALID_REFRESHED_PASS_WITH_EXACT_PROTOCOL_PASS_ARCHIVE")
+        state = ("COMPLETE" if pass_smoke_state != "ABSENT_OR_PRETRANSACTION"
+                 else "COMPLETE_SMOKE_PUBLICATION_PENDING")
+        if (complete_stage_state != "ABSENT"
+                and pass_smoke_state != "ABSENT_OR_PRETRANSACTION"):
+            raise RuntimeError(
+                "single-shard COMPLETE staged residue survived PASS smoke")
+        next_action = ("NO_TRANSACTION_MUTATION" if state == "COMPLETE"
+                       else "PUBLISH_COMPLETE_BOUND_PASS_SMOKE_ONLY")
+    elif backup_exact and target_regenerated_exact:
+        state = "RESTORED_COMPLETE_PENDING"
+        next_action = (
+            "CREATE_COMPLETE_WITHOUT_SECOND_MOVE_OR_REGENERATION")
+    elif backup_exact and target_metadata is None:
+        state = "MOVED_REGENERATION_PENDING"
+        next_action = "RUN_REGENERATION_ENCODER_ONCE"
+    elif not backup_exact and target_original_exact:
+        state = "PREPARED_MOVE_PENDING"
+        next_action = "ATOMIC_MOVE_ONCE"
+    else:
+        raise RuntimeError("single-shard transaction state is impossible")
+
+    return {
+        "transaction_state": state,
+        "prepared_present": True,
+        "prepared_receipt_digest": prepared_binding["self_digest"],
+        "target_state": target_state,
+        "backup_state": "EXACT" if backup_exact else "ABSENT",
+        "complete_present": complete is not None,
+        "complete_receipt_digest": (
+            complete_binding["self_digest"]
+            if complete_binding is not None else None),
+        "pass_smoke_state": pass_smoke_state,
+        "next_action": next_action,
+        "encoder_path_projection_correction_digest":
+            encoder_path_projection_correction_digest,
+        "single_shard_regeneration_transaction_contract_digest":
+            transaction_contract_digest,
+        "prepared_staged_state": prepared_stage_state,
+        "complete_staged_state": complete_stage_state,
+        "target_exact": target_original_exact or target_regenerated_exact,
+        "backup_exact": backup_exact,
+        "target_backup_custody_exact": bool(
+            backup_exact and backup_metadata is not None
+            and backup_metadata.st_dev == target_binding["device_id"]
+            and backup_metadata.st_ino == target_binding["inode"]),
+        "regenerated_target_custody_exact": target_regenerated_exact,
+        "candidate_outcomes_used_for_selection": False,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def load_and_validate_full_bank_v2_single_shard_regeneration_transaction_status(
+        *, out: Path | None = None) -> dict[str, Any]:
+    """Return a lightweight exact transaction projection without shard writes."""
+
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    (manifest, receipt, _rows, artifact, dtype_digest, path_digest,
+     _base_bundle, _base_bundle_digest, transaction_contract,
+     transaction_contract_digest) = _load_full_bank_v2_inputs(
+         scorer_fit, allow_partial=True)
+    status = _classify_full_bank_v2_single_shard_regeneration_transaction(
+        out=scorer_fit,
+        encoder_path_projection_correction_digest=path_digest,
+        transaction_contract=transaction_contract,
+        transaction_contract_digest=transaction_contract_digest)
+    if (status["prepared_present"] is True
+            and status["complete_present"] is False):
+        branch_bundle = (
+            CORPUS_BUILDER
+            .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
+                out=scorer_fit, allow_partial=True))
+        branch_smoke = branch_bundle.get("branch_smoke")
+        if not isinstance(branch_smoke, Mapping):
+            raise RuntimeError(
+                "live branch smoke is absent from transaction lineage")
+        expected_lineage = _transaction_lineage(
+            manifest=manifest, corpus_receipt=receipt,
+            branch_smoke=branch_smoke, contract_artifact=artifact,
+            encoder_compute_dtype_correction_digest=dtype_digest,
+            encoder_path_projection_correction_digest=path_digest)
+        _validate_transaction_live_lineage(
+            out=scorer_fit, transaction_contract=transaction_contract,
+            expected_lineage=expected_lineage,
+            require_complete=status["complete_present"] is True)
+    return status
+
+
+def _stable_smoke_artifact_inventory_digest(
+        inventory: Iterable[Mapping[str, Any]]) -> str:
+    advancing = {
+        FULL_BANK_V2_SMOKE_NAME, FULL_BANK_V2_ENCODING_SUMMARY_NAME}
+    stable = [dict(item) for item in inventory
+              if Path(str(item.get("path", ""))).name not in advancing]
+    stable.sort(key=lambda item: str(item["path"]))
+    if not stable:
+        raise RuntimeError("registered stable smoke inventory is empty")
+    return canonical_digest(stable)
+
+
+def _non_target_smoke_shard_inventory_digest(
+        inventory: Iterable[Mapping[str, Any]], *, target_path: str) -> str:
+    non_target = [dict(item) for item in inventory
+                  if str(item.get("path")) != target_path]
+    non_target.sort(key=lambda item: str(item["path"]))
+    if len(non_target) != 12:
+        raise RuntimeError(
+            "single-shard transaction non-target inventory is not 12 shards")
+    return canonical_digest(non_target)
+
+
+def _non_target_smoke_shard_custody_inventory_digest(
+        inventory: Iterable[Mapping[str, Any]], *, out: Path,
+        target_path: str) -> str:
+    """Bind all non-target shard bytes and filesystem custody without atime."""
+
+    rows: list[dict[str, Any]] = []
+    for item in sorted(inventory, key=lambda value: str(value.get("path"))):
+        logical_path = str(item.get("path"))
+        if logical_path == target_path:
+            continue
+        path = _transaction_physical_path(out, logical_path)
+        before = _path_presence(
+            path, label="single-shard non-target custody shard")
+        if before is None:
+            raise RuntimeError("single-shard non-target custody shard is absent")
+        observed_sha256 = _file_sha256_without_atime_change(path)
+        after = _path_presence(
+            path, label="single-shard non-target custody shard")
+        if (after is None or before != after
+                or observed_sha256 != item.get("sha256")
+                or before.st_size != item.get("byte_count")):
+            raise RuntimeError(
+                "single-shard non-target custody changed during validation")
+        rows.append({
+            "path": logical_path,
+            "sha256": observed_sha256,
+            "byte_count": before.st_size,
+            "shape": list(item["shape"]),
+            "device_id": before.st_dev,
+            "inode": before.st_ino,
+            "mode_octal": f"0{stat.S_IMODE(before.st_mode):03o}",
+            "link_count": before.st_nlink,
+            "user_id": before.st_uid,
+            "group_id": before.st_gid,
+            "access_time_ns": before.st_atime_ns,
+            "modification_time_ns": before.st_mtime_ns,
+            "metadata_change_time_ns": before.st_ctime_ns,
+        })
+    if len(rows) != 12:
+        raise RuntimeError(
+            "single-shard non-target custody inventory is not 12 shards")
+    return canonical_digest(rows)
+
+
+def _transaction_lineage(
+        *, manifest: Mapping[str, Any], corpus_receipt: Mapping[str, Any],
+        branch_smoke: Mapping[str, Any], contract_artifact: Mapping[str, Any],
+        encoder_compute_dtype_correction_digest: str,
+        encoder_path_projection_correction_digest: str,
+        ) -> dict[str, Any]:
+    return {
+        "scorer_fit_corpus_v2_scorer_contract_digest":
+            contract_artifact[V2_CONTRACT.CONTRACT_SELF_KEY],
+        "scorer_fit_corpus_v2_scorer_contract_artifact_digest":
+            contract_artifact[V2_CONTRACT.ARTIFACT_SELF_KEY],
+        "state_manifest_digest": manifest["state_manifest_digest"],
+        "full_bank_assignment_manifest_digest":
+            manifest["full_bank_assignment_manifest_digest"],
+        "corpus_digest": corpus_receipt["corpus_digest"],
+        "branch_smoke_receipt_digest":
+            branch_smoke["smoke_branch_receipt_digest"],
+        "encoder_compute_dtype_correction_digest":
+            encoder_compute_dtype_correction_digest,
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+            encoder_path_projection_correction_digest,
+    }
+
+
+def _validate_transaction_live_lineage(
+        *, out: Path, transaction_contract: Mapping[str, Any],
+        expected_lineage: Mapping[str, Any], require_complete: bool = False,
+        ) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Bind immutable transaction receipts back to the current live corpus."""
+
+    paths = _transaction_paths(out, transaction_contract)
+    prepared, prepared_binding, _raw = _load_exact_immutable_receipt(
+        paths["prepared"],
+        validator=(
+            V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+        binding_builder=(
+            V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+        label="single-shard PREPARED receipt")
+    if prepared["lineage"] != dict(expected_lineage):
+        raise RuntimeError(
+            "single-shard PREPARED lineage differs from the live corpus")
+    complete: dict[str, Any] | None = None
+    if _path_presence(
+            paths["complete"], label="single-shard COMPLETE receipt") is not None:
+        complete, _complete_binding, _raw = _load_exact_immutable_receipt(
+            paths["complete"],
+            validator=(
+                V2_DESIGN.validate_full_bank_v2_smoke_regeneration_complete_receipt),
+            binding_builder=(
+                V2_DESIGN.full_bank_v2_smoke_regeneration_complete_receipt_artifact_binding),
+            label="single-shard COMPLETE receipt")
+        if (complete["lineage"] != dict(expected_lineage)
+                or complete["prepared_receipt_binding"] != prepared_binding):
+            raise RuntimeError(
+                "single-shard COMPLETE lineage differs from the live corpus")
+    if require_complete and complete is None:
+        raise RuntimeError("live transaction COMPLETE receipt is absent")
+    return prepared, complete
+
+
+def _prepare_and_move_full_bank_v2_single_shard_transaction(
+        *, out: Path, manifest: Mapping[str, Any],
+        corpus_receipt: Mapping[str, Any], branch_smoke: Mapping[str, Any],
+        contract_artifact: Mapping[str, Any],
+        encoder_compute_dtype_correction_digest: str,
+        encoder_path_projection_correction_digest: str,
+        transaction_contract: Mapping[str, Any],
+        transaction_contract_digest: str,
+        ) -> dict[str, Any]:
+    """Durably prepare and perform at most one target-to-backup move."""
+
+    status = _classify_full_bank_v2_single_shard_regeneration_transaction(
+        out=out,
+        encoder_path_projection_correction_digest=
+            encoder_path_projection_correction_digest,
+        transaction_contract=transaction_contract,
+        transaction_contract_digest=transaction_contract_digest)
+    paths = _transaction_paths(out, transaction_contract)
+    move_durability_closed_here = False
+    if (status["prepared_present"] is True
+            and status["complete_present"] is False):
+        expected_live_lineage = _transaction_lineage(
+            manifest=manifest, corpus_receipt=corpus_receipt,
+            branch_smoke=branch_smoke,
+            contract_artifact=contract_artifact,
+            encoder_compute_dtype_correction_digest=
+                encoder_compute_dtype_correction_digest,
+            encoder_path_projection_correction_digest=
+                encoder_path_projection_correction_digest)
+        _validate_transaction_live_lineage(
+            out=out, transaction_contract=transaction_contract,
+            expected_lineage=expected_live_lineage)
+    if status["transaction_state"] == "UNSTARTED":
+        projection = (
+            load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
+                out=out, require_protocol_complete=False,
+                verify_encoder_checkpoint=False))
+        if (projection.get("zero_new_resume_verified") is not True
+                or projection.get("invocation_new_context_shards") != 0
+                or projection.get("invocation_new_horizon_shards") != 0):
+            raise RuntimeError(
+                "single-shard transaction requires the exact zero-new smoke")
+        target_projection = projection["single_shard_regeneration_target"]
+        target_path = _transaction_physical_path(
+            out, target_projection["path"])
+        target = _target_stat_binding(
+            target_path, logical_path=target_projection["path"],
+            candidate_index=0, sha256=target_projection["sha256"],
+            byte_count=target_projection["byte_count"],
+            shape=target_projection["shape"])
+        lineage = _transaction_lineage(
+            manifest=manifest, corpus_receipt=corpus_receipt,
+            branch_smoke=branch_smoke, contract_artifact=contract_artifact,
+            encoder_compute_dtype_correction_digest=
+                encoder_compute_dtype_correction_digest,
+            encoder_path_projection_correction_digest=
+                encoder_path_projection_correction_digest)
+        pre_evidence = {
+            "latent_index_digest": projection["latent_index"][
+                "latents_index_digest"],
+            "encoding_smoke_receipt_digest": projection[
+                "encoding_smoke_receipt"]["smoke_receipt_digest"],
+            "registered_smoke_shard_inventory_digest": projection[
+                "registered_smoke_shard_inventory_digest"],
+            "registered_smoke_non_target_shard_inventory_digest":
+                _non_target_smoke_shard_inventory_digest(
+                    projection["registered_smoke_shard_inventory"],
+                    target_path=target_projection["path"]),
+            "registered_smoke_non_target_shard_custody_inventory_digest":
+                _non_target_smoke_shard_custody_inventory_digest(
+                    projection["registered_smoke_shard_inventory"],
+                    out=out, target_path=target_projection["path"]),
+            "registered_smoke_stable_artifact_inventory_digest":
+                _stable_smoke_artifact_inventory_digest(projection[
+                    "registered_smoke_artifact_inventory"]),
+            "zero_new_resume_verified": True,
+        }
+        prepared = (
+            V2_DESIGN.build_full_bank_v2_smoke_regeneration_prepared_receipt(
+                lineage=lineage, designated_target=target,
+                pretransaction_evidence=pre_evidence))
+        _publish_immutable_json_no_overwrite(
+            final_path=paths["prepared"],
+            staged_path=paths["prepared_staged"], payload=prepared,
+            validator=(
+                V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+            binding_builder=(
+                V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+            label="single-shard PREPARED receipt",
+            recover_nonexact_staged=True)
+        status = _classify_full_bank_v2_single_shard_regeneration_transaction(
+            out=out,
+            encoder_path_projection_correction_digest=
+                encoder_path_projection_correction_digest,
+            transaction_contract=transaction_contract,
+            transaction_contract_digest=transaction_contract_digest)
+
+    if (status["prepared_present"] is True
+            and status["prepared_staged_state"] != "ABSENT"):
+        prepared, _binding, _raw = _load_exact_immutable_receipt(
+            paths["prepared"],
+            validator=(
+                V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+            binding_builder=(
+                V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+            label="single-shard PREPARED receipt")
+        _publish_immutable_json_no_overwrite(
+            final_path=paths["prepared"],
+            staged_path=paths["prepared_staged"], payload=prepared,
+            validator=(
+                V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+            binding_builder=(
+                V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+            label="single-shard PREPARED receipt",
+            recover_nonexact_staged=False)
+        status = _classify_full_bank_v2_single_shard_regeneration_transaction(
+            out=out,
+            encoder_path_projection_correction_digest=
+                encoder_path_projection_correction_digest,
+            transaction_contract=transaction_contract,
+            transaction_contract_digest=transaction_contract_digest)
+
+    if status["transaction_state"] == "PREPARED_MOVE_PENDING":
+        prepared, _binding, _raw = _load_exact_immutable_receipt(
+            paths["prepared"],
+            validator=(
+                V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+            binding_builder=(
+                V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+            label="single-shard PREPARED receipt")
+        target_path = _transaction_physical_path(
+            out, prepared["designated_target"]["path"])
+        paths["backup"].parent.mkdir(mode=0o755, exist_ok=True)
+        _atomic_move_target_to_backup_no_replace(
+            target_path=target_path, backup_path=paths["backup"],
+            target_binding=prepared["designated_target"])
+        move_durability_closed_here = True
+        status = _classify_full_bank_v2_single_shard_regeneration_transaction(
+            out=out,
+            encoder_path_projection_correction_digest=
+                encoder_path_projection_correction_digest,
+            transaction_contract=transaction_contract,
+            transaction_contract_digest=transaction_contract_digest)
+        if status["transaction_state"] != "MOVED_REGENERATION_PENDING":
+            raise RuntimeError("single-shard atomic move did not reach recovery state")
+    if (status["transaction_state"] == "MOVED_REGENERATION_PENDING"
+            and not move_durability_closed_here):
+        prepared, _binding, _raw = _load_exact_immutable_receipt(
+            paths["prepared"],
+            validator=(
+                V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+            binding_builder=(
+                V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+            label="single-shard PREPARED receipt")
+        target_path = _transaction_physical_path(
+            out, prepared["designated_target"]["path"])
+        _close_moved_target_backup_durability(
+            target_path=target_path, backup_path=paths["backup"],
+            expected_backup_binding=prepared["expected_backup_binding"])
+    return status
+
+
+def _registered_latent_inventory(
+        out: Path, records: Iterable[Mapping[str, Any]],
+        ) -> list[dict[str, Any]]:
+    inventory: list[dict[str, Any]] = []
+    for record in sorted(records, key=lambda value: str(value["path"])):
+        _physical, logical = _resolve_registered_logical_path(
+            out, str(record["path"]))
+        inventory.append({
+            "path": str(logical),
+            "sha256": record["sha256"],
+            "byte_count": record["byte_count"],
+            "shape": record["shape"],
+        })
+    return inventory
+
+
+def _registered_smoke_artifact_inventory(
+        out: Path, *, smoke_rows: Iterable[Mapping[str, Any]],
+        smoke_context_records: Iterable[Mapping[str, Any]],
+        smoke_horizon_records: Iterable[Mapping[str, Any]],
+        ) -> list[dict[str, Any]]:
+    """Hash the closed smoke artifact registry without decoding any label."""
+
+    out_logical = out.relative_to(ROOT)
+    registered_paths: dict[str, Path] = {}
+
+    def register_path(value: str) -> None:
+        physical, repository_relative = _resolve_registered_logical_path(
+            out, value)
+        try:
+            out_relative = repository_relative.relative_to(out_logical)
+        except ValueError as exc:
+            raise RuntimeError(
+                f"registered smoke artifact escaped scorer_fit: {value}") from exc
+        logical_name = str(out_relative)
+        previous = registered_paths.setdefault(logical_name, physical)
+        if previous != physical:
+            raise RuntimeError(
+                "registered smoke artifact logical alias target changed")
+
+    for name in (
+            CORPUS_BUILDER.SCORER_FIT_V2_BRANCH_ROWS_NAME,
+            CORPUS_BUILDER.SCORER_FIT_V2_CORPUS_RECEIPT_NAME,
+            CORPUS_BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME,
+            FULL_BANK_V2_INDEX_NAME,
+            FULL_BANK_V2_SMOKE_NAME,
+            FULL_BANK_V2_ENCODING_SUMMARY_NAME):
+        register_path(name)
+    for row in smoke_rows:
+        register_path(str(
+            Path(CORPUS_BUILDER.SCORER_FIT_V2_ROW_RECORDS_NAME)
+            / f"{row['branch_identity_digest']}.json"))
+        for frame in (
+                list(row.get("context_frames", []))
+                + list(row.get("horizon_frames", []))):
+            register_path(str(frame["path"]))
+    for record in list(smoke_context_records) + list(smoke_horizon_records):
+        register_path(str(record["path"]))
+    inventory: list[dict[str, Any]] = []
+    for logical_name, path in sorted(registered_paths.items()):
+        if _path_presence(
+                path, label="full-bank V2 registered smoke artifact") is None:
+            raise RuntimeError(
+                "full-bank V2 smoke artifact inventory is incomplete")
+        inventory.append({
+            "path": logical_name,
+            "raw_sha256": _file_sha256_without_atime_change(path),
+            "byte_count": path.stat().st_size,
+        })
+    return inventory
+
+
+def _complete_full_bank_v2_single_shard_transaction(
+        *, out: Path, smoke: Mapping[str, Any], index: Mapping[str, Any],
+        smoke_rows: list[dict[str, Any]],
+        smoke_context_records: list[dict[str, Any]],
+        smoke_horizon_records: list[dict[str, Any]],
+        encoder_path_projection_correction_digest: str,
+        transaction_contract: Mapping[str, Any],
+        transaction_contract_digest: str,
+        expected_live_lineage: Mapping[str, Any],
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Publish immutable COMPLETE before its exact bound PASS smoke."""
+
+    paths = _transaction_paths(out, transaction_contract)
+    if _path_presence(
+            paths["complete"], label="single-shard COMPLETE receipt") is None:
+        _validate_transaction_live_lineage(
+            out=out, transaction_contract=transaction_contract,
+            expected_lineage=expected_live_lineage)
+    prepared, prepared_binding, _prepared_raw = _load_exact_immutable_receipt(
+        paths["prepared"],
+        validator=(
+            V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+        binding_builder=(
+            V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+        label="single-shard PREPARED receipt")
+    target = prepared["designated_target"]
+    target_path = _transaction_physical_path(out, target["path"])
+    regenerated_target = _target_stat_binding(
+        target_path, logical_path=target["path"], candidate_index=0,
+        sha256=target["sha256"], byte_count=target["byte_count"],
+        shape=target["shape"])
+    _fsync_exact_bound_regular_file(
+        target_path, regenerated_target,
+        label="regenerated single-shard target")
+    _fsync_directory(target_path.parent)
+    backup = prepared["expected_backup_binding"]
+    if not _regular_file_binding_matches(
+            paths["backup"], backup, require_mode=True):
+        raise RuntimeError("single-shard retained backup changed")
+    inventory = _registered_latent_inventory(
+        out, smoke_context_records + smoke_horizon_records)
+    inventory_digest = canonical_digest(inventory)
+    non_target_digest = _non_target_smoke_shard_inventory_digest(
+        inventory, target_path=target["path"])
+    non_target_custody_digest = (
+        _non_target_smoke_shard_custody_inventory_digest(
+            inventory, out=out, target_path=target["path"]))
+    if (index["latents_index_digest"]
+            != prepared["pretransaction_evidence"]["latent_index_digest"]
+            or inventory_digest != prepared["pretransaction_evidence"][
+                "registered_smoke_shard_inventory_digest"]
+            or non_target_digest != prepared["pretransaction_evidence"][
+                "registered_smoke_non_target_shard_inventory_digest"]
+            or non_target_custody_digest != prepared[
+                "pretransaction_evidence"][
+                    "registered_smoke_non_target_shard_custody_inventory_"
+                    "digest"]):
+        raise RuntimeError(
+            "single-shard regeneration changed index or shard inventory")
+    live_stable_inventory_digest = _stable_smoke_artifact_inventory_digest(
+        _registered_smoke_artifact_inventory(
+            out, smoke_rows=smoke_rows,
+            smoke_context_records=smoke_context_records,
+            smoke_horizon_records=smoke_horizon_records))
+    if live_stable_inventory_digest != prepared_binding[
+            "pretransaction_registered_smoke_stable_artifact_inventory_digest"]:
+        raise RuntimeError(
+            "single-shard regeneration changed a registered stable artifact")
+    final_smoke_binding = _smoke_receipt_artifact_binding(smoke)
+    post_evidence = {
+        "latent_index_digest": index["latents_index_digest"],
+        "encoding_smoke_receipt_digest": smoke["smoke_receipt_digest"],
+        "registered_smoke_shard_inventory_digest": inventory_digest,
+        "registered_smoke_non_target_shard_custody_inventory_digest":
+            non_target_custody_digest,
+        "registered_smoke_stable_artifact_inventory_digest":
+            live_stable_inventory_digest,
+        "encoder_invocation_new_context_shards": smoke[
+            "invocation_new_context_shards"],
+        "encoder_invocation_new_horizon_shards": smoke[
+            "invocation_new_horizon_shards"],
+        "target_restored_exact": True,
+        "non_target_shards_unchanged": True,
+        "complete_before_pass_smoke": True,
+    }
+    candidate_complete = (
+        V2_DESIGN.build_full_bank_v2_smoke_regeneration_complete_receipt(
+            prepared_receipt_binding=prepared_binding,
+            lineage=prepared["lineage"], designated_target=target,
+            retained_backup_binding=backup,
+            regenerated_target_binding=regenerated_target,
+            non_target_shard_inventory_digest=non_target_digest,
+            posttransaction_evidence=post_evidence,
+            final_smoke_receipt_binding=final_smoke_binding))
+    complete_binding = _publish_immutable_json_no_overwrite(
+        final_path=paths["complete"], staged_path=paths["complete_staged"],
+        payload=candidate_complete,
+        validator=(
+            V2_DESIGN.validate_full_bank_v2_smoke_regeneration_complete_receipt),
+        binding_builder=(
+            V2_DESIGN.full_bank_v2_smoke_regeneration_complete_receipt_artifact_binding),
+        label="single-shard COMPLETE receipt", recover_nonexact_staged=True)
+    complete, observed_binding, _raw = _load_exact_immutable_receipt(
+        paths["complete"],
+        validator=(
+            V2_DESIGN.validate_full_bank_v2_smoke_regeneration_complete_receipt),
+        binding_builder=(
+            V2_DESIGN.full_bank_v2_smoke_regeneration_complete_receipt_artifact_binding),
+        label="single-shard COMPLETE receipt")
+    if (observed_binding != complete_binding
+            or complete["final_smoke_receipt_binding"] != final_smoke_binding):
+        raise RuntimeError("single-shard COMPLETE binds another PASS smoke")
+    return complete, complete_binding
+
+
+def _recover_exact_historical_metadata_from_migrated(
+        migrated: Mapping[str, Any], binding: Mapping[str, Any], *,
+        correction_digest: str, label: str,
+        ) -> dict[str, Any]:
+    """Invert the sole authorised field addition and verify historical bytes."""
+
+    if not isinstance(binding, Mapping):
+        raise RuntimeError(f"{label} historical binding is unavailable")
+    self_key = binding.get("self_digest_key")
+    value = dict(migrated)
+    if (not isinstance(self_key, str)
+            or value.get(ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD)
+            != correction_digest):
+        raise RuntimeError(f"{label} is not an exact half-transition")
+    _verify_self_digest(value, self_key, label)
+    historical = _without_digest(value, self_key)
+    historical.pop(ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD, None)
+    historical[self_key] = canonical_digest(historical)
+    raw = (json.dumps(historical, indent=2, sort_keys=True) + "\n").encode()
+    if (set(binding) != {
+            "path", "schema", "self_digest_key", "self_digest",
+            "raw_sha256", "byte_count"}
+            or historical.get("schema") != binding.get("schema")
+            or historical.get(self_key) != binding.get("self_digest")
+            or len(raw) != binding.get("byte_count")
+            or hashlib.sha256(raw).hexdigest() != binding.get("raw_sha256")):
+        raise RuntimeError(f"{label} does not invert to the authority base")
+    return historical
+
+
+def _migrate_historical_full_bank_v2_path_projection_metadata(
+        *, out: Path, index_path: Path, smoke_path: Path,
+        encoder_path_projection_correction_digest: str,
+        base_smoke_artifact_bundle: Mapping[str, Any],
+        base_smoke_artifact_bundle_digest: str,
+        ) -> bool:
+    """Perform the sole authorised post-base-smoke metadata transition."""
+
+    correction_digest = _validate_encoder_path_projection_correction_digest(
+        encoder_path_projection_correction_digest,
+        label="active full-bank V2 authority")
+    _require_sha256(
+        base_smoke_artifact_bundle_digest,
+        "encoder-path-projection base-smoke artifact bundle digest")
+    if V2_DESIGN.canonical_digest(base_smoke_artifact_bundle) != (
+            base_smoke_artifact_bundle_digest):
+        raise RuntimeError(
+            "encoder-path-projection base-smoke artifact bundle changed")
+
+    index_present = index_path.exists() or index_path.is_symlink()
+    smoke_present = smoke_path.exists() or smoke_path.is_symlink()
+    if not index_present and not smoke_present:
+        return False
+    if ((index_present
+         and (not index_path.is_file() or index_path.is_symlink()))
+            or (smoke_present
+                and (not smoke_path.is_file() or smoke_path.is_symlink()))):
+        raise RuntimeError(
+            "full-bank V2 metadata migration refuses non-regular artifacts")
+    index_exists = index_present
+    smoke_exists = smoke_present
+    index = (_read_regular_json(index_path, label="full-bank V2 latent index")
+             if index_exists else {})
+    smoke = (_read_regular_json(
+        smoke_path, label="full-bank V2 encoding smoke receipt")
+        if smoke_exists else {})
+    index_digest_value = index.get(
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD)
+    smoke_digest_value = smoke.get(
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD)
+    index_binding = base_smoke_artifact_bundle.get("latent_index_binding")
+    smoke_binding = base_smoke_artifact_bundle.get(
+        "base_smoke_receipt_binding")
+    if index_digest_value == correction_digest and (
+            not smoke_exists or smoke_digest_value == correction_digest):
+        _verify_self_digest(
+            index, "latents_index_digest", "full-bank V2 latent index")
+        if smoke_exists:
+            _verify_self_digest(
+                smoke, "smoke_receipt_digest",
+                "full-bank V2 encoding smoke receipt")
+            if smoke.get("latent_index_digest") != index.get(
+                    "latents_index_digest"):
+                raise RuntimeError(
+                    "prior full-bank V2 encoding smoke binds another index")
+        for path, payload, label in (
+                (index_path, index, "current full-bank V2 latent index"),
+                *(([(smoke_path, smoke,
+                     "current full-bank V2 encoding smoke receipt")]
+                   if smoke_exists else []))):
+            metadata = _path_presence(path, label=label)
+            raw = _pretty_json_bytes(payload)
+            if metadata is None or path.read_bytes() != raw:
+                raise RuntimeError(f"{label} raw bytes changed")
+            descriptor = os.open(
+                path, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0))
+            try:
+                reopened = os.fstat(descriptor)
+                if (not stat.S_ISREG(reopened.st_mode)
+                        or reopened.st_dev != metadata.st_dev
+                        or reopened.st_ino != metadata.st_ino
+                        or reopened.st_size != len(raw)):
+                    raise RuntimeError(f"{label} reopen changed")
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+        _fsync_directory(index_path.parent)
+        return False
+    if (index_digest_value == correction_digest
+            and smoke_exists and smoke_digest_value is None):
+        historical_index = _recover_exact_historical_metadata_from_migrated(
+            index, index_binding, correction_digest=correction_digest,
+            label="half-transition full-bank V2 latent index")
+        historical_smoke = _read_exact_historical_metadata(
+            smoke_path, smoke_binding,
+            label="historical full-bank V2 encoding smoke receipt")
+        if historical_smoke.get("latent_index_digest") != historical_index.get(
+                "latents_index_digest"):
+            raise RuntimeError(
+                "historical encoding smoke binds another latent index")
+        shard_snapshot = _snapshot_historical_full_bank_v2_shards(
+            out=out, index=historical_index,
+            base_smoke_artifact_bundle=base_smoke_artifact_bundle)
+        migrated_smoke = {
+            **_without_digest(historical_smoke, "smoke_receipt_digest"),
+            ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+                correction_digest,
+            "latent_index_digest": index["latents_index_digest"],
+        }
+        migrated_smoke["smoke_receipt_digest"] = canonical_digest(
+            migrated_smoke)
+        _atomic_json_with_parent_fsync(smoke_path, migrated_smoke)
+        _assert_historical_full_bank_v2_shards_unchanged(shard_snapshot)
+        return True
+    if index_digest_value is not None or smoke_digest_value is not None:
+        raise RuntimeError(
+            "prior full-bank V2 path-projection correction lineage changed")
+    if not index_exists or not smoke_exists:
+        raise RuntimeError(
+            "historical full-bank V2 metadata migration requires the exact "
+            "base index and smoke receipt")
+
+    historical_index = _read_exact_historical_metadata(
+        index_path, index_binding, label="historical full-bank V2 latent index")
+    historical_smoke = _read_exact_historical_metadata(
+        smoke_path, smoke_binding,
+        label="historical full-bank V2 encoding smoke receipt")
+    if historical_smoke.get("latent_index_digest") != historical_index.get(
+            "latents_index_digest"):
+        raise RuntimeError(
+            "historical encoding smoke binds another latent index")
+    shard_snapshot = _snapshot_historical_full_bank_v2_shards(
+        out=out, index=historical_index,
+        base_smoke_artifact_bundle=base_smoke_artifact_bundle)
+
+    migrated_index = {
+        **_without_digest(historical_index, "latents_index_digest"),
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD: correction_digest,
+    }
+    migrated_index["latents_index_digest"] = canonical_digest(migrated_index)
+    migrated_smoke = {
+        **_without_digest(historical_smoke, "smoke_receipt_digest"),
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD: correction_digest,
+        "latent_index_digest": migrated_index["latents_index_digest"],
+    }
+    migrated_smoke["smoke_receipt_digest"] = canonical_digest(migrated_smoke)
+    _atomic_json_pair(index_path, migrated_index, smoke_path, migrated_smoke)
+    _assert_historical_full_bank_v2_shards_unchanged(shard_snapshot)
+    return True
+
+
 def _validate_full_bank_v2_latent_index(
         index: Mapping[str, Any], *, out: Path,
         manifest: Mapping[str, Any], receipt: Mapping[str, Any],
         rows: list[dict[str, Any]], contract_artifact: Mapping[str, Any],
         encoder_compute_dtype_correction_digest: str,
+        encoder_path_projection_correction_digest: str,
         require_complete: bool, verify_encoder_checkpoint: bool,
         ) -> dict[str, Any]:
     """Validate the exact atomic-shard index produced by this module."""
@@ -1063,6 +2921,10 @@ def _validate_full_bank_v2_latent_index(
         _validate_encoder_compute_dtype_correction_digest(
             encoder_compute_dtype_correction_digest,
             label="active full-bank V2 authority"))
+    expected_path_correction_digest = (
+        _validate_encoder_path_projection_correction_digest(
+            encoder_path_projection_correction_digest,
+            label="active full-bank V2 authority"))
     expected_bindings = {
         key: manifest[key] for key in FULL_BANK_V2_BINDING_KEYS
     }
@@ -1072,6 +2934,8 @@ def _validate_full_bank_v2_latent_index(
             or index.get("corpus_design") != "full-bank-v2"
             or index.get("encoder_compute_dtype_correction_digest")
             != expected_dtype_correction_digest
+            or index.get(ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD)
+            != expected_path_correction_digest
             or index.get("state_manifest_digest")
             != manifest["state_manifest_digest"]
             or index.get("full_bank_assignment_manifest_digest")
@@ -1129,7 +2993,8 @@ def _validate_full_bank_v2_latent_index(
         if (not str(record.get("path", "")).startswith(
                 f"{FULL_BANK_V2_LATENTS_NAME}/context/")
                 or path.is_symlink()
-                or not _valid_existing(path, record, CONTEXT_SHAPE)):
+                or not _valid_existing(
+                    path, record, CONTEXT_SHAPE, preserve_atime=True)):
             raise RuntimeError("full-bank V2 context latent shard is invalid")
     for record in horizons:
         key = str(record.get("key"))
@@ -1147,7 +3012,8 @@ def _validate_full_bank_v2_latent_index(
         if (not str(record.get("path", "")).startswith(
                 f"{FULL_BANK_V2_LATENTS_NAME}/horizon/")
                 or path.is_symlink()
-                or not _valid_existing(path, record, HORIZON_SHAPE)):
+                or not _valid_existing(
+                    path, record, HORIZON_SHAPE, preserve_atime=True)):
             raise RuntimeError("full-bank V2 horizon latent shard is invalid")
     if require_complete:
         if (index.get("complete") is not True
@@ -1181,7 +3047,12 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
 
     scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
     (manifest, receipt, rows, artifact,
-     encoder_compute_dtype_correction_digest) = _load_full_bank_v2_inputs(
+     encoder_compute_dtype_correction_digest,
+     encoder_path_projection_correction_digest,
+     _base_smoke_artifact_bundle,
+     _base_smoke_artifact_bundle_digest,
+     transaction_contract,
+     transaction_contract_digest) = _load_full_bank_v2_inputs(
          scorer_fit, allow_partial=True)
     branch_bundle = (
         CORPUS_BUILDER
@@ -1198,6 +3069,8 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
         contract_artifact=artifact,
         encoder_compute_dtype_correction_digest=
             encoder_compute_dtype_correction_digest,
+        encoder_path_projection_correction_digest=
+            encoder_path_projection_correction_digest,
         require_complete=False,
         verify_encoder_checkpoint=verify_encoder_checkpoint)
     smoke = _read_regular_json(
@@ -1221,6 +3094,8 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
             or smoke.get("status") != STATUS
             or smoke.get("encoder_compute_dtype_correction_digest")
             != encoder_compute_dtype_correction_digest
+            or smoke.get(ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD)
+            != encoder_path_projection_correction_digest
             or smoke.get("base_end_to_end_pass") is not True
             or smoke.get("candidate_indices") != expected_candidates
             or smoke.get("branch_count") != 12
@@ -1255,58 +3130,71 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
             or len(smoke_contexts) != 1
             or len(smoke_horizons) != 12):
         raise RuntimeError("full-bank V2 encoding smoke evidence changed")
+    transaction_status = (
+        _classify_full_bank_v2_single_shard_regeneration_transaction(
+            out=scorer_fit,
+            encoder_path_projection_correction_digest=
+                encoder_path_projection_correction_digest,
+            transaction_contract=transaction_contract,
+            transaction_contract_digest=transaction_contract_digest))
+    transaction_complete = transaction_status["transaction_state"] == "COMPLETE"
+    if (transaction_status["prepared_present"] is True
+            and transaction_status["complete_present"] is False):
+        expected_live_lineage = _transaction_lineage(
+            manifest=manifest, corpus_receipt=receipt,
+            branch_smoke=branch_smoke, contract_artifact=artifact,
+            encoder_compute_dtype_correction_digest=
+                encoder_compute_dtype_correction_digest,
+            encoder_path_projection_correction_digest=
+                encoder_path_projection_correction_digest)
+        _validate_transaction_live_lineage(
+            out=scorer_fit, transaction_contract=transaction_contract,
+            expected_lineage=expected_live_lineage,
+            require_complete=transaction_status["complete_present"] is True)
+    if smoke.get("pass") is True and not transaction_complete:
+        raise RuntimeError(
+            "full-bank V2 PASS smoke lacks exact transaction COMPLETE")
+    if transaction_complete:
+        if (smoke.get(
+                "single_shard_regeneration_transaction_contract_digest")
+                != transaction_contract_digest
+                or smoke.get("single_shard_regeneration_prepared_digest")
+                != transaction_status["prepared_receipt_digest"]
+                or smoke.get(
+                    "single_shard_regeneration_transaction_complete") is not True
+                or (index.get("complete") is True
+                    and smoke.get("single_shard_regeneration_complete_digest")
+                    != transaction_status["complete_receipt_digest"])):
+            raise RuntimeError(
+                "full-bank V2 smoke transaction lineage changed")
     if require_protocol_complete and (
             smoke.get("pass") is not True
             or smoke.get("zero_new_resume_verified") is not True
             or smoke.get("single_shard_deletion_regeneration_verified")
             is not True
-            or smoke.get("smoke_protocol_complete") is not True):
+            or smoke.get("smoke_protocol_complete") is not True
+            or not transaction_complete):
         raise RuntimeError("full-bank V2 smoke durability protocol is incomplete")
     target_record = min(
         smoke_horizons, key=lambda record: int(record["candidate_index"]))
-    target_path = _resolve_frame(scorer_fit, str(target_record["path"]))
-    latent_inventory = [
-        {
-            "path": str((_resolve_frame(
-                scorer_fit, str(record["path"]))).relative_to(ROOT)),
+    _target_physical, target_logical = _resolve_registered_logical_path(
+        scorer_fit, str(target_record["path"]))
+    latent_inventory: list[dict[str, Any]] = []
+    for record in sorted(
+            smoke_contexts + smoke_horizons,
+            key=lambda value: str(value["path"])):
+        _physical, logical = _resolve_registered_logical_path(
+            scorer_fit, str(record["path"]))
+        latent_inventory.append({
+            "path": str(logical),
             "sha256": record["sha256"],
             "byte_count": record["byte_count"],
             "shape": record["shape"],
-        }
-        for record in sorted(
-            smoke_contexts + smoke_horizons,
-            key=lambda value: str(value["path"]))
-    ]
-    registered_paths: set[Path] = {
-        scorer_fit / CORPUS_BUILDER.SCORER_FIT_V2_BRANCH_ROWS_NAME,
-        scorer_fit / CORPUS_BUILDER.SCORER_FIT_V2_CORPUS_RECEIPT_NAME,
-        scorer_fit / CORPUS_BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME,
-        scorer_fit / FULL_BANK_V2_INDEX_NAME,
-        scorer_fit / FULL_BANK_V2_SMOKE_NAME,
-        scorer_fit / FULL_BANK_V2_ENCODING_SUMMARY_NAME,
-    }
-    for row in smoke_rows:
-        registered_paths.add(
-            scorer_fit / CORPUS_BUILDER.SCORER_FIT_V2_ROW_RECORDS_NAME
-            / f"{row['branch_identity_digest']}.json")
-        for frame in (
-                list(row.get("context_frames", []))
-                + list(row.get("horizon_frames", []))):
-            registered_paths.add(
-                _resolve_frame(scorer_fit, str(frame["path"])))
-    for record in smoke_contexts + smoke_horizons:
-        registered_paths.add(
-            _resolve_frame(scorer_fit, str(record["path"])))
-    inventory: list[dict[str, Any]] = []
-    for path in sorted(registered_paths, key=lambda value: str(value)):
-        if not path.is_file() or path.is_symlink():
-            raise RuntimeError(
-                "full-bank V2 smoke artifact inventory is incomplete")
-        inventory.append({
-            "path": str(path.relative_to(scorer_fit)),
-            "raw_sha256": file_sha256(path),
-            "byte_count": path.stat().st_size,
         })
+    inventory = _registered_smoke_artifact_inventory(
+        scorer_fit, smoke_rows=smoke_rows,
+        smoke_context_records=smoke_contexts,
+        smoke_horizon_records=smoke_horizons)
     return {
         "manifest": manifest,
         "rows": rows,
@@ -1316,7 +3204,7 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
         "branch_smoke_receipt": dict(branch_smoke),
         "encoding_smoke_receipt": smoke,
         "single_shard_regeneration_target": {
-            "path": str(target_path.relative_to(ROOT)),
+            "path": str(target_logical),
             "sha256": target_record["sha256"],
             "byte_count": target_record["byte_count"],
             "shape": target_record["shape"],
@@ -1327,6 +3215,8 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
             latent_inventory),
         "encoder_compute_dtype_correction_digest":
             encoder_compute_dtype_correction_digest,
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+            encoder_path_projection_correction_digest,
         "state_count": 1,
         "horizon_latent_count": 12,
         "horizon_shape": [HORIZONS, TOKENS, TOKEN_DIM],
@@ -1335,16 +3225,30 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
         "invocation_new_horizon_shards": smoke[
             "invocation_new_horizon_shards"],
         "zero_new_resume_verified": smoke["zero_new_resume_verified"],
+        "single_shard_regeneration_transaction_state": (
+            FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_STATE_COMPLETE
+            if transaction_complete else
+            FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_STATE_NONE),
+        "single_shard_regeneration_transaction_complete":
+            transaction_complete,
+        "single_shard_regeneration_prepared_digest": transaction_status[
+            "prepared_receipt_digest"],
+        "single_shard_regeneration_complete_digest": transaction_status[
+            "complete_receipt_digest"],
+        "single_shard_regeneration_target_exact": (
+            transaction_status["target_exact"] if transaction_complete else True),
+        "single_shard_regeneration_backup_exact": transaction_status[
+            "backup_exact"],
         "single_registered_shard_regenerated": bool(
             smoke["invocation_new_context_shards"] == 0
-            and smoke["invocation_new_horizon_shards"] == 1
+            and smoke["invocation_new_horizon_shards"] in {0, 1}
             and smoke.get("single_shard_deletion_regeneration_verified")
-            is True),
+            is True and transaction_complete),
         "only_registered_missing_shard_changed": bool(
             smoke["invocation_new_context_shards"] == 0
-            and smoke["invocation_new_horizon_shards"] == 1
+            and smoke["invocation_new_horizon_shards"] in {0, 1}
             and smoke.get("single_shard_deletion_regeneration_verified")
-            is True),
+            is True and transaction_complete),
     }
 
 
@@ -1359,7 +3263,12 @@ def load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
     _ = verify_frame_paths
     scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
     (manifest, receipt, rows, artifact,
-     encoder_compute_dtype_correction_digest) = _load_full_bank_v2_inputs(
+     encoder_compute_dtype_correction_digest,
+     encoder_path_projection_correction_digest,
+     _base_smoke_artifact_bundle,
+     _base_smoke_artifact_bundle_digest,
+     _transaction_contract,
+     _transaction_contract_digest) = _load_full_bank_v2_inputs(
          scorer_fit, allow_partial=False)
     branch_bundle = (
         CORPUS_BUILDER
@@ -1379,6 +3288,8 @@ def load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
         contract_artifact=artifact,
         encoder_compute_dtype_correction_digest=
             encoder_compute_dtype_correction_digest,
+        encoder_path_projection_correction_digest=
+            encoder_path_projection_correction_digest,
         require_complete=True,
         verify_encoder_checkpoint=verify_encoder_checkpoint)
     smoke_bundle = (
@@ -1397,6 +3308,8 @@ def load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
             "target_encoder_checkpoint_sha256"],
         "encoder_compute_dtype_correction_digest":
             encoder_compute_dtype_correction_digest,
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+            encoder_path_projection_correction_digest,
     }
     return {
         "state_manifest": manifest,
@@ -1410,6 +3323,10 @@ def load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
         "state_count": FULL_BANK_V2_EXPECTED_STATES,
         "horizon_latent_count": FULL_BANK_V2_EXPECTED_BRANCHES,
         "horizon_shape": [HORIZONS, TOKENS, TOKEN_DIM],
+        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+            encoder_path_projection_correction_digest,
+        "registered_smoke_artifact_inventory": smoke_bundle[
+            "registered_smoke_artifact_inventory"],
         "registered_smoke_shard_inventory_digest": smoke_bundle[
             "registered_smoke_shard_inventory_digest"],
         "invocation_new_context_shards": smoke_bundle[
@@ -1424,6 +3341,18 @@ def load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
             "only_registered_missing_shard_changed"],
         "single_shard_regeneration_target": smoke_bundle[
             "single_shard_regeneration_target"],
+        "single_shard_regeneration_transaction_state": smoke_bundle[
+            "single_shard_regeneration_transaction_state"],
+        "single_shard_regeneration_transaction_complete": smoke_bundle[
+            "single_shard_regeneration_transaction_complete"],
+        "single_shard_regeneration_prepared_digest": smoke_bundle[
+            "single_shard_regeneration_prepared_digest"],
+        "single_shard_regeneration_complete_digest": smoke_bundle[
+            "single_shard_regeneration_complete_digest"],
+        "single_shard_regeneration_target_exact": smoke_bundle[
+            "single_shard_regeneration_target_exact"],
+        "single_shard_regeneration_backup_exact": smoke_bundle[
+            "single_shard_regeneration_backup_exact"],
     }
 
 
@@ -1437,6 +3366,9 @@ def main() -> int:
     parser.add_argument("--batch-frames", type=int, default=8)
     parser.add_argument("--smoke", action="store_true",
                         help="encode and verify only the registered first state")
+    parser.add_argument(
+        "--single-shard-regeneration-transaction", action="store_true",
+        help="resume the one exact-once full-bank V2 candidate-0 smoke transaction")
     args = parser.parse_args()
     if args.batch_frames < HORIZONS:
         raise SystemExit("--batch-frames must be at least four")
@@ -1446,10 +3378,20 @@ def main() -> int:
     if full_bank_v2 and args.pool != "scorer_fit":
         raise RuntimeError(
             "full-bank V2 does not authorise final-evaluation encoding")
+    if args.single_shard_regeneration_transaction and not (
+            full_bank_v2 and args.pool == "scorer_fit" and args.smoke):
+        raise RuntimeError(
+            "single-shard regeneration transaction requires full-bank-v2 "
+            "scorer_fit --smoke")
     if full_bank_v2:
         (manifest, corpus_receipt, all_rows,
          v2_contract_artifact,
-         encoder_compute_dtype_correction_digest) = _load_full_bank_v2_inputs(
+         encoder_compute_dtype_correction_digest,
+         encoder_path_projection_correction_digest,
+         base_smoke_artifact_bundle,
+         base_smoke_artifact_bundle_digest,
+         transaction_contract,
+         transaction_contract_digest) = _load_full_bank_v2_inputs(
              out, allow_partial=args.smoke)
         contract_lineage = None
         operational_contract_digest = v2_contract_artifact[
@@ -1459,6 +3401,11 @@ def main() -> int:
             out, allow_partial=args.smoke, pool=args.pool)
         v2_contract_artifact = None
         encoder_compute_dtype_correction_digest = None
+        encoder_path_projection_correction_digest = None
+        base_smoke_artifact_bundle = None
+        base_smoke_artifact_bundle_digest = None
+        transaction_contract = None
+        transaction_contract_digest = None
         operational_contract_digest = (
             contract_lineage["current_scorer_contract_v1_2_digest"]
             if contract_lineage is not None else contract_digest()
@@ -1487,6 +3434,14 @@ def main() -> int:
     superseded_root_name = _output_name(
         full_bank_v2=full_bank_v2, legacy="superseded_receipts",
         v2=FULL_BANK_V2_SUPERSEDED_RECEIPTS_NAME)
+    if full_bank_v2:
+        _migrate_historical_full_bank_v2_path_projection_metadata(
+            out=out, index_path=index_path, smoke_path=encoding_smoke_path,
+            encoder_path_projection_correction_digest=
+                encoder_path_projection_correction_digest,
+            base_smoke_artifact_bundle=base_smoke_artifact_bundle,
+            base_smoke_artifact_bundle_digest=
+                base_smoke_artifact_bundle_digest)
     expected_states = manifest["states"]
     if args.smoke:
         if args.pool != "scorer_fit":
@@ -1571,6 +3526,12 @@ def main() -> int:
                     raise RuntimeError(
                         "prior full-bank V2 encoder-compute-dtype correction "
                         "digest changed")
+                if prior.get(
+                        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD) != (
+                            encoder_path_projection_correction_digest):
+                    raise RuntimeError(
+                        "prior full-bank V2 encoder-path-projection correction "
+                        "digest changed")
             contract_matches = (
                 prior.get("scorer_fit_corpus_v2_scorer_contract_digest")
                 == operational_contract_digest if full_bank_v2 else
@@ -1640,7 +3601,9 @@ def main() -> int:
             for sid, record in prior_context.items():
                 state = state_by_id[sid]
                 latent_path = out / str(record["path"])
-                if (not _valid_existing(latent_path, record, CONTEXT_SHAPE)
+                if (not _valid_existing(
+                        latent_path, record, CONTEXT_SHAPE,
+                        preserve_atime=full_bank_v2)
                         or record.get("state_identity_digest")
                         != state["state_identity_digest"]):
                     raise RuntimeError(
@@ -1650,7 +3613,9 @@ def main() -> int:
             for key, record in prior_horizon.items():
                 row = row_by_full_key[key]
                 latent_path = out / str(record["path"])
-                if (not _valid_existing(latent_path, record, HORIZON_SHAPE)
+                if (not _valid_existing(
+                        latent_path, record, HORIZON_SHAPE,
+                        preserve_atime=full_bank_v2)
                         or record.get("branch_identity_digest")
                         != row["branch_identity_digest"]):
                     raise RuntimeError(
@@ -1665,6 +3630,35 @@ def main() -> int:
                 "resume the registered full encoding"
             )
 
+    transaction_pre_encoding_status: dict[str, Any] | None = None
+    if full_bank_v2:
+        if args.single_shard_regeneration_transaction:
+            transaction_pre_encoding_status = (
+                _prepare_and_move_full_bank_v2_single_shard_transaction(
+                    out=out, manifest=manifest,
+                    corpus_receipt=corpus_receipt,
+                    branch_smoke=branch_smoke,
+                    contract_artifact=v2_contract_artifact,
+                    encoder_compute_dtype_correction_digest=
+                        encoder_compute_dtype_correction_digest,
+                    encoder_path_projection_correction_digest=
+                        encoder_path_projection_correction_digest,
+                    transaction_contract=transaction_contract,
+                    transaction_contract_digest=transaction_contract_digest))
+        else:
+            transaction_pre_encoding_status = (
+                _classify_full_bank_v2_single_shard_regeneration_transaction(
+                    out=out,
+                    encoder_path_projection_correction_digest=
+                        encoder_path_projection_correction_digest,
+                    transaction_contract=transaction_contract,
+                    transaction_contract_digest=transaction_contract_digest))
+            if transaction_pre_encoding_status["transaction_state"] not in {
+                    "UNSTARTED", "COMPLETE"}:
+                raise RuntimeError(
+                    "an incomplete single-shard transaction may be resumed "
+                    "only with --single-shard-regeneration-transaction")
+
     context_dir = out / latent_root_name / "context"
     horizon_dir = out / latent_root_name / "horizon"
     invalid_root = out / invalid_root_name / "latents"
@@ -1678,7 +3672,9 @@ def main() -> int:
         identity = str(state["state_identity_digest"])
         path = context_dir / f"{identity}.f16"
         record = prior_context.get(sid)
-        if (_valid_existing(path, record, CONTEXT_SHAPE)
+        if (_valid_existing(
+                path, record, CONTEXT_SHAPE,
+                preserve_atime=full_bank_v2)
                 and record.get("state_identity_digest") == identity):
             context_records[sid] = record
         else:
@@ -1691,7 +3687,9 @@ def main() -> int:
         identity = str(row["branch_identity_digest"])
         path = horizon_dir / f"{identity}.f16"
         record = prior_horizon.get(key)
-        if (_valid_existing(path, record, HORIZON_SHAPE)
+        if (_valid_existing(
+                path, record, HORIZON_SHAPE,
+                preserve_atime=full_bank_v2)
                 and record.get("branch_identity_digest") == identity):
             horizon_records[key] = record
         else:
@@ -1701,6 +3699,39 @@ def main() -> int:
 
     new_context_shards = len(missing_context)
     new_horizon_shards = len(missing_horizon)
+    transaction_target_path: Path | None = None
+    transaction_target_mode: int | None = None
+    if full_bank_v2 and args.single_shard_regeneration_transaction:
+        transaction_paths = _transaction_paths(out, transaction_contract)
+        prepared_receipt, _prepared_binding, _prepared_raw = (
+            _load_exact_immutable_receipt(
+                transaction_paths["prepared"],
+                validator=(
+                    V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+                binding_builder=(
+                    V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+                label="single-shard PREPARED receipt"))
+        transaction_target_path = _transaction_physical_path(
+            out, prepared_receipt["designated_target"]["path"])
+        transaction_target_mode = int(
+            prepared_receipt["designated_target"]["mode_octal"], 8)
+        state_name = transaction_pre_encoding_status["transaction_state"]
+        if state_name == "MOVED_REGENERATION_PENDING":
+            if (new_context_shards != 0 or new_horizon_shards != 1
+                    or missing_horizon[0]["path"].resolve()
+                    != transaction_target_path
+                    or int(missing_horizon[0]["row"]["candidate_index"]) != 0):
+                raise RuntimeError(
+                    "single-shard transaction found another missing artifact")
+        elif (state_name in {
+                "RESTORED_COMPLETE_PENDING",
+                "COMPLETE_SMOKE_PUBLICATION_PENDING", "COMPLETE"}):
+            if new_context_shards != 0 or new_horizon_shards != 0:
+                raise RuntimeError(
+                    "single-shard metadata recovery found a missing artifact")
+        else:
+            raise RuntimeError(
+                f"single-shard transaction cannot encode from {state_name}")
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     dtype = target_encoder_compute_dtype(
@@ -1750,7 +3781,13 @@ def main() -> int:
             len(batch), *HORIZON_SHAPE)
         for item, array in zip(batch, encoded):
             row = item["row"]
-            digest, byte_count = atomic_f16(item["path"], array)
+            mode = (transaction_target_mode
+                    if transaction_target_path is not None
+                    and item["path"].resolve() == transaction_target_path
+                    else None)
+            digest, byte_count = atomic_f16(item["path"], array, mode=mode)
+            if mode is not None:
+                _fsync_directory(item["path"].parent)
             horizon_records[item["key"]] = {
                 "key": item["key"],
                 "state_id": row["state_id"],
@@ -1793,6 +3830,9 @@ def main() -> int:
            if full_bank_v2 else {}),
         **({"encoder_compute_dtype_correction_digest":
             encoder_compute_dtype_correction_digest}
+           if full_bank_v2 else {}),
+        **({ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+            encoder_path_projection_correction_digest}
            if full_bank_v2 else {}),
         "target_encoder_digest": manifest["target_encoder_digest"],
         "target_encoder_checkpoint_sha256":
@@ -1896,9 +3936,13 @@ def main() -> int:
         resume_only_verified = (
             len(smoke_context_records) == 1
             and len(smoke_horizon_records) == candidates_per_state
-            and all(_valid_existing(out / record["path"], record, CONTEXT_SHAPE)
+            and all(_valid_existing(
+                out / record["path"], record, CONTEXT_SHAPE,
+                preserve_atime=full_bank_v2)
                     for record in smoke_context_records)
-            and all(_valid_existing(out / record["path"], record, HORIZON_SHAPE)
+            and all(_valid_existing(
+                out / record["path"], record, HORIZON_SHAPE,
+                preserve_atime=full_bank_v2)
                     for record in smoke_horizon_records)
         )
         prior_smoke: dict[str, Any] = {}
@@ -1916,19 +3960,60 @@ def main() -> int:
                         "encoder_compute_dtype_correction_digest")
                     != encoder_compute_dtype_correction_digest
                     or prior_smoke.get(
+                        ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD)
+                    != encoder_path_projection_correction_digest
+                    or prior_smoke.get(
                         "scorer_fit_corpus_v2_scorer_contract_digest")
                     != operational_contract_digest):
                 raise RuntimeError(
                     "existing full-bank V2 smoke receipt binds another run")
-        zero_new_resume_verified = bool(
-            prior_smoke.get("zero_new_resume_verified")
-            or (prior_smoke and new_context_shards == 0
-                and new_horizon_shards == 0))
-        single_shard_regeneration_verified = bool(
-            prior_smoke.get("single_shard_deletion_regeneration_verified")
-            or (prior_smoke and prior and new_context_shards == 0
-                and new_horizon_shards == 1
-                and int(missing_horizon[0]["row"]["candidate_index"]) == 0))
+        smoke_new_context_shards = new_context_shards
+        smoke_new_horizon_shards = new_horizon_shards
+        prepared_receipt_digest: str | None = None
+        transaction_complete_digest: str | None = None
+        if full_bank_v2 and args.single_shard_regeneration_transaction:
+            transaction_paths = _transaction_paths(out, transaction_contract)
+            prepared_receipt, prepared_binding, _prepared_raw = (
+                _load_exact_immutable_receipt(
+                    transaction_paths["prepared"],
+                    validator=(
+                        V2_DESIGN.validate_full_bank_v2_smoke_regeneration_prepared_receipt),
+                    binding_builder=(
+                        V2_DESIGN.full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding),
+                    label="single-shard PREPARED receipt"))
+            prepared_receipt_digest = prepared_binding["self_digest"]
+            complete_metadata = _path_presence(
+                transaction_paths["complete"],
+                label="single-shard COMPLETE receipt")
+            if complete_metadata is not None:
+                existing_complete, existing_complete_binding, _complete_raw = (
+                    _load_exact_immutable_receipt(
+                        transaction_paths["complete"],
+                        validator=(
+                            V2_DESIGN.validate_full_bank_v2_smoke_regeneration_complete_receipt),
+                        binding_builder=(
+                            V2_DESIGN.full_bank_v2_smoke_regeneration_complete_receipt_artifact_binding),
+                        label="single-shard COMPLETE receipt"))
+                transaction_complete_digest = existing_complete_binding[
+                    "self_digest"]
+                smoke_new_context_shards = existing_complete[
+                    "posttransaction_evidence"][
+                        "encoder_invocation_new_context_shards"]
+                smoke_new_horizon_shards = existing_complete[
+                    "posttransaction_evidence"][
+                        "encoder_invocation_new_horizon_shards"]
+            zero_new_resume_verified = True
+            single_shard_regeneration_verified = True
+        else:
+            zero_new_resume_verified = bool(
+                prior_smoke.get("zero_new_resume_verified")
+                or (prior_smoke and new_context_shards == 0
+                    and new_horizon_shards == 0))
+            single_shard_regeneration_verified = bool(
+                prior_smoke.get("single_shard_deletion_regeneration_verified")
+                or (prior_smoke and prior and new_context_shards == 0
+                    and new_horizon_shards == 1
+                    and int(missing_horizon[0]["row"]["candidate_index"]) == 0))
         base_smoke_pass = bool(
             len(rows) == candidates_per_state
             and all(row.get("valid") for row in rows)
@@ -1940,6 +4025,9 @@ def main() -> int:
             and (not full_bank_v2 or index.get(
                 "encoder_compute_dtype_correction_digest")
                 == encoder_compute_dtype_correction_digest)
+            and (not full_bank_v2 or index.get(
+                ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD)
+                == encoder_path_projection_correction_digest)
             and all(row.get("utility") is not None for row in rows)
             and resume_only_verified)
         smoke = {
@@ -1966,6 +4054,17 @@ def main() -> int:
                 "encoder_compute_dtype": TARGET_ENCODER_COMPUTE_DTYPE_NAME,
                 "encoder_compute_dtype_correction_digest":
                     encoder_compute_dtype_correction_digest,
+                ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD:
+                    encoder_path_projection_correction_digest,
+                **({
+                    "single_shard_regeneration_transaction_contract_digest":
+                        transaction_contract_digest,
+                    "single_shard_regeneration_prepared_digest":
+                        prepared_receipt_digest,
+                    "single_shard_regeneration_transaction_complete": True,
+                    "single_shard_regeneration_target_atomic_move_count": 1,
+                    "single_shard_regeneration_target_regeneration_count": 1,
+                } if args.single_shard_regeneration_transaction else {}),
             } if full_bank_v2 else {}),
             "state_id": state["state_id"],
             "state_identity_digest": state["state_identity_digest"],
@@ -2022,8 +4121,8 @@ def main() -> int:
             "smoke_horizon_shards_verified": candidates_per_state,
             "invocation_new_shard_counts_receipt":
                 encoding_summary_path.name,
-            "invocation_new_context_shards": new_context_shards,
-            "invocation_new_horizon_shards": new_horizon_shards,
+            "invocation_new_context_shards": smoke_new_context_shards,
+            "invocation_new_horizon_shards": smoke_new_horizon_shards,
             "resume_only_verified": resume_only_verified,
             "latent_index_digest": index["latents_index_digest"],
             "checks": {
@@ -2037,22 +4136,65 @@ def main() -> int:
         }
         smoke["smoke_receipt_digest"] = canonical_digest(smoke)
         smoke_path = encoding_smoke_path
-        if smoke_path.is_file():
-            existing_smoke = json.loads(smoke_path.read_text())
-            if existing_smoke != smoke:
-                archive = out / superseded_root_name / (
-                    f"{smoke_path.stem}."
-                    f"{file_sha256(smoke_path)[:16]}.json"
-                )
-                archive.parent.mkdir(parents=True, exist_ok=True)
-                if archive.exists():
-                    if archive.read_bytes() != smoke_path.read_bytes():
-                        raise RuntimeError("encoding smoke receipt archive collision")
-                    smoke_path.unlink()
-                else:
-                    os.replace(smoke_path, archive)
-        if not smoke_path.is_file():
-            atomic_json(smoke_path, smoke)
+        if full_bank_v2 and args.single_shard_regeneration_transaction:
+            _complete, complete_binding = (
+                _complete_full_bank_v2_single_shard_transaction(
+                    out=out, smoke=smoke, index=index,
+                    smoke_rows=rows,
+                    smoke_context_records=smoke_context_records,
+                    smoke_horizon_records=smoke_horizon_records,
+                    encoder_path_projection_correction_digest=
+                        encoder_path_projection_correction_digest,
+                    transaction_contract=transaction_contract,
+                    transaction_contract_digest=transaction_contract_digest,
+                    expected_live_lineage=_transaction_lineage(
+                        manifest=manifest, corpus_receipt=corpus_receipt,
+                        branch_smoke=branch_smoke,
+                        contract_artifact=v2_contract_artifact,
+                        encoder_compute_dtype_correction_digest=
+                            encoder_compute_dtype_correction_digest,
+                        encoder_path_projection_correction_digest=
+                            encoder_path_projection_correction_digest)))
+            transaction_complete_digest = complete_binding["self_digest"]
+            _publish_json_with_archive_no_gap(
+                active_path=smoke_path, payload=smoke,
+                archive_dir=out / superseded_root_name,
+                label="full-bank V2 encoding smoke receipt")
+            completed_transaction = (
+                _classify_full_bank_v2_single_shard_regeneration_transaction(
+                    out=out,
+                    encoder_path_projection_correction_digest=
+                        encoder_path_projection_correction_digest,
+                    transaction_contract=transaction_contract,
+                    transaction_contract_digest=transaction_contract_digest))
+            if (completed_transaction["transaction_state"] != "COMPLETE"
+                    or completed_transaction["complete_receipt_digest"]
+                    != transaction_complete_digest):
+                raise RuntimeError(
+                    "single-shard transaction did not publish COMPLETE+PASS")
+        elif full_bank_v2:
+            _publish_json_with_archive_no_gap(
+                active_path=smoke_path, payload=smoke,
+                archive_dir=out / superseded_root_name,
+                label="full-bank V2 encoding smoke receipt")
+        else:
+            if smoke_path.is_file():
+                existing_smoke = json.loads(smoke_path.read_text())
+                if existing_smoke != smoke:
+                    archive = out / superseded_root_name / (
+                        f"{smoke_path.stem}."
+                        f"{file_sha256(smoke_path)[:16]}.json"
+                    )
+                    archive.parent.mkdir(parents=True, exist_ok=True)
+                    if archive.exists():
+                        if archive.read_bytes() != smoke_path.read_bytes():
+                            raise RuntimeError(
+                                "encoding smoke receipt archive collision")
+                        smoke_path.unlink()
+                    else:
+                        os.replace(smoke_path, archive)
+            if not smoke_path.is_file():
+                atomic_json(smoke_path, smoke)
         print(json.dumps(smoke, indent=2, sort_keys=True))
         # V2 smoke is a three-invocation durability protocol.  Intermediate
         # base and zero-new invocations succeed operationally, while only the
@@ -2065,6 +4207,14 @@ def main() -> int:
             raise RuntimeError("complete scorer-fit encoding lacks required smoke receipts")
         smoke = json.loads(smoke_path.read_text())
         _verify_self_digest(smoke, "smoke_receipt_digest", "encoding smoke receipt")
+        if full_bank_v2 and (
+                smoke.get("encoder_compute_dtype_correction_digest")
+                != encoder_compute_dtype_correction_digest
+                or smoke.get(
+                    ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_FIELD)
+                != encoder_path_projection_correction_digest):
+            raise RuntimeError(
+                "completed encoding smoke correction lineage changed")
         branch_smoke = json.loads(branch_smoke_path.read_text())
         _verify_self_digest(
             branch_smoke, "smoke_branch_receipt_digest", "branch smoke receipt")
@@ -2103,9 +4253,13 @@ def main() -> int:
         resume_only_verified = (
             len(smoke_context) == 1
             and len(smoke_horizons) == candidates_per_state
-            and all(_valid_existing(out / record["path"], record, CONTEXT_SHAPE)
+            and all(_valid_existing(
+                out / record["path"], record, CONTEXT_SHAPE,
+                preserve_atime=full_bank_v2)
                     for record in smoke_context)
-            and all(_valid_existing(out / record["path"], record, HORIZON_SHAPE)
+            and all(_valid_existing(
+                out / record["path"], record, HORIZON_SHAPE,
+                preserve_atime=full_bank_v2)
                     for record in smoke_horizons)
         )
         refreshed = {
@@ -2125,21 +4279,43 @@ def main() -> int:
             "materialized_horizon_shard_count": len(index["horizon_records"]),
             "resume_only_verified": resume_only_verified,
             "latent_index_digest": index["latents_index_digest"],
+            **({
+                "single_shard_regeneration_complete_digest":
+                    transaction_pre_encoding_status[
+                        "complete_receipt_digest"],
+            } if full_bank_v2 else {}),
         }
         refreshed["smoke_receipt_digest"] = canonical_digest(refreshed)
         if refreshed != smoke:
-            archive = out / superseded_root_name / (
-                f"{smoke_path.stem}."
-                f"{file_sha256(smoke_path)[:16]}.json"
-            )
-            archive.parent.mkdir(parents=True, exist_ok=True)
-            if archive.exists():
-                if archive.read_bytes() != smoke_path.read_bytes():
-                    raise RuntimeError("encoding smoke receipt archive collision")
-                smoke_path.unlink()
+            if full_bank_v2:
+                _publish_json_with_archive_no_gap(
+                    active_path=smoke_path, payload=refreshed,
+                    archive_dir=out / superseded_root_name,
+                    label="full-bank V2 complete-index smoke receipt")
+                refreshed_status = (
+                    _classify_full_bank_v2_single_shard_regeneration_transaction(
+                        out=out,
+                        encoder_path_projection_correction_digest=
+                            encoder_path_projection_correction_digest,
+                        transaction_contract=transaction_contract,
+                        transaction_contract_digest=transaction_contract_digest))
+                if refreshed_status["transaction_state"] != "COMPLETE":
+                    raise RuntimeError(
+                        "complete-index smoke refresh lost transaction proof")
             else:
-                os.replace(smoke_path, archive)
-            atomic_json(smoke_path, refreshed)
+                archive = out / superseded_root_name / (
+                    f"{smoke_path.stem}."
+                    f"{file_sha256(smoke_path)[:16]}.json"
+                )
+                archive.parent.mkdir(parents=True, exist_ok=True)
+                if archive.exists():
+                    if archive.read_bytes() != smoke_path.read_bytes():
+                        raise RuntimeError(
+                            "encoding smoke receipt archive collision")
+                    smoke_path.unlink()
+                else:
+                    os.replace(smoke_path, archive)
+                atomic_json(smoke_path, refreshed)
 
     print(json.dumps({
         "complete": complete,

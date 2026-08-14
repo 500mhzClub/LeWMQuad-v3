@@ -77,6 +77,31 @@ ENCODER_COMPUTE_DTYPE_CORRECTION_STATUS = (
     "ISSUED_POST_IMPORT_PRE_LATENT_ENCODER_COMPUTE_DTYPE_CORRECTION")
 ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY = (
     "scorer_fit_corpus_v2_encoder_compute_dtype_correction_digest")
+ENCODER_PATH_PROJECTION_CORRECTION_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_post_base_smoke_logical_path_projection_"
+    "correction_v1")
+ENCODER_PATH_PROJECTION_CORRECTION_STATUS = (
+    "ISSUED_POST_BASE_SMOKE_PRE_ZERO_NEW_LOGICAL_PATH_PROJECTION_CORRECTION")
+ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY = (
+    "scorer_fit_corpus_v2_encoder_path_projection_correction_digest")
+FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_single_shard_regeneration_prepared_v1")
+FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STATUS = (
+    "PREPARED_EXACT_ONCE_SINGLE_REGISTERED_SMOKE_SHARD_REGENERATION")
+FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SELF_KEY = (
+    "single_shard_regeneration_prepared_digest")
+FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_single_shard_regeneration_complete_v1")
+FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_STATUS = (
+    "COMPLETE_EXACT_ONCE_SINGLE_REGISTERED_SMOKE_SHARD_REGENERATION")
+FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SELF_KEY = (
+    "single_shard_regeneration_complete_digest")
+FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_CONTRACT_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_single_shard_regeneration_transaction_"
+    "contract_v1")
+FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_CONTRACT_STATUS = (
+    "PROSPECTIVE_PRE_OUTCOME_EXACT_ONCE_SINGLE_SHARD_REGENERATION_"
+    "TRANSACTION")
 
 BRANCH_GENERATED_ROOT_RELATIVE_PATH = Path(
     ".generated/go2_branch_corpus_v1_2")
@@ -121,6 +146,32 @@ ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH = (
     SCORER_FIT_RELATIVE_PATH /
     "scorer_fit_corpus_v2_post_import_encoder_compute_dtype_correction_v1.json"
 )
+ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    "scorer_fit_corpus_v2_post_base_smoke_path_projection_correction_v1.json"
+)
+ENCODER_PATH_PROJECTION_CORRECTION_STAGED_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    ".scorer_fit_corpus_v2_post_base_smoke_path_projection_correction_v1."
+    "json.staged"
+)
+FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH / "single_shard_regeneration_transaction_v1")
+FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_RELATIVE_PATH = (
+    FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH /
+    "prepared.json")
+FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STAGED_RELATIVE_PATH = (
+    FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH /
+    "prepared.json.staged")
+FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_RELATIVE_PATH = (
+    FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH /
+    "complete.json")
+FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_STAGED_RELATIVE_PATH = (
+    FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH /
+    "complete.json.staged")
+FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_RELATIVE_PATH = (
+    FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH /
+    "candidate_0_horizon_original.f16")
 
 ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT = (
     "76bc465cb33ef94d535b433c83660d94335bee00")
@@ -253,6 +304,471 @@ ENCODER_COMPUTE_DTYPE_UPSTREAM_ROPE_SOURCE_BINDING = {
     "sha256": (
         "64be6a87bd9f18d385f4e44186db3347d1665e18a1f0511d51d3b305531562e2"),
     "first_scaled_dot_product_attention_line": 287,
+}
+ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT = (
+    "dc4f59aec63d8cac8b12deaa5adaa78daeabb33b")
+ENCODER_PATH_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
+    "lewm/oracle/go2_scorer_fit_corpus_v2_design.py",
+    "lewm/oracle/go2_scorer_fit_corpus_v2_scorer_contract.py",
+    "scripts/encode_go2_branch_corpus_v1_2.py",
+    "scripts/run_go2_scorer_fit_full_bank_v2.py",
+)
+ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_PATHS = (
+    "lewm/tests/test_go2_scorer_fit_corpus_v2_design.py",
+    "lewm/tests/test_go2_scorer_fit_corpus_v2_scorer_contract.py",
+    "lewm/tests/test_encode_go2_branch_corpus_v1_2.py",
+    "lewm/tests/test_run_go2_scorer_fit_full_bank_v2.py",
+)
+IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST = (
+    "5427a631eda8d79c5b4cae9cbb486830f6354e9f0a90e2fa4c416b4bd15cbb86")
+IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_BINDING = {
+    "path": str(ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH),
+    "schema": ENCODER_COMPUTE_DTYPE_CORRECTION_SCHEMA,
+    "self_digest_key": ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY,
+    "self_digest": IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST,
+    "raw_sha256": (
+        "4d039bb99c047cc090a94afc8c0370ded3edd804b3b04b81f83424ecc0848473"),
+    "byte_count": 228_110,
+    "source_repository_commit":
+        ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+}
+ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING = {
+    "path": "scripts/encode_go2_branch_corpus_v1_2.py",
+    "role": "failed_physical_to_repository_root_path_projection_route",
+    "exists": True,
+    "byte_count": 106_281,
+    "sha256": (
+        "1846d96888c9660896b89cb221e2effc7110112672ae1c38f2db3ff60e9009f8"),
+}
+IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_SMOKE_BINDING = {
+    "path": str(SCORER_FIT_RELATIVE_PATH / "smoke_encoding_receipt_v2.json"),
+    "schema": "go2_scorer_fit_corpus_v2_end_to_end_smoke_receipt_v1",
+    "self_digest_key": "smoke_receipt_digest",
+    "self_digest": (
+        "d4b845f06f6915f734511812457601134bb5e1d42f7531915105b05f4442a34c"),
+    "raw_sha256": (
+        "61eb248f41afebf220d6c573281080f64abcc0315bc433cdc9bf277785192c7d"),
+    "byte_count": 7_678,
+}
+IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_INDEX_BINDING = {
+    "path": str(SCORER_FIT_RELATIVE_PATH / "latents_index_v2.json"),
+    "schema": "go2_scorer_fit_corpus_v2_latents_index_v1",
+    "self_digest_key": "latents_index_digest",
+    "self_digest": (
+        "4135319ced308eaadbbcf1e0966ed3409d9f79e752026eab6baa07ee8e64cc68"),
+    "raw_sha256": (
+        "8852c8e40e455c1c265cb7ba91c8d7000e6d7df6061344dc6d9025c4d5ccabae"),
+    "byte_count": 14_715,
+}
+IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_SUMMARY_BINDING = {
+    "path": str(
+        SCORER_FIT_RELATIVE_PATH / "encoding_invocation_summary_v2.json"),
+    "schema": "go2_scorer_fit_corpus_v2_encoding_invocation_summary_v1",
+    "raw_sha256": (
+        "d5b28fb926f935cab4eafa712c563b4ae55743821e783314a4d2e61cf02c9104"),
+    "byte_count": 522,
+}
+IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_SHARD_INVENTORY = (
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/context/"
+            "c9bf42df529b75ebaf7e9053be059ee7ad639e690f501ba6b8750c968a37634e.f16")),
+        "sha256": "1979fe99fada521a70334afbae5f6856dc62d1651ff9fdd3f5a1d3023fd57273",
+        "byte_count": 4_718_592, "shape": [3, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "589e6cece3045e5002e8a258884796f76781b9d7aad150030c123722397e36b5.f16")),
+        "sha256": "ffbfd64f34396a6ea96575ebdb117e16989542656ae1e22c449e9525d04ccb31",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "091910bef3cc5d0faa7182a45ff539537a992391e3fc5cca8ef071e3d94c2e6d.f16")),
+        "sha256": "1fb08f53ac15880efe98a77e95f41543fbb8a1cb2c6a49c1ae6a37316e56713b",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "877bb7904f228deab46f15b194fa59e409dae43c7fd400e10ad6ba342e877073.f16")),
+        "sha256": "a7e98b2ba3811c5b65c50502992a243aa5f1588af8686b43576fad9da068689f",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "8bec6e8d63d6baba98225b8014d37fbdf835d0bb0d8cc27ff75f94522985d80e.f16")),
+        "sha256": "f792edf4ba1b652d72141203fd1931cd44de960f98c891161508e5c5a432b339",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "64304ded8767d895b0b4c5e4d699723528453179912dde97c2a6d83e467882dd.f16")),
+        "sha256": "8573bbcdc2842d78e7f3e4913e0f97e67893683e89d4bcbede45e9bcf15a50cc",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "b1a2d43db8c20aec5badb08ade0a5b6af2cb8645dff0463d52502188d9972acb.f16")),
+        "sha256": "a11156a739c4311db462c08fe18e2382ea4cb6f059d9c6bf51a058bca712b40a",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "5522e6c91a93b924105df80582c1e452f52387cd8b0f0ee65277e4111fafe114.f16")),
+        "sha256": "90bb6b4b85e68b5715ee1f4bae0884070e5605e249f90400e98e59c18cb139e1",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "2231c264dae87c4ef543e3bc64a8605889bed32079427f813d114fdcecc3b933.f16")),
+        "sha256": "3a5d346d44f641586e0877dc76cc90f4edba61b2d3a979d13c55879eba92925b",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "5bd95ba3985d1929ef40cd6c94c581d3d875ad9ea0f365efbfcde3d5b44642e5.f16")),
+        "sha256": "ccd9d558c8168cf752a6c106cfbc24351073abdc7a7fb15583e297ad5a8e5aab",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "ec0fd3db4e44e0658f1295f2fab1a9b7dcecebeab64ea5063fda5508590bfca3.f16")),
+        "sha256": "6d1b66ee0300013ee8a23f8d0667f43544900ab153f6fbac18131a6ad32f1ca9",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "b48177c5a83a63b6ad7b59e5f91d527622f6549e4a03191ccd170a5e0c7a51c7.f16")),
+        "sha256": "0594e0e9d1263a7f7c190d09536908b1ca1bf4a3f80e69071fd55fd59165b009",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+    {
+        "path": str(SCORER_FIT_RELATIVE_PATH / (
+            "latents_v2/horizon/"
+            "26cb63511286b1024b2ac37923abdfddbb64af3a5c6cc7c9a21ea58a0256cd30.f16")),
+        "sha256": "64ed8aba7190c911644296f5015dbb3668aaf255295e0f7150095ba5d904e3bf",
+        "byte_count": 6_291_456, "shape": [4, 768, 1024],
+    },
+)
+IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_ARTIFACT_BUNDLE = {
+    "schema": "go2_scorer_fit_corpus_v2_path_projection_failure_base_bundle_v1",
+    "latent_index_binding": copy.deepcopy(
+        IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_INDEX_BINDING),
+    "encoding_invocation_summary_binding": copy.deepcopy(
+        IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_SUMMARY_BINDING),
+    "base_smoke_receipt_binding": copy.deepcopy(
+        IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_SMOKE_BINDING),
+    "latent_shard_inventory": copy.deepcopy(list(
+        IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_SHARD_INVENTORY)),
+    "context_latent_shard_count": 1,
+    "horizon_latent_shard_count": 12,
+    "total_latent_shard_count": 13,
+    "total_latent_storage_bytes": 80_216_064,
+}
+ENCODER_PATH_PROJECTION_SINGLE_SHARD_REGENERATION_TRANSACTION_CONTRACT = {
+    "schema": FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_CONTRACT_SCHEMA,
+    "status": FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_CONTRACT_STATUS,
+    "complete": True,
+    "transaction_version": 1,
+    "transaction_directory_relative_path": str(
+        FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH),
+    "designated_target_selection": {
+        "producer_projection": (
+            "load_and_validate_full_bank_v2_encoding_smoke_for_consumption"),
+        "record_kind": "horizon_latent",
+        "candidate_index": 0,
+        "selection_rule": "MINIMUM_INTEGER_CANDIDATE_INDEX",
+        "required_shape": [4, 768, 1024],
+        "required_path_parent": str(
+            SCORER_FIT_RELATIVE_PATH / "latents_v2/horizon"),
+        "candidate_outcome_or_label_used": False,
+    },
+    "prepared_receipt_contract": {
+        "schema": FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SCHEMA,
+        "status": FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STATUS,
+        "self_digest_key": FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SELF_KEY,
+        "relative_path": str(
+            FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_RELATIVE_PATH),
+        "staged_relative_path": str(
+            FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STAGED_RELATIVE_PATH),
+        "complete_value": False,
+        "required_before_target_move": True,
+    },
+    "backup_contract": {
+        "relative_path": str(
+            FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_RELATIVE_PATH),
+        "same_filesystem_as_active_target_required": True,
+        "must_be_absent_before_atomic_move": True,
+        "atomic_move_not_copy_or_unlink": True,
+        "atomic_move_primitive": "RENAME_NOREPLACE",
+        "no_overwrite_allowed": True,
+        "absence_precheck_alone_is_not_no_overwrite": True,
+        "retained_backup_exact_reopen_before_durability_fsync_required": True,
+        "retained_backup_file_fsync_after_move_required": True,
+        "destination_directory_fsync_before_source_directory_required": True,
+        "source_directory_fsync_after_destination_directory_required": True,
+        "moved_resume_must_reestablish_backup_file_destination_directory_and_"
+        "source_directory_durability_before_regeneration": True,
+        "device_id_inode_mode_and_link_count_must_match_prepared_target": True,
+        "retained_after_complete": True,
+        "registered_as_active_latent": False,
+    },
+    "complete_receipt_contract": {
+        "schema": FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SCHEMA,
+        "status": FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_STATUS,
+        "self_digest_key": FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SELF_KEY,
+        "relative_path": str(
+            FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_RELATIVE_PATH),
+        "staged_relative_path": str(
+            FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_STAGED_RELATIVE_PATH),
+        "complete_value": True,
+        "required_before_pass_smoke_publication": True,
+    },
+    "non_target_custody_contract": {
+        "required_row_count": 12,
+        "row_keys": [
+            "path", "sha256", "byte_count", "shape", "device_id",
+            "inode", "mode_octal", "link_count", "user_id", "group_id",
+            "access_time_ns", "modification_time_ns",
+            "metadata_change_time_ns",
+        ],
+        "sha256_read_mode": "O_NOATIME_O_NOFOLLOW",
+        "pretransaction_and_precomplete_canonical_digest_must_match": True,
+        "target_candidate_index_zero_excluded": True,
+    },
+    "immutable_receipt_publication": {
+        "direct_write_to_final_path_allowed": False,
+        "same_directory_staged_file_required": True,
+        "staged_file_create_flags": ["O_CREAT", "O_EXCL", "O_NOFOLLOW"],
+        "staged_file_fsync_required": True,
+        "staged_file_mode_octal_before_publication": "0444",
+        "atomic_no_overwrite_publication": "LINK_STAGED_TO_FINAL",
+        "final_path_must_be_absent_before_publication": True,
+        "staged_path_unlink_after_publication_required": True,
+        "parent_directory_fsync_immediately_after_final_link_required": True,
+        "parent_directory_fsync_immediately_after_staged_unlink_required": True,
+        "exact_read_only_reopen_required": True,
+        "idempotent_exact_reopen_required": True,
+        "partial_or_nonexact_staged_file_recovery": {
+            "prepared_staged_rebuild_allowed_only_when": (
+                "PREPARED_FINAL_ABSENT_AND_TARGET_EXACT_AND_BACKUP_ABSENT_"
+                "AND_COMPLETE_FINAL_ABSENT"),
+            "complete_staged_rebuild_allowed_only_when": (
+                "PREPARED_FINAL_EXACT_AND_TARGET_EXACT_AND_BACKUP_EXACT_"
+                "AND_COMPLETE_FINAL_ABSENT"),
+            "staged_file_only_unlink_and_parent_fsync_required": True,
+            "active_target_or_backup_mutation_during_staged_rebuild_allowed":
+                False,
+            "final_receipt_unlink_or_overwrite_allowed": False,
+            "all_other_partial_or_nonexact_staged_states": "FAIL_CLOSED",
+        },
+        "exact_final_and_exact_staged_link_recovery": {
+            "both_paths_regular_non_symlink_read_only_required": True,
+            "both_paths_exact_expected_bytes_required": True,
+            "same_device_and_inode_hard_link_proof_required": True,
+            "parent_fsync_before_staged_unlink_required": True,
+            "staged_file_only_unlink_then_parent_fsync_required": True,
+            "parent_fsync_after_staged_unlink_required": True,
+            "final_receipt_target_or_backup_mutation_allowed": False,
+        },
+        "mutable_phase_receipt_allowed": False,
+    },
+    "authorised_mutation": {
+        "transaction_count": 1,
+        "active_context_latent_target_count": 0,
+        "active_horizon_latent_target_count": 1,
+        "non_target_registered_latent_count": 12,
+        "target_atomic_move_count": 1,
+        "target_regeneration_count": 1,
+        "destructive_unlink_of_active_target_allowed": False,
+        "branch_row_or_frame_write_allowed": False,
+        "non_target_latent_write_allowed": False,
+        "latent_value_read_for_transaction_control_allowed": False,
+        "outcome_or_label_read_for_transaction_control_allowed": False,
+        "restored_target_sha256_byte_count_shape_must_equal_prepared": True,
+        "restored_target_device_id_must_equal_prepared": True,
+        "restored_target_inode_must_differ_from_prepared": True,
+        "restored_target_mode_and_link_count_must_equal_prepared": True,
+        "restored_target_exact_reopen_and_file_fsync_before_complete_required":
+            True,
+        "restored_target_parent_directory_fsync_before_complete_required": True,
+        "all_non_target_shard_bindings_must_remain_unchanged": True,
+        "all_non_target_shard_bytes_device_inode_mode_link_size_and_times_"
+        "must_remain_unchanged": True,
+        "registered_stable_artifact_inventory_must_be_recomputed_live_before_"
+        "complete": True,
+        "prepared_lineage_must_equal_live_zero_new_manifest_assignment_corpus_"
+        "branch_smoke_contract_and_corrections_before_every_precomplete_"
+        "mutation": True,
+        "complete_lineage_must_equal_prepared_and_original_protocol_pass_"
+        "lineage_before_downstream_acceptance": True,
+    },
+    "resume_state_machine": [
+        {
+            "prepared": False, "target": "EXACT", "backup": False,
+            "complete_receipt": False, "action": "CREATE_PREPARED",
+        },
+        {
+            "prepared": True, "target": "EXACT", "backup": False,
+            "complete_receipt": False, "action": "ATOMIC_MOVE_ONCE",
+        },
+        {
+            "prepared": True, "target": "ABSENT", "backup": "EXACT",
+            "complete_receipt": False, "action": "REGENERATE_TARGET_ONCE",
+        },
+        {
+            "prepared": True, "target": "EXACT", "backup": "EXACT",
+            "complete_receipt": False,
+            "action": "VALIDATE_AND_CREATE_COMPLETE_WITHOUT_SECOND_MOVE",
+        },
+        {
+            "prepared": True, "target": "EXACT", "backup": "EXACT",
+            "complete_receipt": True,
+            "action": "PUBLISH_OR_REOPEN_COMPLETE_BOUND_SMOKE_ONLY",
+        },
+    ],
+    "unlisted_resume_state_action": "FAIL_CLOSED",
+    "optional_validation_projection": {
+        "required_fields": [
+            "transaction_state", "prepared_present",
+            "prepared_receipt_digest", "target_state", "backup_state",
+            "complete_present", "complete_receipt_digest",
+            "pass_smoke_state", "next_action",
+            "prepared_staged_state", "complete_staged_state",
+            "target_exact", "backup_exact",
+            "target_backup_custody_exact",
+            "regenerated_target_custody_exact",
+            "encoder_path_projection_correction_digest",
+            "single_shard_regeneration_transaction_contract_digest",
+            "candidate_outcomes_used_for_selection",
+            "final_200_state_corpus_generated",
+        ],
+        "transaction_states": [
+            "UNSTARTED", "PREPARED_MOVE_PENDING",
+            "MOVED_REGENERATION_PENDING", "RESTORED_COMPLETE_PENDING",
+            "COMPLETE_SMOKE_PUBLICATION_PENDING", "COMPLETE",
+        ],
+        "target_states": ["NOT_APPLICABLE", "ABSENT", "EXACT"],
+        "backup_states": ["ABSENT", "EXACT"],
+        "staged_receipt_states": ["ABSENT", "EXACT", "PARTIAL_REGULAR"],
+        "partial_or_nonexact_staged_receipt_recovery": {
+            "prepared_allowed_only_in_unstarted_state": True,
+            "complete_allowed_only_in_restored_complete_pending_state": True,
+            "all_other_states": "FAIL_CLOSED",
+        },
+        "complete_staged_receipt_allowed_only_during_restored_complete_"
+        "publication_or_exact_final_hardlink_cleanup": True,
+        "pass_smoke_states": [
+            "ABSENT_OR_PRETRANSACTION", "EXACT_BOUND_PROTOCOL_PASS",
+            "VALID_REFRESHED_PASS_WITH_EXACT_PROTOCOL_PASS_ARCHIVE",
+        ],
+        "accepted_state_matrix": [
+            {
+                "transaction_state": "UNSTARTED", "prepared_present": False,
+                "target_state": ["NOT_APPLICABLE", "EXACT"],
+                "backup_state": "ABSENT", "complete_present": False,
+                "pass_smoke_state": "ABSENT_OR_PRETRANSACTION",
+                "next_action": (
+                    "RUN_OR_RESUME_BASE_AND_ZERO_NEW_BEFORE_PREPARED"),
+            },
+            {
+                "transaction_state": "PREPARED_MOVE_PENDING",
+                "prepared_present": True, "target_state": "EXACT",
+                "backup_state": "ABSENT", "complete_present": False,
+                "pass_smoke_state": "ABSENT_OR_PRETRANSACTION",
+                "next_action": "ATOMIC_MOVE_ONCE",
+            },
+            {
+                "transaction_state": "MOVED_REGENERATION_PENDING",
+                "prepared_present": True, "target_state": "ABSENT",
+                "backup_state": "EXACT", "complete_present": False,
+                "pass_smoke_state": "ABSENT_OR_PRETRANSACTION",
+                "next_action": "RUN_REGENERATION_ENCODER_ONCE",
+            },
+            {
+                "transaction_state": "RESTORED_COMPLETE_PENDING",
+                "prepared_present": True, "target_state": "EXACT",
+                "backup_state": "EXACT", "complete_present": False,
+                "pass_smoke_state": "ABSENT_OR_PRETRANSACTION",
+                "next_action": (
+                    "CREATE_COMPLETE_WITHOUT_SECOND_MOVE_OR_REGENERATION"),
+            },
+            {
+                "transaction_state": "COMPLETE_SMOKE_PUBLICATION_PENDING",
+                "prepared_present": True, "target_state": "EXACT",
+                "backup_state": "EXACT", "complete_present": True,
+                "pass_smoke_state": "ABSENT_OR_PRETRANSACTION",
+                "next_action": "PUBLISH_COMPLETE_BOUND_PASS_SMOKE_ONLY",
+            },
+            {
+                "transaction_state": "COMPLETE", "prepared_present": True,
+                "target_state": "EXACT", "backup_state": "EXACT",
+                "complete_present": True,
+                "pass_smoke_state": [
+                    "EXACT_BOUND_PROTOCOL_PASS",
+                    "VALID_REFRESHED_PASS_WITH_EXACT_PROTOCOL_PASS_ARCHIVE",
+                ],
+                "next_action": "NO_TRANSACTION_MUTATION",
+            },
+        ],
+        "unlisted_or_invalid_artifact_combination": "FAIL_CLOSED",
+        "candidate_outcomes_used_for_selection": False,
+        "final_200_state_corpus_generated": False,
+    },
+    "pass_smoke_publication": {
+        "complete_receipt_durable_before_pass_smoke": True,
+        "complete_receipt_binds_exact_final_smoke_bytes": True,
+        "complete_binding_role": "ORIGINAL_SMOKE_PROTOCOL_PASS_BYTES",
+        "original_protocol_pass_must_be_parsed_self_validated_and_cross_bound_"
+        "to_prepared_and_complete_lineage": True,
+        "original_protocol_pass_is_stable_historical_witness_after_full_"
+        "corpus_receipts_advance": True,
+        "complete_binding_initial_publication_path": str(
+            SCORER_FIT_RELATIVE_PATH / "smoke_encoding_receipt_v2.json"),
+        "pass_smoke_binds_prepared_receipt_transaction_id": True,
+        "original_protocol_pass_omits_complete_digest_to_avoid_cyclic_"
+        "self_binding": True,
+        "pass_smoke_without_valid_complete_receipt_allowed": False,
+        "complete_with_old_or_absent_smoke_action": (
+            "PUBLISH_ONLY_THE_COMPLETE_BOUND_EXACT_SMOKE_BYTES"),
+        "exact_successor_active_replay_requires_file_fsync_and_parent_"
+        "directory_fsync_before_acceptance": True,
+        "second_target_move_or_regeneration_after_complete_allowed": False,
+        "later_complete_full_index_smoke_refresh_allowed": True,
+        "original_protocol_pass_exact_archive_required_before_refresh": True,
+        "original_protocol_pass_archive_directory": str(
+            SCORER_FIT_RELATIVE_PATH / "superseded_receipts_v2"),
+        "original_protocol_pass_archive_filename_rule": (
+            "smoke_encoding_receipt_v2.<RAW_SHA256_FIRST_16_HEX>.json"),
+        "refreshed_smoke_must_bind_prepared_and_complete_digests": True,
+        "refreshed_smoke_must_bind_complete_full_latent_index": True,
+        "refreshed_smoke_current_corpus_and_branch_smoke_may_advance_from_"
+        "prepared_partial_smoke_lineage": True,
+        "refreshed_smoke_state_assignment_scorer_and_correction_lineage_must_"
+        "equal_prepared": True,
+        "refreshed_smoke_must_be_fully_replayed_against_current_index_and_"
+        "current_lineage": True,
+        "full_consumer_must_validate_refreshed_smoke_and_exact_archived_"
+        "protocol_pass": True,
+        "active_full_index_digest_equality_may_be_relaxed": False,
+    },
+    "downstream_gate": {
+        "full_corpus_generation_requires_complete_receipt_and_bound_pass_smoke":
+            True,
+        "training_requires_complete_receipt_and_bound_pass_smoke": True,
+        "final_200_state_evaluation_authorised": False,
+    },
 }
 IMMUTABLE_MANIFEST_REPLAY_CORRECTION_DIGEST = (
     "b35a46b02a51bb030d8777d6b081ec76445d1ebb081be9220e97f22519cbbe7c")
@@ -745,6 +1261,9 @@ ENCODER_IMPORT_CORRECTION_FOCUSED_TEST_SPECS = tuple(
 ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_SPECS = tuple(
     (path, "focused_encoder_compute_dtype_correction_test")
     for path in ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_PATHS)
+ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_SPECS = tuple(
+    (path, "focused_encoder_path_projection_correction_test")
+    for path in ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_PATHS)
 
 V2_PREOUTCOME_ARTIFACT_PATHS = (
     SCORER_FIT_RELATIVE_PATH / "state_manifest_v2.json",
@@ -831,6 +1350,30 @@ ENCODER_COMPUTE_DTYPE_CORRECTION_REQUIRED_ABSENT_PATHS = (
 ENCODER_COMPUTE_DTYPE_CORRECTION_REQUIRED_ABSENT_DIRECTORIES = (
     SCORER_FIT_RELATIVE_PATH / "latents_v2",
     *ENCODER_IMPORT_CORRECTION_REQUIRED_ABSENT_DIRECTORIES,
+)
+ENCODER_PATH_PROJECTION_CORRECTION_REQUIRED_ABSENT_PATHS = (
+    *V2_ALWAYS_ABSENT_PATHS,
+    *tuple(path for path in V2_RUNTIME_OUTPUT_PATHS
+           if UTILITY_V2_ROOT_RELATIVE_PATH == path
+           or UTILITY_V2_ROOT_RELATIVE_PATH in path.parents),
+)
+ENCODER_PATH_PROJECTION_CORRECTION_REQUIRED_ABSENT_DIRECTORIES = (
+    UTILITY_V2_ROOT_RELATIVE_PATH / "initialisations_v2",
+    UTILITY_V2_ROOT_RELATIVE_PATH / "training_v2",
+    UTILITY_V2_ROOT_RELATIVE_PATH /
+        "counterfactual_development_transfer_v2/score_shards",
+    UTILITY_V2_ROOT_RELATIVE_PATH /
+        "counterfactual_development_transfer_v2/invalid_attempts",
+)
+ENCODER_PATH_PROJECTION_TRANSACTION_REQUIRED_ABSENT_PATHS = (
+    FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_RELATIVE_PATH,
+    FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STAGED_RELATIVE_PATH,
+    FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_RELATIVE_PATH,
+    FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_STAGED_RELATIVE_PATH,
+    FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_RELATIVE_PATH,
+)
+ENCODER_PATH_PROJECTION_TRANSACTION_REQUIRED_ABSENT_DIRECTORIES = (
+    FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH,
 )
 
 _ROTATION_IDS = tuple(
@@ -1036,6 +1579,122 @@ ENCODER_COMPUTE_DTYPE_FAILURE_BOUNDARY = {
     "latent_index_written": False,
     "encoding_invocation_summary_written": False,
     "smoke_encoding_receipt_written": False,
+    "scorer_training_started": False,
+    "development_transfer_started": False,
+    "predictor_checkpoint_opened": False,
+    "final_200_state_corpus_generated": False,
+    "scientific_qualification_verdict_reached": False,
+}
+
+ENCODER_PATH_PROJECTION_CORRECTION_PRESERVED_SCIENCE = {
+    **ENCODER_COMPUTE_DTYPE_CORRECTION_PRESERVED_SCIENCE,
+    "encoder_compute_dtype_correction_digest":
+        IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST,
+    "base_smoke_context_latent_count": 1,
+    "base_smoke_horizon_latent_count": 12,
+    "base_smoke_total_latent_shard_count": 13,
+    "base_smoke_receipt_digest":
+        IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_SMOKE_BINDING["self_digest"],
+    "single_registered_shard_regeneration_smoke_requirement_unchanged": True,
+    "transaction_control_uses_candidate_identity_not_outcomes": True,
+    "transaction_control_deserializes_no_latent_values": True,
+}
+
+ENCODER_PATH_PROJECTION_PREISSUE_SINGLE_SHARD_TRANSACTION_AUDIT = {
+    "status": "PREISSUE_SOURCE_ONLY_INTERRUPTION_SAFETY_AUDIT",
+    "finding_severity": "P1",
+    "finding": (
+        "DIRECT_UNLINK_AND_ARCHIVE_FIRST_PASS_SMOKE_PUBLICATION_COULD_"
+        "AUTHORISE_A_SECOND_DELIBERATE_DELETION_AFTER_INTERRUPTION"),
+    "historical_source_repository_commit":
+        ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+    "historical_runner_function": "_delete_registered_smoke_shard",
+    "historical_runner_operation": "PATH_UNLINK_THEN_PARENT_DIRECTORY_FSYNC",
+    "historical_encoder_source_binding": copy.deepcopy(
+        ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING),
+    "historical_encoder_function": (
+        "main_full_bank_v2_smoke_receipt_publication_blocks"),
+    "historical_encoder_publication_source_lines": [2043, 2131],
+    "historical_encoder_publication_operation": (
+        "OS_REPLACE_ACTIVE_SMOKE_TO_ARCHIVE_THEN_ATOMIC_JSON_SUCCESSOR"),
+    "historical_encoder_crash_window": (
+        "AFTER_SUCCESSFUL_CANDIDATE_0_REGENERATION_AND_ACTIVE_SMOKE_ARCHIVE_"
+        "BEFORE_SUCCESSOR_SMOKE_INSTALL"),
+    "active_completion_proof_absent_in_historical_crash_window": True,
+    "resume_could_authorise_second_deliberate_target_deletion": True,
+    "second_deliberate_target_deletion_observed": False,
+    "discovered_after_runtime_failure_by_source_audit": True,
+    "observed_as_a_runtime_failure": False,
+    "path_projection_correction_artifact_issued_when_discovered": False,
+    "zero_new_resume_started_when_discovered": False,
+    "single_shard_transaction_started_when_discovered": False,
+    "prepared_receipt_existed_when_discovered": False,
+    "prepared_staged_receipt_existed_when_discovered": False,
+    "backup_existed_when_discovered": False,
+    "complete_receipt_existed_when_discovered": False,
+    "complete_staged_receipt_existed_when_discovered": False,
+    "branch_outcome_or_label_value_read_for_audit": False,
+    "latent_value_deserialized_for_audit": False,
+    "scientific_requirement_changed": False,
+    "required_hardening": (
+        "IMMUTABLE_PREPARED_THEN_ATOMIC_MOVE_TO_RETAINED_EXACT_BACKUP_"
+        "THEN_IMMUTABLE_COMPLETE_BEFORE_PASS_SMOKE"),
+}
+
+ENCODER_PATH_PROJECTION_FAILURE_BOUNDARY = {
+    "status": "IMMUTABLE_INFRASTRUCTURE_FAILURE_LOGICAL_PATH_PROJECTION",
+    "historical_source_repository_commit":
+        ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+    "runner_stage": "post_base_smoke_read_only_validation",
+    "failing_function": (
+        "load_and_validate_full_bank_v2_encoding_smoke_for_consumption"),
+    "failing_projection_name": "registered_smoke_shard_inventory",
+    "failing_expression": "_resolve_frame(...).relative_to(ROOT)",
+    "failing_source_line_at_historical_commit": 1271,
+    "exception_type": "ValueError",
+    "exception_message_prefix": (
+        "'/home/andrewknowles/.local/share/lewm_go2_planning_utility_v1_2/"
+        "active/go2_branch_corpus_v1_2/scorer_fit/latents_v2/context/"
+        "c9bf42df529b75ebaf7e9053be059ee7ad639e690f501ba6b8750c968a37634e."
+        "f16' is not in the subpath of '/home/andrewknowles/Workspace/"
+        "LeWMQuad-v3'"),
+    "exception_message_suffix_claimed": False,
+    "exception_physical_path_prefix": (
+        "/home/andrewknowles/.local/share/lewm_go2_planning_utility_v1_2/"
+        "active/go2_branch_corpus_v1_2/scorer_fit/latents_v2/context/"),
+    "exception_repository_root": (
+        "/home/andrewknowles/Workspace/LeWMQuad-v3"),
+    "managed_generated_root_is_logical_symlink": True,
+    "resolved_shard_is_outside_repository_root_lexically": True,
+    "base_smoke_encoder_execution_completed": True,
+    "base_smoke_end_to_end_pass": True,
+    "base_smoke_protocol_complete": False,
+    "valid_context_latent_shard_count": 1,
+    "valid_horizon_latent_shard_count": 12,
+    "valid_total_latent_shard_count": 13,
+    "latent_index_written": True,
+    "encoding_invocation_summary_written": True,
+    "base_smoke_receipt_written": True,
+    "read_only_validator_entered": True,
+    "latent_shard_bytes_hashed_by_validator": True,
+    "latent_values_deserialized_by_validator": False,
+    "branch_rows_and_oracle_records_loaded_by_validator": True,
+    "branch_outcome_or_label_value_used_for_correction": False,
+    "first_logical_path_inventory_construction_entered": True,
+    "validator_projection_returned": False,
+    "validator_write_attempted": False,
+    "base_smoke_artifact_changed_by_validator": False,
+    "zero_new_resume_started": False,
+    "single_shard_deletion_started": False,
+    "single_shard_regeneration_started": False,
+    "single_shard_transaction_prepared_receipt_written": False,
+    "single_shard_transaction_prepared_staged_receipt_written": False,
+    "single_shard_transaction_backup_created": False,
+    "single_shard_transaction_complete_receipt_written": False,
+    "single_shard_transaction_complete_staged_receipt_written": False,
+    "pass_smoke_published": False,
+    "full_corpus_branch_generation_started": False,
+    "full_corpus_latent_encoding_started": False,
     "scorer_training_started": False,
     "development_transfer_started": False,
     "predictor_checkpoint_opened": False,
@@ -3042,6 +3701,572 @@ def _validate_encoder_compute_dtype_focused_test_transitions(
     return transitions
 
 
+def _expected_encoder_path_projection_correction_absence_rows(
+        ) -> list[dict[str, Any]]:
+    rows = [
+        {"path": str(path), "expected_kind": "file", "exists": False}
+        for path in ENCODER_PATH_PROJECTION_CORRECTION_REQUIRED_ABSENT_PATHS
+    ]
+    rows.extend({
+        "path": str(path), "expected_kind": "directory", "exists": False,
+    } for path in ENCODER_PATH_PROJECTION_CORRECTION_REQUIRED_ABSENT_DIRECTORIES)
+    return rows
+
+
+def _validate_encoder_path_projection_correction_absence(
+        value: Any) -> list[dict[str, Any]]:
+    expected = _expected_encoder_path_projection_correction_absence_rows()
+    if not isinstance(value, list) or value != expected:
+        raise ScorerFitCorpusV2DesignError(
+            "post-base-smoke path-projection absence projection changed")
+    return copy.deepcopy(expected)
+
+
+def _expected_encoder_path_projection_transaction_absence_rows(
+        ) -> list[dict[str, Any]]:
+    rows = [
+        {"path": str(path), "expected_kind": "file", "exists": False}
+        for path in ENCODER_PATH_PROJECTION_TRANSACTION_REQUIRED_ABSENT_PATHS
+    ]
+    rows.extend({
+        "path": str(path), "expected_kind": "directory", "exists": False,
+    } for path in
+        ENCODER_PATH_PROJECTION_TRANSACTION_REQUIRED_ABSENT_DIRECTORIES)
+    return rows
+
+
+def _validate_encoder_path_projection_transaction_absence(
+        value: Any) -> list[dict[str, Any]]:
+    expected = _expected_encoder_path_projection_transaction_absence_rows()
+    if not isinstance(value, list) or value != expected:
+        raise ScorerFitCorpusV2DesignError(
+            "pre-transaction path-projection absence projection changed")
+    return copy.deepcopy(expected)
+
+
+def _validate_encoder_path_projection_focused_test_transitions(
+        value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list) or len(value) != len(
+            ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_SPECS):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection focused test transition coverage changed")
+    transitions = [
+        _validate_source_transition(row, path=path, role=role)
+        for (path, role), row in zip(
+            ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_SPECS,
+            value, strict=True)
+    ]
+    if [row["path"] for row in transitions] != list(
+            ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_PATHS):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection focused test transition order changed")
+    return transitions
+
+
+_FULL_BANK_V2_SMOKE_REGENERATION_LINEAGE_KEYS = frozenset({
+    "scorer_fit_corpus_v2_scorer_contract_digest",
+    "scorer_fit_corpus_v2_scorer_contract_artifact_digest",
+    "state_manifest_digest", "full_bank_assignment_manifest_digest",
+    "corpus_digest", "branch_smoke_receipt_digest",
+    "encoder_compute_dtype_correction_digest",
+    "encoder_path_projection_correction_digest",
+})
+_FULL_BANK_V2_SMOKE_REGENERATION_TARGET_KEYS = frozenset({
+    "path", "candidate_index", "sha256", "byte_count", "shape",
+    "device_id", "inode", "mode_octal", "link_count",
+})
+_FULL_BANK_V2_SMOKE_REGENERATION_PRE_EVIDENCE_KEYS = frozenset({
+    "latent_index_digest", "encoding_smoke_receipt_digest",
+    "registered_smoke_shard_inventory_digest",
+    "registered_smoke_non_target_shard_inventory_digest",
+    "registered_smoke_non_target_shard_custody_inventory_digest",
+    "registered_smoke_stable_artifact_inventory_digest",
+    "zero_new_resume_verified",
+})
+_FULL_BANK_V2_SMOKE_REGENERATION_POST_EVIDENCE_KEYS = frozenset({
+    "latent_index_digest", "encoding_smoke_receipt_digest",
+    "registered_smoke_shard_inventory_digest",
+    "registered_smoke_non_target_shard_custody_inventory_digest",
+    "registered_smoke_stable_artifact_inventory_digest",
+    "encoder_invocation_new_context_shards",
+    "encoder_invocation_new_horizon_shards", "target_restored_exact",
+    "non_target_shards_unchanged", "complete_before_pass_smoke",
+})
+_FULL_BANK_V2_SMOKE_REGENERATION_ARTIFACT_BINDING_KEYS = frozenset({
+    "path", "schema", "self_digest_key", "self_digest", "raw_sha256",
+    "byte_count",
+})
+_FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_BINDING_KEYS = frozenset({
+    *_FULL_BANK_V2_SMOKE_REGENERATION_ARTIFACT_BINDING_KEYS,
+    "designated_target_digest", "prepared_lineage_digest",
+    "pretransaction_registered_smoke_shard_inventory_digest",
+    "pretransaction_registered_smoke_non_target_shard_inventory_digest",
+    "pretransaction_registered_smoke_non_target_shard_custody_inventory_"
+    "digest",
+    "pretransaction_registered_smoke_stable_artifact_inventory_digest",
+})
+_FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_BINDING_KEYS = frozenset({
+    "path", "sha256", "byte_count", "shape", "device_id", "inode",
+    "mode_octal", "link_count",
+})
+_FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_KEYS = frozenset({
+    "schema", "status", "complete", "transaction_version",
+    "single_shard_regeneration_transaction_contract_digest", "lineage",
+    "designated_target", "expected_backup_binding",
+    "pretransaction_evidence", "receipt_publication_contract",
+    "candidate_outcome_or_label_used", "latent_value_deserialized",
+    "target_move_started_before_prepared_publication",
+    FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SELF_KEY,
+})
+_FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_KEYS = frozenset({
+    "schema", "status", "complete", "transaction_version",
+    "single_shard_regeneration_transaction_contract_digest",
+    "prepared_receipt_binding", "lineage", "designated_target",
+    "retained_backup_binding", "regenerated_target_binding",
+    "non_target_shard_inventory_digest", "posttransaction_evidence",
+    "final_smoke_receipt_binding", "receipt_publication_contract",
+    "candidate_outcome_or_label_used", "latent_value_deserialized",
+    "second_target_move_or_regeneration_performed",
+    FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SELF_KEY,
+})
+
+
+def _validate_full_bank_v2_smoke_regeneration_lineage(
+        value: Any) -> dict[str, Any]:
+    if (not isinstance(value, Mapping)
+            or set(value) != _FULL_BANK_V2_SMOKE_REGENERATION_LINEAGE_KEYS
+            or not all(_is_hex(value.get(key), 64) for key in value)):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration lineage changed")
+    lineage = copy.deepcopy(dict(value))
+    if (lineage["encoder_compute_dtype_correction_digest"]
+            != IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST
+            or lineage[
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest"]
+            != IMMUTABLE_SUCCESSOR_SCORER_CONTRACT_BINDING["self_digest"]
+            or lineage["scorer_fit_corpus_v2_scorer_contract_digest"]
+            != IMMUTABLE_SUCCESSOR_SCORER_CONTRACT_BINDING[
+                "embedded_contract_self_digest"]):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration immutable lineage changed")
+    return lineage
+
+
+def _validate_full_bank_v2_smoke_regeneration_target(
+        value: Any) -> dict[str, Any]:
+    mode = value.get("mode_octal") if isinstance(value, Mapping) else None
+    if (not isinstance(value, Mapping)
+            or set(value) != _FULL_BANK_V2_SMOKE_REGENERATION_TARGET_KEYS
+            or value.get("candidate_index") != 0
+            or not _is_hex(value.get("sha256"), 64)
+            or isinstance(value.get("byte_count"), bool)
+            or value.get("byte_count") != 6_291_456
+            or value.get("shape") != [4, 768, 1024]
+            or any(isinstance(value.get(key), bool)
+                   or not isinstance(value.get(key), int)
+                   or value[key] <= 0 for key in (
+                       "device_id", "inode", "link_count"))
+            or value.get("link_count") != 1
+            or not isinstance(mode, str) or len(mode) != 4
+            or mode[0] != "0" or any(character not in "01234567"
+                                      for character in mode)):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration target changed")
+    path = Path(str(value.get("path", "")))
+    if (path.is_absolute()
+            or path.parent != SCORER_FIT_RELATIVE_PATH / "latents_v2/horizon"
+            or path.suffix != ".f16"):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration target path changed")
+    return copy.deepcopy(dict(value))
+
+
+def _validate_full_bank_v2_smoke_regeneration_pre_evidence(
+        value: Any) -> dict[str, Any]:
+    if (not isinstance(value, Mapping)
+            or set(value) !=
+            _FULL_BANK_V2_SMOKE_REGENERATION_PRE_EVIDENCE_KEYS
+            or value.get("zero_new_resume_verified") is not True
+            or not all(_is_hex(value.get(key), 64) for key in value
+                       if key != "zero_new_resume_verified")):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration pretransaction evidence changed")
+    return copy.deepcopy(dict(value))
+
+
+def _validate_full_bank_v2_smoke_regeneration_post_evidence(
+        value: Any) -> dict[str, Any]:
+    if (not isinstance(value, Mapping)
+            or set(value) !=
+            _FULL_BANK_V2_SMOKE_REGENERATION_POST_EVIDENCE_KEYS
+            or not all(_is_hex(value.get(key), 64) for key in (
+                "latent_index_digest", "encoding_smoke_receipt_digest",
+                "registered_smoke_shard_inventory_digest",
+                "registered_smoke_non_target_shard_custody_inventory_digest",
+                "registered_smoke_stable_artifact_inventory_digest"))
+            or value.get("encoder_invocation_new_context_shards") != 0
+            or value.get("encoder_invocation_new_horizon_shards") not in {0, 1}
+            or value.get("target_restored_exact") is not True
+            or value.get("non_target_shards_unchanged") is not True
+            or value.get("complete_before_pass_smoke") is not True):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration posttransaction evidence changed")
+    return copy.deepcopy(dict(value))
+
+
+def _validate_full_bank_v2_smoke_regeneration_binding(
+        value: Any, *, expected_path: Path, expected_schema: str,
+        expected_self_key: str, label: str) -> dict[str, Any]:
+    if (not isinstance(value, Mapping)
+            or set(value) !=
+            _FULL_BANK_V2_SMOKE_REGENERATION_ARTIFACT_BINDING_KEYS
+            or value.get("path") != str(expected_path)
+            or value.get("schema") != expected_schema
+            or value.get("self_digest_key") != expected_self_key
+            or not _is_hex(value.get("self_digest"), 64)
+            or not _is_hex(value.get("raw_sha256"), 64)
+            or isinstance(value.get("byte_count"), bool)
+            or not isinstance(value.get("byte_count"), int)
+            or value["byte_count"] <= 0):
+        raise ScorerFitCorpusV2DesignError(f"{label} binding changed")
+    return copy.deepcopy(dict(value))
+
+
+def _validate_full_bank_v2_smoke_regeneration_prepared_binding(
+        value: Any) -> dict[str, Any]:
+    if (not isinstance(value, Mapping)
+            or set(value) !=
+            _FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_BINDING_KEYS
+            or value.get("path") != str(
+                FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_RELATIVE_PATH)
+            or value.get("schema")
+            != FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SCHEMA
+            or value.get("self_digest_key")
+            != FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SELF_KEY
+            or not all(_is_hex(value.get(key), 64) for key in (
+                "self_digest", "raw_sha256", "designated_target_digest",
+                "prepared_lineage_digest",
+                "pretransaction_registered_smoke_shard_inventory_digest",
+                "pretransaction_registered_smoke_non_target_shard_inventory_"
+                "digest",
+                "pretransaction_registered_smoke_non_target_shard_custody_"
+                "inventory_digest",
+                "pretransaction_registered_smoke_stable_artifact_inventory_"
+                "digest"))
+            or isinstance(value.get("byte_count"), bool)
+            or not isinstance(value.get("byte_count"), int)
+            or value["byte_count"] <= 0):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration PREPARED binding changed")
+    return copy.deepcopy(dict(value))
+
+
+def build_full_bank_v2_smoke_regeneration_prepared_receipt(
+        *, lineage: Mapping[str, Any], designated_target: Mapping[str, Any],
+        pretransaction_evidence: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Build the immutable intent receipt before the target can move."""
+
+    closed_lineage = _validate_full_bank_v2_smoke_regeneration_lineage(lineage)
+    target = _validate_full_bank_v2_smoke_regeneration_target(
+        designated_target)
+    evidence = _validate_full_bank_v2_smoke_regeneration_pre_evidence(
+        pretransaction_evidence)
+    contract = ENCODER_PATH_PROJECTION_SINGLE_SHARD_REGENERATION_TRANSACTION_CONTRACT
+    expected_backup = {
+        "path": str(FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_RELATIVE_PATH),
+        "sha256": target["sha256"],
+        "byte_count": target["byte_count"],
+        "shape": target["shape"],
+        "device_id": target["device_id"],
+        "inode": target["inode"],
+        "mode_octal": target["mode_octal"],
+        "link_count": target["link_count"],
+    }
+    payload: dict[str, Any] = {
+        "schema": FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SCHEMA,
+        "status": FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STATUS,
+        "complete": False,
+        "transaction_version": 1,
+        "single_shard_regeneration_transaction_contract_digest":
+            canonical_digest(contract),
+        "lineage": closed_lineage,
+        "designated_target": target,
+        "expected_backup_binding": expected_backup,
+        "pretransaction_evidence": evidence,
+        "receipt_publication_contract": copy.deepcopy(
+            contract["immutable_receipt_publication"]),
+        "candidate_outcome_or_label_used": False,
+        "latent_value_deserialized": False,
+        "target_move_started_before_prepared_publication": False,
+    }
+    if set(payload) != _FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_KEYS - {
+            FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SELF_KEY}:
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration PREPARED construction changed")
+    payload[FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SELF_KEY] = (
+        canonical_digest(payload))
+    return payload
+
+
+def validate_full_bank_v2_smoke_regeneration_prepared_receipt(
+        payload: Mapping[str, Any]) -> dict[str, Any]:
+    if (not isinstance(payload, Mapping)
+            or set(payload) != _FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_KEYS):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration PREPARED receipt is not closed")
+    receipt = copy.deepcopy(dict(payload))
+    expected = build_full_bank_v2_smoke_regeneration_prepared_receipt(
+        lineage=receipt.get("lineage", {}),
+        designated_target=receipt.get("designated_target", {}),
+        pretransaction_evidence=receipt.get("pretransaction_evidence", {}),
+    )
+    if receipt != expected:
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration PREPARED receipt changed")
+    return receipt
+
+
+def full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding(
+        payload: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
+    receipt = validate_full_bank_v2_smoke_regeneration_prepared_receipt(
+        payload)
+    if raw != _pretty_json_bytes(receipt):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration PREPARED raw bytes changed")
+    return {
+        "path": str(FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_RELATIVE_PATH),
+        "schema": FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SCHEMA,
+        "self_digest_key": FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SELF_KEY,
+        "self_digest": receipt[
+            FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "designated_target_digest": canonical_digest(
+            receipt["designated_target"]),
+        "prepared_lineage_digest": canonical_digest(receipt["lineage"]),
+        "pretransaction_registered_smoke_shard_inventory_digest":
+            receipt["pretransaction_evidence"][
+                "registered_smoke_shard_inventory_digest"],
+        "pretransaction_registered_smoke_non_target_shard_inventory_digest":
+            receipt["pretransaction_evidence"][
+                "registered_smoke_non_target_shard_inventory_digest"],
+        "pretransaction_registered_smoke_non_target_shard_custody_inventory_"
+        "digest": receipt["pretransaction_evidence"][
+            "registered_smoke_non_target_shard_custody_inventory_digest"],
+        "pretransaction_registered_smoke_stable_artifact_inventory_digest":
+            receipt["pretransaction_evidence"][
+                "registered_smoke_stable_artifact_inventory_digest"],
+    }
+
+
+def build_full_bank_v2_smoke_regeneration_complete_receipt(
+        *, prepared_receipt_binding: Mapping[str, Any],
+        lineage: Mapping[str, Any], designated_target: Mapping[str, Any],
+        retained_backup_binding: Mapping[str, Any],
+        regenerated_target_binding: Mapping[str, Any],
+        non_target_shard_inventory_digest: str,
+        posttransaction_evidence: Mapping[str, Any],
+        final_smoke_receipt_binding: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Build completion evidence before the PASS smoke can be published."""
+
+    prepared = _validate_full_bank_v2_smoke_regeneration_prepared_binding(
+        prepared_receipt_binding)
+    closed_lineage = _validate_full_bank_v2_smoke_regeneration_lineage(lineage)
+    if prepared.get("prepared_lineage_digest") != canonical_digest(
+            closed_lineage):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration COMPLETE changed PREPARED lineage")
+    target = _validate_full_bank_v2_smoke_regeneration_target(
+        designated_target)
+    if prepared["designated_target_digest"] != canonical_digest(target):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration COMPLETE target changed from PREPARED")
+    if (not isinstance(retained_backup_binding, Mapping)
+            or set(retained_backup_binding) !=
+            _FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_BINDING_KEYS
+            or retained_backup_binding.get("path") != str(
+                FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_RELATIVE_PATH)
+            or retained_backup_binding.get("sha256") != target["sha256"]
+            or retained_backup_binding.get("byte_count") != target["byte_count"]
+            or retained_backup_binding.get("shape") != target["shape"]
+            or retained_backup_binding.get("device_id") != target["device_id"]
+            or retained_backup_binding.get("inode") != target["inode"]
+            or retained_backup_binding.get("mode_octal")
+            != target["mode_octal"]
+            or retained_backup_binding.get("link_count")
+            != target["link_count"]):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration retained backup changed")
+    regenerated = _validate_full_bank_v2_smoke_regeneration_target(
+        regenerated_target_binding)
+    semantic_keys = {"path", "candidate_index", "sha256", "byte_count", "shape"}
+    if (any(regenerated[key] != target[key] for key in semantic_keys)
+            or regenerated["device_id"] != target["device_id"]
+            or regenerated["inode"] == target["inode"]
+            or regenerated["mode_octal"] != target["mode_octal"]
+            or regenerated["link_count"] != target["link_count"]):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration did not restore the exact target")
+    if not _is_hex(non_target_shard_inventory_digest, 64):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration non-target inventory changed")
+    if non_target_shard_inventory_digest != prepared[
+            "pretransaction_registered_smoke_non_target_shard_inventory_digest"]:
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration changed a non-target shard")
+    post = _validate_full_bank_v2_smoke_regeneration_post_evidence(
+        posttransaction_evidence)
+    if (post["registered_smoke_shard_inventory_digest"] != prepared[
+            "pretransaction_registered_smoke_shard_inventory_digest"]
+            or post[
+                "registered_smoke_non_target_shard_custody_inventory_digest"]
+            != prepared[
+                "pretransaction_registered_smoke_non_target_shard_custody_"
+                "inventory_digest"]
+            or post["registered_smoke_stable_artifact_inventory_digest"]
+            != prepared[
+                "pretransaction_registered_smoke_stable_artifact_inventory_"
+                "digest"]):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration changed a registered stable artifact")
+    smoke_binding = _validate_full_bank_v2_smoke_regeneration_binding(
+        final_smoke_receipt_binding,
+        expected_path=SCORER_FIT_RELATIVE_PATH /
+            "smoke_encoding_receipt_v2.json",
+        expected_schema=(
+            "go2_scorer_fit_corpus_v2_end_to_end_smoke_receipt_v1"),
+        expected_self_key="smoke_receipt_digest",
+        label="single-shard regeneration final smoke")
+    if (post["encoding_smoke_receipt_digest"]
+            != smoke_binding["self_digest"]):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration COMPLETE binds contradictory smoke "
+            "digests")
+    contract = ENCODER_PATH_PROJECTION_SINGLE_SHARD_REGENERATION_TRANSACTION_CONTRACT
+    payload: dict[str, Any] = {
+        "schema": FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SCHEMA,
+        "status": FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_STATUS,
+        "complete": True,
+        "transaction_version": 1,
+        "single_shard_regeneration_transaction_contract_digest":
+            canonical_digest(contract),
+        "prepared_receipt_binding": prepared,
+        "lineage": closed_lineage,
+        "designated_target": target,
+        "retained_backup_binding": copy.deepcopy(
+            dict(retained_backup_binding)),
+        "regenerated_target_binding": regenerated,
+        "non_target_shard_inventory_digest":
+            non_target_shard_inventory_digest,
+        "posttransaction_evidence": post,
+        "final_smoke_receipt_binding": smoke_binding,
+        "receipt_publication_contract": copy.deepcopy(
+            contract["immutable_receipt_publication"]),
+        "candidate_outcome_or_label_used": False,
+        "latent_value_deserialized": False,
+        "second_target_move_or_regeneration_performed": False,
+    }
+    if set(payload) != _FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_KEYS - {
+            FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SELF_KEY}:
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration COMPLETE construction changed")
+    payload[FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SELF_KEY] = (
+        canonical_digest(payload))
+    return payload
+
+
+def validate_full_bank_v2_smoke_regeneration_complete_receipt(
+        payload: Mapping[str, Any]) -> dict[str, Any]:
+    if (not isinstance(payload, Mapping)
+            or set(payload) != _FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_KEYS):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration COMPLETE receipt is not closed")
+    receipt = copy.deepcopy(dict(payload))
+    expected = build_full_bank_v2_smoke_regeneration_complete_receipt(
+        prepared_receipt_binding=receipt.get("prepared_receipt_binding", {}),
+        lineage=receipt.get("lineage", {}),
+        designated_target=receipt.get("designated_target", {}),
+        retained_backup_binding=receipt.get("retained_backup_binding", {}),
+        regenerated_target_binding=receipt.get(
+            "regenerated_target_binding", {}),
+        non_target_shard_inventory_digest=str(receipt.get(
+            "non_target_shard_inventory_digest", "")),
+        posttransaction_evidence=receipt.get("posttransaction_evidence", {}),
+        final_smoke_receipt_binding=receipt.get(
+            "final_smoke_receipt_binding", {}),
+    )
+    if receipt != expected:
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration COMPLETE receipt changed")
+    return receipt
+
+
+def full_bank_v2_smoke_regeneration_complete_receipt_artifact_binding(
+        payload: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
+    receipt = validate_full_bank_v2_smoke_regeneration_complete_receipt(
+        payload)
+    if raw != _pretty_json_bytes(receipt):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration COMPLETE raw bytes changed")
+    return {
+        "path": str(FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_RELATIVE_PATH),
+        "schema": FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SCHEMA,
+        "self_digest_key": FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SELF_KEY,
+        "self_digest": receipt[
+            FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+    }
+
+
+def validate_encoder_path_projection_single_shard_regeneration_transaction_contract(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    expected = (
+        ENCODER_PATH_PROJECTION_SINGLE_SHARD_REGENERATION_TRANSACTION_CONTRACT)
+    if not isinstance(value, Mapping) or dict(value) != expected:
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration transaction contract changed")
+    return copy.deepcopy(expected)
+
+
+def load_full_bank_v2_smoke_regeneration_prepared_receipt(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    path = _pin_generated(
+        root, FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_RELATIVE_PATH,
+        label="single-shard regeneration PREPARED receipt")
+    if (not path.is_file() or path.is_symlink()
+            or stat.S_IMODE(path.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration PREPARED receipt mode changed")
+    payload, raw = _load_json(
+        path, label="single-shard regeneration PREPARED receipt")
+    receipt = validate_full_bank_v2_smoke_regeneration_prepared_receipt(
+        payload)
+    full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding(
+        receipt, raw)
+    return receipt
+
+
+def load_full_bank_v2_smoke_regeneration_complete_receipt(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    path = _pin_generated(
+        root, FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_RELATIVE_PATH,
+        label="single-shard regeneration COMPLETE receipt")
+    if (not path.is_file() or path.is_symlink()
+            or stat.S_IMODE(path.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "single-shard regeneration COMPLETE receipt mode changed")
+    payload, raw = _load_json(
+        path, label="single-shard regeneration COMPLETE receipt")
+    receipt = validate_full_bank_v2_smoke_regeneration_complete_receipt(
+        payload)
+    full_bank_v2_smoke_regeneration_complete_receipt_artifact_binding(
+        receipt, raw)
+    return receipt
+
+
 _ENCODER_IMPORT_CORRECTION_KEYS = frozenset({
     "schema", "status", "complete", "encoder_import_correction_version",
     "source_repository_commit", "source_bindings", "source_binding_set_digest",
@@ -3629,6 +4854,383 @@ def encoder_compute_dtype_correction_artifact_binding(
     }
 
 
+_IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_KEYS = frozenset({
+    "payload", "binding",
+})
+
+
+def validate_immutable_encoder_compute_dtype_correction(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the exact dc4f dtype correction without live-source equality."""
+
+    if (not isinstance(value, Mapping)
+            or set(value) != _IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_KEYS
+            or not isinstance(value.get("payload"), Mapping)
+            or not isinstance(value.get("binding"), Mapping)):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable encoder-compute-dtype correction is not closed")
+    immutable = copy.deepcopy(dict(value))
+    payload = validate_encoder_compute_dtype_correction(
+        immutable["payload"], validate_live_authorities=False)
+    expected_binding = encoder_compute_dtype_correction_artifact_binding(
+        payload, _pretty_json_bytes(payload))
+    if (immutable["binding"] != expected_binding
+            or expected_binding
+            != IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_BINDING
+            or payload.get(ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY)
+            != IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST
+            or payload.get("source_repository_commit")
+            != ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable encoder-compute-dtype correction changed")
+    immutable["payload"] = payload
+    immutable["binding"] = expected_binding
+    return immutable
+
+
+_ENCODER_PATH_PROJECTION_CORRECTION_KEYS = frozenset({
+    "schema", "status", "complete", "encoder_path_projection_correction_version",
+    "source_repository_commit", "source_bindings", "source_binding_set_digest",
+    "historical_source_repository_commit",
+    "immutable_encoder_compute_dtype_correction",
+    "immutable_encoder_compute_dtype_correction_digest",
+    "immutable_successor_scorer_contract_binding",
+    "failed_encoder_source_binding", "immutable_base_smoke_artifact_bundle",
+    "base_smoke_artifact_bundle_digest", "focused_test_source_transitions",
+    "production_source_transition", "production_source_transition_digest",
+    "focused_test_source_transition_digest", "preserved_scientific_contract",
+    "preserved_scientific_contract_digest", "downstream_outputs_absent_at_issue",
+    "downstream_outputs_absent_at_issue_digest",
+    "single_shard_regeneration_transaction_contract",
+    "single_shard_regeneration_transaction_contract_digest",
+    "preissue_single_shard_regeneration_transaction_audit",
+    "preissue_single_shard_regeneration_transaction_audit_digest",
+    "single_shard_regeneration_transaction_artifacts_absent_at_issue",
+    "single_shard_regeneration_transaction_artifacts_absent_at_issue_digest",
+    "encoder_path_projection_failure_boundary",
+    "encoder_path_projection_failure_boundary_digest",
+    "encoder_path_projection_correction",
+    "encoder_path_projection_correction_material_digest", "issuance_boundary",
+    ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY,
+})
+
+
+def build_encoder_path_projection_correction(
+        *, source_repository_commit: str,
+        source_bindings: Sequence[Mapping[str, Any]],
+        immutable_encoder_compute_dtype_correction: Mapping[str, Any],
+        immutable_successor_scorer_contract_binding: Mapping[str, Any],
+        focused_test_source_transitions: Sequence[Mapping[str, Any]],
+        failed_encoder_source_binding: Mapping[str, Any],
+        base_smoke_artifact_bundle: Mapping[str, Any],
+        downstream_outputs_absent_at_issue: Sequence[Mapping[str, Any]],
+        single_shard_regeneration_transaction_artifacts_absent_at_issue:
+            Sequence[Mapping[str, Any]],
+        ) -> dict[str, Any]:
+    """Build the post-base-smoke logical-path correction without outcomes."""
+
+    if (not _is_hex(source_repository_commit, 40)
+            or source_repository_commit
+            == ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction source commit is malformed or not new")
+    current_sources = _validate_source_bindings(list(source_bindings))
+    immutable_dtype = validate_immutable_encoder_compute_dtype_correction(
+        immutable_encoder_compute_dtype_correction)
+    dtype_payload = immutable_dtype["payload"]
+    historical_sources = dtype_payload["source_bindings"]
+    changed = _changed_source_paths(historical_sources, current_sources)
+    expected_changed = sorted(
+        ENCODER_PATH_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    if changed != expected_changed:
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction changed an unauthorised source path")
+    successor = _validate_immutable_successor_scorer_contract_binding(
+        immutable_successor_scorer_contract_binding)
+    if dtype_payload["immutable_successor_scorer_contract_binding"] != successor:
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection scorer-contract chain changed")
+    if dict(failed_encoder_source_binding) != (
+            ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING):
+        raise ScorerFitCorpusV2DesignError(
+            "path-projection failure source binding changed")
+    historical_encoder = next(
+        row for row in historical_sources
+        if row["path"] == ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING[
+            "path"])
+    if (historical_encoder["byte_count"]
+            != ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING["byte_count"]
+            or historical_encoder["sha256"]
+            != ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING["sha256"]):
+        raise ScorerFitCorpusV2DesignError(
+            "path-projection failure source disagrees with immutable closure")
+    if (not isinstance(base_smoke_artifact_bundle, Mapping)
+            or dict(base_smoke_artifact_bundle)
+            != IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_ARTIFACT_BUNDLE):
+        raise ScorerFitCorpusV2DesignError(
+            "path-projection base-smoke artifact bundle changed")
+    base_bundle = copy.deepcopy(
+        IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_ARTIFACT_BUNDLE)
+    tests = _validate_encoder_path_projection_focused_test_transitions(
+        list(focused_test_source_transitions))
+    absence = _validate_encoder_path_projection_correction_absence(
+        list(downstream_outputs_absent_at_issue))
+    transaction_absence = _validate_encoder_path_projection_transaction_absence(
+        list(single_shard_regeneration_transaction_artifacts_absent_at_issue))
+    production_transition = {
+        "allowed_changed_source_paths": list(
+            ENCODER_PATH_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS),
+        "observed_changed_source_paths": changed,
+        "historical_bound_source_paths": [
+            row["path"] for row in historical_sources],
+        "current_bound_source_paths": [row["path"] for row in current_sources],
+        "failed_encoder_source_binding": copy.deepcopy(
+            ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING),
+        "extra_production_source_path_changed": False,
+    }
+    science = copy.deepcopy(ENCODER_PATH_PROJECTION_CORRECTION_PRESERVED_SCIENCE)
+    failure = copy.deepcopy(ENCODER_PATH_PROJECTION_FAILURE_BOUNDARY)
+    transaction_contract = copy.deepcopy(
+        ENCODER_PATH_PROJECTION_SINGLE_SHARD_REGENERATION_TRANSACTION_CONTRACT)
+    transaction_audit = copy.deepcopy(
+        ENCODER_PATH_PROJECTION_PREISSUE_SINGLE_SHARD_TRANSACTION_AUDIT)
+    if (science.get("encoder_compute_dtype_correction_digest")
+            != IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST
+            or failure.get("historical_source_repository_commit")
+            != ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT
+            or transaction_contract.get("complete") is not True
+            or transaction_audit.get(
+                "path_projection_correction_artifact_issued_when_discovered")
+            is not False):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection immutable science or failure chain changed")
+    correction_material = {
+        "status": (
+            "SOURCE_ONLY_LOGICAL_PATH_PROJECTION_CORRECTION_WITH_"
+            "PREISSUE_INTERRUPTION_SAFETY_HARDENING"),
+        "defect": (
+            "RESOLVED_MANAGED_GENERATED_PATH_WAS_PROJECTED_RELATIVE_TO_"
+            "LEXICAL_REPOSITORY_ROOT"),
+        "correction": (
+            "PROJECT_REGISTERED_ARTIFACTS_THROUGH_THE_MANAGED_LOGICAL_"
+            "SCORER_FIT_ROOT"),
+        "filesystem_alias_or_artifact_location_changed_during_issue_or_"
+        "path_digest_migration": False,
+        "branch_row_frame_or_latent_shard_changed_during_issue_or_path_"
+        "digest_migration": False,
+        "latent_values_deserialized_or_reencoded_during_correction_issue":
+            False,
+        "preprocessing_changed": False,
+        "target_normalisation_changed": False,
+        "target_encoder_architecture_checkpoint_or_output_layer_changed": False,
+        "latent_shape_token_order_or_storage_dtype_changed": False,
+        "oracle_label_scorer_contract_or_manifest_changed": False,
+        "runtime_compute_dtype_changed": False,
+        "path_projection_defect_is_read_only_validator_projection": True,
+        "authorised_path_digest_metadata_transition_count": 1,
+        "authorised_path_digest_metadata_transition": (
+            "ADD_ENCODER_PATH_PROJECTION_CORRECTION_DIGEST_TO_INDEX_AND_"
+            "SMOKE_WITHOUT_LATENT_SHARD_WRITE"),
+        "encoding_invocation_summary_is_operational_and_may_refresh": True,
+        "path_digest_metadata_transition_requires_all_13_shard_bindings_"
+        "unchanged": True,
+        "path_digest_metadata_current_current_recovery_requires_exact_file_"
+        "reopen_fsync_and_parent_directory_fsync": True,
+        "prospective_interruption_safety_implementation_of_existing_smoke_"
+        "requirement": True,
+        "authorised_single_shard_regeneration_transaction_count": 1,
+        "authorised_transaction_target_candidate_index": 0,
+        "authorised_transaction_context_target_count": 0,
+        "authorised_transaction_horizon_target_count": 1,
+        "authorised_transaction_non_target_latent_write_count": 0,
+        "direct_active_target_unlink_authorised": False,
+        "prepared_receipt_before_atomic_move_required": True,
+        "retained_exact_backup_required": True,
+        "complete_receipt_before_pass_smoke_publication_required": True,
+        "immutable_prepared_and_complete_receipts_required": True,
+        "mutable_transaction_phase_receipt_authorised": False,
+        "transaction_changes_science_labels_or_latent_values": False,
+        "resume_scope_after_metadata_transition": (
+            "ZERO_NEW_THEN_PREPARED_ATOMIC_MOVE_REGENERATION_COMPLETE_"
+            "TRANSACTION_THEN_FULL_MISSING_CORPUS"),
+    }
+    payload: dict[str, Any] = {
+        "schema": ENCODER_PATH_PROJECTION_CORRECTION_SCHEMA,
+        "status": ENCODER_PATH_PROJECTION_CORRECTION_STATUS,
+        "complete": True,
+        "encoder_path_projection_correction_version": 1,
+        "source_repository_commit": source_repository_commit,
+        "source_bindings": current_sources,
+        "source_binding_set_digest": canonical_digest(current_sources),
+        "historical_source_repository_commit":
+            ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+        "immutable_encoder_compute_dtype_correction": copy.deepcopy(
+            immutable_dtype),
+        "immutable_encoder_compute_dtype_correction_digest":
+            IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST,
+        "immutable_successor_scorer_contract_binding": successor,
+        "failed_encoder_source_binding": copy.deepcopy(
+            ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING),
+        "immutable_base_smoke_artifact_bundle": base_bundle,
+        "base_smoke_artifact_bundle_digest": canonical_digest(base_bundle),
+        "focused_test_source_transitions": tests,
+        "production_source_transition": production_transition,
+        "production_source_transition_digest": canonical_digest(
+            production_transition),
+        "focused_test_source_transition_digest": canonical_digest(tests),
+        "preserved_scientific_contract": science,
+        "preserved_scientific_contract_digest": canonical_digest(science),
+        "downstream_outputs_absent_at_issue": absence,
+        "downstream_outputs_absent_at_issue_digest": canonical_digest(absence),
+        "single_shard_regeneration_transaction_contract":
+            transaction_contract,
+        "single_shard_regeneration_transaction_contract_digest":
+            canonical_digest(transaction_contract),
+        "preissue_single_shard_regeneration_transaction_audit":
+            transaction_audit,
+        "preissue_single_shard_regeneration_transaction_audit_digest":
+            canonical_digest(transaction_audit),
+        "single_shard_regeneration_transaction_artifacts_absent_at_issue":
+            transaction_absence,
+        "single_shard_regeneration_transaction_artifacts_absent_at_issue_digest":
+            canonical_digest(transaction_absence),
+        "encoder_path_projection_failure_boundary": failure,
+        "encoder_path_projection_failure_boundary_digest": canonical_digest(failure),
+        "encoder_path_projection_correction": correction_material,
+        "encoder_path_projection_correction_material_digest": canonical_digest(
+            correction_material),
+        "issuance_boundary": {
+            "immutable_dtype_and_import_correction_chain_preserved": True,
+            "immutable_successor_scorer_contract_preserved": True,
+            "exact_base_index_summary_smoke_and_13_shards_validated": True,
+            "source_tree_clean_and_committed": True,
+            "branch_outcome_or_label_value_read_for_correction": False,
+            "latent_value_deserialized_for_correction": False,
+            "latent_shard_bytes_hashed_for_identity_only": True,
+            "latent_shard_hashing_must_use_noatime_reads": True,
+            "double_base_bundle_downstream_and_transaction_absence_validation_"
+            "required": True,
+            "later_consumption_requires_pretransition_metadata_live": False,
+            "path_digest_metadata_transition_authorised": True,
+            "branch_or_latent_shard_write_authorised_during_issue": False,
+            "single_shard_transaction_control_receipt_write_authorised_during_"
+            "issue": False,
+            "zero_new_or_single_shard_transaction_started_at_issue": False,
+            "direct_write_to_final_correction_path_allowed": False,
+            "correction_staged_relative_path": str(
+                ENCODER_PATH_PROJECTION_CORRECTION_STAGED_RELATIVE_PATH),
+            "correction_staged_file_fsync_before_publication_required": True,
+            "correction_atomic_no_overwrite_publication": (
+                "LINK_STAGED_TO_FINAL"),
+            "parent_fsync_immediately_after_final_link_required": True,
+            "parent_fsync_immediately_after_staged_unlink_required": True,
+            "exact_final_and_staged_hardlink_cleanup_is_resumable": True,
+            "final_200_state_corpus_authorised": False,
+        },
+    }
+    if set(payload) != _ENCODER_PATH_PROJECTION_CORRECTION_KEYS - {
+            ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY}:
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction construction surface changed")
+    payload[ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY] = canonical_digest(payload)
+    return payload
+
+
+def validate_encoder_path_projection_correction(
+        payload: Mapping[str, Any], *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_failure_boundary_live: bool = False,
+        ) -> dict[str, Any]:
+    if (not isinstance(payload, Mapping)
+            or set(payload) != _ENCODER_PATH_PROJECTION_CORRECTION_KEYS):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction is not closed")
+    correction = copy.deepcopy(dict(payload))
+    if (correction.get("schema") != ENCODER_PATH_PROJECTION_CORRECTION_SCHEMA
+            or correction.get("status") != ENCODER_PATH_PROJECTION_CORRECTION_STATUS
+            or correction.get("complete") is not True
+            or correction.get("encoder_path_projection_correction_version") != 1):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction version changed")
+    expected = build_encoder_path_projection_correction(
+        source_repository_commit=str(correction.get(
+            "source_repository_commit", "")),
+        source_bindings=correction.get("source_bindings", []),
+        immutable_encoder_compute_dtype_correction=correction.get(
+            "immutable_encoder_compute_dtype_correction", {}),
+        immutable_successor_scorer_contract_binding=correction.get(
+            "immutable_successor_scorer_contract_binding", {}),
+        focused_test_source_transitions=correction.get(
+            "focused_test_source_transitions", []),
+        failed_encoder_source_binding=correction.get(
+            "failed_encoder_source_binding", {}),
+        base_smoke_artifact_bundle=correction.get(
+            "immutable_base_smoke_artifact_bundle", {}),
+        downstream_outputs_absent_at_issue=correction.get(
+            "downstream_outputs_absent_at_issue", []),
+        single_shard_regeneration_transaction_artifacts_absent_at_issue=
+            correction.get(
+                "single_shard_regeneration_transaction_artifacts_absent_at_issue",
+                []),
+    )
+    if (correction != expected
+            or correction.get(ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+            != canonical_digest(_without(
+                correction, ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY))):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction binding changed")
+    if validate_live_authorities:
+        commit, sources = clean_source_authority(root=root)
+        immutable_dtype = _load_immutable_encoder_compute_dtype_correction(root=root)
+        successor = _load_immutable_successor_scorer_contract_binding(root=root)
+        tests = _encoder_path_projection_focused_test_source_transitions(root=root)
+        failed = _validate_live_encoder_path_projection_failure_source(root=root)
+        if (commit != correction["source_repository_commit"]
+                or sources != correction["source_bindings"]
+                or immutable_dtype
+                != correction["immutable_encoder_compute_dtype_correction"]
+                or successor
+                != correction["immutable_successor_scorer_contract_binding"]
+                or tests != correction["focused_test_source_transitions"]
+                or failed != correction["failed_encoder_source_binding"]):
+            raise ScorerFitCorpusV2DesignError(
+                "live source or immutable path-projection lineage changed")
+        if require_failure_boundary_live:
+            bundle = _validate_live_encoder_path_projection_base_bundle(root=root)
+            absence = audit_encoder_path_projection_correction_downstream_absence(
+                root=root)
+            transaction_absence = (
+                audit_encoder_path_projection_transaction_artifacts_absent(
+                    root=root))
+            if (bundle != correction["immutable_base_smoke_artifact_bundle"]
+                    or absence
+                    != correction["downstream_outputs_absent_at_issue"]
+                    or transaction_absence != correction[
+                        "single_shard_regeneration_transaction_artifacts_"
+                        "absent_at_issue"]):
+                raise ScorerFitCorpusV2DesignError(
+                    "path-projection failure boundary changed before issue")
+    return correction
+
+
+def encoder_path_projection_correction_artifact_binding(
+        payload: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
+    correction = validate_encoder_path_projection_correction(
+        payload, validate_live_authorities=False)
+    if raw != _pretty_json_bytes(correction):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction raw bytes changed")
+    return {
+        "path": str(ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH),
+        "schema": ENCODER_PATH_PROJECTION_CORRECTION_SCHEMA,
+        "self_digest_key": ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY,
+        "self_digest": correction[ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "source_repository_commit": correction["source_repository_commit"],
+    }
+
+
 def completion_order_material(
         complete_structural_state_identity: Mapping[str, Any],
         designated_goal_identity: Mapping[str, Any], *,
@@ -3879,6 +5481,43 @@ def _encoder_compute_dtype_focused_test_source_transitions(
     return _validate_encoder_compute_dtype_focused_test_transitions(transitions)
 
 
+def _encoder_path_projection_focused_test_source_transitions(
+        *, root: Path = ROOT) -> list[dict[str, Any]]:
+    repository = Path(root).resolve()
+    transitions: list[dict[str, Any]] = []
+    for path, role in ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_SPECS:
+        transitions.append({
+            "path": path,
+            "role": role,
+            "historical": _transition_endpoint_from_raw(
+                path=path, role=role,
+                raw=_historical_source_blob(
+                    root=repository,
+                    commit=(
+                        ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT),
+                    relative=path)),
+            "current": _current_source_endpoint(
+                root=repository, path=path, role=role),
+        })
+    return _validate_encoder_path_projection_focused_test_transitions(
+        transitions)
+
+
+def _validate_live_encoder_path_projection_failure_source(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    expected = ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING
+    raw = _historical_source_blob(
+        root=Path(root).resolve(),
+        commit=ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+        relative=expected["path"])
+    observed = _transition_endpoint_from_raw(
+        path=expected["path"], role=expected["role"], raw=raw)
+    if observed != expected:
+        raise ScorerFitCorpusV2DesignError(
+            "historical path-projection failure source binding changed")
+    return copy.deepcopy(expected)
+
+
 def _validate_live_encoder_compute_dtype_source_evidence(
         *, root: Path = ROOT,
         ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
@@ -3957,6 +5596,29 @@ def _load_immutable_encoder_import_correction(
     return validate_immutable_encoder_import_correction({
         "payload": payload,
         "binding": encoder_import_correction_artifact_binding(payload, raw),
+    })
+
+
+def _load_immutable_encoder_compute_dtype_correction(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    expected = IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_BINDING
+    path = _pin_generated(
+        root, expected["path"],
+        label="immutable encoder-compute-dtype correction")
+    if (not path.is_file() or path.is_symlink()
+            or stat.S_IMODE(path.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable encoder-compute-dtype correction mode changed")
+    payload, raw = _load_json(
+        path, label="immutable encoder-compute-dtype correction")
+    if (len(raw) != expected["byte_count"]
+            or hashlib.sha256(raw).hexdigest() != expected["raw_sha256"]):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable encoder-compute-dtype correction raw binding changed")
+    return validate_immutable_encoder_compute_dtype_correction({
+        "payload": payload,
+        "binding": encoder_compute_dtype_correction_artifact_binding(
+            payload, raw),
     })
 
 
@@ -4073,6 +5735,132 @@ def _validate_live_encoder_import_failure_receipts(
     return copy.deepcopy(smoke_binding), copy.deepcopy(corpus_binding)
 
 
+def _sha256_regular_file(path: Path, *, label: str) -> tuple[str, int]:
+    if not path.is_file() or path.is_symlink():
+        raise ScorerFitCorpusV2DesignError(f"{label} is unavailable")
+    noatime = getattr(os, "O_NOATIME", None)
+    if noatime is None:
+        raise ScorerFitCorpusV2DesignError(
+            f"{label} cannot be hashed without changing atime")
+    flags = (os.O_RDONLY | noatime | getattr(os, "O_CLOEXEC", 0)
+             | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise ScorerFitCorpusV2DesignError(
+            f"{label} cannot be opened without changing atime") from exc
+    digest = hashlib.sha256()
+    byte_count = 0
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise ScorerFitCorpusV2DesignError(
+                f"{label} changed during no-atime open")
+        while True:
+            block = os.read(descriptor, 8 << 20)
+            if not block:
+                break
+            digest.update(block)
+            byte_count += len(block)
+    finally:
+        os.close(descriptor)
+    return digest.hexdigest(), byte_count
+
+
+def _load_exact_path_projection_metadata(
+        binding: Mapping[str, Any], *, root: Path, label: str,
+        ) -> dict[str, Any]:
+    path = _pin_generated(root, binding["path"], label=label)
+    payload, raw = _load_json(path, label=label)
+    if (len(raw) != binding["byte_count"]
+            or hashlib.sha256(raw).hexdigest() != binding["raw_sha256"]
+            or payload.get("schema") != binding["schema"]):
+        raise ScorerFitCorpusV2DesignError(f"{label} raw binding changed")
+    self_key = binding.get("self_digest_key")
+    if self_key is not None and (
+            payload.get(self_key) != binding.get("self_digest")
+            or hashlib.sha256(json.dumps(
+                _without(payload, self_key), sort_keys=True,
+                ensure_ascii=False).encode("utf-8")).hexdigest()
+            != binding.get("self_digest")):
+        raise ScorerFitCorpusV2DesignError(f"{label} self binding changed")
+    return payload
+
+
+def _validate_live_encoder_path_projection_base_bundle(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    bundle = IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_ARTIFACT_BUNDLE
+    index = _load_exact_path_projection_metadata(
+        bundle["latent_index_binding"], root=root,
+        label="path-projection failure latent index")
+    summary = _load_exact_path_projection_metadata(
+        bundle["encoding_invocation_summary_binding"], root=root,
+        label="path-projection failure encoding summary")
+    smoke = _load_exact_path_projection_metadata(
+        bundle["base_smoke_receipt_binding"], root=root,
+        label="path-projection failure base smoke")
+    if any("encoder_path_projection_correction_digest" in payload
+           for payload in (index, summary, smoke)):
+        raise ScorerFitCorpusV2DesignError(
+            "path-projection digest predates its correction authority")
+    if (index.get("complete") is not False
+            or index.get("encoder_compute_dtype") != "float32"
+            or index.get("encoder_compute_dtype_correction_digest")
+            != IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST
+            or index.get("context_shape") != [1, 3, 768, 1024]
+            or index.get("horizon_shape") != [12, 4, 768, 1024]
+            or len(index.get("context_records", [])) != 1
+            or len(index.get("horizon_records", [])) != 12
+            or summary.get("smoke") is not True
+            or summary.get("new_context_shards") != 1
+            or summary.get("new_horizon_shards") != 12
+            or summary.get("new_shards") != 13
+            or summary.get("resume_only_verified") is not False
+            or summary.get("latents_index_digest")
+            != bundle["latent_index_binding"]["self_digest"]
+            or smoke.get("base_end_to_end_pass") is not True
+            or smoke.get("pass") is not False
+            or smoke.get("zero_new_resume_verified") is not False
+            or smoke.get("single_shard_deletion_regeneration_verified")
+            is not False
+            or smoke.get("smoke_protocol_complete") is not False
+            or smoke.get("true_latent_trajectory_count") != 12
+            or smoke.get("encoder_compute_dtype") != "float32"
+            or smoke.get("encoder_compute_dtype_correction_digest")
+            != IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST
+            or smoke.get("latent_index_digest")
+            != bundle["latent_index_binding"]["self_digest"]):
+        raise ScorerFitCorpusV2DesignError(
+            "path-projection base-smoke metadata changed")
+    indexed_inventory = []
+    for record in list(index["context_records"]) + list(
+            index["horizon_records"]):
+        indexed_inventory.append({
+            "path": str(SCORER_FIT_RELATIVE_PATH / str(record["path"])),
+            "sha256": record["sha256"],
+            "byte_count": record["byte_count"],
+            "shape": record["shape"],
+        })
+    expected_inventory = bundle["latent_shard_inventory"]
+    if sorted(indexed_inventory, key=lambda row: row["path"]) != sorted(
+            expected_inventory, key=lambda row: row["path"]):
+        raise ScorerFitCorpusV2DesignError(
+            "path-projection latent index inventory changed")
+    for record in expected_inventory:
+        path = _pin_generated(
+            root, record["path"], label="path-projection base latent shard")
+        digest, byte_count = _sha256_regular_file(
+            path, label="path-projection base latent shard")
+        if digest != record["sha256"] or byte_count != record["byte_count"]:
+            raise ScorerFitCorpusV2DesignError(
+                "path-projection base latent shard binding changed")
+    if (sum(row["byte_count"] for row in expected_inventory)
+            != bundle["total_latent_storage_bytes"]):
+        raise ScorerFitCorpusV2DesignError(
+            "path-projection base latent storage count changed")
+    return copy.deepcopy(bundle)
+
+
 def audit_encoder_import_correction_prelatent_absence(
         *, root: Path = ROOT) -> list[dict[str, Any]]:
     rows = _expected_encoder_import_correction_absence_rows()
@@ -4093,6 +5881,33 @@ def audit_encoder_compute_dtype_correction_prelatent_absence(
         if path.exists() or path.is_symlink():
             raise ScorerFitCorpusV2DesignError(
                 f"pre-latent output predates dtype correction: {row['path']}")
+    return rows
+
+
+def audit_encoder_path_projection_correction_downstream_absence(
+        *, root: Path = ROOT) -> list[dict[str, Any]]:
+    rows = _expected_encoder_path_projection_correction_absence_rows()
+    for row in rows:
+        path = _pin_generated(
+            root, row["path"], label="path-projection downstream absence")
+        if path.exists() or path.is_symlink():
+            raise ScorerFitCorpusV2DesignError(
+                f"downstream output predates path correction: {row['path']}")
+    return rows
+
+
+def audit_encoder_path_projection_transaction_artifacts_absent(
+        *, root: Path = ROOT) -> list[dict[str, Any]]:
+    """Require no PREPARED, backup, or COMPLETE state before issuance."""
+
+    rows = _expected_encoder_path_projection_transaction_absence_rows()
+    for row in rows:
+        path = _pin_generated(
+            root, row["path"], label="path-projection transaction absence")
+        if path.exists() or path.is_symlink():
+            raise ScorerFitCorpusV2DesignError(
+                "single-shard transaction predates path correction: "
+                f"{row['path']}")
     return rows
 
 
@@ -4185,6 +6000,132 @@ def _exclusive_json(path: Path, value: Mapping[str, Any], *, label: str) -> byte
     except BaseException:
         # Never unlink a possibly durable authority after exclusive creation.
         raise
+    return raw
+
+
+def _fsync_parent_directory(path: Path) -> None:
+    descriptor = os.open(
+        path.parent,
+        os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_CLOEXEC", 0),
+    )
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _exclusive_json_atomic_no_overwrite(
+        path: Path, staged_path: Path, value: Mapping[str, Any], *,
+        label: str, recover_nonexact_staged: bool,
+        ) -> bytes:
+    """Durably link a complete staged authority into an absent final path."""
+
+    if path.parent != staged_path.parent or path == staged_path:
+        raise ScorerFitCorpusV2DesignError(
+            f"{label} staged publication escaped its parent")
+    raw = _pretty_json_bytes(value)
+
+    final_present = path.exists() or path.is_symlink()
+    staged_present = staged_path.exists() or staged_path.is_symlink()
+    if final_present:
+        if (path.is_symlink() or not path.is_file()
+                or stat.S_IMODE(path.stat().st_mode) != 0o444
+                or path.read_bytes() != raw):
+            raise ScorerFitCorpusV2DesignError(
+                f"{label} immutable final collision")
+        if staged_present:
+            if (staged_path.is_symlink() or not staged_path.is_file()
+                    or stat.S_IMODE(staged_path.stat().st_mode) != 0o444
+                    or staged_path.read_bytes() != raw
+                    or staged_path.stat().st_dev != path.stat().st_dev
+                    or staged_path.stat().st_ino != path.stat().st_ino):
+                raise ScorerFitCorpusV2DesignError(
+                    f"{label} staged cleanup state changed")
+            # The previous process may have stopped immediately after link(2)
+            # and before the first directory fsync.  Make the final name
+            # durable before removing the only other name for these bytes.
+            _fsync_parent_directory(path)
+            staged_path.unlink()
+            _fsync_parent_directory(path)
+        return raw
+
+    if staged_present:
+        staged_exact = bool(
+            not staged_path.is_symlink() and staged_path.is_file()
+            and stat.S_IMODE(staged_path.stat().st_mode) == 0o444
+            and staged_path.read_bytes() == raw)
+        if not staged_exact:
+            if not recover_nonexact_staged or staged_path.is_symlink():
+                raise ScorerFitCorpusV2DesignError(
+                    f"{label} staged bytes are partial or nonexact")
+            staged_path.unlink()
+            _fsync_parent_directory(path)
+            staged_present = False
+    if not staged_present:
+        flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL
+                 | getattr(os, "O_CLOEXEC", 0)
+                 | getattr(os, "O_NOFOLLOW", 0))
+        try:
+            descriptor = os.open(staged_path, flags, 0o600)
+        except OSError as exc:
+            raise ScorerFitCorpusV2DesignError(
+                f"cannot stage {label}") from exc
+        try:
+            offset = 0
+            while offset < len(raw):
+                written = os.write(descriptor, raw[offset:])
+                if written <= 0:
+                    raise ScorerFitCorpusV2DesignError(
+                        f"cannot fully stage {label}")
+                offset += written
+            os.fchmod(descriptor, 0o444)
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+    staged_stat = staged_path.stat()
+    if (staged_path.is_symlink() or not staged_path.is_file()
+            or stat.S_IMODE(staged_stat.st_mode) != 0o444
+            or staged_path.read_bytes() != raw):
+        raise ScorerFitCorpusV2DesignError(
+            f"{label} staged publication changed")
+    # A staged file may have survived an interruption after its original
+    # fsync.  Reopen and fsync the exact bytes before linking so replay does
+    # not rely on the durability of the interrupted process.
+    staged_descriptor = os.open(
+        staged_path,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0),
+    )
+    try:
+        reopened = os.fstat(staged_descriptor)
+        if (reopened.st_dev != staged_stat.st_dev
+                or reopened.st_ino != staged_stat.st_ino
+                or stat.S_IMODE(reopened.st_mode) != 0o444
+                or not stat.S_ISREG(reopened.st_mode)):
+            raise ScorerFitCorpusV2DesignError(
+                f"{label} staged publication changed before fsync")
+        os.fsync(staged_descriptor)
+    finally:
+        os.close(staged_descriptor)
+    try:
+        os.link(staged_path, path, follow_symlinks=False)
+    except FileExistsError:
+        pass
+    except OSError as exc:
+        raise ScorerFitCorpusV2DesignError(
+            f"cannot atomically publish {label}") from exc
+    _fsync_parent_directory(path)
+    final_stat = path.stat()
+    if (path.is_symlink() or not path.is_file()
+            or final_stat.st_dev != staged_stat.st_dev
+            or final_stat.st_ino != staged_stat.st_ino
+            or stat.S_IMODE(final_stat.st_mode) != 0o444
+            or path.read_bytes() != raw):
+        raise ScorerFitCorpusV2DesignError(
+            f"{label} atomic no-overwrite publication changed")
+    staged_path.unlink()
+    _fsync_parent_directory(path)
     return raw
 
 
@@ -4970,11 +6911,125 @@ def issue_encoder_compute_dtype_correction(
         root=root, require_failure_boundary_live=True)
 
 
+def load_encoder_path_projection_correction_for_consumption(
+        path: Path | None = None, *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_failure_boundary_live: bool = False,
+        ) -> dict[str, Any]:
+    """Load the logical-path correction after its one metadata transition."""
+
+    expected = _pin_generated(
+        root, ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH,
+        label="encoder-path-projection correction")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction logical path changed")
+    if (not expected.is_file() or expected.is_symlink()
+            or stat.S_IMODE(expected.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction mode changed")
+    payload, raw = _load_json(
+        expected, label="encoder-path-projection correction")
+    correction = validate_encoder_path_projection_correction(
+        payload, root=root, validate_live_authorities=validate_live_authorities,
+        require_failure_boundary_live=require_failure_boundary_live)
+    encoder_path_projection_correction_artifact_binding(correction, raw)
+    return correction
+
+
+def issue_encoder_path_projection_correction(
+        path: Path | None = None, *, root: Path = ROOT,
+        source_repository_commit: str | None = None,
+        ) -> dict[str, Any]:
+    """Issue the logical-path correction before zero-new or shard deletion."""
+
+    expected = _pin_generated(
+        root, ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH,
+        label="encoder-path-projection correction")
+    staged = _pin_generated(
+        root, ENCODER_PATH_PROJECTION_CORRECTION_STAGED_RELATIVE_PATH,
+        label="encoder-path-projection correction staged publication")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction logical path changed")
+    if not expected.parent.is_dir() or expected.parent.is_symlink():
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-path-projection correction parent is unavailable")
+    if expected.exists() or expected.is_symlink():
+        correction = load_encoder_path_projection_correction_for_consumption(
+            root=root)
+        _exclusive_json_atomic_no_overwrite(
+            expected, staged, correction,
+            label="encoder-path-projection correction",
+            recover_nonexact_staged=False)
+        return correction
+
+    commit, sources = clean_source_authority(root=root)
+    if source_repository_commit is not None and commit != source_repository_commit:
+        raise ScorerFitCorpusV2DesignError(
+            "requested encoder-path-projection correction commit is not live")
+    immutable_dtype = _load_immutable_encoder_compute_dtype_correction(root=root)
+    successor = _load_immutable_successor_scorer_contract_binding(root=root)
+    tests = _encoder_path_projection_focused_test_source_transitions(root=root)
+    failed = _validate_live_encoder_path_projection_failure_source(root=root)
+    first_bundle = _validate_live_encoder_path_projection_base_bundle(root=root)
+    first_absence = audit_encoder_path_projection_correction_downstream_absence(
+        root=root)
+    first_transaction_absence = (
+        audit_encoder_path_projection_transaction_artifacts_absent(root=root))
+    correction = build_encoder_path_projection_correction(
+        source_repository_commit=commit,
+        source_bindings=sources,
+        immutable_encoder_compute_dtype_correction=immutable_dtype,
+        immutable_successor_scorer_contract_binding=successor,
+        focused_test_source_transitions=tests,
+        failed_encoder_source_binding=failed,
+        base_smoke_artifact_bundle=first_bundle,
+        downstream_outputs_absent_at_issue=first_absence,
+        single_shard_regeneration_transaction_artifacts_absent_at_issue=
+            first_transaction_absence,
+    )
+
+    second_commit, second_sources = clean_source_authority(root=root)
+    second_dtype = _load_immutable_encoder_compute_dtype_correction(root=root)
+    second_successor = _load_immutable_successor_scorer_contract_binding(root=root)
+    second_tests = _encoder_path_projection_focused_test_source_transitions(root=root)
+    second_failed = _validate_live_encoder_path_projection_failure_source(root=root)
+    second_bundle = _validate_live_encoder_path_projection_base_bundle(root=root)
+    second_absence = audit_encoder_path_projection_correction_downstream_absence(
+        root=root)
+    second_transaction_absence = (
+        audit_encoder_path_projection_transaction_artifacts_absent(root=root))
+    if ((commit, sources) != (second_commit, second_sources)
+            or immutable_dtype != second_dtype
+            or successor != second_successor
+            or tests != second_tests
+            or failed != second_failed
+            or first_bundle != second_bundle
+            or first_absence != second_absence
+            or first_transaction_absence != second_transaction_absence):
+        raise ScorerFitCorpusV2DesignError(
+            "source, chained lineage, base smoke, or absence changed before "
+            "encoder-path-projection correction install")
+    _exclusive_json_atomic_no_overwrite(
+        expected, staged, correction,
+        label="encoder-path-projection correction",
+        recover_nonexact_staged=True)
+    return load_encoder_path_projection_correction_for_consumption(
+        root=root, require_failure_boundary_live=True)
+
+
 def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
     """Return immutable science plus the mandatory corrected source authority."""
 
-    dtype_correction = load_encoder_compute_dtype_correction_for_consumption(
+    path_correction = load_encoder_path_projection_correction_for_consumption(
         root=root)
+    immutable_dtype_correction = (
+        validate_immutable_encoder_compute_dtype_correction(
+            path_correction["immutable_encoder_compute_dtype_correction"]))
+    dtype_correction = immutable_dtype_correction["payload"]
     immutable_encoder_correction = validate_immutable_encoder_import_correction(
         dtype_correction["immutable_encoder_import_correction"])
     encoder_correction = immutable_encoder_correction["payload"]
@@ -5022,16 +7077,35 @@ def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
         "encoder_import_correction_digest": encoder_correction[
             ENCODER_IMPORT_CORRECTION_SELF_KEY],
         "encoder_compute_dtype_correction": dtype_correction,
-        "encoder_compute_dtype_correction_binding":
-            encoder_compute_dtype_correction_artifact_binding(
-                dtype_correction, _pretty_json_bytes(dtype_correction)),
+        "encoder_compute_dtype_correction_binding": immutable_dtype_correction[
+            "binding"],
         "encoder_compute_dtype_correction_digest": dtype_correction[
             ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY],
+        "encoder_path_projection_correction": path_correction,
+        "encoder_path_projection_correction_binding":
+            encoder_path_projection_correction_artifact_binding(
+                path_correction, _pretty_json_bytes(path_correction)),
+        "encoder_path_projection_correction_digest": path_correction[
+            ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY],
+        "single_shard_regeneration_transaction_contract": copy.deepcopy(
+            path_correction[
+                "single_shard_regeneration_transaction_contract"]),
+        "single_shard_regeneration_transaction_contract_digest":
+            path_correction[
+                "single_shard_regeneration_transaction_contract_digest"],
+        "preissue_single_shard_regeneration_transaction_audit": copy.deepcopy(
+            path_correction[
+                "preissue_single_shard_regeneration_transaction_audit"]),
+        "preissue_single_shard_regeneration_transaction_audit_digest":
+            path_correction[
+                "preissue_single_shard_regeneration_transaction_audit_digest"],
         "manifest_replay_source_repository_commit": replay_correction[
             "source_repository_commit"],
         "encoder_import_source_repository_commit": encoder_correction[
             "source_repository_commit"],
-        "active_source_repository_commit": dtype_correction[
+        "encoder_compute_dtype_source_repository_commit": dtype_correction[
+            "source_repository_commit"],
+        "active_source_repository_commit": path_correction[
             "source_repository_commit"],
         "active_selector_digest": ACTIVE_SELECTOR_DIGEST,
         "candidate_bank_digest": CANDIDATE_BANK_DIGEST,
@@ -5060,6 +7134,20 @@ __all__ = [
     "ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY",
     "ENCODER_COMPUTE_DTYPE_CORRECTION_STATUS",
     "ENCODER_COMPUTE_DTYPE_FAILURE_BOUNDARY",
+    "ENCODER_PATH_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
+    "ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_PATHS",
+    "ENCODER_PATH_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT",
+    "ENCODER_PATH_PROJECTION_CORRECTION_PRESERVED_SCIENCE",
+    "ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH",
+    "ENCODER_PATH_PROJECTION_CORRECTION_STAGED_RELATIVE_PATH",
+    "ENCODER_PATH_PROJECTION_CORRECTION_SCHEMA",
+    "ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY",
+    "ENCODER_PATH_PROJECTION_CORRECTION_STATUS",
+    "ENCODER_PATH_PROJECTION_FAILURE_BOUNDARY",
+    "ENCODER_PATH_PROJECTION_PREISSUE_SINGLE_SHARD_TRANSACTION_AUDIT",
+    "ENCODER_PATH_PROJECTION_SINGLE_SHARD_REGENERATION_TRANSACTION_CONTRACT",
+    "ENCODER_PATH_PROJECTION_TRANSACTION_REQUIRED_ABSENT_DIRECTORIES",
+    "ENCODER_PATH_PROJECTION_TRANSACTION_REQUIRED_ABSENT_PATHS",
     "ENCODER_IMPORT_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
     "ENCODER_IMPORT_CORRECTION_FOCUSED_TEST_PATHS",
     "ENCODER_IMPORT_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT",
@@ -5069,6 +7157,20 @@ __all__ = [
     "ENCODER_IMPORT_CORRECTION_STATUS", "ENCODER_IMPORT_FAILURE_BOUNDARY",
     "EXPECTED_ROTATION_CONSTRAINT_IDS", "EXPECTED_SOURCE_PATHS", "FAMILIES",
     "FROZEN_PREDICTOR_QUALIFICATION", "FULL_BANK_COUNT_CONTRACT",
+    "FULL_BANK_V2_SMOKE_REGENERATION_BACKUP_RELATIVE_PATH",
+    "FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_RELATIVE_PATH",
+    "FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SCHEMA",
+    "FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_SELF_KEY",
+    "FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_STAGED_RELATIVE_PATH",
+    "FULL_BANK_V2_SMOKE_REGENERATION_COMPLETE_STATUS",
+    "FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_RELATIVE_PATH",
+    "FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SCHEMA",
+    "FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SELF_KEY",
+    "FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STAGED_RELATIVE_PATH",
+    "FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STATUS",
+    "FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_CONTRACT_SCHEMA",
+    "FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_CONTRACT_STATUS",
+    "FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH",
     "GLOBAL_EXACT_MODEL_DIGEST", "GLOBAL_MODEL_PLAN_BINDING",
     "GLOBAL_TERMINAL_INFEASIBILITY_BINDING", "MASK_CLASSIFICATION_RELATIVE_PATH",
     "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_BINDING",
@@ -5076,6 +7178,9 @@ __all__ = [
     "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT",
     "IMMUTABLE_ENCODER_IMPORT_CORRECTION_BINDING",
     "IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST",
+    "IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_BINDING",
+    "IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST",
+    "IMMUTABLE_ENCODER_PATH_PROJECTION_BASE_ARTIFACT_BUNDLE",
     "INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS",
     "ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT",
     "IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST",
@@ -5109,9 +7214,14 @@ __all__ = [
     "V2_PREOUTCOME_ARTIFACT_PATHS", "V2_RUNTIME_OUTPUT_PATHS",
     "V2_SUCCESSOR_CONTRACT_PATH", "audit_v2_outcome_outputs_absent",
     "audit_encoder_compute_dtype_correction_prelatent_absence",
+    "audit_encoder_path_projection_correction_downstream_absence",
+    "audit_encoder_path_projection_transaction_artifacts_absent",
     "audit_encoder_import_correction_prelatent_absence",
     "audit_v2_runtime_outputs_absent", "build_design_amendment",
     "build_encoder_compute_dtype_correction", "build_encoder_import_correction",
+    "build_encoder_path_projection_correction",
+    "build_full_bank_v2_smoke_regeneration_complete_receipt",
+    "build_full_bank_v2_smoke_regeneration_prepared_receipt",
     "build_manifest_replay_correction", "builder_default_canonical_digest",
     "build_preselection_source_correction",
     "build_preselection_source_correction_v1",
@@ -5120,8 +7230,12 @@ __all__ = [
     "clean_source_authority", "completion_order_key", "completion_order_material",
     "design_amendment_artifact_binding",
     "encoder_compute_dtype_correction_artifact_binding",
+    "encoder_path_projection_correction_artifact_binding",
+    "full_bank_v2_smoke_regeneration_complete_receipt_artifact_binding",
+    "full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding",
     "encoder_import_correction_artifact_binding", "issue_design_amendment",
     "issue_encoder_compute_dtype_correction",
+    "issue_encoder_path_projection_correction",
     "issue_encoder_import_correction",
     "issue_manifest_replay_correction",
     "issue_preselection_source_correction",
@@ -5130,6 +7244,9 @@ __all__ = [
     "issue_rotation_mask_classification", "load_active_design_authority",
     "load_design_amendment",
     "load_encoder_compute_dtype_correction_for_consumption",
+    "load_encoder_path_projection_correction_for_consumption",
+    "load_full_bank_v2_smoke_regeneration_complete_receipt",
+    "load_full_bank_v2_smoke_regeneration_prepared_receipt",
     "load_encoder_import_correction_for_consumption",
     "load_manifest_replay_correction",
     "load_preselection_source_correction",
@@ -5149,8 +7266,13 @@ __all__ = [
     "validate_historical_predecessor_artifacts",
     "validate_installed_full_bank_v2_preoutcome_artifacts",
     "validate_encoder_compute_dtype_correction",
+    "validate_encoder_path_projection_correction",
+    "validate_encoder_path_projection_single_shard_regeneration_transaction_contract",
+    "validate_full_bank_v2_smoke_regeneration_complete_receipt",
+    "validate_full_bank_v2_smoke_regeneration_prepared_receipt",
     "validate_encoder_import_correction",
     "validate_immutable_encoder_import_correction",
+    "validate_immutable_encoder_compute_dtype_correction",
     "validate_manifest_replay_correction",
     "validate_preselection_source_correction",
     "validate_preselection_source_correction_v1",
