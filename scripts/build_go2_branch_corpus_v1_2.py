@@ -8542,9 +8542,10 @@ def load_full_bank_v2_exclusion_authority() -> dict[str, Any]:
         raise RuntimeError(
             "development-240 scenes differ from the frozen oracle-v1.2 pilot")
 
-    final_manifest = OUT_ROOT / "final_eval/state_manifest.json"
-    _assert_unsealed_path(final_manifest)
-    if final_manifest.exists():
+    logical_final_manifest = OUT_ROOT / "final_eval/state_manifest.json"
+    final_manifest = _frozen_generated_artifact_path(
+        logical_final_manifest, generated_root=OUT_ROOT)
+    if final_manifest.exists() or final_manifest.is_symlink():
         raise RuntimeError(
             "future final-evaluation manifest already exists during V2 selection")
     pool, predecessor_binding = scene_pool("scorer_fit")
@@ -8595,7 +8596,7 @@ def load_full_bank_v2_exclusion_authority() -> dict[str, Any]:
             "scene_ids": sorted(development_scenes),
         },
         "future_final_evaluation": {
-            "manifest_path": str(final_manifest.relative_to(ROOT)),
+            "manifest_path": str(logical_final_manifest.relative_to(ROOT)),
             "future_final_manifest_absent": True,
             "corpus_selection_contract_digest": selection_digest(),
             "final_eval_rule": SELECTION["final_eval"],
@@ -9476,21 +9477,53 @@ def _full_bank_v2_validate_source_correction_authority(
             or not isinstance(source_correction_binding, Mapping)
             or not _is_sha256(source_correction_digest)):
         raise RuntimeError("full-bank V2 source correction is malformed")
+    schema = source_correction.get("schema")
     try:
-        correction = authority.validate_preselection_source_correction(
-            source_correction, root=ROOT, validate_live_authorities=False)
+        if schema == authority.SOURCE_CORRECTION_V1_SCHEMA:
+            correction = authority.validate_preselection_source_correction_v1(
+                source_correction, root=ROOT,
+                validate_live_authorities=False)
+            binding_builder = \
+                authority.preselection_source_correction_v1_artifact_binding
+        elif schema == authority.SOURCE_CORRECTION_SCHEMA:
+            correction = authority.validate_preselection_source_correction(
+                source_correction, root=ROOT,
+                validate_live_authorities=False)
+            binding_builder = \
+                authority.preselection_source_correction_artifact_binding
+        else:
+            raise RuntimeError(
+                "full-bank V2 source correction schema is not recognised")
         raw = (json.dumps(V1._jsonable(correction), indent=2,
                           sort_keys=True) + "\n").encode("utf-8")
-        expected_binding = \
-            authority.preselection_source_correction_artifact_binding(
-                correction, raw)
+        expected_binding = binding_builder(correction, raw)
     except authority.ScorerFitCorpusV2DesignError as exc:
         raise RuntimeError(
             "full-bank V2 source correction validation failed") from exc
+    if schema != authority.SOURCE_CORRECTION_SCHEMA:
+        raise RuntimeError(
+            "active full-bank source correction must be chained V2")
+    try:
+        nested_v1 = authority.validate_immutable_preselection_source_correction_v1(
+            correction.get("immutable_preselection_source_correction_v1", {}))
+    except authority.ScorerFitCorpusV2DesignError as exc:
+        raise RuntimeError(
+            "full-bank V2 nested source correction V1 validation failed") from exc
+    nested_digest = correction.get(
+        "immutable_preselection_source_correction_v1_digest")
+    nested_payload = nested_v1.get("payload", {})
+    nested_binding = nested_v1.get("binding", {})
     if (
         correction.get(authority.SOURCE_CORRECTION_SELF_KEY)
         != source_correction_digest
         or dict(source_correction_binding) != expected_binding
+        or correction.get("source_correction_version") != 2
+        or not _is_sha256(nested_digest)
+        or nested_payload.get(authority.SOURCE_CORRECTION_SELF_KEY)
+        != nested_digest
+        or nested_binding.get("self_digest") != nested_digest
+        or correction.get("immutable_preselection_source_correction_v1")
+        != nested_v1
         or correction.get("preserved_scientific_design_digest")
         != design_digest
         or correction.get("preserved_rotation_mask_classification_digest")

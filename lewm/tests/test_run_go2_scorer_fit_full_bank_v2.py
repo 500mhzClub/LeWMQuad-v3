@@ -447,13 +447,20 @@ def test_issue_source_correction_replays_active_authority_before_selection(
 
     class FakeDesign:
         DESIGN_SELF_KEY = "design_digest"
+        SOURCE_CORRECTION_SCHEMA = "fixture_source_correction_v2"
         SOURCE_CORRECTION_SELF_KEY = "correction_digest"
+        IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST = HEX_A
 
         def issue_preselection_source_correction(
                 self, *, root: Path) -> Mapping[str, Any]:
             assert root == tmp_path
             events.append("issue-correction")
-            return {"correction_digest": HEX_C}
+            return {
+                "schema": self.SOURCE_CORRECTION_SCHEMA,
+                "source_correction_version": 2,
+                "immutable_preselection_source_correction_v1_digest": HEX_A,
+                "correction_digest": HEX_C,
+            }
 
         def load_active_design_authority(
                 self, *, root: Path) -> Mapping[str, Any]:
@@ -461,7 +468,13 @@ def test_issue_source_correction_replays_active_authority_before_selection(
             events.append("active-replay")
             return {
                 "design_amendment": {"design_digest": HEX_B},
-                "source_correction": {"correction_digest": HEX_C},
+                "source_correction": {
+                    "schema": self.SOURCE_CORRECTION_SCHEMA,
+                    "source_correction_version": 2,
+                    "immutable_preselection_source_correction_v1_digest":
+                        HEX_A,
+                    "correction_digest": HEX_C,
+                },
                 "source_correction_digest": HEX_C,
                 "candidate_outcomes_consumed": False,
             }
@@ -470,6 +483,8 @@ def test_issue_source_correction_replays_active_authority_before_selection(
         root=tmp_path, design=FakeDesign())
     assert events == ["issue-correction", "active-replay"]
     assert report["scorer_fit_corpus_v2_design_digest"] == HEX_B
+    assert report["immutable_preselection_source_correction_v1_digest"] \
+        == HEX_A
     assert report["scorer_fit_corpus_v2_source_correction_digest"] == HEX_C
     assert report["selection_started"] is False
     assert report["solver_or_optimisation_used"] is False

@@ -111,7 +111,9 @@ DeleteRegisteredShard = Callable[[Mapping[str, Any], Path], None]
 class _DesignAuthority(Protocol):
     DESIGN_SELF_KEY: str
     MASK_CLASSIFICATION_SELF_KEY: str
+    SOURCE_CORRECTION_SCHEMA: str
     SOURCE_CORRECTION_SELF_KEY: str
+    IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST: str
 
     def issue_rotation_mask_classification(
             self, *, root: Path) -> Mapping[str, Any]: ...
@@ -299,6 +301,11 @@ def issue_source_correction(
     active = design.load_active_design_authority(root=root)
     if (not isinstance(correction, Mapping)
             or not isinstance(active, Mapping)
+            or correction.get("schema") != design.SOURCE_CORRECTION_SCHEMA
+            or correction.get("source_correction_version") != 2
+            or correction.get(
+                "immutable_preselection_source_correction_v1_digest")
+            != design.IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST
             or active.get("source_correction") != correction
             or active.get("source_correction_digest")
             != correction.get(design.SOURCE_CORRECTION_SELF_KEY)
@@ -307,9 +314,11 @@ def issue_source_correction(
             "issued preselection source correction changed on active replay")
     return {
         "stage": "issue-source-correction",
-        "status": "PASS_PRESELECTION_SOURCE_CORRECTION_ISSUED",
+        "status": "PASS_CHAINED_PRESELECTION_SOURCE_CORRECTION_V2_ISSUED",
         "scorer_fit_corpus_v2_design_digest": active["design_amendment"][
             design.DESIGN_SELF_KEY],
+        "immutable_preselection_source_correction_v1_digest": correction[
+            "immutable_preselection_source_correction_v1_digest"],
         "scorer_fit_corpus_v2_source_correction_digest": correction[
             design.SOURCE_CORRECTION_SELF_KEY],
         "candidate_outcomes_consumed": False,

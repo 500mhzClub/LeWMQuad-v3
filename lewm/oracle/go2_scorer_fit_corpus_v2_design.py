@@ -39,13 +39,18 @@ MASK_CLASSIFICATION_SELF_KEY = "rotation_mask_classification_digest"
 DESIGN_SCHEMA = "go2_scorer_fit_corpus_v2_design_amendment"
 DESIGN_STATUS = "ISSUED_PROSPECTIVE_FULL_TWELVE_CANDIDATE_BANK"
 DESIGN_SELF_KEY = "scorer_fit_corpus_v2_design_digest"
-SOURCE_CORRECTION_SCHEMA = (
+SOURCE_CORRECTION_V1_SCHEMA = (
     "go2_scorer_fit_corpus_v2_preselection_source_correction_v1")
-SOURCE_CORRECTION_STATUS = (
+SOURCE_CORRECTION_V1_STATUS = (
     "ISSUED_PRESELECTION_SOURCE_CORRECTION_AFTER_REGISTERED_"
     "DEVELOPMENT_MANIFEST_ALIAS_FAILURE")
 SOURCE_CORRECTION_SELF_KEY = (
     "scorer_fit_corpus_v2_source_correction_digest")
+SOURCE_CORRECTION_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_preselection_source_correction_v2")
+SOURCE_CORRECTION_STATUS = (
+    "ISSUED_CHAINED_PRESELECTION_SOURCE_CORRECTION_AFTER_MANAGED_"
+    "FINAL_EVAL_ABSENCE_PIN_FAILURE")
 
 BRANCH_GENERATED_ROOT_RELATIVE_PATH = Path(
     ".generated/go2_branch_corpus_v1_2")
@@ -65,20 +70,33 @@ DESIGN_RELATIVE_PATH = (
     SCORER_FIT_RELATIVE_PATH /
     "scorer_fit_corpus_v2_design_amendment.json"
 )
-SOURCE_CORRECTION_RELATIVE_PATH = (
+SOURCE_CORRECTION_V1_RELATIVE_PATH = (
     SCORER_FIT_RELATIVE_PATH /
     "scorer_fit_corpus_v2_preselection_source_correction_v1.json"
+)
+SOURCE_CORRECTION_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    "scorer_fit_corpus_v2_preselection_source_correction_v2.json"
 )
 
 ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT = (
     "76bc465cb33ef94d535b433c83660d94335bee00")
-SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
+SOURCE_CORRECTION_V1_ALLOWED_CHANGED_SOURCE_PATHS = (
     "lewm/oracle/go2_scorer_fit_corpus_v2_design.py",
     "lewm/oracle/go2_scorer_fit_corpus_v2_scorer_contract.py",
     "scripts/build_go2_branch_corpus_v1_2.py",
     "scripts/encode_go2_branch_corpus_v1_2.py",
     "scripts/train_go2_utility_scorer_v1_2.py",
     "scripts/apply_go2_utility_scorer_to_counterfactual_development_v1_2.py",
+    "scripts/run_go2_scorer_fit_full_bank_v2.py",
+)
+IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT = (
+    "6e59f26f3d4729772cac19245c96dc6451da2447")
+IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST = (
+    "0529e634d6b31c22395028f26a2330008fa0483887d5666758de8ad83f756c53")
+SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
+    "lewm/oracle/go2_scorer_fit_corpus_v2_design.py",
+    "scripts/build_go2_branch_corpus_v1_2.py",
     "scripts/run_go2_scorer_fit_full_bank_v2.py",
 )
 
@@ -1149,7 +1167,7 @@ _ISSUED_DESIGN_AUTHORITY_KEYS = frozenset({
     "design_amendment_binding",
 })
 
-PRESELECTION_ALIAS_FAILURE_BOUNDARY = {
+PRESELECTION_ALIAS_FAILURE_BOUNDARY_V1 = {
     "status": (
         "IMMUTABLE_PRESELECTION_FAILURE_REGISTERED_DEVELOPMENT_STAGE_A_"
         "MANIFEST_ALIAS_GUARD"),
@@ -1189,7 +1207,7 @@ PRESELECTION_ALIAS_FAILURE_BOUNDARY = {
     "nothing_running": True,
 }
 
-_SOURCE_CORRECTION_KEYS = frozenset({
+_SOURCE_CORRECTION_V1_KEYS = frozenset({
     "schema", "status", "complete", "source_correction_version",
     "source_repository_commit", "source_bindings",
     "source_binding_set_digest", "historical_source_repository_commit",
@@ -1237,7 +1255,7 @@ def validate_immutable_issued_design_authority(
     return authority
 
 
-def build_preselection_source_correction(
+def build_preselection_source_correction_v1(
         *, source_repository_commit: str,
         source_bindings: Sequence[Mapping[str, Any]],
         immutable_issued_design_authority: Mapping[str, Any],
@@ -1260,12 +1278,12 @@ def build_preselection_source_correction(
             "issued classification/design source closures differ")
     changed = _changed_source_paths(
         classification["source_bindings"], current_sources)
-    if changed != sorted(SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS):
+    if changed != sorted(SOURCE_CORRECTION_V1_ALLOWED_CHANGED_SOURCE_PATHS):
         raise ScorerFitCorpusV2DesignError(
             "preselection correction changed an unauthorised source path")
     absence = _validate_absence_projection(
         list(runtime_outputs_absent_at_issue), phase="design")
-    failure = copy.deepcopy(PRESELECTION_ALIAS_FAILURE_BOUNDARY)
+    failure = copy.deepcopy(PRESELECTION_ALIAS_FAILURE_BOUNDARY_V1)
     correction = {
         "status": "SOURCE_ONLY_REGISTERED_DEVELOPMENT_MANIFEST_ALIAS_CORRECTION",
         "defect": (
@@ -1278,7 +1296,7 @@ def build_preselection_source_correction(
             ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT,
         "successor_source_repository_commit": source_repository_commit,
         "allowed_changed_source_paths": list(
-            SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS),
+            SOURCE_CORRECTION_V1_ALLOWED_CHANGED_SOURCE_PATHS),
         "observed_changed_source_paths": changed,
         "historical_source_binding_set_digest": classification[
             "source_binding_set_digest"],
@@ -1296,8 +1314,8 @@ def build_preselection_source_correction(
         "candidate_outcome_or_downstream_metric_used": False,
     }
     payload: dict[str, Any] = {
-        "schema": SOURCE_CORRECTION_SCHEMA,
-        "status": SOURCE_CORRECTION_STATUS,
+        "schema": SOURCE_CORRECTION_V1_SCHEMA,
+        "status": SOURCE_CORRECTION_V1_STATUS,
         "complete": True,
         "source_correction_version": 1,
         "source_repository_commit": source_repository_commit,
@@ -1328,31 +1346,31 @@ def build_preselection_source_correction(
             "solver_or_optimisation_invoked": False,
         },
     }
-    if set(payload) != _SOURCE_CORRECTION_KEYS - {SOURCE_CORRECTION_SELF_KEY}:
+    if set(payload) != _SOURCE_CORRECTION_V1_KEYS - {SOURCE_CORRECTION_SELF_KEY}:
         raise ScorerFitCorpusV2DesignError(
             "preselection source-correction construction surface changed")
     payload[SOURCE_CORRECTION_SELF_KEY] = canonical_digest(payload)
     return payload
 
 
-def validate_preselection_source_correction(
+def validate_preselection_source_correction_v1(
         payload: Mapping[str, Any], *, root: Path = ROOT,
         validate_live_authorities: bool = True,
         require_runtime_outputs_absent: bool = False,
         ) -> dict[str, Any]:
     """Validate the correction and immutable old scientific authorities."""
 
-    if not isinstance(payload, Mapping) or set(payload) != _SOURCE_CORRECTION_KEYS:
+    if not isinstance(payload, Mapping) or set(payload) != _SOURCE_CORRECTION_V1_KEYS:
         raise ScorerFitCorpusV2DesignError(
             "preselection source correction is not closed")
     correction = copy.deepcopy(dict(payload))
-    if (correction.get("schema") != SOURCE_CORRECTION_SCHEMA
-            or correction.get("status") != SOURCE_CORRECTION_STATUS
+    if (correction.get("schema") != SOURCE_CORRECTION_V1_SCHEMA
+            or correction.get("status") != SOURCE_CORRECTION_V1_STATUS
             or correction.get("complete") is not True
             or correction.get("source_correction_version") != 1):
         raise ScorerFitCorpusV2DesignError(
             "preselection source-correction version changed")
-    expected = build_preselection_source_correction(
+    expected = build_preselection_source_correction_v1(
         source_repository_commit=str(correction.get(
             "source_repository_commit", "")),
         source_bindings=correction.get("source_bindings", []),
@@ -1385,13 +1403,268 @@ def validate_preselection_source_correction(
     return correction
 
 
+def preselection_source_correction_v1_artifact_binding(
+        payload: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
+    correction = validate_preselection_source_correction_v1(
+        payload, validate_live_authorities=False)
+    if raw != _pretty_json_bytes(correction):
+        raise ScorerFitCorpusV2DesignError(
+            "preselection source-correction raw bytes changed")
+    return {
+        "path": str(SOURCE_CORRECTION_V1_RELATIVE_PATH),
+        "schema": SOURCE_CORRECTION_V1_SCHEMA,
+        "self_digest_key": SOURCE_CORRECTION_SELF_KEY,
+        "self_digest": correction[SOURCE_CORRECTION_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "source_repository_commit": correction["source_repository_commit"],
+    }
+
+
+_IMMUTABLE_SOURCE_CORRECTION_V1_KEYS = frozenset({"payload", "binding"})
+
+PRESELECTION_ALIAS_FAILURE_BOUNDARY = {
+    "status": (
+        "IMMUTABLE_PRESELECTION_FAILURE_MANAGED_FINAL_EVAL_ABSENCE_PIN_GUARD"),
+    "immutable_source_correction_v1_issued": True,
+    "immutable_source_correction_v1_digest":
+        IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST,
+    "immutable_source_correction_v1_source_repository_commit":
+        IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT,
+    "freeze_manifests_stage_reentered": True,
+    "preoutcome_input_loader_entered": True,
+    "active_corrected_design_authority_validated": True,
+    "predecessor_fixed_state_count_validated": 115,
+    "eligible_small_completion_scene_count_validated": 17,
+    "historical_preserved_rotation_evidence_loaded": True,
+    "historical_rotation_evidence_used_as_active_mask": False,
+    "factorial_exclusion_setup_loaded": True,
+    "invalid_identity_index_setup_loaded": True,
+    "oracle_v1_1_identity_manifest_json_read_and_validated": True,
+    "oracle_v1_2_identity_manifest_json_read_and_validated": True,
+    "development_stage_a_identity_manifest_json_read_and_validated": True,
+    "registered_development_manifest_alias_resolved_and_validated": True,
+    "failure_site": "PROSPECTIVE_FINAL_EVAL_MANIFEST_ABSENCE_PATH_GUARD",
+    "failure_cause": "OUT_ROOT_IS_A_REGISTERED_GENERATED_ROOT_SYMLINK",
+    "failed_logical_path": (
+        ".generated/go2_branch_corpus_v1_2/final_eval/state_manifest.json"),
+    "final_eval_manifest_content_read": False,
+    "prospective_final_eval_absence_verdict_returned": False,
+    "exclusion_authority_returned": False,
+    "candidate_revalidation_started": False,
+    "completion_ordering_started": False,
+    "small_completion_selection_started": False,
+    "preoutcome_manifest_or_selection_artifact_issued": False,
+    "solver_or_optimisation_invoked": False,
+    "branch_execution_started": False,
+    "candidate_outcome_or_branch_label_read": False,
+    "frame_or_latent_created_or_read": False,
+    "scorer_metric_or_predictor_output_read": False,
+    "successor_scorer_contract_issued": False,
+    "final_200_state_corpus_generated": False,
+    "nothing_running": True,
+}
+
+_SOURCE_CORRECTION_KEYS = frozenset({
+    "schema", "status", "complete", "source_correction_version",
+    "source_repository_commit", "source_bindings",
+    "source_binding_set_digest", "historical_source_repository_commit",
+    "immutable_preselection_source_correction_v1",
+    "immutable_preselection_source_correction_v1_digest",
+    "preserved_scientific_design_digest",
+    "preserved_rotation_mask_classification_digest",
+    "runtime_outputs_absent_at_issue",
+    "runtime_outputs_absent_at_issue_digest",
+    "preselection_alias_failure_boundary",
+    "preselection_alias_failure_boundary_digest",
+    "source_correction", "source_correction_material_digest",
+    "issuance_boundary", SOURCE_CORRECTION_SELF_KEY,
+})
+
+
+def validate_immutable_preselection_source_correction_v1(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the complete immutable V1 correction and exact raw binding."""
+
+    if (not isinstance(value, Mapping)
+            or set(value) != _IMMUTABLE_SOURCE_CORRECTION_V1_KEYS
+            or not isinstance(value.get("payload"), Mapping)):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable preselection source correction V1 is not closed")
+    authority = copy.deepcopy(dict(value))
+    payload = validate_preselection_source_correction_v1(
+        authority["payload"], validate_live_authorities=False)
+    expected_binding = preselection_source_correction_v1_artifact_binding(
+        payload, _pretty_json_bytes(payload))
+    if (authority.get("binding") != expected_binding
+            or payload.get(SOURCE_CORRECTION_SELF_KEY)
+            != IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST
+            or payload.get("source_repository_commit")
+            != IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT
+            or expected_binding.get("self_digest")
+            != IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable preselection source correction V1 changed")
+    return authority
+
+
+def build_preselection_source_correction(
+        *, source_repository_commit: str,
+        source_bindings: Sequence[Mapping[str, Any]],
+        immutable_preselection_source_correction_v1: Mapping[str, Any],
+        runtime_outputs_absent_at_issue: Sequence[Mapping[str, Any]],
+        ) -> dict[str, Any]:
+    """Build chained correction V2 without reading an artifact or outcome."""
+
+    if (not _is_hex(source_repository_commit, 40)
+            or source_repository_commit
+            == IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "preselection source-correction V2 commit is malformed or not new")
+    current_sources = _validate_source_bindings(list(source_bindings))
+    immutable_v1 = validate_immutable_preselection_source_correction_v1(
+        immutable_preselection_source_correction_v1)
+    v1 = immutable_v1["payload"]
+    changed = _changed_source_paths(v1["source_bindings"], current_sources)
+    if changed != sorted(SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS):
+        raise ScorerFitCorpusV2DesignError(
+            "preselection correction V2 changed an unauthorised source path")
+    absence = _validate_absence_projection(
+        list(runtime_outputs_absent_at_issue), phase="design")
+    issued = v1["immutable_issued_design_authority"]
+    classification = issued["rotation_mask_classification_payload"]
+    design = issued["design_amendment_payload"]
+    failure = copy.deepcopy(PRESELECTION_ALIAS_FAILURE_BOUNDARY)
+    correction = {
+        "status": "SOURCE_ONLY_MANAGED_FINAL_EVAL_ABSENCE_PIN_CORRECTION",
+        "defect": (
+            "PROSPECTIVE_FINAL_EVAL_ABSENCE_CHECK_USED_AN_ORDINARY_PATH_"
+            "GUARD_ON_REGISTERED_SYMLINKED_OUT_ROOT"),
+        "correction": (
+            "PIN_THE_EXACT_ABSENT_FINAL_EVAL_MANIFEST_LEAF_THROUGH_THE_"
+            "REGISTERED_MANAGED_OUT_ROOT_WITHOUT_READING_FINAL_EVAL_DATA"),
+        "historical_source_repository_commit":
+            IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT,
+        "successor_source_repository_commit": source_repository_commit,
+        "allowed_changed_source_paths": list(
+            SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS),
+        "observed_changed_source_paths": changed,
+        "historical_source_binding_set_digest": v1[
+            "source_binding_set_digest"],
+        "successor_source_binding_set_digest": canonical_digest(
+            current_sources),
+        "immutable_v1_correction_overwritten_or_reissued": False,
+        "old_classification_or_design_overwritten_or_reissued": False,
+        "old_scientific_design_digest_preserved": True,
+        "managed_out_root_identity_may_change": False,
+        "final_eval_manifest_may_exist_at_correction_issue": False,
+        "final_eval_manifest_content_read": False,
+        "scene_state_or_candidate_pool_changed": False,
+        "candidate_bank_or_frequency_changed": False,
+        "selector_exclusion_rule_or_quota_changed": False,
+        "oracle_render_preprocess_or_target_encoder_changed": False,
+        "scorer_architecture_training_or_qualification_changed": False,
+        "scientific_contract_changed": False,
+        "candidate_outcome_or_downstream_metric_used": False,
+    }
+    payload: dict[str, Any] = {
+        "schema": SOURCE_CORRECTION_SCHEMA,
+        "status": SOURCE_CORRECTION_STATUS,
+        "complete": True,
+        "source_correction_version": 2,
+        "source_repository_commit": source_repository_commit,
+        "source_bindings": current_sources,
+        "source_binding_set_digest": canonical_digest(current_sources),
+        "historical_source_repository_commit":
+            IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT,
+        "immutable_preselection_source_correction_v1": copy.deepcopy(
+            immutable_v1),
+        "immutable_preselection_source_correction_v1_digest":
+            IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST,
+        "preserved_scientific_design_digest": design[DESIGN_SELF_KEY],
+        "preserved_rotation_mask_classification_digest": classification[
+            MASK_CLASSIFICATION_SELF_KEY],
+        "runtime_outputs_absent_at_issue": absence,
+        "runtime_outputs_absent_at_issue_digest": canonical_digest(absence),
+        "preselection_alias_failure_boundary": failure,
+        "preselection_alias_failure_boundary_digest": canonical_digest(failure),
+        "source_correction": correction,
+        "source_correction_material_digest": canonical_digest(correction),
+        "issuance_boundary": {
+            "immutable_source_correction_v1_preserved": True,
+            "source_tree_clean_and_committed": True,
+            "failure_preserved_truthfully": True,
+            "double_runtime_output_absence_audit_required": True,
+            "preselection_only": True,
+            "selection_or_manifest_issued": False,
+            "branch_execution_started": False,
+            "candidate_outcomes_consumed": False,
+            "solver_or_optimisation_invoked": False,
+        },
+    }
+    if set(payload) != _SOURCE_CORRECTION_KEYS - {SOURCE_CORRECTION_SELF_KEY}:
+        raise ScorerFitCorpusV2DesignError(
+            "preselection source-correction V2 construction surface changed")
+    payload[SOURCE_CORRECTION_SELF_KEY] = canonical_digest(payload)
+    return payload
+
+
+def validate_preselection_source_correction(
+        payload: Mapping[str, Any], *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    if not isinstance(payload, Mapping) or set(payload) != _SOURCE_CORRECTION_KEYS:
+        raise ScorerFitCorpusV2DesignError(
+            "preselection source correction V2 is not closed")
+    correction = copy.deepcopy(dict(payload))
+    if (correction.get("schema") != SOURCE_CORRECTION_SCHEMA
+            or correction.get("status") != SOURCE_CORRECTION_STATUS
+            or correction.get("complete") is not True
+            or correction.get("source_correction_version") != 2):
+        raise ScorerFitCorpusV2DesignError(
+            "preselection source-correction V2 version changed")
+    expected = build_preselection_source_correction(
+        source_repository_commit=str(correction.get(
+            "source_repository_commit", "")),
+        source_bindings=correction.get("source_bindings", []),
+        immutable_preselection_source_correction_v1=correction.get(
+            "immutable_preselection_source_correction_v1", {}),
+        runtime_outputs_absent_at_issue=correction.get(
+            "runtime_outputs_absent_at_issue", []),
+    )
+    if (correction != expected
+            or correction.get(SOURCE_CORRECTION_SELF_KEY)
+            != canonical_digest(_without(
+                correction, SOURCE_CORRECTION_SELF_KEY))):
+        raise ScorerFitCorpusV2DesignError(
+            "preselection source-correction V2 binding changed")
+    if validate_live_authorities:
+        commit, sources = clean_source_authority(root=root)
+        if (commit != correction["source_repository_commit"]
+                or sources != correction["source_bindings"]
+                or _load_immutable_preselection_source_correction_v1(
+                    root=root)
+                != correction[
+                    "immutable_preselection_source_correction_v1"]):
+            raise ScorerFitCorpusV2DesignError(
+                "live source or immutable V1 differs from correction V2")
+        if require_runtime_outputs_absent:
+            observed = audit_v2_runtime_outputs_absent(
+                root=root, phase="design")
+            if observed != correction["runtime_outputs_absent_at_issue"]:
+                raise ScorerFitCorpusV2DesignError(
+                    "runtime-output absence changed after correction V2 issuance")
+    return correction
+
+
 def preselection_source_correction_artifact_binding(
         payload: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
     correction = validate_preselection_source_correction(
         payload, validate_live_authorities=False)
     if raw != _pretty_json_bytes(correction):
         raise ScorerFitCorpusV2DesignError(
-            "preselection source-correction raw bytes changed")
+            "preselection source-correction V2 raw bytes changed")
     return {
         "path": str(SOURCE_CORRECTION_RELATIVE_PATH),
         "schema": SOURCE_CORRECTION_SCHEMA,
@@ -1962,6 +2235,68 @@ def _load_issued_design_authority_for_source_correction(
     })
 
 
+def load_preselection_source_correction_v1(
+        path: Path | None = None, *, root: Path = ROOT,
+        validate_live_authorities: bool = False,
+        require_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    expected = _pin_generated(
+        root, SOURCE_CORRECTION_V1_RELATIVE_PATH,
+        label="preselection source correction V1")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "preselection source-correction logical path changed")
+    payload, raw = _load_json(
+        expected, label="preselection source correction V1")
+    correction = validate_preselection_source_correction_v1(
+        payload, root=root,
+        validate_live_authorities=validate_live_authorities,
+        require_runtime_outputs_absent=require_runtime_outputs_absent)
+    preselection_source_correction_v1_artifact_binding(correction, raw)
+    return correction
+
+
+def issue_preselection_source_correction_v1(
+        path: Path | None = None, *, root: Path = ROOT,
+        source_repository_commit: str | None = None,
+        ) -> dict[str, Any]:
+    """Replay immutable V1 only; chained-V2 source cannot reissue it."""
+
+    expected = _pin_generated(
+        root, SOURCE_CORRECTION_V1_RELATIVE_PATH,
+        label="preselection source correction V1")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "preselection source-correction logical path changed")
+    if not expected.parent.is_dir() or expected.parent.is_symlink():
+        raise ScorerFitCorpusV2DesignError(
+            "preselection source-correction parent is unavailable")
+    if expected.exists() or expected.is_symlink():
+        return load_preselection_source_correction_v1(
+            root=root, validate_live_authorities=False)
+    del source_repository_commit
+    raise ScorerFitCorpusV2DesignError(
+        "immutable preselection source correction V1 cannot be reissued")
+
+
+def _load_immutable_preselection_source_correction_v1(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    """Reopen V1 as historical custody without replaying its live source."""
+
+    path = _pin_generated(
+        root, SOURCE_CORRECTION_V1_RELATIVE_PATH,
+        label="immutable preselection source correction V1")
+    payload, raw = _load_json(
+        path, label="immutable preselection source correction V1")
+    binding = preselection_source_correction_v1_artifact_binding(payload, raw)
+    return validate_immutable_preselection_source_correction_v1({
+        "payload": payload,
+        "binding": binding,
+    })
+
+
 def load_preselection_source_correction(
         path: Path | None = None, *, root: Path = ROOT,
         validate_live_authorities: bool = True,
@@ -1969,12 +2304,13 @@ def load_preselection_source_correction(
         ) -> dict[str, Any]:
     expected = _pin_generated(
         root, SOURCE_CORRECTION_RELATIVE_PATH,
-        label="preselection source correction")
+        label="preselection source correction V2")
     supplied = expected if path is None else Path(path).absolute()
     if supplied.absolute() != expected.absolute():
         raise ScorerFitCorpusV2DesignError(
-            "preselection source-correction logical path changed")
-    payload, raw = _load_json(expected, label="preselection source correction")
+            "preselection source-correction V2 logical path changed")
+    payload, raw = _load_json(
+        expected, label="preselection source correction V2")
     correction = validate_preselection_source_correction(
         payload, root=root,
         validate_live_authorities=validate_live_authorities,
@@ -1987,42 +2323,43 @@ def issue_preselection_source_correction(
         path: Path | None = None, *, root: Path = ROOT,
         source_repository_commit: str | None = None,
         ) -> dict[str, Any]:
-    """Install the sole correction after a clean commit and two absence audits."""
+    """Install chained correction V2 after a clean commit and two audits."""
 
     expected = _pin_generated(
         root, SOURCE_CORRECTION_RELATIVE_PATH,
-        label="preselection source correction")
+        label="preselection source correction V2")
     supplied = expected if path is None else Path(path).absolute()
     if supplied.absolute() != expected.absolute():
         raise ScorerFitCorpusV2DesignError(
-            "preselection source-correction logical path changed")
+            "preselection source-correction V2 logical path changed")
     if not expected.parent.is_dir() or expected.parent.is_symlink():
         raise ScorerFitCorpusV2DesignError(
-            "preselection source-correction parent is unavailable")
+            "preselection source-correction V2 parent is unavailable")
     if expected.exists() or expected.is_symlink():
         return load_preselection_source_correction(root=root)
 
     commit, sources = clean_source_authority(root=root)
     if source_repository_commit is not None and commit != source_repository_commit:
         raise ScorerFitCorpusV2DesignError(
-            "requested preselection source-correction commit is not live")
-    immutable = _load_issued_design_authority_for_source_correction(root=root)
+            "requested preselection source-correction V2 commit is not live")
+    immutable_v1 = _load_immutable_preselection_source_correction_v1(root=root)
     first_absence = audit_v2_runtime_outputs_absent(root=root, phase="design")
     correction = build_preselection_source_correction(
         source_repository_commit=commit,
         source_bindings=sources,
-        immutable_issued_design_authority=immutable,
+        immutable_preselection_source_correction_v1=immutable_v1,
         runtime_outputs_absent_at_issue=first_absence)
     second_absence = audit_v2_runtime_outputs_absent(root=root, phase="design")
     second_commit, second_sources = clean_source_authority(root=root)
     if (first_absence != second_absence
             or second_absence != correction["runtime_outputs_absent_at_issue"]
             or (commit, sources) != (second_commit, second_sources)
-            or immutable
-            != _load_issued_design_authority_for_source_correction(root=root)):
+            or immutable_v1
+            != _load_immutable_preselection_source_correction_v1(root=root)):
         raise ScorerFitCorpusV2DesignError(
-            "source, immutable authority, or output absence changed before install")
-    _exclusive_json(expected, correction, label="preselection source correction")
+            "source, V1 authority, or absence changed before V2 install")
+    _exclusive_json(
+        expected, correction, label="preselection source correction V2")
     return load_preselection_source_correction(root=root)
 
 
@@ -2030,7 +2367,9 @@ def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
     """Return immutable science plus the mandatory corrected source authority."""
 
     correction = load_preselection_source_correction(root=root)
-    immutable = correction["immutable_issued_design_authority"]
+    immutable_v1 = validate_immutable_preselection_source_correction_v1(
+        correction["immutable_preselection_source_correction_v1"])
+    immutable = immutable_v1["payload"]["immutable_issued_design_authority"]
     classification = immutable["rotation_mask_classification_payload"]
     classification_binding = immutable[
         "rotation_mask_classification_binding"]
@@ -2076,31 +2415,43 @@ __all__ = [
     "GLOBAL_EXACT_MODEL_DIGEST", "GLOBAL_MODEL_PLAN_BINDING",
     "GLOBAL_TERMINAL_INFEASIBILITY_BINDING", "MASK_CLASSIFICATION_RELATIVE_PATH",
     "ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT",
+    "IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST",
+    "IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT",
     "MASK_CLASSIFICATION_SCHEMA", "MASK_CLASSIFICATION_SELF_KEY",
     "MASK_CLASSIFICATION_STATUS", "ORACLE_V1_2_DIGEST",
     "PRESERVED_SCIENTIFIC_CONTRACT_BINDINGS", "PRIOR_PREOUTCOME_FAILURE_BINDINGS",
     "PREDECESSOR_VALIDATION_PROJECTION", "PRESELECTION_ALIAS_FAILURE_BOUNDARY",
+    "PRESELECTION_ALIAS_FAILURE_BOUNDARY_V1",
     "SIX_OF_TWELVE_SUPERSESSION", "SOURCE_SPECS", "SPLIT_ROLES", "STATE_COUNT",
     "SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
     "SOURCE_CORRECTION_RELATIVE_PATH", "SOURCE_CORRECTION_SCHEMA",
     "SOURCE_CORRECTION_SELF_KEY", "SOURCE_CORRECTION_STATUS",
+    "SOURCE_CORRECTION_V1_ALLOWED_CHANGED_SOURCE_PATHS",
+    "SOURCE_CORRECTION_V1_RELATIVE_PATH", "SOURCE_CORRECTION_V1_SCHEMA",
+    "SOURCE_CORRECTION_V1_STATUS",
     "STRATA", "ScorerFitCorpusV2DesignError", "TERMINAL_RECEIPT_DIGEST",
     "TERMINAL_SOURCE_REPOSITORY_COMMIT", "V2_FUTURE_OUTPUT_PATHS",
     "V2_PREOUTCOME_ARTIFACT_PATHS", "V2_RUNTIME_OUTPUT_PATHS",
     "V2_SUCCESSOR_CONTRACT_PATH", "audit_v2_outcome_outputs_absent",
     "audit_v2_runtime_outputs_absent", "build_design_amendment",
     "build_preselection_source_correction",
+    "build_preselection_source_correction_v1",
     "build_rotation_mask_classification", "canonical_digest",
     "clean_source_authority", "completion_order_key", "completion_order_material",
     "design_amendment_artifact_binding", "issue_design_amendment",
     "issue_preselection_source_correction",
+    "issue_preselection_source_correction_v1",
     "issue_rotation_mask_classification", "load_active_design_authority",
     "load_design_amendment", "load_preselection_source_correction",
+    "load_preselection_source_correction_v1",
     "load_rotation_mask_classification",
     "preselection_source_correction_artifact_binding",
+    "preselection_source_correction_v1_artifact_binding",
     "rotation_mask_classification_artifact_binding", "validate_design_amendment",
     "validate_immutable_issued_design_authority",
+    "validate_immutable_preselection_source_correction_v1",
     "validate_historical_predecessor_artifacts",
     "validate_preselection_source_correction",
+    "validate_preselection_source_correction_v1",
     "validate_rotation_mask_classification",
 ]

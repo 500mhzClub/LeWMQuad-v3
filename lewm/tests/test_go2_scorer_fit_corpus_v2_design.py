@@ -79,9 +79,9 @@ def _issued_design_authority() -> dict[str, object]:
     })
 
 
-def _corrected_sources() -> list[dict[str, object]]:
+def _corrected_sources_v1() -> list[dict[str, object]]:
     rows = _sources()
-    changed = set(design.SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    changed = set(design.SOURCE_CORRECTION_V1_ALLOWED_CHANGED_SOURCE_PATHS)
     for index, row in enumerate(rows):
         if row["path"] in changed:
             row["byte_count"] = int(row["byte_count"]) + 10_000
@@ -89,11 +89,48 @@ def _corrected_sources() -> list[dict[str, object]]:
     return rows
 
 
-def _source_correction() -> dict[str, object]:
-    return design.build_preselection_source_correction(
-        source_repository_commit="b" * 40,
-        source_bindings=_corrected_sources(),
+def _source_correction_v1() -> dict[str, object]:
+    return design.build_preselection_source_correction_v1(
+        source_repository_commit=
+            design.IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT,
+        source_bindings=_corrected_sources_v1(),
         immutable_issued_design_authority=_issued_design_authority(),
+        runtime_outputs_absent_at_issue=design._expected_absence_rows(
+            phase="design"),
+    )
+
+
+def _immutable_source_correction_v1(
+        monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
+    payload = _source_correction_v1()
+    monkeypatch.setattr(
+        design, "IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST",
+        payload[design.SOURCE_CORRECTION_SELF_KEY])
+    raw = (json.dumps(payload, sort_keys=True, indent=2) + "\n").encode()
+    return design.validate_immutable_preselection_source_correction_v1({
+        "payload": payload,
+        "binding": design.preselection_source_correction_v1_artifact_binding(
+            payload, raw),
+    })
+
+
+def _corrected_sources_v2() -> list[dict[str, object]]:
+    rows = _corrected_sources_v1()
+    changed = set(design.SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    for index, row in enumerate(rows):
+        if row["path"] in changed:
+            row["byte_count"] = int(row["byte_count"]) + 20_000
+            row["sha256"] = f"{index + 20_000:064x}"
+    return rows
+
+
+def _source_correction_v2(
+        monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
+    immutable_v1 = _immutable_source_correction_v1(monkeypatch)
+    return design.build_preselection_source_correction(
+        source_repository_commit="c" * 40,
+        source_bindings=_corrected_sources_v2(),
+        immutable_preselection_source_correction_v1=immutable_v1,
         runtime_outputs_absent_at_issue=design._expected_absence_rows(
             phase="design"),
     )
@@ -274,9 +311,9 @@ def test_builders_are_pure_and_do_not_require_repository_or_generated_files(
     assert not list(tmp_path.iterdir())
 
 
-def test_preselection_source_correction_preserves_science_and_exact_failure() -> None:
-    correction = _source_correction()
-    assert design.validate_preselection_source_correction(
+def test_preselection_source_correction_v1_preserves_first_failure() -> None:
+    correction = _source_correction_v1()
+    assert design.validate_preselection_source_correction_v1(
         correction, validate_live_authorities=False) == correction
     issued = _issued_design_authority()
     assert correction["preserved_scientific_design_digest"] == issued[
@@ -286,9 +323,9 @@ def test_preselection_source_correction_preserves_science_and_exact_failure() ->
             design.MASK_CLASSIFICATION_SELF_KEY]
     assert correction["source_correction"][
         "observed_changed_source_paths"] == sorted(
-            design.SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+            design.SOURCE_CORRECTION_V1_ALLOWED_CHANGED_SOURCE_PATHS)
     failure = correction["preselection_alias_failure_boundary"]
-    assert failure == design.PRESELECTION_ALIAS_FAILURE_BOUNDARY
+    assert failure == design.PRESELECTION_ALIAS_FAILURE_BOUNDARY_V1
     assert failure["predecessor_fixed_state_count_validated"] == 115
     assert failure["eligible_small_completion_scene_count_validated"] == 17
     assert failure["exclusion_authority_returned"] is False
@@ -298,10 +335,10 @@ def test_preselection_source_correction_preserves_science_and_exact_failure() ->
     assert failure["solver_or_optimisation_invoked"] is False
 
 
-def test_preselection_source_correction_is_closed_and_tamper_evident() -> None:
-    correction = _source_correction()
+def test_preselection_source_correction_v1_is_tamper_evident() -> None:
+    correction = _source_correction_v1()
     raw = (json.dumps(correction, sort_keys=True, indent=2) + "\n").encode()
-    binding = design.preselection_source_correction_artifact_binding(
+    binding = design.preselection_source_correction_v1_artifact_binding(
         correction, raw)
     assert binding["self_digest"] == correction[
         design.SOURCE_CORRECTION_SELF_KEY]
@@ -313,25 +350,27 @@ def test_preselection_source_correction_is_closed_and_tamper_evident() -> None:
     tampered["preselection_alias_failure_boundary"][
         "exclusion_authority_returned"] = True
     with pytest.raises(design.ScorerFitCorpusV2DesignError):
-        design.validate_preselection_source_correction(
+        design.validate_preselection_source_correction_v1(
             tampered, validate_live_authorities=False)
     extra = copy.deepcopy(correction)
     extra["unregistered"] = True
     with pytest.raises(design.ScorerFitCorpusV2DesignError):
-        design.validate_preselection_source_correction(
+        design.validate_preselection_source_correction_v1(
             extra, validate_live_authorities=False)
 
 
-def test_preselection_source_correction_rejects_wrong_source_delta() -> None:
-    sources = _corrected_sources()
+def test_preselection_source_correction_v1_rejects_wrong_source_delta() -> None:
+    sources = _corrected_sources_v1()
     unchanged_path = next(
         row for row in sources
-        if row["path"] not in design.SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+        if row["path"]
+        not in design.SOURCE_CORRECTION_V1_ALLOWED_CHANGED_SOURCE_PATHS)
     unchanged_path["byte_count"] = int(unchanged_path["byte_count"]) + 1
     unchanged_path["sha256"] = "f" * 64
     with pytest.raises(design.ScorerFitCorpusV2DesignError):
-        design.build_preselection_source_correction(
-            source_repository_commit="b" * 40,
+        design.build_preselection_source_correction_v1(
+            source_repository_commit=
+                design.IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT,
             source_bindings=sources,
             immutable_issued_design_authority=_issued_design_authority(),
             runtime_outputs_absent_at_issue=design._expected_absence_rows(
@@ -339,21 +378,100 @@ def test_preselection_source_correction_rejects_wrong_source_delta() -> None:
         )
 
 
-def test_source_correction_issue_is_exclusive_read_only_and_double_audited(
+def test_source_correction_v1_cannot_be_reissued_by_chained_source(
+        tmp_path: Path) -> None:
+    scorer_fit = tmp_path / design.SCORER_FIT_RELATIVE_PATH
+    scorer_fit.mkdir(parents=True)
+    path = tmp_path / design.SOURCE_CORRECTION_V1_RELATIVE_PATH
+    with pytest.raises(
+            design.ScorerFitCorpusV2DesignError,
+            match="cannot be reissued"):
+        design.issue_preselection_source_correction_v1(root=tmp_path)
+    assert not path.exists()
+
+
+def test_chained_source_correction_v2_preserves_v1_and_second_failure(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _source_correction_v2(monkeypatch)
+    assert design.validate_preselection_source_correction(
+        correction, validate_live_authorities=False) == correction
+    immutable_v1 = correction[
+        "immutable_preselection_source_correction_v1"]
+    assert immutable_v1["payload"][design.SOURCE_CORRECTION_SELF_KEY] == (
+        correction["immutable_preselection_source_correction_v1_digest"])
+    issued = immutable_v1["payload"]["immutable_issued_design_authority"]
+    assert correction["preserved_scientific_design_digest"] == issued[
+        "design_amendment_payload"][design.DESIGN_SELF_KEY]
+    assert correction["source_correction"][
+        "observed_changed_source_paths"] == sorted(
+            design.SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    failure = correction["preselection_alias_failure_boundary"]
+    assert failure == design.PRESELECTION_ALIAS_FAILURE_BOUNDARY
+    assert failure[
+        "development_stage_a_identity_manifest_json_read_and_validated"] is True
+    assert failure[
+        "registered_development_manifest_alias_resolved_and_validated"] is True
+    assert failure["failure_cause"] == (
+        "OUT_ROOT_IS_A_REGISTERED_GENERATED_ROOT_SYMLINK")
+    assert failure["prospective_final_eval_absence_verdict_returned"] is False
+    assert failure["exclusion_authority_returned"] is False
+    assert failure["candidate_revalidation_started"] is False
+    assert failure["preoutcome_manifest_or_selection_artifact_issued"] is False
+    assert failure["candidate_outcome_or_branch_label_read"] is False
+
+
+def test_chained_source_correction_v2_is_closed_and_tamper_evident(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _source_correction_v2(monkeypatch)
+    raw = (json.dumps(correction, sort_keys=True, indent=2) + "\n").encode()
+    binding = design.preselection_source_correction_artifact_binding(
+        correction, raw)
+    assert set(binding) == {
+        "path", "schema", "self_digest_key", "self_digest", "raw_sha256",
+        "byte_count", "source_repository_commit",
+    }
+    assert binding["path"] == str(design.SOURCE_CORRECTION_RELATIVE_PATH)
+    tampered = copy.deepcopy(correction)
+    tampered["preselection_alias_failure_boundary"][
+        "exclusion_authority_returned"] = True
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_preselection_source_correction(
+            tampered, validate_live_authorities=False)
+
+
+def test_chained_source_correction_v2_rejects_extra_source_change(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    immutable_v1 = _immutable_source_correction_v1(monkeypatch)
+    sources = _corrected_sources_v2()
+    unchanged = next(
+        row for row in sources
+        if row["path"] not in design.SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    unchanged["byte_count"] = int(unchanged["byte_count"]) + 1
+    unchanged["sha256"] = "f" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.build_preselection_source_correction(
+            source_repository_commit="c" * 40,
+            source_bindings=sources,
+            immutable_preselection_source_correction_v1=immutable_v1,
+            runtime_outputs_absent_at_issue=design._expected_absence_rows(
+                phase="design"),
+        )
+
+
+def test_source_correction_v2_issue_and_active_loader_are_chained(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     scorer_fit = tmp_path / design.SCORER_FIT_RELATIVE_PATH
     scorer_fit.mkdir(parents=True)
-    issued = _issued_design_authority()
-    sources = _corrected_sources()
+    immutable_v1 = _immutable_source_correction_v1(monkeypatch)
+    sources = _corrected_sources_v2()
     absence = design._expected_absence_rows(phase="design")
     absence_calls: list[int] = []
-
     monkeypatch.setattr(
         design, "clean_source_authority",
-        lambda *, root: ("b" * 40, copy.deepcopy(sources)))
+        lambda *, root: ("c" * 40, copy.deepcopy(sources)))
     monkeypatch.setattr(
-        design, "_load_issued_design_authority_for_source_correction",
-        lambda *, root: copy.deepcopy(issued))
+        design, "_load_immutable_preselection_source_correction_v1",
+        lambda *, root: copy.deepcopy(immutable_v1))
 
     def audit(*, root: Path, phase: str) -> list[dict[str, object]]:
         assert root == tmp_path
@@ -366,11 +484,14 @@ def test_source_correction_issue_is_exclusive_read_only_and_double_audited(
     assert len(absence_calls) == 2
     path = tmp_path / design.SOURCE_CORRECTION_RELATIVE_PATH
     assert stat.S_IMODE(path.stat().st_mode) == 0o444
-    assert correction[design.SOURCE_CORRECTION_SELF_KEY]
     active = design.load_active_design_authority(root=tmp_path)
     assert active["source_correction"] == correction
     assert active["source_correction_digest"] == correction[
         design.SOURCE_CORRECTION_SELF_KEY]
+    assert active["source_correction_binding"] == (
+        design.preselection_source_correction_artifact_binding(
+            correction, path.read_bytes()))
+    issued = immutable_v1["payload"]["immutable_issued_design_authority"]
     assert active["design_amendment"] == issued["design_amendment_payload"]
     assert design.issue_preselection_source_correction(
         root=tmp_path) == correction

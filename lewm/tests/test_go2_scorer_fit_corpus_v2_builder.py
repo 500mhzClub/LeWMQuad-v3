@@ -438,8 +438,16 @@ def test_builder_reads_selector_from_frozen_nested_order_contract(
 
 def test_source_correction_is_separate_from_immutable_design_and_exact_bound(
         monkeypatch) -> None:
+    nested_v1 = {
+        "payload": {AUTH.SOURCE_CORRECTION_SELF_KEY: "a" * 64},
+        "binding": {"self_digest": "a" * 64},
+    }
     correction = {
+        "schema": AUTH.SOURCE_CORRECTION_SCHEMA,
+        "source_correction_version": 2,
         AUTH.SOURCE_CORRECTION_SELF_KEY: "e" * 64,
+        "immutable_preselection_source_correction_v1": nested_v1,
+        "immutable_preselection_source_correction_v1_digest": "a" * 64,
         "preserved_scientific_design_digest": "c" * 64,
         "preserved_rotation_mask_classification_digest": "d" * 64,
     }
@@ -458,6 +466,9 @@ def test_source_correction_is_separate_from_immutable_design_and_exact_bound(
     monkeypatch.setattr(
         AUTH, "preselection_source_correction_artifact_binding",
         lambda _payload, _raw: dict(binding))
+    monkeypatch.setattr(
+        AUTH, "validate_immutable_preselection_source_correction_v1",
+        lambda payload: copy.deepcopy(dict(payload)))
 
     validated = B._full_bank_v2_validate_source_correction_authority(
         source_correction=correction,
@@ -475,6 +486,49 @@ def test_source_correction_is_separate_from_immutable_design_and_exact_bound(
             source_correction_digest="9" * 64,
             design_digest="c" * 64,
             mask_classification_digest="d" * 64)
+
+
+def test_source_correction_v1_is_validated_but_not_accepted_as_active(
+        monkeypatch) -> None:
+    correction = {
+        "schema": AUTH.SOURCE_CORRECTION_V1_SCHEMA,
+        "source_correction_version": 1,
+        AUTH.SOURCE_CORRECTION_SELF_KEY: "e" * 64,
+        "preserved_scientific_design_digest": "c" * 64,
+        "preserved_rotation_mask_classification_digest": "d" * 64,
+    }
+    binding = {
+        "path": str(AUTH.SOURCE_CORRECTION_V1_RELATIVE_PATH),
+        "schema": AUTH.SOURCE_CORRECTION_V1_SCHEMA,
+        "self_digest_key": AUTH.SOURCE_CORRECTION_SELF_KEY,
+        "self_digest": "e" * 64,
+        "raw_sha256": "f" * 64,
+        "byte_count": 123,
+        "source_repository_commit": "1" * 40,
+    }
+    calls = []
+
+    def validate_v1(payload, **_kwargs):
+        calls.append("V1")
+        return dict(payload)
+
+    monkeypatch.setattr(
+        AUTH, "validate_preselection_source_correction_v1", validate_v1)
+    monkeypatch.setattr(
+        AUTH, "preselection_source_correction_v1_artifact_binding",
+        lambda _payload, _raw: dict(binding))
+    monkeypatch.setattr(
+        AUTH, "validate_preselection_source_correction",
+        lambda *_args, **_kwargs: pytest.fail("V2 validator was called"))
+
+    with pytest.raises(RuntimeError, match="must be chained V2"):
+        B._full_bank_v2_validate_source_correction_authority(
+            source_correction=correction,
+            source_correction_binding=binding,
+            source_correction_digest="e" * 64,
+            design_digest="c" * 64,
+            mask_classification_digest="d" * 64)
+    assert calls == ["V1"]
 
 
 def test_development_240_registered_root_alias_pins_exact_identity_leaf(
@@ -578,6 +632,10 @@ def test_exclusion_loader_reads_pinned_target_but_records_logical_path(
     target_root.mkdir(parents=True)
     alias_root.parent.mkdir(parents=True)
     alias_root.symlink_to(target_root, target_is_directory=True)
+    out_alias = repository / ".generated/go2_branch_corpus_v1_2"
+    out_target = tmp_path / "managed/go2_branch_corpus_v1_2"
+    out_target.mkdir(parents=True)
+    out_alias.symlink_to(out_target, target_is_directory=True)
 
     development_scenes = [f"development-scene-{index:02d}"
                           for index in range(20)]
@@ -629,7 +687,7 @@ def test_exclusion_loader_reads_pinned_target_but_records_logical_path(
         binding=lambda: {"invalid_identity_index_digest": "1" * 64})
 
     monkeypatch.setattr(B, "ROOT", repository)
-    monkeypatch.setattr(B, "OUT_ROOT", repository / ".generated/branch-corpus")
+    monkeypatch.setattr(B, "OUT_ROOT", out_alias)
     monkeypatch.setattr(B.V1, "OUT_DIR", v11_root)
     monkeypatch.setattr(B.V12, "OUT_DIR", v12_root)
     monkeypatch.setattr(B, "V11_IDENTITY_MANIFEST_DIGEST",
@@ -658,6 +716,46 @@ def test_exclusion_loader_reads_pinned_target_but_records_logical_path(
     assert binding["raw_sha256"] == B.file_sha256(physical_manifest)
     assert binding["byte_count"] == physical_manifest.stat().st_size
     assert binding["scene_ids"] == sorted(development_scenes)
+    future = authority["future_final_evaluation"]
+    assert future["manifest_path"] == (
+        ".generated/go2_branch_corpus_v1_2/final_eval/state_manifest.json")
+    assert future["future_final_manifest_absent"] is True
+    assert not (out_target / "final_eval/state_manifest.json").exists()
+
+
+def test_final_manifest_pin_rejects_arbitrary_managed_root_alias(
+        tmp_path) -> None:
+    logical_root = (
+        tmp_path / "repository/.generated/go2_branch_corpus_v1_2")
+    wrong_target = tmp_path / "managed/not_the_registered_root"
+    wrong_target.mkdir(parents=True)
+    logical_root.parent.mkdir(parents=True)
+    logical_root.symlink_to(wrong_target, target_is_directory=True)
+
+    with pytest.raises(
+            RuntimeError,
+            match="managed generated-output alias target identity"):
+        B._frozen_generated_artifact_path(
+            logical_root / "final_eval/state_manifest.json",
+            generated_root=logical_root)
+
+
+def test_final_manifest_pin_rejects_descendant_alias(tmp_path) -> None:
+    logical_root = (
+        tmp_path / "repository/.generated/go2_branch_corpus_v1_2")
+    physical_root = tmp_path / "managed/go2_branch_corpus_v1_2"
+    redirected_final_eval = tmp_path / "redirected-final-eval"
+    physical_root.mkdir(parents=True)
+    redirected_final_eval.mkdir()
+    logical_root.parent.mkdir(parents=True)
+    logical_root.symlink_to(physical_root, target_is_directory=True)
+    (physical_root / "final_eval").symlink_to(
+        redirected_final_eval, target_is_directory=True)
+
+    with pytest.raises(RuntimeError, match="symlinked corpus paths"):
+        B._frozen_generated_artifact_path(
+            logical_root / "final_eval/state_manifest.json",
+            generated_root=logical_root)
 
 
 def test_active_projection_preserves_custody_identity_but_retires_mask() -> None:
