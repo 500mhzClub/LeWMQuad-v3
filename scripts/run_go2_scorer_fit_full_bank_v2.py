@@ -5,7 +5,7 @@ This runner is deliberately narrow.  It never invokes a MILP, CP-SAT model,
 candidate-subset allocator, or performance benchmark.  Its public stages are:
 
 * ``issue-design``: issue the rotation-mask classification, then the design;
-* ``issue-source-correction``: bind the preselection registered-alias repair;
+* ``issue-source-correction``: bind the final preselection structural repair;
 * ``freeze-manifests``: deterministically freeze the five pre-outcome files;
 * ``issue-scorer-contract``: issue the successor contract before a branch;
 * ``run``: execute the registered smoke/recovery/corpus/training pipeline; and
@@ -114,6 +114,7 @@ class _DesignAuthority(Protocol):
     SOURCE_CORRECTION_SCHEMA: str
     SOURCE_CORRECTION_SELF_KEY: str
     IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST: str
+    IMMUTABLE_SOURCE_CORRECTION_V2_DIGEST: str
 
     def issue_rotation_mask_classification(
             self, *, root: Path) -> Mapping[str, Any]: ...
@@ -123,6 +124,30 @@ class _DesignAuthority(Protocol):
 
     def issue_preselection_source_correction(
             self, *, root: Path) -> Mapping[str, Any]: ...
+
+
+def _require_final_source_correction_authority(
+        authority: Mapping[str, Any], *, design: Any) -> dict[str, Any]:
+    """Reject both historical repairs at every selection-entry boundary."""
+
+    if not isinstance(authority, Mapping):
+        raise FullBankV2RunnerError("active V2 design authority is malformed")
+    correction = authority.get("source_correction")
+    if (not isinstance(correction, Mapping)
+            or correction.get("schema") != design.SOURCE_CORRECTION_SCHEMA
+            or correction.get("structural_validation_correction_version") != 1
+            or correction.get(
+                "immutable_preselection_source_correction_v2_digest")
+            != design.IMMUTABLE_SOURCE_CORRECTION_V2_DIGEST
+            or correction.get(
+                "transitive_immutable_preselection_source_correction_v1_digest")
+            != design.IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST
+            or authority.get("source_correction_digest")
+            != correction.get(design.SOURCE_CORRECTION_SELF_KEY)
+            or authority.get("candidate_outcomes_consumed") is not False):
+        raise FullBankV2RunnerError(
+            "final preselection structural-validation correction is required")
+    return dict(correction)
 
 
 def _json_bytes(value: Any, *, pretty: bool = False) -> bytes:
@@ -295,30 +320,27 @@ def issue_design(*, root: Path = ROOT, design: Any = DESIGN) -> dict[str, Any]:
 
 def issue_source_correction(
         *, root: Path = ROOT, design: Any = DESIGN) -> dict[str, Any]:
-    """Issue the sole source-only bridge from immutable design to selection."""
+    """Issue the final source-only bridge from immutable design to selection."""
 
     correction = design.issue_preselection_source_correction(root=root)
     active = design.load_active_design_authority(root=root)
+    active_correction = _require_final_source_correction_authority(
+        active, design=design)
     if (not isinstance(correction, Mapping)
-            or not isinstance(active, Mapping)
-            or correction.get("schema") != design.SOURCE_CORRECTION_SCHEMA
-            or correction.get("source_correction_version") != 2
-            or correction.get(
-                "immutable_preselection_source_correction_v1_digest")
-            != design.IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST
-            or active.get("source_correction") != correction
-            or active.get("source_correction_digest")
-            != correction.get(design.SOURCE_CORRECTION_SELF_KEY)
-            or active.get("candidate_outcomes_consumed") is not False):
+            or active_correction != dict(correction)):
         raise FullBankV2RunnerError(
             "issued preselection source correction changed on active replay")
     return {
         "stage": "issue-source-correction",
-        "status": "PASS_CHAINED_PRESELECTION_SOURCE_CORRECTION_V2_ISSUED",
+        "status": (
+            "PASS_PRESELECTION_STRUCTURAL_VALIDATION_CORRECTION_V1_ISSUED"),
         "scorer_fit_corpus_v2_design_digest": active["design_amendment"][
             design.DESIGN_SELF_KEY],
-        "immutable_preselection_source_correction_v1_digest": correction[
-            "immutable_preselection_source_correction_v1_digest"],
+        "immutable_preselection_source_correction_v2_digest": correction[
+            "immutable_preselection_source_correction_v2_digest"],
+        "transitive_immutable_preselection_source_correction_v1_digest":
+            correction[
+                "transitive_immutable_preselection_source_correction_v1_digest"],
         "scorer_fit_corpus_v2_source_correction_digest": correction[
             design.SOURCE_CORRECTION_SELF_KEY],
         "candidate_outcomes_consumed": False,
@@ -431,8 +453,8 @@ def freeze_manifests(
     """Freeze five deterministic pre-outcome artifacts or one exact failure."""
 
     authority = design_authority.load_active_design_authority(root=root)
-    if not isinstance(authority, Mapping):
-        raise FullBankV2RunnerError("active V2 design authority is malformed")
+    _require_final_source_correction_authority(
+        authority, design=design_authority)
     paths = _manifest_paths(root)
     failure_path = _pin_relative(
         root, FEASIBILITY_FAILURE_RELATIVE_PATH,

@@ -161,6 +161,25 @@ def test_structural_boundary_and_snapshot_status_are_closed() -> None:
         B._full_bank_v2_structural_state_identity(raw)
 
 
+def test_structural_body_clearance_accepts_finite_signed_values() -> None:
+    raw = _raw_completion(1)
+    raw["body_clearance_m"] = -0.03
+    structural = B._full_bank_v2_structural_state_identity(raw)
+    assert structural["body_clearance_m"] == -0.03
+
+    raw["clearance_m"] = -0.01
+    with pytest.raises(RuntimeError, match="field clearance_m"):
+        B._full_bank_v2_structural_state_identity(raw)
+
+
+@pytest.mark.parametrize("nonfinite", [float("nan"), float("inf"), -float("inf")])
+def test_structural_body_clearance_rejects_nonfinite(nonfinite) -> None:
+    raw = _raw_completion(1)
+    raw["body_clearance_m"] = nonfinite
+    with pytest.raises(RuntimeError, match="field body_clearance_m"):
+        B._full_bank_v2_structural_state_identity(raw)
+
+
 def test_full_bank_lmax_uses_all_twelve_without_branch_execution() -> None:
     raw = _raw_completion(2, previous=[0.1, 0.0, 0.2])
     evidence = B.full_bank_completion_reachability_evidence(raw)
@@ -442,12 +461,21 @@ def test_source_correction_is_separate_from_immutable_design_and_exact_bound(
         "payload": {AUTH.SOURCE_CORRECTION_SELF_KEY: "a" * 64},
         "binding": {"self_digest": "a" * 64},
     }
+    nested_v2 = {
+        "payload": {
+            AUTH.SOURCE_CORRECTION_SELF_KEY: "b" * 64,
+            "immutable_preselection_source_correction_v1": nested_v1,
+        },
+        "binding": {"self_digest": "b" * 64},
+    }
     correction = {
         "schema": AUTH.SOURCE_CORRECTION_SCHEMA,
-        "source_correction_version": 2,
+        "structural_validation_correction_version": 1,
         AUTH.SOURCE_CORRECTION_SELF_KEY: "e" * 64,
-        "immutable_preselection_source_correction_v1": nested_v1,
-        "immutable_preselection_source_correction_v1_digest": "a" * 64,
+        "immutable_preselection_source_correction_v2": nested_v2,
+        "immutable_preselection_source_correction_v2_digest": "b" * 64,
+        "transitive_immutable_preselection_source_correction_v1_digest":
+            "a" * 64,
         "preserved_scientific_design_digest": "c" * 64,
         "preserved_rotation_mask_classification_digest": "d" * 64,
     }
@@ -466,6 +494,9 @@ def test_source_correction_is_separate_from_immutable_design_and_exact_bound(
     monkeypatch.setattr(
         AUTH, "preselection_source_correction_artifact_binding",
         lambda _payload, _raw: dict(binding))
+    monkeypatch.setattr(
+        AUTH, "validate_immutable_preselection_source_correction_v2",
+        lambda payload: copy.deepcopy(dict(payload)))
     monkeypatch.setattr(
         AUTH, "validate_immutable_preselection_source_correction_v1",
         lambda payload: copy.deepcopy(dict(payload)))
@@ -521,7 +552,7 @@ def test_source_correction_v1_is_validated_but_not_accepted_as_active(
         AUTH, "validate_preselection_source_correction",
         lambda *_args, **_kwargs: pytest.fail("V2 validator was called"))
 
-    with pytest.raises(RuntimeError, match="must be chained V2"):
+    with pytest.raises(RuntimeError, match="final structural validation"):
         B._full_bank_v2_validate_source_correction_authority(
             source_correction=correction,
             source_correction_binding=binding,
@@ -529,6 +560,47 @@ def test_source_correction_v1_is_validated_but_not_accepted_as_active(
             design_digest="c" * 64,
             mask_classification_digest="d" * 64)
     assert calls == ["V1"]
+
+
+def test_source_correction_v2_is_validated_but_not_accepted_as_active(
+        monkeypatch) -> None:
+    correction = {
+        "schema": AUTH.SOURCE_CORRECTION_V2_SCHEMA,
+        "source_correction_version": 2,
+        AUTH.SOURCE_CORRECTION_SELF_KEY: "e" * 64,
+    }
+    binding = {
+        "path": str(AUTH.SOURCE_CORRECTION_V2_RELATIVE_PATH),
+        "schema": AUTH.SOURCE_CORRECTION_V2_SCHEMA,
+        "self_digest_key": AUTH.SOURCE_CORRECTION_SELF_KEY,
+        "self_digest": "e" * 64,
+        "raw_sha256": "f" * 64,
+        "byte_count": 123,
+        "source_repository_commit": "1" * 40,
+    }
+    calls = []
+
+    def validate_v2(payload, **_kwargs):
+        calls.append("V2")
+        return dict(payload)
+
+    monkeypatch.setattr(
+        AUTH, "validate_preselection_source_correction_v2", validate_v2)
+    monkeypatch.setattr(
+        AUTH, "preselection_source_correction_v2_artifact_binding",
+        lambda _payload, _raw: dict(binding))
+    monkeypatch.setattr(
+        AUTH, "validate_preselection_source_correction",
+        lambda *_args, **_kwargs: pytest.fail("final validator was called"))
+
+    with pytest.raises(RuntimeError, match="final structural validation"):
+        B._full_bank_v2_validate_source_correction_authority(
+            source_correction=correction,
+            source_correction_binding=binding,
+            source_correction_digest="e" * 64,
+            design_digest="c" * 64,
+            mask_classification_digest="d" * 64)
+    assert calls == ["V2"]
 
 
 def test_development_240_registered_root_alias_pins_exact_identity_leaf(

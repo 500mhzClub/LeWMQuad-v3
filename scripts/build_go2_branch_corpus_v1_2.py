@@ -8114,11 +8114,19 @@ def _full_bank_v2_structural_state_identity(
             or state["stratum"] not in STRATA
             or state["goal_type"] != goal["material_id"]):
         raise RuntimeError("full-bank structural scene/goal binding changed")
-    for key in ("body_clearance_m", "clearance_m"):
-        value = state.get(key)
-        if (isinstance(value, bool) or not isinstance(value, (int, float))
-                or not math.isfinite(float(value)) or float(value) < 0.0):
-            raise RuntimeError(f"full-bank structural field {key} is malformed")
+    body_clearance = state.get("body_clearance_m")
+    if (isinstance(body_clearance, bool)
+            or not isinstance(body_clearance, (int, float))
+            or not math.isfinite(float(body_clearance))):
+        raise RuntimeError(
+            "full-bank structural field body_clearance_m is malformed")
+    clearance = state.get("clearance_m")
+    if (isinstance(clearance, bool)
+            or not isinstance(clearance, (int, float))
+            or not math.isfinite(float(clearance))
+            or float(clearance) < 0.0):
+        raise RuntimeError(
+            "full-bank structural field clearance_m is malformed")
     structural = {
         "family": str(state["family"]),
         "scene_id": str(state["scene_id"]),
@@ -9485,6 +9493,12 @@ def _full_bank_v2_validate_source_correction_authority(
                 validate_live_authorities=False)
             binding_builder = \
                 authority.preselection_source_correction_v1_artifact_binding
+        elif schema == authority.SOURCE_CORRECTION_V2_SCHEMA:
+            correction = authority.validate_preselection_source_correction_v2(
+                source_correction, root=ROOT,
+                validate_live_authorities=False)
+            binding_builder = \
+                authority.preselection_source_correction_v2_artifact_binding
         elif schema == authority.SOURCE_CORRECTION_SCHEMA:
             correction = authority.validate_preselection_source_correction(
                 source_correction, root=ROOT,
@@ -9502,28 +9516,40 @@ def _full_bank_v2_validate_source_correction_authority(
             "full-bank V2 source correction validation failed") from exc
     if schema != authority.SOURCE_CORRECTION_SCHEMA:
         raise RuntimeError(
-            "active full-bank source correction must be chained V2")
+            "active full-bank source correction must be the final structural "
+            "validation correction")
     try:
+        nested_v2 = authority.validate_immutable_preselection_source_correction_v2(
+            correction.get("immutable_preselection_source_correction_v2", {}))
         nested_v1 = authority.validate_immutable_preselection_source_correction_v1(
-            correction.get("immutable_preselection_source_correction_v1", {}))
+            nested_v2.get("payload", {}).get(
+                "immutable_preselection_source_correction_v1", {}))
     except authority.ScorerFitCorpusV2DesignError as exc:
         raise RuntimeError(
-            "full-bank V2 nested source correction V1 validation failed") from exc
-    nested_digest = correction.get(
-        "immutable_preselection_source_correction_v1_digest")
-    nested_payload = nested_v1.get("payload", {})
-    nested_binding = nested_v1.get("binding", {})
+            "full-bank V2 nested source-correction chain validation failed") from exc
+    nested_v2_digest = correction.get(
+        "immutable_preselection_source_correction_v2_digest")
+    nested_v2_payload = nested_v2.get("payload", {})
+    nested_v2_binding = nested_v2.get("binding", {})
+    transitive_v1_digest = correction.get(
+        "transitive_immutable_preselection_source_correction_v1_digest")
+    nested_v1_payload = nested_v1.get("payload", {})
+    nested_v1_binding = nested_v1.get("binding", {})
     if (
         correction.get(authority.SOURCE_CORRECTION_SELF_KEY)
         != source_correction_digest
         or dict(source_correction_binding) != expected_binding
-        or correction.get("source_correction_version") != 2
-        or not _is_sha256(nested_digest)
-        or nested_payload.get(authority.SOURCE_CORRECTION_SELF_KEY)
-        != nested_digest
-        or nested_binding.get("self_digest") != nested_digest
-        or correction.get("immutable_preselection_source_correction_v1")
-        != nested_v1
+        or correction.get("structural_validation_correction_version") != 1
+        or not _is_sha256(nested_v2_digest)
+        or nested_v2_payload.get(authority.SOURCE_CORRECTION_SELF_KEY)
+        != nested_v2_digest
+        or nested_v2_binding.get("self_digest") != nested_v2_digest
+        or correction.get("immutable_preselection_source_correction_v2")
+        != nested_v2
+        or not _is_sha256(transitive_v1_digest)
+        or nested_v1_payload.get(authority.SOURCE_CORRECTION_SELF_KEY)
+        != transitive_v1_digest
+        or nested_v1_binding.get("self_digest") != transitive_v1_digest
         or correction.get("preserved_scientific_design_digest")
         != design_digest
         or correction.get("preserved_rotation_mask_classification_digest")
