@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Issue and execute the prospective one-model small-completion successor.
 
-The three explicit stages preserve the pre-outcome authority boundary:
+The four explicit stages preserve the pre-outcome authority boundary:
 
 * ``issue-report`` installs the bounded source/formulation coupling report;
 * ``issue-amendment`` installs the clean-source execution amendment; and
+* ``issue-source-correction`` preserves that immutable V1 authority and
+  installs its narrowly source-corrected V2 successor; and
 * ``solve-and-continue`` validates the synthetic fixtures, opens the frozen
   scientific masks, freezes one exact model plan, performs the one global
   solve, and continues directly through the already-authorised scorer stages
@@ -372,14 +374,59 @@ def _require_context(context: Mapping[str, Any], *, masks: bool,
         raise GlobalExactRunnerError("execution context surface changed")
     report = result["coupling_report"]
     amendment = result["execution_amendment"]
+    report_binding = result["coupling_report_binding"]
+    v1_authority = (amendment.get("v1_execution_authority")
+                    if isinstance(amendment, Mapping) else None)
+    v1_amendment = (v1_authority.get("execution_amendment")
+                    if isinstance(v1_authority, Mapping) else None)
+    v1_report_binding = (v1_authority.get(
+        "coupling_report_artifact_binding")
+        if isinstance(v1_authority, Mapping) else None)
+    v1_amendment_binding = (v1_authority.get(
+        "execution_amendment_artifact_binding")
+        if isinstance(v1_authority, Mapping) else None)
+    source_correction = (amendment.get("source_correction")
+                         if isinstance(amendment, Mapping) else None)
+    failed_attempt = (amendment.get("failed_attempt_disposition")
+                      if isinstance(amendment, Mapping) else None)
     if (not isinstance(report, Mapping) or not isinstance(amendment, Mapping)
+            or not isinstance(report_binding, Mapping)
             or report.get("classification") != "COUPLED"
+            or amendment.get("schema") != authority.AMENDMENT_V2_SCHEMA
+            or amendment.get("status") != authority.AMENDMENT_V2_STATUS
             or amendment.get("selected_execution_method", {}).get("method")
             != "ONE_GLOBAL_EXACT_FEASIBILITY_MODEL"
+            or not isinstance(v1_authority, Mapping)
+            or v1_authority.get("coupling_report") != report
+            or not isinstance(v1_amendment, Mapping)
+            or not isinstance(v1_report_binding, Mapping)
+            or not isinstance(v1_amendment_binding, Mapping)
+            or v1_report_binding.get("self_digest")
+            != authority.ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING[
+                "self_digest"]
+            or v1_amendment_binding.get("self_digest")
+            != authority.ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING[
+                "self_digest"]
+            or v1_amendment.get(authority.AMENDMENT_SELF_KEY)
+            != authority.ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING[
+                "self_digest"]
+            or report_binding.get("coupling_report_digest")
+            != report.get(authority.REPORT_SELF_KEY)
+            or not isinstance(source_correction, Mapping)
+            or amendment.get("source_correction_digest")
+            != canonical_digest(source_correction)
+            or source_correction.get("scientific_contract_changed") is not False
+            or source_correction.get(
+                "candidate_outcome_or_downstream_metric_used") is not False
+            or not isinstance(failed_attempt, Mapping)
+            or dict(failed_attempt)
+            != dict(authority.FAILED_SOURCE_TRANSITION_DISPOSITION)
+            or amendment.get("failed_attempt_disposition_digest")
+            != canonical_digest(failed_attempt)
             or result.get("candidate_outcomes_consumed") is not False
             or result.get("scientific_masks_accessed") is not masks
-            or report.get(authority.REPORT_SELF_KEY) is None
-            or amendment.get(authority.AMENDMENT_SELF_KEY) is None):
+            or not _is_digest(report.get(authority.REPORT_SELF_KEY))
+            or not _is_digest(amendment.get(authority.AMENDMENT_SELF_KEY))):
         raise GlobalExactRunnerError("execution authority boundary changed")
     if masks and "preserved_vectors" not in result:
         raise GlobalExactRunnerError("mask-bearing context lacks frozen vectors")
@@ -431,6 +478,57 @@ def issue_amendment(*, builder: Any = BUILDER,
         "solver_invoked": False,
         "scientific_masks_accessed": False,
         "candidate_outcomes_consumed": False,
+    }
+    print(json.dumps(summary, indent=2, sort_keys=True))
+    return dict(amendment)
+
+
+def issue_source_correction(
+        *, root: Path = ROOT, builder: Any = BUILDER,
+        authority: Any = AUTHORITY) -> dict[str, Any]:
+    """Issue only the immutable source-corrected successor to V1 authority."""
+
+    historical = (
+        builder.load_global_exact_historical_mixed_disposition_authority())
+    amendment = authority.issue_execution_amendment_v2(
+        root / authority.EXECUTION_AMENDMENT_V2_RELATIVE_PATH,
+        historical_mixed_disposition_authority=historical,
+        root=root)
+    failure = amendment.get("failed_attempt_disposition", {})
+    source_correction = amendment.get("source_correction", {})
+    v1 = amendment.get("v1_execution_authority", {})
+    if (not isinstance(amendment, Mapping)
+            or amendment.get("schema") != authority.AMENDMENT_V2_SCHEMA
+            or amendment.get("status") != authority.AMENDMENT_V2_STATUS
+            or failure != authority.FAILED_SOURCE_TRANSITION_DISPOSITION
+            or source_correction.get("scientific_contract_changed") is not False
+            or source_correction.get(
+                "candidate_outcome_or_downstream_metric_used") is not False
+            or v1.get("coupling_report_artifact_binding")
+            != authority.ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING
+            or v1.get("execution_amendment_artifact_binding")
+            != authority.ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING):
+        raise GlobalExactRunnerError(
+            "issued source-corrected execution authority is not exact")
+    summary = {
+        "status": amendment["status"],
+        "execution_amendment_digest": amendment[
+            authority.AMENDMENT_SELF_KEY],
+        "historical_source_repository_commit": source_correction[
+            "historical_source_repository_commit"],
+        "source_repository_commit": amendment["source_repository_commit"],
+        "immutable_v1_coupling_report_digest":
+            authority.ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING[
+                "self_digest"],
+        "immutable_v1_execution_amendment_digest":
+            authority.ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING[
+                "self_digest"],
+        "failed_attempt_disposition": failure["disposition"],
+        "historical_preoutcome_disposition_read": True,
+        "new_candidate_rotation_vectors_read": False,
+        "candidate_outcomes_consumed": False,
+        "production_plan_or_solver_started": False,
+        "scientific_contract_changed": False,
     }
     print(json.dumps(summary, indent=2, sort_keys=True))
     return dict(amendment)
@@ -1834,7 +1932,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--stage", required=True,
         choices=(
-            "issue-report", "issue-amendment", "solve-and-continue",
+            "issue-report", "issue-amendment", "issue-source-correction",
+            "solve-and-continue",
             "internal-probe-genesis-runtime",
             "internal-probe-rocm-runtime",
             "internal-validate-qualification",
@@ -1858,6 +1957,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.stage == "issue-amendment":
         issue_amendment()
+        return 0
+    if args.stage == "issue-source-correction":
+        issue_source_correction()
         return 0
     code, _summary = solve_and_continue()
     return code

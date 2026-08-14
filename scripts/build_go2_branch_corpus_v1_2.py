@@ -4626,6 +4626,51 @@ def _phase1_completion_rotation_vectors() -> dict[str, dict[str, Any]]:
     return vectors
 
 
+def _phase1_completion_rotation_vectors_from_validated_disposition(
+        disposition: Mapping[str, Any],
+        ) -> dict[str, dict[str, Any]]:
+    """Return historical vectors using an already validated disposition.
+
+    Global-exact execution reopens the immutable predecessor disposition via
+    :func:`_v2_load_d9d_authorities`.  It must not reinterpret that historical
+    authority under the current-source legacy disposition loader.
+    """
+
+    retained_rows = disposition.get("retained_predecessor_identities")
+    if not isinstance(retained_rows, list):
+        raise RuntimeError("validated mixed disposition retained rows changed")
+    retained_completion: set[str] = set()
+    for row in retained_rows:
+        if not isinstance(row, Mapping):
+            raise RuntimeError("validated mixed disposition row is malformed")
+        if row.get("stratum") == "completion_enriched":
+            identity = str(row.get("state_identity_digest", ""))
+            if not _is_sha256(identity) or identity in retained_completion:
+                raise RuntimeError(
+                    "validated mixed disposition completion identity changed")
+            retained_completion.add(identity)
+
+    receipt = STATE_SELECTOR.validate_frozen_preserved_precontract_failure(
+        root=ROOT)
+    vectors: dict[str, dict[str, Any]] = {}
+    for shard in receipt.get("shards", []):
+        for check in shard.get("state_checks", []):
+            vector = check.get("completion_rotation_eligibility")
+            if vector is None:
+                continue
+            digest = str(check.get("state_identity_digest", ""))
+            if not _is_sha256(digest) or digest in vectors:
+                raise RuntimeError(
+                    "historical phase-1 repeats or malforms a completion identity")
+            if not isinstance(vector, Mapping):
+                raise RuntimeError("historical phase-1 completion vector is malformed")
+            vectors[digest] = dict(vector)
+    if (len(vectors) != 7 or len(retained_completion) != 7
+            or set(vectors) != retained_completion):
+        raise RuntimeError("historical phase-1 retained vector registry changed")
+    return vectors
+
+
 def _state_completion_rotation_vector(
         state: dict[str, Any], preserved_vectors: dict[str, dict[str, Any]]
         ) -> dict[str, Any]:
@@ -7106,6 +7151,42 @@ def _v2_load_d9d_authorities(out: Path) -> dict[str, Any]:
     }
 
 
+def load_global_exact_historical_mixed_disposition_authority(
+        *, out: Path | None = None,
+        ) -> dict[str, Any]:
+    """Return the exact historical mixed disposition and its raw binding."""
+
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    authorities = _v2_load_d9d_authorities(scorer_fit)
+    payload = authorities.get("mixed_disposition")
+    raw_bindings = authorities.get("raw_bindings")
+    raw_binding = (raw_bindings.get("mixed_disposition")
+                   if isinstance(raw_bindings, Mapping) else None)
+    raw_keys = {"self_digest_key", "self_digest", "raw_sha256", "byte_count"}
+    if (not isinstance(payload, Mapping)
+            or not isinstance(raw_binding, Mapping)
+            or set(raw_binding) != raw_keys):
+        raise RuntimeError(
+            "global exact historical mixed disposition authority changed")
+    path = _v2_d9d_authority_paths(scorer_fit)["mixed_disposition"]
+    try:
+        logical_path = str(path.relative_to(ROOT))
+    except ValueError:
+        logical_path = str(path)
+    binding = {
+        "path": logical_path,
+        "self_digest_key": raw_binding["self_digest_key"],
+        "self_digest": raw_binding["self_digest"],
+        "raw_sha256": raw_binding["raw_sha256"],
+        "byte_count": raw_binding["byte_count"],
+    }
+    if set(binding) != {
+            "path", "self_digest_key", "self_digest", "raw_sha256",
+            "byte_count"}:
+        raise AssertionError("historical authority binding schema changed")
+    return {"payload": dict(payload), "binding": binding}
+
+
 def _v2_zero_outcome_record(payload: Mapping[str, Any], *, label: str) -> None:
     if any(key in payload and payload.get(key) not in (False, 0) for key in (
             "candidate_outcomes_loaded", "branch_identities_created",
@@ -7864,42 +7945,24 @@ def issue_global_exact_execution_amendment(
 def load_global_exact_execution_context(
         *, out: Path | None = None, attach_scientific_masks: bool = False,
         ) -> dict[str, Any]:
-    """Reopen the amendment and, only when requested, its frozen masks."""
+    """Reopen the source-corrected authority and optionally its frozen masks."""
 
     material = _global_exact_authority_material(out=out)
-    report_path = ROOT / GLOBAL_EXACT_AUTHORITY.COUPLING_REPORT_RELATIVE_PATH
-    pinned_report = _pin_generated_path(report_path, report_path)
-    if not pinned_report.is_file() or pinned_report.is_symlink():
-        raise RuntimeError("global exact coupling report is missing")
-    report_raw = pinned_report.read_bytes()
-    try:
-        report_payload = json.loads(report_raw)
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise RuntimeError("global exact coupling report is corrupt") from exc
-    report = GLOBAL_EXACT_AUTHORITY.validate_coupling_report(
-        report_payload,
-        expected_scientific_contract_bindings=
-            material["scientific_contract_bindings"],
-        expected_preoutcome_input_bindings=
-            material["preoutcome_input_bindings"],
-        root=ROOT,
-    )
-    report_binding = GLOBAL_EXACT_AUTHORITY.coupling_report_artifact_binding(
-        report, report_raw)
-    amendment = GLOBAL_EXACT_AUTHORITY.load_execution_amendment(
-        ROOT / GLOBAL_EXACT_AUTHORITY.EXECUTION_AMENDMENT_RELATIVE_PATH,
-        expected_coupling_report_binding=report_binding,
-        expected_scientific_contract_bindings=
-            material["scientific_contract_bindings"],
-        expected_preoutcome_input_bindings=
-            material["preoutcome_input_bindings"],
-        root=ROOT,
-    )
+    corrected = GLOBAL_EXACT_AUTHORITY.load_source_corrected_execution_authority(
+        root=ROOT)
+    if (corrected.get("scientific_contract_bindings")
+            != material["scientific_contract_bindings"]
+            or corrected.get("preoutcome_input_bindings")
+            != material["preoutcome_input_bindings"]
+            or corrected.get("candidate_outcomes_consumed") is not False):
+        raise RuntimeError(
+            "source-corrected authority differs from frozen scientific inputs")
     result = {
         **material,
-        "coupling_report": report,
-        "coupling_report_binding": report_binding,
-        "execution_amendment": amendment,
+        "coupling_report": dict(corrected["coupling_report"]),
+        "coupling_report_binding": dict(
+            corrected["coupling_report_binding"]),
+        "execution_amendment": dict(corrected["execution_amendment"]),
         "scientific_masks_accessed": False,
     }
     if not attach_scientific_masks:
@@ -7915,7 +7978,16 @@ def load_global_exact_execution_context(
             != material["scientific_contract_bindings"]):
         raise RuntimeError(
             "post-amendment identity reconstruction differs from authority")
-    preserved_vectors = _phase1_completion_rotation_vectors()
+    historical_disposition = (
+        load_global_exact_historical_mixed_disposition_authority(
+            out=scorer_fit))
+    if (historical_disposition
+            != corrected["historical_mixed_disposition_authority"]):
+        raise RuntimeError(
+            "source correction binds a different historical disposition")
+    preserved_vectors = (
+        _phase1_completion_rotation_vectors_from_validated_disposition(
+            historical_disposition["payload"]))
     if len(preserved_vectors) != 7:
         raise RuntimeError("global exact preserved mask registry changed")
     result["inputs"] = inputs
@@ -7942,8 +8014,10 @@ def build_global_exact_production_instance(
     preserved = context.get("preserved_vectors")
     if (
         not isinstance(amendment, Mapping)
-        or amendment.get("schema") != GLOBAL_EXACT_AUTHORITY.AMENDMENT_SCHEMA
-        or amendment.get("status") != GLOBAL_EXACT_AUTHORITY.AMENDMENT_STATUS
+        or amendment.get("schema")
+        != GLOBAL_EXACT_AUTHORITY.AMENDMENT_V2_SCHEMA
+        or amendment.get("status")
+        != GLOBAL_EXACT_AUTHORITY.AMENDMENT_V2_STATUS
         or not isinstance(inputs, Mapping)
         or not isinstance(preserved, Mapping)
         or len(preserved) != 7
@@ -8460,7 +8534,7 @@ def _build_global_exact_joint_receipt(
             ROOT / GLOBAL_EXACT_AUTHORITY.COUPLING_REPORT_RELATIVE_PATH,
             self_key=GLOBAL_EXACT_AUTHORITY.REPORT_SELF_KEY),
         "execution_amendment": _global_exact_artifact_binding(
-            ROOT / GLOBAL_EXACT_AUTHORITY.EXECUTION_AMENDMENT_RELATIVE_PATH,
+            ROOT / GLOBAL_EXACT_AUTHORITY.EXECUTION_AMENDMENT_V2_RELATIVE_PATH,
             self_key=GLOBAL_EXACT_AUTHORITY.AMENDMENT_SELF_KEY),
         "runner_plan": _global_exact_artifact_binding(
             OUT_ROOT / "scorer_fit" / GLOBAL_EXACT_MODEL_PLAN_NAME,

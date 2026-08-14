@@ -34,6 +34,10 @@ REPORT_SELF_KEY = "coupling_report_digest"
 AMENDMENT_SCHEMA = "go2_small_completion_global_exact_execution_amendment_v1"
 AMENDMENT_STATUS = "ISSUED_PROSPECTIVE_ONE_GLOBAL_EXACT_MODEL_AUTHORITY"
 AMENDMENT_SELF_KEY = "execution_amendment_digest"
+AMENDMENT_V2_SCHEMA = (
+    "go2_small_completion_global_exact_execution_amendment_v2")
+AMENDMENT_V2_STATUS = (
+    "ISSUED_PROSPECTIVE_SOURCE_CORRECTED_ONE_GLOBAL_EXACT_MODEL_AUTHORITY")
 
 GENERATED_ROOT_RELATIVE_PATH = Path(".generated/go2_branch_corpus_v1_2")
 UTILITY_SCORER_ROOT_RELATIVE_PATH = Path(".generated/go2_utility_scorer_v1_2")
@@ -50,6 +54,102 @@ EXECUTION_AMENDMENT_RELATIVE_PATH = (
     SCORER_FIT_RELATIVE_PATH /
     "small_completion_global_exact_execution_amendment_v1.json"
 )
+EXECUTION_AMENDMENT_V2_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    "small_completion_global_exact_execution_amendment_v2.json"
+)
+
+ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT = (
+    "1ebc1378e81b7704768c30d3b2b4b165180a93b9")
+ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING = {
+    "path": str(COUPLING_REPORT_RELATIVE_PATH),
+    "schema": REPORT_SCHEMA,
+    "self_digest_key": REPORT_SELF_KEY,
+    "self_digest": (
+        "4433cc9e44a1caa44ec3dea73096b414b8db09a64a525a091ac48cf4eb290e76"
+    ),
+    "raw_sha256": (
+        "0fe164fd20183f030d7cd5c410802d7e244a91c82b4919335e151158c3c30a83"
+    ),
+    "byte_count": 24_256,
+    "source_repository_commit": ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT,
+}
+ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING = {
+    "path": str(EXECUTION_AMENDMENT_RELATIVE_PATH),
+    "schema": AMENDMENT_SCHEMA,
+    "self_digest_key": AMENDMENT_SELF_KEY,
+    "self_digest": (
+        "52e00a327b944a72bcb954b48d7bf0503dfc2a71f3bc7c62c20298d495993b37"
+    ),
+    "raw_sha256": (
+        "a4e97420f86515b5b4d1171bac903173fc542c680c50b61b8a8234d2b7fc97c4"
+    ),
+    "byte_count": 32_128,
+    "source_repository_commit": ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT,
+}
+HISTORICAL_MIXED_DISPOSITION_ARTIFACT_BINDING = {
+    "path": (
+        ".generated/go2_branch_corpus_v1_2/scorer_fit/"
+        "preserved_state_mixed_precontract_disposition_reachability_v2.json"
+    ),
+    "self_digest_key": "mixed_precontract_disposition_receipt_digest",
+    "self_digest": (
+        "fef1a98980bc41d63434367f518ff2876dbcf93afbea52ff8f555300d3220604"
+    ),
+    "raw_sha256": (
+        "faa71a30cc720b6ed19cf44e4b1c5d5d9f03fc15c7069f1a3ff0ff44ac953958"
+    ),
+    "byte_count": 29_403,
+}
+SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
+    "lewm/oracle/go2_small_completion_global_execution_amendment_v1.py",
+    "scripts/build_go2_branch_corpus_v1_2.py",
+    "scripts/run_go2_small_completion_global_exact_v1.py",
+)
+FAILED_SOURCE_TRANSITION_DISPOSITION = {
+    "status": "IMMUTABLE_FAILED_PRE_PLAN_SOURCE_VALIDATION",
+    "disposition": (
+        "AFTER_17_OPTIONAL_MASKS_AND_FROZEN_45_CHECK_EVIDENCE_BEFORE_7_VECTOR_"
+        "MAPPING_RETURN_BEFORE_PRODUCTION_PLAN_OR_SOLVE"
+    ),
+    "argv": [
+        "python3", "scripts/run_go2_small_completion_global_exact_v1.py",
+        "--stage", "solve-and-continue",
+    ],
+    "exit_code": 1,
+    "exception_type": (
+        "lewm.oracle.go2_scorer_state_selector_amendment_v2."
+        "StateSelectorAmendmentError"
+    ),
+    "exception_message": "mixed precontract disposition source binding mismatch",
+    "mandatory_synthetic_fixture_suite_completed": True,
+    "synthetic_fixture_solver_invoked": True,
+    "optional_completion_rotation_vectors_parsed": 17,
+    "optional_completion_masks_accessed": True,
+    "frozen_45_check_mask_evidence_read_and_validated": True,
+    "scientific_masks_accessed": True,
+    "preserved_phase1_vector_mapping_assembled": False,
+    "preserved_phase1_vector_mapping_returned": False,
+    "candidate_outcomes_consumed": False,
+    "candidate_branch_outcomes_inspected": False,
+    "branch_labels_read": False,
+    "frames_or_latents_created": False,
+    "scorer_or_predictor_accessed": False,
+    "production_instance_built": False,
+    "production_model_built": False,
+    "model_execution_plan_built": False,
+    "runner_plan_written": False,
+    "scientific_production_solver_invoked": False,
+    "terminal_receipt_written": False,
+    "joint_receipt_written": False,
+    "candidate_allocation_manifest_written": False,
+    "phase2_revalidation_receipt_written": False,
+    "state_manifest_written": False,
+    "successor_scorer_contract_written": False,
+    "downstream_started": False,
+    "performance_benchmark_run": False,
+    "v1_or_v2_benchmark_retried": False,
+}
 
 ENGINE_SOURCE_PATH = (
     "lewm/oracle/go2_small_completion_global_exact_model_v1.py"
@@ -682,6 +782,19 @@ def canonical_digest(value: Any) -> str:
     return hashlib.sha256(_json_bytes(value)).hexdigest()
 
 
+def _legacy_default_json_digest(value: Any) -> str:
+    """Reproduce the frozen selector receipt's historical JSON convention."""
+
+    try:
+        encoded = json.dumps(
+            value, sort_keys=True, ensure_ascii=True, allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise GlobalExecutionAmendmentError(
+            "legacy value is not canonical JSON") from exc
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _is_hex(value: Any, length: int) -> bool:
     return (
         isinstance(value, str) and len(value) == length
@@ -1152,6 +1265,16 @@ def _load_json(path: Path, *, label: str) -> tuple[dict[str, Any], bytes]:
     if not isinstance(payload, dict):
         raise GlobalExecutionAmendmentError(f"{label} root is not a mapping")
     return payload, raw
+
+
+def _pretty_json_bytes(payload: Mapping[str, Any]) -> bytes:
+    try:
+        return (json.dumps(
+            dict(payload), indent=2, sort_keys=True, ensure_ascii=True,
+            allow_nan=False) + "\n").encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise GlobalExecutionAmendmentError(
+            "artifact is not canonical JSON") from exc
 
 
 def _exclusive_json(path: Path, payload: Mapping[str, Any], *, label: str) -> None:
@@ -1738,8 +1861,447 @@ def issue_execution_amendment(
         require_runtime_outputs_absent=True)
 
 
+_V1_AUTHORITY_KEYS = frozenset({
+    "status", "source_repository_commit", "coupling_report",
+    "coupling_report_artifact_binding", "execution_amendment",
+    "execution_amendment_artifact_binding",
+})
+_V1_AUTHORITY_STATUS = (
+    "IMMUTABLE_VALID_V1_AUTHORITY_SUPERSEDED_ONLY_FOR_SOURCE_CLOSURE")
+_V2_REPLACED_V1_FIELDS = frozenset({
+    "schema", "status", "source_repository_commit", "source_bindings",
+    "source_binding_set_digest", "runtime_outputs_absent_at_issue",
+    "runtime_outputs_absent_at_issue_digest", "issuance_boundary",
+    AMENDMENT_SELF_KEY,
+})
+_V2_PRESERVED_V1_FIELDS = tuple(sorted(
+    _AMENDMENT_KEYS - _V2_REPLACED_V1_FIELDS))
+_AMENDMENT_V2_KEYS = frozenset({
+    *_AMENDMENT_KEYS,
+    "amendment_version", "v1_execution_authority",
+    "historical_mixed_disposition_authority",
+    "failed_attempt_disposition", "failed_attempt_disposition_digest",
+    "source_correction", "source_correction_digest",
+})
+
+
+def _exact_artifact_binding(
+        value: Any, expected: Mapping[str, Any], *, label: str,
+        ) -> dict[str, Any]:
+    if not isinstance(value, Mapping) or dict(value) != dict(expected):
+        raise GlobalExecutionAmendmentError(f"{label} binding changed")
+    return dict(expected)
+
+
+def validate_historical_v1_execution_authority(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the issued V1 report/amendment without current-source replay."""
+
+    if not isinstance(value, Mapping) or set(value) != _V1_AUTHORITY_KEYS:
+        raise GlobalExecutionAmendmentError(
+            "historical V1 execution authority is not closed")
+    authority = copy.deepcopy(dict(value))
+    if (authority.get("status") != _V1_AUTHORITY_STATUS
+            or authority.get("source_repository_commit")
+            != ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT):
+        raise GlobalExecutionAmendmentError(
+            "historical V1 execution authority disposition changed")
+    report_binding = _exact_artifact_binding(
+        authority.get("coupling_report_artifact_binding"),
+        ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING,
+        label="historical coupling report")
+    amendment_binding = _exact_artifact_binding(
+        authority.get("execution_amendment_artifact_binding"),
+        ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING,
+        label="historical execution amendment")
+    report = authority.get("coupling_report")
+    amendment = authority.get("execution_amendment")
+    if not isinstance(report, Mapping) or not isinstance(amendment, Mapping):
+        raise GlobalExecutionAmendmentError(
+            "historical V1 execution authority payload is missing")
+    report = dict(report)
+    amendment = dict(amendment)
+    report_raw = _pretty_json_bytes(report)
+    amendment_raw = _pretty_json_bytes(amendment)
+    if (report.get(REPORT_SELF_KEY) != report_binding["self_digest"]
+            or hashlib.sha256(report_raw).hexdigest()
+            != report_binding["raw_sha256"]
+            or len(report_raw) != report_binding["byte_count"]
+            or amendment.get(AMENDMENT_SELF_KEY)
+            != amendment_binding["self_digest"]
+            or hashlib.sha256(amendment_raw).hexdigest()
+            != amendment_binding["raw_sha256"]
+            or len(amendment_raw) != amendment_binding["byte_count"]):
+        raise GlobalExecutionAmendmentError(
+            "historical V1 authority bytes changed")
+    scientific = validate_scientific_contract_bindings(
+        report.get("scientific_contract_bindings", {}))
+    preoutcome = validate_preoutcome_input_bindings(
+        report.get("preoutcome_input_bindings", {}))
+    validated_report = validate_coupling_report(
+        report, expected_scientific_contract_bindings=scientific,
+        expected_preoutcome_input_bindings=preoutcome,
+        expected_source_repository_commit=
+            ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT,
+        validate_live_source=False)
+    legacy_report_binding = coupling_report_artifact_binding(
+        validated_report, report_raw)
+    if amendment.get("coupling_report") != legacy_report_binding:
+        raise GlobalExecutionAmendmentError(
+            "historical amendment report binding changed")
+    validate_execution_amendment(
+        amendment, expected_coupling_report_binding=legacy_report_binding,
+        expected_scientific_contract_bindings=scientific,
+        expected_preoutcome_input_bindings=preoutcome,
+        expected_source_repository_commit=
+            ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT,
+        validate_live_authorities=False)
+    return authority
+
+
+def load_historical_v1_execution_authority(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    """Reopen only the two immutable issued V1 authority artifacts."""
+
+    report_path = _pin_generated(
+        root, COUPLING_REPORT_RELATIVE_PATH,
+        label="historical coupling report")
+    amendment_path = _pin_generated(
+        root, EXECUTION_AMENDMENT_RELATIVE_PATH,
+        label="historical execution amendment")
+    report, report_raw = _load_json(
+        report_path, label="historical coupling report")
+    amendment, amendment_raw = _load_json(
+        amendment_path, label="historical execution amendment")
+    value = {
+        "status": _V1_AUTHORITY_STATUS,
+        "source_repository_commit":
+            ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT,
+        "coupling_report": report,
+        "coupling_report_artifact_binding": {
+            **ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING,
+            "raw_sha256": hashlib.sha256(report_raw).hexdigest(),
+            "byte_count": len(report_raw),
+        },
+        "execution_amendment": amendment,
+        "execution_amendment_artifact_binding": {
+            **ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING,
+            "raw_sha256": hashlib.sha256(amendment_raw).hexdigest(),
+            "byte_count": len(amendment_raw),
+        },
+    }
+    return validate_historical_v1_execution_authority(value)
+
+
+def validate_historical_mixed_disposition_authority(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the exact d9d disposition supplied by its archived loader."""
+
+    if (not isinstance(value, Mapping)
+            or set(value) != {"payload", "binding"}
+            or not isinstance(value.get("payload"), Mapping)):
+        raise GlobalExecutionAmendmentError(
+            "historical mixed disposition authority is not closed")
+    result = copy.deepcopy(dict(value))
+    binding = _exact_artifact_binding(
+        result.get("binding"), HISTORICAL_MIXED_DISPOSITION_ARTIFACT_BINDING,
+        label="historical mixed disposition")
+    payload = dict(result["payload"])
+    self_key = str(binding["self_digest_key"])
+    raw = _pretty_json_bytes(payload)
+    if (payload.get("schema")
+            != "go2_scorer_fit_preserved_state_mixed_precontract_"
+               "disposition_reachability_v2"
+            or payload.get("status")
+            != "PASS_PREOUTCOME_37_RETAINED_8_REPLACEMENT_DISPOSITION"
+            or payload.get(self_key) != binding["self_digest"]
+            or _legacy_default_json_digest(_without(payload, self_key))
+            != binding["self_digest"]
+            or hashlib.sha256(raw).hexdigest() != binding["raw_sha256"]
+            or len(raw) != binding["byte_count"]):
+        raise GlobalExecutionAmendmentError(
+            "historical mixed disposition bytes changed")
+    return result
+
+
+def _changed_source_paths(
+        historical: Sequence[Mapping[str, Any]],
+        successor: Sequence[Mapping[str, Any]],
+        ) -> list[str]:
+    before = {str(row["path"]): dict(row) for row in historical}
+    after = {str(row["path"]): dict(row) for row in successor}
+    if set(before) != set(after):
+        raise GlobalExecutionAmendmentError(
+            "source correction closure path set changed")
+    return sorted(
+        path for path in before
+        if (before[path]["sha256"], before[path]["byte_count"])
+        != (after[path]["sha256"], after[path]["byte_count"]))
+
+
+def build_execution_amendment_v2(
+        *, source_repository_commit: str,
+        source_bindings: Sequence[Mapping[str, Any]],
+        v1_execution_authority: Mapping[str, Any],
+        historical_mixed_disposition_authority: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Build the source-only V2 successor without file or mask access."""
+
+    if (not _is_hex(source_repository_commit, 40)
+            or source_repository_commit
+            == ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT):
+        raise GlobalExecutionAmendmentError(
+            "source-correction commit is malformed or not a successor")
+    v1 = validate_historical_v1_execution_authority(
+        v1_execution_authority)
+    mixed = validate_historical_mixed_disposition_authority(
+        historical_mixed_disposition_authority)
+    current_sources = _validate_source_bindings(list(source_bindings))
+    v1_amendment = dict(v1["execution_amendment"])
+    historical_sources = _validate_source_bindings(
+        v1_amendment["source_bindings"])
+    changed_paths = _changed_source_paths(
+        historical_sources, current_sources)
+    if changed_paths != sorted(SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS):
+        raise GlobalExecutionAmendmentError(
+            "source correction changed an unauthorised source path")
+    absence = _expected_absence_rows()
+    failure = copy.deepcopy(FAILED_SOURCE_TRANSITION_DISPOSITION)
+    source_correction = {
+        "status": "SOURCE_ONLY_HISTORICAL_AUTHORITY_VALIDATION_CORRECTION",
+        "defect": (
+            "HISTORICAL_MIXED_PRECONTRACT_DISPOSITION_WAS_VALIDATED_AS_"
+            "CURRENT_SOURCE"
+        ),
+        "correction": (
+            "GLOBAL_EXACT_PATH_USES_EXACT_D9D_HISTORICAL_DISPOSITION_"
+            "AUTHORITY_WITHOUT_CHANGING_THE_LEGACY_CURRENT_SOURCE_LOADER"
+        ),
+        "historical_source_repository_commit":
+            ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT,
+        "successor_source_repository_commit": source_repository_commit,
+        "allowed_changed_source_paths":
+            list(SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS),
+        "observed_changed_source_paths": changed_paths,
+        "historical_source_binding_set_digest": v1_amendment[
+            "source_binding_set_digest"],
+        "successor_source_binding_set_digest": canonical_digest(
+            current_sources),
+        "legacy_active_mixed_disposition_loader_changed": False,
+        "global_exact_historical_loader_added": True,
+        "scene_or_state_pool_changed": False,
+        "candidate_bank_or_frequency_changed": False,
+        "selector_or_allocation_constraint_changed": False,
+        "model_objective_or_solver_setting_changed": False,
+        "oracle_render_preprocess_or_target_encoder_changed": False,
+        "scorer_architecture_or_qualification_changed": False,
+        "scientific_contract_changed": False,
+        "candidate_outcome_or_downstream_metric_used": False,
+        "would_be_1ebc_operational_scorer_digest_preserved": False,
+        "current_operational_scorer_digest_bound_only_after_valid_manifest":
+            True,
+    }
+    payload: dict[str, Any] = {
+        "schema": AMENDMENT_V2_SCHEMA,
+        "status": AMENDMENT_V2_STATUS,
+        "complete": True,
+        "amendment_version": 2,
+        "source_repository_commit": source_repository_commit,
+        "expected_source_paths": list(EXPECTED_SOURCE_PATHS),
+        "source_bindings": current_sources,
+        "source_binding_set_digest": canonical_digest(current_sources),
+        **{key: copy.deepcopy(v1_amendment[key])
+           for key in _V2_PRESERVED_V1_FIELDS},
+        "runtime_outputs_absent_at_issue": absence,
+        "runtime_outputs_absent_at_issue_digest": canonical_digest(absence),
+        "issuance_boundary": {
+            "v1_report_and_amendment_preserved_immutable": True,
+            "source_tree_clean_and_committed": True,
+            "failed_attempt_preserved": True,
+            "mandatory_synthetic_fixture_suite_previously_completed": True,
+            "candidate_masks_previously_accessed": True,
+            "frozen_45_check_mask_evidence_previously_validated": True,
+            "seven_vector_mapping_previously_returned": False,
+            "candidate_outcomes_consumed": False,
+            "production_instance_or_model_built": False,
+            "runner_or_model_plan_written": False,
+            "scientific_production_solver_invoked": False,
+            "performance_benchmark_run": False,
+            "v1_or_v2_benchmark_retried": False,
+        },
+        "v1_execution_authority": copy.deepcopy(v1),
+        "historical_mixed_disposition_authority": copy.deepcopy(mixed),
+        "failed_attempt_disposition": failure,
+        "failed_attempt_disposition_digest": canonical_digest(failure),
+        "source_correction": source_correction,
+        "source_correction_digest": canonical_digest(source_correction),
+    }
+    if set(payload) != _AMENDMENT_V2_KEYS - {AMENDMENT_SELF_KEY}:
+        raise GlobalExecutionAmendmentError(
+            "source-corrected amendment construction surface changed")
+    payload[AMENDMENT_SELF_KEY] = canonical_digest(payload)
+    return payload
+
+
+def validate_execution_amendment_v2(
+        payload: Mapping[str, Any], *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    if not isinstance(payload, Mapping) or set(payload) != _AMENDMENT_V2_KEYS:
+        raise GlobalExecutionAmendmentError(
+            "source-corrected amendment is not closed")
+    amendment = copy.deepcopy(dict(payload))
+    expected = build_execution_amendment_v2(
+        source_repository_commit=str(amendment.get(
+            "source_repository_commit", "")),
+        source_bindings=amendment.get("source_bindings", []),
+        v1_execution_authority=amendment.get("v1_execution_authority", {}),
+        historical_mixed_disposition_authority=amendment.get(
+            "historical_mixed_disposition_authority", {}),
+    )
+    if (amendment != expected
+            or amendment.get(AMENDMENT_SELF_KEY)
+            != canonical_digest(_without(amendment, AMENDMENT_SELF_KEY))):
+        raise GlobalExecutionAmendmentError(
+            "source-corrected amendment binding changed")
+    if validate_live_authorities:
+        if (_clean_source_commit(root=root)
+                != amendment["source_repository_commit"]
+                or _read_source_bindings(root=root)
+                != amendment["source_bindings"]
+                or load_historical_v1_execution_authority(root=root)
+                != amendment["v1_execution_authority"]
+                or load_predecessor_lineage(root=root)
+                != amendment["immutable_predecessor_lineage"]):
+            raise GlobalExecutionAmendmentError(
+                "live source or historical authority differs from V2")
+        if require_runtime_outputs_absent:
+            audit_runtime_outputs_absent(root=root)
+    return amendment
+
+
+def execution_amendment_v2_artifact_binding(
+        amendment: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
+    validated = validate_execution_amendment_v2(
+        amendment, validate_live_authorities=False)
+    if raw != _pretty_json_bytes(validated):
+        raise GlobalExecutionAmendmentError(
+            "source-corrected amendment raw bytes changed")
+    return {
+        "path": str(EXECUTION_AMENDMENT_V2_RELATIVE_PATH),
+        "schema": AMENDMENT_V2_SCHEMA,
+        "execution_amendment_digest": validated[AMENDMENT_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "historical_source_repository_commit":
+            ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT,
+        "source_repository_commit": validated["source_repository_commit"],
+    }
+
+
+def load_execution_amendment_v2(
+        path: Path | None = None, *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    supplied = (root / EXECUTION_AMENDMENT_V2_RELATIVE_PATH
+                if path is None else path)
+    pinned = _require_logical_path(
+        supplied, expected_relative=EXECUTION_AMENDMENT_V2_RELATIVE_PATH,
+        root=root, label="source-corrected execution amendment")
+    payload, _raw = _load_json(
+        pinned, label="source-corrected execution amendment")
+    validated = validate_execution_amendment_v2(
+        payload, root=root,
+        validate_live_authorities=validate_live_authorities,
+        require_runtime_outputs_absent=require_runtime_outputs_absent)
+    execution_amendment_v2_artifact_binding(validated, _raw)
+    return validated
+
+
+def issue_execution_amendment_v2(
+        path: Path, *,
+        historical_mixed_disposition_authority: Mapping[str, Any],
+        source_repository_commit: str | None = None,
+        root: Path = ROOT,
+        ) -> dict[str, Any]:
+    """Install the sole source-corrected successor after its clean commit."""
+
+    amendment_path = _require_logical_path(
+        path, expected_relative=EXECUTION_AMENDMENT_V2_RELATIVE_PATH,
+        root=root, label="source-corrected execution amendment")
+    if not amendment_path.parent.is_dir() or amendment_path.parent.is_symlink():
+        raise GlobalExecutionAmendmentError(
+            "source-corrected amendment parent is unavailable")
+    commit = _clean_source_commit(root=root)
+    if source_repository_commit is not None and commit != source_repository_commit:
+        raise GlobalExecutionAmendmentError(
+            "requested source-correction commit is not live")
+    v1 = load_historical_v1_execution_authority(root=root)
+    mixed = validate_historical_mixed_disposition_authority(
+        historical_mixed_disposition_authority)
+    if amendment_path.exists() or amendment_path.is_symlink():
+        return load_execution_amendment_v2(
+            amendment_path, root=root, require_runtime_outputs_absent=True)
+    first_absence = audit_runtime_outputs_absent(root=root)
+    amendment = build_execution_amendment_v2(
+        source_repository_commit=commit,
+        source_bindings=_read_source_bindings(root=root),
+        v1_execution_authority=v1,
+        historical_mixed_disposition_authority=mixed)
+    second_absence = audit_runtime_outputs_absent(root=root)
+    if (first_absence != second_absence
+            or second_absence != amendment["runtime_outputs_absent_at_issue"]):
+        raise GlobalExecutionAmendmentError(
+            "runtime-output absence changed before V2 amendment install")
+    _exclusive_json(
+        amendment_path, amendment,
+        label="source-corrected execution amendment")
+    return load_execution_amendment_v2(
+        amendment_path, root=root, require_runtime_outputs_absent=True)
+
+
+def load_source_corrected_execution_authority(
+        *, root: Path = ROOT,
+        require_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    """Return the closed active V2 authority projection for builder context."""
+
+    path = _pin_generated(
+        root, EXECUTION_AMENDMENT_V2_RELATIVE_PATH,
+        label="source-corrected execution amendment")
+    amendment, raw = _load_json(
+        path, label="source-corrected execution amendment")
+    amendment = validate_execution_amendment_v2(
+        amendment, root=root, validate_live_authorities=True,
+        require_runtime_outputs_absent=require_runtime_outputs_absent)
+    v1 = amendment["v1_execution_authority"]
+    report = dict(v1["coupling_report"])
+    return {
+        "coupling_report": report,
+        "coupling_report_binding": coupling_report_artifact_binding(
+            report, _pretty_json_bytes(report)),
+        "execution_amendment": amendment,
+        "execution_amendment_binding":
+            execution_amendment_v2_artifact_binding(amendment, raw),
+        "v1_execution_amendment": dict(v1["execution_amendment"]),
+        "v1_execution_amendment_binding": dict(
+            v1["execution_amendment_artifact_binding"]),
+        "historical_mixed_disposition_authority": copy.deepcopy(
+            amendment["historical_mixed_disposition_authority"]),
+        "scientific_contract_bindings": dict(
+            amendment["scientific_contract_bindings"]),
+        "preoutcome_input_bindings": dict(
+            amendment["preoutcome_input_bindings"]),
+        "source_transition_digest": amendment[AMENDMENT_SELF_KEY],
+        "candidate_outcomes_consumed": False,
+    }
+
+
 __all__ = [
     "AMENDMENT_SCHEMA", "AMENDMENT_SELF_KEY", "AMENDMENT_STATUS",
+    "AMENDMENT_V2_SCHEMA", "AMENDMENT_V2_STATUS",
     "CANDIDATE_ALLOCATION_AMENDMENT_DIGEST",
     "CANDIDATE_ALLOCATION_CONTRACT_DIGEST", "CONSTRAINT_IDS",
     "CONSTRAINT_INVENTORY", "COUPLING_REPORT_RELATIVE_PATH",
@@ -1756,23 +2318,39 @@ __all__ = [
     "ROCM_DOWNSTREAM_PYVENV_CONFIG_RELATIVE_PATH",
     "ROCM_DOWNSTREAM_PYVENV_CONFIG_SHA256",
     "ROCM_DOWNSTREAM_RUNTIME_CONTRACT",
-    "EXECUTION_AMENDMENT_RELATIVE_PATH", "EXPECTED_SOURCE_PATHS",
+    "EXECUTION_AMENDMENT_RELATIVE_PATH",
+    "EXECUTION_AMENDMENT_V2_RELATIVE_PATH", "EXPECTED_SOURCE_PATHS",
+    "FAILED_SOURCE_TRANSITION_DISPOSITION",
     "FIXTURE_VALIDATION_CONTRACT", "GlobalExecutionAmendmentError",
-    "NEW_RUNTIME_OUTPUT_PATHS", "REPORT_SCHEMA", "REPORT_SELF_KEY",
+    "HISTORICAL_MIXED_DISPOSITION_ARTIFACT_BINDING",
+    "NEW_RUNTIME_OUTPUT_PATHS",
+    "ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING",
+    "ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING",
+    "ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT",
+    "REPORT_SCHEMA", "REPORT_SELF_KEY",
     "REPORT_STATUS", "RUNNER_SOURCE_PATH", "SCIENTIFIC_CONTRACT_BINDING_KEYS",
     "STABLE_HASH_OBJECTIVE_CONTRACT",
     "STABLE_HASH_OBJECTIVE_CONTRACT_DIGEST",
     "SUPERSEDED_CANONICAL_TIE_BREAK_STATUS",
+    "SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
     "SUPERSEDED_EXTERNAL_ENUMERATION_STATUS", "V1_FAILURE_RECEIPT_DIGEST",
     "V1_FAILURE_STATUS", "V2_BACKEND_DISPOSITION",
     "V2_BENCHMARK_RECEIPT_DIGEST", "V2_CONTRACT_DIGEST",
     "V2_SOURCE_REPOSITORY_COMMIT", "V2_TERMINAL_FAILURE_RECEIPT_DIGEST",
     "audit_runtime_outputs_absent", "build_coupling_report",
-    "build_execution_amendment", "canonical_digest",
+    "build_execution_amendment", "build_execution_amendment_v2",
+    "canonical_digest",
     "coupling_report_artifact_binding", "issue_coupling_report",
-    "issue_execution_amendment", "load_coupling_report",
-    "load_execution_amendment", "load_predecessor_lineage",
+    "execution_amendment_v2_artifact_binding",
+    "issue_execution_amendment", "issue_execution_amendment_v2",
+    "load_coupling_report", "load_execution_amendment",
+    "load_execution_amendment_v2",
+    "load_historical_v1_execution_authority",
+    "load_predecessor_lineage", "load_source_corrected_execution_authority",
     "validate_coupling_report", "validate_execution_amendment",
+    "validate_execution_amendment_v2",
+    "validate_historical_mixed_disposition_authority",
+    "validate_historical_v1_execution_authority",
     "validate_predecessor_lineage_bindings",
     "validate_preoutcome_input_bindings",
     "validate_scientific_contract_bindings",

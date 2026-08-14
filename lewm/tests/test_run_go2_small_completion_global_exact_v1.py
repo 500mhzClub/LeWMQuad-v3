@@ -55,6 +55,43 @@ FIXTURE_CONTRACT = {
 class FakeAuthority:
     REPORT_SELF_KEY = "coupling_report_digest"
     AMENDMENT_SELF_KEY = "execution_amendment_digest"
+    AMENDMENT_V2_SCHEMA = (
+        "go2_small_completion_global_exact_execution_amendment_v2")
+    AMENDMENT_V2_STATUS = (
+        "ISSUED_PROSPECTIVE_SOURCE_CORRECTED_ONE_GLOBAL_EXACT_MODEL_AUTHORITY")
+    EXECUTION_AMENDMENT_V2_RELATIVE_PATH = Path(
+        ".generated/scorer_fit/"
+        "small_completion_global_exact_execution_amendment_v2.json")
+    ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING = {
+        "path": ".generated/scorer_fit/coupling_report_v1.json",
+        "self_digest_key": REPORT_SELF_KEY,
+        "self_digest": "3" * 64,
+        "raw_sha256": "a" * 64,
+        "byte_count": 123,
+    }
+    ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING = {
+        "path": ".generated/scorer_fit/execution_amendment_v1.json",
+        "self_digest_key": AMENDMENT_SELF_KEY,
+        "self_digest": "a" * 64,
+        "raw_sha256": "b" * 64,
+        "byte_count": 456,
+    }
+    FAILED_SOURCE_TRANSITION_DISPOSITION = {
+        "status": "IMMUTABLE_FAILED_PRE_PLAN_SOURCE_VALIDATION",
+        "disposition": (
+            "AFTER_17_OPTIONAL_MASKS_AND_FROZEN_45_CHECK_EVIDENCE_BEFORE_"
+            "7_VECTOR_MAPPING_RETURN_BEFORE_PRODUCTION_PLAN_OR_SOLVE"),
+        "mandatory_synthetic_fixture_suite_completed": True,
+        "synthetic_fixture_solver_invoked": True,
+        "optional_completion_rotation_vectors_parsed": 17,
+        "scientific_masks_accessed": True,
+        "preserved_phase1_vector_mapping_returned": False,
+        "candidate_outcomes_consumed": False,
+        "production_instance_built": False,
+        "runner_plan_written": False,
+        "scientific_production_solver_invoked": False,
+        "downstream_started": False,
+    }
     FIXTURE_VALIDATION_CONTRACT = FIXTURE_CONTRACT
     GENESIS_DOWNSTREAM_INTERPRETER_RELATIVE_PATH = (
         ".generated/venvs/fake_genesis/bin/python")
@@ -336,7 +373,7 @@ class FakeBuilder:
             "selected_method": "ONE_GLOBAL_EXACT_FEASIBILITY_MODEL",
             FakeAuthority.REPORT_SELF_KEY: "3" * 64,
         }
-        self.amendment = {
+        self.v1_amendment = {
             "status": "AMENDMENT_ISSUED",
             "source_repository_commit": C40,
             "selected_execution_method": {
@@ -359,6 +396,36 @@ class FakeBuilder:
                 "downstream_uses_global_solver_interpreter": {
                     "genesis": False, "rocm": False},
             },
+            FakeAuthority.AMENDMENT_SELF_KEY: "a" * 64,
+        }
+        source_correction = {
+            "historical_source_repository_commit": "1" * 40,
+            "successor_source_repository_commit": C40,
+            "scientific_contract_changed": False,
+            "candidate_outcome_or_downstream_metric_used": False,
+        }
+        failed_attempt = json.loads(json.dumps(
+            FakeAuthority.FAILED_SOURCE_TRANSITION_DISPOSITION))
+        self.amendment = {
+            **json.loads(json.dumps(self.v1_amendment)),
+            "schema": FakeAuthority.AMENDMENT_V2_SCHEMA,
+            "status": FakeAuthority.AMENDMENT_V2_STATUS,
+            "source_repository_commit": C40,
+            "v1_execution_authority": {
+                "coupling_report": json.loads(json.dumps(self.report)),
+                "coupling_report_artifact_binding": json.loads(json.dumps(
+                    FakeAuthority.ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING)),
+                "execution_amendment": json.loads(json.dumps(
+                    self.v1_amendment)),
+                "execution_amendment_artifact_binding": json.loads(json.dumps(
+                    FakeAuthority.ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING)),
+            },
+            "source_correction": source_correction,
+            "source_correction_digest": RUNNER.canonical_digest(
+                source_correction),
+            "failed_attempt_disposition": failed_attempt,
+            "failed_attempt_disposition_digest": RUNNER.canonical_digest(
+                failed_attempt),
             FakeAuthority.AMENDMENT_SELF_KEY: "5" * 64,
         }
 
@@ -368,7 +435,15 @@ class FakeBuilder:
 
     def issue_global_exact_execution_amendment(self) -> dict[str, Any]:
         self.events.append("issue-amendment")
-        return dict(self.amendment)
+        return dict(self.v1_amendment)
+
+    def load_global_exact_historical_mixed_disposition_authority(
+            self) -> dict[str, Any]:
+        self.events.append("load-historical-mixed")
+        return {
+            "payload": {"schema": "historical-mixed"},
+            "binding": {"self_digest": "b" * 64},
+        }
 
     def load_global_exact_execution_context(
             self, *, attach_scientific_masks: bool) -> dict[str, Any]:
@@ -378,7 +453,9 @@ class FakeBuilder:
             "predecessor_scientific_input_bindings": {
                 "schema": "predecessor"},
             "coupling_report": dict(self.report),
-            "coupling_report_binding": {"sha256": "d" * 64},
+            "coupling_report_binding": {
+                "coupling_report_digest":
+                    self.report[FakeAuthority.REPORT_SELF_KEY]},
             "execution_amendment": json.loads(json.dumps(self.amendment)),
             "scientific_contract_bindings": {"science": "6" * 64},
             "preoutcome_input_bindings": {"inputs": "7" * 64},
@@ -537,6 +614,83 @@ def test_issue_stages_do_not_open_masks_or_solve(
     assert report["classification"] == "COUPLED"
     assert amendment["issuance_boundary"]["solver_invoked"] is False
     assert events == ["issue-report", "issue-amendment"]
+
+
+def test_issue_source_correction_binds_historical_authority_without_solving(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str]) -> None:
+    events: list[str] = []
+    builder = FakeBuilder(events)
+
+    def issue(path: Path, *, historical_mixed_disposition_authority: Any,
+              root: Path) -> dict[str, Any]:
+        events.append("issue-source-correction")
+        assert path == root / FakeAuthority.EXECUTION_AMENDMENT_V2_RELATIVE_PATH
+        assert historical_mixed_disposition_authority == {
+            "payload": {"schema": "historical-mixed"},
+            "binding": {"self_digest": "b" * 64},
+        }
+        return json.loads(json.dumps(builder.amendment))
+
+    monkeypatch.setattr(
+        FakeAuthority, "issue_execution_amendment_v2",
+        staticmethod(issue), raising=False)
+    amendment = RUNNER.issue_source_correction(
+        root=tmp_path, builder=builder, authority=FakeAuthority)
+    summary = json.loads(capsys.readouterr().out)
+
+    assert amendment["schema"] == FakeAuthority.AMENDMENT_V2_SCHEMA
+    assert summary["execution_amendment_digest"] == "5" * 64
+    assert summary["immutable_v1_coupling_report_digest"] == "3" * 64
+    assert summary["immutable_v1_execution_amendment_digest"] == "a" * 64
+    assert summary["historical_preoutcome_disposition_read"] is True
+    assert summary["new_candidate_rotation_vectors_read"] is False
+    assert summary["candidate_outcomes_consumed"] is False
+    assert summary["production_plan_or_solver_started"] is False
+    assert events == [
+        "load-historical-mixed", "issue-source-correction"]
+    assert RUNNER._parser().parse_args([
+        "--stage", "issue-source-correction"]).stage == \
+        "issue-source-correction"
+
+
+def test_context_requires_exact_source_corrected_v2_lineage() -> None:
+    builder = FakeBuilder([])
+    context = builder.load_global_exact_execution_context(
+        attach_scientific_masks=False)
+    assert RUNNER._require_context(
+        context, masks=False, authority=FakeAuthority) == context
+
+    mutations: list[dict[str, Any]] = []
+    old = json.loads(json.dumps(context))
+    old["execution_amendment"] = json.loads(json.dumps(builder.v1_amendment))
+    mutations.append(old)
+    wrong_failure = json.loads(json.dumps(context))
+    wrong_failure["execution_amendment"]["failed_attempt_disposition"][
+        "candidate_outcomes_consumed"] = True
+    wrong_failure["execution_amendment"][
+        "failed_attempt_disposition_digest"] = RUNNER.canonical_digest(
+            wrong_failure["execution_amendment"][
+                "failed_attempt_disposition"])
+    mutations.append(wrong_failure)
+    wrong_v1 = json.loads(json.dumps(context))
+    wrong_v1["execution_amendment"]["v1_execution_authority"][
+        "execution_amendment_artifact_binding"]["self_digest"] = "0" * 64
+    mutations.append(wrong_v1)
+    wrong_science = json.loads(json.dumps(context))
+    wrong_science["execution_amendment"]["source_correction"][
+        "scientific_contract_changed"] = True
+    wrong_science["execution_amendment"][
+        "source_correction_digest"] = RUNNER.canonical_digest(
+            wrong_science["execution_amendment"]["source_correction"])
+    mutations.append(wrong_science)
+
+    for changed in mutations:
+        with pytest.raises(
+                RUNNER.GlobalExactRunnerError,
+                match="execution authority boundary changed"):
+            RUNNER._require_context(
+                changed, masks=False, authority=FakeAuthority)
 
 
 def test_feasible_dual_runtime_orchestration_and_terminal_reuse(

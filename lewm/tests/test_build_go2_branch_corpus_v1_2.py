@@ -1688,6 +1688,169 @@ def test_v2_predecessor_envelope_api_is_exact_and_mask_free(monkeypatch):
             predecessor_scientific_input_bindings=changed)
 
 
+def test_phase1_vectors_accept_validated_historical_disposition_without_legacy(
+        monkeypatch):
+    completion_ids = [f"{index + 1:064x}" for index in range(7)]
+    disposition = {
+        "retained_predecessor_identities": [{
+            "state_identity_digest": identity,
+            "stratum": "completion_enriched",
+        } for identity in completion_ids],
+    }
+    phase1 = {
+        "shards": [{
+            "state_checks": [{
+                "state_identity_digest": identity,
+                "completion_rotation_eligibility": {
+                    "schema": "synthetic-historical-vector",
+                    "rotations": [],
+                },
+            } for identity in completion_ids],
+        }],
+    }
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "validate_frozen_preserved_precontract_failure",
+        lambda **_kwargs: phase1)
+    monkeypatch.setattr(
+        B, "_load_active_mixed_disposition",
+        lambda: pytest.fail("legacy current-source disposition loader reached"))
+    vectors = (
+        B._phase1_completion_rotation_vectors_from_validated_disposition(
+            disposition))
+    assert set(vectors) == set(completion_ids)
+
+
+def test_global_historical_mixed_disposition_authority_has_closed_raw_binding(
+        tmp_path, monkeypatch):
+    payload = {"synthetic": "historical-disposition"}
+    raw_binding = {
+        "self_digest_key": "mixed_precontract_disposition_receipt_digest",
+        "self_digest": "1" * 64,
+        "raw_sha256": "2" * 64,
+        "byte_count": 123,
+    }
+    authorities = {
+        "mixed_disposition": payload,
+        "raw_bindings": {"mixed_disposition": raw_binding},
+    }
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        B, "_v2_load_d9d_authorities",
+        lambda out: authorities if out == tmp_path / "scorer_fit" else None)
+
+    exact = B.load_global_exact_historical_mixed_disposition_authority(
+        out=tmp_path / "scorer_fit")
+    assert set(exact) == {"payload", "binding"}
+    assert exact["payload"] == payload
+    assert exact["binding"] == {
+        "path": str(B.STATE_SELECTOR
+                    .PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH),
+        **raw_binding,
+    }
+    assert set(exact["binding"]) == {
+        "path", "self_digest_key", "self_digest", "raw_sha256", "byte_count"}
+
+    authorities["raw_bindings"]["mixed_disposition"] = {
+        **raw_binding,
+        "unexpected": True,
+    }
+    with pytest.raises(RuntimeError, match="historical mixed disposition"):
+        B.load_global_exact_historical_mixed_disposition_authority(
+            out=tmp_path / "scorer_fit")
+
+
+def test_global_context_routes_validated_d9d_disposition_without_legacy(
+        tmp_path, monkeypatch):
+    report_path = (
+        tmp_path / B.GLOBAL_EXACT_AUTHORITY.COUPLING_REPORT_RELATIVE_PATH)
+    report_path.parent.mkdir(parents=True)
+    report_path.write_text(json.dumps({"synthetic": "report"}))
+    scientific = {
+        key: f"{index + 1:064x}"
+        for index, key in enumerate(
+            B.GLOBAL_EXACT_AUTHORITY.SCIENTIFIC_CONTRACT_BINDING_KEYS)
+    }
+    material = {
+        "scientific_contract_bindings": scientific,
+        "preoutcome_input_bindings": {"synthetic": "preoutcome"},
+        "predecessor_scientific_input_bindings": {
+            "synthetic": "predecessor"},
+        "candidate_outcomes_consumed": False,
+    }
+    inputs = {
+        "common": dict(scientific),
+        "candidate_outcomes_consumed": False,
+    }
+    disposition = {
+        "retained_predecessor_identities": [{
+            "state_identity_digest": f"{index + 20:064x}",
+            "stratum": "completion_enriched",
+        } for index in range(7)],
+    }
+    vectors = {
+        row["state_identity_digest"]: {"rotations": []}
+        for row in disposition["retained_predecessor_identities"]
+    }
+    historical_authority = {
+        "payload": disposition,
+        "binding": {
+            "path": "synthetic.json",
+            "self_digest_key": "synthetic_digest",
+            "self_digest": "1" * 64,
+            "raw_sha256": "2" * 64,
+            "byte_count": 123,
+        },
+    }
+    observed = []
+
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        B, "_global_exact_authority_material",
+        lambda **_kwargs: copy.deepcopy(material))
+    monkeypatch.setattr(B, "_pin_generated_path", lambda path, *_args: path)
+    monkeypatch.setattr(
+        B.GLOBAL_EXACT_AUTHORITY,
+        "load_source_corrected_execution_authority",
+        lambda **_kwargs: {
+            "coupling_report": {"synthetic": "report"},
+            "coupling_report_binding": {"synthetic": "binding"},
+            "execution_amendment": {
+                "schema": B.GLOBAL_EXACT_AUTHORITY.AMENDMENT_V2_SCHEMA,
+                "status": B.GLOBAL_EXACT_AUTHORITY.AMENDMENT_V2_STATUS,
+            },
+            "historical_mixed_disposition_authority": historical_authority,
+            "scientific_contract_bindings": scientific,
+            "preoutcome_input_bindings": {"synthetic": "preoutcome"},
+            "candidate_outcomes_consumed": False,
+        })
+    monkeypatch.setattr(
+        B, "load_v2_parallel_small_benchmark_inputs",
+        lambda **_kwargs: copy.deepcopy(inputs))
+    monkeypatch.setattr(
+        B, "load_global_exact_historical_mixed_disposition_authority",
+        lambda *, out=None: observed.append(("authority", out))
+        or historical_authority)
+    monkeypatch.setattr(
+        B, "_phase1_completion_rotation_vectors_from_validated_disposition",
+        lambda value: observed.append(("vectors", value)) or vectors)
+    monkeypatch.setattr(
+        B, "_phase1_completion_rotation_vectors",
+        lambda: pytest.fail("legacy phase-1 vector loader reached"))
+    monkeypatch.setattr(
+        B, "_load_active_mixed_disposition",
+        lambda: pytest.fail("legacy current-source disposition loader reached"))
+
+    scorer_fit = tmp_path / "scorer_fit"
+    context = B.load_global_exact_execution_context(
+        out=scorer_fit, attach_scientific_masks=True)
+    assert observed == [
+        ("authority", scorer_fit),
+        ("vectors", disposition),
+    ]
+    assert context["preserved_vectors"] == vectors
+    assert context["scientific_masks_accessed"] is True
+
+
 def test_v2_rank_identity_uses_predecessor_bindings_not_current_source(
         monkeypatch):
     bindings = {
