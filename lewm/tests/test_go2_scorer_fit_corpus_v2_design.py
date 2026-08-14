@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from pathlib import Path
 import stat
@@ -165,12 +166,151 @@ def _source_correction_final(
         monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
     immutable_v2 = _immutable_source_correction_v2(monkeypatch)
     return design.build_preselection_source_correction(
-        source_repository_commit="d" * 40,
+        source_repository_commit=
+            design.IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT,
         source_bindings=_corrected_sources_final(),
         immutable_preselection_source_correction_v2=immutable_v2,
         runtime_outputs_absent_at_issue=design._expected_absence_rows(
             phase="design"),
     )
+
+
+def _immutable_active_preselection_source_correction(
+        monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
+    payload = _source_correction_final(monkeypatch)
+    raw = (json.dumps(payload, sort_keys=True, indent=2) + "\n").encode()
+    binding = design.preselection_source_correction_artifact_binding(
+        payload, raw)
+    monkeypatch.setattr(
+        design, "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST",
+        payload[design.SOURCE_CORRECTION_SELF_KEY])
+    monkeypatch.setattr(
+        design, "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_BINDING",
+        copy.deepcopy(binding))
+    failure = copy.deepcopy(design.MANIFEST_REPLAY_FAILURE_BOUNDARY)
+    failure["active_preselection_correction_digest"] = payload[
+        design.SOURCE_CORRECTION_SELF_KEY]
+    monkeypatch.setattr(
+        design, "MANIFEST_REPLAY_FAILURE_BOUNDARY", failure)
+    return design.validate_immutable_active_preselection_source_correction({
+        "payload": payload,
+        "binding": binding,
+    })
+
+
+def _corrected_sources_replay() -> list[dict[str, object]]:
+    rows = _corrected_sources_final()
+    changed = set(
+        design.MANIFEST_REPLAY_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    for index, row in enumerate(rows):
+        if row["path"] in changed:
+            row["byte_count"] = int(row["byte_count"]) + 40_000
+            row["sha256"] = f"{index + 40_000:064x}"
+    return rows
+
+
+def _manifest_replay_correction(
+        monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
+    immutable = _immutable_active_preselection_source_correction(monkeypatch)
+    return design.build_manifest_replay_correction(
+        source_repository_commit="e" * 40,
+        source_bindings=_corrected_sources_replay(),
+        immutable_active_preselection_source_correction=immutable,
+        installed_preoutcome_artifact_bindings=
+            design.INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS,
+        successor_and_runtime_outputs_absent_at_issue=
+            design._expected_absence_rows(phase="successor_contract"),
+    )
+
+
+def _synthetic_installed_artifacts(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
+        compact_first: bool = False) -> list[dict[str, object]]:
+    source_digest = "9" * 64
+    monkeypatch.setattr(
+        design, "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST",
+        source_digest)
+    specs = [
+        ("small_completion_selection", "selection.json", "selection_v1",
+         "selection_digest", {
+             "ordered_candidate_count": 17,
+             "selected_scene_ids": [f"scene-{index}" for index in range(5)],
+             "branch_data_consumed": False,
+             "scientific_outcomes_accessed": False,
+             "downstream_metric_used": False,
+             "optimisation_or_solver_used": False,
+         }),
+        ("preoutcome_state_revalidation", "revalidation.json",
+         "revalidation_v1", "revalidation_digest", {
+             "fixed_state_count": 115,
+             "selected_small_completion_state_count": 5,
+             "revalidated_state_count": 120,
+             "completion_state_count": 40,
+             "full_bank_candidate_indices": list(range(12)),
+             "branch_data_created": False,
+             "frames_or_latents_accessed": False,
+             "scientific_outcomes_accessed": False,
+             "scorer_or_predictor_accessed": False,
+             "true_branch_execution_requirement_count": 0,
+         }),
+        ("small_family_state_shard", "small.json", "small_v1",
+         "small_digest", {
+             "states": [{"state": index} for index in range(15)],
+             "branch_data_created": False,
+             "scientific_outcomes_accessed": False,
+             "solver_or_optimisation_used": False,
+         }),
+        ("assignment_manifest", "assignment.json", "assignment_v1",
+         "assignment_digest", {
+             "state_count": 120,
+             "assignment_count": 1_440,
+             "candidate_indices": list(range(12)),
+             "branch_execution_used": False,
+         }),
+        ("state_manifest", "state.json", "state_v1", "state_digest", {
+             "states": [{"state": index} for index in range(120)],
+             "attempted_branch_count_registered": 1_440,
+             "candidate_indices_per_state": list(range(12)),
+             "branch_data_created": False,
+             "frames_or_latents_accessed": False,
+             "scientific_outcomes_accessed": False,
+             "scorer_or_predictor_accessed": False,
+         }),
+    ]
+    bindings: list[dict[str, object]] = []
+    for index, (role, name, schema, self_key, fields) in enumerate(specs):
+        relative = design.SCORER_FIT_RELATIVE_PATH / name
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        body = {
+            "schema": schema,
+            "complete": True,
+            design.SOURCE_CORRECTION_SELF_KEY: source_digest,
+            "candidate_outcomes_consumed": False,
+            **fields,
+        }
+        self_digest = (
+            design.canonical_digest(body)
+            if compact_first and index == 0
+            else design.builder_default_canonical_digest(body))
+        payload = {**body, self_key: self_digest}
+        raw = (json.dumps(payload, sort_keys=True, indent=2) + "\n").encode()
+        path.write_bytes(raw)
+        path.chmod(0o444)
+        bindings.append({
+            "role": role,
+            "path": str(relative),
+            "schema": schema,
+            "self_digest_key": self_key,
+            "self_digest": self_digest,
+            "raw_sha256": hashlib.sha256(raw).hexdigest(),
+            "byte_count": len(raw),
+            "mode": "0444",
+        })
+    monkeypatch.setattr(
+        design, "INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS",
+        tuple(copy.deepcopy(bindings)))
+    return bindings
 
 
 def test_rotation_inventory_is_closed_and_allocation_only() -> None:
@@ -592,43 +732,191 @@ def test_final_structural_validation_correction_rejects_extra_source_change(
         )
 
 
-def test_final_correction_issue_and_active_loader_are_chained(
+def test_active_preselection_correction_cannot_be_reissued(
+        tmp_path: Path) -> None:
+    scorer_fit = tmp_path / design.SCORER_FIT_RELATIVE_PATH
+    scorer_fit.mkdir(parents=True)
+    path = tmp_path / design.SOURCE_CORRECTION_RELATIVE_PATH
+    with pytest.raises(
+            design.ScorerFitCorpusV2DesignError,
+            match="cannot be reissued"):
+        design.issue_preselection_source_correction(root=tmp_path)
+    assert not path.exists()
+
+
+def test_manifest_replay_correction_preserves_5206_and_exact_failure(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _manifest_replay_correction(monkeypatch)
+    assert design.validate_manifest_replay_correction(
+        correction, validate_live_authorities=False) == correction
+    immutable = correction[
+        "immutable_active_preselection_source_correction"]
+    assert immutable["payload"][design.SOURCE_CORRECTION_SELF_KEY] == (
+        correction[
+            "immutable_active_preselection_source_correction_digest"])
+    assert correction["preserved_scientific_manifest_lineage_digest"] == (
+        immutable["payload"][design.SOURCE_CORRECTION_SELF_KEY])
+    assert correction["installed_preoutcome_artifact_bindings"] == list(
+        design.INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS)
+    assert [row["role"] for row in correction[
+            "installed_preoutcome_artifact_bindings"]] == [
+        "small_completion_selection", "preoutcome_state_revalidation",
+        "small_family_state_shard", "assignment_manifest", "state_manifest",
+    ]
+    assert {row["mode"] for row in correction[
+        "installed_preoutcome_artifact_bindings"]} == {"0444"}
+    failure = correction["manifest_replay_failure_boundary"]
+    assert failure == design.MANIFEST_REPLAY_FAILURE_BOUNDARY
+    assert failure["all_five_preoutcome_artifacts_installed"] is True
+    assert failure["state_manifest_installed_last_as_terminal_marker"] is True
+    assert failure["first_replay_role"] == "small_completion_selection"
+    assert failure["post_install_replay_completed"] is False
+    assert failure["successor_scorer_contract_issued"] is False
+    assert failure["candidate_outcome_or_branch_label_read"] is False
+    material = correction["manifest_replay_correction"]
+    assert material["full_bank_v2_self_digest_canonicalization"] == (
+        "JSON_DUMPS_SORT_KEYS_DEFAULT_SEPARATORS")
+    assert material["installed_manifest_payload_or_digest_changed"] is False
+    assert material["scientific_manifest_lineage_digest_preserved"] == (
+        correction["preserved_scientific_manifest_lineage_digest"])
+
+
+def test_builder_default_digest_is_not_parallel_compact() -> None:
+    body = {"schema": "synthetic", "nested": {"value": 3}}
+    assert design.builder_default_canonical_digest(body) == (
+        "4588d100adc9cc3ba1a554c8800400fc0d474660261a9d43fff8ef8726f3c8de")
+    assert design.builder_default_canonical_digest(body) != (
+        design.canonical_digest(body))
+
+
+def test_installed_manifest_validator_requires_builder_default_digest(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    bindings = _synthetic_installed_artifacts(tmp_path, monkeypatch)
+    assert design.validate_installed_full_bank_v2_preoutcome_artifacts(
+        root=tmp_path) == bindings
+
+    bad_root = tmp_path / "bad"
+    bad_bindings = _synthetic_installed_artifacts(
+        bad_root, monkeypatch, compact_first=True)
+    assert bad_bindings[0]["self_digest"] != (
+        design.builder_default_canonical_digest({
+            "schema": "selection_v1",
+            "complete": True,
+            design.SOURCE_CORRECTION_SELF_KEY: "9" * 64,
+            "candidate_outcomes_consumed": False,
+            "ordered_candidate_count": 17,
+            "selected_scene_ids": [f"scene-{index}" for index in range(5)],
+            "branch_data_consumed": False,
+            "scientific_outcomes_accessed": False,
+            "downstream_metric_used": False,
+            "optimisation_or_solver_used": False,
+        }))
+    with pytest.raises(
+            design.ScorerFitCorpusV2DesignError,
+            match="small_completion_selection artifact changed"):
+        design.validate_installed_full_bank_v2_preoutcome_artifacts(
+            root=bad_root)
+
+
+def test_manifest_replay_correction_is_tamper_evident(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _manifest_replay_correction(monkeypatch)
+    raw = (json.dumps(correction, sort_keys=True, indent=2) + "\n").encode()
+    binding = design.manifest_replay_correction_artifact_binding(
+        correction, raw)
+    assert set(binding) == {
+        "path", "schema", "self_digest_key", "self_digest", "raw_sha256",
+        "byte_count", "source_repository_commit",
+    }
+    assert binding["path"] == str(
+        design.MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH)
+    tampered = copy.deepcopy(correction)
+    tampered["installed_preoutcome_artifact_bindings"][0][
+        "self_digest"] = "f" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_manifest_replay_correction(
+            tampered, validate_live_authorities=False)
+
+
+def test_manifest_replay_correction_rejects_extra_source_change(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    immutable = _immutable_active_preselection_source_correction(monkeypatch)
+    sources = _corrected_sources_replay()
+    unchanged = next(
+        row for row in sources
+        if row["path"]
+        not in design.MANIFEST_REPLAY_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    unchanged["byte_count"] = int(unchanged["byte_count"]) + 1
+    unchanged["sha256"] = "f" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.build_manifest_replay_correction(
+            source_repository_commit="e" * 40,
+            source_bindings=sources,
+            immutable_active_preselection_source_correction=immutable,
+            installed_preoutcome_artifact_bindings=
+                design.INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS,
+            successor_and_runtime_outputs_absent_at_issue=
+                design._expected_absence_rows(phase="successor_contract"),
+        )
+
+
+def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     scorer_fit = tmp_path / design.SCORER_FIT_RELATIVE_PATH
     scorer_fit.mkdir(parents=True)
-    immutable_v2 = _immutable_source_correction_v2(monkeypatch)
-    sources = _corrected_sources_final()
-    absence = design._expected_absence_rows(phase="design")
+    immutable = _immutable_active_preselection_source_correction(monkeypatch)
+    sources = _corrected_sources_replay()
+    installed = copy.deepcopy(list(
+        design.INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS))
+    absence = design._expected_absence_rows(phase="successor_contract")
     absence_calls: list[int] = []
+    installed_calls: list[int] = []
     monkeypatch.setattr(
         design, "clean_source_authority",
-        lambda *, root: ("d" * 40, copy.deepcopy(sources)))
+        lambda *, root: ("e" * 40, copy.deepcopy(sources)))
     monkeypatch.setattr(
-        design, "_load_immutable_preselection_source_correction_v2",
-        lambda *, root: copy.deepcopy(immutable_v2))
+        design, "_load_immutable_active_preselection_source_correction",
+        lambda *, root: copy.deepcopy(immutable))
+
+    def installed_validator(*, root: Path) -> list[dict[str, object]]:
+        assert root == tmp_path
+        installed_calls.append(1)
+        return copy.deepcopy(installed)
+
+    monkeypatch.setattr(
+        design, "validate_installed_full_bank_v2_preoutcome_artifacts",
+        installed_validator)
 
     def audit(*, root: Path, phase: str) -> list[dict[str, object]]:
         assert root == tmp_path
-        assert phase == "design"
+        assert phase == "successor_contract"
         absence_calls.append(1)
         return copy.deepcopy(absence)
 
     monkeypatch.setattr(design, "audit_v2_runtime_outputs_absent", audit)
-    correction = design.issue_preselection_source_correction(root=tmp_path)
+    correction = design.issue_manifest_replay_correction(root=tmp_path)
     assert len(absence_calls) == 2
-    path = tmp_path / design.SOURCE_CORRECTION_RELATIVE_PATH
+    assert len(installed_calls) >= 2
+    path = tmp_path / design.MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH
     assert stat.S_IMODE(path.stat().st_mode) == 0o444
     active = design.load_active_design_authority(root=tmp_path)
-    assert active["source_correction"] == correction
-    assert active["source_correction_digest"] == correction[
-        design.SOURCE_CORRECTION_SELF_KEY]
-    assert active["source_correction_binding"] == (
-        design.preselection_source_correction_artifact_binding(
+    assert active["source_correction"] == immutable["payload"]
+    assert active["source_correction_binding"] == immutable["binding"]
+    assert active["source_correction_digest"] == immutable[
+        "payload"][design.SOURCE_CORRECTION_SELF_KEY]
+    assert active["manifest_replay_correction"] == correction
+    assert active["manifest_replay_correction_digest"] == correction[
+        design.MANIFEST_REPLAY_CORRECTION_SELF_KEY]
+    assert active["manifest_replay_correction_binding"] == (
+        design.manifest_replay_correction_artifact_binding(
             correction, path.read_bytes()))
+    assert active["active_source_repository_commit"] == "e" * 40
+    immutable_v2 = immutable["payload"][
+        "immutable_preselection_source_correction_v2"]
     immutable_v1 = immutable_v2["payload"][
         "immutable_preselection_source_correction_v1"]
     issued = immutable_v1["payload"]["immutable_issued_design_authority"]
     assert active["design_amendment"] == issued["design_amendment_payload"]
-    assert design.issue_preselection_source_correction(
+    assert design.issue_manifest_replay_correction(
         root=tmp_path) == correction
     assert len(absence_calls) == 2

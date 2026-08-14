@@ -180,6 +180,25 @@ def test_structural_body_clearance_rejects_nonfinite(nonfinite) -> None:
         B._full_bank_v2_structural_state_identity(raw)
 
 
+def test_full_bank_artifact_binding_uses_builder_digest_not_parallel(
+        tmp_path, monkeypatch) -> None:
+    path = tmp_path / "selection.json"
+    body = {"schema": "synthetic", "nested": {"value": 3}}
+    self_key = "selection_digest"
+    payload = {**body, self_key: B.canonical_digest(body)}
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    monkeypatch.setattr(B, "_pin_generated_path", lambda _raw, _expected: path)
+
+    binding = B._full_bank_v2_artifact_binding(path, self_key=self_key)
+    assert binding["self_digest"] == payload[self_key]
+    assert payload[self_key] != B.PARALLEL_SEARCH.canonical_digest(body)
+
+    payload[self_key] = B.PARALLEL_SEARCH.canonical_digest(body)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    with pytest.raises(RuntimeError, match="full-bank V2 self digest mismatch"):
+        B._full_bank_v2_artifact_binding(path, self_key=self_key)
+
+
 def test_full_bank_lmax_uses_all_twelve_without_branch_execution() -> None:
     raw = _raw_completion(2, previous=[0.1, 0.0, 0.2])
     evidence = B.full_bank_completion_reachability_evidence(raw)

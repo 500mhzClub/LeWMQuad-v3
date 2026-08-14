@@ -12,6 +12,7 @@ from scripts import run_go2_scorer_fit_full_bank_v2 as runner
 HEX_A = "a" * 64
 HEX_B = "b" * 64
 HEX_C = "c" * 64
+HEX_D = "d" * 64
 TARGET = {
     "path": (".generated/go2_branch_corpus_v1_2/scorer_fit/"
              "latents_v2/horizon/smoke-candidate-0.f16"),
@@ -441,7 +442,7 @@ def test_issue_design_calls_classification_before_amendment(tmp_path: Path) -> N
     assert report["solver_or_optimisation_used"] is False
 
 
-def test_issue_source_correction_replays_active_authority_before_selection(
+def test_issue_manifest_replay_correction_preserves_scientific_lineage(
         tmp_path: Path) -> None:
     events: list[str] = []
 
@@ -451,6 +452,9 @@ def test_issue_source_correction_replays_active_authority_before_selection(
         SOURCE_CORRECTION_SELF_KEY = "correction_digest"
         IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST = HEX_A
         IMMUTABLE_SOURCE_CORRECTION_V2_DIGEST = HEX_B
+        IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST = HEX_C
+        MANIFEST_REPLAY_CORRECTION_SCHEMA = "fixture_manifest_replay_v1"
+        MANIFEST_REPLAY_CORRECTION_SELF_KEY = "replay_digest"
 
         def correction(self) -> dict[str, Any]:
             return {
@@ -462,11 +466,21 @@ def test_issue_source_correction_replays_active_authority_before_selection(
                 "correction_digest": HEX_C,
             }
 
-        def issue_preselection_source_correction(
+        def replay_correction(self) -> dict[str, Any]:
+            return {
+                "schema": self.MANIFEST_REPLAY_CORRECTION_SCHEMA,
+                "manifest_replay_correction_version": 1,
+                "immutable_active_preselection_source_correction_digest":
+                    HEX_C,
+                "preserved_scientific_manifest_lineage_digest": HEX_C,
+                "replay_digest": HEX_D,
+            }
+
+        def issue_manifest_replay_correction(
                 self, *, root: Path) -> Mapping[str, Any]:
             assert root == tmp_path
-            events.append("issue-correction")
-            return self.correction()
+            events.append("issue-replay-correction")
+            return self.replay_correction()
 
         def load_active_design_authority(
                 self, *, root: Path) -> Mapping[str, Any]:
@@ -476,12 +490,14 @@ def test_issue_source_correction_replays_active_authority_before_selection(
                 "design_amendment": {"design_digest": HEX_B},
                 "source_correction": self.correction(),
                 "source_correction_digest": HEX_C,
+                "manifest_replay_correction": self.replay_correction(),
+                "manifest_replay_correction_digest": HEX_D,
                 "candidate_outcomes_consumed": False,
             }
 
     report = runner.issue_source_correction(
         root=tmp_path, design=FakeDesign())
-    assert events == ["issue-correction", "active-replay"]
+    assert events == ["issue-replay-correction", "active-replay"]
     assert report["scorer_fit_corpus_v2_design_digest"] == HEX_B
     assert report["immutable_preselection_source_correction_v2_digest"] \
         == HEX_B
@@ -489,7 +505,13 @@ def test_issue_source_correction_replays_active_authority_before_selection(
         "transitive_immutable_preselection_source_correction_v1_digest"] \
         == HEX_A
     assert report["scorer_fit_corpus_v2_source_correction_digest"] == HEX_C
-    assert report["selection_started"] is False
+    assert report["scorer_fit_corpus_v2_manifest_lineage_digest"] == HEX_C
+    assert report[
+        "scorer_fit_corpus_v2_manifest_replay_correction_digest"] == HEX_D
+    assert report["selection_started"] is True
+    assert report["selection_already_completed_preoutcome"] is True
+    assert report["all_five_preoutcome_manifests_already_installed"] is True
+    assert report["manifest_written_or_rewritten"] is False
     assert report["solver_or_optimisation_used"] is False
 
 
@@ -509,6 +531,9 @@ def test_freeze_manifests_refuses_historical_source_corrections_before_builder(
         SOURCE_CORRECTION_SELF_KEY = "correction_digest"
         IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST = HEX_A
         IMMUTABLE_SOURCE_CORRECTION_V2_DIGEST = HEX_B
+        IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST = HEX_C
+        MANIFEST_REPLAY_CORRECTION_SCHEMA = "fixture_manifest_replay_v1"
+        MANIFEST_REPLAY_CORRECTION_SELF_KEY = "replay_digest"
 
         def load_active_design_authority(
                 self, *, root: Path) -> Mapping[str, Any]:
@@ -533,6 +558,76 @@ def test_freeze_manifests_refuses_historical_source_corrections_before_builder(
         runner.freeze_manifests(
             root=tmp_path, builder=BuilderMustNotRun(),
             design_authority=HistoricalDesign())
+
+
+def test_freeze_manifests_requires_operational_replay_wrapper_before_builder(
+        tmp_path: Path) -> None:
+    class FinalSourceOnlyDesign:
+        SOURCE_CORRECTION_SCHEMA = "fixture_structural_correction_v1"
+        SOURCE_CORRECTION_SELF_KEY = "correction_digest"
+        IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST = HEX_A
+        IMMUTABLE_SOURCE_CORRECTION_V2_DIGEST = HEX_B
+        IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST = HEX_C
+        MANIFEST_REPLAY_CORRECTION_SCHEMA = "fixture_manifest_replay_v1"
+        MANIFEST_REPLAY_CORRECTION_SELF_KEY = "replay_digest"
+
+        def load_active_design_authority(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            return {
+                "source_correction": {
+                    "schema": self.SOURCE_CORRECTION_SCHEMA,
+                    "structural_validation_correction_version": 1,
+                    "immutable_preselection_source_correction_v2_digest":
+                        HEX_B,
+                    "transitive_immutable_preselection_source_correction_v1_digest":
+                        HEX_A,
+                    "correction_digest": HEX_C,
+                },
+                "source_correction_digest": HEX_C,
+                "candidate_outcomes_consumed": False,
+            }
+
+    class BuilderMustNotRun:
+        def __getattr__(self, name: str) -> Any:
+            raise AssertionError(f"builder accessed before replay gate: {name}")
+
+    with pytest.raises(
+            runner.FullBankV2RunnerError,
+            match="post-install manifest-replay correction"):
+        runner.freeze_manifests(
+            root=tmp_path, builder=BuilderMustNotRun(),
+            design_authority=FinalSourceOnlyDesign())
+
+
+def test_exact_existing_five_manifest_payloads_are_never_rewritten(
+        tmp_path: Path) -> None:
+    paths = [tmp_path / f"manifest-{index}.json" for index in range(5)]
+    payloads = [{"artifact_index": index} for index in range(5)]
+    before: list[tuple[int, int, int, int, bytes]] = []
+    for path, payload in zip(paths, payloads, strict=True):
+        path.write_bytes(runner._json_bytes(payload, pretty=True))
+        path.chmod(0o444)
+        observed = path.stat()
+        before.append((
+            observed.st_ino, observed.st_mtime_ns, observed.st_ctime_ns,
+            observed.st_mode, path.read_bytes()))
+
+    reopened = [
+        runner._install_or_require_exact_json(
+            path, payload, label=f"synthetic manifest {index}")
+        for index, (path, payload) in enumerate(
+            zip(paths, payloads, strict=True))
+    ]
+
+    assert reopened == payloads
+    after = []
+    for path in paths:
+        observed = path.stat()
+        after.append((
+            observed.st_ino, observed.st_mtime_ns, observed.st_ctime_ns,
+            observed.st_mode, path.read_bytes()))
+    assert after == before
 
 
 def test_parser_exposes_source_correction_before_manifest_stage() -> None:

@@ -9819,7 +9819,25 @@ def build_active_scorer_fit_v2_full_bank_bundle(
 
 def _full_bank_v2_artifact_binding(
         path: Path, *, self_key: str) -> dict[str, Any]:
-    binding = _artifact_binding(path, self_key=self_key)
+    # Full-bank V2 payloads deliberately retain this builder's historical
+    # canonical JSON convention (``json.dumps(..., sort_keys=True)`` with
+    # default separators).  The generic helper's optional self check belongs
+    # to the old parallel-search compact convention and must not be reused for
+    # these artifacts.
+    binding = _artifact_binding(path)
+    pinned = _pin_generated_path(path, path)
+    try:
+        payload = json.loads(pinned.read_text())
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            f"full-bank V2 artifact is invalid JSON: {path}") from exc
+    expected = canonical_digest({
+        name: value for name, value in payload.items() if name != self_key
+    })
+    if payload.get(self_key) != expected:
+        raise RuntimeError(f"{path.name} full-bank V2 self digest mismatch")
+    binding["self_digest_key"] = self_key
+    binding["self_digest"] = payload[self_key]
     if (not _is_sha256(binding.get("self_digest"))
             or not _is_sha256(binding.get("raw_sha256"))):
         raise RuntimeError("full-bank V2 artifact binding is malformed")

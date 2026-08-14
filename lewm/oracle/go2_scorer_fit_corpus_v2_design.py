@@ -57,6 +57,12 @@ SOURCE_CORRECTION_SCHEMA = (
 SOURCE_CORRECTION_STATUS = (
     "ISSUED_CHAINED_PRESELECTION_STRUCTURAL_VALIDATION_CORRECTION_"
     "AFTER_SIGNED_BODY_CLEARANCE_DOMAIN_FAILURE")
+MANIFEST_REPLAY_CORRECTION_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_post_install_manifest_replay_correction_v1")
+MANIFEST_REPLAY_CORRECTION_STATUS = (
+    "ISSUED_POST_INSTALL_MANIFEST_REPLAY_CANONICALIZATION_CORRECTION")
+MANIFEST_REPLAY_CORRECTION_SELF_KEY = (
+    "scorer_fit_corpus_v2_manifest_replay_correction_digest")
 
 BRANCH_GENERATED_ROOT_RELATIVE_PATH = Path(
     ".generated/go2_branch_corpus_v1_2")
@@ -89,6 +95,10 @@ SOURCE_CORRECTION_RELATIVE_PATH = (
     "scorer_fit_corpus_v2_preselection_structural_validation_"
     "correction_v1.json"
 )
+MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    "scorer_fit_corpus_v2_post_install_manifest_replay_correction_v1.json"
+)
 
 ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT = (
     "76bc465cb33ef94d535b433c83660d94335bee00")
@@ -118,6 +128,98 @@ SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
     "lewm/oracle/go2_scorer_fit_corpus_v2_design.py",
     "scripts/build_go2_branch_corpus_v1_2.py",
     "scripts/run_go2_scorer_fit_full_bank_v2.py",
+)
+IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT = (
+    "66c6c314dbca04cbf702aa7ea2d45d6096e3945d")
+IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST = (
+    "5206c741b85c138dfaf6747df3f6852ac1446e99539b169d80d2fc744e8a6c35")
+IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_BINDING = {
+    "path": str(SOURCE_CORRECTION_RELATIVE_PATH),
+    "schema": SOURCE_CORRECTION_SCHEMA,
+    "self_digest_key": SOURCE_CORRECTION_SELF_KEY,
+    "self_digest": IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST,
+    "raw_sha256": (
+        "62c57488c154562eae7d3fda68a31f4e4d917213302bf6429273d82e5e71b036"),
+    "byte_count": 123_868,
+    "source_repository_commit":
+        IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT,
+}
+MANIFEST_REPLAY_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
+    "lewm/oracle/go2_scorer_fit_corpus_v2_design.py",
+    "lewm/oracle/go2_scorer_fit_corpus_v2_scorer_contract.py",
+    "scripts/build_go2_branch_corpus_v1_2.py",
+    "scripts/run_go2_scorer_fit_full_bank_v2.py",
+)
+INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS = (
+    {
+        "role": "small_completion_selection",
+        "path": str(
+            SCORER_FIT_RELATIVE_PATH /
+            "full_bank_small_completion_selection_v2.json"),
+        "schema": "go2_scorer_fit_corpus_v2_small_completion_selection_v1",
+        "self_digest_key": "full_bank_small_completion_selection_digest",
+        "self_digest": (
+            "e2d889defc8ceb47742deabf3c79ccadc3b28bce3387b54370153599f739a529"),
+        "raw_sha256": (
+            "52b658b33b4d7325a7db3e928627f30cd41370bfc5882b844e94a3624017a31f"),
+        "byte_count": 98_185,
+        "mode": "0444",
+    },
+    {
+        "role": "preoutcome_state_revalidation",
+        "path": str(
+            SCORER_FIT_RELATIVE_PATH /
+            "full_bank_preoutcome_state_revalidation_v2.json"),
+        "schema": (
+            "go2_scorer_fit_corpus_v2_preoutcome_state_revalidation_v1"),
+        "self_digest_key": "full_bank_preoutcome_state_revalidation_digest",
+        "self_digest": (
+            "d4bfde28459e7fe4f8c449177b1a14329e3e6dd6300fbfda92e1efdeeb86f25c"),
+        "raw_sha256": (
+            "9b274a958e1385d7cf453f939e19a5bd177ac39a1a4f425df616d7b3ccdfb71c"),
+        "byte_count": 571_342,
+        "mode": "0444",
+    },
+    {
+        "role": "small_family_state_shard",
+        "path": str(
+            SCORER_FIT_RELATIVE_PATH /
+            "state_shard_small_enclosed_maze_v2.json"),
+        "schema": "go2_scorer_fit_corpus_v2_small_family_state_shard_v1",
+        "self_digest_key": "state_shard_digest",
+        "self_digest": (
+            "35b558010ee71f3f61fdd0c56fcce622d61dab932a7bc770b4a616b14b1ab9d4"),
+        "raw_sha256": (
+            "fc4b7efd89a36d289b5b163f2be68f8b66d66c1bc3a770f1ed4018d88eda8710"),
+        "byte_count": 30_389,
+        "mode": "0444",
+    },
+    {
+        "role": "assignment_manifest",
+        "path": str(
+            SCORER_FIT_RELATIVE_PATH /
+            "full_bank_assignment_manifest_v2.json"),
+        "schema": "go2_scorer_fit_corpus_v2_assignment_manifest_v1",
+        "self_digest_key": "full_bank_assignment_manifest_digest",
+        "self_digest": (
+            "a91d6d211f5b07270df5a66262ce4ba218e8a3925ae5f8aba196b8c10f4959f4"),
+        "raw_sha256": (
+            "60171432ebe381ad31d41fee9d90549cbf4244333a7748fd2ec92b2bbea5d188"),
+        "byte_count": 1_729_052,
+        "mode": "0444",
+    },
+    {
+        "role": "state_manifest",
+        "path": str(SCORER_FIT_RELATIVE_PATH / "state_manifest_v2.json"),
+        "schema": "go2_scorer_fit_corpus_v2_identity_manifest_v1",
+        "self_digest_key": "state_manifest_digest",
+        "self_digest": (
+            "db79efce49d949522832d920b23a38292a491dc9e6fb2cbf2b8e0a5176fb062e"),
+        "raw_sha256": (
+            "35006fc0153ca087293aee29e7364282d773f02dbbcb7f781a135a8945f521ea"),
+        "byte_count": 496_449,
+        "mode": "0444",
+    },
 )
 
 TERMINAL_SOURCE_REPOSITORY_COMMIT = (
@@ -647,6 +749,19 @@ def _pretty_json_bytes(value: Any) -> bytes:
 
 def canonical_digest(value: Any) -> str:
     return hashlib.sha256(_json_bytes(value)).hexdigest()
+
+
+def builder_default_canonical_digest(value: Any) -> str:
+    """Match the five installed builder payloads' historical self digest."""
+
+    try:
+        raw = json.dumps(
+            value, sort_keys=True, ensure_ascii=True, allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise ScorerFitCorpusV2DesignError(
+            "value is not builder-default canonical JSON") from exc
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _without(payload: Mapping[str, Any], key: str) -> dict[str, Any]:
@@ -2018,6 +2133,418 @@ def preselection_source_correction_artifact_binding(
     }
 
 
+_IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_KEYS = frozenset({
+    "payload", "binding",
+})
+
+MANIFEST_REPLAY_FAILURE_BOUNDARY = {
+    "status": (
+        "IMMUTABLE_POST_INSTALL_REPLAY_FAILURE_SELF_DIGEST_"
+        "CANONICALIZATION_MISMATCH"),
+    "active_preselection_correction_issued": True,
+    "active_preselection_correction_digest":
+        IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST,
+    "active_preselection_correction_source_repository_commit":
+        IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT,
+    "freeze_manifests_stage_entered": True,
+    "all_five_preoutcome_artifacts_installed": True,
+    "installed_artifact_order": [
+        "small_completion_selection",
+        "preoutcome_state_revalidation",
+        "small_family_state_shard",
+        "assignment_manifest",
+        "state_manifest",
+    ],
+    "state_manifest_installed_last_as_terminal_marker": True,
+    "all_installed_artifact_modes": "0444",
+    "post_install_replay_entered": True,
+    "first_replay_role": "small_completion_selection",
+    "first_replay_payload_equal_to_solve_free_expected_payload": True,
+    "failure_site": "FIRST_POST_INSTALL_ARTIFACT_BINDING",
+    "failed_artifact_path": str(
+        SCORER_FIT_RELATIVE_PATH /
+        "full_bank_small_completion_selection_v2.json"),
+    "failure_cause": (
+        "GENERIC_ARTIFACT_BINDING_APPLIED_PARALLEL_SEARCH_COMPACT_"
+        "CANONICALIZATION_TO_A_BUILDER_DEFAULT_CANONICAL_SELF_DIGEST"),
+    "exact_exception": (
+        "RuntimeError: full_bank_small_completion_selection_v2.json "
+        "parallel self digest mismatch"),
+    "post_install_replay_completed": False,
+    "installed_artifact_overwritten_deleted_or_reissued": False,
+    "preoutcome_feasibility_failure_issued": False,
+    "successor_scorer_contract_issued": False,
+    "branch_execution_started": False,
+    "candidate_outcome_or_branch_label_read": False,
+    "frame_or_latent_created_or_read": False,
+    "scorer_metric_or_predictor_output_read": False,
+    "solver_or_optimisation_invoked": False,
+    "final_200_state_corpus_generated": False,
+    "nothing_running": True,
+}
+
+_MANIFEST_REPLAY_CORRECTION_KEYS = frozenset({
+    "schema", "status", "complete", "manifest_replay_correction_version",
+    "source_repository_commit", "source_bindings",
+    "source_binding_set_digest", "historical_source_repository_commit",
+    "immutable_active_preselection_source_correction",
+    "immutable_active_preselection_source_correction_digest",
+    "preserved_scientific_design_digest",
+    "preserved_scientific_manifest_lineage_digest",
+    "installed_preoutcome_artifact_bindings",
+    "installed_preoutcome_artifact_binding_set_digest",
+    "successor_and_runtime_outputs_absent_at_issue",
+    "successor_and_runtime_outputs_absent_at_issue_digest",
+    "manifest_replay_failure_boundary",
+    "manifest_replay_failure_boundary_digest",
+    "manifest_replay_correction", "manifest_replay_correction_material_digest",
+    "issuance_boundary", MANIFEST_REPLAY_CORRECTION_SELF_KEY,
+})
+
+
+def validate_immutable_active_preselection_source_correction(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate exact correction 5206 as immutable manifest lineage."""
+
+    if (not isinstance(value, Mapping)
+            or set(value)
+            != _IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_KEYS
+            or not isinstance(value.get("payload"), Mapping)):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable active preselection source correction is not closed")
+    authority = copy.deepcopy(dict(value))
+    payload = validate_preselection_source_correction(
+        authority["payload"], validate_live_authorities=False)
+    expected_binding = preselection_source_correction_artifact_binding(
+        payload, _pretty_json_bytes(payload))
+    if (authority.get("binding") != expected_binding
+            or expected_binding
+            != IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_BINDING
+            or payload.get(SOURCE_CORRECTION_SELF_KEY)
+            != IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST
+            or payload.get("source_repository_commit")
+            != IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable active preselection source correction changed")
+    return authority
+
+
+def _validate_installed_binding_set(
+        rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    installed = copy.deepcopy(list(rows))
+    expected = copy.deepcopy(list(
+        INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS))
+    if installed != expected:
+        raise ScorerFitCorpusV2DesignError(
+            "installed full-bank V2 preoutcome artifact bindings changed")
+    return installed
+
+
+def validate_installed_full_bank_v2_preoutcome_artifacts(
+        *, root: Path = ROOT) -> list[dict[str, Any]]:
+    """Reopen only the five exact installed, outcome-free manifest artifacts."""
+
+    bindings = _validate_installed_binding_set(
+        INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS)
+    if [row["role"] for row in bindings] != [
+            "small_completion_selection",
+            "preoutcome_state_revalidation",
+            "small_family_state_shard",
+            "assignment_manifest",
+            "state_manifest"]:
+        raise ScorerFitCorpusV2DesignError(
+            "preoutcome artifact installation order changed")
+    for binding in bindings:
+        path = _pin_generated(
+            root, binding["path"],
+            label=f"installed {binding['role']} artifact")
+        if (not path.is_file() or path.is_symlink()
+                or stat.S_IMODE(path.stat().st_mode) != 0o444):
+            raise ScorerFitCorpusV2DesignError(
+                f"installed {binding['role']} artifact custody changed")
+        raw = path.read_bytes()
+        try:
+            payload = json.loads(raw)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ScorerFitCorpusV2DesignError(
+                f"installed {binding['role']} artifact is invalid JSON") from exc
+        self_key = binding["self_digest_key"]
+        if (not isinstance(payload, dict)
+                or len(raw) != binding["byte_count"]
+                or hashlib.sha256(raw).hexdigest() != binding["raw_sha256"]
+                or payload.get("schema") != binding["schema"]
+                or payload.get(self_key) != binding["self_digest"]
+                or builder_default_canonical_digest(
+                    _without(payload, self_key))
+                != binding["self_digest"]
+                or payload.get(SOURCE_CORRECTION_SELF_KEY)
+                != IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST):
+            raise ScorerFitCorpusV2DesignError(
+                f"installed {binding['role']} artifact changed")
+        role = binding["role"]
+        role_counts_valid = False
+        if role == "small_completion_selection":
+            role_counts_valid = (
+                payload.get("ordered_candidate_count") == 17
+                and isinstance(payload.get("selected_scene_ids"), list)
+                and len(payload["selected_scene_ids"]) == 5
+                and len(set(payload["selected_scene_ids"])) == 5
+                and payload.get("branch_data_consumed") is False
+                and payload.get("scientific_outcomes_accessed") is False
+                and payload.get("downstream_metric_used") is False
+                and payload.get("optimisation_or_solver_used") is False)
+        elif role == "preoutcome_state_revalidation":
+            role_counts_valid = (
+                payload.get("fixed_state_count") == 115
+                and payload.get("selected_small_completion_state_count") == 5
+                and payload.get("revalidated_state_count") == 120
+                and payload.get("completion_state_count") == 40
+                and payload.get("full_bank_candidate_indices")
+                == list(CANDIDATE_INDICES)
+                and payload.get("branch_data_created") is False
+                and payload.get("frames_or_latents_accessed") is False
+                and payload.get("scientific_outcomes_accessed") is False
+                and payload.get("scorer_or_predictor_accessed") is False
+                and payload.get(
+                    "true_branch_execution_requirement_count") == 0)
+        elif role == "small_family_state_shard":
+            role_counts_valid = (
+                isinstance(payload.get("states"), list)
+                and len(payload["states"]) == 15
+                and payload.get("branch_data_created") is False
+                and payload.get("scientific_outcomes_accessed") is False
+                and payload.get("solver_or_optimisation_used") is False)
+        elif role == "assignment_manifest":
+            role_counts_valid = (
+                payload.get("state_count") == 120
+                and payload.get("assignment_count") == 1_440
+                and payload.get("candidate_indices")
+                == list(CANDIDATE_INDICES)
+                and payload.get("branch_execution_used") is False)
+        elif role == "state_manifest":
+            role_counts_valid = (
+                isinstance(payload.get("states"), list)
+                and len(payload["states"]) == 120
+                and payload.get("attempted_branch_count_registered") == 1_440
+                and payload.get("candidate_indices_per_state")
+                == list(CANDIDATE_INDICES)
+                and payload.get("branch_data_created") is False
+                and payload.get("frames_or_latents_accessed") is False
+                and payload.get("scientific_outcomes_accessed") is False
+                and payload.get("scorer_or_predictor_accessed") is False)
+        if (payload.get("complete") is not True
+                or payload.get("candidate_outcomes_consumed") is not False
+                or not role_counts_valid):
+            raise ScorerFitCorpusV2DesignError(
+                f"installed {role} scientific count or outcome boundary changed")
+    failure_path = _pin_generated(
+        root,
+        SCORER_FIT_RELATIVE_PATH /
+        "full_bank_preoutcome_feasibility_failure_v2.json",
+        label="preoutcome feasibility failure absence")
+    if failure_path.exists() or failure_path.is_symlink():
+        raise ScorerFitCorpusV2DesignError(
+            "preoutcome feasibility failure coexists with installed manifests")
+    return bindings
+
+
+def build_manifest_replay_correction(
+        *, source_repository_commit: str,
+        source_bindings: Sequence[Mapping[str, Any]],
+        immutable_active_preselection_source_correction: Mapping[str, Any],
+        installed_preoutcome_artifact_bindings: Sequence[Mapping[str, Any]],
+        successor_and_runtime_outputs_absent_at_issue:
+            Sequence[Mapping[str, Any]],
+        ) -> dict[str, Any]:
+    """Build the operational replay correction without changing manifests."""
+
+    if (not _is_hex(source_repository_commit, 40)
+            or source_repository_commit
+            == IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction commit is malformed or not new")
+    current_sources = _validate_source_bindings(list(source_bindings))
+    immutable = validate_immutable_active_preselection_source_correction(
+        immutable_active_preselection_source_correction)
+    active = immutable["payload"]
+    changed = _changed_source_paths(active["source_bindings"], current_sources)
+    if changed != sorted(
+            MANIFEST_REPLAY_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS):
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction changed an unauthorised source path")
+    installed = _validate_installed_binding_set(
+        installed_preoutcome_artifact_bindings)
+    absence = _validate_absence_projection(
+        list(successor_and_runtime_outputs_absent_at_issue),
+        phase="successor_contract")
+    failure = copy.deepcopy(MANIFEST_REPLAY_FAILURE_BOUNDARY)
+    if (failure.get("active_preselection_correction_digest")
+            != IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST
+            or failure.get(
+                "active_preselection_correction_source_repository_commit")
+            != IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT
+            or failure.get("installed_artifact_order")
+            != [row["role"] for row in installed]):
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay failure boundary lineage changed")
+    correction_material = {
+        "status": "SOURCE_ONLY_POST_INSTALL_REPLAY_BINDING_CORRECTION",
+        "defect": (
+            "FULL_BANK_V2_REPLAY_CALLED_GENERIC_COMPACT_SELF_DIGEST_"
+            "VALIDATION_FOR_DEFAULT_CANONICAL_BUILDER_PAYLOADS"),
+        "correction": (
+            "VALIDATE_ONLY_THE_FIVE_FULL_BANK_V2_SELF_DIGESTS_WITH_THE_"
+            "BUILDER_DEFAULT_JSON_DUMPS_SORT_KEYS_CANONICALIZATION"),
+        "historical_source_repository_commit":
+            IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT,
+        "successor_source_repository_commit": source_repository_commit,
+        "allowed_changed_source_paths": list(
+            MANIFEST_REPLAY_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS),
+        "observed_changed_source_paths": changed,
+        "historical_source_binding_set_digest": active[
+            "source_binding_set_digest"],
+        "successor_source_binding_set_digest": canonical_digest(
+            current_sources),
+        "full_bank_v2_self_digest_canonicalization":
+            "JSON_DUMPS_SORT_KEYS_DEFAULT_SEPARATORS",
+        "generic_parallel_search_binding_changed": False,
+        "installed_manifest_payload_or_digest_changed": False,
+        "installed_manifest_overwritten_deleted_or_reissued": False,
+        "scientific_manifest_lineage_digest_preserved":
+            IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST,
+        "scene_state_assignment_or_candidate_changed": False,
+        "selector_exclusion_rule_or_quota_changed": False,
+        "scientific_oracle_scorer_or_qualification_criteria_changed": False,
+        "candidate_outcome_or_downstream_metric_used": False,
+    }
+    payload: dict[str, Any] = {
+        "schema": MANIFEST_REPLAY_CORRECTION_SCHEMA,
+        "status": MANIFEST_REPLAY_CORRECTION_STATUS,
+        "complete": True,
+        "manifest_replay_correction_version": 1,
+        "source_repository_commit": source_repository_commit,
+        "source_bindings": current_sources,
+        "source_binding_set_digest": canonical_digest(current_sources),
+        "historical_source_repository_commit":
+            IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT,
+        "immutable_active_preselection_source_correction": copy.deepcopy(
+            immutable),
+        "immutable_active_preselection_source_correction_digest":
+            IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST,
+        "preserved_scientific_design_digest": active[
+            "preserved_scientific_design_digest"],
+        "preserved_scientific_manifest_lineage_digest":
+            IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST,
+        "installed_preoutcome_artifact_bindings": installed,
+        "installed_preoutcome_artifact_binding_set_digest": canonical_digest(
+            installed),
+        "successor_and_runtime_outputs_absent_at_issue": absence,
+        "successor_and_runtime_outputs_absent_at_issue_digest":
+            canonical_digest(absence),
+        "manifest_replay_failure_boundary": failure,
+        "manifest_replay_failure_boundary_digest": canonical_digest(failure),
+        "manifest_replay_correction": correction_material,
+        "manifest_replay_correction_material_digest": canonical_digest(
+            correction_material),
+        "issuance_boundary": {
+            "active_preselection_source_correction_preserved": True,
+            "all_five_installed_artifacts_preserved_exact": True,
+            "source_tree_clean_and_committed": True,
+            "failure_preserved_truthfully": True,
+            "double_successor_and_runtime_absence_audit_required": True,
+            "operational_replay_only": True,
+            "manifest_lineage_replaced": False,
+            "installed_artifact_written_or_rewritten": False,
+            "successor_scorer_contract_issued": False,
+            "branch_execution_started": False,
+            "candidate_outcomes_consumed": False,
+            "solver_or_optimisation_invoked": False,
+        },
+    }
+    if (set(payload)
+            != _MANIFEST_REPLAY_CORRECTION_KEYS
+            - {MANIFEST_REPLAY_CORRECTION_SELF_KEY}):
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction construction surface changed")
+    payload[MANIFEST_REPLAY_CORRECTION_SELF_KEY] = canonical_digest(payload)
+    return payload
+
+
+def validate_manifest_replay_correction(
+        payload: Mapping[str, Any], *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_successor_and_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    if (not isinstance(payload, Mapping)
+            or set(payload) != _MANIFEST_REPLAY_CORRECTION_KEYS):
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction is not closed")
+    correction = copy.deepcopy(dict(payload))
+    if (correction.get("schema") != MANIFEST_REPLAY_CORRECTION_SCHEMA
+            or correction.get("status") != MANIFEST_REPLAY_CORRECTION_STATUS
+            or correction.get("complete") is not True
+            or correction.get("manifest_replay_correction_version") != 1):
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction version changed")
+    expected = build_manifest_replay_correction(
+        source_repository_commit=str(correction.get(
+            "source_repository_commit", "")),
+        source_bindings=correction.get("source_bindings", []),
+        immutable_active_preselection_source_correction=correction.get(
+            "immutable_active_preselection_source_correction", {}),
+        installed_preoutcome_artifact_bindings=correction.get(
+            "installed_preoutcome_artifact_bindings", []),
+        successor_and_runtime_outputs_absent_at_issue=correction.get(
+            "successor_and_runtime_outputs_absent_at_issue", []),
+    )
+    if (correction != expected
+            or correction.get(MANIFEST_REPLAY_CORRECTION_SELF_KEY)
+            != canonical_digest(_without(
+                correction, MANIFEST_REPLAY_CORRECTION_SELF_KEY))):
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction binding changed")
+    if validate_live_authorities:
+        commit, sources = clean_source_authority(root=root)
+        if (commit != correction["source_repository_commit"]
+                or sources != correction["source_bindings"]
+                or _load_immutable_active_preselection_source_correction(
+                    root=root)
+                != correction[
+                    "immutable_active_preselection_source_correction"]
+                or validate_installed_full_bank_v2_preoutcome_artifacts(
+                    root=root)
+                != correction["installed_preoutcome_artifact_bindings"]):
+            raise ScorerFitCorpusV2DesignError(
+                "live source, manifest lineage, or installed artifacts differ "
+                "from manifest-replay correction")
+        if require_successor_and_runtime_outputs_absent:
+            observed = audit_v2_runtime_outputs_absent(
+                root=root, phase="successor_contract")
+            if observed != correction[
+                    "successor_and_runtime_outputs_absent_at_issue"]:
+                raise ScorerFitCorpusV2DesignError(
+                    "successor/runtime absence changed after replay correction")
+    return correction
+
+
+def manifest_replay_correction_artifact_binding(
+        payload: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
+    correction = validate_manifest_replay_correction(
+        payload, validate_live_authorities=False)
+    if raw != _pretty_json_bytes(correction):
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction raw bytes changed")
+    return {
+        "path": str(MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH),
+        "schema": MANIFEST_REPLAY_CORRECTION_SCHEMA,
+        "self_digest_key": MANIFEST_REPLAY_CORRECTION_SELF_KEY,
+        "self_digest": correction[MANIFEST_REPLAY_CORRECTION_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "source_repository_commit": correction["source_repository_commit"],
+    }
+
+
 def completion_order_material(
         complete_structural_state_identity: Mapping[str, Any],
         designated_goal_identity: Mapping[str, Any], *,
@@ -2727,7 +3254,7 @@ def issue_preselection_source_correction(
         path: Path | None = None, *, root: Path = ROOT,
         source_repository_commit: str | None = None,
         ) -> dict[str, Any]:
-    """Install final correction after a clean commit and two absence audits."""
+    """Replay immutable correction 5206 only; never reissue it."""
 
     expected = _pin_generated(
         root, SOURCE_CORRECTION_RELATIVE_PATH,
@@ -2740,39 +3267,123 @@ def issue_preselection_source_correction(
         raise ScorerFitCorpusV2DesignError(
             "preselection structural-validation correction parent is unavailable")
     if expected.exists() or expected.is_symlink():
-        return load_preselection_source_correction(root=root)
+        return load_preselection_source_correction(
+            root=root, validate_live_authorities=False)
+    del source_repository_commit
+    raise ScorerFitCorpusV2DesignError(
+        "immutable active preselection source correction cannot be reissued")
+
+
+def _load_immutable_active_preselection_source_correction(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    """Reopen exact correction 5206 without replaying its historical source."""
+
+    path = _pin_generated(
+        root, SOURCE_CORRECTION_RELATIVE_PATH,
+        label="immutable active preselection source correction")
+    if (not path.is_file() or path.is_symlink()
+            or stat.S_IMODE(path.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable active preselection source correction mode changed")
+    payload, raw = _load_json(
+        path, label="immutable active preselection source correction")
+    binding = preselection_source_correction_artifact_binding(payload, raw)
+    return validate_immutable_active_preselection_source_correction({
+        "payload": payload,
+        "binding": binding,
+    })
+
+
+def load_manifest_replay_correction(
+        path: Path | None = None, *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_successor_and_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    expected = _pin_generated(
+        root, MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH,
+        label="post-install manifest-replay correction")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction logical path changed")
+    if (not expected.is_file() or expected.is_symlink()
+            or stat.S_IMODE(expected.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction mode changed")
+    payload, raw = _load_json(
+        expected, label="post-install manifest-replay correction")
+    correction = validate_manifest_replay_correction(
+        payload, root=root,
+        validate_live_authorities=validate_live_authorities,
+        require_successor_and_runtime_outputs_absent=
+            require_successor_and_runtime_outputs_absent)
+    manifest_replay_correction_artifact_binding(correction, raw)
+    return correction
+
+
+def issue_manifest_replay_correction(
+        path: Path | None = None, *, root: Path = ROOT,
+        source_repository_commit: str | None = None,
+        ) -> dict[str, Any]:
+    """Install the replay correction after exact five-file custody checks."""
+
+    expected = _pin_generated(
+        root, MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH,
+        label="post-install manifest-replay correction")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction logical path changed")
+    if not expected.parent.is_dir() or expected.parent.is_symlink():
+        raise ScorerFitCorpusV2DesignError(
+            "manifest-replay correction parent is unavailable")
+    if expected.exists() or expected.is_symlink():
+        return load_manifest_replay_correction(root=root)
 
     commit, sources = clean_source_authority(root=root)
     if source_repository_commit is not None and commit != source_repository_commit:
         raise ScorerFitCorpusV2DesignError(
-            "requested structural-validation correction commit is not live")
-    immutable_v2 = _load_immutable_preselection_source_correction_v2(root=root)
-    first_absence = audit_v2_runtime_outputs_absent(root=root, phase="design")
-    correction = build_preselection_source_correction(
+            "requested manifest-replay correction commit is not live")
+    immutable = _load_immutable_active_preselection_source_correction(root=root)
+    first_installed = validate_installed_full_bank_v2_preoutcome_artifacts(
+        root=root)
+    first_absence = audit_v2_runtime_outputs_absent(
+        root=root, phase="successor_contract")
+    correction = build_manifest_replay_correction(
         source_repository_commit=commit,
         source_bindings=sources,
-        immutable_preselection_source_correction_v2=immutable_v2,
-        runtime_outputs_absent_at_issue=first_absence)
-    second_absence = audit_v2_runtime_outputs_absent(root=root, phase="design")
+        immutable_active_preselection_source_correction=immutable,
+        installed_preoutcome_artifact_bindings=first_installed,
+        successor_and_runtime_outputs_absent_at_issue=first_absence)
+    second_installed = validate_installed_full_bank_v2_preoutcome_artifacts(
+        root=root)
+    second_absence = audit_v2_runtime_outputs_absent(
+        root=root, phase="successor_contract")
     second_commit, second_sources = clean_source_authority(root=root)
-    if (first_absence != second_absence
-            or second_absence != correction["runtime_outputs_absent_at_issue"]
+    if (first_installed != second_installed
+            or first_absence != second_absence
+            or second_absence
+            != correction["successor_and_runtime_outputs_absent_at_issue"]
             or (commit, sources) != (second_commit, second_sources)
-            or immutable_v2
-            != _load_immutable_preselection_source_correction_v2(root=root)):
+            or immutable
+            != _load_immutable_active_preselection_source_correction(
+                root=root)):
         raise ScorerFitCorpusV2DesignError(
-            "source, immutable V2 authority, or absence changed before final "
-            "correction install")
+            "source, 5206 lineage, installed manifests, or absence changed "
+            "before replay-correction install")
     _exclusive_json(
-        expected, correction,
-        label="preselection structural-validation correction")
-    return load_preselection_source_correction(root=root)
+        expected, correction, label="post-install manifest-replay correction")
+    return load_manifest_replay_correction(root=root)
 
 
 def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
     """Return immutable science plus the mandatory corrected source authority."""
 
-    correction = load_preselection_source_correction(root=root)
+    replay_correction = load_manifest_replay_correction(root=root)
+    immutable_active = validate_immutable_active_preselection_source_correction(
+        replay_correction[
+            "immutable_active_preselection_source_correction"])
+    correction = immutable_active["payload"]
     immutable_v2 = validate_immutable_preselection_source_correction_v2(
         correction["immutable_preselection_source_correction_v2"])
     immutable_v1 = validate_immutable_preselection_source_correction_v1(
@@ -2784,22 +3395,27 @@ def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
         "rotation_mask_classification_binding"]
     design = immutable["design_amendment_payload"]
     design_binding = immutable["design_amendment_binding"]
-    correction_path = _pin_generated(
-        root, SOURCE_CORRECTION_RELATIVE_PATH,
-        label="preselection source correction")
-    _payload, correction_raw = _load_json(
-        correction_path, label="preselection source correction")
+    correction_binding = immutable_active["binding"]
+    replay_path = _pin_generated(
+        root, MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH,
+        label="post-install manifest-replay correction")
+    _payload, replay_raw = _load_json(
+        replay_path, label="post-install manifest-replay correction")
     return {
         "rotation_mask_classification": classification,
         "rotation_mask_classification_binding": classification_binding,
         "design_amendment": design,
         "design_amendment_binding": design_binding,
         "source_correction": correction,
-        "source_correction_binding":
-            preselection_source_correction_artifact_binding(
-                correction, correction_raw),
+        "source_correction_binding": correction_binding,
         "source_correction_digest": correction[SOURCE_CORRECTION_SELF_KEY],
-        "active_source_repository_commit": correction[
+        "manifest_replay_correction": replay_correction,
+        "manifest_replay_correction_binding":
+            manifest_replay_correction_artifact_binding(
+                replay_correction, replay_raw),
+        "manifest_replay_correction_digest": replay_correction[
+            MANIFEST_REPLAY_CORRECTION_SELF_KEY],
+        "active_source_repository_commit": replay_correction[
             "source_repository_commit"],
         "active_selector_digest": ACTIVE_SELECTOR_DIGEST,
         "candidate_bank_digest": CANDIDATE_BANK_DIGEST,
@@ -2823,6 +3439,10 @@ __all__ = [
     "FROZEN_PREDICTOR_QUALIFICATION", "FULL_BANK_COUNT_CONTRACT",
     "GLOBAL_EXACT_MODEL_DIGEST", "GLOBAL_MODEL_PLAN_BINDING",
     "GLOBAL_TERMINAL_INFEASIBILITY_BINDING", "MASK_CLASSIFICATION_RELATIVE_PATH",
+    "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_BINDING",
+    "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST",
+    "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT",
+    "INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS",
     "ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT",
     "IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST",
     "IMMUTABLE_SOURCE_CORRECTION_V1_SOURCE_REPOSITORY_COMMIT",
@@ -2830,6 +3450,10 @@ __all__ = [
     "IMMUTABLE_SOURCE_CORRECTION_V2_SOURCE_REPOSITORY_COMMIT",
     "MASK_CLASSIFICATION_SCHEMA", "MASK_CLASSIFICATION_SELF_KEY",
     "MASK_CLASSIFICATION_STATUS", "ORACLE_V1_2_DIGEST",
+    "MANIFEST_REPLAY_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
+    "MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH",
+    "MANIFEST_REPLAY_CORRECTION_SCHEMA", "MANIFEST_REPLAY_CORRECTION_SELF_KEY",
+    "MANIFEST_REPLAY_CORRECTION_STATUS", "MANIFEST_REPLAY_FAILURE_BOUNDARY",
     "PRESERVED_SCIENTIFIC_CONTRACT_BINDINGS", "PRIOR_PREOUTCOME_FAILURE_BINDINGS",
     "POST_FIX_PRODUCTION_BUNDLE_DRY_RUN", "PREDECESSOR_VALIDATION_PROJECTION",
     "PRESELECTION_ALIAS_FAILURE_BOUNDARY_V1",
@@ -2850,28 +3474,35 @@ __all__ = [
     "V2_PREOUTCOME_ARTIFACT_PATHS", "V2_RUNTIME_OUTPUT_PATHS",
     "V2_SUCCESSOR_CONTRACT_PATH", "audit_v2_outcome_outputs_absent",
     "audit_v2_runtime_outputs_absent", "build_design_amendment",
+    "build_manifest_replay_correction", "builder_default_canonical_digest",
     "build_preselection_source_correction",
     "build_preselection_source_correction_v1",
     "build_preselection_source_correction_v2",
     "build_rotation_mask_classification", "canonical_digest",
     "clean_source_authority", "completion_order_key", "completion_order_material",
     "design_amendment_artifact_binding", "issue_design_amendment",
+    "issue_manifest_replay_correction",
     "issue_preselection_source_correction",
     "issue_preselection_source_correction_v1",
     "issue_preselection_source_correction_v2",
     "issue_rotation_mask_classification", "load_active_design_authority",
-    "load_design_amendment", "load_preselection_source_correction",
+    "load_design_amendment", "load_manifest_replay_correction",
+    "load_preselection_source_correction",
     "load_preselection_source_correction_v1",
     "load_preselection_source_correction_v2",
     "load_rotation_mask_classification",
+    "manifest_replay_correction_artifact_binding",
     "preselection_source_correction_artifact_binding",
     "preselection_source_correction_v1_artifact_binding",
     "preselection_source_correction_v2_artifact_binding",
     "rotation_mask_classification_artifact_binding", "validate_design_amendment",
+    "validate_immutable_active_preselection_source_correction",
     "validate_immutable_issued_design_authority",
     "validate_immutable_preselection_source_correction_v1",
     "validate_immutable_preselection_source_correction_v2",
     "validate_historical_predecessor_artifacts",
+    "validate_installed_full_bank_v2_preoutcome_artifacts",
+    "validate_manifest_replay_correction",
     "validate_preselection_source_correction",
     "validate_preselection_source_correction_v1",
     "validate_preselection_source_correction_v2",

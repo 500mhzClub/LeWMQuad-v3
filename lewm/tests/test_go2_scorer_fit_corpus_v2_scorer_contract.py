@@ -39,6 +39,9 @@ def _inputs() -> dict:
             C.DESIGN.DESIGN_SELF_KEY, "1", authority=True),
         "source_correction_binding": _binding(
             C.DESIGN.SOURCE_CORRECTION_SELF_KEY, "7", authority=True),
+        "manifest_replay_correction_binding": _binding(
+            C.DESIGN.MANIFEST_REPLAY_CORRECTION_SELF_KEY, "8",
+            authority=True),
         "mask_classification_binding": _binding(
             C.DESIGN.MASK_CLASSIFICATION_SELF_KEY, "2", authority=True),
         "selection_binding": _binding(
@@ -67,6 +70,9 @@ def test_successor_preserves_science_and_interprets_epoch_budget_exactly():
     lineage = contract["preoutcome_lineage"]
     assert lineage["scorer_fit_corpus_v2_source_correction_digest"] \
         == "7" * 64
+    assert lineage[
+        "scorer_fit_corpus_v2_manifest_replay_correction_digest"] \
+        == "8" * 64
     assert lineage["v1_parallel_failure_receipt_digest"] \
         == C.V1_FAILURE_RECEIPT_DIGEST
     assert lineage["exact_infeasibility_digest"] == C.EXACT_INFEASIBILITY_DIGEST
@@ -128,6 +134,8 @@ def test_active_binding_projection_uses_producer_supplied_raw_bindings(monkeypat
         "rotation_mask_classification": {"payload": "masks"},
         "design_amendment_binding": inputs["design_binding"],
         "source_correction_binding": inputs["source_correction_binding"],
+        "manifest_replay_correction_binding":
+            inputs["manifest_replay_correction_binding"],
         "rotation_mask_classification_binding":
             inputs["mask_classification_binding"],
     }
@@ -141,6 +149,7 @@ def test_active_binding_projection_uses_producer_supplied_raw_bindings(monkeypat
     assert projected == {
         key: inputs[key] for key in (
             "design_binding", "source_correction_binding",
+            "manifest_replay_correction_binding",
             "mask_classification_binding",
             "selection_binding", "revalidation_binding",
             "state_manifest_binding", "assignment_manifest_binding",

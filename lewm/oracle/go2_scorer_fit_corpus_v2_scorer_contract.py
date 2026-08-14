@@ -288,6 +288,7 @@ def build_contract(
         *, source_binding: Mapping[str, Any],
         design_binding: Mapping[str, Any],
         source_correction_binding: Mapping[str, Any],
+        manifest_replay_correction_binding: Mapping[str, Any],
         mask_classification_binding: Mapping[str, Any],
         selection_binding: Mapping[str, Any],
         revalidation_binding: Mapping[str, Any],
@@ -307,6 +308,11 @@ def build_contract(
     source_correction = _artifact_binding(
         source_correction_binding, label="corpus V2 preselection source correction",
         self_key=DESIGN.SOURCE_CORRECTION_SELF_KEY, authority_binding=True)
+    replay_correction = _artifact_binding(
+        manifest_replay_correction_binding,
+        label="corpus V2 post-install manifest replay correction",
+        self_key=DESIGN.MANIFEST_REPLAY_CORRECTION_SELF_KEY,
+        authority_binding=True)
     masks = _artifact_binding(
         mask_classification_binding, label="rotation-mask classification",
         self_key=DESIGN.MASK_CLASSIFICATION_SELF_KEY, authority_binding=True)
@@ -332,6 +338,7 @@ def build_contract(
         "preoutcome_authority_bindings": {
             "design_amendment": design,
             "preselection_source_correction": source_correction,
+            "post_install_manifest_replay_correction": replay_correction,
             "rotation_mask_classification": masks,
             "small_completion_selection": selection,
             "full_bank_state_revalidation": revalidation,
@@ -369,6 +376,8 @@ def build_contract(
         "preoutcome_lineage": {
             "scorer_fit_corpus_v2_source_correction_digest":
                 source_correction["self_digest"],
+            "scorer_fit_corpus_v2_manifest_replay_correction_digest":
+                replay_correction["self_digest"],
             "terminal_infeasibility_source_commit":
                 TERMINAL_INFEASIBILITY_SOURCE_COMMIT,
             "global_execution_amendment_digest":
@@ -441,6 +450,7 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
     authorities = contract.get("preoutcome_authority_bindings")
     _require(isinstance(authorities, Mapping) and set(authorities) == {
         "design_amendment", "preselection_source_correction",
+        "post_install_manifest_replay_correction",
         "rotation_mask_classification",
         "small_completion_selection", "full_bank_state_revalidation",
         "state_identity_manifest", "expanded_assignment_manifest",
@@ -452,6 +462,10 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
     _artifact_binding(authorities["preselection_source_correction"],
                       label="corpus V2 preselection source correction",
                       self_key=DESIGN.SOURCE_CORRECTION_SELF_KEY,
+                      authority_binding=True)
+    _artifact_binding(authorities["post_install_manifest_replay_correction"],
+                      label="corpus V2 post-install manifest replay correction",
+                      self_key=DESIGN.MANIFEST_REPLAY_CORRECTION_SELF_KEY,
                       authority_binding=True)
     _artifact_binding(authorities["rotation_mask_classification"],
                       label="rotation-mask classification",
@@ -480,6 +494,7 @@ def build_contract_artifact(
         *, source_binding: Mapping[str, Any],
         design_binding: Mapping[str, Any],
         source_correction_binding: Mapping[str, Any],
+        manifest_replay_correction_binding: Mapping[str, Any],
         mask_classification_binding: Mapping[str, Any],
         selection_binding: Mapping[str, Any],
         revalidation_binding: Mapping[str, Any],
@@ -490,6 +505,7 @@ def build_contract_artifact(
         source_binding=source_binding,
         design_binding=design_binding,
         source_correction_binding=source_correction_binding,
+        manifest_replay_correction_binding=manifest_replay_correction_binding,
         mask_classification_binding=mask_classification_binding,
         selection_binding=selection_binding,
         revalidation_binding=revalidation_binding,
@@ -613,6 +629,8 @@ def _bindings_from_active_inputs(
         "design_binding": dict(authority["design_amendment_binding"]),
         "source_correction_binding": dict(
             authority["source_correction_binding"]),
+        "manifest_replay_correction_binding": dict(
+            authority["manifest_replay_correction_binding"]),
         "mask_classification_binding": dict(
             authority["rotation_mask_classification_binding"]),
         "selection_binding": dict(manifests["selection_binding"]),

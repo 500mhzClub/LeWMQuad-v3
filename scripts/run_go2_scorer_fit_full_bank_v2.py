@@ -5,8 +5,8 @@ This runner is deliberately narrow.  It never invokes a MILP, CP-SAT model,
 candidate-subset allocator, or performance benchmark.  Its public stages are:
 
 * ``issue-design``: issue the rotation-mask classification, then the design;
-* ``issue-source-correction``: bind the final preselection structural repair;
-* ``freeze-manifests``: deterministically freeze the five pre-outcome files;
+* ``issue-source-correction``: bind the post-install manifest-replay repair;
+* ``freeze-manifests``: reopen and replay the five installed pre-outcome files;
 * ``issue-scorer-contract``: issue the successor contract before a branch;
 * ``run``: execute the registered smoke/recovery/corpus/training pipeline; and
 * ``status``: assemble a read-only metadata report.
@@ -115,6 +115,9 @@ class _DesignAuthority(Protocol):
     SOURCE_CORRECTION_SELF_KEY: str
     IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST: str
     IMMUTABLE_SOURCE_CORRECTION_V2_DIGEST: str
+    IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST: str
+    MANIFEST_REPLAY_CORRECTION_SCHEMA: str
+    MANIFEST_REPLAY_CORRECTION_SELF_KEY: str
 
     def issue_rotation_mask_classification(
             self, *, root: Path) -> Mapping[str, Any]: ...
@@ -122,13 +125,13 @@ class _DesignAuthority(Protocol):
     def issue_design_amendment(
             self, *, root: Path) -> Mapping[str, Any]: ...
 
-    def issue_preselection_source_correction(
+    def issue_manifest_replay_correction(
             self, *, root: Path) -> Mapping[str, Any]: ...
 
 
 def _require_final_source_correction_authority(
         authority: Mapping[str, Any], *, design: Any) -> dict[str, Any]:
-    """Reject both historical repairs at every selection-entry boundary."""
+    """Reject historical repairs at every scientific-lineage boundary."""
 
     if not isinstance(authority, Mapping):
         raise FullBankV2RunnerError("active V2 design authority is malformed")
@@ -144,9 +147,33 @@ def _require_final_source_correction_authority(
             != design.IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST
             or authority.get("source_correction_digest")
             != correction.get(design.SOURCE_CORRECTION_SELF_KEY)
+            or authority.get("source_correction_digest")
+            != design.IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST
             or authority.get("candidate_outcomes_consumed") is not False):
         raise FullBankV2RunnerError(
             "final preselection structural-validation correction is required")
+    return dict(correction)
+
+
+def _require_manifest_replay_correction_authority(
+        authority: Mapping[str, Any], *, design: Any) -> dict[str, Any]:
+    """Require the operational wrapper while retaining 5206 manifest lineage."""
+
+    _require_final_source_correction_authority(authority, design=design)
+    correction = authority.get("manifest_replay_correction")
+    if (not isinstance(correction, Mapping)
+            or correction.get("schema")
+            != design.MANIFEST_REPLAY_CORRECTION_SCHEMA
+            or correction.get("manifest_replay_correction_version") != 1
+            or correction.get(
+                "immutable_active_preselection_source_correction_digest")
+            != design.IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST
+            or correction.get("preserved_scientific_manifest_lineage_digest")
+            != design.IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST
+            or authority.get("manifest_replay_correction_digest")
+            != correction.get(design.MANIFEST_REPLAY_CORRECTION_SELF_KEY)):
+        raise FullBankV2RunnerError(
+            "post-install manifest-replay correction is required")
     return dict(correction)
 
 
@@ -320,20 +347,22 @@ def issue_design(*, root: Path = ROOT, design: Any = DESIGN) -> dict[str, Any]:
 
 def issue_source_correction(
         *, root: Path = ROOT, design: Any = DESIGN) -> dict[str, Any]:
-    """Issue the final source-only bridge from immutable design to selection."""
+    """Issue the operational replay bridge without changing manifest lineage."""
 
-    correction = design.issue_preselection_source_correction(root=root)
+    replay_correction = design.issue_manifest_replay_correction(root=root)
     active = design.load_active_design_authority(root=root)
-    active_correction = _require_final_source_correction_authority(
+    correction = _require_final_source_correction_authority(
         active, design=design)
-    if (not isinstance(correction, Mapping)
-            or active_correction != dict(correction)):
+    active_replay_correction = _require_manifest_replay_correction_authority(
+        active, design=design)
+    if (not isinstance(replay_correction, Mapping)
+            or active_replay_correction != dict(replay_correction)):
         raise FullBankV2RunnerError(
-            "issued preselection source correction changed on active replay")
+            "issued manifest-replay correction changed on active replay")
     return {
         "stage": "issue-source-correction",
         "status": (
-            "PASS_PRESELECTION_STRUCTURAL_VALIDATION_CORRECTION_V1_ISSUED"),
+            "PASS_POST_INSTALL_MANIFEST_REPLAY_CORRECTION_V1_ISSUED"),
         "scorer_fit_corpus_v2_design_digest": active["design_amendment"][
             design.DESIGN_SELF_KEY],
         "immutable_preselection_source_correction_v2_digest": correction[
@@ -343,8 +372,15 @@ def issue_source_correction(
                 "transitive_immutable_preselection_source_correction_v1_digest"],
         "scorer_fit_corpus_v2_source_correction_digest": correction[
             design.SOURCE_CORRECTION_SELF_KEY],
+        "scorer_fit_corpus_v2_manifest_lineage_digest": correction[
+            design.SOURCE_CORRECTION_SELF_KEY],
+        "scorer_fit_corpus_v2_manifest_replay_correction_digest":
+            replay_correction[design.MANIFEST_REPLAY_CORRECTION_SELF_KEY],
         "candidate_outcomes_consumed": False,
-        "selection_started": False,
+        "selection_started": True,
+        "selection_already_completed_preoutcome": True,
+        "all_five_preoutcome_manifests_already_installed": True,
+        "manifest_written_or_rewritten": False,
         "solver_or_optimisation_used": False,
     }
 
@@ -450,10 +486,10 @@ def freeze_manifests(
         *, root: Path = ROOT, builder: Any = BUILDER,
         design_authority: Any = DESIGN,
         ) -> tuple[int, dict[str, Any]]:
-    """Freeze five deterministic pre-outcome artifacts or one exact failure."""
+    """Reopen the five installed pre-outcome artifacts without rewriting."""
 
     authority = design_authority.load_active_design_authority(root=root)
-    _require_final_source_correction_authority(
+    replay_correction = _require_manifest_replay_correction_authority(
         authority, design=design_authority)
     paths = _manifest_paths(root)
     failure_path = _pin_relative(
@@ -572,6 +608,11 @@ def freeze_manifests(
         "status": "PASS_FULL_BANK_V2_MANIFESTS_FROZEN",
         "scorer_fit_corpus_v2_source_correction_digest": authority[
             "source_correction_digest"],
+        "scorer_fit_corpus_v2_manifest_lineage_digest": authority[
+            "source_correction_digest"],
+        "scorer_fit_corpus_v2_manifest_replay_correction_digest":
+            replay_correction[
+                design_authority.MANIFEST_REPLAY_CORRECTION_SELF_KEY],
         "selected_small_completion_scene_ids": list(
             replay["selection"]["selected_scene_ids"]),
         "state_count": len(state_manifest["states"]),
@@ -580,6 +621,8 @@ def freeze_manifests(
         "assignment_manifest_digest": replay["assignment_manifest"][
             "full_bank_assignment_manifest_digest"],
         "artifact_bindings": bindings,
+        "preexisting_manifest_count_reopened": len(bindings),
+        "manifest_written_or_rewritten": False,
         "candidate_outcomes_consumed": False,
         "solver_or_optimisation_used": False,
     }
@@ -1401,6 +1444,9 @@ def assemble_status_report(*, root: Path = ROOT) -> dict[str, Any]:
         "preselection_source_correction": _binding_if_present(
             root, DESIGN.SOURCE_CORRECTION_RELATIVE_PATH,
             self_key=DESIGN.SOURCE_CORRECTION_SELF_KEY),
+        "manifest_replay_correction": _binding_if_present(
+            root, DESIGN.MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.MANIFEST_REPLAY_CORRECTION_SELF_KEY),
         "feasibility_failure": _binding_if_present(
             root, FEASIBILITY_FAILURE_RELATIVE_PATH,
             self_key=FEASIBILITY_FAILURE_SELF_KEY),
