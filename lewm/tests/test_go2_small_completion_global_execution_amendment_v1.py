@@ -197,6 +197,46 @@ def _source_correction_amendment(
     return amendment, v1, mixed
 
 
+def _preplan_integration_correction(
+        monkeypatch: pytest.MonkeyPatch,
+        ) -> tuple[dict[str, object], dict[str, object], dict[str, object]]:
+    v2, _v1, _mixed = _source_correction_amendment(monkeypatch)
+    v2_raw = AUTH._pretty_json_bytes(v2)
+    v2_binding = {
+        "path": str(AUTH.EXECUTION_AMENDMENT_V2_RELATIVE_PATH),
+        "schema": AUTH.AMENDMENT_V2_SCHEMA,
+        "self_digest_key": AUTH.AMENDMENT_SELF_KEY,
+        "self_digest": v2[AUTH.AMENDMENT_SELF_KEY],
+        "raw_sha256": hashlib.sha256(v2_raw).hexdigest(),
+        "byte_count": len(v2_raw),
+        "source_repository_commit": "f" * 40,
+    }
+    monkeypatch.setattr(
+        AUTH, "IMMUTABLE_V2_SOURCE_REPOSITORY_COMMIT", "f" * 40)
+    monkeypatch.setattr(
+        AUTH, "IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING",
+        v2_binding)
+    v2_authority = {"payload": v2, "binding": v2_binding}
+    current_sources = copy.deepcopy(v2["source_bindings"])
+    allowed = set(
+        AUTH.PREPLAN_INTEGRATION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    for index, row in enumerate(current_sources):
+        if row["path"] in allowed:
+            row["byte_count"] = int(row["byte_count"]) + 200
+            row["sha256"] = f"{index + 50:064x}"
+    assert {
+        row["path"] for old, row in zip(
+            v2["source_bindings"], current_sources, strict=True)
+        if (old["byte_count"], old["sha256"])
+        != (row["byte_count"], row["sha256"])
+    } == allowed
+    correction = AUTH.build_preplan_integration_correction(
+        source_repository_commit="9" * 40,
+        source_bindings=current_sources,
+        immutable_v2_execution_authority=v2_authority)
+    return correction, v2_authority, {"sources": current_sources}
+
+
 def test_coupling_report_is_closed_coupled_and_self_digested() -> None:
     report = _report()
     validated = AUTH.validate_coupling_report(
@@ -912,5 +952,183 @@ def test_source_correction_issue_is_exclusive_and_reopens_exactly(
     reopened = AUTH.issue_execution_amendment_v2(
         path, historical_mixed_disposition_authority=mixed,
         source_repository_commit="f" * 40, root=tmp_path)
+    assert reopened == issued
+    assert path.read_bytes() == raw
+
+
+def test_preplan_correction_literal_v2_binding_is_frozen() -> None:
+    assert AUTH.IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING == {
+        "path": str(AUTH.EXECUTION_AMENDMENT_V2_RELATIVE_PATH),
+        "schema": AUTH.AMENDMENT_V2_SCHEMA,
+        "self_digest_key": AUTH.AMENDMENT_SELF_KEY,
+        "self_digest": (
+            "36454a1626345da92468038e50e130db103a4196d924f24dca9e2a9e8d38dcd3"
+        ),
+        "raw_sha256": (
+            "da176fa54456e3827a444c7e583487d54e549e2afb488ad891393a0cbe56658e"
+        ),
+        "byte_count": 131_997,
+        "source_repository_commit":
+            "5e92a43814d6eb81fc5cfe9adb6d9c380b1c3e72",
+    }
+    assert AUTH.PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH == (
+        AUTH.SCORER_FIT_RELATIVE_PATH /
+        "small_completion_global_exact_preplan_integration_correction_v1.json")
+
+
+def test_preplan_correction_is_closed_preserves_v2_and_exact_failures(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction, v2_authority, _current = _preplan_integration_correction(
+        monkeypatch)
+    v2 = v2_authority["payload"]
+    frozen_v2 = copy.deepcopy(v2_authority)
+    assert AUTH.validate_preplan_integration_correction(
+        correction, validate_live_authorities=False) == correction
+    assert v2_authority == frozen_v2
+    assert correction["schema"] == \
+        AUTH.PREPLAN_INTEGRATION_CORRECTION_SCHEMA
+    assert correction["status"] == \
+        AUTH.PREPLAN_INTEGRATION_CORRECTION_STATUS
+    assert correction["amendment_version"] == 2
+    assert correction["preplan_integration_correction_version"] == 1
+    assert correction["immutable_v2_execution_authority"] == v2_authority
+    for key in AUTH._PREPLAN_PRESERVED_V2_FIELDS:
+        assert correction[key] == v2[key]
+    assert correction["v2_post_install_reopen_failure"] == \
+        AUTH.V2_POST_INSTALL_REOPEN_FAILURE
+    assert correction["v2_post_install_reopen_failure"][
+        "v2_artifact_remains_valid"] is True
+    assert correction["v2_post_install_reopen_failure"][
+        "runtime_outputs_absent_during_subsequent_validation"] is True
+    assert correction["post_v2_preplan_failed_attempt_disposition"] == \
+        AUTH.POST_V2_PREPLAN_FAILED_ATTEMPT_DISPOSITION
+    failure = correction["post_v2_preplan_failed_attempt_disposition"]
+    assert failure["pre_mask_v2_context_validated"] is True
+    assert failure["mask_context_completed_and_returned"] is True
+    assert failure["optional_completion_rotation_vectors_parsed"] == 17
+    assert failure["optional_completion_masks_accessed"] is True
+    assert failure["preserved_phase1_vector_mapping_returned"] is True
+    assert failure["scientific_masks_accessed"] is True
+    assert failure["builder_fixed_and_optional_rows_assembled"] is True
+    assert failure["production_instance_construction_entered"] is True
+    assert failure["production_instance_built"] is False
+    assert failure["production_instance_returned"] is False
+    boundary = correction["issuance_boundary"]
+    assert boundary["historical_scientific_masks_accessed"] is True
+    assert boundary["scientific_masks_accessed_during_this_issuance"] is False
+    assert boundary["new_attempt_mask_context_started"] is False
+    assert boundary["candidate_outcomes_consumed"] is False
+    source_correction = correction["preplan_integration_correction"]
+    assert source_correction["observed_changed_source_paths"] == sorted(
+        AUTH.PREPLAN_INTEGRATION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    assert source_correction["builder_optional_candidate_projection_changed"] \
+        is False
+    assert source_correction["scientific_contract_changed"] is False
+    assert correction[AUTH.AMENDMENT_SELF_KEY] == AUTH.canonical_digest({
+        key: value for key, value in correction.items()
+        if key != AUTH.AMENDMENT_SELF_KEY
+    })
+    absence_paths = {
+        row["path"] for row in AUTH._expected_absence_rows()
+    }
+    assert str(AUTH.PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH) not in (
+        absence_paths)
+    for _label, path, _kind in AUTH.NEW_RUNTIME_OUTPUT_PATHS:
+        assert str(path) in absence_paths
+
+
+@pytest.mark.parametrize("field", [
+    "v2_post_install_reopen_failure",
+    "post_v2_preplan_failed_attempt_disposition",
+    "preplan_integration_correction",
+    "immutable_v2_execution_authority",
+])
+def test_preplan_correction_rejects_resigned_nested_mutation(
+        field: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    correction, _v2, _current = _preplan_integration_correction(monkeypatch)
+    changed = copy.deepcopy(correction)
+    if field == "immutable_v2_execution_authority":
+        changed[field]["binding"]["raw_sha256"] = "0" * 64
+    else:
+        changed[field]["synthetic_tamper"] = True
+        digest_key = {
+            "v2_post_install_reopen_failure":
+                "v2_post_install_reopen_failure_digest",
+            "post_v2_preplan_failed_attempt_disposition":
+                "post_v2_preplan_failed_attempt_disposition_digest",
+            "preplan_integration_correction":
+                "preplan_integration_correction_digest",
+        }[field]
+        changed[digest_key] = AUTH.canonical_digest(changed[field])
+    changed[AUTH.AMENDMENT_SELF_KEY] = AUTH.canonical_digest({
+        key: value for key, value in changed.items()
+        if key != AUTH.AMENDMENT_SELF_KEY
+    })
+    with pytest.raises(AUTH.GlobalExecutionAmendmentError):
+        AUTH.validate_preplan_integration_correction(
+            changed, validate_live_authorities=False)
+
+
+def test_preplan_correction_rejects_source_change_outside_exact_four_paths(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction, v2_authority, current = _preplan_integration_correction(
+        monkeypatch)
+    sources = copy.deepcopy(current["sources"])
+    outside = next(
+        row for row in sources
+        if row["path"] not in
+        AUTH.PREPLAN_INTEGRATION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    outside["sha256"] = "0" * 64
+    with pytest.raises(
+            AUTH.GlobalExecutionAmendmentError,
+            match="unauthorised source path"):
+        AUTH.build_preplan_integration_correction(
+            source_repository_commit=correction["source_repository_commit"],
+            source_bindings=sources,
+            immutable_v2_execution_authority=v2_authority)
+
+
+def test_preplan_correction_issue_is_exclusive_and_active_loader_reopens(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    correction, v2_authority, current = _preplan_integration_correction(
+        monkeypatch)
+    scorer_fit = tmp_path / AUTH.SCORER_FIT_RELATIVE_PATH
+    scorer_fit.mkdir(parents=True)
+    (tmp_path / AUTH.UTILITY_SCORER_ROOT_RELATIVE_PATH).mkdir(parents=True)
+    monkeypatch.setattr(
+        AUTH, "_clean_source_commit",
+        lambda *, root: correction["source_repository_commit"])
+    monkeypatch.setattr(
+        AUTH, "_read_source_bindings",
+        lambda *, root: copy.deepcopy(current["sources"]))
+    monkeypatch.setattr(
+        AUTH, "load_immutable_v2_execution_authority",
+        lambda *, root: copy.deepcopy(v2_authority))
+    monkeypatch.setattr(
+        AUTH, "load_predecessor_lineage",
+        lambda *, root: copy.deepcopy(
+            correction["immutable_predecessor_lineage"]))
+    monkeypatch.setattr(
+        AUTH, "audit_runtime_outputs_absent",
+        lambda *, root: copy.deepcopy(
+            correction["runtime_outputs_absent_at_issue"]))
+    path = tmp_path / AUTH.PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH
+
+    issued = AUTH.issue_preplan_integration_correction(
+        path, source_repository_commit=correction[
+            "source_repository_commit"], root=tmp_path)
+    raw = path.read_bytes()
+    assert issued == correction
+    assert json.loads(raw) == correction
+    assert stat.S_IMODE(path.stat().st_mode) & 0o222 == 0
+    active = AUTH.load_active_execution_authority(root=tmp_path)
+    assert active["execution_amendment"] == correction
+    assert active["immutable_v2_execution_authority"] == v2_authority
+    assert active["source_transition_digest"] == correction[
+        AUTH.AMENDMENT_SELF_KEY]
+
+    reopened = AUTH.issue_preplan_integration_correction(
+        path, source_repository_commit=correction[
+            "source_repository_commit"], root=tmp_path)
     assert reopened == issued
     assert path.read_bytes() == raw

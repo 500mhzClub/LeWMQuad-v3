@@ -198,8 +198,19 @@ def _production_instance() -> dict:
             "episode_id": index + 1,
             "episode_cluster_id": f"cluster-{index:02d}",
             "cell_id": index + 10,
-            "boundary": {"source_step": 100 + index,
-                         "boundary_digest": _digest("boundary/" + scene_id)},
+            "boundary": {
+                "command_block_tick": 0,
+                "decimation_phase": 0,
+                "observation_emission_phase_ns": 0,
+                "reset": False,
+                "terminated": False,
+                "truncated": False,
+                "source_step": 100 + index,
+                "episode_step": 99 + index,
+                "sim_time_ns": (
+                    (999 + index) * MODEL.CANONICAL_BOUNDARY_STEP_NS),
+                "boundary_digest": MODEL.CANONICAL_BOUNDARY_DIGEST,
+            },
             "goal": {"landmark_id": f"goal-{index}",
                      "landmark_cell": goal_cell,
                      "material_id": "goal-common", "graph_edges": 0,
@@ -226,6 +237,7 @@ def _production_instance() -> dict:
             ALLOCATION.allocation_contract_digest(),
         "candidate_allocation_amendment_digest":
             ALLOCATION.allocation_amendment_digest(),
+        "boundary_digest": MODEL.CANONICAL_BOUNDARY_DIGEST,
         "source_repository_commit": "1" * 40,
         "genesis_backend": "cpu",
     })
@@ -335,6 +347,88 @@ def test_closed_structural_candidate_rejects_outcome_injection_and_mask_tamper()
     changed["optional_scenes"][0]["completion_rotation_eligibility"][0] = False
     with pytest.raises(MODEL.GlobalExactModelError):
         MODEL.validate_production_instance(changed)
+
+
+def test_structural_candidate_requires_complete_canonical_builder_boundary():
+    instance = _production_instance()
+    scene = instance["optional_scenes"][0]
+    raw = {
+        **scene["structural_scene_projection"]["raw_candidate"],
+        "state_id": "DEFERRED_SMALL_COMPLETION_JOINT_SEARCH",
+        "split_role": "DEFERRED_SMALL_COMPLETION_JOINT_SEARCH",
+    }
+    eligibility = scene["completion_rotation_eligibility"]
+    expected_keys = {
+        "command_block_tick", "decimation_phase",
+        "observation_emission_phase_ns", "reset", "terminated", "truncated",
+        "source_step", "episode_step", "sim_time_ns", "boundary_digest",
+    }
+    boundary = raw["boundary"]
+    assert set(boundary) == expected_keys
+    assert boundary["boundary_digest"] == MODEL.CANONICAL_BOUNDARY_DIGEST
+    assert boundary["episode_step"] == raw["source_step"] - 1
+    assert boundary["sim_time_ns"] >= 0
+    assert boundary["sim_time_ns"] % MODEL.CANONICAL_BOUNDARY_STEP_NS == 0
+    assert boundary["sim_time_ns"] != (
+        boundary["episode_step"] * MODEL.CANONICAL_BOUNDARY_STEP_NS)
+    projection = MODEL.structural_scene_projection(
+        raw, completion_rotation_eligibility=eligibility)
+    assert projection["raw_candidate"]["boundary"] == boundary
+    assert instance["state_identity_lineage"][
+        "pre_allocation_identity_static"]["boundary_digest"] == \
+        MODEL.CANONICAL_BOUNDARY_DIGEST
+
+    legacy_two_key = copy.deepcopy(raw)
+    legacy_two_key["boundary"] = {
+        "source_step": raw["source_step"],
+        "boundary_digest": MODEL.CANONICAL_BOUNDARY_DIGEST,
+    }
+    with pytest.raises(
+            MODEL.GlobalExactModelError,
+            match="canonical boundary changed"):
+        MODEL.structural_scene_projection(
+            legacy_two_key, completion_rotation_eligibility=eligibility)
+
+
+def test_identity_lineage_requires_same_canonical_boundary_digest() -> None:
+    instance = _production_instance()
+    changed = copy.deepcopy(instance)
+    changed["state_identity_lineage"]["pre_allocation_identity_static"][
+        "boundary_digest"] = "0" * 64
+    with pytest.raises(MODEL.GlobalExactModelError, match="lineage changed"):
+        MODEL.validate_production_instance(changed)
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("command_block_tick", 1),
+    ("decimation_phase", 1),
+    ("observation_emission_phase_ns", 1),
+    ("reset", True),
+    ("terminated", True),
+    ("truncated", True),
+    ("source_step", 99),
+    ("episode_step", 100),
+    ("sim_time_ns", -MODEL.CANONICAL_BOUNDARY_STEP_NS),
+    ("sim_time_ns", 1),
+    ("boundary_digest", "0" * 64),
+])
+def test_structural_candidate_rejects_canonical_boundary_mutation(
+        field: str, value: object) -> None:
+    instance = _production_instance()
+    scene = instance["optional_scenes"][0]
+    raw = {
+        **scene["structural_scene_projection"]["raw_candidate"],
+        "state_id": "DEFERRED_SMALL_COMPLETION_JOINT_SEARCH",
+        "split_role": "DEFERRED_SMALL_COMPLETION_JOINT_SEARCH",
+    }
+    raw["boundary"][field] = value
+    with pytest.raises(
+            MODEL.GlobalExactModelError,
+            match="canonical boundary changed"):
+        MODEL.structural_scene_projection(
+            raw,
+            completion_rotation_eligibility=
+                scene["completion_rotation_eligibility"])
 
 
 def test_mandatory_five_fixture_suite_uses_independent_semantic_control():

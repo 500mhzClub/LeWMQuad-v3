@@ -176,7 +176,24 @@ _GOAL_KEYS = frozenset({
     "landmark_id", "landmark_cell", "material_id", "graph_edges",
     "start_geodesic_m", "bearing_body_rad", "range_m", "landmark_xy_m",
 })
-_BOUNDARY_KEYS = frozenset({"source_step", "boundary_digest"})
+CANONICAL_BOUNDARY_DIGEST = (
+    "1faae05f843e6f02f0f354c63ab3bcad9404111140146b1355d025da3d0c7a92"
+)
+# V1 asserts ``source_step = episode_ticks + 1`` and
+# ``episode_step = episode_ticks`` at the frozen production boundary.  Its
+# simulator clock remains global across automatic episode resets, so only the
+# exact nonnegative 10 Hz emission phase is shared with ``sim_time_ns``.
+CANONICAL_BOUNDARY_STEP_NS = 100_000_000
+_BOUNDARY_KEYS = frozenset({
+    "command_block_tick", "decimation_phase",
+    "observation_emission_phase_ns", "reset", "terminated", "truncated",
+    "source_step", "episode_step", "sim_time_ns", "boundary_digest",
+})
+_BOUNDARY_ZERO_PHASE_KEYS = (
+    "command_block_tick", "decimation_phase",
+    "observation_emission_phase_ns",
+)
+_BOUNDARY_FALSE_FLAG_KEYS = ("reset", "terminated", "truncated")
 _IDENTITY_LINEAGE_KEYS = frozenset({
     "schema", "selection_digest", "scorer_contract_v1_2_digest", "pool",
     "pre_allocation_identity_static",
@@ -869,6 +886,36 @@ def _validate_identity(value: Any, *, label: str) -> str:
     return str(value)
 
 
+def _canonical_snapshot_boundary(value: Any, *, source_step: Any
+                                 ) -> dict[str, Any]:
+    """Validate the complete immutable pre-outcome capture boundary."""
+
+    if not isinstance(value, Mapping):
+        raise GlobalExactModelError("optional boundary is not a mapping")
+    boundary = json.loads(_json_bytes(dict(value)))
+    integer_keys = {
+        *_BOUNDARY_ZERO_PHASE_KEYS, "source_step", "episode_step",
+        "sim_time_ns",
+    }
+    if (set(boundary) != _BOUNDARY_KEYS
+            or any(type(boundary.get(key)) is not int for key in integer_keys)
+            or any(boundary.get(key) != 0
+                   for key in _BOUNDARY_ZERO_PHASE_KEYS)
+            or any(boundary.get(key) is not False
+                   for key in _BOUNDARY_FALSE_FLAG_KEYS)
+            or type(source_step) is not int
+            or boundary.get("source_step") != source_step
+            or boundary.get("episode_step") != source_step - 1
+            or boundary.get("episode_step", -1) < 0
+            or boundary.get("sim_time_ns", -1) < 0
+            or boundary.get("sim_time_ns") % CANONICAL_BOUNDARY_STEP_NS != 0
+            or boundary.get("boundary_digest")
+            != CANONICAL_BOUNDARY_DIGEST):
+        raise GlobalExactModelError(
+            "raw optional candidate canonical boundary changed")
+    return boundary
+
+
 def structural_scene_projection(
         raw_candidate: Mapping[str, Any], *,
         completion_rotation_eligibility: Sequence[bool],
@@ -910,9 +957,6 @@ def structural_scene_projection(
             or not isinstance(raw.get("scene_manifest_byte_count"), int)
             or raw["scene_manifest_byte_count"] <= 0
             or not isinstance(raw.get("boundary"), Mapping)
-            or set(raw["boundary"]) != _BOUNDARY_KEYS
-            or raw["boundary"].get("source_step") != raw.get("source_step")
-            or not _is_digest(raw["boundary"].get("boundary_digest"))
             or not isinstance(raw.get("snapshot_task_status"), Mapping)
             or not isinstance(raw.get("goal"), Mapping)
             or set(raw["goal"]) != _GOAL_KEYS
@@ -933,6 +977,8 @@ def structural_scene_projection(
             or any(not _is_finite_number(value)
                    for value in raw["previous_applied_command"])):
         raise GlobalExactModelError("raw optional candidate identity changed")
+    raw["boundary"] = _canonical_snapshot_boundary(
+        raw["boundary"], source_step=raw["source_step"])
     try:
         from lewm.oracle import go2_scorer_state_selector_amendment_v2 as selector
         rotations = raw["completion_rotation_eligibility_vector"]["rotations"]
@@ -1007,6 +1053,7 @@ def _validate_identity_lineage(value: Any) -> dict[str, Any]:
             or static.get("selection_digest") != lineage.get("selection_digest")
             or static.get("scorer_contract_v1_2_digest")
             != lineage.get("scorer_contract_v1_2_digest")
+            or static.get("boundary_digest") != CANONICAL_BOUNDARY_DIGEST
             or any(not _is_digest(static.get(key)) for key in digest_keys)
             or not isinstance(static.get("source_repository_commit"), str)
             or len(static["source_repository_commit"]) != 40
@@ -2163,7 +2210,9 @@ __all__ = [
     "ALLOCATION_CONTRACT_DISPOSITION_SCHEMA",
     "ALLOCATION_CONTRACT_DISPOSITION_SELF_KEY",
     "ALLOCATION_RESULT_DIGEST_KEY", "ALLOCATION_RESULT_SCHEMA",
-    "CANDIDATE_COUNT", "COMPLETION_STRATUM", "EXECUTION_INFEASIBLE_STATUS",
+    "CANDIDATE_COUNT", "CANONICAL_BOUNDARY_DIGEST",
+    "CANONICAL_BOUNDARY_STEP_NS", "COMPLETION_STRATUM",
+    "EXECUTION_INFEASIBLE_STATUS",
     "EXECUTION_PASS_STATUS", "EXECUTION_PLAN_DIGEST_KEY",
     "EXECUTION_PLAN_SCHEMA", "EXECUTION_RESULT_DIGEST_KEY",
     "EXECUTION_RESULT_SCHEMA", "FAMILIES", "FIXTURE_SUITE_DIGEST_KEY",

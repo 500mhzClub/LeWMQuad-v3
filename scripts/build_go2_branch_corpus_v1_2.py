@@ -7942,15 +7942,41 @@ def issue_global_exact_execution_amendment(
     )
 
 
+def issue_global_exact_preplan_integration_correction(
+        *, out: Path | None = None,
+        ) -> dict[str, Any]:
+    """Issue the prospective wrapper correcting only pre-plan integration."""
+
+    material = _global_exact_authority_material(out=out)
+    correction = GLOBAL_EXACT_AUTHORITY.issue_preplan_integration_correction(
+        ROOT / GLOBAL_EXACT_AUTHORITY
+        .PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH,
+        root=ROOT)
+    if (correction.get("scientific_contract_bindings")
+            != material["scientific_contract_bindings"]
+            or correction.get("preoutcome_input_bindings")
+            != material["preoutcome_input_bindings"]
+            or correction.get("candidate_outcomes_consumed") is not False):
+        raise RuntimeError(
+            "preplan integration correction differs from frozen inputs")
+    return correction
+
+
 def load_global_exact_execution_context(
         *, out: Path | None = None, attach_scientific_masks: bool = False,
         ) -> dict[str, Any]:
-    """Reopen the source-corrected authority and optionally its frozen masks."""
+    """Reopen the active correction and optionally its frozen masks."""
 
     material = _global_exact_authority_material(out=out)
-    corrected = GLOBAL_EXACT_AUTHORITY.load_source_corrected_execution_authority(
+    corrected = GLOBAL_EXACT_AUTHORITY.load_active_execution_authority(
         root=ROOT)
-    if (corrected.get("scientific_contract_bindings")
+    amendment = corrected.get("execution_amendment")
+    if (not isinstance(amendment, Mapping)
+            or amendment.get("schema")
+            != GLOBAL_EXACT_AUTHORITY.PREPLAN_INTEGRATION_CORRECTION_SCHEMA
+            or amendment.get("status")
+            != GLOBAL_EXACT_AUTHORITY.PREPLAN_INTEGRATION_CORRECTION_STATUS
+            or corrected.get("scientific_contract_bindings")
             != material["scientific_contract_bindings"]
             or corrected.get("preoutcome_input_bindings")
             != material["preoutcome_input_bindings"]
@@ -7962,7 +7988,7 @@ def load_global_exact_execution_context(
         "coupling_report": dict(corrected["coupling_report"]),
         "coupling_report_binding": dict(
             corrected["coupling_report_binding"]),
-        "execution_amendment": dict(corrected["execution_amendment"]),
+        "execution_amendment": dict(amendment),
         "scientific_masks_accessed": False,
     }
     if not attach_scientific_masks:
@@ -8015,9 +8041,9 @@ def build_global_exact_production_instance(
     if (
         not isinstance(amendment, Mapping)
         or amendment.get("schema")
-        != GLOBAL_EXACT_AUTHORITY.AMENDMENT_V2_SCHEMA
+        != GLOBAL_EXACT_AUTHORITY.PREPLAN_INTEGRATION_CORRECTION_SCHEMA
         or amendment.get("status")
-        != GLOBAL_EXACT_AUTHORITY.AMENDMENT_V2_STATUS
+        != GLOBAL_EXACT_AUTHORITY.PREPLAN_INTEGRATION_CORRECTION_STATUS
         or not isinstance(inputs, Mapping)
         or not isinstance(preserved, Mapping)
         or len(preserved) != 7
@@ -8534,7 +8560,8 @@ def _build_global_exact_joint_receipt(
             ROOT / GLOBAL_EXACT_AUTHORITY.COUPLING_REPORT_RELATIVE_PATH,
             self_key=GLOBAL_EXACT_AUTHORITY.REPORT_SELF_KEY),
         "execution_amendment": _global_exact_artifact_binding(
-            ROOT / GLOBAL_EXACT_AUTHORITY.EXECUTION_AMENDMENT_V2_RELATIVE_PATH,
+            ROOT / GLOBAL_EXACT_AUTHORITY
+            .PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH,
             self_key=GLOBAL_EXACT_AUTHORITY.AMENDMENT_SELF_KEY),
         "runner_plan": _global_exact_artifact_binding(
             OUT_ROOT / "scorer_fit" / GLOBAL_EXACT_MODEL_PLAN_NAME,

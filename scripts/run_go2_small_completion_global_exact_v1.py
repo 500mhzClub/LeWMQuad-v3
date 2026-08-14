@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Issue and execute the prospective one-model small-completion successor.
 
-The four explicit stages preserve the pre-outcome authority boundary:
+The five explicit stages preserve the pre-outcome authority boundary:
 
 * ``issue-report`` installs the bounded source/formulation coupling report;
-* ``issue-amendment`` installs the clean-source execution amendment; and
+* ``issue-amendment`` installs the clean-source execution amendment;
 * ``issue-source-correction`` preserves that immutable V1 authority and
-  installs its narrowly source-corrected V2 successor; and
+  installs its narrowly source-corrected V2 successor;
+* ``issue-preplan-integration-correction`` preserves immutable V2 and installs
+  the orthogonal canonical-boundary validation correction; and
 * ``solve-and-continue`` validates the synthetic fixtures, opens the frozen
   scientific masks, freezes one exact model plan, performs the one global
   solve, and continues directly through the already-authorised scorer stages
@@ -389,11 +391,30 @@ def _require_context(context: Mapping[str, Any], *, masks: bool,
                          if isinstance(amendment, Mapping) else None)
     failed_attempt = (amendment.get("failed_attempt_disposition")
                       if isinstance(amendment, Mapping) else None)
+    immutable_v2 = (amendment.get("immutable_v2_execution_authority")
+                    if isinstance(amendment, Mapping) else None)
+    immutable_v2_payload = (immutable_v2.get("payload")
+                            if isinstance(immutable_v2, Mapping) else None)
+    immutable_v2_binding = (immutable_v2.get("binding")
+                            if isinstance(immutable_v2, Mapping) else None)
+    post_install_failure = (amendment.get("v2_post_install_reopen_failure")
+                            if isinstance(amendment, Mapping) else None)
+    preplan_failed_attempt = (amendment.get(
+        "post_v2_preplan_failed_attempt_disposition")
+        if isinstance(amendment, Mapping) else None)
+    preplan_correction = (amendment.get("preplan_integration_correction")
+                          if isinstance(amendment, Mapping) else None)
+    issuance_boundary = (amendment.get("issuance_boundary")
+                         if isinstance(amendment, Mapping) else None)
     if (not isinstance(report, Mapping) or not isinstance(amendment, Mapping)
             or not isinstance(report_binding, Mapping)
             or report.get("classification") != "COUPLED"
-            or amendment.get("schema") != authority.AMENDMENT_V2_SCHEMA
-            or amendment.get("status") != authority.AMENDMENT_V2_STATUS
+            or amendment.get("schema")
+            != authority.PREPLAN_INTEGRATION_CORRECTION_SCHEMA
+            or amendment.get("status")
+            != authority.PREPLAN_INTEGRATION_CORRECTION_STATUS
+            or amendment.get("amendment_version") != 2
+            or amendment.get("preplan_integration_correction_version") != 1
             or amendment.get("selected_execution_method", {}).get("method")
             != "ONE_GLOBAL_EXACT_FEASIBILITY_MODEL"
             or not isinstance(v1_authority, Mapping)
@@ -423,6 +444,48 @@ def _require_context(context: Mapping[str, Any], *, masks: bool,
             != dict(authority.FAILED_SOURCE_TRANSITION_DISPOSITION)
             or amendment.get("failed_attempt_disposition_digest")
             != canonical_digest(failed_attempt)
+            or not isinstance(immutable_v2, Mapping)
+            or set(immutable_v2) != {"payload", "binding"}
+            or not isinstance(immutable_v2_payload, Mapping)
+            or immutable_v2_payload.get("schema") != authority.AMENDMENT_V2_SCHEMA
+            or immutable_v2_payload.get("status") != authority.AMENDMENT_V2_STATUS
+            or immutable_v2_payload.get(authority.AMENDMENT_SELF_KEY)
+            != authority.IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING[
+                "self_digest"]
+            or immutable_v2_binding
+            != authority.IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING
+            or post_install_failure != authority.V2_POST_INSTALL_REOPEN_FAILURE
+            or amendment.get("v2_post_install_reopen_failure_digest")
+            != canonical_digest(post_install_failure)
+            or preplan_failed_attempt
+            != authority.POST_V2_PREPLAN_FAILED_ATTEMPT_DISPOSITION
+            or amendment.get(
+                "post_v2_preplan_failed_attempt_disposition_digest")
+            != canonical_digest(preplan_failed_attempt)
+            or not isinstance(preplan_correction, Mapping)
+            or amendment.get("preplan_integration_correction_digest")
+            != canonical_digest(preplan_correction)
+            or preplan_correction.get("scientific_contract_changed") is not False
+            or preplan_correction.get(
+                "candidate_outcome_or_downstream_metric_used") is not False
+            or preplan_correction.get(
+                "builder_optional_candidate_projection_changed") is not False
+            or not isinstance(issuance_boundary, Mapping)
+            or issuance_boundary.get(
+                "immutable_v1_and_v2_authorities_preserved") is not True
+            or issuance_boundary.get(
+                "historical_scientific_masks_accessed") is not True
+            or issuance_boundary.get(
+                "scientific_masks_accessed_during_this_issuance") is not False
+            or issuance_boundary.get(
+                "new_attempt_mask_context_started") is not False
+            or issuance_boundary.get("candidate_outcomes_consumed") is not False
+            or issuance_boundary.get(
+                "production_instance_or_model_built") is not False
+            or issuance_boundary.get(
+                "runner_or_model_plan_written") is not False
+            or issuance_boundary.get(
+                "scientific_production_solver_invoked") is not False
             or result.get("candidate_outcomes_consumed") is not False
             or result.get("scientific_masks_accessed") is not masks
             or not _is_digest(report.get(authority.REPORT_SELF_KEY))
@@ -532,6 +595,62 @@ def issue_source_correction(
     }
     print(json.dumps(summary, indent=2, sort_keys=True))
     return dict(amendment)
+
+
+def issue_preplan_integration_correction(
+        *, builder: Any = BUILDER, authority: Any = AUTHORITY,
+        ) -> dict[str, Any]:
+    """Issue only the active wrapper around the immutable V2 authority."""
+
+    correction = builder.issue_global_exact_preplan_integration_correction()
+    if not isinstance(correction, Mapping):
+        raise GlobalExactRunnerError(
+            "issued preplan integration correction is not exact")
+    immutable_v2 = correction.get("immutable_v2_execution_authority", {})
+    post_install = correction.get("v2_post_install_reopen_failure", {})
+    failed = correction.get(
+        "post_v2_preplan_failed_attempt_disposition", {})
+    source_correction = correction.get("preplan_integration_correction", {})
+    boundary = correction.get("issuance_boundary", {})
+    if (correction.get("schema")
+            != authority.PREPLAN_INTEGRATION_CORRECTION_SCHEMA
+            or correction.get("status")
+            != authority.PREPLAN_INTEGRATION_CORRECTION_STATUS
+            or correction.get("amendment_version") != 2
+            or correction.get("preplan_integration_correction_version") != 1
+            or immutable_v2.get("binding")
+            != authority.IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING
+            or post_install != authority.V2_POST_INSTALL_REOPEN_FAILURE
+            or failed != authority.POST_V2_PREPLAN_FAILED_ATTEMPT_DISPOSITION
+            or source_correction.get("scientific_contract_changed") is not False
+            or source_correction.get(
+                "candidate_outcome_or_downstream_metric_used") is not False
+            or boundary.get("historical_scientific_masks_accessed") is not True
+            or boundary.get(
+                "scientific_masks_accessed_during_this_issuance") is not False
+            or boundary.get("new_attempt_mask_context_started") is not False
+            or boundary.get("candidate_outcomes_consumed") is not False):
+        raise GlobalExactRunnerError(
+            "issued preplan integration correction is not exact")
+    summary = {
+        "status": correction["status"],
+        "execution_amendment_digest": correction[
+            authority.AMENDMENT_SELF_KEY],
+        "immutable_v2_execution_amendment_digest": immutable_v2[
+            "binding"]["self_digest"],
+        "source_repository_commit": correction["source_repository_commit"],
+        "post_install_v2_artifact_remains_valid": post_install[
+            "v2_artifact_remains_valid"],
+        "post_v2_preplan_failure": failed["disposition"],
+        "historical_scientific_masks_accessed": True,
+        "scientific_masks_accessed_during_this_issuance": False,
+        "new_attempt_mask_context_started": False,
+        "candidate_outcomes_consumed": False,
+        "production_plan_or_solver_started": False,
+        "scientific_contract_changed": False,
+    }
+    print(json.dumps(summary, indent=2, sort_keys=True))
+    return dict(correction)
 
 
 def _validate_fixture_suite_solve_free(
@@ -1933,6 +2052,7 @@ def _parser() -> argparse.ArgumentParser:
         "--stage", required=True,
         choices=(
             "issue-report", "issue-amendment", "issue-source-correction",
+            "issue-preplan-integration-correction",
             "solve-and-continue",
             "internal-probe-genesis-runtime",
             "internal-probe-rocm-runtime",
@@ -1960,6 +2080,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.stage == "issue-source-correction":
         issue_source_correction()
+        return 0
+    if args.stage == "issue-preplan-integration-correction":
+        issue_preplan_integration_correction()
         return 0
     code, _summary = solve_and_continue()
     return code

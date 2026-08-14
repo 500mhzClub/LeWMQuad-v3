@@ -12,6 +12,19 @@ import pytest
 from scripts import build_go2_branch_corpus_v1_2 as B
 
 
+def test_global_exact_boundary_schema_matches_full_builder_capture_contract(
+        ) -> None:
+    model = B.GLOBAL_EXACT_MODEL
+    assert model.CANONICAL_BOUNDARY_DIGEST == B.V1.BOUNDARY_DIGEST
+    assert model.CANONICAL_BOUNDARY_STEP_NS == 1_000_000_000 // 10
+    assert B.V1.TICKS == 5
+    assert model._BOUNDARY_KEYS == {
+        "command_block_tick", "decimation_phase",
+        "observation_emission_phase_ns", "reset", "terminated", "truncated",
+        "source_step", "episode_step", "sim_time_ns", "boundary_digest",
+    }
+
+
 def _archived_pair(
         *, kind: str, ordinal: int, scene_id: str,
         request_extra: dict, chosen_state: dict | None,
@@ -1810,13 +1823,15 @@ def test_global_context_routes_validated_d9d_disposition_without_legacy(
     monkeypatch.setattr(B, "_pin_generated_path", lambda path, *_args: path)
     monkeypatch.setattr(
         B.GLOBAL_EXACT_AUTHORITY,
-        "load_source_corrected_execution_authority",
+        "load_active_execution_authority",
         lambda **_kwargs: {
             "coupling_report": {"synthetic": "report"},
             "coupling_report_binding": {"synthetic": "binding"},
             "execution_amendment": {
-                "schema": B.GLOBAL_EXACT_AUTHORITY.AMENDMENT_V2_SCHEMA,
-                "status": B.GLOBAL_EXACT_AUTHORITY.AMENDMENT_V2_STATUS,
+                "schema": B.GLOBAL_EXACT_AUTHORITY
+                .PREPLAN_INTEGRATION_CORRECTION_SCHEMA,
+                "status": B.GLOBAL_EXACT_AUTHORITY
+                .PREPLAN_INTEGRATION_CORRECTION_STATUS,
             },
             "historical_mixed_disposition_authority": historical_authority,
             "scientific_contract_bindings": scientific,
@@ -1849,6 +1864,44 @@ def test_global_context_routes_validated_d9d_disposition_without_legacy(
     ]
     assert context["preserved_vectors"] == vectors
     assert context["scientific_masks_accessed"] is True
+
+
+def test_builder_issues_preplan_correction_and_requires_frozen_inputs(
+        tmp_path, monkeypatch):
+    scientific = {"science": "frozen"}
+    preoutcome = {"preoutcome": "frozen"}
+    material = {
+        "scientific_contract_bindings": scientific,
+        "preoutcome_input_bindings": preoutcome,
+    }
+    correction = {
+        "scientific_contract_bindings": scientific,
+        "preoutcome_input_bindings": preoutcome,
+        "candidate_outcomes_consumed": False,
+    }
+    observed = []
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        B, "_global_exact_authority_material",
+        lambda **_kwargs: copy.deepcopy(material))
+    monkeypatch.setattr(
+        B.GLOBAL_EXACT_AUTHORITY, "issue_preplan_integration_correction",
+        lambda path, *, root: observed.append((path, root))
+        or copy.deepcopy(correction))
+    assert B.issue_global_exact_preplan_integration_correction() == correction
+    assert observed == [(
+        tmp_path / B.GLOBAL_EXACT_AUTHORITY
+        .PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH,
+        tmp_path,
+    )]
+
+    changed = copy.deepcopy(correction)
+    changed["scientific_contract_bindings"] = {"science": "changed"}
+    monkeypatch.setattr(
+        B.GLOBAL_EXACT_AUTHORITY, "issue_preplan_integration_correction",
+        lambda *_args, **_kwargs: changed)
+    with pytest.raises(RuntimeError, match="differs from frozen inputs"):
+        B.issue_global_exact_preplan_integration_correction()
 
 
 def test_v2_rank_identity_uses_predecessor_bindings_not_current_source(

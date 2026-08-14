@@ -62,6 +62,40 @@ class FakeAuthority:
     EXECUTION_AMENDMENT_V2_RELATIVE_PATH = Path(
         ".generated/scorer_fit/"
         "small_completion_global_exact_execution_amendment_v2.json")
+    PREPLAN_INTEGRATION_CORRECTION_SCHEMA = (
+        "go2_small_completion_global_exact_preplan_integration_correction_v1")
+    PREPLAN_INTEGRATION_CORRECTION_STATUS = (
+        "ISSUED_PROSPECTIVE_CANONICAL_BOUNDARY_VALIDATION_CORRECTION")
+    PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH = Path(
+        ".generated/scorer_fit/"
+        "small_completion_global_exact_preplan_integration_correction_v1.json")
+    IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING = {
+        "path": str(EXECUTION_AMENDMENT_V2_RELATIVE_PATH),
+        "schema": AMENDMENT_V2_SCHEMA,
+        "self_digest_key": AMENDMENT_SELF_KEY,
+        "self_digest": "5" * 64,
+        "raw_sha256": "c" * 64,
+        "byte_count": 789,
+        "source_repository_commit": C40,
+    }
+    V2_POST_INSTALL_REOPEN_FAILURE = {
+        "status": "IMMUTABLE_VALID_V2_ARTIFACT_COMMAND_RETURN_FAILURE",
+        "v2_artifact_remains_valid": True,
+        "runtime_outputs_absent_during_subsequent_validation": True,
+        "candidate_outcomes_consumed": False,
+    }
+    POST_V2_PREPLAN_FAILED_ATTEMPT_DISPOSITION = {
+        "status": "IMMUTABLE_FAILED_POST_V2_PREPLAN",
+        "disposition": "BEFORE_PRODUCTION_INSTANCE_RETURN",
+        "pre_mask_v2_context_validated": True,
+        "mask_context_completed_and_returned": True,
+        "optional_completion_masks_accessed": True,
+        "builder_fixed_and_optional_rows_assembled": True,
+        "production_instance_construction_entered": True,
+        "scientific_masks_accessed": True,
+        "candidate_outcomes_consumed": False,
+        "production_instance_built": False,
+    }
     ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING = {
         "path": ".generated/scorer_fit/coupling_report_v1.json",
         "self_digest_key": REPORT_SELF_KEY,
@@ -428,6 +462,48 @@ class FakeBuilder:
                 failed_attempt),
             FakeAuthority.AMENDMENT_SELF_KEY: "5" * 64,
         }
+        preplan_correction = {
+            "scientific_contract_changed": False,
+            "candidate_outcome_or_downstream_metric_used": False,
+            "builder_optional_candidate_projection_changed": False,
+        }
+        post_install = json.loads(json.dumps(
+            FakeAuthority.V2_POST_INSTALL_REOPEN_FAILURE))
+        post_v2_failure = json.loads(json.dumps(
+            FakeAuthority.POST_V2_PREPLAN_FAILED_ATTEMPT_DISPOSITION))
+        self.active_amendment = {
+            **json.loads(json.dumps(self.amendment)),
+            "schema": FakeAuthority.PREPLAN_INTEGRATION_CORRECTION_SCHEMA,
+            "status": FakeAuthority.PREPLAN_INTEGRATION_CORRECTION_STATUS,
+            "amendment_version": 2,
+            "preplan_integration_correction_version": 1,
+            "issuance_boundary": {
+                "immutable_v1_and_v2_authorities_preserved": True,
+                "historical_scientific_masks_accessed": True,
+                "scientific_masks_accessed_during_this_issuance": False,
+                "new_attempt_mask_context_started": False,
+                "candidate_outcomes_consumed": False,
+                "production_instance_or_model_built": False,
+                "runner_or_model_plan_written": False,
+                "scientific_production_solver_invoked": False,
+            },
+            "immutable_v2_execution_authority": {
+                "payload": json.loads(json.dumps(self.amendment)),
+                "binding": json.loads(json.dumps(
+                    FakeAuthority
+                    .IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING)),
+            },
+            "v2_post_install_reopen_failure": post_install,
+            "v2_post_install_reopen_failure_digest": RUNNER.canonical_digest(
+                post_install),
+            "post_v2_preplan_failed_attempt_disposition": post_v2_failure,
+            "post_v2_preplan_failed_attempt_disposition_digest":
+                RUNNER.canonical_digest(post_v2_failure),
+            "preplan_integration_correction": preplan_correction,
+            "preplan_integration_correction_digest": RUNNER.canonical_digest(
+                preplan_correction),
+            FakeAuthority.AMENDMENT_SELF_KEY: "8" * 64,
+        }
 
     def issue_global_exact_coupling_report(self) -> dict[str, Any]:
         self.events.append("issue-report")
@@ -436,6 +512,11 @@ class FakeBuilder:
     def issue_global_exact_execution_amendment(self) -> dict[str, Any]:
         self.events.append("issue-amendment")
         return dict(self.v1_amendment)
+
+    def issue_global_exact_preplan_integration_correction(
+            self) -> dict[str, Any]:
+        self.events.append("issue-preplan-integration-correction")
+        return json.loads(json.dumps(self.active_amendment))
 
     def load_global_exact_historical_mixed_disposition_authority(
             self) -> dict[str, Any]:
@@ -456,7 +537,8 @@ class FakeBuilder:
             "coupling_report_binding": {
                 "coupling_report_digest":
                     self.report[FakeAuthority.REPORT_SELF_KEY]},
-            "execution_amendment": json.loads(json.dumps(self.amendment)),
+            "execution_amendment": json.loads(json.dumps(
+                self.active_amendment)),
             "scientific_contract_bindings": {"science": "6" * 64},
             "preoutcome_input_bindings": {"inputs": "7" * 64},
             "candidate_outcomes_consumed": False,
@@ -520,7 +602,7 @@ class FakeRuntimeProbeInvoker:
 
 class FakeValidationInvoker:
     def __init__(self, events: list[str], *, qualified: bool = True,
-                 amendment_digest: str = "5" * 64,
+                 amendment_digest: str = "8" * 64,
                  successor_digest: str = "9" * 64) -> None:
         self.events = events
         self.qualified = qualified
@@ -654,7 +736,40 @@ def test_issue_source_correction_binds_historical_authority_without_solving(
         "issue-source-correction"
 
 
-def test_context_requires_exact_source_corrected_v2_lineage() -> None:
+def test_issue_preplan_correction_is_source_only_and_has_exact_cli_stage(
+        capsys: pytest.CaptureFixture[str]) -> None:
+    events: list[str] = []
+    builder = FakeBuilder(events)
+
+    correction = RUNNER.issue_preplan_integration_correction(
+        builder=builder, authority=FakeAuthority)
+    summary = json.loads(capsys.readouterr().out)
+
+    assert correction == builder.active_amendment
+    assert summary == {
+        "candidate_outcomes_consumed": False,
+        "execution_amendment_digest": "8" * 64,
+        "historical_scientific_masks_accessed": True,
+        "immutable_v2_execution_amendment_digest": "5" * 64,
+        "new_attempt_mask_context_started": False,
+        "post_install_v2_artifact_remains_valid": True,
+        "post_v2_preplan_failure": "BEFORE_PRODUCTION_INSTANCE_RETURN",
+        "production_plan_or_solver_started": False,
+        "scientific_contract_changed": False,
+        "scientific_masks_accessed_during_this_issuance": False,
+        "source_repository_commit": C40,
+        "status": FakeAuthority.PREPLAN_INTEGRATION_CORRECTION_STATUS,
+    }
+    assert events == ["issue-preplan-integration-correction"]
+    assert not any(event.startswith((
+        "context:", "fixtures", "instance", "plan", "solve"))
+        for event in events)
+    assert RUNNER._parser().parse_args([
+        "--stage", "issue-preplan-integration-correction"]).stage == (
+            "issue-preplan-integration-correction")
+
+
+def test_context_requires_exact_active_preplan_correction_lineage() -> None:
     builder = FakeBuilder([])
     context = builder.load_global_exact_execution_context(
         attach_scientific_masks=False)
@@ -684,6 +799,34 @@ def test_context_requires_exact_source_corrected_v2_lineage() -> None:
         "source_correction_digest"] = RUNNER.canonical_digest(
             wrong_science["execution_amendment"]["source_correction"])
     mutations.append(wrong_science)
+    wrong_v2_binding = json.loads(json.dumps(context))
+    wrong_v2_binding["execution_amendment"][
+        "immutable_v2_execution_authority"]["binding"]["raw_sha256"] = (
+            "0" * 64)
+    mutations.append(wrong_v2_binding)
+    wrong_post_v2_failure = json.loads(json.dumps(context))
+    wrong_post_v2_failure["execution_amendment"][
+        "post_v2_preplan_failed_attempt_disposition"][
+            "candidate_outcomes_consumed"] = True
+    wrong_post_v2_failure["execution_amendment"][
+        "post_v2_preplan_failed_attempt_disposition_digest"] = (
+            RUNNER.canonical_digest(wrong_post_v2_failure[
+                "execution_amendment"][
+                    "post_v2_preplan_failed_attempt_disposition"]))
+    mutations.append(wrong_post_v2_failure)
+    wrong_correction = json.loads(json.dumps(context))
+    wrong_correction["execution_amendment"][
+        "preplan_integration_correction"][
+            "builder_optional_candidate_projection_changed"] = True
+    wrong_correction["execution_amendment"][
+        "preplan_integration_correction_digest"] = RUNNER.canonical_digest(
+            wrong_correction["execution_amendment"][
+                "preplan_integration_correction"])
+    mutations.append(wrong_correction)
+    wrong_issuance = json.loads(json.dumps(context))
+    wrong_issuance["execution_amendment"]["issuance_boundary"][
+        "scientific_masks_accessed_during_this_issuance"] = True
+    mutations.append(wrong_issuance)
 
     for changed in mutations:
         with pytest.raises(

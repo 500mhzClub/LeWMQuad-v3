@@ -9,9 +9,9 @@ non-scientific execution machinery; every scientific selector, allocation
 margin, allowed subset, oracle, corpus and scorer contract remains frozen.
 
 Importing this module performs no file access, solver work, mask access, or
-outcome access.  Report construction is pure.  The two issue functions are
-the only writers and install their dedicated JSON artifacts with ``O_EXCL``,
-file and directory ``fsync``, and read-only mode.
+outcome access.  Report construction is pure.  The issue functions are the
+only writers and install their dedicated JSON artifacts with ``O_EXCL``, file
+and directory ``fsync``, and read-only mode.
 """
 from __future__ import annotations
 
@@ -38,6 +38,10 @@ AMENDMENT_V2_SCHEMA = (
     "go2_small_completion_global_exact_execution_amendment_v2")
 AMENDMENT_V2_STATUS = (
     "ISSUED_PROSPECTIVE_SOURCE_CORRECTED_ONE_GLOBAL_EXACT_MODEL_AUTHORITY")
+PREPLAN_INTEGRATION_CORRECTION_SCHEMA = (
+    "go2_small_completion_global_exact_preplan_integration_correction_v1")
+PREPLAN_INTEGRATION_CORRECTION_STATUS = (
+    "ISSUED_PROSPECTIVE_CANONICAL_BOUNDARY_VALIDATION_CORRECTION")
 
 GENERATED_ROOT_RELATIVE_PATH = Path(".generated/go2_branch_corpus_v1_2")
 UTILITY_SCORER_ROOT_RELATIVE_PATH = Path(".generated/go2_utility_scorer_v1_2")
@@ -57,6 +61,10 @@ EXECUTION_AMENDMENT_RELATIVE_PATH = (
 EXECUTION_AMENDMENT_V2_RELATIVE_PATH = (
     SCORER_FIT_RELATIVE_PATH /
     "small_completion_global_exact_execution_amendment_v2.json"
+)
+PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    "small_completion_global_exact_preplan_integration_correction_v1.json"
 )
 
 ORIGINAL_GLOBAL_EXACT_SOURCE_REPOSITORY_COMMIT = (
@@ -106,6 +114,104 @@ SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
     "scripts/build_go2_branch_corpus_v1_2.py",
     "scripts/run_go2_small_completion_global_exact_v1.py",
 )
+IMMUTABLE_V2_SOURCE_REPOSITORY_COMMIT = (
+    "5e92a43814d6eb81fc5cfe9adb6d9c380b1c3e72")
+IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING = {
+    "path": str(EXECUTION_AMENDMENT_V2_RELATIVE_PATH),
+    "schema": AMENDMENT_V2_SCHEMA,
+    "self_digest_key": AMENDMENT_SELF_KEY,
+    "self_digest": (
+        "36454a1626345da92468038e50e130db103a4196d924f24dca9e2a9e8d38dcd3"
+    ),
+    "raw_sha256": (
+        "da176fa54456e3827a444c7e583487d54e549e2afb488ad891393a0cbe56658e"
+    ),
+    "byte_count": 131_997,
+    "source_repository_commit": IMMUTABLE_V2_SOURCE_REPOSITORY_COMMIT,
+}
+PREPLAN_INTEGRATION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
+    "lewm/oracle/go2_small_completion_global_execution_amendment_v1.py",
+    "lewm/oracle/go2_small_completion_global_exact_model_v1.py",
+    "scripts/build_go2_branch_corpus_v1_2.py",
+    "scripts/run_go2_small_completion_global_exact_v1.py",
+)
+V2_POST_INSTALL_REOPEN_FAILURE = {
+    "status": (
+        "IMMUTABLE_VALID_V2_ARTIFACT_COMMAND_RETURN_FAILURE_"
+        "POST_INSTALL_REOPEN_PATH_DEFECT"),
+    "disposition": (
+        "V2_DURABLY_INSTALLED_AND_REMAINS_VALID_COMMAND_FAILED_ONLY_DURING_"
+        "POST_INSTALL_CANONICAL_REOPEN"),
+    "argv": [
+        "python3", "scripts/run_go2_small_completion_global_exact_v1.py",
+        "--stage", "issue-source-correction",
+    ],
+    "exit_code": 1,
+    "exception_type": (
+        "lewm.oracle.go2_small_completion_global_execution_amendment_v1."
+        "GlobalExecutionAmendmentError"),
+    "exception_message": (
+        "source-corrected execution amendment logical path changed"),
+    "v2_artifact_durably_installed": True,
+    "v2_artifact_remains_valid": True,
+    "canonical_loader_subsequently_exact_validated": True,
+    "runtime_outputs_absent_during_subsequent_validation": True,
+    "post_install_validation_defect_only": True,
+    "v2_scientific_or_execution_authority_invalidated": False,
+    "scientific_masks_accessed_during_command": False,
+    "candidate_outcomes_consumed": False,
+    "production_instance_or_model_built": False,
+    "runner_or_model_plan_written": False,
+    "scientific_production_solver_invoked": False,
+}
+POST_V2_PREPLAN_FAILED_ATTEMPT_DISPOSITION = {
+    "status": "IMMUTABLE_FAILED_POST_V2_PREPLAN_CANONICAL_BOUNDARY_VALIDATION",
+    "disposition": (
+        "AFTER_17_OPTIONAL_VECTORS_AND_7_PRESERVED_VECTORS_BEFORE_FIRST_"
+        "PRODUCTION_INSTANCE_RETURN_BEFORE_MODEL_PLAN_OR_SCIENTIFIC_SOLVE"),
+    "argv": [
+        "python3", "scripts/run_go2_small_completion_global_exact_v1.py",
+        "--stage", "solve-and-continue",
+    ],
+    "exit_code": 1,
+    "exception_type": (
+        "lewm.oracle.go2_small_completion_global_exact_model_v1."
+        "GlobalExactModelError"),
+    "exception_message": "raw optional candidate identity changed",
+    "mandatory_synthetic_fixture_suite_completed": True,
+    "synthetic_fixture_solver_invoked": True,
+    "pre_mask_v2_context_validated": True,
+    "mask_context_completed_and_returned": True,
+    "optional_completion_rotation_vectors_parsed": 17,
+    "optional_completion_masks_accessed": True,
+    "frozen_45_check_mask_evidence_read_and_validated": True,
+    "preserved_phase1_vector_mapping_assembled": True,
+    "preserved_phase1_vector_mapping_returned": True,
+    "scientific_masks_accessed": True,
+    "builder_fixed_and_optional_rows_assembled": True,
+    "production_instance_construction_entered": True,
+    "failed_at_first_candidate_structural_scene_projection": True,
+    "candidate_outcomes_consumed": False,
+    "candidate_branch_outcomes_inspected": False,
+    "branch_labels_read": False,
+    "frames_or_latents_created": False,
+    "scorer_or_predictor_accessed": False,
+    "production_instance_built": False,
+    "production_instance_returned": False,
+    "production_model_built": False,
+    "model_execution_plan_built": False,
+    "runner_plan_written": False,
+    "scientific_production_solver_invoked": False,
+    "terminal_receipt_written": False,
+    "joint_receipt_written": False,
+    "candidate_allocation_manifest_written": False,
+    "phase2_revalidation_receipt_written": False,
+    "state_manifest_written": False,
+    "successor_scorer_contract_written": False,
+    "downstream_started": False,
+    "performance_benchmark_run": False,
+    "v1_or_v2_benchmark_retried": False,
+}
 FAILED_SOURCE_TRANSITION_DISPOSITION = {
     "status": "IMMUTABLE_FAILED_PRE_PLAN_SOURCE_VALIDATION",
     "disposition": (
@@ -2299,6 +2405,353 @@ def load_source_corrected_execution_authority(
     }
 
 
+_IMMUTABLE_V2_AUTHORITY_KEYS = frozenset({"payload", "binding"})
+_PREPLAN_REPLACED_V2_FIELDS = frozenset({
+    "schema", "status", "source_repository_commit", "source_bindings",
+    "source_binding_set_digest", "runtime_outputs_absent_at_issue",
+    "runtime_outputs_absent_at_issue_digest", "issuance_boundary",
+    AMENDMENT_SELF_KEY,
+})
+_PREPLAN_PRESERVED_V2_FIELDS = tuple(sorted(
+    _AMENDMENT_V2_KEYS - _PREPLAN_REPLACED_V2_FIELDS))
+_PREPLAN_CORRECTION_KEYS = frozenset({
+    *_AMENDMENT_V2_KEYS,
+    "preplan_integration_correction_version",
+    "immutable_v2_execution_authority",
+    "v2_post_install_reopen_failure",
+    "v2_post_install_reopen_failure_digest",
+    "post_v2_preplan_failed_attempt_disposition",
+    "post_v2_preplan_failed_attempt_disposition_digest",
+    "preplan_integration_correction",
+    "preplan_integration_correction_digest",
+})
+
+
+def validate_immutable_v2_execution_authority(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the complete immutable V2 payload and literal raw binding."""
+
+    if (not isinstance(value, Mapping)
+            or set(value) != _IMMUTABLE_V2_AUTHORITY_KEYS
+            or not isinstance(value.get("payload"), Mapping)):
+        raise GlobalExecutionAmendmentError(
+            "immutable V2 execution authority is not closed")
+    authority = copy.deepcopy(dict(value))
+    binding = _exact_artifact_binding(
+        authority.get("binding"),
+        IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING,
+        label="immutable V2 execution amendment")
+    payload = validate_execution_amendment_v2(
+        authority["payload"], validate_live_authorities=False)
+    raw = _pretty_json_bytes(payload)
+    if (payload.get("schema") != AMENDMENT_V2_SCHEMA
+            or payload.get("status") != AMENDMENT_V2_STATUS
+            or payload.get("source_repository_commit")
+            != IMMUTABLE_V2_SOURCE_REPOSITORY_COMMIT
+            or payload.get(AMENDMENT_SELF_KEY) != binding["self_digest"]
+            or binding.get("self_digest_key") != AMENDMENT_SELF_KEY
+            or hashlib.sha256(raw).hexdigest() != binding["raw_sha256"]
+            or len(raw) != binding["byte_count"]):
+        raise GlobalExecutionAmendmentError(
+            "immutable V2 execution amendment bytes changed")
+    return authority
+
+
+def load_immutable_v2_execution_authority(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    """Reopen V2 as exact historical authority without current-source replay."""
+
+    path = _pin_generated(
+        root, EXECUTION_AMENDMENT_V2_RELATIVE_PATH,
+        label="immutable V2 execution amendment")
+    payload, raw = _load_json(path, label="immutable V2 execution amendment")
+    binding = {
+        **IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING,
+        "self_digest": payload.get(AMENDMENT_SELF_KEY),
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "source_repository_commit": payload.get("source_repository_commit"),
+    }
+    return validate_immutable_v2_execution_authority({
+        "payload": payload,
+        "binding": binding,
+    })
+
+
+def build_preplan_integration_correction(
+        *, source_repository_commit: str,
+        source_bindings: Sequence[Mapping[str, Any]],
+        immutable_v2_execution_authority: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Build the orthogonal source-only correction around immutable V2."""
+
+    if (not _is_hex(source_repository_commit, 40)
+            or source_repository_commit
+            == IMMUTABLE_V2_SOURCE_REPOSITORY_COMMIT):
+        raise GlobalExecutionAmendmentError(
+            "preplan-correction commit is malformed or not a successor")
+    v2_authority = validate_immutable_v2_execution_authority(
+        immutable_v2_execution_authority)
+    v2 = dict(v2_authority["payload"])
+    current_sources = _validate_source_bindings(list(source_bindings))
+    v2_sources = _validate_source_bindings(v2["source_bindings"])
+    changed_paths = _changed_source_paths(v2_sources, current_sources)
+    if changed_paths != sorted(
+            PREPLAN_INTEGRATION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS):
+        raise GlobalExecutionAmendmentError(
+            "preplan integration correction changed an unauthorised source path")
+
+    absence = _expected_absence_rows()
+    post_install_failure = copy.deepcopy(V2_POST_INSTALL_REOPEN_FAILURE)
+    preplan_failure = copy.deepcopy(
+        POST_V2_PREPLAN_FAILED_ATTEMPT_DISPOSITION)
+    correction = {
+        "status": "SOURCE_ONLY_CANONICAL_BOUNDARY_VALIDATION_CORRECTION",
+        "defect": (
+            "GLOBAL_EXACT_MODEL_ACCEPTED_ONLY_A_TWO_FIELD_BOUNDARY_WHILE_THE_"
+            "FROZEN_OPTIONAL_CANDIDATES_CARRY_THE_COMPLETE_CANONICAL_BOUNDARY"
+        ),
+        "correction": (
+            "VALIDATE_AND_HASH_THE_COMPLETE_TEN_FIELD_CANONICAL_BOUNDARY_"
+            "WITHOUT_PROJECTING_AWAY_FROZEN_STRUCTURAL_EVIDENCE"),
+        "historical_source_repository_commit":
+            IMMUTABLE_V2_SOURCE_REPOSITORY_COMMIT,
+        "successor_source_repository_commit": source_repository_commit,
+        "allowed_changed_source_paths": list(
+            PREPLAN_INTEGRATION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS),
+        "observed_changed_source_paths": changed_paths,
+        "historical_source_binding_set_digest": v2[
+            "source_binding_set_digest"],
+        "successor_source_binding_set_digest": canonical_digest(
+            current_sources),
+        "canonical_boundary_keys": [
+            "boundary_digest", "command_block_tick", "decimation_phase",
+            "episode_step", "observation_emission_phase_ns", "reset",
+            "sim_time_ns", "source_step", "terminated", "truncated",
+        ],
+        "canonical_boundary_digest": v2[
+            "scientific_contract_bindings"]["boundary_digest"],
+        "builder_optional_candidate_projection_changed": False,
+        "model_canonical_boundary_validation_corrected": True,
+        "scene_or_state_pool_changed": False,
+        "candidate_bank_or_frequency_changed": False,
+        "selector_or_allocation_constraint_changed": False,
+        "model_scientific_constraint_changed": False,
+        "model_objective_or_solver_setting_changed": False,
+        "oracle_render_preprocess_or_target_encoder_changed": False,
+        "scorer_architecture_or_qualification_changed": False,
+        "scientific_contract_changed": False,
+        "candidate_outcome_or_downstream_metric_used": False,
+        "historical_scorer_identity_lineage_preserved": True,
+        "current_operational_scorer_digest_bound_only_after_valid_manifest":
+            True,
+    }
+    payload: dict[str, Any] = {
+        **{key: copy.deepcopy(v2[key])
+           for key in _PREPLAN_PRESERVED_V2_FIELDS},
+        "schema": PREPLAN_INTEGRATION_CORRECTION_SCHEMA,
+        "status": PREPLAN_INTEGRATION_CORRECTION_STATUS,
+        "source_repository_commit": source_repository_commit,
+        "source_bindings": current_sources,
+        "source_binding_set_digest": canonical_digest(current_sources),
+        "runtime_outputs_absent_at_issue": absence,
+        "runtime_outputs_absent_at_issue_digest": canonical_digest(absence),
+        "issuance_boundary": {
+            "immutable_v1_and_v2_authorities_preserved": True,
+            "source_tree_clean_and_committed": True,
+            "v2_post_install_reopen_failure_preserved": True,
+            "post_v2_preplan_failure_preserved": True,
+            "mandatory_synthetic_fixture_suite_previously_completed": True,
+            "historical_optional_completion_vectors_parsed": 17,
+            "historical_frozen_45_check_mask_evidence_validated": True,
+            "historical_seven_vector_mapping_assembled_and_returned": True,
+            "historical_scientific_masks_accessed": True,
+            "scientific_masks_accessed_during_this_issuance": False,
+            "new_attempt_mask_context_started": False,
+            "candidate_outcomes_consumed": False,
+            "production_instance_or_model_built": False,
+            "runner_or_model_plan_written": False,
+            "scientific_production_solver_invoked": False,
+            "performance_benchmark_run": False,
+            "v1_or_v2_benchmark_retried": False,
+        },
+        "preplan_integration_correction_version": 1,
+        "immutable_v2_execution_authority": copy.deepcopy(v2_authority),
+        "v2_post_install_reopen_failure": post_install_failure,
+        "v2_post_install_reopen_failure_digest": canonical_digest(
+            post_install_failure),
+        "post_v2_preplan_failed_attempt_disposition": preplan_failure,
+        "post_v2_preplan_failed_attempt_disposition_digest": canonical_digest(
+            preplan_failure),
+        "preplan_integration_correction": correction,
+        "preplan_integration_correction_digest": canonical_digest(correction),
+    }
+    if set(payload) != _PREPLAN_CORRECTION_KEYS - {AMENDMENT_SELF_KEY}:
+        raise GlobalExecutionAmendmentError(
+            "preplan integration correction construction surface changed")
+    payload[AMENDMENT_SELF_KEY] = canonical_digest(payload)
+    return payload
+
+
+def validate_preplan_integration_correction(
+        payload: Mapping[str, Any], *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    """Validate the active correction and every immutable predecessor."""
+
+    if (not isinstance(payload, Mapping)
+            or set(payload) != _PREPLAN_CORRECTION_KEYS):
+        raise GlobalExecutionAmendmentError(
+            "preplan integration correction is not closed")
+    correction = copy.deepcopy(dict(payload))
+    if (correction.get("schema") != PREPLAN_INTEGRATION_CORRECTION_SCHEMA
+            or correction.get("status")
+            != PREPLAN_INTEGRATION_CORRECTION_STATUS
+            or correction.get("amendment_version") != 2
+            or correction.get("preplan_integration_correction_version") != 1):
+        raise GlobalExecutionAmendmentError(
+            "preplan integration correction version changed")
+    expected = build_preplan_integration_correction(
+        source_repository_commit=str(correction.get(
+            "source_repository_commit", "")),
+        source_bindings=correction.get("source_bindings", []),
+        immutable_v2_execution_authority=correction.get(
+            "immutable_v2_execution_authority", {}),
+    )
+    if (correction != expected
+            or correction.get(AMENDMENT_SELF_KEY)
+            != canonical_digest(_without(correction, AMENDMENT_SELF_KEY))):
+        raise GlobalExecutionAmendmentError(
+            "preplan integration correction binding changed")
+    if validate_live_authorities:
+        if (_clean_source_commit(root=root)
+                != correction["source_repository_commit"]
+                or _read_source_bindings(root=root)
+                != correction["source_bindings"]
+                or load_immutable_v2_execution_authority(root=root)
+                != correction["immutable_v2_execution_authority"]
+                or load_predecessor_lineage(root=root)
+                != correction["immutable_predecessor_lineage"]):
+            raise GlobalExecutionAmendmentError(
+                "live source or immutable authority differs from correction")
+        if require_runtime_outputs_absent:
+            audit_runtime_outputs_absent(root=root)
+    return correction
+
+
+def preplan_integration_correction_artifact_binding(
+        correction: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
+    validated = validate_preplan_integration_correction(
+        correction, validate_live_authorities=False)
+    if raw != _pretty_json_bytes(validated):
+        raise GlobalExecutionAmendmentError(
+            "preplan integration correction raw bytes changed")
+    return {
+        "path": str(PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH),
+        "schema": PREPLAN_INTEGRATION_CORRECTION_SCHEMA,
+        "execution_amendment_digest": validated[AMENDMENT_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "v2_source_repository_commit": IMMUTABLE_V2_SOURCE_REPOSITORY_COMMIT,
+        "source_repository_commit": validated["source_repository_commit"],
+    }
+
+
+def load_preplan_integration_correction(
+        path: Path | None = None, *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    supplied = (root / PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH
+                if path is None else path)
+    pinned = _require_logical_path(
+        supplied, expected_relative=PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH,
+        root=root, label="preplan integration correction")
+    payload, raw = _load_json(pinned, label="preplan integration correction")
+    validated = validate_preplan_integration_correction(
+        payload, root=root,
+        validate_live_authorities=validate_live_authorities,
+        require_runtime_outputs_absent=require_runtime_outputs_absent)
+    preplan_integration_correction_artifact_binding(validated, raw)
+    return validated
+
+
+def issue_preplan_integration_correction(
+        path: Path, *, source_repository_commit: str | None = None,
+        root: Path = ROOT,
+        ) -> dict[str, Any]:
+    """Install the sole prospective integration correction after clean commit."""
+
+    correction_path = _require_logical_path(
+        path, expected_relative=PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH,
+        root=root, label="preplan integration correction")
+    if (not correction_path.parent.is_dir()
+            or correction_path.parent.is_symlink()):
+        raise GlobalExecutionAmendmentError(
+            "preplan integration correction parent is unavailable")
+    commit = _clean_source_commit(root=root)
+    if source_repository_commit is not None and commit != source_repository_commit:
+        raise GlobalExecutionAmendmentError(
+            "requested preplan-correction commit is not live")
+    if correction_path.exists() or correction_path.is_symlink():
+        return load_preplan_integration_correction(
+            path, root=root, require_runtime_outputs_absent=True)
+    v2_authority = load_immutable_v2_execution_authority(root=root)
+    first_absence = audit_runtime_outputs_absent(root=root)
+    correction = build_preplan_integration_correction(
+        source_repository_commit=commit,
+        source_bindings=_read_source_bindings(root=root),
+        immutable_v2_execution_authority=v2_authority)
+    second_absence = audit_runtime_outputs_absent(root=root)
+    if (first_absence != second_absence
+            or second_absence != correction["runtime_outputs_absent_at_issue"]):
+        raise GlobalExecutionAmendmentError(
+            "runtime-output absence changed before correction install")
+    _exclusive_json(
+        correction_path, correction, label="preplan integration correction")
+    return load_preplan_integration_correction(
+        path, root=root, require_runtime_outputs_absent=True)
+
+
+def load_active_execution_authority(
+        *, root: Path = ROOT,
+        require_runtime_outputs_absent: bool = False,
+        ) -> dict[str, Any]:
+    """Return the closed active correction projection for runtime consumers."""
+
+    path = _pin_generated(
+        root, PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH,
+        label="preplan integration correction")
+    correction, raw = _load_json(path, label="preplan integration correction")
+    correction = validate_preplan_integration_correction(
+        correction, root=root, validate_live_authorities=True,
+        require_runtime_outputs_absent=require_runtime_outputs_absent)
+    v1 = correction["v1_execution_authority"]
+    report = dict(v1["coupling_report"])
+    return {
+        "coupling_report": report,
+        "coupling_report_binding": coupling_report_artifact_binding(
+            report, _pretty_json_bytes(report)),
+        "execution_amendment": correction,
+        "execution_amendment_binding":
+            preplan_integration_correction_artifact_binding(correction, raw),
+        "immutable_v2_execution_authority": copy.deepcopy(
+            correction["immutable_v2_execution_authority"]),
+        "v1_execution_amendment": dict(v1["execution_amendment"]),
+        "v1_execution_amendment_binding": dict(
+            v1["execution_amendment_artifact_binding"]),
+        "historical_mixed_disposition_authority": copy.deepcopy(
+            correction["historical_mixed_disposition_authority"]),
+        "scientific_contract_bindings": dict(
+            correction["scientific_contract_bindings"]),
+        "preoutcome_input_bindings": dict(
+            correction["preoutcome_input_bindings"]),
+        "source_transition_digest": correction[AMENDMENT_SELF_KEY],
+        "candidate_outcomes_consumed": False,
+    }
+
+
 __all__ = [
     "AMENDMENT_SCHEMA", "AMENDMENT_SELF_KEY", "AMENDMENT_STATUS",
     "AMENDMENT_V2_SCHEMA", "AMENDMENT_V2_STATUS",
@@ -2323,6 +2776,8 @@ __all__ = [
     "FAILED_SOURCE_TRANSITION_DISPOSITION",
     "FIXTURE_VALIDATION_CONTRACT", "GlobalExecutionAmendmentError",
     "HISTORICAL_MIXED_DISPOSITION_ARTIFACT_BINDING",
+    "IMMUTABLE_V2_EXECUTION_AMENDMENT_ARTIFACT_BINDING",
+    "IMMUTABLE_V2_SOURCE_REPOSITORY_COMMIT",
     "NEW_RUNTIME_OUTPUT_PATHS",
     "ORIGINAL_COUPLING_REPORT_ARTIFACT_BINDING",
     "ORIGINAL_EXECUTION_AMENDMENT_ARTIFACT_BINDING",
@@ -2333,25 +2788,39 @@ __all__ = [
     "STABLE_HASH_OBJECTIVE_CONTRACT_DIGEST",
     "SUPERSEDED_CANONICAL_TIE_BREAK_STATUS",
     "SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
+    "POST_V2_PREPLAN_FAILED_ATTEMPT_DISPOSITION",
+    "PREPLAN_INTEGRATION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
+    "PREPLAN_INTEGRATION_CORRECTION_RELATIVE_PATH",
+    "PREPLAN_INTEGRATION_CORRECTION_SCHEMA",
+    "PREPLAN_INTEGRATION_CORRECTION_STATUS",
     "SUPERSEDED_EXTERNAL_ENUMERATION_STATUS", "V1_FAILURE_RECEIPT_DIGEST",
     "V1_FAILURE_STATUS", "V2_BACKEND_DISPOSITION",
     "V2_BENCHMARK_RECEIPT_DIGEST", "V2_CONTRACT_DIGEST",
     "V2_SOURCE_REPOSITORY_COMMIT", "V2_TERMINAL_FAILURE_RECEIPT_DIGEST",
     "audit_runtime_outputs_absent", "build_coupling_report",
     "build_execution_amendment", "build_execution_amendment_v2",
+    "build_preplan_integration_correction",
     "canonical_digest",
     "coupling_report_artifact_binding", "issue_coupling_report",
     "execution_amendment_v2_artifact_binding",
     "issue_execution_amendment", "issue_execution_amendment_v2",
+    "issue_preplan_integration_correction",
+    "load_active_execution_authority",
     "load_coupling_report", "load_execution_amendment",
     "load_execution_amendment_v2",
+    "load_immutable_v2_execution_authority",
+    "load_preplan_integration_correction",
     "load_historical_v1_execution_authority",
     "load_predecessor_lineage", "load_source_corrected_execution_authority",
     "validate_coupling_report", "validate_execution_amendment",
     "validate_execution_amendment_v2",
+    "validate_immutable_v2_execution_authority",
+    "validate_preplan_integration_correction",
     "validate_historical_mixed_disposition_authority",
     "validate_historical_v1_execution_authority",
     "validate_predecessor_lineage_bindings",
     "validate_preoutcome_input_bindings",
     "validate_scientific_contract_bindings",
+    "V2_POST_INSTALL_REOPEN_FAILURE",
+    "preplan_integration_correction_artifact_binding",
 ]
