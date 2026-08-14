@@ -280,14 +280,148 @@ def _issue(fixture: dict) -> dict:
 
 def _successor_bindings() -> dict:
     return {
-        "source_repository_commit": "a" * 40,
-        "clean_source_binding_digest": "b" * 64,
-        "bound_implementations_digest": "c" * 64,
+        "source_repository_commit": "1" * 40,
+        "clean_source_binding_digest": "2" * 64,
+        "bound_implementations_digest": "3" * 64,
         "scorer_contract_artifact_digest": "d" * 64,
         "scorer_contract_v1_2_digest": "e" * 64,
         "clean_source_launch_receipt_digest": "f" * 64,
         "mixed_precontract_disposition_receipt_digest": "0" * 64,
     }
+
+
+def _receipt_file_binding(path: Path, *, relative: Path, payload: dict,
+                          self_key: str, status: str) -> dict:
+    raw = path.read_bytes()
+    return {
+        "path": str(relative),
+        "receipt_digest": payload[self_key],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "status": status,
+    }
+
+
+def _transition_to_v2(
+        monkeypatch, fixture: dict, v1: dict, *,
+        revalidate_small_prefix=None,
+) -> tuple[dict, dict]:
+    root = fixture["root"]
+    active = root / I.V1_RECEIPT_RELATIVE_PATH
+    archived_relative = (
+        I.ARCHIVE_ROOT_RELATIVE / "source_transition" / "performance_v1.json"
+    )
+    archived = root / archived_relative
+    archived.parent.mkdir(parents=True, exist_ok=True)
+    os.replace(active, archived)
+    predecessor_binding = _receipt_file_binding(
+        archived, relative=archived_relative, payload=v1,
+        self_key=I.V1_SELF_KEY, status=I.V1_STATUS)
+
+    projection = _bound({
+        "schema": "synthetic-current-projection",
+        "status": I.PROJECTION.STATUS,
+        "source_repository_commit": _successor_bindings()[
+            "source_repository_commit"],
+    }, "projection_receipt_digest")
+    projection_path = root / I.PROJECTION.RECEIPT_RELATIVE_PATH
+    _write(projection_path, projection)
+    projection_binding = _receipt_file_binding(
+        projection_path, relative=I.PROJECTION.RECEIPT_RELATIVE_PATH,
+        payload=projection, self_key="projection_receipt_digest",
+        status=I.PROJECTION.STATUS)
+    monkeypatch.setattr(
+        I.PROJECTION, "load_and_validate_interruption_receipt",
+        lambda **_kwargs: copy.deepcopy(projection))
+    monkeypatch.setattr(
+        I.PROJECTION, "receipt_binding",
+        lambda _receipt, **_kwargs: copy.deepcopy(projection_binding))
+
+    transition_binding = {
+        "path": str(I.TRANSITION.RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "4" * 64,
+        "raw_sha256": "5" * 64,
+        "byte_count": 1234,
+        "status": I.TRANSITION.STATUS,
+    }
+    current = _successor_bindings()
+    transition_receipt = {
+        "schema": I.TRANSITION.SCHEMA,
+        "status": I.TRANSITION.STATUS,
+        "superseding_source_repository_commit": current[
+            "source_repository_commit"],
+        "superseding_clean_source_binding_digest": current[
+            "clean_source_binding_digest"],
+        "superseding_bound_implementations_digest": current[
+            "bound_implementations_digest"],
+    }
+    transition_calls = []
+
+    def load_transition(**_kwargs):
+        transition_calls.append("load_transition")
+        return copy.deepcopy(transition_receipt)
+
+    def bind_transition(_receipt, **_kwargs):
+        transition_calls.append("bind_transition")
+        return copy.deepcopy(transition_binding)
+
+    def load_predecessor(_receipt, **_kwargs):
+        transition_calls.append("load_predecessor")
+        return copy.deepcopy(v1)
+
+    def bind_predecessor(_receipt, **_kwargs):
+        transition_calls.append("bind_predecessor")
+        return copy.deepcopy(predecessor_binding)
+
+    monkeypatch.setattr(
+        I.TRANSITION, "load_and_validate_interruption_receipt",
+        load_transition)
+    monkeypatch.setattr(I.TRANSITION, "receipt_binding", bind_transition)
+    monkeypatch.setattr(
+        I.TRANSITION, "load_archived_performance_receipt_v1",
+        load_predecessor)
+    monkeypatch.setattr(
+        I.TRANSITION, "archived_performance_receipt_binding_v1",
+        bind_predecessor)
+    fixture["transition_calls"] = transition_calls
+    original_archives = [
+        *(root / binding["archive_path"]
+          for binding in fixture["authorities"].values()),
+        *(root / binding["archive_path"] for binding in fixture["fixed"]),
+        *(root / row["archive_path"] for row in fixture["fixed_rows"]),
+        *(root / row["archive_path"] for row in fixture["small_rows"]),
+        archived,
+    ]
+    archive_bytes = {path: path.read_bytes() for path in original_archives}
+    original_archive_one = I._archive_one
+    monkeypatch.setattr(
+        I, "_archive_one",
+        lambda *_args, **_kwargs: pytest.fail(
+            "V2 must not invoke the V1 archive mutator"))
+    replay = revalidate_small_prefix or _archived_prefix_replay
+    outcome_calls = []
+
+    def attest_outcome_absence():
+        outcome_calls.append(True)
+        return _attestation(root)
+
+    fixture["v2_outcome_calls"] = outcome_calls
+    v2 = I.issue_performance_interruption_receipt_v2(
+        source_repository_commit=current["source_repository_commit"],
+        clean_source_binding_digest=current["clean_source_binding_digest"],
+        bound_implementations_digest=current[
+            "bound_implementations_digest"],
+        source_transition_receipt_binding=transition_binding,
+        predecessor_v1_receipt=v1,
+        predecessor_v1_receipt_binding=predecessor_binding,
+        current_projection_receipt=projection,
+        outcome_surface_absent=attest_outcome_absence,
+        revalidate_small_prefix=replay,
+        root=root,
+    )
+    monkeypatch.setattr(I, "_archive_one", original_archive_one)
+    assert {path: path.read_bytes() for path in original_archives} == archive_bytes
+    return v2, transition_binding
 
 
 def _archived_prefix_replay(pairs):
@@ -299,7 +433,7 @@ def _archived_prefix_replay(pairs):
 def _semantic_replay(predecessor, rows, bindings):
     assert predecessor["source_repository_commit"] == \
         I.INTERRUPTED_SOURCE_REPOSITORY_COMMIT
-    assert rows and bindings["source_repository_commit"] == "a" * 40
+    assert rows and bindings["source_repository_commit"] == "1" * 40
     return True
 
 
@@ -347,27 +481,190 @@ def test_issuance_archives_exact_bytes_is_not_gate_and_reissues_projection(
     assert prefix["completion_enriched_count"] == 0
 
 
+def test_v2_is_exact_transition_bound_read_only_and_idempotent(
+        monkeypatch, tmp_path):
+    fixture = _fixture(monkeypatch, tmp_path)
+    v1 = _issue(fixture)
+    receipt, transition = _transition_to_v2(monkeypatch, fixture, v1)
+
+    assert receipt["schema"] == I.V2_SCHEMA
+    assert receipt["status"] == I.V2_STATUS
+    assert receipt["source_transition_receipt"] == transition
+    assert receipt["archive_mutation_performed"] is False
+    assert receipt["original_archives_reopened_read_only"] is True
+    assert receipt["successor_fixed_wrapper_count_at_issuance"] == 0
+    assert receipt["successor_small_prefix_request_count_at_issuance"] == 0
+    assert receipt["successor_small_prefix_capture_count_at_issuance"] == 0
+    assert receipt["successor_small_prefix_reissue_receipt_issued"] is False
+    assert len(fixture["v2_outcome_calls"]) == 2
+    assert set(fixture["transition_calls"]) >= {
+        "load_transition", "bind_transition",
+        "load_predecessor", "bind_predecessor",
+    }
+    current = _successor_bindings()
+    loaded = I.load_and_validate_performance_interruption_receipt_v2(
+        expected_source_repository_commit=current[
+            "source_repository_commit"],
+        expected_clean_source_binding_digest=current[
+            "clean_source_binding_digest"],
+        expected_bound_implementations_digest=current[
+            "bound_implementations_digest"],
+        expected_source_transition_receipt_binding=transition,
+        root=tmp_path,
+    )
+    assert loaded == receipt
+    binding = I.performance_interruption_receipt_binding_v2(
+        receipt, root=tmp_path)
+    assert binding["path"] == str(I.V2_RECEIPT_RELATIVE_PATH)
+    assert binding["receipt_digest"] == receipt[I.V2_SELF_KEY]
+    assert I.performance_interruption_receipt_digest(receipt) == \
+        receipt[I.V2_SELF_KEY]
+
+
+def test_v2_rejects_noncanonical_transition_predecessor_and_projection(
+        monkeypatch, tmp_path):
+    fixture = _fixture(monkeypatch, tmp_path)
+    v1 = _issue(fixture)
+    receipt, transition = _transition_to_v2(monkeypatch, fixture, v1)
+    current = _successor_bindings()
+
+    bad_transition = copy.deepcopy(transition)
+    bad_transition["raw_sha256"] = "6" * 64
+    with pytest.raises(
+            I.PerformanceInterruptionError, match="source-transition binding"):
+        I.validate_performance_interruption_receipt_v2(
+            receipt,
+            expected_source_repository_commit=current[
+                "source_repository_commit"],
+            expected_clean_source_binding_digest=current[
+                "clean_source_binding_digest"],
+            expected_bound_implementations_digest=current[
+                "bound_implementations_digest"],
+            expected_source_transition_receipt_binding=bad_transition,
+            root=tmp_path,
+        )
+
+    altered = copy.deepcopy(receipt)
+    altered["predecessor_v1_performance_interruption_receipt"][
+        "raw_sha256"] = "7" * 64
+    altered[I.V2_SELF_KEY] = I._digest({
+        key: value for key, value in altered.items() if key != I.V2_SELF_KEY
+    })
+    with pytest.raises(
+            I.PerformanceInterruptionError, match="transition-bound authority"):
+        I.validate_performance_interruption_receipt_v2(
+            altered,
+            expected_source_repository_commit=current[
+                "source_repository_commit"],
+            expected_clean_source_binding_digest=current[
+                "clean_source_binding_digest"],
+            expected_bound_implementations_digest=current[
+                "bound_implementations_digest"],
+            expected_source_transition_receipt_binding=transition,
+            root=tmp_path,
+        )
+
+    altered = copy.deepcopy(receipt)
+    altered["current_projection_fix_interruption_receipt"][
+        "raw_sha256"] = "8" * 64
+    altered[I.V2_SELF_KEY] = I._digest({
+        key: value for key, value in altered.items() if key != I.V2_SELF_KEY
+    })
+    with pytest.raises(
+            I.PerformanceInterruptionError, match="projection binding"):
+        I.validate_performance_interruption_receipt_v2(
+            altered,
+            expected_source_repository_commit=current[
+                "source_repository_commit"],
+            expected_clean_source_binding_digest=current[
+                "clean_source_binding_digest"],
+            expected_bound_implementations_digest=current[
+                "bound_implementations_digest"],
+            expected_source_transition_receipt_binding=transition,
+            root=tmp_path,
+        )
+
+
+def test_v2_rejects_archived_v1_byte_tamper(monkeypatch, tmp_path):
+    fixture = _fixture(monkeypatch, tmp_path)
+    v1 = _issue(fixture)
+    receipt, transition = _transition_to_v2(monkeypatch, fixture, v1)
+    predecessor = receipt[
+        "predecessor_v1_performance_interruption_receipt"]
+    path = tmp_path / predecessor["path"]
+    path.write_bytes(path.read_bytes() + b" ")
+    current = _successor_bindings()
+    with pytest.raises(I.PerformanceInterruptionError, match="exact byte"):
+        I.validate_performance_interruption_receipt_v2(
+            receipt,
+            expected_source_repository_commit=current[
+                "source_repository_commit"],
+            expected_clean_source_binding_digest=current[
+                "clean_source_binding_digest"],
+            expected_bound_implementations_digest=current[
+                "bound_implementations_digest"],
+            expected_source_transition_receipt_binding=transition,
+            root=tmp_path,
+        )
+
+
+def test_v2_rechecks_no_write_gate_immediately_before_install(
+        monkeypatch, tmp_path):
+    fixture = _fixture(monkeypatch, tmp_path)
+    v1 = _issue(fixture)
+    archived_paths = [
+        *(tmp_path / binding["archive_path"]
+          for binding in fixture["authorities"].values()),
+        *(tmp_path / binding["archive_path"] for binding in fixture["fixed"]),
+        *(tmp_path / row["archive_path"] for row in fixture["fixed_rows"]),
+        *(tmp_path / row["archive_path"] for row in fixture["small_rows"]),
+    ]
+    archive_bytes = {path: path.read_bytes() for path in archived_paths}
+    race_path = tmp_path / fixture["fixed"][0]["active_path"]
+
+    def create_racing_wrapper(_pairs):
+        _write(race_path, {"schema": "concurrent-successor-wrapper"})
+        return True
+
+    with pytest.raises(
+            I.PerformanceInterruptionError,
+            match="fixed-shard successor write"):
+        _transition_to_v2(
+            monkeypatch, fixture, v1,
+            revalidate_small_prefix=create_racing_wrapper)
+    assert not (tmp_path / I.V2_RECEIPT_RELATIVE_PATH).exists()
+    assert race_path.is_file()
+    assert {path: path.read_bytes() for path in archived_paths} == archive_bytes
+
+
 def test_idempotence_and_successor_coexistence(monkeypatch, tmp_path):
     fixture = _fixture(monkeypatch, tmp_path)
-    first = _issue(fixture)
+    first_v1 = _issue(fixture)
     second = _issue(fixture)
-    assert second == first
+    assert second == first_v1
     assert len(fixture["projection_calls"]) == 2
+    first, transition = _transition_to_v2(monkeypatch, fixture, first_v1)
     outputs = I.reissue_fixed_state_shards(
-        receipt=first, revalidate_predecessor=_semantic_replay,
+        receipt=first,
+        expected_source_transition_receipt_binding=transition,
+        revalidate_predecessor=_semantic_replay,
         build_successor_bindings=_successor_bindings,
         outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
     again = I.reissue_fixed_state_shards(
-        receipt=first, revalidate_predecessor=_semantic_replay,
+        receipt=first,
+        expected_source_transition_receipt_binding=transition,
+        revalidate_predecessor=_semantic_replay,
         build_successor_bindings=_successor_bindings,
         outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
     assert outputs == again
     for family, wrapper in outputs.items():
         assert wrapper["schema"] == I.REISSUED_SHARD_SCHEMA
         successor = I.validate_reissued_fixed_state_shard(
-            wrapper, receipt=first, revalidate_predecessor=_semantic_replay,
+            wrapper, receipt=first,
+            expected_source_transition_receipt_binding=transition,
+            revalidate_predecessor=_semantic_replay,
             root=tmp_path)
-        assert successor["source_repository_commit"] == "a" * 40
+        assert successor["source_repository_commit"] == "1" * 40
         predecessor = next(row for row in fixture["fixed"]
                            if row["family"] == family)
         old = json.loads((tmp_path / predecessor["archive_path"]).read_text())
@@ -429,10 +726,12 @@ def test_tampered_transport_and_self_resigned_receipt_fail_closed(
 def test_reissue_rejects_scientific_mutation_and_failed_semantic_replay(
         monkeypatch, tmp_path):
     fixture = _fixture(monkeypatch, tmp_path)
-    receipt = _issue(fixture)
+    v1 = _issue(fixture)
+    receipt, transition = _transition_to_v2(monkeypatch, fixture, v1)
     with pytest.raises(I.PerformanceInterruptionError, match="semantic replay"):
         I.reissue_fixed_state_shards(
             receipt=receipt,
+            expected_source_transition_receipt_binding=transition,
             revalidate_predecessor=lambda *_args: False,
             build_successor_bindings=_successor_bindings,
             outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
@@ -565,9 +864,11 @@ def test_successor_nested_binding_projection_allows_exactly_seven_keys():
 def test_small_prefix_reissue_is_normal_schema_exact_and_idempotent(
         monkeypatch, tmp_path):
     fixture = _fixture(monkeypatch, tmp_path)
-    performance = _issue(fixture)
+    v1 = _issue(fixture)
+    performance, transition = _transition_to_v2(monkeypatch, fixture, v1)
     first = I.reissue_small_fixed_prefix(
         performance_receipt=performance,
+        expected_source_transition_receipt_binding=transition,
         build_successor_bindings=_successor_bindings,
         revalidate_prefix=_successor_prefix_replay,
         outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
@@ -589,6 +890,7 @@ def test_small_prefix_reissue_is_normal_schema_exact_and_idempotent(
         assert (tmp_path / mapping["archived_capture"]["path"]).is_file()
     second = I.reissue_small_fixed_prefix(
         performance_receipt=performance,
+        expected_source_transition_receipt_binding=transition,
         build_successor_bindings=_successor_bindings,
         revalidate_prefix=_successor_prefix_replay,
         outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
@@ -599,10 +901,12 @@ def test_small_prefix_reissue_is_normal_schema_exact_and_idempotent(
 def test_small_prefix_reissue_callback_fails_before_first_write(
         monkeypatch, tmp_path):
     fixture = _fixture(monkeypatch, tmp_path)
-    performance = _issue(fixture)
+    v1 = _issue(fixture)
+    performance, transition = _transition_to_v2(monkeypatch, fixture, v1)
     with pytest.raises(I.PerformanceInterruptionError, match="did not pass"):
         I.reissue_small_fixed_prefix(
             performance_receipt=performance,
+            expected_source_transition_receipt_binding=transition,
             build_successor_bindings=_successor_bindings,
             revalidate_prefix=lambda *_args: False,
             outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
@@ -615,7 +919,8 @@ def test_small_prefix_reissue_callback_fails_before_first_write(
 def test_small_prefix_reissue_recovers_partial_atomic_prefix(
         monkeypatch, tmp_path):
     fixture = _fixture(monkeypatch, tmp_path)
-    performance = _issue(fixture)
+    v1 = _issue(fixture)
+    performance, transition = _transition_to_v2(monkeypatch, fixture, v1)
     original_atomic = I._atomic_write
     calls = 0
 
@@ -630,6 +935,7 @@ def test_small_prefix_reissue_recovers_partial_atomic_prefix(
     with pytest.raises(RuntimeError, match="injected"):
         I.reissue_small_fixed_prefix(
             performance_receipt=performance,
+            expected_source_transition_receipt_binding=transition,
             build_successor_bindings=_successor_bindings,
             revalidate_prefix=_successor_prefix_replay,
             outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
@@ -637,6 +943,7 @@ def test_small_prefix_reissue_recovers_partial_atomic_prefix(
     monkeypatch.setattr(I, "_atomic_write", original_atomic)
     recovered = I.reissue_small_fixed_prefix(
         performance_receipt=performance,
+        expected_source_transition_receipt_binding=transition,
         build_successor_bindings=_successor_bindings,
         revalidate_prefix=_successor_prefix_replay,
         outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
@@ -646,7 +953,8 @@ def test_small_prefix_reissue_recovers_partial_atomic_prefix(
 def test_small_prefix_reissue_never_overwrites_collision(
         monkeypatch, tmp_path):
     fixture = _fixture(monkeypatch, tmp_path)
-    performance = _issue(fixture)
+    v1 = _issue(fixture)
+    performance, transition = _transition_to_v2(monkeypatch, fixture, v1)
     archived_rows = I._small_prefix_rows(root=tmp_path, archived=True)
     projection = I._small_prefix_projection(
         archived_rows, root=tmp_path, require_archived=True)
@@ -659,6 +967,7 @@ def test_small_prefix_reissue_never_overwrites_collision(
     with pytest.raises(I.PerformanceInterruptionError, match="collision"):
         I.reissue_small_fixed_prefix(
             performance_receipt=performance,
+            expected_source_transition_receipt_binding=transition,
             build_successor_bindings=_successor_bindings,
             revalidate_prefix=_successor_prefix_replay,
             outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
@@ -668,13 +977,15 @@ def test_small_prefix_reissue_never_overwrites_collision(
 def test_small_prefix_reissue_rejects_unregistered_active_inventory(
         monkeypatch, tmp_path):
     fixture = _fixture(monkeypatch, tmp_path)
-    performance = _issue(fixture)
+    v1 = _issue(fixture)
+    performance, transition = _transition_to_v2(monkeypatch, fixture, v1)
     unexpected = tmp_path / I.SMALL_PREFIX_ROOTS["capture"] / "unexpected.json"
     unexpected.parent.mkdir(parents=True, exist_ok=True)
     unexpected.write_text("{}")
     with pytest.raises(I.PerformanceInterruptionError, match="inventory"):
         I.reissue_small_fixed_prefix(
             performance_receipt=performance,
+            expected_source_transition_receipt_binding=transition,
             build_successor_bindings=_successor_bindings,
             revalidate_prefix=_successor_prefix_replay,
             outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)
@@ -684,8 +995,8 @@ def test_small_prefix_reissue_rejects_unregistered_active_inventory(
 def test_small_prefix_and_performance_binding_helpers_reject_other_payload(
         monkeypatch, tmp_path):
     fixture = _fixture(monkeypatch, tmp_path)
-    performance = _issue(fixture)
-    altered_performance = copy.deepcopy(performance)
+    performance_v1 = _issue(fixture)
+    altered_performance = copy.deepcopy(performance_v1)
     altered_performance["small_family_candidate_allocation_search_complete"] = True
     key = "preoutcome_small_search_performance_interruption_receipt_digest"
     altered_performance[key] = I._digest({
@@ -694,8 +1005,11 @@ def test_small_prefix_and_performance_binding_helpers_reject_other_payload(
     with pytest.raises(I.PerformanceInterruptionError, match="binding payload"):
         I.receipt_binding(altered_performance, root=tmp_path)
 
+    performance, transition = _transition_to_v2(
+        monkeypatch, fixture, performance_v1)
     reissue = I.reissue_small_fixed_prefix(
         performance_receipt=performance,
+        expected_source_transition_receipt_binding=transition,
         build_successor_bindings=_successor_bindings,
         revalidate_prefix=_successor_prefix_replay,
         outcome_surface_absent=lambda: _attestation(tmp_path), root=tmp_path)

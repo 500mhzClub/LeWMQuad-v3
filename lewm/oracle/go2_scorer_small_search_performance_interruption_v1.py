@@ -30,6 +30,9 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from lewm.oracle import go2_scorer_projection_fix_interruption_v1 as PROJECTION
+from lewm.oracle import (
+    go2_scorer_fixed_reissue_validation_interruption_v1 as TRANSITION,
+)
 from lewm.oracle import go2_scorer_state_selector_amendment_v2 as SELECTOR
 
 
@@ -37,6 +40,20 @@ ROOT = Path(__file__).resolve().parents[2]
 
 SCHEMA = "go2_scorer_small_search_performance_preoutcome_interruption_v1"
 STATUS = "SUPERSEDED_PRE_OUTCOME_PERFORMANCE_INTERRUPTION"
+V1_SCHEMA = SCHEMA
+V1_STATUS = STATUS
+V1_SELF_KEY = (
+    "preoutcome_small_search_performance_interruption_receipt_digest"
+)
+V2_SCHEMA = (
+    "go2_scorer_small_search_performance_preoutcome_interruption_v2"
+)
+V2_STATUS = (
+    "SOURCE_TRANSITION_BOUND_PRE_OUTCOME_PERFORMANCE_INTERRUPTION"
+)
+V2_SELF_KEY = (
+    "preoutcome_small_search_performance_interruption_receipt_v2_digest"
+)
 REISSUED_SHARD_SCHEMA = "go2_branch_corpus_v1_2_source_reissued_state_shard_v1"
 REISSUED_SHARD_STATUS = "COMPLETE_SOURCE_REISSUED_OUTCOME_FREE_FIXED_STATE_SHARD"
 SMALL_PREFIX_REISSUE_SCHEMA = (
@@ -55,6 +72,11 @@ ARCHIVE_ROOT_RELATIVE = (
 RECEIPT_RELATIVE_PATH = (
     SCORER_FIT_RELATIVE /
     "preoutcome_small_search_performance_interruption_receipt_v1.json"
+)
+V1_RECEIPT_RELATIVE_PATH = RECEIPT_RELATIVE_PATH
+V2_RECEIPT_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE /
+    "preoutcome_small_search_performance_interruption_receipt_v2.json"
 )
 SMALL_PREFIX_REISSUE_RECEIPT_RELATIVE_PATH = (
     SCORER_FIT_RELATIVE / "small_fixed_prefix_source_reissue_receipt_v1.json"
@@ -333,6 +355,88 @@ def _verify_self(payload: Mapping[str, Any], key: str, label: str) -> None:
         name: value for name, value in payload.items() if name != key
     }):
         raise PerformanceInterruptionError(f"{label} self binding changed")
+
+
+_RECEIPT_BINDING_KEYS = {
+    "path", "receipt_digest", "raw_sha256", "byte_count", "status",
+}
+
+
+def _validate_receipt_binding(
+    binding: Mapping[str, Any], *, label: str,
+    expected_status: str | None = None,
+) -> dict[str, Any]:
+    """Validate the common exact-file receipt binding without opening it."""
+
+    if not isinstance(binding, Mapping) or set(binding) != _RECEIPT_BINDING_KEYS:
+        raise PerformanceInterruptionError(
+            f"{label} receipt binding key surface changed")
+    path_value = binding.get("path")
+    if not isinstance(path_value, str) or not path_value:
+        raise PerformanceInterruptionError(f"{label} receipt path is invalid")
+    relative = Path(path_value)
+    if relative.is_absolute() or _forbidden(relative):
+        raise PerformanceInterruptionError(
+            f"{label} receipt path escaped managed custody")
+    try:
+        suffix = relative.relative_to(CORPUS_ROOT_RELATIVE)
+    except ValueError as exc:
+        raise PerformanceInterruptionError(
+            f"{label} receipt path escaped the corpus root") from exc
+    if not suffix.parts:
+        raise PerformanceInterruptionError(
+            f"{label} receipt path names only the corpus root")
+    for key in ("receipt_digest", "raw_sha256"):
+        value = binding.get(key)
+        if (
+            not isinstance(value, str) or len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise PerformanceInterruptionError(
+                f"{label} receipt {key} is invalid")
+    byte_count = binding.get("byte_count")
+    if (
+        not isinstance(byte_count, int) or isinstance(byte_count, bool)
+        or byte_count <= 0
+    ):
+        raise PerformanceInterruptionError(
+            f"{label} receipt byte count is invalid")
+    status = binding.get("status")
+    if not isinstance(status, str) or not status:
+        raise PerformanceInterruptionError(
+            f"{label} receipt status is invalid")
+    if expected_status is not None and status != expected_status:
+        raise PerformanceInterruptionError(
+            f"{label} receipt status changed")
+    return copy.deepcopy(dict(binding))
+
+
+def _load_exact_bound_receipt(
+    receipt: Mapping[str, Any], binding: Mapping[str, Any], *,
+    self_key: str, status: str, label: str, root: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Open one exact receipt path and bind its payload, bytes and self digest."""
+
+    normalized = _validate_receipt_binding(
+        binding, label=label, expected_status=status)
+    path = _pin_managed(normalized["path"], root=root)
+    payload = _load_json(path, label)
+    raw = path.read_bytes()
+    if (
+        payload != dict(receipt)
+        or len(raw) != normalized["byte_count"]
+        or _raw_sha256(raw) != normalized["raw_sha256"]
+    ):
+        raise PerformanceInterruptionError(
+            f"{label} exact byte binding changed")
+    _verify_self(payload, self_key, label)
+    if (
+        payload.get(self_key) != normalized["receipt_digest"]
+        or payload.get("status") != status
+    ):
+        raise PerformanceInterruptionError(
+            f"{label} declared receipt binding changed")
+    return payload, normalized
 
 
 def _binding_paths(binding: Mapping[str, Any], *, root: Path) -> tuple[Path, Path]:
@@ -1074,6 +1178,46 @@ def load_and_validate_performance_interruption_receipt(
     )
 
 
+# Explicit V1 names keep the immutable ca09 receipt independently callable after
+# V2 becomes the sole active performance authority.  The historical names above
+# remain aliases for compatibility with the transition recorder.
+validate_performance_interruption_receipt_v1 = \
+    validate_performance_interruption_receipt
+load_and_validate_performance_interruption_receipt_v1 = \
+    load_and_validate_performance_interruption_receipt
+
+
+def load_and_validate_archived_performance_interruption_receipt_v1(
+    *, receipt: Mapping[str, Any], receipt_binding: Mapping[str, Any],
+    root: Path = ROOT,
+) -> dict[str, Any]:
+    """Validate the exact archived ca09 V1 receipt without a current-HEAD claim."""
+
+    binding = _validate_receipt_binding(
+        receipt_binding, label="archived V1 performance interruption",
+        expected_status=V1_STATUS)
+    if binding["path"] == str(V1_RECEIPT_RELATIVE_PATH):
+        raise PerformanceInterruptionError(
+            "archived V1 performance receipt still names its active path")
+    active = _pin_managed(V1_RECEIPT_RELATIVE_PATH, root=root)
+    if active.exists() or active.is_symlink():
+        raise PerformanceInterruptionError(
+            "archived V1 performance receipt still has an active alias")
+    payload, _ = _load_exact_bound_receipt(
+        receipt, binding, self_key=V1_SELF_KEY, status=V1_STATUS,
+        label="archived V1 performance interruption", root=root)
+    return validate_performance_interruption_receipt_v1(
+        payload,
+        expected_source_repository_commit=str(
+            payload.get("superseding_source_repository_commit", "")),
+        expected_clean_source_binding_digest=str(
+            payload.get("superseding_clean_source_binding_digest", "")),
+        expected_bound_implementations_digest=str(
+            payload.get("superseding_bound_implementations_digest", "")),
+        root=root,
+    )
+
+
 def issue_and_archive_performance_interruption_receipt(
     *, source_repository_commit: str, clean_source_binding_digest: str,
     bound_implementations_digest: str,
@@ -1177,6 +1321,368 @@ def issue_and_archive_performance_interruption_receipt(
     return receipt
 
 
+def _validated_current_projection_binding(
+    receipt: Mapping[str, Any], *, source_repository_commit: str,
+    clean_source_binding_digest: str, bound_implementations_digest: str,
+    root: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Require the supplied projection receipt to be the current exact file."""
+
+    current = PROJECTION.load_and_validate_interruption_receipt(
+        expected_source_repository_commit=source_repository_commit,
+        expected_clean_source_binding_digest=clean_source_binding_digest,
+        expected_bound_implementations_digest=bound_implementations_digest,
+        root=root,
+    )
+    if current != dict(receipt):
+        raise PerformanceInterruptionError(
+            "supplied current projection receipt differs from its active bytes")
+    binding = _validate_receipt_binding(
+        PROJECTION.receipt_binding(current, root=root),
+        label="current projection-fix interruption",
+        expected_status=PROJECTION.STATUS,
+    )
+    if binding["path"] != str(PROJECTION.RECEIPT_RELATIVE_PATH):
+        raise PerformanceInterruptionError(
+            "current projection-fix interruption path changed")
+    return current, binding
+
+
+def _validated_source_transition(
+    binding: Mapping[str, Any], *, source_repository_commit: str,
+    clean_source_binding_digest: str, bound_implementations_digest: str,
+    root: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Independently validate the active transition and its exact bytes."""
+
+    supplied = _validate_receipt_binding(
+        binding, label="fixed-reissue source transition",
+        expected_status=TRANSITION.STATUS)
+    transition = TRANSITION.load_and_validate_interruption_receipt(
+        expected_source_repository_commit=source_repository_commit,
+        expected_clean_source_binding_digest=clean_source_binding_digest,
+        expected_bound_implementations_digest=bound_implementations_digest,
+        root=root,
+    )
+    canonical = _validate_receipt_binding(
+        TRANSITION.receipt_binding(transition, root=root),
+        label="fixed-reissue source transition",
+        expected_status=TRANSITION.STATUS)
+    if canonical["path"] != str(TRANSITION.RECEIPT_RELATIVE_PATH):
+        raise PerformanceInterruptionError(
+            "fixed-reissue source-transition path changed")
+    if supplied != canonical:
+        raise PerformanceInterruptionError(
+            "supplied fixed-reissue source-transition binding changed")
+    return transition, canonical
+
+
+def _validated_transition_predecessor_v1(
+    transition: Mapping[str, Any], binding: Mapping[str, Any], *,
+    supplied_receipt: Mapping[str, Any] | None = None,
+    root: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Load only the V1 authority named by the validated transition."""
+
+    supplied_binding = _validate_receipt_binding(
+        binding, label="archived V1 performance interruption",
+        expected_status=V1_STATUS)
+    canonical_binding = _validate_receipt_binding(
+        TRANSITION.archived_performance_receipt_binding_v1(
+            transition, root=root),
+        label="archived V1 performance interruption",
+        expected_status=V1_STATUS)
+    if supplied_binding != canonical_binding:
+        raise PerformanceInterruptionError(
+            "archived V1 binding is not the transition-bound authority")
+    predecessor = TRANSITION.load_archived_performance_receipt_v1(
+        transition, root=root)
+    if supplied_receipt is not None and dict(supplied_receipt) != predecessor:
+        raise PerformanceInterruptionError(
+            "supplied archived V1 receipt is not the transition-bound payload")
+    validated = load_and_validate_archived_performance_interruption_receipt_v1(
+        receipt=predecessor,
+        receipt_binding=canonical_binding,
+        root=root,
+    )
+    return validated, canonical_binding
+
+
+def _assert_v2_preissuance_no_write(*, root: Path) -> None:
+    """Reject any durable successor wrapper/prefix byte before V2 issuance."""
+
+    for binding in FIXED_STATE_SHARDS:
+        active = _pin_managed(binding["active_path"], root=root)
+        if active.exists() or active.is_symlink():
+            raise PerformanceInterruptionError(
+                "V2 performance issuance found a fixed-shard successor write")
+        if active.parent.is_dir():
+            prefix = f".{active.name}.tmp-"
+            if any(entry.name.startswith(prefix) for entry in active.parent.iterdir()):
+                raise PerformanceInterruptionError(
+                    "V2 performance issuance found a fixed-shard temporary write")
+    prefix_receipt = _pin_managed(
+        SMALL_PREFIX_REISSUE_RECEIPT_RELATIVE_PATH, root=root)
+    if prefix_receipt.exists() or prefix_receipt.is_symlink():
+        raise PerformanceInterruptionError(
+            "V2 performance issuance found a small-prefix reissue receipt")
+    for kind, relative in SMALL_PREFIX_ROOTS.items():
+        directory = _pin_managed(relative, root=root)
+        if not directory.exists():
+            continue
+        if directory.is_symlink() or not directory.is_dir():
+            raise PerformanceInterruptionError(
+                f"V2 performance {kind} prefix root changed")
+        entries = list(directory.iterdir())
+        if entries:
+            raise PerformanceInterruptionError(
+                f"V2 performance issuance found a {kind} prefix write")
+
+
+def _receipt_payload_v2(
+    *, source_repository_commit: str, clean_source_binding_digest: str,
+    bound_implementations_digest: str,
+    source_transition_receipt_binding: Mapping[str, Any],
+    predecessor_v1_receipt_binding: Mapping[str, Any],
+    current_projection_receipt_binding: Mapping[str, Any],
+    outcome_attestation: Mapping[str, Any],
+    fixed_transport_rows: Sequence[Mapping[str, Any]],
+    small_prefix_rows: Sequence[Mapping[str, Any]],
+    small_prefix_reducer_trace_digest: str,
+) -> dict[str, Any]:
+    """Build the current-source V2 authority from immutable V1 evidence."""
+
+    transition = _validate_receipt_binding(
+        source_transition_receipt_binding,
+        label="fixed-reissue source transition")
+    predecessor = _validate_receipt_binding(
+        predecessor_v1_receipt_binding,
+        label="archived V1 performance interruption",
+        expected_status=V1_STATUS)
+    projection = _validate_receipt_binding(
+        current_projection_receipt_binding,
+        label="current projection-fix interruption",
+        expected_status=PROJECTION.STATUS)
+    payload = _receipt_payload(
+        source_repository_commit=source_repository_commit,
+        clean_source_binding_digest=clean_source_binding_digest,
+        bound_implementations_digest=bound_implementations_digest,
+        outcome_attestation=outcome_attestation,
+        fixed_transport_rows=fixed_transport_rows,
+        small_prefix_rows=small_prefix_rows,
+        small_prefix_reducer_trace_digest=small_prefix_reducer_trace_digest,
+    )
+    payload.pop(V1_SELF_KEY)
+    payload["schema"] = V2_SCHEMA
+    payload["status"] = V2_STATUS
+    payload["source_transition_receipt"] = transition
+    payload["predecessor_v1_performance_interruption_receipt"] = predecessor
+    payload["current_projection_fix_interruption_receipt"] = projection
+    payload["predecessor_v1_receipt_validated"] = True
+    payload["current_projection_fix_receipt_validated"] = True
+    payload["original_archives_reopened_read_only"] = True
+    payload["archive_mutation_performed"] = False
+    payload["successor_fixed_wrapper_count_at_issuance"] = 0
+    payload["successor_small_prefix_request_count_at_issuance"] = 0
+    payload["successor_small_prefix_capture_count_at_issuance"] = 0
+    payload["successor_small_prefix_reissue_receipt_issued"] = False
+    payload["projection_fix_receipt_requires_successor_reissue"] = False
+    payload[V2_SELF_KEY] = _digest(payload)
+    return payload
+
+
+def validate_performance_interruption_receipt_v2(
+    receipt: Mapping[str, Any], *, expected_source_repository_commit: str,
+    expected_clean_source_binding_digest: str,
+    expected_bound_implementations_digest: str,
+    expected_source_transition_receipt_binding: Mapping[str, Any],
+    root: Path = ROOT,
+) -> dict[str, Any]:
+    """Reconstruct V2 from archived V1 and the current projection read-only."""
+
+    _verify_self(receipt, V2_SELF_KEY, "V2 performance interruption receipt")
+    transition_receipt, transition = _validated_source_transition(
+        expected_source_transition_receipt_binding,
+        source_repository_commit=expected_source_repository_commit,
+        clean_source_binding_digest=expected_clean_source_binding_digest,
+        bound_implementations_digest=expected_bound_implementations_digest,
+        root=root,
+    )
+    if receipt.get("source_transition_receipt") != transition:
+        raise PerformanceInterruptionError(
+            "V2 performance source-transition binding changed")
+    predecessor_binding = _validate_receipt_binding(
+        receipt.get("predecessor_v1_performance_interruption_receipt", {}),
+        label="archived V1 performance interruption",
+        expected_status=V1_STATUS)
+    predecessor, predecessor_binding = _validated_transition_predecessor_v1(
+        transition_receipt, predecessor_binding, root=root)
+    if expected_source_repository_commit == predecessor.get(
+            "superseding_source_repository_commit"):
+        raise PerformanceInterruptionError(
+            "V2 performance source did not advance beyond archived V1")
+    _projection, projection_binding = _validated_current_projection_binding(
+        _load_json(
+            _pin_managed(PROJECTION.RECEIPT_RELATIVE_PATH, root=root),
+            "current projection-fix interruption"),
+        source_repository_commit=expected_source_repository_commit,
+        clean_source_binding_digest=expected_clean_source_binding_digest,
+        bound_implementations_digest=expected_bound_implementations_digest,
+        root=root,
+    )
+    if receipt.get("current_projection_fix_interruption_receipt") != \
+            projection_binding:
+        raise PerformanceInterruptionError(
+            "V2 performance current projection binding changed")
+    attestation = _validate_outcome_attestation(
+        receipt.get("outcome_surface_absence_attestation", {}))
+    validate_archived_fixed_state_shards(predecessor, root=root)
+    small_projection = validated_small_fixed_prefix(predecessor, root=root)
+    expected = _receipt_payload_v2(
+        source_repository_commit=expected_source_repository_commit,
+        clean_source_binding_digest=expected_clean_source_binding_digest,
+        bound_implementations_digest=expected_bound_implementations_digest,
+        source_transition_receipt_binding=transition,
+        predecessor_v1_receipt_binding=predecessor_binding,
+        current_projection_receipt_binding=projection_binding,
+        outcome_attestation=attestation,
+        fixed_transport_rows=predecessor["fixed_transport_rows"],
+        small_prefix_rows=predecessor["small_prefix_rows"],
+        small_prefix_reducer_trace_digest=small_projection[
+            "reducer_trace_digest"],
+    )
+    if dict(receipt) != expected:
+        raise PerformanceInterruptionError(
+            "V2 performance interruption receipt differs from exact reconstruction")
+    return dict(receipt)
+
+
+def load_and_validate_performance_interruption_receipt_v2(
+    *, expected_source_repository_commit: str,
+    expected_clean_source_binding_digest: str,
+    expected_bound_implementations_digest: str,
+    expected_source_transition_receipt_binding: Mapping[str, Any],
+    root: Path = ROOT,
+) -> dict[str, Any]:
+    path = _pin_managed(V2_RECEIPT_RELATIVE_PATH, root=root)
+    receipt = _load_json(path, "V2 performance interruption receipt")
+    return validate_performance_interruption_receipt_v2(
+        receipt,
+        expected_source_repository_commit=expected_source_repository_commit,
+        expected_clean_source_binding_digest=expected_clean_source_binding_digest,
+        expected_bound_implementations_digest=
+            expected_bound_implementations_digest,
+        expected_source_transition_receipt_binding=
+            expected_source_transition_receipt_binding,
+        root=root,
+    )
+
+
+def performance_interruption_receipt_binding_v2(
+    receipt: Mapping[str, Any], *, root: Path = ROOT,
+) -> dict[str, Any]:
+    path = _pin_managed(V2_RECEIPT_RELATIVE_PATH, root=root)
+    on_disk = _load_json(path, "V2 performance interruption receipt")
+    _verify_self(on_disk, V2_SELF_KEY, "V2 performance interruption receipt")
+    if on_disk != dict(receipt) or on_disk.get("status") != V2_STATUS:
+        raise PerformanceInterruptionError(
+            "V2 performance interruption binding payload changed")
+    raw = path.read_bytes()
+    return {
+        "path": str(V2_RECEIPT_RELATIVE_PATH),
+        "receipt_digest": receipt[V2_SELF_KEY],
+        "raw_sha256": _raw_sha256(raw),
+        "byte_count": len(raw),
+        "status": V2_STATUS,
+    }
+
+
+def issue_performance_interruption_receipt_v2(
+    *, source_repository_commit: str, clean_source_binding_digest: str,
+    bound_implementations_digest: str,
+    source_transition_receipt_binding: Mapping[str, Any],
+    predecessor_v1_receipt: Mapping[str, Any],
+    predecessor_v1_receipt_binding: Mapping[str, Any],
+    current_projection_receipt: Mapping[str, Any],
+    outcome_surface_absent: Callable[[], Mapping[str, Any]],
+    revalidate_small_prefix: Callable[[Sequence[Mapping[str, Any]]], Any],
+    root: Path = ROOT,
+) -> dict[str, Any]:
+    """Issue V2 from exact existing archives; never move or rewrite old bytes."""
+
+    transition_receipt, transition = _validated_source_transition(
+        source_transition_receipt_binding,
+        source_repository_commit=source_repository_commit,
+        clean_source_binding_digest=clean_source_binding_digest,
+        bound_implementations_digest=bound_implementations_digest,
+        root=root,
+    )
+    predecessor, predecessor_binding = _validated_transition_predecessor_v1(
+        transition_receipt,
+        predecessor_v1_receipt_binding,
+        supplied_receipt=predecessor_v1_receipt,
+        root=root,
+    )
+    if source_repository_commit == predecessor.get(
+            "superseding_source_repository_commit"):
+        raise PerformanceInterruptionError(
+            "V2 performance source did not advance beyond archived V1")
+    _projection, projection_binding = _validated_current_projection_binding(
+        current_projection_receipt,
+        source_repository_commit=source_repository_commit,
+        clean_source_binding_digest=clean_source_binding_digest,
+        bound_implementations_digest=bound_implementations_digest,
+        root=root,
+    )
+    path = _pin_managed(V2_RECEIPT_RELATIVE_PATH, root=root)
+    if path.exists() or path.is_symlink():
+        receipt = load_and_validate_performance_interruption_receipt_v2(
+            expected_source_repository_commit=source_repository_commit,
+            expected_clean_source_binding_digest=clean_source_binding_digest,
+            expected_bound_implementations_digest=
+                bound_implementations_digest,
+            expected_source_transition_receipt_binding=transition,
+            root=root,
+        )
+        validated_small_fixed_prefix(
+            predecessor, root=root, revalidate_prefix=revalidate_small_prefix)
+        return receipt
+
+    _assert_v2_preissuance_no_write(root=root)
+    attestation = _validate_outcome_attestation(outcome_surface_absent())
+    validate_archived_fixed_state_shards(predecessor, root=root)
+    small_projection = validated_small_fixed_prefix(
+        predecessor, root=root, revalidate_prefix=revalidate_small_prefix)
+    expected = _receipt_payload_v2(
+        source_repository_commit=source_repository_commit,
+        clean_source_binding_digest=clean_source_binding_digest,
+        bound_implementations_digest=bound_implementations_digest,
+        source_transition_receipt_binding=transition,
+        predecessor_v1_receipt_binding=predecessor_binding,
+        current_projection_receipt_binding=projection_binding,
+        outcome_attestation=attestation,
+        fixed_transport_rows=predecessor["fixed_transport_rows"],
+        small_prefix_rows=predecessor["small_prefix_rows"],
+        small_prefix_reducer_trace_digest=small_projection[
+            "reducer_trace_digest"],
+    )
+    # Close the validation-to-issuance race: no successor wrapper or prefix
+    # byte may appear during the potentially expensive read-only replay above.
+    _assert_v2_preissuance_no_write(root=root)
+    if _validate_outcome_attestation(outcome_surface_absent()) != attestation:
+        raise PerformanceInterruptionError(
+            "V2 performance outcome-surface absence changed before issuance")
+    _atomic_write(path, expected)
+    return validate_performance_interruption_receipt_v2(
+        expected,
+        expected_source_repository_commit=source_repository_commit,
+        expected_clean_source_binding_digest=clean_source_binding_digest,
+        expected_bound_implementations_digest=bound_implementations_digest,
+        expected_source_transition_receipt_binding=transition,
+        root=root,
+    )
+
+
 def validate_successor_lineage_bindings(
     successor_bindings: Mapping[str, Any],
 ) -> dict[str, str]:
@@ -1244,6 +1750,28 @@ def _successor_payload(
     return payload
 
 
+def performance_interruption_receipt_digest(
+    receipt: Mapping[str, Any],
+) -> str:
+    """Return the schema-specific digest without treating V1 as current V2."""
+
+    if receipt.get("schema") == V2_SCHEMA:
+        key = V2_SELF_KEY
+    elif receipt.get("schema") == V1_SCHEMA:
+        key = V1_SELF_KEY
+    else:
+        raise PerformanceInterruptionError(
+            "performance interruption receipt schema is unknown")
+    value = receipt.get(key)
+    if (
+        not isinstance(value, str) or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
+    ):
+        raise PerformanceInterruptionError(
+            "performance interruption receipt digest is invalid")
+    return value
+
+
 def _reissued_wrapper(
     *, binding: Mapping[str, Any], predecessor: Mapping[str, Any],
     successor: Mapping[str, Any], successor_bindings: Mapping[str, Any],
@@ -1268,8 +1796,8 @@ def _reissued_wrapper(
             {key: value for key, value in row.items() if key != "archive_path"}
             for row in transport_rows]),
         "successor_lineage_bindings": copy.deepcopy(dict(successor_bindings)),
-        "performance_interruption_receipt_digest": receipt[
-            "preoutcome_small_search_performance_interruption_receipt_digest"],
+        "performance_interruption_receipt_digest":
+            performance_interruption_receipt_digest(receipt),
         "semantic_replay": {
             "archived_request_capture_bytes_reopened": True,
             "old_source_contract_launch_fields_treated_as_historical_lineage_only": True,
@@ -1285,18 +1813,10 @@ def _reissued_wrapper(
 
 def validate_reissued_fixed_state_shard(
     wrapper: Mapping[str, Any], *, receipt: Mapping[str, Any],
+    expected_source_transition_receipt_binding: Mapping[str, Any],
     revalidate_predecessor: Callable[[Mapping[str, Any], Sequence[Mapping[str, Any]], Mapping[str, Any]], Any],
     root: Path = ROOT,
 ) -> dict[str, Any]:
-    validated_receipt = validate_performance_interruption_receipt(
-        receipt,
-        expected_source_repository_commit=str(
-            receipt.get("superseding_source_repository_commit", "")),
-        expected_clean_source_binding_digest=str(
-            receipt.get("superseding_clean_source_binding_digest", "")),
-        expected_bound_implementations_digest=str(
-            receipt.get("superseding_bound_implementations_digest", "")),
-        root=root)
     _verify_self(wrapper, "source_reissued_state_shard_digest",
                  "source-reissued fixed shard")
     family = wrapper.get("family")
@@ -1309,6 +1829,17 @@ def validate_reissued_fixed_state_shard(
     rows = _fixed_transport_rows(predecessor, binding, root=root, archived=True)
     successor_bindings = validate_successor_lineage_bindings(
         wrapper.get("successor_lineage_bindings", {}))
+    validated_receipt = validate_performance_interruption_receipt_v2(
+        receipt,
+        expected_source_repository_commit=successor_bindings[
+            "source_repository_commit"],
+        expected_clean_source_binding_digest=successor_bindings[
+            "clean_source_binding_digest"],
+        expected_bound_implementations_digest=successor_bindings[
+            "bound_implementations_digest"],
+        expected_source_transition_receipt_binding=
+            expected_source_transition_receipt_binding,
+        root=root)
     expected_successor = _successor_payload(predecessor, successor_bindings)
     if revalidate_predecessor(
             copy.deepcopy(predecessor), copy.deepcopy(rows),
@@ -1325,6 +1856,7 @@ def validate_reissued_fixed_state_shard(
 
 def reissue_fixed_state_shards(
     *, receipt: Mapping[str, Any],
+    expected_source_transition_receipt_binding: Mapping[str, Any],
     revalidate_predecessor: Callable[[Mapping[str, Any], Sequence[Mapping[str, Any]], Mapping[str, Any]], Any],
     build_successor_bindings: Callable[[], Mapping[str, Any]],
     outcome_surface_absent: Callable[[], Mapping[str, Any]],
@@ -1332,15 +1864,19 @@ def reissue_fixed_state_shards(
 ) -> dict[str, dict[str, Any]]:
     """Issue seven successor wrappers after exact archived semantic replay."""
 
-    validated_receipt = validate_performance_interruption_receipt(
-        receipt,
-        expected_source_repository_commit=str(receipt["superseding_source_repository_commit"]),
-        expected_clean_source_binding_digest=str(receipt["superseding_clean_source_binding_digest"]),
-        expected_bound_implementations_digest=str(receipt["superseding_bound_implementations_digest"]),
-        root=root)
-    _validate_outcome_attestation(outcome_surface_absent())
     bindings = validate_successor_lineage_bindings(
         build_successor_bindings())
+    validated_receipt = validate_performance_interruption_receipt_v2(
+        receipt,
+        expected_source_repository_commit=bindings["source_repository_commit"],
+        expected_clean_source_binding_digest=bindings[
+            "clean_source_binding_digest"],
+        expected_bound_implementations_digest=bindings[
+            "bound_implementations_digest"],
+        expected_source_transition_receipt_binding=
+            expected_source_transition_receipt_binding,
+        root=root)
+    _validate_outcome_attestation(outcome_surface_absent())
     if (bindings.get("source_repository_commit")
             != receipt["superseding_source_repository_commit"]
             or bindings.get("clean_source_binding_digest")
@@ -1367,6 +1903,8 @@ def reissue_fixed_state_shards(
             existing = _load_json(active, f"reissued fixed shard {family}")
             validate_reissued_fixed_state_shard(
                 existing, receipt=validated_receipt,
+                expected_source_transition_receipt_binding=
+                    expected_source_transition_receipt_binding,
                 revalidate_predecessor=revalidate_predecessor, root=root)
             if existing != expected:
                 raise PerformanceInterruptionError("reissued shard collision")
@@ -1375,6 +1913,8 @@ def reissue_fixed_state_shards(
         _atomic_write(active, expected)
         validate_reissued_fixed_state_shard(
             expected, receipt=validated_receipt,
+            expected_source_transition_receipt_binding=
+                expected_source_transition_receipt_binding,
             revalidate_predecessor=revalidate_predecessor, root=root)
         outputs[family] = expected
     return outputs
@@ -1547,8 +2087,8 @@ def _small_prefix_reissue_payload(
         "active_identity_input": True,
         "changes_scientific_selection": False,
         "reuses_exact_preoutcome_identity_evidence": True,
-        "performance_interruption_receipt_digest": performance_receipt[
-            "preoutcome_small_search_performance_interruption_receipt_digest"],
+        "performance_interruption_receipt_digest":
+            performance_interruption_receipt_digest(performance_receipt),
         "successor_lineage_bindings": bindings,
         "projection_allowlist": list(SUCCESSOR_LINEAGE_KEYS),
         "archived_transport_row_count": SMALL_PREFIX_ROW_COUNT,
@@ -1657,6 +2197,7 @@ def _install_exact_json(
 def validate_small_prefix_reissue_receipt(
     receipt: Mapping[str, Any], *,
     performance_receipt: Mapping[str, Any],
+    expected_source_transition_receipt_binding: Mapping[str, Any],
     successor_bindings: Mapping[str, Any],
     revalidate_prefix: Callable[[
         Sequence[Mapping[str, Any]], Sequence[Mapping[str, Any]],
@@ -1666,14 +2207,16 @@ def validate_small_prefix_reissue_receipt(
     """Reconstruct every old/new pair and replay caller-owned science checks."""
 
     bindings = validate_successor_lineage_bindings(successor_bindings)
-    validated_performance = validate_performance_interruption_receipt(
+    validated_performance = validate_performance_interruption_receipt_v2(
         performance_receipt,
-        expected_source_repository_commit=str(
-            performance_receipt.get("superseding_source_repository_commit", "")),
-        expected_clean_source_binding_digest=str(
-            performance_receipt.get("superseding_clean_source_binding_digest", "")),
-        expected_bound_implementations_digest=str(
-            performance_receipt.get("superseding_bound_implementations_digest", "")),
+        expected_source_repository_commit=bindings[
+            "source_repository_commit"],
+        expected_clean_source_binding_digest=bindings[
+            "clean_source_binding_digest"],
+        expected_bound_implementations_digest=bindings[
+            "bound_implementations_digest"],
+        expected_source_transition_receipt_binding=
+            expected_source_transition_receipt_binding,
         root=root)
     if (
         bindings["source_repository_commit"]
@@ -1720,6 +2263,7 @@ def validate_small_prefix_reissue_receipt(
 
 def load_and_validate_small_prefix_reissue_receipt(
     *, performance_receipt: Mapping[str, Any],
+    expected_source_transition_receipt_binding: Mapping[str, Any],
     successor_bindings: Mapping[str, Any],
     revalidate_prefix: Callable[[
         Sequence[Mapping[str, Any]], Sequence[Mapping[str, Any]],
@@ -1731,6 +2275,8 @@ def load_and_validate_small_prefix_reissue_receipt(
     receipt = _load_json(path, "small prefix reissue receipt")
     return validate_small_prefix_reissue_receipt(
         receipt, performance_receipt=performance_receipt,
+        expected_source_transition_receipt_binding=
+            expected_source_transition_receipt_binding,
         successor_bindings=successor_bindings,
         revalidate_prefix=revalidate_prefix, root=root)
 
@@ -1759,6 +2305,7 @@ def small_prefix_reissue_receipt_binding(
 
 def reissue_small_fixed_prefix(
     *, performance_receipt: Mapping[str, Any],
+    expected_source_transition_receipt_binding: Mapping[str, Any],
     build_successor_bindings: Callable[[], Mapping[str, Any]],
     revalidate_prefix: Callable[[
         Sequence[Mapping[str, Any]], Sequence[Mapping[str, Any]],
@@ -1770,14 +2317,16 @@ def reissue_small_fixed_prefix(
 
     bindings = validate_successor_lineage_bindings(
         build_successor_bindings())
-    validated_performance = validate_performance_interruption_receipt(
+    validated_performance = validate_performance_interruption_receipt_v2(
         performance_receipt,
-        expected_source_repository_commit=str(
-            performance_receipt.get("superseding_source_repository_commit", "")),
-        expected_clean_source_binding_digest=str(
-            performance_receipt.get("superseding_clean_source_binding_digest", "")),
-        expected_bound_implementations_digest=str(
-            performance_receipt.get("superseding_bound_implementations_digest", "")),
+        expected_source_repository_commit=bindings[
+            "source_repository_commit"],
+        expected_clean_source_binding_digest=bindings[
+            "clean_source_binding_digest"],
+        expected_bound_implementations_digest=bindings[
+            "bound_implementations_digest"],
+        expected_source_transition_receipt_binding=
+            expected_source_transition_receipt_binding,
         root=root)
     _validate_outcome_attestation(outcome_surface_absent())
     if (
@@ -1795,6 +2344,8 @@ def reissue_small_fixed_prefix(
     if receipt_path.exists() or receipt_path.is_symlink():
         return load_and_validate_small_prefix_reissue_receipt(
             performance_receipt=validated_performance,
+            expected_source_transition_receipt_binding=
+                expected_source_transition_receipt_binding,
             successor_bindings=bindings,
             revalidate_prefix=revalidate_prefix, root=root)
 
@@ -1833,6 +2384,8 @@ def reissue_small_fixed_prefix(
     _atomic_write(receipt_path, expected)
     return validate_small_prefix_reissue_receipt(
         expected, performance_receipt=validated_performance,
+        expected_source_transition_receipt_binding=
+            expected_source_transition_receipt_binding,
         successor_bindings=bindings,
         revalidate_prefix=revalidate_prefix, root=root)
 
@@ -1872,6 +2425,40 @@ def lineage_contract() -> dict[str, Any]:
         "small_prefix_reissue_schema": SMALL_PREFIX_REISSUE_SCHEMA,
         "small_prefix_reissue_receipt_path": str(
             SMALL_PREFIX_REISSUE_RECEIPT_RELATIVE_PATH),
+        "successor_projection_allowlist": list(SUCCESSOR_LINEAGE_KEYS),
+        "reissue_requires_archived_transport_semantic_replay": True,
+        "archived_transport_bytes_are_never_rewritten": True,
+    }
+
+
+lineage_contract_v1 = lineage_contract
+
+
+def lineage_contract_v2() -> dict[str, Any]:
+    """Static current contract for the source-transition-bound V2 authority."""
+
+    predecessor = lineage_contract_v1()
+    return {
+        "schema": V2_SCHEMA,
+        "status": V2_STATUS,
+        "receipt_path": str(V2_RECEIPT_RELATIVE_PATH),
+        "predecessor_v1_schema": V1_SCHEMA,
+        "predecessor_v1_status": V1_STATUS,
+        "predecessor_v1_active_path": str(V1_RECEIPT_RELATIVE_PATH),
+        "predecessor_v1_lineage_contract": predecessor,
+        "predecessor_v1_lineage_contract_digest": _digest(predecessor),
+        "source_transition_receipt_required": True,
+        "source_transition_receipt_binding_surface": sorted(
+            _RECEIPT_BINDING_KEYS),
+        "current_source_projection_fix_receipt_required": True,
+        "original_a1b_archives_reopened_read_only": True,
+        "archive_mutation_permitted": False,
+        "successor_outputs_required_absent_at_issuance": True,
+        "scientific_outcome_required_absent_at_issuance": True,
+        "scientific_gate_input": False,
+        "may_satisfy_selector_gate": False,
+        "reissued_shard_schema": REISSUED_SHARD_SCHEMA,
+        "small_prefix_reissue_schema": SMALL_PREFIX_REISSUE_SCHEMA,
         "successor_projection_allowlist": list(SUCCESSOR_LINEAGE_KEYS),
         "reissue_requires_archived_transport_semantic_replay": True,
         "archived_transport_bytes_are_never_rewritten": True,
