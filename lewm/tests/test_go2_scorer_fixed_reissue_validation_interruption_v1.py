@@ -18,6 +18,21 @@ NEW_CLEAN_DIGEST = "c" * 64
 NEW_IMPLEMENTATION_DIGEST = "d" * 64
 
 
+def test_frozen_production_bindings_have_exact_digest_shapes():
+    assert len(I.INTERRUPTED_SOURCE_REPOSITORY_COMMIT) == 40
+    for value in (
+        I.INTERRUPTED_CLEAN_SOURCE_BINDING_DIGEST,
+        I.INTERRUPTED_BOUND_IMPLEMENTATIONS_DIGEST,
+        I.INTERRUPTED_SCORER_CONTRACT_DIGEST,
+        I.RETAINED_PREIDENTITY_ARTIFACT["self_digest"],
+        I.RETAINED_PREIDENTITY_ARTIFACT["raw_sha256"],
+        *(row["self_digest"] for row in I.INTERRUPTED_AUTHORITIES.values()),
+        *(row["raw_sha256"] for row in I.INTERRUPTED_AUTHORITIES.values()),
+    ):
+        assert len(value) == 64
+        assert set(value) <= set("0123456789abcdef")
+
+
 def _write(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
@@ -83,12 +98,14 @@ def _fixture(tmp_path: Path, monkeypatch) -> dict:
         I, "RETAINED_PREIDENTITY_PROOF_SOURCE_BINDINGS",
         tuple(proof_bindings))
 
-    preidentity = _bound({
+    preidentity = {
         "schema": I.PREIDENTITY_SCHEMA,
         "status": "PASS_PRE_IDENTITY_STRUCTURAL_VALIDATION",
         "global": {"state_slot_count": 120, "candidate_slot_count": 720},
         "synthetic": True,
-    }, "pre_identity_validation_digest")
+    }
+    preidentity["pre_identity_validation_digest"] = I._allocator_digest(
+        preidentity)
     preidentity_path = tmp_path / I.PREIDENTITY_RELATIVE_PATH
     _write(preidentity_path, preidentity)
     preidentity_raw = preidentity_path.read_bytes()

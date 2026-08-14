@@ -218,7 +218,7 @@ RETAINED_PREIDENTITY_ARTIFACT = {
     "path": str(PREIDENTITY_RELATIVE_PATH),
     "self_digest_key": "pre_identity_validation_digest",
     "self_digest": (
-        "46efa42e3bdcad6df6cd4e404c2e8a796a9a331109a433cfbfffcfa18bf60d"
+        "46efa42e3bdcad6df6cdcd4e404c2e8a796a9a331109a433cfbfffcfa18bf60d"
     ),
     "raw_sha256": (
         "a7f23011cdfec1f7a1938bfff57b4e6aa5f32b4e69082236c57d37a9ffd50256"
@@ -310,6 +310,15 @@ def _digest(payload: Any) -> str:
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True).encode()
     ).hexdigest()
+
+
+def _allocator_digest(payload: Any) -> str:
+    """Match the unchanged allocator's compact canonical JSON exactly."""
+
+    return hashlib.sha256(json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+        allow_nan=False,
+    ).encode("utf-8")).hexdigest()
 
 
 def _raw_sha256(raw: bytes) -> str:
@@ -515,10 +524,14 @@ def _load_retained_preidentity(*, root: Path) -> dict[str, Any]:
             "exact retained pre-identity artifact is unavailable")
     payload = _load_json(path, "retained pre-identity artifact")
     key = str(binding["self_digest_key"])
-    _verify_self(payload, key, "retained pre-identity artifact")
-    if payload.get(key) != binding["self_digest"]:
+    observed = payload.get(key)
+    expected = _allocator_digest({
+        name: value for name, value in payload.items() if name != key
+    })
+    if (not _is_hex(observed, 64) or observed != expected
+            or observed != binding["self_digest"]):
         raise FixedReissueValidationInterruptionError(
-            "retained pre-identity declared digest changed")
+            "retained pre-identity self binding changed")
     if (payload.get("schema") != PREIDENTITY_SCHEMA
             or payload.get("status") !=
             "PASS_PRE_IDENTITY_STRUCTURAL_VALIDATION"):
