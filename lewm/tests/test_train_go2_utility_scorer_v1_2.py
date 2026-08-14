@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import inspect
 import tempfile
 from pathlib import Path
 import unittest
@@ -14,6 +15,63 @@ from scripts import train_go2_utility_scorer_v1_2 as scorer
 
 
 class UtilityScorerTrainerTests(unittest.TestCase):
+    def test_full_bank_v2_budget_and_completion_gate_are_exact(self):
+        profile = scorer.corpus_design_profile(True)
+        self.assertEqual(profile["branches"], 1_440)
+        self.assertEqual(profile["fit_rows"], 1_152)
+        self.assertEqual(profile["calibration_rows"], 288)
+        self.assertEqual(profile["epochs"], 60)
+        self.assertEqual(profile["batch"], 64)
+        self.assertEqual(profile["optimizer_updates_per_model"], 1_080)
+        counts = scorer.full_bank_v2_training_execution_counts()
+        self.assertEqual(counts["optimizer_updates_per_epoch"], 18)
+        self.assertEqual(counts["optimizer_updates_per_model"], 1_080)
+        self.assertEqual(counts["example_presentations_per_model"], 69_120)
+        self.assertTrue(scorer.full_bank_v2_completion_degeneracy(
+            [{"completion": 0}, {"completion": 1}],
+            [{"completion": 1}, {"completion": 0}])["pass"])
+        self.assertFalse(scorer.full_bank_v2_completion_degeneracy(
+            [{"completion": 0}, {"completion": 0}],
+            [{"completion": 1}, {"completion": 0}])["pass"])
+
+    def test_full_bank_v2_validator_enters_only_encoder_producer(self):
+        from scripts import encode_go2_branch_corpus_v1_2 as encoder
+        with mock.patch.object(
+                encoder,
+                "load_and_validate_full_bank_v2_encoded_corpus_for_consumption",
+                return_value={}) as producer, \
+                mock.patch.object(
+                    scorer.CORPUS_BUILDER,
+                    "load_active_state_manifest_for_consumption",
+                    side_effect=AssertionError("legacy manifest opened")) as legacy, \
+                mock.patch.object(
+                    scorer, "allocation_contract_digest",
+                    side_effect=AssertionError("legacy ALLOC opened")) as alloc:
+            with self.assertRaisesRegex(
+                    scorer.CorpusValidationError,
+                    "encoder bundle is incomplete"):
+                scorer.validate_scorer_fit_corpus(
+                    full_bank_v2=True,
+                    verify_encoder_checkpoint=False,
+                    verify_frame_paths=False)
+        producer.assert_called_once()
+        legacy.assert_not_called()
+        alloc.assert_not_called()
+
+    def test_full_bank_v2_degeneracy_gate_precedes_features_and_models(self):
+        source = inspect.getsource(scorer.main)
+        gate = source.index("full_bank_v2_completion_degeneracy(")
+        terminal_return = source.index("return 1", gate)
+        features = source.index("feature_started =", gate)
+        models = source.index("models: dict[str, UtilityScorer]", gate)
+        self.assertLess(gate, terminal_return)
+        self.assertLess(terminal_return, features)
+        self.assertLess(features, models)
+        v2_validator = inspect.getsource(
+            scorer._validate_full_bank_v2_scorer_fit_corpus)
+        self.assertNotIn("allocation_contract_digest", v2_validator)
+        self.assertNotIn("validate_global_exact_allocation", v2_validator)
+
     def test_global_exact_launch_separates_scientific_and_operational_source(self):
         historical_contract = "0" * 64
         current_contract = scorer.contract_digest()

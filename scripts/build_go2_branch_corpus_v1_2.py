@@ -22,6 +22,7 @@ Stages::
 from __future__ import annotations
 
 import argparse
+import copy
 import gc
 import hashlib
 import itertools
@@ -118,6 +119,10 @@ V11_IDENTITY_MANIFEST_DIGEST = (
 V12_IDENTITY_MANIFEST_DIGEST = (
     "5f380bf7f49ef10437c7d9644f04dbef065f0550dfd30d0ec36208cda25d08cf"
 )
+DEVELOPMENT_240_IDENTITY_MANIFEST = (
+    ROOT / ".generated/go2_counterfactual_fidelity_v1_2/"
+    "stage_a_identity_manifest.json"
+)
 
 # ---- frozen strata (scorer-fit only), snapshot-time geometry only -------------
 STRATA = ("general", "safety_enriched", "completion_enriched")
@@ -144,6 +149,115 @@ POOLS = {
         "calibration_per_stratum_per_family": 0,
     },
 }
+
+# The original scorer-fit pool remains immutable at six candidates per state.
+# Its exact infeasibility receipt closes that allocation design; V2 is a
+# separate prospective identity/assignment surface and must never make the
+# legacy validators reinterpret their old ``POOLS["scorer_fit"]`` contract.
+SCORER_FIT_V2_SPEC = {
+    "states_per_family": 15,
+    "candidates_per_state": 12,
+    "strata": {"general": 5, "safety_enriched": 5,
+                "completion_enriched": 5},
+    "calibration_per_stratum_per_family": 1,
+}
+SCORER_FIT_V2_STATE_COUNT = 120
+SCORER_FIT_V2_ASSIGNMENT_COUNT = 1_440
+SCORER_FIT_V2_CANDIDATE_INDICES = tuple(range(12))
+SCORER_FIT_V2_OPTIONAL_HISTORICAL_ROTATION_VECTOR_COUNT = 17
+SCORER_FIT_V2_PRESERVED_HISTORICAL_ROTATION_VECTOR_COUNT = 7
+SCORER_FIT_V2_SELECTION_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_small_completion_selection_v1"
+)
+SCORER_FIT_V2_SELECTION_STATUS = (
+    "PASS_DETERMINISTIC_FULL_BANK_SMALL_COMPLETION_SELECTION"
+)
+SCORER_FIT_V2_REVALIDATION_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_preoutcome_state_revalidation_v1"
+)
+SCORER_FIT_V2_REVALIDATION_STATUS = (
+    "PASS_ALL_120_STATES_FULL_BANK_PREOUTCOME_REVALIDATION"
+)
+SCORER_FIT_V2_SMALL_SHARD_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_small_family_state_shard_v1"
+)
+SCORER_FIT_V2_IDENTITY_PROJECTION_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_identity_projection_v1"
+)
+SCORER_FIT_V2_STATE_MANIFEST_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_identity_manifest_v1"
+)
+SCORER_FIT_V2_ASSIGNMENT_MANIFEST_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_assignment_manifest_v1"
+)
+SCORER_FIT_V2_SELECTION_NAME = "full_bank_small_completion_selection_v2.json"
+SCORER_FIT_V2_REVALIDATION_NAME = (
+    "full_bank_preoutcome_state_revalidation_v2.json"
+)
+SCORER_FIT_V2_SMALL_SHARD_NAME = "state_shard_small_enclosed_maze_v2.json"
+SCORER_FIT_V2_STATE_MANIFEST_NAME = "state_manifest_v2.json"
+SCORER_FIT_V2_ASSIGNMENT_MANIFEST_NAME = (
+    "full_bank_assignment_manifest_v2.json"
+)
+SCORER_FIT_V2_FEASIBILITY_FAILURE_NAME = (
+    "full_bank_preoutcome_feasibility_failure_v2.json"
+)
+SCORER_FIT_V2_ROW_RECORDS_NAME = "row_records_v2"
+SCORER_FIT_V2_FRAMES_NAME = "frames_v2"
+SCORER_FIT_V2_BRANCH_ROWS_NAME = "branch_rows_v2.jsonl"
+SCORER_FIT_V2_CORPUS_RECEIPT_NAME = "corpus_receipt_v2.json"
+SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME = "smoke_branch_receipt_v2.json"
+SCORER_FIT_V2_ENCODING_SMOKE_RECEIPT_NAME = "smoke_encoding_receipt_v2.json"
+SCORER_FIT_V2_BRANCH_ROW_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_full_bank_branch_row_v1"
+)
+SCORER_FIT_V2_BRANCH_IDENTITY_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_full_bank_branch_identity_v1"
+)
+SCORER_FIT_V2_CORPUS_IDENTITY_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_full_bank_corpus_identity_v1"
+)
+SCORER_FIT_V2_CORPUS_RECEIPT_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_full_bank_completion_receipt_v1"
+)
+SCORER_FIT_V2_BRANCH_SMOKE_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_full_bank_branch_smoke_receipt_v1"
+)
+
+
+class FullBankV2FeasibilityFailure(RuntimeError):
+    """The outcome-free V2 pool cannot supply four fit and one calibration."""
+
+    def __init__(self, reason: str, *, fit_count: int,
+                 calibration_count: int, ordered_scene_ids: Sequence[str]):
+        super().__init__(reason)
+        self.reason = str(reason)
+        self.fit_count = int(fit_count)
+        self.calibration_count = int(calibration_count)
+        self.ordered_scene_ids = [str(value) for value in ordered_scene_ids]
+
+
+def _full_bank_v2_historical_rotation_access_attestation() -> dict[str, Any]:
+    """Describe the narrow historical evidence opened by V2 truthfully.
+
+    These vectors are predecessor allocation evidence, classified by the
+    issued authority as partial-subset-only.  V2 reopens them to recover and
+    verify the actual previous command and snapshot task status before
+    recomputing full-bank ``L_max``; it never treats their rotation masks as
+    an active selector or branch-execution gate.
+    """
+
+    return {
+        "historical_rotation_evidence_accessed": True,
+        "optional_historical_rotation_vector_count":
+            SCORER_FIT_V2_OPTIONAL_HISTORICAL_ROTATION_VECTOR_COUNT,
+        "preserved_historical_rotation_vector_count":
+            SCORER_FIT_V2_PRESERVED_HISTORICAL_ROTATION_VECTOR_COUNT,
+        "historical_rotation_evidence_classification":
+            "PARTIAL_SUBSET_ALLOCATION_ONLY",
+        "historical_rotation_mask_used_as_active_v2_gate": False,
+        "scientific_outcomes_accessed": False,
+    }
 
 SELECTION = dict(CORPUS_SELECTION_CONTRACT)
 WARMUP_BLOCKS_MIN, WARMUP_BLOCKS_MAX = SELECTION["warmup_blocks"]
@@ -1693,23 +1807,51 @@ def scene_pool(pool_name: str) -> tuple[dict[str, list[Path]], dict[str, Any]]:
                 | set(invalid_identity_index.scene_ids))
     scorer_binding: dict[str, Any] | None = None
     if pool_name == "final_eval":
-        scorer_path = OUT_ROOT / "scorer_fit/state_manifest.json"
-        scorer_manifest = load_active_state_manifest_for_consumption(
-            scorer_path)
-        if (scorer_manifest.get("pool") != "scorer_fit"
-                or len(scorer_manifest.get("states", [])) != 120
-                or scorer_manifest.get("scorer_contract_v1_2_digest")
-                != scorer_contract_digest()):
-            raise RuntimeError("final selection requires the complete current scorer-fit identity manifest")
+        v2_path = OUT_ROOT / "scorer_fit" / SCORER_FIT_V2_STATE_MANIFEST_NAME
+        if v2_path.is_file() and not v2_path.is_symlink():
+            loaded_v2 = \
+                load_and_validate_full_bank_v2_manifests_for_consumption()
+            scorer_manifest = loaded_v2["state_manifest"]
+            if (scorer_manifest.get("pool") != "scorer_fit_v2"
+                    or len(scorer_manifest.get("states", [])) != 120
+                    or scorer_manifest.get("candidate_outcomes_consumed")
+                    is not False):
+                raise RuntimeError(
+                    "future final selection requires the complete V2 "
+                    "scorer-fit identity manifest")
+            scorer_binding = {
+                "state_manifest_digest": scorer_manifest[
+                    "state_manifest_digest"],
+                "scorer_fit_corpus_v2_design_digest": scorer_manifest[
+                    "scorer_fit_corpus_v2_design_digest"],
+                "full_bank_assignment_manifest_digest": scorer_manifest[
+                    "full_bank_assignment_manifest_digest"],
+                "scene_count": 120,
+                "scene_ids_digest": canonical_digest(sorted(
+                    str(row["scene_id"]) for row in scorer_manifest["states"])),
+            }
+        else:
+            scorer_path = OUT_ROOT / "scorer_fit/state_manifest.json"
+            scorer_manifest = load_active_state_manifest_for_consumption(
+                scorer_path)
+            if (scorer_manifest.get("pool") != "scorer_fit"
+                    or len(scorer_manifest.get("states", [])) != 120
+                    or scorer_manifest.get("scorer_contract_v1_2_digest")
+                    != scorer_contract_digest()):
+                raise RuntimeError(
+                    "final selection requires the complete current scorer-fit "
+                    "identity manifest")
         scorer_scenes = {str(row["scene_id"]) for row in scorer_manifest["states"]}
         if len(scorer_scenes) != 120:
             raise RuntimeError("scorer-fit identity manifest is not scene-disjoint")
         excluded |= scorer_scenes
-        scorer_binding = {
-            "state_manifest_digest": scorer_manifest["state_manifest_digest"],
-            "scene_count": len(scorer_scenes),
-            "scene_ids_digest": canonical_digest(sorted(scorer_scenes)),
-        }
+        if scorer_binding is None:
+            scorer_binding = {
+                "state_manifest_digest": scorer_manifest[
+                    "state_manifest_digest"],
+                "scene_count": len(scorer_scenes),
+                "scene_ids_digest": canonical_digest(sorted(scorer_scenes)),
+            }
 
     families: dict[str, list[Path]] = {}
     for split in SPLITS:
@@ -7769,6 +7911,1682 @@ def load_v2_parallel_small_benchmark_inputs(
     return inputs
 
 
+# ------------------------------------------------------- scorer-fit corpus V2 --
+_FULL_BANK_V2_RAW_COMPLETION_KEYS = frozenset({
+    "state_id", "family", "scene_id", "scene_dir",
+    "scene_manifest_sha256", "scene_manifest_byte_count", "split",
+    "drive_seed", "stratum", "split_role", "warmup_blocks", "source_step",
+    "episode_id", "episode_cluster_id", "cell_id", "boundary", "goal",
+    "goal_type", "body_clearance_m", "clearance_m",
+    "completion_rotation_eligibility_vector", "snapshot_task_status",
+    "previous_applied_command",
+})
+_FULL_BANK_V2_FORBIDDEN_STATE_FIELDS = (
+    "candidate_outcomes", "branch_outcomes", "progress", "safety",
+    "completion", "utility", "frames", "latents", "scorer_metrics",
+    "predictor_outputs", "branch_identities", "candidate_indices",
+    "candidate_rotation_index",
+)
+
+
+def _full_bank_v2_assert_no_outcome_fields(
+        row: Mapping[str, Any], *, label: str) -> None:
+    """Reject outcome-bearing state material without traversing its values."""
+
+    if not isinstance(row, Mapping):
+        raise RuntimeError(f"{label} is not a mapping")
+    present = [key for key in _FULL_BANK_V2_FORBIDDEN_STATE_FIELDS
+               if key in row]
+    if present:
+        raise RuntimeError(
+            f"{label} contains forbidden outcome/allocation fields: {present}")
+    for key in (
+            "candidate_outcomes_loaded", "branches_attempted",
+            "frames_rendered", "target_latents_encoded",
+            "scorer_training_started", "scorer_qualification_started",
+            "predictor_checkpoints_opened"):
+        if key in row and row.get(key) not in (False, 0):
+            raise RuntimeError(f"{label} records outcome-bearing work")
+
+
+def _full_bank_v2_goal_identity(goal: Mapping[str, Any]) -> dict[str, Any]:
+    expected = {
+        "landmark_id", "landmark_cell", "material_id", "graph_edges",
+        "start_geodesic_m", "bearing_body_rad", "range_m",
+        "landmark_xy_m",
+    }
+    if not isinstance(goal, Mapping) or set(goal) != expected:
+        raise RuntimeError("full-bank designated goal binding changed")
+    xy = goal.get("landmark_xy_m")
+    numeric = (
+        goal.get("start_geodesic_m"), goal.get("bearing_body_rad"),
+        goal.get("range_m"), *(xy if isinstance(xy, list) else ()),
+    )
+    if (
+        not isinstance(goal.get("landmark_id"), str)
+        or not goal["landmark_id"]
+        or not isinstance(goal.get("material_id"), str)
+        or not goal["material_id"]
+        or isinstance(goal.get("landmark_cell"), bool)
+        or not isinstance(goal.get("landmark_cell"), int)
+        or isinstance(goal.get("graph_edges"), bool)
+        or not isinstance(goal.get("graph_edges"), int)
+        or goal["graph_edges"] < 0
+        or not isinstance(xy, list) or len(xy) != 2
+        or any(isinstance(value, bool) or not isinstance(value, (int, float))
+               or not math.isfinite(float(value)) for value in numeric)
+        or float(goal["start_geodesic_m"]) < 0.0
+        or float(goal["range_m"]) < 0.0
+    ):
+        raise RuntimeError("full-bank designated goal binding is malformed")
+    return {
+        "landmark_id": str(goal["landmark_id"]),
+        "landmark_cell": int(goal["landmark_cell"]),
+        "material_id": str(goal["material_id"]),
+        "graph_edges": int(goal["graph_edges"]),
+        "start_geodesic_m": float(goal["start_geodesic_m"]),
+        "bearing_body_rad": float(goal["bearing_body_rad"]),
+        "range_m": float(goal["range_m"]),
+        "landmark_xy_m": [float(value) for value in xy],
+    }
+
+
+def _full_bank_v2_structural_state_identity(
+        state: Mapping[str, Any]) -> dict[str, Any]:
+    """Project only frozen structural inputs; never enumerate unknown fields."""
+
+    _full_bank_v2_assert_no_outcome_fields(state, label="full-bank state")
+    goal = _full_bank_v2_goal_identity(state.get("goal", {}))
+    numeric_ints = (
+        "drive_seed", "warmup_blocks", "source_step", "episode_id", "cell_id",
+    )
+    if any(isinstance(state.get(key), bool)
+           or not isinstance(state.get(key), int) for key in numeric_ints):
+        raise RuntimeError("full-bank structural integer field is malformed")
+    if state["warmup_blocks"] < CONTEXT_SLOTS:
+        raise RuntimeError("full-bank canonical snapshot boundary changed")
+    try:
+        # This is the exact ten-field V1 boundary validator already corrected
+        # and frozen for the terminal global-model attempt.  It validates the
+        # closed key surface, all integer/phase/flag relations, source/episode
+        # step relation, 10 Hz clock phase and immutable boundary digest.
+        boundary = GLOBAL_EXACT_MODEL._canonical_snapshot_boundary(
+            state.get("boundary"), source_step=state["source_step"])
+    except GLOBAL_EXACT_MODEL.GlobalExactModelError as exc:
+        raise RuntimeError("full-bank canonical snapshot boundary changed") from exc
+    for key in (
+            "family", "scene_id", "scene_dir", "scene_manifest_sha256",
+            "split", "stratum", "episode_cluster_id", "goal_type"):
+        if not isinstance(state.get(key), str) or not state[key]:
+            raise RuntimeError(f"full-bank structural field {key} is malformed")
+    if (not _is_sha256(state["scene_manifest_sha256"])
+            or isinstance(state.get("scene_manifest_byte_count"), bool)
+            or not isinstance(state.get("scene_manifest_byte_count"), int)
+            or state["scene_manifest_byte_count"] <= 0
+            or state["stratum"] not in STRATA
+            or state["goal_type"] != goal["material_id"]):
+        raise RuntimeError("full-bank structural scene/goal binding changed")
+    for key in ("body_clearance_m", "clearance_m"):
+        value = state.get(key)
+        if (isinstance(value, bool) or not isinstance(value, (int, float))
+                or not math.isfinite(float(value)) or float(value) < 0.0):
+            raise RuntimeError(f"full-bank structural field {key} is malformed")
+    structural = {
+        "family": str(state["family"]),
+        "scene_id": str(state["scene_id"]),
+        "scene_dir": str(state["scene_dir"]),
+        "scene_manifest_sha256": str(state["scene_manifest_sha256"]),
+        "scene_manifest_byte_count": int(state["scene_manifest_byte_count"]),
+        "split": str(state["split"]),
+        "drive_seed": int(state["drive_seed"]),
+        "stratum": str(state["stratum"]),
+        "warmup_blocks": int(state["warmup_blocks"]),
+        "source_step": int(state["source_step"]),
+        "episode_id": int(state["episode_id"]),
+        "episode_cluster_id": str(state["episode_cluster_id"]),
+        "cell_id": int(state["cell_id"]),
+        "boundary": dict(boundary),
+        "body_clearance_m": float(state["body_clearance_m"]),
+        "clearance_m": float(state["clearance_m"]),
+        "goal_type": str(state["goal_type"]),
+    }
+    if state["stratum"] == "completion_enriched":
+        try:
+            previous = list(STATE_SELECTOR._normalise_previous_applied(
+                state.get("previous_applied_command")))
+            status = dict(STATE_SELECTOR.snapshot_task_status_projection(
+                state.get("snapshot_task_status")))
+        except (TypeError, ValueError,
+                STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+            raise RuntimeError(
+                "full-bank completion snapshot input binding changed") from exc
+        structural.update({
+            "previous_applied_command": previous,
+            "snapshot_task_status": status,
+        })
+    return structural
+
+
+def _full_bank_v2_previous_and_status(
+        state: Mapping[str, Any], *,
+        preserved_vectors: Mapping[str, Mapping[str, Any]],
+        ) -> tuple[list[float], dict[str, Any], dict[str, Any] | None]:
+    vector_value = state.get("completion_rotation_eligibility_vector")
+    if vector_value is None:
+        vector_value = preserved_vectors.get(str(
+            state.get("state_identity_digest", "")))
+    vector = dict(vector_value) if isinstance(vector_value, Mapping) else None
+    previous_value = state.get("previous_applied_command")
+    status_value = state.get("snapshot_task_status")
+    if vector is not None:
+        rotations = vector.get("rotations")
+        if not isinstance(rotations, list) or len(rotations) != 12:
+            raise RuntimeError("full-bank historical rotation vector is malformed")
+        first = rotations[0]
+        if not isinstance(first, Mapping):
+            raise RuntimeError("full-bank historical rotation row is malformed")
+        if previous_value is None:
+            previous_value = first.get("previous_applied_command")
+        if status_value is None:
+            status_value = first.get("task_status")
+        try:
+            expected = STATE_SELECTOR.completion_rotation_eligibility_vector(
+                graph_hops=int(state["goal"]["graph_edges"]),
+                reachable=math.isfinite(float(
+                    state["goal"]["start_geodesic_m"])),
+                continuous_geodesic_m=float(
+                    state["goal"]["start_geodesic_m"]),
+                bearing_body_rad=float(state["goal"]["bearing_body_rad"]),
+                task_status=status_value,
+                previous_applied_command=previous_value,
+            )
+        except (KeyError, TypeError, ValueError,
+                STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+            raise RuntimeError(
+                "full-bank historical rotation evidence cannot be reconstructed"
+            ) from exc
+        if vector != expected:
+            raise RuntimeError(
+                "full-bank historical rotation evidence changed")
+    if previous_value is None or status_value is None:
+        raise RuntimeError(
+            "completion state lacks snapshot status or actual previous command")
+    try:
+        previous = list(STATE_SELECTOR._normalise_previous_applied(
+            previous_value))
+        status = dict(STATE_SELECTOR.snapshot_task_status_projection(
+            status_value))
+    except (TypeError, ValueError,
+            STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+        raise RuntimeError(
+            "completion state snapshot inputs are malformed") from exc
+    return previous, status, vector
+
+
+def full_bank_completion_reachability_evidence(
+        state: Mapping[str, Any], *,
+        preserved_vectors: Mapping[str, Mapping[str, Any]] | None = None,
+        ) -> dict[str, Any]:
+    """Recompute the active completion enrichment over candidates 0..11.
+
+    The old twelve rotation masks are checked only as immutable source
+    evidence.  They do not gate selection.  The active reachability budget is
+    the maximum nominal path length over the complete frozen bank.
+    """
+
+    structural = _full_bank_v2_structural_state_identity(state)
+    if structural["stratum"] != "completion_enriched":
+        raise RuntimeError("full-bank L_max requested for a non-completion state")
+    previous, status, _legacy_vector = _full_bank_v2_previous_and_status(
+        state, preserved_vectors={} if preserved_vectors is None
+        else preserved_vectors)
+    lengths = [{
+        "candidate_index": int(index),
+        "candidate_name": str(V1.CANDIDATE_BANK[index][0]),
+        "translational_path_length_m": float(
+            STATE_SELECTOR.candidate_translational_path_length_m(
+                index, previous)),
+    } for index in SCORER_FIT_V2_CANDIDATE_INDICES]
+    l_max = max(row["translational_path_length_m"] for row in lengths)
+    maximisers = [row["candidate_index"] for row in lengths
+                  if row["translational_path_length_m"] == l_max]
+    goal = _full_bank_v2_goal_identity(state["goal"])
+    distance = float(goal["start_geodesic_m"])
+    gap = STATE_SELECTOR.completion_distance_gap_m(distance)
+    bearing = float(goal["bearing_body_rad"])
+    reasons: list[str] = []
+    if not math.isfinite(distance):
+        reasons.append("completion_unreachable")
+    elif gap > l_max:
+        reasons.append("completion_geodesic_gap_gt_full_bank_l_max")
+    if abs(bearing) > STATE_SELECTOR.COMPLETION_MAX_ABS_BEARING_RAD:
+        reasons.append("completion_bearing_gt_75deg")
+    for key in ("task_completed", "goal_claimed", "terminated", "truncated"):
+        value = status.get(key)
+        if value is None:
+            reasons.append(f"completion_snapshot_{key}_unavailable")
+        elif value:
+            reasons.append(f"completion_snapshot_{key}")
+    payload = {
+        "schema": "go2_scorer_fit_corpus_v2_full_bank_l_max_evidence_v1",
+        "state_identity_digest": state.get("state_identity_digest"),
+        "scene_id": str(state["scene_id"]),
+        "candidate_indices": list(SCORER_FIT_V2_CANDIDATE_INDICES),
+        "candidate_count": len(SCORER_FIT_V2_CANDIDATE_INDICES),
+        "previous_applied_command": previous,
+        "candidate_path_lengths_m": lengths,
+        "l_max_m": float(l_max),
+        "l_max_candidate_indices": maximisers,
+        "reachable": math.isfinite(distance),
+        "continuous_geodesic_m": distance,
+        "completion_radius_m": STATE_SELECTOR.COMPLETION_RADIUS_M,
+        "continuous_geodesic_gap_m": float(gap),
+        "bearing_body_rad": bearing,
+        "abs_bearing_rad": abs(bearing),
+        "max_abs_bearing_rad":
+            STATE_SELECTOR.COMPLETION_MAX_ABS_BEARING_RAD,
+        "graph_hops_diagnostic": int(goal["graph_edges"]),
+        "task_status": status,
+        "eligible": not reasons,
+        "rejection_reasons": reasons,
+        "horizon_blocks": STATE_SELECTOR.HORIZON_BLOCKS,
+        "ticks_per_block": STATE_SELECTOR.TICKS_PER_BLOCK,
+        "horizon_ticks": STATE_SELECTOR.HORIZON_TICKS,
+        "tick_dt_s": STATE_SELECTOR.TICK_DT_S,
+        "horizon_s": STATE_SELECTOR.HORIZON_S,
+        "slew_rates_per_tick": list(SLEW.RATES),
+        "uses_actual_previous_applied_command": True,
+        "branch_execution_used": False,
+        "realised_outcome_used": False,
+        "legacy_rotation_mask_used_as_active_gate": False,
+    }
+    payload["full_bank_l_max_evidence_digest"] = canonical_digest(payload)
+    return payload
+
+
+def _full_bank_v2_candidate_order_material(
+        state: Mapping[str, Any], *, domain_separator: str,
+        selector_digest: str) -> dict[str, Any]:
+    if not isinstance(domain_separator, str) or not domain_separator:
+        raise RuntimeError("full-bank completion order domain is missing")
+    if not _is_sha256(selector_digest):
+        raise RuntimeError("full-bank selector digest is malformed")
+    from lewm.oracle import go2_scorer_fit_corpus_v2_design as authority
+    if domain_separator != authority.COMPLETION_ORDER_DOMAIN:
+        raise RuntimeError("full-bank completion order domain changed")
+    structural = _full_bank_v2_structural_state_identity(state)
+    goal = _full_bank_v2_goal_identity(state["goal"])
+    try:
+        material = authority.completion_order_material(
+            structural, goal, active_selector_digest=selector_digest)
+        ordering_digest, tie_break = authority.completion_order_key(
+            structural, goal, active_selector_digest=selector_digest)
+    except authority.ScorerFitCorpusV2DesignError as exc:
+        raise RuntimeError("full-bank completion ordering input changed") from exc
+    return {
+        "scene_id": str(state["scene_id"]),
+        "ordering_digest": ordering_digest,
+        "structural_identity_tie_break_utf8": tie_break.decode("utf-8"),
+        "structural_identity_tie_break_hex": tie_break.hex(),
+        "ordering_material_digest": authority.canonical_digest(material),
+    }
+
+
+def _full_bank_v2_candidate_split_roles(
+        state: Mapping[str, Any]) -> tuple[str, ...]:
+    role = state.get("split_role")
+    if role == "DEFERRED_SMALL_COMPLETION_JOINT_SEARCH":
+        # The frozen selector assigned ordinal zero to calibration and ordinals
+        # one through four to fit; it imposed no scene-specific role mask.
+        return ("calibration", "fit")
+    if role in ("calibration", "fit"):
+        return (str(role),)
+    raise RuntimeError("small-completion split-role eligibility changed")
+
+
+def _full_bank_v2_materialize_completion_state(
+        raw: Mapping[str, Any], *, role: str, ordinal: int,
+        identity_bindings: Mapping[str, Any]) -> dict[str, Any]:
+    if set(raw) != _FULL_BANK_V2_RAW_COMPLETION_KEYS:
+        raise RuntimeError("raw small-completion candidate key surface changed")
+    if role not in ("fit", "calibration"):
+        raise RuntimeError("full-bank selected split role is invalid")
+    expected_ordinal = 0 if role == "calibration" else ordinal
+    if role == "fit" and not 1 <= expected_ordinal <= 4:
+        raise RuntimeError("full-bank fit completion ordinal is invalid")
+    previous, status, _historical_vector = _full_bank_v2_previous_and_status(
+        raw, preserved_vectors={})
+    state = {key: raw[key] for key in _FULL_BANK_V2_RAW_COMPLETION_KEYS
+             if key not in {
+                 "state_id", "split_role",
+                 "completion_rotation_eligibility_vector",
+                 "previous_applied_command", "snapshot_task_status",
+             }}
+    state["previous_applied_command"] = previous
+    state["snapshot_task_status"] = status
+    state["state_id"] = (
+        f"scorer_fit-{REACHABILITY_REDRIVE_FAMILY}-"
+        f"completion_enriched-{expected_ordinal:02d}")
+    state["split_role"] = role
+    state["state_identity_digest"] = _state_identity_digest_for_bindings(
+        state, identity_bindings)
+    return state
+
+
+def _full_bank_v2_active_state_projection(
+        state: Mapping[str, Any], *,
+        preserved_vectors: Mapping[str, Mapping[str, Any]],
+        ) -> dict[str, Any]:
+    """Project one predecessor state into the active mask-free V2 surface."""
+
+    projected = copy.deepcopy(dict(state))
+    if projected.get("stratum") != "completion_enriched":
+        return projected
+    previous, status, _historical_vector = _full_bank_v2_previous_and_status(
+        projected, preserved_vectors=preserved_vectors)
+    # The immutable predecessor digest remains its custody identity.  V2 adds
+    # only the exact non-rotation inputs needed by full-bank eligibility and
+    # retires the historical subset mask from the active state surface.
+    projected.pop("completion_rotation_eligibility_vector", None)
+    projected["previous_applied_command"] = previous
+    projected["snapshot_task_status"] = status
+    return projected
+
+
+def deterministic_full_bank_completion_selection(
+        *, raw_candidates: Sequence[Mapping[str, Any]],
+        candidate_revalidation: Mapping[str, Mapping[str, Any]],
+        identity_bindings: Mapping[str, Any], domain_separator: str,
+        selector_digest: str, design_digest: str,
+        mask_classification_digest: str,
+        ) -> dict[str, Any]:
+    """Select one calibration plus four fit scenes in one frozen hash order."""
+
+    if (len(raw_candidates) != 17
+            or len({str(row.get("scene_id", ""))
+                    for row in raw_candidates}) != 17):
+        raise RuntimeError("full-bank completion pool is not the frozen 17 scenes")
+    if not _is_sha256(design_digest) or not _is_sha256(
+            mask_classification_digest):
+        raise RuntimeError("full-bank design authority digest is malformed")
+    ordered: list[tuple[tuple[str, bytes], Mapping[str, Any], dict[str, Any]]] = []
+    for candidate in raw_candidates:
+        if set(candidate) != _FULL_BANK_V2_RAW_COMPLETION_KEYS:
+            raise RuntimeError("raw small-completion candidate key surface changed")
+        _full_bank_v2_assert_no_outcome_fields(
+            candidate, label="raw full-bank completion candidate")
+        order = _full_bank_v2_candidate_order_material(
+            candidate, domain_separator=domain_separator,
+            selector_digest=selector_digest)
+        ordered.append((
+            (order["ordering_digest"], bytes.fromhex(
+                order["structural_identity_tie_break_hex"])),
+            candidate, order))
+    ordered.sort(key=lambda row: row[0])
+    ordered_scene_ids = [str(row[1]["scene_id"]) for row in ordered]
+    checks = {str(key): dict(value)
+              for key, value in candidate_revalidation.items()}
+    if set(checks) != set(ordered_scene_ids):
+        raise RuntimeError("candidate revalidation does not cover 17 scenes")
+
+    calibration_raw: Mapping[str, Any] | None = None
+    for _key, candidate, _order in ordered:
+        scene_id = str(candidate["scene_id"])
+        if (checks[scene_id].get("pass") is True
+                and "calibration" in _full_bank_v2_candidate_split_roles(
+                    candidate)):
+            calibration_raw = candidate
+            break
+    fit_raw: list[Mapping[str, Any]] = []
+    for _key, candidate, _order in ordered:
+        if calibration_raw is candidate:
+            continue
+        scene_id = str(candidate["scene_id"])
+        if (checks[scene_id].get("pass") is True
+                and "fit" in _full_bank_v2_candidate_split_roles(candidate)):
+            fit_raw.append(candidate)
+            if len(fit_raw) == 4:
+                break
+    if calibration_raw is None or len(fit_raw) != 4:
+        raise FullBankV2FeasibilityFailure(
+            "fewer than one calibration and four distinct fit completion "
+            "scenes pass the prospective full-bank rules",
+            fit_count=len(fit_raw),
+            calibration_count=0 if calibration_raw is None else 1,
+            ordered_scene_ids=ordered_scene_ids)
+
+    selected = [_full_bank_v2_materialize_completion_state(
+        calibration_raw, role="calibration", ordinal=0,
+        identity_bindings=identity_bindings)]
+    selected.extend(_full_bank_v2_materialize_completion_state(
+        raw, role="fit", ordinal=ordinal,
+        identity_bindings=identity_bindings)
+        for ordinal, raw in enumerate(fit_raw, start=1))
+    selected_scene_ids = [str(state["scene_id"]) for state in selected]
+    if len(set(selected_scene_ids)) != 5:
+        raise RuntimeError("full-bank completion selection repeated a scene")
+    order_rows = [{
+        **order,
+        "eligible_split_roles": list(
+            _full_bank_v2_candidate_split_roles(candidate)),
+        "full_bank_revalidation_digest": checks[str(candidate["scene_id"])][
+            "full_bank_revalidation_digest"],
+        "passes_full_bank_revalidation": checks[
+            str(candidate["scene_id"])]["pass"],
+    } for _key, candidate, order in ordered]
+    payload = {
+        "schema": SCORER_FIT_V2_SELECTION_SCHEMA,
+        "status": SCORER_FIT_V2_SELECTION_STATUS,
+        "complete": True,
+        "scorer_fit_corpus_v2_design_digest": design_digest,
+        "rotation_mask_classification_digest": mask_classification_digest,
+        "active_selector_contract_digest": selector_digest,
+        "ordering_domain_separator": domain_separator,
+        "ordering_rule": (
+            "SHA256(domain,selector,complete structural state identity,"
+            "designated goal identity); structural identity final tie-break"
+        ),
+        "ordered_candidate_count": 17,
+        "ordered_candidates": order_rows,
+        "selected_calibration_scene_id": str(calibration_raw["scene_id"]),
+        "selected_fit_scene_ids": [str(row["scene_id"]) for row in fit_raw],
+        "selected_scene_ids": selected_scene_ids,
+        "selected_states": selected,
+        "candidate_outcomes_consumed": False,
+        "branch_data_consumed": False,
+        "optimisation_or_solver_used": False,
+        "old_rotation_mask_used_as_active_gate": False,
+        "downstream_metric_used": False,
+        **_full_bank_v2_historical_rotation_access_attestation(),
+    }
+    payload["full_bank_small_completion_selection_digest"] = \
+        canonical_digest(payload)
+    return payload
+
+
+def load_full_bank_v2_exclusion_authority() -> dict[str, Any]:
+    """Reconstruct every named V2 exclusion from its frozen identity source."""
+
+    factorial_scenes, factorial_binding = _factorial_scene_exclusions()
+    invalid_index = INVALID_IDS.load_invalid_identity_index()
+    abandoned_scenes = set(invalid_index.scene_ids)
+
+    v11_path = V1.OUT_DIR / "identity_manifest.json"
+    v12_path = V12.OUT_DIR / "state_manifest.json"
+    for path in (v11_path, v12_path, DEVELOPMENT_240_IDENTITY_MANIFEST):
+        _assert_unsealed_path(path)
+        if not path.is_file() or path.is_symlink():
+            raise RuntimeError(f"full-bank exclusion authority is missing: {path}")
+    v11 = json.loads(v11_path.read_text())
+    v12 = json.loads(v12_path.read_text())
+    development = json.loads(DEVELOPMENT_240_IDENTITY_MANIFEST.read_text())
+    _verify_self_digest(
+        v11, "identity_manifest_digest", "oracle-v1.1 exclusion manifest")
+    _verify_self_digest(
+        v12, "state_manifest_digest", "oracle-v1.2 exclusion manifest")
+    _verify_self_digest(
+        development, "stage_a_identity_manifest_digest",
+        "development-240 identity manifest")
+    if (v11["identity_manifest_digest"] != V11_IDENTITY_MANIFEST_DIGEST
+            or v12["state_manifest_digest"] != V12_IDENTITY_MANIFEST_DIGEST
+            or development.get("schema")
+            != "go2_counterfactual_fidelity_stage_a_identity_manifest_v1_2"
+            or development.get("complete") is not True
+            or development.get("state_count_registered") != 20
+            or development.get("attempted_branch_count_registered") != 240
+            or development.get("source_state_manifest_digest")
+            != V12_IDENTITY_MANIFEST_DIGEST):
+        raise RuntimeError("full-bank pilot/development exclusion binding changed")
+    v11_scenes = {
+        str(row["scene_id"]) for key in ("pilot_states", "replay_states")
+        for row in v11[key]}
+    v12_scenes = {str(row["scene_id"]) for row in v12["states"]}
+    development_scenes = {
+        str(row["scene_id"]) for row in development["states"]}
+    if len(v12_scenes) != 20 or development_scenes != v12_scenes:
+        raise RuntimeError(
+            "development-240 scenes differ from the frozen oracle-v1.2 pilot")
+
+    final_manifest = OUT_ROOT / "final_eval/state_manifest.json"
+    _assert_unsealed_path(final_manifest)
+    if final_manifest.exists():
+        raise RuntimeError(
+            "future final-evaluation manifest already exists during V2 selection")
+    pool, predecessor_binding = scene_pool("scorer_fit")
+    allow_list = {
+        family: [path.name for path in paths]
+        for family, paths in sorted(pool.items())}
+    excluded_union = (
+        set(factorial_scenes) | abandoned_scenes | v11_scenes | v12_scenes)
+    if (predecessor_binding.get("excluded_scene_count") != len(excluded_union)
+            or predecessor_binding.get("excluded_scene_ids_digest")
+            != canonical_digest(sorted(excluded_union))
+            or predecessor_binding.get("allow_list_digest")
+            != canonical_digest(allow_list)):
+        raise RuntimeError(
+            "full-bank reconstructed exclusions differ from the active pool")
+    authority = {
+        "schema": "go2_scorer_fit_corpus_v2_exclusion_authority_v1",
+        "strict_factorial_training": {
+            "binding": factorial_binding,
+            "scene_ids": sorted(factorial_scenes),
+        },
+        "abandoned_identity_attempt": {
+            "binding": invalid_index.binding(),
+            "scene_ids": sorted(abandoned_scenes),
+        },
+        "oracle_v1_1_pilots": {
+            "path": str(v11_path.relative_to(ROOT)),
+            "identity_manifest_digest": V11_IDENTITY_MANIFEST_DIGEST,
+            "raw_sha256": file_sha256(v11_path),
+            "byte_count": v11_path.stat().st_size,
+            "scene_ids": sorted(v11_scenes),
+        },
+        "oracle_v1_2_pilots": {
+            "path": str(v12_path.relative_to(ROOT)),
+            "state_manifest_digest": V12_IDENTITY_MANIFEST_DIGEST,
+            "raw_sha256": file_sha256(v12_path),
+            "byte_count": v12_path.stat().st_size,
+            "scene_ids": sorted(v12_scenes),
+        },
+        "development_prediction_240_branches": {
+            "path": str(DEVELOPMENT_240_IDENTITY_MANIFEST.relative_to(ROOT)),
+            "stage_a_identity_manifest_digest": development[
+                "stage_a_identity_manifest_digest"],
+            "raw_sha256": file_sha256(DEVELOPMENT_240_IDENTITY_MANIFEST),
+            "byte_count": DEVELOPMENT_240_IDENTITY_MANIFEST.stat().st_size,
+            "state_count": 20,
+            "branch_count": 240,
+            "scene_ids": sorted(development_scenes),
+        },
+        "future_final_evaluation": {
+            "manifest_path": str(final_manifest.relative_to(ROOT)),
+            "future_final_manifest_absent": True,
+            "corpus_selection_contract_digest": selection_digest(),
+            "final_eval_rule": SELECTION["final_eval"],
+            "one_state_per_scene": bool(SELECTION["one_state_per_scene"]),
+            "prospective_scorer_fit_exclusion": (
+                "the frozen V2 120-scene manifest becomes the exact scorer-fit "
+                "scene exclusion when final_eval is later authorised"),
+        },
+        "predecessor_exclusion_binding": predecessor_binding,
+        "allowed_scene_ids_by_family": allow_list,
+        "allowed_scene_ids_by_family_digest": canonical_digest(allow_list),
+        "candidate_outcomes_consumed": False,
+    }
+    authority["full_bank_v2_exclusion_authority_digest"] = \
+        canonical_digest(authority)
+    return authority
+
+
+def _full_bank_v2_validate_exclusion_authority(
+        authority: Mapping[str, Any], *,
+        allowed_scene_ids_by_family: Mapping[str, Sequence[str]]) -> None:
+    if (not isinstance(authority, Mapping)
+            or authority.get("schema")
+            != "go2_scorer_fit_corpus_v2_exclusion_authority_v1"):
+        raise RuntimeError("full-bank V2 exclusion authority is malformed")
+    supplied = {
+        str(key): [str(value) for value in values]
+        for key, values in allowed_scene_ids_by_family.items()}
+    if (authority.get("full_bank_v2_exclusion_authority_digest")
+            != canonical_digest({key: value for key, value in authority.items()
+                                 if key != "full_bank_v2_exclusion_authority_digest"})
+            or authority.get("allowed_scene_ids_by_family") != supplied
+            or authority.get("allowed_scene_ids_by_family_digest")
+            != canonical_digest(supplied)
+            or authority.get("future_final_evaluation", {}).get(
+                "future_final_manifest_absent") is not True
+            or authority.get("candidate_outcomes_consumed") is not False):
+        raise RuntimeError("full-bank V2 exclusion authority binding changed")
+
+
+def _full_bank_v2_state_revalidation_check(
+        state: Mapping[str, Any], *,
+        allowed_scene_ids_by_family: Mapping[str, Sequence[str]],
+        exclusion_authority: Mapping[str, Any],
+        preserved_vectors: Mapping[str, Mapping[str, Any]],
+        require_identity: bool, verify_scene_files: bool,
+        source_custody_digest: str,
+        ) -> dict[str, Any]:
+    """Mechanically check one structural state without opening branch data."""
+
+    structural = _full_bank_v2_structural_state_identity(state)
+    family = structural["family"]
+    scene_id = structural["scene_id"]
+    allowed = allowed_scene_ids_by_family.get(family)
+    if (not isinstance(allowed, Sequence) or isinstance(allowed, (str, bytes))
+            or scene_id not in {str(value) for value in allowed}):
+        raise RuntimeError(
+            f"full-bank state {scene_id} fails the frozen exclusion allow-list")
+    named_exclusions = {
+        "strict_factorial_training_scene_exclusion_pass":
+            "strict_factorial_training",
+        "abandoned_identity_exclusion_pass": "abandoned_identity_attempt",
+        "oracle_v1_1_pilot_exclusion_pass": "oracle_v1_1_pilots",
+        "oracle_v1_2_pilot_exclusion_pass": "oracle_v1_2_pilots",
+        "development_prediction_240_branch_exclusion_pass":
+            "development_prediction_240_branches",
+    }
+    exclusion_checks = {
+        check: scene_id not in {
+            str(value) for value in exclusion_authority.get(
+                source, {}).get("scene_ids", [])}
+        for check, source in named_exclusions.items()
+    }
+    exclusion_checks["future_final_evaluation_reservation_pass"] = bool(
+        exclusion_authority.get("future_final_evaluation", {}).get(
+            "future_final_manifest_absent") is True
+        and exclusion_authority.get("future_final_evaluation", {}).get(
+            "corpus_selection_contract_digest") == selection_digest())
+    if not all(exclusion_checks.values()):
+        raise RuntimeError(
+            f"full-bank state {scene_id} overlaps a named exclusion")
+    identity = state.get("state_identity_digest")
+    if require_identity and not _is_sha256(identity):
+        raise RuntimeError("full-bank fixed/selected state identity is malformed")
+    role = state.get("split_role")
+    if require_identity:
+        if role not in ("fit", "calibration"):
+            raise RuntimeError("full-bank selected state split role is malformed")
+    elif role != "DEFERRED_SMALL_COMPLETION_JOINT_SEARCH":
+        raise RuntimeError("full-bank candidate split role is not deferred")
+
+    scene_manifest_available = True
+    genesis_scene_available = True
+    if verify_scene_files:
+        scene_dir = Path(structural["scene_dir"])
+        _assert_unsealed_path(scene_dir)
+        manifest_path = scene_dir / "manifest.json"
+        genesis_path = scene_dir / "genesis_scene.json"
+        _assert_unsealed_path(manifest_path)
+        _assert_unsealed_path(genesis_path)
+        scene_manifest_available = bool(
+            manifest_path.is_file() and not manifest_path.is_symlink()
+            and file_sha256(manifest_path)
+            == structural["scene_manifest_sha256"]
+            and manifest_path.stat().st_size
+            == structural["scene_manifest_byte_count"])
+        genesis_scene_available = bool(
+            genesis_path.is_file() and not genesis_path.is_symlink())
+        if not scene_manifest_available or not genesis_scene_available:
+            raise RuntimeError(
+                f"full-bank state {scene_id} lacks exact redrive inputs")
+
+    goal = _full_bank_v2_goal_identity(state["goal"])
+    stratum = structural["stratum"]
+    selector_pass = True
+    completion_evidence: dict[str, Any] | None = None
+    if stratum == "general":
+        selector_pass = goal["graph_edges"] >= 2
+    elif stratum == "safety_enriched":
+        selector_pass = (
+            goal["graph_edges"] >= 2
+            and structural["body_clearance_m"]
+            <= SAFETY_ENRICHED_MAX_BODY_CLEARANCE_M)
+    elif stratum == "completion_enriched":
+        completion_evidence = full_bank_completion_reachability_evidence(
+            state, preserved_vectors=preserved_vectors)
+        selector_pass = completion_evidence["eligible"] is True
+    if not selector_pass:
+        # Candidate failure is a normal prospective skip.  Fixed-state failure
+        # is surfaced by the caller as a scientific-contract defect.
+        pass
+    checks = {
+        **exclusion_checks,
+        "family_and_stratum_eligibility_pass": bool(selector_pass),
+        "scene_disjoint_split_designation_available": True,
+        "canonical_snapshot_available": bool(
+            scene_manifest_available and genesis_scene_available),
+        "complete_goal_binding_available": True,
+        "all_scorer_inputs_available": bool(
+            scene_manifest_available and genesis_scene_available),
+        "true_full_bank_execution_requirements_pass": True,
+        "candidate_outcomes_absent": True,
+        "branch_frames_latents_labels_absent": True,
+    }
+    payload = {
+        "schema": "go2_scorer_fit_corpus_v2_state_revalidation_check_v1",
+        "state_id": state.get("state_id"),
+        "state_identity_digest": identity,
+        "scene_id": scene_id,
+        "family": family,
+        "stratum": stratum,
+        "split_role": role,
+        "source_custody_digest": source_custody_digest,
+        "checks": checks,
+        "full_bank_completion_reachability": completion_evidence,
+        "pass": all(checks.values()),
+        "candidate_outcomes_consumed": False,
+        "branch_execution_used": False,
+    }
+    payload["full_bank_revalidation_digest"] = canonical_digest(payload)
+    return payload
+
+
+def build_full_bank_v2_candidate_revalidation(
+        *, raw_candidates: Sequence[Mapping[str, Any]],
+        allowed_scene_ids_by_family: Mapping[str, Sequence[str]],
+        exclusion_authority: Mapping[str, Any],
+        preserved_vectors: Mapping[str, Mapping[str, Any]],
+        candidate_source_custody_digest: str,
+        verify_scene_files: bool = True,
+        ) -> dict[str, dict[str, Any]]:
+    """Validate all 17 optional rows in the frozen order, before selection."""
+
+    if len(raw_candidates) != 17:
+        raise RuntimeError("full-bank candidate revalidation requires 17 scenes")
+    if not _is_sha256(candidate_source_custody_digest):
+        raise RuntimeError(
+            "full-bank candidate source custody digest is malformed")
+    _full_bank_v2_validate_exclusion_authority(
+        exclusion_authority,
+        allowed_scene_ids_by_family=allowed_scene_ids_by_family)
+    result: dict[str, dict[str, Any]] = {}
+    for state in raw_candidates:
+        scene_id = str(state.get("scene_id", ""))
+        if not scene_id or scene_id in result:
+            raise RuntimeError("full-bank candidate scene is missing or repeated")
+        result[scene_id] = _full_bank_v2_state_revalidation_check(
+            state,
+            allowed_scene_ids_by_family=allowed_scene_ids_by_family,
+            exclusion_authority=exclusion_authority,
+            preserved_vectors=preserved_vectors,
+            require_identity=False,
+            verify_scene_files=verify_scene_files,
+            source_custody_digest=candidate_source_custody_digest,
+        )
+    return result
+
+
+def _full_bank_v2_validate_state_quotas(
+        states: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    from collections import Counter
+
+    if len(states) != SCORER_FIT_V2_STATE_COUNT:
+        raise RuntimeError("full-bank V2 manifest does not contain 120 states")
+    families = tuple(str(value) for value in STATE_SELECTOR.REQUIRED_FAMILIES)
+    family = Counter(str(row.get("family")) for row in states)
+    stratum = Counter(str(row.get("stratum")) for row in states)
+    split = Counter(str(row.get("split_role")) for row in states)
+    family_stratum = Counter(
+        (str(row.get("family")), str(row.get("stratum"))) for row in states)
+    family_split = Counter(
+        (str(row.get("family")), str(row.get("split_role"))) for row in states)
+    family_stratum_split = Counter((
+        str(row.get("family")), str(row.get("stratum")),
+        str(row.get("split_role"))) for row in states)
+    expected_family = {name: 15 for name in families}
+    expected_stratum = {name: 40 for name in STRATA}
+    if (dict(family) != expected_family
+            or dict(stratum) != expected_stratum
+            or dict(split) != {"fit": 96, "calibration": 24}
+            or any(family_stratum[(name, layer)] != 5
+                   for name in families for layer in STRATA)
+            or any(family_split[(name, "fit")] != 12
+                   or family_split[(name, "calibration")] != 3
+                   for name in families)
+            or any(family_stratum_split[(name, layer, "fit")] != 4
+                   or family_stratum_split[
+                       (name, layer, "calibration")] != 1
+                   for name in families for layer in STRATA)):
+        raise RuntimeError("full-bank V2 family/stratum/split quotas changed")
+    scene_ids = [str(row.get("scene_id", "")) for row in states]
+    episode_clusters = [str(row.get("episode_cluster_id", ""))
+                        for row in states]
+    identities = [str(row.get("state_identity_digest", "")) for row in states]
+    if (len(set(scene_ids)) != 120 or len(set(episode_clusters)) != 120
+            or len(set(identities)) != 120
+            or any(not _is_sha256(value) for value in identities)):
+        raise RuntimeError("full-bank V2 state identities are not disjoint")
+    return {
+        "state_count": 120,
+        "per_family": dict(sorted(family.items())),
+        "per_stratum": dict(sorted(stratum.items())),
+        "per_split": dict(sorted(split.items())),
+        "per_family_stratum": {
+            f"{name}/{layer}": family_stratum[(name, layer)]
+            for name in families for layer in STRATA},
+        "per_family_split": {
+            f"{name}/{role}": family_split[(name, role)]
+            for name in families for role in ("fit", "calibration")},
+        "per_family_stratum_split": {
+            f"{name}/{layer}/{role}":
+                family_stratum_split[(name, layer, role)]
+            for name in families for layer in STRATA
+            for role in ("fit", "calibration")},
+        "unique_scene_count": len(set(scene_ids)),
+        "unique_episode_cluster_count": len(set(episode_clusters)),
+        "unique_state_identity_count": len(set(identities)),
+    }
+
+
+def build_full_bank_v2_preoutcome_revalidation(
+        *, fixed_states: Sequence[Mapping[str, Any]],
+        selected_states: Sequence[Mapping[str, Any]],
+        allowed_scene_ids_by_family: Mapping[str, Sequence[str]],
+        exclusion_authority: Mapping[str, Any],
+        exclusion_binding: Mapping[str, Any],
+        preserved_vectors: Mapping[str, Mapping[str, Any]],
+        predecessor_custody: Mapping[str, Any], design_digest: str,
+        mask_classification_digest: str, selection_digest: str,
+        verify_scene_files: bool = True,
+        ) -> dict[str, Any]:
+    """Revalidate the exact retained 115 and selected five without outcomes."""
+
+    if len(fixed_states) != 115 or len(selected_states) != 5:
+        raise RuntimeError("full-bank revalidation requires exact 115+5 states")
+    if any(not _is_sha256(value) for value in (
+            design_digest, mask_classification_digest, selection_digest)):
+        raise RuntimeError("full-bank revalidation lineage digest is malformed")
+    states = _joint_state_order([*fixed_states, *selected_states])
+    _full_bank_v2_validate_exclusion_authority(
+        exclusion_authority,
+        allowed_scene_ids_by_family=allowed_scene_ids_by_family)
+    quotas = _full_bank_v2_validate_state_quotas(states)
+    INVALID_IDS.assert_disjoint(
+        states, label="scorer-fit V2 full-bank states",
+        index=INVALID_IDS.load_invalid_identity_index())
+    custody_digest = canonical_digest(dict(predecessor_custody))
+    checks = [_full_bank_v2_state_revalidation_check(
+        state,
+        allowed_scene_ids_by_family=allowed_scene_ids_by_family,
+        exclusion_authority=exclusion_authority,
+        preserved_vectors=preserved_vectors,
+        require_identity=True,
+        verify_scene_files=verify_scene_files,
+        source_custody_digest=custody_digest,
+    ) for state in states]
+    if any(row["pass"] is not True for row in checks):
+        failures = [row["state_id"] for row in checks if not row["pass"]]
+        raise RuntimeError(
+            f"fixed or selected full-bank state revalidation failed: {failures}")
+    completion = [row for row in checks
+                  if row["stratum"] == "completion_enriched"]
+    if (len(completion) != 40
+            or any(row["full_bank_completion_reachability"] is None
+                   or row["full_bank_completion_reachability"].get(
+                       "eligible") is not True for row in completion)):
+        raise RuntimeError("full-bank V2 does not have 40 valid completion states")
+    payload = {
+        "schema": SCORER_FIT_V2_REVALIDATION_SCHEMA,
+        "status": SCORER_FIT_V2_REVALIDATION_STATUS,
+        "complete": True,
+        "scorer_fit_corpus_v2_design_digest": design_digest,
+        "rotation_mask_classification_digest": mask_classification_digest,
+        "full_bank_small_completion_selection_digest": selection_digest,
+        "predecessor_custody": dict(predecessor_custody),
+        "predecessor_custody_digest": custody_digest,
+        "exclusion_binding": dict(exclusion_binding),
+        "exclusion_binding_digest": canonical_digest(dict(exclusion_binding)),
+        "full_bank_v2_exclusion_authority": dict(exclusion_authority),
+        "full_bank_v2_exclusion_authority_digest": exclusion_authority[
+            "full_bank_v2_exclusion_authority_digest"],
+        "fixed_state_count": 115,
+        "selected_small_completion_state_count": 5,
+        "revalidated_state_count": 120,
+        "completion_state_count": 40,
+        "full_bank_candidate_indices": list(
+            SCORER_FIT_V2_CANDIDATE_INDICES),
+        "state_quota_validation": quotas,
+        "state_checks": checks,
+        "retained_identity_count": 115,
+        "replacement_identity_count": 0,
+        "all_rotation_masks_allocation_only": True,
+        "true_branch_execution_requirement_count": 0,
+        "candidate_outcomes_consumed": False,
+        "branch_data_created": False,
+        "frames_or_latents_accessed": False,
+        "scorer_or_predictor_accessed": False,
+        **_full_bank_v2_historical_rotation_access_attestation(),
+    }
+    payload["full_bank_preoutcome_state_revalidation_digest"] = \
+        canonical_digest(payload)
+    return payload
+
+
+def _full_bank_v2_identity_projection(
+        *, states: Sequence[Mapping[str, Any]], design_digest: str,
+        selection_digest_value: str, revalidation_digest: str,
+        selector_digest: str) -> dict[str, Any]:
+    ordered = _joint_state_order(states)
+    payload = {
+        "schema": SCORER_FIT_V2_IDENTITY_PROJECTION_SCHEMA,
+        "scorer_fit_corpus_v2_design_digest": design_digest,
+        "active_selector_contract_digest": selector_digest,
+        "full_bank_small_completion_selection_digest":
+            selection_digest_value,
+        "full_bank_preoutcome_state_revalidation_digest":
+            revalidation_digest,
+        "state_count": len(ordered),
+        "state_identities": [{
+            "state_id": str(row["state_id"]),
+            "state_identity_digest": str(row["state_identity_digest"]),
+            "scene_id": str(row["scene_id"]),
+            "family": str(row["family"]),
+            "stratum": str(row["stratum"]),
+            "split_role": str(row["split_role"]),
+            "goal_type": str(row["goal_type"]),
+            "structural_state_identity_digest": canonical_digest(
+                _full_bank_v2_structural_state_identity(row)),
+            "designated_goal_identity_digest": canonical_digest(
+                _full_bank_v2_goal_identity(row["goal"])),
+        } for row in ordered],
+        "candidate_outcomes_consumed": False,
+    }
+    payload["state_identity_projection_digest"] = canonical_digest(payload)
+    return payload
+
+
+def _full_bank_v2_assignment_counts(
+        states: Sequence[Mapping[str, Any]],
+        assignments: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    from collections import Counter
+
+    ordered_states = _joint_state_order(states)
+    state_by_digest = {
+        str(row["state_identity_digest"]): row for row in ordered_states}
+    if len(state_by_digest) != 120 or len(assignments) != 1_440:
+        raise RuntimeError("full-bank V2 assignment surface size changed")
+    overall: Counter[int] = Counter()
+    split: Counter[tuple[int, str]] = Counter()
+    family: Counter[tuple[int, str]] = Counter()
+    stratum: Counter[tuple[int, str]] = Counter()
+    family_split: Counter[tuple[int, str, str]] = Counter()
+    family_stratum: Counter[tuple[int, str, str]] = Counter()
+    goal_type: Counter[tuple[int, str]] = Counter()
+    per_state: Counter[str] = Counter()
+    seen: set[tuple[str, int]] = set()
+    for assignment in assignments:
+        identity = str(assignment.get("state_identity_digest", ""))
+        candidate = assignment.get("candidate_index")
+        if (identity not in state_by_digest
+                or isinstance(candidate, bool) or not isinstance(candidate, int)
+                or candidate not in SCORER_FIT_V2_CANDIDATE_INDICES
+                or (identity, candidate) in seen):
+            raise RuntimeError("full-bank V2 assignment row is malformed")
+        seen.add((identity, candidate))
+        state = state_by_digest[identity]
+        per_state[identity] += 1
+        overall[candidate] += 1
+        split[(candidate, str(state["split_role"]))] += 1
+        family[(candidate, str(state["family"]))] += 1
+        stratum[(candidate, str(state["stratum"]))] += 1
+        family_split[(candidate, str(state["family"]),
+                      str(state["split_role"]))] += 1
+        family_stratum[(candidate, str(state["family"]),
+                        str(state["stratum"]))] += 1
+        goal_type[(candidate, str(state["goal_type"]))] += 1
+    families = tuple(str(value) for value in STATE_SELECTOR.REQUIRED_FAMILIES)
+    goal_types = sorted({str(row["goal_type"]) for row in ordered_states})
+    if (set(per_state.values()) != {12}
+            or any(overall[index] != 120
+                   for index in SCORER_FIT_V2_CANDIDATE_INDICES)
+            or any(split[(index, "fit")] != 96
+                   or split[(index, "calibration")] != 24
+                   for index in SCORER_FIT_V2_CANDIDATE_INDICES)
+            or any(stratum[(index, layer)] != 40
+                   for index in SCORER_FIT_V2_CANDIDATE_INDICES
+                   for layer in STRATA)
+            or any(family[(index, name)] != 15
+                   for index in SCORER_FIT_V2_CANDIDATE_INDICES
+                   for name in families)
+            or any(family_split[(index, name, "fit")] != 12
+                   or family_split[(index, name, "calibration")] != 3
+                   for index in SCORER_FIT_V2_CANDIDATE_INDICES
+                   for name in families)
+            or any(family_stratum[(index, name, layer)] != 5
+                   for index in SCORER_FIT_V2_CANDIDATE_INDICES
+                   for name in families for layer in STRATA)):
+        raise RuntimeError("full-bank V2 candidate algebra changed")
+    goal_reference = {
+        goal: goal_type[(0, goal)] for goal in goal_types}
+    if any({goal: goal_type[(index, goal)] for goal in goal_types}
+           != goal_reference
+           for index in SCORER_FIT_V2_CANDIDATE_INDICES):
+        raise RuntimeError(
+            "full-bank V2 candidate-by-goal-type distributions differ")
+    pairwise = [{
+        "candidate_a": int(left),
+        "candidate_b": int(right),
+        "cooccurring_state_count": 120,
+    } for left, right in itertools.combinations(
+        SCORER_FIT_V2_CANDIDATE_INDICES, 2)]
+    if len(pairwise) != 66:
+        raise RuntimeError("full-bank V2 pairwise candidate count changed")
+    return {
+        "assignment_count": len(assignments),
+        "per_state_assignment_count": 12,
+        "candidate_overall": {
+            str(index): overall[index]
+            for index in SCORER_FIT_V2_CANDIDATE_INDICES},
+        "candidate_by_split": {
+            str(index): {
+                role: split[(index, role)]
+                for role in ("fit", "calibration")}
+            for index in SCORER_FIT_V2_CANDIDATE_INDICES},
+        "candidate_by_stratum": {
+            str(index): {layer: stratum[(index, layer)] for layer in STRATA}
+            for index in SCORER_FIT_V2_CANDIDATE_INDICES},
+        "candidate_by_family": {
+            str(index): {name: family[(index, name)] for name in families}
+            for index in SCORER_FIT_V2_CANDIDATE_INDICES},
+        "candidate_by_family_split": {
+            str(index): {
+                name: {
+                    role: family_split[(index, name, role)]
+                    for role in ("fit", "calibration")}
+                for name in families}
+            for index in SCORER_FIT_V2_CANDIDATE_INDICES},
+        "candidate_by_family_stratum": {
+            str(index): {
+                name: {
+                    layer: family_stratum[(index, name, layer)]
+                    for layer in STRATA}
+                for name in families}
+            for index in SCORER_FIT_V2_CANDIDATE_INDICES},
+        "candidate_by_goal_type": {
+            str(index): {
+                goal: goal_type[(index, goal)] for goal in goal_types}
+            for index in SCORER_FIT_V2_CANDIDATE_INDICES},
+        "all_candidate_goal_type_distributions_identical": True,
+        "unordered_candidate_pair_count": 66,
+        "pairwise_candidate_cooccurrence": pairwise,
+        "pairwise_candidate_cooccurrence_exact": 120,
+    }
+
+
+def build_full_bank_v2_assignment_manifest(
+        *, states: Sequence[Mapping[str, Any]], design_digest: str,
+        identity_projection_digest: str,
+        revalidation_digest: str) -> dict[str, Any]:
+    """Expand the 120 outcome-free states to the exact 1,440 assignments."""
+
+    if any(not _is_sha256(value) for value in (
+            design_digest, identity_projection_digest, revalidation_digest)):
+        raise RuntimeError("full-bank assignment lineage digest is malformed")
+    ordered = _joint_state_order(states)
+    assignments: list[dict[str, Any]] = []
+    for state in ordered:
+        for candidate_index in SCORER_FIT_V2_CANDIDATE_INDICES:
+            candidate = V1.CANDIDATE_BANK[candidate_index]
+            row = {
+                "schema": "go2_scorer_fit_corpus_v2_assignment_identity_v1",
+                "scorer_fit_corpus_v2_design_digest": design_digest,
+                "state_identity_projection_digest": identity_projection_digest,
+                "state_id": str(state["state_id"]),
+                "state_identity_digest": str(state["state_identity_digest"]),
+                "scene_id": str(state["scene_id"]),
+                "family": str(state["family"]),
+                "stratum": str(state["stratum"]),
+                "split_role": str(state["split_role"]),
+                "goal_type": str(state["goal_type"]),
+                "candidate_index": int(candidate_index),
+                "candidate": str(candidate[0]),
+                "primitives": list(candidate[1]),
+                "candidate_bank_digest": V1.bank_digest(),
+            }
+            row["assignment_identity_digest"] = canonical_digest(row)
+            assignments.append(row)
+    counts = _full_bank_v2_assignment_counts(ordered, assignments)
+    payload = {
+        "schema": SCORER_FIT_V2_ASSIGNMENT_MANIFEST_SCHEMA,
+        "status": STATUS,
+        "complete": True,
+        "scorer_fit_corpus_v2_design_digest": design_digest,
+        "state_identity_projection_digest": identity_projection_digest,
+        "full_bank_preoutcome_state_revalidation_digest":
+            revalidation_digest,
+        "candidate_bank_digest": V1.bank_digest(),
+        "candidate_indices": list(SCORER_FIT_V2_CANDIDATE_INDICES),
+        "state_count": len(ordered),
+        "assignment_count": len(assignments),
+        "assignments": assignments,
+        "algebraic_validation": counts,
+        "candidate_outcomes_consumed": False,
+        "branch_execution_used": False,
+        "rotation_or_subset_decision_present": False,
+    }
+    payload["full_bank_assignment_manifest_digest"] = canonical_digest(payload)
+    return payload
+
+
+def _build_full_bank_v2_small_shard(
+        *, prefix: Mapping[str, Any], selected_states: Sequence[Mapping[str, Any]],
+        design_digest: str, mask_classification_digest: str,
+        selection_digest_value: str, revalidation_digest: str,
+        ) -> dict[str, Any]:
+    prefix_states = prefix.get("states")
+    if not isinstance(prefix_states, list) or len(prefix_states) != 10:
+        raise RuntimeError("full-bank V2 small prefix changed")
+    states = sorted(
+        [dict(row) for row in [*prefix_states, *selected_states]],
+        key=lambda row: (STRATA.index(str(row["stratum"])),
+                         str(row["state_id"])))
+    if (len(states) != 15
+            or len({row["scene_id"] for row in states}) != 15):
+        raise RuntimeError("full-bank V2 small shard is not 15-scene disjoint")
+    payload = {
+        "schema": SCORER_FIT_V2_SMALL_SHARD_SCHEMA,
+        "status": STATUS,
+        "complete": True,
+        "pool": "scorer_fit_v2",
+        "family": REACHABILITY_REDRIVE_FAMILY,
+        "spec": SCORER_FIT_V2_SPEC,
+        "scorer_fit_corpus_v2_design_digest": design_digest,
+        "rotation_mask_classification_digest": mask_classification_digest,
+        "full_bank_small_completion_selection_digest":
+            selection_digest_value,
+        "full_bank_preoutcome_state_revalidation_digest":
+            revalidation_digest,
+        "small_prefix_reissue_receipt": dict(prefix["receipt_binding"]),
+        "small_prefix_transport_binding_digest": canonical_digest(
+            prefix.get("transport_bindings", [])),
+        "states": states,
+        "candidate_outcomes_consumed": False,
+        "branch_data_created": False,
+        "solver_or_optimisation_used": False,
+        **_full_bank_v2_historical_rotation_access_attestation(),
+    }
+    payload["state_shard_digest"] = canonical_digest(payload)
+    return payload
+
+
+def build_full_bank_v2_state_manifest(
+        *, states: Sequence[Mapping[str, Any]], common: Mapping[str, Any],
+        design_digest: str, mask_classification_digest: str,
+        selection: Mapping[str, Any], revalidation: Mapping[str, Any],
+        small_shard: Mapping[str, Any],
+        assignment_manifest: Mapping[str, Any],
+        identity_projection: Mapping[str, Any],
+        predecessor_custody: Mapping[str, Any],
+        exclusion_binding: Mapping[str, Any]) -> dict[str, Any]:
+    ordered = _joint_state_order(states)
+    quotas = _full_bank_v2_validate_state_quotas(ordered)
+    assignments = assignment_manifest.get("assignments")
+    if not isinstance(assignments, list):
+        raise RuntimeError("full-bank V2 assignment rows are absent")
+    by_state: dict[str, list[int]] = {}
+    for row in assignments:
+        by_state.setdefault(str(row["state_identity_digest"]), []).append(
+            int(row["candidate_index"]))
+    manifest_states: list[dict[str, Any]] = []
+    for index, raw in enumerate(ordered):
+        state = dict(raw)
+        candidates = by_state.get(str(state["state_identity_digest"]))
+        if candidates != list(SCORER_FIT_V2_CANDIDATE_INDICES):
+            raise RuntimeError("full-bank V2 state lacks exact candidate 0..11")
+        state["state_index"] = index
+        state["candidate_indices"] = candidates
+        manifest_states.append(state)
+    inherited_keys = (
+        "selection_digest", "invalid_scorer_identity_exclusion_digest",
+        "state_selector_amendment_digest",
+        "state_selector_feasibility_receipt_digest", "candidate_bank_digest",
+        "progress_contract_digest", "safety_contract_digest",
+        "oracle_v1_2_digest", "scorer_contract_v1_2_digest",
+        "boundary_digest", "render_contract_digest",
+        "textured_v03_renderer_contract_digest", "preprocess_contract_digest",
+        "preprocessing_digest", "target_encoder_digest",
+        "target_encoder_checkpoint_sha256", "genesis_backend",
+    )
+    inherited = {key: common[key] for key in inherited_keys}
+    successor_projection = {
+        "corpus_design_version": "scorer_fit_corpus_v2_full_bank_v1",
+        "scorer_fit_corpus_v2_design_digest": design_digest,
+        "state_selector_binding": {
+            "state_selector_amendment_digest": inherited[
+                "state_selector_amendment_digest"],
+            "state_selector_feasibility_receipt_digest": inherited[
+                "state_selector_feasibility_receipt_digest"],
+        },
+        "state_identity_projection_digest": identity_projection[
+            "state_identity_projection_digest"],
+        "assignment_manifest_digest": assignment_manifest[
+            "full_bank_assignment_manifest_digest"],
+        "state_count": 120,
+        "branch_count": 1_440,
+        "candidate_exposure_counts": assignment_manifest[
+            "algebraic_validation"],
+        "preoutcome_lineage_digest": canonical_digest({
+            "predecessor_custody": dict(predecessor_custody),
+            "selection": selection[
+                "full_bank_small_completion_selection_digest"],
+            "revalidation": revalidation[
+                "full_bank_preoutcome_state_revalidation_digest"],
+        }),
+    }
+    payload = {
+        "schema": SCORER_FIT_V2_STATE_MANIFEST_SCHEMA,
+        "status": STATUS,
+        "complete": True,
+        "pool": "scorer_fit_v2",
+        "spec": SCORER_FIT_V2_SPEC,
+        "scorer_fit_corpus_v2_design_digest": design_digest,
+        "rotation_mask_classification_digest": mask_classification_digest,
+        "full_bank_small_completion_selection_digest": selection[
+            "full_bank_small_completion_selection_digest"],
+        "full_bank_preoutcome_state_revalidation_digest": revalidation[
+            "full_bank_preoutcome_state_revalidation_digest"],
+        "small_family_state_shard_digest": small_shard[
+            "state_shard_digest"],
+        "state_identity_projection_digest": identity_projection[
+            "state_identity_projection_digest"],
+        "full_bank_assignment_manifest_digest": assignment_manifest[
+            "full_bank_assignment_manifest_digest"],
+        "predecessor_scientific_contract_bindings": inherited,
+        "predecessor_custody": dict(predecessor_custody),
+        "predecessor_custody_digest": canonical_digest(
+            dict(predecessor_custody)),
+        "exclusion_binding": dict(exclusion_binding),
+        "exclusion_binding_digest": canonical_digest(dict(exclusion_binding)),
+        "states": manifest_states,
+        "state_quota_validation": quotas,
+        "candidate_assignment_validation": assignment_manifest[
+            "algebraic_validation"],
+        "attempted_branch_count_registered": 1_440,
+        "candidate_indices_per_state": list(
+            SCORER_FIT_V2_CANDIDATE_INDICES),
+        "candidate_rotation_present": False,
+        "subset_allocation_present": False,
+        "successor_scorer_contract_input_projection": successor_projection,
+        "candidate_outcomes_consumed": False,
+        "branch_data_created": False,
+        "frames_or_latents_accessed": False,
+        "scorer_or_predictor_accessed": False,
+        "final_200_state_corpus_authorised": False,
+        **_full_bank_v2_historical_rotation_access_attestation(),
+    }
+    payload["state_manifest_digest"] = canonical_digest(payload)
+    return payload
+
+
+def _full_bank_v2_predecessor_custody(
+        inputs: Mapping[str, Any]) -> dict[str, Any]:
+    fixed_evidence = inputs.get("fixed_shard_evidence")
+    fixed_states = inputs.get("fixed_states")
+    raw_candidates = inputs.get("raw_candidates")
+    prefix = inputs.get("prefix")
+    if (not isinstance(fixed_evidence, list) or len(fixed_evidence) != 7
+            or not isinstance(fixed_states, list) or len(fixed_states) != 115
+            or not isinstance(raw_candidates, list)
+            or len(raw_candidates) != 17
+            or not isinstance(prefix, Mapping)
+            or not isinstance(prefix.get("receipt_binding"), Mapping)
+            or not isinstance(inputs.get(
+                "predecessor_scientific_input_bindings"), Mapping)):
+        raise RuntimeError("full-bank predecessor custody is incomplete")
+    payload = {
+        "schema": "go2_scorer_fit_corpus_v2_predecessor_custody_v1",
+        "fixed_non_small_family_state_count": 105,
+        "fixed_non_small_family_shard_count": 7,
+        "fixed_non_small_family_shard_evidence": [
+            dict(row) for row in fixed_evidence],
+        "fixed_small_general_safety_state_count": 10,
+        "small_prefix_reissue_receipt": dict(prefix["receipt_binding"]),
+        "small_prefix_performance_receipt_binding": dict(
+            prefix["performance_receipt_binding"]),
+        "small_prefix_transport_bindings": [
+            dict(row) for row in prefix.get("transport_bindings", [])],
+        "predecessor_scientific_input_bindings": dict(
+            inputs["predecessor_scientific_input_bindings"]),
+        "predecessor_authority_bindings": {
+            str(key): dict(value) for key, value in
+            inputs.get("predecessor_authority_bindings", {}).items()},
+        "fixed_state_count": 115,
+        "fixed_predecessor_state_payload_digest": canonical_digest(
+            fixed_states),
+        "optional_small_completion_scene_count": 17,
+        "optional_small_completion_candidate_payload_digest":
+            canonical_digest(raw_candidates),
+        "optional_small_completion_scene_ids_digest": canonical_digest([
+            str(row["scene_id"]) for row in raw_candidates]),
+        "candidate_outcomes_consumed": False,
+        **_full_bank_v2_historical_rotation_access_attestation(),
+    }
+    payload["predecessor_custody_digest"] = canonical_digest(payload)
+    return payload
+
+
+def _full_bank_v2_exclusion_binding_from_inputs(
+        inputs: Mapping[str, Any]) -> dict[str, Any]:
+    shards = inputs.get("fixed_shards")
+    prefix = inputs.get("prefix")
+    if not isinstance(shards, list) or len(shards) != 7 \
+            or not isinstance(prefix, Mapping):
+        raise RuntimeError("full-bank exclusion sources are incomplete")
+    values = [shard.get("exclusion_binding") for shard in shards]
+    prefix_bindings = prefix.get("state_shard_bindings")
+    if not isinstance(prefix_bindings, Mapping):
+        raise RuntimeError("full-bank small prefix exclusion binding is absent")
+    values.append(prefix_bindings.get("exclusion_binding"))
+    if (not isinstance(values[0], Mapping)
+            or any(value != values[0] for value in values[1:])):
+        raise RuntimeError("full-bank predecessor exclusion bindings differ")
+    return dict(values[0])
+
+
+def _full_bank_v2_validate_design_payloads(
+        design: Mapping[str, Any], classification: Mapping[str, Any],
+        ) -> tuple[str, str, str, str]:
+    """Validate the authority module lazily to keep legacy imports unchanged."""
+
+    from lewm.oracle import go2_scorer_fit_corpus_v2_design as authority
+    authority.validate_design_amendment(design, root=ROOT)
+    authority.validate_rotation_mask_classification(classification, root=ROOT)
+    design_digest = str(design.get(authority.DESIGN_SELF_KEY, ""))
+    classification_digest = str(classification.get(
+        authority.MASK_CLASSIFICATION_SELF_KEY, ""))
+    if (not _is_sha256(design_digest)
+            or not _is_sha256(classification_digest)
+            or tuple(authority.CANDIDATE_INDICES)
+            != SCORER_FIT_V2_CANDIDATE_INDICES
+            or authority.STATE_COUNT != SCORER_FIT_V2_STATE_COUNT
+            or authority.ASSIGNMENT_COUNT != SCORER_FIT_V2_ASSIGNMENT_COUNT):
+        raise RuntimeError("full-bank V2 authority constants changed")
+    selector_digest = design.get("active_selector_contract_digest")
+    if selector_digest is None:
+        selector_digest = design.get("small_completion_selection", {}).get(
+            "active_selector_contract_digest")
+    if selector_digest is None:
+        selector_digest = design.get("scientific_contract_bindings", {}).get(
+            "state_selector_amendment_digest")
+    if not _is_sha256(selector_digest):
+        raise RuntimeError("full-bank V2 authority lacks its selector digest")
+    counts = classification.get("counts")
+    if (not isinstance(counts, Mapping)
+            or counts.get("old_rotation_related_condition_count") != 18
+            or counts.get("partial_subset_allocation_only_count") != 18
+            or counts.get("true_branch_execution_requirement_count") != 0
+            or design.get("count_contract")
+            != authority.FULL_BANK_COUNT_CONTRACT
+            or design.get("small_completion_selection")
+            != authority.COMPLETION_ORDERING_CONTRACT):
+        raise RuntimeError(
+            "full-bank V2 authority classification/count contract changed")
+    return (
+        design_digest, classification_digest, str(selector_digest),
+        str(authority.COMPLETION_ORDER_DOMAIN))
+
+
+def build_scorer_fit_v2_full_bank_bundle(
+        *, design: Mapping[str, Any], classification: Mapping[str, Any],
+        predecessor_inputs: Mapping[str, Any],
+        allowed_scene_ids_by_family: Mapping[str, Sequence[str]],
+        exclusion_authority: Mapping[str, Any],
+        preserved_vectors: Mapping[str, Mapping[str, Any]],
+        exclusion_binding: Mapping[str, Any] | None = None,
+        verify_scene_files: bool = True,
+        ) -> dict[str, Any]:
+    """Pure, solve-free construction of the V2 120-state/1,440-row bundle."""
+
+    design_digest, classification_digest, selector_digest, domain = \
+        _full_bank_v2_validate_design_payloads(design, classification)
+    _full_bank_v2_validate_exclusion_authority(
+        exclusion_authority,
+        allowed_scene_ids_by_family=allowed_scene_ids_by_family)
+    if (predecessor_inputs.get("candidate_outcomes_consumed") is not False
+            or predecessor_inputs.get("scientific_masks_accessed") is not False):
+        raise RuntimeError("full-bank V2 predecessor boundary is not pre-outcome")
+    fixed_states_value = predecessor_inputs.get("fixed_states")
+    raw_candidates = predecessor_inputs.get("raw_candidates")
+    common = predecessor_inputs.get("common")
+    prefix = predecessor_inputs.get("prefix")
+    if (not isinstance(fixed_states_value, list)
+            or len(fixed_states_value) != 115
+            or not isinstance(raw_candidates, list)
+            or len(raw_candidates) != 17
+            or not isinstance(common, Mapping)
+            or not isinstance(prefix, Mapping)):
+        raise RuntimeError("full-bank V2 predecessor input counts changed")
+    fixed_states = [
+        _full_bank_v2_active_state_projection(
+            row, preserved_vectors=preserved_vectors)
+        for row in fixed_states_value
+    ]
+    if selector_digest != common.get("state_selector_amendment_digest"):
+        raise RuntimeError("full-bank V2 authority and predecessor selector differ")
+    active_exclusion = (_full_bank_v2_exclusion_binding_from_inputs(
+        predecessor_inputs) if exclusion_binding is None
+        else dict(exclusion_binding))
+    if exclusion_binding is not None and active_exclusion != \
+            _full_bank_v2_exclusion_binding_from_inputs(predecessor_inputs):
+        raise RuntimeError("full-bank V2 supplied exclusion binding changed")
+    custody = _full_bank_v2_predecessor_custody(predecessor_inputs)
+    candidate_checks = build_full_bank_v2_candidate_revalidation(
+        raw_candidates=raw_candidates,
+        allowed_scene_ids_by_family=allowed_scene_ids_by_family,
+        exclusion_authority=exclusion_authority,
+        preserved_vectors=preserved_vectors,
+        candidate_source_custody_digest=custody[
+            "predecessor_custody_digest"],
+        verify_scene_files=verify_scene_files)
+    selection = deterministic_full_bank_completion_selection(
+        raw_candidates=raw_candidates,
+        candidate_revalidation=candidate_checks,
+        identity_bindings=common,
+        domain_separator=domain,
+        selector_digest=selector_digest,
+        design_digest=design_digest,
+        mask_classification_digest=classification_digest)
+    selected_states = [dict(row) for row in selection["selected_states"]]
+    revalidation = build_full_bank_v2_preoutcome_revalidation(
+        fixed_states=fixed_states,
+        selected_states=selected_states,
+        allowed_scene_ids_by_family=allowed_scene_ids_by_family,
+        exclusion_authority=exclusion_authority,
+        exclusion_binding=active_exclusion,
+        preserved_vectors=preserved_vectors,
+        predecessor_custody=custody,
+        design_digest=design_digest,
+        mask_classification_digest=classification_digest,
+        selection_digest=selection[
+            "full_bank_small_completion_selection_digest"],
+        verify_scene_files=verify_scene_files)
+    revalidation_digest = revalidation[
+        "full_bank_preoutcome_state_revalidation_digest"]
+    small_shard = _build_full_bank_v2_small_shard(
+        prefix=prefix, selected_states=selected_states,
+        design_digest=design_digest,
+        mask_classification_digest=classification_digest,
+        selection_digest_value=selection[
+            "full_bank_small_completion_selection_digest"],
+        revalidation_digest=revalidation_digest)
+    states = _joint_state_order([*fixed_states, *selected_states])
+    identity_projection = _full_bank_v2_identity_projection(
+        states=states, design_digest=design_digest,
+        selection_digest_value=selection[
+            "full_bank_small_completion_selection_digest"],
+        revalidation_digest=revalidation_digest,
+        selector_digest=selector_digest)
+    assignment_manifest = build_full_bank_v2_assignment_manifest(
+        states=states, design_digest=design_digest,
+        identity_projection_digest=identity_projection[
+            "state_identity_projection_digest"],
+        revalidation_digest=revalidation_digest)
+    state_manifest = build_full_bank_v2_state_manifest(
+        states=states, common=common,
+        design_digest=design_digest,
+        mask_classification_digest=classification_digest,
+        selection=selection, revalidation=revalidation,
+        small_shard=small_shard,
+        assignment_manifest=assignment_manifest,
+        identity_projection=identity_projection,
+        predecessor_custody=custody,
+        exclusion_binding=active_exclusion)
+    return {
+        "design": dict(design),
+        "classification": dict(classification),
+        "candidate_revalidation": candidate_checks,
+        "selection": selection,
+        "revalidation": revalidation,
+        "small_shard": small_shard,
+        "identity_projection": identity_projection,
+        "assignment_manifest": assignment_manifest,
+        "state_manifest": state_manifest,
+        "candidate_outcomes_consumed": False,
+        "solver_or_optimisation_used": False,
+        **_full_bank_v2_historical_rotation_access_attestation(),
+    }
+
+
+def validate_scorer_fit_v2_full_bank_bundle(
+        bundle: Mapping[str, Any], *,
+        predecessor_inputs: Mapping[str, Any],
+        allowed_scene_ids_by_family: Mapping[str, Sequence[str]],
+        exclusion_authority: Mapping[str, Any],
+        preserved_vectors: Mapping[str, Mapping[str, Any]],
+        exclusion_binding: Mapping[str, Any] | None = None,
+        verify_scene_files: bool = True) -> None:
+    if not isinstance(bundle, Mapping):
+        raise RuntimeError("full-bank V2 bundle is not a mapping")
+    expected = build_scorer_fit_v2_full_bank_bundle(
+        design=bundle.get("design", {}),
+        classification=bundle.get("classification", {}),
+        predecessor_inputs=predecessor_inputs,
+        allowed_scene_ids_by_family=allowed_scene_ids_by_family,
+        exclusion_authority=exclusion_authority,
+        preserved_vectors=preserved_vectors,
+        exclusion_binding=exclusion_binding,
+        verify_scene_files=verify_scene_files)
+    if dict(bundle) != expected:
+        raise RuntimeError("full-bank V2 bundle differs from solve-free replay")
+
+
+def load_scorer_fit_v2_preoutcome_inputs(
+        *, out: Path | None = None) -> dict[str, Any]:
+    """Reopen the exact 115/17 identity inputs after V2 authority issuance.
+
+    This path performs no MILP, CP-SAT, enumeration, branch execution, render,
+    latent/scorer access, or predictor access.  The legacy rotation vectors are
+    reopened only as classified historical evidence needed to recover the
+    actual previous command for full-bank ``L_max``.
+    """
+
+    from lewm.oracle import go2_scorer_fit_corpus_v2_design as authority
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    if scorer_fit != OUT_ROOT / "scorer_fit":
+        raise RuntimeError("full-bank V2 inputs are scorer-fit only")
+    active = authority.load_active_design_authority(root=ROOT)
+    material = _global_exact_authority_material(out=scorer_fit)
+    inputs = load_v2_parallel_small_benchmark_inputs(
+        predecessor_scientific_input_bindings=material[
+            "predecessor_scientific_input_bindings"],
+        out=scorer_fit)
+    if (active.get("candidate_outcomes_consumed") is not False
+            or inputs.get("candidate_outcomes_consumed") is not False
+            or inputs.get("scientific_masks_accessed") is not False
+            or inputs.get("common")
+            != active.get("preserved_scientific_contract_bindings")):
+        raise RuntimeError(
+            "full-bank V2 inputs differ from the active scientific authority")
+    historical = load_global_exact_historical_mixed_disposition_authority(
+        out=scorer_fit)
+    preserved = _phase1_completion_rotation_vectors_from_validated_disposition(
+        historical["payload"])
+    if len(preserved) != \
+            SCORER_FIT_V2_PRESERVED_HISTORICAL_ROTATION_VECTOR_COUNT:
+        raise RuntimeError("full-bank V2 preserved completion evidence changed")
+    exclusions = load_full_bank_v2_exclusion_authority()
+    if exclusions["predecessor_exclusion_binding"] != \
+            _full_bank_v2_exclusion_binding_from_inputs(inputs):
+        raise RuntimeError(
+            "full-bank V2 exact predecessor exclusions changed")
+    return {
+        "design_authority": active,
+        "predecessor_inputs": inputs,
+        "preserved_vectors": preserved,
+        "historical_mixed_disposition_authority": historical,
+        "exclusion_authority": exclusions,
+        "allowed_scene_ids_by_family": exclusions[
+            "allowed_scene_ids_by_family"],
+        "candidate_outcomes_consumed": False,
+        "solver_or_optimisation_used": False,
+        **_full_bank_v2_historical_rotation_access_attestation(),
+    }
+
+
+def build_active_scorer_fit_v2_full_bank_bundle(
+        *, out: Path | None = None,
+        verify_scene_files: bool = True) -> dict[str, Any]:
+    """Build the one prospective V2 bundle from exact active authorities."""
+
+    loaded = load_scorer_fit_v2_preoutcome_inputs(out=out)
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    failure_path = scorer_fit / SCORER_FIT_V2_FEASIBILITY_FAILURE_NAME
+    if failure_path.exists():
+        raise RuntimeError(
+            "full-bank V2 success bundle conflicts with terminal feasibility "
+            "failure")
+    active = loaded["design_authority"]
+    return build_scorer_fit_v2_full_bank_bundle(
+        design=active["design_amendment"],
+        classification=active["rotation_mask_classification"],
+        predecessor_inputs=loaded["predecessor_inputs"],
+        allowed_scene_ids_by_family=loaded[
+            "allowed_scene_ids_by_family"],
+        exclusion_authority=loaded["exclusion_authority"],
+        preserved_vectors=loaded["preserved_vectors"],
+        exclusion_binding=loaded["exclusion_authority"][
+            "predecessor_exclusion_binding"],
+        verify_scene_files=verify_scene_files)
+
+
+def _full_bank_v2_artifact_binding(
+        path: Path, *, self_key: str) -> dict[str, Any]:
+    binding = _artifact_binding(path, self_key=self_key)
+    if (not _is_sha256(binding.get("self_digest"))
+            or not _is_sha256(binding.get("raw_sha256"))):
+        raise RuntimeError("full-bank V2 artifact binding is malformed")
+    return binding
+
+
+def load_and_validate_full_bank_v2_manifests_for_consumption(
+        *, out: Path | None = None) -> dict[str, Any]:
+    """Pin and solve-free replay the complete active V2 identity surface."""
+
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    if scorer_fit != OUT_ROOT / "scorer_fit":
+        raise RuntimeError("full-bank V2 consumption is scorer-fit only")
+    expected = build_active_scorer_fit_v2_full_bank_bundle(out=scorer_fit)
+    specs = {
+        "selection": (
+            SCORER_FIT_V2_SELECTION_NAME,
+            "full_bank_small_completion_selection_digest"),
+        "revalidation": (
+            SCORER_FIT_V2_REVALIDATION_NAME,
+            "full_bank_preoutcome_state_revalidation_digest"),
+        "small_shard": (
+            SCORER_FIT_V2_SMALL_SHARD_NAME, "state_shard_digest"),
+        "state_manifest": (
+            SCORER_FIT_V2_STATE_MANIFEST_NAME, "state_manifest_digest"),
+        "assignment_manifest": (
+            SCORER_FIT_V2_ASSIGNMENT_MANIFEST_NAME,
+            "full_bank_assignment_manifest_digest"),
+    }
+    result: dict[str, Any] = {
+        "design_authority": load_scorer_fit_v2_preoutcome_inputs(
+            out=scorer_fit)["design_authority"]}
+    for key, (name, self_key) in specs.items():
+        raw_path = scorer_fit / name
+        path = _pin_generated_path(raw_path, raw_path)
+        if not path.is_file() or path.is_symlink():
+            raise RuntimeError(f"full-bank V2 {key} artifact is missing")
+        try:
+            payload = json.loads(path.read_text())
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"full-bank V2 {key} artifact is invalid JSON") from exc
+        expected_payload = expected[key]
+        if payload != expected_payload:
+            raise RuntimeError(
+                f"full-bank V2 {key} differs from solve-free replay")
+        result[key] = payload
+        result[f"{key}_binding"] = _full_bank_v2_artifact_binding(
+            raw_path, self_key=self_key)
+    return result
+
+
 def _global_exact_authority_material(
         *, out: Path | None = None,
         ) -> dict[str, Any]:
@@ -11141,6 +12959,146 @@ def pin_active_scorer_fit_artifact_for_consumption(
     return _pin_generated_path(Path(path), expected)
 
 
+_FULL_BANK_V2_INHERITED_BRANCH_BINDING_KEYS = (
+    "selection_digest", "invalid_scorer_identity_exclusion_digest",
+    "state_selector_amendment_digest",
+    "state_selector_feasibility_receipt_digest", "candidate_bank_digest",
+    "progress_contract_digest", "safety_contract_digest",
+    "oracle_v1_2_digest", "scorer_contract_v1_2_digest",
+    "boundary_digest", "render_contract_digest",
+    "textured_v03_renderer_contract_digest", "preprocess_contract_digest",
+    "preprocessing_digest", "target_encoder_digest",
+    "target_encoder_checkpoint_sha256",
+)
+_FULL_BANK_V2_BRANCH_LINEAGE_KEYS = (
+    "scorer_fit_corpus_v2_design_digest",
+    "rotation_mask_classification_digest",
+    "full_bank_small_completion_selection_digest",
+    "full_bank_preoutcome_state_revalidation_digest",
+    "state_identity_projection_digest",
+    "full_bank_assignment_manifest_digest",
+    "scorer_fit_corpus_v2_scorer_contract_digest",
+    "scorer_fit_corpus_v2_scorer_contract_artifact_digest",
+    *_FULL_BANK_V2_INHERITED_BRANCH_BINDING_KEYS,
+)
+
+
+def _is_full_bank_v2_manifest(manifest: Mapping[str, Any]) -> bool:
+    return bool(
+        isinstance(manifest, Mapping)
+        and manifest.get("schema") == SCORER_FIT_V2_STATE_MANIFEST_SCHEMA
+        and manifest.get("pool") == "scorer_fit_v2"
+    )
+
+
+def _full_bank_v2_branch_identity(
+        state: Mapping[str, Any], assignment: Mapping[str, Any],
+        manifest: Mapping[str, Any]) -> dict[str, Any]:
+    candidate_index = assignment.get("candidate_index")
+    if (assignment.get("state_identity_digest")
+            != state.get("state_identity_digest")
+            or isinstance(candidate_index, bool)
+            or not isinstance(candidate_index, int)
+            or candidate_index not in SCORER_FIT_V2_CANDIDATE_INDICES):
+        raise RuntimeError("full-bank V2 assignment/state join changed")
+    candidate = V1.CANDIDATE_BANK[candidate_index]
+    payload = {
+        "schema": SCORER_FIT_V2_BRANCH_IDENTITY_SCHEMA,
+        "pool": "scorer_fit_v2",
+        "state_id": str(state["state_id"]),
+        "state_identity_digest": str(state["state_identity_digest"]),
+        "scene_id": str(state["scene_id"]),
+        "episode_cluster_id": str(state["episode_cluster_id"]),
+        "source_step": int(state["source_step"]),
+        "goal": dict(state["goal"]),
+        "candidate_index": int(candidate_index),
+        "candidate": str(candidate[0]),
+        "primitives": list(candidate[1]),
+        "assignment_identity_digest": str(
+            assignment["assignment_identity_digest"]),
+        **{key: manifest[key] for key in
+           _FULL_BANK_V2_BRANCH_LINEAGE_KEYS},
+    }
+    return {**payload, "branch_identity_digest": canonical_digest(payload)}
+
+
+def load_full_bank_v2_branch_runtime_authority(
+        *, out: Path | None = None) -> dict[str, Any]:
+    """Reconstruct exact V2 branch identities after successor issuance.
+
+    The pre-outcome state manifest intentionally cannot bind a successor
+    scorer contract that has not yet been issued.  This loader validates both
+    frozen manifests and that later contract, then deterministically joins
+    each assignment to one runtime branch identity.  No outcome file is read.
+    """
+
+    from lewm.oracle import (
+        go2_scorer_fit_corpus_v2_scorer_contract as successor,
+    )
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    if scorer_fit != OUT_ROOT / "scorer_fit":
+        raise RuntimeError("full-bank V2 branch authority is scorer-fit only")
+    manifests = load_and_validate_full_bank_v2_manifests_for_consumption(
+        out=scorer_fit)
+    contract_artifact = successor.load_contract_for_consumption(root=ROOT)
+    contract = contract_artifact.get("contract")
+    if not isinstance(contract, Mapping):
+        raise RuntimeError("full-bank V2 successor contract is absent")
+    state_manifest = manifests["state_manifest"]
+    assignment_manifest = manifests["assignment_manifest"]
+    inherited = state_manifest.get("predecessor_scientific_contract_bindings")
+    if (not isinstance(inherited, Mapping)
+            or set(_FULL_BANK_V2_INHERITED_BRANCH_BINDING_KEYS)
+            - set(inherited)):
+        raise RuntimeError("full-bank V2 inherited scientific bindings changed")
+    runtime = copy.deepcopy(state_manifest)
+    runtime.update({key: inherited[key]
+                    for key in _FULL_BANK_V2_INHERITED_BRANCH_BINDING_KEYS})
+    runtime.update({
+        "scorer_fit_corpus_v2_scorer_contract_digest": contract[
+            successor.CONTRACT_SELF_KEY],
+        "scorer_fit_corpus_v2_scorer_contract_artifact_digest":
+            contract_artifact[successor.ARTIFACT_SELF_KEY],
+    })
+    assignments = assignment_manifest.get("assignments")
+    if not isinstance(assignments, list) or len(assignments) != 1_440:
+        raise RuntimeError("full-bank V2 assignment rows changed")
+    by_state: dict[str, list[dict[str, Any]]] = {}
+    for assignment in assignments:
+        if not isinstance(assignment, Mapping):
+            raise RuntimeError("full-bank V2 assignment row is malformed")
+        by_state.setdefault(
+            str(assignment.get("state_identity_digest", "")), []).append(
+                dict(assignment))
+    branch_identities: list[dict[str, Any]] = []
+    for state in runtime["states"]:
+        rows = sorted(
+            by_state.get(str(state["state_identity_digest"]), []),
+            key=lambda row: int(row["candidate_index"]))
+        if [row["candidate_index"] for row in rows] != list(
+                SCORER_FIT_V2_CANDIDATE_INDICES):
+            raise RuntimeError("full-bank V2 state assignment join is incomplete")
+        identities = [
+            _full_bank_v2_branch_identity(state, row, runtime)
+            for row in rows
+        ]
+        state["branch_identities"] = identities
+        branch_identities.extend(identities)
+    branch_digests = [str(row["branch_identity_digest"])
+                      for row in branch_identities]
+    if (len(branch_digests) != SCORER_FIT_V2_ASSIGNMENT_COUNT
+            or len(set(branch_digests)) != SCORER_FIT_V2_ASSIGNMENT_COUNT):
+        raise RuntimeError("full-bank V2 branch identity set is not unique")
+    runtime["branch_identity_set_digest"] = canonical_digest(
+        sorted(branch_digests))
+    return {
+        "manifests": manifests,
+        "scorer_contract": contract_artifact,
+        "manifest": runtime,
+        "candidate_outcomes_consumed": False,
+    }
+
+
 def _identity_for(state: dict[str, Any], candidate_index: int) -> dict[str, Any]:
     matches = [row for row in state["branch_identities"]
                if int(row["candidate_index"]) == int(candidate_index)]
@@ -11150,7 +13108,52 @@ def _identity_for(state: dict[str, Any], candidate_index: int) -> dict[str, Any]
 
 
 def _row_path(out: Path, identity: dict[str, Any]) -> Path:
-    return out / "row_records" / f"{identity['branch_identity_digest']}.json"
+    directory = (SCORER_FIT_V2_ROW_RECORDS_NAME
+                 if identity.get("schema")
+                 == SCORER_FIT_V2_BRANCH_IDENTITY_SCHEMA
+                 else "row_records")
+    return out / directory / f"{identity['branch_identity_digest']}.json"
+
+
+def _compiled_output_paths(
+        manifest: Mapping[str, Any], out: Path) -> tuple[Path, Path]:
+    if _is_full_bank_v2_manifest(manifest):
+        return (
+            out / SCORER_FIT_V2_BRANCH_ROWS_NAME,
+            out / SCORER_FIT_V2_CORPUS_RECEIPT_NAME,
+        )
+    return out / "branch_rows.jsonl", out / "corpus_receipt.json"
+
+
+def _branch_smoke_receipt_path(
+        manifest: Mapping[str, Any], out: Path) -> Path:
+    return out / (
+        SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME
+        if _is_full_bank_v2_manifest(manifest)
+        else "smoke_branch_receipt.json"
+    )
+
+
+def _branch_frames_root(manifest: Mapping[str, Any], out: Path) -> Path:
+    return out / (
+        SCORER_FIT_V2_FRAMES_NAME
+        if _is_full_bank_v2_manifest(manifest) else "frames"
+    )
+
+
+def _branch_smoke_state(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    states = manifest.get("states")
+    if not isinstance(states, list) or not states:
+        raise RuntimeError("branch smoke manifest has no states")
+    if not _is_full_bank_v2_manifest(manifest):
+        return states[0]
+    fit_states = [state for state in states
+                  if state.get("split_role") == "fit"]
+    if not fit_states:
+        raise RuntimeError("full-bank V2 smoke has no frozen fit state")
+    # State-manifest order is already frozen.  No outcome can influence this
+    # first-fit projection.
+    return fit_states[0]
 
 
 def _resolve_corpus_file(out: Path, relative: str) -> Path:
@@ -11170,9 +13173,132 @@ def _validate_frame_record(out: Path, record: dict[str, Any]) -> None:
         raise RuntimeError(f"frame receipt mismatch for {path}")
 
 
+def validate_full_bank_v2_branch_row(
+        row: Mapping[str, Any], state: Mapping[str, Any],
+        identity: Mapping[str, Any], manifest: Mapping[str, Any],
+        out: Path) -> None:
+    """Validate one V2 row against exact full-bank/contract lineage."""
+
+    if not _is_full_bank_v2_manifest(manifest):
+        raise RuntimeError("full-bank V2 row received a legacy manifest")
+    row = dict(row)
+    state = dict(state)
+    identity = dict(identity)
+    _verify_self_digest(
+        row, "branch_row_digest",
+        f"full-bank V2 row {state['state_id']}|{identity['candidate']}")
+    expected = {
+        "pool": "scorer_fit_v2",
+        "state_id": state["state_id"],
+        "state_identity_digest": state["state_identity_digest"],
+        "branch_identity_digest": identity["branch_identity_digest"],
+        "assignment_identity_digest": identity[
+            "assignment_identity_digest"],
+        "candidate": identity["candidate"],
+        "candidate_index": int(identity["candidate_index"]),
+        "state_manifest_digest": manifest["state_manifest_digest"],
+        "branch_identity_set_digest": manifest[
+            "branch_identity_set_digest"],
+        **{key: manifest[key] for key in
+           _FULL_BANK_V2_BRANCH_LINEAGE_KEYS},
+    }
+    if (row.get("schema") != SCORER_FIT_V2_BRANCH_ROW_SCHEMA
+            or row.get("record_complete") is not True):
+        raise RuntimeError("full-bank V2 branch row is not a completion record")
+    for key, value in expected.items():
+        if row.get(key) != value:
+            raise RuntimeError(f"full-bank V2 branch row {key} mismatch")
+    for key in ("state_index", "split_role", "stratum", "scene_id", "family",
+                "split", "episode_cluster_id", "episode_id", "source_step"):
+        if row.get(key) != state[key]:
+            raise RuntimeError(f"full-bank V2 branch row state field {key} mismatch")
+    if row.get("primitives") != identity["primitives"]:
+        raise RuntimeError("full-bank V2 branch primitive sequence mismatch")
+    if row.get("goal") != state["goal"]:
+        raise RuntimeError("full-bank V2 branch goal binding mismatch")
+    INVALID_IDS.assert_disjoint(
+        [row], label="full-bank V2 branch row",
+        index=INVALID_IDS.load_invalid_identity_index())
+    goal = state["goal"]
+    expected_goal_binding = [
+        math.sin(float(goal["bearing_body_rad"])),
+        math.cos(float(goal["bearing_body_rad"])),
+        float(goal["range_m"]),
+    ]
+    if not np.allclose(
+            np.asarray(row.get("goal_binding_input"), dtype=np.float64),
+            np.asarray(expected_goal_binding, dtype=np.float64),
+            rtol=0.0, atol=1e-12):
+        raise RuntimeError("full-bank V2 numeric goal binding mismatch")
+    previous = np.asarray(
+        row.get("previous_applied_command"), dtype=np.float64)
+    if previous.shape != (3,) or not np.all(np.isfinite(previous)):
+        raise RuntimeError(
+            "full-bank V2 previous applied command is malformed")
+    candidate = V1.CANDIDATE_BANK[int(identity["candidate_index"])]
+    requested, post_slew_plan, action_blocks = candidate_planning_trajectory(
+        candidate, previous.tolist())
+    if row.get("requested") != requested:
+        raise RuntimeError("full-bank V2 requested candidate plan mismatch")
+    if not np.allclose(
+            np.asarray(row.get("candidate_post_slew_plan"), dtype=np.float64),
+            np.asarray(post_slew_plan, dtype=np.float64),
+            rtol=0.0, atol=1e-12):
+        raise RuntimeError("full-bank V2 post-slew candidate plan mismatch")
+    if not np.allclose(
+            np.asarray(row.get("action_blocks"), dtype=np.float64),
+            np.asarray(action_blocks, dtype=np.float64),
+            rtol=0.0, atol=1e-12):
+        raise RuntimeError("full-bank V2 scorer action blocks mismatch")
+    realised_prefix = np.asarray(row.get("post_slew"), dtype=np.float64)
+    if (realised_prefix.ndim != 3 or realised_prefix.shape[1:] != (5, 3)
+            or realised_prefix.shape[0] > HORIZONS
+            or not np.all(np.isfinite(realised_prefix))
+            or not np.allclose(
+                realised_prefix,
+                np.asarray(post_slew_plan[:len(realised_prefix)],
+                           dtype=np.float64),
+                rtol=0.0, atol=1e-6)):
+        raise RuntimeError("full-bank V2 realised post-slew prefix mismatch")
+    action_context = np.asarray(
+        row.get("action_context_blocks"), dtype=np.float64)
+    proprio = np.asarray(row.get("proprio"), dtype=np.float64)
+    control = np.asarray(row.get("control"), dtype=np.float64)
+    if (action_context.shape != (CONTEXT_SLOTS, SLEW.ACTION_DIM)
+            or proprio.shape != (PROPRIO_HISTORY, 30)
+            or control.shape != (PROPRIO_HISTORY, 2)
+            or not np.all(np.isfinite(action_context))
+            or not np.all(np.isfinite(proprio))
+            or not np.all(np.isfinite(control))):
+        raise RuntimeError("full-bank V2 planning histories are malformed")
+    context = row.get("context_frames", [])
+    horizons = row.get("horizon_frames", [])
+    if (row.get("context_paths")
+            != [frame.get("path") for frame in context]
+            or row.get("horizon_paths")
+            != [frame.get("path") for frame in horizons]):
+        raise RuntimeError("full-bank V2 frame-path projection mismatch")
+    if row.get("valid"):
+        if len(context) != CONTEXT_SLOTS or len(horizons) != HORIZONS:
+            raise RuntimeError(
+                "valid full-bank V2 row lacks exact H=1..4 renders")
+        if any(row.get(key) is None for key in (
+                "progress", "safety", "completion", "utility")):
+            raise RuntimeError("valid full-bank V2 row lacks oracle labels")
+    elif (not isinstance(row.get("invalid_reason"), str)
+          or not row["invalid_reason"]):
+        raise RuntimeError("invalid full-bank V2 row lacks a reason code")
+    for frame in context + horizons:
+        _validate_frame_record(out, frame)
+
+
 def _validate_branch_row(row: dict[str, Any], state: dict[str, Any],
                          identity: dict[str, Any], manifest: dict[str, Any],
                          out: Path) -> None:
+    if _is_full_bank_v2_manifest(manifest):
+        validate_full_bank_v2_branch_row(
+            row, state, identity, manifest, out)
+        return
     _verify_self_digest(row, "branch_row_digest",
                         f"branch row {state['state_id']}|{identity['candidate']}")
     expected = {
@@ -11328,6 +13454,9 @@ def _frame_receipt(result: Any, path: Path, out: Path, *, index_key: str,
 
 
 def _row_bindings(manifest: dict[str, Any]) -> dict[str, Any]:
+    if _is_full_bank_v2_manifest(manifest):
+        return {key: manifest[key]
+                for key in _FULL_BANK_V2_BRANCH_LINEAGE_KEYS}
     keys = (
         "candidate_allocation_manifest_digest", "candidate_allocator_contract_digest",
         "candidate_allocation_amendment_digest",
@@ -11347,7 +13476,8 @@ def _row_bindings(manifest: dict[str, Any]) -> dict[str, Any]:
 
 
 def _redrive_mismatch(entry: dict[str, Any], record: dict[str, Any],
-                      ctx: V1.BranchContext) -> str | None:
+                      ctx: V1.BranchContext, *,
+                      full_bank_v2: bool = False) -> str | None:
     comparisons = {
         "source_step": int(record["boundary"]["source_step"]) == int(entry["source_step"]),
         "boundary": record["boundary"] == entry["boundary"],
@@ -11361,7 +13491,61 @@ def _redrive_mismatch(entry: dict[str, Any], record: dict[str, Any],
                      == float(entry["clearance_m"]),
     }
     if entry.get("stratum") == "completion_enriched":
-        if "completion_rotation_eligibility_vector" in entry:
+        if full_bank_v2:
+            # Rotation eligibility was a six-of-twelve allocation mask and is
+            # not an active V2 execution condition.  The actual previous
+            # command and closed task-status projection are nevertheless part
+            # of the frozen structural identity: accepting merely another
+            # snapshot that also passes L_max would change the slew-conditioned
+            # branch start.  Require their exact canonical JSON bytes before
+            # recomputing the same outcome-free full-bank predicate.
+            try:
+                frozen_previous = list(
+                    STATE_SELECTOR._normalise_previous_applied(
+                        entry.get("previous_applied_command")))
+                redriven_previous = list(
+                    STATE_SELECTOR._normalise_previous_applied(
+                        record.get("previous_applied_command")))
+                frozen_status = dict(
+                    STATE_SELECTOR.snapshot_task_status_projection(
+                        entry.get("snapshot_task_status")))
+                redriven_status = dict(
+                    STATE_SELECTOR.snapshot_task_status_projection(
+                        record.get("snapshot_task_status")))
+                json_bytes = lambda value: json.dumps(
+                    V1._jsonable(value), sort_keys=True,
+                    allow_nan=False).encode()
+                previous_matches = (
+                    json_bytes(redriven_previous)
+                    == json_bytes(frozen_previous))
+                status_matches = (
+                    json_bytes(redriven_status) == json_bytes(frozen_status))
+                comparisons.update({
+                    "previous_applied_command": previous_matches,
+                    "snapshot_task_status": status_matches,
+                })
+                if previous_matches and status_matches:
+                    runtime_state = dict(entry)
+                    runtime_state[
+                        "completion_rotation_eligibility_vector"] = \
+                        record.get("completion_rotation_eligibility_vector")
+                    runtime_state["snapshot_task_status"] = redriven_status
+                    runtime_state[
+                        "previous_applied_command"] = redriven_previous
+                    evidence = full_bank_completion_reachability_evidence(
+                        runtime_state)
+                    comparisons[
+                        "completion_full_bank_l_max_eligible"] = bool(
+                            evidence.get("eligible"))
+                else:
+                    comparisons[
+                        "completion_full_bank_l_max_eligible"] = False
+            except (RuntimeError, TypeError, ValueError,
+                    STATE_SELECTOR.StateSelectorAmendmentError):
+                comparisons["previous_applied_command"] = False
+                comparisons["snapshot_task_status"] = False
+                comparisons["completion_full_bank_l_max_eligible"] = False
+        elif "completion_rotation_eligibility_vector" in entry:
             # New V2 successor identities bind the complete twelve-rotation
             # vector plus the unprojected task status and actual previous
             # applied command.  They are not members of the byte-frozen V1
@@ -11437,8 +13621,10 @@ def candidate_planning_trajectory(candidate: tuple[str, tuple[str, ...]],
 def _invalid_completed_row(entry: dict[str, Any], identity: dict[str, Any],
                            manifest: dict[str, Any], reason: str,
                            runtime_s: float) -> dict[str, Any]:
+    full_bank_v2 = _is_full_bank_v2_manifest(manifest)
     row = {
-        "schema": "go2_branch_corpus_v1_2_branch_row",
+        "schema": (SCORER_FIT_V2_BRANCH_ROW_SCHEMA if full_bank_v2
+                   else "go2_branch_corpus_v1_2_branch_row"),
         "status": STATUS,
         "record_complete": True,
         "pool": manifest["pool"],
@@ -11479,6 +13665,13 @@ def _invalid_completed_row(entry: dict[str, Any], identity: dict[str, Any],
         "state_manifest_digest": manifest["state_manifest_digest"],
         **_row_bindings(manifest),
     }
+    if full_bank_v2:
+        row.update({
+            "assignment_identity_digest": identity[
+                "assignment_identity_digest"],
+            "branch_identity_set_digest": manifest[
+                "branch_identity_set_digest"],
+        })
     for key in ("start_geodesic_m", "final_geodesic_m", "progress",
                 "contact_fraction", "clearance_cost", "stuck_fraction", "fall",
                 "safety", "completion", "utility", "min_clearance_m",
@@ -11500,7 +13693,11 @@ def _write_row(out: Path, identity: dict[str, Any], row: dict[str, Any]) -> None
 
 def _write_invalid_attempt_row(out: Path, identity: dict[str, Any],
                                row: dict[str, Any], reason: str) -> Path:
-    root = out / "invalid_attempts/redrive_records"
+    root = out / (
+        "invalid_attempts_v2/redrive_records"
+        if identity.get("schema") == SCORER_FIT_V2_BRANCH_IDENTITY_SCHEMA
+        else "invalid_attempts/redrive_records"
+    )
     root.mkdir(parents=True, exist_ok=True)
     stem = f"{identity['branch_identity_digest']}.{reason.replace(':', '-')}.invalid.json"
     path = root / stem
@@ -11548,12 +13745,12 @@ def _compiled_receipt(
     storage_bytes = (frame_storage_bytes + row_record_storage_bytes
                      + ledger_storage_bytes)
     runtime_total = sum(float(row.get("wall_time_s") or 0.0) for row in ordered)
+    full_bank_v2 = _is_full_bank_v2_manifest(manifest)
     payload = {
-        "schema": "go2_branch_corpus_v1_2_corpus_identity",
+        "schema": (SCORER_FIT_V2_CORPUS_IDENTITY_SCHEMA if full_bank_v2
+                   else "go2_branch_corpus_v1_2_corpus_identity"),
         "pool": manifest["pool"],
         "state_manifest_digest": manifest["state_manifest_digest"],
-        "candidate_allocation_manifest_digest":
-            manifest["candidate_allocation_manifest_digest"],
         "branch_identity_set_digest": manifest["branch_identity_set_digest"],
         "branch_rows_sha256": branch_rows_sha,
         "branch_row_digests": [row["branch_row_digest"] for row in ordered],
@@ -11564,8 +13761,15 @@ def _compiled_receipt(
         "complete": complete,
         "bound_digests": _row_bindings(manifest),
     }
+    if full_bank_v2:
+        payload["full_bank_assignment_manifest_digest"] = manifest[
+            "full_bank_assignment_manifest_digest"]
+    else:
+        payload["candidate_allocation_manifest_digest"] = manifest[
+            "candidate_allocation_manifest_digest"]
     receipt = {
-        "schema": "go2_branch_corpus_v1_2_completion_receipt",
+        "schema": (SCORER_FIT_V2_CORPUS_RECEIPT_SCHEMA if full_bank_v2
+                   else "go2_branch_corpus_v1_2_completion_receipt"),
         "status": STATUS,
         "pool": manifest["pool"],
         "complete": complete,
@@ -11581,8 +13785,6 @@ def _compiled_receipt(
         "invalid_branches": len(ordered) - valid_count,
         "invalid_count": len(ordered) - valid_count,
         "state_manifest_digest": manifest["state_manifest_digest"],
-        "candidate_allocation_manifest_digest":
-            manifest["candidate_allocation_manifest_digest"],
         "branch_rows_sha256": branch_rows_sha,
         **_row_bindings(manifest),
         "corpus_digest_payload": payload,
@@ -11596,6 +13798,12 @@ def _compiled_receipt(
             "branch_rows_ledger": ledger_storage_bytes,
         },
     }
+    if full_bank_v2:
+        receipt["full_bank_assignment_manifest_digest"] = manifest[
+            "full_bank_assignment_manifest_digest"]
+    else:
+        receipt["candidate_allocation_manifest_digest"] = manifest[
+            "candidate_allocation_manifest_digest"]
     return receipt
 
 
@@ -11604,8 +13812,7 @@ def _load_exact_compiled_receipt(
         completed_states: int, rows_text: str) -> dict[str, Any] | None:
     """Return an existing byte-valid ledger/receipt pair, otherwise ``None``."""
 
-    rows_path = out / "branch_rows.jsonl"
-    receipt_path = out / "corpus_receipt.json"
+    rows_path, receipt_path = _compiled_output_paths(manifest, out)
     if not rows_path.is_file() or not receipt_path.is_file():
         return None
     try:
@@ -11646,8 +13853,7 @@ def _compile_corpus(manifest: dict[str, Any], out: Path,
     if retained is not None:
         return retained
 
-    rows_path = out / "branch_rows.jsonl"
-    receipt_path = out / "corpus_receipt.json"
+    rows_path, receipt_path = _compiled_output_paths(manifest, out)
     if not rows_path.is_file() or rows_path.read_bytes() != rows_text.encode():
         if rows_path.exists():
             _preserve_invalid(
@@ -11671,14 +13877,21 @@ def _compile_corpus(manifest: dict[str, Any], out: Path,
 def _build_smoke_branch_receipt(
         manifest: dict[str, Any], rows: list[dict[str, Any]], *,
         corpus_digest: str, replay_check: dict[str, Any]) -> dict[str, Any]:
-    """Build the six-branch replay receipt from already validated rows."""
+    """Build the exact six- or twelve-branch replay receipt."""
 
-    state = manifest["states"][0]
+    state = _branch_smoke_state(manifest)
+    full_bank_v2 = _is_full_bank_v2_manifest(manifest)
+    expected_candidates = (len(SCORER_FIT_V2_CANDIDATE_INDICES)
+                           if full_bank_v2 else 6)
     receipt = {
-        "schema": "go2_scorer_fit_branch_smoke_receipt_v1_2",
+        "schema": (SCORER_FIT_V2_BRANCH_SMOKE_SCHEMA if full_bank_v2
+                   else "go2_scorer_fit_branch_smoke_receipt_v1_2"),
         "status": STATUS,
         "pass": bool(
-            len(rows) == 6 and all(row["valid"] for row in rows)
+            len(rows) == expected_candidates
+            and sorted(int(row["candidate_index"]) for row in rows)
+                == list(range(expected_candidates))
+            and all(row["valid"] for row in rows)
             and replay_check.get("exact_repeat") is True
             and all(len(row["context_frames"]) == 3
                     and len(row["horizon_frames"]) == 4 for row in rows)
@@ -11707,6 +13920,18 @@ def _build_smoke_branch_receipt(
             manifest["target_encoder_checkpoint_sha256"],
         "replay_check": replay_check,
     }
+    if full_bank_v2:
+        receipt.update({
+            "candidate_indices": list(SCORER_FIT_V2_CANDIDATE_INDICES),
+            "branch_count": 12,
+            "rendered_horizon_frame_count": 48,
+            "full_bank_assignment_manifest_digest": manifest[
+                "full_bank_assignment_manifest_digest"],
+            "scorer_fit_corpus_v2_scorer_contract_digest": manifest[
+                "scorer_fit_corpus_v2_scorer_contract_digest"],
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest": manifest[
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest"],
+        })
     receipt["smoke_branch_receipt_digest"] = canonical_digest(receipt)
     return receipt
 
@@ -11716,10 +13941,10 @@ def _load_valid_smoke_branch_receipt(
         rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Validate and reuse the original exact-replay proof on zero-new smoke."""
 
-    path = out / "smoke_branch_receipt.json"
+    path = _branch_smoke_receipt_path(manifest, out)
     if not path.is_file():
         raise RuntimeError(
-            "six completed smoke rows exist without a replay receipt; refusing "
+            "completed smoke rows exist without a replay receipt; refusing "
             "to downgrade or fabricate the exact-replay check"
         )
     try:
@@ -11733,7 +13958,8 @@ def _load_valid_smoke_branch_receipt(
             raise RuntimeError("branch smoke receipt corpus digest is malformed")
         replay_check = receipt["replay_check"]
         if (not isinstance(replay_check, dict)
-                or replay_check.get("state_id") != manifest["states"][0]["state_id"]
+                or replay_check.get("state_id")
+                != _branch_smoke_state(manifest)["state_id"]
                 or replay_check.get("exact_repeat") is not True
                 or replay_check.get("separate_render_scene_physically_inert") is not True):
             raise RuntimeError("branch smoke replay proof is missing or failed")
@@ -11751,6 +13977,104 @@ def _load_valid_smoke_branch_receipt(
         return receipt
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"branch smoke receipt validation failed: {exc}") from exc
+
+
+def load_and_validate_full_bank_v2_branch_outputs_for_consumption(
+        *, out: Path | None = None,
+        allow_partial: bool = False) -> dict[str, Any]:
+    """Strictly replay V2 row, ledger and receipt producers for consumers.
+
+    Unlike producer recovery, this read path never quarantines or rewrites a
+    malformed artifact.  It returns only rows whose atomic shard, referenced
+    frames, branch identity and full authority/contract lineage all verify.
+    """
+
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    runtime = load_full_bank_v2_branch_runtime_authority(out=scorer_fit)
+    manifest = runtime["manifest"]
+    rows_by_key: dict[tuple[str, int], dict[str, Any]] = {}
+    for state in manifest["states"]:
+        for candidate_index in state["candidate_indices"]:
+            identity = _identity_for(state, int(candidate_index))
+            row_path = _row_path(scorer_fit, identity)
+            if not row_path.exists():
+                continue
+            if not row_path.is_file() or row_path.is_symlink():
+                raise RuntimeError("full-bank V2 branch shard is not regular")
+            try:
+                row = json.loads(row_path.read_text())
+            except (OSError, ValueError, TypeError,
+                    json.JSONDecodeError) as exc:
+                raise RuntimeError(
+                    "full-bank V2 branch shard is invalid JSON") from exc
+            validate_full_bank_v2_branch_row(
+                row, state, identity, manifest, scorer_fit)
+            key = (str(state["state_id"]), int(candidate_index))
+            if key in rows_by_key:
+                raise RuntimeError("full-bank V2 branch row is duplicated")
+            rows_by_key[key] = row
+    ordered: list[dict[str, Any]] = []
+    completed_states = 0
+    for state in manifest["states"]:
+        state_rows = [
+            rows_by_key.get((str(state["state_id"]), int(candidate_index)))
+            for candidate_index in state["candidate_indices"]
+        ]
+        ordered.extend(row for row in state_rows if row is not None)
+        if all(row is not None for row in state_rows):
+            completed_states += 1
+    if (not allow_partial
+            and (len(ordered) != SCORER_FIT_V2_ASSIGNMENT_COUNT
+                 or completed_states != SCORER_FIT_V2_STATE_COUNT)):
+        raise RuntimeError("full-bank V2 branch corpus is incomplete")
+    rows_text = "".join(
+        json.dumps(V1._jsonable(row), sort_keys=True) + "\n"
+        for row in ordered)
+    rows_path, receipt_path = _compiled_output_paths(manifest, scorer_fit)
+    if (not rows_path.is_file() or rows_path.is_symlink()
+            or rows_path.read_bytes() != rows_text.encode()
+            or not receipt_path.is_file() or receipt_path.is_symlink()):
+        raise RuntimeError("full-bank V2 compiled ledger/receipt is absent or stale")
+    try:
+        receipt = json.loads(receipt_path.read_text())
+        runtime_s = receipt.get("runtime_s_this_invocation")
+        if (isinstance(runtime_s, bool)
+                or not isinstance(runtime_s, (int, float))
+                or not math.isfinite(float(runtime_s))
+                or float(runtime_s) < 0.0):
+            raise RuntimeError("full-bank V2 receipt runtime is malformed")
+        expected_receipt = _compiled_receipt(
+            manifest, scorer_fit, ordered, completed_states, rows_text,
+            float(runtime_s))
+    except (OSError, ValueError, TypeError, KeyError,
+            json.JSONDecodeError) as exc:
+        raise RuntimeError("full-bank V2 corpus receipt is malformed") from exc
+    if receipt != expected_receipt:
+        raise RuntimeError(
+            "full-bank V2 corpus receipt is not independently reproducible")
+    if not allow_partial and receipt.get("complete") is not True:
+        raise RuntimeError("full-bank V2 completion receipt is not complete")
+    branch_smoke = None
+    smoke_path = _branch_smoke_receipt_path(manifest, scorer_fit)
+    if smoke_path.exists():
+        first_state = _branch_smoke_state(manifest)
+        smoke_rows = [
+            row for row in ordered
+            if row["state_id"] == first_state["state_id"]
+        ]
+        if len(smoke_rows) == 12:
+            branch_smoke = _load_valid_smoke_branch_receipt(
+                manifest, scorer_fit, smoke_rows)
+        elif not allow_partial:
+            raise RuntimeError("full-bank V2 smoke receipt lacks twelve rows")
+    return {
+        "manifests": runtime["manifests"],
+        "scorer_contract": runtime["scorer_contract"],
+        "manifest": manifest,
+        "rows": ordered,
+        "receipt": receipt,
+        "branch_smoke": branch_smoke,
+    }
 
 
 def _encoding_smoke_matches_global_exact_scorer_lineage(
@@ -11801,8 +14125,13 @@ def _final_identifiability_gate(manifest: dict[str, Any], out: Path,
 def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
     out = OUT_ROOT / args.pool
     if args.pool == "scorer_fit":
-        manifest = load_active_state_manifest_for_consumption(
-            out / "state_manifest.json")
+        v2_manifest_path = out / SCORER_FIT_V2_STATE_MANIFEST_NAME
+        if v2_manifest_path.is_file():
+            manifest = load_full_bank_v2_branch_runtime_authority(
+                out=out)["manifest"]
+        else:
+            manifest = load_active_state_manifest_for_consumption(
+                out / "state_manifest.json")
     else:
         raw_manifest_path = out / "state_manifest.json"
         manifest_path = _pin_generated_path(
@@ -11814,10 +14143,14 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
     if smoke and args.pool != "scorer_fit":
         raise RuntimeError("end-to-end smoke is defined only for scorer_fit")
     if not smoke:
-        raw_smoke_path = OUT_ROOT / "scorer_fit/smoke_encoding_receipt.json"
+        full_bank_v2 = _is_full_bank_v2_manifest(manifest)
+        raw_smoke_path = OUT_ROOT / "scorer_fit" / (
+            SCORER_FIT_V2_ENCODING_SMOKE_RECEIPT_NAME
+            if full_bank_v2 else "smoke_encoding_receipt.json")
         smoke_path = _pin_generated_path(raw_smoke_path, raw_smoke_path)
         if not smoke_path.is_file():
-            raise RuntimeError("full branch generation is gated on the encoded six-branch smoke")
+            raise RuntimeError(
+                "full branch generation is gated on the encoded branch smoke")
         smoke_receipt = json.loads(smoke_path.read_text())
         _verify_self_digest(smoke_receipt, "smoke_receipt_digest", "smoke receipt")
         scorer_fit_manifest = (
@@ -11828,24 +14161,36 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
         global_exact_lineage_valid = (
             _encoding_smoke_matches_global_exact_scorer_lineage(
                 smoke_receipt, scorer_fit_manifest))
+        v2_smoke_valid = (not full_bank_v2 or (
+            smoke_receipt.get("schema")
+            == "go2_scorer_fit_corpus_v2_end_to_end_smoke_receipt_v1"
+            and smoke_receipt.get(
+                "full_bank_assignment_manifest_digest")
+            == manifest["full_bank_assignment_manifest_digest"]
+            and smoke_receipt.get(
+                "scorer_fit_corpus_v2_scorer_contract_digest")
+            == manifest["scorer_fit_corpus_v2_scorer_contract_digest"]
+        ))
+        legacy_scorer_valid = (full_bank_v2 or
+            smoke_receipt.get("scorer_contract_v1_2_digest")
+            == scorer_contract_digest())
         if (not smoke_receipt.get("pass")
                 or smoke_receipt.get("state_manifest_digest")
                 != scorer_fit_manifest["state_manifest_digest"]
-                or smoke_receipt.get("scorer_contract_v1_2_digest")
-                != scorer_contract_digest()
+                or not legacy_scorer_valid or not v2_smoke_valid
                 or not global_exact_lineage_valid):
             raise RuntimeError("encoded smoke receipt is not valid for this scorer contract")
 
     completed = _completed_rows(manifest, out)
-    states = ([manifest["states"][0]] if smoke else
+    states = ([_branch_smoke_state(manifest)] if smoke else
               manifest["states"][args.state_offset:args.state_offset + args.state_limit])
-    frames_dir = out / "frames"
+    frames_dir = _branch_frames_root(manifest, out)
     invocation_started = time.time()
     new_rows = 0
     replay_check: dict[str, Any] | None = None
 
     if smoke:
-        state = manifest["states"][0]
+        state = _branch_smoke_state(manifest)
         smoke_rows = [row for row in completed.values()
                       if row["state_id"] == state["state_id"]]
         if len(smoke_rows) == len(state["candidate_indices"]):
@@ -11860,7 +14205,8 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
                     manifest, smoke_rows,
                     corpus_digest=receipt["corpus_digest"],
                     replay_check=retained_smoke["replay_check"])
-                atomic_json(out / "smoke_branch_receipt.json", retained_smoke)
+                atomic_json(
+                    _branch_smoke_receipt_path(manifest, out), retained_smoke)
             print(json.dumps({
                 **retained_smoke,
                 "recovery": "retained_valid_zero_new_replay_receipt",
@@ -11910,7 +14256,9 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
         verdict = classify_state(
             ctx, topology,
             requested_stratum=(entry["stratum"]
-                               if manifest["pool"] == "scorer_fit" else None))
+                               if manifest["pool"] in {
+                                   "scorer_fit", "scorer_fit_v2"}
+                               else None))
         redrive_reason: str | None = None
         if isinstance(verdict, str):
             redrive_reason = f"redrive_failed:{verdict}"
@@ -11918,7 +14266,9 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
             redrive_reason = "redrive_failed:short_proprio_history"
         else:
             record, field, _strata = verdict
-            redrive_reason = _redrive_mismatch(entry, record, ctx)
+            redrive_reason = _redrive_mismatch(
+                entry, record, ctx,
+                full_bank_v2=_is_full_bank_v2_manifest(manifest))
         if redrive_reason is not None:
             for candidate_index in missing:
                 identity = _identity_for(entry, candidate_index)
@@ -12002,10 +14352,12 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
             if scored is not None and not valid:
                 invalid_reason = "truncated_before_h4_render"
             row = {
-                "schema": "go2_branch_corpus_v1_2_branch_row",
+                "schema": (SCORER_FIT_V2_BRANCH_ROW_SCHEMA
+                           if _is_full_bank_v2_manifest(manifest)
+                           else "go2_branch_corpus_v1_2_branch_row"),
                 "status": STATUS,
                 "record_complete": True,
-                "pool": args.pool,
+                "pool": manifest["pool"],
                 "state_id": entry["state_id"],
                 "state_index": int(entry["state_index"]),
                 "state_identity_digest": entry["state_identity_digest"],
@@ -12066,6 +14418,13 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
                 "storage_bytes": sum(frame["byte_count"] for frame in
                                      context_frames + horizon_frames),
             }
+            if _is_full_bank_v2_manifest(manifest):
+                row.update({
+                    "assignment_identity_digest": identity[
+                        "assignment_identity_digest"],
+                    "branch_identity_set_digest": manifest[
+                        "branch_identity_set_digest"],
+                })
             row.update({key: (None if scored is None else scored[key]) for key in (
                 "start_geodesic_m", "final_geodesic_m", "progress",
                 "contact_fraction", "clearance_cost", "stuck_fraction", "fall",
@@ -12097,7 +14456,7 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
 
     receipt = _compile_corpus(manifest, out, time.time() - invocation_started)
     if smoke:
-        state = manifest["states"][0]
+        state = _branch_smoke_state(manifest)
         rows = [row for row in _completed_rows(manifest, out).values()
                 if row["state_id"] == state["state_id"]]
         if replay_check is None:
@@ -12105,15 +14464,17 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
         smoke_receipt = _build_smoke_branch_receipt(
             manifest, rows, corpus_digest=receipt["corpus_digest"],
             replay_check=replay_check)
-        atomic_json(out / "smoke_branch_receipt.json", smoke_receipt)
+        atomic_json(
+            _branch_smoke_receipt_path(manifest, out), smoke_receipt)
         print(json.dumps(smoke_receipt, indent=2, sort_keys=True))
         return 0 if smoke_receipt["pass"] else 1
 
     if args.pool == "scorer_fit" and receipt["complete"]:
-        # The exact-replay proof is first issued against the six-row smoke
-        # corpus.  Rebind that unchanged proof once to the immutable complete
-        # corpus so the full encoder can validate it fail-closed.
-        state = manifest["states"][0]
+        # The exact-replay proof is first issued against the versioned
+        # per-state smoke (six legacy rows or twelve full-bank V2 rows).
+        # Rebind that unchanged proof once to the immutable complete corpus so
+        # the full encoder can validate it fail-closed.
+        state = _branch_smoke_state(manifest)
         smoke_rows = [row for row in _completed_rows(manifest, out).values()
                       if row["state_id"] == state["state_id"]]
         prior_smoke = _load_valid_smoke_branch_receipt(
@@ -12122,7 +14483,8 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
             manifest, smoke_rows, corpus_digest=receipt["corpus_digest"],
             replay_check=prior_smoke["replay_check"])
         if refreshed_smoke != prior_smoke:
-            atomic_json(out / "smoke_branch_receipt.json", refreshed_smoke)
+            atomic_json(
+                _branch_smoke_receipt_path(manifest, out), refreshed_smoke)
 
     gate = _final_identifiability_gate(manifest, out, receipt)
     summary = {
@@ -12135,7 +14497,10 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
         "final_gate": None if gate is None else gate["gate"],
         "wall_time_s": round(time.time() - invocation_started, 3),
     }
-    atomic_json(out / f"branch_summary_{args.state_offset}.json", summary)
+    summary_name = (f"branch_summary_v2_{args.state_offset}.json"
+                    if _is_full_bank_v2_manifest(manifest)
+                    else f"branch_summary_{args.state_offset}.json")
+    atomic_json(out / summary_name, summary)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
@@ -13327,9 +15692,13 @@ def _outcome_generation_started(out: Path) -> bool:
 
     return bool(
         any(pin(Path(name)).exists() for name in (
-            "branch_rows.jsonl", "corpus_receipt.json", "latents_index.json"))
+            "branch_rows.jsonl", "corpus_receipt.json", "latents_index.json",
+            SCORER_FIT_V2_BRANCH_ROWS_NAME,
+            SCORER_FIT_V2_CORPUS_RECEIPT_NAME, "latents_index_v2.json"))
         or guarded_tree_has_file(Path("row_records"))
         or guarded_tree_has_file(Path("frames"))
+        or guarded_tree_has_file(Path(SCORER_FIT_V2_ROW_RECORDS_NAME))
+        or guarded_tree_has_file(Path(SCORER_FIT_V2_FRAMES_NAME))
     )
 
 

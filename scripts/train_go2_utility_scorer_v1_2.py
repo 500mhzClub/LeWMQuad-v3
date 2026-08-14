@@ -49,6 +49,7 @@ from lewm.oracle.go2_scorer_contract_v1_2 import (  # noqa: E402
     SCORER, TARGET_ENCODER, clean_source_binding, contract, contract_digest,
     _managed_scorer_contract_output_path,
 )
+from lewm.oracle import go2_scorer_fit_corpus_v2_scorer_contract as V2_CONTRACT  # noqa: E402
 from lewm.oracle.go2_candidate_allocation_v1_2 import (  # noqa: E402
     CandidateAllocationError, allocation_contract_digest,
     allocation_amendment_digest, allocation_manifest_digest,
@@ -67,7 +68,10 @@ from scripts import build_go2_branch_corpus_v1_2 as CORPUS_BUILDER  # noqa: E402
 STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
 OUT_ROOT = ROOT / ".generated/go2_branch_corpus_v1_2"
 PACKAGE_DIR = ROOT / ".generated/go2_utility_scorer_v1_2"
+V2_PACKAGE_DIR = ROOT / V2_CONTRACT.PACKAGE_ROOT_RELATIVE
 SCORER_CONTRACT_ARTIFACT_PATH = PACKAGE_DIR / "scorer_contract_v1_2.json"
+INITIALISATIONS_DIR_NAME = "registered_initialisations"
+TRAINING_DIR_NAME = "training"
 
 TOKENS, TOKEN_DIM, HORIZONS = 768, 1024, 4
 CONTEXT_SLOTS = 3
@@ -108,6 +112,54 @@ EXPECTED_TARGET_NORMALISATION = "F.layer_norm over the token dimension"
 FROZEN_PREPROCESSING_DIGEST = (
     "8e6aa177b094ea91d27b3c91bcd8f01835b8be5fc51796d145314982ea930fe5"
 )
+FULL_BANK_V2_EXPECTED_BRANCHES = 1_440
+FULL_BANK_V2_EXPECTED_FIT_ROWS = 1_152
+FULL_BANK_V2_EXPECTED_CALIBRATION_ROWS = 288
+FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE = 12
+FULL_BANK_V2_QUALIFICATION_SCHEMA = (
+    "go2_utility_scorer_fit_corpus_v2_qualification_v1"
+)
+FULL_BANK_V2_PACKAGE_SCHEMA = "go2_utility_scorer_fit_corpus_v2_package_v1"
+FULL_BANK_V2_BASELINE_SCHEMA = (
+    "go2_utility_scorer_fit_corpus_v2_no_latent_baseline_package_v1"
+)
+FULL_BANK_V2_LABEL_DISTRIBUTION_SCHEMA = (
+    "go2_utility_scorer_fit_corpus_v2_label_distributions_v1"
+)
+FULL_BANK_V2_DEGENERACY_FAILURE_SCHEMA = (
+    "go2_utility_scorer_fit_corpus_v2_completion_degeneracy_failure_v1"
+)
+
+
+def corpus_design_profile(full_bank_v2: bool) -> dict[str, Any]:
+    """Return exact cardinality/output fields without mutating legacy constants."""
+
+    if not full_bank_v2:
+        return {
+            "name": "six-of-twelve-v1", "states": EXPECTED_STATES,
+            "branches": EXPECTED_BRANCHES, "fit_states": EXPECTED_FIT_STATES,
+            "calibration_states": EXPECTED_CALIBRATION_STATES,
+            "fit_rows": EXPECTED_FIT_ROWS,
+            "calibration_rows": EXPECTED_CALIBRATION_ROWS,
+            "candidates_per_state": EXPECTED_CANDIDATES_PER_STATE,
+            "package_dir": PACKAGE_DIR,
+        }
+    return {
+        "name": "full-bank-v2", "states": V2_CONTRACT.STATE_COUNT,
+        "branches": FULL_BANK_V2_EXPECTED_BRANCHES,
+        "fit_states": V2_CONTRACT.FIT_STATE_COUNT,
+        "calibration_states": V2_CONTRACT.CALIBRATION_STATE_COUNT,
+        "fit_rows": FULL_BANK_V2_EXPECTED_FIT_ROWS,
+        "calibration_rows": FULL_BANK_V2_EXPECTED_CALIBRATION_ROWS,
+        "candidates_per_state": FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE,
+        "package_dir": V2_PACKAGE_DIR,
+        "epochs": V2_CONTRACT.EPOCHS,
+        "batch": V2_CONTRACT.BATCH_SIZE,
+        "optimizer_updates_per_model":
+            V2_CONTRACT.OPTIMISER_UPDATES_PER_MODEL,
+        "example_presentations_per_model":
+            V2_CONTRACT.EXAMPLE_PRESENTATIONS_PER_MODEL,
+    }
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 LAUNCH_BINDING_KEYS = (
     "clean_source_launch_receipt_digest",
@@ -124,6 +176,16 @@ LAUNCH_BINDING_KEYS = (
 SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS = LAUNCH_BINDING_KEYS[:-1]
 SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
 SCORER_PROVENANCE_BINDING_KEYS = SELECTOR_BINDING_KEYS + LAUNCH_BINDING_KEYS
+FULL_BANK_V2_PROVENANCE_BINDING_KEYS = (
+    "scorer_fit_corpus_v2_design_digest",
+    "rotation_mask_classification_digest",
+    "full_bank_small_completion_selection_digest",
+    "full_bank_preoutcome_state_revalidation_digest",
+    "state_identity_projection_digest",
+    "full_bank_assignment_manifest_digest",
+    "scorer_fit_corpus_v2_scorer_contract_digest",
+    "scorer_fit_corpus_v2_scorer_contract_artifact_digest",
+)
 GLOBAL_EXACT_PROVENANCE_BINDING_KEYS = (
     "clean_source_launch_receipt_sha256",
     "scorer_contract_artifact_sha256",
@@ -284,6 +346,20 @@ def atomic_json_save(payload: Any, path: Path) -> None:
     _fsync_directory(path.parent)
 
 
+def _write_or_require_exact_json(payload: Mapping[str, Any], path: Path,
+                                 *, label: str) -> None:
+    """Install one deterministic receipt or require byte-equivalent recovery."""
+
+    if path.exists() or path.is_symlink():
+        _require(path.is_file() and not path.is_symlink(),
+                 f"{label} path is not a regular file")
+        existing = _read_json(path)
+        _require(existing == dict(payload),
+                 f"refusing to overwrite a different {label}")
+        return
+    atomic_json_save(dict(payload), path)
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text())
@@ -313,6 +389,8 @@ def scorer_provenance_binding_keys(value: Mapping[str, Any]) -> tuple[str, ...]:
     when the successor digest is present.
     """
 
+    if "scorer_fit_corpus_v2_scorer_contract_digest" in value:
+        return FULL_BANK_V2_PROVENANCE_BINDING_KEYS
     if "global_exact_successor_scorer_contract_digest" not in value:
         return SCORER_PROVENANCE_BINDING_KEYS
     return SCORER_PROVENANCE_BINDING_KEYS + GLOBAL_EXACT_PROVENANCE_BINDING_KEYS
@@ -348,7 +426,10 @@ def scorer_provenance_bindings(value: Mapping[str, Any]) -> dict[str, Any]:
     bindings = {
         key: value[key] for key in scorer_provenance_binding_keys(value)
     }
-    if "global_exact_successor_scorer_contract_digest" in value:
+    if "scorer_fit_corpus_v2_scorer_contract_digest" in value:
+        for key in FULL_BANK_V2_PROVENANCE_BINDING_KEYS:
+            _require_digest(bindings.get(key), f"full-bank V2 provenance {key}")
+    elif "global_exact_successor_scorer_contract_digest" in value:
         lineage = validate_global_exact_scorer_contract_lineage(
             bindings["global_exact_scorer_contract_lineage"])
         _require(
@@ -367,6 +448,10 @@ def scorer_provenance_bindings(value: Mapping[str, Any]) -> dict[str, Any]:
 def operational_scorer_contract_digest(value: Mapping[str, Any]) -> str:
     """Return the exact signed operational digest for a scorer artefact."""
 
+    if "scorer_fit_corpus_v2_scorer_contract_digest" in value:
+        return _require_digest(
+            value.get("scorer_fit_corpus_v2_scorer_contract_digest"),
+            "full-bank V2 operational scorer contract digest")
     if "global_exact_successor_scorer_contract_digest" not in value:
         return contract_digest()
     lineage = validate_global_exact_scorer_contract_lineage(
@@ -1243,6 +1328,44 @@ def completion_by_split_family(fit_rows: list[dict[str, Any]],
             }
         result[split] = per
     return result
+
+
+def full_bank_v2_completion_degeneracy(
+        fit_rows: Sequence[Mapping[str, Any]],
+        calibration_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Pure pre-training completion-label gate required by the V2 contract."""
+
+    def projection(rows: Sequence[Mapping[str, Any]], label: str) -> dict[str, Any]:
+        values = [int(row.get("completion", -1)) for row in rows]
+        if any(value not in (0, 1) for value in values):
+            raise CorpusValidationError(
+                f"full-bank V2 {label} completion label is not binary")
+        counts = Counter(values)
+        return {
+            "row_count": len(values),
+            "negative_count": counts[0],
+            "positive_count": counts[1],
+            "unique_labels": sorted(counts),
+            "degenerate": len(counts) != 2,
+        }
+
+    fit = projection(fit_rows, "fit")
+    calibration = projection(calibration_rows, "calibration")
+    return {
+        "fit": fit,
+        "calibration": calibration,
+        "pass": not fit["degenerate"] and not calibration["degenerate"],
+    }
+
+
+def full_bank_v2_training_execution_counts() -> dict[str, Any]:
+    value = V2_CONTRACT.training_budget_interpretation()
+    _require(value["fit_examples"] == FULL_BANK_V2_EXPECTED_FIT_ROWS
+             and value["calibration_examples"]
+             == FULL_BANK_V2_EXPECTED_CALIBRATION_ROWS
+             and value["optimizer_updates_per_model"] == 1_080,
+             "full-bank V2 training execution counts changed")
+    return value
 
 
 # --------------------------------------------------------------- corpus gate --
@@ -2252,9 +2375,10 @@ def _validate_latent_index(index: dict[str, Any], pool_dir: Path,
     }, horizon_source, list(context_states), list(horizon_keys))
 
 
-def validate_scorer_fit_corpus(pool: str = EXPECTED_POOL, *,
-                               verify_encoder_checkpoint: bool = True,
-                               verify_frame_paths: bool = True) -> dict[str, Any]:
+def _validate_legacy_scorer_fit_corpus(
+        pool: str = EXPECTED_POOL, *,
+        verify_encoder_checkpoint: bool = True,
+        verify_frame_paths: bool = True) -> dict[str, Any]:
     """Validate every identity, row and latent binding before model construction."""
 
     if pool != EXPECTED_POOL:
@@ -2403,6 +2527,158 @@ def validate_scorer_fit_corpus(pool: str = EXPECTED_POOL, *,
     }
 
 
+def _validate_full_bank_v2_scorer_fit_corpus(
+        pool: str = EXPECTED_POOL, *,
+        verify_encoder_checkpoint: bool = True,
+        verify_frame_paths: bool = True) -> dict[str, Any]:
+    """Consume only the exact V2 encoder producer; never reopen old allocation."""
+
+    if pool != EXPECTED_POOL:
+        raise CorpusValidationError(
+            "full-bank V2 training is registered only for pool=scorer_fit")
+    started = time.time()
+    from scripts import encode_go2_branch_corpus_v1_2 as ENCODER
+
+    try:
+        bundle = (
+            ENCODER
+            .load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
+                out=OUT_ROOT / EXPECTED_POOL,
+                verify_frame_paths=verify_frame_paths,
+                verify_encoder_checkpoint=verify_encoder_checkpoint,
+            )
+        )
+    except (OSError, ValueError, KeyError, RuntimeError) as exc:
+        raise CorpusValidationError(
+            f"full-bank V2 encoded-corpus producer rejected inputs: {exc}"
+        ) from exc
+    _require(isinstance(bundle, Mapping),
+             "full-bank V2 encoder bundle is not an object")
+    manifest = bundle.get("state_manifest")
+    assignment = bundle.get("assignment_manifest")
+    rows_value = bundle.get("rows")
+    index = bundle.get("latent_index")
+    receipt = bundle.get("corpus_receipt")
+    contract_artifact = bundle.get("scorer_contract_artifact")
+    _require(all(isinstance(value, Mapping) for value in (
+        manifest, assignment, index, receipt, contract_artifact,
+    )), "full-bank V2 encoder bundle is incomplete")
+    _require(isinstance(rows_value, list)
+             and len(rows_value) == FULL_BANK_V2_EXPECTED_BRANCHES,
+             "full-bank V2 corpus is not exactly 1,440 rows")
+    rows = [dict(row) for row in rows_value]
+    _require(all(row.get("valid") is True for row in rows),
+             "full-bank V2 corpus contains an invalid branch")
+    _require(len({str(row.get("state_id")) for row in rows}) == EXPECTED_STATES,
+             "full-bank V2 corpus is not exactly 120 states")
+    per_state = Counter(str(row.get("state_id")) for row in rows)
+    _require(set(per_state.values()) == {FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE},
+             "full-bank V2 state does not have twelve branches")
+    state_candidates: dict[str, set[int]] = {}
+    for row in rows:
+        state_candidates.setdefault(str(row["state_id"]), set()).add(
+            int(row["candidate_index"]))
+    _require(all(value == set(range(12)) for value in state_candidates.values()),
+             "full-bank V2 candidates are not exact indices 0..11")
+
+    artifact = V2_CONTRACT.validate_contract_artifact(contract_artifact)
+    successor = artifact["contract"]
+    _require(successor["corpus_counts"]["branches"]
+             == FULL_BANK_V2_EXPECTED_BRANCHES,
+             "successor contract branch count changed")
+    _require(successor["training_budget_interpretation"]
+             == V2_CONTRACT.training_budget_interpretation(),
+             "successor contract training budget changed")
+    _require(manifest.get("state_manifest_digest")
+             == successor["state_selector_binding"]["state_manifest_digest"],
+             "successor contract binds another V2 state manifest")
+    _require(assignment.get("full_bank_assignment_manifest_digest")
+             == successor["state_selector_binding"][
+                 "assignment_manifest_digest"],
+             "successor contract binds another V2 assignment manifest")
+
+    horizon_records = index.get("horizon_records")
+    _require(isinstance(horizon_records, list)
+             and len(horizon_records) == FULL_BANK_V2_EXPECTED_BRANCHES,
+             "full-bank V2 latent index lacks 1,440 horizon shards")
+    _require(index.get("context_shape")
+             == [EXPECTED_STATES, CONTEXT_SLOTS, TOKENS, TOKEN_DIM]
+             and index.get("horizon_shape")
+             == [FULL_BANK_V2_EXPECTED_BRANCHES, HORIZONS, TOKENS, TOKEN_DIM],
+             "full-bank V2 latent index shape changed")
+    pool_dir = OUT_ROOT / EXPECTED_POOL
+    horizon = HorizonShardStore(horizon_records, pool_dir)
+    horizon_keys = [str(record.get("key")) for record in horizon_records]
+    _require(len(set(horizon_keys)) == FULL_BANK_V2_EXPECTED_BRANCHES,
+             "full-bank V2 horizon keys are not unique")
+    positions = {key: position for position, key in enumerate(horizon_keys)}
+    for row in rows:
+        key = f"{row['state_id']}|{row['candidate']}"
+        _require(key in positions,
+                 f"full-bank V2 row has no horizon shard: {key}")
+        row["_latent_index"] = positions[key]
+    rows.sort(key=lambda row: (
+        int(row.get("state_index", 0)), int(row.get("candidate_index", 0))))
+    fit_rows = [row for row in rows if row.get("split_role") == "fit"]
+    calibration_rows = [row for row in rows
+                        if row.get("split_role") == "calibration"]
+    _require(len({row["state_id"] for row in fit_rows}) == EXPECTED_FIT_STATES
+             and len(fit_rows) == FULL_BANK_V2_EXPECTED_FIT_ROWS,
+             "full-bank V2 fit split is not 96 states / 1,152 rows")
+    _require(len({row["state_id"] for row in calibration_rows})
+             == EXPECTED_CALIBRATION_STATES
+             and len(calibration_rows)
+             == FULL_BANK_V2_EXPECTED_CALIBRATION_ROWS,
+             "full-bank V2 calibration split is not 24 states / 288 rows")
+    _require(not ({row["scene_id"] for row in fit_rows}
+                  & {row["scene_id"] for row in calibration_rows}),
+             "full-bank V2 fit/calibration split is not scene-disjoint")
+    training_order_digest = canonical_digest([
+        [row["state_id"], row["candidate"], row["_latent_index"]]
+        for row in fit_rows
+    ])
+    bindings = dict(bundle.get("bindings", {}))
+    for key, value in (
+        ("scorer_fit_corpus_v2_scorer_contract_digest",
+         successor[V2_CONTRACT.CONTRACT_SELF_KEY]),
+        ("scorer_fit_corpus_v2_scorer_contract_artifact_digest",
+         artifact[V2_CONTRACT.ARTIFACT_SELF_KEY]),
+        ("state_manifest_digest", manifest["state_manifest_digest"]),
+        ("full_bank_assignment_manifest_digest",
+         assignment["full_bank_assignment_manifest_digest"]),
+        ("training_row_order_digest", training_order_digest),
+    ):
+        observed = bindings.setdefault(key, value)
+        _require(observed == value,
+                 f"full-bank V2 encoder binding changed at {key}")
+    return {
+        "rows": rows,
+        "fit_rows": fit_rows,
+        "calibration_rows": calibration_rows,
+        "horizon": horizon,
+        "index": dict(index),
+        "manifest": dict(manifest),
+        "receipt": dict(receipt),
+        "bindings": bindings,
+        "corpus_design": "full-bank-v2",
+        "validation_wall_time_s": round(time.time() - started, 3),
+    }
+
+
+def validate_scorer_fit_corpus(
+        pool: str = EXPECTED_POOL, *,
+        verify_encoder_checkpoint: bool = True,
+        verify_frame_paths: bool = True,
+        full_bank_v2: bool = False) -> dict[str, Any]:
+    if full_bank_v2:
+        return _validate_full_bank_v2_scorer_fit_corpus(
+            pool, verify_encoder_checkpoint=verify_encoder_checkpoint,
+            verify_frame_paths=verify_frame_paths)
+    return _validate_legacy_scorer_fit_corpus(
+        pool, verify_encoder_checkpoint=verify_encoder_checkpoint,
+        verify_frame_paths=verify_frame_paths)
+
+
 def load_corpus(pool: str) -> dict[str, Any]:
     """Lightweight loader retained for the downstream, separately gated scorer."""
 
@@ -2490,7 +2766,7 @@ def register_initialisation(name: str, *, use_latent: bool, seed: int,
     model = UtilityScorer(use_latent=use_latent)
     initial_state = _cpu_state(model)
     initial_digest = state_dict_digest(initial_state)
-    directory = PACKAGE_DIR / "registered_initialisations"
+    directory = PACKAGE_DIR / INITIALISATIONS_DIR_NAME
     directory.mkdir(parents=True, exist_ok=True)
     canonical = directory / f"{name}.pt"
     candidates = [canonical] + sorted(directory.glob(f"{name}_recovered_*.pt"))
@@ -2676,7 +2952,7 @@ def train_registered_model(name: str, model: UtilityScorer, *, use_latent: bool,
     seed, epochs = int(budget["seed"]), int(budget["epochs"])
     training_rows = int(latent.shape[0])
     execution = _execution_fingerprint(device)
-    model_root = PACKAGE_DIR / "training" / name
+    model_root = PACKAGE_DIR / TRAINING_DIR_NAME / name
     model_root.mkdir(parents=True, exist_ok=True)
     initial_payload = torch.load(initialisation["path"], map_location="cpu",
                                  weights_only=False)
@@ -2951,7 +3227,7 @@ def _write_once_torch(payload: dict[str, Any], path: Path,
 
 
 def _training_storage_bytes(name: str) -> int:
-    root = PACKAGE_DIR / "training" / name
+    root = PACKAGE_DIR / TRAINING_DIR_NAME / name
     paths: list[Path] = []
     for attempt in root.glob("attempt_*"):
         if attempt.is_dir():
@@ -2973,18 +3249,272 @@ def _safe_json(value: Any) -> Any:
     return value
 
 
+def load_and_validate_full_bank_v2_training_terminal_for_consumption(
+        *, package_dir: Path | None = None,
+        require_qualified: bool | None = None,
+        verify_encoder_checkpoint: bool = True,
+        ) -> dict[str, Any]:
+    """Replay V2 producers and validate the one immutable training terminal.
+
+    This validator never calls a legacy allocator or opens a torch package.  A
+    downstream transfer can therefore establish the exact qualification gate
+    and every package byte digest before deserialising scorer weights or
+    opening any frozen development-predictor artifact.
+    """
+
+    package_root = V2_PACKAGE_DIR if package_dir is None else Path(package_dir)
+    _require(package_root == V2_PACKAGE_DIR,
+             "full-bank V2 training terminal is at its exact package root")
+    corpus = _validate_full_bank_v2_scorer_fit_corpus(
+        EXPECTED_POOL,
+        verify_encoder_checkpoint=verify_encoder_checkpoint,
+        verify_frame_paths=True)
+    contract_digest_value = operational_scorer_contract_digest(
+        corpus["bindings"])
+    qualification_path = package_root / "qualification_v2.json"
+    degeneracy_path = (
+        package_root / "completion_degeneracy_failure_v2.json")
+    if degeneracy_path.is_file():
+        _require(not qualification_path.exists(),
+                 "V2 completion-degeneracy and qualification terminals coexist")
+        failure = _read_json(degeneracy_path)
+        recorded = _require_digest(
+            failure.get("qualification_failure_digest"),
+            "V2 completion-degeneracy failure digest")
+        unsigned = {key: value for key, value in failure.items()
+                    if key != "qualification_failure_digest"}
+        _require(recorded == canonical_digest(unsigned)
+                 and failure.get("schema")
+                 == FULL_BANK_V2_DEGENERACY_FAILURE_SCHEMA
+                 and failure.get("complete") is True
+                 and failure.get("qualified") is False
+                 and failure.get("training_started") is False
+                 and failure.get("scorer_models_constructed") is False
+                 and failure.get(
+                     "scorer_fit_corpus_v2_scorer_contract_digest")
+                 == contract_digest_value,
+                 "V2 completion-degeneracy terminal changed")
+        _require(require_qualified is not True,
+                 "full-bank V2 scorer did not qualify")
+        return {
+            "terminal_kind": "COMPLETION_DEGENERACY_FAILURE",
+            "terminal_digest": recorded,
+            "qualified": False,
+            "terminal": failure,
+            "terminal_path": degeneracy_path,
+            "corpus": corpus,
+            "predictor_artifact_access_authorised": False,
+        }
+    qualification = _read_json(qualification_path)
+    recorded = _require_digest(
+        qualification.get("qualification_report_digest"),
+        "full-bank V2 qualification report digest")
+    unsigned = {key: value for key, value in qualification.items()
+                if key != "qualification_report_digest"}
+    _require(recorded == canonical_digest(unsigned)
+             and qualification.get("schema")
+             == FULL_BANK_V2_QUALIFICATION_SCHEMA
+             and qualification.get("status") == STATUS
+             and qualification.get("qualification_evaluations") == 1
+             and qualification.get("epoch_selection_permitted") is False
+             and qualification.get("fit_states") == EXPECTED_FIT_STATES
+             and qualification.get("calibration_states")
+             == EXPECTED_CALIBRATION_STATES
+             and qualification.get("fit_rows")
+             == FULL_BANK_V2_EXPECTED_FIT_ROWS
+             and qualification.get("calibration_rows")
+             == FULL_BANK_V2_EXPECTED_CALIBRATION_ROWS
+             and qualification.get(
+                 "scorer_fit_corpus_v2_scorer_contract_digest")
+             == contract_digest_value
+             and qualification.get(
+                 "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+             == corpus["bindings"][
+                 "scorer_fit_corpus_v2_scorer_contract_artifact_digest"]
+             and qualification.get("training_execution_counts")
+             == full_bank_v2_training_execution_counts(),
+             "full-bank V2 qualification terminal changed")
+    for key in FULL_BANK_V2_PROVENANCE_BINDING_KEYS:
+        _require(qualification.get(key) == corpus["bindings"][key],
+                 f"full-bank V2 qualification provenance changed at {key}")
+    criteria = qualification.get("criteria")
+    _require(isinstance(criteria, Mapping) and criteria,
+             "full-bank V2 qualification criteria are absent")
+    distributions = qualification.get("label_distributions")
+    latent_result = qualification.get("latent_scorer")
+    baseline_result = qualification.get("no_latent_baseline")
+    _require(all(isinstance(value, Mapping) for value in (
+        distributions, latent_result, baseline_result)),
+        "full-bank V2 qualification inputs are absent")
+    try:
+        expected_criteria, expected_details, expected_dominance = (
+            qualification_criteria(
+                latent_result["calibration"],
+                baseline_result["calibration"],
+                distributions["fit"]["overall"],
+                distributions["calibration"]["overall"]))
+    except (KeyError, TypeError, ValueError) as exc:
+        raise CorpusValidationError(
+            "full-bank V2 qualification inputs are malformed") from exc
+    _require(dict(criteria) == expected_criteria
+             and qualification.get("criterion_details") == expected_details
+             and qualification.get("baseline_dominance_pairwise")
+             == expected_dominance,
+             "full-bank V2 frozen qualification criteria do not replay")
+    qualified = qualification.get("qualified") is True
+    _require(qualified == all(value is True for value in criteria.values()),
+             "full-bank V2 qualification verdict differs from criteria")
+    if require_qualified is not None:
+        _require(qualified is require_qualified,
+                 "full-bank V2 qualification has the wrong terminal verdict")
+    baseline_receipt = qualification.get("no_latent_baseline_package")
+    _require(isinstance(baseline_receipt, Mapping),
+             "full-bank V2 baseline receipt is absent")
+    baseline_receipt = dict(baseline_receipt)
+    baseline_recorded = _require_digest(
+        baseline_receipt.get("receipt_digest"),
+        "full-bank V2 baseline receipt digest")
+    _require(baseline_recorded == canonical_digest({
+        key: value for key, value in baseline_receipt.items()
+        if key != "receipt_digest"})
+        and baseline_receipt.get("complete") is True
+        and baseline_receipt.get(
+            "scorer_fit_corpus_v2_scorer_contract_digest")
+        == contract_digest_value,
+        "full-bank V2 baseline receipt changed")
+    baseline_receipt_path = (
+        package_root / "no_latent_baseline_v2.receipt.json")
+    _require(_read_json(baseline_receipt_path) == baseline_receipt,
+             "full-bank V2 standalone baseline receipt changed")
+    baseline_path = package_root / "no_latent_baseline_v2.pt"
+    _require(baseline_path.is_file() and not baseline_path.is_symlink()
+             and baseline_path.stat().st_size
+             == baseline_receipt.get("byte_count")
+             and sha256_file(baseline_path) == baseline_receipt.get("sha256"),
+             "full-bank V2 baseline package bytes changed")
+    result: dict[str, Any] = {
+        "terminal_kind": ("QUALIFICATION_PASS" if qualified
+                          else "QUALIFICATION_FAILURE"),
+        "terminal_digest": recorded,
+        "qualified": qualified,
+        "terminal": qualification,
+        "terminal_path": qualification_path,
+        "corpus": corpus,
+        "baseline_receipt": baseline_receipt,
+        "baseline_path": baseline_path,
+        "predictor_artifact_access_authorised": qualified,
+    }
+    if qualified:
+        package_path = package_root / "scorer_package_v2.pt"
+        package_receipt_path = (
+            package_root / "scorer_package_receipt_v2.json")
+        package_receipt = _read_json(package_receipt_path)
+        package_recorded = _require_digest(
+            package_receipt.get("scorer_package_receipt_digest"),
+            "full-bank V2 scorer-package receipt digest")
+        _require(package_recorded == canonical_digest({
+            key: value for key, value in package_receipt.items()
+            if key != "scorer_package_receipt_digest"})
+            and package_receipt.get("complete") is True
+            and package_receipt.get("qualified") is True
+            and package_receipt.get("scorer_package_sha256")
+            == qualification.get("scorer_package_sha256")
+            and package_receipt.get(
+                "scorer_fit_corpus_v2_scorer_contract_digest")
+            == contract_digest_value,
+            "full-bank V2 scorer-package receipt changed")
+        _require(package_path.is_file() and not package_path.is_symlink()
+                 and sha256_file(package_path)
+                 == qualification.get("scorer_package_sha256"),
+                 "full-bank V2 scorer-package bytes changed")
+        result.update({
+            "scorer_package_path": package_path,
+            "scorer_package_receipt": package_receipt,
+        })
+    else:
+        failed_path = package_root / "failed_scorer_v2.pt"
+        _require(failed_path.is_file() and not failed_path.is_symlink()
+                 and sha256_file(failed_path)
+                 == qualification.get("failed_scorer_sha256"),
+                 "full-bank V2 failed-scorer package bytes changed")
+        _require(not (package_root / "scorer_package_v2.pt").exists(),
+                 "failed full-bank V2 qualification left a qualified package")
+        result["failed_scorer_path"] = failed_path
+    return result
+
+
 # ---------------------------------------------------------------------- main --
 def main() -> int:
+    global PACKAGE_DIR, SCORER_CONTRACT_ARTIFACT_PATH
+    global INITIALISATIONS_DIR_NAME, TRAINING_DIR_NAME
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--pool", default=EXPECTED_POOL, choices=[EXPECTED_POOL])
+    parser.add_argument(
+        "--corpus-design", choices=("legacy", "full-bank-v2"),
+        default="legacy",
+        help="select the immutable six-of-twelve lineage or prospective full-bank V2",
+    )
     parser.add_argument("--device", default="auto",
                         help="auto, cpu, or cuda; changing device forces a safe init restart")
     args = parser.parse_args()
+    full_bank_v2 = args.corpus_design == "full-bank-v2"
+    if full_bank_v2:
+        PACKAGE_DIR = V2_PACKAGE_DIR
+        SCORER_CONTRACT_ARTIFACT_PATH = (
+            PACKAGE_DIR / V2_CONTRACT.ARTIFACT_NAME)
+        INITIALISATIONS_DIR_NAME = "initialisations_v2"
+        TRAINING_DIR_NAME = "training_v2"
+    else:
+        PACKAGE_DIR = ROOT / ".generated/go2_utility_scorer_v1_2"
+        SCORER_CONTRACT_ARTIFACT_PATH = (
+            PACKAGE_DIR / "scorer_contract_v1_2.json")
+        INITIALISATIONS_DIR_NAME = "registered_initialisations"
+        TRAINING_DIR_NAME = "training"
+    PACKAGE_DIR.mkdir(parents=True, exist_ok=True)
+    qualification_path = PACKAGE_DIR / (
+        "qualification_v2.json" if full_bank_v2 else "qualification.json")
+    scorer_package_path = PACKAGE_DIR / (
+        "scorer_package_v2.pt" if full_bank_v2 else "scorer_package.pt")
+    scorer_package_receipt_path = PACKAGE_DIR / (
+        "scorer_package_receipt_v2.json" if full_bank_v2
+        else "scorer_package_receipt.json")
+    baseline_path = PACKAGE_DIR / (
+        "no_latent_baseline_v2.pt" if full_bank_v2 else "")
+    baseline_receipt_path = PACKAGE_DIR / (
+        "no_latent_baseline_v2.receipt.json" if full_bank_v2 else "")
+    failed_scorer_path = PACKAGE_DIR / (
+        "failed_scorer_v2.pt" if full_bank_v2 else "")
 
     main_started = time.time()
-    corpus = validate_scorer_fit_corpus(args.pool)
+    corpus = validate_scorer_fit_corpus(
+        args.pool, full_bank_v2=full_bank_v2)
     operational_contract_digest = operational_scorer_contract_digest(
         corpus["bindings"])
+    contract_binding_fields = ({
+        "scorer_fit_corpus_v2_scorer_contract_digest":
+            operational_contract_digest,
+        "scorer_fit_corpus_v2_scorer_contract_artifact_digest":
+            corpus["bindings"][
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest"],
+    } if full_bank_v2 else {
+        "scorer_contract_v1_2_digest": operational_contract_digest,
+    })
+    allocation_lineage_fields = ({
+        key: corpus["bindings"][key]
+        for key in FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+    } if full_bank_v2 else {
+        "candidate_allocator_contract_digest": allocation_contract_digest(),
+        "candidate_allocation_amendment_digest": allocation_amendment_digest(),
+        "candidate_allocation_post_identity_validation_digest":
+            corpus["bindings"][
+                "candidate_allocation_post_identity_validation_digest"],
+        "pre_identity_allocation_validation_digest": corpus["bindings"][
+            "pre_identity_allocation_validation_digest"],
+        "invalid_scorer_identity_exclusion_digest":
+            invalid_identity_exclusion_digest(),
+        **scorer_provenance_bindings(corpus["bindings"]),
+    })
     if args.device == "auto":
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     else:
@@ -3001,14 +3531,73 @@ def main() -> int:
         "fit": grouped_label_distributions(fit_rows),
         "calibration": grouped_label_distributions(calibration_rows),
     }
+    if full_bank_v2:
+        execution_counts = full_bank_v2_training_execution_counts()
+        completion_gate = full_bank_v2_completion_degeneracy(
+            fit_rows, calibration_rows)
+        label_receipt = {
+            "schema": FULL_BANK_V2_LABEL_DISTRIBUTION_SCHEMA,
+            "status": STATUS,
+            "complete": True,
+            "scorer_fit_corpus_v2_scorer_contract_digest":
+                operational_contract_digest,
+            "state_manifest_digest": corpus["bindings"][
+                "state_manifest_digest"],
+            "full_bank_assignment_manifest_digest": corpus["bindings"][
+                "full_bank_assignment_manifest_digest"],
+            "corpus_digest": corpus["bindings"]["corpus_digest"],
+            "fit": fit_distribution,
+            "calibration": calibration_distribution,
+            "grouped": grouped_distributions,
+            "completion_degeneracy_gate": completion_gate,
+            "training_execution_counts": execution_counts,
+            "manifest_revisable_after_labels": False,
+            "predictor_checkpoint_opened": False,
+        }
+        label_receipt["label_distribution_receipt_digest"] = \
+            canonical_digest(label_receipt)
+        _write_or_require_exact_json(
+            label_receipt, PACKAGE_DIR / "label_distributions_v2.json",
+            label="full-bank V2 label distribution receipt")
+        if completion_gate["pass"] is not True:
+            failure = {
+                "schema": FULL_BANK_V2_DEGENERACY_FAILURE_SCHEMA,
+                "status": "FAIL_FROZEN_SCORER_QUALIFICATION_PRETRAINING_DEGENERATE_COMPLETION",
+                "complete": True,
+                "qualified": False,
+                "training_started": False,
+                "scorer_models_constructed": False,
+                "scorer_fit_corpus_v2_scorer_contract_digest":
+                    operational_contract_digest,
+                "state_manifest_digest": corpus["bindings"][
+                    "state_manifest_digest"],
+                "full_bank_assignment_manifest_digest": corpus["bindings"][
+                    "full_bank_assignment_manifest_digest"],
+                "corpus_digest": corpus["bindings"]["corpus_digest"],
+                "completion_degeneracy_gate": completion_gate,
+                "label_distribution_receipt_digest": label_receipt[
+                    "label_distribution_receipt_digest"],
+                "manifest_retained_unchanged": True,
+                "predictor_checkpoint_opened": False,
+                "final_200_state_corpus_generated": False,
+            }
+            failure["qualification_failure_digest"] = canonical_digest(failure)
+            _write_or_require_exact_json(
+                failure,
+                PACKAGE_DIR / "completion_degeneracy_failure_v2.json",
+                label="full-bank V2 completion degeneracy failure")
+            print(json.dumps(failure, indent=2, sort_keys=True))
+            return 1
 
     feature_started = time.time()
     fit_features = features(fit_rows, corpus["horizon"], device)
     calibration_features = features(calibration_rows, corpus["horizon"], device)
     feature_wall_time = time.time() - feature_started
     binding_payload = {
-        "schema": "go2_utility_scorer_training_binding_v1_2",
-        "scorer_contract_v1_2_digest": operational_contract_digest,
+        "schema": ("go2_utility_scorer_fit_corpus_v2_training_binding_v1"
+                   if full_bank_v2
+                   else "go2_utility_scorer_training_binding_v1_2"),
+        **contract_binding_fields,
         "corpus_bindings": corpus["bindings"],
         "normalisation": NORMALISATION,
         "architecture": {
@@ -3018,6 +3607,9 @@ def main() -> int:
         },
         "training": dict(budget), "learning_rate_schedule": "constant",
         "final_epoch_only": True, "epoch_selection_permitted": False,
+        **({"training_execution_counts":
+                full_bank_v2_training_execution_counts()}
+           if full_bank_v2 else {}),
     }
     binding_digest = canonical_digest(binding_payload)
     models: dict[str, UtilityScorer] = {}
@@ -3051,7 +3643,7 @@ def main() -> int:
     # A completed one-shot report is an immutable terminal result.  Validate
     # and reuse it before touching calibration tensors again; idempotent
     # recovery must not silently perform a second qualification evaluation.
-    existing_report_path = PACKAGE_DIR / "qualification.json"
+    existing_report_path = qualification_path
     current_final_state_digests = {
         name: state_dict_digest(state) for name, state in packages.items()
     }
@@ -3072,12 +3664,12 @@ def main() -> int:
             and prior_baseline.get("sha256") == sha256_file(prior_baseline_path))
         qualified_package_valid = bool(
             prior.get("qualified") is not True
-            or ((PACKAGE_DIR / "scorer_package.pt").is_file()
+            or (scorer_package_path.is_file()
                 and prior.get("scorer_package_sha256")
-                == sha256_file(PACKAGE_DIR / "scorer_package.pt")))
+                == sha256_file(scorer_package_path)))
         if (prior.get("training_run_digest") == training_run_digest
-                and prior.get("scorer_contract_v1_2_digest")
-                == operational_contract_digest
+                and all(prior.get(key) == value
+                        for key, value in contract_binding_fields.items())
                 and prior.get("qualification_evaluations") == 1
                 and prior.get("final_state_digests") == current_final_state_digests
                 and prior_digest == canonical_digest(prior_payload)
@@ -3118,21 +3710,15 @@ def main() -> int:
     )
     final_state_digests = current_final_state_digests
     common_artifact = {
-        "schema": "go2_utility_scorer_package_v1_2", "status": STATUS,
+        "schema": (FULL_BANK_V2_PACKAGE_SCHEMA if full_bank_v2
+                   else "go2_utility_scorer_package_v1_2"),
+        "status": STATUS,
         "training_run_digest": training_run_digest,
         "binding_digest": binding_digest,
         "contract_digest": operational_contract_digest,
-        "scorer_contract_v1_2_digest": operational_contract_digest,
+        **contract_binding_fields,
         "bindings": binding_payload,
-        "candidate_allocator_contract_digest": allocation_contract_digest(),
-        "candidate_allocation_amendment_digest": allocation_amendment_digest(),
-        "candidate_allocation_post_identity_validation_digest":
-            corpus["bindings"]["candidate_allocation_post_identity_validation_digest"],
-        "pre_identity_allocation_validation_digest":
-            corpus["bindings"]["pre_identity_allocation_validation_digest"],
-        "invalid_scorer_identity_exclusion_digest":
-            invalid_identity_exclusion_digest(),
-        **scorer_provenance_bindings(corpus["bindings"]),
+        **allocation_lineage_fields,
         "latent": packages["latent"], "no_latent": packages["no_latent"],
         "initial_state_digests": {
             name: value["initial_state_digest"] for name, value in initialisations.items()
@@ -3172,12 +3758,13 @@ def main() -> int:
     scorer_package_digest = None
     failed_scorer_digest = None
     baseline_artifact = {
-        "schema": "go2_utility_no_latent_baseline_package_v1_2",
+        "schema": (FULL_BANK_V2_BASELINE_SCHEMA if full_bank_v2
+                   else "go2_utility_no_latent_baseline_package_v1_2"),
         "status": STATUS,
         "training_run_digest": training_run_digest,
         "binding_digest": binding_digest,
-        "scorer_contract_v1_2_digest": operational_contract_digest,
-        **scorer_provenance_bindings(corpus["bindings"]),
+        **contract_binding_fields,
+        **allocation_lineage_fields,
         "model_state_dict": packages["no_latent"],
         "initial_state_digest": initialisations["no_latent"]["initial_state_digest"],
         "final_state_digest": final_state_digests["no_latent"],
@@ -3189,8 +3776,9 @@ def main() -> int:
         "weights": WEIGHTS,
         "qualified_shared_scorer": qualified,
     }
-    baseline_path = (PACKAGE_DIR /
-                     f"no_latent_baseline_{training_run_digest[:16]}.pt")
+    if not full_bank_v2:
+        baseline_path = (PACKAGE_DIR /
+                         f"no_latent_baseline_{training_run_digest[:16]}.pt")
     baseline_package_digest = _write_once_torch(
         baseline_artifact, baseline_path, {
             "schema": baseline_artifact["schema"],
@@ -3198,11 +3786,13 @@ def main() -> int:
             "final_state_digest": final_state_digests["no_latent"],
         })
     baseline_receipt = {
-        "schema": "go2_utility_no_latent_baseline_receipt_v1_2",
+        "schema": ("go2_utility_scorer_fit_corpus_v2_no_latent_baseline_receipt_v1"
+                   if full_bank_v2
+                   else "go2_utility_no_latent_baseline_receipt_v1_2"),
         "status": STATUS, "complete": True,
         "training_run_digest": training_run_digest,
-        "scorer_contract_v1_2_digest": operational_contract_digest,
-        **scorer_provenance_bindings(corpus["bindings"]),
+        **contract_binding_fields,
+        **allocation_lineage_fields,
         "path": str(baseline_path),
         "sha256": baseline_package_digest,
         "byte_count": baseline_path.stat().st_size,
@@ -3211,31 +3801,29 @@ def main() -> int:
         "epoch_selection": "final_epoch_only_no_selection",
     }
     baseline_receipt["receipt_digest"] = canonical_digest(baseline_receipt)
-    atomic_json_save(
-        baseline_receipt,
-        PACKAGE_DIR / f"no_latent_baseline_{training_run_digest[:16]}.receipt.json")
+    if not full_bank_v2:
+        baseline_receipt_path = PACKAGE_DIR / (
+            f"no_latent_baseline_{training_run_digest[:16]}.receipt.json")
+    _write_or_require_exact_json(
+        baseline_receipt, baseline_receipt_path,
+        label="no-latent baseline receipt")
     if qualified:
         scorer_package_digest = _write_once_torch(
-            common_artifact, PACKAGE_DIR / "scorer_package.pt", identity)
+            common_artifact, scorer_package_path, identity)
         package_receipt = {
-            "schema": "go2_utility_scorer_package_receipt_v1_2", "status": STATUS,
+            "schema": ("go2_utility_scorer_fit_corpus_v2_package_receipt_v1"
+                       if full_bank_v2
+                       else "go2_utility_scorer_package_receipt_v1_2"),
+            "status": STATUS,
             "complete": True, "qualified": True,
             "training_run_digest": training_run_digest,
             "scorer_package_sha256": scorer_package_digest,
             "final_state_digests": final_state_digests,
             "bindings_digest": binding_digest,
-            "scorer_contract_v1_2_digest": operational_contract_digest,
+            **contract_binding_fields,
             "state_manifest_digest": corpus["bindings"]["state_manifest_digest"],
             "corpus_digest": corpus["bindings"]["corpus_digest"],
-            "candidate_allocator_contract_digest": allocation_contract_digest(),
-            "candidate_allocation_amendment_digest": allocation_amendment_digest(),
-            "candidate_allocation_post_identity_validation_digest":
-                corpus["bindings"]["candidate_allocation_post_identity_validation_digest"],
-            "pre_identity_allocation_validation_digest":
-                corpus["bindings"]["pre_identity_allocation_validation_digest"],
-            "invalid_scorer_identity_exclusion_digest":
-                invalid_identity_exclusion_digest(),
-            **scorer_provenance_bindings(corpus["bindings"]),
+            **allocation_lineage_fields,
             "target_encoder_digest": corpus["index"]["target_encoder_digest"],
             "target_encoder_checkpoint_sha256":
                 corpus["bindings"]["encoder_checkpoint_sha256"],
@@ -3250,27 +3838,29 @@ def main() -> int:
         }
         package_receipt["scorer_package_receipt_digest"] = canonical_digest(
             package_receipt)
-        atomic_json_save(package_receipt, PACKAGE_DIR / "scorer_package_receipt.json")
+        _write_or_require_exact_json(
+            package_receipt, scorer_package_receipt_path,
+            label="qualified scorer package receipt")
     else:
-        failed_path = PACKAGE_DIR / f"failed_scorer_{training_run_digest[:16]}.pt"
-        failed_scorer_digest = _write_once_torch(common_artifact, failed_path, identity)
+        if not full_bank_v2:
+            failed_scorer_path = PACKAGE_DIR / (
+                f"failed_scorer_{training_run_digest[:16]}.pt")
+        failed_scorer_digest = _write_once_torch(
+            common_artifact, failed_scorer_path, identity)
 
     report = {
-        "schema": "go2_utility_scorer_v1_2_qualification", "status": STATUS,
+        "schema": (FULL_BANK_V2_QUALIFICATION_SCHEMA if full_bank_v2
+                   else "go2_utility_scorer_v1_2_qualification"),
+        "status": STATUS,
         "training_run_digest": training_run_digest,
-        "scorer_contract_v1_2_digest": operational_contract_digest,
-        "frozen_scorer_fit_allocation_design_digest":
-            FROZEN_SCORER_FIT_ALLOCATION_DESIGN_DIGEST,
+        **contract_binding_fields,
+        **({"scorer_fit_corpus_v2_design_digest": corpus["bindings"][
+                "scorer_fit_corpus_v2_design_digest"]}
+           if full_bank_v2 else {
+               "frozen_scorer_fit_allocation_design_digest":
+                   FROZEN_SCORER_FIT_ALLOCATION_DESIGN_DIGEST}),
         "corpus_bindings": corpus["bindings"],
-        "candidate_allocator_contract_digest": allocation_contract_digest(),
-        "candidate_allocation_amendment_digest": allocation_amendment_digest(),
-        "candidate_allocation_post_identity_validation_digest":
-            corpus["bindings"]["candidate_allocation_post_identity_validation_digest"],
-        "pre_identity_allocation_validation_digest":
-            corpus["bindings"]["pre_identity_allocation_validation_digest"],
-        "invalid_scorer_identity_exclusion_digest":
-            invalid_identity_exclusion_digest(),
-        **scorer_provenance_bindings(corpus["bindings"]),
+        **allocation_lineage_fields,
         "target_encoder_digest": corpus["index"]["target_encoder_digest"],
         "target_encoder_checkpoint_sha256":
             corpus["bindings"]["encoder_checkpoint_sha256"],
@@ -3284,7 +3874,11 @@ def main() -> int:
         "target_normalisation": corpus["index"]["target_normalisation"],
         "fit_states": EXPECTED_FIT_STATES,
         "calibration_states": EXPECTED_CALIBRATION_STATES,
-        "fit_rows": EXPECTED_FIT_ROWS, "calibration_rows": EXPECTED_CALIBRATION_ROWS,
+        "fit_rows": (FULL_BANK_V2_EXPECTED_FIT_ROWS if full_bank_v2
+                     else EXPECTED_FIT_ROWS),
+        "calibration_rows": (
+            FULL_BANK_V2_EXPECTED_CALIBRATION_ROWS if full_bank_v2
+            else EXPECTED_CALIBRATION_ROWS),
         "scene_disjoint": True,
         "label_distributions": grouped_distributions,
         "completion_prevalence_by_split_and_family": completion_by_split_family(
@@ -3299,6 +3893,11 @@ def main() -> int:
         "qualification_evaluations": 1,
         "qualification_input": "scene-disjoint true H=1..4 target latent trajectories",
         "epoch_selection_permitted": False,
+        **({"training_execution_counts":
+                full_bank_v2_training_execution_counts(),
+            "label_distribution_receipt_digest": label_receipt[
+                "label_distribution_receipt_digest"]}
+           if full_bank_v2 else {}),
         "initialisations": initialisations,
         "training_receipts": training_receipts,
         "final_state_digests": final_state_digests,
@@ -3318,7 +3917,7 @@ def main() -> int:
             "registered_initialisations_bytes": sum(
                 Path(value["path"]).stat().st_size for value in initialisations.values()),
             "scorer_package_bytes": (
-                (PACKAGE_DIR / "scorer_package.pt").stat().st_size
+                scorer_package_path.stat().st_size
                 if scorer_package_digest is not None else None),
             "no_latent_baseline_package_bytes": baseline_path.stat().st_size,
         },
@@ -3326,8 +3925,14 @@ def main() -> int:
     }
     report = _safe_json(report)
     report["qualification_report_digest"] = canonical_digest(report)
-    report_path = PACKAGE_DIR / "qualification.json"
+    report_path = qualification_path
     if report_path.exists():
+        if full_bank_v2:
+            _write_or_require_exact_json(
+                report, report_path,
+                label="full-bank V2 terminal qualification")
+            print(json.dumps(report, indent=2, default=str))
+            return 0 if qualified else 1
         # Any valid terminal report for this run returned before calibration.
         # Reaching this point means the canonical path is stale, incomplete, or
         # differently bound. Preserve its exact bytes before restoring the
@@ -3339,7 +3944,12 @@ def main() -> int:
             f"qualification.{prior_sha[:16]}.{time.time_ns()}.invalid.json")
         os.replace(report_path, preserved)
         _fsync_directory(invalid_dir)
-    atomic_json_save(report, report_path)
+    if full_bank_v2:
+        _write_or_require_exact_json(
+            report, report_path,
+            label="full-bank V2 terminal qualification")
+    else:
+        atomic_json_save(report, report_path)
     print(json.dumps(report, indent=2, default=str))
     return 0 if qualified else 1
 

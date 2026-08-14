@@ -27,6 +27,79 @@ def synthetic_rows() -> list[dict[str, object]]:
 
 
 class DevelopmentTransferTests(unittest.TestCase):
+    def test_full_bank_v2_qualification_failure_precedes_weights_and_predictors(self):
+        with mock.patch.object(
+                T.S,
+                "load_and_validate_full_bank_v2_training_terminal_for_consumption",
+                side_effect=T.S.CorpusValidationError(
+                    "frozen V2 criterion failed")) as terminal, \
+                mock.patch.object(T.torch, "load") as load, \
+                mock.patch.object(T, "validate_stage_a") as stage_a, \
+                mock.patch.object(T, "validate_bc_result") as predictions, \
+                mock.patch.object(
+                    T, "_validate_live_selector_provenance") as legacy:
+            with self.assertRaisesRegex(
+                    T.DevelopmentTransferRefused,
+                    "frozen V2 criterion failed"):
+                T.validate_qualified_scorer(full_bank_v2=True)
+        terminal.assert_called_once_with(
+            require_qualified=True, verify_encoder_checkpoint=False)
+        load.assert_not_called()
+        stage_a.assert_not_called()
+        predictions.assert_not_called()
+        legacy.assert_not_called()
+
+    def test_full_bank_v2_live_gate_uses_only_successor_producers(self):
+        bindings = {
+            key: key[0] * 64
+            for key in T.S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+        }
+        bindings["scorer_fit_corpus_v2_scorer_contract_digest"] = "c" * 64
+        bindings[
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest"] = "a" * 64
+        qualification = dict(bindings)
+        artifact = {
+            T.S.V2_CONTRACT.ARTIFACT_SELF_KEY: "a" * 64,
+            "contract": {
+                T.S.V2_CONTRACT.CONTRACT_SELF_KEY: "c" * 64,
+                "source_binding_digest": "s" * 64,
+                "final_200_state_evaluation_corpus_authorised": False,
+            },
+        }
+        terminal = {
+            "corpus": {"bindings": {
+                **bindings,
+                "state_manifest_digest": "m" * 64,
+                "corpus_digest": "o" * 64,
+            }},
+        }
+        with mock.patch.object(
+                T.S.V2_CONTRACT, "load_contract_for_consumption",
+                return_value=artifact) as contract, \
+                mock.patch.object(
+                    T, "_validate_live_selector_provenance") as legacy, \
+                mock.patch.object(T.torch, "load") as load:
+            result = T._validate_live_full_bank_v2_provenance(
+                qualification, terminal)
+        contract.assert_called_once_with(root=T.ROOT)
+        legacy.assert_not_called()
+        load.assert_not_called()
+        self.assertEqual(
+            result["status"],
+            "PASS_LIVE_FULL_BANK_V2_PRE_WEIGHT_PROVENANCE_REVALIDATION")
+        self.assertFalse(result["predictor_artifacts_opened_during_validation"])
+        self.assertFalse(result["legacy_allocation_or_mask_validator_called"])
+
+    def test_full_bank_v2_paths_and_transfer_scope_are_exact(self):
+        self.assertEqual(T.V2_OUT_DIR.name,
+                         "counterfactual_development_transfer_v2")
+        self.assertEqual(T.V2_SPEC_NAME, "development_transfer_spec_v2.json")
+        self.assertEqual(T.V2_RESULT_NAME, "result_v2.json")
+        self.assertEqual(T.EXPECTED_STATES, 20)
+        self.assertEqual(T.EXPECTED_BRANCHES, 240)
+        self.assertEqual(T.EXPECTED_CANDIDATES, 12)
+        self.assertEqual(T.EXPECTED_CHECKPOINTS, 32)
+
     def test_downstream_uses_final_non_overwriting_selector_amendment(self):
         self.assertEqual(
             T.S.STATE_SELECTOR.AMENDMENT_VERSION,

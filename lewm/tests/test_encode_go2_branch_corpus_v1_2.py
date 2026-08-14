@@ -11,6 +11,94 @@ from scripts import encode_go2_branch_corpus_v1_2 as encoder
 
 
 class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
+    def test_full_bank_v2_input_route_uses_only_exact_v2_producers(self):
+        bindings = {key: "a" * 64
+                    for key in encoder.FULL_BANK_V2_BINDING_KEYS}
+        bindings["scorer_fit_corpus_v2_scorer_contract_digest"] = "c" * 64
+        bindings[
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest"] = "d" * 64
+        bindings["target_encoder_checkpoint_sha256"] = (
+            encoder.contract()["target_encoder"]["checkpoint_sha256"])
+        manifest = {
+            "schema":
+                encoder.CORPUS_BUILDER.SCORER_FIT_V2_STATE_MANIFEST_SCHEMA,
+            "pool": "scorer_fit_v2",
+            "state_manifest_digest": "b" * 64,
+            "attempted_branch_count_registered": 1_440,
+            "states": [
+                {"candidate_indices": list(range(12))}
+                for _ in range(120)
+            ],
+            **bindings,
+        }
+        rows = []
+        for candidate_index in range(12):
+            row = {
+                "state_id": "smoke-state",
+                "candidate": f"candidate-{candidate_index}",
+                "candidate_index": candidate_index,
+                "valid": True,
+                "state_manifest_digest": manifest["state_manifest_digest"],
+                **bindings,
+            }
+            row["branch_row_digest"] = encoder.canonical_digest(row)
+            rows.append(row)
+        successor = {
+            "state_selector_binding": {
+                "state_manifest_digest": manifest["state_manifest_digest"],
+                "assignment_manifest_digest": manifest[
+                    "full_bank_assignment_manifest_digest"],
+            },
+            "protected_predecessor_scientific_contract": {
+                "target_encoder": encoder.contract()["target_encoder"],
+            },
+            encoder.V2_CONTRACT.CONTRACT_SELF_KEY: "c" * 64,
+        }
+        artifact = {
+            "contract": successor,
+            encoder.V2_CONTRACT.CONTRACT_SELF_KEY: "c" * 64,
+            encoder.V2_CONTRACT.ARTIFACT_SELF_KEY: "d" * 64,
+        }
+        bundle = {
+            "manifest": manifest,
+            "receipt": {"complete": False},
+            "rows": rows,
+            "scorer_contract": artifact,
+        }
+        with mock.patch.object(
+                encoder.CORPUS_BUILDER,
+                "load_and_validate_full_bank_v2_branch_outputs_for_consumption",
+                return_value=bundle) as producer, \
+                mock.patch.object(
+                    encoder.V2_CONTRACT, "load_contract_for_consumption",
+                    return_value=artifact), \
+                mock.patch.object(
+                    encoder.V2_CONTRACT, "validate_contract_artifact",
+                    return_value=artifact), \
+                mock.patch.object(
+                    encoder.ALLOC, "allocation_contract_digest",
+                    side_effect=AssertionError("legacy ALLOC opened")) as alloc, \
+                mock.patch.object(
+                    encoder, "_load_inputs",
+                    side_effect=AssertionError("legacy route opened")) as legacy:
+            observed = encoder._load_full_bank_v2_inputs(
+                encoder.OUT_ROOT / "scorer_fit", allow_partial=True)
+        producer.assert_called_once_with(
+            out=encoder.OUT_ROOT / "scorer_fit", allow_partial=True)
+        alloc.assert_not_called()
+        legacy.assert_not_called()
+        self.assertEqual(observed[0], manifest)
+        self.assertEqual(len(observed[2]), 12)
+
+    def test_full_bank_v2_output_registry_is_versioned_and_disjoint(self):
+        self.assertEqual(encoder.FULL_BANK_V2_INDEX_NAME,
+                         "latents_index_v2.json")
+        self.assertEqual(encoder.FULL_BANK_V2_SMOKE_NAME,
+                         "smoke_encoding_receipt_v2.json")
+        self.assertEqual(encoder.FULL_BANK_V2_LATENTS_NAME, "latents_v2")
+        self.assertNotIn("candidate_allocator_contract_digest",
+                         encoder.FULL_BANK_V2_BINDING_KEYS)
+
     def test_branch_row_remains_bound_to_manifest_scientific_contract(self):
         historical = "1" * 64
         manifest = {

@@ -37,6 +37,7 @@ if str(ROOT) not in sys.path:
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC  # noqa: E402
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS  # noqa: E402
 from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR  # noqa: E402
+from lewm.oracle import go2_scorer_fit_corpus_v2_scorer_contract as V2_CONTRACT  # noqa: E402
 from lewm.oracle.go2_scorer_contract_v1_2 import (  # noqa: E402
     clean_source_binding,
     contract,
@@ -93,6 +94,53 @@ CORPUS_BINDING_KEYS = (
     "target_encoder_digest",
     "target_encoder_checkpoint_sha256",
 )
+FULL_BANK_V2_BINDING_KEYS = (
+    "scorer_fit_corpus_v2_design_digest",
+    "rotation_mask_classification_digest",
+    "full_bank_small_completion_selection_digest",
+    "full_bank_preoutcome_state_revalidation_digest",
+    "state_identity_projection_digest",
+    "full_bank_assignment_manifest_digest",
+    "scorer_fit_corpus_v2_scorer_contract_digest",
+    "scorer_fit_corpus_v2_scorer_contract_artifact_digest",
+    "invalid_scorer_identity_exclusion_digest",
+    "state_selector_amendment_digest",
+    "state_selector_feasibility_receipt_digest",
+    "candidate_bank_digest",
+    "progress_contract_digest",
+    "safety_contract_digest",
+    "oracle_v1_2_digest",
+    "scorer_contract_v1_2_digest",
+    "selection_digest",
+    "boundary_digest",
+    "render_contract_digest",
+    "textured_v03_renderer_contract_digest",
+    "preprocess_contract_digest",
+    "preprocessing_digest",
+    "target_encoder_digest",
+    "target_encoder_checkpoint_sha256",
+)
+FULL_BANK_V2_CONTRACT_LINEAGE_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_operational_contract_lineage_v1"
+)
+FULL_BANK_V2_SMOKE_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_end_to_end_smoke_receipt_v1"
+)
+FULL_BANK_V2_LATENT_INDEX_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_latents_index_v1"
+)
+FULL_BANK_V2_ENCODING_INVOCATION_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_encoding_invocation_summary_v1"
+)
+FULL_BANK_V2_EXPECTED_STATES = 120
+FULL_BANK_V2_EXPECTED_BRANCHES = 1_440
+FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE = 12
+FULL_BANK_V2_INDEX_NAME = "latents_index_v2.json"
+FULL_BANK_V2_ENCODING_SUMMARY_NAME = "encoding_invocation_summary_v2.json"
+FULL_BANK_V2_SMOKE_NAME = "smoke_encoding_receipt_v2.json"
+FULL_BANK_V2_LATENTS_NAME = "latents_v2"
+FULL_BANK_V2_INVALID_ATTEMPTS_NAME = "invalid_attempts_v2"
+FULL_BANK_V2_SUPERSEDED_RECEIPTS_NAME = "superseded_receipts_v2"
 SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
 LAUNCH_BINDING_KEYS = (
     "clean_source_launch_receipt_digest",
@@ -115,6 +163,21 @@ GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_KEYS = frozenset((
 SCORER_CONTRACT_ARTIFACT_PATH = (
     ROOT / ".generated/go2_utility_scorer_v1_2/scorer_contract_v1_2.json"
 )
+
+
+def _is_full_bank_v2_manifest(value: Mapping[str, Any]) -> bool:
+    return (value.get("schema")
+            == CORPUS_BUILDER.SCORER_FIT_V2_STATE_MANIFEST_SCHEMA
+            and value.get("pool") == "scorer_fit_v2")
+
+
+def _corpus_binding_keys(manifest: Mapping[str, Any]) -> tuple[str, ...]:
+    return FULL_BANK_V2_BINDING_KEYS if _is_full_bank_v2_manifest(
+        manifest) else CORPUS_BINDING_KEYS
+
+
+def _output_name(*, full_bank_v2: bool, legacy: str, v2: str) -> str:
+    return v2 if full_bank_v2 else legacy
 
 
 def canonical_digest(payload: Any) -> str:
@@ -248,9 +311,13 @@ def _validate_row(row: dict[str, Any], manifest: dict[str, Any],
                         f"branch row {row.get('state_id')}|{row.get('candidate')}")
     bindings = {
         "state_manifest_digest": manifest["state_manifest_digest"],
-        **{key: manifest[key] for key in CORPUS_BINDING_KEYS},
+        **{key: manifest[key] for key in _corpus_binding_keys(manifest)},
     }
-    bindings["scorer_contract_v1_2_digest"] = expected_contract
+    if not _is_full_bank_v2_manifest(manifest):
+        bindings["scorer_contract_v1_2_digest"] = expected_contract
+    else:
+        bindings["scorer_fit_corpus_v2_scorer_contract_digest"] = \
+            expected_contract
     for key, expected in bindings.items():
         if str(row.get(key)) != str(expected):
             raise RuntimeError(
@@ -762,6 +829,88 @@ def _load_inputs(out: Path, *, allow_partial: bool,
     return manifest, receipt, rows, contract_lineage
 
 
+def _load_full_bank_v2_inputs(
+        out: Path, *, allow_partial: bool,
+        ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]],
+                   dict[str, Any]]:
+    """Consume the exact V2 producers without opening legacy allocation data."""
+
+    expected_out = OUT_ROOT / "scorer_fit"
+    if out != expected_out:
+        raise RuntimeError(
+            "full-bank V2 encoding is registered only for scorer_fit")
+    try:
+        bundle = (
+            CORPUS_BUILDER
+            .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
+                out=out, allow_partial=allow_partial))
+        artifact = V2_CONTRACT.load_contract_for_consumption(root=ROOT)
+    except (OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
+        raise RuntimeError(
+            f"full-bank V2 branch producer rejected inputs: {exc}") from exc
+    if not isinstance(bundle, Mapping):
+        raise RuntimeError("full-bank V2 branch producer returned no bundle")
+    if bundle.get("scorer_contract") != artifact:
+        raise RuntimeError(
+            "full-bank V2 branch producer binds another successor contract")
+    manifest = bundle.get("manifest")
+    receipt = bundle.get("receipt")
+    rows_value = bundle.get("rows")
+    if (not isinstance(manifest, Mapping)
+            or not _is_full_bank_v2_manifest(manifest)
+            or not isinstance(receipt, Mapping)
+            or not isinstance(rows_value, list)):
+        raise RuntimeError("full-bank V2 branch bundle is malformed")
+    manifest = dict(manifest)
+    receipt = dict(receipt)
+    rows = [dict(row) for row in rows_value]
+    successor = V2_CONTRACT.validate_contract_artifact(artifact)["contract"]
+    if (manifest.get("state_manifest_digest")
+            != successor["state_selector_binding"]["state_manifest_digest"]
+            or manifest.get("full_bank_assignment_manifest_digest")
+            != successor["state_selector_binding"][
+                "assignment_manifest_digest"]
+            or manifest.get(
+                "scorer_fit_corpus_v2_scorer_contract_digest")
+            != successor[V2_CONTRACT.CONTRACT_SELF_KEY]
+            or manifest.get(
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+            != artifact[V2_CONTRACT.ARTIFACT_SELF_KEY]):
+        raise RuntimeError(
+            "full-bank V2 manifest/successor contract lineage changed")
+    if (len(manifest.get("states", [])) != FULL_BANK_V2_EXPECTED_STATES
+            or manifest.get("attempted_branch_count_registered")
+            != FULL_BANK_V2_EXPECTED_BRANCHES):
+        raise RuntimeError("full-bank V2 registered cardinality changed")
+    expected_candidates = list(range(FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE))
+    if any(state.get("candidate_indices") != expected_candidates
+           for state in manifest["states"]):
+        raise RuntimeError("full-bank V2 state does not bind candidates 0..11")
+    if any(row.get("valid") is not True for row in rows):
+        raise RuntimeError("full-bank V2 encoding refuses invalid branches")
+    if not allow_partial:
+        if (receipt.get("complete") is not True
+                or len(rows) != FULL_BANK_V2_EXPECTED_BRANCHES):
+            raise RuntimeError(
+                "full-bank V2 encoding requires all 1,440 valid branches")
+    elif len(rows) not in (FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE,
+                           FULL_BANK_V2_EXPECTED_BRANCHES):
+        raise RuntimeError(
+            "full-bank V2 smoke requires one complete twelve-branch state")
+    for row in rows:
+        _validate_row(
+            row, manifest, successor[V2_CONTRACT.CONTRACT_SELF_KEY])
+    target = successor["protected_predecessor_scientific_contract"][
+        "target_encoder"]
+    if (target.get("token_grid") != [24, 32]
+            or target.get("tokens") != TOKENS
+            or target.get("token_dim") != TOKEN_DIM
+            or manifest.get("target_encoder_checkpoint_sha256")
+            != target.get("checkpoint_sha256")):
+        raise RuntimeError("full-bank V2 target-encoder contract changed")
+    return manifest, receipt, rows, dict(artifact)
+
+
 def normalise(tokens: torch.Tensor) -> torch.Tensor:
     """The frozen factorial target normalisation."""
 
@@ -809,9 +958,382 @@ def _batches(values: list[Any], size: int) -> Iterable[list[Any]]:
         yield values[start:start + size]
 
 
+def _read_regular_json(path: Path, *, label: str) -> dict[str, Any]:
+    if not path.is_file() or path.is_symlink():
+        raise RuntimeError(f"{label} is missing or not a regular file")
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"{label} is invalid JSON") from exc
+    if not isinstance(value, dict):
+        raise RuntimeError(f"{label} is not a JSON object")
+    return value
+
+
+def _validate_full_bank_v2_latent_index(
+        index: Mapping[str, Any], *, out: Path,
+        manifest: Mapping[str, Any], receipt: Mapping[str, Any],
+        rows: list[dict[str, Any]], contract_artifact: Mapping[str, Any],
+        require_complete: bool, verify_encoder_checkpoint: bool,
+        ) -> dict[str, Any]:
+    """Validate the exact atomic-shard index produced by this module."""
+
+    index = dict(index)
+    _verify_self_digest(index, "latents_index_digest", "full-bank V2 latent index")
+    artifact = V2_CONTRACT.validate_contract_artifact(contract_artifact)
+    successor = artifact["contract"]
+    expected_bindings = {
+        key: manifest[key] for key in FULL_BANK_V2_BINDING_KEYS
+    }
+    if (index.get("schema") != FULL_BANK_V2_LATENT_INDEX_SCHEMA
+            or index.get("status") != STATUS
+            or index.get("pool") != "scorer_fit_v2"
+            or index.get("corpus_design") != "full-bank-v2"
+            or index.get("state_manifest_digest")
+            != manifest["state_manifest_digest"]
+            or index.get("full_bank_assignment_manifest_digest")
+            != manifest["full_bank_assignment_manifest_digest"]
+            or index.get("scorer_fit_corpus_v2_scorer_contract_digest")
+            != successor[V2_CONTRACT.CONTRACT_SELF_KEY]
+            or index.get(
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+            != artifact[V2_CONTRACT.ARTIFACT_SELF_KEY]
+            or index.get("corpus_digest") != receipt.get("corpus_digest")
+            or index.get("branch_rows_sha256")
+            != receipt.get("branch_rows_sha256")
+            or index.get("corpus_bound_digests") != expected_bindings
+            or index.get("tokens") != TOKENS
+            or index.get("token_dim") != TOKEN_DIM
+            or index.get("horizons") != HORIZONS
+            or index.get("context_slots") != CONTEXT_SLOTS
+            or index.get("dtype") != "float16"
+            or index.get("preprocessing_digest") != PREPROCESSING_SHA256):
+        raise RuntimeError("full-bank V2 latent-index lineage changed")
+    contexts_value = index.get("context_records")
+    horizons_value = index.get("horizon_records")
+    if not isinstance(contexts_value, list) or not isinstance(horizons_value, list):
+        raise RuntimeError("full-bank V2 latent-index records are malformed")
+    contexts = [dict(record) for record in contexts_value]
+    horizons = [dict(record) for record in horizons_value]
+    if (index.get("context_shape")
+            != [len(contexts), *CONTEXT_SHAPE]
+            or index.get("horizon_shape")
+            != [len(horizons), *HORIZON_SHAPE]
+            or index.get("storage_bytes")
+            != sum(int(record.get("byte_count", -1))
+                   for record in contexts + horizons)):
+        raise RuntimeError("full-bank V2 latent-index shape/accounting changed")
+    states_by_id = {
+        str(state["state_id"]): dict(state) for state in manifest["states"]
+    }
+    rows_by_key = {
+        f"{row['state_id']}|{row['candidate']}": row for row in rows
+    }
+    if (len(rows_by_key) != len(rows)
+            or [record.get("state_id") for record in contexts]
+            != sorted(str(record.get("state_id")) for record in contexts)
+            or [record.get("key") for record in horizons]
+            != sorted(str(record.get("key")) for record in horizons)):
+        raise RuntimeError("full-bank V2 latent record order is not canonical")
+    if len({str(record.get("state_id")) for record in contexts}) != len(contexts):
+        raise RuntimeError("full-bank V2 context latent is duplicated")
+    for record in contexts:
+        state = states_by_id.get(str(record.get("state_id")))
+        if (state is None or record.get("state_identity_digest")
+                != state.get("state_identity_digest")):
+            raise RuntimeError("full-bank V2 context latent relabels a state")
+        path = _resolve_frame(out, str(record.get("path", "")))
+        if (not str(record.get("path", "")).startswith(
+                f"{FULL_BANK_V2_LATENTS_NAME}/context/")
+                or path.is_symlink()
+                or not _valid_existing(path, record, CONTEXT_SHAPE)):
+            raise RuntimeError("full-bank V2 context latent shard is invalid")
+    for record in horizons:
+        key = str(record.get("key"))
+        row = rows_by_key.get(key)
+        if (row is None
+                or record.get("state_id") != row.get("state_id")
+                or record.get("candidate") != row.get("candidate")
+                or record.get("candidate_index") != row.get("candidate_index")
+                or record.get("branch_identity_digest")
+                != row.get("branch_identity_digest")
+                or record.get("assignment_identity_digest")
+                != row.get("assignment_identity_digest")):
+            raise RuntimeError("full-bank V2 horizon latent relabels a branch")
+        path = _resolve_frame(out, str(record.get("path", "")))
+        if (not str(record.get("path", "")).startswith(
+                f"{FULL_BANK_V2_LATENTS_NAME}/horizon/")
+                or path.is_symlink()
+                or not _valid_existing(path, record, HORIZON_SHAPE)):
+            raise RuntimeError("full-bank V2 horizon latent shard is invalid")
+    if require_complete:
+        if (index.get("complete") is not True
+                or receipt.get("complete") is not True
+                or len(contexts) != FULL_BANK_V2_EXPECTED_STATES
+                or len(horizons) != FULL_BANK_V2_EXPECTED_BRANCHES
+                or set(rows_by_key) != {
+                    str(record["key"]) for record in horizons}):
+            raise RuntimeError("full-bank V2 latent corpus is incomplete")
+    elif (len(contexts) not in (1, FULL_BANK_V2_EXPECTED_STATES)
+          or len(horizons) not in (
+              FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE,
+              FULL_BANK_V2_EXPECTED_BRANCHES)):
+        raise RuntimeError("full-bank V2 smoke latent cardinality changed")
+    if verify_encoder_checkpoint:
+        arm = E.VJepa21CroppedV03Arm()
+        identity = arm.identity()
+        if (E.preprocessing_hash(arm) != PREPROCESSING_SHA256
+                or index.get("encoder") != identity
+                or identity.get("checkpoint_sha256")
+                != manifest["target_encoder_checkpoint_sha256"]):
+            raise RuntimeError("full-bank V2 target encoder identity changed")
+    return index
+
+
+def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
+        *, out: Path | None = None, require_protocol_complete: bool = True,
+        verify_encoder_checkpoint: bool = False,
+        ) -> dict[str, Any]:
+    """Validate the one registered 12-candidate V2 smoke and its shards."""
+
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    manifest, receipt, rows, artifact = _load_full_bank_v2_inputs(
+        scorer_fit, allow_partial=True)
+    branch_bundle = (
+        CORPUS_BUILDER
+        .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
+            out=scorer_fit, allow_partial=True))
+    branch_smoke = branch_bundle.get("branch_smoke")
+    if not isinstance(branch_smoke, Mapping):
+        raise RuntimeError("full-bank V2 branch smoke receipt is absent")
+    index = _read_regular_json(
+        scorer_fit / FULL_BANK_V2_INDEX_NAME,
+        label="full-bank V2 latent index")
+    index = _validate_full_bank_v2_latent_index(
+        index, out=scorer_fit, manifest=manifest, receipt=receipt, rows=rows,
+        contract_artifact=artifact, require_complete=False,
+        verify_encoder_checkpoint=verify_encoder_checkpoint)
+    smoke = _read_regular_json(
+        scorer_fit / FULL_BANK_V2_SMOKE_NAME,
+        label="full-bank V2 encoding smoke receipt")
+    _verify_self_digest(
+        smoke, "smoke_receipt_digest", "full-bank V2 encoding smoke receipt")
+    smoke_state_id = str(branch_smoke["state_id"])
+    smoke_rows = [row for row in rows if row["state_id"] == smoke_state_id]
+    smoke_horizons = [
+        record for record in index["horizon_records"]
+        if record["state_id"] == smoke_state_id]
+    smoke_contexts = [
+        record for record in index["context_records"]
+        if record["state_id"] == smoke_state_id]
+    expected_candidates = list(range(12))
+    if (smoke.get("schema") != FULL_BANK_V2_SMOKE_SCHEMA
+            or smoke.get("status") != STATUS
+            or smoke.get("base_end_to_end_pass") is not True
+            or smoke.get("candidate_indices") != expected_candidates
+            or smoke.get("branch_count") != 12
+            or smoke.get("rendered_horizon_frame_count") != 48
+            or smoke.get("true_latent_trajectory_count") != 12
+            or smoke.get("true_latent_trajectory_shape")
+            != [4, TOKENS, TOKEN_DIM]
+            or smoke.get("state_id") != smoke_state_id
+            or smoke.get("state_manifest_digest")
+            != manifest["state_manifest_digest"]
+            or smoke.get("full_bank_assignment_manifest_digest")
+            != manifest["full_bank_assignment_manifest_digest"]
+            or smoke.get("scorer_fit_corpus_v2_scorer_contract_digest")
+            != artifact[V2_CONTRACT.CONTRACT_SELF_KEY]
+            or smoke.get(
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+            != artifact[V2_CONTRACT.ARTIFACT_SELF_KEY]
+            or smoke.get("branch_smoke_receipt_digest")
+            != branch_smoke.get("smoke_branch_receipt_digest")
+            or smoke.get("corpus_digest") != receipt.get("corpus_digest")
+            or smoke.get("latent_index_digest")
+            != index["latents_index_digest"]
+            or smoke.get("corpus_bound_digests")
+            != {key: manifest[key] for key in FULL_BANK_V2_BINDING_KEYS}
+            or len(smoke_rows) != 12
+            or sorted(int(row["candidate_index"]) for row in smoke_rows)
+            != expected_candidates
+            or smoke.get("branch_identity_digests")
+            != sorted(row["branch_identity_digest"] for row in smoke_rows)
+            or smoke.get("branch_row_digests")
+            != sorted(row["branch_row_digest"] for row in smoke_rows)
+            or len(smoke_contexts) != 1
+            or len(smoke_horizons) != 12):
+        raise RuntimeError("full-bank V2 encoding smoke evidence changed")
+    if require_protocol_complete and (
+            smoke.get("pass") is not True
+            or smoke.get("zero_new_resume_verified") is not True
+            or smoke.get("single_shard_deletion_regeneration_verified")
+            is not True
+            or smoke.get("smoke_protocol_complete") is not True):
+        raise RuntimeError("full-bank V2 smoke durability protocol is incomplete")
+    target_record = min(
+        smoke_horizons, key=lambda record: int(record["candidate_index"]))
+    target_path = _resolve_frame(scorer_fit, str(target_record["path"]))
+    latent_inventory = [
+        {
+            "path": str((_resolve_frame(
+                scorer_fit, str(record["path"]))).relative_to(ROOT)),
+            "sha256": record["sha256"],
+            "byte_count": record["byte_count"],
+            "shape": record["shape"],
+        }
+        for record in sorted(
+            smoke_contexts + smoke_horizons,
+            key=lambda value: str(value["path"]))
+    ]
+    registered_paths: set[Path] = {
+        scorer_fit / CORPUS_BUILDER.SCORER_FIT_V2_BRANCH_ROWS_NAME,
+        scorer_fit / CORPUS_BUILDER.SCORER_FIT_V2_CORPUS_RECEIPT_NAME,
+        scorer_fit / CORPUS_BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME,
+        scorer_fit / FULL_BANK_V2_INDEX_NAME,
+        scorer_fit / FULL_BANK_V2_SMOKE_NAME,
+        scorer_fit / FULL_BANK_V2_ENCODING_SUMMARY_NAME,
+    }
+    for row in smoke_rows:
+        registered_paths.add(
+            scorer_fit / CORPUS_BUILDER.SCORER_FIT_V2_ROW_RECORDS_NAME
+            / f"{row['branch_identity_digest']}.json")
+        for frame in (
+                list(row.get("context_frames", []))
+                + list(row.get("horizon_frames", []))):
+            registered_paths.add(
+                _resolve_frame(scorer_fit, str(frame["path"])))
+    for record in smoke_contexts + smoke_horizons:
+        registered_paths.add(
+            _resolve_frame(scorer_fit, str(record["path"])))
+    inventory: list[dict[str, Any]] = []
+    for path in sorted(registered_paths, key=lambda value: str(value)):
+        if not path.is_file() or path.is_symlink():
+            raise RuntimeError(
+                "full-bank V2 smoke artifact inventory is incomplete")
+        inventory.append({
+            "path": str(path.relative_to(scorer_fit)),
+            "raw_sha256": file_sha256(path),
+            "byte_count": path.stat().st_size,
+        })
+    return {
+        "manifest": manifest,
+        "rows": rows,
+        "corpus_receipt": receipt,
+        "scorer_contract_artifact": artifact,
+        "latent_index": index,
+        "branch_smoke_receipt": dict(branch_smoke),
+        "encoding_smoke_receipt": smoke,
+        "single_shard_regeneration_target": {
+            "path": str(target_path.relative_to(ROOT)),
+            "sha256": target_record["sha256"],
+            "byte_count": target_record["byte_count"],
+            "shape": target_record["shape"],
+        },
+        "registered_smoke_artifact_inventory": inventory,
+        "registered_smoke_shard_inventory": latent_inventory,
+        "registered_smoke_shard_inventory_digest": canonical_digest(
+            latent_inventory),
+        "state_count": 1,
+        "horizon_latent_count": 12,
+        "horizon_shape": [HORIZONS, TOKENS, TOKEN_DIM],
+        "invocation_new_context_shards": smoke[
+            "invocation_new_context_shards"],
+        "invocation_new_horizon_shards": smoke[
+            "invocation_new_horizon_shards"],
+        "zero_new_resume_verified": smoke["zero_new_resume_verified"],
+        "single_registered_shard_regenerated": bool(
+            smoke["invocation_new_context_shards"] == 0
+            and smoke["invocation_new_horizon_shards"] == 1
+            and smoke.get("single_shard_deletion_regeneration_verified")
+            is True),
+        "only_registered_missing_shard_changed": bool(
+            smoke["invocation_new_context_shards"] == 0
+            and smoke["invocation_new_horizon_shards"] == 1
+            and smoke.get("single_shard_deletion_regeneration_verified")
+            is True),
+    }
+
+
+def load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
+        *, out: Path | None = None, verify_frame_paths: bool = True,
+        verify_encoder_checkpoint: bool = True,
+        ) -> dict[str, Any]:
+    """Strict producer replay for full-bank V2 scorer training."""
+
+    # The branch producer always verifies every referenced frame.  The flag is
+    # retained only for a source-only test seam; it cannot weaken production.
+    _ = verify_frame_paths
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    manifest, receipt, rows, artifact = _load_full_bank_v2_inputs(
+        scorer_fit, allow_partial=False)
+    branch_bundle = (
+        CORPUS_BUILDER
+        .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
+            out=scorer_fit, allow_partial=False))
+    manifests = branch_bundle.get("manifests")
+    if not isinstance(manifests, Mapping):
+        raise RuntimeError("full-bank V2 manifest producer bundle is absent")
+    assignment = manifests.get("assignment_manifest")
+    if not isinstance(assignment, Mapping):
+        raise RuntimeError("full-bank V2 assignment manifest is absent")
+    index = _read_regular_json(
+        scorer_fit / FULL_BANK_V2_INDEX_NAME,
+        label="full-bank V2 latent index")
+    index = _validate_full_bank_v2_latent_index(
+        index, out=scorer_fit, manifest=manifest, receipt=receipt, rows=rows,
+        contract_artifact=artifact, require_complete=True,
+        verify_encoder_checkpoint=verify_encoder_checkpoint)
+    smoke_bundle = (
+        load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
+            out=scorer_fit, require_protocol_complete=True,
+            verify_encoder_checkpoint=False))
+    bindings = {
+        **{key: manifest[key] for key in FULL_BANK_V2_BINDING_KEYS},
+        "state_manifest_digest": manifest["state_manifest_digest"],
+        "full_bank_assignment_manifest_digest": assignment[
+            "full_bank_assignment_manifest_digest"],
+        "corpus_digest": receipt["corpus_digest"],
+        "branch_rows_sha256": receipt["branch_rows_sha256"],
+        "latent_index_digest": index["latents_index_digest"],
+        "encoder_checkpoint_sha256": manifest[
+            "target_encoder_checkpoint_sha256"],
+    }
+    return {
+        "state_manifest": manifest,
+        "assignment_manifest": dict(assignment),
+        "rows": rows,
+        "corpus_receipt": receipt,
+        "scorer_contract_artifact": artifact,
+        "latent_index": index,
+        "smoke": smoke_bundle,
+        "bindings": bindings,
+        "state_count": FULL_BANK_V2_EXPECTED_STATES,
+        "horizon_latent_count": FULL_BANK_V2_EXPECTED_BRANCHES,
+        "horizon_shape": [HORIZONS, TOKENS, TOKEN_DIM],
+        "registered_smoke_shard_inventory_digest": smoke_bundle[
+            "registered_smoke_shard_inventory_digest"],
+        "invocation_new_context_shards": smoke_bundle[
+            "invocation_new_context_shards"],
+        "invocation_new_horizon_shards": smoke_bundle[
+            "invocation_new_horizon_shards"],
+        "zero_new_resume_verified": smoke_bundle[
+            "zero_new_resume_verified"],
+        "single_registered_shard_regenerated": smoke_bundle[
+            "single_registered_shard_regenerated"],
+        "only_registered_missing_shard_changed": smoke_bundle[
+            "only_registered_missing_shard_changed"],
+        "single_shard_regeneration_target": smoke_bundle[
+            "single_shard_regeneration_target"],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--pool", choices=("scorer_fit", "final_eval"), required=True)
+    parser.add_argument(
+        "--corpus-design", choices=("legacy", "full-bank-v2"),
+        default="legacy",
+        help="select the prospective full-bank V2 route explicitly")
     parser.add_argument("--batch-frames", type=int, default=8)
     parser.add_argument("--smoke", action="store_true",
                         help="encode and verify only the registered first state")
@@ -820,17 +1342,54 @@ def main() -> int:
         raise SystemExit("--batch-frames must be at least four")
 
     out = OUT_ROOT / args.pool
-    manifest, corpus_receipt, all_rows, contract_lineage = _load_inputs(
-        out, allow_partial=args.smoke, pool=args.pool)
-    operational_contract_digest = (
-        contract_lineage["current_scorer_contract_v1_2_digest"]
-        if contract_lineage is not None else contract_digest()
-    )
+    full_bank_v2 = args.corpus_design == "full-bank-v2"
+    if full_bank_v2 and args.pool != "scorer_fit":
+        raise RuntimeError(
+            "full-bank V2 does not authorise final-evaluation encoding")
+    if full_bank_v2:
+        (manifest, corpus_receipt, all_rows,
+         v2_contract_artifact) = _load_full_bank_v2_inputs(
+             out, allow_partial=args.smoke)
+        contract_lineage = None
+        operational_contract_digest = v2_contract_artifact[
+            V2_CONTRACT.CONTRACT_SELF_KEY]
+    else:
+        manifest, corpus_receipt, all_rows, contract_lineage = _load_inputs(
+            out, allow_partial=args.smoke, pool=args.pool)
+        v2_contract_artifact = None
+        operational_contract_digest = (
+            contract_lineage["current_scorer_contract_v1_2_digest"]
+            if contract_lineage is not None else contract_digest()
+        )
+    candidates_per_state = (
+        FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE if full_bank_v2 else 6)
+    corpus_binding_keys = _corpus_binding_keys(manifest)
+    index_path = out / _output_name(
+        full_bank_v2=full_bank_v2, legacy="latents_index.json",
+        v2=FULL_BANK_V2_INDEX_NAME)
+    encoding_summary_path = out / _output_name(
+        full_bank_v2=full_bank_v2, legacy="encoding_invocation_summary.json",
+        v2=FULL_BANK_V2_ENCODING_SUMMARY_NAME)
+    encoding_smoke_path = out / _output_name(
+        full_bank_v2=full_bank_v2, legacy="smoke_encoding_receipt.json",
+        v2=FULL_BANK_V2_SMOKE_NAME)
+    branch_smoke_path = out / _output_name(
+        full_bank_v2=full_bank_v2, legacy="smoke_branch_receipt.json",
+        v2=CORPUS_BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME)
+    latent_root_name = _output_name(
+        full_bank_v2=full_bank_v2, legacy="latents",
+        v2=FULL_BANK_V2_LATENTS_NAME)
+    invalid_root_name = _output_name(
+        full_bank_v2=full_bank_v2, legacy="invalid_attempts",
+        v2=FULL_BANK_V2_INVALID_ATTEMPTS_NAME)
+    superseded_root_name = _output_name(
+        full_bank_v2=full_bank_v2, legacy="superseded_receipts",
+        v2=FULL_BANK_V2_SUPERSEDED_RECEIPTS_NAME)
     expected_states = manifest["states"]
     if args.smoke:
         if args.pool != "scorer_fit":
             raise RuntimeError("the end-to-end smoke is defined only for scorer_fit")
-        branch_smoke = json.loads((out / "smoke_branch_receipt.json").read_text())
+        branch_smoke = json.loads(branch_smoke_path.read_text())
         _verify_self_digest(
             branch_smoke, "smoke_branch_receipt_digest", "branch smoke receipt")
         if not branch_smoke.get("pass"):
@@ -839,12 +1398,18 @@ def main() -> int:
         states = [state for state in expected_states
                   if state["state_id"] == smoke_state_id]
         rows = [row for row in all_rows if row["state_id"] == smoke_state_id]
-        if len(states) != 1 or len(rows) != 6 or not all(r.get("valid") for r in rows):
-            raise RuntimeError("smoke requires one complete six-candidate state")
+        if (len(states) != 1 or len(rows) != candidates_per_state
+                or not all(r.get("valid") for r in rows)):
+            raise RuntimeError(
+                f"smoke requires one complete {candidates_per_state}-candidate state")
+        scientific_contract_matches = (
+            branch_smoke.get("scorer_fit_corpus_v2_scorer_contract_digest")
+            == operational_contract_digest if full_bank_v2 else
+            branch_smoke.get("scorer_contract_v1_2_digest")
+            == manifest["scorer_contract_v1_2_digest"])
         if (branch_smoke.get("state_manifest_digest")
                 != manifest["state_manifest_digest"]
-                or branch_smoke.get("scorer_contract_v1_2_digest")
-                != manifest["scorer_contract_v1_2_digest"]
+                or not scientific_contract_matches
                 or branch_smoke.get("state_identity_digest")
                 != states[0]["state_identity_digest"]
                 or branch_smoke.get("branch_identity_digests")
@@ -854,7 +1419,7 @@ def main() -> int:
                 or branch_smoke.get("corpus_digest")
                 != corpus_receipt["corpus_digest"]
                 or branch_smoke.get("corpus_bound_digests")
-                != {key: manifest[key] for key in CORPUS_BINDING_KEYS}):
+                != {key: manifest[key] for key in corpus_binding_keys}):
             raise RuntimeError("branch smoke receipt is not bound to current exact rows")
     else:
         states = list(expected_states)
@@ -886,20 +1451,34 @@ def main() -> int:
             out, _frame_records(row, "horizon"), HORIZONS, f"{key} horizon")
 
     prior: dict[str, Any] = {}
-    index_path = out / "latents_index.json"
     if index_path.is_file():
         try:
             prior = json.loads(index_path.read_text())
             _verify_self_digest(prior, "latents_index_digest", "latents index")
-            if (prior.get("state_manifest_digest") != manifest["state_manifest_digest"]
-                    or prior.get("scorer_contract_v1_2_digest")
-                    != operational_contract_digest
-                    or prior.get("candidate_allocation_amendment_digest")
-                    != manifest["candidate_allocation_amendment_digest"]
+            expected_index_schema = (
+                FULL_BANK_V2_LATENT_INDEX_SCHEMA if full_bank_v2
+                else "go2_branch_corpus_v1_2_latents_index_v2")
+            if prior.get("schema") != expected_index_schema:
+                raise RuntimeError("prior latent-index schema changed")
+            contract_matches = (
+                prior.get("scorer_fit_corpus_v2_scorer_contract_digest")
+                == operational_contract_digest if full_bank_v2 else
+                prior.get("scorer_contract_v1_2_digest")
+                == operational_contract_digest)
+            allocation_matches = (
+                prior.get("full_bank_assignment_manifest_digest")
+                == manifest["full_bank_assignment_manifest_digest"]
+                if full_bank_v2 else
+                prior.get("candidate_allocation_amendment_digest")
+                == manifest["candidate_allocation_amendment_digest"])
+            if (prior.get("state_manifest_digest")
+                    != manifest["state_manifest_digest"]
+                    or not contract_matches
+                    or not allocation_matches
                     or prior.get("invalid_scorer_identity_exclusion_digest")
                     != manifest["invalid_scorer_identity_exclusion_digest"]
                     or prior.get("corpus_bound_digests")
-                    != {key: manifest[key] for key in CORPUS_BINDING_KEYS}):
+                    != {key: manifest[key] for key in corpus_binding_keys}):
                 raise RuntimeError("prior latent index binds a different frozen corpus")
             if contract_lineage is not None:
                 _validate_global_exact_scorer_contract_lineage(
@@ -915,7 +1494,8 @@ def main() -> int:
                     "smoke refuses to replace or narrow an invalid existing latent index; "
                     "resume the registered full encoding"
                 ) from exc
-            _preserve_bad(index_path, out / "invalid_attempts/latents", "bad-index")
+            _preserve_bad(
+                index_path, out / invalid_root_name / "latents", "bad-index")
             prior = {}
     prior_context = {record["state_id"]: record
                      for record in prior.get("context_records", [])}
@@ -974,9 +1554,9 @@ def main() -> int:
                 "resume the registered full encoding"
             )
 
-    context_dir = out / "latents/context"
-    horizon_dir = out / "latents/horizon"
-    invalid_root = out / "invalid_attempts/latents"
+    context_dir = out / latent_root_name / "context"
+    horizon_dir = out / latent_root_name / "horizon"
+    invalid_root = out / invalid_root_name / "latents"
     context_records: dict[str, dict[str, Any]] = {}
     horizon_records: dict[str, dict[str, Any]] = {}
     missing_context: list[dict[str, Any]] = []
@@ -1017,7 +1597,10 @@ def main() -> int:
     if E.preprocessing_hash(arm) != PREPROCESSING_SHA256:
         raise RuntimeError("frozen V03 preprocessing identity changed")
     encoder_identity = arm.identity()
-    target_contract = contract()["target_encoder"]
+    target_contract = (
+        v2_contract_artifact["contract"]
+        ["protected_predecessor_scientific_contract"]["target_encoder"]
+        if full_bank_v2 else contract()["target_encoder"])
     if encoder_identity.get("checkpoint_sha256") != target_contract["checkpoint_sha256"]:
         raise RuntimeError("target checkpoint digest disagrees with scorer contract")
     if not missing_context and not missing_horizon:
@@ -1062,6 +1645,9 @@ def main() -> int:
                 "candidate": row["candidate"],
                 "candidate_index": int(row["candidate_index"]),
                 "branch_identity_digest": row["branch_identity_digest"],
+                **({"assignment_identity_digest":
+                        row["assignment_identity_digest"]}
+                   if full_bank_v2 else {}),
                 "path": str(item["path"].relative_to(out)),
                 "sha256": digest,
                 "byte_count": byte_count,
@@ -1084,9 +1670,11 @@ def main() -> int:
         and len(ordered_horizon) == len(full_expected_keys)
     )
     candidate_index = {
-        "schema": "go2_branch_corpus_v1_2_latents_index_v2",
+        "schema": (FULL_BANK_V2_LATENT_INDEX_SCHEMA if full_bank_v2
+                   else "go2_branch_corpus_v1_2_latents_index_v2"),
         "status": STATUS,
-        "pool": args.pool,
+        "pool": manifest["pool"] if full_bank_v2 else args.pool,
+        **({"corpus_design": "full-bank-v2"} if full_bank_v2 else {}),
         "complete": complete,
         "encoder": encoder_identity,
         "target_encoder_digest": manifest["target_encoder_digest"],
@@ -1094,22 +1682,41 @@ def main() -> int:
             manifest["target_encoder_checkpoint_sha256"],
         "preprocess_contract_digest": manifest["preprocess_contract_digest"],
         "preprocessing_digest": PREPROCESSING_SHA256,
-        "candidate_allocator_contract_digest":
-            manifest["candidate_allocator_contract_digest"],
-        "candidate_allocation_amendment_digest":
-            manifest["candidate_allocation_amendment_digest"],
-        "candidate_allocation_post_identity_validation_digest":
-            manifest["candidate_allocation_post_identity_validation_digest"],
-        "pre_identity_allocation_validation_digest":
-            manifest["pre_identity_allocation_validation_digest"],
+        **({
+            "scorer_fit_corpus_v2_scorer_contract_digest":
+                operational_contract_digest,
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest":
+                v2_contract_artifact[V2_CONTRACT.ARTIFACT_SELF_KEY],
+            "scorer_fit_corpus_v2_design_digest": manifest[
+                "scorer_fit_corpus_v2_design_digest"],
+            "rotation_mask_classification_digest": manifest[
+                "rotation_mask_classification_digest"],
+            "full_bank_small_completion_selection_digest": manifest[
+                "full_bank_small_completion_selection_digest"],
+            "full_bank_preoutcome_state_revalidation_digest": manifest[
+                "full_bank_preoutcome_state_revalidation_digest"],
+            "state_identity_projection_digest": manifest[
+                "state_identity_projection_digest"],
+            "full_bank_assignment_manifest_digest": manifest[
+                "full_bank_assignment_manifest_digest"],
+        } if full_bank_v2 else {
+            "candidate_allocator_contract_digest":
+                manifest["candidate_allocator_contract_digest"],
+            "candidate_allocation_amendment_digest":
+                manifest["candidate_allocation_amendment_digest"],
+            "candidate_allocation_post_identity_validation_digest":
+                manifest["candidate_allocation_post_identity_validation_digest"],
+            "pre_identity_allocation_validation_digest":
+                manifest["pre_identity_allocation_validation_digest"],
+            "scorer_contract_v1_2_digest": operational_contract_digest,
+        }),
         "invalid_scorer_identity_exclusion_digest":
             manifest["invalid_scorer_identity_exclusion_digest"],
-        "scorer_contract_v1_2_digest": operational_contract_digest,
         **({
             "global_exact_scorer_contract_lineage": contract_lineage,
-        } if contract_lineage is not None else {}),
+        } if not full_bank_v2 and contract_lineage is not None else {}),
         "corpus_bound_digests": {
-            key: manifest[key] for key in CORPUS_BINDING_KEYS
+            key: manifest[key] for key in corpus_binding_keys
         },
         "state_manifest_digest": manifest["state_manifest_digest"],
         "corpus_digest": corpus_receipt["corpus_digest"],
@@ -1135,9 +1742,11 @@ def main() -> int:
     index_rewritten = _write_index_if_changed(index_path, index, prior)
 
     invocation_summary = {
-        "schema": "go2_branch_corpus_v1_2_encoding_invocation_summary",
+        "schema": (FULL_BANK_V2_ENCODING_INVOCATION_SCHEMA if full_bank_v2
+                   else "go2_branch_corpus_v1_2_encoding_invocation_summary"),
         "status": STATUS,
-        "pool": args.pool,
+        "pool": manifest["pool"] if full_bank_v2 else args.pool,
+        **({"corpus_design": "full-bank-v2"} if full_bank_v2 else {}),
         "smoke": bool(args.smoke),
         "new_context_shards": new_context_shards,
         "new_horizon_shards": new_horizon_shards,
@@ -1149,15 +1758,14 @@ def main() -> int:
         "latents_index_digest": index["latents_index_digest"],
         "wall_time_s_this_invocation": round(time.time() - started, 3),
     }
-    atomic_json(out / "encoding_invocation_summary.json", invocation_summary)
+    atomic_json(encoding_summary_path, invocation_summary)
 
     if args.smoke:
         state = states[0]
-        first_row = sorted(rows, key=lambda row: int(row["candidate_index"]))[0]
         smoke_context_shape_ok = index["context_shape"] in (
             [1, *CONTEXT_SHAPE], [len(expected_states), *CONTEXT_SHAPE])
         smoke_horizon_shape_ok = index["horizon_shape"] in (
-            [6, *HORIZON_SHAPE],
+            [candidates_per_state, *HORIZON_SHAPE],
             [len([row for row in all_rows if row.get("valid")]), *HORIZON_SHAPE],
         )
         smoke_context_records = [
@@ -1170,24 +1778,65 @@ def main() -> int:
         ]
         resume_only_verified = (
             len(smoke_context_records) == 1
-            and len(smoke_horizon_records) == 6
+            and len(smoke_horizon_records) == candidates_per_state
             and all(_valid_existing(out / record["path"], record, CONTEXT_SHAPE)
                     for record in smoke_context_records)
             and all(_valid_existing(out / record["path"], record, HORIZON_SHAPE)
                     for record in smoke_horizon_records)
         )
+        prior_smoke: dict[str, Any] = {}
+        if full_bank_v2 and encoding_smoke_path.is_file():
+            prior_smoke = json.loads(encoding_smoke_path.read_text())
+            _verify_self_digest(
+                prior_smoke, "smoke_receipt_digest",
+                "full-bank V2 encoding smoke receipt")
+            if (prior_smoke.get("schema") != FULL_BANK_V2_SMOKE_SCHEMA
+                    or prior_smoke.get("state_identity_digest")
+                    != state["state_identity_digest"]
+                    or prior_smoke.get(
+                        "scorer_fit_corpus_v2_scorer_contract_digest")
+                    != operational_contract_digest):
+                raise RuntimeError(
+                    "existing full-bank V2 smoke receipt binds another run")
+        zero_new_resume_verified = bool(
+            prior_smoke.get("zero_new_resume_verified")
+            or (prior_smoke and new_context_shards == 0
+                and new_horizon_shards == 0))
+        single_shard_regeneration_verified = bool(
+            prior_smoke.get("single_shard_deletion_regeneration_verified")
+            or (prior_smoke and prior and new_context_shards == 0
+                and new_horizon_shards == 1
+                and int(missing_horizon[0]["row"]["candidate_index"]) == 0))
+        base_smoke_pass = bool(
+            len(rows) == candidates_per_state
+            and all(row.get("valid") for row in rows)
+            and smoke_context_shape_ok
+            and smoke_horizon_shape_ok
+            and index["preprocessing_digest"] == PREPROCESSING_SHA256
+            and all(row.get("utility") is not None for row in rows)
+            and resume_only_verified)
         smoke = {
-            "schema": "go2_scorer_fit_end_to_end_smoke_receipt_v1",
+            "schema": (FULL_BANK_V2_SMOKE_SCHEMA if full_bank_v2
+                       else "go2_scorer_fit_end_to_end_smoke_receipt_v1"),
             "status": STATUS,
-            "pass": bool(
-                len(rows) == 6
-                and all(row.get("valid") for row in rows)
-                and smoke_context_shape_ok
-                and smoke_horizon_shape_ok
-                and index["preprocessing_digest"] == PREPROCESSING_SHA256
-                and all(row.get("utility") is not None for row in rows)
-                and resume_only_verified
-            ),
+            "pass": bool(base_smoke_pass and (
+                not full_bank_v2 or (
+                    zero_new_resume_verified
+                    and single_shard_regeneration_verified))),
+            **({
+                "base_end_to_end_pass": base_smoke_pass,
+                "zero_new_resume_verified": zero_new_resume_verified,
+                "single_shard_deletion_regeneration_verified":
+                    single_shard_regeneration_verified,
+                "smoke_protocol_complete": bool(
+                    zero_new_resume_verified
+                    and single_shard_regeneration_verified),
+                "candidate_indices": list(range(12)),
+                "branch_count": 12,
+                "rendered_horizon_frame_count": 48,
+                "true_latent_trajectory_count": 12,
+                "true_latent_trajectory_shape": [4, TOKENS, TOKEN_DIM],
+            } if full_bank_v2 else {}),
             "state_id": state["state_id"],
             "state_identity_digest": state["state_identity_digest"],
             "branch_identity_digests": sorted(row["branch_identity_digest"] for row in rows),
@@ -1196,22 +1845,34 @@ def main() -> int:
             "corpus_digest": corpus_receipt["corpus_digest"],
             "branch_smoke_receipt_digest":
                 branch_smoke["smoke_branch_receipt_digest"],
-            "scorer_contract_v1_2_digest": operational_contract_digest,
+            **({
+                "scorer_fit_corpus_v2_scorer_contract_digest":
+                    operational_contract_digest,
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest":
+                    v2_contract_artifact[V2_CONTRACT.ARTIFACT_SELF_KEY],
+                "full_bank_assignment_manifest_digest": manifest[
+                    "full_bank_assignment_manifest_digest"],
+            } if full_bank_v2 else {
+                "scorer_contract_v1_2_digest": operational_contract_digest,
+            }),
             **({
                 "global_exact_scorer_contract_lineage": contract_lineage,
-            } if contract_lineage is not None else {}),
-            "candidate_allocator_contract_digest":
-                manifest["candidate_allocator_contract_digest"],
-            "candidate_allocation_amendment_digest":
-                manifest["candidate_allocation_amendment_digest"],
-            "candidate_allocation_post_identity_validation_digest":
-                manifest["candidate_allocation_post_identity_validation_digest"],
-            "pre_identity_allocation_validation_digest":
-                manifest["pre_identity_allocation_validation_digest"],
+            } if not full_bank_v2 and contract_lineage is not None else {}),
+            **({} if full_bank_v2 else {
+                "candidate_allocator_contract_digest":
+                    manifest["candidate_allocator_contract_digest"],
+                "candidate_allocation_amendment_digest":
+                    manifest["candidate_allocation_amendment_digest"],
+                "candidate_allocation_post_identity_validation_digest":
+                    manifest[
+                        "candidate_allocation_post_identity_validation_digest"],
+                "pre_identity_allocation_validation_digest":
+                    manifest["pre_identity_allocation_validation_digest"],
+            }),
             "invalid_scorer_identity_exclusion_digest":
                 manifest["invalid_scorer_identity_exclusion_digest"],
             "corpus_bound_digests": {
-                key: manifest[key] for key in CORPUS_BINDING_KEYS
+                key: manifest[key] for key in corpus_binding_keys
             },
             "target_encoder_digest": manifest["target_encoder_digest"],
             "target_encoder_checkpoint_sha256":
@@ -1228,9 +1889,11 @@ def main() -> int:
             "materialized_context_shard_count": len(index["context_records"]),
             "materialized_horizon_shard_count": len(index["horizon_records"]),
             "smoke_context_shards_verified": 1,
-            "smoke_horizon_shards_verified": 6,
+            "smoke_horizon_shards_verified": candidates_per_state,
             "invocation_new_shard_counts_receipt":
-                "encoding_invocation_summary.json",
+                encoding_summary_path.name,
+            "invocation_new_context_shards": new_context_shards,
+            "invocation_new_horizon_shards": new_horizon_shards,
             "resume_only_verified": resume_only_verified,
             "latent_index_digest": index["latents_index_digest"],
             "checks": {
@@ -1243,12 +1906,12 @@ def main() -> int:
             },
         }
         smoke["smoke_receipt_digest"] = canonical_digest(smoke)
-        smoke_path = out / "smoke_encoding_receipt.json"
+        smoke_path = encoding_smoke_path
         if smoke_path.is_file():
             existing_smoke = json.loads(smoke_path.read_text())
             if existing_smoke != smoke:
-                archive = out / "superseded_receipts" / (
-                    "smoke_encoding_receipt."
+                archive = out / superseded_root_name / (
+                    f"{smoke_path.stem}."
                     f"{file_sha256(smoke_path)[:16]}.json"
                 )
                 archive.parent.mkdir(parents=True, exist_ok=True)
@@ -1261,11 +1924,13 @@ def main() -> int:
         if not smoke_path.is_file():
             atomic_json(smoke_path, smoke)
         print(json.dumps(smoke, indent=2, sort_keys=True))
-        return 0 if smoke["pass"] else 1
+        # V2 smoke is a three-invocation durability protocol.  Intermediate
+        # base and zero-new invocations succeed operationally, while only the
+        # final receipt is marked PASS and can open full branch generation.
+        return 0 if (base_smoke_pass if full_bank_v2 else smoke["pass"]) else 1
 
     if index.get("complete"):
-        smoke_path = out / "smoke_encoding_receipt.json"
-        branch_smoke_path = out / "smoke_branch_receipt.json"
+        smoke_path = encoding_smoke_path
         if not smoke_path.is_file() or not branch_smoke_path.is_file():
             raise RuntimeError("complete scorer-fit encoding lacks required smoke receipts")
         smoke = json.loads(smoke_path.read_text())
@@ -1273,34 +1938,41 @@ def main() -> int:
         branch_smoke = json.loads(branch_smoke_path.read_text())
         _verify_self_digest(
             branch_smoke, "smoke_branch_receipt_digest", "branch smoke receipt")
-        if (smoke.get("scorer_contract_v1_2_digest")
-                != operational_contract_digest
-                or branch_smoke.get("scorer_contract_v1_2_digest")
-                != manifest["scorer_contract_v1_2_digest"]):
+        smoke_contract_matches = (
+            smoke.get("scorer_fit_corpus_v2_scorer_contract_digest")
+            == operational_contract_digest if full_bank_v2 else
+            smoke.get("scorer_contract_v1_2_digest")
+            == operational_contract_digest)
+        branch_contract_matches = (
+            branch_smoke.get("scorer_fit_corpus_v2_scorer_contract_digest")
+            == operational_contract_digest if full_bank_v2 else
+            branch_smoke.get("scorer_contract_v1_2_digest")
+            == manifest["scorer_contract_v1_2_digest"])
+        if not smoke_contract_matches or not branch_contract_matches:
             raise RuntimeError(
                 "completed smoke receipts conflate scientific and operational "
                 "scorer contracts")
-        if contract_lineage is not None:
+        if not full_bank_v2 and contract_lineage is not None:
             _validate_global_exact_scorer_contract_lineage(
                 smoke.get("global_exact_scorer_contract_lineage"),
                 expected=contract_lineage,
             )
         smoke_state_id = str(branch_smoke["state_id"])
         smoke_rows = [row for row in all_rows if row["state_id"] == smoke_state_id]
-        if (len(smoke_rows) != 6 or not all(row.get("valid") for row in smoke_rows)
+        if (len(smoke_rows) != candidates_per_state
+                or not all(row.get("valid") for row in smoke_rows)
                 or smoke.get("branch_identity_digests")
                 != sorted(row["branch_identity_digest"] for row in smoke_rows)
                 or smoke.get("branch_row_digests")
-                != sorted(row["branch_row_digest"] for row in smoke_rows)
-                or branch_smoke.get("corpus_digest")
-                != corpus_receipt["corpus_digest"]):
+                != sorted(row["branch_row_digest"] for row in smoke_rows)):
             raise RuntimeError("completed encoding smoke evidence does not match exact rows")
         smoke_context = [record for record in index["context_records"]
                          if record["state_id"] == smoke_state_id]
         smoke_horizons = [record for record in index["horizon_records"]
                           if record["state_id"] == smoke_state_id]
         resume_only_verified = (
-            len(smoke_context) == 1 and len(smoke_horizons) == 6
+            len(smoke_context) == 1
+            and len(smoke_horizons) == candidates_per_state
             and all(_valid_existing(out / record["path"], record, CONTEXT_SHAPE)
                     for record in smoke_context)
             and all(_valid_existing(out / record["path"], record, HORIZON_SHAPE)
@@ -1314,7 +1986,7 @@ def main() -> int:
             "branch_smoke_receipt_digest":
                 branch_smoke["smoke_branch_receipt_digest"],
             "corpus_bound_digests": {
-                key: manifest[key] for key in CORPUS_BINDING_KEYS
+                key: manifest[key] for key in corpus_binding_keys
             },
             "context_shape": index["context_shape"],
             "horizon_shape": index["horizon_shape"],
@@ -1326,8 +1998,8 @@ def main() -> int:
         }
         refreshed["smoke_receipt_digest"] = canonical_digest(refreshed)
         if refreshed != smoke:
-            archive = out / "superseded_receipts" / (
-                "smoke_encoding_receipt."
+            archive = out / superseded_root_name / (
+                f"{smoke_path.stem}."
                 f"{file_sha256(smoke_path)[:16]}.json"
             )
             archive.parent.mkdir(parents=True, exist_ok=True)

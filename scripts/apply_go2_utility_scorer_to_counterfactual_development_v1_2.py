@@ -47,6 +47,15 @@ OUT_DIR = S.PACKAGE_DIR / "counterfactual_development_transfer_v1_2"
 SCORE_DIR = OUT_DIR / "score_shards"
 SPEC_PATH = OUT_DIR / "development_transfer_spec.json"
 RESULT_PATH = OUT_DIR / "result.json"
+V2_OUT_DIR = S.V2_PACKAGE_DIR / "counterfactual_development_transfer_v2"
+V2_SPEC_NAME = "development_transfer_spec_v2.json"
+V2_RESULT_NAME = "result_v2.json"
+V2_SPEC_SCHEMA = (
+    "go2_utility_scorer_fit_corpus_v2_development_transfer_spec_v1"
+)
+V2_RESULT_SCHEMA = (
+    "go2_utility_scorer_fit_corpus_v2_development_transfer_result_v1"
+)
 
 FROZEN_PREDICTOR_QUALIFICATION_COMMIT = (
     "ee47b47e7964c16360f265c4cfbe7f8181d16402"
@@ -122,6 +131,31 @@ class PredictionPackage:
     state_shards: dict[str, dict[str, Any]]
     input_digest: str
     storage_bytes: int
+
+
+def _is_full_bank_v2_scorer(value: Mapping[str, Any]) -> bool:
+    return "scorer_fit_corpus_v2_scorer_contract_digest" in value
+
+
+def _scorer_transfer_provenance_keys(
+        value: Mapping[str, Any]) -> tuple[str, ...]:
+    return (S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+            if _is_full_bank_v2_scorer(value)
+            else S.SELECTOR_BINDING_KEYS)
+
+
+def _scorer_contract_fields(value: Mapping[str, Any]) -> dict[str, Any]:
+    if _is_full_bank_v2_scorer(value):
+        return {
+            "scorer_fit_corpus_v2_scorer_contract_digest": value[
+                "scorer_fit_corpus_v2_scorer_contract_digest"],
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest": value[
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest"],
+        }
+    return {
+        "scorer_contract_v1_2_digest":
+            S.operational_scorer_contract_digest(value),
+    }
 
 
 def _require(condition: bool, message: str) -> None:
@@ -375,8 +409,141 @@ def _validate_live_selector_provenance(
 
 
 # ----------------------------------------------------------- scorer gate -----
-def validate_qualified_scorer() -> ScorerBundle:
+def _validate_live_full_bank_v2_provenance(
+        qualification: Mapping[str, Any],
+        terminal: Mapping[str, Any]) -> dict[str, Any]:
+    """Replay only V2 producers before opening scorer or predictor bytes."""
+
+    corpus = terminal.get("corpus")
+    _require(isinstance(corpus, Mapping),
+             "full-bank V2 terminal lacks exact corpus producer replay")
+    bindings = corpus.get("bindings")
+    _require(isinstance(bindings, Mapping),
+             "full-bank V2 corpus bindings are absent")
+    try:
+        artifact = S.V2_CONTRACT.load_contract_for_consumption(root=ROOT)
+    except (OSError, ValueError, KeyError, RuntimeError) as exc:
+        raise DevelopmentTransferRefused(
+            f"full-bank V2 successor contract does not verify: {exc}") from exc
+    contract = artifact["contract"]
+    for key in S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS:
+        _require(qualification.get(key) == bindings.get(key),
+                 f"full-bank V2 qualification differs at {key}")
+    _require(
+        qualification.get("scorer_fit_corpus_v2_scorer_contract_digest")
+        == contract[S.V2_CONTRACT.CONTRACT_SELF_KEY]
+        and qualification.get(
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+        == artifact[S.V2_CONTRACT.ARTIFACT_SELF_KEY]
+        and contract.get("final_200_state_evaluation_corpus_authorised")
+        is False,
+        "full-bank V2 qualification binds another successor contract")
+    result = {
+        "status": "PASS_LIVE_FULL_BANK_V2_PRE_WEIGHT_PROVENANCE_REVALIDATION",
+        "scorer_fit_corpus_v2_scorer_contract_digest": contract[
+            S.V2_CONTRACT.CONTRACT_SELF_KEY],
+        "scorer_fit_corpus_v2_scorer_contract_artifact_digest": artifact[
+            S.V2_CONTRACT.ARTIFACT_SELF_KEY],
+        "full_bank_v2_provenance_bindings": {
+            key: qualification[key]
+            for key in S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+        },
+        "state_manifest_digest": bindings["state_manifest_digest"],
+        "corpus_digest": bindings["corpus_digest"],
+        "source_binding_digest": contract["source_binding_digest"],
+        "scorer_weights_opened_during_validation": False,
+        "predictor_artifacts_opened_during_validation": False,
+        "legacy_allocation_or_mask_validator_called": False,
+    }
+    result["verification_digest"] = legacy_digest(result)
+    return result
+
+
+def validate_qualified_full_bank_v2_scorer() -> ScorerBundle:
+    """Validate V2 qualification and all bytes before torch deserialisation."""
+
+    try:
+        terminal = (
+            S.load_and_validate_full_bank_v2_training_terminal_for_consumption(
+                require_qualified=True, verify_encoder_checkpoint=False))
+    except (OSError, ValueError, KeyError, RuntimeError,
+            S.CorpusValidationError) as exc:
+        raise DevelopmentTransferRefused(
+            f"full-bank V2 scorer qualification does not verify: {exc}") from exc
+    qualification = terminal["terminal"]
+    _require(qualification.get("schema") == S.FULL_BANK_V2_QUALIFICATION_SCHEMA
+             and qualification.get("qualified") is True
+             and qualification.get("qualification_evaluations") == 1
+             and qualification.get("epoch_selection_permitted") is False,
+             "full-bank V2 scorer did not pass one-shot qualification")
+    criteria = qualification.get("criteria")
+    _require(isinstance(criteria, Mapping) and criteria
+             and all(value is True for value in criteria.values()),
+             "full-bank V2 scorer failed a frozen criterion")
+    provenance = _validate_live_full_bank_v2_provenance(
+        qualification, terminal)
+    package_path = terminal["scorer_package_path"]
+    baseline_path = terminal["baseline_path"]
+    package_sha = str(qualification["scorer_package_sha256"])
+
+    # Every qualification/provenance/byte gate above precedes torch.load.
+    package = torch.load(package_path, map_location="cpu", weights_only=False)
+    baseline_package = torch.load(
+        baseline_path, map_location="cpu", weights_only=False)
+    provenance_keys = S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+    _require(package.get("schema") == S.FULL_BANK_V2_PACKAGE_SCHEMA
+             and package.get("qualified") is True
+             and package.get("scorer_fit_corpus_v2_scorer_contract_digest")
+             == qualification[
+                 "scorer_fit_corpus_v2_scorer_contract_digest"]
+             and package.get("training_run_digest")
+             == qualification.get("training_run_digest")
+             and all(package.get(key) == qualification.get(key)
+                     for key in provenance_keys)
+             and package.get("final_epoch") == S.V2_CONTRACT.EPOCHS
+             and package.get("epoch_selection")
+             == "final_epoch_only_no_selection",
+             "full-bank V2 scorer package metadata changed")
+    final_digests = package.get("final_state_digests")
+    _require(isinstance(final_digests, Mapping),
+             "full-bank V2 scorer final-state digests are absent")
+    for name in ("latent", "no_latent"):
+        _require(isinstance(package.get(name), Mapping)
+                 and S.state_dict_digest(package[name])
+                 == final_digests.get(name),
+                 f"full-bank V2 {name} final-state digest changed")
+    baseline_receipt = terminal["baseline_receipt"]
+    _require(
+        baseline_package.get("schema") == S.FULL_BANK_V2_BASELINE_SCHEMA
+        and baseline_package.get("training_run_digest")
+        == qualification.get("training_run_digest")
+        and baseline_package.get(
+            "scorer_fit_corpus_v2_scorer_contract_digest")
+        == qualification["scorer_fit_corpus_v2_scorer_contract_digest"]
+        and all(baseline_package.get(key) == qualification.get(key)
+                for key in provenance_keys)
+        and isinstance(baseline_package.get("model_state_dict"), Mapping)
+        and S.state_dict_digest(baseline_package["model_state_dict"])
+        == final_digests.get("no_latent")
+        == baseline_receipt.get("final_state_digest"),
+        "full-bank V2 no-latent package changed")
+    latent = S.UtilityScorer(use_latent=True)
+    no_latent = S.UtilityScorer(use_latent=False)
+    latent.load_state_dict(package["latent"], strict=True)
+    no_latent.load_state_dict(
+        baseline_package["model_state_dict"], strict=True)
+    latent.eval()
+    no_latent.eval()
+    return ScorerBundle(
+        dict(qualification), package, package_sha, provenance,
+        latent, no_latent)
+
+
+def validate_qualified_scorer(*, full_bank_v2: bool = False) -> ScorerBundle:
     """Refuse before torch.load unless every frozen qualification gate passed."""
+
+    if full_bank_v2:
+        return validate_qualified_full_bank_v2_scorer()
 
     qualification = read_json(S.PACKAGE_DIR / "qualification.json",
                               "scorer qualification")
@@ -545,27 +712,37 @@ def validate_qualified_scorer() -> ScorerBundle:
 
 
 def prospective_spec(scorer: ScorerBundle) -> dict[str, Any]:
+    full_bank_v2 = _is_full_bank_v2_scorer(scorer.qualification)
     sources = (
         "scripts/apply_go2_utility_scorer_to_counterfactual_development_v1_2.py",
         "scripts/train_go2_utility_scorer_v1_2.py",
         "scripts/analyze_go2_counterfactual_predictor_qualification_v1_2.py",
         "lewm/oracle/go2_scorer_contract_v1_2.py",
+        *(('lewm/oracle/go2_scorer_fit_corpus_v2_scorer_contract.py',)
+          if full_bank_v2 else ()),
     )
     global_exact = (
         "global_exact_successor_scorer_contract_digest"
         in scorer.qualification)
     value: dict[str, Any] = {
-        "schema": "go2_utility_scorer_counterfactual_development_transfer_spec_v1_2",
+        "schema": (V2_SPEC_SCHEMA if full_bank_v2 else
+                   "go2_utility_scorer_counterfactual_development_transfer_spec_v1_2"),
         "status": STATUS, "frozen_before_prediction_shard_access": True,
         "predictor_qualification_commit": FROZEN_PREDICTOR_QUALIFICATION_COMMIT,
-        "scorer_contract_v1_2_digest":
-            S.operational_scorer_contract_digest(scorer.qualification),
+        **_scorer_contract_fields(scorer.qualification),
         "qualification_report_digest":
             scorer.qualification["qualification_report_digest"],
         "scorer_package_sha256": scorer.package_sha256,
-        "scorer_source_bindings": {
-            key: scorer.qualification[key] for key in S.LAUNCH_BINDING_KEYS
-        },
+        **({
+            "scorer_full_bank_v2_bindings": {
+                key: scorer.qualification[key]
+                for key in S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+            },
+        } if full_bank_v2 else {
+            "scorer_source_bindings": {
+                key: scorer.qualification[key] for key in S.LAUNCH_BINDING_KEYS
+            },
+        }),
         **({
             "global_exact_successor_bindings": {
                 key: scorer.qualification[key]
@@ -573,7 +750,9 @@ def prospective_spec(scorer: ScorerBundle) -> dict[str, Any]:
             },
         } if global_exact else {}),
         "scorer_selector_successor_bindings": {
-            key: scorer.qualification[key] for key in S.SELECTOR_BINDING_KEYS
+            key: scorer.qualification[key]
+            for key in _scorer_transfer_provenance_keys(
+                scorer.qualification)
         },
         "live_selector_provenance": scorer.selector_provenance,
         "frozen_inputs": {
@@ -876,17 +1055,19 @@ def _preserve_invalid(path: Path, reason: str) -> str | None:
 
 def _score_receipt(unit: str, input_digest: str, scorer: ScorerBundle,
                    score_path: Path) -> dict[str, Any]:
+    full_bank_v2 = _is_full_bank_v2_scorer(scorer.qualification)
     global_exact = (
         "global_exact_successor_scorer_contract_digest"
         in scorer.qualification
     )
     value: dict[str, Any] = {
-        "schema": "go2_utility_scorer_development_score_shard_receipt_v1_2",
+        "schema": ("go2_utility_scorer_fit_corpus_v2_development_score_shard_receipt_v1"
+                   if full_bank_v2 else
+                   "go2_utility_scorer_development_score_shard_receipt_v1_2"),
         "status": STATUS, "complete": True, "unit": unit,
         "input_digest": input_digest,
         "scorer_package_sha256": scorer.package_sha256,
-        "scorer_contract_v1_2_digest":
-            S.operational_scorer_contract_digest(scorer.qualification),
+        **_scorer_contract_fields(scorer.qualification),
         **({
             "current_scorer_contract_v1_2_digest":
                 scorer.qualification[
@@ -900,7 +1081,8 @@ def _score_receipt(unit: str, input_digest: str, scorer: ScorerBundle,
         } if global_exact else {}),
         **{
             key: scorer.qualification[key]
-            for key in S.SELECTOR_BINDING_KEYS
+            for key in _scorer_transfer_provenance_keys(
+                scorer.qualification)
         },
         "selector_provenance_verification_digest":
             scorer.selector_provenance["verification_digest"],
@@ -916,14 +1098,16 @@ def validate_existing_result(result: Mapping[str, Any], spec_digest: str,
                              scorer: ScorerBundle) -> None:
     """Require a terminal report and every score shard it claims to bind."""
 
+    contract_fields = _scorer_contract_fields(scorer.qualification)
+    provenance_keys = _scorer_transfer_provenance_keys(
+        scorer.qualification)
     _require(result.get("result_digest")
              == legacy_digest(result, ("result_digest",))
              and result.get("complete") is True
              and result.get("development_transfer_spec_digest") == spec_digest
              and result.get("scorer_package_sha256") == scorer.package_sha256
-             and result.get("scorer_contract_v1_2_digest")
-             == S.operational_scorer_contract_digest(
-                 scorer.qualification),
+             and all(result.get(key) == value
+                     for key, value in contract_fields.items()),
              "existing development-transfer result differs")
     if "global_exact_successor_scorer_contract_digest" in scorer.qualification:
         expected_global_bindings = {
@@ -955,9 +1139,8 @@ def validate_existing_result(result: Mapping[str, Any], spec_digest: str,
                  == legacy_digest(receipt, ("receipt_digest",))
                  and receipt.get("complete") is True
                  and receipt.get("scorer_package_sha256") == scorer.package_sha256
-                 and receipt.get("scorer_contract_v1_2_digest")
-                 == S.operational_scorer_contract_digest(
-                     scorer.qualification)
+                 and all(receipt.get(key) == value
+                         for key, value in contract_fields.items())
                  and (expected_contract_lineage is None
                       or (receipt.get("global_exact_scorer_contract_lineage")
                           == expected_contract_lineage
@@ -970,7 +1153,7 @@ def validate_existing_result(result: Mapping[str, Any], spec_digest: str,
                           == scorer.qualification.get(
                               "global_exact_successor_scorer_contract_digest")))
                  and all(receipt.get(key) == scorer.qualification.get(key)
-                         for key in S.SELECTOR_BINDING_KEYS)
+                         for key in provenance_keys)
                  and receipt.get("selector_provenance_verification_digest")
                  == scorer.selector_provenance.get("verification_digest")
                  and receipt.get("shape") == [EXPECTED_BRANCHES]
@@ -997,6 +1180,9 @@ def _existing_scores(unit: str, input_digest: str, scorer: ScorerBundle
     receipt_path = SCORE_DIR / f"{unit}.receipt.json"
     if not score_path.exists() and not receipt_path.exists():
         return None
+    contract_fields = _scorer_contract_fields(scorer.qualification)
+    provenance_keys = _scorer_transfer_provenance_keys(
+        scorer.qualification)
     try:
         receipt = read_json(receipt_path, f"{unit} score receipt")
         _require(receipt.get("receipt_digest")
@@ -1005,9 +1191,8 @@ def _existing_scores(unit: str, input_digest: str, scorer: ScorerBundle
                  and receipt.get("unit") == unit
                  and receipt.get("input_digest") == input_digest
                  and receipt.get("scorer_package_sha256") == scorer.package_sha256
-                 and receipt.get("scorer_contract_v1_2_digest")
-                 == S.operational_scorer_contract_digest(
-                     scorer.qualification)
+                 and all(receipt.get(key) == value
+                         for key, value in contract_fields.items())
                  and (
                      "global_exact_scorer_contract_lineage"
                      not in scorer.qualification
@@ -1022,7 +1207,7 @@ def _existing_scores(unit: str, input_digest: str, scorer: ScorerBundle
                      == scorer.qualification[
                          "global_exact_successor_scorer_contract_digest"])
                  and all(receipt.get(key) == scorer.qualification.get(key)
-                         for key in S.SELECTOR_BINDING_KEYS)
+                         for key in provenance_keys)
                  and receipt.get("selector_provenance_verification_digest")
                  == scorer.selector_provenance.get("verification_digest")
                  and receipt.get("shape") == [EXPECTED_BRANCHES]
@@ -1313,10 +1498,69 @@ def synthetic_self_test() -> dict[str, Any]:
             "zero_interval": interval}
 
 
+def load_and_validate_full_bank_v2_development_terminal_for_consumption(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    """Validate the sole V2 exploratory terminal without rerunning scoring."""
+
+    global OUT_DIR, SCORE_DIR, SPEC_PATH, RESULT_PATH
+    _require(Path(root).resolve() == ROOT.resolve(),
+             "full-bank V2 development terminal is at the custody root")
+    OUT_DIR = V2_OUT_DIR
+    SCORE_DIR = OUT_DIR / "score_shards"
+    SPEC_PATH = OUT_DIR / V2_SPEC_NAME
+    RESULT_PATH = OUT_DIR / V2_RESULT_NAME
+    scorer = validate_qualified_scorer(full_bank_v2=True)
+    expected_spec = prospective_spec(scorer)
+    recorded_spec = read_json(SPEC_PATH, "full-bank V2 development spec")
+    _require(recorded_spec == expected_spec,
+             "full-bank V2 development spec changed")
+    result = read_json(RESULT_PATH, "full-bank V2 development result")
+    validate_existing_result(
+        result, expected_spec["development_transfer_spec_digest"], scorer)
+    _require(result.get("schema") == V2_RESULT_SCHEMA
+             and result.get("exploratory_fixed_development_states") is True
+             and result.get("scope") == {
+                 "states": EXPECTED_STATES,
+                 "branches": EXPECTED_BRANCHES,
+                 "candidates_per_state": EXPECTED_CANDIDATES,
+                 "checkpoint_prediction_packages": EXPECTED_CHECKPOINTS,
+             }
+             and result.get("interpretation_boundary", {}).get(
+                 "final_benchmark_claim_authorised") is False,
+             "full-bank V2 development terminal scope changed")
+    return {
+        "spec": recorded_spec,
+        "result": result,
+        "terminal_digest": result["result_digest"],
+        "qualified_scorer_digest": scorer.package_sha256,
+        "qualified_scorer_bound": True,
+        "development_state_count": EXPECTED_STATES,
+        "development_branch_count": EXPECTED_BRANCHES,
+        "terminal_status":
+            "PASS_EXPLORATORY_FIXED_20_STATE_DEVELOPMENT_TRANSFER",
+        "nothing_running": True,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def load_and_validate_full_bank_v2_development_transfer_result_for_consumption(
+        ) -> dict[str, Any]:
+    """Compatibility alias for the frozen runner-facing terminal validator."""
+
+    return load_and_validate_full_bank_v2_development_terminal_for_consumption(
+        root=ROOT)
+
+
 # ------------------------------------------------------------------- main ----
 def main() -> int:
+    global OUT_DIR, SCORE_DIR, SPEC_PATH, RESULT_PATH
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--scorer-corpus-design", "--corpus-design",
+        dest="scorer_corpus_design", choices=("legacy", "full-bank-v2"),
+        default="legacy",
+        help="select the exact qualified scorer lineage")
     parser.add_argument("--self-test", action="store_true",
                         help="pure synthetic metrics only; open no scientific artifact")
     args = parser.parse_args()
@@ -1324,8 +1568,20 @@ def main() -> int:
         print(json.dumps(safe_json(synthetic_self_test()), indent=2))
         return 0
 
+    full_bank_v2 = args.scorer_corpus_design == "full-bank-v2"
+    if full_bank_v2:
+        OUT_DIR = V2_OUT_DIR
+        SCORE_DIR = OUT_DIR / "score_shards"
+        SPEC_PATH = OUT_DIR / V2_SPEC_NAME
+        RESULT_PATH = OUT_DIR / V2_RESULT_NAME
+    else:
+        OUT_DIR = S.PACKAGE_DIR / "counterfactual_development_transfer_v1_2"
+        SCORE_DIR = OUT_DIR / "score_shards"
+        SPEC_PATH = OUT_DIR / "development_transfer_spec.json"
+        RESULT_PATH = OUT_DIR / "result.json"
+
     started = time.time()
-    scorer = validate_qualified_scorer()
+    scorer = validate_qualified_scorer(full_bank_v2=full_bank_v2)
     spec = prospective_spec(scorer)
     freeze_spec(spec)
     if RESULT_PATH.is_file():
@@ -1370,12 +1626,12 @@ def main() -> int:
 
     analysis = analyse_cells(cells)
     output: dict[str, Any] = {
-        "schema": "go2_utility_scorer_counterfactual_development_transfer_result_v1_2",
+        "schema": (V2_RESULT_SCHEMA if full_bank_v2 else
+                   "go2_utility_scorer_counterfactual_development_transfer_result_v1_2"),
         "status": STATUS, "complete": True,
         "exploratory_fixed_development_states": True,
         "development_transfer_spec_digest": spec["development_transfer_spec_digest"],
-        "scorer_contract_v1_2_digest":
-            S.operational_scorer_contract_digest(scorer.qualification),
+        **_scorer_contract_fields(scorer.qualification),
         "qualification_report_digest": scorer.qualification["qualification_report_digest"],
         "scorer_package_sha256": scorer.package_sha256,
         "scorer_selector_successor_bindings":
