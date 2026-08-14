@@ -265,22 +265,29 @@ def _validate_live_selector_provenance(
             "live scorer state manifest self digest does not verify",
         )
         S.validate_pre_identity_structural_validation(pre_identity)
-        launch = S._validate_clean_source_launch(
-            selected_pool, pre_identity,
+        (launch, manifest_launch,
+         selector_launch) = S._load_manifest_launch_lineage(
+            state_manifest, selected_pool, pre_identity,
             enforce_managed_paths=enforce_managed_paths)
         selector = S._validate_selector_successor(
-            selected_pool, launch, allocation,
+            selected_pool, selector_launch, allocation,
             state_manifest.get("states", []),
-            enforce_managed_paths=enforce_managed_paths)
+            enforce_managed_paths=enforce_managed_paths,
+            global_exact_manifest=(
+                state_manifest if isinstance(
+                    state_manifest.get(
+                        "small_completion_global_exact_execution"), Mapping)
+                else None))
         if not enforce_managed_paths:
             S.STATE_SELECTOR.validate_preserved_state_mixed_precontract_disposition_receipt(
                 disposition,
-                expected_source_commit=launch["source_repository_commit"],
+                expected_source_commit=selector_launch[
+                    "source_repository_commit"],
                 expected_successor_selection_digest=
                     S.contract()["corpus_selection_digest"],
-                expected_clean_source_binding_digest=launch[
+                expected_clean_source_binding_digest=selector_launch[
                     "clean_source_binding_digest"],
-                expected_bound_implementations_digest=launch[
+                expected_bound_implementations_digest=selector_launch[
                     "bound_implementations_digest"],
                 root=ROOT,
             )
@@ -293,6 +300,13 @@ def _validate_live_selector_provenance(
     for key in S.SELECTOR_BINDING_KEYS:
         _require(selector.get(key) == qualification.get(key),
                  f"live scorer selector provenance differs at {key}")
+    global_exact = "small_completion_global_exact_execution" in state_manifest
+    operational_provenance = S.scorer_provenance_bindings({
+        **selector, **launch,
+    }) if global_exact else {}
+    for key, expected in operational_provenance.items():
+        _require(qualification.get(key) == expected,
+                 f"qualified scorer operational provenance differs at {key}")
     corpus_bindings = qualification.get("corpus_bindings")
     _require(isinstance(corpus_bindings, Mapping),
              "qualified scorer has no corpus provenance bindings")
@@ -311,7 +325,7 @@ def _validate_live_selector_provenance(
                  f"live scorer allocation provenance differs at {key}")
     _require(
         disposition.get("mixed_precontract_disposition_receipt_digest")
-        == launch["mixed_precontract_disposition_receipt_digest"],
+        == selector_launch["mixed_precontract_disposition_receipt_digest"],
         "live mixed precontract disposition differs from scorer launch",
     )
 
@@ -339,8 +353,12 @@ def _validate_live_selector_provenance(
     result = {
         "status": "PASS_LIVE_PRE_WEIGHT_SELECTOR_PROVENANCE_REVALIDATION",
         "selector_bindings": dict(selector),
+        **({
+            "operational_scorer_contract_bindings": operational_provenance,
+            "scientific_manifest_launch_bindings": dict(manifest_launch),
+        } if global_exact else {}),
         "mixed_precontract_disposition_receipt_digest":
-            launch["mixed_precontract_disposition_receipt_digest"],
+            selector_launch["mixed_precontract_disposition_receipt_digest"],
         "pre_identity_allocation_validation": binding(pre_identity_path),
         "candidate_allocation_manifest": binding(allocation_path),
         "state_manifest": binding(state_manifest_path),
@@ -388,6 +406,36 @@ def validate_qualified_scorer() -> ScorerBundle:
     # the scorer-package byte read and torch.load so the receipt/mask chain is
     # a genuine pre-weight gate at the application boundary.
     selector_provenance = _validate_live_selector_provenance(qualification)
+    global_exact = (
+        "global_exact_successor_scorer_contract_digest" in qualification
+    )
+    if global_exact:
+        live_operational = selector_provenance.get(
+            "operational_scorer_contract_bindings")
+        _require(isinstance(live_operational, Mapping),
+                 "live global scorer operational provenance is absent")
+        try:
+            contract_lineage = S.validate_global_exact_scorer_contract_lineage(
+                qualification.get("global_exact_scorer_contract_lineage"),
+                expected=live_operational.get(
+                    "global_exact_scorer_contract_lineage"),
+            )
+        except S.CorpusValidationError as exc:
+            raise DevelopmentTransferRefused(
+                f"qualified global scorer contract lineage is invalid: {exc}"
+            ) from exc
+        _require(
+            qualification.get("scorer_contract_v1_2_digest")
+            == contract_lineage["current_scorer_contract_v1_2_digest"]
+            == qualification.get("current_scorer_contract_v1_2_digest"),
+            "qualified scorer top-level operational digest differs from lineage",
+        )
+        _require(
+            qualification.get("global_exact_successor_scorer_contract_digest")
+            == contract_lineage[
+                "global_exact_successor_scorer_contract_digest"],
+            "qualified scorer successor digest differs from lineage",
+        )
     try:
         current_source = S.clean_source_binding()
     except RuntimeError as exc:
@@ -407,6 +455,15 @@ def validate_qualified_scorer() -> ScorerBundle:
         _require(isinstance(qualification.get(key), str)
                  and len(qualification[key]) == 64,
                  f"qualified scorer has no {key}")
+    try:
+        provenance_keys = S.scorer_provenance_binding_keys(qualification)
+    except (KeyError, S.CorpusValidationError) as exc:
+        raise DevelopmentTransferRefused(
+            f"qualified scorer operational provenance is incomplete: {exc}"
+        ) from exc
+    for key in provenance_keys:
+        _require(key in qualification,
+                 f"qualified scorer has no operational provenance field {key}")
     package_sha = qualification.get("scorer_package_sha256")
     _require(isinstance(package_sha, str) and len(package_sha) == 64,
              "qualification has no frozen scorer-package digest")
@@ -420,9 +477,10 @@ def validate_qualified_scorer() -> ScorerBundle:
              "scorer package receipt self digest differs")
     _require(receipt.get("complete") is True and receipt.get("qualified") is True
              and receipt.get("scorer_package_sha256") == package_sha
-             and receipt.get("scorer_contract_v1_2_digest") == contract_digest()
+             and receipt.get("scorer_contract_v1_2_digest")
+             == qualification.get("scorer_contract_v1_2_digest")
              and all(receipt.get(key) == qualification.get(key)
-                     for key in S.SCORER_PROVENANCE_BINDING_KEYS),
+                     for key in provenance_keys),
              "scorer package receipt is incomplete or differently bound")
     baseline_receipt = qualification.get("no_latent_baseline_package")
     _require(isinstance(baseline_receipt, Mapping)
@@ -431,8 +489,10 @@ def validate_qualified_scorer() -> ScorerBundle:
              and baseline_receipt.get("complete") is True
              and baseline_receipt.get("training_run_digest")
              == qualification.get("training_run_digest")
+             and baseline_receipt.get("scorer_contract_v1_2_digest")
+             == qualification.get("scorer_contract_v1_2_digest")
              and all(baseline_receipt.get(key) == qualification.get(key)
-                     for key in S.SCORER_PROVENANCE_BINDING_KEYS),
+                     for key in provenance_keys),
              "no-latent baseline package receipt is absent or invalid")
     baseline_path = _safe_relative(
         S.PACKAGE_DIR, baseline_receipt.get("path"), "no-latent baseline package")
@@ -444,11 +504,12 @@ def validate_qualified_scorer() -> ScorerBundle:
     # torch.load is deliberately below every JSON/byte qualification gate.
     package = torch.load(package_path, map_location="cpu", weights_only=False)
     _require(package.get("qualified") is True
-             and package.get("scorer_contract_v1_2_digest") == contract_digest()
+             and package.get("scorer_contract_v1_2_digest")
+             == qualification.get("scorer_contract_v1_2_digest")
              and package.get("training_run_digest")
              == qualification.get("training_run_digest")
              and all(package.get(key) == qualification.get(key)
-                     for key in S.SCORER_PROVENANCE_BINDING_KEYS)
+                     for key in provenance_keys)
              and package.get("final_epoch") == 60
              and package.get("epoch_selection") == "final_epoch_only_no_selection",
              "scorer package metadata differs from the frozen qualified run")
@@ -465,9 +526,9 @@ def validate_qualified_scorer() -> ScorerBundle:
              and baseline_package.get("training_run_digest")
              == qualification.get("training_run_digest")
              and baseline_package.get("scorer_contract_v1_2_digest")
-             == contract_digest()
+             == qualification.get("scorer_contract_v1_2_digest")
              and all(baseline_package.get(key) == qualification.get(key)
-                     for key in S.SCORER_PROVENANCE_BINDING_KEYS)
+                     for key in provenance_keys)
              and isinstance(baseline_package.get("model_state_dict"), Mapping)
              and S.state_dict_digest(baseline_package["model_state_dict"])
              == final_digests.get("no_latent")
@@ -490,17 +551,27 @@ def prospective_spec(scorer: ScorerBundle) -> dict[str, Any]:
         "scripts/analyze_go2_counterfactual_predictor_qualification_v1_2.py",
         "lewm/oracle/go2_scorer_contract_v1_2.py",
     )
+    global_exact = (
+        "global_exact_successor_scorer_contract_digest"
+        in scorer.qualification)
     value: dict[str, Any] = {
         "schema": "go2_utility_scorer_counterfactual_development_transfer_spec_v1_2",
         "status": STATUS, "frozen_before_prediction_shard_access": True,
         "predictor_qualification_commit": FROZEN_PREDICTOR_QUALIFICATION_COMMIT,
-        "scorer_contract_v1_2_digest": contract_digest(),
+        "scorer_contract_v1_2_digest":
+            S.operational_scorer_contract_digest(scorer.qualification),
         "qualification_report_digest":
             scorer.qualification["qualification_report_digest"],
         "scorer_package_sha256": scorer.package_sha256,
         "scorer_source_bindings": {
             key: scorer.qualification[key] for key in S.LAUNCH_BINDING_KEYS
         },
+        **({
+            "global_exact_successor_bindings": {
+                key: scorer.qualification[key]
+                for key in S.GLOBAL_EXACT_PROVENANCE_BINDING_KEYS
+            },
+        } if global_exact else {}),
         "scorer_selector_successor_bindings": {
             key: scorer.qualification[key] for key in S.SELECTOR_BINDING_KEYS
         },
@@ -805,12 +876,28 @@ def _preserve_invalid(path: Path, reason: str) -> str | None:
 
 def _score_receipt(unit: str, input_digest: str, scorer: ScorerBundle,
                    score_path: Path) -> dict[str, Any]:
+    global_exact = (
+        "global_exact_successor_scorer_contract_digest"
+        in scorer.qualification
+    )
     value: dict[str, Any] = {
         "schema": "go2_utility_scorer_development_score_shard_receipt_v1_2",
         "status": STATUS, "complete": True, "unit": unit,
         "input_digest": input_digest,
         "scorer_package_sha256": scorer.package_sha256,
-        "scorer_contract_v1_2_digest": contract_digest(),
+        "scorer_contract_v1_2_digest":
+            S.operational_scorer_contract_digest(scorer.qualification),
+        **({
+            "current_scorer_contract_v1_2_digest":
+                scorer.qualification[
+                    "current_scorer_contract_v1_2_digest"],
+            "global_exact_successor_scorer_contract_digest":
+                scorer.qualification[
+                    "global_exact_successor_scorer_contract_digest"],
+            "global_exact_scorer_contract_lineage":
+                scorer.qualification[
+                    "global_exact_scorer_contract_lineage"],
+        } if global_exact else {}),
         **{
             key: scorer.qualification[key]
             for key in S.SELECTOR_BINDING_KEYS
@@ -833,8 +920,21 @@ def validate_existing_result(result: Mapping[str, Any], spec_digest: str,
              == legacy_digest(result, ("result_digest",))
              and result.get("complete") is True
              and result.get("development_transfer_spec_digest") == spec_digest
-             and result.get("scorer_package_sha256") == scorer.package_sha256,
+             and result.get("scorer_package_sha256") == scorer.package_sha256
+             and result.get("scorer_contract_v1_2_digest")
+             == S.operational_scorer_contract_digest(
+                 scorer.qualification),
              "existing development-transfer result differs")
+    if "global_exact_successor_scorer_contract_digest" in scorer.qualification:
+        expected_global_bindings = {
+            key: scorer.qualification[key]
+            for key in S.GLOBAL_EXACT_PROVENANCE_BINDING_KEYS
+        }
+        _require(
+            result.get("global_exact_successor_bindings")
+            == expected_global_bindings,
+            "existing development-transfer result global scorer lineage differs",
+        )
     receipts = result.get("score_shard_receipts")
     expected_units = {"no_latent", "true_latent"} | {
         f"seed_{seed}_{cell}" for seed in SEEDS for cell in CELLS
@@ -842,6 +942,8 @@ def validate_existing_result(result: Mapping[str, Any], spec_digest: str,
     _require(isinstance(receipts, list) and len(receipts) == len(expected_units),
              "existing transfer result has an incomplete score-shard ledger")
     observed: set[str] = set()
+    expected_contract_lineage = scorer.qualification.get(
+        "global_exact_scorer_contract_lineage")
     for receipt in receipts:
         _require(isinstance(receipt, Mapping),
                  "existing score-shard receipt is not an object")
@@ -853,7 +955,20 @@ def validate_existing_result(result: Mapping[str, Any], spec_digest: str,
                  == legacy_digest(receipt, ("receipt_digest",))
                  and receipt.get("complete") is True
                  and receipt.get("scorer_package_sha256") == scorer.package_sha256
-                 and receipt.get("scorer_contract_v1_2_digest") == contract_digest()
+                 and receipt.get("scorer_contract_v1_2_digest")
+                 == S.operational_scorer_contract_digest(
+                     scorer.qualification)
+                 and (expected_contract_lineage is None
+                      or (receipt.get("global_exact_scorer_contract_lineage")
+                          == expected_contract_lineage
+                          and receipt.get(
+                              "current_scorer_contract_v1_2_digest")
+                          == scorer.qualification.get(
+                              "current_scorer_contract_v1_2_digest")
+                          and receipt.get(
+                              "global_exact_successor_scorer_contract_digest")
+                          == scorer.qualification.get(
+                              "global_exact_successor_scorer_contract_digest")))
                  and all(receipt.get(key) == scorer.qualification.get(key)
                          for key in S.SELECTOR_BINDING_KEYS)
                  and receipt.get("selector_provenance_verification_digest")
@@ -890,7 +1005,22 @@ def _existing_scores(unit: str, input_digest: str, scorer: ScorerBundle
                  and receipt.get("unit") == unit
                  and receipt.get("input_digest") == input_digest
                  and receipt.get("scorer_package_sha256") == scorer.package_sha256
-                 and receipt.get("scorer_contract_v1_2_digest") == contract_digest()
+                 and receipt.get("scorer_contract_v1_2_digest")
+                 == S.operational_scorer_contract_digest(
+                     scorer.qualification)
+                 and (
+                     "global_exact_scorer_contract_lineage"
+                     not in scorer.qualification
+                     or receipt.get("global_exact_scorer_contract_lineage")
+                     == scorer.qualification[
+                         "global_exact_scorer_contract_lineage"]
+                     and receipt.get("current_scorer_contract_v1_2_digest")
+                     == scorer.qualification[
+                         "current_scorer_contract_v1_2_digest"]
+                     and receipt.get(
+                         "global_exact_successor_scorer_contract_digest")
+                     == scorer.qualification[
+                         "global_exact_successor_scorer_contract_digest"])
                  and all(receipt.get(key) == scorer.qualification.get(key)
                          for key in S.SELECTOR_BINDING_KEYS)
                  and receipt.get("selector_provenance_verification_digest")
@@ -1244,11 +1374,16 @@ def main() -> int:
         "status": STATUS, "complete": True,
         "exploratory_fixed_development_states": True,
         "development_transfer_spec_digest": spec["development_transfer_spec_digest"],
-        "scorer_contract_v1_2_digest": contract_digest(),
+        "scorer_contract_v1_2_digest":
+            S.operational_scorer_contract_digest(scorer.qualification),
         "qualification_report_digest": scorer.qualification["qualification_report_digest"],
         "scorer_package_sha256": scorer.package_sha256,
         "scorer_selector_successor_bindings":
             spec["scorer_selector_successor_bindings"],
+        **({
+            "global_exact_successor_bindings":
+                spec["global_exact_successor_bindings"],
+        } if "global_exact_successor_bindings" in spec else {}),
         "live_selector_provenance": spec["live_selector_provenance"],
         "frozen_inputs": spec["frozen_inputs"],
         "scope": {"states": EXPECTED_STATES, "branches": EXPECTED_BRANCHES,

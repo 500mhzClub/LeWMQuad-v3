@@ -219,6 +219,142 @@ class DevelopmentTransferTests(unittest.TestCase):
                          "state_selector_feasibility_receipt_digest": "x" * 64},
                         pool_dir=pool)
 
+    def test_global_exact_live_gate_uses_operational_successor_and_historical_selector(self):
+        with tempfile.TemporaryDirectory() as directory:
+            historical_contract = "a" * 64
+            current_contract = T.contract_digest()
+            pool = Path(directory)
+            paths = {
+                name: pool / name for name in (
+                    "pre_identity_allocation_validation.json",
+                    "candidate_allocation_manifest.json",
+                    "state_manifest.json",
+                    T.S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME,
+                    T.S.STATE_SELECTOR
+                    .PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME,
+                    T.S.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME,
+                )
+            }
+            pre_identity = {"pre_identity_validation_digest": "1" * 64}
+            allocation = {
+                "allocation_manifest_digest": "2" * 64,
+                "post_identity_pre_outcome_validation": {
+                    "post_identity_validation_digest": "3" * 64,
+                },
+            }
+            state_manifest = {
+                "small_completion_global_exact_execution": {}, "states": [],
+                "scorer_contract_v1_2_digest": historical_contract,
+            }
+            state_manifest["state_manifest_digest"] = T.hashlib.sha256(
+                json.dumps(state_manifest, sort_keys=True).encode()).hexdigest()
+            disposition = {
+                "mixed_precontract_disposition_receipt_digest": "4" * 64}
+            paths["pre_identity_allocation_validation.json"].write_text(
+                json.dumps(pre_identity))
+            paths["candidate_allocation_manifest.json"].write_text(
+                json.dumps(allocation))
+            paths["state_manifest.json"].write_text(json.dumps(state_manifest))
+            paths[T.S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME
+                  ].write_text("{}")
+            paths[T.S.STATE_SELECTOR
+                  .PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME
+                  ].write_text(json.dumps(disposition))
+            paths[T.S.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME
+                  ].write_text("{}")
+            selector = {
+                "state_selector_amendment_digest": "5" * 64,
+                "state_selector_feasibility_receipt_digest": "6" * 64,
+                "preserved_state_revalidation_receipt_digest": "7" * 64,
+            }
+            scientific = {
+                "clean_source_launch_receipt_digest": "8" * 64,
+                "source_repository_commit": "9" * 40,
+                "clean_source_binding_digest": "a" * 64,
+                "bound_implementations_digest": "b" * 64,
+                "scorer_contract_artifact_digest": "c" * 64,
+                "mixed_precontract_disposition_receipt_digest": "4" * 64,
+            }
+            operational = {
+                "clean_source_launch_receipt_digest": "d" * 64,
+                "source_repository_commit": "e" * 40,
+                "clean_source_binding_digest": "f" * 64,
+                "bound_implementations_digest": "0" * 64,
+                "scorer_contract_artifact_digest": "1" * 64,
+                "mixed_precontract_disposition_receipt_digest": "4" * 64,
+                "clean_source_launch_receipt_sha256": "2" * 64,
+                "scorer_contract_artifact_sha256": "3" * 64,
+                "global_exact_execution_amendment_digest": "4" * 64,
+                "global_exact_successor_scorer_contract_digest": "5" * 64,
+                "current_scorer_contract_v1_2_digest": current_contract,
+                "scientific_predecessor_launch_bindings": {
+                    key: scientific[key]
+                    for key in T.S.SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS
+                },
+            }
+            operational["global_exact_scorer_contract_lineage"] = {
+                "schema":
+                    T.S.GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_SCHEMA,
+                "scientific_predecessor_scorer_contract_v1_2_digest":
+                    historical_contract,
+                "current_scorer_contract_v1_2_digest": current_contract,
+                "global_exact_successor_scorer_contract_digest": "5" * 64,
+            }
+            selector_launch = {
+                **scientific,
+                "launch_state_selector_feasibility_receipt_digest": "6" * 64,
+            }
+            qualification = {
+                **selector, **operational,
+                "scorer_contract_v1_2_digest": current_contract,
+                "corpus_bindings": {
+                    "candidate_allocation_manifest_digest": "2" * 64,
+                    "candidate_allocation_post_identity_validation_digest":
+                        "3" * 64,
+                    "pre_identity_allocation_validation_digest": "1" * 64,
+                    "state_manifest_digest":
+                        state_manifest["state_manifest_digest"],
+                    "state_manifest_file_sha256":
+                        T.sha256_file(paths["state_manifest.json"]),
+                },
+            }
+            with mock.patch.object(
+                    T.S.CORPUS_BUILDER,
+                    "load_active_state_manifest_for_consumption",
+                    return_value=state_manifest), \
+                    mock.patch.object(
+                        T.S, "_load_manifest_launch_lineage",
+                        return_value=(operational, scientific, selector_launch)
+                    ) as load_lineage, \
+                    mock.patch.object(
+                        T.S, "_validate_clean_source_launch") as legacy, \
+                    mock.patch.object(
+                        T.S, "validate_pre_identity_structural_validation"), \
+                    mock.patch.object(
+                        T.S, "allocation_manifest_digest",
+                        return_value="2" * 64), \
+                    mock.patch.object(
+                        T.S.STATE_SELECTOR,
+                        "validate_preserved_state_mixed_precontract_disposition_receipt"), \
+                    mock.patch.object(
+                        T.S, "_validate_selector_successor",
+                        return_value=selector):
+                result = T._validate_live_selector_provenance(
+                    qualification, pool_dir=pool)
+            load_lineage.assert_called_once()
+            legacy.assert_not_called()
+            self.assertEqual(
+                result["operational_scorer_contract_bindings"]
+                ["source_repository_commit"], "e" * 40)
+            self.assertEqual(
+                result["scientific_manifest_launch_bindings"]
+                ["source_repository_commit"], "9" * 40)
+            self.assertEqual(
+                result["operational_scorer_contract_bindings"]
+                ["global_exact_scorer_contract_lineage"]
+                ["scientific_predecessor_scorer_contract_v1_2_digest"],
+                historical_contract)
+
     def test_live_selection_replay_failure_precedes_selector_and_weight_access(self):
         with tempfile.TemporaryDirectory() as directory:
             pool = Path(directory)
@@ -312,6 +448,36 @@ class DevelopmentTransferTests(unittest.TestCase):
             scorer.qualification)
         self.assertEqual(
             receipt["selector_provenance_verification_digest"], "v" * 64)
+
+    def test_global_score_receipt_carries_closed_contract_lineage(self):
+        current = T.contract_digest()
+        lineage = {
+            "schema": T.S.GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_SCHEMA,
+            "scientific_predecessor_scorer_contract_v1_2_digest": "1" * 64,
+            "current_scorer_contract_v1_2_digest": current,
+            "global_exact_successor_scorer_contract_digest": "2" * 64,
+        }
+        scorer = mock.Mock()
+        scorer.package_sha256 = "p" * 64
+        scorer.qualification = {
+            "state_selector_amendment_digest": "a" * 64,
+            "state_selector_feasibility_receipt_digest": "f" * 64,
+            "preserved_state_revalidation_receipt_digest": "e" * 64,
+            "global_exact_successor_scorer_contract_digest": "2" * 64,
+            "current_scorer_contract_v1_2_digest": current,
+            "global_exact_scorer_contract_lineage": lineage,
+        }
+        scorer.selector_provenance = {"verification_digest": "v" * 64}
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            score = out / "score.f32"
+            score.write_bytes(b"\0" * (T.EXPECTED_BRANCHES * 4))
+            with mock.patch.object(T, "OUT_DIR", out):
+                receipt = T._score_receipt(
+                    "synthetic", "i" * 64, scorer, score)
+        self.assertEqual(receipt["scorer_contract_v1_2_digest"], current)
+        self.assertEqual(
+            receipt["global_exact_scorer_contract_lineage"], lineage)
 
     def test_rank_regret_effect_uses_one_step_minus_rollout(self):
         cells: dict[int, dict[str, dict[str, object]]] = {}

@@ -14,6 +14,84 @@ from scripts import train_go2_utility_scorer_v1_2 as scorer
 
 
 class UtilityScorerTrainerTests(unittest.TestCase):
+    def test_global_exact_launch_separates_scientific_and_operational_source(self):
+        historical_contract = "0" * 64
+        current_contract = scorer.contract_digest()
+        predecessor = {
+            "clean_source_launch_receipt_digest": "1" * 64,
+            "source_repository_commit": "2" * 40,
+            "clean_source_binding_digest": "3" * 64,
+            "bound_implementations_digest": "4" * 64,
+            "scorer_contract_artifact_digest": "5" * 64,
+        }
+        successor = {
+            "clean_source_launch_receipt_digest": "a" * 64,
+            "source_repository_commit": "b" * 40,
+            "clean_source_binding_digest": "c" * 64,
+            "bound_implementations_digest": "d" * 64,
+            "scorer_contract_artifact_digest": "e" * 64,
+            "clean_source_launch_receipt_sha256": "6" * 64,
+            "scorer_contract_artifact_sha256": "7" * 64,
+            "launch_state_selector_feasibility_receipt_digest": "8" * 64,
+            "mixed_precontract_disposition_receipt_digest": "9" * 64,
+            "global_exact_execution_amendment_digest": "a" * 64,
+            "global_exact_successor_scorer_contract_digest": "b" * 64,
+            "current_scorer_contract_v1_2_digest": current_contract,
+            "scientific_predecessor_launch_bindings": predecessor,
+        }
+        pre_identity = {"pre_identity_validation_digest": "f" * 64}
+        manifest = {
+            "small_completion_global_exact_execution": {},
+            **predecessor,
+            "mixed_precontract_disposition_receipt_digest": "9" * 64,
+            "pre_identity_allocation_validation_digest": "f" * 64,
+            "scorer_contract_v1_2_digest": historical_contract,
+        }
+        with mock.patch.object(
+                scorer.CORPUS_BUILDER,
+                "load_global_exact_successor_scorer_contract_for_consumption",
+                return_value=successor, create=True) as load_successor, \
+                mock.patch.object(
+                    scorer, "_validate_clean_source_launch") as legacy:
+            operational, scientific, selector = (
+                scorer._load_manifest_launch_lineage(
+                    manifest, Path("/unused"), pre_identity))
+        load_successor.assert_called_once_with(manifest)
+        legacy.assert_not_called()
+        self.assertEqual(operational["source_repository_commit"], "b" * 40)
+        self.assertEqual(scientific["source_repository_commit"], "2" * 40)
+        self.assertEqual(selector["source_repository_commit"], "2" * 40)
+        self.assertEqual(
+            operational["global_exact_scorer_contract_lineage"]
+            ["scientific_predecessor_scorer_contract_v1_2_digest"],
+            historical_contract)
+        self.assertEqual(
+            scorer.operational_scorer_contract_digest(operational),
+            current_contract)
+        self.assertEqual(
+            set(scorer.scorer_provenance_binding_keys(operational)),
+            set(scorer.SCORER_PROVENANCE_BINDING_KEYS)
+            | set(scorer.GLOBAL_EXACT_PROVENANCE_BINDING_KEYS))
+
+        changed = dict(manifest)
+        changed["source_repository_commit"] = "0" * 40
+        with mock.patch.object(
+                scorer.CORPUS_BUILDER,
+                "load_global_exact_successor_scorer_contract_for_consumption",
+                return_value=successor, create=True):
+            with self.assertRaisesRegex(
+                    scorer.CorpusValidationError,
+                    "manifest scientific launch differs"):
+                scorer._load_manifest_launch_lineage(
+                    changed, Path("/unused"), pre_identity)
+
+        malformed = dict(
+            operational["global_exact_scorer_contract_lineage"])
+        malformed["unexpected"] = "f" * 64
+        with self.assertRaisesRegex(
+                scorer.CorpusValidationError, "schema is not closed"):
+            scorer.validate_global_exact_scorer_contract_lineage(malformed)
+
     def test_live_selection_replay_failure_precedes_rows_latents_and_models(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -190,6 +268,93 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                                         "missing required end-to-end smoke receipt"):
                 scorer._validate_smoke_receipts(root, manifest)
 
+    def test_global_smoke_separates_historical_branch_from_current_encoding(self):
+        historical = "0" * 64
+        current = scorer.contract_digest()
+        successor = "9" * 64
+        lineage = {
+            "schema": scorer.GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_SCHEMA,
+            "scientific_predecessor_scorer_contract_v1_2_digest": historical,
+            "current_scorer_contract_v1_2_digest": current,
+            "global_exact_successor_scorer_contract_digest": successor,
+        }
+        manifest = {
+            "small_completion_global_exact_execution": {},
+            "state_manifest_digest": "d" * 64,
+            "scorer_contract_v1_2_digest": historical,
+            "candidate_allocation_post_identity_validation_digest": "1" * 64,
+            "pre_identity_allocation_validation_digest": "2" * 64,
+            "clean_source_launch_receipt_digest": "3" * 64,
+            "source_repository_commit": "4" * 40,
+            "clean_source_binding_digest": "5" * 64,
+            "bound_implementations_digest": "6" * 64,
+            "scorer_contract_artifact_digest": "7" * 64,
+            "mixed_precontract_disposition_receipt_digest": "8" * 64,
+            "state_selector_amendment_digest": "a" * 64,
+            "state_selector_feasibility_receipt_digest": "b" * 64,
+            "preserved_state_revalidation_receipt_digest": "c" * 64,
+        }
+        frozen = scorer.contract()
+        common = {
+            "pass": True,
+            "state_manifest_digest": manifest["state_manifest_digest"],
+            "candidate_allocator_contract_digest":
+                scorer.allocation_contract_digest(),
+            "candidate_allocation_amendment_digest":
+                scorer.allocation_amendment_digest(),
+            "candidate_allocation_post_identity_validation_digest": "1" * 64,
+            "pre_identity_allocation_validation_digest": "2" * 64,
+            "invalid_scorer_identity_exclusion_digest":
+                scorer.invalid_identity_exclusion_digest(),
+            **{key: manifest[key] for key in scorer.SELECTOR_BINDING_KEYS},
+            "render_contract_digest": scorer.canonical_digest(
+                frozen["render_contract"]),
+            "textured_v03_renderer_contract_digest":
+                scorer.textured_v03_renderer_contract_digest(),
+            "preprocess_contract_digest": scorer.canonical_digest(
+                frozen["preprocess_contract"]),
+            "preprocessing_digest": scorer.FROZEN_PREPROCESSING_DIGEST,
+            "target_encoder_digest": scorer.canonical_digest(
+                frozen["target_encoder"]),
+            "target_encoder_checkpoint_sha256":
+                frozen["target_encoder"]["checkpoint_sha256"],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            branch = {
+                "schema": "go2_scorer_fit_branch_smoke_receipt_v1_2",
+                **common,
+                **{key: manifest[key] for key in scorer.LAUNCH_BINDING_KEYS},
+                "scorer_contract_v1_2_digest": historical,
+            }
+            branch["smoke_branch_receipt_digest"] = scorer.canonical_digest(
+                branch)
+            encoding = {
+                "schema": "go2_scorer_fit_end_to_end_smoke_receipt_v1",
+                **common,
+                "scorer_contract_v1_2_digest": current,
+                "global_exact_scorer_contract_lineage": lineage,
+                "corpus_bound_digests": {
+                    key: manifest[key] for key in scorer.LAUNCH_BINDING_KEYS
+                },
+            }
+            encoding["smoke_receipt_digest"] = scorer.canonical_digest(encoding)
+            (root / "smoke_branch_receipt.json").write_text(json.dumps(branch))
+            (root / "smoke_encoding_receipt.json").write_text(json.dumps(encoding))
+            scorer._validate_smoke_receipts(
+                root, manifest, contract_lineage=lineage)
+
+            encoding["scorer_contract_v1_2_digest"] = historical
+            encoding["smoke_receipt_digest"] = scorer.canonical_digest({
+                key: value for key, value in encoding.items()
+                if key != "smoke_receipt_digest"
+            })
+            (root / "smoke_encoding_receipt.json").write_text(json.dumps(encoding))
+            with self.assertRaisesRegex(
+                    scorer.CorpusValidationError, "scorer-contract role"):
+                scorer._validate_smoke_receipts(
+                    root, manifest, contract_lineage=lineage)
+
     def test_selector_successor_requires_complete_two_phase_outcome_free_chain(self):
         feasibility = {
             "state_selector_feasibility_receipt_digest": "f" * 64,
@@ -279,6 +444,62 @@ class UtilityScorerTrainerTests(unittest.TestCase):
                             "mixed_precontract_disposition_receipt_digest":
                                 "d" * 64,
                         }, {}, [])
+
+    def test_global_selector_successor_uses_solve_free_model_certificate(self):
+        feasibility = {
+            "state_selector_feasibility_receipt_digest": "f" * 64}
+        disposition = {
+            "mixed_precontract_disposition_receipt_digest": "d" * 64}
+        revalidation = {
+            "preserved_state_revalidation_receipt_digest": "e" * 64}
+        manifest = {"small_completion_global_exact_execution": {}}
+        allocation = {"allocation_manifest_digest": "1" * 64}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / scorer.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME
+             ).write_text(json.dumps(feasibility))
+            (root / scorer.STATE_SELECTOR.
+             PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME
+             ).write_text(json.dumps(disposition))
+            (root / scorer.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME
+             ).write_text(json.dumps(revalidation))
+            with mock.patch.object(
+                    scorer.STATE_SELECTOR, "validate_authority_artifacts"), \
+                    mock.patch.object(
+                        scorer.STATE_SELECTOR,
+                        "validate_frozen_reachability_feasibility_pass",
+                        return_value=feasibility), \
+                    mock.patch.object(
+                        scorer.STATE_SELECTOR,
+                        "validate_preserved_state_mixed_precontract_disposition_receipt"), \
+                    mock.patch.object(
+                        scorer.STATE_SELECTOR,
+                        "validate_preserved_state_revalidation_receipt") as legacy, \
+                    mock.patch.object(
+                        scorer.STATE_SELECTOR, "state_selector_amendment_digest",
+                        return_value="a" * 64), \
+                    mock.patch.object(
+                        scorer.CORPUS_BUILDER,
+                        "validate_global_exact_allocation_for_consumption",
+                        return_value={
+                            "preserved_state_revalidation_receipt_digest":
+                                "e" * 64,
+                        }) as certify:
+                bindings = scorer._validate_selector_successor(
+                    root, {
+                        "source_repository_commit": "c" * 40,
+                        "clean_source_binding_digest": "b" * 64,
+                        "bound_implementations_digest": "a" * 64,
+                        "launch_state_selector_feasibility_receipt_digest":
+                            "f" * 64,
+                        "mixed_precontract_disposition_receipt_digest":
+                            "d" * 64,
+                    }, allocation, [], global_exact_manifest=manifest)
+            certify.assert_called_once_with(manifest, allocation)
+            legacy.assert_not_called()
+            self.assertEqual(
+                bindings["preserved_state_revalidation_receipt_digest"],
+                "e" * 64)
 
     def test_registered_initialisation_is_reproducible_and_immutable(self):
         with tempfile.TemporaryDirectory() as directory:

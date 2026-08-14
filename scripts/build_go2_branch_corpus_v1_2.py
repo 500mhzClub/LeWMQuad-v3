@@ -54,6 +54,13 @@ from lewm.oracle.go2_branch_oracle_v1_2 import (
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
 from lewm.oracle import go2_parallel_small_completion_search_v1 as PARALLEL_SEARCH
+from lewm.oracle import (
+    go2_small_completion_global_execution_amendment_v1 as
+    GLOBAL_EXACT_AUTHORITY,
+)
+from lewm.oracle import (
+    go2_small_completion_global_exact_model_v1 as GLOBAL_EXACT_MODEL,
+)
 from lewm.oracle import go2_scorer_projection_fix_interruption_v1 as INTERRUPTION
 from lewm.oracle import (
     go2_scorer_fixed_reissue_validation_interruption_v1 as
@@ -309,6 +316,40 @@ PARALLEL_SMALL_FAILURE_SCHEMA = (
 PARALLEL_SMALL_WORKER_COUNT = 32
 PARALLEL_SMALL_ACTIVE_RANK_WINDOW = 3
 PARALLEL_SMALL_BENCHMARK_MAXIMUM_FRACTION = 0.5
+GLOBAL_EXACT_MODEL_PLAN_NAME = (
+    "small_completion_global_exact_model_plan_v1.json"
+)
+GLOBAL_EXACT_TERMINAL_RESULT_NAME = (
+    "small_completion_global_exact_terminal_result_v1.json"
+)
+GLOBAL_EXACT_TERMINAL_INFEASIBILITY_NAME = (
+    "small_completion_global_exact_terminal_infeasibility_v1.json"
+)
+GLOBAL_EXACT_JOINT_RECEIPT_NAME = (
+    "small_completion_global_exact_joint_receipt_v1.json"
+)
+GLOBAL_EXACT_SUCCESSOR_SCORER_CONTRACT_PATH = (
+    ROOT / ".generated/go2_utility_scorer_v1_2/"
+    "scorer_contract_global_exact_successor_v1.json"
+)
+GLOBAL_EXACT_JOINT_RECEIPT_SCHEMA = (
+    "go2_branch_corpus_v1_2_small_completion_global_exact_joint_receipt_v1"
+)
+GLOBAL_EXACT_JOINT_RECEIPT_STATUS = (
+    "PASS_ONE_GLOBAL_EXACT_OUTCOME_FREE_ALLOCATION"
+)
+GLOBAL_EXACT_JOINT_RECEIPT_SELF_KEY = (
+    "small_completion_global_exact_joint_receipt_digest"
+)
+GLOBAL_EXACT_EXECUTION_BINDING_SCHEMA = (
+    "go2_branch_corpus_v1_2_small_completion_global_exact_execution_binding_v1"
+)
+GLOBAL_EXACT_SMALL_TRANSPORT_RESUME_SCOPE = (
+    "REISSUED_EXACT_SMALL_PREFIX_PLUS_GLOBAL_EXACT_CERTIFICATE"
+)
+GLOBAL_EXACT_SUCCESSOR_SCORER_CONTRACT_SCHEMA = (
+    "go2_utility_scorer_v1_2_global_exact_successor_contract_v1"
+)
 STATE_RESOLUTION_SCENE_REQUEST_SCHEMA = (
     "go2_branch_corpus_v1_2_state_resolution_scene_request_v1"
 )
@@ -7264,6 +7305,7 @@ def _v2_load_small_prefix(
     provenance: list[dict[str, Any]] = []
     rejections: dict[str, dict[str, int]] = {}
     transport_rows: list[dict[str, Any]] = []
+    exact_state_shard_bindings: dict[str, Any] | None = None
     for mapping in receipt["mapping_rows"]:
         scene_id = str(mapping.get("scene_id", ""))
         scene_ordinal = int(mapping.get("scene_ordinal", -1))
@@ -7298,6 +7340,16 @@ def _v2_load_small_prefix(
                 "scene_ordinal": scene_ordinal, **observed})
         request = loaded["request"]
         capture = loaded["capture"]
+        request_bindings = request.get("state_shard_bindings")
+        if not isinstance(request_bindings, Mapping):
+            raise RuntimeError(
+                "d9d small prefix request lost its state-shard bindings")
+        observed_bindings = dict(request_bindings)
+        if exact_state_shard_bindings is None:
+            exact_state_shard_bindings = observed_bindings
+        elif observed_bindings != exact_state_shard_bindings:
+            raise RuntimeError(
+                "d9d small prefix requests contain mixed state-shard bindings")
         provenance.append({
             "scene_id": scene_id,
             "state_resolution_scene_request_digest": request[
@@ -7313,6 +7365,8 @@ def _v2_load_small_prefix(
         })
         rejections[scene_id] = dict(capture["scene_rejection_reasons"])
         pairs.append(loaded)
+    if exact_state_shard_bindings is None:
+        raise RuntimeError("d9d small prefix has no state-shard binding")
     reduced = _v2_reduce_small_prefix(receipt=receipt, pairs=pairs)
     try:
         logical = str(raw_path.relative_to(ROOT))
@@ -7333,6 +7387,7 @@ def _v2_load_small_prefix(
         "receipt_binding": receipt_binding,
         "performance_receipt_binding": dict(
             authorities["performance_binding"]),
+        "state_shard_bindings": exact_state_shard_bindings,
         "transport_bindings": transport_rows,
     }
 
@@ -7525,6 +7580,7 @@ def _v2_load_benchmark_material(out: Path) -> dict[str, Any]:
         resolver_cursor_scene_id=cursor)
     candidate_scene_ids = [str(state["scene_id"]) for state in candidates]
     inputs = {
+        "fixed_shards": [dict(shard) for shard in shards],
         "fixed_states": fixed_states,
         "raw_candidates": candidates,
         "candidate_scene_ids": candidate_scene_ids,
@@ -7630,6 +7686,1373 @@ def load_v2_parallel_small_benchmark_inputs(
         "v1_failure_disposition": material["v1_failure_disposition"],
     })
     return inputs
+
+
+def _global_exact_authority_material(
+        *, out: Path | None = None,
+        ) -> dict[str, Any]:
+    """Reconstruct the exact mask-free inputs bound by the new authority.
+
+    This bridge deliberately stops before opening the seven preserved
+    completion-rotation vectors.  Coupling-report and amendment issuance are
+    therefore source/identity operations only; the scientific mask context is
+    attached by a separate post-amendment helper.
+    """
+
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    if scorer_fit != OUT_ROOT / "scorer_fit":
+        raise RuntimeError("global exact authority is scorer-fit only")
+
+    # The immutable V2 contract already contains the exact nine-key envelope.
+    # Reopen that small authority directly: reconstructing its benchmark inputs
+    # here would parse the 17 completion rotation vectors before the amendment
+    # and make the source-only issuance attestation false.
+    v2_contract_path = scorer_fit / (
+        "small_completion_parallel_prefix_benchmark_v2_contract.json")
+    v2_contract, _v2_raw = _v2_load_exact_predecessor_json(
+        v2_contract_path,
+        self_key="benchmark_v2_contract_digest",
+        label="immutable V2 benchmark contract",
+        expected_binding={
+            "self_digest_key": "benchmark_v2_contract_digest",
+            "self_digest": GLOBAL_EXACT_AUTHORITY.V2_CONTRACT_DIGEST,
+            "raw_sha256": GLOBAL_EXACT_AUTHORITY.V2_CONTRACT_RAW_SHA256,
+            "byte_count": GLOBAL_EXACT_AUTHORITY.V2_CONTRACT_BYTE_COUNT,
+        },
+        self_digest=GLOBAL_EXACT_AUTHORITY.canonical_digest,
+    )
+    envelope_value = v2_contract.get(
+        "predecessor_scientific_input_bindings")
+    if not isinstance(envelope_value, Mapping):
+        raise RuntimeError("immutable V2 predecessor envelope is absent")
+    envelope = dict(envelope_value)
+    if (
+        v2_contract.get("source_repository_commit")
+        != GLOBAL_EXACT_AUTHORITY.V2_SOURCE_REPOSITORY_COMMIT
+        or v2_contract.get("predecessor_scientific_input_bindings_digest")
+        != GLOBAL_EXACT_AUTHORITY.canonical_digest(envelope)
+        or envelope.get("candidate_outcomes_consumed") is not False
+        or envelope.get("scientific_masks_accessed") is not False
+    ):
+        raise RuntimeError("immutable V2 predecessor envelope changed")
+
+    # Reconstruct the old scientific common binding from the six exact d9d
+    # authorities and the retained solve-free preidentity proof.  This opens no
+    # state/candidate row and therefore no completion eligibility mask.
+    authorities = _v2_load_d9d_authorities(scorer_fit)
+    launch = authorities["clean_launch"]
+    contract_artifact = authorities["scorer_contract"]
+    frozen_contract = contract_artifact.get("contract")
+    if not isinstance(frozen_contract, Mapping):
+        raise RuntimeError("d9d scorer contract payload is absent")
+    preidentity = (
+        REISSUE_VALIDATION_INTERRUPTION.validate_retained_preidentity_artifact(
+            authorities["fixed_reissue_transition"], root=ROOT)
+    )
+    target_encoder = frozen_contract.get("target_encoder")
+    render = frozen_contract.get("render_contract")
+    preprocess = frozen_contract.get("preprocess_contract")
+    if (not isinstance(target_encoder, Mapping)
+            or not isinstance(render, Mapping)
+            or not isinstance(preprocess, Mapping)):
+        raise RuntimeError("d9d scorer contract component changed")
+    scientific = {
+        "selection_digest": frozen_contract["corpus_selection_digest"],
+        "scorer_fit_allocation_design_digest":
+            frozen_contract["scorer_fit_allocation_design_digest"],
+        "candidate_allocator_contract_digest":
+            frozen_contract["candidate_allocator_contract_digest"],
+        "candidate_allocation_amendment_digest":
+            frozen_contract["candidate_allocation_amendment_digest"],
+        "pre_identity_allocation_validation_digest":
+            preidentity["pre_identity_validation_digest"],
+        "invalid_scorer_identity_exclusion_digest":
+            frozen_contract["invalid_scorer_identity_exclusion_digest"],
+        "state_selector_amendment_digest":
+            frozen_contract["state_selector_amendment_digest"],
+        "state_selector_feasibility_receipt_digest":
+            launch["state_selector_feasibility_receipt_digest"],
+        "candidate_bank_digest": frozen_contract["candidate_bank_digest"],
+        **{key: launch[key] for key in LAUNCH_BINDING_KEYS},
+        "progress_contract_digest": frozen_contract["progress_target_digest"],
+        "safety_contract_digest": frozen_contract["safety_target_digest"],
+        "oracle_v1_2_digest": frozen_contract["oracle_v1_2_digest"],
+        "scorer_contract_v1_2_digest":
+            launch["scorer_contract_v1_2_digest"],
+        "boundary_digest": V1.BOUNDARY_DIGEST,
+        "render_contract_digest": canonical_digest(render),
+        "preprocess_contract_digest": canonical_digest(preprocess),
+        "textured_v03_renderer_contract_digest":
+            textured_v03_renderer_contract_digest(),
+        "preprocessing_digest":
+            target_encoder["preprocessing_identity_sha256"],
+        "target_encoder_digest": canonical_digest(target_encoder),
+        "target_encoder_checkpoint_sha256": target_encoder["checkpoint_sha256"],
+        "genesis_backend": "cpu",
+    }
+    preoutcome = {
+        "predecessor_scientific_input_bindings_digest":
+            GLOBAL_EXACT_AUTHORITY.canonical_digest(envelope),
+        "candidate_pool_scene_ids_digest":
+            envelope["candidate_pool_scene_ids_digest"],
+        "fixed_state_projection_digest":
+            envelope["fixed_state_projection_digest"],
+        "candidate_pool_count": 17,
+        "fixed_state_count": 115,
+        "selected_completion_scene_count": 5,
+        "final_state_count": 120,
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed": False,
+    }
+    scientific = GLOBAL_EXACT_AUTHORITY.validate_scientific_contract_bindings(
+        scientific)
+    preoutcome = GLOBAL_EXACT_AUTHORITY.validate_preoutcome_input_bindings(
+        preoutcome)
+    return {
+        "predecessor_scientific_input_bindings": envelope,
+        "scientific_contract_bindings": scientific,
+        "preoutcome_input_bindings": preoutcome,
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed": False,
+    }
+
+
+def build_global_exact_authority_inputs(
+        *, out: Path | None = None,
+        ) -> dict[str, Any]:
+    """Public, mask-free input envelope for report/amendment issuance."""
+
+    material = _global_exact_authority_material(out=out)
+    return {
+        "scientific_contract_bindings": dict(
+            material["scientific_contract_bindings"]),
+        "preoutcome_input_bindings": dict(
+            material["preoutcome_input_bindings"]),
+    }
+
+
+def issue_global_exact_coupling_report(
+        *, out: Path | None = None,
+        ) -> dict[str, Any]:
+    """Issue or reopen the source-only COUPLED classification report."""
+
+    material = _global_exact_authority_material(out=out)
+    return GLOBAL_EXACT_AUTHORITY.issue_coupling_report(
+        ROOT / GLOBAL_EXACT_AUTHORITY.COUPLING_REPORT_RELATIVE_PATH,
+        scientific_contract_bindings=material["scientific_contract_bindings"],
+        preoutcome_input_bindings=material["preoutcome_input_bindings"],
+        root=ROOT,
+    )
+
+
+def issue_global_exact_execution_amendment(
+        *, out: Path | None = None,
+        ) -> dict[str, Any]:
+    """Issue the prospective one-model authority before any mask or solve."""
+
+    material = _global_exact_authority_material(out=out)
+    return GLOBAL_EXACT_AUTHORITY.issue_execution_amendment(
+        ROOT / GLOBAL_EXACT_AUTHORITY.EXECUTION_AMENDMENT_RELATIVE_PATH,
+        coupling_report_path=(
+            ROOT / GLOBAL_EXACT_AUTHORITY.COUPLING_REPORT_RELATIVE_PATH),
+        scientific_contract_bindings=material["scientific_contract_bindings"],
+        preoutcome_input_bindings=material["preoutcome_input_bindings"],
+        root=ROOT,
+    )
+
+
+def load_global_exact_execution_context(
+        *, out: Path | None = None, attach_scientific_masks: bool = False,
+        ) -> dict[str, Any]:
+    """Reopen the amendment and, only when requested, its frozen masks."""
+
+    material = _global_exact_authority_material(out=out)
+    report_path = ROOT / GLOBAL_EXACT_AUTHORITY.COUPLING_REPORT_RELATIVE_PATH
+    pinned_report = _pin_generated_path(report_path, report_path)
+    if not pinned_report.is_file() or pinned_report.is_symlink():
+        raise RuntimeError("global exact coupling report is missing")
+    report_raw = pinned_report.read_bytes()
+    try:
+        report_payload = json.loads(report_raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("global exact coupling report is corrupt") from exc
+    report = GLOBAL_EXACT_AUTHORITY.validate_coupling_report(
+        report_payload,
+        expected_scientific_contract_bindings=
+            material["scientific_contract_bindings"],
+        expected_preoutcome_input_bindings=
+            material["preoutcome_input_bindings"],
+        root=ROOT,
+    )
+    report_binding = GLOBAL_EXACT_AUTHORITY.coupling_report_artifact_binding(
+        report, report_raw)
+    amendment = GLOBAL_EXACT_AUTHORITY.load_execution_amendment(
+        ROOT / GLOBAL_EXACT_AUTHORITY.EXECUTION_AMENDMENT_RELATIVE_PATH,
+        expected_coupling_report_binding=report_binding,
+        expected_scientific_contract_bindings=
+            material["scientific_contract_bindings"],
+        expected_preoutcome_input_bindings=
+            material["preoutcome_input_bindings"],
+        root=ROOT,
+    )
+    result = {
+        **material,
+        "coupling_report": report,
+        "coupling_report_binding": report_binding,
+        "execution_amendment": amendment,
+        "scientific_masks_accessed": False,
+    }
+    if not attach_scientific_masks:
+        return result
+    scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
+    inputs = load_v2_parallel_small_benchmark_inputs(
+        predecessor_scientific_input_bindings=material[
+            "predecessor_scientific_input_bindings"],
+        out=scorer_fit,
+    )
+    if ({key: inputs["common"][key]
+         for key in GLOBAL_EXACT_AUTHORITY.SCIENTIFIC_CONTRACT_BINDING_KEYS}
+            != material["scientific_contract_bindings"]):
+        raise RuntimeError(
+            "post-amendment identity reconstruction differs from authority")
+    preserved_vectors = _phase1_completion_rotation_vectors()
+    if len(preserved_vectors) != 7:
+        raise RuntimeError("global exact preserved mask registry changed")
+    result["inputs"] = inputs
+    result["preserved_vectors"] = preserved_vectors
+    result["scientific_masks_accessed"] = True
+    return result
+
+
+def build_global_exact_production_instance(
+        context: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Build the single 115-fixed/17-selectable mask-bearing model input.
+
+    ``context`` must be the exact output of
+    :func:`load_global_exact_execution_context` with mask attachment enabled.
+    This operation reads only frozen pre-outcome selector evidence and never a
+    candidate outcome or downstream metric.
+    """
+
+    if not isinstance(context, Mapping):
+        raise RuntimeError("global exact execution context is not a mapping")
+    amendment = context.get("execution_amendment")
+    inputs = context.get("inputs")
+    preserved = context.get("preserved_vectors")
+    if (
+        not isinstance(amendment, Mapping)
+        or amendment.get("schema") != GLOBAL_EXACT_AUTHORITY.AMENDMENT_SCHEMA
+        or amendment.get("status") != GLOBAL_EXACT_AUTHORITY.AMENDMENT_STATUS
+        or not isinstance(inputs, Mapping)
+        or not isinstance(preserved, Mapping)
+        or len(preserved) != 7
+        or context.get("candidate_outcomes_consumed") is not False
+        or context.get("scientific_masks_accessed") is not True
+        or inputs.get("candidate_outcomes_consumed") is not False
+    ):
+        raise RuntimeError("global exact model requested without its amendment")
+
+    fixed_rows: list[dict[str, Any]] = []
+    for raw_state in inputs.get("fixed_states", []):
+        if not isinstance(raw_state, Mapping):
+            raise RuntimeError("global exact fixed state is malformed")
+        state = dict(raw_state)
+        identity = str(state.get("state_identity_digest", ""))
+        evidence: dict[str, Any] | None = None
+        if state.get("stratum") == "completion_enriched":
+            evidence = _state_completion_rotation_vector(
+                state, {str(key): dict(value)
+                        for key, value in preserved.items()})
+            rotations = evidence.get("rotations")
+            if not isinstance(rotations, list) or len(rotations) != 12:
+                raise RuntimeError(
+                    "global exact fixed completion evidence is malformed")
+            eligibility = [row.get("eligible") for row in rotations]
+            if any(type(flag) is not bool for flag in eligibility):
+                raise RuntimeError(
+                    "global exact fixed completion eligibility changed")
+        else:
+            eligibility = [True] * 12
+        fixed_rows.append({
+            "state_id": str(state["state_id"]),
+            "state_identity_digest": identity,
+            "scene_id": str(state["scene_id"]),
+            "family": str(state["family"]),
+            "stratum": str(state["stratum"]),
+            "split_role": str(state["split_role"]),
+            "goal_type": str(state["goal_type"]),
+            "completion_rotation_eligibility_owner_digest": identity,
+            "completion_rotation_eligibility": eligibility,
+            "completion_rotation_evidence": evidence,
+        })
+
+    optional_rows: list[dict[str, Any]] = []
+    for raw_candidate in inputs.get("raw_candidates", []):
+        if not isinstance(raw_candidate, Mapping):
+            raise RuntimeError("global exact optional scene is malformed")
+        candidate = dict(raw_candidate)
+        evidence = candidate.get("completion_rotation_eligibility_vector")
+        if not isinstance(evidence, Mapping):
+            raise RuntimeError(
+                "global exact optional scene lacks rotation evidence")
+        rotations = evidence.get("rotations")
+        if not isinstance(rotations, list) or len(rotations) != 12:
+            raise RuntimeError(
+                "global exact optional rotation evidence is malformed")
+        eligibility = [row.get("eligible") for row in rotations]
+        if any(type(flag) is not bool for flag in eligibility):
+            raise RuntimeError(
+                "global exact optional eligibility is not boolean")
+        optional_rows.append({
+            "raw_candidate": candidate,
+            "completion_rotation_eligibility": eligibility,
+        })
+
+    common = inputs.get("common")
+    if not isinstance(common, Mapping):
+        raise RuntimeError("global exact common identity binding is absent")
+    identity_lineage = {
+        "schema": GLOBAL_EXACT_MODEL.STATE_IDENTITY_LINEAGE_SCHEMA,
+        "selection_digest": common["selection_digest"],
+        "scorer_contract_v1_2_digest":
+            common["scorer_contract_v1_2_digest"],
+        "pool": "scorer_fit",
+        "pre_allocation_identity_static": {
+            "schema":
+                "go2_branch_corpus_v1_2_pre_allocation_identity_manifest",
+            "pool": "scorer_fit",
+            "spec": POOLS["scorer_fit"],
+            **{key: common[key] for key in STATE_SHARD_COMMON_KEYS},
+        },
+    }
+    instance = GLOBAL_EXACT_MODEL.build_production_instance(
+        fixed_states=fixed_rows,
+        optional_candidates=optional_rows,
+        state_identity_lineage=identity_lineage,
+    )
+    if (
+        instance.get("candidate_outcomes_consumed") is not False
+        or instance.get("scientific_masks_are_frozen_search_inputs") is not True
+    ):
+        raise RuntimeError("global exact production instance boundary changed")
+    return instance
+
+
+def _global_exact_successor_contract_payload(
+        manifest: Mapping[str, Any], *, source: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Build the post-manifest operational scorer contract without I/O."""
+
+    execution = manifest.get("small_completion_global_exact_execution")
+    if (not isinstance(execution, Mapping)
+            or execution.get("execution_amendment_digest")
+            != manifest.get("global_exact_execution_amendment_digest")
+            or manifest.get("legacy_allocation_contract_disposition")
+            != GLOBAL_EXACT_MODEL.legacy_allocation_contract_disposition()
+            or execution.get(
+                "legacy_allocation_contract_disposition_digest")
+            != manifest["legacy_allocation_contract_disposition"].get(
+                GLOBAL_EXACT_MODEL.ALLOCATION_CONTRACT_DISPOSITION_SELF_KEY)
+            or not _is_sha256(manifest.get("state_manifest_digest"))
+            or not _is_sha256(manifest.get(
+                "candidate_allocation_manifest_digest"))):
+        raise RuntimeError("global exact manifest execution lineage is absent")
+    source_mapping = dict(source)
+    if (source_mapping.get("source_repository_clean") is not True
+            or not isinstance(source_mapping.get("source_repository_commit"), str)
+            or len(source_mapping["source_repository_commit"]) != 40
+            or not _is_sha256(source_mapping.get(
+                "bound_implementations_digest"))):
+        raise RuntimeError("global exact successor source is not clean")
+    predecessor = {
+        key: manifest[key] for key in LAUNCH_BINDING_KEYS[:-1]
+    }
+    contract_body = {
+        "schema": "go2_utility_scorer_v1_2_global_exact_contract_body_v1",
+        "current_scorer_contract_v1_2_digest": scorer_contract_digest(),
+        "current_clean_source_binding": source_mapping,
+        "current_clean_source_binding_digest": canonical_digest(source_mapping),
+        "scientific_predecessor_launch_bindings": predecessor,
+        "launch_state_selector_feasibility_receipt_digest": manifest[
+            "state_selector_feasibility_receipt_digest"],
+        "mixed_precontract_disposition_receipt_digest": manifest[
+            "mixed_precontract_disposition_receipt_digest"],
+        "global_exact_execution_amendment_digest": manifest[
+            "global_exact_execution_amendment_digest"],
+        "global_exact_coupling_report_digest": execution[
+            "coupling_report_digest"],
+        "global_exact_model_plan_digest": execution[
+            "global_exact_model_plan_digest"],
+        "global_exact_terminal_result_digest": execution[
+            "global_exact_terminal_result_digest"],
+        "global_exact_joint_receipt_digest": execution[
+            "global_exact_joint_receipt_digest"],
+        "state_manifest_digest": manifest["state_manifest_digest"],
+        "candidate_allocation_manifest_digest": manifest[
+            "candidate_allocation_manifest_digest"],
+        "legacy_allocation_contract_disposition": dict(
+            manifest["legacy_allocation_contract_disposition"]),
+        "candidate_allocation_post_identity_validation_digest": manifest[
+            "candidate_allocation_post_identity_validation_digest"],
+        "preserved_state_revalidation_receipt_digest": manifest[
+            "preserved_state_revalidation_receipt_digest"],
+        "candidate_outcomes_consumed_before_manifest": False,
+        "branch_data_created_before_manifest": False,
+        "scorer_or_predictor_accessed_before_manifest": False,
+        "final_200_state_corpus_authorised": False,
+    }
+    contract_body_digest = canonical_digest(contract_body)
+    operational_launch = {
+        "schema":
+            "go2_utility_scorer_v1_2_global_exact_operational_launch_v1",
+        "source_repository_commit": source_mapping[
+            "source_repository_commit"],
+        "clean_source_binding_digest": canonical_digest(source_mapping),
+        "bound_implementations_digest": source_mapping[
+            "bound_implementations_digest"],
+        "scorer_contract_artifact_digest": contract_body_digest,
+        "global_exact_execution_amendment_digest": manifest[
+            "global_exact_execution_amendment_digest"],
+        "state_manifest_digest": manifest["state_manifest_digest"],
+        "candidate_outcomes_consumed_before_launch": False,
+    }
+    launch_digest = canonical_digest(operational_launch)
+    payload = {
+        "schema": GLOBAL_EXACT_SUCCESSOR_SCORER_CONTRACT_SCHEMA,
+        "status": STATUS,
+        "complete": True,
+        "contract_body": contract_body,
+        "scorer_contract_artifact_digest": contract_body_digest,
+        "operational_launch": operational_launch,
+        "clean_source_launch_receipt_digest": launch_digest,
+        "source_repository_commit": source_mapping[
+            "source_repository_commit"],
+        "source_repository_clean": True,
+        "clean_source_binding_digest": canonical_digest(source_mapping),
+        "bound_implementations_digest": source_mapping[
+            "bound_implementations_digest"],
+        "scientific_predecessor_launch_bindings": predecessor,
+        "launch_state_selector_feasibility_receipt_digest": manifest[
+            "state_selector_feasibility_receipt_digest"],
+        "mixed_precontract_disposition_receipt_digest": manifest[
+            "mixed_precontract_disposition_receipt_digest"],
+        "global_exact_execution_amendment_digest": manifest[
+            "global_exact_execution_amendment_digest"],
+        "state_manifest_digest": manifest["state_manifest_digest"],
+        "candidate_outcomes_consumed_before_issue": False,
+        "scorer_training_started_before_issue": False,
+        "predictor_accessed_before_issue": False,
+    }
+    payload["global_exact_successor_scorer_contract_digest"] = \
+        canonical_digest(payload)
+    return payload
+
+
+def _write_or_require_exact_utility_json(
+        path: Path, payload: Mapping[str, Any], *, label: str,
+        ) -> dict[str, Any]:
+    """Exclusive/fsynced issue-once helper for the utility-scorer root."""
+
+    pinned = _pin_generated_path(path, path, generated_root=path.parent)
+    expected = dict(payload)
+    if pinned.exists():
+        if (not pinned.is_file() or pinned.is_symlink()
+                or json.loads(pinned.read_text()) != expected):
+            raise RuntimeError(f"{label} differs from its frozen bytes")
+        return expected
+    if not pinned.parent.is_dir() or pinned.parent.is_symlink():
+        raise RuntimeError(f"{label} parent is unavailable")
+    encoded = (json.dumps(V1._jsonable(expected), indent=2, sort_keys=True)
+               + "\n").encode("utf-8")
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{pinned.name}.tmp-", dir=str(pinned.parent))
+    temporary = Path(temporary_name)
+    installed = False
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            offset = 0
+            while offset < len(encoded):
+                written = stream.write(encoded[offset:])
+                if written is None or written <= 0:
+                    raise RuntimeError(f"{label} write made no progress")
+                offset += written
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            os.link(temporary, pinned, follow_symlinks=False)
+            installed = True
+        except FileExistsError:
+            pass
+        if installed:
+            directory_fd = os.open(
+                pinned.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+    finally:
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass
+    if (not pinned.is_file() or pinned.is_symlink()
+            or json.loads(pinned.read_text()) != expected):
+        raise RuntimeError(f"{label} exclusive reopen changed")
+    return expected
+
+
+def issue_global_exact_successor_scorer_contract(
+        manifest: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Issue the current-source operational contract after the manifest."""
+
+    source = clean_source_binding()
+    payload = _global_exact_successor_contract_payload(
+        manifest, source=source)
+    _write_or_require_exact_utility_json(
+        GLOBAL_EXACT_SUCCESSOR_SCORER_CONTRACT_PATH, payload,
+        label="global exact successor scorer contract")
+    return load_global_exact_successor_scorer_contract_for_consumption(
+        manifest)
+
+
+def load_global_exact_successor_scorer_contract_for_consumption(
+        manifest: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Validate the current operational contract and historical-science bridge."""
+
+    source = clean_source_binding()
+    expected = _global_exact_successor_contract_payload(
+        manifest, source=source)
+    path = _pin_generated_path(
+        GLOBAL_EXACT_SUCCESSOR_SCORER_CONTRACT_PATH,
+        GLOBAL_EXACT_SUCCESSOR_SCORER_CONTRACT_PATH,
+        generated_root=GLOBAL_EXACT_SUCCESSOR_SCORER_CONTRACT_PATH.parent)
+    if not path.is_file() or path.is_symlink():
+        raise RuntimeError("global exact successor scorer contract is missing")
+    raw = path.read_bytes()
+    try:
+        payload = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            "global exact successor scorer contract is corrupt") from exc
+    if payload != expected:
+        raise RuntimeError("global exact successor scorer contract changed")
+    return {
+        "current_scorer_contract_v1_2_digest": payload["contract_body"][
+            "current_scorer_contract_v1_2_digest"],
+        "clean_source_launch_receipt_digest": payload[
+            "clean_source_launch_receipt_digest"],
+        "source_repository_commit": payload["source_repository_commit"],
+        "clean_source_binding_digest": payload[
+            "clean_source_binding_digest"],
+        "bound_implementations_digest": payload[
+            "bound_implementations_digest"],
+        "scorer_contract_artifact_digest": payload[
+            "scorer_contract_artifact_digest"],
+        "clean_source_launch_receipt_sha256": canonical_digest(
+            payload["operational_launch"]),
+        "scorer_contract_artifact_sha256": hashlib.sha256(raw).hexdigest(),
+        "launch_state_selector_feasibility_receipt_digest": payload[
+            "launch_state_selector_feasibility_receipt_digest"],
+        "mixed_precontract_disposition_receipt_digest": payload[
+            "mixed_precontract_disposition_receipt_digest"],
+        "global_exact_execution_amendment_digest": payload[
+            "global_exact_execution_amendment_digest"],
+        "global_exact_successor_scorer_contract_digest": payload[
+            "global_exact_successor_scorer_contract_digest"],
+        "scientific_predecessor_launch_bindings": dict(
+            payload["scientific_predecessor_launch_bindings"]),
+    }
+
+
+def _load_global_exact_runner_success(
+        *, execution_context: Mapping[str, Any],
+        instance: Mapping[str, Any],
+        supplied_plan: Mapping[str, Any] | None = None,
+        supplied_terminal: Mapping[str, Any] | None = None,
+        ) -> dict[str, Any]:
+    """Reopen the immutable one-model PASS and validate it without a solve."""
+
+    from scripts import run_go2_small_completion_global_exact_v1 as runner
+
+    out = OUT_ROOT / "scorer_fit"
+    raw_plan = out / GLOBAL_EXACT_MODEL_PLAN_NAME
+    raw_terminal = out / GLOBAL_EXACT_TERMINAL_RESULT_NAME
+    raw_infeasible = out / GLOBAL_EXACT_TERMINAL_INFEASIBILITY_NAME
+    plan_path = _pin_generated_path(raw_plan, raw_plan)
+    terminal_path = _pin_generated_path(raw_terminal, raw_terminal)
+    infeasible_path = _pin_generated_path(raw_infeasible, raw_infeasible)
+    if (not plan_path.is_file() or plan_path.is_symlink()
+            or not terminal_path.is_file() or terminal_path.is_symlink()
+            or infeasible_path.exists() or infeasible_path.is_symlink()):
+        raise RuntimeError(
+            "global exact PASS requires its sole plan/terminal disposition")
+    try:
+        plan = json.loads(plan_path.read_text())
+        terminal = json.loads(terminal_path.read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("global exact plan or terminal is corrupt") from exc
+    if supplied_plan is not None and dict(supplied_plan) != plan:
+        raise RuntimeError("supplied global exact plan differs from disk")
+    if supplied_terminal is not None and dict(supplied_terminal) != terminal:
+        raise RuntimeError("supplied global exact terminal differs from disk")
+    plan = runner.validate_runner_plan(
+        plan, execution_context=execution_context, instance=instance)
+    terminal = runner.validate_runner_terminal(
+        terminal, execution_context=execution_context, instance=instance,
+        runner_plan=plan)
+    if terminal.get("status") != runner.TERMINAL_STATUS:
+        raise RuntimeError("global exact finalization requires a PASS terminal")
+    model_result = GLOBAL_EXACT_MODEL.validate_execution_result_solve_free(
+        instance, plan["model_execution_plan"],
+        terminal["model_execution_result"])
+    if model_result.get("status") != GLOBAL_EXACT_MODEL.EXECUTION_PASS_STATUS:
+        raise RuntimeError("global exact model result is not a PASS")
+    materialized = model_result.get("materialized_allocation")
+    if not isinstance(materialized, Mapping):
+        raise RuntimeError("global exact PASS lacks materialized allocation")
+    return {
+        "runner": runner,
+        "plan": plan,
+        "terminal": terminal,
+        "model_result": model_result,
+        "materialized": dict(materialized),
+        "plan_path": plan_path,
+        "terminal_path": terminal_path,
+    }
+
+
+def _global_exact_validated_allocation_material(
+        *, execution_context: Mapping[str, Any],
+        instance: Mapping[str, Any],
+        supplied_plan: Mapping[str, Any] | None = None,
+        supplied_terminal: Mapping[str, Any] | None = None,
+        ) -> dict[str, Any]:
+    """Reconstruct selected identities, allocation and masks solve-free."""
+
+    validated_instance = GLOBAL_EXACT_MODEL.validate_production_instance(
+        instance)
+    rebuilt_instance = build_global_exact_production_instance(
+        execution_context)
+    if validated_instance != rebuilt_instance:
+        raise RuntimeError("global exact production instance changed")
+    runtime = _load_global_exact_runner_success(
+        execution_context=execution_context, instance=validated_instance,
+        supplied_plan=supplied_plan, supplied_terminal=supplied_terminal)
+    inputs = execution_context.get("inputs")
+    preserved = execution_context.get("preserved_vectors")
+    if not isinstance(inputs, Mapping) or not isinstance(preserved, Mapping):
+        raise RuntimeError("global exact finalization lacks frozen inputs")
+    materialized = runtime["materialized"]
+    allocation_disposition = materialized.get(
+        "legacy_allocation_contract_disposition")
+    if allocation_disposition != (
+            GLOBAL_EXACT_MODEL.legacy_allocation_contract_disposition()):
+        raise RuntimeError(
+            "global exact legacy allocation disposition changed")
+    selected_indices = materialized.get("selected_scene_indices")
+    if (not isinstance(selected_indices, list) or len(selected_indices) != 5
+            or any(isinstance(value, bool) or not isinstance(value, int)
+                   for value in selected_indices)
+            or len(set(selected_indices)) != 5
+            or any(not 0 <= value < len(inputs["raw_candidates"])
+                   for value in selected_indices)):
+        raise RuntimeError("global exact selected scene indices changed")
+    selected = _parallel_selected_completion_states(
+        inputs["raw_candidates"], selected_indices,
+        identity_bindings=inputs["common"])
+    selected_rows = materialized.get("selected_scene_rows")
+    if not isinstance(selected_rows, list) or len(selected_rows) != 5:
+        raise RuntimeError("global exact selected scene rows changed")
+    allocation = materialized.get("allocation_manifest")
+    if not isinstance(allocation, Mapping):
+        raise RuntimeError("global exact allocation manifest is absent")
+    allocation = dict(allocation)
+    assignments = {
+        str(row.get("state_identity_digest")): dict(row)
+        for row in allocation.get("assignments", [])
+        if isinstance(row, Mapping)
+    }
+    for ordinal, (state, row) in enumerate(
+            zip(selected, selected_rows, strict=True)):
+        assignment = assignments.get(str(state["state_identity_digest"]))
+        if (not isinstance(row, Mapping) or assignment is None
+                or row.get("selected_scene_index") != selected_indices[ordinal]
+                or row.get("selected_scene_id") != state["scene_id"]
+                or row.get("selected_ordinal") != ordinal
+                or row.get("assigned_split_role") != state["split_role"]
+                or row.get("state_id") != state["state_id"]
+                or row.get("state_identity_digest")
+                != state["state_identity_digest"]
+                or row.get("candidate_rotation_index")
+                != assignment.get("rotation_index")
+                or row.get("candidate_indices")
+                != assignment.get("candidate_indices")):
+            raise RuntimeError(
+                "global exact selected identity/allocation projection changed")
+    states = _joint_state_order([*inputs["fixed_states"], *selected])
+    if (len(states) != 120
+            or len({state["scene_id"] for state in states}) != 120
+            or len({state["state_identity_digest"] for state in states}) != 120):
+        raise RuntimeError("global exact 120-state identity set changed")
+    source_projection = _pre_allocation_identity_payload(
+        states=states, common=inputs["common"])
+    if (materialized.get("source_identity_manifest_projection")
+            != source_projection
+            or allocation.get("source_identity_manifest_digest")
+            != canonical_digest(source_projection)):
+        raise RuntimeError(
+            "global exact allocation source identity binding changed")
+    STATE_SELECTOR.validate_allocation_manifest_structure_solve_free(
+        allocation,
+        expected_source_identity_manifest_digest=canonical_digest(
+            source_projection))
+    if not _all_completion_masks_pass(
+            states=states, allocation=allocation,
+            preserved_vectors={str(key): dict(value)
+                               for key, value in preserved.items()}):
+        raise RuntimeError("global exact allocation fails a frozen mask")
+    if materialized.get(GLOBAL_EXACT_MODEL.ALLOCATION_RESULT_DIGEST_KEY) \
+            != GLOBAL_EXACT_MODEL.canonical_digest({
+                key: value for key, value in materialized.items()
+                if key != GLOBAL_EXACT_MODEL.ALLOCATION_RESULT_DIGEST_KEY
+            }):
+        raise RuntimeError("global exact materialized allocation digest changed")
+    return {
+        **runtime,
+        "instance": validated_instance,
+        "inputs": inputs,
+        "preserved_vectors": preserved,
+        "selected_states": selected,
+        "states": states,
+        "source_projection": source_projection,
+        "allocation": allocation,
+        "allocation_contract_disposition": dict(allocation_disposition),
+    }
+
+
+def _global_exact_artifact_binding(
+        path: Path, *, self_key: str) -> dict[str, Any]:
+    binding = _artifact_binding(path, self_key=self_key)
+    if (not _is_sha256(binding.get("raw_sha256"))
+            or not _is_sha256(binding.get("self_digest"))):
+        raise RuntimeError("global exact artifact binding is malformed")
+    return binding
+
+
+def _build_global_exact_joint_receipt(
+        material: Mapping[str, Any],
+        execution_context: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    inputs = material["inputs"]
+    plan = material["plan"]
+    terminal = material["terminal"]
+    allocation = material["allocation"]
+    amendment = execution_context["execution_amendment"]
+    report = execution_context["coupling_report"]
+    receipt = {
+        "schema": GLOBAL_EXACT_JOINT_RECEIPT_SCHEMA,
+        "status": GLOBAL_EXACT_JOINT_RECEIPT_STATUS,
+        "complete": True,
+        "coupling_report": _global_exact_artifact_binding(
+            ROOT / GLOBAL_EXACT_AUTHORITY.COUPLING_REPORT_RELATIVE_PATH,
+            self_key=GLOBAL_EXACT_AUTHORITY.REPORT_SELF_KEY),
+        "execution_amendment": _global_exact_artifact_binding(
+            ROOT / GLOBAL_EXACT_AUTHORITY.EXECUTION_AMENDMENT_RELATIVE_PATH,
+            self_key=GLOBAL_EXACT_AUTHORITY.AMENDMENT_SELF_KEY),
+        "runner_plan": _global_exact_artifact_binding(
+            OUT_ROOT / "scorer_fit" / GLOBAL_EXACT_MODEL_PLAN_NAME,
+            self_key="global_exact_model_plan_digest"),
+        "runner_terminal": _global_exact_artifact_binding(
+            OUT_ROOT / "scorer_fit" / GLOBAL_EXACT_TERMINAL_RESULT_NAME,
+            self_key="global_exact_terminal_result_digest"),
+        "coupling_report_digest": report[
+            GLOBAL_EXACT_AUTHORITY.REPORT_SELF_KEY],
+        "execution_amendment_digest": amendment[
+            GLOBAL_EXACT_AUTHORITY.AMENDMENT_SELF_KEY],
+        "fixture_suite_digest": plan["fixture_suite_digest"],
+        "production_instance_digest": plan["production_instance_digest"],
+        "model_execution_plan_digest": plan[
+            "model_execution_plan_digest"],
+        "model_execution_result_digest": terminal[
+            "model_execution_result_digest"],
+        "materialized_allocation_digest": material["materialized"][
+            GLOBAL_EXACT_MODEL.ALLOCATION_RESULT_DIGEST_KEY],
+        "allocation_manifest_digest": allocation[
+            "allocation_manifest_digest"],
+        "legacy_allocation_contract_disposition": dict(
+            material["allocation_contract_disposition"]),
+        "candidate_assignment_set_digest":
+            _allocation_assignment_set_digest(allocation),
+        "source_identity_manifest_digest": allocation[
+            "source_identity_manifest_digest"],
+        "small_prefix_reissue_receipt": dict(
+            inputs["prefix"]["receipt_binding"]),
+        "performance_interruption_receipt": dict(
+            inputs["prefix"]["performance_receipt_binding"]),
+        "fixed_state_active_envelope_set_digest": canonical_digest(
+            inputs["fixed_shard_evidence"]),
+        "resolver_cursor_scene_id": inputs["resolver_cursor_scene_id"],
+        "candidate_pool_scene_ids": list(inputs["candidate_scene_ids"]),
+        "candidate_pool_scene_ids_digest": canonical_digest(
+            inputs["candidate_scene_ids"]),
+        "selected_scene_indices": list(
+            material["materialized"]["selected_scene_indices"]),
+        "selected_scene_ids": list(
+            material["materialized"]["selected_scene_ids"]),
+        "selected_scene_rows": list(
+            material["materialized"]["selected_scene_rows"]),
+        "selected_scene_count": 5,
+        "final_state_count": 120,
+        "external_combination_enumeration_executed": False,
+        "performance_benchmark_executed": False,
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed_only_after_amendment": True,
+        "branch_data_created": False,
+        "scorer_or_predictor_accessed": False,
+    }
+    receipt[GLOBAL_EXACT_JOINT_RECEIPT_SELF_KEY] = canonical_digest(receipt)
+    return receipt
+
+
+def _global_exact_execution_binding(
+        material: Mapping[str, Any], execution_context: Mapping[str, Any],
+        joint: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    return {
+        "schema": GLOBAL_EXACT_EXECUTION_BINDING_SCHEMA,
+        "coupling_report_digest": execution_context["coupling_report"][
+            GLOBAL_EXACT_AUTHORITY.REPORT_SELF_KEY],
+        "execution_amendment_digest": execution_context[
+            "execution_amendment"][GLOBAL_EXACT_AUTHORITY.AMENDMENT_SELF_KEY],
+        "fixture_suite_digest": material["plan"]["fixture_suite_digest"],
+        "production_instance_digest": material["plan"][
+            "production_instance_digest"],
+        "global_exact_model_plan_digest": material["plan"][
+            "global_exact_model_plan_digest"],
+        "model_execution_plan_digest": material["plan"][
+            "model_execution_plan_digest"],
+        "model_execution_result_digest": material["terminal"][
+            "model_execution_result_digest"],
+        "global_exact_terminal_result_digest": material["terminal"][
+            "global_exact_terminal_result_digest"],
+        "materialized_allocation_digest": material["materialized"][
+            GLOBAL_EXACT_MODEL.ALLOCATION_RESULT_DIGEST_KEY],
+        "legacy_allocation_contract_disposition_digest": material[
+            "allocation_contract_disposition"][
+                GLOBAL_EXACT_MODEL.ALLOCATION_CONTRACT_DISPOSITION_SELF_KEY],
+        "global_exact_joint_receipt_digest": joint[
+            GLOBAL_EXACT_JOINT_RECEIPT_SELF_KEY],
+        "selected_scene_ids": list(material["materialized"][
+            "selected_scene_ids"]),
+        "candidate_outcomes_consumed": False,
+        "scientific_masks_accessed": True,
+        "external_combination_enumeration_executed": False,
+        "downstream_metric_in_selection": False,
+    }
+
+
+def _validate_global_exact_small_state_identity_lineage(
+        states: Sequence[Mapping[str, Any]], *,
+        prefix_states: Sequence[Mapping[str, Any]],
+        selected_states: Sequence[Mapping[str, Any]],
+        ) -> None:
+    expected = [dict(state) for state in [*prefix_states, *selected_states]]
+    expected.sort(key=lambda state: (
+        STRATA.index(str(state["stratum"])), str(state["scene_id"])))
+    if [dict(state) for state in states] != expected:
+        raise RuntimeError("global exact small identity lineage changed")
+
+
+def _build_global_exact_small_terminal_shard(
+        material: Mapping[str, Any], execution_context: Mapping[str, Any],
+        joint: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    inputs = material["inputs"]
+    prefix = inputs["prefix"]
+    bindings = prefix.get("state_shard_bindings")
+    if (not isinstance(bindings, Mapping)
+            or set(bindings) != {
+                *STATE_SHARD_COMMON_KEYS, "exclusion_binding",
+                "family_allow_list_digest"}
+            or any(bindings.get(key) != inputs["common"].get(key)
+                   for key in STATE_SHARD_COMMON_KEYS)):
+        raise RuntimeError("global exact small shard binding changed")
+    states = [dict(state) for state in [
+        *prefix["states"], *material["selected_states"]]]
+    states.sort(key=lambda state: (
+        STRATA.index(str(state["stratum"])), str(state["scene_id"])))
+    _validate_global_exact_small_state_identity_lineage(
+        states, prefix_states=prefix["states"],
+        selected_states=material["selected_states"])
+    provenance = [dict(row) for row in prefix["capture_provenance"]]
+    execution = _global_exact_execution_binding(
+        material, execution_context, joint)
+    shard = {
+        "schema": "go2_branch_corpus_v1_2_state_shard",
+        "status": STATUS,
+        "complete": True,
+        "pool": "scorer_fit",
+        "family": REACHABILITY_REDRIVE_FAMILY,
+        "spec": POOLS["scorer_fit"],
+        "selection": SELECTION,
+        **dict(bindings),
+        "states": states,
+        "scene_rejection_reasons": dict(prefix[
+            "scene_rejection_reasons"]),
+        "state_resolution_subprocess_transport": {
+            "schema":
+                "go2_branch_corpus_v1_2_state_resolution_transport_v1",
+            "one_scene_per_subprocess": True,
+            "atomic_capture_write_before_native_cleanup": True,
+            "return_code_ignored_only_after_valid_capture": True,
+            "resume_scope": GLOBAL_EXACT_SMALL_TRANSPORT_RESUME_SCOPE,
+            "resolver_algorithm_digest": canonical_digest(
+                STATE_RESOLUTION_REDUCER_CONTRACT),
+            "resolver_cursor_scene_id": inputs[
+                "resolver_cursor_scene_id"],
+            "scene_capture_count": len(provenance),
+            "scene_capture_provenance_digest": canonical_digest(provenance),
+            "candidate_outcomes_loaded": False,
+        },
+        "state_resolution_scene_capture_provenance": provenance,
+        "small_prefix_reissue_receipt": dict(prefix["receipt_binding"]),
+        "small_completion_global_exact_execution": execution,
+    }
+    shard["state_shard_digest"] = canonical_digest(shard)
+    return shard
+
+
+def _global_exact_certify_allocation(
+        supplied: Mapping[str, Any], *, expected: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    if not isinstance(supplied, Mapping) or dict(supplied) != dict(expected):
+        raise RuntimeError("global exact solve-free allocation changed")
+    return dict(expected)
+
+
+def _build_global_exact_phase2_receipt(
+        material: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    inputs = material["inputs"]
+    common = inputs["common"]
+    allocation = material["allocation"]
+    completion_rows = _completion_states_for_phase2(
+        allocation=allocation, states=material["states"],
+        preserved_vectors={str(key): dict(value) for key, value in
+                           material["preserved_vectors"].items()})
+    certify = lambda supplied: _global_exact_certify_allocation(
+        supplied, expected=allocation)
+    receipt = (
+        STATE_SELECTOR
+        .build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+            allocation_manifest=allocation,
+            active_states=material["states"],
+            completion_states=completion_rows,
+            certify_allocation_solve_free=certify,
+            source_repository_commit=str(common["source_repository_commit"]),
+            successor_selection_digest=str(common["selection_digest"]),
+            state_selector_feasibility_receipt_digest=str(
+                common["state_selector_feasibility_receipt_digest"]),
+            mixed_precontract_disposition_receipt_digest=str(
+                common["mixed_precontract_disposition_receipt_digest"]),
+            root=ROOT,
+        )
+    )
+    STATE_SELECTOR.validate_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+        receipt,
+        allocation_manifest=allocation,
+        active_states=material["states"],
+        certify_allocation_solve_free=certify,
+        expected_source_commit=str(common["source_repository_commit"]),
+        expected_successor_selection_digest=str(common["selection_digest"]),
+        expected_feasibility_receipt_digest=str(
+            common["state_selector_feasibility_receipt_digest"]),
+        expected_mixed_precontract_disposition_receipt_digest=str(
+            common["mixed_precontract_disposition_receipt_digest"]),
+        root=ROOT,
+    )
+    return receipt
+
+
+def _global_exact_shard_provenance(
+        *, material: Mapping[str, Any], small_shard: Mapping[str, Any],
+        ) -> list[dict[str, Any]]:
+    inputs = material["inputs"]
+    shards = [*inputs["fixed_shards"], dict(small_shard)]
+    evidence = [dict(row) for row in inputs["fixed_shard_evidence"]]
+    small_raw = OUT_ROOT / "scorer_fit" / (
+        f"state_shard_{REACHABILITY_REDRIVE_FAMILY}.json")
+    small_path = _pin_generated_path(small_raw, small_raw)
+    if (not small_path.is_file() or small_path.is_symlink()
+            or json.loads(small_path.read_text()) != dict(small_shard)):
+        raise RuntimeError("global exact small shard bytes changed")
+    evidence.append({
+        "envelope_schema": str(small_shard["schema"]),
+        "active_path": str(small_raw.relative_to(ROOT)),
+        "active_raw_sha256": file_sha256(small_path),
+        "active_byte_count": small_path.stat().st_size,
+        "source_reissued_state_shard_digest": None,
+        "predecessor_state_shard_digest": None,
+        "performance_interruption_receipt_digest": None,
+        "successor_state_shard_digest": str(
+            small_shard["state_shard_digest"]),
+    })
+    paths = [
+        _pin_generated_path(
+            _active_state_shard_path(
+                OUT_ROOT / "scorer_fit", str(shard["family"]),
+                pool="scorer_fit"),
+            _active_state_shard_path(
+                OUT_ROOT / "scorer_fit", str(shard["family"]),
+                pool="scorer_fit"))
+        for shard in shards
+    ]
+    rows = _build_state_shard_provenance(
+        paths, shards, evidence, pool_name="scorer_fit")
+    for row in rows:
+        if row["family"] == REACHABILITY_REDRIVE_FAMILY:
+            row["selection_provenance"] = (
+                "ONE_GLOBAL_EXACT_OUTCOME_FREE_ALLOCATION")
+    return rows
+
+
+def _build_global_exact_state_manifest_payload(
+        *, material: Mapping[str, Any], execution_context: Mapping[str, Any],
+        joint: Mapping[str, Any], small_shard: Mapping[str, Any],
+        phase2: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    inputs = material["inputs"]
+    common = dict(inputs["common"])
+    allocation = material["allocation"]
+    states = _joint_state_order(material["states"])
+    assignments = {str(row["state_id"]): dict(row)
+                   for row in allocation["assignments"]}
+    for index, state in enumerate(states):
+        assignment = assignments.get(str(state["state_id"]))
+        if (assignment is None
+                or assignment.get("state_identity_digest")
+                != state["state_identity_digest"]):
+            raise RuntimeError("global exact assignment/state join changed")
+        state["state_index"] = index
+        state["candidate_indices"] = list(assignment["candidate_indices"])
+        state["candidate_rotation_index"] = int(
+            assignment["rotation_index"])
+    post_digest = allocation["post_identity_pre_outcome_validation"][
+        "post_identity_validation_digest"]
+    phase2_digest = phase2[
+        "preserved_state_revalidation_receipt_digest"]
+    manifest_bindings = {
+        "pool": "scorer_fit",
+        **common,
+        "candidate_allocation_post_identity_validation_digest": post_digest,
+        "preserved_state_revalidation_receipt_digest": phase2_digest,
+    }
+    candidate_counts = {name: 0 for name, _sequence in V1.CANDIDATE_BANK}
+    branch_rows: list[dict[str, Any]] = []
+    for state in states:
+        identities = [
+            _branch_identity(state, int(candidate), manifest_bindings)
+            for candidate in state["candidate_indices"]
+        ]
+        state["branch_identities"] = identities
+        branch_rows.extend(identities)
+        for identity in identities:
+            candidate_counts[str(identity["candidate"])] += 1
+    branch_digests = [str(row["branch_identity_digest"])
+                      for row in branch_rows]
+    if (len(branch_rows) != 720 or len(set(branch_digests)) != 720
+            or set(candidate_counts.values()) != {60}):
+        raise RuntimeError("global exact branch registration changed")
+    invalid_disjointness = INVALID_IDS.assert_disjoint(
+        states, label="global exact pre-outcome state and branch identities",
+        index=INVALID_IDS.load_invalid_identity_index())
+    shards = [*inputs["fixed_shards"], dict(small_shard)]
+    exclusions = [shard["exclusion_binding"] for shard in shards]
+    if any(value != exclusions[0] for value in exclusions[1:]):
+        raise RuntimeError("global exact shards disagree on exclusions")
+    shard_provenance = _global_exact_shard_provenance(
+        material=material, small_shard=small_shard)
+    execution = _global_exact_execution_binding(
+        material, execution_context, joint)
+    manifest = {
+        "schema": "go2_branch_corpus_v1_2_state_manifest",
+        "status": STATUS,
+        "complete": True,
+        "pool": "scorer_fit",
+        "spec": POOLS["scorer_fit"],
+        "selection": SELECTION,
+        **common,
+        "pre_allocation_identity_manifest_digest": allocation[
+            "source_identity_manifest_digest"],
+        "candidate_allocation_manifest_digest": allocation[
+            "allocation_manifest_digest"],
+        "legacy_allocation_contract_disposition": dict(
+            material["allocation_contract_disposition"]),
+        "candidate_allocation_post_identity_validation_digest": post_digest,
+        "preserved_state_revalidation_receipt_digest": phase2_digest,
+        "branch_identity_set_digest": canonical_digest(sorted(branch_digests)),
+        "exclusion_binding": exclusions[0],
+        "state_shard_digests": {
+            str(shard["family"]): str(shard["state_shard_digest"])
+            for shard in shards
+        },
+        "state_shard_provenance": shard_provenance,
+        "states": states,
+        "candidate_appearances": candidate_counts,
+        "attempted_branch_count_registered": 720,
+        "disjointness": {
+            "state_count": 120,
+            "unique_scene_count": len({state["scene_id"] for state in states}),
+            "unique_episode_cluster_count": len({
+                state["episode_cluster_id"] for state in states}),
+            "unique_state_identity_count": len({
+                state["state_identity_digest"] for state in states}),
+            "unique_branch_identity_count": len(set(branch_digests)),
+            "scene_episode_state_branch_disjoint": True,
+            "invalid_scorer_identity_attempt": invalid_disjointness,
+        },
+        "scene_rejection_reasons": {
+            str(shard["family"]): dict(shard["scene_rejection_reasons"])
+            for shard in shards
+        },
+        "recovery_provenance": {
+            "schema":
+                "go2_branch_corpus_v1_2_global_exact_recovery_provenance_v1",
+            "fixed_reissued_family_count": 7,
+            "reused_small_prefix_state_count": 10,
+            "new_small_completion_state_count": 5,
+            "predecessor_source_repository_commit": common[
+                "source_repository_commit"],
+            "mixed_precontract_disposition_receipt_digest": common[
+                "mixed_precontract_disposition_receipt_digest"],
+            "global_exact_execution_amendment_digest": execution[
+                "execution_amendment_digest"],
+            "global_exact_joint_receipt_digest": execution[
+                "global_exact_joint_receipt_digest"],
+            "candidate_outcomes_consumed": False,
+            "scientific_constraints_changed": False,
+            "final_200_state_corpus_authorised": False,
+        },
+        "small_prefix_reissue_receipt": dict(
+            inputs["prefix"]["receipt_binding"]),
+        "global_exact_execution_amendment_digest": execution[
+            "execution_amendment_digest"],
+        "small_completion_global_exact_execution": execution,
+    }
+    manifest["state_manifest_digest"] = canonical_digest(manifest)
+    return manifest
+
+
+def finalize_global_exact_feasible_allocation(
+        *, execution_context: Mapping[str, Any], instance: Mapping[str, Any],
+        execution_plan: Mapping[str, Any],
+        execution_result: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Install the one-model allocation, shard, manifest and source bridge."""
+
+    if execution_context.get("candidate_outcomes_consumed") is not False:
+        raise RuntimeError("global exact finalization observed an outcome")
+    material = _global_exact_validated_allocation_material(
+        execution_context=execution_context, instance=instance,
+        supplied_plan=execution_plan, supplied_terminal=execution_result)
+    out = OUT_ROOT / "scorer_fit"
+    joint = _build_global_exact_joint_receipt(material, execution_context)
+    _write_or_require_exact_json(
+        out / GLOBAL_EXACT_JOINT_RECEIPT_NAME, joint,
+        label="global exact joint receipt")
+    small_shard = _build_global_exact_small_terminal_shard(
+        material, execution_context, joint)
+    _write_or_require_exact_json(
+        out / f"state_shard_{REACHABILITY_REDRIVE_FAMILY}.json",
+        small_shard, label="global exact small terminal state shard")
+    _write_or_require_exact_json(
+        out / "candidate_allocation_manifest.json", material["allocation"],
+        label="global exact candidate allocation")
+    phase2 = _build_global_exact_phase2_receipt(material)
+    raw_phase2 = ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
+    if raw_phase2.parent != out:
+        raise RuntimeError("global exact phase-2 path escaped scorer-fit")
+    _write_or_require_exact_json(
+        raw_phase2, phase2, label="global exact preserved-state revalidation")
+    manifest = _build_global_exact_state_manifest_payload(
+        material=material, execution_context=execution_context,
+        joint=joint, small_shard=small_shard, phase2=phase2)
+    _write_or_require_exact_json(
+        out / "state_manifest.json", manifest,
+        label="global exact state manifest")
+    successor = issue_global_exact_successor_scorer_contract(manifest)
+    _validate_global_exact_state_manifest(manifest)
+    return {
+        "coupling_classification": "COUPLED",
+        "selected_method": "ONE_GLOBAL_EXACT_FEASIBILITY_MODEL",
+        "execution_amendment_digest": manifest[
+            "global_exact_execution_amendment_digest"],
+        "global_exact_joint_receipt_digest": joint[
+            GLOBAL_EXACT_JOINT_RECEIPT_SELF_KEY],
+        "selected_scene_ids": list(material["materialized"][
+            "selected_scene_ids"]),
+        "candidate_allocation_manifest_digest": material["allocation"][
+            "allocation_manifest_digest"],
+        "small_state_shard_digest": small_shard["state_shard_digest"],
+        "state_manifest_digest": manifest["state_manifest_digest"],
+        "preserved_state_revalidation_receipt_digest": phase2[
+            "preserved_state_revalidation_receipt_digest"],
+        "global_exact_successor_scorer_contract_digest": successor[
+            "global_exact_successor_scorer_contract_digest"],
+        "candidate_outcomes_consumed": False,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def _validate_global_exact_small_state_shard(
+        payload: Mapping[str, Any], path: Path,
+        ) -> None:
+    """Reconstruct the global small shard without any legacy search replay."""
+
+    raw_expected = OUT_ROOT / "scorer_fit" / (
+        f"state_shard_{REACHABILITY_REDRIVE_FAMILY}.json")
+    pinned = _pin_generated_path(path, raw_expected)
+    if (not pinned.is_file() or pinned.is_symlink()
+            or json.loads(pinned.read_text()) != dict(payload)):
+        raise RuntimeError("global exact small state-shard custody changed")
+    _verify_self_digest(
+        dict(payload), "state_shard_digest", "global exact small state shard")
+    context = load_global_exact_execution_context(
+        attach_scientific_masks=True)
+    instance = build_global_exact_production_instance(context)
+    material = _global_exact_validated_allocation_material(
+        execution_context=context, instance=instance)
+    raw_joint = OUT_ROOT / "scorer_fit" / GLOBAL_EXACT_JOINT_RECEIPT_NAME
+    joint_path = _pin_generated_path(raw_joint, raw_joint)
+    if not joint_path.is_file() or joint_path.is_symlink():
+        raise RuntimeError("global exact joint receipt is missing")
+    joint = json.loads(joint_path.read_text())
+    expected_joint = _build_global_exact_joint_receipt(material, context)
+    if joint != expected_joint:
+        raise RuntimeError("global exact joint receipt changed")
+    expected = _build_global_exact_small_terminal_shard(
+        material, context, joint)
+    if dict(payload) != expected:
+        raise RuntimeError("global exact small state shard changed")
+
+
+def _validate_global_exact_state_manifest(
+        manifest: Mapping[str, Any],
+        ) -> None:
+    """Solve-free canonical validator for the global-exact manifest lineage."""
+
+    if (not isinstance(manifest, Mapping)
+            or manifest.get("schema")
+            != "go2_branch_corpus_v1_2_state_manifest"
+            or manifest.get("pool") != "scorer_fit"
+            or manifest.get("complete") is not True
+            or not isinstance(
+                manifest.get("small_completion_global_exact_execution"),
+                Mapping)
+            or manifest.get("candidate_outcomes_consumed") is not None):
+        # The legacy manifest has no top-level outcome field.  Requiring it to
+        # remain absent closes a convenient route for self-resigned additions.
+        raise RuntimeError("global exact state manifest route is malformed")
+    _verify_self_digest(
+        dict(manifest), "state_manifest_digest", "global exact state manifest")
+    context = load_global_exact_execution_context(
+        attach_scientific_masks=True)
+    instance = build_global_exact_production_instance(context)
+    material = _global_exact_validated_allocation_material(
+        execution_context=context, instance=instance)
+    out = OUT_ROOT / "scorer_fit"
+
+    raw_joint = out / GLOBAL_EXACT_JOINT_RECEIPT_NAME
+    joint_path = _pin_generated_path(raw_joint, raw_joint)
+    if not joint_path.is_file() or joint_path.is_symlink():
+        raise RuntimeError("global exact joint receipt is missing")
+    joint = json.loads(joint_path.read_text())
+    expected_joint = _build_global_exact_joint_receipt(material, context)
+    if joint != expected_joint:
+        raise RuntimeError("global exact joint receipt changed")
+
+    raw_small = out / f"state_shard_{REACHABILITY_REDRIVE_FAMILY}.json"
+    small_path = _pin_generated_path(raw_small, raw_small)
+    if not small_path.is_file() or small_path.is_symlink():
+        raise RuntimeError("global exact small state shard is missing")
+    small = json.loads(small_path.read_text())
+    expected_small = _build_global_exact_small_terminal_shard(
+        material, context, joint)
+    if small != expected_small:
+        raise RuntimeError("global exact small state shard changed")
+
+    raw_allocation = out / "candidate_allocation_manifest.json"
+    allocation_path = _pin_generated_path(raw_allocation, raw_allocation)
+    if (not allocation_path.is_file() or allocation_path.is_symlink()
+            or json.loads(allocation_path.read_text())
+            != material["allocation"]):
+        raise RuntimeError("global exact allocation artifact changed")
+
+    expected_phase2 = _build_global_exact_phase2_receipt(material)
+    raw_phase2 = ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
+    phase2_path = _pin_generated_path(raw_phase2, raw_phase2)
+    if (not phase2_path.is_file() or phase2_path.is_symlink()
+            or json.loads(phase2_path.read_text()) != expected_phase2):
+        raise RuntimeError("global exact phase-2 receipt changed")
+
+    expected = _build_global_exact_state_manifest_payload(
+        material=material, execution_context=context, joint=joint,
+        small_shard=small, phase2=expected_phase2)
+    if dict(manifest) != expected:
+        raise RuntimeError("global exact state manifest changed")
+    load_global_exact_successor_scorer_contract_for_consumption(expected)
+
+
+def validate_global_exact_allocation_for_consumption(
+        manifest: Mapping[str, Any], allocation: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    """Certify the global assignment without reviving legacy lexicographic MILPs.
+
+    The raw allocation keeps the historical closed schema as a structural
+    compatibility projection.  It is accepted on this path only beside the
+    exact amendment/model/plan/result certificate reconstructed by the global
+    manifest validator, which explicitly supersedes the old non-scientific
+    rotation tie-break.
+    """
+
+    if (not isinstance(manifest, Mapping)
+            or not isinstance(
+                manifest.get("small_completion_global_exact_execution"),
+                Mapping)
+            or manifest.get("legacy_allocation_contract_disposition")
+            != GLOBAL_EXACT_MODEL.legacy_allocation_contract_disposition()):
+        raise RuntimeError(
+            "global exact allocation lacks its supersession certificate")
+    _validate_global_exact_state_manifest(manifest)
+    if not isinstance(allocation, Mapping):
+        raise RuntimeError("global exact allocation is not a mapping")
+    bound = dict(allocation)
+    STATE_SELECTOR.validate_allocation_manifest_structure_solve_free(
+        bound,
+        expected_source_identity_manifest_digest=str(
+            manifest["pre_allocation_identity_manifest_digest"]),
+    )
+    raw_path = OUT_ROOT / "scorer_fit" / "candidate_allocation_manifest.json"
+    path = _pin_generated_path(raw_path, raw_path)
+    if (not path.is_file() or path.is_symlink()
+            or json.loads(path.read_text()) != bound
+            or bound.get("allocation_manifest_digest")
+            != manifest.get("candidate_allocation_manifest_digest")):
+        raise RuntimeError("global exact compatibility allocation changed")
+    return {
+        "allocation_manifest": bound,
+        "allocation_contract_disposition": dict(
+            manifest["legacy_allocation_contract_disposition"]),
+        "state_selector_amendment_digest": str(
+            manifest["state_selector_amendment_digest"]),
+        "state_selector_feasibility_receipt_digest": str(
+            manifest["state_selector_feasibility_receipt_digest"]),
+        "preserved_state_revalidation_receipt_digest": str(
+            manifest["preserved_state_revalidation_receipt_digest"]),
+    }
 
 
 def attach_v2_parallel_search_mask_context(
@@ -9345,6 +10768,12 @@ def _certify_parallel_allocation_solve_free(
 
 
 def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
+    if "small_completion_global_exact_execution" in manifest:
+        if pool != "scorer_fit":
+            raise RuntimeError(
+                "global exact execution appeared outside scorer-fit")
+        _validate_global_exact_state_manifest(manifest)
+        return
     _verify_self_digest(manifest, "state_manifest_digest", "state manifest")
     expected_states = EXPECTED_FAMILIES * POOLS[pool]["states_per_family"]
     expected_branches = expected_states * POOLS[pool]["candidates_per_state"]
@@ -10161,7 +11590,11 @@ def _build_smoke_branch_receipt(
         "state_manifest_digest": manifest["state_manifest_digest"],
         "corpus_bound_digests": _row_bindings(manifest),
         **_row_bindings(manifest),
-        "scorer_contract_v1_2_digest": scorer_contract_digest(),
+        # State and branch identities remain scientific predecessor evidence.
+        # The global-exact successor contract separately binds the current
+        # operational scorer implementation used by encoding and training.
+        "scorer_contract_v1_2_digest": manifest[
+            "scorer_contract_v1_2_digest"],
         "corpus_digest": corpus_digest,
         "render_contract_digest": manifest["render_contract_digest"],
         "textured_v03_renderer_contract_digest":
@@ -10219,6 +11652,28 @@ def _load_valid_smoke_branch_receipt(
         raise RuntimeError(f"branch smoke receipt validation failed: {exc}") from exc
 
 
+def _encoding_smoke_matches_global_exact_scorer_lineage(
+        smoke_receipt: Mapping[str, Any],
+        manifest: Mapping[str, Any],
+        ) -> bool:
+    """Bind an operational encoding smoke to its preserved science bridge."""
+
+    if "small_completion_global_exact_execution" not in manifest:
+        return True
+    successor = load_global_exact_successor_scorer_contract_for_consumption(
+        manifest)
+    expected = {
+        "schema": "go2_utility_scorer_v1_2_global_exact_contract_lineage_v1",
+        "scientific_predecessor_scorer_contract_v1_2_digest": manifest[
+            "scorer_contract_v1_2_digest"],
+        "current_scorer_contract_v1_2_digest": successor[
+            "current_scorer_contract_v1_2_digest"],
+        "global_exact_successor_scorer_contract_digest": successor[
+            "global_exact_successor_scorer_contract_digest"],
+    }
+    return smoke_receipt.get("global_exact_scorer_contract_lineage") == expected
+
+
 def _final_identifiability_gate(manifest: dict[str, Any], out: Path,
                                 receipt: dict[str, Any]) -> dict[str, Any] | None:
     if manifest["pool"] != "final_eval" or not receipt["complete"]:
@@ -10269,11 +11724,15 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
             else load_active_state_manifest_for_consumption(
                 OUT_ROOT / "scorer_fit/state_manifest.json")
         )
+        global_exact_lineage_valid = (
+            _encoding_smoke_matches_global_exact_scorer_lineage(
+                smoke_receipt, scorer_fit_manifest))
         if (not smoke_receipt.get("pass")
                 or smoke_receipt.get("state_manifest_digest")
                 != scorer_fit_manifest["state_manifest_digest"]
                 or smoke_receipt.get("scorer_contract_v1_2_digest")
-                != scorer_contract_digest()):
+                != scorer_contract_digest()
+                or not global_exact_lineage_valid):
             raise RuntimeError("encoded smoke receipt is not valid for this scorer contract")
 
     completed = _completed_rows(manifest, out)
@@ -10879,6 +12338,13 @@ def _validate_parallel_small_state_identity_lineage(
 
 def _validate_state_shard(payload: dict[str, Any], path: Path,
                           expected_pool: str) -> None:
+    if "small_completion_global_exact_execution" in payload:
+        if (expected_pool != "scorer_fit"
+                or payload.get("family") != REACHABILITY_REDRIVE_FAMILY):
+            raise RuntimeError(
+                "global exact shard appeared outside the small scorer family")
+        _validate_global_exact_small_state_shard(payload, path)
+        return
     _verify_self_digest(payload, "state_shard_digest", f"state shard {path.name}")
     spec = POOLS[expected_pool]
     expected_keys = {

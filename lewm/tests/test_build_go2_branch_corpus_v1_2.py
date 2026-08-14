@@ -2308,7 +2308,8 @@ def test_compile_partial_to_full_preserves_ledger_and_then_is_byte_idempotent(
     assert len(list((tmp_path / "invalid_attempts").iterdir())) == 2
 
 
-def test_zero_new_smoke_reuses_exact_replay_receipt_bytes(tmp_path):
+def test_zero_new_smoke_reuses_exact_replay_receipt_bytes(
+        tmp_path, monkeypatch):
     manifest = _manifest(candidate_indices=tuple(range(6)))
     for candidate_index in range(6):
         identity, row = _row(
@@ -2323,9 +2324,13 @@ def test_zero_new_smoke_reuses_exact_replay_receipt_bytes(tmp_path):
         "exact_repeat": True,
         "separate_render_scene_physically_inert": True,
     }
+    monkeypatch.setattr(B, "scorer_contract_digest", lambda: "f" * 64)
     smoke = B._build_smoke_branch_receipt(
         manifest, rows, corpus_digest=corpus["corpus_digest"],
         replay_check=replay)
+    assert smoke["scorer_contract_v1_2_digest"] == manifest[
+        "scorer_contract_v1_2_digest"]
+    assert smoke["scorer_contract_v1_2_digest"] != "f" * 64
     B.atomic_json(tmp_path / "smoke_branch_receipt.json", smoke)
     before = (tmp_path / "smoke_branch_receipt.json").read_bytes()
 
@@ -2459,3 +2464,343 @@ def test_encoder_noop_index_write_preserves_exact_bytes_and_mtime(tmp_path):
     assert encoder._write_index_if_changed(path, payload, dict(payload)) is False
     assert path.read_bytes() == first_bytes
     assert path.stat().st_mtime_ns == first_mtime
+
+
+def _synthetic_global_common() -> dict:
+    common = {key: "1" * 64 for key in B.STATE_SHARD_COMMON_KEYS}
+    common.update({
+        "source_repository_commit": "2" * 40,
+        "genesis_backend": "cpu",
+    })
+    return common
+
+
+def _synthetic_global_execution_material() -> tuple[dict, dict, dict]:
+    common = _synthetic_global_common()
+    prefix_states = [
+        {"scene_id": f"prefix-{index:02d}",
+         "stratum": "general" if index < 5 else "safety_enriched"}
+        for index in range(10)
+    ]
+    selected_states = [
+        {"scene_id": f"selected-{index:02d}",
+         "stratum": "completion_enriched"}
+        for index in range(5)
+    ]
+    inputs = {
+        "common": common,
+        "resolver_cursor_scene_id": "prefix-cursor",
+        "candidate_scene_ids": [f"candidate-{index:02d}" for index in range(17)],
+        "fixed_shard_evidence": [{"family": f"family-{index}"}
+                                 for index in range(7)],
+        "prefix": {
+            "states": prefix_states,
+            "state_shard_bindings": {
+                **common,
+                "exclusion_binding": {"digest": "3" * 64},
+                "family_allow_list_digest": "4" * 64,
+            },
+            "capture_provenance": [
+                {"scene_id": f"prefix-{index:02d}"} for index in range(12)
+            ],
+            "scene_rejection_reasons": {},
+            "receipt_binding": {"receipt_digest": "5" * 64},
+            "performance_receipt_binding": {"receipt_digest": "6" * 64},
+        },
+    }
+    material = {
+        "inputs": inputs,
+        "selected_states": selected_states,
+        "plan": {
+            "fixture_suite_digest": "7" * 64,
+            "production_instance_digest": "8" * 64,
+            "global_exact_model_plan_digest": "9" * 64,
+            "model_execution_plan_digest": "a" * 64,
+        },
+        "terminal": {
+            "model_execution_result_digest": "b" * 64,
+            "global_exact_terminal_result_digest": "c" * 64,
+        },
+        "materialized": {
+            B.GLOBAL_EXACT_MODEL.ALLOCATION_RESULT_DIGEST_KEY: "d" * 64,
+            "selected_scene_ids": [row["scene_id"] for row in selected_states],
+        },
+        "allocation_contract_disposition":
+            B.GLOBAL_EXACT_MODEL.legacy_allocation_contract_disposition(),
+    }
+    context = {
+        "coupling_report": {B.GLOBAL_EXACT_AUTHORITY.REPORT_SELF_KEY: "e" * 64},
+        "execution_amendment": {
+            B.GLOBAL_EXACT_AUTHORITY.AMENDMENT_SELF_KEY: "f" * 64},
+    }
+    joint = {B.GLOBAL_EXACT_JOINT_RECEIPT_SELF_KEY: "0" * 64}
+    return material, context, joint
+
+
+def test_global_small_shard_uses_historical_bindings_and_new_certificate():
+    material, context, joint = _synthetic_global_execution_material()
+    shard = B._build_global_exact_small_terminal_shard(
+        material, context, joint)
+    assert shard["states"] == [
+        *material["inputs"]["prefix"]["states"],
+        *material["selected_states"],
+    ]
+    assert shard["source_repository_commit"] == "2" * 40
+    assert shard["state_resolution_subprocess_transport"]["resume_scope"] == \
+        B.GLOBAL_EXACT_SMALL_TRANSPORT_RESUME_SCOPE
+    assert "small_completion_joint_allocation_search" not in shard
+    assert shard["small_completion_global_exact_execution"][
+        "global_exact_joint_receipt_digest"] == "0" * 64
+    assert shard["state_shard_digest"] == B.canonical_digest({
+        key: value for key, value in shard.items()
+        if key != "state_shard_digest"
+    })
+
+    changed = copy.deepcopy(material)
+    changed["inputs"]["prefix"]["state_shard_bindings"][
+        "source_repository_commit"] = "3" * 40
+    with pytest.raises(RuntimeError, match="small shard binding"):
+        B._build_global_exact_small_terminal_shard(changed, context, joint)
+
+
+def test_global_phase2_uses_historical_authority_and_exact_mapping_callback(
+        monkeypatch):
+    allocation = {"allocation_manifest_digest": "1" * 64}
+    material = {
+        "inputs": {"common": _synthetic_global_common()},
+        "allocation": allocation,
+        "states": [{"state_id": "state"}],
+        "preserved_vectors": {},
+    }
+    monkeypatch.setattr(B, "_completion_states_for_phase2",
+                        lambda **_kwargs: [{"completion": True}] * 40)
+    observed = {}
+
+    def build(**kwargs):
+        observed.update(kwargs)
+        assert kwargs["certify_allocation_solve_free"](allocation) == allocation
+        with pytest.raises(RuntimeError, match="allocation changed"):
+            kwargs["certify_allocation_solve_free"]({"different": True})
+        return {"preserved_state_revalidation_receipt_digest": "2" * 64}
+
+    monkeypatch.setattr(
+        B.STATE_SELECTOR,
+        "build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation",
+        build)
+    monkeypatch.setattr(
+        B.STATE_SELECTOR,
+        "validate_preserved_state_revalidation_receipt_from_solve_free_certified_allocation",
+        lambda receipt, **_kwargs: receipt)
+    receipt = B._build_global_exact_phase2_receipt(material)
+    common = material["inputs"]["common"]
+    assert receipt["preserved_state_revalidation_receipt_digest"] == "2" * 64
+    assert observed["source_repository_commit"] == common[
+        "source_repository_commit"]
+    assert observed["successor_selection_digest"] == common[
+        "selection_digest"]
+    assert observed["state_selector_feasibility_receipt_digest"] == common[
+        "state_selector_feasibility_receipt_digest"]
+    assert observed["mixed_precontract_disposition_receipt_digest"] == common[
+        "mixed_precontract_disposition_receipt_digest"]
+
+
+def test_global_manifest_and_shard_route_before_legacy_validators(monkeypatch):
+    manifest = {"small_completion_global_exact_execution": {}}
+    shard = {
+        "small_completion_global_exact_execution": {},
+        "family": B.REACHABILITY_REDRIVE_FAMILY,
+    }
+    observed = []
+    monkeypatch.setattr(
+        B, "_validate_global_exact_state_manifest",
+        lambda value: observed.append(("manifest", value)))
+    monkeypatch.setattr(
+        B, "_validate_global_exact_small_state_shard",
+        lambda value, path: observed.append(("shard", value, path)))
+    monkeypatch.setattr(
+        B, "_load_clean_source_launch_receipt",
+        lambda: (_ for _ in ()).throw(AssertionError("legacy launch opened")))
+    monkeypatch.setattr(
+        B, "_validate_small_completion_joint_search_receipt",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("legacy search replayed")))
+    B._validate_state_manifest(manifest, "scorer_fit")
+    B._validate_state_shard(shard, Path("synthetic.json"), "scorer_fit")
+    assert [row[0] for row in observed] == ["manifest", "shard"]
+
+
+def test_global_allocation_consumer_requires_exact_supersession_certificate(
+        monkeypatch, tmp_path):
+    allocation = {
+        "source_identity_manifest_digest": "1" * 64,
+        "allocation_manifest_digest": "2" * 64,
+    }
+    manifest = {
+        "small_completion_global_exact_execution": {
+            "execution_amendment_digest": "3" * 64},
+        "legacy_allocation_contract_disposition":
+            B.GLOBAL_EXACT_MODEL.legacy_allocation_contract_disposition(),
+        "pre_allocation_identity_manifest_digest": "1" * 64,
+        "candidate_allocation_manifest_digest": "2" * 64,
+        "state_selector_amendment_digest": "4" * 64,
+        "state_selector_feasibility_receipt_digest": "5" * 64,
+        "preserved_state_revalidation_receipt_digest": "6" * 64,
+    }
+    allocation_path = tmp_path / "candidate_allocation_manifest.json"
+    allocation_path.write_text(json.dumps(allocation))
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path.parent)
+    monkeypatch.setattr(B, "_pin_generated_path",
+                        lambda _raw, _expected: allocation_path)
+    observed = []
+    monkeypatch.setattr(
+        B, "_validate_global_exact_state_manifest",
+        lambda supplied: observed.append(dict(supplied)))
+    monkeypatch.setattr(
+        B.STATE_SELECTOR, "validate_allocation_manifest_structure_solve_free",
+        lambda supplied, **_kwargs: observed.append(dict(supplied)))
+    certified = B.validate_global_exact_allocation_for_consumption(
+        manifest, allocation)
+    assert certified["allocation_manifest"] == allocation
+    assert len(observed) == 2
+
+    changed = copy.deepcopy(manifest)
+    changed["legacy_allocation_contract_disposition"][
+        "legacy_choice_rule_status"] = "PRESERVED_MANDATORY"
+    disposition_key = (
+        B.GLOBAL_EXACT_MODEL.ALLOCATION_CONTRACT_DISPOSITION_SELF_KEY)
+    changed["legacy_allocation_contract_disposition"][
+        disposition_key] = (
+            B.GLOBAL_EXACT_MODEL.canonical_digest({
+                key: value for key, value in changed[
+                    "legacy_allocation_contract_disposition"].items()
+                if key != disposition_key
+            }))
+    with pytest.raises(RuntimeError, match="supersession certificate"):
+        B.validate_global_exact_allocation_for_consumption(
+            changed, allocation)
+
+
+def test_global_successor_contract_view_separates_current_scorer_digest(
+        monkeypatch, tmp_path):
+    payload = {
+        "contract_body": {
+            "current_scorer_contract_v1_2_digest": "1" * 64,
+        },
+        "clean_source_launch_receipt_digest": "2" * 64,
+        "source_repository_commit": "3" * 40,
+        "clean_source_binding_digest": "4" * 64,
+        "bound_implementations_digest": "5" * 64,
+        "scorer_contract_artifact_digest": "6" * 64,
+        "operational_launch": {"synthetic": True},
+        "launch_state_selector_feasibility_receipt_digest": "7" * 64,
+        "mixed_precontract_disposition_receipt_digest": "8" * 64,
+        "global_exact_execution_amendment_digest": "9" * 64,
+        "global_exact_successor_scorer_contract_digest": "a" * 64,
+        "scientific_predecessor_launch_bindings": {
+            "scorer_contract_v1_2_digest": "b" * 64,
+        },
+    }
+    path = tmp_path / "successor.json"
+    path.write_text(json.dumps(payload))
+    monkeypatch.setattr(B, "clean_source_binding", lambda: {})
+    monkeypatch.setattr(
+        B, "_global_exact_successor_contract_payload",
+        lambda _manifest, *, source: copy.deepcopy(payload))
+    monkeypatch.setattr(
+        B, "GLOBAL_EXACT_SUCCESSOR_SCORER_CONTRACT_PATH", path)
+    monkeypatch.setattr(B, "_pin_generated_path", lambda *_args, **_kwargs: path)
+    view = B.load_global_exact_successor_scorer_contract_for_consumption({})
+    assert view["current_scorer_contract_v1_2_digest"] == "1" * 64
+    assert view["scientific_predecessor_launch_bindings"][
+        "scorer_contract_v1_2_digest"] == "b" * 64
+
+
+def test_encoding_smoke_requires_exact_global_scorer_lineage(monkeypatch):
+    manifest = {
+        "small_completion_global_exact_execution": {},
+        "scorer_contract_v1_2_digest": "1" * 64,
+    }
+    successor = {
+        "current_scorer_contract_v1_2_digest": "2" * 64,
+        "global_exact_successor_scorer_contract_digest": "3" * 64,
+    }
+    monkeypatch.setattr(
+        B, "load_global_exact_successor_scorer_contract_for_consumption",
+        lambda supplied: successor if supplied is manifest else None)
+    lineage = {
+        "schema": "go2_utility_scorer_v1_2_global_exact_contract_lineage_v1",
+        "scientific_predecessor_scorer_contract_v1_2_digest": "1" * 64,
+        "current_scorer_contract_v1_2_digest": "2" * 64,
+        "global_exact_successor_scorer_contract_digest": "3" * 64,
+    }
+    assert B._encoding_smoke_matches_global_exact_scorer_lineage(
+        {"global_exact_scorer_contract_lineage": lineage}, manifest)
+    changed = copy.deepcopy(lineage)
+    changed["scientific_predecessor_scorer_contract_v1_2_digest"] = "4" * 64
+    assert not B._encoding_smoke_matches_global_exact_scorer_lineage(
+        {"global_exact_scorer_contract_lineage": changed}, manifest)
+    assert B._encoding_smoke_matches_global_exact_scorer_lineage({}, {})
+
+
+def test_global_finalizer_is_idempotent_ordered_and_never_uses_legacy_search(
+        monkeypatch, tmp_path):
+    material, context, _joint_seed = _synthetic_global_execution_material()
+    material.update({
+        "allocation": {"allocation_manifest_digest": "1" * 64},
+        "states": [],
+        "preserved_vectors": {},
+    })
+    joint = {
+        B.GLOBAL_EXACT_JOINT_RECEIPT_SELF_KEY: "2" * 64,
+    }
+    shard = {"state_shard_digest": "3" * 64}
+    phase2 = {"preserved_state_revalidation_receipt_digest": "4" * 64}
+    manifest = {
+        "global_exact_execution_amendment_digest": "5" * 64,
+        "state_manifest_digest": "6" * 64,
+    }
+    writes = []
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        B, "OUT_ROOT", tmp_path / ".generated/go2_branch_corpus_v1_2")
+    monkeypatch.setattr(
+        B, "_global_exact_validated_allocation_material",
+        lambda **_kwargs: material)
+    monkeypatch.setattr(
+        B, "_build_global_exact_joint_receipt",
+        lambda *_args: joint)
+    monkeypatch.setattr(
+        B, "_build_global_exact_small_terminal_shard",
+        lambda *_args: shard)
+    monkeypatch.setattr(
+        B, "_build_global_exact_phase2_receipt",
+        lambda *_args: phase2)
+    monkeypatch.setattr(
+        B, "_build_global_exact_state_manifest_payload",
+        lambda **_kwargs: manifest)
+    monkeypatch.setattr(
+        B, "_write_or_require_exact_json",
+        lambda path, payload, *, label: writes.append(
+            (label, Path(path).name, dict(payload))) or dict(payload))
+    monkeypatch.setattr(
+        B, "issue_global_exact_successor_scorer_contract",
+        lambda _manifest: {
+            "global_exact_successor_scorer_contract_digest": "7" * 64})
+    monkeypatch.setattr(B, "_validate_global_exact_state_manifest",
+                        lambda _manifest: None)
+    monkeypatch.setattr(
+        B, "_validate_small_completion_joint_search_receipt",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("legacy search replayed")))
+    result = B.finalize_global_exact_feasible_allocation(
+        execution_context={"candidate_outcomes_consumed": False},
+        instance={}, execution_plan={}, execution_result={})
+    assert [label for label, _path, _payload in writes] == [
+        "global exact joint receipt",
+        "global exact small terminal state shard",
+        "global exact candidate allocation",
+        "global exact preserved-state revalidation",
+        "global exact state manifest",
+    ]
+    assert result["global_exact_successor_scorer_contract_digest"] == "7" * 64
+    assert result["candidate_outcomes_consumed"] is False

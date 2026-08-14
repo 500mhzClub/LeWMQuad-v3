@@ -24,7 +24,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 import numpy as np
 import torch
@@ -102,6 +102,16 @@ LAUNCH_BINDING_KEYS = (
     "scorer_contract_artifact_digest",
     "mixed_precontract_disposition_receipt_digest",
 )
+SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS = LAUNCH_BINDING_KEYS[:-1]
+GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_SCHEMA = (
+    "go2_utility_scorer_v1_2_global_exact_contract_lineage_v1"
+)
+GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_KEYS = frozenset((
+    "schema",
+    "scientific_predecessor_scorer_contract_v1_2_digest",
+    "current_scorer_contract_v1_2_digest",
+    "global_exact_successor_scorer_contract_digest",
+))
 SCORER_CONTRACT_ARTIFACT_PATH = (
     ROOT / ".generated/go2_utility_scorer_v1_2/scorer_contract_v1_2.json"
 )
@@ -160,6 +170,34 @@ def _verify_self_digest(payload: dict[str, Any], key: str, label: str) -> None:
     expected = canonical_digest(_without_digest(payload, key))
     if observed != expected:
         raise RuntimeError(f"{label} self digest mismatch: {observed} != {expected}")
+
+
+def _require_sha256(value: Any, label: str) -> str:
+    if (not isinstance(value, str) or len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)):
+        raise RuntimeError(f"{label} is not a lowercase SHA-256 digest")
+    return value
+
+
+def _validate_global_exact_scorer_contract_lineage(
+        value: Any, *, expected: Mapping[str, Any] | None = None,
+        ) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        raise RuntimeError("global exact scorer-contract lineage is not an object")
+    if set(value) != GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_KEYS:
+        raise RuntimeError(
+            "global exact scorer-contract lineage schema is not closed")
+    lineage = dict(value)
+    if lineage.get("schema") != GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_SCHEMA:
+        raise RuntimeError("global exact scorer-contract lineage schema changed")
+    for key in GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_KEYS - {"schema"}:
+        _require_sha256(lineage.get(key), f"global exact lineage {key}")
+    if lineage["current_scorer_contract_v1_2_digest"] != contract_digest():
+        raise RuntimeError(
+            "global exact operational scorer contract differs from current source")
+    if expected is not None and dict(expected) != lineage:
+        raise RuntimeError("global exact scorer-contract lineage differs")
+    return lineage
 
 
 def _resolve_frame(out: Path, value: str) -> Path:
@@ -303,6 +341,95 @@ def _load_clean_source_launch_receipt() -> dict[str, Any]:
     }
 
 
+def _load_manifest_launch_lineage(
+        manifest: Mapping[str, Any],
+        ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Resolve current operational and preserved scientific launch identities."""
+
+    if "small_completion_global_exact_execution" not in manifest:
+        legacy = _load_clean_source_launch_receipt()
+        scientific = dict(legacy)
+        return legacy, scientific, legacy
+    try:
+        successor = (
+            CORPUS_BUILDER
+            .load_global_exact_successor_scorer_contract_for_consumption(
+                manifest))
+    except (OSError, ValueError, KeyError, RuntimeError) as exc:
+        raise RuntimeError(
+            f"global-exact successor scorer contract does not verify: {exc}"
+        ) from exc
+    if not isinstance(successor, Mapping):
+        raise RuntimeError("global-exact successor scorer contract is not an object")
+    predecessor = successor.get("scientific_predecessor_launch_bindings")
+    if not isinstance(predecessor, Mapping):
+        raise RuntimeError(
+            "global-exact successor lacks scientific predecessor launch bindings")
+    if set(predecessor) != set(SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS):
+        raise RuntimeError(
+            "global-exact scientific predecessor launch schema is not closed")
+    digest_keys = (
+        "clean_source_launch_receipt_digest",
+        "clean_source_binding_digest",
+        "bound_implementations_digest",
+        "scorer_contract_artifact_digest",
+    )
+    for key in SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS:
+        value = predecessor.get(key)
+        expected_length = 40 if key == "source_repository_commit" else 64
+        if (not isinstance(value, str) or len(value) != expected_length
+                or any(character not in "0123456789abcdef" for character in value)):
+            raise RuntimeError(f"scientific predecessor {key} is malformed")
+    for key in (
+            *SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS,
+            "clean_source_launch_receipt_sha256",
+            "scorer_contract_artifact_sha256",
+            "launch_state_selector_feasibility_receipt_digest",
+            "mixed_precontract_disposition_receipt_digest",
+            "global_exact_execution_amendment_digest",
+            "global_exact_successor_scorer_contract_digest",
+            "current_scorer_contract_v1_2_digest",
+            ):
+        value = successor.get(key)
+        expected_length = 40 if key == "source_repository_commit" else 64
+        if (not isinstance(value, str) or len(value) != expected_length
+                or any(character not in "0123456789abcdef" for character in value)):
+            raise RuntimeError(f"operational successor {key} is malformed")
+    # Keep this explicit to make accidental removal of one of the digest fields
+    # visible to static review.
+    if any(key not in successor for key in digest_keys):
+        raise RuntimeError("global-exact operational launch bindings are incomplete")
+    historical_scorer_digest = _require_sha256(
+        manifest.get("scorer_contract_v1_2_digest"),
+        "global-exact scientific predecessor scorer_contract_v1_2_digest",
+    )
+    contract_lineage = _validate_global_exact_scorer_contract_lineage({
+        "schema": GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_SCHEMA,
+        "scientific_predecessor_scorer_contract_v1_2_digest":
+            historical_scorer_digest,
+        "current_scorer_contract_v1_2_digest": successor[
+            "current_scorer_contract_v1_2_digest"],
+        "global_exact_successor_scorer_contract_digest": successor[
+            "global_exact_successor_scorer_contract_digest"],
+    })
+    operational = {
+        **dict(successor),
+        "global_exact_scorer_contract_lineage": contract_lineage,
+    }
+    scientific = {
+        **{key: predecessor[key]
+           for key in SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS},
+        "mixed_precontract_disposition_receipt_digest": successor[
+            "mixed_precontract_disposition_receipt_digest"],
+    }
+    selector_launch = {
+        **scientific,
+        "launch_state_selector_feasibility_receipt_digest": successor[
+            "launch_state_selector_feasibility_receipt_digest"],
+    }
+    return operational, scientific, selector_launch
+
+
 def _load_selector_successor_receipts(
         *, source_commit: str, selection_digest: str,
         active_states: list[dict[str, Any]],
@@ -311,6 +438,7 @@ def _load_selector_successor_receipts(
         expected_clean_source_binding_digest: str | None = None,
         expected_bound_implementations_digest: str | None = None,
         enforce_managed_paths: bool = False,
+        global_exact_manifest: Mapping[str, Any] | None = None,
         ) -> dict[str, str]:
     """Verify the outcome-free selector successor before opening branch rows."""
 
@@ -387,14 +515,25 @@ def _load_selector_successor_receipts(
                 "mixed precontract disposition differs from clean-source launch")
         revalidation = json.loads(revalidation_path.read_text())
         allocation = json.loads(allocation_path.read_text())
-        STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
-            revalidation, allocation_manifest=allocation,
-            active_states=active_states,
-            expected_source_commit=source_commit,
-            expected_successor_selection_digest=selection_digest,
-            expected_feasibility_receipt_digest=feasibility_digest,
-            expected_mixed_precontract_disposition_receipt_digest=
-                expected_mixed_precontract_disposition_receipt_digest)
+        if global_exact_manifest is not None:
+            certified = (
+                CORPUS_BUILDER
+                .validate_global_exact_allocation_for_consumption(
+                    global_exact_manifest, allocation))
+            if (certified["preserved_state_revalidation_receipt_digest"]
+                    != revalidation.get(
+                        "preserved_state_revalidation_receipt_digest")):
+                raise RuntimeError(
+                    "global exact phase-2 selector receipt changed")
+        else:
+            STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
+                revalidation, allocation_manifest=allocation,
+                active_states=active_states,
+                expected_source_commit=source_commit,
+                expected_successor_selection_digest=selection_digest,
+                expected_feasibility_receipt_digest=feasibility_digest,
+                expected_mixed_precontract_disposition_receipt_digest=
+                    expected_mixed_precontract_disposition_receipt_digest)
     except (OSError, json.JSONDecodeError,
             STATE_SELECTOR.StateSelectorAmendmentError) as exc:
         raise RuntimeError(
@@ -410,7 +549,8 @@ def _load_selector_successor_receipts(
 
 def _load_inputs(out: Path, *, allow_partial: bool,
                  pool: str | None = None) -> tuple[
-        dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
+        dict[str, Any], dict[str, Any], list[dict[str, Any]],
+        dict[str, str] | None]:
     manifest_path = out / "state_manifest.json"
     # Reopen and replay the canonical pre-outcome selection provenance before
     # any branch row or frame is opened.  A self-signed manifest plus phase-2
@@ -431,24 +571,41 @@ def _load_inputs(out: Path, *, allow_partial: bool,
         # always supplies one, so this cannot bypass the managed-root gate.
         manifest = json.loads(manifest_path.read_text())
         _verify_self_digest(manifest, "state_manifest_digest", "state manifest")
-    expected_contract = contract_digest()
     frozen = contract()
-    launch = _load_clean_source_launch_receipt()
+    (operational_launch, manifest_launch,
+     selector_launch) = _load_manifest_launch_lineage(manifest)
+    contract_lineage = (
+        _validate_global_exact_scorer_contract_lineage(
+            operational_launch.get("global_exact_scorer_contract_lineage"))
+        if "global_exact_successor_scorer_contract_digest" in operational_launch
+        else None
+    )
+    scientific_contract_digest = (
+        contract_lineage[
+            "scientific_predecessor_scorer_contract_v1_2_digest"]
+        if contract_lineage is not None else contract_digest()
+    )
     selector = _load_selector_successor_receipts(
-        source_commit=launch["source_repository_commit"],
+        source_commit=selector_launch["source_repository_commit"],
         selection_digest=frozen["corpus_selection_digest"],
         active_states=manifest["states"],
-        expected_feasibility_receipt_digest=launch[
+        expected_feasibility_receipt_digest=selector_launch[
             "launch_state_selector_feasibility_receipt_digest"],
-        expected_mixed_precontract_disposition_receipt_digest=launch[
+        expected_mixed_precontract_disposition_receipt_digest=selector_launch[
             "mixed_precontract_disposition_receipt_digest"],
-        expected_clean_source_binding_digest=launch[
+        expected_clean_source_binding_digest=selector_launch[
             "clean_source_binding_digest"],
-        expected_bound_implementations_digest=launch[
+        expected_bound_implementations_digest=selector_launch[
             "bound_implementations_digest"],
-        enforce_managed_paths=True)
-    if manifest.get("scorer_contract_v1_2_digest") != expected_contract:
-        raise RuntimeError("state manifest is bound to a different scorer contract")
+        enforce_managed_paths=True,
+        global_exact_manifest=(
+            manifest if isinstance(
+                manifest.get("small_completion_global_exact_execution"),
+                Mapping) else None))
+    if (manifest.get("scorer_contract_v1_2_digest")
+            != scientific_contract_digest):
+        raise RuntimeError(
+            "state manifest is bound to a different scientific scorer contract")
     target_encoder = frozen["target_encoder"]
     if (target_encoder.get("token_grid") != [24, 32]
             or target_encoder.get("tokens") != TOKENS
@@ -466,7 +623,7 @@ def _load_inputs(out: Path, *, allow_partial: bool,
         "progress_contract_digest": frozen["progress_target_digest"],
         "safety_contract_digest": frozen["safety_target_digest"],
         "oracle_v1_2_digest": frozen["oracle_v1_2_digest"],
-        "scorer_contract_v1_2_digest": expected_contract,
+        "scorer_contract_v1_2_digest": scientific_contract_digest,
         "render_contract_digest": render_contract_digest(),
         "textured_v03_renderer_contract_digest":
             textured_v03_renderer_contract_digest(),
@@ -479,8 +636,9 @@ def _load_inputs(out: Path, *, allow_partial: bool,
         if manifest.get(key) != expected:
             raise RuntimeError(f"state manifest frozen binding mismatch: {key}")
     for key in LAUNCH_BINDING_KEYS:
-        if manifest.get(key) != launch[key]:
-            raise RuntimeError(f"state manifest clean-source binding mismatch: {key}")
+        if manifest.get(key) != manifest_launch[key]:
+            raise RuntimeError(
+                f"state manifest scientific launch binding mismatch: {key}")
 
     invalid_index = INVALID_IDS.load_invalid_identity_index()
     if manifest.get("exclusion_binding", {}).get(
@@ -506,11 +664,17 @@ def _load_inputs(out: Path, *, allow_partial: bool,
                 != preflight.get("pre_identity_validation_digest")):
             raise RuntimeError("pre-identity allocation validation binding mismatch")
         allocation = json.loads(allocation_path.read_text())
-        ALLOC.validate_allocation_manifest(
-            allocation,
-            expected_source_identity_manifest_digest=
-                manifest["pre_allocation_identity_manifest_digest"],
-        )
+        if isinstance(
+                manifest.get("small_completion_global_exact_execution"),
+                Mapping):
+            CORPUS_BUILDER.validate_global_exact_allocation_for_consumption(
+                manifest, allocation)
+        else:
+            ALLOC.validate_allocation_manifest(
+                allocation,
+                expected_source_identity_manifest_digest=
+                    manifest["pre_allocation_identity_manifest_digest"],
+            )
         if (manifest.get("candidate_allocation_manifest_digest")
                 != allocation.get("allocation_manifest_digest")
                 or manifest.get(
@@ -575,7 +739,7 @@ def _load_inputs(out: Path, *, allow_partial: bool,
     if not allow_partial and (not receipt.get("complete") or len(rows) != expected_count):
         raise RuntimeError("full encoding requires the exact complete registered corpus")
     for row in rows:
-        _validate_row(row, manifest, expected_contract)
+        _validate_row(row, manifest, scientific_contract_digest)
     INVALID_IDS.assert_disjoint(rows, label="branch row ledger", index=invalid_index)
     registered = {
         identity["branch_identity_digest"]: (state, identity)
@@ -595,7 +759,7 @@ def _load_inputs(out: Path, *, allow_partial: bool,
             raise RuntimeError("branch row relabels a registered branch identity")
     if receipt.get("complete") and set(observed) != set(registered):
         raise RuntimeError("completed corpus omits a registered branch identity")
-    return manifest, receipt, rows
+    return manifest, receipt, rows, contract_lineage
 
 
 def normalise(tokens: torch.Tensor) -> torch.Tensor:
@@ -656,8 +820,12 @@ def main() -> int:
         raise SystemExit("--batch-frames must be at least four")
 
     out = OUT_ROOT / args.pool
-    manifest, corpus_receipt, all_rows = _load_inputs(
+    manifest, corpus_receipt, all_rows, contract_lineage = _load_inputs(
         out, allow_partial=args.smoke, pool=args.pool)
+    operational_contract_digest = (
+        contract_lineage["current_scorer_contract_v1_2_digest"]
+        if contract_lineage is not None else contract_digest()
+    )
     expected_states = manifest["states"]
     if args.smoke:
         if args.pool != "scorer_fit":
@@ -675,6 +843,8 @@ def main() -> int:
             raise RuntimeError("smoke requires one complete six-candidate state")
         if (branch_smoke.get("state_manifest_digest")
                 != manifest["state_manifest_digest"]
+                or branch_smoke.get("scorer_contract_v1_2_digest")
+                != manifest["scorer_contract_v1_2_digest"]
                 or branch_smoke.get("state_identity_digest")
                 != states[0]["state_identity_digest"]
                 or branch_smoke.get("branch_identity_digests")
@@ -722,7 +892,8 @@ def main() -> int:
             prior = json.loads(index_path.read_text())
             _verify_self_digest(prior, "latents_index_digest", "latents index")
             if (prior.get("state_manifest_digest") != manifest["state_manifest_digest"]
-                    or prior.get("scorer_contract_v1_2_digest") != contract_digest()
+                    or prior.get("scorer_contract_v1_2_digest")
+                    != operational_contract_digest
                     or prior.get("candidate_allocation_amendment_digest")
                     != manifest["candidate_allocation_amendment_digest"]
                     or prior.get("invalid_scorer_identity_exclusion_digest")
@@ -730,6 +901,11 @@ def main() -> int:
                     or prior.get("corpus_bound_digests")
                     != {key: manifest[key] for key in CORPUS_BINDING_KEYS}):
                 raise RuntimeError("prior latent index binds a different frozen corpus")
+            if contract_lineage is not None:
+                _validate_global_exact_scorer_contract_lineage(
+                    prior.get("global_exact_scorer_contract_lineage"),
+                    expected=contract_lineage,
+                )
             if (prior.get("complete")
                     and prior.get("corpus_digest") != corpus_receipt["corpus_digest"]):
                 raise RuntimeError("completed latent index binds a different corpus receipt")
@@ -928,7 +1104,10 @@ def main() -> int:
             manifest["pre_identity_allocation_validation_digest"],
         "invalid_scorer_identity_exclusion_digest":
             manifest["invalid_scorer_identity_exclusion_digest"],
-        "scorer_contract_v1_2_digest": contract_digest(),
+        "scorer_contract_v1_2_digest": operational_contract_digest,
+        **({
+            "global_exact_scorer_contract_lineage": contract_lineage,
+        } if contract_lineage is not None else {}),
         "corpus_bound_digests": {
             key: manifest[key] for key in CORPUS_BINDING_KEYS
         },
@@ -1017,7 +1196,10 @@ def main() -> int:
             "corpus_digest": corpus_receipt["corpus_digest"],
             "branch_smoke_receipt_digest":
                 branch_smoke["smoke_branch_receipt_digest"],
-            "scorer_contract_v1_2_digest": contract_digest(),
+            "scorer_contract_v1_2_digest": operational_contract_digest,
+            **({
+                "global_exact_scorer_contract_lineage": contract_lineage,
+            } if contract_lineage is not None else {}),
             "candidate_allocator_contract_digest":
                 manifest["candidate_allocator_contract_digest"],
             "candidate_allocation_amendment_digest":
@@ -1091,6 +1273,18 @@ def main() -> int:
         branch_smoke = json.loads(branch_smoke_path.read_text())
         _verify_self_digest(
             branch_smoke, "smoke_branch_receipt_digest", "branch smoke receipt")
+        if (smoke.get("scorer_contract_v1_2_digest")
+                != operational_contract_digest
+                or branch_smoke.get("scorer_contract_v1_2_digest")
+                != manifest["scorer_contract_v1_2_digest"]):
+            raise RuntimeError(
+                "completed smoke receipts conflate scientific and operational "
+                "scorer contracts")
+        if contract_lineage is not None:
+            _validate_global_exact_scorer_contract_lineage(
+                smoke.get("global_exact_scorer_contract_lineage"),
+                expected=contract_lineage,
+            )
         smoke_state_id = str(branch_smoke["state_id"])
         smoke_rows = [row for row in all_rows if row["state_id"] == smoke_state_id]
         if (len(smoke_rows) != 6 or not all(row.get("valid") for row in smoke_rows)

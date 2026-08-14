@@ -117,8 +117,31 @@ LAUNCH_BINDING_KEYS = (
     "scorer_contract_artifact_digest",
     "mixed_precontract_disposition_receipt_digest",
 )
+# The first five fields are the source/contract launch identity carried by the
+# original (d9d) scientific manifest.  The mixed-precontract receipt is
+# selector lineage and is intentionally handled alongside the selector
+# feasibility receipt below.
+SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS = LAUNCH_BINDING_KEYS[:-1]
 SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
 SCORER_PROVENANCE_BINDING_KEYS = SELECTOR_BINDING_KEYS + LAUNCH_BINDING_KEYS
+GLOBAL_EXACT_PROVENANCE_BINDING_KEYS = (
+    "clean_source_launch_receipt_sha256",
+    "scorer_contract_artifact_sha256",
+    "global_exact_execution_amendment_digest",
+    "global_exact_successor_scorer_contract_digest",
+    "current_scorer_contract_v1_2_digest",
+    "scientific_predecessor_launch_bindings",
+    "global_exact_scorer_contract_lineage",
+)
+GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_SCHEMA = (
+    "go2_utility_scorer_v1_2_global_exact_contract_lineage_v1"
+)
+GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_KEYS = frozenset((
+    "schema",
+    "scientific_predecessor_scorer_contract_v1_2_digest",
+    "current_scorer_contract_v1_2_digest",
+    "global_exact_successor_scorer_contract_digest",
+))
 
 # There are no learned or outcome-derived scaler values.  Recording every
 # identity transform explicitly prevents a downstream consumer from silently
@@ -280,6 +303,85 @@ def _require_digest(value: Any, label: str) -> str:
     _require(isinstance(value, str) and HEX64.fullmatch(value) is not None,
              f"{label} is not a lowercase SHA-256 digest")
     return str(value)
+
+
+def scorer_provenance_binding_keys(value: Mapping[str, Any]) -> tuple[str, ...]:
+    """Return the provenance fields applicable to one scorer run.
+
+    Legacy d9d manifests retain their byte-for-byte field set.  A global-exact
+    successor adds its operational contract and historical-science bridge only
+    when the successor digest is present.
+    """
+
+    if "global_exact_successor_scorer_contract_digest" not in value:
+        return SCORER_PROVENANCE_BINDING_KEYS
+    return SCORER_PROVENANCE_BINDING_KEYS + GLOBAL_EXACT_PROVENANCE_BINDING_KEYS
+
+
+def validate_global_exact_scorer_contract_lineage(
+        value: Any, *, expected: Mapping[str, Any] | None = None,
+        ) -> dict[str, str]:
+    """Validate the closed historical/current scorer-contract bridge."""
+
+    _require(isinstance(value, Mapping),
+             "global exact scorer-contract lineage is not an object")
+    _require(set(value) == GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_KEYS,
+             "global exact scorer-contract lineage schema is not closed")
+    lineage = dict(value)
+    _require(
+        lineage.get("schema") == GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_SCHEMA,
+        "global exact scorer-contract lineage schema changed",
+    )
+    for key in GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_KEYS - {"schema"}:
+        _require_digest(lineage.get(key), f"global exact lineage {key}")
+    _require(
+        lineage["current_scorer_contract_v1_2_digest"] == contract_digest(),
+        "global exact operational scorer contract differs from current source",
+    )
+    if expected is not None:
+        _require(dict(expected) == lineage,
+                 "global exact scorer-contract lineage differs")
+    return lineage
+
+
+def scorer_provenance_bindings(value: Mapping[str, Any]) -> dict[str, Any]:
+    bindings = {
+        key: value[key] for key in scorer_provenance_binding_keys(value)
+    }
+    if "global_exact_successor_scorer_contract_digest" in value:
+        lineage = validate_global_exact_scorer_contract_lineage(
+            bindings["global_exact_scorer_contract_lineage"])
+        _require(
+            lineage["current_scorer_contract_v1_2_digest"]
+            == bindings["current_scorer_contract_v1_2_digest"],
+            "global exact operational scorer digest is internally inconsistent",
+        )
+        _require(
+            lineage["global_exact_successor_scorer_contract_digest"]
+            == bindings["global_exact_successor_scorer_contract_digest"],
+            "global exact successor scorer digest is internally inconsistent",
+        )
+    return bindings
+
+
+def operational_scorer_contract_digest(value: Mapping[str, Any]) -> str:
+    """Return the exact signed operational digest for a scorer artefact."""
+
+    if "global_exact_successor_scorer_contract_digest" not in value:
+        return contract_digest()
+    lineage = validate_global_exact_scorer_contract_lineage(
+        value.get("global_exact_scorer_contract_lineage"))
+    _require(
+        value.get("current_scorer_contract_v1_2_digest")
+        == lineage["current_scorer_contract_v1_2_digest"],
+        "global exact current scorer digest differs from its closed lineage",
+    )
+    _require(
+        value.get("global_exact_successor_scorer_contract_digest")
+        == lineage["global_exact_successor_scorer_contract_digest"],
+        "global exact successor scorer digest differs from its closed lineage",
+    )
+    return lineage["current_scorer_contract_v1_2_digest"]
 
 
 def _finite_number(value: Any) -> bool:
@@ -444,11 +546,122 @@ def _validate_clean_source_launch(
     }
 
 
+def _load_manifest_launch_lineage(
+        manifest: Mapping[str, Any], pool_dir: Path,
+        pre_identity_validation: Mapping[str, Any], *,
+        enforce_managed_paths: bool = False,
+        ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Resolve operational, manifest-scientific, and selector launch bindings.
+
+    A legacy manifest has one launch identity, so all three views are the
+    existing clean-source launch receipt.  A global-exact manifest deliberately
+    keeps the original d9d launch fields as scientific lineage while the
+    post-manifest successor scorer contract binds the current clean executable
+    source.  The builder helper validates that bridge before returning it.
+    """
+
+    if "small_completion_global_exact_execution" not in manifest:
+        legacy = _validate_clean_source_launch(
+            pool_dir, pre_identity_validation,
+            enforce_managed_paths=enforce_managed_paths)
+        scientific = dict(legacy)
+        return legacy, scientific, legacy
+
+    try:
+        successor = (
+            CORPUS_BUILDER
+            .load_global_exact_successor_scorer_contract_for_consumption(
+                manifest))
+    except (OSError, ValueError, KeyError, RuntimeError) as exc:
+        raise CorpusValidationError(
+            f"global-exact successor scorer contract does not verify: {exc}"
+        ) from exc
+    _require(isinstance(successor, Mapping),
+             "global-exact successor scorer contract is not an object")
+    predecessor = successor.get("scientific_predecessor_launch_bindings")
+    _require(isinstance(predecessor, Mapping),
+             "global-exact successor lacks scientific predecessor launch bindings")
+    _require(set(predecessor) == set(SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS),
+             "global-exact scientific predecessor launch schema is not closed")
+    for key in SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS:
+        value = predecessor.get(key)
+        if key == "source_repository_commit":
+            _require(isinstance(value, str)
+                     and re.fullmatch(r"[0-9a-f]{40}", value) is not None,
+                     f"scientific predecessor {key} is not a commit digest")
+        else:
+            _require_digest(value, f"scientific predecessor {key}")
+    for key in (
+            *SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS,
+            "clean_source_launch_receipt_sha256",
+            "scorer_contract_artifact_sha256",
+            "launch_state_selector_feasibility_receipt_digest",
+            "mixed_precontract_disposition_receipt_digest",
+            "global_exact_execution_amendment_digest",
+            "global_exact_successor_scorer_contract_digest",
+            "current_scorer_contract_v1_2_digest",
+            ):
+        value = successor.get(key)
+        if key == "source_repository_commit":
+            _require(isinstance(value, str)
+                     and re.fullmatch(r"[0-9a-f]{40}", value) is not None,
+                     f"operational successor {key} is not a commit digest")
+        else:
+            _require_digest(value, f"operational successor {key}")
+
+    historical_scorer_digest = _require_digest(
+        manifest.get("scorer_contract_v1_2_digest"),
+        "global-exact scientific predecessor scorer_contract_v1_2_digest",
+    )
+    contract_lineage = validate_global_exact_scorer_contract_lineage({
+        "schema": GLOBAL_EXACT_SCORER_CONTRACT_LINEAGE_SCHEMA,
+        "scientific_predecessor_scorer_contract_v1_2_digest":
+            historical_scorer_digest,
+        "current_scorer_contract_v1_2_digest": successor[
+            "current_scorer_contract_v1_2_digest"],
+        "global_exact_successor_scorer_contract_digest": successor[
+            "global_exact_successor_scorer_contract_digest"],
+    })
+    operational = {
+        **{key: successor[key] for key in LAUNCH_BINDING_KEYS},
+        **{key: successor[key] for key in GLOBAL_EXACT_PROVENANCE_BINDING_KEYS
+           if key not in {
+               "scientific_predecessor_launch_bindings",
+               "global_exact_scorer_contract_lineage",
+           }},
+        "scientific_predecessor_launch_bindings": {
+            key: predecessor[key]
+            for key in SCIENTIFIC_PREDECESSOR_LAUNCH_BINDING_KEYS
+        },
+        "global_exact_scorer_contract_lineage": contract_lineage,
+    }
+    scientific = {
+        **operational["scientific_predecessor_launch_bindings"],
+        "mixed_precontract_disposition_receipt_digest": successor[
+            "mixed_precontract_disposition_receipt_digest"],
+    }
+    for key, expected in scientific.items():
+        _require(manifest.get(key) == expected,
+                 f"global-exact manifest scientific launch differs at {key}")
+    _require(
+        manifest.get("pre_identity_allocation_validation_digest")
+        == pre_identity_validation.get("pre_identity_validation_digest"),
+        "global-exact manifest pre-identity validation binding differs",
+    )
+    selector_launch = {
+        **scientific,
+        "launch_state_selector_feasibility_receipt_digest": successor[
+            "launch_state_selector_feasibility_receipt_digest"],
+    }
+    return operational, scientific, selector_launch
+
+
 def _validate_selector_successor(
         pool_dir: Path, launch_bindings: Mapping[str, Any],
         allocation_manifest: Mapping[str, Any],
         active_states: Sequence[Mapping[str, Any]],
         *, enforce_managed_paths: bool = False,
+        global_exact_manifest: Mapping[str, Any] | None = None,
         ) -> dict[str, str]:
     """Validate frozen feasibility, mixed disposition, and final phase 2."""
 
@@ -523,15 +736,28 @@ def _validate_selector_successor(
             "mixed precontract disposition differs from clean-source launch",
         )
         revalidation = _read_json(revalidation_path)
-        STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
-            revalidation,
-            allocation_manifest=allocation_manifest,
-            active_states=active_states,
-            expected_source_commit=launch_bindings["source_repository_commit"],
-            expected_successor_selection_digest=selection_digest,
-            expected_feasibility_receipt_digest=feasibility_digest,
-            expected_mixed_precontract_disposition_receipt_digest=launch_bindings[
-                "mixed_precontract_disposition_receipt_digest"])
+        if global_exact_manifest is not None:
+            certified = (
+                CORPUS_BUILDER
+                .validate_global_exact_allocation_for_consumption(
+                    global_exact_manifest, allocation_manifest))
+            _require(
+                certified["preserved_state_revalidation_receipt_digest"]
+                == revalidation.get(
+                    "preserved_state_revalidation_receipt_digest"),
+                "global exact phase-2 selector receipt changed")
+        else:
+            STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
+                revalidation,
+                allocation_manifest=allocation_manifest,
+                active_states=active_states,
+                expected_source_commit=launch_bindings[
+                    "source_repository_commit"],
+                expected_successor_selection_digest=selection_digest,
+                expected_feasibility_receipt_digest=feasibility_digest,
+                expected_mixed_precontract_disposition_receipt_digest=
+                    launch_bindings[
+                        "mixed_precontract_disposition_receipt_digest"])
         revalidation_digest = _require_digest(
             revalidation.get("preserved_state_revalidation_receipt_digest"),
             "preserved_state_revalidation_receipt_digest")
@@ -1039,10 +1265,29 @@ def _parse_rows(path: Path) -> list[dict[str, Any]]:
 def _validate_manifest(manifest: dict[str, Any],
                        allocation: Mapping[str, Any],
                        pre_identity_validation: Mapping[str, Any],
-                       launch_bindings: Mapping[str, Any],
-                       selector_bindings: Mapping[str, Any]
+                       manifest_launch_bindings: Mapping[str, Any],
+                       selector_bindings: Mapping[str, Any],
+                       contract_lineage: Mapping[str, Any] | None,
                        ) -> dict[str, dict[str, Any]]:
     expected = contract()
+    if isinstance(
+            manifest.get("small_completion_global_exact_execution"), Mapping):
+        scientific_contract_digest = _require_digest(
+            manifest.get("scorer_contract_v1_2_digest"),
+            "manifest scientific predecessor scorer_contract_v1_2_digest",
+        )
+        lineage = validate_global_exact_scorer_contract_lineage(
+            contract_lineage)
+        _require(
+            lineage[
+                "scientific_predecessor_scorer_contract_v1_2_digest"]
+            == scientific_contract_digest,
+            "manifest scientific scorer digest differs from successor lineage",
+        )
+    else:
+        _require(contract_lineage is None,
+                 "legacy manifest unexpectedly has global scorer lineage")
+        scientific_contract_digest = contract_digest()
     _require(expected.get("scorer_fit_allocation_design_digest")
              == FROZEN_SCORER_FIT_ALLOCATION_DESIGN_DIGEST,
              "scorer contract allocation-design binding changed")
@@ -1095,12 +1340,12 @@ def _validate_manifest(manifest: dict[str, Any],
         "invalid_scorer_identity_exclusion_digest":
             invalid_identity_exclusion_digest(),
         **{key: selector_bindings[key] for key in SELECTOR_BINDING_KEYS},
-        **{key: launch_bindings[key] for key in LAUNCH_BINDING_KEYS},
+        **{key: manifest_launch_bindings[key] for key in LAUNCH_BINDING_KEYS},
         "candidate_bank_digest": expected["candidate_bank_digest"],
         "progress_contract_digest": expected["progress_target_digest"],
         "safety_contract_digest": expected["safety_target_digest"],
         "oracle_v1_2_digest": expected["oracle_v1_2_digest"],
-        "scorer_contract_v1_2_digest": contract_digest(),
+        "scorer_contract_v1_2_digest": scientific_contract_digest,
         "boundary": FROZEN_BRANCH_BOUNDARY_DIGEST,
         "render_contract_digest": canonical_digest(expected["render_contract"]),
         "textured_v03_renderer_contract_digest":
@@ -1121,12 +1366,23 @@ def _validate_manifest(manifest: dict[str, Any],
         "pre_allocation_identity_manifest_digest")
     _require(allocation.get("source_identity_manifest_digest") == source_identity_digest,
              "candidate allocation binds a different pre-allocation identity manifest")
-    try:
-        validate_allocation_manifest(
-            allocation,
-            expected_source_identity_manifest_digest=source_identity_digest)
-    except CandidateAllocationError as exc:
-        raise CorpusValidationError(f"candidate allocation manifest is invalid: {exc}") from exc
+    if isinstance(
+            manifest.get("small_completion_global_exact_execution"), Mapping):
+        try:
+            CORPUS_BUILDER.validate_global_exact_allocation_for_consumption(
+                manifest, allocation)
+        except RuntimeError as exc:
+            raise CorpusValidationError(
+                f"global exact allocation certificate is invalid: {exc}") from exc
+    else:
+        try:
+            validate_allocation_manifest(
+                allocation,
+                expected_source_identity_manifest_digest=
+                    source_identity_digest)
+        except CandidateAllocationError as exc:
+            raise CorpusValidationError(
+                f"candidate allocation manifest is invalid: {exc}") from exc
     allocation_digest = allocation_manifest_digest(allocation)
     _require(allocation.get("allocation_manifest_digest") == allocation_digest,
              "candidate allocation manifest self digest does not verify")
@@ -1176,7 +1432,7 @@ def _validate_manifest(manifest: dict[str, Any],
         expected_state_identity = canonical_digest({
             "schema": "go2_branch_state_identity_v1_2",
             "selection_digest": expected["corpus_selection_digest"],
-            "scorer_contract_v1_2_digest": contract_digest(),
+            "scorer_contract_v1_2_digest": scientific_contract_digest,
             "state": identity_payload,
         })
         _require(state.get("state_identity_digest") == expected_state_identity,
@@ -1250,7 +1506,7 @@ def _validate_manifest(manifest: dict[str, Any],
                 ("pool", EXPECTED_POOL),
                 ("candidate_bank_digest", expected["candidate_bank_digest"]),
                 ("oracle_v1_2_digest", expected["oracle_v1_2_digest"]),
-                ("scorer_contract_v1_2_digest", contract_digest()),
+                ("scorer_contract_v1_2_digest", scientific_contract_digest),
                 ("render_contract_digest",
                  canonical_digest(expected["render_contract"])),
                 ("textured_v03_renderer_contract_digest",
@@ -1266,7 +1522,8 @@ def _validate_manifest(manifest: dict[str, Any],
                 ("invalid_scorer_identity_exclusion_digest",
                  invalid_identity_exclusion_digest()),
                 *((key, selector_bindings[key]) for key in SELECTOR_BINDING_KEYS),
-                *((key, launch_bindings[key]) for key in LAUNCH_BINDING_KEYS),
+                *((key, manifest_launch_bindings[key])
+                  for key in LAUNCH_BINDING_KEYS),
             ):
                 _require(branch_identity.get(identity_key) == expected_value,
                          f"branch identity {identity_key} differs for {state_id}")
@@ -1382,7 +1639,9 @@ def _verify_frame_records(records: Sequence[Mapping[str, Any]], *, expected: int
 
 def _validate_rows(rows: list[dict[str, Any]], states: dict[str, dict[str, Any]],
                    manifest: dict[str, Any], pool_dir: Path,
-                   *, verify_frame_paths: bool) -> list[dict[str, Any]]:
+                   *, verify_frame_paths: bool,
+                   scientific_contract_digest: str,
+                   ) -> list[dict[str, Any]]:
     _require(len(rows) == EXPECTED_BRANCHES,
              f"branch_rows.jsonl must contain exactly {EXPECTED_BRANCHES} rows")
     expected_contract = contract()
@@ -1432,7 +1691,8 @@ def _validate_rows(rows: list[dict[str, Any]], states: dict[str, dict[str, Any]]
                  f"row {row_number} has the wrong state manifest binding")
         _require(row.get("oracle_v1_2_digest") == expected_contract["oracle_v1_2_digest"],
                  f"row {row_number} has the wrong oracle binding")
-        _require(row.get("scorer_contract_v1_2_digest") == contract_digest(),
+        _require(row.get("scorer_contract_v1_2_digest")
+                 == scientific_contract_digest,
                  f"row {row_number} has the wrong scorer-contract binding")
         for aliases, expected_value in (
             (("candidate_allocation_manifest_digest",),
@@ -1595,7 +1855,9 @@ def _validate_rows(rows: list[dict[str, Any]], states: dict[str, dict[str, Any]]
 
 def _validate_receipt(receipt: dict[str, Any], manifest: dict[str, Any],
                       branch_rows_sha256: str,
-                      rows: Sequence[Mapping[str, Any]]) -> str:
+                      rows: Sequence[Mapping[str, Any]], *,
+                      scientific_contract_digest: str,
+                      ) -> str:
     _require(receipt.get("schema") == "go2_branch_corpus_v1_2_completion_receipt",
              "unexpected corpus receipt schema")
     _require(receipt.get("pool") == EXPECTED_POOL,
@@ -1623,7 +1885,8 @@ def _validate_receipt(receipt: dict[str, Any], manifest: dict[str, Any],
         (("safety_contract_digest", "safety_target_digest"),
          expected["safety_target_digest"]),
         (("oracle_v1_2_digest",), expected["oracle_v1_2_digest"]),
-        (("scorer_contract_v1_2_digest", "contract_digest"), contract_digest()),
+        (("scorer_contract_v1_2_digest", "contract_digest"),
+         scientific_contract_digest),
         (("selection_digest",), expected["corpus_selection_digest"]),
         (("candidate_allocation_manifest_digest",),
          manifest["candidate_allocation_manifest_digest"]),
@@ -1688,9 +1951,26 @@ def _validate_receipt(receipt: dict[str, Any], manifest: dict[str, Any],
     return corpus_digest
 
 
-def _validate_smoke_receipts(pool_dir: Path,
-                             manifest: Mapping[str, Any]) -> dict[str, Any]:
+def _validate_smoke_receipts(
+        pool_dir: Path, manifest: Mapping[str, Any], *,
+        contract_lineage: Mapping[str, Any] | None = None,
+        ) -> dict[str, Any]:
     expected = contract()
+    lineage = (
+        validate_global_exact_scorer_contract_lineage(contract_lineage)
+        if contract_lineage is not None else None
+    )
+    scientific_contract_digest = (
+        _require_digest(
+            manifest.get("scorer_contract_v1_2_digest"),
+            "smoke scientific predecessor scorer_contract_v1_2_digest",
+        )
+        if lineage is not None else contract_digest()
+    )
+    operational_contract_digest = (
+        lineage["current_scorer_contract_v1_2_digest"]
+        if lineage is not None else contract_digest()
+    )
     paths = (
         (pool_dir / "smoke_branch_receipt.json", "smoke_branch_receipt_digest",
          "go2_scorer_fit_branch_smoke_receipt_v1_2"),
@@ -1700,7 +1980,6 @@ def _validate_smoke_receipts(pool_dir: Path,
     verified: dict[str, Any] = {}
     required = (
         (("state_manifest_digest",), manifest["state_manifest_digest"]),
-        (("scorer_contract_v1_2_digest",), contract_digest()),
         (("candidate_allocator_contract_digest",), allocation_contract_digest()),
         (("candidate_allocation_amendment_digest",), allocation_amendment_digest()),
         (("candidate_allocation_post_identity_validation_digest",),
@@ -1731,6 +2010,21 @@ def _validate_smoke_receipts(pool_dir: Path,
         payload = {key: value for key, value in receipt.items() if key != self_key}
         _require(canonical_digest(payload) == observed_digest,
                  f"{path.name} self digest does not verify")
+        expected_scorer_digest = (
+            scientific_contract_digest
+            if path.name == "smoke_branch_receipt.json"
+            else operational_contract_digest
+        )
+        _require(
+            receipt.get("scorer_contract_v1_2_digest")
+            == expected_scorer_digest,
+            f"{path.name} scorer-contract role does not verify",
+        )
+        if lineage is not None and path.name == "smoke_encoding_receipt.json":
+            validate_global_exact_scorer_contract_lineage(
+                receipt.get("global_exact_scorer_contract_lineage"),
+                expected=lineage,
+            )
         for aliases, expected_value in required:
             _require(_bound_value(receipt, aliases) == expected_value,
                      f"{path.name} binding {aliases[0]} does not verify")
@@ -1744,8 +2038,17 @@ def _validate_smoke_receipts(pool_dir: Path,
 def _validate_latent_index(index: dict[str, Any], pool_dir: Path,
                            states: dict[str, dict[str, Any]],
                            rows: list[dict[str, Any]], manifest: dict[str, Any],
-                           corpus_digest: str, *, verify_encoder_checkpoint: bool
+                           corpus_digest: str, *, verify_encoder_checkpoint: bool,
+                           contract_lineage: Mapping[str, Any] | None,
                            ) -> tuple[dict[str, Any], Any, list[str], list[str]]:
+    lineage = (
+        validate_global_exact_scorer_contract_lineage(contract_lineage)
+        if contract_lineage is not None else None
+    )
+    operational_contract_digest = (
+        lineage["current_scorer_contract_v1_2_digest"]
+        if lineage is not None else contract_digest()
+    )
     _require(index.get("complete") is True, "latent index is not complete")
     _require(index.get("schema") == "go2_branch_corpus_v1_2_latents_index_v2",
              "unexpected latent index schema")
@@ -1792,7 +2095,7 @@ def _validate_latent_index(index: dict[str, Any], pool_dir: Path,
     for key, expected_value in (
         ("state_manifest_digest", manifest["state_manifest_digest"]),
         ("corpus_digest", corpus_digest),
-        ("scorer_contract_v1_2_digest", contract_digest()),
+        ("scorer_contract_v1_2_digest", operational_contract_digest),
         ("candidate_allocator_contract_digest", allocation_contract_digest()),
         ("candidate_allocation_amendment_digest", allocation_amendment_digest()),
         ("candidate_allocation_post_identity_validation_digest",
@@ -1813,6 +2116,11 @@ def _validate_latent_index(index: dict[str, Any], pool_dir: Path,
     ):
         _require(_bound_value(index, (key,)) == expected_value,
                  f"latent index {key} does not verify")
+    if lineage is not None:
+        validate_global_exact_scorer_contract_lineage(
+            index.get("global_exact_scorer_contract_lineage"),
+            expected=lineage,
+        )
     _require(index.get("preprocess") == EXPECTED_PREPROCESS,
              "latent preprocessing implementation changed")
     _require(index.get("target_normalisation") == EXPECTED_TARGET_NORMALISATION,
@@ -1985,25 +2293,50 @@ def validate_scorer_fit_corpus(pool: str = EXPECTED_POOL, *,
         _require(path.is_file(), f"missing required scorer-fit artefact {path}")
     pre_identity_validation = _read_json(pre_identity_path)
     allocation = _read_json(allocation_path)
-    launch_bindings = _validate_clean_source_launch(
-        pool_dir, pre_identity_validation, enforce_managed_paths=True)
-    selector_bindings = _validate_selector_successor(
-        pool_dir, launch_bindings, allocation, manifest.get("states", []),
+    (launch_bindings, manifest_launch_bindings,
+     selector_launch_bindings) = _load_manifest_launch_lineage(
+        manifest, pool_dir, pre_identity_validation,
         enforce_managed_paths=True)
+    contract_lineage = (
+        validate_global_exact_scorer_contract_lineage(
+            launch_bindings.get("global_exact_scorer_contract_lineage"))
+        if "global_exact_successor_scorer_contract_digest" in launch_bindings
+        else None
+    )
+    scientific_contract_digest = (
+        contract_lineage[
+            "scientific_predecessor_scorer_contract_v1_2_digest"]
+        if contract_lineage is not None else contract_digest()
+    )
+    selector_bindings = _validate_selector_successor(
+        pool_dir, selector_launch_bindings, allocation,
+        manifest.get("states", []),
+        enforce_managed_paths=True,
+        global_exact_manifest=(
+            manifest if isinstance(
+                manifest.get("small_completion_global_exact_execution"),
+                Mapping) else None))
     states = _validate_manifest(
-        manifest, allocation, pre_identity_validation, launch_bindings,
-        selector_bindings)
+        manifest, allocation, pre_identity_validation,
+        manifest_launch_bindings,
+        selector_bindings, contract_lineage)
     raw_rows = _parse_rows(rows_path)
     rows = _validate_rows(raw_rows, states, manifest, pool_dir,
-                          verify_frame_paths=verify_frame_paths)
+                          verify_frame_paths=verify_frame_paths,
+                          scientific_contract_digest=
+                              scientific_contract_digest)
     rows_digest = sha256_file(rows_path)
     receipt = _read_json(receipt_path)
-    corpus_digest = _validate_receipt(receipt, manifest, rows_digest, rows)
-    smoke_receipts = _validate_smoke_receipts(pool_dir, manifest)
+    corpus_digest = _validate_receipt(
+        receipt, manifest, rows_digest, rows,
+        scientific_contract_digest=scientific_contract_digest)
+    smoke_receipts = _validate_smoke_receipts(
+        pool_dir, manifest, contract_lineage=contract_lineage)
     index = _read_json(index_path)
     latent, horizon, _context_states, horizon_keys = _validate_latent_index(
         index, pool_dir, states, rows, manifest, corpus_digest,
-        verify_encoder_checkpoint=verify_encoder_checkpoint)
+        verify_encoder_checkpoint=verify_encoder_checkpoint,
+        contract_lineage=contract_lineage)
     positions = {key: position for position, key in enumerate(horizon_keys)}
     for row in rows:
         row["_latent_index"] = positions[f"{row['state_id']}|{row['candidate']}"]
@@ -2051,6 +2384,11 @@ def validate_scorer_fit_corpus(pool: str = EXPECTED_POOL, *,
                 launch_bindings["clean_source_launch_receipt_sha256"],
             "scorer_contract_artifact_sha256":
                 launch_bindings["scorer_contract_artifact_sha256"],
+            **({
+                key: launch_bindings[key]
+                for key in GLOBAL_EXACT_PROVENANCE_BINDING_KEYS
+            } if "global_exact_successor_scorer_contract_digest"
+               in launch_bindings else {}),
             "state_manifest_digest": manifest["state_manifest_digest"],
             "state_manifest_file_sha256": sha256_file(manifest_path),
             "branch_rows_sha256": rows_digest,
@@ -2645,6 +2983,8 @@ def main() -> int:
 
     main_started = time.time()
     corpus = validate_scorer_fit_corpus(args.pool)
+    operational_contract_digest = operational_scorer_contract_digest(
+        corpus["bindings"])
     if args.device == "auto":
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     else:
@@ -2668,7 +3008,7 @@ def main() -> int:
     feature_wall_time = time.time() - feature_started
     binding_payload = {
         "schema": "go2_utility_scorer_training_binding_v1_2",
-        "scorer_contract_v1_2_digest": contract_digest(),
+        "scorer_contract_v1_2_digest": operational_contract_digest,
         "corpus_bindings": corpus["bindings"],
         "normalisation": NORMALISATION,
         "architecture": {
@@ -2736,7 +3076,8 @@ def main() -> int:
                 and prior.get("scorer_package_sha256")
                 == sha256_file(PACKAGE_DIR / "scorer_package.pt")))
         if (prior.get("training_run_digest") == training_run_digest
-                and prior.get("scorer_contract_v1_2_digest") == contract_digest()
+                and prior.get("scorer_contract_v1_2_digest")
+                == operational_contract_digest
                 and prior.get("qualification_evaluations") == 1
                 and prior.get("final_state_digests") == current_final_state_digests
                 and prior_digest == canonical_digest(prior_payload)
@@ -2780,8 +3121,8 @@ def main() -> int:
         "schema": "go2_utility_scorer_package_v1_2", "status": STATUS,
         "training_run_digest": training_run_digest,
         "binding_digest": binding_digest,
-        "contract_digest": contract_digest(),
-        "scorer_contract_v1_2_digest": contract_digest(),
+        "contract_digest": operational_contract_digest,
+        "scorer_contract_v1_2_digest": operational_contract_digest,
         "bindings": binding_payload,
         "candidate_allocator_contract_digest": allocation_contract_digest(),
         "candidate_allocation_amendment_digest": allocation_amendment_digest(),
@@ -2791,8 +3132,7 @@ def main() -> int:
             corpus["bindings"]["pre_identity_allocation_validation_digest"],
         "invalid_scorer_identity_exclusion_digest":
             invalid_identity_exclusion_digest(),
-        **{key: corpus["bindings"][key]
-           for key in SCORER_PROVENANCE_BINDING_KEYS},
+        **scorer_provenance_bindings(corpus["bindings"]),
         "latent": packages["latent"], "no_latent": packages["no_latent"],
         "initial_state_digests": {
             name: value["initial_state_digest"] for name, value in initialisations.items()
@@ -2836,9 +3176,8 @@ def main() -> int:
         "status": STATUS,
         "training_run_digest": training_run_digest,
         "binding_digest": binding_digest,
-        "scorer_contract_v1_2_digest": contract_digest(),
-        **{key: corpus["bindings"][key]
-           for key in SCORER_PROVENANCE_BINDING_KEYS},
+        "scorer_contract_v1_2_digest": operational_contract_digest,
+        **scorer_provenance_bindings(corpus["bindings"]),
         "model_state_dict": packages["no_latent"],
         "initial_state_digest": initialisations["no_latent"]["initial_state_digest"],
         "final_state_digest": final_state_digests["no_latent"],
@@ -2862,9 +3201,8 @@ def main() -> int:
         "schema": "go2_utility_no_latent_baseline_receipt_v1_2",
         "status": STATUS, "complete": True,
         "training_run_digest": training_run_digest,
-        "scorer_contract_v1_2_digest": contract_digest(),
-        **{key: corpus["bindings"][key]
-           for key in SCORER_PROVENANCE_BINDING_KEYS},
+        "scorer_contract_v1_2_digest": operational_contract_digest,
+        **scorer_provenance_bindings(corpus["bindings"]),
         "path": str(baseline_path),
         "sha256": baseline_package_digest,
         "byte_count": baseline_path.stat().st_size,
@@ -2886,7 +3224,7 @@ def main() -> int:
             "scorer_package_sha256": scorer_package_digest,
             "final_state_digests": final_state_digests,
             "bindings_digest": binding_digest,
-            "scorer_contract_v1_2_digest": contract_digest(),
+            "scorer_contract_v1_2_digest": operational_contract_digest,
             "state_manifest_digest": corpus["bindings"]["state_manifest_digest"],
             "corpus_digest": corpus["bindings"]["corpus_digest"],
             "candidate_allocator_contract_digest": allocation_contract_digest(),
@@ -2897,8 +3235,7 @@ def main() -> int:
                 corpus["bindings"]["pre_identity_allocation_validation_digest"],
             "invalid_scorer_identity_exclusion_digest":
                 invalid_identity_exclusion_digest(),
-            **{key: corpus["bindings"][key]
-               for key in SCORER_PROVENANCE_BINDING_KEYS},
+            **scorer_provenance_bindings(corpus["bindings"]),
             "target_encoder_digest": corpus["index"]["target_encoder_digest"],
             "target_encoder_checkpoint_sha256":
                 corpus["bindings"]["encoder_checkpoint_sha256"],
@@ -2921,7 +3258,7 @@ def main() -> int:
     report = {
         "schema": "go2_utility_scorer_v1_2_qualification", "status": STATUS,
         "training_run_digest": training_run_digest,
-        "scorer_contract_v1_2_digest": contract_digest(),
+        "scorer_contract_v1_2_digest": operational_contract_digest,
         "frozen_scorer_fit_allocation_design_digest":
             FROZEN_SCORER_FIT_ALLOCATION_DESIGN_DIGEST,
         "corpus_bindings": corpus["bindings"],
@@ -2933,8 +3270,7 @@ def main() -> int:
             corpus["bindings"]["pre_identity_allocation_validation_digest"],
         "invalid_scorer_identity_exclusion_digest":
             invalid_identity_exclusion_digest(),
-        **{key: corpus["bindings"][key]
-           for key in SCORER_PROVENANCE_BINDING_KEYS},
+        **scorer_provenance_bindings(corpus["bindings"]),
         "target_encoder_digest": corpus["index"]["target_encoder_digest"],
         "target_encoder_checkpoint_sha256":
             corpus["bindings"]["encoder_checkpoint_sha256"],
