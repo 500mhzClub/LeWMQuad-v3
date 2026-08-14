@@ -17,6 +17,9 @@ candidate-subset allocator, or performance benchmark.  Its public stages are:
   and the issued scorer contract;
 * ``issue-branch-redrive-projection-correction``: bind the post-partial-corpus
   structural-redrive projection repair without changing any manifest or row;
+* ``issue-optional-smoke-partial-corpus-resume-correction``: bind the
+  metadata-only resume-gate repair after the strict producer retained a
+  state-aligned partial branch corpus;
 * ``run``: execute the registered smoke/recovery/corpus/training pipeline; and
 * ``status``: assemble a read-only metadata report.
 
@@ -705,6 +708,9 @@ def issue_encoder_import_correction(
     replayed_from_dtype_lineage = False
     replayed_from_path_projection_lineage = False
     replayed_from_redrive_lineage = False
+    replayed_from_resume_lineage = False
+    newest = _installed_optional_smoke_resume_correction(
+        root=root, design_authority=design_authority)
     redrive_relative = getattr(
         design_authority,
         "BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH", None)
@@ -722,7 +728,27 @@ def issue_encoder_import_correction(
         None)
     dtype_path = (None if dtype_relative is None else _pin_relative(
         root, Path(dtype_relative), label="encoder-compute-dtype correction"))
-    if (redrive_path is not None
+    if newest is not None:
+        redrive, _redrive_digest = (
+            _immutable_redrive_from_optional_smoke_resume_correction(
+                newest, root=root, design_authority=design_authority))
+        path_correction, _path_digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        dtype_correction, _dtype_digest = (
+            _immutable_dtype_from_path_projection_correction(
+                path_correction, design_authority=design_authority))
+        immutable = design_authority.validate_immutable_encoder_import_correction(
+            dtype_correction.get("immutable_encoder_import_correction", {}))
+        artifact = immutable["payload"]
+        validated = artifact
+        _immutable_import_digest_from_dtype_correction(
+            dtype_correction, design_authority=design_authority)
+        replayed_from_dtype_lineage = True
+        replayed_from_path_projection_lineage = True
+        replayed_from_redrive_lineage = True
+        replayed_from_resume_lineage = True
+    elif (redrive_path is not None
             and (redrive_path.exists() or redrive_path.is_symlink())):
         redrive = (
             design_authority
@@ -812,6 +838,8 @@ def issue_encoder_import_correction(
             replayed_from_path_projection_lineage,
         "replayed_from_immutable_branch_redrive_correction_lineage":
             replayed_from_redrive_lineage,
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage": replayed_from_resume_lineage,
     }
 
 
@@ -889,6 +917,59 @@ def _immutable_path_from_branch_redrive_projection_correction(
     return dict(payload), str(digest)
 
 
+def _immutable_redrive_from_optional_smoke_resume_correction(
+        correction: Mapping[str, Any], *, root: Path = ROOT,
+        design_authority: Any = DESIGN,
+        ) -> tuple[dict[str, Any], str]:
+    """Return the historical redrive correction nested by the live gate."""
+
+    digest = correction.get(
+        "immutable_branch_redrive_projection_correction_digest")
+    immutable = correction.get(
+        "immutable_branch_redrive_projection_correction")
+    if not isinstance(immutable, Mapping):
+        raise FullBankV2RunnerError(
+            "partial-corpus resume correction lacks the immutable redrive "
+            "correction")
+    validated_immutable = (
+        design_authority.validate_immutable_branch_redrive_projection_correction(
+            immutable))
+    payload = validated_immutable.get("payload")
+    binding = validated_immutable.get("binding")
+    if (not _is_hex(digest) or not isinstance(payload, Mapping)
+            or not isinstance(binding, Mapping)
+            or payload.get(
+                design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY)
+            != digest
+            or binding.get("self_digest_key")
+            != design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY
+            or binding.get("self_digest") != digest):
+        raise FullBankV2RunnerError(
+            "partial-corpus resume correction changed the immutable redrive "
+            "correction")
+    return dict(payload), str(digest)
+
+
+def _installed_optional_smoke_resume_correction(
+        *, root: Path, design_authority: Any) -> Mapping[str, Any] | None:
+    """Load the newest authority only when its exact registered path exists."""
+
+    relative = getattr(
+        design_authority,
+        "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH",
+        None)
+    if relative is None:
+        return None
+    path = _pin_relative(
+        root, Path(relative), label="optional-smoke partial-corpus correction")
+    if not path.exists() and not path.is_symlink():
+        return None
+    return (
+        design_authority
+        .load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+            root=root))
+
+
 def issue_encoder_compute_dtype_correction(
         *, root: Path = ROOT, design_authority: Any = DESIGN,
         ) -> dict[str, Any]:
@@ -896,6 +977,9 @@ def issue_encoder_compute_dtype_correction(
 
     replayed_from_path_projection_lineage = False
     replayed_from_redrive_lineage = False
+    replayed_from_resume_lineage = False
+    newest = _installed_optional_smoke_resume_correction(
+        root=root, design_authority=design_authority)
     redrive_relative = getattr(
         design_authority,
         "BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH", None)
@@ -908,7 +992,20 @@ def issue_encoder_compute_dtype_correction(
         None if path_relative is None else _pin_relative(
             root, Path(path_relative),
             label="encoder-path-projection correction"))
-    if (redrive_path is not None
+    if newest is not None:
+        redrive, _redrive_digest = (
+            _immutable_redrive_from_optional_smoke_resume_correction(
+                newest, root=root, design_authority=design_authority))
+        path_correction, _path_digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        artifact, _digest = _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority)
+        validated = artifact
+        replayed_from_path_projection_lineage = True
+        replayed_from_redrive_lineage = True
+        replayed_from_resume_lineage = True
+    elif (redrive_path is not None
             and (redrive_path.exists() or redrive_path.is_symlink())):
         redrive = (
             design_authority
@@ -980,6 +1077,8 @@ def issue_encoder_compute_dtype_correction(
             replayed_from_path_projection_lineage,
         "replayed_from_immutable_branch_redrive_correction_lineage":
             replayed_from_redrive_lineage,
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage": replayed_from_resume_lineage,
     }
 
 
@@ -989,12 +1088,25 @@ def issue_encoder_path_projection_correction(
     """Issue historically, or replay through the installed redrive gate."""
 
     replayed_from_redrive_lineage = False
+    replayed_from_resume_lineage = False
+    newest = _installed_optional_smoke_resume_correction(
+        root=root, design_authority=design_authority)
     redrive_relative = getattr(
         design_authority,
         "BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH", None)
     redrive_path = (None if redrive_relative is None else _pin_relative(
         root, Path(redrive_relative), label="branch-redrive correction"))
-    if (redrive_path is not None
+    if newest is not None:
+        redrive, _redrive_digest = (
+            _immutable_redrive_from_optional_smoke_resume_correction(
+                newest, root=root, design_authority=design_authority))
+        artifact, _digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        validated = artifact
+        replayed_from_redrive_lineage = True
+        replayed_from_resume_lineage = True
+    elif (redrive_path is not None
             and (redrive_path.exists() or redrive_path.is_symlink())):
         redrive = (
             design_authority
@@ -1054,19 +1166,31 @@ def issue_encoder_path_projection_correction(
         "branch_latent_or_scorer_runtime_started_by_issue_stage": False,
         "replayed_from_immutable_branch_redrive_correction_lineage":
             replayed_from_redrive_lineage,
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage": replayed_from_resume_lineage,
     }
 
 
 def issue_branch_redrive_projection_correction(
         *, root: Path = ROOT, design_authority: Any = DESIGN,
         ) -> dict[str, Any]:
-    """Issue the post-partial-corpus structural-redrive source authority."""
+    """Issue historically, or replay through the installed resume gate."""
 
-    artifact = design_authority.issue_branch_redrive_projection_correction(
-        root=root)
-    validated = (
-        design_authority
-        .load_branch_redrive_projection_correction_for_consumption(root=root))
+    newest = _installed_optional_smoke_resume_correction(
+        root=root, design_authority=design_authority)
+    replayed_from_resume_lineage = newest is not None
+    if newest is not None:
+        artifact, _digest = (
+            _immutable_redrive_from_optional_smoke_resume_correction(
+                newest, root=root, design_authority=design_authority))
+        validated = artifact
+    else:
+        artifact = design_authority.issue_branch_redrive_projection_correction(
+            root=root)
+        validated = (
+            design_authority
+            .load_branch_redrive_projection_correction_for_consumption(
+                root=root))
     if artifact != validated:
         raise FullBankV2RunnerError(
             "issued branch-redrive correction changed on exact replay")
@@ -1102,6 +1226,70 @@ def issue_branch_redrive_projection_correction(
         "completed_branch_reissued_or_rewritten": False,
         "candidate_outcome_or_label_value_read_for_correction": False,
         "branch_latent_or_scorer_runtime_started_by_issue_stage": False,
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage": replayed_from_resume_lineage,
+    }
+
+
+def issue_optional_smoke_partial_corpus_resume_correction(
+        *, root: Path = ROOT, design_authority: Any = DESIGN,
+        ) -> dict[str, Any]:
+    """Issue the source-only post-redrive optional-smoke resume authority."""
+
+    artifact = (
+        design_authority
+        .issue_optional_smoke_partial_corpus_resume_correction(root=root))
+    validated = (
+        design_authority
+        .load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+            root=root))
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued partial-corpus resume correction changed on exact replay")
+    digest = artifact.get(
+        design_authority.
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY)
+    if not _is_hex(digest):
+        raise FullBankV2RunnerError(
+            "partial-corpus resume correction digest is malformed")
+    redrive_correction, redrive_digest = (
+        _immutable_redrive_from_optional_smoke_resume_correction(
+            artifact, root=root, design_authority=design_authority))
+    path_correction, path_digest = (
+        _immutable_path_from_branch_redrive_projection_correction(
+            redrive_correction, root=root,
+            design_authority=design_authority))
+    dtype_correction, dtype_digest = (
+        _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority))
+    import_digest = _immutable_import_digest_from_dtype_correction(
+        dtype_correction, design_authority=design_authority)
+    return {
+        "stage": "issue-optional-smoke-partial-corpus-resume-correction",
+        "status": design_authority.
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STATUS,
+        design_authority.
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY: digest,
+        "optional_smoke_partial_corpus_resume_correction_digest": digest,
+        design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY:
+            redrive_digest,
+        "branch_redrive_projection_correction_digest": redrive_digest,
+        design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
+            path_digest,
+        "encoder_path_projection_correction_digest": path_digest,
+        design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+            dtype_digest,
+        "encoder_compute_dtype_correction_digest": dtype_digest,
+        design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY: import_digest,
+        "encoder_import_correction_digest": import_digest,
+        "retained_valid_branch_count": 120,
+        "retained_invalid_attempt_receipt_count": 12,
+        "retained_smoke_transaction_complete": True,
+        "manifest_or_identity_replaced": False,
+        "completed_branch_reissued_or_rewritten": False,
+        "branch_or_latent_runtime_started_by_issue_stage": False,
+        "candidate_outcome_or_label_value_read_for_correction": False,
+        "final_200_state_corpus_generated": False,
     }
 
 
@@ -1472,6 +1660,7 @@ def _training_stop_report(
         encoder_compute_dtype_correction_digest: str,
         encoder_path_projection_correction_digest: str,
         branch_redrive_projection_correction_digest: str,
+        optional_smoke_partial_corpus_resume_correction_digest: str,
         ) -> tuple[int, dict[str, Any]]:
     terminal_kind = terminal.get("terminal_kind")
     if terminal_kind == "COMPLETION_DEGENERACY_FAILURE":
@@ -1505,6 +1694,10 @@ def _training_stop_report(
             branch_redrive_projection_correction_digest,
         DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY:
             branch_redrive_projection_correction_digest,
+        "optional_smoke_partial_corpus_resume_correction_digest":
+            optional_smoke_partial_corpus_resume_correction_digest,
+        DESIGN.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY:
+            optional_smoke_partial_corpus_resume_correction_digest,
         "terminal_digest": terminal["terminal_digest"],
         "nothing_running": True,
     }
@@ -1517,6 +1710,7 @@ def _development_complete_report(
         encoder_compute_dtype_correction_digest: str,
         encoder_path_projection_correction_digest: str,
         branch_redrive_projection_correction_digest: str,
+        optional_smoke_partial_corpus_resume_correction_digest: str,
         ) -> tuple[int, dict[str, Any]]:
     if (development.get("qualified_scorer_bound") is not True
             or development.get("development_state_count") != 20
@@ -1548,6 +1742,10 @@ def _development_complete_report(
             branch_redrive_projection_correction_digest,
         DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY:
             branch_redrive_projection_correction_digest,
+        "optional_smoke_partial_corpus_resume_correction_digest":
+            optional_smoke_partial_corpus_resume_correction_digest,
+        DESIGN.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY:
+            optional_smoke_partial_corpus_resume_correction_digest,
         "nothing_running": True,
     }
 
@@ -1635,17 +1833,26 @@ def run_pipeline(
         ) -> tuple[int, dict[str, Any]]:
     """Execute the fail-closed post-contract sequence using injected effects."""
 
-    # The post-partial-corpus redrive correction is the sole live source
-    # authority.  It immutably embeds the path, FP32 and import corrections,
-    # and must validate before probes or any runtime command.  The historical
-    # path object is passed unchanged to the contract loader so existing
-    # latent/smoke lineage is never rewritten under this operational fix.
-    branch_redrive_projection_correction = (
-        DESIGN.load_branch_redrive_projection_correction_for_consumption(
+    # The optional-smoke partial-corpus resume correction is the sole live
+    # source authority.  It immutably embeds the redrive, path, FP32 and import
+    # corrections and must validate before probes or any runtime command.  The
+    # historical path object is passed unchanged to the contract loader.  No
+    # manifest, existing branch row, latent shard, PREPARED, or COMPLETE
+    # transaction lineage is rewritten.  The existing producers retain their
+    # frozen one-time branch-smoke and encoding-smoke/index rebinds only after
+    # the corpus reaches all 1,440 assignments.
+    partial_resume_correction = (
+        DESIGN.load_optional_smoke_partial_corpus_resume_correction_for_consumption(
             root=root))
-    branch_redrive_correction_digest = (
-        branch_redrive_projection_correction.get(
-            DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY))
+    partial_resume_correction_digest = partial_resume_correction.get(
+        DESIGN.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY)
+    if not _is_hex(partial_resume_correction_digest):
+        raise FullBankV2RunnerError(
+            "optional-smoke partial-corpus resume correction is missing "
+            "before runtime")
+    branch_redrive_projection_correction, branch_redrive_correction_digest = (
+        _immutable_redrive_from_optional_smoke_resume_correction(
+            partial_resume_correction, root=root))
     if not _is_hex(branch_redrive_correction_digest):
         raise FullBankV2RunnerError(
             "branch-redrive projection correction is missing before runtime")
@@ -1712,7 +1919,9 @@ def run_pipeline(
                     encoder_path_projection_correction_digest=
                     path_correction_digest,
                     branch_redrive_projection_correction_digest=
-                    branch_redrive_correction_digest)
+                    branch_redrive_correction_digest,
+                    optional_smoke_partial_corpus_resume_correction_digest=
+                    partial_resume_correction_digest)
             if (retained_terminal.get("terminal_kind") != "QUALIFICATION_PASS"
                     or retained_terminal.get("qualified") is not True):
                 raise FullBankV2RunnerError(
@@ -1736,7 +1945,9 @@ def run_pipeline(
                     encoder_path_projection_correction_digest=
                     path_correction_digest,
                     branch_redrive_projection_correction_digest=
-                    branch_redrive_correction_digest)
+                    branch_redrive_correction_digest,
+                    optional_smoke_partial_corpus_resume_correction_digest=
+                    partial_resume_correction_digest)
             if retained_development.get("terminal_present") is not False:
                 raise FullBankV2RunnerError(
                     "optional development-terminal presence verdict is missing")
@@ -1758,7 +1969,9 @@ def run_pipeline(
                 encoder_path_projection_correction_digest=
                 path_correction_digest,
                 branch_redrive_projection_correction_digest=
-                branch_redrive_correction_digest)
+                branch_redrive_correction_digest,
+                optional_smoke_partial_corpus_resume_correction_digest=
+                partial_resume_correction_digest)
         if retained_terminal.get("terminal_present") is not False:
             raise FullBankV2RunnerError(
                 "optional training-terminal presence verdict is missing")
@@ -1945,7 +2158,9 @@ def run_pipeline(
                 encoder_path_projection_correction_digest=
                 path_correction_digest,
                 branch_redrive_projection_correction_digest=
-                branch_redrive_correction_digest)
+                branch_redrive_correction_digest,
+                optional_smoke_partial_corpus_resume_correction_digest=
+                partial_resume_correction_digest)
         if (terminal.get("terminal_kind") != "QUALIFICATION_PASS"
                 or terminal.get("qualified") is not True):
             raise FullBankV2RunnerError(
@@ -1974,7 +2189,9 @@ def run_pipeline(
                 encoder_path_projection_correction_digest=
                 path_correction_digest,
                 branch_redrive_projection_correction_digest=
-                branch_redrive_correction_digest)
+                branch_redrive_correction_digest,
+                optional_smoke_partial_corpus_resume_correction_digest=
+                partial_resume_correction_digest)
         if (terminal_kind != "QUALIFICATION_PASS" or training_return != 0
                 or terminal.get("qualified") is not True):
             raise FullBankV2RunnerError(
@@ -1999,7 +2216,9 @@ def run_pipeline(
             encoder_path_projection_correction_digest=
             path_correction_digest,
             branch_redrive_projection_correction_digest=
-            branch_redrive_correction_digest)
+            branch_redrive_correction_digest,
+            optional_smoke_partial_corpus_resume_correction_digest=
+            partial_resume_correction_digest)
     if prior_development.get("terminal_present") is not False:
         raise FullBankV2RunnerError(
             "optional development-terminal presence verdict is missing")
@@ -2017,7 +2236,9 @@ def run_pipeline(
         encoder_compute_dtype_correction_digest=dtype_correction_digest,
         encoder_path_projection_correction_digest=path_correction_digest,
         branch_redrive_projection_correction_digest=
-        branch_redrive_correction_digest)
+        branch_redrive_correction_digest,
+        optional_smoke_partial_corpus_resume_correction_digest=
+        partial_resume_correction_digest)
 
 
 def _default_validation_invoker(
@@ -2113,6 +2334,12 @@ def assemble_status_report(*, root: Path = ROOT) -> dict[str, Any]:
         "branch_redrive_projection_correction": _binding_if_present(
             root, DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH,
             self_key=DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY),
+        "optional_smoke_partial_corpus_resume_correction":
+            _binding_if_present(
+                root,
+                DESIGN.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH,
+                self_key=DESIGN.
+                OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY),
         "branch_smoke": _binding_if_present(
             root, SCORER_FIT_RELATIVE_PATH /
             BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME,
@@ -2709,16 +2936,23 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
     branch_receipt_matches = (
         smoke.get("branch_smoke_receipt_digest")
         == branch_smoke.get("smoke_branch_receipt_digest"))
+    branch_receipt_lag_after_partial_corpus = False
     branch_receipt_lag_after_complete_corpus = False
-    complete_corpus: Mapping[str, Any] | None = None
-    if not branch_receipt_matches:
+    advanced_corpus: Mapping[str, Any] | None = None
+    transaction_complete = _optional_smoke_transaction_complete(transaction)
+    # A state-aligned partial corpus deliberately leaves the original
+    # twelve-row branch-smoke receipt unchanged.  Inspect the advancing corpus
+    # receipt only after the immutable transaction is COMPLETE; unfinished
+    # transaction recovery remains coupled to its original strict live inputs.
+    if not branch_receipt_matches or transaction_complete:
         corpus_path = root / SCORER_FIT_RELATIVE_PATH / (
             BUILDER.SCORER_FIT_V2_CORPUS_RECEIPT_NAME)
         corpus, _corpus_raw = _load_json(
-            corpus_path, label="optional V2 complete branch corpus receipt")
+            corpus_path, label="optional V2 advanced branch corpus receipt")
         corpus_payload = corpus.get("corpus_digest_payload")
         branch_receipt_lag_after_complete_corpus = bool(
-            isinstance(corpus_payload, Mapping)
+            not branch_receipt_matches
+            and isinstance(corpus_payload, Mapping)
             and corpus.get("corpus_digest")
             == _builder_default_json_digest(corpus_payload)
             and corpus.get("status") == STATUS
@@ -2756,13 +2990,86 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
             and smoke.get("branch_row_digests")
             == branch_smoke.get("branch_row_digests"))
         if branch_receipt_lag_after_complete_corpus:
-            complete_corpus = corpus
+            advanced_corpus = corpus
+        elif (transaction_complete
+              and corpus.get("complete") is False
+              and isinstance(corpus.get("attempted_branches"), int)
+              and not isinstance(corpus.get("attempted_branches"), bool)
+              and 12 < corpus["attempted_branches"] < 1_440):
+            # Only the state-aligned partial-corpus transition needs the
+            # strict builder producer replay.  Keep the previously reviewed
+            # complete-corpus interruption proof independent of unrelated
+            # missing rows so the full encoder can repair those rows/shards.
+            producer = (
+                BUILDER
+                .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
+                    out=root / SCORER_FIT_RELATIVE_PATH,
+                    allow_partial=True))
+            producer_corpus = producer.get("receipt")
+            producer_rows = producer.get("rows")
+            producer_smoke = producer.get("branch_smoke")
+            row_count = (
+                len(producer_rows) if isinstance(producer_rows, list) else -1)
+            completed_states = (
+                producer_corpus.get("completed_states")
+                if isinstance(producer_corpus, Mapping) else None)
+            rows_by_state: dict[str, list[int]] = {}
+            if isinstance(producer_rows, list):
+                for row in producer_rows:
+                    if isinstance(row, Mapping):
+                        rows_by_state.setdefault(
+                            str(row.get("state_id")), []).append(
+                                int(row.get("candidate_index", -1)))
+            state_aligned = bool(
+                isinstance(completed_states, int)
+                and not isinstance(completed_states, bool)
+                and row_count == completed_states * 12
+                and len(rows_by_state) == completed_states
+                and all(sorted(indices) == list(range(12))
+                        for indices in rows_by_state.values()))
+            branch_receipt_lag_after_partial_corpus = bool(
+                isinstance(producer_corpus, Mapping)
+                and producer_corpus == corpus
+                and producer_smoke == branch_smoke
+                and branch_receipt_matches
+                and isinstance(producer_rows, list)
+                and all(isinstance(row, Mapping)
+                        and row.get("valid") is True for row in producer_rows)
+                and state_aligned
+                and 12 < row_count < 1_440
+                and producer_corpus.get("status") == STATUS
+                and producer_corpus.get("complete") is False
+                and producer_corpus.get("state_count") == 120
+                and producer_corpus.get("states") == 120
+                and producer_corpus.get("expected_branches") == 1_440
+                and producer_corpus.get("attempted_branches") == row_count
+                and producer_corpus.get("attempted_count") == row_count
+                and producer_corpus.get("rows") == row_count
+                and producer_corpus.get("valid_branches") == row_count
+                and producer_corpus.get("valid_count") == row_count
+                and producer_corpus.get("invalid_branches") == 0
+                and producer_corpus.get("invalid_count") == 0
+                and producer_corpus.get("state_manifest_digest")
+                == state_manifest.get("state_manifest_digest")
+                and producer_corpus.get("full_bank_assignment_manifest_digest")
+                == assignment_manifest.get(
+                    "full_bank_assignment_manifest_digest")
+                and _is_hex(producer_corpus.get("branch_rows_sha256"))
+                and smoke.get("state_id") == branch_smoke.get("state_id")
+                and smoke.get("branch_identity_digests")
+                == branch_smoke.get("branch_identity_digests")
+                and smoke.get("branch_row_digests")
+                == branch_smoke.get("branch_row_digests"))
+            if not branch_receipt_lag_after_partial_corpus:
+                raise FullBankV2RunnerError(
+                    "optional V2 partial-corpus resume proof changed")
+            advanced_corpus = producer_corpus
 
     metadata_state = current_metadata[0] if current_metadata is not None else None
     if metadata_state == "complete_index_ahead":
         index_ahead = current_metadata[1]
         if (not branch_receipt_lag_after_complete_corpus
-                or complete_corpus is None
+                or advanced_corpus is None
                 or smoke.get("pass") is not True
                 or smoke.get("zero_new_resume_verified") is not True
                 or smoke.get("single_shard_deletion_regeneration_verified")
@@ -2784,9 +3091,9 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
                     "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
                 != contract.get(SCORER_CONTRACT.ARTIFACT_SELF_KEY)
                 or index_ahead.get("corpus_digest")
-                != complete_corpus.get("corpus_digest")
+                != advanced_corpus.get("corpus_digest")
                 or index_ahead.get("branch_rows_sha256")
-                != complete_corpus.get("branch_rows_sha256")):
+                != advanced_corpus.get("branch_rows_sha256")):
             raise FullBankV2RunnerError(
                 "complete index-ahead smoke recovery proof changed")
     transaction_smoke_binding_valid = bool(
@@ -2833,6 +3140,7 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
                 branch_smoke, "smoke_branch_receipt_digest"))
             or branch_smoke.get("pass") is not True
             or not (branch_receipt_matches
+                    or branch_receipt_lag_after_partial_corpus
                     or branch_receipt_lag_after_complete_corpus)
             or smoke.get("candidate_indices") != list(range(12))
             or smoke.get("branch_count") != 12
@@ -2865,7 +3173,9 @@ def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
         raise FullBankV2RunnerError(
             "optional V2 encoding smoke receipt changed")
     refresh_required = bool(
-        branch_receipt_lag_after_complete_corpus or legacy_pre_refresh)
+        branch_receipt_lag_after_partial_corpus
+        or branch_receipt_lag_after_complete_corpus
+        or legacy_pre_refresh)
     complete = bool(
         not legacy_pre_refresh
         and _optional_smoke_transaction_complete(transaction)
@@ -3061,7 +3371,8 @@ def _parser() -> argparse.ArgumentParser:
         "issue-scorer-contract", "issue-encoder-import-correction",
         "issue-encoder-compute-dtype-correction",
         "issue-encoder-path-projection-correction",
-        "issue-branch-redrive-projection-correction", "run",
+        "issue-branch-redrive-projection-correction",
+        "issue-optional-smoke-partial-corpus-resume-correction", "run",
         "status", "internal-probe-genesis", "internal-probe-rocm",
         "internal-validate-branch-smoke", "internal-validate-encoding-smoke",
         "internal-validate-encoding-smoke-optional",
@@ -3109,6 +3420,9 @@ def main(argv: list[str] | None = None) -> int:
         code = 0
     elif args.stage == "issue-branch-redrive-projection-correction":
         report = issue_branch_redrive_projection_correction()
+        code = 0
+    elif args.stage == "issue-optional-smoke-partial-corpus-resume-correction":
+        report = issue_optional_smoke_partial_corpus_resume_correction()
         code = 0
     elif args.stage == "run":
         code, report = run_authorised(resume=args.resume)

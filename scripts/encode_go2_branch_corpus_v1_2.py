@@ -2222,15 +2222,40 @@ def load_and_validate_full_bank_v2_single_shard_regeneration_transaction_status(
     """Return a lightweight exact transaction projection without shard writes."""
 
     scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
-    (manifest, receipt, _rows, artifact, dtype_digest, path_digest,
+    (_source_correction_digest, path_digest, dtype_digest,
      _base_bundle, _base_bundle_digest, transaction_contract,
-     transaction_contract_digest) = _load_full_bank_v2_inputs(
-         scorer_fit, allow_partial=True)
+     transaction_contract_digest, artifact, _successor) = (
+         _load_full_bank_v2_source_correction_authority())
     status = _classify_full_bank_v2_single_shard_regeneration_transaction(
         out=scorer_fit,
         encoder_path_projection_correction_digest=path_digest,
         transaction_contract=transaction_contract,
         transaction_contract_digest=transaction_contract_digest)
+    # COMPLETE is an immutable exact-once custody verdict bound to the
+    # original twelve-branch smoke.  The branch corpus is authorised to
+    # advance after that verdict, so its live partial ledger must not be
+    # reinterpreted as another smoke input merely to classify the already
+    # closed transaction.  Optional resume validates that advancing branch
+    # corpus separately before it skips the stale strict-smoke projection.
+    if status["transaction_state"] == "COMPLETE":
+        return status
+
+    # Every unfinished transaction remains coupled to the exact live smoke
+    # corpus.  Preserve the former strict 12/1,440 input and live-lineage
+    # validation rather than allowing an advancing partial corpus to recover
+    # an incomplete deletion/regeneration transaction.
+    (manifest, receipt, _rows, strict_artifact, strict_dtype_digest,
+     strict_path_digest, _strict_base_bundle, _strict_base_bundle_digest,
+     strict_transaction_contract, strict_transaction_contract_digest) = (
+         _load_full_bank_v2_inputs(scorer_fit, allow_partial=True))
+    if (strict_artifact != artifact
+            or strict_dtype_digest != dtype_digest
+            or strict_path_digest != path_digest
+            or strict_transaction_contract != transaction_contract
+            or strict_transaction_contract_digest
+            != transaction_contract_digest):
+        raise RuntimeError(
+            "full-bank V2 transaction authority changed during classification")
     if (status["prepared_present"] is True
             and status["complete_present"] is False):
         branch_bundle = (

@@ -536,6 +536,80 @@ def _branch_redrive_projection_correction(
     )
 
 
+def _optional_smoke_partial_corpus_resume_correction(
+        monkeypatch: pytest.MonkeyPatch, *,
+        redrive_correction: dict[str, object] | None = None,
+        ) -> dict[str, object]:
+    redrive_correction = (
+        _branch_redrive_projection_correction(monkeypatch)
+        if redrive_correction is None else copy.deepcopy(redrive_correction))
+    historical_commit = str(redrive_correction["source_repository_commit"])
+    redrive_digest = redrive_correction[
+        design.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY]
+    redrive_raw = design._pretty_json_bytes(redrive_correction)
+    redrive_binding = (
+        design.branch_redrive_projection_correction_artifact_binding(
+            redrive_correction, redrive_raw))
+    monkeypatch.setattr(
+        design,
+        "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_"
+        "HISTORICAL_SOURCE_REPOSITORY_COMMIT",
+        historical_commit)
+    monkeypatch.setattr(
+        design, "IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_DIGEST",
+        redrive_digest)
+    monkeypatch.setattr(
+        design, "IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_BINDING",
+        copy.deepcopy(redrive_binding))
+    failure = copy.deepcopy(
+        design.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_FAILURE_BOUNDARY)
+    failure["historical_source_repository_commit"] = historical_commit
+    monkeypatch.setattr(
+        design, "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_FAILURE_BOUNDARY",
+        failure)
+    science = copy.deepcopy(
+        design.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_PRESERVED_SCIENCE)
+    science["immutable_branch_redrive_projection_correction_digest"] = (
+        redrive_digest)
+    monkeypatch.setattr(
+        design,
+        "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_PRESERVED_SCIENCE",
+        science)
+    sources = copy.deepcopy(redrive_correction["source_bindings"])
+    changed = set(
+        design.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    for index, row in enumerate(sources):
+        if row["path"] in changed:
+            row["byte_count"] = int(row["byte_count"]) + 90_000
+            row["sha256"] = f"{index + 90_000:064x}"
+    tests = []
+    for index, (path, role) in enumerate(
+            design.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_FOCUSED_TEST_SPECS):
+        tests.append({
+            "path": path,
+            "role": role,
+            "historical": {
+                "path": path, "role": role, "exists": True,
+                "byte_count": 100 + index, "sha256": f"{index + 1:064x}",
+            },
+            "current": {
+                "path": path, "role": role, "exists": True,
+                "byte_count": 200 + index, "sha256": f"{index + 101:064x}",
+            },
+        })
+    return design.build_optional_smoke_partial_corpus_resume_correction(
+        source_repository_commit="4" * 40,
+        source_bindings=sources,
+        focused_test_source_transitions=tests,
+        immutable_branch_redrive_projection_correction={
+            "payload": redrive_correction, "binding": redrive_binding,
+        },
+        downstream_outputs_absent_at_issue=(
+            design
+            ._expected_optional_smoke_partial_corpus_resume_correction_absence_rows()),
+    )
+
+
 def _synthetic_smoke_regeneration_receipts(
         correction: dict[str, object],
         ) -> tuple[dict[str, object], dict[str, object]]:
@@ -1361,9 +1435,12 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
         monkeypatch, dtype_correction=dtype_correction)
     redrive_correction = _branch_redrive_projection_correction(
         monkeypatch, path_correction=path_correction)
+    resume_correction = _optional_smoke_partial_corpus_resume_correction(
+        monkeypatch, redrive_correction=redrive_correction)
     monkeypatch.setattr(
-        design, "load_branch_redrive_projection_correction_for_consumption",
-        lambda **_kwargs: copy.deepcopy(redrive_correction))
+        design,
+        "load_optional_smoke_partial_corpus_resume_correction_for_consumption",
+        lambda **_kwargs: copy.deepcopy(resume_correction))
     active = design.load_active_design_authority(root=tmp_path)
     assert active["source_correction"] == immutable["payload"]
     assert active["source_correction_binding"] == immutable["binding"]
@@ -1380,7 +1457,7 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
     assert active["encoder_compute_dtype_source_repository_commit"] == "1" * 40
     assert active["encoder_path_projection_source_repository_commit"] == \
         "2" * 40
-    assert active["active_source_repository_commit"] == "3" * 40
+    assert active["active_source_repository_commit"] == "4" * 40
     assert active["encoder_import_correction"] == encoder_correction
     assert active["encoder_compute_dtype_correction"] == dtype_correction
     assert active["encoder_path_projection_correction"] == path_correction
@@ -1389,6 +1466,12 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
     assert active["branch_redrive_projection_correction_digest"] == \
         redrive_correction[
             design.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY]
+    assert active["optional_smoke_partial_corpus_resume_correction"] == \
+        resume_correction
+    assert active[
+        "optional_smoke_partial_corpus_resume_correction_digest"] == \
+        resume_correction[
+            design.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY]
     immutable_v2 = immutable["payload"][
         "immutable_preselection_source_correction_v2"]
     immutable_v1 = immutable_v2["payload"][
@@ -1770,6 +1853,261 @@ def test_branch_redrive_projection_issue_is_atomic_and_reopen_is_boundary_free(
     assert design.load_branch_redrive_projection_correction_for_consumption(
         root=tmp_path) == correction
     assert design.issue_branch_redrive_projection_correction(
+        root=tmp_path, source_repository_commit=str(commit)) == correction
+    assert expected.read_bytes() == before
+    assert stat.S_IMODE(expected.stat().st_mode) == 0o444
+    assert calls["install"] == 1
+
+
+def test_optional_smoke_partial_corpus_resume_correction_is_closed_and_narrow(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _optional_smoke_partial_corpus_resume_correction(monkeypatch)
+    assert design.validate_optional_smoke_partial_corpus_resume_correction(
+        correction, validate_live_authorities=False) == correction
+    assert correction["production_source_transition"][
+        "observed_changed_source_paths"] == sorted(
+            design
+            .OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    assert [row["path"] for row in correction[
+        "focused_test_source_transitions"]] == list(
+            design
+            .OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_FOCUSED_TEST_PATHS)
+    failure = correction[
+        "optional_smoke_partial_corpus_resume_failure_boundary"]
+    assert failure["observed_partial_branch_count"] == 120
+    assert failure["observed_completed_state_count"] == 10
+    assert failure["transaction_state_before_failure"] == "COMPLETE"
+    assert failure[
+        "encoding_smoke_and_branch_smoke_receipt_digests_still_match"] is True
+    assert failure[
+        "matching_smoke_receipt_digests_prove_no_partial_progress"] is False
+    assert failure["corrected_branch_command_started"] is False
+    assert failure["scientific_or_feasibility_failure_established"] is False
+    material = correction[
+        "optional_smoke_partial_corpus_resume_correction"]
+    assert material["complete_transaction_only_fast_path"] is True
+    assert material[
+        "noncomplete_transaction_loader_and_live_lineage_unchanged"] is True
+    assert material[
+        "matching_historical_smoke_digests_sufficient_for_no_partial_lag"] \
+        is False
+    assert material[
+        "runner_partial_lag_detection_uses_strict_builder_producer"] is True
+    assert material[
+        "runner_partial_lag_requires_state_aligned_complete_candidate_banks"] \
+        is True
+    assert material[
+        "runner_partial_lag_skips_only_stale_strict_smoke_replay"] is True
+    assert material[
+        "normal_full_encoder_refresh_after_1440_branches_required"] is True
+    assert material[
+        "strict_encoded_corpus_validation_after_refresh_required"] is True
+    assert material[
+        "prepared_and_complete_transaction_receipts_immutable"] is True
+    assert material[
+        "existing_encoding_smoke_preserved_during_partial_corpus_phase"] \
+        is True
+    assert material[
+        "encoding_smoke_refresh_before_1440_branches_authorised"] is False
+    assert material[
+        "frozen_one_time_complete_corpus_encoding_smoke_refresh_at_1440_"
+        "authorised"] is True
+    assert material[
+        "frozen_one_time_complete_corpus_encoding_smoke_refresh_at_1440_"
+        "required"] is True
+    assert material[
+        "original_branch_smoke_preserved_during_partial_advancement"] is True
+    assert material[
+        "branch_smoke_rebinding_before_1440_branches_authorised"] is False
+    assert material[
+        "frozen_complete_corpus_branch_smoke_rebinding_at_1440_authorised"] \
+        is True
+    assert material["encoder_smoke_partial_cardinality_rule_changed"] is False
+    assert material["full_encoder_cardinality_rule_changed"] is False
+    science = correction["preserved_scientific_contract"]
+    assert science["retained_valid_branch_count"] == 120
+    assert science["retained_invalid_attempt_receipt_count"] == 12
+    assert science["completed_transaction_receipts_preserved"] is True
+    assert science["existing_frame_or_latent_regeneration_authorised"] is False
+    assert science["existing_valid_branch_row_rewrite_authorised"] is False
+    assert science[
+        "advancing_compiled_ledger_and_corpus_receipt_refresh_authorised"] \
+        is True
+    assert science[
+        "correction_issuance_rewrites_smoke_or_transaction_receipts"] is False
+    assert science[
+        "prepared_and_complete_transaction_receipts_immutable"] is True
+    assert science[
+        "existing_encoding_smoke_preserved_during_partial_corpus_phase"] \
+        is True
+    assert science[
+        "encoding_smoke_refresh_before_1440_branches_authorised"] is False
+    assert science[
+        "frozen_one_time_complete_corpus_encoding_smoke_refresh_at_1440_"
+        "authorised"] is True
+    assert science[
+        "frozen_one_time_complete_corpus_encoding_smoke_refresh_at_1440_"
+        "required"] is True
+    assert science[
+        "original_branch_smoke_preserved_during_partial_corpus_advancement"] \
+        is True
+    assert science[
+        "branch_smoke_rebinding_before_1440_branches_authorised"] is False
+    assert science[
+        "frozen_complete_corpus_branch_smoke_rebinding_at_1440_authorised"] \
+        is True
+    assert science[
+        "runner_partial_lag_requires_strict_builder_producer_validation"] \
+        is True
+    assert science[
+        "strict_encoded_corpus_validation_after_full_refresh_required"] is True
+    assert science["resume_scope"] == "MISSING_REGISTERED_ASSIGNMENTS_ONLY"
+    immutable = correction[
+        "immutable_branch_redrive_projection_correction"]
+    assert immutable["payload"][
+        design.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY] == correction[
+            "immutable_branch_redrive_projection_correction_digest"]
+    raw = design._pretty_json_bytes(correction)
+    binding = (
+        design
+        .optional_smoke_partial_corpus_resume_correction_artifact_binding(
+            correction, raw))
+    assert binding["self_digest"] == correction[
+        design.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY]
+
+    tampered = copy.deepcopy(correction)
+    tampered["optional_smoke_partial_corpus_resume_correction"][
+        "full_encoder_cardinality_rule_changed"] = True
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_optional_smoke_partial_corpus_resume_correction(
+            tampered, validate_live_authorities=False)
+
+    extra_change = copy.deepcopy(correction["source_bindings"])
+    unchanged = next(
+        row for row in extra_change
+        if row["path"] not in
+        design
+        .OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    unchanged["byte_count"] = int(unchanged["byte_count"]) + 1
+    unchanged["sha256"] = "f" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.build_optional_smoke_partial_corpus_resume_correction(
+            source_repository_commit=correction["source_repository_commit"],
+            source_bindings=extra_change,
+            focused_test_source_transitions=correction[
+                "focused_test_source_transitions"],
+            immutable_branch_redrive_projection_correction=correction[
+                "immutable_branch_redrive_projection_correction"],
+            downstream_outputs_absent_at_issue=correction[
+                "downstream_outputs_absent_at_issue"],
+        )
+
+
+def test_optional_smoke_partial_corpus_resume_issue_is_atomic_and_reopen_is_boundary_free(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _optional_smoke_partial_corpus_resume_correction(monkeypatch)
+    commit = correction["source_repository_commit"]
+    sources = correction["source_bindings"]
+    tests = correction["focused_test_source_transitions"]
+    immutable_redrive = correction[
+        "immutable_branch_redrive_projection_correction"]
+    partial = correction["partial_corpus_failure_boundary"]
+    invalid = correction["invalid_attempt_receipt_bindings"]
+    smoke = correction["completed_smoke_boundary"]
+    absence = correction["downstream_outputs_absent_at_issue"]
+    expected = tmp_path / \
+        design.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH
+    staged = tmp_path / \
+        design.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STAGED_RELATIVE_PATH
+    expected.parent.mkdir(parents=True)
+    calls = {"source": 0, "redrive": 0, "tests": 0, "boundary": 0,
+             "absence": 0, "install": 0}
+
+    def clean_source(*, root: Path):
+        assert root == tmp_path
+        calls["source"] += 1
+        return str(commit), copy.deepcopy(sources)
+
+    def load_redrive(*, root: Path):
+        assert root == tmp_path
+        calls["redrive"] += 1
+        return copy.deepcopy(immutable_redrive)
+
+    def load_tests(*, root: Path):
+        assert root == tmp_path
+        calls["tests"] += 1
+        return copy.deepcopy(tests)
+
+    def load_boundary(*, root: Path):
+        assert root == tmp_path
+        calls["boundary"] += 1
+        return (copy.deepcopy(partial), copy.deepcopy(invalid),
+                copy.deepcopy(smoke))
+
+    def load_absence(*, root: Path):
+        assert root == tmp_path
+        calls["absence"] += 1
+        return copy.deepcopy(absence)
+
+    monkeypatch.setattr(design, "clean_source_authority", clean_source)
+    monkeypatch.setattr(
+        design, "_load_immutable_branch_redrive_projection_correction",
+        load_redrive)
+    monkeypatch.setattr(
+        design,
+        "_optional_smoke_partial_corpus_resume_focused_test_source_transitions",
+        load_tests)
+    monkeypatch.setattr(
+        design, "_validate_live_branch_redrive_failure_boundary",
+        load_boundary)
+    monkeypatch.setattr(
+        design,
+        "audit_optional_smoke_partial_corpus_resume_correction_downstream_absence",
+        load_absence)
+    atomic_publish = design._exclusive_json_atomic_no_overwrite
+
+    def checked_publish(path: Path, staged_path: Path,
+                        payload: dict[str, object], *, label: str,
+                        recover_nonexact_staged: bool) -> bytes:
+        assert path == expected and staged_path == staged
+        assert label == "optional-smoke partial-corpus resume correction"
+        if not path.exists() and not path.is_symlink():
+            assert recover_nonexact_staged is True
+            assert calls["redrive"] == 2
+            assert calls["boundary"] == 2
+            assert calls["absence"] == 2
+            calls["install"] += 1
+        else:
+            assert recover_nonexact_staged is False
+        return atomic_publish(
+            path, staged_path, payload, label=label,
+            recover_nonexact_staged=recover_nonexact_staged)
+
+    monkeypatch.setattr(
+        design, "_exclusive_json_atomic_no_overwrite", checked_publish)
+    issued = design.issue_optional_smoke_partial_corpus_resume_correction(
+        root=tmp_path, source_repository_commit=str(commit))
+    assert issued == correction
+    assert calls["install"] == 1
+    assert stat.S_IMODE(expected.stat().st_mode) == 0o444
+    assert not staged.exists() and not staged.is_symlink()
+    before = expected.read_bytes()
+
+    def forbidden_boundary(**_kwargs):
+        raise AssertionError("mutable failure boundary was reopened")
+
+    monkeypatch.setattr(
+        design, "_validate_live_branch_redrive_failure_boundary",
+        forbidden_boundary)
+    monkeypatch.setattr(
+        design,
+        "audit_optional_smoke_partial_corpus_resume_correction_downstream_absence",
+        forbidden_boundary)
+    assert (
+        design
+        .load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+            root=tmp_path) == correction)
+    assert design.issue_optional_smoke_partial_corpus_resume_correction(
         root=tmp_path, source_repository_commit=str(commit)) == correction
     assert expected.read_bytes() == before
     assert stat.S_IMODE(expected.stat().st_mode) == 0o444

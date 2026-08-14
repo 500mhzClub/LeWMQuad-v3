@@ -138,7 +138,8 @@ class FakePipeline:
             retained_transaction_state
             if retained_transaction_state is not None else (
                 "COMPLETE" if retained_smoke in {
-                    "complete", "complete-corpus-receipt-lag"}
+                    "complete", "partial-corpus-receipt-lag",
+                    "complete-corpus-receipt-lag"}
                 else "UNSTARTED"))
         self.transaction_resume_origin = self.retained_transaction_state
         self.root = tmp_path
@@ -159,6 +160,12 @@ class FakePipeline:
             runner.DESIGN,
             "BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY",
             "scorer_fit_corpus_v2_branch_redrive_projection_correction_digest",
+            raising=False)
+        monkeypatch.setattr(
+            runner.DESIGN,
+            "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY",
+            "scorer_fit_corpus_v2_optional_smoke_partial_corpus_resume_"
+            "correction_digest",
             raising=False)
         monkeypatch.setattr(
             runner.DESIGN,
@@ -194,12 +201,36 @@ class FakePipeline:
                 "binding": {"self_digest": HEX_E},
             },
         }
+        self.partial_resume_correction = {
+            runner.DESIGN.
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY: HEX_A,
+            "immutable_branch_redrive_projection_correction_digest": HEX_B,
+            "immutable_branch_redrive_projection_correction": {
+                "payload": self.branch_redrive_correction,
+                "binding": {
+                    "self_digest_key": runner.DESIGN.
+                        BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY,
+                    "self_digest": HEX_B,
+                },
+            },
+        }
+        monkeypatch.setattr(
+            runner.DESIGN,
+            "load_optional_smoke_partial_corpus_resume_correction_for_"
+            "consumption",
+            lambda **_kwargs: self.events.append(
+                "validate:partial-corpus-resume-correction")
+            or self.partial_resume_correction, raising=False)
+        monkeypatch.setattr(
+            runner.DESIGN,
+            "validate_immutable_branch_redrive_projection_correction",
+            lambda value, **_kwargs: dict(value), raising=False)
         monkeypatch.setattr(
             runner.DESIGN,
             "load_branch_redrive_projection_correction_for_consumption",
-            lambda **_kwargs: self.events.append(
-                "validate:branch-redrive-projection-correction")
-            or self.branch_redrive_correction, raising=False)
+            lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
+                "historical redrive correction must not be live-loaded")),
+            raising=False)
         monkeypatch.setattr(
             runner.DESIGN,
             "load_encoder_path_projection_correction_for_consumption",
@@ -323,7 +354,8 @@ class FakePipeline:
                     kind, terminal_present=False,
                     **_transaction(self.retained_transaction_state))
             complete = self.retained_smoke in {
-                "complete", "complete-corpus-receipt-lag"}
+                "complete", "partial-corpus-receipt-lag",
+                "complete-corpus-receipt-lag"}
             zero_new = self.retained_smoke != "base-only"
             return _closed(
                 kind, terminal_present=True,
@@ -332,7 +364,9 @@ class FakePipeline:
                 single_registered_shard_regenerated=complete,
                 only_registered_missing_shard_changed=complete,
                 requires_full_encoder_refresh=
-                    self.retained_smoke == "complete-corpus-receipt-lag",
+                    self.retained_smoke in {
+                        "partial-corpus-receipt-lag",
+                        "complete-corpus-receipt-lag"},
                 **_transaction(
                     self.retained_transaction_state,
                     unstarted_target="EXACT"))
@@ -410,22 +444,27 @@ def test_pass_pipeline_has_exact_order_and_development_is_pass_gated(
     assert report["branch_redrive_projection_correction_digest"] == HEX_B
     assert report[
         runner.DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY] == HEX_B
+    assert report[
+        "optional_smoke_partial_corpus_resume_correction_digest"] == HEX_A
+    assert report[
+        runner.DESIGN.
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY] == HEX_A
     assert report["predictor_access_before_qualification"] is False
     assert report["final_200_state_corpus_generated"] is False
     assert fake.events.index(
-        "validate:branch-redrive-projection-correction") < fake.events.index(
+        "validate:partial-corpus-resume-correction") < fake.events.index(
             "validate:immutable-scorer-contract")
     assert fake.events.index(
         "validate:immutable-scorer-contract") < fake.events.index(
             "command:smoke_encoding")
 
 
-def test_missing_branch_redrive_projection_correction_blocks_before_any_command(
+def test_missing_partial_corpus_resume_correction_blocks_before_any_command(
         monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     fake = FakePipeline(monkeypatch, tmp_path)
     monkeypatch.setattr(
         runner.DESIGN,
-        "load_branch_redrive_projection_correction_for_consumption",
+        "load_optional_smoke_partial_corpus_resume_correction_for_consumption",
         lambda **_kwargs: (_ for _ in ()).throw(
             runner.FullBankV2RunnerError("fixture correction missing")))
     with pytest.raises(runner.FullBankV2RunnerError,
@@ -518,6 +557,22 @@ def test_complete_smoke_with_complete_corpus_receipt_lag_skips_smoke_recovery(
     assert not any(stage.startswith("smoke") for stage in fake.commands_run)
     # The exact full-index-ahead/old-smoke crash window cannot pass the strict
     # active-index consumer until full encoding publishes its refreshed smoke.
+    assert fake.validation_counts.get("encoding-smoke", 0) == 0
+    assert "retained_strict_completed_smoke_protocol" not in report[
+        "completed_stages"]
+    assert "retained_completed_smoke_protocol" in report["completed_stages"]
+
+
+def test_complete_smoke_with_partial_corpus_lag_resumes_missing_branches_first(
+        monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    fake = FakePipeline(
+        monkeypatch, tmp_path,
+        retained_smoke="partial-corpus-receipt-lag")
+    code, report = fake.run(resume=True)
+    assert code == 0
+    assert fake.commands_run[:2] == [
+        "full_branch_corpus", "full_latent_encoding"]
+    assert not any(stage.startswith("smoke") for stage in fake.commands_run)
     assert fake.validation_counts.get("encoding-smoke", 0) == 0
     assert "retained_strict_completed_smoke_protocol" not in report[
         "completed_stages"]
@@ -746,6 +801,94 @@ def test_optional_smoke_accepts_complete_corpus_lag_and_index_ahead(
     assert projection["terminal_present"] is True
     assert projection["smoke_protocol_complete"] is True
     assert projection["requires_full_encoder_refresh"] is True
+
+    # A strict builder-validated, state-aligned partial corpus may also have
+    # advanced beyond the immutable one-state smoke receipt.  It is retained
+    # for missing-only branch resume and requests the later full-encoder
+    # refresh; it does not replay the completed smoke protocol.
+    (smoke_path.parent / "latents_index_v2.json").write_bytes(
+        runner._encoder_pretty_json_bytes(current_index))
+    complete_corpus = dict(corpus)
+    complete_branch_smoke = dict(branch_smoke)
+    complete_smoke_branch_digest = smoke["branch_smoke_receipt_digest"]
+    partial_rows = [
+        {
+            "state_id": f"state-{state_index}",
+            "candidate_index": candidate_index,
+            "valid": True,
+        }
+        for state_index in range(10)
+        for candidate_index in range(12)
+    ]
+    partial_payload = {
+        "state_count": 120,
+        "attempted_branch_count": 120,
+        "valid_branch_count": 120,
+        "invalid_branch_count": 0,
+        "complete": False,
+        "state_manifest_digest": state_digest,
+        "full_bank_assignment_manifest_digest": assignment_digest,
+    }
+    corpus.clear()
+    corpus.update({
+        "status": runner.STATUS,
+        "complete": False,
+        "states": 120,
+        "state_count": 120,
+        "completed_states": 10,
+        "expected_branches": 1_440,
+        "attempted_branches": 120,
+        "attempted_count": 120,
+        "rows": 120,
+        "valid_branches": 120,
+        "valid_count": 120,
+        "invalid_branches": 0,
+        "invalid_count": 0,
+        "state_manifest_digest": state_digest,
+        "full_bank_assignment_manifest_digest": assignment_digest,
+        "corpus_digest_payload": partial_payload,
+        "corpus_digest": runner._builder_default_json_digest(partial_payload),
+        "branch_rows_sha256": "7" * 64,
+    })
+    smoke["branch_smoke_receipt_digest"] = branch_smoke[
+        "smoke_branch_receipt_digest"]
+    smoke["smoke_receipt_digest"] = runner._encoder_default_json_digest({
+        key: value for key, value in smoke.items()
+        if key != "smoke_receipt_digest"
+    })
+    monkeypatch.setattr(
+        runner.BUILDER,
+        "load_and_validate_full_bank_v2_branch_outputs_for_consumption",
+        lambda **_kwargs: {
+            "receipt": dict(corpus),
+            "rows": [dict(row) for row in partial_rows],
+            "branch_smoke": dict(branch_smoke),
+        })
+    partial_projection = runner._optional_encoding_smoke_projection(
+        root=tmp_path)
+    assert partial_projection["terminal_present"] is True
+    assert partial_projection["smoke_protocol_complete"] is True
+    assert partial_projection["requires_full_encoder_refresh"] is True
+
+    corpus["completed_states"] = 9
+    with pytest.raises(runner.FullBankV2RunnerError,
+                       match="partial-corpus resume proof changed"):
+        runner._optional_encoding_smoke_projection(root=tmp_path)
+
+    corpus.clear()
+    corpus.update(complete_corpus)
+    branch_smoke.clear()
+    branch_smoke.update(complete_branch_smoke)
+    smoke["branch_smoke_receipt_digest"] = complete_smoke_branch_digest
+    smoke["smoke_receipt_digest"] = runner._encoder_default_json_digest({
+        key: value for key, value in smoke.items()
+        if key != "smoke_receipt_digest"
+    })
+    monkeypatch.setattr(
+        runner.BUILDER,
+        "load_and_validate_full_bank_v2_branch_outputs_for_consumption",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
+            "complete-corpus recovery must not require all rows")))
 
     # Restore the ordinary current/current pair for the lineage mutations
     # below so each rejection continues to isolate the field under test.
@@ -1752,7 +1895,15 @@ def test_issue_encoder_compute_dtype_correction_preserves_predecessors(
     events: list[str] = []
     payload = {
         "immutable_encoder_import_correction": {
-            "payload": {"encoder_import_correction_digest": HEX_D},
+            "payload": {
+                "encoder_import_correction_digest": HEX_D,
+                "immutable_successor_scorer_contract_binding": {
+                    "self_digest": runner.SCORER_CONTRACT.
+                        IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+                    "embedded_contract_self_digest": runner.SCORER_CONTRACT.
+                        IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+                },
+            },
             "binding": {"self_digest": HEX_D},
         },
         "immutable_encoder_import_correction_digest": HEX_D,
@@ -1876,6 +2027,12 @@ def test_issue_encoder_path_projection_correction_preserves_predecessors(
         },
         "immutable_encoder_import_correction_digest": HEX_D,
         "encoder_compute_dtype_correction_digest": HEX_C,
+        "immutable_successor_scorer_contract_binding": {
+            "self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+            "embedded_contract_self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        },
     }
     immutable_dtype = {
         "payload": dtype, "binding": {"self_digest": HEX_C}}
@@ -2040,6 +2197,281 @@ def test_parser_exposes_redrive_projection_correction_before_resume_run() -> Non
         ["--stage", "run", "--resume"])
     assert correction.stage == "issue-branch-redrive-projection-correction"
     assert resumed.stage == "run" and resumed.resume is True
+
+
+def test_issue_optional_smoke_partial_corpus_resume_correction_is_source_only(
+        tmp_path: Path) -> None:
+    events: list[str] = []
+    dtype = {
+        "immutable_encoder_import_correction": {
+            "payload": {"encoder_import_correction_digest": HEX_D},
+        },
+        "immutable_encoder_import_correction_digest": HEX_D,
+        "encoder_compute_dtype_correction_digest": HEX_C,
+    }
+    path = {
+        "scorer_fit_corpus_v2_encoder_path_projection_correction_digest":
+            HEX_E,
+        "immutable_encoder_compute_dtype_correction_digest": HEX_C,
+        "immutable_encoder_compute_dtype_correction": {
+            "payload": dtype, "binding": {"self_digest": HEX_C}},
+    }
+    redrive = {
+        "scorer_fit_corpus_v2_branch_redrive_projection_correction_digest":
+            HEX_B,
+        "immutable_encoder_path_projection_correction_digest": HEX_E,
+        "immutable_encoder_path_projection_correction": {
+            "payload": path, "binding": {"self_digest": HEX_E}},
+    }
+    correction = {
+        "scorer_fit_corpus_v2_optional_smoke_partial_corpus_resume_"
+        "correction_digest": HEX_A,
+        "immutable_branch_redrive_projection_correction_digest": HEX_B,
+        "immutable_branch_redrive_projection_correction": {
+            "payload": redrive,
+            "binding": {
+                "self_digest_key": (
+                    "scorer_fit_corpus_v2_branch_redrive_projection_"
+                    "correction_digest"),
+                "self_digest": HEX_B,
+            },
+        },
+    }
+
+    class FakeDesign:
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY = (
+            "scorer_fit_corpus_v2_optional_smoke_partial_corpus_resume_"
+            "correction_digest")
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STATUS = (
+            "ISSUED_FIXTURE_PARTIAL_RESUME")
+        BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY = (
+            "scorer_fit_corpus_v2_branch_redrive_projection_correction_"
+            "digest")
+        ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY = (
+            "scorer_fit_corpus_v2_encoder_path_projection_correction_digest")
+        ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY = (
+            "encoder_compute_dtype_correction_digest")
+        ENCODER_IMPORT_CORRECTION_SELF_KEY = (
+            "encoder_import_correction_digest")
+        IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST = HEX_C
+        IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST = HEX_D
+
+        def issue_optional_smoke_partial_corpus_resume_correction(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("issue-partial-resume")
+            return correction
+
+        def load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("reopen-partial-resume")
+            return correction
+
+        def validate_immutable_branch_redrive_projection_correction(
+                self, value: Mapping[str, Any]) -> Mapping[str, Any]:
+            events.append("validate-immutable-redrive")
+            return dict(value)
+
+        def validate_immutable_encoder_path_projection_correction(
+                self, value: Mapping[str, Any], **_kwargs: Any
+                ) -> Mapping[str, Any]:
+            events.append("validate-immutable-path")
+            return dict(value)
+
+        def validate_immutable_encoder_compute_dtype_correction(
+                self, value: Mapping[str, Any]) -> Mapping[str, Any]:
+            events.append("validate-immutable-dtype")
+            return dict(value)
+
+    report = runner.issue_optional_smoke_partial_corpus_resume_correction(
+        root=tmp_path, design_authority=FakeDesign())
+    assert events == [
+        "issue-partial-resume", "reopen-partial-resume",
+        "validate-immutable-redrive", "validate-immutable-path",
+        "validate-immutable-dtype",
+    ]
+    assert report[
+        "optional_smoke_partial_corpus_resume_correction_digest"] == HEX_A
+    assert report["branch_redrive_projection_correction_digest"] == HEX_B
+    assert report["retained_valid_branch_count"] == 120
+    assert report["retained_invalid_attempt_receipt_count"] == 12
+    assert report["retained_smoke_transaction_complete"] is True
+    assert report["manifest_or_identity_replaced"] is False
+    assert report["completed_branch_reissued_or_rewritten"] is False
+    assert report["branch_or_latent_runtime_started_by_issue_stage"] is False
+    assert report["candidate_outcome_or_label_value_read_for_correction"] \
+        is False
+
+
+def test_parser_exposes_partial_corpus_resume_correction_before_resume() -> None:
+    correction = runner._parser().parse_args([
+        "--stage", "issue-optional-smoke-partial-corpus-resume-correction"])
+    resumed = runner._parser().parse_args(
+        ["--stage", "run", "--resume"])
+    assert correction.stage == (
+        "issue-optional-smoke-partial-corpus-resume-correction")
+    assert resumed.stage == "run" and resumed.resume is True
+
+
+def test_historical_correction_issue_stages_replay_newest_immutable_chain(
+        tmp_path: Path) -> None:
+    dtype = {
+        "immutable_encoder_import_correction": {
+            "payload": {
+                "encoder_import_correction_digest": HEX_D,
+                "immutable_successor_scorer_contract_binding": {
+                    "self_digest": runner.SCORER_CONTRACT.
+                        IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+                    "embedded_contract_self_digest": runner.SCORER_CONTRACT.
+                        IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+                },
+            },
+            "binding": {"self_digest": HEX_D},
+        },
+        "immutable_encoder_import_correction_digest": HEX_D,
+        "encoder_compute_dtype_correction_digest": HEX_C,
+        "immutable_successor_scorer_contract_binding": {
+            "self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+            "embedded_contract_self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        },
+    }
+    path = {
+        "scorer_fit_corpus_v2_encoder_path_projection_correction_digest":
+            HEX_E,
+        "immutable_encoder_compute_dtype_correction_digest": HEX_C,
+        "immutable_encoder_compute_dtype_correction": {
+            "payload": dtype, "binding": {"self_digest": HEX_C}},
+        "immutable_successor_scorer_contract_binding": {
+            "self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+            "embedded_contract_self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        },
+    }
+    redrive = {
+        "scorer_fit_corpus_v2_branch_redrive_projection_correction_digest":
+            HEX_B,
+        "immutable_encoder_path_projection_correction_digest": HEX_E,
+        "immutable_encoder_path_projection_correction": {
+            "payload": path,
+            "binding": {
+                "self_digest_key": (
+                    "scorer_fit_corpus_v2_encoder_path_projection_"
+                    "correction_digest"),
+                "self_digest": HEX_E,
+            },
+        },
+    }
+    newest = {
+        "scorer_fit_corpus_v2_optional_smoke_partial_corpus_resume_"
+        "correction_digest": HEX_A,
+        "immutable_branch_redrive_projection_correction_digest": HEX_B,
+        "immutable_branch_redrive_projection_correction": {
+            "payload": redrive,
+            "binding": {
+                "self_digest_key": (
+                    "scorer_fit_corpus_v2_branch_redrive_projection_"
+                    "correction_digest"),
+                "self_digest": HEX_B,
+            },
+        },
+    }
+    events: list[str] = []
+
+    class FakeDesign:
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH = (
+            Path("scorer_fit/newest.json"))
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY = (
+            "scorer_fit_corpus_v2_optional_smoke_partial_corpus_resume_"
+            "correction_digest")
+        BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH = Path(
+            "scorer_fit/redrive.json")
+        BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY = (
+            "scorer_fit_corpus_v2_branch_redrive_projection_correction_"
+            "digest")
+        BRANCH_REDRIVE_PROJECTION_CORRECTION_STATUS = "ISSUED_REDRIVE"
+        ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH = Path(
+            "scorer_fit/path.json")
+        ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY = (
+            "scorer_fit_corpus_v2_encoder_path_projection_correction_digest")
+        ENCODER_PATH_PROJECTION_CORRECTION_STATUS = "ISSUED_PATH"
+        ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH = Path(
+            "scorer_fit/dtype.json")
+        ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY = (
+            "encoder_compute_dtype_correction_digest")
+        ENCODER_COMPUTE_DTYPE_CORRECTION_STATUS = "ISSUED_DTYPE"
+        ENCODER_IMPORT_CORRECTION_RELATIVE_PATH = Path(
+            "scorer_fit/import.json")
+        ENCODER_IMPORT_CORRECTION_SELF_KEY = (
+            "encoder_import_correction_digest")
+        ENCODER_IMPORT_CORRECTION_STATUS = "ISSUED_IMPORT"
+        IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST = HEX_C
+        IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST = HEX_D
+
+        def load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("load-newest")
+            return newest
+
+        def validate_immutable_branch_redrive_projection_correction(
+                self, value: Mapping[str, Any]) -> Mapping[str, Any]:
+            events.append("redrive")
+            return dict(value)
+
+        def validate_immutable_encoder_path_projection_correction(
+                self, value: Mapping[str, Any], **_kwargs: Any
+                ) -> Mapping[str, Any]:
+            events.append("path")
+            return dict(value)
+
+        def validate_immutable_encoder_compute_dtype_correction(
+                self, value: Mapping[str, Any]) -> Mapping[str, Any]:
+            events.append("dtype")
+            return dict(value)
+
+        def validate_immutable_encoder_import_correction(
+                self, value: Mapping[str, Any]) -> Mapping[str, Any]:
+            events.append("import")
+            return dict(value)
+
+        def __getattr__(self, name: str) -> Any:
+            if name.startswith(("issue_", "load_branch_redrive_",
+                                "load_encoder_")):
+                raise AssertionError(
+                    f"historical correction stage was live-reissued: {name}")
+            raise AttributeError(name)
+
+    marker = tmp_path / (
+        FakeDesign.
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH)
+    marker.parent.mkdir(parents=True)
+    marker.write_text("installed newest fixture")
+    design = FakeDesign()
+    redrive_report = runner.issue_branch_redrive_projection_correction(
+        root=tmp_path, design_authority=design)
+    path_report = runner.issue_encoder_path_projection_correction(
+        root=tmp_path, design_authority=design)
+    dtype_report = runner.issue_encoder_compute_dtype_correction(
+        root=tmp_path, design_authority=design)
+    import_report = runner.issue_encoder_import_correction(
+        root=tmp_path, design_authority=design)
+    assert redrive_report[
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage"] is True
+    assert path_report[
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage"] is True
+    assert dtype_report[
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage"] is True
+    assert import_report[
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage"] is True
+    assert events.count("load-newest") == 4
 
 
 def test_preoutcome_failure_binds_corrected_source_and_immutable_design() -> None:

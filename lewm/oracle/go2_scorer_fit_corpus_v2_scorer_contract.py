@@ -789,14 +789,15 @@ def load_contract_for_consumption(
         *, root: Path = ROOT,
         encoder_path_projection_correction: Mapping[str, Any] | None = None,
         ) -> dict[str, Any]:
-    """Validate the immutable contract through the active redrive correction.
+    """Validate the immutable contract through the active resume correction.
 
     The contract remains byte-for-byte the artifact issued from historical
     clean commit ``72b0d77``.  The encoder import, FP32-compute, and logical
-    path-projection corrections are now immutable history.  The branch-redrive
-    projection correction is the sole live-source gate.  It binds the complete
-    historical correction chain and this contract exactly; no predecessor or
-    manifest authority is replayed under the current repository commit.
+    path-projection and branch-redrive corrections are now immutable history.
+    The optional-smoke partial-corpus resume correction is the sole live-source
+    gate.  It binds the complete historical correction chain and this contract
+    exactly; no predecessor or manifest authority is replayed under the
+    current repository commit.
 
     ``encoder_path_projection_correction`` remains in the public signature for
     historical callers.  A supplied value is compared byte-semantically with
@@ -809,22 +810,46 @@ def load_contract_for_consumption(
     artifact = validate_immutable_issued_contract_artifact(
         json.loads(path.read_text()))
 
-    correction = DESIGN.load_branch_redrive_projection_correction_for_consumption(
-        root=root)
+    correction = (
+        DESIGN.load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+            root=root))
     _require(isinstance(correction, Mapping),
-             "branch-redrive-projection correction authority is not an object")
+             "partial-corpus resume correction authority is not an object")
 
-    immutable_path = correction.get(
+    immutable_redrive = correction.get(
+        "immutable_branch_redrive_projection_correction")
+    _require(isinstance(immutable_redrive, Mapping),
+             "partial-corpus resume correction has no immutable redrive "
+             "correction")
+    validated_immutable_redrive = (
+        DESIGN.validate_immutable_branch_redrive_projection_correction(
+            immutable_redrive))
+    historical_redrive = validated_immutable_redrive["payload"]
+    historical_redrive_binding = validated_immutable_redrive["binding"]
+    _require(
+        correction.get("immutable_branch_redrive_projection_correction_digest")
+        == historical_redrive.get(
+            DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY)
+        and historical_redrive_binding.get("self_digest_key")
+        == DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY
+        and historical_redrive_binding.get("self_digest")
+        == historical_redrive.get(
+            DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY),
+        "immutable branch-redrive projection correction binding changed",
+    )
+
+    immutable_path = historical_redrive.get(
         "immutable_encoder_path_projection_correction")
     _require(isinstance(immutable_path, Mapping),
-             "branch-redrive correction has no immutable path correction")
+             "immutable branch-redrive correction has no path correction")
     validated_immutable_path = (
         DESIGN.validate_immutable_encoder_path_projection_correction(
             immutable_path))
     historical_path = validated_immutable_path["payload"]
     historical_binding = validated_immutable_path["binding"]
     _require(
-        correction.get("immutable_encoder_path_projection_correction_digest")
+        historical_redrive.get(
+            "immutable_encoder_path_projection_correction_digest")
         == historical_path.get(
             DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
         and historical_binding.get("self_digest_key")
@@ -847,7 +872,7 @@ def load_contract_for_consumption(
         historical_path.get(
             "immutable_successor_scorer_contract_binding")
         == contract_binding,
-        "branch-redrive correction binds a different immutable scorer "
+        "partial-corpus resume correction binds a different immutable scorer "
         "contract",
     )
     return validate_immutable_issued_contract_artifact(artifact)

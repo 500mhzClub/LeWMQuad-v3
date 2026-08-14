@@ -648,6 +648,113 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
                         RuntimeError, "without changing atime"):
                     encoder._file_sha256_without_atime_change(symlink)  # noqa: SLF001
 
+    def test_complete_transaction_status_does_not_reopen_advancing_branch_corpus(
+            self):
+        out = encoder.OUT_ROOT / "scorer_fit"
+        path_digest = "1" * 64
+        dtype_digest = "2" * 64
+        transaction_contract = {"synthetic": "exact-once-contract"}
+        transaction_contract_digest = "3" * 64
+        artifact = {"synthetic": "successor-contract"}
+        source_authority = (
+            "4" * 64, path_digest, dtype_digest, {"base": "smoke"},
+            "5" * 64, transaction_contract, transaction_contract_digest,
+            artifact, {"synthetic": "successor"})
+        complete_status = {
+            "transaction_state": "COMPLETE",
+            "prepared_present": True,
+            "complete_present": True,
+        }
+        with mock.patch.object(
+                encoder, "_load_full_bank_v2_source_correction_authority",
+                return_value=source_authority) as authority, \
+                mock.patch.object(
+                    encoder,
+                    "_classify_full_bank_v2_single_shard_regeneration_transaction",
+                    return_value=complete_status) as classify, \
+                mock.patch.object(
+                    encoder, "_load_full_bank_v2_inputs",
+                    side_effect=RuntimeError(
+                        "synthetic advancing 120-row partial corpus")) as inputs, \
+                mock.patch.object(
+                    encoder.CORPUS_BUILDER,
+                    "load_and_validate_full_bank_v2_branch_outputs_for_consumption",
+                    side_effect=AssertionError(
+                        "COMPLETE status reopened branch inputs")) as producer:
+            observed = (
+                encoder.
+                load_and_validate_full_bank_v2_single_shard_regeneration_transaction_status(
+                    out=out))
+        self.assertEqual(observed, complete_status)
+        authority.assert_called_once_with()
+        classify.assert_called_once_with(
+            out=out,
+            encoder_path_projection_correction_digest=path_digest,
+            transaction_contract=transaction_contract,
+            transaction_contract_digest=transaction_contract_digest)
+        inputs.assert_not_called()
+        producer.assert_not_called()
+
+    def test_incomplete_transaction_status_retains_strict_smoke_live_lineage(
+            self):
+        out = encoder.OUT_ROOT / "scorer_fit"
+        path_digest = "1" * 64
+        dtype_digest = "2" * 64
+        transaction_contract = {"synthetic": "exact-once-contract"}
+        transaction_contract_digest = "3" * 64
+        artifact = {"synthetic": "successor-contract"}
+        source_authority = (
+            "4" * 64, path_digest, dtype_digest, {"base": "smoke"},
+            "5" * 64, transaction_contract, transaction_contract_digest,
+            artifact, {"synthetic": "successor"})
+        incomplete_status = {
+            "transaction_state": "PREPARED_MOVE_PENDING",
+            "prepared_present": True,
+            "complete_present": False,
+        }
+        manifest = {"synthetic": "manifest"}
+        receipt = {"synthetic": "twelve-branch-receipt"}
+        strict_inputs = (
+            manifest, receipt, [{} for _ in range(12)], artifact,
+            dtype_digest, path_digest, {"base": "smoke"}, "5" * 64,
+            transaction_contract, transaction_contract_digest)
+        branch_smoke = {"synthetic": "branch-smoke"}
+        expected_lineage = {"synthetic": "live-lineage"}
+        with mock.patch.object(
+                encoder, "_load_full_bank_v2_source_correction_authority",
+                return_value=source_authority), \
+                mock.patch.object(
+                    encoder,
+                    "_classify_full_bank_v2_single_shard_regeneration_transaction",
+                    return_value=incomplete_status), \
+                mock.patch.object(
+                    encoder, "_load_full_bank_v2_inputs",
+                    return_value=strict_inputs) as inputs, \
+                mock.patch.object(
+                    encoder.CORPUS_BUILDER,
+                    "load_and_validate_full_bank_v2_branch_outputs_for_consumption",
+                    return_value={"branch_smoke": branch_smoke}) as producer, \
+                mock.patch.object(
+                    encoder, "_transaction_lineage",
+                    return_value=expected_lineage) as lineage, \
+                mock.patch.object(
+                    encoder, "_validate_transaction_live_lineage") as validate:
+            observed = (
+                encoder.
+                load_and_validate_full_bank_v2_single_shard_regeneration_transaction_status(
+                    out=out))
+        self.assertEqual(observed, incomplete_status)
+        inputs.assert_called_once_with(out, allow_partial=True)
+        producer.assert_called_once_with(out=out, allow_partial=True)
+        lineage.assert_called_once_with(
+            manifest=manifest, corpus_receipt=receipt,
+            branch_smoke=branch_smoke, contract_artifact=artifact,
+            encoder_compute_dtype_correction_digest=dtype_digest,
+            encoder_path_projection_correction_digest=path_digest)
+        validate.assert_called_once_with(
+            out=out, transaction_contract=transaction_contract,
+            expected_lineage=expected_lineage, require_complete=False)
+
     def test_transaction_classifier_covers_all_recovery_states_and_custody(self):
         with tempfile.TemporaryDirectory() as directory:
             fixture = self._transaction_fixture(directory)

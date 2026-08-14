@@ -91,6 +91,15 @@ BRANCH_REDRIVE_PROJECTION_CORRECTION_STATUS = (
     "ISSUED_POST_PARTIAL_CORPUS_BRANCH_REDRIVE_PROJECTION_CORRECTION")
 BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY = (
     "scorer_fit_corpus_v2_branch_redrive_projection_correction_digest")
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_post_redrive_optional_smoke_partial_corpus_"
+    "resume_correction_v1")
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STATUS = (
+    "ISSUED_POST_REDRIVE_PRE_RESUME_OPTIONAL_SMOKE_PARTIAL_CORPUS_GATE_"
+    "CORRECTION")
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY = (
+    "scorer_fit_corpus_v2_optional_smoke_partial_corpus_resume_correction_"
+    "digest")
 FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_SCHEMA = (
     "go2_scorer_fit_corpus_v2_single_shard_regeneration_prepared_v1")
 FULL_BANK_V2_SMOKE_REGENERATION_PREPARED_STATUS = (
@@ -170,6 +179,16 @@ BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH = (
 BRANCH_REDRIVE_PROJECTION_CORRECTION_STAGED_RELATIVE_PATH = (
     SCORER_FIT_RELATIVE_PATH /
     ".scorer_fit_corpus_v2_post_partial_corpus_branch_redrive_projection_"
+    "correction_v1.json.staged"
+)
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    "scorer_fit_corpus_v2_post_redrive_optional_smoke_partial_corpus_resume_"
+    "correction_v1.json"
+)
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STAGED_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    ".scorer_fit_corpus_v2_post_redrive_optional_smoke_partial_corpus_resume_"
     "correction_v1.json.staged"
 )
 FULL_BANK_V2_SMOKE_REGENERATION_TRANSACTION_DIRECTORY_RELATIVE_PATH = (
@@ -344,6 +363,33 @@ BRANCH_REDRIVE_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
     "scripts/build_go2_branch_corpus_v1_2.py",
     "scripts/run_go2_scorer_fit_full_bank_v2.py",
 )
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT = (
+    "35c6ec76d618a70025f47c6dd2dd3216adf8cde2")
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
+    "lewm/oracle/go2_scorer_fit_corpus_v2_design.py",
+    "lewm/oracle/go2_scorer_fit_corpus_v2_scorer_contract.py",
+    "scripts/encode_go2_branch_corpus_v1_2.py",
+    "scripts/run_go2_scorer_fit_full_bank_v2.py",
+)
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_FOCUSED_TEST_PATHS = (
+    "lewm/tests/test_go2_scorer_fit_corpus_v2_design.py",
+    "lewm/tests/test_go2_scorer_fit_corpus_v2_scorer_contract.py",
+    "lewm/tests/test_encode_go2_branch_corpus_v1_2.py",
+    "lewm/tests/test_run_go2_scorer_fit_full_bank_v2.py",
+)
+IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_DIGEST = (
+    "ba8be551c80c320927219940837fc61e1264b3d77bc2979e2891b20d6f61e217")
+IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_BINDING = {
+    "path": str(BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH),
+    "schema": BRANCH_REDRIVE_PROJECTION_CORRECTION_SCHEMA,
+    "self_digest_key": BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY,
+    "self_digest": IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_DIGEST,
+    "raw_sha256": (
+        "0876cedbb20d6617a8a0cc6099e3ee1b1b5320415016ad2d57b145216f51c663"),
+    "byte_count": 346_011,
+    "source_repository_commit":
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+}
 IMMUTABLE_ENCODER_PATH_PROJECTION_CORRECTION_DIGEST = (
     "597ae5c7237749dbf5d6b7813ffd2d4441b7244b4f241e57d6fbd5b7349203b8")
 IMMUTABLE_ENCODER_PATH_PROJECTION_CORRECTION_BINDING = {
@@ -1452,6 +1498,9 @@ ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_SPECS = tuple(
 ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_SPECS = tuple(
     (path, "focused_encoder_path_projection_correction_test")
     for path in ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_PATHS)
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_FOCUSED_TEST_SPECS = tuple(
+    (path, "focused_optional_smoke_partial_corpus_resume_correction_test")
+    for path in OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_FOCUSED_TEST_PATHS)
 
 V2_PREOUTCOME_ARTIFACT_PATHS = (
     SCORER_FIT_RELATIVE_PATH / "state_manifest_v2.json",
@@ -1585,6 +1634,12 @@ BRANCH_REDRIVE_PROJECTION_CORRECTION_REQUIRED_ABSENT_DIRECTORIES = (
         "counterfactual_development_transfer_v2/score_shards",
     UTILITY_V2_ROOT_RELATIVE_PATH /
         "counterfactual_development_transfer_v2/invalid_attempts",
+)
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_REQUIRED_ABSENT_PATHS = (
+    *BRANCH_REDRIVE_PROJECTION_CORRECTION_REQUIRED_ABSENT_PATHS,
+)
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_REQUIRED_ABSENT_DIRECTORIES = (
+    *BRANCH_REDRIVE_PROJECTION_CORRECTION_REQUIRED_ABSENT_DIRECTORIES,
 )
 
 _ROTATION_IDS = tuple(
@@ -1969,6 +2024,109 @@ BRANCH_REDRIVE_PROJECTION_CORRECTION_PRESERVED_SCIENCE = {
     "frame_or_latent_value_read_for_correction": False,
     "preoutcome_feasibility_terminal_authorised": False,
     "scientific_failure_terminal_authorised_by_observed_reason": False,
+}
+
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_FAILURE_BOUNDARY = {
+    "status": "IMMUTABLE_SOURCE_FAILURE_OPTIONAL_SMOKE_PARTIAL_CORPUS_GATE",
+    "historical_source_repository_commit":
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+    "runner_stage": "resume_pre_smoke_optional_validation",
+    "bound_validator_stage": "internal-validate-encoding-smoke-optional",
+    "runner_function": "_optional_smoke_transaction_status",
+    "encoder_status_function": (
+        "load_and_validate_full_bank_v2_single_shard_regeneration_"
+        "transaction_status"),
+    "encoder_input_function": "_load_full_bank_v2_inputs",
+    "encoder_input_allow_partial": True,
+    "encoder_partial_cardinality_admitted_before_correction": [12, 1_440],
+    "observed_partial_branch_count": 120,
+    "observed_completed_state_count": 10,
+    "observed_attempted_branch_count": 120,
+    "observed_valid_branch_count": 120,
+    "observed_invalid_branch_count": 0,
+    "observed_corpus_complete": False,
+    "observed_corpus_digest": (
+        "d3bf3622550d8ac59cdda55470c751ab7cd0e8aacf18ce7dfd8e2446f1f62928"),
+    "observed_branch_rows_sha256": (
+        "b9cadbb5feb4925e9924ca791d1210477336fadb468bd91b31bf41a0ae909e3a"),
+    "deterministic_exception_type": "RuntimeError",
+    "deterministic_exception_message": (
+        "full-bank V2 smoke requires one complete twelve-branch state"),
+    "transaction_state_before_failure": "COMPLETE",
+    "transaction_pass_smoke_already_validated": True,
+    "branch_smoke_receipt_remained_bound_to_original_twelve_row_corpus": True,
+    "encoding_smoke_and_branch_smoke_receipt_digests_still_match": True,
+    "matching_smoke_receipt_digests_prove_no_partial_progress": False,
+    "uncorrected_complete_shortcut_would_next_enter_stale_strict_smoke_replay":
+        True,
+    "transaction_status_requires_current_partial_branch_rows": False,
+    "corrected_branch_command_started": False,
+    "candidate_outcome_or_label_fields_parsed_by_failing_validator": True,
+    "candidate_outcome_or_label_used_for_selection": False,
+    "registered_frame_bytes_hashed_by_failing_validator": True,
+    "frame_pixels_interpreted_for_selection": False,
+    "latent_value_read_by_failing_validator": False,
+    "partial_corpus_invalidity_established": False,
+    "scientific_or_feasibility_failure_established": False,
+}
+
+OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_PRESERVED_SCIENCE = {
+    "immutable_branch_redrive_projection_correction_digest":
+        IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_DIGEST,
+    "immutable_encoder_path_projection_correction_digest":
+        IMMUTABLE_ENCODER_PATH_PROJECTION_CORRECTION_DIGEST,
+    "state_manifest_digest": BRANCH_REDRIVE_PROJECTION_CORRECTION_PRESERVED_SCIENCE[
+        "state_manifest_digest"],
+    "assignment_manifest_digest":
+        BRANCH_REDRIVE_PROJECTION_CORRECTION_PRESERVED_SCIENCE[
+            "assignment_manifest_digest"],
+    "successor_scorer_contract_digest":
+        BRANCH_REDRIVE_PROJECTION_CORRECTION_PRESERVED_SCIENCE[
+            "successor_scorer_contract_digest"],
+    "successor_scorer_contract_artifact_digest":
+        BRANCH_REDRIVE_PROJECTION_CORRECTION_PRESERVED_SCIENCE[
+            "successor_scorer_contract_artifact_digest"],
+    "candidate_bank_digest": CANDIDATE_BANK_DIGEST,
+    "candidate_indices": list(CANDIDATE_INDICES),
+    "oracle_v1_2_digest": ORACLE_V1_2_DIGEST,
+    "state_identity_or_manifest_replacement_authorised": False,
+    "candidate_bank_or_oracle_change_authorised": False,
+    "branch_plan_render_preprocess_encoder_or_scorer_change_authorised": False,
+    "existing_valid_branch_row_rewrite_authorised": False,
+    "advancing_compiled_ledger_and_corpus_receipt_refresh_authorised": True,
+    "correction_issuance_rewrites_smoke_or_transaction_receipts": False,
+    "prepared_and_complete_transaction_receipts_immutable": True,
+    "existing_encoding_smoke_preserved_during_partial_corpus_phase": True,
+    "encoding_smoke_refresh_before_1440_branches_authorised": False,
+    "frozen_one_time_complete_corpus_encoding_smoke_refresh_at_1440_"
+    "authorised": True,
+    "frozen_one_time_complete_corpus_encoding_smoke_refresh_at_1440_"
+    "required": True,
+    "original_branch_smoke_preserved_during_partial_corpus_advancement": True,
+    "branch_smoke_rebinding_before_1440_branches_authorised": False,
+    "frozen_complete_corpus_branch_smoke_rebinding_at_1440_authorised": True,
+    "existing_frame_or_latent_regeneration_authorised": False,
+    "completed_valid_branch_regeneration_authorised": False,
+    "retained_valid_branch_count": 120,
+    "retained_invalid_attempt_receipt_count": 12,
+    "partial_valid_branch_rows_preserved": True,
+    "invalid_attempt_receipts_preserved": True,
+    "completed_transaction_receipts_preserved": True,
+    "existing_manifest_frame_and_latent_artifacts_preserved": True,
+    "resume_scope": "MISSING_REGISTERED_ASSIGNMENTS_ONLY",
+    "runner_partial_lag_requires_strict_builder_producer_validation": True,
+    "runner_partial_lag_requires_complete_state_alignment": True,
+    "runner_partial_lag_may_retain_completed_smoke_protocol": True,
+    "runner_partial_lag_may_skip_only_stale_strict_smoke_replay": True,
+    "normal_full_encoder_refresh_after_complete_branch_corpus_required": True,
+    "strict_encoded_corpus_validation_after_full_refresh_required": True,
+    "noncomplete_transaction_status_path_changed": False,
+    "smoke_or_full_encoder_cardinality_gate_changed": False,
+    "candidate_outcome_or_label_value_read_for_correction": False,
+    "frame_or_latent_value_read_for_correction": False,
+    "preoutcome_feasibility_terminal_authorised": False,
+    "scientific_failure_terminal_authorised": False,
+    "final_200_state_corpus_authorised": False,
 }
 
 
@@ -4035,6 +4193,31 @@ def _validate_branch_redrive_projection_correction_absence(
     return copy.deepcopy(expected)
 
 
+def _expected_optional_smoke_partial_corpus_resume_correction_absence_rows(
+        ) -> list[dict[str, Any]]:
+    rows = [
+        {"path": str(path), "expected_kind": "file", "exists": False}
+        for path in
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_REQUIRED_ABSENT_PATHS
+    ]
+    rows.extend({
+        "path": str(path), "expected_kind": "directory", "exists": False,
+    } for path in
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_REQUIRED_ABSENT_DIRECTORIES)
+    return rows
+
+
+def _validate_optional_smoke_partial_corpus_resume_correction_absence(
+        value: Any) -> list[dict[str, Any]]:
+    expected = (
+        _expected_optional_smoke_partial_corpus_resume_correction_absence_rows())
+    if not isinstance(value, list) or value != expected:
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke partial-corpus downstream absence projection "
+            "changed")
+    return copy.deepcopy(expected)
+
+
 def _validate_encoder_path_projection_focused_test_transitions(
         value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list) or len(value) != len(
@@ -4051,6 +4234,25 @@ def _validate_encoder_path_projection_focused_test_transitions(
             ENCODER_PATH_PROJECTION_CORRECTION_FOCUSED_TEST_PATHS):
         raise ScorerFitCorpusV2DesignError(
             "encoder-path-projection focused test transition order changed")
+    return transitions
+
+
+def _validate_optional_smoke_partial_corpus_resume_focused_test_transitions(
+        value: Any) -> list[dict[str, Any]]:
+    specs = OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_FOCUSED_TEST_SPECS
+    if not isinstance(value, list) or len(value) != len(specs):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke partial-corpus focused test transition coverage "
+            "changed")
+    transitions = [
+        _validate_source_transition(row, path=path, role=role)
+        for (path, role), row in zip(specs, value, strict=True)
+    ]
+    if [row["path"] for row in transitions] != list(
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_FOCUSED_TEST_PATHS):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke partial-corpus focused test transition order "
+            "changed")
     return transitions
 
 
@@ -5791,6 +5993,316 @@ def branch_redrive_projection_correction_artifact_binding(
     }
 
 
+def validate_immutable_branch_redrive_projection_correction(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the exact redrive predecessor without live-source replay."""
+
+    if not isinstance(value, Mapping) or set(value) != {"payload", "binding"}:
+        raise ScorerFitCorpusV2DesignError(
+            "immutable branch-redrive projection correction is not closed")
+    immutable = copy.deepcopy(dict(value))
+    payload = validate_branch_redrive_projection_correction(
+        immutable.get("payload", {}), validate_live_authorities=False)
+    raw = _pretty_json_bytes(payload)
+    expected_binding = branch_redrive_projection_correction_artifact_binding(
+        payload, raw)
+    if (immutable.get("binding") != expected_binding
+            or expected_binding
+            != IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_BINDING
+            or payload.get(BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY)
+            != IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_DIGEST
+            or payload.get("source_repository_commit")
+            != OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable branch-redrive projection correction changed")
+    immutable["payload"] = payload
+    immutable["binding"] = expected_binding
+    return immutable
+
+
+_OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_KEYS = frozenset({
+    "schema", "status", "complete",
+    "optional_smoke_partial_corpus_resume_correction_version",
+    "source_repository_commit", "source_bindings", "source_binding_set_digest",
+    "historical_source_repository_commit",
+    "immutable_branch_redrive_projection_correction",
+    "immutable_branch_redrive_projection_correction_digest",
+    "production_source_transition", "production_source_transition_digest",
+    "focused_test_source_transitions", "focused_test_source_transition_digest",
+    "partial_corpus_failure_boundary", "partial_corpus_failure_boundary_digest",
+    "invalid_attempt_receipt_bindings", "invalid_attempt_receipt_binding_digest",
+    "completed_smoke_boundary", "completed_smoke_boundary_digest",
+    "optional_smoke_partial_corpus_resume_failure_boundary",
+    "optional_smoke_partial_corpus_resume_failure_boundary_digest",
+    "preserved_scientific_contract", "preserved_scientific_contract_digest",
+    "downstream_outputs_absent_at_issue",
+    "downstream_outputs_absent_at_issue_digest",
+    "optional_smoke_partial_corpus_resume_correction",
+    "optional_smoke_partial_corpus_resume_correction_material_digest",
+    "issuance_boundary",
+    OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY,
+})
+
+
+def build_optional_smoke_partial_corpus_resume_correction(
+        *, source_repository_commit: str,
+        source_bindings: Sequence[Mapping[str, Any]],
+        focused_test_source_transitions: Sequence[Mapping[str, Any]],
+        immutable_branch_redrive_projection_correction: Mapping[str, Any],
+        downstream_outputs_absent_at_issue: Sequence[Mapping[str, Any]],
+        ) -> dict[str, Any]:
+    """Build the source-only correction for the COMPLETE status gate."""
+
+    if (not _is_hex(source_repository_commit, 40)
+            or source_repository_commit
+            == OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction source commit is malformed or "
+            "not new")
+    current_sources = _validate_source_bindings(list(source_bindings))
+    immutable_redrive = validate_immutable_branch_redrive_projection_correction(
+        immutable_branch_redrive_projection_correction)
+    redrive = immutable_redrive["payload"]
+    changed = _changed_source_paths(redrive["source_bindings"], current_sources)
+    expected_changed = sorted(
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    if changed != expected_changed:
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction changed an unauthorised source "
+            "path")
+    tests = (
+        _validate_optional_smoke_partial_corpus_resume_focused_test_transitions(
+            list(focused_test_source_transitions)))
+    partial = copy.deepcopy(redrive["partial_corpus_failure_boundary"])
+    invalid = copy.deepcopy(redrive["invalid_attempt_receipt_bindings"])
+    smoke = copy.deepcopy(redrive["completed_smoke_boundary"])
+    if (partial != IMMUTABLE_BRANCH_REDRIVE_PARTIAL_CORPUS_BINDING
+            or invalid
+            != list(IMMUTABLE_BRANCH_REDRIVE_INVALID_ATTEMPT_RECEIPT_BINDINGS)
+            or smoke != IMMUTABLE_BRANCH_REDRIVE_COMPLETED_SMOKE_BUNDLE):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume predecessor runtime boundary changed")
+    absence = (
+        _validate_optional_smoke_partial_corpus_resume_correction_absence(
+            list(downstream_outputs_absent_at_issue)))
+    production_transition = {
+        "allowed_changed_source_paths": list(
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS),
+        "observed_changed_source_paths": changed,
+        "historical_bound_source_paths": [
+            row["path"] for row in redrive["source_bindings"]],
+        "current_bound_source_paths": [row["path"] for row in current_sources],
+        "extra_production_source_path_changed": False,
+    }
+    failure = copy.deepcopy(
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_FAILURE_BOUNDARY)
+    receipt = partial["corpus_receipt"]
+    if (failure["observed_partial_branch_count"]
+            != receipt["attempted_branches"]
+            or failure["observed_completed_state_count"]
+            != receipt["completed_states"]
+            or failure["observed_corpus_digest"] != receipt["corpus_digest"]
+            or failure["observed_branch_rows_sha256"]
+            != receipt["branch_rows_sha256"]):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume failure facts changed")
+    science = copy.deepcopy(
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_PRESERVED_SCIENCE)
+    correction_material = {
+        "status": "SOURCE_ONLY_OPTIONAL_SMOKE_PARTIAL_CORPUS_GATE_CORRECTION",
+        "defect": (
+            "COMPLETE_TRANSACTION_STATUS_CLASSIFICATION_OPENED_THE_ADVANCING_"
+            "PARTIAL_BRANCH_CORPUS_BEFORE_CLASSIFYING_IMMUTABLE_CUSTODY"),
+        "correction": (
+            "CLASSIFY_EXACT_COMPLETE_TRANSACTION_FROM_IMMUTABLE_AUTHORITY_"
+            "BEFORE_ANY_PARTIAL_BRANCH_CORPUS_CARDINALITY_CHECK"),
+        "complete_transaction_only_fast_path": True,
+        "noncomplete_transaction_loader_and_live_lineage_unchanged": True,
+        "matching_historical_smoke_digests_sufficient_for_no_partial_lag": False,
+        "runner_partial_lag_detection_uses_strict_builder_producer": True,
+        "runner_partial_lag_requires_state_aligned_complete_candidate_banks":
+            True,
+        "runner_partial_lag_retains_completed_smoke_protocol": True,
+        "runner_partial_lag_skips_only_stale_strict_smoke_replay": True,
+        "runner_resume_executes_only_missing_registered_branches": True,
+        "normal_full_encoder_refresh_after_1440_branches_required": True,
+        "strict_encoded_corpus_validation_after_refresh_required": True,
+        "encoder_smoke_partial_cardinality_rule_changed": False,
+        "full_encoder_cardinality_rule_changed": False,
+        "builder_partial_receipt_validation_relaxed": False,
+        "encoding_smoke_or_transaction_receipt_rewritten_by_correction": False,
+        "prepared_and_complete_transaction_receipts_immutable": True,
+        "existing_encoding_smoke_preserved_during_partial_corpus_phase": True,
+        "encoding_smoke_refresh_before_1440_branches_authorised": False,
+        "frozen_one_time_complete_corpus_encoding_smoke_refresh_at_1440_"
+        "authorised": True,
+        "frozen_one_time_complete_corpus_encoding_smoke_refresh_at_1440_"
+        "required": True,
+        "original_branch_smoke_preserved_during_partial_advancement": True,
+        "branch_smoke_rebinding_before_1440_branches_authorised": False,
+        "frozen_complete_corpus_branch_smoke_rebinding_at_1440_authorised":
+            True,
+        "manifest_branch_row_frame_or_latent_rewritten": False,
+        "candidate_outcome_or_label_value_read_for_correction": False,
+        "corrected_resume_authorised": True,
+        "corrected_resume_scope": "MISSING_REGISTERED_ASSIGNMENTS_ONLY",
+        "scientific_or_feasibility_terminal_issued": False,
+    }
+    payload: dict[str, Any] = {
+        "schema": OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SCHEMA,
+        "status": OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STATUS,
+        "complete": True,
+        "optional_smoke_partial_corpus_resume_correction_version": 1,
+        "source_repository_commit": source_repository_commit,
+        "source_bindings": current_sources,
+        "source_binding_set_digest": canonical_digest(current_sources),
+        "historical_source_repository_commit":
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+        "immutable_branch_redrive_projection_correction": immutable_redrive,
+        "immutable_branch_redrive_projection_correction_digest":
+            IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_DIGEST,
+        "production_source_transition": production_transition,
+        "production_source_transition_digest": canonical_digest(
+            production_transition),
+        "focused_test_source_transitions": tests,
+        "focused_test_source_transition_digest": canonical_digest(tests),
+        "partial_corpus_failure_boundary": partial,
+        "partial_corpus_failure_boundary_digest": canonical_digest(partial),
+        "invalid_attempt_receipt_bindings": invalid,
+        "invalid_attempt_receipt_binding_digest": canonical_digest(invalid),
+        "completed_smoke_boundary": smoke,
+        "completed_smoke_boundary_digest": canonical_digest(smoke),
+        "optional_smoke_partial_corpus_resume_failure_boundary": failure,
+        "optional_smoke_partial_corpus_resume_failure_boundary_digest":
+            canonical_digest(failure),
+        "preserved_scientific_contract": science,
+        "preserved_scientific_contract_digest": canonical_digest(science),
+        "downstream_outputs_absent_at_issue": absence,
+        "downstream_outputs_absent_at_issue_digest": canonical_digest(absence),
+        "optional_smoke_partial_corpus_resume_correction": correction_material,
+        "optional_smoke_partial_corpus_resume_correction_material_digest":
+            canonical_digest(correction_material),
+        "issuance_boundary": {
+            "source_tree_clean_and_committed": True,
+            "immutable_branch_redrive_projection_correction_reopened": True,
+            "partial_corpus_metadata_validated_twice_before_publication": True,
+            "branch_rows_bytes_hashed_without_jsonl_parse": True,
+            "invalid_attempt_metadata_receipts_validated_twice": True,
+            "completed_smoke_and_transaction_validated_twice": True,
+            "later_training_qualification_development_absence_validated_twice":
+                True,
+            "later_consumption_requires_failure_time_partial_corpus_live": False,
+            "later_consumption_requires_invalid_attempt_receipts_live": False,
+            "direct_write_to_final_correction_path_allowed": False,
+            "correction_staged_relative_path": str(
+                OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STAGED_RELATIVE_PATH),
+            "correction_staged_file_create_uses_o_excl": True,
+            "correction_staged_file_fsync_before_publication_required": True,
+            "correction_staged_mode_before_publication": "0444",
+            "correction_atomic_no_overwrite_publication":
+                "LINK_STAGED_TO_FINAL",
+            "parent_directory_fsync_after_link_and_staged_unlink_required": True,
+            "idempotent_exact_reopen_required": True,
+            "final_200_state_corpus_authorised": False,
+        },
+    }
+    if set(payload) != (
+            _OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_KEYS - {
+                OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY}):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction construction surface changed")
+    payload[OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY] = (
+        canonical_digest(payload))
+    return payload
+
+
+def validate_optional_smoke_partial_corpus_resume_correction(
+        payload: Mapping[str, Any], *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_failure_boundary_live: bool = False,
+        ) -> dict[str, Any]:
+    if (not isinstance(payload, Mapping)
+            or set(payload)
+            != _OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_KEYS):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke partial-corpus resume correction is not closed")
+    correction = copy.deepcopy(dict(payload))
+    if (correction.get("schema")
+            != OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SCHEMA
+            or correction.get("status")
+            != OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STATUS
+            or correction.get("complete") is not True
+            or correction.get(
+                "optional_smoke_partial_corpus_resume_correction_version")
+            != 1):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction version changed")
+    expected = build_optional_smoke_partial_corpus_resume_correction(
+        source_repository_commit=str(correction.get(
+            "source_repository_commit", "")),
+        source_bindings=correction.get("source_bindings", []),
+        focused_test_source_transitions=correction.get(
+            "focused_test_source_transitions", []),
+        immutable_branch_redrive_projection_correction=correction.get(
+            "immutable_branch_redrive_projection_correction", {}),
+        downstream_outputs_absent_at_issue=correction.get(
+            "downstream_outputs_absent_at_issue", []),
+    )
+    if (correction != expected
+            or correction.get(
+                OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY)
+            != canonical_digest(_without(
+                correction,
+                OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY))):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction binding changed")
+    if validate_live_authorities:
+        commit, sources = clean_source_authority(root=root)
+        tests = (
+            _optional_smoke_partial_corpus_resume_focused_test_source_transitions(
+                root=root))
+        if (commit != correction["source_repository_commit"]
+                or sources != correction["source_bindings"]
+                or tests != correction["focused_test_source_transitions"]):
+            raise ScorerFitCorpusV2DesignError(
+                "live source differs from optional-smoke resume correction")
+        if require_failure_boundary_live:
+            partial, invalid, smoke = (
+                _validate_live_branch_redrive_failure_boundary(root=root))
+            absence = (
+                audit_optional_smoke_partial_corpus_resume_correction_downstream_absence(
+                    root=root))
+            if (partial != correction["partial_corpus_failure_boundary"]
+                    or invalid != correction["invalid_attempt_receipt_bindings"]
+                    or smoke != correction["completed_smoke_boundary"]
+                    or absence
+                    != correction["downstream_outputs_absent_at_issue"]):
+                raise ScorerFitCorpusV2DesignError(
+                    "optional-smoke live failure boundary changed before issue")
+    return correction
+
+
+def optional_smoke_partial_corpus_resume_correction_artifact_binding(
+        payload: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
+    correction = validate_optional_smoke_partial_corpus_resume_correction(
+        payload, validate_live_authorities=False)
+    if raw != _pretty_json_bytes(correction):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction raw bytes changed")
+    return {
+        "path": str(
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH),
+        "schema": OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SCHEMA,
+        "self_digest_key":
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY,
+        "self_digest": correction[
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "source_repository_commit": correction["source_repository_commit"],
+    }
+
+
 def completion_order_material(
         complete_structural_state_identity: Mapping[str, Any],
         designated_goal_identity: Mapping[str, Any], *,
@@ -6063,6 +6575,29 @@ def _encoder_path_projection_focused_test_source_transitions(
         transitions)
 
 
+def _optional_smoke_partial_corpus_resume_focused_test_source_transitions(
+        *, root: Path = ROOT) -> list[dict[str, Any]]:
+    repository = Path(root).resolve()
+    transitions: list[dict[str, Any]] = []
+    for path, role in (
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_FOCUSED_TEST_SPECS):
+        transitions.append({
+            "path": path,
+            "role": role,
+            "historical": _transition_endpoint_from_raw(
+                path=path, role=role,
+                raw=_historical_source_blob(
+                    root=repository,
+                    commit=(
+                        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT),
+                    relative=path)),
+            "current": _current_source_endpoint(
+                root=repository, path=path, role=role),
+        })
+    return _validate_optional_smoke_partial_corpus_resume_focused_test_transitions(
+        transitions)
+
+
 def _validate_live_encoder_path_projection_failure_source(
         *, root: Path = ROOT) -> dict[str, Any]:
     expected = ENCODER_PATH_PROJECTION_FAILURE_ENCODER_SOURCE_BINDING
@@ -6201,6 +6736,30 @@ def _load_immutable_encoder_path_projection_correction(
     return validate_immutable_encoder_path_projection_correction({
         "payload": payload,
         "binding": encoder_path_projection_correction_artifact_binding(
+            payload, raw),
+    })
+
+
+def _load_immutable_branch_redrive_projection_correction(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    expected = IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_BINDING
+    path = _pin_generated(
+        root, expected["path"],
+        label="immutable branch-redrive projection correction")
+    if (not path.is_file() or path.is_symlink()
+            or stat.S_IMODE(path.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable branch-redrive projection correction mode changed")
+    payload, raw = _load_json(
+        path, label="immutable branch-redrive projection correction")
+    if (len(raw) != expected["byte_count"]
+            or hashlib.sha256(raw).hexdigest() != expected["raw_sha256"]):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable branch-redrive projection correction raw binding "
+            "changed")
+    return validate_immutable_branch_redrive_projection_correction({
+        "payload": payload,
+        "binding": branch_redrive_projection_correction_artifact_binding(
             payload, raw),
     })
 
@@ -6674,6 +7233,23 @@ def audit_branch_redrive_projection_correction_downstream_absence(
         if path.exists() or path.is_symlink():
             raise ScorerFitCorpusV2DesignError(
                 "downstream output predates branch-redrive correction: "
+                f"{row['path']}")
+    return rows
+
+
+def audit_optional_smoke_partial_corpus_resume_correction_downstream_absence(
+        *, root: Path = ROOT) -> list[dict[str, Any]]:
+    """Require no training, qualification, transfer, or final-eval output."""
+
+    rows = (
+        _expected_optional_smoke_partial_corpus_resume_correction_absence_rows())
+    for row in rows:
+        path = _pin_generated(
+            root, row["path"],
+            label="optional-smoke partial-corpus correction downstream absence")
+        if path.exists() or path.is_symlink():
+            raise ScorerFitCorpusV2DesignError(
+                "downstream output predates optional-smoke resume correction: "
                 f"{row['path']}")
     return rows
 
@@ -7890,11 +8466,130 @@ def issue_branch_redrive_projection_correction(
     return load_branch_redrive_projection_correction_for_consumption(root=root)
 
 
+def load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+        path: Path | None = None, *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_failure_boundary_live: bool = False,
+        ) -> dict[str, Any]:
+    """Load the newest correction without reopening mutable partial rows."""
+
+    expected = _pin_generated(
+        root, OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH,
+        label="optional-smoke partial-corpus resume correction")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction logical path changed")
+    if (not expected.is_file() or expected.is_symlink()
+            or stat.S_IMODE(expected.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction mode changed")
+    payload, raw = _load_json(
+        expected, label="optional-smoke partial-corpus resume correction")
+    correction = validate_optional_smoke_partial_corpus_resume_correction(
+        payload, root=root,
+        validate_live_authorities=validate_live_authorities,
+        require_failure_boundary_live=require_failure_boundary_live)
+    optional_smoke_partial_corpus_resume_correction_artifact_binding(
+        correction, raw)
+    return correction
+
+
+def issue_optional_smoke_partial_corpus_resume_correction(
+        path: Path | None = None, *, root: Path = ROOT,
+        source_repository_commit: str | None = None,
+        ) -> dict[str, Any]:
+    """Issue the source-only COMPLETE-transaction optional-smoke fix."""
+
+    expected = _pin_generated(
+        root, OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH,
+        label="optional-smoke partial-corpus resume correction")
+    staged = _pin_generated(
+        root,
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STAGED_RELATIVE_PATH,
+        label="optional-smoke partial-corpus resume correction staged "
+        "publication")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction logical path changed")
+    if not expected.parent.is_dir() or expected.parent.is_symlink():
+        raise ScorerFitCorpusV2DesignError(
+            "optional-smoke resume correction parent is unavailable")
+    if expected.exists() or expected.is_symlink():
+        correction = (
+            load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+                root=root))
+        _exclusive_json_atomic_no_overwrite(
+            expected, staged, correction,
+            label="optional-smoke partial-corpus resume correction",
+            recover_nonexact_staged=False)
+        return correction
+
+    commit, sources = clean_source_authority(root=root)
+    if source_repository_commit is not None and commit != source_repository_commit:
+        raise ScorerFitCorpusV2DesignError(
+            "requested optional-smoke resume correction commit is not live")
+    immutable_redrive = _load_immutable_branch_redrive_projection_correction(
+        root=root)
+    first_tests = (
+        _optional_smoke_partial_corpus_resume_focused_test_source_transitions(
+            root=root))
+    first_partial, first_invalid, first_smoke = (
+        _validate_live_branch_redrive_failure_boundary(root=root))
+    first_absence = (
+        audit_optional_smoke_partial_corpus_resume_correction_downstream_absence(
+            root=root))
+    correction = build_optional_smoke_partial_corpus_resume_correction(
+        source_repository_commit=commit,
+        source_bindings=sources,
+        focused_test_source_transitions=first_tests,
+        immutable_branch_redrive_projection_correction=immutable_redrive,
+        downstream_outputs_absent_at_issue=first_absence,
+    )
+
+    second_commit, second_sources = clean_source_authority(root=root)
+    second_redrive = _load_immutable_branch_redrive_projection_correction(
+        root=root)
+    second_tests = (
+        _optional_smoke_partial_corpus_resume_focused_test_source_transitions(
+            root=root))
+    second_partial, second_invalid, second_smoke = (
+        _validate_live_branch_redrive_failure_boundary(root=root))
+    second_absence = (
+        audit_optional_smoke_partial_corpus_resume_correction_downstream_absence(
+            root=root))
+    if ((commit, sources) != (second_commit, second_sources)
+            or immutable_redrive != second_redrive
+            or first_tests != second_tests
+            or first_partial != second_partial
+            or first_invalid != second_invalid
+            or first_smoke != second_smoke
+            or first_absence != second_absence):
+        raise ScorerFitCorpusV2DesignError(
+            "source, chained redrive correction, partial metadata, smoke, or "
+            "absence changed before optional-smoke correction install")
+    _exclusive_json_atomic_no_overwrite(
+        expected, staged, correction,
+        label="optional-smoke partial-corpus resume correction",
+        recover_nonexact_staged=True)
+    # Failure-time partial files may advance after issuance.  Reopen only the
+    # immutable correction and current clean source authority.
+    return load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+        root=root)
+
+
 def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
     """Return immutable science plus the mandatory corrected source authority."""
 
-    redrive_correction = (
-        load_branch_redrive_projection_correction_for_consumption(root=root))
+    resume_correction = (
+        load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+            root=root))
+    immutable_redrive_correction = (
+        validate_immutable_branch_redrive_projection_correction(
+            resume_correction[
+                "immutable_branch_redrive_projection_correction"]))
+    redrive_correction = immutable_redrive_correction["payload"]
     immutable_path_correction = (
         validate_immutable_encoder_path_projection_correction(
             redrive_correction[
@@ -7962,10 +8657,16 @@ def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
             ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY],
         "branch_redrive_projection_correction": redrive_correction,
         "branch_redrive_projection_correction_binding":
-            branch_redrive_projection_correction_artifact_binding(
-                redrive_correction, _pretty_json_bytes(redrive_correction)),
+            immutable_redrive_correction["binding"],
         "branch_redrive_projection_correction_digest": redrive_correction[
             BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY],
+        "optional_smoke_partial_corpus_resume_correction": resume_correction,
+        "optional_smoke_partial_corpus_resume_correction_binding":
+            optional_smoke_partial_corpus_resume_correction_artifact_binding(
+                resume_correction, _pretty_json_bytes(resume_correction)),
+        "optional_smoke_partial_corpus_resume_correction_digest":
+            resume_correction[
+                OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY],
         "single_shard_regeneration_transaction_contract": copy.deepcopy(
             path_correction[
                 "single_shard_regeneration_transaction_contract"]),
@@ -7986,7 +8687,7 @@ def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
             "source_repository_commit"],
         "encoder_path_projection_source_repository_commit": path_correction[
             "source_repository_commit"],
-        "active_source_repository_commit": redrive_correction[
+        "active_source_repository_commit": resume_correction[
             "source_repository_commit"],
         "active_selector_digest": ACTIVE_SELECTOR_DIGEST,
         "candidate_bank_digest": CANDIDATE_BANK_DIGEST,
@@ -8015,6 +8716,16 @@ __all__ = [
     "BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY",
     "BRANCH_REDRIVE_PROJECTION_CORRECTION_STATUS",
     "BRANCH_REDRIVE_PROJECTION_FAILURE_BOUNDARY",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_FOCUSED_TEST_PATHS",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_PRESERVED_SCIENCE",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STAGED_RELATIVE_PATH",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SCHEMA",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STATUS",
+    "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_FAILURE_BOUNDARY",
     "ENCODER_COMPUTE_DTYPE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
     "ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_PATHS",
     "ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT",
@@ -8076,6 +8787,8 @@ __all__ = [
     "IMMUTABLE_BRANCH_REDRIVE_COMPLETED_SMOKE_BUNDLE",
     "IMMUTABLE_BRANCH_REDRIVE_INVALID_ATTEMPT_RECEIPT_BINDINGS",
     "IMMUTABLE_BRANCH_REDRIVE_PARTIAL_CORPUS_BINDING",
+    "IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_BINDING",
+    "IMMUTABLE_BRANCH_REDRIVE_PROJECTION_CORRECTION_DIGEST",
     "INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS",
     "ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT",
     "IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST",
@@ -8109,6 +8822,7 @@ __all__ = [
     "V2_PREOUTCOME_ARTIFACT_PATHS", "V2_RUNTIME_OUTPUT_PATHS",
     "V2_SUCCESSOR_CONTRACT_PATH", "audit_v2_outcome_outputs_absent",
     "audit_branch_redrive_projection_correction_downstream_absence",
+    "audit_optional_smoke_partial_corpus_resume_correction_downstream_absence",
     "audit_encoder_compute_dtype_correction_prelatent_absence",
     "audit_encoder_path_projection_correction_downstream_absence",
     "audit_encoder_path_projection_transaction_artifacts_absent",
@@ -8117,6 +8831,7 @@ __all__ = [
     "build_encoder_compute_dtype_correction", "build_encoder_import_correction",
     "build_encoder_path_projection_correction",
     "build_branch_redrive_projection_correction",
+    "build_optional_smoke_partial_corpus_resume_correction",
     "build_full_bank_v2_smoke_regeneration_complete_receipt",
     "build_full_bank_v2_smoke_regeneration_prepared_receipt",
     "build_manifest_replay_correction", "builder_default_canonical_digest",
@@ -8129,12 +8844,14 @@ __all__ = [
     "encoder_compute_dtype_correction_artifact_binding",
     "encoder_path_projection_correction_artifact_binding",
     "branch_redrive_projection_correction_artifact_binding",
+    "optional_smoke_partial_corpus_resume_correction_artifact_binding",
     "full_bank_v2_smoke_regeneration_complete_receipt_artifact_binding",
     "full_bank_v2_smoke_regeneration_prepared_receipt_artifact_binding",
     "encoder_import_correction_artifact_binding", "issue_design_amendment",
     "issue_encoder_compute_dtype_correction",
     "issue_encoder_path_projection_correction",
     "issue_branch_redrive_projection_correction",
+    "issue_optional_smoke_partial_corpus_resume_correction",
     "issue_encoder_import_correction",
     "issue_manifest_replay_correction",
     "issue_preselection_source_correction",
@@ -8145,6 +8862,7 @@ __all__ = [
     "load_encoder_compute_dtype_correction_for_consumption",
     "load_encoder_path_projection_correction_for_consumption",
     "load_branch_redrive_projection_correction_for_consumption",
+    "load_optional_smoke_partial_corpus_resume_correction_for_consumption",
     "load_full_bank_v2_smoke_regeneration_complete_receipt",
     "load_full_bank_v2_smoke_regeneration_prepared_receipt",
     "load_encoder_import_correction_for_consumption",
@@ -8168,6 +8886,7 @@ __all__ = [
     "validate_encoder_compute_dtype_correction",
     "validate_encoder_path_projection_correction",
     "validate_branch_redrive_projection_correction",
+    "validate_optional_smoke_partial_corpus_resume_correction",
     "validate_encoder_path_projection_single_shard_regeneration_transaction_contract",
     "validate_full_bank_v2_smoke_regeneration_complete_receipt",
     "validate_full_bank_v2_smoke_regeneration_prepared_receipt",
@@ -8175,6 +8894,7 @@ __all__ = [
     "validate_immutable_encoder_import_correction",
     "validate_immutable_encoder_compute_dtype_correction",
     "validate_immutable_encoder_path_projection_correction",
+    "validate_immutable_branch_redrive_projection_correction",
     "validate_manifest_replay_correction",
     "validate_preselection_source_correction",
     "validate_preselection_source_correction_v1",
