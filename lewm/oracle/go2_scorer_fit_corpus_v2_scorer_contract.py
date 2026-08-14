@@ -789,14 +789,18 @@ def load_contract_for_consumption(
         *, root: Path = ROOT,
         encoder_path_projection_correction: Mapping[str, Any] | None = None,
         ) -> dict[str, Any]:
-    """Validate the immutable contract through the active path correction.
+    """Validate the immutable contract through the active redrive correction.
 
     The contract remains byte-for-byte the artifact issued from historical
-    clean commit ``72b0d77``.  Both the import and FP32-compute corrections are
-    now immutable history.  Their successor validates the narrow live logical
-    path-projection policy while binding both predecessors and this contract
-    exactly; it does not rebuild any predecessor under the current repository
-    commit.
+    clean commit ``72b0d77``.  The encoder import, FP32-compute, and logical
+    path-projection corrections are now immutable history.  The branch-redrive
+    projection correction is the sole live-source gate.  It binds the complete
+    historical correction chain and this contract exactly; no predecessor or
+    manifest authority is replayed under the current repository commit.
+
+    ``encoder_path_projection_correction`` remains in the public signature for
+    historical callers.  A supplied value is compared byte-semantically with
+    the immutable nested payload, never live-revalidated as current source.
     """
 
     path = _exact_output_path(root / ARTIFACT_RELATIVE_PATH, root=root)
@@ -805,46 +809,46 @@ def load_contract_for_consumption(
     artifact = validate_immutable_issued_contract_artifact(
         json.loads(path.read_text()))
 
-    correction = (
-        DESIGN.load_encoder_path_projection_correction_for_consumption(
-            root=root)
-        if encoder_path_projection_correction is None
-        else DESIGN.validate_encoder_path_projection_correction(
-            encoder_path_projection_correction, root=root,
-            validate_live_authorities=True)
-    )
+    correction = DESIGN.load_branch_redrive_projection_correction_for_consumption(
+        root=root)
     _require(isinstance(correction, Mapping),
-             "encoder-path-projection correction authority is not an object")
-    _require(
-        correction.get("immutable_successor_scorer_contract_binding")
-        == immutable_contract_artifact_binding(artifact, root=root),
-        "encoder-path-projection correction binds a different immutable "
-        "scorer contract",
-    )
+             "branch-redrive-projection correction authority is not an object")
 
-    # Replay every unchanged manifest input and compare it directly with the
-    # corresponding historical binding embedded in the immutable artifact.
-    # Do not call ``build_contract`` here: the predecessor's dynamic source
-    # projection now correctly sees the reviewed import shim, while the issued
-    # scorer contract must retain its earlier protected scientific payload.
-    authority, manifests = _active_inputs(root=root)
-    live = _bindings_from_active_inputs(authority, manifests)
-    embedded = artifact["contract"]["preoutcome_authority_bindings"]
-    expected_embedded = {
-        "design_binding": "design_amendment",
-        "source_correction_binding": "preselection_source_correction",
-        "manifest_replay_correction_binding":
-            "post_install_manifest_replay_correction",
-        "mask_classification_binding": "rotation_mask_classification",
-        "selection_binding": "small_completion_selection",
-        "revalidation_binding": "full_bank_state_revalidation",
-        "state_manifest_binding": "state_identity_manifest",
-        "assignment_manifest_binding": "expanded_assignment_manifest",
-    }
+    immutable_path = correction.get(
+        "immutable_encoder_path_projection_correction")
+    _require(isinstance(immutable_path, Mapping),
+             "branch-redrive correction has no immutable path correction")
+    validated_immutable_path = (
+        DESIGN.validate_immutable_encoder_path_projection_correction(
+            immutable_path))
+    historical_path = validated_immutable_path["payload"]
+    historical_binding = validated_immutable_path["binding"]
     _require(
-        all(embedded.get(embedded_key) == live[live_key]
-            for live_key, embedded_key in expected_embedded.items()),
-        "issued scorer-fit V2 contract manifest authority changed",
+        correction.get("immutable_encoder_path_projection_correction_digest")
+        == historical_path.get(
+            DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+        and historical_binding.get("self_digest_key")
+        == DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY
+        and historical_binding.get("self_digest")
+        == historical_path.get(
+            DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY),
+        "immutable encoder-path-projection correction binding changed",
+    )
+    if encoder_path_projection_correction is not None:
+        _require(isinstance(encoder_path_projection_correction, Mapping)
+                 and dict(encoder_path_projection_correction)
+                 == historical_path,
+                 "caller-supplied historical path correction differs from "
+                 "the immutable branch-redrive lineage")
+
+    contract_binding = immutable_contract_artifact_binding(
+        artifact, root=root)
+    _require(
+        historical_path.get(
+            "immutable_successor_scorer_contract_binding")
+        == contract_binding,
+        "branch-redrive correction binds a different immutable scorer "
+        "contract",
     )
     return validate_immutable_issued_contract_artifact(artifact)
 

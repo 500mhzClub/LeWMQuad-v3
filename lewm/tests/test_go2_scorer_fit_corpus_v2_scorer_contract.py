@@ -224,45 +224,41 @@ def test_self_resigned_mutation_cannot_use_immutable_validation_path(
         C.validate_contract_artifact(changed)
 
 
-def test_consumption_uses_path_correction_and_historical_bindings_only(
-        monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    embedded = {
-        "design_amendment": {"binding": "design"},
-        "preselection_source_correction": {"binding": "source"},
-        "post_install_manifest_replay_correction": {"binding": "replay"},
-        "rotation_mask_classification": {"binding": "masks"},
-        "small_completion_selection": {"binding": "selection"},
-        "full_bank_state_revalidation": {"binding": "revalidation"},
-        "state_identity_manifest": {"binding": "states"},
-        "expanded_assignment_manifest": {"binding": "assignments"},
-    }
+def _consumption_fixture(tmp_path: Path) -> tuple[
+        dict, dict, dict, dict]:
     artifact = {
         "contract": {
             "source_binding": {"historical": True},
-            "preoutcome_authority_bindings": embedded,
+            "preoutcome_authority_bindings": {"historical": True},
         },
     }
     path = tmp_path / C.ARTIFACT_RELATIVE_PATH
     path.parent.mkdir(parents=True)
     path.write_text(json.dumps(artifact))
     immutable_binding = {"binding": "immutable-contract"}
-    correction = {
+    historical_path = {
+        C.DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY: "9" * 64,
         "immutable_successor_scorer_contract_binding": immutable_binding,
     }
-    live = {
-        "design_binding": embedded["design_amendment"],
-        "source_correction_binding":
-            embedded["preselection_source_correction"],
-        "manifest_replay_correction_binding":
-            embedded["post_install_manifest_replay_correction"],
-        "mask_classification_binding":
-            embedded["rotation_mask_classification"],
-        "selection_binding": embedded["small_completion_selection"],
-        "revalidation_binding": embedded["full_bank_state_revalidation"],
-        "state_manifest_binding": embedded["state_identity_manifest"],
-        "assignment_manifest_binding":
-            embedded["expanded_assignment_manifest"],
+    correction = {
+        "immutable_encoder_path_projection_correction": {
+            "payload": historical_path,
+            "binding": {
+                "self_digest_key":
+                    C.DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY,
+                "self_digest": "9" * 64,
+            },
+        },
+        "immutable_encoder_path_projection_correction_digest": "9" * 64,
     }
+    return artifact, immutable_binding, historical_path, correction
+
+
+def test_consumption_orders_live_redrive_then_immutable_path_validation(
+        monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    artifact, immutable_binding, historical_path, correction = \
+        _consumption_fixture(tmp_path)
+    calls: list[tuple[str, object]] = []
     monkeypatch.setattr(
         C, "validate_immutable_issued_contract_artifact",
         lambda value, **_kwargs: dict(value))
@@ -270,25 +266,72 @@ def test_consumption_uses_path_correction_and_historical_bindings_only(
         C, "immutable_contract_artifact_binding",
         lambda _value, **_kwargs: immutable_binding)
     monkeypatch.setattr(
-        C.DESIGN, "validate_encoder_path_projection_correction",
-        lambda value, **_kwargs: dict(value), raising=False)
+        C.DESIGN, "load_branch_redrive_projection_correction_for_consumption",
+        lambda **kwargs: (
+            calls.append(("live_branch_redrive", kwargs)),
+            copy.deepcopy(correction),
+        )[1], raising=False)
     monkeypatch.setattr(
-        C.DESIGN, "load_encoder_compute_dtype_correction_for_consumption",
+        C.DESIGN, "validate_immutable_encoder_path_projection_correction",
+        lambda value: (
+            calls.append(("immutable_path", None)), copy.deepcopy(value),
+        )[1], raising=False)
+    monkeypatch.setattr(
+        C.DESIGN, "load_encoder_path_projection_correction_for_consumption",
         lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
-            "immutable dtype correction must not be live-revalidated")),
+            "historical path correction must not be loaded as live source")),
         raising=False)
     monkeypatch.setattr(
-        C.DESIGN, "load_encoder_import_correction_for_consumption",
+        C.DESIGN, "validate_branch_redrive_projection_correction",
         lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
-            "immutable import correction must not be live-revalidated")))
-    monkeypatch.setattr(C, "_active_inputs", lambda **_kwargs: ({}, {}))
+            "the authoritative loader already performs the sole live "
+            "validation")), raising=False)
     monkeypatch.setattr(
-        C, "_bindings_from_active_inputs",
-        lambda _authority, _manifests: live)
+        C, "_active_inputs",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
+            "historical manifest authority must not be replayed")))
     monkeypatch.setattr(
         C, "clean_source_binding",
         lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
             "current source must not replace historical issued source")))
     assert C.load_contract_for_consumption(
         root=tmp_path,
-        encoder_path_projection_correction=correction) == artifact
+        encoder_path_projection_correction=historical_path) == artifact
+    assert [name for name, _details in calls] == [
+        "live_branch_redrive", "immutable_path"]
+
+
+def test_consumption_rejects_historical_path_or_contract_mismatch(
+        monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    artifact, immutable_binding, historical_path, correction = \
+        _consumption_fixture(tmp_path)
+    active = copy.deepcopy(correction)
+    monkeypatch.setattr(
+        C, "validate_immutable_issued_contract_artifact",
+        lambda value, **_kwargs: dict(value))
+    monkeypatch.setattr(
+        C, "immutable_contract_artifact_binding",
+        lambda _value, **_kwargs: immutable_binding)
+    monkeypatch.setattr(
+        C.DESIGN, "load_branch_redrive_projection_correction_for_consumption",
+        lambda **_kwargs: copy.deepcopy(active), raising=False)
+    monkeypatch.setattr(
+        C.DESIGN, "validate_immutable_encoder_path_projection_correction",
+        lambda value: copy.deepcopy(value), raising=False)
+
+    supplied = copy.deepcopy(historical_path)
+    supplied["unexpected"] = True
+    with pytest.raises(
+            C.ScorerFitCorpusV2ContractError,
+            match="caller-supplied historical path correction"):
+        C.load_contract_for_consumption(
+            root=tmp_path,
+            encoder_path_projection_correction=supplied)
+
+    active["immutable_encoder_path_projection_correction"]["payload"][
+        "immutable_successor_scorer_contract_binding"] = {
+            "binding": "different-contract"}
+    with pytest.raises(
+            C.ScorerFitCorpusV2ContractError,
+            match="different immutable scorer contract"):
+        C.load_contract_for_consumption(root=tmp_path)

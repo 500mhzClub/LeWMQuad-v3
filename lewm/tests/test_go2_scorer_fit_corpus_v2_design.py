@@ -478,6 +478,64 @@ def _encoder_path_projection_correction(
     )
 
 
+def _branch_redrive_projection_correction(
+        monkeypatch: pytest.MonkeyPatch, *,
+        path_correction: dict[str, object] | None = None,
+        ) -> dict[str, object]:
+    path_correction = (
+        _encoder_path_projection_correction(monkeypatch)
+        if path_correction is None else copy.deepcopy(path_correction))
+    historical_commit = str(path_correction["source_repository_commit"])
+    path_digest = path_correction[
+        design.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY]
+    path_raw = (
+        json.dumps(path_correction, sort_keys=True, indent=2) + "\n").encode()
+    path_binding = design.encoder_path_projection_correction_artifact_binding(
+        path_correction, path_raw)
+    monkeypatch.setattr(
+        design,
+        "BRANCH_REDRIVE_PROJECTION_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT",
+        historical_commit)
+    monkeypatch.setattr(
+        design, "IMMUTABLE_ENCODER_PATH_PROJECTION_CORRECTION_DIGEST",
+        path_digest)
+    monkeypatch.setattr(
+        design, "IMMUTABLE_ENCODER_PATH_PROJECTION_CORRECTION_BINDING",
+        copy.deepcopy(path_binding))
+    failure = copy.deepcopy(design.BRANCH_REDRIVE_PROJECTION_FAILURE_BOUNDARY)
+    failure["historical_source_repository_commit"] = historical_commit
+    monkeypatch.setattr(
+        design, "BRANCH_REDRIVE_PROJECTION_FAILURE_BOUNDARY", failure)
+    science = copy.deepcopy(
+        design.BRANCH_REDRIVE_PROJECTION_CORRECTION_PRESERVED_SCIENCE)
+    science["immutable_encoder_path_projection_correction_digest"] = path_digest
+    monkeypatch.setattr(
+        design, "BRANCH_REDRIVE_PROJECTION_CORRECTION_PRESERVED_SCIENCE",
+        science)
+    sources = copy.deepcopy(path_correction["source_bindings"])
+    changed = set(
+        design.BRANCH_REDRIVE_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    for index, row in enumerate(sources):
+        if row["path"] in changed:
+            row["byte_count"] = int(row["byte_count"]) + 80_000
+            row["sha256"] = f"{index + 80_000:064x}"
+    return design.build_branch_redrive_projection_correction(
+        source_repository_commit="3" * 40,
+        source_bindings=sources,
+        immutable_encoder_path_projection_correction={
+            "payload": path_correction, "binding": path_binding,
+        },
+        partial_corpus_failure_boundary=
+            design.IMMUTABLE_BRANCH_REDRIVE_PARTIAL_CORPUS_BINDING,
+        invalid_attempt_receipt_bindings=
+            design.IMMUTABLE_BRANCH_REDRIVE_INVALID_ATTEMPT_RECEIPT_BINDINGS,
+        completed_smoke_boundary=
+            design.IMMUTABLE_BRANCH_REDRIVE_COMPLETED_SMOKE_BUNDLE,
+        downstream_outputs_absent_at_issue=
+            design._expected_branch_redrive_projection_correction_absence_rows(),
+    )
+
+
 def _synthetic_smoke_regeneration_receipts(
         correction: dict[str, object],
         ) -> tuple[dict[str, object], dict[str, object]]:
@@ -1301,9 +1359,11 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
         monkeypatch, encoder_import=encoder_correction)
     path_correction = _encoder_path_projection_correction(
         monkeypatch, dtype_correction=dtype_correction)
+    redrive_correction = _branch_redrive_projection_correction(
+        monkeypatch, path_correction=path_correction)
     monkeypatch.setattr(
-        design, "load_encoder_path_projection_correction_for_consumption",
-        lambda **_kwargs: copy.deepcopy(path_correction))
+        design, "load_branch_redrive_projection_correction_for_consumption",
+        lambda **_kwargs: copy.deepcopy(redrive_correction))
     active = design.load_active_design_authority(root=tmp_path)
     assert active["source_correction"] == immutable["payload"]
     assert active["source_correction_binding"] == immutable["binding"]
@@ -1318,10 +1378,17 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
     assert active["manifest_replay_source_repository_commit"] == "e" * 40
     assert active["encoder_import_source_repository_commit"] == "f" * 40
     assert active["encoder_compute_dtype_source_repository_commit"] == "1" * 40
-    assert active["active_source_repository_commit"] == "2" * 40
+    assert active["encoder_path_projection_source_repository_commit"] == \
+        "2" * 40
+    assert active["active_source_repository_commit"] == "3" * 40
     assert active["encoder_import_correction"] == encoder_correction
     assert active["encoder_compute_dtype_correction"] == dtype_correction
     assert active["encoder_path_projection_correction"] == path_correction
+    assert active["branch_redrive_projection_correction"] == \
+        redrive_correction
+    assert active["branch_redrive_projection_correction_digest"] == \
+        redrive_correction[
+            design.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY]
     immutable_v2 = immutable["payload"][
         "immutable_preselection_source_correction_v2"]
     immutable_v1 = immutable_v2["payload"][
@@ -1544,6 +1611,169 @@ def test_encoder_import_correction_issue_reopen_and_receipt_refresh_lifecycle(
     assert calls["install"] == 1
     assert expected.read_bytes() == raw
     assert stat.S_IMODE(expected.stat().st_mode) == 0o444
+
+
+def test_branch_redrive_projection_correction_is_closed_and_science_preserving(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _branch_redrive_projection_correction(monkeypatch)
+    assert design.validate_branch_redrive_projection_correction(
+        correction, validate_live_authorities=False) == correction
+    assert correction["production_source_transition"][
+        "observed_changed_source_paths"] == sorted(
+            design.BRANCH_REDRIVE_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    boundary = correction["partial_corpus_failure_boundary"]["corpus_receipt"]
+    assert boundary["completed_states"] == 10
+    assert boundary["attempted_branches"] == 120
+    assert boundary["valid_branches"] == 120
+    assert boundary["invalid_branches"] == 0
+    assert len(correction["invalid_attempt_receipt_bindings"]) == 12
+    assert [row["candidate_index"] for row in correction[
+        "invalid_attempt_receipt_bindings"]] == list(range(12))
+    failure = correction["branch_redrive_projection_failure_boundary"]
+    assert failure[
+        "active_manifest_field_copied_into_structural_evidence"] == \
+        "candidate_indices"
+    assert failure[
+        "broad_exception_handler_overwrote_prior_comparison_truth_values"] is True
+    assert failure[
+        "reported_reason_proves_full_bank_l_max_ineligibility"] is False
+    science = correction["preserved_scientific_contract"]
+    assert science["state_identity_or_manifest_replacement_authorised"] is False
+    assert science["unchanged_source_retry_authorised"] is False
+    assert science["candidate_outcome_or_label_value_read_for_correction"] is False
+    assert correction["issuance_boundary"][
+        "later_consumption_requires_failure_time_partial_corpus_live"] is False
+    raw = design._pretty_json_bytes(correction)
+    binding = design.branch_redrive_projection_correction_artifact_binding(
+        correction, raw)
+    assert binding["self_digest"] == correction[
+        design.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY]
+
+    tampered = copy.deepcopy(correction)
+    tampered["preserved_scientific_contract"][
+        "state_identity_or_manifest_replacement_authorised"] = True
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_branch_redrive_projection_correction(
+            tampered, validate_live_authorities=False)
+
+    extra_change = copy.deepcopy(correction["source_bindings"])
+    unchanged = next(
+        row for row in extra_change
+        if row["path"] not in
+        design.BRANCH_REDRIVE_PROJECTION_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    unchanged["byte_count"] = int(unchanged["byte_count"]) + 1
+    unchanged["sha256"] = "f" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.build_branch_redrive_projection_correction(
+            source_repository_commit=correction["source_repository_commit"],
+            source_bindings=extra_change,
+            immutable_encoder_path_projection_correction=correction[
+                "immutable_encoder_path_projection_correction"],
+            partial_corpus_failure_boundary=correction[
+                "partial_corpus_failure_boundary"],
+            invalid_attempt_receipt_bindings=correction[
+                "invalid_attempt_receipt_bindings"],
+            completed_smoke_boundary=correction["completed_smoke_boundary"],
+            downstream_outputs_absent_at_issue=correction[
+                "downstream_outputs_absent_at_issue"],
+        )
+
+
+def test_branch_redrive_projection_issue_is_atomic_and_reopen_is_boundary_free(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _branch_redrive_projection_correction(monkeypatch)
+    commit = correction["source_repository_commit"]
+    sources = correction["source_bindings"]
+    immutable_path = correction[
+        "immutable_encoder_path_projection_correction"]
+    partial = correction["partial_corpus_failure_boundary"]
+    invalid = correction["invalid_attempt_receipt_bindings"]
+    smoke = correction["completed_smoke_boundary"]
+    absence = correction["downstream_outputs_absent_at_issue"]
+    expected = tmp_path / \
+        design.BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH
+    staged = tmp_path / \
+        design.BRANCH_REDRIVE_PROJECTION_CORRECTION_STAGED_RELATIVE_PATH
+    expected.parent.mkdir(parents=True)
+    calls = {"source": 0, "path": 0, "boundary": 0, "absence": 0,
+             "install": 0}
+
+    def clean_source(*, root: Path):
+        assert root == tmp_path
+        calls["source"] += 1
+        return str(commit), copy.deepcopy(sources)
+
+    def load_path(*, root: Path):
+        assert root == tmp_path
+        calls["path"] += 1
+        return copy.deepcopy(immutable_path)
+
+    def load_boundary(*, root: Path):
+        assert root == tmp_path
+        calls["boundary"] += 1
+        return (copy.deepcopy(partial), copy.deepcopy(invalid),
+                copy.deepcopy(smoke))
+
+    def load_absence(*, root: Path):
+        assert root == tmp_path
+        calls["absence"] += 1
+        return copy.deepcopy(absence)
+
+    monkeypatch.setattr(design, "clean_source_authority", clean_source)
+    monkeypatch.setattr(
+        design, "_load_immutable_encoder_path_projection_correction",
+        load_path)
+    monkeypatch.setattr(
+        design, "_validate_live_branch_redrive_failure_boundary",
+        load_boundary)
+    monkeypatch.setattr(
+        design, "audit_branch_redrive_projection_correction_downstream_absence",
+        load_absence)
+    atomic_publish = design._exclusive_json_atomic_no_overwrite
+
+    def checked_publish(path: Path, staged_path: Path,
+                        payload: dict[str, object], *, label: str,
+                        recover_nonexact_staged: bool) -> bytes:
+        assert path == expected and staged_path == staged
+        assert label == "branch-redrive projection correction"
+        if not path.exists() and not path.is_symlink():
+            assert recover_nonexact_staged is True
+            assert calls == {"source": 2, "path": 2, "boundary": 2,
+                             "absence": 2, "install": 0}
+            calls["install"] += 1
+        else:
+            assert recover_nonexact_staged is False
+        return atomic_publish(
+            path, staged_path, payload, label=label,
+            recover_nonexact_staged=recover_nonexact_staged)
+
+    monkeypatch.setattr(
+        design, "_exclusive_json_atomic_no_overwrite", checked_publish)
+    issued = design.issue_branch_redrive_projection_correction(
+        root=tmp_path, source_repository_commit=str(commit))
+    assert issued == correction
+    assert calls == {"source": 3, "path": 2, "boundary": 2,
+                     "absence": 2, "install": 1}
+    assert stat.S_IMODE(expected.stat().st_mode) == 0o444
+    assert not staged.exists() and not staged.is_symlink()
+    before = expected.read_bytes()
+
+    def forbidden_boundary(**_kwargs):
+        raise AssertionError("mutable failure boundary was reopened")
+
+    monkeypatch.setattr(
+        design, "_validate_live_branch_redrive_failure_boundary",
+        forbidden_boundary)
+    monkeypatch.setattr(
+        design, "audit_branch_redrive_projection_correction_downstream_absence",
+        forbidden_boundary)
+    assert design.load_branch_redrive_projection_correction_for_consumption(
+        root=tmp_path) == correction
+    assert design.issue_branch_redrive_projection_correction(
+        root=tmp_path, source_repository_commit=str(commit)) == correction
+    assert expected.read_bytes() == before
+    assert stat.S_IMODE(expected.stat().st_mode) == 0o444
+    assert calls["install"] == 1
 
 
 def test_encoder_path_projection_correction_is_chained_and_base_bound(

@@ -88,6 +88,16 @@ def _raw_completion(index: int, *, previous=None, status=None) -> dict:
     }
 
 
+def _manifest_completion(index: int, *, previous=None, status=None) -> dict:
+    state = _raw_completion(index, previous=previous, status=status)
+    state.update({
+        "state_identity_digest": f"{index + 101:064x}",
+        "state_index": index,
+        "candidate_indices": list(range(12)),
+    })
+    return state
+
+
 def _identity_bindings() -> dict:
     return {
         "selection_digest": "a" * 64,
@@ -891,7 +901,7 @@ def test_v2_branch_paths_and_smoke_state_are_versioned_and_fit_only(
 
 
 def test_v2_redrive_requires_exact_frozen_previous_command_and_status() -> None:
-    entry = _raw_completion(3)
+    entry = _manifest_completion(3)
     record = {
         key: copy.deepcopy(entry[key]) for key in (
             "boundary", "cell_id", "goal", "body_clearance_m",
@@ -918,6 +928,147 @@ def test_v2_redrive_requires_exact_frozen_previous_command_and_status() -> None:
         entry, changed_status, ctx, full_bank_v2=True)
     assert status_reason is not None
     assert "snapshot_task_status" in status_reason
+
+
+def test_v2_redrive_removes_only_exact_full_bank_assignment_projection() -> None:
+    entry = _manifest_completion(4)
+    record = {
+        key: copy.deepcopy(entry[key]) for key in (
+            "boundary", "cell_id", "goal", "body_clearance_m",
+            "clearance_m", "completion_rotation_eligibility_vector",
+            "snapshot_task_status", "previous_applied_command",
+        )
+    }
+    ctx = SimpleNamespace(runner=SimpleNamespace(episode_states=[
+        SimpleNamespace(episode_id=entry["episode_id"]),
+    ]))
+
+    # The selection-time guard remains closed over assignment fields; only the
+    # runtime redrive path is authorised to remove this exact manifest layer.
+    with pytest.raises(RuntimeError, match="candidate_indices"):
+        B._full_bank_v2_structural_state_identity(entry)
+    assert B._redrive_mismatch(
+        entry, record, ctx, full_bank_v2=True) is None
+
+    wrong_candidates = copy.deepcopy(entry)
+    wrong_candidates["candidate_indices"] = list(reversed(range(12)))
+    assert B._redrive_mismatch(
+        wrong_candidates, record, ctx, full_bank_v2=True) == (
+            "redrive_completion_full_bank_internal_evidence_validation_mismatch")
+
+    forbidden = copy.deepcopy(entry)
+    forbidden["branch_outcomes"] = {"must_not_be_traversed": object()}
+    assert B._redrive_mismatch(
+        forbidden, record, ctx, full_bank_v2=True) == (
+            "redrive_completion_full_bank_internal_evidence_validation_mismatch")
+
+
+def test_v2_redrive_joins_exact_raw_manifest_row_from_enriched_runtime() -> None:
+    raw = _manifest_completion(6)
+    enriched = copy.deepcopy(raw)
+    enriched["branch_identities"] = [
+        {"candidate_index": index, "branch_identity_digest": f"{index + 1:064x}"}
+        for index in range(12)
+    ]
+    authority = {
+        "manifest": {"states": [enriched]},
+        "manifests": {"state_manifest": {"states": [raw]}},
+    }
+    joined = B._full_bank_v2_redrive_entry_by_state_id(authority)
+    assert joined == {raw["state_id"]: raw}
+    assert "branch_identities" not in joined[raw["state_id"]]
+
+    record = {
+        key: copy.deepcopy(raw[key]) for key in (
+            "boundary", "cell_id", "goal", "body_clearance_m",
+            "clearance_m", "completion_rotation_eligibility_vector",
+            "snapshot_task_status", "previous_applied_command",
+        )
+    }
+    ctx = SimpleNamespace(runner=SimpleNamespace(episode_states=[
+        SimpleNamespace(episode_id=raw["episode_id"]),
+    ]))
+    assert B._redrive_mismatch(
+        joined[raw["state_id"]], record, ctx, full_bank_v2=True) is None
+
+    changed_structure = copy.deepcopy(authority)
+    changed_structure["manifest"]["states"][0]["clearance_m"] += 0.01
+    with pytest.raises(RuntimeError, match="exact manifest extension"):
+        B._full_bank_v2_redrive_entry_by_state_id(changed_structure)
+
+    changed_identity = copy.deepcopy(authority)
+    changed_identity["manifest"]["states"][0][
+        "state_identity_digest"] = "e" * 64
+    with pytest.raises(RuntimeError, match="identity digest differs"):
+        B._full_bank_v2_redrive_entry_by_state_id(changed_identity)
+
+
+def test_v2_redrive_internal_evidence_failure_preserves_snapshot_comparisons(
+        monkeypatch) -> None:
+    entry = _manifest_completion(5)
+    record = {
+        key: copy.deepcopy(entry[key]) for key in (
+            "boundary", "cell_id", "goal", "body_clearance_m",
+            "clearance_m", "completion_rotation_eligibility_vector",
+            "snapshot_task_status", "previous_applied_command",
+        )
+    }
+    ctx = SimpleNamespace(runner=SimpleNamespace(episode_states=[
+        SimpleNamespace(episode_id=entry["episode_id"]),
+    ]))
+    observed = {}
+
+    def fail_internal_evidence(state):
+        observed.update(state)
+        raise RuntimeError("synthetic internal evidence failure")
+
+    monkeypatch.setattr(
+        B, "full_bank_completion_reachability_evidence",
+        fail_internal_evidence)
+    reason = B._redrive_mismatch(entry, record, ctx, full_bank_v2=True)
+    assert reason == (
+        "redrive_completion_full_bank_internal_evidence_validation_mismatch")
+    assert "candidate_indices" not in observed
+    assert "state_index" not in observed
+    assert "completion_rotation_eligibility_vector" not in observed
+    assert observed["previous_applied_command"] == \
+        entry["previous_applied_command"]
+    assert observed["snapshot_task_status"] == _STATUS
+
+
+def test_active_branch_redrive_correction_is_separate_operational_gate() -> None:
+    payload_key, binding_key, digest_key = \
+        B.SCORER_FIT_V2_BRANCH_REDRIVE_CORRECTION_KEYS
+    digest = "d" * 64
+    self_key = AUTH.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY
+    active = {
+        payload_key: {
+            "schema": "synthetic-redrive-correction",
+            self_key: digest,
+        },
+        binding_key: {
+            "self_digest_key": self_key,
+            "self_digest": digest,
+            "path": "synthetic.json",
+        },
+        digest_key: digest,
+    }
+    projected = B._full_bank_v2_active_branch_redrive_correction(active)
+    assert projected == active
+    assert not set(projected).intersection(B._FULL_BANK_V2_BRANCH_LINEAGE_KEYS)
+    projected[payload_key]["schema"] = "mutated"
+    assert active[payload_key]["schema"] == "synthetic-redrive-correction"
+
+    for missing in B.SCORER_FIT_V2_BRANCH_REDRIVE_CORRECTION_KEYS:
+        malformed = copy.deepcopy(active)
+        malformed.pop(missing)
+        with pytest.raises(RuntimeError, match="branch-redrive correction"):
+            B._full_bank_v2_active_branch_redrive_correction(malformed)
+
+    mismatched = copy.deepcopy(active)
+    mismatched[binding_key]["self_digest"] = "e" * 64
+    with pytest.raises(RuntimeError, match="branch-redrive correction"):
+        B._full_bank_v2_active_branch_redrive_correction(mismatched)
 
 
 def _v2_runtime_manifest(*, candidate_indices=(0, 1)) -> dict:

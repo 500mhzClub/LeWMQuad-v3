@@ -15,6 +15,8 @@ candidate-subset allocator, or performance benchmark.  Its public stages are:
 * ``issue-encoder-path-projection-correction``: bind the post-base-smoke
   logical-path metadata repair while preserving both predecessor corrections
   and the issued scorer contract;
+* ``issue-branch-redrive-projection-correction``: bind the post-partial-corpus
+  structural-redrive projection repair without changing any manifest or row;
 * ``run``: execute the registered smoke/recovery/corpus/training pipeline; and
 * ``status``: assemble a read-only metadata report.
 
@@ -702,6 +704,12 @@ def issue_encoder_import_correction(
 
     replayed_from_dtype_lineage = False
     replayed_from_path_projection_lineage = False
+    replayed_from_redrive_lineage = False
+    redrive_relative = getattr(
+        design_authority,
+        "BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH", None)
+    redrive_path = (None if redrive_relative is None else _pin_relative(
+        root, Path(redrive_relative), label="branch-redrive correction"))
     path_relative = getattr(
         design_authority, "ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH",
         None)
@@ -714,7 +722,28 @@ def issue_encoder_import_correction(
         None)
     dtype_path = (None if dtype_relative is None else _pin_relative(
         root, Path(dtype_relative), label="encoder-compute-dtype correction"))
-    if (path_correction_path is not None
+    if (redrive_path is not None
+            and (redrive_path.exists() or redrive_path.is_symlink())):
+        redrive = (
+            design_authority
+            .load_branch_redrive_projection_correction_for_consumption(
+                root=root))
+        path_correction, _path_digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        dtype_correction, _dtype_digest = (
+            _immutable_dtype_from_path_projection_correction(
+                path_correction, design_authority=design_authority))
+        immutable = design_authority.validate_immutable_encoder_import_correction(
+            dtype_correction.get("immutable_encoder_import_correction", {}))
+        artifact = immutable["payload"]
+        validated = artifact
+        _immutable_import_digest_from_dtype_correction(
+            dtype_correction, design_authority=design_authority)
+        replayed_from_dtype_lineage = True
+        replayed_from_path_projection_lineage = True
+        replayed_from_redrive_lineage = True
+    elif (path_correction_path is not None
             and (path_correction_path.exists()
                  or path_correction_path.is_symlink())):
         path_correction = (
@@ -781,6 +810,8 @@ def issue_encoder_import_correction(
             replayed_from_dtype_lineage,
         "replayed_from_immutable_path_projection_correction_lineage":
             replayed_from_path_projection_lineage,
+        "replayed_from_immutable_branch_redrive_correction_lineage":
+            replayed_from_redrive_lineage,
     }
 
 
@@ -829,12 +860,47 @@ def _immutable_dtype_from_path_projection_correction(
     return dict(payload), str(digest)
 
 
+def _immutable_path_from_branch_redrive_projection_correction(
+        correction: Mapping[str, Any], *, root: Path = ROOT,
+        design_authority: Any = DESIGN,
+        ) -> tuple[dict[str, Any], str]:
+    """Return the historical path correction nested by the live redrive gate."""
+
+    digest = correction.get(
+        "immutable_encoder_path_projection_correction_digest")
+    immutable = correction.get("immutable_encoder_path_projection_correction")
+    if not isinstance(immutable, Mapping):
+        raise FullBankV2RunnerError(
+            "redrive-projection correction lacks the immutable path correction")
+    validated_immutable = (
+        design_authority.validate_immutable_encoder_path_projection_correction(
+            immutable))
+    payload = validated_immutable.get("payload")
+    binding = validated_immutable.get("binding")
+    if (not _is_hex(digest) or not isinstance(payload, Mapping)
+            or not isinstance(binding, Mapping)
+            or payload.get(
+                design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+            != digest
+            or binding.get("self_digest") != digest):
+        raise FullBankV2RunnerError(
+            "redrive-projection correction changed the immutable path "
+            "correction")
+    return dict(payload), str(digest)
+
+
 def issue_encoder_compute_dtype_correction(
         *, root: Path = ROOT, design_authority: Any = DESIGN,
         ) -> dict[str, Any]:
     """Issue historically, or replay immutably through its path successor."""
 
     replayed_from_path_projection_lineage = False
+    replayed_from_redrive_lineage = False
+    redrive_relative = getattr(
+        design_authority,
+        "BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH", None)
+    redrive_path = (None if redrive_relative is None else _pin_relative(
+        root, Path(redrive_relative), label="branch-redrive correction"))
     path_relative = getattr(
         design_authority, "ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH",
         None)
@@ -842,7 +908,21 @@ def issue_encoder_compute_dtype_correction(
         None if path_relative is None else _pin_relative(
             root, Path(path_relative),
             label="encoder-path-projection correction"))
-    if (path_correction_path is not None
+    if (redrive_path is not None
+            and (redrive_path.exists() or redrive_path.is_symlink())):
+        redrive = (
+            design_authority
+            .load_branch_redrive_projection_correction_for_consumption(
+                root=root))
+        path_correction, _path_digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        artifact, _digest = _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority)
+        validated = artifact
+        replayed_from_path_projection_lineage = True
+        replayed_from_redrive_lineage = True
+    elif (path_correction_path is not None
             and (path_correction_path.exists()
                  or path_correction_path.is_symlink())):
         path_correction = (
@@ -898,19 +978,39 @@ def issue_encoder_compute_dtype_correction(
         "branch_latent_or_scorer_runtime_started_by_issue_stage": False,
         "replayed_from_immutable_path_projection_correction_lineage":
             replayed_from_path_projection_lineage,
+        "replayed_from_immutable_branch_redrive_correction_lineage":
+            replayed_from_redrive_lineage,
     }
 
 
 def issue_encoder_path_projection_correction(
         *, root: Path = ROOT, design_authority: Any = DESIGN,
         ) -> dict[str, Any]:
-    """Issue and reopen the sole live encoder-runtime source authority."""
+    """Issue historically, or replay through the installed redrive gate."""
 
-    artifact = design_authority.issue_encoder_path_projection_correction(
-        root=root)
-    validated = (
-        design_authority
-        .load_encoder_path_projection_correction_for_consumption(root=root))
+    replayed_from_redrive_lineage = False
+    redrive_relative = getattr(
+        design_authority,
+        "BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH", None)
+    redrive_path = (None if redrive_relative is None else _pin_relative(
+        root, Path(redrive_relative), label="branch-redrive correction"))
+    if (redrive_path is not None
+            and (redrive_path.exists() or redrive_path.is_symlink())):
+        redrive = (
+            design_authority
+            .load_branch_redrive_projection_correction_for_consumption(
+                root=root))
+        artifact, _digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        validated = artifact
+        replayed_from_redrive_lineage = True
+    else:
+        artifact = design_authority.issue_encoder_path_projection_correction(
+            root=root)
+        validated = (
+            design_authority
+            .load_encoder_path_projection_correction_for_consumption(root=root))
     if artifact != validated:
         raise FullBankV2RunnerError(
             "issued encoder-path-projection correction changed on exact replay")
@@ -951,6 +1051,56 @@ def issue_encoder_path_projection_correction(
         "encoder_import_correction_reissued_or_rewritten": False,
         "scorer_contract_reissued_or_rewritten": False,
         "preoutcome_manifests_reissued_or_rewritten": False,
+        "branch_latent_or_scorer_runtime_started_by_issue_stage": False,
+        "replayed_from_immutable_branch_redrive_correction_lineage":
+            replayed_from_redrive_lineage,
+    }
+
+
+def issue_branch_redrive_projection_correction(
+        *, root: Path = ROOT, design_authority: Any = DESIGN,
+        ) -> dict[str, Any]:
+    """Issue the post-partial-corpus structural-redrive source authority."""
+
+    artifact = design_authority.issue_branch_redrive_projection_correction(
+        root=root)
+    validated = (
+        design_authority
+        .load_branch_redrive_projection_correction_for_consumption(root=root))
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued branch-redrive correction changed on exact replay")
+    digest = artifact.get(
+        design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY)
+    if not _is_hex(digest):
+        raise FullBankV2RunnerError(
+            "branch-redrive projection correction digest is malformed")
+    path_correction, path_digest = (
+        _immutable_path_from_branch_redrive_projection_correction(
+            artifact, root=root, design_authority=design_authority))
+    dtype_correction, dtype_digest = (
+        _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority))
+    import_digest = _immutable_import_digest_from_dtype_correction(
+        dtype_correction, design_authority=design_authority)
+    return {
+        "stage": "issue-branch-redrive-projection-correction",
+        "status": design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_STATUS,
+        design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY: digest,
+        "branch_redrive_projection_correction_digest": digest,
+        design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
+            path_digest,
+        "encoder_path_projection_correction_digest": path_digest,
+        design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+            dtype_digest,
+        "encoder_compute_dtype_correction_digest": dtype_digest,
+        design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY: import_digest,
+        "encoder_import_correction_digest": import_digest,
+        "retained_valid_branch_count": 120,
+        "retained_invalid_attempt_receipt_count": 12,
+        "manifest_or_identity_replaced": False,
+        "completed_branch_reissued_or_rewritten": False,
+        "candidate_outcome_or_label_value_read_for_correction": False,
         "branch_latent_or_scorer_runtime_started_by_issue_stage": False,
     }
 
@@ -1321,6 +1471,7 @@ def _training_stop_report(
         encoder_import_correction_digest: str,
         encoder_compute_dtype_correction_digest: str,
         encoder_path_projection_correction_digest: str,
+        branch_redrive_projection_correction_digest: str,
         ) -> tuple[int, dict[str, Any]]:
     terminal_kind = terminal.get("terminal_kind")
     if terminal_kind == "COMPLETION_DEGENERACY_FAILURE":
@@ -1350,6 +1501,10 @@ def _training_stop_report(
             encoder_path_projection_correction_digest,
         DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
             encoder_path_projection_correction_digest,
+        "branch_redrive_projection_correction_digest":
+            branch_redrive_projection_correction_digest,
+        DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY:
+            branch_redrive_projection_correction_digest,
         "terminal_digest": terminal["terminal_digest"],
         "nothing_running": True,
     }
@@ -1361,6 +1516,7 @@ def _development_complete_report(
         encoder_import_correction_digest: str,
         encoder_compute_dtype_correction_digest: str,
         encoder_path_projection_correction_digest: str,
+        branch_redrive_projection_correction_digest: str,
         ) -> tuple[int, dict[str, Any]]:
     if (development.get("qualified_scorer_bound") is not True
             or development.get("development_state_count") != 20
@@ -1388,6 +1544,10 @@ def _development_complete_report(
             encoder_path_projection_correction_digest,
         DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
             encoder_path_projection_correction_digest,
+        "branch_redrive_projection_correction_digest":
+            branch_redrive_projection_correction_digest,
+        DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY:
+            branch_redrive_projection_correction_digest,
         "nothing_running": True,
     }
 
@@ -1475,14 +1635,23 @@ def run_pipeline(
         ) -> tuple[int, dict[str, Any]]:
     """Execute the fail-closed post-contract sequence using injected effects."""
 
-    # The logical-path correction is the sole live source authority.  It
-    # immutably embeds the earlier FP32 and import corrections, and must
-    # validate before probes or any command capable of importing the target
-    # encoder.  Passing the same object to the contract loader avoids live
-    # reinterpretation of every historical predecessor.
-    encoder_path_projection_correction = (
-        DESIGN.load_encoder_path_projection_correction_for_consumption(
+    # The post-partial-corpus redrive correction is the sole live source
+    # authority.  It immutably embeds the path, FP32 and import corrections,
+    # and must validate before probes or any runtime command.  The historical
+    # path object is passed unchanged to the contract loader so existing
+    # latent/smoke lineage is never rewritten under this operational fix.
+    branch_redrive_projection_correction = (
+        DESIGN.load_branch_redrive_projection_correction_for_consumption(
             root=root))
+    branch_redrive_correction_digest = (
+        branch_redrive_projection_correction.get(
+            DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY))
+    if not _is_hex(branch_redrive_correction_digest):
+        raise FullBankV2RunnerError(
+            "branch-redrive projection correction is missing before runtime")
+    encoder_path_projection_correction, path_correction_digest = (
+        _immutable_path_from_branch_redrive_projection_correction(
+            branch_redrive_projection_correction, root=root))
     path_correction_digest = encoder_path_projection_correction.get(
         DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
     if not _is_hex(path_correction_digest):
@@ -1541,7 +1710,9 @@ def run_pipeline(
                     encoder_compute_dtype_correction_digest=
                     dtype_correction_digest,
                     encoder_path_projection_correction_digest=
-                    path_correction_digest)
+                    path_correction_digest,
+                    branch_redrive_projection_correction_digest=
+                    branch_redrive_correction_digest)
             if (retained_terminal.get("terminal_kind") != "QUALIFICATION_PASS"
                     or retained_terminal.get("qualified") is not True):
                 raise FullBankV2RunnerError(
@@ -1563,7 +1734,9 @@ def run_pipeline(
                     encoder_compute_dtype_correction_digest=
                     dtype_correction_digest,
                     encoder_path_projection_correction_digest=
-                    path_correction_digest)
+                    path_correction_digest,
+                    branch_redrive_projection_correction_digest=
+                    branch_redrive_correction_digest)
             if retained_development.get("terminal_present") is not False:
                 raise FullBankV2RunnerError(
                     "optional development-terminal presence verdict is missing")
@@ -1583,7 +1756,9 @@ def run_pipeline(
                 encoder_compute_dtype_correction_digest=
                 dtype_correction_digest,
                 encoder_path_projection_correction_digest=
-                path_correction_digest)
+                path_correction_digest,
+                branch_redrive_projection_correction_digest=
+                branch_redrive_correction_digest)
         if retained_terminal.get("terminal_present") is not False:
             raise FullBankV2RunnerError(
                 "optional training-terminal presence verdict is missing")
@@ -1768,7 +1943,9 @@ def run_pipeline(
                 encoder_compute_dtype_correction_digest=
                 dtype_correction_digest,
                 encoder_path_projection_correction_digest=
-                path_correction_digest)
+                path_correction_digest,
+                branch_redrive_projection_correction_digest=
+                branch_redrive_correction_digest)
         if (terminal.get("terminal_kind") != "QUALIFICATION_PASS"
                 or terminal.get("qualified") is not True):
             raise FullBankV2RunnerError(
@@ -1795,7 +1972,9 @@ def run_pipeline(
                 encoder_compute_dtype_correction_digest=
                 dtype_correction_digest,
                 encoder_path_projection_correction_digest=
-                path_correction_digest)
+                path_correction_digest,
+                branch_redrive_projection_correction_digest=
+                branch_redrive_correction_digest)
         if (terminal_kind != "QUALIFICATION_PASS" or training_return != 0
                 or terminal.get("qualified") is not True):
             raise FullBankV2RunnerError(
@@ -1818,7 +1997,9 @@ def run_pipeline(
             encoder_compute_dtype_correction_digest=
             dtype_correction_digest,
             encoder_path_projection_correction_digest=
-            path_correction_digest)
+            path_correction_digest,
+            branch_redrive_projection_correction_digest=
+            branch_redrive_correction_digest)
     if prior_development.get("terminal_present") is not False:
         raise FullBankV2RunnerError(
             "optional development-terminal presence verdict is missing")
@@ -1834,7 +2015,9 @@ def run_pipeline(
         runtime_probe_digests=probe_digests,
         encoder_import_correction_digest=import_correction_digest,
         encoder_compute_dtype_correction_digest=dtype_correction_digest,
-        encoder_path_projection_correction_digest=path_correction_digest)
+        encoder_path_projection_correction_digest=path_correction_digest,
+        branch_redrive_projection_correction_digest=
+        branch_redrive_correction_digest)
 
 
 def _default_validation_invoker(
@@ -1927,6 +2110,9 @@ def assemble_status_report(*, root: Path = ROOT) -> dict[str, Any]:
         "encoder_path_projection_correction": _binding_if_present(
             root, DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH,
             self_key=DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY),
+        "branch_redrive_projection_correction": _binding_if_present(
+            root, DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY),
         "branch_smoke": _binding_if_present(
             root, SCORER_FIT_RELATIVE_PATH /
             BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME,
@@ -2874,7 +3060,8 @@ def _parser() -> argparse.ArgumentParser:
         "issue-design", "issue-source-correction", "freeze-manifests",
         "issue-scorer-contract", "issue-encoder-import-correction",
         "issue-encoder-compute-dtype-correction",
-        "issue-encoder-path-projection-correction", "run",
+        "issue-encoder-path-projection-correction",
+        "issue-branch-redrive-projection-correction", "run",
         "status", "internal-probe-genesis", "internal-probe-rocm",
         "internal-validate-branch-smoke", "internal-validate-encoding-smoke",
         "internal-validate-encoding-smoke-optional",
@@ -2919,6 +3106,9 @@ def main(argv: list[str] | None = None) -> int:
         code = 0
     elif args.stage == "issue-encoder-path-projection-correction":
         report = issue_encoder_path_projection_correction()
+        code = 0
+    elif args.stage == "issue-branch-redrive-projection-correction":
+        report = issue_branch_redrive_projection_correction()
         code = 0
     elif args.stage == "run":
         code, report = run_authorised(resume=args.resume)

@@ -157,6 +157,11 @@ class FakePipeline:
             raising=False)
         monkeypatch.setattr(
             runner.DESIGN,
+            "BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY",
+            "scorer_fit_corpus_v2_branch_redrive_projection_correction_digest",
+            raising=False)
+        monkeypatch.setattr(
+            runner.DESIGN,
             "IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST", HEX_C,
             raising=False)
         monkeypatch.setattr(
@@ -181,12 +186,30 @@ class FakePipeline:
                 "binding": {"self_digest": HEX_C},
             },
         }
+        self.branch_redrive_correction = {
+            runner.DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY: HEX_B,
+            "immutable_encoder_path_projection_correction_digest": HEX_E,
+            "immutable_encoder_path_projection_correction": {
+                "payload": self.path_correction,
+                "binding": {"self_digest": HEX_E},
+            },
+        }
+        monkeypatch.setattr(
+            runner.DESIGN,
+            "load_branch_redrive_projection_correction_for_consumption",
+            lambda **_kwargs: self.events.append(
+                "validate:branch-redrive-projection-correction")
+            or self.branch_redrive_correction, raising=False)
         monkeypatch.setattr(
             runner.DESIGN,
             "load_encoder_path_projection_correction_for_consumption",
-            lambda **_kwargs: self.events.append(
-                "validate:encoder-path-projection-correction")
-            or self.path_correction, raising=False)
+            lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
+                "historical path correction must not be live-loaded")),
+            raising=False)
+        monkeypatch.setattr(
+            runner.DESIGN,
+            "validate_immutable_encoder_path_projection_correction",
+            lambda value, **_kwargs: dict(value), raising=False)
         monkeypatch.setattr(
             runner.DESIGN,
             "validate_immutable_encoder_compute_dtype_correction",
@@ -204,7 +227,7 @@ class FakePipeline:
                 "old import correction must not be live-loaded")))
         def load_contract(**kwargs: Any) -> dict[str, Any]:
             assert kwargs["encoder_path_projection_correction"] \
-                is self.path_correction
+                == self.path_correction
             self.events.append("validate:immutable-scorer-contract")
             return {}
 
@@ -384,22 +407,25 @@ def test_pass_pipeline_has_exact_order_and_development_is_pass_gated(
     assert report["encoder_path_projection_correction_digest"] == HEX_E
     assert report[
         runner.DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY] == HEX_E
+    assert report["branch_redrive_projection_correction_digest"] == HEX_B
+    assert report[
+        runner.DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY] == HEX_B
     assert report["predictor_access_before_qualification"] is False
     assert report["final_200_state_corpus_generated"] is False
     assert fake.events.index(
-        "validate:encoder-path-projection-correction") < fake.events.index(
+        "validate:branch-redrive-projection-correction") < fake.events.index(
             "validate:immutable-scorer-contract")
     assert fake.events.index(
         "validate:immutable-scorer-contract") < fake.events.index(
             "command:smoke_encoding")
 
 
-def test_missing_encoder_path_projection_correction_blocks_before_any_command(
+def test_missing_branch_redrive_projection_correction_blocks_before_any_command(
         monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     fake = FakePipeline(monkeypatch, tmp_path)
     monkeypatch.setattr(
         runner.DESIGN,
-        "load_encoder_path_projection_correction_for_consumption",
+        "load_branch_redrive_projection_correction_for_consumption",
         lambda **_kwargs: (_ for _ in ()).throw(
             runner.FullBankV2RunnerError("fixture correction missing")))
     with pytest.raises(runner.FullBankV2RunnerError,
@@ -1926,6 +1952,93 @@ def test_parser_exposes_path_projection_correction_before_resume_run() -> None:
     resumed = runner._parser().parse_args(
         ["--stage", "run", "--resume"])
     assert correction.stage == "issue-encoder-path-projection-correction"
+    assert resumed.stage == "run" and resumed.resume is True
+
+
+def test_issue_branch_redrive_projection_correction_is_source_only(
+        tmp_path: Path) -> None:
+    events: list[str] = []
+    dtype = {
+        "immutable_encoder_import_correction": {
+            "payload": {"encoder_import_correction_digest": HEX_D},
+        },
+        "immutable_encoder_import_correction_digest": HEX_D,
+        "encoder_compute_dtype_correction_digest": HEX_C,
+    }
+    path = {
+        "scorer_fit_corpus_v2_encoder_path_projection_correction_digest":
+            HEX_E,
+        "immutable_encoder_compute_dtype_correction_digest": HEX_C,
+        "immutable_encoder_compute_dtype_correction": {
+            "payload": dtype, "binding": {"self_digest": HEX_C}},
+    }
+    correction = {
+        "scorer_fit_corpus_v2_branch_redrive_projection_correction_digest":
+            HEX_B,
+        "immutable_encoder_path_projection_correction_digest": HEX_E,
+        "immutable_encoder_path_projection_correction": {
+            "payload": path, "binding": {"self_digest": HEX_E}},
+    }
+
+    class FakeDesign:
+        BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY = (
+            "scorer_fit_corpus_v2_branch_redrive_projection_correction_digest")
+        BRANCH_REDRIVE_PROJECTION_CORRECTION_STATUS = "ISSUED_FIXTURE_REDRIVE"
+        ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY = (
+            "scorer_fit_corpus_v2_encoder_path_projection_correction_digest")
+        ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY = (
+            "encoder_compute_dtype_correction_digest")
+        ENCODER_IMPORT_CORRECTION_SELF_KEY = (
+            "encoder_import_correction_digest")
+        IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST = HEX_C
+        IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST = HEX_D
+
+        def issue_branch_redrive_projection_correction(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("issue-redrive")
+            return correction
+
+        def load_branch_redrive_projection_correction_for_consumption(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("reopen-redrive")
+            return correction
+
+        def validate_immutable_encoder_path_projection_correction(
+                self, value: Mapping[str, Any], **_kwargs: Any
+                ) -> Mapping[str, Any]:
+            events.append("validate-immutable-path")
+            return dict(value)
+
+        def validate_immutable_encoder_compute_dtype_correction(
+                self, value: Mapping[str, Any]) -> Mapping[str, Any]:
+            events.append("validate-immutable-dtype")
+            return dict(value)
+
+    report = runner.issue_branch_redrive_projection_correction(
+        root=tmp_path, design_authority=FakeDesign())
+    assert events == [
+        "issue-redrive", "reopen-redrive", "validate-immutable-path",
+        "validate-immutable-dtype"]
+    assert report["branch_redrive_projection_correction_digest"] == HEX_B
+    assert report["encoder_path_projection_correction_digest"] == HEX_E
+    assert report["retained_valid_branch_count"] == 120
+    assert report["retained_invalid_attempt_receipt_count"] == 12
+    assert report["manifest_or_identity_replaced"] is False
+    assert report["completed_branch_reissued_or_rewritten"] is False
+    assert report["candidate_outcome_or_label_value_read_for_correction"] \
+        is False
+    assert report["branch_latent_or_scorer_runtime_started_by_issue_stage"] \
+        is False
+
+
+def test_parser_exposes_redrive_projection_correction_before_resume_run() -> None:
+    correction = runner._parser().parse_args(
+        ["--stage", "issue-branch-redrive-projection-correction"])
+    resumed = runner._parser().parse_args(
+        ["--stage", "run", "--resume"])
+    assert correction.stage == "issue-branch-redrive-projection-correction"
     assert resumed.stage == "run" and resumed.resume is True
 
 

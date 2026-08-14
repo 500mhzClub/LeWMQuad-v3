@@ -175,6 +175,11 @@ SCORER_FIT_V2_PRESERVED_HISTORICAL_ROTATION_VECTOR_COUNT = 7
 SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY = (
     "scorer_fit_corpus_v2_source_correction_digest"
 )
+SCORER_FIT_V2_BRANCH_REDRIVE_CORRECTION_KEYS = (
+    "branch_redrive_projection_correction",
+    "branch_redrive_projection_correction_binding",
+    "branch_redrive_projection_correction_digest",
+)
 SCORER_FIT_V2_SELECTION_SCHEMA = (
     "go2_scorer_fit_corpus_v2_small_completion_selection_v1"
 )
@@ -9844,6 +9849,45 @@ def _full_bank_v2_artifact_binding(
     return binding
 
 
+def _full_bank_v2_active_branch_redrive_correction(
+        active: Mapping[str, Any]) -> dict[str, Any]:
+    """Project the validated operational redrive correction from authority.
+
+    This correction is deliberately outside immutable manifest, assignment,
+    branch-row, and scorer-contract scientific lineage.  The design authority
+    owns its nested path-correction validation; the builder requires only the
+    exact validated payload/binding/digest projection before any branch
+    runtime authority is returned.
+    """
+
+    from lewm.oracle import go2_scorer_fit_corpus_v2_design as authority
+
+    if not isinstance(active, Mapping):
+        raise RuntimeError("full-bank V2 active design authority is malformed")
+    payload_key, binding_key, digest_key = \
+        SCORER_FIT_V2_BRANCH_REDRIVE_CORRECTION_KEYS
+    payload = active.get(payload_key)
+    binding = active.get(binding_key)
+    digest = active.get(digest_key)
+    if (
+        not isinstance(payload, Mapping)
+        or not isinstance(binding, Mapping)
+        or not _is_sha256(digest)
+        or payload.get(authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY)
+        != digest
+        or binding.get("self_digest_key")
+        != authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY
+        or binding.get("self_digest") != digest
+    ):
+        raise RuntimeError(
+            "full-bank V2 active branch-redrive correction changed")
+    return {
+        payload_key: copy.deepcopy(dict(payload)),
+        binding_key: copy.deepcopy(dict(binding)),
+        digest_key: str(digest),
+    }
+
+
 def load_and_validate_full_bank_v2_manifests_for_consumption(
         *, out: Path | None = None) -> dict[str, Any]:
     """Pin and solve-free replay the complete active V2 identity surface."""
@@ -9869,6 +9913,8 @@ def load_and_validate_full_bank_v2_manifests_for_consumption(
     }
     replay_authority = load_scorer_fit_v2_preoutcome_inputs(
         out=scorer_fit)["design_authority"]
+    redrive_correction = _full_bank_v2_active_branch_redrive_correction(
+        replay_authority)
     result: dict[str, Any] = {
         "design_authority": replay_authority,
         "source_correction": replay_authority["source_correction"],
@@ -9876,6 +9922,7 @@ def load_and_validate_full_bank_v2_manifests_for_consumption(
             "source_correction_binding"],
         "source_correction_digest": replay_authority[
             "source_correction_digest"],
+        **redrive_correction,
     }
     for key, (name, self_key) in specs.items():
         raw_path = scorer_fit / name
@@ -13412,6 +13459,10 @@ def load_full_bank_v2_branch_runtime_authority(
         raise RuntimeError("full-bank V2 branch identity set is not unique")
     runtime["branch_identity_set_digest"] = canonical_digest(
         sorted(branch_digests))
+    operational_redrive = {
+        key: manifests[key]
+        for key in SCORER_FIT_V2_BRANCH_REDRIVE_CORRECTION_KEYS
+    }
     return {
         "manifests": manifests,
         "scorer_contract": contract_artifact,
@@ -13420,8 +13471,111 @@ def load_full_bank_v2_branch_runtime_authority(
         "source_correction_binding": manifests[
             "source_correction_binding"],
         "source_correction_digest": correction_digest,
+        **operational_redrive,
         "candidate_outcomes_consumed": False,
     }
+
+
+def _full_bank_v2_redrive_entry_by_state_id(
+        runtime_authority: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    """Join enriched runtime states to their immutable manifest state rows."""
+
+    runtime = runtime_authority.get("manifest")
+    manifests = runtime_authority.get("manifests")
+    raw_manifest = (manifests.get("state_manifest")
+                    if isinstance(manifests, Mapping) else None)
+    enriched_states = (runtime.get("states")
+                       if isinstance(runtime, Mapping) else None)
+    raw_states = (raw_manifest.get("states")
+                  if isinstance(raw_manifest, Mapping) else None)
+    if (
+        not isinstance(enriched_states, list)
+        or not isinstance(raw_states, list)
+        or not enriched_states
+        or len(enriched_states) != len(raw_states)
+    ):
+        raise RuntimeError(
+            "full-bank V2 redrive state surfaces are incomplete")
+
+    def by_state_id(rows: Sequence[Any], *, label: str
+                    ) -> dict[str, Mapping[str, Any]]:
+        result: dict[str, Mapping[str, Any]] = {}
+        identities: set[str] = set()
+        for row in rows:
+            if not isinstance(row, Mapping):
+                raise RuntimeError(
+                    f"full-bank V2 {label} state row is malformed")
+            state_id = row.get("state_id")
+            identity = row.get("state_identity_digest")
+            if (not isinstance(state_id, str) or not state_id
+                    or not _is_sha256(identity)
+                    or state_id in result or str(identity) in identities):
+                raise RuntimeError(
+                    f"full-bank V2 {label} state identity is not one-to-one")
+            result[state_id] = row
+            identities.add(str(identity))
+        return result
+
+    enriched_by_id = by_state_id(enriched_states, label="enriched runtime")
+    raw_by_id = by_state_id(raw_states, label="immutable manifest")
+    if set(enriched_by_id) != set(raw_by_id):
+        raise RuntimeError(
+            "full-bank V2 enriched/raw redrive state IDs differ")
+
+    result: dict[str, dict[str, Any]] = {}
+    expected_candidates = list(SCORER_FIT_V2_CANDIDATE_INDICES)
+    for state_id in sorted(raw_by_id):
+        enriched = enriched_by_id[state_id]
+        raw = raw_by_id[state_id]
+        if (enriched.get("state_identity_digest")
+                != raw.get("state_identity_digest")):
+            raise RuntimeError(
+                "full-bank V2 enriched/raw redrive identity digest differs")
+
+        # The runtime loader may add only its already-validated branch identity
+        # join.  Removing that operational surface must recover the immutable
+        # state-manifest row byte-for-byte as a Python value.
+        enriched_base = dict(enriched)
+        branch_identities = enriched_base.pop("branch_identities", None)
+        if (not isinstance(branch_identities, list)
+                or len(branch_identities) != len(expected_candidates)
+                or any(not isinstance(row, Mapping)
+                       for row in branch_identities)
+                or enriched_base != dict(raw)):
+            raise RuntimeError(
+                "full-bank V2 enriched runtime state is not an exact manifest "
+                "extension")
+
+        # Independently compare the exact closed state/goal projection used by
+        # redrive.  Assignment indices are validated and removed here only for
+        # the comparison; the immutable raw row is retained intact for the
+        # redrive whitelist itself.
+        projections: list[dict[str, Any]] = []
+        for value in (raw, enriched_base):
+            candidate_indices = value.get("candidate_indices")
+            if (not isinstance(candidate_indices, list)
+                    or candidate_indices != expected_candidates
+                    or any(isinstance(index, bool)
+                           or not isinstance(index, int)
+                           for index in candidate_indices)):
+                raise RuntimeError(
+                    "full-bank V2 redrive state lacks exact candidates 0..11")
+            state = dict(value)
+            del state["candidate_indices"]
+            _full_bank_v2_assert_no_outcome_fields(
+                state, label="full-bank redrive joined state")
+            projections.append({
+                "state_id": state_id,
+                "state_identity_digest": value["state_identity_digest"],
+                "structural_state": _full_bank_v2_structural_state_identity(
+                    state),
+                "goal": _full_bank_v2_goal_identity(value["goal"]),
+            })
+        if projections[0] != projections[1]:
+            raise RuntimeError(
+                "full-bank V2 enriched/raw redrive structural projection differs")
+        result[state_id] = copy.deepcopy(dict(raw))
+    return result
 
 
 def _identity_for(state: dict[str, Any], candidate_index: int) -> dict[str, Any]:
@@ -13849,27 +14003,76 @@ def _redrive_mismatch(entry: dict[str, Any], record: dict[str, Any],
                     "previous_applied_command": previous_matches,
                     "snapshot_task_status": status_matches,
                 })
-                if previous_matches and status_matches:
-                    runtime_state = dict(entry)
-                    runtime_state[
-                        "completion_rotation_eligibility_vector"] = \
-                        record.get("completion_rotation_eligibility_vector")
-                    runtime_state["snapshot_task_status"] = redriven_status
-                    runtime_state[
-                        "previous_applied_command"] = redriven_previous
-                    evidence = full_bank_completion_reachability_evidence(
-                        runtime_state)
-                    comparisons[
-                        "completion_full_bank_l_max_eligible"] = bool(
-                            evidence.get("eligible"))
-                else:
-                    comparisons[
-                        "completion_full_bank_l_max_eligible"] = False
             except (RuntimeError, TypeError, ValueError,
                     STATE_SELECTOR.StateSelectorAmendmentError):
                 comparisons["previous_applied_command"] = False
                 comparisons["snapshot_task_status"] = False
                 comparisons["completion_full_bank_l_max_eligible"] = False
+            else:
+                if previous_matches and status_matches:
+                    try:
+                        # ``candidate_indices`` belongs to the expanded
+                        # state x candidate manifest, not to the frozen
+                        # structural state.  Remove exactly that registered
+                        # full-bank assignment projection, then retain the
+                        # ordinary outcome/allocation-field guard so no other
+                        # forbidden surface can be silently discarded.
+                        candidate_indices = entry.get("candidate_indices")
+                        if (
+                            not isinstance(candidate_indices, list)
+                            or any(isinstance(value, bool)
+                                   or not isinstance(value, int)
+                                   for value in candidate_indices)
+                            or candidate_indices
+                            != list(SCORER_FIT_V2_CANDIDATE_INDICES)
+                        ):
+                            raise RuntimeError(
+                                "full-bank runtime state lacks exact candidate "
+                                "indices 0..11")
+                        state_without_assignment = dict(entry)
+                        del state_without_assignment["candidate_indices"]
+                        _full_bank_v2_assert_no_outcome_fields(
+                            state_without_assignment,
+                            label="full-bank runtime redrive state")
+
+                        # Rebuild a closed structural projection.  In
+                        # particular, do not carry the retired historical
+                        # rotation vector into the active full-bank predicate.
+                        structural = _full_bank_v2_structural_state_identity(
+                            state_without_assignment)
+                        runtime_state = {
+                            **structural,
+                            "state_identity_digest": entry.get(
+                                "state_identity_digest"),
+                            "goal": _full_bank_v2_goal_identity(entry["goal"]),
+                            "previous_applied_command": redriven_previous,
+                            "snapshot_task_status": redriven_status,
+                        }
+                        evidence = full_bank_completion_reachability_evidence(
+                            runtime_state)
+                        if (not isinstance(evidence, Mapping)
+                                or not isinstance(evidence.get("eligible"), bool)):
+                            raise RuntimeError(
+                                "full-bank runtime reachability evidence is "
+                                "malformed")
+                    except (KeyError, RuntimeError, TypeError, ValueError,
+                            STATE_SELECTOR.StateSelectorAmendmentError):
+                        # An internal projection/evidence failure is not an
+                        # observed command or task-status mismatch and is not
+                        # scientific evidence that L_max is ineligible.
+                        comparisons[
+                            "completion_full_bank_internal_evidence_validation"
+                        ] = False
+                    else:
+                        comparisons[
+                            "completion_full_bank_internal_evidence_validation"
+                        ] = True
+                        comparisons[
+                            "completion_full_bank_l_max_eligible"] = evidence[
+                                "eligible"]
+                else:
+                    comparisons[
+                        "completion_full_bank_l_max_eligible"] = False
         elif "completion_rotation_eligibility_vector" in entry:
             # New V2 successor identities bind the complete twelve-rotation
             # vector plus the unprojected task status and actual previous
@@ -14449,11 +14652,15 @@ def _final_identifiability_gate(manifest: dict[str, Any], out: Path,
 
 def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
     out = OUT_ROOT / args.pool
+    redrive_entry_by_state_id: dict[str, dict[str, Any]] | None = None
     if args.pool == "scorer_fit":
         v2_manifest_path = out / SCORER_FIT_V2_STATE_MANIFEST_NAME
         if v2_manifest_path.is_file():
-            manifest = load_full_bank_v2_branch_runtime_authority(
-                out=out)["manifest"]
+            runtime_authority = load_full_bank_v2_branch_runtime_authority(
+                out=out)
+            manifest = runtime_authority["manifest"]
+            redrive_entry_by_state_id = \
+                _full_bank_v2_redrive_entry_by_state_id(runtime_authority)
         else:
             manifest = load_active_state_manifest_for_consumption(
                 out / "state_manifest.json")
@@ -14591,8 +14798,15 @@ def stage_branches(args: argparse.Namespace, *, smoke: bool = False) -> int:
             redrive_reason = "redrive_failed:short_proprio_history"
         else:
             record, field, _strata = verdict
+            redrive_entry = entry
+            if _is_full_bank_v2_manifest(manifest):
+                if (redrive_entry_by_state_id is None
+                        or entry["state_id"] not in redrive_entry_by_state_id):
+                    raise RuntimeError(
+                        "full-bank V2 immutable redrive entry is unavailable")
+                redrive_entry = redrive_entry_by_state_id[entry["state_id"]]
             redrive_reason = _redrive_mismatch(
-                entry, record, ctx,
+                redrive_entry, record, ctx,
                 full_bank_v2=_is_full_bank_v2_manifest(manifest))
         if redrive_reason is not None:
             for candidate_index in missing:
