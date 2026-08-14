@@ -40,6 +40,7 @@ if str(ROOT) not in sys.path:
 
 from scripts import analyze_go2_counterfactual_predictor_qualification_v1_2 as A  # noqa: E402
 from scripts import train_go2_utility_scorer_v1_2 as S  # noqa: E402
+from lewm.oracle import go2_scorer_fit_corpus_v2_design as V2_DESIGN  # noqa: E402
 from lewm.oracle.go2_scorer_contract_v1_2 import contract_digest  # noqa: E402
 
 STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
@@ -421,11 +422,28 @@ def _validate_live_full_bank_v2_provenance(
     _require(isinstance(bindings, Mapping),
              "full-bank V2 corpus bindings are absent")
     try:
+        authority = V2_DESIGN.load_active_design_authority(root=ROOT)
         artifact = S.V2_CONTRACT.load_contract_for_consumption(root=ROOT)
+        artifact = S.V2_CONTRACT.validate_contract_artifact(artifact)
     except (OSError, ValueError, KeyError, RuntimeError) as exc:
         raise DevelopmentTransferRefused(
             f"full-bank V2 successor contract does not verify: {exc}") from exc
     contract = artifact["contract"]
+    lineage = contract.get("preoutcome_lineage")
+    correction_digest = authority.get("source_correction_digest")
+    _require(
+        isinstance(correction_digest, str)
+        and S.HEX64.fullmatch(correction_digest) is not None
+        and isinstance(lineage, Mapping)
+        and lineage.get("scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest
+        and qualification.get(
+            "scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest
+        and bindings.get("scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest,
+        "full-bank V2 active authority/successor source-correction "
+        "lineage changed")
     for key in S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS:
         _require(qualification.get(key) == bindings.get(key),
                  f"full-bank V2 qualification differs at {key}")

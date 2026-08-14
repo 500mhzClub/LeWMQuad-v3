@@ -44,6 +44,10 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
             row["branch_row_digest"] = encoder.canonical_digest(row)
             rows.append(row)
         successor = {
+            "preoutcome_lineage": {
+                "scorer_fit_corpus_v2_source_correction_digest": bindings[
+                    "scorer_fit_corpus_v2_source_correction_digest"],
+            },
             "state_selector_binding": {
                 "state_manifest_digest": manifest["state_manifest_digest"],
                 "assignment_manifest_digest": manifest[
@@ -66,6 +70,12 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
             "scorer_contract": artifact,
         }
         with mock.patch.object(
+                encoder.V2_DESIGN, "load_active_design_authority",
+                return_value={
+                    "source_correction_digest": bindings[
+                        "scorer_fit_corpus_v2_source_correction_digest"],
+                }), \
+                mock.patch.object(
                 encoder.CORPUS_BUILDER,
                 "load_and_validate_full_bank_v2_branch_outputs_for_consumption",
                 return_value=bundle) as producer, \
@@ -90,6 +100,34 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
         self.assertEqual(observed[0], manifest)
         self.assertEqual(len(observed[2]), 12)
 
+    def test_full_bank_v2_source_correction_mismatch_precedes_branch_producer(
+            self):
+        artifact = {
+            "contract": {
+                "preoutcome_lineage": {
+                    "scorer_fit_corpus_v2_source_correction_digest": "b" * 64,
+                },
+            },
+        }
+        with mock.patch.object(
+                encoder.V2_DESIGN, "load_active_design_authority",
+                return_value={"source_correction_digest": "a" * 64}), \
+                mock.patch.object(
+                    encoder.V2_CONTRACT, "load_contract_for_consumption",
+                    return_value=artifact), \
+                mock.patch.object(
+                    encoder.V2_CONTRACT, "validate_contract_artifact",
+                    return_value=artifact), \
+                mock.patch.object(
+                    encoder.CORPUS_BUILDER,
+                    "load_and_validate_full_bank_v2_branch_outputs_for_consumption",
+                    side_effect=AssertionError("branch producer opened")) as producer:
+            with self.assertRaisesRegex(
+                    RuntimeError, "source-correction lineage changed"):
+                encoder._load_full_bank_v2_inputs(
+                    encoder.OUT_ROOT / "scorer_fit", allow_partial=True)
+        producer.assert_not_called()
+
     def test_full_bank_v2_output_registry_is_versioned_and_disjoint(self):
         self.assertEqual(encoder.FULL_BANK_V2_INDEX_NAME,
                          "latents_index_v2.json")
@@ -98,6 +136,8 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
         self.assertEqual(encoder.FULL_BANK_V2_LATENTS_NAME, "latents_v2")
         self.assertNotIn("candidate_allocator_contract_digest",
                          encoder.FULL_BANK_V2_BINDING_KEYS)
+        self.assertIn("scorer_fit_corpus_v2_source_correction_digest",
+                      encoder.FULL_BANK_V2_BINDING_KEYS)
 
     def test_branch_row_remains_bound_to_manifest_scientific_contract(self):
         historical = "1" * 64

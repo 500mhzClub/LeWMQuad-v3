@@ -37,6 +37,7 @@ if str(ROOT) not in sys.path:
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC  # noqa: E402
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS  # noqa: E402
 from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR  # noqa: E402
+from lewm.oracle import go2_scorer_fit_corpus_v2_design as V2_DESIGN  # noqa: E402
 from lewm.oracle import go2_scorer_fit_corpus_v2_scorer_contract as V2_CONTRACT  # noqa: E402
 from lewm.oracle.go2_scorer_contract_v1_2 import (  # noqa: E402
     clean_source_binding,
@@ -96,6 +97,7 @@ CORPUS_BINDING_KEYS = (
 )
 FULL_BANK_V2_BINDING_KEYS = (
     "scorer_fit_corpus_v2_design_digest",
+    "scorer_fit_corpus_v2_source_correction_digest",
     "rotation_mask_classification_digest",
     "full_bank_small_completion_selection_digest",
     "full_bank_preoutcome_state_revalidation_digest",
@@ -169,6 +171,34 @@ def _is_full_bank_v2_manifest(value: Mapping[str, Any]) -> bool:
     return (value.get("schema")
             == CORPUS_BUILDER.SCORER_FIT_V2_STATE_MANIFEST_SCHEMA
             and value.get("pool") == "scorer_fit_v2")
+
+
+def _load_full_bank_v2_source_correction_authority(
+        ) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    """Validate the corrected source boundary before opening branch outputs."""
+
+    try:
+        authority = V2_DESIGN.load_active_design_authority(root=ROOT)
+        artifact = V2_CONTRACT.load_contract_for_consumption(root=ROOT)
+        artifact = V2_CONTRACT.validate_contract_artifact(artifact)
+    except (OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
+        raise RuntimeError(
+            f"full-bank V2 source-correction authority rejected inputs: {exc}"
+        ) from exc
+    contract = artifact.get("contract")
+    lineage = (contract.get("preoutcome_lineage")
+               if isinstance(contract, Mapping) else None)
+    digest = authority.get("source_correction_digest")
+    if (not isinstance(digest, str)
+            or len(digest) != 64
+            or any(character not in "0123456789abcdef" for character in digest)
+            or not isinstance(lineage, Mapping)
+            or lineage.get("scorer_fit_corpus_v2_source_correction_digest")
+            != digest):
+        raise RuntimeError(
+            "full-bank V2 active authority/successor source-correction "
+            "lineage changed")
+    return digest, dict(artifact), dict(contract)
 
 
 def _corpus_binding_keys(manifest: Mapping[str, Any]) -> tuple[str, ...]:
@@ -839,12 +869,13 @@ def _load_full_bank_v2_inputs(
     if out != expected_out:
         raise RuntimeError(
             "full-bank V2 encoding is registered only for scorer_fit")
+    correction_digest, artifact, successor = (
+        _load_full_bank_v2_source_correction_authority())
     try:
         bundle = (
             CORPUS_BUILDER
             .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
                 out=out, allow_partial=allow_partial))
-        artifact = V2_CONTRACT.load_contract_for_consumption(root=ROOT)
     except (OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
         raise RuntimeError(
             f"full-bank V2 branch producer rejected inputs: {exc}") from exc
@@ -864,7 +895,6 @@ def _load_full_bank_v2_inputs(
     manifest = dict(manifest)
     receipt = dict(receipt)
     rows = [dict(row) for row in rows_value]
-    successor = V2_CONTRACT.validate_contract_artifact(artifact)["contract"]
     if (manifest.get("state_manifest_digest")
             != successor["state_selector_binding"]["state_manifest_digest"]
             or manifest.get("full_bank_assignment_manifest_digest")
@@ -875,7 +905,10 @@ def _load_full_bank_v2_inputs(
             != successor[V2_CONTRACT.CONTRACT_SELF_KEY]
             or manifest.get(
                 "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
-            != artifact[V2_CONTRACT.ARTIFACT_SELF_KEY]):
+            != artifact[V2_CONTRACT.ARTIFACT_SELF_KEY]
+            or manifest.get(
+                "scorer_fit_corpus_v2_source_correction_digest")
+            != correction_digest):
         raise RuntimeError(
             "full-bank V2 manifest/successor contract lineage changed")
     if (len(manifest.get("states", [])) != FULL_BANK_V2_EXPECTED_STATES

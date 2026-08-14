@@ -99,7 +99,8 @@ _AUTHORITY_ARTIFACT_BINDING_KEYS = _ARTIFACT_BINDING_BASE_KEYS | {
     "schema", "source_repository_commit",
 }
 _MANIFEST_BUNDLE_KEYS = frozenset({
-    "design_authority", "selection", "selection_binding", "revalidation",
+    "design_authority", "source_correction", "source_correction_binding",
+    "source_correction_digest", "selection", "selection_binding", "revalidation",
     "revalidation_binding", "small_shard", "small_shard_binding",
     "state_manifest", "state_manifest_binding", "assignment_manifest",
     "assignment_manifest_binding",
@@ -286,6 +287,7 @@ def _protected_predecessor_contract() -> dict[str, Any]:
 def build_contract(
         *, source_binding: Mapping[str, Any],
         design_binding: Mapping[str, Any],
+        source_correction_binding: Mapping[str, Any],
         mask_classification_binding: Mapping[str, Any],
         selection_binding: Mapping[str, Any],
         revalidation_binding: Mapping[str, Any],
@@ -302,6 +304,9 @@ def build_contract(
     design = _artifact_binding(
         design_binding, label="corpus V2 design",
         self_key=DESIGN.DESIGN_SELF_KEY, authority_binding=True)
+    source_correction = _artifact_binding(
+        source_correction_binding, label="corpus V2 preselection source correction",
+        self_key=DESIGN.SOURCE_CORRECTION_SELF_KEY, authority_binding=True)
     masks = _artifact_binding(
         mask_classification_binding, label="rotation-mask classification",
         self_key=DESIGN.MASK_CLASSIFICATION_SELF_KEY, authority_binding=True)
@@ -326,6 +331,7 @@ def build_contract(
         "source_binding_digest": canonical_digest(source),
         "preoutcome_authority_bindings": {
             "design_amendment": design,
+            "preselection_source_correction": source_correction,
             "rotation_mask_classification": masks,
             "small_completion_selection": selection,
             "full_bank_state_revalidation": revalidation,
@@ -361,6 +367,8 @@ def build_contract(
         "protected_predecessor_scientific_contract":
             _protected_predecessor_contract(),
         "preoutcome_lineage": {
+            "scorer_fit_corpus_v2_source_correction_digest":
+                source_correction["self_digest"],
             "terminal_infeasibility_source_commit":
                 TERMINAL_INFEASIBILITY_SOURCE_COMMIT,
             "global_execution_amendment_digest":
@@ -432,13 +440,18 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
              "full-bank scorer corpus counts changed")
     authorities = contract.get("preoutcome_authority_bindings")
     _require(isinstance(authorities, Mapping) and set(authorities) == {
-        "design_amendment", "rotation_mask_classification",
+        "design_amendment", "preselection_source_correction",
+        "rotation_mask_classification",
         "small_completion_selection", "full_bank_state_revalidation",
         "state_identity_manifest", "expanded_assignment_manifest",
     }, "scorer-fit V2 authority binding schema is not closed")
     _artifact_binding(authorities["design_amendment"],
                       label="corpus V2 design",
                       self_key=DESIGN.DESIGN_SELF_KEY,
+                      authority_binding=True)
+    _artifact_binding(authorities["preselection_source_correction"],
+                      label="corpus V2 preselection source correction",
+                      self_key=DESIGN.SOURCE_CORRECTION_SELF_KEY,
                       authority_binding=True)
     _artifact_binding(authorities["rotation_mask_classification"],
                       label="rotation-mask classification",
@@ -466,6 +479,7 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
 def build_contract_artifact(
         *, source_binding: Mapping[str, Any],
         design_binding: Mapping[str, Any],
+        source_correction_binding: Mapping[str, Any],
         mask_classification_binding: Mapping[str, Any],
         selection_binding: Mapping[str, Any],
         revalidation_binding: Mapping[str, Any],
@@ -475,6 +489,7 @@ def build_contract_artifact(
     contract = build_contract(
         source_binding=source_binding,
         design_binding=design_binding,
+        source_correction_binding=source_correction_binding,
         mask_classification_binding=mask_classification_binding,
         selection_binding=selection_binding,
         revalidation_binding=revalidation_binding,
@@ -596,6 +611,8 @@ def _bindings_from_active_inputs(
              "active design authority payload is incomplete")
     return {
         "design_binding": dict(authority["design_amendment_binding"]),
+        "source_correction_binding": dict(
+            authority["source_correction_binding"]),
         "mask_classification_binding": dict(
             authority["rotation_mask_classification_binding"]),
         "selection_binding": dict(manifests["selection_binding"]),

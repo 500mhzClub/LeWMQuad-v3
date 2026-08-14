@@ -48,6 +48,57 @@ def _amendment() -> dict[str, object]:
     )
 
 
+def _issued_design_authority() -> dict[str, object]:
+    sources = _sources()
+    classification = design.build_rotation_mask_classification(
+        source_repository_commit=
+            design.ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT,
+        source_bindings=sources,
+        predecessor_validation=design.PREDECESSOR_VALIDATION_PROJECTION,
+    )
+    classification_raw = (
+        json.dumps(classification, sort_keys=True, indent=2) + "\n").encode()
+    classification_binding = (
+        design.rotation_mask_classification_artifact_binding(
+            classification, classification_raw))
+    amendment = design.build_design_amendment(
+        source_repository_commit=
+            design.ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT,
+        source_bindings=sources,
+        rotation_mask_classification_binding=classification_binding,
+        predecessor_validation=design.PREDECESSOR_VALIDATION_PROJECTION,
+    )
+    amendment_raw = (
+        json.dumps(amendment, sort_keys=True, indent=2) + "\n").encode()
+    return design.validate_immutable_issued_design_authority({
+        "rotation_mask_classification_payload": classification,
+        "rotation_mask_classification_binding": classification_binding,
+        "design_amendment_payload": amendment,
+        "design_amendment_binding": design.design_amendment_artifact_binding(
+            amendment, amendment_raw),
+    })
+
+
+def _corrected_sources() -> list[dict[str, object]]:
+    rows = _sources()
+    changed = set(design.SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    for index, row in enumerate(rows):
+        if row["path"] in changed:
+            row["byte_count"] = int(row["byte_count"]) + 10_000
+            row["sha256"] = f"{index + 10_000:064x}"
+    return rows
+
+
+def _source_correction() -> dict[str, object]:
+    return design.build_preselection_source_correction(
+        source_repository_commit="b" * 40,
+        source_bindings=_corrected_sources(),
+        immutable_issued_design_authority=_issued_design_authority(),
+        runtime_outputs_absent_at_issue=design._expected_absence_rows(
+            phase="design"),
+    )
+
+
 def test_rotation_inventory_is_closed_and_allocation_only() -> None:
     payload = _classification()
     assert design.validate_rotation_mask_classification(payload) == payload
@@ -221,3 +272,106 @@ def test_builders_are_pure_and_do_not_require_repository_or_generated_files(
     assert _amendment()["selection_field_policy"][
         "historical_receipts_used_for_selection"] is False
     assert not list(tmp_path.iterdir())
+
+
+def test_preselection_source_correction_preserves_science_and_exact_failure() -> None:
+    correction = _source_correction()
+    assert design.validate_preselection_source_correction(
+        correction, validate_live_authorities=False) == correction
+    issued = _issued_design_authority()
+    assert correction["preserved_scientific_design_digest"] == issued[
+        "design_amendment_payload"][design.DESIGN_SELF_KEY]
+    assert correction["preserved_rotation_mask_classification_digest"] == issued[
+        "rotation_mask_classification_payload"][
+            design.MASK_CLASSIFICATION_SELF_KEY]
+    assert correction["source_correction"][
+        "observed_changed_source_paths"] == sorted(
+            design.SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    failure = correction["preselection_alias_failure_boundary"]
+    assert failure == design.PRESELECTION_ALIAS_FAILURE_BOUNDARY
+    assert failure["predecessor_fixed_state_count_validated"] == 115
+    assert failure["eligible_small_completion_scene_count_validated"] == 17
+    assert failure["exclusion_authority_returned"] is False
+    assert failure["small_completion_selection_started"] is False
+    assert failure["preoutcome_manifest_or_selection_artifact_issued"] is False
+    assert failure["candidate_outcome_or_branch_label_read"] is False
+    assert failure["solver_or_optimisation_invoked"] is False
+
+
+def test_preselection_source_correction_is_closed_and_tamper_evident() -> None:
+    correction = _source_correction()
+    raw = (json.dumps(correction, sort_keys=True, indent=2) + "\n").encode()
+    binding = design.preselection_source_correction_artifact_binding(
+        correction, raw)
+    assert binding["self_digest"] == correction[
+        design.SOURCE_CORRECTION_SELF_KEY]
+    assert set(binding) == {
+        "path", "schema", "self_digest_key", "self_digest", "raw_sha256",
+        "byte_count", "source_repository_commit",
+    }
+    tampered = copy.deepcopy(correction)
+    tampered["preselection_alias_failure_boundary"][
+        "exclusion_authority_returned"] = True
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_preselection_source_correction(
+            tampered, validate_live_authorities=False)
+    extra = copy.deepcopy(correction)
+    extra["unregistered"] = True
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_preselection_source_correction(
+            extra, validate_live_authorities=False)
+
+
+def test_preselection_source_correction_rejects_wrong_source_delta() -> None:
+    sources = _corrected_sources()
+    unchanged_path = next(
+        row for row in sources
+        if row["path"] not in design.SOURCE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    unchanged_path["byte_count"] = int(unchanged_path["byte_count"]) + 1
+    unchanged_path["sha256"] = "f" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.build_preselection_source_correction(
+            source_repository_commit="b" * 40,
+            source_bindings=sources,
+            immutable_issued_design_authority=_issued_design_authority(),
+            runtime_outputs_absent_at_issue=design._expected_absence_rows(
+                phase="design"),
+        )
+
+
+def test_source_correction_issue_is_exclusive_read_only_and_double_audited(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    scorer_fit = tmp_path / design.SCORER_FIT_RELATIVE_PATH
+    scorer_fit.mkdir(parents=True)
+    issued = _issued_design_authority()
+    sources = _corrected_sources()
+    absence = design._expected_absence_rows(phase="design")
+    absence_calls: list[int] = []
+
+    monkeypatch.setattr(
+        design, "clean_source_authority",
+        lambda *, root: ("b" * 40, copy.deepcopy(sources)))
+    monkeypatch.setattr(
+        design, "_load_issued_design_authority_for_source_correction",
+        lambda *, root: copy.deepcopy(issued))
+
+    def audit(*, root: Path, phase: str) -> list[dict[str, object]]:
+        assert root == tmp_path
+        assert phase == "design"
+        absence_calls.append(1)
+        return copy.deepcopy(absence)
+
+    monkeypatch.setattr(design, "audit_v2_runtime_outputs_absent", audit)
+    correction = design.issue_preselection_source_correction(root=tmp_path)
+    assert len(absence_calls) == 2
+    path = tmp_path / design.SOURCE_CORRECTION_RELATIVE_PATH
+    assert stat.S_IMODE(path.stat().st_mode) == 0o444
+    assert correction[design.SOURCE_CORRECTION_SELF_KEY]
+    active = design.load_active_design_authority(root=tmp_path)
+    assert active["source_correction"] == correction
+    assert active["source_correction_digest"] == correction[
+        design.SOURCE_CORRECTION_SELF_KEY]
+    assert active["design_amendment"] == issued["design_amendment_payload"]
+    assert design.issue_preselection_source_correction(
+        root=tmp_path) == correction
+    assert len(absence_calls) == 2

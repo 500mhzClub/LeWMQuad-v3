@@ -50,6 +50,7 @@ from lewm.oracle.go2_scorer_contract_v1_2 import (  # noqa: E402
     _managed_scorer_contract_output_path,
 )
 from lewm.oracle import go2_scorer_fit_corpus_v2_scorer_contract as V2_CONTRACT  # noqa: E402
+from lewm.oracle import go2_scorer_fit_corpus_v2_design as V2_DESIGN  # noqa: E402
 from lewm.oracle.go2_candidate_allocation_v1_2 import (  # noqa: E402
     CandidateAllocationError, allocation_contract_digest,
     allocation_amendment_digest, allocation_manifest_digest,
@@ -178,6 +179,7 @@ SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
 SCORER_PROVENANCE_BINDING_KEYS = SELECTOR_BINDING_KEYS + LAUNCH_BINDING_KEYS
 FULL_BANK_V2_PROVENANCE_BINDING_KEYS = (
     "scorer_fit_corpus_v2_design_digest",
+    "scorer_fit_corpus_v2_source_correction_digest",
     "rotation_mask_classification_digest",
     "full_bank_small_completion_selection_digest",
     "full_bank_preoutcome_state_revalidation_digest",
@@ -2527,6 +2529,32 @@ def _validate_legacy_scorer_fit_corpus(
     }
 
 
+def _load_full_bank_v2_source_correction_authority(
+        ) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    """Validate corrected source lineage before consuming encoded outputs."""
+
+    try:
+        authority = V2_DESIGN.load_active_design_authority(root=ROOT)
+        artifact = V2_CONTRACT.load_contract_for_consumption(root=ROOT)
+        artifact = V2_CONTRACT.validate_contract_artifact(artifact)
+    except (OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
+        raise CorpusValidationError(
+            f"full-bank V2 source-correction authority rejected inputs: {exc}"
+        ) from exc
+    contract = artifact.get("contract")
+    lineage = (contract.get("preoutcome_lineage")
+               if isinstance(contract, Mapping) else None)
+    digest = authority.get("source_correction_digest")
+    _require(isinstance(digest, str)
+             and HEX64.fullmatch(digest) is not None
+             and isinstance(lineage, Mapping)
+             and lineage.get(
+                 "scorer_fit_corpus_v2_source_correction_digest") == digest,
+             "full-bank V2 active authority/successor source-correction "
+             "lineage changed")
+    return str(digest), dict(artifact), dict(contract)
+
+
 def _validate_full_bank_v2_scorer_fit_corpus(
         pool: str = EXPECTED_POOL, *,
         verify_encoder_checkpoint: bool = True,
@@ -2537,6 +2565,8 @@ def _validate_full_bank_v2_scorer_fit_corpus(
         raise CorpusValidationError(
             "full-bank V2 training is registered only for pool=scorer_fit")
     started = time.time()
+    correction_digest, live_artifact, live_contract = (
+        _load_full_bank_v2_source_correction_authority())
     from scripts import encode_go2_branch_corpus_v1_2 as ENCODER
 
     try:
@@ -2581,8 +2611,21 @@ def _validate_full_bank_v2_scorer_fit_corpus(
     _require(all(value == set(range(12)) for value in state_candidates.values()),
              "full-bank V2 candidates are not exact indices 0..11")
 
-    artifact = V2_CONTRACT.validate_contract_artifact(contract_artifact)
-    successor = artifact["contract"]
+    _require(dict(contract_artifact) == live_artifact,
+             "full-bank V2 encoder binds another successor contract")
+    artifact = live_artifact
+    successor = live_contract
+    _require(
+        manifest.get("scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest
+        and assignment.get(
+            "scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest
+        and isinstance(index.get("corpus_bound_digests"), Mapping)
+        and index["corpus_bound_digests"].get(
+            "scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest,
+        "full-bank V2 encoded corpus source-correction lineage changed")
     _require(successor["corpus_counts"]["branches"]
              == FULL_BANK_V2_EXPECTED_BRANCHES,
              "successor contract branch count changed")
@@ -2638,6 +2681,10 @@ def _validate_full_bank_v2_scorer_fit_corpus(
         for row in fit_rows
     ])
     bindings = dict(bundle.get("bindings", {}))
+    _require(bindings.get(
+        "scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest,
+        "full-bank V2 encoder source-correction binding changed")
     for key, value in (
         ("scorer_fit_corpus_v2_scorer_contract_digest",
          successor[V2_CONTRACT.CONTRACT_SELF_KEY]),

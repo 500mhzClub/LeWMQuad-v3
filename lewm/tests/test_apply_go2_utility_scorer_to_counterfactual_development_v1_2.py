@@ -57,11 +57,17 @@ class DevelopmentTransferTests(unittest.TestCase):
         bindings["scorer_fit_corpus_v2_scorer_contract_digest"] = "c" * 64
         bindings[
             "scorer_fit_corpus_v2_scorer_contract_artifact_digest"] = "a" * 64
+        bindings[
+            "scorer_fit_corpus_v2_source_correction_digest"] = "e" * 64
         qualification = dict(bindings)
         artifact = {
             T.S.V2_CONTRACT.ARTIFACT_SELF_KEY: "a" * 64,
             "contract": {
                 T.S.V2_CONTRACT.CONTRACT_SELF_KEY: "c" * 64,
+                "preoutcome_lineage": {
+                    "scorer_fit_corpus_v2_source_correction_digest": bindings[
+                        "scorer_fit_corpus_v2_source_correction_digest"],
+                },
                 "source_binding_digest": "s" * 64,
                 "final_200_state_evaluation_corpus_authorised": False,
             },
@@ -74,8 +80,17 @@ class DevelopmentTransferTests(unittest.TestCase):
             }},
         }
         with mock.patch.object(
+                T.V2_DESIGN, "load_active_design_authority",
+                return_value={
+                    "source_correction_digest": bindings[
+                        "scorer_fit_corpus_v2_source_correction_digest"],
+                }), \
+                mock.patch.object(
                 T.S.V2_CONTRACT, "load_contract_for_consumption",
                 return_value=artifact) as contract, \
+                mock.patch.object(
+                    T.S.V2_CONTRACT, "validate_contract_artifact",
+                    return_value=artifact), \
                 mock.patch.object(
                     T, "_validate_live_selector_provenance") as legacy, \
                 mock.patch.object(T.torch, "load") as load:
@@ -89,6 +104,42 @@ class DevelopmentTransferTests(unittest.TestCase):
             "PASS_LIVE_FULL_BANK_V2_PRE_WEIGHT_PROVENANCE_REVALIDATION")
         self.assertFalse(result["predictor_artifacts_opened_during_validation"])
         self.assertFalse(result["legacy_allocation_or_mask_validator_called"])
+
+    def test_full_bank_v2_source_correction_mismatch_precedes_weights_and_predictors(
+            self):
+        bindings = {
+            key: "a" * 64
+            for key in T.S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+        }
+        qualification = dict(bindings)
+        artifact = {
+            "contract": {
+                "preoutcome_lineage": {
+                    "scorer_fit_corpus_v2_source_correction_digest": "b" * 64,
+                },
+            },
+        }
+        terminal = {"corpus": {"bindings": bindings}}
+        with mock.patch.object(
+                T.V2_DESIGN, "load_active_design_authority",
+                return_value={"source_correction_digest": "a" * 64}), \
+                mock.patch.object(
+                    T.S.V2_CONTRACT, "load_contract_for_consumption",
+                    return_value=artifact), \
+                mock.patch.object(
+                    T.S.V2_CONTRACT, "validate_contract_artifact",
+                    return_value=artifact), \
+                mock.patch.object(T.torch, "load") as load, \
+                mock.patch.object(T, "validate_stage_a") as stage_a, \
+                mock.patch.object(T, "validate_bc_result") as predictions:
+            with self.assertRaisesRegex(
+                    T.DevelopmentTransferRefused,
+                    "source-correction lineage changed"):
+                T._validate_live_full_bank_v2_provenance(
+                    qualification, terminal)
+        load.assert_not_called()
+        stage_a.assert_not_called()
+        predictions.assert_not_called()
 
     def test_full_bank_v2_paths_and_transfer_scope_are_exact(self):
         self.assertEqual(T.V2_OUT_DIR.name,

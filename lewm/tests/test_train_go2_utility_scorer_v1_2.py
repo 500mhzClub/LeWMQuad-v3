@@ -27,6 +27,8 @@ class UtilityScorerTrainerTests(unittest.TestCase):
         self.assertEqual(counts["optimizer_updates_per_epoch"], 18)
         self.assertEqual(counts["optimizer_updates_per_model"], 1_080)
         self.assertEqual(counts["example_presentations_per_model"], 69_120)
+        self.assertIn("scorer_fit_corpus_v2_source_correction_digest",
+                      scorer.FULL_BANK_V2_PROVENANCE_BINDING_KEYS)
         self.assertTrue(scorer.full_bank_v2_completion_degeneracy(
             [{"completion": 0}, {"completion": 1}],
             [{"completion": 1}, {"completion": 0}])["pass"])
@@ -36,7 +38,27 @@ class UtilityScorerTrainerTests(unittest.TestCase):
 
     def test_full_bank_v2_validator_enters_only_encoder_producer(self):
         from scripts import encode_go2_branch_corpus_v1_2 as encoder
+        correction_digest = "a" * 64
+        artifact = {
+            "contract": {
+                "preoutcome_lineage": {
+                    "scorer_fit_corpus_v2_source_correction_digest":
+                        correction_digest,
+                },
+            },
+        }
         with mock.patch.object(
+                scorer.V2_DESIGN, "load_active_design_authority",
+                return_value={
+                    "source_correction_digest": correction_digest,
+                }), \
+                mock.patch.object(
+                    scorer.V2_CONTRACT, "load_contract_for_consumption",
+                    return_value=artifact), \
+                mock.patch.object(
+                    scorer.V2_CONTRACT, "validate_contract_artifact",
+                    return_value=artifact), \
+                mock.patch.object(
                 encoder,
                 "load_and_validate_full_bank_v2_encoded_corpus_for_consumption",
                 return_value={}) as producer, \
@@ -57,6 +79,37 @@ class UtilityScorerTrainerTests(unittest.TestCase):
         producer.assert_called_once()
         legacy.assert_not_called()
         alloc.assert_not_called()
+
+    def test_full_bank_v2_source_correction_mismatch_precedes_encoder_producer(
+            self):
+        from scripts import encode_go2_branch_corpus_v1_2 as encoder
+        artifact = {
+            "contract": {
+                "preoutcome_lineage": {
+                    "scorer_fit_corpus_v2_source_correction_digest": "b" * 64,
+                },
+            },
+        }
+        with mock.patch.object(
+                scorer.V2_DESIGN, "load_active_design_authority",
+                return_value={"source_correction_digest": "a" * 64}), \
+                mock.patch.object(
+                    scorer.V2_CONTRACT, "load_contract_for_consumption",
+                    return_value=artifact), \
+                mock.patch.object(
+                    scorer.V2_CONTRACT, "validate_contract_artifact",
+                    return_value=artifact), \
+                mock.patch.object(
+                    encoder,
+                    "load_and_validate_full_bank_v2_encoded_corpus_for_consumption",
+                    side_effect=AssertionError("encoder producer opened")) as producer:
+            with self.assertRaisesRegex(
+                    scorer.CorpusValidationError,
+                    "source-correction lineage changed"):
+                scorer._validate_full_bank_v2_scorer_fit_corpus(
+                    verify_encoder_checkpoint=False,
+                    verify_frame_paths=False)
+        producer.assert_not_called()
 
     def test_full_bank_v2_degeneracy_gate_precedes_features_and_models(self):
         source = inspect.getsource(scorer.main)

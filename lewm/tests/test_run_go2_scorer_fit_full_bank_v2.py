@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Mapping
 
 import pytest
@@ -438,3 +439,73 @@ def test_issue_design_calls_classification_before_amendment(tmp_path: Path) -> N
     assert report["rotation_mask_classification_digest"] == HEX_A
     assert report["scorer_fit_corpus_v2_design_digest"] == HEX_B
     assert report["solver_or_optimisation_used"] is False
+
+
+def test_issue_source_correction_replays_active_authority_before_selection(
+        tmp_path: Path) -> None:
+    events: list[str] = []
+
+    class FakeDesign:
+        DESIGN_SELF_KEY = "design_digest"
+        SOURCE_CORRECTION_SELF_KEY = "correction_digest"
+
+        def issue_preselection_source_correction(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("issue-correction")
+            return {"correction_digest": HEX_C}
+
+        def load_active_design_authority(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("active-replay")
+            return {
+                "design_amendment": {"design_digest": HEX_B},
+                "source_correction": {"correction_digest": HEX_C},
+                "source_correction_digest": HEX_C,
+                "candidate_outcomes_consumed": False,
+            }
+
+    report = runner.issue_source_correction(
+        root=tmp_path, design=FakeDesign())
+    assert events == ["issue-correction", "active-replay"]
+    assert report["scorer_fit_corpus_v2_design_digest"] == HEX_B
+    assert report["scorer_fit_corpus_v2_source_correction_digest"] == HEX_C
+    assert report["selection_started"] is False
+    assert report["solver_or_optimisation_used"] is False
+
+
+def test_parser_exposes_source_correction_before_manifest_stage() -> None:
+    correction = runner._parser().parse_args(
+        ["--stage", "issue-source-correction"])
+    manifests = runner._parser().parse_args(
+        ["--stage", "freeze-manifests"])
+    assert correction.stage == "issue-source-correction"
+    assert manifests.stage == "freeze-manifests"
+
+
+def test_preoutcome_failure_binds_corrected_source_and_immutable_design() -> None:
+    authority = {
+        "design_amendment": {
+            runner.DESIGN.DESIGN_SELF_KEY: HEX_A,
+            "source_repository_commit": "1" * 40,
+        },
+        "rotation_mask_classification": {
+            runner.DESIGN.MASK_CLASSIFICATION_SELF_KEY: HEX_B,
+        },
+        "source_correction_digest": HEX_C,
+        "active_source_repository_commit": "2" * 40,
+    }
+    failure = SimpleNamespace(
+        ordered_scene_ids=[f"scene-{index:02d}" for index in range(17)],
+        fit_count=3,
+        calibration_count=1,
+        reason="fixture full-bank insufficiency",
+    )
+    receipt = runner._build_feasibility_failure(
+        failure, authority=authority)
+    assert receipt["source_repository_commit"] == "2" * 40
+    assert receipt["scorer_fit_corpus_v2_design_digest"] == HEX_A
+    assert receipt["scorer_fit_corpus_v2_source_correction_digest"] == HEX_C
+    assert runner._validate_feasibility_failure(
+        receipt, authority=authority) == receipt

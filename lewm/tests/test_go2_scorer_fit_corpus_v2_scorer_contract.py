@@ -37,6 +37,8 @@ def _inputs() -> dict:
         },
         "design_binding": _binding(
             C.DESIGN.DESIGN_SELF_KEY, "1", authority=True),
+        "source_correction_binding": _binding(
+            C.DESIGN.SOURCE_CORRECTION_SELF_KEY, "7", authority=True),
         "mask_classification_binding": _binding(
             C.DESIGN.MASK_CLASSIFICATION_SELF_KEY, "2", authority=True),
         "selection_binding": _binding(
@@ -63,6 +65,8 @@ def test_successor_preserves_science_and_interprets_epoch_budget_exactly():
     assert budget["example_presentations_per_model"] == 69_120
     assert budget["step_budget_also_retained"] is False
     lineage = contract["preoutcome_lineage"]
+    assert lineage["scorer_fit_corpus_v2_source_correction_digest"] \
+        == "7" * 64
     assert lineage["v1_parallel_failure_receipt_digest"] \
         == C.V1_FAILURE_RECEIPT_DIGEST
     assert lineage["exact_infeasibility_digest"] == C.EXACT_INFEASIBILITY_DIGEST
@@ -120,8 +124,10 @@ def test_active_binding_projection_uses_producer_supplied_raw_bindings(monkeypat
     inputs = _inputs()
     authority = {
         "design_amendment": {"payload": "design"},
+        "source_correction": {"payload": "source-correction"},
         "rotation_mask_classification": {"payload": "masks"},
         "design_amendment_binding": inputs["design_binding"],
+        "source_correction_binding": inputs["source_correction_binding"],
         "rotation_mask_classification_binding":
             inputs["mask_classification_binding"],
     }
@@ -134,8 +140,30 @@ def test_active_binding_projection_uses_producer_supplied_raw_bindings(monkeypat
     projected = C._bindings_from_active_inputs(authority, manifests)
     assert projected == {
         key: inputs[key] for key in (
-            "design_binding", "mask_classification_binding",
+            "design_binding", "source_correction_binding",
+            "mask_classification_binding",
             "selection_binding", "revalidation_binding",
             "state_manifest_binding", "assignment_manifest_binding",
         )
     }
+
+
+def test_active_inputs_accept_exact_correction_aware_manifest_bundle(
+        monkeypatch, tmp_path):
+    from scripts import build_go2_branch_corpus_v1_2 as builder
+
+    authority = {"authority": "fixture"}
+    manifests = {
+        key: ({"authority": "fixture"}
+              if key == "design_authority" else f"fixture-{key}")
+        for key in C._MANIFEST_BUNDLE_KEYS
+    }
+    monkeypatch.setattr(
+        C.DESIGN, "load_active_design_authority",
+        lambda **_kwargs: authority)
+    monkeypatch.setattr(
+        builder, "load_and_validate_full_bank_v2_manifests_for_consumption",
+        lambda **_kwargs: manifests)
+    loaded_authority, loaded_manifests = C._active_inputs(root=tmp_path)
+    assert loaded_authority == authority
+    assert loaded_manifests == manifests

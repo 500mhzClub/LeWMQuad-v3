@@ -5,6 +5,7 @@ This runner is deliberately narrow.  It never invokes a MILP, CP-SAT model,
 candidate-subset allocator, or performance benchmark.  Its public stages are:
 
 * ``issue-design``: issue the rotation-mask classification, then the design;
+* ``issue-source-correction``: bind the preselection registered-alias repair;
 * ``freeze-manifests``: deterministically freeze the five pre-outcome files;
 * ``issue-scorer-contract``: issue the successor contract before a branch;
 * ``run``: execute the registered smoke/recovery/corpus/training pipeline; and
@@ -110,11 +111,15 @@ DeleteRegisteredShard = Callable[[Mapping[str, Any], Path], None]
 class _DesignAuthority(Protocol):
     DESIGN_SELF_KEY: str
     MASK_CLASSIFICATION_SELF_KEY: str
+    SOURCE_CORRECTION_SELF_KEY: str
 
     def issue_rotation_mask_classification(
             self, *, root: Path) -> Mapping[str, Any]: ...
 
     def issue_design_amendment(
+            self, *, root: Path) -> Mapping[str, Any]: ...
+
+    def issue_preselection_source_correction(
             self, *, root: Path) -> Mapping[str, Any]: ...
 
 
@@ -286,6 +291,33 @@ def issue_design(*, root: Path = ROOT, design: Any = DESIGN) -> dict[str, Any]:
     }
 
 
+def issue_source_correction(
+        *, root: Path = ROOT, design: Any = DESIGN) -> dict[str, Any]:
+    """Issue the sole source-only bridge from immutable design to selection."""
+
+    correction = design.issue_preselection_source_correction(root=root)
+    active = design.load_active_design_authority(root=root)
+    if (not isinstance(correction, Mapping)
+            or not isinstance(active, Mapping)
+            or active.get("source_correction") != correction
+            or active.get("source_correction_digest")
+            != correction.get(design.SOURCE_CORRECTION_SELF_KEY)
+            or active.get("candidate_outcomes_consumed") is not False):
+        raise FullBankV2RunnerError(
+            "issued preselection source correction changed on active replay")
+    return {
+        "stage": "issue-source-correction",
+        "status": "PASS_PRESELECTION_SOURCE_CORRECTION_ISSUED",
+        "scorer_fit_corpus_v2_design_digest": active["design_amendment"][
+            design.DESIGN_SELF_KEY],
+        "scorer_fit_corpus_v2_source_correction_digest": correction[
+            design.SOURCE_CORRECTION_SELF_KEY],
+        "candidate_outcomes_consumed": False,
+        "selection_started": False,
+        "solver_or_optimisation_used": False,
+    }
+
+
 def _manifest_paths(root: Path) -> dict[str, Path]:
     return {
         key: _pin_relative(
@@ -311,8 +343,11 @@ def _build_feasibility_failure(
         "schema": FEASIBILITY_FAILURE_SCHEMA,
         "status": FEASIBILITY_FAILURE_STATUS,
         "complete": True,
-        "source_repository_commit": design["source_repository_commit"],
+        "source_repository_commit": authority[
+            "active_source_repository_commit"],
         "scorer_fit_corpus_v2_design_digest": design[DESIGN.DESIGN_SELF_KEY],
+        "scorer_fit_corpus_v2_source_correction_digest": authority[
+            "source_correction_digest"],
         "rotation_mask_classification_digest": classification[
             DESIGN.MASK_CLASSIFICATION_SELF_KEY],
         "active_global_exact_amendment_digest":
@@ -359,6 +394,10 @@ def _validate_feasibility_failure(
             != canonical_digest(_without(payload, FEASIBILITY_FAILURE_SELF_KEY))
             or payload.get("scorer_fit_corpus_v2_design_digest")
             != authority["design_amendment"][DESIGN.DESIGN_SELF_KEY]
+            or payload.get("source_repository_commit")
+            != authority["active_source_repository_commit"]
+            or payload.get("scorer_fit_corpus_v2_source_correction_digest")
+            != authority["source_correction_digest"]
             or payload.get("rotation_mask_classification_digest")
             != authority["rotation_mask_classification"][
                 DESIGN.MASK_CLASSIFICATION_SELF_KEY]
@@ -415,6 +454,10 @@ def freeze_manifests(
         bundle = builder.build_scorer_fit_v2_full_bank_bundle(
             design=authority["design_amendment"],
             classification=authority["rotation_mask_classification"],
+            source_correction=authority["source_correction"],
+            source_correction_binding=authority[
+                "source_correction_binding"],
+            source_correction_digest=authority["source_correction_digest"],
             predecessor_inputs=loaded["predecessor_inputs"],
             allowed_scene_ids_by_family=loaded[
                 "allowed_scene_ids_by_family"],
@@ -496,6 +539,8 @@ def freeze_manifests(
     return 0, {
         "stage": "freeze-manifests",
         "status": "PASS_FULL_BANK_V2_MANIFESTS_FROZEN",
+        "scorer_fit_corpus_v2_source_correction_digest": authority[
+            "source_correction_digest"],
         "selected_small_completion_scene_ids": list(
             replay["selection"]["selected_scene_ids"]),
         "state_count": len(state_manifest["states"]),
@@ -1322,6 +1367,9 @@ def assemble_status_report(*, root: Path = ROOT) -> dict[str, Any]:
             self_key=DESIGN.MASK_CLASSIFICATION_SELF_KEY),
         "design_amendment": _binding_if_present(
             root, DESIGN.DESIGN_RELATIVE_PATH, self_key=DESIGN.DESIGN_SELF_KEY),
+        "preselection_source_correction": _binding_if_present(
+            root, DESIGN.SOURCE_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.SOURCE_CORRECTION_SELF_KEY),
         "feasibility_failure": _binding_if_present(
             root, FEASIBILITY_FAILURE_RELATIVE_PATH,
             self_key=FEASIBILITY_FAILURE_SELF_KEY),
@@ -1774,7 +1822,8 @@ def _optional_development_terminal_projection(*, root: Path) -> dict[str, Any]:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", required=True, choices=(
-        "issue-design", "freeze-manifests", "issue-scorer-contract", "run",
+        "issue-design", "issue-source-correction", "freeze-manifests",
+        "issue-scorer-contract", "run",
         "status", "internal-probe-genesis", "internal-probe-rocm",
         "internal-validate-branch-smoke", "internal-validate-encoding-smoke",
         "internal-validate-encoding-smoke-optional",
@@ -1802,6 +1851,9 @@ def main(argv: list[str] | None = None) -> int:
         return _emit_validation(args.stage.removeprefix("internal-validate-"))
     if args.stage == "issue-design":
         report = issue_design()
+        code = 0
+    elif args.stage == "issue-source-correction":
+        report = issue_source_correction()
         code = 0
     elif args.stage == "freeze-manifests":
         code, report = freeze_manifests()

@@ -119,9 +119,15 @@ V11_IDENTITY_MANIFEST_DIGEST = (
 V12_IDENTITY_MANIFEST_DIGEST = (
     "5f380bf7f49ef10437c7d9644f04dbef065f0550dfd30d0ec36208cda25d08cf"
 )
+DEVELOPMENT_240_GENERATED_ROOT = (
+    ROOT / ".generated/go2_counterfactual_fidelity_v1_2"
+)
+DEVELOPMENT_240_REGISTERED_TARGET_ROOT = Path(
+    "/home/andrewknowles/.local/share/lewm_go2_planning_utility_v1_2/"
+    "active/go2_counterfactual_fidelity_v1_2"
+)
 DEVELOPMENT_240_IDENTITY_MANIFEST = (
-    ROOT / ".generated/go2_counterfactual_fidelity_v1_2/"
-    "stage_a_identity_manifest.json"
+    DEVELOPMENT_240_GENERATED_ROOT / "stage_a_identity_manifest.json"
 )
 
 # ---- frozen strata (scorer-fit only), snapshot-time geometry only -------------
@@ -166,6 +172,9 @@ SCORER_FIT_V2_ASSIGNMENT_COUNT = 1_440
 SCORER_FIT_V2_CANDIDATE_INDICES = tuple(range(12))
 SCORER_FIT_V2_OPTIONAL_HISTORICAL_ROTATION_VECTOR_COUNT = 17
 SCORER_FIT_V2_PRESERVED_HISTORICAL_ROTATION_VECTOR_COUNT = 7
+SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY = (
+    "scorer_fit_corpus_v2_source_correction_digest"
+)
 SCORER_FIT_V2_SELECTION_SCHEMA = (
     "go2_scorer_fit_corpus_v2_small_completion_selection_v1"
 )
@@ -705,6 +714,83 @@ def _frozen_generated_artifact_path(
     # therefore rejects a symlinked receipt, census, family directory, or shard.
     _assert_unsealed_path(canonical_path)
     return canonical_path
+
+
+def _pinned_development_240_identity_manifest(
+        *, logical_path: Path = DEVELOPMENT_240_IDENTITY_MANIFEST,
+        registered_alias_root: Path = DEVELOPMENT_240_GENERATED_ROOT,
+        registered_target_root: Path =
+        DEVELOPMENT_240_REGISTERED_TARGET_ROOT) -> Path:
+    """Pin the one registered development identity artifact behind its alias.
+
+    This is deliberately narrower than general generated-artifact traversal:
+    the logical leaf, repository alias and physical target are all fixed.  The
+    root alias is the only symlink admitted; every ancestor of both roots and
+    the complete physical leaf remain subject to the ordinary sealed/symlink
+    guard.
+    """
+
+    logical = Path(logical_path)
+    alias_root = Path(registered_alias_root)
+    target_root = Path(registered_target_root)
+    expected_leaf = "stage_a_identity_manifest.json"
+    if (
+        not logical.is_absolute()
+        or not alias_root.is_absolute()
+        or not target_root.is_absolute()
+        or logical != alias_root / expected_leaf
+    ):
+        raise RuntimeError(
+            "development-240 identity path is not the registered logical leaf")
+    for label, path in (
+            ("development-240 logical path", logical),
+            ("development-240 alias root", alias_root),
+            ("development-240 target root", target_root)):
+        if any(part == ".." or part == "sealed_test.json" or part == "sealed"
+               or part.startswith("sealed_") for part in path.parts):
+            raise RuntimeError(f"{label} crosses inaccessible custody")
+
+    # The repository ancestry is ordinary custody.  Only the final registered
+    # generated root may be an alias.
+    _assert_unsealed_path(alias_root.parent)
+    if not alias_root.is_symlink():
+        raise RuntimeError(
+            "development-240 registered generated-root alias is missing")
+    raw_target = alias_root.readlink()
+    if any(part == ".." or part == "sealed_test.json" or part == "sealed"
+           or part.startswith("sealed_") for part in raw_target.parts):
+        raise RuntimeError(
+            "development-240 registered alias target crosses inaccessible custody")
+    observed_target = (raw_target if raw_target.is_absolute()
+                       else alias_root.parent / raw_target)
+    if observed_target != target_root:
+        raise RuntimeError(
+            "development-240 registered alias target identity changed")
+
+    _assert_unsealed_path(target_root)
+    try:
+        canonical_root = target_root.resolve(strict=True)
+    except OSError as exc:
+        raise RuntimeError(
+            "development-240 registered target root is missing") from exc
+    if canonical_root != target_root or not canonical_root.is_dir():
+        raise RuntimeError(
+            "development-240 registered target root identity changed")
+
+    pinned = canonical_root / expected_leaf
+    _assert_unsealed_path(pinned)
+    if pinned.is_symlink() or not pinned.is_file():
+        raise RuntimeError(
+            "development-240 registered identity manifest is missing")
+    try:
+        resolved = pinned.resolve(strict=True)
+    except OSError as exc:  # pragma: no cover - is_file checked above
+        raise RuntimeError(
+            "development-240 registered identity manifest is missing") from exc
+    if resolved != pinned:
+        raise RuntimeError(
+            "development-240 registered identity manifest identity changed")
+    return resolved
 
 
 def _load_current_reissue_validation_interruption() -> dict[str, Any]:
@@ -1824,6 +1910,8 @@ def scene_pool(pool_name: str) -> tuple[dict[str, list[Path]], dict[str, Any]]:
                     "state_manifest_digest"],
                 "scorer_fit_corpus_v2_design_digest": scorer_manifest[
                     "scorer_fit_corpus_v2_design_digest"],
+                SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY: scorer_manifest[
+                    SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY],
                 "full_bank_assignment_manifest_digest": scorer_manifest[
                     "full_bank_assignment_manifest_digest"],
                 "scene_count": 120,
@@ -8298,7 +8386,7 @@ def deterministic_full_bank_completion_selection(
         candidate_revalidation: Mapping[str, Mapping[str, Any]],
         identity_bindings: Mapping[str, Any], domain_separator: str,
         selector_digest: str, design_digest: str,
-        mask_classification_digest: str,
+        mask_classification_digest: str, source_correction_digest: str,
         ) -> dict[str, Any]:
     """Select one calibration plus four fit scenes in one frozen hash order."""
 
@@ -8306,8 +8394,9 @@ def deterministic_full_bank_completion_selection(
             or len({str(row.get("scene_id", ""))
                     for row in raw_candidates}) != 17):
         raise RuntimeError("full-bank completion pool is not the frozen 17 scenes")
-    if not _is_sha256(design_digest) or not _is_sha256(
-            mask_classification_digest):
+    if any(not _is_sha256(value) for value in (
+            design_digest, mask_classification_digest,
+            source_correction_digest)):
         raise RuntimeError("full-bank design authority digest is malformed")
     ordered: list[tuple[tuple[str, bytes], Mapping[str, Any], dict[str, Any]]] = []
     for candidate in raw_candidates:
@@ -8380,6 +8469,8 @@ def deterministic_full_bank_completion_selection(
         "complete": True,
         "scorer_fit_corpus_v2_design_digest": design_digest,
         "rotation_mask_classification_digest": mask_classification_digest,
+        SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+            source_correction_digest,
         "active_selector_contract_digest": selector_digest,
         "ordering_domain_separator": domain_separator,
         "ordering_rule": (
@@ -8413,13 +8504,17 @@ def load_full_bank_v2_exclusion_authority() -> dict[str, Any]:
 
     v11_path = V1.OUT_DIR / "identity_manifest.json"
     v12_path = V12.OUT_DIR / "state_manifest.json"
-    for path in (v11_path, v12_path, DEVELOPMENT_240_IDENTITY_MANIFEST):
+    for path in (v11_path, v12_path):
         _assert_unsealed_path(path)
         if not path.is_file() or path.is_symlink():
             raise RuntimeError(f"full-bank exclusion authority is missing: {path}")
+    development_path = _pinned_development_240_identity_manifest(
+        logical_path=DEVELOPMENT_240_IDENTITY_MANIFEST,
+        registered_alias_root=DEVELOPMENT_240_GENERATED_ROOT,
+        registered_target_root=DEVELOPMENT_240_REGISTERED_TARGET_ROOT)
     v11 = json.loads(v11_path.read_text())
     v12 = json.loads(v12_path.read_text())
-    development = json.loads(DEVELOPMENT_240_IDENTITY_MANIFEST.read_text())
+    development = json.loads(development_path.read_text())
     _verify_self_digest(
         v11, "identity_manifest_digest", "oracle-v1.1 exclusion manifest")
     _verify_self_digest(
@@ -8493,8 +8588,8 @@ def load_full_bank_v2_exclusion_authority() -> dict[str, Any]:
             "path": str(DEVELOPMENT_240_IDENTITY_MANIFEST.relative_to(ROOT)),
             "stage_a_identity_manifest_digest": development[
                 "stage_a_identity_manifest_digest"],
-            "raw_sha256": file_sha256(DEVELOPMENT_240_IDENTITY_MANIFEST),
-            "byte_count": DEVELOPMENT_240_IDENTITY_MANIFEST.stat().st_size,
+            "raw_sha256": file_sha256(development_path),
+            "byte_count": development_path.stat().st_size,
             "state_count": 20,
             "branch_count": 240,
             "scene_ids": sorted(development_scenes),
@@ -8769,7 +8864,8 @@ def build_full_bank_v2_preoutcome_revalidation(
         exclusion_binding: Mapping[str, Any],
         preserved_vectors: Mapping[str, Mapping[str, Any]],
         predecessor_custody: Mapping[str, Any], design_digest: str,
-        mask_classification_digest: str, selection_digest: str,
+        mask_classification_digest: str, source_correction_digest: str,
+        selection_digest: str,
         verify_scene_files: bool = True,
         ) -> dict[str, Any]:
     """Revalidate the exact retained 115 and selected five without outcomes."""
@@ -8777,8 +8873,14 @@ def build_full_bank_v2_preoutcome_revalidation(
     if len(fixed_states) != 115 or len(selected_states) != 5:
         raise RuntimeError("full-bank revalidation requires exact 115+5 states")
     if any(not _is_sha256(value) for value in (
-            design_digest, mask_classification_digest, selection_digest)):
+            design_digest, mask_classification_digest,
+            source_correction_digest, selection_digest)):
         raise RuntimeError("full-bank revalidation lineage digest is malformed")
+    if predecessor_custody.get(
+            SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY) \
+            != source_correction_digest:
+        raise RuntimeError(
+            "full-bank revalidation source-correction custody changed")
     states = _joint_state_order([*fixed_states, *selected_states])
     _full_bank_v2_validate_exclusion_authority(
         exclusion_authority,
@@ -8814,6 +8916,8 @@ def build_full_bank_v2_preoutcome_revalidation(
         "complete": True,
         "scorer_fit_corpus_v2_design_digest": design_digest,
         "rotation_mask_classification_digest": mask_classification_digest,
+        SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+            source_correction_digest,
         "full_bank_small_completion_selection_digest": selection_digest,
         "predecessor_custody": dict(predecessor_custody),
         "predecessor_custody_digest": custody_digest,
@@ -8847,12 +8951,18 @@ def build_full_bank_v2_preoutcome_revalidation(
 
 def _full_bank_v2_identity_projection(
         *, states: Sequence[Mapping[str, Any]], design_digest: str,
+        source_correction_digest: str,
         selection_digest_value: str, revalidation_digest: str,
         selector_digest: str) -> dict[str, Any]:
+    if not _is_sha256(source_correction_digest):
+        raise RuntimeError(
+            "full-bank identity source correction digest is malformed")
     ordered = _joint_state_order(states)
     payload = {
         "schema": SCORER_FIT_V2_IDENTITY_PROJECTION_SCHEMA,
         "scorer_fit_corpus_v2_design_digest": design_digest,
+        SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+            source_correction_digest,
         "active_selector_contract_digest": selector_digest,
         "full_bank_small_completion_selection_digest":
             selection_digest_value,
@@ -8998,12 +9108,14 @@ def _full_bank_v2_assignment_counts(
 
 def build_full_bank_v2_assignment_manifest(
         *, states: Sequence[Mapping[str, Any]], design_digest: str,
+        source_correction_digest: str,
         identity_projection_digest: str,
         revalidation_digest: str) -> dict[str, Any]:
     """Expand the 120 outcome-free states to the exact 1,440 assignments."""
 
     if any(not _is_sha256(value) for value in (
-            design_digest, identity_projection_digest, revalidation_digest)):
+            design_digest, source_correction_digest,
+            identity_projection_digest, revalidation_digest)):
         raise RuntimeError("full-bank assignment lineage digest is malformed")
     ordered = _joint_state_order(states)
     assignments: list[dict[str, Any]] = []
@@ -9013,6 +9125,8 @@ def build_full_bank_v2_assignment_manifest(
             row = {
                 "schema": "go2_scorer_fit_corpus_v2_assignment_identity_v1",
                 "scorer_fit_corpus_v2_design_digest": design_digest,
+                SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+                    source_correction_digest,
                 "state_identity_projection_digest": identity_projection_digest,
                 "state_id": str(state["state_id"]),
                 "state_identity_digest": str(state["state_identity_digest"]),
@@ -9034,6 +9148,8 @@ def build_full_bank_v2_assignment_manifest(
         "status": STATUS,
         "complete": True,
         "scorer_fit_corpus_v2_design_digest": design_digest,
+        SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+            source_correction_digest,
         "state_identity_projection_digest": identity_projection_digest,
         "full_bank_preoutcome_state_revalidation_digest":
             revalidation_digest,
@@ -9054,8 +9170,11 @@ def build_full_bank_v2_assignment_manifest(
 def _build_full_bank_v2_small_shard(
         *, prefix: Mapping[str, Any], selected_states: Sequence[Mapping[str, Any]],
         design_digest: str, mask_classification_digest: str,
-        selection_digest_value: str, revalidation_digest: str,
+        source_correction_digest: str, selection_digest_value: str,
+        revalidation_digest: str,
         ) -> dict[str, Any]:
+    if not _is_sha256(source_correction_digest):
+        raise RuntimeError("full-bank small shard correction digest is malformed")
     prefix_states = prefix.get("states")
     if not isinstance(prefix_states, list) or len(prefix_states) != 10:
         raise RuntimeError("full-bank V2 small prefix changed")
@@ -9075,6 +9194,8 @@ def _build_full_bank_v2_small_shard(
         "spec": SCORER_FIT_V2_SPEC,
         "scorer_fit_corpus_v2_design_digest": design_digest,
         "rotation_mask_classification_digest": mask_classification_digest,
+        SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+            source_correction_digest,
         "full_bank_small_completion_selection_digest":
             selection_digest_value,
         "full_bank_preoutcome_state_revalidation_digest":
@@ -9095,12 +9216,22 @@ def _build_full_bank_v2_small_shard(
 def build_full_bank_v2_state_manifest(
         *, states: Sequence[Mapping[str, Any]], common: Mapping[str, Any],
         design_digest: str, mask_classification_digest: str,
+        source_correction_digest: str,
         selection: Mapping[str, Any], revalidation: Mapping[str, Any],
         small_shard: Mapping[str, Any],
         assignment_manifest: Mapping[str, Any],
         identity_projection: Mapping[str, Any],
         predecessor_custody: Mapping[str, Any],
         exclusion_binding: Mapping[str, Any]) -> dict[str, Any]:
+    if (not _is_sha256(source_correction_digest)
+            or any(artifact.get(
+                SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY)
+                != source_correction_digest for artifact in (
+                    selection, revalidation, small_shard,
+                    assignment_manifest, identity_projection,
+                    predecessor_custody))):
+        raise RuntimeError(
+            "full-bank state manifest source-correction lineage changed")
     ordered = _joint_state_order(states)
     quotas = _full_bank_v2_validate_state_quotas(ordered)
     assignments = assignment_manifest.get("assignments")
@@ -9134,6 +9265,8 @@ def build_full_bank_v2_state_manifest(
     successor_projection = {
         "corpus_design_version": "scorer_fit_corpus_v2_full_bank_v1",
         "scorer_fit_corpus_v2_design_digest": design_digest,
+        SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+            source_correction_digest,
         "state_selector_binding": {
             "state_selector_amendment_digest": inherited[
                 "state_selector_amendment_digest"],
@@ -9149,6 +9282,8 @@ def build_full_bank_v2_state_manifest(
         "candidate_exposure_counts": assignment_manifest[
             "algebraic_validation"],
         "preoutcome_lineage_digest": canonical_digest({
+            SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+                source_correction_digest,
             "predecessor_custody": dict(predecessor_custody),
             "selection": selection[
                 "full_bank_small_completion_selection_digest"],
@@ -9164,6 +9299,8 @@ def build_full_bank_v2_state_manifest(
         "spec": SCORER_FIT_V2_SPEC,
         "scorer_fit_corpus_v2_design_digest": design_digest,
         "rotation_mask_classification_digest": mask_classification_digest,
+        SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+            source_correction_digest,
         "full_bank_small_completion_selection_digest": selection[
             "full_bank_small_completion_selection_digest"],
         "full_bank_preoutcome_state_revalidation_digest": revalidation[
@@ -9202,7 +9339,10 @@ def build_full_bank_v2_state_manifest(
 
 
 def _full_bank_v2_predecessor_custody(
-        inputs: Mapping[str, Any]) -> dict[str, Any]:
+        inputs: Mapping[str, Any], *,
+        source_correction: Mapping[str, Any],
+        source_correction_binding: Mapping[str, Any],
+        source_correction_digest: str) -> dict[str, Any]:
     fixed_evidence = inputs.get("fixed_shard_evidence")
     fixed_states = inputs.get("fixed_states")
     raw_candidates = inputs.get("raw_candidates")
@@ -9216,8 +9356,22 @@ def _full_bank_v2_predecessor_custody(
             or not isinstance(inputs.get(
                 "predecessor_scientific_input_bindings"), Mapping)):
         raise RuntimeError("full-bank predecessor custody is incomplete")
+    if (not isinstance(source_correction, Mapping)
+            or not isinstance(source_correction_binding, Mapping)
+            or not _is_sha256(source_correction_digest)
+            or source_correction.get(
+                SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY)
+            != source_correction_digest
+            or source_correction_binding.get("self_digest")
+            != source_correction_digest):
+        raise RuntimeError(
+            "full-bank predecessor custody source correction changed")
     payload = {
         "schema": "go2_scorer_fit_corpus_v2_predecessor_custody_v1",
+        "source_correction": dict(source_correction),
+        "source_correction_binding": dict(source_correction_binding),
+        SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY:
+            source_correction_digest,
         "fixed_non_small_family_state_count": 105,
         "fixed_non_small_family_shard_count": 7,
         "fixed_non_small_family_shard_evidence": [
@@ -9309,8 +9463,49 @@ def _full_bank_v2_validate_design_payloads(
         str(authority.COMPLETION_ORDER_DOMAIN))
 
 
+def _full_bank_v2_validate_source_correction_authority(
+        *, source_correction: Mapping[str, Any],
+        source_correction_binding: Mapping[str, Any],
+        source_correction_digest: str, design_digest: str,
+        mask_classification_digest: str,
+        ) -> tuple[dict[str, Any], dict[str, Any], str]:
+    """Validate the source-only correction without changing old science."""
+
+    from lewm.oracle import go2_scorer_fit_corpus_v2_design as authority
+    if (not isinstance(source_correction, Mapping)
+            or not isinstance(source_correction_binding, Mapping)
+            or not _is_sha256(source_correction_digest)):
+        raise RuntimeError("full-bank V2 source correction is malformed")
+    try:
+        correction = authority.validate_preselection_source_correction(
+            source_correction, root=ROOT, validate_live_authorities=False)
+        raw = (json.dumps(V1._jsonable(correction), indent=2,
+                          sort_keys=True) + "\n").encode("utf-8")
+        expected_binding = \
+            authority.preselection_source_correction_artifact_binding(
+                correction, raw)
+    except authority.ScorerFitCorpusV2DesignError as exc:
+        raise RuntimeError(
+            "full-bank V2 source correction validation failed") from exc
+    if (
+        correction.get(authority.SOURCE_CORRECTION_SELF_KEY)
+        != source_correction_digest
+        or dict(source_correction_binding) != expected_binding
+        or correction.get("preserved_scientific_design_digest")
+        != design_digest
+        or correction.get("preserved_rotation_mask_classification_digest")
+        != mask_classification_digest
+    ):
+        raise RuntimeError(
+            "full-bank V2 source correction changed immutable authority")
+    return correction, expected_binding, source_correction_digest
+
+
 def build_scorer_fit_v2_full_bank_bundle(
         *, design: Mapping[str, Any], classification: Mapping[str, Any],
+        source_correction: Mapping[str, Any],
+        source_correction_binding: Mapping[str, Any],
+        source_correction_digest: str,
         predecessor_inputs: Mapping[str, Any],
         allowed_scene_ids_by_family: Mapping[str, Sequence[str]],
         exclusion_authority: Mapping[str, Any],
@@ -9322,6 +9517,13 @@ def build_scorer_fit_v2_full_bank_bundle(
 
     design_digest, classification_digest, selector_digest, domain = \
         _full_bank_v2_validate_design_payloads(design, classification)
+    correction, correction_binding, correction_digest = \
+        _full_bank_v2_validate_source_correction_authority(
+            source_correction=source_correction,
+            source_correction_binding=source_correction_binding,
+            source_correction_digest=source_correction_digest,
+            design_digest=design_digest,
+            mask_classification_digest=classification_digest)
     _full_bank_v2_validate_exclusion_authority(
         exclusion_authority,
         allowed_scene_ids_by_family=allowed_scene_ids_by_family)
@@ -9352,7 +9554,11 @@ def build_scorer_fit_v2_full_bank_bundle(
     if exclusion_binding is not None and active_exclusion != \
             _full_bank_v2_exclusion_binding_from_inputs(predecessor_inputs):
         raise RuntimeError("full-bank V2 supplied exclusion binding changed")
-    custody = _full_bank_v2_predecessor_custody(predecessor_inputs)
+    custody = _full_bank_v2_predecessor_custody(
+        predecessor_inputs,
+        source_correction=correction,
+        source_correction_binding=correction_binding,
+        source_correction_digest=correction_digest)
     candidate_checks = build_full_bank_v2_candidate_revalidation(
         raw_candidates=raw_candidates,
         allowed_scene_ids_by_family=allowed_scene_ids_by_family,
@@ -9368,7 +9574,8 @@ def build_scorer_fit_v2_full_bank_bundle(
         domain_separator=domain,
         selector_digest=selector_digest,
         design_digest=design_digest,
-        mask_classification_digest=classification_digest)
+        mask_classification_digest=classification_digest,
+        source_correction_digest=correction_digest)
     selected_states = [dict(row) for row in selection["selected_states"]]
     revalidation = build_full_bank_v2_preoutcome_revalidation(
         fixed_states=fixed_states,
@@ -9380,6 +9587,7 @@ def build_scorer_fit_v2_full_bank_bundle(
         predecessor_custody=custody,
         design_digest=design_digest,
         mask_classification_digest=classification_digest,
+        source_correction_digest=correction_digest,
         selection_digest=selection[
             "full_bank_small_completion_selection_digest"],
         verify_scene_files=verify_scene_files)
@@ -9389,18 +9597,21 @@ def build_scorer_fit_v2_full_bank_bundle(
         prefix=prefix, selected_states=selected_states,
         design_digest=design_digest,
         mask_classification_digest=classification_digest,
+        source_correction_digest=correction_digest,
         selection_digest_value=selection[
             "full_bank_small_completion_selection_digest"],
         revalidation_digest=revalidation_digest)
     states = _joint_state_order([*fixed_states, *selected_states])
     identity_projection = _full_bank_v2_identity_projection(
         states=states, design_digest=design_digest,
+        source_correction_digest=correction_digest,
         selection_digest_value=selection[
             "full_bank_small_completion_selection_digest"],
         revalidation_digest=revalidation_digest,
         selector_digest=selector_digest)
     assignment_manifest = build_full_bank_v2_assignment_manifest(
         states=states, design_digest=design_digest,
+        source_correction_digest=correction_digest,
         identity_projection_digest=identity_projection[
             "state_identity_projection_digest"],
         revalidation_digest=revalidation_digest)
@@ -9408,6 +9619,7 @@ def build_scorer_fit_v2_full_bank_bundle(
         states=states, common=common,
         design_digest=design_digest,
         mask_classification_digest=classification_digest,
+        source_correction_digest=correction_digest,
         selection=selection, revalidation=revalidation,
         small_shard=small_shard,
         assignment_manifest=assignment_manifest,
@@ -9417,6 +9629,9 @@ def build_scorer_fit_v2_full_bank_bundle(
     return {
         "design": dict(design),
         "classification": dict(classification),
+        "source_correction": correction,
+        "source_correction_binding": correction_binding,
+        "source_correction_digest": correction_digest,
         "candidate_revalidation": candidate_checks,
         "selection": selection,
         "revalidation": revalidation,
@@ -9443,6 +9658,11 @@ def validate_scorer_fit_v2_full_bank_bundle(
     expected = build_scorer_fit_v2_full_bank_bundle(
         design=bundle.get("design", {}),
         classification=bundle.get("classification", {}),
+        source_correction=bundle.get("source_correction", {}),
+        source_correction_binding=bundle.get(
+            "source_correction_binding", {}),
+        source_correction_digest=str(bundle.get(
+            "source_correction_digest", "")),
         predecessor_inputs=predecessor_inputs,
         allowed_scene_ids_by_family=allowed_scene_ids_by_family,
         exclusion_authority=exclusion_authority,
@@ -9494,6 +9714,9 @@ def load_scorer_fit_v2_preoutcome_inputs(
             "full-bank V2 exact predecessor exclusions changed")
     return {
         "design_authority": active,
+        "source_correction": active["source_correction"],
+        "source_correction_binding": active["source_correction_binding"],
+        "source_correction_digest": active["source_correction_digest"],
         "predecessor_inputs": inputs,
         "preserved_vectors": preserved,
         "historical_mixed_disposition_authority": historical,
@@ -9522,6 +9745,9 @@ def build_active_scorer_fit_v2_full_bank_bundle(
     return build_scorer_fit_v2_full_bank_bundle(
         design=active["design_amendment"],
         classification=active["rotation_mask_classification"],
+        source_correction=active["source_correction"],
+        source_correction_binding=active["source_correction_binding"],
+        source_correction_digest=active["source_correction_digest"],
         predecessor_inputs=loaded["predecessor_inputs"],
         allowed_scene_ids_by_family=loaded[
             "allowed_scene_ids_by_family"],
@@ -9564,9 +9790,16 @@ def load_and_validate_full_bank_v2_manifests_for_consumption(
             SCORER_FIT_V2_ASSIGNMENT_MANIFEST_NAME,
             "full_bank_assignment_manifest_digest"),
     }
+    replay_authority = load_scorer_fit_v2_preoutcome_inputs(
+        out=scorer_fit)["design_authority"]
     result: dict[str, Any] = {
-        "design_authority": load_scorer_fit_v2_preoutcome_inputs(
-            out=scorer_fit)["design_authority"]}
+        "design_authority": replay_authority,
+        "source_correction": replay_authority["source_correction"],
+        "source_correction_binding": replay_authority[
+            "source_correction_binding"],
+        "source_correction_digest": replay_authority[
+            "source_correction_digest"],
+    }
     for key, (name, self_key) in specs.items():
         raw_path = scorer_fit / name
         path = _pin_generated_path(raw_path, raw_path)
@@ -12973,6 +13206,7 @@ _FULL_BANK_V2_INHERITED_BRANCH_BINDING_KEYS = (
 _FULL_BANK_V2_BRANCH_LINEAGE_KEYS = (
     "scorer_fit_corpus_v2_design_digest",
     "rotation_mask_classification_digest",
+    SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY,
     "full_bank_small_completion_selection_digest",
     "full_bank_preoutcome_state_revalidation_digest",
     "state_identity_projection_digest",
@@ -13046,6 +13280,16 @@ def load_full_bank_v2_branch_runtime_authority(
         raise RuntimeError("full-bank V2 successor contract is absent")
     state_manifest = manifests["state_manifest"]
     assignment_manifest = manifests["assignment_manifest"]
+    correction_digest = manifests["source_correction_digest"]
+    if (
+        state_manifest.get(SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY)
+        != correction_digest
+        or contract.get("preoutcome_lineage", {}).get(
+            SCORER_FIT_V2_SOURCE_CORRECTION_DIGEST_KEY)
+        != correction_digest
+    ):
+        raise RuntimeError(
+            "full-bank V2 runtime source-correction lineage changed")
     inherited = state_manifest.get("predecessor_scientific_contract_bindings")
     if (not isinstance(inherited, Mapping)
             or set(_FULL_BANK_V2_INHERITED_BRANCH_BINDING_KEYS)
@@ -13095,6 +13339,10 @@ def load_full_bank_v2_branch_runtime_authority(
         "manifests": manifests,
         "scorer_contract": contract_artifact,
         "manifest": runtime,
+        "source_correction": manifests["source_correction"],
+        "source_correction_binding": manifests[
+            "source_correction_binding"],
+        "source_correction_digest": correction_digest,
         "candidate_outcomes_consumed": False,
     }
 
