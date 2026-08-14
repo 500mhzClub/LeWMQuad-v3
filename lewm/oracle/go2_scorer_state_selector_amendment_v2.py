@@ -26,7 +26,7 @@ import math
 import operator
 import copy
 import struct
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -3236,7 +3236,220 @@ def _completion_source_row_from_active_state(
     }
 
 
-def build_preserved_state_revalidation_receipt(
+_ALLOCATION_MANIFEST_KEYS = frozenset({
+    "schema", "status", "source_identity_manifest_digest",
+    "pre_outcome_identity_digest", "allocation_contract",
+    "allocation_contract_digest", "allocation_amendment",
+    "allocation_amendment_digest", "assignments", "contingency_tables",
+    "post_identity_pre_outcome_validation", "allocation_manifest_digest",
+})
+_ALLOCATION_IDENTITY_KEYS = frozenset({
+    "state_id", "state_identity_digest", "family", "stratum", "split_role",
+    "goal_type",
+})
+_ALLOCATION_ASSIGNMENT_KEYS = _ALLOCATION_IDENTITY_KEYS | frozenset({
+    "rotation_index", "candidate_indices",
+})
+
+
+def validate_allocation_manifest_structure_solve_free(
+    allocation_manifest: Mapping[str, Any],
+    *,
+    expected_source_identity_manifest_digest: str | None = None,
+) -> None:
+    """Validate every allocation property except the MILP canonicality proof.
+
+    This is deliberately *not* a replacement for certification of the
+    lexicographically minimal rotation vector.  It validates the complete
+    manifest key surface, identity projection, exact rotation masks, all
+    balance tables, the post-identity validation object, and both manifest
+    digests using pure deterministic helpers.  It never calls the allocator's
+    builder, public validator, constraint builder, or MILP solver.  A caller
+    using this function for scientific acceptance must separately validate a
+    frozen solve-free canonicality certificate.
+    """
+
+    try:
+        if not isinstance(allocation_manifest, Mapping):
+            raise StateSelectorAmendmentError(
+                "certified allocation manifest must be a mapping"
+            )
+        if set(allocation_manifest) != _ALLOCATION_MANIFEST_KEYS:
+            raise StateSelectorAmendmentError(
+                "certified allocation manifest has an unexpected key surface"
+            )
+        if (
+            allocation_manifest.get("schema") != ALLOCATION.SCHEMA
+            or allocation_manifest.get("status") != ALLOCATION.STATUS
+        ):
+            raise StateSelectorAmendmentError(
+                "certified allocation manifest schema/status changed"
+            )
+        source_digest = allocation_manifest.get(
+            "source_identity_manifest_digest"
+        )
+        if not _is_digest(source_digest):
+            raise StateSelectorAmendmentError(
+                "certified allocation source identity digest is invalid"
+            )
+        if (
+            expected_source_identity_manifest_digest is not None
+            and source_digest != expected_source_identity_manifest_digest
+        ):
+            raise StateSelectorAmendmentError(
+                "certified allocation source identity digest changed"
+            )
+        if (
+            allocation_manifest.get("allocation_contract")
+            != ALLOCATION.algorithm_contract()
+            or allocation_manifest.get("allocation_contract_digest")
+            != ALLOCATION.allocation_contract_digest()
+            or allocation_manifest.get("allocation_amendment")
+            != ALLOCATION.allocation_amendment_contract()
+            or allocation_manifest.get("allocation_amendment_digest")
+            != ALLOCATION.allocation_amendment_digest()
+        ):
+            raise StateSelectorAmendmentError(
+                "certified allocation contract lineage changed"
+            )
+
+        raw_assignments = allocation_manifest.get("assignments")
+        if not isinstance(raw_assignments, list) or len(raw_assignments) != 120:
+            raise StateSelectorAmendmentError(
+                "certified allocation must contain exactly 120 assignments"
+            )
+        identity_rows: list[dict[str, str]] = []
+        previous_key: tuple[str, str] | None = None
+        for raw in raw_assignments:
+            if (
+                not isinstance(raw, Mapping)
+                or frozenset(raw) != _ALLOCATION_ASSIGNMENT_KEYS
+            ):
+                raise StateSelectorAmendmentError(
+                    "certified allocation assignment key surface changed"
+                )
+            identity = ALLOCATION._normalise_identity_state({
+                key: raw[key] for key in _ALLOCATION_IDENTITY_KEYS
+            })
+            key = (identity["state_identity_digest"], identity["state_id"])
+            if previous_key is not None and key <= previous_key:
+                raise StateSelectorAmendmentError(
+                    "certified allocation assignments are not canonical-order"
+                )
+            previous_key = key
+            identity_rows.append(identity)
+            rotation = raw.get("rotation_index")
+            if isinstance(rotation, bool) or not isinstance(rotation, int):
+                raise StateSelectorAmendmentError(
+                    "certified allocation rotation index is not an integer"
+                )
+            candidates = raw.get("candidate_indices")
+            if (
+                not isinstance(candidates, list)
+                or candidates != list(ALLOCATION.candidate_block(rotation))
+            ):
+                raise StateSelectorAmendmentError(
+                    "certified allocation mask differs from its exact rotation"
+                )
+
+        normalised = ALLOCATION._normalise_identity_states(identity_rows)
+        if allocation_manifest.get("pre_outcome_identity_digest") != (
+            ALLOCATION.pre_outcome_identity_digest(normalised)
+        ):
+            raise StateSelectorAmendmentError(
+                "certified allocation identity projection digest changed"
+            )
+        expected_tables = ALLOCATION._contingency_tables(raw_assignments)
+        if allocation_manifest.get("contingency_tables") != expected_tables:
+            raise StateSelectorAmendmentError(
+                "certified allocation contingency tables changed"
+            )
+        # This helper materialises every count, coverage, goal-type, and exact
+        # post-identity check.  It is arithmetic over the supplied rows only.
+        expected_post_identity = ALLOCATION._post_identity_pre_outcome_validation(
+            raw_assignments
+        )
+        if allocation_manifest.get(
+            "post_identity_pre_outcome_validation"
+        ) != expected_post_identity:
+            raise StateSelectorAmendmentError(
+                "certified allocation post-identity validation changed"
+            )
+        if allocation_manifest.get("allocation_manifest_digest") != (
+            ALLOCATION.allocation_manifest_digest(allocation_manifest)
+        ):
+            raise StateSelectorAmendmentError(
+                "certified allocation manifest digest changed"
+            )
+    except StateSelectorAmendmentError:
+        raise
+    except (KeyError, TypeError, ValueError,
+            ALLOCATION.CandidateAllocationError) as exc:
+        raise StateSelectorAmendmentError(
+            "certified allocation failed solve-free structural validation"
+        ) from exc
+
+
+def validate_solve_free_certified_allocation_manifest(
+    allocation_manifest: Mapping[str, Any],
+    *,
+    certify_allocation_solve_free: Callable[
+        [Mapping[str, Any]], Mapping[str, Any]
+    ],
+    expected_source_identity_manifest_digest: str | None = None,
+) -> None:
+    """Require structural validity plus an exact external certificate replay.
+
+    ``certify_allocation_solve_free`` is the fail-closed trust boundary.  It
+    must replay the frozen parallel-search certificates without solving and
+    return the exact certified allocation manifest.  Returning ``True``, a
+    digest, a partial projection, or a merely equivalent manifest is rejected.
+    The callback receives a deep copy so it cannot mutate the accepted input.
+    """
+
+    if not callable(certify_allocation_solve_free):
+        raise StateSelectorAmendmentError(
+            "solve-free allocation certification callback is missing"
+        )
+    validate_allocation_manifest_structure_solve_free(
+        allocation_manifest,
+        expected_source_identity_manifest_digest=(
+            expected_source_identity_manifest_digest
+        ),
+    )
+    frozen_manifest = copy.deepcopy(dict(allocation_manifest))
+    try:
+        certified = certify_allocation_solve_free(
+            copy.deepcopy(frozen_manifest)
+        )
+    except Exception as exc:
+        raise StateSelectorAmendmentError(
+            "solve-free allocation certificate replay failed"
+        ) from exc
+    if not isinstance(certified, Mapping):
+        raise StateSelectorAmendmentError(
+            "solve-free allocation certificate did not return a manifest"
+        )
+    if dict(allocation_manifest) != frozen_manifest:
+        raise StateSelectorAmendmentError(
+            "solve-free allocation certification mutated its input"
+        )
+    certified_manifest = copy.deepcopy(dict(certified))
+    if certified_manifest != frozen_manifest:
+        raise StateSelectorAmendmentError(
+            "solve-free allocation certificate binds a different manifest"
+        )
+    # Validate the returned object independently instead of trusting equality
+    # implemented by an exotic Mapping subtype.
+    validate_allocation_manifest_structure_solve_free(
+        certified_manifest,
+        expected_source_identity_manifest_digest=(
+            expected_source_identity_manifest_digest
+        ),
+    )
+
+
+def _build_preserved_state_revalidation_receipt_after_allocation_validation(
     *,
     allocation_manifest: Mapping[str, Any],
     active_states: Sequence[Mapping[str, Any]],
@@ -3249,7 +3462,6 @@ def build_preserved_state_revalidation_receipt(
 ) -> dict[str, Any]:
     """Bind 37 retained masks, eight replacements, and all 40 completion rows."""
 
-    ALLOCATION.validate_allocation_manifest(allocation_manifest)
     for label, value in (
         ("selection", successor_selection_digest),
         ("feasibility", state_selector_feasibility_receipt_digest),
@@ -3316,6 +3528,32 @@ def build_preserved_state_revalidation_receipt(
         ):
             raise StateSelectorAmendmentError(
                 "phase-2 active scene/episode/state/observation identities repeat"
+            )
+        assignment = assignments.get(identity)
+        if assignment is None or any(
+            assignment.get(key) != state.get(key)
+            for key in (
+                "state_id", "state_identity_digest", "family", "stratum",
+                "split_role", "goal_type",
+            )
+        ):
+            raise StateSelectorAmendmentError(
+                "phase-2 active identity projection differs from allocation"
+            )
+        if (
+            "candidate_indices" in state
+            and state.get("candidate_indices")
+            != assignment.get("candidate_indices")
+        ) or (
+            "candidate_rotation_index" in state
+            and state.get("candidate_rotation_index")
+            != assignment.get("rotation_index")
+        ) or (
+            "rotation_index" in state
+            and state.get("rotation_index") != assignment.get("rotation_index")
+        ):
+            raise StateSelectorAmendmentError(
+                "phase-2 active exact candidate mask differs from allocation"
             )
         states_by_identity[identity] = state
         states_by_id[state_id] = state
@@ -3556,7 +3794,79 @@ def build_preserved_state_revalidation_receipt(
     return payload
 
 
-def validate_preserved_state_revalidation_receipt(
+def build_preserved_state_revalidation_receipt(
+    *,
+    allocation_manifest: Mapping[str, Any],
+    active_states: Sequence[Mapping[str, Any]],
+    completion_states: Sequence[Mapping[str, Any]],
+    source_repository_commit: str,
+    successor_selection_digest: str,
+    state_selector_feasibility_receipt_digest: str,
+    mixed_precontract_disposition_receipt_digest: str,
+    root: Path = ROOT,
+) -> dict[str, Any]:
+    """Legacy builder retaining the allocator's live canonicality re-solve."""
+
+    ALLOCATION.validate_allocation_manifest(allocation_manifest)
+    return _build_preserved_state_revalidation_receipt_after_allocation_validation(
+        allocation_manifest=allocation_manifest,
+        active_states=active_states,
+        completion_states=completion_states,
+        source_repository_commit=source_repository_commit,
+        successor_selection_digest=successor_selection_digest,
+        state_selector_feasibility_receipt_digest=(
+            state_selector_feasibility_receipt_digest
+        ),
+        mixed_precontract_disposition_receipt_digest=(
+            mixed_precontract_disposition_receipt_digest
+        ),
+        root=root,
+    )
+
+
+def build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+    *,
+    allocation_manifest: Mapping[str, Any],
+    active_states: Sequence[Mapping[str, Any]],
+    completion_states: Sequence[Mapping[str, Any]],
+    source_repository_commit: str,
+    successor_selection_digest: str,
+    state_selector_feasibility_receipt_digest: str,
+    mixed_precontract_disposition_receipt_digest: str,
+    certify_allocation_solve_free: Callable[
+        [Mapping[str, Any]], Mapping[str, Any]
+    ],
+    root: Path = ROOT,
+) -> dict[str, Any]:
+    """Build byte-identical phase-2 evidence from a frozen certificate replay.
+
+    The callback must return the exact allocation it certified.  No
+    certificate metadata is added to the receipt: the existing allocation
+    manifest and post-identity digests already bind those exact bytes, keeping
+    the scientific receipt schema and digest semantics unchanged.
+    """
+
+    validate_solve_free_certified_allocation_manifest(
+        allocation_manifest,
+        certify_allocation_solve_free=certify_allocation_solve_free,
+    )
+    return _build_preserved_state_revalidation_receipt_after_allocation_validation(
+        allocation_manifest=allocation_manifest,
+        active_states=active_states,
+        completion_states=completion_states,
+        source_repository_commit=source_repository_commit,
+        successor_selection_digest=successor_selection_digest,
+        state_selector_feasibility_receipt_digest=(
+            state_selector_feasibility_receipt_digest
+        ),
+        mixed_precontract_disposition_receipt_digest=(
+            mixed_precontract_disposition_receipt_digest
+        ),
+        root=root,
+    )
+
+
+def _validate_preserved_state_revalidation_receipt(
     receipt: Mapping[str, Any],
     *,
     allocation_manifest: Mapping[str, Any],
@@ -3565,6 +3875,9 @@ def validate_preserved_state_revalidation_receipt(
     expected_successor_selection_digest: str | None = None,
     expected_feasibility_receipt_digest: str | None = None,
     expected_mixed_precontract_disposition_receipt_digest: str | None = None,
+    certify_allocation_solve_free: Callable[
+        [Mapping[str, Any]], Mapping[str, Any]
+    ] | None = None,
     root: Path = ROOT,
 ) -> None:
     """Validate one generic phase-2 digest over masks and 40 reachability rows."""
@@ -3643,24 +3956,103 @@ def validate_preserved_state_revalidation_receipt(
         }
         for row in completion_rows
     ]
-    expected = build_preserved_state_revalidation_receipt(
-        allocation_manifest=allocation_manifest,
-        active_states=active_states,
-        completion_states=source_rows,
-        source_repository_commit=str(payload["source_repository_commit"]),
-        successor_selection_digest=str(payload["successor_selection_digest"]),
-        state_selector_feasibility_receipt_digest=str(
+    build_arguments = {
+        "allocation_manifest": allocation_manifest,
+        "active_states": active_states,
+        "completion_states": source_rows,
+        "source_repository_commit": str(payload["source_repository_commit"]),
+        "successor_selection_digest": str(
+            payload["successor_selection_digest"]
+        ),
+        "state_selector_feasibility_receipt_digest": str(
             payload["state_selector_feasibility_receipt_digest"]
         ),
-        mixed_precontract_disposition_receipt_digest=str(
+        "mixed_precontract_disposition_receipt_digest": str(
             payload["mixed_precontract_disposition_receipt_digest"]
         ),
-        root=root,
-    )
+        "root": root,
+    }
+    if certify_allocation_solve_free is None:
+        expected = build_preserved_state_revalidation_receipt(
+            **build_arguments
+        )
+    else:
+        expected = (
+            build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+                **build_arguments,
+                certify_allocation_solve_free=certify_allocation_solve_free,
+            )
+        )
     if dict(receipt) != expected:
         raise StateSelectorAmendmentError(
             "phase-2 receipt differs from exact masks/reachability reconstruction"
         )
+
+
+def validate_preserved_state_revalidation_receipt(
+    receipt: Mapping[str, Any],
+    *,
+    allocation_manifest: Mapping[str, Any],
+    active_states: Sequence[Mapping[str, Any]],
+    expected_source_commit: str | None = None,
+    expected_successor_selection_digest: str | None = None,
+    expected_feasibility_receipt_digest: str | None = None,
+    expected_mixed_precontract_disposition_receipt_digest: str | None = None,
+    root: Path = ROOT,
+) -> None:
+    """Legacy validator retaining the allocator's live canonicality re-solve."""
+
+    _validate_preserved_state_revalidation_receipt(
+        receipt,
+        allocation_manifest=allocation_manifest,
+        active_states=active_states,
+        expected_source_commit=expected_source_commit,
+        expected_successor_selection_digest=(
+            expected_successor_selection_digest
+        ),
+        expected_feasibility_receipt_digest=(
+            expected_feasibility_receipt_digest
+        ),
+        expected_mixed_precontract_disposition_receipt_digest=(
+            expected_mixed_precontract_disposition_receipt_digest
+        ),
+        root=root,
+    )
+
+
+def validate_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+    receipt: Mapping[str, Any],
+    *,
+    allocation_manifest: Mapping[str, Any],
+    active_states: Sequence[Mapping[str, Any]],
+    certify_allocation_solve_free: Callable[
+        [Mapping[str, Any]], Mapping[str, Any]
+    ],
+    expected_source_commit: str | None = None,
+    expected_successor_selection_digest: str | None = None,
+    expected_feasibility_receipt_digest: str | None = None,
+    expected_mixed_precontract_disposition_receipt_digest: str | None = None,
+    root: Path = ROOT,
+) -> None:
+    """Reconstruct and validate phase-2 evidence with no allocation solve."""
+
+    _validate_preserved_state_revalidation_receipt(
+        receipt,
+        allocation_manifest=allocation_manifest,
+        active_states=active_states,
+        expected_source_commit=expected_source_commit,
+        expected_successor_selection_digest=(
+            expected_successor_selection_digest
+        ),
+        expected_feasibility_receipt_digest=(
+            expected_feasibility_receipt_digest
+        ),
+        expected_mixed_precontract_disposition_receipt_digest=(
+            expected_mixed_precontract_disposition_receipt_digest
+        ),
+        certify_allocation_solve_free=certify_allocation_solve_free,
+        root=root,
+    )
 
 
 # Outcome-free predecessor helpers whose semantics are unchanged in V2.

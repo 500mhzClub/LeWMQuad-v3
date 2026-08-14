@@ -314,6 +314,13 @@ def test_contract_and_launch_bind_the_single_interruption_receipt(monkeypatch):
         "byte_count": 123,
         "status": I.STATUS,
     }
+    performance_binding = {
+        "path": str(CONTRACT.PERFORMANCE_INTERRUPTION.RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "j" * 64,
+        "raw_sha256": "s" * 64,
+        "byte_count": 456,
+        "status": CONTRACT.PERFORMANCE_INTERRUPTION.STATUS,
+    }
     monkeypatch.setattr(
         CONTRACT.STATE_SELECTOR, "validate_frozen_reachability_feasibility_pass",
         lambda **_kwargs: feasibility)
@@ -322,9 +329,11 @@ def test_contract_and_launch_bind_the_single_interruption_receipt(monkeypatch):
         "validate_preserved_state_mixed_precontract_disposition_receipt",
         lambda *_args, **_kwargs: None)
     artifact = CONTRACT._contract_artifact_payload(
-        source, feasibility, mixed, binding)
+        source, feasibility, mixed, binding, performance_binding)
     assert artifact["preoutcome_projection_fix_interruption_verified"] is True
     assert artifact["preoutcome_projection_fix_interruption"] == binding
+    assert artifact["preoutcome_small_search_performance_interruption"] == \
+        performance_binding
 
     monkeypatch.setattr(BUILDER, "_issued_scorer_contract_path", lambda: Path("x"))
     monkeypatch.setattr(
@@ -337,5 +346,7 @@ def test_contract_and_launch_bind_the_single_interruption_receipt(monkeypatch):
     launch = BUILDER._build_clean_source_launch_receipt({
         "pre_identity_validation_digest": "p" * 64})
     assert launch["preoutcome_projection_fix_interruption"] == binding
+    assert launch["preoutcome_small_search_performance_interruption"] == \
+        performance_binding
     assert "preoutcome_projection_fix_interruption" not in \
         BUILDER.LAUNCH_BINDING_KEYS

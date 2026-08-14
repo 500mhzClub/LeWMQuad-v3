@@ -1,12 +1,76 @@
 """Non-Genesis durability tests for the v1.2 branch corpus pipeline."""
 from __future__ import annotations
 
+import copy
 import json
+import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
 
 from scripts import build_go2_branch_corpus_v1_2 as B
+
+
+def _archived_pair(
+        *, kind: str, ordinal: int, scene_id: str,
+        request_extra: dict, chosen_state: dict | None,
+        rejection_reasons: dict[str, int] | None = None,
+        provenance_extra: dict | None = None):
+    request_key = (
+        "mixed_replacement_scene_request_digest" if kind == "mixed" else
+        "state_resolution_scene_request_digest")
+    capture_key = (
+        "mixed_replacement_scene_capture_digest" if kind == "mixed" else
+        "state_resolution_scene_capture_digest")
+    request_digest = f"{ordinal + 1:064x}"
+    capture_digest = f"{ordinal + 101:064x}"
+    request = {
+        "scene_ordinal": ordinal,
+        "scene": {"scene_id": scene_id},
+        request_key: request_digest,
+        **request_extra,
+    }
+    capture = {
+        "scene_id": scene_id,
+        "request": request,
+        request_key: request_digest,
+        capture_key: capture_digest,
+        "chosen_state": chosen_state,
+        "scene_rejection_reasons": dict(rejection_reasons or {}),
+        "worker_failure": None,
+    }
+    request_path = f"requests/{request_digest}.json"
+    capture_path = f"captures/{request_digest}.json"
+    request_sha = f"{ordinal + 201:064x}"
+    capture_sha = f"{ordinal + 301:064x}"
+    provenance = {
+        "scene_id": scene_id,
+        request_key: request_digest,
+        capture_key: capture_digest,
+        "request_path": request_path,
+        "request_raw_sha256": request_sha,
+        "request_byte_count": 1000 + ordinal,
+        "capture_path": capture_path,
+        "capture_raw_sha256": capture_sha,
+        "capture_byte_count": 2000 + ordinal,
+        **dict(provenance_extra or {}),
+    }
+    projected = {
+        "request": copy.deepcopy(request),
+        "capture": copy.deepcopy(capture),
+        "old_request": copy.deepcopy(request),
+        "old_capture": copy.deepcopy(capture),
+        "request_row": {
+            "kind": "request", "path": request_path,
+            "raw_sha256": request_sha, "byte_count": 1000 + ordinal,
+        },
+        "capture_row": {
+            "kind": "capture", "path": capture_path,
+            "raw_sha256": capture_sha, "byte_count": 2000 + ordinal,
+        },
+    }
+    return provenance, projected
 
 
 def _mock_interruption(monkeypatch):
@@ -24,7 +88,246 @@ def _mock_interruption(monkeypatch):
     monkeypatch.setattr(
         B.INTERRUPTION, "receipt_binding",
         lambda _receipt, **_kwargs: dict(binding))
+    monkeypatch.setattr(
+        B.PERFORMANCE_INTERRUPTION,
+        "load_and_validate_performance_interruption_receipt",
+        lambda **_kwargs: receipt)
+    monkeypatch.setattr(
+        B.PERFORMANCE_INTERRUPTION, "receipt_binding",
+        lambda _receipt, **_kwargs: dict(binding))
     return binding
+
+
+def test_archived_ordinary_wrapper_replays_dynamic_quota_and_first_cursor():
+    required = dict(B.POOLS["scorer_fit"]["strata"])
+    found = {name: 0 for name in required}
+    provenance = []
+    projected = []
+    states = []
+    rejections = {}
+    ordinal = 0
+    for stratum in B.STRATA:
+        for index in range(required[stratum]):
+            scene_id = f"scene-{ordinal:03d}"
+            state = {
+                "state_id": f"state-{stratum}-{index}",
+                "scene_id": scene_id,
+                "stratum": stratum,
+                "state_identity_digest": f"{ordinal + 401:064x}",
+            }
+            requested = [name for name in B.STRATA
+                         if found[name] < required[name]]
+            row, pair = _archived_pair(
+                kind="ordinary", ordinal=ordinal, scene_id=scene_id,
+                request_extra={
+                    "found_before_scene": dict(found),
+                    "required_counts": dict(required),
+                    "requested_strata_in_priority_order": requested,
+                },
+                chosen_state=state,
+                rejection_reasons={"synthetic": ordinal},
+            )
+            provenance.append(row)
+            projected.append(pair)
+            states.append(state)
+            rejections[scene_id] = {"synthetic": ordinal}
+            found[stratum] += 1
+            ordinal += 1
+    states.sort(key=lambda state: (
+        B.STRATA.index(state["stratum"]), state["scene_id"]))
+    transport = {
+        "schema": "go2_branch_corpus_v1_2_state_resolution_transport_v1",
+        "one_scene_per_subprocess": True,
+        "atomic_capture_write_before_native_cleanup": True,
+        "return_code_ignored_only_after_valid_capture": True,
+        "resume_scope": "MISSING_OR_INVALID_SCENE_CAPTURES_ONLY",
+        "resolver_algorithm_digest":
+            B.canonical_digest(B.STATE_RESOLUTION_REDUCER_CONTRACT),
+        "resolver_cursor_scene_id": provenance[-1]["scene_id"],
+        "scene_capture_count": len(provenance),
+        "scene_capture_provenance_digest": B.canonical_digest(provenance),
+        "candidate_outcomes_loaded": False,
+    }
+    predecessor = {
+        "states": states,
+        "scene_rejection_reasons": rejections,
+        "state_resolution_subprocess_transport": transport,
+        "state_resolution_scene_capture_provenance": provenance,
+    }
+    B._replay_projected_ordinary_fixed_shard(
+        predecessor=predecessor, family="ordinary", projected_pairs=projected)
+
+    tampered = copy.deepcopy(projected)
+    tampered[6]["request"]["found_before_scene"]["general"] = 4
+    with pytest.raises(RuntimeError, match="dynamic quota prefix"):
+        B._replay_projected_ordinary_fixed_shard(
+            predecessor=predecessor, family="ordinary",
+            projected_pairs=tampered)
+
+
+def test_archived_mixed_wrapper_replays_interval_slot_and_stop_prefix(
+        tmp_path, monkeypatch):
+    family = "mixed-family"
+    retained = {
+        "state_id": "retained-0", "scene_id": "retained",
+        "stratum": "general", "state_identity_digest": "a" * 64,
+        "split_role": "fit",
+    }
+    slot = {"state_id": "replacement-0"}
+    interval = {
+        "lower_scene_id_exclusive": None,
+        "upper_scene_id_exclusive": None,
+        "vacant_ordinals": [0],
+        "replacement_slots": [slot],
+    }
+    plan = {
+        "retained_states": [retained],
+        "rejected_identity_digests": ["b" * 64],
+        "interval_groups": [interval],
+    }
+    scenes = [tmp_path / "scene-a", tmp_path / "scene-b"]
+    monkeypatch.setattr(
+        B, "_mixed_family_replacement_plan", lambda _family: plan)
+    monkeypatch.setattr(
+        B, "scene_pool", lambda _pool: ({family: scenes}, {}))
+    monkeypatch.setattr(
+        B, "_mixed_disposition_sets",
+        lambda: ({"retained": retained}, {"b" * 64: {}}, []))
+    chosen = {
+        "state_id": "replacement-0", "scene_id": "scene-a",
+        "stratum": "completion_enriched",
+        "state_identity_digest": "c" * 64, "split_role": "fit",
+    }
+    row, pair = _archived_pair(
+        kind="mixed", ordinal=0, scene_id="scene-a",
+        request_extra={
+            "anchor_interval": {
+                "lower_scene_id_exclusive": None,
+                "upper_scene_id_exclusive": None,
+                "vacant_ordinals": [0],
+            },
+            "replacement_slot": slot,
+            "accepted_scene_ids_before": [],
+        },
+        chosen_state=chosen,
+        rejection_reasons={"synthetic": 1},
+        provenance_extra={
+            "interval_index": 0,
+            "replacement_slot_state_id": "replacement-0",
+            "selected": True,
+        },
+    )
+    provenance = [row]
+    interval_rows = [{
+        "interval_index": 0,
+        "lower_scene_id_exclusive": None,
+        "upper_scene_id_exclusive": None,
+        "vacant_ordinals": [0],
+        "replacement_slot_state_ids": ["replacement-0"],
+        "candidate_scene_ids": ["scene-a", "scene-b"],
+        "scanned_scene_ids": ["scene-a"],
+        "selected_scene_ids": ["scene-a"],
+        "stopped_at_first_complete_prefix": True,
+    }]
+    states = [retained, chosen]
+    states.sort(key=lambda state: (
+        B.STRATA.index(state["stratum"]), state["state_id"]))
+    predecessor = {
+        "states": states,
+        "replacement_slot_fills": [{
+            "state_id": chosen["state_id"],
+            "state_identity_digest": chosen["state_identity_digest"],
+            "scene_id": chosen["scene_id"],
+            "split_role": chosen["split_role"],
+        }],
+        "retained_predecessor_identity_digests": ["a" * 64],
+        "rejected_predecessor_identity_digests": ["b" * 64],
+        "scene_rejection_reasons": {"scene-a": {"synthetic": 1}},
+        "mixed_replacement_scene_capture_provenance": provenance,
+        "mixed_replacement_subprocess_transport": {
+            "schema": B.MIXED_REPLACEMENT_TRANSPORT_SCHEMA,
+            "one_scene_per_subprocess": True,
+            "atomic_capture_write_before_native_cleanup": True,
+            "return_code_ignored_only_after_valid_capture": True,
+            "resume_scope":
+                "MISSING_OR_INVALID_REPLACEMENT_SCENE_CAPTURES_ONLY",
+            "interval_rows": interval_rows,
+            "scene_capture_count": 1,
+            "scene_capture_provenance_digest": B.canonical_digest(provenance),
+            "candidate_outcomes_loaded": False,
+        },
+    }
+    B._replay_projected_mixed_fixed_shard(
+        predecessor=predecessor, family=family, projected_pairs=[pair])
+
+    extra_row, extra_pair = _archived_pair(
+        kind="mixed", ordinal=1, scene_id="scene-b",
+        request_extra=pair["request"] | {"scene_ordinal": 1},
+        chosen_state=None,
+        provenance_extra={
+            "interval_index": 0,
+            "replacement_slot_state_id": "replacement-0",
+            "selected": False,
+        },
+    )
+    post_quota = copy.deepcopy(predecessor)
+    post_quota["mixed_replacement_scene_capture_provenance"].append(extra_row)
+    post_quota["mixed_replacement_subprocess_transport"][
+        "scene_capture_count"] = 2
+    post_quota["mixed_replacement_subprocess_transport"][
+        "scene_capture_provenance_digest"] = B.canonical_digest(
+            post_quota["mixed_replacement_scene_capture_provenance"])
+    with pytest.raises(RuntimeError, match="post-quota"):
+        B._replay_projected_mixed_fixed_shard(
+            predecessor=post_quota, family=family,
+            projected_pairs=[pair, extra_pair])
+
+
+def test_fixed_performance_family_states_entrypoint_is_read_only(
+        tmp_path, monkeypatch):
+    family = str(B.PERFORMANCE_INTERRUPTION.FIXED_STATE_SHARDS[0]["family"])
+    output_root = tmp_path / "go2_branch_corpus_v1_2"
+    output_root.mkdir()
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    monkeypatch.setattr(sys, "argv", [
+        "build_go2_branch_corpus_v1_2.py", "--pool", "scorer_fit",
+        "--stage", "states", "--family", family,
+    ])
+    payload = {
+        "family": family, "states": [{}], "state_shard_digest": "d" * 64,
+    }
+    evidence = {
+        "active_path": f"active/{family}.json",
+        "envelope_schema": B.PERFORMANCE_INTERRUPTION.REISSUED_SHARD_SCHEMA,
+    }
+    monkeypatch.setattr(
+        B, "_load_active_state_shard_evidence",
+        lambda *_args, **_kwargs: (tmp_path / "physical.json", payload, evidence))
+    monkeypatch.setattr(
+        B, "resolve_states",
+        lambda *_args, **_kwargs: pytest.fail("fixed family was re-resolved"))
+    monkeypatch.setattr(
+        B, "resolve_mixed_active_family",
+        lambda *_args, **_kwargs: pytest.fail("fixed family was re-resolved"))
+    assert B.main() == 0
+
+    def invalid_wrapper(*_args, **_kwargs):
+        raise RuntimeError("tampered wrapper")
+
+    monkeypatch.setattr(B, "_load_active_state_shard_evidence", invalid_wrapper)
+    with pytest.raises(RuntimeError, match="restored only"):
+        B.main()
+
+    monkeypatch.setattr(
+        B, "stage_state_resolution_scene_worker",
+        lambda *_args, **_kwargs: pytest.fail("fixed family worker executed"))
+    monkeypatch.setattr(sys, "argv", [
+        "build_go2_branch_corpus_v1_2.py", "--pool", "scorer_fit",
+        "--stage", "states", "--family", family,
+        "--state-resolution-scene-request-digest", "a" * 64,
+    ])
+    with pytest.raises(SystemExit, match="cannot execute scene workers"):
+        B.main()
 
 
 def _manifest(candidate_indices=(0, 1)):
@@ -316,6 +619,7 @@ def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
         "clean_source_binding": clean_source,
         "clean_source_binding_digest": B.canonical_digest(clean_source),
         "preoutcome_projection_fix_interruption": interruption,
+        "preoutcome_small_search_performance_interruption": interruption,
         **selector_preconditions,
     }
     contract_artifact["contract_artifact_digest"] = B.canonical_digest(
@@ -359,6 +663,7 @@ def test_issued_scorer_contract_uses_exact_managed_utility_root(
         "clean_source_binding": source,
         "clean_source_binding_digest": B.canonical_digest(source),
         "preoutcome_projection_fix_interruption": interruption,
+        "preoutcome_small_search_performance_interruption": interruption,
     }
     payload["contract_artifact_digest"] = B.canonical_digest(payload)
     B.atomic_json(contract_path, payload)
@@ -401,7 +706,8 @@ def test_issued_scorer_contract_canonical_path_survives_root_alias_swap(
             "source_repository_clean": True,
             "clean_source_binding": source,
             "clean_source_binding_digest": B.canonical_digest(source),
-            "preoutcome_projection_fix_interruption": interruption,
+                "preoutcome_projection_fix_interruption": interruption,
+                "preoutcome_small_search_performance_interruption": interruption,
         }
         payload["contract_artifact_digest"] = B.canonical_digest(payload)
         return payload
@@ -422,6 +728,360 @@ def test_issued_scorer_contract_canonical_path_survives_root_alias_swap(
     assert pinned == first_path
     assert B._load_issued_scorer_contract_at_path(pinned) == first
     assert B._load_issued_scorer_contract() == second
+
+
+def test_parallel_artifacts_keep_lexical_identity_across_managed_root_alias(
+        tmp_path, monkeypatch):
+    """Resolved executor paths must never be reinterpreted as lexical paths."""
+
+    lexical_root = tmp_path / "repo/.generated/go2_branch_corpus_v1_2"
+    target_root = tmp_path / "managed/go2_branch_corpus_v1_2"
+    target_root.mkdir(parents=True)
+    lexical_root.parent.mkdir(parents=True)
+    lexical_root.symlink_to(target_root, target_is_directory=True)
+    monkeypatch.setattr(B, "OUT_ROOT", lexical_root)
+    out = lexical_root / "scorer_fit"
+
+    raw_benchmark = out / B.PARALLEL_SMALL_BENCHMARK_NAME
+    benchmark = {"schema": "synthetic-parallel-benchmark", "complete": True}
+    B._write_or_require_exact_json(
+        raw_benchmark, benchmark, label="synthetic parallel benchmark")
+    assert json.loads(
+        (target_root / "scorer_fit" /
+         B.PARALLEL_SMALL_BENCHMARK_NAME).read_text()) == benchmark
+
+    raw_checkpoint = out / B.PARALLEL_SMALL_CHECKPOINT_ROOT
+    pinned_checkpoint = B._parallel_search_checkpoint_root(out)
+    raw_rank = raw_checkpoint / "ranks/000000000000.json"
+    pinned_rank = pinned_checkpoint / "ranks/000000000000.json"
+    receipt = {"schema": "synthetic-rank"}
+    receipt["rank_receipt_digest"] = B.PARALLEL_SEARCH.canonical_digest(
+        receipt)
+    B.atomic_json(pinned_rank, receipt)
+    binding = B._parallel_certificate_binding(
+        raw_rank, receipt, "rank_receipt_digest", pinned_path=pinned_rank)
+    assert binding["path"] == str(raw_rank)
+    assert binding["raw_sha256"] == B.file_sha256(pinned_rank)
+
+
+def test_parallel_artifact_install_is_exclusive_under_concurrent_issuers(
+        tmp_path, monkeypatch):
+    output_root = tmp_path / ".generated/go2_branch_corpus_v1_2"
+    output_root.mkdir(parents=True)
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    path = output_root / "scorer_fit/concurrent-receipt.json"
+    path.parent.mkdir()
+    payloads = [{"issuer": "first"}, {"issuer": "second"}]
+
+    def issue(payload):
+        try:
+            B._write_or_require_exact_json(
+                path, payload, label="synthetic concurrent receipt")
+            return "installed"
+        except RuntimeError:
+            return "rejected"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        outcomes = list(executor.map(issue, payloads))
+    assert sorted(outcomes) == ["installed", "rejected"]
+    assert json.loads(path.read_text()) in payloads
+
+
+def test_parallel_exhaustion_must_certify_before_failure_receipt(
+        tmp_path, monkeypatch):
+    output_root = tmp_path / "go2_branch_corpus_v1_2"
+    out = output_root / "scorer_fit"
+    out.mkdir(parents=True)
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    terminal_path = out / B.PARALLEL_SMALL_TERMINAL_RESULT_NAME
+    B.atomic_json(terminal_path, {"status": "EXHAUSTED"})
+    monkeypatch.setattr(B, "_parallel_small_search_inputs", lambda _out: {})
+    monkeypatch.setattr(
+        B, "_load_parallel_plan_and_benchmark",
+        lambda _out, _inputs: ({"total_rank_count": 2}, {}, {}))
+    monkeypatch.setattr(
+        B, "_parallel_search_callbacks",
+        lambda _inputs: (lambda *_args: {}, lambda *_args: False,
+                         lambda *_args: True))
+    monkeypatch.setattr(
+        B, "_parallel_search_checkpoint_root", lambda _out: out / "checkpoints")
+
+    def reject_partial(**_kwargs):
+        raise B.PARALLEL_SEARCH.ParallelSearchError(
+            "terminal scientific EXHAUSTED surface changed")
+
+    monkeypatch.setattr(
+        B.PARALLEL_SEARCH, "validate_exhausted_search_result", reject_partial)
+    monkeypatch.setattr(
+        B, "_parallel_failure_receipt",
+        lambda **_kwargs: pytest.fail("uncertified failure receipt was built"))
+    with pytest.raises(
+            B.PARALLEL_SEARCH.ParallelSearchError,
+            match="EXHAUSTED surface changed"):
+        B.stage_parallel_small_completion_search()
+
+
+def _synthetic_parallel_failure_plan_and_prepare():
+    states = [{
+        "state_id": f"state-{index:03d}",
+        "state_identity_digest": f"{index + 1:064x}",
+        "family": f"synthetic-family-{index // 15}",
+        "stratum": B.ALLOC.STRATA[(index % 15) // 5],
+        "split_role": "calibration" if index % 5 == 0 else "fit",
+        "goal_type": "landmark",
+    } for index in range(B.PARALLEL_SEARCH.PREFIX_STATE_COUNT)]
+    plan = B.PARALLEL_SEARCH.build_search_plan(
+        candidate_scene_ids=[f"scene-{index:03d}" for index in range(5)],
+        combination_size=5, worker_count=1,
+        source_repository_commit="a" * 40,
+        clean_source_launch_receipt_digest="b" * 64,
+        state_selector_amendment_digest="c" * 64,
+        candidate_allocation_amendment_digest="d" * 64,
+        fixed_state_projection_digest="e" * 64,
+        resolver_cursor_scene_id="scene-before-pool",
+        solver_identity={"name": "synthetic", "version": "1"},
+        solver_options={"threads": 1, "mip_rel_gap": 0.0},
+    )
+
+    def prepare(_rank, _combination):
+        return {
+            "states": copy.deepcopy(states),
+            "source_identity_manifest_digest": "f" * 64,
+            "mask_context": {},
+        }
+
+    return plan, prepare, states
+
+
+def _synthetic_parallel_wave(
+        plan, projection, *, statuses, state_index=0, prefix=()):
+    results = [{
+        "rotation": rotation,
+        "status": status,
+        "message": f"synthetic {status.lower()}",
+        "elapsed_s": 0.0,
+        "solver_call_count": 1,
+        "worker_pid": 1,
+        "thread_environment": dict(B.PARALLEL_SEARCH.THREAD_ENVIRONMENT),
+    } for rotation, status in enumerate(statuses)]
+    wave_status, selected = B.PARALLEL_SEARCH._lexicographic_wave_decision(
+        statuses, state_index=state_index)
+    payload = {
+        "schema": B.PARALLEL_SEARCH.WAVE_RECEIPT_SCHEMA,
+        "search_plan_digest": plan["search_plan_digest"],
+        "rank": 0,
+        "state_index": state_index,
+        "projection_digest": projection,
+        "prefix_rotations_before": list(prefix),
+        "rotation_results": results,
+        "wave_status": wave_status,
+        "selected_rotation": selected,
+        "solver_call_count": B.PARALLEL_SEARCH.ROTATION_COUNT,
+        "wave_elapsed_s": 0.0,
+        "candidate_outcomes_consumed": False,
+    }
+    payload["wave_receipt_digest"] = \
+        B.PARALLEL_SEARCH.canonical_digest(payload)
+    return payload
+
+
+def test_parallel_failure_inventory_rejects_noncanonical_checkpoint_file(
+        tmp_path, monkeypatch):
+    output_root = tmp_path / "go2_branch_corpus_v1_2"
+    out = output_root / "scorer_fit"
+    rank_dir = (out / B.PARALLEL_SMALL_CHECKPOINT_ROOT /
+                "waves/rank-000000000000")
+    rank_dir.mkdir(parents=True)
+    (rank_dir / "self-authored-fatal.json").write_text(
+        json.dumps({"status": "FATAL"}))
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    plan, prepare, _states = _synthetic_parallel_failure_plan_and_prepare()
+    with pytest.raises(RuntimeError, match="filename is noncanonical"):
+        B._parallel_failure_evidence_inventory(
+            out=out, plan=plan, prepare_rank=prepare)
+
+
+def test_parallel_failure_inventory_requires_waves_for_every_rank_receipt(
+        tmp_path, monkeypatch):
+    output_root = tmp_path / "go2_branch_corpus_v1_2"
+    out = output_root / "scorer_fit"
+    checkpoint = out / B.PARALLEL_SMALL_CHECKPOINT_ROOT
+    checkpoint.mkdir(parents=True)
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    plan, prepare, states = _synthetic_parallel_failure_plan_and_prepare()
+    projection = B.PARALLEL_SEARCH.canonical_digest(
+        B.PARALLEL_SEARCH.project_allocator_identity_states(states))
+    rank = B.PARALLEL_SEARCH._rank_payload(
+        plan=plan, rank=0, projection_digest=projection,
+        source_digest="f" * 64, classification="MASK_FAIL",
+        rotations=[0] * B.PARALLEL_SEARCH.PREFIX_STATE_COUNT,
+        allocation={"allocation_manifest_digest": "1" * 64},
+        assignment_digest="2" * 64)
+    B.PARALLEL_SEARCH.write_rank_receipt(
+        checkpoint / "ranks/000000000000.json", rank,
+        search_plan=plan)
+    with pytest.raises(RuntimeError, match="lacks complete wave evidence"):
+        B._parallel_failure_evidence_inventory(
+            out=out, plan=plan, prepare_rank=prepare)
+
+
+def test_parallel_failure_inventory_rejects_fatal_wave_for_infeasible_rank(
+        tmp_path, monkeypatch):
+    output_root = tmp_path / "go2_branch_corpus_v1_2"
+    out = output_root / "scorer_fit"
+    checkpoint = out / B.PARALLEL_SMALL_CHECKPOINT_ROOT
+    checkpoint.mkdir(parents=True)
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    plan, prepare, states = _synthetic_parallel_failure_plan_and_prepare()
+    projection = B.PARALLEL_SEARCH.canonical_digest(
+        B.PARALLEL_SEARCH.project_allocator_identity_states(states))
+    rank = B.PARALLEL_SEARCH._rank_payload(
+        plan=plan, rank=0, projection_digest=projection,
+        source_digest="f" * 64, classification="ALLOCATOR_INFEASIBLE",
+        rotations=[], allocation=None, assignment_digest=None)
+    B.PARALLEL_SEARCH.write_rank_receipt(
+        checkpoint / "ranks/000000000000.json", rank,
+        search_plan=plan)
+    statuses = ["FATAL"] + [
+        "INFEASIBLE"] * (B.PARALLEL_SEARCH.ROTATION_COUNT - 1)
+    B.atomic_json(
+        checkpoint / "waves/rank-000000000000/prefix-000.json",
+        _synthetic_parallel_wave(plan, projection, statuses=statuses))
+    with pytest.raises(RuntimeError, match="infeasible rank wave evidence"):
+        B._parallel_failure_evidence_inventory(
+            out=out, plan=plan, prepare_rank=prepare)
+
+
+def test_fatal_receipt_binds_nonfatal_speculative_checkpoint_bytes(
+        tmp_path, monkeypatch):
+    output_root = tmp_path / "go2_branch_corpus_v1_2"
+    out = output_root / "scorer_fit"
+    checkpoint = out / B.PARALLEL_SMALL_CHECKPOINT_ROOT
+    checkpoint.mkdir(parents=True)
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    plan, prepare, states = _synthetic_parallel_failure_plan_and_prepare()
+    projection = B.PARALLEL_SEARCH.canonical_digest(
+        B.PARALLEL_SEARCH.project_allocator_identity_states(states))
+    statuses = ["FEASIBLE"] + [
+        "INFEASIBLE"] * (B.PARALLEL_SEARCH.ROTATION_COUNT - 1)
+    wave_path = checkpoint / "waves/rank-000000000000/prefix-000.json"
+    B.atomic_json(
+        wave_path,
+        _synthetic_parallel_wave(plan, projection, statuses=statuses))
+    monkeypatch.setattr(
+        B, "_artifact_binding",
+        lambda path, **_kwargs: {"path": str(path), "digest": "a" * 64})
+    kwargs = {
+        "out": out,
+        "inputs": {"prefix": {"receipt_binding": {"digest": "b" * 64}}},
+        "plan": plan,
+        "benchmark": {},
+        "status": "FATAL",
+        "reason": "synthetic fatal outside rank evaluation",
+        "terminal": None,
+        "prepare_rank": prepare,
+    }
+    first = B._parallel_failure_receipt(**kwargs)
+    assert [row["kind"] for row in first[
+        "checkpoint_evidence_inventory"]] == ["prefix_wave_receipt"]
+    wave_path.unlink()
+    second = B._parallel_failure_receipt(**kwargs)
+    assert second["checkpoint_evidence_inventory"] == []
+    assert (first["parallel_small_completion_failure_receipt_digest"]
+            != second["parallel_small_completion_failure_receipt_digest"])
+
+
+def test_complete_ordinary_nonpass_frontier_cannot_be_fatal(
+        tmp_path, monkeypatch):
+    output_root = tmp_path / "go2_branch_corpus_v1_2"
+    out = output_root / "scorer_fit"
+    out.mkdir(parents=True)
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    plan, prepare, _states = _synthetic_parallel_failure_plan_and_prepare()
+    monkeypatch.setattr(
+        B, "_parallel_failure_evidence_inventory",
+        lambda **_kwargs: ({0: {"classification": "MASK_FAIL"}}, [], []))
+    with pytest.raises(RuntimeError, match="requires EXHAUSTED evidence"):
+        B._parallel_failure_receipt(
+            out=out,
+            inputs={"prefix": {"receipt_binding": {}}},
+            plan=plan, benchmark={}, status="FATAL",
+            reason="synthetic contradictory fatal", terminal=None,
+            prepare_rank=prepare)
+
+
+def test_parallel_terminal_failure_hard_stops_before_search(monkeypatch):
+    monkeypatch.setattr(B, "_parallel_small_search_inputs", lambda _out: {})
+    monkeypatch.setattr(
+        B, "_load_parallel_plan_and_benchmark",
+        lambda _out, _inputs: ({}, {}, {}))
+    monkeypatch.setattr(
+        B, "_parallel_search_callbacks",
+        lambda _inputs: (lambda *_args: {}, lambda *_args: False,
+                         lambda *_args: True))
+    monkeypatch.setattr(
+        B, "_load_existing_parallel_terminal_failure",
+        lambda **_kwargs: {"status": "FATAL"})
+    monkeypatch.setattr(
+        B.PARALLEL_SEARCH, "run_scientific_parallel_search",
+        lambda **_kwargs: pytest.fail("terminal FATAL retried the search"))
+    with pytest.raises(RuntimeError, match="retry is forbidden"):
+        B.stage_parallel_small_completion_search()
+
+
+def test_parallel_failure_binds_terminal_result_presence_or_absence(
+        tmp_path, monkeypatch):
+    output_root = tmp_path / "go2_branch_corpus_v1_2"
+    out = output_root / "scorer_fit"
+    out.mkdir(parents=True)
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    absent = B._parallel_terminal_result_disposition(
+        out=out, status="FATAL", terminal=None)
+    assert absent == {
+        "status": "ABSENT",
+        "path": str(out / B.PARALLEL_SMALL_TERMINAL_RESULT_NAME),
+    }
+
+    terminal = {
+        "schema": B.PARALLEL_SEARCH.SEARCH_RESULT_SCHEMA,
+        "status": "EXHAUSTED",
+        "combination_attempt_count": 1,
+        "allocator_infeasible_combination_count": 1,
+        "search_plan_digest": "a" * 64,
+        "candidate_outcomes_consumed": False,
+    }
+    path = out / B.PARALLEL_SMALL_TERMINAL_RESULT_NAME
+    B.atomic_json(path, terminal)
+    with pytest.raises(RuntimeError, match="contradicts"):
+        B._parallel_terminal_result_disposition(
+            out=out, status="FATAL", terminal=None)
+    present = B._parallel_terminal_result_disposition(
+        out=out, status="EXHAUSTED", terminal=terminal)
+    assert present["status"] == "PRESENT_EXHAUSTED"
+    assert present["terminal_result_digest"] == \
+        B.PARALLEL_SEARCH.canonical_digest(terminal)
+    with pytest.raises(RuntimeError, match="bytes changed"):
+        B._parallel_terminal_result_disposition(
+            out=out, status="EXHAUSTED", terminal={**terminal, "tamper": True})
+
+
+def test_parallel_manifest_projection_removes_only_registered_merge_fields():
+    base = {
+        "state_id": "state-a", "state_identity_digest": "a" * 64,
+        "scene_id": "scene-a", "family": "family-a", "stratum": "general",
+        "split_role": "fit",
+        "goal_type": "landmark", "scientific_marker": {"exact": True},
+    }
+    merged = {
+        **base,
+        "state_index": 7,
+        "candidate_indices": [0, 1, 2, 3, 4, 5],
+        "candidate_rotation_index": 2,
+        "branch_identities": [{"branch_identity_digest": "b" * 64}],
+    }
+    assert B._preallocation_state_projection([merged]) == [base]
+    changed = {**merged, "unregistered_post_field": "tamper"}
+    assert B._preallocation_state_projection([changed]) != [base]
 
 
 def test_launch_hashes_same_pinned_utility_contract_after_alias_swap(
@@ -453,7 +1113,8 @@ def test_launch_hashes_same_pinned_utility_contract_after_alias_swap(
             "source_repository_clean": True,
             "clean_source_binding": source,
             "clean_source_binding_digest": B.canonical_digest(source),
-            "preoutcome_projection_fix_interruption": interruption,
+                "preoutcome_projection_fix_interruption": interruption,
+                "preoutcome_small_search_performance_interruption": interruption,
             **selector,
         }
         payload["contract_artifact_digest"] = B.canonical_digest(payload)
@@ -659,7 +1320,11 @@ def test_corrupted_row_is_preserved_then_exact_registered_row_resumes(tmp_path):
     "artifact",
     ("branch_rows", "receipt", "latents", "row_record", "frame"),
 )
-def test_any_durable_outcome_artifact_seals_identity_replacement(tmp_path, artifact):
+def test_any_durable_outcome_artifact_seals_identity_replacement(
+        tmp_path, artifact, monkeypatch):
+    # Treat the pytest parent as the managed generated root so the production
+    # helper pins ``tmp_path`` once as a pool directory before enumeration.
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path.parent)
     # Empty staging directories are not outcomes; the first durable file is.
     (tmp_path / "row_records").mkdir()
     (tmp_path / "frames" / "family-a").mkdir(parents=True)

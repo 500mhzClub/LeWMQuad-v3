@@ -2070,33 +2070,21 @@ def _fake_allocation(states, serial):
     }
 
 
-def test_joint_search_uses_first_passing_combination_and_unchanged_allocator(
-        monkeypatch):
+def test_serial_joint_search_is_tombstoned_without_allocator_use(monkeypatch):
     fixed = [_joint_state(index) for index in range(115)]
     candidates = [_joint_candidate(index) for index in range(6)]
     # A large d0 must not change the predecessor's cross-scene lexical order.
     candidates[0]["goal"]["start_geodesic_m"] = 9.0
     allocator_calls = []
-
-    def allocate(projection, *, source_identity_manifest_digest):
-        allocator_calls.append((copy.deepcopy(projection),
-                                source_identity_manifest_digest))
-        return _fake_allocation(projection, len(allocator_calls))
-
-    monkeypatch.setattr(B.ALLOC, "build_allocation_manifest", allocate)
-    monkeypatch.setattr(B, "_all_completion_masks_pass",
-                        lambda **kwargs: len(allocator_calls) == 2)
-    selected, receipt = B.select_small_completion_combination(
-        fixed_states=fixed, raw_candidates=candidates, preserved_vectors={})
-    assert receipt["combination_attempt_count"] == 2
-    assert len(allocator_calls) == 2
-    # C(6,5) lexical scene order: the second set omits scene index 4 while the
-    # lexically smallest scene remains selected despite its largest d0.
-    assert {row["scene_id"] for row in selected} == {
-        "small-scene-000", "small-scene-001", "small-scene-002",
-        "small-scene-003", "small-scene-005"}
-    calibration = [row for row in selected if row["split_role"] == "calibration"]
-    assert [row["scene_id"] for row in calibration] == ["small-scene-000"]
+    monkeypatch.setattr(
+        B.ALLOC, "build_allocation_manifest",
+        lambda *_args, **_kwargs: allocator_calls.append(True))
+    with pytest.raises(
+            RuntimeError, match="superseded.*bounded parallel coordinator"):
+        B.select_small_completion_combination(
+            fixed_states=fixed, raw_candidates=candidates,
+            preserved_vectors={})
+    assert allocator_calls == []
 
 
 def test_cursor_restriction_never_revisits_earlier_completion_only_scene():
@@ -2112,18 +2100,14 @@ def test_cursor_restriction_never_revisits_earlier_completion_only_scene():
     assert [row["scene_id"] for row in retained] == ["small-scene-005"]
 
 
-def test_joint_search_fails_closed_when_cursor_pool_has_fewer_than_five():
+def test_serial_joint_search_tombstone_precedes_pool_arithmetic():
     fixed = [_joint_state(index) for index in range(115)]
     candidates = [_joint_candidate(index) for index in range(4)]
     with pytest.raises(
-        B.SmallCompletionJointSearchInfeasible,
-        match="cursor-restricted.*fewer than five",
-    ) as error:
+            RuntimeError, match="superseded.*bounded parallel coordinator"):
         B.select_small_completion_combination(
             fixed_states=fixed, raw_candidates=candidates,
             preserved_vectors={}, resolver_cursor_scene_id="earlier")
-    assert error.value.attempt_count == 0
-    assert len(error.value.candidate_scene_ids) == 4
 
 
 def test_terminal_joint_search_failure_is_nonoverwriting_and_pre_genesis(
@@ -2160,7 +2144,7 @@ def test_terminal_joint_search_failure_is_nonoverwriting_and_pre_genesis(
     args = SimpleNamespace(
         pool="scorer_fit", family=B.REACHABILITY_REDRIVE_FAMILY,
         backend="cpu")
-    with pytest.raises(RuntimeError, match="terminal pre-outcome"):
+    with pytest.raises(RuntimeError, match="serial small-family resolution"):
         B.resolve_states(args)
 
 
@@ -2205,18 +2189,7 @@ def test_terminal_failure_rejects_resigned_malformed_arithmetic(
                 backend="cpu"))
 
 
-def test_terminal_exhaustion_is_replayed_over_exact_live_pool(
-        tmp_path, monkeypatch):
-    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
-    out = tmp_path / "scorer_fit"
-    out.mkdir(parents=True)
-    launch = {
-        "source_repository_commit": "a" * 40,
-        "clean_source_launch_receipt_digest": "b" * 64,
-        "state_selector_feasibility_receipt_digest": "c" * 64,
-    }
-    monkeypatch.setattr(B, "_load_clean_source_launch_receipt",
-                        lambda: dict(launch))
+def test_terminal_exhaustion_cannot_reenter_legacy_serial_selector(monkeypatch):
     fixed = [_joint_state(index) for index in range(115)]
     candidates = [_joint_candidate(index) for index in range(6)]
     calls = []
@@ -2224,42 +2197,12 @@ def test_terminal_exhaustion_is_replayed_over_exact_live_pool(
         B.ALLOC, "build_allocation_manifest",
         lambda projection, **kwargs: (
             calls.append(1) or _fake_allocation(projection, len(calls))))
-    monkeypatch.setattr(B, "_all_completion_masks_pass", lambda **kwargs: False)
-    with pytest.raises(B.SmallCompletionJointSearchInfeasible) as caught:
+    with pytest.raises(
+            RuntimeError, match="superseded.*bounded parallel coordinator"):
         B.select_small_completion_combination(
             fixed_states=fixed, raw_candidates=candidates,
             preserved_vectors={}, resolver_cursor_scene_id="earlier")
-    payload = B._issue_small_completion_search_failure(
-        out=out, error=caught.value, resolver_cursor_scene_id="earlier")
-    assert payload["combination_attempt_count"] == 6
-    monkeypatch.setattr(
-        B, "_live_small_completion_search_inputs",
-        lambda **_kwargs: ("earlier", fixed, candidates, {}))
-    calls.clear()
-    reopened = B._load_small_completion_search_failure(
-        out, args=SimpleNamespace(
-            pool="scorer_fit", family=B.REACHABILITY_REDRIVE_FAMILY,
-            backend="cpu"))
-    assert reopened == payload
-    assert len(calls) == 6
-
-    changed = copy.deepcopy(payload)
-    changed["cursor_restricted_candidate_scene_ids"][0] = "later-tamper"
-    changed["cursor_restricted_candidate_scene_ids"].sort()
-    changed["cursor_restricted_candidate_scene_ids_digest"] = \
-        B.canonical_digest(changed["cursor_restricted_candidate_scene_ids"])
-    changed["small_completion_joint_search_failure_digest"] = \
-        B.canonical_digest({
-            key: item for key, item in changed.items()
-            if key != "small_completion_joint_search_failure_digest"
-        })
-    (out / B.SMALL_COMPLETION_SEARCH_FAILURE_NAME).write_text(
-        json.dumps(changed))
-    with pytest.raises(RuntimeError, match="live cursor/pool"):
-        B._load_small_completion_search_failure(
-            out, args=SimpleNamespace(
-                pool="scorer_fit", family=B.REACHABILITY_REDRIVE_FAMILY,
-                backend="cpu"))
+    assert calls == []
 
 
 def test_joint_search_fails_after_exhausting_all_combinations(monkeypatch):
@@ -2270,12 +2213,12 @@ def test_joint_search_fails_after_exhausting_all_combinations(monkeypatch):
         B.ALLOC, "build_allocation_manifest",
         lambda projection, **kwargs: (
             calls.append(1) or _fake_allocation(projection, len(calls))))
-    monkeypatch.setattr(B, "_all_completion_masks_pass", lambda **kwargs: False)
-    with pytest.raises(RuntimeError, match="no lexicographic small completion"):
+    with pytest.raises(
+            RuntimeError, match="superseded.*bounded parallel coordinator"):
         B.select_small_completion_combination(
             fixed_states=fixed, raw_candidates=candidates,
             preserved_vectors={})
-    assert len(calls) == 6
+    assert calls == []
 
 
 def test_joint_search_continues_after_allocator_infeasible_combination(monkeypatch):
@@ -2291,11 +2234,12 @@ def test_joint_search_continues_after_allocator_infeasible_combination(monkeypat
         return _fake_allocation(projection, len(calls))
 
     monkeypatch.setattr(B.ALLOC, "build_allocation_manifest", allocate)
-    monkeypatch.setattr(B, "_all_completion_masks_pass", lambda **kwargs: True)
-    _selected, receipt = B.select_small_completion_combination(
-        fixed_states=fixed, raw_candidates=candidates, preserved_vectors={})
-    assert receipt["combination_attempt_count"] == 2
-    assert receipt["allocator_infeasible_combination_count"] == 1
+    with pytest.raises(
+            RuntimeError, match="superseded.*bounded parallel coordinator"):
+        B.select_small_completion_combination(
+            fixed_states=fixed, raw_candidates=candidates,
+            preserved_vectors={})
+    assert calls == []
 
 
 def test_exact_completion_gate_requires_all_forty(monkeypatch):
@@ -2423,32 +2367,15 @@ def _joint_manifest_fixture():
             "small_completion_joint_allocation_search": receipt}, allocation
 
 
-def test_manifest_joint_receipt_replays_live_first_combination(monkeypatch):
+def test_manifest_rejects_legacy_serial_joint_receipt_without_replay(
+        monkeypatch):
     manifest, allocation = _joint_manifest_fixture()
-    receipt = manifest["small_completion_joint_allocation_search"]
-    completion = [state for state in manifest["states"]
-                  if state["family"] == B.REACHABILITY_REDRIVE_FAMILY
-                  and state["stratum"] == "completion_enriched"]
-    raw = [_joint_candidate(index) for index in range(5)]
-    for state, expected in zip(raw, completion):
-        state["scene_id"] = expected["scene_id"]
     monkeypatch.setattr(
-        B, "_small_completion_candidates_from_feasibility",
-        lambda **_kwargs: raw)
-    monkeypatch.setattr(B, "_phase1_completion_rotation_vectors", lambda: {})
-    replay = {key: value for key, value in receipt.items() if key not in (
-        "final_candidate_assignment_set_digest", "final_masks_equal_searched_masks")}
-    monkeypatch.setattr(
-        B, "select_small_completion_combination",
-        lambda **_kwargs: (completion, replay))
-    B._validate_small_completion_joint_search_receipt(
-        manifest=manifest, allocation=allocation, replay_live=True)
-    changed = copy.deepcopy(manifest)
-    changed["small_completion_joint_allocation_search"][
-        "combination_attempt_count"] = 2
-    with pytest.raises(RuntimeError, match="not the first live passing"):
+        B, "select_small_completion_combination", lambda **_kwargs:
+        pytest.fail("legacy serial selector was replayed"))
+    with pytest.raises(RuntimeError, match="self digest mismatch"):
         B._validate_small_completion_joint_search_receipt(
-            manifest=changed, allocation=allocation, replay_live=True)
+            manifest=manifest, allocation=allocation, replay_live=True)
 
 
 def _redrive_pair():

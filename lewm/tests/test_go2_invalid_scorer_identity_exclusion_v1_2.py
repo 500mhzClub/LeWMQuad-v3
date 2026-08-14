@@ -365,8 +365,16 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
         "byte_count": 123,
         "status": C.INTERRUPTION.STATUS,
     }
+    performance_interruption = {
+        "path": str(C.PERFORMANCE_INTERRUPTION.RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "3" * 64,
+        "raw_sha256": "4" * 64,
+        "byte_count": 456,
+        "status": C.PERFORMANCE_INTERRUPTION.STATUS,
+    }
     payload = C._contract_artifact_payload(
-        source, feasibility, disposition, interruption)
+        source, feasibility, disposition, interruption,
+        performance_interruption)
     frozen = payload["contract"]
     assert payload["schema"] == "go2_utility_scorer_contract_v1_2_artifact"
     assert payload["source_repository_commit"] == "c" * 40
@@ -381,6 +389,8 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
     assert payload["mixed_precontract_disposition_receipt_digest"] == \
         disposition["mixed_precontract_disposition_receipt_digest"]
     assert payload["preoutcome_projection_fix_interruption"] == interruption
+    assert payload["preoutcome_small_search_performance_interruption"] == \
+        performance_interruption
     assert payload["mixed_state_post_allocation_revalidation"] == {
         "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
         "required_before_active_identity_manifest": True,

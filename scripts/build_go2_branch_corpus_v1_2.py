@@ -28,12 +28,15 @@ import itertools
 import json
 import math
 import os
+import re
 import subprocess
 import sys
+import tempfile
 import time
+from fnmatch import fnmatchcase
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import numpy as np
 
@@ -50,7 +53,9 @@ from lewm.oracle.go2_branch_oracle_v1_2 import (
 )
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
+from lewm.oracle import go2_parallel_small_completion_search_v1 as PARALLEL_SEARCH
 from lewm.oracle import go2_scorer_projection_fix_interruption_v1 as INTERRUPTION
+from lewm.oracle import go2_scorer_small_search_performance_interruption_v1 as PERFORMANCE_INTERRUPTION
 from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR
 from lewm.oracle.go2_textured_v03_renderer import (
     BasePose,
@@ -187,6 +192,31 @@ SMALL_COMPLETION_SEARCH_FAILURE_STATUS = (
 SMALL_COMPLETION_SEARCH_FAILURE_NAME = (
     "small_completion_joint_search_preoutcome_failure_v2.json"
 )
+PARALLEL_SMALL_SEARCH_PLAN_NAME = (
+    "small_completion_parallel_search_plan_v1.json"
+)
+PARALLEL_SMALL_BENCHMARK_NAME = (
+    "small_completion_parallel_prefix_benchmark_v1.json"
+)
+PARALLEL_SMALL_CHECKPOINT_ROOT = "small_completion_parallel_search_v1"
+PARALLEL_SMALL_TERMINAL_RESULT_NAME = (
+    "small_completion_parallel_terminal_result_v1.json"
+)
+PARALLEL_SMALL_JOINT_RECEIPT_NAME = (
+    "small_completion_parallel_joint_receipt_v1.json"
+)
+PARALLEL_SMALL_TERMINAL_FAILURE_NAME = (
+    "small_completion_parallel_terminal_failure_v1.json"
+)
+PARALLEL_SMALL_JOINT_RECEIPT_SCHEMA = (
+    "go2_branch_corpus_v1_2_parallel_small_completion_joint_receipt_v1"
+)
+PARALLEL_SMALL_FAILURE_SCHEMA = (
+    "go2_branch_corpus_v1_2_parallel_small_completion_terminal_failure_v1"
+)
+PARALLEL_SMALL_WORKER_COUNT = 32
+PARALLEL_SMALL_ACTIVE_RANK_WINDOW = 3
+PARALLEL_SMALL_BENCHMARK_MAXIMUM_FRACTION = 0.5
 STATE_RESOLUTION_SCENE_REQUEST_SCHEMA = (
     "go2_branch_corpus_v1_2_state_resolution_scene_request_v1"
 )
@@ -249,6 +279,22 @@ LAUNCH_BINDING_KEYS = (
     "mixed_precontract_disposition_receipt_digest",
 )
 ACTIVE_SELECTOR_BINDING_KEYS = tuple(STATE_SELECTOR.ACTIVE_SELECTOR_BINDING_KEYS)
+STATE_SHARD_COMMON_KEYS = (
+    "selection_digest", "scorer_fit_allocation_design_digest",
+    "candidate_allocator_contract_digest",
+    "candidate_allocation_amendment_digest",
+    "pre_identity_allocation_validation_digest",
+    "invalid_scorer_identity_exclusion_digest",
+    "state_selector_amendment_digest",
+    "state_selector_feasibility_receipt_digest", "candidate_bank_digest",
+    *LAUNCH_BINDING_KEYS,
+    "progress_contract_digest", "safety_contract_digest",
+    "oracle_v1_2_digest", "scorer_contract_v1_2_digest", "boundary_digest",
+    "render_contract_digest", "preprocess_contract_digest",
+    "textured_v03_renderer_contract_digest", "preprocessing_digest",
+    "target_encoder_digest", "target_encoder_checkpoint_sha256",
+    "genesis_backend",
+)
 
 MIXED_ACTIVE_STATE_SHARD_SCHEMA = (
     "go2_branch_corpus_v1_2_mixed_active_state_shard_v2"
@@ -469,6 +515,23 @@ def _load_issued_scorer_contract_at_path(path: Path) -> dict[str, Any]:
         raise RuntimeError(
             "issued scorer contract lost projection-fix interruption lineage"
         )
+    performance_interruption = (
+        PERFORMANCE_INTERRUPTION
+        .load_and_validate_performance_interruption_receipt(
+            expected_source_repository_commit=str(
+                current_source["source_repository_commit"]),
+            expected_clean_source_binding_digest=canonical_digest(current_source),
+            expected_bound_implementations_digest=str(
+                current_source["bound_implementations_digest"]),
+            root=ROOT,
+        )
+    )
+    if artifact.get("preoutcome_small_search_performance_interruption") != \
+            PERFORMANCE_INTERRUPTION.receipt_binding(
+                performance_interruption, root=ROOT):
+        raise RuntimeError(
+            "issued scorer contract lost small-search performance interruption lineage"
+        )
     return artifact
 
 
@@ -520,6 +583,9 @@ def _build_clean_source_launch_receipt(
             STATE_SELECTOR.state_selector_amendment_digest(),
         "preoutcome_projection_fix_interruption": dict(
             scorer_artifact["preoutcome_projection_fix_interruption"]),
+        "preoutcome_small_search_performance_interruption": dict(
+            scorer_artifact[
+                "preoutcome_small_search_performance_interruption"]),
         **selector_receipts,
         "pre_identity_allocation_validation_digest":
             pre_identity["pre_identity_validation_digest"],
@@ -3248,6 +3314,82 @@ def stage_selector_reachability_feasibility(args: argparse.Namespace) -> int:
     return 0 if receipt["status"] == REACHABILITY_FEASIBILITY_PASS_STATUS else 1
 
 
+_PHASE1_MANAGED_GENERATED_ROOTS = (
+    Path(".generated/go2_branch_corpus_v1_2"),
+    Path(".generated/go2_utility_scorer_v1_2"),
+)
+
+
+def _pin_phase1_managed_roots(*, root: Path) -> dict[Path, Path]:
+    """Resolve each permitted generated alias once for one coherent audit."""
+
+    root_path = Path(root)
+    absolute_root = root_path if root_path.is_absolute() else Path.cwd() / root_path
+    pinned: dict[Path, Path] = {}
+    for managed_relative in _PHASE1_MANAGED_GENERATED_ROOTS:
+        managed_root = absolute_root / managed_relative
+        if managed_root.is_symlink() or managed_root.exists():
+            sentinel = managed_root / ".phase1-custody-root-sentinel"
+            pinned[managed_relative] = _pin_generated_path(
+                sentinel, sentinel, generated_root=managed_root).parent
+        else:
+            # An entirely absent generated root is valid absence evidence.
+            # Prove that no existing ancestor is an alias before freezing its
+            # lexical location for this audit.
+            _assert_unsealed_path(managed_root)
+            pinned[managed_relative] = managed_root
+    return pinned
+
+
+def _pinned_phase1_surface_path(
+        *, pinned_roots: Mapping[Path, Path],
+        relative: str | Path) -> Path:
+    """Derive one registered surface from a previously pinned root map."""
+
+    logical = Path(relative)
+    if logical.is_absolute():
+        raise RuntimeError("phase-1 surface path must be repository-relative")
+    managed_relative = next((candidate for candidate in
+                             _PHASE1_MANAGED_GENERATED_ROOTS
+                             if logical == candidate
+                             or candidate in logical.parents), None)
+    if managed_relative is None:
+        raise RuntimeError("phase-1 surface escaped registered generated roots")
+    if set(pinned_roots) != set(_PHASE1_MANAGED_GENERATED_ROOTS):
+        raise RuntimeError("phase-1 pinned-root surface changed")
+    tail = logical.relative_to(managed_relative)
+    pinned_path = Path(pinned_roots[managed_relative]).joinpath(*tail.parts)
+    _assert_unsealed_path(pinned_path)
+    return pinned_path
+
+
+def _guarded_phase1_descendant_artifacts(
+        *, pinned_root: Path, relative: str | Path) -> list[str]:
+    """Enumerate files below one pinned root without following a symlink."""
+
+    logical_root = Path(relative)
+    if not pinned_root.exists():
+        return []
+    if pinned_root.is_symlink() or not pinned_root.is_dir():
+        raise RuntimeError("phase-1 directory root is not a regular directory")
+    artifacts: list[str] = []
+    stack: list[tuple[Path, Path]] = [(logical_root, pinned_root)]
+    while stack:
+        logical_directory, pinned_directory = stack.pop()
+        for entry in sorted(pinned_directory.iterdir(), key=lambda row: row.name):
+            if entry.is_symlink():
+                raise RuntimeError("phase-1 descendant is symlinked")
+            logical_entry = logical_directory / entry.name
+            _assert_unsealed_path(entry)
+            if entry.is_file():
+                artifacts.append(str(logical_entry))
+            elif entry.is_dir():
+                stack.append((logical_entry, entry))
+            else:
+                raise RuntimeError("phase-1 descendant is not a regular node")
+    return sorted(artifacts)
+
+
 def _phase1_outcome_surface_absence_attestation(
         *, root: Path = ROOT) -> dict[str, Any]:
     """Audit exact scorer-output paths once, before the phase-1 redrive.
@@ -3269,9 +3411,12 @@ def _phase1_outcome_surface_absence_attestation(
             return "directory"
         return "other"
 
+    pinned_roots = _pin_phase1_managed_roots(root=root)
+
     exact_file_checks: list[dict[str, Any]] = []
     for relative in STATE_SELECTOR.PHASE1_FORBIDDEN_EXACT_FILE_PATHS:
-        target = root / relative
+        target = _pinned_phase1_surface_path(
+            pinned_roots=pinned_roots, relative=relative)
         target_kind = kind(target)
         absent = target_kind == "absent"
         exact_file_checks.append({
@@ -3283,15 +3428,13 @@ def _phase1_outcome_surface_absence_attestation(
 
     directory_checks: list[dict[str, Any]] = []
     for relative in STATE_SELECTOR.PHASE1_FORBIDDEN_DIRECTORY_ROOTS:
-        target = root / relative
+        target = _pinned_phase1_surface_path(
+            pinned_roots=pinned_roots, relative=relative)
         target_kind = kind(target)
         descendants: list[str] = []
         if target_kind == "directory":
-            descendants = sorted(
-                str(path.relative_to(root))
-                for path in target.rglob("*")
-                if path.is_file() or path.is_symlink()
-            )
+            descendants = _guarded_phase1_descendant_artifacts(
+                pinned_root=target, relative=relative)
         elif target_kind != "absent":
             descendants = [relative]
         directory_checks.append({
@@ -3305,9 +3448,24 @@ def _phase1_outcome_surface_absence_attestation(
 
     glob_checks: list[dict[str, Any]] = []
     for pattern in STATE_SELECTOR.PHASE1_FORBIDDEN_GLOB_PATTERNS:
-        matches = sorted(
-            str(path.relative_to(root)) for path in root.glob(pattern)
-        )
+        logical_pattern = Path(pattern)
+        logical_parent = logical_pattern.parent
+        if any(character in str(logical_parent) for character in "*?["):
+            raise RuntimeError("phase-1 glob parent is not an exact path")
+        pinned_parent = _pinned_phase1_surface_path(
+            pinned_roots=pinned_roots, relative=logical_parent)
+        matches: list[str] = []
+        if pinned_parent.exists():
+            if pinned_parent.is_symlink() or not pinned_parent.is_dir():
+                raise RuntimeError("phase-1 glob parent is not a directory")
+            for entry in sorted(pinned_parent.iterdir(), key=lambda row: row.name):
+                if not fnmatchcase(entry.name, logical_pattern.name):
+                    continue
+                if entry.is_symlink():
+                    raise RuntimeError("phase-1 glob match is symlinked")
+                logical_entry = logical_parent / entry.name
+                _assert_unsealed_path(entry)
+                matches.append(str(logical_entry))
         glob_checks.append({
             "pattern": pattern,
             "match_count": len(matches),
@@ -3357,6 +3515,150 @@ def _phase1_present_outcome_paths(attestation: dict[str, Any]) -> list[str]:
         match for row in attestation["glob_checks"] for match in row["matches"]
     )
     return sorted(set(paths))
+
+
+def _replay_small_fixed_prefix_pairs(
+        pairs: Sequence[Mapping[str, Any]], *,
+        successor_bindings: Mapping[str, Any] | None = None,
+        ) -> dict[str, Any]:
+    """Run the ordinary request/capture validators and exact 5G/5S reducer.
+
+    Historical pairs carry their byte-bound historical nested bindings.  A
+    successor replay instead supplies the one current binding object that must
+    occur in every projected request.  Neither mode consults an active
+    request/capture directory; the complete pair sequence is provided by the
+    custody module after it has reopened the exact archived or successor bytes.
+    """
+
+    pool, exclusion = scene_pool("scorer_fit")
+    family = REACHABILITY_REDRIVE_FAMILY
+    args = argparse.Namespace(pool="scorer_fit", family=family, backend="cpu")
+    required = {
+        "general": 5,
+        "safety_enriched": 5,
+        "completion_enriched": 0,
+    }
+    found = {key: 0 for key in required}
+    selected: list[dict[str, Any]] = []
+    trace: list[dict[str, Any]] = []
+    rows = [dict(pair) for pair in pairs]
+    if len(rows) != PERFORMANCE_INTERRUPTION.SMALL_PREFIX_REQUEST_COUNT:
+        raise RuntimeError("small fixed prefix pair count changed")
+    for ordinal, pair in enumerate(rows):
+        request = dict(pair.get("request", {}))
+        capture = dict(pair.get("capture", {}))
+        if (pair.get("scene_ordinal") != ordinal
+                or request.get("scene_ordinal") != ordinal
+                or pair.get("scene_id") != request.get("scene", {}).get("scene_id")):
+            raise RuntimeError("small fixed prefix lexical scene order changed")
+        embedded = request.get("state_shard_bindings")
+        if not isinstance(embedded, Mapping):
+            raise RuntimeError("small fixed prefix bindings are malformed")
+        expected_bindings = (
+            embedded if successor_bindings is None else
+            PERFORMANCE_INTERRUPTION.project_successor_state_shard_bindings(
+                embedded, successor_bindings)
+        )
+        _validate_state_resolution_scene_request(
+            request, args=args, out=OUT_ROOT / "scorer_fit", pool=pool,
+            exclusion=exclusion,
+            expected_state_shard_bindings=expected_bindings)
+        _validate_state_resolution_scene_capture(
+            capture, expected_request=request)
+        requested = [name for name in STRATA
+                     if found[name] < required[name]]
+        if (request.get("required_counts") != required
+                or request.get("found_before_scene") != found
+                or request.get("requested_strata_in_priority_order")
+                != requested
+                or capture.get("worker_failure") is not None):
+            raise RuntimeError("small fixed prefix reducer input changed")
+        chosen = capture.get("chosen_state")
+        chosen_stratum = None
+        chosen_digest = None
+        if chosen is not None:
+            chosen = dict(chosen)
+            chosen_stratum = str(chosen["stratum"])
+            if chosen_stratum not in requested:
+                raise RuntimeError("small fixed prefix selected a filled stratum")
+            found[chosen_stratum] += 1
+            selected.append(chosen)
+            chosen_digest = str(chosen["state_identity_digest"])
+        quota_full = found == required
+        if quota_full != (ordinal == len(rows) - 1):
+            raise RuntimeError("small fixed prefix does not stop at first quota")
+        trace.append({
+            "scene_ordinal": ordinal,
+            "scene_id": str(pair["scene_id"]),
+            "found_before_scene": request["found_before_scene"],
+            "requested_strata_in_priority_order": requested,
+            "chosen_stratum": chosen_stratum,
+            "chosen_state_identity_digest": chosen_digest,
+        })
+    if (found != required or len(selected) != 10
+            or len({state["scene_id"] for state in selected}) != 10):
+        raise RuntimeError("small fixed prefix no longer contains exact 5G/5S")
+    return {
+        "states": selected,
+        "resolver_cursor_scene_id": str(rows[-1]["scene_id"]),
+        "reducer_trace_digest": canonical_digest(trace),
+        "state_identity_digests": sorted(
+            str(state["state_identity_digest"]) for state in selected),
+    }
+
+
+def _revalidate_performance_interrupted_small_prefix(
+        pairs: Sequence[Mapping[str, Any]]) -> bool:
+    _replay_small_fixed_prefix_pairs(pairs)
+    return True
+
+
+def _revalidate_reissued_small_prefix(
+        archived_pairs: Sequence[Mapping[str, Any]],
+        successor_pairs: Sequence[Mapping[str, Any]],
+        successor_bindings: Mapping[str, Any]) -> bool:
+    archived = _replay_small_fixed_prefix_pairs(archived_pairs)
+    successor = _replay_small_fixed_prefix_pairs(
+        successor_pairs, successor_bindings=successor_bindings)
+    if (archived["state_identity_digests"]
+            != successor["state_identity_digests"]
+            or archived["resolver_cursor_scene_id"]
+            != successor["resolver_cursor_scene_id"]):
+        raise RuntimeError("small prefix successor changed scientific identities")
+    return True
+
+
+def stage_small_search_performance_interruption() -> int:
+    """Archive the exact 24-hour pre-outcome attempt under clean successor source.
+
+    This stage is an authority/custody transition only.  It neither satisfies
+    the selector gate nor resolves a state.  Contract issuance and fixed-shard
+    reissue occur in later explicit steps after this receipt is reviewed.
+    """
+
+    source = clean_source_binding()
+    receipt = (
+        PERFORMANCE_INTERRUPTION
+        .issue_and_archive_performance_interruption_receipt(
+            source_repository_commit=str(source["source_repository_commit"]),
+            clean_source_binding_digest=canonical_digest(source),
+            bound_implementations_digest=str(
+                source["bound_implementations_digest"]),
+            outcome_surface_absent=lambda:
+                _phase1_outcome_surface_absence_attestation(root=ROOT),
+            revalidate_small_prefix=
+                _revalidate_performance_interrupted_small_prefix,
+            root=ROOT,
+        )
+    )
+    print(json.dumps({
+        "status": receipt["status"],
+        "receipt": PERFORMANCE_INTERRUPTION.receipt_binding(
+            receipt, root=ROOT),
+        "scientific_gate_input": receipt["scientific_gate_input"],
+        "may_satisfy_selector_gate": receipt["may_satisfy_selector_gate"],
+    }, indent=2, sort_keys=True))
+    return 0
 
 
 def _phase1_expected_states() -> list[tuple[dict[str, Any], dict[str, Any]]]:
@@ -4059,7 +4361,7 @@ def _allocation_assignment_set_digest(allocation: dict[str, Any]) -> str:
         "candidate_indices": [int(value) for value in row["candidate_indices"]],
     } for row in allocation["assignments"]], key=lambda row: (
         row["state_identity_digest"], row["state_id"]))
-    return canonical_digest(rows)
+    return PARALLEL_SEARCH.canonical_digest(rows)
 
 
 def _all_completion_masks_pass(
@@ -4129,88 +4431,12 @@ def select_small_completion_combination(
         preserved_vectors: dict[str, dict[str, Any]],
         resolver_cursor_scene_id: str | None = None,
         ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Choose the first lexicographic five-set passing the unchanged allocator.
+    """Refuse the superseded serial/unbounded implementation explicitly."""
 
-    The search is exhaustive if necessary.  Allocation-robust candidates are
-    not privileged in the ordering; their vectors only make the usual first
-    combination likely to pass without altering the exact-mask criterion.
-    """
-
-    if len(fixed_states) != 115:
-        raise RuntimeError("small-last joint search requires 115 fixed states")
-    if len({state["scene_id"] for state in fixed_states}) != 115:
-        raise RuntimeError("fixed joint-search states are not scene-disjoint")
-    # Preserve the predecessor resolver's cross-scene priority exactly.  Each
-    # scene shard already carries its first eligible snapshot and the frozen
-    # within-snapshot goal argmin; d0 must never reorder distinct scenes.
-    ordered = sorted(raw_candidates, key=lambda state: (
-        str(state["scene_id"]), int(state["warmup_blocks"])))
-    candidate_scene_ids = [str(row["scene_id"]) for row in ordered]
-    if len(set(candidate_scene_ids)) != len(candidate_scene_ids):
-        raise RuntimeError("small completion pool repeats a scene")
-    if (resolver_cursor_scene_id is not None
-            and any(scene_id <= resolver_cursor_scene_id
-                    for scene_id in candidate_scene_ids)):
-        raise RuntimeError(
-            "small completion pool revisits a scene at/before the one-pass cursor")
-    if len(ordered) < 5:
-        raise SmallCompletionJointSearchInfeasible(
-            "cursor-restricted small completion pool has fewer than five scenes",
-            attempt_count=0, allocator_infeasible_count=0,
-            candidate_scene_ids=candidate_scene_ids)
-    attempts = 0
-    allocator_infeasible = 0
-    for combination in itertools.combinations(ordered, 5):
-        selected: list[dict[str, Any]] = []
-        # The frozen split rule follows the same lexical scene order used to
-        # enumerate combinations: ordinal zero owns the one calibration slot.
-        split_order = sorted(combination, key=lambda row: str(row["scene_id"]))
-        for ordinal, raw in enumerate(split_order):
-            state = dict(raw)
-            state["state_id"] = (
-                f"scorer_fit-{REACHABILITY_REDRIVE_FAMILY}-"
-                f"completion_enriched-{ordinal:02d}")
-            state["split_role"] = "calibration" if ordinal == 0 else "fit"
-            state["state_identity_digest"] = _state_identity_digest(state)
-            selected.append(state)
-        all_states = list(fixed_states) + selected
-        projection = _allocation_projection(all_states)
-        source_digest = canonical_digest({
-            "schema": "go2_joint_small_completion_search_projection_v2",
-            "state_identities": projection,
-        })
-        attempts += 1
-        try:
-            allocation = ALLOC.build_allocation_manifest(
-                projection, source_identity_manifest_digest=source_digest)
-        except ALLOC.CandidateAllocationInfeasible:
-            allocator_infeasible += 1
-            continue
-        if _all_completion_masks_pass(
-                states=all_states, allocation=allocation,
-                preserved_vectors=preserved_vectors):
-            return selected, {
-                "status": "PASS_FIRST_LEXICOGRAPHIC_EXACT_MASK_COMBINATION",
-                "combination_attempt_count": attempts,
-                "allocator_infeasible_combination_count": allocator_infeasible,
-                "candidate_pool_count": len(ordered),
-                "candidate_pool_scene_ids": candidate_scene_ids,
-                "candidate_pool_scene_ids_digest":
-                    canonical_digest(candidate_scene_ids),
-                "resolver_cursor_scene_id": resolver_cursor_scene_id,
-                "selected_scene_ids": [row["scene_id"] for row in selected],
-                "provisional_allocation_manifest_digest":
-                    allocation["allocation_manifest_digest"],
-                "provisional_candidate_assignment_set_digest":
-                    _allocation_assignment_set_digest(allocation),
-                "candidate_outcomes_consumed": False,
-            }
-    raise SmallCompletionJointSearchInfeasible(
-        "no lexicographic small completion combination passes all 40 exact "
-        "allocated-mask reachability predicates",
-        attempt_count=attempts,
-        allocator_infeasible_count=allocator_infeasible,
-        candidate_scene_ids=candidate_scene_ids)
+    del fixed_states, raw_candidates, preserved_vectors, resolver_cursor_scene_id
+    raise RuntimeError(
+        "serial small completion selection is superseded by the measured "
+        "bounded parallel coordinator")
 
 
 def _cursor_restricted_completion_rows(
@@ -4863,7 +5089,8 @@ def _build_state_resolution_scene_request(
 
 def _validate_state_resolution_scene_request(
         request: dict[str, Any], *, args: argparse.Namespace,
-        out: Path, pool: dict[str, list[Path]], exclusion: dict[str, Any]
+        out: Path, pool: dict[str, list[Path]], exclusion: dict[str, Any],
+        expected_state_shard_bindings: Mapping[str, Any] | None = None,
         ) -> None:
     _verify_self_digest(
         request, "state_resolution_scene_request_digest",
@@ -4910,6 +5137,11 @@ def _validate_state_resolution_scene_request(
         "split": str(scene_dir.parent.parent.name),
         "drive_seed": int(V1._drive_seed(scene_dir.name)),
     }
+    expected_bindings = (
+        _state_shard_bindings(args, exclusion, [path.name for path in scenes])
+        if expected_state_shard_bindings is None
+        else dict(expected_state_shard_bindings)
+    )
     if (
         request.get("schema") != STATE_RESOLUTION_SCENE_REQUEST_SCHEMA
         or request.get("status") != STATUS
@@ -4930,8 +5162,7 @@ def _validate_state_resolution_scene_request(
         or request.get("stratum_priority") != list(STRATA)
         or request.get("warmup_blocks_min") != WARMUP_BLOCKS_MIN
         or request.get("warmup_blocks_max") != WARMUP_BLOCKS_MAX
-        or request.get("state_shard_bindings") != _state_shard_bindings(
-            args, exclusion, [path.name for path in scenes])
+        or request.get("state_shard_bindings") != expected_bindings
         or request.get("candidate_outcomes_loaded") is not False
         or request.get("branch_identities_created") is not False
         or request.get("branches_attempted") != 0
@@ -5815,6 +6046,1207 @@ def _live_small_completion_search_inputs(
     )
 
 
+def _artifact_binding(path: Path, *, self_key: str | None = None,
+                      logical_root: Path = ROOT) -> dict[str, Any]:
+    """Bind one regular generated JSON artifact without following aliases."""
+
+    pinned = _pin_generated_path(path, path)
+    if not pinned.is_file() or pinned.is_symlink():
+        raise RuntimeError(f"bound artifact is not a regular file: {path}")
+    payload = json.loads(pinned.read_text())
+    try:
+        logical = str(path.relative_to(logical_root))
+    except ValueError:
+        logical = str(path)
+    binding = {
+        "path": logical,
+        "raw_sha256": file_sha256(pinned),
+        "byte_count": pinned.stat().st_size,
+    }
+    if self_key is not None:
+        expected = PARALLEL_SEARCH.canonical_digest({
+            name: value for name, value in payload.items()
+            if name != self_key})
+        if payload.get(self_key) != expected:
+            raise RuntimeError(f"{path.name} parallel self digest mismatch")
+        binding["self_digest_key"] = self_key
+        binding["self_digest"] = payload[self_key]
+    return binding
+
+
+def _write_or_require_exact_json(path: Path, payload: Mapping[str, Any],
+                                 *, label: str) -> dict[str, Any]:
+    """Atomically issue once, or reopen exactly; never rewrite evidence."""
+
+    pinned = _pin_generated_path(path, path)
+    expected = dict(payload)
+    if pinned.exists():
+        if (not pinned.is_file() or pinned.is_symlink()
+                or json.loads(pinned.read_text()) != expected):
+            raise RuntimeError(f"{label} differs from its frozen bytes")
+        return expected
+    # ``atomic_json`` historically created the parent implicitly.  Preserve
+    # that behavior only after the lexical path has been pinned to the managed
+    # physical root; the exclusive install below must never traverse an
+    # unvalidated alias while creating directories.
+    pinned.parent.mkdir(parents=True, exist_ok=True)
+    encoded = (json.dumps(V1._jsonable(expected), indent=2, sort_keys=True)
+               + "\n").encode("utf-8")
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{pinned.name}.tmp-", dir=str(pinned.parent))
+    temporary = Path(temporary_name)
+    installed = False
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(encoded)
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            os.link(temporary, pinned, follow_symlinks=False)
+            installed = True
+        except FileExistsError:
+            pass
+        if installed:
+            directory_fd = os.open(
+                pinned.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+    finally:
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass
+    if (not pinned.is_file() or pinned.is_symlink()
+            or json.loads(pinned.read_text()) != expected):
+        raise RuntimeError(f"{label} atomic reopen changed")
+    return expected
+
+
+def _load_reissued_small_prefix_inputs(out: Path) -> dict[str, Any]:
+    """Reopen the active normal-schema 5G/5S prefix and its receipt."""
+
+    performance = _load_current_performance_interruption_receipt()
+    bindings = _performance_successor_bindings()
+    receipt = (
+        PERFORMANCE_INTERRUPTION
+        .load_and_validate_small_prefix_reissue_receipt(
+            performance_receipt=performance,
+            successor_bindings=bindings,
+            revalidate_prefix=_revalidate_reissued_small_prefix,
+            root=ROOT,
+        )
+    )
+    receipt_binding = (
+        PERFORMANCE_INTERRUPTION.small_prefix_reissue_receipt_binding(
+            receipt, root=ROOT)
+    )
+    pairs: list[dict[str, Any]] = []
+    provenance: list[dict[str, Any]] = []
+    rejections: dict[str, dict[str, int]] = {}
+    for mapping in receipt["mapping_rows"]:
+        loaded: dict[str, Any] = {
+            "scene_id": str(mapping["scene_id"]),
+            "scene_ordinal": int(mapping["scene_ordinal"]),
+        }
+        for kind in ("request", "capture"):
+            row = dict(mapping[f"successor_{kind}"])
+            raw_path = ROOT / str(row["path"])
+            path = _pin_generated_path(raw_path, raw_path)
+            if (not path.is_file() or path.is_symlink()
+                    or file_sha256(path) != row["raw_sha256"]
+                    or path.stat().st_size != row["byte_count"]):
+                raise RuntimeError("reissued small prefix transport changed")
+            payload = json.loads(path.read_text())
+            loaded[kind] = payload
+        request = loaded["request"]
+        capture = loaded["capture"]
+        digest = str(request["state_resolution_scene_request_digest"])
+        if (Path(str(mapping["successor_request"]["path"]))
+                != Path(PERFORMANCE_INTERRUPTION.SMALL_PREFIX_ROOTS[
+                    "request"]) / f"{digest}.json"
+                or Path(str(mapping["successor_capture"]["path"]))
+                != Path(PERFORMANCE_INTERRUPTION.SMALL_PREFIX_ROOTS[
+                    "capture"]) / f"{digest}.json"):
+            raise RuntimeError("reissued small prefix logical paths changed")
+        provenance.append({
+            "scene_id": str(mapping["scene_id"]),
+            "state_resolution_scene_request_digest": digest,
+            "state_resolution_scene_capture_digest":
+                capture["state_resolution_scene_capture_digest"],
+            "request_path": str(mapping["successor_request"]["path"]),
+            "request_raw_sha256": mapping["successor_request"]["raw_sha256"],
+            "request_byte_count": mapping["successor_request"]["byte_count"],
+            "capture_path": str(mapping["successor_capture"]["path"]),
+            "capture_raw_sha256": mapping["successor_capture"]["raw_sha256"],
+            "capture_byte_count": mapping["successor_capture"]["byte_count"],
+        })
+        rejections[str(mapping["scene_id"])] = dict(
+            capture["scene_rejection_reasons"])
+        pairs.append(loaded)
+    replay = _replay_small_fixed_prefix_pairs(
+        pairs, successor_bindings=bindings)
+    if (replay["resolver_cursor_scene_id"]
+            != receipt["resolver_cursor_scene_id"]
+            or len(replay["states"]) != 10):
+        raise RuntimeError("reissued small prefix projection changed")
+    return {
+        "states": [dict(state) for state in replay["states"]],
+        "resolver_cursor_scene_id": replay["resolver_cursor_scene_id"],
+        "scene_rejection_reasons": rejections,
+        "capture_provenance": provenance,
+        "receipt": receipt,
+        "receipt_binding": receipt_binding,
+        "performance_receipt_binding":
+            PERFORMANCE_INTERRUPTION.receipt_binding(performance, root=ROOT),
+    }
+
+
+def _common_state_shard_bindings(
+        shards: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    if not shards:
+        raise RuntimeError("state-shard common binding input is empty")
+    common = {key: shards[0][key] for key in STATE_SHARD_COMMON_KEYS}
+    for shard in shards[1:]:
+        if any(shard.get(key) != common[key]
+               for key in STATE_SHARD_COMMON_KEYS):
+            raise RuntimeError("fixed state shards contain mixed bindings")
+    return common
+
+
+def _joint_state_order(states: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    return sorted((dict(state) for state in states), key=lambda state: (
+        str(state["family"]),
+        STRATA.index(str(state["stratum"])),
+        str(state["scene_id"]),
+    ))
+
+
+def _pre_allocation_identity_payload(
+        *, states: Sequence[Mapping[str, Any]],
+        common: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "schema": "go2_branch_corpus_v1_2_pre_allocation_identity_manifest",
+        "pool": "scorer_fit",
+        "spec": POOLS["scorer_fit"],
+        **{key: common[key] for key in STATE_SHARD_COMMON_KEYS},
+        "state_identities": _allocation_projection(
+            _joint_state_order(states)),
+    }
+
+
+def _parallel_small_search_inputs(out: Path) -> dict[str, Any]:
+    """Construct the exact 115-state fixed input and cursor-only candidate pool."""
+
+    if out != OUT_ROOT / "scorer_fit":
+        raise RuntimeError("parallel small search is scorer-fit only")
+    prefix = _load_reissued_small_prefix_inputs(out)
+    fixed_shards: list[dict[str, Any]] = []
+    fixed_evidence: list[dict[str, Any]] = []
+    for family in STATE_SELECTOR.REQUIRED_FAMILIES:
+        if family == REACHABILITY_REDRIVE_FAMILY:
+            continue
+        _path, shard, evidence = _load_active_state_shard_evidence(
+            out, family, pool="scorer_fit")
+        fixed_shards.append(shard)
+        fixed_evidence.append(evidence)
+    common = _common_state_shard_bindings(fixed_shards)
+    fixed_states = [dict(state) for shard in fixed_shards
+                    for state in shard["states"]]
+    fixed_states.extend(dict(state) for state in prefix["states"])
+    if (len(fixed_states) != 115
+            or len({state["scene_id"] for state in fixed_states}) != 115
+            or len({state["state_identity_digest"] for state in fixed_states})
+            != 115):
+        raise RuntimeError("parallel search fixed 115-state identity set changed")
+    cursor = str(prefix["resolver_cursor_scene_id"])
+    candidates = _small_completion_candidates_from_feasibility(
+        out=out,
+        excluded_scene_ids={str(state["scene_id"]) for state in fixed_states},
+        resolver_cursor_scene_id=cursor,
+    )
+    candidates = sorted(candidates, key=lambda state: (
+        str(state["scene_id"]), int(state["warmup_blocks"])))
+    candidate_scene_ids = [str(state["scene_id"]) for state in candidates]
+    if (len(candidates) < 5 or candidate_scene_ids != sorted(candidate_scene_ids)
+            or len(set(candidate_scene_ids)) != len(candidate_scene_ids)
+            or any(scene_id <= cursor for scene_id in candidate_scene_ids)):
+        raise RuntimeError("parallel search cursor-restricted candidate pool changed")
+    return {
+        "fixed_states": fixed_states,
+        "raw_candidates": candidates,
+        "candidate_scene_ids": candidate_scene_ids,
+        "resolver_cursor_scene_id": cursor,
+        "preserved_vectors": _phase1_completion_rotation_vectors(),
+        "common": common,
+        "prefix": prefix,
+        "fixed_shard_evidence": fixed_evidence,
+    }
+
+
+def _parallel_selected_completion_states(
+        raw_candidates: Sequence[Mapping[str, Any]],
+        combination_indices: Sequence[int]) -> list[dict[str, Any]]:
+    selected: list[dict[str, Any]] = []
+    combination = [dict(raw_candidates[index]) for index in combination_indices]
+    for ordinal, raw in enumerate(sorted(
+            combination, key=lambda row: str(row["scene_id"]))):
+        state = dict(raw)
+        state["state_id"] = (
+            f"scorer_fit-{REACHABILITY_REDRIVE_FAMILY}-"
+            f"completion_enriched-{ordinal:02d}")
+        state["split_role"] = "calibration" if ordinal == 0 else "fit"
+        state["state_identity_digest"] = _state_identity_digest(state)
+        selected.append(state)
+    return selected
+
+
+def _parallel_rank_material(
+        inputs: Mapping[str, Any], rank: int,
+        combination_indices: Sequence[int]) -> dict[str, Any]:
+    expected = PARALLEL_SEARCH.unrank_combination(
+        rank, len(inputs["raw_candidates"]), 5)
+    if tuple(combination_indices) != expected:
+        raise RuntimeError("parallel rank/combination identity changed")
+    selected = _parallel_selected_completion_states(
+        inputs["raw_candidates"], combination_indices)
+    states = _joint_state_order([*inputs["fixed_states"], *selected])
+    if len(states) != 120:
+        raise RuntimeError("parallel rank does not contain 120 states")
+    source_payload = _pre_allocation_identity_payload(
+        states=states, common=inputs["common"])
+    return {
+        "states": states,
+        "source_identity_manifest_digest": canonical_digest(source_payload),
+        "mask_context": {
+            "preserved_vectors": inputs["preserved_vectors"],
+        },
+    }
+
+
+def _parallel_mask_classifier(
+        states: Sequence[Mapping[str, Any]], allocation: Mapping[str, Any],
+        context: Mapping[str, Any]) -> bool:
+    vectors = context.get("preserved_vectors")
+    if not isinstance(vectors, dict):
+        raise RuntimeError("parallel mask context changed")
+    return _all_completion_masks_pass(
+        states=[dict(state) for state in states], allocation=dict(allocation),
+        preserved_vectors=vectors)
+
+
+def _parallel_winner_validator_zero_solve(
+        _rank: int, states: Sequence[Mapping[str, Any]],
+        allocation: Mapping[str, Any], context: Mapping[str, Any]) -> bool:
+    """Rebuild and check exact allocation bytes without invoking a MILP."""
+
+    manifest = dict(allocation)
+    rotations = [int(row["rotation_index"])
+                 for row in manifest.get("assignments", [])]
+    expected = PARALLEL_SEARCH.materialize_allocation_manifest_single_solve(
+        states,
+        source_identity_manifest_digest=str(
+            manifest.get("source_identity_manifest_digest", "")),
+        rotations=rotations,
+    )
+    if manifest != expected:
+        raise RuntimeError("parallel winner allocation bytes changed")
+    if _allocation_assignment_set_digest(manifest) != \
+            PARALLEL_SEARCH._candidate_assignment_set_digest(manifest):
+        raise RuntimeError("parallel winner assignment digest implementation diverged")
+    return _parallel_mask_classifier(states, manifest, context)
+
+
+def _parallel_plan_bindings(inputs: Mapping[str, Any]) -> dict[str, Any]:
+    launch = _load_clean_source_launch_receipt()
+    return {
+        "small_prefix_reissue_receipt":
+            dict(inputs["prefix"]["receipt_binding"]),
+        "performance_interruption_receipt":
+            dict(inputs["prefix"]["performance_receipt_binding"]),
+        "fixed_state_active_envelope_set_digest": canonical_digest(
+            inputs["fixed_shard_evidence"]),
+        "fixed_state_identity_projection_digest": canonical_digest(
+            _allocation_projection(inputs["fixed_states"])),
+        "state_selector_feasibility_receipt_digest":
+            launch["state_selector_feasibility_receipt_digest"],
+        "pre_allocation_identity_payload_schema":
+            "go2_branch_corpus_v1_2_pre_allocation_identity_manifest",
+        "candidate_outcomes_consumed": False,
+    }
+
+
+def _build_parallel_search_plan(
+        inputs: Mapping[str, Any], *,
+        measured_benchmark_receipt_digest: str | None) -> dict[str, Any]:
+    launch = _load_clean_source_launch_receipt()
+    return PARALLEL_SEARCH.build_search_plan(
+        candidate_scene_ids=inputs["candidate_scene_ids"],
+        combination_size=5,
+        worker_count=PARALLEL_SMALL_WORKER_COUNT,
+        active_rank_window=PARALLEL_SMALL_ACTIVE_RANK_WINDOW,
+        source_repository_commit=str(launch["source_repository_commit"]),
+        clean_source_launch_receipt_digest=str(
+            launch["clean_source_launch_receipt_digest"]),
+        state_selector_amendment_digest=
+            STATE_SELECTOR.state_selector_amendment_digest(),
+        candidate_allocation_amendment_digest=
+            ALLOC.allocation_amendment_digest(),
+        fixed_state_projection_digest=canonical_digest(
+            _allocation_projection(inputs["fixed_states"])),
+        resolver_cursor_scene_id=str(inputs["resolver_cursor_scene_id"]),
+        solver_identity={
+            "implementation": "scipy.optimize.milp/HiGHS",
+            "candidate_allocation_algorithm_version": ALLOC.ALGORITHM_VERSION,
+            "parallel_search_algorithm_version":
+                PARALLEL_SEARCH.ALGORITHM_VERSION,
+        },
+        solver_options={
+            "disp": False,
+            "presolve": True,
+            "mip_rel_gap": 0.0,
+            "threads": 1,
+            "time_limit": PARALLEL_SEARCH.DEFAULT_MILP_TIME_LIMIT_S,
+        },
+        bindings=_parallel_plan_bindings(inputs),
+        measured_benchmark_receipt_digest=
+            measured_benchmark_receipt_digest,
+    )
+
+
+def _parallel_benchmark_source_binding(
+        inputs: Mapping[str, Any], provisional_plan: Mapping[str, Any]) -> str:
+    rank_zero = _parallel_rank_material(
+        inputs, 0, PARALLEL_SEARCH.unrank_combination(
+            0, len(inputs["raw_candidates"]), 5))
+    return PARALLEL_SEARCH.canonical_digest({
+        "schema": "go2_branch_corpus_v1_2_parallel_small_benchmark_binding_v1",
+        "provisional_search_plan_digest": provisional_plan["search_plan_digest"],
+        "rank_zero_source_identity_manifest_digest":
+            rank_zero["source_identity_manifest_digest"],
+        "rank_zero_projection_digest": PARALLEL_SEARCH.canonical_digest(
+            ALLOC._normalise_identity_states(
+                _allocation_projection(rank_zero["states"]))),
+        "small_prefix_reissue_receipt_digest":
+            inputs["prefix"]["receipt_binding"]["receipt_digest"],
+        "candidate_outcomes_consumed": False,
+    })
+
+
+def _load_parallel_plan_and_benchmark(
+        out: Path, inputs: Mapping[str, Any],
+        ) -> tuple[dict[str, Any], dict[str, Any], str]:
+    raw_benchmark_path = out / PARALLEL_SMALL_BENCHMARK_NAME
+    benchmark_path = _pin_generated_path(
+        raw_benchmark_path, raw_benchmark_path)
+    if not benchmark_path.is_file() or benchmark_path.is_symlink():
+        raise RuntimeError("measured parallel prefix benchmark is missing")
+    benchmark = json.loads(benchmark_path.read_text())
+    provisional = _build_parallel_search_plan(
+        inputs, measured_benchmark_receipt_digest=None)
+    source_binding = _parallel_benchmark_source_binding(inputs, provisional)
+    PARALLEL_SEARCH.require_measured_benchmark_gate(
+        benchmark, expected_source_binding_digest=source_binding,
+        maximum_parallel_fraction=PARALLEL_SMALL_BENCHMARK_MAXIMUM_FRACTION)
+    expected_plan = _build_parallel_search_plan(
+        inputs,
+        measured_benchmark_receipt_digest=benchmark[
+            "benchmark_receipt_digest"])
+    raw_plan_path = out / PARALLEL_SMALL_SEARCH_PLAN_NAME
+    plan_path = _pin_generated_path(raw_plan_path, raw_plan_path)
+    if not plan_path.is_file() or plan_path.is_symlink():
+        raise RuntimeError("parallel small search plan is missing")
+    plan = PARALLEL_SEARCH.validate_search_plan(
+        json.loads(plan_path.read_text()))
+    if plan != expected_plan:
+        raise RuntimeError("parallel small search plan differs from live inputs")
+    return plan, benchmark, source_binding
+
+
+def stage_parallel_small_completion_benchmark() -> int:
+    """Measure the exact three prefix waves and freeze the gated search plan."""
+
+    out = OUT_ROOT / "scorer_fit"
+    inputs = _parallel_small_search_inputs(out)
+    provisional = _build_parallel_search_plan(
+        inputs, measured_benchmark_receipt_digest=None)
+    source_binding = _parallel_benchmark_source_binding(inputs, provisional)
+    raw_benchmark_path = out / PARALLEL_SMALL_BENCHMARK_NAME
+    benchmark_path = _pin_generated_path(
+        raw_benchmark_path, raw_benchmark_path)
+    if benchmark_path.exists() and (
+            not benchmark_path.is_file() or benchmark_path.is_symlink()):
+        raise RuntimeError("parallel benchmark path is not a regular file")
+    if benchmark_path.is_file():
+        benchmark = json.loads(benchmark_path.read_text())
+    else:
+        rank_zero = _parallel_rank_material(
+            inputs, 0, PARALLEL_SEARCH.unrank_combination(
+                0, len(inputs["raw_candidates"]), 5))
+        benchmark = PARALLEL_SEARCH.run_measured_fixed_rotation_benchmark(
+            states=rank_zero["states"], search_plan=provisional,
+            source_binding_digest=source_binding,
+            sample_prefix_indices=(0, 1, 2),
+            maximum_parallel_fraction=
+                PARALLEL_SMALL_BENCHMARK_MAXIMUM_FRACTION,
+        )
+        _write_or_require_exact_json(
+            raw_benchmark_path, benchmark,
+            label="parallel prefix benchmark")
+    PARALLEL_SEARCH.require_measured_benchmark_gate(
+        benchmark, expected_source_binding_digest=source_binding,
+        maximum_parallel_fraction=PARALLEL_SMALL_BENCHMARK_MAXIMUM_FRACTION)
+    plan = _build_parallel_search_plan(
+        inputs,
+        measured_benchmark_receipt_digest=benchmark[
+            "benchmark_receipt_digest"])
+    _write_or_require_exact_json(
+        out / PARALLEL_SMALL_SEARCH_PLAN_NAME, plan,
+        label="parallel small search plan")
+    print(json.dumps({
+        "status": "PASS_MEASURED_PARALLEL_PREFIX_BENCHMARK",
+        "benchmark_receipt_digest": benchmark["benchmark_receipt_digest"],
+        "search_plan_digest": plan["search_plan_digest"],
+        "candidate_pool_count": plan["candidate_pool_count"],
+        "total_rank_count": plan["total_rank_count"],
+        "worker_count": plan["worker_count"],
+        "active_rank_window": plan["active_rank_window"],
+    }, indent=2, sort_keys=True))
+    return 0
+
+
+def _parallel_search_checkpoint_root(out: Path) -> Path:
+    raw = out / PARALLEL_SMALL_CHECKPOINT_ROOT
+    return _pin_generated_path(raw, raw)
+
+
+def _parallel_search_callbacks(inputs: Mapping[str, Any]) -> tuple[
+        Callable[[int, tuple[int, ...]], Mapping[str, Any]],
+        Callable[[Sequence[Mapping[str, Any]], Mapping[str, Any],
+                  Mapping[str, Any]], bool],
+        Callable[[int, Sequence[Mapping[str, Any]], Mapping[str, Any],
+                  Mapping[str, Any]], bool]]:
+    def prepare(rank: int, combination: tuple[int, ...]) -> Mapping[str, Any]:
+        return _parallel_rank_material(inputs, rank, combination)
+
+    return prepare, _parallel_mask_classifier, \
+        _parallel_winner_validator_zero_solve
+
+
+def _parallel_certificate_binding(
+        raw_path: Path, payload: Mapping[str, Any], self_key: str, *,
+        pinned_path: Path | None = None) -> dict[str, Any]:
+    """Bind a certificate while keeping lexical and pinned paths distinct.
+
+    Production ``OUT_ROOT`` is one permitted managed symlink.  ``raw_path``
+    therefore remains the lexical custody identity, while ``pinned_path`` may
+    be the already-resolved path used by the executor.  Never feed that
+    resolved path back through ``_pin_generated_path`` as though it were a
+    second lexical artifact path.
+    """
+
+    expected_pinned = _pin_generated_path(raw_path, raw_path)
+    pinned = expected_pinned if pinned_path is None else Path(pinned_path)
+    if pinned != expected_pinned:
+        raise RuntimeError("parallel certificate pinned path changed")
+    if (not pinned.is_file() or pinned.is_symlink()
+            or json.loads(pinned.read_text()) != dict(payload)):
+        raise RuntimeError("parallel certificate bytes changed")
+    expected = PARALLEL_SEARCH.canonical_digest({
+        key: value for key, value in payload.items() if key != self_key})
+    if payload.get(self_key) != expected:
+        raise RuntimeError("parallel certificate self digest changed")
+    try:
+        logical = str(raw_path.relative_to(ROOT))
+    except ValueError:
+        logical = str(raw_path)
+    return {
+        "path": logical,
+        "raw_sha256": file_sha256(pinned),
+        "byte_count": pinned.stat().st_size,
+        "self_digest_key": self_key,
+        "self_digest": payload[self_key],
+    }
+
+
+def _parallel_rank_prefix_bindings(
+        *, plan: Mapping[str, Any], out: Path,
+        terminal_rank: int) -> list[dict[str, Any]]:
+    raw_checkpoint_root = out / PARALLEL_SMALL_CHECKPOINT_ROOT
+    checkpoint_root = _parallel_search_checkpoint_root(out)
+    rows: list[dict[str, Any]] = []
+    for rank in range(terminal_rank + 1):
+        raw_path = raw_checkpoint_root / "ranks" / f"{rank:012d}.json"
+        path = checkpoint_root / "ranks" / f"{rank:012d}.json"
+        receipt = PARALLEL_SEARCH.load_rank_receipt(
+            path, search_plan=plan, expected_rank=rank)
+        rows.append({
+            "rank": rank,
+            "classification": receipt["classification"],
+            **_parallel_certificate_binding(
+                raw_path, receipt, "rank_receipt_digest", pinned_path=path),
+        })
+    return rows
+
+
+def _build_parallel_joint_receipt(
+        *, out: Path, inputs: Mapping[str, Any], plan: Mapping[str, Any],
+        benchmark: Mapping[str, Any], terminal: Mapping[str, Any],
+        allocation: Mapping[str, Any]) -> dict[str, Any]:
+    if terminal.get("status") != "PASS":
+        raise RuntimeError("joint receipt requires a terminal PASS")
+    rank = int(terminal["rank"])
+    raw_checkpoint_root = out / PARALLEL_SMALL_CHECKPOINT_ROOT
+    checkpoint_root = _parallel_search_checkpoint_root(out)
+    rank_rows = _parallel_rank_prefix_bindings(
+        plan=plan, out=out, terminal_rank=rank)
+    raw_winner_path = raw_checkpoint_root / "winner-objective-validation.json"
+    winner_path = checkpoint_root / "winner-objective-validation.json"
+    winner = dict(terminal["winner_validation_receipt"])
+    receipt = {
+        "schema": PARALLEL_SMALL_JOINT_RECEIPT_SCHEMA,
+        "status": "PASS_FIRST_LEXICOGRAPHIC_EXACT_MASK_COMBINATION",
+        "complete": True,
+        "search_plan": _artifact_binding(
+            out / PARALLEL_SMALL_SEARCH_PLAN_NAME,
+            self_key="search_plan_digest"),
+        "measured_benchmark": _artifact_binding(
+            out / PARALLEL_SMALL_BENCHMARK_NAME,
+            self_key="benchmark_receipt_digest"),
+        "small_prefix_reissue_receipt":
+            dict(inputs["prefix"]["receipt_binding"]),
+        "performance_interruption_receipt":
+            dict(inputs["prefix"]["performance_receipt_binding"]),
+        "checkpoint_root": str(
+            (out / PARALLEL_SMALL_CHECKPOINT_ROOT).relative_to(ROOT)),
+        "rank": rank,
+        "combination_attempt_count": terminal["combination_attempt_count"],
+        "allocator_infeasible_combination_count":
+            terminal["allocator_infeasible_combination_count"],
+        "rank_prefix_receipts": rank_rows,
+        "rank_prefix_receipt_set_digest":
+            PARALLEL_SEARCH.canonical_digest(rank_rows),
+        "winner_validation_receipt": _parallel_certificate_binding(
+            raw_winner_path, winner, "winner_validation_receipt_digest",
+            pinned_path=winner_path),
+        "resolver_cursor_scene_id": inputs["resolver_cursor_scene_id"],
+        "candidate_pool_scene_ids": list(inputs["candidate_scene_ids"]),
+        "candidate_pool_scene_ids_digest":
+            PARALLEL_SEARCH.canonical_digest(inputs["candidate_scene_ids"]),
+        "selected_scene_ids": list(
+            terminal["rank_receipt"]["selected_scene_ids"]),
+        "provisional_allocation_manifest_digest":
+            allocation["allocation_manifest_digest"],
+        "provisional_candidate_assignment_set_digest":
+            _allocation_assignment_set_digest(dict(allocation)),
+        "final_candidate_assignment_set_digest":
+            _allocation_assignment_set_digest(dict(allocation)),
+        "final_masks_equal_searched_masks": True,
+        "terminal_search_result_digest":
+            PARALLEL_SEARCH.canonical_digest(terminal),
+        "candidate_outcomes_consumed": False,
+    }
+    receipt["parallel_small_completion_joint_receipt_digest"] = \
+        PARALLEL_SEARCH.canonical_digest(receipt)
+    return receipt
+
+
+def _build_parallel_small_terminal_shard(
+        *, inputs: Mapping[str, Any], terminal: Mapping[str, Any],
+        joint_receipt: Mapping[str, Any]) -> dict[str, Any]:
+    selected = _parallel_selected_completion_states(
+        inputs["raw_candidates"], terminal["rank_receipt"][
+            "combination_indices"])
+    states = [*inputs["prefix"]["states"], *selected]
+    states.sort(key=lambda state: (
+        STRATA.index(str(state["stratum"])), str(state["scene_id"])))
+    pool, exclusion = scene_pool("scorer_fit")
+    args = argparse.Namespace(
+        pool="scorer_fit", family=REACHABILITY_REDRIVE_FAMILY,
+        backend="cpu")
+    expected_common = _state_shard_bindings(
+        args, exclusion,
+        [path.name for path in pool[REACHABILITY_REDRIVE_FAMILY]])
+    if any(inputs["common"].get(key) != expected_common[key]
+           for key in inputs["common"]):
+        raise RuntimeError("small terminal shard common bindings changed")
+    provenance = list(inputs["prefix"]["capture_provenance"])
+    shard = {
+        "schema": "go2_branch_corpus_v1_2_state_shard",
+        "status": STATUS,
+        "complete": True,
+        "pool": "scorer_fit",
+        "family": REACHABILITY_REDRIVE_FAMILY,
+        "spec": POOLS["scorer_fit"],
+        "selection": SELECTION,
+        **expected_common,
+        "states": states,
+        "scene_rejection_reasons":
+            dict(inputs["prefix"]["scene_rejection_reasons"]),
+        "state_resolution_subprocess_transport": {
+            "schema": "go2_branch_corpus_v1_2_state_resolution_transport_v1",
+            "one_scene_per_subprocess": True,
+            "atomic_capture_write_before_native_cleanup": True,
+            "return_code_ignored_only_after_valid_capture": True,
+            "resume_scope": "REISSUED_EXACT_SMALL_PREFIX_PLUS_PARALLEL_CERTIFICATE",
+            "resolver_algorithm_digest":
+                canonical_digest(STATE_RESOLUTION_REDUCER_CONTRACT),
+            "resolver_cursor_scene_id": inputs["resolver_cursor_scene_id"],
+            "scene_capture_count": len(provenance),
+            "scene_capture_provenance_digest": canonical_digest(provenance),
+            "candidate_outcomes_loaded": False,
+        },
+        "state_resolution_scene_capture_provenance": provenance,
+        "small_prefix_reissue_receipt":
+            dict(inputs["prefix"]["receipt_binding"]),
+        "small_completion_joint_allocation_search": dict(joint_receipt),
+    }
+    shard["state_shard_digest"] = canonical_digest(shard)
+    return shard
+
+
+def _parallel_failure_evidence_inventory(
+        *, out: Path, plan: Mapping[str, Any],
+        prepare_rank: Callable[[int, tuple[int, ...]], Mapping[str, Any]],
+        ) -> tuple[dict[int, dict[str, Any]], list[dict[str, Any]],
+                   list[dict[str, Any]]]:
+    """Validate the exact checkpoint namespace before binding fatal evidence."""
+
+    raw_checkpoint_root = out / PARALLEL_SMALL_CHECKPOINT_ROOT
+    checkpoint_root = _parallel_search_checkpoint_root(out)
+    total = int(plan["total_rank_count"])
+    prepared: dict[int, tuple[str, str, list[Mapping[str, Any]]]] = {}
+    checkpoint_rows: list[dict[str, Any]] = []
+    if checkpoint_root.exists():
+        if checkpoint_root.is_symlink() or not checkpoint_root.is_dir():
+            raise RuntimeError("parallel checkpoint root is not regular")
+        allowed = {
+            "ranks": "directory",
+            "waves": "directory",
+            "winner-objective": "directory",
+            "winner-objective-validation.json": "file",
+        }
+        for entry in sorted(checkpoint_root.iterdir(), key=lambda row: row.name):
+            kind = allowed.get(entry.name)
+            if kind is None:
+                raise RuntimeError("parallel checkpoint entry is noncanonical")
+            if entry.is_symlink() or (
+                    kind == "directory" and not entry.is_dir()) or (
+                    kind == "file" and not entry.is_file()):
+                raise RuntimeError("parallel checkpoint entry is not regular")
+
+    def material(rank: int) -> tuple[str, str, list[Mapping[str, Any]]]:
+        if rank not in prepared:
+            combination = PARALLEL_SEARCH.unrank_combination(
+                rank, int(plan["candidate_pool_count"]),
+                int(plan["combination_size"]))
+            row = dict(prepare_rank(rank, combination))
+            if set(row) != {
+                    "states", "source_identity_manifest_digest", "mask_context"}:
+                raise RuntimeError("failure replay rank preparation changed")
+            states = list(row["states"])
+            source = row["source_identity_manifest_digest"]
+            if (not _is_sha256(source)
+                    or not isinstance(row["mask_context"], Mapping)
+                    or len(states) != PARALLEL_SEARCH.PREFIX_STATE_COUNT):
+                raise RuntimeError("failure replay rank binding changed")
+            projection = PARALLEL_SEARCH.canonical_digest(
+                PARALLEL_SEARCH.project_allocator_identity_states(states))
+            prepared[rank] = (projection, source, states)
+        return prepared[rank]
+
+    rank_receipts: dict[int, dict[str, Any]] = {}
+    raw_rank_root = raw_checkpoint_root / "ranks"
+    rank_root = checkpoint_root / "ranks"
+    if rank_root.exists():
+        if rank_root.is_symlink() or not rank_root.is_dir():
+            raise RuntimeError("parallel rank receipt root is not regular")
+        for path in sorted(rank_root.iterdir(), key=lambda row: row.name):
+            if path.is_symlink() or not path.is_file():
+                raise RuntimeError("parallel rank receipt entry is not regular")
+            match = re.fullmatch(r"([0-9]{12})\.json", path.name)
+            if match is None:
+                raise RuntimeError("parallel rank receipt filename is noncanonical")
+            rank = int(match.group(1))
+            if rank >= total or rank in rank_receipts:
+                raise RuntimeError("parallel rank receipt rank is outside the plan")
+            raw_path = raw_rank_root / path.name
+            expected_path = _pin_generated_path(raw_path, raw_path)
+            if expected_path != path:
+                raise RuntimeError("parallel rank receipt path identity changed")
+            receipt = PARALLEL_SEARCH.load_rank_receipt(
+                path, search_plan=plan, expected_rank=rank)
+            projection, source, _states = material(rank)
+            if (receipt["projection_digest"] != projection
+                    or receipt["source_identity_manifest_digest"] != source):
+                raise RuntimeError("parallel rank receipt source binding changed")
+            rank_receipts[rank] = receipt
+            checkpoint_rows.append({
+                "kind": "rank_receipt", "rank": rank,
+                **_parallel_certificate_binding(
+                    raw_path, receipt, "rank_receipt_digest",
+                    pinned_path=path),
+            })
+
+    fatal_rows: list[dict[str, Any]] = []
+    validated_wave_ranks: set[int] = set()
+    raw_wave_root = raw_checkpoint_root / "waves"
+    wave_root = checkpoint_root / "waves"
+    if wave_root.exists():
+        if wave_root.is_symlink() or not wave_root.is_dir():
+            raise RuntimeError("parallel wave root is not regular")
+        for rank_dir in sorted(wave_root.iterdir(), key=lambda row: row.name):
+            if rank_dir.is_symlink() or not rank_dir.is_dir():
+                raise RuntimeError("parallel wave rank directory is not regular")
+            rank_match = re.fullmatch(r"rank-([0-9]{12})", rank_dir.name)
+            if rank_match is None:
+                raise RuntimeError("parallel wave rank directory is noncanonical")
+            rank = int(rank_match.group(1))
+            if rank >= total:
+                raise RuntimeError("parallel wave rank is outside the plan")
+            validated_wave_ranks.add(rank)
+            projection, _source, _states = material(rank)
+            indexed: dict[int, Path] = {}
+            for path in sorted(rank_dir.iterdir(), key=lambda row: row.name):
+                if path.is_symlink() or not path.is_file():
+                    raise RuntimeError("parallel wave entry is not regular")
+                match = re.fullmatch(r"prefix-([0-9]{3})\.json", path.name)
+                if match is None:
+                    raise RuntimeError("parallel wave filename is noncanonical")
+                state_index = int(match.group(1))
+                if (state_index >= PARALLEL_SEARCH.PREFIX_STATE_COUNT
+                        or state_index in indexed):
+                    raise RuntimeError("parallel wave index is outside the plan")
+                indexed[state_index] = path
+            if sorted(indexed) != list(range(len(indexed))):
+                raise RuntimeError("parallel wave prefix is not contiguous")
+            prefix: list[int] = []
+            terminal_wave = False
+            last_wave_status: str | None = None
+            for state_index in range(len(indexed)):
+                path = indexed[state_index]
+                raw_path = (raw_wave_root / rank_dir.name / path.name)
+                expected_path = _pin_generated_path(raw_path, raw_path)
+                if expected_path != path:
+                    raise RuntimeError("parallel wave path identity changed")
+                payload = json.loads(path.read_text())
+                receipt = PARALLEL_SEARCH._validate_wave_receipt(
+                    payload, plan=plan, rank=rank,
+                    projection_digest=projection, expected_prefix=prefix)
+                binding = _parallel_certificate_binding(
+                    raw_path, receipt, "wave_receipt_digest",
+                    pinned_path=path)
+                checkpoint_rows.append({
+                    "kind": "prefix_wave_receipt", "rank": rank,
+                    "state_index": state_index,
+                    "wave_status": receipt["wave_status"],
+                    **binding,
+                })
+                last_wave_status = str(receipt["wave_status"])
+                if terminal_wave:
+                    raise RuntimeError("parallel wave continues after terminal status")
+                if receipt["wave_status"] == "SELECTED":
+                    prefix.append(int(receipt["selected_rotation"]))
+                else:
+                    terminal_wave = True
+                if receipt["wave_status"] == "FATAL":
+                    fatal_rows.append(dict(binding))
+            existing_rank = rank_receipts.get(rank)
+            if existing_rank is not None:
+                classification = existing_rank["classification"]
+                if classification == "ALLOCATOR_INFEASIBLE":
+                    if (len(indexed) != 1 or not terminal_wave
+                            or prefix != []
+                            or last_wave_status != "ALLOCATOR_INFEASIBLE"):
+                        raise RuntimeError(
+                            "allocator-infeasible rank wave evidence changed")
+                elif classification in {"PASS", "MASK_FAIL", "NONPASS"}:
+                    if (terminal_wave
+                            or len(indexed)
+                            != PARALLEL_SEARCH.PREFIX_STATE_COUNT
+                            or prefix != existing_rank["selected_rotations"]):
+                        raise RuntimeError("completed rank wave evidence changed")
+
+    for rank, receipt in rank_receipts.items():
+        if receipt["classification"] not in {
+                "ALLOCATOR_INFEASIBLE", "MASK_FAIL", "PASS"}:
+            raise RuntimeError(
+                "persisted scientific rank classification is unreachable")
+        if rank not in validated_wave_ranks:
+            raise RuntimeError(
+                "persisted rank receipt lacks complete wave evidence")
+
+    objective_receipts: dict[int, list[dict[str, Any]]] = {}
+    raw_objective_root = raw_checkpoint_root / "winner-objective"
+    objective_root = checkpoint_root / "winner-objective"
+    if objective_root.exists():
+        if objective_root.is_symlink() or not objective_root.is_dir():
+            raise RuntimeError("parallel objective root is not regular")
+        for rank_dir in sorted(objective_root.iterdir(), key=lambda row: row.name):
+            if rank_dir.is_symlink() or not rank_dir.is_dir():
+                raise RuntimeError(
+                    "parallel objective rank directory is not regular")
+            rank_match = re.fullmatch(r"rank-([0-9]{12})", rank_dir.name)
+            if rank_match is None:
+                raise RuntimeError(
+                    "parallel objective rank directory is noncanonical")
+            rank = int(rank_match.group(1))
+            rank_receipt = rank_receipts.get(rank)
+            if (rank >= total or rank_receipt is None
+                    or rank_receipt["classification"] != "PASS"):
+                raise RuntimeError("parallel objective rank lacks PASS evidence")
+            projection, source, _states = material(rank)
+            rotations = list(rank_receipt["selected_rotations"])
+            indexed: dict[int, Path] = {}
+            for path in sorted(rank_dir.iterdir(), key=lambda row: row.name):
+                if path.is_symlink() or not path.is_file():
+                    raise RuntimeError("parallel objective entry is not regular")
+                match = re.fullmatch(r"prefix-([0-9]{3})\.json", path.name)
+                if match is None:
+                    raise RuntimeError(
+                        "parallel objective filename is noncanonical")
+                state_index = int(match.group(1))
+                if (state_index >= PARALLEL_SEARCH.PREFIX_STATE_COUNT
+                        or state_index in indexed):
+                    raise RuntimeError(
+                        "parallel objective index is outside the plan")
+                indexed[state_index] = path
+            if sorted(indexed) != list(range(len(indexed))):
+                raise RuntimeError("parallel objective prefix is not contiguous")
+            prefix: list[int] = []
+            terminal_wave = False
+            for state_index in range(len(indexed)):
+                path = indexed[state_index]
+                raw_path = raw_objective_root / rank_dir.name / path.name
+                expected_path = _pin_generated_path(raw_path, raw_path)
+                if expected_path != path:
+                    raise RuntimeError("parallel objective path identity changed")
+                receipt = PARALLEL_SEARCH._validate_objective_wave_receipt(
+                    json.loads(path.read_text()), plan=plan, rank=rank,
+                    projection_digest=projection, source_digest=source,
+                    expected_prefix=prefix,
+                    certified_rotation=int(rotations[state_index]))
+                binding = _parallel_certificate_binding(
+                    raw_path, receipt, "objective_wave_receipt_digest",
+                    pinned_path=path)
+                checkpoint_rows.append({
+                    "kind": "objective_wave_receipt", "rank": rank,
+                    "state_index": state_index,
+                    "solver_status": receipt["solver_status"],
+                    **binding,
+                })
+                objective_receipts.setdefault(rank, []).append(receipt)
+                if terminal_wave:
+                    raise RuntimeError(
+                        "parallel objective continues after fatal status")
+                if receipt["solver_status"] == "FEASIBLE":
+                    prefix.append(int(receipt["selected_rotation"]))
+                else:
+                    terminal_wave = True
+                    fatal_rows.append(dict(binding))
+
+    raw_winner_path = raw_checkpoint_root / "winner-objective-validation.json"
+    winner_path = checkpoint_root / "winner-objective-validation.json"
+    if winner_path.exists():
+        if winner_path.is_symlink() or not winner_path.is_file():
+            raise RuntimeError("parallel winner validation path is not regular")
+        winner_payload = json.loads(winner_path.read_text())
+        winner_rank = winner_payload.get("rank")
+        if (isinstance(winner_rank, bool) or not isinstance(winner_rank, int)
+                or winner_rank not in rank_receipts):
+            raise RuntimeError("parallel winner validation rank changed")
+        rank_receipt = rank_receipts[winner_rank]
+        if rank_receipt["classification"] != "PASS":
+            raise RuntimeError("parallel winner validation lacks PASS evidence")
+        projection, source, _states = material(winner_rank)
+        winner_receipt = PARALLEL_SEARCH._validate_winner_validation_receipt(
+            winner_payload, plan=plan, rank=winner_rank,
+            projection_digest=projection, source_digest=source,
+            allocation_digest=rank_receipt[
+                "provisional_allocation_manifest_digest"],
+            assignment_digest=rank_receipt[
+                "provisional_candidate_assignment_set_digest"],
+            rotations=rank_receipt["selected_rotations"],
+            objective_wave_rows=[{
+                "state_index": row["state_index"],
+                "objective_wave_receipt_digest":
+                    row["objective_wave_receipt_digest"],
+            } for row in objective_receipts.get(winner_rank, [])])
+        checkpoint_rows.append({
+            "kind": "winner_validation_receipt", "rank": winner_rank,
+            **_parallel_certificate_binding(
+                raw_winner_path, winner_receipt,
+                "winner_validation_receipt_digest", pinned_path=winner_path),
+        })
+
+    checkpoint_rows.sort(key=lambda row: (str(row["path"]), str(row["kind"])))
+    fatal_rows.sort(key=lambda row: str(row["path"]))
+    return rank_receipts, fatal_rows, checkpoint_rows
+
+
+def _parallel_terminal_result_disposition(
+        *, out: Path, status: str,
+        terminal: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Bind terminal-result absence or the exact EXHAUSTED result bytes."""
+
+    raw_path = out / PARALLEL_SMALL_TERMINAL_RESULT_NAME
+    path = _pin_generated_path(raw_path, raw_path)
+    try:
+        logical_path = str(raw_path.relative_to(ROOT))
+    except ValueError:
+        logical_path = str(raw_path)
+    if status == "FATAL":
+        if terminal is not None or path.exists():
+            raise RuntimeError(
+                "FATAL failure contradicts an existing terminal result")
+        return {"status": "ABSENT", "path": logical_path}
+    if status != "EXHAUSTED" or terminal is None:
+        raise RuntimeError("parallel failure terminal disposition changed")
+    if path.is_symlink() or not path.is_file():
+        raise RuntimeError("EXHAUSTED terminal result is absent or irregular")
+    raw = path.read_bytes()
+    observed = json.loads(raw)
+    if observed != dict(terminal):
+        raise RuntimeError("EXHAUSTED terminal result bytes changed")
+    return {
+        "status": "PRESENT_EXHAUSTED",
+        "path": logical_path,
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "terminal_result_digest": PARALLEL_SEARCH.canonical_digest(observed),
+    }
+
+
+def _parallel_failure_receipt(
+        *, out: Path, inputs: Mapping[str, Any], plan: Mapping[str, Any],
+        benchmark: Mapping[str, Any], status: str, reason: str,
+        terminal: Mapping[str, Any] | None = None,
+        certified_rank_receipts: Sequence[Mapping[str, Any]] | None = None,
+        prepare_rank: Callable[
+            [int, tuple[int, ...]], Mapping[str, Any]],
+        ) -> dict[str, Any]:
+    raw_checkpoint_root = out / PARALLEL_SMALL_CHECKPOINT_ROOT
+    checkpoint_root = _parallel_search_checkpoint_root(out)
+    total_rank_count = int(plan["total_rank_count"])
+    if status == "EXHAUSTED":
+        if (terminal is None or certified_rank_receipts is None
+                or len(certified_rank_receipts) != total_rank_count):
+            raise RuntimeError(
+                "EXHAUSTED failure requires a certified complete rank frontier")
+    elif certified_rank_receipts is not None:
+        raise RuntimeError(
+            "certified exhausted ranks cannot bind a non-EXHAUSTED failure")
+    validated_ranks, fatal_rows, checkpoint_rows = \
+        _parallel_failure_evidence_inventory(
+            out=out, plan=plan, prepare_rank=prepare_rank)
+    if (status == "FATAL" and len(validated_ranks) == total_rank_count
+            and all(receipt["classification"] in {
+                "ALLOCATOR_INFEASIBLE", "MASK_FAIL"
+            } for receipt in validated_ranks.values())):
+        raise RuntimeError(
+            "complete ordinary-nonpass frontier requires EXHAUSTED evidence")
+    rank_rows: list[dict[str, Any]] = []
+    for rank in range(total_rank_count):
+        raw_path = raw_checkpoint_root / "ranks" / f"{rank:012d}.json"
+        path = checkpoint_root / "ranks" / f"{rank:012d}.json"
+        loaded = validated_ranks.get(rank)
+        if loaded is None:
+            if status == "EXHAUSTED":
+                raise RuntimeError("EXHAUSTED rank frontier is incomplete")
+            break
+        if (certified_rank_receipts is not None
+                and loaded != dict(certified_rank_receipts[rank])):
+            raise RuntimeError("certified EXHAUSTED rank receipt changed")
+        rank_rows.append({
+            "rank": rank, "classification": loaded["classification"],
+            **_parallel_certificate_binding(
+                raw_path, loaded, "rank_receipt_digest", pinned_path=path),
+        })
+    if status == "EXHAUSTED" and fatal_rows:
+        raise RuntimeError("EXHAUSTED search contains fatal wave evidence")
+    payload = {
+        "schema": PARALLEL_SMALL_FAILURE_SCHEMA,
+        "status": status,
+        "complete": True,
+        "reason": reason,
+        "search_plan": _artifact_binding(
+            out / PARALLEL_SMALL_SEARCH_PLAN_NAME,
+            self_key="search_plan_digest"),
+        "measured_benchmark": _artifact_binding(
+            out / PARALLEL_SMALL_BENCHMARK_NAME,
+            self_key="benchmark_receipt_digest"),
+        "small_prefix_reissue_receipt":
+            dict(inputs["prefix"]["receipt_binding"]),
+        "rank_prefix_receipts": rank_rows,
+        "rank_prefix_receipt_set_digest":
+            PARALLEL_SEARCH.canonical_digest(rank_rows),
+        "fatal_wave_receipts": fatal_rows,
+        "fatal_wave_receipt_set_digest":
+            PARALLEL_SEARCH.canonical_digest(fatal_rows),
+        "checkpoint_evidence_inventory": checkpoint_rows,
+        "checkpoint_evidence_inventory_digest":
+            PARALLEL_SEARCH.canonical_digest(checkpoint_rows),
+        "terminal_result_disposition":
+            _parallel_terminal_result_disposition(
+                out=out, status=status, terminal=terminal),
+        "terminal_result": None if terminal is None else dict(terminal),
+        "complete_identity_manifest_created": False,
+        "candidate_outcomes_loaded": False,
+        "branch_identities_created": False,
+        "branches_attempted": 0,
+        "frames_rendered": 0,
+        "target_latents_encoded": 0,
+        "scorer_training_started": False,
+        "predictor_checkpoints_opened": 0,
+    }
+    payload["parallel_small_completion_failure_receipt_digest"] = \
+        PARALLEL_SEARCH.canonical_digest(payload)
+    return payload
+
+
+def _load_existing_parallel_terminal_failure(
+        *, out: Path, inputs: Mapping[str, Any], plan: Mapping[str, Any],
+        benchmark: Mapping[str, Any],
+        prepare_rank: Callable[
+            [int, tuple[int, ...]], Mapping[str, Any]],
+        classify_mask: Callable[[Sequence[Mapping[str, Any]],
+                                 Mapping[str, Any], Mapping[str, Any]], bool],
+        ) -> dict[str, Any] | None:
+    """Reopen a terminal failure exactly; it permanently forbids a retry."""
+
+    raw_path = out / PARALLEL_SMALL_TERMINAL_FAILURE_NAME
+    path = _pin_generated_path(raw_path, raw_path)
+    if not path.exists():
+        return None
+    if path.is_symlink() or not path.is_file():
+        raise RuntimeError("parallel terminal failure path is not regular")
+    payload = json.loads(path.read_text())
+    if not isinstance(payload, dict):
+        raise RuntimeError("parallel terminal failure is not a mapping")
+    observed = payload.get(
+        "parallel_small_completion_failure_receipt_digest")
+    if (not _is_sha256(observed)
+            or observed != PARALLEL_SEARCH.canonical_digest({
+                key: value for key, value in payload.items()
+                if key != "parallel_small_completion_failure_receipt_digest"})):
+        raise RuntimeError("parallel terminal failure self digest changed")
+    status = payload.get("status")
+    reason = payload.get("reason")
+    terminal = payload.get("terminal_result")
+    if (status not in {"FATAL", "EXHAUSTED"}
+            or not isinstance(reason, str) or not reason
+            or (status == "FATAL" and terminal is not None)
+            or (status == "EXHAUSTED" and not isinstance(terminal, Mapping))):
+        raise RuntimeError("parallel terminal failure status/reason changed")
+    certified: list[dict[str, Any]] | None = None
+    if status == "EXHAUSTED":
+        certified = PARALLEL_SEARCH.validate_exhausted_search_result(
+            terminal_result=dict(terminal), search_plan=plan,
+            checkpoint_root=_parallel_search_checkpoint_root(out),
+            prepare_rank=prepare_rank, classify_mask=classify_mask)
+    expected = _parallel_failure_receipt(
+        out=out, inputs=inputs, plan=plan, benchmark=benchmark,
+        status=str(status), reason=reason,
+        terminal=None if terminal is None else dict(terminal),
+        certified_rank_receipts=certified,
+        prepare_rank=prepare_rank)
+    if payload != expected:
+        raise RuntimeError("parallel terminal failure evidence changed")
+    return payload
+
+
+def stage_parallel_small_completion_search() -> int:
+    """Run/resume the shared 32-worker ordered scientific coordinator."""
+
+    out = OUT_ROOT / "scorer_fit"
+    inputs = _parallel_small_search_inputs(out)
+    plan, benchmark, _source_binding = _load_parallel_plan_and_benchmark(
+        out, inputs)
+    prepare, classify, validate = _parallel_search_callbacks(inputs)
+    existing_failure = _load_existing_parallel_terminal_failure(
+        out=out, inputs=inputs, plan=plan, benchmark=benchmark,
+        prepare_rank=prepare, classify_mask=classify)
+    if existing_failure is not None:
+        raise RuntimeError(
+            "parallel small completion search already terminated with "
+            f"{existing_failure['status']}; retry is forbidden")
+    raw_terminal_path = out / PARALLEL_SMALL_TERMINAL_RESULT_NAME
+    terminal_path = _pin_generated_path(raw_terminal_path, raw_terminal_path)
+    if terminal_path.exists() and (
+            not terminal_path.is_file() or terminal_path.is_symlink()):
+        raise RuntimeError("parallel terminal result path is not regular")
+    try:
+        if terminal_path.is_file():
+            terminal = json.loads(terminal_path.read_text())
+        else:
+            terminal = PARALLEL_SEARCH.run_scientific_parallel_search(
+                search_plan=plan,
+                checkpoint_root=_parallel_search_checkpoint_root(out),
+                prepare_rank=prepare,
+                classify_mask=classify,
+                validate_winner=validate,
+            )
+            _write_or_require_exact_json(
+                raw_terminal_path, terminal,
+                label="parallel small terminal search result")
+        if terminal.get("status") == "EXHAUSTED":
+            certified_exhausted_ranks = \
+                PARALLEL_SEARCH.validate_exhausted_search_result(
+                    terminal_result=terminal, search_plan=plan,
+                    checkpoint_root=_parallel_search_checkpoint_root(out),
+                    prepare_rank=prepare, classify_mask=classify,
+                )
+            failure = _parallel_failure_receipt(
+                out=out, inputs=inputs, plan=plan, benchmark=benchmark,
+                status="EXHAUSTED", reason=(
+                    "no lexicographic cursor-restricted five-scene set passes "
+                    "the exact allocator and all 40 allocated masks"),
+                terminal=terminal,
+                certified_rank_receipts=certified_exhausted_ranks,
+                prepare_rank=prepare)
+            _write_or_require_exact_json(
+                out / PARALLEL_SMALL_TERMINAL_FAILURE_NAME, failure,
+                label="parallel small EXHAUSTED receipt")
+            raise RuntimeError("parallel small completion search exhausted")
+        allocation = PARALLEL_SEARCH.validate_terminal_search_result(
+            terminal_result=terminal, search_plan=plan,
+            checkpoint_root=_parallel_search_checkpoint_root(out),
+            prepare_rank=prepare, classify_mask=classify,
+            validate_winner=validate,
+        )
+    except PARALLEL_SEARCH.ParallelSearchFatal as exc:
+        failure = _parallel_failure_receipt(
+            out=out, inputs=inputs, plan=plan, benchmark=benchmark,
+            status="FATAL", reason=str(exc), prepare_rank=prepare)
+        _write_or_require_exact_json(
+            out / PARALLEL_SMALL_TERMINAL_FAILURE_NAME, failure,
+            label="parallel small FATAL receipt")
+        raise RuntimeError(
+            "parallel small completion search failed fatally") from exc
+    joint = _build_parallel_joint_receipt(
+        out=out, inputs=inputs, plan=plan, benchmark=benchmark,
+        terminal=terminal, allocation=allocation)
+    _write_or_require_exact_json(
+        out / PARALLEL_SMALL_JOINT_RECEIPT_NAME, joint,
+        label="parallel small joint receipt")
+    shard = _build_parallel_small_terminal_shard(
+        inputs=inputs, terminal=terminal, joint_receipt=joint)
+    shard_path = out / f"state_shard_{REACHABILITY_REDRIVE_FAMILY}.json"
+    _write_or_require_exact_json(
+        shard_path, shard, label="parallel small terminal state shard")
+    _validate_state_shard(shard, shard_path, "scorer_fit")
+    print(json.dumps({
+        "status": joint["status"],
+        "winning_rank": joint["rank"],
+        "selected_scene_ids": joint["selected_scene_ids"],
+        "allocation_manifest_digest":
+            allocation["allocation_manifest_digest"],
+        "state_shard_digest": shard["state_shard_digest"],
+    }, indent=2, sort_keys=True))
+    return 0
+
+
 def _validate_small_completion_search_failure_static(
         payload: dict[str, Any], *, launch: dict[str, Any]) -> None:
     """Validate the closed schema and reason-dependent arithmetic."""
@@ -5897,6 +7329,8 @@ def _validate_small_completion_search_failure_static(
 def _load_small_completion_search_failure(
         out: Path, *, args: argparse.Namespace | None = None,
         ) -> dict[str, Any] | None:
+    """Reopen the superseded serial receipt as lineage only, never replay it."""
+
     raw_path = out / SMALL_COMPLETION_SEARCH_FAILURE_NAME
     path = _pin_generated_path(raw_path, raw_path)
     if not path.exists():
@@ -5909,39 +7343,7 @@ def _load_small_completion_search_failure(
         "small completion joint-search failure")
     launch = _load_clean_source_launch_receipt()
     _validate_small_completion_search_failure_static(payload, launch=launch)
-    if args is None:
-        raise RuntimeError(
-            "terminal small completion receipt requires live replay arguments")
-    cursor, fixed_states, raw_candidates, preserved_vectors = \
-        _live_small_completion_search_inputs(args=args, out=out)
-    live_scene_ids = [str(row["scene_id"]) for row in raw_candidates]
-    if (
-        payload["resolver_cursor_scene_id"] != cursor
-        or payload["cursor_restricted_candidate_scene_ids"] != live_scene_ids
-    ):
-        raise RuntimeError(
-            "small completion terminal failure differs from live cursor/pool")
-    try:
-        select_small_completion_combination(
-            fixed_states=fixed_states,
-            raw_candidates=raw_candidates,
-            preserved_vectors=preserved_vectors,
-            resolver_cursor_scene_id=cursor,
-        )
-    except SmallCompletionJointSearchInfeasible as error:
-        if (
-            error.reason != payload["failure_reason"]
-            or error.attempt_count != payload["combination_attempt_count"]
-            or error.allocator_infeasible_count
-            != payload["allocator_infeasible_combination_count"]
-            or error.candidate_scene_ids
-            != payload["cursor_restricted_candidate_scene_ids"]
-        ):
-            raise RuntimeError(
-                "small completion terminal failure differs from live replay")
-    else:
-        raise RuntimeError(
-            "small completion terminal failure no longer reproduces")
+    del args
     return payload
 
 
@@ -5959,21 +7361,106 @@ def _active_state_shard_path(out: Path, family: str, *, pool: str) -> Path:
     return out / f"state_shard_{family}.json"
 
 
-def _load_active_family_state_shard(
-        out: Path, family: str, *, pool: str) -> tuple[Path, dict[str, Any]]:
+def _load_current_performance_interruption_receipt() -> dict[str, Any]:
+    """Reopen the exact source-bound interruption authority read-only."""
+
+    source = clean_source_binding()
+    return (
+        PERFORMANCE_INTERRUPTION
+        .load_and_validate_performance_interruption_receipt(
+            expected_source_repository_commit=str(
+                source["source_repository_commit"]),
+            expected_clean_source_binding_digest=canonical_digest(source),
+            expected_bound_implementations_digest=str(
+                source["bound_implementations_digest"]),
+            root=ROOT,
+        )
+    )
+
+
+def _load_active_state_shard_evidence(
+        out: Path, family: str, *, pool: str,
+        ) -> tuple[Path, dict[str, Any], dict[str, Any]]:
+    """Load an active shard and retain its exact on-disk custody envelope.
+
+    Seven scorer-fit shards are source-reissue wrappers after the performance
+    interruption.  They may be unwrapped only after the archived transport is
+    scientifically replayed under the current bindings.  The wrapper bytes,
+    its lineage receipt, and the inner successor digest remain distinct
+    provenance inputs; callers must never pretend the inner object occupied
+    the active path.
+    """
+
     raw_path = _active_state_shard_path(out, family, pool=pool)
     path = _pin_generated_path(raw_path, raw_path)
     if not path.is_file() or path.is_symlink():
         raise RuntimeError(f"active state shard {family} is missing")
-    payload = json.loads(path.read_text())
-    if (pool == "scorer_fit"
-            and family in {
-                row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}):
-        _validate_mixed_active_state_shard(payload, raw_path)
+    envelope = json.loads(path.read_text())
+    try:
+        evidence_path = str(raw_path.relative_to(ROOT))
+    except ValueError:
+        # Synthetic alias-custody tests may place the lexical generated root
+        # outside the repository; production paths are always repository
+        # relative and the canonical path is independently pinned above.
+        evidence_path = str(raw_path)
+    is_reissued = (
+        envelope.get("schema") == PERFORMANCE_INTERRUPTION.REISSUED_SHARD_SCHEMA)
+    if is_reissued:
+        if pool != "scorer_fit" or family == REACHABILITY_REDRIVE_FAMILY:
+            raise RuntimeError("source-reissued wrapper appeared outside fixed scorer-fit shards")
+        receipt = _load_current_performance_interruption_receipt()
+        payload = PERFORMANCE_INTERRUPTION.validate_reissued_fixed_state_shard(
+            envelope,
+            receipt=receipt,
+            revalidate_predecessor=
+                _revalidate_performance_interrupted_fixed_shard,
+            root=ROOT,
+        )
+        evidence = {
+            "envelope_schema": PERFORMANCE_INTERRUPTION.REISSUED_SHARD_SCHEMA,
+            "active_path": evidence_path,
+            "active_raw_sha256": file_sha256(path),
+            "active_byte_count": path.stat().st_size,
+            "source_reissued_state_shard_digest": str(
+                envelope["source_reissued_state_shard_digest"]),
+            "predecessor_state_shard_digest": str(
+                envelope["predecessor_state_shard_digest"]),
+            "performance_interruption_receipt_digest": str(
+                envelope["performance_interruption_receipt_digest"]),
+            "successor_state_shard_digest": str(payload["state_shard_digest"]),
+        }
     else:
-        _validate_state_shard(payload, raw_path, pool)
+        payload = envelope
+        evidence = {
+            "envelope_schema": str(payload.get("schema", "")),
+            "active_path": evidence_path,
+            "active_raw_sha256": file_sha256(path),
+            "active_byte_count": path.stat().st_size,
+            "source_reissued_state_shard_digest": None,
+            "predecessor_state_shard_digest": None,
+            "performance_interruption_receipt_digest": None,
+            "successor_state_shard_digest": str(
+                payload.get("state_shard_digest", "")),
+        }
+    if not is_reissued:
+        if (pool == "scorer_fit"
+                and family in {
+                    row["family"] for row in
+                    STATE_SELECTOR.PRESERVED_STATE_SHARDS}):
+            _validate_mixed_active_state_shard(payload, raw_path)
+        else:
+            _validate_state_shard(payload, raw_path, pool)
     if payload.get("family") != family:
         raise RuntimeError("active state shard family changed")
+    if evidence["successor_state_shard_digest"] != payload["state_shard_digest"]:
+        raise RuntimeError("active shard evidence and successor payload disagree")
+    return path, payload, evidence
+
+
+def _load_active_family_state_shard(
+        out: Path, family: str, *, pool: str) -> tuple[Path, dict[str, Any]]:
+    path, payload, _evidence = _load_active_state_shard_evidence(
+        out, family, pool=pool)
     return path, payload
 
 
@@ -6330,12 +7817,9 @@ def resolve_states(args: argparse.Namespace) -> dict[str, Any]:
     _load_clean_source_launch_receipt()
     if (args.pool == "scorer_fit"
             and args.family == REACHABILITY_REDRIVE_FAMILY):
-        terminal = _load_small_completion_search_failure(
-            OUT_ROOT / "scorer_fit", args=args)
-        if terminal is not None:
-            raise RuntimeError(
-                "terminal pre-outcome small completion joint-search failure: "
-                f"{terminal['failure_reason']}")
+        raise RuntimeError(
+            "serial small-family resolution is superseded; use the prefix "
+            "reissue, measured benchmark, and parallel search stages")
     spec = POOLS[args.pool]
     pool, exclusion = scene_pool(args.pool)
     if args.family is None:
@@ -6404,41 +7888,6 @@ def resolve_states(args: argparse.Namespace) -> dict[str, Any]:
                   f"edges={chosen['goal']['graph_edges']} "
                   f"d0={chosen['goal']['start_geodesic_m']:.2f}m", flush=True)
 
-    joint_search_receipt: dict[str, Any] | None = None
-    if small_joint_search:
-        if resolver_cursor_scene_id is None:
-            raise RuntimeError("small-family resolver has no lexical scene cursor")
-        out = OUT_ROOT / "scorer_fit"
-        fixed_shards: list[dict[str, Any]] = []
-        for other_family in STATE_SELECTOR.REQUIRED_FAMILIES:
-            if other_family == REACHABILITY_REDRIVE_FAMILY:
-                continue
-            _shard_path, shard = _load_active_family_state_shard(
-                out, other_family, pool="scorer_fit")
-            fixed_shards.append(shard)
-        fixed_states = [state for shard in fixed_shards
-                        for state in shard["states"]] + list(states)
-        raw_candidates = _small_completion_candidates_from_feasibility(
-            out=out, excluded_scene_ids={str(state["scene_id"])
-                                         for state in fixed_states},
-            resolver_cursor_scene_id=resolver_cursor_scene_id)
-        try:
-            selected, joint_search_receipt = select_small_completion_combination(
-                fixed_states=fixed_states, raw_candidates=raw_candidates,
-                preserved_vectors=_phase1_completion_rotation_vectors(),
-                resolver_cursor_scene_id=resolver_cursor_scene_id)
-        except SmallCompletionJointSearchInfeasible as exc:
-            failure = _issue_small_completion_search_failure(
-                out=out, error=exc,
-                resolver_cursor_scene_id=resolver_cursor_scene_id)
-            print(json.dumps(failure, indent=2, sort_keys=True))
-            raise RuntimeError(
-                "terminal pre-outcome small completion joint-search failure: "
-                f"{exc.reason}") from exc
-        states.extend(selected)
-        found["completion_enriched"] = len(selected)
-        need["completion_enriched"] = 5
-
     incomplete = {key: [found[key], need[key]] for key in need
                   if found[key] != need[key]}
     if incomplete:
@@ -6480,95 +7929,100 @@ def resolve_states(args: argparse.Namespace) -> dict[str, Any]:
         },
         "state_resolution_scene_capture_provenance": capture_provenance,
     }
-    if joint_search_receipt is not None:
-        shard["small_completion_joint_allocation_search"] = joint_search_receipt
     shard["state_shard_digest"] = canonical_digest(shard)
     return shard
 
 
 # ------------------------------------------------------------------- stage B --
+_POST_ALLOCATION_STATE_FIELDS = frozenset({
+    "state_index", "candidate_indices", "candidate_rotation_index",
+    "branch_identities",
+})
+
+
+def _preallocation_state_projection(
+        states: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Remove only registered merge-time fields from full scientific states."""
+
+    if isinstance(states, (str, bytes)) or not isinstance(states, Sequence):
+        raise RuntimeError("state projection input is not a sequence")
+    projected: list[dict[str, Any]] = []
+    for state in states:
+        if not isinstance(state, Mapping):
+            raise RuntimeError("state projection row is not a mapping")
+        projected.append({
+            key: value for key, value in state.items()
+            if key not in _POST_ALLOCATION_STATE_FIELDS
+        })
+    return _joint_state_order(projected)
+
+
 def _validate_small_completion_joint_search_receipt(
         *, manifest: dict[str, Any], allocation: dict[str, Any],
         replay_live: bool = True) -> None:
-    """Reopen the exact small-last search-to-final-mask equivalence."""
+    """Strictly replay durable parallel certificates with zero MILP solves."""
 
+    del replay_live  # Kept for source compatibility; all validation is strict.
     receipt = manifest.get("small_completion_joint_allocation_search")
     if not isinstance(receipt, dict):
-        raise RuntimeError("state manifest lacks the small completion search receipt")
-    assignment_digest = _allocation_assignment_set_digest(allocation)
-    small_completion_scenes = sorted(
-        str(state["scene_id"]) for state in manifest.get("states", [])
-        if (state.get("family") == REACHABILITY_REDRIVE_FAMILY
-            and state.get("stratum") == "completion_enriched")
-    )
-    pool_scene_ids = receipt.get("candidate_pool_scene_ids")
-    cursor = receipt.get("resolver_cursor_scene_id")
-    if (
-        receipt.get("status")
-        != "PASS_FIRST_LEXICOGRAPHIC_EXACT_MASK_COMBINATION"
-        or receipt.get("candidate_outcomes_consumed") is not False
-        or receipt.get("final_masks_equal_searched_masks") is not True
-        or receipt.get("provisional_candidate_assignment_set_digest")
-        != assignment_digest
-        or receipt.get("final_candidate_assignment_set_digest")
-        != assignment_digest
-        or receipt.get("selected_scene_ids") != small_completion_scenes
-        or len(small_completion_scenes) != 5
-        or not isinstance(cursor, str) or not cursor
-        or not isinstance(pool_scene_ids, list)
-        or receipt.get("candidate_pool_count") != len(pool_scene_ids)
-        or receipt.get("candidate_pool_scene_ids_digest")
-        != canonical_digest(pool_scene_ids)
-        or pool_scene_ids != sorted(pool_scene_ids)
-        or len(set(pool_scene_ids)) != len(pool_scene_ids)
-        or any(not isinstance(scene_id, str) or scene_id <= cursor
-               for scene_id in pool_scene_ids)
-        or any(scene_id not in pool_scene_ids
-               for scene_id in small_completion_scenes)
-    ):
-        raise RuntimeError(
-            "state manifest small completion joint-search receipt mismatch")
-    if not replay_live:
-        return
-    small_states = [state for state in manifest["states"]
-                    if state["family"] == REACHABILITY_REDRIVE_FAMILY]
-    general_safety = [state for state in small_states
-                      if state["stratum"] != "completion_enriched"]
-    if len(general_safety) != 10:
-        raise RuntimeError("small joint-search replay lacks ten fixed G/S states")
-    # The one-pass resolver stopped when its tenth G/S state was selected.
-    # Because scene order is lexical and each scene can contribute at most one
-    # state, that selected scene is the exact consumed cursor.
-    expected_cursor = max(str(state["scene_id"]) for state in general_safety)
-    if cursor != expected_cursor:
-        raise RuntimeError("small joint-search resolver cursor changed")
-    fixed_states = [state for state in manifest["states"]
-                    if not (state["family"] == REACHABILITY_REDRIVE_FAMILY
-                            and state["stratum"] == "completion_enriched")]
-    live_candidates = _small_completion_candidates_from_feasibility(
-        out=OUT_ROOT / "scorer_fit",
-        excluded_scene_ids={str(state["scene_id"]) for state in fixed_states},
-        resolver_cursor_scene_id=expected_cursor)
-    live_scene_ids = [str(state["scene_id"]) for state in live_candidates]
-    if live_scene_ids != pool_scene_ids:
-        raise RuntimeError("small joint-search live candidate pool changed")
-    replay_selected, replay_receipt = select_small_completion_combination(
-        fixed_states=fixed_states, raw_candidates=live_candidates,
-        preserved_vectors=_phase1_completion_rotation_vectors(),
-        resolver_cursor_scene_id=expected_cursor)
-    expected_pre_final = {
-        key: value for key, value in receipt.items()
-        if key not in (
-            "final_candidate_assignment_set_digest",
-            "final_masks_equal_searched_masks",
-        )
-    }
-    if (replay_receipt != expected_pre_final
-            or [state["state_identity_digest"] for state in replay_selected]
-            != [state["state_identity_digest"] for state in small_states
-                if state["stratum"] == "completion_enriched"]):
-        raise RuntimeError(
-            "small joint-search receipt is not the first live passing combination")
+        raise RuntimeError("state manifest lacks the parallel small joint receipt")
+    if receipt.get("parallel_small_completion_joint_receipt_digest") != \
+            PARALLEL_SEARCH.canonical_digest({
+                key: value for key, value in receipt.items()
+                if key != "parallel_small_completion_joint_receipt_digest"}):
+        raise RuntimeError("parallel small joint receipt self digest mismatch")
+    out = OUT_ROOT / "scorer_fit"
+    inputs = _parallel_small_search_inputs(out)
+    plan, benchmark, _source_binding = _load_parallel_plan_and_benchmark(
+        out, inputs)
+    raw_terminal = out / PARALLEL_SMALL_TERMINAL_RESULT_NAME
+    terminal_path = _pin_generated_path(raw_terminal, raw_terminal)
+    if not terminal_path.is_file() or terminal_path.is_symlink():
+        raise RuntimeError("parallel terminal result is missing")
+    terminal = json.loads(terminal_path.read_text())
+    prepare, classify, validate = _parallel_search_callbacks(inputs)
+    certified = PARALLEL_SEARCH.validate_terminal_search_result(
+        terminal_result=terminal, search_plan=plan,
+        checkpoint_root=_parallel_search_checkpoint_root(out),
+        prepare_rank=prepare, classify_mask=classify,
+        validate_winner=validate)
+    expected_receipt = _build_parallel_joint_receipt(
+        out=out, inputs=inputs, plan=plan, benchmark=benchmark,
+        terminal=terminal, allocation=certified)
+    if (receipt != expected_receipt or dict(allocation) != certified
+            or manifest.get("small_prefix_reissue_receipt")
+            not in (None, inputs["prefix"]["receipt_binding"])):
+        raise RuntimeError("parallel small terminal certificate changed")
+    manifest_states = _preallocation_state_projection(
+        manifest.get("states", []))
+    certified_states = _parallel_rank_material(
+        inputs, int(terminal["rank"]), tuple(
+            terminal["rank_receipt"]["combination_indices"]))["states"]
+    if manifest_states != certified_states:
+        raise RuntimeError("parallel terminal states differ from manifest")
+
+
+def _certify_parallel_allocation_solve_free(
+        out: Path, supplied_allocation: Mapping[str, Any]) -> dict[str, Any]:
+    """Replay the complete durable terminal proof and return exact bytes."""
+
+    inputs = _parallel_small_search_inputs(out)
+    plan, _benchmark, _source_binding = _load_parallel_plan_and_benchmark(
+        out, inputs)
+    raw_terminal = out / PARALLEL_SMALL_TERMINAL_RESULT_NAME
+    terminal_path = _pin_generated_path(raw_terminal, raw_terminal)
+    if not terminal_path.is_file() or terminal_path.is_symlink():
+        raise RuntimeError("parallel terminal result is missing")
+    terminal = json.loads(terminal_path.read_text())
+    prepare, classify, validate = _parallel_search_callbacks(inputs)
+    certified = PARALLEL_SEARCH.validate_terminal_search_result(
+        terminal_result=terminal, search_plan=plan,
+        checkpoint_root=_parallel_search_checkpoint_root(out),
+        prepare_rank=prepare, classify_mask=classify,
+        validate_winner=validate)
+    if dict(supplied_allocation) != certified:
+        raise RuntimeError("solve-free certificate binds another allocation")
+    return certified
 
 
 def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
@@ -6659,6 +8113,8 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
     raw_allocation_path = OUT_ROOT / pool / "candidate_allocation_manifest.json"
     allocation_path = _pin_generated_path(
         raw_allocation_path, raw_allocation_path)
+    if not allocation_path.is_file() or allocation_path.is_symlink():
+        raise RuntimeError("candidate allocation artifact is not a regular file")
     allocation = json.loads(allocation_path.read_text())
     if allocation.get("allocation_manifest_digest") \
             != manifest["candidate_allocation_manifest_digest"]:
@@ -6677,10 +8133,11 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
                 != launch[
                     "mixed_precontract_disposition_receipt_digest"]):
             raise RuntimeError("live selector preconditions differ from launch")
-        ALLOC.validate_allocation_manifest(
-            allocation,
-            expected_source_identity_manifest_digest=
-                manifest["pre_allocation_identity_manifest_digest"])
+        # The terminal parallel certificate replays every fixed-r prefix wave,
+        # the bounded winner-objective proof, exact allocation bytes, and all
+        # completion masks.  It performs no new MILP solve.
+        _validate_small_completion_joint_search_receipt(
+            manifest=manifest, allocation=allocation)
         if (allocation["post_identity_pre_outcome_validation"][
                 "post_identity_validation_digest"]
                 != manifest[
@@ -6688,8 +8145,6 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
             raise RuntimeError(
                 "post-identity allocation validation digest mismatch"
             )
-        _validate_small_completion_joint_search_receipt(
-            manifest=manifest, allocation=allocation)
         raw_revalidation_path = (
             ROOT / STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_PATH
         )
@@ -6699,10 +8154,13 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
             raise RuntimeError("post-allocation state revalidation receipt is missing")
         revalidation = json.loads(revalidation_path.read_text())
         launch = _load_clean_source_launch_receipt()
-        STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
+        STATE_SELECTOR.validate_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
             revalidation,
             allocation_manifest=allocation,
             active_states=manifest["states"],
+            certify_allocation_solve_free=lambda supplied:
+                _certify_parallel_allocation_solve_free(
+                    OUT_ROOT / "scorer_fit", supplied),
             expected_source_commit=str(launch["source_repository_commit"]),
             expected_successor_selection_digest=selection_digest(),
             expected_feasibility_receipt_digest=str(
@@ -6719,11 +8177,19 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
             key: value for key, value in allocation.items()
             if key != "allocation_manifest_digest"}):
         raise RuntimeError("final candidate allocation self digest mismatch")
-    assignment = {row["state_id"]: row["candidate_indices"]
-                  for row in allocation["assignments"]}
-    if any(list(state["candidate_indices"]) != list(assignment.get(state["state_id"], []))
+    assignment = {row["state_id"]: row for row in allocation["assignments"]}
+    if any(list(state["candidate_indices"]) != list(
+               assignment.get(state["state_id"], {}).get(
+                   "candidate_indices", []))
            for state in manifest["states"]):
         raise RuntimeError("state manifest candidate assignments changed")
+    if pool == "scorer_fit" and any(
+            isinstance(state.get("candidate_rotation_index"), bool)
+            or not isinstance(state.get("candidate_rotation_index"), int)
+            or state["candidate_rotation_index"]
+            != assignment.get(state["state_id"], {}).get("rotation_index")
+            for state in manifest["states"]):
+        raise RuntimeError("state manifest candidate rotations changed")
 
 
 def validate_active_state_manifest_for_consumption(
@@ -8072,7 +9538,10 @@ def _validate_state_shard(payload: dict[str, Any], path: Path,
     }
     if (expected_pool == "scorer_fit"
             and payload.get("family") == REACHABILITY_REDRIVE_FAMILY):
-        expected_keys.add("small_completion_joint_allocation_search")
+        expected_keys.update({
+            "small_prefix_reissue_receipt",
+            "small_completion_joint_allocation_search",
+        })
     if set(payload) != expected_keys:
         raise RuntimeError(f"state shard {path.name} key surface changed")
     if (payload.get("schema") != "go2_branch_corpus_v1_2_state_shard"
@@ -8118,7 +9587,48 @@ def _validate_state_shard(payload: dict[str, Any], path: Path,
     for key in LAUNCH_BINDING_KEYS:
         if payload.get(key) != launch[key]:
             raise RuntimeError(f"state shard {path.name} clean-source {key} mismatch")
-    _validate_state_resolution_transport(payload, expected_pool=expected_pool)
+    is_parallel_small = (
+        expected_pool == "scorer_fit"
+        and payload.get("family") == REACHABILITY_REDRIVE_FAMILY)
+    if is_parallel_small:
+        transport = payload.get("state_resolution_subprocess_transport")
+        provenance = payload.get(
+            "state_resolution_scene_capture_provenance")
+        if (not isinstance(transport, dict)
+                or set(transport) != {
+                    "schema", "one_scene_per_subprocess",
+                    "atomic_capture_write_before_native_cleanup",
+                    "return_code_ignored_only_after_valid_capture",
+                    "resume_scope", "resolver_algorithm_digest",
+                    "resolver_cursor_scene_id", "scene_capture_count",
+                    "scene_capture_provenance_digest",
+                    "candidate_outcomes_loaded",
+                }
+                or transport.get("schema")
+                != "go2_branch_corpus_v1_2_state_resolution_transport_v1"
+                or transport.get("one_scene_per_subprocess") is not True
+                or transport.get(
+                    "atomic_capture_write_before_native_cleanup") is not True
+                or transport.get(
+                    "return_code_ignored_only_after_valid_capture") is not True
+                or transport.get("resume_scope")
+                != "REISSUED_EXACT_SMALL_PREFIX_PLUS_PARALLEL_CERTIFICATE"
+                or transport.get("resolver_algorithm_digest")
+                != canonical_digest(STATE_RESOLUTION_REDUCER_CONTRACT)
+                or transport.get("resolver_cursor_scene_id")
+                != payload.get("small_completion_joint_allocation_search", {}).get(
+                    "resolver_cursor_scene_id")
+                or not isinstance(provenance, list) or len(provenance) != 12
+                or transport.get("scene_capture_count") != len(provenance)
+                or transport.get("scene_capture_provenance_digest")
+                != canonical_digest(provenance)
+                or transport.get("candidate_outcomes_loaded") is not False
+                or payload.get("small_prefix_reissue_receipt")
+                != payload.get("small_completion_joint_allocation_search", {}).get(
+                    "small_prefix_reissue_receipt")):
+            raise RuntimeError("parallel small terminal transport changed")
+    else:
+        _validate_state_resolution_transport(payload, expected_pool=expected_pool)
     states = payload.get("states", [])
     if len(states) != spec["states_per_family"]:
         raise RuntimeError(f"state shard {path.name} has the wrong state count")
@@ -8133,6 +9643,36 @@ def _validate_state_shard(payload: dict[str, Any], path: Path,
     if any(_state_identity_digest(state) != state.get("state_identity_digest")
            for state in states):
         raise RuntimeError(f"state shard {path.name} has an identity digest mismatch")
+    if is_parallel_small:
+        inputs = _parallel_small_search_inputs(OUT_ROOT / "scorer_fit")
+        if (provenance != inputs["prefix"]["capture_provenance"]
+                or payload.get("scene_rejection_reasons")
+                != inputs["prefix"]["scene_rejection_reasons"]
+                or payload.get("small_prefix_reissue_receipt")
+                != inputs["prefix"]["receipt_binding"]
+                or [state for state in states
+                    if state["stratum"] != "completion_enriched"]
+                != sorted(inputs["prefix"]["states"], key=lambda state: (
+                    STRATA.index(str(state["stratum"])),
+                    str(state["scene_id"])))):
+            raise RuntimeError("parallel small shard prefix receipt/replay changed")
+        terminal_path = _pin_generated_path(
+            OUT_ROOT / "scorer_fit" / PARALLEL_SMALL_TERMINAL_RESULT_NAME,
+            OUT_ROOT / "scorer_fit" / PARALLEL_SMALL_TERMINAL_RESULT_NAME)
+        if not terminal_path.is_file() or terminal_path.is_symlink():
+            raise RuntimeError("parallel small shard terminal result is missing")
+        terminal = json.loads(terminal_path.read_text())
+        aggregate = _joint_state_order([*inputs["fixed_states"], *states])
+        _validate_small_completion_joint_search_receipt(
+            manifest={
+                "states": aggregate,
+                "small_prefix_reissue_receipt":
+                    payload["small_prefix_reissue_receipt"],
+                "small_completion_joint_allocation_search":
+                    payload["small_completion_joint_allocation_search"],
+            },
+            allocation=dict(terminal.get("allocation", {})),
+            replay_live=False)
 
 
 def _validate_mixed_active_state_shard(
@@ -8345,17 +9885,521 @@ def _validate_mixed_active_state_shard(
     INVALID_IDS.assert_disjoint(states, label=f"mixed state shard {family}")
 
 
+def _assert_archived_fixed_transport_pair(
+        *, kind: str, provenance: Mapping[str, Any],
+        request_row: Mapping[str, Any], capture_row: Mapping[str, Any],
+        old_request: Mapping[str, Any], old_capture: Mapping[str, Any]) -> None:
+    """Bind one archived request/capture pair back to its shard provenance."""
+
+    request_key = (
+        "mixed_replacement_scene_request_digest" if kind == "mixed" else
+        "state_resolution_scene_request_digest")
+    capture_key = (
+        "mixed_replacement_scene_capture_digest" if kind == "mixed" else
+        "state_resolution_scene_capture_digest")
+    if (
+        request_row.get("kind") != "request"
+        or capture_row.get("kind") != "capture"
+        or request_row.get("path") != provenance.get("request_path")
+        or capture_row.get("path") != provenance.get("capture_path")
+        or request_row.get("raw_sha256")
+        != provenance.get("request_raw_sha256")
+        or request_row.get("byte_count") != provenance.get("request_byte_count")
+        or capture_row.get("raw_sha256")
+        != provenance.get("capture_raw_sha256")
+        or capture_row.get("byte_count") != provenance.get("capture_byte_count")
+        or old_request.get(request_key) != provenance.get(request_key)
+        or old_capture.get(capture_key) != provenance.get(capture_key)
+        or old_capture.get(request_key) != old_request.get(request_key)
+        or old_capture.get("request") != old_request
+    ):
+        raise RuntimeError("archived fixed transport provenance changed")
+
+
+def _replay_projected_ordinary_fixed_shard(
+        *, predecessor: Mapping[str, Any], family: str,
+        projected_pairs: Sequence[Mapping[str, Any]]) -> None:
+    """Reconstruct the ordinary lexical quota reducer entirely in memory."""
+
+    provenance = predecessor.get("state_resolution_scene_capture_provenance")
+    transport = predecessor.get("state_resolution_subprocess_transport")
+    expected_transport_keys = {
+        "schema", "one_scene_per_subprocess",
+        "atomic_capture_write_before_native_cleanup",
+        "return_code_ignored_only_after_valid_capture", "resume_scope",
+        "resolver_algorithm_digest", "resolver_cursor_scene_id",
+        "scene_capture_count", "scene_capture_provenance_digest",
+        "candidate_outcomes_loaded",
+    }
+    if (not isinstance(provenance, list) or not provenance
+            or len(projected_pairs) != len(provenance)
+            or not isinstance(transport, Mapping)
+            or set(transport) != expected_transport_keys
+            or transport.get("schema")
+            != "go2_branch_corpus_v1_2_state_resolution_transport_v1"
+            or transport.get("one_scene_per_subprocess") is not True
+            or transport.get("atomic_capture_write_before_native_cleanup")
+            is not True
+            or transport.get("return_code_ignored_only_after_valid_capture")
+            is not True
+            or transport.get("resume_scope")
+            != "MISSING_OR_INVALID_SCENE_CAPTURES_ONLY"
+            or transport.get("resolver_algorithm_digest")
+            != canonical_digest(STATE_RESOLUTION_REDUCER_CONTRACT)
+            or transport.get("candidate_outcomes_loaded") is not False
+            or transport.get("scene_capture_count") != len(provenance)
+            or transport.get("scene_capture_provenance_digest")
+            != canonical_digest(provenance)):
+        raise RuntimeError("ordinary archived reducer transport changed")
+
+    required = dict(POOLS["scorer_fit"]["strata"])
+    found = {name: 0 for name in required}
+    selected: list[dict[str, Any]] = []
+    rejections: dict[str, dict[str, int]] = {}
+    identities: set[str] = set()
+    for ordinal, (row, projected) in enumerate(
+            zip(provenance, projected_pairs, strict=True)):
+        request = dict(projected["request"])
+        capture = dict(projected["capture"])
+        old_request = dict(projected["old_request"])
+        old_capture = dict(projected["old_capture"])
+        _assert_archived_fixed_transport_pair(
+            kind="ordinary", provenance=row,
+            request_row=projected["request_row"],
+            capture_row=projected["capture_row"],
+            old_request=old_request, old_capture=old_capture)
+        requested = [name for name in STRATA
+                     if found[name] < required[name]]
+        scene_id = str(request.get("scene", {}).get("scene_id", ""))
+        if (request.get("scene_ordinal") != ordinal
+                or row.get("scene_id") != scene_id
+                or capture.get("scene_id") != scene_id
+                or request.get("found_before_scene") != found
+                or request.get("required_counts") != required
+                or request.get("requested_strata_in_priority_order")
+                != requested
+                or not requested
+                or capture.get("worker_failure") is not None):
+            raise RuntimeError("ordinary archived dynamic quota prefix changed")
+        rejections[scene_id] = dict(capture["scene_rejection_reasons"])
+        chosen = capture.get("chosen_state")
+        if chosen is not None:
+            chosen = dict(chosen)
+            stratum = str(chosen["stratum"])
+            if stratum not in requested or found[stratum] >= required[stratum]:
+                raise RuntimeError("ordinary archived reducer exceeded a quota")
+            found[stratum] += 1
+            identity = str(chosen["state_identity_digest"])
+            if identity in identities:
+                raise RuntimeError("ordinary archived reducer repeats an identity")
+            identities.add(identity)
+            selected.append(chosen)
+        quota_full = found == required
+        if quota_full != (ordinal == len(provenance) - 1):
+            raise RuntimeError(
+                "ordinary archived reducer did not stop at first full quota")
+
+    selected.sort(key=lambda state: (
+        STRATA.index(str(state["stratum"])), str(state["scene_id"])))
+    if (found != required
+            or transport.get("resolver_cursor_scene_id")
+            != provenance[-1].get("scene_id")
+            or predecessor.get("states") != selected
+            or predecessor.get("scene_rejection_reasons") != rejections):
+        raise RuntimeError("ordinary archived reducer output changed")
+
+
+def _replay_projected_mixed_fixed_shard(
+        *, predecessor: Mapping[str, Any], family: str,
+        projected_pairs: Sequence[Mapping[str, Any]]) -> None:
+    """Reconstruct every mixed interval, slot, and first-complete prefix."""
+
+    provenance = predecessor.get("mixed_replacement_scene_capture_provenance")
+    transport = predecessor.get("mixed_replacement_subprocess_transport")
+    expected_transport_keys = {
+        "schema", "one_scene_per_subprocess",
+        "atomic_capture_write_before_native_cleanup",
+        "return_code_ignored_only_after_valid_capture", "resume_scope",
+        "interval_rows", "scene_capture_count",
+        "scene_capture_provenance_digest", "candidate_outcomes_loaded",
+    }
+    if (not isinstance(provenance, list)
+            or len(projected_pairs) != len(provenance)
+            or not isinstance(transport, Mapping)
+            or set(transport) != expected_transport_keys
+            or transport.get("schema") != MIXED_REPLACEMENT_TRANSPORT_SCHEMA
+            or transport.get("one_scene_per_subprocess") is not True
+            or transport.get("atomic_capture_write_before_native_cleanup")
+            is not True
+            or transport.get("return_code_ignored_only_after_valid_capture")
+            is not True
+            or transport.get("resume_scope")
+            != "MISSING_OR_INVALID_REPLACEMENT_SCENE_CAPTURES_ONLY"
+            or transport.get("candidate_outcomes_loaded") is not False
+            or transport.get("scene_capture_count") != len(provenance)
+            or transport.get("scene_capture_provenance_digest")
+            != canonical_digest(provenance)):
+        raise RuntimeError("mixed archived reducer transport changed")
+
+    plan = _mixed_family_replacement_plan(family)
+    pool, _exclusion = scene_pool("scorer_fit")
+    scenes = pool[family]
+    retained_all, rejected_all, _slots = _mixed_disposition_sets()
+    retained_scene_ids = {str(row["scene_id"])
+                          for row in retained_all.values()}
+    cursor = 0
+    replacements: list[dict[str, Any]] = []
+    rejections: dict[str, dict[str, int]] = {}
+    interval_rows: list[dict[str, Any]] = []
+    for interval_index, interval in enumerate(plan["interval_groups"]):
+        candidates = _mixed_replacement_candidate_scenes(
+            scenes=scenes, interval=interval,
+            retained_scene_ids=retained_scene_ids)
+        accepted: list[dict[str, Any]] = []
+        scanned_scene_ids: list[str] = []
+        while len(accepted) < len(interval["replacement_slots"]):
+            candidate_index = len(scanned_scene_ids)
+            if candidate_index >= len(candidates) or cursor >= len(provenance):
+                raise RuntimeError("mixed archived interval ends before quota")
+            scene_ordinal, scene_dir = candidates[candidate_index]
+            row = provenance[cursor]
+            projected = projected_pairs[cursor]
+            cursor += 1
+            request = dict(projected["request"])
+            capture = dict(projected["capture"])
+            old_request = dict(projected["old_request"])
+            old_capture = dict(projected["old_capture"])
+            _assert_archived_fixed_transport_pair(
+                kind="mixed", provenance=row,
+                request_row=projected["request_row"],
+                capture_row=projected["capture_row"],
+                old_request=old_request, old_capture=old_capture)
+            slot = interval["replacement_slots"][len(accepted)]
+            accepted_scene_ids = [state["scene_id"] for state in accepted]
+            if (row.get("interval_index") != interval_index
+                    or row.get("scene_id") != scene_dir.name
+                    or row.get("replacement_slot_state_id")
+                    != slot["state_id"]
+                    or request.get("scene_ordinal") != scene_ordinal
+                    or request.get("scene", {}).get("scene_id")
+                    != scene_dir.name
+                    or request.get("anchor_interval") != {
+                        "lower_scene_id_exclusive":
+                            interval["lower_scene_id_exclusive"],
+                        "upper_scene_id_exclusive":
+                            interval["upper_scene_id_exclusive"],
+                        "vacant_ordinals": list(interval["vacant_ordinals"]),
+                    }
+                    or request.get("replacement_slot") != slot
+                    or request.get("accepted_scene_ids_before")
+                    != accepted_scene_ids
+                    or capture.get("scene_id") != scene_dir.name
+                    or capture.get("worker_failure") is not None
+                    or row.get("selected")
+                    != (capture.get("chosen_state") is not None)):
+                raise RuntimeError("mixed archived lexical interval prefix changed")
+            scanned_scene_ids.append(scene_dir.name)
+            rejections[scene_dir.name] = dict(
+                capture["scene_rejection_reasons"])
+            chosen = capture.get("chosen_state")
+            if chosen is not None:
+                chosen = dict(chosen)
+                if chosen["state_identity_digest"] in rejected_all:
+                    raise RuntimeError(
+                        "mixed archived reducer restored a rejected identity")
+                accepted.append(chosen)
+                replacements.append(chosen)
+        interval_rows.append({
+            "interval_index": interval_index,
+            "lower_scene_id_exclusive": interval[
+                "lower_scene_id_exclusive"],
+            "upper_scene_id_exclusive": interval[
+                "upper_scene_id_exclusive"],
+            "vacant_ordinals": list(interval["vacant_ordinals"]),
+            "replacement_slot_state_ids": [
+                row["state_id"] for row in interval["replacement_slots"]],
+            "candidate_scene_ids": [
+                scene.name for _ordinal, scene in candidates],
+            "scanned_scene_ids": scanned_scene_ids,
+            "selected_scene_ids": [state["scene_id"] for state in accepted],
+            "stopped_at_first_complete_prefix": True,
+        })
+    if cursor != len(provenance):
+        raise RuntimeError("mixed archived reducer appends post-quota captures")
+
+    states = [dict(row) for row in plan["retained_states"]] + replacements
+    states.sort(key=lambda row: (
+        STRATA.index(str(row["stratum"])), str(row["state_id"])))
+    replacement_fills = [{
+        "state_id": row["state_id"],
+        "state_identity_digest": row["state_identity_digest"],
+        "scene_id": row["scene_id"],
+        "split_role": row["split_role"],
+    } for row in sorted(replacements, key=lambda value: value["state_id"])]
+    if (predecessor.get("states") != states
+            or predecessor.get("replacement_slot_fills") != replacement_fills
+            or predecessor.get("scene_rejection_reasons") != rejections
+            or transport.get("interval_rows") != interval_rows
+            or predecessor.get("retained_predecessor_identity_digests")
+            != sorted(row["state_identity_digest"]
+                      for row in plan["retained_states"])
+            or predecessor.get("rejected_predecessor_identity_digests")
+            != plan["rejected_identity_digests"]):
+        raise RuntimeError("mixed archived reducer output changed")
+
+
+def _revalidate_performance_interrupted_fixed_shard(
+        predecessor: dict[str, Any], transport_rows: Sequence[dict[str, Any]],
+        successor_bindings: dict[str, Any]) -> bool:
+    """Replay archived request/capture semantics under successor bindings.
+
+    Archived bytes remain immutable.  Each request is projected in memory onto
+    the current complete state-shard binding, its digest is recomputed, and its
+    paired capture is projected onto that exact request before the existing
+    structural/scientific validators run.  Only after every row and the final
+    selected-state projection pass may the lineage module issue a successor
+    wrapper.
+    """
+
+    family = str(predecessor.get("family", ""))
+    kind = next(
+        (row["kind"] for row in PERFORMANCE_INTERRUPTION.FIXED_STATE_SHARDS
+         if row["family"] == family), None)
+    if kind not in {"ordinary", "mixed"}:
+        raise RuntimeError("performance-interrupted shard family changed")
+    pool, exclusion = scene_pool("scorer_fit")
+    scenes = pool.get(family)
+    if scenes is None:
+        raise RuntimeError("performance-interrupted family left scene pool")
+    args = argparse.Namespace(pool="scorer_fit", family=family, backend="cpu")
+    expected_bindings = _state_shard_bindings(
+        args, exclusion, [path.name for path in scenes])
+    if any(expected_bindings.get(key) != successor_bindings.get(key)
+           for key in PERFORMANCE_INTERRUPTION.SUCCESSOR_LINEAGE_KEYS):
+        raise RuntimeError("successor replay lineage differs from live bindings")
+
+    by_logical = {str(row["path"]): dict(row) for row in transport_rows}
+    provenance_key = (
+        "mixed_replacement_scene_capture_provenance" if kind == "mixed" else
+        "state_resolution_scene_capture_provenance")
+    provenance = predecessor.get(provenance_key)
+    if not isinstance(provenance, list) or len(by_logical) != 2 * len(provenance):
+        raise RuntimeError("archived transport/provenance cardinality changed")
+    projected_pairs: list[dict[str, Any]] = []
+    for pair in provenance:
+        request_row = by_logical.get(str(pair.get("request_path", "")))
+        capture_row = by_logical.get(str(pair.get("capture_path", "")))
+        if request_row is None or capture_row is None:
+            raise RuntimeError("archived transport pair is incomplete")
+        request_path = PERFORMANCE_INTERRUPTION._pin_managed(
+            request_row["archive_path"], root=ROOT)
+        capture_path = PERFORMANCE_INTERRUPTION._pin_managed(
+            capture_row["archive_path"], root=ROOT)
+        request = json.loads(request_path.read_text())
+        capture = json.loads(capture_path.read_text())
+        old_request = dict(request)
+        old_capture = dict(capture)
+        old_bindings = old_request.get("state_shard_bindings")
+        if (not isinstance(old_bindings, dict)
+                or set(old_bindings) != set(expected_bindings)):
+            raise RuntimeError(
+                "archived request state-shard binding surface changed")
+        for key in expected_bindings:
+            if key in PERFORMANCE_INTERRUPTION.SUCCESSOR_LINEAGE_KEYS:
+                continue
+            if old_bindings[key] != expected_bindings[key]:
+                raise RuntimeError(
+                    f"archived request nonlineage binding {key} changed")
+        request["state_shard_bindings"] = expected_bindings
+        request_key = (
+            "mixed_replacement_scene_request_digest" if kind == "mixed" else
+            "state_resolution_scene_request_digest")
+        request.pop(request_key, None)
+        request[request_key] = canonical_digest(request)
+        capture["request"] = request
+        capture[request_key] = request[request_key]
+        capture_key = (
+            "mixed_replacement_scene_capture_digest" if kind == "mixed" else
+            "state_resolution_scene_capture_digest")
+        capture.pop(capture_key, None)
+        capture[capture_key] = canonical_digest(capture)
+        # The in-memory projection is lineage-only: every nonbinding request
+        # field and every non-nested-request capture field remains exact.
+        old_request_projection = dict(old_request)
+        old_request_projection.pop("state_shard_bindings")
+        old_request_projection.pop(request_key)
+        new_request_projection = dict(request)
+        new_request_projection.pop("state_shard_bindings")
+        new_request_projection.pop(request_key)
+        if old_request_projection != new_request_projection:
+            raise RuntimeError("request scientific projection changed")
+        old_capture_projection = dict(old_capture)
+        old_capture_projection.pop("request")
+        old_capture_projection.pop(request_key)
+        old_capture_projection.pop(capture_key)
+        new_capture_projection = dict(capture)
+        new_capture_projection.pop("request")
+        new_capture_projection.pop(request_key)
+        new_capture_projection.pop(capture_key)
+        if old_capture_projection != new_capture_projection:
+            raise RuntimeError("capture scientific projection changed")
+        if kind == "mixed":
+            _validate_mixed_replacement_scene_request(
+                request, args=args, out=OUT_ROOT / "scorer_fit",
+                pool=pool, exclusion=exclusion)
+            _validate_mixed_replacement_scene_capture(
+                capture, expected_request=request)
+        else:
+            _validate_state_resolution_scene_request(
+                request, args=args, out=OUT_ROOT / "scorer_fit",
+                pool=pool, exclusion=exclusion)
+            _validate_state_resolution_scene_capture(
+                capture, expected_request=request)
+        if capture.get("worker_failure") is not None:
+            raise RuntimeError("archived fixed transport contains worker failure")
+        projected_pairs.append({
+            "request": request,
+            "capture": capture,
+            "old_request": old_request,
+            "old_capture": old_capture,
+            "request_row": request_row,
+            "capture_row": capture_row,
+        })
+
+    if kind == "ordinary":
+        _replay_projected_ordinary_fixed_shard(
+            predecessor=predecessor, family=family,
+            projected_pairs=projected_pairs)
+    else:
+        _replay_projected_mixed_fixed_shard(
+            predecessor=predecessor, family=family,
+            projected_pairs=projected_pairs)
+    return True
+
+
+def _performance_successor_bindings() -> dict[str, Any]:
+    """Return the sole current seven-key lineage projection."""
+
+    launch = _load_clean_source_launch_receipt()
+    return {
+        key: (scorer_contract_digest()
+              if key == "scorer_contract_v1_2_digest" else launch[key])
+        for key in PERFORMANCE_INTERRUPTION.SUCCESSOR_LINEAGE_KEYS
+    }
+
+
+def stage_reissue_performance_interrupted_fixed_shards() -> int:
+    """Reissue seven exact pre-outcome shards after current contract/launch."""
+
+    source = clean_source_binding()
+    receipt = (
+        PERFORMANCE_INTERRUPTION
+        .load_and_validate_performance_interruption_receipt(
+            expected_source_repository_commit=str(
+                source["source_repository_commit"]),
+            expected_clean_source_binding_digest=canonical_digest(source),
+            expected_bound_implementations_digest=str(
+                source["bound_implementations_digest"]),
+            root=ROOT,
+        )
+    )
+
+    outputs = PERFORMANCE_INTERRUPTION.reissue_fixed_state_shards(
+        receipt=receipt,
+        revalidate_predecessor=
+            _revalidate_performance_interrupted_fixed_shard,
+        build_successor_bindings=_performance_successor_bindings,
+        outcome_surface_absent=lambda:
+            _phase1_outcome_surface_absence_attestation(root=ROOT),
+        root=ROOT,
+    )
+    print(json.dumps({
+        "status": PERFORMANCE_INTERRUPTION.REISSUED_SHARD_STATUS,
+        "families": sorted(outputs),
+        "source_reissued_state_shard_digests": {
+            family: payload["source_reissued_state_shard_digest"]
+            for family, payload in sorted(outputs.items())
+        },
+        "scientific_selection_changed": False,
+    }, indent=2, sort_keys=True))
+    return 0
+
+
+def stage_reissue_performance_interrupted_small_prefix() -> int:
+    """Reissue the exact 12-pair, outcome-free 5G/5S prefix.
+
+    This stage follows contract and launch issuance.  The resulting receipt is
+    deliberately *not* added to the launch receipt: it is bound by the search
+    plan, terminal joint receipt, small-family shard, and final state manifest.
+    """
+
+    receipt = _load_current_performance_interruption_receipt()
+    reissue = PERFORMANCE_INTERRUPTION.reissue_small_fixed_prefix(
+        performance_receipt=receipt,
+        build_successor_bindings=_performance_successor_bindings,
+        revalidate_prefix=_revalidate_reissued_small_prefix,
+        outcome_surface_absent=lambda:
+            _phase1_outcome_surface_absence_attestation(root=ROOT),
+        root=ROOT,
+    )
+    binding = PERFORMANCE_INTERRUPTION.small_prefix_reissue_receipt_binding(
+        reissue, root=ROOT)
+    print(json.dumps({
+        "status": reissue["status"],
+        "small_prefix_reissue_receipt": binding,
+        "selected_state_projection_digest":
+            reissue["selected_state_projection_digest"],
+        "resolver_cursor_scene_id": reissue["resolver_cursor_scene_id"],
+        "candidate_outcomes_consumed": False,
+    }, indent=2, sort_keys=True))
+    return 0
+
+
 def _outcome_generation_started(out: Path) -> bool:
-    row_root = out / "row_records"
-    frame_root = out / "frames"
+    lexical_root = Path(out)
+    pinned_out = _pin_generated_path(lexical_root, lexical_root)
+    if pinned_out.is_symlink() or not pinned_out.is_dir():
+        raise RuntimeError("outcome surface pool root is not a directory")
+
+    def pin(relative: Path) -> Path:
+        pinned = pinned_out / relative
+        _assert_unsealed_path(pinned)
+        return pinned
+
+    def guarded_tree_has_file(relative: Path) -> bool:
+        pinned_root = pin(relative)
+        if not pinned_root.exists():
+            return False
+        if pinned_root.is_symlink():
+            raise RuntimeError("outcome surface root is symlinked")
+        if pinned_root.is_file():
+            return True
+        if not pinned_root.is_dir():
+            raise RuntimeError("outcome surface root is not regular")
+        stack: list[tuple[Path, Path]] = [(relative, pinned_root)]
+        while stack:
+            logical_directory, pinned_directory = stack.pop()
+            for entry in sorted(
+                    pinned_directory.iterdir(), key=lambda row: row.name):
+                if entry.is_symlink():
+                    raise RuntimeError("outcome surface descendant is symlinked")
+                logical_entry = logical_directory / entry.name
+                pinned_entry = pin(logical_entry)
+                if pinned_entry != entry:
+                    raise RuntimeError("outcome surface path identity changed")
+                if entry.is_file():
+                    return True
+                if entry.is_dir():
+                    stack.append((logical_entry, entry))
+                else:
+                    raise RuntimeError("outcome surface node is not regular")
+        return False
+
     return bool(
-        (out / "branch_rows.jsonl").exists()
-        or (out / "corpus_receipt.json").exists()
-        or (out / "latents_index.json").exists()
-        or (row_root.is_dir() and any(path.is_file() for path in row_root.iterdir()))
-        or (frame_root.is_dir()
-            and any(path.is_file() for family in frame_root.iterdir()
-                    if family.is_dir() for path in family.iterdir()))
+        any(pin(Path(name)).exists() for name in (
+            "branch_rows.jsonl", "corpus_receipt.json", "latents_index.json"))
+        or guarded_tree_has_file(Path("row_records"))
+        or guarded_tree_has_file(Path("frames"))
     )
 
 
@@ -8408,10 +10452,13 @@ def _issue_preserved_state_revalidation(
     completion_states = _completion_states_for_phase2(
         allocation=allocation, states=states,
         preserved_vectors=_phase1_completion_rotation_vectors())
-    expected = STATE_SELECTOR.build_preserved_state_revalidation_receipt(
+    certify_solve_free = lambda supplied: \
+        _certify_parallel_allocation_solve_free(out, supplied)
+    expected = STATE_SELECTOR.build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
         allocation_manifest=allocation,
         active_states=states,
         completion_states=completion_states,
+        certify_allocation_solve_free=certify_solve_free,
         source_repository_commit=str(launch["source_repository_commit"]),
         successor_selection_digest=selection_digest(),
         state_selector_feasibility_receipt_digest=str(
@@ -8427,10 +10474,11 @@ def _issue_preserved_state_revalidation(
     if path.is_file():
         existing = json.loads(path.read_text())
         try:
-            STATE_SELECTOR.validate_preserved_state_revalidation_receipt(
+            STATE_SELECTOR.validate_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
                 existing,
                 allocation_manifest=allocation,
                 active_states=states,
+                certify_allocation_solve_free=certify_solve_free,
                 expected_source_commit=str(launch["source_repository_commit"]),
                 expected_successor_selection_digest=selection_digest(),
                 expected_feasibility_receipt_digest=str(
@@ -8459,16 +10507,35 @@ def _issue_preserved_state_revalidation(
 
 def _build_state_shard_provenance(
         paths: Sequence[Path], shards: Sequence[dict[str, Any]],
-        *, pool_name: str) -> list[dict[str, Any]]:
-    """Bind mixed pre-outcome shard bytes without promoting old bindings."""
+        evidence: Sequence[dict[str, Any]] | None = None, *, pool_name: str,
+        ) -> list[dict[str, Any]]:
+    """Bind active envelope bytes and the validated successor shard separately."""
 
-    by_family = {str(shard["family"]): (path, shard)
-                 for path, shard in zip(paths, shards, strict=True)}
+    if evidence is None:
+        derived_evidence: list[dict[str, Any]] = []
+        for path, shard in zip(paths, shards, strict=True):
+            raw = _active_state_shard_path(
+                OUT_ROOT / pool_name, str(shard["family"]), pool=pool_name)
+            derived_evidence.append({
+                "envelope_schema": str(shard.get("schema", "")),
+                "active_path": str(raw.relative_to(ROOT)),
+                "active_raw_sha256": file_sha256(path),
+                "active_byte_count": path.stat().st_size,
+                "source_reissued_state_shard_digest": None,
+                "predecessor_state_shard_digest": None,
+                "performance_interruption_receipt_digest": None,
+                "successor_state_shard_digest": str(
+                    shard["state_shard_digest"]),
+            })
+        evidence = derived_evidence
+    by_family = {str(shard["family"]): (path, shard, envelope)
+                 for path, shard, envelope in zip(
+                     paths, shards, evidence, strict=True)}
     mixed_families = {str(row["family"])
                       for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}
     rows: list[dict[str, Any]] = []
     for family in sorted(by_family):
-        path, shard = by_family[family]
+        path, shard, envelope = by_family[family]
         raw_path = _active_state_shard_path(
             OUT_ROOT / pool_name, family, pool=pool_name)
         expected_path = _pin_generated_path(raw_path, raw_path)
@@ -8481,6 +10548,7 @@ def _build_state_shard_provenance(
             "state_shard_digest": str(shard["state_shard_digest"]),
             "raw_sha256": file_sha256(path),
             "byte_count": path.stat().st_size,
+            "active_envelope": dict(envelope),
             "selection_provenance": (
                 "MIXED_37_RETAINED_8_REPLACED_SELECTOR_AMENDMENT_V2"
                 if pool_name == "scorer_fit" and family in mixed_families
@@ -8514,23 +10582,21 @@ def _validate_state_shard_provenance(
                 OUT_ROOT / pool, family, pool=pool))
         if path != expected_path or not path.is_file() or path.is_symlink():
             raise RuntimeError("state-shard provenance path changed or escapes root")
-        payload = json.loads(path.read_text())
+        loaded_path, payload, envelope = _load_active_state_shard_evidence(
+            OUT_ROOT / pool, family, pool=pool)
         expected_provenance = (
             "MIXED_37_RETAINED_8_REPLACED_SELECTOR_AMENDMENT_V2"
             if pool == "scorer_fit" and family in mixed_families
             else "SUCCESSOR_SELECTOR_AMENDMENT_V2"
         )
-        if (row.get("selection_provenance") != expected_provenance
+        if (loaded_path != path
+                or row.get("selection_provenance") != expected_provenance
                 or row.get("raw_sha256") != file_sha256(path)
                 or row.get("byte_count") != path.stat().st_size
+                or row.get("active_envelope") != envelope
                 or row.get("state_shard_digest")
                 != payload.get("state_shard_digest")):
             raise RuntimeError(f"state-shard provenance failed for {family}")
-        if expected_provenance == (
-                "MIXED_37_RETAINED_8_REPLACED_SELECTOR_AMENDMENT_V2"):
-            _validate_mixed_active_state_shard(payload, raw_path)
-        else:
-            _validate_state_shard(payload, raw_path, pool)
         observed_digests[family] = str(row["state_shard_digest"])
     if (seen != set(manifest.get("state_shard_digests", {}))
             or observed_digests != manifest.get("state_shard_digests")):
@@ -8545,11 +10611,13 @@ def merge_states(out: Path) -> int:
         raise RuntimeError(f"unknown output pool {pool_name!r}")
     paths: list[Path] = []
     shards: list[dict[str, Any]] = []
+    shard_evidence: list[dict[str, Any]] = []
     for family in STATE_SELECTOR.REQUIRED_FAMILIES:
-        path, payload = _load_active_family_state_shard(
+        path, payload, evidence = _load_active_state_shard_evidence(
             out, family, pool=pool_name)
         paths.append(path)
         shards.append(payload)
+        shard_evidence.append(evidence)
     families = [str(shard["family"]) for shard in shards]
     if len(set(families)) != EXPECTED_FAMILIES:
         raise RuntimeError("state shards do not represent eight unique families")
@@ -8576,22 +10644,7 @@ def merge_states(out: Path) -> int:
     for index, state in enumerate(states):
         state["state_index"] = index
 
-    common_keys = (
-        "selection_digest", "scorer_fit_allocation_design_digest",
-        "candidate_allocator_contract_digest",
-        "candidate_allocation_amendment_digest",
-        "pre_identity_allocation_validation_digest",
-        "invalid_scorer_identity_exclusion_digest",
-        "state_selector_amendment_digest",
-        "state_selector_feasibility_receipt_digest", "candidate_bank_digest",
-        *LAUNCH_BINDING_KEYS,
-        "progress_contract_digest", "safety_contract_digest",
-        "oracle_v1_2_digest", "scorer_contract_v1_2_digest", "boundary_digest",
-        "render_contract_digest", "preprocess_contract_digest",
-        "textured_v03_renderer_contract_digest",
-        "preprocessing_digest", "target_encoder_digest",
-        "target_encoder_checkpoint_sha256", "genesis_backend",
-    )
+    common_keys = STATE_SHARD_COMMON_KEYS
     active_shards = shards
     common = {key: active_shards[0][key] for key in common_keys}
     for shard in active_shards[1:]:
@@ -8619,19 +10672,6 @@ def merge_states(out: Path) -> int:
         raw_allocation_path, raw_allocation_path)
     allocation_digest: str
     if pool_name == "scorer_fit":
-        projection = [{
-            "state_id": state["state_id"],
-            "state_identity_digest": state["state_identity_digest"],
-            "family": state["family"],
-            "stratum": state["stratum"],
-            "split_role": state["split_role"],
-            "goal_type": state["goal_type"],
-        } for state in states]
-        allocation = ALLOC.build_allocation_manifest(
-            projection, source_identity_manifest_digest=pre_allocation_digest)
-        ALLOC.validate_allocation_manifest(
-            allocation,
-            expected_source_identity_manifest_digest=pre_allocation_digest)
         small_shard = next(
             (shard for shard in shards
              if shard["family"] == REACHABILITY_REDRIVE_FAMILY), None)
@@ -8641,23 +10681,28 @@ def merge_states(out: Path) -> int:
         if not isinstance(joint_search, dict):
             raise RuntimeError(
                 "scorer-fit allocation lacks the small-last joint search receipt")
-        actual_assignment_digest = _allocation_assignment_set_digest(allocation)
-        if (joint_search.get("provisional_candidate_assignment_set_digest")
-                != actual_assignment_digest):
+        raw_terminal = out / PARALLEL_SMALL_TERMINAL_RESULT_NAME
+        terminal_path = _pin_generated_path(raw_terminal, raw_terminal)
+        if not terminal_path.is_file() or terminal_path.is_symlink():
+            raise RuntimeError("parallel terminal result is missing at merge")
+        terminal = json.loads(terminal_path.read_text())
+        allocation = dict(terminal.get("allocation", {}))
+        if allocation.get("source_identity_manifest_digest") \
+                != pre_allocation_digest:
             raise RuntimeError(
-                "final candidate masks differ from the pre-outcome joint search")
-        joint_search = {
-            **joint_search,
-            "final_candidate_assignment_set_digest": actual_assignment_digest,
-            "final_masks_equal_searched_masks": True,
-        }
+                "certified allocation source identity digest changed at merge")
         _validate_small_completion_joint_search_receipt(
             manifest={
                 "states": states,
+                "small_prefix_reissue_receipt":
+                    small_shard.get("small_prefix_reissue_receipt"),
                 "small_completion_joint_allocation_search": joint_search,
             },
             allocation=allocation,
-            replay_live=True)
+            replay_live=False)
+        if allocation_path.exists() and (
+                not allocation_path.is_file() or allocation_path.is_symlink()):
+            raise RuntimeError("candidate allocation path is not a regular file")
         if allocation_path.is_file():
             existing = json.loads(allocation_path.read_text())
             if existing != allocation:
@@ -8684,6 +10729,9 @@ def merge_states(out: Path) -> int:
             } for state in states],
         }
         allocation["allocation_manifest_digest"] = canonical_digest(allocation)
+        if allocation_path.exists() and (
+                not allocation_path.is_file() or allocation_path.is_symlink()):
+            raise RuntimeError("candidate allocation path is not a regular file")
         if allocation_path.is_file():
             existing = json.loads(allocation_path.read_text())
             if existing != allocation:
@@ -8758,7 +10806,7 @@ def merge_states(out: Path) -> int:
     rejections = {shard["family"]: shard["scene_rejection_reasons"]
                   for shard in shards}
     shard_provenance = _build_state_shard_provenance(
-        paths, shards, pool_name=pool_name)
+        paths, shards, shard_evidence, pool_name=pool_name)
     manifest = {
         "schema": "go2_branch_corpus_v1_2_state_manifest",
         "status": STATUS,
@@ -8843,6 +10891,8 @@ def merge_states(out: Path) -> int:
     }
     if pool_name == "scorer_fit":
         manifest["small_completion_joint_allocation_search"] = joint_search
+        manifest["small_prefix_reissue_receipt"] = \
+            small_shard["small_prefix_reissue_receipt"]
     manifest["state_manifest_digest"] = canonical_digest(manifest)
     raw_manifest_path = out / "state_manifest.json"
     manifest_path = _pin_generated_path(
@@ -8876,6 +10926,11 @@ def main() -> int:
     parser.add_argument("--stage",
                         choices=["allocation-preflight", "selector-feasibility",
                                  "selector-reachability-feasibility",
+                                 "record-performance-interruption",
+                                 "reissue-performance-fixed-states",
+                                 "reissue-performance-small-prefix",
+                                 "small-completion-benchmark",
+                                 "small-completion-search",
                                  "revalidate-preserved",
                                  "states", "merge-states", "smoke", "branches"],
                         required=True)
@@ -8928,13 +10983,44 @@ def main() -> int:
         raise SystemExit("only one internal state-scene worker may be requested")
 
     out = OUT_ROOT / args.pool
-    out.mkdir(parents=True, exist_ok=True)
+    # Validate the one permitted generated-root alias before even a nominal
+    # mkdir traverses it.  Keep ``out`` lexical for all later custody bindings;
+    # the resolved path is used only for this guarded directory creation.
+    pinned_out = _pin_generated_path(out, out)
+    pinned_out.mkdir(parents=True, exist_ok=True)
+    if not pinned_out.is_dir() or pinned_out.is_symlink():
+        raise SystemExit("managed pool output path is not a regular directory")
     if args.stage == "allocation-preflight":
         return issue_pre_identity_allocation_validation(out)
     if args.stage == "selector-feasibility":
         return stage_selector_feasibility(args)
     if args.stage == "selector-reachability-feasibility":
         return stage_selector_reachability_feasibility(args)
+    if args.stage == "record-performance-interruption":
+        if args.pool != "scorer_fit" or args.family is not None:
+            raise SystemExit(
+                "performance interruption lineage is scorer_fit pool-wide")
+        return stage_small_search_performance_interruption()
+    if args.stage == "reissue-performance-fixed-states":
+        if args.pool != "scorer_fit" or args.family is not None:
+            raise SystemExit(
+                "fixed-state reissue is scorer_fit pool-wide")
+        return stage_reissue_performance_interrupted_fixed_shards()
+    if args.stage == "reissue-performance-small-prefix":
+        if args.pool != "scorer_fit" or args.family is not None:
+            raise SystemExit(
+                "small-prefix reissue is scorer_fit pool-wide")
+        return stage_reissue_performance_interrupted_small_prefix()
+    if args.stage == "small-completion-benchmark":
+        if args.pool != "scorer_fit" or args.family is not None:
+            raise SystemExit(
+                "small completion benchmark is scorer_fit pool-wide")
+        return stage_parallel_small_completion_benchmark()
+    if args.stage == "small-completion-search":
+        if args.pool != "scorer_fit" or args.family is not None:
+            raise SystemExit(
+                "small completion search is scorer_fit pool-wide")
+        return stage_parallel_small_completion_search()
     if args.stage == "revalidate-preserved":
         return stage_preserved_state_precontract_revalidation(args)
     if args.stage == "merge-states":
@@ -8942,26 +11028,72 @@ def main() -> int:
     if args.stage == "states":
         if args.family is None:
             raise SystemExit("--stage states requires exactly one --family shard")
+        performance_fixed_families = {
+            str(row["family"])
+            for row in PERFORMANCE_INTERRUPTION.FIXED_STATE_SHARDS
+        }
+        if (args.pool == "scorer_fit"
+                and args.family in performance_fixed_families
+                and (args.mixed_replacement_scene_request_digest is not None
+                     or args.state_resolution_scene_request_digest is not None)):
+            raise SystemExit(
+                "performance-reissued fixed families cannot execute scene "
+                "workers; restore only with --stage "
+                "reissue-performance-fixed-states")
         if args.mixed_replacement_scene_request_digest is not None:
             return stage_mixed_replacement_scene_worker(args)
         if args.state_resolution_scene_request_digest is not None:
             return stage_state_resolution_scene_worker(args)
+        if (args.pool == "scorer_fit"
+                and args.family == REACHABILITY_REDRIVE_FAMILY):
+            raise SystemExit(
+                "small_enclosed_maze is issued only by --stage "
+                "small-completion-search after prefix reissue and benchmark")
+        if (args.pool == "scorer_fit"
+                and args.family in performance_fixed_families):
+            # These seven scientific selections are immutable inputs to the
+            # performance successor.  Never treat a wrapper-validation error
+            # or an interrupted archive gap as permission to re-run Genesis.
+            # The explicit reissue stage is the only writer for their active
+            # paths; this legacy entry point is read-only retention at most.
+            try:
+                shard_path, existing, evidence = \
+                    _load_active_state_shard_evidence(
+                        out, str(args.family), pool="scorer_fit")
+            except Exception as exc:
+                raise RuntimeError(
+                    f"fixed family {args.family} must be restored only by "
+                    "--stage reissue-performance-fixed-states"
+                ) from exc
+            print(json.dumps({
+                "recovery": "retained_valid_performance_reissued_identity_shard",
+                "path": evidence["active_path"],
+                "active_envelope_schema": evidence["envelope_schema"],
+                "state_shard_digest": existing["state_shard_digest"],
+                "states": len(existing["states"]),
+            }, indent=2, sort_keys=True))
+            return 0
         mixed_family = (
             args.pool == "scorer_fit"
             and args.family in {
                 row["family"] for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS
             }
         )
-        shard_path = (_mixed_active_state_shard_path(out, args.family)
-                      if mixed_family
-                      else out / f"state_shard_{args.family}.json")
+        raw_shard_path = (_mixed_active_state_shard_path(out, args.family)
+                          if mixed_family
+                          else out / f"state_shard_{args.family}.json")
+        shard_path = _pin_generated_path(raw_shard_path, raw_shard_path)
+        if shard_path.is_symlink():
+            raise RuntimeError("state shard path is symlinked")
         if shard_path.is_file():
             try:
                 existing = json.loads(shard_path.read_text())
                 if mixed_family:
-                    _validate_mixed_active_state_shard(existing, shard_path)
+                    _validate_mixed_active_state_shard(
+                        existing, raw_shard_path)
                 else:
-                    _validate_state_shard(existing, shard_path, args.pool)
+                    _validate_state_shard(
+                        existing, raw_shard_path, args.pool)
                 print(json.dumps({
                     "recovery": "retained_valid_completed_identity_shard",
                     "path": str(shard_path),

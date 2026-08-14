@@ -974,6 +974,8 @@ def _synthetic_mixed_phase2(monkeypatch, tmp_path):
             "state_id": row["state_id"],
             "family": row["family"],
             "stratum": row["stratum"],
+            "split_role": row["split_role"],
+            "goal_type": row["goal_type"],
             "candidate_indices": list(ALLOCATION.ROTATION_BLOCKS[rotation]),
             "rotation_index": rotation,
         })
@@ -1010,6 +1012,341 @@ def _synthetic_mixed_phase2(monkeypatch, tmp_path):
         },
     )
     return active, replacements, rejected_sources, allocation, completion_rows
+
+
+def _solve_free_certified_phase2(monkeypatch, tmp_path):
+    """Upgrade the phase-2 fixture to one pure, fully valid allocation."""
+
+    active, replacements, rejected, _allocation, _rows = \
+        _synthetic_mixed_phase2(monkeypatch, tmp_path)
+    strata = tuple(ALLOCATION.STRATA)
+    slots = [
+        (f"family-{family_index}", stratum, role, ordinal)
+        for family_index in range(8)
+        for stratum in strata
+        for ordinal, role in (
+            (0, "calibration"), (1, "fit"), (2, "fit"), (3, "fit"),
+            (4, "fit"),
+        )
+    ]
+    replacement_slots = {
+        f"replacement-{family_index:02d}": (
+            f"family-{family_index}",
+            "completion_enriched",
+            "calibration" if family_index == 0 else "fit",
+            0 if family_index == 0 else 1,
+        )
+        for family_index in range(8)
+    }
+    remaining_slots = [
+        slot for slot in slots if slot not in set(replacement_slots.values())
+    ]
+    assigned_slots: dict[str, tuple[str, str, str, int]] = {}
+    for state in active:
+        state_id = str(state["state_id"])
+        slot = replacement_slots.get(state_id)
+        if slot is None:
+            slot = remaining_slots.pop(0)
+        assigned_slots[state_id] = slot
+        family, stratum, split_role, _ordinal = slot
+        state["family"] = family
+        state["stratum"] = stratum
+        state["split_role"] = split_role
+        state["goal_type"] = str(state["goal"]["material_id"])
+        if (
+            stratum == "completion_enriched"
+            and "completion_rotation_eligibility_vector" not in state
+        ):
+            status = _full_status(
+                goal_cell=int(state["goal"]["landmark_cell"])
+            )
+            state.update({
+                "completion_rotation_eligibility_vector":
+                    S.completion_rotation_eligibility_vector(
+                        graph_hops=0,
+                        reachable=True,
+                        continuous_geodesic_m=0.5,
+                        bearing_body_rad=0.0,
+                        task_status=status,
+                        previous_applied_command=[0.0, 0.0, 0.0],
+                    ),
+                "snapshot_task_status": status,
+                "previous_applied_command": [0.0, 0.0, 0.0],
+            })
+    assert not remaining_slots
+
+    retained_states = [
+        copy.deepcopy(state) for state in active
+        if str(state["state_id"]).startswith("retained-")
+    ]
+    replacement_by_id = {
+        str(state["state_id"]): state for state in replacements
+    }
+    for predecessor in rejected:
+        replacement = replacement_by_id[str(predecessor["state_id"])]
+        for key in ("family", "stratum", "split_role", "goal_type"):
+            predecessor[key] = replacement[key]
+    rejected_rows = [
+        S._mixed_identity_row(
+            predecessor,
+            failure_reason=(
+                "RuntimeError:amended classification failed: "
+                "no_completion_enriched_goal"
+            ),
+        )
+        for predecessor in rejected
+    ]
+    mixed = {
+        "retained_predecessor_identities": [
+            S._mixed_identity_row(state) for state in retained_states
+        ],
+        "rejected_predecessor_identities": rejected_rows,
+        "replacement_slots": [{
+            "state_id": str(predecessor["state_id"]),
+            "family": str(predecessor["family"]),
+            "stratum": str(predecessor["stratum"]),
+            "split_role": str(predecessor["split_role"]),
+            "predecessor_state_identity_digest": str(
+                predecessor["state_identity_digest"]
+            ),
+            "predecessor_scene_id": str(predecessor["scene_id"]),
+        } for predecessor in rejected],
+        "rejected_predecessor_identity_set_digest": S._sha256(rejected_rows),
+        "mixed_precontract_disposition_receipt_digest": "d" * 64,
+    }
+    mixed_path = (
+        tmp_path / S.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_PATH
+    )
+    mixed_path.write_text(json.dumps(mixed))
+    monkeypatch.setattr(
+        S,
+        "load_preserved_state_shards",
+        lambda *_args, **_kwargs: {
+            "synthetic": {"states": retained_states + rejected},
+        },
+    )
+
+    calibration_base = (0, 6, 1, 7, 2, 8, 3, 9)
+    calibration_offset = {
+        "general": 0,
+        "safety_enriched": 6,
+        "completion_enriched": 2,
+    }
+    fit_rotations = (0, 6, 1, 7)
+    assignments = []
+    for state in active:
+        family, stratum, split_role, ordinal = assigned_slots[str(
+            state["state_id"]
+        )]
+        family_index = int(family.rsplit("-", 1)[1])
+        rotation = (
+            (calibration_base[family_index] + calibration_offset[stratum]) % 12
+            if split_role == "calibration"
+            else fit_rotations[ordinal - 1]
+        )
+        assignments.append({
+            "state_id": str(state["state_id"]),
+            "state_identity_digest": str(state["state_identity_digest"]),
+            "family": family,
+            "stratum": stratum,
+            "split_role": split_role,
+            "goal_type": str(state["goal_type"]),
+            "rotation_index": rotation,
+            "candidate_indices": list(ALLOCATION.candidate_block(rotation)),
+        })
+    assignments.sort(key=lambda row: (
+        row["state_identity_digest"], row["state_id"]
+    ))
+    identity_rows = [{
+        key: row[key] for key in (
+            "state_id", "state_identity_digest", "family", "stratum",
+            "split_role", "goal_type",
+        )
+    } for row in assignments]
+    allocation = {
+        "schema": ALLOCATION.SCHEMA,
+        "status": ALLOCATION.STATUS,
+        "source_identity_manifest_digest": "b" * 64,
+        "pre_outcome_identity_digest":
+            ALLOCATION.pre_outcome_identity_digest(identity_rows),
+        "allocation_contract": ALLOCATION.algorithm_contract(),
+        "allocation_contract_digest": ALLOCATION.allocation_contract_digest(),
+        "allocation_amendment": ALLOCATION.allocation_amendment_contract(),
+        "allocation_amendment_digest":
+            ALLOCATION.allocation_amendment_digest(),
+        "assignments": assignments,
+        "contingency_tables": ALLOCATION._contingency_tables(assignments),
+        "post_identity_pre_outcome_validation":
+            ALLOCATION._post_identity_pre_outcome_validation(assignments),
+    }
+    allocation["allocation_manifest_digest"] = \
+        ALLOCATION.allocation_manifest_digest(allocation)
+    by_identity = {
+        row["state_identity_digest"]: row for row in assignments
+    }
+    completion_rows = [
+        S._completion_source_row_from_active_state(
+            state,
+            assignment=by_identity[str(state["state_identity_digest"])],
+            preserved_vectors={},
+        )
+        for state in active if state["stratum"] == "completion_enriched"
+    ]
+    assert len(completion_rows) == 40
+    return active, allocation, completion_rows
+
+
+def _phase2_build_arguments(active, allocation, completion_rows, tmp_path):
+    return {
+        "allocation_manifest": allocation,
+        "active_states": active,
+        "completion_states": completion_rows,
+        "source_repository_commit": "c" * 40,
+        "successor_selection_digest": "e" * 64,
+        "state_selector_feasibility_receipt_digest":
+            S.FROZEN_REACHABILITY_FEASIBILITY_PASS["receipt_digest"],
+        "mixed_precontract_disposition_receipt_digest": "d" * 64,
+        "root": tmp_path,
+    }
+
+
+def test_solve_free_certified_phase2_build_and_validate_are_byte_identical(
+        monkeypatch, tmp_path):
+    active, allocation, completion_rows = \
+        _solve_free_certified_phase2(monkeypatch, tmp_path)
+    arguments = _phase2_build_arguments(
+        active, allocation, completion_rows, tmp_path
+    )
+    legacy = S.build_preserved_state_revalidation_receipt(**arguments)
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("allocation solve/revalidation was reached")
+
+    monkeypatch.setattr(
+        S.ALLOCATION, "validate_allocation_manifest", forbidden
+    )
+    monkeypatch.setattr(S.ALLOCATION, "build_allocation_manifest", forbidden)
+    monkeypatch.setattr(S.ALLOCATION, "_lexicographic_rotations", forbidden)
+    monkeypatch.setattr(S.ALLOCATION, "_constraint_system", forbidden)
+    import scipy.optimize as scipy_optimize
+    monkeypatch.setattr(scipy_optimize, "milp", forbidden)
+    certified_calls = []
+
+    def certify(candidate):
+        assert candidate == allocation
+        certified_calls.append(candidate["allocation_manifest_digest"])
+        return copy.deepcopy(allocation)
+
+    observed = (
+        S.build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+            **arguments,
+            certify_allocation_solve_free=certify,
+        )
+    )
+    assert observed == legacy
+    S.validate_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+        observed,
+        allocation_manifest=allocation,
+        active_states=active,
+        certify_allocation_solve_free=certify,
+        expected_source_commit="c" * 40,
+        expected_successor_selection_digest="e" * 64,
+        expected_feasibility_receipt_digest=
+            S.FROZEN_REACHABILITY_FEASIBILITY_PASS["receipt_digest"],
+        expected_mixed_precontract_disposition_receipt_digest="d" * 64,
+        root=tmp_path,
+    )
+    assert certified_calls == [
+        allocation["allocation_manifest_digest"],
+        allocation["allocation_manifest_digest"],
+    ]
+
+
+@pytest.mark.parametrize("failure", ("boolean", "different", "exception"))
+def test_solve_free_allocation_certificate_callback_fails_closed(
+        monkeypatch, tmp_path, failure):
+    active, allocation, completion_rows = \
+        _solve_free_certified_phase2(monkeypatch, tmp_path)
+    arguments = _phase2_build_arguments(
+        active, allocation, completion_rows, tmp_path
+    )
+
+    def certify(_candidate):
+        if failure == "boolean":
+            return True
+        if failure == "exception":
+            raise ValueError("certificate invalid")
+        changed = copy.deepcopy(allocation)
+        changed["source_identity_manifest_digest"] = "f" * 64
+        return changed
+
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="solve-free allocation"):
+        S.build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+            **arguments,
+            certify_allocation_solve_free=certify,
+        )
+
+
+def test_solve_free_certified_phase2_rejects_manifest_active_and_receipt_tamper(
+        monkeypatch, tmp_path):
+    active, allocation, completion_rows = \
+        _solve_free_certified_phase2(monkeypatch, tmp_path)
+    arguments = _phase2_build_arguments(
+        active, allocation, completion_rows, tmp_path
+    )
+    certify = lambda _candidate: copy.deepcopy(allocation)
+    receipt = (
+        S.build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+            **arguments,
+            certify_allocation_solve_free=certify,
+        )
+    )
+
+    changed_allocation = copy.deepcopy(allocation)
+    changed_allocation["assignments"][0]["candidate_indices"][0] = 11
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="exact rotation"):
+        S.build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+            **{**arguments, "allocation_manifest": changed_allocation},
+            certify_allocation_solve_free=certify,
+        )
+
+    changed_states = copy.deepcopy(active)
+    changed_states[0]["goal_type"] = "different-material"
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="identity projection"):
+        S.build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+            **{**arguments, "active_states": changed_states},
+            certify_allocation_solve_free=certify,
+        )
+
+    changed_masks = copy.deepcopy(active)
+    changed_masks[0]["candidate_indices"] = [0, 1, 2, 3, 4, 5]
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="exact candidate mask"):
+        S.build_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+            **{**arguments, "active_states": changed_masks},
+            certify_allocation_solve_free=certify,
+        )
+
+    changed_receipt = copy.deepcopy(receipt)
+    changed_receipt["retained_predecessor_candidate_masks"][0][
+        "candidate_indices"
+    ][0] = 11
+    changed_receipt["preserved_state_revalidation_receipt_digest"] = S._sha256({
+        key: value for key, value in changed_receipt.items()
+        if key != "preserved_state_revalidation_receipt_digest"
+    })
+    with pytest.raises(
+            S.StateSelectorAmendmentError, match="reconstruction"):
+        S.validate_preserved_state_revalidation_receipt_from_solve_free_certified_allocation(
+            changed_receipt,
+            allocation_manifest=allocation,
+            active_states=active,
+            certify_allocation_solve_free=certify,
+            root=tmp_path,
+        )
 
 
 def test_phase2_allows_same_failed_scene_only_for_a_distinct_snapshot(
