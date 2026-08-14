@@ -734,12 +734,24 @@ def _preserved_states_by_digest() -> dict[str, dict[str, Any]]:
     return states
 
 
-def _state_identity_matches_active_or_preserved(state: dict[str, Any]) -> bool:
+def _state_identity_matches_active_or_preserved(
+        state: dict[str, Any], *,
+        exact_performance_lineage_states: Mapping[
+            str, Mapping[str, Any]
+        ] | None = None,
+        ) -> bool:
     digest = str(state.get("state_identity_digest", ""))
     preserved = _preserved_states_by_digest().get(digest)
     if preserved is not None:
         return _state_identity_payload(state) == _state_identity_payload(preserved)
-    return _state_identity_digest(state) == digest
+    if _state_identity_digest(state) == digest:
+        return True
+    if exact_performance_lineage_states is None:
+        return False
+    exact = exact_performance_lineage_states.get(digest)
+    return (isinstance(exact, Mapping)
+            and _state_identity_payload(state)
+            == _state_identity_payload(dict(exact)))
 
 
 def _load_active_mixed_disposition() -> dict[str, Any]:
@@ -984,12 +996,47 @@ def _state_identity_payload(state: dict[str, Any]) -> dict[str, Any]:
                            "branch_identities"}}
 
 
-def _state_identity_digest(state: dict[str, Any]) -> str:
+def _state_identity_digest_for_bindings(
+        state: dict[str, Any], bindings: Mapping[str, Any]) -> str:
+    selection = bindings.get("selection_digest")
+    scorer = bindings.get("scorer_contract_v1_2_digest")
+    if not _is_sha256(selection) or not _is_sha256(scorer):
+        raise RuntimeError("state identity lineage bindings are malformed")
     return canonical_digest({
         "schema": "go2_branch_state_identity_v1_2",
+        "selection_digest": selection,
+        "scorer_contract_v1_2_digest": scorer,
+        "state": _state_identity_payload(state),
+    })
+
+
+def _validate_interrupted_state_identity_bindings(
+        bindings: Mapping[str, Any]) -> dict[str, str]:
+    """Return the exact historical identity authority or fail closed."""
+
+    if not isinstance(bindings, Mapping):
+        raise RuntimeError("interrupted state identity bindings are malformed")
+    projection = {
+        "selection_digest": bindings.get("selection_digest"),
+        "scorer_contract_v1_2_digest":
+            bindings.get("scorer_contract_v1_2_digest"),
+    }
+    expected = {
+        "selection_digest":
+            PERFORMANCE_INTERRUPTION.INTERRUPTED_SELECTION_DIGEST,
+        "scorer_contract_v1_2_digest":
+            PERFORMANCE_INTERRUPTION.INTERRUPTED_SCORER_CONTRACT_DIGEST,
+    }
+    if projection != expected:
+        raise RuntimeError(
+            "interrupted state identity authority bindings changed")
+    return expected
+
+
+def _state_identity_digest(state: dict[str, Any]) -> str:
+    return _state_identity_digest_for_bindings(state, {
         "selection_digest": selection_digest(),
         "scorer_contract_v1_2_digest": scorer_contract_digest(),
-        "state": _state_identity_payload(state),
     })
 
 
@@ -3520,6 +3567,7 @@ def _phase1_present_outcome_paths(attestation: dict[str, Any]) -> list[str]:
 def _replay_small_fixed_prefix_pairs(
         pairs: Sequence[Mapping[str, Any]], *,
         successor_bindings: Mapping[str, Any] | None = None,
+        historical_identity_bindings: Sequence[Mapping[str, Any]] | None = None,
         ) -> dict[str, Any]:
     """Run the ordinary request/capture validators and exact 5G/5S reducer.
 
@@ -3544,6 +3592,9 @@ def _replay_small_fixed_prefix_pairs(
     rows = [dict(pair) for pair in pairs]
     if len(rows) != PERFORMANCE_INTERRUPTION.SMALL_PREFIX_REQUEST_COUNT:
         raise RuntimeError("small fixed prefix pair count changed")
+    if (historical_identity_bindings is not None
+            and len(historical_identity_bindings) != len(rows)):
+        raise RuntimeError("small fixed prefix identity lineage count changed")
     for ordinal, pair in enumerate(rows):
         request = dict(pair.get("request", {}))
         capture = dict(pair.get("capture", {}))
@@ -3559,12 +3610,18 @@ def _replay_small_fixed_prefix_pairs(
             PERFORMANCE_INTERRUPTION.project_successor_state_shard_bindings(
                 embedded, successor_bindings)
         )
+        identity_bindings = (
+            embedded if historical_identity_bindings is None else
+            historical_identity_bindings[ordinal]
+        )
+        _validate_interrupted_state_identity_bindings(identity_bindings)
         _validate_state_resolution_scene_request(
             request, args=args, out=OUT_ROOT / "scorer_fit", pool=pool,
             exclusion=exclusion,
             expected_state_shard_bindings=expected_bindings)
         _validate_state_resolution_scene_capture(
-            capture, expected_request=request)
+            capture, expected_request=request,
+            expected_state_identity_bindings=identity_bindings)
         requested = [name for name in STRATA
                      if found[name] < required[name]]
         if (request.get("required_counts") != required
@@ -3619,7 +3676,11 @@ def _revalidate_reissued_small_prefix(
         successor_bindings: Mapping[str, Any]) -> bool:
     archived = _replay_small_fixed_prefix_pairs(archived_pairs)
     successor = _replay_small_fixed_prefix_pairs(
-        successor_pairs, successor_bindings=successor_bindings)
+        successor_pairs, successor_bindings=successor_bindings,
+        historical_identity_bindings=[
+            dict(pair["request"])["state_shard_bindings"]
+            for pair in archived_pairs
+        ])
     if (archived["state_identity_digests"]
             != successor["state_identity_digests"]
             or archived["resolver_cursor_scene_id"]
@@ -4847,7 +4908,9 @@ def _build_mixed_replacement_scene_capture(
 
 
 def _validate_mixed_replacement_scene_capture(
-        capture: dict[str, Any], *, expected_request: dict[str, Any]) -> None:
+        capture: dict[str, Any], *, expected_request: dict[str, Any],
+        expected_state_identity_bindings: Mapping[str, Any] | None = None,
+        ) -> None:
     _verify_self_digest(
         capture, "mixed_replacement_scene_capture_digest",
         "mixed replacement scene capture")
@@ -4930,6 +4993,12 @@ def _validate_mixed_replacement_scene_capture(
         return
     if not isinstance(chosen, dict):
         raise RuntimeError("mixed replacement chosen state is malformed")
+    expected_identity_digest = (
+        _state_identity_digest(chosen)
+        if expected_state_identity_bindings is None else
+        _state_identity_digest_for_bindings(
+            chosen, expected_state_identity_bindings)
+    )
     slot = expected_request["replacement_slot"]
     expected_chosen_keys = {
         "state_id", "family", "scene_id", "scene_dir",
@@ -4955,7 +5024,7 @@ def _validate_mixed_replacement_scene_capture(
         or chosen.get("split") != expected_request["scene"]["split"]
         or chosen.get("drive_seed") != expected_request["scene"]["drive_seed"]
         or chosen.get("warmup_blocks") != blocks
-        or chosen.get("state_identity_digest") != _state_identity_digest(chosen)
+        or chosen.get("state_identity_digest") != expected_identity_digest
         or chosen.get("state_identity_digest")
         in set(expected_request["rejected_identity_digests"])
         or _replacement_reuses_any_rejected_snapshot(
@@ -5292,7 +5361,9 @@ def _replay_state_resolution_attempt_trace(
 
 
 def _validate_state_resolution_scene_capture(
-        capture: dict[str, Any], *, expected_request: dict[str, Any]) -> None:
+        capture: dict[str, Any], *, expected_request: dict[str, Any],
+        expected_state_identity_bindings: Mapping[str, Any] | None = None,
+        ) -> None:
     _verify_self_digest(
         capture, "state_resolution_scene_capture_digest",
         "state-resolution scene capture")
@@ -5358,6 +5429,12 @@ def _validate_state_resolution_scene_capture(
         return
     if not isinstance(chosen, dict):
         raise RuntimeError("state-resolution chosen state is malformed")
+    expected_identity_digest = (
+        _state_identity_digest(chosen)
+        if expected_state_identity_bindings is None else
+        _state_identity_digest_for_bindings(
+            chosen, expected_state_identity_bindings)
+    )
     requested = expected_request["requested_strata_in_priority_order"]
     stratum = chosen.get("stratum")
     if replayed_selected != stratum:
@@ -5400,7 +5477,7 @@ def _validate_state_resolution_scene_capture(
         != expected_request["scene"]["scene_manifest_byte_count"]
         or chosen.get("split") != expected_request["scene"]["split"]
         or chosen.get("drive_seed") != expected_request["scene"]["drive_seed"]
-        or chosen.get("state_identity_digest") != _state_identity_digest(chosen)
+        or chosen.get("state_identity_digest") != expected_identity_digest
         or not isinstance(chosen.get("warmup_blocks"), int)
         or not (WARMUP_BLOCKS_MIN <= chosen["warmup_blocks"]
                 <= WARMUP_BLOCKS_MAX)
@@ -6185,8 +6262,18 @@ def _load_reissued_small_prefix_inputs(out: Path) -> dict[str, Any]:
         rejections[str(mapping["scene_id"])] = dict(
             capture["scene_rejection_reasons"])
         pairs.append(loaded)
+    interrupted_identity_bindings = \
+        _validate_interrupted_state_identity_bindings({
+            "selection_digest":
+                PERFORMANCE_INTERRUPTION.INTERRUPTED_SELECTION_DIGEST,
+            "scorer_contract_v1_2_digest":
+                PERFORMANCE_INTERRUPTION.INTERRUPTED_SCORER_CONTRACT_DIGEST,
+        })
     replay = _replay_small_fixed_prefix_pairs(
-        pairs, successor_bindings=bindings)
+        pairs, successor_bindings=bindings,
+        historical_identity_bindings=[
+            interrupted_identity_bindings for _pair in pairs
+        ])
     if (replay["resolver_cursor_scene_id"]
             != receipt["resolver_cursor_scene_id"]
             or len(replay["states"]) != 10):
@@ -6218,22 +6305,49 @@ def _common_state_shard_bindings(
 def _joint_state_order(states: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     return sorted((dict(state) for state in states), key=lambda state: (
         str(state["family"]),
-        STRATA.index(str(state["stratum"])),
+        (STRATA.index(str(state["stratum"]))
+         if str(state["stratum"]) in STRATA else 0),
         str(state["scene_id"]),
     ))
 
 
 def _pre_allocation_identity_payload(
         *, states: Sequence[Mapping[str, Any]],
-        common: Mapping[str, Any]) -> dict[str, Any]:
+        common: Mapping[str, Any], pool: str = "scorer_fit",
+        ) -> dict[str, Any]:
+    if pool not in POOLS:
+        raise RuntimeError("pre-allocation identity pool changed")
     return {
         "schema": "go2_branch_corpus_v1_2_pre_allocation_identity_manifest",
-        "pool": "scorer_fit",
-        "spec": POOLS["scorer_fit"],
+        "pool": pool,
+        "spec": POOLS[pool],
         **{key: common[key] for key in STATE_SHARD_COMMON_KEYS},
         "state_identities": _allocation_projection(
             _joint_state_order(states)),
     }
+
+
+def _build_final_eval_candidate_allocation(
+        states: Sequence[Mapping[str, Any]], *,
+        source_identity_manifest_digest: str,
+        ) -> dict[str, Any]:
+    """Reconstruct the sole all-candidates final-evaluation allocation."""
+
+    if not _is_sha256(source_identity_manifest_digest):
+        raise RuntimeError("final allocation source identity digest is malformed")
+    ordered = _joint_state_order(states)
+    allocation = {
+        "schema": "go2_final_eval_all_candidate_allocation_v1_2",
+        "source_identity_manifest_digest": source_identity_manifest_digest,
+        "candidate_bank_digest": V1.bank_digest(),
+        "assignments": [{
+            "state_id": state["state_id"],
+            "state_identity_digest": state["state_identity_digest"],
+            "candidate_indices": list(range(len(V1.CANDIDATE_BANK))),
+        } for state in ordered],
+    }
+    allocation["allocation_manifest_digest"] = canonical_digest(allocation)
+    return allocation
 
 
 def _parallel_small_search_inputs(out: Path) -> dict[str, Any]:
@@ -6661,6 +6775,8 @@ def _build_parallel_small_terminal_shard(
     states = [*inputs["prefix"]["states"], *selected]
     states.sort(key=lambda state: (
         STRATA.index(str(state["stratum"])), str(state["scene_id"])))
+    _validate_parallel_small_state_identity_lineage(
+        states, inputs["prefix"]["states"])
     pool, exclusion = scene_pool("scorer_fit")
     args = argparse.Namespace(
         pool="scorer_fit", family=REACHABILITY_REDRIVE_FAMILY,
@@ -7957,6 +8073,43 @@ def _preallocation_state_projection(
     return _joint_state_order(projected)
 
 
+def _ordered_manifest_preallocation_state_projection(
+        states: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Require merge order/indexes and return exact pre-allocation rows."""
+
+    if isinstance(states, (str, bytes)) or not isinstance(states, Sequence):
+        raise RuntimeError("manifest state projection input is not a sequence")
+    projected: list[dict[str, Any]] = []
+    for index, state in enumerate(states):
+        if not isinstance(state, Mapping):
+            raise RuntimeError("manifest state projection row is not a mapping")
+        state_index = state.get("state_index")
+        if (isinstance(state_index, bool) or not isinstance(state_index, int)
+                or state_index != index):
+            raise RuntimeError("state manifest index/order changed")
+        projected.append({
+            key: value for key, value in state.items()
+            if key not in _POST_ALLOCATION_STATE_FIELDS
+        })
+    if projected != _preallocation_state_projection(states):
+        raise RuntimeError("state manifest canonical family/stratum order changed")
+    return projected
+
+
+def _validate_manifest_pool_specific_state_fields(
+        states: Sequence[Mapping[str, Any]], *, pool: str) -> None:
+    """Reject post-allocation fields that are not defined for this pool."""
+
+    if pool not in POOLS:
+        raise RuntimeError("state manifest pool changed")
+    if pool == "final_eval" and any(
+            isinstance(state, Mapping)
+            and "candidate_rotation_index" in state
+            for state in states):
+        raise RuntimeError(
+            "final-evaluation state contains a scorer-fit rotation field")
+
+
 def _validate_small_completion_joint_search_receipt(
         *, manifest: dict[str, Any], allocation: dict[str, Any],
         replay_live: bool = True) -> None:
@@ -8072,7 +8225,21 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
     for key in LAUNCH_BINDING_KEYS:
         if manifest.get(key) != launch[key]:
             raise RuntimeError(f"state manifest clean-source binding mismatch: {key}")
-    _validate_state_shard_provenance(manifest, pool=pool)
+    _validate_manifest_pool_specific_state_fields(
+        manifest.get("states", []), pool=pool)
+    exact_performance_lineage_states = _validate_state_shard_provenance(
+        manifest, pool=pool)
+    preallocation_states = _ordered_manifest_preallocation_state_projection(
+        manifest["states"])
+    preallocation_payload = _pre_allocation_identity_payload(
+        states=preallocation_states,
+        common={key: manifest[key] for key in STATE_SHARD_COMMON_KEYS},
+        pool=pool)
+    preallocation_digest = canonical_digest(preallocation_payload)
+    if manifest.get("pre_allocation_identity_manifest_digest") \
+            != preallocation_digest:
+        raise RuntimeError(
+            "state manifest pre-allocation identity digest changed")
     invalid_identity_index = INVALID_IDS.load_invalid_identity_index()
     if manifest.get("exclusion_binding", {}).get(
             "invalid_scorer_identity_attempt") != invalid_identity_index.binding():
@@ -8088,7 +8255,10 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
         raise RuntimeError("state manifest branch identity set is inconsistent")
     if len({state["scene_id"] for state in manifest["states"]}) != expected_states:
         raise RuntimeError("state manifest is not scene-disjoint")
-    if any(not _state_identity_matches_active_or_preserved(state)
+    if any(not _state_identity_matches_active_or_preserved(
+               state,
+               exact_performance_lineage_states=
+                   exact_performance_lineage_states)
            for state in manifest["states"]):
         raise RuntimeError("state manifest contains a changed state identity")
     identity_bindings = {
@@ -8119,6 +8289,8 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
     if allocation.get("allocation_manifest_digest") \
             != manifest["candidate_allocation_manifest_digest"]:
         raise RuntimeError("candidate allocation artifact digest mismatch")
+    if allocation.get("source_identity_manifest_digest") != preallocation_digest:
+        raise RuntimeError("candidate allocation source identity digest mismatch")
     if pool == "scorer_fit":
         preconditions = _load_state_selector_preconditions(
             source_commit=str(launch["source_repository_commit"]),
@@ -8173,10 +8345,10 @@ def _validate_state_manifest(manifest: dict[str, Any], pool: str) -> None:
                 != revalidation[
                     "preserved_state_revalidation_receipt_digest"]):
             raise RuntimeError("state manifest phase-2 revalidation digest mismatch")
-    elif allocation["allocation_manifest_digest"] != canonical_digest({
-            key: value for key, value in allocation.items()
-            if key != "allocation_manifest_digest"}):
-        raise RuntimeError("final candidate allocation self digest mismatch")
+    elif allocation != _build_final_eval_candidate_allocation(
+            preallocation_states,
+            source_identity_manifest_digest=preallocation_digest):
+        raise RuntimeError("final candidate allocation reconstruction changed")
     assignment = {row["state_id"]: row for row in allocation["assignments"]}
     if any(list(state["candidate_indices"]) != list(
                assignment.get(state["state_id"], {}).get(
@@ -9511,6 +9683,34 @@ def _validate_state_resolution_transport(
             "state-resolution captured identities differ from final state shard")
 
 
+def _validate_parallel_small_state_identity_lineage(
+        states: Sequence[Mapping[str, Any]],
+        expected_prefix_states: Sequence[Mapping[str, Any]],
+        ) -> None:
+    """Admit exact historical prefix rows and only current completion IDs."""
+
+    prefix_states = [
+        dict(state) for state in states
+        if state.get("stratum") != "completion_enriched"
+    ]
+    completion_states = [
+        dict(state) for state in states
+        if state.get("stratum") == "completion_enriched"
+    ]
+    expected_prefix = sorted(
+        (dict(state) for state in expected_prefix_states), key=lambda state: (
+            STRATA.index(str(state["stratum"])),
+            str(state["scene_id"])))
+    if (len(prefix_states) != 10 or len(completion_states) != 5
+            or prefix_states != expected_prefix):
+        raise RuntimeError("parallel small shard prefix identity lineage changed")
+    if any(
+            _state_identity_digest(state)
+            != state.get("state_identity_digest")
+            for state in completion_states):
+        raise RuntimeError("parallel small completion identity digest changed")
+
+
 def _validate_state_shard(payload: dict[str, Any], path: Path,
                           expected_pool: str) -> None:
     _verify_self_digest(payload, "state_shard_digest", f"state shard {path.name}")
@@ -9640,21 +9840,15 @@ def _validate_state_shard(payload: dict[str, Any], path: Path,
         raise RuntimeError(f"state shard {path.name} invalid45 binding mismatch")
     INVALID_IDS.assert_disjoint(
         states, label=f"state shard {path.name}", index=invalid_identity_index)
-    if any(_state_identity_digest(state) != state.get("state_identity_digest")
-           for state in states):
-        raise RuntimeError(f"state shard {path.name} has an identity digest mismatch")
     if is_parallel_small:
         inputs = _parallel_small_search_inputs(OUT_ROOT / "scorer_fit")
+        _validate_parallel_small_state_identity_lineage(
+            states, inputs["prefix"]["states"])
         if (provenance != inputs["prefix"]["capture_provenance"]
                 or payload.get("scene_rejection_reasons")
                 != inputs["prefix"]["scene_rejection_reasons"]
                 or payload.get("small_prefix_reissue_receipt")
-                != inputs["prefix"]["receipt_binding"]
-                or [state for state in states
-                    if state["stratum"] != "completion_enriched"]
-                != sorted(inputs["prefix"]["states"], key=lambda state: (
-                    STRATA.index(str(state["stratum"])),
-                    str(state["scene_id"])))):
+                != inputs["prefix"]["receipt_binding"]):
             raise RuntimeError("parallel small shard prefix receipt/replay changed")
         terminal_path = _pin_generated_path(
             OUT_ROOT / "scorer_fit" / PARALLEL_SMALL_TERMINAL_RESULT_NAME,
@@ -9673,6 +9867,11 @@ def _validate_state_shard(payload: dict[str, Any], path: Path,
             },
             allocation=dict(terminal.get("allocation", {})),
             replay_live=False)
+    elif any(
+            _state_identity_digest(state) != state.get("state_identity_digest")
+            for state in states):
+        raise RuntimeError(
+            f"state shard {path.name} has an identity digest mismatch")
 
 
 def _validate_mixed_active_state_shard(
@@ -10204,6 +10403,7 @@ def _revalidate_performance_interrupted_fixed_shard(
                 or set(old_bindings) != set(expected_bindings)):
             raise RuntimeError(
                 "archived request state-shard binding surface changed")
+        _validate_interrupted_state_identity_bindings(old_bindings)
         for key in expected_bindings:
             if key in PERFORMANCE_INTERRUPTION.SUCCESSOR_LINEAGE_KEYS:
                 continue
@@ -10248,13 +10448,15 @@ def _revalidate_performance_interrupted_fixed_shard(
                 request, args=args, out=OUT_ROOT / "scorer_fit",
                 pool=pool, exclusion=exclusion)
             _validate_mixed_replacement_scene_capture(
-                capture, expected_request=request)
+                capture, expected_request=request,
+                expected_state_identity_bindings=old_bindings)
         else:
             _validate_state_resolution_scene_request(
                 request, args=args, out=OUT_ROOT / "scorer_fit",
                 pool=pool, exclusion=exclusion)
             _validate_state_resolution_scene_capture(
-                capture, expected_request=request)
+                capture, expected_request=request,
+                expected_state_identity_bindings=old_bindings)
         if capture.get("worker_failure") is not None:
             raise RuntimeError("archived fixed transport contains worker failure")
         projected_pairs.append({
@@ -10561,8 +10763,29 @@ def _build_state_shard_provenance(
     return rows
 
 
+def _validate_manifest_common_bindings_against_shards(
+        manifest: Mapping[str, Any],
+        shards: Sequence[Mapping[str, Any]],
+        ) -> None:
+    """Bind manifest-wide science/source fields to every reopened shard."""
+
+    try:
+        expected = {key: manifest[key] for key in STATE_SHARD_COMMON_KEYS}
+    except (KeyError, TypeError) as exc:
+        raise RuntimeError(
+            "state manifest lacks a common state-shard binding") from exc
+    if not shards:
+        raise RuntimeError("state manifest has no active state shards")
+    for shard in shards:
+        if not isinstance(shard, Mapping) or any(
+                shard.get(key) != value for key, value in expected.items()):
+            raise RuntimeError(
+                "state manifest common bindings differ from active shards")
+
+
 def _validate_state_shard_provenance(
-        manifest: dict[str, Any], *, pool: str) -> None:
+        manifest: dict[str, Any], *, pool: str,
+        ) -> dict[str, dict[str, Any]]:
     rows = manifest.get("state_shard_provenance")
     if not isinstance(rows, list) or len(rows) != EXPECTED_FAMILIES:
         raise RuntimeError("state manifest lacks eight-row shard provenance")
@@ -10570,6 +10793,9 @@ def _validate_state_shard_provenance(
                       for row in STATE_SELECTOR.PRESERVED_STATE_SHARDS}
     seen: set[str] = set()
     observed_digests: dict[str, str] = {}
+    loaded_shards: list[dict[str, Any]] = []
+    loaded_evidence: list[dict[str, Any]] = []
+    loaded_states: list[dict[str, Any]] = []
     for row in rows:
         family = str(row.get("family", ""))
         if family in seen:
@@ -10598,9 +10824,61 @@ def _validate_state_shard_provenance(
                 != payload.get("state_shard_digest")):
             raise RuntimeError(f"state-shard provenance failed for {family}")
         observed_digests[family] = str(row["state_shard_digest"])
+        loaded_shards.append(payload)
+        loaded_evidence.append(envelope)
+        shard_states = payload.get("states")
+        if not isinstance(shard_states, list):
+            raise RuntimeError("active state shard states are malformed")
+        loaded_states.extend(dict(state) for state in shard_states)
     if (seen != set(manifest.get("state_shard_digests", {}))
             or observed_digests != manifest.get("state_shard_digests")):
         raise RuntimeError("state-shard digest map and provenance disagree")
+    _validate_manifest_common_bindings_against_shards(
+        manifest, loaded_shards)
+    manifest_states = _ordered_manifest_preallocation_state_projection(
+        manifest.get("states", []))
+    if manifest_states != _joint_state_order(loaded_states):
+        raise RuntimeError(
+            "state manifest states differ from the active state-shard union")
+    return _validated_performance_lineage_states_by_digest(
+        loaded_shards, loaded_evidence, pool=pool)
+
+
+def _validated_performance_lineage_states_by_digest(
+        shards: Sequence[Mapping[str, Any]],
+        evidence: Sequence[Mapping[str, Any]], *, pool: str,
+        ) -> dict[str, dict[str, Any]]:
+    """Index only historical states admitted by exact live replay evidence."""
+
+    if len(shards) != len(evidence):
+        raise RuntimeError("performance lineage shard/evidence count changed")
+    if pool != "scorer_fit":
+        return {}
+    indexed: dict[str, dict[str, Any]] = {}
+    for shard, envelope in zip(shards, evidence, strict=True):
+        family = str(shard.get("family", ""))
+        states = shard.get("states")
+        if not isinstance(states, list):
+            raise RuntimeError("performance lineage shard states are malformed")
+        if (envelope.get("envelope_schema")
+                == PERFORMANCE_INTERRUPTION.REISSUED_SHARD_SCHEMA):
+            admitted = states
+        elif family == REACHABILITY_REDRIVE_FAMILY:
+            admitted = [
+                state for state in states
+                if state.get("stratum") != "completion_enriched"
+            ]
+        else:
+            admitted = []
+        for state in admitted:
+            if not isinstance(state, Mapping):
+                raise RuntimeError("performance lineage state is malformed")
+            digest = str(state.get("state_identity_digest", ""))
+            if not _is_sha256(digest) or digest in indexed:
+                raise RuntimeError(
+                    "performance lineage identity digest is malformed or repeated")
+            indexed[digest] = dict(state)
+    return indexed
 
 
 def merge_states(out: Path) -> int:
@@ -10638,7 +10916,13 @@ def merge_states(out: Path) -> int:
         raise RuntimeError("merged state identities are not episode-cluster-disjoint")
     if len({state["state_identity_digest"] for state in states}) != len(states):
         raise RuntimeError("merged state identity digests are not unique")
-    if any(not _state_identity_matches_active_or_preserved(state)
+    exact_performance_lineage_states = \
+        _validated_performance_lineage_states_by_digest(
+            shards, shard_evidence, pool=pool_name)
+    if any(not _state_identity_matches_active_or_preserved(
+               state,
+               exact_performance_lineage_states=
+                   exact_performance_lineage_states)
            for state in states):
         raise RuntimeError("merged state identities changed across selector phases")
     for index, state in enumerate(states):
@@ -10651,20 +10935,8 @@ def merge_states(out: Path) -> int:
         if any(shard[key] != common[key] for key in common_keys):
             raise RuntimeError("state shards contain mixed contract bindings")
 
-    pre_allocation_payload = {
-        "schema": "go2_branch_corpus_v1_2_pre_allocation_identity_manifest",
-        "pool": pool_name,
-        "spec": spec,
-        **common,
-        "state_identities": [{
-            "state_id": state["state_id"],
-            "state_identity_digest": state["state_identity_digest"],
-            "family": state["family"],
-            "stratum": state["stratum"],
-            "split_role": state["split_role"],
-            "goal_type": state["goal_type"],
-        } for state in states],
-    }
+    pre_allocation_payload = _pre_allocation_identity_payload(
+        states=states, common=common, pool=pool_name)
     pre_allocation_digest = canonical_digest(pre_allocation_payload)
 
     raw_allocation_path = out / "candidate_allocation_manifest.json"
@@ -10718,17 +10990,9 @@ def merge_states(out: Path) -> int:
             state["candidate_rotation_index"] = int(assigned[state["state_id"]][
                 "rotation_index"])
     else:
-        allocation = {
-            "schema": "go2_final_eval_all_candidate_allocation_v1_2",
-            "source_identity_manifest_digest": pre_allocation_digest,
-            "candidate_bank_digest": V1.bank_digest(),
-            "assignments": [{
-                "state_id": state["state_id"],
-                "state_identity_digest": state["state_identity_digest"],
-                "candidate_indices": list(range(len(V1.CANDIDATE_BANK))),
-            } for state in states],
-        }
-        allocation["allocation_manifest_digest"] = canonical_digest(allocation)
+        allocation = _build_final_eval_candidate_allocation(
+            states,
+            source_identity_manifest_digest=pre_allocation_digest)
         if allocation_path.exists() and (
                 not allocation_path.is_file() or allocation_path.is_symlink()):
             raise RuntimeError("candidate allocation path is not a regular file")

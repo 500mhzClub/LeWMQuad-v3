@@ -1065,23 +1065,226 @@ def test_parallel_failure_binds_terminal_result_presence_or_absence(
             out=out, status="EXHAUSTED", terminal={**terminal, "tamper": True})
 
 
-def test_parallel_manifest_projection_removes_only_registered_merge_fields():
-    base = {
+def test_ordered_manifest_projection_requires_exact_shard_state_union():
+    first = {
         "state_id": "state-a", "state_identity_digest": "a" * 64,
         "scene_id": "scene-a", "family": "family-a", "stratum": "general",
         "split_role": "fit",
         "goal_type": "landmark", "scientific_marker": {"exact": True},
     }
-    merged = {
-        **base,
-        "state_index": 7,
+    second = {
+        "state_id": "state-b", "state_identity_digest": "b" * 64,
+        "scene_id": "scene-b", "family": "family-b",
+        "stratum": "evaluation", "split_role": "fit",
+        "goal_type": "landmark", "scientific_marker": {"exact": True},
+    }
+    expected = [first, second]
+    merged = [{
+        **state,
+        "state_index": index,
+        "candidate_indices": [0, 1, 2, 3, 4, 5],
+        "candidate_rotation_index": index,
+        "branch_identities": [{"branch_identity_digest": f"{index + 3:064x}"}],
+    } for index, state in enumerate((first, second))]
+    assert B._ordered_manifest_preallocation_state_projection(merged) == expected
+
+    missing = merged[:1]
+    extra = [*merged, {
+        **first, "state_id": "state-c", "scene_id": "scene-c",
+        "state_identity_digest": "c" * 64, "family": "family-z",
+        "state_index": 2,
         "candidate_indices": [0, 1, 2, 3, 4, 5],
         "candidate_rotation_index": 2,
-        "branch_identities": [{"branch_identity_digest": "b" * 64}],
+        "branch_identities": [{"branch_identity_digest": "f" * 64}],
+    }]
+    changed = copy.deepcopy(merged)
+    changed[0]["scientific_marker"]["exact"] = False
+    for nonexact in (missing, extra, changed):
+        assert B._ordered_manifest_preallocation_state_projection(
+            nonexact) != expected
+
+
+def test_final_eval_manifest_state_forbids_candidate_rotation_index():
+    state = {
+        "state_id": "final-state",
+        "state_index": 0,
+        "candidate_indices": list(range(len(B.V1.CANDIDATE_BANK))),
+        "branch_identities": [],
     }
-    assert B._preallocation_state_projection([merged]) == [base]
-    changed = {**merged, "unregistered_post_field": "tamper"}
-    assert B._preallocation_state_projection([changed]) != [base]
+    assert B._validate_manifest_pool_specific_state_fields(
+        [state], pool="final_eval") is None
+    with_rotation = {**state, "candidate_rotation_index": 0}
+    with pytest.raises(RuntimeError):
+        B._validate_manifest_pool_specific_state_fields(
+            [with_rotation], pool="final_eval")
+
+
+def test_manifest_common_bindings_match_every_shard_exactly():
+    common = {
+        key: f"synthetic-common-{index}"
+        for index, key in enumerate(B.STATE_SHARD_COMMON_KEYS)
+    }
+    shards = [{**common, "family": f"family-{index}"}
+              for index in range(2)]
+    assert B._validate_manifest_common_bindings_against_shards(
+        dict(common), shards) is None
+
+    changed = copy.deepcopy(shards)
+    changed[1]["scorer_fit_allocation_design_digest"] = "changed"
+    with pytest.raises(RuntimeError):
+        B._validate_manifest_common_bindings_against_shards(
+            dict(common), changed)
+
+    missing_manifest = dict(common)
+    missing_manifest.pop("scorer_fit_allocation_design_digest")
+    missing_shards = copy.deepcopy(shards)
+    for shard in missing_shards:
+        shard.pop("scorer_fit_allocation_design_digest")
+    with pytest.raises(RuntimeError):
+        B._validate_manifest_common_bindings_against_shards(
+            missing_manifest, missing_shards)
+
+
+def test_interrupted_identity_bindings_require_exact_selection_and_scorer():
+    lineage = {
+        "selection_digest":
+            B.PERFORMANCE_INTERRUPTION.INTERRUPTED_SELECTION_DIGEST,
+        "scorer_contract_v1_2_digest":
+            B.PERFORMANCE_INTERRUPTION.INTERRUPTED_SCORER_CONTRACT_DIGEST,
+    }
+    assert B._validate_interrupted_state_identity_bindings(lineage) == lineage
+    invalid = (
+        {},
+        {"selection_digest": lineage["selection_digest"]},
+        {"scorer_contract_v1_2_digest":
+            lineage["scorer_contract_v1_2_digest"]},
+        {**lineage, "selection_digest": "0" * 64},
+        {**lineage, "scorer_contract_v1_2_digest": "0" * 64},
+    )
+    for bindings in invalid:
+        with pytest.raises(RuntimeError):
+            B._validate_interrupted_state_identity_bindings(bindings)
+
+
+def test_performance_lineage_requires_exact_registered_state_membership(
+        monkeypatch):
+    monkeypatch.setattr(B, "_preserved_states_by_digest", lambda: {})
+    state = {
+        "state_id": "historical-state",
+        "family": "medium_enclosed_maze",
+        "stratum": "general",
+        "split_role": "fit",
+        "goal_type": "landmark_red",
+        "scientific_payload": {"exact": True},
+    }
+    lineage = {
+        "selection_digest":
+            B.PERFORMANCE_INTERRUPTION.INTERRUPTED_SELECTION_DIGEST,
+        "scorer_contract_v1_2_digest":
+            B.PERFORMANCE_INTERRUPTION.INTERRUPTED_SCORER_CONTRACT_DIGEST,
+    }
+    state["state_identity_digest"] = \
+        B._state_identity_digest_for_bindings(state, lineage)
+    assert B._state_identity_matches_active_or_preserved(state) is False
+    assert B._state_identity_matches_active_or_preserved(
+        state, exact_performance_lineage_states={
+            state["state_identity_digest"]: copy.deepcopy(state),
+        }) is True
+    changed = copy.deepcopy(state)
+    changed["scientific_payload"]["exact"] = False
+    assert B._state_identity_matches_active_or_preserved(
+        changed, exact_performance_lineage_states={
+            state["state_identity_digest"]: copy.deepcopy(state),
+        }) is False
+
+    same_family_impostor = copy.deepcopy(state)
+    same_family_impostor["state_id"] = "same-family-impostor"
+    same_family_impostor["scientific_payload"] = {"exact": "invented"}
+    same_family_impostor["state_identity_digest"] = \
+        B._state_identity_digest_for_bindings(same_family_impostor, lineage)
+    assert B._state_identity_matches_active_or_preserved(
+        same_family_impostor, exact_performance_lineage_states={
+            state["state_identity_digest"]: copy.deepcopy(state),
+        }) is False
+
+
+def test_parallel_small_lineage_requires_ten_prefix_and_five_current():
+    def states(prefix_count, current_count):
+        prefix = [{
+            "state_id": f"historical-{index:02d}",
+            "state_identity_digest": f"{index + 1:064x}",
+            "scene_id": f"historical-scene-{index:02d}",
+            "family": B.REACHABILITY_REDRIVE_FAMILY,
+            "stratum": "general" if index < 5 else "safety_enriched",
+            "split_role": "fit",
+        } for index in range(prefix_count)]
+        current = [{
+            "state_id": f"current-{index:02d}",
+            "scene_id": f"current-scene-{index:02d}",
+            "family": B.REACHABILITY_REDRIVE_FAMILY,
+            "stratum": "completion_enriched",
+            "split_role": "fit",
+        } for index in range(current_count)]
+        for state in current:
+            state["state_identity_digest"] = B._state_identity_digest(state)
+        return [*prefix, *current], prefix
+
+    exact, exact_prefix = states(10, 5)
+    assert B._validate_parallel_small_state_identity_lineage(
+        exact, exact_prefix) is None
+
+    for prefix_count, current_count in ((11, 4), (9, 6)):
+        nonexact, expected_prefix = states(prefix_count, current_count)
+        with pytest.raises(RuntimeError):
+            B._validate_parallel_small_state_identity_lineage(
+                nonexact, expected_prefix)
+
+    historical_current = copy.deepcopy(exact)
+    lineage = {
+        "selection_digest":
+            B.PERFORMANCE_INTERRUPTION.INTERRUPTED_SELECTION_DIGEST,
+        "scorer_contract_v1_2_digest":
+            B.PERFORMANCE_INTERRUPTION.INTERRUPTED_SCORER_CONTRACT_DIGEST,
+    }
+    historical_current[-1]["state_identity_digest"] = \
+        B._state_identity_digest_for_bindings(historical_current[-1], lineage)
+    with pytest.raises(RuntimeError):
+        B._validate_parallel_small_state_identity_lineage(
+            historical_current, exact_prefix)
+
+
+def test_final_eval_allocation_is_reconstructed_exactly_from_states():
+    states = [{
+        "state_id": f"state-{index}",
+        "state_identity_digest": f"{index + 1:064x}",
+        "family": "family-a",
+        "stratum": "evaluation",
+        "scene_id": f"scene-{index}",
+    } for index in range(2)]
+    source_digest = "f" * 64
+    allocation = B._build_final_eval_candidate_allocation(
+        states, source_identity_manifest_digest=source_digest)
+    expected = {
+        "schema": "go2_final_eval_all_candidate_allocation_v1_2",
+        "source_identity_manifest_digest": source_digest,
+        "candidate_bank_digest": B.V1.bank_digest(),
+        "assignments": [{
+            "state_id": state["state_id"],
+            "state_identity_digest": state["state_identity_digest"],
+            "candidate_indices": list(range(len(B.V1.CANDIDATE_BANK))),
+        } for state in states],
+    }
+    expected["allocation_manifest_digest"] = B.canonical_digest(expected)
+    assert allocation == expected
+
+    rebound = copy.deepcopy(allocation)
+    rebound["assignments"][0]["state_identity_digest"] = "e" * 64
+    rebound["allocation_manifest_digest"] = B.canonical_digest({
+        key: value for key, value in rebound.items()
+        if key != "allocation_manifest_digest"
+    })
+    assert rebound != B._build_final_eval_candidate_allocation(
+        states, source_identity_manifest_digest=source_digest)
 
 
 def test_launch_hashes_same_pinned_utility_contract_after_alias_swap(

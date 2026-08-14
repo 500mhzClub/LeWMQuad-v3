@@ -131,6 +131,30 @@ def test_ordinary_completion_capture_accepts_full_production_snapshot_status():
         capture, expected_request=request)
 
 
+def test_historical_capture_identity_replays_under_bound_contract_lineage():
+    request, capture = _synthetic_completion_state_capture()
+    lineage = {
+        "selection_digest":
+            B.PERFORMANCE_INTERRUPTION.INTERRUPTED_SELECTION_DIGEST,
+        "scorer_contract_v1_2_digest":
+            B.PERFORMANCE_INTERRUPTION.INTERRUPTED_SCORER_CONTRACT_DIGEST,
+    }
+    changed = copy.deepcopy(capture)
+    changed["chosen_state"]["state_identity_digest"] = \
+        B._state_identity_digest_for_bindings(
+            changed["chosen_state"], lineage)
+    changed["state_resolution_scene_capture_digest"] = B.canonical_digest({
+        key: value for key, value in changed.items()
+        if key != "state_resolution_scene_capture_digest"
+    })
+    with pytest.raises(RuntimeError, match="chosen identity changed"):
+        B._validate_state_resolution_scene_capture(
+            changed, expected_request=request)
+    B._validate_state_resolution_scene_capture(
+        changed, expected_request=request,
+        expected_state_identity_bindings=lineage)
+
+
 @pytest.mark.parametrize("surface", ("selector_flag", "claim", "reset"))
 def test_ordinary_completion_capture_rejects_status_evidence_tamper(surface):
     request, capture = _synthetic_completion_state_capture()

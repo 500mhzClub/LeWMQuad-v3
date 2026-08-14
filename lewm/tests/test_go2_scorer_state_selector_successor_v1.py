@@ -562,6 +562,7 @@ def test_scene_shard_is_nonbinding_and_process_exit_cannot_be_a_verdict():
 @pytest.mark.parametrize("mode", ("missing", "invalid"))
 def test_resume_reuses_exact_scene_shards_and_launches_only_missing_or_invalid(
         tmp_path, monkeypatch, mode):
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     out = tmp_path / "scorer_fit"
     out.mkdir()
     census = _task_census()
@@ -640,6 +641,7 @@ def test_post_outcome_missing_or_invalid_scene_shard_is_never_regenerated(
 
 def test_scene_sigsegv_preserves_prior_exact_scenes_and_records_no_ineligibility(
         tmp_path, monkeypatch):
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     out = tmp_path / "scorer_fit"
     out.mkdir()
     census = _task_census()
@@ -665,6 +667,7 @@ def test_scene_sigsegv_preserves_prior_exact_scenes_and_records_no_ineligibility
 
 def test_valid_atomic_scene_census_survives_worker_teardown_sigsegv(
         tmp_path, monkeypatch):
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
     out = tmp_path / "scorer_fit"
     out.mkdir()
     census = _task_census()
